@@ -1,0 +1,66 @@
+[relaychain]
+default_image = "{{RELAY_IMAGE}}"
+default_command = "polkadot"
+default_args = [ "-lparachain=debug" ]
+
+chain = "rococo-local"
+
+  [[relaychain.nodes]]
+  name = "alice"
+  validator = true
+
+  [[relaychain.nodes]]
+  name = "bob"
+  validator = true
+
+  [[relaychain.nodes]]
+  name = "ferdie"
+  validator = false
+
+[[parachains]]
+id = 2000
+cumulus_based = true
+
+  # run charlie as parachain collator
+  [[parachains.collators]]
+  name = "charlie"
+  validator = true
+  image = "{{COL_IMAGE}}"
+  command = "test-parachain"
+  args = ["-lparachain=debug", "--disable-block-announcements"]
+
+  # Run dave as parachain collator and eve as parachain full node
+  #
+  # They will need to recover the pov blocks through availability recovery.
+  [[parachains.collators]]
+  name = "dave"
+  validator = true
+  image = "{{COL_IMAGE}}"
+  command = "test-parachain"
+  args = ["-lcumulus-pov-recovery=debug,parachain=debug,sync=debug", "--use-null-consensus", "--disable-block-announcements"]
+
+  # run eve as parachain full node that is only connected to charlie
+  [[parachains.collators]]
+  name = "eve"
+  validator = false
+  image = "{{COL_IMAGE}}"
+  command = "test-parachain"
+  args = ["-lcumulus-pov-recovery=debug,parachain=debug,sync=debug", "--use-null-consensus", "--disable-block-announcements"]
+
+  # Run one as parachain collator and two as parachain full node, connected via RPC relay chain node
+  #
+  # They will need to recover the pov blocks through availability recovery.
+  [[parachains.collators]]
+  name = "one"
+  validator = true
+  image = "{{COL_IMAGE}}"
+  command = "test-parachain"
+  args = ["-lcumulus-pov-recovery=debug,parachain=debug,sync=debug", "--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'ferdie'|zombie('wsUri')}}", "-- --bootnodes {{'ferdie'|zombie('multiAddress')}}"]
+
+  # run two as parachain full node that is only connected to charlie
+  [[parachains.collators]]
+  name = "two"
+  validator = false
+  image = "{{COL_IMAGE}}"
+  command = "test-parachain"
+  args = ["-lcumulus-pov-recovery=debug,parachain=debug,sync=debug","--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'ferdie'|zombie('wsUri')}}", "-- --bootnodes {{'ferdie'|zombie('multiAddress')}}"]
