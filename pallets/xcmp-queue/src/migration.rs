@@ -17,7 +17,11 @@
 //! A module that is responsible for migration of storage.
 
 use crate::{Config, Pallet, Store};
-use frame_support::{pallet_prelude::*, traits::StorageVersion, weights::{constants::WEIGHT_PER_MILLIS, Weight}};
+use frame_support::{
+	pallet_prelude::*,
+	traits::StorageVersion,
+	weights::{constants::WEIGHT_PER_MILLIS, Weight},
+};
 use xcm::latest::Weight as XcmWeight;
 
 /// The current storage version.

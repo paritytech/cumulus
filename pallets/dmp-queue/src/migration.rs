@@ -17,7 +17,11 @@
 //! A module that is responsible for migration of storage.
 
 use crate::{Config, Pallet, Store};
-use frame_support::{pallet_prelude::*, traits::StorageVersion, weights::{constants::WEIGHT_PER_MILLIS, Weight}};
+use frame_support::{
+	pallet_prelude::*,
+	traits::StorageVersion,
+	weights::{constants::WEIGHT_PER_MILLIS, Weight},
+};
 use xcm::latest::Weight as XcmWeight;
 
 /// The current storage version.
@@ -37,21 +41,19 @@ pub fn migrate_to_latest<T: Config>() -> Weight {
 }
 
 mod v0 {
-    use super::*;
-    use codec::{Decode, Encode};
+	use super::*;
+	use codec::{Decode, Encode};
 
-    #[derive(Decode, Encode, Debug)]
-    pub struct ConfigData {
-        pub max_individual: XcmWeight,
-    }
+	#[derive(Decode, Encode, Debug)]
+	pub struct ConfigData {
+		pub max_individual: XcmWeight,
+	}
 
-    impl Default for ConfigData {
-        fn default() -> Self {
-            ConfigData {
-                max_individual: 10u64 * WEIGHT_PER_MILLIS.ref_time(),
-            }
-        }
-    }
+	impl Default for ConfigData {
+		fn default() -> Self {
+			ConfigData { max_individual: 10u64 * WEIGHT_PER_MILLIS.ref_time() }
+		}
+	}
 }
 
 /// Migrates `QueueConfigData` from v1 (using only reference time weights) to v2 (with
@@ -61,9 +63,7 @@ mod v0 {
 /// `migrate_to_latest`.
 pub fn migrate_to_v1<T: Config>() -> Weight {
 	let translate = |pre: v0::ConfigData| -> super::ConfigData {
-		super::ConfigData {
-			max_individual: Weight::from_ref_time(pre.max_individual),
-		}
+		super::ConfigData { max_individual: Weight::from_ref_time(pre.max_individual) }
 	};
 
 	if let Err(_) = <Pallet<T> as Store>::Configuration::translate(|pre| pre.map(translate)) {
@@ -83,9 +83,7 @@ mod tests {
 
 	#[test]
 	fn test_migration_to_v1() {
-		let v0 = v0::ConfigData {
-			max_individual: 30_000_000_000,
-		};
+		let v0 = v0::ConfigData { max_individual: 30_000_000_000 };
 
 		new_test_ext().execute_with(|| {
 			frame_support::storage::unhashed::put_raw(

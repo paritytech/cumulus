@@ -33,7 +33,10 @@ pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::{convert::TryFrom, prelude::*};
-use xcm::{latest::{prelude::*, Weight as XcmWeight}, VersionedXcm, MAX_XCM_DECODE_DEPTH};
+use xcm::{
+	latest::{prelude::*, Weight as XcmWeight},
+	VersionedXcm, MAX_XCM_DECODE_DEPTH,
+};
 
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ConfigData {
@@ -157,8 +160,9 @@ pub mod pallet {
 			T::ExecuteOverweightOrigin::ensure_origin(origin)?;
 
 			let (sent_at, data) = Overweight::<T>::get(index).ok_or(Error::<T>::Unknown)?;
-			let weight_used = Self::try_service_message(Weight::from_ref_time(weight_limit), sent_at, &data[..])
-				.map_err(|_| Error::<T>::OverLimit)?;
+			let weight_used =
+				Self::try_service_message(Weight::from_ref_time(weight_limit), sent_at, &data[..])
+					.map_err(|_| Error::<T>::OverLimit)?;
 			Overweight::<T>::remove(index);
 			Self::deposit_event(Event::OverweightServiced { overweight_index: index, weight_used });
 			Ok(Some(weight_used.saturating_add(Weight::from_ref_time(1_000_000))).into())
@@ -751,19 +755,11 @@ mod tests {
 			assert_eq!(overweights(), vec![0]);
 
 			assert_noop!(
-				DmpQueue::service_overweight(
-					RuntimeOrigin::signed(1),
-					0,
-					20000
-				),
+				DmpQueue::service_overweight(RuntimeOrigin::signed(1), 0, 20000),
 				BadOrigin
 			);
 			assert_noop!(
-				DmpQueue::service_overweight(
-					RuntimeOrigin::root(),
-					1,
-					20000
-				),
+				DmpQueue::service_overweight(RuntimeOrigin::root(), 1, 20000),
 				Error::<Test>::Unknown
 			);
 			assert_noop!(
@@ -772,28 +768,18 @@ mod tests {
 			);
 			assert_eq!(take_trace(), vec![msg_limit_reached(10000)]);
 
-			let base_weight =
-				super::Call::<Test>::service_overweight { index: 0, weight_limit: 0 }
-					.get_dispatch_info()
-					.weight;
+			let base_weight = super::Call::<Test>::service_overweight { index: 0, weight_limit: 0 }
+				.get_dispatch_info()
+				.weight;
 			use frame_support::dispatch::GetDispatchInfo;
-			let info = DmpQueue::service_overweight(
-				RuntimeOrigin::root(),
-				0,
-				20000,
-			)
-			.unwrap();
+			let info = DmpQueue::service_overweight(RuntimeOrigin::root(), 0, 20000).unwrap();
 			let actual_weight = info.actual_weight.unwrap();
 			assert_eq!(actual_weight, base_weight + Weight::from_ref_time(10000));
 			assert_eq!(take_trace(), vec![msg_complete(10000)]);
 			assert!(overweights().is_empty());
 
 			assert_noop!(
-				DmpQueue::service_overweight(
-					RuntimeOrigin::root(),
-					0,
-					20000
-				),
+				DmpQueue::service_overweight(RuntimeOrigin::root(), 0, 20000),
 				Error::<Test>::Unknown
 			);
 		});

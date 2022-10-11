@@ -187,15 +187,9 @@ fn update_threshold_weight_works() {
 	new_test_ext().execute_with(|| {
 		let data: QueueConfigData = <QueueConfig<Test>>::get();
 		assert_eq!(data.threshold_weight, Weight::from_ref_time(100_000));
-		assert_ok!(XcmpQueue::update_threshold_weight(
-			RuntimeOrigin::root(),
-			10_000
-		));
+		assert_ok!(XcmpQueue::update_threshold_weight(RuntimeOrigin::root(), 10_000));
 		assert_noop!(
-			XcmpQueue::update_threshold_weight(
-				RuntimeOrigin::signed(5),
-				10_000_000
-			),
+			XcmpQueue::update_threshold_weight(RuntimeOrigin::signed(5), 10_000_000),
 			BadOrigin
 		);
 		let data: QueueConfigData = <QueueConfig<Test>>::get();
