@@ -15,7 +15,7 @@ group_rotation_frequency = 100 # 10 mins
 
   [[relaychain.node_groups]]
   name = "validator"
-  count = 7
+  count = 13
   args = ["-lparachain::availability=trace,parachain=debug", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
 
 [[parachains]]
