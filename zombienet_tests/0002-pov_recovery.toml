@@ -10,13 +10,12 @@ max_validators_per_core = 1
 group_rotation_frequency = 100 # 10 mins
 
   [[relaychain.nodes]]
-  name = "ferdie" # bootnode
-  validator = true
-  args = ["-lparachain::availability=trace,parachain=debug"]
+  name = "ferdie" # bootnode fullnode
+  validator = false
 
   [[relaychain.node_groups]]
   name = "validator"
-  count = 6
+  count = 7
   args = ["-lparachain::availability=trace,parachain=debug", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
 
 [[parachains]]
