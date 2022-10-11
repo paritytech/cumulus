@@ -16,10 +16,9 @@ specs:
 
   - name: Fail - Only one audit label allowed
     filter:
-      id: [ require_one_d_when_x1 ]
+      id: [ single_d ]
     labels: [ D1, B1, D4 ]
     expected: false
-
 
   - name: Fail - Release need criticality
     filter:
