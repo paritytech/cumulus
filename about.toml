@@ -1,0 +1,20 @@
+accepted = [
+    "Apache-2.0",
+    "MIT",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "CC0-1.0",
+    "BSD-3-Clause",
+    "MPL-2.0",
+    "ISC",
+    "OpenSSL",
+    "Unicode-DFS-2016",
+    "Zlib",
+    "GPL-3.0 WITH Classpath-exception-2.0",
+    "GPL-3.0",
+]
+ignore-dev-dependencies = true
+ignore-build-dependencies = true
+workarounds = [
+    "ring",
+]

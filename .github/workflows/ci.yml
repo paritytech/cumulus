@@ -130,6 +130,28 @@ jobs:
         if: ${{ matrix.check == 'clippy' }}
         run: cargo clippy -- -D warnings
 
+  license-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install cargo-about
+        uses: baptiste0928/cargo-install@v1
+        with:
+          crate: cargo-about
+          version: "0.5"
+
+      - name: Run license check
+        # Explicitly use stable because otherwise cargo will trigger a download of
+        # the nightly version specified in rust-toolchain.toml
+        run: cargo +stable about generate about.hbs > license.html
+
+      - name: Archive license file
+        uses: actions/upload-artifact@v3
+        with:
+          name: license
+          path: license.html
+
   cargo-toml-fmt:
     runs-on: ubuntu-latest
     container: "tamasfe/taplo:0.7.0-alpine"
