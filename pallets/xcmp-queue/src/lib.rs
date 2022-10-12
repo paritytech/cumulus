@@ -40,8 +40,9 @@ pub use weights::WeightInfo;
 
 use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_core::{
-	relay_chain::{BlockNumber as RelayBlockNumber, v2::MAX_POV_SIZE}, ChannelStatus, GetChannelInfo,
-	MessageSendError, ParaId, XcmpMessageFormat, XcmpMessageHandler, XcmpMessageSource,
+	relay_chain::{v2::MAX_POV_SIZE, BlockNumber as RelayBlockNumber},
+	ChannelStatus, GetChannelInfo, MessageSendError, ParaId, XcmpMessageFormat, XcmpMessageHandler,
+	XcmpMessageSource,
 };
 use frame_support::{
 	traits::EnsureOrigin,

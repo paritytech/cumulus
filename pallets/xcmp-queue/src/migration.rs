@@ -82,7 +82,10 @@ pub fn migrate_to_v2<T: Config>() -> Weight {
 			resume_threshold: pre.resume_threshold,
 			threshold_weight: Weight::from_ref_time(pre.threshold_weight),
 			weight_restrict_decay: Weight::from_ref_time(pre.weight_restrict_decay),
-			xcmp_max_individual_weight: Weight::from_parts(pre.xcmp_max_individual_weight, MAX_POV_SIZE as u64),
+			xcmp_max_individual_weight: Weight::from_parts(
+				pre.xcmp_max_individual_weight,
+				MAX_POV_SIZE as u64,
+			),
 		}
 	};
 

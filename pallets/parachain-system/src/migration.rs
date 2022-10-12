@@ -43,18 +43,20 @@ mod v2 {
 	use super::*;
 
 	pub fn migrate<T: Config>() -> Weight {
-		let translate = |pre: u64| -> Weight {
-			Weight::from_parts(pre, MAX_POV_SIZE as u64)
-		};
+		let translate = |pre: u64| -> Weight { Weight::from_parts(pre, MAX_POV_SIZE as u64) };
 
-		if <Pallet<T> as Store>::ReservedXcmpWeightOverride::translate(|pre| pre.map(translate)).is_err() {
+		if <Pallet<T> as Store>::ReservedXcmpWeightOverride::translate(|pre| pre.map(translate))
+			.is_err()
+		{
 			log::error!(
 				target: "parachain_system",
 				"unexpected error when performing translation of the ReservedXcmpWeightOverride type during storage upgrade to v2"
 			);
 		}
 
-		if <Pallet<T> as Store>::ReservedDmpWeightOverride::translate(|pre| pre.map(translate)).is_err() {
+		if <Pallet<T> as Store>::ReservedDmpWeightOverride::translate(|pre| pre.map(translate))
+			.is_err()
+		{
 			log::error!(
 				target: "parachain_system",
 				"unexpected error when performing translation of the ReservedDmpWeightOverride type during storage upgrade to v2"
