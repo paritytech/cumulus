@@ -250,9 +250,8 @@ pub fn run() -> Result<()> {
 
 			// grab the task manager.
 			let registry = &runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
-			let task_manager =
-				TaskManager::new(runner.config().tokio_handle.clone(), *registry)
-					.map_err(|e| format!("Error: {:?}", e))?;
+			let task_manager = TaskManager::new(runner.config().tokio_handle.clone(), *registry)
+				.map_err(|e| format!("Error: {:?}", e))?;
 
 			runner.async_run(|config| {
 				Ok((cmd.run::<Block, TemplateRuntimeExecutor>(config), task_manager))
