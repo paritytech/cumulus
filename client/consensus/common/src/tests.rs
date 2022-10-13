@@ -131,15 +131,25 @@ fn build_and_import_block_ext<B: InitBlockBuilder, I: BlockImport<Block>>(
 		None => builder.init_block_builder(None, Default::default()),
 	};
 
-	let block = builder.build().unwrap().block;
+	let mut block = builder.build().unwrap().block;
 	let (header, body) = block.clone().deconstruct();
+
+	// Simulate some form of post activity.
+	// This is mostly used to excercise the `LevelMonitor` correct behavior.
+	// (in practice we want that header post-hash != pre-hash)
+	let post_digest = sp_runtime::DigestItem::Other(vec![1, 2, 3]);
 
 	let mut block_import_params = BlockImportParams::new(origin, header);
 	block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(import_as_best));
 	block_import_params.body = Some(body);
+	block_import_params.post_digests.push(post_digest.clone());
 
 	block_on(importer.import_block(block_import_params, Default::default())).unwrap();
 
+	// In order to get a header hash compatible with block import params containing some
+	// form of `post_digest`, we need to manually push the post digest within the header
+	// digest logs.
+	block.header.digest.push(post_digest);
 	block
 }
 

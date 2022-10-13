@@ -135,8 +135,9 @@ where
 		mut params: sc_consensus::BlockImportParams<Block, Self::Transaction>,
 		cache: std::collections::HashMap<sp_consensus::CacheKeyId, Vec<u8>>,
 	) -> Result<sc_consensus::ImportResult, Self::Error> {
+		// Blocks are stored within the backend by using POST hash.
+		let hash = params.post_hash();
 		let number = *params.header.number();
-		let hash = params.header.hash();
 
 		if let Some(ref mut monitor) = self.level_monitor {
 			monitor.enforce_limit(number);
@@ -154,10 +155,9 @@ where
 			monitor.block_imported(number, hash);
 		}
 
-		// TODO: REMOVE temporary debug message
 		match res {
 			ImportResult::Imported(_) => (),
-			_ => log::warn!(target: "parachain", "Failed importing {}: {:?}", hash, res),
+			_ => log::warn!(target: "parachain", "XXX Failed importing {}: {:?}", hash, res),
 		}
 
 		Ok(res)

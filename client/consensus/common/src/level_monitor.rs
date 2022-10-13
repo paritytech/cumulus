@@ -98,7 +98,11 @@ where
 	/// Level limits are not enforced during this phase.
 	fn restore(&mut self) {
 		let info = self.backend.blockchain().info();
-		log::debug!(target: "parachain", "XXX Restoring chain level monitor from last finalized block: {} {}", info.finalized_number, info.finalized_hash);
+		log::debug!(
+			target: "parachain",
+			"XXX Restoring chain level monitor from last finalized block: {} {}",
+			info.finalized_number, info.finalized_hash
+		);
 
 		self.lowest_level = info.finalized_number;
 		self.import_counter = info.finalized_number;
@@ -163,7 +167,7 @@ where
 
 		log::debug!(
 			target: "parachain",
-			"Detected leaves overflow at height {number}, removing {remove_count} obsolete blocks",
+			"XXX Detected leaves overflow at height {number}, removing {remove_count} obsolete blocks",
 		);
 
 		(0..remove_count).all(|_| {
@@ -241,7 +245,7 @@ where
 					// This should never happen
 					log::error!(
 						target: "parachain",
-						"Unable getting route to any leaf from {:?} (this is a bug)",
+						"XXX Unable getting route to any leaf from {:?} (this is a bug)",
 						blk_hash,
 					);
 					continue
