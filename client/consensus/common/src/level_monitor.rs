@@ -98,6 +98,7 @@ where
 	/// Level limits are not enforced during this phase.
 	fn restore(&mut self) {
 		let info = self.backend.blockchain().info();
+		log::debug!(target: "parachain", "XXX Restoring chain level monitor from last finalized block: {} {}", info.finalized_number, info.finalized_hash);
 
 		self.lowest_level = info.finalized_number;
 		self.import_counter = info.finalized_number;
@@ -121,6 +122,8 @@ where
 			});
 			counter_max = std::cmp::max(self.import_counter, counter_max);
 		}
+
+		log::debug!(target: "parachain", "XXX Restored chain level monitor up to height {}", counter_max);
 
 		self.import_counter = counter_max;
 	}
