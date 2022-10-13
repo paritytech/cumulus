@@ -257,6 +257,10 @@ pub fn run() -> Result<()> {
 				Ok((cmd.run::<Block, TemplateRuntimeExecutor>(config), task_manager))
 			})
 		},
+		#[cfg(not(feature = "try-runtime"))]
+		Some(TryRuntime) => Err("Try-runtime was not enabled when building the node. \
+			You can enable it with `--features try-runtime`."
+			.into()),
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 			let collator_options = cli.run.collator_options();

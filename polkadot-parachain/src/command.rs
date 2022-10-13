@@ -628,6 +628,10 @@ pub fn run() -> Result<()> {
 				_ => Err("Chain doesn't support try-runtime".into()),
 			}
 		},
+		#[cfg(not(feature = "try-runtime"))]
+		Some(TryRuntime) => Err("Try-runtime was not enabled when building the node. \
+			You can enable it with `--features try-runtime`."
+			.into()),
 		Some(Subcommand::Key(cmd)) => Ok(cmd.run(&cli)?),
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
