@@ -40,9 +40,8 @@ pub use weights::WeightInfo;
 
 use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_core::{
-	relay_chain::{v2::MAX_POV_SIZE, BlockNumber as RelayBlockNumber},
-	ChannelStatus, GetChannelInfo, MessageSendError, ParaId, XcmpMessageFormat, XcmpMessageHandler,
-	XcmpMessageSource,
+	relay_chain::BlockNumber as RelayBlockNumber, ChannelStatus, GetChannelInfo, MessageSendError,
+	ParaId, XcmpMessageFormat, XcmpMessageHandler, XcmpMessageSource,
 };
 use frame_support::{
 	traits::EnsureOrigin,
@@ -67,6 +66,7 @@ pub use pallet::*;
 pub type OverweightIndex = u64;
 
 const LOG_TARGET: &str = "xcmp_queue";
+const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -464,7 +464,7 @@ impl Default for QueueConfigData {
 			threshold_weight: Weight::from_ref_time(100_000),
 			weight_restrict_decay: Weight::from_ref_time(2),
 			xcmp_max_individual_weight: (20u64 * WEIGHT_PER_MILLIS)
-				.set_proof_size(MAX_POV_SIZE as u64),
+				.set_proof_size(DEFAULT_POV_SIZE),
 		}
 	}
 }

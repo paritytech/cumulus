@@ -16,8 +16,7 @@
 
 //! A module that is responsible for migration of storage.
 
-use crate::{Config, Pallet, Store};
-use cumulus_primitives_core::relay_chain::v2::MAX_POV_SIZE;
+use crate::{Config, Pallet, Store, DEFAULT_POV_SIZE};
 use frame_support::{
 	pallet_prelude::*,
 	traits::StorageVersion,
@@ -65,7 +64,7 @@ mod v0 {
 pub fn migrate_to_v1<T: Config>() -> Weight {
 	let translate = |pre: v0::ConfigData| -> super::ConfigData {
 		super::ConfigData {
-			max_individual: Weight::from_parts(pre.max_individual, MAX_POV_SIZE as u64),
+			max_individual: Weight::from_parts(pre.max_individual, DEFAULT_POV_SIZE),
 		}
 	};
 
@@ -99,7 +98,7 @@ mod tests {
 			let v1 = crate::Configuration::<Test>::get();
 
 			assert_eq!(v0.max_individual, v1.max_individual.ref_time());
-			assert_eq!(v1.max_individual.proof_size(), MAX_POV_SIZE as u64);
+			assert_eq!(v1.max_individual.proof_size(), DEFAULT_POV_SIZE);
 		});
 	}
 }

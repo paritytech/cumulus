@@ -15,7 +15,6 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{Config, Pallet, Store};
-use cumulus_primitives_core::relay_chain::v2::MAX_POV_SIZE;
 use frame_support::{
 	traits::{Get, StorageVersion},
 	weights::Weight,
@@ -48,9 +47,10 @@ pub fn on_runtime_upgrade<T: Config>() -> Weight {
 /// V2: Migrate to 2D weights for ReservedXcmpWeightOverride and ReservedDmpWeightOverride.
 mod v2 {
 	use super::*;
+	const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
 
 	pub fn migrate<T: Config>() -> Weight {
-		let translate = |pre: u64| -> Weight { Weight::from_parts(pre, MAX_POV_SIZE as u64) };
+		let translate = |pre: u64| -> Weight { Weight::from_parts(pre, DEFAULT_POV_SIZE) };
 
 		if <Pallet<T> as Store>::ReservedXcmpWeightOverride::translate(|pre| pre.map(translate))
 			.is_err()
