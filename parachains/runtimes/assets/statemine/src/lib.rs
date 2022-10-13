@@ -258,6 +258,7 @@ impl pallet_assets::Config for Runtime {
 	type Extra = ();
 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
 	type AssetAccountDeposit = AssetAccountDeposit;
+	type RemoveItemsLimit = ConstU32<1000>;
 }
 
 parameter_types! {
