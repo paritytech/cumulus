@@ -10,14 +10,14 @@ path = "src/main.rs"
 
 [dependencies]
 async-trait = "0.1.57"
-clap = { version = "3.2.20", features = ["derive", "deprecated"] }
+clap = { version = "3.2.22", features = ["derive", "deprecated"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 criterion = { version = "0.4.0", features = [ "async_tokio" ] }
 jsonrpsee = { version = "0.15.1", features = ["server"] }
 rand = "0.8.5"
-serde = { version = "1.0.144", features = ["derive"] }
-tokio = { version = "1.21.1", features = ["macros"] }
-tracing = "0.1.36"
+serde = { version = "1.0.145", features = ["derive"] }
+tokio = { version = "1.21.2", features = ["macros"] }
+tracing = "0.1.37"
 url = "2.3.1"
 
 # Substrate
@@ -31,7 +31,6 @@ sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "mast
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network-common = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "master", features = [ "wasmtime" ] }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -70,6 +69,7 @@ cumulus-relay-chain-interface = { path = "../../client/relay-chain-interface" }
 cumulus-relay-chain-rpc-interface = { path = "../../client/relay-chain-rpc-interface" }
 cumulus-test-relay-validation-worker-provider = { path = "../relay-validation-worker-provider" }
 cumulus-test-runtime = { path = "../runtime" }
+cumulus-relay-chain-minimal-node = { path = "../../client/relay-chain-minimal-node" }
 
 [dev-dependencies]
 futures = "0.3.24"

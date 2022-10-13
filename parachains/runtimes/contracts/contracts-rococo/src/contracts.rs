@@ -4,13 +4,12 @@ use crate::{
 };
 use frame_support::{
 	parameter_types,
-	traits::{ConstU32, Nothing, OnRuntimeUpgrade},
+	traits::{ConstU32, Nothing},
 	weights::Weight,
 };
 use pallet_contracts::{
-	migration,
 	weights::{SubstrateWeight, WeightInfo},
-	Config, DefaultAddressGenerator, DefaultContractAccessWeight, Frame, Schedule,
+	Config, DefaultAddressGenerator, Frame, Schedule,
 };
 pub use parachains_common::AVERAGE_ON_INITIALIZE_RATIO;
 
@@ -56,15 +55,6 @@ impl Config for Runtime {
 	type Schedule = MySchedule;
 	type CallStack = [Frame<Self>; 31];
 	type AddressGenerator = DefaultAddressGenerator;
-	type ContractAccessWeight = DefaultContractAccessWeight<RuntimeBlockWeights>;
 	type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
-	type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
 	type MaxStorageKeyLen = ConstU32<128>;
-}
-
-pub struct Migrations;
-impl OnRuntimeUpgrade for Migrations {
-	fn on_runtime_upgrade() -> Weight {
-		migration::migrate::<Runtime>()
-	}
 }
