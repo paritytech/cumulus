@@ -481,12 +481,12 @@ macro_rules! construct_async_run {
 			Runtime::BridgeHub(bridge_hub_runtime_type) => {
 				runner.async_run(|$config| {
 					let $components = match bridge_hub_runtime_type {
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo { .. } |
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal => new_partial::<chain_spec::bridge_hubs::rococo::RuntimeApi, _>(
 							&$config,
 							crate::service::aura_build_import_queue::<_, AuraId>,
 						)?,
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::Wococo |
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::Wococo { .. } |
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::WococoLocal => new_partial::<chain_spec::bridge_hubs::wococo::RuntimeApi, _>(
 							&$config,
 							crate::service::aura_build_import_queue::<_, AuraId>,
@@ -781,13 +781,13 @@ pub fn run() -> Result<()> {
 					.map(|r| r.0)
 					.map_err(Into::into),
 					Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo { .. } |
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal =>
 							crate::service::start_generic_aura_node::<
 								chain_spec::bridge_hubs::rococo::RuntimeApi,
 								AuraId,
 							>(config, polkadot_config, collator_options, id, hwbench),
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::Wococo |
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::Wococo { .. } |
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::WococoLocal =>
 							crate::service::start_generic_aura_node::<
 								chain_spec::bridge_hubs::wococo::RuntimeApi,
