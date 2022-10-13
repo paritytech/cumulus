@@ -1634,6 +1634,7 @@ dependencies = [
  "cumulus-relay-chain-interface",
  "futures",
  "parking_lot 0.12.1",
+ "sc-client-api",
  "sc-consensus",
  "sp-api",
  "sp-block-builder",
