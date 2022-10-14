@@ -27,6 +27,7 @@ These checks should be performed on the codebase.
 
 ### On the release branch
 
+- [ ] :crab: Doublecheck that the release branch is not pointing to master for cumulus/polkadot/substrate.
 The following checks can be performed after we have forked off to the release-
 candidate branch or started an additional release candidate branch (rc-2, rc-3, etc)
 
