@@ -45,7 +45,7 @@ The following checks can be performed after we have forked off to the release-ca
 
 # Post release
 
-- [ ] :crab: all commits on this release branch have been merged back to master.
+- [ ] :crab: all commits (release version bumps, fixes) on this release branch have been merged back to master.
 
 ---
 
