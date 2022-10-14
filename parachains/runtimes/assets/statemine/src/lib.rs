@@ -1024,8 +1024,8 @@ impl pallet_state_trie_migration::Config for Runtime {
 
 #[cfg(feature = "state-trie-migration")]
 frame_support::ord_parameter_types! {
-	pub const MigController: AccountId = AccountId::from(hex_literal::hex!("52bc71c1eca5353749542dfdf0af97bf764f9c2f44e860cd485f1cd86400f649"));
-	pub const RootMigController: AccountId = AccountId::from(hex_literal::hex!("52bc71c1eca5353749542dfdf0af97bf764f9c2f44e860cd485f1cd86400f649"));
+	pub const MigController: AccountId = AccountId::from(hex_literal::hex!("8458ed39dc4b6f6c7255f7bc42be50c2967db126357c999d44e12ca7ac80dc52"));
+	pub const RootMigController: AccountId = AccountId::from(hex_literal::hex!("8458ed39dc4b6f6c7255f7bc42be50c2967db126357c999d44e12ca7ac80dc52"));
 }
 
 #[cfg(feature = "state-trie-migration")]
@@ -1034,11 +1034,11 @@ fn ensure_key_ss58() {
 	use frame_support::traits::SortedMembers;
 	use sp_core::crypto::Ss58Codec;
 	let acc =
-		AccountId::from_ss58check("5DwBmEFPXRESyEam5SsQF1zbWSCn2kCjyLW51hJHXe9vW4xs").unwrap();
+		AccountId::from_ss58check("5F4EbSkZz18X36xhbsjvDNs6NuZ82HyYtq5UiJ1h9SBHJXZD").unwrap();
 	//panic!("{:x?}", acc);
 	assert_eq!(acc, MigController::sorted_members()[0]);
 	let acc =
-		AccountId::from_ss58check("5DwBmEFPXRESyEam5SsQF1zbWSCn2kCjyLW51hJHXe9vW4xs").unwrap();
+		AccountId::from_ss58check("5F4EbSkZz18X36xhbsjvDNs6NuZ82HyYtq5UiJ1h9SBHJXZD").unwrap();
 	assert_eq!(acc, RootMigController::sorted_members()[0]);
 	//panic!("{:x?}", acc);
 }
