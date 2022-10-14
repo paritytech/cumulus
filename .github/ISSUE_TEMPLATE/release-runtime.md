@@ -43,6 +43,10 @@ The following checks can be performed after we have forked off to the release-ca
 - [ ] Check that [build artifacts](https://github.com/paritytech/cumulus/blob/master/docs/release.md#build-artifacts) have been added to the
     draft-release.
 
+# Post release
+
+- [ ] :crab: all commits on this release branch have been merged back to master.
+
 ---
 
 Read more about the [release documentation](https://github.com/paritytech/cumulus/blob/master/docs/release.md).
