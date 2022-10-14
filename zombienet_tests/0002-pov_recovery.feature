@@ -10,7 +10,13 @@ validator-3: is up
 alice: is up within 60 seconds
 bob: is up within 60 seconds
 charlie: is up within 60 seconds
-validator-0: parachain 2000 is registered within 225 seconds
-bob: reports block height is at least 20 within 360 seconds
-alice: reports block height is at least 20 within 360 seconds
-charlie: reports block height is at least 20 within 360 seconds
+
+# wait 30 blocks and register parachain
+validator-3: reports block height is at least 30 within 250 seconds
+validator-0: js-script ./register-para.js with "2000" within 240 seconds
+validator-0: parachain 2000 is registered within 300 seconds
+
+# check block production
+bob: reports block height is at least 20 within 600 seconds
+alice: reports block height is at least 20 within 600 seconds
+charlie: reports block height is at least 20 within 600 seconds

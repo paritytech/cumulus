@@ -16,22 +16,15 @@ group_rotation_frequency = 100 # 10 mins
   [[relaychain.node_groups]]
   name = "validator"
   count = 13
-  args = ["-lparachain::availability=trace,parachain=debug", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
+  args = ["-lparachain::availability=trace,sync=debug,parachain=debug", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
 
 [[parachains]]
 id = 2000
 cumulus_based = true
+register_para = false
+add_to_genesis = false
 
-  # run alice as a parachain collator who does not produce blocks
-  # alice is a bootnode for bob and charlie
-  [[parachains.collators]]
-  name = "alice"
-  validator = true # collator
-  image = "{{COL_IMAGE}}"
-  command = "test-parachain"
-  args = ["-lparachain::availability=trace,parachain=debug,cumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements", "--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
-
-  # run bob as a parachain collator who is the only one producing blocks 
+  # run bob as a parachain collator who is the only one producing blocks
   # alice and charlie will need to recover the pov blocks through availability recovery
   [[parachains.collators]]
   name = "bob"
@@ -40,10 +33,19 @@ cumulus_based = true
   command = "test-parachain"
   args = ["--disable-block-announcements"]
 
+  # run alice as a parachain collator who does not produce blocks
+  # alice is a bootnode for bob and charlie
+  [[parachains.collators]]
+  name = "alice"
+  validator = true # collator
+  image = "{{COL_IMAGE}}"
+  command = "test-parachain"
+  args = ["-lparachain::availability=trace,sync=debug,parachain=debug,cumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements", "--bootnodes {{'bob'|zombie('multiAddress')}}",  "--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
+
   # run eve as a parachain full node
   [[parachains.collators]]
   name = "charlie"
   validator = false # full node
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["-lparachain::availability=trace,parachain=debug,cumulus-pov-recovery=debug", "--disable-block-announcements", "--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
+  args = ["-lparachain::availability=trace,sync=debug,parachain=debug,cumulus-pov-recovery=debug", "--disable-block-announcements", "--bootnodes {{'bob'|zombie('multiAddress')}}","--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
