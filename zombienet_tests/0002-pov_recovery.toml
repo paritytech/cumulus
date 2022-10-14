@@ -21,6 +21,17 @@ group_rotation_frequency = 100 # 10 mins
 [[parachains]]
 id = 2000
 cumulus_based = true
+register_para = false
+add_to_genesis = false
+
+  # run bob as a parachain collator who is the only one producing blocks
+  # alice and charlie will need to recover the pov blocks through availability recovery
+  [[parachains.collators]]
+  name = "bob"
+  validator = true # collator
+  image = "{{COL_IMAGE}}"
+  command = "test-parachain"
+  args = ["--disable-block-announcements"]
 
   # run alice as a parachain collator who does not produce blocks
   # alice is a bootnode for bob and charlie
@@ -30,15 +41,6 @@ cumulus_based = true
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
   args = ["-lparachain::availability=trace,sync=debug,parachain=debug,cumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements", "--bootnodes {{'bob'|zombie('multiAddress')}}",  "--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
-
-  # run bob as a parachain collator who is the only one producing blocks 
-  # alice and charlie will need to recover the pov blocks through availability recovery
-  [[parachains.collators]]
-  name = "bob"
-  validator = true # collator
-  image = "{{COL_IMAGE}}"
-  command = "test-parachain"
-  args = ["--disable-block-announcements"]
 
   # run eve as a parachain full node
   [[parachains.collators]]
