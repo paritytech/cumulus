@@ -23,7 +23,7 @@ These checks should be performed on the codebase.
 - [ ] the [benchmarks](https://github.com/paritytech/ci_cd/wiki/Benchmarks:-cumulus) ran
 - [ ] the weights have been updated for any modified runtime logic
 - [ ] :crab: the new weights are sane, there are no significant (>50%) drops or rises with no reason
-- [ ] :crab: the various pieces of XCM config are sane
+- [ ] :crab: XCM config is compatible with the configurations and versions of relevant interlocutors, like the Relay Chain.
 
 ### On the release branch
 
