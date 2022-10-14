@@ -7,8 +7,8 @@ title: Release Checklist for Runtime {{ env.VERSION }}
 # Release Checklist - Runtimes
 
 **All** following checks must be completed before publishing a new release.
-The release process owned and led by @paritytech/release-engineering team.
-The checks marked with :crab: is meant to be checked by [a runtime engineer](https://github.com/paritytech/cumulus/issues/1761).
+The release process is owned and led by @paritytech/release-engineering team.
+The checks marked with :crab: are meant to be checked by [a runtime engineer](https://github.com/paritytech/cumulus/issues/1761).
 
 ## Runtimes Release
 
