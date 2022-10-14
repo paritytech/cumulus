@@ -11,6 +11,6 @@ alice: is up within 60 seconds
 bob: is up within 60 seconds
 charlie: is up within 60 seconds
 validator-0: parachain 2000 is registered within 225 seconds
-bob: reports block height is at least 7 within 250 seconds
-alice: reports block height is at least 7 within 250 seconds
-charlie: reports block height is at least 7 within 250 seconds
+bob: reports block height is at least 20 within 360 seconds
+alice: reports block height is at least 20 within 360 seconds
+charlie: reports block height is at least 20 within 360 seconds
