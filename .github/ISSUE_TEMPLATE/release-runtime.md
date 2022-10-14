@@ -22,7 +22,7 @@ These checks should be performed on the codebase.
     the same. Bump `transaction_version` otherwise
 - [ ] the [benchmarks](https://github.com/paritytech/ci_cd/wiki/Benchmarks:-cumulus) ran
 - [ ] the weights have been updated for any modified runtime logic
-- [ ] :crab: the new weights are sane, there are no significant (>20%) drops or rises with no reason
+- [ ] :crab: the new weights are sane, there are no significant (>50%) drops or rises with no reason
 - [ ] :crab: the various pieces of XCM config are sane
 
 ### On the release branch
