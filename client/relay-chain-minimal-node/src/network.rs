@@ -462,5 +462,5 @@ impl sc_service::ImportQueue<Block> for DummyImportQueue {
 struct DummyChainSyncService<B>(std::marker::PhantomData<B>);
 
 impl<B: BlockT> NetworkSyncForkRequest<B::Hash, NumberFor<B>> for DummyChainSyncService<B> {
-    fn set_sync_fork_request(&self, _peers: Vec<PeerId>, _hash: B::Hash, _number: NumberFor<B>) {}
+	fn set_sync_fork_request(&self, _peers: Vec<PeerId>, _hash: B::Hash, _number: NumberFor<B>) {}
 }
