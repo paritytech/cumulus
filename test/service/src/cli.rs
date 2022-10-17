@@ -41,7 +41,7 @@ pub struct TestCollatorCli {
 	pub parachain_id: u32,
 
 	/// Relay chain arguments
-	#[clap(raw = true)]
+	#[arg(raw = true)]
 	pub relaychain_args: Vec<String>,
 
 	#[arg(long)]
