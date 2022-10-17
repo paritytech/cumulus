@@ -16,8 +16,8 @@ criterion = { version = "0.4.0", features = [ "async_tokio" ] }
 jsonrpsee = { version = "0.15.1", features = ["server"] }
 rand = "0.8.5"
 serde = { version = "1.0.145", features = ["derive"] }
-tokio = { version = "1.21.1", features = ["macros"] }
-tracing = "0.1.36"
+tokio = { version = "1.21.2", features = ["macros"] }
+tracing = "0.1.37"
 url = "2.3.1"
 
 # Substrate
@@ -69,6 +69,7 @@ cumulus-relay-chain-interface = { path = "../../client/relay-chain-interface" }
 cumulus-relay-chain-rpc-interface = { path = "../../client/relay-chain-rpc-interface" }
 cumulus-test-relay-validation-worker-provider = { path = "../relay-validation-worker-provider" }
 cumulus-test-runtime = { path = "../runtime" }
+cumulus-relay-chain-minimal-node = { path = "../../client/relay-chain-minimal-node" }
 
 [dev-dependencies]
 futures = "0.3.24"

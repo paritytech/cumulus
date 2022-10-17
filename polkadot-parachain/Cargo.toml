@@ -83,6 +83,7 @@ cumulus-primitives-parachain-inherent = { path = "../primitives/parachain-inhere
 cumulus-relay-chain-interface = { path = "../client/relay-chain-interface" }
 cumulus-relay-chain-inprocess-interface = { path = "../client/relay-chain-inprocess-interface" }
 cumulus-relay-chain-rpc-interface = { path = "../client/relay-chain-rpc-interface" }
+cumulus-relay-chain-minimal-node = { path = "../client/relay-chain-minimal-node" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -91,7 +92,7 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 assert_cmd = "2.0"
 nix = "0.25"
 tempfile = "3.3.0"
-tokio = { version = "1.21.1", features = ["macros", "time", "parking_lot"] }
+tokio = { version = "1.21.2", features = ["macros", "time", "parking_lot"] }
 wait-timeout = "0.2"
 # purge_chain_works works with rococo-local and needs to allow this
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", features = ["rococo-native"] }
