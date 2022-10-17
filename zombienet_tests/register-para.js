@@ -3,7 +3,6 @@ async function run(nodeName, networkInfo, args) {
     const para = networkInfo.paras[paraIdStr];
     const relayNode = networkInfo.relay[0];
 
-    console.log(para);
     await zombie.registerParachain(parseInt(paraIdStr,10),para.wasmPath, para.statePath, relayNode.wsUri, "//Alice", true);
 }
 
