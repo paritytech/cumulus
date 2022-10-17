@@ -93,14 +93,14 @@ jobs:
 
       - name: Upload ${{ matrix.runtime }} srtool json
         if: ${{ github.event.inputs.release_type != 'client' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
         with:
           name: ${{ matrix.runtime }}-srtool-json
           path: ${{ matrix.runtime }}-srtool-digest.json
 
       - name: Upload ${{ matrix.runtime }} runtime
         if: ${{ github.event.inputs.release_type != 'client' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
         with:
           name: ${{ matrix.runtime }}-runtime
           path: |
@@ -125,7 +125,7 @@ jobs:
           ruby-version: 3.0.0
 
       - name: Download srtool json output
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3.0.0
 
       - name: Prepare tooling
         run: |
@@ -177,14 +177,14 @@ jobs:
 
       - name: Archive srtool json
         if: ${{ github.event.inputs.release_type != 'client' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
         with:
           name: srtool-json
           path: |
             **/*-srtool-digest.json
 
       - name: Archive context artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
         with:
           name: release-notes-context
           path: |
@@ -233,7 +233,7 @@ jobs:
           ref: ${{ github.event.inputs.ref2 }}
 
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3.0.0
 
       - uses: ruby/setup-ruby@eae47962baca661befdfd24e4d6c34ade04858f7 # v1.118.0
         with:
