@@ -120,7 +120,7 @@ jobs:
           path: cumulus
           ref: ${{ github.event.inputs.ref2 }}
 
-      - uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@eae47962baca661befdfd24e4d6c34ade04858f7 # v1.118.0
         with:
           ruby-version: 3.0.0
 
@@ -235,7 +235,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v3
 
-      - uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@eae47962baca661befdfd24e4d6c34ade04858f7 # v1.118.0
         with:
           ruby-version: 3.0.0
 
