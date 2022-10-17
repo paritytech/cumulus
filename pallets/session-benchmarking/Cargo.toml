@@ -14,12 +14,12 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 parity-scale-codec = { version = "3.2.1", default-features = false }
-sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-session = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+pallet-session = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
 
 [features]
 default = ["std"]

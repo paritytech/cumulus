@@ -10,16 +10,16 @@ futures = "0.3.24"
 futures-timer = "3.0.2"
 
 # Substrate
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
 
 # Polkadot
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false, features = ["cli"] }
@@ -33,7 +33,7 @@ cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 [dev-dependencies]
 
 # Substrate
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
 
 # Polkadot
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }

@@ -8,23 +8,23 @@ edition = "2021"
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [ "derive" ] }
 
 # Substrate
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
-sc-executor-common = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] , branch = "aa/safely-destroy-large-assets" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sc-executor = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] , branch = "aa/safely-destroy-large-assets" }
+sc-executor-common = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
 
 # Polkadot
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }

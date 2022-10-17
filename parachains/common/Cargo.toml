@@ -13,17 +13,17 @@ codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive
 scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-assets = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-authorship = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "aa/safely-destroy-large-assets" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "aa/safely-destroy-large-assets" }
+pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "aa/safely-destroy-large-assets" }
+pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "aa/safely-destroy-large-assets" }
+pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "aa/safely-destroy-large-assets" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "aa/safely-destroy-large-assets" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "aa/safely-destroy-large-assets" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "aa/safely-destroy-large-assets" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "aa/safely-destroy-large-assets" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "aa/safely-destroy-large-assets" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "aa/safely-destroy-large-assets" }
 
 # Polkadot
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -35,11 +35,11 @@ pallet-collator-selection = { path = "../../pallets/collator-selection", default
 cumulus-primitives-utility = { path = "../../primitives/utility", default-features = false }
 
 [dev-dependencies]
-pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "aa/safely-destroy-large-assets" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "aa/safely-destroy-large-assets" }
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
 
 [features]
 default = ["std"]
