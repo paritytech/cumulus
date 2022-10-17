@@ -13,12 +13,12 @@ futures = "0.3.24"
 tracing = "0.1.37"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -30,7 +30,7 @@ cumulus-relay-chain-interface = { path = "../../relay-chain-interface" }
 futures-timer = "3.0.2"
 
 # Substrate
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Cumulus
 cumulus-test-client = { path = "../../../test/client" }

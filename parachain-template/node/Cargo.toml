@@ -73,7 +73,7 @@ cumulus-relay-chain-rpc-interface = { path = "../../client/relay-chain-rpc-inter
 cumulus-relay-chain-minimal-node = { path = "../../client/relay-chain-minimal-node" }
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [features]
 default = []

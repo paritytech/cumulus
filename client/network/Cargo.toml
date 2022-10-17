@@ -14,12 +14,12 @@ parking_lot = "0.12.1"
 tracing = "0.1.37"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
 polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -35,13 +35,13 @@ tokio = { version = "1.21.2", features = ["macros"] }
 url = "2.3.1"
 
 # Substrate
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
 polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }

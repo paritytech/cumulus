@@ -16,17 +16,17 @@ codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive
 scale-info = { version = "2.2.0", default-features = false, features = ["derive"] }
 
 # Substrate
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "aa/safely-destroy-large-assets" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "aa/safely-destroy-large-assets" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "aa/safely-destroy-large-assets" }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 [dev-dependencies]
 serde = { version = "1.0.132" }
 
 # Substrate
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "aa/safely-destroy-large-assets" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "aa/safely-destroy-large-assets" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "aa/safely-destroy-large-assets" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 [features]
 default = ["std"]

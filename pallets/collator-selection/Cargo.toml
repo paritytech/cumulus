@@ -18,25 +18,25 @@ codec = { default-features = false, features = ["derive"], package = "parity-sca
 rand = { version = "0.8.5", features = ["std_rng"], default-features = false }
 scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
 
-sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-staking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-pallet-authorship = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-pallet-session = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-staking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-authorship = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-session = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 
-frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [dev-dependencies]
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-pallet-aura = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [features]
 default = ["std"]

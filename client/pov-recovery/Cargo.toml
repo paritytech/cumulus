@@ -13,11 +13,11 @@ rand = "0.8.5"
 tracing = "0.1.37"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
 polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -37,6 +37,6 @@ portpicker = "0.1.1"
 cumulus-test-service = { path = "../../test/service" }
 
 # Substrate
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "aa/safely-destroy-large-assets" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }

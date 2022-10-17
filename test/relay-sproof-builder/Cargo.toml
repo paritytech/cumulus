@@ -8,9 +8,9 @@ edition = "2021"
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [ "derive" ] }
 
 # Substrate
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "aa/safely-destroy-large-assets" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "aa/safely-destroy-large-assets" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "aa/safely-destroy-large-assets" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
