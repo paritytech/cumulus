@@ -1611,6 +1611,7 @@ dependencies = [
  "dyn-clone",
  "futures",
  "futures-timer",
+ "log",
  "parity-scale-codec",
  "polkadot-primitives",
  "sc-client-api",

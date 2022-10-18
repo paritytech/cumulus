@@ -12,7 +12,9 @@ use parachain_template_runtime::{opaque::Block, Hash, RuntimeApi};
 
 // Cumulus Imports
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
-use cumulus_client_consensus_common::ParachainConsensus;
+use cumulus_client_consensus_common::{
+	ParachainBlockImport as TParachainBlockImport, ParachainConsensus,
+};
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
@@ -54,6 +56,8 @@ type ParachainClient = TFullClient<Block, RuntimeApi, ParachainExecutor>;
 
 type ParachainBackend = TFullBackend<Block>;
 
+type ParachainBlockImport = TParachainBlockImport<Arc<ParachainClient>>;
+
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
@@ -69,13 +73,14 @@ pub fn new_partial<BIQ>(
 		(),
 		sc_consensus::DefaultImportQueue<Block, ParachainClient>,
 		sc_transaction_pool::FullPool<Block, ParachainClient>,
-		(Option<Telemetry>, Option<TelemetryWorkerHandle>),
+		(ParachainBlockImport, Option<Telemetry>, Option<TelemetryWorkerHandle>),
 	>,
 	sc_service::Error,
 >
 where
 	BIQ: FnOnce(
 		Arc<ParachainClient>,
+		ParachainBlockImport,
 		&Configuration,
 		Option<TelemetryHandle>,
 		&TaskManager,
@@ -125,8 +130,11 @@ where
 		client.clone(),
 	);
 
+	let block_import = ParachainBlockImport::new(client.clone());
+
 	let import_queue = build_import_queue(
 		client.clone(),
+		block_import.clone(),
 		config,
 		telemetry.as_ref().map(|telemetry| telemetry.handle()),
 		&task_manager,
@@ -140,7 +148,7 @@ where
 		task_manager,
 		transaction_pool,
 		select_chain: (),
-		other: (telemetry, telemetry_worker_handle),
+		other: (block_import, telemetry, telemetry_worker_handle),
 	};
 
 	Ok(params)
@@ -185,6 +193,7 @@ where
 	RB: Fn(Arc<ParachainClient>) -> Result<RpcModule<()>, sc_service::Error> + Send + 'static,
 	BIQ: FnOnce(
 			Arc<ParachainClient>,
+			ParachainBlockImport,
 			&Configuration,
 			Option<TelemetryHandle>,
 			&TaskManager,
@@ -193,6 +202,7 @@ where
 			sc_service::Error,
 		> + 'static,
 	BIC: FnOnce(
+		ParachainBlockImport,
 		Arc<ParachainClient>,
 		Option<&Registry>,
 		Option<TelemetryHandle>,
@@ -207,7 +217,7 @@ where
 	let parachain_config = prepare_node_config(parachain_config);
 
 	let params = new_partial::<BIQ>(&parachain_config, build_import_queue)?;
-	let (mut telemetry, telemetry_worker_handle) = params.other;
+	let (block_import, mut telemetry, telemetry_worker_handle) = params.other;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -298,6 +308,7 @@ where
 
 	if validator {
 		let parachain_consensus = build_consensus(
+			block_import,
 			client.clone(),
 			prometheus_registry.as_ref(),
 			telemetry.as_ref().map(|t| t.handle()),
@@ -348,6 +359,7 @@ where
 #[allow(clippy::type_complexity)]
 pub fn parachain_build_import_queue(
 	client: Arc<ParachainClient>,
+	block_import: ParachainBlockImport,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
@@ -362,8 +374,8 @@ pub fn parachain_build_import_queue(
 		_,
 		_,
 	>(cumulus_client_consensus_aura::ImportQueueParams {
-		block_import: client.clone(),
-		client: client.clone(),
+		block_import,
+		client,
 		create_inherent_data_providers: move |_, _| async move {
 			let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
@@ -397,7 +409,8 @@ pub async fn start_parachain_node(
 		id,
 		|_| Ok(RpcModule::new(())),
 		parachain_build_import_queue,
-		|client,
+		|block_import,
+		 client,
 		 prometheus_registry,
 		 telemetry,
 		 task_manager,
@@ -445,7 +458,7 @@ pub async fn start_parachain_node(
 							Ok((slot, timestamp, parachain_inherent))
 						}
 					},
-					block_import: client.clone(),
+					block_import,
 					para_client: client,
 					backoff_authoring_blocks: Option::<()>::None,
 					sync_oracle,

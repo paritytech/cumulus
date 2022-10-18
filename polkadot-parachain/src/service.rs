@@ -527,6 +527,7 @@ where
 			sc_service::Error,
 		> + 'static,
 	BIC: FnOnce(
+		PatachainBlockImport,
 		Arc<TFullClient<Block, RuntimeApi, WasmExecutor<HostFunctions>>>,
 		Option<&Registry>,
 		Option<TelemetryHandle>,
@@ -747,7 +748,8 @@ pub async fn start_rococo_parachain_node(
 		id,
 		|_| Ok(RpcModule::new(())),
 		rococo_parachain_build_import_queue,
-		|client,
+		|block_import,
+		 client,
 		 prometheus_registry,
 		 telemetry,
 		 task_manager,

@@ -79,7 +79,14 @@ pub struct ParachainBlockImport<I>(I);
 impl<I> ParachainBlockImport<I> {
 	/// Create a new instance.
 	pub fn new(inner: I) -> Self {
+		log::debug!(target: "parachain", "XXX BLOCK IMPORT INSTANCED");
 		Self(inner)
+	}
+}
+
+impl<I: Clone> Clone for ParachainBlockImport<I> {
+	fn clone(&self) -> Self {
+		ParachainBlockImport(self.0.clone())
 	}
 }
 
