@@ -277,6 +277,7 @@ fn validate_relay_chain_url(arg: &str) -> Result<Url, String> {
 
 /// The `run` command used to run a node.
 #[derive(Debug, clap::Parser)]
+#[group(skip)]
 pub struct RunCmd {
 	/// The cumulus RunCmd inherents from sc_cli's
 	#[command(flatten)]
