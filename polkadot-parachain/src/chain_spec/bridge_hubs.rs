@@ -68,7 +68,7 @@ impl BridgeHubRuntimeType {
 				if *default_config {
 					Ok(Box::new(rococo::default_config(
 						rococo::BRIDGE_HUB_ROCOCO,
-						"Rococo BrideHub",
+						"Rococo BridgeHub",
 						ChainType::Live,
 						"rococo",
 						ParaId::new(1013),
@@ -82,7 +82,7 @@ impl BridgeHubRuntimeType {
 				},
 			BridgeHubRuntimeType::RococoLocal => Ok(Box::new(rococo::default_config(
 				rococo::BRIDGE_HUB_ROCOCO_LOCAL,
-				"Rococo BrideHub Local",
+				"Rococo BridgeHub Local",
 				ChainType::Local,
 				"rococo-local",
 				ParaId::new(1013),
@@ -93,7 +93,7 @@ impl BridgeHubRuntimeType {
 				if *default_config {
 					Ok(Box::new(wococo::default_config(
 						wococo::BRIDGE_HUB_WOCOCO,
-						"Wococo BrideHub",
+						"Wococo BridgeHub",
 						ChainType::Live,
 						"wococo",
 						ParaId::new(1013),
@@ -107,7 +107,7 @@ impl BridgeHubRuntimeType {
 				},
 			BridgeHubRuntimeType::WococoLocal => Ok(Box::new(wococo::default_config(
 				wococo::BRIDGE_HUB_WOCOCO_LOCAL,
-				"Wococo BrideHub Local",
+				"Wococo BridgeHub Local",
 				ChainType::Local,
 				"wococo-local",
 				ParaId::new(1013),
