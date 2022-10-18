@@ -156,8 +156,10 @@ where
 		}
 
 		match res {
-			ImportResult::Imported(_) => (),
-			_ => log::warn!(target: "parachain", "XXX Failed importing {}: {:?}", hash, res),
+			ImportResult::Imported(_) =>
+				log::debug!(target: "parachain", "XXX Imported (@{}) {}", number, hash),
+			_ =>
+				log::warn!(target: "parachain", "XXX Failed importing (@{}) {}: {:?}", number, hash, res),
 		}
 
 		Ok(res)
