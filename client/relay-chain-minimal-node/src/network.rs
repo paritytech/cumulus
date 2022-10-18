@@ -20,14 +20,22 @@ use polkadot_service::{BlockT, NumberFor};
 use polkadot_node_network_protocol::PeerId;
 use sc_network::{NetworkService, SyncState};
 
-use sc_network_common::sync::{Metrics, SyncStatus};
+use sc_client_api::HeaderBackend;
+use sc_network_common::{
+	config::{
+		NonDefaultSetConfig, NonReservedPeerMode, NotificationHandshake, ProtocolId, SetConfig,
+	},
+	protocol::role::Roles,
+	service::NetworkSyncForkRequest,
+	sync::{message::BlockAnnouncesHandshake, Metrics, SyncStatus},
+};
 use sc_network_light::light_client_requests;
 use sc_network_sync::{block_request_handler, state_request_handler};
 use sc_service::{error::Error, Configuration, NetworkStarter, SpawnTaskHandle};
 use sp_consensus::BlockOrigin;
 use sp_runtime::Justifications;
 
-use std::sync::Arc;
+use std::{iter, sync::Arc};
 
 use crate::BlockChainRpcClient;
 
@@ -59,6 +67,16 @@ pub(crate) fn build_collator_network(
 	let light_client_request_protocol_config =
 		light_client_requests::generate_protocol_config(&protocol_id, genesis_hash, None);
 
+	let chain_sync = DummyChainSync;
+	let block_announce_config = chain_sync.get_block_announce_proto_config::<Block>(
+		protocol_id.clone(),
+		&None,
+		Roles::from(&config.role),
+		client.info().best_number,
+		client.info().best_hash,
+		genesis_hash,
+	);
+
 	let network_params = sc_network::config::Params {
 		role: config.role.clone(),
 		executor: {
@@ -68,12 +86,14 @@ pub(crate) fn build_collator_network(
 			}))
 		},
 		fork_id: None,
-		chain_sync: Box::new(DummyChainSync),
+		chain_sync: Box::new(chain_sync),
 		network_config: config.network.clone(),
 		chain: client.clone(),
 		import_queue: Box::new(DummyImportQueue),
 		protocol_id,
 		metrics_registry: config.prometheus_config.as_ref().map(|config| config.registry.clone()),
+		block_announce_config,
+		chain_sync_service: Box::new(DummyChainSyncService::<Block>(Default::default())),
 		block_request_protocol_config,
 		state_request_protocol_config,
 		warp_sync_protocol_config: None,
@@ -115,6 +135,54 @@ pub(crate) fn build_collator_network(
 /// the minimal node, but network currently requires it. So
 /// we provide a noop implementation.
 struct DummyChainSync;
+
+impl DummyChainSync {
+	pub fn get_block_announce_proto_config<B: BlockT>(
+		&self,
+		protocol_id: ProtocolId,
+		fork_id: &Option<String>,
+		roles: Roles,
+		best_number: NumberFor<B>,
+		best_hash: B::Hash,
+		genesis_hash: B::Hash,
+	) -> NonDefaultSetConfig {
+		let block_announces_protocol = {
+			let genesis_hash = genesis_hash.as_ref();
+			if let Some(ref fork_id) = fork_id {
+				format!(
+					"/{}/{}/block-announces/1",
+					array_bytes::bytes2hex("", genesis_hash),
+					fork_id
+				)
+			} else {
+				format!("/{}/block-announces/1", array_bytes::bytes2hex("", genesis_hash))
+			}
+		};
+
+		NonDefaultSetConfig {
+			notifications_protocol: block_announces_protocol.into(),
+			fallback_names: iter::once(
+				format!("/{}/block-announces/1", protocol_id.as_ref()).into(),
+			)
+			.collect(),
+			max_notification_size: 1024 * 1024,
+			handshake: Some(NotificationHandshake::new(BlockAnnouncesHandshake::<B>::build(
+				roles,
+				best_number,
+				best_hash,
+				genesis_hash,
+			))),
+			// NOTE: `set_config` will be ignored by `protocol.rs` as the block announcement
+			// protocol is still hardcoded into the peerset.
+			set_config: SetConfig {
+				in_peers: 0,
+				out_peers: 0,
+				reserved_nodes: Vec::new(),
+				non_reserved_mode: NonReservedPeerMode::Deny,
+			},
+		}
+	}
+}
 
 impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 	fn peer_info(&self, _who: &PeerId) -> Option<sc_network_common::sync::PeerInfo<B>> {
@@ -189,7 +257,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 
 	fn block_requests(
 		&mut self,
-	) -> Box<dyn Iterator<Item = (&PeerId, sc_network_common::sync::message::BlockRequest<B>)> + '_>
+	) -> Box<dyn Iterator<Item = (PeerId, sc_network_common::sync::message::BlockRequest<B>)> + '_>
 	{
 		Box::new(std::iter::empty())
 	}
@@ -354,6 +422,14 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 	) -> Result<sc_network_common::sync::OpaqueStateResponse, String> {
 		unimplemented!("Not supported on the RPC collator")
 	}
+
+	fn poll(
+		&mut self,
+		_cx: &mut std::task::Context,
+	) -> std::task::Poll<sc_network_common::sync::PollBlockAnnounceValidation<<B as BlockT>::Header>>
+	{
+		std::task::Poll::Pending
+	}
 }
 
 struct DummyImportQueue;
@@ -381,4 +457,10 @@ impl sc_service::ImportQueue<Block> for DummyImportQueue {
 		_link: &mut dyn sc_consensus::import_queue::Link<Block>,
 	) {
 	}
+}
+
+struct DummyChainSyncService<B>(std::marker::PhantomData<B>);
+
+impl<B: BlockT> NetworkSyncForkRequest<B::Hash, NumberFor<B>> for DummyChainSyncService<B> {
+	fn set_sync_fork_request(&self, _peers: Vec<PeerId>, _hash: B::Hash, _number: NumberFor<B>) {}
 }
