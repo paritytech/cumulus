@@ -64,6 +64,7 @@ pub enum Subcommand {
 }
 
 #[derive(Debug, clap::Parser)]
+#[group(skip)]
 pub struct ExportGenesisStateCommand {
 	#[arg(default_value_t = 2000u32)]
 	pub parachain_id: u32,
@@ -80,6 +81,7 @@ impl CliConfiguration for ExportGenesisStateCommand {
 
 /// Command for exporting the genesis wasm file.
 #[derive(Debug, clap::Parser)]
+#[group(skip)]
 pub struct ExportGenesisWasmCommand {
 	#[arg(default_value_t = 2000u32)]
 	pub parachain_id: u32,

@@ -40,6 +40,7 @@ use url::Url;
 
 /// The `purge-chain` command used to remove the whole chain: the parachain and the relay chain.
 #[derive(Debug, clap::Parser)]
+#[group(skip)]
 pub struct PurgeChainCmd {
 	/// The base struct of the purge-chain command.
 	#[command(flatten)]
