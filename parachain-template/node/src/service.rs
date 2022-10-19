@@ -3,9 +3,6 @@
 // std
 use std::{sync::Arc, time::Duration};
 
-// rpc
-use jsonrpsee::RpcModule;
-
 use cumulus_client_cli::CollatorOptions;
 // Local Runtime Types
 use parachain_template_runtime::{opaque::Block, Hash, RuntimeApi};
@@ -156,17 +153,13 @@ async fn build_relay_chain_interface(
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
-async fn start_node_impl<RB>(
+async fn start_node_impl(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,
 	id: ParaId,
-	_rpc_ext_builder: RB,
 	hwbench: Option<sc_sysinfo::HwBench>,
-) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)>
-where
-	RB: Fn(Arc<ParachainClient>) -> Result<RpcModule<()>, sc_service::Error> + Send + 'static,
-{
+) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
 	let parachain_config = prepare_node_config(parachain_config);
 
 	let params = new_partial(&parachain_config)?;
@@ -421,13 +414,5 @@ pub async fn start_parachain_node(
 	id: ParaId,
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
-	start_node_impl(
-		parachain_config,
-		polkadot_config,
-		collator_options,
-		id,
-		|_| Ok(RpcModule::new(())),
-		hwbench,
-	)
-	.await
+	start_node_impl(parachain_config, polkadot_config, collator_options, id, hwbench).await
 }
