@@ -101,27 +101,26 @@ where
 }
 
 /// Start an import queue for a Cumulus collator that does not uses any special authoring logic.
-pub fn import_queue<Client, Block: BlockT, I, CIDP>(
+///
+/// `BI` should be a `ParachainBlockImport` or a wrapper around it;
+///  if not, important functional logic will be omitted.
+/// TODO: better docs
+/// TODO: can we just get rid of the BI generic and directly expect a `ParachainBlockImport`?
+pub fn import_queue<Client, Block: BlockT, BI, CIDP>(
 	client: Arc<Client>,
-	block_import: I,
+	block_import: BI,
 	create_inherent_data_providers: CIDP,
 	spawner: &impl sp_core::traits::SpawnEssentialNamed,
 	registry: Option<&substrate_prometheus_endpoint::Registry>,
-) -> ClientResult<BasicQueue<Block, I::Transaction>>
+) -> ClientResult<BasicQueue<Block, BI::Transaction>>
 where
-	I: BlockImport<Block, Error = ConsensusError> + Send + Sync + 'static,
-	I::Transaction: Send,
+	BI: BlockImport<Block, Error = ConsensusError> + Send + Sync + 'static,
+	BI::Transaction: Send,
 	Client: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	<Client as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block>,
 	CIDP: CreateInherentDataProviders<Block, ()> + 'static,
 {
 	let verifier = Verifier::new(client, create_inherent_data_providers);
 
-	Ok(BasicQueue::new(
-		verifier,
-		Box::new(cumulus_client_consensus_common::ParachainBlockImport::new(block_import)),
-		None,
-		spawner,
-		registry,
-	))
+	Ok(BasicQueue::new(verifier, Box::new(block_import), None, spawner, registry))
 }
