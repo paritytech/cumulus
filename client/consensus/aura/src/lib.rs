@@ -23,9 +23,7 @@
 //! For more information about AuRa, the Substrate crate should be checked.
 
 use codec::{Decode, Encode};
-use cumulus_client_consensus_common::{
-	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
-};
+use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_primitives_core::{relay_chain::v2::Hash as PHash, PersistedValidationData};
 
 use futures::lock::Mutex;
@@ -117,7 +115,7 @@ where
 		let worker = sc_consensus_aura::build_aura_worker::<P, _, _, _, _, _, _, _, _>(
 			BuildAuraWorkerParams {
 				client: para_client,
-				block_import: ParachainBlockImport::new(block_import),
+				block_import,
 				justification_sync_link: (),
 				proposer_factory,
 				sync_oracle,
