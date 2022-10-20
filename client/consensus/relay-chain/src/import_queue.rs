@@ -16,6 +16,8 @@
 
 use std::{marker::PhantomData, sync::Arc};
 
+use cumulus_client_consensus_common::ParachainBlockImport;
+
 use sc_consensus::{
 	import_queue::{BasicQueue, Verifier as VerifierT},
 	BlockImport, BlockImportParams,
@@ -101,21 +103,16 @@ where
 }
 
 /// Start an import queue for a Cumulus collator that does not uses any special authoring logic.
-///
-/// `BI` should be a `ParachainBlockImport` or a wrapper around it;
-///  if not, important functional logic will be omitted.
-/// TODO: better docs
-/// TODO: can we just get rid of the BI generic and directly expect a `ParachainBlockImport`?
-pub fn import_queue<Client, Block: BlockT, BI, CIDP>(
+pub fn import_queue<Client, Block: BlockT, I, CIDP>(
 	client: Arc<Client>,
-	block_import: BI,
+	block_import: ParachainBlockImport<I>,
 	create_inherent_data_providers: CIDP,
 	spawner: &impl sp_core::traits::SpawnEssentialNamed,
 	registry: Option<&substrate_prometheus_endpoint::Registry>,
-) -> ClientResult<BasicQueue<Block, BI::Transaction>>
+) -> ClientResult<BasicQueue<Block, I::Transaction>>
 where
-	BI: BlockImport<Block, Error = ConsensusError> + Send + Sync + 'static,
-	BI::Transaction: Send,
+	I: BlockImport<Block, Error = ConsensusError> + Send + Sync + 'static,
+	I::Transaction: Send,
 	Client: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	<Client as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block>,
 	CIDP: CreateInherentDataProviders<Block, ()> + 'static,

@@ -54,13 +54,12 @@ pub use import_queue::{import_queue, Verifier};
 const LOG_TARGET: &str = "cumulus-consensus-relay-chain";
 
 /// The implementation of the relay-chain provided consensus for parachains.
-/// TODO: can we use directly ParachainBlockImport in place of BI?
 pub struct RelayChainConsensus<B, PF, BI, RCInterface, CIDP> {
 	para_id: ParaId,
 	_phantom: PhantomData<B>,
 	proposer_factory: Arc<Mutex<PF>>,
 	create_inherent_data_providers: Arc<CIDP>,
-	block_import: Arc<futures::lock::Mutex<BI>>,
+	block_import: Arc<futures::lock::Mutex<ParachainBlockImport<BI>>>,
 	relay_chain_interface: RCInterface,
 }
 
@@ -87,17 +86,11 @@ where
 	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)>,
 {
 	/// Create a new instance of relay-chain provided consensus.
-	///
-	/// Note: in order to perform the correct parachian logic this should
-	/// be a `ParachainBlockImport` or a wrapper of it.
-	///
-	/// TODO: better doc
-	/// TODO: Can we just pass a ParachainBlockImport<BI: BlockImport>?
 	pub fn new(
 		para_id: ParaId,
 		proposer_factory: PF,
 		create_inherent_data_providers: CIDP,
-		block_import: BI,
+		block_import: ParachainBlockImport<BI>,
 		relay_chain_interface: RCInterface,
 	) -> Self {
 		Self {
@@ -227,16 +220,13 @@ pub struct BuildRelayChainConsensusParams<PF, BI, CIDP, RCInterface> {
 	pub para_id: ParaId,
 	pub proposer_factory: PF,
 	pub create_inherent_data_providers: CIDP,
-	pub block_import: BI,
+	pub block_import: ParachainBlockImport<BI>,
 	pub relay_chain_interface: RCInterface,
 }
 
 /// Build the [`RelayChainConsensus`].
 ///
 /// Returns a boxed [`ParachainConsensus`].
-///
-/// TODO: doc about BI
-/// TODO: can't we pass a ParachainBlockImport directly?
 pub fn build_relay_chain_consensus<Block, PF, BI, CIDP, RCInterface>(
 	BuildRelayChainConsensusParams {
 		para_id,

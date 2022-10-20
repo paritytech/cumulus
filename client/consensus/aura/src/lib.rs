@@ -23,7 +23,9 @@
 //! For more information about AuRa, the Substrate crate should be checked.
 
 use codec::{Decode, Encode};
-use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
+use cumulus_client_consensus_common::{
+	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
+};
 use cumulus_primitives_core::{relay_chain::v2::Hash as PHash, PersistedValidationData};
 
 use futures::lock::Mutex;
@@ -67,6 +69,22 @@ impl<B, CIDP, W> Clone for AuraConsensus<B, CIDP, W> {
 			_phantom: PhantomData,
 		}
 	}
+}
+
+/// Parameters of [`AuraConsensus::build`].
+pub struct BuildAuraConsensusParams<PF, BI, CIDP, Client, BS, SO> {
+	pub proposer_factory: PF,
+	pub create_inherent_data_providers: CIDP,
+	pub block_import: ParachainBlockImport<BI>,
+	pub para_client: Arc<Client>,
+	pub backoff_authoring_blocks: Option<BS>,
+	pub sync_oracle: SO,
+	pub keystore: SyncCryptoStorePtr,
+	pub force_authoring: bool,
+	pub slot_duration: SlotDuration,
+	pub telemetry: Option<TelemetryHandle>,
+	pub block_proposal_slot_portion: SlotProportion,
+	pub max_block_proposal_slot_portion: Option<SlotProportion>,
 }
 
 impl<B, CIDP> AuraConsensus<B, CIDP, ()>
@@ -213,20 +231,4 @@ where
 
 		Some(ParachainCandidate { block: res.block, proof: res.storage_proof })
 	}
-}
-
-/// Parameters of [`AuraConsensus::build`].
-pub struct BuildAuraConsensusParams<PF, BI, CIDP, Client, BS, SO> {
-	pub proposer_factory: PF,
-	pub create_inherent_data_providers: CIDP,
-	pub block_import: BI,
-	pub para_client: Arc<Client>,
-	pub backoff_authoring_blocks: Option<BS>,
-	pub sync_oracle: SO,
-	pub keystore: SyncCryptoStorePtr,
-	pub force_authoring: bool,
-	pub slot_duration: SlotDuration,
-	pub telemetry: Option<TelemetryHandle>,
-	pub block_proposal_slot_portion: SlotProportion,
-	pub max_block_proposal_slot_portion: Option<SlotProportion>,
 }
