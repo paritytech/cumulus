@@ -599,7 +599,7 @@ pub fn run() -> Result<()> {
 			// grab the task manager.
 			let runner = cli.create_runner(cmd)?;
 			let registry = &runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
-			let task_manager = TaskManager::new(runner.config().tokio_handle.clone(), *registry)
+			let task_manager = sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
 				.map_err(|e| format!("Error: {:?}", e))?;
 
 			match runner.config().chain_spec.runtime() {
@@ -620,7 +620,7 @@ pub fn run() -> Result<()> {
 						))
 					}),
 				Runtime::Shell => runner.async_run(|config| {
-					Ok((cmd.run::<Block, ShellRuntimeExecutor>(config), task_manager))
+					Ok((cmd.run::<Block, sc_service::ShellRuntimeExecutor>(config), task_manager))
 				}),
 				_ => Err("Chain doesn't support try-runtime".into()),
 			}
