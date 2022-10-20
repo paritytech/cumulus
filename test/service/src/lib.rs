@@ -30,7 +30,9 @@ use url::Url;
 
 use crate::runtime::Weight;
 use cumulus_client_cli::CollatorOptions;
-use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
+use cumulus_client_consensus_common::{
+	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
+};
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
@@ -145,6 +147,8 @@ pub fn new_partial(
 		sc_service::new_full_parts::<Block, RuntimeApi, _>(config, None, executor)?;
 	let client = Arc::new(client);
 
+	let block_import = ParachainBlockImport::new(client.clone());
+
 	let registry = config.prometheus_registry();
 
 	let transaction_pool = sc_transaction_pool::BasicPool::new_full(
@@ -157,7 +161,7 @@ pub fn new_partial(
 
 	let import_queue = cumulus_client_consensus_relay_chain::import_queue(
 		client.clone(),
-		client.clone(),
+		block_import,
 		|_, _| async { Ok(sp_timestamp::InherentDataProvider::from_system_time()) },
 		&task_manager.spawn_essential_handle(),
 		registry,
@@ -314,6 +318,7 @@ where
 					None,
 				);
 				let relay_chain_interface2 = relay_chain_interface_for_closure.clone();
+				let block_import = ParachainBlockImport::new(client.clone());
 				Box::new(cumulus_client_consensus_relay_chain::RelayChainConsensus::new(
 					para_id,
 					proposer_factory,
@@ -338,7 +343,7 @@ where
 							Ok((time, parachain_inherent))
 						}
 					},
-					client.clone(),
+					block_import,
 					relay_chain_interface2,
 				))
 			},
