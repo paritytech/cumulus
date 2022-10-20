@@ -12389,6 +12389,7 @@ version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#f5ed51def33950ac24709eb11940790ca446421d"
 dependencies = [
  "clap 4.0.17",
+ "frame-try-runtime",
  "log",
  "parity-scale-codec",
  "remote-externalities",
