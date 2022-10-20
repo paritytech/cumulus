@@ -1434,7 +1434,6 @@ pub fn contracts_rococo_build_import_queue(
 > {
 	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
 
-	// TODO: check out how this is different from the direct relay chain import...
 	cumulus_client_consensus_aura::import_queue::<
 		sp_consensus_aura::sr25519::AuthorityPair,
 		_,
