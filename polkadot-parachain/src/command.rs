@@ -621,7 +621,10 @@ pub fn run() -> Result<()> {
 						))
 					}),
 				Runtime::Shell => runner.async_run(|config| {
-					Ok((cmd.run::<Block, sc_service::ShellRuntimeExecutor>(config), task_manager))
+					Ok((
+						cmd.run::<Block, crate::service::ShellRuntimeExecutor>(config),
+						task_manager,
+					))
 				}),
 				_ => Err("Chain doesn't support try-runtime".into()),
 			}
