@@ -75,10 +75,10 @@ where
 		msg: &mut Option<Xcm<()>>,
 	) -> SendResult<Vec<u8>> {
 		let d = dest.take().ok_or(SendError::MissingArgument)?;
-		let xcm = msg.take().ok_or(SendError::MissingArgument)?;
 
 		if d.contains_parents_only(1) {
 			// An upward message for the relay chain.
+			let xcm = msg.take().ok_or(SendError::MissingArgument)?;
 			let price = P::price_for_parent_delivery(&xcm);
 			let versioned_xcm =
 				W::wrap_version(&d, xcm).map_err(|()| SendError::DestinationUnsupported)?;
@@ -86,8 +86,9 @@ where
 
 			Ok((data, price))
 		} else {
+			// Anything else is unhandled. This includes a message that is not meant for us.
+			// We need to make sure that dest/msg is not consumed here.
 			*dest = Some(d);
-			// Anything else is unhandled. This includes a message this is meant for us.
 			Err(SendError::NotApplicable)
 		}
 	}

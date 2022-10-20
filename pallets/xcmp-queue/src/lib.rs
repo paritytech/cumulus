@@ -1138,19 +1138,20 @@ impl<T: Config> SendXcm for Pallet<T> {
 		msg: &mut Option<Xcm<()>>,
 	) -> SendResult<(ParaId, VersionedXcm<()>)> {
 		let d = dest.take().ok_or(SendError::MissingArgument)?;
-		let xcm = msg.take().ok_or(SendError::MissingArgument)?;
 
 		match &d {
 			// An HRMP message for a sibling parachain.
 			MultiLocation { parents: 1, interior: X1(Parachain(id)) } => {
+				let xcm = msg.take().ok_or(SendError::MissingArgument)?;
 				let id = ParaId::from(*id);
 				let price = T::PriceForSiblingDelivery::price_for_sibling_delivery(id, &xcm);
 				let versioned_xcm = T::VersionWrapper::wrap_version(&d, xcm)
 					.map_err(|()| SendError::DestinationUnsupported)?;
 				Ok(((id, versioned_xcm), price))
 			},
-			// Anything else is unhandled. This includes a message this is meant for us.
 			_ => {
+				// Anything else is unhandled. This includes a message that is not meant for us.
+				// We need to make sure that dest/msg is not consumed here.
 				*dest = Some(d);
 				Err(SendError::NotApplicable)
 			},
