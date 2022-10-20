@@ -18,8 +18,8 @@ use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{
-		new_partial, Block, CollectivesPolkadotRuntimeExecutor, ShellRuntimeExecutor,
-		StatemineRuntimeExecutor, StatemintRuntimeExecutor, WestmintRuntimeExecutor,
+		new_partial, Block, CollectivesPolkadotRuntimeExecutor, StatemineRuntimeExecutor,
+		StatemintRuntimeExecutor, WestmintRuntimeExecutor,
 	},
 };
 use codec::Encode;
@@ -629,7 +629,7 @@ pub fn run() -> Result<()> {
 			}
 		},
 		#[cfg(not(feature = "try-runtime"))]
-		Some(TryRuntime) => Err("Try-runtime was not enabled when building the node. \
+		Some(Subcommand::TryRuntime) => Err("Try-runtime was not enabled when building the node. \
 			You can enable it with `--features try-runtime`."
 			.into()),
 		Some(Subcommand::Key(cmd)) => Ok(cmd.run(&cli)?),
