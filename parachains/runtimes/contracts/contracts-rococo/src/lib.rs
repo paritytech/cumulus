@@ -524,6 +524,7 @@ impl_runtime_apis! {
 				storage_deposit_limit,
 				input_data,
 				contracts::CONTRACTS_DEBUG_OUTPUT,
+				pallet_contracts::Determinism::Deterministic,
 			)
 		}
 
@@ -555,6 +556,7 @@ impl_runtime_apis! {
 			storage_deposit_limit: Option<Balance>,
 		) -> pallet_contracts_primitives::CodeUploadResult<Hash, Balance> {
 			Contracts::bare_upload_code(origin, code, storage_deposit_limit)
+			pallet_contracts::Determinism::Deterministic,
 		}
 
 		fn get_storage(
