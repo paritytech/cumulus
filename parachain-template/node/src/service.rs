@@ -311,7 +311,7 @@ async fn start_node_impl(
 }
 
 /// Build the import queue for the parachain runtime.
-pub fn build_import_queue(
+fn build_import_queue(
 	client: Arc<ParachainClient>,
 	block_import: ParachainBlockImport,
 	config: &Configuration,

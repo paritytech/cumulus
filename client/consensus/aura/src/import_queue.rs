@@ -34,7 +34,7 @@ use sp_runtime::traits::Block as BlockT;
 use std::{fmt::Debug, hash::Hash, sync::Arc};
 use substrate_prometheus_endpoint::Registry;
 
-/// Parameters of [`import_queue`].
+/// Parameters for [`import_queue`].
 pub struct ImportQueueParams<'a, I, C, CIDP, S> {
 	/// The block import to use.
 	pub block_import: I,
@@ -51,7 +51,7 @@ pub struct ImportQueueParams<'a, I, C, CIDP, S> {
 }
 
 /// Start an import queue for the Aura consensus algorithm.
-pub fn import_queue<'a, P, Block, BI, C, S, CIDP>(
+pub fn import_queue<'a, P, Block, I, C, S, CIDP>(
 	ImportQueueParams {
 		block_import,
 		client,
@@ -59,7 +59,7 @@ pub fn import_queue<'a, P, Block, BI, C, S, CIDP>(
 		spawner,
 		registry,
 		telemetry,
-	}: ImportQueueParams<'a, BI, C, CIDP, S>,
+	}: ImportQueueParams<'a, I, C, CIDP, S>,
 ) -> Result<DefaultImportQueue<Block, C>, sp_consensus::Error>
 where
 	Block: BlockT,
@@ -72,7 +72,7 @@ where
 		+ AuxStore
 		+ UsageProvider<Block>
 		+ HeaderBackend<Block>,
-	BI: BlockImport<Block, Error = ConsensusError, Transaction = sp_api::TransactionFor<C, Block>>
+	I: BlockImport<Block, Error = ConsensusError, Transaction = sp_api::TransactionFor<C, Block>>
 		+ ParachainBlockImportMarker
 		+ Send
 		+ Sync
