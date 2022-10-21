@@ -9,11 +9,13 @@ HEAD_REF="$2"
 ORG="paritytech"
 REPO="$CI_PROJECT_NAME"
 BASE_REF="$CI_COMMIT_BRANCH"
+# Change threshold in %. Bigger values excludes the small changes.
+THRESHOLD=${THRESHOLD:-30}
 
 WEIGHTS_COMPARISON_URL_PARTS=(
   "https://weights.tasty.limo/compare?"
   "repo=$REPO&"
-  "threshold=30&"
+  "threshold=$THRESHOLD&"
   "path_pattern=**%2Fweights%2F*.rs&"
   "method=guess-worst&"
   "ignore_errors=true&"
