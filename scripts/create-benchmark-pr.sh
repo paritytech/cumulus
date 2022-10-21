@@ -28,9 +28,11 @@ printf -v WEIGHTS_COMPARISON_URL %s "${WEIGHTS_COMPARISON_URL_PARTS[@]}"
 PAYLOAD="$(jq -n \
   --arg title "$PR_TITLE" \
   --arg body "
-This PR is generated automatically by CI. (Once merged please backport to master and node release branch.)
+This PR is generated automatically by CI.
 
 Compare the weights with \`$BASE_REF\`: $WEIGHTS_COMPARISON_URL
+
+- [ ] Backport to master and node release branch once merged
 " \
   --arg base "$BASE_REF" \
   --arg head "$HEAD_REF" \
