@@ -24,12 +24,12 @@
 
 use codec::{Decode, Encode};
 use cumulus_client_consensus_common::{
-	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
+	ParachainBlockImportMarker, ParachainCandidate, ParachainConsensus,
 };
 use cumulus_primitives_core::{relay_chain::v2::Hash as PHash, PersistedValidationData};
 
 use futures::lock::Mutex;
-use sc_client_api::{backend::AuxStore, Backend, BlockOf};
+use sc_client_api::{backend::AuxStore, BlockOf};
 use sc_consensus::BlockImport;
 use sc_consensus_slots::{BackoffAuthoringBlocksStrategy, SimpleSlotWorker, SlotInfo};
 use sc_telemetry::TelemetryHandle;
@@ -71,6 +71,22 @@ impl<B, CIDP, W> Clone for AuraConsensus<B, CIDP, W> {
 	}
 }
 
+/// Parameters of [`AuraConsensus::build`].
+pub struct BuildAuraConsensusParams<PF, BI, CIDP, Client, BS, SO> {
+	pub proposer_factory: PF,
+	pub create_inherent_data_providers: CIDP,
+	pub block_import: BI,
+	pub para_client: Arc<Client>,
+	pub backoff_authoring_blocks: Option<BS>,
+	pub sync_oracle: SO,
+	pub keystore: SyncCryptoStorePtr,
+	pub force_authoring: bool,
+	pub slot_duration: SlotDuration,
+	pub telemetry: Option<TelemetryHandle>,
+	pub block_proposal_slot_portion: SlotProportion,
+	pub max_block_proposal_slot_portion: Option<SlotProportion>,
+}
+
 impl<B, CIDP> AuraConsensus<B, CIDP, ()>
 where
 	B: BlockT,
@@ -78,7 +94,7 @@ where
 	CIDP::InherentDataProviders: InherentDataProviderExt,
 {
 	/// Create a new boxed instance of AURA consensus.
-	pub fn build<P, Client, BI, SO, PF, BS, Error, BE>(
+	pub fn build<P, Client, BI, SO, PF, BS, Error>(
 		BuildAuraConsensusParams {
 			proposer_factory,
 			create_inherent_data_providers,
@@ -92,14 +108,17 @@ where
 			telemetry,
 			block_proposal_slot_portion,
 			max_block_proposal_slot_portion,
-			backend,
-		}: BuildAuraConsensusParams<PF, BI, CIDP, Client, BS, SO, BE>,
+		}: BuildAuraConsensusParams<PF, BI, CIDP, Client, BS, SO>,
 	) -> Box<dyn ParachainConsensus<B>>
 	where
 		Client:
 			ProvideRuntimeApi<B> + BlockOf + AuxStore + HeaderBackend<B> + Send + Sync + 'static,
 		Client::Api: AuraApi<B, P::Public>,
-		BI: BlockImport<B, Transaction = sp_api::TransactionFor<Client, B>> + Send + Sync + 'static,
+		BI: BlockImport<B, Transaction = sp_api::TransactionFor<Client, B>>
+			+ ParachainBlockImportMarker
+			+ Send
+			+ Sync
+			+ 'static,
 		SO: SyncOracle + Send + Sync + Clone + 'static,
 		BS: BackoffAuthoringBlocksStrategy<NumberFor<B>> + Send + Sync + 'static,
 		PF: Environment<B, Error = Error> + Send + Sync + 'static,
@@ -114,12 +133,11 @@ where
 		P: Pair + Send + Sync,
 		P::Public: AppPublic + Hash + Member + Encode + Decode,
 		P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
-		BE: Backend<B> + 'static,
 	{
 		let worker = sc_consensus_aura::build_aura_worker::<P, _, _, _, _, _, _, _, _>(
 			BuildAuraWorkerParams {
 				client: para_client,
-				block_import: ParachainBlockImport::new(block_import, backend),
+				block_import,
 				justification_sync_link: (),
 				proposer_factory,
 				sync_oracle,
@@ -217,21 +235,4 @@ where
 
 		Some(ParachainCandidate { block: res.block, proof: res.storage_proof })
 	}
-}
-
-/// Parameters of [`AuraConsensus::build`].
-pub struct BuildAuraConsensusParams<PF, BI, CIDP, Client, BS, SO, BE> {
-	pub proposer_factory: PF,
-	pub create_inherent_data_providers: CIDP,
-	pub block_import: BI,
-	pub para_client: Arc<Client>,
-	pub backoff_authoring_blocks: Option<BS>,
-	pub sync_oracle: SO,
-	pub keystore: SyncCryptoStorePtr,
-	pub force_authoring: bool,
-	pub slot_duration: SlotDuration,
-	pub telemetry: Option<TelemetryHandle>,
-	pub block_proposal_slot_portion: SlotProportion,
-	pub max_block_proposal_slot_portion: Option<SlotProportion>,
-	pub backend: Arc<BE>,
 }

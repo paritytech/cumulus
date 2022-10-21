@@ -17,8 +17,8 @@
 //! Parachain specific wrapper for the AuRa import queue.
 
 use codec::Codec;
-use cumulus_client_consensus_common::ParachainBlockImport;
-use sc_client_api::{backend::AuxStore, Backend, BlockOf, UsageProvider};
+use cumulus_client_consensus_common::ParachainBlockImportMarker;
+use sc_client_api::{backend::AuxStore, BlockOf, UsageProvider};
 use sc_consensus::{import_queue::DefaultImportQueue, BlockImport};
 use sc_consensus_aura::AuraVerifier;
 use sc_consensus_slots::InherentDataProviderExt;
@@ -35,7 +35,7 @@ use std::{fmt::Debug, hash::Hash, sync::Arc};
 use substrate_prometheus_endpoint::Registry;
 
 /// Parameters of [`import_queue`].
-pub struct ImportQueueParams<'a, I, C, CIDP, S, BE> {
+pub struct ImportQueueParams<'a, I, C, CIDP, S> {
 	/// The block import to use.
 	pub block_import: I,
 	/// The client to interact with the chain.
@@ -48,12 +48,10 @@ pub struct ImportQueueParams<'a, I, C, CIDP, S, BE> {
 	pub registry: Option<&'a Registry>,
 	/// The telemetry handle.
 	pub telemetry: Option<TelemetryHandle>,
-	/// The backend.
-	pub backend: Arc<BE>,
 }
 
 /// Start an import queue for the Aura consensus algorithm.
-pub fn import_queue<'a, P, Block, I, C, S, CIDP, BE>(
+pub fn import_queue<'a, P, Block, BI, C, S, CIDP>(
 	ImportQueueParams {
 		block_import,
 		client,
@@ -61,8 +59,7 @@ pub fn import_queue<'a, P, Block, I, C, S, CIDP, BE>(
 		spawner,
 		registry,
 		telemetry,
-		backend,
-	}: ImportQueueParams<'a, I, C, CIDP, S, BE>,
+	}: ImportQueueParams<'a, BI, C, CIDP, S>,
 ) -> Result<DefaultImportQueue<Block, C>, sp_consensus::Error>
 where
 	Block: BlockT,
@@ -75,7 +72,8 @@ where
 		+ AuxStore
 		+ UsageProvider<Block>
 		+ HeaderBackend<Block>,
-	I: BlockImport<Block, Error = ConsensusError, Transaction = sp_api::TransactionFor<C, Block>>
+	BI: BlockImport<Block, Error = ConsensusError, Transaction = sp_api::TransactionFor<C, Block>>
+		+ ParachainBlockImportMarker
 		+ Send
 		+ Sync
 		+ 'static,
@@ -85,10 +83,9 @@ where
 	S: sp_core::traits::SpawnEssentialNamed,
 	CIDP: CreateInherentDataProviders<Block, ()> + Sync + Send + 'static,
 	CIDP::InherentDataProviders: InherentDataProviderExt + Send + Sync,
-	BE: Backend<Block> + 'static,
 {
 	sc_consensus_aura::import_queue::<P, _, _, _, _, _>(sc_consensus_aura::ImportQueueParams {
-		block_import: ParachainBlockImport::new(block_import, backend),
+		block_import,
 		justification_import: None,
 		client,
 		create_inherent_data_providers,

@@ -16,6 +16,8 @@
 
 use std::{marker::PhantomData, sync::Arc};
 
+use cumulus_client_consensus_common::ParachainBlockImportMarker;
+
 use sc_consensus::{
 	import_queue::{BasicQueue, Verifier as VerifierT},
 	BlockImport, BlockImportParams,
@@ -29,8 +31,6 @@ use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT},
 };
-
-use cumulus_client_consensus_common::ParachainBlockImport;
 
 /// A verifier that just checks the inherents.
 pub struct Verifier<Client, Block, CIDP> {
@@ -103,29 +103,25 @@ where
 }
 
 /// Start an import queue for a Cumulus collator that does not uses any special authoring logic.
-pub fn import_queue<Client, Block: BlockT, I, CIDP, BE>(
+pub fn import_queue<Client, Block: BlockT, I, CIDP>(
 	client: Arc<Client>,
 	block_import: I,
 	create_inherent_data_providers: CIDP,
 	spawner: &impl sp_core::traits::SpawnEssentialNamed,
 	registry: Option<&substrate_prometheus_endpoint::Registry>,
-	backend: Arc<BE>,
 ) -> ClientResult<BasicQueue<Block, I::Transaction>>
 where
-	I: BlockImport<Block, Error = ConsensusError> + Send + Sync + 'static,
+	I: BlockImport<Block, Error = ConsensusError>
+		+ ParachainBlockImportMarker
+		+ Send
+		+ Sync
+		+ 'static,
 	I::Transaction: Send,
 	Client: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	<Client as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block>,
 	CIDP: CreateInherentDataProviders<Block, ()> + 'static,
-	BE: sc_client_api::Backend<Block> + 'static,
 {
 	let verifier = Verifier::new(client, create_inherent_data_providers);
 
-	Ok(BasicQueue::new(
-		verifier,
-		Box::new(ParachainBlockImport::new(block_import, backend)),
-		None,
-		spawner,
-		registry,
-	))
+	Ok(BasicQueue::new(verifier, Box::new(block_import), None, spawner, registry))
 }

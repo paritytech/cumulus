@@ -17,7 +17,7 @@
 use polkadot_primitives::v2::{Hash as PHash, PersistedValidationData};
 
 use sc_client_api::Backend;
-use sc_consensus::{BlockImport, ImportResult};
+use sc_consensus::{shared_data::SharedData, BlockImport, ImportResult};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
 use std::sync::Arc;
@@ -85,7 +85,7 @@ impl<B: BlockT> ParachainConsensus<B> for Box<dyn ParachainConsensus<B> + Send +
 /// we will update the best block, as it is included by the relay-chain.
 pub struct ParachainBlockImport<Block: BlockT, BI, BE> {
 	inner: BI,
-	level_monitor: Option<LevelMonitor<Block, BE>>,
+	monitor: Option<SharedData<LevelMonitor<Block, BE>>>,
 }
 
 impl<Block: BlockT, BI, BE: Backend<Block>> ParachainBlockImport<Block, BI, BE> {
@@ -107,9 +107,16 @@ impl<Block: BlockT, BI, BE: Backend<Block>> ParachainBlockImport<Block, BI, BE> 
 			LevelLimit::Default => Some(MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT),
 		};
 
-		let level_monitor = level_limit.map(|level_limit| LevelMonitor::new(level_limit, backend));
+		let monitor =
+			level_limit.map(|level_limit| SharedData::new(LevelMonitor::new(level_limit, backend)));
 
-		Self { inner, level_monitor }
+		Self { inner, monitor }
+	}
+}
+
+impl<Block: BlockT, I: Clone, BE> Clone for ParachainBlockImport<Block, I, BE> {
+	fn clone(&self) -> Self {
+		ParachainBlockImport { inner: self.inner.clone(), monitor: self.monitor.clone() }
 	}
 }
 
@@ -139,19 +146,22 @@ where
 		let hash = params.post_hash();
 		let number = *params.header.number();
 
-		if let Some(ref mut monitor) = self.level_monitor {
-			monitor.enforce_limit(number);
-		}
-
 		// Best block is determined by the relay chain, or if we are doing the initial sync
 		// we import all blocks as new best.
 		params.fork_choice = Some(sc_consensus::ForkChoiceStrategy::Custom(
 			params.origin == sp_consensus::BlockOrigin::NetworkInitialSync,
 		));
 
+		let maybe_lock = self.monitor.as_ref().map(|monitor_lock| {
+			let mut monitor = monitor_lock.shared_data_locked();
+			monitor.enforce_limit(number);
+			monitor.release_mutex()
+		});
+
 		let res = self.inner.import_block(params, cache).await?;
 
-		if let (Some(monitor), ImportResult::Imported(_)) = (self.level_monitor.as_mut(), &res) {
+		if let (Some(mut monitor_lock), ImportResult::Imported(_)) = (maybe_lock, &res) {
+			let mut monitor = monitor_lock.upgrade();
 			monitor.block_imported(number, hash);
 		}
 
@@ -165,3 +175,8 @@ where
 		Ok(res)
 	}
 }
+
+/// Marker trait denoting a block import type that fits the parachain requirements.
+pub trait ParachainBlockImportMarker {}
+
+impl<B: BlockT, BI, BE> ParachainBlockImportMarker for ParachainBlockImport<B, BI, BE> {}

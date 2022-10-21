@@ -592,7 +592,8 @@ fn restore_limit_monitor() {
 	let expected = vec![blocks1[1].header.hash(), block13.header.hash()];
 	assert_eq!(leaves, expected);
 
-	let monitor = para_import.level_monitor.unwrap();
+	let monitor = para_import.monitor.unwrap();
+	let monitor = monitor.shared_data();
 	assert_eq!(monitor.import_counter, 5);
 	assert!(monitor.levels.iter().all(|(number, hashes)| {
 		hashes
