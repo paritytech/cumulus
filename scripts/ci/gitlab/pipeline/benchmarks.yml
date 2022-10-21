@@ -28,7 +28,7 @@ benchmarks-assets:
     - export CURRENT_TIME=$(date '+%s')
     - export BRANCHNAME="weights-statemint-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
     - !reference [.git-commit-push, script]
-    - ./scripts/create-benchmark-pr.sh "[benchmarks] Update weights for statemine/t" "$BRANCHNAME"
+    - ./scripts/ci/create-benchmark-pr.sh "[benchmarks] Update weights for statemine/t" "$BRANCHNAME"
   after_script:
     - rm -rf .git/config
   tags:
@@ -47,7 +47,7 @@ benchmarks-collectives:
     - export CURRENT_TIME=$(date '+%s')
     - export BRANCHNAME="weights-collectives-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
     - !reference [.git-commit-push, script]
-    - ./scripts/create-benchmark-pr.sh "[benchmarks] Update weights for collectives" "$BRANCHNAME"
+    - ./scripts/ci/create-benchmark-pr.sh "[benchmarks] Update weights for collectives" "$BRANCHNAME"
   after_script:
     - rm -rf .git/config
   tags:
