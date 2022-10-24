@@ -554,12 +554,13 @@ impl_runtime_apis! {
 			origin: AccountId,
 			code: Vec<u8>,
 			storage_deposit_limit: Option<Balance>,
+			determinism: pallet_contracts::Determinism,
 		) -> pallet_contracts_primitives::CodeUploadResult<Hash, Balance> {
 			Contracts::bare_upload_code(
 				origin,
 				code,
 				storage_deposit_limit,
-				pallet_contracts::Determinism::Deterministic,
+				determinism,
 			)
 		}
 
