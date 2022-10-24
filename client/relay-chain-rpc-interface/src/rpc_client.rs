@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+use crate::resilient_ws_client::PooledClient;
 use backoff::{future::retry_notify, ExponentialBackoff};
 use cumulus_primitives_core::{
 	relay_chain::{
@@ -54,7 +55,6 @@ use std::sync::Arc;
 use tokio::sync::mpsc::{
 	channel as tokio_channel, Receiver as TokioReceiver, Sender as TokioSender,
 };
-
 pub use url::Url;
 
 const LOG_TARGET: &str = "relay-chain-rpc-client";
@@ -65,7 +65,7 @@ const NOTIFICATION_CHANNEL_SIZE_LIMIT: usize = 20;
 #[derive(Clone)]
 pub struct RelayChainRpcClient {
 	/// Websocket client to make calls
-	ws_client: Arc<JsonRpcClient>,
+	ws_client: Arc<PooledClient>,
 
 	/// Retry strategy that should be used for requests and subscriptions
 	retry_strategy: ExponentialBackoff,
@@ -104,7 +104,7 @@ pub async fn create_client_and_start_worker(
 	task_manager: &mut TaskManager,
 ) -> RelayChainResult<RelayChainRpcClient> {
 	let first_url = urls.first().map(|s| s.to_owned()).unwrap();
-	let ws_client = WsClientBuilder::default().build(first_url.as_str()).await?;
+	let ws_client = PooledClient::new(WsClientBuilder::default().build(first_url.as_str()).await?);
 
 	let best_head_stream = RelayChainRpcClient::subscribe_new_best_heads(&ws_client).await?;
 	let finalized_head_stream = RelayChainRpcClient::subscribe_finalized_heads(&ws_client).await?;
@@ -220,7 +220,7 @@ impl RpcStreamWorker {
 impl RelayChainRpcClient {
 	/// Initialize new RPC Client.
 	async fn new(
-		ws_client: JsonRpcClient,
+		ws_client: PooledClient,
 		sender: TokioSender<NotificationRegisterMessage>,
 	) -> RelayChainResult<Self> {
 		let client = RelayChainRpcClient {
@@ -677,7 +677,7 @@ impl RelayChainRpcClient {
 	}
 
 	async fn subscribe_imported_heads(
-		ws_client: &JsonRpcClient,
+		ws_client: &PooledClient,
 	) -> Result<Subscription<PHeader>, RelayChainError> {
 		Ok(ws_client
 			.subscribe::<PHeader>("chain_subscribeAllHeads", None, "chain_unsubscribeAllHeads")
@@ -685,7 +685,7 @@ impl RelayChainRpcClient {
 	}
 
 	async fn subscribe_finalized_heads(
-		ws_client: &JsonRpcClient,
+		ws_client: &PooledClient,
 	) -> Result<Subscription<PHeader>, RelayChainError> {
 		Ok(ws_client
 			.subscribe::<PHeader>(
@@ -697,7 +697,7 @@ impl RelayChainRpcClient {
 	}
 
 	async fn subscribe_new_best_heads(
-		ws_client: &JsonRpcClient,
+		ws_client: &PooledClient,
 	) -> Result<Subscription<PHeader>, RelayChainError> {
 		Ok(ws_client
 			.subscribe::<PHeader>(

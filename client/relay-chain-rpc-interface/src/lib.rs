@@ -34,6 +34,7 @@ use std::pin::Pin;
 
 pub use url::Url;
 
+mod resilient_ws_client;
 mod rpc_client;
 pub use rpc_client::{create_client_and_start_worker, RelayChainRpcClient};
 
