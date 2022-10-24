@@ -189,7 +189,7 @@ async fn build_relay_chain_interface(
 	collator_options: CollatorOptions,
 	task_manager: &mut TaskManager,
 ) -> RelayChainResult<Arc<dyn RelayChainInterface + 'static>> {
-	if let Some(relay_chain_url) = collator_options.relay_chain_rpc_url {
+	if let Some(relay_chain_url) = collator_options.relay_chain_rpc_urls {
 		return build_minimal_relay_chain_node(relay_chain_config, task_manager, relay_chain_url)
 			.await
 			.map(|r| r.0)
@@ -427,7 +427,7 @@ pub struct TestNodeBuilder {
 	storage_update_func_parachain: Option<Box<dyn Fn()>>,
 	storage_update_func_relay_chain: Option<Box<dyn Fn()>>,
 	consensus: Consensus,
-	relay_chain_full_node_url: Option<Url>,
+	relay_chain_full_node_url: Option<Vec<Url>>,
 }
 
 impl TestNodeBuilder {
@@ -543,7 +543,7 @@ impl TestNodeBuilder {
 
 	/// Connect to full node via RPC.
 	pub fn use_external_relay_chain_node_at_url(mut self, network_address: Url) -> Self {
-		self.relay_chain_full_node_url = Some(network_address);
+		self.relay_chain_full_node_url = Some(vec![network_address]);
 		self
 	}
 
@@ -552,7 +552,7 @@ impl TestNodeBuilder {
 		let mut localhost_url =
 			Url::parse("ws://localhost").expect("Should be able to parse localhost Url");
 		localhost_url.set_port(Some(port)).expect("Should be able to set port");
-		self.relay_chain_full_node_url = Some(localhost_url);
+		self.relay_chain_full_node_url = Some(vec![localhost_url]);
 		self
 	}
 
@@ -578,7 +578,7 @@ impl TestNodeBuilder {
 		);
 
 		let collator_options =
-			CollatorOptions { relay_chain_rpc_url: self.relay_chain_full_node_url };
+			CollatorOptions { relay_chain_rpc_urls: self.relay_chain_full_node_url };
 
 		relay_chain_config.network.node_name =
 			format!("{} (relay chain)", relay_chain_config.network.node_name);

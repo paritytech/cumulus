@@ -100,11 +100,11 @@ struct RpcStreamWorker {
 
 /// Entry point to create [`RelayChainRpcClient`] and start a worker that distributes notifications.
 pub async fn create_client_and_start_worker(
-	url: Url,
+	urls: Vec<Url>,
 	task_manager: &mut TaskManager,
 ) -> RelayChainResult<RelayChainRpcClient> {
-	tracing::info!(target: LOG_TARGET, url = %url.to_string(), "Initializing RPC Client");
-	let ws_client = WsClientBuilder::default().build(url.as_str()).await?;
+	let first_url = urls.first().map(|s| s.to_owned()).unwrap();
+	let ws_client = WsClientBuilder::default().build(first_url.as_str()).await?;
 
 	let best_head_stream = RelayChainRpcClient::subscribe_new_best_heads(&ws_client).await?;
 	let finalized_head_stream = RelayChainRpcClient::subscribe_finalized_heads(&ws_client).await?;
