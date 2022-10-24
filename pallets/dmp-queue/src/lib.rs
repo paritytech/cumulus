@@ -52,8 +52,8 @@ impl Default for ConfigData {
 	fn default() -> Self {
 		Self {
 			max_individual: Weight::from_parts(
-				10u64 * WEIGHT_PER_MILLIS, // 10 ms of execution time maximum by default
-				DEFAULT_POV_SIZE,          // 64 KB of proof size by default
+				10u64 * WEIGHT_PER_MILLIS.ref_time(), // 10 ms of execution time maximum by default
+				DEFAULT_POV_SIZE,                     // 64 KB of proof size by default
 			),
 		}
 	}

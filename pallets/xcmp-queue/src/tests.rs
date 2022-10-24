@@ -220,7 +220,7 @@ fn update_xcmp_max_individual_weight() {
 		let data: QueueConfigData = <QueueConfig<Test>>::get();
 		assert_eq!(
 			data.xcmp_max_individual_weight,
-			Weight::from_parts(20u64 * WEIGHT_PER_MILLIS, DEFAULT_POV_SIZE),
+			Weight::from_parts(20u64 * WEIGHT_PER_MILLIS.ref_time(), DEFAULT_POV_SIZE),
 		);
 		assert_ok!(XcmpQueue::update_xcmp_max_individual_weight(
 			RuntimeOrigin::root(),
