@@ -318,3 +318,104 @@ pub trait ChargeWeightInFungibles<AccountId, Assets: fungibles::Inspect<AccountI
 		weight: Weight,
 	) -> Result<<Assets as Inspect<AccountId>>::Balance, XcmError>;
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use cumulus_primitives_core::UpwardMessage;
+
+	/// Validates [`validate`] for required Some(destination) and Some(message)
+	struct OkFixedXcmHashWithAssertingRequiredInputsSender;
+	impl OkFixedXcmHashWithAssertingRequiredInputsSender {
+		const FIXED_XCM_HASH: [u8; 32] = [9; 32];
+
+		fn fixed_delivery_asset() -> MultiAssets {
+			MultiAssets::new()
+		}
+
+		fn expected_delivery_result() -> Result<(XcmHash, MultiAssets), SendError> {
+			Ok((Self::FIXED_XCM_HASH, Self::fixed_delivery_asset()))
+		}
+	}
+	impl SendXcm for OkFixedXcmHashWithAssertingRequiredInputsSender {
+		type Ticket = ();
+
+		fn validate(
+			destination: &mut Option<MultiLocation>,
+			message: &mut Option<Xcm<()>>,
+		) -> SendResult<Self::Ticket> {
+			assert!(destination.is_some());
+			assert!(message.is_some());
+			Ok(((), OkFixedXcmHashWithAssertingRequiredInputsSender::fixed_delivery_asset()))
+		}
+
+		fn deliver(_: Self::Ticket) -> Result<XcmHash, SendError> {
+			Ok(Self::FIXED_XCM_HASH)
+		}
+	}
+
+	/// Impl [`UpwardMessageSender`] that return `Other` error
+	struct OtherErrorUpwardMessageSender;
+	impl UpwardMessageSender for OtherErrorUpwardMessageSender {
+		fn send_upward_message(_: UpwardMessage) -> Result<u32, MessageSendError> {
+			Err(MessageSendError::Other)
+		}
+	}
+
+	#[test]
+	fn parent_as_ump_does_not_consume_dest_or_msg_on_not_applicable() {
+		// dummy message
+		let message = Xcm(vec![Trap(5)]);
+
+		// ParentAsUmp - check dest is really not applicable
+		let dest = (Parent, Parent, Parent);
+		let mut dest_wrapper = Some(dest.clone().into());
+		let mut msg_wrapper = Some(message.clone());
+		assert_eq!(
+			Err(SendError::NotApplicable),
+			<ParentAsUmp<(), (), ()> as SendXcm>::validate(&mut dest_wrapper, &mut msg_wrapper)
+		);
+
+		// check wrapper were not consumed
+		assert_eq!(Some(dest.clone().into()), dest_wrapper.take());
+		assert_eq!(Some(message.clone()), msg_wrapper.take());
+
+		// another try with router chain with asserting sender
+		assert_eq!(
+			OkFixedXcmHashWithAssertingRequiredInputsSender::expected_delivery_result(),
+			send_xcm::<(ParentAsUmp<(), (), ()>, OkFixedXcmHashWithAssertingRequiredInputsSender)>(
+				dest.into(),
+				message
+			)
+		);
+	}
+
+	#[test]
+	fn parent_as_ump_consumes_dest_and_msg_on_ok_validate() {
+		// dummy message
+		let message = Xcm(vec![Trap(5)]);
+
+		// ParentAsUmp - check dest/msg is valid
+		let dest = (Parent, Here);
+		let mut dest_wrapper = Some(dest.clone().into());
+		let mut msg_wrapper = Some(message.clone());
+		assert!(<ParentAsUmp<(), (), ()> as SendXcm>::validate(
+			&mut dest_wrapper,
+			&mut msg_wrapper
+		)
+		.is_ok());
+
+		// check wrapper were consumed
+		assert_eq!(None, dest_wrapper.take());
+		assert_eq!(None, msg_wrapper.take());
+
+		// another try with router chain with asserting sender
+		assert_eq!(
+			Err(SendError::Transport("Other")),
+			send_xcm::<(
+				ParentAsUmp<OtherErrorUpwardMessageSender, (), ()>,
+				OkFixedXcmHashWithAssertingRequiredInputsSender
+			)>(dest.into(), message)
+		);
+	}
+}
