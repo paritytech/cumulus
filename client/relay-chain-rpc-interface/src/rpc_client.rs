@@ -104,7 +104,7 @@ pub async fn create_client_and_start_worker(
 	task_manager: &mut TaskManager,
 ) -> RelayChainResult<RelayChainRpcClient> {
 	let first_url = urls.first().map(|s| s.to_owned()).unwrap();
-	let ws_client = PooledClient::new(WsClientBuilder::default().build(first_url.as_str()).await?);
+	let ws_client = PooledClient::new(first_url).await?;
 
 	let best_head_stream = RelayChainRpcClient::subscribe_new_best_heads(&ws_client).await?;
 	let finalized_head_stream = RelayChainRpcClient::subscribe_finalized_heads(&ws_client).await?;
