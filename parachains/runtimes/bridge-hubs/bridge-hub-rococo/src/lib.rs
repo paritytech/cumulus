@@ -22,10 +22,13 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+pub mod bridge_common_config;
+pub mod bridge_hub_rococo_config;
+pub mod bridge_hub_wococo_config;
 mod weights;
 pub mod xcm_config;
-mod bridge_config;
 
+use bridge_common_config::*;
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
@@ -59,18 +62,20 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
-use bp_polkadot_core::parachains::ParaId;
 use bp_runtime::{HeaderId, HeaderIdProvider};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-// Polkadot imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
+use sp_runtime::traits::ConstU32;
 
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
-// XCM Imports
+use crate::{
+	bridge_hub_rococo_config::OnBridgeHubRococoBlobDispatcher,
+	bridge_hub_wococo_config::OnBridgeHubWococoBlobDispatcher, xcm_config::XcmRouter,
+};
 use parachains_common::{AccountId, Signature};
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
@@ -238,11 +243,18 @@ pub fn native_version() -> NativeVersion {
 }
 
 // TODO:check-parameter - move to bridges/primitives, once rebased and would compile with bp_bridge_hub_xyz dependencies
-mod runtime_api {
-	use super::BlockNumber;
-	use super::Hash;
+pub mod runtime_api {
+	use super::{BlockNumber, Hash};
 	bp_runtime::decl_bridge_finality_runtime_apis!(rococo);
 	bp_runtime::decl_bridge_finality_runtime_apis!(wococo);
+
+	use bp_messages::{
+		InboundMessageDetails, LaneId, MessageNonce, MessagePayload, OutboundMessageDetails,
+	};
+	use frame_support::{sp_runtime::FixedU128, Parameter};
+	use sp_std::prelude::Vec;
+	bp_runtime::decl_bridge_messages_runtime_apis!(bridge_hub_rococo);
+	bp_runtime::decl_bridge_messages_runtime_apis!(bridge_hub_wococo);
 }
 
 parameter_types! {
@@ -412,11 +424,12 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type Event = Event;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
-	type VersionWrapper = ();
+	type VersionWrapper = PolkadotXcm;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type ControllerOrigin = EnsureRoot<AccountId>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-	type WeightInfo = ();
+	type PriceForSiblingDelivery = ();
+	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -485,12 +498,6 @@ impl pallet_sudo::Config for Runtime {
 }
 
 // Add bridge pallets (GPA)
-parameter_types! {
-	// TODO:check-parameter
-	pub const MaxRequests: u32 = 64;
-	// TODO:check-parameter
-	pub const HeadersToKeep: u32 = 1024;
-}
 
 /// Add granda bridge pallet to track Wococo relay chain on Rococo BridgeHub
 pub type BridgeGrandpaWococoInstance = pallet_bridge_grandpa::Instance1;
@@ -523,9 +530,9 @@ parameter_types! {
 /// Add parachain bridge pallet to track Wococo bridge hub parachain
 pub type BridgeParachainWococoInstance = pallet_bridge_parachains::Instance1;
 impl pallet_bridge_parachains::Config<BridgeParachainWococoInstance> for Runtime {
+	type Event = Event;
 	// TODO:check-parameter
 	type WeightInfo = ();
-	type Event = Event;
 	type BridgesGrandpaPalletInstance = BridgeGrandpaWococoInstance;
 	type ParasPalletName = WococoBridgeParachainPalletName;
 	type TrackedParachains = Everything;
@@ -544,24 +551,25 @@ impl pallet_bridge_parachains::Config<BridgeParachainRococoInstance> for Runtime
 	type HeadsToKeep = ParachainHeadsToKeep;
 }
 
-/// Add XCM messages support for BrigdeHubRococo to support Wococo->Rococo XCM messages
+/// Add XCM messages support for BrigdeHubRococo to support Rococo->Wococo XCM messages
 pub type WithBridgeHubWococoMessagesInstance = pallet_bridge_messages::Instance1;
 impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Runtime {
 	type Event = Event;
 	// TODO:check-parameter - copy of MillauWeigth + refactor
 	type WeightInfo = ();
-	type BridgedChainId = bridge_config::BridgeHubWococoChainId;
-	// TODO:check-parameter - do we need any conversion rate or what ever?
+	type BridgedChainId = bridge_hub_rococo_config::BridgeHubWococoChainId;
 	type Parameter = ();
-	type MaxMessagesToPruneAtOnce = bridge_config::BridgeHubWococoMaxMessagesToPruneAtOnce;
-	type MaxUnrewardedRelayerEntriesAtInboundLane = bridge_config::BridgeHubWococoMaxUnrewardedRelayerEntriesAtInboundLane;
-	type MaxUnconfirmedMessagesAtInboundLane = bridge_config::BridgeHubWococoMaxUnconfirmedMessagesAtInboundLane;
+	type MaxMessagesToPruneAtOnce = MaxMessagesToPruneAtOnce;
+	type MaxUnrewardedRelayerEntriesAtInboundLane =
+		bridge_hub_rococo_config::MaxUnrewardedRelayerEntriesAtInboundLane;
+	type MaxUnconfirmedMessagesAtInboundLane =
+		bridge_hub_rococo_config::MaxUnconfirmedMessagesAtInboundLane;
 
 	type MaximalOutboundPayloadSize = ();
-	type OutboundPayload = bridge_config::ToBridgeHubWococoMessagePayload;
-	type OutboundMessageFee = crate::Balance;  /* bp_bridge_hub_rococo::Balance */
+	type OutboundPayload = XcmAsPlainPayload;
+	type OutboundMessageFee = crate::Balance; /* bp_bridge_hub_rococo::Balance */
 
-	type InboundPayload = bridge_config::FromBridgeHubWococoMessagePayload;
+	type InboundPayload = XcmAsPlainPayload;
 	type InboundMessageFee = crate::Balance; /* bp_bridge_hub_wococo::Balance */
 	type InboundRelayer = crate::AccountId; /* bp_bridge_hub_wococo::AccountId */
 
@@ -573,27 +581,32 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 	type OnDeliveryConfirmed = ();
 
 	type SourceHeaderChain = bridge_config::BridgeHubWococoMessagingSupport;
-	type MessageDispatch = bridge_config::FromBridgeHubWococoMessageDispatch<bp_bridge_hub_wococo::BridgeHubWococo, bp_bridge_hub_rococo::BridgeHubRococo>;
+	type MessageDispatch = XcmBlobMessageDispatch<
+		bp_bridge_hub_wococo::BridgeHubWococo,
+		bp_bridge_hub_rococo::BridgeHubRococo,
+		OnBridgeHubRococoBlobDispatcher,
+	>;
 }
 
-/// Add XCM messages support for BrigdeHubWococo to support Rococo->Wococo XCM messages
+/// Add XCM messages support for BrigdeHubWococo to support Wococo->Rococo XCM messages
 pub type WithBridgeHubRococoMessagesInstance = pallet_bridge_messages::Instance2;
 impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Runtime {
 	type Event = Event;
 	// TODO:check-parameter - copy of MillauWeigth + refactor
 	type WeightInfo = ();
-	type BridgedChainId = bridge_config::BridgeHubRococoChainId;
-	// TODO:check-parameter - do we need any conversion rate or what ever?
+	type BridgedChainId = bridge_hub_wococo_config::BridgeHubRococoChainId;
 	type Parameter = ();
-	type MaxMessagesToPruneAtOnce = bridge_config::BridgeHubRococoMaxMessagesToPruneAtOnce;
-	type MaxUnrewardedRelayerEntriesAtInboundLane = bridge_config::BridgeHubRococoMaxUnrewardedRelayerEntriesAtInboundLane;
-	type MaxUnconfirmedMessagesAtInboundLane = bridge_config::BridgeHubRococoMaxUnconfirmedMessagesAtInboundLane;
+	type MaxMessagesToPruneAtOnce = MaxMessagesToPruneAtOnce;
+	type MaxUnrewardedRelayerEntriesAtInboundLane =
+		bridge_hub_wococo_config::MaxUnrewardedRelayerEntriesAtInboundLane;
+	type MaxUnconfirmedMessagesAtInboundLane =
+		bridge_hub_wococo_config::MaxUnconfirmedMessagesAtInboundLane;
 
 	type MaximalOutboundPayloadSize = ();
-	type OutboundPayload = bridge_config::ToBridgeHubRococoMessagePayload;
-	type OutboundMessageFee = crate::Balance;  /* bp_bridge_hub_wococo::Balance */
+	type OutboundPayload = XcmAsPlainPayload;
+	type OutboundMessageFee = crate::Balance; /* bp_bridge_hub_wococo::Balance */
 
-	type InboundPayload = bridge_config::FromBridgeHubRococoMessagePayload;
+	type InboundPayload = XcmAsPlainPayload;
 	type InboundMessageFee = crate::Balance; /* bp_bridge_hub_rococo::Balance */
 	type InboundRelayer = crate::AccountId; /* bp_bridge_hub_rococo::AccountId */
 
@@ -605,7 +618,11 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 	type OnDeliveryConfirmed = ();
 
 	type SourceHeaderChain = bridge_config::BridgeHubRococoMessagingSupport;
-	type MessageDispatch = bridge_config::FromBridgeHubRococoMessageDispatch<bp_bridge_hub_rococo::BridgeHubRococo, bp_bridge_hub_wococo::BridgeHubWococo>;
+	type MessageDispatch = XcmBlobMessageDispatch<
+		bp_bridge_hub_rococo::BridgeHubRococo,
+		bp_bridge_hub_wococo::BridgeHubWococo,
+		OnBridgeHubWococoBlobDispatcher,
+	>;
 }
 
 /// Add shift session manager
@@ -793,6 +810,41 @@ impl_runtime_apis! {
 	impl runtime_api::WococoFinalityApi<Block> for Runtime {
 		fn best_finalized() -> Option<HeaderId<bp_wococo::Hash, bp_wococo::BlockNumber>> {
 			BridgeWococoGrandpa::best_finalized().map(|header| header.id())
+		}
+	}
+
+	// This exposed by BridgeHubRococo
+	impl runtime_api::ToBridgeHubWococoOutboundLaneApi<Block, Balance, XcmAsPlainPayload> for Runtime {
+		fn estimate_message_delivery_and_dispatch_fee(
+			_lane_id: bp_messages::LaneId,
+			payload: XcmAsPlainPayload,
+			_conversion_rate: Option<frame_support::sp_runtime::FixedU128>,
+		) -> Option<Balance> {
+			None
+		}
+
+		fn message_details(
+			lane: bp_messages::LaneId,
+			begin: bp_messages::MessageNonce,
+			end: bp_messages::MessageNonce,
+		) -> Vec<bp_messages::OutboundMessageDetails<Balance>> {
+			bridge_runtime_common::messages_api::outbound_message_details::<
+				Runtime,
+				WithBridgeHubWococoMessagesInstance,
+			>(lane, begin, end)
+		}
+	}
+
+	// This is exposed by BridgeHubWococo
+	impl runtime_api::FromBridgeHubRococoInboundLaneApi<Block, Balance> for Runtime {
+		fn message_details(
+			lane: bp_messages::LaneId,
+			messages: Vec<(bp_messages::MessagePayload, bp_messages::OutboundMessageDetails<Balance>)>,
+		) -> Vec<bp_messages::InboundMessageDetails> {
+			bridge_runtime_common::messages_api::inbound_message_details::<
+				Runtime,
+				WithBridgeHubRococoMessagesInstance,
+			>(lane, messages)
 		}
 	}
 

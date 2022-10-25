@@ -15,15 +15,18 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-	AccountId, Balance, Balances, Call, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime,
-	XcmpQueue,
+	AccountId, Balance, Balances, Call, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm,
+	Runtime, XcmpQueue,
+};
+use crate::{
+	bridge_hub_rococo_config::ToBridgeHubWococoHaulBlobExporter,
+	bridge_hub_wococo_config::ToBridgeHubRococoHaulBlobExporter,
 };
 use frame_support::{
 	match_types, parameter_types,
 	traits::{Everything, Nothing},
-	weights::Weight,
+	weights::{IdentityFee, Weight},
 };
-use frame_support::weights::IdentityFee;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
@@ -34,7 +37,7 @@ use xcm_builder::{
 	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 	UsingComponents,
 };
-use xcm_executor::XcmExecutor;
+use xcm_executor::{traits::ExportXcm, XcmExecutor};
 
 parameter_types! {
 	pub const RelayLocation: MultiLocation = MultiLocation::parent();
@@ -192,6 +195,8 @@ pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<Everything>,
 	AllowUnpaidExecutionFrom<ParentOrParentsUnitPlurality>,
+	// TODO:check-parameter - supporting unpaid execution at first then SovereignPaid
+	AllowUnpaidExecutionFrom<Everything>,
 	// ^^^ Parent & its unit plurality gets free execution
 );
 
@@ -219,7 +224,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetLocker = ();
 	type AssetExchanger = ();
 	type FeeManager = ();
-	type MessageExporter = ();
+	type MessageExporter = BridgeHubRococoOrBridgeHubWococoSwitchExporter;
 	type UniversalAliases = Nothing;
 	type CallDispatcher = Call;
 }
@@ -231,32 +236,11 @@ pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, RelayNet
 /// queues.
 pub type XcmRouter = (
 	// Two routers - use UMP to communicate with the relay chain:
-	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, ()>,
+	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, ()>,
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
 );
 
-// TODO: hacked
-// impl pallet_xcm::Config for Runtime {
-// 	type Event = Event;
-// 	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-// 	type XcmRouter = XcmRouter;
-// 	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-// 	type XcmExecuteFilter = Nothing;
-// 	// ^ Disable dispatchable execute on the XCM pallet.
-// 	// Needs to be `Everything` for local testing.
-// 	type XcmExecutor = XcmExecutor<XcmConfig>;
-// 	type XcmTeleportFilter = Everything;
-// 	type XcmReserveTransferFilter = Nothing;
-// 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-// 	type LocationInverter = LocationInverter<Ancestry>;
-// 	type Origin = Origin;
-// 	type Call = Call;
-//
-// 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
-// 	// ^ Override for AdvertisedXcmVersion default
-// 	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
-// }
 impl pallet_xcm::Config for Runtime {
 	type Event = Event;
 	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
@@ -282,4 +266,36 @@ impl pallet_xcm::Config for Runtime {
 impl cumulus_pallet_xcm::Config for Runtime {
 	type Event = Event;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
+}
+
+/// Hacky switch implementation, because we have just one runtime for Rococo and Wococo BridgeHub, so it means we have just one XcmConfig
+pub struct BridgeHubRococoOrBridgeHubWococoSwitchExporter;
+impl ExportXcm for BridgeHubRococoOrBridgeHubWococoSwitchExporter {
+	type Ticket = (NetworkId, (sp_std::prelude::Vec<u8>, XcmHash));
+
+	fn validate(
+		network: NetworkId,
+		channel: u32,
+		destination: &mut Option<InteriorMultiLocation>,
+		message: &mut Option<Xcm<()>>,
+	) -> SendResult<Self::Ticket> {
+		match network {
+			Rococo =>
+				ToBridgeHubRococoHaulBlobExporter::validate(network, channel, destination, message)
+					.map(|result| ((Rococo, result.0), result.1)),
+			Wococo =>
+				ToBridgeHubWococoHaulBlobExporter::validate(network, channel, destination, message)
+					.map(|result| ((Wococo, result.0), result.1)),
+			_ => unimplemented!("Unsupported network: {:?}", network),
+		}
+	}
+
+	fn deliver(ticket: Self::Ticket) -> Result<XcmHash, SendError> {
+		let (network, ticket) = ticket;
+		match network {
+			Rococo => ToBridgeHubRococoHaulBlobExporter::deliver(ticket),
+			Wococo => ToBridgeHubWococoHaulBlobExporter::deliver(ticket),
+			_ => unimplemented!("Unsupported network: {:?}", network),
+		}
+	}
 }
