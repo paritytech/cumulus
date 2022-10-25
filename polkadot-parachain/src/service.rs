@@ -1029,7 +1029,7 @@ where
 	let aura_verifier = move || {
 		let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
 
-		Box::new(cumulus_client_consensus_aura::build_verifier::<<AuraId as AppKey>::Pair, _, _>(
+		Box::new(cumulus_client_consensus_aura::build_verifier::<<AuraId as AppKey>::Pair, _, _, _>(
 			cumulus_client_consensus_aura::BuildVerifierParams {
 				client: client2.clone(),
 				create_inherent_data_providers: move |_, _| async move {
