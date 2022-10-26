@@ -31,11 +31,11 @@ impl<T: frame_system::Config> pallet_timestamp::WeightInfo for WeightInfo<T> {
 	// Storage: Timestamp Now (r:1 w:1)
 	// Storage: Teerex EnclaveRegistry (r:1 w:0)
 	fn set() -> Weight {
-		(38_692_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(38_692_000)
+			.saturating_add(T::DbWeight::get().reads(2))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	fn on_finalize() -> Weight {
-		(14_527_000 as Weight)
+		Weight::from_ref_time(14_527_000)
 	}
 }

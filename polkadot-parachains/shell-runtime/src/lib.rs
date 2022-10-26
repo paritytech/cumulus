@@ -76,7 +76,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("integritee-parachain"),
 	impl_name: create_runtime_str!("integritee-shell"),
 	authoring_version: 0,
-	spec_version: 4,
+	spec_version: 5,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 0,
@@ -119,7 +119,7 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(5);
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 500ms of compute with a 6 second average block time.
 // **This value has been adjusted by integritee**.
-const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
+const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_div(2);
 
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 250;
@@ -261,7 +261,7 @@ impl pallet_vesting::Config for Runtime {
 
 parameter_types! {
 	// We do anything the parent chain tells us in this runtime.
-	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 2;
+	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(2);
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
@@ -308,7 +308,7 @@ match_types! {
 
 parameter_types! {
 	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: Weight = 1_000_000;
+	pub UnitWeightCost: u64 = 1_000_000;
 	pub const MaxInstructions: u32 = 100;
 }
 

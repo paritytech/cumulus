@@ -29,7 +29,7 @@ use frame_support::{
 	pallet_prelude::Get,
 	parameter_types,
 	traits::{Everything, Nothing},
-	weights::{IdentityFee, Weight},
+	weights::IdentityFee,
 	RuntimeDebug,
 };
 use frame_system::EnsureRoot;
@@ -221,7 +221,7 @@ where
 
 parameter_types! {
 	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: Weight = 1_000_000;
+	pub UnitWeightCost: u64 =1_000_000;
 	// One TEER buys 1 second of weight.
 	pub const WeightPrice: (MultiLocation, u128) = (MultiLocation::parent(), TEER);
 }
@@ -316,7 +316,7 @@ parameter_types! {
 }
 
 parameter_types! {
-	pub const BaseXcmWeight: Weight = 100_000_000;
+	pub const BaseXcmWeight: u64 = 100_000_000;
 	pub const MaxAssetsForTransfer: usize = 2;
 }
 

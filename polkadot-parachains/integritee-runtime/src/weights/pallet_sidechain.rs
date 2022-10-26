@@ -30,9 +30,9 @@ impl<T: frame_system::Config> pallet_sidechain::WeightInfo for WeightInfo<T> {
 	// Storage: Teerex EnclaveIndex (r:1 w:0)
 	// Storage: Teerex EnclaveRegistry (r:1 w:0)
 	// Storage: Teerex WorkerForShard (r:0 w:1)
-	fn confirm_proposed_sidechain_block() -> Weight {
-		(93_363_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+	fn confirm_imported_sidechain_block() -> Weight {
+		Weight::from_ref_time(93_363_000)
+			.saturating_add(T::DbWeight::get().reads(2))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
 }

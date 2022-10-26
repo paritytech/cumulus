@@ -33,24 +33,24 @@ impl<T: frame_system::Config> pallet_teerex::WeightInfo for WeightInfo<T> {
 	// Storage: Teerex EnclaveIndex (r:1 w:0)
 	// Storage: Teerex EnclaveRegistry (r:0 w:1)
 	fn register_enclave() -> Weight {
-		(2_943_573_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(2_943_573_000)
+			.saturating_add(T::DbWeight::get().reads(3))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: Teerex EnclaveIndex (r:1 w:2)
 	// Storage: Teerex EnclaveCount (r:1 w:1)
 	// Storage: Teerex EnclaveRegistry (r:1 w:2)
 	fn unregister_enclave() -> Weight {
-		(112_614_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
-			.saturating_add(T::DbWeight::get().writes(5 as Weight))
+		Weight::from_ref_time(112_614_000)
+			.saturating_add(T::DbWeight::get().reads(3))
+			.saturating_add(T::DbWeight::get().writes(5))
 	}
 	fn call_worker() -> Weight {
-		(49_431_000 as Weight)
+		Weight::from_ref_time(49_431_000)
 	}
 	// Storage: Teerex EnclaveIndex (r:1 w:0)
 	fn confirm_processed_parentchain_block() -> Weight {
-		(53_473_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
+		Weight::from_ref_time(53_473_000)
+			.saturating_add(T::DbWeight::get().reads(1))
 	}
 }
