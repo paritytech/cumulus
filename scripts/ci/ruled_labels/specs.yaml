@@ -31,17 +31,17 @@ labels:
     description: Changes should be noted in the release notes
     color: f9d0c4
   - name: C1-low
-    description: "Elevates a release containing this PR to \"low priority\"."
-    color: fcdfc3
+    description: "PR touches the given topic and has a low impact on builders."
+    color: EBF7B3
   - name: C3-medium
-    description: "Elevates a release containing this PR to \"medium priority\"."
-    color: FFE9C0
+    description: "PR touches the given topic and has a medium impact on builders.."
+    color: FEF2C0
   - name: C5-high
-    description: "Elevates a release containing this PR to \"high priority\"."
-    color: fef2c0
+    description: "PR touches the given topic and has a high impact on builders."
+    color: D4C5F9
   - name: C7-critical
-    description: "Elevates a release containing this PR to \"critical priority\"."
-    color: fef2c0
+    description: "PR touches the given topic and has a critical impact on builders."
+    color: E99695
   - name: D1-audited 👍
     description: PR contains changes to fund-managing logic that has been properly reviewed and externally audited.
     color: C0E7CC
@@ -150,28 +150,28 @@ labels:
   - name: S4-blocked
     description: "Issue is blocked, see comments for further information."
     color: "122381"
-  - name: T0-polkadot
-    description: This PR/Issue is related to Polkadot.
+  - name: T3-relay_chain
+    description: This PR/Issue is related to the relay chain.
     color: ffeeee
-  - name: T1-smart_contracts
+  - name: T4-smart_contracts
     description: This PR/Issue is related to smart contracts.
     color: 0C7BAD
-  - name: T2-parachains
+  - name: T5-parachains
     description: This PR/Issue is related to Parachains.
     color: 0052cc
-  - name: T3-release
+  - name: T10-release
     description: This PR/Issue is related to topics touching the release notes.
     color: 0052cc
-  - name: T4-statemint
+  - name: T7-statemint
     description: This PR/Issue is related to Statemint
     color: 86e62a
-  - name: T5-CGP
+  - name: T8-CGP
     description: This PR/Issue is related to Common Good Parachains.
     color: BFDADC
   - name: T6-XCM
     description: This PR/Issue is related to XCM.
     color: d4c5f9
-  - name: T7-substrate
+  - name: T9-substrate
     description: This is an issue that needs to be implemented upstream in Substrate.
     color: 1d76db
   - name: U0-drop_everything
@@ -189,13 +189,13 @@ labels:
   - name: U4-some_day_maybe
     description: Issue might be worth doing eventually.
     color: fffbed
-  - name: X0-node
+  - name: T0-node
     description: This PR/Issue is related to the topic “node”.
     color: fbffe0
-  - name: X1-runtime
+  - name: T1-runtime
     description: This PR/Issue is related to the topic “runtime”.
     color: F5FCE6
-  - name: X2-API
+  - name: T2-API
     description: This PR/Issue is related to APIs.
     color: 009B40
 
@@ -213,12 +213,12 @@ rules:
       when: !one_of [ B1 ]
       require: !one_of [ C* ]
 
-  - name: Release mentions need a topic (X)
+  - name: Release mentions need a topic (T)
     id: require_one_x_when_b1
     tags: [ PR ]
     spec:
       when: !one_of [ B1 ]
-      require: !one_of [ X* ]
+      require: !one_of [ T* ]
 
   - name: One single issue status (S) label allowed
     id: single_s
