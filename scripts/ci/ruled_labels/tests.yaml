@@ -23,13 +23,13 @@ specs:
   - name: Fail - Release need criticality
     filter:
       id: [ require_one_c_when_b1 ]
-    labels: [ B1, X1, D1 ]
+    labels: [ B1, T1, D1 ]
     expected: false
 
-  - name: Fail - Release require one X topics
+  - name: Fail - Release require one T topics
     filter:
-      id: [ require_one_x_when_b1 ]
-    labels: [ B1, T0, D1 ]
+      id: [ require_one_t_when_b1 ]
+    labels: [ B1, D1 ]
     expected: false
 
   - name: Fail - Only one criticality label allowed

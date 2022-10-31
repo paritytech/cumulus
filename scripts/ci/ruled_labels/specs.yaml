@@ -214,7 +214,7 @@ rules:
       require: !one_of [ C* ]
 
   - name: Release mentions need a topic (T)
-    id: require_one_x_when_b1
+    id: require_one_t_when_b1
     tags: [ PR ]
     spec:
       when: !one_of [ B1 ]
