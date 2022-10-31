@@ -68,13 +68,13 @@ use bp_runtime::{HeaderId, HeaderIdProvider};
 pub use sp_runtime::BuildStorage;
 
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
-use sp_runtime::traits::ConstU32;
 
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 use crate::{
 	bridge_hub_rococo_config::OnBridgeHubRococoBlobDispatcher,
-	bridge_hub_wococo_config::OnBridgeHubWococoBlobDispatcher, xcm_config::XcmRouter,
+	bridge_hub_wococo_config::OnBridgeHubWococoBlobDispatcher,
+	xcm_config::XcmRouter,
 };
 use parachains_common::{AccountId, Signature};
 use xcm::latest::prelude::BodyId;
@@ -565,22 +565,21 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 	type MaxUnconfirmedMessagesAtInboundLane =
 		bridge_hub_rococo_config::MaxUnconfirmedMessagesAtInboundLane;
 
-	type MaximalOutboundPayloadSize = ();
+	type MaximalOutboundPayloadSize = bridge_hub_rococo_config::ToBridgeHubWococoMaximalOutboundPayloadSize;
 	type OutboundPayload = XcmAsPlainPayload;
-	type OutboundMessageFee = crate::Balance; /* bp_bridge_hub_rococo::Balance */
+	type OutboundMessageFee = Balance;
 
 	type InboundPayload = XcmAsPlainPayload;
-	type InboundMessageFee = crate::Balance; /* bp_bridge_hub_wococo::Balance */
-	type InboundRelayer = crate::AccountId; /* bp_bridge_hub_wococo::AccountId */
+	type InboundMessageFee = Balance;
+	type InboundRelayer = AccountId;
 
-	type TargetHeaderChain = bridge_config::BridgeHubWococoMessagingSupport;
-	type LaneMessageVerifier = bridge_config::ToBridgeHubWococoMessageVerifier<Self::Origin, bp_bridge_hub_rococo::BridgeHubRococo>;
-	// TODO:check-parameter - add because of rewards?
+	type TargetHeaderChain = bridge_hub_rococo_config::BridgeHubWococo;
+	type LaneMessageVerifier = bridge_hub_rococo_config::ToBridgeHubWococoMessageVerifier;
 	type MessageDeliveryAndDispatchPayment = ();
 	type OnMessageAccepted = ();
 	type OnDeliveryConfirmed = ();
 
-	type SourceHeaderChain = bridge_config::BridgeHubWococoMessagingSupport;
+	type SourceHeaderChain = bridge_hub_rococo_config::BridgeHubWococo;
 	type MessageDispatch = XcmBlobMessageDispatch<
 		bp_bridge_hub_wococo::BridgeHubWococo,
 		bp_bridge_hub_rococo::BridgeHubRococo,
@@ -602,22 +601,21 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 	type MaxUnconfirmedMessagesAtInboundLane =
 		bridge_hub_wococo_config::MaxUnconfirmedMessagesAtInboundLane;
 
-	type MaximalOutboundPayloadSize = ();
+	type MaximalOutboundPayloadSize = bridge_hub_wococo_config::ToBridgeHubRococoMaximalOutboundPayloadSize;
 	type OutboundPayload = XcmAsPlainPayload;
-	type OutboundMessageFee = crate::Balance; /* bp_bridge_hub_wococo::Balance */
+	type OutboundMessageFee = Balance;
 
 	type InboundPayload = XcmAsPlainPayload;
-	type InboundMessageFee = crate::Balance; /* bp_bridge_hub_rococo::Balance */
-	type InboundRelayer = crate::AccountId; /* bp_bridge_hub_rococo::AccountId */
+	type InboundMessageFee = Balance;
+	type InboundRelayer = AccountId;
 
-	type TargetHeaderChain = bridge_config::BridgeHubRococoMessagingSupport;
-	type LaneMessageVerifier = bridge_config::ToBridgeHubRococoMessageVerifier<Self::Origin, bp_bridge_hub_wococo::BridgeHubWococo>;
-	// TODO:check-parameter - add because of rewards?
+	type TargetHeaderChain = bridge_hub_wococo_config::BridgeHubRococo;
+	type LaneMessageVerifier = bridge_hub_wococo_config::ToBridgeHubRococoMessageVerifier;
 	type MessageDeliveryAndDispatchPayment = ();
 	type OnMessageAccepted = ();
 	type OnDeliveryConfirmed = ();
 
-	type SourceHeaderChain = bridge_config::BridgeHubRococoMessagingSupport;
+	type SourceHeaderChain = bridge_hub_wococo_config::BridgeHubRococo;
 	type MessageDispatch = XcmBlobMessageDispatch<
 		bp_bridge_hub_rococo::BridgeHubRococo,
 		bp_bridge_hub_wococo::BridgeHubWococo,

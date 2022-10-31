@@ -55,7 +55,7 @@ impl<
 		message: &mut DispatchMessage<Self::DispatchPayload, BalanceOf<TargetBridgeHubChain>>,
 	) -> Weight {
 		log::error!(
-			"[XcmBlobMessageDispatch] TODO: change here to XCMv3 dispatch_weight with XcmExecutor"
+			"[XcmBlobMessageDispatch] TODO: change here to XCMv3 dispatch_weight with XcmExecutor - message: ?...?",
 		);
 		0
 	}
