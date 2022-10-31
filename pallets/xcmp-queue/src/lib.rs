@@ -275,6 +275,7 @@ pub mod pallet {
 		/// Bad XCM format used.
 		BadFormat { message_hash: Option<XcmHash> },
 		/// An HRMP message was sent to a sibling parachain.
+		XcmpMessageSent { message_hash: Option<XcmHash> },
 		/// An XCM exceeded the individual message weight budget.
 		OverweightEnqueued {
 			sender: ParaId,
