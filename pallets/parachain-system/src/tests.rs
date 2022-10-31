@@ -69,12 +69,12 @@ parameter_types! {
 		state_version: 1,
 	};
 	pub const ParachainId: ParaId = ParaId::new(200);
-	pub const ReservedXcmpWeight: Weight = 0;
-	pub const ReservedDmpWeight: Weight = 0;
+	pub const ReservedXcmpWeight: Weight = Weight::zero();
+	pub const ReservedDmpWeight: Weight = Weight::zero();
 }
 impl frame_system::Config for Test {
-	type Origin = Origin;
-	type Call = Call;
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeCall = RuntimeCall;
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
@@ -82,7 +82,7 @@ impl frame_system::Config for Test {
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
 	type BlockWeights = ();
@@ -99,7 +99,7 @@ impl frame_system::Config for Test {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 impl Config for Test {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = ParachainId;
 	type OutboundXcmpMessageSource = FromThreadLocal;
@@ -107,6 +107,7 @@ impl Config for Test {
 	type ReservedDmpWeight = ReservedDmpWeight;
 	type XcmpMessageHandler = SaveIntoThreadLocal;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
+	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
 pub struct FromThreadLocal;
@@ -154,7 +155,7 @@ impl DmpMessageHandler for SaveIntoThreadLocal {
 			for i in iter {
 				m.borrow_mut().push(i);
 			}
-			0
+			Weight::zero()
 		})
 	}
 }
@@ -168,7 +169,7 @@ impl XcmpMessageHandler for SaveIntoThreadLocal {
 			for (sender, sent_at, message) in iter {
 				m.borrow_mut().push((sender, sent_at, message.to_vec()));
 			}
-			0
+			Weight::zero()
 		})
 	}
 }
@@ -226,8 +227,7 @@ struct BlockTests {
 	ran: bool,
 	relay_sproof_builder_hook:
 		Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut RelayStateSproofBuilder)>>,
-	persisted_validation_data_hook:
-		Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut PersistedValidationData)>>,
+	persisted_validation_data_hook: Option<Box<dyn Fn(&BlockTests, &mut PersistedValidationData)>>,
 	inherent_data_hook:
 		Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut ParachainInherentData)>>,
 }
@@ -274,10 +274,9 @@ impl BlockTests {
 		self
 	}
 
-	#[allow(dead_code)] // might come in handy in future. If now is future and it still hasn't - feel free.
 	fn with_validation_data<F>(mut self, f: F) -> Self
 	where
-		F: 'static + Fn(&BlockTests, RelayChainBlockNumber, &mut PersistedValidationData),
+		F: 'static + Fn(&BlockTests, &mut PersistedValidationData),
 	{
 		self.persisted_validation_data_hook = Some(Box::new(f));
 		self
@@ -319,7 +318,7 @@ impl BlockTests {
 					..Default::default()
 				};
 				if let Some(ref hook) = self.persisted_validation_data_hook {
-					hook(self, *n as RelayChainBlockNumber, &mut vfp);
+					hook(self, &mut vfp);
 				}
 
 				<ValidationData<Test>>::put(&vfp);
@@ -404,7 +403,7 @@ fn events() {
 				let events = System::events();
 				assert_eq!(
 					events[0].event,
-					Event::ParachainSystem(crate::Event::ValidationFunctionStored.into())
+					RuntimeEvent::ParachainSystem(crate::Event::ValidationFunctionStored.into())
 				);
 			},
 		)
@@ -415,7 +414,10 @@ fn events() {
 				let events = System::events();
 				assert_eq!(
 					events[0].event,
-					Event::ParachainSystem(crate::Event::ValidationFunctionApplied(1234).into())
+					RuntimeEvent::ParachainSystem(
+						crate::Event::ValidationFunctionApplied { relay_chain_block_num: 1234 }
+							.into()
+					)
 				);
 			},
 		);
@@ -488,7 +490,7 @@ fn aborted_upgrade() {
 				let events = System::events();
 				assert_eq!(
 					events[0].event,
-					Event::ParachainSystem(crate::Event::ValidationFunctionDiscarded.into())
+					RuntimeEvent::ParachainSystem(crate::Event::ValidationFunctionDiscarded.into())
 				);
 			},
 		);
@@ -960,4 +962,15 @@ fn receive_hrmp_after_pause() {
 				m.clear();
 			});
 		});
+}
+
+#[test]
+#[should_panic = "Relay chain block number needs to strictly increase between Parachain blocks!"]
+fn test() {
+	BlockTests::new()
+		.with_validation_data(|_, data| {
+			data.relay_parent_number = 1;
+		})
+		.add(1, || {})
+		.add(2, || {});
 }

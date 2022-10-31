@@ -67,14 +67,14 @@ where
 	assert!(parent_head.hash() == *block.header().parent_hash(), "Invalid parent hash",);
 
 	// Create the db
-	let (db, _root) = match storage_proof.to_memory_db(Some(parent_head.state_root())) {
-		Ok((db, root)) => (db, root),
+	let db = match storage_proof.to_memory_db(Some(parent_head.state_root())) {
+		Ok((db, _)) => db,
 		Err(_) => panic!("Compact proof decoding failure."),
 	};
 
 	sp_std::mem::drop(storage_proof);
 
-	let backend = sp_state_machine::TrieBackend::new(db, *parent_head.state_root());
+	let backend = sp_state_machine::TrieBackendBuilder::new(db, *parent_head.state_root()).build();
 
 	let _guard = (
 		// Replace storage calls with our own implementations
@@ -118,6 +118,11 @@ where
 	let inherent_data = block
 		.extrinsics()
 		.iter()
+		// Inherents are at the front of the block and are unsigned.
+		//
+		// If `is_signed` is returning `None`, we keep it safe and assume that it is "signed".
+		// We are searching for unsigned transactions anyway.
+		.take_while(|e| !e.is_signed().unwrap_or(true))
 		.filter_map(|e| e.call().is_sub_type())
 		.find_map(|c| match c {
 			crate::Call::set_validation_data { data: validation_data } =>
@@ -205,8 +210,8 @@ fn host_storage_set(key: &[u8], value: &[u8]) {
 	with_externalities(|ext| ext.place_storage(key.to_vec(), Some(value.to_vec())))
 }
 
-fn host_storage_get(key: &[u8]) -> Option<Vec<u8>> {
-	with_externalities(|ext| ext.storage(key).clone())
+fn host_storage_get(key: &[u8]) -> Option<bytes::Bytes> {
+	with_externalities(|ext| ext.storage(key).map(|value| value.into()))
 }
 
 fn host_storage_exists(key: &[u8]) -> bool {
@@ -222,13 +227,7 @@ fn host_storage_root(version: StateVersion) -> Vec<u8> {
 }
 
 fn host_storage_clear_prefix(prefix: &[u8], limit: Option<u32>) -> KillStorageResult {
-	with_externalities(|ext| {
-		let (all_removed, num_removed) = ext.clear_prefix(prefix, limit);
-		match all_removed {
-			true => KillStorageResult::AllRemoved(num_removed),
-			false => KillStorageResult::SomeRemaining(num_removed),
-		}
-	})
+	with_externalities(|ext| ext.clear_prefix(prefix, limit, None).into())
 }
 
 fn host_storage_append(key: &[u8], value: Vec<u8>) {
@@ -294,13 +293,7 @@ fn host_default_child_storage_storage_kill(
 	limit: Option<u32>,
 ) -> KillStorageResult {
 	let child_info = ChildInfo::new_default(storage_key);
-	with_externalities(|ext| {
-		let (all_removed, num_removed) = ext.kill_child_storage(&child_info, limit);
-		match all_removed {
-			true => KillStorageResult::AllRemoved(num_removed),
-			false => KillStorageResult::SomeRemaining(num_removed),
-		}
-	})
+	with_externalities(|ext| ext.kill_child_storage(&child_info, limit, None).into())
 }
 
 fn host_default_child_storage_exists(storage_key: &[u8], key: &[u8]) -> bool {
@@ -314,13 +307,7 @@ fn host_default_child_storage_clear_prefix(
 	limit: Option<u32>,
 ) -> KillStorageResult {
 	let child_info = ChildInfo::new_default(storage_key);
-	with_externalities(|ext| {
-		let (all_removed, num_removed) = ext.clear_child_prefix(&child_info, prefix, limit);
-		match all_removed {
-			true => KillStorageResult::AllRemoved(num_removed),
-			false => KillStorageResult::SomeRemaining(num_removed),
-		}
-	})
+	with_externalities(|ext| ext.clear_child_prefix(&child_info, prefix, limit, None).into())
 }
 
 fn host_default_child_storage_root(storage_key: &[u8], version: StateVersion) -> Vec<u8> {

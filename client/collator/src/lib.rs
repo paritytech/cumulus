@@ -359,6 +359,7 @@ pub async fn start_collator<Block, RA, BS, Spawner>(
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use async_trait::async_trait;
 	use cumulus_client_consensus_common::ParachainCandidate;
 	use cumulus_test_client::{
 		Client, ClientBlockImportExt, DefaultTestClientBuilderExt, InitBlockBuilder,
@@ -374,8 +375,10 @@ mod tests {
 	use sp_state_machine::Backend;
 
 	struct AlwaysSupportsParachains;
+
+	#[async_trait]
 	impl HeadSupportsParachains for AlwaysSupportsParachains {
-		fn head_supports_parachains(&self, _head: &PHash) -> bool {
+		async fn head_supports_parachains(&self, _head: &PHash) -> bool {
 			true
 		}
 	}
@@ -478,8 +481,8 @@ mod tests {
 			.0
 			.into_memory_db();
 
-		let backend =
-			sp_state_machine::new_in_mem::<BlakeTwo256>().update_backend(*header.state_root(), db);
+		let backend = sp_state_machine::new_in_mem_hash_key::<BlakeTwo256>()
+			.update_backend(*header.state_root(), db);
 
 		// Should return an error, as it was not included while building the proof.
 		assert!(backend

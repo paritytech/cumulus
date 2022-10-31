@@ -27,7 +27,7 @@ use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, UsageProvider,
 };
 use sc_consensus::{
-	import_queue::{ImportQueue, IncomingBlock, Link, Origin},
+	import_queue::{ImportQueue, IncomingBlock, Link, RuntimeOrigin},
 	BlockImport,
 };
 use sc_service::{Configuration, TaskManager};
@@ -40,8 +40,6 @@ use sp_runtime::{
 	Justifications,
 };
 use std::{sync::Arc, time::Duration};
-
-pub mod genesis;
 
 /// Parameters given to [`start_collator`].
 pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, RCInterface, Spawner, IQ> {
@@ -127,9 +125,8 @@ where
 	task_manager
 		.spawn_essential_handle()
 		.spawn("cumulus-pov-recovery", None, pov_recovery.run());
-
 	cumulus_client_collator::start_collator(cumulus_client_collator::StartCollatorParams {
-		runtime_api: client.clone(),
+		runtime_api: client,
 		block_status,
 		announce_block,
 		overseer_handle,
@@ -220,9 +217,9 @@ where
 			min: relay_chain_slot_duration * 25,
 			max: relay_chain_slot_duration * 50,
 		},
-		client.clone(),
+		client,
 		import_queue,
-		relay_chain_interface.clone(),
+		relay_chain_interface,
 		para_id,
 	);
 
@@ -263,7 +260,7 @@ impl<Block: BlockT> ImportQueue<Block> for SharedImportQueue<Block> {
 
 	fn import_justifications(
 		&mut self,
-		who: Origin,
+		who: RuntimeOrigin,
 		hash: Block::Hash,
 		number: NumberFor<Block>,
 		justifications: Justifications,

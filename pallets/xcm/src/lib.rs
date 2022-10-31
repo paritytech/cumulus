@@ -27,7 +27,7 @@ use cumulus_primitives_core::{
 use frame_support::dispatch::Weight;
 pub use pallet::*;
 use scale_info::TypeInfo;
-use sp_runtime::traits::BadOrigin;
+use sp_runtime::{traits::BadOrigin, RuntimeDebug};
 use sp_std::{convert::TryFrom, prelude::*};
 use xcm::{
 	latest::{ExecuteXcm, Outcome, Parent, Xcm},
@@ -48,9 +48,9 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		type XcmExecutor: ExecuteXcm<Self::Call>;
+		type XcmExecutor: ExecuteXcm<Self::RuntimeCall>;
 	}
 
 	#[pallet::error]
@@ -77,8 +77,7 @@ pub mod pallet {
 	}
 
 	/// Origin for the parachains module.
-	#[derive(PartialEq, Eq, Clone, Encode, Decode, TypeInfo)]
-	#[cfg_attr(feature = "std", derive(Debug))]
+	#[derive(PartialEq, Eq, Clone, Encode, Decode, TypeInfo, RuntimeDebug, MaxEncodedLen)]
 	#[pallet::origin]
 	pub enum Origin {
 		/// It comes from the (parent) relay chain.
@@ -112,20 +111,20 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 		iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
 		limit: Weight,
 	) -> Weight {
-		let mut used = 0;
+		let mut used = Weight::zero();
 		for (_sent_at, data) in iter {
 			let id = sp_io::hashing::blake2_256(&data[..]);
-			let msg = VersionedXcm::<T::Call>::decode_all_with_depth_limit(
+			let msg = VersionedXcm::<T::RuntimeCall>::decode_all_with_depth_limit(
 				MAX_XCM_DECODE_DEPTH,
 				&mut data.as_slice(),
 			)
-			.map(Xcm::<T::Call>::try_from);
+			.map(Xcm::<T::RuntimeCall>::try_from);
 			match msg {
 				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
 				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
-					let outcome = T::XcmExecutor::execute_xcm(Parent, x, id, limit);
-					used += outcome.weight_used();
+					let outcome = T::XcmExecutor::execute_xcm(Parent, x, id, limit.ref_time());
+					used += Weight::from_ref_time(outcome.weight_used());
 					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				},
 			}
@@ -145,21 +144,22 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 		iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
 		limit: Weight,
 	) -> Weight {
-		let mut used = 0;
+		let mut used = Weight::zero();
 		for (_sent_at, data) in iter {
 			let id = sp_io::hashing::blake2_256(&data[..]);
-			let msg = VersionedXcm::<T::Call>::decode_all_with_depth_limit(
+			let msg = VersionedXcm::<T::RuntimeCall>::decode_all_with_depth_limit(
 				MAX_XCM_DECODE_DEPTH,
 				&mut data.as_slice(),
 			)
-			.map(Xcm::<T::Call>::try_from);
+			.map(Xcm::<T::RuntimeCall>::try_from);
 			match msg {
 				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
 				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
 					let weight_limit = limit.saturating_sub(used);
-					let outcome = T::XcmExecutor::execute_xcm(Parent, x, id, weight_limit);
-					used += outcome.weight_used();
+					let outcome =
+						T::XcmExecutor::execute_xcm(Parent, x, id, weight_limit.ref_time());
+					used += Weight::from_ref_time(outcome.weight_used());
 					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				},
 			}
