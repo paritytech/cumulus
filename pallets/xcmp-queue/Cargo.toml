@@ -18,9 +18,9 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", default-features
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.31" }
 
 # Polkadot
-polkadot-runtime-common = { git = "https://github.com/arturgontijo/polkadot", default-features = false, branch = "trappist-xcm-v3-0931" }
-xcm = { git = "https://github.com/arturgontijo/polkadot", default-features = false, branch = "trappist-xcm-v3-0931" }
-xcm-executor = { git = "https://github.com/arturgontijo/polkadot", default-features = false, branch = "trappist-xcm-v3-0931" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "trappist-xcm-v3" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "trappist-xcm-v3" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "trappist-xcm-v3" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
@@ -36,7 +36,7 @@ sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.31" }
 
 # Polkadot
-xcm-builder = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "trappist-xcm-v3" }
 
 # Cumulus
 cumulus-pallet-parachain-system = { path = "../parachain-system" }
