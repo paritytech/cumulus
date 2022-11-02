@@ -31,7 +31,10 @@ use frame_support::{
 use polkadot_runtime_common::xcm_sender::ConstantPrice;
 use sp_runtime::{traits::Saturating, SaturatedConversion};
 use sp_std::{marker::PhantomData, prelude::*};
-use xcm::{latest::prelude::*, WrapVersion};
+use xcm::{
+	latest::{prelude::*, Weight as XCMWeight},
+	WrapVersion,
+};
 use xcm_builder::TakeRevenue;
 use xcm_executor::traits::{MatchesFungibles, TransactAsset, WeightTrader};
 
@@ -72,10 +75,10 @@ where
 		msg: &mut Option<Xcm<()>>,
 	) -> SendResult<Vec<u8>> {
 		let d = dest.take().ok_or(SendError::MissingArgument)?;
-		let xcm = msg.take().ok_or(SendError::MissingArgument)?;
 
 		if d.contains_parents_only(1) {
 			// An upward message for the relay chain.
+			let xcm = msg.take().ok_or(SendError::MissingArgument)?;
 			let price = P::price_for_parent_delivery(&xcm);
 			let versioned_xcm =
 				W::wrap_version(&d, xcm).map_err(|()| SendError::DestinationUnsupported)?;
@@ -83,9 +86,9 @@ where
 
 			Ok((data, price))
 		} else {
+			// Anything else is unhandled. This includes a message that is not meant for us.
+			// We need to make sure that dest/msg is not consumed here.
 			*dest = Some(d);
-			*msg = Some(xcm);
-			// Anything else is unhandled. This includes a message this is meant for us.
 			Err(SendError::NotApplicable)
 		}
 	}
@@ -148,7 +151,7 @@ impl<
 	// If everything goes well, we charge.
 	fn buy_weight(
 		&mut self,
-		weight: Weight,
+		weight: XCMWeight,
 		payment: xcm_executor::Assets,
 	) -> Result<xcm_executor::Assets, XcmError> {
 		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::buy_weight weight: {:?}, payment: {:?}", weight, payment);
@@ -157,6 +160,8 @@ impl<
 		if self.0.is_some() {
 			return Err(XcmError::NotWithdrawable)
 		}
+
+		let weight = Weight::from_ref_time(weight);
 
 		// We take the very first multiasset from payment
 		let multiassets: MultiAssets = payment.clone().into();
@@ -198,14 +203,14 @@ impl<
 		Ok(unused)
 	}
 
-	fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
+	fn refund_weight(&mut self, weight: XCMWeight) -> Option<MultiAsset> {
 		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::refund_weight weight: {:?}", weight);
 		if let Some(AssetTraderRefunder {
 			mut weight_outstanding,
 			outstanding_concrete_asset: MultiAsset { id, fun },
 		}) = self.0.clone()
 		{
-			let weight = weight.min(weight_outstanding);
+			let weight = Weight::from_ref_time(weight).min(weight_outstanding);
 
 			// Get the local asset id in which we can refund fees
 			let (local_asset_id, outstanding_balance) =
@@ -293,6 +298,8 @@ impl<
 			let ok = FungiblesMutateAdapter::deposit_asset(
 				&revenue,
 				&(X1(AccountId32 { network: None, id: receiver.into() }).into()),
+				// We aren't able to track the XCM that initiated the fee deposit, so we create a
+				// fake message hash here
 				&XcmContext::with_message_hash([0; 32]),
 			)
 			.is_ok();
@@ -310,4 +317,105 @@ pub trait ChargeWeightInFungibles<AccountId, Assets: fungibles::Inspect<AccountI
 		asset_id: <Assets as Inspect<AccountId>>::AssetId,
 		weight: Weight,
 	) -> Result<<Assets as Inspect<AccountId>>::Balance, XcmError>;
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use cumulus_primitives_core::UpwardMessage;
+
+	/// Validates [`validate`] for required Some(destination) and Some(message)
+	struct OkFixedXcmHashWithAssertingRequiredInputsSender;
+	impl OkFixedXcmHashWithAssertingRequiredInputsSender {
+		const FIXED_XCM_HASH: [u8; 32] = [9; 32];
+
+		fn fixed_delivery_asset() -> MultiAssets {
+			MultiAssets::new()
+		}
+
+		fn expected_delivery_result() -> Result<(XcmHash, MultiAssets), SendError> {
+			Ok((Self::FIXED_XCM_HASH, Self::fixed_delivery_asset()))
+		}
+	}
+	impl SendXcm for OkFixedXcmHashWithAssertingRequiredInputsSender {
+		type Ticket = ();
+
+		fn validate(
+			destination: &mut Option<MultiLocation>,
+			message: &mut Option<Xcm<()>>,
+		) -> SendResult<Self::Ticket> {
+			assert!(destination.is_some());
+			assert!(message.is_some());
+			Ok(((), OkFixedXcmHashWithAssertingRequiredInputsSender::fixed_delivery_asset()))
+		}
+
+		fn deliver(_: Self::Ticket) -> Result<XcmHash, SendError> {
+			Ok(Self::FIXED_XCM_HASH)
+		}
+	}
+
+	/// Impl [`UpwardMessageSender`] that return `Other` error
+	struct OtherErrorUpwardMessageSender;
+	impl UpwardMessageSender for OtherErrorUpwardMessageSender {
+		fn send_upward_message(_: UpwardMessage) -> Result<u32, MessageSendError> {
+			Err(MessageSendError::Other)
+		}
+	}
+
+	#[test]
+	fn parent_as_ump_does_not_consume_dest_or_msg_on_not_applicable() {
+		// dummy message
+		let message = Xcm(vec![Trap(5)]);
+
+		// ParentAsUmp - check dest is really not applicable
+		let dest = (Parent, Parent, Parent);
+		let mut dest_wrapper = Some(dest.clone().into());
+		let mut msg_wrapper = Some(message.clone());
+		assert_eq!(
+			Err(SendError::NotApplicable),
+			<ParentAsUmp<(), (), ()> as SendXcm>::validate(&mut dest_wrapper, &mut msg_wrapper)
+		);
+
+		// check wrapper were not consumed
+		assert_eq!(Some(dest.clone().into()), dest_wrapper.take());
+		assert_eq!(Some(message.clone()), msg_wrapper.take());
+
+		// another try with router chain with asserting sender
+		assert_eq!(
+			OkFixedXcmHashWithAssertingRequiredInputsSender::expected_delivery_result(),
+			send_xcm::<(ParentAsUmp<(), (), ()>, OkFixedXcmHashWithAssertingRequiredInputsSender)>(
+				dest.into(),
+				message
+			)
+		);
+	}
+
+	#[test]
+	fn parent_as_ump_consumes_dest_and_msg_on_ok_validate() {
+		// dummy message
+		let message = Xcm(vec![Trap(5)]);
+
+		// ParentAsUmp - check dest/msg is valid
+		let dest = (Parent, Here);
+		let mut dest_wrapper = Some(dest.clone().into());
+		let mut msg_wrapper = Some(message.clone());
+		assert!(<ParentAsUmp<(), (), ()> as SendXcm>::validate(
+			&mut dest_wrapper,
+			&mut msg_wrapper
+		)
+		.is_ok());
+
+		// check wrapper were consumed
+		assert_eq!(None, dest_wrapper.take());
+		assert_eq!(None, msg_wrapper.take());
+
+		// another try with router chain with asserting sender
+		assert_eq!(
+			Err(SendError::Transport("Other")),
+			send_xcm::<(
+				ParentAsUmp<OtherErrorUpwardMessageSender, (), ()>,
+				OkFixedXcmHashWithAssertingRequiredInputsSender
+			)>(dest.into(), message)
+		);
+	}
 }
