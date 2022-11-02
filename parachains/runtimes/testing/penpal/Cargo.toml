@@ -1,6 +1,6 @@
 [package]
 name = "penpal-runtime"
-version = "0.9.27"
+version = "0.9.31"
 authors = ["Anonymous"]
 description = "A parachain for communication back and forth with XCM of assets and uniques."
 license = "Unlicense"
@@ -39,6 +39,7 @@ pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", 
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.31" }
 pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.31" }
 pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.31" }
+pallet-uniques = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.31" }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.31" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.31" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.31" }
@@ -104,6 +105,7 @@ std = [
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 	"pallet-assets/std",
+	"pallet-uniques/std",
 	"pallet-asset-tx-payment/std",
 	"pallet-xcm/std",
 	"polkadot-primitives/std",
@@ -112,6 +114,7 @@ std = [
 	"polkadot-runtime-common/std",
 	"sp-api/std",
 	"sp-block-builder/std",
+	"sp-consensus-aura/std",
 	"sp-consensus-aura/std",
 	"sp-core/std",
 	"sp-inherents/std",
