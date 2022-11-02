@@ -22,9 +22,9 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkad
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.31" }
 
 # Polkadot
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", default-features = false, features = ["cli"] , branch = "release-v0.9.31" }
-polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
+polkadot-cli = { git = "https://github.com/arturgontijo/polkadot", default-features = false, features = ["cli"] , branch = "trappist-xcm-v3-0931" }
+polkadot-client = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
+polkadot-service = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core" }
@@ -36,8 +36,8 @@ cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.31" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
-polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
+polkadot-primitives = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
+polkadot-test-client = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
 metered = { package = "prioritized-metered-channel", version = "0.2.0" }
 
 # Cumulus

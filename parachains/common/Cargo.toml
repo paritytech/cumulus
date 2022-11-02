@@ -13,6 +13,7 @@ codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive
 scale-info = { version = "2.2.0", default-features = false, features = ["derive"] }
 
 # Substrate
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.31" }
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.31" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.31" }
 pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.31" }
@@ -26,9 +27,11 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", default-features
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.31" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.31" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.31" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.31" }
+polkadot-primitives = { git = "https://github.com/arturgontijo/polkadot", default-features = false, branch = "trappist-xcm-v3-0931" }
+polkadot-runtime-common = { git = "https://github.com/arturgontijo/polkadot", default-features = false, branch = "trappist-xcm-v3-0931" }
+xcm = { git = "https://github.com/arturgontijo/polkadot", default-features = false, branch = "trappist-xcm-v3-0931" }
+xcm-executor = { git = "https://github.com/arturgontijo/polkadot", default-features = false, branch = "trappist-xcm-v3-0931" }
+xcm-builder = { git = "https://github.com/arturgontijo/polkadot", default-features = false, branch = "trappist-xcm-v3-0931" }
 
 # Cumulus
 pallet-collator-selection = { path = "../../pallets/collator-selection", default-features = false }
@@ -44,6 +47,9 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 [features]
 default = ["std"]
 std = [
+	"codec/std",
+	"scale-info/std",
+	"frame-executive/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-asset-tx-payment/std",
@@ -51,6 +57,7 @@ std = [
 	"pallet-authorship/std",
 	"pallet-balances/std",
 	"polkadot-primitives/std",
+	"polkadot-runtime-common/std",
 	"sp-consensus-aura/std",
 	"sp-io/std",
 	"sp-std/std",
@@ -58,4 +65,5 @@ std = [
 	"cumulus-primitives-utility/std",
 	"xcm/std",
 	"xcm-executor/std",
+	"xcm-builder/std"
 ]

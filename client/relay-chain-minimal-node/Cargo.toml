@@ -6,15 +6,15 @@ edition = "2021"
 
 [dependencies]
 # polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
-polkadot-node-subsystem-util = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
-polkadot-node-network-protocol = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
-polkadot-network-bridge = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
-polkadot-node-core-av-store = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
-polkadot-availability-distribution = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
+polkadot-primitives = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
+polkadot-core-primitives = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
+polkadot-overseer = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
+polkadot-service = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
+polkadot-node-subsystem-util = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
+polkadot-node-network-protocol = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
+polkadot-network-bridge = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
+polkadot-node-core-av-store = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
+polkadot-availability-distribution = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
 
 # substrate deps
 sc-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.31" }

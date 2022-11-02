@@ -66,10 +66,10 @@ frame-rpc-system = { package = "substrate-frame-rpc-system", git = "https://gith
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.31" }
 
 # Polkadot
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
+polkadot-cli = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
+polkadot-primitives = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
+polkadot-service = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
+xcm = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3-0931" }
 
 # Cumulus
 cumulus-client-cli = { path = "../client/cli" }
@@ -95,7 +95,7 @@ tempfile = "3.3.0"
 tokio = { version = "1.21.2", features = ["macros", "time", "parking_lot"] }
 wait-timeout = "0.2"
 # purge_chain_works works with rococo-local and needs to allow this
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", features = ["rococo-native"] , branch = "release-v0.9.31" }
+polkadot-cli = { git = "https://github.com/arturgontijo/polkadot", features = ["rococo-native"] , branch = "trappist-xcm-v3-0931" }
 
 [features]
 default = []
