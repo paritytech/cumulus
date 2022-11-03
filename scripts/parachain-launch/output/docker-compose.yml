@@ -1,0 +1,92 @@
+version: "3.7"
+services:
+  relaychain-alice:
+    ports:
+      - 9944:9944
+      - 9933:9933
+      - 30333:30333
+    volumes:
+      - relaychain-alice:/data
+    build:
+      context: .
+      dockerfile: relaychain.Dockerfile
+    command:
+      - --base-path=/data
+      - --chain=/app/rococo-local.json
+      - --validator
+      - --ws-external
+      - --rpc-external
+      - --rpc-cors=all
+      - --name=alice
+      - --alice
+      - --rpc-methods=unsafe
+      - --wasm-execution=compiled
+      - --execution=wasm
+    environment:
+      RUST_LOG: parachain::candidate-backing=trace,parachain::candidate-selection=trace,parachain::pvf=debug,parachain::provisioner=trace
+    ulimits:
+      &a1
+      nofile:
+        soft: 65536
+        hard: 65536
+  relaychain-bob:
+    ports:
+      - 9945:9944
+      - 9934:9933
+      - 30334:30333
+    volumes:
+      - relaychain-bob:/data
+    build:
+      context: .
+      dockerfile: relaychain.Dockerfile
+    command:
+      - --base-path=/data
+      - --chain=/app/rococo-local.json
+      - --validator
+      - --ws-external
+      - --rpc-external
+      - --rpc-cors=all
+      - --name=bob
+      - --bob
+      - --rpc-methods=unsafe
+      - --wasm-execution=compiled
+      - --execution=wasm
+    environment:
+      RUST_LOG: parachain::candidate-backing=trace,parachain::candidate-selection=trace,parachain::pvf=debug,parachain::provisioner=trace
+    ulimits: *a1
+  parachain-2000-0:
+    ports:
+      - 9946:9944
+      - 9935:9933
+      - 30335:30333
+    volumes:
+      - parachain-2000-0:/data
+    build:
+      context: .
+      dockerfile: parachain-2000.Dockerfile
+    command:
+      - --base-path=/data
+      - --chain=/app/statemine-local-2000.json
+      - --ws-external
+      - --rpc-external
+      - --rpc-cors=all
+      - --name=parachain-2000-0
+      - --collator
+      - --rpc-methods=unsafe
+      - --force-authoring
+      - --wasm-execution=compiled
+      - --execution=wasm
+      - --alice
+      - --node-key=15c931b2a198ea9bcb8170d41e4d838e11300d7b678f0e23c4f6b1e50977e4ef
+      - --listen-addr=/ip4/0.0.0.0/tcp/30333
+      - --
+      - --chain=/app/rococo-local.json
+      - --wasm-execution=compiled
+      - --execution=wasm
+    environment:
+      RUST_LOG: sc_basic_authorship=trace,cumulus-consensus=trace,cumulus-collator=trace,collator_protocol=trace,collation_generation=trace,aura=debug
+    ulimits: *a1
+volumes:
+  relaychain-alice: null
+  relaychain-bob: null
+  parachain-2000-0: null
