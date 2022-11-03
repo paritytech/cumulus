@@ -23,8 +23,8 @@
 //! ReserveAssetTransferDeposited message but that will but the intension will be to support this soon.
 use super::{
 	AccountId, AllPalletsWithSystem, AssetId as AssetIdPalletAssets, Assets, Balance, Balances,
-	ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
-	WeightToFee, XcmpQueue, ForeignUniques,
+	ForeignUniques, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall,
+	RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
 use core::marker::PhantomData;
 use frame_support::{
@@ -44,10 +44,10 @@ use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
 	AssetChecking, ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
-	FungiblesAdapter, IsConcrete, MintLocation, NativeAsset, ParentIsPreset, RelayChainAsNative,
-	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
-	NonFungiblesAdapter, NoChecking,
+	FungiblesAdapter, IsConcrete, MintLocation, NativeAsset, NoChecking, NonFungiblesAdapter,
+	ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+	UsingComponents,
 };
 use xcm_executor::{
 	traits::{JustTry, ShouldExecute},
@@ -116,12 +116,7 @@ pub type SovereignAccountOf = (
 
 pub type NonFungiblesTransactor = NonFungiblesAdapter<
 	ForeignUniques,
-	ConvertedConcreteId<
-		MultiLocation,
-		AssetInstance,
-		JustTry,
-		JustTry,
-	>,
+	ConvertedConcreteId<MultiLocation, AssetInstance, JustTry, JustTry>,
 	SovereignAccountOf,
 	AccountId,
 	NoChecking,
@@ -258,12 +253,10 @@ impl<T: Get<(MultiAssetFilter, MultiLocation)>> ContainsPair<MultiAsset, MultiLo
 	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
 		let (_, loc) = T::get();
 		&loc == origin &&
-			(
-				matches!(asset, MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) }
+			(matches!(asset, MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) }
 					if asset_loc.match_and_split(&loc).is_some()) ||
 				matches!(asset, MultiAsset { id: AssetId::Concrete(asset_loc), fun: NonFungible(_a) }
-					if asset_loc.match_and_split(&loc).is_some())
-			)
+					if asset_loc.match_and_split(&loc).is_some()))
 	}
 }
 

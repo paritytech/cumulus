@@ -35,7 +35,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{Everything, EitherOfDiverse, EnsureOrigin, EnsureOriginWithArg},
+	traits::{EitherOfDiverse, EnsureOrigin, EnsureOriginWithArg, Everything},
 	weights::{
 		constants::WEIGHT_PER_SECOND, ConstantMultiplier, Weight, WeightToFeeCoefficient,
 		WeightToFeeCoefficients, WeightToFeePolynomial,
@@ -62,11 +62,8 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use xcm_config::{
-	AssetsToBlockAuthor,
-	XcmConfig,
+	AssetsToBlockAuthor, RelayLocation, SovereignAccountOf, XcmConfig,
 	XcmOriginToTransactDispatchOrigin,
-	RelayLocation,
-	SovereignAccountOf,
 };
 
 #[cfg(any(feature = "std", test))]
@@ -78,10 +75,10 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 // XCM Imports
+use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
 use parachains_common::{AccountId, Signature};
 use xcm::latest::{prelude::*, MultiLocation};
 use xcm_executor::{traits::Convert, XcmExecutor};
-use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
 
 /// Balance of an account.
 pub type Balance = u128;
@@ -421,10 +418,8 @@ parameter_types! {
 	pub const UnitBody: BodyId = BodyId::Unit;
 }
 
-pub type AssetsForceOrigin = EitherOfDiverse<
-	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<RelayLocation, UnitBody>>
->;
+pub type AssetsForceOrigin =
+	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<RelayLocation, UnitBody>>>;
 
 parameter_types! {
 	pub const UniquesMetadataDepositBase: Balance = 100 * UNIT;
@@ -464,10 +459,7 @@ pub struct ForeignCreators;
 impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
 	type Success = AccountId;
 
-	fn try_origin(
-		o: RuntimeOrigin,
-		a: &MultiLocation,
-	) -> Result<Self::Success, RuntimeOrigin> {
+	fn try_origin(o: RuntimeOrigin, a: &MultiLocation) -> Result<Self::Success, RuntimeOrigin> {
 		let origin_location = EnsureXcm::<Everything>::try_origin(o.clone())?;
 		if !a.starts_with(&origin_location) {
 			return Err(o)
