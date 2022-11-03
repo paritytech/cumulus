@@ -44,6 +44,7 @@ pub struct RelayStateSproofBuilder {
 	pub hrmp_channels: BTreeMap<relay_chain::v2::HrmpChannelId, AbridgedHrmpChannel>,
 	pub current_slot: relay_chain::v2::Slot,
 	pub current_epoch: u64,
+	pub randomness: relay_chain::Hash,
 }
 
 impl Default for RelayStateSproofBuilder {
@@ -69,6 +70,7 @@ impl Default for RelayStateSproofBuilder {
 			hrmp_channels: BTreeMap::new(),
 			current_slot: 0.into(),
 			current_epoch: 0u64,
+			randomness: relay_chain::Hash::default(),
 		}
 	}
 }
@@ -102,7 +104,7 @@ impl RelayStateSproofBuilder {
 	) -> (polkadot_primitives::v2::Hash, sp_state_machine::StorageProof) {
 		let (db, root) = MemoryDB::<HashFor<polkadot_primitives::v2::Block>>::default_with_root();
 		let state_version = Default::default(); // for test using default.
-		let mut backend = sp_state_machine::TrieBackend::new(db, root);
+		let mut backend = sp_state_machine::TrieBackendBuilder::new(db, root).build();
 
 		let mut relevant_keys = Vec::new();
 		{
@@ -156,6 +158,10 @@ impl RelayStateSproofBuilder {
 				insert(relay_chain::well_known_keys::hrmp_channels(channel), metadata.encode());
 			}
 			insert(relay_chain::well_known_keys::EPOCH_INDEX.to_vec(), self.current_epoch.encode());
+			insert(
+				relay_chain::well_known_keys::ONE_EPOCH_AGO_RANDOMNESS.to_vec(),
+				self.randomness.encode(),
+			);
 			insert(relay_chain::well_known_keys::CURRENT_SLOT.to_vec(), self.current_slot.encode());
 		}
 

@@ -65,7 +65,7 @@ jobs:
           $CMD >> output.txt
           sed -z -i 's/\n\n/\n/g' output.txt
           cat output.txt | egrep -n -i ''
-          SUMMARY=$(./scripts/ci/extrinsic-ordering-filter.sh output.txt)
+          SUMMARY=$(./scripts/ci/github/extrinsic-ordering-filter.sh output.txt)
           echo -e $SUMMARY
           echo -e $SUMMARY >> output.txt
 
@@ -79,7 +79,7 @@ jobs:
         continue-on-error: true
 
       - name: Save output as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
         with:
           name: ${{ env.CHAIN }}
           path: |

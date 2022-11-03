@@ -2,10 +2,11 @@ use crate::impls::AccountIdOf;
 use core::marker::PhantomData;
 use frame_support::{
 	log,
-	traits::{fungibles::Inspect, tokens::BalanceConversion},
+	traits::{fungibles::Inspect, tokens::BalanceConversion, ContainsPair},
 	weights::{Weight, WeightToFee, WeightToFeePolynomial},
 };
-use xcm::latest::{prelude::*, Instruction};
+use sp_runtime::traits::Get;
+use xcm::latest::{prelude::*, Weight as XCMWeight};
 use xcm_executor::traits::ShouldExecute;
 
 //TODO: move DenyThenTry to polkadot's xcm module.
@@ -21,27 +22,27 @@ where
 	Deny: ShouldExecute,
 	Allow: ShouldExecute,
 {
-	fn should_execute<Call>(
+	fn should_execute<RuntimeCall>(
 		origin: &MultiLocation,
-		instructions: &mut [Instruction<Call>],
-		max_weight: Weight,
-		weight_credit: &mut Weight,
+		message: &mut [Instruction<RuntimeCall>],
+		max_weight: XCMWeight,
+		weight_credit: &mut XCMWeight,
 	) -> Result<(), ()> {
-		Deny::should_execute(origin, instructions, max_weight, weight_credit)?;
-		Allow::should_execute(origin, instructions, max_weight, weight_credit)
+		Deny::should_execute(origin, message, max_weight, weight_credit)?;
+		Allow::should_execute(origin, message, max_weight, weight_credit)
 	}
 }
 
 // See issue #5233
 pub struct DenyReserveTransferToRelayChain;
 impl ShouldExecute for DenyReserveTransferToRelayChain {
-	fn should_execute<Call>(
+	fn should_execute<RuntimeCall>(
 		origin: &MultiLocation,
-		instructions: &mut [Instruction<Call>],
-		_max_weight: Weight,
-		_weight_credit: &mut Weight,
+		message: &mut [Instruction<RuntimeCall>],
+		_max_weight: XCMWeight,
+		_weight_credit: &mut XCMWeight,
 	) -> Result<(), ()> {
-		if instructions.iter().any(|inst| {
+		if message.iter().any(|inst| {
 			matches!(
 				inst,
 				InitiateReserveWithdraw {
@@ -60,7 +61,7 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 		// An unexpected reserve transfer has arrived from the Relay Chain. Generally, `IsReserve`
 		// should not allow this, but we just log it here.
 		if matches!(origin, MultiLocation { parents: 1, interior: Here }) &&
-			instructions.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
+			message.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
 		{
 			log::warn!(
 				target: "xcm::barrier",
@@ -105,5 +106,18 @@ where
 		let asset_amount = BalanceConverter::to_asset_balance(amount, asset_id)
 			.map_err(|_| XcmError::TooExpensive)?;
 		Ok(asset_amount)
+	}
+}
+
+/// Accepts an asset if it is a native asset from a particular `MultiLocation`.
+pub struct ConcreteNativeAssetFrom<Location>(PhantomData<Location>);
+impl<Location: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation>
+	for ConcreteNativeAssetFrom<Location>
+{
+	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+		log::trace!(target: "xcm::filter_asset_location",
+			"ConcreteNativeAsset asset: {:?}, origin: {:?}, location: {:?}",
+			asset, origin, Location::get());
+		matches!(asset.id, Concrete(ref id) if id == origin && origin == &Location::get())
 	}
 }
