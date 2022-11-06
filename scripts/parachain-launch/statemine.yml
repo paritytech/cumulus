@@ -28,11 +28,6 @@ parachains:
   flags:
     - --rpc-methods=unsafe
     - --force-authoring
-    - --wasm-execution=compiled
-    - --execution=wasm
-  relaychainFlags:
-    - --wasm-execution=compiled
-    - --execution=wasm
   env:
     RUST_LOG: sc_basic_authorship=trace,cumulus-consensus=trace,cumulus-collator=trace,collator_protocol=trace,collation_generation=trace,aura=debug
   nodes:
