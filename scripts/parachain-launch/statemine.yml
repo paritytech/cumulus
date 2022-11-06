@@ -10,8 +10,6 @@ relaychain:
     RUST_LOG: parachain::candidate-backing=trace,parachain::candidate-selection=trace,parachain::pvf=debug,parachain::provisioner=trace
   flags:
     - --rpc-methods=unsafe
-    - --wasm-execution=compiled
-    - --execution=wasm
   nodes:
     - name: alice
     - name: bob
