@@ -14,7 +14,7 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 hex-literal = { version = "0.3.4", optional = true }
 log = { version = "0.4.17", default-features = false }
-scale-info = { version = "2.2.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
 smallvec = "1.10.0"
 
 # Substrate
@@ -47,7 +47,7 @@ pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", 
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-contracts = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-contracts = { git = "https://github.com/paritytech/substrate", default-features = false, features = ["unstable-interface"], branch = "master" }
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot
@@ -131,12 +131,6 @@ std = [
 	"cumulus-primitives-utility/std",
 ]
 
-# Make contract callable functions marked as __unstable__ available. Do not enable
-# on live chains as those are subject to change.
-contracts-unstable-interface = [
-	"pallet-contracts/unstable-interface"
-]
-
 runtime-benchmarks = [
 	"hex-literal",
 	"frame-benchmarking/runtime-benchmarks",
@@ -163,7 +157,7 @@ try-runtime = [
 	"cumulus-pallet-xcmp-queue/try-runtime",
 	"frame-executive/try-runtime",
 	"frame-system/try-runtime",
-	"frame-try-runtime",
+	"frame-try-runtime/try-runtime",
 	"pallet-aura/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-balances/try-runtime",

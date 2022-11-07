@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
-scale-info = { version = "2.2.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
 
 # Substrate
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -68,5 +68,5 @@ std = [
 ]
 try-runtime = [
 	"frame-executive/try-runtime",
-	"frame-try-runtime",
+	"frame-try-runtime/try-runtime",
 ]
