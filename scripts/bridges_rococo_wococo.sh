@@ -41,6 +41,19 @@ function register_parachain() {
     # TODO: find the way to do it automatically
 }
 
+function show_node_log_file() {
+    local NAME=$1
+    local WS_PORT=$2
+    local FILE_PATH=$3
+
+    echo ""
+    echo ""
+    echo "  Node(${NAME}): ws-port: ${WS_PORT}"
+    echo "  Logs: ${FILE_PATH}"
+    echo ""
+    echo ""
+}
+
 function check_parachain_collator() {
     local PORT=$1
     local PALLET=$2
@@ -81,7 +94,9 @@ case "$1" in
 
     # Rococo
     ~/local_bridge_testing/bin/polkadot-parachain --chain ~/local_bridge_testing/bridge-hub-rococo-local-raw.json --collator --alice --force-authoring --tmp --port 40333 --rpc-port 8933 --ws-port 8943 --no-mdns --node-key ${COLLATOR_KEY_ALICE[1]} --bootnodes=/ip4/127.0.0.1/tcp/40334/p2p/${COLLATOR_KEY_BOB[0]} -- --execution wasm --chain ~/local_bridge_testing/rococo-local-cfde.json --port 41333 --rpc-port 48933 --ws-port 48943 --no-mdns --node-key ${COLLATOR_KEY_ALICE[1]} --bootnodes=/ip4/127.0.0.1/tcp/30332/p2p/${VALIDATOR_KEY_ALICE[0]} &> ~/local_bridge_testing/logs/rococo_para_alice.log &
+    show_node_log_file alice 8943 ~/local_bridge_testing/logs/rococo_para_alice.log
     ~/local_bridge_testing/bin/polkadot-parachain --chain ~/local_bridge_testing/bridge-hub-rococo-local-raw.json --collator --bob --force-authoring --tmp --port 40334 --rpc-port 8934 --ws-port 8944 --no-mdns --node-key ${COLLATOR_KEY_BOB[1]} --bootnodes=/ip4/127.0.0.1/tcp/40333/p2p/${COLLATOR_KEY_ALICE[0]} -- --execution wasm --chain ~/local_bridge_testing/rococo-local-cfde.json --port 41334 --rpc-port 48934 --ws-port 48944 --no-mdns --node-key ${COLLATOR_KEY_BOB[1]} --bootnodes=/ip4/127.0.0.1/tcp/30333/p2p/${VALIDATOR_KEY_BOB[0]} &> ~/local_bridge_testing/logs/rococo_para_bob.log &
+    show_node_log_file bob 8944 ~/local_bridge_testing/logs/rococo_para_bob.log
 
     register_parachain 9942 1013 ~/local_bridge_testing/bridge-hub-rococo-local-genesis ~/local_bridge_testing/bridge-hub-rococo-local-genesis-wasm
     check_parachain_collator 8943 bridgeWococoGrandpa
@@ -111,14 +126,16 @@ case "$1" in
 
     # Wococo
     ~/local_bridge_testing/bin/polkadot-parachain --chain ~/local_bridge_testing/bridge-hub-wococo-local-raw.json --collator --alice --force-authoring --tmp --port 40335 --rpc-port 8935 --ws-port 8945 --no-mdns --node-key ${COLLATOR_KEY_ALICE[1]} --bootnodes=/ip4/127.0.0.1/tcp/40336/p2p/${COLLATOR_KEY_BOB[0]} -- --execution wasm --chain ~/local_bridge_testing/wococo-local-cfde.json --port 41335 --rpc-port 48935 --ws-port 48945 --no-mdns --node-key ${COLLATOR_KEY_ALICE[1]} --bootnodes=/ip4/127.0.0.1/tcp/30335/p2p/${VALIDATOR_KEY_ALICE[0]} &> ~/local_bridge_testing/logs/wococo_para_alice.log &
+    show_node_log_file alice 8945 ~/local_bridge_testing/logs/wococo_para_alice.log
     ~/local_bridge_testing/bin/polkadot-parachain --chain ~/local_bridge_testing/bridge-hub-wococo-local-raw.json --collator --bob --force-authoring --tmp --port 40336 --rpc-port 8936 --ws-port 8946 --no-mdns --node-key ${COLLATOR_KEY_BOB[1]} --bootnodes=/ip4/127.0.0.1/tcp/40335/p2p/${COLLATOR_KEY_ALICE[0]} -- --execution wasm --chain ~/local_bridge_testing/wococo-local-cfde.json --port 41336 --rpc-port 48936 --ws-port 48946 --no-mdns --node-key ${COLLATOR_KEY_BOB[1]} --bootnodes=/ip4/127.0.0.1/tcp/30336/p2p/${VALIDATOR_KEY_BOB[0]} &> ~/local_bridge_testing/logs/wococo_para_bob.log &
+    show_node_log_file bob 8946 ~/local_bridge_testing/logs/wococo_para_bob.log
 
     register_parachain 9945 1013 ~/local_bridge_testing/bridge-hub-wococo-local-genesis ~/local_bridge_testing/bridge-hub-wococo-local-genesis-wasm
     check_parachain_collator 8945 bridgeRococoGrandpa
     ;;
   init-ro-wo)
     # Init bridge Rococo->Wococo
-    RUST_LOG=runtime=trace,rpc=trace,runtime::bridge=trace \
+    RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
         ~/local_bridge_testing/bin/substrate-relay init-bridge rococo-to-bridge-hub-wococo \
 	--source-host localhost \
 	--source-port 48943 \
@@ -128,7 +145,7 @@ case "$1" in
     ;;
   init-wo-ro)
     # Init bridge Wococo->Rococo
-    RUST_LOG=runtime=trace,rpc=trace,runtime::bridge=trace \
+    RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
         ~/local_bridge_testing/bin/substrate-relay init-bridge wococo-to-bridge-hub-rococo \
         --source-host localhost \
         --source-port 48945 \

@@ -1,4 +1,4 @@
-# Bride-hubs Parachain
+# Bridge-hubs Parachain
 
 Implementation of _BridgeHub_, a blockchain to support message passing between Substrate based chains like Polkadot and Kusama networks.
 
@@ -72,7 +72,7 @@ or
 
 ```
 # Rococo -> Wococo
-RUST_LOG=runtime=trace,rpc=trace,runtime::bridge=trace \
+RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	~/local_bridge_testing/bin/substrate-relay init-bridge rococo-to-bridge-hub-wococo \
 	--source-host localhost \
 	--source-port 48943 \
@@ -81,7 +81,7 @@ RUST_LOG=runtime=trace,rpc=trace,runtime::bridge=trace \
 	--target-signer //Bob
 
 # Wococo -> Rococo
-RUST_LOG=runtime=trace,rpc=trace,runtime::bridge=trace \
+RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	~/local_bridge_testing/bin/substrate-relay init-bridge wococo-to-bridge-hub-rococo \
 	--source-host localhost \
 	--source-port 48945 \
@@ -97,7 +97,7 @@ RUST_LOG=runtime=trace,rpc=trace,runtime::bridge=trace \
 
 ```
 # Rococo -> Wococo
-RUST_LOG=runtime=trace,rpc=trace,runtime::bridge=trace \
+RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	~/local_bridge_testing/bin/substrate-relay relay-headers rococo-to-bridge-hub-wococo \
 	--source-host localhost \
 	--source-port 48943 \
@@ -107,7 +107,7 @@ RUST_LOG=runtime=trace,rpc=trace,runtime::bridge=trace \
 	--target-transactions-mortality=4
 
 # Wococo -> Rococo
-RUST_LOG=runtime=trace,rpc=trace,runtime::bridge=trace \
+RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	~/local_bridge_testing/bin/substrate-relay relay-headers wococo-to-bridge-hub-rococo \
 	--source-host localhost \
 	--source-port 48945 \
@@ -131,7 +131,7 @@ RUST_LOG=runtime=trace,rpc=trace,runtime::bridge=trace \
 
 ```
 # Rococo -> Wococo
-RUST_LOG=runtime=trace,rpc=trace,runtime::bridge=trace \
+RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	~/local_bridge_testing/bin/substrate-relay relay-parachains bridge-hub-rococo-to-bridge-hub-wococo \
 	--source-host localhost \
 	--source-port 48943 \
@@ -141,7 +141,7 @@ RUST_LOG=runtime=trace,rpc=trace,runtime::bridge=trace \
 	--target-transactions-mortality=4
 
 # Wococo -> Rococo
-RUST_LOG=runtime=trace,rpc=trace,runtime::bridge=trace \
+RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	~/local_bridge_testing/bin/substrate-relay relay-parachains bridge-hub-wococo-to-bridge-hub-rococo \
 	--source-host localhost \
 	--source-port 48945 \
