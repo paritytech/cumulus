@@ -30,7 +30,9 @@ use url::Url;
 
 use crate::runtime::Weight;
 use cumulus_client_cli::CollatorOptions;
-use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
+use cumulus_client_consensus_common::{
+	ParachainBlockImport as TParachainBlockImport, ParachainCandidate, ParachainConsensus,
+};
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
@@ -38,7 +40,8 @@ use cumulus_client_service::{
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::RelayChainInProcessInterface;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_rpc_interface::{create_client_and_start_worker, RelayChainRpcInterface};
+use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
+
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 
 use frame_system_rpc_runtime_api::AccountNonceApi;
@@ -116,6 +119,8 @@ pub type Client = TFullClient<
 /// Transaction pool type used by the test service
 pub type TransactionPool = Arc<sc_transaction_pool::FullPool<Block, Client>>;
 
+type ParachainBlockImport = TParachainBlockImport<Arc<Client>>;
+
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
@@ -129,7 +134,7 @@ pub fn new_partial(
 		(),
 		sc_consensus::import_queue::BasicQueue<Block, PrefixedMemoryDB<BlakeTwo256>>,
 		sc_transaction_pool::FullPool<Block, Client>,
-		(),
+		ParachainBlockImport,
 	>,
 	sc_service::Error,
 > {
@@ -144,6 +149,8 @@ pub fn new_partial(
 		sc_service::new_full_parts::<Block, RuntimeApi, _>(config, None, executor)?;
 	let client = Arc::new(client);
 
+	let block_import = ParachainBlockImport::new(client.clone());
+
 	let registry = config.prometheus_registry();
 
 	let transaction_pool = sc_transaction_pool::BasicPool::new_full(
@@ -156,7 +163,7 @@ pub fn new_partial(
 
 	let import_queue = cumulus_client_consensus_relay_chain::import_queue(
 		client.clone(),
-		client.clone(),
+		block_import.clone(),
 		|_, _| async { Ok(sp_timestamp::InherentDataProvider::from_system_time()) },
 		&task_manager.spawn_essential_handle(),
 		registry,
@@ -170,7 +177,7 @@ pub fn new_partial(
 		task_manager,
 		transaction_pool,
 		select_chain: (),
-		other: (),
+		other: block_import,
 	};
 
 	Ok(params)
@@ -183,8 +190,9 @@ async fn build_relay_chain_interface(
 	task_manager: &mut TaskManager,
 ) -> RelayChainResult<Arc<dyn RelayChainInterface + 'static>> {
 	if let Some(relay_chain_url) = collator_options.relay_chain_rpc_url {
-		let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
-		return Ok(Arc::new(RelayChainRpcInterface::new(client)) as Arc<_>)
+		return build_minimal_relay_chain_node(relay_chain_config, task_manager, relay_chain_url)
+			.await
+			.map(|r| r.0)
 	}
 
 	let relay_chain_full_node = polkadot_test_service::new_full(
@@ -198,12 +206,15 @@ async fn build_relay_chain_interface(
 	)?;
 
 	task_manager.add_child(relay_chain_full_node.task_manager);
+	tracing::info!("Using inprocess node.");
 	Ok(Arc::new(RelayChainInProcessInterface::new(
 		relay_chain_full_node.client.clone(),
 		relay_chain_full_node.backend.clone(),
 		Arc::new(relay_chain_full_node.network.clone()),
-		relay_chain_full_node.overseer_handle,
-	)) as Arc<_>)
+		relay_chain_full_node.overseer_handle.ok_or(RelayChainError::GenericError(
+			"Overseer should be running in full node.".to_string(),
+		))?,
+	)))
 }
 
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
@@ -239,6 +250,8 @@ where
 	let client = params.client.clone();
 	let backend = params.backend.clone();
 
+	let block_import = params.other;
+
 	let relay_chain_interface = build_relay_chain_interface(
 		relay_chain_config,
 		collator_key.clone(),
@@ -270,7 +283,6 @@ where
 
 	let rpc_builder = {
 		let client = client.clone();
-
 		Box::new(move |_, _| rpc_ext_builder(client.clone()))
 	};
 
@@ -333,7 +345,7 @@ where
 							Ok((time, parachain_inherent))
 						}
 					},
-					client.clone(),
+					block_import,
 					relay_chain_interface2,
 				))
 			},
@@ -367,7 +379,6 @@ where
 			// the recovery delay of pov-recovery. We don't want to wait for too
 			// long on the full node to recover, so we reduce this time here.
 			relay_chain_slot_duration: Duration::from_millis(6),
-			collator_options,
 		};
 
 		start_full_node(params)?;
@@ -473,9 +484,9 @@ impl TestNodeBuilder {
 	/// node.
 	pub fn connect_to_parachain_nodes<'a>(
 		mut self,
-		nodes: impl Iterator<Item = &'a TestNode>,
+		nodes: impl IntoIterator<Item = &'a TestNode>,
 	) -> Self {
-		self.parachain_nodes.extend(nodes.map(|n| n.addr.clone()));
+		self.parachain_nodes.extend(nodes.into_iter().map(|n| n.addr.clone()));
 		self
 	}
 
