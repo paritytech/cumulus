@@ -1,28 +1,165 @@
-use cumulus_relay_chain_interface::RelayChainResult;
+use cumulus_primitives_core::relay_chain::Header as PHeader;
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
+use futures::{
+	channel::mpsc::{Receiver, Sender},
+	channel::oneshot::{Receiver as OneshotReceiver, Sender as OneshotSender},
+	StreamExt,
+};
 use jsonrpsee::{
 	core::{
-		client::{Client as JsonRpcClient, ClientT, Subscription, SubscriptionClientT},
-		Error as JsonRpseeError,
+		client::{Client as JsonRpcClient, ClientT, SubscriptionClientT},
+		Error as JsonRpseeError, JsonValue,
 	},
-	types::ParamsSer,
 	ws_client::WsClientBuilder,
+};
+use polkadot_service::TaskManager;
+use tokio::sync::mpsc::{
+	channel as tokio_channel, Receiver as TokioReceiver, Sender as TokioSender,
 };
 use url::Url;
 
+const NOTIFICATION_CHANNEL_SIZE_LIMIT: usize = 20;
+const LOG_TARGET: &str = "pooled-rpc-client";
+
 pub struct PooledClient {
-	ws_clients: Vec<(Url, JsonRpcClient)>,
-	active_index: usize,
+	/// Channel to communicate with the RPC worker
+	to_worker_channel: TokioSender<RpcDispatcherMessage>,
 }
 
 impl PooledClient {
-	pub async fn new(url: Url) -> RelayChainResult<Self> {
+	pub async fn new(urls: Vec<Url>, task_manager: &mut TaskManager) -> RelayChainResult<Self> {
 		tracing::info!(target: "pooled-client", "Instantiating pooled websocket client");
-		let ws_client = WsClientBuilder::default().build(url.as_str()).await?;
-		Ok(Self { ws_clients: vec![(url, ws_client)], active_index: 0 })
+
+		let (worker, sender) = RpcStreamWorker::new(urls).await;
+
+		task_manager
+			.spawn_essential_handle()
+			.spawn("relay-chain-rpc-worker", None, worker.run());
+
+		Ok(Self { to_worker_channel: sender })
+	}
+}
+
+#[async_trait::async_trait]
+impl ClientT for PooledClient {
+	async fn notification<'a>(
+		&self,
+		method: &'a str,
+		params: Option<jsonrpsee::types::ParamsSer<'a>>,
+	) -> Result<(), jsonrpsee::core::Error> {
+		todo!()
 	}
 
-	pub async fn new_from_urls(urls: Vec<Url>) -> RelayChainResult<Self> {
-		tracing::info!(target: "pooled-client", "Instantiating pooled websocket client");
+	async fn request<'a, R>(
+		&self,
+		method: &'a str,
+		params: Option<jsonrpsee::types::ParamsSer<'a>>,
+	) -> Result<R, jsonrpsee::core::Error>
+	where
+		R: sp_runtime::DeserializeOwned,
+	{
+		let (tx, rx) = futures::channel::oneshot::channel();
+		let message = RpcDispatcherMessage::Request("bla".to_string(), None, tx);
+		self.to_worker_channel.send(message);
+		rx.await
+	}
+
+	async fn batch_request<'a, R>(
+		&self,
+		batch: Vec<(&'a str, Option<jsonrpsee::types::ParamsSer<'a>>)>,
+	) -> Result<Vec<R>, jsonrpsee::core::Error>
+	where
+		R: sp_runtime::DeserializeOwned + Default + Clone,
+	{
+		todo!()
+	}
+}
+
+impl PooledClient {
+	/// Get a stream of new best relay chain headers
+	pub fn get_best_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
+		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
+		self.send_register_message_to_worker(RpcDispatcherMessage::RegisterBestHeadListener(tx))?;
+		Ok(rx)
+	}
+
+	/// Get a stream of finalized relay chain headers
+	pub fn get_finalized_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
+		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
+		self.send_register_message_to_worker(RpcDispatcherMessage::RegisterFinalizationListener(
+			tx,
+		))?;
+		Ok(rx)
+	}
+
+	/// Get a stream of all imported relay chain headers
+	pub fn get_imported_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
+		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
+		self.send_register_message_to_worker(RpcDispatcherMessage::RegisterImportListener(tx))?;
+		Ok(rx)
+	}
+
+	fn send_register_message_to_worker(
+		&self,
+		message: RpcDispatcherMessage,
+	) -> Result<(), RelayChainError> {
+		self.to_worker_channel
+			.try_send(message)
+			.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))
+	}
+}
+
+/// Worker messages to register new notification listeners
+#[derive(Clone, Debug)]
+pub enum RpcDispatcherMessage {
+	RegisterBestHeadListener(Sender<PHeader>),
+	RegisterImportListener(Sender<PHeader>),
+	RegisterFinalizationListener(Sender<PHeader>),
+	Request(String, Option<Vec<JsonValue>>, OneshotSender<R>),
+}
+
+/// Worker that should be used in combination with [`RelayChainRpcClient`]. Must be polled to distribute header notifications to listeners.
+struct RpcStreamWorker {
+	ws_clients: Vec<(Url, JsonRpcClient)>,
+	// Communication channel with the RPC client
+	client_receiver: TokioReceiver<RpcDispatcherMessage>,
+
+	// Senders to distribute incoming header notifications to
+	imported_header_listeners: Vec<Sender<PHeader>>,
+	finalized_header_listeners: Vec<Sender<PHeader>>,
+	best_header_listeners: Vec<Sender<PHeader>>,
+}
+
+fn handle_event_distribution(
+	event: Option<Result<PHeader, JsonRpseeError>>,
+	senders: &mut Vec<Sender<PHeader>>,
+) -> Result<(), String> {
+	match event {
+		Some(Ok(header)) => {
+			senders.retain_mut(|e| {
+				match e.try_send(header.clone()) {
+					// Receiver has been dropped, remove Sender from list.
+					Err(error) if error.is_disconnected() => false,
+					// Channel is full. This should not happen.
+					// TODO: Improve error handling here
+					// https://github.com/paritytech/cumulus/issues/1482
+					Err(error) => {
+						tracing::error!(target: LOG_TARGET, ?error, "Event distribution channel has reached its limit. This can lead to missed notifications.");
+						true
+					},
+					_ => true,
+				}
+			});
+			Ok(())
+		},
+		None => Err("RPC Subscription closed.".to_string()),
+		Some(Err(err)) => Err(format!("Error in RPC subscription: {}", err)),
+	}
+}
+
+impl RpcStreamWorker {
+	/// Create new worker. Returns the worker and a channel to register new listeners.
+	async fn new(urls: Vec<Url>) -> (RpcStreamWorker, TokioSender<RpcDispatcherMessage>) {
 		let clients: Vec<(Url, Result<JsonRpcClient, JsonRpseeError>)> =
 			futures::future::join_all(urls.into_iter().map(|url| async move {
 				(url.clone(), WsClientBuilder::default().build(url.as_str()).await)
@@ -36,69 +173,88 @@ impl PooledClient {
 					None}
 			}
 		}).collect();
-		Ok(Self { ws_clients: clients, active_index: 0 })
+
+		let (tx, rx) = tokio_channel(100);
+		let worker = RpcStreamWorker {
+			ws_clients: clients,
+			client_receiver: rx,
+			imported_header_listeners: Vec::new(),
+			finalized_header_listeners: Vec::new(),
+			best_header_listeners: Vec::new(),
+		};
+		(worker, tx)
 	}
 
-	fn active_client(&self) -> &JsonRpcClient {
-		&self.ws_clients.get(self.active_index).unwrap().1
-	}
-}
+	/// Run this worker to drive notification streams.
+	/// The worker does two things:
+	/// 1. Listen for `NotificationRegisterMessage` and register new listeners for the notification streams
+	/// 2. Distribute incoming import, best head and finalization notifications to registered listeners.
+	///    If an error occurs during sending, the receiver has been closed and we remove the sender from the list.
+	pub async fn run(mut self) {
+		let ws_client = &self.ws_clients.first().unwrap().1;
 
-#[async_trait::async_trait]
-impl ClientT for PooledClient {
-	async fn notification<'a>(
-		&self,
-		method: &'a str,
-		params: Option<jsonrpsee::types::ParamsSer<'a>>,
-	) -> Result<(), jsonrpsee::core::Error> {
-		self.active_client().notification(method, params).await
-	}
-
-	async fn request<'a, R>(
-		&self,
-		method: &'a str,
-		params: Option<jsonrpsee::types::ParamsSer<'a>>,
-	) -> Result<R, jsonrpsee::core::Error>
-	where
-		R: sp_runtime::DeserializeOwned,
-	{
-		self.active_client().request(method, params).await
-	}
-
-	async fn batch_request<'a, R>(
-		&self,
-		batch: Vec<(&'a str, Option<jsonrpsee::types::ParamsSer<'a>>)>,
-	) -> Result<Vec<R>, jsonrpsee::core::Error>
-	where
-		R: sp_runtime::DeserializeOwned + Default + Clone,
-	{
-		self.active_client().batch_request(batch).await
-	}
-}
-
-#[async_trait::async_trait]
-impl SubscriptionClientT for PooledClient {
-	async fn subscribe<'a, Notif>(
-		&self,
-		subscribe_method: &'a str,
-		params: Option<ParamsSer<'a>>,
-		unsubscribe_method: &'a str,
-	) -> Result<Subscription<Notif>, JsonRpseeError>
-	where
-		Notif: sp_runtime::DeserializeOwned,
-	{
-		self.active_client()
-			.subscribe(subscribe_method, params, unsubscribe_method)
+		let mut import_sub = ws_client
+			.subscribe::<PHeader>("chain_subscribeAllHeads", None, "chain_unsubscribeAllHeads")
 			.await
-	}
+			.expect("should not fail")
+			.fuse();
 
-	async fn subscribe_to_method<'a, Notif>(
-		&self,
-		method: &'a str,
-	) -> Result<Subscription<Notif>, JsonRpseeError>
-	where
-		Notif: sp_runtime::DeserializeOwned,
-	{
-		self.active_client().subscribe_to_method(method).await
+		let mut best_head_sub = ws_client
+			.subscribe::<PHeader>(
+				"chain_subscribeNewHeads",
+				None,
+				"chain_unsubscribeFinalizedHeads",
+			)
+			.await
+			.expect("should not fail");
+		let mut finalized_sub = ws_client
+			.subscribe::<PHeader>(
+				"chain_subscribeFinalizedHeads",
+				None,
+				"chain_unsubscribeFinalizedHeads",
+			)
+			.await
+			.expect("should not fail")
+			.fuse();
+		loop {
+			tokio::select! {
+				evt = self.client_receiver.recv() => match evt {
+					Some(RpcDispatcherMessage::RegisterBestHeadListener(tx)) => {
+						self.best_header_listeners.push(tx);
+					},
+					Some(RpcDispatcherMessage::RegisterImportListener(tx)) => {
+						self.imported_header_listeners.push(tx)
+					},
+					Some(RpcDispatcherMessage::RegisterFinalizationListener(tx)) => {
+						self.finalized_header_listeners.push(tx)
+					},
+					Some(RpcDispatcherMessage::Request(_, _, _)) => {
+						todo!();
+					},
+					None => {
+						tracing::error!(target: LOG_TARGET, "RPC client receiver closed. Stopping RPC Worker.");
+						return;
+					}
+				},
+				import_event = import_sub.next() => {
+					if let Err(err) = handle_event_distribution(import_event, &mut self.imported_header_listeners) {
+						tracing::error!(target: LOG_TARGET, err, "Encountered error while processing imported header notification. Stopping RPC Worker.");
+						return;
+					}
+				},
+				best_header_event = best_head_sub.next() => {
+					if let Err(err) = handle_event_distribution(best_header_event, &mut self.best_header_listeners) {
+						tracing::error!(target: LOG_TARGET, err, "Encountered error while processing best header notification. Stopping RPC Worker.");
+						return;
+					}
+				}
+				finalized_event = finalized_sub.next() => {
+					if let Err(err) = handle_event_distribution(finalized_event, &mut self.finalized_header_listeners) {
+						tracing::error!(target: LOG_TARGET, err, "Encountered error while processing finalized header notification. Stopping RPC Worker.");
+						return;
+					}
+				}
+			}
+		}
 	}
 }
