@@ -6137,6 +6137,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-state-trie-migration"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate?branch=master#f447beec6eefbf452520b90cb0d199eaaf114342"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-sudo"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.32#2bafa7d4cf240ad4a89f100c1364d53adaedef9b"
@@ -11532,6 +11549,7 @@ dependencies = [
  "pallet-multisig",
  "pallet-proxy",
  "pallet-session",
+ "pallet-state-trie-migration",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
