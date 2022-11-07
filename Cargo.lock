@@ -6893,6 +6893,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "polkadot-ambassadors"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "polkadot-approval-distribution"
 version = "0.9.31"
 source = "git+https://github.com/paritytech/polkadot?branch=master#ef8d1a72f8081fdcee28b7434697b3978ec93a05"

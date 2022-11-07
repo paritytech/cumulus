@@ -29,6 +29,7 @@ members = [
 	"parachains/common",
 	"parachains/pallets/parachain-info",
 	"parachains/pallets/ping",
+	"parachains/pallets/polkadot-ambassadors",
 	"parachains/runtimes/testing/rococo-parachain",
 	"parachains/runtimes/starters/shell",
 	"parachains/runtimes/starters/seedling",
