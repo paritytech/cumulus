@@ -91,8 +91,9 @@ impl MessageBridge for WithBridgeHubWococoMessageBridge {
 		bridged_balance: bridge_runtime_common::messages::BalanceOf<BridgedChain<Self>>,
 		bridged_to_this_conversion_rate_override: Option<FixedU128>,
 	) -> bridge_runtime_common::messages::BalanceOf<ThisChain<Self>> {
-		log::info!("[WithBridgeHubWococoMessageBridge] bridged_balance_to_this_balance - bridged_balance: {:?}, bridged_to_this_conversion_rate_override: {:?}", bridged_balance, bridged_to_this_conversion_rate_override);
-		unimplemented!("TODO: WithBridgeHubWococoMessageBridge - bridged_balance_to_this_balance")
+		log::info!("[WithBridgeHubWococoMessageBridge] bridged_balance_to_this_balance (returns 0 balance, TODO: fix) - bridged_balance: {:?}, bridged_to_this_conversion_rate_override: {:?}", bridged_balance, bridged_to_this_conversion_rate_override);
+		// TODO:check-parameter - any payment? from sovereign account?
+		0
 	}
 }
 
@@ -193,14 +194,11 @@ impl messages::BridgedChainWithMessages for BridgeHubWococo {
 		transaction: MessageTransaction<WeightOf<Self>>,
 	) -> messages::BalanceOf<Self> {
 		log::info!(
-			"[BridgeHubWococo::BridgedChainWithMessages] transaction_payment - transaction: {:?}",
+			"[BridgeHubWococo::BridgedChainWithMessages] transaction_payment (returns 0 balance, TODO: fix) - transaction: {:?}",
 			transaction
 		);
 		// TODO:check-parameter - any payment? from sovereign account?
-		unimplemented!(
-			"[BridgeHubWococo/BridgedChainWithMessages] transaction_payment - transaction: {:?}",
-			transaction
-		)
+		0
 	}
 }
 
@@ -243,13 +241,10 @@ impl ThisChainWithMessages for BridgeHubRococo {
 		transaction: MessageTransaction<WeightOf<Self>>,
 	) -> messages::BalanceOf<Self> {
 		log::info!(
-			"[BridgeHubRococo::ThisChainWithMessages] transaction_payment - transaction: {:?}",
+			"[BridgeHubRococo::ThisChainWithMessages] transaction_payment (returns 0 balance, TODO: fix) - transaction: {:?}",
 			transaction
 		);
 		// TODO:check-parameter - any payment? from sovereign account?
-		unimplemented!(
-			"[BridgeHubRococo/ThisChainWithMessages] transaction_payment - transaction: {:?}",
-			transaction
-		)
+		0
 	}
 }

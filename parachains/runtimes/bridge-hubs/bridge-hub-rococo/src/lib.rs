@@ -28,6 +28,7 @@ pub mod bridge_hub_wococo_config;
 mod weights;
 pub mod xcm_config;
 
+use codec::Decode;
 use bridge_common_config::*;
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use smallvec::smallvec;
@@ -247,6 +248,8 @@ pub mod runtime_api {
 	use super::{BlockNumber, Hash};
 	bp_runtime::decl_bridge_finality_runtime_apis!(rococo);
 	bp_runtime::decl_bridge_finality_runtime_apis!(wococo);
+	bp_runtime::decl_bridge_finality_runtime_apis!(bridge_hub_rococo);
+	bp_runtime::decl_bridge_finality_runtime_apis!(bridge_hub_wococo);
 
 	use bp_messages::{
 		InboundMessageDetails, LaneId, MessageNonce, MessagePayload, OutboundMessageDetails,
@@ -808,6 +811,23 @@ impl_runtime_apis! {
 	impl runtime_api::WococoFinalityApi<Block> for Runtime {
 		fn best_finalized() -> Option<HeaderId<bp_wococo::Hash, bp_wococo::BlockNumber>> {
 			BridgeWococoGrandpa::best_finalized().map(|header| header.id())
+		}
+	}
+
+
+	impl runtime_api::BridgeHubRococoFinalityApi<Block> for Runtime {
+		fn best_finalized() -> Option<HeaderId<Hash, BlockNumber>> {
+			let encoded_head = BridgeRococoParachain::best_parachain_head(bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID.into())?;
+			let head = bp_bridge_hub_rococo::Header::decode(&mut &encoded_head.0[..]).ok()?;
+			Some(head.id())
+		}
+	}
+
+	impl runtime_api::BridgeHubWococoFinalityApi<Block> for Runtime {
+		fn best_finalized() -> Option<HeaderId<Hash, BlockNumber>> {
+			let encoded_head = BridgeWococoParachain::best_parachain_head(bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID.into())?;
+			let head = bp_bridge_hub_wococo::Header::decode(&mut &encoded_head.0[..]).ok()?;
+			Some(head.id())
 		}
 	}
 

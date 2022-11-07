@@ -152,7 +152,7 @@ jobs:
           WESTMINT_DIGEST: ${{ github.workspace}}/westmint-srtool-json/westmint-srtool-digest.json
           STATEMINE_DIGEST: ${{ github.workspace}}/statemine-srtool-json/statemine-srtool-digest.json
           STATEMINT_DIGEST: ${{ github.workspace}}/statemint-srtool-json/statemint-srtool-digest.json
-          BRIDE_HUB_ROCOCO_DIGEST: ${{ github.workspace}}/bridge-hub-rococo-srtool-json/bridge-hub-rococo-srtool-digest.json
+          BRIDGE_HUB_ROCOCO_DIGEST: ${{ github.workspace}}/bridge-hub-rococo-srtool-json/bridge-hub-rococo-srtool-digest.json
           COLLECTIVES_POLKADOT_DIGEST: ${{ github.workspace}}/collectives-polkadot-srtool-json/collectives-polkadot-srtool-digest.json
           ROCOCO_PARA_DIGEST: ${{ github.workspace}}/rococo-parachain-srtool-json/rococo-parachain-srtool-digest.json
           CANVAS_KUSAMA_DIGEST: ${{ github.workspace}}/contracts-rococo-srtool-json/contracts-rococo-srtool-digest.json
@@ -168,7 +168,7 @@ jobs:
             ls -al $WESTMINT_DIGEST || true
             ls -al $STATEMINE_DIGEST || true
             ls -al $STATEMINT_DIGEST || true
-            ls -al $BRIDE_HUB_ROCOCO_DIGEST || true
+            ls -al $BRIDGE_HUB_ROCOCO_DIGEST || true
             ls -al $COLLECTIVES_POLKADOT_DIGEST || true
             ls -al $ROCOCO_PARA_DIGEST || true
             ls -al $CANVAS_KUSAMA_DIGEST || true

@@ -163,6 +163,19 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 
 **4. Relay (XCM) messages**
 
+```
+# Rococo -> Wococo
+RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
+	~/local_bridge_testing/bin/substrate-relay relay-messages bridge-hub-rococo-to-bridge-hub-wococo \
+	--source-host localhost \
+	--source-port 8943 \
+	--source-signer //Charlie \
+	--target-host localhost \
+	--target-port 8945 \
+	--target-signer //Charlie \
+	--target-transactions-mortality=4 \
+	--lane 00000002
+```
 TODO:
 
 ---
