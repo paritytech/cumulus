@@ -87,7 +87,7 @@ default = [ "std" ]
 # This pallet will migrate the entire state, controlled through some account.
 #
 # This feature should be removed when the main-net will be migrated.
-state-trie-migration = ["pallet-state-trie-migration"]
+state-trie-version-1 = ["pallet-state-trie-migration"]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",

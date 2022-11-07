@@ -82,7 +82,7 @@ impl_opaque_keys! {
 	}
 }
 
-#[cfg(feature = "state-trie-migration")]
+#[cfg(feature = "state-trie-version-1")]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("statemine"),
@@ -95,7 +95,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	state_version: 1,
 };
 
-#[cfg(not(feature = "state-trie-migration"))]
+#[cfg(not(feature = "state-trie-version-1"))]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("statemine"),
@@ -611,7 +611,7 @@ construct_runtime!(
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 
-		#[cfg(feature = "state-trie-migration")]
+		#[cfg(feature = "state-trie-version-1")]
 		StateTrieMigration: pallet_state_trie_migration = 70,
 	}
 );
@@ -997,7 +997,7 @@ cumulus_pallet_parachain_system::register_validate_block! {
 	CheckInherents = CheckInherents,
 }
 
-#[cfg(feature = "state-trie-migration")]
+#[cfg(feature = "state-trie-version-1")]
 parameter_types! {
 	// The deposit configuration for the singed migration. Specially if you want to allow any signed account to do the migration (see `SignedFilter`, these deposits should be high)
 	pub const MigrationSignedDepositPerItem: Balance = 1 * CENTS;
@@ -1005,7 +1005,7 @@ parameter_types! {
 	pub const MigrationMaxKeyLen: u32 = 512;
 }
 
-#[cfg(feature = "state-trie-migration")]
+#[cfg(feature = "state-trie-version-1")]
 impl pallet_state_trie_migration::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
@@ -1022,13 +1022,13 @@ impl pallet_state_trie_migration::Config for Runtime {
 	type MaxKeyLen = MigrationMaxKeyLen;
 }
 
-#[cfg(feature = "state-trie-migration")]
+#[cfg(feature = "state-trie-version-1")]
 frame_support::ord_parameter_types! {
 	pub const MigController: AccountId = AccountId::from(hex_literal::hex!("8458ed39dc4b6f6c7255f7bc42be50c2967db126357c999d44e12ca7ac80dc52"));
 	pub const RootMigController: AccountId = AccountId::from(hex_literal::hex!("8458ed39dc4b6f6c7255f7bc42be50c2967db126357c999d44e12ca7ac80dc52"));
 }
 
-#[cfg(feature = "state-trie-migration")]
+#[cfg(feature = "state-trie-version-1")]
 #[test]
 fn ensure_key_ss58() {
 	use frame_support::traits::SortedMembers;
