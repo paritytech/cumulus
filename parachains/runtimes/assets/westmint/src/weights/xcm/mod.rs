@@ -241,4 +241,7 @@ impl<Call> XcmWeightInfo<Call> for WestmintXcmWeight<Call> {
 		// XCM Executor does not currently support alias origin operations
 		Weight::MAX.ref_time()
 	}
+	fn unpaid_execution(_: &WeightLimit, _: &Option<MultiLocation>) -> XCMWeight {
+		XcmGeneric::<Runtime>::unpaid_execution().ref_time()
+	}
 }
