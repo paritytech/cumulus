@@ -53,10 +53,10 @@ pallet-utility = { default-features = false, git = "https://github.com/paritytec
 pallet-vesting = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.29" }
 
 # integritee pallets
-pallet-claims = { default-features = false, git = "https://github.com/integritee-network/pallets.git", branch = "polkadot-v0.9.29" }
-pallet-sidechain = { default-features = false, git = "https://github.com/integritee-network/pallets.git", branch = "polkadot-v0.9.29" }
-pallet-teeracle = { default-features = false, git = "https://github.com/integritee-network/pallets.git", branch = "polkadot-v0.9.29" }
-pallet-teerex = { default-features = false, git = "https://github.com/integritee-network/pallets.git", branch = "polkadot-v0.9.29" }
+pallet-claims = { default-features = false, git = "https://github.com/integritee-network/pallets.git", branch = "tn/switch-to-newer-ring-fork" }
+pallet-sidechain = { default-features = false, git = "https://github.com/integritee-network/pallets.git", branch = "tn/switch-to-newer-ring-fork" }
+pallet-teeracle = { default-features = false, git = "https://github.com/integritee-network/pallets.git", branch = "tn/switch-to-newer-ring-fork" }
+pallet-teerex = { default-features = false, git = "https://github.com/integritee-network/pallets.git", branch = "tn/switch-to-newer-ring-fork" }
 
 
 # Cumulus dependencies
