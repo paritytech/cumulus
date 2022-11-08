@@ -44,7 +44,7 @@ To launch a local network, you can use [zombienet](https://github.com/paritytech
 
 ### Zombienet
 We use zombienet to spin up networks for integration tests and local networks. Follow [these installation steps](https://github.com/paritytech/zombienet#requirements-by-provider) to set it up on your machine.
-A simple network specification with two relay chain nodes and one collator is located at [zombienet_examples/simple_network.toml](zombienet_examples/simple_network.toml).
+A simple network specification with two relay chain nodes and one collator is located at [zombienet/examples/small_network.toml](zombienet/examples/small_network.toml).
 
 
 #### Which provider should I use?
@@ -58,10 +58,10 @@ To run the example network, use the following commands:
 
 ```bash
 # Podman provider
-zombienet --provider podman spawn ./zombienet_examples/simple_network.toml
+zombienet --provider podman spawn ./zombienet/examples/small_network.toml
 
 # Native provider, assumes polkadot and polkadot-parachains binary in $PATH
-zombienet --provider native spawn ./zombienet_examples/simple_network.toml
+zombienet --provider native spawn ./zombienet/examples/small_network.toml
 ```
 
 ### Manual Setup
