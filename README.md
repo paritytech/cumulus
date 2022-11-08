@@ -44,7 +44,7 @@ To launch a local network, you can use [zombienet](https://github.com/paritytech
 
 ### Zombienet
 We use zombienet to spin up networks for integration tests and local networks. Follow [these installation steps](https://github.com/paritytech/zombienet#requirements-by-provider) to set it up on your machine.
-A simple network specification with two relay chain nodes and one collator is located at `zombienet_examples/simple_network.toml`.
+A simple network specification with two relay chain nodes and one collator is located at [zombienet_examples/simple_network.toml](zombienet_examples/simple_network.toml).
 
 
 #### Which provider should I use?
