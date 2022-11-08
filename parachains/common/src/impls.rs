@@ -18,12 +18,13 @@
 
 use frame_support::traits::{
 	fungibles::{self, Balanced, CreditOf},
-	Contains, ContainsPair, Currency, Get, Imbalance, OnUnbalanced,
+	ContainsPair, Currency, Get, Imbalance, OnUnbalanced,
 };
 use pallet_asset_tx_payment::HandleCredit;
 use sp_runtime::traits::Zero;
 use sp_std::marker::PhantomData;
 use xcm::latest::{AssetId, Fungibility::Fungible, MultiAsset, MultiLocation};
+use xcm_builder::{AssetChecking, MintLocation};
 
 /// Type alias to conveniently refer to the `Currency::NegativeImbalance` associated type.
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
@@ -87,13 +88,16 @@ where
 
 /// Allow checking in assets that have issuance > 0.
 pub struct NonZeroIssuance<AccountId, Assets>(PhantomData<(AccountId, Assets)>);
-impl<AccountId, Assets> Contains<<Assets as fungibles::Inspect<AccountId>>::AssetId>
-	for NonZeroIssuance<AccountId, Assets>
+impl<AccountId, Assets> AssetChecking<Assets::AssetId> for NonZeroIssuance<AccountId, Assets>
 where
 	Assets: fungibles::Inspect<AccountId>,
 {
-	fn contains(id: &<Assets as fungibles::Inspect<AccountId>>::AssetId) -> bool {
-		!Assets::total_issuance(*id).is_zero()
+	fn asset_checking(id: &Assets::AssetId) -> Option<MintLocation> {
+		if Assets::total_issuance(*id).is_zero() {
+			None
+		} else {
+			Some(MintLocation::Local)
+		}
 	}
 }
 
