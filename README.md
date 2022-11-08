@@ -40,15 +40,18 @@ implemented by the `polkadot-parachain` binary (previously called `polkadot-coll
 ## Installation and Setup
 Before building Cumulus SDK based nodes / runtimes prepare your environment by following Substrate [installation instructions](https://docs.substrate.io/main-docs/install/).
 
-You can use [zombienet](https://github.com/paritytech/zombienet) for quick setup and experimentation or follow the [manual setup](#manual-setup).
+To launch a local network, you can use [zombienet](https://github.com/paritytech/zombienet) for quick setup and experimentation or follow the [manual setup](#manual-setup).
 
 ### Zombienet
-We use zombienet to spin up networks for integration tests and local networks.
+We use zombienet to spin up networks for integration tests and local networks. Follow [these installation steps](https://github.com/paritytech/zombienet#requirements-by-provider) to set it up on your machine.
 A simple network specification with two relay chain nodes and one collator is located at `zombienet_examples/simple_network.toml`.
 
+
 #### Which provider should I use?
-Zombienet offers multiple providers to run networks. For development on the node, the `native` provider is a good pick but requires a `polkadot` and `polkadot-parachain` binary.
-If you just want to spin up a network for experimentation, you can use the `podman` provider.
+Zombienet offers multiple providers to run networks. Choose the one that best fits your needs:
+- **Podman:** Choose this if you want to spin up a network quick and easy.
+- **Native:** Choose this if you want to develop and deploy your changes. Requires compilation of the binaries.
+- **Kubernetes:** Choose this for advanced use-cases or running on cloud-infrastructure.
 
 #### How to run
 To run the example network, use the following commands:
