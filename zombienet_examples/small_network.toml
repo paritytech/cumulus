@@ -20,6 +20,6 @@ chain = "statemine-local"
   [[parachains.collators]]
   name = "charlie"
   validator = true
-  image = "docker.io/parity/polkadot-parachain:latest"
+  image = "parity/polkadot-parachain:latest"
   command = "polkadot-parachain"
   args = ["--force-authoring"]
