@@ -37,7 +37,11 @@ jobs:
           # Fetch the labels for the PR under test
           labels=$( curl -H "Authorization: token ${GITHUB_TOKEN}" -s "$API_BASE/${REPO}/pulls/${GITHUB_PR}" | jq '.labels | .[] | .name' | tr "\n" ",")
 
-          [ -z "${labels}" ] && echo "No labels found. Please add labels A, B and C labels"; exit 1
+          if [ -z "${labels}" ]; then
+            echo "No labels found. Please add labels A, B and C labels"
+            exit 1
+          fi
+
           labels_args=${labels: :-1}
           printf "Checking labels: %s\n" "${labels_args}"
 
