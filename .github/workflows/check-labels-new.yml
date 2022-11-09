@@ -20,6 +20,9 @@ jobs:
         with:
           toolchain: stable
 
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@b894d59a8d236e2979b247b80dac8d053ab340dd # v2.1.0
+
       - name: Check labels
         # continue-on-error: true
         env:
