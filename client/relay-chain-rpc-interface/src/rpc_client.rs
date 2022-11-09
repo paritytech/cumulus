@@ -30,11 +30,7 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use futures::channel::mpsc::Receiver;
-use jsonrpsee::{
-	core::{client::ClientT, Error as JsonRpseeError},
-	rpc_params,
-	types::ParamsSer,
-};
+use jsonrpsee::core::{Error as JsonRpseeError, JsonValue};
 use parity_scale_codec::{Decode, Encode};
 use polkadot_service::{BlockNumber, TaskManager};
 use sc_client_api::StorageData;
@@ -59,6 +55,20 @@ pub struct RelayChainRpcClient {
 	retry_strategy: ExponentialBackoff,
 }
 
+macro_rules! rpc_params {
+	($($param:expr),*) => {
+		{
+			let mut __params = vec![];
+			$(
+				__params.push(serde_json::to_value($param).expect("json serialization is infallible; qed."));
+			)*
+			Some(__params)
+		}
+	};
+	() => {
+		None
+	}
+}
 /// Entry point to create [`RelayChainRpcClient`] and start a worker that distributes notifications.
 pub async fn create_client_and_start_worker(
 	urls: Vec<Url>,
@@ -114,7 +124,7 @@ impl RelayChainRpcClient {
 	async fn request<'a, R>(
 		&self,
 		method: &'a str,
-		params: Option<ParamsSer<'a>>,
+		params: Option<Vec<JsonValue>>,
 	) -> Result<R, RelayChainError>
 	where
 		R: DeserializeOwned + std::fmt::Debug,
@@ -131,7 +141,7 @@ impl RelayChainRpcClient {
 	async fn request_tracing<'a, R, OR>(
 		&self,
 		method: &'a str,
-		params: Option<ParamsSer<'a>>,
+		params: Option<Vec<JsonValue>>,
 		trace_error: OR,
 	) -> Result<R, RelayChainError>
 	where

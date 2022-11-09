@@ -2,7 +2,8 @@ use cumulus_primitives_core::relay_chain::Header as PHeader;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use futures::{
 	channel::mpsc::{Receiver, Sender},
-	channel::oneshot::{Receiver as OneshotReceiver, Sender as OneshotSender},
+	channel::oneshot::Sender as OneshotSender,
+	stream::FuturesUnordered,
 	StreamExt,
 };
 use jsonrpsee::{
@@ -40,42 +41,23 @@ impl PooledClient {
 	}
 }
 
-#[async_trait::async_trait]
-impl ClientT for PooledClient {
-	async fn notification<'a>(
-		&self,
-		method: &'a str,
-		params: Option<jsonrpsee::types::ParamsSer<'a>>,
-	) -> Result<(), jsonrpsee::core::Error> {
-		todo!()
-	}
+impl PooledClient {}
 
-	async fn request<'a, R>(
+impl PooledClient {
+	pub async fn request<R>(
 		&self,
-		method: &'a str,
-		params: Option<jsonrpsee::types::ParamsSer<'a>>,
+		method: &str,
+		params: Option<Vec<JsonValue>>,
 	) -> Result<R, jsonrpsee::core::Error>
 	where
 		R: sp_runtime::DeserializeOwned,
 	{
 		let (tx, rx) = futures::channel::oneshot::channel();
-		let message = RpcDispatcherMessage::Request("bla".to_string(), None, tx);
-		self.to_worker_channel.send(message);
-		rx.await
+		let message = RpcDispatcherMessage::Request(method.to_string(), params, tx);
+		self.to_worker_channel.send(message).await.expect("worker sending fucked up");
+		let value = rx.await.expect("fucked up during deserialization")?;
+		serde_json::from_value(value).map_err(JsonRpseeError::ParseError)
 	}
-
-	async fn batch_request<'a, R>(
-		&self,
-		batch: Vec<(&'a str, Option<jsonrpsee::types::ParamsSer<'a>>)>,
-	) -> Result<Vec<R>, jsonrpsee::core::Error>
-	where
-		R: sp_runtime::DeserializeOwned + Default + Clone,
-	{
-		todo!()
-	}
-}
-
-impl PooledClient {
 	/// Get a stream of new best relay chain headers
 	pub fn get_best_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
 		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
@@ -110,12 +92,12 @@ impl PooledClient {
 }
 
 /// Worker messages to register new notification listeners
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub enum RpcDispatcherMessage {
 	RegisterBestHeadListener(Sender<PHeader>),
 	RegisterImportListener(Sender<PHeader>),
 	RegisterFinalizationListener(Sender<PHeader>),
-	Request(String, Option<Vec<JsonValue>>, OneshotSender<R>),
+	Request(String, Option<Vec<JsonValue>>, OneshotSender<Result<JsonValue, JsonRpseeError>>),
 }
 
 /// Worker that should be used in combination with [`RelayChainRpcClient`]. Must be polled to distribute header notifications to listeners.
@@ -192,6 +174,7 @@ impl RpcStreamWorker {
 	///    If an error occurs during sending, the receiver has been closed and we remove the sender from the list.
 	pub async fn run(mut self) {
 		let ws_client = &self.ws_clients.first().unwrap().1;
+		let mut pending_requests = FuturesUnordered::new();
 
 		let mut import_sub = ws_client
 			.subscribe::<PHeader>("chain_subscribeAllHeads", None, "chain_unsubscribeAllHeads")
@@ -216,6 +199,7 @@ impl RpcStreamWorker {
 			.await
 			.expect("should not fail")
 			.fuse();
+
 		loop {
 			tokio::select! {
 				evt = self.client_receiver.recv() => match evt {
@@ -228,14 +212,20 @@ impl RpcStreamWorker {
 					Some(RpcDispatcherMessage::RegisterFinalizationListener(tx)) => {
 						self.finalized_header_listeners.push(tx)
 					},
-					Some(RpcDispatcherMessage::Request(_, _, _)) => {
-						todo!();
+					Some(RpcDispatcherMessage::Request(method, params, response_sender)) => {
+						pending_requests.push(async move {
+							let resp = ws_client.request(&method, params.map(|p| p.into())).await;
+							if let Err(err) = response_sender.send(resp) {
+								tracing::error!(target: LOG_TARGET, ?err, "Recipient no longer interested in request result");
+							}
+						});
 					},
 					None => {
 						tracing::error!(target: LOG_TARGET, "RPC client receiver closed. Stopping RPC Worker.");
 						return;
 					}
 				},
+				_ = pending_requests.next() => {},
 				import_event = import_sub.next() => {
 					if let Err(err) = handle_event_distribution(import_event, &mut self.imported_header_listeners) {
 						tracing::error!(target: LOG_TARGET, err, "Encountered error while processing imported header notification. Stopping RPC Worker.");

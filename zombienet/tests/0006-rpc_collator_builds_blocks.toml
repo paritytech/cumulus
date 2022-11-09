@@ -35,7 +35,7 @@ cumulus_based = true
   validator = true
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["-lparachain=debug,blockchain-rpc-client=debug", "--relay-chain-rpc-url {{'one'|zombie('wsUri')}}", "--relay-chain-rpc-url {{'two'|zombie('wsUri')}}", "-- --bootnodes {{'one'|zombie('multiAddress')}}"]
+  args = ["-lparachain=debug,blockchain-rpc-client=debug", "--relay-chain-rpc-urls {{'one'|zombie('wsUri')}} {{'two'|zombie('wsUri')}}", "-- --bootnodes {{'one'|zombie('multiAddress')}}"]
 
   # run eve as parachain full node
   [[parachains.collators]]
@@ -43,4 +43,4 @@ cumulus_based = true
   validator = true
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["-lparachain=debug,blockchain-rpc-client=debug", "--relay-chain-rpc-url {{'one'|zombie('wsUri')}}",, "--relay-chain-rpc-url {{'two'|zombie('wsUri')}}" "-- --bootnodes {{'two'|zombie('multiAddress')}}"]
+  args = ["-lparachain=debug,blockchain-rpc-client=debug", "--relay-chain-rpc-urls {{'one'|zombie('wsUri')}} {{'two'|zombie('wsUri')}}", "-- --bootnodes {{'two'|zombie('multiAddress')}}"]

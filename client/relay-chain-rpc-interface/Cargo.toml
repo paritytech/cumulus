@@ -20,7 +20,7 @@ sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-storage = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-tokio = { version = "1.21.2", features = ["sync"] }
+tokio = { version = "1.21.2", features = ["sync", "time"] }
 
 futures = "0.3.24"
 futures-timer = "3.0.2"
@@ -30,3 +30,4 @@ tracing = "0.1.37"
 async-trait = "0.1.58"
 url = "2.3.1"
 backoff = { version = "0.4.0", features = ["tokio"] }
+serde_json = "1.0.87"
