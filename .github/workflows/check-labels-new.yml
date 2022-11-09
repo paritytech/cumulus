@@ -36,7 +36,7 @@ jobs:
 
           # Fetch the labels for the PR under test
           labels=$( curl -H "Authorization: token ${GITHUB_TOKEN}" -s "$API_BASE/${REPO}/pulls/${GITHUB_PR}" | jq '.labels | .[] | .name' | tr "\n" ",")
-          labels_args=${labels: :-1}
+          labels_args=${labels: :-1} || echo "Please set labels"; exit 1
           printf "Checking labels: %s\n" "${labels_args}"
 
           # Prevent the shell from splitting labels with spaces
