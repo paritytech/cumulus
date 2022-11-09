@@ -26,4 +26,4 @@ jobs:
           RULES_PATH: scripts/ci/ruled_labels
         run: |
           cargo install ruled-labels --version 0.3.1
-          ruled-labels ${RULES_PATH}/specs.yaml
+          ruled-labels test ${RULES_PATH}/specs.yaml
