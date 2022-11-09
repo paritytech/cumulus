@@ -20,18 +20,9 @@ jobs:
         with:
           toolchain: stable
 
-      # - name: Pull image
-      #   env:
-      #     IMAGE: chevdor/ruled-labels:latest
-      #   run: |
-      #     docker pull $IMAGE
-      #     docker run --rm $IMAGE --version
-
       - name: Check labels
         # continue-on-error: true
         env:
-          IMAGE: chevdor/ruled-labels:latest
-          MOUNT: /work
           CHECK_SPECS: specs.yaml
           GITHUB_PR: ${{ github.event.pull_request.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -40,17 +31,16 @@ jobs:
           RULES_PATH: scripts/ci/ruled_labels
         run: |
           cargo install ruled-labels --version 0.3.1
-          echo "REPO: $REPO"
-          echo "GITHUB_PR: $GITHUB_PR"
+          echo "REPO: ${REPO}"
+          echo "GITHUB_PR: ${GITHUB_PR}"
 
           # Fetch the labels for the PR under test
-          labels=$( curl -H "Authorization: token $GITHUB_TOKEN" -s "$API_BASE/$REPO/pulls/$GITHUB_PR" | jq '.labels | .[] | .name' | tr "\n" ",")
+          labels=$( curl -H "Authorization: token ${GITHUB_TOKEN}" -s "$API_BASE/${REPO}/pulls/${GITHUB_PR}" | jq '.labels | .[] | .name' | tr "\n" ",")
           labels_args=${labels: :-1}
-          printf "Checking labels: %s\n" "$labels_args"
+          printf "Checking labels: %s\n" "${labels_args}"
 
-          cd $RULES_PATH
           # Prevent the shell from splitting labels with spaces
           IFS=","
-          ruled-labels check --labels $labels_args --dev
+
           # --dev is more useful to debug mode to debug
-          # docker run --rm -e labels_args -v $PWD/$RULES_PATH:$MOUNT $IMAGE check $MOUNT/$CHECK_SPECS --dev --labels $labels_args
+          ruled-labels check --labels ${labels_args} --dev ${RULES_PATH}/${CHECK_SPECS}
