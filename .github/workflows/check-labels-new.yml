@@ -15,12 +15,19 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
 
-      - name: Pull image
-        env:
-          IMAGE: chevdor/ruled-labels:latest
-        run: |
-          docker pull $IMAGE
-          docker run --rm $IMAGE --version
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          override: true
+          components: ruled-labels
+
+      # - name: Pull image
+      #   env:
+      #     IMAGE: chevdor/ruled-labels:latest
+      #   run: |
+      #     docker pull $IMAGE
+      #     docker run --rm $IMAGE --version
 
       - name: Check labels
         # continue-on-error: true
@@ -42,7 +49,9 @@ jobs:
           labels_args=${labels: :-1}
           printf "Checking labels: %s\n" "$labels_args"
 
+          cd $RULES_PATH
           # Prevent the shell from splitting labels with spaces
           IFS=","
+          ruled-labels check --labels $labels_args --dev
           # --dev is more useful to debug mode to debug
-          docker run --rm -e labels_args -v $PWD/$RULES_PATH:$MOUNT $IMAGE check $MOUNT/$CHECK_SPECS --dev --labels $labels_args
+          # docker run --rm -e labels_args -v $PWD/$RULES_PATH:$MOUNT $IMAGE check $MOUNT/$CHECK_SPECS --dev --labels $labels_args
