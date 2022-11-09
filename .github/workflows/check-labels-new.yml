@@ -19,7 +19,6 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          components: ruled-labels
 
       # - name: Pull image
       #   env:
@@ -40,6 +39,7 @@ jobs:
           REPO: ${{ github.repository }}
           RULES_PATH: scripts/ci/ruled_labels
         run: |
+          cargo install ruled-labels --version 0.3.1
           echo "REPO: $REPO"
           echo "GITHUB_PR: $GITHUB_PR"
 
