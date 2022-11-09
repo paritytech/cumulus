@@ -6,20 +6,20 @@ edition = "2021"
 
 
 [dependencies]
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.31" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.32" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.31" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.31" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.31" }
-sp-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.31" }
-sp-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.31" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.31" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.31" }
-sp-storage = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.31" }
-sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.31" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
+sp-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
+sp-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
+sp-storage = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
+sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
 tokio = { version = "1.21.2", features = ["sync"] }
 
 futures = "0.3.24"

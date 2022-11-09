@@ -10,13 +10,13 @@ codec = { package = "parity-scale-codec", version = "3.0.0", default-features = 
 scale-info = { version = "2.2.0", default-features = false, features = ["derive"] }
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.31" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.31" }
-pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.31" }
-sp-application-crypto = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.31" }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.31" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.31" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.31" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.32" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.32" }
+pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.32" }
+sp-application-crypto = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.32" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.32" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.32" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.32" }
 
 [dev-dependencies]
 
