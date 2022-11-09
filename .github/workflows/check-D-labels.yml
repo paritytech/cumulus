@@ -1,8 +1,13 @@
-name: Check labels (new)
+name: Check D labels
 
 on:
   pull_request:
     types: [labeled, opened, synchronize, unlabeled]
+    paths:
+      - runtime/common/**
+      - runtime/polkadot/**
+      - runtime/kusama/**
+      - primitives/src/**
 
 jobs:
   check-labels:
@@ -28,7 +33,7 @@ jobs:
           API_BASE: https://api.github.com/repos
           REPO: ${{ github.repository }}
           RULES_PATH: scripts/ci/ruled_labels
-          CHECK_SPECS: specs.yaml
+          CHECK_SPECS: specs-D.yaml
         run: |
           cargo install ruled-labels --version 0.3.1
           echo "REPO: ${REPO}"
@@ -37,7 +42,7 @@ jobs:
           # Fetch the labels for the PR under test
           labels=$( curl -H "Authorization: token ${GITHUB_TOKEN}" -s "$API_BASE/${REPO}/pulls/${GITHUB_PR}" | jq '.labels | .[] | .name' | tr "\n" ",")
 
-          [ -z "${labels}" ] && echo "No labels found. Please add labels A, B and C labels"; exit 1
+          [ -z "${labels}" ] && echo "No labels found. Please add D label"; exit 1
           labels_args=${labels: :-1}
           printf "Checking labels: %s\n" "${labels_args}"
 

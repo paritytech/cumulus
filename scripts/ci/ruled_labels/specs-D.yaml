@@ -1,0 +1,26 @@
+---
+name: paritytech/cumulus
+description: Import from paritytech/cumulus
+version: 0.0.1
+labels:
+  - name: D1-audited 👍
+    description: PR contains changes to fund-managing logic that has been properly reviewed and externally audited.
+    color: C0E7CC
+  - name: D2-notlive 💤
+    description: PR contains changes in a runtime directory that is not deployed to a chain that requires an audit.
+    color: C209B4
+  - name: D3-trivial 🧸
+    description: PR contains trivial changes in a runtime directory that do not require an audit
+    color: 5EDFEE
+  - name: D5-nicetohaveaudit ⚠️
+    description: PR contains trivial changes to logic that should be properly reviewed.
+    color: c5def5
+  - name: D9-needsaudit 👮
+    description: PR contains changes to fund-managing logic that should be properly reviewed and externally audited
+    color: C3EDC0
+rules:
+  - name: Require single audit (D) label allowed
+    id: single_d
+    tags: [PR]
+    spec:
+      require: !one_of [D*]
