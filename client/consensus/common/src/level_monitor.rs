@@ -296,7 +296,7 @@ where
 	) {
 		let mut remove_leaf = |number, hash| {
 			log::debug!(target: "parachain", "XXX Removing block (@{}) {:?}", number, hash);
-			if let Err(err) = self.backend.remove_leaf_block(&hash) {
+			if let Err(err) = self.backend.remove_leaf_block(hash) {
 				log::debug!(target: "parachain", "XXX Remove error for {}: {}", hash, err);
 				return false
 			}

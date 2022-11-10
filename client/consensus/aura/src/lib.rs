@@ -147,6 +147,7 @@ where
 				telemetry,
 				block_proposal_slot_portion,
 				max_block_proposal_slot_portion,
+				compatibility_mode: sc_consensus_aura::CompatibilityMode::None,
 			},
 		);
 

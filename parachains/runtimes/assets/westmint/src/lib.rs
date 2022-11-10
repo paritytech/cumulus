@@ -85,7 +85,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("westmint"),
 	impl_name: create_runtime_str!("westmint"),
 	authoring_version: 1,
-	spec_version: 9300,
+	spec_version: 9320,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 8,
@@ -228,6 +228,7 @@ impl pallet_assets::Config for Runtime {
 	type Balance = Balance;
 	type AssetId = AssetId;
 	type Currency = Balances;
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 	type ForceOrigin = AssetsForceOrigin;
 	type AssetDeposit = AssetDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
@@ -245,7 +246,7 @@ parameter_types! {
 	pub const DepositBase: Balance = deposit(1, 88);
 	// Additional storage item size of 32 bytes.
 	pub const DepositFactor: Balance = deposit(0, 32);
-	pub const MaxSignatories: u16 = 100;
+	pub const MaxSignatories: u32 = 100;
 }
 
 impl pallet_multisig::Config for Runtime {
