@@ -4,10 +4,7 @@ on:
   pull_request:
     types: [labeled, opened, synchronize, unlabeled]
     paths:
-      - runtime/common/**
-      - runtime/polkadot/**
-      - runtime/kusama/**
-      - primitives/src/**
+      - primitives/**
 
 jobs:
   check-labels:
