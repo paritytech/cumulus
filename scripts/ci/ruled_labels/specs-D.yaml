@@ -21,6 +21,6 @@ labels:
 rules:
   - name: Require single audit (D) label allowed
     id: single_d
-    tags: [PR]
+    tags: [ PR ]
     spec:
-      require: !one_of [D*]
+      require: !one_of [ D* ]

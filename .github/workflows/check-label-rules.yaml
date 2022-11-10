@@ -16,14 +16,16 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
 
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+      - name: Pull image
+        env:
+          IMAGE: paritytech/ruled_labels:0.3.1
+        run: docker pull $IMAGE
 
       - name: Check label Rules
         env:
+          IMAGE: paritytech/ruled_labels:0.3.1
+          MOUNT: /work
           RULES_PATH: scripts/ci/ruled_labels
         run: |
-          cargo install ruled-labels --version 0.3.1
-          ruled-labels test ${RULES_PATH}/specs.yaml
+          docker run --rm -i -v $PWD/${RULES_PATH}/:$MOUNT $IMAGE test ${MOUNT}/specs.yaml
+          docker run --rm -i -v $PWD/${RULES_PATH}/:$MOUNT $IMAGE test ${MOUNT}/specs-D.yaml
