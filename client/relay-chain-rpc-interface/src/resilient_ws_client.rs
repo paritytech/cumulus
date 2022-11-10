@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cumulus_primitives_core::relay_chain::Header as PHeader;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use futures::{
@@ -14,8 +16,9 @@ use jsonrpsee::{
 	ws_client::WsClientBuilder,
 };
 use polkadot_service::TaskManager;
-use tokio::sync::mpsc::{
-	channel as tokio_channel, Receiver as TokioReceiver, Sender as TokioSender,
+use tokio::sync::{
+	mpsc::{channel as tokio_channel, Receiver as TokioReceiver, Sender as TokioSender},
+	RwLock,
 };
 use url::Url;
 
@@ -102,9 +105,10 @@ pub enum RpcDispatcherMessage {
 
 /// Worker that should be used in combination with [`RelayChainRpcClient`]. Must be polled to distribute header notifications to listeners.
 struct RpcStreamWorker {
-	ws_clients: Vec<(Url, JsonRpcClient)>,
+	ws_urls: Vec<Url>,
 	// Communication channel with the RPC client
 	client_receiver: TokioReceiver<RpcDispatcherMessage>,
+	self_sender: TokioSender<RpcDispatcherMessage>,
 
 	// Senders to distribute incoming header notifications to
 	imported_header_listeners: Vec<Sender<PHeader>>,
@@ -134,32 +138,63 @@ fn handle_event_distribution(
 			});
 			Ok(())
 		},
-		None => Err("RPC Subscription closed.".to_string()),
+		None => {
+			// TODO skunert We should replace the stream at this point
+			tracing::error!(target: LOG_TARGET, "The subscription was closed");
+			return Err("Subscription closed".to_string());
+		},
 		Some(Err(err)) => Err(format!("Error in RPC subscription: {}", err)),
+	}
+}
+
+#[derive(Clone, Debug)]
+struct ClientManager {
+	urls: Vec<Url>,
+	ws_client: Arc<JsonRpcClient>,
+	bla: bool,
+}
+
+impl ClientManager {
+	pub async fn new(urls: Vec<Url>) -> Result<Self, JsonRpseeError> {
+		let first_url = urls.first().unwrap();
+		let ws_client = WsClientBuilder::default().build(first_url.clone()).await?;
+		Ok(Self { urls, ws_client: Arc::new(ws_client), bla: false })
+	}
+
+	pub async fn refresh(&mut self) {
+		tracing::info!(
+			target: LOG_TARGET,
+			is_connected = self.ws_client.is_connected(),
+			"Client 1 disconnected, switching to url 2"
+		);
+		if self.bla {
+			tracing::info!(target: LOG_TARGET, "Nothing to do, already switched connections");
+			return;
+		}
+		let new_url = self.urls.get(1).unwrap();
+		self.ws_client = Arc::new(
+			WsClientBuilder::default()
+				.build(new_url.clone())
+				.await
+				.expect("Second url also not running"),
+		);
+		self.bla = true;
+	}
+
+	pub async fn get_client(&mut self) -> Result<Arc<JsonRpcClient>, JsonRpseeError> {
+		tracing::info!(target: LOG_TARGET, "Client still connected, everything ok");
+		return Ok(self.ws_client.clone());
 	}
 }
 
 impl RpcStreamWorker {
 	/// Create new worker. Returns the worker and a channel to register new listeners.
 	async fn new(urls: Vec<Url>) -> (RpcStreamWorker, TokioSender<RpcDispatcherMessage>) {
-		let clients: Vec<(Url, Result<JsonRpcClient, JsonRpseeError>)> =
-			futures::future::join_all(urls.into_iter().map(|url| async move {
-				(url.clone(), WsClientBuilder::default().build(url.as_str()).await)
-			}))
-			.await;
-		let clients = clients.into_iter().filter_map(|element| {
-			match element.1 {
-				Ok(client) => Some((element.0, client)),
-				_ => {
-					tracing::warn!(target: "pooled-client", url = ?element.0, "Unable to connect to provided relay chain.");
-					None}
-			}
-		}).collect();
-
 		let (tx, rx) = tokio_channel(100);
 		let worker = RpcStreamWorker {
-			ws_clients: clients,
+			ws_urls: urls,
 			client_receiver: rx,
+			self_sender: tx.clone(),
 			imported_header_listeners: Vec::new(),
 			finalized_header_listeners: Vec::new(),
 			best_header_listeners: Vec::new(),
@@ -173,16 +208,18 @@ impl RpcStreamWorker {
 	/// 2. Distribute incoming import, best head and finalization notifications to registered listeners.
 	///    If an error occurs during sending, the receiver has been closed and we remove the sender from the list.
 	pub async fn run(mut self) {
-		let ws_client = &self.ws_clients.first().unwrap().1;
+		let mut client_manager = ClientManager::new(self.ws_urls.clone()).await.expect("jojo");
+
+		let mut subscription_client = client_manager.get_client().await.expect("jojo");
 		let mut pending_requests = FuturesUnordered::new();
 
-		let mut import_sub = ws_client
+		let mut import_sub = subscription_client
 			.subscribe::<PHeader>("chain_subscribeAllHeads", None, "chain_unsubscribeAllHeads")
 			.await
 			.expect("should not fail")
 			.fuse();
 
-		let mut best_head_sub = ws_client
+		let mut best_head_sub = subscription_client
 			.subscribe::<PHeader>(
 				"chain_subscribeNewHeads",
 				None,
@@ -190,7 +227,8 @@ impl RpcStreamWorker {
 			)
 			.await
 			.expect("should not fail");
-		let mut finalized_sub = ws_client
+
+		let mut finalized_sub = subscription_client
 			.subscribe::<PHeader>(
 				"chain_subscribeFinalizedHeads",
 				None,
@@ -200,7 +238,42 @@ impl RpcStreamWorker {
 			.expect("should not fail")
 			.fuse();
 
+		let mut reset_streams = false;
 		loop {
+			if reset_streams {
+				tracing::info!(target: LOG_TARGET, "Resetting streams");
+				client_manager.refresh().await;
+				subscription_client = client_manager.get_client().await.expect("jap");
+				import_sub = subscription_client
+					.subscribe::<PHeader>(
+						"chain_subscribeAllHeads",
+						None,
+						"chain_unsubscribeAllHeads",
+					)
+					.await
+					.expect("should not fail")
+					.fuse();
+
+				best_head_sub = subscription_client
+					.subscribe::<PHeader>(
+						"chain_subscribeNewHeads",
+						None,
+						"chain_unsubscribeFinalizedHeads",
+					)
+					.await
+					.expect("should not fail");
+
+				finalized_sub = subscription_client
+					.subscribe::<PHeader>(
+						"chain_subscribeFinalizedHeads",
+						None,
+						"chain_unsubscribeFinalizedHeads",
+					)
+					.await
+					.expect("should not fail")
+					.fuse();
+				reset_streams = false;
+			};
 			tokio::select! {
 				evt = self.client_receiver.recv() => match evt {
 					Some(RpcDispatcherMessage::RegisterBestHeadListener(tx)) => {
@@ -213,11 +286,23 @@ impl RpcStreamWorker {
 						self.finalized_header_listeners.push(tx)
 					},
 					Some(RpcDispatcherMessage::Request(method, params, response_sender)) => {
+						let Ok(closure_client) = client_manager.get_client().await else {
+							tracing::error!("Unable to get the new client, terminating worker");
+							return;
+						};
 						pending_requests.push(async move {
-							let resp = ws_client.request(&method, params.map(|p| p.into())).await;
+							let resp = closure_client.request(&method, params.clone().map(|p| p.into())).await;
+
+							let mut result = Ok(());
+							if resp.is_err() {
+								result = Err(());
+							}
+							tracing::info!(target: LOG_TARGET, ?resp, "Got response");
+
 							if let Err(err) = response_sender.send(resp) {
 								tracing::error!(target: LOG_TARGET, ?err, "Recipient no longer interested in request result");
 							}
+							return result;
 						});
 					},
 					None => {
@@ -225,23 +310,28 @@ impl RpcStreamWorker {
 						return;
 					}
 				},
-				_ = pending_requests.next() => {},
-				import_event = import_sub.next() => {
-					if let Err(err) = handle_event_distribution(import_event, &mut self.imported_header_listeners) {
-						tracing::error!(target: LOG_TARGET, err, "Encountered error while processing imported header notification. Stopping RPC Worker.");
-						return;
+				should_retry = pending_requests.next() => {
+					if let Some(Err(())) = should_retry {
+						tracing::info!(target: LOG_TARGET, "Refreshing client");
+						reset_streams = true;
 					}
 				},
-				best_header_event = best_head_sub.next() => {
+				import_event = import_sub.next(), if !reset_streams => {
+					if let Err(err) = handle_event_distribution(import_event, &mut self.imported_header_listeners) {
+						tracing::error!(target: LOG_TARGET, err, "Encountered error while processing imported header notification.");
+						reset_streams = true;
+					}
+				},
+				best_header_event = best_head_sub.next(), if !reset_streams => {
 					if let Err(err) = handle_event_distribution(best_header_event, &mut self.best_header_listeners) {
-						tracing::error!(target: LOG_TARGET, err, "Encountered error while processing best header notification. Stopping RPC Worker.");
-						return;
+						tracing::error!(target: LOG_TARGET, err, "Encountered error while processing best header notification.");
+						reset_streams = true;
 					}
 				}
-				finalized_event = finalized_sub.next() => {
+				finalized_event = finalized_sub.next(), if !reset_streams => {
 					if let Err(err) = handle_event_distribution(finalized_event, &mut self.finalized_header_listeners) {
-						tracing::error!(target: LOG_TARGET, err, "Encountered error while processing finalized header notification. Stopping RPC Worker.");
-						return;
+						tracing::error!(target: LOG_TARGET, err, "Encountered error while processing finalized header notification.");
+						reset_streams = true;
 					}
 				}
 			}
