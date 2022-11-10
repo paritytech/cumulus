@@ -18,9 +18,12 @@
 //! Expose the auto generated weight files.
 
 pub mod block_weights;
+pub mod cumulus_pallet_xcmp_queue;
 pub mod extrinsic_weights;
 pub mod paritydb_weights;
+pub mod pallet_balances;
 pub mod rocksdb_weights;
+pub mod xcm;
 
 pub use block_weights::constants::BlockExecutionWeight;
 pub use extrinsic_weights::constants::ExtrinsicBaseWeight;

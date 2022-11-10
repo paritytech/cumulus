@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::universal_exports::HaulBlob;
 use bp_messages::{
 	source_chain::MessagesBridge,
 	target_chain::{DispatchMessage, MessageDispatch},
@@ -24,6 +23,7 @@ use bp_runtime::{messages::MessageDispatchResult, AccountIdOf, BalanceOf, Chain}
 use codec::Encode;
 use frame_support::{dispatch::Weight, parameter_types};
 use xcm::latest::prelude::*;
+use xcm_builder::{DispatchBlob, DispatchBlobError, HaulBlob};
 
 // TODO:check-parameter - we could possibly use BridgeMessage from xcm:v3 stuff
 /// PLain "XCM" payload, which we transfer through bridge
@@ -45,9 +45,9 @@ pub struct XcmBlobMessageDispatch<SourceBridgeHubChain, TargetBridgeHubChain, Di
 impl<
 		SourceBridgeHubChain: Chain,
 		TargetBridgeHubChain: Chain,
-		DispatchBlob: crate::universal_exports::DispatchBlob,
+		BlobDispatcher: DispatchBlob,
 	> MessageDispatch<AccountIdOf<SourceBridgeHubChain>, BalanceOf<TargetBridgeHubChain>>
-	for XcmBlobMessageDispatch<SourceBridgeHubChain, TargetBridgeHubChain, DispatchBlob>
+	for XcmBlobMessageDispatch<SourceBridgeHubChain, TargetBridgeHubChain, BlobDispatcher>
 {
 	type DispatchPayload = XcmAsPlainPayload;
 
@@ -57,7 +57,7 @@ impl<
 		log::error!(
 			"[XcmBlobMessageDispatch] TODO: change here to XCMv3 dispatch_weight with XcmExecutor - message: ?...?",
 		);
-		0
+		Weight::zero()
 	}
 
 	fn dispatch(
@@ -71,14 +71,23 @@ impl<
 				log::error!("[XcmBlobMessageDispatch] payload error: {:?}", e);
 				return MessageDispatchResult {
 					dispatch_result: false,
-					unspent_weight: 0,
+					unspent_weight: Weight::zero(),
 					dispatch_fee_paid_during_dispatch: false,
 				}
 			},
 		};
-		let dispatch_result = match DispatchBlob::dispatch_blob(payload) {
+		let dispatch_result = match BlobDispatcher::dispatch_blob(payload) {
 			Ok(_) => true,
 			Err(e) => {
+				let e= match e {
+					DispatchBlobError::Unbridgable => "DispatchBlobError::Unbridgable",
+					DispatchBlobError::InvalidEncoding => "DispatchBlobError::InvalidEncoding",
+					DispatchBlobError::UnsupportedLocationVersion => "DispatchBlobError::UnsupportedLocationVersion",
+					DispatchBlobError::UnsupportedXcmVersion => "DispatchBlobError::UnsupportedXcmVersion",
+					DispatchBlobError::RoutingError => "DispatchBlobError::RoutingError",
+					DispatchBlobError::NonUniversalDestination => "DispatchBlobError::NonUniversalDestination",
+					DispatchBlobError::WrongGlobal => "DispatchBlobError::WrongGlobal",
+				};
 				log::error!(
 					"[XcmBlobMessageDispatch] DispatchBlob::dispatch_blob failed, error: {:?}",
 					e
@@ -89,7 +98,7 @@ impl<
 		MessageDispatchResult {
 			dispatch_result,
 			dispatch_fee_paid_during_dispatch: false,
-			unspent_weight: 0,
+			unspent_weight: Weight::zero(),
 		}
 	}
 }
@@ -102,8 +111,7 @@ pub trait XcmBlobHauler {
 
 	/// Runtime message sender adapter.
 	type MessageSender: MessagesBridge<
-		super::Origin,
-		AccountIdOf<Self::SenderChain>,
+		super::RuntimeOrigin,
 		BalanceOf<Self::SenderChain>,
 		XcmAsPlainPayload,
 	>;
@@ -115,15 +123,16 @@ pub trait XcmBlobHauler {
 	fn xcm_lane() -> LaneId;
 }
 
-impl<T: XcmBlobHauler> HaulBlob for T {
+pub struct XcmBlobHaulerAdapter<XcmBlobHauler>(sp_std::marker::PhantomData<XcmBlobHauler>);
+impl<H: XcmBlobHauler> HaulBlob for XcmBlobHaulerAdapter<H> {
 	fn haul_blob(blob: sp_std::prelude::Vec<u8>) {
-		let lane = T::xcm_lane();
+		let lane = H::xcm_lane();
 		// TODO:check-parameter - fee could be taken from BridgeMessage - or add as optional fo send_message
 		// TODO:check-parameter - or add here something like PriceForSiblingDelivery
-		let fee = <T::SenderChain as Chain>::Balance::from(0u8);
+		let fee = <H::SenderChain as Chain>::Balance::from(0u8);
 
-		let result = T::MessageSender::send_message(
-			pallet_xcm::Origin::from(MultiLocation::from(T::message_sender_origin())).into(),
+		let result = H::MessageSender::send_message(
+			pallet_xcm::Origin::from(MultiLocation::from(H::message_sender_origin())).into(),
 			lane,
 			blob,
 			fee,

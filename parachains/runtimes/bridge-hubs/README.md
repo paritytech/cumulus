@@ -31,7 +31,7 @@ cp target/release/polkadot ~/local_bridge_testing/bin/polkadot
 
 # 2. Build cumulus polkadot-parachain binary
 cd <cumulus-git-repo-dir>
-cargo build --release --locked -p polkadot-parachain@0.9.230
+cargo build --release --locked -p polkadot-parachain@0.9.300
 cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain
 
 # 3. Build substrate-relay binary

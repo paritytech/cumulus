@@ -25,11 +25,13 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod bridge_common_config;
 pub mod bridge_hub_rococo_config;
 pub mod bridge_hub_wococo_config;
+pub mod constants;
 mod weights;
 pub mod xcm_config;
 
 use codec::Decode;
 use bridge_common_config::*;
+use constants::currency::*;
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
@@ -48,9 +50,10 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, parameter_types,
+	dispatch::DispatchClass,
 	traits::Everything,
 	weights::{
-		constants::WEIGHT_PER_SECOND, ConstantMultiplier, DispatchClass, Weight,
+		ConstantMultiplier, Weight,
 		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 	},
 	PalletId,
@@ -77,7 +80,7 @@ use crate::{
 	bridge_hub_wococo_config::OnBridgeHubWococoBlobDispatcher,
 	xcm_config::XcmRouter,
 };
-use parachains_common::{AccountId, Signature};
+use parachains_common::{AccountId, Signature, AVERAGE_ON_INITIALIZE_RATIO, NORMAL_DISPATCH_RATIO, MAXIMUM_BLOCK_WEIGHT};
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
 
@@ -123,10 +126,10 @@ pub type SignedExtra = (
 );
 
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 
 /// Extrinsic type that has already been checked.
-pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
+pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -154,7 +157,7 @@ impl WeightToFeePolynomial for WeightToFee {
 		// in Rococo, extrinsic base weight (smallest non-zero weight) is mapped to 1 MILLIUNIT:
 		// in our template, we map to 1/10 of that, or 1/10 MILLIUNIT
 		let p = MILLIUNIT / 10;
-		let q = 100 * Balance::from(ExtrinsicBaseWeight::get());
+		let q = 100 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
 		smallvec![WeightToFeeCoefficient {
 			degree: 1,
 			negative: false,
@@ -223,19 +226,6 @@ pub const UNIT: Balance = 1_000_000_000_000;
 pub const MILLIUNIT: Balance = 1_000_000_000;
 pub const MICROUNIT: Balance = 1_000_000;
 
-/// The existential deposit. Set to 1/10 of the Connected Relay Chain.
-pub const EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
-
-/// We assume that ~5% of the block weight is consumed by `on_initialize` handlers. This is
-/// used to limit the maximal weight of a single extrinsic.
-const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(5);
-
-/// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used by
-/// `Operational` extrinsics.
-const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-
-/// We allow for 0.5 of a second of compute with a 12 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
@@ -262,11 +252,6 @@ pub mod runtime_api {
 
 parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
-
-	// This part is copied from Substrate's `bin/node/runtime/src/lib.rs`.
-	//  The `RuntimeBlockLength` and `RuntimeBlockWeights` exist here because the
-	// `DeletionWeightLimit` and `DeletionQueueDepth` depend on those to parameterize
-	// the lazy contract deletion.
 	pub RuntimeBlockLength: BlockLength =
 		BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
@@ -296,7 +281,7 @@ impl frame_system::Config for Runtime {
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
 	/// The aggregated dispatch type that is available for extrinsics.
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
 	type Lookup = AccountIdLookup<AccountId, ()>;
 	/// The index type for storing how many extrinsics an account has signed.
@@ -310,9 +295,9 @@ impl frame_system::Config for Runtime {
 	/// The header type.
 	type Header = generic::Header<BlockNumber, BlakeTwo256>;
 	/// The ubiquitous event type.
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	/// The ubiquitous origin type.
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	type BlockHashCount = BlockHashCount;
 	/// Runtime version.
@@ -365,7 +350,6 @@ impl pallet_authorship::Config for Runtime {
 	type EventHandler = (CollatorSelection,);
 }
 
-// TODO:check-parameter
 parameter_types! {
 	pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
 	pub const MaxLocks: u32 = 50;
@@ -377,11 +361,11 @@ impl pallet_balances::Config for Runtime {
 	/// The type for recording an account's balance.
 	type Balance = Balance;
 	/// The ubiquitous event type.
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
-	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_balances::WeightInfo<Runtime>;
 	type MaxReserves = MaxReserves;
 	type ReserveIdentifier = [u8; 8];
 }
@@ -394,7 +378,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
 	type WeightToFee = WeightToFee;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
@@ -403,12 +387,12 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
-	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
+	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
 	type OutboundXcmpMessageSource = XcmpQueue;
@@ -424,7 +408,7 @@ impl parachain_info::Config for Runtime {}
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
@@ -436,7 +420,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }
@@ -448,7 +432,7 @@ parameter_types! {
 }
 
 impl pallet_session::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	// we don't have stash and controller, thus we don't need the convert as well.
 	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
@@ -480,7 +464,7 @@ parameter_types! {
 pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
 
 impl pallet_collator_selection::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	type UpdateOrigin = CollatorSelectionUpdateOrigin;
 	type PotId = PotId;
@@ -496,8 +480,8 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 impl pallet_sudo::Config for Runtime {
-	type Call = Call;
-	type Event = Event;
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
 }
 
 // Add bridge pallets (GPA)
@@ -508,8 +492,9 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
 	type BridgedChain = bp_wococo::Wococo;
 	type MaxRequests = MaxRequests;
 	type HeadersToKeep = HeadersToKeep;
-	// TODO:check-parameter
-	type WeightInfo = ();
+	type MaxBridgedAuthorities = frame_support::traits::ConstU32<{bp_wococo::MAX_AUTHORITIES_COUNT}>;
+	type MaxBridgedHeaderSize = frame_support::traits::ConstU32<{bp_wococo::MAX_HEADER_SIZE}>;
+	type WeightInfo = pallet_bridge_grandpa::weights::BridgeWeight<Runtime>;
 }
 
 /// Add granda bridge pallet to track Rococo relay chain
@@ -518,8 +503,9 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 	type BridgedChain = bp_rococo::Rococo;
 	type MaxRequests = MaxRequests;
 	type HeadersToKeep = HeadersToKeep;
-	// TODO:check-parameter
-	type WeightInfo = ();
+	type MaxBridgedAuthorities = frame_support::traits::ConstU32<{bp_rococo::MAX_AUTHORITIES_COUNT}>;
+	type MaxBridgedHeaderSize = frame_support::traits::ConstU32<{bp_rococo::MAX_HEADER_SIZE}>;
+	type WeightInfo = pallet_bridge_grandpa::weights::BridgeWeight<Runtime>;
 }
 
 pub const ROCOCO_BRIDGE_PARA_PALLET_NAME: &str = "Paras";
@@ -533,33 +519,32 @@ parameter_types! {
 /// Add parachain bridge pallet to track Wococo bridge hub parachain
 pub type BridgeParachainWococoInstance = pallet_bridge_parachains::Instance1;
 impl pallet_bridge_parachains::Config<BridgeParachainWococoInstance> for Runtime {
-	type Event = Event;
-	// TODO:check-parameter
-	type WeightInfo = ();
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_bridge_parachains::weights::BridgeWeight<Runtime>;
 	type BridgesGrandpaPalletInstance = BridgeGrandpaWococoInstance;
 	type ParasPalletName = WococoBridgeParachainPalletName;
 	type TrackedParachains = Everything;
 	type HeadsToKeep = ParachainHeadsToKeep;
+	type MaxParaHeadSize = frame_support::traits::ConstU32<{bp_wococo::MAX_NESTED_PARACHAIN_HEAD_SIZE}>;
 }
 
 /// Add parachain bridge pallet to track Rococo bridge hub parachain
 pub type BridgeParachainRococoInstance = pallet_bridge_parachains::Instance2;
 impl pallet_bridge_parachains::Config<BridgeParachainRococoInstance> for Runtime {
-	type Event = Event;
-	// TODO:check-parameter
-	type WeightInfo = ();
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_bridge_parachains::weights::BridgeWeight<Runtime>;
 	type BridgesGrandpaPalletInstance = BridgeGrandpaRococoInstance;
 	type ParasPalletName = RococoBridgeParachainPalletName;
 	type TrackedParachains = Everything;
 	type HeadsToKeep = ParachainHeadsToKeep;
+	type MaxParaHeadSize = frame_support::traits::ConstU32<{bp_rococo::MAX_NESTED_PARACHAIN_HEAD_SIZE}>;
 }
 
 /// Add XCM messages support for BrigdeHubRococo to support Rococo->Wococo XCM messages
 pub type WithBridgeHubWococoMessagesInstance = pallet_bridge_messages::Instance1;
 impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Runtime {
-	type Event = Event;
-	// TODO:check-parameter - copy of MillauWeigth + refactor
-	type WeightInfo = ();
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_bridge_messages::weights::BridgeWeight<Runtime>;
 	type BridgedChainId = bridge_hub_rococo_config::BridgeHubWococoChainId;
 	type Parameter = ();
 	type MaxMessagesToPruneAtOnce = MaxMessagesToPruneAtOnce;
@@ -593,9 +578,8 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 /// Add XCM messages support for BrigdeHubWococo to support Wococo->Rococo XCM messages
 pub type WithBridgeHubRococoMessagesInstance = pallet_bridge_messages::Instance2;
 impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Runtime {
-	type Event = Event;
-	// TODO:check-parameter - copy of MillauWeigth + refactor
-	type WeightInfo = ();
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_bridge_messages::weights::BridgeWeight<Runtime>;
 	type BridgedChainId = bridge_hub_wococo_config::BridgeHubRococoChainId;
 	type Parameter = ();
 	type MaxMessagesToPruneAtOnce = MaxMessagesToPruneAtOnce;
@@ -692,6 +676,10 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		// XCM
+		// NOTE: Make sure you point to the individual modules below.
+		[pallet_xcm_benchmarks::fungible, XcmBalances]
+		[pallet_xcm_benchmarks::generic, XcmGeneric]
 	);
 }
 
@@ -836,7 +824,7 @@ impl_runtime_apis! {
 		fn estimate_message_delivery_and_dispatch_fee(
 			_lane_id: bp_messages::LaneId,
 			payload: XcmAsPlainPayload,
-			_conversion_rate: Option<frame_support::sp_runtime::FixedU128>,
+			conversion_rate: Option<frame_support::sp_runtime::FixedU128>,
 		) -> Option<Balance> {
 			None
 		}

@@ -1,14 +1,18 @@
 [workspace]
 members = [
+	"bridges/bin/runtime-common",
 	"bridges/modules/grandpa",
 	"bridges/modules/messages",
 	"bridges/modules/parachains",
 	"bridges/modules/relayers",
 	"bridges/modules/shift-session-manager",
+	"bridges/primitives/messages",
 	"bridges/primitives/polkadot-core",
 	"bridges/primitives/runtime",
 	"bridges/primitives/chain-bridge-hub-rococo",
 	"bridges/primitives/chain-bridge-hub-wococo",
+	"bridges/primitives/chain-rococo",
+	"bridges/primitives/chain-wococo",
 	"client/cli",
 	"client/consensus/aura",
 	"client/consensus/common",
@@ -89,7 +93,9 @@ frame-system = { git = "https://github.com/paritytech//substrate", branch = "sv-
 frame-system-benchmarking = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
 frame-try-runtime = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
-node-inspect = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
+pallet-alliance = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
+pallet-assets = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
+pallet-asset-tx-payment = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
 pallet-aura = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
 pallet-authority-discovery = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
 pallet-authorship = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
@@ -221,6 +227,7 @@ sp-rpc = { git = "https://github.com/paritytech//substrate", branch = "sv-locked
 sp-runtime = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
 sp-runtime-interface = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
 sp-runtime-interface-proc-macro = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
+sp-serializer = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
 sp-session = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
 sp-staking = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
 sp-state-machine = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
@@ -296,6 +303,7 @@ polkadot-test-runtime = { git = "https://github.com/paritytech//polkadot", branc
 slot-range-helper = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }
 tracing-gum = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }
 tracing-gum-proc-macro = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }
+westend-runtime-constants = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }
 xcm = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }
 xcm-builder = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }
 xcm-executor = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }

@@ -14,11 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{
-	universal_exports::{BridgeBlobDispatcher, HaulBlobExporter},
-	ParachainInfo, Runtime, WithBridgeHubWococoMessagesInstance, XcmAsPlainPayload, XcmBlobHauler,
-	XcmRouter,
-};
+use crate::{ParachainInfo, Runtime, WithBridgeHubWococoMessagesInstance, XcmAsPlainPayload, XcmBlobHauler, XcmBlobHaulerAdapter, XcmRouter};
 use bp_messages::{
 	source_chain::TargetHeaderChain,
 	target_chain::{ProvedMessages, SourceHeaderChain},
@@ -31,7 +27,7 @@ use bridge_runtime_common::{
 	messages::{
 		target::FromBridgedChainMessagesProof, BasicConfirmationTransactionEstimation,
 		BridgedChain, ChainWithMessages, MessageBridge, MessageTransaction, ThisChain,
-		ThisChainWithMessages, WeightOf,
+		ThisChainWithMessages,
 	},
 };
 use frame_support::{dispatch::Weight, parameter_types, RuntimeDebug};
@@ -40,6 +36,7 @@ use xcm::{
 	latest::prelude::*,
 	prelude::{InteriorMultiLocation, NetworkId},
 };
+use xcm_builder::{BridgeBlobDispatcher, HaulBlobExporter};
 
 // TODO:check-parameter
 parameter_types! {
@@ -58,7 +55,7 @@ pub type OnBridgeHubRococoBlobDispatcher =
 
 /// Export XCM messages to be relayed to the otherside
 pub type ToBridgeHubWococoHaulBlobExporter =
-	HaulBlobExporter<ToBridgeHubWococoXcmBlobHauler, WococoGlobalConsensusNetwork, ()>;
+	HaulBlobExporter<XcmBlobHaulerAdapter<ToBridgeHubWococoXcmBlobHauler>, WococoGlobalConsensusNetwork, ()>;
 pub struct ToBridgeHubWococoXcmBlobHauler;
 pub const DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO: LaneId = [0, 0, 0, 2];
 impl XcmBlobHauler for ToBridgeHubWococoXcmBlobHauler {
@@ -114,7 +111,6 @@ impl ChainWithMessages for BridgeHubWococo {
 	type AccountId = bp_bridge_hub_wococo::AccountId;
 	type Signer = bp_bridge_hub_wococo::AccountSigner;
 	type Signature = bp_bridge_hub_wococo::Signature;
-	type Weight = Weight;
 	type Balance = bp_bridge_hub_wococo::Balance;
 }
 
@@ -168,18 +164,18 @@ impl messages::BridgedChainWithMessages for BridgeHubWococo {
 	fn estimate_delivery_transaction(
 		message_payload: &[u8],
 		include_pay_dispatch_fee_cost: bool,
-		message_dispatch_weight: WeightOf<Self>,
-	) -> MessageTransaction<WeightOf<Self>> {
+		message_dispatch_weight: Weight,
+	) -> MessageTransaction<Weight> {
 		let message_payload_len = u32::try_from(message_payload.len()).unwrap_or(u32::MAX);
-		let extra_bytes_in_payload = Weight::from(message_payload_len)
-			.saturating_sub(pallet_bridge_messages::EXPECTED_DEFAULT_MESSAGE_LENGTH.into());
+		let extra_bytes_in_payload = message_payload_len
+			.saturating_sub(pallet_bridge_messages::EXPECTED_DEFAULT_MESSAGE_LENGTH);
 
 		MessageTransaction {
-			dispatch_weight: extra_bytes_in_payload
-				.saturating_mul(bp_bridge_hub_wococo::ADDITIONAL_MESSAGE_BYTE_DELIVERY_WEIGHT)
+			dispatch_weight: bp_bridge_hub_wococo::ADDITIONAL_MESSAGE_BYTE_DELIVERY_WEIGHT
+				.saturating_mul(extra_bytes_in_payload as u64)
 				.saturating_add(bp_bridge_hub_wococo::DEFAULT_MESSAGE_DELIVERY_TX_WEIGHT)
 				.saturating_sub(if include_pay_dispatch_fee_cost {
-					0
+					Weight::from_ref_time(0)
 				} else {
 					bp_bridge_hub_wococo::PAY_INBOUND_DISPATCH_FEE_WEIGHT
 				})
@@ -191,7 +187,7 @@ impl messages::BridgedChainWithMessages for BridgeHubWococo {
 	}
 
 	fn transaction_payment(
-		transaction: MessageTransaction<WeightOf<Self>>,
+		transaction: MessageTransaction<Weight>,
 	) -> messages::BalanceOf<Self> {
 		log::info!(
 			"[BridgeHubWococo::BridgedChainWithMessages] transaction_payment (returns 0 balance, TODO: fix) - transaction: {:?}",
@@ -211,21 +207,20 @@ impl ChainWithMessages for BridgeHubRococo {
 	type AccountId = bp_bridge_hub_rococo::AccountId;
 	type Signer = bp_bridge_hub_rococo::AccountSigner;
 	type Signature = bp_bridge_hub_rococo::Signature;
-	type Weight = Weight;
 	type Balance = bp_bridge_hub_rococo::Balance;
 }
 
 impl ThisChainWithMessages for BridgeHubRococo {
-	type Origin = crate::Origin;
-	type Call = crate::Call;
+	type RuntimeOrigin = crate::RuntimeOrigin;
+	type RuntimeCall = crate::RuntimeCall;
 	type ConfirmationTransactionEstimation = BasicConfirmationTransactionEstimation<
 		Self::AccountId,
-		{ bp_bridge_hub_rococo::MAX_SINGLE_MESSAGE_DELIVERY_CONFIRMATION_TX_WEIGHT },
+		{ bp_bridge_hub_rococo::MAX_SINGLE_MESSAGE_DELIVERY_CONFIRMATION_TX_WEIGHT.ref_time() },
 		{ bp_bridge_hub_wococo::EXTRA_STORAGE_PROOF_SIZE },
 		{ bp_bridge_hub_rococo::TX_EXTRA_BYTES },
 	>;
 
-	fn is_message_accepted(origin: &Self::Origin, lane: &LaneId) -> bool {
+	fn is_message_accepted(origin: &Self::RuntimeOrigin, lane: &LaneId) -> bool {
 		log::info!("[BridgeHubRococo::ThisChainWithMessages] is_message_accepted - origin: {:?}, lane: {:?}", origin, lane);
 		lane == &DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO
 	}
@@ -238,7 +233,7 @@ impl ThisChainWithMessages for BridgeHubRococo {
 	}
 
 	fn transaction_payment(
-		transaction: MessageTransaction<WeightOf<Self>>,
+		transaction: MessageTransaction<Weight>,
 	) -> messages::BalanceOf<Self> {
 		log::info!(
 			"[BridgeHubRococo::ThisChainWithMessages] transaction_payment (returns 0 balance, TODO: fix) - transaction: {:?}",
