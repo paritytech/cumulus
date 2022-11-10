@@ -202,48 +202,47 @@ labels:
 rules:
   - name: Require a single Release (B) label
     id: single_b
-    tags: [ PR ]
+    tags: [PR]
     spec:
-      require: !one_of [ B* ]
+      require: !one_of [B*]
 
   - name: Release mentions need criticality (C)
     id: require_one_c_when_b1
-    tags: [ PR ]
+    tags: [PR]
     spec:
-      when: !one_of [ B1 ]
-      require: !one_of [ C* ]
+      when: !one_of [B1]
+      require: !one_of [C*]
 
   - name: Release mentions need a topic (T)
     id: require_one_t_when_b1
-    tags: [ PR ]
+    tags: [PR]
     spec:
-      when: !one_of [ B1 ]
-      require: !one_of [ T* ]
+      when: !one_of [B1]
+      require: !one_of [T*]
 
   - name: One single issue status (S) label allowed
     id: single_s
     tags:
     spec:
-      when: !some_of  [ S* ]
-      require: !one_of [ S* ]
+      when: !some_of [S*]
+      require: !one_of [S*]
 
   - name: One single urgency status (U) label allowed
     id: single_u
-    tags: 
+    tags:
     spec:
-      when: !some_of  [ U* ]
-      require: !one_of [ U* ]
+      when: !some_of [U*]
+      require: !one_of [U*]
 
   - name: One single criticality (C) label allowed
     id: single_c
     tags: [ PR ]
     spec:
-      when: !some_of  [ C* ]
-      require: !one_of [ C* ]
-  
-  - name: One single audit (D) label allowed
+      when: !some_of [C*]
+      require: !one_of [C*]
+
+  - name: Require single audit (D) label allowed
     id: single_d
-    tags: [ PR ]
+    tags: [audit]
     spec:
-      when: !some_of  [ D* ]
-      require: !one_of [ D* ]
+      require: !one_of [D*]

@@ -16,10 +16,16 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
 
+      - name: Pull image
+        env:
+          IMAGE: paritytech/ruled_labels:0.3.1
+        run: docker pull $IMAGE
+
       - name: Check label Rules
         env:
-          IMAGE: chevdor/ruled-labels:latest
+          IMAGE: paritytech/ruled_labels:0.3.1
           MOUNT: /work
-          TEST_SPECS: tests.yaml
+          RULES_PATH: scripts/ci/ruled_labels
         run: |
-          docker run --rm -i --pull=always -v $PWD/scripts/ci/ruled_labels/:$MOUNT $IMAGE test $MOUNT/$TEST_SPECS
+          docker run --rm -i -v $PWD/${RULES_PATH}/:$MOUNT $IMAGE test ${MOUNT}/specs.yaml
+          docker run --rm -i -v $PWD/${RULES_PATH}/:$MOUNT $IMAGE test ${MOUNT}/specs-D.yaml
