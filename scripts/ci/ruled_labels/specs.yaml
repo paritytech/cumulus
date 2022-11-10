@@ -245,5 +245,4 @@ rules:
     id: single_d
     tags: [audit]
     spec:
-      when: !some_of [D*]
       require: !one_of [D*]
