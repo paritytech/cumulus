@@ -236,7 +236,7 @@ rules:
 
   - name: One single criticality (C) label allowed
     id: single_c
-    tags: 
+    tags: [ PR ]
     spec:
       when: !some_of  [ C* ]
       require: !one_of [ C* ]
