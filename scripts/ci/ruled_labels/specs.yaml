@@ -243,6 +243,7 @@ rules:
 
   - name: Require single audit (D) label allowed
     id: single_d
-    tags: [ audit ]
+    tags: [audit]
     spec:
-      require: !one_of [ D* ]
+      when: !some_of [D*]
+      require: !one_of [D*]

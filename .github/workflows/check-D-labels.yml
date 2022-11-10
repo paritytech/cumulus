@@ -31,7 +31,7 @@ jobs:
           API_BASE: https://api.github.com/repos
           REPO: ${{ github.repository }}
           RULES_PATH: scripts/ci/ruled_labels
-          CHECK_SPECS: specs-D.yaml
+          CHECK_SPECS: specs.yaml
         run: |
           echo "REPO: ${REPO}"
           echo "GITHUB_PR: ${GITHUB_PR}"
