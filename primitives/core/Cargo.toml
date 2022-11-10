@@ -30,4 +30,3 @@ std = [
 	"polkadot-parachain/std",
 	"polkadot-primitives/std",
 ]
-##
