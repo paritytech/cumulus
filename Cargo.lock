@@ -714,6 +714,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "bridge-assets-transfer"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
+ "sp-version",
+ "xcm",
+ "xcm-builder",
+]
+
+[[package]]
 name = "bs58"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11517,6 +11533,7 @@ name = "statemine-runtime"
 version = "2.0.0"
 dependencies = [
  "asset-test-utils",
+ "bridge-assets-transfer",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
