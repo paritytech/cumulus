@@ -1588,6 +1588,7 @@ dependencies = [
  "polkadot-primitives",
  "sc-client-api",
  "sc-consensus",
+ "sc-service",
  "sp-blockchain",
  "sp-consensus",
  "sp-runtime",

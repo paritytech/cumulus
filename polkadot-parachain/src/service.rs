@@ -536,6 +536,12 @@ where
 		s => s.to_string().into(),
 	})?;
 
+	block_import.spawn_relay_chain_observer(
+		relay_chain_interface.clone(),
+		para_id,
+		task_manager.spawn_handle(),
+	);
+
 	let block_announce_validator =
 		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
 

@@ -204,7 +204,10 @@ where
 
 		let level = self.levels.get(&number)?;
 
-		for blk_hash in level.iter().filter(|hash| **hash != best_hash) {
+		for blk_hash in level
+			.iter()
+			.filter(|hash| **hash != best_hash && self.freshness.get(*hash) != Some(&0u32.into()))
+		{
 			// Search for the fresher leaf information for this block
 			let candidate_info = leaves
 				.iter()
