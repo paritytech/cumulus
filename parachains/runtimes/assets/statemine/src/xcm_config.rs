@@ -36,9 +36,10 @@ use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
 	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FungiblesAdapter, IsConcrete,
-	NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
+	NativeAsset, NetworkExportTable, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UnpaidRemoteExporter,
+	UsingComponents, WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
@@ -46,7 +47,7 @@ parameter_types! {
 	pub const KsmLocation: MultiLocation = MultiLocation::parent();
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-	pub UniversalLocation: InteriorMultiLocation = X1(Parachain(ParachainInfo::parachain_id().into()));
+	pub UniversalLocation: InteriorMultiLocation = X2(GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into()));
 	pub const Local: MultiLocation = Here.into_location();
 	pub TrustBackedAssetsPalletLocation: MultiLocation =
 		PalletInstance(<TrustBackedAssets as PalletInfoAccess>::index() as u8).into();
@@ -266,3 +267,15 @@ impl cumulus_pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
+
+parameter_types! {
+	/// BridgedNetworkConsensus + Multilocation-to-LocalGlobalConsensusBridgeHub + LocalGlobalConsensusBridgeHub
+	pub BridgeTable: sp_std::prelude::Vec<(NetworkId, MultiLocation, Option<MultiAsset>)> = sp_std::vec![
+		(NetworkId::Wococo, (Parent, Parachain(1013)).into(), None),
+		(NetworkId::Polkadot, (Parent, Parachain(1003)).into(), None),
+	];
+}
+
+/// Bridge router, which wraps and sends xcm to BridgeHub to be delivered to the different GlobalConsensus
+pub type BridgeXcmSender =
+	UnpaidRemoteExporter<NetworkExportTable<BridgeTable>, XcmRouter, UniversalLocation>;

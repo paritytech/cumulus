@@ -63,7 +63,7 @@ use parachains_common::{
 	opaque, AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
-use xcm_config::{KsmLocation, XcmConfig};
+use xcm_config::{BridgeXcmSender, KsmLocation, XcmConfig};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -74,6 +74,7 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use xcm::latest::BodyId;
 use xcm_executor::XcmExecutor;
 
+use crate::xcm_config::{BridgeTable, UniversalLocation};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 impl_opaque_keys! {
@@ -569,6 +570,13 @@ impl pallet_uniques::Config for Runtime {
 	type Locker = ();
 }
 
+impl bridge_assets_transfer::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type BridgeXcmSender = BridgeXcmSender;
+	type SupportedBridges = BridgeTable;
+	type UniversalLocation = UniversalLocation;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -611,6 +619,7 @@ construct_runtime!(
 		// The main stage.
 		TrustBackedAssets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>} = 50,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
+		BridgeAssetsTransfer: bridge_assets_transfer::{Pallet, Call, Event<T>} = 52,
 	}
 );
 

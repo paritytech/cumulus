@@ -1,0 +1,40 @@
+[package]
+name = "bridge-assets-transfer"
+version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2021"
+license = "Apache-2.0"
+homepage = "https://docs.substrate.io/"
+repository = "https://github.com/paritytech/cumulus/"
+description = "Pallet message transfers through bridges"
+readme = "README.md"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
+log = { version = "0.4.14", default-features = false }
+
+# Substrate
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+
+# Polkadot
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+
+[dev-dependencies]
+sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"scale-info/std",
+	"sp-std/std",
+	"sp-runtime/std",
+	"frame-support/std",
+	"frame-system/std",
+	"xcm/std",
+]

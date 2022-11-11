@@ -68,6 +68,7 @@ cumulus-primitives-utility = { path = "../../../../primitives/utility", default-
 pallet-collator-selection = { path = "../../../../pallets/collator-selection", default-features = false }
 parachain-info = { path = "../../../pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
+bridge-assets-transfer = { path = "../../../../parachains/pallets/bridge-assets-transfer", default-features = false }
 pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false, optional = true }
 
 
@@ -177,4 +178,5 @@ std = [
 	"pallet-collator-selection/std",
 	"parachain-info/std",
 	"parachains-common/std",
+	"bridge-assets-transfer/std",
 ]
