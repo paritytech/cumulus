@@ -332,9 +332,11 @@ where
 			if invalidated_leaves.contains(&leaf_idx) {
 				return
 			}
-			invalidated_leaves.insert(leaf_idx);
 			match sp_blockchain::tree_route(self.backend.blockchain(), target_hash, *leaf_hash) {
-				Ok(route) if route.retracted().is_empty() => remove_route(route),
+				Ok(route) if route.retracted().is_empty() => {
+					invalidated_leaves.insert(leaf_idx);
+					remove_route(route);
+				},
 				Err(err) => {
 					log::warn!(
 						target: "parachain",
