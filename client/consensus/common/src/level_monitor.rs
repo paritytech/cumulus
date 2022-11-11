@@ -15,7 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use sc_client_api::{blockchain::Backend as _, Backend, HeaderBackend as _};
-use sp_blockchain::TreeRoute;
+use sp_blockchain::{HashAndNumber, TreeRoute};
 use sp_runtime::traits::{Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto, Zero};
 use std::{
 	collections::{HashMap, HashSet},
@@ -67,8 +67,7 @@ struct TargetInfo<Block: BlockT> {
 	/// Index of freshest leaf in the leaves array.
 	freshest_leaf_idx: usize,
 	/// Route from target to its freshest leaf.
-	/// `None` if they are equal.
-	freshest_route: Option<TreeRoute<Block>>,
+	freshest_route: TreeRoute<Block>,
 }
 
 impl<Block, BE> LevelMonitor<Block, BE>
@@ -216,12 +215,14 @@ where
 				.rev()
 				.find_map(|(leaf_idx, leaf_hash)| {
 					if blk_hash == leaf_hash {
-						Some(TargetInfo { freshest_leaf_idx: leaf_idx, freshest_route: None })
+						let entry = HashAndNumber { number, hash: *blk_hash };
+						let freshest_route = TreeRoute::new(vec![entry], 0);
+						Some(TargetInfo { freshest_leaf_idx: leaf_idx, freshest_route })
 					} else {
 						match sp_blockchain::tree_route(blockchain, *blk_hash, *leaf_hash) {
 							Ok(route) if route.retracted().is_empty() => Some(TargetInfo {
 								freshest_leaf_idx: leaf_idx,
-								freshest_route: Some(route),
+								freshest_route: route,
 							}),
 							Err(err) => {
 								log::warn!(
@@ -266,9 +267,9 @@ where
 			let not_contains_best = || {
 				candidate_info
 					.freshest_route
-					.as_ref()
-					.map(|tr| tr.enacted().iter().all(|entry| entry.hash != best_hash))
-					.unwrap_or(true)
+					.enacted()
+					.iter()
+					.all(|entry| entry.hash != best_hash)
 			};
 
 			if is_less_fresh() && not_contains_best() {
@@ -307,54 +308,43 @@ where
 
 		invalidated_leaves.insert(target.freshest_leaf_idx);
 
-		let target_hash = match target.freshest_route {
-			Some(freshest_route) => {
-				// Takes care of route removal. Starts from the leaf and stops as soon as an error is
-				// encountered. In this case an error is interpreted as the block being not a leaf
-				// and it will be removed while removing another route from the same block but to a
-				// different leaf.
-				let mut remove_route = |route: TreeRoute<Block>| {
-					route.enacted().iter().rev().all(|elem| remove_leaf(elem.number, elem.hash));
-				};
-
-				let target_hash = freshest_route.common_block().hash;
-				debug_assert_eq!(
-					freshest_route.common_block().number,
-					number,
-					"This is a bug in LevelMonitor::find_target() or the Backend is corrupted"
-				);
-
-				// Remove freshest (cached) route first.
-				remove_route(freshest_route);
-
-				// Don't bother trying with leaves we already found to not be our descendants.
-				let to_skip = leaves.len() - target.freshest_leaf_idx;
-				leaves.iter().enumerate().rev().skip(to_skip).for_each(|(leaf_idx, leaf_hash)| {
-					if invalidated_leaves.contains(&leaf_idx) {
-						return
-					}
-					invalidated_leaves.insert(leaf_idx);
-					match sp_blockchain::tree_route(
-						self.backend.blockchain(),
-						target_hash,
-						*leaf_hash,
-					) {
-						Ok(route) if route.retracted().is_empty() => remove_route(route),
-						Err(err) => {
-							log::warn!(
-								target: "parachain",
-								"XXX (on rem) Unable getting route from {:?} to {:?}: {}",
-								target_hash, leaf_hash, err,
-							);
-						},
-						_ => (),
-					};
-				});
-
-				target_hash
-			},
-			None => leaves[target.freshest_leaf_idx],
+		// Takes care of route removal. Starts from the leaf and stops as soon as an error is
+		// encountered. In this case an error is interpreted as the block being not a leaf
+		// and it will be removed while removing another route from the same block but to a
+		// different leaf.
+		let mut remove_route = |route: TreeRoute<Block>| {
+			route.enacted().iter().rev().all(|elem| remove_leaf(elem.number, elem.hash));
 		};
+
+		let target_hash = target.freshest_route.common_block().hash;
+		debug_assert_eq!(
+			target.freshest_route.common_block().number,
+			number,
+			"This is a bug in LevelMonitor::find_target() or the Backend is corrupted"
+		);
+
+		// Remove freshest (cached) route first.
+		remove_route(target.freshest_route);
+
+		// Don't bother trying with leaves we already found to not be our descendants.
+		let to_skip = leaves.len() - target.freshest_leaf_idx;
+		leaves.iter().enumerate().rev().skip(to_skip).for_each(|(leaf_idx, leaf_hash)| {
+			if invalidated_leaves.contains(&leaf_idx) {
+				return
+			}
+			invalidated_leaves.insert(leaf_idx);
+			match sp_blockchain::tree_route(self.backend.blockchain(), target_hash, *leaf_hash) {
+				Ok(route) if route.retracted().is_empty() => remove_route(route),
+				Err(err) => {
+					log::warn!(
+						target: "parachain",
+						"XXX (on rem) Unable getting route from {:?} to {:?}: {}",
+						target_hash, leaf_hash, err,
+					);
+				},
+				_ => (),
+			};
+		});
 
 		remove_leaf(number, target_hash);
 
