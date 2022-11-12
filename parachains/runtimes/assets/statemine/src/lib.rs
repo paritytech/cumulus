@@ -69,10 +69,12 @@ use xcm_config::{KsmLocation, XcmConfig};
 pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
-use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
+use pallet_xcm::{EnsureXcm, EqualMultiLocation, IsMajorityOfBody};
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
-use xcm::latest::BodyId;
+use xcm::latest::prelude::*;
 use xcm_executor::XcmExecutor;
+
+use kusama_runtime_constants::xcm::{origins::STAKING_ADMIN_INDEX, ORIGIN_INDEX};
 
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
@@ -506,11 +508,24 @@ parameter_types! {
 	pub const MinCandidates: u32 = 5;
 	pub const SessionLength: BlockNumber = 6 * HOURS;
 	pub const MaxInvulnerables: u32 = 100;
+	// Relay chain StakingAdmin origin location.
+	pub const StakingAdminLocation: MultiLocation = MultiLocation {
+		parents: 1,
+		interior: X2(
+			GeneralIndex(ORIGIN_INDEX as u128),
+			GeneralIndex(STAKING_ADMIN_INDEX as u128),
+		),
+	};
 }
 
-/// We allow root and the Relay Chain council to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin =
-	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>>;
+/// We allow root, the Relay Chain council and the StakingAdmin to execute privileged collator selection operations.
+pub type CollatorSelectionUpdateOrigin = EitherOfDiverse<
+	EnsureRoot<AccountId>,
+	EnsureXcm<(
+		IsMajorityOfBody<KsmLocation, ExecutiveBody>,
+		EqualMultiLocation<StakingAdminLocation>,
+	)>,
+>;
 
 impl pallet_collator_selection::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
