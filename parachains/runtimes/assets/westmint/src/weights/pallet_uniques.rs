@@ -74,14 +74,13 @@ impl<T: frame_system::Config> pallet_uniques::WeightInfo for WeightInfo<T> {
 	/// The range of component `m` is `[0, 1000]`.
 	/// The range of component `a` is `[0, 1000]`.
 	fn destroy(n: u32, m: u32, a: u32, ) -> Weight {
-		// Minimum execution time: 2_549_168 nanoseconds.
-		Weight::from_ref_time(2_562_828_000 as u64)
-			// Standard Error: 29_004
-			.saturating_add(Weight::from_ref_time(8_855_354 as u64).saturating_mul(n as u64))
-			// Standard Error: 29_004
-			.saturating_add(Weight::from_ref_time(310_593 as u64).saturating_mul(m as u64))
-			// Standard Error: 29_004
-			.saturating_add(Weight::from_ref_time(269_743 as u64).saturating_mul(a as u64))
+		Weight::from_ref_time(0 as u64)
+			// Standard Error: 13_000
+			.saturating_add(Weight::from_ref_time(10_002_000 as u64).saturating_mul(n as u64))
+			// Standard Error: 13_000
+			.saturating_add(Weight::from_ref_time(1_796_000 as u64).saturating_mul(m as u64))
+			// Standard Error: 13_000
+			.saturating_add(Weight::from_ref_time(1_646_000 as u64).saturating_mul(a as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(n as u64)))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
