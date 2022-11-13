@@ -642,7 +642,7 @@ pub fn run() -> Result<()> {
 				let hwbench = if !cli.no_hardware_benchmarks || cli.config.is_authority() {
 					config.database.path().map(|database_path| {
 						let _ = std::fs::create_dir_all(&database_path);
-						sc_sysinfo::gather_hwbench(Some(database_path))
+						sc_sysinfo::gather_hwbench(Some(database_path), SUBSTRATE_REFERENCE_HARDWARE.clone(), config.role.is_authority())
 					})
 				} else {
 					None
