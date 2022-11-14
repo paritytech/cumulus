@@ -74,7 +74,10 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use xcm::latest::prelude::*;
 use xcm_executor::XcmExecutor;
 
-use kusama_runtime_constants::xcm::{origins::STAKING_ADMIN_INDEX, ORIGIN_INDEX};
+use kusama_runtime_constants::xcm::{
+	origins::{FELLOWS_INDEX, STAKING_ADMIN_INDEX},
+	ORIGIN_INDEX,
+};
 
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
@@ -456,16 +459,27 @@ impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
+parameter_types! {
+	// Relay chain Fellows origin location.
+	pub const FellowsLocation: MultiLocation = MultiLocation {
+		parents: 1,
+		interior: X2(
+			GeneralIndex(ORIGIN_INDEX as u128),
+			GeneralIndex(FELLOWS_INDEX as u128),
+		),
+	};
+}
+
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-	type ControllerOrigin = EitherOfDiverse<
-		EnsureRoot<AccountId>,
-		EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>,
-	>;
+	type ControllerOrigin = EnsureXcm<(
+		IsMajorityOfBody<KsmLocation, ExecutiveBody>,
+		EqualMultiLocation<FellowsLocation>,
+	)>;
 	type ControllerOriginConverter = xcm_config::XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
 }
