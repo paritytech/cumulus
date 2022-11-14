@@ -14,7 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{ParachainInfo, Runtime, WithBridgeHubRococoMessagesInstance, XcmAsPlainPayload, XcmBlobHauler, XcmBlobHaulerAdapter, XcmRouter};
+use crate::{
+	ParachainInfo, Runtime, WithBridgeHubRococoMessagesInstance, XcmAsPlainPayload, XcmBlobHauler,
+	XcmBlobHaulerAdapter, XcmRouter,
+};
 use bp_messages::{
 	source_chain::TargetHeaderChain,
 	target_chain::{ProvedMessages, SourceHeaderChain},
@@ -54,8 +57,11 @@ pub type OnBridgeHubWococoBlobDispatcher =
 	BridgeBlobDispatcher<XcmRouter, BridgeHubWococoUniversalLocation>;
 
 /// Export XCM messages to be relayed to the otherside
-pub type ToBridgeHubRococoHaulBlobExporter =
-	HaulBlobExporter<XcmBlobHaulerAdapter<ToBridgeHubRococoXcmBlobHauler>, RococoGlobalConsensusNetwork, ()>;
+pub type ToBridgeHubRococoHaulBlobExporter = HaulBlobExporter<
+	XcmBlobHaulerAdapter<ToBridgeHubRococoXcmBlobHauler>,
+	RococoGlobalConsensusNetwork,
+	(),
+>;
 pub struct ToBridgeHubRococoXcmBlobHauler;
 pub const DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO: LaneId = [0, 0, 0, 1];
 impl XcmBlobHauler for ToBridgeHubRococoXcmBlobHauler {

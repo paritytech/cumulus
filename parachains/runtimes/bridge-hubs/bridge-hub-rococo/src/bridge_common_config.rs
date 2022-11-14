@@ -42,11 +42,8 @@ pub struct XcmBlobMessageDispatch<SourceBridgeHubChain, TargetBridgeHubChain, Di
 		sp_std::marker::PhantomData<(SourceBridgeHubChain, TargetBridgeHubChain, DispatchBlob)>,
 }
 
-impl<
-		SourceBridgeHubChain: Chain,
-		TargetBridgeHubChain: Chain,
-		BlobDispatcher: DispatchBlob,
-	> MessageDispatch<AccountIdOf<SourceBridgeHubChain>, BalanceOf<TargetBridgeHubChain>>
+impl<SourceBridgeHubChain: Chain, TargetBridgeHubChain: Chain, BlobDispatcher: DispatchBlob>
+	MessageDispatch<AccountIdOf<SourceBridgeHubChain>, BalanceOf<TargetBridgeHubChain>>
 	for XcmBlobMessageDispatch<SourceBridgeHubChain, TargetBridgeHubChain, BlobDispatcher>
 {
 	type DispatchPayload = XcmAsPlainPayload;
@@ -79,13 +76,16 @@ impl<
 		let dispatch_result = match BlobDispatcher::dispatch_blob(payload) {
 			Ok(_) => true,
 			Err(e) => {
-				let e= match e {
+				let e = match e {
 					DispatchBlobError::Unbridgable => "DispatchBlobError::Unbridgable",
 					DispatchBlobError::InvalidEncoding => "DispatchBlobError::InvalidEncoding",
-					DispatchBlobError::UnsupportedLocationVersion => "DispatchBlobError::UnsupportedLocationVersion",
-					DispatchBlobError::UnsupportedXcmVersion => "DispatchBlobError::UnsupportedXcmVersion",
+					DispatchBlobError::UnsupportedLocationVersion =>
+						"DispatchBlobError::UnsupportedLocationVersion",
+					DispatchBlobError::UnsupportedXcmVersion =>
+						"DispatchBlobError::UnsupportedXcmVersion",
 					DispatchBlobError::RoutingError => "DispatchBlobError::RoutingError",
-					DispatchBlobError::NonUniversalDestination => "DispatchBlobError::NonUniversalDestination",
+					DispatchBlobError::NonUniversalDestination =>
+						"DispatchBlobError::NonUniversalDestination",
 					DispatchBlobError::WrongGlobal => "DispatchBlobError::WrongGlobal",
 				};
 				log::error!(
@@ -142,9 +142,7 @@ impl<H: XcmBlobHauler> HaulBlob for XcmBlobHaulerAdapter<H> {
 				let hash = (lane, artifacts.nonce).using_encoded(sp_io::hashing::blake2_256);
 				hash
 			})
-			.map_err(|e| {
-				e
-			});
+			.map_err(|e| e);
 		log::info!(target: "runtime::bridge-hub", "haul_blob result: {:?} on lane: {:?}", result, lane);
 		result.expect("failed to process: TODO:check-parameter - wait for origin/gav-xcm-v3, there is a comment about handliing errors for HaulBlob");
 	}

@@ -29,11 +29,10 @@ pub mod constants;
 mod weights;
 pub mod xcm_config;
 
-use codec::Decode;
 use bridge_common_config::*;
+use codec::Decode;
 use constants::currency::*;
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -49,13 +48,11 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime,
 	dispatch::DispatchClass,
+	parameter_types,
 	traits::Everything,
-	weights::{
-		ConstantMultiplier, Weight,
-		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
-	},
+	weights::{ConstantMultiplier, Weight},
 	PalletId,
 };
 use frame_system::{
@@ -77,10 +74,12 @@ use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 use crate::{
 	bridge_hub_rococo_config::OnBridgeHubRococoBlobDispatcher,
-	bridge_hub_wococo_config::OnBridgeHubWococoBlobDispatcher,
+	bridge_hub_wococo_config::OnBridgeHubWococoBlobDispatcher, constants::fee::WeightToFee,
 	xcm_config::XcmRouter,
 };
-use parachains_common::{AccountId, Signature, AVERAGE_ON_INITIALIZE_RATIO, NORMAL_DISPATCH_RATIO, MAXIMUM_BLOCK_WEIGHT};
+use parachains_common::{
+	AccountId, Signature, AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO,
+};
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
 
@@ -126,7 +125,8 @@ pub type SignedExtra = (
 );
 
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+pub type UncheckedExtrinsic =
+	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
@@ -139,33 +139,6 @@ pub type Executive = frame_executive::Executive<
 	Runtime,
 	AllPalletsWithSystem,
 >;
-
-/// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
-/// node's balance type.
-///
-/// This should typically create a mapping between the following ranges:
-///   - `[0, MAXIMUM_BLOCK_WEIGHT]`
-///   - `[Balance::min, Balance::max]`
-///
-/// Yet, it can be used for any other sort of change to weight-fee. Some examples being:
-///   - Setting it to `0` will essentially disable the weight fee.
-///   - Setting it to `1` will cause the literal `#[weight = x]` values to be charged.
-pub struct WeightToFee;
-impl WeightToFeePolynomial for WeightToFee {
-	type Balance = Balance;
-	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		// in Rococo, extrinsic base weight (smallest non-zero weight) is mapped to 1 MILLIUNIT:
-		// in our template, we map to 1/10 of that, or 1/10 MILLIUNIT
-		let p = MILLIUNIT / 10;
-		let q = 100 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
-		smallvec![WeightToFeeCoefficient {
-			degree: 1,
-			negative: false,
-			coeff_frac: Perbill::from_rational(p % q, q),
-			coeff_integer: p / q,
-		}]
-	}
-}
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -225,7 +198,6 @@ pub const DAYS: BlockNumber = HOURS * 24;
 pub const UNIT: Balance = 1_000_000_000_000;
 pub const MILLIUNIT: Balance = 1_000_000_000;
 pub const MICROUNIT: Balance = 1_000_000;
-
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
@@ -492,8 +464,9 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
 	type BridgedChain = bp_wococo::Wococo;
 	type MaxRequests = MaxRequests;
 	type HeadersToKeep = HeadersToKeep;
-	type MaxBridgedAuthorities = frame_support::traits::ConstU32<{bp_wococo::MAX_AUTHORITIES_COUNT}>;
-	type MaxBridgedHeaderSize = frame_support::traits::ConstU32<{bp_wococo::MAX_HEADER_SIZE}>;
+	type MaxBridgedAuthorities =
+		frame_support::traits::ConstU32<{ bp_wococo::MAX_AUTHORITIES_COUNT }>;
+	type MaxBridgedHeaderSize = frame_support::traits::ConstU32<{ bp_wococo::MAX_HEADER_SIZE }>;
 	type WeightInfo = pallet_bridge_grandpa::weights::BridgeWeight<Runtime>;
 }
 
@@ -503,8 +476,9 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 	type BridgedChain = bp_rococo::Rococo;
 	type MaxRequests = MaxRequests;
 	type HeadersToKeep = HeadersToKeep;
-	type MaxBridgedAuthorities = frame_support::traits::ConstU32<{bp_rococo::MAX_AUTHORITIES_COUNT}>;
-	type MaxBridgedHeaderSize = frame_support::traits::ConstU32<{bp_rococo::MAX_HEADER_SIZE}>;
+	type MaxBridgedAuthorities =
+		frame_support::traits::ConstU32<{ bp_rococo::MAX_AUTHORITIES_COUNT }>;
+	type MaxBridgedHeaderSize = frame_support::traits::ConstU32<{ bp_rococo::MAX_HEADER_SIZE }>;
 	type WeightInfo = pallet_bridge_grandpa::weights::BridgeWeight<Runtime>;
 }
 
@@ -525,7 +499,8 @@ impl pallet_bridge_parachains::Config<BridgeParachainWococoInstance> for Runtime
 	type ParasPalletName = WococoBridgeParachainPalletName;
 	type TrackedParachains = Everything;
 	type HeadsToKeep = ParachainHeadsToKeep;
-	type MaxParaHeadSize = frame_support::traits::ConstU32<{bp_wococo::MAX_NESTED_PARACHAIN_HEAD_SIZE}>;
+	type MaxParaHeadSize =
+		frame_support::traits::ConstU32<{ bp_wococo::MAX_NESTED_PARACHAIN_HEAD_SIZE }>;
 }
 
 /// Add parachain bridge pallet to track Rococo bridge hub parachain
@@ -537,7 +512,8 @@ impl pallet_bridge_parachains::Config<BridgeParachainRococoInstance> for Runtime
 	type ParasPalletName = RococoBridgeParachainPalletName;
 	type TrackedParachains = Everything;
 	type HeadsToKeep = ParachainHeadsToKeep;
-	type MaxParaHeadSize = frame_support::traits::ConstU32<{bp_rococo::MAX_NESTED_PARACHAIN_HEAD_SIZE}>;
+	type MaxParaHeadSize =
+		frame_support::traits::ConstU32<{ bp_rococo::MAX_NESTED_PARACHAIN_HEAD_SIZE }>;
 }
 
 /// Add XCM messages support for BrigdeHubRococo to support Rococo->Wococo XCM messages
@@ -553,7 +529,8 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 	type MaxUnconfirmedMessagesAtInboundLane =
 		bridge_hub_rococo_config::MaxUnconfirmedMessagesAtInboundLane;
 
-	type MaximalOutboundPayloadSize = bridge_hub_rococo_config::ToBridgeHubWococoMaximalOutboundPayloadSize;
+	type MaximalOutboundPayloadSize =
+		bridge_hub_rococo_config::ToBridgeHubWococoMaximalOutboundPayloadSize;
 	type OutboundPayload = XcmAsPlainPayload;
 	type OutboundMessageFee = Balance;
 
@@ -588,7 +565,8 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 	type MaxUnconfirmedMessagesAtInboundLane =
 		bridge_hub_wococo_config::MaxUnconfirmedMessagesAtInboundLane;
 
-	type MaximalOutboundPayloadSize = bridge_hub_wococo_config::ToBridgeHubRococoMaximalOutboundPayloadSize;
+	type MaximalOutboundPayloadSize =
+		bridge_hub_wococo_config::ToBridgeHubRococoMaximalOutboundPayloadSize;
 	type OutboundPayload = XcmAsPlainPayload;
 	type OutboundMessageFee = Balance;
 

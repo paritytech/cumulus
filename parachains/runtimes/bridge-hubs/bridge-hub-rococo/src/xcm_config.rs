@@ -15,8 +15,8 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-	AccountId, Balance, Balances, RuntimeCall, RuntimeEvent, RuntimeOrigin, ParachainInfo, ParachainSystem, PolkadotXcm,
-	Runtime, XcmpQueue,
+	AccountId, Balance, Balances, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime,
+	RuntimeCall, RuntimeEvent, RuntimeOrigin, XcmpQueue,
 };
 use crate::{
 	bridge_hub_rococo_config::ToBridgeHubWococoHaulBlobExporter,
@@ -30,7 +30,13 @@ use frame_support::{
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
-use xcm_builder::{AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin, IsConcrete, NativeAsset, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds};
+use xcm_builder::{
+	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
+	EnsureXcmOrigin, IsConcrete, NativeAsset, ParentIsPreset, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+	WeightInfoBounds,
+};
 use xcm_executor::{traits::ExportXcm, XcmExecutor};
 
 parameter_types! {
@@ -276,12 +282,22 @@ impl ExportXcm for BridgeHubRococoOrBridgeHubWococoSwitchExporter {
 		message: &mut Option<Xcm<()>>,
 	) -> SendResult<Self::Ticket> {
 		match network {
-			Rococo =>
-				ToBridgeHubRococoHaulBlobExporter::validate(network, channel, universal_source, destination, message)
-					.map(|result| ((Rococo, result.0), result.1)),
-			Wococo =>
-				ToBridgeHubWococoHaulBlobExporter::validate(network, channel, universal_source, destination, message)
-					.map(|result| ((Wococo, result.0), result.1)),
+			Rococo => ToBridgeHubRococoHaulBlobExporter::validate(
+				network,
+				channel,
+				universal_source,
+				destination,
+				message,
+			)
+			.map(|result| ((Rococo, result.0), result.1)),
+			Wococo => ToBridgeHubWococoHaulBlobExporter::validate(
+				network,
+				channel,
+				universal_source,
+				destination,
+				message,
+			)
+			.map(|result| ((Wococo, result.0), result.1)),
 			_ => unimplemented!("Unsupported network: {:?}", network),
 		}
 	}
