@@ -16,9 +16,8 @@ use jsonrpsee::{
 	ws_client::WsClientBuilder,
 };
 use polkadot_service::TaskManager;
-use tokio::sync::{
-	mpsc::{channel as tokio_channel, Receiver as TokioReceiver, Sender as TokioSender},
-	RwLock,
+use tokio::sync::mpsc::{
+	channel as tokio_channel, Receiver as TokioReceiver, Sender as TokioSender,
 };
 use url::Url;
 
@@ -150,40 +149,46 @@ fn handle_event_distribution(
 #[derive(Clone, Debug)]
 struct ClientManager {
 	urls: Vec<Url>,
-	ws_client: Arc<JsonRpcClient>,
-	bla: bool,
+	active_client: (usize, Arc<JsonRpcClient>),
+}
+
+async fn find_next_client(
+	urls: &Vec<Url>,
+	starting_position: usize,
+) -> Result<(usize, Arc<JsonRpcClient>), ()> {
+	for (counter, url) in urls.iter().cycle().skip(starting_position).take(urls.len()).enumerate() {
+		let index = (starting_position + counter) % urls.len();
+		tracing::info!(target: LOG_TARGET, index, ?url, "Connecting to RPC node",);
+		if let Ok(ws_client) = WsClientBuilder::default().build(url.clone()).await {
+			tracing::info!(target: LOG_TARGET, ?url, "Successfully switched.");
+			return Ok((index, Arc::new(ws_client)));
+		};
+	}
+	Err(())
 }
 
 impl ClientManager {
-	pub async fn new(urls: Vec<Url>) -> Result<Self, JsonRpseeError> {
-		let first_url = urls.first().unwrap();
-		let ws_client = WsClientBuilder::default().build(first_url.clone()).await?;
-		Ok(Self { urls, ws_client: Arc::new(ws_client), bla: false })
+	pub async fn new(urls: Vec<Url>) -> Result<Self, ()> {
+		if urls.is_empty() {
+			return Err(());
+		}
+		let active_client = find_next_client(&urls, 1).await?;
+		Ok(Self { urls, active_client })
 	}
 
-	pub async fn refresh(&mut self) {
+	pub async fn connect_to_new_rpc_server(&mut self) -> Result<(), ()> {
 		tracing::info!(
 			target: LOG_TARGET,
-			is_connected = self.ws_client.is_connected(),
-			"Client 1 disconnected, switching to url 2"
+			is_connected = self.active_client.1.is_connected(),
+			"Trying to find new RPC server."
 		);
-		if self.bla {
-			tracing::info!(target: LOG_TARGET, "Nothing to do, already switched connections");
-			return;
-		}
-		let new_url = self.urls.get(1).unwrap();
-		self.ws_client = Arc::new(
-			WsClientBuilder::default()
-				.build(new_url.clone())
-				.await
-				.expect("Second url also not running"),
-		);
-		self.bla = true;
+		let new_active = find_next_client(&self.urls, self.active_client.0 + 1).await?;
+		self.active_client = new_active;
+		Ok(())
 	}
 
-	pub async fn get_client(&mut self) -> Result<Arc<JsonRpcClient>, JsonRpseeError> {
-		tracing::info!(target: LOG_TARGET, "Client still connected, everything ok");
-		return Ok(self.ws_client.clone());
+	pub fn get_client(&mut self) -> Arc<JsonRpcClient> {
+		return self.active_client.1.clone();
 	}
 }
 
@@ -210,7 +215,7 @@ impl RpcStreamWorker {
 	pub async fn run(mut self) {
 		let mut client_manager = ClientManager::new(self.ws_urls.clone()).await.expect("jojo");
 
-		let mut subscription_client = client_manager.get_client().await.expect("jojo");
+		let mut subscription_client = client_manager.get_client();
 		let mut pending_requests = FuturesUnordered::new();
 
 		let mut import_sub = subscription_client
@@ -241,9 +246,13 @@ impl RpcStreamWorker {
 		let mut reset_streams = false;
 		loop {
 			if reset_streams {
-				tracing::info!(target: LOG_TARGET, "Resetting streams");
-				client_manager.refresh().await;
-				subscription_client = client_manager.get_client().await.expect("jap");
+				if let Err(()) = client_manager.connect_to_new_rpc_server().await {
+					tracing::error!(
+						target: LOG_TARGET,
+						"Unable to find valid external RPC server, shutting down."
+					);
+				};
+				subscription_client = client_manager.get_client();
 				import_sub = subscription_client
 					.subscribe::<PHeader>(
 						"chain_subscribeAllHeads",
@@ -286,23 +295,18 @@ impl RpcStreamWorker {
 						self.finalized_header_listeners.push(tx)
 					},
 					Some(RpcDispatcherMessage::Request(method, params, response_sender)) => {
-						let Ok(closure_client) = client_manager.get_client().await else {
-							tracing::error!("Unable to get the new client, terminating worker");
-							return;
-						};
+						let closure_client = client_manager.get_client();
 						pending_requests.push(async move {
 							let resp = closure_client.request(&method, params.clone().map(|p| p.into())).await;
 
-							let mut result = Ok(());
-							if resp.is_err() {
-								result = Err(());
+							if let Err(JsonRpseeError::RestartNeeded(_)) = resp {
+								return Err(RpcDispatcherMessage::Request(method, params, response_sender));
 							}
-							tracing::info!(target: LOG_TARGET, ?resp, "Got response");
 
 							if let Err(err) = response_sender.send(resp) {
 								tracing::error!(target: LOG_TARGET, ?err, "Recipient no longer interested in request result");
 							}
-							return result;
+							return Ok(());
 						});
 					},
 					None => {
@@ -311,9 +315,10 @@ impl RpcStreamWorker {
 					}
 				},
 				should_retry = pending_requests.next() => {
-					if let Some(Err(())) = should_retry {
-						tracing::info!(target: LOG_TARGET, "Refreshing client");
+					if let Some(Err(req)) = should_retry {
 						reset_streams = true;
+						tracing::info!(target: LOG_TARGET, ?req, "Retrying request");
+						self.self_sender.send(req).await.expect("This should work");
 					}
 				},
 				import_event = import_sub.next(), if !reset_streams => {
