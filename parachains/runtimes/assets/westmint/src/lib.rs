@@ -85,7 +85,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("westmint"),
 	impl_name: create_runtime_str!("westmint"),
 	authoring_version: 1,
-	spec_version: 9300,
+	spec_version: 9320,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 8,
@@ -228,6 +228,7 @@ impl pallet_assets::Config for Runtime {
 	type Balance = Balance;
 	type AssetId = AssetId;
 	type Currency = Balances;
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 	type ForceOrigin = AssetsForceOrigin;
 	type AssetDeposit = AssetDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
