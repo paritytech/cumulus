@@ -208,7 +208,7 @@ fn encointer_genesis(
 		treasury: Default::default(),
 		collective: Default::default(),
 		membership: parachain_runtime::MembershipConfig {
-			members: encointer_council,
+			members: encointer_council.try_into().expect("Council below council max members; qed."),
 			phantom: Default::default(),
 		},
 		encointer_scheduler: parachain_runtime::EncointerSchedulerConfig {
@@ -225,6 +225,7 @@ fn encointer_genesis(
 			time_tolerance: 600_000,   // +-10min
 			location_tolerance: 1_000, // [m]
 			endorsement_tickets_per_bootstrapper: 10,
+			endorsement_tickets_per_reputable: 5,
 			reputation_lifetime: 5,
 			inactivity_timeout: 5, // idle ceremonies before purging community
 			meetup_time_offset: 0,
@@ -265,7 +266,7 @@ fn launch_genesis(
 		treasury: Default::default(),
 		collective: Default::default(),
 		membership: launch_runtime::MembershipConfig {
-			members: encointer_council,
+			members: encointer_council.try_into().expect("Council below council max members; qed."),
 			phantom: Default::default(),
 		},
 	}

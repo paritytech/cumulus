@@ -23,7 +23,7 @@ use crate::{
 	},
 };
 use codec::Encode;
-use cumulus_client_service::genesis::generate_genesis_block;
+use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::info;
@@ -37,7 +37,7 @@ use sc_service::{
 };
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
-use std::{io::Write, net::SocketAddr};
+use std::net::SocketAddr;
 
 trait IdentifyChain {
 	fn is_launch(&self) -> bool;
@@ -66,7 +66,7 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 #[rustfmt::skip]
 fn load_spec(
 	id: &str,
-) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	Ok(match id {
 		// live configs (hard coded genesis state. genesis will always be shell for a live system)
 		"encointer-rococo" 			=> Box::new(chain_spec::launch_rococo()?),
@@ -143,7 +143,7 @@ impl SubstrateCli for Cli {
 			"Encointer collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
-		{} [parachain-args] -- [relay_chain-args]",
+		{} [parachain-args] -- [relaychain-args]",
 			Self::executable_name()
 		)
 	}
@@ -160,7 +160,7 @@ impl SubstrateCli for Cli {
 		2017
 	}
 
-	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		load_spec(id)
 	}
 
@@ -204,23 +204,13 @@ impl SubstrateCli for RelayChainCli {
 		2017
 	}
 
-	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name().to_string()].iter())
-			.load_spec(id)
+	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
+		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
 		polkadot_cli::Cli::native_runtime_version(chain_spec)
 	}
-}
-
-fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<Vec<u8>> {
-	let mut storage = chain_spec.build_storage()?;
-
-	storage
-		.top
-		.remove(sp_core::storage::well_known_keys::CODE)
-		.ok_or_else(|| "Could not find wasm file in genesis state!".into())
 }
 
 /// Creates partial components for the runtimes that are supported by the benchmarks.
@@ -229,13 +219,13 @@ macro_rules! construct_benchmark_partials {
 		if $config.chain_spec.is_launch() {
 			let $partials = new_partial::<launch_runtime::RuntimeApi, _>(
 				&$config,
-				crate::service::parachain_build_import_queue::<_, parachains_common::AuraId>,
+				crate::service::aura_build_import_queue::<_, parachains_common::AuraId>,
 			)?;
 			$code
 		} else if $config.chain_spec.is_encointer() {
 			let $partials = new_partial::<parachain_runtime::RuntimeApi, _>(
 				&$config,
-				crate::service::parachain_build_import_queue::<_, parachains_common::AuraId>,
+				crate::service::aura_build_import_queue::<_, parachains_common::AuraId>,
 			)?;
 			$code
 		} else {
@@ -251,7 +241,7 @@ macro_rules! construct_async_run {
 			runner.async_run(|$config| {
 				let $components = new_partial::<launch_runtime::RuntimeApi, _>(
 					&$config,
-					crate::service::parachain_build_import_queue::<_, parachains_common::AuraId>,
+					crate::service::aura_build_import_queue::<_, parachains_common::AuraId>,
 				)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
@@ -263,7 +253,7 @@ macro_rules! construct_async_run {
 				_
 			>(
 				&$config,
-				crate::service::parachain_build_import_queue::<_, parachains_common::AuraId>,
+				crate::service::aura_build_import_queue::<_, parachains_common::AuraId>,
 			)?;
 			let task_manager = $components.task_manager;
 			{ $( $code )* }.map(|v| (v, task_manager))
@@ -301,15 +291,16 @@ pub fn run() -> Result<()> {
 				Ok(cmd.run(components.client, components.import_queue))
 			})
 		},
+		Some(Subcommand::Revert(cmd)) => construct_async_run!(|components, cli, cmd, config| {
+			Ok(cmd.run(components.client, components.backend, None))
+		}),
 		Some(Subcommand::PurgeChain(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 
 			runner.sync_run(|config| {
 				let polkadot_cli = RelayChainCli::new(
 					&config,
-					[RelayChainCli::executable_name().to_string()]
-						.iter()
-						.chain(cli.relaychain_args.iter()),
+					[RelayChainCli::executable_name()].iter().chain(cli.relaychain_args.iter()),
 				);
 
 				let polkadot_config = SubstrateCli::create_configuration(
@@ -322,53 +313,20 @@ pub fn run() -> Result<()> {
 				cmd.run(config, polkadot_config)
 			})
 		},
-		Some(Subcommand::Revert(cmd)) => construct_async_run!(|components, cli, cmd, config| {
-			Ok(cmd.run(components.client, components.backend, None))
-		}),
-		Some(Subcommand::ExportGenesisState(params)) => {
-			let mut builder = sc_cli::LoggerBuilder::new("");
-			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
-			let _ = builder.init();
-
-			let spec = load_spec(&params.chain.clone().unwrap_or_default())?;
-			let state_version = Cli::native_runtime_version(&spec).state_version();
-
-			let block: crate::service::Block = generate_genesis_block(&spec, state_version)?;
-			let raw_header = block.header().encode();
-			let output_buf = if params.raw {
-				raw_header
-			} else {
-				format!("0x{:?}", HexDisplay::from(&block.header().encode())).into_bytes()
-			};
-
-			if let Some(output) = &params.output {
-				std::fs::write(output, output_buf)?;
-			} else {
-				std::io::stdout().write_all(&output_buf)?;
-			}
-
-			Ok(())
+		Some(Subcommand::ExportGenesisState(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			runner.sync_run(|_config| {
+				let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
+				let state_version = Cli::native_runtime_version(&spec).state_version();
+				cmd.run::<crate::service::Block>(&*spec, state_version)
+			})
 		},
-		Some(Subcommand::ExportGenesisWasm(params)) => {
-			let mut builder = sc_cli::LoggerBuilder::new("");
-			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
-			let _ = builder.init();
-
-			let raw_wasm_blob =
-				extract_genesis_wasm(&cli.load_spec(&params.chain.clone().unwrap_or_default())?)?;
-			let output_buf = if params.raw {
-				raw_wasm_blob
-			} else {
-				format!("0x{:?}", HexDisplay::from(&raw_wasm_blob)).into_bytes()
-			};
-
-			if let Some(output) = &params.output {
-				std::fs::write(output, output_buf)?;
-			} else {
-				std::io::stdout().write_all(&output_buf)?;
-			}
-
-			Ok(())
+		Some(Subcommand::ExportGenesisWasm(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			runner.sync_run(|_config| {
+				let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
+				cmd.run(&*spec)
+			})
 		},
 		Some(Subcommand::Benchmark(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
@@ -402,9 +360,12 @@ pub fn run() -> Result<()> {
 						cmd.run(config, partials.client.clone(), db, storage)
 					})
 				}),
-				BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
 				BenchmarkCmd::Machine(cmd) =>
 					runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
+				// NOTE: this allows the Client to leniently implement
+				// new benchmark commands without requiring a companion MR.
+				#[allow(unreachable_patterns)]
+				_ => Err("Benchmarking sub-command unsupported".into()),
 			}
 		},
 		Some(Subcommand::TryRuntime(cmd)) => {
@@ -455,9 +416,7 @@ pub fn run() -> Result<()> {
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,
-					[RelayChainCli::executable_name().to_string()]
-						.iter()
-						.chain(cli.relaychain_args.iter()),
+					[RelayChainCli::executable_name()].iter().chain(cli.relaychain_args.iter()),
 				);
 
 				let id = ParaId::from(para_id);
@@ -468,7 +427,7 @@ pub fn run() -> Result<()> {
 				let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
 
 				let block: crate::service::Block =
-					generate_genesis_block(&config.chain_spec, state_version)
+					generate_genesis_block(&*config.chain_spec, state_version)
 						.map_err(|e| format!("{:?}", e))?;
 				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
@@ -595,8 +554,8 @@ impl CliConfiguration<Self> for RelayChainCli {
 		self.base.base.role(is_dev)
 	}
 
-	fn transaction_pool(&self) -> Result<sc_service::config::TransactionPoolOptions> {
-		self.base.base.transaction_pool()
+	fn transaction_pool(&self, is_dev: bool) -> Result<sc_service::config::TransactionPoolOptions> {
+		self.base.base.transaction_pool(is_dev)
 	}
 
 	fn state_cache_child_ratio(&self) -> Result<Option<usize>> {
@@ -644,5 +603,120 @@ impl CliConfiguration<Self> for RelayChainCli {
 
 	fn node_name(&self) -> Result<String> {
 		self.base.base.node_name()
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use crate::{
+		chain_spec::{get_account_id_from_seed, get_from_seed},
+		command::{Runtime, RuntimeResolver},
+	};
+	use sc_chain_spec::{ChainSpec, ChainSpecExtension, ChainSpecGroup, ChainType, Extension};
+	use serde::{Deserialize, Serialize};
+	use sp_core::sr25519;
+	use std::path::PathBuf;
+	use tempfile::TempDir;
+
+	#[derive(
+		Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension, Default,
+	)]
+	#[serde(deny_unknown_fields)]
+	pub struct Extensions1 {
+		pub attribute1: String,
+		pub attribute2: u32,
+	}
+
+	#[derive(
+		Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension, Default,
+	)]
+	#[serde(deny_unknown_fields)]
+	pub struct Extensions2 {
+		pub attribute_x: String,
+		pub attribute_y: String,
+		pub attribute_z: u32,
+	}
+
+	fn store_configuration(dir: &TempDir, spec: Box<dyn ChainSpec>) -> PathBuf {
+		let raw_output = true;
+		let json = sc_service::chain_ops::build_spec(&*spec, raw_output)
+			.expect("Failed to build json string");
+		let mut cfg_file_path = dir.path().to_path_buf();
+		cfg_file_path.push(spec.id());
+		cfg_file_path.set_extension("json");
+		std::fs::write(&cfg_file_path, json).expect("Failed to write to json file");
+		cfg_file_path
+	}
+
+	pub type DummyChainSpec<E> =
+		sc_service::GenericChainSpec<rococo_parachain_runtime::GenesisConfig, E>;
+
+	pub fn create_default_with_extensions<E: Extension>(
+		id: &str,
+		extension: E,
+	) -> DummyChainSpec<E> {
+		DummyChainSpec::from_genesis(
+			"Dummy local testnet",
+			id,
+			ChainType::Local,
+			move || {
+				crate::chain_spec::rococo_parachain::testnet_genesis(
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					vec![
+						get_from_seed::<rococo_parachain_runtime::AuraId>("Alice"),
+						get_from_seed::<rococo_parachain_runtime::AuraId>("Bob"),
+					],
+					vec![get_account_id_from_seed::<sr25519::Public>("Alice")],
+					1000.into(),
+				)
+			},
+			Vec::new(),
+			None,
+			None,
+			None,
+			None,
+			extension,
+		)
+	}
+
+	#[test]
+	fn test_resolve_runtime_for_different_configuration_files() {
+		let temp_dir = tempfile::tempdir().expect("Failed to access tempdir");
+
+		let path = store_configuration(
+			&temp_dir,
+			Box::new(create_default_with_extensions("shell-1", Extensions1::default())),
+		);
+		assert_eq!(Runtime::Shell, path.runtime());
+
+		let path = store_configuration(
+			&temp_dir,
+			Box::new(create_default_with_extensions("shell-2", Extensions2::default())),
+		);
+		assert_eq!(Runtime::Shell, path.runtime());
+
+		let path = store_configuration(
+			&temp_dir,
+			Box::new(create_default_with_extensions("seedling", Extensions2::default())),
+		);
+		assert_eq!(Runtime::Seedling, path.runtime());
+
+		let path = store_configuration(
+			&temp_dir,
+			Box::new(crate::chain_spec::rococo_parachain::rococo_parachain_local_config()),
+		);
+		assert_eq!(Runtime::Default, path.runtime());
+
+		let path = store_configuration(
+			&temp_dir,
+			Box::new(crate::chain_spec::statemint::statemine_local_config()),
+		);
+		assert_eq!(Runtime::Statemine, path.runtime());
+
+		let path = store_configuration(
+			&temp_dir,
+			Box::new(crate::chain_spec::contracts::contracts_rococo_local_config()),
+		);
+		assert_eq!(Runtime::ContractsRococo, path.runtime());
 	}
 }

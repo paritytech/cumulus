@@ -189,4 +189,18 @@ impl<T: frame_system::Config> pallet_encointer_ceremonies::WeightInfo for Weight
 		(185_000_000 as Weight)
 			.saturating_add(T::DbWeight::get().writes(12 as Weight))
 	}
+	fn upgrade_registration() -> Weight {
+		(247_000_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(15 as Weight))
+			.saturating_add(T::DbWeight::get().writes(8 as Weight))
+	}
+	
+	fn unregister_participant() -> Weight {
+		(91_000_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(9 as Weight))
+			.saturating_add(T::DbWeight::get().writes(5 as Weight))
+	}
+    fn set_endorsement_tickets_per_reputable() -> Weight {
+        (38_000_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
+    }
 }
