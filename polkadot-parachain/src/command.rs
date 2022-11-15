@@ -478,7 +478,8 @@ macro_rules! construct_async_run {
 			},
 			Runtime::BridgeHub(bridge_hub_runtime_type) => {
 				 match bridge_hub_runtime_type {
-					chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama => {
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal => {
 						runner.async_run(|$config| {
 							let $components = new_partial::<chain_spec::bridge_hubs::kusama::RuntimeApi, _>(
 								&$config,
@@ -799,7 +800,8 @@ pub fn run() -> Result<()> {
 					.map(|r| r.0)
 					.map_err(Into::into),
 					Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama =>
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal =>
 							crate::service::start_generic_aura_node::<
 								chain_spec::bridge_hubs::kusama::RuntimeApi,
 								AuraId,
