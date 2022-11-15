@@ -15,7 +15,6 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::resilient_ws_client::PooledClient;
-use backoff::{future::retry_notify, ExponentialBackoff};
 use cumulus_primitives_core::{
 	relay_chain::{
 		v2::{
@@ -30,7 +29,7 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use futures::channel::mpsc::Receiver;
-use jsonrpsee::core::{Error as JsonRpseeError, JsonValue};
+use jsonrpsee::core::JsonValue;
 use parity_scale_codec::{Decode, Encode};
 use polkadot_service::{BlockNumber, TaskManager};
 use sc_client_api::StorageData;
@@ -50,9 +49,6 @@ const LOG_TARGET: &str = "relay-chain-rpc-client";
 pub struct RelayChainRpcClient {
 	/// Websocket client to make calls
 	ws_client: Arc<PooledClient>,
-
-	/// Retry strategy that should be used for requests and subscriptions
-	retry_strategy: ExponentialBackoff,
 }
 
 macro_rules! rpc_params {
@@ -84,10 +80,7 @@ pub async fn create_client_and_start_worker(
 impl RelayChainRpcClient {
 	/// Initialize new RPC Client.
 	async fn new(ws_client: PooledClient) -> RelayChainResult<Self> {
-		let client = RelayChainRpcClient {
-			ws_client: Arc::new(ws_client),
-			retry_strategy: ExponentialBackoff::default(),
-		};
+		let client = RelayChainRpcClient { ws_client: Arc::new(ws_client) };
 
 		Ok(client)
 	}
@@ -148,21 +141,10 @@ impl RelayChainRpcClient {
 		R: DeserializeOwned + std::fmt::Debug,
 		OR: Fn(&RelayChainError),
 	{
-		retry_notify(
-			self.retry_strategy.clone(),
-			|| async {
-				self.ws_client.request(method, params.clone()).await.map_err(|err| match err {
-					RelayChainError::JsonRpcError(JsonRpseeError::Transport(_)) =>
-						backoff::Error::Transient { err, retry_after: None },
-					_ => backoff::Error::Permanent(err),
-				})
-			},
-			|error, dur| tracing::trace!(target: LOG_TARGET, %error, ?dur, "Encountered transport error, retrying."),
-		)
-		.await
-		.map_err(|err| {
+		self.ws_client.request(method, params.clone()).await.map_err(|err| {
 			trace_error(&err);
-			RelayChainError::RpcCallError(method.to_string())})
+			RelayChainError::RpcCallError(method.to_string())
+		})
 	}
 
 	/// Returns information regarding the current epoch.
