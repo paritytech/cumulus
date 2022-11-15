@@ -1,14 +1,18 @@
 [package]
 name = "polkadot-parachain"
-version = "0.9.300"
+version = "0.9.320"
 authors = ["Parity Technologies <admin@parity.io>"]
 build = "build.rs"
 edition = "2021"
 description = "Runs a polkadot parachain node which could be a collator."
 
+[[bin]]
+name = "polkadot-parachain"
+path = "src/main.rs"
+
 [dependencies]
-async-trait = "0.1.57"
-clap = { version = "3.2.22", features = ["derive", "deprecated"] }
+async-trait = "0.1.58"
+clap = { version = "4.0.22", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 futures = "0.3.24"
 hex-literal = "0.3.4"
@@ -62,10 +66,11 @@ sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = 
 sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-serializer = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
-try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 frame-rpc-system = { package = "substrate-frame-rpc-system", git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-state-trie-migration-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -112,4 +117,5 @@ try-runtime = [
 	"statemine-runtime/try-runtime",
 	"westmint-runtime/try-runtime",
 	"shell-runtime/try-runtime",
+	"try-runtime-cli/try-runtime",
 ]
