@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::resilient_ws_client::PooledClient;
+use crate::reconnecting_ws_client::ReconnectingWsClient;
 use cumulus_primitives_core::{
 	relay_chain::{
 		v2::{
@@ -48,7 +48,7 @@ const LOG_TARGET: &str = "relay-chain-rpc-client";
 #[derive(Clone)]
 pub struct RelayChainRpcClient {
 	/// Websocket client to make calls
-	ws_client: Arc<PooledClient>,
+	ws_client: Arc<ReconnectingWsClient>,
 }
 
 macro_rules! rpc_params {
@@ -70,7 +70,7 @@ pub async fn create_client_and_start_worker(
 	urls: Vec<Url>,
 	task_manager: &mut TaskManager,
 ) -> RelayChainResult<RelayChainRpcClient> {
-	let ws_client = PooledClient::new(urls, task_manager).await?;
+	let ws_client = ReconnectingWsClient::new(urls, task_manager).await?;
 
 	let client = RelayChainRpcClient::new(ws_client).await?;
 
@@ -79,7 +79,7 @@ pub async fn create_client_and_start_worker(
 
 impl RelayChainRpcClient {
 	/// Initialize new RPC Client.
-	async fn new(ws_client: PooledClient) -> RelayChainResult<Self> {
+	async fn new(ws_client: ReconnectingWsClient) -> RelayChainResult<Self> {
 		let client = RelayChainRpcClient { ws_client: Arc::new(ws_client) };
 
 		Ok(client)
