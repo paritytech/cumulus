@@ -150,7 +150,10 @@ fn handle_event_distribution(
 	}
 }
 
-#[derive(Clone, Debug)]
+/// Manages the active websocket client.
+/// Responsible for creating request futures, subscription streams
+/// and reconnections.
+#[derive(Debug)]
 struct ClientManager {
 	urls: Vec<Url>,
 	active_client: (usize, Arc<JsonRpcClient>),
