@@ -17,7 +17,7 @@ use super::*;
 use crate as collator_selection;
 use frame_support::{
 	ord_parameter_types, parameter_types,
-	traits::{FindAuthor, GenesisBuild, ValidatorRegistration},
+	traits::{ConstU64, FindAuthor, GenesisBuild, ValidatorRegistration},
 	PalletId,
 };
 use frame_system as system;
@@ -115,14 +115,10 @@ impl pallet_authorship::Config for Test {
 	type EventHandler = CollatorSelection;
 }
 
-parameter_types! {
-	pub const MinimumPeriod: u64 = 1;
-}
-
 impl pallet_timestamp::Config for Test {
 	type Moment = u64;
 	type OnTimestampSet = Aura;
-	type MinimumPeriod = MinimumPeriod;
+	type MinimumPeriod = ConstU64<1>;
 	type WeightInfo = ();
 }
 
