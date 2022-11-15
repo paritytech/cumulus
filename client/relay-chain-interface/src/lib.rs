@@ -51,11 +51,11 @@ pub enum RelayChainError {
 	BlockchainError(#[from] sp_blockchain::Error),
 	#[error("State machine error occured: {0}")]
 	StateMachineError(Box<dyn sp_state_machine::Error>),
-	#[error("Unable to call RPC method '{0}' due to error: {1}")]
-	RpcCallError(String, JsonRpcError),
+	#[error("Unable to call RPC method '{0}'")]
+	RpcCallError(String),
 	#[error("RPC Error: '{0}'")]
 	JsonRpcError(#[from] JsonRpcError),
-	#[error("Unable to reach RpcStreamWorker: {0}")]
+	#[error("Unable to communicate with RPC worker: {0}")]
 	WorkerCommunicationError(String),
 	#[error("Scale codec deserialization error: {0}")]
 	DeserializationError(CodecError),
@@ -84,6 +84,24 @@ impl From<CodecError> for RelayChainError {
 impl From<RelayChainError> for sp_blockchain::Error {
 	fn from(r: RelayChainError) -> Self {
 		sp_blockchain::Error::Application(Box::new(r))
+	}
+}
+
+impl<T> From<tokio::sync::mpsc::error::SendError<T>> for RelayChainError {
+	fn from(e: tokio::sync::mpsc::error::SendError<T>) -> Self {
+		return RelayChainError::WorkerCommunicationError(format!(
+			"Unable to send message to RPC worker: {}",
+			e.to_string()
+		));
+	}
+}
+
+impl From<futures::channel::oneshot::Canceled> for RelayChainError {
+	fn from(e: futures::channel::oneshot::Canceled) -> Self {
+		return RelayChainError::WorkerCommunicationError(format!(
+			"Unexpected channel close on RPC worker side: {}",
+			e.to_string()
+		));
 	}
 }
 

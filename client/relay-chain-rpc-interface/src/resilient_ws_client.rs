@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Instant};
+use std::sync::Arc;
 
 use cumulus_primitives_core::relay_chain::Header as PHeader;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
@@ -50,15 +50,16 @@ impl PooledClient {
 		&self,
 		method: &str,
 		params: Option<Vec<JsonValue>>,
-	) -> Result<R, jsonrpsee::core::Error>
+	) -> Result<R, RelayChainError>
 	where
 		R: sp_runtime::DeserializeOwned,
 	{
 		let (tx, rx) = futures::channel::oneshot::channel();
 		let message = RpcDispatcherMessage::Request(method.to_string(), params, tx);
-		self.to_worker_channel.send(message).await.expect("worker sending fucked up");
-		let value = rx.await.expect("fucked up during deserialization")?;
-		serde_json::from_value(value).map_err(JsonRpseeError::ParseError)
+		self.to_worker_channel.send(message).await?;
+		let value = rx.await??;
+		serde_json::from_value(value)
+			.map_err(|_| RelayChainError::GenericError("Unable to deserialize value".to_string()))
 	}
 	/// Get a stream of new best relay chain headers
 	pub fn get_best_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
@@ -144,8 +145,6 @@ fn handle_event_distribution(
 			Ok(())
 		},
 		None => {
-			// TODO skunert We should replace the stream at this point
-			tracing::error!(target: LOG_TARGET, "The subscription was closed");
 			return Err("Subscription closed".to_string());
 		},
 		Some(Err(err)) => Err(format!("Error in RPC subscription: {}", err)),
@@ -172,7 +171,6 @@ async fn find_next_client(
 		let index = (starting_position + counter) % urls.len();
 		tracing::info!(target: LOG_TARGET, index, ?url, "Connecting to RPC node",);
 		if let Ok(ws_client) = WsClientBuilder::default().build(url.clone()).await {
-			tracing::info!(target: LOG_TARGET, ?url, "Successfully switched.");
 			return Ok((index, Arc::new(ws_client)));
 		};
 	}
@@ -247,13 +245,13 @@ impl RpcStreamWorker {
 	/// 2. Distribute incoming import, best head and finalization notifications to registered listeners.
 	///    If an error occurs during sending, the receiver has been closed and we remove the sender from the list.
 	pub async fn run(mut self) {
+		let mut pending_requests = FuturesUnordered::new();
+
 		let Ok(mut client_manager) = ClientManager::new(self.ws_urls.clone()).await else {
 			tracing::error!(target: LOG_TARGET, "No valid RPC url found. Stopping RPC worker.");
 			return;
 		};
-
 		let active_client = client_manager.get_client();
-		let mut pending_requests = FuturesUnordered::new();
 
 		let Ok(mut subscriptions) = get_subscriptions(&active_client).await else {
 			return;
@@ -273,6 +271,10 @@ impl RpcStreamWorker {
 				if let Ok(new_subscriptions) = get_subscriptions(&active_client).await {
 					subscriptions = new_subscriptions;
 				} else {
+					tracing::error!(
+						target: LOG_TARGET,
+						"Not able to create streams from newly connected RPC server, shutting down."
+					);
 					return;
 				};
 
@@ -299,11 +301,13 @@ impl RpcStreamWorker {
 						return;
 					}
 				},
-				should_retry = pending_requests.next() => {
+				should_retry = pending_requests.next(), if pending_requests.len() > 0 => {
 					if let Some(Err(req)) = should_retry {
 						reset_streams = true;
-						tracing::info!(target: LOG_TARGET, ?req, "Retrying request");
-						self.self_sender.send(req).await.expect("This should work");
+						if let Err(e) = self.self_sender.send(req).await {
+							tracing::error!(target: LOG_TARGET, ?e, "Unable to retry request, channel closed.");
+							return;
+						};
 					}
 				},
 				import_event = subscriptions.import_subscription.next() => {

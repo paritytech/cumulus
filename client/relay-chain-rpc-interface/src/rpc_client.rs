@@ -146,13 +146,13 @@ impl RelayChainRpcClient {
 	) -> Result<R, RelayChainError>
 	where
 		R: DeserializeOwned + std::fmt::Debug,
-		OR: Fn(&jsonrpsee::core::Error),
+		OR: Fn(&RelayChainError),
 	{
 		retry_notify(
 			self.retry_strategy.clone(),
 			|| async {
 				self.ws_client.request(method, params.clone()).await.map_err(|err| match err {
-					JsonRpseeError::Transport(_) =>
+					RelayChainError::JsonRpcError(JsonRpseeError::Transport(_)) =>
 						backoff::Error::Transient { err, retry_after: None },
 					_ => backoff::Error::Permanent(err),
 				})
@@ -162,7 +162,7 @@ impl RelayChainRpcClient {
 		.await
 		.map_err(|err| {
 			trace_error(&err);
-			RelayChainError::RpcCallError(method.to_string(), err)})
+			RelayChainError::RpcCallError(method.to_string())})
 	}
 
 	/// Returns information regarding the current epoch.
