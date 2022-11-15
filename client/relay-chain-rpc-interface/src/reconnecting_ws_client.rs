@@ -245,10 +245,12 @@ impl ReconnectingWebsocketWorker {
 	}
 
 	/// Run this worker to drive notification streams.
-	/// The worker does two things:
-	/// 1. Listen for `NotificationRegisterMessage` and register new listeners for the notification streams
-	/// 2. Distribute incoming import, best head and finalization notifications to registered listeners.
-	///    If an error occurs during sending, the receiver has been closed and we remove the sender from the list.
+	/// The worker does the following:
+	/// - Listen for [`RpcDispatcherMessage`], perform requests and register new listeners for the notification streams
+	/// - Distribute incoming import, best head and finalization notifications to registered listeners.
+	///   If an error occurs during sending, the receiver has been closed and we remove the sender from the list.
+	/// - Find a new valid RPC server to connect to in case the websocket connection is terminated.
+	///   If the worker is not able to connec to an RPC server from the list, the worker shuts down.
 	pub async fn run(mut self) {
 		let mut pending_requests = FuturesUnordered::new();
 
@@ -264,11 +266,18 @@ impl ReconnectingWebsocketWorker {
 
 		let mut should_reconnect = false;
 		loop {
+			// This branch is taken if the websocket connection to the current RPC server is closed.
 			if should_reconnect {
-				let mut requests_to_retry: Vec<RpcDispatcherMessage> = Vec::new();
-				while pending_requests.len() > 0 {
+				// At this point, all pending requests will return an error since the
+				// JsonRpSee background thread is dead. So draining the pending requests should be fast.
+				while !pending_requests.is_empty() {
 					if let Some(Err(req)) = pending_requests.next().await {
-						requests_to_retry.push(req);
+						// Put the failed requests into the queue again, they will be processed
+						// once we have a new rpc server to connect to.
+						self.self_sender
+							.send(req)
+							.await
+							.expect("This worker owns the channel; qed");
 					}
 				}
 
@@ -290,16 +299,6 @@ impl ReconnectingWebsocketWorker {
 					return;
 				};
 
-				requests_to_retry.into_iter().for_each(|req| {
-					if let RpcDispatcherMessage::Request(method, params, response_sender) = req {
-						pending_requests.push(create_request(
-							active_client.clone(),
-							method,
-							params,
-							response_sender,
-						))
-					}
-				});
 				should_reconnect = false;
 			};
 
@@ -323,13 +322,10 @@ impl ReconnectingWebsocketWorker {
 						return;
 					}
 				},
-				should_retry = pending_requests.next(), if pending_requests.len() > 0 => {
+				should_retry = pending_requests.next(), if !pending_requests.is_empty() => {
 					if let Some(Err(req)) = should_retry {
+						self.self_sender.send(req).await.expect("This worker owns the channel; qed");
 						should_reconnect = true;
-						if let Err(e) = self.self_sender.send(req).await {
-							tracing::error!(target: LOG_TARGET, ?e, "Unable to retry request, channel closed.");
-							return;
-						};
 					}
 				},
 				import_event = subscriptions.import_subscription.next() => {
