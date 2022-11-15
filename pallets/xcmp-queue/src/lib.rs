@@ -68,6 +68,9 @@ pub type OverweightIndex = u64;
 
 const LOG_TARGET: &str = "xcmp_queue";
 const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
+										 // Maximum amount of messages to process per block. This is a temporary measure until we properly
+										 // account for proof size weights.
+const MAX_MESSAGES_PER_BLOCK: u8 = 10;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -658,6 +661,7 @@ impl<T: Config> Pallet<T> {
 	fn process_xcmp_message(
 		sender: ParaId,
 		(sent_at, format): (RelayBlockNumber, XcmpMessageFormat),
+		messages_processed: &mut u8,
 		max_weight: Weight,
 		max_individual_weight: Weight,
 	) -> (Weight, bool) {
@@ -667,7 +671,9 @@ impl<T: Config> Pallet<T> {
 		let mut weight_used = Weight::zero();
 		match format {
 			XcmpMessageFormat::ConcatenatedVersionedXcm => {
-				while !remaining_fragments.is_empty() {
+				while !remaining_fragments.is_empty() &&
+					*messages_processed < MAX_MESSAGES_PER_BLOCK
+				{
 					last_remaining_fragments = remaining_fragments;
 					if let Ok(xcm) = VersionedXcm::<T::RuntimeCall>::decode_with_depth_limit(
 						MAX_XCM_DECODE_DEPTH,
@@ -675,7 +681,10 @@ impl<T: Config> Pallet<T> {
 					) {
 						let weight = max_weight - weight_used;
 						match Self::handle_xcm_message(sender, sent_at, xcm, weight) {
-							Ok(used) => weight_used = weight_used.saturating_add(used),
+							Ok(used) => {
+								weight_used = weight_used.saturating_add(used);
+								*messages_processed += 1;
+							},
 							Err(XcmError::WeightLimitReached(required))
 								if required > max_individual_weight.ref_time() =>
 							{
@@ -723,7 +732,10 @@ impl<T: Config> Pallet<T> {
 					if let Ok(blob) = <Vec<u8>>::decode(&mut remaining_fragments) {
 						let weight = max_weight - weight_used;
 						match Self::handle_blob_message(sender, sent_at, blob, weight) {
-							Ok(used) => weight_used = weight_used.saturating_add(used),
+							Ok(used) => {
+								weight_used = weight_used.saturating_add(used);
+								*messages_processed += 1;
+							},
 							Err(true) => {
 								// That message didn't get processed this time because of being
 								// too heavy. We leave it around for next time and bail.
@@ -799,6 +811,7 @@ impl<T: Config> Pallet<T> {
 	/// further.
 	fn service_xcmp_queue(max_weight: Weight) -> Weight {
 		let suspended = QueueSuspended::<T>::get();
+		let mut messages_processed = 0;
 
 		let mut status = <InboundXcmpStatus<T>>::get(); // <- sorted.
 		if status.is_empty() {
@@ -827,7 +840,8 @@ impl<T: Config> Pallet<T> {
 
 		let mut shuffle_index = 0;
 		while shuffle_index < shuffled.len() &&
-			max_weight.saturating_sub(weight_used).all_gte(threshold_weight)
+			max_weight.saturating_sub(weight_used).all_gte(threshold_weight) &&
+			messages_processed < MAX_MESSAGES_PER_BLOCK
 		{
 			let index = shuffled[shuffle_index];
 			let sender = status[index].sender;

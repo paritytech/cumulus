@@ -39,10 +39,8 @@ use xcm::{
 };
 
 const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
-
-const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
-// Maximum amount of messages to process per block. This is a temporary measure until we properly
-// account for proof size weights.
+										 // Maximum amount of messages to process per block. This is a temporary measure until we properly
+										 // account for proof size weights.
 const MAX_MESSAGES_PER_BLOCK: u8 = 10;
 
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
@@ -206,7 +204,9 @@ pub mod pallet {
 		/// Returns the weight consumed by executing messages in the queue.
 		fn service_queue(limit: Weight) -> Weight {
 			let mut messages_processed = 0;
-			PageIndex::<T>::mutate(|page_index| Self::do_service_queue(limit, page_index, &mut messages_processed))
+			PageIndex::<T>::mutate(|page_index| {
+				Self::do_service_queue(limit, page_index, &mut messages_processed)
+			})
 		}
 
 		/// Exactly equivalent to `service_queue` but expects a mutable `page_index` to be passed
