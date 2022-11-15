@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cumulus_primitives_core::relay_chain::Header as PHeader;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use futures::{
@@ -16,6 +14,8 @@ use jsonrpsee::{
 	ws_client::WsClientBuilder,
 };
 use polkadot_service::TaskManager;
+use std::future::Future;
+use std::sync::Arc;
 use tokio::sync::mpsc::{
 	channel as tokio_channel, Receiver as TokioReceiver, Sender as TokioSender,
 };
@@ -35,12 +35,14 @@ pub enum RpcDispatcherMessage {
 
 /// Frontend for performing websocket requests.
 /// Requests and stream requests are forwarded to [`ReconnectingWebsocketWorker`].
+#[derive(Debug, Clone)]
 pub struct ReconnectingWsClient {
 	/// Channel to communicate with the RPC worker
 	to_worker_channel: TokioSender<RpcDispatcherMessage>,
 }
 
 impl ReconnectingWsClient {
+	/// Create a new websocket client frontend.
 	pub async fn new(urls: Vec<Url>, task_manager: &mut TaskManager) -> RelayChainResult<Self> {
 		tracing::info!(target: "pooled-client", "Instantiating pooled websocket client");
 
@@ -109,6 +111,8 @@ struct ReconnectingWebsocketWorker {
 	ws_urls: Vec<Url>,
 	// Communication channel with the RPC client
 	client_receiver: TokioReceiver<RpcDispatcherMessage>,
+
+	// Communication channel with ourself
 	self_sender: TokioSender<RpcDispatcherMessage>,
 
 	// Senders to distribute incoming header notifications to
@@ -123,12 +127,6 @@ fn handle_event_distribution(
 ) -> Result<(), String> {
 	match event {
 		Some(Ok(header)) => {
-			tracing::info!(
-				target: LOG_TARGET,
-				"Received block via RPC: #{} ({})",
-				header.number,
-				header.hash()
-			);
 			senders.retain_mut(|e| {
 				match e.try_send(header.clone()) {
 					// Receiver has been dropped, remove Sender from list.
@@ -164,10 +162,13 @@ struct RelayChainSubscriptions {
 	best_subscription: Subscription<PHeader>,
 }
 
+/// Try to find a new RPC server to connect to.
 async fn connect_next_available_rpc_server(
 	urls: &Vec<Url>,
 	starting_position: usize,
 ) -> Result<(usize, Arc<JsonRpcClient>), ()> {
+	tracing::info!(target: LOG_TARGET, "Connecting to RPC server.");
+
 	for (counter, url) in urls.iter().cycle().skip(starting_position).take(urls.len()).enumerate() {
 		let index = (starting_position + counter) % urls.len();
 		tracing::info!(target: LOG_TARGET, index, ?url, "Connecting to RPC node",);
@@ -176,28 +177,6 @@ async fn connect_next_available_rpc_server(
 		};
 	}
 	Err(())
-}
-
-async fn create_request(
-	client: Arc<JsonRpcClient>,
-	method: String,
-	params: Option<Vec<JsonValue>>,
-	response_sender: OneshotSender<Result<JsonValue, JsonRpseeError>>,
-) -> Result<(), RpcDispatcherMessage> {
-	let resp = client.request(&method, params.clone().map(|p| p.into())).await;
-
-	if let Err(JsonRpseeError::RestartNeeded(_)) = resp {
-		return Err(RpcDispatcherMessage::Request(method, params, response_sender));
-	}
-
-	if let Err(err) = response_sender.send(resp) {
-		tracing::error!(
-			target: LOG_TARGET,
-			?err,
-			"Recipient no longer interested in request result"
-		);
-	}
-	return Ok(());
 }
 
 impl ClientManager {
@@ -209,21 +188,82 @@ impl ClientManager {
 		Ok(Self { urls, active_client })
 	}
 
-	pub async fn connect_to_new_rpc_server(&mut self) -> Result<Arc<JsonRpcClient>, ()> {
-		tracing::info!(
-			target: LOG_TARGET,
-			is_connected = self.active_client.1.is_connected(),
-			"Trying to find new RPC server."
-		);
-
+	pub async fn connect_to_new_rpc_server(&mut self) -> Result<(), ()> {
 		let new_active =
 			connect_next_available_rpc_server(&self.urls, self.active_client.0 + 1).await?;
 		self.active_client = new_active;
-		Ok(self.active_client.1.clone())
+		Ok(())
 	}
 
-	pub fn get_client(&mut self) -> Arc<JsonRpcClient> {
-		return self.active_client.1.clone();
+	async fn get_subscriptions(&self) -> Result<RelayChainSubscriptions, JsonRpseeError> {
+		let import_subscription = self
+			.active_client
+			.1
+			.subscribe::<PHeader>("chain_subscribeAllHeads", None, "chain_unsubscribeAllHeads")
+			.await
+			.map_err(|e| {
+				tracing::error!(target: LOG_TARGET, ?e, "Unable to open subscription.");
+				e
+			})?;
+		let best_subscription = self
+			.active_client
+			.1
+			.subscribe::<PHeader>("chain_subscribeNewHeads", None, "chain_unsubscribeNewHeads")
+			.await
+			.map_err(|e| {
+				tracing::error!(target: LOG_TARGET, ?e, "Unable to open subscription.");
+				e
+			})?;
+		let finalized_subscription = self
+			.active_client
+			.1
+			.subscribe::<PHeader>(
+				"chain_subscribeFinalizedHeads",
+				None,
+				"chain_unsubscribeFinalizedHeads",
+			)
+			.await
+			.map_err(|e| {
+				tracing::error!(target: LOG_TARGET, ?e, "Unable to open subscription.");
+				e
+			})?;
+
+		Ok(RelayChainSubscriptions {
+			import_subscription,
+			best_subscription,
+			finalized_subscription,
+		})
+	}
+
+	/// Create a request future that performs an RPC request and sends the results to the caller.
+	/// In case of a dead websocket connection, it returns the original request parameters to
+	/// enable retries.
+	fn create_request(
+		&self,
+		method: String,
+		params: Option<Vec<JsonValue>>,
+		response_sender: OneshotSender<Result<JsonValue, JsonRpseeError>>,
+	) -> impl Future<Output = Result<(), RpcDispatcherMessage>> {
+		let future_client = self.active_client.1.clone();
+		async move {
+			let resp = future_client.request(&method, params.clone().map(|p| p.into())).await;
+
+			// We should only return the original request in case
+			// the websocket connection is dead and requires a restart.
+			// Other errors should be forwarded to the request caller.
+			if let Err(JsonRpseeError::RestartNeeded(_)) = resp {
+				return Err(RpcDispatcherMessage::Request(method, params, response_sender));
+			}
+
+			if let Err(err) = response_sender.send(resp) {
+				tracing::error!(
+					target: LOG_TARGET,
+					?err,
+					"Recipient no longer interested in request result"
+				);
+			}
+			return Ok(());
+		}
 	}
 }
 
@@ -251,16 +291,14 @@ impl ReconnectingWebsocketWorker {
 	///   If an error occurs during sending, the receiver has been closed and we remove the sender from the list.
 	/// - Find a new valid RPC server to connect to in case the websocket connection is terminated.
 	///   If the worker is not able to connec to an RPC server from the list, the worker shuts down.
-	pub async fn run(mut self) {
+	async fn run(mut self) {
 		let mut pending_requests = FuturesUnordered::new();
 
 		let Ok(mut client_manager) = ClientManager::new(self.ws_urls.clone()).await else {
 			tracing::error!(target: LOG_TARGET, "No valid RPC url found. Stopping RPC worker.");
 			return;
 		};
-		let active_client = client_manager.get_client();
-
-		let Ok(mut subscriptions) = get_subscriptions(&active_client).await else {
+		let Ok(mut subscriptions) = client_manager.get_subscriptions().await else {
 			return;
 		};
 
@@ -269,7 +307,7 @@ impl ReconnectingWebsocketWorker {
 			// This branch is taken if the websocket connection to the current RPC server is closed.
 			if should_reconnect {
 				// At this point, all pending requests will return an error since the
-				// JsonRpSee background thread is dead. So draining the pending requests should be fast.
+				// websocket connection is dead. So draining the pending requests should be fast.
 				while !pending_requests.is_empty() {
 					if let Some(Err(req)) = pending_requests.next().await {
 						// Put the failed requests into the queue again, they will be processed
@@ -281,7 +319,7 @@ impl ReconnectingWebsocketWorker {
 					}
 				}
 
-				let Ok(active_client) = client_manager.connect_to_new_rpc_server().await else {
+				if let Err(_) = client_manager.connect_to_new_rpc_server().await {
 					tracing::error!(
 						target: LOG_TARGET,
 						"Unable to find valid external RPC server, shutting down."
@@ -289,9 +327,7 @@ impl ReconnectingWebsocketWorker {
 					return;
 				};
 
-				if let Ok(new_subscriptions) = get_subscriptions(&active_client).await {
-					subscriptions = new_subscriptions;
-				} else {
+				let Ok(new_subscriptions) = client_manager.get_subscriptions().await else {
 					tracing::error!(
 						target: LOG_TARGET,
 						"Not able to create streams from newly connected RPC server, shutting down."
@@ -299,6 +335,7 @@ impl ReconnectingWebsocketWorker {
 					return;
 				};
 
+				subscriptions = new_subscriptions;
 				should_reconnect = false;
 			};
 
@@ -314,8 +351,7 @@ impl ReconnectingWebsocketWorker {
 						self.finalized_header_listeners.push(tx)
 					},
 					Some(RpcDispatcherMessage::Request(method, params, response_sender)) => {
-						let client = active_client.clone();
-						pending_requests.push(create_request(client, method, params, response_sender));
+						pending_requests.push(client_manager.create_request(method, params, response_sender));
 					},
 					None => {
 						tracing::error!(target: LOG_TARGET, "RPC client receiver closed. Stopping RPC Worker.");
@@ -349,53 +385,4 @@ impl ReconnectingWebsocketWorker {
 			}
 		}
 	}
-}
-
-async fn get_imported_header_subscription(
-	subscription_client: &Arc<JsonRpcClient>,
-) -> Result<Subscription<PHeader>, JsonRpseeError> {
-	subscription_client
-		.subscribe::<PHeader>("chain_subscribeAllHeads", None, "chain_unsubscribeAllHeads")
-		.await
-		.map_err(|e| {
-			tracing::error!(target: LOG_TARGET, ?e, "Unable to open subscription.");
-			e
-		})
-}
-
-async fn get_best_head_subscription(
-	subscription_client: &Arc<JsonRpcClient>,
-) -> Result<Subscription<PHeader>, JsonRpseeError> {
-	subscription_client
-		.subscribe::<PHeader>("chain_subscribeNewHeads", None, "chain_unsubscribeNewHeads")
-		.await
-		.map_err(|e| {
-			tracing::error!(target: LOG_TARGET, ?e, "Unable to open subscription.");
-			e
-		})
-}
-
-async fn get_finalized_head_subscription(
-	subscription_client: &Arc<JsonRpcClient>,
-) -> Result<Subscription<PHeader>, JsonRpseeError> {
-	subscription_client
-		.subscribe::<PHeader>(
-			"chain_subscribeFinalizedHeads",
-			None,
-			"chain_unsubscribeFinalizedHeads",
-		)
-		.await
-		.map_err(|e| {
-			tracing::error!(target: LOG_TARGET, ?e, "Unable to open subscription.");
-			e
-		})
-}
-
-async fn get_subscriptions(
-	active_client: &Arc<JsonRpcClient>,
-) -> Result<RelayChainSubscriptions, JsonRpseeError> {
-	let import_subscription = get_imported_header_subscription(&active_client).await?;
-	let best_subscription = get_best_head_subscription(&active_client).await?;
-	let finalized_subscription = get_finalized_head_subscription(&active_client).await?;
-	Ok(RelayChainSubscriptions { import_subscription, best_subscription, finalized_subscription })
 }
