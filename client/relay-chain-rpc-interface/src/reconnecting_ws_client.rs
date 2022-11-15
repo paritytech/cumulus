@@ -1,8 +1,10 @@
 use cumulus_primitives_core::relay_chain::Header as PHeader;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use futures::{
-	channel::mpsc::{Receiver, Sender},
-	channel::oneshot::Sender as OneshotSender,
+	channel::{
+		mpsc::{Receiver, Sender},
+		oneshot::Sender as OneshotSender,
+	},
 	stream::FuturesUnordered,
 	StreamExt,
 };
@@ -14,8 +16,7 @@ use jsonrpsee::{
 	ws_client::WsClientBuilder,
 };
 use polkadot_service::TaskManager;
-use std::future::Future;
-use std::sync::Arc;
+use std::{future::Future, sync::Arc};
 use tokio::sync::mpsc::{
 	channel as tokio_channel, Receiver as TokioReceiver, Sender as TokioSender,
 };
@@ -143,9 +144,7 @@ fn handle_event_distribution(
 			});
 			Ok(())
 		},
-		None => {
-			return Err("Subscription closed".to_string());
-		},
+		None => return Err("Subscription closed".to_string()),
 		Some(Err(err)) => Err(format!("Error in RPC subscription: {}", err)),
 	}
 }
@@ -176,7 +175,7 @@ async fn connect_next_available_rpc_server(
 		let index = (starting_position + counter) % urls.len();
 		tracing::info!(target: LOG_TARGET, index, ?url, "Connecting to RPC node",);
 		if let Ok(ws_client) = WsClientBuilder::default().build(url.clone()).await {
-			return Ok((index, Arc::new(ws_client)));
+			return Ok((index, Arc::new(ws_client)))
 		};
 	}
 	Err(())
@@ -185,7 +184,7 @@ async fn connect_next_available_rpc_server(
 impl ClientManager {
 	pub async fn new(urls: Vec<Url>) -> Result<Self, ()> {
 		if urls.is_empty() {
-			return Err(());
+			return Err(())
 		}
 		let active_client = connect_next_available_rpc_server(&urls, 0).await?;
 		Ok(Self { urls, active_client })
@@ -255,7 +254,7 @@ impl ClientManager {
 			// the websocket connection is dead and requires a restart.
 			// Other errors should be forwarded to the request caller.
 			if let Err(JsonRpseeError::RestartNeeded(_)) = resp {
-				return Err(RpcDispatcherMessage::Request(method, params, response_sender));
+				return Err(RpcDispatcherMessage::Request(method, params, response_sender))
 			}
 
 			if let Err(err) = response_sender.send(resp) {
@@ -265,7 +264,7 @@ impl ClientManager {
 					"Recipient no longer interested in request result"
 				);
 			}
-			return Ok(());
+			return Ok(())
 		}
 	}
 }
@@ -327,7 +326,7 @@ impl ReconnectingWebsocketWorker {
 						target: LOG_TARGET,
 						"Unable to find valid external RPC server, shutting down."
 					);
-					return;
+					return
 				};
 
 				let Ok(new_subscriptions) = client_manager.get_subscriptions().await else {

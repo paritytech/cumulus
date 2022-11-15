@@ -92,7 +92,7 @@ impl<T> From<tokio::sync::mpsc::error::SendError<T>> for RelayChainError {
 		return RelayChainError::WorkerCommunicationError(format!(
 			"Unable to send message to RPC worker: {}",
 			e.to_string()
-		));
+		))
 	}
 }
 
@@ -101,7 +101,7 @@ impl From<futures::channel::oneshot::Canceled> for RelayChainError {
 		return RelayChainError::WorkerCommunicationError(format!(
 			"Unexpected channel close on RPC worker side: {}",
 			e.to_string()
-		));
+		))
 	}
 }
 
