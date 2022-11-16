@@ -68,9 +68,12 @@ pub type OverweightIndex = u64;
 
 const LOG_TARGET: &str = "xcmp_queue";
 const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
-										 // Maximum amount of messages to process per block. This is a temporary measure until we properly
-										 // account for proof size weights.
+
+// Maximum amount of messages to process per block. This is a temporary measure until we properly
+// account for proof size weights.
 const MAX_MESSAGES_PER_BLOCK: u8 = 10;
+// Maximum amount of messages that can exist in the overweight queue at any given time.
+const MAX_OVERWEIGHT_MESSAGES: u32 = 1000;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -366,7 +369,7 @@ pub mod pallet {
 	/// `service_overweight`.
 	#[pallet::storage]
 	pub(super) type Overweight<T: Config> =
-		StorageMap<_, Twox64Concat, OverweightIndex, (ParaId, RelayBlockNumber, Vec<u8>)>;
+		CountedStorageMap<_, Twox64Concat, OverweightIndex, (ParaId, RelayBlockNumber, Vec<u8>)>;
 
 	/// The number of overweight messages ever recorded in `Overweight`. Also doubles as the next
 	/// available free overweight index.
@@ -686,20 +689,27 @@ impl<T: Config> Pallet<T> {
 							Err(XcmError::WeightLimitReached(required))
 								if required > max_individual_weight.ref_time() =>
 							{
-								// overweight - add to overweight queue and continue with message
-								// execution consuming the message.
-								let msg_len = last_remaining_fragments
-									.len()
-									.saturating_sub(remaining_fragments.len());
-								let overweight_xcm = last_remaining_fragments[..msg_len].to_vec();
-								let index = Self::stash_overweight(sender, sent_at, overweight_xcm);
-								let e = Event::OverweightEnqueued {
-									sender,
-									sent_at,
-									index,
-									required: Weight::from_ref_time(required),
-								};
-								Self::deposit_event(e);
+								let is_under_limit =
+									Overweight::<T>::count() < MAX_OVERWEIGHT_MESSAGES;
+								weight_used.saturating_accrue(T::DbWeight::get().reads(1));
+								if is_under_limit {
+									// overweight - add to overweight queue and continue with message
+									// execution consuming the message.
+									let msg_len = last_remaining_fragments
+										.len()
+										.saturating_sub(remaining_fragments.len());
+									let overweight_xcm =
+										last_remaining_fragments[..msg_len].to_vec();
+									let index =
+										Self::stash_overweight(sender, sent_at, overweight_xcm);
+									let e = Event::OverweightEnqueued {
+										sender,
+										sent_at,
+										index,
+										required: Weight::from_ref_time(required),
+									};
+									Self::deposit_event(e);
+								}
 							},
 							Err(XcmError::WeightLimitReached(required))
 								if required <= max_weight.ref_time() =>
