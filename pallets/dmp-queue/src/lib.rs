@@ -43,6 +43,8 @@ const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
 // Maximum amount of messages to process per block. This is a temporary measure until we properly
 // account for proof size weights.
 const MAX_MESSAGES_PER_BLOCK: u8 = 10;
+// Maximum amount of messages that can exist in the overweight queue at any given time.
+const MAX_OVERWEIGHT_MESSAGES: u32 = 1000;
 
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ConfigData {
@@ -123,8 +125,13 @@ pub mod pallet {
 
 	/// The overweight messages.
 	#[pallet::storage]
-	pub(super) type Overweight<T> =
-		StorageMap<_, Blake2_128Concat, OverweightIndex, (RelayBlockNumber, Vec<u8>), OptionQuery>;
+	pub(super) type Overweight<T> = CountedStorageMap<
+		_,
+		Blake2_128Concat,
+		OverweightIndex,
+		(RelayBlockNumber, Vec<u8>),
+		OptionQuery,
+	>;
 
 	#[pallet::error]
 	pub enum Error<T> {
@@ -327,7 +334,9 @@ pub mod pallet {
 						Err((message_id, required_weight)) =>
 						// Too much weight required right now.
 						{
-							if required_weight.any_gt(config.max_individual) {
+							let is_under_limit = Overweight::<T>::count() < MAX_OVERWEIGHT_MESSAGES;
+							used.saturating_accrue(T::DbWeight::get().reads(1));
+							if required_weight.any_gt(config.max_individual) && is_under_limit {
 								// overweight - add to overweight queue and continue with
 								// message execution.
 								let overweight_index = page_index.overweight_count;

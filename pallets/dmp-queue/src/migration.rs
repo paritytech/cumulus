@@ -33,8 +33,15 @@ pub fn migrate_to_latest<T: Config>() -> Weight {
 	let mut weight = T::DbWeight::get().reads(1);
 
 	if StorageVersion::get::<Pallet<T>>() == 0 {
-		weight += migrate_to_v1::<T>();
+		weight.saturating_accrue(migrate_to_v1::<T>());
 		StorageVersion::new(1).put::<Pallet<T>>();
+		weight.saturating_accrue(T::DbWeight::get().writes(1));
+	}
+
+	if StorageVersion::get::<Pallet<T>>() == 1 {
+		weight.saturating_accrue(migrate_to_v2::<T>());
+		StorageVersion::new(2).put::<Pallet<T>>();
+		weight.saturating_accrue(T::DbWeight::get().writes(1));
 	}
 
 	weight
@@ -76,6 +83,16 @@ pub fn migrate_to_v1<T: Config>() -> Weight {
 	}
 
 	T::DbWeight::get().reads_writes(1, 1)
+}
+
+/// Migrates `Overweight` so that it initializes the storage map's counter.
+///
+/// NOTE: Only use this function if you know what you're doing. Default to using
+/// `migrate_to_latest`.
+pub fn migrate_to_v2<T: Config>() -> Weight {
+	let overweight_messages = <Pallet<T> as Store>::Overweight::initialize_counter() as u64;
+
+	T::DbWeight::get().reads_writes(overweight_messages, 1)
 }
 
 #[cfg(test)]
