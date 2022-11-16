@@ -1,4 +1,6 @@
 [workspace]
+resolver = "2"
+
 members = [
 	"client/cli",
 	"client/consensus/aura",
@@ -10,6 +12,7 @@ members = [
 	"client/relay-chain-interface",
 	"client/relay-chain-inprocess-interface",
 	"client/relay-chain-rpc-interface",
+	"client/relay-chain-minimal-node",
 	"pallets/aura-ext",
 	"pallets/collator-selection",
 	"pallets/dmp-queue",
