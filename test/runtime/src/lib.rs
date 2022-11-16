@@ -271,6 +271,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type XcmpMessageHandler = ();
 	type ReservedXcmpWeight = ();
 	type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::AnyRelayNumber;
+	type WeightInfo = ();
 }
 
 parameter_types! {

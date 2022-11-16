@@ -58,8 +58,11 @@ mod migration;
 mod relay_state_snapshot;
 #[macro_use]
 pub mod validate_block;
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 #[cfg(test)]
 mod tests;
+pub mod weights;
 
 /// Register the `validate_block` function that is used by parachains to validate blocks on a
 /// validator.
@@ -87,6 +90,7 @@ pub use cumulus_pallet_parachain_system_proc_macro::register_validate_block;
 pub use relay_state_snapshot::{MessagingStateSnapshot, RelayChainStateProof};
 
 pub use pallet::*;
+pub use weights::WeightInfo;
 
 /// Something that can check the associated relay block number.
 ///
@@ -177,6 +181,9 @@ pub mod pallet {
 
 		/// Something that can check the associated relay parent block number.
 		type CheckAssociatedRelayNumber: CheckAssociatedRelayNumber;
+
+		/// Weight information for extrinsics in this pallet.
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::hooks]
@@ -335,7 +342,7 @@ pub mod pallet {
 		///
 		/// As a side effect, this function upgrades the current validation function
 		/// if the appropriate time has come.
-		#[pallet::weight((0, DispatchClass::Mandatory))]
+		#[pallet::weight((T::WeightInfo::set_validation_data(), DispatchClass::Mandatory))]
 		// TODO: This weight should be corrected.
 		pub fn set_validation_data(
 			origin: OriginFor<T>,
@@ -431,7 +438,7 @@ pub mod pallet {
 			Ok(PostDispatchInfo { actual_weight: Some(total_weight), pays_fee: Pays::No })
 		}
 
-		#[pallet::weight((1_000, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::sudo_send_upward_message(message.len() as u32), DispatchClass::Operational))]
 		pub fn sudo_send_upward_message(
 			origin: OriginFor<T>,
 			message: UpwardMessage,
@@ -441,7 +448,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight((1_000_000, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::authorize_upgrade(), DispatchClass::Operational))]
 		pub fn authorize_upgrade(origin: OriginFor<T>, code_hash: T::Hash) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -451,7 +458,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(1_000_000)]
+		#[pallet::weight(T::WeightInfo::enact_authorized_upgrade(code.len() as u32))]
 		pub fn enact_authorized_upgrade(
 			_: OriginFor<T>,
 			code: Vec<u8>,

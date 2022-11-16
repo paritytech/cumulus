@@ -111,6 +111,7 @@ impl cumulus_pallet_parachain_system::Config for Test {
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ();
 	type CheckAssociatedRelayNumber = AnyRelayNumber;
+	type WeightInfo = ();
 }
 
 parameter_types! {

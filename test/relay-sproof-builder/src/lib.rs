@@ -51,17 +51,7 @@ impl Default for RelayStateSproofBuilder {
 	fn default() -> Self {
 		RelayStateSproofBuilder {
 			para_id: ParaId::from(200),
-			host_config: cumulus_primitives_core::AbridgedHostConfiguration {
-				max_code_size: 2 * 1024 * 1024,
-				max_head_data_size: 1024 * 1024,
-				max_upward_queue_count: 8,
-				max_upward_queue_size: 1024,
-				max_upward_message_size: 256,
-				max_upward_message_num_per_candidate: 5,
-				hrmp_max_message_num_per_candidate: 5,
-				validation_upgrade_cooldown: 6,
-				validation_upgrade_delay: 6,
-			},
+			host_config: default_host_config(),
 			dmq_mqc_head: None,
 			upgrade_go_ahead: None,
 			relay_dispatch_queue_size: None,
@@ -72,6 +62,20 @@ impl Default for RelayStateSproofBuilder {
 			current_epoch: 0u64,
 			randomness: relay_chain::Hash::default(),
 		}
+	}
+}
+
+pub const fn default_host_config() -> cumulus_primitives_core::AbridgedHostConfiguration {
+	cumulus_primitives_core::AbridgedHostConfiguration {
+		max_code_size: 2 * 1024 * 1024,
+		max_head_data_size: 1024 * 1024,
+		max_upward_queue_count: 8,
+		max_upward_queue_size: 1024,
+		max_upward_message_size: 256,
+		max_upward_message_num_per_candidate: 5,
+		hrmp_max_message_num_per_candidate: 5,
+		validation_upgrade_cooldown: 6,
+		validation_upgrade_delay: 6,
 	}
 }
 

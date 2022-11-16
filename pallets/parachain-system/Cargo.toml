@@ -14,6 +14,7 @@ log = { version = "0.4.17", default-features = false }
 scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
 
 # Substrate
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -33,10 +34,11 @@ polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-f
 cumulus-pallet-parachain-system-proc-macro = { path = "proc-macro", default-features = false }
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent", default-features = false }
+hex-literal = { version = "0.3.4", default-features = false, optional = true }
 
 [dev-dependencies]
-hex-literal = "0.3.4"
 lazy_static = "1.4"
+hex-literal = { version = "0.3.4", default-features = false }
 
 # Substrate
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -45,7 +47,7 @@ sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master
 sp-version = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Cumulus
-cumulus-test-client = { path = "../../test/client" }
+cumulus-test-client = { path = "../../test/client", default-features = false }
 cumulus-test-relay-sproof-builder = { path = "../../test/relay-sproof-builder" }
 
 [features]
@@ -70,7 +72,11 @@ std = [
 ]
 
 runtime-benchmarks = [
-	"sp-runtime/runtime-benchmarks"
+	"hex-literal",
+	"sp-runtime/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"frame-benchmarking/runtime-benchmarks",
 ]
 
 try-runtime = ["frame-support/try-runtime"]
