@@ -28,4 +28,3 @@ jobs:
           RULES_PATH: scripts/ci/ruled_labels
         run: |
           docker run --rm -i -v $PWD/${RULES_PATH}/:$MOUNT $IMAGE test ${MOUNT}/specs.yaml
-          docker run --rm -i -v $PWD/${RULES_PATH}/:$MOUNT $IMAGE test ${MOUNT}/specs-D.yaml
