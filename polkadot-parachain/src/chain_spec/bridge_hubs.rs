@@ -24,12 +24,16 @@ use std::{path::PathBuf, str::FromStr};
 pub enum BridgeHubRuntimeType {
 	Rococo,
 	RococoLocal,
+	// used by benchmarks
+	RococoDevelopment,
 
 	Wococo,
 	WococoLocal,
 
 	Kusama,
 	KusamaLocal,
+	// used by benchmarks
+	KusamaDevelopment,
 }
 
 impl FromStr for BridgeHubRuntimeType {
@@ -39,8 +43,10 @@ impl FromStr for BridgeHubRuntimeType {
 		match value {
 			kusama::BRIDGE_HUB_KUSAMA => Ok(BridgeHubRuntimeType::Kusama),
 			kusama::BRIDGE_HUB_KUSAMA_LOCAL => Ok(BridgeHubRuntimeType::KusamaLocal),
+			kusama::BRIDGE_HUB_KUSAMA_DEVELOPMENT => Ok(BridgeHubRuntimeType::KusamaDevelopment),
 			rococo::BRIDGE_HUB_ROCOCO => Ok(BridgeHubRuntimeType::Rococo),
 			rococo::BRIDGE_HUB_ROCOCO_LOCAL => Ok(BridgeHubRuntimeType::RococoLocal),
+			rococo::BRIDGE_HUB_ROCOCO_DEVELOPMENT => Ok(BridgeHubRuntimeType::RococoDevelopment),
 			wococo::BRIDGE_HUB_WOCOCO => Ok(BridgeHubRuntimeType::Wococo),
 			wococo::BRIDGE_HUB_WOCOCO_LOCAL => Ok(BridgeHubRuntimeType::WococoLocal),
 			_ => Err(format!("Value '{}' is not configured yet", value)),
@@ -53,9 +59,13 @@ impl BridgeHubRuntimeType {
 
 	pub fn chain_spec_from_json_file(&self, path: PathBuf) -> Result<Box<dyn ChainSpec>, String> {
 		match self {
-			BridgeHubRuntimeType::Kusama | BridgeHubRuntimeType::KusamaLocal =>
+			BridgeHubRuntimeType::Kusama |
+			BridgeHubRuntimeType::KusamaLocal |
+			BridgeHubRuntimeType::KusamaDevelopment =>
 				Ok(Box::new(kusama::BridgeHubChainSpec::from_json_file(path)?)),
-			BridgeHubRuntimeType::Rococo | BridgeHubRuntimeType::RococoLocal =>
+			BridgeHubRuntimeType::Rococo |
+			BridgeHubRuntimeType::RococoLocal |
+			BridgeHubRuntimeType::RococoDevelopment =>
 				Ok(Box::new(rococo::BridgeHubChainSpec::from_json_file(path)?)),
 			BridgeHubRuntimeType::Wococo | BridgeHubRuntimeType::WococoLocal =>
 				Ok(Box::new(wococo::BridgeHubChainSpec::from_json_file(path)?)),
@@ -74,6 +84,12 @@ impl BridgeHubRuntimeType {
 				"kusama-local",
 				ParaId::new(1003),
 			))),
+			BridgeHubRuntimeType::KusamaDevelopment => Ok(Box::new(kusama::local_config(
+				kusama::BRIDGE_HUB_KUSAMA_DEVELOPMENT,
+				"Kusama BrideHub Development",
+				"kusama-dev",
+				ParaId::new(1003),
+			))),
 			BridgeHubRuntimeType::Rococo => Ok(Box::new(rococo::live_config(
 				rococo::BRIDGE_HUB_ROCOCO,
 				"Rococo BrideHub",
@@ -85,6 +101,13 @@ impl BridgeHubRuntimeType {
 				rococo::BRIDGE_HUB_ROCOCO_LOCAL,
 				"Rococo BrideHub Local",
 				"rococo-local",
+				ParaId::new(1013),
+				|_| (),
+			))),
+			BridgeHubRuntimeType::RococoDevelopment => Ok(Box::new(rococo::local_config(
+				rococo::BRIDGE_HUB_ROCOCO_DEVELOPMENT,
+				"Rococo BrideHub Development",
+				"rococo-dev",
 				ParaId::new(1013),
 				|_| (),
 			))),
@@ -105,11 +128,13 @@ impl BridgeHubRuntimeType {
 
 	pub fn runtime_version(&self) -> &'static RuntimeVersion {
 		match self {
-			BridgeHubRuntimeType::Kusama | BridgeHubRuntimeType::KusamaLocal =>
-				&bridge_hub_kusama_runtime::VERSION,
+			BridgeHubRuntimeType::Kusama |
+			BridgeHubRuntimeType::KusamaLocal |
+			BridgeHubRuntimeType::KusamaDevelopment => &bridge_hub_kusama_runtime::VERSION,
 			BridgeHubRuntimeType::Rococo |
-			BridgeHubRuntimeType::Wococo |
 			BridgeHubRuntimeType::RococoLocal |
+			BridgeHubRuntimeType::RococoDevelopment |
+			BridgeHubRuntimeType::Wococo |
 			BridgeHubRuntimeType::WococoLocal => {
 				// this is intentional, for Rococo/Wococo we just want to have one runtime, which is configured for both sides
 				&bridge_hub_rococo_runtime::VERSION
@@ -143,6 +168,7 @@ pub mod rococo {
 
 	pub(crate) const BRIDGE_HUB_ROCOCO: &str = "bridge-hub-rococo";
 	pub(crate) const BRIDGE_HUB_ROCOCO_LOCAL: &str = "bridge-hub-rococo-local";
+	pub(crate) const BRIDGE_HUB_ROCOCO_DEVELOPMENT: &str = "bridge-hub-rococo-dev";
 	const BRIDGE_HUB_ROCOCO_ED: bridge_hub_rococo_runtime::Balance =
 		bridge_hub_rococo_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
@@ -358,6 +384,7 @@ pub mod kusama {
 
 	pub(crate) const BRIDGE_HUB_KUSAMA: &str = "bridge-hub-kusama";
 	pub(crate) const BRIDGE_HUB_KUSAMA_LOCAL: &str = "bridge-hub-kusama-local";
+	pub(crate) const BRIDGE_HUB_KUSAMA_DEVELOPMENT: &str = "bridge-hub-kusama-dev";
 	const BRIDGE_HUB_KUSAMA_ED: bridge_hub_kusama_runtime::Balance =
 		bridge_hub_kusama_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
