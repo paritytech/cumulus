@@ -434,7 +434,11 @@ pub mod kusama {
 					.to_vec(),
 			},
 			balances: bridge_hub_kusama_runtime::BalancesConfig {
-				balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
+				balances: endowed_accounts
+					.iter()
+					.cloned()
+					.map(|k| (k, BRIDGE_HUB_KUSAMA_ED * 524_288))
+					.collect(),
 			},
 			parachain_info: bridge_hub_kusama_runtime::ParachainInfoConfig { parachain_id: id },
 			collator_selection: bridge_hub_kusama_runtime::CollatorSelectionConfig {
