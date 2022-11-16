@@ -15,22 +15,21 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-	ParachainInfo, Runtime, WithBridgeHubWococoMessagesInstance, XcmAsPlainPayload, XcmBlobHauler,
-	XcmBlobHaulerAdapter, XcmRouter,
+	BridgeParachainWococoInstance, ParachainInfo, Runtime, WithBridgeHubWococoMessagesInstance,
+	XcmAsPlainPayload, XcmBlobHauler, XcmBlobHaulerAdapter, XcmRouter,
 };
 use bp_messages::{
 	source_chain::TargetHeaderChain,
 	target_chain::{ProvedMessages, SourceHeaderChain},
 	InboundLaneData, LaneId, Message, MessageNonce,
 };
-use bp_polkadot_core::parachains::ParaId;
-use bp_runtime::{Chain, ChainId};
+use bp_runtime::ChainId;
 use bridge_runtime_common::{
 	messages,
 	messages::{
 		target::FromBridgedChainMessagesProof, BasicConfirmationTransactionEstimation,
-		BridgedChain, ChainWithMessages, MessageBridge, MessageTransaction, ThisChain,
-		ThisChainWithMessages,
+		BridgedChain, MessageBridge, MessageTransaction, ThisChain, ThisChainWithMessages,
+		UnderlyingChainProvider,
 	},
 };
 use frame_support::{dispatch::Weight, parameter_types, RuntimeDebug};
@@ -89,6 +88,11 @@ impl MessageBridge for WithBridgeHubWococoMessageBridge {
 		bp_bridge_hub_rococo::WITH_BRIDGE_HUB_ROCOCO_MESSAGES_PALLET_NAME;
 	type ThisChain = BridgeHubRococo;
 	type BridgedChain = BridgeHubWococo;
+	type BridgedHeaderChain = pallet_bridge_parachains::ParachainHeaders<
+		Runtime,
+		BridgeParachainWococoInstance,
+		bp_bridge_hub_wococo::BridgeHubWococo,
+	>;
 
 	fn bridged_balance_to_this_balance(
 		bridged_balance: bridge_runtime_common::messages::BalanceOf<BridgedChain<Self>>,
@@ -112,12 +116,8 @@ pub type ToBridgeHubWococoMaximalOutboundPayloadSize =
 #[derive(RuntimeDebug, Clone, Copy)]
 pub struct BridgeHubWococo;
 
-impl ChainWithMessages for BridgeHubWococo {
-	type Hash = bp_bridge_hub_wococo::Hash;
-	type AccountId = bp_bridge_hub_wococo::AccountId;
-	type Signer = bp_bridge_hub_wococo::AccountSigner;
-	type Signature = bp_bridge_hub_wococo::Signature;
-	type Balance = bp_bridge_hub_wococo::Balance;
+impl UnderlyingChainProvider for BridgeHubWococo {
+	type Chain = bp_bridge_hub_wococo::BridgeHubWococo;
 }
 
 impl SourceHeaderChain<crate::Balance> for BridgeHubWococo {
@@ -128,12 +128,10 @@ impl SourceHeaderChain<crate::Balance> for BridgeHubWococo {
 		proof: Self::MessagesProof,
 		messages_count: u32,
 	) -> Result<ProvedMessages<Message<crate::Balance>>, Self::Error> {
-		bridge_runtime_common::messages::target::verify_messages_proof_from_parachain::<
+		bridge_runtime_common::messages::target::verify_messages_proof::<
 			WithBridgeHubWococoMessageBridge,
-			bp_bridge_hub_wococo::Header,
-			crate::Runtime,
-			crate::BridgeParachainWococoInstance,
-		>(ParaId(bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID), proof, messages_count)
+		>(proof, messages_count)
+		.map_err(Into::into)
 	}
 }
 
@@ -149,20 +147,11 @@ impl TargetHeaderChain<XcmAsPlainPayload, crate::AccountId> for BridgeHubWococo 
 	fn verify_messages_delivery_proof(
 		proof: Self::MessagesDeliveryProof,
 	) -> Result<(LaneId, InboundLaneData<bp_bridge_hub_rococo::AccountId>), Self::Error> {
-		messages::source::verify_messages_delivery_proof_from_parachain::<
-			WithBridgeHubWococoMessageBridge,
-			bp_bridge_hub_wococo::Header,
-			crate::Runtime,
-			crate::BridgeParachainWococoInstance,
-		>(ParaId(bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID), proof)
+		messages::source::verify_messages_delivery_proof::<WithBridgeHubWococoMessageBridge>(proof)
 	}
 }
 
 impl messages::BridgedChainWithMessages for BridgeHubWococo {
-	fn maximal_extrinsic_size() -> u32 {
-		bp_bridge_hub_wococo::BridgeHubWococo::max_extrinsic_size()
-	}
-
 	fn verify_dispatch_weight(_message_payload: &[u8]) -> bool {
 		true
 	}
@@ -206,19 +195,15 @@ impl messages::BridgedChainWithMessages for BridgeHubWococo {
 #[derive(RuntimeDebug, Clone, Copy)]
 pub struct BridgeHubRococo;
 
-impl ChainWithMessages for BridgeHubRococo {
-	type Hash = bp_bridge_hub_rococo::Hash;
-	type AccountId = bp_bridge_hub_rococo::AccountId;
-	type Signer = bp_bridge_hub_rococo::AccountSigner;
-	type Signature = bp_bridge_hub_rococo::Signature;
-	type Balance = bp_bridge_hub_rococo::Balance;
+impl UnderlyingChainProvider for BridgeHubRococo {
+	type Chain = bp_bridge_hub_rococo::BridgeHubRococo;
 }
 
 impl ThisChainWithMessages for BridgeHubRococo {
 	type RuntimeOrigin = crate::RuntimeOrigin;
 	type RuntimeCall = crate::RuntimeCall;
 	type ConfirmationTransactionEstimation = BasicConfirmationTransactionEstimation<
-		Self::AccountId,
+		bp_bridge_hub_rococo::AccountId,
 		{ bp_bridge_hub_rococo::MAX_SINGLE_MESSAGE_DELIVERY_CONFIRMATION_TX_WEIGHT.ref_time() },
 		{ bp_bridge_hub_wococo::EXTRA_STORAGE_PROOF_SIZE },
 		{ bp_bridge_hub_rococo::TX_EXTRA_BYTES },

@@ -7,7 +7,6 @@ members = [
 	"bridges/modules/relayers",
 	"bridges/modules/shift-session-manager",
 	"bridges/primitives/messages",
-	"bridges/primitives/polkadot-core",
 	"bridges/primitives/runtime",
 	"bridges/primitives/chain-bridge-hub-rococo",
 	"bridges/primitives/chain-bridge-hub-wococo",
@@ -248,6 +247,11 @@ substrate-prometheus-endpoint = { git = "https://github.com/paritytech//substrat
 substrate-state-trie-migration-rpc = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
 substrate-wasm-builder = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
 try-runtime-cli = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
+substrate-test-client = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
+pallet-election-provider-support-benchmarking = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
+pallet-nomination-pools-benchmarking = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
+pallet-offences-benchmarking = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
+pallet-session-benchmarking = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges" }
 
 [patch."https://github.com/paritytech/polkadot"]
 kusama-runtime = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }

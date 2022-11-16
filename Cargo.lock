@@ -721,6 +721,8 @@ dependencies = [
  "bp-polkadot-core",
  "bp-runtime",
  "frame-support",
+ "polkadot-runtime-constants",
+ "smallvec",
  "sp-api",
  "sp-std",
 ]
@@ -754,6 +756,7 @@ dependencies = [
  "sp-finality-grandpa",
  "sp-runtime",
  "sp-std",
+ "sp-trie",
 ]
 
 [[package]]
@@ -936,7 +939,6 @@ dependencies = [
  "bp-bridge-hub-rococo",
  "bp-bridge-hub-wococo",
  "bp-messages",
- "bp-polkadot-core",
  "bp-rococo",
  "bp-runtime",
  "bp-wococo",
@@ -1006,6 +1008,7 @@ dependencies = [
 name = "bridge-runtime-common"
 version = "0.1.0"
 dependencies = [
+ "bp-header-chain",
  "bp-messages",
  "bp-parachains",
  "bp-polkadot-core",
@@ -4383,7 +4386,7 @@ dependencies = [
  "pallet-conviction-voting",
  "pallet-democracy",
  "pallet-election-provider-multi-phase",
- "pallet-election-provider-support-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
+ "pallet-election-provider-support-benchmarking",
  "pallet-elections-phragmen",
  "pallet-fast-unstake",
  "pallet-gilt",
@@ -6182,7 +6185,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "pallet-election-provider-support-benchmarking 4.0.0-dev (git+https://github.com/paritytech//substrate?branch=sv-locked-for-gav-xcm-v3-and-bridges)",
+ "pallet-election-provider-support-benchmarking",
  "parity-scale-codec",
  "rand 0.7.3",
  "scale-info",
@@ -6194,19 +6197,6 @@ dependencies = [
  "sp-std",
  "static_assertions",
  "strum",
-]
-
-[[package]]
-name = "pallet-election-provider-support-benchmarking"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#87f3fdea8f227d33322c439d45a9e1796637e972"
-dependencies = [
- "frame-benchmarking",
- "frame-election-provider-support",
- "frame-system",
- "parity-scale-codec",
- "sp-npos-elections",
- "sp-runtime",
 ]
 
 [[package]]
@@ -6435,7 +6425,7 @@ dependencies = [
 [[package]]
 name = "pallet-nomination-pools-benchmarking"
 version = "1.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#87f3fdea8f227d33322c439d45a9e1796637e972"
+source = "git+https://github.com/paritytech//substrate?branch=sv-locked-for-gav-xcm-v3-and-bridges#87f3fdea8f227d33322c439d45a9e1796637e972"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -6482,7 +6472,7 @@ dependencies = [
 [[package]]
 name = "pallet-offences-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#87f3fdea8f227d33322c439d45a9e1796637e972"
+source = "git+https://github.com/paritytech//substrate?branch=sv-locked-for-gav-xcm-v3-and-bridges#87f3fdea8f227d33322c439d45a9e1796637e972"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -6639,7 +6629,7 @@ dependencies = [
 [[package]]
 name = "pallet-session-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#87f3fdea8f227d33322c439d45a9e1796637e972"
+source = "git+https://github.com/paritytech//substrate?branch=sv-locked-for-gav-xcm-v3-and-bridges#87f3fdea8f227d33322c439d45a9e1796637e972"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8416,7 +8406,7 @@ dependencies = [
  "pallet-collective",
  "pallet-democracy",
  "pallet-election-provider-multi-phase",
- "pallet-election-provider-support-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
+ "pallet-election-provider-support-benchmarking",
  "pallet-elections-phragmen",
  "pallet-fast-unstake",
  "pallet-grandpa",
@@ -12433,7 +12423,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-client"
 version = "2.0.1"
-source = "git+https://github.com/paritytech/substrate?branch=master#87f3fdea8f227d33322c439d45a9e1796637e972"
+source = "git+https://github.com/paritytech//substrate?branch=sv-locked-for-gav-xcm-v3-and-bridges#87f3fdea8f227d33322c439d45a9e1796637e972"
 dependencies = [
  "array-bytes",
  "async-trait",
@@ -13655,7 +13645,7 @@ dependencies = [
  "pallet-collective",
  "pallet-democracy",
  "pallet-election-provider-multi-phase",
- "pallet-election-provider-support-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
+ "pallet-election-provider-support-benchmarking",
  "pallet-elections-phragmen",
  "pallet-fast-unstake",
  "pallet-grandpa",
