@@ -680,11 +680,9 @@ impl<T: Config> Pallet<T> {
 						&mut remaining_fragments,
 					) {
 						let weight = max_weight - weight_used;
+						*messages_processed += 1;
 						match Self::handle_xcm_message(sender, sent_at, xcm, weight) {
-							Ok(used) => {
-								weight_used = weight_used.saturating_add(used);
-								*messages_processed += 1;
-							},
+							Ok(used) => weight_used = weight_used.saturating_add(used),
 							Err(XcmError::WeightLimitReached(required))
 								if required > max_individual_weight.ref_time() =>
 							{
@@ -731,11 +729,9 @@ impl<T: Config> Pallet<T> {
 
 					if let Ok(blob) = <Vec<u8>>::decode(&mut remaining_fragments) {
 						let weight = max_weight - weight_used;
+						*messages_processed += 1;
 						match Self::handle_blob_message(sender, sent_at, blob, weight) {
-							Ok(used) => {
-								weight_used = weight_used.saturating_add(used);
-								*messages_processed += 1;
-							},
+							Ok(used) => weight_used = weight_used.saturating_add(used),
 							Err(true) => {
 								// That message didn't get processed this time because of being
 								// too heavy. We leave it around for next time and bail.

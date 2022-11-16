@@ -225,12 +225,10 @@ pub mod pallet {
 						Pages::<T>::insert(page_index.begin_used, &page[i..]);
 						return used
 					}
+					*messages_processed += 1;
 					match Self::try_service_message(limit.saturating_sub(used), sent_at, &data[..])
 					{
-						Ok(w) => {
-							used += w;
-							*messages_processed += 1;
-						},
+						Ok(w) => used += w,
 						Err(..) => {
 							// Too much weight needed - put the remaining messages back and bail
 							Pages::<T>::insert(page_index.begin_used, &page[i..]);
@@ -322,11 +320,9 @@ pub mod pallet {
 				if maybe_enqueue_page.is_none() {
 					// We're not currently enqueuing - try to execute inline.
 					let remaining_weight = limit.saturating_sub(used);
+					messages_processed += 1;
 					match Self::try_service_message(remaining_weight, sent_at, &data[..]) {
-						Ok(consumed) => {
-							used += consumed;
-							messages_processed += 1;
-						},
+						Ok(consumed) => used += consumed,
 						Err((message_id, required_weight)) =>
 						// Too much weight required right now.
 						{
