@@ -39,8 +39,9 @@ use xcm::{
 };
 
 const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
-										 // Maximum amount of messages to process per block. This is a temporary measure until we properly
-										 // account for proof size weights.
+
+// Maximum amount of messages to process per block. This is a temporary measure until we properly
+// account for proof size weights.
 const MAX_MESSAGES_PER_BLOCK: u8 = 10;
 
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
