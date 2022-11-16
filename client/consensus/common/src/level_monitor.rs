@@ -99,7 +99,7 @@ where
 		let info = self.backend.blockchain().info();
 		log::debug!(
 			target: "parachain",
-			"XXX Restoring chain level monitor from last finalized block: {} {}",
+			"Restoring chain level monitor from last finalized block: {} {}",
 			info.finalized_number, info.finalized_hash
 		);
 
@@ -126,7 +126,7 @@ where
 			counter_max = std::cmp::max(self.import_counter, counter_max);
 		}
 
-		log::debug!(target: "parachain", "XXX Restored chain level monitor up to height {}", counter_max);
+		log::debug!(target: "parachain", "Restored chain level monitor up to height {}", counter_max);
 
 		self.import_counter = counter_max;
 	}
@@ -166,7 +166,7 @@ where
 
 		log::debug!(
 			target: "parachain",
-			"XXX Detected leaves overflow at height {number}, removing {remove_count} obsolete blocks",
+			"Detected leaves overflow at height {number}, removing {remove_count} obsolete blocks",
 		);
 
 		(0..remove_count).all(|_| {
@@ -227,7 +227,7 @@ where
 							Err(err) => {
 								log::warn!(
 									target: "parachain",
-									"XXX (lookup) Unable getting route from {:?} to {:?}: {}",
+									"(Lookup) Unable getting route from {:?} to {:?}: {}",
 									blk_hash, leaf_hash, err,
 								);
 								None
@@ -246,7 +246,7 @@ where
 					// This should never happen
 					log::error!(
 						target: "parachain",
-						"XXX Unable getting route to any leaf from {:?} (this is a bug)",
+						"Unable getting route to any leaf from {:?} (this is a bug)",
 						blk_hash,
 					);
 					continue
@@ -296,9 +296,9 @@ where
 		invalidated_leaves: &mut HashSet<usize>,
 	) {
 		let mut remove_leaf = |number, hash| {
-			log::debug!(target: "parachain", "XXX Removing block (@{}) {:?}", number, hash);
+			log::debug!(target: "parachain", "Removing block (@{}) {:?}", number, hash);
 			if let Err(err) = self.backend.remove_leaf_block(hash) {
-				log::debug!(target: "parachain", "XXX Remove error for {}: {}", hash, err);
+				log::debug!(target: "parachain", "Remove not possible for {}: {}", hash, err);
 				return false
 			}
 			self.levels.get_mut(&number).map(|level| level.remove(&hash));
@@ -340,7 +340,7 @@ where
 				Err(err) => {
 					log::warn!(
 						target: "parachain",
-						"XXX (on rem) Unable getting route from {:?} to {:?}: {}",
+						"(Removal) unable getting route from {:?} to {:?}: {}",
 						target_hash, leaf_hash, err,
 					);
 				},
@@ -349,8 +349,6 @@ where
 		});
 
 		remove_leaf(number, target_hash);
-
-		log::debug!(target: "parachain", "XXX Removed target (@{}) {:?}", number, target_hash);
 	}
 
 	/// Add a new imported block information to the monitor.

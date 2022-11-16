@@ -165,13 +165,6 @@ where
 			monitor.block_imported(number, hash);
 		}
 
-		match res {
-			ImportResult::Imported(_) =>
-				log::debug!(target: "parachain", "XXX Imported (@{}) {}", number, hash),
-			_ =>
-				log::warn!(target: "parachain", "XXX Failed importing (@{}) {}: {:?}", number, hash, res),
-		}
-
 		Ok(res)
 	}
 }
