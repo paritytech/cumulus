@@ -721,7 +721,7 @@ pub fn run() -> Result<()> {
 						}),
 					_ => Err(format!(
 						"Chain '{:?}' doesn't support try-runtime for bridge_hub_runtime_type: {:?}",
-						config.chain_spec.runtime(),
+						runner.config().chain_spec.runtime(),
 						bridge_hub_runtime_type
 					)
 					.into()),
