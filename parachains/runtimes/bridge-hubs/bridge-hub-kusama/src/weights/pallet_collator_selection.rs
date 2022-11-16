@@ -51,23 +51,23 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 	// Storage: CollatorSelection Invulnerables (r:0 w:1)
 	/// The range of component `b` is `[1, 100]`.
 	fn set_invulnerables(b: u32, ) -> Weight {
-		// Minimum execution time: 23_238 nanoseconds.
-		Weight::from_ref_time(24_641_033 as u64)
-			// Standard Error: 2_887
-			.saturating_add(Weight::from_ref_time(2_458_746 as u64).saturating_mul(b as u64))
+		// Minimum execution time: 23_476 nanoseconds.
+		Weight::from_ref_time(25_244_018 as u64)
+			// Standard Error: 3_006
+			.saturating_add(Weight::from_ref_time(2_470_729 as u64).saturating_mul(b as u64))
 			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(b as u64)))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: CollatorSelection DesiredCandidates (r:0 w:1)
 	fn set_desired_candidates() -> Weight {
-		// Minimum execution time: 14_081 nanoseconds.
-		Weight::from_ref_time(14_559_000 as u64)
+		// Minimum execution time: 14_256 nanoseconds.
+		Weight::from_ref_time(14_699_000 as u64)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: CollatorSelection CandidacyBond (r:0 w:1)
 	fn set_candidacy_bond() -> Weight {
-		// Minimum execution time: 14_048 nanoseconds.
-		Weight::from_ref_time(14_542_000 as u64)
+		// Minimum execution time: 14_610 nanoseconds.
+		Weight::from_ref_time(14_849_000 as u64)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: CollatorSelection Candidates (r:1 w:1)
@@ -78,10 +78,10 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 	// Storage: CollatorSelection LastAuthoredBlock (r:0 w:1)
 	/// The range of component `c` is `[1, 999]`.
 	fn register_as_candidate(c: u32, ) -> Weight {
-		// Minimum execution time: 49_022 nanoseconds.
-		Weight::from_ref_time(65_830_450 as u64)
-			// Standard Error: 1_134
-			.saturating_add(Weight::from_ref_time(166_499 as u64).saturating_mul(c as u64))
+		// Minimum execution time: 49_939 nanoseconds.
+		Weight::from_ref_time(65_000_471 as u64)
+			// Standard Error: 971
+			.saturating_add(Weight::from_ref_time(166_827 as u64).saturating_mul(c as u64))
 			.saturating_add(T::DbWeight::get().reads(5 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -89,10 +89,10 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 	// Storage: CollatorSelection LastAuthoredBlock (r:0 w:1)
 	/// The range of component `c` is `[6, 1000]`.
 	fn leave_intent(c: u32, ) -> Weight {
-		// Minimum execution time: 39_176 nanoseconds.
-		Weight::from_ref_time(60_721_956 as u64)
-			// Standard Error: 1_415
-			.saturating_add(Weight::from_ref_time(158_944 as u64).saturating_mul(c as u64))
+		// Minimum execution time: 39_651 nanoseconds.
+		Weight::from_ref_time(64_330_763 as u64)
+			// Standard Error: 1_784
+			.saturating_add(Weight::from_ref_time(154_007 as u64).saturating_mul(c as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -100,8 +100,8 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 	// Storage: System BlockWeight (r:1 w:1)
 	// Storage: CollatorSelection LastAuthoredBlock (r:0 w:1)
 	fn note_author() -> Weight {
-		// Minimum execution time: 36_710 nanoseconds.
-		Weight::from_ref_time(37_440_000 as u64)
+		// Minimum execution time: 36_425 nanoseconds.
+		Weight::from_ref_time(37_314_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
@@ -113,10 +113,10 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 	/// The range of component `r` is `[1, 1000]`.
 	/// The range of component `c` is `[1, 1000]`.
 	fn new_session(_r: u32, c: u32, ) -> Weight {
-		// Minimum execution time: 22_483 nanoseconds.
-		Weight::from_ref_time(22_818_000 as u64)
-			// Standard Error: 630_790
-			.saturating_add(Weight::from_ref_time(22_103_331 as u64).saturating_mul(c as u64))
+		// Minimum execution time: 22_780 nanoseconds.
+		Weight::from_ref_time(23_070_000 as u64)
+			// Standard Error: 629_907
+			.saturating_add(Weight::from_ref_time(22_042_278 as u64).saturating_mul(c as u64))
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(c as u64)))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
