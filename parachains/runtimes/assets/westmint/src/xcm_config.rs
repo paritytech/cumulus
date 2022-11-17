@@ -180,7 +180,7 @@ impl xcm_executor::Config for XcmConfig {
 			AssetFeeAsExistentialDepositMultiplier<
 				Runtime,
 				WeightToFee,
-				pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
+				pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, frame_support::instances::Instance1>,
 			>,
 			ConvertedConcreteAssetId<
 				AssetId,
@@ -250,23 +250,23 @@ pub type SovereignAccountOf = (
 
 // `EnsureOriginWithArg` impl for `CreateOrigin` which allows only XCM origins that are locations
 // containing the class location.
-pub struct ForeignCreators;
-impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
-	type Success = AccountId;
+// pub struct ForeignCreators;
+// impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
+// 	type Success = AccountId;
 
-	fn try_origin(
-		o: RuntimeOrigin,
-		a: &MultiLocation,
-	) -> sp_std::result::Result<Self::Success, RuntimeOrigin> {
-		let origin_location = pallet_xcm::EnsureXcm::<Everything>::try_origin(o.clone())?;
-		if !a.starts_with(&origin_location) {
-			return Err(o)
-		}
-		SovereignAccountOf::convert(origin_location).map_err(|_| o)
-	}
+// 	fn try_origin(
+// 		o: RuntimeOrigin,
+// 		a: &MultiLocation,
+// 	) -> sp_std::result::Result<Self::Success, RuntimeOrigin> {
+// 		let origin_location = pallet_xcm::EnsureXcm::<Everything>::try_origin(o.clone())?;
+// 		if !a.starts_with(&origin_location) {
+// 			return Err(o)
+// 		}
+// 		SovereignAccountOf::convert(origin_location).map_err(|_| o)
+// 	}
 
-	#[cfg(feature = "runtime-benchmarks")]
-	fn successful_origin(a: &MultiLocation) -> RuntimeOrigin {
-		pallet_xcm::Origin::Xcm(a.clone()).into()
-	}
-}
+// 	#[cfg(feature = "runtime-benchmarks")]
+// 	fn successful_origin(a: &MultiLocation) -> RuntimeOrigin {
+// 		pallet_xcm::Origin::Xcm(a.clone()).into()
+// 	}
+// }

@@ -182,7 +182,7 @@ impl xcm_executor::Config for XcmConfig {
 			AssetFeeAsExistentialDepositMultiplier<
 				Runtime,
 				WeightToFee,
-				pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
+				pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, frame_support::instances::Instance1>,
 			>,
 			ConvertedConcreteAssetId<
 				AssetId,
