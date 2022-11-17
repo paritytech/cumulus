@@ -31,9 +31,9 @@ use sc_network::{Event, NetworkService};
 use sc_network_common::service::NetworkEventStream;
 use std::sync::Arc;
 
-use polkadot_service::{open_database, Configuration, TaskManager};
+use polkadot_service::{Configuration, TaskManager};
 
-use futures::StreamExt;
+use futures::{select, FutureExt, StreamExt};
 
 use sp_runtime::{app_crypto::Pair, traits::Block as BlockT};
 
@@ -152,8 +152,12 @@ async fn new_minimal_relay_chain(
 		.extend(peer_sets_info(is_authority, &peer_set_protocol_names));
 
 	let request_protocol_names = ReqProtocolNames::new(genesis_hash, config.chain_spec.fork_id());
-	let (collation_req_receiver, available_data_req_receiver, pov_req_receiver, chunk_req_receiver) =
-		build_request_response_protocol_receivers(&request_protocol_names, &mut config);
+	let (
+		collation_req_receiver,
+		available_data_req_receiver,
+		mut pov_req_receiver,
+		mut chunk_req_receiver,
+	) = build_request_response_protocol_receivers(&request_protocol_names, &mut config);
 	let (network, network_starter) =
 		network::build_collator_network(network::BuildCollatorNetworkParams {
 			config: &config,
@@ -162,6 +166,20 @@ async fn new_minimal_relay_chain(
 			genesis_hash,
 		})?;
 
+	task_manager.spawn_handle().spawn("request-drainer", None, async move {
+		loop {
+			select! {
+				res = pov_req_receiver.recv(|| vec![]).fuse() => {
+					tracing::error!(target: "skunert", "received pov request");
+				},
+				res = chunk_req_receiver.recv(|| vec![]).fuse() => {
+					tracing::error!(target: "skunert", "received chunk request");
+				},
+
+			}
+		}
+	});
+
 	let authority_discovery_service = build_authority_discovery_service(
 		&task_manager,
 		relay_chain_rpc_client.clone(),
@@ -169,8 +187,6 @@ async fn new_minimal_relay_chain(
 		network.clone(),
 		prometheus_registry.clone(),
 	);
-
-	let parachains_db = open_database(&config.database)?;
 
 	let overseer_args = CollatorOverseerGenArgs {
 		runtime_client: relay_chain_rpc_client.clone(),
@@ -183,10 +199,6 @@ async fn new_minimal_relay_chain(
 		collator_pair,
 		req_protocol_names: request_protocol_names,
 		peer_set_protocol_names,
-		parachains_db,
-		availability_config: polkadot_service::AVAILABILITY_CONFIG,
-		pov_req_receiver,
-		chunk_req_receiver,
 	};
 
 	let overseer_handle = collator_overseer::spawn_overseer(
