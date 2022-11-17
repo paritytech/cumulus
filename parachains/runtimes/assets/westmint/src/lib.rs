@@ -63,7 +63,9 @@ use parachains_common::{
 	opaque, AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
-use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
+use xcm_config::{
+	ForeignCreators, MultiLocationForAssetId, XcmConfig, XcmOriginToTransactDispatchOrigin,
+};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -242,6 +244,27 @@ impl pallet_assets::Config<TrustBackedAssetClasses> for Runtime {
 	type Extra = ();
 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
 	type AssetAccountDeposit = AssetAccountDeposit;
+}
+
+/// Assets managed by some foreign location.
+type ForeignAssetClasses = pallet_assets::Instance2;
+impl pallet_assets::Config<ForeignAssetClasses> for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = Balance;
+	type AssetId = MultiLocationForAssetId;
+	type Currency = Balances;
+	type CreateOrigin = ForeignCreators;
+	type ForceOrigin = AssetsForceOrigin;
+	type AssetDeposit = AssetDeposit;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = AssetsStringLimit;
+	type Freezer = ();
+	type Extra = ();
+	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
+	type AssetAccountDeposit = AssetAccountDeposit;
+	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
 }
 
 parameter_types! {
@@ -514,9 +537,12 @@ impl pallet_asset_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	// TODO
 	// This should be able to take assets from any pallet instance.
-	type Fungibles = TrustBackedAssets;
+	type Fungibles = (ForeignAssets, TrustBackedAssets);
 	type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
-		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
+		(
+			ForeignAssets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
+			TrustBackedAssets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
+		),
 		AssetsToBlockAuthor<Runtime>,
 	>;
 }
@@ -595,6 +621,7 @@ construct_runtime!(
 		// The main stage.
 		TrustBackedAssets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>} = 50,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
+		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 52,
 	}
 );
 
@@ -644,6 +671,7 @@ mod benches {
 	define_benchmarks!(
 		[frame_system, SystemBench::<Runtime>]
 		[pallet_assets, TrustBackedAssets]
+		[pallet_assets, ForeignAssets]
 		[pallet_balances, Balances]
 		[pallet_multisig, Multisig]
 		[pallet_proxy, Proxy]
