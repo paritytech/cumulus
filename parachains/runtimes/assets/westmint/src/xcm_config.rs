@@ -49,6 +49,7 @@ parameter_types! {
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub const Local: MultiLocation = Here.into();
+	// todo: accept all instances, perhaps need a type for each instance?
 	pub AssetsPalletLocation: MultiLocation =
 		PalletInstance(<TrustBackedAssets as PalletInfoAccess>::index() as u8).into();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
@@ -83,12 +84,12 @@ pub type CurrencyTransactor = CurrencyAdapter<
 /// Means for transacting assets besides the native currency on this chain.
 pub type FungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
-	TrustBackedAssets,
+	TrustBackedAssets, // todo: accept all instances
 	// Use this currency when it is a fungible asset matching the given location or name:
 	ConvertedConcreteAssetId<
 		AssetId,
 		Balance,
-		AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>,
+		AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>, // todo: accept all instances
 		JustTry,
 	>,
 	// Convert an XCM MultiLocation into a local account id:
@@ -97,7 +98,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	AccountId,
 	// We only want to allow teleports of known assets. We use non-zero issuance as an indication
 	// that this asset is known.
-	parachains_common::impls::NonZeroIssuance<AccountId, TrustBackedAssets>,
+	parachains_common::impls::NonZeroIssuance<AccountId, TrustBackedAssets>, // todo: accept all instances
 	// The account to use for tracking teleports.
 	CheckingAccount,
 >;
@@ -184,10 +185,10 @@ impl xcm_executor::Config for XcmConfig {
 			ConvertedConcreteAssetId<
 				AssetId,
 				Balance,
-				AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>,
+				AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>, // todo: accept all instances
 				JustTry,
 			>,
-			TrustBackedAssets,
+			TrustBackedAssets, // todo: accept all instances
 			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
 				FungiblesTransactor,
 				AccountId,
