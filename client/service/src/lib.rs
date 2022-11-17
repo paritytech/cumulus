@@ -22,6 +22,7 @@ use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
 use cumulus_relay_chain_interface::RelayChainInterface;
 use polkadot_primitives::v2::CollatorPair;
+
 use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, UsageProvider,
 };
@@ -30,6 +31,7 @@ use sc_consensus::{
 	BlockImport,
 };
 use sc_service::{Configuration, TaskManager};
+
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::BlockOrigin;
@@ -38,7 +40,14 @@ use sp_runtime::{
 	traits::{Block as BlockT, NumberFor},
 	Justifications,
 };
+
+use futures::channel::mpsc;
 use std::{sync::Arc, time::Duration};
+
+// Given the sporadic nature of the explicit recovery operation and the
+// possibility to retry infinite times this value is more than enough.
+// In practice here we expect no more than one queued messages.
+const RECOVERY_CHAN_SIZE: usize = 8;
 
 /// Parameters given to [`start_collator`].
 pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, RCInterface, Spawner, IQ> {
@@ -94,11 +103,14 @@ where
 	Backend: BackendT<Block> + 'static,
 	IQ: ImportQueue<Block> + 'static,
 {
+	let (recovery_chan_tx, recovery_chan_rx) = mpsc::channel(RECOVERY_CHAN_SIZE);
+
 	let consensus = cumulus_client_consensus_common::run_parachain_consensus(
 		para_id,
 		client.clone(),
 		relay_chain_interface.clone(),
 		announce_block.clone(),
+		recovery_chan_tx,
 	);
 
 	task_manager
@@ -118,6 +130,7 @@ where
 		import_queue,
 		relay_chain_interface.clone(),
 		para_id,
+		recovery_chan_rx,
 	);
 
 	task_manager
@@ -178,11 +191,13 @@ where
 	RCInterface: RelayChainInterface + Clone + 'static,
 	IQ: ImportQueue<Block> + 'static,
 {
+	let (recovery_chan_tx, recovery_chan_rx) = mpsc::channel(64);
 	let consensus = cumulus_client_consensus_common::run_parachain_consensus(
 		para_id,
 		client.clone(),
 		relay_chain_interface.clone(),
 		announce_block,
+		recovery_chan_tx,
 	);
 
 	task_manager
@@ -208,6 +223,7 @@ where
 		import_queue,
 		relay_chain_interface,
 		para_id,
+		recovery_chan_rx,
 	);
 
 	task_manager

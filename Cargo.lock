@@ -1690,6 +1690,7 @@ dependencies = [
  "cumulus-client-pov-recovery",
  "cumulus-primitives-core",
  "cumulus-relay-chain-interface",
+ "futures",
  "parking_lot 0.12.1",
  "polkadot-primitives",
  "sc-client-api",

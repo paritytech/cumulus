@@ -30,7 +30,7 @@ use sp_runtime::{
 use polkadot_primitives::v2::{Hash as PHash, Id as ParaId, OccupiedCoreAssumption};
 
 use codec::Decode;
-use futures::{select, FutureExt, Stream, StreamExt};
+use futures::{channel::mpsc::Sender, select, FutureExt, Stream, StreamExt};
 
 use std::{pin::Pin, sync::Arc};
 
@@ -82,7 +82,7 @@ where
 		let finalized_head = if let Some(h) = finalized_heads.next().await {
 			h
 		} else {
-			tracing::debug!(target: "cumulus-consensus", "Stopping following finalized head.");
+			tracing::debug!(target: LOG_TARGET, "Stopping following finalized head.");
 			return
 		};
 
@@ -90,7 +90,7 @@ where
 			Ok(header) => header,
 			Err(err) => {
 				tracing::debug!(
-					target: "cumulus-consensus",
+					target: LOG_TARGET,
 					error = ?err,
 					"Could not decode parachain header while following finalized heads.",
 				);
@@ -105,12 +105,12 @@ where
 			if let Err(e) = parachain.finalize_block(hash, None, true) {
 				match e {
 					ClientError::UnknownBlock(_) => tracing::debug!(
-						target: "cumulus-consensus",
+						target: LOG_TARGET,
 						block_hash = ?hash,
 						"Could not finalize block because it is unknown.",
 					),
 					_ => tracing::warn!(
-						target: "cumulus-consensus",
+						target: LOG_TARGET,
 						error = ?e,
 						block_hash = ?hash,
 						"Failed to finalize block",
@@ -136,6 +136,7 @@ pub async fn run_parachain_consensus<P, R, Block, B>(
 	parachain: Arc<P>,
 	relay_chain: R,
 	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
+	recovery_chan_tx: Sender<Block::Hash>,
 ) where
 	Block: BlockT,
 	P: Finalizer<Block, B>
@@ -148,8 +149,13 @@ pub async fn run_parachain_consensus<P, R, Block, B>(
 	R: RelaychainClient,
 	B: Backend<Block>,
 {
-	let follow_new_best =
-		follow_new_best(para_id, parachain.clone(), relay_chain.clone(), announce_block);
+	let follow_new_best = follow_new_best(
+		para_id,
+		parachain.clone(),
+		relay_chain.clone(),
+		announce_block,
+		recovery_chan_tx,
+	);
 	let follow_finalized_head = follow_finalized_head(para_id, parachain, relay_chain);
 	select! {
 		_ = follow_new_best.fuse() => {},
@@ -163,6 +169,7 @@ async fn follow_new_best<P, R, Block, B>(
 	parachain: Arc<P>,
 	relay_chain: R,
 	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
+	recovery_chan_tx: Sender<Block::Hash>,
 ) where
 	Block: BlockT,
 	P: Finalizer<Block, B>
@@ -197,10 +204,11 @@ async fn follow_new_best<P, R, Block, B>(
 						h,
 						&*parachain,
 						&mut unset_best_header,
+						recovery_chan_tx.clone(),
 					).await,
 					None => {
 						tracing::debug!(
-							target: "cumulus-consensus",
+							target: LOG_TARGET,
 							"Stopping following new best.",
 						);
 						return
@@ -217,7 +225,7 @@ async fn follow_new_best<P, R, Block, B>(
 					).await,
 					None => {
 						tracing::debug!(
-							target: "cumulus-consensus",
+							target: LOG_TARGET,
 							"Stopping following imported blocks.",
 						);
 						return
@@ -276,7 +284,7 @@ async fn handle_new_block_imported<Block, P>(
 			import_block_as_new_best(unset_hash, unset_best_header, parachain).await;
 		},
 		state => tracing::debug!(
-			target: "cumulus-consensus",
+			target: LOG_TARGET,
 			?unset_best_header,
 			?notification.header,
 			?state,
@@ -290,6 +298,7 @@ async fn handle_new_best_parachain_head<Block, P>(
 	head: Vec<u8>,
 	parachain: &P,
 	unset_best_header: &mut Option<Block::Header>,
+	mut recovery_chan_tx: Sender<Block::Hash>,
 ) where
 	Block: BlockT,
 	P: UsageProvider<Block> + Send + Sync + BlockBackend<Block>,
@@ -299,7 +308,7 @@ async fn handle_new_best_parachain_head<Block, P>(
 		Ok(header) => header,
 		Err(err) => {
 			tracing::debug!(
-				target: "cumulus-consensus",
+				target: LOG_TARGET,
 				error = ?err,
 				"Could not decode Parachain header while following best heads.",
 			);
@@ -311,7 +320,7 @@ async fn handle_new_best_parachain_head<Block, P>(
 
 	if parachain.usage_info().chain.best_hash == hash {
 		tracing::debug!(
-			target: "cumulus-consensus",
+			target: LOG_TARGET,
 			block_hash = ?hash,
 			"Skipping set new best block, because block is already the best.",
 		)
@@ -325,7 +334,7 @@ async fn handle_new_best_parachain_head<Block, P>(
 			},
 			Ok(BlockStatus::InChainPruned) => {
 				tracing::error!(
-					target: "cumulus-collator",
+					target: LOG_TARGET,
 					block_hash = ?hash,
 					"Trying to set pruned block as new best!",
 				);
@@ -334,14 +343,26 @@ async fn handle_new_best_parachain_head<Block, P>(
 				*unset_best_header = Some(parachain_head);
 
 				tracing::debug!(
-					target: "cumulus-collator",
+					target: LOG_TARGET,
 					block_hash = ?hash,
 					"Parachain block not yet imported, waiting for import to enact as best block.",
 				);
+
+				// Best effort to trigger a recovery.
+				// Error is not fatal. The relay chain will re-announce the best block anyway,
+				// thus we will have other opportunities to retry.
+				if let Err(err) = recovery_chan_tx.try_send(hash) {
+					tracing::warn!(
+						target: LOG_TARGET,
+						block_hash = ?hash,
+						error = ?err,
+						"Unable to notify block recovery subsystem"
+					)
+				}
 			},
 			Err(e) => {
 				tracing::error!(
-					target: "cumulus-collator",
+					target: LOG_TARGET,
 					block_hash = ?hash,
 					error = ?e,
 					"Failed to get block status of block.",
@@ -361,7 +382,7 @@ where
 	let best_number = parachain.usage_info().chain.best_number;
 	if *header.number() < best_number {
 		tracing::debug!(
-			target: "cumulus-consensus",
+			target: LOG_TARGET,
 			%best_number,
 			block_number = %header.number(),
 			"Skipping importing block as new best block, because there already exists a \
@@ -377,7 +398,7 @@ where
 
 	if let Err(err) = (&*parachain).import_block(block_import_params, Default::default()).await {
 		tracing::warn!(
-			target: "cumulus-consensus",
+			target: LOG_TARGET,
 			block_hash = ?hash,
 			error = ?err,
 			"Failed to set new best block.",

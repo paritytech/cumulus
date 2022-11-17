@@ -59,7 +59,9 @@ use cumulus_primitives_core::ParachainBlockData;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 
 use codec::Decode;
-use futures::{select, stream::FuturesUnordered, Future, FutureExt, Stream, StreamExt};
+use futures::{
+	channel::mpsc::Receiver, select, stream::FuturesUnordered, Future, FutureExt, Stream, StreamExt,
+};
 use futures_timer::Delay;
 use rand::{thread_rng, Rng};
 
@@ -80,6 +82,7 @@ struct PendingCandidate<Block: BlockT> {
 	receipt: CandidateReceipt,
 	session_index: SessionIndex,
 	block_number: NumberFor<Block>,
+	parent_hash: Block::Hash,
 }
 
 /// The delay between observing an unknown block and recovering this block.
@@ -122,6 +125,8 @@ pub struct PoVRecovery<Block: BlockT, PC, IQ, RC> {
 	parachain_import_queue: IQ,
 	relay_chain_interface: RC,
 	para_id: ParaId,
+	/// Explicit block recovery requests channel.
+	recovery_chan_rx: Receiver<Block::Hash>,
 }
 
 impl<Block: BlockT, PC, IQ, RCInterface> PoVRecovery<Block, PC, IQ, RCInterface>
@@ -138,6 +143,7 @@ where
 		parachain_import_queue: IQ,
 		relay_chain_interface: RCInterface,
 		para_id: ParaId,
+		recovery_chan_rx: Receiver<Block::Hash>,
 	) -> Self {
 		Self {
 			pending_candidates: HashMap::new(),
@@ -149,6 +155,7 @@ where
 			parachain_import_queue,
 			relay_chain_interface,
 			para_id,
+			recovery_chan_rx,
 		}
 	}
 
@@ -175,10 +182,35 @@ where
 		}
 
 		let hash = header.hash();
+
+		if self.pending_candidates.contains_key(&hash) {
+			return
+		}
+
+		tracing::debug!(target: LOG_TARGET, block_hash = ?hash, "Adding pending candidate");
+		self.pending_candidates.insert(
+			hash,
+			PendingCandidate {
+				block_number: *header.number(),
+				receipt: receipt.to_plain(),
+				session_index,
+				parent_hash: *header.parent_hash(),
+			},
+		);
+
 		match self.parachain_client.block_status(&BlockId::Hash(hash)) {
-			Ok(BlockStatus::Unknown) => (),
-			// Any other state means, we should ignore it.
-			Ok(_) => return,
+			Ok(BlockStatus::Unknown) => {
+				// Delay the recovery by some random time to not spam the relay chain.
+				tracing::debug!(target: LOG_TARGET, block_hash = ?hash, "Starting lazy block recovery");
+				let delay = self.recovery_delay.as_delay();
+				self.next_candidate_to_recover.push(
+					async move {
+						delay.await;
+						hash
+					}
+					.boxed(),
+				);
+			},
 			Err(e) => {
 				tracing::debug!(
 					target: LOG_TARGET,
@@ -186,40 +218,9 @@ where
 					block_hash = ?hash,
 					"Failed to get block status",
 				);
-				return
 			},
+			_ => (),
 		}
-
-		tracing::debug!(target: LOG_TARGET, ?hash, "Adding pending candidate");
-		if self
-			.pending_candidates
-			.insert(
-				hash,
-				PendingCandidate {
-					block_number: *header.number(),
-					receipt: receipt.to_plain(),
-					session_index,
-				},
-			)
-			.is_some()
-		{
-			return
-		}
-
-		// Delay the recovery by some random time to not spam the relay chain.
-		let delay = self.recovery_delay.as_delay();
-		self.next_candidate_to_recover.push(
-			async move {
-				delay.await;
-				hash
-			}
-			.boxed(),
-		);
-	}
-
-	/// Handle an imported block.
-	fn handle_block_imported(&mut self, hash: &Block::Hash) {
-		self.pending_candidates.remove(hash);
 	}
 
 	/// Handle a finalized block with the given `block_number`.
@@ -343,13 +344,55 @@ where
 		self.import_block(block).await;
 	}
 
+	async fn chain_recovery(&mut self, mut hash: Block::Hash) {
+		let mut to_recover = Vec::new();
+		let do_recover = loop {
+			match self.parachain_client.block_status(&BlockId::Hash(hash)) {
+				Ok(BlockStatus::Unknown) => to_recover.push(hash),
+				Ok(_) => break true,
+				Err(e) => {
+					tracing::error!(
+						target: LOG_TARGET,
+						error = ?e,
+						block_hash = ?hash,
+						"Failed to get block status",
+					);
+					break false
+				},
+			}
+
+			hash = match self.pending_candidates.get(&hash) {
+				Some(p) => p.parent_hash,
+				None => {
+					tracing::error!(
+						target: LOG_TARGET,
+						block_hash = ?hash,
+						"Cound not recover, block has never been announced as a candidate"
+					);
+					break false
+				},
+			}
+		};
+
+		if do_recover {
+			for hash in to_recover.iter().rev() {
+				tracing::debug!(
+					target: LOG_TARGET,
+					block_hash = ?hash,
+					"Starting eager recovery",
+				);
+				self.recover_candidate(*hash).await;
+			}
+		}
+	}
+
 	/// Import the given `block`.
 	///
 	/// This will also recursivley drain `waiting_for_parent` and import them as well.
 	async fn import_block(&mut self, block: Block) {
 		let mut blocks = VecDeque::new();
 
-		tracing::debug!(target: LOG_TARGET, hash = ?block.hash(), "Importing block retrieved using pov_recovery");
+		tracing::debug!(target: LOG_TARGET, block_hash = ?block.hash(), "Importing block retrieved using pov_recovery");
 		blocks.push_back(block);
 
 		let mut incoming_blocks = Vec::new();
@@ -382,7 +425,6 @@ where
 
 	/// Run the pov-recovery.
 	pub async fn run(mut self) {
-		let mut imported_blocks = self.parachain_client.import_notification_stream().fuse();
 		let mut finalized_blocks = self.parachain_client.finality_notification_stream().fuse();
 		let pending_candidates =
 			match pending_candidates(self.relay_chain_interface.clone(), self.para_id).await {
@@ -408,15 +450,9 @@ where
 						return;
 					}
 				},
-				imported = imported_blocks.next() => {
-					if let Some(imported) = imported {
-						self.handle_block_imported(&imported.hash);
-					} else {
-						tracing::debug!(
-							target: LOG_TARGET,
-							"Imported blocks stream ended",
-						);
-						return;
+				recovery_req = self.recovery_chan_rx.next() => {
+					if let Some(hash) = recovery_req {
+						self.chain_recovery(hash).await;
 					}
 				},
 				finalized = finalized_blocks.next() => {
