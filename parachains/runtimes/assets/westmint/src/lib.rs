@@ -535,14 +535,16 @@ impl pallet_collator_selection::Config for Runtime {
 
 impl pallet_asset_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	// TODO
+	// TODO https://github.com/paritytech/substrate/issues/12724
 	// This should be able to take assets from any pallet instance.
-	type Fungibles = (ForeignAssets, TrustBackedAssets);
+	type Fungibles = TrustBackedAssets;
 	type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
-		(
-			ForeignAssets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
-			TrustBackedAssets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
-		),
+		pallet_assets::BalanceToAssetBalance<
+			Balances,
+			Runtime,
+			ConvertInto,
+			pallet_assets::Instance1,
+		>,
 		AssetsToBlockAuthor<Runtime>,
 	>;
 }
