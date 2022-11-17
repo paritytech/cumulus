@@ -19,7 +19,7 @@ use super::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{Everything, PalletInfoAccess},
+	traits::{EnsureOriginWithArg, Everything, PalletInfoAccess},
 };
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
@@ -28,7 +28,7 @@ use parachains_common::{
 		AssetFeeAsExistentialDepositMultiplier, DenyReserveTransferToRelayChain, DenyThenTry,
 	},
 };
-use polkadot_parachain::primitives::Sibling;
+use polkadot_parachain::primitives::{Id as ParaId, Sibling};
 use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -237,4 +237,35 @@ impl pallet_xcm::Config for Runtime {
 impl cumulus_pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
+}
+
+pub type MultiLocationForAssetId = MultiLocation;
+
+pub type SovereignAccountOf = (
+	SiblingParachainConvertsVia<ParaId, AccountId>,
+	AccountId32Aliases<RelayNetwork, AccountId>,
+	ParentIsPreset<AccountId>,
+);
+
+// `EnsureOriginWithArg` impl for `CreateOrigin` which allows only XCM origins that are locations
+// containing the class location.
+pub struct ForeignCreators;
+impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
+	type Success = AccountId;
+
+	fn try_origin(
+		o: RuntimeOrigin,
+		a: &MultiLocation,
+	) -> sp_std::result::Result<Self::Success, RuntimeOrigin> {
+		let origin_location = pallet_xcm::EnsureXcm::<Everything>::try_origin(o.clone())?;
+		if !a.starts_with(&origin_location) {
+			return Err(o)
+		}
+		SovereignAccountOf::convert(origin_location).map_err(|_| o)
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn successful_origin(a: &MultiLocation) -> RuntimeOrigin {
+		pallet_xcm::Origin::Xcm(a.clone()).into()
+	}
 }
