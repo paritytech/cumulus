@@ -82,6 +82,7 @@ pub struct AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceC
 impl<CurrencyBalance, Runtime, WeightToFee, BalanceConverter>
 	cumulus_primitives_utility::ChargeWeightInFungibles<
 		AccountIdOf<Runtime>,
+		// todo: I don't understand why `frame_support` is the instance here??? but it compiles...
 		pallet_assets::Pallet<Runtime, frame_support::instances::Instance1>,
 	> for AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceConverter>
 where
@@ -98,8 +99,12 @@ where
 	fn charge_weight_in_fungibles(
 		asset_id: <pallet_assets::Pallet<Runtime, frame_support::instances::Instance1> as Inspect<AccountIdOf<Runtime>>>::AssetId,
 		weight: Weight,
-	) -> Result<<pallet_assets::Pallet<Runtime, frame_support::instances::Instance1> as Inspect<AccountIdOf<Runtime>>>::Balance, XcmError>
-	{
+	) -> Result<
+		<pallet_assets::Pallet<Runtime, frame_support::instances::Instance1> as Inspect<
+			AccountIdOf<Runtime>,
+		>>::Balance,
+		XcmError,
+	> {
 		let amount = WeightToFee::weight_to_fee(&weight);
 		// If the amount gotten is not at least the ED, then make it be the ED of the asset
 		// This is to avoid burning assets and decreasing the supply

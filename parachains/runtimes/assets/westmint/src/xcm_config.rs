@@ -15,13 +15,14 @@
 
 use super::{
 	AccountId, AssetId, Authorship, Balance, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
-	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, TrustBackedAssets, WeightToFee, XcmpQueue,
+	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, TrustBackedAssetsInstance, TrustBackedAssets,
+	WeightToFee, XcmpQueue,
 };
 use frame_support::{
 	match_types, parameter_types,
 	traits::{EnsureOriginWithArg, Everything, PalletInfoAccess},
 };
-use pallet_xcm::XcmPassthrough;
+use pallet_xcm::{EnsureXcm, XcmPassthrough};
 use parachains_common::{
 	impls::ToStakingPot,
 	xcm_config::{
@@ -40,7 +41,7 @@ use xcm_builder::{
 	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 	WeightInfoBounds,
 };
-use xcm_executor::{traits::JustTry, XcmExecutor};
+use xcm_executor::{traits::{Convert, JustTry}, XcmExecutor};
 
 parameter_types! {
 	pub const WestendLocation: MultiLocation = MultiLocation::parent();
@@ -180,7 +181,12 @@ impl xcm_executor::Config for XcmConfig {
 			AssetFeeAsExistentialDepositMultiplier<
 				Runtime,
 				WeightToFee,
-				pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, frame_support::instances::Instance1>,
+				pallet_assets::BalanceToAssetBalance<
+					Balances,
+					Runtime,
+					ConvertInto,
+					TrustBackedAssetsInstance,
+				>,
 			>,
 			ConvertedConcreteAssetId<
 				AssetId,
@@ -254,16 +260,22 @@ pub type SovereignAccountOf = (
 // impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
 // 	type Success = AccountId;
 
-// 	fn try_origin(
-// 		o: RuntimeOrigin,
-// 		a: &MultiLocation,
-// 	) -> sp_std::result::Result<Self::Success, RuntimeOrigin> {
-// 		let origin_location = pallet_xcm::EnsureXcm::<Everything>::try_origin(o.clone())?;
-// 		if !a.starts_with(&origin_location) {
-// 			return Err(o)
-// 		}
-// 		SovereignAccountOf::convert(origin_location).map_err(|_| o)
-// 	}
+	fn try_origin(
+		o: RuntimeOrigin,
+		a: &MultiLocation,
+	) -> sp_std::result::Result<Self::Success, RuntimeOrigin> {
+		let origin_location = EnsureXcm::try_origin(o.clone())?;
+
+		// dirty hack, should port vvv into master and use `starts_with`
+		// https://github.com/paritytech/polkadot/commit/e640d826513c45a0452138c8908a699e19ac0143
+		if a.parents != origin_location.parents ||
+			a.interior.len() != origin_location.interior.len() ||
+			!a.interior.iter().zip(origin_location.interior.iter()).all(|(l, r)| l == r)
+		{
+			return Err(o)
+		}
+		SovereignAccountOf::convert(origin_location).map_err(|_| o)
+	}
 
 // 	#[cfg(feature = "runtime-benchmarks")]
 // 	fn successful_origin(a: &MultiLocation) -> RuntimeOrigin {

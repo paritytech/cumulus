@@ -76,7 +76,7 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use xcm_executor::XcmExecutor;
 
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
-use frame_support::instances::Instance1 as TrustBackedAssetsInstance;
+// use frame_support::instances::Instance1 as TrustBackedAssetsInstance;
 
 impl_opaque_keys! {
 	pub struct SessionKeys {
@@ -230,8 +230,8 @@ pub type AssetsForceOrigin = EnsureRoot<AccountId>;
 // We should perhaps come up with a new name. "ReserveBackedAssets" collides with XCM terminology
 // and falsly implies that they are actually backed by some reserve. In reality, the user is
 // _trusting_ some `CreateOrigin` (AccountId) that the asset is what they claim.
-type TrustBackedAssetClasses = pallet_assets::Instance1;
-impl pallet_assets::Config<TrustBackedAssetClasses> for Runtime {
+pub type TrustBackedAssetsInstance = pallet_assets::Instance1;
+impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type AssetId = AssetId;
@@ -255,9 +255,11 @@ type ForeignAssetClasses = pallet_assets::Instance2;
 impl pallet_assets::Config<ForeignAssetClasses> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
-	type AssetId = AssetId; // TODO not copy? MultiLocationForAssetId;
+	// TODO: impl Copy for MultiLocation or relax AssetId to Clone?
+	// https://github.com/paritytech/substrate/pull/12731
+	type AssetId = AssetId; // MultiLocationForAssetId;
 	type Currency = Balances;
-	type CreateOrigin =  AsEnsureOriginWithArg<EnsureSigned<AccountId>>; //todo: ForeignCreators;
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>; // ForeignCreators;
 	type ForceOrigin = AssetsForceOrigin;
 	type AssetDeposit = AssetDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
@@ -343,6 +345,7 @@ impl Default for ProxyType {
 		Self::Any
 	}
 }
+type TrustBackedAssetsCall = pallet_assets::Call<Runtime, frame_support::instances::Instance1>;
 impl InstanceFilter<RuntimeCall> for ProxyType {
 	fn filter(&self, c: &RuntimeCall) -> bool {
 		match self {
@@ -370,23 +373,17 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			},
 			ProxyType::AssetOwner => matches!(
 				c,
-				RuntimeCall::TrustBackedAssets(pallet_assets::Call::<Runtime, TrustBackedAssetsInstance>::create { .. }) |
+				RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::create { .. }) |
 					RuntimeCall::TrustBackedAssets(
-						pallet_assets::Call::<Runtime, TrustBackedAssetsInstance>::start_destroy { .. }
-					) | RuntimeCall::TrustBackedAssets(
-						pallet_assets::Call::<Runtime, TrustBackedAssetsInstance>::destroy_accounts { .. }
-				) | RuntimeCall::TrustBackedAssets(
-					pallet_assets::Call::<Runtime, TrustBackedAssetsInstance>::destroy_approvals { .. }
-				) | RuntimeCall::TrustBackedAssets(
-					pallet_assets::Call::<Runtime, TrustBackedAssetsInstance>::finish_destroy { .. }
-				) | RuntimeCall::TrustBackedAssets(
-					pallet_assets::Call::<Runtime, TrustBackedAssetsInstance>::transfer_ownership { .. }
-				) | RuntimeCall::TrustBackedAssets(pallet_assets::Call::<Runtime, TrustBackedAssetsInstance>::set_team { .. }) |
+						TrustBackedAssetsCall::destroy_accounts { .. }
+					) | RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::destroy_approvals { .. }) |
+					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::finish_destroy { .. }) |
 					RuntimeCall::TrustBackedAssets(
-						pallet_assets::Call::<Runtime, TrustBackedAssetsInstance>::set_metadata { .. }
-					) | RuntimeCall::TrustBackedAssets(
-						pallet_assets::Call::<Runtime, TrustBackedAssetsInstance>::clear_metadata { .. }
-				) | RuntimeCall::Uniques(pallet_uniques::Call::create { .. }) |
+						TrustBackedAssetsCall::transfer_ownership { .. }
+					) | RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::set_team { .. }) |
+					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::set_metadata { .. }) |
+					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::clear_metadata { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::create { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::destroy { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::transfer_ownership { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::set_team { .. }) |
@@ -402,15 +399,13 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			),
 			ProxyType::AssetManager => matches!(
 				c,
-				RuntimeCall::TrustBackedAssets(pallet_assets::Call::<Runtime, TrustBackedAssetsInstance>::mint { .. }) |
-					RuntimeCall::TrustBackedAssets(pallet_assets::Call::<Runtime, TrustBackedAssetsInstance>::burn { .. }) |
-					RuntimeCall::TrustBackedAssets(pallet_assets::Call::<Runtime, TrustBackedAssetsInstance>::freeze { .. }) |
-					RuntimeCall::TrustBackedAssets(pallet_assets::Call::<Runtime, TrustBackedAssetsInstance>::thaw { .. }) |
-					RuntimeCall::TrustBackedAssets(
-						pallet_assets::Call::freeze_asset { .. }
-					) | RuntimeCall::TrustBackedAssets(
-						pallet_assets::Call::thaw_asset { .. }
-				) | RuntimeCall::Uniques(pallet_uniques::Call::mint { .. }) |
+				RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::mint { .. }) |
+					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::burn { .. }) |
+					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::freeze { .. }) |
+					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::thaw { .. }) |
+					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::freeze_asset { .. }) |
+					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::thaw_asset { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::mint { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::burn { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::freeze { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::thaw { .. }) |
@@ -549,7 +544,8 @@ impl pallet_collator_selection::Config for Runtime {
 impl pallet_asset_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	// TODO https://github.com/paritytech/substrate/issues/12724
-	// This should be able to take assets from any pallet instance.
+	// This should be able to take assets from any pallet instance. For now we only allow
+	// sufficient, trust backed assets to pay for transaction fees.
 	type Fungibles = TrustBackedAssets;
 	type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
 		pallet_assets::BalanceToAssetBalance<
