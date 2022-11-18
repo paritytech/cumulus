@@ -14,7 +14,7 @@
 // limitations under the License.
 
 use super::{
-	AccountId, AllPalletsWithSystem, AssetId, Assets, Authorship, Balance, Balances, ParachainInfo,
+	AccountId, AllPalletsWithSystem, AssetId, Authorship, Balance, Balances, ParachainInfo,
 	ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
 	TrustBackedAssets, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
@@ -52,7 +52,7 @@ parameter_types! {
 	pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub const Local: MultiLocation = Here.into_location();
 	// todo: accept all instances, perhaps need a type for each instance?
-	pub AssetsPalletLocation: MultiLocation =
+	pub TrustBackedAssetsPalletLocation: MultiLocation =
 		PalletInstance(<TrustBackedAssets as PalletInfoAccess>::index() as u8).into();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
@@ -91,7 +91,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	ConvertedConcreteId<
 		AssetId,
 		Balance,
-		AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>, // todo: accept all instances
+		AsPrefixedGeneralIndex<TrustBackedAssetsPalletLocation, AssetId, JustTry>, // todo: accept all instances
 		JustTry,
 	>,
 	// Convert an XCM MultiLocation into a local account id:
@@ -193,7 +193,7 @@ impl xcm_executor::Config for XcmConfig {
 			ConvertedConcreteId<
 				AssetId,
 				Balance,
-				AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>, // todo: accept all instances
+				AsPrefixedGeneralIndex<TrustBackedAssetsPalletLocation, AssetId, JustTry>, // todo: accept all instances
 				JustTry,
 			>,
 			TrustBackedAssets, // todo: accept all instances
@@ -280,13 +280,7 @@ impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
 		a: &MultiLocation,
 	) -> sp_std::result::Result<Self::Success, RuntimeOrigin> {
 		let origin_location = EnsureXcm::<Everything>::try_origin(o.clone())?;
-
-		// dirty hack, should port vvv into master and use `starts_with`
-		// https://github.com/paritytech/polkadot/commit/e640d826513c45a0452138c8908a699e19ac0143
-		if a.parents != origin_location.parents ||
-			a.interior.len() < origin_location.interior.len() ||
-			!origin_location.interior.iter().zip(a.interior.iter()).all(|(l, r)| l == r)
-		{
+		if !a.starts_with(&origin_location) {
 			return Err(o)
 		}
 		SovereignAccountOf::convert(origin_location).map_err(|_| o)

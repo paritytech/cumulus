@@ -82,25 +82,24 @@ pub struct AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceC
 impl<CurrencyBalance, Runtime, WeightToFee, BalanceConverter>
 	cumulus_primitives_utility::ChargeWeightInFungibles<
 		AccountIdOf<Runtime>,
-		// todo: I don't understand why `frame_support` is the instance here??? but it compiles...
-		pallet_assets::Pallet<Runtime, frame_support::instances::Instance1>,
+		pallet_assets::Pallet<Runtime, pallet_assets::Instance1>,
 	> for AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceConverter>
 where
-	Runtime: pallet_assets::Config<frame_support::instances::Instance1>,
+	Runtime: pallet_assets::Config<pallet_assets::Instance1>,
 	WeightToFee: WeightToFeePolynomial<Balance = CurrencyBalance>,
 	BalanceConverter: BalanceConversion<
 		CurrencyBalance,
-		<Runtime as pallet_assets::Config<frame_support::instances::Instance1>>::AssetId,
-		<Runtime as pallet_assets::Config<frame_support::instances::Instance1>>::Balance,
+		<Runtime as pallet_assets::Config<pallet_assets::Instance1>>::AssetId,
+		<Runtime as pallet_assets::Config<pallet_assets::Instance1>>::Balance,
 	>,
 	AccountIdOf<Runtime>:
 		From<polkadot_primitives::v2::AccountId> + Into<polkadot_primitives::v2::AccountId>,
 {
 	fn charge_weight_in_fungibles(
-		asset_id: <pallet_assets::Pallet<Runtime, frame_support::instances::Instance1> as Inspect<AccountIdOf<Runtime>>>::AssetId,
+		asset_id: <pallet_assets::Pallet<Runtime, pallet_assets::Instance1> as Inspect<AccountIdOf<Runtime>>>::AssetId,
 		weight: Weight,
 	) -> Result<
-		<pallet_assets::Pallet<Runtime, frame_support::instances::Instance1> as Inspect<
+		<pallet_assets::Pallet<Runtime, pallet_assets::Instance1> as Inspect<
 			AccountIdOf<Runtime>,
 		>>::Balance,
 		XcmError,
