@@ -96,7 +96,9 @@ where
 		From<polkadot_primitives::v2::AccountId> + Into<polkadot_primitives::v2::AccountId>,
 {
 	fn charge_weight_in_fungibles(
-		asset_id: <pallet_assets::Pallet<Runtime, pallet_assets::Instance1> as Inspect<AccountIdOf<Runtime>>>::AssetId,
+		asset_id: <pallet_assets::Pallet<Runtime, pallet_assets::Instance1> as Inspect<
+			AccountIdOf<Runtime>,
+		>>::AssetId,
 		weight: Weight,
 	) -> Result<
 		<pallet_assets::Pallet<Runtime, pallet_assets::Instance1> as Inspect<

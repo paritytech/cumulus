@@ -234,7 +234,7 @@ impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 	type Balance = Balance;
 	type AssetId = AssetId;
 	type Currency = Balances;
-	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>; 
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 	type ForceOrigin = AssetsForceOrigin;
 	type AssetDeposit = AssetDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
@@ -370,8 +370,9 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 				c,
 				RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::create { .. }) |
 					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::destroy { .. }) |
-					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::transfer_ownership { .. }) |
-					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::set_team { .. }) |
+					RuntimeCall::TrustBackedAssets(
+						TrustBackedAssetsCall::transfer_ownership { .. }
+					) | RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::set_team { .. }) |
 					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::set_metadata { .. }) |
 					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::clear_metadata { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::create { .. }) |
