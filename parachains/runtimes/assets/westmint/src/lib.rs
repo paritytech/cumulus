@@ -247,8 +247,8 @@ impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 }
 
 /// Assets managed by some foreign location.
-type ForeignAssetClasses = pallet_assets::Instance2;
-impl pallet_assets::Config<ForeignAssetClasses> for Runtime {
+type ForeignAssetsInstance = pallet_assets::Instance2;
+impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	// TODO: impl Copy for MultiLocation or relax AssetId to Clone?
