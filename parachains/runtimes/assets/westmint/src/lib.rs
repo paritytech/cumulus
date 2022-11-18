@@ -76,7 +76,6 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use xcm_executor::XcmExecutor;
 
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
-// use frame_support::instances::Instance1 as TrustBackedAssetsInstance;
 
 impl_opaque_keys! {
 	pub struct SessionKeys {

@@ -26,7 +26,7 @@ use pallet_xcm::{EnsureXcm, XcmPassthrough};
 use parachains_common::{
 	impls::ToStakingPot,
 	xcm_config::{
-		AssetFeeAsExistentialDepositMultiplier, DenyReserveTransferToRelayChain, DenyThenTry,
+		AssetFeeAsExistentialDepositMultiplierInstance1, DenyReserveTransferToRelayChain, DenyThenTry,
 	},
 };
 use polkadot_parachain::primitives::{Id as ParaId, Sibling};
@@ -181,7 +181,7 @@ impl xcm_executor::Config for XcmConfig {
 		UsingComponents<WeightToFee, WestendLocation, AccountId, Balances, ToStakingPot<Runtime>>,
 		cumulus_primitives_utility::TakeFirstAssetTrader<
 			AccountId,
-			AssetFeeAsExistentialDepositMultiplier<
+			AssetFeeAsExistentialDepositMultiplierInstance1<
 				Runtime,
 				WeightToFee,
 				pallet_assets::BalanceToAssetBalance<

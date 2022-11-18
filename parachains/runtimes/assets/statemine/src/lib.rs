@@ -242,8 +242,7 @@ parameter_types! {
 pub type AssetsForceOrigin =
 	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>>;
 
-type TrustBackedAssetClasses = frame_support::instances::Instance1;
-impl pallet_assets::Config<TrustBackedAssetClasses> for Runtime {
+impl pallet_assets::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type AssetId = AssetId;
@@ -361,15 +360,15 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			},
 			ProxyType::AssetOwner => matches!(
 				c,
-				RuntimeCall::Assets(pallet_assets::Call::<Runtime, TrustBackedAssetClasses>::create { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::<Runtime, TrustBackedAssetClasses>::start_destroy { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::<Runtime, TrustBackedAssetClasses>::destroy_accounts { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::<Runtime, TrustBackedAssetClasses>::destroy_approvals { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::<Runtime, TrustBackedAssetClasses>::finish_destroy { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::<Runtime, TrustBackedAssetClasses>::transfer_ownership { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::<Runtime, TrustBackedAssetClasses>::set_team { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::<Runtime, TrustBackedAssetClasses>::set_metadata { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::<Runtime, TrustBackedAssetClasses>::clear_metadata { .. }) |
+				RuntimeCall::Assets(pallet_assets::Call::create { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::start_destroy { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::destroy_accounts { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::destroy_approvals { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::finish_destroy { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::transfer_ownership { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::set_team { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::set_metadata { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::clear_metadata { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::create { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::destroy { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::transfer_ownership { .. }) |
@@ -386,12 +385,12 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			),
 			ProxyType::AssetManager => matches!(
 				c,
-				RuntimeCall::Assets(pallet_assets::Call::<Runtime, TrustBackedAssetClasses>::mint { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::<Runtime, TrustBackedAssetClasses>::burn { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::<Runtime, TrustBackedAssetClasses>::freeze { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::<Runtime, TrustBackedAssetClasses>::thaw { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::<Runtime, TrustBackedAssetClasses>::freeze_asset { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::<Runtime, TrustBackedAssetClasses>::thaw_asset { .. }) |
+				RuntimeCall::Assets(pallet_assets::Call::mint { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::burn { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::freeze { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::thaw { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::freeze_asset { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::thaw_asset { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::mint { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::burn { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::freeze { .. }) |
@@ -537,7 +536,7 @@ impl pallet_asset_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Fungibles = Assets;
 	type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
-		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, frame_support::instances::Instance1>,
+		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
 		AssetsToBlockAuthor<Runtime>,
 	>;
 }
@@ -614,7 +613,7 @@ construct_runtime!(
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 42,
 
 		// The main stage.
-		Assets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>} = 50,
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 
 		#[cfg(feature = "state-trie-version-1")]

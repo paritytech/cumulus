@@ -82,25 +82,67 @@ pub struct AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceC
 impl<CurrencyBalance, Runtime, WeightToFee, BalanceConverter>
 	cumulus_primitives_utility::ChargeWeightInFungibles<
 		AccountIdOf<Runtime>,
-		// todo: I don't understand why `frame_support` is the instance here??? but it compiles...
-		pallet_assets::Pallet<Runtime, frame_support::instances::Instance1>,
+		pallet_assets::Pallet<Runtime>,
 	> for AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceConverter>
 where
-	Runtime: pallet_assets::Config<frame_support::instances::Instance1>,
+	Runtime: pallet_assets::Config,
 	WeightToFee: WeightToFeePolynomial<Balance = CurrencyBalance>,
 	BalanceConverter: BalanceConversion<
 		CurrencyBalance,
-		<Runtime as pallet_assets::Config<frame_support::instances::Instance1>>::AssetId,
-		<Runtime as pallet_assets::Config<frame_support::instances::Instance1>>::Balance,
+		<Runtime as pallet_assets::Config>::AssetId,
+		<Runtime as pallet_assets::Config>::Balance,
 	>,
 	AccountIdOf<Runtime>:
 		From<polkadot_primitives::v2::AccountId> + Into<polkadot_primitives::v2::AccountId>,
 {
 	fn charge_weight_in_fungibles(
-		asset_id: <pallet_assets::Pallet<Runtime, frame_support::instances::Instance1> as Inspect<AccountIdOf<Runtime>>>::AssetId,
+		asset_id: <pallet_assets::Pallet<Runtime> as Inspect<AccountIdOf<Runtime>>>::AssetId,
 		weight: Weight,
 	) -> Result<
-		<pallet_assets::Pallet<Runtime, frame_support::instances::Instance1> as Inspect<
+		<pallet_assets::Pallet<Runtime> as Inspect<
+			AccountIdOf<Runtime>,
+		>>::Balance,
+		XcmError,
+	> {
+		let amount = WeightToFee::weight_to_fee(&weight);
+		// If the amount gotten is not at least the ED, then make it be the ED of the asset
+		// This is to avoid burning assets and decreasing the supply
+		let asset_amount = BalanceConverter::to_asset_balance(amount, asset_id)
+			.map_err(|_| XcmError::TooExpensive)?;
+		Ok(asset_amount)
+	}
+}
+
+// TODO: These types will become common again once instanced assets is rolled out to
+// statemine & statemint runtimes. Then we can delete the above type.
+
+/// A `ChargeFeeInFungibles` implementation that converts the output of
+/// a given WeightToFee implementation an amount charged in
+/// a particular assetId from pallet-assets FOR instance1 of pallet-assets.
+pub struct AssetFeeAsExistentialDepositMultiplierInstance1<Runtime, WeightToFee, BalanceConverter>(
+	PhantomData<(Runtime, WeightToFee, BalanceConverter)>,
+);
+impl<CurrencyBalance, Runtime, WeightToFee, BalanceConverter>
+	cumulus_primitives_utility::ChargeWeightInFungibles<
+		AccountIdOf<Runtime>,
+		pallet_assets::Pallet<Runtime, pallet_assets::Instance1>,
+	> for AssetFeeAsExistentialDepositMultiplierInstance1<Runtime, WeightToFee, BalanceConverter>
+where
+	Runtime: pallet_assets::Config<pallet_assets::Instance1>,
+	WeightToFee: WeightToFeePolynomial<Balance = CurrencyBalance>,
+	BalanceConverter: BalanceConversion<
+		CurrencyBalance,
+		<Runtime as pallet_assets::Config<pallet_assets::Instance1>>::AssetId,
+		<Runtime as pallet_assets::Config<pallet_assets::Instance1>>::Balance,
+	>,
+	AccountIdOf<Runtime>:
+		From<polkadot_primitives::v2::AccountId> + Into<polkadot_primitives::v2::AccountId>,
+{
+	fn charge_weight_in_fungibles(
+		asset_id: <pallet_assets::Pallet<Runtime, pallet_assets::Instance1> as Inspect<AccountIdOf<Runtime>>>::AssetId,
+		weight: Weight,
+	) -> Result<
+		<pallet_assets::Pallet<Runtime, pallet_assets::Instance1> as Inspect<
 			AccountIdOf<Runtime>,
 		>>::Balance,
 		XcmError,
