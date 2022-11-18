@@ -20,7 +20,7 @@ use super::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{EnsureOriginWithArg, Everything, PalletInfoAccess},
+	traits::{EnsureOrigin, EnsureOriginWithArg, Everything, PalletInfoAccess},
 };
 use pallet_xcm::{EnsureXcm, XcmPassthrough};
 use parachains_common::{
@@ -256,9 +256,9 @@ pub type SovereignAccountOf = (
 
 // `EnsureOriginWithArg` impl for `CreateOrigin` which allows only XCM origins that are locations
 // containing the class location.
-// pub struct ForeignCreators;
-// impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
-// 	type Success = AccountId;
+pub struct ForeignCreators;
+impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
+	type Success = AccountId;
 
 	fn try_origin(
 		o: RuntimeOrigin,
@@ -277,8 +277,8 @@ pub type SovereignAccountOf = (
 		SovereignAccountOf::convert(origin_location).map_err(|_| o)
 	}
 
-// 	#[cfg(feature = "runtime-benchmarks")]
-// 	fn successful_origin(a: &MultiLocation) -> RuntimeOrigin {
-// 		pallet_xcm::Origin::Xcm(a.clone()).into()
-// 	}
-// }
+	#[cfg(feature = "runtime-benchmarks")]
+	fn successful_origin(a: &MultiLocation) -> RuntimeOrigin {
+		pallet_xcm::Origin::Xcm(a.clone()).into()
+	}
+}
