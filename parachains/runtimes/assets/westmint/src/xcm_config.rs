@@ -15,8 +15,8 @@
 
 use super::{
 	AccountId, AssetId, Authorship, Balance, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
-	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, TrustBackedAssetsInstance, TrustBackedAssets,
-	WeightToFee, XcmpQueue,
+	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, TrustBackedAssets,
+	TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -41,7 +41,10 @@ use xcm_builder::{
 	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 	WeightInfoBounds,
 };
-use xcm_executor::{traits::{Convert, JustTry}, XcmExecutor};
+use xcm_executor::{
+	traits::{Convert, JustTry},
+	XcmExecutor,
+};
 
 parameter_types! {
 	pub const WestendLocation: MultiLocation = MultiLocation::parent();
@@ -269,8 +272,8 @@ impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
 		// dirty hack, should port vvv into master and use `starts_with`
 		// https://github.com/paritytech/polkadot/commit/e640d826513c45a0452138c8908a699e19ac0143
 		if a.parents != origin_location.parents ||
-			a.interior.len() != origin_location.interior.len() ||
-			!a.interior.iter().zip(origin_location.interior.iter()).all(|(l, r)| l == r)
+			a.interior.len() < origin_location.interior.len() ||
+			!origin_location.interior.iter().zip(a.interior.iter()).all(|(l, r)| l == r)
 		{
 			return Err(o)
 		}
