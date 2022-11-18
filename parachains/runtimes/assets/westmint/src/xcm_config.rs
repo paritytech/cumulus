@@ -20,7 +20,7 @@ use super::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{EnsureOriginWithArg, Everything, PalletInfoAccess},
+	traits::{EnsureOrigin, EnsureOriginWithArg, Everything, PalletInfoAccess},
 };
 use pallet_xcm::{EnsureXcm, XcmPassthrough};
 use parachains_common::{
@@ -264,7 +264,7 @@ impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
 		o: RuntimeOrigin,
 		a: &MultiLocation,
 	) -> sp_std::result::Result<Self::Success, RuntimeOrigin> {
-		let origin_location = EnsureXcm::try_origin(o.clone())?;
+		let origin_location = EnsureXcm::<Everything>::try_origin(o.clone())?;
 
 		// dirty hack, should port vvv into master and use `starts_with`
 		// https://github.com/paritytech/polkadot/commit/e640d826513c45a0452138c8908a699e19ac0143
