@@ -40,6 +40,12 @@ use xcm::{
 
 const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
 
+// Maximum amount of messages to process per block. This is a temporary measure until we properly
+// account for proof size weights.
+const MAX_MESSAGES_PER_BLOCK: u8 = 10;
+// Maximum amount of messages that can exist in the overweight queue at any given time.
+const MAX_OVERWEIGHT_MESSAGES: u32 = 1000;
+
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ConfigData {
 	/// The maximum amount of weight any individual message may consume. Messages above this weight
@@ -119,8 +125,13 @@ pub mod pallet {
 
 	/// The overweight messages.
 	#[pallet::storage]
-	pub(super) type Overweight<T> =
-		StorageMap<_, Blake2_128Concat, OverweightIndex, (RelayBlockNumber, Vec<u8>), OptionQuery>;
+	pub(super) type Overweight<T> = CountedStorageMap<
+		_,
+		Blake2_128Concat,
+		OverweightIndex,
+		(RelayBlockNumber, Vec<u8>),
+		OptionQuery,
+	>;
 
 	#[pallet::error]
 	pub enum Error<T> {
@@ -200,16 +211,29 @@ pub mod pallet {
 		///
 		/// Returns the weight consumed by executing messages in the queue.
 		fn service_queue(limit: Weight) -> Weight {
-			PageIndex::<T>::mutate(|page_index| Self::do_service_queue(limit, page_index))
+			let mut messages_processed = 0;
+			PageIndex::<T>::mutate(|page_index| {
+				Self::do_service_queue(limit, page_index, &mut messages_processed)
+			})
 		}
 
 		/// Exactly equivalent to `service_queue` but expects a mutable `page_index` to be passed
 		/// in and any changes stored.
-		fn do_service_queue(limit: Weight, page_index: &mut PageIndexData) -> Weight {
+		fn do_service_queue(
+			limit: Weight,
+			page_index: &mut PageIndexData,
+			messages_processed: &mut u8,
+		) -> Weight {
 			let mut used = Weight::zero();
-			while page_index.begin_used < page_index.end_used {
+			'page: while page_index.begin_used < page_index.end_used {
 				let page = Pages::<T>::take(page_index.begin_used);
 				for (i, &(sent_at, ref data)) in page.iter().enumerate() {
+					if *messages_processed >= MAX_MESSAGES_PER_BLOCK {
+						// Exceeded block message limit - put the remaining messages back and bail
+						Pages::<T>::insert(page_index.begin_used, &page[i..]);
+						return used
+					}
+					*messages_processed += 1;
 					match Self::try_service_message(limit.saturating_sub(used), sent_at, &data[..])
 					{
 						Ok(w) => used += w,
@@ -280,11 +304,12 @@ pub mod pallet {
 			iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
 			limit: Weight,
 		) -> Weight {
+			let mut messages_processed = 0;
 			let mut page_index = PageIndex::<T>::get();
 			let config = Configuration::<T>::get();
 
 			// First try to use `max_weight` to service the current queue.
-			let mut used = Self::do_service_queue(limit, &mut page_index);
+			let mut used = Self::do_service_queue(limit, &mut page_index, &mut messages_processed);
 
 			// Then if the queue is empty, use the weight remaining to service the incoming messages
 			// and once we run out of weight, place them in the queue.
@@ -297,15 +322,21 @@ pub mod pallet {
 			};
 
 			for (i, (sent_at, data)) in iter.enumerate() {
+				if messages_processed >= MAX_MESSAGES_PER_BLOCK {
+					break
+				}
 				if maybe_enqueue_page.is_none() {
 					// We're not currently enqueuing - try to execute inline.
 					let remaining_weight = limit.saturating_sub(used);
+					messages_processed += 1;
 					match Self::try_service_message(remaining_weight, sent_at, &data[..]) {
 						Ok(consumed) => used += consumed,
 						Err((message_id, required_weight)) =>
 						// Too much weight required right now.
 						{
-							if required_weight.any_gt(config.max_individual) {
+							let is_under_limit = Overweight::<T>::count() < MAX_OVERWEIGHT_MESSAGES;
+							used.saturating_accrue(T::DbWeight::get().reads(1));
+							if required_weight.any_gt(config.max_individual) && is_under_limit {
 								// overweight - add to overweight queue and continue with
 								// message execution.
 								let overweight_index = page_index.overweight_count;
