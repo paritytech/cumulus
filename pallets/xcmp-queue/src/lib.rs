@@ -887,6 +887,7 @@ impl<T: Config> Pallet<T> {
 				let (weight_processed, is_empty) = Self::process_xcmp_message(
 					sender,
 					status[index].message_metadata[0],
+					&mut messages_processed,
 					weight_remaining,
 					xcmp_max_individual_weight,
 				);
