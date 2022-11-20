@@ -31,7 +31,7 @@ use frame_support::{
 	log, match_types, parameter_types,
 	traits::{
 		fungibles::{self, Balanced, CreditOf},
-		ConstU32, ContainsPair, Everything, Get, Nothing,
+		ConstU32, Contains, ContainsPair, Everything, Get, Nothing,
 	},
 };
 use pallet_asset_tx_payment::HandleCredit;
@@ -43,8 +43,8 @@ use xcm::latest::{prelude::*, Weight as XCMWeight};
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
-	AssetChecking, ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
-	FungiblesAdapter, IsConcrete, MintLocation, NativeAsset, ParentIsPreset, RelayChainAsNative,
+	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter,
+	IsConcrete, NativeAsset, NonLocalMint, ParentIsPreset, RelayChainAsNative,
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
@@ -103,7 +103,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	AccountId,
 	// We only want to allow teleports of known assets. We use non-zero issuance as an indication
 	// that this asset is known.
-	NonZeroIssuance<AccountId, Assets>,
+	NonLocalMint<NonZeroIssuance<AccountId, Assets>>,
 	// The account to use for tracking teleports.
 	CheckingAccount,
 >;
@@ -244,16 +244,13 @@ impl<T: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation> for AssetsFr
 
 /// Allow checking in assets that have issuance > 0.
 pub struct NonZeroIssuance<AccountId, Assets>(PhantomData<(AccountId, Assets)>);
-impl<AccountId, Assets> AssetChecking<Assets::AssetId> for NonZeroIssuance<AccountId, Assets>
+impl<AccountId, Assets> Contains<<Assets as fungibles::Inspect<AccountId>>::AssetId>
+	for NonZeroIssuance<AccountId, Assets>
 where
 	Assets: fungibles::Inspect<AccountId>,
 {
-	fn asset_checking(id: &Assets::AssetId) -> Option<MintLocation> {
-		if Assets::total_issuance(*id).is_zero() {
-			None
-		} else {
-			Some(MintLocation::Local)
-		}
+	fn contains(id: &<Assets as fungibles::Inspect<AccountId>>::AssetId) -> bool {
+		!Assets::total_issuance(*id).is_zero()
 	}
 }
 

@@ -66,7 +66,7 @@ use parachains_common::{
 };
 use xcm_builder::{
 	AllowKnownQueryResponses, AllowSubscriptionsFrom, AsPrefixedGeneralIndex, ConvertedConcreteId,
-	FungiblesAdapter,
+	FungiblesAdapter, NonLocalMint,
 };
 use xcm_executor::traits::JustTry;
 
@@ -330,7 +330,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	AccountId,
 	// We only want to allow teleports of known assets. We use non-zero issuance as an indication
 	// that this asset is known.
-	NonZeroIssuance<AccountId, Assets>,
+	NonLocalMint<NonZeroIssuance<AccountId, Assets>>,
 	// The account to use for tracking teleports.
 	CheckingAccount,
 >;
