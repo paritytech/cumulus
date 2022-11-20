@@ -1,7 +1,7 @@
 [package]
 name = 'launch-runtime'
 # major.minor revision must match collator node. patch should match the runtimes' `spec_version`.
-version = '1.2.2'
+version = '1.3.2'
 authors = ["Encointer <info@encointer.org>"]
 license = "GPL-3.0"
 edition = "2021"
