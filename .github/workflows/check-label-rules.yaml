@@ -18,12 +18,12 @@ jobs:
 
       - name: Pull image
         env:
-          IMAGE: paritytech/ruled_labels:0.3.1
+          IMAGE: paritytech/ruled_labels:0.3.2
         run: docker pull $IMAGE
 
       - name: Check label Rules
         env:
-          IMAGE: paritytech/ruled_labels:0.3.1
+          IMAGE: paritytech/ruled_labels:0.3.2
           MOUNT: /work
           RULES_PATH: scripts/ci/ruled_labels
         run: |

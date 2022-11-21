@@ -19,12 +19,12 @@ jobs:
 
       - name: Pull image
         env:
-          IMAGE: paritytech/ruled_labels:0.3.1
+          IMAGE: paritytech/ruled_labels:0.3.2
         run: docker pull $IMAGE
 
       - name: Check labels
         env:
-          IMAGE: paritytech/ruled_labels:0.3.1
+          IMAGE: paritytech/ruled_labels:0.3.2
           MOUNT: /work
           GITHUB_PR: ${{ github.event.pull_request.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
