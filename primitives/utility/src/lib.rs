@@ -133,7 +133,7 @@ impl<
 		// Calculate how much we should charge in the asset_id for such amount of weight
 		// Require at least a payment of minimum_balance
 		// Necessary for fully collateral-backed assets
-		let asset_balance: u128 = FeeCharger::charge_weight_in_fungibles(local_asset_id, weight)
+		let asset_balance: u128 = FeeCharger::charge_weight_in_fungibles(local_asset_id.clone(), weight)
 			.map(|amount| {
 				let minimum_balance = ConcreteAssets::minimum_balance(local_asset_id);
 				if amount < minimum_balance {
@@ -173,7 +173,7 @@ impl<
 			let (local_asset_id, outstanding_balance) =
 				Matcher::matches_fungibles(&(id.clone(), fun).into()).ok()?;
 
-			let minimum_balance = ConcreteAssets::minimum_balance(local_asset_id);
+			let minimum_balance = ConcreteAssets::minimum_balance(local_asset_id.clone());
 
 			// Calculate asset_balance
 			// This read should have already be cached in buy_weight
