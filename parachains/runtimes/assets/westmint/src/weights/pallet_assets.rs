@@ -67,17 +67,16 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Assets Asset (r:1 w:1)
-	// Storage: Assets Account (r:1 w:0)
-	// Storage: System Account (r:20 w:20)
-	/// The range of component `c` is `[0, 1000]`.
-	fn destroy_accounts(c: u32, ) -> Weight {
-		Weight::from_ref_time(37_000_000 as u64)
-			// Standard Error: 19_301
-			.saturating_add(Weight::from_ref_time(25_467_908 as u64).saturating_mul(c as u64))
+	// Storage: Assets Accounts (r:1 w:0)
+	/// The range of component `a` is `[0, 1000]`.
+	fn destroy_accounts(a: u32, ) -> Weight {
+		Weight::from_ref_time(39_000_000 as u64)
+			// Standard Error: 14_298
+			.saturating_add(Weight::from_ref_time(27_632_144 as u64).saturating_mul(a as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
-			.saturating_add(T::DbWeight::get().reads((2 as u64).saturating_mul(c as u64)))
+			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(a as u64)))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
-			.saturating_add(T::DbWeight::get().writes((2 as u64).saturating_mul(c as u64)))
+			.saturating_add(T::DbWeight::get().writes((1 as u64).saturating_mul(a as u64)))
 	}
 	// Storage: Assets Asset (r:1 w:1)
 	// Storage: Assets Approvals (r:1 w:0)
