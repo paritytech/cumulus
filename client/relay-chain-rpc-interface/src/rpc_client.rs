@@ -54,10 +54,11 @@ pub struct RelayChainRpcClient {
 macro_rules! rpc_params {
 	($($param:expr),*) => {
 		{
-			let mut __params = vec![];
-			$(
-				__params.push(serde_json::to_value($param).expect("json serialization is infallible; qed."));
-			)*
+			let mut __params = vec![
+				$(
+					serde_json::to_value($param).expect("json serialization is infallible; qed."),
+				)*
+			];
 			Some(__params)
 		}
 	};

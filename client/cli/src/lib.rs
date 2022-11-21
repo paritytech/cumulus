@@ -97,7 +97,7 @@ impl PurgeChainCmd {
 				Some('y') | Some('Y') => {},
 				_ => {
 					println!("Aborted");
-					return Ok(())
+					return Ok(());
 				},
 			}
 		}
@@ -294,9 +294,9 @@ pub struct RunCmd {
 	#[arg(
 		long,
 		value_parser = validate_relay_chain_url,
-		num_args = 1..
+		num_args = 0..
 	)]
-	pub relay_chain_rpc_urls: Option<Vec<Url>>,
+	pub relay_chain_rpc_urls: Vec<Url>,
 }
 
 impl RunCmd {
@@ -319,7 +319,7 @@ impl RunCmd {
 #[derive(Clone, Debug)]
 pub struct CollatorOptions {
 	/// Location of relay chain full node
-	pub relay_chain_rpc_urls: Option<Vec<Url>>,
+	pub relay_chain_rpc_urls: Vec<Url>,
 }
 
 /// A non-redundant version of the `RunCmd` that sets the `validator` field when the

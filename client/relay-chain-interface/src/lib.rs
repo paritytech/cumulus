@@ -89,18 +89,18 @@ impl From<RelayChainError> for sp_blockchain::Error {
 
 impl<T> From<tokio::sync::mpsc::error::SendError<T>> for RelayChainError {
 	fn from(e: tokio::sync::mpsc::error::SendError<T>) -> Self {
-		return RelayChainError::WorkerCommunicationError(format!(
+		RelayChainError::WorkerCommunicationError(format!(
 			"Unable to send message to RPC worker: {}",
-			e.to_string()
+			e
 		))
 	}
 }
 
 impl From<futures::channel::oneshot::Canceled> for RelayChainError {
 	fn from(e: futures::channel::oneshot::Canceled) -> Self {
-		return RelayChainError::WorkerCommunicationError(format!(
+		RelayChainError::WorkerCommunicationError(format!(
 			"Unexpected channel close on RPC worker side: {}",
-			e.to_string()
+			e
 		))
 	}
 }

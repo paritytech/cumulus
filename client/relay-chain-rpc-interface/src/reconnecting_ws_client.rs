@@ -109,14 +109,14 @@ impl ReconnectingWsClient {
 
 /// Worker that should be used in combination with [`RelayChainRpcClient`]. Must be polled to distribute header notifications to listeners.
 struct ReconnectingWebsocketWorker {
-	ws_urls: Vec<Url>,
-	// Communication channel with the RPC client
+	ws_urls: Option<Vec<Url>>,
+	/// Communication channel with the RPC client
 	client_receiver: TokioReceiver<RpcDispatcherMessage>,
 
-	// Communication channel with ourself
+	/// Communication channel with ourself
 	self_sender: TokioSender<RpcDispatcherMessage>,
 
-	// Senders to distribute incoming header notifications to
+	/// Senders to distribute incoming header notifications to
 	imported_header_listeners: Vec<Sender<PHeader>>,
 	finalized_header_listeners: Vec<Sender<PHeader>>,
 	best_header_listeners: Vec<Sender<PHeader>>,
@@ -144,7 +144,7 @@ fn handle_event_distribution(
 			});
 			Ok(())
 		},
-		None => return Err("Subscription closed".to_string()),
+		None => Err("Subscription closed".to_string()),
 		Some(Err(err)) => Err(format!("Error in RPC subscription: {}", err)),
 	}
 }
@@ -155,7 +155,8 @@ fn handle_event_distribution(
 #[derive(Debug)]
 struct ClientManager {
 	urls: Vec<Url>,
-	active_client: (usize, Arc<JsonRpcClient>),
+	active_client: Arc<JsonRpcClient>,
+	active_index: usize,
 }
 
 struct RelayChainSubscriptions {
@@ -174,8 +175,8 @@ async fn connect_next_available_rpc_server(
 	for (counter, url) in urls.iter().cycle().skip(starting_position).take(urls.len()).enumerate() {
 		let index = (starting_position + counter) % urls.len();
 		tracing::info!(target: LOG_TARGET, index, ?url, "Connecting to RPC node",);
-		if let Ok(ws_client) = WsClientBuilder::default().build(url.clone()).await {
-			return Ok((index, Arc::new(ws_client)))
+		if let Ok(ws_client) = WsClientBuilder::default().build(url).await {
+			return Ok((index, Arc::new(ws_client)));
 		};
 	}
 	Err(())
@@ -184,23 +185,23 @@ async fn connect_next_available_rpc_server(
 impl ClientManager {
 	pub async fn new(urls: Vec<Url>) -> Result<Self, ()> {
 		if urls.is_empty() {
-			return Err(())
+			return Err(());
 		}
 		let active_client = connect_next_available_rpc_server(&urls, 0).await?;
-		Ok(Self { urls, active_client })
+		Ok(Self { urls, active_client: active_client.1, active_index: active_client.0 })
 	}
 
 	pub async fn connect_to_new_rpc_server(&mut self) -> Result<(), ()> {
 		let new_active =
-			connect_next_available_rpc_server(&self.urls, self.active_client.0 + 1).await?;
-		self.active_client = new_active;
+			connect_next_available_rpc_server(&self.urls, self.active_index + 1).await?;
+		self.active_client = new_active.1;
+		self.active_index = new_active.0;
 		Ok(())
 	}
 
 	async fn get_subscriptions(&self) -> Result<RelayChainSubscriptions, JsonRpseeError> {
 		let import_subscription = self
 			.active_client
-			.1
 			.subscribe::<PHeader>("chain_subscribeAllHeads", None, "chain_unsubscribeAllHeads")
 			.await
 			.map_err(|e| {
@@ -209,7 +210,6 @@ impl ClientManager {
 			})?;
 		let best_subscription = self
 			.active_client
-			.1
 			.subscribe::<PHeader>("chain_subscribeNewHeads", None, "chain_unsubscribeNewHeads")
 			.await
 			.map_err(|e| {
@@ -218,7 +218,6 @@ impl ClientManager {
 			})?;
 		let finalized_subscription = self
 			.active_client
-			.1
 			.subscribe::<PHeader>(
 				"chain_subscribeFinalizedHeads",
 				None,
@@ -246,7 +245,7 @@ impl ClientManager {
 		params: Option<Vec<JsonValue>>,
 		response_sender: OneshotSender<Result<JsonValue, JsonRpseeError>>,
 	) -> impl Future<Output = Result<(), RpcDispatcherMessage>> {
-		let future_client = self.active_client.1.clone();
+		let future_client = self.active_client.clone();
 		async move {
 			let resp = future_client.request(&method, params.clone().map(|p| p.into())).await;
 
@@ -254,17 +253,17 @@ impl ClientManager {
 			// the websocket connection is dead and requires a restart.
 			// Other errors should be forwarded to the request caller.
 			if let Err(JsonRpseeError::RestartNeeded(_)) = resp {
-				return Err(RpcDispatcherMessage::Request(method, params, response_sender))
+				return Err(RpcDispatcherMessage::Request(method, params, response_sender));
 			}
 
 			if let Err(err) = response_sender.send(resp) {
-				tracing::error!(
+				tracing::debug!(
 					target: LOG_TARGET,
 					?err,
 					"Recipient no longer interested in request result"
 				);
 			}
-			return Ok(())
+			Ok(())
 		}
 	}
 }
@@ -276,7 +275,7 @@ impl ReconnectingWebsocketWorker {
 	) -> (ReconnectingWebsocketWorker, TokioSender<RpcDispatcherMessage>) {
 		let (tx, rx) = tokio_channel(100);
 		let worker = ReconnectingWebsocketWorker {
-			ws_urls: urls,
+			ws_urls: Some(urls),
 			client_receiver: rx,
 			self_sender: tx.clone(),
 			imported_header_listeners: Vec::new(),
@@ -296,11 +295,13 @@ impl ReconnectingWebsocketWorker {
 	async fn run(mut self) {
 		let mut pending_requests = FuturesUnordered::new();
 
-		let Ok(mut client_manager) = ClientManager::new(self.ws_urls.clone()).await else {
+		let urls = self.ws_urls.take().expect("Constructor requires passing of urls; qed");
+		let Ok(mut client_manager) = ClientManager::new(urls).await else {
 			tracing::error!(target: LOG_TARGET, "No valid RPC url found. Stopping RPC worker.");
 			return;
 		};
 		let Ok(mut subscriptions) = client_manager.get_subscriptions().await else {
+			tracing::error!(target: LOG_TARGET, "Not able to fetch subscription after reconnect.");
 			return;
 		};
 
@@ -314,19 +315,23 @@ impl ReconnectingWebsocketWorker {
 					if let Some(Err(req)) = pending_requests.next().await {
 						// Put the failed requests into the queue again, they will be processed
 						// once we have a new rpc server to connect to.
-						self.self_sender
-							.send(req)
-							.await
-							.expect("This worker owns the channel; qed");
+						if let Err(err) = self.self_sender.try_send(req) {
+							tracing::error!(
+								target: LOG_TARGET,
+								?err,
+								"Unable to retry requests, queue is unexpectedly full."
+							);
+							return;
+						};
 					}
 				}
 
-				if let Err(_) = client_manager.connect_to_new_rpc_server().await {
+				if client_manager.connect_to_new_rpc_server().await.is_err() {
 					tracing::error!(
 						target: LOG_TARGET,
 						"Unable to find valid external RPC server, shutting down."
 					);
-					return
+					return;
 				};
 
 				let Ok(new_subscriptions) = client_manager.get_subscriptions().await else {
@@ -362,7 +367,14 @@ impl ReconnectingWebsocketWorker {
 				},
 				should_retry = pending_requests.next(), if !pending_requests.is_empty() => {
 					if let Some(Err(req)) = should_retry {
-						self.self_sender.send(req).await.expect("This worker owns the channel; qed");
+						if let Err(err) = self.self_sender.try_send(req) {
+							tracing::error!(
+								target: LOG_TARGET,
+								?err,
+								"Unable to retry requests, queue is unexpectedly full."
+							);
+							return;
+						};
 						should_reconnect = true;
 					}
 				},

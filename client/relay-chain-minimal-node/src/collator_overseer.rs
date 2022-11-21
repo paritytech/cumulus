@@ -252,7 +252,8 @@ async fn forward_collator_events(
 			f = finality.next() => {
 				match f {
 					Some(header) => {
-						tracing::info!(target: "minimal-polkadot-node", "Received finalized block via RPC: #{} ({} -> {})", header.number, header.parent_hash, header.hash());
+						tracing::info!(target: "minimal-polkadot-node", "Received finalized block via RPC: #{} ({} -> {})",
+									   header.number, header.parent_hash, header.hash());
 						let block_info = BlockInfo { hash: header.hash(), parent_hash: header.parent_hash, number: header.number };
 						handle.block_finalized(block_info).await;
 					}
@@ -262,7 +263,8 @@ async fn forward_collator_events(
 			i = imports.next() => {
 				match i {
 					Some(header) => {
-						tracing::info!(target: "minimal-polkadot-node", "Received imported block via RPC: #{} ({} -> {})", header.number, header.parent_hash, header.hash());
+						tracing::info!(target: "minimal-polkadot-node", "Received imported block via RPC: #{} ({} -> {})",
+									   header.number, header.parent_hash, header.hash());
 						let block_info = BlockInfo { hash: header.hash(), parent_hash: header.parent_hash, number: header.number };
 						handle.block_imported(block_info).await;
 					}
