@@ -245,6 +245,8 @@ impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 	type Extra = ();
 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
 	type AssetAccountDeposit = AssetAccountDeposit;
+	#[cfg(feature = "runtime-benchmarks")]
+	type Helper = ();
 }
 
 /// Assets managed by some foreign location.
@@ -252,7 +254,6 @@ type ForeignAssetsInstance = pallet_assets::Instance2;
 impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
-	// TODO: need HasCompact for MultiLocation
 	type AssetId = AssetId; // MultiLocationForAssetId;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>; // ForeignCreators;
@@ -266,6 +267,8 @@ impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type Extra = ();
 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
 	type AssetAccountDeposit = AssetAccountDeposit;
+	#[cfg(feature = "runtime-benchmarks")]
+	type Helper = ();
 }
 
 parameter_types! {
@@ -663,8 +666,17 @@ pub type Executive = frame_executive::Executive<
 	// TODO
 	// 1. Move this instance https://substrate.stackexchange.com/questions/4343/how-to-migrate-storage-from-a-default-pallet-instance-to-an-actual-one
 	// 2. Make sure this migration applies to the old instance
-	(), //pallet_assets::migration::v1::MigrateToV1<Runtime>,
+	MigrateAssetsPallet, //pallet_assets::migration::v1::MigrateToV1<Runtime>,
 >;
+
+pub struct MigrateAssetsPallet;
+impl frame_support::traits::OnRuntimeUpgrade for MigrateAssetsPallet {
+	fn on_runtime_upgrade() -> Weight {
+		use frame_support::storage::migration;
+		migration::move_pallet(b"Assets", b"TrustBackedAssets");
+		<Runtime as frame_system::Config>::DbWeight::get().writes(1)
+	}
+}
 
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
