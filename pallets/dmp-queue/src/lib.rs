@@ -33,10 +33,7 @@ pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::{convert::TryFrom, prelude::*};
-use xcm::{
-	latest::{prelude::*, Weight as XcmWeight},
-	VersionedXcm, MAX_XCM_DECODE_DEPTH,
-};
+use xcm::{latest::prelude::*, VersionedXcm, MAX_XCM_DECODE_DEPTH};
 
 const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
 
@@ -167,17 +164,17 @@ pub mod pallet {
 		///
 		/// Events:
 		/// - `OverweightServiced`: On success.
-		#[pallet::weight(Weight::from_ref_time(weight_limit.saturating_add(1_000_000)))]
+		#[pallet::weight(weight_limit.saturating_add(Weight::from_ref_time(1_000_000)))]
 		pub fn service_overweight(
 			origin: OriginFor<T>,
 			index: OverweightIndex,
-			weight_limit: XcmWeight,
+			weight_limit: Weight,
 		) -> DispatchResultWithPostInfo {
 			T::ExecuteOverweightOrigin::ensure_origin(origin)?;
 
 			let (sent_at, data) = Overweight::<T>::get(index).ok_or(Error::<T>::Unknown)?;
 			let weight_used =
-				Self::try_service_message(Weight::from_ref_time(weight_limit), sent_at, &data[..])
+				Self::try_service_message(weight_limit, sent_at, &data[..])
 					.map_err(|_| Error::<T>::OverLimit)?;
 			Overweight::<T>::remove(index);
 			Self::deposit_event(Event::OverweightServiced { overweight_index: index, weight_used });
@@ -281,14 +278,13 @@ pub mod pallet {
 				},
 				Ok(Ok(x)) => {
 					let outcome =
-						T::XcmExecutor::execute_xcm(Parent, x, message_id, limit.ref_time());
+						T::XcmExecutor::execute_xcm(Parent, x, message_id, limit);
 					match outcome {
 						Outcome::Error(XcmError::WeightLimitReached(required)) =>
-							Err((message_id, Weight::from_ref_time(required))),
+							Err((message_id, required)),
 						outcome => {
-							let weight_used = Weight::from_ref_time(outcome.weight_used());
 							Self::deposit_event(Event::ExecutedDownward { message_id, outcome });
-							Ok(weight_used)
+							Ok(outcome.weight_used())
 						},
 					}
 				},
@@ -398,7 +394,7 @@ mod tests {
 	};
 	use sp_version::RuntimeVersion;
 	use std::cell::RefCell;
-	use xcm::latest::{MultiLocation, OriginKind, Weight as XCMWeight};
+	use xcm::latest::{MultiLocation, OriginKind};
 
 	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 	type Block = frame_system::mocking::MockBlock<Test>;
@@ -475,7 +471,7 @@ mod tests {
 
 	pub enum Weightless {}
 	impl PreparedMessage for Weightless {
-		fn weight_of(&self) -> XCMWeight {
+		fn weight_of(&self) -> u64 {
 			unreachable!()
 		}
 	}
@@ -492,7 +488,7 @@ mod tests {
 			_origin: impl Into<MultiLocation>,
 			_: Weightless,
 			_hash: XcmHash,
-			_weight_limit: XCMWeight,
+			_weight_limit: u64,
 		) -> Outcome {
 			unreachable!()
 		}
@@ -534,7 +530,7 @@ mod tests {
 		DmpQueue::handle_dmp_messages(iter, limit)
 	}
 
-	fn msg(weight: XCMWeight) -> Xcm {
+	fn msg(weight: u64) -> Xcm {
 		Xcm(vec![Transact {
 			origin_kind: OriginKind::Native,
 			require_weight_at_most: weight,
@@ -542,11 +538,11 @@ mod tests {
 		}])
 	}
 
-	fn msg_complete(weight: XCMWeight) -> (Xcm, Outcome) {
+	fn msg_complete(weight: u64) -> (Xcm, Outcome) {
 		(msg(weight), Outcome::Complete(weight))
 	}
 
-	fn msg_limit_reached(weight: XCMWeight) -> (Xcm, Outcome) {
+	fn msg_limit_reached(weight: u64) -> (Xcm, Outcome) {
 		(msg(weight), Outcome::Error(XcmError::WeightLimitReached(weight)))
 	}
 
