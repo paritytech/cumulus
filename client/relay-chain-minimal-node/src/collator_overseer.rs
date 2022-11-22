@@ -58,9 +58,9 @@ pub(crate) struct CollatorOverseerGenArgs<'a> {
 	pub network_service: Arc<sc_network::NetworkService<Block, PHash>>,
 	/// Underlying authority discovery service.
 	pub authority_discovery_service: AuthorityDiscoveryService,
-	// Receiver for collation request protocol
+	/// Receiver for collation request protocol
 	pub collation_req_receiver: IncomingRequestReceiver<CollationFetchingRequest>,
-	// Receiver for availability request protocol
+	/// Receiver for availability request protocol
 	pub available_data_req_receiver: IncomingRequestReceiver<AvailableDataFetchingRequest>,
 	/// Prometheus registry, commonly used for production systems, less so for test.
 	pub registry: Option<&'a Registry>,

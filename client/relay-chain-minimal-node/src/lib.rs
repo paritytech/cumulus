@@ -21,7 +21,7 @@ use cumulus_relay_chain_rpc_interface::{RelayChainRpcInterface, Url};
 use polkadot_network_bridge::{peer_sets_info, IsAuthority};
 use polkadot_node_network_protocol::{
 	peer_set::PeerSetProtocolNames,
-	request_response::{self, IncomingRequest, ReqProtocolNames},
+	request_response::{v1, IncomingRequest, IncomingRequestReceiver, ReqProtocolNames},
 };
 use polkadot_node_subsystem_util::metrics::prometheus::Registry;
 use polkadot_primitives::v2::CollatorPair;
@@ -43,6 +43,8 @@ mod network;
 
 mod blockchain_rpc_client;
 pub use blockchain_rpc_client::BlockChainRpcClient;
+
+const LOG_TARGET: &'static str = "polkadot-minimal-node";
 
 fn build_authority_discovery_service<Block: BlockT>(
 	task_manager: &TaskManager,
@@ -152,12 +154,10 @@ async fn new_minimal_relay_chain(
 		.extend(peer_sets_info(is_authority, &peer_set_protocol_names));
 
 	let request_protocol_names = ReqProtocolNames::new(genesis_hash, config.chain_spec.fork_id());
-	let (
-		collation_req_receiver,
-		available_data_req_receiver,
-		mut pov_req_receiver,
-		mut chunk_req_receiver,
-	) = build_request_response_protocol_receivers(&request_protocol_names, &mut config);
+	let (collation_req_receiver, available_data_req_receiver, pov_req_receiver, chunk_req_receiver) =
+		build_request_response_protocol_receivers(&request_protocol_names, &mut config);
+	drain_unwanted_request_channels(&task_manager, pov_req_receiver, chunk_req_receiver);
+
 	let (network, network_starter) =
 		network::build_collator_network(network::BuildCollatorNetworkParams {
 			config: &config,
@@ -165,20 +165,6 @@ async fn new_minimal_relay_chain(
 			spawn_handle: task_manager.spawn_handle(),
 			genesis_hash,
 		})?;
-
-	task_manager.spawn_handle().spawn("request-drainer", None, async move {
-		loop {
-			select! {
-				res = pov_req_receiver.recv(|| vec![]).fuse() => {
-					tracing::error!(target: "skunert", "received pov request");
-				},
-				res = chunk_req_receiver.recv(|| vec![]).fuse() => {
-					tracing::error!(target: "skunert", "received chunk request");
-				},
-
-			}
-		}
-	});
 
 	let authority_discovery_service = build_authority_discovery_service(
 		&task_manager,
@@ -212,14 +198,37 @@ async fn new_minimal_relay_chain(
 	Ok(NewMinimalNode { task_manager, overseer_handle, network })
 }
 
+/// Usually availability-distribution subsystem handles these requests.
+/// We do not run it in this minimal node and therefore can not answer them.
+/// However, since we run as collator we are also not expected to answer these.
+fn drain_unwanted_request_channels(
+	task_manager: &TaskManager,
+	mut pov_req_receiver: IncomingRequestReceiver<v1::PoVFetchingRequest>,
+	mut chunk_req_receiver: IncomingRequestReceiver<v1::ChunkFetchingRequest>,
+) {
+	task_manager.spawn_handle().spawn("request-drainer", None, async move {
+		loop {
+			select! {
+				_req = pov_req_receiver.recv(|| vec![]).fuse() => {
+					tracing::error!(target: LOG_TARGET, "Received PoV fetching request. Since we are a collator we discard it.");
+				},
+				_req = chunk_req_receiver.recv(|| vec![]).fuse() => {
+					tracing::error!(target: LOG_TARGET, "Received Availability chunk request. Since we are a collator we discard it.");
+				},
+
+			}
+		}
+	});
+}
+
 fn build_request_response_protocol_receivers(
 	request_protocol_names: &ReqProtocolNames,
 	config: &mut Configuration,
 ) -> (
-	request_response::IncomingRequestReceiver<request_response::v1::CollationFetchingRequest>,
-	request_response::IncomingRequestReceiver<request_response::v1::AvailableDataFetchingRequest>,
-	request_response::IncomingRequestReceiver<request_response::v1::PoVFetchingRequest>,
-	request_response::IncomingRequestReceiver<request_response::v1::ChunkFetchingRequest>,
+	IncomingRequestReceiver<v1::CollationFetchingRequest>,
+	IncomingRequestReceiver<v1::AvailableDataFetchingRequest>,
+	IncomingRequestReceiver<v1::PoVFetchingRequest>,
+	IncomingRequestReceiver<v1::ChunkFetchingRequest>,
 ) {
 	let (collation_req_receiver, cfg) =
 		IncomingRequest::get_config_receiver(request_protocol_names);
