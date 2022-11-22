@@ -18,12 +18,12 @@ use jsonrpsee::{
 use polkadot_service::TaskManager;
 use std::{future::Future, sync::Arc};
 use tokio::sync::mpsc::{
-	channel as tokio_channel, Receiver as TokioReceiver, Sender as TokioSender,
+	channel as tokio_channel, error::TryRecvError, Receiver as TokioReceiver, Sender as TokioSender,
 };
 use url::Url;
 
 const NOTIFICATION_CHANNEL_SIZE_LIMIT: usize = 20;
-const LOG_TARGET: &str = "pooled-rpc-client";
+const LOG_TARGET: &str = "reconnecting-websocket-client";
 
 /// Messages for communication between [`ReconnectingWsClient`] and [`ReconnectingWebsocketWorker`].
 #[derive(Debug)]
@@ -45,7 +45,7 @@ pub struct ReconnectingWsClient {
 impl ReconnectingWsClient {
 	/// Create a new websocket client frontend.
 	pub async fn new(urls: Vec<Url>, task_manager: &mut TaskManager) -> RelayChainResult<Self> {
-		tracing::info!(target: "pooled-client", "Instantiating pooled websocket client");
+		tracing::info!(target: LOG_TARGET, "Instantiating reconnecting websocket client");
 
 		let (worker, sender) = ReconnectingWebsocketWorker::new(urls).await;
 
@@ -187,7 +187,7 @@ impl ClientManager {
 		if urls.is_empty() {
 			return Err(());
 		}
-		let active_client = connect_next_available_rpc_server(&urls, 0).await?;
+		let active_client = connect_next_available_rpc_server(&urls, 1).await?;
 		Ok(Self { urls, active_client: active_client.1, active_index: active_client.0 })
 	}
 
@@ -285,6 +285,58 @@ impl ReconnectingWebsocketWorker {
 		(worker, tx)
 	}
 
+	///	Reconnect via [`ClientManager`] and provide new notification streams.
+	async fn handle_reconnect(
+		&mut self,
+		client_manager: &mut ClientManager,
+		pending_requests: &mut FuturesUnordered<
+			impl Future<Output = Result<(), RpcDispatcherMessage>>,
+		>,
+	) -> Result<RelayChainSubscriptions, String> {
+		let mut tmp_request_storage = Vec::new();
+		loop {
+			match self.client_receiver.try_recv() {
+				Ok(val) => tmp_request_storage.push(val),
+				Err(TryRecvError::Empty) => break,
+				Err(_) => {
+					return Err("Can not fetch values from client receiver channel.".to_string())
+				},
+			}
+		}
+
+		// At this point, all pending requests will return an error since the
+		// websocket connection is dead. So draining the pending requests should be fast.
+		while !pending_requests.is_empty() {
+			if let Some(Err(req)) = pending_requests.next().await {
+				// Put the failed requests into the queue again, they will be processed
+				// once we have a new rpc server to connect to.
+				if let Err(err) = self.self_sender.try_send(req) {
+					return Err(format!(
+						"Unable to retry requests, queue is unexpectedly full. err: {:?}",
+						err
+					));
+				};
+			}
+		}
+
+		for item in tmp_request_storage.into_iter() {
+			if let Err(err) = self.self_sender.try_send(item) {
+				return Err(format!(
+					"Unable to retry requests, queue is unexpectedly full. err: {:?}",
+					err
+				));
+			};
+		}
+
+		if client_manager.connect_to_new_rpc_server().await.is_err() {
+			return Err(format!("Unable to find valid external RPC server, shutting down."));
+		};
+
+		client_manager.get_subscriptions().await.map_err(|e| {
+			format!("Not able to create streams from newly connected RPC server, shutting down. err: {:?}", e)
+		})
+	}
+
 	/// Run this worker to drive notification streams.
 	/// The worker does the following:
 	/// - Listen for [`RpcDispatcherMessage`], perform requests and register new listeners for the notification streams
@@ -309,40 +361,19 @@ impl ReconnectingWebsocketWorker {
 		loop {
 			// This branch is taken if the websocket connection to the current RPC server is closed.
 			if should_reconnect {
-				// At this point, all pending requests will return an error since the
-				// websocket connection is dead. So draining the pending requests should be fast.
-				while !pending_requests.is_empty() {
-					if let Some(Err(req)) = pending_requests.next().await {
-						// Put the failed requests into the queue again, they will be processed
-						// once we have a new rpc server to connect to.
-						if let Err(err) = self.self_sender.try_send(req) {
-							tracing::error!(
-								target: LOG_TARGET,
-								?err,
-								"Unable to retry requests, queue is unexpectedly full."
-							);
-							return;
-						};
-					}
+				match self.handle_reconnect(&mut client_manager, &mut pending_requests).await {
+					Ok(new_subscriptions) => {
+						subscriptions = new_subscriptions;
+					},
+					Err(message) => {
+						tracing::error!(
+							target: LOG_TARGET,
+							message,
+							"Unable to reconnect, stopping worker."
+						);
+						return;
+					},
 				}
-
-				if client_manager.connect_to_new_rpc_server().await.is_err() {
-					tracing::error!(
-						target: LOG_TARGET,
-						"Unable to find valid external RPC server, shutting down."
-					);
-					return;
-				};
-
-				let Ok(new_subscriptions) = client_manager.get_subscriptions().await else {
-					tracing::error!(
-						target: LOG_TARGET,
-						"Not able to create streams from newly connected RPC server, shutting down."
-					);
-					return;
-				};
-
-				subscriptions = new_subscriptions;
 				should_reconnect = false;
 			};
 
