@@ -107,7 +107,7 @@ pub mod pallet {
 					(Parent, Junction::Parachain(para.into())).into(),
 					Xcm(vec![Transact {
 						origin_kind: OriginKind::Native,
-						require_weight_at_most: 1_000,
+						require_weight_at_most: Weight::from_parts(1_000, 1_000),
 						call: <T as Config>::RuntimeCall::from(Call::<T>::ping {
 							seq,
 							payload: payload.clone().to_vec(),
@@ -203,7 +203,7 @@ pub mod pallet {
 				(Parent, Junction::Parachain(para.into())).into(),
 				Xcm(vec![Transact {
 					origin_kind: OriginKind::Native,
-					require_weight_at_most: 1_000,
+					require_weight_at_most: Weight::from_parts(1_000, 1_000),
 					call: <T as Config>::RuntimeCall::from(Call::<T>::pong {
 						seq,
 						payload: payload.clone(),

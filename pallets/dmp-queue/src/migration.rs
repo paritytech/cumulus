@@ -22,7 +22,6 @@ use frame_support::{
 	traits::StorageVersion,
 	weights::{constants::WEIGHT_PER_MILLIS, Weight},
 };
-use xcm::latest::Weight as XcmWeight;
 
 /// The current storage version.
 pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -53,7 +52,7 @@ mod v0 {
 
 	#[derive(Decode, Encode, Debug)]
 	pub struct ConfigData {
-		pub max_individual: XcmWeight,
+		pub max_individual: u64,
 	}
 
 	impl Default for ConfigData {

@@ -22,7 +22,6 @@ use frame_support::{
 	traits::StorageVersion,
 	weights::{constants::WEIGHT_PER_MILLIS, Weight},
 };
-use xcm::latest::Weight as XcmWeight;
 
 /// The current storage version.
 pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
@@ -56,9 +55,9 @@ mod v1 {
 		pub suspend_threshold: u32,
 		pub drop_threshold: u32,
 		pub resume_threshold: u32,
-		pub threshold_weight: XcmWeight,
-		pub weight_restrict_decay: XcmWeight,
-		pub xcmp_max_individual_weight: XcmWeight,
+		pub threshold_weight: u64,
+		pub weight_restrict_decay: u64,
+		pub xcmp_max_individual_weight: u64,
 	}
 
 	impl Default for QueueConfigData {
