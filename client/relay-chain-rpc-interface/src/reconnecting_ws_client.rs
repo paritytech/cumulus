@@ -65,7 +65,7 @@ impl ReconnectingWsClient {
 		params: Option<Vec<JsonValue>>,
 	) -> Result<R, RelayChainError>
 	where
-		R: sp_runtime::DeserializeOwned,
+		R: serde::de::DeserializeOwned,
 	{
 		let (tx, rx) = futures::channel::oneshot::channel();
 		let message = RpcDispatcherMessage::Request(method.to_string(), params, tx);
