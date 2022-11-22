@@ -6,7 +6,7 @@ use frame_support::{
 	weights::{Weight, WeightToFee, WeightToFeePolynomial},
 };
 use sp_runtime::traits::Get;
-use xcm::latest::{prelude::*, Weight as XCMWeight};
+use xcm::latest::prelude::*;
 use xcm_executor::traits::ShouldExecute;
 
 //TODO: move DenyThenTry to polkadot's xcm module.
@@ -25,8 +25,8 @@ where
 	fn should_execute<RuntimeCall>(
 		origin: &MultiLocation,
 		message: &mut [Instruction<RuntimeCall>],
-		max_weight: XCMWeight,
-		weight_credit: &mut XCMWeight,
+		max_weight: Weight,
+		weight_credit: &mut Weight,
 	) -> Result<(), ()> {
 		Deny::should_execute(origin, message, max_weight, weight_credit)?;
 		Allow::should_execute(origin, message, max_weight, weight_credit)
@@ -39,8 +39,8 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 	fn should_execute<RuntimeCall>(
 		origin: &MultiLocation,
 		message: &mut [Instruction<RuntimeCall>],
-		_max_weight: XCMWeight,
-		_weight_credit: &mut XCMWeight,
+		_max_weight: Weight,
+		_weight_credit: &mut Weight,
 	) -> Result<(), ()> {
 		if message.iter().any(|inst| {
 			matches!(
