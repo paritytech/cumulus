@@ -19,7 +19,7 @@ use bp_messages::{
 	target_chain::{DispatchMessage, MessageDispatch},
 	LaneId,
 };
-use bp_runtime::{messages::MessageDispatchResult, AccountIdOf, BalanceOf, Chain};
+use bp_runtime::{messages::MessageDispatchResult, AccountIdOf, Chain};
 use codec::Encode;
 use frame_support::{dispatch::Weight, parameter_types};
 use xcm::latest::prelude::*;
@@ -43,38 +43,37 @@ pub struct XcmBlobMessageDispatch<SourceBridgeHubChain, TargetBridgeHubChain, Di
 }
 
 impl<SourceBridgeHubChain: Chain, TargetBridgeHubChain: Chain, BlobDispatcher: DispatchBlob>
-	MessageDispatch<AccountIdOf<SourceBridgeHubChain>, BalanceOf<TargetBridgeHubChain>>
+	MessageDispatch<AccountIdOf<SourceBridgeHubChain>>
 	for XcmBlobMessageDispatch<SourceBridgeHubChain, TargetBridgeHubChain, BlobDispatcher>
 {
 	type DispatchPayload = XcmAsPlainPayload;
 
-	fn dispatch_weight(
-		message: &mut DispatchMessage<Self::DispatchPayload, BalanceOf<TargetBridgeHubChain>>,
-	) -> Weight {
+	fn dispatch_weight(_message: &mut DispatchMessage<Self::DispatchPayload>) -> Weight {
 		log::error!(
 			"[XcmBlobMessageDispatch] TODO: change here to XCMv3 dispatch_weight with XcmExecutor - message: ?...?",
 		);
+		// TODO:check-parameter - setup weight?
 		Weight::zero()
 	}
 
 	fn dispatch(
 		_relayer_account: &AccountIdOf<SourceBridgeHubChain>,
-		message: DispatchMessage<Self::DispatchPayload, BalanceOf<TargetBridgeHubChain>>,
+		message: DispatchMessage<Self::DispatchPayload>,
 	) -> MessageDispatchResult {
-		log::warn!("[XcmBlobMessageDispatch] DispatchBlob::dispatch_blob triggering");
+		log::warn!("[XcmBlobMessageDispatch] DispatchBlob::dispatch_blob triggering - message_nonce: {:?}", message.key.nonce);
 		let payload = match message.data.payload {
 			Ok(payload) => payload,
 			Err(e) => {
-				log::error!("[XcmBlobMessageDispatch] payload error: {:?}", e);
+				log::error!("[XcmBlobMessageDispatch] payload error: {:?} - message_nonce: {:?}", e, message.key.nonce);
 				return MessageDispatchResult {
-					dispatch_result: false,
+					// TODO:check-parameter - setup uspent_weight?
 					unspent_weight: Weight::zero(),
 					dispatch_fee_paid_during_dispatch: false,
 				}
 			},
 		};
-		let dispatch_result = match BlobDispatcher::dispatch_blob(payload) {
-			Ok(_) => true,
+		match BlobDispatcher::dispatch_blob(payload) {
+			Ok(_) => log::debug!("[XcmBlobMessageDispatch] DispatchBlob::dispatch_blob was ok - message_nonce: {:?}", message.key.nonce),
 			Err(e) => {
 				let e = match e {
 					DispatchBlobError::Unbridgable => "DispatchBlobError::Unbridgable",
@@ -89,14 +88,13 @@ impl<SourceBridgeHubChain: Chain, TargetBridgeHubChain: Chain, BlobDispatcher: D
 					DispatchBlobError::WrongGlobal => "DispatchBlobError::WrongGlobal",
 				};
 				log::error!(
-					"[XcmBlobMessageDispatch] DispatchBlob::dispatch_blob failed, error: {:?}",
-					e
+					"[XcmBlobMessageDispatch] DispatchBlob::dispatch_blob failed, error: {:?} - message_nonce: {:?}",
+					e, message.key.nonce
 				);
-				false
 			},
-		};
+		}
 		MessageDispatchResult {
-			dispatch_result,
+			// TODO:check-parameter - setup uspent_weight?
 			dispatch_fee_paid_during_dispatch: false,
 			unspent_weight: Weight::zero(),
 		}
@@ -106,15 +104,8 @@ impl<SourceBridgeHubChain: Chain, TargetBridgeHubChain: Chain, BlobDispatcher: D
 /// [`XcmBlobHauler`] is responsible for sending messages to the bridge "point-to-point link" from one side,
 /// where on the other it can be dispatched by [`XcmBlobMessageDispatch`].
 pub trait XcmBlobHauler {
-	/// Which chain is sending
-	type SenderChain: Chain;
-
 	/// Runtime message sender adapter.
-	type MessageSender: MessagesBridge<
-		super::RuntimeOrigin,
-		BalanceOf<Self::SenderChain>,
-		XcmAsPlainPayload,
-	>;
+	type MessageSender: MessagesBridge<super::RuntimeOrigin, XcmAsPlainPayload>;
 
 	/// Our location within the Consensus Universe.
 	fn message_sender_origin() -> InteriorMultiLocation;
@@ -127,15 +118,10 @@ pub struct XcmBlobHaulerAdapter<XcmBlobHauler>(sp_std::marker::PhantomData<XcmBl
 impl<H: XcmBlobHauler> HaulBlob for XcmBlobHaulerAdapter<H> {
 	fn haul_blob(blob: sp_std::prelude::Vec<u8>) {
 		let lane = H::xcm_lane();
-		// TODO:check-parameter - fee could be taken from BridgeMessage - or add as optional fo send_message
-		// TODO:check-parameter - or add here something like PriceForSiblingDelivery
-		let fee = <H::SenderChain as Chain>::Balance::from(0u8);
-
 		let result = H::MessageSender::send_message(
 			pallet_xcm::Origin::from(MultiLocation::from(H::message_sender_origin())).into(),
 			lane,
 			blob,
-			fee,
 		);
 		let result = result
 			.map(|artifacts| {

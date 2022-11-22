@@ -216,7 +216,6 @@ pub mod runtime_api {
 	use bp_messages::{
 		InboundMessageDetails, LaneId, MessageNonce, MessagePayload, OutboundMessageDetails,
 	};
-	use frame_support::{sp_runtime::FixedU128, Parameter};
 	use sp_std::prelude::Vec;
 	bp_runtime::decl_bridge_messages_runtime_apis!(bridge_hub_rococo);
 	bp_runtime::decl_bridge_messages_runtime_apis!(bridge_hub_wococo);
@@ -522,8 +521,7 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_bridge_messages::weights::BridgeWeight<Runtime>;
 	type BridgedChainId = bridge_hub_rococo_config::BridgeHubWococoChainId;
-	type Parameter = ();
-	type MaxMessagesToPruneAtOnce = MaxMessagesToPruneAtOnce;
+	type ActiveOutboundLanes = bridge_hub_rococo_config::ActiveOutboundLanesToBridgeHubWococo;
 	type MaxUnrewardedRelayerEntriesAtInboundLane =
 		bridge_hub_rococo_config::MaxUnrewardedRelayerEntriesAtInboundLane;
 	type MaxUnconfirmedMessagesAtInboundLane =
@@ -532,17 +530,13 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 	type MaximalOutboundPayloadSize =
 		bridge_hub_rococo_config::ToBridgeHubWococoMaximalOutboundPayloadSize;
 	type OutboundPayload = XcmAsPlainPayload;
-	type OutboundMessageFee = Balance;
 
 	type InboundPayload = XcmAsPlainPayload;
-	type InboundMessageFee = Balance;
 	type InboundRelayer = AccountId;
 
 	type TargetHeaderChain = bridge_hub_rococo_config::BridgeHubWococo;
 	type LaneMessageVerifier = bridge_hub_rococo_config::ToBridgeHubWococoMessageVerifier;
 	type MessageDeliveryAndDispatchPayment = ();
-	type OnMessageAccepted = ();
-	type OnDeliveryConfirmed = ();
 
 	type SourceHeaderChain = bridge_hub_rococo_config::BridgeHubWococo;
 	type MessageDispatch = XcmBlobMessageDispatch<
@@ -550,6 +544,7 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 		bp_bridge_hub_rococo::BridgeHubRococo,
 		OnBridgeHubRococoBlobDispatcher,
 	>;
+
 }
 
 /// Add XCM messages support for BrigdeHubWococo to support Wococo->Rococo XCM messages
@@ -558,8 +553,7 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_bridge_messages::weights::BridgeWeight<Runtime>;
 	type BridgedChainId = bridge_hub_wococo_config::BridgeHubRococoChainId;
-	type Parameter = ();
-	type MaxMessagesToPruneAtOnce = MaxMessagesToPruneAtOnce;
+	type ActiveOutboundLanes = bridge_hub_wococo_config::ActiveOutboundLanesToBridgeHubRococo;
 	type MaxUnrewardedRelayerEntriesAtInboundLane =
 		bridge_hub_wococo_config::MaxUnrewardedRelayerEntriesAtInboundLane;
 	type MaxUnconfirmedMessagesAtInboundLane =
@@ -568,17 +562,13 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 	type MaximalOutboundPayloadSize =
 		bridge_hub_wococo_config::ToBridgeHubRococoMaximalOutboundPayloadSize;
 	type OutboundPayload = XcmAsPlainPayload;
-	type OutboundMessageFee = Balance;
 
 	type InboundPayload = XcmAsPlainPayload;
-	type InboundMessageFee = Balance;
 	type InboundRelayer = AccountId;
 
 	type TargetHeaderChain = bridge_hub_wococo_config::BridgeHubRococo;
 	type LaneMessageVerifier = bridge_hub_wococo_config::ToBridgeHubRococoMessageVerifier;
 	type MessageDeliveryAndDispatchPayment = ();
-	type OnMessageAccepted = ();
-	type OnDeliveryConfirmed = ();
 
 	type SourceHeaderChain = bridge_hub_wococo_config::BridgeHubRococo;
 	type MessageDispatch = XcmBlobMessageDispatch<
@@ -797,21 +787,15 @@ impl_runtime_apis! {
 		}
 	}
 
-	// This exposed by BridgeHubRococo
-	impl runtime_api::ToBridgeHubWococoOutboundLaneApi<Block, Balance, XcmAsPlainPayload> for Runtime {
-		fn estimate_message_delivery_and_dispatch_fee(
-			_lane_id: bp_messages::LaneId,
-			payload: XcmAsPlainPayload,
-			conversion_rate: Option<frame_support::sp_runtime::FixedU128>,
-		) -> Option<Balance> {
-			None
-		}
+	// TODO: add here other directions
 
+	// This exposed by BridgeHubRococo
+	impl runtime_api::ToBridgeHubWococoOutboundLaneApi<Block> for Runtime {
 		fn message_details(
 			lane: bp_messages::LaneId,
 			begin: bp_messages::MessageNonce,
 			end: bp_messages::MessageNonce,
-		) -> Vec<bp_messages::OutboundMessageDetails<Balance>> {
+		) -> Vec<bp_messages::OutboundMessageDetails> {
 			bridge_runtime_common::messages_api::outbound_message_details::<
 				Runtime,
 				WithBridgeHubWococoMessagesInstance,
@@ -820,10 +804,10 @@ impl_runtime_apis! {
 	}
 
 	// This is exposed by BridgeHubWococo
-	impl runtime_api::FromBridgeHubRococoInboundLaneApi<Block, Balance> for Runtime {
+	impl runtime_api::FromBridgeHubRococoInboundLaneApi<Block> for Runtime {
 		fn message_details(
 			lane: bp_messages::LaneId,
-			messages: Vec<(bp_messages::MessagePayload, bp_messages::OutboundMessageDetails<Balance>)>,
+			messages: Vec<(bp_messages::MessagePayload, bp_messages::OutboundMessageDetails)>,
 		) -> Vec<bp_messages::InboundMessageDetails> {
 			bridge_runtime_common::messages_api::inbound_message_details::<
 				Runtime,

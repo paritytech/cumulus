@@ -27,13 +27,11 @@ use bp_runtime::ChainId;
 use bridge_runtime_common::{
 	messages,
 	messages::{
-		target::FromBridgedChainMessagesProof, BasicConfirmationTransactionEstimation,
-		BridgedChain, MessageBridge, MessageTransaction, ThisChain, ThisChainWithMessages,
+		target::FromBridgedChainMessagesProof, MessageBridge, ThisChainWithMessages,
 		UnderlyingChainProvider,
 	},
 };
-use frame_support::{dispatch::Weight, parameter_types, RuntimeDebug};
-use sp_runtime::FixedU128;
+use frame_support::{parameter_types, RuntimeDebug};
 use xcm::{
 	latest::prelude::*,
 	prelude::{InteriorMultiLocation, NetworkId},
@@ -49,6 +47,7 @@ parameter_types! {
 	pub const BridgeHubWococoChainId: bp_runtime::ChainId = bp_runtime::BRIDGE_HUB_WOCOCO_CHAIN_ID;
 	pub BridgeHubRococoUniversalLocation: InteriorMultiLocation = X2(GlobalConsensus(Rococo), Parachain(ParachainInfo::parachain_id().into()));
 	pub WococoGlobalConsensusNetwork: NetworkId = NetworkId::Wococo;
+	pub ActiveOutboundLanesToBridgeHubWococo: &'static [bp_messages::LaneId] = &[DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO];
 }
 
 /// Dispatches received XCM messages from other bridge
@@ -64,7 +63,6 @@ pub type ToBridgeHubWococoHaulBlobExporter = HaulBlobExporter<
 pub struct ToBridgeHubWococoXcmBlobHauler;
 pub const DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO: LaneId = [0, 0, 0, 2];
 impl XcmBlobHauler for ToBridgeHubWococoXcmBlobHauler {
-	type SenderChain = bp_bridge_hub_rococo::BridgeHubRococo;
 	type MessageSender =
 		pallet_bridge_messages::Pallet<Runtime, WithBridgeHubWococoMessagesInstance>;
 
@@ -80,8 +78,6 @@ impl XcmBlobHauler for ToBridgeHubWococoXcmBlobHauler {
 /// Messaging Bridge configuration for BridgeHubRococo -> BridgeHubWococo
 pub struct WithBridgeHubWococoMessageBridge;
 impl MessageBridge for WithBridgeHubWococoMessageBridge {
-	// TODO:check-parameter - relayers rewards
-	const RELAYER_FEE_PERCENT: u32 = 0;
 	const THIS_CHAIN_ID: ChainId = bp_runtime::BRIDGE_HUB_ROCOCO_CHAIN_ID;
 	const BRIDGED_CHAIN_ID: ChainId = bp_runtime::BRIDGE_HUB_WOCOCO_CHAIN_ID;
 	const BRIDGED_MESSAGES_PALLET_NAME: &'static str =
@@ -93,15 +89,6 @@ impl MessageBridge for WithBridgeHubWococoMessageBridge {
 		BridgeParachainWococoInstance,
 		bp_bridge_hub_wococo::BridgeHubWococo,
 	>;
-
-	fn bridged_balance_to_this_balance(
-		bridged_balance: bridge_runtime_common::messages::BalanceOf<BridgedChain<Self>>,
-		bridged_to_this_conversion_rate_override: Option<FixedU128>,
-	) -> bridge_runtime_common::messages::BalanceOf<ThisChain<Self>> {
-		log::info!("[WithBridgeHubWococoMessageBridge] bridged_balance_to_this_balance (returns 0 balance, TODO: fix) - bridged_balance: {:?}, bridged_to_this_conversion_rate_override: {:?}", bridged_balance, bridged_to_this_conversion_rate_override);
-		// TODO:check-parameter - any payment? from sovereign account?
-		0
-	}
 }
 
 /// Message verifier for BridgeHubWococo messages sent from BridgeHubRococo
@@ -120,14 +107,14 @@ impl UnderlyingChainProvider for BridgeHubWococo {
 	type Chain = bp_bridge_hub_wococo::BridgeHubWococo;
 }
 
-impl SourceHeaderChain<crate::Balance> for BridgeHubWococo {
+impl SourceHeaderChain for BridgeHubWococo {
 	type Error = &'static str;
 	type MessagesProof = FromBridgedChainMessagesProof<crate::Hash>;
 
 	fn verify_messages_proof(
 		proof: Self::MessagesProof,
 		messages_count: u32,
-	) -> Result<ProvedMessages<Message<crate::Balance>>, Self::Error> {
+	) -> Result<ProvedMessages<Message>, Self::Error> {
 		bridge_runtime_common::messages::target::verify_messages_proof::<
 			WithBridgeHubWococoMessageBridge,
 		>(proof, messages_count)
@@ -155,40 +142,6 @@ impl messages::BridgedChainWithMessages for BridgeHubWococo {
 	fn verify_dispatch_weight(_message_payload: &[u8]) -> bool {
 		true
 	}
-
-	fn estimate_delivery_transaction(
-		message_payload: &[u8],
-		include_pay_dispatch_fee_cost: bool,
-		message_dispatch_weight: Weight,
-	) -> MessageTransaction<Weight> {
-		let message_payload_len = u32::try_from(message_payload.len()).unwrap_or(u32::MAX);
-		let extra_bytes_in_payload = message_payload_len
-			.saturating_sub(pallet_bridge_messages::EXPECTED_DEFAULT_MESSAGE_LENGTH);
-
-		MessageTransaction {
-			dispatch_weight: bp_bridge_hub_wococo::ADDITIONAL_MESSAGE_BYTE_DELIVERY_WEIGHT
-				.saturating_mul(extra_bytes_in_payload as u64)
-				.saturating_add(bp_bridge_hub_wococo::DEFAULT_MESSAGE_DELIVERY_TX_WEIGHT)
-				.saturating_sub(if include_pay_dispatch_fee_cost {
-					Weight::from_ref_time(0)
-				} else {
-					bp_bridge_hub_wococo::PAY_INBOUND_DISPATCH_FEE_WEIGHT
-				})
-				.saturating_add(message_dispatch_weight),
-			size: message_payload_len
-				.saturating_add(bp_bridge_hub_rococo::EXTRA_STORAGE_PROOF_SIZE)
-				.saturating_add(bp_bridge_hub_wococo::TX_EXTRA_BYTES),
-		}
-	}
-
-	fn transaction_payment(transaction: MessageTransaction<Weight>) -> messages::BalanceOf<Self> {
-		log::info!(
-			"[BridgeHubWococo::BridgedChainWithMessages] transaction_payment (returns 0 balance, TODO: fix) - transaction: {:?}",
-			transaction
-		);
-		// TODO:check-parameter - any payment? from sovereign account?
-		0
-	}
 }
 
 /// BridgeHubRococo chain from message lane point of view.
@@ -202,12 +155,6 @@ impl UnderlyingChainProvider for BridgeHubRococo {
 impl ThisChainWithMessages for BridgeHubRococo {
 	type RuntimeOrigin = crate::RuntimeOrigin;
 	type RuntimeCall = crate::RuntimeCall;
-	type ConfirmationTransactionEstimation = BasicConfirmationTransactionEstimation<
-		bp_bridge_hub_rococo::AccountId,
-		{ bp_bridge_hub_rococo::MAX_SINGLE_MESSAGE_DELIVERY_CONFIRMATION_TX_WEIGHT.ref_time() },
-		{ bp_bridge_hub_wococo::EXTRA_STORAGE_PROOF_SIZE },
-		{ bp_bridge_hub_rococo::TX_EXTRA_BYTES },
-	>;
 
 	fn is_message_accepted(origin: &Self::RuntimeOrigin, lane: &LaneId) -> bool {
 		log::info!("[BridgeHubRococo::ThisChainWithMessages] is_message_accepted - origin: {:?}, lane: {:?}", origin, lane);
@@ -219,14 +166,5 @@ impl ThisChainWithMessages for BridgeHubRococo {
 			"[BridgeHubRococo::ThisChainWithMessages] maximal_pending_messages_at_outbound_lane"
 		);
 		MessageNonce::MAX / 2
-	}
-
-	fn transaction_payment(transaction: MessageTransaction<Weight>) -> messages::BalanceOf<Self> {
-		log::info!(
-			"[BridgeHubRococo::ThisChainWithMessages] transaction_payment (returns 0 balance, TODO: fix) - transaction: {:?}",
-			transaction
-		);
-		// TODO:check-parameter - any payment? from sovereign account?
-		0
 	}
 }
