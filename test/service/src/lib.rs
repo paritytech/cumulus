@@ -196,7 +196,7 @@ async fn build_relay_chain_interface(
 			collator_options.relay_chain_rpc_urls,
 		)
 		.await
-		.map(|r| r.0);
+		.map(|r| r.0)
 	}
 
 	let relay_chain_full_node = polkadot_test_service::new_full(

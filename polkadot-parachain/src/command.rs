@@ -114,24 +114,20 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	let (id, _, para_id) = extract_parachain_id(id);
 	Ok(match id {
 		// - Defaul-like
-		"staging" => {
-			Box::new(chain_spec::rococo_parachain::staging_rococo_parachain_local_config())
-		},
-		"tick" => {
+		"staging" =>
+			Box::new(chain_spec::rococo_parachain::staging_rococo_parachain_local_config()),
+		"tick" =>
 			Box::new(chain_spec::rococo_parachain::RococoParachainChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/tick.json")[..],
-			)?)
-		},
-		"trick" => {
+			)?),
+		"trick" =>
 			Box::new(chain_spec::rococo_parachain::RococoParachainChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/trick.json")[..],
-			)?)
-		},
-		"track" => {
+			)?),
+		"track" =>
 			Box::new(chain_spec::rococo_parachain::RococoParachainChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/track.json")[..],
-			)?)
-		},
+			)?),
 
 		// -- Starters
 		"shell" => Box::new(chain_spec::shell::get_shell_chain_spec()),
@@ -168,36 +164,29 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		)?),
 
 		// -- Polkadot Collectives
-		"collectives-polkadot-dev" => {
-			Box::new(chain_spec::collectives::collectives_polkadot_development_config())
-		},
-		"collectives-polkadot-local" => {
-			Box::new(chain_spec::collectives::collectives_polkadot_local_config())
-		},
-		"collectives-polkadot" => {
+		"collectives-polkadot-dev" =>
+			Box::new(chain_spec::collectives::collectives_polkadot_development_config()),
+		"collectives-polkadot-local" =>
+			Box::new(chain_spec::collectives::collectives_polkadot_local_config()),
+		"collectives-polkadot" =>
 			Box::new(chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/collectives-polkadot.json")[..],
-			)?)
-		},
-		"collectives-westend" => {
+			)?),
+		"collectives-westend" =>
 			Box::new(chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/collectives-westend.json")[..],
-			)?)
-		},
+			)?),
 
 		// -- Contracts on Rococo
-		"contracts-rococo-dev" => {
-			Box::new(chain_spec::contracts::contracts_rococo_development_config())
-		},
-		"contracts-rococo-local" => {
-			Box::new(chain_spec::contracts::contracts_rococo_local_config())
-		},
+		"contracts-rococo-dev" =>
+			Box::new(chain_spec::contracts::contracts_rococo_development_config()),
+		"contracts-rococo-local" =>
+			Box::new(chain_spec::contracts::contracts_rococo_local_config()),
 		"contracts-rococo-genesis" => Box::new(chain_spec::contracts::contracts_rococo_config()),
-		"contracts-rococo" => {
+		"contracts-rococo" =>
 			Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/contracts-rococo.json")[..],
-			)?)
-		},
+			)?),
 
 		// -- Penpall
 		"penpal-kusama" => Box::new(chain_spec::penpal::get_penpal_chain_spec(
@@ -219,30 +208,23 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		path => {
 			let path: PathBuf = path.into();
 			match path.runtime() {
-				Runtime::Statemint => {
-					Box::new(chain_spec::statemint::StatemintChainSpec::from_json_file(path)?)
-				},
-				Runtime::Statemine => {
-					Box::new(chain_spec::statemint::StatemineChainSpec::from_json_file(path)?)
-				},
-				Runtime::Westmint => {
-					Box::new(chain_spec::statemint::WestmintChainSpec::from_json_file(path)?)
-				},
+				Runtime::Statemint =>
+					Box::new(chain_spec::statemint::StatemintChainSpec::from_json_file(path)?),
+				Runtime::Statemine =>
+					Box::new(chain_spec::statemint::StatemineChainSpec::from_json_file(path)?),
+				Runtime::Westmint =>
+					Box::new(chain_spec::statemint::WestmintChainSpec::from_json_file(path)?),
 				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => Box::new(
 					chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_file(path)?,
 				),
-				Runtime::Shell => {
-					Box::new(chain_spec::shell::ShellChainSpec::from_json_file(path)?)
-				},
-				Runtime::Seedling => {
-					Box::new(chain_spec::seedling::SeedlingChainSpec::from_json_file(path)?)
-				},
-				Runtime::ContractsRococo => {
-					Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_file(path)?)
-				},
-				Runtime::Penpal(_para_id) => {
-					Box::new(chain_spec::penpal::PenpalChainSpec::from_json_file(path)?)
-				},
+				Runtime::Shell =>
+					Box::new(chain_spec::shell::ShellChainSpec::from_json_file(path)?),
+				Runtime::Seedling =>
+					Box::new(chain_spec::seedling::SeedlingChainSpec::from_json_file(path)?),
+				Runtime::ContractsRococo =>
+					Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_file(path)?),
+				Runtime::Penpal(_para_id) =>
+					Box::new(chain_spec::penpal::PenpalChainSpec::from_json_file(path)?),
 				Runtime::Default => Box::new(
 					chain_spec::rococo_parachain::RococoParachainChainSpec::from_json_file(path)?,
 				),
@@ -313,9 +295,8 @@ impl SubstrateCli for Cli {
 			Runtime::Statemint => &statemint_runtime::VERSION,
 			Runtime::Statemine => &statemine_runtime::VERSION,
 			Runtime::Westmint => &westmint_runtime::VERSION,
-			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => {
-				&collectives_polkadot_runtime::VERSION
-			},
+			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
+				&collectives_polkadot_runtime::VERSION,
 			Runtime::Shell => &shell_runtime::VERSION,
 			Runtime::Seedling => &seedling_runtime::VERSION,
 			Runtime::ContractsRococo => &contracts_rococo_runtime::VERSION,
@@ -564,19 +545,16 @@ pub fn run() -> Result<()> {
 
 			// Switch on the concrete benchmark sub-command-
 			match cmd {
-				BenchmarkCmd::Pallet(cmd) => {
+				BenchmarkCmd::Pallet(cmd) =>
 					if cfg!(feature = "runtime-benchmarks") {
 						runner.sync_run(|config| match config.chain_spec.runtime() {
-							Runtime::Statemine => {
-								cmd.run::<Block, StatemineRuntimeExecutor>(config)
-							},
+							Runtime::Statemine =>
+								cmd.run::<Block, StatemineRuntimeExecutor>(config),
 							Runtime::Westmint => cmd.run::<Block, WestmintRuntimeExecutor>(config),
-							Runtime::Statemint => {
-								cmd.run::<Block, StatemintRuntimeExecutor>(config)
-							},
-							Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => {
-								cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config)
-							},
+							Runtime::Statemint =>
+								cmd.run::<Block, StatemintRuntimeExecutor>(config),
+							Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
+								cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
 							_ => Err(format!(
 								"Chain '{:?}' doesn't support benchmarking",
 								config.chain_spec.runtime()
@@ -587,20 +565,18 @@ pub fn run() -> Result<()> {
 						Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
 							.into())
-					}
-				},
+					},
 				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
 					construct_benchmark_partials!(config, |partials| cmd.run(partials.client))
 				}),
 				#[cfg(not(feature = "runtime-benchmarks"))]
-				BenchmarkCmd::Storage(_) => {
+				BenchmarkCmd::Storage(_) =>
 					return Err(sc_cli::Error::Input(
 						"Compile with --features=runtime-benchmarks \
 						to enable storage benchmarks."
 							.into(),
 					)
-					.into())
-				},
+					.into()),
 				#[cfg(feature = "runtime-benchmarks")]
 				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
 					construct_benchmark_partials!(config, |partials| {
@@ -610,9 +586,8 @@ pub fn run() -> Result<()> {
 						cmd.run(config, partials.client.clone(), db, storage)
 					})
 				}),
-				BenchmarkCmd::Machine(cmd) => {
-					runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()))
-				},
+				BenchmarkCmd::Machine(cmd) =>
+					runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
 				// NOTE: this allows the Client to leniently implement
 				// new benchmark commands without requiring a companion MR.
 				#[allow(unreachable_patterns)]
@@ -638,14 +613,13 @@ pub fn run() -> Result<()> {
 				Runtime::Statemint => runner.async_run(|config| {
 					Ok((cmd.run::<Block, StatemintRuntimeExecutor>(config), task_manager))
 				}),
-				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => {
+				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
 					runner.async_run(|config| {
 						Ok((
 							cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
 							task_manager,
 						))
-					})
-				},
+					}),
 				Runtime::Shell => runner.async_run(|config| {
 					Ok((
 						cmd.run::<Block, crate::service::ShellRuntimeExecutor>(config),

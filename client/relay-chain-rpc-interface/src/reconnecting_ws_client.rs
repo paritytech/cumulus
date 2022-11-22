@@ -176,7 +176,7 @@ async fn connect_next_available_rpc_server(
 		let index = (starting_position + counter) % urls.len();
 		tracing::info!(target: LOG_TARGET, index, ?url, "Connecting to RPC node",);
 		if let Ok(ws_client) = WsClientBuilder::default().build(url).await {
-			return Ok((index, Arc::new(ws_client)));
+			return Ok((index, Arc::new(ws_client)))
 		};
 	}
 	Err(())
@@ -185,7 +185,7 @@ async fn connect_next_available_rpc_server(
 impl ClientManager {
 	pub async fn new(urls: Vec<Url>) -> Result<Self, ()> {
 		if urls.is_empty() {
-			return Err(());
+			return Err(())
 		}
 		let active_client = connect_next_available_rpc_server(&urls, 1).await?;
 		Ok(Self { urls, active_client: active_client.1, active_index: active_client.0 })
@@ -253,7 +253,7 @@ impl ClientManager {
 			// the websocket connection is dead and requires a restart.
 			// Other errors should be forwarded to the request caller.
 			if let Err(JsonRpseeError::RestartNeeded(_)) = resp {
-				return Err(RpcDispatcherMessage::Request(method, params, response_sender));
+				return Err(RpcDispatcherMessage::Request(method, params, response_sender))
 			}
 
 			if let Err(err) = response_sender.send(resp) {
@@ -299,9 +299,8 @@ impl ReconnectingWebsocketWorker {
 			match self.client_receiver.try_recv() {
 				Ok(val) => tmp_request_storage.push(val),
 				Err(TryRecvError::Empty) => break,
-				Err(_) => {
-					return Err("Can not fetch values from client receiver channel.".to_string())
-				},
+				Err(_) =>
+					return Err("Can not fetch values from client receiver channel.".to_string()),
 			}
 		}
 
@@ -315,7 +314,7 @@ impl ReconnectingWebsocketWorker {
 					return Err(format!(
 						"Unable to retry requests, queue is unexpectedly full. err: {:?}",
 						err
-					));
+					))
 				};
 			}
 		}
@@ -325,12 +324,12 @@ impl ReconnectingWebsocketWorker {
 				return Err(format!(
 					"Unable to retry requests, queue is unexpectedly full. err: {:?}",
 					err
-				));
+				))
 			};
 		}
 
 		if client_manager.connect_to_new_rpc_server().await.is_err() {
-			return Err(format!("Unable to find valid external RPC server, shutting down."));
+			return Err(format!("Unable to find valid external RPC server, shutting down."))
 		};
 
 		client_manager.get_subscriptions().await.map_err(|e| {
@@ -372,7 +371,7 @@ impl ReconnectingWebsocketWorker {
 							message,
 							"Unable to reconnect, stopping worker."
 						);
-						return;
+						return
 					},
 				}
 				should_reconnect = false;
