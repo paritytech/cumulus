@@ -55,7 +55,7 @@ use rand_chacha::{
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::{convert::TryFrom, prelude::*};
-use xcm::{latest::{prelude::*}, VersionedXcm, WrapVersion, MAX_XCM_DECODE_DEPTH};
+use xcm::{latest::prelude::*, VersionedXcm, WrapVersion, MAX_XCM_DECODE_DEPTH};
 use xcm_executor::traits::ConvertOrigin;
 
 pub use pallet::*;
@@ -156,9 +156,8 @@ pub mod pallet {
 				&mut data.as_slice(),
 			)
 			.map_err(|_| Error::<T>::BadXcm)?;
-			let used =
-				Self::handle_xcm_message(sender, sent_at, xcm, weight_limit)
-					.map_err(|_| Error::<T>::WeightOverLimit)?;
+			let used = Self::handle_xcm_message(sender, sent_at, xcm, weight_limit)
+				.map_err(|_| Error::<T>::WeightOverLimit)?;
 			Overweight::<T>::remove(index);
 			Self::deposit_event(Event::OverweightServiced { index, used });
 			Ok(Some(used.saturating_add(Weight::from_ref_time(1_000_000))).into())
@@ -625,23 +624,12 @@ impl<T: Config> Pallet<T> {
 						Err(e),
 						Event::Fail { message_hash: Some(hash), error: e, weight: Weight::zero() },
 					),
-					Outcome::Complete(w) => (
-						Ok(w),
-						Event::Success {
-							message_hash: Some(hash),
-							weight: w,
-						},
-					),
+					Outcome::Complete(w) =>
+						(Ok(w), Event::Success { message_hash: Some(hash), weight: w }),
 					// As far as the caller is concerned, this was dispatched without error, so
 					// we just report the weight used.
-					Outcome::Incomplete(w, e) => (
-						Ok(w),
-						Event::Fail {
-							message_hash: Some(hash),
-							error: e,
-							weight: w,
-						},
-					),
+					Outcome::Incomplete(w, e) =>
+						(Ok(w), Event::Fail { message_hash: Some(hash), error: e, weight: w }),
 				}
 			},
 			Err(()) =>

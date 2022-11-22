@@ -31,7 +31,7 @@ use frame_support::{
 use polkadot_runtime_common::xcm_sender::ConstantPrice;
 use sp_runtime::{traits::Saturating, SaturatedConversion};
 use sp_std::{marker::PhantomData, prelude::*};
-use xcm::{latest::{prelude::*}, WrapVersion};
+use xcm::{latest::prelude::*, WrapVersion};
 use xcm_builder::TakeRevenue;
 use xcm_executor::traits::{MatchesFungibles, TransactAsset, WeightTrader};
 
