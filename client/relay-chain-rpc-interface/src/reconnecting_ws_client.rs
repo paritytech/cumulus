@@ -295,6 +295,7 @@ impl ReconnectingWebsocketWorker {
 	) -> Result<RelayChainSubscriptions, String> {
 		let mut tmp_request_storage = Vec::new();
 		loop {
+			// Drain the incoming request channel to insert retrying requests at the front later
 			match self.client_receiver.try_recv() {
 				Ok(val) => tmp_request_storage.push(val),
 				Err(TryRecvError::Empty) => break,
