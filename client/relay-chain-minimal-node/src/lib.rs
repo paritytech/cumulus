@@ -207,13 +207,24 @@ fn drain_unwanted_request_channels(
 	mut chunk_req_receiver: IncomingRequestReceiver<v1::ChunkFetchingRequest>,
 ) {
 	task_manager.spawn_handle().spawn("request-drainer", None, async move {
+
 		loop {
 			select! {
-				_req = pov_req_receiver.recv(|| vec![]).fuse() => {
-					tracing::error!(target: LOG_TARGET, "Received PoV fetching request. Since we are a collator we discard it.");
+				pov_req = pov_req_receiver.recv(|| vec![]).fuse() => {
+					tracing::warn!(target: LOG_TARGET, "Received PoV fetching request. Since we are a collator we should not receive this.");
+					if let Ok(request) = pov_req {
+						if let Err(err) = request.send_response(v1::PoVFetchingResponse::NoSuchPoV) {
+							tracing::debug!(target: LOG_TARGET, ?err, "Unable to answer PoV fetching request");
+						};
+					}
 				},
-				_req = chunk_req_receiver.recv(|| vec![]).fuse() => {
-					tracing::error!(target: LOG_TARGET, "Received Availability chunk request. Since we are a collator we discard it.");
+				chunk_req = chunk_req_receiver.recv(|| vec![]).fuse() => {
+					tracing::warn!(target: LOG_TARGET, "Received PoV fetching request. Since we are a collator we should not receive this.");
+					if let Ok(request) = chunk_req {
+						if let Err(err) = request.send_response(v1::ChunkFetchingResponse::NoSuchChunk) {
+							tracing::debug!(target: LOG_TARGET, ?err, "Unable to answer chunk fetching request");
+						}
+					}
 				},
 
 			}
