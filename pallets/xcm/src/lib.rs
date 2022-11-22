@@ -157,8 +157,7 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
 					let weight_limit = limit.saturating_sub(used);
-					let outcome =
-						T::XcmExecutor::execute_xcm(Parent, x, id, weight_limit);
+					let outcome = T::XcmExecutor::execute_xcm(Parent, x, id, weight_limit);
 					used = used.saturating_add(outcome.weight_used());
 					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				},
