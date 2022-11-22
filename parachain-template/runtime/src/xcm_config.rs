@@ -203,8 +203,8 @@ impl pallet_xcm::Config for Runtime {
 	// ^ Disable dispatchable execute on the XCM pallet.
 	// Needs to be `Everything` for local testing.
 	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type XcmTeleportFilter = Everything;
-	type XcmReserveTransferFilter = Nothing;
+	type XcmTeleportFilter = Nothing;
+	type XcmReserveTransferFilter = Everything;
 	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type RuntimeOrigin = RuntimeOrigin;
