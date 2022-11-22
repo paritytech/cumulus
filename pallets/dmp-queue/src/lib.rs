@@ -764,7 +764,9 @@ mod tests {
 	fn overweight_should_not_block_queue() {
 		new_test_ext().execute_with(|| {
 			// Set the overweight threshold to 9999.
-			Configuration::<Test>::put(ConfigData { max_individual: Weight::from_parts(9999, 9999) });
+			Configuration::<Test>::put(ConfigData {
+				max_individual: Weight::from_parts(9999, 9999),
+			});
 
 			let incoming = vec![msg(1000), msg(10001), msg(1002)];
 			let weight_used = handle_messages(&incoming, Weight::from_parts(2500, 2500));
@@ -783,7 +785,9 @@ mod tests {
 	fn overweights_should_be_manually_executable() {
 		new_test_ext().execute_with(|| {
 			// Set the overweight threshold to 9999.
-			Configuration::<Test>::put(ConfigData { max_individual: Weight::from_parts(9999, 9999) });
+			Configuration::<Test>::put(ConfigData {
+				max_individual: Weight::from_parts(9999, 9999),
+			});
 
 			let incoming = vec![msg(10000)];
 			let weight_used = handle_messages(&incoming, Weight::from_parts(2500, 2500));
