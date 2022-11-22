@@ -120,7 +120,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_version: 9320,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 8,
+	transaction_version: 9,
 	state_version: 0,
 };
 
@@ -190,7 +190,7 @@ parameter_types! {
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
-	type OnTimestampSet = ();
+	type OnTimestampSet = Aura;
 	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = weights::pallet_timestamp::WeightInfo<Runtime>;
 }
@@ -274,6 +274,7 @@ impl pallet_assets::Config for Runtime {
 	type Extra = ();
 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
 	type AssetAccountDeposit = AssetAccountDeposit;
+	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
 }
 
 parameter_types! {
@@ -376,7 +377,10 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			ProxyType::AssetOwner => matches!(
 				c,
 				RuntimeCall::Assets(pallet_assets::Call::create { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::destroy { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::start_destroy { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::destroy_accounts { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::destroy_approvals { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::finish_destroy { .. }) |
 					RuntimeCall::Assets(pallet_assets::Call::transfer_ownership { .. }) |
 					RuntimeCall::Assets(pallet_assets::Call::set_team { .. }) |
 					RuntimeCall::Assets(pallet_assets::Call::set_metadata { .. }) |
@@ -661,6 +665,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
+	pallet_assets::migration::v1::MigrateToV1<Runtime>,
 >;
 
 #[cfg(feature = "runtime-benchmarks")]
