@@ -793,31 +793,31 @@ mod tests {
 			assert_eq!(overweights(), vec![0]);
 
 			assert_noop!(
-				DmpQueue::service_overweight(RuntimeOrigin::signed(1), 0, 20000),
+				DmpQueue::service_overweight(RuntimeOrigin::signed(1), 0, Weight::from_parts(20000, 20000)),
 				BadOrigin
 			);
 			assert_noop!(
-				DmpQueue::service_overweight(RuntimeOrigin::root(), 1, 20000),
+				DmpQueue::service_overweight(RuntimeOrigin::root(), 1, Weight::from_parts(20000, 20000)),
 				Error::<Test>::Unknown
 			);
 			assert_noop!(
-				DmpQueue::service_overweight(RuntimeOrigin::root(), 0, 9999),
+				DmpQueue::service_overweight(RuntimeOrigin::root(), 0, Weight::from_parts(9999, 9999)),
 				Error::<Test>::OverLimit
 			);
 			assert_eq!(take_trace(), vec![msg_limit_reached(10000)]);
 
-			let base_weight = super::Call::<Test>::service_overweight { index: 0, weight_limit: 0 }
+			let base_weight = super::Call::<Test>::service_overweight { index: 0, weight_limit: Weight::zero() }
 				.get_dispatch_info()
 				.weight;
 			use frame_support::dispatch::GetDispatchInfo;
-			let info = DmpQueue::service_overweight(RuntimeOrigin::root(), 0, 20000).unwrap();
+			let info = DmpQueue::service_overweight(RuntimeOrigin::root(), 0, Weight::from_parts(20000, 20000)).unwrap();
 			let actual_weight = info.actual_weight.unwrap();
 			assert_eq!(actual_weight, base_weight + Weight::from_ref_time(10000));
 			assert_eq!(take_trace(), vec![msg_complete(10000)]);
 			assert!(overweights().is_empty());
 
 			assert_noop!(
-				DmpQueue::service_overweight(RuntimeOrigin::root(), 0, 20000),
+				DmpQueue::service_overweight(RuntimeOrigin::root(), 0, Weight::from_parts(20000, 20000)),
 				Error::<Test>::Unknown
 			);
 		});
