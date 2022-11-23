@@ -14,8 +14,9 @@
 // limitations under the License.
 
 use super::{
-	AccountId, AssetIdForTrustBackedAssets, Authorship, Balance, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
-	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, TrustBackedAssets, WeightToFee, XcmpQueue,
+	AccountId, AssetIdForTrustBackedAssets, Authorship, Balance, Balances, ParachainInfo,
+	ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
+	TrustBackedAssets, WeightToFee, XcmpQueue,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -84,7 +85,11 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	ConvertedConcreteAssetId<
 		AssetIdForTrustBackedAssets,
 		Balance,
-		AsPrefixedGeneralIndex<TrustBackedAssetsPalletLocation, AssetIdForTrustBackedAssets, JustTry>,
+		AsPrefixedGeneralIndex<
+			TrustBackedAssetsPalletLocation,
+			AssetIdForTrustBackedAssets,
+			JustTry,
+		>,
 		JustTry,
 	>,
 	// Convert an XCM MultiLocation into a local account id:

@@ -6,8 +6,8 @@ use frame_support::{
 };
 use parachains_common::{AccountId, StatemintAuraId as AuraId};
 pub use statemint_runtime::{
-	constants::fee::WeightToFee, xcm_config::XcmConfig, TrustBackedAssets, Balances, ExistentialDeposit,
-	Runtime, SessionKeys, System,
+	constants::fee::WeightToFee, xcm_config::XcmConfig, Balances, ExistentialDeposit, Runtime,
+	SessionKeys, System, TrustBackedAssets,
 };
 use xcm::latest::prelude::*;
 use xcm_executor::traits::WeightTrader;
@@ -52,8 +52,8 @@ fn test_asset_xcm_trader_does_not_work_in_statemine() {
 				0,
 				X2(
 					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>().unwrap()
-							as u8,
+						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>()
+							.unwrap() as u8,
 					),
 					GeneralIndex(1),
 				),

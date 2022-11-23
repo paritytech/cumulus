@@ -6,8 +6,8 @@ use frame_support::{
 };
 use parachains_common::{AccountId, AuraId};
 pub use statemine_runtime::{
-	constants::fee::WeightToFee, xcm_config::XcmConfig, TrustBackedAssets, Balances, ExistentialDeposit,
-	Runtime, SessionKeys, System,
+	constants::fee::WeightToFee, xcm_config::XcmConfig, Balances, ExistentialDeposit, Runtime,
+	SessionKeys, System, TrustBackedAssets,
 };
 use xcm::latest::prelude::*;
 use xcm_executor::traits::WeightTrader;
@@ -57,8 +57,8 @@ fn test_asset_xcm_trader() {
 				0,
 				X2(
 					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>().unwrap()
-							as u8,
+						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>()
+							.unwrap() as u8,
 					),
 					GeneralIndex(1),
 				),
@@ -79,7 +79,10 @@ fn test_asset_xcm_trader() {
 			);
 
 			// We also need to ensure the total supply increased
-			assert_eq!(TrustBackedAssets::total_supply(1), ExistentialDeposit::get() + amount_needed);
+			assert_eq!(
+				TrustBackedAssets::total_supply(1),
+				ExistentialDeposit::get() + amount_needed
+			);
 		});
 }
 
@@ -124,8 +127,8 @@ fn test_asset_xcm_trader_with_refund() {
 				0,
 				X2(
 					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>().unwrap()
-							as u8,
+						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>()
+							.unwrap() as u8,
 					),
 					GeneralIndex(1),
 				),
@@ -203,8 +206,8 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 				0,
 				X2(
 					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>().unwrap()
-							as u8,
+						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>()
+							.unwrap() as u8,
 					),
 					GeneralIndex(1),
 				),
@@ -263,8 +266,8 @@ fn test_that_buying_ed_refund_does_not_refund() {
 				0,
 				X2(
 					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>().unwrap()
-							as u8,
+						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>()
+							.unwrap() as u8,
 					),
 					GeneralIndex(1),
 				),
@@ -296,7 +299,10 @@ fn test_that_buying_ed_refund_does_not_refund() {
 			drop(trader);
 
 			// Make sure author(Alice) has received the amount
-			assert_eq!(TrustBackedAssets::balance(1, AccountId::from(ALICE)), ExistentialDeposit::get());
+			assert_eq!(
+				TrustBackedAssets::balance(1, AccountId::from(ALICE)),
+				ExistentialDeposit::get()
+			);
 
 			// We also need to ensure the total supply increased
 			assert_eq!(TrustBackedAssets::total_supply(1), ExistentialDeposit::get());
