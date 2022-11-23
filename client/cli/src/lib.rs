@@ -294,7 +294,8 @@ pub struct RunCmd {
 	#[arg(
 		long,
 		value_parser = validate_relay_chain_url,
-		num_args = 0..
+		num_args = 0..,
+		alias = "relay-chain-rpc-url"
 	)]
 	pub relay_chain_rpc_urls: Vec<Url>,
 }
