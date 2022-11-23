@@ -244,7 +244,7 @@ pub type AssetsForceOrigin =
 	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>>;
 
 pub type TrustBackedAssetsInstance = pallet_assets::Instance1;
-type TrustBackedAssetsCall = pallet_assets::Call<Runtime, frame_support::instances::Instance1>;
+type TrustBackedAssetsCall = pallet_assets::Call<Runtime, TrustBackedAssetsInstance>;
 impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
