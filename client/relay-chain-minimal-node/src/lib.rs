@@ -199,8 +199,8 @@ async fn new_minimal_relay_chain(
 }
 
 /// Usually availability-distribution subsystem handles these requests.
-/// We do not run it in this minimal node and therefore can not answer them.
-/// However, since we run as collator we are also not expected to answer these.
+/// We do not run it in this minimal node and therefore we answer
+/// that we do not have the chunk/PoV.
 fn drain_unwanted_request_channels(
 	task_manager: &TaskManager,
 	mut pov_req_receiver: IncomingRequestReceiver<v1::PoVFetchingRequest>,
@@ -211,7 +211,7 @@ fn drain_unwanted_request_channels(
 		loop {
 			select! {
 				pov_req = pov_req_receiver.recv(|| vec![]).fuse() => {
-					tracing::warn!(target: LOG_TARGET, "Received PoV fetching request. Since we are a collator we should not receive this.");
+					tracing::debug!(target: LOG_TARGET, "Received PoV fetching request. Since we are a collator we should not receive this.");
 					if let Ok(request) = pov_req {
 						if let Err(err) = request.send_response(v1::PoVFetchingResponse::NoSuchPoV) {
 							tracing::debug!(target: LOG_TARGET, ?err, "Unable to answer PoV fetching request");
@@ -219,7 +219,7 @@ fn drain_unwanted_request_channels(
 					}
 				},
 				chunk_req = chunk_req_receiver.recv(|| vec![]).fuse() => {
-					tracing::warn!(target: LOG_TARGET, "Received PoV fetching request. Since we are a collator we should not receive this.");
+					tracing::debug!(target: LOG_TARGET, "Received PoV fetching request. Since we are a collator we should not receive this.");
 					if let Ok(request) = chunk_req {
 						if let Err(err) = request.send_response(v1::ChunkFetchingResponse::NoSuchChunk) {
 							tracing::debug!(target: LOG_TARGET, ?err, "Unable to answer chunk fetching request");
