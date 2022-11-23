@@ -2134,7 +2134,7 @@ dependencies = [
 [[package]]
 name = "encointer-balances-tx-payment"
 version = "1.0.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#aa8f3e9244a31f117028d15edc9292db3f4838b6"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#9ee44a459f4b79bb3c722d27f9585000901e3e80"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -2150,7 +2150,7 @@ dependencies = [
 [[package]]
 name = "encointer-ceremonies-assignment"
 version = "1.2.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#aa8f3e9244a31f117028d15edc9292db3f4838b6"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#9ee44a459f4b79bb3c722d27f9585000901e3e80"
 dependencies = [
  "encointer-primitives",
  "sp-runtime",
@@ -2241,7 +2241,7 @@ dependencies = [
 [[package]]
 name = "encointer-meetup-validation"
 version = "1.2.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#aa8f3e9244a31f117028d15edc9292db3f4838b6"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#9ee44a459f4b79bb3c722d27f9585000901e3e80"
 dependencies = [
  "encointer-primitives",
  "parity-scale-codec",
@@ -2254,7 +2254,7 @@ dependencies = [
 [[package]]
 name = "encointer-primitives"
 version = "1.2.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#aa8f3e9244a31f117028d15edc9292db3f4838b6"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#9ee44a459f4b79bb3c722d27f9585000901e3e80"
 dependencies = [
  "bs58",
  "crc",
@@ -2273,7 +2273,7 @@ dependencies = [
 [[package]]
 name = "encointer-rpc"
 version = "0.1.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#aa8f3e9244a31f117028d15edc9292db3f4838b6"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#9ee44a459f4b79bb3c722d27f9585000901e3e80"
 dependencies = [
  "jsonrpsee",
  "thiserror",
@@ -2414,7 +2414,7 @@ checksum = "68b91989ae21441195d7d9b9993a2f9295c7e1a8c96255d8b729accddc124797"
 [[package]]
 name = "ep-core"
 version = "1.2.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#aa8f3e9244a31f117028d15edc9292db3f4838b6"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#9ee44a459f4b79bb3c722d27f9585000901e3e80"
 dependencies = [
  "impl-serde",
  "parity-scale-codec",
@@ -5628,7 +5628,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-balances"
 version = "1.2.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#aa8f3e9244a31f117028d15edc9292db3f4838b6"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#9ee44a459f4b79bb3c722d27f9585000901e3e80"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -5647,7 +5647,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-bazaar"
 version = "1.1.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#aa8f3e9244a31f117028d15edc9292db3f4838b6"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#9ee44a459f4b79bb3c722d27f9585000901e3e80"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
@@ -5664,7 +5664,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-bazaar-rpc"
 version = "1.0.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#aa8f3e9244a31f117028d15edc9292db3f4838b6"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#9ee44a459f4b79bb3c722d27f9585000901e3e80"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -5683,7 +5683,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-bazaar-rpc-runtime-api"
 version = "1.0.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#aa8f3e9244a31f117028d15edc9292db3f4838b6"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#9ee44a459f4b79bb3c722d27f9585000901e3e80"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -5694,7 +5694,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-ceremonies"
 version = "1.2.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#aa8f3e9244a31f117028d15edc9292db3f4838b6"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#9ee44a459f4b79bb3c722d27f9585000901e3e80"
 dependencies = [
  "encointer-ceremonies-assignment",
  "encointer-meetup-validation",
@@ -5719,7 +5719,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-ceremonies-rpc"
 version = "1.2.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#aa8f3e9244a31f117028d15edc9292db3f4838b6"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#9ee44a459f4b79bb3c722d27f9585000901e3e80"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -5738,7 +5738,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-ceremonies-rpc-runtime-api"
 version = "1.2.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#aa8f3e9244a31f117028d15edc9292db3f4838b6"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#9ee44a459f4b79bb3c722d27f9585000901e3e80"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -5749,7 +5749,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-communities"
 version = "1.2.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#aa8f3e9244a31f117028d15edc9292db3f4838b6"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#9ee44a459f4b79bb3c722d27f9585000901e3e80"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
@@ -5768,7 +5768,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-communities-rpc"
 version = "1.2.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#aa8f3e9244a31f117028d15edc9292db3f4838b6"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#9ee44a459f4b79bb3c722d27f9585000901e3e80"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -5787,7 +5787,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-communities-rpc-runtime-api"
 version = "1.2.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#aa8f3e9244a31f117028d15edc9292db3f4838b6"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#9ee44a459f4b79bb3c722d27f9585000901e3e80"
 dependencies = [
  "encointer-primitives",
  "sp-api",
@@ -5797,7 +5797,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-scheduler"
 version = "1.1.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#aa8f3e9244a31f117028d15edc9292db3f4838b6"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.28#9ee44a459f4b79bb3c722d27f9585000901e3e80"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
@@ -11579,7 +11579,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 0.1.10",
+ "cfg-if 1.0.0",
  "digest 0.10.5",
  "rand 0.8.5",
  "static_assertions",
