@@ -39,7 +39,7 @@ jobs:
     name: Cancel Previous Runs
     runs-on: ubuntu-20.04
     steps:
-      - uses: styfle/cancel-workflow-action@0.4.1
+      - uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -58,7 +58,7 @@ jobs:
       RUST_BIN_DIR: target/${{ matrix.rust-target }}/debug
       RELEASE_NAME: debug
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Print env
         run: |
@@ -79,7 +79,7 @@ jobs:
 
       # Upload artifacts
       - name: Upload encointer-collator
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: encointer-collator-${{ github.sha }}
           path: target/release/encointer-collator
@@ -102,7 +102,7 @@ jobs:
       RUSTV: ${{ matrix.rust }}
       TARGET: ${{ matrix.rust-target }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
       # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
@@ -128,7 +128,7 @@ jobs:
       matrix:
         runtime: ["encointer", "launch"]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Cache target dir
         uses: actions/cache@v2
@@ -182,7 +182,7 @@ jobs:
 #          cat ${{ matrix.chain }}-diff.txt
 
       - name: Upload ${{ matrix.runtime }} srtool json
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.runtime }}-srtool-json-${{ github.sha }}
           path: |
@@ -194,7 +194,7 @@ jobs:
 
 
       - name: Upload ${{ matrix.runtime }} runtime
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.runtime }}-runtime-${{ github.sha }}
           path: |
@@ -213,9 +213,9 @@ jobs:
         config: [rococo, westend, kusama]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: encointer-collator-${{ github.sha }}
 
@@ -237,7 +237,7 @@ jobs:
           sha256sum ${{ env.CHAIN_SPEC }}.json.state >> checksums.txt
 
       - name: Upload ${{ env.CHAIN_SPEC }} Files
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ env.CHAIN_SPEC }}-genesis-spec-${{ github.sha }}
           path: |
@@ -255,10 +255,10 @@ jobs:
       release_url: ${{ steps.create-release.outputs.html_url }}
       asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Download Integritee Collator
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: encointer-collator-${{ github.sha }}
 
@@ -293,12 +293,12 @@ jobs:
       matrix:
         runtime: ["encointer", "launch"]
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v2
-      - name: Set up Ruby 2.7
-        uses: actions/setup-ruby@v1
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+      - name: Set up Ruby 3
+        uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 2.7
+          ruby-version: '3.0'
 
       - name: Get runtime version
         id: get-runtime-ver
