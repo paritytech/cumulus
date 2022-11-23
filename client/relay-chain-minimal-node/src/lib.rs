@@ -35,7 +35,7 @@ use std::sync::Arc;
 
 use polkadot_service::{Configuration, TaskManager};
 
-use futures::{select, FutureExt, StreamExt};
+use futures::StreamExt;
 
 use sp_runtime::{app_crypto::Pair, traits::Block as BlockT};
 
@@ -158,9 +158,9 @@ async fn new_minimal_relay_chain(
 		.extend(peer_sets_info(is_authority, &peer_set_protocol_names));
 
 	let request_protocol_names = ReqProtocolNames::new(genesis_hash, config.chain_spec.fork_id());
-	let (collation_req_receiver, available_data_req_receiver, pov_req_receiver, chunk_req_receiver) =
+	let (collation_req_receiver, available_data_req_receiver, chunk_req_receiver) =
 		build_request_response_protocol_receivers(&request_protocol_names, &mut config);
-	drain_unwanted_request_channels(&task_manager, pov_req_receiver, chunk_req_receiver);
+	drain_unwanted_request_channels(&task_manager, chunk_req_receiver);
 
 	let (network, network_starter) =
 		network::build_collator_network(network::BuildCollatorNetworkParams {
@@ -207,30 +207,23 @@ async fn new_minimal_relay_chain(
 /// that we do not have the chunk/PoV.
 fn drain_unwanted_request_channels(
 	task_manager: &TaskManager,
-	mut pov_req_receiver: IncomingRequestReceiver<v1::PoVFetchingRequest>,
 	mut chunk_req_receiver: IncomingRequestReceiver<v1::ChunkFetchingRequest>,
 ) {
-	task_manager.spawn_handle().spawn("pov-chunk-request-drainer", None, async move {
+	task_manager.spawn_handle().spawn("chunk-request-drainer", None, async move {
 		loop {
-			select! {
-				pov_req = pov_req_receiver.recv(|| vec![COST_INVALID_REQUEST]).fuse() => {
-					tracing::debug!(target: LOG_TARGET, "Received PoV fetching request. Collator should not receive this.");
-					if let Ok(request) = pov_req {
-						if let Err(err) = request.send_response(v1::PoVFetchingResponse::NoSuchPoV) {
-							tracing::debug!(target: LOG_TARGET, ?err, "Unable to answer PoV fetching request");
-						};
-					}
-				},
-				chunk_req = chunk_req_receiver.recv(|| vec![COST_INVALID_REQUEST]).fuse() => {
-					tracing::debug!(target: LOG_TARGET, "Received PoV fetching request. Collators should not receive this.");
-					if let Ok(request) = chunk_req {
-						if let Err(err) = request.send_response(v1::ChunkFetchingResponse::NoSuchChunk) {
-							tracing::debug!(target: LOG_TARGET, ?err, "Unable to answer chunk fetching request");
-						}
-					}
-				},
-
-			}
+			if let Ok(request) = chunk_req_receiver.recv(|| vec![COST_INVALID_REQUEST]).await {
+				tracing::debug!(
+					target: LOG_TARGET,
+					"Received chunk fetching request. Collators should not receive this."
+				);
+				if let Err(err) = request.send_response(v1::ChunkFetchingResponse::NoSuchChunk) {
+					tracing::debug!(
+						target: LOG_TARGET,
+						?err,
+						"Unable to answer chunk fetching request"
+					);
+				}
+			};
 		}
 	});
 }
@@ -241,7 +234,6 @@ fn build_request_response_protocol_receivers(
 ) -> (
 	IncomingRequestReceiver<v1::CollationFetchingRequest>,
 	IncomingRequestReceiver<v1::AvailableDataFetchingRequest>,
-	IncomingRequestReceiver<v1::PoVFetchingRequest>,
 	IncomingRequestReceiver<v1::ChunkFetchingRequest>,
 ) {
 	let (collation_req_receiver, cfg) =
@@ -250,9 +242,7 @@ fn build_request_response_protocol_receivers(
 	let (available_data_req_receiver, cfg) =
 		IncomingRequest::get_config_receiver(request_protocol_names);
 	config.network.request_response_protocols.push(cfg);
-	let (pov_req_receiver, cfg) = IncomingRequest::get_config_receiver(request_protocol_names);
-	config.network.request_response_protocols.push(cfg);
 	let (chunk_req_receiver, cfg) = IncomingRequest::get_config_receiver(request_protocol_names);
 	config.network.request_response_protocols.push(cfg);
-	(collation_req_receiver, available_data_req_receiver, pov_req_receiver, chunk_req_receiver)
+	(collation_req_receiver, available_data_req_receiver, chunk_req_receiver)
 }
