@@ -138,7 +138,7 @@ case "$1" in
     RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
         ~/local_bridge_testing/bin/substrate-relay init-bridge rococo-to-bridge-hub-wococo \
 	--source-host localhost \
-	--source-port 48943 \
+	--source-port 9942 \
 	--target-host localhost \
 	--target-port 8945 \
 	--target-signer //Bob
@@ -148,7 +148,7 @@ case "$1" in
     RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
         ~/local_bridge_testing/bin/substrate-relay init-bridge wococo-to-bridge-hub-rococo \
         --source-host localhost \
-        --source-port 48945 \
+        --source-port 9945 \
         --target-host localhost \
         --target-port 8943 \
         --target-signer //Bob

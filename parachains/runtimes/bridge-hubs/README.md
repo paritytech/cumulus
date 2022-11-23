@@ -41,6 +41,22 @@ cargo build -p substrate-relay
 cp target/release/substrate-relay ~/local_bridge_testing/bin/substrate-relay
 ```
 
+### Run chains (Rococo + BridgeHub, Wococo + BridgeHub) with zombienet
+
+```
+# Rococo + BridgeHubWococo
+POLKADOT_BINARY_PATH=../../polkadot/target/release/polkadot \
+POLKADOT_PARACHAIN_BINARY_PATH=./target/release/polkadot-parachain \
+	./zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_rococo_local_network.toml
+```
+
+```
+# Wococo + BridgeHubWococo
+POLKADOT_BINARY_PATH=../../polkadot/target/release/polkadot \
+POLKADOT_PARACHAIN_BINARY_PATH=./target/release/polkadot-parachain \
+	./zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_wococo_local_network.toml
+```
+
 ### Run chains (Rococo + BridgeHub, Wococo + BridgeHub) from `./scripts/bridges_rococo_wococo.sh`
 
 ```
@@ -75,7 +91,7 @@ or
 RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	~/local_bridge_testing/bin/substrate-relay init-bridge rococo-to-bridge-hub-wococo \
 	--source-host localhost \
-	--source-port 48943 \
+	--source-port 9942 \
 	--target-host localhost \
 	--target-port 8945 \
 	--target-signer //Bob
@@ -84,7 +100,7 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	~/local_bridge_testing/bin/substrate-relay init-bridge wococo-to-bridge-hub-rococo \
 	--source-host localhost \
-	--source-port 48945 \
+	--source-port 9945 \
 	--target-host localhost \
 	--target-port 8943 \
 	--target-signer //Bob
@@ -100,7 +116,7 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	~/local_bridge_testing/bin/substrate-relay relay-headers rococo-to-bridge-hub-wococo \
 	--source-host localhost \
-	--source-port 48943 \
+	--source-port 9942 \
 	--target-host localhost \
 	--target-port 8945 \
 	--target-signer //Bob \
@@ -110,7 +126,7 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	~/local_bridge_testing/bin/substrate-relay relay-headers wococo-to-bridge-hub-rococo \
 	--source-host localhost \
-	--source-port 48945 \
+	--source-port 9945 \
 	--target-host localhost \
 	--target-port 8943 \
 	--target-signer //Bob \
@@ -134,7 +150,7 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	~/local_bridge_testing/bin/substrate-relay relay-parachains bridge-hub-rococo-to-bridge-hub-wococo \
 	--source-host localhost \
-	--source-port 48943 \
+	--source-port 9942 \
 	--target-host localhost \
 	--target-port 8945 \
 	--target-signer //Bob \
@@ -144,7 +160,7 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	~/local_bridge_testing/bin/substrate-relay relay-parachains bridge-hub-wococo-to-bridge-hub-rococo \
 	--source-host localhost \
-	--source-port 48945 \
+	--source-port 9945 \
 	--target-host localhost \
 	--target-port 8943 \
 	--target-signer //Bob \
@@ -176,7 +192,20 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	--target-transactions-mortality=4 \
 	--lane 00000002
 ```
-TODO:
+
+```
+# Wococo -> Rococo
+RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
+	~/local_bridge_testing/bin/substrate-relay relay-messages bridge-hub-wococo-to-bridge-hub-rococo \
+	--source-host localhost \
+	--source-port 8945 \
+	--source-signer //Charlie \
+	--target-host localhost \
+	--target-port 8943 \
+	--target-signer //Charlie \
+	--target-transactions-mortality=4 \
+	--lane 00000001
+```
 
 ---
 
