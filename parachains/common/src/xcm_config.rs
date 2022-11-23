@@ -82,24 +82,30 @@ pub struct AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceC
 impl<CurrencyBalance, Runtime, WeightToFee, BalanceConverter>
 	cumulus_primitives_utility::ChargeWeightInFungibles<
 		AccountIdOf<Runtime>,
-		pallet_assets::Pallet<Runtime>,
+		pallet_assets::Pallet<Runtime, pallet_assets::Instance1>,
 	> for AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceConverter>
 where
-	Runtime: pallet_assets::Config,
+	Runtime: pallet_assets::Config<pallet_assets::Instance1>,
 	WeightToFee: WeightToFeePolynomial<Balance = CurrencyBalance>,
 	BalanceConverter: BalanceConversion<
 		CurrencyBalance,
-		<Runtime as pallet_assets::Config>::AssetId,
-		<Runtime as pallet_assets::Config>::Balance,
+		<Runtime as pallet_assets::Config<pallet_assets::Instance1>>::AssetId,
+		<Runtime as pallet_assets::Config<pallet_assets::Instance1>>::Balance,
 	>,
 	AccountIdOf<Runtime>:
 		From<polkadot_primitives::v2::AccountId> + Into<polkadot_primitives::v2::AccountId>,
 {
 	fn charge_weight_in_fungibles(
-		asset_id: <pallet_assets::Pallet<Runtime> as Inspect<AccountIdOf<Runtime>>>::AssetId,
+		asset_id: <pallet_assets::Pallet<Runtime, pallet_assets::Instance1> as Inspect<
+			AccountIdOf<Runtime>,
+		>>::AssetId,
 		weight: Weight,
-	) -> Result<<pallet_assets::Pallet<Runtime> as Inspect<AccountIdOf<Runtime>>>::Balance, XcmError>
-	{
+	) -> Result<
+		<pallet_assets::Pallet<Runtime, pallet_assets::Instance1> as Inspect<
+			AccountIdOf<Runtime>,
+		>>::Balance,
+		XcmError,
+	> {
 		let amount = WeightToFee::weight_to_fee(&weight);
 		// If the amount gotten is not at least the ED, then make it be the ED of the asset
 		// This is to avoid burning assets and decreasing the supply

@@ -6,7 +6,7 @@ use frame_support::{
 };
 use parachains_common::{AccountId, AuraId};
 pub use statemine_runtime::{
-	constants::fee::WeightToFee, xcm_config::XcmConfig, Assets, Balances, ExistentialDeposit,
+	constants::fee::WeightToFee, xcm_config::XcmConfig, TrustBackedAssets, Balances, ExistentialDeposit,
 	Runtime, SessionKeys, System,
 };
 use xcm::latest::prelude::*;
@@ -26,7 +26,7 @@ fn test_asset_xcm_trader() {
 		.execute_with(|| {
 			// We need root origin to create a sufficient asset
 			// We set existential deposit to be identical to the one for Balances first
-			assert_ok!(Assets::force_create(
+			assert_ok!(TrustBackedAssets::force_create(
 				RuntimeHelper::<Runtime>::root_origin(),
 				1,
 				AccountId::from(ALICE).into(),
@@ -35,7 +35,7 @@ fn test_asset_xcm_trader() {
 			));
 
 			// We first mint enough asset for the account to exist for assets
-			assert_ok!(Assets::mint(
+			assert_ok!(TrustBackedAssets::mint(
 				RuntimeHelper::<Runtime>::origin_of(AccountId::from(ALICE)),
 				1,
 				AccountId::from(ALICE).into(),
@@ -57,7 +57,7 @@ fn test_asset_xcm_trader() {
 				0,
 				X2(
 					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
+						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>().unwrap()
 							as u8,
 					),
 					GeneralIndex(1),
@@ -74,12 +74,12 @@ fn test_asset_xcm_trader() {
 
 			// Make sure author(Alice) has received the amount
 			assert_eq!(
-				Assets::balance(1, AccountId::from(ALICE)),
+				TrustBackedAssets::balance(1, AccountId::from(ALICE)),
 				ExistentialDeposit::get() + amount_needed
 			);
 
 			// We also need to ensure the total supply increased
-			assert_eq!(Assets::total_supply(1), ExistentialDeposit::get() + amount_needed);
+			assert_eq!(TrustBackedAssets::total_supply(1), ExistentialDeposit::get() + amount_needed);
 		});
 }
 
@@ -96,7 +96,7 @@ fn test_asset_xcm_trader_with_refund() {
 		.execute_with(|| {
 			// We need root origin to create a sufficient asset
 			// We set existential deposit to be identical to the one for Balances first
-			assert_ok!(Assets::force_create(
+			assert_ok!(TrustBackedAssets::force_create(
 				RuntimeHelper::<Runtime>::root_origin(),
 				1,
 				AccountId::from(ALICE).into(),
@@ -105,7 +105,7 @@ fn test_asset_xcm_trader_with_refund() {
 			));
 
 			// We first mint enough asset for the account to exist for assets
-			assert_ok!(Assets::mint(
+			assert_ok!(TrustBackedAssets::mint(
 				RuntimeHelper::<Runtime>::origin_of(AccountId::from(ALICE)),
 				1,
 				AccountId::from(ALICE).into(),
@@ -124,7 +124,7 @@ fn test_asset_xcm_trader_with_refund() {
 				0,
 				X2(
 					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
+						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>().unwrap()
 							as u8,
 					),
 					GeneralIndex(1),
@@ -161,12 +161,12 @@ fn test_asset_xcm_trader_with_refund() {
 			let fees_paid = WeightToFee::weight_to_fee(&Weight::from_ref_time(weight_used));
 
 			assert_eq!(
-				Assets::balance(1, AccountId::from(ALICE)),
+				TrustBackedAssets::balance(1, AccountId::from(ALICE)),
 				ExistentialDeposit::get() + fees_paid
 			);
 
 			// We also need to ensure the total supply increased
-			assert_eq!(Assets::total_supply(1), ExistentialDeposit::get() + fees_paid);
+			assert_eq!(TrustBackedAssets::total_supply(1), ExistentialDeposit::get() + fees_paid);
 		});
 }
 
@@ -183,7 +183,7 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 		.execute_with(|| {
 			// We need root origin to create a sufficient asset
 			// We set existential deposit to be identical to the one for Balances first
-			assert_ok!(Assets::force_create(
+			assert_ok!(TrustBackedAssets::force_create(
 				RuntimeHelper::<Runtime>::root_origin(),
 				1,
 				AccountId::from(ALICE).into(),
@@ -203,7 +203,7 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 				0,
 				X2(
 					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
+						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>().unwrap()
 							as u8,
 					),
 					GeneralIndex(1),
@@ -223,10 +223,10 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::TooExpensive);
 
 			// not credited since the ED is higher than this value
-			assert_eq!(Assets::balance(1, AccountId::from(ALICE)), 0);
+			assert_eq!(TrustBackedAssets::balance(1, AccountId::from(ALICE)), 0);
 
 			// We also need to ensure the total supply did not increase
-			assert_eq!(Assets::total_supply(1), 0);
+			assert_eq!(TrustBackedAssets::total_supply(1), 0);
 		});
 }
 
@@ -243,7 +243,7 @@ fn test_that_buying_ed_refund_does_not_refund() {
 		.execute_with(|| {
 			// We need root origin to create a sufficient asset
 			// We set existential deposit to be identical to the one for Balances first
-			assert_ok!(Assets::force_create(
+			assert_ok!(TrustBackedAssets::force_create(
 				RuntimeHelper::<Runtime>::root_origin(),
 				1,
 				AccountId::from(ALICE).into(),
@@ -263,7 +263,7 @@ fn test_that_buying_ed_refund_does_not_refund() {
 				0,
 				X2(
 					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
+						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>().unwrap()
 							as u8,
 					),
 					GeneralIndex(1),
@@ -296,9 +296,9 @@ fn test_that_buying_ed_refund_does_not_refund() {
 			drop(trader);
 
 			// Make sure author(Alice) has received the amount
-			assert_eq!(Assets::balance(1, AccountId::from(ALICE)), ExistentialDeposit::get());
+			assert_eq!(TrustBackedAssets::balance(1, AccountId::from(ALICE)), ExistentialDeposit::get());
 
 			// We also need to ensure the total supply increased
-			assert_eq!(Assets::total_supply(1), ExistentialDeposit::get());
+			assert_eq!(TrustBackedAssets::total_supply(1), ExistentialDeposit::get());
 		});
 }

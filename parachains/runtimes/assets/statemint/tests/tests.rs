@@ -6,7 +6,7 @@ use frame_support::{
 };
 use parachains_common::{AccountId, StatemintAuraId as AuraId};
 pub use statemint_runtime::{
-	constants::fee::WeightToFee, xcm_config::XcmConfig, Assets, Balances, ExistentialDeposit,
+	constants::fee::WeightToFee, xcm_config::XcmConfig, TrustBackedAssets, Balances, ExistentialDeposit,
 	Runtime, SessionKeys, System,
 };
 use xcm::latest::prelude::*;
@@ -26,7 +26,7 @@ fn test_asset_xcm_trader_does_not_work_in_statemine() {
 		.execute_with(|| {
 			// We need root origin to create a sufficient asset
 			// We set existential deposit to be identical to the one for Balances first
-			assert_ok!(Assets::force_create(
+			assert_ok!(TrustBackedAssets::force_create(
 				RuntimeHelper::<Runtime>::root_origin(),
 				1,
 				AccountId::from(ALICE).into(),
@@ -52,7 +52,7 @@ fn test_asset_xcm_trader_does_not_work_in_statemine() {
 				0,
 				X2(
 					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
+						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>().unwrap()
 							as u8,
 					),
 					GeneralIndex(1),
@@ -65,9 +65,9 @@ fn test_asset_xcm_trader_does_not_work_in_statemine() {
 			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::TooExpensive);
 
 			// not credited since the ED is higher than this value
-			assert_eq!(Assets::balance(1, AccountId::from(ALICE)), 0);
+			assert_eq!(TrustBackedAssets::balance(1, AccountId::from(ALICE)), 0);
 
 			// We also need to ensure the total supply did not increase
-			assert_eq!(Assets::total_supply(1), 0);
+			assert_eq!(TrustBackedAssets::total_supply(1), 0);
 		});
 }
