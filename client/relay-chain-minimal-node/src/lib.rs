@@ -22,7 +22,9 @@ use polkadot_network_bridge::{peer_sets_info, IsAuthority};
 use polkadot_node_network_protocol::{
 	peer_set::PeerSetProtocolNames,
 	request_response::{v1, IncomingRequest, IncomingRequestReceiver, ReqProtocolNames},
+	UnifiedReputationChange,
 };
+
 use polkadot_node_subsystem_util::metrics::prometheus::Registry;
 use polkadot_primitives::v2::CollatorPair;
 
@@ -45,6 +47,8 @@ mod blockchain_rpc_client;
 pub use blockchain_rpc_client::BlockChainRpcClient;
 
 const LOG_TARGET: &'static str = "polkadot-minimal-node";
+const COST_INVALID_REQUEST: UnifiedReputationChange =
+	UnifiedReputationChange::CostMajor("Received message could not be decoded.");
 
 fn build_authority_discovery_service<Block: BlockT>(
 	task_manager: &TaskManager,
@@ -206,20 +210,19 @@ fn drain_unwanted_request_channels(
 	mut pov_req_receiver: IncomingRequestReceiver<v1::PoVFetchingRequest>,
 	mut chunk_req_receiver: IncomingRequestReceiver<v1::ChunkFetchingRequest>,
 ) {
-	task_manager.spawn_handle().spawn("request-drainer", None, async move {
-
+	task_manager.spawn_handle().spawn("pov-chunk-request-drainer", None, async move {
 		loop {
 			select! {
-				pov_req = pov_req_receiver.recv(|| vec![]).fuse() => {
-					tracing::debug!(target: LOG_TARGET, "Received PoV fetching request. Since we are a collator we should not receive this.");
+				pov_req = pov_req_receiver.recv(|| vec![COST_INVALID_REQUEST]).fuse() => {
+					tracing::debug!(target: LOG_TARGET, "Received PoV fetching request. Collator should not receive this.");
 					if let Ok(request) = pov_req {
 						if let Err(err) = request.send_response(v1::PoVFetchingResponse::NoSuchPoV) {
 							tracing::debug!(target: LOG_TARGET, ?err, "Unable to answer PoV fetching request");
 						};
 					}
 				},
-				chunk_req = chunk_req_receiver.recv(|| vec![]).fuse() => {
-					tracing::debug!(target: LOG_TARGET, "Received PoV fetching request. Since we are a collator we should not receive this.");
+				chunk_req = chunk_req_receiver.recv(|| vec![COST_INVALID_REQUEST]).fuse() => {
+					tracing::debug!(target: LOG_TARGET, "Received PoV fetching request. Collators should not receive this.");
 					if let Ok(request) = chunk_req {
 						if let Err(err) = request.send_response(v1::ChunkFetchingResponse::NoSuchChunk) {
 							tracing::debug!(target: LOG_TARGET, ?err, "Unable to answer chunk fetching request");
