@@ -157,12 +157,13 @@ impl ThisChainWithMessages for BridgeHubRococo {
 	type RuntimeCall = crate::RuntimeCall;
 
 	fn is_message_accepted(origin: &Self::RuntimeOrigin, lane: &LaneId) -> bool {
-		log::info!("[BridgeHubRococo::ThisChainWithMessages] is_message_accepted - origin: {:?}, lane: {:?}", origin, lane);
+		log::info!(target: crate::LOG_TARGET, "[BridgeHubRococo::ThisChainWithMessages] is_message_accepted - origin: {:?}, lane: {:?}", origin, lane);
 		lane == &DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO
 	}
 
 	fn maximal_pending_messages_at_outbound_lane() -> MessageNonce {
 		log::info!(
+			target: crate::LOG_TARGET,
 			"[BridgeHubRococo::ThisChainWithMessages] maximal_pending_messages_at_outbound_lane"
 		);
 		MessageNonce::MAX / 2

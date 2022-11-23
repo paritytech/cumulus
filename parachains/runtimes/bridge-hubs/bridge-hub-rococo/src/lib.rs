@@ -83,6 +83,8 @@ use parachains_common::{
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
 
+pub const LOG_TARGET: &str = "runtime::bridge-hub";
+
 /// Balance of an account.
 pub type Balance = u128;
 
@@ -544,7 +546,6 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 		bp_bridge_hub_rococo::BridgeHubRococo,
 		OnBridgeHubRococoBlobDispatcher,
 	>;
-
 }
 
 /// Add XCM messages support for BrigdeHubWococo to support Wococo->Rococo XCM messages
@@ -787,9 +788,19 @@ impl_runtime_apis! {
 		}
 	}
 
-	// TODO: add here other directions
-
 	// This exposed by BridgeHubRococo
+	impl runtime_api::FromBridgeHubWococoInboundLaneApi<Block> for Runtime {
+		fn message_details(
+			lane: bp_messages::LaneId,
+			messages: Vec<(bp_messages::MessagePayload, bp_messages::OutboundMessageDetails)>,
+		) -> Vec<bp_messages::InboundMessageDetails> {
+			bridge_runtime_common::messages_api::inbound_message_details::<
+				Runtime,
+				WithBridgeHubWococoMessagesInstance,
+			>(lane, messages)
+		}
+	}
+
 	impl runtime_api::ToBridgeHubWococoOutboundLaneApi<Block> for Runtime {
 		fn message_details(
 			lane: bp_messages::LaneId,
@@ -816,10 +827,23 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl runtime_api::ToBridgeHubRococoOutboundLaneApi<Block> for Runtime {
+		fn message_details(
+			lane: bp_messages::LaneId,
+			begin: bp_messages::MessageNonce,
+			end: bp_messages::MessageNonce,
+		) -> Vec<bp_messages::OutboundMessageDetails> {
+			bridge_runtime_common::messages_api::outbound_message_details::<
+				Runtime,
+				WithBridgeHubRococoMessagesInstance,
+			>(lane, begin, end)
+		}
+	}
+
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {
 		fn on_runtime_upgrade() -> (Weight, Weight) {
-			log::info!("try-runtime::on_runtime_upgrade parachain-template.");
+			log::info!(target: LOG_TARGET, "try-runtime::on_runtime_upgrade parachain-template.");
 			let weight = Executive::try_runtime_upgrade().unwrap();
 			(weight, RuntimeBlockWeights::get().max_block)
 		}

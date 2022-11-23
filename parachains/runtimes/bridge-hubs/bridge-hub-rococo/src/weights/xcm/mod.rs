@@ -214,7 +214,12 @@ impl<Call> XcmWeightInfo<Call> for BridgeHubXcmWeight<Call> {
 		Weight::MAX.ref_time()
 	}
 	fn export_message(_: &NetworkId, _: &Junctions, _: &Xcm<()>) -> XCMWeight {
-		Weight::MAX.ref_time()
+		log::error!(
+			target: crate::LOG_TARGET,
+			"TODO: Calling weight: export_message -> triggers unpaid_execution -> need fix here!"
+		);
+		// TODO:check-parameter - add correct weight also add it to the polkadot gav-xcm-v3
+		XcmGeneric::<Runtime>::unpaid_execution().ref_time()
 	}
 	fn lock_asset(_: &MultiAsset, _: &MultiLocation) -> XCMWeight {
 		Weight::MAX.ref_time()

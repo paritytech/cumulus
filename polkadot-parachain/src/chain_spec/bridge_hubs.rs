@@ -96,7 +96,7 @@ impl BridgeHubRuntimeType {
 						"Wococo BridgeHub",
 						ChainType::Live,
 						"wococo",
-						ParaId::new(1013),
+						ParaId::new(1014),
 						None,
 						None,
 					)))
@@ -110,7 +110,7 @@ impl BridgeHubRuntimeType {
 				"Wococo BridgeHub Local",
 				ChainType::Local,
 				"wococo-local",
-				ParaId::new(1013),
+				ParaId::new(1014),
 				Some("Alice".to_string()),
 				Some("Bob".to_string()),
 			))),

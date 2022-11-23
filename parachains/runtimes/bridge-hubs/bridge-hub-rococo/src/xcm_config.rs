@@ -29,6 +29,7 @@ use frame_support::{
 };
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
+use sp_core::Get;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
@@ -41,11 +42,24 @@ use xcm_executor::{traits::ExportXcm, XcmExecutor};
 
 parameter_types! {
 	pub const RelayLocation: MultiLocation = MultiLocation::parent();
-	// TODO: hack: hardcoded Polkadot?
-	pub const RelayNetwork: NetworkId = NetworkId::Rococo;
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-	pub UniversalLocation: InteriorMultiLocation = X1(Parachain(ParachainInfo::parachain_id().into()));
+	pub UniversalLocation: InteriorMultiLocation = X2(GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into()));
+}
+
+pub struct RelayNetwork;
+impl Get<Option<NetworkId>> for RelayNetwork {
+	fn get() -> Option<NetworkId> {
+		Some(Self::get())
+	}
+}
+impl Get<NetworkId> for RelayNetwork {
+	fn get() -> NetworkId {
+		match u32::from(ParachainInfo::parachain_id()) {
+			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID => NetworkId::Rococo,
+			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID => NetworkId::Wococo,
+			para_id => unreachable!("Not supported for para_id: {}", para_id),
+		}
+	}
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -106,71 +120,6 @@ match_types! {
 		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
 	};
 }
-
-//TODO: move DenyThenTry to polkadot's xcm module.
-// /// Deny executing the xcm message if it matches any of the Deny filter regardless of anything else.
-// /// If it passes the Deny, and matches one of the Allow cases then it is let through.
-// pub struct DenyThenTry<Deny, Allow>(PhantomData<Deny>, PhantomData<Allow>)
-// where
-// 	Deny: ShouldExecute,
-// 	Allow: ShouldExecute;
-//
-// impl<Deny, Allow> ShouldExecute for DenyThenTry<Deny, Allow>
-// where
-// 	Deny: ShouldExecute,
-// 	Allow: ShouldExecute,
-// {
-// 	fn should_execute<Call>(
-// 		origin: &MultiLocation,
-// 		message: &mut Xcm<Call>,
-// 		max_weight: Weight,
-// 		weight_credit: &mut Weight,
-// 	) -> Result<(), ()> {
-// 		Deny::should_execute(origin, message, max_weight, weight_credit)?;
-// 		Allow::should_execute(origin, message, max_weight, weight_credit)
-// 	}
-// }
-
-// TODO: hacked
-// See issue #5233
-// pub struct DenyReserveTransferToRelayChain;
-// impl ShouldExecute for DenyReserveTransferToRelayChain {
-// 	fn should_execute<Call>(
-// 		origin: &MultiLocation,
-// 		message: &mut Xcm<Call>,
-// 		_max_weight: Weight,
-// 		_weight_credit: &mut Weight,
-// 	) -> Result<(), ()> {
-// 		if message.0.iter().any(|inst| {
-// 			matches!(
-// 				inst,
-// 				InitiateReserveWithdraw {
-// 					reserve: MultiLocation { parents: 1, interior: Here },
-// 					..
-// 				} | DepositReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. } |
-// 					TransferReserveAsset {
-// 						dest: MultiLocation { parents: 1, interior: Here },
-// 						..
-// 					}
-// 			)
-// 		}) {
-// 			return Err(()) // Deny
-// 		}
-//
-// 		// An unexpected reserve transfer has arrived from the Relay Chain. Generally, `IsReserve`
-// 		// should not allow this, but we just log it here.
-// 		if matches!(origin, MultiLocation { parents: 1, interior: Here }) &&
-// 			message.0.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
-// 		{
-// 			log::warn!(
-// 				target: "xcm::barriers",
-// 				"Unexpected ReserveAssetDeposited from the Relay Chain",
-// 			);
-// 		}
-// 		// Permit everything else
-// 		Ok(())
-// 	}
-// }
 
 match_types! {
 	pub type ParentOrParentsUnitPlurality: impl Contains<MultiLocation> = {

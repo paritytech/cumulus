@@ -50,6 +50,7 @@ impl<SourceBridgeHubChain: Chain, TargetBridgeHubChain: Chain, BlobDispatcher: D
 
 	fn dispatch_weight(_message: &mut DispatchMessage<Self::DispatchPayload>) -> Weight {
 		log::error!(
+			target: crate::LOG_TARGET,
 			"[XcmBlobMessageDispatch] TODO: change here to XCMv3 dispatch_weight with XcmExecutor - message: ?...?",
 		);
 		// TODO:check-parameter - setup weight?
@@ -60,11 +61,20 @@ impl<SourceBridgeHubChain: Chain, TargetBridgeHubChain: Chain, BlobDispatcher: D
 		_relayer_account: &AccountIdOf<SourceBridgeHubChain>,
 		message: DispatchMessage<Self::DispatchPayload>,
 	) -> MessageDispatchResult {
-		log::warn!("[XcmBlobMessageDispatch] DispatchBlob::dispatch_blob triggering - message_nonce: {:?}", message.key.nonce);
+		log::warn!(
+			target: crate::LOG_TARGET,
+			"[XcmBlobMessageDispatch] DispatchBlob::dispatch_blob triggering - message_nonce: {:?}",
+			message.key.nonce
+		);
 		let payload = match message.data.payload {
 			Ok(payload) => payload,
 			Err(e) => {
-				log::error!("[XcmBlobMessageDispatch] payload error: {:?} - message_nonce: {:?}", e, message.key.nonce);
+				log::error!(
+					target: crate::LOG_TARGET,
+					"[XcmBlobMessageDispatch] payload error: {:?} - message_nonce: {:?}",
+					e,
+					message.key.nonce
+				);
 				return MessageDispatchResult {
 					// TODO:check-parameter - setup uspent_weight?
 					unspent_weight: Weight::zero(),
@@ -73,7 +83,11 @@ impl<SourceBridgeHubChain: Chain, TargetBridgeHubChain: Chain, BlobDispatcher: D
 			},
 		};
 		match BlobDispatcher::dispatch_blob(payload) {
-			Ok(_) => log::debug!("[XcmBlobMessageDispatch] DispatchBlob::dispatch_blob was ok - message_nonce: {:?}", message.key.nonce),
+			Ok(_) => log::debug!(
+				target: crate::LOG_TARGET,
+				"[XcmBlobMessageDispatch] DispatchBlob::dispatch_blob was ok - message_nonce: {:?}",
+				message.key.nonce
+			),
 			Err(e) => {
 				let e = match e {
 					DispatchBlobError::Unbridgable => "DispatchBlobError::Unbridgable",
@@ -88,6 +102,7 @@ impl<SourceBridgeHubChain: Chain, TargetBridgeHubChain: Chain, BlobDispatcher: D
 					DispatchBlobError::WrongGlobal => "DispatchBlobError::WrongGlobal",
 				};
 				log::error!(
+					target: crate::LOG_TARGET,
 					"[XcmBlobMessageDispatch] DispatchBlob::dispatch_blob failed, error: {:?} - message_nonce: {:?}",
 					e, message.key.nonce
 				);
@@ -129,7 +144,7 @@ impl<H: XcmBlobHauler> HaulBlob for XcmBlobHaulerAdapter<H> {
 				hash
 			})
 			.map_err(|e| e);
-		log::info!(target: "runtime::bridge-hub", "haul_blob result: {:?} on lane: {:?}", result, lane);
+		log::info!(target: crate::LOG_TARGET, "haul_blob result: {:?} on lane: {:?}", result, lane);
 		result.expect("failed to process: TODO:check-parameter - wait for origin/gav-xcm-v3, there is a comment about handliing errors for HaulBlob");
 	}
 }
