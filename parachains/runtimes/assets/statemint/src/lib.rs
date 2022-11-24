@@ -665,7 +665,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	pallet_assets::migration::v1::MigrateToV1<Runtime>,
+	pallet_assets::migration::v2::MigrateToV2<Runtime>,
 >;
 
 #[cfg(feature = "runtime-benchmarks")]
