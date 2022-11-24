@@ -71,7 +71,7 @@ struct AssetTraderRefunder {
 	outstanding_concrete_asset: MultiAsset,
 }
 
-/// Charges for exercution in the first multiasset of those selected for fee payment
+/// Charges for execution in the first multiasset of those selected for fee payment
 /// Only succeeds for Concrete Fungible Assets
 /// First tries to convert the this MultiAsset into a local assetId
 /// Then charges for this assetId as described by FeeCharger
@@ -120,11 +120,8 @@ impl<
 
 		let weight = Weight::from_ref_time(weight);
 
-		// We take the very first multiasset from payment
-		let multiassets: MultiAssets = payment.clone().into();
-
-		// Take the first multiasset from the selected MultiAssets
-		let first = multiassets.get(0).ok_or(XcmError::AssetNotFound)?;
+		// Take the very first multiasset from from payment
+		let first = payment.assets_iter().next().ok_or(XcmError::AssetNotFound)?;
 
 		// Get the local asset id in which we can pay for fees
 		let (local_asset_id, _) =
@@ -146,7 +143,7 @@ impl<
 			.map_err(|_| XcmError::Overflow)?;
 
 		// Convert to the same kind of multiasset, with the required fungible balance
-		let required = first.id.clone().into_multiasset(asset_balance.into());
+		let required = first.id.into_multiasset(asset_balance.into());
 
 		// Substract payment
 		let unused = payment.checked_sub(required.clone()).map_err(|_| XcmError::TooExpensive)?;

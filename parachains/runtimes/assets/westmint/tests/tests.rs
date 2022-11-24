@@ -196,7 +196,7 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 			// Set Alice as block author, who will receive fees
 			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
 
-			// We are going to buy 4e9 weight
+			// We are going to buy 5e9 weight
 			let bought = 500_000_000u64;
 
 			let asset_multilocation = MultiLocation::new(
@@ -298,6 +298,73 @@ fn test_that_buying_ed_refund_does_not_refund() {
 			assert_eq!(Assets::balance(1, AccountId::from(ALICE)), ExistentialDeposit::get());
 
 			// We also need to ensure the total supply increased
+			assert_eq!(Assets::total_supply(1), ExistentialDeposit::get());
+		});
+}
+
+#[test]
+fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
+	ExtBuilder::<Runtime>::default()
+		.with_collators(vec![AccountId::from(ALICE)])
+		.with_session_keys(vec![(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+		)])
+		.build()
+		.execute_with(|| {
+			// Create a non-sufficient asset
+			// We set existential deposit to be identical to the one for Balances first
+			assert_ok!(Assets::force_create(
+				RuntimeHelper::<Runtime>::root_origin(),
+				1,
+				AccountId::from(ALICE).into(),
+				false,
+				ExistentialDeposit::get()
+			));
+
+			// We first mint enough asset for the account to exist for assets
+			assert_ok!(Assets::mint(
+				RuntimeHelper::<Runtime>::origin_of(AccountId::from(ALICE)),
+				1,
+				AccountId::from(ALICE).into(),
+				ExistentialDeposit::get()
+			));
+
+			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
+
+			// Set Alice as block author, who will receive fees
+			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
+
+			// We are going to buy 4e9 weight
+			let bought = 4_000_000_000u64;
+
+			// lets calculate amount needed
+			let amount_needed = WeightToFee::weight_to_fee(&Weight::from_ref_time(bought));
+
+			let asset_multilocation = MultiLocation::new(
+				0,
+				X2(
+					PalletInstance(
+						<Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
+							as u8,
+					),
+					GeneralIndex(1),
+				),
+			);
+
+			let asset: MultiAsset = (asset_multilocation, amount_needed).into();
+
+			// Make sure again buy_weight does return an error
+			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::TooExpensive);
+
+			// Drop trader
+			drop(trader);
+
+			// Make sure author(Alice) has NOT received the amount
+			assert_eq!(Assets::balance(1, AccountId::from(ALICE)), ExistentialDeposit::get());
+
+			// We also need to ensure the total supply NOT increased
 			assert_eq!(Assets::total_supply(1), ExistentialDeposit::get());
 		});
 }
