@@ -267,7 +267,7 @@ jobs:
         id: fix-runtime-path
         run: |
           cd "${{ matrix.runtime }}-runtime/"
-          mv "$(sed -E 's/-(.*)/_\1/' <<< ${{ matrix.runtime }})_runtime.compact.compressed.wasm" "${{ matrix.runtime }}_runtime.compact.compressed.wasm" || true
+          mv "$(sed -E 's/- */_/g' <<< ${{ matrix.runtime }})_runtime.compact.compressed.wasm" "${{ matrix.runtime }}_runtime.compact.compressed.wasm" || true
 
       - name: Upload compressed ${{ matrix.runtime }} wasm
         uses: actions/upload-release-asset@e8f9f06c4b078e705bd2ea027f0926603fc9b4d5 # v1.0.2
