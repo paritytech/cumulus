@@ -628,7 +628,7 @@ pub fn run() -> Result<()> {
 				}),
 				Runtime::ContractsRococo => runner.async_run(|config| {
 					Ok((
-						cmd.run::<Block, crates::service::ContractsRococoRuntimeExecutor>(config),
+						cmd.run::<Block, crate::service::ContractsRococoRuntimeExecutor>(config),
 						task_manager,
 					))
 				}),
