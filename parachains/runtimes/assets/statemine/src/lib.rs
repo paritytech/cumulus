@@ -471,10 +471,14 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-	type ControllerOrigin = EnsureXcm<(
-		IsMajorityOfBody<KsmLocation, ExecutiveBody>,
-		IsVoiceOfBody<KsmLocation, FellowsBodyId>,
-	)>;
+	type ControllerOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		EnsureXcm<(
+			IsMajorityOfBody<KsmLocation, ExecutiveBody>,
+			IsVoiceOfBody<KsmLocation, FellowsBodyId>,
+		)>,
+	>;
+	type ControllerOrigin = EnsureXcm;
 	type ControllerOriginConverter = xcm_config::XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
 }
