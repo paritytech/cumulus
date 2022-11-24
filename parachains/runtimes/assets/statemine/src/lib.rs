@@ -478,7 +478,6 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 			IsVoiceOfBody<KsmLocation, FellowsBodyId>,
 		)>,
 	>;
-	type ControllerOrigin = EnsureXcm;
 	type ControllerOriginConverter = xcm_config::XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
 }
