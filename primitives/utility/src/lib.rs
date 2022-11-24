@@ -120,8 +120,12 @@ impl<
 
 		let weight = Weight::from_ref_time(weight);
 
-		// Take the very first multiasset from from payment
-		let first = payment.assets_iter().next().ok_or(XcmError::AssetNotFound)?;
+		// We take the very first multiasset from payment
+		// (assets are sorted by fungibility/amount after this conversion)
+		let multiassets: MultiAssets = payment.clone().into();
+
+		// Take the first multiasset from the selected MultiAssets
+		let first = multiassets.get(0).ok_or(XcmError::AssetNotFound)?;
 
 		// Get the local asset id in which we can pay for fees
 		let (local_asset_id, _) =
@@ -143,7 +147,7 @@ impl<
 			.map_err(|_| XcmError::Overflow)?;
 
 		// Convert to the same kind of multiasset, with the required fungible balance
-		let required = first.id.into_multiasset(asset_balance.into());
+		let required = first.id.clone().into_multiasset(asset_balance.into());
 
 		// Substract payment
 		let unused = payment.checked_sub(required.clone()).map_err(|_| XcmError::TooExpensive)?;
