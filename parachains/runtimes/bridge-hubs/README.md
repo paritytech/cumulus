@@ -109,68 +109,43 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	--target-signer //Bob
 ```
 
-**2. Relay (Grandpa relay-chain) headers**
-
-**source-host/source-port** - WS-port of collator's inner RelayChain validator
-**target-host/target-port** - WS-port of BridgeHub collator
+**2. Relay relay-chain headers, parachain headers and messages**
 
 ```
-# Rococo -> Wococo
 RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
-	~/local_bridge_testing/bin/substrate-relay relay-headers rococo-to-bridge-hub-wococo \
-	--source-host localhost \
-	--source-port 9942 \
-	--target-host localhost \
-	--target-port 8945 \
-	--target-signer //Bob \
-	--target-transactions-mortality=4
-
-# Wococo -> Rococo
-RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
-	~/local_bridge_testing/bin/substrate-relay relay-headers wococo-to-bridge-hub-rococo \
-	--source-host localhost \
-	--source-port 9945 \
-	--target-host localhost \
-	--target-port 8943 \
-	--target-signer //Bob \
-	--target-transactions-mortality=4
+    ~/local_bridge_testing/bin/substrate-relay relay-headers-and-messages bridge-hub-rococo-bridge-hub-wococo \
+    --rococo-host localhost \
+    --rococo-port 9942 \
+    --bridge-hub-rococo-host localhost \
+    --bridge-hub-rococo-port 8943 \
+    --bridge-hub-rococo-signer //Charlie \
+    --wococo-headers-to-bridge-hub-rococo-signer //Bob \
+    --wococo-parachains-to-bridge-hub-rococo-signer //Bob \
+    --bridge-hub-rococo-messages-pallet-owner //Bob \
+    --bridge-hub-rococo-transactions-mortality 4 \
+    --wococo-host localhost \
+    --wococo-port 9945 \
+    --bridge-hub-wococo-host localhost \
+    --bridge-hub-wococo-port 8945 \
+    --bridge-hub-wococo-signer //Charlie \
+    --rococo-headers-to-bridge-hub-wococo-signer //Bob \
+    --rococo-parachains-to-bridge-hub-wococo-signer //Bob \
+    --bridge-hub-wococo-messages-pallet-owner //Bob \
+    --bridge-hub-wococo-transactions-mortality 4 \
+    --lane 00000001
 ```
 
-**Check parachain collators:**
+**Check relay-chain headers relaying:**
 - Rococo parachain:
-  - https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A8943#/chainstate
-  - Pallet: **bridgeWococoGrandpa**
-  - Keys: **bestFinalized()**
+	- https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A8943#/chainstate
+	- Pallet: **bridgeWococoGrandpa**
+	- Keys: **bestFinalized()**
 - Wococo parachain:
 	- https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A8945#/chainstate
 	- Pallet: **bridgeRococoGrandpa**
 	- Keys: **bestFinalized()**
 
-**3. Relay (BridgeHub parachain) headers**
-
-```
-# Rococo -> Wococo
-RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
-	~/local_bridge_testing/bin/substrate-relay relay-parachains bridge-hub-rococo-to-bridge-hub-wococo \
-	--source-host localhost \
-	--source-port 9942 \
-	--target-host localhost \
-	--target-port 8945 \
-	--target-signer //Bob \
-	--target-transactions-mortality=4
-
-# Wococo -> Rococo
-RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
-	~/local_bridge_testing/bin/substrate-relay relay-parachains bridge-hub-wococo-to-bridge-hub-rococo \
-	--source-host localhost \
-	--source-port 9945 \
-	--target-host localhost \
-	--target-port 8943 \
-	--target-signer //Bob \
-	--target-transactions-mortality=4
-```
-
-**Check parachain collators:**
+**Check parachain headers relaying:**
 - Rococo parachain:
 	- https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A8943#/chainstate
 	- Pallet: **bridgeWococoParachain**
@@ -179,36 +154,6 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	- https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A8945#/chainstate
 	- Pallet: **bridgeRococoParachain**
 	- Keys: **bestParaHeads()**
-
-**4. Relay (XCM) messages**
-
-```
-# Rococo -> Wococo
-RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
-	~/local_bridge_testing/bin/substrate-relay relay-messages bridge-hub-rococo-to-bridge-hub-wococo \
-	--source-host localhost \
-	--source-port 8943 \
-	--source-signer //Charlie \
-	--target-host localhost \
-	--target-port 8945 \
-	--target-signer //Charlie \
-	--target-transactions-mortality=4 \
-	--lane 00000002
-```
-
-```
-# Wococo -> Rococo
-RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
-	~/local_bridge_testing/bin/substrate-relay relay-messages bridge-hub-wococo-to-bridge-hub-rococo \
-	--source-host localhost \
-	--source-port 8945 \
-	--source-signer //Charlie \
-	--target-host localhost \
-	--target-port 8943 \
-	--target-signer //Charlie \
-	--target-transactions-mortality=4 \
-	--lane 00000001
-```
 
 ---
 
