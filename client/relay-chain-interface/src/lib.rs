@@ -87,24 +87,6 @@ impl From<RelayChainError> for sp_blockchain::Error {
 	}
 }
 
-impl<T> From<tokio::sync::mpsc::error::SendError<T>> for RelayChainError {
-	fn from(e: tokio::sync::mpsc::error::SendError<T>) -> Self {
-		RelayChainError::WorkerCommunicationError(format!(
-			"Unable to send message to RPC worker: {}",
-			e
-		))
-	}
-}
-
-impl From<futures::channel::oneshot::Canceled> for RelayChainError {
-	fn from(e: futures::channel::oneshot::Canceled) -> Self {
-		RelayChainError::WorkerCommunicationError(format!(
-			"Unexpected channel close on RPC worker side: {}",
-			e
-		))
-	}
-}
-
 /// Trait that provides all necessary methods for interaction between collator and relay chain.
 #[async_trait]
 pub trait RelayChainInterface: Send + Sync {

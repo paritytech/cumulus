@@ -39,7 +39,6 @@ use sp_api::RuntimeVersion;
 use sp_consensus_babe::Epoch;
 use sp_core::sp_std::collections::btree_map::BTreeMap;
 use sp_storage::StorageKey;
-use std::sync::Arc;
 pub use url::Url;
 
 const LOG_TARGET: &str = "relay-chain-rpc-client";
@@ -48,7 +47,7 @@ const LOG_TARGET: &str = "relay-chain-rpc-client";
 #[derive(Clone)]
 pub struct RelayChainRpcClient {
 	/// Websocket client to make calls
-	ws_client: Arc<ReconnectingWsClient>,
+	ws_client: ReconnectingWsClient,
 }
 
 macro_rules! rpc_params {
@@ -81,7 +80,7 @@ pub async fn create_client_and_start_worker(
 impl RelayChainRpcClient {
 	/// Initialize new RPC Client.
 	async fn new(ws_client: ReconnectingWsClient) -> RelayChainResult<Self> {
-		let client = RelayChainRpcClient { ws_client: Arc::new(ws_client) };
+		let client = RelayChainRpcClient { ws_client };
 
 		Ok(client)
 	}
