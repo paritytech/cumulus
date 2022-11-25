@@ -23,7 +23,7 @@ use cumulus_primitives_core::{
 			PvfCheckStatement, ScrapedOnChainVotes, SessionIndex, SessionInfo, ValidationCode,
 			ValidationCodeHash, ValidatorId, ValidatorIndex, ValidatorSignature,
 		},
-		CandidateHash, Hash as PHash, Header as PHeader, InboundHrmpMessage,
+		CandidateHash, Hash as RelayHash, Header as RelayHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
@@ -89,7 +89,7 @@ impl RelayChainRpcClient {
 	pub async fn call_remote_runtime_function<R: Decode>(
 		&self,
 		method_name: &str,
-		hash: PHash,
+		hash: RelayHash,
 		payload: Option<impl Encode>,
 	) -> RelayChainResult<R> {
 		let payload_bytes =
@@ -148,14 +148,14 @@ impl RelayChainRpcClient {
 	}
 
 	/// Returns information regarding the current epoch.
-	pub async fn babe_api_current_epoch(&self, at: PHash) -> Result<Epoch, RelayChainError> {
+	pub async fn babe_api_current_epoch(&self, at: RelayHash) -> Result<Epoch, RelayChainError> {
 		self.call_remote_runtime_function("BabeApi_current_epoch", at, None::<()>).await
 	}
 
 	/// Old method to fetch v1 session info.
 	pub async fn parachain_host_session_info_before_version_2(
 		&self,
-		at: PHash,
+		at: RelayHash,
 		index: SessionIndex,
 	) -> Result<Option<OldV1SessionInfo>, RelayChainError> {
 		self.call_remote_runtime_function(
@@ -169,8 +169,8 @@ impl RelayChainRpcClient {
 	/// Scrape dispute relevant from on-chain, backing votes and resolved disputes.
 	pub async fn parachain_host_on_chain_votes(
 		&self,
-		at: PHash,
-	) -> Result<Option<ScrapedOnChainVotes<PHash>>, RelayChainError> {
+		at: RelayHash,
+	) -> Result<Option<ScrapedOnChainVotes<RelayHash>>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_on_chain_votes", at, None::<()>)
 			.await
 	}
@@ -178,7 +178,7 @@ impl RelayChainRpcClient {
 	/// Returns code hashes of PVFs that require pre-checking by validators in the active set.
 	pub async fn parachain_host_pvfs_require_precheck(
 		&self,
-		at: PHash,
+		at: RelayHash,
 	) -> Result<Vec<ValidationCodeHash>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_pvfs_require_precheck", at, None::<()>)
 			.await
@@ -187,7 +187,7 @@ impl RelayChainRpcClient {
 	/// Submits a PVF pre-checking statement into the transaction pool.
 	pub async fn parachain_host_submit_pvf_check_statement(
 		&self,
-		at: PHash,
+		at: RelayHash,
 		stmt: PvfCheckStatement,
 		signature: ValidatorSignature,
 	) -> Result<(), RelayChainError> {
@@ -213,8 +213,8 @@ impl RelayChainRpcClient {
 	pub async fn state_get_read_proof(
 		&self,
 		storage_keys: Vec<StorageKey>,
-		at: Option<PHash>,
-	) -> Result<ReadProof<PHash>, RelayChainError> {
+		at: Option<RelayHash>,
+	) -> Result<ReadProof<RelayHash>, RelayChainError> {
 		let params = rpc_params!(storage_keys, at);
 		self.request("state_getReadProof", params).await
 	}
@@ -223,7 +223,7 @@ impl RelayChainRpcClient {
 	pub async fn state_get_storage(
 		&self,
 		storage_key: StorageKey,
-		at: Option<PHash>,
+		at: Option<RelayHash>,
 	) -> Result<Option<StorageData>, RelayChainError> {
 		let params = rpc_params!(storage_key, at);
 		self.request("state_getStorage", params).await
@@ -232,7 +232,7 @@ impl RelayChainRpcClient {
 	/// Get hash of the n-th block in the canon chain.
 	///
 	/// By default returns latest block hash.
-	pub async fn chain_get_head(&self, at: Option<u64>) -> Result<PHash, RelayChainError> {
+	pub async fn chain_get_head(&self, at: Option<u64>) -> Result<RelayHash, RelayChainError> {
 		let params = rpc_params!(at);
 		self.request("chain_getHead", params).await
 	}
@@ -242,7 +242,7 @@ impl RelayChainRpcClient {
 	/// should be the successor of the number of the block.
 	pub async fn parachain_host_validator_groups(
 		&self,
-		at: PHash,
+		at: RelayHash,
 	) -> Result<(Vec<Vec<ValidatorIndex>>, GroupRotationInfo), RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_validator_groups", at, None::<()>)
 			.await
@@ -251,7 +251,7 @@ impl RelayChainRpcClient {
 	/// Get a vector of events concerning candidates that occurred within a block.
 	pub async fn parachain_host_candidate_events(
 		&self,
-		at: PHash,
+		at: RelayHash,
 	) -> Result<Vec<CandidateEvent>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_candidate_events", at, None::<()>)
 			.await
@@ -260,7 +260,7 @@ impl RelayChainRpcClient {
 	/// Checks if the given validation outputs pass the acceptance criteria.
 	pub async fn parachain_host_check_validation_outputs(
 		&self,
-		at: PHash,
+		at: RelayHash,
 		para_id: ParaId,
 		outputs: CandidateCommitments,
 	) -> Result<bool, RelayChainError> {
@@ -277,9 +277,9 @@ impl RelayChainRpcClient {
 	/// data hash against an expected one and yields `None` if they're not equal.
 	pub async fn parachain_host_assumed_validation_data(
 		&self,
-		at: PHash,
+		at: RelayHash,
 		para_id: ParaId,
-		expected_hash: PHash,
+		expected_hash: RelayHash,
 	) -> Result<Option<(PersistedValidationData, ValidationCodeHash)>, RelayChainError> {
 		self.call_remote_runtime_function(
 			"ParachainHost_persisted_assumed_validation_data",
@@ -290,7 +290,7 @@ impl RelayChainRpcClient {
 	}
 
 	/// Get hash of last finalized block.
-	pub async fn chain_get_finalized_head(&self) -> Result<PHash, RelayChainError> {
+	pub async fn chain_get_finalized_head(&self) -> Result<RelayHash, RelayChainError> {
 		self.request("chain_getFinalizedHead", None).await
 	}
 
@@ -298,7 +298,7 @@ impl RelayChainRpcClient {
 	pub async fn chain_get_block_hash(
 		&self,
 		block_number: Option<polkadot_service::BlockNumber>,
-	) -> Result<Option<PHash>, RelayChainError> {
+	) -> Result<Option<RelayHash>, RelayChainError> {
 		let params = rpc_params!(block_number);
 		self.request("chain_getBlockHash", params).await
 	}
@@ -310,7 +310,7 @@ impl RelayChainRpcClient {
 	/// and the para already occupies a core.
 	pub async fn parachain_host_persisted_validation_data(
 		&self,
-		at: PHash,
+		at: RelayHash,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> Result<Option<PersistedValidationData>, RelayChainError> {
@@ -325,7 +325,7 @@ impl RelayChainRpcClient {
 	/// Get the validation code from its hash.
 	pub async fn parachain_host_validation_code_by_hash(
 		&self,
-		at: PHash,
+		at: RelayHash,
 		validation_code_hash: ValidationCodeHash,
 	) -> Result<Option<ValidationCode>, RelayChainError> {
 		self.call_remote_runtime_function(
@@ -340,14 +340,14 @@ impl RelayChainRpcClient {
 	/// Cores are either free or occupied. Free cores can have paras assigned to them.
 	pub async fn parachain_host_availability_cores(
 		&self,
-		at: PHash,
-	) -> Result<Vec<CoreState<PHash, BlockNumber>>, RelayChainError> {
+		at: RelayHash,
+	) -> Result<Vec<CoreState<RelayHash, BlockNumber>>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_availability_cores", at, None::<()>)
 			.await
 	}
 
 	/// Get runtime version
-	pub async fn runtime_version(&self, at: PHash) -> Result<RuntimeVersion, RelayChainError> {
+	pub async fn runtime_version(&self, at: RelayHash) -> Result<RuntimeVersion, RelayChainError> {
 		let params = rpc_params!(at);
 		self.request("state_getRuntimeVersion", params).await
 	}
@@ -356,7 +356,7 @@ impl RelayChainRpcClient {
 	/// This is a staging method! Do not use on production runtimes!
 	pub async fn parachain_host_staging_get_disputes(
 		&self,
-		at: PHash,
+		at: RelayHash,
 	) -> Result<Vec<(SessionIndex, CandidateHash, DisputeState<BlockNumber>)>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_staging_get_disputes", at, None::<()>)
 			.await
@@ -364,7 +364,7 @@ impl RelayChainRpcClient {
 
 	pub async fn authority_discovery_authorities(
 		&self,
-		at: PHash,
+		at: RelayHash,
 	) -> Result<Vec<sp_authority_discovery::AuthorityId>, RelayChainError> {
 		self.call_remote_runtime_function("AuthorityDiscoveryApi_authorities", at, None::<()>)
 			.await
@@ -376,7 +376,7 @@ impl RelayChainRpcClient {
 	/// and the para already occupies a core.
 	pub async fn parachain_host_validation_code(
 		&self,
-		at: PHash,
+		at: RelayHash,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> Result<Option<ValidationCode>, RelayChainError> {
@@ -391,7 +391,7 @@ impl RelayChainRpcClient {
 	/// Fetch the hash of the validation code used by a para, making the given `OccupiedCoreAssumption`.
 	pub async fn parachain_host_validation_code_hash(
 		&self,
-		at: PHash,
+		at: RelayHash,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> Result<Option<ValidationCodeHash>, RelayChainError> {
@@ -406,7 +406,7 @@ impl RelayChainRpcClient {
 	/// Get the session info for the given session, if stored.
 	pub async fn parachain_host_session_info(
 		&self,
-		at: PHash,
+		at: RelayHash,
 		index: SessionIndex,
 	) -> Result<Option<SessionInfo>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_session_info", at, Some(index))
@@ -416,8 +416,8 @@ impl RelayChainRpcClient {
 	/// Get header at specified hash
 	pub async fn chain_get_header(
 		&self,
-		hash: Option<PHash>,
-	) -> Result<Option<PHeader>, RelayChainError> {
+		hash: Option<RelayHash>,
+	) -> Result<Option<RelayHeader>, RelayChainError> {
 		let params = rpc_params!(hash);
 		self.request("chain_getHeader", params).await
 	}
@@ -426,7 +426,7 @@ impl RelayChainRpcClient {
 	/// assigned to occupied cores in `availability_cores` and `None` otherwise.
 	pub async fn parachain_host_candidate_pending_availability(
 		&self,
-		at: PHash,
+		at: RelayHash,
 		para_id: ParaId,
 	) -> Result<Option<CommittedCandidateReceipt>, RelayChainError> {
 		self.call_remote_runtime_function(
@@ -442,7 +442,7 @@ impl RelayChainRpcClient {
 	/// This can be used to instantiate a `SigningContext`.
 	pub async fn parachain_host_session_index_for_child(
 		&self,
-		at: PHash,
+		at: RelayHash,
 	) -> Result<SessionIndex, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_session_index_for_child", at, None::<()>)
 			.await
@@ -451,7 +451,7 @@ impl RelayChainRpcClient {
 	/// Get the current validators.
 	pub async fn parachain_host_validators(
 		&self,
-		at: PHash,
+		at: RelayHash,
 	) -> Result<Vec<ValidatorId>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_validators", at, None::<()>)
 			.await
@@ -462,7 +462,7 @@ impl RelayChainRpcClient {
 	pub async fn parachain_host_inbound_hrmp_channels_contents(
 		&self,
 		para_id: ParaId,
-		at: PHash,
+		at: RelayHash,
 	) -> Result<BTreeMap<ParaId, Vec<InboundHrmpMessage>>, RelayChainError> {
 		self.call_remote_runtime_function(
 			"ParachainHost_inbound_hrmp_channels_contents",
@@ -476,24 +476,24 @@ impl RelayChainRpcClient {
 	pub async fn parachain_host_dmq_contents(
 		&self,
 		para_id: ParaId,
-		at: PHash,
+		at: RelayHash,
 	) -> Result<Vec<InboundDownwardMessage>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_dmq_contents", at, Some(para_id))
 			.await
 	}
 
 	/// Get a stream of all imported relay chain headers
-	pub fn get_imported_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
+	pub fn get_imported_heads_stream(&self) -> Result<Receiver<RelayHeader>, RelayChainError> {
 		self.ws_client.get_imported_heads_stream()
 	}
 
 	/// Get a stream of new best relay chain headers
-	pub fn get_best_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
+	pub fn get_best_heads_stream(&self) -> Result<Receiver<RelayHeader>, RelayChainError> {
 		self.ws_client.get_best_heads_stream()
 	}
 
 	/// Get a stream of finalized relay chain headers
-	pub fn get_finalized_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
+	pub fn get_finalized_heads_stream(&self) -> Result<Receiver<RelayHeader>, RelayChainError> {
 		self.ws_client.get_finalized_heads_stream()
 	}
 }

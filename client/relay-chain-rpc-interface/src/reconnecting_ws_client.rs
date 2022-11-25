@@ -1,4 +1,4 @@
-use cumulus_primitives_core::relay_chain::Header as PHeader;
+use cumulus_primitives_core::relay_chain::Header as RelayHeader;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use futures::{
 	channel::{
@@ -28,9 +28,9 @@ const LOG_TARGET: &str = "reconnecting-websocket-client";
 /// Messages for communication between [`ReconnectingWsClient`] and [`ReconnectingWebsocketWorker`].
 #[derive(Debug)]
 pub enum RpcDispatcherMessage {
-	RegisterBestHeadListener(Sender<PHeader>),
-	RegisterImportListener(Sender<PHeader>),
-	RegisterFinalizationListener(Sender<PHeader>),
+	RegisterBestHeadListener(Sender<RelayHeader>),
+	RegisterImportListener(Sender<RelayHeader>),
+	RegisterFinalizationListener(Sender<RelayHeader>),
 	Request(String, Option<Vec<JsonValue>>, OneshotSender<Result<JsonValue, JsonRpseeError>>),
 }
 
@@ -88,15 +88,15 @@ impl ReconnectingWsClient {
 			.map_err(|_| RelayChainError::GenericError("Unable to deserialize value".to_string()))
 	}
 	/// Get a stream of new best relay chain headers
-	pub fn get_best_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
-		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
+	pub fn get_best_heads_stream(&self) -> Result<Receiver<RelayHeader>, RelayChainError> {
+		let (tx, rx) = futures::channel::mpsc::channel::<RelayHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
 		self.send_register_message_to_worker(RpcDispatcherMessage::RegisterBestHeadListener(tx))?;
 		Ok(rx)
 	}
 
 	/// Get a stream of finalized relay chain headers
-	pub fn get_finalized_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
-		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
+	pub fn get_finalized_heads_stream(&self) -> Result<Receiver<RelayHeader>, RelayChainError> {
+		let (tx, rx) = futures::channel::mpsc::channel::<RelayHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
 		self.send_register_message_to_worker(RpcDispatcherMessage::RegisterFinalizationListener(
 			tx,
 		))?;
@@ -104,8 +104,8 @@ impl ReconnectingWsClient {
 	}
 
 	/// Get a stream of all imported relay chain headers
-	pub fn get_imported_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
-		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
+	pub fn get_imported_heads_stream(&self) -> Result<Receiver<RelayHeader>, RelayChainError> {
+		let (tx, rx) = futures::channel::mpsc::channel::<RelayHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
 		self.send_register_message_to_worker(RpcDispatcherMessage::RegisterImportListener(tx))?;
 		Ok(rx)
 	}
@@ -130,14 +130,14 @@ struct ReconnectingWebsocketWorker {
 	self_sender: TokioSender<RpcDispatcherMessage>,
 
 	/// Senders to distribute incoming header notifications to
-	imported_header_listeners: Vec<Sender<PHeader>>,
-	finalized_header_listeners: Vec<Sender<PHeader>>,
-	best_header_listeners: Vec<Sender<PHeader>>,
+	imported_header_listeners: Vec<Sender<RelayHeader>>,
+	finalized_header_listeners: Vec<Sender<RelayHeader>>,
+	best_header_listeners: Vec<Sender<RelayHeader>>,
 }
 
 fn handle_event_distribution(
-	event: Option<Result<PHeader, JsonRpseeError>>,
-	senders: &mut Vec<Sender<PHeader>>,
+	event: Option<Result<RelayHeader, JsonRpseeError>>,
+	senders: &mut Vec<Sender<RelayHeader>>,
 ) -> Result<(), String> {
 	match event {
 		Some(Ok(header)) => {
@@ -173,9 +173,9 @@ struct ClientManager {
 }
 
 struct RelayChainSubscriptions {
-	import_subscription: Subscription<PHeader>,
-	finalized_subscription: Subscription<PHeader>,
-	best_subscription: Subscription<PHeader>,
+	import_subscription: Subscription<RelayHeader>,
+	finalized_subscription: Subscription<RelayHeader>,
+	best_subscription: Subscription<RelayHeader>,
 }
 
 /// Try to find a new RPC server to connect to.
@@ -215,7 +215,7 @@ impl ClientManager {
 	async fn get_subscriptions(&self) -> Result<RelayChainSubscriptions, JsonRpseeError> {
 		let import_subscription = self
 			.active_client
-			.subscribe::<PHeader>("chain_subscribeAllHeads", None, "chain_unsubscribeAllHeads")
+			.subscribe::<RelayHeader>("chain_subscribeAllHeads", None, "chain_unsubscribeAllHeads")
 			.await
 			.map_err(|e| {
 				tracing::error!(target: LOG_TARGET, ?e, "Unable to open subscription.");
@@ -223,7 +223,7 @@ impl ClientManager {
 			})?;
 		let best_subscription = self
 			.active_client
-			.subscribe::<PHeader>("chain_subscribeNewHeads", None, "chain_unsubscribeNewHeads")
+			.subscribe::<RelayHeader>("chain_subscribeNewHeads", None, "chain_unsubscribeNewHeads")
 			.await
 			.map_err(|e| {
 				tracing::error!(target: LOG_TARGET, ?e, "Unable to open subscription.");
@@ -231,7 +231,7 @@ impl ClientManager {
 			})?;
 		let finalized_subscription = self
 			.active_client
-			.subscribe::<PHeader>(
+			.subscribe::<RelayHeader>(
 				"chain_subscribeFinalizedHeads",
 				None,
 				"chain_unsubscribeFinalizedHeads",
