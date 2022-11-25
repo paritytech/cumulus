@@ -22,22 +22,25 @@ Every _BridgeHub_ is meant to be **_common good parachain_** with main responsib
 mkdir -p ~/local_bridge_testing/bin
 mkdir -p ~/local_bridge_testing/logs
 
+# 1. Install zombienet
+Go to: https://github.com/paritytech/zombienet/releases
+Copy the apropriate binary (zombienet-linux) from the latest release to ~/local_bridge_testing/bin
 
-# 1. Build polkadot binary
+# 2. Build polkadot binary
 git clone https://github.com/paritytech/polkadot.git
 cd polkadot
 cargo build --release
 cp target/release/polkadot ~/local_bridge_testing/bin/polkadot
 
-# 2. Build cumulus polkadot-parachain binary
+# 3. Build cumulus polkadot-parachain binary
 cd <cumulus-git-repo-dir>
 cargo build --release --locked -p polkadot-parachain@0.9.300
 cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain
 
-# 3. Build substrate-relay binary
+# 4. Build substrate-relay binary
 git clone https://github.com/paritytech/parity-bridges-common.git
 cd parity-bridges-common
-cargo build -p substrate-relay
+cargo build --release -p substrate-relay
 cp target/release/substrate-relay ~/local_bridge_testing/bin/substrate-relay
 ```
 
@@ -45,16 +48,16 @@ cp target/release/substrate-relay ~/local_bridge_testing/bin/substrate-relay
 
 ```
 # Rococo + BridgeHubWococo
-POLKADOT_BINARY_PATH=../../polkadot/target/release/polkadot \
-POLKADOT_PARACHAIN_BINARY_PATH=./target/release/polkadot-parachain \
-	./zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_rococo_local_network.toml
+POLKADOT_BINARY_PATH=~/local_bridge_testing/bin/polkadot \
+POLKADOT_PARACHAIN_BINARY_PATH=~/local_bridge_testing/bin/polkadot-parachain \
+	~/local_bridge_testing/bin/zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_rococo_local_network.toml
 ```
 
 ```
 # Wococo + BridgeHubWococo
-POLKADOT_BINARY_PATH=../../polkadot/target/release/polkadot \
-POLKADOT_PARACHAIN_BINARY_PATH=./target/release/polkadot-parachain \
-	./zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_wococo_local_network.toml
+POLKADOT_BINARY_PATH=~/local_bridge_testing/bin/polkadot \
+POLKADOT_PARACHAIN_BINARY_PATH=~/local_bridge_testing/bin/polkadot-parachain \
+	~/local_bridge_testing/bin/zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_wococo_local_network.toml
 ```
 
 ### Run chains (Rococo + BridgeHub, Wococo + BridgeHub) from `./scripts/bridges_rococo_wococo.sh`
