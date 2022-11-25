@@ -313,14 +313,14 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 		)])
 		.build()
 		.execute_with(|| {
-			// Create a non-sufficient asset
-			// We set existential deposit to be identical to the one for Balances first
+			// Create a non-sufficient asset with specific existential deposit
+			let minimum_asset_balance = 1_000_000_u128;
 			assert_ok!(Assets::force_create(
 				RuntimeHelper::<Runtime>::root_origin(),
 				1,
 				AccountId::from(ALICE).into(),
 				false,
-				ExistentialDeposit::get()
+				minimum_asset_balance
 			));
 
 			// We first mint enough asset for the account to exist for assets
@@ -328,7 +328,7 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 				RuntimeHelper::<Runtime>::origin_of(AccountId::from(ALICE)),
 				1,
 				AccountId::from(ALICE).into(),
-				ExistentialDeposit::get()
+				minimum_asset_balance
 			));
 
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
@@ -362,9 +362,9 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 			drop(trader);
 
 			// Make sure author(Alice) has NOT received the amount
-			assert_eq!(Assets::balance(1, AccountId::from(ALICE)), ExistentialDeposit::get());
+			assert_eq!(Assets::balance(1, AccountId::from(ALICE)), minimum_asset_balance);
 
 			// We also need to ensure the total supply NOT increased
-			assert_eq!(Assets::total_supply(1), ExistentialDeposit::get());
+			assert_eq!(Assets::total_supply(1), minimum_asset_balance);
 		});
 }
