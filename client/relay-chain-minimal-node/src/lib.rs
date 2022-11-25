@@ -21,8 +21,7 @@ use cumulus_relay_chain_rpc_interface::{RelayChainRpcInterface, Url};
 use polkadot_network_bridge::{peer_sets_info, IsAuthority};
 use polkadot_node_network_protocol::{
 	peer_set::PeerSetProtocolNames,
-	request_response::{v1, IncomingRequest, IncomingRequestReceiver, ReqProtocolNames},
-	UnifiedReputationChange,
+	request_response::{v1, IncomingRequest, IncomingRequestReceiver, Protocol, ReqProtocolNames},
 };
 
 use polkadot_node_subsystem_util::metrics::prometheus::Registry;
@@ -45,10 +44,6 @@ mod network;
 
 mod blockchain_rpc_client;
 pub use blockchain_rpc_client::BlockChainRpcClient;
-
-const LOG_TARGET: &'static str = "polkadot-minimal-node";
-const COST_INVALID_REQUEST: UnifiedReputationChange =
-	UnifiedReputationChange::CostMajor("Received message could not be decoded.");
 
 fn build_authority_discovery_service<Block: BlockT>(
 	task_manager: &TaskManager,
@@ -158,9 +153,8 @@ async fn new_minimal_relay_chain(
 		.extend(peer_sets_info(is_authority, &peer_set_protocol_names));
 
 	let request_protocol_names = ReqProtocolNames::new(genesis_hash, config.chain_spec.fork_id());
-	let (collation_req_receiver, available_data_req_receiver, chunk_req_receiver) =
+	let (collation_req_receiver, available_data_req_receiver) =
 		build_request_response_protocol_receivers(&request_protocol_names, &mut config);
-	drain_unwanted_request_channels(&task_manager, chunk_req_receiver);
 
 	let (network, network_starter) =
 		network::build_collator_network(network::BuildCollatorNetworkParams {
@@ -202,39 +196,12 @@ async fn new_minimal_relay_chain(
 	Ok(NewMinimalNode { task_manager, overseer_handle, network })
 }
 
-/// Usually availability-distribution subsystem handles these requests.
-/// We do not run it in this minimal node and therefore we answer
-/// that we do not have the chunk/PoV.
-fn drain_unwanted_request_channels(
-	task_manager: &TaskManager,
-	mut chunk_req_receiver: IncomingRequestReceiver<v1::ChunkFetchingRequest>,
-) {
-	task_manager.spawn_handle().spawn("chunk-request-drainer", None, async move {
-		loop {
-			if let Ok(request) = chunk_req_receiver.recv(|| vec![COST_INVALID_REQUEST]).await {
-				tracing::debug!(
-					target: LOG_TARGET,
-					"Received chunk fetching request. Collators should not receive this."
-				);
-				if let Err(err) = request.send_response(v1::ChunkFetchingResponse::NoSuchChunk) {
-					tracing::debug!(
-						target: LOG_TARGET,
-						?err,
-						"Unable to answer chunk fetching request"
-					);
-				}
-			};
-		}
-	});
-}
-
 fn build_request_response_protocol_receivers(
 	request_protocol_names: &ReqProtocolNames,
 	config: &mut Configuration,
 ) -> (
 	IncomingRequestReceiver<v1::CollationFetchingRequest>,
 	IncomingRequestReceiver<v1::AvailableDataFetchingRequest>,
-	IncomingRequestReceiver<v1::ChunkFetchingRequest>,
 ) {
 	let (collation_req_receiver, cfg) =
 		IncomingRequest::get_config_receiver(request_protocol_names);
@@ -242,7 +209,7 @@ fn build_request_response_protocol_receivers(
 	let (available_data_req_receiver, cfg) =
 		IncomingRequest::get_config_receiver(request_protocol_names);
 	config.network.request_response_protocols.push(cfg);
-	let (chunk_req_receiver, cfg) = IncomingRequest::get_config_receiver(request_protocol_names);
+	let cfg = Protocol::ChunkFetchingV1.get_outbound_only_config(request_protocol_names);
 	config.network.request_response_protocols.push(cfg);
-	(collation_req_receiver, available_data_req_receiver, chunk_req_receiver)
+	(collation_req_receiver, available_data_req_receiver)
 }
