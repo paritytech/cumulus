@@ -28,7 +28,7 @@ fn test_asset_xcm_trader() {
 			// We set existential deposit to be identical to the one for Balances first
 			assert_ok!(Assets::force_create(
 				RuntimeHelper::<Runtime>::root_origin(),
-				1,
+				1.into(),
 				AccountId::from(ALICE).into(),
 				true,
 				ExistentialDeposit::get()
@@ -37,7 +37,7 @@ fn test_asset_xcm_trader() {
 			// We first mint enough asset for the account to exist for assets
 			assert_ok!(Assets::mint(
 				RuntimeHelper::<Runtime>::origin_of(AccountId::from(ALICE)),
-				1,
+				1.into(),
 				AccountId::from(ALICE).into(),
 				ExistentialDeposit::get()
 			));
@@ -98,7 +98,7 @@ fn test_asset_xcm_trader_with_refund() {
 			// We set existential deposit to be identical to the one for Balances first
 			assert_ok!(Assets::force_create(
 				RuntimeHelper::<Runtime>::root_origin(),
-				1,
+				1.into(),
 				AccountId::from(ALICE).into(),
 				true,
 				ExistentialDeposit::get()
@@ -107,7 +107,7 @@ fn test_asset_xcm_trader_with_refund() {
 			// We first mint enough asset for the account to exist for assets
 			assert_ok!(Assets::mint(
 				RuntimeHelper::<Runtime>::origin_of(AccountId::from(ALICE)),
-				1,
+				1.into(),
 				AccountId::from(ALICE).into(),
 				ExistentialDeposit::get()
 			));
@@ -185,7 +185,7 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 			// We set existential deposit to be identical to the one for Balances first
 			assert_ok!(Assets::force_create(
 				RuntimeHelper::<Runtime>::root_origin(),
-				1,
+				1.into(),
 				AccountId::from(ALICE).into(),
 				true,
 				ExistentialDeposit::get()
@@ -245,7 +245,7 @@ fn test_that_buying_ed_refund_does_not_refund() {
 			// We set existential deposit to be identical to the one for Balances first
 			assert_ok!(Assets::force_create(
 				RuntimeHelper::<Runtime>::root_origin(),
-				1,
+				1.into(),
 				AccountId::from(ALICE).into(),
 				true,
 				ExistentialDeposit::get()

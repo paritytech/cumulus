@@ -28,7 +28,7 @@ fn test_asset_xcm_trader_does_not_work_in_statemine() {
 			// We set existential deposit to be identical to the one for Balances first
 			assert_ok!(Assets::force_create(
 				RuntimeHelper::<Runtime>::root_origin(),
-				1,
+				1.into(),
 				AccountId::from(ALICE).into(),
 				true,
 				ExistentialDeposit::get()
