@@ -47,29 +47,19 @@ cp target/release/substrate-relay ~/local_bridge_testing/bin/substrate-relay
 ### Run chains (Rococo + BridgeHub, Wococo + BridgeHub) with zombienet
 
 ```
-# Rococo + BridgeHubWococo
+# Rococo + BridgeHubRococo + Rockmine (mirroring Kusama)
 POLKADOT_BINARY_PATH=~/local_bridge_testing/bin/polkadot \
 POLKADOT_PARACHAIN_BINARY_PATH=~/local_bridge_testing/bin/polkadot-parachain \
+POLKADOT_PARACHAIN_BINARY_PATH_FOR_ROCKMINE=~/local_bridge_testing/bin/polkadot-parachain \
 	~/local_bridge_testing/bin/zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_rococo_local_network.toml
 ```
 
 ```
-# Wococo + BridgeHubWococo
+# Wococo + BridgeHubWococo + Wockmint (mirroring Polkadot)
 POLKADOT_BINARY_PATH=~/local_bridge_testing/bin/polkadot \
 POLKADOT_PARACHAIN_BINARY_PATH=~/local_bridge_testing/bin/polkadot-parachain \
+POLKADOT_PARACHAIN_BINARY_PATH_FOR_WOCKMINT=~/local_bridge_testing/bin/polkadot-parachain \
 	~/local_bridge_testing/bin/zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_wococo_local_network.toml
-```
-
-### Run chains (Rococo + BridgeHub, Wococo + BridgeHub) from `./scripts/bridges_rococo_wococo.sh`
-
-```
-./scripts/bridges_rococo_wococo.sh stop
-
-./scripts/bridges_rococo_wococo.sh start-rococo
-# TODO: check log and activate parachain manually
-
-./scripts/bridges_rococo_wococo.sh start-wococo
-# TODO: check log and activate parachain manually
 ```
 
 ### Run relayers (Rococo, Wococo)
@@ -80,14 +70,7 @@ POLKADOT_PARACHAIN_BINARY_PATH=~/local_bridge_testing/bin/polkadot-parachain \
 
 **1. Init bridges**
 
-Need to wait for parachain activation, then run:
-
-```
-./scripts/bridges_rococo_wococo.sh init-ro-wo
-./scripts/bridges_rococo_wococo.sh init-wo-ro
-```
-
-or
+Need to wait for parachain activation (start producing blocks), then run:
 
 ```
 # Rococo -> Wococo
@@ -121,7 +104,6 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
     --bridge-hub-rococo-signer //Charlie \
     --wococo-headers-to-bridge-hub-rococo-signer //Bob \
     --wococo-parachains-to-bridge-hub-rococo-signer //Bob \
-    --bridge-hub-rococo-messages-pallet-owner //Bob \
     --bridge-hub-rococo-transactions-mortality 4 \
     --wococo-host localhost \
     --wococo-port 9945 \
@@ -130,9 +112,9 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
     --bridge-hub-wococo-signer //Charlie \
     --rococo-headers-to-bridge-hub-wococo-signer //Bob \
     --rococo-parachains-to-bridge-hub-wococo-signer //Bob \
-    --bridge-hub-wococo-messages-pallet-owner //Bob \
     --bridge-hub-wococo-transactions-mortality 4 \
-    --lane 00000001
+    --lane 00000001 \
+    --lane 00000002
 ```
 
 **Check relay-chain headers relaying:**
@@ -175,21 +157,3 @@ all into one.
 Now we use `master` branch, but in future, it could change to some release branch/tag.
 
 Original `./bridges/Cargo.toml` was renamed to `./bridges/Cargo.toml_removed_for_bridges_subtree_feature` to avoid confusion for `Cargo` having multiple workspaces.
-
-----
-
-###### TODO: fix zombienet ports as bridges_rococo_wococo.sh, because networks colide and interfere by default, because of autodiscovery on localhost
-
-###### Run chains (Rococo + BridgeHub, Wococo + BridgeHub) with Zombienet
-
-```
-# Rococo
-POLKADOT_BINARY_PATH=~/local_bridge_testing/bin/polkadot \
-	POLKADOT_PARACHAIN_BINARY_PATH=~/local_bridge_testing/bin/polkadot-parachain \
-	~/local_bridge_testing/bin/zombienet-linux --provider native spawn ./zombienet_tests/0004-run_bridge_hubs_rococo.toml
-
-# Wococo
-POLKADOT_BINARY_PATH=~/local_bridge_testing/bin/polkadot \
-	POLKADOT_PARACHAIN_BINARY_PATH=~/local_bridge_testing/bin/polkadot-parachain \
-	~/local_bridge_testing/bin/zombienet-linux --provider native spawn ./zombienet_tests/0004-run_bridge_hubs_wococo.toml
-```
