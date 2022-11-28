@@ -77,12 +77,14 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 parameter_types! {
+	// TODO: change to meassured weights - https://github.com/paritytech/parity-bridges-common/issues/391
 	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
 	pub UnitWeightCost: u64 = 1_000_000_000;
 	pub const MaxInstructions: u32 = 100;
 }
 
 match_types! {
+	// TODO: map gov2 origins here - after merge https://github.com/paritytech/cumulus/pull/1895
 	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
@@ -122,6 +124,7 @@ impl xcm_executor::Config for XcmConfig {
 	type IsTeleporter = ConcreteNativeAssetFrom<KsmRelayLocation>;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
+	// TODO: change to meassured weights - https://github.com/paritytech/parity-bridges-common/issues/391
 	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 	type Trader =
 		UsingComponents<WeightToFee, KsmRelayLocation, AccountId, Balances, ToAuthor<Runtime>>;
@@ -156,6 +159,7 @@ impl pallet_xcm::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
 	type XcmReserveTransferFilter = Nothing; // This parachain is not meant as a reserve location.
+	// TODO: change to meassured weights - https://github.com/paritytech/parity-bridges-common/issues/391
 	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type RuntimeOrigin = RuntimeOrigin;
