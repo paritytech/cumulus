@@ -15,6 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use cumulus_primitives_core::ParaId;
+use parachains_common::Balance as BridgeHubBalance;
 use sc_chain_spec::ChainSpec;
 use sc_cli::RuntimeVersion;
 use std::{path::PathBuf, str::FromStr};
@@ -158,7 +159,7 @@ fn ensure_id(id: &str) -> Result<&str, String> {
 
 /// Sub-module for Rococo setup
 pub mod rococo {
-	use super::ParaId;
+	use super::{BridgeHubBalance, ParaId};
 	use crate::chain_spec::{
 		get_account_id_from_seed, get_collator_keys_from_seed, Extensions, SAFE_XCM_VERSION,
 	};
@@ -169,7 +170,7 @@ pub mod rococo {
 	pub(crate) const BRIDGE_HUB_ROCOCO: &str = "bridge-hub-rococo";
 	pub(crate) const BRIDGE_HUB_ROCOCO_LOCAL: &str = "bridge-hub-rococo-local";
 	pub(crate) const BRIDGE_HUB_ROCOCO_DEVELOPMENT: &str = "bridge-hub-rococo-dev";
-	const BRIDGE_HUB_ROCOCO_ED: bridge_hub_rococo_runtime::Balance =
+	const BRIDGE_HUB_ROCOCO_ED: BridgeHubBalance =
 		bridge_hub_rococo_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 	/// Specialized `ChainSpec` for the normal parachain runtime.
@@ -374,7 +375,7 @@ pub mod wococo {
 
 /// Sub-module for Kusama setup (reuses stuff from Rococo)
 pub mod kusama {
-	use super::ParaId;
+	use super::{BridgeHubBalance, ParaId};
 	use crate::chain_spec::{
 		get_account_id_from_seed, get_collator_keys_from_seed, Extensions, SAFE_XCM_VERSION,
 	};
@@ -385,7 +386,7 @@ pub mod kusama {
 	pub(crate) const BRIDGE_HUB_KUSAMA: &str = "bridge-hub-kusama";
 	pub(crate) const BRIDGE_HUB_KUSAMA_LOCAL: &str = "bridge-hub-kusama-local";
 	pub(crate) const BRIDGE_HUB_KUSAMA_DEVELOPMENT: &str = "bridge-hub-kusama-dev";
-	const BRIDGE_HUB_KUSAMA_ED: bridge_hub_kusama_runtime::Balance =
+	const BRIDGE_HUB_KUSAMA_ED: BridgeHubBalance =
 		bridge_hub_kusama_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 	/// Specialized `ChainSpec` for the normal parachain runtime.
