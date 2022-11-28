@@ -21,6 +21,11 @@ pub mod currency {
 	pub const EXISTENTIAL_DEPOSIT: Balance = constants::currency::EXISTENTIAL_DEPOSIT / 10;
 
 	pub const CENTS: Balance = constants::currency::CENTS;
+
+	pub const fn deposit(items: u32, bytes: u32) -> Balance {
+		// map to 1/100 of what the rococo relay chain charges
+		constants::currency::deposit(items, bytes) / 100
+	}
 }
 
 pub mod fee {
