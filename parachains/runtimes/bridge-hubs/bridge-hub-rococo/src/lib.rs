@@ -71,8 +71,8 @@ use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 // XCM Imports
 use parachains_common::{
-	AccountId, Balance, BlockNumber, Header, Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, HOURS,
-	MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
+	opaque, AccountId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
