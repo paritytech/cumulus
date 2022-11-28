@@ -32,7 +32,7 @@ fn test_asset_xcm_trader() {
 			let local_asset_id = 1;
 			assert_ok!(Assets::force_create(
 				RuntimeHelper::<Runtime>::root_origin(),
-				local_asset_id,
+				local_asset_id.into(),
 				AccountId::from(ALICE).into(),
 				true,
 				minimum_asset_balance
@@ -41,7 +41,7 @@ fn test_asset_xcm_trader() {
 			// We first mint enough asset for the account to exist for assets
 			assert_ok!(Assets::mint(
 				RuntimeHelper::<Runtime>::origin_of(AccountId::from(ALICE)),
-				local_asset_id,
+				local_asset_id.into(),
 				AccountId::from(ALICE).into(),
 				minimum_asset_balance
 			));
@@ -336,7 +336,7 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 			let minimum_asset_balance = 1_000_000_u128;
 			assert_ok!(Assets::force_create(
 				RuntimeHelper::<Runtime>::root_origin(),
-				1,
+				1.into(),
 				AccountId::from(ALICE).into(),
 				false,
 				minimum_asset_balance
@@ -345,7 +345,7 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 			// We first mint enough asset for the account to exist for assets
 			assert_ok!(Assets::mint(
 				RuntimeHelper::<Runtime>::origin_of(AccountId::from(ALICE)),
-				1,
+				1.into(),
 				AccountId::from(ALICE).into(),
 				minimum_asset_balance
 			));
