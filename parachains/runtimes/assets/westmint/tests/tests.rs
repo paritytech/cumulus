@@ -82,7 +82,7 @@ fn test_asset_xcm_trader() {
 			// Lets buy_weight and make sure buy_weight does not return an error
 			match trader.buy_weight(bought, asset.into()) {
 				Ok(unused_assets) => {
-					// Check if return correct unused assets
+					// Check whether a correct amount of unused assets is returned
 					assert_ok!(unused_assets
 						.ensure_contains(&(asset_multilocation, asset_amount_extra).into()));
 				},
