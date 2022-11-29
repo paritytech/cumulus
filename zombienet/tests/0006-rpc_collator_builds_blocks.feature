@@ -18,3 +18,9 @@ dave: reports block height is at least 12 within 250 seconds
 eve: reports block height is at least 12 within 250 seconds
 one: pause
 dave: reports block height is at least 20 within 200 seconds
+one: resume
+sleep 10
+two: pause
+three: pause
+dave: is up
+dave: reports block height is at least 30 within 200 seconds
