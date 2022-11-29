@@ -162,6 +162,12 @@ pub type Barrier = DenyThenTry<
 	),
 >;
 
+pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<
+	Runtime,
+	WeightToFee,
+	pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
+>;
+
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
 	type RuntimeCall = RuntimeCall;
@@ -184,16 +190,7 @@ impl xcm_executor::Config for XcmConfig {
 		UsingComponents<WeightToFee, KsmLocation, AccountId, Balances, ToStakingPot<Runtime>>,
 		cumulus_primitives_utility::TakeFirstAssetTrader<
 			AccountId,
-			AssetFeeAsExistentialDepositMultiplier<
-				Runtime,
-				WeightToFee,
-				pallet_assets::BalanceToAssetBalance<
-					Balances,
-					Runtime,
-					ConvertInto,
-					TrustBackedAssetsInstance,
-				>,
-			>,
+			AssetFeeAsExistentialDepositMultiplierFeeCharger,
 			ConvertedConcreteAssetId<
 				AssetIdForTrustBackedAssets,
 				Balance,
