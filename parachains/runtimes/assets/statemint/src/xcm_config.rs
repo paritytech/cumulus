@@ -16,7 +16,7 @@
 use super::{
 	AccountId, AssetIdForTrustBackedAssets, Authorship, Balance, Balances, ParachainInfo,
 	ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
-	TrustBackedAssets, WeightToFee, XcmpQueue,
+	TrustBackedAssets, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -165,7 +165,7 @@ pub type Barrier = DenyThenTry<
 pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<
 	Runtime,
 	WeightToFee,
-	pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
+	pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, TrustBackedAssetsInstance>,
 >;
 
 pub struct XcmConfig;
@@ -192,12 +192,12 @@ impl xcm_executor::Config for XcmConfig {
 			AccountId,
 			AssetFeeAsExistentialDepositMultiplierFeeCharger,
 			ConvertedConcreteAssetId<
-				AssetId,
+				AssetIdForTrustBackedAssets,
 				Balance,
-				AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>,
+				AsPrefixedGeneralIndex<TrustBackedAssetsPalletLocation, AssetIdForTrustBackedAssets, JustTry>,
 				JustTry,
 			>,
-			Assets,
+			TrustBackedAssets,
 			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
 				FungiblesTransactor,
 				AccountId,
