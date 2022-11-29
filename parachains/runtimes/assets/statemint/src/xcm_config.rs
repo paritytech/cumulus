@@ -187,7 +187,7 @@ impl xcm_executor::Config for XcmConfig {
 		cumulus_primitives_utility::TakeFirstAssetTrader<
 			AccountId,
 			AssetFeeAsExistentialDepositMultiplierFeeCharger,
-			ConvertedConcreteAssetId<
+			ConvertedConcreteId<
 				AssetId,
 				Balance,
 				AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>,
