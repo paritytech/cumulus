@@ -111,7 +111,7 @@ struct AssetTraderRefunder {
 	outstanding_concrete_asset: MultiAsset,
 }
 
-/// Charges for exercution in the first multiasset of those selected for fee payment
+/// Charges for execution in the first multiasset of those selected for fee payment
 /// Only succeeds for Concrete Fungible Assets
 /// First tries to convert the this MultiAsset into a local assetId
 /// Then charges for this assetId as described by FeeCharger
@@ -159,6 +159,7 @@ impl<
 		}
 
 		// We take the very first multiasset from payment
+		// (assets are sorted by fungibility/amount after this conversion)
 		let multiassets: MultiAssets = payment.clone().into();
 
 		// Take the first multiasset from the selected MultiAssets
