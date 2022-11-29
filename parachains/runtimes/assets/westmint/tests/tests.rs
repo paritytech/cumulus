@@ -51,8 +51,8 @@ fn test_asset_xcm_trader() {
 				0,
 				X2(
 					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>().unwrap()
-							as u8,
+						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>()
+							.unwrap() as u8,
 					),
 					GeneralIndex(local_asset_id.into()),
 				),
@@ -99,7 +99,10 @@ fn test_asset_xcm_trader() {
 			);
 
 			// We also need to ensure the total supply increased
-			assert_eq!(TrustBackedAssets::total_supply(1), minimum_asset_balance + asset_amount_needed);
+			assert_eq!(
+				TrustBackedAssets::total_supply(1),
+				minimum_asset_balance + asset_amount_needed
+			);
 		});
 }
 
@@ -368,8 +371,8 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 				0,
 				X2(
 					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>().unwrap()
-							as u8,
+						<Runtime as frame_system::Config>::PalletInfo::index::<TrustBackedAssets>()
+							.unwrap() as u8,
 					),
 					GeneralIndex(1),
 				),
@@ -384,7 +387,10 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 			drop(trader);
 
 			// Make sure author(Alice) has NOT received the amount
-			assert_eq!(TrustBackedAssets::balance(1, AccountId::from(ALICE)), minimum_asset_balance);
+			assert_eq!(
+				TrustBackedAssets::balance(1, AccountId::from(ALICE)),
+				minimum_asset_balance
+			);
 
 			// We also need to ensure the total supply NOT increased
 			assert_eq!(TrustBackedAssets::total_supply(1), minimum_asset_balance);

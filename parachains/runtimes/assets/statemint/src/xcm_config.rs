@@ -194,7 +194,11 @@ impl xcm_executor::Config for XcmConfig {
 			ConvertedConcreteAssetId<
 				AssetIdForTrustBackedAssets,
 				Balance,
-				AsPrefixedGeneralIndex<TrustBackedAssetsPalletLocation, AssetIdForTrustBackedAssets, JustTry>,
+				AsPrefixedGeneralIndex<
+					TrustBackedAssetsPalletLocation,
+					AssetIdForTrustBackedAssets,
+					JustTry,
+				>,
 				JustTry,
 			>,
 			TrustBackedAssets,
