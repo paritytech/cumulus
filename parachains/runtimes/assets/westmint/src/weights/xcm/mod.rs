@@ -123,7 +123,7 @@ impl<Call> XcmWeightInfo<Call> for WestmintXcmWeight<Call> {
 		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_reserve_asset())
 	}
 	fn exchange_asset(_give: &MultiAssetFilter, _receive: &MultiAssets, _maximal: &bool) -> Weight {
-		Weight::MAX.ref_time()
+		Weight::MAX
 	}
 	fn initiate_reserve_withdraw(
 		assets: &MultiAssetFilter,
