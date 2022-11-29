@@ -550,7 +550,7 @@ impl pallet_asset_tx_payment::Config for Runtime {
 			ConvertInto,
 			TrustBackedAssetsInstance,
 		>,
-		AssetsToBlockAuthor<Runtime>,
+		AssetsToBlockAuthor<Runtime, TrustBackedAssetsInstance>,
 	>;
 }
 
