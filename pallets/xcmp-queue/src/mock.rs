@@ -117,7 +117,7 @@ impl cumulus_pallet_parachain_system::Config for Test {
 parameter_types! {
 	pub const RelayChain: MultiLocation = MultiLocation::parent();
 	pub UniversalLocation: InteriorMultiLocation = X1(Parachain(1u32.into())).into();
-	pub UnitWeightCost: u64 = 1_000_000;
+	pub UnitWeightCost: Weight = Weight::from_parts(1_000_000, 1024);
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
 }
