@@ -46,6 +46,7 @@ fn bad_message_is_handled() {
 		XcmpQueue::process_xcmp_message(
 			1000.into(),
 			(1, format),
+			&mut 0,
 			Weight::from_ref_time(10_000_000_000),
 			Weight::from_ref_time(10_000_000_000),
 		);
@@ -69,6 +70,7 @@ fn handle_blob_message() {
 		XcmpQueue::process_xcmp_message(
 			1000.into(),
 			(1, format),
+			&mut 0,
 			Weight::from_ref_time(10_000_000_000),
 			Weight::from_ref_time(10_000_000_000),
 		);
@@ -86,6 +88,7 @@ fn handle_invalid_data() {
 		XcmpQueue::process_xcmp_message(
 			1000.into(),
 			(1, format),
+			&mut 0,
 			Weight::from_ref_time(10_000_000_000),
 			Weight::from_ref_time(10_000_000_000),
 		);
@@ -96,7 +99,7 @@ fn handle_invalid_data() {
 fn service_overweight_unknown() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(
-			XcmpQueue::service_overweight(RuntimeOrigin::root(), 0, 1000),
+			XcmpQueue::service_overweight(RuntimeOrigin::root(), 0, Weight::from_parts(1000, 1000)),
 			Error::<Test>::BadOverweightIndex,
 		);
 	});
@@ -109,7 +112,7 @@ fn service_overweight_bad_xcm_format() {
 		Overweight::<Test>::insert(0, (ParaId::from(1000), 0, bad_xcm));
 
 		assert_noop!(
-			XcmpQueue::service_overweight(RuntimeOrigin::root(), 0, 1000),
+			XcmpQueue::service_overweight(RuntimeOrigin::root(), 0, Weight::from_parts(1000, 1000)),
 			Error::<Test>::BadXcm
 		);
 	});
@@ -187,9 +190,15 @@ fn update_threshold_weight_works() {
 	new_test_ext().execute_with(|| {
 		let data: QueueConfigData = <QueueConfig<Test>>::get();
 		assert_eq!(data.threshold_weight, Weight::from_ref_time(100_000));
-		assert_ok!(XcmpQueue::update_threshold_weight(RuntimeOrigin::root(), 10_000));
+		assert_ok!(XcmpQueue::update_threshold_weight(
+			RuntimeOrigin::root(),
+			Weight::from_ref_time(10_000)
+		));
 		assert_noop!(
-			XcmpQueue::update_threshold_weight(RuntimeOrigin::signed(5), 10_000_000),
+			XcmpQueue::update_threshold_weight(
+				RuntimeOrigin::signed(5),
+				Weight::from_ref_time(10_000_000),
+			),
 			BadOrigin
 		);
 		let data: QueueConfigData = <QueueConfig<Test>>::get();
