@@ -189,6 +189,7 @@ impl xcm_executor::Config for XcmConfig {
 					ConvertInto,
 					TrustBackedAssetsInstance,
 				>,
+				TrustBackedAssetsInstance,
 			>,
 			ConvertedConcreteId<
 				AssetId,

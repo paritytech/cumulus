@@ -249,6 +249,19 @@ impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 	type Helper = ();
 }
 
+// This is frustrating...
+// use pallet_assets::BenchmarkHelper;
+// pub struct XcmBenchmarkHelper;
+// #[cfg(feature = "runtime-benchmarks")]
+// impl<AssetId: From<MultiLocationForAssetId>> BenchmarkHelper<AssetId> for XcmBenchmarkHelper {
+// 	fn create_asset_id(id: u32) -> AssetId {
+// 		match id {
+// 			x => MultiLocationForAssetId { parents: 1, interior: X1(Parachain(x)) },
+// 			_ => MultiLocationForAssetId { parents: 0, interior: Here },
+// 		}
+// 	}
+// }
+
 /// Assets managed by some foreign location.
 type ForeignAssetsInstance = pallet_assets::Instance2;
 impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
