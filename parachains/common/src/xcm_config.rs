@@ -76,34 +76,35 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 /// A `ChargeFeeInFungibles` implementation that converts the output of
 /// a given WeightToFee implementation an amount charged in
 /// a particular assetId from pallet-assets
-pub struct AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceConverter>(
-	PhantomData<(Runtime, WeightToFee, BalanceConverter)>,
-);
-impl<CurrencyBalance, Runtime, WeightToFee, BalanceConverter>
+pub struct AssetFeeAsExistentialDepositMultiplier<
+	Runtime,
+	WeightToFee,
+	BalanceConverter,
+	AssetInstance: 'static,
+>(PhantomData<(Runtime, WeightToFee, BalanceConverter, AssetInstance)>);
+impl<CurrencyBalance, Runtime, WeightToFee, BalanceConverter, AssetInstance>
 	cumulus_primitives_utility::ChargeWeightInFungibles<
 		AccountIdOf<Runtime>,
-		pallet_assets::Pallet<Runtime, pallet_assets::Instance1>,
-	> for AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceConverter>
+		pallet_assets::Pallet<Runtime, AssetInstance>,
+	> for AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceConverter, AssetInstance>
 where
-	Runtime: pallet_assets::Config<pallet_assets::Instance1>,
+	Runtime: pallet_assets::Config<AssetInstance>,
 	WeightToFee: WeightToFeePolynomial<Balance = CurrencyBalance>,
 	BalanceConverter: BalanceConversion<
 		CurrencyBalance,
-		<Runtime as pallet_assets::Config<pallet_assets::Instance1>>::AssetId,
-		<Runtime as pallet_assets::Config<pallet_assets::Instance1>>::Balance,
+		<Runtime as pallet_assets::Config<AssetInstance>>::AssetId,
+		<Runtime as pallet_assets::Config<AssetInstance>>::Balance,
 	>,
 	AccountIdOf<Runtime>:
 		From<polkadot_primitives::v2::AccountId> + Into<polkadot_primitives::v2::AccountId>,
 {
 	fn charge_weight_in_fungibles(
-		asset_id: <pallet_assets::Pallet<Runtime, pallet_assets::Instance1> as Inspect<
+		asset_id: <pallet_assets::Pallet<Runtime, AssetInstance> as Inspect<
 			AccountIdOf<Runtime>,
 		>>::AssetId,
 		weight: Weight,
 	) -> Result<
-		<pallet_assets::Pallet<Runtime, pallet_assets::Instance1> as Inspect<
-			AccountIdOf<Runtime>,
-		>>::Balance,
+		<pallet_assets::Pallet<Runtime, AssetInstance> as Inspect<AccountIdOf<Runtime>>>::Balance,
 		XcmError,
 	> {
 		let amount = WeightToFee::weight_to_fee(&weight);
