@@ -71,7 +71,7 @@ where
 
 /// A `HandleCredit` implementation that naively transfers the fees to the block author.
 /// Will drop and burn the assets in case the transfer fails.
-pub struct AssetsToBlockAuthor<R, I = ()>(PhantomData<(R, I)>);
+pub struct AssetsToBlockAuthor<R, I>(PhantomData<(R, I)>);
 impl<R, I> HandleCredit<AccountIdOf<R>, pallet_assets::Pallet<R, I>> for AssetsToBlockAuthor<R>
 where
 	I: 'static,
