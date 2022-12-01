@@ -5,6 +5,7 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 
 [dependencies]
+async-trait = "0.1.59"
 parking_lot = "0.12.1"
 
 # Substrate

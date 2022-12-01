@@ -21,6 +21,7 @@ use polkadot_node_network_protocol::PeerId;
 use sc_network::{NetworkService, SyncState};
 
 use sc_client_api::HeaderBackend;
+use sc_consensus::{BlockImportError, BlockImportStatus, JustificationSyncLink, Link};
 use sc_network_common::{
 	config::{
 		NonDefaultSetConfig, NonReservedPeerMode, NotificationHandshake, ProtocolId, SetConfig,
@@ -29,14 +30,12 @@ use sc_network_common::{
 	service::NetworkSyncForkRequest,
 	sync::{
 		message::{BlockAnnouncesHandshake, BlockRequest},
-		Metrics, SyncStatus,
+		BadPeer, Metrics, OnBlockData, PollBlockAnnounceValidation, SyncStatus,
 	},
 };
 use sc_network_light::light_client_requests;
 use sc_network_sync::{block_request_handler, state_request_handler};
 use sc_service::{error::Error, Configuration, NetworkStarter, SpawnTaskHandle};
-use sp_consensus::BlockOrigin;
-use sp_runtime::Justifications;
 
 use std::{iter, sync::Arc};
 
@@ -92,7 +91,6 @@ pub(crate) fn build_collator_network(
 		chain_sync: Box::new(chain_sync),
 		network_config: config.network.clone(),
 		chain: client.clone(),
-		import_queue: Box::new(DummyImportQueue),
 		protocol_id,
 		metrics_registry: config.prometheus_config.as_ref().map(|config| config.registry.clone()),
 		block_announce_config,
@@ -324,12 +322,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		std::task::Poll::Pending
 	}
 
-	fn peer_disconnected(
-		&mut self,
-		_who: &PeerId,
-	) -> Option<sc_network_common::sync::OnBlockData<B>> {
-		None
-	}
+	fn peer_disconnected(&mut self, _who: &PeerId) {}
 
 	fn metrics(&self) -> sc_network_common::sync::Metrics {
 		Metrics {
@@ -355,7 +348,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 	fn poll(
 		&mut self,
 		_cx: &mut std::task::Context,
-	) -> std::task::Poll<sc_network_common::sync::PollResult<B>> {
+	) -> std::task::Poll<PollBlockAnnounceValidation<B::Header>> {
 		std::task::Poll::Pending
 	}
 
@@ -366,37 +359,39 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 	fn num_active_peers(&self) -> usize {
 		0
 	}
-}
 
-struct DummyImportQueue;
-
-impl sc_service::ImportQueue<Block> for DummyImportQueue {
-	fn import_blocks(
-		&mut self,
-		_origin: BlockOrigin,
-		_blocks: Vec<sc_consensus::IncomingBlock<Block>>,
-	) {
-	}
-
-	fn import_justifications(
-		&mut self,
-		_who: PeerId,
-		_hash: Hash,
-		_number: NumberFor<Block>,
-		_justifications: Justifications,
-	) {
-	}
-
-	fn poll_actions(
-		&mut self,
-		_cx: &mut futures::task::Context,
-		_link: &mut dyn sc_consensus::import_queue::Link<Block>,
-	) {
-	}
+	fn process_block_response_data(&mut self, _blocks_to_import: Result<OnBlockData<B>, BadPeer>) {}
 }
 
 struct DummyChainSyncService<B>(std::marker::PhantomData<B>);
 
 impl<B: BlockT> NetworkSyncForkRequest<B::Hash, NumberFor<B>> for DummyChainSyncService<B> {
 	fn set_sync_fork_request(&self, _peers: Vec<PeerId>, _hash: B::Hash, _number: NumberFor<B>) {}
+}
+
+impl<B: BlockT> JustificationSyncLink<B> for DummyChainSyncService<B> {
+	fn request_justification(&self, _hash: &B::Hash, _number: NumberFor<B>) {}
+
+	fn clear_justification_requests(&self) {}
+}
+
+impl<B: BlockT> Link<B> for DummyChainSyncService<B> {
+	fn blocks_processed(
+		&mut self,
+		_imported: usize,
+		_count: usize,
+		_results: Vec<(Result<BlockImportStatus<NumberFor<B>>, BlockImportError>, B::Hash)>,
+	) {
+	}
+
+	fn justification_imported(
+		&mut self,
+		_who: PeerId,
+		_hash: &B::Hash,
+		_number: NumberFor<B>,
+		_success: bool,
+	) {
+	}
+
+	fn request_justification(&mut self, _hash: &B::Hash, _number: NumberFor<B>) {}
 }
