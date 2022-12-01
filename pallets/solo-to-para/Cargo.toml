@@ -10,14 +10,14 @@ codec = { package = "parity-scale-codec", version = "3.0.0", default-features = 
 scale-info = { version = "2.2.0", default-features = false, features = ["derive"] }
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33" }
-pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33-asset-destroy" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33-asset-destroy" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33-asset-destroy" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33-asset-destroy" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33-asset-destroy" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.33" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.33-asset-destroy" }
 
 # Cumulus
 cumulus-pallet-parachain-system = { default-features = false, path = "../parachain-system" }

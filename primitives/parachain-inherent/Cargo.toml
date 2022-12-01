@@ -11,15 +11,15 @@ scale-info = { version = "2.3.0", default-features = false, features = ["derive"
 tracing = { version = "0.1.37", optional = true }
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.33" }
-sp-api = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.33" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.33" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.33" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33" }
-sp-storage = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.33" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.33-asset-destroy" }
+sp-api = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.33-asset-destroy" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33-asset-destroy" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33-asset-destroy" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.33-asset-destroy" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.33-asset-destroy" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33-asset-destroy" }
+sp-storage = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.33-asset-destroy" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.33-asset-destroy" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../core", default-features = false }
