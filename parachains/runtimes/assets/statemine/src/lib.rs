@@ -321,7 +321,7 @@ impl Default for ProxyType {
 		Self::Any
 	}
 }
-type TrustBackedAssetsCall = pallet_assets::Call<Runtime, frame_support::instances::Instance1>;
+type TrustBackedAssetsCall = pallet_assets::Call<Runtime, TrustBackedAssetsInstance>;
 impl InstanceFilter<RuntimeCall> for ProxyType {
 	fn filter(&self, c: &RuntimeCall) -> bool {
 		match self {
@@ -533,7 +533,7 @@ impl pallet_asset_tx_payment::Config for Runtime {
 			ConvertInto,
 			TrustBackedAssetsInstance,
 		>,
-		AssetsToBlockAuthor<Runtime>,
+		AssetsToBlockAuthor<Runtime, TrustBackedAssetsInstance>,
 	>;
 }
 

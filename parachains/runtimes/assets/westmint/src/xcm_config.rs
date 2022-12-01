@@ -57,6 +57,16 @@ parameter_types! {
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
+// This is frustrating...
+// use pallet_assets::BenchmarkHelper;
+// pub struct XcmBenchmarkHelper;
+// #[cfg(feature = "runtime-benchmarks")]
+// impl<MultiLocation: From<u32>> BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
+// 	fn create_asset_id(id: u32) -> MultiLocation {
+// 		(Parent, Parachain(id)).into()
+// 	}
+// }
+
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
 /// when determining ownership of accounts for asset transacting and when attempting to use XCM
 /// `Transact` in order to determine the dispatch Origin.
