@@ -69,7 +69,8 @@ build-test-parachain:
         cd ..;
       done
 
-# DAG: build-runtime-assets -> build-runtime-collectives -> build-runtime-bridge-hubs -> build-runtime-contracts
+# DAG: build-runtime-assets -> build-runtime-collectives -> build-runtime-bridge-hubs
+# DAG: build-runtime-assets -> build-runtime-collectives -> build-runtime-contracts
 # DAG: build-runtime-assets -> build-runtime-starters -> build-runtime-testing
 build-runtime-assets:
   <<: *build-runtime-template
