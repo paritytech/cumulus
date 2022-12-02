@@ -319,16 +319,14 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::add_invulnerable())]
 		pub fn add_invulnerable(
 			origin: OriginFor<T>,
-			new: <T>::AccountId,
+			new: T::AccountId,
 		) -> DispatchResultWithPostInfo {
 			// check if invulnerable is not already in the list
-			if  <Invulnerables<T>>::try_get(&new){
-				Error::<T>::AlreadyInvulnerable;
-			}
+			let new_invulnerables = StorageValue<new>::try_get().map_err(|_| Error::<T>::AlreadyInvulnerable)?;
 
 			// check if a new invulnerable can be added to the list
 			T::UpdateOrigin::ensure_origin(origin)?;
-			if <Invulnerables<T>>::decode_len()+1 <= T::MaxInvulnerables{
+			if <Invulnerables<T>>::decode_len()+Some(1) <= T::MaxInvulnerables{
 				Error::<T>::TooManyInvulnerables;
 			}
 
@@ -341,12 +339,7 @@ pub mod pallet {
 			);
 
 			// append new invulnerable
-			if <Invulnerables<T>>::try_append(&new){
-				<Invulnerables<T>>::append(&new);
-			}
-			else{
-				Error::<T>::Unknown;
-			}
+			<Invulnerables<T>>::append(&new);
 
 			Self::deposit_event(Event::NewInvulnerable {
 				added: new,
