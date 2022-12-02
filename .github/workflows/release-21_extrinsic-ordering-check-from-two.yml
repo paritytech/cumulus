@@ -40,6 +40,18 @@ jobs:
           - runtime: contracts-rococo
             local: contracts-rococo-local
             relay: polkadot-local
+          - runtime: collectives-polkadot
+            local: collectives-polkadot-local
+            relay: polkadot-local
+          - runtime: seedling
+            local: seedling-local
+            relay: polkadot-local
+          - runtime: shell
+            local: shell-local
+            relay: polkadot-local
+          - runtime: rococo-parachain
+            local: rococo-parachain-local
+            relay: polkadot-local
 
     steps:
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
