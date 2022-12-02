@@ -274,6 +274,8 @@ pub mod pallet {
 		TooManyInvulnerables,
 		/// User is already an Invulnerable
 		AlreadyInvulnerable,
+		/// User is not an Invulnerable
+		NotInvulnerable,
 		/// Account has no associated validator ID
 		NoAssociatedValidatorId,
 		/// Validator ID is not yet registered
@@ -311,6 +313,67 @@ pub mod pallet {
 			});
 			Ok(().into())
 		}
+
+		#[pallet::weight(T::WeightInfo::add_invulnerable())]
+		pub fn add_invulnerable(
+			origin: OriginFor<T>,
+			new: <T>::AccountId,
+		) -> DispatchResultWithPostInfo {
+			// check if invulnerable is not already in the list
+			if  <Invulnerables<T>>::contains(&new){
+				Error::<T>::AlreadyInvulnerable;
+			}
+
+			// check if a new invulnerable can be added to the list
+			T::UpdateOrigin::ensure_origin(origin)?;
+			let bounded_invulnerables = BoundedVec::<_, T::MaxInvulnerables>::try_from(<Invulnerables<T>>::append(&new))
+				.map_err(|_| Error::<T>::TooManyInvulnerables)?;
+
+			// check if new invulnerable has associated validator key before it is added
+			let validator_key = T::ValidatorIdOf::convert(new.clone())
+				.ok_or(Error::<T>::NoAssociatedValidatorId)?;
+			ensure!(
+				T::ValidatorRegistration::is_registered(&validator_key),
+				Error::<T>::ValidatorNotRegistered
+			);
+
+			// append new invulnerable
+			<Invulnerables<T>>::append(&new);
+
+			Self::deposit_event(Event::NewInvulnerables {
+				total_invulnerables: bounded_invulnerables.to_vec(),
+				new_invulnerable: new,
+			});
+			Ok(().into())
+		}
+
+		#[pallet::weight(T::WeightInfo::delete_invulnerable())]
+		pub fn delete_invulnerable(
+			origin: OriginFor<T>,
+			to_delete: <T>::AccountId,
+		) -> DispatchResultWithPostInfo {
+			// check if invulnerable exists in the list
+			if !<Invulnerables<T>>::contains(&to_delete) {
+				Error::<T>::NotInvulnerable;
+			}
+			
+			// check if old invulnerable still has associated validator keys before it is deleted
+			//let validator_key = !T::ValidatorIdOf::convert(account_id.clone())
+			//		.ok_or(Error::<T>::StillAssociatedValidatorId)?;
+			//	ensure!(
+			//		!T::ValidatorRegistration::is_registered(&validator_key),
+			//		Error::<T>::ValidatorStillRegistered
+			//	);
+
+			//delete invulnerable
+			<Invulnerables<T>>::remove(&to_delete);
+			
+			Self::deposit_event(Event::InvulnerableDeleted {
+				invulnerable: to_delete,
+			});
+			Ok(().into())
+		}
+		
 
 		/// Set the ideal number of collators (not including the invulnerables).
 		/// If lowering this number, then the number of running collators could be higher than this figure.

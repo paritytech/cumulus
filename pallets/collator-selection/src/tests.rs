@@ -62,6 +62,86 @@ fn it_should_set_invulnerables() {
 }
 
 #[test]
+fn add_invulnerable_works(){
+	new_test_ext().execute_with(|| {
+		let added = 13;
+		let old_set = CollatorSelection::invulnerables().clone();
+		let new_set = old_set.append(&added);
+
+		// element was added to the list
+		assert_ok!(CollatorSelection::add_invulnerable(
+			RuntimeOrigin::signed(RootAccount::get()),
+			added.clone()
+		));
+
+		// same element cannot be added more than once
+		assert_noop!(CollatorSelection::add_invulnerable(
+			RuntimeOrigin::signed(RootAccount::get()),
+			added.clone()
+		))
+
+		// added element was correct
+		assert_eq!(CollatorSelection::invulnerables(), new_set);
+
+		// cannot set with non-root
+		assert_noop!(
+			CollatorSelection::add_invulnerable(RuntimeOrigin::signed(1), added.clone()),
+			BadOrigin
+		);
+
+		// cannot add invulnerable without associated validator keys
+		let invulnerable = 7;
+		assert_noop!(
+			CollatorSelection::add_invulnerable(
+				RuntimeOrigin::signed(RootAccount::get()),
+				invulnerable.clone()
+			),
+			Error::<Test>::ValidatorNotRegistered
+		);
+	});
+}
+
+#[test]
+fn delete_invulnerable_works(){
+	new_test_ext().execute_with(|| {
+		let to_delete = CollatorSelection::invulnerables().clone().first();
+		let old_set = CollatorSelection::invulnerables().clone();
+		let new_set = old_set::remove(to_delete);
+
+		// element was deleted from the list
+		assert_ok!(CollatorSelection::delete_invulnerable(
+			RuntimeOrigin::signed(RootAccount::get()),
+			to_delete.clone()
+		));
+
+		// element cannot be deleted more than once from the list
+		assert_noop!(CollatorSelection::delete_invulnerables(
+			RuntimeOrigin::signed(RootAccount::get()),
+			to_delete.clone()
+		));
+
+		// element deleted was correct
+		assert_eq!(CollatorSelection::invulnerables(), new_set);
+
+		// cannot set with non-root
+		assert_noop!(
+			CollatorSelection::delete_invulnerable(RuntimeOrigin::signed(1), to_delete.clone()),
+			BadOrigin
+		);
+
+		// cannot delete invulnerables still with associated validator keys
+		//let invulnerable = CollatorSelection::invulnerables().clone().last();
+		//assert_noop!(
+		//	CollatorSelection::delete_invulnerable(
+		//		RuntimeOrigin::signed(RootAccount::get()),
+		//		invulnerable.clone()
+		//	),
+		//	Error::<Test>::ValidatorStillRegistered
+		//);
+	});
+}
+
+#[test]
 fn set_desired_candidates_works() {
 	new_test_ext().execute_with(|| {
 		// given
