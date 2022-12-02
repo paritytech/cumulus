@@ -248,9 +248,9 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		NewInvulnerables { invulnerables: Vec<T::AccountId>},
-		NewInvulnerable { added: <T>::AccountId},
-		InvulnerableRemoved { removed: <T>::AccountIds},
+		NewInvulnerables { invulnerables: Vec<T::AccountId> },
+		NewInvulnerable { added: <T>::AccountId },
+		InvulnerableRemoved { removed: <T>::AccountId },
 		NewDesiredCandidates { desired_candidates: u32 },
 		NewCandidacyBond { bond_amount: BalanceOf<T> },
 		CandidateAdded { account_id: T::AccountId, deposit: BalanceOf<T> },
