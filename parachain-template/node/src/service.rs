@@ -30,6 +30,9 @@ use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerH
 use sp_keystore::SyncCryptoStorePtr;
 use substrate_prometheus_endpoint::Registry;
 
+use polkadot_service::CollatorPair;
+use sc_network_common::sync::warp::WarpSyncParams;
+
 /// Native executor type.
 pub struct ParachainNativeExecutor;
 
@@ -175,7 +178,16 @@ async fn start_node_impl(
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let transaction_pool = params.transaction_pool.clone();
 	let import_queue_service = params.import_queue.service();
-
+	let warp_sync_params =
+		match cumulus_client_network::WaitForParachainTargetBlock::<Block>::warp_sync_get(
+			id,
+			relay_chain_interface.clone(),
+		)
+		.await
+		{
+			Ok(target_block) => Some(WarpSyncParams::WaitForTarget(target_block)),
+			_ => None,
+		};
 	let (network, system_rpc_tx, tx_handler_controller, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &parachain_config,
@@ -186,7 +198,7 @@ async fn start_node_impl(
 			block_announce_validator_builder: Some(Box::new(|_| {
 				Box::new(block_announce_validator)
 			})),
-			warp_sync: None,
+			warp_sync_params,
 		})?;
 
 	if parachain_config.offchain_worker.enabled {

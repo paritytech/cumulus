@@ -50,7 +50,9 @@ use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_consensus::ImportQueue;
 use sc_network::{multiaddr, NetworkBlock, NetworkService};
-use sc_network_common::{config::TransportConfig, service::NetworkStateInfo};
+use sc_network_common::{
+	config::TransportConfig, service::NetworkStateInfo, sync::warp::WarpSyncParams,
+};
 use sc_service::{
 	config::{
 		BlocksPruning, DatabaseSource, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
@@ -277,6 +279,16 @@ where
 		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
 	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
 
+	let warp_sync_params =
+		match cumulus_client_network::WaitForParachainTargetBlock::<Block>::warp_sync_get(
+			para_id,
+			relay_chain_interface.clone(),
+		)
+		.await
+		{
+			Ok(target_block) => Some(WarpSyncParams::WaitForTarget(target_block)),
+			_ => None,
+		};
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let import_queue_service = params.import_queue.service();
 
@@ -288,7 +300,7 @@ where
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue: params.import_queue,
 			block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
-			warp_sync: None,
+			warp_sync_params,
 		})?;
 
 	let rpc_builder = {

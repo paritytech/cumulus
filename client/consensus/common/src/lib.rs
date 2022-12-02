@@ -24,6 +24,8 @@ use std::sync::Arc;
 
 mod level_monitor;
 mod parachain_consensus;
+
+pub mod parachain_consensus;s
 #[cfg(test)]
 mod tests;
 

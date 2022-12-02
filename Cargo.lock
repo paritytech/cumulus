@@ -1804,6 +1804,7 @@ name = "cumulus-client-network"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cumulus-client-consensus-common",
  "cumulus-primitives-core",
  "cumulus-relay-chain-inprocess-interface",
  "cumulus-relay-chain-interface",

@@ -35,10 +35,10 @@ use polkadot_primitives::{
 };
 
 use codec::{Decode, DecodeAll, Encode};
-use futures::{channel::oneshot, future::FutureExt, Future};
+use futures::{channel::oneshot, future::FutureExt, Future, StreamExt};
 
+use cumulus_client_consensus_common::parachain_consensus::RelaychainClient;
 use std::{convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc};
-
 #[cfg(test)]
 mod tests;
 
@@ -452,5 +452,74 @@ async fn wait_to_announce<Block: BlockT>(
 			block = ?block_hash,
 			"Received invalid statement while waiting to announce block.",
 		);
+	}
+}
+
+#[derive(Clone)]
+pub struct WaitForParachainTargetBlock<Block> {
+	phantom: PhantomData<Block>,
+}
+
+impl<Block: BlockT> WaitForParachainTargetBlock<Block> {
+	/// Get warp sync target block
+	pub async fn warp_sync_get(
+		para_id: ParaId,
+		relay_chain_interface: Arc<dyn RelayChainInterface>,
+	) -> Result<oneshot::Receiver<Block::Header>, BoxedError>
+	where
+		Block: BlockT + 'static,
+	{
+		let (sender, receiver) = oneshot::channel::<Block::Header>();
+		Self::wait_for_target_block(sender, para_id, relay_chain_interface).await;
+		return Ok(receiver)
+	}
+
+	async fn wait_for_target_block(
+		sender: oneshot::Sender<Block::Header>,
+		para_id: ParaId,
+		relay_chain_interface: Arc<dyn RelayChainInterface>,
+	) {
+		let is_syncing = relay_chain_interface
+			.is_major_syncing()
+			.await
+			.map_err(|e| {
+				tracing::error!(target: LOG_TARGET, "Unable to determine sync status. {}", e)
+			})
+			.unwrap_or(false);
+
+		loop {
+			if !is_syncing {
+				let mut finalized_heads = match relay_chain_interface.finalized_heads(para_id).await
+				{
+					Ok(finalized_heads_stream) => finalized_heads_stream,
+					Err(err) => {
+						tracing::error!(target: LOG_TARGET, error = ?err, "Unable to retrieve finalized heads stream.");
+						return
+					},
+				};
+
+				let finalized_head = if let Some(h) = finalized_heads.next().await {
+					h
+				} else {
+					tracing::debug!(target: "cumulus-network", "Stopping following finalized head.");
+					return
+				};
+
+				let target_header = match Block::Header::decode(&mut &finalized_head[..]) {
+					Ok(header) => header,
+					Err(err) => {
+						tracing::debug!(
+							target: "cumulus-network",
+							error = ?err,
+							"Could not decode parachain header while following finalized heads.",
+						);
+						continue
+					},
+				};
+
+				let _ = sender.send(target_header);
+				break
+			}
+		}
 	}
 }

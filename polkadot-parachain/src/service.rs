@@ -45,7 +45,7 @@ use sc_consensus::{
 };
 use sc_executor::WasmExecutor;
 use sc_network::NetworkService;
-use sc_network_common::service::NetworkBlock;
+use sc_network_common::{service::NetworkBlock, sync::warp::WarpSyncParams};
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::{ApiExt, ConstructRuntimeApi};
@@ -382,8 +382,17 @@ where
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let transaction_pool = params.transaction_pool.clone();
-	let import_queue_service = params.import_queue.service();
-
+	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
+	let warp_sync_params =
+		match cumulus_client_network::WaitForParachainTargetBlock::<Block>::warp_sync_get(
+			para_id,
+			relay_chain_interface.clone(),
+		)
+		.await
+		{
+			Ok(target_block) => Some(WarpSyncParams::WaitForTarget(target_block)),
+			_ => None,
+		};
 	let (network, system_rpc_tx, tx_handler_controller, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &parachain_config,
@@ -394,7 +403,7 @@ where
 			block_announce_validator_builder: Some(Box::new(|_| {
 				Box::new(block_announce_validator)
 			})),
-			warp_sync: None,
+			warp_sync_params,
 		})?;
 
 	let rpc_client = client.clone();
@@ -567,6 +576,16 @@ where
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let transaction_pool = params.transaction_pool.clone();
 	let import_queue_service = params.import_queue.service();
+	let warp_sync_params =
+		match cumulus_client_network::WaitForParachainTargetBlock::<Block>::warp_sync_get(
+			para_id,
+			relay_chain_interface.clone(),
+		)
+		.await
+		{
+			Ok(target_block) => Some(WarpSyncParams::WaitForTarget(target_block)),
+			_ => None,
+		};
 
 	let (network, system_rpc_tx, tx_handler_controller, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
@@ -578,7 +597,7 @@ where
 			block_announce_validator_builder: Some(Box::new(|_| {
 				Box::new(block_announce_validator)
 			})),
-			warp_sync: None,
+			warp_sync_params,
 		})?;
 
 	let rpc_builder = {
@@ -1338,7 +1357,16 @@ where
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let transaction_pool = params.transaction_pool.clone();
 	let import_queue_service = params.import_queue.service();
-
+	let warp_sync_params =
+		match cumulus_client_network::WaitForParachainTargetBlock::<Block>::warp_sync_get(
+			para_id,
+			relay_chain_interface.clone(),
+		)
+		.await
+		{
+			Ok(target_block) => Some(WarpSyncParams::WaitForTarget(target_block)),
+			_ => None,
+		};
 	let (network, system_rpc_tx, tx_handler_controller, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &parachain_config,
@@ -1349,7 +1377,7 @@ where
 			block_announce_validator_builder: Some(Box::new(|_| {
 				Box::new(block_announce_validator)
 			})),
-			warp_sync: None,
+			warp_sync_params,
 		})?;
 
 	let rpc_builder = {
