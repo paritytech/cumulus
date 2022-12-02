@@ -248,7 +248,9 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		NewInvulnerables { invulnerables: Vec<T::AccountId> },
+		NewInvulnerables { invulnerables: Vec<T::AccountId>},
+		NewInvulnerable { added: <T>::AccountId},
+		InvulnerableRemoved { removed: <T>::AccountIds},
 		NewDesiredCandidates { desired_candidates: u32 },
 		NewCandidacyBond { bond_amount: BalanceOf<T> },
 		CandidateAdded { account_id: T::AccountId, deposit: BalanceOf<T> },
@@ -320,14 +322,15 @@ pub mod pallet {
 			new: <T>::AccountId,
 		) -> DispatchResultWithPostInfo {
 			// check if invulnerable is not already in the list
-			if  <Invulnerables<T>>::contains(&new){
+			if  <Invulnerables<T>>::try_get(&new){
 				Error::<T>::AlreadyInvulnerable;
 			}
 
 			// check if a new invulnerable can be added to the list
 			T::UpdateOrigin::ensure_origin(origin)?;
-			let bounded_invulnerables = BoundedVec::<_, T::MaxInvulnerables>::try_from(<Invulnerables<T>>::append(&new))
-				.map_err(|_| Error::<T>::TooManyInvulnerables)?;
+			if <Invulnerables<T>>::decode_len()+1 <= T::MaxInvulnerables{
+				Error::<T>::TooManyInvulnerables;
+			}
 
 			// check if new invulnerable has associated validator key before it is added
 			let validator_key = T::ValidatorIdOf::convert(new.clone())
@@ -338,26 +341,30 @@ pub mod pallet {
 			);
 
 			// append new invulnerable
-			<Invulnerables<T>>::append(&new);
+			if <Invulnerables<T>>::try_append(&new){
+				<Invulnerables<T>>::append(&new);
+			}
+			else{
+				Error::<T>::Unknown;
+			}
 
-			Self::deposit_event(Event::NewInvulnerables {
-				total_invulnerables: bounded_invulnerables.to_vec(),
-				new_invulnerable: new,
+			Self::deposit_event(Event::NewInvulnerable {
+				added: new,
 			});
 			Ok(().into())
 		}
 
 		#[pallet::weight(T::WeightInfo::delete_invulnerable())]
-		pub fn delete_invulnerable(
+		pub fn remove_invulnerable(
 			origin: OriginFor<T>,
-			to_delete: <T>::AccountId,
+			to_remove: <T>::AccountId,
 		) -> DispatchResultWithPostInfo {
 			// check if invulnerable exists in the list
-			if !<Invulnerables<T>>::contains(&to_delete) {
+			if !<Invulnerables<T>>::try_get(&to_remove) {
 				Error::<T>::NotInvulnerable;
 			}
 			
-			// check if old invulnerable still has associated validator keys before it is deleted
+			// check if old invulnerable still has associated validator keys before it is removed
 			//let validator_key = !T::ValidatorIdOf::convert(account_id.clone())
 			//		.ok_or(Error::<T>::StillAssociatedValidatorId)?;
 			//	ensure!(
@@ -365,11 +372,11 @@ pub mod pallet {
 			//		Error::<T>::ValidatorStillRegistered
 			//	);
 
-			//delete invulnerable
-			<Invulnerables<T>>::remove(&to_delete);
+			//remove invulnerable
+			<Invulnerables<T>>::kill(&to_remove);
 			
-			Self::deposit_event(Event::InvulnerableDeleted {
-				invulnerable: to_delete,
+			Self::deposit_event(Event::InvulnerableRemoved {
+				removed: to_remove,
 			});
 			Ok(().into())
 		}

@@ -102,37 +102,37 @@ fn add_invulnerable_works(){
 }
 
 #[test]
-fn delete_invulnerable_works(){
+fn remove_invulnerable_works(){
 	new_test_ext().execute_with(|| {
-		let to_delete = CollatorSelection::invulnerables().clone().first();
+		let to_remove = CollatorSelection::invulnerables().clone().first();
 		let old_set = CollatorSelection::invulnerables().clone();
-		let new_set = old_set::remove(to_delete);
+		let new_set = old_set::remove(to_remove);
 
-		// element was deleted from the list
-		assert_ok!(CollatorSelection::delete_invulnerable(
+		// element was removed from the list
+		assert_ok!(CollatorSelection::remove_invulnerable(
 			RuntimeOrigin::signed(RootAccount::get()),
-			to_delete.clone()
+			to_remove.clone()
 		));
 
-		// element cannot be deleted more than once from the list
-		assert_noop!(CollatorSelection::delete_invulnerables(
+		// element cannot be removed more than once from the list
+		assert_noop!(CollatorSelection::remove_invulnerables(
 			RuntimeOrigin::signed(RootAccount::get()),
-			to_delete.clone()
+			to_remove.clone()
 		));
 
-		// element deleted was correct
+		// element removed was correct
 		assert_eq!(CollatorSelection::invulnerables(), new_set);
 
 		// cannot set with non-root
 		assert_noop!(
-			CollatorSelection::delete_invulnerable(RuntimeOrigin::signed(1), to_delete.clone()),
+			CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(1), to_remove.clone()),
 			BadOrigin
 		);
 
-		// cannot delete invulnerables still with associated validator keys
+		// cannot remove invulnerables still with associated validator keys
 		//let invulnerable = CollatorSelection::invulnerables().clone().last();
 		//assert_noop!(
-		//	CollatorSelection::delete_invulnerable(
+		//	CollatorSelection::remove_invulnerable(
 		//		RuntimeOrigin::signed(RootAccount::get()),
 		//		invulnerable.clone()
 		//	),
