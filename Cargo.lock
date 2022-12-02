@@ -6695,7 +6695,7 @@ dependencies = [
  "cumulus-relay-chain-rpc-interface",
  "frame-benchmarking",
  "frame-benchmarking-cli",
- "jsonrpsee 0.15.1",
+ "jsonrpsee 0.16.2",
  "log",
  "pallet-transaction-payment-rpc",
  "parachain-template-runtime",
