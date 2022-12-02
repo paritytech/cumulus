@@ -33,7 +33,7 @@ where
 	}
 }
 
-// See issue #5233
+// See issue <https://github.com/paritytech/polkadot/issues/5233>
 pub struct DenyReserveTransferToRelayChain;
 impl ShouldExecute for DenyReserveTransferToRelayChain {
 	fn should_execute<RuntimeCall>(
@@ -64,7 +64,7 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 			message.0.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
 		{
 			log::warn!(
-				target: "xcm::barrier",
+				target: "xcm::barriers",
 				"Unexpected ReserveAssetDeposited from the Relay Chain",
 			);
 		}
