@@ -375,13 +375,16 @@ where
 		};
 
 		if do_recover {
-			for hash in to_recover.iter().rev() {
-				tracing::debug!(
-					target: LOG_TARGET,
-					block_hash = ?hash,
-					"Starting eager recovery",
+			for hash in to_recover.into_iter().rev() {
+				tracing::debug!(target: LOG_TARGET, block_hash = ?hash, "Starting explicit lazy block recovery");
+				let delay = self.recovery_delay.as_delay();
+				self.next_candidate_to_recover.push(
+					async move {
+						delay.await;
+						hash
+					}
+					.boxed(),
 				);
-				self.recover_candidate(*hash).await;
 			}
 		}
 	}
@@ -443,26 +446,23 @@ where
 					if let Some((receipt, session_index)) = pending_candidate {
 						self.handle_pending_candidate(receipt, session_index);
 					} else {
-						tracing::debug!(
-							target: LOG_TARGET,
-							"Pending candidates stream ended",
-						);
+						tracing::debug!(target: LOG_TARGET, "Pending candidates stream ended");
 						return;
 					}
 				},
 				recovery_req = self.recovery_chan_rx.next() => {
 					if let Some(hash) = recovery_req {
 						self.chain_recovery(hash).await;
+					} else {
+						tracing::debug!(target: LOG_TARGET, "Recovery channel stream ended");
+						return;
 					}
 				},
 				finalized = finalized_blocks.next() => {
 					if let Some(finalized) = finalized {
 						self.handle_block_finalized(*finalized.header.number());
 					} else {
-						tracing::debug!(
-							target: LOG_TARGET,
-							"Finalized blocks stream ended",
-						);
+						tracing::debug!(target: LOG_TARGET,	"Finalized blocks stream ended");
 						return;
 					}
 				},
