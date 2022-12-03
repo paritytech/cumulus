@@ -367,7 +367,7 @@ where
 					tracing::error!(
 						target: LOG_TARGET,
 						block_hash = ?hash,
-						"Cound not recover, block has never been announced as a candidate"
+						"Cound not recover. Block was never announced as candidate"
 					);
 					break false
 				},
