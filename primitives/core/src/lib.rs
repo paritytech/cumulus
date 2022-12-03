@@ -19,6 +19,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
+use core::time::Duration;
 use polkadot_parachain::primitives::HeadData;
 use sp_runtime::{traits::Block as BlockT, RuntimeDebug};
 use sp_std::prelude::*;
@@ -192,6 +193,37 @@ impl<B: BlockT> ParachainBlockData<B> {
 	pub fn deconstruct(self) -> (B::Header, sp_std::vec::Vec<B::Extrinsic>, sp_trie::CompactProof) {
 		(self.header, self.extrinsics, self.storage_proof)
 	}
+}
+
+/// Type of recovery to trigger.
+#[derive(PartialEq)]
+pub enum RecoveryKind {
+	/// Single block recovery.
+	Simple,
+	/// Full ancestry recovery.
+	Full,
+}
+
+/// Structure used to trigger an explicit recovery request via `PoVRecovery`.
+pub struct RecoveryRequest<Block: BlockT> {
+	/// Hash of the last block to recover.
+	pub hash: Block::Hash,
+	/// Recovery delay range. Randomizing the start of the recovery within this interval
+	/// can be used to prevent self-DOSing if the recovery request is part of a
+	/// distributed protocol and there is the possibility that multiple actors are
+	/// requiring to perform the recovery action at approximately the same time.
+	pub delay: RecoveryDelay,
+	/// Recovery type.
+	pub kind: RecoveryKind,
+}
+
+/// The delay between observing an unknown block and recovering this block.
+#[derive(Clone, Copy)]
+pub struct RecoveryDelay {
+	/// Start recovering the block after at least `min` delay.
+	pub min: Duration,
+	/// Start recovering the block in maximum of the given delay.
+	pub max: Duration,
 }
 
 /// Information about a collation.

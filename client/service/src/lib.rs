@@ -19,7 +19,7 @@
 //! Provides functions for starting a collator node or a normal full node.
 
 use cumulus_client_consensus_common::ParachainConsensus;
-use cumulus_primitives_core::{CollectCollationInfo, ParaId};
+use cumulus_primitives_core::{CollectCollationInfo, ParaId, RecoveryDelay};
 use cumulus_relay_chain_interface::RelayChainInterface;
 use polkadot_primitives::v2::CollatorPair;
 
@@ -125,7 +125,7 @@ where
 		overseer_handle.clone(),
 		// We want that collators wait at maximum the relay chain slot duration before starting
 		// to recover blocks.
-		cumulus_client_pov_recovery::RecoveryDelay::WithMax { max: relay_chain_slot_duration },
+		RecoveryDelay { min: core::time::Duration::ZERO, max: relay_chain_slot_duration },
 		client.clone(),
 		import_queue,
 		relay_chain_interface.clone(),
@@ -216,10 +216,7 @@ where
 		// the recovery way before full nodes try to recover a certain block and then share the
 		// block with the network using "the normal way". Full nodes are just the "last resort"
 		// for block recovery.
-		cumulus_client_pov_recovery::RecoveryDelay::WithMinAndMax {
-			min: relay_chain_slot_duration * 25,
-			max: relay_chain_slot_duration * 50,
-		},
+		RecoveryDelay { min: relay_chain_slot_duration * 25, max: relay_chain_slot_duration * 50 },
 		client,
 		import_queue,
 		relay_chain_interface,

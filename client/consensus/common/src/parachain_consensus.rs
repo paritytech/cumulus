@@ -15,7 +15,6 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use async_trait::async_trait;
-use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 use sc_client_api::{
 	Backend, BlockBackend, BlockImportNotification, BlockchainEvents, Finalizer, UsageProvider,
 };
@@ -27,6 +26,9 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT},
 };
 
+use cumulus_primitives_core::{RecoveryDelay, RecoveryKind, RecoveryRequest};
+use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
+
 use polkadot_primitives::v2::{Hash as PHash, Id as ParaId, OccupiedCoreAssumption};
 
 use codec::Decode;
@@ -35,6 +37,8 @@ use futures::{channel::mpsc::Sender, select, FutureExt, Stream, StreamExt};
 use std::{pin::Pin, sync::Arc};
 
 const LOG_TARGET: &str = "cumulus-consensus";
+
+const RECOVERY_MAX_DELAY: std::time::Duration = std::time::Duration::from_secs(10);
 
 /// Helper for the relay chain client. This is expected to be a lightweight handle like an `Arc`.
 #[async_trait]
@@ -136,7 +140,7 @@ pub async fn run_parachain_consensus<P, R, Block, B>(
 	parachain: Arc<P>,
 	relay_chain: R,
 	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
-	recovery_chan_tx: Sender<Block::Hash>,
+	recovery_chan_tx: Sender<RecoveryRequest<Block>>,
 ) where
 	Block: BlockT,
 	P: Finalizer<Block, B>
@@ -169,7 +173,7 @@ async fn follow_new_best<P, R, Block, B>(
 	parachain: Arc<P>,
 	relay_chain: R,
 	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
-	recovery_chan_tx: Sender<Block::Hash>,
+	recovery_chan_tx: Sender<RecoveryRequest<Block>>,
 ) where
 	Block: BlockT,
 	P: Finalizer<Block, B>
@@ -298,7 +302,7 @@ async fn handle_new_best_parachain_head<Block, P>(
 	head: Vec<u8>,
 	parachain: &P,
 	unset_best_header: &mut Option<Block::Header>,
-	mut recovery_chan_tx: Sender<Block::Hash>,
+	mut recovery_chan_tx: Sender<RecoveryRequest<Block>>,
 ) where
 	Block: BlockT,
 	P: UsageProvider<Block> + Send + Sync + BlockBackend<Block>,
@@ -351,7 +355,15 @@ async fn handle_new_best_parachain_head<Block, P>(
 				// Best effort to trigger a recovery.
 				// Error is not fatal. The relay chain will re-announce the best block anyway,
 				// thus we will have other opportunities to retry.
-				if let Err(err) = recovery_chan_tx.try_send(hash) {
+				let req = RecoveryRequest {
+					hash,
+					delay: RecoveryDelay {
+						min: core::time::Duration::ZERO,
+						max: RECOVERY_MAX_DELAY,
+					},
+					kind: RecoveryKind::Full,
+				};
+				if let Err(err) = recovery_chan_tx.try_send(req) {
 					tracing::warn!(
 						target: LOG_TARGET,
 						block_hash = ?hash,

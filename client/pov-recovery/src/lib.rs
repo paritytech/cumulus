@@ -55,7 +55,7 @@ use polkadot_primitives::v2::{
 	CandidateReceipt, CommittedCandidateReceipt, Id as ParaId, SessionIndex,
 };
 
-use cumulus_primitives_core::ParachainBlockData;
+use cumulus_primitives_core::{ParachainBlockData, RecoveryDelay, RecoveryKind, RecoveryRequest};
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 
 use codec::Decode;
@@ -69,7 +69,6 @@ use std::{
 	collections::{HashMap, VecDeque},
 	pin::Pin,
 	sync::Arc,
-	time::Duration,
 };
 
 mod active_candidate_recovery;
@@ -78,31 +77,12 @@ use active_candidate_recovery::ActiveCandidateRecovery;
 const LOG_TARGET: &str = "cumulus-pov-recovery";
 
 /// Represents a pending candidate.
+#[derive(Clone)]
 struct PendingCandidate<Block: BlockT> {
 	receipt: CandidateReceipt,
 	session_index: SessionIndex,
 	block_number: NumberFor<Block>,
 	parent_hash: Block::Hash,
-}
-
-/// The delay between observing an unknown block and recovering this block.
-#[derive(Clone, Copy)]
-pub enum RecoveryDelay {
-	/// Start recovering the block in maximum of the given delay.
-	WithMax { max: Duration },
-	/// Start recovering the block after at least `min` delay and in maximum `max` delay.
-	WithMinAndMax { min: Duration, max: Duration },
-}
-
-impl RecoveryDelay {
-	/// Return as [`Delay`].
-	fn as_delay(self) -> Delay {
-		match self {
-			Self::WithMax { max } => Delay::new(max.mul_f64(thread_rng().gen())),
-			Self::WithMinAndMax { min, max } =>
-				Delay::new(min + max.saturating_sub(min).mul_f64(thread_rng().gen())),
-		}
-	}
 }
 
 /// Encapsulates the logic of the pov recovery.
@@ -126,7 +106,7 @@ pub struct PoVRecovery<Block: BlockT, PC, IQ, RC> {
 	relay_chain_interface: RC,
 	para_id: ParaId,
 	/// Explicit block recovery requests channel.
-	recovery_chan_rx: Receiver<Block::Hash>,
+	recovery_chan_rx: Receiver<RecoveryRequest<Block>>,
 }
 
 impl<Block: BlockT, PC, IQ, RCInterface> PoVRecovery<Block, PC, IQ, RCInterface>
@@ -143,7 +123,7 @@ where
 		parachain_import_queue: IQ,
 		relay_chain_interface: RCInterface,
 		para_id: ParaId,
-		recovery_chan_rx: Receiver<Block::Hash>,
+		recovery_chan_rx: Receiver<RecoveryRequest<Block>>,
 	) -> Self {
 		Self {
 			pending_candidates: HashMap::new(),
@@ -198,29 +178,13 @@ where
 			},
 		);
 
-		match self.parachain_client.block_status(&BlockId::Hash(hash)) {
-			Ok(BlockStatus::Unknown) => {
-				// Delay the recovery by some random time to not spam the relay chain.
-				tracing::debug!(target: LOG_TARGET, block_hash = ?hash, "Starting lazy block recovery");
-				let delay = self.recovery_delay.as_delay();
-				self.next_candidate_to_recover.push(
-					async move {
-						delay.await;
-						hash
-					}
-					.boxed(),
-				);
-			},
-			Err(e) => {
-				tracing::debug!(
-					target: LOG_TARGET,
-					error = ?e,
-					block_hash = ?hash,
-					"Failed to get block status",
-				);
-			},
-			_ => (),
-		}
+		// Trigger a lazy recovery request that will eventually be blocked if in the meantime the
+		// block is imported.
+		self.chain_recovery(RecoveryRequest {
+			hash,
+			delay: self.recovery_delay,
+			kind: RecoveryKind::Simple,
+		});
 	}
 
 	/// Handle a finalized block with the given `block_number`.
@@ -230,8 +194,8 @@ where
 
 	/// Recover the candidate for the given `block_hash`.
 	async fn recover_candidate(&mut self, block_hash: Block::Hash) {
-		let pending_candidate = match self.pending_candidates.remove(&block_hash) {
-			Some(pending_candidate) => pending_candidate,
+		let pending_candidate = match self.pending_candidates.get(&block_hash) {
+			Some(pending_candidate) => pending_candidate.clone(),
 			None => return,
 		};
 
@@ -344,8 +308,12 @@ where
 		self.import_block(block).await;
 	}
 
-	async fn chain_recovery(&mut self, mut hash: Block::Hash) {
+	/// Attempts an explicit recovery of one or more blocks.
+	fn chain_recovery(&mut self, req: RecoveryRequest<Block>) {
+		let RecoveryRequest { mut hash, delay, kind } = req;
+
 		let mut to_recover = Vec::new();
+
 		let do_recover = loop {
 			match self.parachain_client.block_status(&BlockId::Hash(hash)) {
 				Ok(BlockStatus::Unknown) => to_recover.push(hash),
@@ -359,6 +327,10 @@ where
 					);
 					break false
 				},
+			}
+
+			if kind == RecoveryKind::Simple {
+				break true
 			}
 
 			hash = match self.pending_candidates.get(&hash) {
@@ -376,11 +348,17 @@ where
 
 		if do_recover {
 			for hash in to_recover.into_iter().rev() {
-				tracing::debug!(target: LOG_TARGET, block_hash = ?hash, "Starting explicit lazy block recovery");
-				let delay = self.recovery_delay.as_delay();
+				let delay =
+					delay.min + delay.max.saturating_sub(delay.min).mul_f64(thread_rng().gen());
+				tracing::debug!(
+					target: LOG_TARGET,
+					block_hash = ?hash,
+					"Starting explicit lazy block recovery in {:?} sec",
+					delay.as_secs(),
+				);
 				self.next_candidate_to_recover.push(
 					async move {
-						delay.await;
+						Delay::new(delay).await;
 						hash
 					}
 					.boxed(),
@@ -451,8 +429,8 @@ where
 					}
 				},
 				recovery_req = self.recovery_chan_rx.next() => {
-					if let Some(hash) = recovery_req {
-						self.chain_recovery(hash).await;
+					if let Some(req) = recovery_req {
+						self.chain_recovery(req);
 					} else {
 						tracing::debug!(target: LOG_TARGET, "Recovery channel stream ended");
 						return;
