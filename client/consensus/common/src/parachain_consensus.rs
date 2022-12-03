@@ -34,11 +34,16 @@ use polkadot_primitives::v2::{Hash as PHash, Id as ParaId, OccupiedCoreAssumptio
 use codec::Decode;
 use futures::{channel::mpsc::Sender, select, FutureExt, Stream, StreamExt};
 
-use std::{pin::Pin, sync::Arc};
+use std::{pin::Pin, sync::Arc, time::Duration};
 
 const LOG_TARGET: &str = "cumulus-consensus";
 
-const RECOVERY_MAX_DELAY: std::time::Duration = std::time::Duration::from_secs(10);
+// Delay range to trigger explicit requests.
+// The chosen value doesn't have any special meaning, a random delay within the order of
+// seconds in practice should be a good enough to allow a quick recovery without DOSing
+// the relay chain.
+const RECOVERY_DELAY: RecoveryDelay =
+	RecoveryDelay { min: Duration::ZERO, max: Duration::from_secs(30) };
 
 /// Helper for the relay chain client. This is expected to be a lightweight handle like an `Arc`.
 #[async_trait]
@@ -355,14 +360,7 @@ async fn handle_new_best_parachain_head<Block, P>(
 				// Best effort to trigger a recovery.
 				// Error is not fatal. The relay chain will re-announce the best block anyway,
 				// thus we will have other opportunities to retry.
-				let req = RecoveryRequest {
-					hash,
-					delay: RecoveryDelay {
-						min: core::time::Duration::ZERO,
-						max: RECOVERY_MAX_DELAY,
-					},
-					kind: RecoveryKind::Full,
-				};
+				let req = RecoveryRequest { hash, delay: RECOVERY_DELAY, kind: RecoveryKind::Full };
 				if let Err(err) = recovery_chan_tx.try_send(req) {
 					tracing::warn!(
 						target: LOG_TARGET,
