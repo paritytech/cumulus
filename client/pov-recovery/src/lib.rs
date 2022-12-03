@@ -76,9 +76,8 @@ use active_candidate_recovery::ActiveCandidateRecovery;
 
 const LOG_TARGET: &str = "cumulus-pov-recovery";
 
-/// Represents a pending candidate.
-#[derive(Clone)]
-struct PendingCandidate<Block: BlockT> {
+/// Represents an outstanding block candidate.
+struct Candidate<Block: BlockT> {
 	receipt: CandidateReceipt,
 	session_index: SessionIndex,
 	block_number: NumberFor<Block>,
@@ -89,7 +88,7 @@ struct PendingCandidate<Block: BlockT> {
 pub struct PoVRecovery<Block: BlockT, PC, IQ, RC> {
 	/// All the pending candidates that we are waiting for to be imported or that need to be
 	/// recovered when `next_candidate_to_recover` tells us to do so.
-	pending_candidates: HashMap<Block::Hash, PendingCandidate<Block>>,
+	candidates: HashMap<Block::Hash, Candidate<Block>>,
 	/// A stream of futures that resolve to hashes of candidates that need to be recovered.
 	///
 	/// The candidates to the hashes are stored in `pending_candidates`. If a candidate is not
@@ -126,7 +125,7 @@ where
 		recovery_chan_rx: Receiver<RecoveryRequest<Block>>,
 	) -> Self {
 		Self {
-			pending_candidates: HashMap::new(),
+			candidates: HashMap::new(),
 			next_candidate_to_recover: Default::default(),
 			active_candidate_recovery: ActiveCandidateRecovery::new(overseer_handle),
 			recovery_delay,
@@ -163,14 +162,14 @@ where
 
 		let hash = header.hash();
 
-		if self.pending_candidates.contains_key(&hash) {
+		if self.candidates.contains_key(&hash) {
 			return
 		}
 
-		tracing::debug!(target: LOG_TARGET, block_hash = ?hash, "Adding pending candidate");
-		self.pending_candidates.insert(
+		tracing::debug!(target: LOG_TARGET, block_hash = ?hash, "Adding outstanding candidate");
+		self.candidates.insert(
 			hash,
-			PendingCandidate {
+			Candidate {
 				block_number: *header.number(),
 				receipt: receipt.to_plain(),
 				session_index,
@@ -189,20 +188,17 @@ where
 
 	/// Handle a finalized block with the given `block_number`.
 	fn handle_block_finalized(&mut self, block_number: NumberFor<Block>) {
-		self.pending_candidates.retain(|_, pc| pc.block_number > block_number);
+		self.candidates.retain(|_, pc| pc.block_number > block_number);
 	}
 
 	/// Recover the candidate for the given `block_hash`.
 	async fn recover_candidate(&mut self, block_hash: Block::Hash) {
-		let pending_candidate = match self.pending_candidates.get(&block_hash) {
-			Some(pending_candidate) => pending_candidate.clone(),
-			None => return,
+		let Some(candidate) = self.candidates.get(&block_hash) else {
+			return;
 		};
 
 		tracing::debug!(target: LOG_TARGET, ?block_hash, "Issuing recovery request");
-		self.active_candidate_recovery
-			.recover_candidate(block_hash, pending_candidate)
-			.await;
+		self.active_candidate_recovery.recover_candidate(block_hash, candidate).await;
 	}
 
 	/// Clear `waiting_for_parent` from the given `hash` and do this recursively for all child
@@ -311,7 +307,6 @@ where
 	/// Attempts an explicit recovery of one or more blocks.
 	fn chain_recovery(&mut self, req: RecoveryRequest<Block>) {
 		let RecoveryRequest { mut hash, delay, kind } = req;
-
 		let mut to_recover = Vec::new();
 
 		let do_recover = loop {
@@ -333,7 +328,7 @@ where
 				break true
 			}
 
-			hash = match self.pending_candidates.get(&hash) {
+			hash = match self.candidates.get(&hash) {
 				Some(p) => p.parent_hash,
 				None => {
 					tracing::error!(
