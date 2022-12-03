@@ -110,7 +110,7 @@ where
 		client.clone(),
 		relay_chain_interface.clone(),
 		announce_block.clone(),
-		recovery_chan_tx,
+		Some(recovery_chan_tx),
 	);
 
 	task_manager
@@ -198,7 +198,7 @@ where
 		client.clone(),
 		relay_chain_interface.clone(),
 		announce_block,
-		recovery_chan_tx,
+		Some(recovery_chan_tx),
 	);
 
 	task_manager

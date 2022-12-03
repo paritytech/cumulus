@@ -145,7 +145,7 @@ pub async fn run_parachain_consensus<P, R, Block, B>(
 	parachain: Arc<P>,
 	relay_chain: R,
 	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
-	recovery_chan_tx: Sender<RecoveryRequest<Block>>,
+	recovery_chan_tx: Option<Sender<RecoveryRequest<Block>>>,
 ) where
 	Block: BlockT,
 	P: Finalizer<Block, B>
@@ -178,7 +178,7 @@ async fn follow_new_best<P, R, Block, B>(
 	parachain: Arc<P>,
 	relay_chain: R,
 	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
-	recovery_chan_tx: Sender<RecoveryRequest<Block>>,
+	recovery_chan_tx: Option<Sender<RecoveryRequest<Block>>>,
 ) where
 	Block: BlockT,
 	P: Finalizer<Block, B>
@@ -307,7 +307,7 @@ async fn handle_new_best_parachain_head<Block, P>(
 	head: Vec<u8>,
 	parachain: &P,
 	unset_best_header: &mut Option<Block::Header>,
-	mut recovery_chan_tx: Sender<RecoveryRequest<Block>>,
+	mut recovery_chan_tx: Option<Sender<RecoveryRequest<Block>>>,
 ) where
 	Block: BlockT,
 	P: UsageProvider<Block> + Send + Sync + BlockBackend<Block>,
@@ -357,17 +357,20 @@ async fn handle_new_best_parachain_head<Block, P>(
 					"Parachain block not yet imported, waiting for import to enact as best block.",
 				);
 
-				// Best effort to trigger a recovery.
-				// Error is not fatal. The relay chain will re-announce the best block anyway,
-				// thus we will have other opportunities to retry.
-				let req = RecoveryRequest { hash, delay: RECOVERY_DELAY, kind: RecoveryKind::Full };
-				if let Err(err) = recovery_chan_tx.try_send(req) {
-					tracing::warn!(
-						target: LOG_TARGET,
-						block_hash = ?hash,
-						error = ?err,
-						"Unable to notify block recovery subsystem"
-					)
+				if let Some(ref mut recovery_chan_tx) = recovery_chan_tx {
+					// Best effort channel to actively encourage block recovery.
+					// An error here is not fatal; the relay chain continuously re-announces
+					// the best block, thus we will have other opportunities to retry.
+					let req =
+						RecoveryRequest { hash, delay: RECOVERY_DELAY, kind: RecoveryKind::Full };
+					if let Err(err) = recovery_chan_tx.try_send(req) {
+						tracing::warn!(
+							target: LOG_TARGET,
+							block_hash = ?hash,
+							error = ?err,
+							"Unable to notify block recovery subsystem"
+						)
+					}
 				}
 			},
 			Err(e) => {

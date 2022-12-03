@@ -18,6 +18,7 @@ use crate::*;
 
 use async_trait::async_trait;
 use codec::Encode;
+use cumulus_primitives_core::RecoveryKind;
 use cumulus_relay_chain_interface::RelayChainResult;
 use cumulus_test_client::{
 	runtime::{Block, Header},
@@ -29,7 +30,7 @@ use polkadot_primitives::v2::Id as ParaId;
 use sc_client_api::{blockchain::Backend as _, Backend as _, UsageProvider};
 use sc_consensus::{BlockImport, BlockImportParams, ForkChoiceStrategy};
 use sp_blockchain::Error as ClientError;
-use sp_consensus::BlockOrigin;
+use sp_consensus::{BlockOrigin, BlockStatus};
 use sp_runtime::generic::BlockId;
 use std::{
 	sync::{Arc, Mutex},
@@ -103,22 +104,8 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 	}
 }
 
-fn build_and_import_block(mut client: Arc<Client>, import_as_best: bool) -> Block {
-	build_and_import_block_ext(
-		&*client.clone(),
-		BlockOrigin::Own,
-		import_as_best,
-		&mut client,
-		None,
-		None,
-	)
-}
-
-fn build_and_import_block_ext<B: InitBlockBuilder, I: BlockImport<Block>>(
+fn build_block<B: InitBlockBuilder>(
 	builder: &B,
-	origin: BlockOrigin,
-	import_as_best: bool,
-	importer: &mut I,
 	at: Option<BlockId<Block>>,
 	timestamp: Option<u64>,
 ) -> Block {
@@ -132,25 +119,70 @@ fn build_and_import_block_ext<B: InitBlockBuilder, I: BlockImport<Block>>(
 	};
 
 	let mut block = builder.build().unwrap().block;
-	let (header, body) = block.clone().deconstruct();
 
 	// Simulate some form of post activity.
 	// This is mostly used to excercise the `LevelMonitor` correct behavior.
 	// (in practice we want that header post-hash != pre-hash)
 	let post_digest = sp_runtime::DigestItem::Other(vec![1, 2, 3]);
 
-	let mut block_import_params = BlockImportParams::new(origin, header);
-	block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(import_as_best));
-	block_import_params.body = Some(body);
-	block_import_params.post_digests.push(post_digest.clone());
-
-	block_on(importer.import_block(block_import_params, Default::default())).unwrap();
-
 	// In order to get a header hash compatible with block import params containing some
 	// form of `post_digest`, we need to manually push the post digest within the header
 	// digest logs.
 	block.header.digest.push(post_digest);
+
 	block
+}
+
+async fn import_block<I: BlockImport<Block>>(
+	importer: &mut I,
+	block: Block,
+	origin: BlockOrigin,
+	import_as_best: bool,
+) {
+	let (mut header, body) = block.deconstruct();
+
+	let post_digest =
+		header.digest.pop().expect("post digested is present in manually crafted block");
+
+	let mut block_import_params = BlockImportParams::new(origin, header);
+	block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(import_as_best));
+	block_import_params.body = Some(body);
+	block_import_params.post_digests.push(post_digest);
+
+	importer.import_block(block_import_params, Default::default()).await.unwrap();
+}
+
+fn import_block_sync<I: BlockImport<Block>>(
+	importer: &mut I,
+	block: Block,
+	origin: BlockOrigin,
+	import_as_best: bool,
+) {
+	block_on(import_block(importer, block, origin, import_as_best));
+}
+
+fn build_and_import_block_ext<B: InitBlockBuilder, I: BlockImport<Block>>(
+	builder: &B,
+	origin: BlockOrigin,
+	import_as_best: bool,
+	importer: &mut I,
+	at: Option<BlockId<Block>>,
+	timestamp: Option<u64>,
+) -> Block {
+	let block = build_block(builder, at, timestamp);
+	import_block_sync(importer, block.clone(), origin, import_as_best);
+	block
+}
+
+fn build_and_import_block(mut client: Arc<Client>, import_as_best: bool) -> Block {
+	build_and_import_block_ext(
+		&*client.clone(),
+		BlockOrigin::Own,
+		import_as_best,
+		&mut client,
+		None,
+		None,
+	)
 }
 
 #[test]
@@ -164,7 +196,7 @@ fn follow_new_best_works() {
 	let new_best_heads_sender = relay_chain.inner.lock().unwrap().new_best_heads_sender.clone();
 
 	let consensus =
-		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}));
+		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}), None);
 
 	let work = async move {
 		new_best_heads_sender.unbounded_send(block.header().clone()).unwrap();
@@ -188,6 +220,68 @@ fn follow_new_best_works() {
 }
 
 #[test]
+fn follow_new_best_with_dummy_recovery_works() {
+	sp_tracing::try_init_simple();
+
+	let client = Arc::new(TestClientBuilder::default().build());
+
+	let relay_chain = Relaychain::new();
+	let new_best_heads_sender = relay_chain.inner.lock().unwrap().new_best_heads_sender.clone();
+
+	let (recovery_chan_tx, mut recovery_chan_rx) = futures::channel::mpsc::channel(3);
+
+	let consensus = run_parachain_consensus(
+		100.into(),
+		client.clone(),
+		relay_chain,
+		Arc::new(|_, _| {}),
+		Some(recovery_chan_tx),
+	);
+
+	let block = build_block(&*client.clone(), None, None);
+	let block_clone = block.clone();
+	let client_clone = client.clone();
+
+	let work = async move {
+		new_best_heads_sender.unbounded_send(block.header().clone()).unwrap();
+		loop {
+			Delay::new(Duration::from_millis(100)).await;
+			match client.block_status(&BlockId::Hash(block.hash())).unwrap() {
+				BlockStatus::Unknown => {},
+				status => {
+					assert_eq!(block.hash(), client.usage_info().chain.best_hash);
+					assert_eq!(status, BlockStatus::InChainWithState);
+					break
+				},
+			}
+		}
+	};
+
+	let dummy_block_recovery = async move {
+		loop {
+			if let Some(req) = recovery_chan_rx.next().await {
+				assert_eq!(req.hash, block_clone.hash());
+				assert_eq!(req.kind, RecoveryKind::Full);
+				Delay::new(Duration::from_millis(500)).await;
+				import_block(&mut &*client_clone, block_clone.clone(), BlockOrigin::Own, true)
+					.await;
+			}
+		}
+	};
+
+	block_on(async move {
+		futures::pin_mut!(consensus);
+		futures::pin_mut!(work);
+
+		select! {
+			r = consensus.fuse() => panic!("Consensus should not end: {:?}", r),
+			_ = dummy_block_recovery.fuse() => {},
+			_ = work.fuse() => {},
+		}
+	});
+}
+
+#[test]
 fn follow_finalized_works() {
 	sp_tracing::try_init_simple();
 
@@ -198,7 +292,7 @@ fn follow_finalized_works() {
 	let finalized_sender = relay_chain.inner.lock().unwrap().finalized_heads_sender.clone();
 
 	let consensus =
-		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}));
+		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}), None);
 
 	let work = async move {
 		finalized_sender.unbounded_send(block.header().clone()).unwrap();
@@ -239,7 +333,7 @@ fn follow_finalized_does_not_stop_on_unknown_block() {
 	let finalized_sender = relay_chain.inner.lock().unwrap().finalized_heads_sender.clone();
 
 	let consensus =
-		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}));
+		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}), None);
 
 	let work = async move {
 		for _ in 0..3usize {
@@ -289,7 +383,7 @@ fn follow_new_best_sets_best_after_it_is_imported() {
 	let new_best_heads_sender = relay_chain.inner.lock().unwrap().new_best_heads_sender.clone();
 
 	let consensus =
-		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}));
+		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}), None);
 
 	let work = async move {
 		new_best_heads_sender.unbounded_send(block.header().clone()).unwrap();
@@ -366,7 +460,7 @@ fn do_not_set_best_block_to_older_block() {
 	let new_best_heads_sender = relay_chain.inner.lock().unwrap().new_best_heads_sender.clone();
 
 	let consensus =
-		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}));
+		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}), None);
 
 	let client2 = client.clone();
 	let work = async move {
