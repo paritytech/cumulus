@@ -166,8 +166,7 @@ fn test_asset_xcm_trader_with_refund() {
 			let weight_used = bought / 2;
 
 			// Make sure refurnd works.
-			let amount_refunded =
-				WeightToFee::weight_to_fee(&(bought - weight_used));
+			let amount_refunded = WeightToFee::weight_to_fee(&(bought - weight_used));
 
 			assert_eq!(
 				trader.refund_weight(bought - weight_used),

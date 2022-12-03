@@ -212,9 +212,10 @@ fn update_weight_restrict_decay_works() {
 	new_test_ext().execute_with(|| {
 		let data: QueueConfigData = <QueueConfig<Test>>::get();
 		assert_eq!(data.weight_restrict_decay, Weight::from_ref_time(2));
-		assert_ok!(
-			XcmpQueue::update_weight_restrict_decay(RuntimeOrigin::root(), Weight::from_ref_time(5))
-		);
+		assert_ok!(XcmpQueue::update_weight_restrict_decay(
+			RuntimeOrigin::root(),
+			Weight::from_ref_time(5)
+		));
 		assert_noop!(
 			XcmpQueue::update_weight_restrict_decay(
 				RuntimeOrigin::signed(6),

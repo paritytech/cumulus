@@ -28,7 +28,7 @@ use super::{
 };
 use core::marker::PhantomData;
 use frame_support::{
-	log, match_types, parameter_types,
+	match_types, parameter_types,
 	traits::{
 		fungibles::{self, Balanced, CreditOf},
 		ConstU32, Contains, ContainsPair, Everything, Get, Nothing,
@@ -37,6 +37,7 @@ use frame_support::{
 };
 use pallet_asset_tx_payment::HandleCredit;
 use pallet_xcm::XcmPassthrough;
+use parachains_common::xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry};
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
 use sp_runtime::traits::Zero;
@@ -49,10 +50,7 @@ use xcm_builder::{
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
-use xcm_executor::{
-	traits::{JustTry, ShouldExecute},
-	XcmExecutor,
-};
+use xcm_executor::{traits::JustTry, XcmExecutor};
 
 parameter_types! {
 	pub const RelayLocation: MultiLocation = MultiLocation::parent();
@@ -148,69 +146,6 @@ match_types! {
 	pub type CommonGoodAssetsParachain: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: X1(Parachain(1000)) }
 	};
-}
-
-//TODO: move DenyThenTry to polkadot's xcm module.
-/// Deny executing the xcm message if it matches any of the Deny filter regardless of anything else.
-/// If it passes the Deny, and matches one of the Allow cases then it is let through.
-pub struct DenyThenTry<Deny, Allow>(PhantomData<Deny>, PhantomData<Allow>)
-where
-	Deny: ShouldExecute,
-	Allow: ShouldExecute;
-
-impl<Deny, Allow> ShouldExecute for DenyThenTry<Deny, Allow>
-where
-	Deny: ShouldExecute,
-	Allow: ShouldExecute,
-{
-	fn should_execute<RuntimeCall>(
-		origin: &MultiLocation,
-		message: &mut [Instruction<RuntimeCall>],
-		max_weight: Weight,
-		weight_credit: &mut Weight,
-	) -> Result<(), ()> {
-		Deny::should_execute(origin, message, max_weight, weight_credit)?;
-		Allow::should_execute(origin, message, max_weight, weight_credit)
-	}
-}
-
-// See issue <https://github.com/paritytech/polkadot/issues/5233>
-pub struct DenyReserveTransferToRelayChain;
-impl ShouldExecute for DenyReserveTransferToRelayChain {
-	fn should_execute<RuntimeCall>(
-		origin: &MultiLocation,
-		message: &mut [Instruction<RuntimeCall>],
-		_max_weight: Weight,
-		_weight_credit: &mut Weight,
-	) -> Result<(), ()> {
-		if message.iter().any(|inst| {
-			matches!(
-				inst,
-				InitiateReserveWithdraw {
-					reserve: MultiLocation { parents: 1, interior: Here },
-					..
-				} | DepositReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. } |
-					TransferReserveAsset {
-						dest: MultiLocation { parents: 1, interior: Here },
-						..
-					}
-			)
-		}) {
-			return Err(()) // Deny
-		}
-
-		// allow reserve transfers to arrive from relay chain
-		if matches!(origin, MultiLocation { parents: 1, interior: Here }) &&
-			message.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
-		{
-			log::warn!(
-				target: "xcm::barriers",
-				"Unexpected ReserveAssetDeposited from the relay chain",
-			);
-		}
-		// Permit everything else
-		Ok(())
-	}
 }
 
 pub type Barrier = DenyThenTry<
