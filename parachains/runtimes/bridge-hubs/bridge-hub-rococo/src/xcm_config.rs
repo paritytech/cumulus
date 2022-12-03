@@ -15,8 +15,8 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-	AccountId, Balances, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall,
-	RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
+	AccountId, AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
+	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -36,7 +36,7 @@ use xcm_builder::{
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
-use xcm_executor::XcmExecutor;
+use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
 parameter_types! {
 	pub const RelayLocation: MultiLocation = MultiLocation::parent();
@@ -96,6 +96,7 @@ parameter_types! {
 	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
 	pub UnitWeightCost: u64 = 1_000_000_000;
 	pub const MaxInstructions: u32 = 100;
+	pub const MaxAssetsIntoHolding: u32 = 64;
 }
 
 match_types! {
@@ -106,6 +107,34 @@ match_types! {
 	pub type ParentOrSiblings: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(_) }
+	};
+
+	// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
+	// account for proof size weights.
+	//
+	// Calls that are allowed through this filter must:
+	// 1. Have a fixed weight;
+	// 2. Cannot lead to another call being made;
+	// 3. Have a defined proof size weight, e.g. no unbounded vecs in call parameters.
+	pub type SafeCallFilter: impl Contains<RuntimeCall> = {
+		RuntimeCall::System(
+			frame_system::Call::set_heap_pages { .. } |
+			frame_system::Call::set_code { .. } |
+			frame_system::Call::set_code_without_checks { .. } |
+			frame_system::Call::kill_prefix { .. }
+		) |
+		RuntimeCall::ParachainSystem(..) |
+		RuntimeCall::Timestamp(..) |
+		RuntimeCall::Balances(..) |
+		RuntimeCall::CollatorSelection(
+			pallet_collator_selection::Call::set_desired_candidates { .. } |
+			pallet_collator_selection::Call::set_candidacy_bond { .. } |
+			pallet_collator_selection::Call::register_as_candidate { .. } |
+			pallet_collator_selection::Call::leave_intent { .. }
+		) |
+		RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
+		RuntimeCall::XcmpQueue(..) | RuntimeCall::DmpQueue(..) |
+		RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. })
 	};
 }
 
@@ -145,6 +174,15 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;
 	type SubscriptionService = PolkadotXcm;
+	type PalletInstancesInfo = AllPalletsWithSystem;
+	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
+	type AssetLocker = ();
+	type AssetExchanger = ();
+	type FeeManager = ();
+	type MessageExporter = ();
+	type UniversalAliases = Nothing;
+	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
+	type SafeCallFilter = SafeCallFilter;
 }
 
 /// Converts a local signed origin into an XCM multilocation.

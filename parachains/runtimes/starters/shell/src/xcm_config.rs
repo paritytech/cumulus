@@ -17,7 +17,11 @@ use super::{
 	AccountId, AllPalletsWithSystem, ParachainInfo, Runtime, RuntimeCall, RuntimeEvent,
 	RuntimeOrigin,
 };
-use frame_support::{match_types, parameter_types, traits::Nothing, weights::Weight};
+use frame_support::{
+	match_types, parameter_types,
+	traits::{Everything, Nothing},
+	weights::Weight,
+};
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AllowUnpaidExecutionFrom, FixedWeightBounds, ParentAsSuperuser, ParentIsPreset,
@@ -78,6 +82,7 @@ impl xcm_executor::Config for XcmConfig {
 	type MessageExporter = ();
 	type UniversalAliases = Nothing;
 	type CallDispatcher = RuntimeCall;
+	type SafeCallFilter = Everything;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
