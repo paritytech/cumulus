@@ -120,15 +120,10 @@ fn build_block<B: InitBlockBuilder>(
 
 	let mut block = builder.build().unwrap().block;
 
-	// Simulate some form of post activity.
+	// Simulate some form of post activity (like a Seal or Other generic things).
 	// This is mostly used to excercise the `LevelMonitor` correct behavior.
 	// (in practice we want that header post-hash != pre-hash)
-	let post_digest = sp_runtime::DigestItem::Other(vec![1, 2, 3]);
-
-	// In order to get a header hash compatible with block import params containing some
-	// form of `post_digest`, we need to manually push the post digest within the header
-	// digest logs.
-	block.header.digest.push(post_digest);
+	block.header.digest.push(sp_runtime::DigestItem::Other(vec![1, 2, 3]));
 
 	block
 }
