@@ -82,6 +82,8 @@ struct Candidate<Block: BlockT> {
 	session_index: SessionIndex,
 	block_number: NumberFor<Block>,
 	parent_hash: Block::Hash,
+	// Lazy recovery has been submitted.
+	waiting_recovery: bool,
 }
 
 /// Encapsulates the logic of the pov recovery.
@@ -174,15 +176,24 @@ where
 				receipt: receipt.to_plain(),
 				session_index,
 				parent_hash: *header.parent_hash(),
+				waiting_recovery: false,
 			},
 		);
 
-		// Trigger a lazy recovery request that will eventually be blocked if in the meantime the
-		// block is imported.
+		// If required, triggers a lazy recovery request that will eventually be blocked
+		// if in the meantime the block is imported.
 		self.recover(RecoveryRequest {
 			hash,
 			delay: self.recovery_delay,
 			kind: RecoveryKind::Simple,
+		});
+	}
+
+	/// Handle an imported block.
+	fn handle_block_imported(&mut self, block_hash: &Block::Hash) {
+		self.candidates.get_mut(block_hash).map(|candidate| {
+			// Prevents triggering an already enqueued recovery request
+			candidate.waiting_recovery = false;
 		});
 	}
 
@@ -193,12 +204,13 @@ where
 
 	/// Recover the candidate for the given `block_hash`.
 	async fn recover_candidate(&mut self, block_hash: Block::Hash) {
-		let Some(candidate) = self.candidates.get(&block_hash) else {
-			return;
-		};
-
-		tracing::debug!(target: LOG_TARGET, ?block_hash, "Issuing recovery request");
-		self.active_candidate_recovery.recover_candidate(block_hash, candidate).await;
+		match self.candidates.get(&block_hash) {
+			Some(candidate) if candidate.waiting_recovery => {
+				tracing::debug!(target: LOG_TARGET, ?block_hash, "Issuing recovery request");
+				self.active_candidate_recovery.recover_candidate(block_hash, candidate).await;
+			},
+			_ => (),
+		}
 	}
 
 	/// Clear `waiting_for_parent` from the given `hash` and do this recursively for all child
@@ -347,8 +359,25 @@ where
 		let mut to_recover = Vec::new();
 
 		let do_recover = loop {
+			let candidate = match self.candidates.get_mut(&hash) {
+				Some(candidate) if !candidate.waiting_recovery => candidate,
+				None => {
+					tracing::error!(
+						target: LOG_TARGET,
+						block_hash = ?hash,
+						"Cound not recover. Block was never announced as candidate"
+					);
+					break false
+				},
+				// Recovery already in progress
+				_ => break false,
+			};
+
 			match self.parachain_client.block_status(&BlockId::Hash(hash)) {
-				Ok(BlockStatus::Unknown) => to_recover.push(hash),
+				Ok(BlockStatus::Unknown) => {
+					candidate.waiting_recovery = true;
+					to_recover.push(hash);
+				},
 				Ok(_) => break true,
 				Err(e) => {
 					tracing::error!(
@@ -365,17 +394,7 @@ where
 				break true
 			}
 
-			hash = match self.candidates.get(&hash) {
-				Some(p) => p.parent_hash,
-				None => {
-					tracing::error!(
-						target: LOG_TARGET,
-						block_hash = ?hash,
-						"Cound not recover. Block was never announced as candidate"
-					);
-					break false
-				},
-			}
+			hash = candidate.parent_hash;
 		};
 
 		if do_recover {
@@ -385,7 +404,8 @@ where
 				tracing::debug!(
 					target: LOG_TARGET,
 					block_hash = ?hash,
-					"Starting explicit lazy block recovery in {:?} sec",
+					"Starting {:?} block recovery in {:?} sec",
+					kind,
 					delay.as_secs(),
 				);
 				self.next_candidate_to_recover.push(
@@ -401,6 +421,7 @@ where
 
 	/// Run the pov-recovery.
 	pub async fn run(mut self) {
+		let mut imported_blocks = self.parachain_client.import_notification_stream().fuse();
 		let mut finalized_blocks = self.parachain_client.finality_notification_stream().fuse();
 		let pending_candidates =
 			match pending_candidates(self.relay_chain_interface.clone(), self.para_id).await {
@@ -428,6 +449,14 @@ where
 						self.recover(req);
 					} else {
 						tracing::debug!(target: LOG_TARGET, "Recovery channel stream ended");
+						return;
+					}
+				},
+				imported = imported_blocks.next() => {
+					if let Some(imported) = imported {
+						self.handle_block_imported(&imported.hash);
+					} else {
+						tracing::debug!(target: LOG_TARGET,	"Imported blocks stream ended");
 						return;
 					}
 				},

@@ -196,7 +196,7 @@ impl<B: BlockT> ParachainBlockData<B> {
 }
 
 /// Type of recovery to trigger.
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum RecoveryKind {
 	/// Single block recovery.
 	Simple,
