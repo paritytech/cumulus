@@ -179,7 +179,7 @@ where
 
 		// Trigger a lazy recovery request that will eventually be blocked if in the meantime the
 		// block is imported.
-		self.chain_recovery(RecoveryRequest {
+		self.recover(RecoveryRequest {
 			hash,
 			delay: self.recovery_delay,
 			kind: RecoveryKind::Simple,
@@ -304,8 +304,45 @@ where
 		self.import_block(block).await;
 	}
 
+	/// Import the given `block`.
+	///
+	/// This will also recursivley drain `waiting_for_parent` and import them as well.
+	async fn import_block(&mut self, block: Block) {
+		let mut blocks = VecDeque::new();
+
+		tracing::debug!(target: LOG_TARGET, block_hash = ?block.hash(), "Importing block retrieved using pov_recovery");
+		blocks.push_back(block);
+
+		let mut incoming_blocks = Vec::new();
+
+		while let Some(block) = blocks.pop_front() {
+			let block_hash = block.hash();
+			let (header, body) = block.deconstruct();
+
+			incoming_blocks.push(IncomingBlock {
+				hash: block_hash,
+				header: Some(header),
+				body: Some(body),
+				import_existing: false,
+				allow_missing_state: false,
+				justifications: None,
+				origin: None,
+				skip_execution: false,
+				state: None,
+				indexed_body: None,
+			});
+
+			if let Some(waiting) = self.waiting_for_parent.remove(&block_hash) {
+				blocks.extend(waiting);
+			}
+		}
+
+		self.parachain_import_queue
+			.import_blocks(BlockOrigin::ConsensusBroadcast, incoming_blocks);
+	}
+
 	/// Attempts an explicit recovery of one or more blocks.
-	fn chain_recovery(&mut self, req: RecoveryRequest<Block>) {
+	pub fn recover(&mut self, req: RecoveryRequest<Block>) {
 		let RecoveryRequest { mut hash, delay, kind } = req;
 		let mut to_recover = Vec::new();
 
@@ -362,43 +399,6 @@ where
 		}
 	}
 
-	/// Import the given `block`.
-	///
-	/// This will also recursivley drain `waiting_for_parent` and import them as well.
-	async fn import_block(&mut self, block: Block) {
-		let mut blocks = VecDeque::new();
-
-		tracing::debug!(target: LOG_TARGET, block_hash = ?block.hash(), "Importing block retrieved using pov_recovery");
-		blocks.push_back(block);
-
-		let mut incoming_blocks = Vec::new();
-
-		while let Some(block) = blocks.pop_front() {
-			let block_hash = block.hash();
-			let (header, body) = block.deconstruct();
-
-			incoming_blocks.push(IncomingBlock {
-				hash: block_hash,
-				header: Some(header),
-				body: Some(body),
-				import_existing: false,
-				allow_missing_state: false,
-				justifications: None,
-				origin: None,
-				skip_execution: false,
-				state: None,
-				indexed_body: None,
-			});
-
-			if let Some(waiting) = self.waiting_for_parent.remove(&block_hash) {
-				blocks.extend(waiting);
-			}
-		}
-
-		self.parachain_import_queue
-			.import_blocks(BlockOrigin::ConsensusBroadcast, incoming_blocks);
-	}
-
 	/// Run the pov-recovery.
 	pub async fn run(mut self) {
 		let mut finalized_blocks = self.parachain_client.finality_notification_stream().fuse();
@@ -425,7 +425,7 @@ where
 				},
 				recovery_req = self.recovery_chan_rx.next() => {
 					if let Some(req) = recovery_req {
-						self.chain_recovery(req);
+						self.recover(req);
 					} else {
 						tracing::debug!(target: LOG_TARGET, "Recovery channel stream ended");
 						return;

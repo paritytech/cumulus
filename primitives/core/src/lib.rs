@@ -217,12 +217,12 @@ pub struct RecoveryRequest<Block: BlockT> {
 	pub kind: RecoveryKind,
 }
 
-/// The delay between observing an unknown block and recovering this block.
+/// The delay between observing an unknown block and triggering the recovery of a block.
 #[derive(Clone, Copy)]
 pub struct RecoveryDelay {
-	/// Start recovering the block after at least `min` delay.
+	/// Start recovering after `min` delay.
 	pub min: Duration,
-	/// Start recovering the block in maximum of the given delay.
+	/// Start recovering before `max` delay.
 	pub max: Duration,
 }
 
