@@ -283,6 +283,7 @@ where
 		match cumulus_client_network::WaitForParachainTargetBlock::<Block>::warp_sync_get(
 			para_id,
 			relay_chain_interface.clone(),
+			Arc::new(task_manager.spawn_handle()),
 		)
 		.await
 		{

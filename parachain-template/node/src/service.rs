@@ -182,6 +182,7 @@ async fn start_node_impl(
 		match cumulus_client_network::WaitForParachainTargetBlock::<Block>::warp_sync_get(
 			id,
 			relay_chain_interface.clone(),
+			Arc::new(task_manager.spawn_handle()),
 		)
 		.await
 		{
