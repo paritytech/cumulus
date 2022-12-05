@@ -14,7 +14,11 @@
   ],
   "telemetryEndpoints": null,
   "protocolId": null,
-  "properties": {},
+  "properties": {
+    "ss58Format": 42,
+    "tokenDecimals": 12,
+    "tokenSymbol": "WOOK"
+  },
   "relay_chain": "wococo",
   "para_id": 1014,
   "codeSubstitutes": {},

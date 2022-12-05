@@ -20,8 +20,9 @@ use bp_messages::{
 	LaneId,
 };
 use bp_runtime::{messages::MessageDispatchResult, AccountIdOf, Chain};
-use codec::Encode;
-use frame_support::{dispatch::Weight, parameter_types};
+use codec::{Decode, Encode};
+use frame_support::{dispatch::Weight, parameter_types, CloneNoBound, EqNoBound, PartialEqNoBound};
+use scale_info::TypeInfo;
 use xcm::latest::prelude::*;
 use xcm_builder::{DispatchBlob, DispatchBlobError, HaulBlob};
 
@@ -36,6 +37,13 @@ parameter_types! {
 	pub const HeadersToKeep: u32 = 1024;
 }
 
+#[derive(CloneNoBound, EqNoBound, PartialEqNoBound, Encode, Decode, Debug, TypeInfo)]
+pub enum XcmBlobMessageDispatchResult {
+	InvalidPayload,
+	Dispatched,
+	NotDispatched(#[codec(skip)] &'static str),
+}
+
 /// [`XcmBlobMessageDispatch`] is responsible for dispatching received messages from other BridgeHub
 pub struct XcmBlobMessageDispatch<SourceBridgeHubChain, TargetBridgeHubChain, DispatchBlob> {
 	_marker:
@@ -47,6 +55,7 @@ impl<SourceBridgeHubChain: Chain, TargetBridgeHubChain: Chain, BlobDispatcher: D
 	for XcmBlobMessageDispatch<SourceBridgeHubChain, TargetBridgeHubChain, BlobDispatcher>
 {
 	type DispatchPayload = XcmAsPlainPayload;
+	type DispatchLevelResult = XcmBlobMessageDispatchResult;
 
 	fn dispatch_weight(_message: &mut DispatchMessage<Self::DispatchPayload>) -> Weight {
 		log::error!(
@@ -60,7 +69,7 @@ impl<SourceBridgeHubChain: Chain, TargetBridgeHubChain: Chain, BlobDispatcher: D
 	fn dispatch(
 		_relayer_account: &AccountIdOf<SourceBridgeHubChain>,
 		message: DispatchMessage<Self::DispatchPayload>,
-	) -> MessageDispatchResult {
+	) -> MessageDispatchResult<Self::DispatchLevelResult> {
 		log::warn!(
 			target: crate::LOG_TARGET,
 			"[XcmBlobMessageDispatch] DispatchBlob::dispatch_blob triggering - message_nonce: {:?}",
@@ -79,15 +88,19 @@ impl<SourceBridgeHubChain: Chain, TargetBridgeHubChain: Chain, BlobDispatcher: D
 					// TODO:check-parameter - setup uspent_weight?
 					unspent_weight: Weight::zero(),
 					dispatch_fee_paid_during_dispatch: false,
+					dispatch_level_result: XcmBlobMessageDispatchResult::InvalidPayload,
 				}
 			},
 		};
-		match BlobDispatcher::dispatch_blob(payload) {
-			Ok(_) => log::debug!(
-				target: crate::LOG_TARGET,
-				"[XcmBlobMessageDispatch] DispatchBlob::dispatch_blob was ok - message_nonce: {:?}",
-				message.key.nonce
-			),
+		let dispatch_level_result = match BlobDispatcher::dispatch_blob(payload) {
+			Ok(_) => {
+				log::debug!(
+					target: crate::LOG_TARGET,
+					"[XcmBlobMessageDispatch] DispatchBlob::dispatch_blob was ok - message_nonce: {:?}",
+					message.key.nonce
+				);
+				XcmBlobMessageDispatchResult::Dispatched
+			},
 			Err(e) => {
 				let e = match e {
 					DispatchBlobError::Unbridgable => "DispatchBlobError::Unbridgable",
@@ -106,12 +119,14 @@ impl<SourceBridgeHubChain: Chain, TargetBridgeHubChain: Chain, BlobDispatcher: D
 					"[XcmBlobMessageDispatch] DispatchBlob::dispatch_blob failed, error: {:?} - message_nonce: {:?}",
 					e, message.key.nonce
 				);
+				XcmBlobMessageDispatchResult::NotDispatched(e)
 			},
-		}
+		};
 		MessageDispatchResult {
 			// TODO:check-parameter - setup uspent_weight?
 			dispatch_fee_paid_during_dispatch: false,
 			unspent_weight: Weight::zero(),
+			dispatch_level_result,
 		}
 	}
 }
