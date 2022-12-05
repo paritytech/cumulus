@@ -854,6 +854,7 @@ dependencies = [
 name = "bp-relayers"
 version = "0.1.0"
 dependencies = [
+ "bp-messages",
  "frame-support",
  "hex",
  "hex-literal",
@@ -4443,7 +4444,7 @@ dependencies = [
  "pallet-vesting",
  "pallet-whitelist",
  "pallet-xcm",
- "pallet-xcm-benchmarks 0.9.31 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
+ "pallet-xcm-benchmarks",
  "parity-scale-codec",
  "polkadot-primitives",
  "polkadot-runtime-common",
@@ -6960,23 +6961,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-xcm-benchmarks"
-version = "0.9.31"
-source = "git+https://github.com/paritytech/polkadot?branch=master#40aefb4ac396bcd098755c6d57dac7b284a343e7"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-runtime",
- "sp-std",
- "xcm",
- "xcm-executor",
-]
-
-[[package]]
 name = "parachain-info"
 version = "0.1.0"
 dependencies = [
@@ -8819,7 +8803,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "test-runtime-constants 0.9.31 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
+ "test-runtime-constants",
  "xcm",
  "xcm-builder",
  "xcm-executor",
@@ -8828,7 +8812,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-service"
 version = "0.9.31"
-source = "git+https://github.com/paritytech/polkadot?branch=master#40aefb4ac396bcd098755c6d57dac7b284a343e7"
+source = "git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges#9fc6b88ccc7abc1418ff5260e8cc492e647306a0"
 dependencies = [
  "frame-benchmarking",
  "frame-system",
@@ -8874,7 +8858,7 @@ dependencies = [
  "sp-state-machine",
  "substrate-test-client",
  "tempfile",
- "test-runtime-constants 0.9.31 (git+https://github.com/paritytech/polkadot?branch=master)",
+ "test-runtime-constants",
  "tokio",
  "tracing-gum",
 ]
@@ -9580,7 +9564,7 @@ dependencies = [
  "pallet-utility",
  "pallet-vesting",
  "pallet-xcm",
- "pallet-xcm-benchmarks 0.9.31 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
+ "pallet-xcm-benchmarks",
  "parity-scale-codec",
  "polkadot-parachain 0.9.31",
  "polkadot-primitives",
@@ -12161,7 +12145,7 @@ dependencies = [
  "pallet-uniques",
  "pallet-utility",
  "pallet-xcm",
- "pallet-xcm-benchmarks 0.9.31 (git+https://github.com/paritytech/polkadot?branch=master)",
+ "pallet-xcm-benchmarks",
  "parachain-info",
  "parachains-common",
  "parity-scale-codec",
@@ -12225,7 +12209,7 @@ dependencies = [
  "pallet-uniques",
  "pallet-utility",
  "pallet-xcm",
- "pallet-xcm-benchmarks 0.9.31 (git+https://github.com/paritytech/polkadot?branch=master)",
+ "pallet-xcm-benchmarks",
  "parachain-info",
  "parachains-common",
  "parity-scale-codec",
@@ -12470,7 +12454,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-utils"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#4e1e17cccd499dfe49e8c1bed01957953aa4c839"
+source = "git+https://github.com/paritytech//substrate?branch=sv-locked-for-gav-xcm-v3-and-bridges#87f3fdea8f227d33322c439d45a9e1796637e972"
 dependencies = [
  "futures",
  "substrate-test-utils-derive",
@@ -12480,7 +12464,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-utils-derive"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#4e1e17cccd499dfe49e8c1bed01957953aa4c839"
+source = "git+https://github.com/paritytech//substrate?branch=sv-locked-for-gav-xcm-v3-and-bridges#87f3fdea8f227d33322c439d45a9e1796637e972"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -12600,18 +12584,6 @@ checksum = "507e9898683b6c43a9aa55b64259b721b52ba226e0f3779137e50ad114a4c90b"
 name = "test-runtime-constants"
 version = "0.9.31"
 source = "git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges#9fc6b88ccc7abc1418ff5260e8cc492e647306a0"
-dependencies = [
- "frame-support",
- "polkadot-primitives",
- "polkadot-runtime-common",
- "smallvec",
- "sp-runtime",
-]
-
-[[package]]
-name = "test-runtime-constants"
-version = "0.9.31"
-source = "git+https://github.com/paritytech/polkadot?branch=master#40aefb4ac396bcd098755c6d57dac7b284a343e7"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -13697,7 +13669,7 @@ dependencies = [
  "pallet-utility",
  "pallet-vesting",
  "pallet-xcm",
- "pallet-xcm-benchmarks 0.9.31 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
+ "pallet-xcm-benchmarks",
  "parity-scale-codec",
  "polkadot-parachain 0.9.31",
  "polkadot-primitives",
@@ -13781,7 +13753,7 @@ dependencies = [
  "pallet-uniques",
  "pallet-utility",
  "pallet-xcm",
- "pallet-xcm-benchmarks 0.9.31 (git+https://github.com/paritytech/polkadot?branch=master)",
+ "pallet-xcm-benchmarks",
  "parachain-info",
  "parachains-common",
  "parity-scale-codec",
