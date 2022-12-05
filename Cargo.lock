@@ -965,6 +965,7 @@ dependencies = [
  "bp-rococo",
  "bp-runtime",
  "bp-wococo",
+ "bridge-hub-test-utils",
  "bridge-runtime-common",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -1008,6 +1009,7 @@ dependencies = [
  "polkadot-runtime-constants",
  "scale-info",
  "serde",
+ "serial_test",
  "smallvec",
  "sp-api",
  "sp-block-builder",
@@ -1022,6 +1024,27 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
+]
+
+[[package]]
+name = "bridge-hub-test-utils"
+version = "0.1.0"
+dependencies = [
+ "bp-messages",
+ "cumulus-pallet-parachain-system",
+ "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
+ "cumulus-test-relay-sproof-builder",
+ "frame-support",
+ "frame-system",
+ "pallet-xcm",
+ "pallet-xcm-benchmarks",
+ "parachain-info",
+ "parachains-common",
+ "polkadot-parachain 0.9.31",
  "xcm",
  "xcm-builder",
  "xcm-executor",
@@ -2650,6 +2673,19 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "dashmap"
+version = "5.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "907076dfda823b0b36d2a1bb5f90c96660a5bbcd7729e10727f07858f22c4edc"
+dependencies = [
+ "cfg-if 1.0.0",
+ "hashbrown",
+ "lock_api",
+ "once_cell",
+ "parking_lot_core 0.9.3",
 ]
 
 [[package]]
@@ -11076,6 +11112,32 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e44969a61f5d316be20a42ff97816efb3b407a924d06824c3d8a49fa8450de0e"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "serial_test"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92761393ee4dc3ff8f4af487bd58f4307c9329bbedea02cac0089ad9c411e153"
+dependencies = [
+ "dashmap",
+ "futures",
+ "lazy_static",
+ "log",
+ "parking_lot 0.12.1",
+ "serial_test_derive",
+]
+
+[[package]]
+name = "serial_test_derive"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4b6f5d1c3087fb119617cff2966fe3808a80e5eb59a8c1601d5994d66f4346a5"
+dependencies = [
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

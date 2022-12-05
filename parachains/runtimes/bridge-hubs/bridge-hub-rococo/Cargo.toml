@@ -83,6 +83,10 @@ pallet-bridge-relayers = { path = "../../../../bridges/modules/relayers", defaul
 pallet-shift-session-manager = { path = "../../../../bridges/modules/shift-session-manager", default-features = false }
 bridge-runtime-common = { path = "../../../../bridges/bin/runtime-common", default-features = false }
 
+[dev-dependencies]
+serial_test = "0.9.0"
+bridge-hub-test-utils = { path = "../test-utils"}
+
 [features]
 default = [
 	"std",
