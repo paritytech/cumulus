@@ -995,7 +995,6 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-session",
  "pallet-shift-session-manager",
- "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",

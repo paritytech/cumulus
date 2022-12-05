@@ -452,11 +452,6 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = ();
 }
 
-impl pallet_sudo::Config for Runtime {
-	type RuntimeCall = RuntimeCall;
-	type RuntimeEvent = RuntimeEvent;
-}
-
 // Add bridge pallets (GPA)
 
 /// Add granda bridge pallet to track Wococo relay chain on Rococo BridgeHub
@@ -626,9 +621,6 @@ construct_runtime!(
 		BridgeRococoGrandpa: pallet_bridge_grandpa::<Instance2>::{Pallet, Call, Storage, Config<T>} = 43,
 		BridgeRococoParachain: pallet_bridge_parachains::<Instance2>::{Pallet, Call, Storage, Event<T>} = 44,
 		BridgeRococoMessages: pallet_bridge_messages::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 45,
-
-		// Sudo
-		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Event<T>, Storage} = 100,
 	}
 );
 

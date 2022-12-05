@@ -73,7 +73,6 @@ impl BridgeHubRuntimeType {
 						"rococo",
 						ParaId::new(1013),
 						None,
-						None,
 					)))
 				} else {
 					Ok(Box::new(rococo::BridgeHubChainSpec::from_json_bytes(
@@ -86,7 +85,6 @@ impl BridgeHubRuntimeType {
 				ChainType::Local,
 				"rococo-local",
 				ParaId::new(1013),
-				Some("Alice".to_string()),
 				Some("Bob".to_string()),
 			))),
 			BridgeHubRuntimeType::Wococo { default_config } =>
@@ -97,7 +95,6 @@ impl BridgeHubRuntimeType {
 						ChainType::Live,
 						"wococo",
 						ParaId::new(1014),
-						None,
 						None,
 					)))
 				} else {
@@ -111,7 +108,6 @@ impl BridgeHubRuntimeType {
 				ChainType::Local,
 				"wococo-local",
 				ParaId::new(1014),
-				Some("Alice".to_string()),
 				Some("Bob".to_string()),
 			))),
 		}
@@ -166,7 +162,6 @@ pub mod rococo {
 		chain_type: ChainType,
 		relay_chain: &str,
 		para_id: ParaId,
-		root_key_seed: Option<String>,
 		bridges_pallet_owner_seed: Option<String>,
 	) -> BridgeHubChainSpec {
 		let properties = sc_chain_spec::Properties::new();
@@ -209,9 +204,6 @@ pub mod rococo {
 						get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 					],
 					para_id,
-					root_key_seed
-						.as_ref()
-						.map(|seed| get_account_id_from_seed::<sr25519::Public>(&seed)),
 					bridges_pallet_owner_seed
 						.as_ref()
 						.map(|seed| get_account_id_from_seed::<sr25519::Public>(&seed)),
@@ -230,7 +222,6 @@ pub mod rococo {
 		invulnerables: Vec<(AccountId, AuraId)>,
 		endowed_accounts: Vec<AccountId>,
 		id: ParaId,
-		root_key: Option<AccountId>,
 		bridges_pallet_owner: Option<AccountId>,
 	) -> bridge_hub_rococo_runtime::GenesisConfig {
 		bridge_hub_rococo_runtime::GenesisConfig {
@@ -267,8 +258,6 @@ pub mod rococo {
 			polkadot_xcm: bridge_hub_rococo_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
 			},
-			// TODO: when go live, check it: https://github.com/paritytech/parity-bridges-common/issues/1551
-			sudo: bridge_hub_rococo_runtime::SudoConfig { key: root_key },
 			bridge_wococo_grandpa: bridge_hub_rococo_runtime::BridgeWococoGrandpaConfig {
 				owner: bridges_pallet_owner.clone(),
 				..Default::default()
@@ -308,7 +297,6 @@ pub mod wococo {
 		chain_type: ChainType,
 		relay_chain: &str,
 		para_id: ParaId,
-		root_key_seed: Option<String>,
 		bridges_pallet_owner_seed: Option<String>,
 	) -> BridgeHubChainSpec {
 		rococo::default_config(
@@ -317,7 +305,6 @@ pub mod wococo {
 			chain_type,
 			relay_chain,
 			para_id,
-			root_key_seed,
 			bridges_pallet_owner_seed,
 		)
 	}
