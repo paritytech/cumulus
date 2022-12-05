@@ -360,7 +360,7 @@ where
 
 		let do_recover = loop {
 			let candidate = match self.candidates.get_mut(&hash) {
-				Some(candidate) if !candidate.waiting_recovery => candidate,
+				Some(candidate) => candidate,
 				None => {
 					tracing::error!(
 						target: LOG_TARGET,
@@ -369,12 +369,10 @@ where
 					);
 					break false
 				},
-				// Recovery already in progress
-				_ => break false,
 			};
 
 			match self.parachain_client.block_status(&BlockId::Hash(hash)) {
-				Ok(BlockStatus::Unknown) => {
+				Ok(BlockStatus::Unknown) if !candidate.waiting_recovery => {
 					candidate.waiting_recovery = true;
 					to_recover.push(hash);
 				},
