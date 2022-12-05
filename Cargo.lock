@@ -4162,7 +4162,7 @@ dependencies = [
  "pallet-election-provider-support-benchmarking",
  "pallet-elections-phragmen",
  "pallet-fast-unstake",
- "pallet-gilt",
+ "pallet-nis",
  "pallet-grandpa",
  "pallet-identity",
  "pallet-im-online",
@@ -5883,7 +5883,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-gilt"
+name = "pallet-nis"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#9812205cb216f9c3598d733f63c0f882136b8004"
 dependencies = [
@@ -9129,7 +9129,7 @@ dependencies = [
  "pallet-collective",
  "pallet-democracy",
  "pallet-elections-phragmen",
- "pallet-gilt",
+ "pallet-nis",
  "pallet-grandpa",
  "pallet-identity",
  "pallet-im-online",
