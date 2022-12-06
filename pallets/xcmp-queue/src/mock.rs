@@ -20,7 +20,7 @@ use cumulus_pallet_parachain_system::AnyRelayNumber;
 use cumulus_primitives_core::{IsSystem, ParaId};
 use frame_support::{
 	parameter_types,
-	traits::{Nothing, OriginTrait},
+	traits::{Everything, Nothing, OriginTrait},
 };
 use frame_system::EnsureRoot;
 use sp_core::H256;
@@ -59,7 +59,7 @@ parameter_types! {
 type AccountId = u64;
 
 impl frame_system::Config for Test {
-	type BaseCallFilter = frame_support::traits::Everything;
+	type BaseCallFilter = Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
 	type DbWeight = ();
@@ -163,6 +163,7 @@ impl xcm_executor::Config for XcmConfig {
 	type MessageExporter = ();
 	type UniversalAliases = Nothing;
 	type CallDispatcher = RuntimeCall;
+	type SafeCallFilter = Everything;
 }
 
 pub type XcmRouter = (
