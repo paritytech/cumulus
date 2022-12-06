@@ -23,7 +23,6 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-use frame_support::traits::{ConstU32, Nothing};
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
@@ -44,7 +43,7 @@ pub use frame_support::{
 	match_types, parameter_types,
 	traits::{
 		AsEnsureOriginWithArg, ConstU32, ConstU64, ConstU8, EitherOfDiverse, Everything, IsInVec,
-		Randomness,
+		Nothing, Randomness,
 	},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
