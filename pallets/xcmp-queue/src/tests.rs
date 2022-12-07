@@ -224,12 +224,12 @@ fn update_xcmp_max_individual_weight() {
 		);
 		assert_ok!(XcmpQueue::update_xcmp_max_individual_weight(
 			RuntimeOrigin::root(),
-			Weight::from_ref_time(30u64 * WEIGHT_REF_TIME_PER_MILLIS)
+			30u64 * WEIGHT_REF_TIME_PER_MILLIS
 		));
 		assert_noop!(
 			XcmpQueue::update_xcmp_max_individual_weight(
 				RuntimeOrigin::signed(3),
-				Weight::from_ref_time(10u64 * WEIGHT_REF_TIME_PER_MILLIS)
+				10u64 * WEIGHT_REF_TIME_PER_MILLIS
 			),
 			BadOrigin
 		);
