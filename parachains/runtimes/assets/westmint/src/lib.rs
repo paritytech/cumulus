@@ -825,7 +825,7 @@ impl_runtime_apis! {
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
 			use xcm::latest::prelude::*;
-			use xcm_config::WestendLocation;
+			use xcm_config::{LocalCheckAccount, WestendLocation};
 			use pallet_xcm_benchmarks::asset_instance_from;
 
 			impl pallet_xcm_benchmarks::Config for Runtime {
@@ -874,7 +874,7 @@ impl_runtime_apis! {
 			impl pallet_xcm_benchmarks::fungible::Config for Runtime {
 				type TransactAsset = Balances;
 
-				type CheckedAccount = CheckedAccount;
+				type CheckedAccount = LocalCheckAccount;
 				type TrustedTeleporter = TrustedTeleporter;
 
 				fn get_multi_asset() -> MultiAsset {
