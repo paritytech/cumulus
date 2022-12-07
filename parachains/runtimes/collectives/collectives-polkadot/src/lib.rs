@@ -583,6 +583,7 @@ mod benches {
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_alliance, Alliance]
 		[pallet_collective, AllianceMotion]
+		[pallet_xcm, PolkadotXcm]
 	);
 }
 
