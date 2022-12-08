@@ -251,28 +251,6 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		unimplemented!("Not supported on the RPC collator")
 	}
 
-	fn on_blocks_processed(
-		&mut self,
-		_imported: usize,
-		_count: usize,
-		_results: Vec<(
-			Result<
-				sc_consensus::BlockImportStatus<polkadot_service::NumberFor<B>>,
-				sc_consensus::BlockImportError,
-			>,
-			<B as BlockT>::Hash,
-		)>,
-	) -> Box<
-		dyn Iterator<
-			Item = Result<
-				(PeerId, sc_network_common::sync::message::BlockRequest<B>),
-				sc_network_common::sync::BadPeer,
-			>,
-		>,
-	> {
-		Box::new(std::iter::empty())
-	}
-
 	fn on_justification_import(
 		&mut self,
 		_hash: <B as BlockT>::Hash,
