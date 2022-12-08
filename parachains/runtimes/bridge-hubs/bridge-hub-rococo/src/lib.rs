@@ -122,8 +122,7 @@ pub type SignedExtra = (
 	frame_system::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
-	// TODO: do we need?
-	// BridgeRejectObsoleteHeadersAndMessages,
+	BridgeRejectObsoleteHeadersAndMessages,
 );
 
 /// Unchecked extrinsic type as expected by this runtime.
@@ -623,6 +622,16 @@ construct_runtime!(
 		BridgeRococoMessages: pallet_bridge_messages::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 45,
 	}
 );
+
+bridge_runtime_common::generate_bridge_reject_obsolete_headers_and_messages! {
+	RuntimeCall, AccountId,
+	// Grandpa
+	BridgeRococoGrandpa, BridgeWococoGrandpa,
+	// Parachains
+	BridgeRococoParachain, BridgeWococoParachain,
+	// Messages
+	BridgeRococoMessages, BridgeWococoMessages
+}
 
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
