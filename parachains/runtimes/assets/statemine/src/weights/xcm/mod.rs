@@ -235,6 +235,6 @@ impl<Call> XcmWeightInfo<Call> for StatemineXcmWeight<Call> {
 		Weight::MAX
 	}
 	fn unpaid_execution(_: &WeightLimit, _: &Option<MultiLocation>) -> Weight {
-		Weight::from_ref_time(3_111_000 as u64)
+		XcmGeneric::<Runtime>::unpaid_execution()
 	}
 }
