@@ -901,8 +901,8 @@ impl_runtime_apis! {
 					Err(BenchmarkError::Skip)
 				}
 
-				fn transact_origin() -> Result<MultiLocation, BenchmarkError> {
-					Ok(WestendLocation::get())
+				fn transact_origin_and_runtime_call() -> Result<(MultiLocation, RuntimeCall), BenchmarkError> {
+					Ok((WestendLocation::get(), pallet_session::Call::purge_keys {}.into()))
 				}
 
 				fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {

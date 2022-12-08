@@ -929,8 +929,8 @@ impl_runtime_apis! {
 					Err(BenchmarkError::Skip)
 				}
 
-				fn transact_origin() -> Result<MultiLocation, BenchmarkError> {
-					Ok(KsmLocation::get())
+				fn transact_origin_and_runtime_call() -> Result<(MultiLocation, RuntimeCall), BenchmarkError> {
+					Ok((KsmLocation::get(), pallet_session::Call::purge_keys {}.into()))
 				}
 
 				fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
