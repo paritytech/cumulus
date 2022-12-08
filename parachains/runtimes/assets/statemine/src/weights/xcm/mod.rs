@@ -53,7 +53,7 @@ impl<Call> XcmWeightInfo<Call> for StatemineXcmWeight<Call> {
 	}
 	// Currently there is no trusted reserve
 	fn reserve_asset_deposited(_assets: &MultiAssets) -> Weight {
-		Weight::MAX
+		Weight::from_ref_time(1_000_000_000 as u64)
 	}
 	fn receive_teleported_asset(assets: &MultiAssets) -> Weight {
 		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::receive_teleported_asset())
