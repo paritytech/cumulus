@@ -134,3 +134,55 @@ impl ThisChainWithMessages for BridgeHubRococo {
 		MessageNonce::MAX / 2
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::BridgeGrandpaWococoInstance;
+	use bridge_runtime_common::{
+		assert_complete_bridge_types,
+		integrity::{
+			assert_complete_bridge_constants, AssertBridgeMessagesPalletConstants,
+			AssertBridgePalletNames, AssertChainConstants, AssertCompleteBridgeConstants,
+		},
+	};
+
+	#[test]
+	fn ensure_bridge_integrity() {
+		assert_complete_bridge_types!(
+			runtime: Runtime,
+			with_bridged_chain_grandpa_instance: BridgeGrandpaWococoInstance,
+			with_bridged_chain_messages_instance: WithBridgeHubWococoMessagesInstance,
+			bridge: WithBridgeHubWococoMessageBridge,
+			this_chain: bp_rococo::Rococo,
+			bridged_chain: bp_wococo::Wococo,
+		);
+
+		assert_complete_bridge_constants::<
+			Runtime,
+			BridgeGrandpaWococoInstance,
+			WithBridgeHubWococoMessagesInstance,
+			WithBridgeHubWococoMessageBridge,
+			bp_rococo::Rococo,
+		>(AssertCompleteBridgeConstants {
+			this_chain_constants: AssertChainConstants {
+				block_length: bp_bridge_hub_rococo::BlockLength::get(),
+				block_weights: bp_bridge_hub_rococo::BlockWeights::get(),
+			},
+			messages_pallet_constants: AssertBridgeMessagesPalletConstants {
+				max_unrewarded_relayers_in_bridged_confirmation_tx:
+					bp_bridge_hub_wococo::MAX_UNREWARDED_RELAYERS_IN_CONFIRMATION_TX,
+				max_unconfirmed_messages_in_bridged_confirmation_tx:
+					bp_bridge_hub_wococo::MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX,
+				bridged_chain_id: bp_runtime::BRIDGE_HUB_WOCOCO_CHAIN_ID,
+			},
+			pallet_names: AssertBridgePalletNames {
+				with_this_chain_messages_pallet_name:
+					bp_bridge_hub_rococo::WITH_BRIDGE_HUB_ROCOCO_MESSAGES_PALLET_NAME,
+				with_bridged_chain_grandpa_pallet_name: bp_wococo::WITH_WOCOCO_GRANDPA_PALLET_NAME,
+				with_bridged_chain_messages_pallet_name:
+					bp_bridge_hub_wococo::WITH_BRIDGE_HUB_WOCOCO_MESSAGES_PALLET_NAME,
+			},
+		});
+	}
+}
