@@ -124,7 +124,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 	fn contains(call: &RuntimeCall) -> bool {
 		#[cfg(feature = "runtime-benchmarks")]
 		{
-			if matches!(call, RuntimeCall::System(frame_system::Call::remark_with_event {..})) {
+			if matches!(call, RuntimeCall::System(frame_system::Call::remark_with_event { .. })) {
 				return true
 			}
 		}
@@ -134,7 +134,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				frame_system::Call::set_heap_pages { .. } |
 				frame_system::Call::set_code { .. } |
 				frame_system::Call::set_code_without_checks { .. } |
-				frame_system::Call::kill_prefix { .. }
+				frame_system::Call::kill_prefix { .. },
 			) |
 			RuntimeCall::ParachainSystem(..) |
 			RuntimeCall::Timestamp(..) |
@@ -143,10 +143,11 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_collator_selection::Call::set_desired_candidates { .. } |
 				pallet_collator_selection::Call::set_candidacy_bond { .. } |
 				pallet_collator_selection::Call::register_as_candidate { .. } |
-				pallet_collator_selection::Call::leave_intent { .. }
+				pallet_collator_selection::Call::leave_intent { .. },
 			) |
 			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
-			RuntimeCall::XcmpQueue(..) | RuntimeCall::DmpQueue(..) |
+			RuntimeCall::XcmpQueue(..) |
+			RuntimeCall::DmpQueue(..) |
 			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) => true,
 			_ => false,
 		}

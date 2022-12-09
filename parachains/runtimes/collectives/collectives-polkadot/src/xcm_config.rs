@@ -127,7 +127,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 	fn contains(call: &RuntimeCall) -> bool {
 		#[cfg(feature = "runtime-benchmarks")]
 		{
-			if matches!(call, RuntimeCall::System(frame_system::Call::remark_with_event {..})) {
+			if matches!(call, RuntimeCall::System(frame_system::Call::remark_with_event { .. })) {
 				return true
 			}
 		}
@@ -137,7 +137,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				frame_system::Call::set_heap_pages { .. } |
 				frame_system::Call::set_code { .. } |
 				frame_system::Call::set_code_without_checks { .. } |
-				frame_system::Call::kill_prefix { .. }
+				frame_system::Call::kill_prefix { .. },
 			) |
 			RuntimeCall::ParachainSystem(..) |
 			RuntimeCall::Timestamp(..) |
@@ -146,10 +146,11 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_collator_selection::Call::set_desired_candidates { .. } |
 				pallet_collator_selection::Call::set_candidacy_bond { .. } |
 				pallet_collator_selection::Call::register_as_candidate { .. } |
-				pallet_collator_selection::Call::leave_intent { .. }
+				pallet_collator_selection::Call::leave_intent { .. },
 			) |
 			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
-			RuntimeCall::XcmpQueue(..) | RuntimeCall::DmpQueue(..) |
+			RuntimeCall::XcmpQueue(..) |
+			RuntimeCall::DmpQueue(..) |
 			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
 			RuntimeCall::Alliance(
 				pallet_alliance::Call::vote { .. } |
@@ -165,13 +166,13 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_alliance::Call::retire { .. } |
 				pallet_alliance::Call::kick_member { .. } |
 				pallet_alliance::Call::close { .. } |
-				pallet_alliance::Call::abdicate_fellow_status { .. }
+				pallet_alliance::Call::abdicate_fellow_status { .. },
 			) |
 			RuntimeCall::AllianceMotion(
 				pallet_collective::Call::vote { .. } |
 				pallet_collective::Call::close_old_weight { .. } |
 				pallet_collective::Call::disapprove_proposal { .. } |
-				pallet_collective::Call::close { .. }
+				pallet_collective::Call::close { .. },
 			) => true,
 			_ => false,
 		}
