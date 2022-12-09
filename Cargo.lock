@@ -1578,6 +1578,7 @@ name = "cumulus-client-consensus-common"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cumulus-primitives-core",
  "cumulus-relay-chain-interface",
  "cumulus-test-client",
  "dyn-clone",
@@ -1690,6 +1691,7 @@ dependencies = [
  "cumulus-client-pov-recovery",
  "cumulus-primitives-core",
  "cumulus-relay-chain-interface",
+ "futures",
  "parking_lot 0.12.1",
  "polkadot-primitives",
  "sc-client-api",
