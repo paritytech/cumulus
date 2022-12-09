@@ -78,7 +78,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{AsEnsureOriginWithArg, EitherOfDiverse, InstanceFilter},
+	traits::{AsEnsureOriginWithArg, ConstU32, ConstU64, ConstU8, EitherOfDiverse, InstanceFilter},
 	weights::{ConstantMultiplier, Weight},
 	PalletId, RuntimeDebug,
 };
@@ -117,10 +117,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("statemint"),
 	impl_name: create_runtime_str!("statemint"),
 	authoring_version: 1,
-	spec_version: 9320,
+	spec_version: 9330,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 8,
+	transaction_version: 10,
 	state_version: 0,
 };
 
@@ -183,37 +183,27 @@ impl frame_system::Config for Runtime {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
-parameter_types! {
-	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
-}
-
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
-	type OnTimestampSet = ();
-	type MinimumPeriod = MinimumPeriod;
+	type OnTimestampSet = Aura;
+	type MinimumPeriod = ConstU64<{ SLOT_DURATION / 2 }>;
 	type WeightInfo = weights::pallet_timestamp::WeightInfo<Runtime>;
-}
-
-parameter_types! {
-	pub const UncleGenerations: u32 = 0;
 }
 
 impl pallet_authorship::Config for Runtime {
 	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
-	type UncleGenerations = UncleGenerations;
+	type UncleGenerations = ConstU32<0>;
 	type FilterUncle = ();
 	type EventHandler = (CollatorSelection,);
 }
 
 parameter_types! {
 	pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
-	pub const MaxLocks: u32 = 50;
-	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
-	type MaxLocks = MaxLocks;
+	type MaxLocks = ConstU32<50>;
 	/// The type for recording an account's balance.
 	type Balance = Balance;
 	/// The ubiquitous event type.
@@ -222,14 +212,13 @@ impl pallet_balances::Config for Runtime {
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = weights::pallet_balances::WeightInfo<Runtime>;
-	type MaxReserves = MaxReserves;
+	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = [u8; 8];
 }
 
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
 	pub const TransactionByteFee: Balance = 1 * MILLICENTS;
-	pub const OperationalFeeMultiplier: u8 = 5;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -239,7 +228,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type WeightToFee = WeightToFee;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
-	type OperationalFeeMultiplier = OperationalFeeMultiplier;
+	type OperationalFeeMultiplier = ConstU8<5>;
 }
 
 parameter_types! {
@@ -262,6 +251,7 @@ impl pallet_assets::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type AssetId = AssetId;
+	type AssetIdParameter = codec::Compact<AssetId>;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 	type ForceOrigin = AssetsForceOrigin;
@@ -274,6 +264,9 @@ impl pallet_assets::Config for Runtime {
 	type Extra = ();
 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
 	type AssetAccountDeposit = AssetAccountDeposit;
+	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 parameter_types! {
@@ -376,7 +369,10 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			ProxyType::AssetOwner => matches!(
 				c,
 				RuntimeCall::Assets(pallet_assets::Call::create { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::destroy { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::start_destroy { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::destroy_accounts { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::destroy_approvals { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::finish_destroy { .. }) |
 					RuntimeCall::Assets(pallet_assets::Call::transfer_ownership { .. }) |
 					RuntimeCall::Assets(pallet_assets::Call::set_team { .. }) |
 					RuntimeCall::Assets(pallet_assets::Call::set_metadata { .. }) |
@@ -493,7 +489,6 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 parameter_types! {
 	pub const Period: u32 = 6 * HOURS;
 	pub const Offset: u32 = 0;
-	pub const MaxAuthorities: u32 = 100_000;
 }
 
 impl pallet_session::Config for Runtime {
@@ -504,7 +499,7 @@ impl pallet_session::Config for Runtime {
 	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
 	type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
 	type SessionManager = CollatorSelection;
-	// Essentially just Aura, but lets be pedantic.
+	// Essentially just Aura, but let's be pedantic.
 	type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = SessionKeys;
 	type WeightInfo = weights::pallet_session::WeightInfo<Runtime>;
@@ -513,7 +508,7 @@ impl pallet_session::Config for Runtime {
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
-	type MaxAuthorities = MaxAuthorities;
+	type MaxAuthorities = ConstU32<100_000>;
 }
 
 parameter_types! {
@@ -661,6 +656,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
+	pallet_assets::migration::v1::MigrateToV1<Runtime>,
 >;
 
 #[cfg(feature = "runtime-benchmarks")]

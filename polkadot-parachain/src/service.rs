@@ -151,6 +151,51 @@ impl sc_executor::NativeExecutionDispatch for CollectivesPolkadotRuntimeExecutor
 	}
 }
 
+// Native BridgeHubKusama executor instance.
+pub struct BridgeHubKusamaRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for BridgeHubKusamaRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		bridge_hub_kusama_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		bridge_hub_kusama_runtime::native_version()
+	}
+}
+
+// Native BridgeHubRococo executor instance.
+pub struct BridgeHubRococoRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for BridgeHubRococoRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		bridge_hub_rococo_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		bridge_hub_rococo_runtime::native_version()
+	}
+}
+
+// Native contracts executor instance.
+pub struct ContractsRococoRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for ContractsRococoRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		contracts_rococo_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		contracts_rococo_runtime::native_version()
+	}
+}
+
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
