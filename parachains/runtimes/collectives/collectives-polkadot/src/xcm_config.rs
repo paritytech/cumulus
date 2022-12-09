@@ -19,7 +19,7 @@ use super::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{ConstU32, Everything, Nothing},
+	traits::{ConstU32, Contains, Everything, Nothing},
 	weights::Weight,
 };
 use pallet_xcm::XcmPassthrough;
@@ -113,56 +113,69 @@ match_types! {
 		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(_) }
 	};
+}
 
-	// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
-	// account for proof size weights.
-	//
-	// Calls that are allowed through this filter must:
-	// 1. Have a fixed weight;
-	// 2. Cannot lead to another call being made;
-	// 3. Have a defined proof size weight, e.g. no unbounded vecs in call parameters.
-	pub type SafeCallFilter: impl Contains<RuntimeCall> = {
-		RuntimeCall::System(
-			frame_system::Call::set_heap_pages { .. } |
-			frame_system::Call::set_code { .. } |
-			frame_system::Call::set_code_without_checks { .. } |
-			frame_system::Call::kill_prefix { .. }
-		) |
-		RuntimeCall::ParachainSystem(..) |
-		RuntimeCall::Timestamp(..) |
-		RuntimeCall::Balances(..) |
-		RuntimeCall::CollatorSelection(
-			pallet_collator_selection::Call::set_desired_candidates { .. } |
-			pallet_collator_selection::Call::set_candidacy_bond { .. } |
-			pallet_collator_selection::Call::register_as_candidate { .. } |
-			pallet_collator_selection::Call::leave_intent { .. }
-		) |
-		RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
-		RuntimeCall::XcmpQueue(..) | RuntimeCall::DmpQueue(..) |
-		RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
-		RuntimeCall::Alliance(
-			pallet_alliance::Call::vote { .. } |
-			pallet_alliance::Call::close_old_weight { .. } |
-			pallet_alliance::Call::disband { .. } |
-			pallet_alliance::Call::set_rule { .. } |
-			pallet_alliance::Call::announce { .. } |
-			pallet_alliance::Call::remove_announcement { .. } |
-			pallet_alliance::Call::join_alliance { .. } |
-			pallet_alliance::Call::nominate_ally { .. } |
-			pallet_alliance::Call::elevate_ally { .. } |
-			pallet_alliance::Call::give_retirement_notice { .. } |
-			pallet_alliance::Call::retire { .. } |
-			pallet_alliance::Call::kick_member { .. } |
-			pallet_alliance::Call::close { .. } |
-			pallet_alliance::Call::abdicate_fellow_status { .. }
-		) |
-		RuntimeCall::AllianceMotion(
-			pallet_collective::Call::vote { .. } |
-			pallet_collective::Call::close_old_weight { .. } |
-			pallet_collective::Call::disapprove_proposal { .. } |
-			pallet_collective::Call::close { .. }
-		)
-	};
+/// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
+/// account for proof size weights.
+///
+/// Calls that are allowed through this filter must:
+/// 1. Have a fixed weight;
+/// 2. Cannot lead to another call being made;
+/// 3. Have a defined proof size weight, e.g. no unbounded vecs in call parameters.
+pub struct SafeCallFilter;
+impl Contains<RuntimeCall> for SafeCallFilter {
+	fn contains(call: &RuntimeCall) -> bool {
+		#[cfg(feature = "runtime-benchmarks")]
+		{
+			if matches!(call, RuntimeCall::System(frame_system::Call::remark_with_event {..})) {
+				return true
+			}
+		}
+
+		match call {
+			RuntimeCall::System(
+				frame_system::Call::set_heap_pages { .. } |
+				frame_system::Call::set_code { .. } |
+				frame_system::Call::set_code_without_checks { .. } |
+				frame_system::Call::kill_prefix { .. }
+			) |
+			RuntimeCall::ParachainSystem(..) |
+			RuntimeCall::Timestamp(..) |
+			RuntimeCall::Balances(..) |
+			RuntimeCall::CollatorSelection(
+				pallet_collator_selection::Call::set_desired_candidates { .. } |
+				pallet_collator_selection::Call::set_candidacy_bond { .. } |
+				pallet_collator_selection::Call::register_as_candidate { .. } |
+				pallet_collator_selection::Call::leave_intent { .. }
+			) |
+			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
+			RuntimeCall::XcmpQueue(..) | RuntimeCall::DmpQueue(..) |
+			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
+			RuntimeCall::Alliance(
+				pallet_alliance::Call::vote { .. } |
+				pallet_alliance::Call::close_old_weight { .. } |
+				pallet_alliance::Call::disband { .. } |
+				pallet_alliance::Call::set_rule { .. } |
+				pallet_alliance::Call::announce { .. } |
+				pallet_alliance::Call::remove_announcement { .. } |
+				pallet_alliance::Call::join_alliance { .. } |
+				pallet_alliance::Call::nominate_ally { .. } |
+				pallet_alliance::Call::elevate_ally { .. } |
+				pallet_alliance::Call::give_retirement_notice { .. } |
+				pallet_alliance::Call::retire { .. } |
+				pallet_alliance::Call::kick_member { .. } |
+				pallet_alliance::Call::close { .. } |
+				pallet_alliance::Call::abdicate_fellow_status { .. }
+			) |
+			RuntimeCall::AllianceMotion(
+				pallet_collective::Call::vote { .. } |
+				pallet_collective::Call::close_old_weight { .. } |
+				pallet_collective::Call::disapprove_proposal { .. } |
+				pallet_collective::Call::close { .. }
+			) => true,
+			_ => false,
+		}
+	}
 }
 
 pub type Barrier = DenyThenTry<
