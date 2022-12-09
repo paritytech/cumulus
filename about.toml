@@ -12,6 +12,9 @@ accepted = [
     "Zlib",
     "GPL-3.0 WITH Classpath-exception-2.0",
     "GPL-3.0",
+    # This is suddendly needed for webpki v0.22.0
+    # because it can't identify the licence. See https://github.com/integritee-network/integritee-node/pull/154
+    "NOASSERTION"
 ]
 ignore-dev-dependencies = true
 ignore-build-dependencies = true
