@@ -69,8 +69,8 @@ parachain-info = { path = "../../../../parachains/pallets/parachain-info", defau
 parachains-common = { path = "../../../../parachains/common", default-features = false }
 
 # Bridges
-bp-bridge-hub-rococo = { path = "../../../../bridges/primitives/chain-bridge-hub-rococo", default-features = false }
-bp-bridge-hub-wococo = { path = "../../../../bridges/primitives/chain-bridge-hub-wococo", default-features = false }
+bp-bridge-hub-rococo = { path = "../../../../bridges-ext/primitives/chain-bridge-hub-rococo", default-features = false }
+bp-bridge-hub-wococo = { path = "../../../../bridges-ext/primitives/chain-bridge-hub-wococo", default-features = false }
 bp-messages = { path = "../../../../bridges/primitives/messages", default-features = false }
 bp-runtime = { path = "../../../../bridges/primitives/runtime", default-features = false }
 bp-rococo = { path = "../../../../bridges/primitives/chain-rococo", default-features = false }

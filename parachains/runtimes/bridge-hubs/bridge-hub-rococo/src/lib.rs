@@ -25,13 +25,12 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod bridge_common_config;
 pub mod bridge_hub_rococo_config;
 pub mod bridge_hub_wococo_config;
-pub mod constants;
 mod weights;
 pub mod xcm_config;
 
+use bp_bridge_hub_rococo::constants::currency::*;
 use bridge_common_config::*;
 use codec::Decode;
-use constants::currency::*;
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -48,9 +47,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use frame_support::{
-	construct_runtime,
-	dispatch::DispatchClass,
-	parameter_types,
+	construct_runtime, parameter_types,
 	traits::Everything,
 	weights::{ConstantMultiplier, Weight},
 	PalletId,
@@ -70,16 +67,13 @@ pub use sp_runtime::BuildStorage;
 
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
-use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
+use weights::RocksDbWeight;
 
 use crate::{
 	bridge_hub_rococo_config::OnBridgeHubRococoBlobDispatcher,
-	bridge_hub_wococo_config::OnBridgeHubWococoBlobDispatcher, constants::fee::WeightToFee,
-	xcm_config::XcmRouter,
+	bridge_hub_wococo_config::OnBridgeHubWococoBlobDispatcher, xcm_config::XcmRouter,
 };
-use parachains_common::{
-	AccountId, Signature, AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO,
-};
+use parachains_common::{AccountId, Signature, MAXIMUM_BLOCK_WEIGHT};
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
 
@@ -224,26 +218,8 @@ pub mod runtime_api {
 
 parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
-	pub RuntimeBlockLength: BlockLength =
-		BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
-	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
-		.base_block(BlockExecutionWeight::get())
-		.for_class(DispatchClass::all(), |weights| {
-			weights.base_extrinsic = ExtrinsicBaseWeight::get();
-		})
-		.for_class(DispatchClass::Normal, |weights| {
-			weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
-		})
-		.for_class(DispatchClass::Operational, |weights| {
-			weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
-			// Operational transactions have some extra reserved space, so that they
-			// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
-			weights.reserved = Some(
-				MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
-			);
-		})
-		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
-		.build_or_panic();
+	pub RuntimeBlockLength: BlockLength = bp_bridge_hub_rococo::BlockLength::get();
+	pub RuntimeBlockWeights: BlockWeights = bp_bridge_hub_rococo::BlockWeights::get();
 	pub const SS58Prefix: u16 = 42;
 }
 
@@ -352,7 +328,7 @@ parameter_types! {
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
-	type WeightToFee = WeightToFee;
+	type WeightToFee = bp_bridge_hub_rococo::WeightToFee;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;

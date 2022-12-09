@@ -1,0 +1,44 @@
+[package]
+name = "bp-bridge-hub-rococo"
+description = "Primitives of BridgeHubRococo parachain runtime."
+version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2021"
+license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
+
+[dependencies]
+smallvec = "1.10.0"
+
+# Bridge Dependencies
+bp-bridge-hub-common = { path = "../chain-bridge-hub-common", default-features = false }
+bp-runtime = { path = "../../../bridges/primitives/runtime", default-features = false }
+bp-messages = { path = "../../../bridges/primitives/messages", default-features = false }
+
+# Substrate Based Dependencies
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+
+# Polkadot Dependencies
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+
+# Cumulus
+parachains-common = { path = "../../../parachains/common", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"bp-bridge-hub-common/std",
+	"bp-messages/std",
+	"bp-runtime/std",
+	"frame-support/std",
+	"sp-api/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"polkadot-core-primitives/std",
+	"polkadot-runtime-constants/std",
+	"parachains-common/std",
+]
