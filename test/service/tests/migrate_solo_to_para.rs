@@ -28,7 +28,6 @@ use codec::Encode;
 use cumulus_primitives_core::ParaId;
 use cumulus_test_service::{initial_head_data, run_relay_chain_validator_node, Keyring::*};
 use sc_client_api::{BlockBackend, UsageProvider};
-use sp_runtime::generic::BlockId;
 
 #[substrate_test_utils::test(flavor = "multi_thread")]
 #[ignore]
@@ -93,7 +92,12 @@ async fn test_migrate_solo_to_para() {
 		solo.client.block_hash(0).ok().flatten().unwrap(),
 	);
 
-	let solo_chain_header = solo.client.header(&BlockId::Number(0)).ok().flatten().unwrap();
+	let solo_chain_header = solo
+		.client
+		.header(solo.client.chain_info().genesis_hash)
+		.ok()
+		.flatten()
+		.unwrap();
 
 	// Send the transaction to set the custom header, aka the header of the solo chain.
 	parachain
