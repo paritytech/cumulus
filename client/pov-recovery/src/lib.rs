@@ -362,7 +362,7 @@ where
 			let candidate = match self.candidates.get_mut(&hash) {
 				Some(candidate) => candidate,
 				None => {
-					tracing::error!(
+					tracing::debug!(
 						target: LOG_TARGET,
 						block_hash = ?hash,
 						"Cound not recover. Block was never announced as candidate"
