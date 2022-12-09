@@ -216,8 +216,10 @@ where
 				.find_map(|(leaf_idx, leaf_hash)| {
 					if blk_hash == leaf_hash {
 						let entry = HashAndNumber { number, hash: *blk_hash };
-						let freshest_route = TreeRoute::new(vec![entry], 0);
-						Some(TargetInfo { freshest_leaf_idx: leaf_idx, freshest_route })
+						TreeRoute::new(vec![entry], 0).ok().map(|freshest_route| TargetInfo {
+							freshest_leaf_idx: leaf_idx,
+							freshest_route,
+						})
 					} else {
 						match sp_blockchain::tree_route(blockchain, *blk_hash, *leaf_hash) {
 							Ok(route) if route.retracted().is_empty() => Some(TargetInfo {
