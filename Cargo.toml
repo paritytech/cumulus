@@ -309,3 +309,4 @@ rococo-runtime-constants = { git = "https://github.com/paritytech//polkadot", br
 polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech//polkadot", branch = "gav-xcm-v3" }
 polkadot-test-client = { git = "https://github.com/paritytech//polkadot", branch = "gav-xcm-v3" }
 polkadot-test-service = { git = "https://github.com/paritytech//polkadot", branch = "gav-xcm-v3" }
+westend-runtime-constants = { git = "https://github.com/paritytech//polkadot", branch = "gav-xcm-v3" }

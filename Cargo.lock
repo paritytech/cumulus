@@ -6485,6 +6485,7 @@ name = "pallet-xcm"
 version = "0.9.33"
 source = "git+https://github.com/paritytech//polkadot?branch=gav-xcm-v3#840414726ffee9b6e32569de78f66d332556cb59"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -6492,6 +6493,7 @@ dependencies = [
  "scale-info",
  "serde",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
  "xcm",
@@ -6509,9 +6511,11 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "scale-info",
+ "sp-io",
  "sp-runtime",
  "sp-std",
  "xcm",
+ "xcm-builder",
  "xcm-executor",
 ]
 
@@ -11361,7 +11365,7 @@ dependencies = [
 [[package]]
 name = "sp-serializer"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech//substrate?branch=bko-gav-xcm-v3-compatible#15cfd9c5dbbfa1f3ed49623eb55b67354d1645e9"
+source = "git+https://github.com/paritytech/substrate?branch=master#2f0d59d766ff79ca2b552216a411c8e2b1762da4"
 dependencies = [
  "serde",
  "serde_json",
@@ -11957,7 +11961,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-utils"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech//substrate?branch=bko-gav-xcm-v3-compatible#15cfd9c5dbbfa1f3ed49623eb55b67354d1645e9"
+source = "git+https://github.com/paritytech/substrate?branch=master#2f0d59d766ff79ca2b552216a411c8e2b1762da4"
 dependencies = [
  "futures",
  "substrate-test-utils-derive",
@@ -11967,7 +11971,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-utils-derive"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech//substrate?branch=bko-gav-xcm-v3-compatible#15cfd9c5dbbfa1f3ed49623eb55b67354d1645e9"
+source = "git+https://github.com/paritytech/substrate?branch=master#2f0d59d766ff79ca2b552216a411c8e2b1762da4"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -13568,7 +13572,9 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "scale-info",
- "sp-runtime",
+ "serde",
+ "sp-core",
+ "sp-weights",
  "xcm-procedural",
 ]
 
@@ -13579,6 +13585,7 @@ source = "git+https://github.com/paritytech//polkadot?branch=gav-xcm-v3#84041472
 dependencies = [
  "frame-support",
  "frame-system",
+ "impl-trait-for-tuples",
  "log",
  "pallet-transaction-payment",
  "parity-scale-codec",
@@ -13597,6 +13604,7 @@ name = "xcm-executor"
 version = "0.9.33"
 source = "git+https://github.com/paritytech//polkadot?branch=gav-xcm-v3#840414726ffee9b6e32569de78f66d332556cb59"
 dependencies = [
+ "environmental",
  "frame-benchmarking",
  "frame-support",
  "impl-trait-for-tuples",
@@ -13607,6 +13615,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "sp-weights",
  "xcm",
 ]
 
@@ -13684,3 +13693,8 @@ dependencies = [
  "cc",
  "libc",
 ]
+
+[[patch.unused]]
+name = "node-inspect"
+version = "0.9.0-dev"
+source = "git+https://github.com/paritytech//substrate?branch=bko-gav-xcm-v3-compatible#15cfd9c5dbbfa1f3ed49623eb55b67354d1645e9"
