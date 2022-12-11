@@ -20,7 +20,7 @@ use crate::{Config, Pallet, Store, DEFAULT_POV_SIZE};
 use frame_support::{
 	pallet_prelude::*,
 	traits::StorageVersion,
-	weights::{constants::WEIGHT_PER_MILLIS, Weight},
+	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight},
 };
 
 /// The current storage version.
@@ -57,7 +57,7 @@ mod v0 {
 
 	impl Default for ConfigData {
 		fn default() -> Self {
-			ConfigData { max_individual: 10u64 * WEIGHT_PER_MILLIS.ref_time() }
+			ConfigData { max_individual: 10u64 * WEIGHT_REF_TIME_PER_MILLIS }
 		}
 	}
 }
