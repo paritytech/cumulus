@@ -221,7 +221,7 @@ pub mod pallet {
 			messages_processed: &mut u8,
 		) -> Weight {
 			let mut used = Weight::zero();
-			'page: while page_index.begin_used < page_index.end_used {
+			while page_index.begin_used < page_index.end_used {
 				let page = Pages::<T>::take(page_index.begin_used);
 				for (i, &(sent_at, ref data)) in page.iter().enumerate() {
 					if *messages_processed >= MAX_MESSAGES_PER_BLOCK {
