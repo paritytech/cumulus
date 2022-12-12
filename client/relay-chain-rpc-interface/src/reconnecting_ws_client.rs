@@ -186,8 +186,7 @@ async fn connect_next_available_rpc_server(
 	urls: &Vec<Url>,
 	starting_position: usize,
 ) -> Result<(usize, Arc<JsonRpcClient>), ()> {
-	tracing::info!(target: LOG_TARGET, "Connecting to RPC server.");
-
+	tracing::debug!(target: LOG_TARGET, starting_position, "Connecting to RPC server.");
 	for (counter, url) in urls.iter().cycle().skip(starting_position).take(urls.len()).enumerate() {
 		let index = (starting_position + counter) % urls.len();
 		tracing::info!(target: LOG_TARGET, index, ?url, "Connecting to RPC node",);
@@ -203,7 +202,7 @@ impl ClientManager {
 		if urls.is_empty() {
 			return Err(())
 		}
-		let active_client = connect_next_available_rpc_server(&urls, 1).await?;
+		let active_client = connect_next_available_rpc_server(&urls, 0).await?;
 		Ok(Self { urls, active_client: active_client.1, active_index: active_client.0 })
 	}
 
