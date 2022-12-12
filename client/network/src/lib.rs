@@ -479,12 +479,12 @@ impl<Block: BlockT> WaitForParachainTargetBlock<Block> {
 			"cumulus-parachain-wait-for-target-block",
 			None,
 			async move {
-				tracing::debug!(
+				tracing::info!(
 					target: LOG_TARGET,
 					"waiting for target block in a background task...",
 				);
 				Self::wait_for_target_block(sender, para_id, relay_chain_interface).await;
-				tracing::debug!(target: LOG_TARGET, "target block reached",);
+				tracing::info!(target: LOG_TARGET, "target block reached",);
 			}
 			.boxed(),
 		);
@@ -548,7 +548,7 @@ impl<Block: BlockT> WaitForParachainTargetBlock<Block> {
 						let _ = sender.send(target_header);
 						break
 					}
-					tracing::debug!(
+					tracing::info!(
 						target: LOG_TARGET,
 						"waiting for relay chain sync to complete......",
 					);

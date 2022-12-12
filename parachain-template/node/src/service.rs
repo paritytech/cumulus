@@ -25,13 +25,14 @@ use sc_consensus::ImportQueue;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
 use sc_network_common::service::NetworkBlock;
-use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
+use sc_service::{
+	Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager, WarpSyncParams,
+};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_keystore::SyncCryptoStorePtr;
 use substrate_prometheus_endpoint::Registry;
 
 use polkadot_service::CollatorPair;
-use sc_network_common::sync::warp::WarpSyncParams;
 
 /// Native executor type.
 pub struct ParachainNativeExecutor;
