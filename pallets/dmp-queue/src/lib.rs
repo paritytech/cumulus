@@ -468,40 +468,58 @@ mod tests {
 		})
 	}
 
-	pub enum Weightless {}
-	impl PreparedMessage for Weightless {
+	pub struct WeightOutcome(Outcome);
+	impl PreparedMessage for WeightOutcome {
 		fn weight_of(&self) -> Weight {
-			unreachable!()
+			self.0.weight_used()
 		}
 	}
 
 	pub struct MockExec;
 	impl ExecuteXcm<RuntimeCall> for MockExec {
-		type Prepared = Weightless;
+		type Prepared = WeightOutcome;
 
 		fn prepare(message: Xcm) -> Result<Self::Prepared, Xcm> {
-			Err(message)
+			let o = match (message.0.len(), &message.0.first()) {
+				(1, Some(Transact { require_weight_at_most, .. })) => {
+					Outcome::Complete(*require_weight_at_most)
+				},
+				// use 1000 to decide that it's not supported.
+				_ => Outcome::Incomplete(Weight::from_parts(1000, 1000), XcmError::Unimplemented),
+			};
+			Ok(o)
 		}
 
 		fn execute(
 			_origin: impl Into<MultiLocation>,
-			_: Weightless,
+			WeightOutcome(o): WeightOutcome,
 			_hash: XcmHash,
-			_weight_limit: Weight,
+			_weight_credit: Weight,
 		) -> Outcome {
-			let o = match (message.0.len(), &message.0.first()) {
-				(1, Some(Transact { require_weight_at_most, .. })) => {
-					if require_weight_at_most.all_lte(weight_limit) {
-						Outcome::Complete(*require_weight_at_most)
-					} else {
-						Outcome::Error(XcmError::WeightLimitReached(*require_weight_at_most))
-					}
-				},
-				// use 1000 to decide that it's not supported.
-				_ => Outcome::Incomplete(Weight::from_parts(1000, 1000).min(weight_limit), XcmError::Unimplemented),
-			};
 			TRACE.with(|q| q.borrow_mut().push((message, o.clone())));
 			o
+		}
+
+		fn execute_xcm_in_credit(
+			origin: impl Into<MultiLocation>,
+			message: Xcm,
+			hash: XcmHash,
+			weight_limit: Weight,
+			weight_credit: Weight,
+		) -> Outcome {
+			match Self::prepare(message) {
+				Ok(pre @ WeightOutcome(Outcome::Complete(..))) => {
+					let xcm_weight = pre.weight_of();
+					if xcm_weight.any_gt(weight_limt) {
+						return Outcome::Error(Error::WeightLimitReached(xcm_weight))
+					}
+					Self::execute(origin, pre, hash, weight_credit)
+				},
+				Ok(WeightOutcome(Outcome::Incomplete(w, XcmError::Unimplemented))) => {
+					Outcome::Incomplete(w.min(weight_limit), XcmError::Unimplemented)
+				},
+				_ => Outcome::Error(Error::WeightNotComputable),
+			}
 		}
 
 		fn charge_fees(_location: impl Into<MultiLocation>, _fees: MultiAssets) -> XcmResult {
