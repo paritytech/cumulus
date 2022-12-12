@@ -6,13 +6,13 @@
 
 
 stages:
-  # - test
-  # - build
-  # - benchmarks-build
-  # - benchmarks-run
-  # - publish
-  # - integration-tests
-  # - zombienet
+  - test
+  - build
+  - benchmarks-build
+  - benchmarks-run
+  - publish
+  - integration-tests
+  - zombienet
 
 default:
   interruptible:                   true
