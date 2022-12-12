@@ -538,11 +538,11 @@ mod tests {
 	}
 
 	fn msg_complete(weight: u64) -> (Xcm, Outcome) {
-		(msg(weight), Outcome::Complete(Weight::from_ref_time(weight)))
+		(msg(weight), Outcome::Complete(Weight::from_parts(weight, weight)))
 	}
 
 	fn msg_limit_reached(weight: u64) -> (Xcm, Outcome) {
-		(msg(weight), Outcome::Error(XcmError::WeightLimitReached(Weight::from_ref_time(weight))))
+		(msg(weight), Outcome::Error(XcmError::WeightLimitReached(Weight::from_parts(weight, weight))))
 	}
 
 	fn pages_queued() -> PageCounter {
@@ -574,7 +574,7 @@ mod tests {
 		new_test_ext().execute_with(|| {
 			let incoming = vec![msg(1000), msg(1001)];
 			let weight_used = handle_messages(&incoming, Weight::from_parts(2500, 2500));
-			assert_eq!(weight_used, Weight::from_ref_time(2001));
+			assert_eq!(weight_used, Weight::from_parts(2001, 2001));
 			assert_eq!(take_trace(), vec![msg_complete(1000), msg_complete(1001)]);
 			assert!(queue_is_empty());
 		});
@@ -586,7 +586,7 @@ mod tests {
 			let enqueued = vec![msg(1000), msg(1001), msg(1002)];
 			enqueue(&enqueued);
 			let weight_used = handle_messages(&[], Weight::from_parts(2500, 2500));
-			assert_eq!(weight_used, Weight::from_ref_time(2001));
+			assert_eq!(weight_used, Weight::from_parts(2001, 2001));
 			assert_eq!(
 				take_trace(),
 				vec![msg_complete(1000), msg_complete(1001), msg_limit_reached(1002),]
@@ -608,14 +608,14 @@ mod tests {
 			assert_eq!(take_trace(), vec![msg_limit_reached(1000)]);
 
 			let weight_used = handle_messages(&[], Weight::from_parts(2500, 2500));
-			assert_eq!(weight_used, Weight::from_ref_time(2001));
+			assert_eq!(weight_used, Weight::from_parts(2001, 2001));
 			assert_eq!(
 				take_trace(),
 				vec![msg_complete(1000), msg_complete(1001), msg_limit_reached(1002),]
 			);
 
 			let weight_used = handle_messages(&[], Weight::from_parts(2500, 2500));
-			assert_eq!(weight_used, Weight::from_ref_time(1002));
+			assert_eq!(weight_used, Weight::from_parts(1002, 1002));
 			assert_eq!(take_trace(), vec![msg_complete(1002),]);
 			assert!(queue_is_empty());
 		});
@@ -626,13 +626,13 @@ mod tests {
 		new_test_ext().execute_with(|| {
 			let incoming = vec![msg(1000), msg(1001), msg(1002)];
 			let weight_used = handle_messages(&incoming, Weight::from_parts(1500, 1500));
-			assert_eq!(weight_used, Weight::from_ref_time(1000));
+			assert_eq!(weight_used, Weight::from_parts(1000, 1000));
 			assert_eq!(pages_queued(), 1);
 			assert_eq!(Pages::<Test>::get(0).len(), 2);
 			assert_eq!(take_trace(), vec![msg_complete(1000), msg_limit_reached(1001),]);
 
 			let weight_used = handle_messages(&[], Weight::from_parts(2500, 2500));
-			assert_eq!(weight_used, Weight::from_ref_time(2003));
+			assert_eq!(weight_used, Weight::from_parts(2003, 2003));
 			assert_eq!(take_trace(), vec![msg_complete(1001), msg_complete(1002),]);
 			assert!(queue_is_empty());
 		});
@@ -645,7 +645,7 @@ mod tests {
 			let incoming = vec![msg(1002), msg(1003)];
 			enqueue(&enqueued);
 			let weight_used = handle_messages(&incoming, Weight::from_parts(5000, 5000));
-			assert_eq!(weight_used, Weight::from_ref_time(4006));
+			assert_eq!(weight_used, Weight::from_parts(4006, 4006));
 			assert_eq!(
 				take_trace(),
 				vec![
@@ -666,7 +666,7 @@ mod tests {
 			let incoming = vec![msg(1002), msg(1003)];
 			enqueue(&enqueued);
 			let weight_used = handle_messages(&incoming, Weight::from_parts(5000, 5000));
-			assert_eq!(weight_used, Weight::from_ref_time(1000));
+			assert_eq!(weight_used, Weight::from_parts(1000, 1000));
 			assert_eq!(take_trace(), vec![msg_complete(1000), msg_limit_reached(10001),]);
 			assert_eq!(pages_queued(), 2);
 
@@ -677,7 +677,7 @@ mod tests {
 
 			// 20000 is now enough to process everything.
 			let weight_used = handle_messages(&[], Weight::from_parts(20000, 20000));
-			assert_eq!(weight_used, Weight::from_ref_time(12006));
+			assert_eq!(weight_used, Weight::from_parts(12006, 12006));
 			assert_eq!(
 				take_trace(),
 				vec![msg_complete(10001), msg_complete(1002), msg_complete(1003),]
@@ -693,7 +693,7 @@ mod tests {
 			let incoming = vec![msg(10002), msg(1003)];
 			enqueue(&enqueued);
 			let weight_used = handle_messages(&incoming, Weight::from_parts(5000, 5000));
-			assert_eq!(weight_used, Weight::from_ref_time(2001));
+			assert_eq!(weight_used, Weight::from_parts(2001, 2001));
 			assert_eq!(
 				take_trace(),
 				vec![msg_complete(1000), msg_complete(1001), msg_limit_reached(10002),]
@@ -702,7 +702,7 @@ mod tests {
 
 			// 20000 is now enough to process everything.
 			let weight_used = handle_messages(&[], Weight::from_parts(20000, 20000));
-			assert_eq!(weight_used, Weight::from_ref_time(11005));
+			assert_eq!(weight_used, Weight::from_parts(11005, 11005));
 			assert_eq!(take_trace(), vec![msg_complete(10002), msg_complete(1003),]);
 			assert!(queue_is_empty());
 		});
@@ -715,7 +715,7 @@ mod tests {
 			let incoming = vec![msg(1002), msg(10003)];
 			enqueue(&enqueued);
 			let weight_used = handle_messages(&incoming, Weight::from_parts(5000, 5000));
-			assert_eq!(weight_used, Weight::from_ref_time(3003));
+			assert_eq!(weight_used, Weight::from_parts(3003, 3003));
 			assert_eq!(
 				take_trace(),
 				vec![
@@ -729,7 +729,7 @@ mod tests {
 
 			// 20000 is now enough to process everything.
 			let weight_used = handle_messages(&[], Weight::from_parts(20000, 20000));
-			assert_eq!(weight_used, Weight::from_ref_time(10003));
+			assert_eq!(weight_used, Weight::from_parts(10003, 10003));
 			assert_eq!(take_trace(), vec![msg_complete(10003),]);
 			assert!(queue_is_empty());
 		});
@@ -741,19 +741,19 @@ mod tests {
 			let enqueued = vec![msg(1000), msg(1001)];
 			enqueue(&enqueued);
 			let weight_used = handle_messages(&vec![msg(1002)], Weight::from_parts(1500, 1500));
-			assert_eq!(weight_used, Weight::from_ref_time(1000));
+			assert_eq!(weight_used, Weight::from_parts(1000, 1000));
 			assert_eq!(take_trace(), vec![msg_complete(1000), msg_limit_reached(1001),]);
 			assert_eq!(pages_queued(), 2);
 			assert_eq!(PageIndex::<Test>::get().begin_used, 0);
 
 			let weight_used = handle_messages(&vec![msg(1003)], Weight::from_parts(1500, 1500));
-			assert_eq!(weight_used, Weight::from_ref_time(1001));
+			assert_eq!(weight_used, Weight::from_parts(1001, 1001));
 			assert_eq!(take_trace(), vec![msg_complete(1001), msg_limit_reached(1002),]);
 			assert_eq!(pages_queued(), 2);
 			assert_eq!(PageIndex::<Test>::get().begin_used, 1);
 
 			let weight_used = handle_messages(&vec![msg(1004)], Weight::from_parts(1500, 1500));
-			assert_eq!(weight_used, Weight::from_ref_time(1002));
+			assert_eq!(weight_used, Weight::from_parts(1002, 1002));
 			assert_eq!(take_trace(), vec![msg_complete(1002), msg_limit_reached(1003),]);
 			assert_eq!(pages_queued(), 2);
 			assert_eq!(PageIndex::<Test>::get().begin_used, 2);
@@ -770,7 +770,7 @@ mod tests {
 
 			let incoming = vec![msg(1000), msg(10001), msg(1002)];
 			let weight_used = handle_messages(&incoming, Weight::from_parts(2500, 2500));
-			assert_eq!(weight_used, Weight::from_ref_time(2002));
+			assert_eq!(weight_used, Weight::from_parts(2002, 2002));
 			assert!(queue_is_empty());
 			assert_eq!(
 				take_trace(),
@@ -833,7 +833,7 @@ mod tests {
 			)
 			.unwrap();
 			let actual_weight = info.actual_weight.unwrap();
-			assert_eq!(actual_weight, base_weight + Weight::from_ref_time(10000));
+			assert_eq!(actual_weight, base_weight + Weight::from_parts(10000, 10000));
 			assert_eq!(take_trace(), vec![msg_complete(10000)]);
 			assert!(overweights().is_empty());
 
@@ -855,8 +855,8 @@ mod tests {
 			enqueue(&vec![msg(1002), msg(1003)]);
 			enqueue(&vec![msg(1004), msg(1005)]);
 
-			let weight_used = DmpQueue::on_idle(1, Weight::from_ref_time(6000));
-			assert_eq!(weight_used, Weight::from_ref_time(5010));
+			let weight_used = DmpQueue::on_idle(1, Weight::from_parts(6000, 6000));
+			assert_eq!(weight_used, Weight::from_parts(5010, 5010));
 			assert_eq!(
 				take_trace(),
 				vec![
