@@ -542,7 +542,10 @@ mod tests {
 	}
 
 	fn msg_limit_reached(weight: u64) -> (Xcm, Outcome) {
-		(msg(weight), Outcome::Error(XcmError::WeightLimitReached(Weight::from_parts(weight, weight))))
+		(
+			msg(weight),
+			Outcome::Error(XcmError::WeightLimitReached(Weight::from_parts(weight, weight))),
+		)
 	}
 
 	fn pages_queued() -> PageCounter {
