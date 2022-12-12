@@ -17,7 +17,7 @@ It contains 65 labels:
 - `B0-silent`: *Changes should not be mentioned in any release notes*
 - `B1-note_worthy`: *Changes should be noted in the release notes*
 
-### C labels: Criticality - how critical is this change? Criticality - how critical is this change? Which impact does it have on the builders? To be used in combination with a T* label
+### C labels: Criticality - how critical is this change? Which impact does it have on the builders? To be used in combination with a T* label
 - `C1-low`: *PR touches the given topic and has a low impact on builders.*
 - `C3-medium`: *PR touches the given topic and has a medium impact on builders.*
 - `C5-high`: *PR touches the given topic and has a high impact on builders.*
