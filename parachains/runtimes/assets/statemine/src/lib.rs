@@ -74,8 +74,6 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use xcm::latest::BodyId;
 use xcm_executor::XcmExecutor;
 
-use kusama_runtime_constants::xcm::body::{FELLOWS_INDEX, STAKING_ADMIN_INDEX};
-
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 impl_opaque_keys! {
@@ -462,7 +460,7 @@ impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {
 	// Fellows pluralistic body.
-	pub const FellowsBodyId: BodyId = BodyId::Index(FELLOWS_INDEX);
+	pub const FellowsBodyId: BodyId = BodyId::Technical;
 }
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
@@ -521,7 +519,7 @@ parameter_types! {
 	pub const SessionLength: BlockNumber = 6 * HOURS;
 	pub const MaxInvulnerables: u32 = 100;
 	// StakingAdmin pluralistic body.
-	pub const StakingAdminBodyId: BodyId = BodyId::Index(STAKING_ADMIN_INDEX);
+	pub const StakingAdminBodyId: BodyId = BodyId::Defence;
 }
 
 /// We allow root, the Relay Chain council and the StakingAdmin to execute privileged collator selection operations.
