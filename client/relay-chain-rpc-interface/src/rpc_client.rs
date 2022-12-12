@@ -29,7 +29,7 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use futures::channel::mpsc::Receiver;
-use jsonrpsee::core::JsonValue;
+use jsonrpsee::{core::params::ArrayParams, rpc_params};
 use parity_scale_codec::{Decode, Encode};
 use polkadot_service::{BlockNumber, TaskManager};
 use sc_client_api::StorageData;
@@ -50,21 +50,6 @@ pub struct RelayChainRpcClient {
 	ws_client: ReconnectingWsClient,
 }
 
-macro_rules! rpc_params {
-	($($param:expr),*) => {
-		{
-			let mut __params = vec![
-				$(
-					serde_json::to_value($param).expect("json serialization is infallible; qed."),
-				)*
-			];
-			Some(__params)
-		}
-	};
-	() => {
-		None
-	}
-}
 /// Entry point to create [`RelayChainRpcClient`] and start a worker that distributes notifications.
 pub async fn create_client_and_start_worker(
 	urls: Vec<Url>,
@@ -117,7 +102,7 @@ impl RelayChainRpcClient {
 	async fn request<'a, R>(
 		&self,
 		method: &'a str,
-		params: Option<Vec<JsonValue>>,
+		params: ArrayParams,
 	) -> Result<R, RelayChainError>
 	where
 		R: DeserializeOwned + std::fmt::Debug,
@@ -134,7 +119,7 @@ impl RelayChainRpcClient {
 	async fn request_tracing<'a, R, OR>(
 		&self,
 		method: &'a str,
-		params: Option<Vec<JsonValue>>,
+		params: ArrayParams,
 		trace_error: OR,
 	) -> Result<R, RelayChainError>
 	where
@@ -201,12 +186,12 @@ impl RelayChainRpcClient {
 
 	/// Get local listen address of the node
 	pub async fn system_local_listen_addresses(&self) -> Result<Vec<String>, RelayChainError> {
-		self.request("system_localListenAddresses", None).await
+		self.request("system_localListenAddresses", rpc_params![]).await
 	}
 
 	/// Get system health information
 	pub async fn system_health(&self) -> Result<Health, RelayChainError> {
-		self.request("system_health", None).await
+		self.request("system_health", rpc_params![]).await
 	}
 
 	/// Get read proof for `storage_keys`
@@ -215,7 +200,7 @@ impl RelayChainRpcClient {
 		storage_keys: Vec<StorageKey>,
 		at: Option<RelayHash>,
 	) -> Result<ReadProof<RelayHash>, RelayChainError> {
-		let params = rpc_params!(storage_keys, at);
+		let params = rpc_params![storage_keys, at];
 		self.request("state_getReadProof", params).await
 	}
 
@@ -225,7 +210,7 @@ impl RelayChainRpcClient {
 		storage_key: StorageKey,
 		at: Option<RelayHash>,
 	) -> Result<Option<StorageData>, RelayChainError> {
-		let params = rpc_params!(storage_key, at);
+		let params = rpc_params![storage_key, at];
 		self.request("state_getStorage", params).await
 	}
 
@@ -233,7 +218,7 @@ impl RelayChainRpcClient {
 	///
 	/// By default returns latest block hash.
 	pub async fn chain_get_head(&self, at: Option<u64>) -> Result<RelayHash, RelayChainError> {
-		let params = rpc_params!(at);
+		let params = rpc_params![at];
 		self.request("chain_getHead", params).await
 	}
 
@@ -291,7 +276,7 @@ impl RelayChainRpcClient {
 
 	/// Get hash of last finalized block.
 	pub async fn chain_get_finalized_head(&self) -> Result<RelayHash, RelayChainError> {
-		self.request("chain_getFinalizedHead", None).await
+		self.request("chain_getFinalizedHead", rpc_params![]).await
 	}
 
 	/// Get hash of n-th block.
@@ -299,7 +284,7 @@ impl RelayChainRpcClient {
 		&self,
 		block_number: Option<polkadot_service::BlockNumber>,
 	) -> Result<Option<RelayHash>, RelayChainError> {
-		let params = rpc_params!(block_number);
+		let params = rpc_params![block_number];
 		self.request("chain_getBlockHash", params).await
 	}
 
@@ -348,7 +333,7 @@ impl RelayChainRpcClient {
 
 	/// Get runtime version
 	pub async fn runtime_version(&self, at: RelayHash) -> Result<RuntimeVersion, RelayChainError> {
-		let params = rpc_params!(at);
+		let params = rpc_params![at];
 		self.request("state_getRuntimeVersion", params).await
 	}
 
@@ -418,7 +403,7 @@ impl RelayChainRpcClient {
 		&self,
 		hash: Option<RelayHash>,
 	) -> Result<Option<RelayHeader>, RelayChainError> {
-		let params = rpc_params!(hash);
+		let params = rpc_params![hash];
 		self.request("chain_getHeader", params).await
 	}
 
