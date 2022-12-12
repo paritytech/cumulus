@@ -866,7 +866,7 @@ impl_runtime_apis! {
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
 			use xcm::latest::prelude::*;
-			use xcm_config::DotLocation;
+			use xcm_config::{DotLocation, MaxAssetsIntoHolding};
 			use pallet_xcm_benchmarks::asset_instance_from;
 
 			impl pallet_xcm_benchmarks::Config for Runtime {
@@ -875,12 +875,12 @@ impl_runtime_apis! {
 				fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
 					Ok(DotLocation::get())
 				}
-				fn worst_case_holding(_depositable_count: u32) -> MultiAssets {
+				fn worst_case_holding(depositable_count: u32) -> MultiAssets {
 					// A mix of fungible, non-fungible, and concrete assets.
-					const HOLDING_FUNGIBLES: u32 = 100;
-					const HOLDING_NON_FUNGIBLES: u32 = 100;
+					let holding_non_fungibles = MaxAssetsIntoHolding::get() / 2 - depositable_count;
+					let holding_fungibles = holding_non_fungibles - 1;
 					let fungibles_amount: u128 = 100;
-					let mut assets = (0..HOLDING_FUNGIBLES)
+					let mut assets = (0..holding_fungibles)
 						.map(|i| {
 							MultiAsset {
 								id: Concrete(GeneralIndex(i as u128).into()),
@@ -889,17 +889,17 @@ impl_runtime_apis! {
 							.into()
 						})
 						.chain(core::iter::once(MultiAsset { id: Concrete(Here.into()), fun: Fungible(u128::MAX) }))
-						.chain((0..HOLDING_NON_FUNGIBLES).map(|i| MultiAsset {
+						.chain((0..holding_non_fungibles).map(|i| MultiAsset {
 							id: Concrete(GeneralIndex(i as u128).into()),
 							fun: NonFungible(asset_instance_from(i)),
 						}))
 						.collect::<Vec<_>>();
 
-						assets.push(MultiAsset{
-							id: Concrete(DotLocation::get()),
-							fun: Fungible(1_000_000 * UNITS),
-						});
-						assets.into()
+					assets.push(MultiAsset {
+						id: Concrete(DotLocation::get()),
+						fun: Fungible(1_000_000 * UNITS),
+					});
+					assets.into()
 				}
 			}
 
