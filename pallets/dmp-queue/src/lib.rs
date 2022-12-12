@@ -489,7 +489,19 @@ mod tests {
 			_hash: XcmHash,
 			_weight_limit: Weight,
 		) -> Outcome {
-			unreachable!()
+			let o = match (message.0.len(), &message.0.first()) {
+				(1, Some(Transact { require_weight_at_most, .. })) => {
+					if require_weight_at_most.all_lte(weight_limit) {
+						Outcome::Complete(*require_weight_at_most)
+					} else {
+						Outcome::Error(XcmError::WeightLimitReached(*require_weight_at_most))
+					}
+				},
+				// use 1000 to decide that it's not supported.
+				_ => Outcome::Incomplete(Weight::from_parts(1000, 1000).min(weight_limit), XcmError::Unimplemented),
+			};
+			TRACE.with(|q| q.borrow_mut().push((message, o.clone())));
+			o
 		}
 
 		fn charge_fees(_location: impl Into<MultiLocation>, _fees: MultiAssets) -> XcmResult {
