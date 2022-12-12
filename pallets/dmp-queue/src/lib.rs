@@ -487,17 +487,16 @@ mod tests {
 				// use 1000 to decide that it's not supported.
 				_ => Outcome::Incomplete(Weight::from_parts(1000, 1000), XcmError::Unimplemented),
 			};
-			Ok(o)
+			Ok(WeightOutcome(o))
 		}
 
 		fn execute(
 			_origin: impl Into<MultiLocation>,
-			WeightOutcome(o): WeightOutcome,
+			_pre: WeightOutcome,
 			_hash: XcmHash,
 			_weight_credit: Weight,
 		) -> Outcome {
-			TRACE.with(|q| q.borrow_mut().push((message, o.clone())));
-			o
+			unreachable!()
 		}
 
 		fn execute_xcm_in_credit(
@@ -508,17 +507,18 @@ mod tests {
 			weight_credit: Weight,
 		) -> Outcome {
 			match Self::prepare(message) {
-				Ok(pre @ WeightOutcome(Outcome::Complete(..))) => {
-					let xcm_weight = pre.weight_of();
-					if xcm_weight.any_gt(weight_limt) {
+				Ok(WeightOutcome(o @ Outcome::Complete(..))) => {
+					let xcm_weight = o.weight_used();
+					if xcm_weight.any_gt(weight_limit) {
 						return Outcome::Error(Error::WeightLimitReached(xcm_weight))
 					}
-					Self::execute(origin, pre, hash, weight_credit)
+					TRACE.with(|q| q.borrow_mut().push((message, o.clone())));
+					o
 				},
 				Ok(WeightOutcome(Outcome::Incomplete(w, XcmError::Unimplemented))) => {
 					Outcome::Incomplete(w.min(weight_limit), XcmError::Unimplemented)
 				},
-				_ => Outcome::Error(Error::WeightNotComputable),
+				_ => Outcome::Error(XcmError::WeightNotComputable),
 			}
 		}
 
