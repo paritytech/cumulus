@@ -9,14 +9,12 @@ modified to include dependencies required for registering this node as a **parat
 
 The stand-alone version of this template is hosted on the
 [Substrate Devhub Parachain Template](https://github.com/substrate-developer-hub/substrate-parachain-template/)
-for each release of Polkadot. It is generated directly to the upstream
-[Parachain Template in Cumulus](https://github.com/paritytech/cumulus/tree/master/parachain-template)
-at each release branch using the
-[Substrate Template Generator](https://github.com/paritytech/substrate-template-generator/).
+for each release of Polkadot.
+This is generated directly at each Polkadot release branch form the [Parachain Template in Cumulus](https://github.com/paritytech/cumulus/tree/master/parachain-template) upstrea
+Please report issues and make PRs upstream to [Cumulus](https://github.com/paritytech/cumulus/tree/master/parachain-template).
 
-👉 Learn more about parachains [here](https://wiki.polkadot.network/docs/learn-parachains), and
-parathreads [here](https://wiki.polkadot.network/docs/learn-parathreads).
+👉 Learn more about parachains [here](https://wiki.polkadot.network/docs/learn-parachains).
 
 
 🧙 Learn about how to use this template and run your own parachain testnet for it in the
-[Devhub Cumulus Tutorial](https://docs.substrate.io/tutorials/v3/cumulus/start-relay/).
+[Devhub Cumulus Tutorial](https://docs.substrate.io/tutorials/connect-relay-and-parachains/).
