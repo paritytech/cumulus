@@ -99,7 +99,6 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, Si
 
 pub type Migrations = (
 	pallet_contracts::Migration<Runtime>,
-	pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,
 );
 
 /// Executive: handles dispatch to the various modules.
@@ -385,6 +384,7 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
 		[pallet_contracts, Contracts]
+		[pallet_xcm, PolkadotXcm]
 	);
 }
 

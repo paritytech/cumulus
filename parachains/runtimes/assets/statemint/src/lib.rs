@@ -685,6 +685,7 @@ mod benches {
 		[pallet_collator_selection, CollatorSelection]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		// XCM
+		[pallet_xcm, PolkadotXcm]
 		// NOTE: Make sure you point to the individual modules below.
 		[pallet_xcm_benchmarks::fungible, XcmBalances]
 		[pallet_xcm_benchmarks::generic, XcmGeneric]
@@ -872,7 +873,7 @@ impl_runtime_apis! {
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
 			use xcm::latest::prelude::*;
-			use xcm_config::{DotLocation, MaxAssetsIntoHolding};
+			use xcm_config::{DotLocation, LocalCheckAccount, MaxAssetsIntoHolding};
 			use pallet_xcm_benchmarks::asset_instance_from;
 
 			impl pallet_xcm_benchmarks::Config for Runtime {
@@ -920,7 +921,7 @@ impl_runtime_apis! {
 			impl pallet_xcm_benchmarks::fungible::Config for Runtime {
 				type TransactAsset = Balances;
 
-				type CheckedAccount = CheckedAccount;
+				type CheckedAccount = LocalCheckAccount;
 				type TrustedTeleporter = TrustedTeleporter;
 
 				fn get_multi_asset() -> MultiAsset {
