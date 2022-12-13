@@ -468,9 +468,16 @@ mod tests {
 		})
 	}
 
+	pub enum Weightless {}
+	impl PreparedMessage for Weightless {
+		fn weight_of(&self) -> Weight {
+			unreachable!()
+		}
+	}
+
 	pub struct MockExec;
 	impl ExecuteXcm<RuntimeCall> for MockExec {
-		type Prepared = ();
+		type Prepared = Weightless;
 
 		fn prepare(_message: Xcm) -> Result<Self::Prepared, Xcm> {
 			unreachable!()
@@ -478,7 +485,7 @@ mod tests {
 
 		fn execute(
 			_origin: impl Into<MultiLocation>,
-			_pre: (),
+			_pre: Weightless,
 			_hash: XcmHash,
 			_weight_credit: Weight,
 		) -> Outcome {
