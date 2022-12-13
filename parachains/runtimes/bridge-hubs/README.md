@@ -66,13 +66,19 @@ POLKADOT_PARACHAIN_BINARY_PATH_FOR_WOCKMINT=~/local_bridge_testing/bin/polkadot-
 
 **Accounts of BridgeHub parachains:**
 - `Bob` is pallet owner of all bridge pallets
-- `Alice` is `Sudo`
 
-**1. Init bridges**
+#### Run with script (alternative 1)
+```
+cd <cumulus-git-repo-dir>
+./scripts/bridges_rococo_wococo.sh run-relay
+```
 
+#### Run with binary (alternative 2)
 Need to wait for parachain activation (start producing blocks), then run:
 
 ```
+# 1. Init bridges:
+
 # Rococo -> Wococo
 RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	~/local_bridge_testing/bin/substrate-relay init-bridge rococo-to-bridge-hub-wococo \
@@ -90,11 +96,8 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	--target-host localhost \
 	--target-port 8943 \
 	--target-signer //Bob
-```
 
-**2. Relay relay-chain headers, parachain headers and messages**
-
-```
+# 2. Relay relay-chain headers, parachain headers and messages**
 RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
     ~/local_bridge_testing/bin/substrate-relay relay-headers-and-messages bridge-hub-rococo-bridge-hub-wococo \
     --rococo-host localhost \

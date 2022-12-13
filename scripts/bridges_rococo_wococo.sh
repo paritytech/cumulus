@@ -68,6 +68,49 @@ function check_parachain_collator() {
     echo ""
 }
 
+function init_ro_wo() {
+    RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
+        ~/local_bridge_testing/bin/substrate-relay init-bridge rococo-to-bridge-hub-wococo \
+	--source-host localhost \
+	--source-port 9942 \
+	--target-host localhost \
+	--target-port 8945 \
+	--target-signer //Bob
+}
+
+function init_wo_ro() {
+    RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
+        ~/local_bridge_testing/bin/substrate-relay init-bridge wococo-to-bridge-hub-rococo \
+        --source-host localhost \
+        --source-port 9945 \
+        --target-host localhost \
+        --target-port 8943 \
+        --target-signer //Bob
+}
+
+function run_relay() {
+    RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
+        ~/local_bridge_testing/bin/substrate-relay relay-headers-and-messages bridge-hub-rococo-bridge-hub-wococo \
+        --rococo-host localhost \
+        --rococo-port 9942 \
+        --bridge-hub-rococo-host localhost \
+        --bridge-hub-rococo-port 8943 \
+        --bridge-hub-rococo-signer //Charlie \
+        --wococo-headers-to-bridge-hub-rococo-signer //Bob \
+        --wococo-parachains-to-bridge-hub-rococo-signer //Bob \
+        --bridge-hub-rococo-transactions-mortality 4 \
+        --wococo-host localhost \
+        --wococo-port 9945 \
+        --bridge-hub-wococo-host localhost \
+        --bridge-hub-wococo-port 8945 \
+        --bridge-hub-wococo-signer //Charlie \
+        --rococo-headers-to-bridge-hub-wococo-signer //Bob \
+        --rococo-parachains-to-bridge-hub-wococo-signer //Bob \
+        --bridge-hub-wococo-transactions-mortality 4 \
+        --lane 00000001 \
+        --lane 00000002
+}
+
 ensure_binaries
 
 case "$1" in
@@ -135,27 +178,20 @@ case "$1" in
     ;;
   init-ro-wo)
     # Init bridge Rococo->Wococo
-    RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
-        ~/local_bridge_testing/bin/substrate-relay init-bridge rococo-to-bridge-hub-wococo \
-	--source-host localhost \
-	--source-port 9942 \
-	--target-host localhost \
-	--target-port 8945 \
-	--target-signer //Bob
+    init_ro_wo
     ;;
   init-wo-ro)
     # Init bridge Wococo->Rococo
-    RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
-        ~/local_bridge_testing/bin/substrate-relay init-bridge wococo-to-bridge-hub-rococo \
-        --source-host localhost \
-        --source-port 9945 \
-        --target-host localhost \
-        --target-port 8943 \
-        --target-signer //Bob
+    init_wo_ro
+    ;;
+  run-relay)
+    init_ro_wo
+    init_wo_ro
+    run_relay
     ;;
   stop)
     pkill -f polkadot
     pkill -f parachain
     ;;
-  *) echo "A command is require. Supported commands: start-rococo, start-wococo, init-ro-wo, init-wo-ro, stop"; exit 1;;
+  *) echo "A command is require. Supported commands: start-rococo, start-wococo, init-ro-wo, init-wo-ro, run-relay, stop"; exit 1;;
 esac
