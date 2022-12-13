@@ -245,6 +245,8 @@ pallet-session-benchmarking = { git = "https://github.com/paritytech//substrate"
 pallet-nis = { git = "https://github.com/paritytech//substrate", branch = "bko-gav-xcm-v3-compatible" }
 sp-beefy = { git = "https://github.com/paritytech//substrate", branch = "bko-gav-xcm-v3-compatible" }
 substrate-test-client = { git = "https://github.com/paritytech//substrate", branch = "bko-gav-xcm-v3-compatible" }
+substrate-test-utils = { git = "https://github.com/paritytech//substrate", branch = "bko-gav-xcm-v3-compatible" }
+substrate-test-utils-derive = { git = "https://github.com/paritytech//substrate", branch = "bko-gav-xcm-v3-compatible" }
 
 [patch."https://github.com/paritytech/polkadot"]
 kusama-runtime = { git = "https://github.com/paritytech//polkadot", branch = "gav-xcm-v3" }
