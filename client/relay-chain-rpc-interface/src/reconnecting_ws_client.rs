@@ -1,4 +1,6 @@
-use cumulus_primitives_core::relay_chain::Header as RelayHeader;
+use cumulus_primitives_core::relay_chain::{
+	BlockNumber as RelayBlockNumber, Header as RelayHeader,
+};
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use futures::{
 	channel::{
@@ -17,8 +19,9 @@ use jsonrpsee::{
 	rpc_params,
 	ws_client::WsClientBuilder,
 };
+use lru::LruCache;
 use polkadot_service::TaskManager;
-use std::{future::Future, sync::Arc};
+use std::{future::Future, num::NonZeroUsize, sync::Arc};
 use tokio::sync::mpsc::{
 	channel as tokio_channel, error::TryRecvError, Receiver as TokioReceiver, Sender as TokioSender,
 };
@@ -136,13 +139,8 @@ struct ReconnectingWebsocketWorker {
 	best_header_listeners: Vec<Sender<RelayHeader>>,
 }
 
-fn handle_event_distribution(
-	event: Option<Result<RelayHeader, JsonRpseeError>>,
-	senders: &mut Vec<Sender<RelayHeader>>,
-) -> Result<(), String> {
-	match event {
-		Some(Ok(header)) => {
-			senders.retain_mut(|e| {
+fn distribute_header(header: RelayHeader, senders: &mut Vec<Sender<RelayHeader>>) {
+	senders.retain_mut(|e| {
 				match e.try_send(header.clone()) {
 					// Receiver has been dropped, remove Sender from list.
 					Err(error) if error.is_disconnected() => false,
@@ -156,11 +154,6 @@ fn handle_event_distribution(
 					_ => true,
 				}
 			});
-			Ok(())
-		},
-		None => Err("Subscription closed".to_string()),
-		Some(Err(err)) => Err(format!("Error in RPC subscription: {}", err)),
-	}
 }
 
 /// Manages the active websocket client.
@@ -379,7 +372,10 @@ impl ReconnectingWebsocketWorker {
 			return;
 		};
 
+		let mut imported_blocks_cache =
+			LruCache::new(NonZeroUsize::new(40).expect("40 is nonzero; qed."));
 		let mut should_reconnect = false;
+		let mut last_seen_finalized_num: RelayBlockNumber = 0;
 		loop {
 			// This branch is taken if the websocket connection to the current RPC server is closed.
 			if should_reconnect {
@@ -432,21 +428,66 @@ impl ReconnectingWebsocketWorker {
 					}
 				},
 				import_event = subscriptions.import_subscription.next() => {
-					if let Err(err) = handle_event_distribution(import_event, &mut self.imported_header_listeners) {
-						tracing::error!(target: LOG_TARGET, err, "Encountered error while processing imported header notification.");
-						should_reconnect = true;
+					match import_event {
+						Some(Ok(header)) => {
+							let hash = header.hash();
+							if imported_blocks_cache.contains(&hash) {
+								tracing::debug!(
+									target: LOG_TARGET,
+									number = header.number,
+									?hash,
+									"Duplicate imported block header. This might happen after switching to a new RPC node. Skipping distribution."
+								);
+								continue;
+							}
+							imported_blocks_cache.put(hash, ());
+							distribute_header(header, &mut self.imported_header_listeners);
+						},
+						None => {
+							tracing::error!(target: LOG_TARGET, "Subscription closed.");
+							should_reconnect = true;
+						},
+						Some(Err(err)) => {
+							tracing::error!(target: LOG_TARGET, ?err, "Error in RPC subscription.");
+							should_reconnect = true;
+						},
 					}
 				},
 				best_header_event = subscriptions.best_subscription.next() => {
-					if let Err(err) = handle_event_distribution(best_header_event, &mut self.best_header_listeners) {
-						tracing::error!(target: LOG_TARGET, err, "Encountered error while processing best header notification.");
-						should_reconnect = true;
+					match best_header_event {
+						Some(Ok(header)) => distribute_header(header, &mut self.best_header_listeners),
+						None => {
+							tracing::error!(target: LOG_TARGET, "Subscription closed.");
+							should_reconnect = true;
+						},
+						Some(Err(err)) => {
+							tracing::error!(target: LOG_TARGET, ?err, "Error in RPC subscription.");
+							should_reconnect = true;
+						},
 					}
 				}
 				finalized_event = subscriptions.finalized_subscription.next() => {
-					if let Err(err) = handle_event_distribution(finalized_event, &mut self.finalized_header_listeners) {
-						tracing::error!(target: LOG_TARGET, err, "Encountered error while processing finalized header notification.");
-						should_reconnect = true;
+					match finalized_event {
+						Some(Ok(header)) if header.number > last_seen_finalized_num => {
+							last_seen_finalized_num = header.number;
+							distribute_header(header, &mut self.finalized_header_listeners);
+						},
+						Some(Ok(header)) => {
+							tracing::debug!(
+								target: LOG_TARGET,
+								number = header.number,
+								last_seen_finalized_num,
+								"Duplicate finalized block header. This might happen after switching to a new RPC node. Skipping distribution."
+							);
+						},
+						None => {
+							tracing::error!(target: LOG_TARGET, "Subscription closed.");
+							should_reconnect = true;
+						},
+						Some(Err(err)) => {
+							tracing::error!(target: LOG_TARGET, ?err, "Error in RPC subscription.");
+							should_reconnect = true;
+						},
 					}
 				}
 			}
