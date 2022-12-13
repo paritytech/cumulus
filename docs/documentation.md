@@ -74,15 +74,15 @@ It contains 65 labels:
 ### T labels: Topics - to be used in combination with other labels
 - `T0-node`: *This PR/Issue is related to the topic “node”.*
 - `T1-runtime`: *This PR/Issue is related to the topic “runtime”.*
-- `T10-release`: *This PR/Issue is related to topics touching the release notes.*
 - `T2-API`: *This PR/Issue is related to APIs.*
 - `T3-relay_chain`: *This PR/Issue is related to the relay chain.*
 - `T4-smart_contracts`: *This PR/Issue is related to smart contracts.*
 - `T5-parachains`: *This PR/Issue is related to Parachains.*
 - `T6-XCM`: *This PR/Issue is related to XCM.*
-- `T7-statemint`: *This PR/Issue is related to Statemint*
 - `T7-substrate`: *This is an issue that needs to be implemented upstream in Substrate.*
-- `T8-CGP`: *This PR/Issue is related to Common Good Parachains.*
+- `T8-system_parachains`: *This PR/Issue is related to System Parachains.*
+- `T9-bridges`: *This PR/Issue is related to bridges.*
+- `T10-release`: *This PR/Issue is related to topics touching the release notes.*
 
 ### U labels: Urgency - in what time manner does this issue need to be resolved?
 - `U0-drop_everything`: *Everyone should address the issue now.*
