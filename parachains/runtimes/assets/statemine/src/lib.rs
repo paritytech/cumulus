@@ -510,7 +510,7 @@ parameter_types! {
 	pub const SessionLength: BlockNumber = 6 * HOURS;
 	pub const MaxInvulnerables: u32 = 100;
 	// StakingAdmin pluralistic body.
-	pub const StakingAdminBodyId: BodyId = BodyId::Defence;
+	pub const StakingAdminBodyId: BodyId = BodyId::Defense;
 }
 
 /// We allow root, the Relay Chain council and the StakingAdmin to execute privileged collator selection operations.
