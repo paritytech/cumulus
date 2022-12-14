@@ -23,8 +23,9 @@ use futures::{
 		mpsc::{Receiver, Sender},
 		oneshot::Sender as OneshotSender,
 	},
+	future::BoxFuture,
 	stream::FuturesUnordered,
-	StreamExt,
+	FutureExt, StreamExt,
 };
 use jsonrpsee::{
 	core::{
@@ -37,9 +38,9 @@ use jsonrpsee::{
 };
 use lru::LruCache;
 use polkadot_service::TaskManager;
-use std::{future::Future, num::NonZeroUsize, sync::Arc};
+use std::{num::NonZeroUsize, sync::Arc};
 use tokio::sync::mpsc::{
-	channel as tokio_channel, error::TryRecvError, Receiver as TokioReceiver, Sender as TokioSender,
+	channel as tokio_channel, Receiver as TokioReceiver, Sender as TokioSender,
 };
 use url::Url;
 
@@ -146,9 +147,6 @@ struct ReconnectingWebsocketWorker {
 	ws_urls: Vec<Url>,
 	/// Communication channel with the RPC client
 	client_receiver: TokioReceiver<RpcDispatcherMessage>,
-
-	/// Communication channel with ourself
-	self_sender: TokioSender<RpcDispatcherMessage>,
 
 	/// Senders to distribute incoming header notifications to
 	imported_header_listeners: Vec<Sender<RelayHeader>>,
@@ -292,7 +290,7 @@ impl ClientManager {
 		method: String,
 		params: ArrayParams,
 		response_sender: OneshotSender<Result<JsonValue, JsonRpseeError>>,
-	) -> impl Future<Output = Result<(), RpcDispatcherMessage>> {
+	) -> BoxFuture<'static, Result<(), RpcDispatcherMessage>> {
 		let future_client = self.active_client.clone();
 		async move {
 			let resp = future_client.request(&method, params.clone()).await;
@@ -313,7 +311,13 @@ impl ClientManager {
 			}
 			Ok(())
 		}
+		.boxed()
 	}
+}
+
+enum ConnectionStatus {
+	Connected,
+	ReconnectRequired(Option<RpcDispatcherMessage>),
 }
 
 impl ReconnectingWebsocketWorker {
@@ -325,7 +329,6 @@ impl ReconnectingWebsocketWorker {
 		let worker = ReconnectingWebsocketWorker {
 			ws_urls: urls,
 			client_receiver: rx,
-			self_sender: tx.clone(),
 			imported_header_listeners: Vec::new(),
 			finalized_header_listeners: Vec::new(),
 			best_header_listeners: Vec::new(),
@@ -338,47 +341,36 @@ impl ReconnectingWebsocketWorker {
 		&mut self,
 		client_manager: &mut ClientManager,
 		pending_requests: &mut FuturesUnordered<
-			impl Future<Output = Result<(), RpcDispatcherMessage>>,
+			BoxFuture<'static, Result<(), RpcDispatcherMessage>>,
 		>,
+		first_failed_request: Option<RpcDispatcherMessage>,
 	) -> Result<RelayChainSubscriptions, String> {
-		let mut tmp_request_storage = Vec::new();
-		loop {
-			// Drain the incoming request channel to insert retrying requests at the front later
-			match self.client_receiver.try_recv() {
-				Ok(val) => tmp_request_storage.push(val),
-				Err(TryRecvError::Empty) => break,
-				Err(_) =>
-					return Err("Can not fetch values from client receiver channel.".to_string()),
-			}
+		let mut requests_to_retry = Vec::new();
+		if let Some(req @ RpcDispatcherMessage::Request(_, _, _)) = first_failed_request {
+			requests_to_retry.push(req);
 		}
 
 		// At this point, all pending requests will return an error since the
 		// websocket connection is dead. So draining the pending requests should be fast.
 		while !pending_requests.is_empty() {
 			if let Some(Err(req)) = pending_requests.next().await {
-				// Put the failed requests into the queue again, they will be processed
-				// once we have a new rpc server to connect to.
-				if let Err(err) = self.self_sender.try_send(req) {
-					return Err(format!(
-						"Unable to retry requests, queue is unexpectedly full. err: {:?}",
-						err
-					))
-				};
+				requests_to_retry.push(req);
 			}
-		}
-
-		for item in tmp_request_storage.into_iter() {
-			if let Err(err) = self.self_sender.try_send(item) {
-				return Err(format!(
-					"Unable to retry requests, queue is unexpectedly full. err: {:?}",
-					err
-				))
-			};
 		}
 
 		if client_manager.connect_to_new_rpc_server().await.is_err() {
 			return Err(format!("Unable to find valid external RPC server, shutting down."))
 		};
+
+		for item in requests_to_retry.into_iter() {
+			if let RpcDispatcherMessage::Request(method, params, response_sender) = item {
+				pending_requests.push(client_manager.create_request(
+					method,
+					params,
+					response_sender,
+				));
+			};
+		}
 
 		client_manager.get_subscriptions().await.map_err(|e| {
 			format!("Not able to create streams from newly connected RPC server, shutting down. err: {:?}", e)
@@ -407,12 +399,19 @@ impl ReconnectingWebsocketWorker {
 
 		let mut imported_blocks_cache =
 			LruCache::new(NonZeroUsize::new(40).expect("40 is nonzero; qed."));
-		let mut should_reconnect = false;
+		let mut should_reconnect = ConnectionStatus::Connected;
 		let mut last_seen_finalized_num: RelayBlockNumber = 0;
 		loop {
 			// This branch is taken if the websocket connection to the current RPC server is closed.
-			if should_reconnect {
-				match self.handle_reconnect(&mut client_manager, &mut pending_requests).await {
+			if let ConnectionStatus::ReconnectRequired(maybe_failed_request) = should_reconnect {
+				match self
+					.handle_reconnect(
+						&mut client_manager,
+						&mut pending_requests,
+						maybe_failed_request,
+					)
+					.await
+				{
 					Ok(new_subscriptions) => {
 						subscriptions = new_subscriptions;
 					},
@@ -425,8 +424,8 @@ impl ReconnectingWebsocketWorker {
 						return
 					},
 				}
-				should_reconnect = false;
-			};
+				should_reconnect = ConnectionStatus::Connected;
+			}
 
 			tokio::select! {
 				evt = self.client_receiver.recv() => match evt {
@@ -449,15 +448,7 @@ impl ReconnectingWebsocketWorker {
 				},
 				should_retry = pending_requests.next(), if !pending_requests.is_empty() => {
 					if let Some(Err(req)) = should_retry {
-						if let Err(err) = self.self_sender.try_send(req) {
-							tracing::error!(
-								target: LOG_TARGET,
-								?err,
-								"Unable to retry requests, queue is unexpectedly full."
-							);
-							return;
-						};
-						should_reconnect = true;
+						should_reconnect = ConnectionStatus::ReconnectRequired(Some(req));
 					}
 				},
 				import_event = subscriptions.import_subscription.next() => {
@@ -478,11 +469,11 @@ impl ReconnectingWebsocketWorker {
 						},
 						None => {
 							tracing::error!(target: LOG_TARGET, "Subscription closed.");
-							should_reconnect = true;
+							should_reconnect = ConnectionStatus::ReconnectRequired(None);
 						},
 						Some(Err(error)) => {
 							tracing::error!(target: LOG_TARGET, ?error, "Error in RPC subscription.");
-							should_reconnect = true;
+							should_reconnect = ConnectionStatus::ReconnectRequired(None);
 						},
 					}
 				},
@@ -491,11 +482,11 @@ impl ReconnectingWebsocketWorker {
 						Some(Ok(header)) => distribute_header(header, &mut self.best_header_listeners),
 						None => {
 							tracing::error!(target: LOG_TARGET, "Subscription closed.");
-							should_reconnect = true;
+							should_reconnect = ConnectionStatus::ReconnectRequired(None);
 						},
 						Some(Err(error)) => {
 							tracing::error!(target: LOG_TARGET, ?error, "Error in RPC subscription.");
-							should_reconnect = true;
+							should_reconnect = ConnectionStatus::ReconnectRequired(None);
 						},
 					}
 				}
@@ -515,11 +506,11 @@ impl ReconnectingWebsocketWorker {
 						},
 						None => {
 							tracing::error!(target: LOG_TARGET, "Subscription closed.");
-							should_reconnect = true;
+							should_reconnect = ConnectionStatus::ReconnectRequired(None);
 						},
 						Some(Err(error)) => {
 							tracing::error!(target: LOG_TARGET, ?error, "Error in RPC subscription.");
-							should_reconnect = true;
+							should_reconnect = ConnectionStatus::ReconnectRequired(None);
 						},
 					}
 				}
