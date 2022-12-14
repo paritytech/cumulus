@@ -126,7 +126,7 @@ impl RelayChainRpcClient {
 		R: DeserializeOwned + std::fmt::Debug,
 		OR: Fn(&RelayChainError),
 	{
-		self.ws_client.request(method, params.clone()).await.map_err(|err| {
+		self.ws_client.request(method, params).await.map_err(|err| {
 			trace_error(&err);
 			RelayChainError::RpcCallError(method.to_string())
 		})

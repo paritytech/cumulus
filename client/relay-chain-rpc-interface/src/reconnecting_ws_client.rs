@@ -1,3 +1,19 @@
+// Copyright 2022 Parity Technologies (UK) Ltd.
+// This file is part of Cumulus.
+
+// Cumulus is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Cumulus is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
+
 use cumulus_primitives_core::relay_chain::{
 	BlockNumber as RelayBlockNumber, Header as RelayHeader,
 };
@@ -32,7 +48,7 @@ const LOG_TARGET: &str = "reconnecting-websocket-client";
 
 /// Messages for communication between [`ReconnectingWsClient`] and [`ReconnectingWebsocketWorker`].
 #[derive(Debug)]
-pub enum RpcDispatcherMessage {
+enum RpcDispatcherMessage {
 	RegisterBestHeadListener(Sender<RelayHeader>),
 	RegisterImportListener(Sender<RelayHeader>),
 	RegisterFinalizationListener(Sender<RelayHeader>),
@@ -50,7 +66,7 @@ pub struct ReconnectingWsClient {
 impl ReconnectingWsClient {
 	/// Create a new websocket client frontend.
 	pub async fn new(urls: Vec<Url>, task_manager: &mut TaskManager) -> RelayChainResult<Self> {
-		tracing::info!(target: LOG_TARGET, "Instantiating reconnecting websocket client");
+		tracing::debug!(target: LOG_TARGET, "Instantiating reconnecting websocket client");
 
 		let (worker, sender) = ReconnectingWebsocketWorker::new(urls).await;
 
@@ -70,7 +86,7 @@ impl ReconnectingWsClient {
 	{
 		let (tx, rx) = futures::channel::oneshot::channel();
 
-		let message = RpcDispatcherMessage::Request(method.to_string(), params, tx);
+		let message = RpcDispatcherMessage::Request(method.into(), params, tx);
 		self.to_worker_channel.send(message).await.map_err(|err| {
 			RelayChainError::WorkerCommunicationError(format!(
 				"Unable to send message to RPC worker: {}",
@@ -88,6 +104,7 @@ impl ReconnectingWsClient {
 		serde_json::from_value(value)
 			.map_err(|_| RelayChainError::GenericError("Unable to deserialize value".to_string()))
 	}
+
 	/// Get a stream of new best relay chain headers
 	pub fn get_best_heads_stream(&self) -> Result<Receiver<RelayHeader>, RelayChainError> {
 		let (tx, rx) =
@@ -215,7 +232,11 @@ impl ClientManager {
 			)
 			.await
 			.map_err(|e| {
-				tracing::error!(target: LOG_TARGET, ?e, "Unable to open subscription.");
+				tracing::error!(
+					target: LOG_TARGET,
+					?e,
+					"Unable to open `chain_subscribeAllHeads` subscription."
+				);
 				e
 			})?;
 		let best_subscription = self
@@ -227,7 +248,11 @@ impl ClientManager {
 			)
 			.await
 			.map_err(|e| {
-				tracing::error!(target: LOG_TARGET, ?e, "Unable to open subscription.");
+				tracing::error!(
+					target: LOG_TARGET,
+					?e,
+					"Unable to open `chain_subscribeNewHeads` subscription."
+				);
 				e
 			})?;
 		let finalized_subscription = self
@@ -239,7 +264,11 @@ impl ClientManager {
 			)
 			.await
 			.map_err(|e| {
-				tracing::error!(target: LOG_TARGET, ?e, "Unable to open subscription.");
+				tracing::error!(
+					target: LOG_TARGET,
+					?e,
+					"Unable to open `chain_subscribeFinalizedHeads` subscription."
+				);
 				e
 			})?;
 
@@ -299,7 +328,7 @@ impl ReconnectingWebsocketWorker {
 		(worker, tx)
 	}
 
-	///	Reconnect via [`ClientManager`] and provide new notification streams.
+	/// Reconnect via [`ClientManager`] and provide new notification streams.
 	async fn handle_reconnect(
 		&mut self,
 		client_manager: &mut ClientManager,
@@ -367,7 +396,7 @@ impl ReconnectingWebsocketWorker {
 			return;
 		};
 		let Ok(mut subscriptions) = client_manager.get_subscriptions().await else {
-			tracing::error!(target: LOG_TARGET, "Not able to fetch subscription after reconnect.");
+			tracing::error!(target: LOG_TARGET, "Unable to fetch subscriptions on initial connection.");
 			return;
 		};
 
@@ -446,8 +475,8 @@ impl ReconnectingWebsocketWorker {
 							tracing::error!(target: LOG_TARGET, "Subscription closed.");
 							should_reconnect = true;
 						},
-						Some(Err(err)) => {
-							tracing::error!(target: LOG_TARGET, ?err, "Error in RPC subscription.");
+						Some(Err(error)) => {
+							tracing::error!(target: LOG_TARGET, ?error, "Error in RPC subscription.");
 							should_reconnect = true;
 						},
 					}
@@ -459,8 +488,8 @@ impl ReconnectingWebsocketWorker {
 							tracing::error!(target: LOG_TARGET, "Subscription closed.");
 							should_reconnect = true;
 						},
-						Some(Err(err)) => {
-							tracing::error!(target: LOG_TARGET, ?err, "Error in RPC subscription.");
+						Some(Err(error)) => {
+							tracing::error!(target: LOG_TARGET, ?error, "Error in RPC subscription.");
 							should_reconnect = true;
 						},
 					}
@@ -483,8 +512,8 @@ impl ReconnectingWebsocketWorker {
 							tracing::error!(target: LOG_TARGET, "Subscription closed.");
 							should_reconnect = true;
 						},
-						Some(Err(err)) => {
-							tracing::error!(target: LOG_TARGET, ?err, "Error in RPC subscription.");
+						Some(Err(error)) => {
+							tracing::error!(target: LOG_TARGET, ?error, "Error in RPC subscription.");
 							should_reconnect = true;
 						},
 					}
