@@ -197,7 +197,12 @@ async fn connect_next_available_rpc_server(
 	tracing::debug!(target: LOG_TARGET, starting_position, "Connecting to RPC server.");
 	for (counter, url) in urls.iter().cycle().skip(starting_position).take(urls.len()).enumerate() {
 		let index = (starting_position + counter) % urls.len();
-		tracing::info!(target: LOG_TARGET, index, ?url, "Connecting to RPC node",);
+		tracing::info!(
+			target: LOG_TARGET,
+			index,
+			?url,
+			"Trying to connect to next external relaychain node.",
+		);
 		if let Ok(ws_client) = WsClientBuilder::default().build(url).await {
 			return Ok((index, Arc::new(ws_client)))
 		};
