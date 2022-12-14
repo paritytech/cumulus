@@ -14,8 +14,8 @@
 // limitations under the License.
 
 use super::{
-	AccountId, AllPalletsWithSystem, AssetId, Authorship, Balance, Balances, ParachainInfo,
-	ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
+	AccountId, AllPalletsWithSystem, AssetId, Authorship, Balance, Balances, BridgeAssetsTransfer,
+	ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
 	TrustBackedAssets, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
 use frame_support::{
@@ -36,10 +36,10 @@ use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
 	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FungiblesAdapter, IsConcrete,
-	NativeAsset, NetworkExportTable, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
-	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UnpaidRemoteExporter,
-	UsingComponents, WeightInfoBounds,
+	NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+	SovereignSignedViaLocation, TakeWeightCredit, UnpaidRemoteExporter, UsingComponents,
+	WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
@@ -268,14 +268,5 @@ impl cumulus_pallet_xcm::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
-parameter_types! {
-	/// BridgedNetworkConsensus + Multilocation-to-LocalGlobalConsensusBridgeHub + LocalGlobalConsensusBridgeHub
-	pub BridgeTable: sp_std::prelude::Vec<(NetworkId, MultiLocation, Option<MultiAsset>)> = sp_std::vec![
-		(NetworkId::Wococo, (Parent, Parachain(1013)).into(), None),
-		(NetworkId::Polkadot, (Parent, Parachain(1003)).into(), None),
-	];
-}
-
 /// Bridge router, which wraps and sends xcm to BridgeHub to be delivered to the different GlobalConsensus
-pub type BridgeXcmSender =
-	UnpaidRemoteExporter<NetworkExportTable<BridgeTable>, XcmRouter, UniversalLocation>;
+pub type BridgeXcmSender = UnpaidRemoteExporter<BridgeAssetsTransfer, XcmRouter, UniversalLocation>;

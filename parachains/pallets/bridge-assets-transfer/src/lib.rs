@@ -20,17 +20,39 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::{Decode, Encode, MaxEncodedLen};
+use scale_info::TypeInfo;
+use sp_runtime::RuntimeDebug;
+
 pub use pallet::*;
 use xcm::prelude::*;
+
+pub mod weights;
 
 /// The log target of this pallet.
 pub const LOG_TARGET: &str = "runtime::bridge-assets-transfer";
 
+#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+pub struct BridgeConfig {
+	/// Contains location, which is able to bridge XCM messages to bridged network
+	bridge_location: MultiLocation,
+	/// Fee which could be needed to pay in `bridge_location`
+	fee: Option<MultiAsset>,
+}
+
+impl From<BridgeConfig> for (MultiLocation, Option<MultiAsset>) {
+	fn from(bridge_config: BridgeConfig) -> (MultiLocation, Option<MultiAsset>) {
+		(bridge_config.bridge_location, bridge_config.fee)
+	}
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use crate::weights::WeightInfo;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
+	use xcm_builder::ExporterFor;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub (super) trait Store)]
@@ -45,15 +67,16 @@ pub mod pallet {
 		/// XCM sender which sends messages to the BridgeHub
 		type BridgeXcmSender: SendXcm;
 
-		// TODO: store as persistent and create add_bridge/remove_bridge - then we can have generic impl and dont need to hardcode NetworkId/ParaId in runtime
-		/// Configuration for supported bridged networks
-		type SupportedBridges: Get<
-			sp_std::prelude::Vec<(NetworkId, MultiLocation, Option<MultiAsset>)>,
-		>;
-
 		/// Runtime's universal location
 		type UniversalLocation: Get<InteriorMultiLocation>;
+
+		/// Weight information for extrinsics in this pallet.
+		type WeightInfo: WeightInfo;
 	}
+
+	#[pallet::storage]
+	/// Details of configured bridges which are allowed for transfer.
+	pub(super) type Bridges<T: Config> = StorageMap<_, Blake2_128Concat, NetworkId, BridgeConfig>;
 
 	#[pallet::error]
 	#[cfg_attr(test, derive(PartialEq))]
@@ -69,6 +92,13 @@ pub mod pallet {
 		// TODO: add here xcm_hash?
 		/// Transfer was successfully entered to the system (does not mean already delivered)
 		TransferInitiated(XcmHash),
+
+		/// New bridge configuration was added
+		BridgeAdded,
+		/// Bridge configuration was removed
+		BridgeRemoved,
+		/// Bridge configuration was updated
+		BridgeUpdated,
 	}
 
 	#[pallet::call]
@@ -78,10 +108,8 @@ pub mod pallet {
 		/// Parameters:
 		///
 		/// * `assets`:
-		/// * `destination`: Different consensus location, where the assets will be deposited, e.g. Polkadot's Statemint: `X2(GlobalConsensus(NetworkId::Polkadot), Parachain(1000))`
-		///
-		// TODO: correct weigth
-		#[pallet::weight((T::DbWeight::get().reads_writes(1, 1), DispatchClass::Operational))]
+		/// * `destination`: Different consensus location, where the assets will be deposited, e.g. Polkadot's Statemint: `2, X2(GlobalConsensus(NetworkId::Polkadot), Parachain(1000))`
+		#[pallet::weight(T::WeightInfo::transfer_asset_via_bridge())]
 		pub fn transfer_asset_via_bridge(
 			origin: OriginFor<T>,
 			assets: VersionedMultiAssets,
@@ -135,6 +163,67 @@ pub mod pallet {
 			Self::deposit_event(Event::TransferInitiated(xcm_hash));
 			Ok(())
 		}
+
+		/// Adds new bridge configuration, which allows transfer to this `bridged_network`.
+		///
+		/// Parameters:
+		///
+		/// * `bridged_network`: Network where we want to allow transfer funds
+		/// * `bridge_config`: contains location for BridgeHub in our network + fee
+		#[pallet::weight(T::WeightInfo::add_bridge_config())]
+		pub fn add_bridge_config(
+			origin: OriginFor<T>,
+			bridged_network: NetworkId,
+			bridge_config: BridgeConfig,
+		) -> DispatchResult {
+			let _ = ensure_root(origin)?;
+			ensure!(!Bridges::<T>::contains_key(bridged_network), Error::<T>::InvalidConfiguration);
+
+			Bridges::<T>::insert(bridged_network, bridge_config);
+			Self::deposit_event(Event::BridgeAdded);
+			Ok(())
+		}
+
+		/// Remove bridge configuration for specified `bridged_network`.
+		///
+		/// Parameters:
+		///
+		/// * `bridged_network`: Network where we want to remove
+		#[pallet::weight(T::WeightInfo::remove_bridge_config())]
+		pub fn remove_bridge_config(
+			origin: OriginFor<T>,
+			bridged_network: NetworkId,
+		) -> DispatchResult {
+			let _ = ensure_root(origin)?;
+			ensure!(Bridges::<T>::contains_key(bridged_network), Error::<T>::InvalidConfiguration);
+
+			Bridges::<T>::remove(bridged_network);
+			Self::deposit_event(Event::BridgeRemoved);
+			Ok(())
+		}
+
+		/// Updates bridge configuration for specified `bridged_network`.
+		///
+		/// Parameters:
+		///
+		/// * `bridged_network`: Network where we want to remove
+		/// * `fee`: New fee to update
+		#[pallet::weight(T::WeightInfo::update_bridge_config())]
+		pub fn update_bridge_config(
+			origin: OriginFor<T>,
+			bridged_network: NetworkId,
+			fee: Option<MultiAsset>,
+		) -> DispatchResult {
+			let _ = ensure_root(origin)?;
+			ensure!(Bridges::<T>::contains_key(bridged_network), Error::<T>::InvalidConfiguration);
+
+			Bridges::<T>::try_mutate_exists(bridged_network, |bridge_config| {
+				let deposit = bridge_config.as_mut().ok_or(Error::<T>::InvalidConfiguration)?;
+				deposit.fee = fee;
+				Self::deposit_event(Event::BridgeUpdated);
+				Ok(())
+			})
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -156,10 +245,7 @@ pub mod pallet {
 						.map_err(|_| Error::<T>::UnsupportedDestination)?;
 					ensure!(local_network != remote_network, Error::<T>::UnsupportedDestination);
 					ensure!(
-						T::SupportedBridges::get()
-							.iter()
-							.find(|sb| sb.0 == remote_network)
-							.is_some(),
+						Bridges::<T>::contains_key(remote_network),
 						Error::<T>::UnsupportedDestination
 					);
 					Ok(location)
@@ -183,6 +269,16 @@ pub mod pallet {
 			}
 		}
 	}
+
+	impl<T: Config> ExporterFor for Pallet<T> {
+		fn exporter_for(
+			network: &NetworkId,
+			_remote_location: &InteriorMultiLocation,
+			_message: &Xcm<()>,
+		) -> Option<(MultiLocation, Option<MultiAsset>)> {
+			Bridges::<T>::get(network).map(Into::into)
+		}
+	}
 }
 
 #[cfg(test)]
@@ -190,13 +286,15 @@ mod tests {
 	use super::*;
 	use crate as bridge_assets_transfer;
 
-	use frame_support::{parameter_types, sp_io, sp_tracing};
+	use frame_support::{
+		assert_noop, assert_ok, dispatch::DispatchError, parameter_types, sp_io, sp_tracing,
+	};
 	use sp_runtime::{
 		testing::{Header, H256},
 		traits::{BlakeTwo256, IdentityLookup},
 	};
 	use sp_version::RuntimeVersion;
-	use xcm_builder::{NetworkExportTable, UnpaidRemoteExporter};
+	use xcm_builder::{ExporterFor, UnpaidRemoteExporter};
 
 	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 	type Block = frame_system::mocking::MockBlock<TestRuntime>;
@@ -297,17 +395,14 @@ mod tests {
 	}
 
 	/// Bridge router, which wraps and sends xcm to BridgeHub to be delivered to the different GlobalConsensus
-	pub type TestBridgeXcmSender = UnpaidRemoteExporter<
-		NetworkExportTable<TestBridgeTable>,
-		ThreadLocalXcmRouter,
-		UniversalLocation,
-	>;
+	pub type TestBridgeXcmSender =
+		UnpaidRemoteExporter<BridgeAssetsTransfer, ThreadLocalXcmRouter, UniversalLocation>;
 
 	impl Config for TestRuntime {
 		type RuntimeEvent = RuntimeEvent;
 		type BridgeXcmSender = TestBridgeXcmSender;
-		type SupportedBridges = TestBridgeTable;
 		type UniversalLocation = UniversalLocation;
+		type WeightInfo = ();
 	}
 
 	pub(crate) fn new_test_ext() -> sp_io::TestExternalities {
@@ -321,6 +416,13 @@ mod tests {
 	#[test]
 	fn test_ensure_remote_destination() {
 		new_test_ext().execute_with(|| {
+			// insert bridge config
+			assert_ok!(BridgeAssetsTransfer::add_bridge_config(
+				RuntimeOrigin::root(),
+				Wococo,
+				BridgeConfig { bridge_location: (Parent, Parachain(1013)).into(), fee: None },
+			));
+
 			// v2 not supported
 			assert_eq!(
 				BridgeAssetsTransfer::ensure_remote_destination(VersionedMultiLocation::V2(
@@ -365,6 +467,13 @@ mod tests {
 	#[test]
 	fn test_transfer_asset_via_bridge_works() {
 		new_test_ext().execute_with(|| {
+			// insert bridge config
+			assert_ok!(BridgeAssetsTransfer::add_bridge_config(
+				RuntimeOrigin::root(),
+				Wococo,
+				BridgeConfig { bridge_location: (Parent, Parachain(1013)).into(), fee: None },
+			));
+
 			assert!(ROUTED_MESSAGE.with(|r| r.borrow().is_none()));
 
 			let assets = VersionedMultiAssets::V3(MultiAssets::default());
@@ -381,5 +490,95 @@ mod tests {
 			assert_eq!(result, Ok(()));
 			assert!(ROUTED_MESSAGE.with(|r| r.borrow().is_some()));
 		});
+	}
+
+	#[test]
+	fn test_bridge_config_management_works() {
+		let bridged_network = Rococo;
+		let bridged_config =
+			BridgeConfig { bridge_location: (Parent, Parachain(1013)).into(), fee: None };
+		let dummy_xcm = Xcm(vec![]);
+		let dummy_remote_interior_multilocation = X1(Parachain(1234));
+
+		new_test_ext().execute_with(|| {
+			assert_eq!(Bridges::<TestRuntime>::iter().count(), 0);
+
+			// should fail - just root is allowed
+			assert_noop!(
+				BridgeAssetsTransfer::add_bridge_config(
+					RuntimeOrigin::signed(1),
+					bridged_network,
+					bridged_config.clone(),
+				),
+				DispatchError::BadOrigin
+			);
+			assert_eq!(Bridges::<TestRuntime>::iter().count(), 0);
+			assert_eq!(
+				BridgeAssetsTransfer::exporter_for(
+					&bridged_network,
+					&dummy_remote_interior_multilocation,
+					&dummy_xcm
+				),
+				None
+			);
+
+			// add with root
+			assert_ok!(BridgeAssetsTransfer::add_bridge_config(
+				RuntimeOrigin::root(),
+				bridged_network,
+				bridged_config.clone(),
+			));
+			assert_eq!(Bridges::<TestRuntime>::iter().count(), 1);
+			assert_eq!(Bridges::<TestRuntime>::get(bridged_network), Some(bridged_config.clone()));
+			assert_eq!(Bridges::<TestRuntime>::get(Wococo), None);
+			assert_eq!(
+				BridgeAssetsTransfer::exporter_for(
+					&bridged_network,
+					&dummy_remote_interior_multilocation,
+					&dummy_xcm
+				),
+				Some(bridged_config.clone().into())
+			);
+			assert_eq!(
+				BridgeAssetsTransfer::exporter_for(
+					&Wococo,
+					&dummy_remote_interior_multilocation,
+					&dummy_xcm
+				),
+				None
+			);
+
+			// update fee
+			// remove
+			assert_ok!(BridgeAssetsTransfer::update_bridge_config(
+				RuntimeOrigin::root(),
+				bridged_network,
+				Some((Parent, 200u128).into()),
+			));
+			assert_eq!(Bridges::<TestRuntime>::iter().count(), 1);
+			assert_eq!(
+				Bridges::<TestRuntime>::get(bridged_network),
+				Some(BridgeConfig {
+					bridge_location: bridged_config.bridge_location.clone(),
+					fee: Some((Parent, 200u128).into())
+				})
+			);
+			assert_eq!(
+				BridgeAssetsTransfer::exporter_for(
+					&bridged_network,
+					&dummy_remote_interior_multilocation,
+					&dummy_xcm
+				),
+				Some((bridged_config.bridge_location, Some((Parent, 200u128).into())))
+			);
+
+			// remove
+			assert_ok!(BridgeAssetsTransfer::remove_bridge_config(
+				RuntimeOrigin::root(),
+				bridged_network,
+			));
+			assert_eq!(Bridges::<TestRuntime>::get(bridged_network), None);
+			assert_eq!(Bridges::<TestRuntime>::iter().count(), 0);
+		})
 	}
 }

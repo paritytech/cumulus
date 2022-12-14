@@ -68,7 +68,7 @@ cumulus-primitives-utility = { path = "../../../../primitives/utility", default-
 pallet-collator-selection = { path = "../../../../pallets/collator-selection", default-features = false }
 parachain-info = { path = "../../../pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
-bridge-assets-transfer = { path = "../../../../parachains/pallets/bridge-assets-transfer", default-features = false }
+pallet-bridge-assets-transfer = { path = "../../../../parachains/pallets/bridge-assets-transfer", default-features = false }
 pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false, optional = true }
 
 
@@ -101,6 +101,7 @@ runtime-benchmarks = [
 	"pallet-collator-selection/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
+	"pallet-bridge-assets-transfer/runtime-benchmarks",
 ]
 try-runtime = [
 	"cumulus-pallet-aura-ext/try-runtime",
@@ -126,6 +127,7 @@ try-runtime = [
 	"pallet-utility/try-runtime",
 	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",
+	"pallet-bridge-assets-transfer/try-runtime",
 ]
 std = [
 	"codec/std",
@@ -178,5 +180,5 @@ std = [
 	"pallet-collator-selection/std",
 	"parachain-info/std",
 	"parachains-common/std",
-	"bridge-assets-transfer/std",
+	"pallet-bridge-assets-transfer/std",
 ]
