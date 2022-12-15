@@ -728,7 +728,6 @@ impl_runtime_apis! {
 			let params = (&config, &whitelist);
 			add_benchmarks!(params, batches);
 
-			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
 		}
 	}
