@@ -319,24 +319,22 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::add_invulnerable())]
 		pub fn add_invulnerable(
 			origin: OriginFor<T>,
-			new: T::AccountId,
+			new: <T>::AccountId,
 		) -> DispatchResultWithPostInfo {
-			// check if invulnerable is not already in the list
-			let new_invulnerables = StorageValue<new>::try_get().map_err(|_| Error::<T>::AlreadyInvulnerable)?;
-
-			// check if a new invulnerable can be added to the list
 			T::UpdateOrigin::ensure_origin(origin)?;
-			if <Invulnerables<T>>::decode_len()+Some(1) <= T::MaxInvulnerables{
-				Error::<T>::TooManyInvulnerables;
-			}
+			// check if invulnerable is not already in the list
+			
+			// check if a new invulnerable can be added to the list
+			//let bounded_invulnerables = BoundedVec::<_, T::MaxInvulnerables>::try_from(new)
+			//	.map_err(|_| Error::<T>::TooManyInvulnerables)?;
 
 			// check if new invulnerable has associated validator key before it is added
-			let validator_key = T::ValidatorIdOf::convert(new.clone())
-				.ok_or(Error::<T>::NoAssociatedValidatorId)?;
-			ensure!(
-				T::ValidatorRegistration::is_registered(&validator_key),
-				Error::<T>::ValidatorNotRegistered
-			);
+			//let validator_key = T::ValidatorIdOf::convert(new.clone())
+			//	.ok_or(Error::<T>::NoAssociatedValidatorId)?;
+			//ensure!(
+			//	T::ValidatorRegistration::is_registered(&validator_key),
+			//	Error::<T>::ValidatorNotRegistered
+			//);
 
 			// append new invulnerable
 			<Invulnerables<T>>::append(&new);
@@ -347,32 +345,32 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(T::WeightInfo::delete_invulnerable())]
-		pub fn remove_invulnerable(
-			origin: OriginFor<T>,
-			to_remove: <T>::AccountId,
-		) -> DispatchResultWithPostInfo {
-			// check if invulnerable exists in the list
-			if !<Invulnerables<T>>::try_get(&to_remove) {
-				Error::<T>::NotInvulnerable;
-			}
+		// #[pallet::weight(T::WeightInfo::remove_invulnerable())]
+		// pub fn remove_invulnerable(
+		// 	origin: OriginFor<T>,
+		// 	to_remove: <T::AccountId>,
+		// ) -> DispatchResultWithPostInfo {
+		// 	// check if invulnerable exists in the list
+		// 	//if !<Invulnerables<T>>::try_get(&to_remove) {
+		// 	//	Error::<T>::NotInvulnerable;
+		// 	//}
 			
-			// check if old invulnerable still has associated validator keys before it is removed
-			//let validator_key = !T::ValidatorIdOf::convert(account_id.clone())
-			//		.ok_or(Error::<T>::StillAssociatedValidatorId)?;
-			//	ensure!(
-			//		!T::ValidatorRegistration::is_registered(&validator_key),
-			//		Error::<T>::ValidatorStillRegistered
-			//	);
+		// 	// check if old invulnerable still has associated validator keys before it is removed
+		// 	//let validator_key = !T::ValidatorIdOf::convert(account_id.clone())
+		// 	//		.ok_or(Error::<T>::StillAssociatedValidatorId)?;
+		// 	//	ensure!(
+		// 	//		!T::ValidatorRegistration::is_registered(&validator_key),
+		// 	//		Error::<T>::ValidatorStillRegistered
+		// 	//	);
 
-			//remove invulnerable
-			<Invulnerables<T>>::kill(&to_remove);
+		// 	//remove invulnerable
+		// 	<Invulnerables<T>>::take(&to_remove);
 			
-			Self::deposit_event(Event::InvulnerableRemoved {
-				removed: to_remove,
-			});
-			Ok(().into())
-		}
+		// 	Self::deposit_event(Event::InvulnerableRemoved {
+		// 		removed: to_remove,
+		// 	});
+		// 	Ok(().into())
+		// }
 		
 
 		/// Set the ideal number of collators (not including the invulnerables).
