@@ -244,10 +244,7 @@ pub fn run() -> Result<()> {
 					.map_err(|e| format!("Error: {:?}", e))?;
 
 			runner.async_run(|_| {
-				Ok((
-					cmd.run::<Block, HostFunctionsOf<ParachainNativeExecutor>>(),
-					task_manager,
-				))
+				Ok((cmd.run::<Block, HostFunctionsOf<ParachainNativeExecutor>>(), task_manager))
 			})
 		},
 		#[cfg(not(feature = "try-runtime"))]
