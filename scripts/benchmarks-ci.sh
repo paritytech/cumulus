@@ -49,6 +49,8 @@ elif [[ $runtimeName == "bridge-hub-rococo" ]] || [[ $runtimeName == "bridge-hub
                 pallet_timestamp
                 pallet_utility
                 cumulus_pallet_xcmp_queue
+                pallet_xcm_benchmarks::generic
+                pallet_xcm_benchmarks::fungible
 	)
 else
 	echo "$runtimeName pallet list not found in benchmarks-ci.sh"
