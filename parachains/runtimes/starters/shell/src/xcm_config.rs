@@ -24,7 +24,7 @@ use frame_support::{
 };
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AllowUnpaidExecutionFrom, FixedWeightBounds, ParentAsSuperuser, ParentIsPreset,
+	AllowExplicitUnpaidExecutionFrom, FixedWeightBounds, ParentAsSuperuser, ParentIsPreset,
 	SovereignSignedViaLocation,
 };
 
@@ -67,7 +67,7 @@ impl xcm_executor::Config for XcmConfig {
 	type IsReserve = (); // balances not supported
 	type IsTeleporter = (); // balances not supported
 	type UniversalLocation = UniversalLocation;
-	type Barrier = AllowUnpaidExecutionFrom<JustTheParent>;
+	type Barrier = AllowExplicitUnpaidExecutionFrom<JustTheParent>;
 	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>; // balances not supported
 	type Trader = (); // balances not supported
 	type ResponseHandler = (); // Don't handle responses for now.

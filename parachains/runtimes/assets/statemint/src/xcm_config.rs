@@ -34,7 +34,7 @@ use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
+	AllowTopLevelPaidExecutionFrom, AllowExplicitUnpaidExecutionFrom, AsPrefixedGeneralIndex,
 	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FungiblesAdapter, IsConcrete, LocalMint,
 	NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
@@ -250,7 +250,7 @@ pub type Barrier = DenyThenTry<
 		TakeWeightCredit,
 		AllowTopLevelPaidExecutionFrom<Everything>,
 		// Parent and its exec plurality get free execution
-		AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+		AllowExplicitUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
 		// Expected responses are OK.
 		AllowKnownQueryResponses<PolkadotXcm>,
 		// Subscriptions for version tracking are OK.
