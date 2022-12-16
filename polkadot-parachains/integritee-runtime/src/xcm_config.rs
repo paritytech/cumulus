@@ -58,7 +58,7 @@ use xcm_executor::{Config, XcmExecutor};
 parameter_types! {
 	pub const RelayChainLocation: MultiLocation = MultiLocation::parent();
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
-	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
+	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 	// Ancestry defines the multilocation describing this consensus system
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	// Relative Self Reserve location, defines the multilocation identifiying the local currency.

@@ -49,4 +49,13 @@ impl<T: frame_system::Config> pallet_teeracle::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
+	// Storage: Teerex EnclaveIndex (r:1 w:0)
+	// Storage: Teerex EnclaveRegistry (r:1 w:0)
+	// Storage: Teeracle Whitelists (r:1 w:0)
+	// Storage: Teeracle OracleData (r:0 w:1)
+	fn update_oracle() -> Weight {
+		Weight::from_ref_time(77_556_000)
+			.saturating_add(T::DbWeight::get().reads(3))
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
 }

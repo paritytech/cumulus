@@ -43,6 +43,7 @@ pallet-collective = { default-features = false, git = "https://github.com/parity
 pallet-democracy = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
 pallet-multisig = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.32" }
 pallet-proxy = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.32" }
+pallet-preimage = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.32" }
 pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
 pallet-scheduler = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.32" }
 pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
@@ -129,6 +130,7 @@ std = [
     "pallet-vesting/std",
     "pallet-multisig/std",
     "pallet-proxy/std",
+    "pallet-preimage/std",
     "pallet-scheduler/std",
     "pallet-utility/std",
     "pallet-xcm/std",
@@ -173,6 +175,7 @@ runtime-benchmarks = [
     "pallet-democracy/runtime-benchmarks",
     "pallet-multisig/runtime-benchmarks",
     "pallet-proxy/runtime-benchmarks",
+    "pallet-preimage/runtime-benchmarks",
     "pallet-scheduler/runtime-benchmarks",
     "pallet-sidechain/runtime-benchmarks",
     "pallet-teeracle/runtime-benchmarks",

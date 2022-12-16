@@ -3500,6 +3500,7 @@ dependencies = [
  "pallet-collective",
  "pallet-democracy",
  "pallet-multisig",
+ "pallet-preimage",
  "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
