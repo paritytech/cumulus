@@ -116,11 +116,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	Migrations,
 >;
-
-pub type Migrations =
-	(pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,);
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
 /// node's balance type.

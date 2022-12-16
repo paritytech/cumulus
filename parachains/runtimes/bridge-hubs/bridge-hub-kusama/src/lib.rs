@@ -114,11 +114,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	Migrations,
 >;
-
-pub type Migrations =
-	(pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,);
 
 impl_opaque_keys! {
 	pub struct SessionKeys {
