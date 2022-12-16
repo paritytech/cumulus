@@ -32,12 +32,15 @@ use common::AuraId;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
-use log::info;
+use log::{info, warn};
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
 };
-use sc_service::config::{BasePath, PrometheusConfig};
+use sc_service::{
+	config::{BasePath, PrometheusConfig},
+	TaskManager,
+};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::net::SocketAddr;
@@ -199,7 +202,7 @@ impl SubstrateCli for RelayChainCli {
 		2019
 	}
 
-	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
 	}
 
@@ -214,13 +217,13 @@ macro_rules! construct_benchmark_partials {
 		if $config.chain_spec.is_shell() {
 			let $partials = new_partial::<shell_runtime::RuntimeApi, _>(
 				&$config,
-				crate::service::aura_build_import_queue::<_, common::AuraId>,
+				crate::service::aura_build_import_queue::<_, AuraId>,
 			)?;
 			$code
 		} else {
 			let $partials = new_partial::<parachain_runtime::RuntimeApi, _>(
 				&$config,
-				crate::service::aura_build_import_queue::<_, common::AuraId>,
+				crate::service::aura_build_import_queue::<_, AuraId>,
 			)?;
 			$code
 		}
@@ -234,7 +237,7 @@ macro_rules! construct_async_run {
 			runner.async_run(|$config| {
 				let $components = new_partial::<shell_runtime::RuntimeApi, _>(
 					&$config,
-					crate::service::aura_build_import_queue::<_, common::AuraId>,
+					crate::service::aura_build_import_queue::<_, AuraId>,
 				)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
@@ -243,7 +246,7 @@ macro_rules! construct_async_run {
 			runner.async_run(|$config| {
 			let $components = new_partial::<parachain_runtime::RuntimeApi, _>(
 				&$config,
-				crate::service::aura_build_import_queue::<_, common::AuraId>,
+				crate::service::aura_build_import_queue::<_, AuraId>,
 			)?;
 			let task_manager = $components.task_manager;
 			{ $( $code )* }.map(|v| (v, task_manager))
@@ -340,6 +343,15 @@ pub fn run() -> Result<()> {
 				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
 					construct_benchmark_partials!(config, |partials| cmd.run(partials.client))
 				}),
+				#[cfg(not(feature = "runtime-benchmarks"))]
+				BenchmarkCmd::Storage(_) =>
+					return Err(sc_cli::Error::Input(
+						"Compile with --features=runtime-benchmarks \
+						to enable storage benchmarks."
+							.into(),
+					)
+					.into()),
+				#[cfg(feature = "runtime-benchmarks")]
 				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
 					construct_benchmark_partials!(config, |partials| {
 						let db = partials.backend.expose_db();
@@ -354,6 +366,21 @@ pub fn run() -> Result<()> {
 				// new benchmark commands without requiring a companion MR.
 				#[allow(unreachable_patterns)]
 				_ => Err("Benchmarking sub-command unsupported".into()),
+			}
+		},
+		Some(Subcommand::TryRuntime(cmd)) => {
+			if cfg!(feature = "try-runtime") {
+				// grab the task manager.
+				let runner = cli.create_runner(cmd)?;
+				let registry = &runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
+				let _task_manager =
+					TaskManager::new(runner.config().tokio_handle.clone(), *registry)
+						.map_err(|e| format!("Error: {:?}", e))?;
+
+				// Todo: integritee implement block analogous to cumulus upstream
+				Err("Chain doesn't support try-runtime".into())
+			} else {
+				Err("Try-runtime must be enabled by `--features try-runtime`.".into())
 			}
 		},
 		Some(Subcommand::Key(cmd)) => Ok(cmd.run(&cli)?),
@@ -401,6 +428,10 @@ pub fn run() -> Result<()> {
 				info!("Parachain Account: {}", parachain_account);
 				info!("Parachain genesis state: {}", genesis_state);
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
+
+				if collator_options.relay_chain_rpc_url.is_some() && cli.relaychain_args.len() > 0 {
+					warn!("Detected relay chain node arguments together with --relay-chain-rpc-url. This command starts a minimal Polkadot node that only uses a network-related subset of all relay chain CLI options.");
+				}
 
 				if config.chain_spec.is_shell() {
 					crate::service::start_generic_aura_node::<shell_runtime::RuntimeApi, AuraId>(
@@ -463,10 +494,10 @@ impl CliConfiguration<Self> for RelayChainCli {
 	}
 
 	fn base_path(&self) -> Result<Option<BasePath>> {
-		match &self.shared_params().base_path {
-			Some(path) => Ok(Some(BasePath::new(path))),
-			None => Ok(self.base_path.clone().map(Into::into)),
-		}
+		Ok(self
+			.shared_params()
+			.base_path()?
+			.or_else(|| self.base_path.clone().map(Into::into)))
 	}
 
 	fn rpc_http(&self, default_listen_port: u16) -> Result<Option<SocketAddr>> {
@@ -516,6 +547,10 @@ impl CliConfiguration<Self> for RelayChainCli {
 		self.base.base.transaction_pool(is_dev)
 	}
 
+	fn trie_cache_maximum_size(&self) -> Result<Option<usize>> {
+		self.base.base.trie_cache_maximum_size()
+	}
+
 	fn rpc_methods(&self) -> Result<sc_service::config::RpcMethods> {
 		self.base.base.rpc_methods()
 	}
@@ -557,5 +592,120 @@ impl CliConfiguration<Self> for RelayChainCli {
 
 	fn node_name(&self) -> Result<String> {
 		self.base.base.node_name()
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use crate::{
+		chain_spec::{get_account_id_from_seed, get_from_seed},
+		command::{Runtime, RuntimeResolver},
+	};
+	use sc_chain_spec::{ChainSpec, ChainSpecExtension, ChainSpecGroup, ChainType, Extension};
+	use serde::{Deserialize, Serialize};
+	use sp_core::sr25519;
+	use std::path::PathBuf;
+	use tempfile::TempDir;
+
+	#[derive(
+		Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension, Default,
+	)]
+	#[serde(deny_unknown_fields)]
+	pub struct Extensions1 {
+		pub attribute1: String,
+		pub attribute2: u32,
+	}
+
+	#[derive(
+		Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension, Default,
+	)]
+	#[serde(deny_unknown_fields)]
+	pub struct Extensions2 {
+		pub attribute_x: String,
+		pub attribute_y: String,
+		pub attribute_z: u32,
+	}
+
+	fn store_configuration(dir: &TempDir, spec: Box<dyn ChainSpec>) -> PathBuf {
+		let raw_output = true;
+		let json = sc_service::chain_ops::build_spec(&*spec, raw_output)
+			.expect("Failed to build json string");
+		let mut cfg_file_path = dir.path().to_path_buf();
+		cfg_file_path.push(spec.id());
+		cfg_file_path.set_extension("json");
+		std::fs::write(&cfg_file_path, json).expect("Failed to write to json file");
+		cfg_file_path
+	}
+
+	pub type DummyChainSpec<E> =
+		sc_service::GenericChainSpec<rococo_parachain_runtime::GenesisConfig, E>;
+
+	pub fn create_default_with_extensions<E: Extension>(
+		id: &str,
+		extension: E,
+	) -> DummyChainSpec<E> {
+		DummyChainSpec::from_genesis(
+			"Dummy local testnet",
+			id,
+			ChainType::Local,
+			move || {
+				crate::chain_spec::rococo_parachain::testnet_genesis(
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					vec![
+						get_from_seed::<rococo_parachain_runtime::AuraId>("Alice"),
+						get_from_seed::<rococo_parachain_runtime::AuraId>("Bob"),
+					],
+					vec![get_account_id_from_seed::<sr25519::Public>("Alice")],
+					1000.into(),
+				)
+			},
+			Vec::new(),
+			None,
+			None,
+			None,
+			None,
+			extension,
+		)
+	}
+
+	#[test]
+	fn test_resolve_runtime_for_different_configuration_files() {
+		let temp_dir = tempfile::tempdir().expect("Failed to access tempdir");
+
+		let path = store_configuration(
+			&temp_dir,
+			Box::new(create_default_with_extensions("shell-1", Extensions1::default())),
+		);
+		assert_eq!(Runtime::Shell, path.runtime());
+
+		let path = store_configuration(
+			&temp_dir,
+			Box::new(create_default_with_extensions("shell-2", Extensions2::default())),
+		);
+		assert_eq!(Runtime::Shell, path.runtime());
+
+		let path = store_configuration(
+			&temp_dir,
+			Box::new(create_default_with_extensions("seedling", Extensions2::default())),
+		);
+		assert_eq!(Runtime::Seedling, path.runtime());
+
+		let path = store_configuration(
+			&temp_dir,
+			Box::new(crate::chain_spec::rococo_parachain::rococo_parachain_local_config()),
+		);
+		assert_eq!(Runtime::Default, path.runtime());
+
+		let path = store_configuration(
+			&temp_dir,
+			Box::new(crate::chain_spec::statemint::statemine_local_config()),
+		);
+		assert_eq!(Runtime::Statemine, path.runtime());
+
+		let path = store_configuration(
+			&temp_dir,
+			Box::new(crate::chain_spec::contracts::contracts_rococo_local_config()),
+		);
+		assert_eq!(Runtime::ContractsRococo, path.runtime());
 	}
 }
