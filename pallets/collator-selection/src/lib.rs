@@ -322,22 +322,28 @@ pub mod pallet {
 			new: <T>::AccountId,
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
-			// check if invulnerable is not already in the list
-			
-			// check if a new invulnerable can be added to the list
-			//let bounded_invulnerables = BoundedVec::<_, T::MaxInvulnerables>::try_from(new)
-			//	.map_err(|_| Error::<T>::TooManyInvulnerables)?;
+		
+			let mut bounded_invulnerables = <Invulnerables<T>>::get();
+			bounded_invulnerables.try_mutate(|invulnerables: BoundedVec<_, T::AccountId>| -> Result<usize, DispatchError> {
+				// check if invulnerable is not already in the list
+				if invulnerables.iter().any(|&invulnerable| invulnerable == new) {
+					Err(Error::<T>::AlreadyInvulnerable)?
+				} else {
+					// check if new invulnerable has associated validator key before it is added
+					let validator_key = 
+						T::ValidatorIdOf::convert(new.clone()).ok_or(Error::<T>::NoAssociatedValidatorId)?;
+					ensure!(
+						T::ValidatorRegistration::is_registered(&validator_key),
+						Error::<T>::ValidatorNotRegistered
+					);
+					// add invulnerable
+					invulnerables.try_push(new).map_err(|_| Error::<T>::TooManyInvulnerables)?;
+					Ok(invulnerables.len())
+				}
+			})?;
 
-			// check if new invulnerable has associated validator key before it is added
-			//let validator_key = T::ValidatorIdOf::convert(new.clone())
-			//	.ok_or(Error::<T>::NoAssociatedValidatorId)?;
-			//ensure!(
-			//	T::ValidatorRegistration::is_registered(&validator_key),
-			//	Error::<T>::ValidatorNotRegistered
-			//);
-
-			// append new invulnerable
-			<Invulnerables<T>>::append(&new);
+			// replace invulnerables list with new invulnerable
+			<Invulnerables<T>>::put(&bounded_invulnerables);
 
 			Self::deposit_event(Event::NewInvulnerable {
 				added: new,
