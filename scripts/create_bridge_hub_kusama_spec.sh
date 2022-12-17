@@ -41,10 +41,47 @@ cat chain-spec-plain.json | jq --rawfile code rt-hex.txt '.genesis.runtime.syste
     | jq --argjson para_id $para_id '.para_id = $para_id' \
     | jq --argjson para_id $para_id '.genesis.runtime.parachainInfo.parachainId = $para_id' \
     | jq '.genesis.runtime.balances.balances = []' \
+    | jq '.genesis.runtime.collatorSelection.invulnerables = [
+                                                                "DQkekNBt8g6D7bPUEqhgfujADxzzfivr1qQZJkeGzAqnEzF",
+                                                                "HbUc5qrLtKAZvasioiTSf1CunaN2SyEwvfsgMuYQjXA5sfk",
+                                                                "JEe4NcVyuWFEwZe4WLfRtynDswyKgvLS8H8r4Wo9d3t61g1",
+                                                                "FAe4DGhQHKTm35n5MgBFNBZvyEJcm7QAwgnVNQU8KXP2ixn"
+                                                             ]' \
+    | jq '.genesis.runtime.session.keys = [
+                                            [
+                                                "DQkekNBt8g6D7bPUEqhgfujADxzzfivr1qQZJkeGzAqnEzF",
+                                                "DQkekNBt8g6D7bPUEqhgfujADxzzfivr1qQZJkeGzAqnEzF",
+                                                    {
+                                                        "aura": "DQkekNBt8g6D7bPUEqhgfujADxzzfivr1qQZJkeGzAqnEzF"
+                                                    }
+                                            ],
+                                            [
+                                                "HbUc5qrLtKAZvasioiTSf1CunaN2SyEwvfsgMuYQjXA5sfk",
+                                                "HbUc5qrLtKAZvasioiTSf1CunaN2SyEwvfsgMuYQjXA5sfk",
+                                                    {
+                                                        "aura": "HbUc5qrLtKAZvasioiTSf1CunaN2SyEwvfsgMuYQjXA5sfk"
+                                                    }
+                                            ],
+                                            [
+                                                "JEe4NcVyuWFEwZe4WLfRtynDswyKgvLS8H8r4Wo9d3t61g1",
+                                                "JEe4NcVyuWFEwZe4WLfRtynDswyKgvLS8H8r4Wo9d3t61g1",
+                                                    {
+                                                        "aura": "JEe4NcVyuWFEwZe4WLfRtynDswyKgvLS8H8r4Wo9d3t61g1"
+                                                    }
+                                            ],
+                                            [
+                                                "FAe4DGhQHKTm35n5MgBFNBZvyEJcm7QAwgnVNQU8KXP2ixn",
+                                                "FAe4DGhQHKTm35n5MgBFNBZvyEJcm7QAwgnVNQU8KXP2ixn",
+                                                    {
+                                                        "aura": "FAe4DGhQHKTm35n5MgBFNBZvyEJcm7QAwgnVNQU8KXP2ixn"
+                                                    }
+                                            ]
+                                          ]' \
     > edited-chain-spec-plain.json
 
 # build a raw spec
 $binary build-spec --chain edited-chain-spec-plain.json --raw > chain-spec-raw.json
+cp chain-spec-raw.json ./parachains/chain-specs/bridge-hub-kusama.json
 
 # build genesis data
 $binary export-genesis-state --chain chain-spec-raw.json > bridge-hub-kusama-genesis-head-data
