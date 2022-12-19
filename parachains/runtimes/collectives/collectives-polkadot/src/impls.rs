@@ -13,14 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use super::{AccountId, OriginCaller};
+use crate::{PolkadotXcm, RelayTreasuryAccId, RuntimeOrigin, SlashedImbalanceAccId};
 use frame_support::{
 	dispatch::{DispatchError, DispatchResultWithPostInfo},
 	log,
-	traits::{Currency, Get, Imbalance, OnUnbalanced, OriginTrait},
+	traits::{Currency, Imbalance, OnUnbalanced, PrivilegeCmp},
 	weights::Weight,
 };
 use pallet_alliance::{ProposalIndex, ProposalProvider};
-use sp_std::{marker::PhantomData, prelude::*};
+use sp_std::{cmp::Ordering, marker::PhantomData, prelude::*};
 use xcm::latest::{Fungibility, Junction, NetworkId, Parent};
 
 type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
@@ -33,36 +35,29 @@ type NegativeImbalanceOf<T, I> = <<T as pallet_alliance::Config<I>>::Currency as
 	<T as frame_system::Config>::AccountId,
 >>::NegativeImbalance;
 
-type CurrencyOf<T, I> = <T as pallet_alliance::Config<I>>::Currency;
-
 type BalanceOf<T, I> = <<T as pallet_alliance::Config<I>>::Currency as Currency<
 	<T as frame_system::Config>::AccountId,
 >>::Balance;
 
 /// Implements `OnUnbalanced::on_unbalanced` to teleport slashed assets to relay chain treasury account.
-pub struct ToParentTreasury<TreasuryAcc, TempAcc, T, I = ()>(
-	PhantomData<(TreasuryAcc, TempAcc, T, I)>,
-);
+pub struct ToParentTreasury<T, I = ()>(PhantomData<(T, I)>);
 
-impl<TreasuryAcc, TempAcc, T, I: 'static> OnUnbalanced<NegativeImbalanceOf<T, I>>
-	for ToParentTreasury<TreasuryAcc, TempAcc, T, I>
+impl<T, I: 'static> OnUnbalanced<NegativeImbalanceOf<T, I>> for ToParentTreasury<T, I>
 where
-	TreasuryAcc: Get<AccountIdOf<T>>,
-	TempAcc: Get<AccountIdOf<T>>,
-	T: pallet_xcm::Config + frame_system::Config + pallet_alliance::Config<I>,
-	[u8; 32]: From<AccountIdOf<T>>,
+	T: pallet_alliance::Config<I> + frame_system::Config,
+	[u8; 32]: From<AccountId>,
 	BalanceOf<T, I>: Into<Fungibility>,
-	<<T as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId: From<AccountIdOf<T>>,
+	<T as frame_system::Config>::AccountId: From<AccountId>,
 {
 	fn on_unbalanced(amount: NegativeImbalanceOf<T, I>) {
-		let temp_account: AccountIdOf<T> = TempAcc::get();
-		let treasury_acc: AccountIdOf<T> = TreasuryAcc::get();
+		let temp_account: AccountId = SlashedImbalanceAccId::get();
+		let treasury_acc: AccountId = RelayTreasuryAccId::get();
 		let imbalance = amount.peek();
 
-		<CurrencyOf<T, I>>::resolve_creating(&temp_account, amount);
+		T::Currency::resolve_creating(&temp_account.clone().into(), amount);
 
-		let result = pallet_xcm::Pallet::<T>::teleport_assets(
-			<T as frame_system::Config>::RuntimeOrigin::signed(temp_account.into()),
+		let result = PolkadotXcm::teleport_assets(
+			RuntimeOrigin::signed(temp_account.into()),
 			Box::new(Parent.into()),
 			Box::new(
 				Junction::AccountId32 { network: NetworkId::Any, id: treasury_acc.into() }
@@ -129,5 +124,21 @@ where
 
 	fn proposal_of(proposal_hash: HashOf<T>) -> Option<ProposalOf<T, I>> {
 		pallet_collective::Pallet::<T, I>::proposal_of(proposal_hash)
+	}
+}
+
+/// Used the compare the privilege of an origin inside the scheduler.
+pub struct EqualOrGreatestRootCmp;
+
+impl PrivilegeCmp<OriginCaller> for EqualOrGreatestRootCmp {
+	fn cmp_privilege(left: &OriginCaller, right: &OriginCaller) -> Option<Ordering> {
+		if left == right {
+			return Some(Ordering::Equal)
+		}
+		match (left, right) {
+			// Root is greater than anything.
+			(OriginCaller::system(frame_system::RawOrigin::Root), _) => Some(Ordering::Greater),
+			_ => None,
+		}
 	}
 }
