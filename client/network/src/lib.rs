@@ -35,13 +35,8 @@ use polkadot_primitives::{
 };
 
 use codec::{Decode, DecodeAll, Encode};
-use futures::{channel::oneshot, future::FutureExt, Future, StreamExt};
-
-use cumulus_client_consensus_common::parachain_consensus::RelaychainClient;
-use std::{
-	convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc, thread::sleep, time::Duration,
-};
-
+use futures::{channel::oneshot, future::FutureExt, Future};
+use std::{convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc};
 #[cfg(test)]
 mod tests;
 
@@ -463,100 +458,69 @@ pub struct WaitForParachainTargetBlock<Block> {
 	phantom: PhantomData<Block>,
 }
 
-impl<Block: BlockT> WaitForParachainTargetBlock<Block> {
-	/// Get warp sync target block
-	pub async fn warp_sync_get(
-		para_id: ParaId,
-		relay_chain_interface: Arc<dyn RelayChainInterface>,
-		spawner: Arc<dyn SpawnNamed + Send + Sync>,
-	) -> Result<oneshot::Receiver<Block::Header>, BoxedError>
-	where
-		Block: BlockT + 'static,
-	{
-		let (sender, receiver) = oneshot::channel::<Block::Header>();
+pub async fn warp_sync_get<B>(
+	para_id: ParaId,
+	relay_chain_interface: Arc<dyn RelayChainInterface>,
+) -> Result<oneshot::Receiver<<B as BlockT>::Header>, BoxedError>
+where
+	B: BlockT + 'static,
+{
+	let (sender, receiver) = oneshot::channel::<B::Header>();
+	wait_for_target_block::<B>(sender, para_id, relay_chain_interface).await?;
+	return Ok(receiver)
+}
 
-		spawner.spawn(
-			"cumulus-parachain-wait-for-target-block",
-			None,
-			async move {
-				tracing::info!(
-					target: LOG_TARGET,
-					"waiting for target block in a background task...",
-				);
-				Self::wait_for_target_block(sender, para_id, relay_chain_interface).await;
-				tracing::info!(target: LOG_TARGET, "target block reached",);
+async fn wait_for_target_block<B>(
+	sender: oneshot::Sender<<B as BlockT>::Header>,
+	para_id: ParaId,
+	relay_chain_interface: Arc<dyn RelayChainInterface>,
+) -> Result<(), BoxedError>
+where
+	B: BlockT + 'static,
+{
+	match relay_chain_interface.import_notification_stream().await {
+		Ok(_) => loop {
+			let is_syncing = relay_chain_interface
+				.is_major_syncing()
+				.await
+				.map_err(|e| {
+					tracing::error!(target: LOG_TARGET, "Unable to determine sync status. {}", e)
+				})
+				.unwrap_or(false);
+
+			if !is_syncing {
+				let relay_chain_best_hash = relay_chain_interface
+					.best_block_hash()
+					.await
+					.map_err(|e| Box::new(e) as Box<_>)?;
+
+				let validation_data = relay_chain_interface
+					.persisted_validation_data(
+						relay_chain_best_hash,
+						para_id,
+						OccupiedCoreAssumption::TimedOut,
+					)
+					.await
+					.map_err(|e| Box::new(BlockAnnounceError(format!("{:?}", e))) as Box<_>)?
+					.ok_or_else(|| {
+						Box::new(BlockAnnounceError(
+							"Could not find parachain head in relay chain".into(),
+						)) as Box<_>
+					})?;
+				let target_header = B::Header::decode(&mut &validation_data.parent_head.0[..])
+					.map_err(|e| {
+						Box::new(BlockAnnounceError(format!(
+							"Failed to decode parachain head: {:?}",
+							e
+						))) as Box<_>
+					})?;
+
+				let _ = sender.send(target_header);
+				return Ok(())
 			}
-			.boxed(),
-		);
-
-		return Ok(receiver)
-	}
-
-	async fn wait_for_target_block(
-		sender: oneshot::Sender<Block::Header>,
-		para_id: ParaId,
-		relay_chain_interface: Arc<dyn RelayChainInterface>,
-	) {
-		let import_stream = relay_chain_interface.import_notification_stream();
-		match import_stream.await {
-			Ok(mut import_stream_notification) => match import_stream_notification.next().await {
-				Some(_header) => loop {
-					let is_syncing = relay_chain_interface
-						.is_major_syncing()
-						.await
-						.map_err(|e| {
-							tracing::error!(
-								target: LOG_TARGET,
-								"Unable to determine sync status. {}",
-								e
-							)
-						})
-						.unwrap_or(false);
-
-					if !is_syncing {
-						let mut finalized_heads =
-							match relay_chain_interface.finalized_heads(para_id).await {
-								Ok(finalized_heads_stream) => finalized_heads_stream,
-								Err(err) => {
-									tracing::error!(target: LOG_TARGET, error = ?err, "Unable to retrieve finalized heads stream.");
-									return
-								},
-							};
-
-						let finalized_head = if let Some(h) = finalized_heads.next().await {
-							h
-						} else {
-							tracing::debug!(
-								target: LOG_TARGET,
-								"Stopping following finalized head."
-							);
-							return
-						};
-
-						let target_header = match Block::Header::decode(&mut &finalized_head[..]) {
-							Ok(header) => header,
-							Err(err) => {
-								tracing::debug!(
-									target: LOG_TARGET,
-									error = ?err,
-									"Could not decode parachain header while following finalized heads.",
-								);
-								continue
-							},
-						};
-
-						let _ = sender.send(target_header);
-						break
-					}
-					tracing::info!(
-						target: LOG_TARGET,
-						"waiting for relay chain sync to complete......",
-					);
-					sleep(Duration::from_secs(120));
-				},
-				None => (),
-			},
-			_ => (),
-		}
+			tracing::info!(target: LOG_TARGET, "waiting for relay chain sync to complete......",);
+			tokio::time::sleep(std::time::Duration::from_secs(120)).await;
+		},
+		_ => return Ok(()),
 	}
 }

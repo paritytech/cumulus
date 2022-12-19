@@ -33,9 +33,9 @@ use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::{
 	ParachainBlockImport as TParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
-use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
-	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
+	build_network, prepare_node_config, start_collator, start_full_node, BuildNetworkParams,
+	StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::RelayChainInProcessInterface;
@@ -57,7 +57,7 @@ use sc_service::{
 		OffchainWorkerConfig, PruningMode, WasmExecutionMethod,
 	},
 	BasePath, ChainSpec, Configuration, Error as ServiceError, PartialComponents, Role,
-	RpcHandlers, TFullBackend, TFullClient, TaskManager, WarpSyncParams,
+	RpcHandlers, TFullBackend, TFullClient, TaskManager,
 };
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_blockchain::HeaderBackend;
@@ -273,34 +273,21 @@ where
 		s => s.to_string().into(),
 	})?;
 
-	let block_announce_validator =
-		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
-	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
-
-	let warp_sync_params =
-		match cumulus_client_network::WaitForParachainTargetBlock::<Block>::warp_sync_get(
-			para_id,
-			relay_chain_interface.clone(),
-			Arc::new(task_manager.spawn_handle()),
-		)
-		.await
-		{
-			Ok(target_block) => Some(WarpSyncParams::WaitForTarget(target_block)),
-			_ => None,
-		};
-	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let import_queue_service = params.import_queue.service();
 
 	let (network, system_rpc_tx, tx_handler_controller, start_network) =
-		sc_service::build_network(sc_service::BuildNetworkParams {
-			config: &parachain_config,
+		build_network(BuildNetworkParams {
+			parachain_config: &parachain_config,
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
-			spawn_handle: task_manager.spawn_handle(),
+			para_id,
+			task_manager: &mut task_manager,
+			relay_chain_interface: relay_chain_interface.clone(),
 			import_queue: params.import_queue,
-			block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
-			warp_sync_params,
-		})?;
+		})
+		.await?;
+
+	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 
 	let rpc_builder = {
 		let client = client.clone();

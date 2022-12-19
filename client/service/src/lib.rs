@@ -20,7 +20,10 @@
 
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::ParachainConsensus;
+
 use cumulus_client_pov_recovery::{PoVRecovery, RecoveryDelay};
+
+use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
@@ -28,14 +31,20 @@ use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
 use polkadot_primitives::CollatorPair;
 
 use sc_client_api::{
-	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, UsageProvider,
+	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, ProofProvider, UsageProvider,
 };
-use sc_consensus::{import_queue::ImportQueueService, BlockImport};
 use sc_service::{Configuration, TaskManager};
 use sc_telemetry::TelemetryWorkerHandle;
+
+use sc_consensus::{import_queue::ImportQueueService, BlockImport, ImportQueue};
+use sc_network::NetworkService;
+use sc_network_transactions::TransactionsHandlerController;
+use sc_service::{Configuration, NetworkStarter, TaskManager, WarpSyncParams};
+use sc_utils::mpsc::TracingUnboundedSender;
 use sp_api::ProvideRuntimeApi;
-use sp_blockchain::HeaderBackend;
+use sp_blockchain::{HeaderBackend, HeaderMetadata};
 use sp_core::traits::SpawnNamed;
+
 use sp_runtime::traits::Block as BlockT;
 
 use futures::channel::mpsc;
@@ -46,6 +55,9 @@ use std::{sync::Arc, time::Duration};
 // In practice here we expect no more than one queued messages.
 const RECOVERY_CHAN_SIZE: usize = 8;
 
+
+use sp_runtime::traits::{Block as BlockT, BlockIdTo};
+use std::{sync::Arc, time::Duration};
 /// Parameters given to [`start_collator`].
 pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, RCInterface, Spawner> {
 	pub block_status: Arc<BS>,
@@ -263,4 +275,97 @@ pub async fn build_relay_chain_interface(
 			hwbench,
 		)
 	}
+}
+
+
+
+/// Parameters given to [`build_network`].
+pub struct BuildNetworkParams<
+	'a,
+	Block: BlockT,
+	Client: ProvideRuntimeApi<Block>
+		+ BlockBackend<Block>
+		+ HeaderMetadata<Block, Error = sp_blockchain::Error>
+		+ HeaderBackend<Block>
+		+ BlockIdTo<Block>
+		+ 'static,
+	RCInterface,
+	IQ,
+> where
+	Client::Api: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>,
+{
+	pub parachain_config: &'a Configuration,
+	pub client: Arc<Client>,
+	pub transaction_pool: Arc<sc_transaction_pool::FullPool<Block, Client>>,
+	pub para_id: ParaId,
+	pub relay_chain_interface: RCInterface,
+	pub task_manager: &'a mut TaskManager,
+	pub import_queue: IQ,
+}
+
+/// Build the network service
+///
+pub async fn build_network<'a, Block, Client, RCInterface, IQ>(
+	BuildNetworkParams {
+		parachain_config,
+		client,
+		transaction_pool,
+		para_id,
+		task_manager,
+		relay_chain_interface,
+		import_queue,
+	}: BuildNetworkParams<'a, Block, Client, RCInterface, IQ>,
+) -> sc_service::error::Result<(
+	Arc<NetworkService<Block, Block::Hash>>,
+	TracingUnboundedSender<sc_rpc::system::Request<Block>>,
+	TransactionsHandlerController<Block::Hash>,
+	NetworkStarter,
+)>
+where
+	Block: BlockT,
+	Client: UsageProvider<Block>
+		+ HeaderBackend<Block>
+		+ sp_consensus::block_validation::Chain<Block>
+		+ Send
+		+ Sync
+		+ BlockBackend<Block>
+		+ BlockchainEvents<Block>
+		+ ProvideRuntimeApi<Block>
+		+ HeaderMetadata<Block, Error = sp_blockchain::Error>
+		+ BlockIdTo<Block, Error = sp_blockchain::Error>
+		+ ProofProvider<Block>
+		+ 'static,
+	Client::Api: CollectCollationInfo<Block>
+		+ sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>,
+	for<'b> &'b Client: BlockImport<Block>,
+	RCInterface: RelayChainInterface + Clone + 'static,
+	IQ: ImportQueue<Block> + 'static,
+{
+	let warp_sync_params = if let Ok(target_block) = cumulus_client_network::warp_sync_get::<Block>(
+		para_id,
+		Arc::new(relay_chain_interface.clone()),
+	)
+	.await
+	{
+		Some(WarpSyncParams::WaitForTarget(target_block))
+	} else {
+		None
+	};
+
+	let block_announce_validator =
+		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
+	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
+
+	let (network, system_rpc_tx, tx_handler_controller, start_network) =
+		sc_service::build_network(sc_service::BuildNetworkParams {
+			config: parachain_config,
+			client: client.clone(),
+			transaction_pool: transaction_pool.clone(),
+			spawn_handle: task_manager.spawn_handle(),
+			import_queue,
+			block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
+			warp_sync_params,
+		})?;
+
+	Ok((network, system_rpc_tx, tx_handler_controller, start_network))
 }
