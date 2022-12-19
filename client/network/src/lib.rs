@@ -37,6 +37,8 @@ use polkadot_primitives::{
 use codec::{Decode, DecodeAll, Encode};
 use futures::{channel::oneshot, future::FutureExt, Future};
 use std::{convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc};
+use tokio::time::sleep;
+
 #[cfg(test)]
 mod tests;
 
@@ -453,20 +455,35 @@ async fn wait_to_announce<Block: BlockT>(
 	}
 }
 
-#[derive(Clone)]
-pub struct WaitForParachainTargetBlock<Block> {
-	phantom: PhantomData<Block>,
-}
-
 pub async fn warp_sync_get<B>(
 	para_id: ParaId,
 	relay_chain_interface: Arc<dyn RelayChainInterface>,
+	spawner: Arc<dyn SpawnNamed + Send + Sync>,
 ) -> Result<oneshot::Receiver<<B as BlockT>::Header>, BoxedError>
 where
 	B: BlockT + 'static,
 {
 	let (sender, receiver) = oneshot::channel::<B::Header>();
-	wait_for_target_block::<B>(sender, para_id, relay_chain_interface).await?;
+	spawner.spawn(
+		"cumulus-parachain-wait-for-target-block",
+		None,
+		async move {
+			tracing::debug!(
+				target: "cumulus-network",
+				"waiting for announce block in a background task...",
+			);
+			tracing::debug!(target: LOG_TARGET, "waiting for target block in a background task...",);
+			wait_for_target_block::<B>(sender, para_id, relay_chain_interface)
+				.await
+				.map_err(|e| {
+					tracing::error!(target: LOG_TARGET, "Unable to determine sync status. {}", e)
+				})
+				.unwrap();
+			tracing::debug!(target: LOG_TARGET, "target block reached",);
+		}
+		.boxed(),
+	);
+
 	return Ok(receiver)
 }
 
@@ -519,7 +536,7 @@ where
 				return Ok(())
 			}
 			tracing::info!(target: LOG_TARGET, "waiting for relay chain sync to complete......",);
-			tokio::time::sleep(std::time::Duration::from_secs(120)).await;
+			sleep(std::time::Duration::from_secs(120)).await;
 		},
 		_ => return Ok(()),
 	}

@@ -33,7 +33,6 @@ use polkadot_primitives::CollatorPair;
 use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, ProofProvider, UsageProvider,
 };
-use sc_service::{Configuration, TaskManager};
 use sc_telemetry::TelemetryWorkerHandle;
 
 use sc_consensus::{import_queue::ImportQueueService, BlockImport, ImportQueue};
@@ -344,6 +343,7 @@ where
 	let warp_sync_params = if let Ok(target_block) = cumulus_client_network::warp_sync_get::<Block>(
 		para_id,
 		Arc::new(relay_chain_interface.clone()),
+		Arc::new(task_manager.spawn_handle()),
 	)
 	.await
 	{
