@@ -23,6 +23,7 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
+use sp_std::boxed::Box;
 
 pub use pallet::*;
 use xcm::prelude::*;
@@ -112,13 +113,13 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::transfer_asset_via_bridge())]
 		pub fn transfer_asset_via_bridge(
 			origin: OriginFor<T>,
-			assets: VersionedMultiAssets,
-			destination: VersionedMultiLocation,
+			assets: Box<VersionedMultiAssets>,
+			destination: Box<VersionedMultiLocation>,
 		) -> DispatchResult {
 			let _ = ensure_signed(origin)?;
 
 			// Check remote destination
-			let remote_destination = Self::ensure_remote_destination(destination)?;
+			let remote_destination = Self::ensure_remote_destination(*destination)?;
 
 			// TODO: do some checks
 			// TODO: check assets?
@@ -174,7 +175,7 @@ pub mod pallet {
 		pub fn add_bridge_config(
 			origin: OriginFor<T>,
 			bridged_network: NetworkId,
-			bridge_config: BridgeConfig,
+			bridge_config: Box<BridgeConfig>,
 		) -> DispatchResult {
 			let _ = ensure_root(origin)?;
 			ensure!(!Bridges::<T>::contains_key(bridged_network), Error::<T>::InvalidConfiguration);
@@ -420,7 +421,10 @@ mod tests {
 			assert_ok!(BridgeAssetsTransfer::add_bridge_config(
 				RuntimeOrigin::root(),
 				Wococo,
-				BridgeConfig { bridge_location: (Parent, Parachain(1013)).into(), fee: None },
+				Box::new(BridgeConfig {
+					bridge_location: (Parent, Parachain(1013)).into(),
+					fee: None
+				}),
 			));
 
 			// v2 not supported
@@ -471,16 +475,19 @@ mod tests {
 			assert_ok!(BridgeAssetsTransfer::add_bridge_config(
 				RuntimeOrigin::root(),
 				Wococo,
-				BridgeConfig { bridge_location: (Parent, Parachain(1013)).into(), fee: None },
+				Box::new(BridgeConfig {
+					bridge_location: (Parent, Parachain(1013)).into(),
+					fee: None
+				}),
 			));
 
 			assert!(ROUTED_MESSAGE.with(|r| r.borrow().is_none()));
 
-			let assets = VersionedMultiAssets::V3(MultiAssets::default());
-			let destination = VersionedMultiLocation::V3(MultiLocation::new(
+			let assets = Box::new(VersionedMultiAssets::V3(MultiAssets::default()));
+			let destination = Box::new(VersionedMultiLocation::V3(MultiLocation::new(
 				2,
 				X2(GlobalConsensus(Wococo), Parachain(1000)),
-			));
+			)));
 
 			let result = BridgeAssetsTransfer::transfer_asset_via_bridge(
 				RuntimeOrigin::signed(1),
@@ -496,7 +503,7 @@ mod tests {
 	fn test_bridge_config_management_works() {
 		let bridged_network = Rococo;
 		let bridged_config =
-			BridgeConfig { bridge_location: (Parent, Parachain(1013)).into(), fee: None };
+			Box::new(BridgeConfig { bridge_location: (Parent, Parachain(1013)).into(), fee: None });
 		let dummy_xcm = Xcm(vec![]);
 		let dummy_remote_interior_multilocation = X1(Parachain(1234));
 
@@ -529,7 +536,10 @@ mod tests {
 				bridged_config.clone(),
 			));
 			assert_eq!(Bridges::<TestRuntime>::iter().count(), 1);
-			assert_eq!(Bridges::<TestRuntime>::get(bridged_network), Some(bridged_config.clone()));
+			assert_eq!(
+				Bridges::<TestRuntime>::get(bridged_network),
+				Some((*bridged_config.clone()).into())
+			);
 			assert_eq!(Bridges::<TestRuntime>::get(Wococo), None);
 			assert_eq!(
 				BridgeAssetsTransfer::exporter_for(
@@ -537,7 +547,7 @@ mod tests {
 					&dummy_remote_interior_multilocation,
 					&dummy_xcm
 				),
-				Some(bridged_config.clone().into())
+				Some((*bridged_config.clone()).into())
 			);
 			assert_eq!(
 				BridgeAssetsTransfer::exporter_for(
