@@ -63,7 +63,10 @@ use parachains_common::{
 	opaque, AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
-use xcm_config::{BridgeXcmSender, KsmLocation, XcmConfig};
+use xcm_config::{
+	AssetTransactors, BridgeXcmSender, KsmLocation, LocalOriginToLocation, UniversalLocation,
+	XcmConfig,
+};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -72,9 +75,9 @@ pub use sp_runtime::BuildStorage;
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use xcm::latest::BodyId;
+use xcm_builder::EnsureXcmOrigin;
 use xcm_executor::XcmExecutor;
 
-use crate::xcm_config::UniversalLocation;
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 impl_opaque_keys! {
@@ -575,6 +578,8 @@ impl pallet_bridge_assets_transfer::Config for Runtime {
 	type BridgeXcmSender = BridgeXcmSender;
 	type UniversalLocation = UniversalLocation;
 	type WeightInfo = pallet_bridge_assets_transfer::weights::SubstrateWeight<Runtime>;
+	type AssetTransactor = AssetTransactors;
+	type TransferXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

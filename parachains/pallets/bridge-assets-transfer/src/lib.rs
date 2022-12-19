@@ -53,7 +53,9 @@ pub mod pallet {
 	use crate::weights::WeightInfo;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
+	use xcm::latest::Error as XcmError;
 	use xcm_builder::ExporterFor;
+	use xcm_executor::traits::TransactAsset;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub (super) trait Store)]
@@ -73,6 +75,15 @@ pub mod pallet {
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
+
+		/// How to withdraw and deposit an asset for reserve.
+		type AssetTransactor: TransactAsset;
+
+		/// Required origin for asset transfer. If successful, it resolves to `MultiLocation`.
+		type TransferXcmOrigin: EnsureOrigin<
+			<Self as frame_system::Config>::RuntimeOrigin,
+			Success = MultiLocation,
+		>;
 	}
 
 	#[pallet::storage]
@@ -83,14 +94,16 @@ pub mod pallet {
 	#[cfg_attr(test, derive(PartialEq))]
 	pub enum Error<T> {
 		InvalidConfiguration,
+		InvalidAssets,
+		MaxAssetsLimitReached,
 		UnsupportedDestination,
-		BridgeCallError(#[codec(skip)] &'static str),
+		BridgeCallError,
+		FailedToReserve,
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		// TODO: add here xcm_hash?
 		/// Transfer was successfully entered to the system (does not mean already delivered)
 		TransferInitiated(XcmHash),
 
@@ -100,6 +113,12 @@ pub mod pallet {
 		BridgeRemoved,
 		/// Bridge configuration was updated
 		BridgeUpdated,
+
+		/// Make reserve failed
+		FailedToReserve(XcmError),
+
+		/// Bridge transfer failed
+		BridgeCallError(SendError),
 	}
 
 	#[pallet::call]
@@ -116,21 +135,52 @@ pub mod pallet {
 			assets: Box<VersionedMultiAssets>,
 			destination: Box<VersionedMultiLocation>,
 		) -> DispatchResult {
-			let _ = ensure_signed(origin)?;
+			let origin_location = T::TransferXcmOrigin::ensure_origin(origin)?;
 
-			// Check remote destination
-			let remote_destination = Self::ensure_remote_destination(*destination)?;
+			// Check remote destination + bridge_config
+			let (bridge_config, remote_destination) =
+				Self::ensure_remote_destination(*destination)?;
 
-			// TODO: do some checks
+			// Check reserve account - sovereign account of bridge
+			let reserve_account = bridge_config.bridge_location;
+
+			// TODO: do some checks - balances, can_withdraw, ...
 			// TODO: check assets?
 			// TODO: check enought fee?
+
+			// TODO: fix this for multiple assets
+			let assets: MultiAssets =
+				(*assets).try_into().map_err(|()| Error::<T>::InvalidAssets)?;
+			ensure!(assets.len() == 1, Error::<T>::MaxAssetsLimitReached);
+			let asset = assets.get(0).unwrap();
 
 			// Deposit assets into `AccountId` that corresponds to the bridge
 			// hub. In this way, Statemine acts as a reserve location to the
 			// bridge, such that it need not trust any consensus system from
 			// `./Parent/Parent/...`. (It may trust Polkadot, but would
 			// Polkadot trust Kusama with its DOT?)
+			// Move asset to reserve account for selected bridge
+			let asset = T::AssetTransactor::transfer_asset(
+				asset,
+				&origin_location,
+				&reserve_account,
+				// We aren't able to track the XCM that initiated the fee deposit, so we create a
+				// fake message hash here
+				&XcmContext::with_message_hash([0; 32]),
+			)
+			.map_err(|e| {
+				log::error!(
+					target: LOG_TARGET,
+					"XcmError occurred for origin_location: {:?}, asset: {:?}, error: {:?}",
+					origin_location,
+					asset,
+					e
+				);
+				Self::deposit_event(Event::FailedToReserve(e));
+				Error::<T>::FailedToReserve
+			})?;
 
+			// TODO: reanchor somehow
 			// TODO: xcm - withdraw and fire ReserveAssetDeposited to the other side
 
 			// TODO: send message through bridge
@@ -139,7 +189,7 @@ pub mod pallet {
 
 			// TODO: prepare ReserveAssetDeposited msg to bridge to the other side?
 			let xcm: Xcm<()> =
-				sp_std::vec![Instruction::ReserveAssetDeposited(Default::default())].into();
+				sp_std::vec![Instruction::ReserveAssetDeposited(asset.into())].into();
 
 			// TODO: how to compensate if this call fails?
 			log::info!(
@@ -151,7 +201,15 @@ pub mod pallet {
 			// call bridge
 			let (ticket, fees) =
 				T::BridgeXcmSender::validate(&mut Some(remote_destination), &mut Some(xcm))
-					.map_err(Self::convert_to_error)?;
+					.map_err(|e| {
+						log::error!(
+							target: LOG_TARGET,
+							"[BridgeXcmSender::validate] SendError occurred, error: {:?}",
+							e
+						);
+						Self::deposit_event(Event::BridgeCallError(e));
+						Error::<T>::BridgeCallError
+					})?;
 			log::info!(
 				target: LOG_TARGET,
 				"[T::BridgeXcmSender::validate] (TODO: process) fees: {:?}",
@@ -159,7 +217,15 @@ pub mod pallet {
 			);
 			// TODO: what to do with fees - we have fees here, pay here or ignore?
 			// TODO: use fn send_msg
-			let xcm_hash = T::BridgeXcmSender::deliver(ticket).map_err(Self::convert_to_error)?;
+			let xcm_hash = T::BridgeXcmSender::deliver(ticket).map_err(|e| {
+				log::error!(
+					target: LOG_TARGET,
+					"[BridgeXcmSender::deliver] SendError occurred, error: {:?}",
+					e
+				);
+				Self::deposit_event(Event::BridgeCallError(e));
+				Error::<T>::BridgeCallError
+			})?;
 
 			Self::deposit_event(Event::TransferInitiated(xcm_hash));
 			Ok(())
@@ -233,7 +299,7 @@ pub mod pallet {
 		/// Returns: correct remote location, where we should be able to bridge
 		pub(crate) fn ensure_remote_destination(
 			destination: VersionedMultiLocation,
-		) -> Result<MultiLocation, Error<T>> {
+		) -> Result<(BridgeConfig, MultiLocation), Error<T>> {
 			match destination {
 				VersionedMultiLocation::V3(location) => {
 					ensure!(location.parent_count() == 2, Error::<T>::UnsupportedDestination);
@@ -245,29 +311,17 @@ pub mod pallet {
 						.global_consensus()
 						.map_err(|_| Error::<T>::UnsupportedDestination)?;
 					ensure!(local_network != remote_network, Error::<T>::UnsupportedDestination);
-					ensure!(
-						Bridges::<T>::contains_key(remote_network),
-						Error::<T>::UnsupportedDestination
-					);
-					Ok(location)
+					match Bridges::<T>::get(remote_network) {
+						Some(bridge_config) => Ok((bridge_config, location)),
+						None => return Err(Error::<T>::UnsupportedDestination),
+					}
 				},
 				_ => Err(Error::<T>::UnsupportedDestination),
 			}
 		}
 
-		fn convert_to_error(error: SendError) -> Error<T> {
-			log::error!(target: LOG_TARGET, "SendError occurred, error: {:?}", error);
-			match error {
-				SendError::NotApplicable => Error::<T>::BridgeCallError("NotApplicable"),
-				SendError::Transport(error) => Error::<T>::BridgeCallError(error),
-				SendError::Unroutable => Error::<T>::BridgeCallError("Unroutable"),
-				SendError::DestinationUnsupported =>
-					Error::<T>::BridgeCallError("DestinationUnsupported"),
-				SendError::ExceedsMaxMessageSize =>
-					Error::<T>::BridgeCallError("ExceedsMaxMessageSize"),
-				SendError::MissingArgument => Error::<T>::BridgeCallError("MissingArgument"),
-				SendError::Fees => Error::<T>::BridgeCallError("Fees"),
-			}
+		fn get_bridge_for(network: &NetworkId) -> Option<BridgeConfig> {
+			Bridges::<T>::get(network)
 		}
 	}
 
@@ -277,7 +331,7 @@ pub mod pallet {
 			_remote_location: &InteriorMultiLocation,
 			_message: &Xcm<()>,
 		) -> Option<(MultiLocation, Option<MultiAsset>)> {
-			Bridges::<T>::get(network).map(Into::into)
+			Pallet::<T>::get_bridge_for(network).map(Into::into)
 		}
 	}
 }
@@ -286,16 +340,23 @@ pub mod pallet {
 mod tests {
 	use super::*;
 	use crate as bridge_assets_transfer;
+	use frame_support::traits::Currency;
 
 	use frame_support::{
 		assert_noop, assert_ok, dispatch::DispatchError, parameter_types, sp_io, sp_tracing,
 	};
+	use polkadot_parachain::primitives::Sibling;
 	use sp_runtime::{
 		testing::{Header, H256},
 		traits::{BlakeTwo256, IdentityLookup},
+		AccountId32,
 	};
 	use sp_version::RuntimeVersion;
-	use xcm_builder::{ExporterFor, UnpaidRemoteExporter};
+	use xcm_builder::{
+		AccountId32Aliases, CurrencyAdapter, EnsureXcmOrigin, ExporterFor, IsConcrete,
+		SiblingParachainConvertsVia, SignedToAccountId32, UnpaidRemoteExporter,
+	};
+	use xcm_executor::traits::Convert;
 
 	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 	type Block = frame_system::mocking::MockBlock<TestRuntime>;
@@ -307,6 +368,7 @@ mod tests {
 			UncheckedExtrinsic = UncheckedExtrinsic,
 		{
 			System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+			Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 			BridgeAssetsTransfer: bridge_assets_transfer::{Pallet, Call, Event<T>} = 52,
 		}
 	);
@@ -325,6 +387,8 @@ mod tests {
 		};
 	}
 
+	pub type AccountId = AccountId32;
+
 	impl frame_system::Config for TestRuntime {
 		type RuntimeOrigin = RuntimeOrigin;
 		type RuntimeCall = RuntimeCall;
@@ -332,7 +396,7 @@ mod tests {
 		type BlockNumber = u64;
 		type Hash = H256;
 		type Hashing = BlakeTwo256;
-		type AccountId = u64;
+		type AccountId = AccountId;
 		type Lookup = IdentityLookup<Self::AccountId>;
 		type Header = Header;
 		type RuntimeEvent = RuntimeEvent;
@@ -341,7 +405,7 @@ mod tests {
 		type BlockWeights = ();
 		type Version = Version;
 		type PalletInfo = PalletInfo;
-		type AccountData = ();
+		type AccountData = pallet_balances::AccountData<u64>;
 		type OnNewAccount = ();
 		type OnKilledAccount = ();
 		type DbWeight = ();
@@ -353,6 +417,23 @@ mod tests {
 	}
 
 	parameter_types! {
+		pub const ExistentialDeposit: u64 = 5;
+		pub const MaxReserves: u32 = 50;
+	}
+
+	impl pallet_balances::Config for TestRuntime {
+		type Balance = u64;
+		type RuntimeEvent = RuntimeEvent;
+		type DustRemoval = ();
+		type ExistentialDeposit = ExistentialDeposit;
+		type AccountStore = System;
+		type WeightInfo = ();
+		type MaxLocks = ();
+		type MaxReserves = MaxReserves;
+		type ReserveIdentifier = [u8; 8];
+	}
+
+	parameter_types! {
 		// UniversalLocation as statemine
 		pub const RelayNetwork: NetworkId = NetworkId::Kusama;
 		pub UniversalLocation: InteriorMultiLocation = X2(GlobalConsensus(RelayNetwork::get()), Parachain(1000));
@@ -361,6 +442,8 @@ mod tests {
 			(NetworkId::Wococo, (Parent, Parachain(1013)).into(), None),
 			(NetworkId::Polkadot, (Parent, Parachain(1003)).into(), None),
 		];
+		// Relay chain currency/balance location (e.g. KsmLocation, DotLocation, ..)
+		pub const RelayLocation: MultiLocation = MultiLocation::parent();
 	}
 
 	std::thread_local! {
@@ -399,32 +482,59 @@ mod tests {
 	pub type TestBridgeXcmSender =
 		UnpaidRemoteExporter<BridgeAssetsTransfer, ThreadLocalXcmRouter, UniversalLocation>;
 
+	/// No local origins on this chain are allowed to dispatch XCM sends/executions.
+	pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, RelayNetwork>;
+
+	pub type LocationToAccountId = (
+		// Sibling parachain origins convert to AccountId via the `ParaId::into`.
+		SiblingParachainConvertsVia<Sibling, AccountId>,
+		// Straight up local `AccountId32` origins just alias directly to `AccountId`.
+		AccountId32Aliases<RelayNetwork, AccountId>,
+	);
+
+	/// Means for transacting the native currency on this chain.
+	pub type CurrencyTransactor = CurrencyAdapter<
+		// Use this currency:
+		Balances,
+		// Use this currency when it is a fungible asset matching the given location or name:
+		IsConcrete<RelayLocation>,
+		// Convert an XCM MultiLocation into a local account id:
+		LocationToAccountId,
+		// Our chain's account ID type (we can't get away without mentioning it explicitly):
+		AccountId,
+		// We don't track any teleports of `Balances`.
+		(),
+	>;
+
 	impl Config for TestRuntime {
 		type RuntimeEvent = RuntimeEvent;
 		type BridgeXcmSender = TestBridgeXcmSender;
 		type UniversalLocation = UniversalLocation;
 		type WeightInfo = ();
+		type AssetTransactor = CurrencyTransactor;
+		type TransferXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 	}
 
 	pub(crate) fn new_test_ext() -> sp_io::TestExternalities {
 		sp_tracing::try_init_simple();
-		frame_system::GenesisConfig::default()
-			.build_storage::<TestRuntime>()
-			.unwrap()
-			.into()
+		let t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+		t.into()
+	}
+
+	fn account(account: u8) -> AccountId32 {
+		AccountId32::new([account; 32])
 	}
 
 	#[test]
 	fn test_ensure_remote_destination() {
 		new_test_ext().execute_with(|| {
 			// insert bridge config
+			let bridge_config =
+				BridgeConfig { bridge_location: (Parent, Parachain(1013)).into(), fee: None };
 			assert_ok!(BridgeAssetsTransfer::add_bridge_config(
 				RuntimeOrigin::root(),
 				Wococo,
-				Box::new(BridgeConfig {
-					bridge_location: (Parent, Parachain(1013)).into(),
-					fee: None
-				}),
+				Box::new(bridge_config.clone()),
 			));
 
 			// v2 not supported
@@ -463,7 +573,10 @@ mod tests {
 				BridgeAssetsTransfer::ensure_remote_destination(VersionedMultiLocation::V3(
 					MultiLocation::new(2, X2(GlobalConsensus(Wococo), Parachain(1000)))
 				)),
-				Ok(MultiLocation::new(2, X2(GlobalConsensus(Wococo), Parachain(1000))))
+				Ok((
+					bridge_config,
+					MultiLocation::new(2, X2(GlobalConsensus(Wococo), Parachain(1000)))
+				))
 			);
 		})
 	}
@@ -471,31 +584,62 @@ mod tests {
 	#[test]
 	fn test_transfer_asset_via_bridge_works() {
 		new_test_ext().execute_with(|| {
+			// initialize some Balances for user_account
+			let user_account = account(1);
+			let user_account_init_balance = 1000_u64;
+			let _ = Balances::deposit_creating(&user_account, user_account_init_balance);
+			let user_free_balance = Balances::free_balance(&user_account);
+			let balance_to_transfer = 15_u64;
+			assert!((user_free_balance - balance_to_transfer) >= ExistentialDeposit::get());
+
 			// insert bridge config
+			let bridged_network = Wococo;
 			assert_ok!(BridgeAssetsTransfer::add_bridge_config(
 				RuntimeOrigin::root(),
-				Wococo,
+				bridged_network,
 				Box::new(BridgeConfig {
 					bridge_location: (Parent, Parachain(1013)).into(),
 					fee: None
 				}),
 			));
+			let bridge_location = Bridges::<TestRuntime>::get(bridged_network)
+				.expect("stored BridgeConfig for bridged_network")
+				.bridge_location;
 
+			// checks before
 			assert!(ROUTED_MESSAGE.with(|r| r.borrow().is_none()));
+			assert_eq!(Balances::free_balance(&user_account), user_account_init_balance);
+			let bridge_location_as_account =
+				SiblingParachainConvertsVia::<Sibling, AccountId>::convert_ref(bridge_location)
+					.expect("converted bridge location as accountId");
+			assert_eq!(Balances::free_balance(&bridge_location_as_account), 0);
 
-			let assets = Box::new(VersionedMultiAssets::V3(MultiAssets::default()));
+			// trigger transfer_asset_via_bridge - should trigger new ROUTED_MESSAGE
+			let asset = MultiAsset {
+				fun: Fungible(balance_to_transfer.into()),
+				id: Concrete(RelayLocation::get()),
+			};
+
+			let assets = Box::new(VersionedMultiAssets::V3(asset.into()));
 			let destination = Box::new(VersionedMultiLocation::V3(MultiLocation::new(
 				2,
 				X2(GlobalConsensus(Wococo), Parachain(1000)),
 			)));
 
 			let result = BridgeAssetsTransfer::transfer_asset_via_bridge(
-				RuntimeOrigin::signed(1),
+				RuntimeOrigin::signed(account(1)),
 				assets,
 				destination,
 			);
 			assert_eq!(result, Ok(()));
 			assert!(ROUTED_MESSAGE.with(|r| r.borrow().is_some()));
+			// check user account decresed
+			assert_eq!(
+				Balances::free_balance(&user_account),
+				user_account_init_balance - balance_to_transfer
+			);
+			// check reserve account increased
+			assert_eq!(Balances::free_balance(&bridge_location_as_account), 15);
 		});
 	}
 
@@ -513,7 +657,7 @@ mod tests {
 			// should fail - just root is allowed
 			assert_noop!(
 				BridgeAssetsTransfer::add_bridge_config(
-					RuntimeOrigin::signed(1),
+					RuntimeOrigin::signed(account(1)),
 					bridged_network,
 					bridged_config.clone(),
 				),
