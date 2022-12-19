@@ -16,6 +16,7 @@
 
 use polkadot_primitives::{Hash as PHash, PersistedValidationData};
 
+
 use sc_client_api::Backend;
 use sc_consensus::{shared_data::SharedData, BlockImport, ImportResult};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
@@ -25,7 +26,7 @@ use std::sync::Arc;
 mod level_monitor;
 mod parachain_consensus;
 
-pub mod parachain_consensus;s
+mod parachain_consensus;
 #[cfg(test)]
 mod tests;
 

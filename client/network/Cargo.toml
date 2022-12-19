@@ -29,7 +29,6 @@ polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch =
 
 # Cumulus
 cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
-cumulus-client-consensus-common = { path = "../consensus/common" }
 
 [dev-dependencies]
 portpicker = "0.1.1"
