@@ -1673,6 +1673,7 @@ name = "cumulus-client-consensus-common"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cumulus-client-pov-recovery",
  "cumulus-primitives-core",
  "cumulus-relay-chain-interface",
  "cumulus-test-client",

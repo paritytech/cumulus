@@ -55,7 +55,7 @@ use polkadot_primitives::v2::{
 	CandidateReceipt, CommittedCandidateReceipt, Id as ParaId, SessionIndex,
 };
 
-use cumulus_primitives_core::{ParachainBlockData, RecoveryDelay, RecoveryKind, RecoveryRequest};
+use cumulus_primitives_core::ParachainBlockData;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 
 use codec::Decode;
@@ -69,12 +69,44 @@ use std::{
 	collections::{HashMap, VecDeque},
 	pin::Pin,
 	sync::Arc,
+	time::Duration,
 };
 
 mod active_candidate_recovery;
 use active_candidate_recovery::ActiveCandidateRecovery;
 
 const LOG_TARGET: &str = "cumulus-pov-recovery";
+
+/// Type of recovery to trigger.
+#[derive(Debug, PartialEq)]
+pub enum RecoveryKind {
+	/// Single block recovery.
+	Simple,
+	/// Full ancestry recovery.
+	Full,
+}
+
+/// Structure used to trigger an explicit recovery request via `PoVRecovery`.
+pub struct RecoveryRequest<Block: BlockT> {
+	/// Hash of the last block to recover.
+	pub hash: Block::Hash,
+	/// Recovery delay range. Randomizing the start of the recovery within this interval
+	/// can be used to prevent self-DOSing if the recovery request is part of a
+	/// distributed protocol and there is the possibility that multiple actors are
+	/// requiring to perform the recovery action at approximately the same time.
+	pub delay: RecoveryDelay,
+	/// Recovery type.
+	pub kind: RecoveryKind,
+}
+
+/// The delay between observing an unknown block and triggering the recovery of a block.
+#[derive(Clone, Copy)]
+pub struct RecoveryDelay {
+	/// Start recovering after `min` delay.
+	pub min: Duration,
+	/// Start recovering before `max` delay.
+	pub max: Duration,
+}
 
 /// Represents an outstanding block candidate.
 struct Candidate<Block: BlockT> {

@@ -26,7 +26,7 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT},
 };
 
-use cumulus_primitives_core::{RecoveryDelay, RecoveryKind, RecoveryRequest};
+use cumulus_client_pov_recovery::{RecoveryDelay, RecoveryKind, RecoveryRequest};
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 
 use polkadot_primitives::v2::{Hash as PHash, Id as ParaId, OccupiedCoreAssumption};
