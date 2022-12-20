@@ -20,7 +20,8 @@
 
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::ParachainConsensus;
-use cumulus_primitives_core::{CollectCollationInfo, ParaId, RecoveryDelay};
+use cumulus_client_pov_recovery::{PoVRecovery, RecoveryDelay};
+use cumulus_primitives_core::{CollectCollationInfo, ParaId};
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
@@ -35,10 +36,7 @@ use sc_telemetry::TelemetryWorkerHandle;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::traits::SpawnNamed;
-use sp_runtime::{
-	traits::{Block as BlockT, NumberFor},
-	Justifications,
-};
+use sp_runtime::traits::Block as BlockT;
 
 use futures::channel::mpsc;
 use std::{sync::Arc, time::Duration};
@@ -119,7 +117,7 @@ where
 		.overseer_handle()
 		.map_err(|e| sc_service::Error::Application(Box::new(e)))?;
 
-	let pov_recovery = cumulus_client_pov_recovery::PoVRecovery::new(
+	let pov_recovery = PoVRecovery::new(
 		overseer_handle.clone(),
 		// We want that collators wait at maximum the relay chain slot duration before starting
 		// to recover blocks.
@@ -206,7 +204,7 @@ where
 		.overseer_handle()
 		.map_err(|e| sc_service::Error::Application(Box::new(e)))?;
 
-	let pov_recovery = cumulus_client_pov_recovery::PoVRecovery::new(
+	let pov_recovery = PoVRecovery::new(
 		overseer_handle,
 		// Full nodes should at least wait 2.5 minutes (assuming 6 seconds slot duration) and
 		// in maximum 5 minutes before starting to recover blocks. Collators should already start
