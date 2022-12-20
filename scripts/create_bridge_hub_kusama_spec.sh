@@ -36,7 +36,23 @@ cat chain-spec-plain.json | jq --rawfile code rt-hex.txt '.genesis.runtime.syste
     | jq '.name = "Kusama BridgeHub"' \
     | jq '.id = "bridge-hub-kusama"' \
     | jq '.chainType = "Live"' \
-    | jq '.bootNodes = []' \
+    | jq '.bootNodes = [
+                           "/dns/kusama-bridge-hub-collator-ew1-0.polkadot.io/tcp/30334/p2p/12D3KooWP2Gngt4tt2sz5BgDaAbMTxasPWk3V2Z99bQTmFcAorqa",
+                           "/dns/kusama-bridge-hub-collator-ew1-1.polkadot.io/tcp/30334/p2p/12D3KooWMmL3FQuYmruBui1sbY4MwNmvicinrePi1Yq4QMRSYHoR",
+                           "/dns/kusama-bridge-hub-collator-ue4-0.polkadot.io/tcp/30334/p2p/12D3KooWQpTocTck1tNBzMNTHJ3kSv4vzv8Yf9FpVkfGnungbez4",
+                           "/dns/kusama-bridge-hub-collator-ue4-1.polkadot.io/tcp/30334/p2p/12D3KooWRgtJqKEaMi7hkU4VMiGhpHTJeL8N7JgL7d9gwooPv4eW",
+
+                           "/dns/kusama-bridge-hub-connect-ew1-0.polkadot.io/tcp/30334/p2p/12D3KooWPQQPivrqQ51kRTDc2R1mtqwKT4GGtk2rapkY4FrwHrEp",
+                           "/dns/kusama-bridge-hub-connect-ew1-1.polkadot.io/tcp/30334/p2p/12D3KooWPcF9Yk4gYrMju9CyWCV69hAFXbYsnxCLogwLGu9QFTRn",
+                           "/dns/kusama-bridge-hub-connect-ue4-0.polkadot.io/tcp/30334/p2p/12D3KooWMf1sVnJDTkKWtaThqvrgcSPLbfGXttSqbwhM2DJp9BUG",
+                           "/dns/kusama-bridge-hub-connect-ue4-1.polkadot.io/tcp/30334/p2p/12D3KooWQaV7wMfNVKy2aMz4Lds3TTxgSDyZAUEnbAZMfD8rW3ow",
+
+                           "/dns/kusama-bridge-hub-connect-ew1-0.polkadot.io/tcp/443/wss/p2p/12D3KooWPQQPivrqQ51kRTDc2R1mtqwKT4GGtk2rapkY4FrwHrEp",
+                           "/dns/kusama-bridge-hub-connect-ew1-1.polkadot.io/tcp/443/wss/p2p/12D3KooWPcF9Yk4gYrMju9CyWCV69hAFXbYsnxCLogwLGu9QFTRn",
+                           "/dns/kusama-bridge-hub-connect-ue4-0.polkadot.io/tcp/443/wss/p2p/12D3KooWMf1sVnJDTkKWtaThqvrgcSPLbfGXttSqbwhM2DJp9BUG",
+                           "/dns/kusama-bridge-hub-connect-ue4-1.polkadot.io/tcp/443/wss/p2p/12D3KooWQaV7wMfNVKy2aMz4Lds3TTxgSDyZAUEnbAZMfD8rW3ow"
+
+                       ]' \
     | jq '.relay_chain = "kusama"' \
     | jq --argjson para_id $para_id '.para_id = $para_id' \
     | jq --argjson para_id $para_id '.genesis.runtime.parachainInfo.parachainId = $para_id' \
@@ -52,28 +68,28 @@ cat chain-spec-plain.json | jq --rawfile code rt-hex.txt '.genesis.runtime.syste
                                                 "DQkekNBt8g6D7bPUEqhgfujADxzzfivr1qQZJkeGzAqnEzF",
                                                 "DQkekNBt8g6D7bPUEqhgfujADxzzfivr1qQZJkeGzAqnEzF",
                                                     {
-                                                        "aura": "DQkekNBt8g6D7bPUEqhgfujADxzzfivr1qQZJkeGzAqnEzF"
+                                                        "aura": "5E7AiV9ygGUcfdK3XVoJsew7fsu18uvKQHYhksE5PXDNfRL9"
                                                     }
                                             ],
                                             [
                                                 "HbUc5qrLtKAZvasioiTSf1CunaN2SyEwvfsgMuYQjXA5sfk",
                                                 "HbUc5qrLtKAZvasioiTSf1CunaN2SyEwvfsgMuYQjXA5sfk",
                                                     {
-                                                        "aura": "HbUc5qrLtKAZvasioiTSf1CunaN2SyEwvfsgMuYQjXA5sfk"
+                                                        "aura": "5CyXoMh8cA2MSk55JASpCfhCg44iSG5fBwmhvSfXUUS3uhPR"
                                                     }
                                             ],
                                             [
                                                 "JEe4NcVyuWFEwZe4WLfRtynDswyKgvLS8H8r4Wo9d3t61g1",
                                                 "JEe4NcVyuWFEwZe4WLfRtynDswyKgvLS8H8r4Wo9d3t61g1",
                                                     {
-                                                        "aura": "JEe4NcVyuWFEwZe4WLfRtynDswyKgvLS8H8r4Wo9d3t61g1"
+                                                        "aura": "5Grj5pN52kKU61qK9qP5cf9ADuyowe2WVvYWxMNK1QqAM8qf"
                                                     }
                                             ],
                                             [
                                                 "FAe4DGhQHKTm35n5MgBFNBZvyEJcm7QAwgnVNQU8KXP2ixn",
                                                 "FAe4DGhQHKTm35n5MgBFNBZvyEJcm7QAwgnVNQU8KXP2ixn",
                                                     {
-                                                        "aura": "FAe4DGhQHKTm35n5MgBFNBZvyEJcm7QAwgnVNQU8KXP2ixn"
+                                                        "aura": "5EHTyftGjcHfe71VVuZqCeLbHNf4ptYzgdAMMyqpTNbs5Rrp"
                                                     }
                                             ]
                                           ]' \
