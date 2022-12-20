@@ -48,6 +48,7 @@ use frame_system_rpc_runtime_api::AccountNonceApi;
 use polkadot_primitives::v2::{CollatorPair, Hash as PHash, PersistedValidationData};
 use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
+use sc_consensus::ImportQueue;
 use sc_network::{multiaddr, NetworkBlock, NetworkService};
 use sc_network_common::{config::TransportConfig, service::NetworkStateInfo};
 use sc_service::{
@@ -193,10 +194,14 @@ async fn build_relay_chain_interface(
 	collator_options: CollatorOptions,
 	task_manager: &mut TaskManager,
 ) -> RelayChainResult<Arc<dyn RelayChainInterface + 'static>> {
-	if let Some(relay_chain_url) = collator_options.relay_chain_rpc_url {
-		return build_minimal_relay_chain_node(relay_chain_config, task_manager, relay_chain_url)
-			.await
-			.map(|r| r.0)
+	if !collator_options.relay_chain_rpc_urls.is_empty() {
+		return build_minimal_relay_chain_node(
+			relay_chain_config,
+			task_manager,
+			collator_options.relay_chain_rpc_urls,
+		)
+		.await
+		.map(|r| r.0)
 	}
 
 	let relay_chain_full_node = polkadot_test_service::new_full(
@@ -273,14 +278,15 @@ where
 	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
 
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
-	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
+	let import_queue_service = params.import_queue.service();
+
 	let (network, system_rpc_tx, tx_handler_controller, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &parachain_config,
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
 			spawn_handle: task_manager.spawn_handle(),
-			import_queue: import_queue.clone(),
+			import_queue: params.import_queue,
 			block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
 			warp_sync: None,
 		})?;
@@ -366,7 +372,7 @@ where
 			parachain_consensus,
 			relay_chain_interface,
 			collator_key,
-			import_queue,
+			import_queue: import_queue_service,
 			relay_chain_slot_duration: Duration::from_secs(6),
 		};
 
@@ -378,7 +384,7 @@ where
 			task_manager: &mut task_manager,
 			para_id,
 			relay_chain_interface,
-			import_queue,
+			import_queue: import_queue_service,
 			// The slot duration is currently used internally only to configure
 			// the recovery delay of pov-recovery. We don't want to wait for too
 			// long on the full node to recover, so we reduce this time here.
@@ -431,7 +437,7 @@ pub struct TestNodeBuilder {
 	storage_update_func_parachain: Option<Box<dyn Fn()>>,
 	storage_update_func_relay_chain: Option<Box<dyn Fn()>>,
 	consensus: Consensus,
-	relay_chain_full_node_url: Option<Url>,
+	relay_chain_full_node_url: Vec<Url>,
 }
 
 impl TestNodeBuilder {
@@ -453,7 +459,7 @@ impl TestNodeBuilder {
 			storage_update_func_parachain: None,
 			storage_update_func_relay_chain: None,
 			consensus: Consensus::RelayChain,
-			relay_chain_full_node_url: None,
+			relay_chain_full_node_url: vec![],
 		}
 	}
 
@@ -547,7 +553,7 @@ impl TestNodeBuilder {
 
 	/// Connect to full node via RPC.
 	pub fn use_external_relay_chain_node_at_url(mut self, network_address: Url) -> Self {
-		self.relay_chain_full_node_url = Some(network_address);
+		self.relay_chain_full_node_url = vec![network_address];
 		self
 	}
 
@@ -556,7 +562,7 @@ impl TestNodeBuilder {
 		let mut localhost_url =
 			Url::parse("ws://localhost").expect("Should be able to parse localhost Url");
 		localhost_url.set_port(Some(port)).expect("Should be able to set port");
-		self.relay_chain_full_node_url = Some(localhost_url);
+		self.relay_chain_full_node_url = vec![localhost_url];
 		self
 	}
 
@@ -582,7 +588,7 @@ impl TestNodeBuilder {
 		);
 
 		let collator_options =
-			CollatorOptions { relay_chain_rpc_url: self.relay_chain_full_node_url };
+			CollatorOptions { relay_chain_rpc_urls: self.relay_chain_full_node_url };
 
 		relay_chain_config.network.node_name =
 			format!("{} (relay chain)", relay_chain_config.network.node_name);
