@@ -7,6 +7,11 @@ bob: is up
 charlie: is up
 dave: is up
 eve: is up
+ferdie: is up
+george: is up
+george: pause
 alice: parachain 2000 is registered within 225 seconds
 dave: reports block height is at least 7 within 250 seconds
 eve: reports block height is at least 7 within 250 seconds
+george: resume
+george: reports block height is at least 7 within 250 seconds
