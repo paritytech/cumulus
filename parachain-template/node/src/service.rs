@@ -13,8 +13,8 @@ use cumulus_client_consensus_common::{
 	ParachainBlockImport as TParachainBlockImport, ParachainConsensus,
 };
 use cumulus_client_service::{
-	build_relay_chain_interface, prepare_node_config, start_collator, start_full_node,
-	StartCollatorParams, StartFullNodeParams,
+	build_network, build_relay_chain_interface, prepare_node_config, start_collator,
+	start_full_node, BuildNetworkParams, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
@@ -28,8 +28,6 @@ use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, Ta
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_keystore::SyncCryptoStorePtr;
 use substrate_prometheus_endpoint::Registry;
-
-use polkadot_service::CollatorPair;
 
 /// Native executor type.
 pub struct ParachainNativeExecutor;
@@ -168,7 +166,6 @@ async fn start_node_impl(
 		s => s.to_string().into(),
 	})?;
 
-
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
@@ -180,7 +177,7 @@ async fn start_node_impl(
 			parachain_config: &parachain_config,
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
-			para_id: id,
+			para_id,
 			task_manager: &mut task_manager,
 			relay_chain_interface: relay_chain_interface.clone(),
 			import_queue: params.import_queue,

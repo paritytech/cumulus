@@ -47,6 +47,7 @@ use sp_core::traits::SpawnNamed;
 use sp_runtime::traits::Block as BlockT;
 
 use futures::channel::mpsc;
+use sp_runtime::traits::BlockIdTo;
 use std::{sync::Arc, time::Duration};
 
 // Given the sporadic nature of the explicit recovery operation and the
@@ -54,9 +55,6 @@ use std::{sync::Arc, time::Duration};
 // In practice here we expect no more than one queued messages.
 const RECOVERY_CHAN_SIZE: usize = 8;
 
-
-use sp_runtime::traits::{Block as BlockT, BlockIdTo};
-use std::{sync::Arc, time::Duration};
 /// Parameters given to [`start_collator`].
 pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, RCInterface, Spawner> {
 	pub block_status: Arc<BS>,
@@ -275,8 +273,6 @@ pub async fn build_relay_chain_interface(
 		)
 	}
 }
-
-
 
 /// Parameters given to [`build_network`].
 pub struct BuildNetworkParams<
