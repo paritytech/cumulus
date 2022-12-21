@@ -38,19 +38,19 @@ build-push-image-polkadot-parachain-debug:
     IMAGE_NAME:                    "docker.io/paritypr/polkadot-parachain-debug"
     VERSION:                       "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
 
-build-push-image-test-parachain:
-  stage:                           publish
-  extends:
-    - .kubernetes-env
-    - .common-refs
-    - .build-push-image
-  needs:
-    - job:                         build-test-parachain
-      artifacts:                   true
-  variables:
-    DOCKERFILE:                    "docker/test-parachain_injected.Dockerfile"
-    IMAGE_NAME:                    "docker.io/paritypr/test-parachain"
-    VERSION:                       "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
+#build-push-image-test-parachain:
+#  stage:                           publish
+#  extends:
+#    - .kubernetes-env
+#    - .common-refs
+#    - .build-push-image
+#  needs:
+#    - job:                         build-test-parachain
+#      artifacts:                   true
+#  variables:
+#    DOCKERFILE:                    "docker/test-parachain_injected.Dockerfile"
+#    IMAGE_NAME:                    "docker.io/paritypr/test-parachain"
+#    VERSION:                       "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
 
 publish-s3:
   stage:                           publish
