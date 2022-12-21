@@ -153,17 +153,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Service a single overweight message.
-		///
-		/// - `origin`: Must pass `ExecuteOverweightOrigin`.
-		/// - `index`: The index of the overweight message to service.
-		/// - `weight_limit`: The amount of weight that message execution may take.
-		///
-		/// Errors:
-		/// - `Unknown`: Message of `index` is unknown.
-		/// - `OverLimit`: Message execution may use greater than `weight_limit`.
-		///
-		/// Events:
-		/// - `OverweightServiced`: On success.
+		#[pallet::call_index(0)]
 		#[pallet::weight(weight_limit.saturating_add(Weight::from_ref_time(1_000_000)))]
 		pub fn service_overweight(
 			origin: OriginFor<T>,
