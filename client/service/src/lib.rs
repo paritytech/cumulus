@@ -18,30 +18,36 @@
 //!
 //! Provides functions for starting a collator node or a normal full node.
 
+use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::ParachainConsensus;
+use cumulus_client_pov_recovery::{PoVRecovery, RecoveryDelay};
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
-use cumulus_relay_chain_interface::RelayChainInterface;
+use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
+use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
+use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
 use polkadot_primitives::v2::CollatorPair;
+
 use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, UsageProvider,
 };
-use sc_consensus::{
-	import_queue::{ImportQueue, IncomingBlock, Link, RuntimeOrigin},
-	BlockImport,
-};
+use sc_consensus::{import_queue::ImportQueueService, BlockImport};
 use sc_service::{Configuration, TaskManager};
+use sc_telemetry::TelemetryWorkerHandle;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_consensus::BlockOrigin;
 use sp_core::traits::SpawnNamed;
-use sp_runtime::{
-	traits::{Block as BlockT, NumberFor},
-	Justifications,
-};
+use sp_runtime::traits::Block as BlockT;
+
+use futures::channel::mpsc;
 use std::{sync::Arc, time::Duration};
 
+// Given the sporadic nature of the explicit recovery operation and the
+// possibility to retry infinite times this value is more than enough.
+// In practice here we expect no more than one queued messages.
+const RECOVERY_CHAN_SIZE: usize = 8;
+
 /// Parameters given to [`start_collator`].
-pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, RCInterface, Spawner, IQ> {
+pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, RCInterface, Spawner> {
 	pub block_status: Arc<BS>,
 	pub client: Arc<Client>,
 	pub announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
@@ -50,7 +56,7 @@ pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, RCInterface, Spawn
 	pub relay_chain_interface: RCInterface,
 	pub task_manager: &'a mut TaskManager,
 	pub parachain_consensus: Box<dyn ParachainConsensus<Block>>,
-	pub import_queue: IQ,
+	pub import_queue: Box<dyn ImportQueueService<Block>>,
 	pub collator_key: CollatorPair,
 	pub relay_chain_slot_duration: Duration,
 }
@@ -60,7 +66,7 @@ pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, RCInterface, Spawn
 /// A collator is similar to a validator in a normal blockchain.
 /// It is responsible for producing blocks and sending the blocks to a
 /// parachain validator for validation and inclusion into the relay chain.
-pub async fn start_collator<'a, Block, BS, Client, Backend, RCInterface, Spawner, IQ>(
+pub async fn start_collator<'a, Block, BS, Client, Backend, RCInterface, Spawner>(
 	StartCollatorParams {
 		block_status,
 		client,
@@ -73,7 +79,7 @@ pub async fn start_collator<'a, Block, BS, Client, Backend, RCInterface, Spawner
 		import_queue,
 		collator_key,
 		relay_chain_slot_duration,
-	}: StartCollatorParams<'a, Block, BS, Client, RCInterface, Spawner, IQ>,
+	}: StartCollatorParams<'a, Block, BS, Client, RCInterface, Spawner>,
 ) -> sc_service::error::Result<()>
 where
 	Block: BlockT,
@@ -92,13 +98,15 @@ where
 	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
 	RCInterface: RelayChainInterface + Clone + 'static,
 	Backend: BackendT<Block> + 'static,
-	IQ: ImportQueue<Block> + 'static,
 {
+	let (recovery_chan_tx, recovery_chan_rx) = mpsc::channel(RECOVERY_CHAN_SIZE);
+
 	let consensus = cumulus_client_consensus_common::run_parachain_consensus(
 		para_id,
 		client.clone(),
 		relay_chain_interface.clone(),
 		announce_block.clone(),
+		Some(recovery_chan_tx),
 	);
 
 	task_manager
@@ -109,15 +117,16 @@ where
 		.overseer_handle()
 		.map_err(|e| sc_service::Error::Application(Box::new(e)))?;
 
-	let pov_recovery = cumulus_client_pov_recovery::PoVRecovery::new(
+	let pov_recovery = PoVRecovery::new(
 		overseer_handle.clone(),
 		// We want that collators wait at maximum the relay chain slot duration before starting
 		// to recover blocks.
-		cumulus_client_pov_recovery::RecoveryDelay::WithMax { max: relay_chain_slot_duration },
+		RecoveryDelay { min: core::time::Duration::ZERO, max: relay_chain_slot_duration },
 		client.clone(),
 		import_queue,
 		relay_chain_interface.clone(),
 		para_id,
+		recovery_chan_rx,
 	);
 
 	task_manager
@@ -139,21 +148,21 @@ where
 }
 
 /// Parameters given to [`start_full_node`].
-pub struct StartFullNodeParams<'a, Block: BlockT, Client, RCInterface, IQ> {
+pub struct StartFullNodeParams<'a, Block: BlockT, Client, RCInterface> {
 	pub para_id: ParaId,
 	pub client: Arc<Client>,
 	pub relay_chain_interface: RCInterface,
 	pub task_manager: &'a mut TaskManager,
 	pub announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 	pub relay_chain_slot_duration: Duration,
-	pub import_queue: IQ,
+	pub import_queue: Box<dyn ImportQueueService<Block>>,
 }
 
 /// Start a full node for a parachain.
 ///
 /// A full node will only sync the given parachain and will follow the
 /// tip of the chain.
-pub fn start_full_node<Block, Client, Backend, RCInterface, IQ>(
+pub fn start_full_node<Block, Client, Backend, RCInterface>(
 	StartFullNodeParams {
 		client,
 		announce_block,
@@ -162,7 +171,7 @@ pub fn start_full_node<Block, Client, Backend, RCInterface, IQ>(
 		para_id,
 		relay_chain_slot_duration,
 		import_queue,
-	}: StartFullNodeParams<Block, Client, RCInterface, IQ>,
+	}: StartFullNodeParams<Block, Client, RCInterface>,
 ) -> sc_service::error::Result<()>
 where
 	Block: BlockT,
@@ -176,13 +185,15 @@ where
 	for<'a> &'a Client: BlockImport<Block>,
 	Backend: BackendT<Block> + 'static,
 	RCInterface: RelayChainInterface + Clone + 'static,
-	IQ: ImportQueue<Block> + 'static,
 {
+	let (recovery_chan_tx, recovery_chan_rx) = mpsc::channel(RECOVERY_CHAN_SIZE);
+
 	let consensus = cumulus_client_consensus_common::run_parachain_consensus(
 		para_id,
 		client.clone(),
 		relay_chain_interface.clone(),
 		announce_block,
+		Some(recovery_chan_tx),
 	);
 
 	task_manager
@@ -193,21 +204,19 @@ where
 		.overseer_handle()
 		.map_err(|e| sc_service::Error::Application(Box::new(e)))?;
 
-	let pov_recovery = cumulus_client_pov_recovery::PoVRecovery::new(
+	let pov_recovery = PoVRecovery::new(
 		overseer_handle,
 		// Full nodes should at least wait 2.5 minutes (assuming 6 seconds slot duration) and
 		// in maximum 5 minutes before starting to recover blocks. Collators should already start
 		// the recovery way before full nodes try to recover a certain block and then share the
 		// block with the network using "the normal way". Full nodes are just the "last resort"
 		// for block recovery.
-		cumulus_client_pov_recovery::RecoveryDelay::WithMinAndMax {
-			min: relay_chain_slot_duration * 25,
-			max: relay_chain_slot_duration * 50,
-		},
+		RecoveryDelay { min: relay_chain_slot_duration * 25, max: relay_chain_slot_duration * 50 },
 		client,
 		import_queue,
 		relay_chain_interface,
 		para_id,
+		recovery_chan_rx,
 	);
 
 	task_manager
@@ -227,35 +236,31 @@ pub fn prepare_node_config(mut parachain_config: Configuration) -> Configuration
 	parachain_config
 }
 
-/// A shared import queue
-///
-/// This is basically a hack until the Substrate side is implemented properly.
-#[derive(Clone)]
-pub struct SharedImportQueue<Block: BlockT>(Arc<parking_lot::Mutex<dyn ImportQueue<Block>>>);
-
-impl<Block: BlockT> SharedImportQueue<Block> {
-	/// Create a new instance of the shared import queue.
-	pub fn new<IQ: ImportQueue<Block> + 'static>(import_queue: IQ) -> Self {
-		Self(Arc::new(parking_lot::Mutex::new(import_queue)))
-	}
-}
-
-impl<Block: BlockT> ImportQueue<Block> for SharedImportQueue<Block> {
-	fn import_blocks(&mut self, origin: BlockOrigin, blocks: Vec<IncomingBlock<Block>>) {
-		self.0.lock().import_blocks(origin, blocks)
-	}
-
-	fn import_justifications(
-		&mut self,
-		who: RuntimeOrigin,
-		hash: Block::Hash,
-		number: NumberFor<Block>,
-		justifications: Justifications,
-	) {
-		self.0.lock().import_justifications(who, hash, number, justifications)
-	}
-
-	fn poll_actions(&mut self, cx: &mut std::task::Context, link: &mut dyn Link<Block>) {
-		self.0.lock().poll_actions(cx, link)
+/// Build a relay chain interface.
+/// Will return a minimal relay chain node with RPC
+/// client or an inprocess node, based on the [`CollatorOptions`] passed in.
+pub async fn build_relay_chain_interface(
+	polkadot_config: Configuration,
+	parachain_config: &Configuration,
+	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
+	task_manager: &mut TaskManager,
+	collator_options: CollatorOptions,
+	hwbench: Option<sc_sysinfo::HwBench>,
+) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
+	if !collator_options.relay_chain_rpc_urls.is_empty() {
+		build_minimal_relay_chain_node(
+			polkadot_config,
+			task_manager,
+			collator_options.relay_chain_rpc_urls,
+		)
+		.await
+	} else {
+		build_inprocess_relay_chain(
+			polkadot_config,
+			parachain_config,
+			telemetry_worker_handle,
+			task_manager,
+			hwbench,
+		)
 	}
 }
