@@ -56,6 +56,11 @@ impl<Runtime: frame_system::Config + pallet_balances::Config + pallet_session::C
 		self
 	}
 
+	pub fn with_tracing(self) -> Self {
+		frame_support::sp_tracing::try_init_simple();
+		self
+	}
+
 	pub fn build(self) -> sp_io::TestExternalities
 	where
 		Runtime:

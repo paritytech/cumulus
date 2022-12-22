@@ -20,7 +20,10 @@ use super::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{ConstU32, EnsureOrigin, EnsureOriginWithArg, Everything, Nothing, PalletInfoAccess},
+	traits::{
+		ConstU32, Contains, EnsureOrigin, EnsureOriginWithArg, Everything, OriginTrait,
+		PalletInfoAccess,
+	},
 };
 use pallet_xcm::{EnsureXcm, XcmPassthrough};
 use parachains_common::{
@@ -39,9 +42,10 @@ use xcm_builder::{
 	NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
 	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
+	WithComputedOrigin,
 };
 use xcm_executor::{
-	traits::{Convert, JustTry},
+	traits::{Convert, ConvertOrigin, JustTry, ShouldExecute},
 	XcmExecutor,
 };
 
@@ -49,7 +53,7 @@ parameter_types! {
 	pub const WestendLocation: MultiLocation = MultiLocation::parent();
 	pub RelayNetwork: NetworkId = NetworkId::Westend;
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-	pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
+	pub UniversalLocation: InteriorMultiLocation = X2(GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into()));
 	pub const Local: MultiLocation = Here.into_location();
 	// todo: accept all instances, perhaps need a type for each instance?
 	pub TrustBackedAssetsPalletLocation: MultiLocation =
@@ -139,7 +143,44 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
 	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
 	XcmPassthrough<RuntimeOrigin>,
+	// TODO: just temporary for - needs to be removed - whatever origin is, it replaced it with SovereignAccount of this parachain
+	VeryTemporaryForSampleDemoToSovereignAccount<LocationToAccountId, RuntimeOrigin>,
 );
+
+pub struct VeryTemporaryForSampleDemoToSovereignAccount<LocationConverter, RuntimeOrigin>(
+	sp_std::marker::PhantomData<(LocationConverter, RuntimeOrigin)>,
+);
+impl<
+		LocationConverter: Convert<MultiLocation, RuntimeOrigin::AccountId>,
+		RuntimeOrigin: OriginTrait,
+	> ConvertOrigin<RuntimeOrigin>
+	for VeryTemporaryForSampleDemoToSovereignAccount<LocationConverter, RuntimeOrigin>
+where
+	RuntimeOrigin::AccountId: Clone,
+{
+	fn convert_origin(
+		origin: impl Into<MultiLocation>,
+		kind: OriginKind,
+	) -> Result<RuntimeOrigin, MultiLocation> {
+		let origin = origin.into();
+		// TODO: hack, simulate/pretend - that any origin from bridged network as sovereign account, just to pass Transact/System::remark_with_event
+		let new_origin = MultiLocation {
+			parents: 1,
+			interior: X1(Parachain(ParachainInfo::parachain_id().into())),
+		};
+		log::error!(
+			target: "xcm::origin_conversion",
+			"VeryTemporaryForSampleDemoToSovereignAccount replacing origin: {:?} to new_origin: {:?}, kind: {:?}",
+			origin, new_origin, kind,
+		);
+		if let OriginKind::SovereignAccount = kind {
+			let location = LocationConverter::convert(new_origin)?;
+			Ok(RuntimeOrigin::signed(location).into())
+		} else {
+			Err(origin)
+		}
+	}
+}
 
 parameter_types! {
 	pub const MaxInstructions: u32 = 100;
@@ -151,6 +192,10 @@ match_types! {
 	pub type ParentOrParentsPlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
+	};
+
+	pub type VeryTemporaryForSampleDemoTrustedBridgedNetworks: impl Contains<(MultiLocation, Junction)> = {
+		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Rococo))
 	};
 }
 
@@ -165,8 +210,45 @@ pub type Barrier = DenyThenTry<
 		AllowKnownQueryResponses<PolkadotXcm>,
 		// Subscriptions for version tracking are OK.
 		AllowSubscriptionsFrom<Everything>,
+		// Specific barrier for bridged calls from different globalConsensus/network
+		WithComputedOrigin<BridgedCallsBarrier, UniversalLocation, ConstU32<2>>,
 	),
 >;
+
+pub type BridgedCallsBarrier = (
+	// TODO: just for temporary sample/demo
+	VeryTemporaryForSampleDemoAllowUnpaidExecutionForTransactAndTrapFrom<Everything>,
+	// Expected responses are OK.
+	AllowKnownQueryResponses<PolkadotXcm>,
+	// Subscriptions for version tracking are OK.
+	AllowSubscriptionsFrom<Everything>,
+);
+
+pub struct VeryTemporaryForSampleDemoAllowUnpaidExecutionForTransactAndTrapFrom<T>(
+	sp_std::marker::PhantomData<T>,
+);
+impl<T: Contains<MultiLocation>> ShouldExecute
+	for VeryTemporaryForSampleDemoAllowUnpaidExecutionForTransactAndTrapFrom<T>
+{
+	fn should_execute<Call>(
+		origin: &MultiLocation,
+		instructions: &mut [Instruction<Call>],
+		max_weight: xcm::latest::Weight,
+		_weight_credit: &mut xcm::latest::Weight,
+	) -> Result<(), ()> {
+		log::error!(
+			target: "xcm::barriers",
+			"(TODO: remove) VeryTemporaryAllowUnpaidExecutionForTransactFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, weight_credit: {:?}",
+			origin, instructions, max_weight, _weight_credit,
+		);
+
+		match instructions.first() {
+			Some(Trap { .. }) => Ok(()),
+			Some(Transact { .. }) => Ok(()),
+			_ => Err(()),
+		}
+	}
+}
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
@@ -225,7 +307,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetExchanger = ();
 	type FeeManager = ();
 	type MessageExporter = ();
-	type UniversalAliases = Nothing;
+	type UniversalAliases = VeryTemporaryForSampleDemoTrustedBridgedNetworks;
 	type CallDispatcher = RuntimeCall;
 }
 
