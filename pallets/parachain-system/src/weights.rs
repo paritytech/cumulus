@@ -61,7 +61,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: ParachainSystem UpgradeRestrictionSignal (r:0 w:1)
 	#[rustfmt::skip]
 	fn set_validation_data_no_messages() -> Weight {
-		(45_216_000 as Weight)
+		(42_259_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(9 as u64))
 			.saturating_add(T::DbWeight::get().writes(10 as u64))
 	}
@@ -69,14 +69,14 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	#[rustfmt::skip]
 	fn sudo_send_upward_message() -> Weight {
-		(3_647_000 as Weight)
+		(4_669_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: ParachainSystem AuthorizedUpgrade (r:0 w:1)
 	#[rustfmt::skip]
 	fn authorize_upgrade() -> Weight {
-		(9_779_000 as Weight)
+		(12_872_000 as Weight)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: ParachainSystem AuthorizedUpgrade (r:1 w:1)
@@ -88,7 +88,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: ParachainSystem DidSetValidationCode (r:0 w:1)
 	#[rustfmt::skip]
 	fn enact_authorized_upgrade() -> Weight {
-		(25_628_000 as Weight)
+		(25_830_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(5 as u64))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
@@ -113,7 +113,7 @@ impl WeightInfo for () {
 	// Storage: ParachainSystem UpgradeRestrictionSignal (r:0 w:1)
 	#[rustfmt::skip]
 	fn set_validation_data_no_messages() -> Weight {
-		(45_216_000 as Weight)
+		(42_259_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(9 as u64))
 			.saturating_add(RocksDbWeight::get().writes(10 as u64))
 	}
@@ -121,14 +121,14 @@ impl WeightInfo for () {
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	#[rustfmt::skip]
 	fn sudo_send_upward_message() -> Weight {
-		(3_647_000 as Weight)
+		(4_669_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: ParachainSystem AuthorizedUpgrade (r:0 w:1)
 	#[rustfmt::skip]
 	fn authorize_upgrade() -> Weight {
-		(9_779_000 as Weight)
+		(12_872_000 as Weight)
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: ParachainSystem AuthorizedUpgrade (r:1 w:1)
@@ -140,7 +140,7 @@ impl WeightInfo for () {
 	// Storage: ParachainSystem DidSetValidationCode (r:0 w:1)
 	#[rustfmt::skip]
 	fn enact_authorized_upgrade() -> Weight {
-		(25_628_000 as Weight)
+		(25_830_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(5 as u64))
 			.saturating_add(RocksDbWeight::get().writes(4 as u64))
 	}
