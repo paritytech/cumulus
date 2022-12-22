@@ -33,6 +33,12 @@ use sp_std::marker::PhantomData;
 pub trait WeightInfo {
 	#[rustfmt::skip]
 	fn set_validation_data_no_messages() -> Weight;
+	#[rustfmt::skip]
+	fn sudo_send_upward_message() -> Weight;
+	#[rustfmt::skip]
+	fn authorize_upgrade() -> Weight;
+	#[rustfmt::skip]
+	fn enact_authorized_upgrade() -> Weight;
 }
 
 /// Weights for pallet_parachain_system using the Substrate node and recommended hardware.
@@ -59,6 +65,33 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(9 as u64))
 			.saturating_add(T::DbWeight::get().writes(10 as u64))
 	}
+	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
+	#[rustfmt::skip]
+	fn sudo_send_upward_message() -> Weight {
+		(3_647_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(2 as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
+	}
+	// Storage: ParachainSystem AuthorizedUpgrade (r:0 w:1)
+	#[rustfmt::skip]
+	fn authorize_upgrade() -> Weight {
+		(9_779_000 as Weight)
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
+	}
+	// Storage: ParachainSystem AuthorizedUpgrade (r:1 w:1)
+	// Storage: ParachainSystem ValidationData (r:1 w:0)
+	// Storage: ParachainSystem UpgradeRestrictionSignal (r:1 w:0)
+	// Storage: ParachainSystem PendingValidationCode (r:1 w:1)
+	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	// Storage: ParachainSystem NewValidationCode (r:0 w:1)
+	// Storage: ParachainSystem DidSetValidationCode (r:0 w:1)
+	#[rustfmt::skip]
+	fn enact_authorized_upgrade() -> Weight {
+		(25_628_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(5 as u64))
+			.saturating_add(T::DbWeight::get().writes(4 as u64))
+	}
 }
 
 // For backwards compatibility and tests
@@ -83,5 +116,32 @@ impl WeightInfo for () {
 		(45_216_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(9 as u64))
 			.saturating_add(RocksDbWeight::get().writes(10 as u64))
+	}
+	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
+	#[rustfmt::skip]
+	fn sudo_send_upward_message() -> Weight {
+		(3_647_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(2 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1 as u64))
+	}
+	// Storage: ParachainSystem AuthorizedUpgrade (r:0 w:1)
+	#[rustfmt::skip]
+	fn authorize_upgrade() -> Weight {
+		(9_779_000 as Weight)
+			.saturating_add(RocksDbWeight::get().writes(1 as u64))
+	}
+	// Storage: ParachainSystem AuthorizedUpgrade (r:1 w:1)
+	// Storage: ParachainSystem ValidationData (r:1 w:0)
+	// Storage: ParachainSystem UpgradeRestrictionSignal (r:1 w:0)
+	// Storage: ParachainSystem PendingValidationCode (r:1 w:1)
+	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	// Storage: ParachainSystem NewValidationCode (r:0 w:1)
+	// Storage: ParachainSystem DidSetValidationCode (r:0 w:1)
+	#[rustfmt::skip]
+	fn enact_authorized_upgrade() -> Weight {
+		(25_628_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(5 as u64))
+			.saturating_add(RocksDbWeight::get().writes(4 as u64))
 	}
 }

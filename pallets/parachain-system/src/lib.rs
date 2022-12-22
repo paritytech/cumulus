@@ -54,9 +54,9 @@ use sp_runtime::{
 };
 use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
 
-pub mod weights;
 mod migration;
 mod relay_state_snapshot;
+pub mod weights;
 #[macro_use]
 pub mod validate_block;
 #[cfg(test)]
@@ -438,7 +438,7 @@ pub mod pallet {
 			Ok(PostDispatchInfo { actual_weight: Some(total_weight), pays_fee: Pays::No })
 		}
 
-		#[pallet::weight((1_000, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::sudo_send_upward_message(), DispatchClass::Operational))]
 		pub fn sudo_send_upward_message(
 			origin: OriginFor<T>,
 			message: UpwardMessage,
@@ -448,7 +448,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight((1_000_000, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::authorize_upgrade(), DispatchClass::Operational))]
 		pub fn authorize_upgrade(origin: OriginFor<T>, code_hash: T::Hash) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -458,7 +458,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(1_000_000)]
+		#[pallet::weight(T::WeightInfo::enact_authorized_upgrade())]
 		pub fn enact_authorized_upgrade(
 			_: OriginFor<T>,
 			code: Vec<u8>,
