@@ -25,6 +25,9 @@ std = [
 	"sp-runtime/std",
 	"sp-state-machine/std",
 	"sp-std/std",
+	"polkadot-primitives/std",
 	"cumulus-primitives-core/std",
 ]
-runtime-benchmarks = []
+runtime-benchmarks = [
+	"polkadot-primitives/runtime-benchmarks",
+]

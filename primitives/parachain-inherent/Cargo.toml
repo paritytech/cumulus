@@ -11,9 +11,10 @@ scale-info = { version = "2.2.0", default-features = false, features = ["derive"
 tracing = { version = "0.1.36", optional = true }
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", optional = true, branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", optional = true, branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-core-hashing = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", optional = true, branch = "master" }
 sp-state-machine = { git = "https://github.com/paritytech/substrate", optional = true, branch = "master" }
@@ -45,4 +46,7 @@ std = [
 	"cumulus-primitives-core/std",
 	"cumulus-relay-chain-interface",
 	"cumulus-test-relay-sproof-builder",
+]
+runtime-benchmarks = [
+	"cumulus-test-relay-sproof-builder/runtime-benchmarks"
 ]

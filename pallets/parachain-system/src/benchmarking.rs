@@ -26,6 +26,21 @@ benchmarks! {
 		let l in 0 .. host_config().max_upward_message_size;
 		HostConfiguration::<T>::put(host_config());
 
+		{
+			let data_provider =
+		cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider::<()> {
+			current_para_block: 2,
+			relay_offset: 1,
+			relay_blocks_per_para_block: 2,
+			para_blocks_per_relay_epoch: 4,
+			relay_randomness_config: (),
+			xcm_config: Default::default(),
+			raw_downward_messages: Default::default(),
+			raw_horizontal_messages: Default::default(),
+		};
+	//let para_inherent_data = data_provider.provide_para_inherent_data();
+		}
+
 		// Populate the queue and leave space for one more message.
 		for _ in 1..host_config().max_upward_queue_count {
 			let msg = vec![255u8; host_config().max_upward_message_size as usize];

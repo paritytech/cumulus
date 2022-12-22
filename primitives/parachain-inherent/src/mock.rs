@@ -19,12 +19,16 @@ use codec::Decode;
 use cumulus_primitives_core::{
 	relay_chain, InboundDownwardMessage, InboundHrmpMessage, ParaId, PersistedValidationData,
 };
+#[cfg(feature = "std")]
 use sc_client_api::{Backend, StorageProvider};
+#[cfg(feature = "std")]
 use sp_api::BlockId;
-use sp_core::twox_128;
-use sp_inherents::{InherentData, InherentDataProvider};
+use sp_core_hashing::twox_128;
+use sp_inherents::InherentData;
+#[cfg(feature = "std")]
 use sp_runtime::traits::Block;
-use std::collections::BTreeMap;
+use sp_std::collections::btree_map::BTreeMap;
+use sp_std::vec::Vec;
 
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 
@@ -105,6 +109,7 @@ impl Default for ParachainSystemName {
 	}
 }
 
+#[cfg(feature = "std")]
 impl MockXcmConfig {
 	/// Create a MockXcmConfig by reading the mqc_heads directly
 	/// from the storage of a previous block.
@@ -208,7 +213,7 @@ impl<R: Send + Sync + GenerateRandomness<u64>> MockValidationDataInherentDataPro
 
 		ParachainInherentData {
 			validation_data: PersistedValidationData {
-				parent_head: Default::default(),
+				parent_head: sp_std::vec::Vec::<_>::default().into(),
 				relay_parent_storage_root,
 				relay_parent_number,
 				max_pov_size: Default::default(),
@@ -220,8 +225,9 @@ impl<R: Send + Sync + GenerateRandomness<u64>> MockValidationDataInherentDataPro
 	}
 }
 
+#[cfg(feature = "std")]
 #[async_trait::async_trait]
-impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider
+impl<R: Send + Sync + GenerateRandomness<u64>> sp_inherents::InherentDataProvider
 	for MockValidationDataInherentDataProvider<R>
 {
 	fn provide_inherent_data(

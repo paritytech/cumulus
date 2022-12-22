@@ -40,9 +40,9 @@ use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 mod client_side;
 #[cfg(feature = "std")]
 pub use client_side::*;
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "runtime-benchmarks"))]
 mod mock;
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "runtime-benchmarks"))]
 pub use mock::{MockValidationDataInherentDataProvider, MockXcmConfig};
 
 /// The identifier for the parachain inherent.
