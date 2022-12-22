@@ -77,6 +77,12 @@ impl<T: frame_system::Config> pallet_alliance::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
+
+	// not used
+	fn veto(_p: u32, ) -> Weight {
+		Weight::from_ref_time(100_000_000)
+	}
+
 	// Storage: Alliance Members (r:1 w:0)
 	// Storage: AllianceMotion Voting (r:1 w:1)
 	// Storage: AllianceMotion Members (r:1 w:0)
