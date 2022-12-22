@@ -34,14 +34,22 @@ cp target/release/polkadot ~/local_bridge_testing/bin/polkadot
 
 # 3. Build cumulus polkadot-parachain binary
 cd <cumulus-git-repo-dir>
+git checkout -b bridge-hub-rococo-wococo --track origin/bridge-hub-rococo-wococo
 cargo build --release --locked -p polkadot-parachain@0.9.300
 cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain
+cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain-mint
 
 # 4. Build substrate-relay binary
 git clone https://github.com/paritytech/parity-bridges-common.git
 cd parity-bridges-common
 cargo build --release -p substrate-relay
 cp target/release/substrate-relay ~/local_bridge_testing/bin/substrate-relay
+
+# (Optional) 5. Build polkadot-parachain-mint binary with statemine/westmint for moving assets
+cd <cumulus-git-repo-dir>
+git checkout -b bko-transfer-asset-via-bridge --track origin/bko-transfer-asset-via-bridge
+cargo build --release --locked -p polkadot-parachain@0.9.300
+cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain-mint
 ```
 
 ### Run chains (Rococo + BridgeHub, Wococo + BridgeHub) with zombienet
@@ -50,7 +58,7 @@ cp target/release/substrate-relay ~/local_bridge_testing/bin/substrate-relay
 # Rococo + BridgeHubRococo + Rockmine (mirroring Kusama)
 POLKADOT_BINARY_PATH=~/local_bridge_testing/bin/polkadot \
 POLKADOT_PARACHAIN_BINARY_PATH=~/local_bridge_testing/bin/polkadot-parachain \
-POLKADOT_PARACHAIN_BINARY_PATH_FOR_ROCKMINE=~/local_bridge_testing/bin/polkadot-parachain \
+POLKADOT_PARACHAIN_BINARY_PATH_FOR_ROCKMINE=~/local_bridge_testing/bin/polkadot-parachain-mint \
 	~/local_bridge_testing/bin/zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_rococo_local_network.toml
 ```
 
@@ -58,7 +66,7 @@ POLKADOT_PARACHAIN_BINARY_PATH_FOR_ROCKMINE=~/local_bridge_testing/bin/polkadot-
 # Wococo + BridgeHubWococo + Wockmint (mirroring Polkadot)
 POLKADOT_BINARY_PATH=~/local_bridge_testing/bin/polkadot \
 POLKADOT_PARACHAIN_BINARY_PATH=~/local_bridge_testing/bin/polkadot-parachain \
-POLKADOT_PARACHAIN_BINARY_PATH_FOR_WOCKMINT=~/local_bridge_testing/bin/polkadot-parachain \
+POLKADOT_PARACHAIN_BINARY_PATH_FOR_WOCKMINT=~/local_bridge_testing/bin/polkadot-parachain-mint \
 	~/local_bridge_testing/bin/zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_wococo_local_network.toml
 ```
 
