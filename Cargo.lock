@@ -1824,6 +1824,7 @@ dependencies = [
  "cumulus-test-client",
  "cumulus-test-relay-sproof-builder",
  "environmental",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex-literal",
