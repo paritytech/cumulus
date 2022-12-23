@@ -276,7 +276,7 @@ impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {
 	pub const RocLocation: MultiLocation = MultiLocation::parent();
-	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
+	pub const RococoNetwork: Option<NetworkId> = Some(NetworkId::Rococo);
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub UniversalLocation: InteriorMultiLocation = X1(Parachain(ParachainInfo::parachain_id().into()));
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();

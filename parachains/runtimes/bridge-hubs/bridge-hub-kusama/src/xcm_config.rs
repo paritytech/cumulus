@@ -21,7 +21,6 @@ use super::{
 use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing},
-	weights::Weight,
 };
 use pallet_xcm::XcmPassthrough;
 use parachains_common::xcm_config::{
@@ -44,7 +43,7 @@ parameter_types! {
 	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::Kusama);
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub UniversalLocation: InteriorMultiLocation =
-		Parachain(ParachainInfo::parachain_id().into()).into();
+		X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
 }
