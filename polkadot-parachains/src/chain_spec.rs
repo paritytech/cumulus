@@ -17,9 +17,8 @@
 #![allow(clippy::inconsistent_digit_grouping)]
 
 use cumulus_primitives_core::ParaId;
-use parachain_runtime::{
-	AccountId, AuraId, CouncilConfig, DemocracyConfig, TechnicalCommitteeConfig, TeerexConfig,
-};
+use parachain_runtime::{CouncilConfig, DemocracyConfig, TechnicalCommitteeConfig, TeerexConfig};
+use parachains_common::{AccountId, AuraId};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{ChainType, GenericChainSpec};
 use serde::{Deserialize, Serialize};

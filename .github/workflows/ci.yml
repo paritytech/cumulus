@@ -17,7 +17,7 @@ on:
 
 env:
   VERBOSE: ${{ github.events.input.verbose }}
-  SUBWASM_VERSION: 0.17.0
+  SUBWASM_VERSION: 0.18.0
 
 
 jobs:
@@ -33,13 +33,13 @@ jobs:
       runs: ${{ steps.runs.outputs.runs }}
     steps:
       - id: check
-        run: echo "::set-output name=check::${{ env.ENABLE_CHECK }}"
+        run: echo "{check}=${{ env.ENABLE_CHECK }}" >> $GITHUB_OUTPUT
 
   cancel_previous_runs:
     name: Cancel Previous Runs
     runs-on: ubuntu-20.04
     steps:
-      - uses: styfle/cancel-workflow-action@0.4.1
+      - uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -69,9 +69,14 @@ jobs:
       - name: Setup Rust toolchain
         run: rustup show
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.os }}-${{ env.RUST_BIN_DIR }}-${{ matrix.binary }}
+
+      - name: Install protobuf
+        run: |
+           sudo apt update
+           sudo apt install --assume-yes protobuf-compiler
 
       - name: Release
         if: ${{ matrix.binary == 'release' }}
@@ -98,14 +103,14 @@ jobs:
   check:
     name: Rust check ${{ matrix.check }} (${{ matrix.rust-target }})
     needs: config
-    if: ${{ needs.config.outputs.check == 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest]
         rust: [stable]
         rust-target: [x86_64-unknown-linux-gnu]
-        check: [fmt] ## [fmt, clippy] ignore clippy for now
+#        check: [fmt --all -- --check, clippy -- -D warnings]
+        check: [fmt --all -- --check, check --features runtime-benchmarks] # skip clippy for now
     env:
       RUST_BACKTRACE: full
       RUSTV: ${{ matrix.rust }}
@@ -118,17 +123,17 @@ jobs:
       - name: Setup Rust toolchain
         run: rustup show
 
-      - uses: Swatinem/rust-cache@v1
+      - name: Install protobuf
+        run: |
+          sudo apt update
+          sudo apt install --assume-yes protobuf-compiler
+
+      - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.rust-target }}-${{ matrix.check }}
 
-      - name: Fmt
-        if: ${{ matrix.check == 'fmt' }}
-        run: cargo fmt --all -- --check
-
-      - name: Clippy
-        if: ${{ matrix.check == 'clippy' }}
-        run: cargo clippy -- -D warnings
+      - name: ${{ matrix.check }}
+        run: cargo ${{ matrix.check }}
 
   license-check:
     runs-on: ubuntu-latest
@@ -185,7 +190,7 @@ jobs:
 
       - name: Srtool build
         id: srtool_build
-        uses: chevdor/srtool-actions@v0.4.0
+        uses: chevdor/srtool-actions@v0.6.0
         with:
           chain: ${{ matrix.runtime }}
           runtime_dir: polkadot-parachains/${{ matrix.runtime }}-runtime
@@ -196,6 +201,16 @@ jobs:
           cat ${{ matrix.runtime }}-srtool-digest.json
           echo "Compact Runtime: ${{ steps.srtool_build.outputs.wasm }}"
           echo "Compressed Runtime: ${{ steps.srtool_build.outputs.wasm_compressed }}"
+
+      # It takes a while to build the runtime, so let's save the artifact as soon as we have it.
+      - name: Archive Artifacts for ${{ matrix.runtime }}
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
+        with:
+          name: ${{ matrix.runtime }}-runtime-${{ github.sha }}
+          path: |
+            ${{ steps.srtool_build.outputs.wasm }}
+            ${{ steps.srtool_build.outputs.wasm_compressed }}
+            ${{ matrix.runtime }}-srtool-digest.json
 
       # We now get extra information thanks to subwasm
       - name: Install subwasm
@@ -225,25 +240,15 @@ jobs:
 #          subwasm diff ${{ steps.srtool_build.outputs.wasm }} --chain-b ${{ matrix.chain }} > ${{ matrix.chain }}-diff.txt
 #          cat ${{ matrix.chain }}-diff.txt
 
-      - name: Upload ${{ matrix.runtime }} srtool json
-        uses: actions/upload-artifact@v2
+      - name: Archive Subwasm results
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
         with:
           name: ${{ matrix.runtime }}-srtool-json-${{ github.sha }}
           path: |
-            ${{ matrix.runtime }}-srtool-digest.json
             ${{ matrix.runtime }}-info.json
             ${{ matrix.runtime }}-compressed-info.json
             ${{ matrix.runtime }}-metadata.json
-#            ${{ matrix.runtime }}-diff.txt
-
-
-      - name: Upload ${{ matrix.runtime }} runtime
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.runtime }}-runtime-${{ github.sha }}
-          path: |
-            ${{ steps.srtool_build.outputs.wasm }}
-            ${{ steps.srtool_build.outputs.wasm_compressed }}
+            ${{ matrix.runtime }}-diff.txt
 
       - name: Slack Notification
         uses: 8398a7/action-slack@v3
@@ -289,7 +294,7 @@ jobs:
           sha256sum ${{ env.CHAIN_SPEC }}.json >> checksums.txt
 
       - name: Upload ${{ env.CHAIN_SPEC }} Files
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
         with:
           name: ${{ env.CHAIN_SPEC }}-${{ github.sha }}
           path: |
@@ -318,7 +323,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Download Integritee Collator
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: integritee-collator-${{ github.sha }}
 
@@ -363,19 +368,20 @@ jobs:
         runtime: ["shell", "integritee"]
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v2
-      - name: Set up Ruby 2.7
-        uses: actions/setup-ruby@v1
+      - uses: actions/download-artifact@v3
+
+      - name: Set up Ruby 3
+        uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 2.7
+          ruby-version: '3.0'
 
       - name: Get runtime version
         id: get-runtime-ver
         run: |
           ls
           ls "${{ matrix.runtime }}-runtime-${{ github.sha }}"
-          runtime_ver="$(ruby -e 'require "./scripts/github/lib.rb"; puts get_runtime("${{ matrix.runtime }}")')"
-          echo "::set-output name=runtime_ver::$runtime_ver"
+          runtime_ver="$(ruby -e 'require "./scripts/github/lib.rb"; puts get_runtime()')"
+          echo "{runtime_ver}={$runtime_ver}" >> $GITHUB_OUTPUT
 
       - name: Upload compact ${{ matrix.runtime }} wasm
         uses: actions/upload-release-asset@v1

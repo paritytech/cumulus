@@ -13,6 +13,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Common modules for all parachains.
+//!
+//! Largely inspired by cumulus/parachains/common/
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 // the two mods do not exist upstream
@@ -64,7 +68,7 @@ mod types {
 /// Common constants of parachains.
 mod constants {
 	use super::types::BlockNumber;
-	use frame_support::weights::{constants::WEIGHT_PER_SECOND, Weight};
+	use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight};
 	use sp_runtime::Perbill;
 	/// This determines the average expected block time that we are targeting. Blocks will be
 	/// produced at a minimum duration defined by `SLOT_DURATION`. `SLOT_DURATION` is picked up by
@@ -88,7 +92,10 @@ mod constants {
 	pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 
 	/// We allow for 0.5 seconds of compute with a 6 second average block time.
-	pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_div(2);
+	pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
+		WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
+		polkadot_primitives::v2::MAX_POV_SIZE as u64,
+	);
 }
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
