@@ -15,7 +15,7 @@ settings:
       alice_ss58: &acc_alice_ss58 '15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5'
 
 tests:
-  - name: Member kicked out, deposited assets slashed and teleported to Relay Chain treasury.
+  - name: Teleport assets from Relay Chain to Collectives Parachain successful.
     before:
       - name: Get the Alice balances on Relay & Collectives Chains.
         actions:
@@ -186,7 +186,5 @@ tests:
                     }
                   }
                 ]
-
-  #             TODO (P2) assert Alice balance before and after teleport (see example in kick_member test)
-
-  # TODO (P1) test: teleport of non relay chain assets fails
+# TODO (P2) assert Alice balance before and after teleport (see example in kick_member test)
+# TODO (P1) test: teleport of non relay chain assets fails
