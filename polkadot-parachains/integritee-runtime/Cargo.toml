@@ -56,7 +56,10 @@ pallet-claims = { default-features = false, git = "https://github.com/integritee
 pallet-sidechain = { default-features = false, git = "https://github.com/integritee-network/pallets.git", branch = "polkadot-v0.9.36" }
 pallet-teeracle = { default-features = false, git = "https://github.com/integritee-network/pallets.git", branch = "polkadot-v0.9.36" }
 pallet-teerex = { default-features = false, git = "https://github.com/integritee-network/pallets.git", branch = "polkadot-v0.9.36" }
+pallet-xcm-transactor = { default-features = false, git = "https://github.com/integritee-network/pallets.git", branch = "coax1d-test-transactor-branch" }
 
+# other integritee deps
+xcm-transactor-primitives = { default-features = false, git = "https://github.com/integritee-network/pallets.git", branch = "coax1d-test-transactor-branch" }
 
 # Cumulus dependencies
 cumulus-pallet-aura-ext = { default-features = false, git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.36" }
@@ -132,6 +135,7 @@ std = [
     "pallet-scheduler/std",
     "pallet-utility/std",
     "pallet-xcm/std",
+    "pallet-xcm-transactor/std",
     "parachain-info/std",
     "parachains-common/std",
     "cumulus-pallet-aura-ext/std",
@@ -145,6 +149,7 @@ std = [
     "xcm/std",
     "xcm-builder/std",
     "xcm-executor/std",
+    "xcm-transactor-primitives/std",
     "sp-consensus-aura/std",
     # orml
     "orml-xtokens/std",

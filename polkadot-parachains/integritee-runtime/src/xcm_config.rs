@@ -28,7 +28,7 @@ use frame_support::{
 	pallet_prelude::Get,
 	parameter_types,
 	traits::{Everything, Nothing},
-	weights::IdentityFee,
+	weights::{IdentityFee, WeighData},
 	RuntimeDebug,
 };
 use frame_system::EnsureRoot;
@@ -45,7 +45,7 @@ use sp_std::{
 	convert::{From, Into},
 	prelude::*,
 };
-use xcm::latest::prelude::*;
+use xcm::latest::{prelude::*, Weight as XcmWeight};
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
@@ -54,6 +54,7 @@ use xcm_builder::{
 	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::{Config, XcmExecutor};
+use xcm_transactor_primitives::*;
 
 parameter_types! {
 	pub const RelayChainLocation: MultiLocation = MultiLocation::parent();
@@ -277,6 +278,22 @@ impl pallet_xcm::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
+}
+
+parameter_types! {
+	pub const ShellRuntimeParaId: u32 = 2223u32;
+	pub const IntegriteeKsmParaId: u32 = 2015u32;
+	pub const WeightForParaSwap: XcmWeight = 10_000_000_000;
+}
+
+impl pallet_xcm_transactor::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RelayCallBuilder = RelayCallBuilder;
+	type XcmSender = XcmRouter;
+	type ShellRuntimeParaId = ShellRuntimeParaId;
+	type IntegriteeKsmParaId = IntegriteeKsmParaId;
+	type WeightForParaSwap = WeightForParaSwap;
+	type WeightInfo = ();
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
