@@ -28,7 +28,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, Convert, ConvertInto},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -62,13 +62,8 @@ pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 // XCM imports
 use frame_support::{traits::Contains, weights::ConstantMultiplier};
-//use xcm::v0::{Junction::*, MultiLocation, MultiLocation::*, NetworkId};
-use xcm::latest::prelude::*;
-use xcm_builder::{
-	AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
-	ParentIsPreset, SovereignSignedViaLocation,
-};
-use xcm_executor::{Config, XcmExecutor};
+
+pub mod xcm_config;
 
 pub type SessionHandlers = ();
 
@@ -234,19 +229,19 @@ impl pallet_vesting::Config for Runtime {
 }
 
 parameter_types! {
-	// We do anything the parent chain tells us in this runtime.
-	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(2);
+	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
-	type OutboundXcmpMessageSource = ();
-	type DmpMessageHandler = cumulus_pallet_xcm::UnlimitedDmpExecution<Runtime>;
+	type DmpMessageHandler = DmpQueue;
 	type ReservedDmpWeight = ReservedDmpWeight;
-	type XcmpMessageHandler = ();
-	type ReservedXcmpWeight = ();
+	type OutboundXcmpMessageSource = XcmpQueue;
+	type XcmpMessageHandler = XcmpQueue;
+	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
@@ -255,61 +250,12 @@ impl parachain_info::Config for Runtime {}
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {
-	pub const RococoLocation: MultiLocation = MultiLocation::parent();
-	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
-	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-}
-
-/// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
-/// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
-/// bias the kind of local `Origin` it will become.
-pub type XcmOriginToTransactDispatchOrigin = (
-	// Sovereign account converter; this attempts to derive an `AccountId` from the origin location
-	// using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
-	// foreign chains who want to have a local sovereign account on this chain which they control.
-	SovereignSignedViaLocation<ParentIsPreset<AccountId>, RuntimeOrigin>,
-	// Superuser converter for the Relay-chain (Parent) location. This will allow it to issue a
-	// transaction from the Root origin.
-	ParentAsSuperuser<RuntimeOrigin>,
-);
-
-match_types! {
-	pub type JustTheParent: impl Contains<MultiLocation> = {
-		//X1(Parent)
-		MultiLocation { parents: 1, interior: Here }
-	};
-}
-
-parameter_types! {
-	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: u64 = 1_000_000;
+	pub const AssetDeposit: Balance = TEER;
+	pub const ApprovalDeposit: Balance = 100 * MILLITEER;
+	pub const StringLimit: u32 = 50;
+	pub const MetadataDepositBase: Balance = TEER;
+	pub const MetadataDepositPerByte: Balance = 10 * MILLITEER;
 	pub const MaxInstructions: u32 = 100;
-}
-
-pub struct XcmConfig;
-impl Config for XcmConfig {
-	type RuntimeCall = RuntimeCall;
-	type XcmSender = (); // sending XCM not supported
-	type AssetTransactor = (); // balances not supported
-	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	type IsReserve = (); // balances not supported
-	type IsTeleporter = (); // balances not supported
-	type LocationInverter = LocationInverter<Ancestry>;
-	type Barrier = AllowUnpaidExecutionFrom<JustTheParent>;
-	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>; // balances not supported
-	type Trader = (); // balances not supported
-	type ResponseHandler = (); // Don't handle responses for now.
-	type AssetTrap = ();
-	type AssetClaims = ();
-	type SubscriptionService = (); // don't handle subscriptions for now
-}
-
-impl cumulus_pallet_xcm::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
-}
-
-parameter_types! {
 	pub const MaxAuthorities: u32 = 100_000;
 }
 
@@ -342,7 +288,10 @@ construct_runtime!(
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Config} = 24,
 
-		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 32,
+		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin} = 31,
+		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 32,
+		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 	}
 );
 
