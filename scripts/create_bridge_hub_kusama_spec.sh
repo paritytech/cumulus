@@ -97,7 +97,9 @@ cat chain-spec-plain.json | jq --rawfile code rt-hex.txt '.genesis.runtime.syste
 
 # build a raw spec
 $binary build-spec --chain edited-chain-spec-plain.json --raw > chain-spec-raw.json
+cp edited-chain-spec-plain.json bridge-hub-kusama-spec.json
 cp chain-spec-raw.json ./parachains/chain-specs/bridge-hub-kusama.json
+cp chain-spec-raw.json bridge-hub-kusama-spec-raw.json
 
 # build genesis data
 $binary export-genesis-state --chain chain-spec-raw.json > bridge-hub-kusama-genesis-head-data
