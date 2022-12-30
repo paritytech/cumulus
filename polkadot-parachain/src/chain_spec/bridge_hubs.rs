@@ -97,7 +97,7 @@ impl BridgeHubRuntimeType {
 				"kusama-dev",
 				ParaId::new(1003),
 			))),
-                        BridgeHubRuntimeType::Westend =>
+			BridgeHubRuntimeType::Westend =>
 				Ok(Box::new(westend::BridgeHubChainSpec::from_json_bytes(
 					&include_bytes!("../../../parachains/chain-specs/bridge-hub-westend.json")[..],
 				)?)),
@@ -142,7 +142,7 @@ impl BridgeHubRuntimeType {
 			BridgeHubRuntimeType::Kusama |
 			BridgeHubRuntimeType::KusamaLocal |
 			BridgeHubRuntimeType::KusamaDevelopment => &bridge_hub_kusama_runtime::VERSION,
-                        BridgeHubRuntimeType::Westend => &bridge_hub_kusama_runtime::VERSION,
+			BridgeHubRuntimeType::Westend => &bridge_hub_kusama_runtime::VERSION,
 			BridgeHubRuntimeType::Rococo |
 			BridgeHubRuntimeType::RococoLocal |
 			BridgeHubRuntimeType::RococoDevelopment |
