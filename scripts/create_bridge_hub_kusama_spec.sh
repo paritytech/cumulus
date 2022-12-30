@@ -4,7 +4,7 @@ usage() {
     echo Usage:
     echo "$1 <srtool compressed runtime path>"
     echo "$2 <para_id>"
-    echo "e.g.: ./scripts/create_bridge_hub_kusama_spec.sh ./target/release/wbuild/bridge-hub-kusama-runtime/bridge_hub_kusama_runtime.compact.compressed.wasm 1003"
+    echo "e.g.: ./scripts/create_bridge_hub_kusama_spec.sh ./target/release/wbuild/bridge-hub-kusama-runtime/bridge_hub_kusama_runtime.compact.compressed.wasm 1002"
     exit 1
 }
 
