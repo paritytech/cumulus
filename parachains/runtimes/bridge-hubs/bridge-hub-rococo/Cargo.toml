@@ -79,7 +79,6 @@ pallet-bridge-grandpa = { path = "../../../../bridges/modules/grandpa", default-
 pallet-bridge-messages = { path = "../../../../bridges/modules/messages", default-features = false }
 pallet-bridge-parachains = { path = "../../../../bridges/modules/parachains", default-features = false }
 pallet-bridge-relayers = { path = "../../../../bridges/modules/relayers", default-features = false }
-pallet-shift-session-manager = { path = "../../../../bridges/modules/shift-session-manager", default-features = false }
 bridge-runtime-common = { path = "../../../../bridges/bin/runtime-common", default-features = false }
 
 [dev-dependencies]
@@ -121,7 +120,6 @@ std = [
 	"pallet-bridge-messages/std",
 	"pallet-bridge-parachains/std",
 	"pallet-bridge-relayers/std",
-	"pallet-shift-session-manager/std",
 	"pallet-collator-selection/std",
 	"pallet-session/std",
 	"pallet-timestamp/std",
