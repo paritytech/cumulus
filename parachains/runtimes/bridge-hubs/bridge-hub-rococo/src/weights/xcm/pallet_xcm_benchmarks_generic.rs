@@ -23,21 +23,20 @@
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("bridge-hub-rococo-dev"), DB CACHE: 1024
 
 // Executed Command:
-// /home/benchbot/cargo_target_dir/production/polkadot-parachain
+// ./artifacts/polkadot-parachain
 // benchmark
 // pallet
-// --steps=50
-// --repeat=20
-// --extrinsic=*
+// --template=./templates/xcm-bench-template.hbs
+// --chain=bridge-hub-rococo-dev
 // --execution=wasm
 // --wasm-execution=compiled
-// --heap-pages=4096
-// --json-file=/var/lib/gitlab-runner/builds/zyw4fam_/0/parity/mirrors/cumulus/.git/.artifacts/bench.json
 // --pallet=pallet_xcm_benchmarks::generic
-// --chain=bridge-hub-rococo-dev
+// --extrinsic=*
+// --steps=50
+// --repeat=20
+// --json
 // --header=./file_header.txt
-// --template=./templates/xcm-bench-template.hbs
-// --output=./parachains/runtimes/bridge-hubs/bridge-hub-rococo/src/weights/xcm/
+// --output=./parachains/runtimes/bridge-hubs/bridge-hub-rococo/src/weights/xcm/pallet_xcm_benchmarks_generic.rs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
