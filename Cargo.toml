@@ -5,7 +5,6 @@ members = [
 	"bridges/modules/messages",
 	"bridges/modules/parachains",
 	"bridges/modules/relayers",
-	"bridges/modules/shift-session-manager",
 	"bridges/primitives/messages",
 	"bridges/primitives/runtime",
 	"bridges/primitives/chain-bridge-hub-rococo",
