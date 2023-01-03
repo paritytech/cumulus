@@ -484,7 +484,7 @@ pub mod pallet {
 		/// Downward messages were processed using the given weight.
 		DownwardMessagesProcessed { weight_used: Weight, dmq_head: relay_chain::Hash },
 		/// An upward message was sent to the relay chain.
-		UpwardMessageSent{ message_hash: Option<XcmHash>},
+		UpwardMessageSent{ message_hash: Option<XcmHash> },
 	}
 
 	#[pallet::error]
