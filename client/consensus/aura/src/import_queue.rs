@@ -17,9 +17,10 @@
 //! Parachain specific wrapper for the AuRa import queue.
 
 use codec::Codec;
+use cumulus_client_consensus_common::ParachainBlockImportMarker;
 use sc_client_api::{backend::AuxStore, BlockOf, UsageProvider};
 use sc_consensus::{import_queue::DefaultImportQueue, BlockImport};
-use sc_consensus_aura::AuraVerifier;
+use sc_consensus_aura::{AuraVerifier, CompatibilityMode};
 use sc_consensus_slots::InherentDataProviderExt;
 use sc_telemetry::TelemetryHandle;
 use sp_api::{ApiExt, ProvideRuntimeApi};
@@ -33,7 +34,7 @@ use sp_runtime::traits::Block as BlockT;
 use std::{fmt::Debug, hash::Hash, sync::Arc};
 use substrate_prometheus_endpoint::Registry;
 
-/// Parameters of [`import_queue`].
+/// Parameters for [`import_queue`].
 pub struct ImportQueueParams<'a, I, C, CIDP, S> {
 	/// The block import to use.
 	pub block_import: I,
@@ -72,6 +73,7 @@ where
 		+ UsageProvider<Block>
 		+ HeaderBackend<Block>,
 	I: BlockImport<Block, Error = ConsensusError, Transaction = sp_api::TransactionFor<C, Block>>
+		+ ParachainBlockImportMarker
 		+ Send
 		+ Sync
 		+ 'static,
@@ -83,7 +85,7 @@ where
 	CIDP::InherentDataProviders: InherentDataProviderExt + Send + Sync,
 {
 	sc_consensus_aura::import_queue::<P, _, _, _, _, _>(sc_consensus_aura::ImportQueueParams {
-		block_import: cumulus_client_consensus_common::ParachainBlockImport::new(block_import),
+		block_import,
 		justification_import: None,
 		client,
 		create_inherent_data_providers,
@@ -91,6 +93,7 @@ where
 		registry,
 		check_for_equivocation: sc_consensus_aura::CheckForEquivocation::No,
 		telemetry,
+		compatibility_mode: CompatibilityMode::None,
 	})
 }
 
@@ -105,16 +108,17 @@ pub struct BuildVerifierParams<C, CIDP> {
 }
 
 /// Build the [`AuraVerifier`].
-pub fn build_verifier<P, C, CIDP>(
+pub fn build_verifier<P, C, CIDP, N>(
 	BuildVerifierParams { client, create_inherent_data_providers, telemetry }: BuildVerifierParams<
 		C,
 		CIDP,
 	>,
-) -> AuraVerifier<C, P, CIDP> {
+) -> AuraVerifier<C, P, CIDP, N> {
 	sc_consensus_aura::build_verifier(sc_consensus_aura::BuildVerifierParams {
 		client,
 		create_inherent_data_providers,
 		telemetry,
 		check_for_equivocation: sc_consensus_aura::CheckForEquivocation::No,
+		compatibility_mode: CompatibilityMode::None,
 	})
 }

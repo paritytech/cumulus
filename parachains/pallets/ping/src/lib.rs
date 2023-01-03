@@ -107,7 +107,7 @@ pub mod pallet {
 					(Parent, Junction::Parachain(para.into())).into(),
 					Xcm(vec![Transact {
 						origin_kind: OriginKind::Native,
-						require_weight_at_most: 1_000,
+						require_weight_at_most: Weight::from_parts(1_000, 1_000),
 						call: <T as Config>::RuntimeCall::from(Call::<T>::ping {
 							seq,
 							payload: payload.clone().to_vec(),
@@ -141,6 +141,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		#[pallet::call_index(0)]
 		#[pallet::weight(0)]
 		pub fn start(origin: OriginFor<T>, para: ParaId, payload: Vec<u8>) -> DispatchResult {
 			ensure_root(origin)?;
@@ -152,6 +153,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::call_index(1)]
 		#[pallet::weight(0)]
 		pub fn start_many(
 			origin: OriginFor<T>,
@@ -171,6 +173,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::call_index(2)]
 		#[pallet::weight(0)]
 		pub fn stop(origin: OriginFor<T>, para: ParaId) -> DispatchResult {
 			ensure_root(origin)?;
@@ -182,6 +185,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::call_index(3)]
 		#[pallet::weight(0)]
 		pub fn stop_all(origin: OriginFor<T>, maybe_para: Option<ParaId>) -> DispatchResult {
 			ensure_root(origin)?;
@@ -193,6 +197,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::call_index(4)]
 		#[pallet::weight(0)]
 		pub fn ping(origin: OriginFor<T>, seq: u32, payload: Vec<u8>) -> DispatchResult {
 			// Only accept pings from other chains.
@@ -203,7 +208,7 @@ pub mod pallet {
 				(Parent, Junction::Parachain(para.into())).into(),
 				Xcm(vec![Transact {
 					origin_kind: OriginKind::Native,
-					require_weight_at_most: 1_000,
+					require_weight_at_most: Weight::from_parts(1_000, 1_000),
 					call: <T as Config>::RuntimeCall::from(Call::<T>::pong {
 						seq,
 						payload: payload.clone(),
@@ -219,6 +224,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::call_index(5)]
 		#[pallet::weight(0)]
 		pub fn pong(origin: OriginFor<T>, seq: u32, payload: Vec<u8>) -> DispatchResult {
 			// Only accept pings from other chains.

@@ -45,7 +45,7 @@ use cumulus_primitives_core::{
 };
 use frame_support::{
 	traits::{EnsureOrigin, Get},
-	weights::{constants::WEIGHT_PER_MILLIS, Weight},
+	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight},
 };
 use polkadot_runtime_common::xcm_sender::ConstantPrice;
 use rand_chacha::{
@@ -64,6 +64,13 @@ pub use pallet::*;
 pub type OverweightIndex = u64;
 
 const LOG_TARGET: &str = "xcmp_queue";
+const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
+
+// Maximum amount of messages to process per block. This is a temporary measure until we properly
+// account for proof size weights.
+const MAX_MESSAGES_PER_BLOCK: u8 = 10;
+// Maximum amount of messages that can exist in the overweight queue at any given time.
+const MAX_OVERWEIGHT_MESSAGES: u32 = 1000;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -134,7 +141,8 @@ pub mod pallet {
 		///
 		/// Events:
 		/// - `OverweightServiced`: On success.
-		#[pallet::weight((weight_limit.saturating_add(Weight::from_ref_time(1_000_000)), DispatchClass::Operational,))]
+		#[pallet::call_index(0)]
+		#[pallet::weight((weight_limit.saturating_add(Weight::from_ref_time(1_000_000)), DispatchClass::Operational))]
 		pub fn service_overweight(
 			origin: OriginFor<T>,
 			index: OverweightIndex,
@@ -159,6 +167,7 @@ pub mod pallet {
 		/// Suspends all XCM executions for the XCMP queue, regardless of the sender's origin.
 		///
 		/// - `origin`: Must pass `ControllerOrigin`.
+		#[pallet::call_index(1)]
 		#[pallet::weight((T::DbWeight::get().writes(1), DispatchClass::Operational,))]
 		pub fn suspend_xcm_execution(origin: OriginFor<T>) -> DispatchResult {
 			T::ControllerOrigin::ensure_origin(origin)?;
@@ -173,6 +182,7 @@ pub mod pallet {
 		/// Note that this function doesn't change the status of the in/out bound channels.
 		///
 		/// - `origin`: Must pass `ControllerOrigin`.
+		#[pallet::call_index(2)]
 		#[pallet::weight((T::DbWeight::get().writes(1), DispatchClass::Operational,))]
 		pub fn resume_xcm_execution(origin: OriginFor<T>) -> DispatchResult {
 			T::ControllerOrigin::ensure_origin(origin)?;
@@ -187,6 +197,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.suspend_value`
+		#[pallet::call_index(3)]
 		#[pallet::weight((T::WeightInfo::set_config_with_u32(), DispatchClass::Operational,))]
 		pub fn update_suspend_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
@@ -200,6 +211,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.drop_threshold`
+		#[pallet::call_index(4)]
 		#[pallet::weight((T::WeightInfo::set_config_with_u32(),DispatchClass::Operational,))]
 		pub fn update_drop_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
@@ -213,6 +225,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.resume_threshold`
+		#[pallet::call_index(5)]
 		#[pallet::weight((T::WeightInfo::set_config_with_u32(), DispatchClass::Operational,))]
 		pub fn update_resume_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
@@ -225,6 +238,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.threshold_weight`
+		#[pallet::call_index(6)]
 		#[pallet::weight((T::WeightInfo::set_config_with_weight(), DispatchClass::Operational,))]
 		pub fn update_threshold_weight(origin: OriginFor<T>, new: Weight) -> DispatchResult {
 			ensure_root(origin)?;
@@ -238,6 +252,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.weight_restrict_decay`.
+		#[pallet::call_index(7)]
 		#[pallet::weight((T::WeightInfo::set_config_with_weight(), DispatchClass::Operational,))]
 		pub fn update_weight_restrict_decay(origin: OriginFor<T>, new: Weight) -> DispatchResult {
 			ensure_root(origin)?;
@@ -251,6 +266,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.xcmp_max_individual_weight`.
+		#[pallet::call_index(8)]
 		#[pallet::weight((T::WeightInfo::set_config_with_weight(), DispatchClass::Operational,))]
 		pub fn update_xcmp_max_individual_weight(
 			origin: OriginFor<T>,
@@ -349,7 +365,7 @@ pub mod pallet {
 	/// `service_overweight`.
 	#[pallet::storage]
 	pub(super) type Overweight<T: Config> =
-		StorageMap<_, Twox64Concat, OverweightIndex, (ParaId, RelayBlockNumber, Vec<u8>)>;
+		CountedStorageMap<_, Twox64Concat, OverweightIndex, (ParaId, RelayBlockNumber, Vec<u8>)>;
 
 	/// The number of overweight messages ever recorded in `Overweight`. Also doubles as the next
 	/// available free overweight index.
@@ -453,7 +469,10 @@ impl Default for QueueConfigData {
 			resume_threshold: 1,
 			threshold_weight: Weight::from_ref_time(100_000),
 			weight_restrict_decay: Weight::from_ref_time(2),
-			xcmp_max_individual_weight: 20u64 * WEIGHT_PER_MILLIS,
+			xcmp_max_individual_weight: Weight::from_parts(
+				20u64 * WEIGHT_REF_TIME_PER_MILLIS,
+				DEFAULT_POV_SIZE,
+			),
 		}
 	}
 }
@@ -607,28 +626,17 @@ impl<T: Config> Pallet<T> {
 			Ok(xcm) => {
 				let location = (Parent, Parachain(sender.into()));
 
-				match T::XcmExecutor::execute_xcm(location, xcm, hash, max_weight.ref_time()) {
+				match T::XcmExecutor::execute_xcm(location, xcm, hash, max_weight) {
 					Outcome::Error(e) => (
 						Err(e),
 						Event::Fail { message_hash: Some(hash), error: e, weight: Weight::zero() },
 					),
-					Outcome::Complete(w) => (
-						Ok(Weight::from_ref_time(w)),
-						Event::Success {
-							message_hash: Some(hash),
-							weight: Weight::from_ref_time(w),
-						},
-					),
+					Outcome::Complete(w) =>
+						(Ok(w), Event::Success { message_hash: Some(hash), weight: w }),
 					// As far as the caller is concerned, this was dispatched without error, so
 					// we just report the weight used.
-					Outcome::Incomplete(w, e) => (
-						Ok(Weight::from_ref_time(w)),
-						Event::Fail {
-							message_hash: Some(hash),
-							error: e,
-							weight: Weight::from_ref_time(w),
-						},
-					),
+					Outcome::Incomplete(w, e) =>
+						(Ok(w), Event::Fail { message_hash: Some(hash), error: e, weight: w }),
 				}
 			},
 			Err(()) =>
@@ -641,6 +649,7 @@ impl<T: Config> Pallet<T> {
 	fn process_xcmp_message(
 		sender: ParaId,
 		(sent_at, format): (RelayBlockNumber, XcmpMessageFormat),
+		messages_processed: &mut u8,
 		max_weight: Weight,
 		max_individual_weight: Weight,
 	) -> (Weight, bool) {
@@ -650,35 +659,45 @@ impl<T: Config> Pallet<T> {
 		let mut weight_used = Weight::zero();
 		match format {
 			XcmpMessageFormat::ConcatenatedVersionedXcm => {
-				while !remaining_fragments.is_empty() {
+				while !remaining_fragments.is_empty() &&
+					*messages_processed < MAX_MESSAGES_PER_BLOCK
+				{
 					last_remaining_fragments = remaining_fragments;
 					if let Ok(xcm) = VersionedXcm::<T::RuntimeCall>::decode_with_depth_limit(
 						MAX_XCM_DECODE_DEPTH,
 						&mut remaining_fragments,
 					) {
 						let weight = max_weight - weight_used;
+						*messages_processed += 1;
 						match Self::handle_xcm_message(sender, sent_at, xcm, weight) {
 							Ok(used) => weight_used = weight_used.saturating_add(used),
 							Err(XcmError::WeightLimitReached(required))
-								if required > max_individual_weight.ref_time() =>
+								if required.any_gt(max_individual_weight) =>
 							{
-								// overweight - add to overweight queue and continue with message
-								// execution consuming the message.
-								let msg_len = last_remaining_fragments
-									.len()
-									.saturating_sub(remaining_fragments.len());
-								let overweight_xcm = last_remaining_fragments[..msg_len].to_vec();
-								let index = Self::stash_overweight(sender, sent_at, overweight_xcm);
-								let e = Event::OverweightEnqueued {
-									sender,
-									sent_at,
-									index,
-									required: Weight::from_ref_time(required),
-								};
-								Self::deposit_event(e);
+								let is_under_limit =
+									Overweight::<T>::count() < MAX_OVERWEIGHT_MESSAGES;
+								weight_used.saturating_accrue(T::DbWeight::get().reads(1));
+								if is_under_limit {
+									// overweight - add to overweight queue and continue with message
+									// execution consuming the message.
+									let msg_len = last_remaining_fragments
+										.len()
+										.saturating_sub(remaining_fragments.len());
+									let overweight_xcm =
+										last_remaining_fragments[..msg_len].to_vec();
+									let index =
+										Self::stash_overweight(sender, sent_at, overweight_xcm);
+									let e = Event::OverweightEnqueued {
+										sender,
+										sent_at,
+										index,
+										required,
+									};
+									Self::deposit_event(e);
+								}
 							},
 							Err(XcmError::WeightLimitReached(required))
-								if required <= max_weight.ref_time() =>
+								if required.all_lte(max_weight) =>
 							{
 								// That message didn't get processed this time because of being
 								// too heavy. We leave it around for next time and bail.
@@ -705,6 +724,7 @@ impl<T: Config> Pallet<T> {
 
 					if let Ok(blob) = <Vec<u8>>::decode(&mut remaining_fragments) {
 						let weight = max_weight - weight_used;
+						*messages_processed += 1;
 						match Self::handle_blob_message(sender, sent_at, blob, weight) {
 							Ok(used) => weight_used = weight_used.saturating_add(used),
 							Err(true) => {
@@ -782,6 +802,7 @@ impl<T: Config> Pallet<T> {
 	/// further.
 	fn service_xcmp_queue(max_weight: Weight) -> Weight {
 		let suspended = QueueSuspended::<T>::get();
+		let mut messages_processed = 0;
 
 		let mut status = <InboundXcmpStatus<T>>::get(); // <- sorted.
 		if status.is_empty() {
@@ -810,7 +831,8 @@ impl<T: Config> Pallet<T> {
 
 		let mut shuffle_index = 0;
 		while shuffle_index < shuffled.len() &&
-			max_weight.saturating_sub(weight_used).all_gte(threshold_weight)
+			max_weight.saturating_sub(weight_used).all_gte(threshold_weight) &&
+			messages_processed < MAX_MESSAGES_PER_BLOCK
 		{
 			let index = shuffled[shuffle_index];
 			let sender = status[index].sender;
@@ -850,6 +872,7 @@ impl<T: Config> Pallet<T> {
 				let (weight_processed, is_empty) = Self::process_xcmp_message(
 					sender,
 					status[index].message_metadata[0],
+					&mut messages_processed,
 					weight_remaining,
 					xcmp_max_individual_weight,
 				);
