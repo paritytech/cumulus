@@ -484,7 +484,7 @@ pub mod pallet {
 		/// Downward messages were processed using the given weight.
 		DownwardMessagesProcessed { weight_used: Weight, dmq_head: relay_chain::Hash },
 		/// An upward message was sent to the relay chain.
-        UpwardMessageSent{ message_hash: Option<XcmHash>},
+		UpwardMessageSent{ message_hash: Option<XcmHash>},
 	}
 
 	#[pallet::error]
@@ -1074,7 +1074,7 @@ impl<T: Config> Pallet<T> {
 		// TODO: shall we change both ump and this to
 		// message.using_encoded(sp_io::hashing::blake2_256)?
 		let hash = sp_io::hashing::blake2_256(message);
-		Self::deposit_event(Event::UpwardMessageSent{ message_hash: Some(hash) });
+		Self::deposit_event(Event::UpwardMessageSent { message_hash: Some(hash) });
 		Ok((0, hash))
 	}
 }

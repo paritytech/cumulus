@@ -91,7 +91,6 @@ where
 	}
 
 	fn deliver(data: Vec<u8>) -> Result<XcmHash, SendError> {
-
 		let (_, hash) = T::send_upward_message(data).map_err(|e| match e {
 			MessageSendError::TooBig => SendError::ExceedsMaxMessageSize,
 			e => SendError::Transport(e.into()),
