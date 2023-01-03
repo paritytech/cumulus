@@ -1878,6 +1878,7 @@ dependencies = [
  "sp-tracing",
  "sp-trie",
  "sp-version",
+ "xcm",
 ]
 
 [[package]]
