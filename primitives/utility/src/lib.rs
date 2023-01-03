@@ -349,7 +349,7 @@ mod tests {
 	/// Impl [`UpwardMessageSender`] that return `Other` error
 	struct OtherErrorUpwardMessageSender;
 	impl UpwardMessageSender for OtherErrorUpwardMessageSender {
-		fn send_upward_message(_: UpwardMessage) -> Result<u32, MessageSendError> {
+		fn send_upward_message(_: UpwardMessage) -> Result<(u32, XcmHash), MessageSendError> {
 			Err(MessageSendError::Other)
 		}
 	}
