@@ -18,7 +18,7 @@ version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b9ecd88a8c8378ca913a680cd98f0f13ac67383d35993f86c90a70e3f137816b"
 dependencies = [
- "gimli 0.26.1",
+ "gimli 0.26.2",
 ]
 
 [[package]]
@@ -1360,7 +1360,7 @@ dependencies = [
  "cranelift-codegen-shared",
  "cranelift-entity",
  "cranelift-isle",
- "gimli 0.26.1",
+ "gimli 0.26.2",
  "log",
  "regalloc2",
  "smallvec",
@@ -2910,7 +2910,7 @@ checksum = "f82b0f4c27ad9f8bfd1f3208d882da2b09c301bc1c828fd3a00d0216d2fbbff6"
 dependencies = [
  "crc32fast",
  "libz-sys",
- "miniz_oxide 0.4.4",
+ "miniz_oxide 0.5.4",
 ]
 
 [[package]]
@@ -12951,7 +12951,7 @@ dependencies = [
  "indexmap",
  "libc",
  "log",
- "object",
+ "object 0.29.0",
  "once_cell",
  "paste",
  "psm",
@@ -13008,9 +13008,9 @@ dependencies = [
  "cranelift-frontend",
  "cranelift-native",
  "cranelift-wasm",
- "gimli 0.26.1",
+ "gimli 0.26.2",
  "log",
- "object",
+ "object 0.29.0",
  "target-lexicon",
  "thiserror",
  "wasmparser",
@@ -13025,10 +13025,10 @@ checksum = "5c587c62e91c5499df62012b87b88890d0eb470b2ffecc5964e9da967b70c77c"
 dependencies = [
  "anyhow",
  "cranelift-entity",
- "gimli 0.26.1",
+ "gimli 0.26.2",
  "indexmap",
  "log",
- "object",
+ "object 0.29.0",
  "serde",
  "target-lexicon",
  "thiserror",
@@ -13047,9 +13047,9 @@ dependencies = [
  "bincode",
  "cfg-if",
  "cpp_demangle",
- "gimli 0.26.1",
+ "gimli 0.26.2",
  "log",
- "object",
+ "object 0.29.0",
  "rustc-demangle",
  "rustix 0.35.10",
  "serde",
@@ -13067,7 +13067,7 @@ version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b299569abf6f99b7b8e020afaf84a700e8636c6a42e242069267322cd5818235"
 dependencies = [
- "object",
+ "object 0.29.0",
  "once_cell",
  "rustix 0.35.10",
 ]
