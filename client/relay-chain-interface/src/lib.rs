@@ -23,13 +23,14 @@ use cumulus_primitives_core::{
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use polkadot_overseer::Handle as OverseerHandle;
+use polkadot_overseer::{prometheus::PrometheusError, Handle as OverseerHandle};
+use polkadot_service::SubstrateServiceError;
 use sc_client_api::StorageProof;
 
 use futures::Stream;
 
 use async_trait::async_trait;
-use jsonrpsee_core::Error as JsonRPSeeError;
+use jsonrpsee_core::Error as JsonRpcError;
 use parity_scale_codec::Error as CodecError;
 use sp_api::ApiError;
 use sp_state_machine::StorageValue;
@@ -50,21 +51,39 @@ pub enum RelayChainError {
 	BlockchainError(#[from] sp_blockchain::Error),
 	#[error("State machine error occured: {0}")]
 	StateMachineError(Box<dyn sp_state_machine::Error>),
-	#[error("Unable to call RPC method '{0}' due to error: {1}")]
-	RPCCallError(String, JsonRPSeeError),
+	#[error("Unable to call RPC method '{0}'")]
+	RpcCallError(String),
 	#[error("RPC Error: '{0}'")]
-	JsonRPCError(#[from] JsonRPSeeError),
+	JsonRpcError(#[from] JsonRpcError),
+	#[error("Unable to communicate with RPC worker: {0}")]
+	WorkerCommunicationError(String),
 	#[error("Scale codec deserialization error: {0}")]
 	DeserializationError(CodecError),
-	#[error("Scale codec deserialization error: {0}")]
+	#[error("Polkadot service error: {0}")]
 	ServiceError(#[from] polkadot_service::Error),
+	#[error("Substrate service error: {0}")]
+	SubServiceError(#[from] SubstrateServiceError),
+	#[error("Prometheus error: {0}")]
+	PrometheusError(#[from] PrometheusError),
 	#[error("Unspecified error occured: {0}")]
 	GenericError(String),
+}
+
+impl From<RelayChainError> for ApiError {
+	fn from(r: RelayChainError) -> Self {
+		sp_api::ApiError::Application(Box::new(r))
+	}
 }
 
 impl From<CodecError> for RelayChainError {
 	fn from(e: CodecError) -> Self {
 		RelayChainError::DeserializationError(e)
+	}
+}
+
+impl From<RelayChainError> for sp_blockchain::Error {
+	fn from(r: RelayChainError) -> Self {
+		sp_blockchain::Error::Application(Box::new(r))
 	}
 }
 
@@ -153,7 +172,7 @@ pub trait RelayChainInterface: Send + Sync {
 	async fn is_major_syncing(&self) -> RelayChainResult<bool>;
 
 	/// Get a handle to the overseer.
-	fn overseer_handle(&self) -> RelayChainResult<Option<OverseerHandle>>;
+	fn overseer_handle(&self) -> RelayChainResult<OverseerHandle>;
 
 	/// Generate a storage read proof.
 	async fn prove_read(
@@ -231,7 +250,7 @@ where
 		(**self).is_major_syncing().await
 	}
 
-	fn overseer_handle(&self) -> RelayChainResult<Option<OverseerHandle>> {
+	fn overseer_handle(&self) -> RelayChainResult<OverseerHandle> {
 		(**self).overseer_handle()
 	}
 

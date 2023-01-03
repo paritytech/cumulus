@@ -91,7 +91,7 @@ where
 	///
 	/// Returns `true` if the block could be found and is good to be build on.
 	fn check_block_status(&self, hash: Block::Hash, header: &Block::Header) -> bool {
-		match self.block_status.block_status(&BlockId::Hash(hash)) {
+		match self.block_status.block_status(hash) {
 			Ok(BlockStatus::Queued) => {
 				tracing::debug!(
 					target: LOG_TARGET,
@@ -359,6 +359,7 @@ pub async fn start_collator<Block, RA, BS, Spawner>(
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use async_trait::async_trait;
 	use cumulus_client_consensus_common::ParachainCandidate;
 	use cumulus_test_client::{
 		Client, ClientBlockImportExt, DefaultTestClientBuilderExt, InitBlockBuilder,
@@ -374,8 +375,10 @@ mod tests {
 	use sp_state_machine::Backend;
 
 	struct AlwaysSupportsParachains;
+
+	#[async_trait]
 	impl HeadSupportsParachains for AlwaysSupportsParachains {
-		fn head_supports_parachains(&self, _head: &PHash) -> bool {
+		async fn head_supports_parachains(&self, _head: &PHash) -> bool {
 			true
 		}
 	}
@@ -419,7 +422,7 @@ mod tests {
 		let para_id = ParaId::from(100);
 		let announce_block = |_, _| ();
 		let client = Arc::new(TestClientBuilder::new().build());
-		let header = client.header(&BlockId::Number(0)).unwrap().unwrap();
+		let header = client.header(client.chain_info().genesis_hash).unwrap().unwrap();
 
 		let (sub_tx, sub_rx) = mpsc::channel(64);
 

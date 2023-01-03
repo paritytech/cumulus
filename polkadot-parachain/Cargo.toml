@@ -1,6 +1,6 @@
 [package]
-name = "polkadot-parachain"
-version = "0.9.220"
+name = "polkadot-parachain-bin"
+version = "0.9.330"
 authors = ["Parity Technologies <admin@parity.io>"]
 build = "build.rs"
 edition = "2021"
@@ -11,13 +11,13 @@ name = "polkadot-parachain"
 path = "src/main.rs"
 
 [dependencies]
-async-trait = "0.1.56"
-clap = { version = "3.1", features = ["derive"] }
+async-trait = "0.1.60"
+clap = { version = "4.0.32", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
-futures = { version = "0.3.1", features = ["compat"] }
+futures = "0.3.25"
 hex-literal = "0.3.4"
 log = "0.4.17"
-serde = { version = "1.0.137", features = ["derive"] }
+serde = { version = "1.0.152", features = ["derive"] }
 
 # Local
 rococo-parachain-runtime = { path = "../parachains/runtimes/testing/rococo-parachain" }
@@ -26,8 +26,12 @@ seedling-runtime = { path = "../parachains/runtimes/starters/seedling" }
 statemint-runtime = { path = "../parachains/runtimes/assets/statemint" }
 statemine-runtime = { path = "../parachains/runtimes/assets/statemine" }
 westmint-runtime = { path = "../parachains/runtimes/assets/westmint" }
+collectives-polkadot-runtime = { path = "../parachains/runtimes/collectives/collectives-polkadot" }
 contracts-rococo-runtime = { path = "../parachains/runtimes/contracts/contracts-rococo" }
-jsonrpsee = { version = "0.14.0", features = ["server"] }
+bridge-hub-rococo-runtime = { path = "../parachains/runtimes/bridge-hubs/bridge-hub-rococo" }
+bridge-hub-kusama-runtime = { path = "../parachains/runtimes/bridge-hubs/bridge-hub-kusama" }
+penpal-runtime = { path = "../parachains/runtimes/testing/penpal" }
+jsonrpsee = { version = "0.16.2", features = ["server"] }
 parachains-common = { path = "../parachains/common" }
 
 # Substrate
@@ -36,18 +40,18 @@ frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", bran
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-session = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-network-common = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -60,16 +64,16 @@ sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "maste
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-serializer = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
-try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 frame-rpc-system = { package = "substrate-frame-rpc-system", git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-contracts-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-state-trie-migration-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -84,16 +88,18 @@ cumulus-client-network = { path = "../client/network" }
 cumulus-primitives-core = { path = "../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../primitives/parachain-inherent" }
 cumulus-relay-chain-interface = { path = "../client/relay-chain-interface" }
-cumulus-relay-chain-inprocess-interface = { path = "../client/relay-chain-inprocess-interface" }
-cumulus-relay-chain-rpc-interface = { path = "../client/relay-chain-rpc-interface" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [dev-dependencies]
 assert_cmd = "2.0"
-nix = "0.24"
+nix = "0.25"
 tempfile = "3.3.0"
+tokio = { version = "1.23.0", features = ["macros", "time", "parking_lot"] }
+wait-timeout = "0.2"
+# purge_chain_works works with rococo-local and needs to allow this
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", features = ["rococo-native"] }
 
 [features]
 default = []
@@ -108,4 +114,5 @@ try-runtime = [
 	"statemine-runtime/try-runtime",
 	"westmint-runtime/try-runtime",
 	"shell-runtime/try-runtime",
+	"try-runtime-cli/try-runtime",
 ]

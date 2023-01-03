@@ -1,5 +1,7 @@
 # Cumulus ☁️
 
+[![Doc](https://img.shields.io/badge/cumulus%20docs-master-brightgreen)](https://paritytech.github.io/cumulus/)
+
 This repository contains both the Cumulus SDK and also specific chains implemented
 on top of this SDK.
 
@@ -9,7 +11,7 @@ A set of tools for writing [Substrate](https://substrate.io/)-based
 [Polkadot](https://wiki.polkadot.network/en/)
 [parachains](https://wiki.polkadot.network/docs/en/learn-parachains). Refer to the included
 [overview](docs/overview.md) for architectural details, and the
-[Cumulus tutorial](https://docs.substrate.io/tutorials/v3/cumulus/start-relay) for a
+[Connect to relay and  parachain tutorials](https://docs.substrate.io/tutorials/connect-relay-and-parachains/) for a
 guided walk-through of using these tools.
 
 It's easy to write blockchains using Substrate, and the overhead of writing parachains'
@@ -35,6 +37,85 @@ and treat as best.
 A Polkadot [collator](https://wiki.polkadot.network/docs/en/learn-collator) for the parachain is
 implemented by the `polkadot-parachain` binary (previously called `polkadot-collator`).
 
+## Installation and Setup
+Before building Cumulus SDK based nodes / runtimes prepare your environment by following Substrate [installation instructions](https://docs.substrate.io/main-docs/install/).
+
+To launch a local network, you can use [zombienet](https://github.com/paritytech/zombienet) for quick setup and experimentation or follow the [manual setup](#manual-setup).
+
+### Zombienet
+We use Zombienet to spin up networks for integration tests and local networks. Follow [these installation steps](https://github.com/paritytech/zombienet#requirements-by-provider) to set it up on your machine.
+A simple network specification with two relay chain nodes and one collator is located at [zombienet/examples/small_network.toml](zombienet/examples/small_network.toml).
+
+
+#### Which provider should I use?
+Zombienet offers multiple providers to run networks. Choose the one that best fits your needs:
+- **Podman:** Choose this if you want to spin up a network quick and easy.
+- **Native:** Choose this if you want to develop and deploy your changes. Requires compilation of the binaries.
+- **Kubernetes:** Choose this for advanced use-cases or running on cloud-infrastructure.
+
+#### How to run
+To run the example network, use the following commands:
+
+```bash
+# Podman provider
+zombienet --provider podman spawn ./zombienet/examples/small_network.toml
+
+# Native provider, assumes polkadot and polkadot-parachains binary in $PATH
+zombienet --provider native spawn ./zombienet/examples/small_network.toml
+```
+
+### Manual Setup
+#### Launch the Relay Chain
+
+```bash
+# Clone
+git clone https://github.com/paritytech/polkadot
+cd polkadot
+
+# Compile Polkadot with the real overseer feature
+cargo build --release --bin polkadot
+
+# Generate a raw chain spec
+./target/release/polkadot build-spec --chain rococo-local --disable-default-bootnode --raw > rococo-local-cfde.json
+
+# Alice
+./target/release/polkadot --chain rococo-local-cfde.json --alice --tmp
+
+# Bob (In a separate terminal)
+./target/release/polkadot --chain rococo-local-cfde.json --bob --tmp --port 30334
+```
+
+#### Launch the Parachain
+
+```bash
+# Clone
+git clone https://github.com/paritytech/cumulus
+cd cumulus
+
+# Compile
+cargo build --release --bin polkadot-parachain
+
+# Export genesis state
+./target/release/polkadot-parachain export-genesis-state > genesis-state
+
+# Export genesis wasm
+./target/release/polkadot-parachain export-genesis-wasm > genesis-wasm
+
+# Collator1
+./target/release/polkadot-parachain --collator --alice --force-authoring --tmp --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30335
+
+# Collator2
+./target/release/polkadot-parachain --collator --bob --force-authoring --tmp --port 40336 --ws-port 9947 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30336
+
+# Parachain Full Node 1
+./target/release/polkadot-parachain --tmp --port 40337 --ws-port 9948 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337
+```
+
+#### Register the parachain
+
+![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
+
+
 ## Statemint 🪙
 
 This repository also contains the Statemint runtime (as well as the canary runtime Statemine and the
@@ -57,11 +138,15 @@ CHAIN=westmint # or statemine
 ./target/release/polkadot-parachain --chain $CHAIN
 ```
 
-Refer to the [setup instructions below](#local-setup) to run a local network for development.
+Refer to the [setup instructions](#local-setup) to run a local network for development.
 
 ## Contracts 📝
 
 See [the `contracts-rococo` readme](parachains/runtimes/contracts/contracts-rococo/README.md) for details.
+
+## Bridge-hub 📝
+
+See [the `bridge-hubs` readme](parachains/runtimes/bridge-hubs/README.md) for details.
 
 ## Rococo 👑
 
@@ -110,60 +195,6 @@ Once the executable is built, launch collators for each parachain (repeat once e
 The network uses horizontal message passing (HRMP) to enable communication between parachains and
 the relay chain and, in turn, between parachains. This means that every message is sent to the relay
 chain, and from the relay chain to its destination parachain.
-
-### Local Setup
-
-Launch a local setup including a Relay Chain and a Parachain.
-
-#### Launch the Relay Chain
-
-```bash
-# Clone
-git clone https://github.com/paritytech/polkadot
-cd polkadot
-
-# Compile Polkadot with the real overseer feature
-cargo build --release
-
-# Generate a raw chain spec
-./target/release/polkadot build-spec --chain rococo-local --disable-default-bootnode --raw > rococo-local-cfde.json
-
-# Alice
-./target/release/polkadot --chain rococo-local-cfde.json --alice --tmp
-
-# Bob (In a separate terminal)
-./target/release/polkadot --chain rococo-local-cfde.json --bob --tmp --port 30334
-```
-
-#### Launch the Parachain
-
-```bash
-# Clone
-git clone https://github.com/paritytech/cumulus
-cd cumulus
-
-# Compile
-cargo build --release
-
-# Export genesis state
-./target/release/polkadot-parachain export-genesis-state > genesis-state
-
-# Export genesis wasm
-./target/release/polkadot-parachain export-genesis-wasm > genesis-wasm
-
-# Collator1
-./target/release/polkadot-parachain --collator --alice --force-authoring --tmp --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30335
-
-# Collator2
-./target/release/polkadot-parachain --collator --bob --force-authoring --tmp --port 40336 --ws-port 9947 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30336
-
-# Parachain Full Node 1
-./target/release/polkadot-parachain --tmp --port 40337 --ws-port 9948 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337
-```
-
-#### Register the parachain
-
-![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
 
 ### Containerize
 

@@ -45,7 +45,7 @@ use cumulus_primitives_core::{
 };
 use frame_support::{
 	traits::EnsureOrigin,
-	weights::{constants::WEIGHT_PER_MILLIS, Weight},
+	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight},
 };
 use rand_chacha::{
 	rand_core::{RngCore, SeedableRng},
@@ -54,7 +54,10 @@ use rand_chacha::{
 use scale_info::TypeInfo;
 use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::{convert::TryFrom, prelude::*};
-use xcm::{latest::prelude::*, VersionedXcm, WrapVersion, MAX_XCM_DECODE_DEPTH};
+use xcm::{
+	latest::{prelude::*, Weight as XcmWeight},
+	VersionedXcm, WrapVersion, MAX_XCM_DECODE_DEPTH,
+};
 use xcm_executor::traits::ConvertOrigin;
 
 pub use pallet::*;
@@ -63,6 +66,7 @@ pub use pallet::*;
 pub type OverweightIndex = u64;
 
 const LOG_TARGET: &str = "xcmp_queue";
+const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -78,10 +82,10 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Something to execute an XCM message. We need this to service the XCMoXCMP queue.
-		type XcmExecutor: ExecuteXcm<Self::Call>;
+		type XcmExecutor: ExecuteXcm<Self::RuntimeCall>;
 
 		/// Information on the avaialble XCMP channels.
 		type ChannelInfo: GetChannelInfo;
@@ -90,14 +94,14 @@ pub mod pallet {
 		type VersionWrapper: WrapVersion;
 
 		/// The origin that is allowed to execute overweight messages.
-		type ExecuteOverweightOrigin: EnsureOrigin<Self::Origin>;
+		type ExecuteOverweightOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
 		/// The origin that is allowed to resume or suspend the XCMP queue.
-		type ControllerOrigin: EnsureOrigin<Self::Origin>;
+		type ControllerOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
 		/// The conversion function used to attempt to convert an XCM `MultiLocation` origin to a
 		/// superuser origin.
-		type ControllerOriginConverter: ConvertOrigin<Self::Origin>;
+		type ControllerOriginConverter: ConvertOrigin<Self::RuntimeOrigin>;
 
 		/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
@@ -130,31 +134,34 @@ pub mod pallet {
 		///
 		/// Events:
 		/// - `OverweightServiced`: On success.
-		#[pallet::weight((weight_limit.saturating_add(1_000_000), DispatchClass::Operational,))]
+		#[pallet::call_index(0)]
+		#[pallet::weight((Weight::from_ref_time(weight_limit.saturating_add(1_000_000)), DispatchClass::Operational,))]
 		pub fn service_overweight(
 			origin: OriginFor<T>,
 			index: OverweightIndex,
-			weight_limit: Weight,
+			weight_limit: XcmWeight,
 		) -> DispatchResultWithPostInfo {
 			T::ExecuteOverweightOrigin::ensure_origin(origin)?;
 
 			let (sender, sent_at, data) =
 				Overweight::<T>::get(index).ok_or(Error::<T>::BadOverweightIndex)?;
-			let xcm = VersionedXcm::<T::Call>::decode_all_with_depth_limit(
+			let xcm = VersionedXcm::<T::RuntimeCall>::decode_all_with_depth_limit(
 				MAX_XCM_DECODE_DEPTH,
 				&mut data.as_slice(),
 			)
 			.map_err(|_| Error::<T>::BadXcm)?;
-			let used = Self::handle_xcm_message(sender, sent_at, xcm, weight_limit)
-				.map_err(|_| Error::<T>::WeightOverLimit)?;
+			let used =
+				Self::handle_xcm_message(sender, sent_at, xcm, Weight::from_ref_time(weight_limit))
+					.map_err(|_| Error::<T>::WeightOverLimit)?;
 			Overweight::<T>::remove(index);
-			Self::deposit_event(Event::OverweightServiced(index, used));
-			Ok(Some(used.saturating_add(1_000_000)).into())
+			Self::deposit_event(Event::OverweightServiced { index, used });
+			Ok(Some(used.saturating_add(Weight::from_ref_time(1_000_000))).into())
 		}
 
 		/// Suspends all XCM executions for the XCMP queue, regardless of the sender's origin.
 		///
 		/// - `origin`: Must pass `ControllerOrigin`.
+		#[pallet::call_index(1)]
 		#[pallet::weight((T::DbWeight::get().writes(1), DispatchClass::Operational,))]
 		pub fn suspend_xcm_execution(origin: OriginFor<T>) -> DispatchResult {
 			T::ControllerOrigin::ensure_origin(origin)?;
@@ -169,6 +176,7 @@ pub mod pallet {
 		/// Note that this function doesn't change the status of the in/out bound channels.
 		///
 		/// - `origin`: Must pass `ControllerOrigin`.
+		#[pallet::call_index(2)]
 		#[pallet::weight((T::DbWeight::get().writes(1), DispatchClass::Operational,))]
 		pub fn resume_xcm_execution(origin: OriginFor<T>) -> DispatchResult {
 			T::ControllerOrigin::ensure_origin(origin)?;
@@ -183,6 +191,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.suspend_value`
+		#[pallet::call_index(3)]
 		#[pallet::weight((T::WeightInfo::set_config_with_u32(), DispatchClass::Operational,))]
 		pub fn update_suspend_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
@@ -196,6 +205,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.drop_threshold`
+		#[pallet::call_index(4)]
 		#[pallet::weight((T::WeightInfo::set_config_with_u32(),DispatchClass::Operational,))]
 		pub fn update_drop_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
@@ -209,6 +219,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.resume_threshold`
+		#[pallet::call_index(5)]
 		#[pallet::weight((T::WeightInfo::set_config_with_u32(), DispatchClass::Operational,))]
 		pub fn update_resume_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
@@ -221,10 +232,11 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.threshold_weight`
+		#[pallet::call_index(6)]
 		#[pallet::weight((T::WeightInfo::set_config_with_weight(), DispatchClass::Operational,))]
-		pub fn update_threshold_weight(origin: OriginFor<T>, new: Weight) -> DispatchResult {
+		pub fn update_threshold_weight(origin: OriginFor<T>, new: XcmWeight) -> DispatchResult {
 			ensure_root(origin)?;
-			QueueConfig::<T>::mutate(|data| data.threshold_weight = new);
+			QueueConfig::<T>::mutate(|data| data.threshold_weight = Weight::from_ref_time(new));
 
 			Ok(())
 		}
@@ -234,10 +246,16 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.weight_restrict_decay`.
+		#[pallet::call_index(7)]
 		#[pallet::weight((T::WeightInfo::set_config_with_weight(), DispatchClass::Operational,))]
-		pub fn update_weight_restrict_decay(origin: OriginFor<T>, new: Weight) -> DispatchResult {
+		pub fn update_weight_restrict_decay(
+			origin: OriginFor<T>,
+			new: XcmWeight,
+		) -> DispatchResult {
 			ensure_root(origin)?;
-			QueueConfig::<T>::mutate(|data| data.weight_restrict_decay = new);
+			QueueConfig::<T>::mutate(|data| {
+				data.weight_restrict_decay = Weight::from_ref_time(new)
+			});
 
 			Ok(())
 		}
@@ -247,13 +265,16 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.xcmp_max_individual_weight`.
+		#[pallet::call_index(8)]
 		#[pallet::weight((T::WeightInfo::set_config_with_weight(), DispatchClass::Operational,))]
 		pub fn update_xcmp_max_individual_weight(
 			origin: OriginFor<T>,
-			new: Weight,
+			new: XcmWeight,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-			QueueConfig::<T>::mutate(|data| data.xcmp_max_individual_weight = new);
+			QueueConfig::<T>::mutate(|data| {
+				data.xcmp_max_individual_weight = Weight::from_ref_time(new)
+			});
 
 			Ok(())
 		}
@@ -263,21 +284,26 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Some XCM was executed ok.
-		Success(Option<T::Hash>),
+		Success { message_hash: Option<T::Hash>, weight: Weight },
 		/// Some XCM failed.
-		Fail(Option<T::Hash>, XcmError),
+		Fail { message_hash: Option<T::Hash>, error: XcmError, weight: Weight },
 		/// Bad XCM version used.
-		BadVersion(Option<T::Hash>),
+		BadVersion { message_hash: Option<T::Hash> },
 		/// Bad XCM format used.
-		BadFormat(Option<T::Hash>),
+		BadFormat { message_hash: Option<T::Hash> },
 		/// An upward message was sent to the relay chain.
-		UpwardMessageSent(Option<T::Hash>),
+		UpwardMessageSent { message_hash: Option<T::Hash> },
 		/// An HRMP message was sent to a sibling parachain.
-		XcmpMessageSent(Option<T::Hash>),
+		XcmpMessageSent { message_hash: Option<T::Hash> },
 		/// An XCM exceeded the individual message weight budget.
-		OverweightEnqueued(ParaId, RelayBlockNumber, OverweightIndex, Weight),
+		OverweightEnqueued {
+			sender: ParaId,
+			sent_at: RelayBlockNumber,
+			index: OverweightIndex,
+			required: Weight,
+		},
 		/// An XCM from the overweight queue was executed with the given actual weight used.
-		OverweightServiced(OverweightIndex, Weight),
+		OverweightServiced { index: OverweightIndex, used: Weight },
 	}
 
 	#[pallet::error]
@@ -444,9 +470,12 @@ impl Default for QueueConfigData {
 			suspend_threshold: 2,
 			drop_threshold: 5,
 			resume_threshold: 1,
-			threshold_weight: 100_000,
-			weight_restrict_decay: 2,
-			xcmp_max_individual_weight: 20 * WEIGHT_PER_MILLIS,
+			threshold_weight: Weight::from_ref_time(100_000),
+			weight_restrict_decay: Weight::from_ref_time(2),
+			xcmp_max_individual_weight: Weight::from_parts(
+				20u64 * WEIGHT_REF_TIME_PER_MILLIS,
+				DEFAULT_POV_SIZE,
+			),
 		}
 	}
 }
@@ -591,23 +620,41 @@ impl<T: Config> Pallet<T> {
 	fn handle_xcm_message(
 		sender: ParaId,
 		_sent_at: RelayBlockNumber,
-		xcm: VersionedXcm<T::Call>,
+		xcm: VersionedXcm<T::RuntimeCall>,
 		max_weight: Weight,
 	) -> Result<Weight, XcmError> {
 		let hash = Encode::using_encoded(&xcm, T::Hashing::hash);
 		log::debug!("Processing XCMP-XCM: {:?}", &hash);
-		let (result, event) = match Xcm::<T::Call>::try_from(xcm) {
+		let (result, event) = match Xcm::<T::RuntimeCall>::try_from(xcm) {
 			Ok(xcm) => {
 				let location = (1, Parachain(sender.into()));
-				match T::XcmExecutor::execute_xcm(location, xcm, max_weight) {
-					Outcome::Error(e) => (Err(e), Event::Fail(Some(hash), e)),
-					Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
+
+				match T::XcmExecutor::execute_xcm(location, xcm, max_weight.ref_time()) {
+					Outcome::Error(e) => (
+						Err(e),
+						Event::Fail { message_hash: Some(hash), error: e, weight: Weight::zero() },
+					),
+					Outcome::Complete(w) => (
+						Ok(Weight::from_ref_time(w)),
+						Event::Success {
+							message_hash: Some(hash),
+							weight: Weight::from_ref_time(w),
+						},
+					),
 					// As far as the caller is concerned, this was dispatched without error, so
 					// we just report the weight used.
-					Outcome::Incomplete(w, e) => (Ok(w), Event::Fail(Some(hash), e)),
+					Outcome::Incomplete(w, e) => (
+						Ok(Weight::from_ref_time(w)),
+						Event::Fail {
+							message_hash: Some(hash),
+							error: e,
+							weight: Weight::from_ref_time(w),
+						},
+					),
 				}
 			},
-			Err(()) => (Err(XcmError::UnhandledXcmVersion), Event::BadVersion(Some(hash))),
+			Err(()) =>
+				(Err(XcmError::UnhandledXcmVersion), Event::BadVersion { message_hash: Some(hash) }),
 		};
 		Self::deposit_event(event);
 		result
@@ -622,12 +669,12 @@ impl<T: Config> Pallet<T> {
 		let data = <InboundXcmpMessages<T>>::get(sender, sent_at);
 		let mut last_remaining_fragments;
 		let mut remaining_fragments = &data[..];
-		let mut weight_used = 0;
+		let mut weight_used = Weight::zero();
 		match format {
 			XcmpMessageFormat::ConcatenatedVersionedXcm => {
 				while !remaining_fragments.is_empty() {
 					last_remaining_fragments = remaining_fragments;
-					if let Ok(xcm) = VersionedXcm::<T::Call>::decode_with_depth_limit(
+					if let Ok(xcm) = VersionedXcm::<T::RuntimeCall>::decode_with_depth_limit(
 						MAX_XCM_DECODE_DEPTH,
 						&mut remaining_fragments,
 					) {
@@ -635,7 +682,7 @@ impl<T: Config> Pallet<T> {
 						match Self::handle_xcm_message(sender, sent_at, xcm, weight) {
 							Ok(used) => weight_used = weight_used.saturating_add(used),
 							Err(XcmError::WeightLimitReached(required))
-								if required > max_individual_weight =>
+								if required > max_individual_weight.ref_time() =>
 							{
 								// overweight - add to overweight queue and continue with message
 								// execution consuming the message.
@@ -644,11 +691,16 @@ impl<T: Config> Pallet<T> {
 									.saturating_sub(remaining_fragments.len());
 								let overweight_xcm = last_remaining_fragments[..msg_len].to_vec();
 								let index = Self::stash_overweight(sender, sent_at, overweight_xcm);
-								let e = Event::OverweightEnqueued(sender, sent_at, index, required);
+								let e = Event::OverweightEnqueued {
+									sender,
+									sent_at,
+									index,
+									required: Weight::from_ref_time(required),
+								};
 								Self::deposit_event(e);
 							},
 							Err(XcmError::WeightLimitReached(required))
-								if required <= max_weight =>
+								if required <= max_weight.ref_time() =>
 							{
 								// That message didn't get processed this time because of being
 								// too heavy. We leave it around for next time and bail.
@@ -755,7 +807,7 @@ impl<T: Config> Pallet<T> {
 
 		let mut status = <InboundXcmpStatus<T>>::get(); // <- sorted.
 		if status.is_empty() {
-			return 0
+			return Weight::zero()
 		}
 
 		let QueueConfigData {
@@ -767,8 +819,8 @@ impl<T: Config> Pallet<T> {
 		} = <QueueConfig<T>>::get();
 
 		let mut shuffled = Self::create_shuffle(status.len());
-		let mut weight_used = 0;
-		let mut weight_available = 0;
+		let mut weight_used = Weight::zero();
+		let mut weight_available = Weight::zero();
 
 		// We don't want the possibility of a chain sending a series of really heavy messages and
 		// tying up the block's execution time from other chains. Therefore we execute any remaining
@@ -780,7 +832,7 @@ impl<T: Config> Pallet<T> {
 
 		let mut shuffle_index = 0;
 		while shuffle_index < shuffled.len() &&
-			max_weight.saturating_sub(weight_used) >= threshold_weight
+			max_weight.saturating_sub(weight_used).all_gte(threshold_weight)
 		{
 			let index = shuffled[shuffle_index];
 			let sender = status[index].sender;
@@ -802,8 +854,8 @@ impl<T: Config> Pallet<T> {
 				// on the first round to unlocking everything, then we do so.
 				if shuffle_index < status.len() {
 					weight_available +=
-						(max_weight - weight_available) / (weight_restrict_decay + 1);
-					if weight_available + threshold_weight > max_weight {
+						(max_weight - weight_available) / (weight_restrict_decay.ref_time() + 1);
+					if (weight_available + threshold_weight).any_gt(max_weight) {
 						weight_available = max_weight;
 					}
 				} else {
@@ -813,7 +865,7 @@ impl<T: Config> Pallet<T> {
 
 			let weight_processed = if status[index].message_metadata.is_empty() {
 				debug_assert!(false, "channel exists in status; there must be messages; qed");
-				0
+				Weight::zero()
 			} else {
 				// Process up to one block's worth for now.
 				let weight_remaining = weight_available.saturating_sub(weight_used);
@@ -843,7 +895,7 @@ impl<T: Config> Pallet<T> {
 			// other channels a look in. If we've still not unlocked all weight, then we set them
 			// up for processing a second time anyway.
 			if !status[index].message_metadata.is_empty() &&
-				(weight_processed > 0 || weight_available != max_weight)
+				(weight_processed.any_gt(Weight::zero()) || weight_available != max_weight)
 			{
 				if shuffle_index + 1 == shuffled.len() {
 					// Only this queue left. Just run around this loop once more.
@@ -1098,7 +1150,7 @@ impl<T: Config> SendXcm for Pallet<T> {
 					versioned_xcm,
 				)
 				.map_err(|e| SendError::Transport(<&'static str>::from(e)))?;
-				Self::deposit_event(Event::XcmpMessageSent(Some(hash)));
+				Self::deposit_event(Event::XcmpMessageSent { message_hash: Some(hash) });
 				Ok(())
 			},
 			// Anything else is unhandled. This includes a message this is meant for us.

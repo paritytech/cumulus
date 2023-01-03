@@ -1,4 +1,6 @@
 [workspace]
+resolver = "2"
+
 members = [
 	"client/cli",
 	"client/consensus/aura",
@@ -10,12 +12,14 @@ members = [
 	"client/relay-chain-interface",
 	"client/relay-chain-inprocess-interface",
 	"client/relay-chain-rpc-interface",
+	"client/relay-chain-minimal-node",
 	"pallets/aura-ext",
 	"pallets/collator-selection",
 	"pallets/dmp-queue",
 	"pallets/parachain-system",
 	"pallets/parachain-system/proc-macro",
 	"pallets/session-benchmarking",
+	"pallets/solo-to-para",
 	"pallets/xcm",
 	"pallets/xcmp-queue",
 	"parachain-template/node",
@@ -24,7 +28,7 @@ members = [
 	"primitives/parachain-inherent",
 	"primitives/timestamp",
 	"primitives/utility",
-	"polkadot-parachain/",
+	"polkadot-parachain",
 	"parachains/common",
 	"parachains/pallets/parachain-info",
 	"parachains/pallets/ping",
@@ -34,7 +38,11 @@ members = [
 	"parachains/runtimes/assets/statemint",
 	"parachains/runtimes/assets/statemine",
 	"parachains/runtimes/assets/westmint",
+	"parachains/runtimes/bridge-hubs/bridge-hub-rococo",
+	"parachains/runtimes/bridge-hubs/bridge-hub-kusama",
+	"parachains/runtimes/collectives/collectives-polkadot",
 	"parachains/runtimes/contracts/contracts-rococo",
+	"parachains/runtimes/testing/penpal",
 	"test/client",
 	"test/relay-sproof-builder",
 	"test/relay-validation-worker-provider",

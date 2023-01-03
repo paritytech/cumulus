@@ -47,13 +47,13 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		type Origin: From<<Self as SystemConfig>::Origin>
-			+ Into<Result<CumulusOrigin, <Self as Config>::Origin>>;
+		type RuntimeOrigin: From<<Self as SystemConfig>::RuntimeOrigin>
+			+ Into<Result<CumulusOrigin, <Self as Config>::RuntimeOrigin>>;
 
 		/// The overarching call type; we assume sibling chains use the same type.
-		type Call: From<Call<Self>> + Encode;
+		type RuntimeCall: From<Call<Self>> + Encode;
 
 		type XcmSender: SendXcm;
 	}
@@ -108,7 +108,7 @@ pub mod pallet {
 					Xcm(vec![Transact {
 						origin_type: OriginKind::Native,
 						require_weight_at_most: 1_000,
-						call: <T as Config>::Call::from(Call::<T>::ping {
+						call: <T as Config>::RuntimeCall::from(Call::<T>::ping {
 							seq,
 							payload: payload.clone().to_vec(),
 						})
@@ -135,6 +135,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		#[pallet::call_index(0)]
 		#[pallet::weight(0)]
 		pub fn start(origin: OriginFor<T>, para: ParaId, payload: Vec<u8>) -> DispatchResult {
 			ensure_root(origin)?;
@@ -146,6 +147,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::call_index(1)]
 		#[pallet::weight(0)]
 		pub fn start_many(
 			origin: OriginFor<T>,
@@ -165,6 +167,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::call_index(2)]
 		#[pallet::weight(0)]
 		pub fn stop(origin: OriginFor<T>, para: ParaId) -> DispatchResult {
 			ensure_root(origin)?;
@@ -176,6 +179,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::call_index(3)]
 		#[pallet::weight(0)]
 		pub fn stop_all(origin: OriginFor<T>, maybe_para: Option<ParaId>) -> DispatchResult {
 			ensure_root(origin)?;
@@ -187,10 +191,11 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::call_index(4)]
 		#[pallet::weight(0)]
 		pub fn ping(origin: OriginFor<T>, seq: u32, payload: Vec<u8>) -> DispatchResult {
 			// Only accept pings from other chains.
-			let para = ensure_sibling_para(<T as Config>::Origin::from(origin))?;
+			let para = ensure_sibling_para(<T as Config>::RuntimeOrigin::from(origin))?;
 
 			Self::deposit_event(Event::Pinged(para, seq, payload.clone()));
 			match T::XcmSender::send_xcm(
@@ -198,7 +203,7 @@ pub mod pallet {
 				Xcm(vec![Transact {
 					origin_type: OriginKind::Native,
 					require_weight_at_most: 1_000,
-					call: <T as Config>::Call::from(Call::<T>::pong {
+					call: <T as Config>::RuntimeCall::from(Call::<T>::pong {
 						seq,
 						payload: payload.clone(),
 					})
@@ -212,10 +217,11 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::call_index(5)]
 		#[pallet::weight(0)]
 		pub fn pong(origin: OriginFor<T>, seq: u32, payload: Vec<u8>) -> DispatchResult {
 			// Only accept pings from other chains.
-			let para = ensure_sibling_para(<T as Config>::Origin::from(origin))?;
+			let para = ensure_sibling_para(<T as Config>::RuntimeOrigin::from(origin))?;
 
 			if let Some(sent_at) = Pings::<T>::take(seq) {
 				Self::deposit_event(Event::Ponged(

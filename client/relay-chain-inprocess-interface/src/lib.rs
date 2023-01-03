@@ -27,10 +27,9 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use futures::{FutureExt, Stream, StreamExt};
-use parking_lot::Mutex;
 use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
 use polkadot_service::{
-	AuxStore, BabeApi, CollatorPair, Configuration, Handle, NewFull, Role, TaskManager,
+	AuxStore, BabeApi, CollatorPair, Configuration, Handle, NewFull, TaskManager,
 };
 use sc_cli::SubstrateCli;
 use sc_client_api::{
@@ -50,8 +49,8 @@ const TIMEOUT_IN_SECONDS: u64 = 6;
 pub struct RelayChainInProcessInterface<Client> {
 	full_client: Arc<Client>,
 	backend: Arc<FullBackend>,
-	sync_oracle: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
-	overseer_handle: Option<Handle>,
+	sync_oracle: Arc<dyn SyncOracle + Send + Sync>,
+	overseer_handle: Handle,
 }
 
 impl<Client> RelayChainInProcessInterface<Client> {
@@ -59,8 +58,8 @@ impl<Client> RelayChainInProcessInterface<Client> {
 	pub fn new(
 		full_client: Arc<Client>,
 		backend: Arc<FullBackend>,
-		sync_oracle: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
-		overseer_handle: Option<Handle>,
+		sync_oracle: Arc<dyn SyncOracle + Send + Sync>,
+		overseer_handle: Handle,
 	) -> Self {
 		Self { full_client, backend, sync_oracle, overseer_handle }
 	}
@@ -169,11 +168,10 @@ where
 	}
 
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {
-		let mut network = self.sync_oracle.lock();
-		Ok(network.is_major_syncing())
+		Ok(self.sync_oracle.is_major_syncing())
 	}
 
-	fn overseer_handle(&self) -> RelayChainResult<Option<Handle>> {
+	fn overseer_handle(&self) -> RelayChainResult<Handle> {
 		Ok(self.overseer_handle.clone())
 	}
 
@@ -182,8 +180,7 @@ where
 		relay_parent: PHash,
 		key: &[u8],
 	) -> RelayChainResult<Option<StorageValue>> {
-		let block_id = BlockId::Hash(relay_parent);
-		let state = self.backend.state_at(block_id)?;
+		let state = self.backend.state_at(relay_parent)?;
 		state.storage(key).map_err(RelayChainError::GenericError)
 	}
 
@@ -192,8 +189,7 @@ where
 		relay_parent: PHash,
 		relevant_keys: &Vec<Vec<u8>>,
 	) -> RelayChainResult<StorageProof> {
-		let block_id = BlockId::Hash(relay_parent);
-		let state_backend = self.backend.state_at(block_id)?;
+		let state_backend = self.backend.state_at(relay_parent)?;
 
 		sp_state_machine::prove_read(state_backend, relevant_keys)
 			.map_err(RelayChainError::StateMachineError)
@@ -269,9 +265,7 @@ where
 {
 	let _lock = backend.get_import_lock().read();
 
-	let block_id = BlockId::Hash(hash);
-
-	if backend.blockchain().status(block_id)? == BlockStatus::InChain {
+	if backend.blockchain().status(hash)? == BlockStatus::InChain {
 		return Ok(BlockCheckStatus::InChain)
 	}
 
@@ -289,8 +283,8 @@ where
 struct RelayChainInProcessInterfaceBuilder {
 	polkadot_client: polkadot_client::Client,
 	backend: Arc<FullBackend>,
-	sync_oracle: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
-	overseer_handle: Option<Handle>,
+	sync_oracle: Arc<dyn SyncOracle + Send + Sync>,
+	overseer_handle: Handle,
 }
 
 impl RelayChainInProcessInterfaceBuilder {
@@ -330,32 +324,29 @@ fn build_polkadot_full_node(
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> Result<(NewFull<polkadot_client::Client>, Option<CollatorPair>), polkadot_service::Error> {
-	let is_light = matches!(config.role, Role::Light);
-	if is_light {
-		Err(polkadot_service::Error::Sub("Light client not supported.".into()))
+	let (is_collator, maybe_collator_key) = if parachain_config.role.is_authority() {
+		let collator_key = CollatorPair::generate().0;
+		(polkadot_service::IsCollator::Yes(collator_key.clone()), Some(collator_key))
 	} else {
-		let (is_collator, maybe_collator_key) = if parachain_config.role.is_authority() {
-			let collator_key = CollatorPair::generate().0;
-			(polkadot_service::IsCollator::Yes(collator_key.clone()), Some(collator_key))
-		} else {
-			(polkadot_service::IsCollator::No, None)
-		};
+		(polkadot_service::IsCollator::No, None)
+	};
 
-		let relay_chain_full_node = polkadot_service::build_full(
-			config,
-			is_collator,
-			None,
-			true,
-			None,
-			telemetry_worker_handle,
-			true,
-			polkadot_service::RealOverseerGen,
-			None,
-			hwbench,
-		)?;
+	let relay_chain_full_node = polkadot_service::build_full(
+		config,
+		is_collator,
+		None,
+		// Disable BEEFY. It should not be required by the internal relay chain node.
+		false,
+		None,
+		telemetry_worker_handle,
+		true,
+		polkadot_service::RealOverseerGen,
+		None,
+		None,
+		hwbench,
+	)?;
 
-		Ok((relay_chain_full_node, maybe_collator_key))
-	}
+	Ok((relay_chain_full_node, maybe_collator_key))
 }
 
 /// Builds a relay chain interface by constructing a full relay chain node
@@ -378,13 +369,14 @@ pub fn build_inprocess_relay_chain(
 		hwbench,
 	)?;
 
-	let sync_oracle: Box<dyn SyncOracle + Send + Sync> = Box::new(full_node.network.clone());
-	let sync_oracle = Arc::new(Mutex::new(sync_oracle));
+	let sync_oracle: Arc<dyn SyncOracle + Send + Sync> = Arc::new(full_node.network.clone());
 	let relay_chain_interface_builder = RelayChainInProcessInterfaceBuilder {
 		polkadot_client: full_node.client.clone(),
 		backend: full_node.backend.clone(),
 		sync_oracle,
-		overseer_handle: full_node.overseer_handle.clone(),
+		overseer_handle: full_node.overseer_handle.clone().ok_or(RelayChainError::GenericError(
+			"Overseer not running in full node.".to_string(),
+		))?,
 	};
 
 	task_manager.add_child(full_node.task_manager);
@@ -394,8 +386,6 @@ pub fn build_inprocess_relay_chain(
 
 #[cfg(test)]
 mod tests {
-	use parking_lot::Mutex;
-
 	use super::*;
 
 	use polkadot_primitives::v2::Block as PBlock;
@@ -413,11 +403,11 @@ mod tests {
 	struct DummyNetwork {}
 
 	impl SyncOracle for DummyNetwork {
-		fn is_major_syncing(&mut self) -> bool {
+		fn is_major_syncing(&self) -> bool {
 			unimplemented!("Not needed for test")
 		}
 
-		fn is_offline(&mut self) -> bool {
+		fn is_offline(&self) -> bool {
 			unimplemented!("Not needed for test")
 		}
 	}
@@ -431,17 +421,14 @@ mod tests {
 
 		let block_builder = client.init_polkadot_block_builder();
 		let block = block_builder.build().expect("Finalizes the block").block;
-		let dummy_network: Box<dyn SyncOracle + Sync + Send> = Box::new(DummyNetwork {});
+		let dummy_network: Arc<dyn SyncOracle + Sync + Send> = Arc::new(DummyNetwork {});
 
+		let (tx, _rx) = metered::channel(30);
+		let mock_handle = Handle::new(tx);
 		(
 			client.clone(),
 			block,
-			RelayChainInProcessInterface::new(
-				client,
-				backend.clone(),
-				Arc::new(Mutex::new(dummy_network)),
-				None,
-			),
+			RelayChainInProcessInterface::new(client, backend.clone(), dummy_network, mock_handle),
 		)
 	}
 

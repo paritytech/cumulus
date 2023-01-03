@@ -24,7 +24,7 @@ use cumulus_test_client::{
 };
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use sp_keyring::AccountKeyring::*;
-use sp_runtime::{generic::BlockId, traits::Header as HeaderT};
+use sp_runtime::traits::Header as HeaderT;
 use std::{env, process::Command};
 
 fn call_validate_block_encoded_header(
@@ -60,7 +60,7 @@ fn create_test_client() -> (Client, Header) {
 		.build();
 
 	let genesis_header = client
-		.header(&BlockId::number(0))
+		.header(client.chain_info().genesis_hash)
 		.ok()
 		.flatten()
 		.expect("Genesis header exists; qed");
@@ -249,5 +249,43 @@ fn check_inherent_fails_on_validate_block_as_expected() {
 		assert!(
 			dbg!(String::from_utf8(output.stderr).unwrap()).contains("Checking inherents failed")
 		);
+	}
+}
+
+#[test]
+fn check_inherents_are_unsigned_and_before_all_other_extrinsics() {
+	sp_tracing::try_init_simple();
+
+	if env::var("RUN_TEST").is_ok() {
+		let (client, parent_head) = create_test_client();
+
+		let TestBlockData { block, validation_data } =
+			build_block_with_witness(&client, Vec::new(), parent_head.clone(), Default::default());
+
+		let (header, mut extrinsics, proof) = block.deconstruct();
+
+		extrinsics.insert(0, transfer(&client, Alice, Bob, 69));
+
+		call_validate_block(
+			parent_head,
+			ParachainBlockData::new(header, extrinsics, proof),
+			validation_data.relay_parent_storage_root,
+		)
+		.unwrap_err();
+	} else {
+		let output = Command::new(env::current_exe().unwrap())
+			.args(&[
+				"check_inherents_are_unsigned_and_before_all_other_extrinsics",
+				"--",
+				"--nocapture",
+			])
+			.env("RUN_TEST", "1")
+			.output()
+			.expect("Runs the test");
+		assert!(output.status.success());
+
+		assert!(String::from_utf8(output.stderr)
+			.unwrap()
+			.contains("Could not find `set_validation_data` inherent"));
 	}
 }

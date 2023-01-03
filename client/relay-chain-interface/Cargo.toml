@@ -10,17 +10,14 @@ polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "m
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
-futures = "0.3.21"
-parking_lot = "0.12.1"
-derive_more = "0.99.2"
-async-trait = "0.1.56"
-thiserror = "1.0.31"
-jsonrpsee-core = "0.14.0"
-parity-scale-codec = "3.1.5"
+tokio = { version = "1.21.2", features = ["sync"] }
+futures = "0.3.25"
+async-trait = "0.1.60"
+thiserror = "1.0.38"
+jsonrpsee-core = "0.16.2"
+parity-scale-codec = "3.2.1"

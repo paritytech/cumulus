@@ -16,21 +16,12 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
 use cumulus_pallet_parachain_system as parachain_system;
-use frame_support::{dispatch::DispatchResult, pallet_prelude::*, weights::DispatchInfo};
+use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use polkadot_primitives::v2::PersistedValidationData;
-use scale_info::TypeInfo;
-use sp_runtime::{
-	traits::{DispatchInfoOf, Dispatchable, SignedExtension},
-	transaction_validity::{
-		InvalidTransaction, TransactionLongevity, TransactionPriority, TransactionValidity,
-		TransactionValidityError, ValidTransaction,
-	},
-};
-use sp_std::{prelude::*, vec::Vec};
+use sp_std::vec::Vec;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -40,7 +31,7 @@ pub mod pallet {
 	pub trait Config:
 		frame_system::Config + parachain_system::Config + pallet_sudo::Config
 	{
-		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 	}
 
 	#[pallet::pallet]
@@ -70,6 +61,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		#[pallet::call_index(0)]
 		#[pallet::weight(0)]
 		pub fn schedule_migration(
 			origin: OriginFor<T>,
@@ -105,78 +97,6 @@ pub mod pallet {
 		fn on_validation_data(_data: &PersistedValidationData) {}
 		fn on_validation_code_applied() {
 			crate::Pallet::<T>::set_pending_custom_validation_head_data();
-		}
-	}
-
-	/// Ensure that signed transactions are only valid if they are signed by root.
-	#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo, Default)]
-	#[scale_info(skip_type_params(T))]
-	pub struct CheckSudo<T: Config + Send + Sync>(sp_std::marker::PhantomData<T>);
-
-	impl<T: Config + Send + Sync> CheckSudo<T> {
-		pub fn new() -> Self {
-			Self(Default::default())
-		}
-	}
-
-	impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckSudo<T> {
-		#[cfg(feature = "std")]
-		fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-			write!(f, "CheckSudo")
-		}
-
-		#[cfg(not(feature = "std"))]
-		fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-			Ok(())
-		}
-	}
-
-	impl<T: Config + Send + Sync> SignedExtension for CheckSudo<T>
-	where
-		<T as frame_system::Config>::Call: Dispatchable<Info = DispatchInfo>,
-	{
-		type AccountId = T::AccountId;
-		type Call = <T as frame_system::Config>::Call;
-		type AdditionalSigned = ();
-		type Pre = ();
-		const IDENTIFIER: &'static str = "CheckSudo";
-
-		fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
-			Ok(())
-		}
-
-		fn pre_dispatch(
-			self,
-			who: &Self::AccountId,
-			call: &Self::Call,
-			info: &DispatchInfoOf<Self::Call>,
-			len: usize,
-		) -> Result<Self::Pre, TransactionValidityError> {
-			Ok(self.validate(who, call, info, len).map(|_| ())?)
-		}
-
-		fn validate(
-			&self,
-			who: &Self::AccountId,
-			_call: &Self::Call,
-			info: &DispatchInfoOf<Self::Call>,
-			_len: usize,
-		) -> TransactionValidity {
-			let root_account = match pallet_sudo::Pallet::<T>::key() {
-				Some(account) => account,
-				None => return Err(InvalidTransaction::BadSigner.into()),
-			};
-
-			if *who == root_account {
-				Ok(ValidTransaction {
-					priority: info.weight as TransactionPriority,
-					longevity: TransactionLongevity::max_value(),
-					propagate: true,
-					..Default::default()
-				})
-			} else {
-				Err(InvalidTransaction::BadSigner.into())
-			}
 		}
 	}
 }

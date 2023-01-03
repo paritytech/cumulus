@@ -16,6 +16,8 @@
 
 use std::{marker::PhantomData, sync::Arc};
 
+use cumulus_client_consensus_common::ParachainBlockImportMarker;
+
 use sc_consensus::{
 	import_queue::{BasicQueue, Verifier as VerifierT},
 	BlockImport, BlockImportParams,
@@ -63,8 +65,10 @@ where
 				.await
 				.map_err(|e| e.to_string())?;
 
-			let inherent_data =
-				inherent_data_providers.create_inherent_data().map_err(|e| format!("{:?}", e))?;
+			let inherent_data = inherent_data_providers
+				.create_inherent_data()
+				.await
+				.map_err(|e| format!("{:?}", e))?;
 
 			let block = Block::new(block_params.header.clone(), inner_body);
 
@@ -109,7 +113,11 @@ pub fn import_queue<Client, Block: BlockT, I, CIDP>(
 	registry: Option<&substrate_prometheus_endpoint::Registry>,
 ) -> ClientResult<BasicQueue<Block, I::Transaction>>
 where
-	I: BlockImport<Block, Error = ConsensusError> + Send + Sync + 'static,
+	I: BlockImport<Block, Error = ConsensusError>
+		+ ParachainBlockImportMarker
+		+ Send
+		+ Sync
+		+ 'static,
 	I::Transaction: Send,
 	Client: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	<Client as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block>,
@@ -117,11 +125,5 @@ where
 {
 	let verifier = Verifier::new(client, create_inherent_data_providers);
 
-	Ok(BasicQueue::new(
-		verifier,
-		Box::new(cumulus_client_consensus_common::ParachainBlockImport::new(block_import)),
-		None,
-		spawner,
-		registry,
-	))
+	Ok(BasicQueue::new(verifier, Box::new(block_import), None, spawner, registry))
 }
