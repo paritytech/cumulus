@@ -17,11 +17,12 @@
 use crate::reconnecting_ws_client::ReconnectingWsClient;
 use cumulus_primitives_core::{
 	relay_chain::{
-		v2::{
+		v2,
+		v3::{
 			CandidateCommitments, CandidateEvent, CommittedCandidateReceipt, CoreState,
-			DisputeState, GroupRotationInfo, OccupiedCoreAssumption, OldV1SessionInfo,
-			PvfCheckStatement, ScrapedOnChainVotes, SessionIndex, SessionInfo, ValidationCode,
-			ValidationCodeHash, ValidatorId, ValidatorIndex, ValidatorSignature,
+			DisputeState, GroupRotationInfo, OccupiedCoreAssumption, PvfCheckStatement,
+			ScrapedOnChainVotes, SessionIndex, SessionInfo, ValidationCode, ValidationCodeHash,
+			ValidatorId, ValidatorIndex, ValidatorSignature,
 		},
 		CandidateHash, Hash as RelayHash, Header as RelayHeader, InboundHrmpMessage,
 	},
@@ -142,9 +143,23 @@ impl RelayChainRpcClient {
 		&self,
 		at: RelayHash,
 		index: SessionIndex,
-	) -> Result<Option<OldV1SessionInfo>, RelayChainError> {
+	) -> Result<Option<v2::OldV1SessionInfo>, RelayChainError> {
 		self.call_remote_runtime_function(
 			"ParachainHost_session_info_before_version_2",
+			at,
+			Some(index),
+		)
+		.await
+	}
+
+	/// Old method to fetch v2 session info.
+	pub async fn parachain_host_session_info_before_version_3(
+		&self,
+		at: RelayHash,
+		index: SessionIndex,
+	) -> Result<Option<v2::SessionInfo>, RelayChainError> {
+		self.call_remote_runtime_function(
+			"ParachainHost_session_info_before_version_3",
 			at,
 			Some(index),
 		)

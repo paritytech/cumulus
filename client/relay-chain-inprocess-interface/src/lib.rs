@@ -20,7 +20,7 @@ use async_trait::async_trait;
 use cumulus_primitives_core::{
 	relay_chain::{
 		runtime_api::ParachainHost,
-		v2::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
+		v3::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
 		Block as PBlock, BlockId, Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
@@ -388,7 +388,7 @@ pub fn build_inprocess_relay_chain(
 mod tests {
 	use super::*;
 
-	use polkadot_primitives::v2::Block as PBlock;
+	use polkadot_primitives::v3::Block as PBlock;
 	use polkadot_test_client::{
 		construct_transfer_extrinsic, BlockBuilderExt, Client, ClientBlockImportExt,
 		DefaultTestClientBuilderExt, ExecutionStrategy, InitPolkadotBlockBuilder,

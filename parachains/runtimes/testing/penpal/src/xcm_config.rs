@@ -199,7 +199,7 @@ impl<R> HandleCredit<AccountIdOf<R>, pallet_assets::Pallet<R>> for AssetsToBlock
 where
 	R: pallet_authorship::Config + pallet_assets::Config,
 	AccountIdOf<R>:
-		From<polkadot_primitives::v2::AccountId> + Into<polkadot_primitives::v2::AccountId>,
+		From<polkadot_primitives::v3::AccountId> + Into<polkadot_primitives::v2::AccountId>,
 {
 	fn handle_credit(credit: CreditOf<AccountIdOf<R>, pallet_assets::Pallet<R>>) {
 		if let Some(author) = pallet_authorship::Pallet::<R>::author() {

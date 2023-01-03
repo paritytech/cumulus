@@ -18,7 +18,7 @@ use async_trait::async_trait;
 use core::time::Duration;
 use cumulus_primitives_core::{
 	relay_chain::{
-		v2::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
+		v3::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
 		Hash as RelayHash, Header as RelayHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
