@@ -22,39 +22,38 @@ cumulus_based = true
   name = "charlie"
   validator = true
   image = "{{COL_IMAGE}}"
-  command = "test-parachain"
+  command = "polkadot-parachain"
   args = ["-lparachain=debug"]
 
   # run cumulus dave (a parachain full node) and wait for it to sync some blocks
   [[parachains.collators]]
   name = "dave"
-  validator = false
+  validator = true
   image = "{{COL_IMAGE}}"
-  command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}"]
+  command = "polkadot-parachain"
+  args = []
 
   # run cumulus eve (a parachain full node) and wait for it to sync some blocks
   [[parachains.collators]]
   name = "eve"
-  validator = false
+  validator = true
   image = "{{COL_IMAGE}}"
-  command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "--relay-chain-rpc-url {{'alice'|zombie('wsUri')}}"]
+  command = "polkadot-parachain"
+  args = []
 
   # run cumulus ferdie (a parachain full node) and wait for it to sync some blocks
   [[parachains.collators]]
   name = "ferdie"
-  validator = false
+  validator = true
   image = "{{COL_IMAGE}}"
-  command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "--relay-chain-rpc-url {{'alice'|zombie('wsUri')}}"]
+  command = "polkadot-parachain"
+  args = []
 
-
-  # run cumulus george (a parachain full node) and wait for it to sync some blocks
+  # run cumulus one (a parachain full node) and wait for it to sync some blocks
   [[parachains.collators]]
-  name = "george"
-  validator = false
+  name = "one"
+  validator = true
   image = "{{COL_IMAGE}}"
-  command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "--relay-chain-rpc-url {{'alice'|zombie('wsUri')}}", "--sync warp"]
+  command = "polkadot-parachain"
+  args = ['--sync warp']
 

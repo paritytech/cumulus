@@ -38,7 +38,7 @@ use codec::{Decode, DecodeAll, Encode};
 use futures::{channel::oneshot, future::FutureExt, Future};
 use std::{convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc};
 use tokio::time::sleep;
-
+use sc_service::SpawnTaskHandle;
 #[cfg(test)]
 mod tests;
 
@@ -455,13 +455,15 @@ async fn wait_to_announce<Block: BlockT>(
 	}
 }
 
-pub async fn warp_sync_get<B>(
+pub async fn warp_sync_get<B,RCInterface>(
 	para_id: ParaId,
-	relay_chain_interface: Arc<dyn RelayChainInterface>,
-	spawner: Arc<dyn SpawnNamed + Send + Sync>,
+	relay_chain_interface: RCInterface,
+	spawner: SpawnTaskHandle,
 ) -> Result<oneshot::Receiver<<B as BlockT>::Header>, BoxedError>
 where
 	B: BlockT + 'static,
+	RCInterface: RelayChainInterface + 'static,
+
 {
 	let (sender, receiver) = oneshot::channel::<B::Header>();
 	spawner.spawn(
@@ -473,7 +475,7 @@ where
 				"waiting for announce block in a background task...",
 			);
 			tracing::debug!(target: LOG_TARGET, "waiting for target block in a background task...",);
-			wait_for_target_block::<B>(sender, para_id, relay_chain_interface)
+			wait_for_target_block::<B, RCInterface>(sender, para_id, relay_chain_interface)
 				.await
 				.map_err(|e| {
 					tracing::error!(target: LOG_TARGET, "Unable to determine sync status. {}", e)
@@ -487,13 +489,15 @@ where
 	return Ok(receiver)
 }
 
-async fn wait_for_target_block<B>(
+async fn wait_for_target_block<B, RCInterface>(
 	sender: oneshot::Sender<<B as BlockT>::Header>,
 	para_id: ParaId,
-	relay_chain_interface: Arc<dyn RelayChainInterface>,
+	relay_chain_interface: RCInterface,
 ) -> Result<(), BoxedError>
 where
 	B: BlockT + 'static,
+	RCInterface: RelayChainInterface + 'static,
+
 {
 	match relay_chain_interface.import_notification_stream().await {
 		Ok(_) => loop {

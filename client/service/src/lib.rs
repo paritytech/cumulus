@@ -336,27 +336,33 @@ where
 	RCInterface: RelayChainInterface + Clone + 'static,
 	IQ: ImportQueue<Block> + 'static,
 {
-	let warp_sync_params = if let Ok(target_block) = cumulus_client_network::warp_sync_get::<Block>(
-		para_id,
-		Arc::new(relay_chain_interface.clone()),
-		Arc::new(task_manager.spawn_handle()),
-	)
-	.await
-	{
-		Some(WarpSyncParams::WaitForTarget(target_block))
-	} else {
-		None
+	let warp_sync_params = match parachain_config.network.sync_mode {
+		SyncMode::Warp => {
+			let warp_sync_params = if let Ok(target_block) =
+				cumulus_client_network::warp_sync_get::<Block, RCInterface>(
+					para_id,
+					relay_chain_interface.clone(),
+					task_manager.spawn_handle(),
+				)
+				.await
+			{
+				Some(WarpSyncParams::WaitForTarget(target_block))
+			} else {
+				None
+			};
+			warp_sync_params
+		},
+		_ => None,
 	};
 
-	let block_announce_validator =
-		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
+	let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface, para_id);
 	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
 
 	let (network, system_rpc_tx, tx_handler_controller, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: parachain_config,
-			client: client.clone(),
-			transaction_pool: transaction_pool.clone(),
+			client,
+			transaction_pool,
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue,
 			block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
