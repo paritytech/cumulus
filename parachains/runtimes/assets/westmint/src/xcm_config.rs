@@ -20,7 +20,7 @@ use super::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{ConstU32, EnsureOrigin, EnsureOriginWithArg, Everything, Nothing, PalletInfoAccess},
+	traits::{ConstU32, Contains, EnsureOrigin, EnsureOriginWithArg, Everything, PalletInfoAccess},
 };
 use pallet_xcm::{EnsureXcm, XcmPassthrough};
 use parachains_common::{
@@ -39,9 +39,10 @@ use xcm_builder::{
 	NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
 	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
+	WithComputedOrigin,
 };
 use xcm_executor::{
-	traits::{Convert, JustTry},
+	traits::{Convert, JustTry, ShouldExecute},
 	XcmExecutor,
 };
 
@@ -49,7 +50,7 @@ parameter_types! {
 	pub const WestendLocation: MultiLocation = MultiLocation::parent();
 	pub RelayNetwork: NetworkId = NetworkId::Westend;
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-	pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
+	pub UniversalLocation: InteriorMultiLocation = X2(GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into()));
 	pub const Local: MultiLocation = Here.into_location();
 	// todo: accept all instances, perhaps need a type for each instance?
 	pub TrustBackedAssetsPalletLocation: MultiLocation =
@@ -152,6 +153,12 @@ match_types! {
 		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
 	};
+
+	// TODO:check-parameter - add new pallet and persist/manage this via governance?
+	// Means, that we accept some `GlobalConsensus` from some `MultiLocation` (which is supposed to be our bridge-hub)
+	pub type TrustedBridgedNetworks: impl Contains<(MultiLocation, Junction)> = {
+		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Rococo))
+	};
 }
 
 pub type Barrier = DenyThenTry<
@@ -165,6 +172,8 @@ pub type Barrier = DenyThenTry<
 		AllowKnownQueryResponses<PolkadotXcm>,
 		// Subscriptions for version tracking are OK.
 		AllowSubscriptionsFrom<Everything>,
+		// Specific barrier for bridged calls from different globalConsensus/network
+		WithComputedOrigin<BridgedCallsBarrier, UniversalLocation, ConstU32<2>>,
 	),
 >;
 
@@ -225,7 +234,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetExchanger = ();
 	type FeeManager = ();
 	type MessageExporter = ();
-	type UniversalAliases = Nothing;
+	type UniversalAliases = TrustedBridgedNetworks;
 	type CallDispatcher = RuntimeCall;
 }
 
@@ -300,5 +309,35 @@ impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
 	#[cfg(feature = "runtime-benchmarks")]
 	fn successful_origin(a: &MultiLocation) -> RuntimeOrigin {
 		pallet_xcm::Origin::Xcm(a.clone()).into()
+	}
+}
+
+pub type BridgedCallsBarrier = (
+	// TODO:check-parameter - verify, if we need for production (usefull at least for testing connection in production)
+	AllowExecutionForTrapFrom<Everything>,
+	// Expected responses are OK.
+	AllowKnownQueryResponses<PolkadotXcm>,
+	// Subscriptions for version tracking are OK.
+	AllowSubscriptionsFrom<Everything>,
+);
+
+pub struct AllowExecutionForTrapFrom<T>(sp_std::marker::PhantomData<T>);
+impl<T: Contains<MultiLocation>> ShouldExecute for AllowExecutionForTrapFrom<T> {
+	fn should_execute<RuntimeCall>(
+		origin: &MultiLocation,
+		instructions: &mut [Instruction<RuntimeCall>],
+		max_weight: xcm::latest::Weight,
+		_weight_credit: &mut xcm::latest::Weight,
+	) -> Result<(), ()> {
+		log::warn!(
+			target: "xcm::barriers",
+			"(TODO:remove-in-production) AllowExecutionForTrapFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, weight_credit: {:?}",
+			origin, instructions, max_weight, _weight_credit,
+		);
+
+		match instructions.first() {
+			Some(Trap { .. }) => Ok(()),
+			_ => Err(()),
+		}
 	}
 }
