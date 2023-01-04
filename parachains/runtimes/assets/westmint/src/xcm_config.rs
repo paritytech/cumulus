@@ -153,12 +153,6 @@ match_types! {
 		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
 	};
-
-	// TODO:check-parameter - add new pallet and persist/manage this via governance?
-	// Means, that we accept some `GlobalConsensus` from some `MultiLocation` (which is supposed to be our bridge-hub)
-	pub type TrustedBridgedNetworks: impl Contains<(MultiLocation, Junction)> = {
-		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Rococo))
-	};
 }
 
 pub type Barrier = DenyThenTry<
@@ -309,6 +303,20 @@ impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
 	#[cfg(feature = "runtime-benchmarks")]
 	fn successful_origin(a: &MultiLocation) -> RuntimeOrigin {
 		pallet_xcm::Origin::Xcm(a.clone()).into()
+	}
+}
+
+parameter_types! {
+	// TODO:check-parameter - add new pallet and persist/manage this via governance?
+	// Means, that we accept some `GlobalConsensus` from some `MultiLocation` (which is supposed to be our bridge-hub)
+	pub TrustedBridgedNetworks: sp_std::vec::Vec<(MultiLocation, Junction)> = sp_std::vec![
+		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Rococo))
+	];
+}
+
+impl Contains<(MultiLocation, Junction)> for TrustedBridgedNetworks {
+	fn contains(t: &(MultiLocation, Junction)) -> bool {
+		Self::get().contains(t)
 	}
 }
 
