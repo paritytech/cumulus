@@ -235,6 +235,7 @@ fn integritee_genesis_config(
 		aura: parachain_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		polkadot_xcm: Default::default(),
 		teerex: TeerexConfig { allow_sgx_debug_mode: true },
 		claims: Default::default(),
 		treasury: Default::default(),
@@ -262,6 +263,7 @@ fn shell_genesis_config(
 		parachain_system: Default::default(),
 		aura: shell_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),
+		polkadot_xcm: Default::default(),
 	}
 }
 

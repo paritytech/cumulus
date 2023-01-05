@@ -692,11 +692,12 @@ construct_runtime!(
 
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin} = 31,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin, Storage, Config} = 31,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 		XTokens: orml_xtokens::{Pallet, Call, Storage, Event<T>} = 34,
 		OrmlXcm: orml_xcm = 35,
+		XcmTransactor: pallet_xcm_transactor = 36,
 
 		// Integritee pallets.
 		Teerex: pallet_teerex::{Pallet, Call, Config, Storage, Event<T>} = 50,

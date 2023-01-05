@@ -43,6 +43,7 @@ use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::net::SocketAddr;
 
 const LOCAL_PARA_ID: u32 = 2015;
+const SHELL_PARA_ID: u32 = 2223;
 const ROCOCO_PARA_ID: u32 = 2015;
 const WESTEND_PARA_ID: u32 = 2081;
 const KUSAMA_PARA_ID: u32 = 2015;
@@ -101,7 +102,7 @@ fn load_spec(
 		"integritee-polkadot-local-dev" => Box::new(integritee_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::WellKnown, RelayChain::PolkadotLocal)),
 
 		"shell-rococo-local" => Box::new(shell_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::RococoLocal)),
-		"shell-rococo-local-dev" => Box::new(shell_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::WellKnown, RelayChain::RococoLocal)),
+		"shell-rococo-local-dev" => Box::new(shell_chain_spec(SHELL_PARA_ID.into(), GenesisKeys::WellKnown, RelayChain::RococoLocal)),
 
 		"shell-westend-local" => Box::new(shell_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::WestendLocal)),
 		"shell-westend-local-dev" => Box::new(shell_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::WellKnown, RelayChain::WestendLocal)),

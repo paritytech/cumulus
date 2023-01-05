@@ -55,10 +55,14 @@ parachain-info = { default-features = false, git = "https://github.com/paritytec
 
 # Polkadot dependencies
 pallet-xcm = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
+pallet-xcm-transactor = { default-features = false, git = "https://github.com/integritee-network/pallets.git", branch = "polkadot-v0.9.36" }
 polkadot-parachain = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
 xcm = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
 xcm-builder = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
 xcm-executor = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
+
+# other integritee deps
+xcm-transactor-primitives = { default-features = false, git = "https://github.com/integritee-network/pallets.git", branch = "polkadot-v0.9.36" }
 
 # orml
 orml-traits = { default-features = false, git = "https://github.com/UniqueNetwork/open-runtime-module-library.git", branch = "feature/polkadot-v0.9.36" }
@@ -107,6 +111,7 @@ std = [
     "xcm/std",
     "xcm-builder/std",
     "xcm-executor/std",
+    "xcm-transactor-primitives/std",
     "pallet-balances/std",
     "pallet-sudo/std",
     "pallet-timestamp/std",
@@ -114,6 +119,8 @@ std = [
     "pallet-transaction-payment/std",
     "pallet-transaction-payment-rpc-runtime-api/std",
     "pallet-vesting/std",
+    "pallet-xcm-transactor/std",
+    "pallet-xcm/std",
     "cumulus-pallet-aura-ext/std",
     "sp-consensus-aura/std",
 ]
