@@ -562,9 +562,6 @@ impl pallet_uniques::Config for Runtime {
 
 parameter_types! {
 	pub NftsPalletFeatures: PalletFeatures = PalletFeatures::all_enabled();
-	pub const NftsApprovalsLimit: u32 = 20;
-	pub const NftsItemAttributesApprovalsLimit: u32 = 30;
-	pub const NftsMaxTips: u32 = 10;
 	pub const NftsMaxDeadlineDuration: BlockNumber = 12 * 30 * DAYS;
 }
 
@@ -584,9 +581,9 @@ impl pallet_nfts::Config for Runtime {
 	type StringLimit = UniquesStringLimit;
 	type KeyLimit = KeyLimit;
 	type ValueLimit = ValueLimit;
-	type ApprovalsLimit = NftsApprovalsLimit;
-	type ItemAttributesApprovalsLimit = NftsItemAttributesApprovalsLimit;
-	type MaxTips = NftsMaxTips;
+	type ApprovalsLimit = ConstU32<20>;
+	type ItemAttributesApprovalsLimit = ConstU32<30>;
+	type MaxTips = ConstU32<10>;
 	type MaxDeadlineDuration = NftsMaxDeadlineDuration;
 	type Features = NftsPalletFeatures;
 	type WeightInfo = weights::pallet_nfts::WeightInfo<Runtime>;
