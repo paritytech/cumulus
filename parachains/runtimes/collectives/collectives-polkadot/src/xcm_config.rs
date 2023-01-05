@@ -35,6 +35,7 @@ use xcm_builder::{
 	FixedWeightBounds, IsConcrete, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+	WithComputedOrigin,
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
@@ -103,11 +104,14 @@ parameter_types! {
 	pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
+	pub const MaxPrefixes: u32 = 8;
 }
 
 match_types! {
 	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
-		MultiLocation { parents: 1, interior: Here } |
+		MultiLocation { parents: 1, interior: Here }
+	};
+	pub type ParentsExecutivePlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
 	};
 	pub type ParentOrSiblings: impl Contains<MultiLocation> = {
@@ -186,13 +190,22 @@ pub type Barrier = DenyThenTry<
 		// Allow local users to buy weight credit.
 		TakeWeightCredit,
 		// Parent and its exec plurality get free execution.
-		AllowExplicitUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+		AllowExplicitUnpaidExecutionFrom<ParentLocation>,
 		// Expected responses are OK.
 		AllowKnownQueryResponses<PolkadotXcm>,
 		// Subscriptions for version tracking are OK.
 		AllowSubscriptionsFrom<ParentOrSiblings>,
 		// Allow anything to pay for execution.
 		AllowTopLevelPaidExecutionFrom<Everything>,
+		// Allow XCMs with some computed origins to pass through.
+		WithComputedOrigin<
+			(
+				// Parent's executive plurality (i.e. governance) gets free execution.
+				AllowExplicitUnpaidExecutionFrom<ParentsExecutivePlurality>,
+			),
+			UniversalLocation,
+			MaxPrefixes,
+		>,
 	),
 >;
 

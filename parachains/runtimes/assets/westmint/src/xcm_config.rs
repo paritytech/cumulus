@@ -39,6 +39,7 @@ use xcm_builder::{
 	NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
 	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
+	WithComputedOrigin,
 };
 use xcm_executor::{
 	traits::{JustTry, WithOriginFilter},
@@ -134,12 +135,15 @@ pub type XcmOriginToTransactDispatchOrigin = (
 parameter_types! {
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
+	pub const MaxPrefixes: u32 = 8;
 	pub XcmAssetFeesReceiver: Option<AccountId> = Authorship::author();
 }
 
 match_types! {
-	pub type ParentOrParentsPlurality: impl Contains<MultiLocation> = {
-		MultiLocation { parents: 1, interior: Here } |
+	pub type ParentLocation: impl Contains<MultiLocation> = {
+		MultiLocation { parents: 1, interior: Here }
+	};
+	pub type ParentsPlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
 	};
 }
@@ -245,12 +249,21 @@ pub type Barrier = DenyThenTry<
 	(
 		TakeWeightCredit,
 		AllowTopLevelPaidExecutionFrom<Everything>,
-		// Parent and its plurality get free execution
-		AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
+		// Parent gets free execution
+		AllowExplicitUnpaidExecutionFrom<ParentLocation>,
 		// Expected responses are OK.
 		AllowKnownQueryResponses<PolkadotXcm>,
 		// Subscriptions for version tracking are OK.
 		AllowSubscriptionsFrom<Everything>,
+		// Allow XCMs with some computed origins to pass through.
+		WithComputedOrigin<
+			(
+				// Parent's plurality (i.e. governance bodies) gets free execution.
+				AllowExplicitUnpaidExecutionFrom<ParentsPlurality>,
+			),
+			UniversalLocation,
+			MaxPrefixes,
+		>,
 	),
 >;
 
