@@ -36,7 +36,7 @@ use sc_client_api::{
 use sc_telemetry::TelemetryWorkerHandle;
 
 use sc_consensus::{import_queue::ImportQueueService, BlockImport, ImportQueue};
-use sc_network::NetworkService;
+use sc_network::{config::SyncMode, NetworkService};
 use sc_network_transactions::TransactionsHandlerController;
 use sc_service::{Configuration, NetworkStarter, TaskManager, WarpSyncParams};
 use sc_utils::mpsc::TracingUnboundedSender;
