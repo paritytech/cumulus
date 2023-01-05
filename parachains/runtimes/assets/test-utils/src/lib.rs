@@ -1,11 +1,20 @@
-use frame_support::traits::GenesisBuild;
+use cumulus_primitives_core::{AbridgedHrmpChannel, ParaId, PersistedValidationData};
+use cumulus_primitives_parachain_inherent::ParachainInherentData;
+use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
+use frame_support::{
+	dispatch::{RawOrigin, UnfilteredDispatchable},
+	inherent::{InherentData, ProvideInherent},
+	traits::GenesisBuild,
+};
 use sp_std::marker::PhantomData;
 
 use frame_support::traits::OriginTrait;
 use parachains_common::AccountId;
+use polkadot_parachain::primitives::{HrmpChannelId, RelayChainBlockNumber};
 use sp_consensus_aura::AURA_ENGINE_ID;
 use sp_core::Encode;
 use sp_runtime::{Digest, DigestItem};
+use xcm::prelude::XcmVersion;
 
 pub type BalanceOf<Runtime> = <Runtime as pallet_balances::Config>::Balance;
 pub type AccountIdOf<Runtime> = <Runtime as frame_system::Config>::AccountId;
@@ -22,19 +31,39 @@ pub struct ExtBuilder<
 	collators: Vec<AccountIdOf<Runtime>>,
 	// keys added to pallet session
 	keys: Vec<(AccountIdOf<Runtime>, ValidatorIdOf<Runtime>, SessionKeysOf<Runtime>)>,
+	// safe xcm version for pallet_xcm
+	safe_xcm_version: Option<XcmVersion>,
+	// para id
+	para_id: Option<ParaId>,
 	_runtime: PhantomData<Runtime>,
 }
 
-impl<Runtime: frame_system::Config + pallet_balances::Config + pallet_session::Config> Default
-	for ExtBuilder<Runtime>
+impl<
+		Runtime: frame_system::Config
+			+ pallet_balances::Config
+			+ pallet_session::Config
+			+ pallet_xcm::Config,
+	> Default for ExtBuilder<Runtime>
 {
 	fn default() -> ExtBuilder<Runtime> {
-		ExtBuilder { balances: vec![], collators: vec![], keys: vec![], _runtime: PhantomData }
+		ExtBuilder {
+			balances: vec![],
+			collators: vec![],
+			keys: vec![],
+			safe_xcm_version: None,
+			para_id: None,
+			_runtime: PhantomData,
+		}
 	}
 }
 
-impl<Runtime: frame_system::Config + pallet_balances::Config + pallet_session::Config>
-	ExtBuilder<Runtime>
+impl<
+		Runtime: frame_system::Config
+			+ pallet_balances::Config
+			+ pallet_session::Config
+			+ pallet_xcm::Config
+			+ parachain_info::Config,
+	> ExtBuilder<Runtime>
 {
 	pub fn with_balances(
 		mut self,
@@ -61,6 +90,16 @@ impl<Runtime: frame_system::Config + pallet_balances::Config + pallet_session::C
 		self
 	}
 
+	pub fn with_safe_xcm_version(mut self, safe_xcm_version: XcmVersion) -> Self {
+		self.safe_xcm_version = Some(safe_xcm_version);
+		self
+	}
+
+	pub fn with_para_id(mut self, para_id: ParaId) -> Self {
+		self.para_id = Some(para_id);
+		self
+	}
+
 	pub fn build(self) -> sp_io::TestExternalities
 	where
 		Runtime:
@@ -68,6 +107,20 @@ impl<Runtime: frame_system::Config + pallet_balances::Config + pallet_session::C
 		ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
 	{
 		let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
+
+		<pallet_xcm::GenesisConfig as GenesisBuild<Runtime>>::assimilate_storage(
+			&pallet_xcm::GenesisConfig { safe_xcm_version: self.safe_xcm_version },
+			&mut t,
+		)
+		.unwrap();
+
+		if let Some(para_id) = self.para_id {
+			<parachain_info::GenesisConfig as frame_support::traits::GenesisBuild<Runtime>>::assimilate_storage(
+				&parachain_info::GenesisConfig { parachain_id: para_id },
+				&mut t,
+			)
+				.unwrap();
+		}
 
 		pallet_balances::GenesisConfig::<Runtime> { balances: self.balances.into() }
 			.assimilate_storage(&mut t)
@@ -136,4 +189,60 @@ where
 	) -> <Runtime as frame_system::Config>::RuntimeOrigin {
 		<Runtime as frame_system::Config>::RuntimeOrigin::signed(account_id.into())
 	}
+}
+
+/// Helper function which emulates opening HRMP channel which is needed for XcmpQueue xcm router to pass
+pub fn mock_open_hrmp_channel<
+	C: cumulus_pallet_parachain_system::Config,
+	T: ProvideInherent<Call = cumulus_pallet_parachain_system::Call<C>>,
+>(
+	sender: ParaId,
+	recipient: ParaId,
+) {
+	let n = 1_u32;
+	let mut sproof_builder = RelayStateSproofBuilder::default();
+	sproof_builder.para_id = sender;
+	sproof_builder.hrmp_channels.insert(
+		HrmpChannelId { sender, recipient },
+		AbridgedHrmpChannel {
+			max_capacity: 10,
+			max_total_size: 10_000_000_u32,
+			max_message_size: 10_000_000_u32,
+			msg_count: 10,
+			total_size: 10_000_000_u32,
+			mqc_head: None,
+		},
+	);
+	sproof_builder.hrmp_egress_channel_index = Some(vec![recipient]);
+
+	let (relay_parent_storage_root, relay_chain_state) = sproof_builder.into_state_root_and_proof();
+	let vfp = PersistedValidationData {
+		relay_parent_number: n as RelayChainBlockNumber,
+		relay_parent_storage_root,
+		..Default::default()
+	};
+	// It is insufficient to push the validation function params
+	// to storage; they must also be included in the inherent data.
+	let inherent_data = {
+		let mut inherent_data = InherentData::default();
+		let system_inherent_data = ParachainInherentData {
+			validation_data: vfp.clone(),
+			relay_chain_state,
+			downward_messages: Default::default(),
+			horizontal_messages: Default::default(),
+		};
+		inherent_data
+			.put_data(
+				cumulus_primitives_parachain_inherent::INHERENT_IDENTIFIER,
+				&system_inherent_data,
+			)
+			.expect("failed to put VFP inherent");
+		inherent_data
+	};
+
+	// execute the block
+	T::create_inherent(&inherent_data)
+		.expect("got an inherent")
+		.dispatch_bypass_filter(RawOrigin::None.into())
+		.expect("dispatch succeeded");
 }

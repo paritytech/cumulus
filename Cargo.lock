@@ -190,19 +190,27 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 name = "asset-test-utils"
 version = "1.0.0"
 dependencies = [
+ "cumulus-pallet-parachain-system",
+ "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
+ "cumulus-test-relay-sproof-builder",
  "frame-support",
  "frame-system",
  "hex-literal",
  "pallet-balances",
  "pallet-collator-selection",
  "pallet-session",
+ "pallet-xcm",
+ "parachain-info",
  "parachains-common",
+ "polkadot-parachain 0.9.31",
  "sp-consensus-aura",
  "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
  "substrate-wasm-builder",
+ "xcm",
 ]
 
 [[package]]

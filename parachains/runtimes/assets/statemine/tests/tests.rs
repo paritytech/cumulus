@@ -1,4 +1,4 @@
-use asset_test_utils::{ExtBuilder, RuntimeHelper};
+use asset_test_utils::{mock_open_hrmp_channel, ExtBuilder, RuntimeHelper};
 use frame_support::{
 	assert_noop, assert_ok,
 	traits::PalletInfo,
@@ -6,10 +6,11 @@ use frame_support::{
 };
 use parachains_common::{AccountId, AuraId};
 pub use statemine_runtime::{
-	constants::fee::WeightToFee, xcm_config::XcmConfig, Balances, ExistentialDeposit, Runtime,
-	SessionKeys, System, TrustBackedAssets,
+	constants::fee::WeightToFee, xcm_config::XcmConfig, Balances, ExistentialDeposit,
+	ParachainSystem, PolkadotXcm, Runtime, RuntimeEvent, RuntimeOrigin, SessionKeys, System,
+	TrustBackedAssets,
 };
-use xcm::latest::prelude::*;
+use xcm::{latest::prelude::*, VersionedMultiLocation, VersionedXcm};
 use xcm_executor::traits::WeightTrader;
 pub const ALICE: [u8; 32] = [1u8; 32];
 
@@ -302,5 +303,64 @@ fn test_that_buying_ed_refund_does_not_refund() {
 
 			// We also need to ensure the total supply increased
 			assert_eq!(Assets::total_supply(1), ExistentialDeposit::get());
+		});
+}
+
+#[test]
+fn test_send_xcm_transact_with_remark_with_event_works() {
+	let runtime_para_id = 1015;
+	let bridge_hub_para_id = 1013;
+
+	ExtBuilder::<Runtime>::default()
+		.with_collators(vec![AccountId::from(ALICE)])
+		.with_session_keys(vec![(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+		)])
+		.with_tracing()
+		.with_safe_xcm_version(3)
+		.with_para_id(runtime_para_id.into())
+		.build()
+		.execute_with(|| {
+			// open hrmp channel
+			mock_open_hrmp_channel::<Runtime, ParachainSystem>(
+				runtime_para_id.into(),
+				bridge_hub_para_id.into(),
+			);
+
+			// prepare xcm message with Transact
+			let message = Xcm(vec![ExportMessage {
+				network: Wococo,
+				destination: X1(Parachain(1000)),
+				xcm: Xcm(vec![Transact {
+					origin_kind: OriginKind::SovereignAccount,
+					require_weight_at_most: 1000000000,
+					call: vec![0, 8, 20, 104, 101, 108, 108, 111].into(),
+				}]),
+			}]);
+
+			// simulate send export_message to bridge-hub
+			assert_ok!(PolkadotXcm::send(
+				RuntimeOrigin::signed(AccountId::from(ALICE)),
+				Box::new(VersionedMultiLocation::V3(MultiLocation {
+					parents: 1,
+					interior: X1(Parachain(bridge_hub_para_id))
+				})),
+				Box::new(VersionedXcm::from(message.clone()))
+			));
+
+			// check xcm sent-like events occured
+			let events = System::events();
+			assert!(!events.is_empty());
+
+			assert!(System::events().iter().any(|r| matches!(
+				r.event,
+				RuntimeEvent::PolkadotXcm(pallet_xcm::Event::Sent(..))
+			)));
+			assert!(System::events().iter().any(|r| matches!(
+				r.event,
+				RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::XcmpMessageSent { .. })
+			)));
 		});
 }
