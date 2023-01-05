@@ -13,12 +13,155 @@ function ensure_binaries() {
         echo "  Please, check ./parachains/runtimes/bridge-hubs/README.md (Prepare/Build/Deploy)"
         exit 1
     fi
+}
+
+function ensure_relayer() {
     if [[ ! -f ~/local_bridge_testing/bin/substrate-relay ]]; then
         echo "  Required substrate-relay binary '~/local_bridge_testing/bin/substrate-relay' does not exist!"
         echo "  You need to build it and copy to this location!"
         echo "  Please, check ./parachains/runtimes/bridge-hubs/README.md (Prepare/Build/Deploy)"
         exit 1
     fi
+}
+
+function ensure_polkadot_js_api() {
+    if ! which polkadot-js-api &> /dev/null; then
+        echo ''
+        echo 'Required command `polkadot-js-api` not in PATH, please, install, e.g.:'
+        echo "npm install -g @polkadot/api-cli@beta"
+        echo "      or"
+        echo "yarn global add @polkadot/api-cli"
+        echo ''
+        exit 1
+    fi
+    if ! which jq &> /dev/null; then
+        echo ''
+        echo 'Required command `jq` not in PATH, please, install, e.g.:'
+        echo "apt install -y jq"
+        echo ''
+        exit 1
+    fi
+}
+
+STATEMINE_ACCOUNT_SEED_FOR_LOCAL="//Alice"
+ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO="scatter feed race company oxygen trip extra elbow slot bundle auto canoe"
+
+function send_xcm_transact_remark_from_statemine() {
+    local url=$1
+    local seed=$2
+    local bridge_hub_para_id=$3
+    local target_network=$4
+    local target_network_para_id=$5
+    echo "  calling send_xcm_transact_remark_from_statemine:"
+    echo "      url: ${url}"
+    echo "      seed: ${seed}"
+    echo "      bridge_hub_para_id: ${bridge_hub_para_id}"
+    echo "      params:"
+
+    local dest=$(jq --null-input \
+                    --arg bridge_hub_para_id "$bridge_hub_para_id" \
+                    '{ "V3": { "parents": 1, "interior": { "X1": { "Parachain": $bridge_hub_para_id } } } }')
+
+    local message=$(jq --null-input \
+                       --arg target_network "$target_network" \
+                       --arg target_network_para_id "$target_network_para_id" \
+                       '{
+                          "V3": [
+                            {
+                              "ExportMessage": {
+                                "network": $target_network,
+                                "destination": {
+                                  "X1": {
+                                    "Parachain": $target_network_para_id
+                                  }
+                                },
+                                "xcm": [
+                                  {
+                                    "Transact": {
+                                      "origin_kind": "SovereignAccount",
+                                      "require_weight_at_most": 1000000000,
+                                      "call": {
+                                        "encoded": [0, 8, 20, 104, 101, 108, 108, 111 ]
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        }')
+
+    echo ""
+    echo "          dest:"
+    echo "${dest}"
+    echo ""
+    echo "          message:"
+    echo "${message}"
+    echo ""
+    echo "--------------------------------------------------"
+
+    polkadot-js-api \
+        --ws "${url?}" \
+        --seed "${seed?}" \
+        tx.polkadotXcm.send \
+            "${dest}" \
+            "${message}"
+}
+
+function send_xcm_trap_from_statemine() {
+    local url=$1
+    local seed=$2
+    local bridge_hub_para_id=$3
+    local target_network=$4
+    local target_network_para_id=$5
+    echo "  calling send_xcm_trap_from_statemine:"
+    echo "      url: ${url}"
+    echo "      seed: ${seed}"
+    echo "      bridge_hub_para_id: ${bridge_hub_para_id}"
+    echo "      params:"
+
+    local dest=$(jq --null-input \
+                    --arg bridge_hub_para_id "$bridge_hub_para_id" \
+                    '{ "V3": { "parents": 1, "interior": { "X1": { "Parachain": $bridge_hub_para_id } } } }')
+
+    local message=$(jq --null-input \
+                       --arg target_network "$target_network" \
+                       --arg target_network_para_id "$target_network_para_id" \
+                       '{
+                          "V3": [
+                            {
+                              "ExportMessage": {
+                                "network": $target_network,
+                                "destination": {
+                                  "X1": {
+                                    "Parachain": $target_network_para_id
+                                  }
+                                },
+                                "xcm": [
+                                  {
+                                    "Trap": 12345
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        }')
+
+    echo ""
+    echo "          dest:"
+    echo "${dest}"
+    echo ""
+    echo "          message:"
+    echo "${message}"
+    echo ""
+    echo "--------------------------------------------------"
+
+    polkadot-js-api \
+        --ws "${url?}" \
+        --seed "${seed?}" \
+        tx.polkadotXcm.send \
+            "${dest}" \
+            "${message}"
 }
 
 function register_parachain() {
@@ -69,6 +212,8 @@ function check_parachain_collator() {
 }
 
 function init_ro_wo() {
+    ensure_relayer
+
     RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
         ~/local_bridge_testing/bin/substrate-relay init-bridge rococo-to-bridge-hub-wococo \
 	--source-host localhost \
@@ -79,6 +224,8 @@ function init_ro_wo() {
 }
 
 function init_wo_ro() {
+    ensure_relayer
+
     RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
         ~/local_bridge_testing/bin/substrate-relay init-bridge wococo-to-bridge-hub-rococo \
         --source-host localhost \
@@ -89,6 +236,8 @@ function init_wo_ro() {
 }
 
 function run_relay() {
+    ensure_relayer
+
     RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
         ~/local_bridge_testing/bin/substrate-relay relay-headers-and-messages bridge-hub-rococo-bridge-hub-wococo \
         --rococo-host localhost \
@@ -111,10 +260,10 @@ function run_relay() {
         --lane 00000002
 }
 
-ensure_binaries
-
 case "$1" in
   start-rococo)
+    ensure_binaries
+
     # TODO: change to generate: ./bin/polkadot key generate-node-key
     VALIDATOR_KEY_ALICE=(12D3KooWRD6kEQuKDn7BCsMfW71U8AEFDYTc7N2dFQthRsjSR8J5 aa5dc9a97f82f9af38d1f16fbc9c72e915577c3ca654f7d33601645ca5b9a8a5)
     VALIDATOR_KEY_BOB=(12D3KooWELR4gpc8unmH8WiauK133v397KoMfkkjESWJrzg7Y3Pq 556a36beaeeb95225eb84ae2633bd8135e5ace22f03291853654f07bc5da20ae)
@@ -145,6 +294,8 @@ case "$1" in
     check_parachain_collator 8943 bridgeWococoGrandpa
     ;;
   start-wococo)
+    ensure_binaries
+
     # TODO: change to generate: ./bin/polkadot key generate-node-key
     VALIDATOR_KEY_ALICE=(12D3KooWKB4SqNJAttmDHXEKtETLPr8Nixso8gUNzNKDS9b6HtYj 8c87694d3a3b3a0e201caceaae095aac66a76ba37545c439f7e0d986670da8e6)
     VALIDATOR_KEY_BOB=(12D3KooWJq6xkfyV3LFxoNgsCskAwLv6VfLhL3cjHfW4UxDNwroF 9ebcd7371b427d63c087762fe3dc5a1d4b01875cb8611c263feda21364d4a329)
@@ -188,6 +339,42 @@ case "$1" in
     init_ro_wo
     init_wo_ro
     run_relay
+    ;;
+  send-remark-local)
+    ensure_polkadot_js_api
+    send_xcm_transact_remark_from_statemine \
+        "ws://127.0.0.1:9910#/explorer" \
+        "${STATEMINE_ACCOUNT_SEED_FOR_LOCAL}" \
+        1013 \
+        "Wococo" \
+        1000
+    ;;
+  send-trap-local)
+    ensure_polkadot_js_api
+    send_xcm_trap_from_statemine \
+        "ws://127.0.0.1:9910#/explorer" \
+        "${STATEMINE_ACCOUNT_SEED_FOR_LOCAL}" \
+        1013 \
+        "Wococo" \
+        1000
+    ;;
+  send-remark-rococo)
+    ensure_polkadot_js_api
+    send_xcm_transact_remark_from_statemine \
+        "wss://ws-rococo-rockmine2-collator-node-0.parity-testnet.parity.io" \
+        "${ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO}" \
+        1013 \
+        "Wococo" \
+        1000
+    ;;
+  send-trap-rococo)
+    ensure_polkadot_js_api
+    send_xcm_trap_from_statemine \
+        "wss://ws-rococo-rockmine2-collator-node-0.parity-testnet.parity.io" \
+        "${ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO}" \
+        1013 \
+        "Wococo" \
+        1000
     ;;
   stop)
     pkill -f polkadot

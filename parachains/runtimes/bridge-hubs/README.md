@@ -148,8 +148,43 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	- Pallet: **bridgeRococoParachain**
 	- Keys: **bestParaHeads()**
 
----
+### Send messages (Rococo, Wococo)
 
+
+#### Local Rococo:Statemine -> Wococo:Westmint
+- check that relayers are up and running (see above)
+- uses account seed `//Alice`
+  ```
+  cd <cumulus-git-repo-dir>
+
+  ./scripts/bridges_rococo_wococo.sh send-remark-local
+  or
+  ./scripts/bridges_rococo_wococo.sh send-trap-local
+  ```
+- open explorers: (see zombienets)
+	- Statemine (see `polkadotXcm.Sent`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9910#/explorer
+	- BridgeHubRococo (see `bridgeWococoMessages.MessageAccepted`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8943#/explorer
+	- BridgeHubWococo (see `bridgeRococoMessages.MessagesReceived`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8945#/explorer
+	- Westmint (see `xcmpQueue.Success` for `remark` and `xcmpQueue.Fail` for `trap`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9010#/explorer
+    - BridgeHubRococo (see `bridgeWococoMessages.MessagesDelivered`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8943#/explorer
+
+#### Live Rococo:Rockmine2 -> Wococo:Wockmint
+- uses account seed on Live Rococo:Rockmine2
+  ```
+  cd <cumulus-git-repo-dir>
+
+  ./scripts/bridges_rococo_wococo.sh send-remark-rococo
+  or
+  ./scripts/bridges_rococo_wococo.sh send-trap-rococo
+  ```
+- open explorers: (see https://github.com/paritytech/parity-bridges-common/issues/1671)
+	- Rockmine2 (see `polkadotXcm.Sent`)
+	- BridgeHubRococo (see `bridgeWococoMessages.MessageAccepted`)
+	- BridgeHubWococo (see `bridgeRococoMessages.MessagesReceived`)
+	- Wockmint (see `xcmpQueue.Success` for `remark` and `xcmpQueue.Fail` for `trap`)
+	- BridgeHubRococo (see `bridgeWococoMessages.MessagesDelivered`)
+
+----
 ## Git subtree `./bridges`
 
 Add Bridges repo as a local remote and synchronize it with latest `master` from bridges repo:
