@@ -330,13 +330,17 @@ fn test_receive_bridged_xcm_transact_with_remark_with_event_works() {
 			let origin = MultiLocation { parents: 1, interior: X1(Parachain(1014)) };
 			let xcm = Xcm(vec![
 				UniversalOrigin(GlobalConsensus(Rococo)),
-				DescendOrigin(X1(AccountId32 {
-					network: Some(Rococo),
-					id: [
-						28, 189, 45, 67, 83, 10, 68, 112, 90, 208, 136, 175, 49, 62, 24, 248, 11,
-						83, 239, 22, 179, 97, 119, 205, 75, 119, 184, 70, 242, 165, 240, 124,
-					],
-				})),
+				DescendOrigin(X2(
+					Parachain(1000),
+					AccountId32 {
+						network: Some(Rococo),
+						id: [
+							28, 189, 45, 67, 83, 10, 68, 112, 90, 208, 136, 175, 49, 62, 24, 248,
+							11, 83, 239, 22, 179, 97, 119, 205, 75, 119, 184, 70, 242, 165, 240,
+							124,
+						],
+					},
+				)),
 				Transact {
 					origin_kind: OriginKind::SovereignAccount,
 					require_weight_at_most: 1000000000,

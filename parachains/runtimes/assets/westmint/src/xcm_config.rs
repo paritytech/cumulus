@@ -399,24 +399,38 @@ where
 		kind: OriginKind,
 	) -> Result<RuntimeOrigin, MultiLocation> {
 		let origin = origin.into();
+		log::trace!(
+			target: "xcm::origin_conversion",
+			"BridgedSignedAccountId32AsNative origin: {:?}, kind: {:?}",
+			origin, kind,
+		);
 		if let OriginKind::SovereignAccount = kind {
 			match origin {
+				// this represents remote relaychain
 				MultiLocation {
 					parents: 2,
 					interior:
 						X2(
 							GlobalConsensus(remote_network),
-							AccountId32 { network: Some(account_remote_network), id: _id },
+							AccountId32 { network: _network, id: _id },
 						),
+				} |
+				// this represents remote parachain
+				MultiLocation {
+					parents: 2,
+					interior:
+					X3(
+						GlobalConsensus(remote_network),
+						Parachain(_),
+						AccountId32 { network: _network, id: _id },
+					),
 				} => {
 					// TODO:check-parameter - hack - configured local bridge-hub behaves on behalf of any origin from configured bridged network (just to pass Transact/System::remark_with_event - ensure_signed)
 					// find configured local bridge_hub for remote network
 					let bridge_hub_location = BridgedNetworks::get()
 						.iter()
 						.find(|(_, configured_bridged_network)| match configured_bridged_network {
-							GlobalConsensus(bridged_network) =>
-								bridged_network.eq(&account_remote_network) &&
-									bridged_network.eq(&remote_network),
+							GlobalConsensus(bridged_network) => bridged_network.eq(&remote_network),
 							_ => false,
 						})
 						.map(|(bridge_hub_location, _)| bridge_hub_location.clone());
