@@ -192,6 +192,7 @@ jobs:
         id: srtool_build
         uses: chevdor/srtool-actions@v0.6.0
         with:
+          image: paritytech/srtool
           chain: ${{ matrix.runtime }}
           runtime_dir: polkadot-parachains/${{ matrix.runtime }}-runtime
 
@@ -208,9 +209,7 @@ jobs:
         with:
           name: ${{ matrix.runtime }}-runtime-${{ github.sha }}
           path: |
-            ${{ steps.srtool_build.outputs.wasm }}
             ${{ steps.srtool_build.outputs.wasm_compressed }}
-            ${{ matrix.runtime }}-srtool-digest.json
 
       # We now get extra information thanks to subwasm
       - name: Install subwasm
@@ -222,9 +221,7 @@ jobs:
       - name: Show Runtime information
         shell: bash
         run: |
-          subwasm info ${{ steps.srtool_build.outputs.wasm }}
           subwasm info ${{ steps.srtool_build.outputs.wasm_compressed }}
-          subwasm --json info ${{ steps.srtool_build.outputs.wasm }} > ${{ matrix.runtime }}-info.json
           subwasm --json info ${{ steps.srtool_build.outputs.wasm_compressed }} > ${{ matrix.runtime }}-compressed-info.json
 
       - name: Extract the metadata
@@ -245,6 +242,7 @@ jobs:
         with:
           name: ${{ matrix.runtime }}-srtool-json-${{ github.sha }}
           path: |
+            ${{ matrix.runtime }}-srtool-digest.json
             ${{ matrix.runtime }}-info.json
             ${{ matrix.runtime }}-compressed-info.json
             ${{ matrix.runtime }}-metadata.json
