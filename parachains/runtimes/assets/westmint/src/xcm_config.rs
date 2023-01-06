@@ -140,10 +140,8 @@ parameter_types! {
 }
 
 match_types! {
-	pub type ParentLocation: impl Contains<MultiLocation> = {
-		MultiLocation { parents: 1, interior: Here }
-	};
-	pub type ParentsPlurality: impl Contains<MultiLocation> = {
+	pub type ParentOrParentsPlurality: impl Contains<MultiLocation> = {
+		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
 	};
 }
@@ -248,18 +246,17 @@ pub type Barrier = DenyThenTry<
 	DenyReserveTransferToRelayChain,
 	(
 		TakeWeightCredit,
-		AllowTopLevelPaidExecutionFrom<Everything>,
-		// Parent gets free execution
-		AllowExplicitUnpaidExecutionFrom<ParentLocation>,
 		// Expected responses are OK.
 		AllowKnownQueryResponses<PolkadotXcm>,
-		// Subscriptions for version tracking are OK.
-		AllowSubscriptionsFrom<Everything>,
 		// Allow XCMs with some computed origins to pass through.
 		WithComputedOrigin<
 			(
-				// Parent's plurality (i.e. governance bodies) gets free execution.
-				AllowExplicitUnpaidExecutionFrom<ParentsPlurality>,
+				// If the message is one that immediately attemps to pay for execution, then allow it.
+				AllowTopLevelPaidExecutionFrom<Everything>,
+				// Parent or its plurality (i.e. governance bodies) gets free execution.
+				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
+				// Subscriptions for version tracking are OK.
+				AllowSubscriptionsFrom<Everything>,
 			),
 			UniversalLocation,
 			MaxPrefixes,

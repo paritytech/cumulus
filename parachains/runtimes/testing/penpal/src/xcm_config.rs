@@ -49,6 +49,7 @@ use xcm_builder::{
 	IsConcrete, LocalMint, NativeAsset, ParentIsPreset, RelayChainAsNative,
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+	WithComputedOrigin,
 };
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
@@ -136,6 +137,7 @@ parameter_types! {
 	pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
+	pub const MaxPrefixes: u32 = 8;
 }
 
 match_types! {
@@ -152,15 +154,23 @@ pub type Barrier = DenyThenTry<
 	DenyReserveTransferToRelayChain,
 	(
 		TakeWeightCredit,
-		AllowTopLevelPaidExecutionFrom<Everything>,
-		// Parent and its exec plurality get free execution
-		AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
-		// Assets Common Good parachain gets free execution
-		AllowUnpaidExecutionFrom<CommonGoodAssetsParachain>,
 		// Expected responses are OK.
 		AllowKnownQueryResponses<PolkadotXcm>,
-		// Subscriptions for version tracking are OK.
-		AllowSubscriptionsFrom<Everything>,
+		// Allow XCMs with some computed origins to pass through.
+		WithComputedOrigin<
+			(
+				// If the message is one that immediately attemps to pay for execution, then allow it.
+				AllowTopLevelPaidExecutionFrom<Everything>,
+				// Parent and its exec plurality get free execution
+				AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+				// Assets Common Good parachain gets free execution
+				AllowUnpaidExecutionFrom<CommonGoodAssetsParachain>,
+				// Subscriptions for version tracking are OK.
+				AllowSubscriptionsFrom<Everything>,
+			),
+			UniversalLocation,
+			MaxPrefixes,
+		>,
 	),
 >;
 
