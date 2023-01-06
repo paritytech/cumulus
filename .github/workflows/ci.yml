@@ -380,7 +380,7 @@ jobs:
         run: |
           ls
           ls "${{ matrix.runtime }}-runtime-${{ github.sha }}"
-          runtime_ver="$(ruby -e 'require "./scripts/github/lib.rb"; puts get_runtime()')"
+          runtime_ver="$(ruby -e 'require "./scripts/github/lib.rb"; puts get_runtime("${{ matrix.runtime }}")')"
           echo "{runtime_ver}={$runtime_ver}" >> $GITHUB_OUTPUT
 
       - name: Upload compact ${{ matrix.runtime }} wasm
