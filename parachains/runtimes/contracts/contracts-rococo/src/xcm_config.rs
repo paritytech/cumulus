@@ -105,7 +105,6 @@ parameter_types! {
 	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
 	pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
 	pub const MaxInstructions: u32 = 100;
-	pub const MaxPrefixes: u32 = 8;
 }
 
 match_types! {
@@ -136,7 +135,7 @@ pub type Barrier = DenyThenTry<
 				AllowSubscriptionsFrom<ParentOrSiblings>,
 			),
 			UniversalLocation,
-			MaxPrefixes,
+			ConstU32<8>,
 		>,
 	),
 >;

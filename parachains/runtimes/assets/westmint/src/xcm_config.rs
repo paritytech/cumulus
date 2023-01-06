@@ -135,7 +135,6 @@ pub type XcmOriginToTransactDispatchOrigin = (
 parameter_types! {
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
-	pub const MaxPrefixes: u32 = 8;
 	pub XcmAssetFeesReceiver: Option<AccountId> = Authorship::author();
 }
 
@@ -259,7 +258,7 @@ pub type Barrier = DenyThenTry<
 				AllowSubscriptionsFrom<Everything>,
 			),
 			UniversalLocation,
-			MaxPrefixes,
+			ConstU32<8>,
 		>,
 	),
 >;

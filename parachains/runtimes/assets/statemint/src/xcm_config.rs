@@ -263,7 +263,7 @@ pub type Barrier = DenyThenTry<
 				AllowSubscriptionsFrom<ParentOrSiblings>,
 			),
 			UniversalLocation,
-			MaxPrefixes,
+			ConstU32<8>,
 		>,
 	),
 >;
