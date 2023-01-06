@@ -36,9 +36,9 @@ use polkadot_primitives::{
 
 use codec::{Decode, DecodeAll, Encode};
 use futures::{channel::oneshot, future::FutureExt, Future};
+use sc_service::SpawnTaskHandle;
 use std::{convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc};
 use tokio::time::sleep;
-use sc_service::SpawnTaskHandle;
 #[cfg(test)]
 mod tests;
 
@@ -455,7 +455,7 @@ async fn wait_to_announce<Block: BlockT>(
 	}
 }
 
-pub async fn warp_sync_get<B,RCInterface>(
+pub async fn warp_sync_get<B, RCInterface>(
 	para_id: ParaId,
 	relay_chain_interface: RCInterface,
 	spawner: SpawnTaskHandle,
@@ -463,7 +463,6 @@ pub async fn warp_sync_get<B,RCInterface>(
 where
 	B: BlockT + 'static,
 	RCInterface: RelayChainInterface + 'static,
-
 {
 	let (sender, receiver) = oneshot::channel::<B::Header>();
 	spawner.spawn(
@@ -497,7 +496,6 @@ async fn wait_for_target_block<B, RCInterface>(
 where
 	B: BlockT + 'static,
 	RCInterface: RelayChainInterface + 'static,
-
 {
 	match relay_chain_interface.import_notification_stream().await {
 		Ok(_) => loop {
