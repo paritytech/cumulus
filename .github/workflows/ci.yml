@@ -85,7 +85,7 @@ jobs:
 
       # Upload artifacts
       - name: Upload integritee-collator
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: integritee-collator-${{ github.sha }}
           path: target/release/integritee-collator
@@ -274,7 +274,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: integritee-collator-${{ github.sha }}
 
@@ -383,7 +383,7 @@ jobs:
           echo "runtime_ver={$runtime_ver}" >> $GITHUB_OUTPUT
 
       - name: Upload compressed ${{ matrix.runtime }} wasm
-        uses: actions/upload-release-asset@v1
+        uses: shogo82148/actions-upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
