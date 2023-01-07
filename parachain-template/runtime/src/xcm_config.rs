@@ -13,8 +13,8 @@ use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
-	EnsureXcmOrigin, FixedWeightBounds, IsConcrete, NativeAsset, ParentIsPreset,
+	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowExplicitUnpaidExecutionFrom,
+	CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, IsConcrete, NativeAsset, ParentIsPreset,
 	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
 	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 	UsingComponents, WithComputedOrigin,
@@ -160,7 +160,7 @@ pub type Barrier = DenyThenTry<
 		WithComputedOrigin<
 		 	(
 				AllowTopLevelPaidExecutionFrom<Everything>,
-				AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+				AllowExplicitUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
 				// ^^^ Parent and its exec plurality get free execution
 			),
 			UniversalLocation,

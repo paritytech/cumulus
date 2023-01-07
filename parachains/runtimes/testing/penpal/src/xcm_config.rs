@@ -44,7 +44,7 @@ use sp_runtime::traits::Zero;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
+	AllowTopLevelPaidExecutionFrom, AllowExplicitUnpaidExecutionFrom, AsPrefixedGeneralIndex,
 	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter,
 	IsConcrete, LocalMint, NativeAsset, ParentIsPreset, RelayChainAsNative,
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
@@ -160,10 +160,8 @@ pub type Barrier = DenyThenTry<
 			(
 				// If the message is one that immediately attemps to pay for execution, then allow it.
 				AllowTopLevelPaidExecutionFrom<Everything>,
-				// Parent and its exec plurality get free execution
-				AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
-				// Assets Common Good parachain gets free execution
-				AllowUnpaidExecutionFrom<CommonGoodAssetsParachain>,
+				// Common Good Assets parachain, parent and its exec plurality get free execution
+				AllowExplicitUnpaidExecutionFrom<(CommonGoodAssetsParachain, ParentOrParentsExecutivePlurality)>,
 				// Subscriptions for version tracking are OK.
 				AllowSubscriptionsFrom<Everything>,
 			),
