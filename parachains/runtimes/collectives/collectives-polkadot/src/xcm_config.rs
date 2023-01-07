@@ -35,6 +35,7 @@ use xcm_builder::{
 	FixedWeightBounds, IsConcrete, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+	WithComputedOrigin,
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
@@ -185,14 +186,21 @@ pub type Barrier = DenyThenTry<
 	(
 		// Allow local users to buy weight credit.
 		TakeWeightCredit,
-		// Parent and its exec plurality get free execution.
-		AllowExplicitUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
 		// Expected responses are OK.
 		AllowKnownQueryResponses<PolkadotXcm>,
-		// Subscriptions for version tracking are OK.
-		AllowSubscriptionsFrom<ParentOrSiblings>,
-		// Allow anything to pay for execution.
-		AllowTopLevelPaidExecutionFrom<Everything>,
+		// Allow XCMs with some computed origins to pass through.
+		WithComputedOrigin<
+			(
+				// If the message is one that immediately attemps to pay for execution, then allow it.
+				AllowTopLevelPaidExecutionFrom<Everything>,
+				// Parent and its executive plurality (i.e. governance) gets free execution.
+				AllowExplicitUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+				// Subscriptions for version tracking are OK.
+				AllowSubscriptionsFrom<ParentOrSiblings>,
+			),
+			UniversalLocation,
+			ConstU32<8>,
+		>,
 	),
 >;
 
