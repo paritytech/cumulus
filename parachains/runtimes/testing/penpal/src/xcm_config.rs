@@ -161,7 +161,10 @@ pub type Barrier = DenyThenTry<
 				// If the message is one that immediately attemps to pay for execution, then allow it.
 				AllowTopLevelPaidExecutionFrom<Everything>,
 				// Common Good Assets parachain, parent and its exec plurality get free execution
-				AllowExplicitUnpaidExecutionFrom<(CommonGoodAssetsParachain, ParentOrParentsExecutivePlurality)>,
+				AllowExplicitUnpaidExecutionFrom<(
+					CommonGoodAssetsParachain,
+					ParentOrParentsExecutivePlurality,
+				)>,
 				// Subscriptions for version tracking are OK.
 				AllowSubscriptionsFrom<Everything>,
 			),
