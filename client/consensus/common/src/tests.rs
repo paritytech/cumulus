@@ -182,7 +182,7 @@ impl RelayChainInterface for Relaychain {
 		unimplemented!("Not needed for test")
 	}
 
-	async fn wait_for_block(&self, hash: PHash) -> RelayChainResult<()> {
+	async fn wait_for_block(&self, _: PHash) -> RelayChainResult<()> {
 		unimplemented!("Not needed for test")
 	}
 
