@@ -13,27 +13,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/// The Ambassador Program.
-/// todo docs
+//! The Ambassador Program.
+//! todo docs
+
 mod pallet;
 mod tracks;
-pub mod types;
 
 use super::*;
-use frame_support::traits::MapSuccess;
-pub use pallet::pallet as pallet_ambassador;
-use pallet::pallet::{
-	Ambassador as AmbassadorOrigin, Origin, SeniorAmbassador as SeniorAmbassadorOrigin,
+use frame_support::traits::TryMapSuccess;
+pub use pallet::pallet_ambassador;
+use pallet::pallet_ambassador::{
+	EnsureAmbassador, EnsureRankedAmbassador, EnsureSeniorAmbassador, Origin,
 };
-use sp_runtime::traits::Replace;
+use sp_arithmetic::traits::CheckedSub;
+use sp_runtime::{
+	morph_types,
+	traits::{ConstU16, TypedGet},
+};
+
+/// The Ambassador Program members ranks.
+pub mod ranks {
+	use pallet_ranked_collective::Rank;
+
+	#[allow(dead_code)]
+	pub const CANDIDATE: Rank = 0;
+	pub const AMBASSADOR: Rank = 1;
+	pub const SENIOR_AMBASSADOR: Rank = 2;
+	pub const HEAD_AMBASSADOR: Rank = 3;
+}
 
 impl pallet_ambassador::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type AmbassadorOrigin = AmbassadorOrigin;
+	type AmbassadorOrigin = EnsureAmbassador;
 	type MemberOrigin = pallet_ranked_collective::EnsureMember<
 		Runtime,
 		AmbassadorCollectiveInstance,
-		1, // todo types::ranks::AMBASSADOR
+		{ ranks::AMBASSADOR },
 	>;
 	type MaxAnnouncementsCount = ConstU32<100>;
 }
@@ -55,10 +70,10 @@ impl pallet_referenda::Config<AmbassadorReferendaInstance> for Runtime {
 	type SubmitOrigin = pallet_ranked_collective::EnsureMember<
 		Runtime,
 		AmbassadorCollectiveInstance,
-		1, // todo types::ranks::AMBASSADOR
+		{ ranks::AMBASSADOR },
 	>;
-	type CancelOrigin = EitherOf<EnsureRoot<AccountId>, SeniorAmbassadorOrigin>;
-	type KillOrigin = EitherOf<EnsureRoot<AccountId>, SeniorAmbassadorOrigin>;
+	type CancelOrigin = EitherOf<EnsureRoot<AccountId>, EnsureSeniorAmbassador>;
+	type KillOrigin = EitherOf<EnsureRoot<AccountId>, EnsureSeniorAmbassador>;
 	type Slash = ToParentTreasury<Runtime>;
 	type Votes = pallet_ranked_collective::Votes;
 	type Tally = pallet_ranked_collective::TallyOf<Runtime, AmbassadorCollectiveInstance>;
@@ -71,9 +86,15 @@ impl pallet_referenda::Config<AmbassadorReferendaInstance> for Runtime {
 }
 
 parameter_types! {
-	pub const CandidateRank: types::Rank = types::ranks::CANDIDATE;
-	pub const AmbassadorRank: types::Rank = types::ranks::AMBASSADOR;
-	pub const SeniorAmbassadorRank: types::Rank = types::ranks::SENIOR_AMBASSADOR;
+	pub const HeadAmbassadorRank: pallet_ranked_collective::Rank = ranks::HEAD_AMBASSADOR;
+}
+
+morph_types! {
+	/// A `TryMorph` implementation to reduce a scalar by a particular amount, checking for
+	/// underflow.
+	pub type CheckedReduceBy<N: TypedGet>: TryMorph = |r: N::Type| -> Result<N::Type, ()> {
+		r.checked_sub(&N::get()).ok_or(())
+	} where N::Type: CheckedSub;
 }
 
 pub type AmbassadorCollectiveInstance = pallet_ranked_collective::Instance1;
@@ -82,15 +103,12 @@ impl pallet_ranked_collective::Config<AmbassadorCollectiveInstance> for Runtime 
 	type WeightInfo = (); // TODO use actual weights
 	type RuntimeEvent = RuntimeEvent;
 	type PromoteOrigin = EitherOf<
-		frame_system::EnsureRootWithSuccess<Self::AccountId, CandidateRank>,
-		EitherOf<
-			MapSuccess<AmbassadorOrigin, Replace<CandidateRank>>,
-			MapSuccess<SeniorAmbassadorOrigin, Replace<AmbassadorRank>>,
-		>,
+		frame_system::EnsureRootWithSuccess<Self::AccountId, HeadAmbassadorRank>,
+		TryMapSuccess<EnsureRankedAmbassador, CheckedReduceBy<ConstU16<1>>>,
 	>;
 	type DemoteOrigin = EitherOf<
-		frame_system::EnsureRootWithSuccess<Self::AccountId, SeniorAmbassadorRank>,
-		MapSuccess<SeniorAmbassadorOrigin, Replace<AmbassadorRank>>,
+		frame_system::EnsureRootWithSuccess<Self::AccountId, HeadAmbassadorRank>,
+		TryMapSuccess<EnsureRankedAmbassador, CheckedReduceBy<ConstU16<1>>>,
 	>;
 	type Polls = AmbassadorReferenda;
 	type MinRankOfClass = sp_runtime::traits::Identity;

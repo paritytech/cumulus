@@ -13,25 +13,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/// The Ambassador Program referendum voting tracks.
-use super::{types, Origin};
+//! The Ambassador Program referendum voting tracks.
+
+use super::Origin;
 use crate::{Balance, BlockNumber, RuntimeOrigin, DAYS, MINUTES, UNITS};
 use sp_runtime::Perbill;
+
+/// Referendum TrackId type.
+pub type TrackId = u16;
+
+/// Referendum tracks ids.
+pub mod constants {
+	use super::TrackId;
+
+	pub const CANDIDATE: TrackId = 0;
+	pub const AMBASSADOR: TrackId = 1;
+	pub const SENIOR_AMBASSADOR: TrackId = 2;
+	pub const HEAD_AMBASSADOR: TrackId = 3;
+}
 
 /// The type implementing the [`pallet_referenda::TracksInfo`] trait for referenda pallet.
 pub struct TracksInfo;
 
 /// Information on the voting tracks.
 impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
-	type Id = types::TrackId;
+	type Id = TrackId;
 
 	type RuntimeOrigin = <RuntimeOrigin as frame_support::traits::OriginTrait>::PalletsOrigin;
 
 	/// Return the array of available tracks and their information.
 	fn tracks() -> &'static [(Self::Id, pallet_referenda::TrackInfo<Balance, BlockNumber>)] {
-		static DATA: [(u16, pallet_referenda::TrackInfo<Balance, BlockNumber>); 3] = [
+		static DATA: [(TrackId, pallet_referenda::TrackInfo<Balance, BlockNumber>); 4] = [
 			(
-				types::tracks::CANDIDATE,
+				constants::CANDIDATE,
 				pallet_referenda::TrackInfo {
 					name: "candidate",
 					max_deciding: 50,
@@ -53,7 +67,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				},
 			),
 			(
-				types::tracks::AMBASSADOR,
+				constants::AMBASSADOR,
 				pallet_referenda::TrackInfo {
 					name: "ambassador",
 					max_deciding: 50,
@@ -75,9 +89,31 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				},
 			),
 			(
-				types::tracks::SENIOR_AMBASSADOR,
+				constants::SENIOR_AMBASSADOR,
 				pallet_referenda::TrackInfo {
 					name: "senior ambassador",
+					max_deciding: 50,
+					decision_deposit: 10 * UNITS,
+					prepare_period: 30 * MINUTES,
+					decision_period: 7 * DAYS,
+					confirm_period: 30 * MINUTES,
+					min_enactment_period: 1 * MINUTES,
+					min_approval: pallet_referenda::Curve::LinearDecreasing {
+						length: Perbill::from_percent(100),
+						floor: Perbill::from_percent(50),
+						ceil: Perbill::from_percent(100),
+					},
+					min_support: pallet_referenda::Curve::LinearDecreasing {
+						length: Perbill::from_percent(100),
+						floor: Perbill::from_percent(10),
+						ceil: Perbill::from_percent(50),
+					},
+				},
+			),
+			(
+				constants::HEAD_AMBASSADOR,
+				pallet_referenda::TrackInfo {
+					name: "head ambassador",
 					max_deciding: 50,
 					decision_deposit: 10 * UNITS,
 					prepare_period: 30 * MINUTES,
@@ -108,14 +144,15 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 			// It is important that this is not available in production!
 			let root: Self::RuntimeOrigin = frame_system::RawOrigin::Root.into();
 			if &root == id {
-				return Ok(types::tracks::SENIOR_AMBASSADOR)
+				return Ok(constants::HEAD_AMBASSADOR)
 			}
 		}
 
 		match Origin::try_from(id.clone()) {
-			Ok(Origin::Candidate) => Ok(types::tracks::CANDIDATE),
-			Ok(Origin::Ambassador) => Ok(types::tracks::AMBASSADOR),
-			Ok(Origin::SeniorAmbassador) => Ok(types::tracks::SENIOR_AMBASSADOR),
+			Ok(Origin::Candidate) => Ok(constants::CANDIDATE),
+			Ok(Origin::Ambassador) => Ok(constants::AMBASSADOR),
+			Ok(Origin::SeniorAmbassador) => Ok(constants::SENIOR_AMBASSADOR),
+			Ok(Origin::HeadAmbassador) => Ok(constants::HEAD_AMBASSADOR),
 			_ => Err(()),
 		}
 	}

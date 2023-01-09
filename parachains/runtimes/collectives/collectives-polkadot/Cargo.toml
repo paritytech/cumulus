@@ -37,6 +37,7 @@ pallet-utility = { git = "https://github.com/paritytech/substrate", default-feat
 pallet-referenda = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-ranked-collective = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }

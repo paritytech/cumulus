@@ -13,12 +13,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[frame_support::pallet]
-pub mod pallet {
-	use super::super::types::Cid;
+//! TODO docs
 
+use frame_support::BoundedVec;
+use sp_core::ConstU32;
+
+/// IPFS compatible CID.
+// worst case 2 bytes base and codec, 2 bytes hash type and size, 64 bytes hash digest.
+pub type Cid = BoundedVec<u8, ConstU32<68>>;
+
+#[frame_support::pallet]
+pub mod pallet_ambassador {
+	use super::{super::ranks, Cid};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
+	use pallet_ranked_collective::Rank;
 
 	/// The current storage version.
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
@@ -48,14 +57,17 @@ pub mod pallet {
 	#[derive(PartialEq, Eq, Clone, MaxEncodedLen, Encode, Decode, TypeInfo, RuntimeDebug)]
 	#[pallet::origin]
 	pub enum Origin {
-		/// Candidates plurality voice given via referendum.
+		/// Plurality voice of the [ranks::CANDIDATE] members or above given via referendum.
 		Candidate,
-		/// Ambassador plurality voice given via referendum.
+		/// Plurality voice of the [ranks::AMBASSADOR] members or above given via referendum.
 		Ambassador,
-		/// SeniorAmbassador plurality voice given via referendum.
+		/// Plurality voice of the [ranks::SENIOR_AMBASSADOR] members or above given via referendum.
 		SeniorAmbassador,
+		/// Plurality voice of the [ranks::HEAD_AMBASSADOR] members or above given via referendum.
+		HeadAmbassador,
 	}
 
+	/// todo docs
 	#[pallet::error]
 	pub enum Error<T> {
 		/// The announcement is not found.
@@ -64,6 +76,7 @@ pub mod pallet {
 		TooManyAnnouncements,
 	}
 
+	/// todo docs
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -133,9 +146,9 @@ pub mod pallet {
 		}
 	}
 
-	pub struct Ambassador;
-	// todo P2 check impl
-	impl<O: Into<Result<Origin, O>> + From<Origin>> EnsureOrigin<O> for Ambassador {
+	/// Implementation of the [EnsureOrigin] trait for the [Origin::Ambassador] origin.
+	pub struct EnsureAmbassador;
+	impl<O: Into<Result<Origin, O>> + From<Origin>> EnsureOrigin<O> for EnsureAmbassador {
 		type Success = ();
 		fn try_origin(o: O) -> Result<Self::Success, O> {
 			o.into().and_then(|o| match o {
@@ -145,12 +158,29 @@ pub mod pallet {
 		}
 	}
 
-	pub struct SeniorAmbassador;
-	impl<O: Into<Result<Origin, O>> + From<Origin>> EnsureOrigin<O> for SeniorAmbassador {
+	/// Implementation of the [EnsureOrigin] trait for the [Origin::SeniorAmbassador] origin.
+	pub struct EnsureSeniorAmbassador;
+	impl<O: Into<Result<Origin, O>> + From<Origin>> EnsureOrigin<O> for EnsureSeniorAmbassador {
 		type Success = ();
 		fn try_origin(o: O) -> Result<Self::Success, O> {
 			o.into().and_then(|o| match o {
 				Origin::SeniorAmbassador => Ok(()),
+				r => Err(O::from(r)),
+			})
+		}
+	}
+
+	/// Implementation of the [EnsureOrigin] trait for the plurality voice [Origin]s with the success result
+	/// of the corresponding [Rank]. Not implemented for the [Origin::Candidate].
+	pub struct EnsureRankedAmbassador;
+
+	impl<O: Into<Result<Origin, O>> + From<Origin>> EnsureOrigin<O> for EnsureRankedAmbassador {
+		type Success = Rank;
+		fn try_origin(o: O) -> Result<Self::Success, O> {
+			o.into().and_then(|o| match o {
+				Origin::Ambassador => Ok(ranks::AMBASSADOR),
+				Origin::SeniorAmbassador => Ok(ranks::SENIOR_AMBASSADOR),
+				Origin::HeadAmbassador => Ok(ranks::HEAD_AMBASSADOR),
 				r => Err(O::from(r)),
 			})
 		}
