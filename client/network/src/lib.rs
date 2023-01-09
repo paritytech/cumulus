@@ -473,7 +473,6 @@ where
 				target: "cumulus-network",
 				"waiting for announce block in a background task...",
 			);
-			tracing::debug!(target: LOG_TARGET, "waiting for target block in a background task...",);
 			wait_for_target_block::<B, RCInterface>(sender, para_id, relay_chain_interface)
 				.await
 				.map_err(|e| {
