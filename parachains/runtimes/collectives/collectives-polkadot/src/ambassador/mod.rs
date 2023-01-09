@@ -14,7 +14,12 @@
 // limitations under the License.
 
 //! The Ambassador Program.
-//! todo docs
+//!
+//! The module defines the following on-chain functionality of the Ambassador Program:
+//! - managed set of the program members, where every member has a [rank](ranks) (via [pallet_ranked_collective]).
+//! - referendum functionality for the program members to propose, vote and execute passed proposals on behalf
+//! of the members of a certain [rank](Origin) (via [pallet_referenda]).
+//! - managed content (charter, announcements) (via [pallet_ambassador]).
 
 mod pallet;
 mod tracks;
@@ -44,7 +49,7 @@ pub mod ranks {
 
 impl pallet_ambassador::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type AmbassadorOrigin = EnsureAmbassador;
+	type CharterOrigin = EnsureAmbassador;
 	type MemberOrigin = pallet_ranked_collective::EnsureMember<
 		Runtime,
 		AmbassadorCollectiveInstance,
@@ -67,6 +72,7 @@ impl pallet_referenda::Config<AmbassadorReferendaInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Scheduler = Scheduler;
 	type Currency = Balances;
+	// A proposal can be submitted by a member of the Ambassador Program of [ranks::AMBASSADOR] rank or higher.
 	type SubmitOrigin = pallet_ranked_collective::EnsureMember<
 		Runtime,
 		AmbassadorCollectiveInstance,
@@ -102,10 +108,16 @@ pub type AmbassadorCollectiveInstance = pallet_ranked_collective::Instance1;
 impl pallet_ranked_collective::Config<AmbassadorCollectiveInstance> for Runtime {
 	type WeightInfo = (); // TODO use actual weights
 	type RuntimeEvent = RuntimeEvent;
+	// Promotion is by any of:
+	// - Root can promote arbitrarily.
+	// - a vote by the rank above the new rank.
 	type PromoteOrigin = EitherOf<
 		frame_system::EnsureRootWithSuccess<Self::AccountId, HeadAmbassadorRank>,
 		TryMapSuccess<EnsureRankedAmbassador, CheckedReduceBy<ConstU16<1>>>,
 	>;
+	// Demotion is by any of:
+	// - Root can demote arbitrarily.
+	// - a vote by the rank above the current rank.
 	type DemoteOrigin = EitherOf<
 		frame_system::EnsureRootWithSuccess<Self::AccountId, HeadAmbassadorRank>,
 		TryMapSuccess<EnsureRankedAmbassador, CheckedReduceBy<ConstU16<1>>>,

@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! TODO docs
+//! The module containing custom pallet/s of the Ambassador Program.
 
 use frame_support::BoundedVec;
 use sp_core::ConstU32;
@@ -46,8 +46,8 @@ pub mod pallet_ambassador {
 		/// A member of the Ambassador Program.
 		type MemberOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
-		/// Ambassador plurality voice.
-		type AmbassadorOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+		/// The origin to control the Ambassador Program charter.
+		type CharterOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
 		/// The maximum number of announcements.
 		#[pallet::constant]
@@ -67,7 +67,7 @@ pub mod pallet_ambassador {
 		HeadAmbassador,
 	}
 
-	/// todo docs
+	/// Errors encountered by the pallet (not a full list).
 	#[pallet::error]
 	pub enum Error<T> {
 		/// The announcement is not found.
@@ -76,7 +76,7 @@ pub mod pallet_ambassador {
 		TooManyAnnouncements,
 	}
 
-	/// todo docs
+	/// Events emitted by the pallet.
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -105,7 +105,7 @@ pub mod pallet_ambassador {
 		#[pallet::call_index(0)]
 		#[pallet::weight(0)] // TODO
 		pub fn set_charter(origin: OriginFor<T>, cid: Cid) -> DispatchResult {
-			T::AmbassadorOrigin::ensure_origin(origin)?;
+			T::CharterOrigin::ensure_origin(origin)?;
 
 			Charter::<T>::put(&cid);
 
@@ -158,13 +158,15 @@ pub mod pallet_ambassador {
 		}
 	}
 
-	/// Implementation of the [EnsureOrigin] trait for the [Origin::SeniorAmbassador] origin.
+	/// Implementation of the [EnsureOrigin] trait for the [Origin::SeniorAmbassador]
+	/// and [Origin::HeadAmbassador] origins.
 	pub struct EnsureSeniorAmbassador;
 	impl<O: Into<Result<Origin, O>> + From<Origin>> EnsureOrigin<O> for EnsureSeniorAmbassador {
 		type Success = ();
 		fn try_origin(o: O) -> Result<Self::Success, O> {
 			o.into().and_then(|o| match o {
 				Origin::SeniorAmbassador => Ok(()),
+				Origin::HeadAmbassador => Ok(()),
 				r => Err(O::from(r)),
 			})
 		}
