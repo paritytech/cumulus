@@ -16,8 +16,6 @@
 
 //! A module that enables a runtime to work as parachain.
 
-use polkadot_parachain::primitives::ValidationParams;
-
 #[cfg(not(feature = "std"))]
 #[doc(hidden)]
 pub mod implementation;
@@ -29,23 +27,7 @@ mod tests;
 pub use polkadot_parachain;
 #[cfg(not(feature = "std"))]
 #[doc(hidden)]
-pub use sp_runtime::traits::GetRuntimeBlockType;
-
-// Stores the [`ValidationParams`] that are being passed to `validate_block`.
-//
-// This value will only be set when a parachain validator validates a given `PoV`.
-environmental::environmental!(VALIDATION_PARAMS: ValidationParams);
-
-/// Execute the given closure with the [`ValidationParams`].
-///
-/// Returns `None` if the [`ValidationParams`] are not set, because the code is currently not being
-/// executed in the context of `validate_block`.
-pub(crate) fn with_validation_params<R>(f: impl FnOnce(&ValidationParams) -> R) -> Option<R> {
-	VALIDATION_PARAMS::with(|v| f(v))
-}
-
-/// Set the [`ValidationParams`] for the local context and execute the given closure in this context.
+pub use sp_io;
 #[cfg(not(feature = "std"))]
-fn set_and_run_with_validation_params<R>(mut params: ValidationParams, f: impl FnOnce() -> R) -> R {
-	VALIDATION_PARAMS::using(&mut params, f)
-}
+#[doc(hidden)]
+pub use sp_runtime::traits::GetRuntimeBlockType;

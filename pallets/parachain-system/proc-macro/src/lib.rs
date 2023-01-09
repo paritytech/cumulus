@@ -114,11 +114,15 @@ pub fn register_validate_block(input: proc_macro::TokenStream) -> proc_macro::To
 				use super::*;
 
 				#[no_mangle]
-				unsafe fn validate_block(arguments: *const u8, arguments_len: usize) -> u64 {
+				unsafe fn validate_block(arguments: *mut u8, arguments_len: usize) -> u64 {
 					let params = #crate_::validate_block::polkadot_parachain::load_params(
 						arguments,
 						arguments_len,
 					);
+
+					// Memory is scarce resource, so let's free the `arguments` as we don't
+					// need them anymore.
+					#crate_::validate_block::sp_io::allocator::free(arguments);
 
 					let res = #crate_::validate_block::implementation::validate_block::<
 						<#runtime as #crate_::validate_block::GetRuntimeBlockType>::RuntimeBlock,
