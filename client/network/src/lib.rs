@@ -502,7 +502,7 @@ where
 				.is_major_syncing()
 				.await
 				.map_err(|e| {
-					tracing::error!(target: LOG_TARGET, "Unable to determine sync status. {}", e)
+					tracing::error!(target: LOG_TARGET, "Unable to determine sync status. {e}")
 				})
 				.unwrap_or(false);
 
