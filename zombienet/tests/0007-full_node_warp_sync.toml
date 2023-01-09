@@ -16,10 +16,9 @@ chain = "rococo-local"
 [[parachains]]
 id = 2000
 cumulus_based = true
-chain_spec_path = "warp-sync-parachain-spec.json"
+chain_spec_path = "0007-warp-sync-parachain-spec.json"
 add_to_genesis = false
 
-  # run charlie as parachain collator
   [[parachains.collators]]
   name = "charlie"
   validator = true
@@ -28,7 +27,6 @@ add_to_genesis = false
   args = [""]
   db_snapshot = "https://github.com/samelamin/cumulus/blob/chain-snapshots/docker/snapshots/parachain.tgz?raw=true"
 
-  # run cumulus dave (a parachain full node) and wait for it to sync some blocks
   [[parachains.collators]]
   name = "dave"
   validator = true
@@ -37,7 +35,6 @@ add_to_genesis = false
   args = ["-lparachain=debug"]
   db_snapshot = "https://github.com/samelamin/cumulus/blob/chain-snapshots/docker/snapshots/parachain.tgz?raw=true"
 
-  # run cumulus eve (a parachain full node) and wait for it to sync some blocks
   [[parachains.collators]]
   name = "eve"
   validator = true
@@ -46,7 +43,6 @@ add_to_genesis = false
   args = ["-lparachain=debug"]
   db_snapshot = "https://github.com/samelamin/cumulus/blob/chain-snapshots/docker/snapshots/parachain.tgz?raw=true"
 
-  # run cumulus ferdie (a parachain full node) and wait for it to sync some blocks
   [[parachains.collators]]
   name = "ferdie"
   validator = true
@@ -55,7 +51,6 @@ add_to_genesis = false
   args = []
   db_snapshot = "https://github.com/samelamin/cumulus/blob/chain-snapshots/docker/snapshots/parachain.tgz?raw=true"
 
-  # run cumulus one (a parachain full node) and wait for it to sync some blocks
   [[parachains.collators]]
   name = "one"
   validator = false

@@ -38,7 +38,8 @@ use codec::{Decode, DecodeAll, Encode};
 use futures::{channel::oneshot, future::FutureExt, Future};
 use sc_service::SpawnTaskHandle;
 use std::{convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc};
-use tokio::time::sleep;
+use std::time::Duration;
+use futures_timer::Delay;
 #[cfg(test)]
 mod tests;
 
@@ -455,6 +456,7 @@ async fn wait_to_announce<Block: BlockT>(
 	}
 }
 
+/// Creates a new background task to wait for the relay chain to sync up and retreive the parachain header
 pub async fn warp_sync_get<B, RCInterface>(
 	para_id: ParaId,
 	relay_chain_interface: RCInterface,
@@ -476,9 +478,13 @@ where
 			wait_for_target_block::<B, _>(sender, para_id, relay_chain_interface)
 				.await
 				.map_err(|e| {
-					tracing::error!(target: LOG_TARGET, "Unable to determine sync status. {}", e)
+					tracing::error!(
+						target: LOG_TARGET,
+						"Unable to determine parachain target header {}",
+						e
+					)
 				})
-				.unwrap();
+				.unwrap_or_default();
 			tracing::debug!(target: LOG_TARGET, "target block reached");
 		}
 		.boxed(),
@@ -487,6 +493,7 @@ where
 	Ok(receiver)
 }
 
+/// loops while waiting for the relay chain to sync, once complete retrun the latest parachain header to warp to
 async fn wait_for_target_block<B, RCInterface>(
 	sender: oneshot::Sender<<B as BlockT>::Header>,
 	para_id: ParaId,
@@ -533,11 +540,11 @@ where
 						))) as Box<_>
 					})?;
 
+				tracing::debug!(target: LOG_TARGET, "Target block reached {:?}", target_header);
 				let _ = sender.send(target_header);
 				return Ok(())
 			}
-			tracing::info!(target: LOG_TARGET, "waiting for relay chain sync to complete......",);
-			sleep(std::time::Duration::from_secs(120)).await;
+			Delay::new(Duration::from_secs(30)).await;
 		},
 		_ => return Ok(()),
 	}

@@ -20,21 +20,17 @@
 
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::ParachainConsensus;
-
 use cumulus_client_pov_recovery::{PoVRecovery, RecoveryDelay};
-
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
-use polkadot_primitives::CollatorPair;
-
+use polkadot_primitives::v2::CollatorPair;
 use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, ProofProvider, UsageProvider,
 };
 use sc_telemetry::TelemetryWorkerHandle;
-
 use sc_consensus::{import_queue::ImportQueueService, BlockImport, ImportQueue};
 use sc_network::{config::SyncMode, NetworkService};
 use sc_network_transactions::TransactionsHandlerController;
@@ -44,8 +40,8 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{HeaderBackend, HeaderMetadata};
 use sp_core::traits::SpawnNamed;
 use sp_runtime::traits::{Block as BlockT, BlockIdTo};
-
 use futures::channel::mpsc;
+use sc_service::SpawnTaskHandle;
 use std::{sync::Arc, time::Duration};
 
 // Given the sporadic nature of the explicit recovery operation and the
@@ -292,7 +288,7 @@ pub struct BuildNetworkParams<
 	pub transaction_pool: Arc<sc_transaction_pool::FullPool<Block, Client>>,
 	pub para_id: ParaId,
 	pub relay_chain_interface: RCInterface,
-	pub task_manager: &'a mut TaskManager,
+	pub spawn_handle: SpawnTaskHandle,
 	pub import_queue: IQ,
 }
 
@@ -303,7 +299,7 @@ pub async fn build_network<'a, Block, Client, RCInterface, IQ>(
 		client,
 		transaction_pool,
 		para_id,
-		task_manager,
+		spawn_handle,
 		relay_chain_interface,
 		import_queue,
 	}: BuildNetworkParams<'a, Block, Client, RCInterface, IQ>,
@@ -335,18 +331,14 @@ where
 {
 	let warp_sync_params = match parachain_config.network.sync_mode {
 		SyncMode::Warp => {
-			if let Ok(target_block) =
-				cumulus_client_network::warp_sync_get::<Block, RCInterface>(
-					para_id,
-					relay_chain_interface.clone(),
-					task_manager.spawn_handle(),
-				)
-				.await
-			{
-				Some(WarpSyncParams::WaitForTarget(target_block))
-			} else {
-				None
-			}
+			let target_block = cumulus_client_network::warp_sync_get::<Block, RCInterface>(
+				para_id,
+				relay_chain_interface.clone(),
+				spawn_handle.clone(),
+			)
+			.await
+			.map_err(|e| format!("Error: {:?}", e))?;
+			Some(WarpSyncParams::WaitForTarget(target_block))
 		},
 		_ => None,
 	};
@@ -359,7 +351,7 @@ where
 			config: parachain_config,
 			client,
 			transaction_pool,
-			spawn_handle: task_manager.spawn_handle(),
+			spawn_handle,
 			import_queue,
 			block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
 			warp_sync_params,

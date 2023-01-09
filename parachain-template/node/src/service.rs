@@ -178,7 +178,7 @@ async fn start_node_impl(
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
 			para_id,
-			task_manager: &mut task_manager,
+			spawn_handle: task_manager.spawn_handle(),
 			relay_chain_interface: relay_chain_interface.clone(),
 			import_queue: params.import_queue,
 		})
