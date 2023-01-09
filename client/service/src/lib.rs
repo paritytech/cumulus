@@ -47,7 +47,6 @@ use sp_core::traits::SpawnNamed;
 use sp_runtime::traits::Block as BlockT;
 
 use futures::channel::mpsc;
-use sp_runtime::traits::BlockIdTo;
 use std::{sync::Arc, time::Duration};
 
 // Given the sporadic nature of the explicit recovery operation and the
