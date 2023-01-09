@@ -43,8 +43,7 @@ use sc_utils::mpsc::TracingUnboundedSender;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{HeaderBackend, HeaderMetadata};
 use sp_core::traits::SpawnNamed;
-
-use sp_runtime::traits::Block as BlockT;
+use sp_runtime::traits::{Block as BlockT, BlockIdTo};
 
 use futures::channel::mpsc;
 use std::{sync::Arc, time::Duration};
