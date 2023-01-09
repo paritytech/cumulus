@@ -485,7 +485,7 @@ where
 		.boxed(),
 	);
 
-	return Ok(receiver)
+	Ok(receiver)
 }
 
 async fn wait_for_target_block<B, RCInterface>(
