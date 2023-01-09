@@ -296,8 +296,7 @@ pub struct BuildNetworkParams<
 	pub import_queue: IQ,
 }
 
-/// Build the network service
-///
+/// Build the network service, the network status sinks and an RPC sender.
 pub async fn build_network<'a, Block, Client, RCInterface, IQ>(
 	BuildNetworkParams {
 		parachain_config,
