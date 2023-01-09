@@ -513,7 +513,7 @@ where
 
 			if !is_syncing {
 				let relay_chain_best_hash = relay_chain_interface
-					.best_block_hash()
+					.last_finalised_block_hash()
 					.await
 					.map_err(|e| Box::new(e) as Box<_>)?;
 
