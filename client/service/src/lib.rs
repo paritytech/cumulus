@@ -20,28 +20,27 @@
 
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::ParachainConsensus;
-use cumulus_client_pov_recovery::{PoVRecovery, RecoveryDelay};
 use cumulus_client_network::BlockAnnounceValidator;
+use cumulus_client_pov_recovery::{PoVRecovery, RecoveryDelay};
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
+use futures::channel::mpsc;
 use polkadot_primitives::v2::CollatorPair;
 use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, ProofProvider, UsageProvider,
 };
-use sc_telemetry::TelemetryWorkerHandle;
 use sc_consensus::{import_queue::ImportQueueService, BlockImport, ImportQueue};
 use sc_network::{config::SyncMode, NetworkService};
 use sc_network_transactions::TransactionsHandlerController;
-use sc_service::{Configuration, NetworkStarter, TaskManager, WarpSyncParams};
+use sc_service::{Configuration, NetworkStarter, SpawnTaskHandle, TaskManager, WarpSyncParams};
+use sc_telemetry::TelemetryWorkerHandle;
 use sc_utils::mpsc::TracingUnboundedSender;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{HeaderBackend, HeaderMetadata};
 use sp_core::traits::SpawnNamed;
 use sp_runtime::traits::{Block as BlockT, BlockIdTo};
-use futures::channel::mpsc;
-use sc_service::SpawnTaskHandle;
 use std::{sync::Arc, time::Duration};
 
 // Given the sporadic nature of the explicit recovery operation and the

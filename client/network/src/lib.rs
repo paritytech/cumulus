@@ -36,10 +36,9 @@ use polkadot_primitives::{
 
 use codec::{Decode, DecodeAll, Encode};
 use futures::{channel::oneshot, future::FutureExt, Future};
-use sc_service::SpawnTaskHandle;
-use std::{convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc};
-use std::time::Duration;
 use futures_timer::Delay;
+use sc_service::SpawnTaskHandle;
+use std::{convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc, time::Duration};
 #[cfg(test)]
 mod tests;
 
@@ -456,7 +455,7 @@ async fn wait_to_announce<Block: BlockT>(
 	}
 }
 
-/// Creates a new background task to wait for the relay chain to sync up and retreive the parachain header
+/// Creates a new background task to wait for the relay chain to sync up and retrieve the parachain header
 pub async fn warp_sync_get<B, RCInterface>(
 	para_id: ParaId,
 	relay_chain_interface: RCInterface,
@@ -485,7 +484,6 @@ where
 					)
 				})
 				.unwrap_or_default();
-			tracing::debug!(target: LOG_TARGET, "target block reached");
 		}
 		.boxed(),
 	);
@@ -546,6 +544,9 @@ where
 			}
 			Delay::new(Duration::from_secs(30)).await;
 		},
-		_ => return Ok(()),
+		Err(e) => {
+			tracing::error!(target: LOG_TARGET, "Failed to retrieve import notification {:?}", e);
+			Err(Box::new(e))
+		},
 	}
 }
