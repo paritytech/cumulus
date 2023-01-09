@@ -31,7 +31,7 @@ cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 
 [dev-dependencies]
 portpicker = "0.1.1"
-tokio = { version = "1.23.0", features = ["macros"] }
+tokio = { version = "1.24.1", features = ["macros"] }
 url = "2.3.1"
 
 # Substrate
@@ -45,7 +45,6 @@ substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch
 
 # Polkadot
 polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus
