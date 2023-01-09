@@ -61,7 +61,6 @@ pub type ToBridgeHubWococoHaulBlobExporter = HaulBlobExporter<
 	(),
 >;
 pub struct ToBridgeHubWococoXcmBlobHauler;
-pub const DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO: LaneId = [0, 0, 0, 2];
 impl XcmBlobHauler for ToBridgeHubWococoXcmBlobHauler {
 	type MessageSender =
 		pallet_bridge_messages::Pallet<Runtime, WithBridgeHubWococoMessagesInstance>;
@@ -74,6 +73,7 @@ impl XcmBlobHauler for ToBridgeHubWococoXcmBlobHauler {
 		DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO
 	}
 }
+const DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO: LaneId = [0, 0, 0, 1];
 
 /// Messaging Bridge configuration for BridgeHubRococo -> BridgeHubWococo
 pub struct WithBridgeHubWococoMessageBridge;

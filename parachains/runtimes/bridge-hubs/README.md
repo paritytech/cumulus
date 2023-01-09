@@ -124,8 +124,7 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
     --rococo-headers-to-bridge-hub-wococo-signer //Bob \
     --rococo-parachains-to-bridge-hub-wococo-signer //Bob \
     --bridge-hub-wococo-transactions-mortality 4 \
-    --lane 00000001 \
-    --lane 00000002
+    --lane 00000001
 ```
 
 **Check relay-chain headers relaying:**

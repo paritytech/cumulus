@@ -256,8 +256,7 @@ function run_relay() {
         --rococo-headers-to-bridge-hub-wococo-signer //Bob \
         --rococo-parachains-to-bridge-hub-wococo-signer //Bob \
         --bridge-hub-wococo-transactions-mortality 4 \
-        --lane 00000001 \
-        --lane 00000002
+        --lane 00000001
 }
 
 case "$1" in
