@@ -473,7 +473,7 @@ where
 				target: "cumulus-network",
 				"waiting for announce block in a background task...",
 			);
-			wait_for_target_block::<B, RCInterface>(sender, para_id, relay_chain_interface)
+			wait_for_target_block::<B, _>(sender, para_id, relay_chain_interface)
 				.await
 				.map_err(|e| {
 					tracing::error!(target: LOG_TARGET, "Unable to determine sync status. {}", e)
