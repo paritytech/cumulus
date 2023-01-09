@@ -479,7 +479,7 @@ where
 					tracing::error!(target: LOG_TARGET, "Unable to determine sync status. {}", e)
 				})
 				.unwrap();
-			tracing::debug!(target: LOG_TARGET, "target block reached",);
+			tracing::debug!(target: LOG_TARGET, "target block reached");
 		}
 		.boxed(),
 	);
