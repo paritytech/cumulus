@@ -335,7 +335,7 @@ where
 {
 	let warp_sync_params = match parachain_config.network.sync_mode {
 		SyncMode::Warp => {
-			let warp_sync_params = if let Ok(target_block) =
+			if let Ok(target_block) =
 				cumulus_client_network::warp_sync_get::<Block, RCInterface>(
 					para_id,
 					relay_chain_interface.clone(),
@@ -346,8 +346,7 @@ where
 				Some(WarpSyncParams::WaitForTarget(target_block))
 			} else {
 				None
-			};
-			warp_sync_params
+			}
 		},
 		_ => None,
 	};
