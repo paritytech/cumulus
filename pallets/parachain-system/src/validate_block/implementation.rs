@@ -96,8 +96,6 @@ where
 
 	let (header, extrinsics, storage_proof) = block_data.deconstruct();
 
-	let head_data = HeadData(header.encode());
-
 	let block = B::new(header, extrinsics);
 	assert!(parent_header.hash() == *block.header().parent_hash(), "Invalid parent hash");
 
@@ -184,6 +182,8 @@ where
 	});
 
 	run_with_externalities::<B, _, _>(&backend, || {
+		let head_data = HeadData(block.header().encode());
+
 		E::execute_block(block);
 
 		let new_validation_code = crate::NewValidationCode::<PSC>::get();
