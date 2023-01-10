@@ -29,8 +29,8 @@ use sp_api::ApiError;
 
 pub use cumulus_primitives_core::{
 	relay_chain::{
-		CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId,
-		Hash as PHash, Header as PHeader, InboundHrmpMessage,
+		CommittedCandidateReceipt, Hash as PHash, Header as PHeader, InboundHrmpMessage,
+		OccupiedCoreAssumption, SessionIndex, ValidatorId,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
