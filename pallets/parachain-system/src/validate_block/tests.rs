@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use codec::{Decode, Encode, DecodeAll};
+use codec::{Decode, DecodeAll, Encode};
 use cumulus_primitives_core::{ParachainBlockData, PersistedValidationData};
 use cumulus_test_client::{
 	generate_extrinsic,
@@ -299,14 +299,12 @@ fn validation_params_and_memory_optimized_validation_params_encode_and_decode() 
 	const BLOCK_DATA: &[u8] = &[1, 2, 3, 4, 5];
 	const PARENT_HEAD: &[u8] = &[1, 3, 4, 5, 6, 7, 9];
 
-
-	let validation_params =
-		ValidationParams {
-			block_data: BlockData(BLOCK_DATA.encode()),
-			parent_head: HeadData(PARENT_HEAD.encode()),
-			relay_parent_number: 1,
-			relay_parent_storage_root: Hash::random(),
-		};
+	let validation_params = ValidationParams {
+		block_data: BlockData(BLOCK_DATA.encode()),
+		parent_head: HeadData(PARENT_HEAD.encode()),
+		relay_parent_number: 1,
+		relay_parent_storage_root: Hash::random(),
+	};
 
 	let encoded = validation_params.encode();
 

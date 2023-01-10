@@ -24,19 +24,19 @@ mod tests;
 
 #[cfg(not(feature = "std"))]
 #[doc(hidden)]
-pub use polkadot_parachain;
-#[cfg(not(feature = "std"))]
-#[doc(hidden)]
-pub use sp_std;
-#[cfg(not(feature = "std"))]
-#[doc(hidden)]
 pub use bytes;
 #[cfg(not(feature = "std"))]
 #[doc(hidden)]
 pub use codec::decode_from_bytes;
 #[cfg(not(feature = "std"))]
 #[doc(hidden)]
+pub use polkadot_parachain;
+#[cfg(not(feature = "std"))]
+#[doc(hidden)]
 pub use sp_runtime::traits::GetRuntimeBlockType;
+#[cfg(not(feature = "std"))]
+#[doc(hidden)]
+pub use sp_std;
 
 /// Basically the same as [`ValidationParams`](polkadot_parachain::primitives::ValidationParams),
 /// but a little bit optimized for our use case here.
