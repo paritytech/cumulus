@@ -16,9 +16,7 @@
 
 //! The actual implementation of the validate block functionality.
 
-use frame_support::traits::{ExecuteBlock, ExtrinsicCall, Get, IsSubType};
-use sp_runtime::traits::{Block as BlockT, Extrinsic, HashFor, Header as HeaderT};
-
+use super::MemoryOptimizedValidationParams;
 use cumulus_primitives_core::{
 	relay_chain::v2::Hash as RHash, ParachainBlockData, PersistedValidationData,
 };
@@ -30,9 +28,11 @@ use polkadot_parachain::primitives::{
 
 use codec::{Decode, Encode};
 
+use frame_support::traits::{ExecuteBlock, ExtrinsicCall, Get, IsSubType};
 use sp_core::storage::{ChildInfo, StateVersion};
 use sp_externalities::{set_and_run_with_externalities, Externalities};
 use sp_io::KillStorageResult;
+use sp_runtime::traits::{Block as BlockT, Extrinsic, HashFor, Header as HeaderT};
 use sp_std::{mem, prelude::*};
 use sp_trie::MemoryDB;
 
@@ -77,39 +77,41 @@ pub fn validate_block<
 	PSC: crate::Config,
 	CI: crate::CheckInherents<B>,
 >(
-	params: ValidationParams,
+	MemoryOptimizedValidationParams {
+		block_data,
+		parent_head,
+		relay_parent_number,
+		relay_parent_storage_root,
+	}: MemoryOptimizedValidationParams,
 ) -> ValidationResult
 where
 	B::Extrinsic: ExtrinsicCall,
 	<B::Extrinsic as Extrinsic>::Call: IsSubType<crate::Call<PSC>>,
 {
-	let block_data = ParachainBlockData::<B>::decode(&mut &params.block_data.0[..])
+	let block_data = codec::decode_from_bytes::<ParachainBlockData<B>>(block_data)
 		.expect("Invalid parachain block data");
 
-	let parent_head =
-		B::Header::decode(&mut &params.parent_head.0[..]).expect("Invalid parent head");
-
-	// We decoded the block data and don't need it anymore. So, we release it to free the memory.
-	mem::drop(params.block_data);
+	let parent_header =
+		codec::decode_from_bytes::<B::Header>(parent_head.clone()).expect("Invalid parent head");
 
 	let (header, extrinsics, storage_proof) = block_data.deconstruct();
 
 	let head_data = HeadData(header.encode());
 
 	let block = B::new(header, extrinsics);
-	assert!(parent_head.hash() == *block.header().parent_hash(), "Invalid parent hash");
+	assert!(parent_header.hash() == *block.header().parent_hash(), "Invalid parent hash");
 
 	let inherent_data = extract_parachain_inherent_data(&block);
 
 	validate_validation_data(
 		&inherent_data.validation_data,
-		params.relay_parent_number,
-		params.relay_parent_storage_root,
-		params.parent_head,
+		relay_parent_number,
+		relay_parent_storage_root,
+		parent_head,
 	);
 
 	// Create the db
-	let db = match storage_proof.to_memory_db(Some(parent_head.state_root())) {
+	let db = match storage_proof.to_memory_db(Some(parent_header.state_root())) {
 		Ok((db, _)) => db,
 		Err(_) => panic!("Compact proof decoding failure."),
 	};
@@ -118,7 +120,8 @@ where
 
 	// We use the storage root of the `parent_head` to ensure that it is the correct root.
 	// This is already being done above while creating the in-memory db, but let's be paranoid!!
-	let backend = sp_state_machine::TrieBackendBuilder::new(db, *parent_head.state_root()).build();
+	let backend =
+		sp_state_machine::TrieBackendBuilder::new(db, *parent_header.state_root()).build();
 
 	let _guard = (
 		// Replace storage calls with our own implementations
@@ -236,9 +239,9 @@ fn validate_validation_data(
 	validation_data: &PersistedValidationData,
 	relay_parent_number: RelayChainBlockNumber,
 	relay_parent_storage_root: RHash,
-	parent_head: HeadData,
+	parent_head: bytes::Bytes,
 ) {
-	assert_eq!(parent_head, validation_data.parent_head, "Parent head doesn't match");
+	assert_eq!(parent_head, validation_data.parent_head.0, "Parent head doesn't match");
 	assert_eq!(
 		relay_parent_number, validation_data.relay_parent_number,
 		"Relay parent number doesn't match",

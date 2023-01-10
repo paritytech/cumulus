@@ -27,7 +27,32 @@ mod tests;
 pub use polkadot_parachain;
 #[cfg(not(feature = "std"))]
 #[doc(hidden)]
-pub use sp_io;
+pub use sp_std;
+#[cfg(not(feature = "std"))]
+#[doc(hidden)]
+pub use bytes;
+#[cfg(not(feature = "std"))]
+#[doc(hidden)]
+pub use codec::decode_from_bytes;
 #[cfg(not(feature = "std"))]
 #[doc(hidden)]
 pub use sp_runtime::traits::GetRuntimeBlockType;
+
+/// Basically the same as [`ValidationParams`](polkadot_parachain::primitives::ValidationParams),
+/// but a little bit optimized for our use case here.
+///
+/// `block_data` and `head_data` are represented as [`bytes::Bytes`] to make them reuse
+/// the memory of the input parameter of the exported `validate_blocks` function.
+///
+/// The layout of this type must match exactly the layout of
+/// [`ValidationParams`](polkadot_parachain::primitives::ValidationParams) to have the same
+/// SCALE encoding.
+#[derive(codec::Decode)]
+#[cfg_attr(feature = "std", derive(codec::Encode))]
+#[doc(hidden)]
+pub struct MemoryOptimizedValidationParams {
+	pub parent_head: bytes::Bytes,
+	pub block_data: bytes::Bytes,
+	pub relay_parent_number: cumulus_primitives_core::relay_chain::v2::BlockNumber,
+	pub relay_parent_storage_root: cumulus_primitives_core::relay_chain::v2::Hash,
+}

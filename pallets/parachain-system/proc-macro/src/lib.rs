@@ -115,14 +115,19 @@ pub fn register_validate_block(input: proc_macro::TokenStream) -> proc_macro::To
 
 				#[no_mangle]
 				unsafe fn validate_block(arguments: *mut u8, arguments_len: usize) -> u64 {
-					let params = #crate_::validate_block::polkadot_parachain::load_params(
-						arguments,
-						arguments_len,
+					// We convert the `arguments` into a boxed slice and then into `Bytes`.
+					let args = #crate_::validate_block::sp_std::boxed::Box::from_raw(
+						#crate_::validate_block::sp_std::slice::from_raw_parts_mut(
+							arguments,
+							arguments_len,
+						)
 					);
+					let args = #crate_::validate_block::bytes::Bytes::from(args);
 
-					// Memory is scarce resource, so let's free the `arguments` as we don't
-					// need them anymore.
-					#crate_::validate_block::sp_io::allocator::free(arguments);
+					// Then we decode from these bytes the `MemoryOptimizedValidationParams`.
+					let params = #crate_::validate_block::decode_from_bytes::<
+						#crate_::validate_block::MemoryOptimizedValidationParams
+					>(args).expect("Invalid arguments to `validate_block`.");
 
 					let res = #crate_::validate_block::implementation::validate_block::<
 						<#runtime as #crate_::validate_block::GetRuntimeBlockType>::RuntimeBlock,
