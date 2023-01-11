@@ -82,7 +82,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 	async fn validators(
 		&self,
 		at: Hash,
-	) -> Result<Vec<polkadot_primitives::v3::ValidatorId>, sp_api::ApiError> {
+	) -> Result<Vec<polkadot_primitives::ValidatorId>, sp_api::ApiError> {
 		Ok(self.rpc_client.parachain_host_validators(at).await?)
 	}
 
@@ -91,8 +91,8 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		at: Hash,
 	) -> Result<
 		(
-			Vec<Vec<polkadot_primitives::v3::ValidatorIndex>>,
-			polkadot_primitives::v3::GroupRotationInfo<polkadot_core_primitives::BlockNumber>,
+			Vec<Vec<polkadot_primitives::ValidatorIndex>>,
+			polkadot_primitives::GroupRotationInfo<polkadot_core_primitives::BlockNumber>,
 		),
 		sp_api::ApiError,
 	> {
@@ -103,7 +103,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		&self,
 		at: Hash,
 	) -> Result<
-		Vec<polkadot_primitives::v3::CoreState<Hash, polkadot_core_primitives::BlockNumber>>,
+		Vec<polkadot_primitives::CoreState<Hash, polkadot_core_primitives::BlockNumber>>,
 		sp_api::ApiError,
 	> {
 		Ok(self.rpc_client.parachain_host_availability_cores(at).await?)
@@ -113,7 +113,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		&self,
 		at: Hash,
 		para_id: cumulus_primitives_core::ParaId,
-		assumption: polkadot_primitives::v3::OccupiedCoreAssumption,
+		assumption: polkadot_primitives::OccupiedCoreAssumption,
 	) -> Result<
 		Option<
 			cumulus_primitives_core::PersistedValidationData<
@@ -140,7 +140,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 				Hash,
 				polkadot_core_primitives::BlockNumber,
 			>,
-			polkadot_primitives::v3::ValidationCodeHash,
+			polkadot_primitives::ValidationCodeHash,
 		)>,
 		sp_api::ApiError,
 	> {
@@ -158,7 +158,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		&self,
 		at: Hash,
 		para_id: cumulus_primitives_core::ParaId,
-		outputs: polkadot_primitives::v3::CandidateCommitments,
+		outputs: polkadot_primitives::CandidateCommitments,
 	) -> Result<bool, sp_api::ApiError> {
 		Ok(self
 			.rpc_client
@@ -169,7 +169,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 	async fn session_index_for_child(
 		&self,
 		at: Hash,
-	) -> Result<polkadot_primitives::v3::SessionIndex, sp_api::ApiError> {
+	) -> Result<polkadot_primitives::SessionIndex, sp_api::ApiError> {
 		Ok(self.rpc_client.parachain_host_session_index_for_child(at).await?)
 	}
 
@@ -177,8 +177,8 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		&self,
 		at: Hash,
 		para_id: cumulus_primitives_core::ParaId,
-		assumption: polkadot_primitives::v3::OccupiedCoreAssumption,
-	) -> Result<Option<polkadot_primitives::v3::ValidationCode>, sp_api::ApiError> {
+		assumption: polkadot_primitives::OccupiedCoreAssumption,
+	) -> Result<Option<polkadot_primitives::ValidationCode>, sp_api::ApiError> {
 		Ok(self.rpc_client.parachain_host_validation_code(at, para_id, assumption).await?)
 	}
 
@@ -186,8 +186,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		&self,
 		at: Hash,
 		para_id: cumulus_primitives_core::ParaId,
-	) -> Result<Option<polkadot_primitives::v3::CommittedCandidateReceipt<Hash>>, sp_api::ApiError>
-	{
+	) -> Result<Option<polkadot_primitives::CommittedCandidateReceipt<Hash>>, sp_api::ApiError> {
 		Ok(self
 			.rpc_client
 			.parachain_host_candidate_pending_availability(at, para_id)
@@ -197,7 +196,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 	async fn candidate_events(
 		&self,
 		at: Hash,
-	) -> Result<Vec<polkadot_primitives::v3::CandidateEvent<Hash>>, sp_api::ApiError> {
+	) -> Result<Vec<polkadot_primitives::CandidateEvent<Hash>>, sp_api::ApiError> {
 		Ok(self.rpc_client.parachain_host_candidate_events(at).await?)
 	}
 
@@ -234,8 +233,8 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 	async fn validation_code_by_hash(
 		&self,
 		at: Hash,
-		validation_code_hash: polkadot_primitives::v3::ValidationCodeHash,
-	) -> Result<Option<polkadot_primitives::v3::ValidationCode>, sp_api::ApiError> {
+		validation_code_hash: polkadot_primitives::ValidationCodeHash,
+	) -> Result<Option<polkadot_primitives::ValidationCode>, sp_api::ApiError> {
 		Ok(self
 			.rpc_client
 			.parachain_host_validation_code_by_hash(at, validation_code_hash)
@@ -245,14 +244,14 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 	async fn on_chain_votes(
 		&self,
 		at: Hash,
-	) -> Result<Option<polkadot_primitives::v3::ScrapedOnChainVotes<Hash>>, sp_api::ApiError> {
+	) -> Result<Option<polkadot_primitives::ScrapedOnChainVotes<Hash>>, sp_api::ApiError> {
 		Ok(self.rpc_client.parachain_host_on_chain_votes(at).await?)
 	}
 
 	async fn session_info(
 		&self,
 		at: Hash,
-		index: polkadot_primitives::v3::SessionIndex,
+		index: polkadot_primitives::SessionIndex,
 	) -> Result<Option<polkadot_primitives::v3::SessionInfo>, sp_api::ApiError> {
 		Ok(self.rpc_client.parachain_host_session_info(at, index).await?)
 	}
@@ -260,7 +259,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 	async fn session_info_before_version_2(
 		&self,
 		at: Hash,
-		index: polkadot_primitives::v3::SessionIndex,
+		index: polkadot_primitives::SessionIndex,
 	) -> Result<Option<polkadot_primitives::v2::OldV1SessionInfo>, sp_api::ApiError> {
 		Ok(self.rpc_client.parachain_host_session_info_before_version_2(at, index).await?)
 	}
@@ -268,7 +267,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 	async fn session_info_before_version_3(
 		&self,
 		at: Hash,
-		index: polkadot_primitives::v3::SessionIndex,
+		index: polkadot_primitives::SessionIndex,
 	) -> Result<Option<polkadot_primitives::v2::SessionInfo>, sp_api::ApiError> {
 		Ok(self.rpc_client.parachain_host_session_info_before_version_3(at, index).await?)
 	}
@@ -276,8 +275,8 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 	async fn submit_pvf_check_statement(
 		&self,
 		at: Hash,
-		stmt: polkadot_primitives::v3::PvfCheckStatement,
-		signature: polkadot_primitives::v3::ValidatorSignature,
+		stmt: polkadot_primitives::PvfCheckStatement,
+		signature: polkadot_primitives::ValidatorSignature,
 	) -> Result<(), sp_api::ApiError> {
 		Ok(self
 			.rpc_client
@@ -288,7 +287,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 	async fn pvfs_require_precheck(
 		&self,
 		at: Hash,
-	) -> Result<Vec<polkadot_primitives::v3::ValidationCodeHash>, sp_api::ApiError> {
+	) -> Result<Vec<polkadot_primitives::ValidationCodeHash>, sp_api::ApiError> {
 		Ok(self.rpc_client.parachain_host_pvfs_require_precheck(at).await?)
 	}
 
@@ -296,8 +295,8 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		&self,
 		at: Hash,
 		para_id: cumulus_primitives_core::ParaId,
-		assumption: polkadot_primitives::v3::OccupiedCoreAssumption,
-	) -> Result<Option<polkadot_primitives::v3::ValidationCodeHash>, sp_api::ApiError> {
+		assumption: polkadot_primitives::OccupiedCoreAssumption,
+	) -> Result<Option<polkadot_primitives::ValidationCodeHash>, sp_api::ApiError> {
 		Ok(self
 			.rpc_client
 			.parachain_host_validation_code_hash(at, para_id, assumption)
@@ -311,7 +310,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 	async fn authorities(
 		&self,
 		at: Hash,
-	) -> std::result::Result<Vec<polkadot_primitives::v3::AuthorityDiscoveryId>, sp_api::ApiError> {
+	) -> std::result::Result<Vec<polkadot_primitives::AuthorityDiscoveryId>, sp_api::ApiError> {
 		Ok(self.rpc_client.authority_discovery_authorities(at).await?)
 	}
 
@@ -325,9 +324,9 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		at: Hash,
 	) -> Result<
 		Vec<(
-			polkadot_primitives::v3::SessionIndex,
-			polkadot_primitives::v3::CandidateHash,
-			polkadot_primitives::v3::DisputeState<polkadot_primitives::v3::BlockNumber>,
+			polkadot_primitives::SessionIndex,
+			polkadot_primitives::CandidateHash,
+			polkadot_primitives::DisputeState<polkadot_primitives::BlockNumber>,
 		)>,
 		ApiError,
 	> {
@@ -340,7 +339,7 @@ impl AuthorityDiscovery<Block> for BlockChainRpcClient {
 	async fn authorities(
 		&self,
 		at: Hash,
-	) -> std::result::Result<Vec<polkadot_primitives::v3::AuthorityDiscoveryId>, sp_api::ApiError> {
+	) -> std::result::Result<Vec<polkadot_primitives::AuthorityDiscoveryId>, sp_api::ApiError> {
 		let result = self.rpc_client.authority_discovery_authorities(at).await?;
 		Ok(result)
 	}

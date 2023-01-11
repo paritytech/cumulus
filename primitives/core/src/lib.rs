@@ -28,7 +28,7 @@ pub use polkadot_parachain::primitives::{
 	DmpMessageHandler, Id as ParaId, IsSystem, UpwardMessage, ValidationParams, XcmpMessageFormat,
 	XcmpMessageHandler,
 };
-pub use polkadot_primitives::v3::{
+pub use polkadot_primitives::{
 	AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData,
 };
 
@@ -39,10 +39,10 @@ pub mod relay_chain {
 }
 
 /// An inbound HRMP message.
-pub type InboundHrmpMessage = polkadot_primitives::v3::InboundHrmpMessage<relay_chain::BlockNumber>;
+pub type InboundHrmpMessage = polkadot_primitives::InboundHrmpMessage<relay_chain::BlockNumber>;
 
 /// And outbound HRMP message
-pub type OutboundHrmpMessage = polkadot_primitives::v3::OutboundHrmpMessage<ParaId>;
+pub type OutboundHrmpMessage = polkadot_primitives::OutboundHrmpMessage<ParaId>;
 
 /// Error description of a message send failure.
 #[derive(Eq, PartialEq, Copy, Clone, RuntimeDebug, Encode, Decode)]
@@ -204,11 +204,11 @@ pub struct CollationInfoV1 {
 	/// The horizontal messages sent by the parachain.
 	pub horizontal_messages: Vec<OutboundHrmpMessage>,
 	/// New validation code.
-	pub new_validation_code: Option<relay_chain::v3::ValidationCode>,
+	pub new_validation_code: Option<relay_chain::ValidationCode>,
 	/// The number of messages processed from the DMQ.
 	pub processed_downward_messages: u32,
 	/// The mark which specifies the block number up to which all inbound HRMP messages are processed.
-	pub hrmp_watermark: relay_chain::v3::BlockNumber,
+	pub hrmp_watermark: relay_chain::BlockNumber,
 }
 
 impl CollationInfoV1 {
@@ -233,11 +233,11 @@ pub struct CollationInfo {
 	/// The horizontal messages sent by the parachain.
 	pub horizontal_messages: Vec<OutboundHrmpMessage>,
 	/// New validation code.
-	pub new_validation_code: Option<relay_chain::v3::ValidationCode>,
+	pub new_validation_code: Option<relay_chain::ValidationCode>,
 	/// The number of messages processed from the DMQ.
 	pub processed_downward_messages: u32,
 	/// The mark which specifies the block number up to which all inbound HRMP messages are processed.
-	pub hrmp_watermark: relay_chain::v3::BlockNumber,
+	pub hrmp_watermark: relay_chain::BlockNumber,
 	/// The head data, aka encoded header, of the block that corresponds to the collation.
 	pub head_data: HeadData,
 }
