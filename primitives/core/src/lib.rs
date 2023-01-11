@@ -35,7 +35,7 @@ pub use polkadot_primitives::{
 /// A module that re-exports relevant relay chain definitions.
 pub mod relay_chain {
 	pub use polkadot_core_primitives::*;
-	pub use polkadot_primitives::{runtime_api, v2, v3, v3::well_known_keys};
+	pub use polkadot_primitives::{v2, v3, *};
 }
 
 /// An inbound HRMP message.

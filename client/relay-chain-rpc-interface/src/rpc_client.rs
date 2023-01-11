@@ -17,11 +17,11 @@
 use crate::reconnecting_ws_client::ReconnectingWsClient;
 use cumulus_primitives_core::{
 	relay_chain::{
-		CandidateCommitments, CandidateEvent, CandidateHash, CommittedCandidateReceipt, CoreState,
-		DisputeState, GroupRotationInfo, Hash as RelayHash, Header as RelayHeader,
-		InboundHrmpMessage, OccupiedCoreAssumption, OldV1SessionInfo, PvfCheckStatement,
-		ScrapedOnChainVotes, SessionIndex, v3::SessionInfo, ValidationCode, ValidationCodeHash,
-		ValidatorId, ValidatorIndex, ValidatorSignature,
+		v2, v3, CandidateCommitments, CandidateEvent, CandidateHash, CommittedCandidateReceipt,
+		CoreState, DisputeState, GroupRotationInfo, Hash as RelayHash, Header as RelayHeader,
+		InboundHrmpMessage, OccupiedCoreAssumption, PvfCheckStatement, ScrapedOnChainVotes,
+		SessionIndex, ValidationCode, ValidationCodeHash, ValidatorId, ValidatorIndex,
+		ValidatorSignature,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
@@ -405,7 +405,7 @@ impl RelayChainRpcClient {
 		&self,
 		at: RelayHash,
 		index: SessionIndex,
-	) -> Result<Option<SessionInfo>, RelayChainError> {
+	) -> Result<Option<v3::SessionInfo>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_session_info", at, Some(index))
 			.await
 	}
