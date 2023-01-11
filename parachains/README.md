@@ -11,7 +11,7 @@ The general internal structure is:
 - `pallets`: FRAME pallets that are specific to parachains.
 - `runtimes`: The entry point for parachain runtimes.
 
-## Common Good Parachains
+## System Parachains
 
 The `runtimes` directory includes many, but is not limited to,
 [system parachains](https://wiki.polkadot.network/docs/learn-system-chains). Likewise, not all
