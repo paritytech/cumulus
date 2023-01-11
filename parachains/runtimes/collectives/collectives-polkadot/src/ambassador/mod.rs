@@ -19,15 +19,15 @@
 //! - managed set of the program members, where every member has a [rank](ranks) (via [pallet_ranked_collective]).
 //! - referendum functionality for the program members to propose, vote and execute passed proposals on behalf
 //! of the members of a certain [rank](Origin) (via [pallet_referenda]).
-//! - managed content (charter, announcements) (via [pallet_ambassador]).
+//! - managed content (charter, announcements) (via [pallet_collective_content]).
 
-mod pallet;
+mod origins;
 mod tracks;
 
 use super::*;
 use frame_support::traits::TryMapSuccess;
-pub use pallet::pallet_ambassador;
-use pallet::pallet_ambassador::{
+pub use origins::pallet_origins as pallet_ambassador_origins;
+use origins::pallet_origins::{
 	EnsureAmbassador, EnsureRankedAmbassador, EnsureSeniorAmbassador, Origin,
 };
 use sp_arithmetic::traits::CheckedSub;
@@ -47,16 +47,19 @@ pub mod ranks {
 	pub const HEAD_AMBASSADOR: Rank = 3;
 }
 
-impl pallet_ambassador::Config for Runtime {
+impl pallet_collective_content::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type CharterOrigin = EnsureAmbassador;
-	type MemberOrigin = pallet_ranked_collective::EnsureMember<
+	type AnnouncementOrigin = pallet_ranked_collective::EnsureMember<
 		Runtime,
 		AmbassadorCollectiveInstance,
 		{ ranks::AMBASSADOR },
 	>;
 	type MaxAnnouncementsCount = ConstU32<100>;
+	type WeightInfo = weights::pallet_ambassador_content::WeightInfo<Runtime>;
 }
+
+impl pallet_ambassador_origins::Config for Runtime {}
 
 parameter_types! {
 	pub const AlarmInterval: BlockNumber = 1;
@@ -84,7 +87,7 @@ impl pallet_referenda::Config<AmbassadorReferendaInstance> for Runtime {
 	type Votes = pallet_ranked_collective::Votes;
 	type Tally = pallet_ranked_collective::TallyOf<Runtime, AmbassadorCollectiveInstance>;
 	type SubmissionDeposit = SubmissionDeposit;
-	type MaxQueued = ConstU32<100>;
+	type MaxQueued = ConstU32<20>;
 	type UndecidingTimeout = UndecidingTimeout;
 	type AlarmInterval = AlarmInterval;
 	type Tracks = tracks::TracksInfo;
@@ -92,7 +95,9 @@ impl pallet_referenda::Config<AmbassadorReferendaInstance> for Runtime {
 }
 
 parameter_types! {
-	pub const HeadAmbassadorRank: pallet_ranked_collective::Rank = ranks::HEAD_AMBASSADOR;
+	// TODO remove "+10", use [ranks::HEAD_AMBASSADOR] instead. To make this possible the benches
+	// of pallet_ranked_collective should be improved.
+	pub const MaxAmbassadorRank: pallet_ranked_collective::Rank = ranks::HEAD_AMBASSADOR + 10;
 }
 
 morph_types! {
@@ -106,20 +111,20 @@ morph_types! {
 pub type AmbassadorCollectiveInstance = pallet_ranked_collective::Instance1;
 
 impl pallet_ranked_collective::Config<AmbassadorCollectiveInstance> for Runtime {
-	type WeightInfo = (); // TODO use actual weights
+	type WeightInfo = weights::pallet_ambassador_collective::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
 	// Promotion is by any of:
 	// - Root can promote arbitrarily.
 	// - a vote by the rank above the new rank.
 	type PromoteOrigin = EitherOf<
-		frame_system::EnsureRootWithSuccess<Self::AccountId, HeadAmbassadorRank>,
+		frame_system::EnsureRootWithSuccess<Self::AccountId, MaxAmbassadorRank>,
 		TryMapSuccess<EnsureRankedAmbassador, CheckedReduceBy<ConstU16<1>>>,
 	>;
 	// Demotion is by any of:
 	// - Root can demote arbitrarily.
 	// - a vote by the rank above the current rank.
 	type DemoteOrigin = EitherOf<
-		frame_system::EnsureRootWithSuccess<Self::AccountId, HeadAmbassadorRank>,
+		frame_system::EnsureRootWithSuccess<Self::AccountId, MaxAmbassadorRank>,
 		TryMapSuccess<EnsureRankedAmbassador, CheckedReduceBy<ConstU16<1>>>,
 	>;
 	type Polls = AmbassadorReferenda;

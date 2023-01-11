@@ -1,4 +1,4 @@
-// Copyright (C) 2022 Parity Technologies (UK) Ltd.
+// Copyright (C) 2023 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +13,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! The module containing custom pallet/s of the Ambassador Program.
+//! Collective content.
+//! TODO docs
+
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+pub mod weights;
+
+pub use pallet::*;
+pub use weights::WeightInfo;
 
 use frame_support::BoundedVec;
 use sp_core::ConstU32;
@@ -23,11 +38,10 @@ use sp_core::ConstU32;
 pub type Cid = BoundedVec<u8, ConstU32<68>>;
 
 #[frame_support::pallet]
-pub mod pallet_ambassador {
-	use super::{super::ranks, Cid};
+pub mod pallet {
+	use super::{Cid, WeightInfo};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use pallet_ranked_collective::Rank;
 
 	/// The current storage version.
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
@@ -43,28 +57,18 @@ pub mod pallet_ambassador {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		/// A member of the Ambassador Program.
-		type MemberOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+		/// The origin to control the collective announcements.
+		type AnnouncementOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
-		/// The origin to control the Ambassador Program charter.
+		/// The origin to control the collective charter.
 		type CharterOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
 		/// The maximum number of announcements.
 		#[pallet::constant]
 		type MaxAnnouncementsCount: Get<u32>;
-	}
 
-	#[derive(PartialEq, Eq, Clone, MaxEncodedLen, Encode, Decode, TypeInfo, RuntimeDebug)]
-	#[pallet::origin]
-	pub enum Origin {
-		/// Plurality voice of the [ranks::CANDIDATE] members or above given via referendum.
-		Candidate,
-		/// Plurality voice of the [ranks::AMBASSADOR] members or above given via referendum.
-		Ambassador,
-		/// Plurality voice of the [ranks::SENIOR_AMBASSADOR] members or above given via referendum.
-		SeniorAmbassador,
-		/// Plurality voice of the [ranks::HEAD_AMBASSADOR] members or above given via referendum.
-		HeadAmbassador,
+		/// Weights information needed for the pallet.
+		type WeightInfo: WeightInfo;
 	}
 
 	/// Errors encountered by the pallet (not a full list).
@@ -88,12 +92,12 @@ pub mod pallet_ambassador {
 		AnnouncementRemoved { cid: Cid },
 	}
 
-	/// The Ambassador Program's charter.
+	/// The collective charter.
 	#[pallet::storage]
 	#[pallet::getter(fn charter)]
 	pub type Charter<T: Config> = StorageValue<_, Cid, OptionQuery>;
 
-	/// The Ambassador Program's announcements.
+	/// The collective announcements.
 	#[pallet::storage]
 	#[pallet::getter(fn announcements)]
 	pub type Announcements<T: Config> =
@@ -101,9 +105,9 @@ pub mod pallet_ambassador {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Set the Ambassador Program's  charter.
+		/// Set the collective  charter.
 		#[pallet::call_index(0)]
-		#[pallet::weight(0)] // TODO
+		#[pallet::weight(T::WeightInfo::set_charter())]
 		pub fn set_charter(origin: OriginFor<T>, cid: Cid) -> DispatchResult {
 			T::CharterOrigin::ensure_origin(origin)?;
 
@@ -115,9 +119,9 @@ pub mod pallet_ambassador {
 
 		/// Publish an announcement.
 		#[pallet::call_index(1)]
-		#[pallet::weight(0)] // TODO
+		#[pallet::weight(T::WeightInfo::announce())]
 		pub fn announce(origin: OriginFor<T>, cid: Cid) -> DispatchResult {
-			T::MemberOrigin::ensure_origin(origin)?;
+			T::AnnouncementOrigin::ensure_origin(origin)?;
 
 			let mut announcements = <Announcements<T>>::get();
 			announcements
@@ -131,9 +135,9 @@ pub mod pallet_ambassador {
 
 		/// Remove an announcement.
 		#[pallet::call_index(2)]
-		#[pallet::weight(0)] // TODO
+		#[pallet::weight(T::WeightInfo::remove_announcement())]
 		pub fn remove_announcement(origin: OriginFor<T>, cid: Cid) -> DispatchResult {
-			T::MemberOrigin::ensure_origin(origin)?;
+			T::AnnouncementOrigin::ensure_origin(origin)?;
 
 			let mut announcements = <Announcements<T>>::get();
 			let pos =
@@ -143,48 +147,6 @@ pub mod pallet_ambassador {
 
 			Self::deposit_event(Event::<T>::AnnouncementRemoved { cid });
 			Ok(())
-		}
-	}
-
-	/// Implementation of the [EnsureOrigin] trait for the [Origin::Ambassador] origin.
-	pub struct EnsureAmbassador;
-	impl<O: Into<Result<Origin, O>> + From<Origin>> EnsureOrigin<O> for EnsureAmbassador {
-		type Success = ();
-		fn try_origin(o: O) -> Result<Self::Success, O> {
-			o.into().and_then(|o| match o {
-				Origin::Ambassador => Ok(()),
-				r => Err(O::from(r)),
-			})
-		}
-	}
-
-	/// Implementation of the [EnsureOrigin] trait for the [Origin::SeniorAmbassador]
-	/// and [Origin::HeadAmbassador] origins.
-	pub struct EnsureSeniorAmbassador;
-	impl<O: Into<Result<Origin, O>> + From<Origin>> EnsureOrigin<O> for EnsureSeniorAmbassador {
-		type Success = ();
-		fn try_origin(o: O) -> Result<Self::Success, O> {
-			o.into().and_then(|o| match o {
-				Origin::SeniorAmbassador => Ok(()),
-				Origin::HeadAmbassador => Ok(()),
-				r => Err(O::from(r)),
-			})
-		}
-	}
-
-	/// Implementation of the [EnsureOrigin] trait for the plurality voice [Origin]s with the success result
-	/// of the corresponding [Rank]. Not implemented for the [Origin::Candidate].
-	pub struct EnsureRankedAmbassador;
-
-	impl<O: Into<Result<Origin, O>> + From<Origin>> EnsureOrigin<O> for EnsureRankedAmbassador {
-		type Success = Rank;
-		fn try_origin(o: O) -> Result<Self::Success, O> {
-			o.into().and_then(|o| match o {
-				Origin::Ambassador => Ok(ranks::AMBASSADOR),
-				Origin::SeniorAmbassador => Ok(ranks::SENIOR_AMBASSADOR),
-				Origin::HeadAmbassador => Ok(ranks::HEAD_AMBASSADOR),
-				r => Err(O::from(r)),
-			})
 		}
 	}
 }

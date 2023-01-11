@@ -72,6 +72,7 @@ cumulus-primitives-utility = { path = "../../../../primitives/utility", default-
 pallet-collator-selection = { path = "../../../../pallets/collator-selection", default-features = false }
 parachain-info = { path = "../../../pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
+pallet-collective-content = { path = "../../../pallets/collective-content", default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.3.4"
@@ -104,6 +105,7 @@ runtime-benchmarks = [
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-referenda/runtime-benchmarks",
 	"pallet-ranked-collective/runtime-benchmarks",
+	"pallet-collective-content/runtime-benchmarks",
 ]
 try-runtime = [
 	"cumulus-pallet-aura-ext/try-runtime",

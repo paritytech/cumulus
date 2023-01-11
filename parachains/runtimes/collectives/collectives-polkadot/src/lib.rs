@@ -31,7 +31,7 @@
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![recursion_limit = "256"]
+#![recursion_limit = "10000"]
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -42,7 +42,7 @@ pub mod constants;
 pub mod impls;
 mod weights;
 pub mod xcm_config;
-use ambassador::pallet_ambassador;
+pub use ambassador::pallet_ambassador_origins;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use impls::{AllianceProposalProvider, EqualOrGreatestRootCmp, ToParentTreasury};
@@ -494,7 +494,7 @@ impl pallet_alliance::Config for Runtime {
 
 parameter_types! {
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) * RuntimeBlockWeights::get().max_block;
-	pub const MaxScheduledPerBlock: u32 = 50;
+	pub const MaxScheduledPerBlock: u32 = 200; // TODO replace by 50, after fixing referendum benches
 }
 
 impl pallet_scheduler::Config for Runtime {
@@ -505,7 +505,7 @@ impl pallet_scheduler::Config for Runtime {
 	type MaximumWeight = MaximumSchedulerWeight;
 	type ScheduleOrigin = EnsureRoot<AccountId>;
 	type MaxScheduledPerBlock = MaxScheduledPerBlock;
-	type WeightInfo = (); // todo weights
+	type WeightInfo = weights::pallet_scheduler::WeightInfo<Runtime>;
 	type OriginPrivilegeCmp = EqualOrGreatestRootCmp;
 	type Preimages = Preimage;
 }
@@ -516,7 +516,7 @@ parameter_types! {
 }
 
 impl pallet_preimage::Config for Runtime {
-	type WeightInfo = (); // todo weights
+	type WeightInfo = weights::pallet_preimage::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	type ManagerOrigin = EnsureRoot<AccountId>;
@@ -570,7 +570,8 @@ construct_runtime!(
 		// Ambassador Program
 		AmbassadorCollective: pallet_ranked_collective::<Instance1>::{Pallet, Call, Storage, Event<T>} = 60,
 		AmbassadorReferenda: pallet_referenda::<Instance1>::{Pallet, Call, Storage, Event<T>} = 61,
-		Ambassador: pallet_ambassador::{Pallet, Origin, Call, Storage, Event<T>} = 62,
+		AmbassadorContent: pallet_collective_content::{Pallet, Call, Storage, Event<T>} = 62,
+		AmbassadorOrigins: pallet_ambassador_origins::{Origin} = 63,
 	}
 );
 
@@ -637,6 +638,7 @@ mod benches {
 		[pallet_scheduler, Scheduler]
 		[pallet_referenda, AmbassadorReferenda]
 		[pallet_ranked_collective, AmbassadorCollective]
+		[pallet_collective_content, AmbassadorContent]
 	);
 }
 

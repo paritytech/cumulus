@@ -50,9 +50,13 @@ where
 	<T as frame_system::Config>::AccountId: From<AccountId>,
 {
 	fn on_unbalanced(amount: NegativeImbalanceOf<T, I>) {
+		let amount = match amount.drop_zero() {
+			Ok(..) => return,
+			Err(amount) => amount,
+		};
+		let imbalance = amount.peek();
 		let temp_account: AccountId = SlashedImbalanceAccId::get();
 		let treasury_acc: AccountId = RelayTreasuryAccId::get();
-		let imbalance = amount.peek();
 
 		T::Currency::resolve_creating(&temp_account.clone().into(), amount);
 
