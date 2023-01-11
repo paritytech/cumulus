@@ -335,6 +335,7 @@ pub mod pallet {
 		///
 		/// As a side effect, this function upgrades the current validation function
 		/// if the appropriate time has come.
+		#[pallet::call_index(0)]
 		#[pallet::weight((0, DispatchClass::Mandatory))]
 		// TODO: This weight should be corrected.
 		pub fn set_validation_data(
@@ -353,8 +354,6 @@ pub mod pallet {
 				downward_messages,
 				horizontal_messages,
 			} = data;
-
-			Self::validate_validation_data(&vfp);
 
 			// Check that the associated relay chain block number is as expected.
 			T::CheckAssociatedRelayNumber::check_associated_relay_number(
@@ -431,6 +430,7 @@ pub mod pallet {
 			Ok(PostDispatchInfo { actual_weight: Some(total_weight), pays_fee: Pays::No })
 		}
 
+		#[pallet::call_index(1)]
 		#[pallet::weight((1_000, DispatchClass::Operational))]
 		pub fn sudo_send_upward_message(
 			origin: OriginFor<T>,
@@ -441,6 +441,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::call_index(2)]
 		#[pallet::weight((1_000_000, DispatchClass::Operational))]
 		pub fn authorize_upgrade(origin: OriginFor<T>, code_hash: T::Hash) -> DispatchResult {
 			ensure_root(origin)?;
@@ -451,6 +452,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::call_index(3)]
 		#[pallet::weight(1_000_000)]
 		pub fn enact_authorized_upgrade(
 			_: OriginFor<T>,
@@ -765,34 +767,6 @@ impl<T: Config> GetChannelInfo for Pallet<T> {
 }
 
 impl<T: Config> Pallet<T> {
-	/// Validate the given [`PersistedValidationData`] against the
-	/// [`ValidationParams`](polkadot_parachain::primitives::ValidationParams).
-	///
-	/// This check will only be executed when the block is currently being executed in the context
-	/// of [`validate_block`]. If this is being executed in the context of block building or block
-	/// import, this is a no-op.
-	///
-	/// # Panics
-	///
-	/// Panics while validating the `PoV` on the relay chain if the [`PersistedValidationData`]
-	/// passed by the block author was incorrect.
-	fn validate_validation_data(validation_data: &PersistedValidationData) {
-		validate_block::with_validation_params(|params| {
-			assert_eq!(
-				params.parent_head, validation_data.parent_head,
-				"Parent head doesn't match"
-			);
-			assert_eq!(
-				params.relay_parent_number, validation_data.relay_parent_number,
-				"Relay parent number doesn't match",
-			);
-			assert_eq!(
-				params.relay_parent_storage_root, validation_data.relay_parent_storage_root,
-				"Relay parent storage root doesn't match",
-			);
-		});
-	}
-
 	/// Process all inbound downward messages relayed by the collator.
 	///
 	/// Checks if the sequence of the messages is valid, dispatches them and communicates the

@@ -19,7 +19,7 @@ use std::{pin::Pin, str::FromStr};
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRpcClient;
 use futures::{Future, Stream, StreamExt};
-use polkadot_core_primitives::{Block, BlockId, Hash, Header};
+use polkadot_core_primitives::{Block, Hash, Header};
 use polkadot_overseer::RuntimeApiSubsystemClient;
 use polkadot_service::{AuxStore, HeaderBackend};
 use sc_authority_discovery::AuthorityDiscovery;
@@ -363,13 +363,13 @@ impl BlockChainRpcClient {
 	pub async fn import_notification_stream(
 		&self,
 	) -> RelayChainResult<Pin<Box<dyn Stream<Item = Header> + Send>>> {
-		Ok(self.rpc_client.get_imported_heads_stream().await?.boxed())
+		Ok(self.rpc_client.get_imported_heads_stream()?.boxed())
 	}
 
 	pub async fn finality_notification_stream(
 		&self,
 	) -> RelayChainResult<Pin<Box<dyn Stream<Item = Header> + Send>>> {
-		Ok(self.rpc_client.get_finalized_heads_stream().await?.boxed())
+		Ok(self.rpc_client.get_finalized_heads_stream()?.boxed())
 	}
 }
 
@@ -381,20 +381,9 @@ fn block_local<T>(fut: impl Future<Output = T>) -> T {
 impl HeaderBackend<Block> for BlockChainRpcClient {
 	fn header(
 		&self,
-		id: BlockId,
+		hash: <Block as polkadot_service::BlockT>::Hash,
 	) -> sp_blockchain::Result<Option<<Block as polkadot_service::BlockT>::Header>> {
-		let fetch_header = |hash| block_local(self.rpc_client.chain_get_header(Some(hash)));
-
-		match id {
-			BlockId::Hash(hash) => Ok(fetch_header(hash)?),
-			BlockId::Number(number) => {
-				if let Some(hash) = HeaderBackend::<Block>::hash(self, number)? {
-					Ok(fetch_header(hash)?)
-				} else {
-					Ok(None)
-				}
-			},
-		}
+		Ok(block_local(self.rpc_client.chain_get_header(Some(hash)))?)
 	}
 
 	fn info(&self) -> Info<Block> {
@@ -422,21 +411,9 @@ impl HeaderBackend<Block> for BlockChainRpcClient {
 
 	fn status(
 		&self,
-		id: sp_api::BlockId<Block>,
+		hash: <Block as polkadot_service::BlockT>::Hash,
 	) -> sp_blockchain::Result<sp_blockchain::BlockStatus> {
-		let exists = match id {
-			BlockId::Hash(_) => self.header(id)?.is_some(),
-			BlockId::Number(n) => {
-				let best_header = block_local(self.rpc_client.chain_get_header(None))?;
-				if let Some(best) = best_header {
-					n < best.number
-				} else {
-					false
-				}
-			},
-		};
-
-		if exists {
+		if self.header(hash)?.is_some() {
 			Ok(sc_client_api::blockchain::BlockStatus::InChain)
 		} else {
 			Ok(sc_client_api::blockchain::BlockStatus::Unknown)
