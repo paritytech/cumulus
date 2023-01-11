@@ -54,7 +54,7 @@ use sc_network_common::{config::TransportConfig, service::NetworkStateInfo};
 use sc_service::{
 	config::{
 		BlocksPruning, DatabaseSource, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
-		OffchainWorkerConfig, PruningMode, WasmExecutionMethod,
+		OffchainWorkerConfig, PruningMode, WasmExecutionMethod, WebRTCConfig,
 	},
 	BasePath, ChainSpec, Configuration, Error as ServiceError, PartialComponents, Role,
 	RpcHandlers, TFullBackend, TFullClient, TaskManager,
@@ -644,6 +644,7 @@ pub fn node_config(
 		format!("{} (parachain)", key_seed),
 		"network/test/0.1",
 		Default::default(),
+		WebRTCConfig::Ephemeral,
 		None,
 	);
 
