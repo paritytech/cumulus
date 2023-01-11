@@ -229,6 +229,7 @@ pub type AssetsForceOrigin = EnsureRoot<AccountId>;
 // and falsly implies that they are actually backed by some reserve. In reality, the user is
 // _trusting_ some `CreateOrigin` (AccountId) that the asset is what they claim.
 pub type TrustBackedAssetsInstance = pallet_assets::Instance1;
+type TrustBackedAssetsCall = pallet_assets::Call<Runtime, TrustBackedAssetsInstance>;
 impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
@@ -343,7 +344,6 @@ impl Default for ProxyType {
 		Self::Any
 	}
 }
-type TrustBackedAssetsCall = pallet_assets::Call<Runtime, TrustBackedAssetsInstance>;
 impl InstanceFilter<RuntimeCall> for ProxyType {
 	fn filter(&self, c: &RuntimeCall) -> bool {
 		match self {
@@ -373,9 +373,8 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 				c,
 				RuntimeCall::Assets(TrustBackedAssetsCall::create { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::destroy { .. }) |
-					RuntimeCall::Assets(
-						TrustBackedAssetsCall::transfer_ownership { .. }
-					) | RuntimeCall::Assets(TrustBackedAssetsCall::set_team { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::transfer_ownership { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::set_team { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::set_metadata { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::clear_metadata { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::create { .. }) |

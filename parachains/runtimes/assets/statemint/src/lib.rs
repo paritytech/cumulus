@@ -381,9 +381,8 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 				c,
 				RuntimeCall::Assets(TrustBackedAssetsCall::create { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::destroy { .. }) |
-					RuntimeCall::Assets(
-						TrustBackedAssetsCall::transfer_ownership { .. }
-					) | RuntimeCall::Assets(TrustBackedAssetsCall::set_team { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::transfer_ownership { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::set_team { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::set_metadata { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::clear_metadata { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::create { .. }) |
