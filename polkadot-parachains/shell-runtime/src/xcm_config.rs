@@ -46,7 +46,7 @@ use sp_std::{
 	convert::{From, Into},
 	prelude::*,
 };
-use xcm::latest::{prelude::*, Weight as XcmWeight};
+use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
@@ -284,7 +284,6 @@ impl pallet_xcm::Config for Runtime {
 parameter_types! {
 	pub const IntegriteeKsmParaId: u32 = 2015;
 	pub const ShellRuntimeParaId: u32 = 2223;
-	pub const WeightForParaSwap: XcmWeight = 10_000_000_000;
 }
 
 impl pallet_xcm_transactor::Config for Runtime {
@@ -294,7 +293,6 @@ impl pallet_xcm_transactor::Config for Runtime {
 	type SwapOrigin = EnsureRoot<AccountId>;
 	type ShellRuntimeParaId = ShellRuntimeParaId;
 	type IntegriteeKsmParaId = IntegriteeKsmParaId;
-	type WeightForParaSwap = WeightForParaSwap;
 	type WeightInfo = ();
 }
 

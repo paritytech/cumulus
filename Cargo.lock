@@ -859,7 +859,7 @@ dependencies = [
 [[package]]
 name = "claims-primitives"
 version = "0.1.0"
-source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#38d6995aac434d46df47bb55fcb99cd11a4c59fc"
+source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#ef51a5548178896d11deaccc2f8b29702c190863"
 dependencies = [
  "parity-scale-codec",
  "rustc-hex",
@@ -954,7 +954,7 @@ dependencies = [
 [[package]]
 name = "common-primitives"
 version = "0.1.0"
-source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#38d6995aac434d46df47bb55fcb99cd11a4c59fc"
+source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#ef51a5548178896d11deaccc2f8b29702c190863"
 dependencies = [
  "sp-std",
 ]
@@ -3232,7 +3232,7 @@ dependencies = [
 [[package]]
 name = "ias-verify"
 version = "0.1.4"
-source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#38d6995aac434d46df47bb55fcb99cd11a4c59fc"
+source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#ef51a5548178896d11deaccc2f8b29702c190863"
 dependencies = [
  "base64",
  "chrono",
@@ -3361,7 +3361,7 @@ dependencies = [
 
 [[package]]
 name = "integritee-collator"
-version = "1.5.32"
+version = "1.5.33"
 dependencies = [
  "assert_cmd",
  "async-trait",
@@ -3442,7 +3442,7 @@ dependencies = [
 
 [[package]]
 name = "integritee-runtime"
-version = "1.5.28"
+version = "1.5.29"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -5345,7 +5345,7 @@ dependencies = [
 [[package]]
 name = "pallet-claims"
 version = "0.9.12"
-source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#38d6995aac434d46df47bb55fcb99cd11a4c59fc"
+source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#ef51a5548178896d11deaccc2f8b29702c190863"
 dependencies = [
  "claims-primitives",
  "frame-benchmarking",
@@ -5871,7 +5871,7 @@ dependencies = [
 [[package]]
 name = "pallet-sidechain"
 version = "0.9.0"
-source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#38d6995aac434d46df47bb55fcb99cd11a4c59fc"
+source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#ef51a5548178896d11deaccc2f8b29702c190863"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5984,7 +5984,7 @@ dependencies = [
 [[package]]
 name = "pallet-teeracle"
 version = "0.1.0"
-source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#38d6995aac434d46df47bb55fcb99cd11a4c59fc"
+source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#ef51a5548178896d11deaccc2f8b29702c190863"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6007,7 +6007,7 @@ dependencies = [
 [[package]]
 name = "pallet-teerex"
 version = "0.9.0"
-source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#38d6995aac434d46df47bb55fcb99cd11a4c59fc"
+source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#ef51a5548178896d11deaccc2f8b29702c190863"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6210,7 +6210,7 @@ dependencies = [
 [[package]]
 name = "pallet-xcm-transactor"
 version = "0.1.0"
-source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#38d6995aac434d46df47bb55fcb99cd11a4c59fc"
+source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#ef51a5548178896d11deaccc2f8b29702c190863"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
@@ -9890,7 +9890,7 @@ dependencies = [
 
 [[package]]
 name = "shell-runtime"
-version = "1.5.6"
+version = "1.5.7"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -9952,7 +9952,7 @@ checksum = "43b2853a4d09f215c24cc5489c992ce46052d359b5109343cbafbf26bc62f8a3"
 [[package]]
 name = "sidechain-primitives"
 version = "0.1.0"
-source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#38d6995aac434d46df47bb55fcb99cd11a4c59fc"
+source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#ef51a5548178896d11deaccc2f8b29702c190863"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -11229,7 +11229,7 @@ checksum = "9410d0f6853b1d94f0e519fb95df60f29d2c1eff2d921ffdf01a4c8a3b54f12d"
 [[package]]
 name = "teeracle-primitives"
 version = "0.1.0"
-source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#38d6995aac434d46df47bb55fcb99cd11a4c59fc"
+source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#ef51a5548178896d11deaccc2f8b29702c190863"
 dependencies = [
  "common-primitives",
  "sp-std",
@@ -11239,7 +11239,7 @@ dependencies = [
 [[package]]
 name = "teerex-primitives"
 version = "0.1.0"
-source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#38d6995aac434d46df47bb55fcb99cd11a4c59fc"
+source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#ef51a5548178896d11deaccc2f8b29702c190863"
 dependencies = [
  "ias-verify",
  "parity-scale-codec",
@@ -11282,7 +11282,7 @@ checksum = "95059e91184749cb66be6dc994f67f182b6d897cb3df74a5bf66b5e709295fd8"
 [[package]]
 name = "test-utils"
 version = "0.1.0"
-source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#38d6995aac434d46df47bb55fcb99cd11a4c59fc"
+source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#ef51a5548178896d11deaccc2f8b29702c190863"
 dependencies = [
  "hex-literal",
  "log",
@@ -12748,7 +12748,7 @@ dependencies = [
 [[package]]
 name = "xcm-transactor-primitives"
 version = "0.1.0"
-source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#38d6995aac434d46df47bb55fcb99cd11a4c59fc"
+source = "git+https://github.com/integritee-network/pallets.git?branch=polkadot-v0.9.36#ef51a5548178896d11deaccc2f8b29702c190863"
 dependencies = [
  "common-primitives",
  "cumulus-primitives-core",
