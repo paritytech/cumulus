@@ -7,13 +7,13 @@ use frame_support::{
 use parachains_common::{AccountId, AuraId};
 pub use statemine_runtime::{
 	constants::fee::WeightToFee, xcm_config::XcmConfig, Balances, ExistentialDeposit, Runtime,
-	SessionKeys, System, TrustBackedAssets,
+	SessionKeys, System, Assets,
 };
 use xcm::latest::prelude::*;
 use xcm_executor::traits::WeightTrader;
 pub const ALICE: [u8; 32] = [1u8; 32];
 
-type Assets = TrustBackedAssets;
+type Assets = Assets;
 
 #[test]
 fn test_asset_xcm_trader() {

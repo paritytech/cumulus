@@ -16,7 +16,7 @@
 use super::{
 	AccountId, AllPalletsWithSystem, AssetId, Authorship, Balance, Balances, ParachainInfo,
 	ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
-	TrustBackedAssets, WeightToFee, XcmpQueue,
+	Assets, WeightToFee, XcmpQueue,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -46,7 +46,7 @@ parameter_types! {
 	pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub const Local: MultiLocation = MultiLocation::here();
 	pub TrustBackedAssetsPalletLocation: MultiLocation =
-		PalletInstance(<TrustBackedAssets as PalletInfoAccess>::index() as u8).into();
+		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
@@ -79,7 +79,7 @@ pub type CurrencyTransactor = CurrencyAdapter<
 /// Means for transacting assets besides the native currency on this chain.
 pub type FungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
-	TrustBackedAssets,
+	Assets,
 	// Use this currency when it is a fungible asset matching the given location or name:
 	ConvertedConcreteId<
 		AssetId,
@@ -93,7 +93,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	AccountId,
 	// We only want to allow teleports of known assets. We use non-zero issuance as an indication
 	// that this asset is known.
-	parachains_common::impls::NonZeroIssuance<AccountId, TrustBackedAssets>,
+	parachains_common::impls::NonZeroIssuance<AccountId, Assets>,
 	// The account to use for tracking teleports.
 	CheckingAccount,
 >;
