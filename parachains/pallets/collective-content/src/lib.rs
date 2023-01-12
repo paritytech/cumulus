@@ -18,6 +18,7 @@
 //! The pallet provides the functionality to store different types of the content.
 //! The content presented as a [Cid] of the IPFS document which might contain any type of data.
 //! Every type of the content has its own origin to be manage. The origins are configurable by clients.
+//! Storing the content does not require a deposit, the content expected to be managed by a trusted collective.
 //!
 //! Content types:
 //! - the collective [charter](pallet::Charter). A single document managed by [CharterOrigin](pallet::Config::CharterOrigin).
