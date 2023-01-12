@@ -21,7 +21,7 @@
 //! of the members of a certain [rank](Origin) (via [pallet_referenda]).
 //! - managed content (charter, announcements) (via [pallet_collective_content]).
 
-mod origins;
+pub mod origins;
 mod tracks;
 
 use super::*;
@@ -30,7 +30,6 @@ pub use origins::pallet_origins as pallet_ambassador_origins;
 use origins::pallet_origins::{
 	EnsureAmbassador, EnsureRankedAmbassador, EnsureSeniorAmbassador, Origin,
 };
-pub use ranks;
 use sp_arithmetic::traits::CheckedSub;
 use sp_runtime::{
 	morph_types,
