@@ -8,16 +8,13 @@ use frame_support::{
 use parachains_common::{AccountId, AuraId};
 pub use westmint_runtime::{
 	constants::fee::WeightToFee,
-	xcm_config::{LocationToAccountId, XcmConfig},
+	xcm_config::{LocationToAccountId, XcmConfig}, Assets,
 	Balances, ExistentialDeposit, Runtime, RuntimeCall, RuntimeEvent, SessionKeys, System,
-	TrustBackedAssets,
 };
 use xcm::latest::prelude::*;
 use xcm_executor::{traits::WeightTrader, XcmExecutor};
 
 pub const ALICE: [u8; 32] = [1u8; 32];
-
-type Assets = TrustBackedAssets;
 
 #[test]
 fn test_asset_xcm_trader() {

@@ -64,7 +64,8 @@ use parachains_common::{
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{
-	ForeignCreators, MultiLocationForAssetId, XcmConfig, XcmOriginToTransactDispatchOrigin,
+	ForeignCreators, MultiLocationForAssetId, XcmConfig,
+	XcmOriginToTransactDispatchOrigin,
 };
 
 #[cfg(any(feature = "std", test))]
@@ -229,6 +230,7 @@ pub type AssetsForceOrigin = EnsureRoot<AccountId>;
 // and falsly implies that they are actually backed by some reserve. In reality, the user is
 // _trusting_ some `CreateOrigin` (AccountId) that the asset is what they claim.
 pub type TrustBackedAssetsInstance = pallet_assets::Instance1;
+type TrustBackedAssetsCall = pallet_assets::Call<Runtime, TrustBackedAssetsInstance>;
 impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
@@ -268,7 +270,7 @@ impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
 	type AssetAccountDeposit = AssetAccountDeposit;
 	#[cfg(feature = "runtime-benchmarks")]
-	type Helper = (); //XcmBenchmarkHelper;
+	type Helper = xcm_config::XcmBenchmarkHelper;
 }
 
 parameter_types! {
@@ -343,7 +345,6 @@ impl Default for ProxyType {
 		Self::Any
 	}
 }
-type TrustBackedAssetsCall = pallet_assets::Call<Runtime, TrustBackedAssetsInstance>;
 impl InstanceFilter<RuntimeCall> for ProxyType {
 	fn filter(&self, c: &RuntimeCall) -> bool {
 		match self {
@@ -351,7 +352,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			ProxyType::NonTransfer => !matches!(
 				c,
 				RuntimeCall::Balances { .. } |
-					RuntimeCall::TrustBackedAssets { .. } |
+					RuntimeCall::Assets { .. } |
 					RuntimeCall::Uniques { .. }
 			),
 			ProxyType::CancelProxy => matches!(
@@ -363,7 +364,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			ProxyType::Assets => {
 				matches!(
 					c,
-					RuntimeCall::TrustBackedAssets { .. } |
+					RuntimeCall::Assets { .. } |
 						RuntimeCall::Utility { .. } |
 						RuntimeCall::Multisig { .. } |
 						RuntimeCall::Uniques { .. }
@@ -371,13 +372,12 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			},
 			ProxyType::AssetOwner => matches!(
 				c,
-				RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::create { .. }) |
-					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::destroy { .. }) |
-					RuntimeCall::TrustBackedAssets(
-						TrustBackedAssetsCall::transfer_ownership { .. }
-					) | RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::set_team { .. }) |
-					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::set_metadata { .. }) |
-					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::clear_metadata { .. }) |
+				RuntimeCall::Assets(TrustBackedAssetsCall::create { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::destroy { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::transfer_ownership { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::set_team { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::set_metadata { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::clear_metadata { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::create { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::destroy { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::transfer_ownership { .. }) |
@@ -394,12 +394,12 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			),
 			ProxyType::AssetManager => matches!(
 				c,
-				RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::mint { .. }) |
-					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::burn { .. }) |
-					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::freeze { .. }) |
-					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::thaw { .. }) |
-					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::freeze_asset { .. }) |
-					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::thaw_asset { .. }) |
+				RuntimeCall::Assets(TrustBackedAssetsCall::mint { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::burn { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::freeze { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::thaw { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::freeze_asset { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::thaw_asset { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::mint { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::burn { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::freeze { .. }) |
@@ -542,7 +542,7 @@ impl pallet_asset_tx_payment::Config for Runtime {
 	// TODO https://github.com/paritytech/substrate/issues/12724
 	// This should be able to take assets from any pallet instance. For now we only allow
 	// sufficient, trust backed assets to pay for transaction fees.
-	type Fungibles = TrustBackedAssets;
+	type Fungibles = Assets;
 	type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
 		pallet_assets::BalanceToAssetBalance<
 			Balances,
@@ -626,7 +626,7 @@ construct_runtime!(
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 42,
 
 		// The main stage.
-		TrustBackedAssets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>} = 50,
+		Assets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>} = 50,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 52,
 	}
@@ -656,6 +656,8 @@ pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
+/// Migrations to apply on runtime upgrade.
+pub type Migrations = ();
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
 	Runtime,
@@ -663,20 +665,8 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	// TODO
-	// 1. Move this instance https://substrate.stackexchange.com/questions/4343/how-to-migrate-storage-from-a-default-pallet-instance-to-an-actual-one
-	// 2. Make sure this migration applies to the old instance
-	MigrateAssetsPallet, //pallet_assets::migration::v1::MigrateToV1<Runtime>,
+	Migrations,
 >;
-
-pub struct MigrateAssetsPallet;
-impl frame_support::traits::OnRuntimeUpgrade for MigrateAssetsPallet {
-	fn on_runtime_upgrade() -> Weight {
-		use frame_support::storage::migration;
-		migration::move_pallet(b"Assets", b"TrustBackedAssets");
-		<Runtime as frame_system::Config>::DbWeight::get().writes(1)
-	}
-}
 
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
@@ -686,7 +676,7 @@ extern crate frame_benchmarking;
 mod benches {
 	define_benchmarks!(
 		[frame_system, SystemBench::<Runtime>]
-		[pallet_assets, TrustBackedAssets]
+		[pallet_assets, Assets]
 		[pallet_assets, ForeignAssets]
 		[pallet_balances, Balances]
 		[pallet_multisig, Multisig]
@@ -884,6 +874,7 @@ impl_runtime_apis! {
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
 			use xcm::latest::prelude::*;
+			use xcm_builder::MintLocation;
 			use xcm_config::WestendLocation;
 			use pallet_xcm_benchmarks::asset_instance_from;
 
@@ -926,7 +917,7 @@ impl_runtime_apis! {
 					WestendLocation::get(),
 					MultiAsset { fun: Fungible(1 * UNITS), id: Concrete(WestendLocation::get()) },
 				));
-				pub const CheckedAccount: Option<AccountId> = None;
+				pub const CheckedAccount: Option<(AccountId, MintLocation)> = None;
 
 			}
 
