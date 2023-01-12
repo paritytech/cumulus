@@ -56,7 +56,7 @@ add_to_genesis = false
   validator = false
   image = "{{COL_IMAGE}}"
   command = "polkadot-parachain"
-  args = ["--sync warp"]
+  args = ["-lsync=debug","--sync warp"]
   db_snapshot = "https://github.com/samelamin/cumulus/blob/chain-snapshots/docker/snapshots/parachain-to-sync.tgz?raw=true"
 
 
