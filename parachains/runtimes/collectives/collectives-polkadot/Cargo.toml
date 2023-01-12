@@ -134,6 +134,7 @@ try-runtime = [
 	"pallet-preimage/try-runtime",
 	"pallet-referenda/try-runtime",
 	"pallet-ranked-collective/try-runtime",
+	"pallet-collective-content/try-runtime",
 ]
 std = [
 	"codec/std",
