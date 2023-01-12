@@ -27,10 +27,10 @@ mod tracks;
 use super::*;
 use frame_support::traits::TryMapSuccess;
 pub use origins::pallet_origins as pallet_ambassador_origins;
-pub use ranks;
 use origins::pallet_origins::{
 	EnsureAmbassador, EnsureRankedAmbassador, EnsureSeniorAmbassador, Origin,
 };
+pub use ranks;
 use sp_arithmetic::traits::CheckedSub;
 use sp_runtime::{
 	morph_types,
