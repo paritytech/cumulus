@@ -64,8 +64,7 @@ use parachains_common::{
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{
-	ForeignCreators, MultiLocationForAssetId, XcmConfig,
-	XcmOriginToTransactDispatchOrigin,
+	ForeignCreators, MultiLocationForAssetId, XcmConfig, XcmOriginToTransactDispatchOrigin,
 };
 
 #[cfg(any(feature = "std", test))]
