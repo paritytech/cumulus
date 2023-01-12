@@ -29,6 +29,7 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", default-feature
 sp-version = { git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+cumulus-pallet-xcmp-queue = { path = "../../../pallets/xcmp-queue" }
 
 [features]
 default = ["std"]

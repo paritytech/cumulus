@@ -37,6 +37,12 @@ pub const LOG_TARGET: &str = "runtime::bridge-assets-transfer";
 pub struct BridgeConfig {
 	/// Contains location, which is able to bridge XCM messages to bridged network
 	bridge_location: MultiLocation,
+
+	/// Contains target destination on bridged network. E.g.: MultiLocation of Statemine/t on different consensus
+	// TODO:check-parameter - lets start with 1..1, maybe later we could extend this with BoundedVec
+	// TODO: bridged bridge-hub should have router for this
+	allowed_target_location: MultiLocation,
+
 	/// Fee which could be needed to pay in `bridge_location`
 	fee: Option<MultiAsset>,
 }
@@ -58,8 +64,7 @@ pub mod pallet {
 	use xcm_executor::traits::TransactAsset;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub (super) trait Store)]
-	#[pallet::without_storage_info]
+	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
@@ -86,8 +91,9 @@ pub mod pallet {
 		>;
 	}
 
-	#[pallet::storage]
 	/// Details of configured bridges which are allowed for transfer.
+	#[pallet::storage]
+	#[pallet::getter(fn bridges)]
 	pub(super) type Bridges<T: Config> = StorageMap<_, Blake2_128Concat, NetworkId, BridgeConfig>;
 
 	#[pallet::error]
@@ -114,7 +120,9 @@ pub mod pallet {
 		/// Bridge configuration was updated
 		BridgeUpdated,
 
-		/// Make reserve failed
+		/// Reserve asset passed
+		ReserveAssetsDeposited { from: MultiLocation, to: MultiLocation, assets: MultiAssets },
+		/// Reserve asset failed
 		FailedToReserve(XcmError),
 
 		/// Bridge transfer failed
@@ -143,10 +151,14 @@ pub mod pallet {
 
 			// Check reserve account - sovereign account of bridge
 			let reserve_account = bridge_config.bridge_location;
+			let allowed_target_location = bridge_config.allowed_target_location;
 
 			// TODO: do some checks - balances, can_withdraw, ...
-			// TODO: check assets?
-			// TODO: check enought fee?
+			// TODO:check-parameter - check assets:
+			// TODO:check-parameter - check assets - allow just fungible or non-fungible? allow mix?
+			// TODO:check-parameter - check assets - allow Abstract assets - reanchor ignores them?
+			// TODO:check-parameter - check enought fee?
+			// TODO:check-parameter - reserve_account has enought for existential deposit?
 
 			// TODO: fix this for multiple assets
 			let assets: MultiAssets =
@@ -159,8 +171,9 @@ pub mod pallet {
 			// bridge, such that it need not trust any consensus system from
 			// `./Parent/Parent/...`. (It may trust Polkadot, but would
 			// Polkadot trust Kusama with its DOT?)
+
 			// Move asset to reserve account for selected bridge
-			let asset = T::AssetTransactor::transfer_asset(
+			let mut asset = T::AssetTransactor::transfer_asset(
 				asset,
 				&origin_location,
 				&reserve_account,
@@ -168,11 +181,20 @@ pub mod pallet {
 				// fake message hash here
 				&XcmContext::with_message_hash([0; 32]),
 			)
+			.and_then(|assets| {
+				Self::deposit_event(Event::ReserveAssetsDeposited {
+					from: origin_location,
+					to: reserve_account,
+					assets: assets.clone().into(),
+				});
+				Ok(assets)
+			})
 			.map_err(|e| {
 				log::error!(
 					target: LOG_TARGET,
-					"XcmError occurred for origin_location: {:?}, asset: {:?}, error: {:?}",
+					"AssetTransactor failed to reserve assets from origin_location: {:?} to reserve_account: {:?} for assets: {:?}, error: {:?}",
 					origin_location,
+					reserve_account,
 					asset,
 					e
 				);
@@ -180,27 +202,35 @@ pub mod pallet {
 				Error::<T>::FailedToReserve
 			})?;
 
-			// TODO: reanchor somehow
-			// TODO: xcm - withdraw and fire ReserveAssetDeposited to the other side
+			// TODO: asset.clone for compensation + add test for compensation
 
-			// TODO: send message through bridge
-			// Construct and send `Xcm(vec![Instruction])` to
-			// `./Parent/BridgeHubParaId`.
+			// prepare ReserveAssetDeposited msg to bridge to the other side - reanchor stuff
+			// We need to convert local asset's id/MultiLocation to format, that could be understood by different consensus and from their point-of-view
+			// assets.prepend_location(&T::UniversalLocation::get().into_location());
+			asset.reanchor(&allowed_target_location, T::UniversalLocation::get(), None);
+			let remote_destination = remote_destination
+				.reanchored(&allowed_target_location, T::UniversalLocation::get())
+				.expect("aaa");
 
-			// TODO: prepare ReserveAssetDeposited msg to bridge to the other side?
-			let xcm: Xcm<()> =
-				sp_std::vec![Instruction::ReserveAssetDeposited(asset.into())].into();
+			let xcm: Xcm<()> = sp_std::vec![
+				ReserveAssetDeposited(asset.into()),
+				ClearOrigin,
+				DepositAsset { assets: All.into(), beneficiary: remote_destination }
+			]
+			.into();
 
 			// TODO: how to compensate if this call fails?
+
+			// call bridge
 			log::info!(
 				target: LOG_TARGET,
-				"[T::BridgeXcmSender] send to bridge, remote_destination: {:?}, xcm: {:?}",
-				remote_destination,
+				"[T::BridgeXcmSender] send to bridge, allowed_target_location: {:?}, xcm: {:?}",
+				allowed_target_location,
 				xcm,
 			);
-			// call bridge
+			// TODO: use fn send_msg - which does: validate + deliver - but find out what to do with the fees?
 			let (ticket, fees) =
-				T::BridgeXcmSender::validate(&mut Some(remote_destination), &mut Some(xcm))
+				T::BridgeXcmSender::validate(&mut Some(allowed_target_location), &mut Some(xcm))
 					.map_err(|e| {
 						log::error!(
 							target: LOG_TARGET,
@@ -216,7 +246,6 @@ pub mod pallet {
 				fees
 			);
 			// TODO: what to do with fees - we have fees here, pay here or ignore?
-			// TODO: use fn send_msg
 			let xcm_hash = T::BridgeXcmSender::deliver(ticket).map_err(|e| {
 				log::error!(
 					target: LOG_TARGET,
@@ -245,6 +274,15 @@ pub mod pallet {
 		) -> DispatchResult {
 			let _ = ensure_root(origin)?;
 			ensure!(!Bridges::<T>::contains_key(bridged_network), Error::<T>::InvalidConfiguration);
+			let allowed_target_location_network = bridge_config
+				.allowed_target_location
+				.interior()
+				.global_consensus()
+				.map_err(|_| Error::<T>::InvalidConfiguration)?;
+			ensure!(
+				bridged_network == allowed_target_location_network,
+				Error::<T>::InvalidConfiguration
+			);
 
 			Bridges::<T>::insert(bridged_network, bridge_config);
 			Self::deposit_event(Event::BridgeAdded);
@@ -298,21 +336,30 @@ pub mod pallet {
 		///
 		/// Returns: correct remote location, where we should be able to bridge
 		pub(crate) fn ensure_remote_destination(
-			destination: VersionedMultiLocation,
+			remote_destination: VersionedMultiLocation,
 		) -> Result<(BridgeConfig, MultiLocation), Error<T>> {
-			match destination {
-				VersionedMultiLocation::V3(location) => {
-					ensure!(location.parent_count() == 2, Error::<T>::UnsupportedDestination);
+			match remote_destination {
+				VersionedMultiLocation::V3(remote_location) => {
+					ensure!(
+						remote_location.parent_count() == 2,
+						Error::<T>::UnsupportedDestination
+					);
 					let local_network = T::UniversalLocation::get()
 						.global_consensus()
 						.map_err(|_| Error::<T>::InvalidConfiguration)?;
-					let remote_network = location
+					let remote_network = remote_location
 						.interior()
 						.global_consensus()
 						.map_err(|_| Error::<T>::UnsupportedDestination)?;
 					ensure!(local_network != remote_network, Error::<T>::UnsupportedDestination);
 					match Bridges::<T>::get(remote_network) {
-						Some(bridge_config) => Ok((bridge_config, location)),
+						Some(bridge_config) => {
+							ensure!(
+								remote_location.starts_with(&bridge_config.allowed_target_location),
+								Error::<T>::UnsupportedDestination
+							);
+							Ok((bridge_config, remote_location))
+						},
 						None => return Err(Error::<T>::UnsupportedDestination),
 					}
 				},
@@ -349,7 +396,7 @@ mod tests {
 	use sp_runtime::{
 		testing::{Header, H256},
 		traits::{BlakeTwo256, IdentityLookup},
-		AccountId32,
+		AccountId32, ModuleError,
 	};
 	use sp_version::RuntimeVersion;
 	use xcm_builder::{
@@ -440,7 +487,7 @@ mod tests {
 		// Test bridge cfg
 		pub TestBridgeTable: sp_std::prelude::Vec<(NetworkId, MultiLocation, Option<MultiAsset>)> = sp_std::vec![
 			(NetworkId::Wococo, (Parent, Parachain(1013)).into(), None),
-			(NetworkId::Polkadot, (Parent, Parachain(1003)).into(), None),
+			(NetworkId::Polkadot, (Parent, Parachain(1002)).into(), None),
 		];
 		// Relay chain currency/balance location (e.g. KsmLocation, DotLocation, ..)
 		pub const RelayLocation: MultiLocation = MultiLocation::parent();
@@ -518,19 +565,39 @@ mod tests {
 	pub(crate) fn new_test_ext() -> sp_io::TestExternalities {
 		sp_tracing::try_init_simple();
 		let t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
-		t.into()
+
+		// with 0 block_number events dont work
+		let mut ext = sp_io::TestExternalities::new(t);
+		ext.execute_with(|| {
+			frame_system::Pallet::<TestRuntime>::set_block_number(1u32.into());
+		});
+
+		ext
 	}
 
 	fn account(account: u8) -> AccountId32 {
 		AccountId32::new([account; 32])
 	}
 
+	fn consensus_account(network: NetworkId, account: u8) -> Junction {
+		xcm::prelude::AccountId32 {
+			network: Some(network),
+			id: AccountId32::new([account; 32]).into(),
+		}
+	}
+
 	#[test]
 	fn test_ensure_remote_destination() {
 		new_test_ext().execute_with(|| {
 			// insert bridge config
-			let bridge_config =
-				BridgeConfig { bridge_location: (Parent, Parachain(1013)).into(), fee: None };
+			let bridge_config = BridgeConfig {
+				bridge_location: (Parent, Parachain(1013)).into(),
+				allowed_target_location: MultiLocation::new(
+					2,
+					X2(GlobalConsensus(Wococo), Parachain(1000)),
+				),
+				fee: None,
+			};
 			assert_ok!(BridgeAssetsTransfer::add_bridge_config(
 				RuntimeOrigin::root(),
 				Wococo,
@@ -568,7 +635,15 @@ mod tests {
 				Err(Error::<TestRuntime>::UnsupportedDestination)
 			);
 
-			// v3 - ok
+			// v3 - remote_destination is not allowed
+			assert_eq!(
+				BridgeAssetsTransfer::ensure_remote_destination(VersionedMultiLocation::V3(
+					MultiLocation::new(2, X2(GlobalConsensus(Wococo), Parachain(1234)))
+				)),
+				Err(Error::<TestRuntime>::UnsupportedDestination)
+			);
+
+			// v3 - ok (allowed)
 			assert_eq!(
 				BridgeAssetsTransfer::ensure_remote_destination(VersionedMultiLocation::V3(
 					MultiLocation::new(2, X2(GlobalConsensus(Wococo), Parachain(1000)))
@@ -581,8 +656,9 @@ mod tests {
 		})
 	}
 
+	// TODO: add test for pallet_asset not only blances
 	#[test]
-	fn test_transfer_asset_via_bridge_works() {
+	fn test_transfer_asset_via_bridge_for_currency_works() {
 		new_test_ext().execute_with(|| {
 			// initialize some Balances for user_account
 			let user_account = account(1);
@@ -591,6 +667,8 @@ mod tests {
 			let user_free_balance = Balances::free_balance(&user_account);
 			let balance_to_transfer = 15_u64;
 			assert!((user_free_balance - balance_to_transfer) >= ExistentialDeposit::get());
+			// TODO: because, sovereign account needs to have ED otherwise reserve fails
+			assert!(balance_to_transfer >= ExistentialDeposit::get());
 
 			// insert bridge config
 			let bridged_network = Wococo;
@@ -599,6 +677,10 @@ mod tests {
 				bridged_network,
 				Box::new(BridgeConfig {
 					bridge_location: (Parent, Parachain(1013)).into(),
+					allowed_target_location: MultiLocation::new(
+						2,
+						X2(GlobalConsensus(Wococo), Parachain(1000))
+					),
 					fee: None
 				}),
 			));
@@ -609,45 +691,83 @@ mod tests {
 			// checks before
 			assert!(ROUTED_MESSAGE.with(|r| r.borrow().is_none()));
 			assert_eq!(Balances::free_balance(&user_account), user_account_init_balance);
-			let bridge_location_as_account =
+			let bridge_location_as_sovereign_account =
 				SiblingParachainConvertsVia::<Sibling, AccountId>::convert_ref(bridge_location)
 					.expect("converted bridge location as accountId");
-			assert_eq!(Balances::free_balance(&bridge_location_as_account), 0);
+			assert_eq!(Balances::free_balance(&bridge_location_as_sovereign_account), 0);
 
 			// trigger transfer_asset_via_bridge - should trigger new ROUTED_MESSAGE
 			let asset = MultiAsset {
 				fun: Fungible(balance_to_transfer.into()),
 				id: Concrete(RelayLocation::get()),
 			};
-
 			let assets = Box::new(VersionedMultiAssets::V3(asset.into()));
+
+			// destination is account from different consensus
 			let destination = Box::new(VersionedMultiLocation::V3(MultiLocation::new(
 				2,
-				X2(GlobalConsensus(Wococo), Parachain(1000)),
+				X3(GlobalConsensus(Wococo), Parachain(1000), consensus_account(Wococo, 2)),
 			)));
 
-			let result = BridgeAssetsTransfer::transfer_asset_via_bridge(
+			// trigger asset transfer
+			assert_ok!(BridgeAssetsTransfer::transfer_asset_via_bridge(
 				RuntimeOrigin::signed(account(1)),
 				assets,
 				destination,
-			);
-			assert_eq!(result, Ok(()));
-			assert!(ROUTED_MESSAGE.with(|r| r.borrow().is_some()));
-			// check user account decresed
+			));
+
+			// check user account decressed
 			assert_eq!(
 				Balances::free_balance(&user_account),
 				user_account_init_balance - balance_to_transfer
 			);
 			// check reserve account increased
-			assert_eq!(Balances::free_balance(&bridge_location_as_account), 15);
+			assert_eq!(Balances::free_balance(&bridge_location_as_sovereign_account), 15);
+
+			// check events
+			let events = System::events();
+			assert!(!events.is_empty());
+
+			// check reserve asset deposited event
+			assert!(System::events().iter().any(|r| matches!(
+				r.event,
+				RuntimeEvent::BridgeAssetsTransfer(Event::ReserveAssetsDeposited { .. })
+			)));
+			assert!(System::events().iter().any(|r| matches!(
+				r.event,
+				RuntimeEvent::BridgeAssetsTransfer(Event::TransferInitiated { .. })
+			)));
+
+			// check fired XCM ExportMessage to bridge-hub
+			let fired_xcm =
+				ROUTED_MESSAGE.with(|r| r.take().expect("xcm::ExportMessage should be here"));
+
+			if let Some(ExportMessage { xcm, .. }) = fired_xcm.0.iter().find(|instr| {
+				matches!(
+					instr,
+					ExportMessage { network: Wococo, destination: X1(Parachain(1000)), .. }
+				)
+			}) {
+				assert!(xcm.0.iter().any(|instr| matches!(instr, ReserveAssetDeposited(..))));
+				assert!(xcm.0.iter().any(|instr| matches!(instr, ClearOrigin)));
+				assert!(xcm.0.iter().any(|instr| matches!(instr, DepositAsset { .. })));
+			} else {
+				assert!(false, "Does not contains [`ExportMessage`], fired_xcm: {:?}", fired_xcm);
+			}
 		});
 	}
 
 	#[test]
 	fn test_bridge_config_management_works() {
 		let bridged_network = Rococo;
-		let bridged_config =
-			Box::new(BridgeConfig { bridge_location: (Parent, Parachain(1013)).into(), fee: None });
+		let bridged_config = Box::new(BridgeConfig {
+			bridge_location: (Parent, Parachain(1013)).into(),
+			allowed_target_location: MultiLocation::new(
+				2,
+				X2(GlobalConsensus(bridged_network), Parachain(1000)),
+			),
+			fee: None,
+		});
 		let dummy_xcm = Xcm(vec![]);
 		let dummy_remote_interior_multilocation = X1(Parachain(1234));
 
@@ -662,6 +782,27 @@ mod tests {
 					bridged_config.clone(),
 				),
 				DispatchError::BadOrigin
+			);
+
+			// should fail - cannot bridged_network should match allowed_target_location
+			assert_noop!(
+				BridgeAssetsTransfer::add_bridge_config(RuntimeOrigin::root(), bridged_network, {
+					let remote_network = Westend;
+					assert_ne!(bridged_network, remote_network);
+					Box::new(BridgeConfig {
+						bridge_location: (Parent, Parachain(1013)).into(),
+						allowed_target_location: MultiLocation::new(
+							2,
+							X2(GlobalConsensus(remote_network), Parachain(1000)),
+						),
+						fee: None,
+					})
+				}),
+				DispatchError::Module(ModuleError {
+					index: 52,
+					error: [0, 0, 0, 0],
+					message: Some("InvalidConfiguration")
+				})
 			);
 			assert_eq!(Bridges::<TestRuntime>::iter().count(), 0);
 			assert_eq!(
@@ -714,6 +855,7 @@ mod tests {
 				Bridges::<TestRuntime>::get(bridged_network),
 				Some(BridgeConfig {
 					bridge_location: bridged_config.bridge_location.clone(),
+					allowed_target_location: bridged_config.allowed_target_location.clone(),
 					fee: Some((Parent, 200u128).into())
 				})
 			);
