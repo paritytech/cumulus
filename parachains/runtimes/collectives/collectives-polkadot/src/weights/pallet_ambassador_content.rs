@@ -32,23 +32,23 @@ pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_collective_content::WeightInfo for WeightInfo<T> {
 	// Storage: AmbassadorContent Charter (r:0 w:1)
 	fn set_charter() -> Weight {
-		// Minimum execution time: 245_000 nanoseconds.
-		Weight::from_ref_time(245_000_000)
+		// Minimum execution time: 214_000 nanoseconds.
+		Weight::from_ref_time(214_000_000)
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: AmbassadorCollective Members (r:1 w:0)
 	// Storage: AmbassadorContent Announcements (r:1 w:1)
 	fn announce() -> Weight {
-		// Minimum execution time: 352_000 nanoseconds.
-		Weight::from_ref_time(352_000_000)
+		// Minimum execution time: 317_000 nanoseconds.
+		Weight::from_ref_time(317_000_000)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: AmbassadorCollective Members (r:1 w:0)
 	// Storage: AmbassadorContent Announcements (r:1 w:1)
 	fn remove_announcement() -> Weight {
-		// Minimum execution time: 432_000 nanoseconds.
-		Weight::from_ref_time(432_000_000)
+		// Minimum execution time: 394_000 nanoseconds.
+		Weight::from_ref_time(394_000_000)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}

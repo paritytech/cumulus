@@ -16,34 +16,34 @@
 //! The pallet benchmarks.
 
 use super::{Pallet as CollectiveContent, *};
-use frame_benchmarking::benchmarks;
+use frame_benchmarking::benchmarks_instance_pallet;
 use frame_support::traits::{EnsureOrigin, UnfilteredDispatchable};
 use sp_core::Get;
 use sp_std::vec;
 
-fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
+fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::RuntimeEvent) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 
-benchmarks! {
+benchmarks_instance_pallet! {
 	set_charter {
 		let cid: Cid = b"ipfs_hash".to_vec().try_into().unwrap();
-		let call = Call::<T>::set_charter { cid: cid.clone() };
+		let call = Call::<T, I>::set_charter { cid: cid.clone() };
 		let origin = T::CharterOrigin::successful_origin();
 	}: { call.dispatch_bypass_filter(origin)? }
 	verify {
-		assert_eq!(CollectiveContent::<T>::charter(), Some(cid.clone()));
-		assert_last_event::<T>(Event::NewCharterSet { cid }.into());
+		assert_eq!(CollectiveContent::<T, I>::charter(), Some(cid.clone()));
+		assert_last_event::<T, I>(Event::NewCharterSet { cid }.into());
 	}
 
 	announce {
 		let cid: Cid = b"ipfs_hash".to_vec().try_into().unwrap();
-		let call = Call::<T>::announce { cid: cid.clone() };
+		let call = Call::<T, I>::announce { cid: cid.clone() };
 		let origin = T::AnnouncementOrigin::successful_origin();
 	}: { call.dispatch_bypass_filter(origin)? }
 	verify {
-		assert_eq!(CollectiveContent::<T>::announcements().len(), 1);
-		assert_last_event::<T>(Event::AnnouncementAnnounced { cid }.into());
+		assert_eq!(CollectiveContent::<T, I>::announcements().len(), 1);
+		assert_last_event::<T, I>(Event::AnnouncementAnnounced { cid }.into());
 	}
 
 	remove_announcement {
@@ -54,14 +54,14 @@ benchmarks! {
 		// fill the announcements vec for the worst case.
 		let announcements = vec![cid.clone(); max_count];
 		let announcements: BoundedVec<_, T::MaxAnnouncementsCount> = BoundedVec::try_from(announcements).unwrap();
-		Announcements::<T>::put(announcements);
-		assert_eq!(CollectiveContent::<T>::announcements().len(), max_count);
+		Announcements::<T, I>::put(announcements);
+		assert_eq!(CollectiveContent::<T, I>::announcements().len(), max_count);
 
-		let call = Call::<T>::remove_announcement { cid: cid.clone() };
+		let call = Call::<T, I>::remove_announcement { cid: cid.clone() };
 	}: { call.dispatch_bypass_filter(origin)? }
 	verify {
-		assert_eq!(CollectiveContent::<T>::announcements().len(), max_count - 1);
-		assert_last_event::<T>(Event::AnnouncementRemoved { cid }.into());
+		assert_eq!(CollectiveContent::<T, I>::announcements().len(), max_count - 1);
+		assert_last_event::<T, I>(Event::AnnouncementRemoved { cid }.into());
 	}
 
 	impl_benchmark_test_suite!(CollectiveContent, super::mock::new_bench_ext(), super::mock::Test);

@@ -570,7 +570,7 @@ construct_runtime!(
 		// Ambassador Program
 		AmbassadorCollective: pallet_ranked_collective::<Instance1>::{Pallet, Call, Storage, Event<T>} = 60,
 		AmbassadorReferenda: pallet_referenda::<Instance1>::{Pallet, Call, Storage, Event<T>} = 61,
-		AmbassadorContent: pallet_collective_content::{Pallet, Call, Storage, Event<T>} = 62,
+		AmbassadorContent: pallet_collective_content::<Instance1>::{Pallet, Call, Storage, Event<T>} = 62,
 		AmbassadorOrigins: pallet_ambassador_origins::{Origin} = 63,
 	}
 );

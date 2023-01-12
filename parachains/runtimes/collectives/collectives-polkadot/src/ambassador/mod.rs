@@ -47,7 +47,9 @@ pub mod ranks {
 	pub const HEAD_AMBASSADOR: Rank = 3;
 }
 
-impl pallet_collective_content::Config for Runtime {
+pub type AmbassadorContentInstance = pallet_collective_content::Instance1;
+
+impl pallet_collective_content::Config<AmbassadorContentInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type CharterOrigin = EnsureAmbassador;
 	type AnnouncementOrigin = pallet_ranked_collective::EnsureMember<
@@ -70,7 +72,7 @@ parameter_types! {
 pub type AmbassadorReferendaInstance = pallet_referenda::Instance1;
 
 impl pallet_referenda::Config<AmbassadorReferendaInstance> for Runtime {
-	type WeightInfo = weights::pallet_ambassador_referenda;
+	type WeightInfo = weights::pallet_ambassador_referenda::WeightInfo<Runtime>;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type Scheduler = Scheduler;

@@ -57,13 +57,14 @@ pub mod pallet {
 	#[pallet::pallet]
 	#[pallet::generate_store(pub (super) trait Store)]
 	#[pallet::storage_version(STORAGE_VERSION)]
-	pub struct Pallet<T>(PhantomData<T>);
+	pub struct Pallet<T, I = ()>(PhantomData<(T, I)>);
 
 	/// The module configuration trait.
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config<I: 'static = ()>: frame_system::Config {
 		/// The overarching event type.
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type RuntimeEvent: From<Event<Self, I>>
+			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// The origin to control the collective announcements.
 		type AnnouncementOrigin: EnsureOrigin<Self::RuntimeOrigin>;
@@ -81,7 +82,7 @@ pub mod pallet {
 
 	/// Errors encountered by the pallet (not a full list).
 	#[pallet::error]
-	pub enum Error<T> {
+	pub enum Error<T, I = ()> {
 		/// The announcement is not found.
 		MissingAnnouncement,
 		/// Number of announcements exceeds `MaxAnnouncementsCount`.
@@ -91,7 +92,7 @@ pub mod pallet {
 	/// Events emitted by the pallet.
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event<T: Config> {
+	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// A new charter has been set.
 		NewCharterSet { cid: Cid },
 		/// A new announcement has been proposed.
@@ -103,17 +104,16 @@ pub mod pallet {
 	/// The collective charter.
 	#[pallet::storage]
 	#[pallet::getter(fn charter)]
-	pub type Charter<T: Config> = StorageValue<_, Cid, OptionQuery>;
+	pub type Charter<T: Config<I>, I: 'static = ()> = StorageValue<_, Cid, OptionQuery>;
 
 	/// The collective announcements.
 	#[pallet::storage]
 	#[pallet::getter(fn announcements)]
-	pub type Announcements<T: Config> =
+	pub type Announcements<T: Config<I>, I: 'static = ()> =
 		StorageValue<_, BoundedVec<Cid, T::MaxAnnouncementsCount>, ValueQuery>;
 
-	// TODO make generic over instance (I), we probably will have multiple instances (Ambassador, Alliance).
 	#[pallet::call]
-	impl<T: Config> Pallet<T> {
+	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		/// Set the collective  charter.
 		///
 		/// Parameters:
@@ -126,9 +126,9 @@ pub mod pallet {
 		pub fn set_charter(origin: OriginFor<T>, cid: Cid) -> DispatchResult {
 			T::CharterOrigin::ensure_origin(origin)?;
 
-			Charter::<T>::put(&cid);
+			Charter::<T, I>::put(&cid);
 
-			Self::deposit_event(Event::<T>::NewCharterSet { cid });
+			Self::deposit_event(Event::<T, I>::NewCharterSet { cid });
 			Ok(())
 		}
 
@@ -144,13 +144,13 @@ pub mod pallet {
 		pub fn announce(origin: OriginFor<T>, cid: Cid) -> DispatchResult {
 			T::AnnouncementOrigin::ensure_origin(origin)?;
 
-			let mut announcements = <Announcements<T>>::get();
+			let mut announcements = <Announcements<T, I>>::get();
 			announcements
 				.try_push(cid.clone())
-				.map_err(|_| Error::<T>::TooManyAnnouncements)?;
-			<Announcements<T>>::put(announcements);
+				.map_err(|_| Error::<T, I>::TooManyAnnouncements)?;
+			<Announcements<T, I>>::put(announcements);
 
-			Self::deposit_event(Event::<T>::AnnouncementAnnounced { cid });
+			Self::deposit_event(Event::<T, I>::AnnouncementAnnounced { cid });
 			Ok(())
 		}
 
@@ -166,13 +166,15 @@ pub mod pallet {
 		pub fn remove_announcement(origin: OriginFor<T>, cid: Cid) -> DispatchResult {
 			T::AnnouncementOrigin::ensure_origin(origin)?;
 
-			let mut announcements = <Announcements<T>>::get();
-			let pos =
-				announcements.binary_search(&cid).ok().ok_or(Error::<T>::MissingAnnouncement)?;
+			let mut announcements = <Announcements<T, I>>::get();
+			let pos = announcements
+				.binary_search(&cid)
+				.ok()
+				.ok_or(Error::<T, I>::MissingAnnouncement)?;
 			announcements.remove(pos);
-			<Announcements<T>>::put(announcements);
+			<Announcements<T, I>>::put(announcements);
 
-			Self::deposit_event(Event::<T>::AnnouncementRemoved { cid });
+			Self::deposit_event(Event::<T, I>::AnnouncementRemoved { cid });
 			Ok(())
 		}
 	}
