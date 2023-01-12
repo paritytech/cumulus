@@ -18,6 +18,8 @@
 use super::{Pallet as CollectiveContent, *};
 use frame_benchmarking::benchmarks;
 use frame_support::traits::{EnsureOrigin, UnfilteredDispatchable};
+use sp_core::Get;
+use sp_std::vec;
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
@@ -25,7 +27,7 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
 
 benchmarks! {
 	set_charter {
-		let cid: Cid = b"ipfs_hash_fail".to_vec().try_into().unwrap();
+		let cid: Cid = b"ipfs_hash".to_vec().try_into().unwrap();
 		let call = Call::<T>::set_charter { cid: cid.clone() };
 		let origin = T::CharterOrigin::successful_origin();
 	}: { call.dispatch_bypass_filter(origin)? }
@@ -35,7 +37,7 @@ benchmarks! {
 	}
 
 	announce {
-		let cid: Cid = b"ipfs_hash_fail".to_vec().try_into().unwrap();
+		let cid: Cid = b"ipfs_hash".to_vec().try_into().unwrap();
 		let call = Call::<T>::announce { cid: cid.clone() };
 		let origin = T::AnnouncementOrigin::successful_origin();
 	}: { call.dispatch_bypass_filter(origin)? }
@@ -45,16 +47,20 @@ benchmarks! {
 	}
 
 	remove_announcement {
-		let cid: Cid = b"ipfs_hash_fail".to_vec().try_into().unwrap();
+		let cid: Cid = b"ipfs_hash".to_vec().try_into().unwrap();
 		let origin = T::AnnouncementOrigin::successful_origin();
+		let max_count = T::MaxAnnouncementsCount::get() as usize;
 
-		CollectiveContent::<T>::announce(origin.clone(), cid.clone())?;
-		assert_eq!(CollectiveContent::<T>::announcements().len(), 1);
+		// fill the announcements vec for the worst case.
+		let announcements = vec![cid.clone(); max_count];
+		let announcements: BoundedVec<_, T::MaxAnnouncementsCount> = BoundedVec::try_from(announcements).unwrap();
+		Announcements::<T>::put(announcements);
+		assert_eq!(CollectiveContent::<T>::announcements().len(), max_count);
 
 		let call = Call::<T>::remove_announcement { cid: cid.clone() };
 	}: { call.dispatch_bypass_filter(origin)? }
 	verify {
-		assert_eq!(CollectiveContent::<T>::announcements().len(), 0);
+		assert_eq!(CollectiveContent::<T>::announcements().len(), max_count - 1);
 		assert_last_event::<T>(Event::AnnouncementRemoved { cid }.into());
 	}
 

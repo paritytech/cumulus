@@ -70,7 +70,7 @@ parameter_types! {
 pub type AmbassadorReferendaInstance = pallet_referenda::Instance1;
 
 impl pallet_referenda::Config<AmbassadorReferendaInstance> for Runtime {
-	type WeightInfo = (); // TODO use actual weights
+	type WeightInfo = weights::pallet_ambassador_referenda;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type Scheduler = Scheduler;

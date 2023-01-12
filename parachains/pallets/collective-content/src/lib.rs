@@ -13,8 +13,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Collective content.
-//! TODO docs
+//! Managed collective content.
+//!
+//! The pallet provides the functionality to store different types of the content.
+//! The content presented as a [Cid] of the IPFS document which might contain any type of data.
+//! Every type of the content has its own origin to be manage. The origins are configurable by clients.
+//!
+//! Content types:
+//! - the collective [charter](pallet::Charter). A single document managed by [CharterOrigin](pallet::Config::CharterOrigin).
+//! - the collective [announcements](pallet::Announcements). A list of announcements managed by [AnnouncementOrigin](pallet::Config::AnnouncementOrigin).
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -103,9 +110,16 @@ pub mod pallet {
 	pub type Announcements<T: Config> =
 		StorageValue<_, BoundedVec<Cid, T::MaxAnnouncementsCount>, ValueQuery>;
 
+	// TODO make generic over instance (I), we probably will have multiple instances (Ambassador, Alliance).
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Set the collective  charter.
+		///
+		/// Parameters:
+		/// - `origin`: Must be the [T::CharterOrigin].
+		/// - `cid`: [CID](super::Cid) of the IPFS document of the collective charter.
+		///
+		/// Weight: `O(1)`.
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::set_charter())]
 		pub fn set_charter(origin: OriginFor<T>, cid: Cid) -> DispatchResult {
@@ -118,6 +132,12 @@ pub mod pallet {
 		}
 
 		/// Publish an announcement.
+		///
+		/// Parameters:
+		/// - `origin`: Must be the [T::CharterOrigin].
+		/// - `cid`: [CID](super::Cid) of the IPFS document to announce.
+		///
+		/// Weight: `O(1)`.
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::announce())]
 		pub fn announce(origin: OriginFor<T>, cid: Cid) -> DispatchResult {
@@ -134,6 +154,12 @@ pub mod pallet {
 		}
 
 		/// Remove an announcement.
+		///
+		/// Parameters:
+		/// - `origin`: Must be the [T::CharterOrigin].
+		/// - `cid`: [CID](super::Cid) of the IPFS document to remove.
+		///
+		/// Weight: `O(1)`, less of the [T::MaxAnnouncementsCount] is lower.
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::remove_announcement())]
 		pub fn remove_announcement(origin: OriginFor<T>, cid: Cid) -> DispatchResult {
