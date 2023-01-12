@@ -295,6 +295,7 @@ impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
 
 /// Simple conversion of `u32` into an `AssetId` for use in benchmarking.
 pub struct XcmBenchmarkHelper;
+#[cfg(feature = "runtime-benchmarks")]
 use pallet_assets::BenchmarkHelper;
 #[cfg(feature = "runtime-benchmarks")]
 impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
