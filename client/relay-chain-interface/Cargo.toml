@@ -15,8 +15,9 @@ sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "mas
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
+tokio = { version = "1.24.1", features = ["sync"] }
 futures = "0.3.25"
-async-trait = "0.1.58"
-thiserror = "1.0.37"
-jsonrpsee-core = "0.15.1"
+async-trait = "0.1.60"
+thiserror = "1.0.38"
+jsonrpsee-core = "0.16.2"
 parity-scale-codec = "3.2.1"
