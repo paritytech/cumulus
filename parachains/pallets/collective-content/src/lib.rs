@@ -117,7 +117,7 @@ pub mod pallet {
 		/// Set the collective  charter.
 		///
 		/// Parameters:
-		/// - `origin`: Must be the [T::CharterOrigin].
+		/// - `origin`: Must be the [Config::CharterOrigin].
 		/// - `cid`: [CID](super::Cid) of the IPFS document of the collective charter.
 		///
 		/// Weight: `O(1)`.
@@ -135,7 +135,7 @@ pub mod pallet {
 		/// Publish an announcement.
 		///
 		/// Parameters:
-		/// - `origin`: Must be the [T::CharterOrigin].
+		/// - `origin`: Must be the [Config::CharterOrigin].
 		/// - `cid`: [CID](super::Cid) of the IPFS document to announce.
 		///
 		/// Weight: `O(1)`.
@@ -157,10 +157,10 @@ pub mod pallet {
 		/// Remove an announcement.
 		///
 		/// Parameters:
-		/// - `origin`: Must be the [T::CharterOrigin].
+		/// - `origin`: Must be the [Config::CharterOrigin].
 		/// - `cid`: [CID](super::Cid) of the IPFS document to remove.
 		///
-		/// Weight: `O(1)`, less of the [T::MaxAnnouncementsCount] is lower.
+		/// Weight: `O(1)`, less of the [Config::MaxAnnouncementsCount] is lower.
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::remove_announcement())]
 		pub fn remove_announcement(origin: OriginFor<T>, cid: Cid) -> DispatchResult {
