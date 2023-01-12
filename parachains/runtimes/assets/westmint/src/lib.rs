@@ -874,6 +874,7 @@ impl_runtime_apis! {
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
 			use xcm::latest::prelude::*;
+			use xcm_builder::MintLocation;
 			use xcm_config::WestendLocation;
 			use pallet_xcm_benchmarks::asset_instance_from;
 
@@ -916,7 +917,7 @@ impl_runtime_apis! {
 					WestendLocation::get(),
 					MultiAsset { fun: Fungible(1 * UNITS), id: Concrete(WestendLocation::get()) },
 				));
-				pub const CheckedAccount: Option<AccountId> = None;
+				pub const CheckedAccount: Option<(AccountId, MintLocation)> = None;
 
 			}
 
