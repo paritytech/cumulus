@@ -142,10 +142,20 @@ mod tests {
 	use bridge_runtime_common::{
 		assert_complete_bridge_types,
 		integrity::{
-			assert_complete_bridge_constants, AssertBridgeMessagesPalletConstants,
-			AssertBridgePalletNames, AssertChainConstants, AssertCompleteBridgeConstants,
+			assert_complete_bridge_constants, check_message_lane_weights,
+			AssertBridgeMessagesPalletConstants, AssertBridgePalletNames, AssertChainConstants,
+			AssertCompleteBridgeConstants,
 		},
 	};
+
+	#[test]
+	fn ensure_bridge_hub_rococo_message_lane_weights_are_correct() {
+		check_message_lane_weights::<bp_bridge_hub_rococo::BridgeHubRococo, Runtime>(
+			bp_bridge_hub_wococo::EXTRA_STORAGE_PROOF_SIZE,
+			bp_bridge_hub_rococo::MAX_UNREWARDED_RELAYERS_IN_CONFIRMATION_TX,
+			bp_bridge_hub_rococo::MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX,
+		);
+	}
 
 	#[test]
 	fn ensure_bridge_integrity() {
