@@ -206,22 +206,6 @@ pub fn native_version() -> NativeVersion {
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
-// TODO:check-parameter - move to bridges/primitives, once rebased and would compile with bp_bridge_hub_xyz dependencies
-pub mod runtime_api {
-	use super::{BlockNumber, Hash};
-	bp_runtime::decl_bridge_finality_runtime_apis!(rococo);
-	bp_runtime::decl_bridge_finality_runtime_apis!(wococo);
-	bp_runtime::decl_bridge_finality_runtime_apis!(bridge_hub_rococo);
-	bp_runtime::decl_bridge_finality_runtime_apis!(bridge_hub_wococo);
-
-	use bp_messages::{
-		InboundMessageDetails, LaneId, MessageNonce, MessagePayload, OutboundMessageDetails,
-	};
-	use sp_std::prelude::Vec;
-	bp_runtime::decl_bridge_messages_runtime_apis!(bridge_hub_rococo);
-	bp_runtime::decl_bridge_messages_runtime_apis!(bridge_hub_wococo);
-}
-
 parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
 	pub RuntimeBlockLength: BlockLength =
@@ -754,20 +738,20 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl runtime_api::RococoFinalityApi<Block> for Runtime {
+	impl bp_rococo::RococoFinalityApi<Block> for Runtime {
 		fn best_finalized() -> Option<HeaderId<bp_rococo::Hash, bp_rococo::BlockNumber>> {
 			BridgeRococoGrandpa::best_finalized().map(|header| header.id())
 		}
 	}
 
-	impl runtime_api::WococoFinalityApi<Block> for Runtime {
+	impl bp_wococo::WococoFinalityApi<Block> for Runtime {
 		fn best_finalized() -> Option<HeaderId<bp_wococo::Hash, bp_wococo::BlockNumber>> {
 			BridgeWococoGrandpa::best_finalized().map(|header| header.id())
 		}
 	}
 
 
-	impl runtime_api::BridgeHubRococoFinalityApi<Block> for Runtime {
+	impl bp_bridge_hub_rococo::BridgeHubRococoFinalityApi<Block> for Runtime {
 		fn best_finalized() -> Option<HeaderId<Hash, BlockNumber>> {
 			let encoded_head = BridgeRococoParachain::best_parachain_head(bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID.into())?;
 			let head = bp_bridge_hub_rococo::Header::decode(&mut &encoded_head.0[..]).ok()?;
@@ -775,7 +759,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl runtime_api::BridgeHubWococoFinalityApi<Block> for Runtime {
+	impl bp_bridge_hub_wococo::BridgeHubWococoFinalityApi<Block> for Runtime {
 		fn best_finalized() -> Option<HeaderId<Hash, BlockNumber>> {
 			let encoded_head = BridgeWococoParachain::best_parachain_head(bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID.into())?;
 			let head = bp_bridge_hub_wococo::Header::decode(&mut &encoded_head.0[..]).ok()?;
@@ -784,7 +768,7 @@ impl_runtime_apis! {
 	}
 
 	// This exposed by BridgeHubRococo
-	impl runtime_api::FromBridgeHubWococoInboundLaneApi<Block> for Runtime {
+	impl bp_bridge_hub_wococo::FromBridgeHubWococoInboundLaneApi<Block> for Runtime {
 		fn message_details(
 			lane: bp_messages::LaneId,
 			messages: Vec<(bp_messages::MessagePayload, bp_messages::OutboundMessageDetails)>,
@@ -796,7 +780,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl runtime_api::ToBridgeHubWococoOutboundLaneApi<Block> for Runtime {
+	impl bp_bridge_hub_wococo::ToBridgeHubWococoOutboundLaneApi<Block> for Runtime {
 		fn message_details(
 			lane: bp_messages::LaneId,
 			begin: bp_messages::MessageNonce,
@@ -810,7 +794,7 @@ impl_runtime_apis! {
 	}
 
 	// This is exposed by BridgeHubWococo
-	impl runtime_api::FromBridgeHubRococoInboundLaneApi<Block> for Runtime {
+	impl bp_bridge_hub_rococo::FromBridgeHubRococoInboundLaneApi<Block> for Runtime {
 		fn message_details(
 			lane: bp_messages::LaneId,
 			messages: Vec<(bp_messages::MessagePayload, bp_messages::OutboundMessageDetails)>,
@@ -822,7 +806,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl runtime_api::ToBridgeHubRococoOutboundLaneApi<Block> for Runtime {
+	impl bp_bridge_hub_rococo::ToBridgeHubRococoOutboundLaneApi<Block> for Runtime {
 		fn message_details(
 			lane: bp_messages::LaneId,
 			begin: bp_messages::MessageNonce,
