@@ -356,8 +356,6 @@ pub mod pallet {
 				horizontal_messages,
 			} = data;
 
-			Self::validate_validation_data(&vfp);
-
 			// Check that the associated relay chain block number is as expected.
 			T::CheckAssociatedRelayNumber::check_associated_relay_number(
 				vfp.relay_parent_number,
@@ -379,7 +377,7 @@ pub mod pallet {
 				.read_upgrade_go_ahead_signal()
 				.expect("Invalid upgrade go ahead signal");
 			match upgrade_go_ahead_signal {
-				Some(relay_chain::v2::UpgradeGoAhead::GoAhead) => {
+				Some(relay_chain::UpgradeGoAhead::GoAhead) => {
 					assert!(
 						<PendingValidationCode<T>>::exists(),
 						"No new validation function found in storage, GoAhead signal is not expected",
@@ -392,7 +390,7 @@ pub mod pallet {
 						relay_chain_block_num: vfp.relay_parent_number,
 					});
 				},
-				Some(relay_chain::v2::UpgradeGoAhead::Abort) => {
+				Some(relay_chain::UpgradeGoAhead::Abort) => {
 					<PendingValidationCode<T>>::kill();
 					Self::deposit_event(Event::ValidationFunctionDiscarded);
 				},
@@ -551,7 +549,7 @@ pub mod pallet {
 	/// set after the inherent.
 	#[pallet::storage]
 	pub(super) type UpgradeRestrictionSignal<T: Config> =
-		StorageValue<_, Option<relay_chain::v2::UpgradeRestriction>, ValueQuery>;
+		StorageValue<_, Option<relay_chain::UpgradeRestriction>, ValueQuery>;
 
 	/// The state proof for the last relay parent block.
 	///
@@ -610,7 +608,7 @@ pub mod pallet {
 	/// This will be cleared in `on_initialize` of each new block.
 	#[pallet::storage]
 	pub(super) type HrmpWatermark<T: Config> =
-		StorageValue<_, relay_chain::v2::BlockNumber, ValueQuery>;
+		StorageValue<_, relay_chain::BlockNumber, ValueQuery>;
 
 	/// HRMP messages that were sent in a block.
 	///
@@ -772,34 +770,6 @@ impl<T: Config> GetChannelInfo for Pallet<T> {
 }
 
 impl<T: Config> Pallet<T> {
-	/// Validate the given [`PersistedValidationData`] against the
-	/// [`ValidationParams`](polkadot_parachain::primitives::ValidationParams).
-	///
-	/// This check will only be executed when the block is currently being executed in the context
-	/// of [`validate_block`]. If this is being executed in the context of block building or block
-	/// import, this is a no-op.
-	///
-	/// # Panics
-	///
-	/// Panics while validating the `PoV` on the relay chain if the [`PersistedValidationData`]
-	/// passed by the block author was incorrect.
-	fn validate_validation_data(validation_data: &PersistedValidationData) {
-		validate_block::with_validation_params(|params| {
-			assert_eq!(
-				params.parent_head, validation_data.parent_head,
-				"Parent head doesn't match"
-			);
-			assert_eq!(
-				params.relay_parent_number, validation_data.relay_parent_number,
-				"Relay parent number doesn't match",
-			);
-			assert_eq!(
-				params.relay_parent_storage_root, validation_data.relay_parent_storage_root,
-				"Relay parent storage root doesn't match",
-			);
-		});
-	}
-
 	/// Process all inbound downward messages relayed by the collator.
 	///
 	/// Checks if the sequence of the messages is valid, dispatches them and communicates the
@@ -861,7 +831,7 @@ impl<T: Config> Pallet<T> {
 	fn process_inbound_horizontal_messages(
 		ingress_channels: &[(ParaId, cumulus_primitives_core::AbridgedHrmpChannel)],
 		horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
-		relay_parent_number: relay_chain::v2::BlockNumber,
+		relay_parent_number: relay_chain::BlockNumber,
 	) -> Weight {
 		// First, check that all submitted messages are sent from channels that exist. The
 		// channel exists if its MQC head is present in `vfp.hrmp_mqc_heads`.
