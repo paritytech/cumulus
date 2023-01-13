@@ -345,8 +345,7 @@ where
 	let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface, para_id);
 	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
 
-	let (network, system_rpc_tx, tx_handler_controller, start_network) =
-		sc_service::build_network(sc_service::BuildNetworkParams {
+	sc_service::build_network(sc_service::BuildNetworkParams {
 			config: parachain_config,
 			client,
 			transaction_pool,
@@ -354,7 +353,5 @@ where
 			import_queue,
 			block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
 			warp_sync_params,
-		})?;
-
-	Ok((network, system_rpc_tx, tx_handler_controller, start_network))
+		})
 }
