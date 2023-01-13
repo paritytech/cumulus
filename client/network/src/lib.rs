@@ -502,9 +502,7 @@ where
 	RCInterface: RelayChainInterface + Send + 'static,
 {
 	let mut imported_blocks = relay_chain_interface.import_notification_stream().await?.fuse();
-	loop {
-		select! {
-			i = imported_blocks.next() => {
+	while imported_blocks.next().await.is_some() {
 						let is_syncing = relay_chain_interface
 						.is_major_syncing()
 						.await
