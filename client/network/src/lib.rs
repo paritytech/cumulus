@@ -548,12 +548,9 @@ where
 							return Ok(())
 						}
 						Delay::new(Duration::from_secs(30)).await;
-					}
-					None => {
-						return Err("Stopping following imported blocks. Could not determine parachain target block".into())
-					}
-				}
 			}
+			
+			Err("Stopping following imported blocks. Could not determine parachain target block".into())
 		}
 	}
 }
