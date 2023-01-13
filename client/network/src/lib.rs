@@ -505,8 +505,6 @@ where
 	loop {
 		select! {
 			i = imported_blocks.next() => {
-					match i {
-					Some(_) => {
 						let is_syncing = relay_chain_interface
 						.is_major_syncing()
 						.await
