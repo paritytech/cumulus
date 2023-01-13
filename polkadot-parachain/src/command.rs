@@ -492,6 +492,17 @@ macro_rules! construct_async_run {
 							{ $( $code )* }.map(|v| (v, task_manager))
 						})
 					},
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::Westend => {
+						runner.async_run(|$config| {
+							let $components = new_partial::<chain_spec::bridge_hubs::westend::RuntimeApi, _>(
+								&$config,
+								crate::service::aura_build_import_queue::<_, AuraId>,
+							)?;
+
+							let task_manager = $components.task_manager;
+							{ $( $code )* }.map(|v| (v, task_manager))
+						})
+					},
 					chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
 					chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal |
 					chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoDevelopment => {
@@ -781,7 +792,7 @@ pub fn run() -> Result<()> {
 				let id = ParaId::from(para_id);
 
 				let parachain_account =
-					AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
+					AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(&id);
 
 				let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
 
@@ -867,6 +878,13 @@ pub fn run() -> Result<()> {
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment =>
 							crate::service::start_generic_aura_node::<
 								chain_spec::bridge_hubs::kusama::RuntimeApi,
+								AuraId,
+							>(config, polkadot_config, collator_options, id, hwbench)
+							.await
+							.map(|r| r.0),
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::Westend =>
+							crate::service::start_generic_aura_node::<
+								chain_spec::bridge_hubs::westend::RuntimeApi,
 								AuraId,
 							>(config, polkadot_config, collator_options, id, hwbench)
 							.await

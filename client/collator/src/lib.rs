@@ -37,7 +37,7 @@ use polkadot_node_primitives::{
 };
 use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
 use polkadot_overseer::Handle as OverseerHandle;
-use polkadot_primitives::v2::{CollatorPair, Id as ParaId};
+use polkadot_primitives::{CollatorPair, Id as ParaId};
 
 use codec::{Decode, Encode};
 use futures::{channel::oneshot, FutureExt};
@@ -91,7 +91,7 @@ where
 	///
 	/// Returns `true` if the block could be found and is good to be build on.
 	fn check_block_status(&self, hash: Block::Hash, header: &Block::Header) -> bool {
-		match self.block_status.block_status(&BlockId::Hash(hash)) {
+		match self.block_status.block_status(hash) {
 			Ok(BlockStatus::Queued) => {
 				tracing::debug!(
 					target: LOG_TARGET,

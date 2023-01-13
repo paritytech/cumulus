@@ -91,9 +91,7 @@ where
 	}
 
 	fn deliver(data: Vec<u8>) -> Result<XcmHash, SendError> {
-		let hash = data.using_encoded(sp_io::hashing::blake2_256);
-
-		T::send_upward_message(data).map_err(|e| match e {
+		let (_, hash) = T::send_upward_message(data).map_err(|e| match e {
 			MessageSendError::TooBig => SendError::ExceedsMaxMessageSize,
 			e => SendError::Transport(e.into()),
 		})?;
@@ -351,7 +349,7 @@ mod tests {
 	/// Impl [`UpwardMessageSender`] that return `Other` error
 	struct OtherErrorUpwardMessageSender;
 	impl UpwardMessageSender for OtherErrorUpwardMessageSender {
-		fn send_upward_message(_: UpwardMessage) -> Result<u32, MessageSendError> {
+		fn send_upward_message(_: UpwardMessage) -> Result<(u32, XcmHash), MessageSendError> {
 			Err(MessageSendError::Other)
 		}
 	}
