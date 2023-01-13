@@ -491,7 +491,7 @@ where
 	Ok(receiver)
 }
 
-/// loops while waiting for the relay chain to sync, once complete return the latest parachain header to warp to
+/// Waits for the relay chain to have finished syncing and then gets the parachain header that corresponds to the last finalized relay chain block.
 async fn wait_for_target_block<B, RCInterface>(
 	sender: oneshot::Sender<<B as BlockT>::Header>,
 	para_id: ParaId,
