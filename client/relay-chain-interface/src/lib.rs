@@ -105,7 +105,7 @@ pub trait RelayChainInterface: Send + Sync {
 	/// Get the hash of the current best block.
 	async fn best_block_hash(&self) -> RelayChainResult<PHash>;
 
-	/// Get the hash of the current best finalised block.
+	/// Get the hash of the finalized block.
 	async fn finalized_block_hash(&self) -> RelayChainResult<PHash>;
 
 	/// Returns the whole contents of the downward message queue for the parachain we are collating
