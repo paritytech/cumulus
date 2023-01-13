@@ -545,7 +545,6 @@ where
 							let _ = sender.send(target_block);
 							return Ok(())
 						}
-						Delay::new(Duration::from_secs(30)).await;
 			}
 			
 			Err("Stopping following imported blocks. Could not determine parachain target block".into())
