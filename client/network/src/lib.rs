@@ -35,10 +35,8 @@ use polkadot_primitives::{
 };
 
 use codec::{Decode, DecodeAll, Encode};
-use futures::{channel::oneshot, future::FutureExt, select, Future, StreamExt};
-use futures_timer::Delay;
-use sc_service::SpawnTaskHandle;
-use std::{convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc, time::Duration};
+use futures::{channel::oneshot, future::FutureExt, Future};
+use std::{convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc};
 #[cfg(test)]
 mod tests;
 
@@ -452,100 +450,5 @@ async fn wait_to_announce<Block: BlockT>(
 			block = ?block_hash,
 			"Received invalid statement while waiting to announce block.",
 		);
-	}
-}
-
-/// Creates a new background task to wait for the relay chain to sync up and retrieve the parachain header
-pub async fn warp_sync_get<B, RCInterface>(
-	para_id: ParaId,
-	relay_chain_interface: RCInterface,
-	spawner: SpawnTaskHandle,
-) -> Result<oneshot::Receiver<<B as BlockT>::Header>, BoxedError>
-where
-	B: BlockT + 'static,
-	RCInterface: RelayChainInterface + 'static,
-{
-	let (sender, receiver) = oneshot::channel::<B::Header>();
-	spawner.spawn(
-		"cumulus-parachain-wait-for-target-block",
-		None,
-		async move {
-			tracing::debug!(
-				target: "cumulus-network",
-				"waiting for announce block in a background task...",
-			);
-
-			let _ = wait_for_target_block::<B, _>(sender, para_id, relay_chain_interface)
-				.await
-				.map_err(|e| {
-					tracing::error!(
-						target: LOG_TARGET,
-						"Unable to determine parachain target block {:?}",
-						e
-					)
-				});
-		}
-		.boxed(),
-	);
-
-	Ok(receiver)
-}
-
-/// Waits for the relay chain to have finished syncing and then gets the parachain header that corresponds to the last finalized relay chain block.
-async fn wait_for_target_block<B, RCInterface>(
-	sender: oneshot::Sender<<B as BlockT>::Header>,
-	para_id: ParaId,
-	relay_chain_interface: RCInterface,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>>
-where
-	B: BlockT + 'static,
-	RCInterface: RelayChainInterface + Send + 'static,
-{
-	let mut imported_blocks = relay_chain_interface.import_notification_stream().await?.fuse();
-	while imported_blocks.next().await.is_some() {
-						let is_syncing = relay_chain_interface
-						.is_major_syncing()
-						.await
-						.map_err(|e| {
-							tracing::error!(target: LOG_TARGET, "Unable to determine sync status. {e}")
-						})
-						.unwrap_or(false);
-
-						if !is_syncing {
-							let relay_chain_best_hash = relay_chain_interface
-								.last_finalised_block_hash()
-								.await
-								.map_err(|e| Box::new(e) as Box<_>)?;
-
-							let validation_data = relay_chain_interface
-								.persisted_validation_data(
-									relay_chain_best_hash,
-									para_id,
-									OccupiedCoreAssumption::TimedOut,
-								)
-								.await
-								.map_err(|e| Box::new(BlockAnnounceError(format!("{:?}", e))) as Box<_>)?
-								.ok_or_else(|| {
-									Box::new(BlockAnnounceError(
-										"Could not find parachain head in relay chain".into(),
-									)) as Box<_>
-								})?;
-
-							let target_block = B::Header::decode(&mut &validation_data.parent_head.0[..])
-								.map_err(|e| {
-									Box::new(BlockAnnounceError(format!(
-										"Failed to decode parachain head: {:?}",
-										e
-									))) as Box<_>
-								})?;
-
-							tracing::debug!(target: LOG_TARGET, "Target block reached {:?}", target_block);
-							let _ = sender.send(target_block);
-							return Ok(())
-						}
-			}
-			
-			Err("Stopping following imported blocks. Could not determine parachain target block".into())
-		}
 	}
 }

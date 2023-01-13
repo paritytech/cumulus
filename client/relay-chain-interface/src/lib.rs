@@ -251,8 +251,8 @@ where
 		(**self).best_block_hash().await
 	}
 
-	async fn last_finalised_block_hash(&self) -> RelayChainResult<PHash> {
-		(**self).last_finalised_block_hash().await
+	async fn finalized_block_hash(&self) -> RelayChainResult<PHash> {
+		(**self).finalized_block_hash().await
 	}
 
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {

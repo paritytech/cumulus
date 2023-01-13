@@ -26,8 +26,11 @@ use cumulus_primitives_core::{CollectCollationInfo, ParaId};
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
-use futures::channel::mpsc;
-use polkadot_primitives::CollatorPair;
+use futures::{
+	channel::{mpsc, oneshot},
+	FutureExt, StreamExt,
+};
+use polkadot_primitives::{CollatorPair, OccupiedCoreAssumption};
 use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, ProofProvider, UsageProvider,
 };
@@ -35,18 +38,29 @@ use sc_consensus::{import_queue::ImportQueueService, BlockImport, ImportQueue};
 use sc_network::{config::SyncMode, NetworkService};
 use sc_network_transactions::TransactionsHandlerController;
 use sc_service::{Configuration, NetworkStarter, SpawnTaskHandle, TaskManager, WarpSyncParams};
-use sc_telemetry::TelemetryWorkerHandle;
+use sc_telemetry::{log, TelemetryWorkerHandle};
 use sc_utils::mpsc::TracingUnboundedSender;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{HeaderBackend, HeaderMetadata};
-use sp_core::traits::SpawnNamed;
+use sp_core::{traits::SpawnNamed, Decode};
 use sp_runtime::traits::{Block as BlockT, BlockIdTo};
-use std::{sync::Arc, time::Duration};
+use std::{fmt, sync::Arc, time::Duration};
+
+#[derive(Debug)]
+struct WarpSyncError(String);
+impl std::error::Error for WarpSyncError {}
+
+impl fmt::Display for WarpSyncError {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		self.0.fmt(f)
+	}
+}
 
 // Given the sporadic nature of the explicit recovery operation and the
 // possibility to retry infinite times this value is more than enough.
 // In practice here we expect no more than one queued messages.
 const RECOVERY_CHAN_SIZE: usize = 8;
+const LOG_TARGET: &str = "sync::cumulus";
 
 /// Parameters given to [`start_collator`].
 pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, RCInterface, Spawner> {
@@ -330,7 +344,7 @@ where
 {
 	let warp_sync_params = match parachain_config.network.sync_mode {
 		SyncMode::Warp => {
-			let target_block = cumulus_client_network::warp_sync_get::<Block, RCInterface>(
+			let target_block = warp_sync_get::<Block, RCInterface>(
 				para_id,
 				relay_chain_interface.clone(),
 				spawn_handle.clone(),
@@ -346,12 +360,100 @@ where
 	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
 
 	sc_service::build_network(sc_service::BuildNetworkParams {
-			config: parachain_config,
-			client,
-			transaction_pool,
-			spawn_handle,
-			import_queue,
-			block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
-			warp_sync_params,
-		})
+		config: parachain_config,
+		client,
+		transaction_pool,
+		spawn_handle,
+		import_queue,
+		block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
+		warp_sync_params,
+	})
+}
+
+/// Creates a new background task to wait for the relay chain to sync up and retrieve the parachain header
+async fn warp_sync_get<B, RCInterface>(
+	para_id: ParaId,
+	relay_chain_interface: RCInterface,
+	spawner: SpawnTaskHandle,
+) -> Result<oneshot::Receiver<<B as BlockT>::Header>, WarpSyncError>
+where
+	B: BlockT + 'static,
+	RCInterface: RelayChainInterface + 'static,
+{
+	let (sender, receiver) = oneshot::channel::<B::Header>();
+	spawner.spawn(
+		"cumulus-parachain-wait-for-target-block",
+		None,
+		async move {
+			log::debug!(
+				target: "cumulus-network",
+				"waiting for announce block in a background task...",
+			);
+
+			let _ = wait_for_target_block::<B, _>(sender, para_id, relay_chain_interface)
+				.await
+				.map_err(|e| {
+					log::error!(
+						target: LOG_TARGET,
+						"Unable to determine parachain target block {:?}",
+						e
+					)
+				});
+		}
+		.boxed(),
+	);
+
+	Ok(receiver)
+}
+
+/// Waits for the relay chain to have finished syncing and then gets the parachain header that corresponds to the last finalized relay chain block.
+async fn wait_for_target_block<B, RCInterface>(
+	sender: oneshot::Sender<<B as BlockT>::Header>,
+	para_id: ParaId,
+	relay_chain_interface: RCInterface,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>>
+where
+	B: BlockT + 'static,
+	RCInterface: RelayChainInterface + Send + 'static,
+{
+	let mut imported_blocks = relay_chain_interface.import_notification_stream().await?.fuse();
+	while imported_blocks.next().await.is_some() {
+		let is_syncing = relay_chain_interface
+			.is_major_syncing()
+			.await
+			.map_err(|e| log::error!(target: LOG_TARGET, "Unable to determine sync status. {e}"))
+			.unwrap_or(false);
+
+		if !is_syncing {
+			let relay_chain_best_hash = relay_chain_interface
+				.finalized_block_hash()
+				.await
+				.map_err(|e| Box::new(e) as Box<_>)?;
+
+			let validation_data = relay_chain_interface
+				.persisted_validation_data(
+					relay_chain_best_hash,
+					para_id,
+					OccupiedCoreAssumption::TimedOut,
+				)
+				.await
+				.map_err(|e| Box::new(WarpSyncError(format!("{:?}", e))) as Box<_>)?
+				.ok_or_else(|| {
+					Box::new(WarpSyncError("Could not find parachain head in relay chain".into()))
+						as Box<_>
+				})?;
+
+			let target_block =
+				B::Header::decode(&mut &validation_data.parent_head.0[..]).map_err(|e| {
+					Box::new(WarpSyncError(format!("Failed to decode parachain head: {:?}", e)))
+						as Box<_>
+				})?;
+
+			log::debug!(target: LOG_TARGET, "Target block reached {:?}", target_block);
+			let _ = sender.send(target_block);
+			return Ok(())
+		}
+	}
+
+	Err("Stopping following imported blocks. Could not determine parachain target block".into())
 }

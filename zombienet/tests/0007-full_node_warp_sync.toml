@@ -48,7 +48,7 @@ add_to_genesis = false
   validator = true
   image = "{{COL_IMAGE}}"
   command = "polkadot-parachain"
-  args = []
+  args = ["-lparachain=debug"]
   db_snapshot = "https://github.com/samelamin/cumulus/blob/chain-snapshots/docker/snapshots/parachain.tgz?raw=true"
 
   [[parachains.collators]]

@@ -167,7 +167,7 @@ where
 		Ok(self.backend.blockchain().info().best_hash)
 	}
 
-	async fn last_finalised_block_hash(&self) -> RelayChainResult<PHash> {
+	async fn finalized_block_hash(&self) -> RelayChainResult<PHash> {
 		Ok(self.backend.blockchain().info().finalized_hash)
 	}
 

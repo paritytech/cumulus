@@ -123,7 +123,7 @@ impl RelayChainInterface for RelayChainRpcInterface {
 		self.rpc_client.chain_get_head(None).await
 	}
 
-	async fn last_finalised_block_hash(&self) -> RelayChainResult<RelayHash> {
+	async fn finalized_block_hash(&self) -> RelayChainResult<RelayHash> {
 		self.rpc_client.chain_get_finalized_head().await
 	}
 
