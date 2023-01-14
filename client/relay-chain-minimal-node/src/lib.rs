@@ -25,7 +25,7 @@ use polkadot_node_network_protocol::{
 };
 
 use polkadot_node_subsystem_util::metrics::prometheus::Registry;
-use polkadot_primitives::v2::CollatorPair;
+use polkadot_primitives::CollatorPair;
 
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
 use sc_network::{Event, NetworkService};
@@ -85,7 +85,7 @@ fn build_authority_discovery_service<Block: BlockT>(
 pub async fn build_minimal_relay_chain_node(
 	polkadot_config: Configuration,
 	task_manager: &mut TaskManager,
-	relay_chain_url: Url,
+	relay_chain_url: Vec<Url>,
 ) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
 	let client = cumulus_relay_chain_rpc_interface::create_client_and_start_worker(
 		relay_chain_url,

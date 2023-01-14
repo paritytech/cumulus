@@ -20,7 +20,7 @@ use cumulus_pallet_parachain_system as parachain_system;
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
-use polkadot_primitives::v2::PersistedValidationData;
+use polkadot_primitives::PersistedValidationData;
 use sp_std::vec::Vec;
 
 #[frame_support::pallet]
@@ -61,6 +61,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		#[pallet::call_index(0)]
 		#[pallet::weight(0)]
 		pub fn schedule_migration(
 			origin: OriginFor<T>,
