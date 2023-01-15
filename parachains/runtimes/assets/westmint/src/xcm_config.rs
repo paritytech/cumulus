@@ -20,7 +20,7 @@ use super::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{ConstU32, Everything, Nothing, PalletInfoAccess},
+	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
 };
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
@@ -33,20 +33,25 @@ use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
-	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FungiblesAdapter, IsConcrete,
+	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
+	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, AsPrefixedGeneralIndex,
+	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FungiblesAdapter, IsConcrete, LocalMint,
 	NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
 	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
+	WithComputedOrigin,
 };
-use xcm_executor::{traits::JustTry, XcmExecutor};
+use xcm_executor::{
+	traits::{JustTry, WithOriginFilter},
+	XcmExecutor,
+};
 
 parameter_types! {
 	pub const WestendLocation: MultiLocation = MultiLocation::parent();
-	pub RelayNetwork: NetworkId = NetworkId::Westend;
+	pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Westend);
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-	pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
+	pub UniversalLocation: InteriorMultiLocation =
+		X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
 	pub const Local: MultiLocation = Here.into_location();
 	pub AssetsPalletLocation: MultiLocation =
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
@@ -96,7 +101,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	AccountId,
 	// We only want to allow teleports of known assets. We use non-zero issuance as an indication
 	// that this asset is known.
-	parachains_common::impls::NonZeroIssuance<AccountId, Assets>,
+	LocalMint<parachains_common::impls::NonZeroIssuance<AccountId, Assets>>,
 	// The account to use for tracking teleports.
 	CheckingAccount,
 >;
@@ -139,19 +144,129 @@ match_types! {
 		MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
 	};
 }
+/// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
+/// account for proof size weights.
+///
+/// Calls that are allowed through this filter must:
+/// 1. Have a fixed weight;
+/// 2. Cannot lead to another call being made;
+/// 3. Have a defined proof size weight, e.g. no unbounded vecs in call parameters.
+pub struct SafeCallFilter;
+impl Contains<RuntimeCall> for SafeCallFilter {
+	fn contains(call: &RuntimeCall) -> bool {
+		#[cfg(feature = "runtime-benchmarks")]
+		{
+			if matches!(call, RuntimeCall::System(frame_system::Call::remark_with_event { .. })) {
+				return true
+			}
+		}
+
+		match call {
+			RuntimeCall::System(
+				frame_system::Call::set_heap_pages { .. } |
+				frame_system::Call::set_code { .. } |
+				frame_system::Call::set_code_without_checks { .. } |
+				frame_system::Call::kill_prefix { .. },
+			) |
+			RuntimeCall::ParachainSystem(..) |
+			RuntimeCall::Timestamp(..) |
+			RuntimeCall::Balances(..) |
+			RuntimeCall::CollatorSelection(
+				pallet_collator_selection::Call::set_desired_candidates { .. } |
+				pallet_collator_selection::Call::set_candidacy_bond { .. } |
+				pallet_collator_selection::Call::register_as_candidate { .. } |
+				pallet_collator_selection::Call::leave_intent { .. },
+			) |
+			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
+			RuntimeCall::XcmpQueue(..) |
+			RuntimeCall::DmpQueue(..) |
+			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
+			RuntimeCall::Assets(
+				pallet_assets::Call::create { .. } |
+				pallet_assets::Call::force_create { .. } |
+				pallet_assets::Call::start_destroy { .. } |
+				pallet_assets::Call::destroy_accounts { .. } |
+				pallet_assets::Call::destroy_approvals { .. } |
+				pallet_assets::Call::finish_destroy { .. } |
+				pallet_assets::Call::mint { .. } |
+				pallet_assets::Call::burn { .. } |
+				pallet_assets::Call::transfer { .. } |
+				pallet_assets::Call::transfer_keep_alive { .. } |
+				pallet_assets::Call::force_transfer { .. } |
+				pallet_assets::Call::freeze { .. } |
+				pallet_assets::Call::thaw { .. } |
+				pallet_assets::Call::freeze_asset { .. } |
+				pallet_assets::Call::thaw_asset { .. } |
+				pallet_assets::Call::transfer_ownership { .. } |
+				pallet_assets::Call::set_team { .. } |
+				pallet_assets::Call::clear_metadata { .. } |
+				pallet_assets::Call::force_clear_metadata { .. } |
+				pallet_assets::Call::force_asset_status { .. } |
+				pallet_assets::Call::approve_transfer { .. } |
+				pallet_assets::Call::cancel_approval { .. } |
+				pallet_assets::Call::force_cancel_approval { .. } |
+				pallet_assets::Call::transfer_approved { .. } |
+				pallet_assets::Call::touch { .. } |
+				pallet_assets::Call::refund { .. },
+			) |
+			RuntimeCall::Uniques(
+				pallet_uniques::Call::create { .. } |
+				pallet_uniques::Call::force_create { .. } |
+				pallet_uniques::Call::destroy { .. } |
+				pallet_uniques::Call::mint { .. } |
+				pallet_uniques::Call::burn { .. } |
+				pallet_uniques::Call::transfer { .. } |
+				pallet_uniques::Call::freeze { .. } |
+				pallet_uniques::Call::thaw { .. } |
+				pallet_uniques::Call::freeze_collection { .. } |
+				pallet_uniques::Call::thaw_collection { .. } |
+				pallet_uniques::Call::transfer_ownership { .. } |
+				pallet_uniques::Call::set_team { .. } |
+				pallet_uniques::Call::approve_transfer { .. } |
+				pallet_uniques::Call::cancel_approval { .. } |
+				pallet_uniques::Call::force_item_status { .. } |
+				pallet_uniques::Call::set_attribute { .. } |
+				pallet_uniques::Call::clear_attribute { .. } |
+				pallet_uniques::Call::set_metadata { .. } |
+				pallet_uniques::Call::clear_metadata { .. } |
+				pallet_uniques::Call::set_collection_metadata { .. } |
+				pallet_uniques::Call::clear_collection_metadata { .. } |
+				pallet_uniques::Call::set_accept_ownership { .. } |
+				pallet_uniques::Call::set_collection_max_supply { .. } |
+				pallet_uniques::Call::set_price { .. } |
+				pallet_uniques::Call::buy_item { .. },
+			) => true,
+			_ => false,
+		}
+	}
+}
 
 pub type Barrier = DenyThenTry<
 	DenyReserveTransferToRelayChain,
 	(
 		TakeWeightCredit,
-		AllowTopLevelPaidExecutionFrom<Everything>,
-		// Parent and its plurality get free execution
-		AllowUnpaidExecutionFrom<ParentOrParentsPlurality>,
 		// Expected responses are OK.
 		AllowKnownQueryResponses<PolkadotXcm>,
-		// Subscriptions for version tracking are OK.
-		AllowSubscriptionsFrom<Everything>,
+		// Allow XCMs with some computed origins to pass through.
+		WithComputedOrigin<
+			(
+				// If the message is one that immediately attemps to pay for execution, then allow it.
+				AllowTopLevelPaidExecutionFrom<Everything>,
+				// Parent or its plurality (i.e. governance bodies) gets free execution.
+				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
+				// Subscriptions for version tracking are OK.
+				AllowSubscriptionsFrom<Everything>,
+			),
+			UniversalLocation,
+			ConstU32<8>,
+		>,
 	),
+>;
+
+pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<
+	Runtime,
+	WeightToFee,
+	pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
 >;
 
 pub struct XcmConfig;
@@ -176,11 +291,7 @@ impl xcm_executor::Config for XcmConfig {
 		UsingComponents<WeightToFee, WestendLocation, AccountId, Balances, ToStakingPot<Runtime>>,
 		cumulus_primitives_utility::TakeFirstAssetTrader<
 			AccountId,
-			AssetFeeAsExistentialDepositMultiplier<
-				Runtime,
-				WeightToFee,
-				pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
-			>,
+			AssetFeeAsExistentialDepositMultiplierFeeCharger,
 			ConvertedConcreteId<
 				AssetId,
 				Balance,
@@ -206,7 +317,8 @@ impl xcm_executor::Config for XcmConfig {
 	type FeeManager = ();
 	type MessageExporter = ();
 	type UniversalAliases = Nothing;
-	type CallDispatcher = RuntimeCall;
+	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
+	type SafeCallFilter = SafeCallFilter;
 }
 
 /// Local origins on this chain are allowed to dispatch XCM sends/executions.
@@ -220,6 +332,11 @@ pub type XcmRouter = (
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
 );
+
+#[cfg(feature = "runtime-benchmarks")]
+parameter_types! {
+	pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
+}
 
 impl pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -245,6 +362,9 @@ impl pallet_xcm::Config for Runtime {
 	type TrustedLockers = ();
 	type SovereignAccountOf = LocationToAccountId;
 	type MaxLockers = ConstU32<8>;
+	type WeightInfo = crate::weights::pallet_xcm::WeightInfo<Runtime>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type ReachableDest = ReachableDest;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
