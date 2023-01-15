@@ -17,16 +17,20 @@ use super::{
 	AccountId, AllPalletsWithSystem, ParachainInfo, Runtime, RuntimeCall, RuntimeEvent,
 	RuntimeOrigin,
 };
-use frame_support::{match_types, parameter_types, traits::Nothing};
+use frame_support::{
+	match_types, parameter_types,
+	traits::{Everything, Nothing},
+	weights::Weight,
+};
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AllowUnpaidExecutionFrom, FixedWeightBounds, ParentAsSuperuser, ParentIsPreset,
+	AllowExplicitUnpaidExecutionFrom, FixedWeightBounds, ParentAsSuperuser, ParentIsPreset,
 	SovereignSignedViaLocation,
 };
 
 parameter_types! {
 	pub const RococoLocation: MultiLocation = MultiLocation::parent();
-	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
+	pub const RococoNetwork: Option<NetworkId> = Some(NetworkId::Rococo);
 	pub UniversalLocation: InteriorMultiLocation = X1(Parachain(ParachainInfo::parachain_id().into()));
 }
 
@@ -49,7 +53,7 @@ match_types! {
 
 parameter_types! {
 	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: u64 = 1_000_000_000;
+	pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
 }
@@ -63,7 +67,7 @@ impl xcm_executor::Config for XcmConfig {
 	type IsReserve = (); // balances not supported
 	type IsTeleporter = (); // balances not supported
 	type UniversalLocation = UniversalLocation;
-	type Barrier = AllowUnpaidExecutionFrom<JustTheParent>;
+	type Barrier = AllowExplicitUnpaidExecutionFrom<JustTheParent>;
 	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>; // balances not supported
 	type Trader = (); // balances not supported
 	type ResponseHandler = (); // Don't handle responses for now.
@@ -78,6 +82,7 @@ impl xcm_executor::Config for XcmConfig {
 	type MessageExporter = ();
 	type UniversalAliases = Nothing;
 	type CallDispatcher = RuntimeCall;
+	type SafeCallFilter = Everything;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {

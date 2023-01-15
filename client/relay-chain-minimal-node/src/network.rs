@@ -21,19 +21,19 @@ use polkadot_node_network_protocol::PeerId;
 use sc_network::{NetworkService, SyncState};
 
 use sc_client_api::HeaderBackend;
+use sc_consensus::{BlockImportError, BlockImportStatus, JustificationSyncLink, Link};
 use sc_network_common::{
 	config::{
 		NonDefaultSetConfig, NonReservedPeerMode, NotificationHandshake, ProtocolId, SetConfig,
 	},
 	protocol::role::Roles,
 	service::NetworkSyncForkRequest,
-	sync::{message::BlockAnnouncesHandshake, Metrics, SyncStatus},
+	sync::{
+		message::{BlockAnnouncesHandshake, BlockRequest},
+		BadPeer, Metrics, OnBlockData, PollBlockAnnounceValidation, SyncStatus,
+	},
 };
-use sc_network_light::light_client_requests;
-use sc_network_sync::{block_request_handler, state_request_handler};
 use sc_service::{error::Error, Configuration, NetworkStarter, SpawnTaskHandle};
-use sp_consensus::BlockOrigin;
-use sp_runtime::Justifications;
 
 use std::{iter, sync::Arc};
 
@@ -57,16 +57,6 @@ pub(crate) fn build_collator_network(
 	let BuildCollatorNetworkParams { config, client, spawn_handle, genesis_hash } = params;
 
 	let protocol_id = config.protocol_id();
-
-	let block_request_protocol_config =
-		block_request_handler::generate_protocol_config(&protocol_id, genesis_hash, None);
-
-	let state_request_protocol_config =
-		state_request_handler::generate_protocol_config(&protocol_id, genesis_hash, None);
-
-	let light_client_request_protocol_config =
-		light_client_requests::generate_protocol_config(&protocol_id, genesis_hash, None);
-
 	let chain_sync = DummyChainSync;
 	let block_announce_config = chain_sync.get_block_announce_proto_config::<Block>(
 		protocol_id.clone(),
@@ -81,23 +71,18 @@ pub(crate) fn build_collator_network(
 		role: config.role.clone(),
 		executor: {
 			let spawn_handle = Clone::clone(&spawn_handle);
-			Some(Box::new(move |fut| {
+			Box::new(move |fut| {
 				spawn_handle.spawn("libp2p-node", Some("networking"), fut);
-			}))
+			})
 		},
 		fork_id: None,
 		chain_sync: Box::new(chain_sync),
 		network_config: config.network.clone(),
 		chain: client.clone(),
-		import_queue: Box::new(DummyImportQueue),
 		protocol_id,
 		metrics_registry: config.prometheus_config.as_ref().map(|config| config.registry.clone()),
 		block_announce_config,
 		chain_sync_service: Box::new(DummyChainSyncService::<Block>(Default::default())),
-		block_request_protocol_config,
-		state_request_protocol_config,
-		warp_sync_protocol_config: None,
-		light_client_request_protocol_config,
 		request_response_protocol_configs: Vec::new(),
 	};
 
@@ -248,52 +233,12 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 	) {
 	}
 
-	fn justification_requests(
-		&mut self,
-	) -> Box<dyn Iterator<Item = (PeerId, sc_network_common::sync::message::BlockRequest<B>)> + '_>
-	{
-		Box::new(std::iter::empty())
-	}
-
-	fn block_requests(
-		&mut self,
-	) -> Box<dyn Iterator<Item = (PeerId, sc_network_common::sync::message::BlockRequest<B>)> + '_>
-	{
-		Box::new(std::iter::empty())
-	}
-
-	fn state_request(&mut self) -> Option<(PeerId, sc_network_common::sync::OpaqueStateRequest)> {
-		None
-	}
-
-	fn warp_sync_request(
-		&mut self,
-	) -> Option<(PeerId, sc_network_common::sync::warp::WarpProofRequest<B>)> {
-		None
-	}
-
 	fn on_block_data(
 		&mut self,
 		_who: &PeerId,
 		_request: Option<sc_network_common::sync::message::BlockRequest<B>>,
 		_response: sc_network_common::sync::message::BlockResponse<B>,
 	) -> Result<sc_network_common::sync::OnBlockData<B>, sc_network_common::sync::BadPeer> {
-		unimplemented!("Not supported on the RPC collator")
-	}
-
-	fn on_state_data(
-		&mut self,
-		_who: &PeerId,
-		_response: sc_network_common::sync::OpaqueStateResponse,
-	) -> Result<sc_network_common::sync::OnStateData<B>, sc_network_common::sync::BadPeer> {
-		unimplemented!("Not supported on the RPC collator")
-	}
-
-	fn on_warp_sync_data(
-		&mut self,
-		_who: &PeerId,
-		_response: sc_network_common::sync::warp::EncodedProof,
-	) -> Result<(), sc_network_common::sync::BadPeer> {
 		unimplemented!("Not supported on the RPC collator")
 	}
 
@@ -304,28 +249,6 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 	) -> Result<sc_network_common::sync::OnBlockJustification<B>, sc_network_common::sync::BadPeer>
 	{
 		unimplemented!("Not supported on the RPC collator")
-	}
-
-	fn on_blocks_processed(
-		&mut self,
-		_imported: usize,
-		_count: usize,
-		_results: Vec<(
-			Result<
-				sc_consensus::BlockImportStatus<polkadot_service::NumberFor<B>>,
-				sc_consensus::BlockImportError,
-			>,
-			<B as BlockT>::Hash,
-		)>,
-	) -> Box<
-		dyn Iterator<
-			Item = Result<
-				(PeerId, sc_network_common::sync::message::BlockRequest<B>),
-				sc_network_common::sync::BadPeer,
-			>,
-		>,
-	> {
-		Box::new(std::iter::empty())
 	}
 
 	fn on_justification_import(
@@ -360,12 +283,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		std::task::Poll::Pending
 	}
 
-	fn peer_disconnected(
-		&mut self,
-		_who: &PeerId,
-	) -> Option<sc_network_common::sync::OnBlockData<B>> {
-		None
-	}
+	fn peer_disconnected(&mut self, _who: &PeerId) {}
 
 	fn metrics(&self) -> sc_network_common::sync::Metrics {
 		Metrics {
@@ -380,27 +298,6 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		}
 	}
 
-	fn create_opaque_block_request(
-		&self,
-		_request: &sc_network_common::sync::message::BlockRequest<B>,
-	) -> sc_network_common::sync::OpaqueBlockRequest {
-		unimplemented!("Not supported on the RPC collator")
-	}
-
-	fn encode_block_request(
-		&self,
-		_request: &sc_network_common::sync::OpaqueBlockRequest,
-	) -> Result<Vec<u8>, String> {
-		unimplemented!("Not supported on the RPC collator")
-	}
-
-	fn decode_block_response(
-		&self,
-		_response: &[u8],
-	) -> Result<sc_network_common::sync::OpaqueBlockResponse, String> {
-		unimplemented!("Not supported on the RPC collator")
-	}
-
 	fn block_response_into_blocks(
 		&self,
 		_request: &sc_network_common::sync::message::BlockRequest<B>,
@@ -409,58 +306,53 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		unimplemented!("Not supported on the RPC collator")
 	}
 
-	fn encode_state_request(
-		&self,
-		_request: &sc_network_common::sync::OpaqueStateRequest,
-	) -> Result<Vec<u8>, String> {
-		unimplemented!("Not supported on the RPC collator")
-	}
-
-	fn decode_state_response(
-		&self,
-		_response: &[u8],
-	) -> Result<sc_network_common::sync::OpaqueStateResponse, String> {
-		unimplemented!("Not supported on the RPC collator")
-	}
-
 	fn poll(
 		&mut self,
 		_cx: &mut std::task::Context,
-	) -> std::task::Poll<sc_network_common::sync::PollBlockAnnounceValidation<<B as BlockT>::Header>>
-	{
+	) -> std::task::Poll<PollBlockAnnounceValidation<B::Header>> {
 		std::task::Poll::Pending
 	}
-}
 
-struct DummyImportQueue;
-
-impl sc_service::ImportQueue<Block> for DummyImportQueue {
-	fn import_blocks(
-		&mut self,
-		_origin: BlockOrigin,
-		_blocks: Vec<sc_consensus::IncomingBlock<Block>>,
-	) {
+	fn send_block_request(&mut self, _who: PeerId, _request: BlockRequest<B>) {
+		unimplemented!("Not supported on the RPC collator")
 	}
 
-	fn import_justifications(
-		&mut self,
-		_who: PeerId,
-		_hash: Hash,
-		_number: NumberFor<Block>,
-		_justifications: Justifications,
-	) {
+	fn num_active_peers(&self) -> usize {
+		0
 	}
 
-	fn poll_actions(
-		&mut self,
-		_cx: &mut futures::task::Context,
-		_link: &mut dyn sc_consensus::import_queue::Link<Block>,
-	) {
-	}
+	fn process_block_response_data(&mut self, _blocks_to_import: Result<OnBlockData<B>, BadPeer>) {}
 }
 
 struct DummyChainSyncService<B>(std::marker::PhantomData<B>);
 
 impl<B: BlockT> NetworkSyncForkRequest<B::Hash, NumberFor<B>> for DummyChainSyncService<B> {
 	fn set_sync_fork_request(&self, _peers: Vec<PeerId>, _hash: B::Hash, _number: NumberFor<B>) {}
+}
+
+impl<B: BlockT> JustificationSyncLink<B> for DummyChainSyncService<B> {
+	fn request_justification(&self, _hash: &B::Hash, _number: NumberFor<B>) {}
+
+	fn clear_justification_requests(&self) {}
+}
+
+impl<B: BlockT> Link<B> for DummyChainSyncService<B> {
+	fn blocks_processed(
+		&mut self,
+		_imported: usize,
+		_count: usize,
+		_results: Vec<(Result<BlockImportStatus<NumberFor<B>>, BlockImportError>, B::Hash)>,
+	) {
+	}
+
+	fn justification_imported(
+		&mut self,
+		_who: PeerId,
+		_hash: &B::Hash,
+		_number: NumberFor<B>,
+		_success: bool,
+	) {
+	}
+
+	fn request_justification(&mut self, _hash: &B::Hash, _number: NumberFor<B>) {}
 }
