@@ -23,7 +23,7 @@ jobs:
         run:  rustup show
 
       - name: Rust cache
-        uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8 # v2.0.0
+        uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6 # v2.2.0
 
       - name: Build rustdocs
         run:  SKIP_WASM_BUILD=1 cargo doc --all --no-deps
@@ -32,7 +32,7 @@ jobs:
         run:  echo "<meta http-equiv=refresh content=0;url=cumulus_client_collator/index.html>" > ./target/doc/index.html
 
       - name: Deploy documentation
-        uses: peaceiris/actions-gh-pages@068dc23d9710f1ba62e86896f84735d869951305 # v3.8.0
+        uses: peaceiris/actions-gh-pages@de7ea6f8efb354206b205ef54722213d99067935 # v3.9.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages

@@ -31,10 +31,7 @@ use frame_support::{
 use polkadot_runtime_common::xcm_sender::ConstantPrice;
 use sp_runtime::{traits::Saturating, SaturatedConversion};
 use sp_std::{marker::PhantomData, prelude::*};
-use xcm::{
-	latest::{prelude::*, Weight as XCMWeight},
-	WrapVersion,
-};
+use xcm::{latest::prelude::*, WrapVersion};
 use xcm_builder::TakeRevenue;
 use xcm_executor::traits::{MatchesFungibles, TransactAsset, WeightTrader};
 
@@ -94,9 +91,7 @@ where
 	}
 
 	fn deliver(data: Vec<u8>) -> Result<XcmHash, SendError> {
-		let hash = data.using_encoded(sp_io::hashing::blake2_256);
-
-		T::send_upward_message(data).map_err(|e| match e {
+		let (_, hash) = T::send_upward_message(data).map_err(|e| match e {
 			MessageSendError::TooBig => SendError::ExceedsMaxMessageSize,
 			e => SendError::Transport(e.into()),
 		})?;
@@ -114,7 +109,7 @@ struct AssetTraderRefunder {
 	outstanding_concrete_asset: MultiAsset,
 }
 
-/// Charges for exercution in the first multiasset of those selected for fee payment
+/// Charges for execution in the first multiasset of those selected for fee payment
 /// Only succeeds for Concrete Fungible Assets
 /// First tries to convert the this MultiAsset into a local assetId
 /// Then charges for this assetId as described by FeeCharger
@@ -151,7 +146,7 @@ impl<
 	// If everything goes well, we charge.
 	fn buy_weight(
 		&mut self,
-		weight: XCMWeight,
+		weight: Weight,
 		payment: xcm_executor::Assets,
 	) -> Result<xcm_executor::Assets, XcmError> {
 		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::buy_weight weight: {:?}, payment: {:?}", weight, payment);
@@ -161,9 +156,8 @@ impl<
 			return Err(XcmError::NotWithdrawable)
 		}
 
-		let weight = Weight::from_ref_time(weight);
-
 		// We take the very first multiasset from payment
+		// (assets are sorted by fungibility/amount after this conversion)
 		let multiassets: MultiAssets = payment.clone().into();
 
 		// Take the first multiasset from the selected MultiAssets
@@ -203,15 +197,13 @@ impl<
 		Ok(unused)
 	}
 
-	fn refund_weight(&mut self, weight: XCMWeight) -> Option<MultiAsset> {
+	fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
 		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::refund_weight weight: {:?}", weight);
 		if let Some(AssetTraderRefunder {
 			mut weight_outstanding,
 			outstanding_concrete_asset: MultiAsset { id, fun },
 		}) = self.0.clone()
 		{
-			let weight = Weight::from_ref_time(weight).min(weight_outstanding);
-
 			// Get the local asset id in which we can refund fees
 			let (local_asset_id, outstanding_balance) =
 				Matcher::matches_fungibles(&(id.clone(), fun).into()).ok()?;
@@ -357,7 +349,7 @@ mod tests {
 	/// Impl [`UpwardMessageSender`] that return `Other` error
 	struct OtherErrorUpwardMessageSender;
 	impl UpwardMessageSender for OtherErrorUpwardMessageSender {
-		fn send_upward_message(_: UpwardMessage) -> Result<u32, MessageSendError> {
+		fn send_upward_message(_: UpwardMessage) -> Result<(u32, XcmHash), MessageSendError> {
 			Err(MessageSendError::Other)
 		}
 	}

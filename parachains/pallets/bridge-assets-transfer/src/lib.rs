@@ -137,6 +137,7 @@ pub mod pallet {
 		///
 		/// * `assets`:
 		/// * `destination`: Different consensus location, where the assets will be deposited, e.g. Polkadot's Statemint: `2, X2(GlobalConsensus(NetworkId::Polkadot), Parachain(1000))`
+		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::transfer_asset_via_bridge())]
 		pub fn transfer_asset_via_bridge(
 			origin: OriginFor<T>,
@@ -266,6 +267,7 @@ pub mod pallet {
 		///
 		/// * `bridged_network`: Network where we want to allow transfer funds
 		/// * `bridge_config`: contains location for BridgeHub in our network + fee
+		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::add_bridge_config())]
 		pub fn add_bridge_config(
 			origin: OriginFor<T>,
@@ -294,6 +296,7 @@ pub mod pallet {
 		/// Parameters:
 		///
 		/// * `bridged_network`: Network where we want to remove
+		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::remove_bridge_config())]
 		pub fn remove_bridge_config(
 			origin: OriginFor<T>,
@@ -313,6 +316,7 @@ pub mod pallet {
 		///
 		/// * `bridged_network`: Network where we want to remove
 		/// * `fee`: New fee to update
+		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::update_bridge_config())]
 		pub fn update_bridge_config(
 			origin: OriginFor<T>,
