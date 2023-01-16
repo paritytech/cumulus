@@ -18,7 +18,6 @@ use bp_messages::target_chain::MessageDispatch;
 use bp_runtime::messages::MessageDispatchResult;
 use bridge_hub_rococo_runtime::bridge_common_config::XcmBlobMessageDispatchResult;
 pub use bridge_hub_rococo_runtime::{
-	runtime_api,
 	xcm_config::{XcmConfig, XcmRouter},
 	Runtime, *,
 };
@@ -43,7 +42,6 @@ fn execute_on_runtime<R>(
 }
 
 #[test]
-#[serial_test::serial]
 fn test_bridge_hub_wococo_dispatch_blob_and_xcm_routing_works() {
 	let universal_source_as_senders =
 		vec![X1(GlobalConsensus(Rococo)), X2(GlobalConsensus(Rococo), Parachain(1000))];
@@ -113,7 +111,6 @@ fn test_bridge_hub_wococo_dispatch_blob_and_xcm_routing_works() {
 }
 
 #[test]
-#[serial_test::serial]
 fn test_bridge_hub_rococo_dispatch_blob_and_xcm_routing_works() {
 	let universal_source_as_senders =
 		vec![X1(GlobalConsensus(Wococo)), X2(GlobalConsensus(Wococo), Parachain(1000))];

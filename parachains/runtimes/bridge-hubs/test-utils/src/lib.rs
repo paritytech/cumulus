@@ -53,13 +53,14 @@ pub fn dummy_account() -> AccountId {
 /// Macro used for simulate_export_message and capturing bytes
 macro_rules! grab_haul_blob (
 	($name:ident, $grabbed_payload:ident) => {
-		static mut $grabbed_payload: Option<Vec<u8>> = None;
+		std::thread_local! {
+			static $grabbed_payload: std::cell::RefCell<Option<Vec<u8>>> = std::cell::RefCell::new(None);
+		}
+
 		struct $name;
 		impl HaulBlob for $name {
 			fn haul_blob(blob: Vec<u8>) {
-				unsafe {
-					$grabbed_payload = Some(blob);
-				}
+				$grabbed_payload.with(|rm| *rm.borrow_mut() = Some(blob));
 			}
 		}
 	}
@@ -91,7 +92,7 @@ pub fn simulate_export_message<BridgedNetwork: Get<NetworkId>>(
 		.expect("deliver error");
 	println!("[MessageExporter::deliver] {:?}", result);
 
-	unsafe { GRABBED_HAUL_BLOB_PAYLOAD.as_ref().unwrap().clone() }
+	GRABBED_HAUL_BLOB_PAYLOAD.with(|r| r.take().expect("xcm::ExportMessage should be here"))
 }
 
 /// Initialize runtime/externalities
