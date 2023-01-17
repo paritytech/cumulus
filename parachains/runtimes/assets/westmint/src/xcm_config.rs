@@ -33,11 +33,13 @@ use parachains_common::{
 	},
 };
 use polkadot_parachain::primitives::{Id as ParaId, Sibling};
+use sp_core::Get;
 use sp_runtime::traits::ConvertInto;
+use sp_std::marker::PhantomData;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
+	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
+	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, AsPrefixedGeneralIndex,
 	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FungiblesAdapter, IsConcrete,
 	NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
@@ -60,16 +62,6 @@ parameter_types! {
 		PalletInstance(<TrustBackedAssets as PalletInfoAccess>::index() as u8).into();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
-
-// This is frustrating...
-// use pallet_assets::BenchmarkHelper;
-// pub struct XcmBenchmarkHelper;
-// #[cfg(feature = "runtime-benchmarks")]
-// impl<MultiLocation: From<u32>> BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
-// 	fn create_asset_id(id: u32) -> MultiLocation {
-// 		(Parent, Parachain(id)).into()
-// 	}
-// }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
 /// when determining ownership of accounts for asset transacting and when attempting to use XCM
@@ -143,44 +135,12 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
 	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
 	XcmPassthrough<RuntimeOrigin>,
-	// TODO: just temporary for - needs to be removed - whatever origin is, it replaced it with SovereignAccount of this parachain
-	VeryTemporaryForSampleDemoToSovereignAccount<LocationToAccountId, RuntimeOrigin>,
+	// Bridged account origins from different GlobalConsensus converts as SovereignAccount
+	BridgedSignedProxyAccountAsNative<
+		BridgedProxyAccountId<TrustedBridgedNetworks, AccountId>,
+		RuntimeOrigin,
+	>,
 );
-
-pub struct VeryTemporaryForSampleDemoToSovereignAccount<LocationConverter, RuntimeOrigin>(
-	sp_std::marker::PhantomData<(LocationConverter, RuntimeOrigin)>,
-);
-impl<
-		LocationConverter: Convert<MultiLocation, RuntimeOrigin::AccountId>,
-		RuntimeOrigin: OriginTrait,
-	> ConvertOrigin<RuntimeOrigin>
-	for VeryTemporaryForSampleDemoToSovereignAccount<LocationConverter, RuntimeOrigin>
-where
-	RuntimeOrigin::AccountId: Clone,
-{
-	fn convert_origin(
-		origin: impl Into<MultiLocation>,
-		kind: OriginKind,
-	) -> Result<RuntimeOrigin, MultiLocation> {
-		let origin = origin.into();
-		// TODO: hack, simulate/pretend - that any origin from bridged network as sovereign account, just to pass Transact/System::remark_with_event
-		let new_origin = MultiLocation {
-			parents: 1,
-			interior: X1(Parachain(ParachainInfo::parachain_id().into())),
-		};
-		log::error!(
-			target: "xcm::origin_conversion",
-			"VeryTemporaryForSampleDemoToSovereignAccount replacing origin: {:?} to new_origin: {:?}, kind: {:?}",
-			origin, new_origin, kind,
-		);
-		if let OriginKind::SovereignAccount = kind {
-			let location = LocationConverter::convert(new_origin)?;
-			Ok(RuntimeOrigin::signed(location).into())
-		} else {
-			Err(origin)
-		}
-	}
-}
 
 parameter_types! {
 	pub const MaxInstructions: u32 = 100;
@@ -193,62 +153,31 @@ match_types! {
 		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
 	};
-
-	pub type VeryTemporaryForSampleDemoTrustedBridgedNetworks: impl Contains<(MultiLocation, Junction)> = {
-		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Rococo))
-	};
 }
 
 pub type Barrier = DenyThenTry<
 	DenyReserveTransferToRelayChain,
 	(
 		TakeWeightCredit,
-		AllowTopLevelPaidExecutionFrom<Everything>,
-		// Parent and its plurality get free execution
-		AllowUnpaidExecutionFrom<ParentOrParentsPlurality>,
 		// Expected responses are OK.
 		AllowKnownQueryResponses<PolkadotXcm>,
-		// Subscriptions for version tracking are OK.
-		AllowSubscriptionsFrom<Everything>,
-		// Specific barrier for bridged calls from different globalConsensus/network
-		WithComputedOrigin<BridgedCallsBarrier, UniversalLocation, ConstU32<2>>,
+		// Allow XCMs with some computed origins to pass through.
+		WithComputedOrigin<
+			(
+				// If the message is one that immediately attemps to pay for execution, then allow it.
+				AllowTopLevelPaidExecutionFrom<Everything>,
+				// Parent or its plurality (i.e. governance bodies) gets free execution.
+				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
+				// Subscriptions for version tracking are OK.
+				AllowSubscriptionsFrom<Everything>,
+				// Specific barrier for bridged calls from different globalConsensus/network
+				BridgedCallsBarrier,
+			),
+			UniversalLocation,
+			ConstU32<8>,
+		>,
 	),
 >;
-
-pub type BridgedCallsBarrier = (
-	// TODO: just for temporary sample/demo
-	VeryTemporaryForSampleDemoAllowUnpaidExecutionForTransactAndTrapFrom<Everything>,
-	// Expected responses are OK.
-	AllowKnownQueryResponses<PolkadotXcm>,
-	// Subscriptions for version tracking are OK.
-	AllowSubscriptionsFrom<Everything>,
-);
-
-pub struct VeryTemporaryForSampleDemoAllowUnpaidExecutionForTransactAndTrapFrom<T>(
-	sp_std::marker::PhantomData<T>,
-);
-impl<T: Contains<MultiLocation>> ShouldExecute
-	for VeryTemporaryForSampleDemoAllowUnpaidExecutionForTransactAndTrapFrom<T>
-{
-	fn should_execute<Call>(
-		origin: &MultiLocation,
-		instructions: &mut [Instruction<Call>],
-		max_weight: xcm::latest::Weight,
-		_weight_credit: &mut xcm::latest::Weight,
-	) -> Result<(), ()> {
-		log::error!(
-			target: "xcm::barriers",
-			"(TODO: remove) VeryTemporaryAllowUnpaidExecutionForTransactFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, weight_credit: {:?}",
-			origin, instructions, max_weight, _weight_credit,
-		);
-
-		match instructions.first() {
-			Some(Trap { .. }) => Ok(()),
-			Some(Transact { .. }) => Ok(()),
-			_ => Err(()),
-		}
-	}
-}
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
@@ -307,7 +236,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetExchanger = ();
 	type FeeManager = ();
 	type MessageExporter = ();
-	type UniversalAliases = VeryTemporaryForSampleDemoTrustedBridgedNetworks;
+	type UniversalAliases = TrustedBridgedNetworks;
 	type CallDispatcher = RuntimeCall;
 }
 
@@ -374,7 +303,7 @@ impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
 	) -> sp_std::result::Result<Self::Success, RuntimeOrigin> {
 		let origin_location = EnsureXcm::<Everything>::try_origin(o.clone())?;
 		if !a.starts_with(&origin_location) {
-			return Err(o)
+			return Err(o);
 		}
 		SovereignAccountOf::convert(origin_location).map_err(|_| o)
 	}
@@ -382,5 +311,160 @@ impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
 	#[cfg(feature = "runtime-benchmarks")]
 	fn successful_origin(a: &MultiLocation) -> RuntimeOrigin {
 		pallet_xcm::Origin::Xcm(a.clone()).into()
+	}
+}
+
+parameter_types! {
+	pub TrustedBridgedNetworks: sp_std::vec::Vec<(MultiLocation, Junction)> = sp_std::vec![
+		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Rococo))
+		// TODO add Ethereum
+		// (MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Ethereum))
+
+	];
+}
+
+impl Contains<(MultiLocation, Junction)> for TrustedBridgedNetworks {
+	fn contains(t: &(MultiLocation, Junction)) -> bool {
+		Self::get().contains(t)
+	}
+}
+
+// TODO allow only Trap/Transact instructions from TrustedBridgedNetworks
+pub type BridgedCallsBarrier = (
+	AllowExecutionForTrapFrom<Everything>,
+	AllowExecutionForTransactFrom<Everything>,
+	// Expected responses are OK.
+	AllowKnownQueryResponses<PolkadotXcm>,
+	// Subscriptions for version tracking are OK.
+	AllowSubscriptionsFrom<Everything>,
+);
+
+pub struct AllowExecutionForTrapFrom<T>(PhantomData<T>);
+impl<T: Contains<MultiLocation>> ShouldExecute for AllowExecutionForTrapFrom<T> {
+	fn should_execute<RuntimeCall>(
+		origin: &MultiLocation,
+		instructions: &mut [Instruction<RuntimeCall>],
+		max_weight: xcm::latest::Weight,
+		_weight_credit: &mut xcm::latest::Weight,
+	) -> Result<(), ()> {
+		log::trace!(
+			target: "xcm::barriers",
+			"AllowExecutionForTrapFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, weight_credit: {:?}",
+			origin, instructions, max_weight, _weight_credit,
+		);
+
+		match instructions.first() {
+			Some(Trap { .. }) => Ok(()),
+			_ => Err(()),
+		}
+	}
+}
+
+pub struct AllowExecutionForTransactFrom<T>(PhantomData<T>);
+impl<T: Contains<MultiLocation>> ShouldExecute for AllowExecutionForTransactFrom<T> {
+	fn should_execute<RuntimeCall>(
+		origin: &MultiLocation,
+		instructions: &mut [Instruction<RuntimeCall>],
+		max_weight: xcm::latest::Weight,
+		_weight_credit: &mut xcm::latest::Weight,
+	) -> Result<(), ()> {
+		log::trace!(
+			target: "xcm::barriers",
+			"AllowExecutionForTransactFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, weight_credit: {:?}",
+			origin, instructions, max_weight, _weight_credit,
+		);
+
+		match instructions.first() {
+			// TODO:checkparameter - filter just remark/remark_with_event
+			Some(Transact { .. }) => Ok(()),
+			_ => Err(()),
+		}
+	}
+}
+
+pub struct BridgedSignedProxyAccountAsNative<LocationConverter, RuntimeOrigin>(
+	PhantomData<(LocationConverter, RuntimeOrigin)>,
+);
+impl<
+		LocationConverter: Convert<MultiLocation, RuntimeOrigin::AccountId>,
+		RuntimeOrigin: OriginTrait,
+	> ConvertOrigin<RuntimeOrigin>
+	for BridgedSignedProxyAccountAsNative<LocationConverter, RuntimeOrigin>
+where
+	RuntimeOrigin::AccountId: Clone,
+{
+	fn convert_origin(
+		origin: impl Into<MultiLocation>,
+		kind: OriginKind,
+	) -> Result<RuntimeOrigin, MultiLocation> {
+		let origin = origin.into();
+		log::trace!(
+			target: "xcm::origin_conversion",
+			"BridgedSignedProxyAccountAsNative origin: {:?}, kind: {:?}",
+			origin, kind,
+		);
+
+		if let OriginKind::SovereignAccount = kind {
+			let location = LocationConverter::convert(origin)?;
+			Ok(RuntimeOrigin::signed(location).into())
+		} else {
+			log::trace!(
+				target: "xcm::origin_conversion",
+				"BridgedSignedProxyAccountAsNative origin: {:?} is not a SovereignAccount, kind: {:?}",
+				origin, kind
+			);
+
+			Err(origin)
+		}
+	}
+}
+
+/// Extracts the `AccountId32` from the bridged `MultiLocation` if the network matches.
+pub struct BridgedProxyAccountId<BridgedNetworks, AccountId>(
+	PhantomData<(BridgedNetworks, AccountId)>,
+);
+impl<
+		BridgedNetworks: Get<sp_std::vec::Vec<(MultiLocation, Junction)>>,
+		AccountId: From<[u8; 32]> + Into<[u8; 32]> + Clone,
+	> Convert<MultiLocation, AccountId> for BridgedProxyAccountId<BridgedNetworks, AccountId>
+{
+	fn convert(location: MultiLocation) -> Result<AccountId, MultiLocation> {
+		log::trace!(target: "xcm::location_conversion", "BridgedProxyAccountId source: {:?}", location);
+
+		let (consensus, id) = match location {
+			MultiLocation {
+				parents: 2,
+				interior: X2(GlobalConsensus(consensus), AccountId32 { id, network: _ }),
+			}
+			| MultiLocation {
+				parents: 2,
+				interior:
+					X3(GlobalConsensus(consensus), Parachain(_), AccountId32 { id, network: _ }),
+			} => (consensus, id),
+			_ => {
+				log::error!(target: "xcm::location_conversion", "BridgedProxyAccountId invalid MultiLocation: {:?}", location);
+				return Err(location);
+			},
+		};
+
+		log::trace!(target: "xcm::location_conversion", "BridgedProxyAccountId found GlobalConsensus: {:?} and AccountId32: {:?}", consensus, id);
+
+		BridgedNetworks::get()
+			.iter()
+			.find(|(_, configured_bridged_network)| match configured_bridged_network {
+				GlobalConsensus(bridged_network) => bridged_network.eq(&consensus),
+				_ => false,
+			})
+			.map_or_else(|| {
+				log::trace!(target: "xcm::location_conversion", "BridgedProxyAccountId GlobalConsensus: {:?} is not trusted", consensus);
+				Err(location)
+			}, |_| {
+				log::trace!(target: "xcm::location_conversion", "BridgedProxyAccountId prepared final AccountId");
+				Ok(id.into())
+			})
+	}
+
+	fn reverse(who: AccountId) -> Result<MultiLocation, AccountId> {
+		Ok(AccountId32 { id: who.into(), network: None }.into())
 	}
 }

@@ -13506,8 +13506,3 @@ dependencies = [
  "cc",
  "libc",
 ]
-
-[[patch.unused]]
-name = "node-inspect"
-version = "0.9.0-dev"
-source = "git+https://github.com/paritytech//substrate?branch=sv-locked-for-gav-xcm-v3-and-bridges-plus-assets#ab9809d10decf643925e06c82e70df30e2c4e42c"

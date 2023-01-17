@@ -350,70 +350,70 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			ProxyType::Any => true,
 			ProxyType::NonTransfer => !matches!(
 				c,
-				RuntimeCall::Balances { .. }
-					| RuntimeCall::TrustBackedAssets { .. }
-					| RuntimeCall::Uniques { .. }
+				RuntimeCall::Balances { .. } |
+					RuntimeCall::TrustBackedAssets { .. } |
+					RuntimeCall::Uniques { .. }
 			),
 			ProxyType::CancelProxy => matches!(
 				c,
-				RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. })
-					| RuntimeCall::Utility { .. }
-					| RuntimeCall::Multisig { .. }
+				RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. }) |
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 			ProxyType::Assets => {
 				matches!(
 					c,
-					RuntimeCall::TrustBackedAssets { .. }
-						| RuntimeCall::Utility { .. }
-						| RuntimeCall::Multisig { .. }
-						| RuntimeCall::Uniques { .. }
+					RuntimeCall::TrustBackedAssets { .. } |
+						RuntimeCall::Utility { .. } |
+						RuntimeCall::Multisig { .. } |
+						RuntimeCall::Uniques { .. }
 				)
 			},
 			ProxyType::AssetOwner => matches!(
 				c,
-				RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::create { .. })
-					| RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::destroy { .. })
-					| RuntimeCall::TrustBackedAssets(
+				RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::create { .. }) |
+					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::destroy { .. }) |
+					RuntimeCall::TrustBackedAssets(
 						TrustBackedAssetsCall::transfer_ownership { .. }
-					) | RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::set_team { .. })
-					| RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::set_metadata { .. })
-					| RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::clear_metadata { .. })
-					| RuntimeCall::Uniques(pallet_uniques::Call::create { .. })
-					| RuntimeCall::Uniques(pallet_uniques::Call::destroy { .. })
-					| RuntimeCall::Uniques(pallet_uniques::Call::transfer_ownership { .. })
-					| RuntimeCall::Uniques(pallet_uniques::Call::set_team { .. })
-					| RuntimeCall::Uniques(pallet_uniques::Call::set_metadata { .. })
-					| RuntimeCall::Uniques(pallet_uniques::Call::set_attribute { .. })
-					| RuntimeCall::Uniques(pallet_uniques::Call::set_collection_metadata { .. })
-					| RuntimeCall::Uniques(pallet_uniques::Call::clear_metadata { .. })
-					| RuntimeCall::Uniques(pallet_uniques::Call::clear_attribute { .. })
-					| RuntimeCall::Uniques(pallet_uniques::Call::clear_collection_metadata { .. })
-					| RuntimeCall::Uniques(pallet_uniques::Call::set_collection_max_supply { .. })
-					| RuntimeCall::Utility { .. }
-					| RuntimeCall::Multisig { .. }
+					) | RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::set_team { .. }) |
+					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::set_metadata { .. }) |
+					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::clear_metadata { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::create { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::destroy { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::transfer_ownership { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::set_team { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::set_metadata { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::set_attribute { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::set_collection_metadata { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::clear_metadata { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::clear_attribute { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::clear_collection_metadata { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::set_collection_max_supply { .. }) |
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 			ProxyType::AssetManager => matches!(
 				c,
-				RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::mint { .. })
-					| RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::burn { .. })
-					| RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::freeze { .. })
-					| RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::thaw { .. })
-					| RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::freeze_asset { .. })
-					| RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::thaw_asset { .. })
-					| RuntimeCall::Uniques(pallet_uniques::Call::mint { .. })
-					| RuntimeCall::Uniques(pallet_uniques::Call::burn { .. })
-					| RuntimeCall::Uniques(pallet_uniques::Call::freeze { .. })
-					| RuntimeCall::Uniques(pallet_uniques::Call::thaw { .. })
-					| RuntimeCall::Uniques(pallet_uniques::Call::freeze_collection { .. })
-					| RuntimeCall::Uniques(pallet_uniques::Call::thaw_collection { .. })
-					| RuntimeCall::Utility { .. }
-					| RuntimeCall::Multisig { .. }
+				RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::mint { .. }) |
+					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::burn { .. }) |
+					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::freeze { .. }) |
+					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::thaw { .. }) |
+					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::freeze_asset { .. }) |
+					RuntimeCall::TrustBackedAssets(TrustBackedAssetsCall::thaw_asset { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::mint { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::burn { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::freeze { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::thaw { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::freeze_collection { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::thaw_collection { .. }) |
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 			ProxyType::Collator => matches!(
 				c,
-				RuntimeCall::CollatorSelection { .. }
-					| RuntimeCall::Utility { .. }
-					| RuntimeCall::Multisig { .. }
+				RuntimeCall::CollatorSelection { .. } |
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 		}
 	}

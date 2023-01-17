@@ -81,7 +81,6 @@ frame-system = { git = "https://github.com/paritytech//substrate", branch = "sv-
 frame-system-benchmarking = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges-plus-assets" }
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges-plus-assets" }
 frame-try-runtime = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges-plus-assets" }
-node-inspect = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges-plus-assets" }
 pallet-alliance = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges-plus-assets" }
 pallet-asset-tx-payment = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges-plus-assets" }
 pallet-assets = { git = "https://github.com/paritytech//substrate", branch = "sv-locked-for-gav-xcm-v3-and-bridges-plus-assets" }

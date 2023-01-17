@@ -7,7 +7,7 @@ mod mock;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
+	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
@@ -22,7 +22,8 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		Triggered(u32),
+		BeforeSignatureVerification,
+		Triggered(T::AccountId, u32),
 	}
 
 	#[pallet::error]
@@ -36,8 +37,10 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(Weight::from_ref_time(10_000))]
-		pub fn do_something(_origin: OriginFor<T>, something: u32) -> DispatchResult {
-			Self::deposit_event(Event::Triggered(something));
+		pub fn do_something(origin: OriginFor<T>, something: u32) -> DispatchResult {
+			Self::deposit_event(Event::BeforeSignatureVerification);
+			let who = ensure_signed(origin)?;
+			Self::deposit_event(Event::Triggered(who, something));
 			Ok(())
 		}
 	}
