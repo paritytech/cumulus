@@ -51,8 +51,8 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	weights::{ConstantMultiplier, Weight},
 	traits::{ConstU32, ConstU64, ConstU8, Everything},
+	weights::{ConstantMultiplier, Weight},
 	PalletId,
 };
 use frame_system::{

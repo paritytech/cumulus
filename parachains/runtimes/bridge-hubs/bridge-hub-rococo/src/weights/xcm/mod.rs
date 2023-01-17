@@ -206,7 +206,7 @@ impl<Call> XcmWeightInfo<Call> for BridgeHubRococoXcmWeight<Call> {
 	fn universal_origin(_: &Junction) -> Weight {
 		Weight::MAX
 	}
-	fn export_message(_: &NetworkId, _: &Junctions, _: &Xcm<()>) -> XCMWeight {
+	fn export_message(_: &NetworkId, _: &Junctions, _: &Xcm<()>) -> Weight {
 		log::error!(
 			target: crate::LOG_TARGET,
 			"TODO: Calling weight: export_message -> triggers unpaid_execution -> need fix here!"

@@ -15,10 +15,8 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-	AccountId, Balance, Balances, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime,
-	RuntimeCall, RuntimeEvent, RuntimeOrigin, XcmpQueue,
-	AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
-	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
+	AccountId, AllPalletsWithSystem, Balance, Balances, ParachainInfo, ParachainSystem,
+	PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
 use crate::{
 	bridge_hub_rococo_config::ToBridgeHubWococoHaulBlobExporter,
@@ -26,21 +24,34 @@ use crate::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{Everything, Nothing},
+	traits::{ConstU32, Contains, Everything, Nothing},
 	weights::IdentityFee,
+	AccountId, AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
+	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use sp_core::Get;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
-	EnsureXcmOrigin, IsConcrete, NativeAsset, ParentAsSuperuser, ParentIsPreset,
+	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
+	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
+	CurrencyAdapter, EnsureXcmOrigin, IsConcrete, NativeAsset, ParentAsSuperuser, ParentIsPreset,
 	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
 	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-	UsingComponents, WeightInfoBounds,
+	UsingComponents, WeightInfoBounds, WithComputedOrigin,
 };
-use xcm_executor::{traits::ExportXcm, XcmExecutor};
+use xcm_executor::{
+	traits::{ExportXcm, WithOriginFilter},
+	XcmExecutor,
+};
+
+use parachains_common::xcm_config::{
+	ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry,
+};
+use polkadot_runtime_common::impls::ToAuthor;
+use xcm::latest::prelude::*;
+use xcm_executor::traits::WithOriginFilter;
 
 parameter_types! {
 	pub const RelayLocation: MultiLocation = MultiLocation::parent();
@@ -66,21 +77,6 @@ impl Get<NetworkId> for RelayNetwork {
 		}
 	}
 }
-
-use frame_support::{
-	traits::{ConstU32, Contains},
-};
-use parachains_common::xcm_config::{
-	ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry,
-};
-use polkadot_runtime_common::impls::ToAuthor;
-use xcm::latest::prelude::*;
-use xcm_builder::{
-	AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
-	AllowSubscriptionsFrom,
-	WithComputedOrigin,
-};
-use xcm_executor::traits::WithOriginFilter;
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
 /// when determining ownership of accounts for asset transacting and when attempting to use XCM
@@ -204,7 +200,7 @@ pub type Barrier = DenyThenTry<
 			UniversalLocation,
 			ConstU32<8>,
 		>,
-		// TODO:check-parameter - supporting unpaid execution at first then SovereignPaid
+		// TODO:check-parameter - supporting unpaid execution at first, then SovereignPaid
 		AllowUnpaidExecutionFrom<Everything>,
 	),
 >;
@@ -262,7 +258,6 @@ parameter_types! {
 	pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
 }
 
-
 impl pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type XcmRouter = XcmRouter;
@@ -279,6 +274,7 @@ impl pallet_xcm::Config for Runtime {
 		RuntimeCall,
 		MaxInstructions,
 	>;
+	type UniversalLocation = UniversalLocation;
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
@@ -286,7 +282,6 @@ impl pallet_xcm::Config for Runtime {
 	type Currency = Balances;
 	type CurrencyMatcher = ();
 	type TrustedLockers = ();
-	type UniversalLocation = UniversalLocation;
 	type SovereignAccountOf = LocationToAccountId;
 	type MaxLockers = ConstU32<8>;
 	type WeightInfo = crate::weights::pallet_xcm::WeightInfo<Runtime>;

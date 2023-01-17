@@ -16,10 +16,10 @@
 
 use crate::chain_spec::{get_account_id_from_seed, get_collator_keys_from_seed};
 use cumulus_primitives_core::ParaId;
+use parachains_common::Balance as BridgeHubBalance;
 use sc_chain_spec::{ChainSpec, ChainType};
 use sc_cli::RuntimeVersion;
 use sp_core::sr25519;
-use parachains_common::Balance as BridgeHubBalance;
 use std::{path::PathBuf, str::FromStr};
 
 /// Collects all supported BridgeHub configurations
@@ -39,7 +39,8 @@ pub enum BridgeHubRuntimeType {
 	KusamaDevelopment,
 
 	// used with kusama runtime
-	Westend,}
+	Westend,
+}
 
 impl FromStr for BridgeHubRuntimeType {
 	type Err = String;
@@ -102,9 +103,10 @@ impl BridgeHubRuntimeType {
 				Ok(Box::new(westend::BridgeHubChainSpec::from_json_bytes(
 					&include_bytes!("../../../parachains/chain-specs/bridge-hub-westend.json")[..],
 				)?)),
-			BridgeHubRuntimeType::Rococo => Ok(Box::new(rococo::BridgeHubChainSpec::from_json_bytes(
-				&include_bytes!("../../../parachains/chain-specs/bridge-hub-rococo.json")[..],
-			)?)),
+			BridgeHubRuntimeType::Rococo =>
+				Ok(Box::new(rococo::BridgeHubChainSpec::from_json_bytes(
+					&include_bytes!("../../../parachains/chain-specs/bridge-hub-rococo.json")[..],
+				)?)),
 			BridgeHubRuntimeType::RococoLocal => Ok(Box::new(rococo::local_config(
 				rococo::BRIDGE_HUB_ROCOCO_LOCAL,
 				"Rococo BridgeHub Local",
@@ -113,15 +115,15 @@ impl BridgeHubRuntimeType {
 				Some("Bob".to_string()),
 				|_| (),
 			))),
-				BridgeHubRuntimeType::RococoLocal => Ok(Box::new(rococo::local_config(
-					rococo::BRIDGE_HUB_ROCOCO_LOCAL,
-					"Rococo BridgeHub Local",
-					"rococo-local",
-					ParaId::new(1013),
-					Some("Bob".to_string()),
-					|_| (),
-				))),
-				BridgeHubRuntimeType::RococoDevelopment => Ok(Box::new(rococo::local_config(
+			BridgeHubRuntimeType::RococoLocal => Ok(Box::new(rococo::local_config(
+				rococo::BRIDGE_HUB_ROCOCO_LOCAL,
+				"Rococo BridgeHub Local",
+				"rococo-local",
+				ParaId::new(1013),
+				Some("Bob".to_string()),
+				|_| (),
+			))),
+			BridgeHubRuntimeType::RococoDevelopment => Ok(Box::new(rococo::local_config(
 				rococo::BRIDGE_HUB_ROCOCO_DEVELOPMENT,
 				"Rococo BridgeHub Development",
 				"rococo-dev",
@@ -129,9 +131,10 @@ impl BridgeHubRuntimeType {
 				Some("Bob".to_string()),
 				|_| (),
 			))),
-			BridgeHubRuntimeType::Wococo => Ok(Box::new(rococo::BridgeHubChainSpec::from_json_bytes(
-				&include_bytes!("../../../parachains/chain-specs/bridge-hub-wococo.json")[..],
-			)?)),
+			BridgeHubRuntimeType::Wococo =>
+				Ok(Box::new(rococo::BridgeHubChainSpec::from_json_bytes(
+					&include_bytes!("../../../parachains/chain-specs/bridge-hub-wococo.json")[..],
+				)?)),
 			BridgeHubRuntimeType::WococoLocal => Ok(Box::new(wococo::local_config(
 				wococo::BRIDGE_HUB_WOCOCO_LOCAL,
 				"Wococo BridgeHub Local",
@@ -187,7 +190,7 @@ pub mod rococo {
 	use parachains_common::{AccountId, AuraId};
 	use sc_chain_spec::ChainType;
 
-	use super::{BridgeHubBalance};
+	use super::BridgeHubBalance;
 
 	pub(crate) const BRIDGE_HUB_ROCOCO: &str = "bridge-hub-rococo";
 	pub(crate) const BRIDGE_HUB_ROCOCO_LOCAL: &str = "bridge-hub-rococo-local";
@@ -402,9 +405,16 @@ pub mod wococo {
 		para_id: ParaId,
 		bridges_pallet_owner_seed: Option<String>,
 	) -> BridgeHubChainSpec {
-		rococo::local_config(id, chain_name, relay_chain, para_id, bridges_pallet_owner_seed, |properties| {
-			properties.insert("tokenSymbol".into(), "WOOK".into());
-		})
+		rococo::local_config(
+			id,
+			chain_name,
+			relay_chain,
+			para_id,
+			bridges_pallet_owner_seed,
+			|properties| {
+				properties.insert("tokenSymbol".into(), "WOOK".into());
+			},
+		)
 	}
 
 	pub fn live_config(
