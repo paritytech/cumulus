@@ -32,7 +32,6 @@ sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", d
 [features]
 default = ["std"]
 std = [
-	"sp-beefy/std",
 	"bp-runtime/std",
 	"codec/std",
 	"frame-support/std",
@@ -43,6 +42,7 @@ std = [
 	"sp-application-crypto/std",
 	"sp-core/std",
 	"sp-io/std",
+	"sp-beefy/std",
 	"sp-runtime/std",
 	"sp-std/std"
 ]
