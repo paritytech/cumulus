@@ -411,7 +411,7 @@ pub struct XcmBenchmarkHelper;
 use pallet_assets::BenchmarkHelper;
 #[cfg(feature = "runtime-benchmarks")]
 impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
-	fn create_asset_id(id: u32) -> MultiLocation {
+	fn create_asset_id_parameter(id: u32) -> MultiLocation {
 		MultiLocation { parents: 1, interior: X1(Parachain(id)) }
 	}
 }
