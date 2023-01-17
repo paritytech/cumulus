@@ -39,8 +39,8 @@ impl WeighMultiAssets for MultiAssetFilter {
 				// TODO: Investigate if this is the right solution
 				All => weight.saturating_mul(MAX_ASSETS as u64),
 				AllOf { .. } => weight,
-				AllCounted(count) => weight.saturating_mul(count as u64),
-				AllOfCounted { count, .. } => weight.saturating_mul(count as u64),
+				AllCounted(count) => weight.saturating_mul(*count as u64),
+				AllOfCounted { count, .. } => weight.saturating_mul(*count as u64),
 			},
 		}
 	}
