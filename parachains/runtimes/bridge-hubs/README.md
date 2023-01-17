@@ -1,13 +1,25 @@
-# Bridge-hubs Parachain
+- [Bridge-hub Parachains](#bridge-hub-parachains)
+	* [How to test locally Rococo <-> Wococo](#how-to-test-locally-rococo-----wococo)
+		+ [Prepare/Build/Deploy](#prepare-build-deploy)
+		+ [Run chains (Rococo + BridgeHub, Wococo + BridgeHub) with zombienet](#run-chains--rococo---bridgehub--wococo---bridgehub--with-zombienet)
+		+ [Run relayers (Rococo, Wococo)](#run-relayers--rococo--wococo-)
+			- [Run with script (alternative 1)](#run-with-script--alternative-1-)
+			- [Run with binary (alternative 2)](#run-with-binary--alternative-2-)
+		+ [Send messages (Rococo, Wococo)](#send-messages--rococo--wococo-)
+			- [Local Rococo:Statemine -> Wococo:Westmint](#local-rococo-statemine----wococo-westmint)
+			- [Live Rococo:Rockmine2 -> Wococo:Wockmint](#live-rococo-rockmine2----wococo-wockmint)
+	* [How to test local BridgeHubKusama](#how-to-test-local-bridgehubkusama)
+	* [Git subtree `./bridges`](#git-subtree---bridges-)
+
+# Bridge-hub Parachains
 
 Implementation of _BridgeHub_, a blockchain to support message passing between Substrate based chains like Polkadot and Kusama networks.
 
 _BridgeHub_ allows users to:
 
 - Passing arbitrary messages between different Substrate chains (Polkadot <-> Kusama).
--- Message passing is
 
-Every _BridgeHub_ is meant to be **_common good parachain_** with main responsibilities:
+_BridgeHub_ is meant to be **_system parachain_** with main responsibilities:
 - sync finality proofs between relay chains
 - sync finality proofs between BridgeHub parachains
 - pass (XCM) messages between different BridgeHub parachains
@@ -35,7 +47,7 @@ cp target/release/polkadot ~/local_bridge_testing/bin/polkadot
 # 3. Build cumulus polkadot-parachain binary
 cd <cumulus-git-repo-dir>
 git checkout -b bridge-hub-rococo-wococo --track origin/bridge-hub-rococo-wococo
-cargo build --release --locked -p polkadot-parachain@0.9.300
+cargo build --release --locked -p polkadot-parachain-bin
 cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain
 cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain-mint
 
@@ -182,6 +194,18 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	- BridgeHubWococo (see `bridgeRococoMessages.MessagesReceived`)
 	- Wockmint (see `xcmpQueue.Success` for `remark` and `xcmpQueue.Fail` for `trap`)
 	- BridgeHubRococo (see `bridgeWococoMessages.MessagesDelivered`)
+
+## How to test local BridgeHubKusama
+```
+cd <base-cumulus-repo-directory>
+cargo build --release -p polkadot-parachain-bin
+
+# script expect to have pre-built polkadot binary on the path: ../polkadot/target/release/polkadot
+# if using kusama-local, build polkadot with `--features fast-runtime`
+
+# BridgeHubKusama
+zombienet-linux --provider native spawn ./zombienet/examples/bridge_hub_kusama_local_network.toml
+```
 
 ----
 ## Git subtree `./bridges`

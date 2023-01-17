@@ -18,8 +18,9 @@ use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{
-		new_partial, Block, CollectivesPolkadotRuntimeExecutor, StatemineRuntimeExecutor,
-		StatemintRuntimeExecutor, WestmintRuntimeExecutor,
+		new_partial, Block, BridgeHubKusamaRuntimeExecutor, BridgeHubRococoRuntimeExecutor,
+		CollectivesPolkadotRuntimeExecutor, StatemineRuntimeExecutor, StatemintRuntimeExecutor,
+		WestmintRuntimeExecutor,
 	},
 };
 use codec::Encode;
@@ -477,23 +478,57 @@ macro_rules! construct_async_run {
 				})
 			},
 			Runtime::BridgeHub(bridge_hub_runtime_type) => {
-				runner.async_run(|$config| {
-					let $components = match bridge_hub_runtime_type {
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo { .. } |
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal => new_partial::<chain_spec::bridge_hubs::rococo::RuntimeApi, _>(
-							&$config,
-							crate::service::aura_build_import_queue::<_, AuraId>,
-						)?,
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::Wococo { .. } |
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::WococoLocal => new_partial::<chain_spec::bridge_hubs::wococo::RuntimeApi, _>(
-							&$config,
-							crate::service::aura_build_import_queue::<_, AuraId>,
-						)?,
-					};
+				 match bridge_hub_runtime_type {
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal |
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment => {
+						runner.async_run(|$config| {
+							let $components = new_partial::<chain_spec::bridge_hubs::kusama::RuntimeApi, _>(
+								&$config,
+								crate::service::aura_build_import_queue::<_, AuraId>,
+							)?;
 
-					let task_manager = $components.task_manager;
-					{ $( $code )* }.map(|v| (v, task_manager))
-				})
+							let task_manager = $components.task_manager;
+							{ $( $code )* }.map(|v| (v, task_manager))
+						})
+					},
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::Westend => {
+						runner.async_run(|$config| {
+							let $components = new_partial::<chain_spec::bridge_hubs::westend::RuntimeApi, _>(
+								&$config,
+								crate::service::aura_build_import_queue::<_, AuraId>,
+							)?;
+
+							let task_manager = $components.task_manager;
+							{ $( $code )* }.map(|v| (v, task_manager))
+						})
+					},
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal |
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoDevelopment => {
+						runner.async_run(|$config| {
+							let $components = new_partial::<chain_spec::bridge_hubs::rococo::RuntimeApi, _>(
+								&$config,
+								crate::service::aura_build_import_queue::<_, AuraId>,
+							)?;
+
+							let task_manager = $components.task_manager;
+							{ $( $code )* }.map(|v| (v, task_manager))
+						})
+					},
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::Wococo |
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::WococoLocal => {
+						runner.async_run(|$config| {
+							let $components = new_partial::<chain_spec::bridge_hubs::wococo::RuntimeApi, _>(
+								&$config,
+								crate::service::aura_build_import_queue::<_, AuraId>,
+							)?;
+
+							let task_manager = $components.task_manager;
+							{ $( $code )* }.map(|v| (v, task_manager))
+						})
+					}
+				}
 			},
 			Runtime::Penpal(_) | Runtime::Default => {
 				runner.async_run(|$config| {
@@ -585,7 +620,8 @@ pub fn run() -> Result<()> {
 			match cmd {
 				BenchmarkCmd::Pallet(cmd) =>
 					if cfg!(feature = "runtime-benchmarks") {
-						runner.sync_run(|config| match config.chain_spec.runtime() {
+						runner.sync_run(|config| {
+							match config.chain_spec.runtime() {
 							Runtime::Statemine =>
 								cmd.run::<Block, StatemineRuntimeExecutor>(config),
 							Runtime::Westmint => cmd.run::<Block, WestmintRuntimeExecutor>(config),
@@ -593,11 +629,28 @@ pub fn run() -> Result<()> {
 								cmd.run::<Block, StatemintRuntimeExecutor>(config),
 							Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
 								cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
+							Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
+								chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
+								chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal |
+								chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment =>
+									cmd.run::<Block, BridgeHubKusamaRuntimeExecutor>(config),
+								chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
+								chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal |
+								chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoDevelopment =>
+									cmd.run::<Block, BridgeHubRococoRuntimeExecutor>(config),
+								_ => Err(format!(
+									"Chain '{:?}' doesn't support benchmarking for bridge_hub_runtime_type: {:?}",
+									config.chain_spec.runtime(),
+									bridge_hub_runtime_type
+								)
+									.into()),
+							}
 							_ => Err(format!(
 								"Chain '{:?}' doesn't support benchmarking",
 								config.chain_spec.runtime()
 							)
 							.into()),
+						}
 						})
 					} else {
 						Err("Benchmarking wasn't enabled when building the node. \
@@ -640,27 +693,68 @@ pub fn run() -> Result<()> {
 			let task_manager =
 				sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
 					.map_err(|e| format!("Error: {:?}", e))?;
+			use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
+			type HostFunctionsOf<E> = ExtendedHostFunctions<
+				sp_io::SubstrateHostFunctions,
+				<E as NativeExecutionDispatch>::ExtendHostFunctions,
+			>;
 
 			match runner.config().chain_spec.runtime() {
-				Runtime::Statemine => runner.async_run(|config| {
-					Ok((cmd.run::<Block, StatemineRuntimeExecutor>(config), task_manager))
+				Runtime::Statemine => runner.async_run(|_| {
+					Ok((
+						cmd.run::<Block, HostFunctionsOf<StatemineRuntimeExecutor>>(),
+						task_manager,
+					))
 				}),
-				Runtime::Westmint => runner.async_run(|config| {
-					Ok((cmd.run::<Block, WestmintRuntimeExecutor>(config), task_manager))
+				Runtime::Westmint => runner.async_run(|_| {
+					Ok((cmd.run::<Block, HostFunctionsOf<WestmintRuntimeExecutor>>(), task_manager))
 				}),
-				Runtime::Statemint => runner.async_run(|config| {
-					Ok((cmd.run::<Block, StatemintRuntimeExecutor>(config), task_manager))
+				Runtime::Statemint => runner.async_run(|_| {
+					Ok((
+						cmd.run::<Block, HostFunctionsOf<StatemintRuntimeExecutor>>(),
+						task_manager,
+					))
 				}),
 				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
-					runner.async_run(|config| {
+					runner.async_run(|_| {
 						Ok((
-							cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
+							cmd.run::<Block, HostFunctionsOf<CollectivesPolkadotRuntimeExecutor>>(),
 							task_manager,
 						))
 					}),
-				Runtime::Shell => runner.async_run(|config| {
+				Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal |
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment => runner.async_run(|_| {
+						Ok((
+							cmd.run::<Block, HostFunctionsOf<BridgeHubKusamaRuntimeExecutor>>(),
+							task_manager,
+						))
+					}),
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal |
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoDevelopment => runner.async_run(|_| {
+						Ok((
+							cmd.run::<Block, HostFunctionsOf<BridgeHubRococoRuntimeExecutor>>(),
+							task_manager,
+						))
+					}),
+					_ => Err(format!(
+						"Chain '{:?}' doesn't support try-runtime for bridge_hub_runtime_type: {:?}",
+						runner.config().chain_spec.runtime(),
+						bridge_hub_runtime_type
+					)
+					.into()),
+				},
+				Runtime::Shell => runner.async_run(|_| {
 					Ok((
-						cmd.run::<Block, crate::service::ShellRuntimeExecutor>(config),
+						cmd.run::<Block, HostFunctionsOf<crate::service::ShellRuntimeExecutor>>(),
+						task_manager,
+					))
+				}),
+				Runtime::ContractsRococo => runner.async_run(|_| {
+					Ok((
+						cmd.run::<Block, HostFunctionsOf<crate::service::ContractsRococoRuntimeExecutor>>(),
 						task_manager,
 					))
 				}),
@@ -698,7 +792,7 @@ pub fn run() -> Result<()> {
 				let id = ParaId::from(para_id);
 
 				let parachain_account =
-					AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
+					AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(&id);
 
 				let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
 
@@ -717,7 +811,7 @@ pub fn run() -> Result<()> {
 				info!("Parachain genesis state: {}", genesis_state);
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
-				if collator_options.relay_chain_rpc_url.is_some() && cli.relaychain_args.len() > 0 {
+				if !collator_options.relay_chain_rpc_urls.is_empty() && cli.relaychain_args.len() > 0 {
 					warn!("Detected relay chain node arguments together with --relay-chain-rpc-url. This command starts a minimal Polkadot node that only uses a network-related subset of all relay chain CLI options.");
 				}
 
@@ -779,21 +873,40 @@ pub fn run() -> Result<()> {
 					.map(|r| r.0)
 					.map_err(Into::into),
 					Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo { .. } |
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal =>
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal |
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment =>
+							crate::service::start_generic_aura_node::<
+								chain_spec::bridge_hubs::kusama::RuntimeApi,
+								AuraId,
+							>(config, polkadot_config, collator_options, id, hwbench)
+							.await
+							.map(|r| r.0),
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::Westend =>
+							crate::service::start_generic_aura_node::<
+								chain_spec::bridge_hubs::westend::RuntimeApi,
+								AuraId,
+							>(config, polkadot_config, collator_options, id, hwbench)
+							.await
+							.map(|r| r.0),
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal |
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoDevelopment =>
 							crate::service::start_generic_aura_node::<
 								chain_spec::bridge_hubs::rococo::RuntimeApi,
 								AuraId,
-							>(config, polkadot_config, collator_options, id, hwbench),
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::Wococo { .. } |
+							>(config, polkadot_config, collator_options, id, hwbench)
+							.await
+							.map(|r| r.0),
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::Wococo |
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::WococoLocal =>
 							crate::service::start_generic_aura_node::<
 								chain_spec::bridge_hubs::wococo::RuntimeApi,
 								AuraId,
-							>(config, polkadot_config, collator_options, id, hwbench),
+							>(config, polkadot_config, collator_options, id, hwbench)
+							.await
+							.map(|r| r.0),
 					}
-					.await
-					.map(|r| r.0)
 					.map_err(Into::into),
 					Runtime::Penpal(_) | Runtime::Default =>
 						crate::service::start_rococo_parachain_node(

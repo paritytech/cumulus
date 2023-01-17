@@ -51,6 +51,8 @@ jobs:
           - category: assets
             runtime: westmint
           - category: bridge-hubs
+            runtime: bridge-hub-kusama
+          - category: bridge-hubs
             runtime: bridge-hub-rococo
           - category: collectives
             runtime: collectives-polkadot
@@ -122,7 +124,7 @@ jobs:
           path: cumulus
           ref: ${{ github.event.inputs.ref2 }}
 
-      - uses: ruby/setup-ruby@eae47962baca661befdfd24e4d6c34ade04858f7 # v1.118.0
+      - uses: ruby/setup-ruby@93287a1fa82c6ddbb6d8db978df4b0119cd8879f # v1.133.2
         with:
           ruby-version: 3.0.0
 
@@ -153,6 +155,7 @@ jobs:
           STATEMINE_DIGEST: ${{ github.workspace}}/statemine-srtool-json/statemine-srtool-digest.json
           STATEMINT_DIGEST: ${{ github.workspace}}/statemint-srtool-json/statemint-srtool-digest.json
           BRIDGE_HUB_ROCOCO_DIGEST: ${{ github.workspace}}/bridge-hub-rococo-srtool-json/bridge-hub-rococo-srtool-digest.json
+          BRIDGE_HUB_KUSAMA_DIGEST: ${{ github.workspace}}/bridge-hub-kusama-srtool-json/bridge-hub-kusama-srtool-digest.json
           COLLECTIVES_POLKADOT_DIGEST: ${{ github.workspace}}/collectives-polkadot-srtool-json/collectives-polkadot-srtool-digest.json
           ROCOCO_PARA_DIGEST: ${{ github.workspace}}/rococo-parachain-srtool-json/rococo-parachain-srtool-digest.json
           CANVAS_KUSAMA_DIGEST: ${{ github.workspace}}/contracts-rococo-srtool-json/contracts-rococo-srtool-digest.json
@@ -169,6 +172,7 @@ jobs:
             ls -al $STATEMINE_DIGEST || true
             ls -al $STATEMINT_DIGEST || true
             ls -al $BRIDGE_HUB_ROCOCO_DIGEST || true
+            ls -al $BRIDGE_HUB_KUSAMA_DIGEST || true
             ls -al $COLLECTIVES_POLKADOT_DIGEST || true
             ls -al $ROCOCO_PARA_DIGEST || true
             ls -al $CANVAS_KUSAMA_DIGEST || true
@@ -221,6 +225,8 @@ jobs:
           - category: assets
             runtime: westmint
           - category: bridge-hubs
+            runtime: bridge-hub-kusama
+          - category: bridge-hubs
             runtime: bridge-hub-rococo
           - category: collectives
             runtime: collectives-polkadot
@@ -241,7 +247,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3.0.0
 
-      - uses: ruby/setup-ruby@eae47962baca661befdfd24e4d6c34ade04858f7 # v1.118.0
+      - uses: ruby/setup-ruby@93287a1fa82c6ddbb6d8db978df4b0119cd8879f # v1.133.2
         with:
           ruby-version: 3.0.0
 

@@ -39,6 +39,19 @@ elif [[ $runtimeName == "collectives-polkadot" ]]; then
 		cumulus_pallet_xcmp_queue
 		frame_system
 	)
+elif [[ $runtimeName == "bridge-hub-rococo" ]] || [[ $runtimeName == "bridge-hub-kusama" ]]; then
+	pallets=(
+                frame_system
+                pallet_balances
+                pallet_collator_selection
+                pallet_multisig
+                pallet_session
+                pallet_timestamp
+                pallet_utility
+                cumulus_pallet_xcmp_queue
+                pallet_xcm_benchmarks::generic
+                pallet_xcm_benchmarks::fungible
+	)
 else
 	echo "$runtimeName pallet list not found in benchmarks-ci.sh"
 	exit 1
@@ -46,10 +59,10 @@ fi
 
 for pallet in ${pallets[@]}
 do
-	# a little hack for xcm benchmarks
 	output_file="${pallet//::/_}"
 	extra_args=""
-  if [[ "$pallet" == *"xcm"* ]]; then
+	# a little hack for pallet_xcm_benchmarks - we want to force custom implementation for XcmWeightInfo
+  if [[ "$pallet" == "pallet_xcm_benchmarks::generic" ]] || [[ "$pallet" == "pallet_xcm_benchmarks::fungible" ]]; then
 		output_file="xcm/$output_file"
 		extra_args="--template=./templates/xcm-bench-template.hbs"
   fi

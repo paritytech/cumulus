@@ -17,6 +17,8 @@
 use super::{
 	AccountId, Balance, Balances, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime,
 	RuntimeCall, RuntimeEvent, RuntimeOrigin, XcmpQueue,
+	AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
+	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
 use crate::{
 	bridge_hub_rococo_config::ToBridgeHubWococoHaulBlobExporter,
@@ -43,7 +45,10 @@ use xcm_executor::{traits::ExportXcm, XcmExecutor};
 parameter_types! {
 	pub const RelayLocation: MultiLocation = MultiLocation::parent();
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-	pub UniversalLocation: InteriorMultiLocation = X2(GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into()));
+		pub UniversalLocation: InteriorMultiLocation =
+		X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
+	pub const MaxInstructions: u32 = 100;
+	pub const MaxAssetsIntoHolding: u32 = 64;
 }
 
 pub struct RelayNetwork;
@@ -62,6 +67,21 @@ impl Get<NetworkId> for RelayNetwork {
 	}
 }
 
+use frame_support::{
+	traits::{ConstU32, Contains},
+};
+use parachains_common::xcm_config::{
+	ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry,
+};
+use polkadot_runtime_common::impls::ToAuthor;
+use xcm::latest::prelude::*;
+use xcm_builder::{
+	AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
+	AllowSubscriptionsFrom,
+	WithComputedOrigin,
+};
+use xcm_executor::traits::WithOriginFilter;
+
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
 /// when determining ownership of accounts for asset transacting and when attempting to use XCM
 /// `Transact` in order to determine the dispatch Origin.
@@ -74,8 +94,8 @@ pub type LocationToAccountId = (
 	AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
-/// Means for transacting assets on this chain.
-pub type LocalAssetTransactor = CurrencyAdapter<
+/// Means for transacting the native currency on this chain.
+pub type CurrencyTransactor = CurrencyAdapter<
 	// Use this currency:
 	Balances,
 	// Use this currency when it is a fungible asset matching the given location or name:
@@ -97,10 +117,10 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	// foreign chains who want to have a local sovereign account on this chain which they control.
 	SovereignSignedViaLocation<LocationToAccountId, RuntimeOrigin>,
 	// Native converter for Relay-chain (Parent) location; will convert to a `Relay` origin when
-	// recognised.
+	// recognized.
 	RelayChainAsNative<RelayChainOrigin, RuntimeOrigin>,
 	// Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
-	// recognised.
+	// recognized.
 	SiblingParachainAsNative<cumulus_pallet_xcm::Origin, RuntimeOrigin>,
 	// Superuser converter for the Relay-chain (Parent) location. This will allow it to issue a
 	// transaction from the Root origin.
@@ -112,77 +132,120 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	XcmPassthrough<RuntimeOrigin>,
 );
 
-parameter_types! {
-	pub const MaxInstructions: u32 = 100;
-	pub const MaxAssetsIntoHolding: u32 = 64;
-}
-
 match_types! {
-	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
+	pub type ParentOrParentsPlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
-		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
+		MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
+	};
+	pub type ParentOrSiblings: impl Contains<MultiLocation> = {
+		MultiLocation { parents: 1, interior: Here } |
+		MultiLocation { parents: 1, interior: X1(_) }
 	};
 }
 
-match_types! {
-	pub type ParentOrParentsUnitPlurality: impl Contains<MultiLocation> = {
-		MultiLocation { parents: 1, interior: Here } |
-		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Unit, .. }) }
-	};
+/// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
+/// account for proof size weights.
+///
+/// Calls that are allowed through this filter must:
+/// 1. Have a fixed weight;
+/// 2. Cannot lead to another call being made;
+/// 3. Have a defined proof size weight, e.g. no unbounded vecs in call parameters.
+pub struct SafeCallFilter;
+impl Contains<RuntimeCall> for SafeCallFilter {
+	fn contains(call: &RuntimeCall) -> bool {
+		#[cfg(feature = "runtime-benchmarks")]
+		{
+			if matches!(call, RuntimeCall::System(frame_system::Call::remark_with_event { .. })) {
+				return true
+			}
+		}
+
+		match call {
+			RuntimeCall::System(
+				frame_system::Call::set_heap_pages { .. } |
+				frame_system::Call::set_code { .. } |
+				frame_system::Call::set_code_without_checks { .. } |
+				frame_system::Call::kill_prefix { .. },
+			) |
+			RuntimeCall::ParachainSystem(..) |
+			RuntimeCall::Timestamp(..) |
+			RuntimeCall::Balances(..) |
+			RuntimeCall::CollatorSelection(
+				pallet_collator_selection::Call::set_desired_candidates { .. } |
+				pallet_collator_selection::Call::set_candidacy_bond { .. } |
+				pallet_collator_selection::Call::register_as_candidate { .. } |
+				pallet_collator_selection::Call::leave_intent { .. },
+			) |
+			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
+			RuntimeCall::XcmpQueue(..) |
+			RuntimeCall::DmpQueue(..) |
+			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) => true,
+			_ => false,
+		}
+	}
 }
 
-// TOOD: hacked
-// pub type Barrier = DenyThenTry<
-// 	DenyReserveTransferToRelayChain,
-// 	(
-// 		TakeWeightCredit,
-// 		AllowTopLevelPaidExecutionFrom<Everything>,
-// 		AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
-// 		// ^^^ Parent and its exec plurality get free execution
-// 	),
-// >;
-pub type Barrier = (
-	TakeWeightCredit,
-	AllowTopLevelPaidExecutionFrom<Everything>,
-	AllowUnpaidExecutionFrom<ParentOrParentsUnitPlurality>,
-	// TODO:check-parameter - supporting unpaid execution at first then SovereignPaid
-	AllowUnpaidExecutionFrom<Everything>,
-	// ^^^ Parent & its unit plurality gets free execution
-);
-
-type XcmWeigher = WeightInfoBounds<
-	crate::weights::xcm::BridgeHubXcmWeight<RuntimeCall>,
-	RuntimeCall,
-	MaxInstructions,
+pub type Barrier = DenyThenTry<
+	DenyReserveTransferToRelayChain,
+	(
+		// Allow local users to buy weight credit.
+		TakeWeightCredit,
+		// Expected responses are OK.
+		AllowKnownQueryResponses<PolkadotXcm>,
+		WithComputedOrigin<
+			(
+				// Allow anything to pay for execution.
+				AllowTopLevelPaidExecutionFrom<Everything>,
+				// Parent and its exec plurality get free execution.
+				AllowExplicitUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+				// Subscriptions for version tracking are OK.
+				AllowSubscriptionsFrom<ParentOrSiblings>,
+			),
+			UniversalLocation,
+			ConstU32<8>,
+		>,
+		// TODO:check-parameter - supporting unpaid execution at first then SovereignPaid
+		AllowUnpaidExecutionFrom<Everything>,
+	),
 >;
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
 	type RuntimeCall = RuntimeCall;
 	type XcmSender = XcmRouter;
-	type AssetTransactor = LocalAssetTransactor;
+	type AssetTransactor = CurrencyTransactor;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	type IsReserve = NativeAsset;
-	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of UNIT
+	// BridgeHub does not recognize a reserve location for any asset. Users must teleport Native token
+	// where allowed (e.g. with the Relay Chain).
+	type IsReserve = ();
+	/// Only allow teleportation of NativeToken of relay chain.
+	type IsTeleporter = ConcreteNativeAssetFrom<RelayLocation>;
 	type UniversalLocation = UniversalLocation;
 	type Barrier = Barrier;
-	type Weigher = XcmWeigher;
-	type Trader = UsingComponents<IdentityFee<Balance>, RelayLocation, AccountId, Balances, ()>;
+	type Weigher = WeightInfoBounds<
+		crate::weights::xcm::BridgeHubRococoXcmWeight<RuntimeCall>,
+		RuntimeCall,
+		MaxInstructions,
+	>;
+	type Trader =
+		UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ToAuthor<Runtime>>;
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;
 	type SubscriptionService = PolkadotXcm;
-	type PalletInstancesInfo = ();
+	type PalletInstancesInfo = AllPalletsWithSystem;
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 	type AssetLocker = ();
 	type AssetExchanger = ();
 	type FeeManager = ();
 	type MessageExporter = BridgeHubRococoOrBridgeHubWococoSwitchExporter;
 	type UniversalAliases = Nothing;
-	type CallDispatcher = RuntimeCall;
+	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
+	type SafeCallFilter = SafeCallFilter;
 }
 
-/// No local origins on this chain are allowed to dispatch XCM sends/executions.
+/// Converts a local signed origin into an XCM multilocation.
+/// Forms the basis for local origins sending/executing XCMs.
 pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, RelayNetwork>;
 
 /// The means for routing XCM messages which are not for local execution into the right message
@@ -194,16 +257,28 @@ pub type XcmRouter = (
 	XcmpQueue,
 );
 
+#[cfg(feature = "runtime-benchmarks")]
+parameter_types! {
+	pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
+}
+
+
 impl pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 	type XcmRouter = XcmRouter;
+	// We want to disallow users sending (arbitrary) XCMs from this chain.
+	type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, ()>;
+	// We support local origins dispatching XCM executions in principle...
 	type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 	type XcmExecuteFilter = Everything;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
-	type XcmReserveTransferFilter = Everything;
-	type Weigher = XcmWeigher;
+	type XcmReserveTransferFilter = Nothing; // This parachain is not meant as a reserve location.
+	type Weigher = WeightInfoBounds<
+		crate::weights::xcm::BridgeHubRococoXcmWeight<RuntimeCall>,
+		RuntimeCall,
+		MaxInstructions,
+	>;
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
@@ -211,9 +286,12 @@ impl pallet_xcm::Config for Runtime {
 	type Currency = Balances;
 	type CurrencyMatcher = ();
 	type TrustedLockers = ();
-	type SovereignAccountOf = ();
-	type MaxLockers = frame_support::traits::ConstU32<8>;
 	type UniversalLocation = UniversalLocation;
+	type SovereignAccountOf = LocationToAccountId;
+	type MaxLockers = ConstU32<8>;
+	type WeightInfo = crate::weights::pallet_xcm::WeightInfo<Runtime>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type ReachableDest = ReachableDest;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
