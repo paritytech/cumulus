@@ -5,7 +5,7 @@ use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::{info, warn};
-use parachain_template_runtime::Block;
+use parachain_template_runtime::{Block, MILLISECS_PER_BLOCK};
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
@@ -13,6 +13,9 @@ use sc_cli::{
 use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
+
+#[cfg(feature = "try-runtime")]
+use try_runtime_cli::block_building_info::timestamp_with_aura_info;
 
 use crate::{
 	chain_spec,
@@ -243,8 +246,15 @@ pub fn run() -> Result<()> {
 				sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
 					.map_err(|e| format!("Error: {:?}", e))?;
 
+			let info_provider = timestamp_with_aura_info(MILLISECS_PER_BLOCK);
+
 			runner.async_run(|_| {
-				Ok((cmd.run::<Block, HostFunctionsOf<ParachainNativeExecutor>>(), task_manager))
+				Ok((
+					cmd.run::<Block, HostFunctionsOf<ParachainNativeExecutor>, _>(Some(
+						info_provider,
+					)),
+					task_manager,
+				))
 			})
 		},
 		#[cfg(not(feature = "try-runtime"))]

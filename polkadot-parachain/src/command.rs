@@ -38,6 +38,9 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::{net::SocketAddr, path::PathBuf};
 
+#[cfg(feature = "try-runtime")]
+use try_runtime_cli::block_building_info::timestamp_with_aura_info;
+
 /// Helper enum that is used for better distinction of different parachain/runtime configuration
 /// (it is based/calculated on ChainSpec's ID attribute)
 #[derive(Debug, PartialEq, Default)]
@@ -699,53 +702,65 @@ pub fn run() -> Result<()> {
 				<E as NativeExecutionDispatch>::ExtendHostFunctions,
 			>;
 
+			let info_provider = timestamp_with_aura_info(6000);
+
 			match runner.config().chain_spec.runtime() {
 				Runtime::Statemine => runner.async_run(|_| {
 					Ok((
-						cmd.run::<Block, HostFunctionsOf<StatemineRuntimeExecutor>>(),
+						cmd.run::<Block, HostFunctionsOf<StatemineRuntimeExecutor>, _>(Some(
+							info_provider,
+						)),
 						task_manager,
 					))
 				}),
 				Runtime::Westmint => runner.async_run(|_| {
-					Ok((cmd.run::<Block, HostFunctionsOf<WestmintRuntimeExecutor>>(), task_manager))
+					Ok((
+						cmd.run::<Block, HostFunctionsOf<WestmintRuntimeExecutor>, _>(Some(
+							info_provider,
+						)),
+						task_manager,
+					))
 				}),
 				Runtime::Statemint => runner.async_run(|_| {
 					Ok((
-						cmd.run::<Block, HostFunctionsOf<StatemintRuntimeExecutor>>(),
+						cmd.run::<Block, HostFunctionsOf<StatemintRuntimeExecutor>, _>(Some(
+							info_provider,
+						)),
 						task_manager,
 					))
 				}),
 				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
 					runner.async_run(|_| {
 						Ok((
-							cmd.run::<Block, HostFunctionsOf<CollectivesPolkadotRuntimeExecutor>>(),
+							cmd.run::<Block, HostFunctionsOf<CollectivesPolkadotRuntimeExecutor>, _>(Some(info_provider)),
 							task_manager,
 						))
 					}),
-				Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
-					chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
-					chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal |
-					chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment => runner.async_run(|_| {
-						Ok((
-							cmd.run::<Block, HostFunctionsOf<BridgeHubKusamaRuntimeExecutor>>(),
+				Runtime::BridgeHub(bridge_hub_runtime_type) =>
+					match bridge_hub_runtime_type {
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal |
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment => runner.async_run(|_| {
+							Ok((
+							cmd.run::<Block, HostFunctionsOf<BridgeHubKusamaRuntimeExecutor>, _>(Some(info_provider)),
 							task_manager,
 						))
-					}),
-					chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
-					chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal |
-					chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoDevelopment => runner.async_run(|_| {
-						Ok((
-							cmd.run::<Block, HostFunctionsOf<BridgeHubRococoRuntimeExecutor>>(),
+						}),
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal |
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoDevelopment => runner.async_run(|_| {
+							Ok((
+							cmd.run::<Block, HostFunctionsOf<BridgeHubRococoRuntimeExecutor>, _>(Some(info_provider)),
 							task_manager,
 						))
-					}),
-					_ => Err(format!(
+						}),
+						_ => Err(format!(
 						"Chain '{:?}' doesn't support try-runtime for bridge_hub_runtime_type: {:?}",
 						runner.config().chain_spec.runtime(),
 						bridge_hub_runtime_type
 					)
-					.into()),
-				},
+						.into()),
+					},
 				Runtime::Shell => runner.async_run(|_| {
 					Ok((
 						cmd.run::<Block, HostFunctionsOf<crate::service::ShellRuntimeExecutor>>(),
