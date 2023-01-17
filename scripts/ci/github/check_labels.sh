@@ -37,11 +37,10 @@ audit_labels=(
   'D9-needsaudit 👮'
 )
 
-x_labels=(
-  'X0-node'
-  'X1-runtime'
-  'X2-API'
-  'X9-misc'
+t_labels=(
+  'T0-node'
+  'T1-runtime'
+  'T2-API'
 )
 
 echo "[+] Checking release notes (B) labels for $CI_COMMIT_BRANCH"
@@ -53,11 +52,11 @@ else
 fi
 
 if has_label  "$repo" "$pr" 'B1-note_worthy'; then
-  echo "[+] B1-note_worthy is chosen. Checking that there X-labels for $CI_COMMIT_BRANCH"
+  echo "[+] B1-note_worthy is chosen. Checking that there T-labels for $CI_COMMIT_BRANCH"
   if ensure_labels "${x_labels[@]}";  then
-    echo "[+] X-label detected. All is well."
+    echo "[+] T-label detected. All is well."
   else
-    echo "[!] X-label not detected. Please add one of: ${x_labels[*]}"
+    echo "[!] T-label not detected. Please add one of: ${t_labels[*]}"
     exit 1
   fi
 fi
