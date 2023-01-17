@@ -16,6 +16,7 @@ members = [
 	"pallets/dmp-queue",
 	"pallets/parachain-system",
 	"pallets/parachain-system/proc-macro",
+	"pallets/playground",
 	"pallets/session-benchmarking",
 	"pallets/xcm",
 	"pallets/xcmp-queue",

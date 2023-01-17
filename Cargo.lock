@@ -5969,6 +5969,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-playground"
+version = "0.0.1"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "xcm",
+]
+
+[[package]]
 name = "pallet-preimage"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech//substrate?branch=sv-locked-for-gav-xcm-v3-and-bridges-plus-assets#ab9809d10decf643925e06c82e70df30e2c4e42c"
@@ -13162,6 +13178,7 @@ dependencies = [
  "pallet-balances",
  "pallet-collator-selection",
  "pallet-multisig",
+ "pallet-playground",
  "pallet-proxy",
  "pallet-session",
  "pallet-timestamp",

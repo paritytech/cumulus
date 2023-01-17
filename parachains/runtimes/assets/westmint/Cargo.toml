@@ -70,6 +70,8 @@ parachain-info = { path = "../../../pallets/parachain-info", default-features = 
 parachains-common = { path = "../../../common", default-features = false }
 pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false, optional = true }
 
+pallet-playground = { path = "../../../../pallets/playground", default-features = false }
+
 [dev-dependencies]
 hex-literal = "0.3.4"
 asset-test-utils = { path = "../test-utils"}
@@ -124,6 +126,7 @@ try-runtime = [
 	"pallet-utility/try-runtime",
 	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",
+	"pallet-playground/try-runtime",
 ]
 std = [
 	"codec/std",
@@ -147,6 +150,7 @@ std = [
 	"pallet-uniques/std",
 	"pallet-utility/std",
 	"pallet-xcm/std",
+	"pallet-playground/std",
 	"polkadot-core-primitives/std",
 	"polkadot-parachain/std",
 	"polkadot-runtime-common/std",
