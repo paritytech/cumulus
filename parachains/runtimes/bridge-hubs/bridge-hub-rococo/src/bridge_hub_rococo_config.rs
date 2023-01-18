@@ -27,8 +27,8 @@ use bp_runtime::ChainId;
 use bridge_runtime_common::{
 	messages,
 	messages::{
-		target::FromBridgedChainMessagesProof, MessageBridge, ThisChainWithMessages,
-		UnderlyingChainProvider,
+		source::FromBridgedChainMessagesDeliveryProof, target::FromBridgedChainMessagesProof,
+		MessageBridge, ThisChainWithMessages, UnderlyingChainProvider,
 	},
 };
 use frame_support::{parameter_types, RuntimeDebug};
@@ -49,6 +49,13 @@ parameter_types! {
 	pub WococoGlobalConsensusNetwork: NetworkId = NetworkId::Wococo;
 	pub ActiveOutboundLanesToBridgeHubWococo: &'static [bp_messages::LaneId] = &[DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO];
 }
+
+/// Proof of messages, coming from Wococo.
+pub type FromWococoBridgeHubMessagesProof =
+	FromBridgedChainMessagesProof<bp_bridge_hub_wococo::Hash>;
+/// Messages delivery proof for Rococo Bridge Hub -> Wococo Bridge Hub messages.
+pub type ToWococoBridgeHubMessagesDeliveryProof =
+	FromBridgedChainMessagesDeliveryProof<bp_bridge_hub_wococo::Hash>;
 
 /// Dispatches received XCM messages from other bridge
 pub type OnBridgeHubRococoBlobDispatcher =
@@ -109,7 +116,7 @@ impl UnderlyingChainProvider for BridgeHubWococo {
 
 impl SourceHeaderChain for BridgeHubWococo {
 	type Error = &'static str;
-	type MessagesProof = FromBridgedChainMessagesProof<crate::Hash>;
+	type MessagesProof = FromWococoBridgeHubMessagesProof;
 
 	fn verify_messages_proof(
 		proof: Self::MessagesProof,

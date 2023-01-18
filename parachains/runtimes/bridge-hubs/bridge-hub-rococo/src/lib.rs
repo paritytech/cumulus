@@ -554,12 +554,16 @@ construct_runtime!(
 		// TODO:check-parameter - change back to 41 a align bridge pallets
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 36,
 
-		// Wococo bridge modules
+		// Rococo and Wococo Bridge Hubs are sharing the runtime, so this runtime has two sets of
+		// bridge pallets. Both are deployed at both runtimes, but only one set is actually used
+		// at particular runtime.
+
+		// With-Wococo bridge modules that are active (used) at Rococo Bridge Hub runtime.
 		BridgeWococoGrandpa: pallet_bridge_grandpa::<Instance1>::{Pallet, Call, Storage, Config<T>} = 41,
 		BridgeWococoParachain: pallet_bridge_parachains::<Instance1>::{Pallet, Call, Storage, Event<T>} = 42,
 		BridgeWococoMessages: pallet_bridge_messages::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 46,
 
-		// Rococo bridge modules
+		// With-Rococo bridge modules that are active (used) at Wococo Bridge Hub runtime.
 		BridgeRococoGrandpa: pallet_bridge_grandpa::<Instance2>::{Pallet, Call, Storage, Config<T>} = 43,
 		BridgeRococoParachain: pallet_bridge_parachains::<Instance2>::{Pallet, Call, Storage, Event<T>} = 44,
 		BridgeRococoMessages: pallet_bridge_messages::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 45,
@@ -597,6 +601,14 @@ mod benches {
 		// NOTE: Make sure you point to the individual modules below.
 		[pallet_xcm_benchmarks::fungible, XcmBalances]
 		[pallet_xcm_benchmarks::generic, XcmGeneric]
+		// Bridge pallets at Rococo
+		[pallet_bridge_grandpa, BridgeWococoGrandpa]
+		[pallet_bridge_parachains, BridgeParachainsBench::<Runtime, BridgeParachainWococoInstance>]
+		[pallet_bridge_messages, BridgeMessagesBench::<Runtime, WithBridgeHubWococoMessagesInstance>]
+		// Bridge pallets at Wococo
+		[pallet_bridge_grandpa, BridgeRococoGrandpa]
+		[pallet_bridge_parachains, BridgeParachainsBench::<Runtime, BridgeParachainRococoInstance>]
+		[pallet_bridge_messages, BridgeMessagesBench::<Runtime, WithBridgeHubRococoMessagesInstance>]
 	);
 }
 
@@ -824,6 +836,9 @@ impl_runtime_apis! {
 			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
 			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
+			use pallet_bridge_parachains::benchmarking::Pallet as BridgeParachainsBench;
+			use pallet_bridge_messages::benchmarking::Pallet as BridgeMessagesBench;
+
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
 
@@ -922,6 +937,122 @@ impl_runtime_apis! {
 
 			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
 			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
+
+			use bridge_runtime_common::messages_benchmarking::{prepare_message_delivery_proof, prepare_message_proof};
+			use pallet_bridge_messages::benchmarking::{
+				Config as BridgeMessagesConfig,
+				Pallet as BridgeMessagesBench,
+				MessageDeliveryProofParams,
+				MessageProofParams,
+			};
+
+			impl BridgeMessagesConfig<WithBridgeHubWococoMessagesInstance> for Runtime {
+				// TODO: remove me after bridges subtree update
+				fn bridged_relayer_id() -> AccountId { [0u8; 32].into() }
+				fn endow_account(_: &AccountId) {}
+				fn is_message_dispatched(_: bp_messages::MessageNonce) -> bool { true }
+
+				fn prepare_message_proof(
+					params: MessageProofParams,
+				) -> (bridge_hub_rococo_config::FromWococoBridgeHubMessagesProof, Weight) {
+					prepare_message_proof::<
+						Runtime,
+						(),
+						BridgeGrandpaWococoInstance,
+						bridge_hub_rococo_config::WithBridgeHubWococoMessageBridge,
+						bp_bridge_hub_wococo::Header,
+						bp_bridge_hub_wococo::Hasher,
+					>(params)
+				}
+
+				fn prepare_message_delivery_proof(
+					params: MessageDeliveryProofParams<AccountId>,
+				) -> bridge_hub_rococo_config::ToWococoBridgeHubMessagesDeliveryProof {
+					prepare_message_delivery_proof::<
+						Runtime,
+						BridgeGrandpaWococoInstance,
+						bridge_hub_rococo_config::WithBridgeHubWococoMessageBridge,
+						bp_bridge_hub_wococo::Header,
+						bp_bridge_hub_wococo::Hasher,
+					>(params)
+				}
+			}
+
+			impl BridgeMessagesConfig<WithBridgeHubRococoMessagesInstance> for Runtime {
+				// TODO: remove me after bridges subtree update
+				fn bridged_relayer_id() -> AccountId { [0u8; 32].into() }
+				fn endow_account(_: &AccountId) {}
+				fn is_message_dispatched(_: bp_messages::MessageNonce) -> bool { true }
+
+				fn prepare_message_proof(
+					params: MessageProofParams,
+				) -> (bridge_hub_wococo_config::FromRococoBridgeHubMessagesProof, Weight) {
+					prepare_message_proof::<
+						Runtime,
+						(),
+						BridgeGrandpaRococoInstance,
+						bridge_hub_wococo_config::WithBridgeHubRococoMessageBridge,
+						bp_bridge_hub_rococo::Header,
+						bp_bridge_hub_rococo::Hasher,
+					>(params)
+				}
+
+				fn prepare_message_delivery_proof(
+					params: MessageDeliveryProofParams<AccountId>,
+				) -> bridge_hub_wococo_config::ToRococoBridgeHubMessagesDeliveryProof {
+					prepare_message_delivery_proof::<
+						Runtime,
+						BridgeGrandpaRococoInstance,
+						bridge_hub_wococo_config::WithBridgeHubRococoMessageBridge,
+						bp_bridge_hub_rococo::Header,
+						bp_bridge_hub_rococo::Hasher,
+					>(params)
+				}
+			}
+
+			use bridge_runtime_common::parachains_benchmarking::prepare_parachain_heads_proof;
+			use pallet_bridge_parachains::benchmarking::{
+				Config as BridgeParachainsConfig,
+				Pallet as BridgeParachainsBench,
+			};
+
+			impl BridgeParachainsConfig<BridgeParachainWococoInstance> for Runtime {
+				fn prepare_parachain_heads_proof(
+					parachains: &[bp_polkadot_core::parachains::ParaId],
+					parachain_head_size: u32,
+					proof_size: bp_runtime::StorageProofSize,
+				) -> (
+					pallet_bridge_parachains::RelayBlockNumber,
+					pallet_bridge_parachains::RelayBlockHash,
+					bp_polkadot_core::parachains::ParaHeadsProof,
+					Vec<(bp_polkadot_core::parachains::ParaId, bp_polkadot_core::parachains::ParaHash)>,
+				) {
+					prepare_parachain_heads_proof::<Runtime, BridgeParachainWococoInstance>(
+						parachains,
+						parachain_head_size,
+						proof_size,
+					)
+				}
+			}
+
+			impl BridgeParachainsConfig<BridgeParachainRococoInstance> for Runtime {
+				fn prepare_parachain_heads_proof(
+					parachains: &[bp_polkadot_core::parachains::ParaId],
+					parachain_head_size: u32,
+					proof_size: bp_runtime::StorageProofSize,
+				) -> (
+					pallet_bridge_parachains::RelayBlockNumber,
+					pallet_bridge_parachains::RelayBlockHash,
+					bp_polkadot_core::parachains::ParaHeadsProof,
+					Vec<(bp_polkadot_core::parachains::ParaId, bp_polkadot_core::parachains::ParaHash)>,
+				) {
+					prepare_parachain_heads_proof::<Runtime, BridgeParachainRococoInstance>(
+						parachains,
+						parachain_head_size,
+						proof_size,
+					)
+				}
+			}
 
 			let whitelist: Vec<TrackedStorageKey> = vec![
 				// Block Number
