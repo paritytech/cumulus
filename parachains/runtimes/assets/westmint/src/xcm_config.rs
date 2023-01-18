@@ -33,10 +33,9 @@ use parachains_common::{
 	},
 };
 use polkadot_parachain::primitives::{Id as ParaId, Sibling};
-use sp_core::Get;
 use sp_runtime::traits::ConvertInto;
 use sp_std::marker::PhantomData;
-use xcm::latest::prelude::*;
+use xcm::latest::{prelude::*, Weight};
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
 	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, AsPrefixedGeneralIndex,
@@ -329,58 +328,46 @@ impl Contains<(MultiLocation, Junction)> for TrustedBridgedNetworks {
 	}
 }
 
-// TODO allow only Trap/Transact instructions from TrustedBridgedNetworks
+impl Contains<MultiLocation> for TrustedBridgedNetworks {
+	fn contains(origin: &MultiLocation) -> bool {
+		let consensus = match origin {
+			MultiLocation {
+				parents: 2,
+				interior: X2(GlobalConsensus(consensus), AccountId32 { .. }),
+			}
+			| MultiLocation {
+				parents: 2,
+				interior: X3(GlobalConsensus(consensus), Parachain(_), AccountId32 { .. }),
+			} => consensus,
+			_ => {
+				log::trace!(target: "xcm::contains_multi_location", "TrustedBridgedNetworks invalid MultiLocation: {:?}", origin);
+				return false;
+			},
+		};
+
+		Self::get()
+			.iter()
+			.find(|(_, configured_bridged_network)| match configured_bridged_network {
+				GlobalConsensus(bridged_network) => bridged_network.eq(&consensus),
+				_ => false,
+			})
+			.map_or_else(|| {
+				log::trace!(target: "xcm::contains_multi_location", "TrustedBridgedNetworks  GlobalConsensus: {:?} is not Trusted", consensus);
+				false
+			}, |_| {
+				log::trace!(target: "xcm::contains_multi_location", "TrustedBridgedNetworks  GlobalConsensus: {:?} is Trusted", consensus);
+				true
+			})
+	}
+}
+
 pub type BridgedCallsBarrier = (
-	AllowExecutionForTrapFrom<Everything>,
-	AllowExecutionForTransactFrom<Everything>,
+	AllowExecutionForBridgesOperationFrom<TrustedBridgedNetworks>,
 	// Expected responses are OK.
 	AllowKnownQueryResponses<PolkadotXcm>,
 	// Subscriptions for version tracking are OK.
 	AllowSubscriptionsFrom<Everything>,
 );
-
-pub struct AllowExecutionForTrapFrom<T>(PhantomData<T>);
-impl<T: Contains<MultiLocation>> ShouldExecute for AllowExecutionForTrapFrom<T> {
-	fn should_execute<RuntimeCall>(
-		origin: &MultiLocation,
-		instructions: &mut [Instruction<RuntimeCall>],
-		max_weight: xcm::latest::Weight,
-		_weight_credit: &mut xcm::latest::Weight,
-	) -> Result<(), ()> {
-		log::trace!(
-			target: "xcm::barriers",
-			"AllowExecutionForTrapFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, weight_credit: {:?}",
-			origin, instructions, max_weight, _weight_credit,
-		);
-
-		match instructions.first() {
-			Some(Trap { .. }) => Ok(()),
-			_ => Err(()),
-		}
-	}
-}
-
-pub struct AllowExecutionForTransactFrom<T>(PhantomData<T>);
-impl<T: Contains<MultiLocation>> ShouldExecute for AllowExecutionForTransactFrom<T> {
-	fn should_execute<RuntimeCall>(
-		origin: &MultiLocation,
-		instructions: &mut [Instruction<RuntimeCall>],
-		max_weight: xcm::latest::Weight,
-		_weight_credit: &mut xcm::latest::Weight,
-	) -> Result<(), ()> {
-		log::trace!(
-			target: "xcm::barriers",
-			"AllowExecutionForTransactFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, weight_credit: {:?}",
-			origin, instructions, max_weight, _weight_credit,
-		);
-
-		match instructions.first() {
-			// TODO:checkparameter - filter just remark/remark_with_event
-			Some(Transact { .. }) => Ok(()),
-			_ => Err(()),
-		}
-	}
-}
 
 pub struct BridgedSignedProxyAccountAsNative<LocationConverter, RuntimeOrigin>(
 	PhantomData<(LocationConverter, RuntimeOrigin)>,
@@ -419,49 +406,66 @@ where
 	}
 }
 
+/// Allow execution of specific messages from specified bridged networks
+/// At first checks `origin` comes from specified networks
+/// Then verifies if each instruction is Trap or Transact
+pub struct AllowExecutionForBridgesOperationFrom<BridgedNetworks>(PhantomData<BridgedNetworks>);
+impl<BridgedNetworks: Contains<MultiLocation>> ShouldExecute
+	for AllowExecutionForBridgesOperationFrom<BridgedNetworks>
+{
+	fn should_execute<RuntimeCall>(
+		origin: &MultiLocation,
+		instructions: &mut [Instruction<RuntimeCall>],
+		_max_weight: Weight,
+		_weight_credit: &mut Weight,
+	) -> Result<(), ()> {
+		log::trace!(
+			target: "xcm::barriers",
+			"AllowExecutionForBridgesOperationFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, weight_credit: {:?}",
+			origin, instructions, _max_weight, _weight_credit,
+		);
+
+		if !BridgedNetworks::contains(origin) {
+			log::trace!(target: "xcm::barriers", "AllowExecutionForBridgesOperationsFrom barrier failed on invalid Origin: {:?}", origin);
+			return Err(());
+		}
+
+		log::trace!(target: "xcm::barriers", "AllowExecutionForBridgesOperationsFrom barrier passed");
+		Ok(())
+	}
+}
+
 /// Extracts the `AccountId32` from the bridged `MultiLocation` if the network matches.
 pub struct BridgedProxyAccountId<BridgedNetworks, AccountId>(
 	PhantomData<(BridgedNetworks, AccountId)>,
 );
 impl<
-		BridgedNetworks: Get<sp_std::vec::Vec<(MultiLocation, Junction)>>,
+		BridgedNetworks: Contains<MultiLocation>,
 		AccountId: From<[u8; 32]> + Into<[u8; 32]> + Clone,
 	> Convert<MultiLocation, AccountId> for BridgedProxyAccountId<BridgedNetworks, AccountId>
 {
 	fn convert(location: MultiLocation) -> Result<AccountId, MultiLocation> {
 		log::trace!(target: "xcm::location_conversion", "BridgedProxyAccountId source: {:?}", location);
 
-		let (consensus, id) = match location {
+		if !BridgedNetworks::contains(&location) {
+			log::trace!(target: "xcm::location_conversion", "BridgedProxyAccountId MultiLocation: {:?} is not Trusted", location);
+			return Err(location);
+		}
+
+		match location {
 			MultiLocation {
 				parents: 2,
-				interior: X2(GlobalConsensus(consensus), AccountId32 { id, network: _ }),
+				interior: X2(GlobalConsensus(_), AccountId32 { id, network: _ }),
 			}
 			| MultiLocation {
 				parents: 2,
-				interior:
-					X3(GlobalConsensus(consensus), Parachain(_), AccountId32 { id, network: _ }),
-			} => (consensus, id),
+				interior: X3(GlobalConsensus(_), Parachain(_), AccountId32 { id, network: _ }),
+			} => Ok(id.into()),
 			_ => {
-				log::error!(target: "xcm::location_conversion", "BridgedProxyAccountId invalid MultiLocation: {:?}", location);
-				return Err(location);
-			},
-		};
-
-		log::trace!(target: "xcm::location_conversion", "BridgedProxyAccountId found GlobalConsensus: {:?} and AccountId32: {:?}", consensus, id);
-
-		BridgedNetworks::get()
-			.iter()
-			.find(|(_, configured_bridged_network)| match configured_bridged_network {
-				GlobalConsensus(bridged_network) => bridged_network.eq(&consensus),
-				_ => false,
-			})
-			.map_or_else(|| {
-				log::trace!(target: "xcm::location_conversion", "BridgedProxyAccountId GlobalConsensus: {:?} is not trusted", consensus);
+				log::trace!(target: "xcm::location_conversion", "BridgedProxyAccountId cannot extract AccountId from MultiLocation: {:?}", location);
 				Err(location)
-			}, |_| {
-				log::trace!(target: "xcm::location_conversion", "BridgedProxyAccountId prepared final AccountId");
-				Ok(id.into())
-			})
+			},
+		}
 	}
 
 	fn reverse(who: AccountId) -> Result<MultiLocation, AccountId> {
