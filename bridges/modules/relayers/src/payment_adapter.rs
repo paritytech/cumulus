@@ -14,49 +14,45 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Code that allows relayers pallet to be used as a delivery+dispatch payment mechanism
-//! for the messages pallet.
+//! Code that allows relayers pallet to be used as a payment mechanism for the messages pallet.
 
 use crate::{Config, Pallet};
 
-use bp_messages::source_chain::{MessageDeliveryAndDispatchPayment, RelayersRewards};
-use frame_support::sp_runtime::SaturatedConversion;
+use bp_messages::source_chain::{DeliveryConfirmationPayments, RelayersRewards};
+use frame_support::{sp_runtime::SaturatedConversion, traits::Get};
 use sp_arithmetic::traits::{Saturating, UniqueSaturatedFrom, Zero};
 use sp_std::{collections::vec_deque::VecDeque, marker::PhantomData, ops::RangeInclusive};
 
 /// Adapter that allows relayers pallet to be used as a delivery+dispatch payment mechanism
 /// for the messages pallet.
-pub struct MessageDeliveryAndDispatchPaymentAdapter<T, MessagesInstance>(
-	PhantomData<(T, MessagesInstance)>,
+pub struct DeliveryConfirmationPaymentsAdapter<T, DeliveryReward, ConfirmationReward>(
+	PhantomData<(T, DeliveryReward, ConfirmationReward)>,
 );
 
-impl<T, MessagesInstance> MessageDeliveryAndDispatchPayment<T::RuntimeOrigin, T::AccountId>
-	for MessageDeliveryAndDispatchPaymentAdapter<T, MessagesInstance>
+impl<T, DeliveryReward, ConfirmationReward> DeliveryConfirmationPayments<T::AccountId>
+	for DeliveryConfirmationPaymentsAdapter<T, DeliveryReward, ConfirmationReward>
 where
-	T: Config + pallet_bridge_messages::Config<MessagesInstance>,
-	MessagesInstance: 'static,
+	T: Config,
+	DeliveryReward: Get<T::Reward>,
+	ConfirmationReward: Get<T::Reward>,
 {
 	type Error = &'static str;
 
-	fn pay_relayers_rewards(
+	fn pay_reward(
 		lane_id: bp_messages::LaneId,
 		messages_relayers: VecDeque<bp_messages::UnrewardedRelayer<T::AccountId>>,
 		confirmation_relayer: &T::AccountId,
 		received_range: &RangeInclusive<bp_messages::MessageNonce>,
 	) {
-		let relayers_rewards = pallet_bridge_messages::calc_relayers_rewards::<T, MessagesInstance>(
-			messages_relayers,
-			received_range,
-		);
+		let relayers_rewards =
+			bp_messages::calc_relayers_rewards::<T::AccountId>(messages_relayers, received_range);
 
 		register_relayers_rewards::<T>(
 			confirmation_relayer,
 			relayers_rewards,
 			lane_id,
-			// TODO (https://github.com/paritytech/parity-bridges-common/issues/1318): this shall be fixed
-			// in some way. ATM the future of the `register_relayer_reward` is not yet known
-			100_000_u32.into(),
-			10_000_u32.into(),
+			DeliveryReward::get(),
+			ConfirmationReward::get(),
 		);
 	}
 }

@@ -18,9 +18,7 @@
 
 use crate as pallet_bridge_relayers;
 
-use bp_messages::{
-	source_chain::ForbidOutboundMessages, target_chain::ForbidInboundMessages, LaneId,
-};
+use bp_messages::LaneId;
 use bp_relayers::PaymentProcedure;
 use frame_support::{parameter_types, weights::RuntimeDbWeight};
 use sp_core::H256;
@@ -43,7 +41,6 @@ frame_support::construct_runtime! {
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Event<T>},
-		Messages: pallet_bridge_messages::{Pallet, Event<T>},
 		Relayers: pallet_bridge_relayers::{Pallet, Call, Event<T>},
 	}
 }
@@ -91,34 +88,6 @@ impl pallet_balances::Config for TestRuntime {
 	type ReserveIdentifier = ();
 }
 
-parameter_types! {
-	pub const TestBridgedChainId: bp_runtime::ChainId = *b"test";
-	pub ActiveOutboundLanes: &'static [bp_messages::LaneId] = &[[0, 0, 0, 0]];
-}
-
-// we're not testing messages pallet here, so values in this config might be crazy
-impl pallet_bridge_messages::Config for TestRuntime {
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
-	type ActiveOutboundLanes = ActiveOutboundLanes;
-	type MaxUnrewardedRelayerEntriesAtInboundLane = frame_support::traits::ConstU64<8>;
-	type MaxUnconfirmedMessagesAtInboundLane = frame_support::traits::ConstU64<8>;
-
-	type MaximalOutboundPayloadSize = frame_support::traits::ConstU32<1024>;
-	type OutboundPayload = ();
-
-	type InboundPayload = ();
-	type InboundRelayer = AccountId;
-
-	type TargetHeaderChain = ForbidOutboundMessages;
-	type LaneMessageVerifier = ForbidOutboundMessages;
-	type MessageDeliveryAndDispatchPayment = ();
-
-	type SourceHeaderChain = ForbidInboundMessages;
-	type MessageDispatch = ForbidInboundMessages;
-	type BridgedChainId = TestBridgedChainId;
-}
-
 impl pallet_bridge_relayers::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type Reward = Balance;
@@ -127,7 +96,7 @@ impl pallet_bridge_relayers::Config for TestRuntime {
 }
 
 /// Message lane that we're using in tests.
-pub const TEST_LANE_ID: LaneId = [0, 0, 0, 0];
+pub const TEST_LANE_ID: LaneId = LaneId([0, 0, 0, 0]);
 
 /// Regular relayer that may receive rewards.
 pub const REGULAR_RELAYER: AccountId = 1;

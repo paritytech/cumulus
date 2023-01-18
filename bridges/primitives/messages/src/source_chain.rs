@@ -88,16 +88,9 @@ pub trait LaneMessageVerifier<SenderOrigin, Payload> {
 	) -> Result<(), Self::Error>;
 }
 
-/// Message delivery payment. It is called as a part of submit-message transaction. Transaction
-/// submitter is paying (in source chain tokens/assets) for:
-///
-/// 1) submit-message-transaction-fee itself. This fee is not included in the
-/// `delivery_and_dispatch_fee` and is withheld by the regular transaction payment mechanism;
-/// 2) message-delivery-transaction-fee. It is submitted to the target node by relayer;
-/// 3) message-dispatch fee. It is paid by relayer for processing message by target chain;
-/// 4) message-receiving-delivery-transaction-fee. It is submitted to the source node
-/// by relayer.
-pub trait MessageDeliveryAndDispatchPayment<SenderOrigin, AccountId> {
+/// Manages payments that are happening at the source chain during delivery confirmation
+/// transaction.
+pub trait DeliveryConfirmationPayments<AccountId> {
 	/// Error type.
 	type Error: Debug + Into<&'static str>;
 
@@ -105,7 +98,7 @@ pub trait MessageDeliveryAndDispatchPayment<SenderOrigin, AccountId> {
 	///
 	/// The implementation may also choose to pay reward to the `confirmation_relayer`, which is
 	/// a relayer that has submitted delivery confirmation transaction.
-	fn pay_relayers_rewards(
+	fn pay_reward(
 		lane_id: LaneId,
 		messages_relayers: VecDeque<UnrewardedRelayer<AccountId>>,
 		confirmation_relayer: &AccountId,
@@ -113,15 +106,16 @@ pub trait MessageDeliveryAndDispatchPayment<SenderOrigin, AccountId> {
 	);
 }
 
-impl<SenderOrigin, AccountId> MessageDeliveryAndDispatchPayment<SenderOrigin, AccountId> for () {
+impl<AccountId> DeliveryConfirmationPayments<AccountId> for () {
 	type Error = &'static str;
 
-	fn pay_relayers_rewards(
+	fn pay_reward(
 		_lane_id: LaneId,
 		_messages_relayers: VecDeque<UnrewardedRelayer<AccountId>>,
 		_confirmation_relayer: &AccountId,
 		_received_range: &RangeInclusive<MessageNonce>,
 	) {
+		// this implementation is not rewarding relayers at all
 	}
 }
 
@@ -202,12 +196,10 @@ impl<SenderOrigin, Payload> LaneMessageVerifier<SenderOrigin, Payload> for Forbi
 	}
 }
 
-impl<SenderOrigin, AccountId> MessageDeliveryAndDispatchPayment<SenderOrigin, AccountId>
-	for ForbidOutboundMessages
-{
+impl<AccountId> DeliveryConfirmationPayments<AccountId> for ForbidOutboundMessages {
 	type Error = &'static str;
 
-	fn pay_relayers_rewards(
+	fn pay_reward(
 		_lane_id: LaneId,
 		_messages_relayers: VecDeque<UnrewardedRelayer<AccountId>>,
 		_confirmation_relayer: &AccountId,

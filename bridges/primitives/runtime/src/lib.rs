@@ -27,12 +27,13 @@ use frame_system::RawOrigin;
 use scale_info::TypeInfo;
 use sp_core::{hash::H256, storage::StorageKey};
 use sp_io::hashing::blake2_256;
-use sp_runtime::traits::{BadOrigin, Header as HeaderT};
+use sp_runtime::traits::{BadOrigin, Header as HeaderT, UniqueSaturatedInto};
 use sp_std::{convert::TryFrom, fmt::Debug, vec, vec::Vec};
 
 pub use chain::{
 	AccountIdOf, AccountPublicOf, BalanceOf, BlockNumberOf, Chain, EncodedOrDecodedCall, HashOf,
-	HasherOf, HeaderOf, IndexOf, Parachain, SignatureOf, TransactionEraOf,
+	HasherOf, HeaderOf, IndexOf, Parachain, SignatureOf, TransactionEraOf, UnderlyingChainOf,
+	UnderlyingChainProvider,
 };
 pub use frame_support::storage::storage_prefix as storage_value_final_key;
 use num_traits::{CheckedSub, One};
@@ -46,6 +47,7 @@ pub use storage_types::BoundedStorageValue;
 #[cfg(feature = "std")]
 pub use storage_proof::craft_valid_storage_proof;
 
+pub mod extensions;
 pub mod messages;
 
 mod chain;
@@ -96,9 +98,36 @@ pub const ROOT_ACCOUNT_DERIVATION_PREFIX: &[u8] = b"pallet-bridge/account-deriva
 
 /// Generic header Id.
 #[derive(
-	RuntimeDebug, Default, Clone, Encode, Decode, Copy, Eq, Hash, PartialEq, PartialOrd, Ord,
+	RuntimeDebug,
+	Default,
+	Clone,
+	Encode,
+	Decode,
+	Copy,
+	Eq,
+	Hash,
+	MaxEncodedLen,
+	PartialEq,
+	PartialOrd,
+	Ord,
+	TypeInfo,
 )]
 pub struct HeaderId<Hash, Number>(pub Number, pub Hash);
+
+impl<Hash: Copy, Number: Copy> HeaderId<Hash, Number> {
+	/// Return header number.
+	pub fn number(&self) -> Number {
+		self.0
+	}
+
+	/// Return header hash.
+	pub fn hash(&self) -> Hash {
+		self.1
+	}
+}
+
+/// Header id used by the chain.
+pub type HeaderIdOf<C> = HeaderId<HashOf<C>, BlockNumberOf<C>>;
 
 /// Generic header id provider.
 pub trait HeaderIdProvider<Header: HeaderT> {
@@ -201,7 +230,9 @@ pub enum TransactionEra<BlockNumber, BlockHash> {
 	Mortal(HeaderId<BlockHash, BlockNumber>, u32),
 }
 
-impl<BlockNumber: Copy + Into<u64>, BlockHash: Copy> TransactionEra<BlockNumber, BlockHash> {
+impl<BlockNumber: Copy + UniqueSaturatedInto<u64>, BlockHash: Copy>
+	TransactionEra<BlockNumber, BlockHash>
+{
 	/// Prepare transaction era, based on mortality period and current best block number.
 	pub fn new(
 		best_block_id: HeaderId<BlockHash, BlockNumber>,
@@ -229,8 +260,10 @@ impl<BlockNumber: Copy + Into<u64>, BlockHash: Copy> TransactionEra<BlockNumber,
 	pub fn frame_era(&self) -> sp_runtime::generic::Era {
 		match *self {
 			TransactionEra::Immortal => sp_runtime::generic::Era::immortal(),
+			// `unique_saturated_into` is fine here - mortality `u64::MAX` is not something we
+			// expect to see on any chain
 			TransactionEra::Mortal(header_id, period) =>
-				sp_runtime::generic::Era::mortal(period as _, header_id.0.into()),
+				sp_runtime::generic::Era::mortal(period as _, header_id.0.unique_saturated_into()),
 		}
 	}
 

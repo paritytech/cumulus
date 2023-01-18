@@ -24,7 +24,9 @@ use bp_runtime::{BasicOperatingMode, OperatingMode};
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::RuntimeDebug;
 use scale_info::TypeInfo;
-use sp_std::{collections::vec_deque::VecDeque, prelude::*};
+use source_chain::RelayersRewards;
+use sp_core::TypeId;
+use sp_std::{collections::vec_deque::VecDeque, ops::RangeInclusive, prelude::*};
 
 pub mod source_chain;
 pub mod storage_keys;
@@ -65,8 +67,27 @@ impl OperatingMode for MessagesOperatingMode {
 	}
 }
 
-/// Lane identifier.
-pub type LaneId = [u8; 4];
+/// Lane id which implements `TypeId`.
+#[derive(
+	Clone, Copy, Decode, Default, Encode, Eq, Ord, PartialOrd, PartialEq, TypeInfo, MaxEncodedLen,
+)]
+pub struct LaneId(pub [u8; 4]);
+
+impl core::fmt::Debug for LaneId {
+	fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+		self.0.fmt(fmt)
+	}
+}
+
+impl AsRef<[u8]> for LaneId {
+	fn as_ref(&self) -> &[u8] {
+		&self.0
+	}
+}
+
+impl TypeId for LaneId {
+	const TYPE_ID: [u8; 4] = *b"blan";
+}
 
 /// Message nonce. Valid messages will never have 0 nonce.
 pub type MessageNonce = u64;
@@ -349,6 +370,39 @@ pub fn total_unrewarded_messages<RelayerId>(
 	}
 }
 
+/// Calculate the number of messages that the relayers have delivered.
+pub fn calc_relayers_rewards<AccountId>(
+	messages_relayers: VecDeque<UnrewardedRelayer<AccountId>>,
+	received_range: &RangeInclusive<MessageNonce>,
+) -> RelayersRewards<AccountId>
+where
+	AccountId: sp_std::cmp::Ord,
+{
+	// remember to reward relayers that have delivered messages
+	// this loop is bounded by `T::MaxUnrewardedRelayerEntriesAtInboundLane` on the bridged chain
+	let mut relayers_rewards = RelayersRewards::new();
+	for entry in messages_relayers {
+		let nonce_begin = sp_std::cmp::max(entry.messages.begin, *received_range.start());
+		let nonce_end = sp_std::cmp::min(entry.messages.end, *received_range.end());
+		if nonce_end >= nonce_begin {
+			*relayers_rewards.entry(entry.relayer).or_default() += nonce_end - nonce_begin + 1;
+		}
+	}
+	relayers_rewards
+}
+
+/// A minimized version of `pallet-bridge-messages::Call` that can be used without a runtime.
+#[derive(Encode, Decode, Debug, PartialEq, Eq, Clone, TypeInfo)]
+#[allow(non_camel_case_types)]
+pub enum BridgeMessagesCall<AccountId, MessagesProof, MessagesDeliveryProof> {
+	/// `pallet-bridge-messages::Call::receive_messages_proof`
+	#[codec(index = 2)]
+	receive_messages_proof(AccountId, MessagesProof, u32, Weight),
+	/// `pallet-bridge-messages::Call::receive_messages_delivery_proof`
+	#[codec(index = 3)]
+	receive_messages_delivery_proof(MessagesDeliveryProof, UnrewardedRelayersState),
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -397,11 +451,7 @@ mod tests {
 			let difference = (expected_size.unwrap() as f64 - actual_size as f64).abs();
 			assert!(
 				difference / (std::cmp::min(actual_size, expected_size.unwrap()) as f64) < 0.1,
-				"Too large difference between actual ({}) and expected ({:?}) inbound lane data size. Test case: {}+{}",
-				actual_size,
-				expected_size,
-				relayer_entries,
-				messages_count,
+				"Too large difference between actual ({actual_size}) and expected ({expected_size:?}) inbound lane data size. Test case: {relayer_entries}+{messages_count}",
 			);
 		}
 	}
@@ -414,5 +464,10 @@ mod tests {
 		assert!(delivered_messages.contains_message(100));
 		assert!(delivered_messages.contains_message(150));
 		assert!(!delivered_messages.contains_message(151));
+	}
+
+	#[test]
+	fn lane_id_debug_format_matches_inner_array_format() {
+		assert_eq!(format!("{:?}", LaneId([0, 0, 0, 0])), format!("{:?}", [0, 0, 0, 0]),);
 	}
 }

@@ -18,7 +18,7 @@
 #![allow(clippy::from_over_into)]
 
 use bp_runtime::Chain;
-use frame_support::{construct_runtime, parameter_types, weights::Weight};
+use frame_support::{construct_runtime, parameter_types, traits::ConstU64, weights::Weight};
 use sp_core::sr25519::Signature;
 use sp_runtime::{
 	testing::{Header, H256},
@@ -34,7 +34,6 @@ type Block = frame_system::mocking::MockBlock<TestRuntime>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 
 pub const MAX_BRIDGED_AUTHORITIES: u32 = 2048;
-pub const MAX_HEADER_SIZE: u32 = 65536;
 
 use crate as grandpa;
 
@@ -50,7 +49,6 @@ construct_runtime! {
 }
 
 parameter_types! {
-	pub const BlockHashCount: u64 = 250;
 	pub const MaximumBlockWeight: Weight = Weight::from_ref_time(1024);
 	pub const MaximumBlockLength: u32 = 2 * 1024;
 	pub const AvailableBlockRatio: Perbill = Perbill::one();
@@ -67,7 +65,7 @@ impl frame_system::Config for TestRuntime {
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type RuntimeEvent = ();
-	type BlockHashCount = BlockHashCount;
+	type BlockHashCount = ConstU64<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
 	type AccountData = ();
@@ -95,7 +93,6 @@ impl grandpa::Config for TestRuntime {
 	type MaxRequests = MaxRequests;
 	type HeadersToKeep = HeadersToKeep;
 	type MaxBridgedAuthorities = frame_support::traits::ConstU32<MAX_BRIDGED_AUTHORITIES>;
-	type MaxBridgedHeaderSize = frame_support::traits::ConstU32<MAX_HEADER_SIZE>;
 	type WeightInfo = ();
 }
 

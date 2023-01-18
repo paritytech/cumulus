@@ -20,17 +20,17 @@
 #![warn(missing_docs)]
 
 pub use beefy_merkle_tree::{merkle_root, Keccak256 as BeefyKeccak256};
-pub use beefy_primitives::{
-	crypto::{AuthorityId as EcdsaValidatorId, AuthoritySignature as EcdsaValidatorSignature},
-	known_payloads::MMR_ROOT_ID as MMR_ROOT_PAYLOAD_ID,
-	mmr::{BeefyAuthoritySet, MmrLeafVersion},
-	BeefyAuthorityId, BeefyVerify, Commitment, Payload as BeefyPayload, SignedCommitment,
-	ValidatorSet, ValidatorSetId, BEEFY_ENGINE_ID,
-};
 pub use pallet_beefy_mmr::BeefyEcdsaToEthereum;
 pub use pallet_mmr::{
 	primitives::{DataOrHash as MmrDataOrHash, Proof as MmrProof},
 	verify_leaves_proof as verify_mmr_leaves_proof,
+};
+pub use sp_beefy::{
+	crypto::{AuthorityId as EcdsaValidatorId, AuthoritySignature as EcdsaValidatorSignature},
+	known_payloads::MMR_ROOT_ID as MMR_ROOT_PAYLOAD_ID,
+	mmr::{BeefyAuthoritySet, MmrLeafVersion},
+	BeefyAuthorityId, Commitment, Payload as BeefyPayload, SignedCommitment, ValidatorSet,
+	ValidatorSetId, BEEFY_ENGINE_ID,
 };
 
 use bp_runtime::{BasicOperatingMode, BlockNumberOf, Chain, HashOf};
@@ -39,7 +39,7 @@ use frame_support::Parameter;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{Convert, MaybeSerializeDeserialize},
-	RuntimeDebug,
+	RuntimeAppPublic, RuntimeDebug,
 };
 use sp_std::prelude::*;
 
@@ -72,7 +72,8 @@ pub trait ChainWithBeefy: Chain {
 		+ Copy
 		+ AsRef<[u8]>
 		+ Default
-		+ MaybeSerializeDeserialize;
+		+ MaybeSerializeDeserialize
+		+ PartialOrd;
 
 	/// The type expected for the MMR leaf extra data.
 	type BeefyMmrLeafExtra: Parameter;
@@ -80,12 +81,7 @@ pub trait ChainWithBeefy: Chain {
 	/// A way to identify a BEEFY validator.
 	///
 	/// Corresponds to the `BeefyId` field of the `pallet-beefy` configuration.
-	type AuthorityId: BeefyAuthorityId + Parameter;
-
-	/// The signature type used by BEEFY.
-	///
-	/// Corresponds to the `BeefyId` field of the `pallet-beefy` configuration.
-	type Signature: BeefyVerify<Self::CommitmentHasher, Signer = Self::AuthorityId> + Parameter;
+	type AuthorityId: BeefyAuthorityId<Self::CommitmentHasher> + Parameter;
 
 	/// A way to convert validator id to its raw representation in the BEEFY merkle tree.
 	///
@@ -99,9 +95,10 @@ pub type BeefyAuthorityIdOf<C> = <C as ChainWithBeefy>::AuthorityId;
 /// BEEFY validator set, containing both validator identifiers and the numeric set id.
 pub type BeefyAuthoritySetOf<C> = ValidatorSet<BeefyAuthorityIdOf<C>>;
 /// BEEFY authority set, containing both validator identifiers and the numeric set id.
-pub type BeefyAuthoritySetInfoOf<C> = beefy_primitives::mmr::BeefyAuthoritySet<MmrHashOf<C>>;
+pub type BeefyAuthoritySetInfoOf<C> = sp_beefy::mmr::BeefyAuthoritySet<MmrHashOf<C>>;
 /// BEEFY validator signature used by given Substrate chain.
-pub type BeefyValidatorSignatureOf<C> = <C as ChainWithBeefy>::Signature;
+pub type BeefyValidatorSignatureOf<C> =
+	<<C as ChainWithBeefy>::AuthorityId as RuntimeAppPublic>::Signature;
 /// Signed BEEFY commitment used by given Substrate chain.
 pub type BeefySignedCommitmentOf<C> =
 	SignedCommitment<BlockNumberOf<C>, BeefyValidatorSignatureOf<C>>;
@@ -119,12 +116,8 @@ pub type BeefyMmrLeafExtraOf<C> = <C as ChainWithBeefy>::BeefyMmrLeafExtra;
 /// the given Substrate chain.
 pub type BeefyAuthorityIdToMerkleLeafOf<C> = <C as ChainWithBeefy>::AuthorityIdToMerkleLeaf;
 /// Actual type of leafs in the BEEFY MMR.
-pub type BeefyMmrLeafOf<C> = beefy_primitives::mmr::MmrLeaf<
-	BlockNumberOf<C>,
-	HashOf<C>,
-	MmrHashOf<C>,
-	BeefyMmrLeafExtraOf<C>,
->;
+pub type BeefyMmrLeafOf<C> =
+	sp_beefy::mmr::MmrLeaf<BlockNumberOf<C>, HashOf<C>, MmrHashOf<C>, BeefyMmrLeafExtraOf<C>>;
 
 /// Data required for initializing the BEEFY pallet.
 ///

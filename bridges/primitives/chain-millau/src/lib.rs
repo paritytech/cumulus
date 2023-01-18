@@ -27,7 +27,7 @@ use bp_messages::{
 use bp_runtime::{decl_bridge_runtime_apis, Chain};
 use frame_support::{
 	dispatch::DispatchClass,
-	weights::{constants::WEIGHT_PER_SECOND, IdentityFee, Weight},
+	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, IdentityFee, Weight},
 	RuntimeDebug,
 };
 use frame_system::limits;
@@ -60,7 +60,9 @@ pub const TX_EXTRA_BYTES: u32 = 103;
 ///
 /// This represents 0.5 seconds of compute assuming a target block time of six seconds.
 // TODO: https://github.com/paritytech/parity-bridges-common/issues/1543 - remove `set_proof_size`
-pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.set_proof_size(1_000).saturating_div(2);
+pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND)
+	.set_proof_size(1_000)
+	.saturating_div(2);
 
 /// Represents the portion of a block that will be used by Normal extrinsics.
 pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
@@ -80,9 +82,6 @@ pub const SESSION_LENGTH: BlockNumber = 5 * time_units::MINUTES;
 
 /// Maximal number of GRANDPA authorities at Millau.
 pub const MAX_AUTHORITIES_COUNT: u32 = 5;
-
-/// Maximal SCALE-encoded header size (in bytes) at Millau.
-pub const MAX_HEADER_SIZE: u32 = 1024;
 
 /// Re-export `time_units` to make usage easier.
 pub use time_units::*;
@@ -163,7 +162,6 @@ impl ChainWithBeefy for Millau {
 	type MmrHash = <Keccak256 as sp_runtime::traits::Hash>::Output;
 	type BeefyMmrLeafExtra = ();
 	type AuthorityId = bp_beefy::EcdsaValidatorId;
-	type Signature = bp_beefy::EcdsaValidatorSignature;
 	type AuthorityIdToMerkleLeaf = bp_beefy::BeefyEcdsaToEthereum;
 }
 
