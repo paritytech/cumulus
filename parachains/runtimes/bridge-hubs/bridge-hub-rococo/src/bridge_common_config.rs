@@ -26,7 +26,6 @@ use scale_info::TypeInfo;
 use xcm::latest::prelude::*;
 use xcm_builder::{DispatchBlob, DispatchBlobError, HaulBlob, HaulBlobError};
 
-// TODO:check-parameter - we could possibly use BridgeMessage from xcm:v3 stuff
 /// PLain "XCM" payload, which we transfer through bridge
 pub type XcmAsPlainPayload = sp_std::prelude::Vec<u8>;
 

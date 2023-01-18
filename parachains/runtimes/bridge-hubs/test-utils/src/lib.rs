@@ -16,7 +16,7 @@
 
 use bp_messages::{
 	target_chain::{DispatchMessage, DispatchMessageData},
-	MessageKey,
+	LaneId, MessageKey,
 };
 use cumulus_primitives_core::{AbridgedHrmpChannel, ParaId, PersistedValidationData};
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
@@ -30,7 +30,7 @@ use frame_support::{
 use parachains_common::AccountId;
 use polkadot_parachain::primitives::{HrmpChannelId, RelayChainBlockNumber};
 use xcm::{latest::prelude::*, prelude::XcmVersion};
-use xcm_builder::{HaulBlob, HaulBlobExporter};
+use xcm_builder::{HaulBlob, HaulBlobError, HaulBlobExporter};
 use xcm_executor::traits::{validate_export, ExportXcm};
 
 /// Dummy xcm
@@ -40,7 +40,7 @@ pub fn dummy_xcm() -> Xcm<()> {
 
 pub fn wrap_as_dispatch_message(payload: Vec<u8>) -> DispatchMessage<Vec<u8>> {
 	DispatchMessage {
-		key: MessageKey { lane_id: [0, 0, 0, 0], nonce: 1 },
+		key: MessageKey { lane_id: LaneId([0, 0, 0, 0]), nonce: 1 },
 		data: DispatchMessageData { payload: Ok(payload) },
 	}
 }
@@ -59,8 +59,9 @@ macro_rules! grab_haul_blob (
 
 		struct $name;
 		impl HaulBlob for $name {
-			fn haul_blob(blob: Vec<u8>) {
+			fn haul_blob(blob: Vec<u8>) -> Result<(), HaulBlobError>{
 				$grabbed_payload.with(|rm| *rm.borrow_mut() = Some(blob));
+				Ok(())
 			}
 		}
 	}
