@@ -52,24 +52,21 @@ use crate::{
 
 use bp_messages::{
 	source_chain::{
-		LaneMessageVerifier, MessageDeliveryAndDispatchPayment, RelayersRewards,
-		SendMessageArtifacts, TargetHeaderChain,
+		DeliveryConfirmationPayments, LaneMessageVerifier, SendMessageArtifacts, TargetHeaderChain,
 	},
 	target_chain::{
-		DispatchMessage, MessageDispatch, ProvedLaneMessages, ProvedMessages, SourceHeaderChain,
+		DeliveryPayments, DispatchMessage, MessageDispatch, ProvedLaneMessages, ProvedMessages,
+		SourceHeaderChain,
 	},
 	total_unrewarded_messages, DeliveredMessages, InboundLaneData, InboundMessageDetails, LaneId,
 	MessageKey, MessageNonce, MessagePayload, MessagesOperatingMode, OutboundLaneData,
-	OutboundMessageDetails, UnrewardedRelayer, UnrewardedRelayersState,
+	OutboundMessageDetails, UnrewardedRelayersState,
 };
 use bp_runtime::{BasicOperatingMode, ChainId, OwnedBridgeModule, Size};
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{dispatch::PostDispatchInfo, ensure, fail, traits::Get};
 use sp_runtime::traits::UniqueSaturatedFrom;
-use sp_std::{
-	cell::RefCell, collections::vec_deque::VecDeque, marker::PhantomData, ops::RangeInclusive,
-	prelude::*,
-};
+use sp_std::{cell::RefCell, marker::PhantomData, prelude::*};
 
 mod inbound_lane;
 mod outbound_lane;
@@ -146,6 +143,8 @@ pub mod pallet {
 		/// Identifier of relayer that deliver messages to this chain. Relayer reward is paid on the
 		/// bridged chain.
 		type InboundRelayer: Parameter + MaxEncodedLen;
+		/// Delivery payments.
+		type DeliveryPayments: DeliveryPayments<Self::AccountId>;
 
 		// Types that are used by outbound_lane (on source chain).
 
@@ -153,11 +152,8 @@ pub mod pallet {
 		type TargetHeaderChain: TargetHeaderChain<Self::OutboundPayload, Self::AccountId>;
 		/// Message payload verifier.
 		type LaneMessageVerifier: LaneMessageVerifier<Self::RuntimeOrigin, Self::OutboundPayload>;
-		/// Message delivery payment.
-		type MessageDeliveryAndDispatchPayment: MessageDeliveryAndDispatchPayment<
-			Self::RuntimeOrigin,
-			Self::AccountId,
-		>;
+		/// Delivery confirmation payments.
+		type DeliveryConfirmationPayments: DeliveryConfirmationPayments<Self::AccountId>;
 
 		// Types that are used by inbound_lane (on target chain).
 
@@ -171,10 +167,10 @@ pub mod pallet {
 	}
 
 	/// Shortcut to messages proof type for Config.
-	type MessagesProofOf<T, I> =
+	pub type MessagesProofOf<T, I> =
 		<<T as Config<I>>::SourceHeaderChain as SourceHeaderChain>::MessagesProof;
 	/// Shortcut to messages delivery proof type for Config.
-	type MessagesDeliveryProofOf<T, I> =
+	pub type MessagesDeliveryProofOf<T, I> =
 		<<T as Config<I>>::TargetHeaderChain as TargetHeaderChain<
 			<T as Config<I>>::OutboundPayload,
 			<T as frame_system::Config>::AccountId,
@@ -230,6 +226,7 @@ pub mod pallet {
 		/// Change `PalletOwner`.
 		///
 		/// May only be called either by root, or by `PalletOwner`.
+		#[pallet::call_index(0)]
 		#[pallet::weight((T::DbWeight::get().reads_writes(1, 1), DispatchClass::Operational))]
 		pub fn set_owner(origin: OriginFor<T>, new_owner: Option<T::AccountId>) -> DispatchResult {
 			<Self as OwnedBridgeModule<_>>::set_owner(origin, new_owner)
@@ -238,6 +235,7 @@ pub mod pallet {
 		/// Halt or resume all/some pallet operations.
 		///
 		/// May only be called either by root, or by `PalletOwner`.
+		#[pallet::call_index(1)]
 		#[pallet::weight((T::DbWeight::get().reads_writes(1, 1), DispatchClass::Operational))]
 		pub fn set_operating_mode(
 			origin: OriginFor<T>,
@@ -251,6 +249,7 @@ pub mod pallet {
 		/// The weight of the call assumes that the transaction always brings outbound lane
 		/// state update. Because of that, the submitter (relayer) has no benefit of not including
 		/// this data in the transaction, so reward confirmations lags should be minimal.
+		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::receive_messages_proof_weight(proof, *messages_count, *dispatch_weight))]
 		pub fn receive_messages_proof(
 			origin: OriginFor<T>,
@@ -361,40 +360,36 @@ pub mod pallet {
 					// losing funds for messages dispatch. But keep in mind that relayer pays base
 					// delivery transaction cost anyway. And base cost covers everything except
 					// dispatch, so we have a balance here.
-					let (unspent_weight, refund_pay_dispatch_fee) = match &receival_result {
+					let unspent_weight = match &receival_result {
 						ReceivalResult::Dispatched(dispatch_result) => {
 							valid_messages += 1;
-							(
-								dispatch_result.unspent_weight,
-								!dispatch_result.dispatch_fee_paid_during_dispatch,
-							)
+							dispatch_result.unspent_weight
 						},
 						ReceivalResult::InvalidNonce |
 						ReceivalResult::TooManyUnrewardedRelayers |
-						ReceivalResult::TooManyUnconfirmedMessages => (message_dispatch_weight, true),
+						ReceivalResult::TooManyUnconfirmedMessages => message_dispatch_weight,
 					};
 					lane_messages_received_status.push(message.key.nonce, receival_result);
 
 					let unspent_weight = unspent_weight.min(message_dispatch_weight);
 					dispatch_weight_left -= message_dispatch_weight - unspent_weight;
-					actual_weight = actual_weight.saturating_sub(unspent_weight).saturating_sub(
-						// delivery call weight formula assumes that the fee is paid at
-						// this (target) chain. If the message is prepaid at the source
-						// chain, let's refund relayer with this extra cost.
-						if refund_pay_dispatch_fee {
-							T::WeightInfo::pay_inbound_dispatch_fee_overhead()
-						} else {
-							Weight::zero()
-						},
-					);
+					actual_weight = actual_weight.saturating_sub(unspent_weight);
 				}
 
 				messages_received_status.push(lane_messages_received_status);
 			}
 
+			// let's now deal with relayer payments
+			T::DeliveryPayments::pay_reward(
+				relayer_id_at_this_chain,
+				total_messages,
+				valid_messages,
+				actual_weight,
+			);
+
 			log::debug!(
 				target: LOG_TARGET,
-				"Received messages: total={}, valid={}. Weight used: {}/{}",
+				"Received messages: total={}, valid={}. Weight used: {}/{}.",
 				total_messages,
 				valid_messages,
 				actual_weight,
@@ -403,10 +398,11 @@ pub mod pallet {
 
 			Self::deposit_event(Event::MessagesReceived(messages_received_status));
 
-			Ok(PostDispatchInfo { actual_weight: Some(actual_weight), pays_fee: Pays::Yes })
+			Ok(PostDispatchInfo { actual_weight: Some(actual_weight), pays_fee: Pays::No })
 		}
 
 		/// Receive messages delivery proof from bridged chain.
+		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::receive_messages_delivery_proof_weight(
 			proof,
 			relayers_state,
@@ -490,7 +486,7 @@ pub mod pallet {
 				});
 
 				// if some new messages have been confirmed, reward relayers
-				<T as Config<I>>::MessageDeliveryAndDispatchPayment::pay_relayers_rewards(
+				T::DeliveryConfirmationPayments::pay_reward(
 					lane_id,
 					lane_data.relayers,
 					&confirmation_relayer,
@@ -646,6 +642,11 @@ pub mod pallet {
 				dispatch_weight: T::MessageDispatch::dispatch_weight(&mut dispatch_message),
 			}
 		}
+
+		/// Return inbound lane data.
+		pub fn inbound_lane_data(lane: LaneId) -> InboundLaneData<T::InboundRelayer> {
+			InboundLanes::<T, I>::get(lane).0
+		}
 	}
 }
 
@@ -735,31 +736,6 @@ fn send_message<T: Config<I>, I: 'static>(
 	let actual_weight = T::DbWeight::get().reads_writes(2, 2);
 
 	Ok(SendMessageArtifacts { nonce, weight: actual_weight })
-}
-
-/// Calculate the number of messages that the relayers have delivered.
-pub fn calc_relayers_rewards<T, I>(
-	messages_relayers: VecDeque<UnrewardedRelayer<T::AccountId>>,
-	received_range: &RangeInclusive<MessageNonce>,
-) -> RelayersRewards<T::AccountId>
-where
-	T: frame_system::Config + crate::Config<I>,
-	I: 'static,
-{
-	// remember to reward relayers that have delivered messages
-	// this loop is bounded by `T::MaxUnrewardedRelayerEntriesAtInboundLane` on the bridged chain
-	let mut relayers_rewards = RelayersRewards::new();
-	for entry in messages_relayers {
-		let nonce_begin = sp_std::cmp::max(entry.messages.begin, *received_range.start());
-		let nonce_end = sp_std::cmp::min(entry.messages.end, *received_range.end());
-
-		// loop won't proceed if current entry is ahead of received range (begin > end).
-		// this loop is bound by `T::MaxUnconfirmedMessagesAtInboundLane` on the bridged chain
-		if nonce_end >= nonce_begin {
-			*relayers_rewards.entry(entry.relayer).or_default() += nonce_end - nonce_begin + 1;
-		}
-	}
-	relayers_rewards
 }
 
 /// Ensure that the pallet is in normal operational mode.
@@ -913,13 +889,13 @@ fn verify_and_decode_messages_proof<Chain: SourceHeaderChain, DispatchPayload: D
 mod tests {
 	use super::*;
 	use crate::mock::{
-		message, message_payload, run_test, unrewarded_relayer, DbWeight,
-		RuntimeEvent as TestEvent, RuntimeOrigin, TestMessageDeliveryAndDispatchPayment,
-		TestMessagesDeliveryProof, TestMessagesProof, TestRuntime, MAX_OUTBOUND_PAYLOAD_SIZE,
-		PAYLOAD_REJECTED_BY_TARGET_CHAIN, REGULAR_PAYLOAD, TEST_LANE_ID, TEST_LANE_ID_2,
-		TEST_LANE_ID_3, TEST_RELAYER_A, TEST_RELAYER_B,
+		message, message_payload, run_test, unrewarded_relayer, AccountId, DbWeight,
+		RuntimeEvent as TestEvent, RuntimeOrigin, TestDeliveryConfirmationPayments,
+		TestDeliveryPayments, TestMessagesDeliveryProof, TestMessagesProof, TestRuntime,
+		MAX_OUTBOUND_PAYLOAD_SIZE, PAYLOAD_REJECTED_BY_TARGET_CHAIN, REGULAR_PAYLOAD, TEST_LANE_ID,
+		TEST_LANE_ID_2, TEST_LANE_ID_3, TEST_RELAYER_A, TEST_RELAYER_B,
 	};
-	use bp_messages::{UnrewardedRelayer, UnrewardedRelayersState};
+	use bp_messages::{BridgeMessagesCall, UnrewardedRelayer, UnrewardedRelayersState};
 	use bp_test_utils::generate_owned_bridge_module_tests;
 	use frame_support::{
 		assert_noop, assert_ok,
@@ -1200,6 +1176,8 @@ mod tests {
 			));
 
 			assert_eq!(InboundLanes::<TestRuntime>::get(TEST_LANE_ID).0.last_delivered_nonce(), 1);
+
+			assert!(TestDeliveryPayments::is_reward_paid(1));
 		});
 	}
 
@@ -1361,8 +1339,8 @@ mod tests {
 					..Default::default()
 				},
 			));
-			assert!(TestMessageDeliveryAndDispatchPayment::is_reward_paid(TEST_RELAYER_A, 1));
-			assert!(!TestMessageDeliveryAndDispatchPayment::is_reward_paid(TEST_RELAYER_B, 1));
+			assert!(TestDeliveryConfirmationPayments::is_reward_paid(TEST_RELAYER_A, 1));
+			assert!(!TestDeliveryConfirmationPayments::is_reward_paid(TEST_RELAYER_B, 1));
 
 			// this reports delivery of both message 1 and message 2 => reward is paid only to
 			// TEST_RELAYER_B
@@ -1387,8 +1365,8 @@ mod tests {
 					..Default::default()
 				},
 			));
-			assert!(!TestMessageDeliveryAndDispatchPayment::is_reward_paid(TEST_RELAYER_A, 1));
-			assert!(TestMessageDeliveryAndDispatchPayment::is_reward_paid(TEST_RELAYER_B, 1));
+			assert!(!TestDeliveryConfirmationPayments::is_reward_paid(TEST_RELAYER_A, 1));
+			assert!(TestDeliveryConfirmationPayments::is_reward_paid(TEST_RELAYER_B, 1));
 		});
 	}
 
@@ -1554,11 +1532,9 @@ mod tests {
 			fn submit_with_unspent_weight(
 				nonce: MessageNonce,
 				unspent_weight: u64,
-				is_prepaid: bool,
 			) -> (Weight, Weight) {
 				let mut payload = REGULAR_PAYLOAD;
 				*payload.dispatch_result.unspent_weight.ref_time_mut() = unspent_weight;
-				payload.dispatch_result.dispatch_fee_paid_during_dispatch = !is_prepaid;
 				let proof = Ok(vec![message(nonce, payload)]).into();
 				let messages_count = 1;
 				let pre_dispatch_weight =
@@ -1582,40 +1558,32 @@ mod tests {
 			}
 
 			// when dispatch is returning `unspent_weight < declared_weight`
-			let (pre, post) = submit_with_unspent_weight(1, 1, false);
+			let (pre, post) = submit_with_unspent_weight(1, 1);
 			assert_eq!(post.ref_time(), pre.ref_time() - 1);
 
 			// when dispatch is returning `unspent_weight = declared_weight`
 			let (pre, post) =
-				submit_with_unspent_weight(2, REGULAR_PAYLOAD.declared_weight.ref_time(), false);
+				submit_with_unspent_weight(2, REGULAR_PAYLOAD.declared_weight.ref_time());
 			assert_eq!(
 				post.ref_time(),
 				pre.ref_time() - REGULAR_PAYLOAD.declared_weight.ref_time()
 			);
 
 			// when dispatch is returning `unspent_weight > declared_weight`
-			let (pre, post) = submit_with_unspent_weight(
-				3,
-				REGULAR_PAYLOAD.declared_weight.ref_time() + 1,
-				false,
-			);
+			let (pre, post) =
+				submit_with_unspent_weight(3, REGULAR_PAYLOAD.declared_weight.ref_time() + 1);
 			assert_eq!(
 				post.ref_time(),
 				pre.ref_time() - REGULAR_PAYLOAD.declared_weight.ref_time()
 			);
 
 			// when there's no unspent weight
-			let (pre, post) = submit_with_unspent_weight(4, 0, false);
+			let (pre, post) = submit_with_unspent_weight(4, 0);
 			assert_eq!(post, pre);
 
-			// when dispatch is returning `unspent_weight < declared_weight` AND message is prepaid
-			let (pre, post) = submit_with_unspent_weight(5, 1, true);
-			assert_eq!(
-				post.ref_time(),
-				pre.ref_time() -
-					1 - <TestRuntime as Config>::WeightInfo::pay_inbound_dispatch_fee_overhead()
-					.ref_time()
-			);
+			// when dispatch is returning `unspent_weight < declared_weight`
+			let (pre, post) = submit_with_unspent_weight(5, 1);
+			assert_eq!(post.ref_time(), pre.ref_time() - 1);
 		});
 	}
 
@@ -1925,6 +1893,69 @@ mod tests {
 				Error::<TestRuntime, ()>::InactiveOutboundLane,
 			);
 		});
+	}
+
+	#[test]
+	fn test_bridge_messages_call_is_correctly_defined() {
+		let account_id = 1;
+		let message_proof: TestMessagesProof = Ok(vec![message(1, REGULAR_PAYLOAD)]).into();
+		let message_delivery_proof = TestMessagesDeliveryProof(Ok((
+			TEST_LANE_ID,
+			InboundLaneData {
+				last_confirmed_nonce: 1,
+				relayers: vec![UnrewardedRelayer {
+					relayer: 0,
+					messages: DeliveredMessages::new(1),
+				}]
+				.into_iter()
+				.collect(),
+			},
+		)));
+		let unrewarded_relayer_state = UnrewardedRelayersState {
+			unrewarded_relayer_entries: 1,
+			total_messages: 1,
+			last_delivered_nonce: 1,
+			..Default::default()
+		};
+
+		let direct_receive_messages_proof_call = Call::<TestRuntime>::receive_messages_proof {
+			relayer_id_at_bridged_chain: account_id,
+			proof: message_proof.clone(),
+			messages_count: 1,
+			dispatch_weight: REGULAR_PAYLOAD.declared_weight,
+		};
+		let indirect_receive_messages_proof_call = BridgeMessagesCall::<
+			AccountId,
+			TestMessagesProof,
+			TestMessagesDeliveryProof,
+		>::receive_messages_proof(
+			account_id,
+			message_proof,
+			1,
+			REGULAR_PAYLOAD.declared_weight,
+		);
+		assert_eq!(
+			direct_receive_messages_proof_call.encode(),
+			indirect_receive_messages_proof_call.encode()
+		);
+
+		let direct_receive_messages_delivery_proof_call =
+			Call::<TestRuntime>::receive_messages_delivery_proof {
+				proof: message_delivery_proof.clone(),
+				relayers_state: unrewarded_relayer_state.clone(),
+			};
+		let indirect_receive_messages_delivery_proof_call = BridgeMessagesCall::<
+			AccountId,
+			TestMessagesProof,
+			TestMessagesDeliveryProof,
+		>::receive_messages_delivery_proof(
+			message_delivery_proof,
+			unrewarded_relayer_state,
+		);
+		assert_eq!(
+			direct_receive_messages_delivery_proof_call.encode(),
+			indirect_receive_messages_delivery_proof_call.encode()
+		);
 	}
 
 	generate_owned_bridge_module_tests!(

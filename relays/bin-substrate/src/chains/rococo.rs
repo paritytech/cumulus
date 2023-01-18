@@ -19,24 +19,13 @@
 use crate::cli::CliChain;
 use relay_bridge_hub_rococo_client::BridgeHubRococo;
 use relay_rococo_client::Rococo;
-use sp_version::RuntimeVersion;
+use relay_substrate_client::SimpleRuntimeVersion;
 
 impl CliChain for Rococo {
-	const RUNTIME_VERSION: Option<RuntimeVersion> = None;
-
-	type KeyPair = sp_core::sr25519::Pair;
-
-	fn ss58_format() -> u16 {
-		bp_rococo::SS58Prefix::get() as u16
-	}
+	const RUNTIME_VERSION: Option<SimpleRuntimeVersion> = None;
 }
 
 impl CliChain for BridgeHubRococo {
-	const RUNTIME_VERSION: Option<RuntimeVersion> = None;
-
-	type KeyPair = sp_core::sr25519::Pair;
-
-	fn ss58_format() -> u16 {
-		relay_bridge_hub_rococo_client::runtime::SS58Prefix::get()
-	}
+	const RUNTIME_VERSION: Option<SimpleRuntimeVersion> =
+		Some(SimpleRuntimeVersion { spec_version: 9302, transaction_version: 1 });
 }

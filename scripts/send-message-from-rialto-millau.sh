@@ -10,24 +10,9 @@
 
 RIALTO_PORT="${RIALTO_PORT:-9944}"
 
-case "$1" in
-	remark)
-		RUST_LOG=runtime=trace,substrate-relay=trace,bridge=trace \
-		./target/debug/substrate-relay send-message rialto-to-millau \
-			--source-host localhost \
-			--source-port $RIALTO_PORT \
-			--source-signer //Bob \
-			raw 020419ac
-		;;
-	transfer)
-		RUST_LOG=runtime=trace,substrate-relay=trace,bridge=trace \
-		./target/debug/substrate-relay send-message rialto-to-millau \
-			--source-host localhost \
-			--source-port $RIALTO_PORT \
-			--source-signer //Bob \
-			transfer \
-			--amount 100000000000000 \
-			--recipient 5DZvVvd1udr61vL7Xks17TFQ4fi9NiagYLaBobnbPCP14ewA \
-		;;
-	*) echo "A message type is require. Supported messages: remark, transfer."; exit 1;;
-esac
+RUST_LOG=runtime=trace,substrate-relay=trace,bridge=trace \
+./target/debug/substrate-relay send-message rialto-to-millau \
+	--source-host localhost \
+	--source-port $RIALTO_PORT \
+	--source-signer //Bob \
+	raw 020419ac

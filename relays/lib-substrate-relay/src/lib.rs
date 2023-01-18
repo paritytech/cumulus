@@ -18,6 +18,10 @@
 
 #![warn(missing_docs)]
 
+use relay_substrate_client::{Chain, ChainWithUtilityPallet, UtilityPallet};
+
+use std::marker::PhantomData;
+
 pub mod error;
 pub mod finality;
 pub mod messages_lane;
@@ -60,13 +64,6 @@ pub enum TaggedAccount<AccountId> {
 		/// Name of the bridged chain, which sends us messages or delivery confirmations.
 		bridged_chain: String,
 	},
-	/// Account, used to sign messages with-bridged-chain pallet parameters update transactions.
-	MessagesPalletOwner {
-		/// Account id.
-		id: AccountId,
-		/// Name of the chain, bridged using messages pallet at our chain.
-		bridged_chain: String,
-	},
 }
 
 impl<AccountId> TaggedAccount<AccountId> {
@@ -76,7 +73,6 @@ impl<AccountId> TaggedAccount<AccountId> {
 			TaggedAccount::Headers { ref id, .. } => id,
 			TaggedAccount::Parachains { ref id, .. } => id,
 			TaggedAccount::Messages { ref id, .. } => id,
-			TaggedAccount::MessagesPalletOwner { ref id, .. } => id,
 		}
 	}
 
@@ -90,9 +86,46 @@ impl<AccountId> TaggedAccount<AccountId> {
 			TaggedAccount::Messages { ref bridged_chain, .. } => {
 				format!("{bridged_chain}Messages")
 			},
-			TaggedAccount::MessagesPalletOwner { ref bridged_chain, .. } => {
-				format!("{bridged_chain}MessagesPalletOwner")
-			},
 		}
+	}
+}
+
+/// Batch call builder.
+pub trait BatchCallBuilder<Call>: Send {
+	/// Create batch call from given calls vector.
+	fn build_batch_call(&self, _calls: Vec<Call>) -> Call;
+}
+
+/// Batch call builder constructor.
+pub trait BatchCallBuilderConstructor<Call> {
+	/// Create a new instance of a batch call builder.
+	fn new_builder() -> Option<Box<dyn BatchCallBuilder<Call>>>;
+}
+
+/// Batch call builder based on `pallet-utility`.
+pub struct UtilityPalletBatchCallBuilder<C: Chain>(PhantomData<C>);
+
+impl<C: Chain> BatchCallBuilder<C::Call> for UtilityPalletBatchCallBuilder<C>
+where
+	C: ChainWithUtilityPallet,
+{
+	fn build_batch_call(&self, calls: Vec<C::Call>) -> C::Call {
+		C::UtilityPallet::build_batch_call(calls)
+	}
+}
+
+impl<C: Chain> BatchCallBuilderConstructor<C::Call> for UtilityPalletBatchCallBuilder<C>
+where
+	C: ChainWithUtilityPallet,
+{
+	fn new_builder() -> Option<Box<dyn BatchCallBuilder<C::Call>>> {
+		Some(Box::new(Self(Default::default())))
+	}
+}
+
+/// A `BatchCallBuilderConstructor` that always returns `None`.
+impl<Call> BatchCallBuilderConstructor<Call> for () {
+	fn new_builder() -> Option<Box<dyn BatchCallBuilder<Call>>> {
+		None
 	}
 }

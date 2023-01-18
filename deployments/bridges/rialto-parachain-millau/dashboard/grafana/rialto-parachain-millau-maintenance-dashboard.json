@@ -153,12 +153,6 @@
           "interval": "",
           "legendFormat": "With-Millau messages relay account balance",
           "refId": "B"
-        },
-        {
-          "expr": "at_RialtoParachain_relay_MillauMessagesPalletOwner_balance{instance=\"relay-millau-rialto-parachain-1:9616\"}",
-          "interval": "",
-          "legendFormat": "With-Millau messages pallet owner account balance",
-          "refId": "C"
         }
       ],
       "thresholds": [
@@ -352,12 +346,6 @@
           "interval": "",
           "legendFormat": "With-Rialto parachains relay account balance",
           "refId": "C"
-        },
-        {
-          "expr": "at_Millau_relay_RialtoParachainMessagesPalletOwner_balance{instance=\"relay-millau-rialto-parachain-1:9616\"}",
-          "interval": "",
-          "legendFormat": "With-RialtoParachain messages pallet owner account balance",
-          "refId": "D"
         }
       ],
       "thresholds": [

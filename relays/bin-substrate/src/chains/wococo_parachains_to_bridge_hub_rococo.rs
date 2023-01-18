@@ -39,8 +39,6 @@ impl SubstrateParachainsPipeline for BridgeHubWococoToBridgeHubRococo {
 	type TargetChain = relay_bridge_hub_rococo_client::BridgeHubRococo;
 
 	type SubmitParachainHeadsCallBuilder = BridgeHubWococoToBridgeHubRococoCallBuilder;
-
-	const SOURCE_PARACHAIN_PARA_ID: u32 = bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID;
 }
 
 pub struct BridgeHubWococoToBridgeHubRococoCallBuilder;
@@ -53,7 +51,7 @@ impl SubmitParachainHeadsCallBuilder<BridgeHubWococoToBridgeHubRococo>
 		parachain_heads_proof: ParaHeadsProof,
 	) -> CallOf<relay_bridge_hub_rococo_client::BridgeHubRococo> {
 		relay_bridge_hub_rococo_client::runtime::Call::BridgeWococoParachain(
-			relay_bridge_hub_rococo_client::runtime::BridgeParachainCall::submit_parachain_heads(
+			bp_parachains::BridgeParachainCall::submit_parachain_heads(
 				(at_relay_block.0, at_relay_block.1),
 				parachains,
 				parachain_heads_proof,
@@ -78,8 +76,6 @@ impl CliBridgeBase for BridgeHubWococoToBridgeHubRococoCliBridge {
 }
 
 impl MessagesCliBridge for BridgeHubWococoToBridgeHubRococoCliBridge {
-	const ESTIMATE_MESSAGE_FEE_METHOD: &'static str =
-		bp_bridge_hub_rococo::TO_BRIDGE_HUB_ROCOCO_ESTIMATE_MESSAGE_FEE_METHOD;
 	type MessagesLane =
 	crate::chains::bridge_hub_wococo_messages_to_bridge_hub_rococo::BridgeHubWococoMessagesToBridgeHubRococoMessageLane;
 }

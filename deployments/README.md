@@ -1,11 +1,13 @@
 # Bridge Deployments
 
 ## Requirements
+
 Make sure to install `docker` and `docker-compose` to be able to run and test bridge deployments. If
 for whatever reason you can't or don't want to use Docker, you can find some scripts for running the
-bridge [here](https://github.com/svyatonik/parity-bridges-common.test).
+bridge [here](./local-scripts/).
 
 ## Networks
+
 One of the building blocks we use for our deployments are _networks_. A network is a collection of
 homogenous blockchain nodes. We have Docker Compose files for each network that we want to bridge.
 Each of the compose files found in the `./networks` folder is able to independently spin up a
@@ -18,6 +20,7 @@ docker-compose -f ./networks/rialto.yml up
 After running this command we would have a network of several nodes producing blocks.
 
 ## Bridges
+
 A _bridge_ is a way for several _networks_ to connect to one another. Bridge deployments have their
 own Docker Compose files which can be found in the `./bridges` folder. These Compose files typically
 contain bridge relayers, which are services external to blockchain nodes, and other components such
@@ -43,10 +46,11 @@ and Grafana. We cover these in more details in the [Monitoring](#monitoring) sec
 the monitoring Compose file is _not_ optional, and must be included for bridge deployments.
 
 ### Running and Updating Deployments
+
 We currently support three bridge deployments
 1. Rialto Substrate to Millau Substrate
 2. Rialto Parachain Substrate to Millau Substrate
-2. Westend Substrate to Millau Substrate
+2. Westend Substrate to Millau Substrate (only finality bridge)
 
 These bridges can be deployed using our [`./run.sh`](./run.sh) script.
 
@@ -71,11 +75,12 @@ You can also bring down a deployment using the script with the `stop` argument.
 ```
 
 ### Adding Deployments
+
 We need two main things when adding a new deployment. First, the new network which we want to
 bridge. A compose file for the network should be added in the `/networks/` folder. Secondly we'll
 need a new bridge Compose file in `./bridges/`. This should configure the bridge relayer nodes
 correctly for the two networks, and add any additional components needed for the deployment. If you
-want you can also add support in the `./run` script for the new deployment. While recommended it's
+want you can also add support in the `./run.sh` script for the new deployment. While recommended it's
 not strictly required.
 
 ## General Notes
@@ -111,8 +116,8 @@ is not recommended, because this may lead to nonces conflict.
 
 Following accounts are used when `rialto-millau` bridge is running:
 
-- Millau's `Rialto.HeadersAndMessagesRelay` signs complex headers+messages relay transactions on Millau chain;
-- Rialto's `Millau.HeadersAndMessagesRelay` signs complex headers+messages relay transactions on Rialto chain;
+- Millau's `Rialto.HeadersAndMessagesRelay1` signs complex headers+messages relay transactions on Millau chain;
+- Rialto's `Millau.HeadersAndMessagesRelay1` signs complex headers+messages relay transactions on Rialto chain;
 - Millau's `Rialto.MessagesSender` signs Millau transactions which contain messages for Rialto;
 - Rialto's `Millau.MessagesSender` signs Rialto transactions which contain messages for Millau;
 - Millau's `Rialto.OutboundMessagesRelay.Lane00000001` signs relay transactions with message delivery confirmations (lane 00000001) from Rialto to Millau;
@@ -136,11 +141,14 @@ Following accounts are used when `rialto-parachain-millau` bridge is running:
 - RialtoParachain's `Millau.HeadersAndMessagesRelay` signs complex headers+messages relay transactions on RialtoParachain chain.
 
 ### Docker Usage
+
 When the network is running you can query logs from individual nodes using:
 
 ```bash
 docker logs rialto_millau-node-charlie_1 -f
 ```
+
+You may use the [dump-logs.sh](../scripts/dump-logs.sh) to dump logs of most of running containers.
 
 To kill all leftover containers and start the network from scratch next time:
 ```bash
@@ -148,6 +156,7 @@ docker ps -a --format "{{.ID}}" | xargs docker rm # This removes all containers!
 ```
 
 ### Docker Compose Usage
+
 If you're not familiar with how to use `docker-compose` here are some useful commands you'll need
 when interacting with the bridge deployments:
 
@@ -172,10 +181,12 @@ docker-compose -f docker-compose.yml -f docker-compose.override.yml config > doc
 ```
 
 ## Docker and Git Deployment
+
 It is also possible to avoid using images from the Docker Hub and instead build
 containers from Git. There are two ways to build the images this way.
 
 ### Git Repo
+
 If you have cloned the bridges repo you can build local Docker images by running the following
 command at the top level of the repo:
 
@@ -189,16 +200,17 @@ This will build a local image of a particular component with a tag of
 You can configure the build using Docker
 [build arguments](https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg).
 Here are the arguments currently supported:
-  - `BRIDGE_REPO`: Git repository of the bridge node and relay code
-  - `BRIDGE_HASH`: Commit hash within that repo (can also be a branch or tag)
-  - `ETHEREUM_REPO`: Git repository of the OpenEthereum client
-  - `ETHEREUM_HASH`: Commit hash within that repo (can also be a branch or tag)
   - `PROJECT`: Project to build withing bridges repo. Can be one of:
     - `rialto-bridge-node`
     - `millau-bridge-node`
+    - `rialto-parachain-collator`
     - `substrate-relay`
 
+You may use the [build-containers.sh](../scripts/build-containers.sh) script to build all available
+containers.
+
 ### GitHub Actions
+
 We have a nightly job which runs and publishes Docker images for the different nodes and relayers to
 the [ParityTech Docker Hub](https://hub.docker.com/u/paritytech) organization. These images are used
 for our ephemeral (temporary) test networks. Additionally, any time a tag in the form of `v*` is
@@ -209,6 +221,7 @@ With images built using either method, all you have to do to use them in a deplo
 `image` field in the existing Docker Compose files to point to the tag of the image you want to use.
 
 ### Monitoring
+
 [Prometheus](https://prometheus.io/) is used by the bridge relay to monitor information such as system
 resource use, and block data (e.g the best blocks it knows about). In order to visualize this data
 a [Grafana](https://grafana.com/) dashboard can be used.
@@ -223,6 +236,7 @@ dashboard can be accessed at `http://localhost:9090`. The Grafana dashboard can 
 `http://localhost:3000`. Note that the default log-in credentials for Grafana are `admin:admin`.
 
 ### Environment Variables
+
 Here is an example `.env` file which is used for production deployments and network updates. For
 security reasons it is not kept as part of version control. When deploying a network this
 file should be correctly populated and kept in the appropriate [`bridges`](`./bridges`) deployment
@@ -247,13 +261,8 @@ UI_EXPECTED_ETHEREUM_NETWORK_ID=105
 
 ### UI
 
-Use [wss://rialto.bridges.test-installations.parity.io/](https://polkadot.js.org/apps/)
-as a custom endpoint for [https://polkadot.js.org/apps/](https://polkadot.js.org/apps/).
-
-### Polkadot.js UI
-
-To teach the UI decode our custom types used in the pallet, go to: `Settings -> Developer`
-and import the [`./types.json`](./types.json)
+Use [wss://wss.rialto.brucke.link](https://polkadot.js.org/apps/) as a custom endpoint for
+[https://polkadot.js.org/apps/](https://polkadot.js.org/apps/).
 
 ## Scripts
 

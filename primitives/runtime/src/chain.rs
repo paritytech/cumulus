@@ -21,7 +21,7 @@ use num_traits::{AsPrimitive, Bounded, CheckedSub, Saturating, SaturatingAdd, Ze
 use sp_runtime::{
 	traits::{
 		AtLeast32Bit, AtLeast32BitUnsigned, Hash as HashT, Header as HeaderT, MaybeDisplay,
-		MaybeMallocSizeOf, MaybeSerialize, MaybeSerializeDeserialize, Member, SimpleBitOps, Verify,
+		MaybeSerialize, MaybeSerializeDeserialize, Member, SimpleBitOps, Verify,
 	},
 	FixedPointOperand,
 };
@@ -107,14 +107,10 @@ pub trait Chain: Send + Sync + 'static {
 		+ MaybeDisplay
 		+ AtLeast32BitUnsigned
 		+ FromStr
-		+ MaybeMallocSizeOf
 		+ AsPrimitive<usize>
 		+ Default
 		+ Saturating
-		+ MaxEncodedLen
-		// original `sp_runtime::traits::Header::BlockNumber` doesn't have this trait, but
-		// `sp_runtime::generic::Era` requires block number -> `u64` conversion.
-		+ Into<u64>;
+		+ MaxEncodedLen;
 
 	/// A type that fulfills the abstract idea of what a Substrate hash is.
 	// Constraits come from the associated Hash type of `sp_runtime::traits::Header`
@@ -131,7 +127,6 @@ pub trait Chain: Send + Sync + 'static {
 		+ SimpleBitOps
 		+ AsRef<[u8]>
 		+ AsMut<[u8]>
-		+ MaybeMallocSizeOf
 		+ MaxEncodedLen;
 
 	/// A type that fulfills the abstract idea of what a Substrate hasher (a type
@@ -195,11 +190,50 @@ pub trait Chain: Send + Sync + 'static {
 	fn max_extrinsic_weight() -> Weight;
 }
 
+/// A trait that provides the type of the underlying chain.
+pub trait UnderlyingChainProvider {
+	/// Underlying chain type.
+	type Chain: Chain;
+}
+
+impl<T> Chain for T
+where
+	T: Send + Sync + 'static + UnderlyingChainProvider,
+{
+	type BlockNumber = <T::Chain as Chain>::BlockNumber;
+	type Hash = <T::Chain as Chain>::Hash;
+	type Hasher = <T::Chain as Chain>::Hasher;
+	type Header = <T::Chain as Chain>::Header;
+	type AccountId = <T::Chain as Chain>::AccountId;
+	type Balance = <T::Chain as Chain>::Balance;
+	type Index = <T::Chain as Chain>::Index;
+	type Signature = <T::Chain as Chain>::Signature;
+
+	fn max_extrinsic_size() -> u32 {
+		<T::Chain as Chain>::max_extrinsic_size()
+	}
+
+	fn max_extrinsic_weight() -> Weight {
+		<T::Chain as Chain>::max_extrinsic_weight()
+	}
+}
+
 /// Minimal parachain representation that may be used from no_std environment.
 pub trait Parachain: Chain {
 	/// Parachain identifier.
 	const PARACHAIN_ID: u32;
 }
+
+impl<T> Parachain for T
+where
+	T: Chain + UnderlyingChainProvider,
+	<T as UnderlyingChainProvider>::Chain: Parachain,
+{
+	const PARACHAIN_ID: u32 = <<T as UnderlyingChainProvider>::Chain as Parachain>::PARACHAIN_ID;
+}
+
+/// Underlying chain type.
+pub type UnderlyingChainOf<C> = <C as UnderlyingChainProvider>::Chain;
 
 /// Block number used by the chain.
 pub type BlockNumberOf<C> = <C as Chain>::BlockNumber;
@@ -272,8 +306,6 @@ macro_rules! decl_bridge_finality_runtime_apis {
 ///     - `To<ThisChain>OutboundLaneApi`
 ///     - `From<ThisChain>InboundLaneApi`
 /// - constants that are stringified names of runtime API methods:
-///     - `TO_<THIS_CHAIN>_ESTIMATE_MESSAGE_FEE_METHOD`
-///     - `TO_<THIS_CHAIN>_MESSAGE_DETAILS_METHOD`
 ///     - `FROM_<THIS_CHAIN>_MESSAGE_DETAILS_METHOD`,
 /// The name of the chain has to be specified in snake case (e.g. `rialto_parachain`).
 #[macro_export]
@@ -283,10 +315,6 @@ macro_rules! decl_bridge_messages_runtime_apis {
 			mod [<$chain _messages_api>] {
 				use super::*;
 
-				/// Name of the `To<ThisChain>OutboundLaneApi::estimate_message_delivery_and_dispatch_fee` runtime
-				/// method.
-				pub const [<TO_ $chain:upper _ESTIMATE_MESSAGE_FEE_METHOD>]: &str =
-					stringify!([<To $chain:camel OutboundLaneApi_estimate_message_delivery_and_dispatch_fee>]);
 				/// Name of the `To<ThisChain>OutboundLaneApi::message_details` runtime method.
 				pub const [<TO_ $chain:upper _MESSAGE_DETAILS_METHOD>]: &str =
 					stringify!([<To $chain:camel OutboundLaneApi_message_details>]);

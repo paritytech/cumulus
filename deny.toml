@@ -48,21 +48,17 @@ notice = "warn"
 # A list of advisory IDs to ignore. Note that ignored advisories will still
 # output a note when they are encountered.
 ignore = [
-    # Comes from honggfuzz via storage-proof-fuzzer: 'memmap'
-    "RUSTSEC-2020-0077",
     # time (origin: Substrate RPC + benchmarking crates)
     "RUSTSEC-2020-0071",
-    # chrono (origin: Substrate benchmarking + cli + ...)
-    "RUSTSEC-2020-0159",
-    # lru 0.6.6 (origin: libp2p)
-    "RUSTSEC-2021-0130",
     # ansi_term (The maintainer has adviced that this crate is deprecated and will not receive any maintenance.
     # Once other crates will move to some alternative, we'll do that too)
     "RUSTSEC-2021-0139",
-    # rocksdb (origin: Substrate and Polkadot kvdb-rocksdb - we need to upgrade soon)
-    "RUSTSEC-2022-0046",
-    # owning_ref (origin: Substrate, libp2p)
-    "RUSTSEC-2022-0040",
+    # deprecated parity-wasm (origin: Substrate)
+    "RUSTSEC-2022-0061",
+    # atty (origin: Substrate, clap)
+    "RUSTSEC-2021-0145",
+    # wasmtime (origin: Substrate)
+    "RUSTSEC-2022-0076",
 ]
 # Threshold for security vulnerabilities, any vulnerability with a CVSS score
 # lower than the range specified will be ignored. Note that ignored advisories

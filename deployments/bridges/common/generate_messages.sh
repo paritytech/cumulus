@@ -17,11 +17,13 @@
 
 SECONDARY_EXTRA_ARGS=${SECONDARY_EXTRA_ARGS:-""}
 
+trap "echo Exiting... TERM; exit $?" TERM
+
 # Sleep a bit between messages
 rand_sleep() {
 	SUBMIT_DELAY_S=`shuf -i 0-$MAX_SUBMIT_DELAY_S -n 1`
 	echo "Sleeping $SUBMIT_DELAY_S seconds..."
-	sleep $SUBMIT_DELAY_S
+	sleep $SUBMIT_DELAY_S & wait $!
 	NOW=`date "+%Y-%m-%d %H:%M:%S"`
 	echo "Woke up at $NOW"
 }

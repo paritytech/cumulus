@@ -17,7 +17,7 @@
 use crate::cli::CliChain;
 use pallet_bridge_parachains::{RelayBlockHash, RelayBlockHasher, RelayBlockNumber};
 use parachains_relay::ParachainsPipeline;
-use relay_substrate_client::{AccountKeyPairOf, Chain, ChainWithTransactions, RelayChain};
+use relay_substrate_client::{Chain, ChainWithTransactions, Parachain, RelayChain};
 use strum::{EnumString, EnumVariantNames};
 use substrate_relay_helper::{
 	finality::SubstrateFinalitySyncPipeline, messages_lane::SubstrateMessageLane,
@@ -61,7 +61,7 @@ pub trait CliBridgeBase: Sized {
 	/// The source chain.
 	type Source: Chain + CliChain;
 	/// The target chain.
-	type Target: ChainWithTransactions + CliChain<KeyPair = AccountKeyPairOf<Self::Target>>;
+	type Target: ChainWithTransactions + CliChain;
 }
 
 /// Bridge representation that can be used from the CLI for relaying headers
@@ -76,7 +76,10 @@ pub trait RelayToRelayHeadersCliBridge: CliBridgeBase {
 
 /// Bridge representation that can be used from the CLI for relaying headers
 /// from a parachain to a relay chain.
-pub trait ParachainToRelayHeadersCliBridge: CliBridgeBase {
+pub trait ParachainToRelayHeadersCliBridge: CliBridgeBase
+where
+	Self::Source: Parachain,
+{
 	// The `CliBridgeBase` type represents the parachain in this situation.
 	// We need to add an extra type for the relay chain.
 	type SourceRelay: Chain<BlockNumber = RelayBlockNumber, Hash = RelayBlockHash, Hasher = RelayBlockHasher>
@@ -97,9 +100,6 @@ pub trait ParachainToRelayHeadersCliBridge: CliBridgeBase {
 
 /// Bridge representation that can be used from the CLI for relaying messages.
 pub trait MessagesCliBridge: CliBridgeBase {
-	/// Name of the runtime method used to estimate the message dispatch and delivery fee for the
-	/// defined bridge.
-	const ESTIMATE_MESSAGE_FEE_METHOD: &'static str;
 	/// The Source -> Destination messages synchronization pipeline.
 	type MessagesLane: SubstrateMessageLane<SourceChain = Self::Source, TargetChain = Self::Target>;
 }

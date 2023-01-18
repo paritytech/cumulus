@@ -9,5 +9,6 @@ services:
       LETSENCRYPT_EMAIL: admin@parity.io
       CHAIN_1_SUBSTRATE_PROVIDER: ${UI_CHAIN_1:-ws://localhost:9944}
       CHAIN_2_SUBSTRATE_PROVIDER: ${UI_CHAIN_2:-ws://localhost:19944}
+    stop_signal: SIGKILL
     ports:
       - "8080:80"

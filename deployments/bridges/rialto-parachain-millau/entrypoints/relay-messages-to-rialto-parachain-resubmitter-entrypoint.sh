@@ -15,7 +15,7 @@ sleep 15
 # we need tip around `526186677695 - 17800827994 = 508_385_849_701`. Let's round it
 # up to `1_000_000_000_000`.
 
-/home/user/substrate-relay resubmit-transactions millau \
+exec /home/user/substrate-relay resubmit-transactions millau \
 	--target-host millau-node-alice \
 	--target-port 9944 \
 	--target-signer //RialtoParachain.MessagesSender \

@@ -18,11 +18,17 @@
 
 use std::convert::TryInto;
 
+use async_std::prelude::*;
 use codec::{Decode, Encode};
+use futures::{select, FutureExt};
+use rbtag::BuildInfo;
+use signal_hook::consts::*;
+use signal_hook_async_std::Signals;
 use structopt::{clap::arg_enum, StructOpt};
 use strum::{EnumString, EnumVariantNames};
 
 use bp_messages::LaneId;
+use relay_substrate_client::SimpleRuntimeVersion;
 
 pub(crate) mod bridge;
 pub(crate) mod encode_message;
@@ -36,6 +42,9 @@ mod relay_headers_and_messages;
 mod relay_messages;
 mod relay_parachains;
 mod resubmit_transactions;
+
+/// The target that will be used when publishing logs related to this pallet.
+pub const LOG_TARGET: &str = "bridge";
 
 /// Parse relay CLI args.
 pub fn parse_args() -> Command {
@@ -100,8 +109,7 @@ impl Command {
 	}
 
 	/// Run the command.
-	pub async fn run(self) -> anyhow::Result<()> {
-		self.init_logger();
+	async fn do_run(self) -> anyhow::Result<()> {
 		match self {
 			Self::RelayHeaders(arg) => arg.run().await?,
 			Self::RelayMessages(arg) => arg.run().await?,
@@ -113,6 +121,32 @@ impl Command {
 			Self::RelayParachains(arg) => arg.run().await?,
 		}
 		Ok(())
+	}
+
+	/// Run the command.
+	pub async fn run(self) {
+		self.init_logger();
+
+		let exit_signals = match Signals::new([SIGINT, SIGTERM]) {
+			Ok(signals) => signals,
+			Err(e) => {
+				log::error!(target: LOG_TARGET, "Could not register exit signals: {}", e);
+				return
+			},
+		};
+		let run = self.do_run().fuse();
+		futures::pin_mut!(exit_signals, run);
+
+		select! {
+			signal = exit_signals.next().fuse() => {
+				log::info!(target: LOG_TARGET, "Received exit signal {:?}", signal);
+			},
+			result = run => {
+				if let Err(e) = result {
+					log::error!(target: LOG_TARGET, "substrate-relay: {}", e);
+				}
+			},
+		}
 	}
 }
 
@@ -161,24 +195,16 @@ pub trait CliChain: relay_substrate_client::Chain {
 	/// Current version of the chain runtime, known to relay.
 	///
 	/// can be `None` if relay is not going to submit transactions to that chain.
-	const RUNTIME_VERSION: Option<sp_version::RuntimeVersion>;
-
-	/// Crypto KeyPair type used to send messages.
-	///
-	/// In case of chains supporting multiple cryptos, pick one used by the CLI.
-	type KeyPair: sp_core::crypto::Pair;
-
-	/// Numeric value of SS58 format.
-	fn ss58_format() -> u16;
+	const RUNTIME_VERSION: Option<SimpleRuntimeVersion>;
 }
 
 /// Lane id.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct HexLaneId(pub LaneId);
+pub struct HexLaneId(pub [u8; 4]);
 
 impl From<HexLaneId> for LaneId {
 	fn from(lane_id: HexLaneId) -> LaneId {
-		lane_id.0
+		LaneId(lane_id.0)
 	}
 }
 
@@ -186,7 +212,7 @@ impl std::str::FromStr for HexLaneId {
 	type Err = hex::FromHexError;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let mut lane_id = LaneId::default();
+		let mut lane_id = [0u8; 4];
 		hex::decode_to_slice(s, &mut lane_id)?;
 		Ok(HexLaneId(lane_id))
 	}
@@ -230,17 +256,30 @@ pub struct PrometheusParams {
 	pub prometheus_port: u16,
 }
 
-impl From<PrometheusParams> for relay_utils::metrics::MetricsParams {
-	fn from(cli_params: PrometheusParams) -> relay_utils::metrics::MetricsParams {
-		if !cli_params.no_prometheus {
+/// Struct to get git commit info and build time.
+#[derive(BuildInfo)]
+struct SubstrateRelayBuildInfo;
+
+impl PrometheusParams {
+	/// Tries to convert CLI metrics params into metrics params, used by the relay.
+	pub fn into_metrics_params(self) -> anyhow::Result<relay_utils::metrics::MetricsParams> {
+		let metrics_address = if !self.no_prometheus {
 			Some(relay_utils::metrics::MetricsAddress {
-				host: cli_params.prometheus_host,
-				port: cli_params.prometheus_port,
+				host: self.prometheus_host,
+				port: self.prometheus_port,
 			})
-			.into()
 		} else {
-			None.into()
-		}
+			None
+		};
+
+		let relay_version = option_env!("CARGO_PKG_VERSION").unwrap_or("unknown");
+		let relay_commit = SubstrateRelayBuildInfo.get_build_commit();
+		relay_utils::metrics::MetricsParams::new(
+			metrics_address,
+			relay_version.into(),
+			relay_commit.into(),
+		)
+		.map_err(|e| anyhow::format_err!("{:?}", e))
 	}
 }
 

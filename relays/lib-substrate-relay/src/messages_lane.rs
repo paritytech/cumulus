@@ -20,22 +20,22 @@ use crate::{
 	messages_source::{SubstrateMessagesProof, SubstrateMessagesSource},
 	messages_target::{SubstrateMessagesDeliveryProof, SubstrateMessagesTarget},
 	on_demand::OnDemandRelay,
-	TransactionParams,
+	BatchCallBuilder, BatchCallBuilderConstructor, TransactionParams,
 };
 
 use async_std::sync::Arc;
 use bp_messages::{LaneId, MessageNonce};
-use bp_runtime::{AccountIdOf, Chain as _, WeightExtraOps};
+use bp_runtime::{AccountIdOf, Chain as _, HeaderIdOf, WeightExtraOps};
 use bridge_runtime_common::messages::{
 	source::FromBridgedChainMessagesDeliveryProof, target::FromBridgedChainMessagesProof,
 };
 use codec::Encode;
 use frame_support::{dispatch::GetDispatchInfo, weights::Weight};
-use messages_relay::message_lane::MessageLane;
+use messages_relay::{message_lane::MessageLane, message_lane_loop::BatchTransaction};
 use pallet_bridge_messages::{Call as BridgeMessagesCall, Config as BridgeMessagesConfig};
 use relay_substrate_client::{
 	transaction_stall_timeout, AccountKeyPairOf, BalanceOf, BlockNumberOf, CallOf, Chain,
-	ChainWithMessages, ChainWithTransactions, Client, HashOf,
+	ChainWithMessages, ChainWithTransactions, Client, Error as SubstrateError, HashOf,
 };
 use relay_utils::{
 	metrics::{GlobalMetrics, MetricsParams, StandaloneMetric},
@@ -55,11 +55,16 @@ pub trait SubstrateMessageLane: 'static + Clone + Debug + Send + Sync {
 	type ReceiveMessagesProofCallBuilder: ReceiveMessagesProofCallBuilder<Self>;
 	/// How receive messages delivery proof call is built?
 	type ReceiveMessagesDeliveryProofCallBuilder: ReceiveMessagesDeliveryProofCallBuilder<Self>;
+
+	/// How batch calls are built at the source chain?
+	type SourceBatchCallBuilder: BatchCallBuilderConstructor<CallOf<Self::SourceChain>>;
+	/// How batch calls are built at the target chain?
+	type TargetBatchCallBuilder: BatchCallBuilderConstructor<CallOf<Self::TargetChain>>;
 }
 
 /// Adapter that allows all `SubstrateMessageLane` to act as `MessageLane`.
 #[derive(Clone, Debug)]
-pub(crate) struct MessageLaneAdapter<P: SubstrateMessageLane> {
+pub struct MessageLaneAdapter<P: SubstrateMessageLane> {
 	_phantom: PhantomData<P>,
 }
 
@@ -90,14 +95,61 @@ pub struct MessagesRelayParams<P: SubstrateMessageLane> {
 	pub target_transaction_params: TransactionParams<AccountKeyPairOf<P::TargetChain>>,
 	/// Optional on-demand source to target headers relay.
 	pub source_to_target_headers_relay:
-		Option<Arc<dyn OnDemandRelay<BlockNumberOf<P::SourceChain>>>>,
+		Option<Arc<dyn OnDemandRelay<P::SourceChain, P::TargetChain>>>,
 	/// Optional on-demand target to source headers relay.
 	pub target_to_source_headers_relay:
-		Option<Arc<dyn OnDemandRelay<BlockNumberOf<P::TargetChain>>>>,
+		Option<Arc<dyn OnDemandRelay<P::TargetChain, P::SourceChain>>>,
 	/// Identifier of lane that needs to be served.
 	pub lane_id: LaneId,
 	/// Metrics parameters.
 	pub metrics_params: MetricsParams,
+}
+
+/// Batch transaction that brings headers + and messages delivery/receiving confirmations to the
+/// source node.
+pub struct BatchProofTransaction<SC: Chain, TC: Chain, B: BatchCallBuilderConstructor<CallOf<SC>>> {
+	builder: Box<dyn BatchCallBuilder<CallOf<SC>>>,
+	proved_header: HeaderIdOf<TC>,
+	prove_calls: Vec<CallOf<SC>>,
+
+	/// Using `fn() -> B` in order to avoid implementing `Send` for `B`.
+	_phantom: PhantomData<fn() -> B>,
+}
+
+impl<SC: Chain, TC: Chain, B: BatchCallBuilderConstructor<CallOf<SC>>>
+	BatchProofTransaction<SC, TC, B>
+{
+	/// Creates a new instance of `BatchProofTransaction`.
+	pub async fn new(
+		relay: Arc<dyn OnDemandRelay<TC, SC>>,
+		block_num: BlockNumberOf<TC>,
+	) -> Result<Option<Self>, SubstrateError> {
+		if let Some(builder) = B::new_builder() {
+			let (proved_header, prove_calls) = relay.prove_header(block_num).await?;
+			return Ok(Some(Self {
+				builder,
+				proved_header,
+				prove_calls,
+				_phantom: Default::default(),
+			}))
+		}
+
+		Ok(None)
+	}
+
+	/// Return a batch call that includes the provided call.
+	pub fn append_call_and_build(mut self, call: CallOf<SC>) -> CallOf<SC> {
+		self.prove_calls.push(call);
+		self.builder.build_batch_call(self.prove_calls)
+	}
+}
+
+impl<SC: Chain, TC: Chain, B: BatchCallBuilderConstructor<CallOf<SC>>>
+	BatchTransaction<HeaderIdOf<TC>> for BatchProofTransaction<SC, TC, B>
+{
+	fn required_header_id(&self) -> HeaderIdOf<TC> {
+		self.proved_header
+	}
 }
 
 /// Run Substrate-to-Substrate messages sync loop.
@@ -278,7 +330,7 @@ macro_rules! generate_mocked_receive_message_proof_call_builder {
 					<$pipeline as $crate::messages_lane::SubstrateMessageLane>::SourceChain
 				>,
 				messages_count: u32,
-				dispatch_weight: Weight,
+				dispatch_weight: bp_messages::Weight,
 				_trace_call: bool,
 			) -> relay_substrate_client::CallOf<
 				<$pipeline as $crate::messages_lane::SubstrateMessageLane>::TargetChain
@@ -443,7 +495,7 @@ mod tests {
 			// Any significant change in this values should attract additional attention.
 			//
 			// TODO: https://github.com/paritytech/parity-bridges-common/issues/1543 - remove `set_proof_size`
-			(1024, Weight::from_ref_time(216_609_134_667).set_proof_size(217)),
+			(1024, Weight::from_ref_time(216_600_684_000).set_proof_size(217)),
 		);
 	}
 }

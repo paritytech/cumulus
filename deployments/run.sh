@@ -43,6 +43,7 @@ function show_help () {
   echo "  --local-rialto                             Use prebuilt local/rialto-bridge-node image when starting nodes"
   echo "  --local-rialto-parachain                   Use prebuilt local/rialto-parachain-collator image when starting nodes"
   echo "  --local-millau                             Use prebuilt local/millau-bridge-node image when starting nodes"
+  echo "  --no-grafana-startup-delay                 Start Grafana without any delay (you may see some false alerts during startup)"
   echo " "
   echo "You can start multiple bridges at once by passing several bridge names:"
   echo "  ./run.sh rialto-millau rialto-parachain-millau westend-millau [stop|update]"
@@ -81,6 +82,7 @@ do
       export RIALTO_BRIDGE_NODE_IMAGE=local/rialto-bridge-node
       export RIALTO_PARACHAIN_COLLATOR_IMAGE=local/rialto-parachain-collator
       export MILLAU_BRIDGE_NODE_IMAGE=local/millau-bridge-node
+      export IMMEDIATE_
       shift
       continue
       ;;
@@ -101,6 +103,11 @@ do
       ;;
     --local-millau)
       export MILLAU_BRIDGE_NODE_IMAGE=local/millau-bridge-node
+      shift
+      continue
+      ;;
+    --no-grafana-startup-delay)
+      export NO_GRAFANA_STARTUP_DELAY="echo 'No Grafana startup delay'"
       shift
       continue
       ;;

@@ -16,20 +16,10 @@
 
 //! Module with configuration which reflects BridgeHubWococo runtime setup
 //! (AccountId, Headers, Hashes...)
-//!
-//! but actually this is just reexported BridgeHubRococo stuff, because they are supposed to be
-//! identical, at least uses the same parachain runtime
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-// Re-export only what is really needed
-pub use bp_bridge_hub_rococo::{
-	AccountId, AccountInfoStorageMapKeyProvider, AccountPublic, AccountSigner, Address, Balance,
-	BlockLength, BlockNumber, BlockWeights, Hash, Hasher, Hashing, Header, Index, Nonce,
-	SS58Prefix, Signature, SignedBlock, SignedExtensions, UncheckedExtrinsic, WeightToFee,
-	MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX, MAX_UNREWARDED_RELAYERS_IN_CONFIRMATION_TX,
-	TX_EXTRA_BYTES,
-};
+pub use bp_bridge_hub_cumulus::*;
 use bp_messages::*;
 use bp_runtime::{
 	decl_bridge_finality_runtime_apis, decl_bridge_messages_runtime_apis, Chain, Parachain,

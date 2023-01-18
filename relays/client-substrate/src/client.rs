@@ -23,8 +23,8 @@ use crate::{
 		SubstrateFrameSystemClient, SubstrateStateClient, SubstrateSystemClient,
 		SubstrateTransactionPaymentClient,
 	},
-	transaction_stall_timeout, ConnectionParams, Error, HashOf, HeaderIdOf, Result, SignParam,
-	TransactionTracker, UnsignedTransaction,
+	transaction_stall_timeout, AccountKeyPairOf, ConnectionParams, Error, HashOf, HeaderIdOf,
+	Result, SignParam, TransactionTracker, UnsignedTransaction,
 };
 
 use async_std::sync::{Arc, Mutex};
@@ -43,7 +43,7 @@ use pallet_transaction_payment::InclusionFee;
 use relay_utils::{relay_loop::RECONNECT_DELAY, STALL_TIMEOUT};
 use sp_core::{
 	storage::{StorageData, StorageKey},
-	Bytes, Hasher,
+	Bytes, Hasher, Pair,
 };
 use sp_runtime::{
 	traits::Header as HeaderT,
@@ -57,11 +57,42 @@ const SUB_API_GRANDPA_AUTHORITIES: &str = "GrandpaApi_grandpa_authorities";
 const SUB_API_TXPOOL_VALIDATE_TRANSACTION: &str = "TaggedTransactionQueue_validate_transaction";
 const MAX_SUBSCRIPTION_CAPACITY: usize = 4096;
 
+/// The difference between best block number and number of its ancestor, that is enough
+/// for us to consider that ancestor an "ancient" block with dropped state.
+///
+/// The relay does not assume that it is connected to the archive node, so it always tries
+/// to use the best available chain state. But sometimes it still may use state of some
+/// old block. If the state of that block is already dropped, relay will see errors when
+/// e.g. it tries to prove something.
+///
+/// By default Substrate-based nodes are storing state for last 256 blocks. We'll use
+/// half of this value.
+pub const ANCIENT_BLOCK_THRESHOLD: u32 = 128;
+
 /// Opaque justifications subscription type.
 pub struct Subscription<T>(pub(crate) Mutex<futures::channel::mpsc::Receiver<Option<T>>>);
 
 /// Opaque GRANDPA authorities set.
 pub type OpaqueGrandpaAuthoritiesSet = Vec<u8>;
+
+/// A simple runtime version. It only includes the `spec_version` and `transaction_version`.
+#[derive(Copy, Clone, Debug)]
+pub struct SimpleRuntimeVersion {
+	/// Version of the runtime specification.
+	pub spec_version: u32,
+	/// All existing dispatches are fully compatible when this number doesn't change.
+	pub transaction_version: u32,
+}
+
+impl SimpleRuntimeVersion {
+	/// Create a new instance of `SimpleRuntimeVersion` from a `RuntimeVersion`.
+	pub const fn from_runtime_version(runtime_version: &RuntimeVersion) -> Self {
+		Self {
+			spec_version: runtime_version.spec_version,
+			transaction_version: runtime_version.transaction_version,
+		}
+	}
+}
 
 /// Chain runtime version in client
 #[derive(Clone, Debug)]
@@ -69,9 +100,7 @@ pub enum ChainRuntimeVersion {
 	/// Auto query from chain.
 	Auto,
 	/// Custom runtime version, defined by user.
-	/// the first is `spec_version`
-	/// the second is `transaction_version`
-	Custom(u32, u32),
+	Custom(SimpleRuntimeVersion),
 }
 
 /// Substrate client type.
@@ -201,16 +230,14 @@ impl<C: Chain> Client<C> {
 
 impl<C: Chain> Client<C> {
 	/// Return simple runtime version, only include `spec_version` and `transaction_version`.
-	pub async fn simple_runtime_version(&self) -> Result<(u32, u32)> {
-		let (spec_version, transaction_version) = match self.chain_runtime_version {
+	pub async fn simple_runtime_version(&self) -> Result<SimpleRuntimeVersion> {
+		Ok(match &self.chain_runtime_version {
 			ChainRuntimeVersion::Auto => {
 				let runtime_version = self.runtime_version().await?;
-				(runtime_version.spec_version, runtime_version.transaction_version)
+				SimpleRuntimeVersion::from_runtime_version(&runtime_version)
 			},
-			ChainRuntimeVersion::Custom(spec_version, transaction_version) =>
-				(spec_version, transaction_version),
-		};
-		Ok((spec_version, transaction_version))
+			ChainRuntimeVersion::Custom(version) => *version,
+		})
 	}
 
 	/// Returns true if client is connected to at least one peer and is in synced state.
@@ -242,7 +269,7 @@ impl<C: Chain> Client<C> {
 
 	/// Return number of the best finalized block.
 	pub async fn best_finalized_header_number(&self) -> Result<C::BlockNumber> {
-		Ok(*self.header_by_hash(self.best_finalized_header_hash().await?).await?.number())
+		Ok(*self.best_finalized_header().await?.number())
 	}
 
 	/// Return header of the best finalized block.
@@ -414,6 +441,19 @@ impl<C: Chain> Client<C> {
 		.await
 	}
 
+	async fn build_sign_params(&self, signer: AccountKeyPairOf<C>) -> Result<SignParam<C>>
+	where
+		C: ChainWithTransactions,
+	{
+		let runtime_version = self.simple_runtime_version().await?;
+		Ok(SignParam::<C> {
+			spec_version: runtime_version.spec_version,
+			transaction_version: runtime_version.transaction_version,
+			genesis_hash: self.genesis_hash,
+			signer,
+		})
+	}
+
 	/// Submit an extrinsic signed by given account.
 	///
 	/// All calls of this method are synchronized, so there can't be more than one active
@@ -423,18 +463,19 @@ impl<C: Chain> Client<C> {
 	/// Note: The given transaction needs to be SCALE encoded beforehand.
 	pub async fn submit_signed_extrinsic(
 		&self,
-		extrinsic_signer: C::AccountId,
-		signing_data: SignParam<C>,
+		signer: &AccountKeyPairOf<C>,
 		prepare_extrinsic: impl FnOnce(HeaderIdOf<C>, C::Index) -> Result<UnsignedTransaction<C>>
 			+ Send
 			+ 'static,
 	) -> Result<C::Hash>
 	where
 		C: ChainWithTransactions,
+		C::AccountId: From<<C::AccountKeyPair as Pair>::Public>,
 	{
 		let _guard = self.submit_signed_extrinsic_lock.lock().await;
-		let transaction_nonce = self.next_account_index(extrinsic_signer).await?;
+		let transaction_nonce = self.next_account_index(signer.public().into()).await?;
 		let best_header = self.best_header().await?;
+		let signing_data = self.build_sign_params(signer.clone()).await?;
 
 		// By using parent of best block here, we are protecing again best-block reorganizations.
 		// E.g. transaction may have been submitted when the best block was `A[num=100]`. Then it
@@ -463,18 +504,19 @@ impl<C: Chain> Client<C> {
 	/// after submission.
 	pub async fn submit_and_watch_signed_extrinsic(
 		&self,
-		extrinsic_signer: C::AccountId,
-		signing_data: SignParam<C>,
+		signer: &AccountKeyPairOf<C>,
 		prepare_extrinsic: impl FnOnce(HeaderIdOf<C>, C::Index) -> Result<UnsignedTransaction<C>>
 			+ Send
 			+ 'static,
 	) -> Result<TransactionTracker<C, Self>>
 	where
 		C: ChainWithTransactions,
+		C::AccountId: From<<C::AccountKeyPair as Pair>::Public>,
 	{
 		let self_clone = self.clone();
+		let signing_data = self.build_sign_params(signer.clone()).await?;
 		let _guard = self.submit_signed_extrinsic_lock.lock().await;
-		let transaction_nonce = self.next_account_index(extrinsic_signer).await?;
+		let transaction_nonce = self.next_account_index(signer.public().into()).await?;
 		let best_header = self.best_header().await?;
 		let best_header_id = best_header.id();
 		let (sender, receiver) = futures::channel::mpsc::channel(MAX_SUBSCRIPTION_CAPACITY);

@@ -16,11 +16,12 @@
 
 //! Types used to connect to the BridgeHub-Rococo-Substrate parachain.
 
-use bp_messages::{MessageNonce, Weight};
+use bp_bridge_hub_wococo::PolkadotSignedExtension;
+use bp_messages::MessageNonce;
 use codec::Encode;
 use relay_substrate_client::{
-	Chain, ChainBase, ChainWithBalances, ChainWithMessages, ChainWithTransactions,
-	Error as SubstrateError, SignParam, UnsignedTransaction,
+	Chain, ChainWithBalances, ChainWithMessages, ChainWithTransactions, Error as SubstrateError,
+	SignParam, UnderlyingChainProvider, UnsignedTransaction,
 };
 use sp_core::{storage::StorageKey, Pair};
 use sp_runtime::{generic::SignedPayload, traits::IdentifyAccount};
@@ -34,24 +35,8 @@ pub use runtime_wrapper as runtime;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BridgeHubRococo;
 
-impl ChainBase for BridgeHubRococo {
-	type BlockNumber = bp_bridge_hub_rococo::BlockNumber;
-	type Hash = bp_bridge_hub_rococo::Hash;
-	type Hasher = bp_bridge_hub_rococo::Hashing;
-	type Header = bp_bridge_hub_rococo::Header;
-
-	type AccountId = bp_bridge_hub_rococo::AccountId;
-	type Balance = bp_bridge_hub_rococo::Balance;
-	type Index = bp_bridge_hub_rococo::Nonce;
-	type Signature = bp_bridge_hub_rococo::Signature;
-
-	fn max_extrinsic_size() -> u32 {
-		bp_bridge_hub_rococo::BridgeHubRococo::max_extrinsic_size()
-	}
-
-	fn max_extrinsic_weight() -> Weight {
-		bp_bridge_hub_rococo::BridgeHubRococo::max_extrinsic_weight()
-	}
+impl UnderlyingChainProvider for BridgeHubRococo {
+	type Chain = bp_bridge_hub_rococo::BridgeHubRococo;
 }
 
 impl Chain for BridgeHubRococo {
@@ -81,7 +66,7 @@ impl ChainWithTransactions for BridgeHubRococo {
 	) -> Result<Self::SignedTransaction, SubstrateError> {
 		let raw_payload = SignedPayload::new(
 			unsigned.call,
-			bp_bridge_hub_rococo::SignedExtensions::new(
+			bp_bridge_hub_rococo::BridgeSignedExtension::from_params(
 				param.spec_version,
 				param.transaction_version,
 				unsigned.era,
@@ -136,7 +121,6 @@ impl ChainWithMessages for BridgeHubRococo {
 	const MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX: MessageNonce =
 		bp_bridge_hub_rococo::MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX;
 
-	type WeightToFee = bp_bridge_hub_rococo::WeightToFee;
 	// TODO: fix (https://github.com/paritytech/parity-bridges-common/issues/1640)
 	type WeightInfo = ();
 }
@@ -149,8 +133,10 @@ mod tests {
 	#[test]
 	fn parse_transaction_works() {
 		let unsigned = UnsignedTransaction {
-			call: runtime::Call::System(runtime::SystemCall::remark(b"Hello world!".to_vec()))
-				.into(),
+			call: runtime::Call::System(relay_substrate_client::calls::SystemCall::remark(
+				b"Hello world!".to_vec(),
+			))
+			.into(),
 			nonce: 777,
 			tip: 888,
 			era: TransactionEra::immortal(),

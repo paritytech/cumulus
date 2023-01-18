@@ -25,6 +25,7 @@ mod rpc;
 mod sync_header;
 mod transaction_tracker;
 
+pub mod calls;
 pub mod guard;
 pub mod metrics;
 pub mod test_chain;
@@ -34,22 +35,24 @@ use std::time::Duration;
 pub use crate::{
 	chain::{
 		AccountKeyPairOf, BlockWithJustification, CallOf, Chain, ChainWithBalances,
-		ChainWithGrandpa, ChainWithMessages, ChainWithTransactions, RelayChain, SignParam,
-		TransactionStatusOf, UnsignedTransaction, WeightToFeeOf,
+		ChainWithGrandpa, ChainWithMessages, ChainWithTransactions, ChainWithUtilityPallet,
+		FullRuntimeUtilityPallet, Parachain, RelayChain, SignParam, TransactionStatusOf,
+		UnsignedTransaction, UtilityPallet,
 	},
-	client::{ChainRuntimeVersion, Client, OpaqueGrandpaAuthoritiesSet, Subscription},
+	client::{
+		ChainRuntimeVersion, Client, OpaqueGrandpaAuthoritiesSet, SimpleRuntimeVersion,
+		Subscription, ANCIENT_BLOCK_THRESHOLD,
+	},
 	error::{Error, Result},
 	rpc::{SubstrateBeefyFinalityClient, SubstrateFinalityClient, SubstrateGrandpaFinalityClient},
 	sync_header::SyncHeader,
 	transaction_tracker::TransactionTracker,
 };
 pub use bp_runtime::{
-	AccountIdOf, AccountPublicOf, BalanceOf, BlockNumberOf, Chain as ChainBase, HashOf, HeaderOf,
-	IndexOf, SignatureOf, TransactionEra, TransactionEraOf,
+	AccountIdOf, AccountPublicOf, BalanceOf, BlockNumberOf, Chain as ChainBase, HashOf, HeaderIdOf,
+	HeaderOf, IndexOf, Parachain as ParachainBase, SignatureOf, TransactionEra, TransactionEraOf,
+	UnderlyingChainProvider,
 };
-
-/// Header id used by the chain.
-pub type HeaderIdOf<C> = relay_utils::HeaderId<HashOf<C>, BlockNumberOf<C>>;
 
 /// Substrate-over-websocket connection params.
 #[derive(Debug, Clone)]

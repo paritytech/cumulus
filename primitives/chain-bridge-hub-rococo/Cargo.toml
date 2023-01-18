@@ -7,11 +7,9 @@ edition = "2021"
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 
 [dependencies]
-smallvec = "1.10.0"
-
 # Bridge Dependencies
 
-bp-polkadot-core = { path = "../../primitives/polkadot-core", default-features = false }
+bp-bridge-hub-cumulus = { path = "../chain-bridge-hub-cumulus", default-features = false }
 bp-runtime = { path = "../../primitives/runtime", default-features = false }
 bp-messages = { path = "../../primitives/messages", default-features = false }
 
@@ -21,17 +19,13 @@ frame-support = { git = "https://github.com/paritytech/substrate", branch = "mas
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
-# Polkadot Dependencies
-polkadot-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-
 [features]
 default = ["std"]
 std = [
-	"bp-polkadot-core/std",
+	"bp-bridge-hub-cumulus/std",
 	"bp-messages/std",
 	"bp-runtime/std",
 	"frame-support/std",
 	"sp-api/std",
 	"sp-std/std",
-	"polkadot-runtime-constants/std",
 ]

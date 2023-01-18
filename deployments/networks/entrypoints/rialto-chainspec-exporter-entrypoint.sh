@@ -1,6 +1,8 @@
 #!/bin/bash
 set -xeu
 
+trap "echo Exiting... TERM; exit $?" TERM
+
 /home/user/rialto-bridge-node build-spec \
 	--chain local \
 	--raw \
@@ -11,4 +13,4 @@ set -xeu
 # by the container running this script. If this script ends, the volume will be detached
 # and our chain spec will be lost when it'll go online again. Hence the never-ending
 # script which keeps volume online until container is stopped.
-tail -f /dev/null
+tail -f /dev/null & wait $!

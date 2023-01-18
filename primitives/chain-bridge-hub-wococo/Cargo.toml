@@ -10,7 +10,7 @@ license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 
 # Bridge Dependencies
 
-bp-bridge-hub-rococo = { path = "../chain-bridge-hub-rococo", default-features = false }
+bp-bridge-hub-cumulus = { path = "../chain-bridge-hub-cumulus", default-features = false }
 bp-runtime = { path = "../../primitives/runtime", default-features = false }
 bp-messages = { path = "../../primitives/messages", default-features = false }
 
@@ -23,10 +23,10 @@ sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", d
 [features]
 default = ["std"]
 std = [
+	"bp-bridge-hub-cumulus/std",
 	"bp-runtime/std",
 	"bp-messages/std",
 	"frame-support/std",
 	"sp-api/std",
 	"sp-std/std",
-	"bp-bridge-hub-rococo/std",
 ]

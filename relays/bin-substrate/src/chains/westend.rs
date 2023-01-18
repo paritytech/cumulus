@@ -17,31 +17,13 @@
 //! Westend chain specification for CLI.
 
 use crate::cli::CliChain;
+use relay_substrate_client::SimpleRuntimeVersion;
 use relay_westend_client::{Westend, Westmint};
-use sp_version::RuntimeVersion;
 
 impl CliChain for Westend {
-	const RUNTIME_VERSION: Option<RuntimeVersion> = None;
-
-	type KeyPair = sp_core::sr25519::Pair;
-
-	fn ss58_format() -> u16 {
-		sp_core::crypto::Ss58AddressFormat::from(
-			sp_core::crypto::Ss58AddressFormatRegistry::SubstrateAccount,
-		)
-		.into()
-	}
+	const RUNTIME_VERSION: Option<SimpleRuntimeVersion> = None;
 }
 
 impl CliChain for Westmint {
-	const RUNTIME_VERSION: Option<RuntimeVersion> = None;
-
-	type KeyPair = sp_core::sr25519::Pair;
-
-	fn ss58_format() -> u16 {
-		sp_core::crypto::Ss58AddressFormat::from(
-			sp_core::crypto::Ss58AddressFormatRegistry::SubstrateAccount,
-		)
-		.into()
-	}
+	const RUNTIME_VERSION: Option<SimpleRuntimeVersion> = None;
 }

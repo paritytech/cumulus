@@ -22,7 +22,6 @@ use crate::cli::{
 	relay_headers_and_messages::{Full2WayBridgeBase, Full2WayBridgeCommonParams},
 	CliChain,
 };
-use bp_runtime::BlockNumberOf;
 use relay_substrate_client::{AccountIdOf, AccountKeyPairOf, ChainWithTransactions};
 use sp_core::Pair;
 use substrate_relay_helper::{
@@ -65,8 +64,6 @@ macro_rules! declare_relay_to_relay_bridge_schema {
 				right_headers_to_left_sign_override: [<$right_chain HeadersTo $left_chain SigningParams>],
 				#[structopt(flatten)]
 				left_sign: [<$left_chain SigningParams>],
-				#[structopt(flatten)]
-				left_messages_pallet_owner: [<$left_chain MessagesPalletOwnerSigningParams>],
 				// default signer, which is always used to sign messages relay transactions on the right chain
 				#[structopt(flatten)]
 				right: [<$right_chain ConnectionParams>],
@@ -75,14 +72,12 @@ macro_rules! declare_relay_to_relay_bridge_schema {
 				left_headers_to_right_sign_override: [<$left_chain HeadersTo $right_chain SigningParams>],
 				#[structopt(flatten)]
 				right_sign: [<$right_chain SigningParams>],
-				#[structopt(flatten)]
-				right_messages_pallet_owner: [<$right_chain MessagesPalletOwnerSigningParams>],
 			}
 
 			impl [<$left_chain $right_chain HeadersAndMessages>] {
 				async fn into_bridge<
-					Left: ChainWithTransactions + CliChain<KeyPair = AccountKeyPairOf<Left>>,
-					Right: ChainWithTransactions + CliChain<KeyPair = AccountKeyPairOf<Right>>,
+					Left: ChainWithTransactions + CliChain,
+					Right: ChainWithTransactions + CliChain,
 					L2R: CliBridgeBase<Source = Left, Target = Right> + MessagesCliBridge + RelayToRelayHeadersCliBridge,
 					R2L: CliBridgeBase<Source = Right, Target = Left> + MessagesCliBridge + RelayToRelayHeadersCliBridge,
 				>(
@@ -95,14 +90,12 @@ macro_rules! declare_relay_to_relay_bridge_schema {
 								client: self.left.into_client::<Left>().await?,
 								sign: self.left_sign.to_keypair::<Left>()?,
 								transactions_mortality: self.left_sign.transactions_mortality()?,
-								messages_pallet_owner: self.left_messages_pallet_owner.to_keypair::<Left>()?,
 								accounts: vec![],
 							},
 							BridgeEndCommonParams {
 								client: self.right.into_client::<Right>().await?,
 								sign: self.right_sign.to_keypair::<Right>()?,
 								transactions_mortality: self.right_sign.transactions_mortality()?,
-								messages_pallet_owner: self.right_messages_pallet_owner.to_keypair::<Right>()?,
 								accounts: vec![],
 							},
 						)?,
@@ -121,8 +114,8 @@ macro_rules! declare_relay_to_relay_bridge_schema {
 
 #[async_trait]
 impl<
-		Left: ChainWithTransactions + CliChain<KeyPair = AccountKeyPairOf<Left>>,
-		Right: ChainWithTransactions + CliChain<KeyPair = AccountKeyPairOf<Right>>,
+		Left: ChainWithTransactions + CliChain,
+		Right: ChainWithTransactions + CliChain,
 		L2R: CliBridgeBase<Source = Left, Target = Right>
 			+ MessagesCliBridge
 			+ RelayToRelayHeadersCliBridge,
@@ -149,8 +142,8 @@ where
 	async fn start_on_demand_headers_relayers(
 		&mut self,
 	) -> anyhow::Result<(
-		Arc<dyn OnDemandRelay<BlockNumberOf<Self::Left>>>,
-		Arc<dyn OnDemandRelay<BlockNumberOf<Self::Right>>>,
+		Arc<dyn OnDemandRelay<Self::Left, Self::Right>>,
+		Arc<dyn OnDemandRelay<Self::Right, Self::Left>>,
 	)> {
 		self.common.right.accounts.push(TaggedAccount::Headers {
 			id: self.left_to_right_transaction_params.signer.public().into(),
@@ -175,18 +168,20 @@ where
 		.await?;
 
 		let left_to_right_on_demand_headers =
-			OnDemandHeadersRelay::new::<<L2R as RelayToRelayHeadersCliBridge>::Finality>(
+			OnDemandHeadersRelay::<<L2R as RelayToRelayHeadersCliBridge>::Finality>::new(
 				self.common.left.client.clone(),
 				self.common.right.client.clone(),
 				self.left_to_right_transaction_params.clone(),
 				self.common.shared.only_mandatory_headers,
+				None,
 			);
 		let right_to_left_on_demand_headers =
-			OnDemandHeadersRelay::new::<<R2L as RelayToRelayHeadersCliBridge>::Finality>(
+			OnDemandHeadersRelay::<<R2L as RelayToRelayHeadersCliBridge>::Finality>::new(
 				self.common.right.client.clone(),
 				self.common.left.client.clone(),
 				self.right_to_left_transaction_params.clone(),
 				self.common.shared.only_mandatory_headers,
+				None,
 			);
 
 		Ok((Arc::new(left_to_right_on_demand_headers), Arc::new(right_to_left_on_demand_headers)))

@@ -199,8 +199,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 			Ok(k) => keystore_container.set_remote_keystore(k),
 			Err(e) =>
 				return Err(ServiceError::Other(format!(
-					"Error hooking up remote keystore for {}: {}",
-					url, e
+					"Error hooking up remote keystore for {url}: {e}"
 				))),
 		};
 	}
@@ -273,7 +272,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 		use sc_finality_grandpa::FinalityProofProvider as GrandpaFinalityProofProvider;
 
 		use beefy_gadget_rpc::{Beefy, BeefyApiServer};
-		use pallet_mmr_rpc::{Mmr, MmrApiServer};
+		use mmr_rpc::{Mmr, MmrApiServer};
 		use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 		use sc_finality_grandpa_rpc::{Grandpa, GrandpaApiServer};
 		use sc_rpc::DenyUnsafe;
@@ -330,7 +329,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 		keystore: keystore_container.sync_keystore(),
 		task_manager: &mut task_manager,
 		transaction_pool: transaction_pool.clone(),
-		rpc_builder: rpc_extensions_builder.clone(),
+		rpc_builder: rpc_extensions_builder,
 		backend: backend.clone(),
 		system_rpc_tx,
 		config,
@@ -392,7 +391,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 		if role.is_authority() { Some(keystore_container.sync_keystore()) } else { None };
 
 	let justifications_protocol_name = beefy_on_demand_justifications_handler.protocol_name();
-	let payload_provider = beefy_primitives::mmr::MmrRootProvider::new(client.clone());
+	let payload_provider = sp_beefy::mmr::MmrRootProvider::new(client.clone());
 	let beefy_params = beefy_gadget::BeefyParams {
 		client: client.clone(),
 		backend,

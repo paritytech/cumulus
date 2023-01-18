@@ -15,12 +15,12 @@
 
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
-use sp_core::Pair;
+use relay_substrate_client::{AccountKeyPairOf, ChainWithTransactions};
 use structopt::StructOpt;
 use strum::{EnumString, EnumVariantNames};
 
 use crate::cli::CliChain;
-pub use relay_substrate_client::ChainRuntimeVersion;
+pub use relay_substrate_client::{ChainRuntimeVersion, SimpleRuntimeVersion};
 use substrate_relay_helper::TransactionParams;
 
 #[doc = "Runtime version params."]
@@ -57,25 +57,24 @@ macro_rules! declare_chain_runtime_version_params_cli_schema {
 				/// Converts self into `ChainRuntimeVersion`.
 				pub fn into_runtime_version(
 					self,
-					bundle_runtime_version: Option<sp_version::RuntimeVersion>,
+					bundle_runtime_version: Option<SimpleRuntimeVersion>,
 				) -> anyhow::Result<ChainRuntimeVersion> {
 					Ok(match self.[<$chain_prefix _version_mode>] {
 						RuntimeVersionType::Auto => ChainRuntimeVersion::Auto,
 						RuntimeVersionType::Custom => {
-							let except_spec_version = self.[<$chain_prefix _spec_version>]
+							let custom_spec_version = self.[<$chain_prefix _spec_version>]
 								.ok_or_else(|| anyhow::Error::msg(format!("The {}-spec-version is required when choose custom mode", stringify!($chain_prefix))))?;
-							let except_transaction_version = self.[<$chain_prefix _transaction_version>]
+							let custom_transaction_version = self.[<$chain_prefix _transaction_version>]
 								.ok_or_else(|| anyhow::Error::msg(format!("The {}-transaction-version is required when choose custom mode", stringify!($chain_prefix))))?;
 							ChainRuntimeVersion::Custom(
-								except_spec_version,
-								except_transaction_version
+								SimpleRuntimeVersion {
+									spec_version: custom_spec_version,
+									transaction_version: custom_transaction_version
+								}
 							)
 						},
 						RuntimeVersionType::Bundle => match bundle_runtime_version {
-							Some(runtime_version) => ChainRuntimeVersion::Custom(
-								runtime_version.spec_version,
-								runtime_version.transaction_version
-							),
+							Some(runtime_version) => ChainRuntimeVersion::Custom(runtime_version),
 							None => ChainRuntimeVersion::Auto
 						},
 					})
@@ -135,16 +134,16 @@ pub trait TransactionParamsProvider {
 	/// Returns `true` if transaction parameters are defined by this provider.
 	fn is_defined(&self) -> bool;
 	/// Returns transaction parameters.
-	fn transaction_params<Chain: CliChain>(
+	fn transaction_params<Chain: ChainWithTransactions>(
 		&self,
-	) -> anyhow::Result<TransactionParams<Chain::KeyPair>>;
+	) -> anyhow::Result<TransactionParams<AccountKeyPairOf<Chain>>>;
 
 	/// Returns transaction parameters, defined by `self` provider or, if they're not defined,
 	/// defined by `other` provider.
-	fn transaction_params_or<Chain: CliChain, T: TransactionParamsProvider>(
+	fn transaction_params_or<Chain: ChainWithTransactions, T: TransactionParamsProvider>(
 		&self,
 		other: &T,
-	) -> anyhow::Result<TransactionParams<Chain::KeyPair>> {
+	) -> anyhow::Result<TransactionParams<AccountKeyPairOf<Chain>>> {
 		if self.is_defined() {
 			self.transaction_params::<Chain>()
 		} else {
@@ -202,7 +201,7 @@ macro_rules! declare_chain_signing_params_cli_schema {
 
 				/// Parse signing params into chain-specific KeyPair.
 				#[allow(dead_code)]
-				pub fn to_keypair<Chain: CliChain>(&self) -> anyhow::Result<Chain::KeyPair> {
+				pub fn to_keypair<Chain: ChainWithTransactions>(&self) -> anyhow::Result<AccountKeyPairOf<Chain>> {
 					let suri = match (self.[<$chain_prefix _signer>].as_ref(), self.[<$chain_prefix _signer_file>].as_ref()) {
 						(Some(suri), _) => suri.to_owned(),
 						(None, Some(suri_file)) => std::fs::read_to_string(suri_file)
@@ -235,7 +234,7 @@ macro_rules! declare_chain_signing_params_cli_schema {
 
 					use sp_core::crypto::Pair;
 
-					Chain::KeyPair::from_string(
+					AccountKeyPairOf::<Chain>::from_string(
 						&suri,
 						suri_password.as_deref()
 					).map_err(|e| anyhow::format_err!("{:?}", e))
@@ -248,45 +247,11 @@ macro_rules! declare_chain_signing_params_cli_schema {
 					self.[<$chain_prefix _signer>].is_some() || self.[<$chain_prefix _signer_file>].is_some()
 				}
 
-				fn transaction_params<Chain: CliChain>(&self) -> anyhow::Result<TransactionParams<Chain::KeyPair>> {
+				fn transaction_params<Chain: ChainWithTransactions>(&self) -> anyhow::Result<TransactionParams<AccountKeyPairOf<Chain>>> {
 					Ok(TransactionParams {
 						mortality: self.transactions_mortality()?,
 						signer: self.to_keypair::<Chain>()?,
 					})
-				}
-			}
-		}
-	};
-}
-
-/// Create chain-specific set of messages pallet owner signing parameters.
-#[macro_export]
-macro_rules! declare_chain_messages_pallet_owner_signing_params_cli_schema {
-	($chain:ident, $chain_prefix:ident) => {
-		bp_runtime::paste::item! {
-			#[doc = "Parameters required to sign transaction on behalf of owner of the messages pallet at " $chain "."]
-			#[derive(StructOpt, Debug, PartialEq, Eq)]
-			pub struct [<$chain MessagesPalletOwnerSigningParams>] {
-				#[doc = "The SURI of secret key to use when transactions are submitted to the " $chain " node."]
-				#[structopt(long)]
-				pub [<$chain_prefix _messages_pallet_owner>]: Option<String>,
-				#[doc = "The password for the SURI of secret key to use when transactions are submitted to the " $chain " node."]
-				#[structopt(long)]
-				pub [<$chain_prefix _messages_pallet_owner_password>]: Option<String>,
-			}
-
-			#[allow(dead_code)]
-			impl [<$chain MessagesPalletOwnerSigningParams>] {
-				/// Parse signing params into chain-specific KeyPair.
-				pub fn to_keypair<Chain: CliChain>(&self) -> anyhow::Result<Option<Chain::KeyPair>> {
-					let [<$chain_prefix _messages_pallet_owner>] = match self.[<$chain_prefix _messages_pallet_owner>] {
-						Some(ref messages_pallet_owner) => messages_pallet_owner,
-						None => return Ok(None),
-					};
-					Chain::KeyPair::from_string(
-						[<$chain_prefix _messages_pallet_owner>],
-						self.[<$chain_prefix _messages_pallet_owner_password>].as_deref()
-					).map_err(|e| anyhow::format_err!("{:?}", e)).map(Some)
 				}
 			}
 		}
@@ -301,10 +266,6 @@ macro_rules! declare_chain_cli_schema {
 		$crate::declare_chain_runtime_version_params_cli_schema!($chain, $chain_prefix);
 		$crate::declare_chain_connection_params_cli_schema!($chain, $chain_prefix);
 		$crate::declare_chain_signing_params_cli_schema!($chain, $chain_prefix);
-		$crate::declare_chain_messages_pallet_owner_signing_params_cli_schema!(
-			$chain,
-			$chain_prefix
-		);
 	};
 }
 

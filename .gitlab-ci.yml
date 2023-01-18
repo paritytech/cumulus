@@ -242,11 +242,14 @@ build-nightly:
   variables:                       &image-variables
     GIT_STRATEGY:                  none
     DOCKERFILE:                    ci.Dockerfile
-    IMAGE_NAME:                    docker.io/paritytech/$CI_JOB_NAME
+    BRIDGES_PROJECT:               "${CI_JOB_NAME}"
+    DOCKER_IMAGE_NAME:             "${CI_JOB_NAME}"
+    IMAGE_NAME:                    docker.io/paritytech/$DOCKER_IMAGE_NAME
   needs:
     - job:                         build
       artifacts:                   true
   before_script:                   &check-versions
+    - echo "Starting docker image build/push with name '${IMAGE_NAME}' for '${BRIDGES_PROJECT}' with Dockerfile = '${DOCKERFILE}'"
     - if [[ "${CI_COMMIT_TAG}" ]]; then
         VERSION=${CI_COMMIT_TAG};
       elif [[ "${CI_COMMIT_REF_NAME}" ]]; then
@@ -260,6 +263,7 @@ build-nightly:
         FLOATING_TAG="latest";
       fi
     - echo "Effective tags = ${VERSION} sha-${CI_COMMIT_SHORT_SHA} ${FLOATING_TAG}"
+    - echo "Full docker image name = ${IMAGE_NAME}"
   script:
     - test "${Docker_Hub_User_Parity}" -a "${Docker_Hub_Pass_Parity}" ||
         ( echo "no docker credentials provided"; exit 1 )
@@ -268,7 +272,7 @@ build-nightly:
         --format=docker
         --build-arg VCS_REF="${CI_COMMIT_SHORT_SHA}"
         --build-arg BUILD_DATE="$(date +%d-%m-%Y)"
-        --build-arg PROJECT="${CI_JOB_NAME}"
+        --build-arg PROJECT="${BRIDGES_PROJECT}"
         --build-arg VERSION="${VERSION}"
         --tag "${IMAGE_NAME}:${VERSION}"
         --tag "${IMAGE_NAME}:sha-${CI_COMMIT_SHORT_SHA}"
@@ -299,5 +303,13 @@ millau-bridge-node:
 substrate-relay:
   stage:                           publish
   <<:                              *build-push-image
+
+bridges-common-relay:
+  stage:                           publish
+  <<:                              *build-push-image
+  variables:
+    <<:                            *image-variables
+    BRIDGES_PROJECT:               substrate-relay
+    DOCKER_IMAGE_NAME:             bridges-common-relay
 
 # FIXME: publish binaries

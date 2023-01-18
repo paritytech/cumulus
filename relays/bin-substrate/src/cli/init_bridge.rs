@@ -29,7 +29,7 @@ use crate::{
 	cli::{bridge::CliBridgeBase, chain_schema::*},
 };
 use bp_runtime::Chain as ChainBase;
-use relay_substrate_client::{AccountKeyPairOf, Chain, SignParam, UnsignedTransaction};
+use relay_substrate_client::{calls::SudoCall, AccountKeyPairOf, Chain, UnsignedTransaction};
 use sp_core::Pair;
 use structopt::StructOpt;
 use strum::{EnumString, EnumVariantNames, VariantNames};
@@ -83,17 +83,10 @@ where
 		let target_sign = data.target_sign.to_keypair::<Self::Target>()?;
 		let dry_run = data.dry_run;
 
-		let (spec_version, transaction_version) = target_client.simple_runtime_version().await?;
 		substrate_relay_helper::finality::initialize::initialize::<Self::Engine, _, _, _>(
 			source_client,
 			target_client.clone(),
-			target_sign.public().into(),
-			SignParam {
-				spec_version,
-				transaction_version,
-				genesis_hash: *target_client.genesis_hash(),
-				signer: target_sign,
-			},
+			target_sign,
 			move |transaction_nonce, initialization_data| {
 				let call = Self::encode_init_bridge(initialization_data);
 				log::info!(
@@ -130,13 +123,13 @@ impl BridgeInitializer for MillauToRialtoParachainCliBridge {
 	fn encode_init_bridge(
 		init_data: <Self::Engine as Engine<Self::Source>>::InitializationData,
 	) -> <Self::Target as Chain>::Call {
-		let initialize_call = rialto_parachain_runtime::BridgeGrandpaCall::<
-			rialto_parachain_runtime::Runtime,
-			rialto_parachain_runtime::MillauGrandpaInstance,
-		>::initialize {
-			init_data,
-		};
-		rialto_parachain_runtime::SudoCall::sudo { call: Box::new(initialize_call.into()) }.into()
+		use relay_rialto_parachain_client::runtime;
+
+		let initialize_call = runtime::Call::BridgeMillauGrandpa(
+			runtime::BridgeMillauGrandpaCall::initialize(init_data),
+		);
+		let sudo_call = SudoCall::sudo(Box::new(initialize_call));
+		runtime::Call::Sudo(sudo_call)
 	}
 }
 
@@ -183,7 +176,7 @@ impl BridgeInitializer for RococoToBridgeHubWococoCliBridge {
 		init_data: <Self::Engine as Engine<Self::Source>>::InitializationData,
 	) -> <Self::Target as Chain>::Call {
 		relay_bridge_hub_wococo_client::runtime::Call::BridgeRococoGrandpa(
-			relay_bridge_hub_wococo_client::runtime::BridgeGrandpaRococoCall::initialize(init_data),
+			relay_bridge_hub_wococo_client::runtime::BridgeRococoGrandpaCall::initialize(init_data),
 		)
 	}
 }

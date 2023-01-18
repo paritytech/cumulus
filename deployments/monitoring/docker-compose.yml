@@ -20,7 +20,9 @@ services:
       - "3000:3000"
     depends_on:
       - prometheus-metrics
-    entrypoint: sh -c "echo 'sleeping for 10m' && sleep 600 && /run.sh"
+    # SIGTERM won't work because of our custom entrypoint. Should be ok to use SIGKILL.
+    stop_signal: SIGKILL
+    entrypoint: sh -c "${NO_GRAFANA_STARTUP_DELAY:-echo 'sleeping for 10m' && sleep 600} && /run.sh"
 
   grafana-matrix-notifier:
     build:

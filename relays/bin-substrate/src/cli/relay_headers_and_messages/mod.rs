@@ -59,9 +59,10 @@ use crate::{
 	declare_chain_cli_schema,
 };
 use bp_messages::LaneId;
-use bp_runtime::{BalanceOf, BlockNumberOf};
+use bp_runtime::BalanceOf;
 use relay_substrate_client::{
 	AccountIdOf, AccountKeyPairOf, Chain, ChainWithBalances, ChainWithTransactions, Client,
+	Parachain,
 };
 use relay_utils::metrics::MetricsParams;
 use sp_core::Pair;
@@ -109,7 +110,7 @@ impl<Left: ChainWithTransactions + CliChain, Right: ChainWithTransactions + CliC
 		right: BridgeEndCommonParams<Right>,
 	) -> anyhow::Result<Self> {
 		// Create metrics registry.
-		let metrics_params = shared.prometheus_params.clone().into();
+		let metrics_params = shared.prometheus_params.clone().into_metrics_params()?;
 		let metrics_params = relay_utils::relay_metrics(metrics_params).into_params();
 
 		Ok(Self { shared, left, right, metrics_params })
@@ -124,8 +125,6 @@ pub struct BridgeEndCommonParams<Chain: ChainWithTransactions + CliChain> {
 	pub sign: AccountKeyPairOf<Chain>,
 	/// Transactions mortality.
 	pub transactions_mortality: Option<u32>,
-	/// Account that "owns" messages pallet.
-	pub messages_pallet_owner: Option<AccountKeyPairOf<Chain>>,
 	/// Accounts, which balances are exposed as metrics by the relay process.
 	pub accounts: Vec<TaggedAccount<AccountIdOf<Chain>>>,
 }
@@ -166,8 +165,8 @@ where
 	/// Returns message relay parameters.
 	fn messages_relay_params(
 		&self,
-		source_to_target_headers_relay: Arc<dyn OnDemandRelay<BlockNumberOf<Source>>>,
-		target_to_source_headers_relay: Arc<dyn OnDemandRelay<BlockNumberOf<Target>>>,
+		source_to_target_headers_relay: Arc<dyn OnDemandRelay<Source, Target>>,
+		target_to_source_headers_relay: Arc<dyn OnDemandRelay<Target, Source>>,
 		lane_id: LaneId,
 	) -> MessagesRelayParams<Bridge::MessagesLane> {
 		MessagesRelayParams {
@@ -228,9 +227,9 @@ trait Full2WayBridgeBase: Sized + Send + Sync {
 	/// The CLI params for the bridge.
 	type Params;
 	/// The left relay chain.
-	type Left: ChainWithTransactions + CliChain<KeyPair = AccountKeyPairOf<Self::Left>>;
+	type Left: ChainWithTransactions + CliChain;
 	/// The right destination chain (it can be a relay or a parachain).
-	type Right: ChainWithTransactions + CliChain<KeyPair = AccountKeyPairOf<Self::Right>>;
+	type Right: ChainWithTransactions + CliChain;
 
 	/// Reference to common relay parameters.
 	fn common(&self) -> &Full2WayBridgeCommonParams<Self::Left, Self::Right>;
@@ -242,8 +241,8 @@ trait Full2WayBridgeBase: Sized + Send + Sync {
 	async fn start_on_demand_headers_relayers(
 		&mut self,
 	) -> anyhow::Result<(
-		Arc<dyn OnDemandRelay<BlockNumberOf<Self::Left>>>,
-		Arc<dyn OnDemandRelay<BlockNumberOf<Self::Right>>>,
+		Arc<dyn OnDemandRelay<Self::Left, Self::Right>>,
+		Arc<dyn OnDemandRelay<Self::Right, Self::Left>>,
 	)>;
 }
 
@@ -260,13 +259,9 @@ where
 	type Base: Full2WayBridgeBase<Left = Self::Left, Right = Self::Right>;
 
 	/// The left relay chain.
-	type Left: ChainWithTransactions
-		+ ChainWithBalances
-		+ CliChain<KeyPair = AccountKeyPairOf<Self::Left>>;
+	type Left: ChainWithTransactions + ChainWithBalances + CliChain;
 	/// The right relay chain.
-	type Right: ChainWithTransactions
-		+ ChainWithBalances
-		+ CliChain<KeyPair = AccountKeyPairOf<Self::Right>>;
+	type Right: ChainWithTransactions + ChainWithBalances + CliChain;
 
 	/// Left to Right bridge.
 	type L2R: MessagesCliBridge<Source = Self::Left, Target = Self::Right>;
@@ -499,8 +494,6 @@ mod tests {
 			"9944",
 			"--millau-signer",
 			"//Charlie",
-			"--millau-messages-pallet-owner",
-			"//RialtoMessagesOwner",
 			"--millau-transactions-mortality",
 			"64",
 			"--rialto-host",
@@ -509,8 +502,6 @@ mod tests {
 			"9944",
 			"--rialto-signer",
 			"//Charlie",
-			"--rialto-messages-pallet-owner",
-			"//MillauMessagesOwner",
 			"--rialto-transactions-mortality",
 			"64",
 			"--lane",
@@ -554,10 +545,6 @@ mod tests {
 					millau_signer_password_file: None,
 					millau_transactions_mortality: Some(64),
 				},
-				left_messages_pallet_owner: MillauMessagesPalletOwnerSigningParams {
-					millau_messages_pallet_owner: Some("//RialtoMessagesOwner".into()),
-					millau_messages_pallet_owner_password: None,
-				},
 				left_headers_to_right_sign_override: MillauHeadersToRialtoSigningParams {
 					millau_headers_to_rialto_signer: None,
 					millau_headers_to_rialto_signer_password: None,
@@ -581,10 +568,6 @@ mod tests {
 					rialto_signer_file: None,
 					rialto_signer_password_file: None,
 					rialto_transactions_mortality: Some(64),
-				},
-				right_messages_pallet_owner: RialtoMessagesPalletOwnerSigningParams {
-					rialto_messages_pallet_owner: Some("//MillauMessagesOwner".into()),
-					rialto_messages_pallet_owner_password: None,
 				},
 				right_headers_to_left_sign_override: RialtoHeadersToMillauSigningParams {
 					rialto_headers_to_millau_signer: None,
@@ -611,8 +594,6 @@ mod tests {
 			"//Iden",
 			"--rialto-headers-to-millau-signer",
 			"//Ken",
-			"--millau-messages-pallet-owner",
-			"//RialtoParachainMessagesOwner",
 			"--millau-transactions-mortality",
 			"64",
 			"--rialto-parachain-host",
@@ -621,8 +602,6 @@ mod tests {
 			"9944",
 			"--rialto-parachain-signer",
 			"//George",
-			"--rialto-parachain-messages-pallet-owner",
-			"//MillauMessagesOwner",
 			"--rialto-parachain-transactions-mortality",
 			"64",
 			"--rialto-host",
@@ -666,10 +645,6 @@ mod tests {
 						millau_signer_password_file: None,
 						millau_transactions_mortality: Some(64),
 					},
-					left_messages_pallet_owner: MillauMessagesPalletOwnerSigningParams {
-						millau_messages_pallet_owner: Some("//RialtoParachainMessagesOwner".into()),
-						millau_messages_pallet_owner_password: None,
-					},
 					left_headers_to_right_sign_override:
 						MillauHeadersToRialtoParachainSigningParams {
 							millau_headers_to_rialto_parachain_signer: None,
@@ -694,12 +669,6 @@ mod tests {
 						rialto_parachain_signer_file: None,
 						rialto_parachain_signer_password_file: None,
 						rialto_parachain_transactions_mortality: Some(64),
-					},
-					right_messages_pallet_owner: RialtoParachainMessagesPalletOwnerSigningParams {
-						rialto_parachain_messages_pallet_owner: Some(
-							"//MillauMessagesOwner".into()
-						),
-						rialto_parachain_messages_pallet_owner_password: None,
 					},
 					right_relay_headers_to_left_sign_override: RialtoHeadersToMillauSigningParams {
 						rialto_headers_to_millau_signer: Some("//Ken".into()),

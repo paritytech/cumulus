@@ -155,9 +155,13 @@ where
 {
 	type Error = C::Error;
 	type TargetNoncesData = ();
+	type BatchTransaction = C::BatchTransaction;
 	type TransactionTracker = C::TransactionTracker;
 
-	async fn require_source_header(&self, id: TargetHeaderIdOf<P>) {
+	async fn require_source_header(
+		&self,
+		id: TargetHeaderIdOf<P>,
+	) -> Result<Option<C::BatchTransaction>, Self::Error> {
 		self.client.require_target_header_on_source(id).await
 	}
 
@@ -178,12 +182,15 @@ where
 
 	async fn submit_proof(
 		&self,
+		maybe_batch_tx: Option<Self::BatchTransaction>,
 		generated_at_block: TargetHeaderIdOf<P>,
 		nonces: RangeInclusive<MessageNonce>,
 		proof: P::MessagesReceivingProof,
 	) -> Result<NoncesSubmitArtifacts<Self::TransactionTracker>, Self::Error> {
-		let tx_tracker =
-			self.client.submit_messages_receiving_proof(generated_at_block, proof).await?;
+		let tx_tracker = self
+			.client
+			.submit_messages_receiving_proof(maybe_batch_tx, generated_at_block, proof)
+			.await?;
 		Ok(NoncesSubmitArtifacts { nonces, tx_tracker })
 	}
 }

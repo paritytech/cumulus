@@ -24,7 +24,7 @@ use bp_messages::{
 use bp_runtime::{decl_bridge_runtime_apis, Chain};
 use frame_support::{
 	dispatch::DispatchClass,
-	weights::{constants::WEIGHT_PER_SECOND, IdentityFee, Weight},
+	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, IdentityFee, Weight},
 	RuntimeDebug,
 };
 use frame_system::limits;
@@ -49,7 +49,9 @@ pub const TX_EXTRA_BYTES: u32 = 104;
 ///
 /// This represents two seconds of compute assuming a target block time of six seconds.
 // TODO: https://github.com/paritytech/parity-bridges-common/issues/1543 - remove `set_proof_size`
-pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.set_proof_size(1_000).saturating_mul(2);
+pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND)
+	.set_proof_size(1_000)
+	.saturating_mul(2);
 
 /// Represents the portion of a block that will be used by Normal extrinsics.
 pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
@@ -70,11 +72,12 @@ pub const SESSION_LENGTH: BlockNumber = 4;
 /// Maximal number of GRANDPA authorities at Rialto.
 pub const MAX_AUTHORITIES_COUNT: u32 = 5;
 
-/// Maximal SCALE-encoded header size (in bytes) at Rialto.
-pub const MAX_HEADER_SIZE: u32 = 1024;
-
-/// Maximal SCALE-encoded size of parachains headers that are stored at Rialto `Paras` pallet.
-pub const MAX_NESTED_PARACHAIN_HEAD_SIZE: u32 = MAX_HEADER_SIZE;
+/// Maximal size of encoded `bp_parachains::ParaStoredHeaderData` structure among all Rialto
+/// parachains.
+///
+/// It includes the block number and state root, so it shall be near 40 bytes, but let's have some
+/// reserve.
+pub const MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE: u32 = 128;
 
 /// Re-export `time_units` to make usage easier.
 pub use time_units::*;

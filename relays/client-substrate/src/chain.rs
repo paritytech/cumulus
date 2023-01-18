@@ -16,17 +16,17 @@
 
 use bp_messages::MessageNonce;
 use bp_runtime::{
-	Chain as ChainBase, EncodedOrDecodedCall, HashOf, TransactionEra, TransactionEraOf,
+	Chain as ChainBase, EncodedOrDecodedCall, HashOf, Parachain as ParachainBase, TransactionEra,
+	TransactionEraOf, UnderlyingChainProvider,
 };
 use codec::{Codec, Encode};
-use frame_support::weights::WeightToFee;
 use jsonrpsee::core::{DeserializeOwned, Serialize};
 use num_traits::Zero;
 use sc_transaction_pool_api::TransactionStatus;
 use sp_core::{storage::StorageKey, Pair};
 use sp_runtime::{
 	generic::SignedBlock,
-	traits::{Block as BlockT, Dispatchable, Member},
+	traits::{Block as BlockT, Member},
 	ConsensusEngineId, EncodedJustification,
 };
 use std::{fmt::Debug, time::Duration};
@@ -56,7 +56,7 @@ pub trait Chain: ChainBase + Clone {
 	/// Block type.
 	type SignedBlock: Member + Serialize + DeserializeOwned + BlockWithJustification<Self::Header>;
 	/// The aggregated `Call` type.
-	type Call: Clone + Codec + Dispatchable + Debug + Send;
+	type Call: Clone + Codec + Debug + Send;
 }
 
 /// Substrate-based relay chain that supports parachains.
@@ -72,6 +72,11 @@ pub trait RelayChain: Chain {
 	/// the same name.
 	const PARACHAINS_FINALITY_PALLET_NAME: &'static str;
 }
+
+/// Substrate-based parachain from minimal relay-client point of view.
+pub trait Parachain: Chain + ParachainBase {}
+
+impl<T> Parachain for T where T: UnderlyingChainProvider + Chain + ParachainBase {}
 
 /// Substrate-based chain that is using direct GRANDPA finality from minimal relay-client point of
 /// view.
@@ -111,16 +116,12 @@ pub trait ChainWithMessages: Chain {
 	/// `ChainWithMessages`.
 	const MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX: MessageNonce;
 
-	/// Type that is used by the chain, to convert from weight to fee.
-	type WeightToFee: WeightToFee<Balance = Self::Balance>;
 	/// Weights of message pallet calls.
 	type WeightInfo: pallet_bridge_messages::WeightInfoExt;
 }
 
 /// Call type used by the chain.
 pub type CallOf<C> = <C as Chain>::Call;
-/// Weight-to-Fee type used by the chain.
-pub type WeightToFeeOf<C> = <C as ChainWithMessages>::WeightToFee;
 /// Transaction status of the chain.
 pub type TransactionStatusOf<C> = TransactionStatus<HashOf<C>, HashOf<C>>;
 
@@ -232,4 +233,32 @@ impl<Block: BlockT> BlockWithJustification<Block::Header> for SignedBlock<Block>
 	fn justification(&self, engine_id: ConsensusEngineId) -> Option<&EncodedJustification> {
 		self.justifications.as_ref().and_then(|j| j.get(engine_id))
 	}
+}
+
+/// Trait that provides functionality defined inside `pallet-utility`
+pub trait UtilityPallet<C: Chain> {
+	/// Create batch call from given calls vector.
+	fn build_batch_call(calls: Vec<C::Call>) -> C::Call;
+}
+
+/// Structure that implements `UtilityPalletProvider` based on a full runtime.
+pub struct FullRuntimeUtilityPallet<R> {
+	_phantom: std::marker::PhantomData<R>,
+}
+
+impl<C, R> UtilityPallet<C> for FullRuntimeUtilityPallet<R>
+where
+	C: Chain,
+	R: pallet_utility::Config<RuntimeCall = C::Call>,
+	<R as pallet_utility::Config>::RuntimeCall: From<pallet_utility::Call<R>>,
+{
+	fn build_batch_call(calls: Vec<C::Call>) -> C::Call {
+		pallet_utility::Call::batch_all { calls }.into()
+	}
+}
+
+/// Substrate-based chain that uses `pallet-utility`.
+pub trait ChainWithUtilityPallet: Chain {
+	/// The utility pallet provider.
+	type UtilityPallet: UtilityPallet<Self>;
 }

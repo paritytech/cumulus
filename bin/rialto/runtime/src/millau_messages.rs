@@ -28,7 +28,7 @@ use bridge_runtime_common::messages::{self, MessageBridge};
 use frame_support::{parameter_types, weights::Weight, RuntimeDebug};
 
 /// Lane that is used for XCM messages exchange.
-pub const XCM_LANE: LaneId = [0, 0, 0, 0];
+pub const XCM_LANE: LaneId = LaneId([0, 0, 0, 0]);
 /// Weight of 2 XCM instructions is for simple `Trap(42)` program, coming through bridge
 /// (it is prepended with `UniversalOrigin` instruction). It is used just for simplest manual
 /// tests, confirming that we don't break encoding somewhere between.
@@ -162,41 +162,19 @@ impl SourceHeaderChain for Millau {
 mod tests {
 	use super::*;
 	use crate::{MillauGrandpaInstance, Runtime, WithMillauMessagesInstance};
-	use bp_runtime::Chain;
 	use bridge_runtime_common::{
 		assert_complete_bridge_types,
 		integrity::{
-			assert_complete_bridge_constants, AssertBridgeMessagesPalletConstants,
-			AssertBridgePalletNames, AssertChainConstants, AssertCompleteBridgeConstants,
+			assert_complete_bridge_constants, check_message_lane_weights,
+			AssertBridgeMessagesPalletConstants, AssertBridgePalletNames, AssertChainConstants,
+			AssertCompleteBridgeConstants,
 		},
 	};
 
 	#[test]
 	fn ensure_rialto_message_lane_weights_are_correct() {
-		type Weights = pallet_bridge_messages::weights::BridgeWeight<Runtime>;
-
-		pallet_bridge_messages::ensure_weights_are_correct::<Weights>();
-
-		let max_incoming_message_proof_size = bp_millau::EXTRA_STORAGE_PROOF_SIZE.saturating_add(
-			messages::target::maximal_incoming_message_size(bp_rialto::Rialto::max_extrinsic_size()),
-		);
-		pallet_bridge_messages::ensure_able_to_receive_message::<Weights>(
-			bp_rialto::Rialto::max_extrinsic_size(),
-			bp_rialto::Rialto::max_extrinsic_weight(),
-			max_incoming_message_proof_size,
-			messages::target::maximal_incoming_message_dispatch_weight(
-				bp_rialto::Rialto::max_extrinsic_weight(),
-			),
-		);
-
-		let max_incoming_inbound_lane_data_proof_size =
-			bp_messages::InboundLaneData::<()>::encoded_size_hint_u32(
-				bp_rialto::MAX_UNREWARDED_RELAYERS_IN_CONFIRMATION_TX as _,
-			);
-		pallet_bridge_messages::ensure_able_to_receive_confirmation::<Weights>(
-			bp_rialto::Rialto::max_extrinsic_size(),
-			bp_rialto::Rialto::max_extrinsic_weight(),
-			max_incoming_inbound_lane_data_proof_size,
+		check_message_lane_weights::<bp_rialto::Rialto, Runtime>(
+			bp_millau::EXTRA_STORAGE_PROOF_SIZE,
 			bp_rialto::MAX_UNREWARDED_RELAYERS_IN_CONFIRMATION_TX,
 			bp_rialto::MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX,
 		);

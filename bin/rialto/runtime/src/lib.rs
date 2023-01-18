@@ -32,19 +32,15 @@ pub mod millau_messages;
 pub mod parachains;
 pub mod xcm_config;
 
-use beefy_primitives::{crypto::AuthorityId as BeefyId, mmr::MmrLeafVersion, ValidatorSet};
-use bp_runtime::{HeaderId, HeaderIdProvider};
+use bp_runtime::HeaderId;
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
-use pallet_mmr::primitives as mmr;
 use pallet_transaction_payment::{FeeDetails, Multiplier, RuntimeDispatchInfo};
 use sp_api::impl_runtime_apis;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
+use sp_beefy::{crypto::AuthorityId as BeefyId, mmr::MmrLeafVersion, ValidatorSet};
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_mmr_primitives::{
-	DataOrHash, EncodableOpaqueLeaf, Error as MmrError, LeafDataProvider, Proof as MmrProof,
-};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdLookup, Block as BlockT, Keccak256, NumberFor, OpaqueKeys},
@@ -61,8 +57,8 @@ pub use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{Currency, ExistenceRequirement, Imbalance, KeyOwnerProofSystem},
-	weights::{constants::WEIGHT_PER_SECOND, IdentityFee, RuntimeDbWeight, Weight},
+	traits::{ConstU32, ConstU8, Currency, ExistenceRequirement, Imbalance, KeyOwnerProofSystem},
+	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, IdentityFee, RuntimeDbWeight, Weight},
 	StorageValue,
 };
 
@@ -222,13 +218,12 @@ pub const BABE_GENESIS_EPOCH_CONFIG: sp_consensus_babe::BabeEpochConfiguration =
 parameter_types! {
 	pub const EpochDuration: u64 = bp_rialto::EPOCH_DURATION_IN_SLOTS as u64;
 	pub const ExpectedBlockTime: bp_rialto::Moment = bp_rialto::time_units::MILLISECS_PER_BLOCK;
-	pub const MaxAuthorities: u32 = 10;
 }
 
 impl pallet_babe::Config for Runtime {
 	type EpochDuration = EpochDuration;
 	type ExpectedBlockTime = ExpectedBlockTime;
-	type MaxAuthorities = MaxAuthorities;
+	type MaxAuthorities = ConstU32<10>;
 
 	// session module is the trigger
 	type EpochChangeTrigger = pallet_babe::ExternalTrigger;
@@ -251,13 +246,13 @@ impl pallet_babe::Config for Runtime {
 
 impl pallet_beefy::Config for Runtime {
 	type BeefyId = BeefyId;
-	type MaxAuthorities = MaxAuthorities;
+	type MaxAuthorities = ConstU32<10>;
 	type OnNewValidatorSet = MmrLeaf;
 }
 
 impl pallet_grandpa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type MaxAuthorities = MaxAuthorities;
+	type MaxAuthorities = ConstU32<10>;
 	type KeyOwnerProofSystem = ();
 	type KeyOwnerProof =
 		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
@@ -269,9 +264,6 @@ impl pallet_grandpa::Config for Runtime {
 	// TODO: update me (https://github.com/paritytech/parity-bridges-common/issues/78)
 	type WeightInfo = ();
 }
-
-type MmrHash = <Keccak256 as sp_runtime::traits::Hash>::Output;
-type MmrHashing = <Runtime as pallet_mmr::Config>::Hashing;
 
 impl pallet_mmr::Config for Runtime {
 	const INDEXING_PREFIX: &'static [u8] = b"mmr";
@@ -301,7 +293,7 @@ parameter_types! {
 
 pub struct BeefyDummyDataProvider;
 
-impl beefy_primitives::mmr::BeefyDataProvider<()> for BeefyDummyDataProvider {
+impl sp_beefy::mmr::BeefyDataProvider<()> for BeefyDummyDataProvider {
 	fn extra_data() {}
 }
 
@@ -327,10 +319,6 @@ impl pallet_timestamp::Config for Runtime {
 
 parameter_types! {
 	pub const ExistentialDeposit: bp_rialto::Balance = 500;
-	// For weight estimation, we assume that the most locks on an individual account will be 50.
-	// This number may need to be adjusted in the future if this assumption no longer holds true.
-	pub const MaxLocks: u32 = 50;
-	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -343,15 +331,16 @@ impl pallet_balances::Config for Runtime {
 	type AccountStore = System;
 	// TODO: update me (https://github.com/paritytech/parity-bridges-common/issues/78)
 	type WeightInfo = ();
-	type MaxLocks = MaxLocks;
-	type MaxReserves = MaxReserves;
+	// For weight estimation, we assume that the most locks on an individual account will be 50.
+	// This number may need to be adjusted in the future if this assumption no longer holds true.
+	type MaxLocks = ConstU32<50>;
+	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = [u8; 8];
 }
 
 parameter_types! {
 	pub const TransactionBaseFee: Balance = 0;
 	pub const TransactionByteFee: Balance = 1;
-	pub const OperationalFeeMultiplier: u8 = 5;
 	// values for following parameters are copied from polkadot repo, but it is fine
 	// not to sync them - we're not going to make Rialto a full copy of one of Polkadot-like chains
 	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
@@ -362,7 +351,7 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
-	type OperationalFeeMultiplier = OperationalFeeMultiplier;
+	type OperationalFeeMultiplier = ConstU8<5>;
 	type WeightToFee = bp_rialto::WeightToFee;
 	type LengthToFee = bp_rialto::WeightToFee;
 	type FeeMultiplierUpdate = pallet_transaction_payment::TargetedFeeAdjustment<
@@ -394,23 +383,18 @@ impl pallet_session::Config for Runtime {
 }
 
 impl pallet_authority_discovery::Config for Runtime {
-	type MaxAuthorities = MaxAuthorities;
+	type MaxAuthorities = ConstU32<10>;
 }
 
 impl pallet_bridge_relayers::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Reward = Balance;
-	type PaymentProcedure = bp_relayers::MintReward<pallet_balances::Pallet<Runtime>, AccountId>;
+	type PaymentProcedure =
+		bp_relayers::PayLaneRewardFromAccount<pallet_balances::Pallet<Runtime>, AccountId>;
 	type WeightInfo = ();
 }
 
 parameter_types! {
-	/// This is a pretty unscientific cap.
-	///
-	/// Note that once this is hit the pallet will essentially throttle incoming requests down to one
-	/// call per block.
-	pub const MaxRequests: u32 = 50;
-
 	/// Number of headers to keep.
 	///
 	/// Assuming the worst case of every header being finalized, we will keep headers at least for a
@@ -419,17 +403,18 @@ parameter_types! {
 
 	/// Maximal number of authorities at Millau.
 	pub const MaxAuthoritiesAtMillau: u32 = bp_millau::MAX_AUTHORITIES_COUNT;
-	/// Maximal size of SCALE-encoded Millau header.
-	pub const MaxMillauHeaderSize: u32 = bp_millau::MAX_HEADER_SIZE;
 }
 
 pub type MillauGrandpaInstance = ();
 impl pallet_bridge_grandpa::Config for Runtime {
 	type BridgedChain = bp_millau::Millau;
-	type MaxRequests = MaxRequests;
+	/// This is a pretty unscientific cap.
+	///
+	/// Note that once this is hit the pallet will essentially throttle incoming requests down to
+	/// one call per block.
+	type MaxRequests = ConstU32<50>;
 	type HeadersToKeep = HeadersToKeep;
 	type MaxBridgedAuthorities = MaxAuthoritiesAtMillau;
-	type MaxBridgedHeaderSize = MaxMillauHeaderSize;
 	type WeightInfo = pallet_bridge_grandpa::weights::BridgeWeight<Runtime>;
 }
 
@@ -461,14 +446,15 @@ impl pallet_bridge_messages::Config<WithMillauMessagesInstance> for Runtime {
 
 	type InboundPayload = crate::millau_messages::FromMillauMessagePayload;
 	type InboundRelayer = bp_millau::AccountId;
+	type DeliveryPayments = ();
 
 	type TargetHeaderChain = crate::millau_messages::Millau;
 	type LaneMessageVerifier = crate::millau_messages::ToMillauMessageVerifier;
-	type MessageDeliveryAndDispatchPayment =
-		pallet_bridge_relayers::MessageDeliveryAndDispatchPaymentAdapter<
-			Runtime,
-			WithMillauMessagesInstance,
-		>;
+	type DeliveryConfirmationPayments = pallet_bridge_relayers::DeliveryConfirmationPaymentsAdapter<
+		Runtime,
+		frame_support::traits::ConstU128<100_000>,
+		frame_support::traits::ConstU128<100_000>,
+	>;
 
 	type SourceHeaderChain = crate::millau_messages::Millau;
 	type MessageDispatch = crate::millau_messages::FromMillauMessageDispatch;
@@ -581,6 +567,16 @@ pub type Executive = frame_executive::Executive<
 	AllPalletsWithSystem,
 >;
 
+/// MMR helper types.
+mod mmr {
+	use super::Runtime;
+	pub use pallet_mmr::primitives::*;
+
+	pub type Leaf = <<Runtime as pallet_mmr::Config>::LeafData as LeafDataProvider>::LeafData;
+	pub type Hash = <Runtime as pallet_mmr::Config>::Hash;
+	pub type Hashing = <Runtime as pallet_mmr::Config>::Hashing;
+}
+
 impl_runtime_apis! {
 	impl sp_api::Core<Block> for Runtime {
 		fn version() -> RuntimeVersion {
@@ -629,66 +625,30 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl beefy_primitives::BeefyApi<Block> for Runtime {
+	impl sp_beefy::BeefyApi<Block> for Runtime {
 		fn validator_set() -> Option<ValidatorSet<BeefyId>> {
 			Beefy::validator_set()
 		}
 	}
 
-	impl sp_mmr_primitives::MmrApi<Block, Hash, BlockNumber> for Runtime {
-		fn generate_proof(block_number: BlockNumber)
-			-> Result<(EncodableOpaqueLeaf, MmrProof<Hash>), MmrError>
-		{
-			Mmr::generate_batch_proof(vec![block_number])
-				.and_then(|(leaves, proof)| Ok((
-					mmr::EncodableOpaqueLeaf::from_leaf(&leaves[0]),
-					mmr::BatchProof::into_single_leaf_proof(proof)?
-				)))
-		}
-
-		fn verify_proof(leaf: EncodableOpaqueLeaf, proof: MmrProof<Hash>)
-			-> Result<(), MmrError>
-		{
-			pub type Leaf = <
-				<Runtime as pallet_mmr::Config>::LeafData as LeafDataProvider
-			>::LeafData;
-
-			let leaf: Leaf = leaf
-				.into_opaque_leaf()
-				.try_decode()
-				.ok_or(MmrError::Verify)?;
-			Mmr::verify_leaves(vec![leaf], mmr::Proof::into_batch_proof(proof))
-		}
-
-		fn verify_proof_stateless(
-			root: Hash,
-			leaf: EncodableOpaqueLeaf,
-			proof: MmrProof<Hash>
-		) -> Result<(), MmrError> {
-			let node = DataOrHash::Data(leaf.into_opaque_leaf());
-			pallet_mmr::verify_leaves_proof::<MmrHashing, _>(
-				root,
-				vec![node],
-				pallet_mmr::primitives::Proof::into_batch_proof(proof),
-			)
-		}
-
-		fn mmr_root() -> Result<Hash, MmrError> {
+	impl pallet_mmr::primitives::MmrApi<
+		Block,
+		mmr::Hash,
+		BlockNumber,
+	> for Runtime {
+		fn mmr_root() -> Result<mmr::Hash, mmr::Error> {
 			Ok(Mmr::mmr_root())
 		}
 
-		fn generate_batch_proof(block_numbers: Vec<BlockNumber>)
-			-> Result<(Vec<mmr::EncodableOpaqueLeaf>, mmr::BatchProof<MmrHash>), mmr::Error>
-		{
-			Mmr::generate_batch_proof(block_numbers)
-				.map(|(leaves, proof)| (leaves.into_iter().map(|leaf| mmr::EncodableOpaqueLeaf::from_leaf(&leaf)).collect(), proof))
+		fn mmr_leaf_count() -> Result<mmr::LeafIndex, mmr::Error> {
+			Ok(Mmr::mmr_leaves())
 		}
 
-		fn generate_historical_batch_proof(
+		fn generate_proof(
 			block_numbers: Vec<BlockNumber>,
-			best_known_block_number: BlockNumber
-		) -> Result<(Vec<mmr::EncodableOpaqueLeaf>, mmr::BatchProof<MmrHash>), mmr::Error> {
-			Mmr::generate_historical_batch_proof(block_numbers, best_known_block_number).map(
+			best_known_block_number: Option<BlockNumber>,
+		) -> Result<(Vec<mmr::EncodableOpaqueLeaf>, mmr::Proof<mmr::Hash>), mmr::Error> {
+			Mmr::generate_proof(block_numbers, best_known_block_number).map(
 				|(leaves, proof)| {
 					(
 						leaves
@@ -701,32 +661,29 @@ impl_runtime_apis! {
 			)
 		}
 
-		fn verify_batch_proof(leaves: Vec<mmr::EncodableOpaqueLeaf>, proof: mmr::BatchProof<MmrHash>)
+		fn verify_proof(leaves: Vec<mmr::EncodableOpaqueLeaf>, proof: mmr::Proof<mmr::Hash>)
 			-> Result<(), mmr::Error>
 		{
-			type Leaf = <
-				<Runtime as pallet_mmr::Config>::LeafData as LeafDataProvider
-			>::LeafData;
 			let leaves = leaves.into_iter().map(|leaf|
 				leaf.into_opaque_leaf()
 				.try_decode()
-				.ok_or(mmr::Error::Verify)).collect::<Result<Vec<Leaf>, mmr::Error>>()?;
+				.ok_or(mmr::Error::Verify)).collect::<Result<Vec<mmr::Leaf>, mmr::Error>>()?;
 			Mmr::verify_leaves(leaves, proof)
 		}
 
-		fn verify_batch_proof_stateless(
-			root: MmrHash,
+		fn verify_proof_stateless(
+			root: mmr::Hash,
 			leaves: Vec<mmr::EncodableOpaqueLeaf>,
-			proof: mmr::BatchProof<MmrHash>
+			proof: mmr::Proof<mmr::Hash>
 		) -> Result<(), mmr::Error> {
 			let nodes = leaves.into_iter().map(|leaf|mmr::DataOrHash::Data(leaf.into_opaque_leaf())).collect();
-			pallet_mmr::verify_leaves_proof::<MmrHashing, _>(root, nodes, proof)
+			pallet_mmr::verify_leaves_proof::<mmr::Hashing, _>(root, nodes, proof)
 		}
 	}
 
 	impl bp_millau::MillauFinalityApi<Block> for Runtime {
 		fn best_finalized() -> Option<HeaderId<bp_millau::Hash, bp_millau::BlockNumber>> {
-			BridgeMillauGrandpa::best_finalized().map(|header| header.id())
+			BridgeMillauGrandpa::best_finalized()
 		}
 	}
 

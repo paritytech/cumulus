@@ -24,7 +24,7 @@ use crate::{
 use bp_beefy::{BeefyValidatorSignatureOf, ChainWithBeefy, Commitment, MmrDataOrHash};
 use bp_runtime::{BasicOperatingMode, Chain};
 use codec::Encode;
-use frame_support::{construct_runtime, parameter_types, weights::Weight};
+use frame_support::{construct_runtime, parameter_types, traits::ConstU64, weights::Weight};
 use sp_core::{sr25519::Signature, Pair};
 use sp_runtime::{
 	testing::{Header, H256},
@@ -32,7 +32,7 @@ use sp_runtime::{
 	Perbill,
 };
 
-pub use beefy_primitives::crypto::{AuthorityId as BeefyId, Pair as BeefyPair};
+pub use sp_beefy::crypto::{AuthorityId as BeefyId, Pair as BeefyPair};
 use sp_core::crypto::Wraps;
 use sp_runtime::traits::Keccak256;
 
@@ -49,7 +49,7 @@ pub type TestBridgedMmrHashing = BridgedMmrHashing<TestRuntime, ()>;
 pub type TestBridgedMmrHash = BridgedMmrHash<TestRuntime, ()>;
 pub type TestBridgedBeefyMmrLeafExtra = BridgedBeefyMmrLeafExtra<TestRuntime, ()>;
 pub type TestBridgedMmrProof = BridgedMmrProof<TestRuntime, ()>;
-pub type TestBridgedRawMmrLeaf = beefy_primitives::mmr::MmrLeaf<
+pub type TestBridgedRawMmrLeaf = sp_beefy::mmr::MmrLeaf<
 	TestBridgedBlockNumber,
 	TestBridgedBlockHash,
 	TestBridgedMmrHash,
@@ -72,7 +72,6 @@ construct_runtime! {
 }
 
 parameter_types! {
-	pub const BlockHashCount: u64 = 250;
 	pub const MaximumBlockWeight: Weight = Weight::from_ref_time(1024);
 	pub const MaximumBlockLength: u32 = 2 * 1024;
 	pub const AvailableBlockRatio: Perbill = Perbill::one();
@@ -89,7 +88,7 @@ impl frame_system::Config for TestRuntime {
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type RuntimeEvent = ();
-	type BlockHashCount = BlockHashCount;
+	type BlockHashCount = ConstU64<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
 	type AccountData = ();
@@ -139,7 +138,6 @@ impl ChainWithBeefy for TestBridgedChain {
 	type MmrHash = <Keccak256 as Hash>::Output;
 	type BeefyMmrLeafExtra = ();
 	type AuthorityId = BeefyId;
-	type Signature = beefy_primitives::crypto::AuthoritySignature;
 	type AuthorityIdToMerkleLeaf = pallet_beefy_mmr::BeefyEcdsaToEthereum;
 }
 

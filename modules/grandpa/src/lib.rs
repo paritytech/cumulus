@@ -38,13 +38,13 @@
 
 use storage_types::StoredAuthoritySet;
 
-use bp_header_chain::{justification::GrandpaJustification, HeaderChain, InitializationData};
-use bp_runtime::{
-	BlockNumberOf, BoundedStorageValue, Chain, HashOf, HasherOf, HeaderOf, OwnedBridgeModule,
+use bp_header_chain::{
+	justification::GrandpaJustification, HeaderChain, InitializationData, StoredHeaderData,
+	StoredHeaderDataBuilder,
 };
+use bp_runtime::{BlockNumberOf, Chain, HashOf, HasherOf, HeaderId, HeaderOf, OwnedBridgeModule};
 use finality_grandpa::voter_set::VoterSet;
 use frame_support::{ensure, fail};
-use frame_system::ensure_signed;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{Header as HeaderT, Zero};
 use sp_std::{boxed::Box, convert::TryInto};
@@ -73,13 +73,15 @@ pub type BridgedChain<T, I> = <T as Config<I>>::BridgedChain;
 pub type BridgedBlockNumber<T, I> = BlockNumberOf<<T as Config<I>>::BridgedChain>;
 /// Block hash of the bridged chain.
 pub type BridgedBlockHash<T, I> = HashOf<<T as Config<I>>::BridgedChain>;
+/// Block id of the bridged chain.
+pub type BridgedBlockId<T, I> = HeaderId<BridgedBlockHash<T, I>, BridgedBlockNumber<T, I>>;
 /// Hasher of the bridged chain.
 pub type BridgedBlockHasher<T, I> = HasherOf<<T as Config<I>>::BridgedChain>;
 /// Header of the bridged chain.
 pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
-/// Stored header of the bridged chain.
-pub type StoredBridgedHeader<T, I> =
-	BoundedStorageValue<<T as Config<I>>::MaxBridgedHeaderSize, BridgedHeader<T, I>>;
+/// Header data of the bridged chain that is stored at this chain by this pallet.
+pub type BridgedStoredHeaderData<T, I> =
+	StoredHeaderData<BridgedBlockNumber<T, I>, BridgedBlockHash<T, I>>;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -115,15 +117,6 @@ pub mod pallet {
 		/// Max number of authorities at the bridged chain.
 		#[pallet::constant]
 		type MaxBridgedAuthorities: Get<u32>;
-		/// Maximal size (in bytes) of the SCALE-encoded bridged chain header.
-		///
-		/// This constant must be selected with care. The pallet requires mandatory headers to be
-		/// submitted to be able to proceed. Mandatory headers contain public keys of all GRANDPA
-		/// authorities. E.g. for 1024 authorities, the size of encoded keys will be at least 32 KB.
-		/// The same header may also contain other digest items as well, so some reserve here
-		/// is required.
-		#[pallet::constant]
-		type MaxBridgedHeaderSize: Get<u32>;
 
 		/// Weights gathered through benchmarking.
 		type WeightInfo: WeightInfo;
@@ -157,17 +150,17 @@ pub mod pallet {
 		///
 		/// If successful in verification, it will write the target header to the underlying storage
 		/// pallet.
+		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::submit_finality_proof(
 			justification.commit.precommits.len().try_into().unwrap_or(u32::MAX),
 			justification.votes_ancestries.len().try_into().unwrap_or(u32::MAX),
 		))]
 		pub fn submit_finality_proof(
-			origin: OriginFor<T>,
+			_origin: OriginFor<T>,
 			finality_target: Box<BridgedHeader<T, I>>,
 			justification: GrandpaJustification<BridgedHeader<T, I>>,
 		) -> DispatchResultWithPostInfo {
 			Self::ensure_not_halted().map_err(Error::<T, I>::BridgeModule)?;
-			let _ = ensure_signed(origin)?;
 
 			ensure!(Self::request_count() < T::MaxRequests::get(), <Error<T, I>>::TooManyRequests);
 
@@ -178,11 +171,8 @@ pub mod pallet {
 				finality_target
 			);
 
-			let best_finalized = BestFinalized::<T, I>::get();
-			let best_finalized =
-				best_finalized.and_then(|(_, hash)| ImportedHeaders::<T, I>::get(hash));
-			let best_finalized = match best_finalized {
-				Some(best_finalized) => best_finalized,
+			let best_finalized_number = match BestFinalized::<T, I>::get() {
+				Some(best_finalized_id) => best_finalized_id.number(),
 				None => {
 					log::error!(
 						target: LOG_TARGET,
@@ -196,7 +186,7 @@ pub mod pallet {
 			// We do a quick check here to ensure that our header chain is making progress and isn't
 			// "travelling back in time" (which could be indicative of something bad, e.g a
 			// hard-fork).
-			ensure!(best_finalized.number() < number, <Error<T, I>>::OldHeader);
+			ensure!(best_finalized_number < *number, <Error<T, I>>::OldHeader);
 
 			let authority_set = <CurrentAuthoritySet<T, I>>::get();
 			let set_id = authority_set.set_id;
@@ -204,20 +194,8 @@ pub mod pallet {
 
 			let is_authorities_change_enacted =
 				try_enact_authority_change::<T, I>(&finality_target, set_id)?;
-			let finality_target = StoredBridgedHeader::<T, I>::try_from_inner(*finality_target)
-				.map_err(|e| {
-					log::error!(
-						target: LOG_TARGET,
-						"Size of header {:?} ({}) is larger that the configured value {}",
-						hash,
-						e.value_size,
-						e.maximal_size,
-					);
-
-					Error::<T, I>::TooLargeHeader
-				})?;
 			<RequestCount<T, I>>::mutate(|count| *count += 1);
-			insert_header::<T, I>(finality_target, hash);
+			insert_header::<T, I>(*finality_target, hash);
 			log::info!(
 				target: LOG_TARGET,
 				"Successfully imported finalized header with hash {:?}!",
@@ -244,6 +222,7 @@ pub mod pallet {
 		/// This function is only allowed to be called from a trusted origin and writes to storage
 		/// with practically no checks in terms of the validity of the data. It is important that
 		/// you ensure that valid data is being passed in.
+		#[pallet::call_index(1)]
 		#[pallet::weight((T::DbWeight::get().reads_writes(2, 5), DispatchClass::Operational))]
 		pub fn initialize(
 			origin: OriginFor<T>,
@@ -267,6 +246,7 @@ pub mod pallet {
 		/// Change `PalletOwner`.
 		///
 		/// May only be called either by root, or by `PalletOwner`.
+		#[pallet::call_index(2)]
 		#[pallet::weight((T::DbWeight::get().reads_writes(1, 1), DispatchClass::Operational))]
 		pub fn set_owner(origin: OriginFor<T>, new_owner: Option<T::AccountId>) -> DispatchResult {
 			<Self as OwnedBridgeModule<_>>::set_owner(origin, new_owner)
@@ -275,6 +255,7 @@ pub mod pallet {
 		/// Halt or resume all pallet operations.
 		///
 		/// May only be called either by root, or by `PalletOwner`.
+		#[pallet::call_index(3)]
 		#[pallet::weight((T::DbWeight::get().reads_writes(1, 1), DispatchClass::Operational))]
 		pub fn set_operating_mode(
 			origin: OriginFor<T>,
@@ -302,8 +283,9 @@ pub mod pallet {
 
 	/// Hash of the best finalized header.
 	#[pallet::storage]
+	#[pallet::getter(fn best_finalized)]
 	pub type BestFinalized<T: Config<I>, I: 'static = ()> =
-		StorageValue<_, (BridgedBlockNumber<T, I>, BridgedBlockHash<T, I>), OptionQuery>;
+		StorageValue<_, BridgedBlockId<T, I>, OptionQuery>;
 
 	/// A ring buffer of imported hashes. Ordered by the insertion time.
 	#[pallet::storage]
@@ -315,10 +297,10 @@ pub mod pallet {
 	pub(super) type ImportedHashesPointer<T: Config<I>, I: 'static = ()> =
 		StorageValue<_, u32, ValueQuery>;
 
-	/// Headers which have been imported into the pallet.
+	/// Relevant fields of imported headers.
 	#[pallet::storage]
 	pub type ImportedHeaders<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Identity, BridgedBlockHash<T, I>, StoredBridgedHeader<T, I>>;
+		StorageMap<_, Identity, BridgedBlockHash<T, I>, BridgedStoredHeaderData<T, I>>;
 
 	/// The current GRANDPA Authority set.
 	#[pallet::storage]
@@ -394,8 +376,6 @@ pub mod pallet {
 		AlreadyInitialized,
 		/// Too many authorities in the set.
 		TooManyAuthoritiesInSet,
-		/// Too large header.
-		TooLargeHeader,
 		/// Error generated by the `OwnedBridgeModule` trait.
 		BridgeModule(bp_runtime::OwnedBridgeModuleError),
 	}
@@ -489,13 +469,13 @@ pub mod pallet {
 	/// Note this function solely takes care of updating the storage and pruning old entries,
 	/// but does not verify the validity of such import.
 	pub(crate) fn insert_header<T: Config<I>, I: 'static>(
-		header: StoredBridgedHeader<T, I>,
+		header: BridgedHeader<T, I>,
 		hash: BridgedBlockHash<T, I>,
 	) {
 		let index = <ImportedHashesPointer<T, I>>::get();
 		let pruning = <ImportedHashes<T, I>>::try_get(index);
-		<BestFinalized<T, I>>::put((*header.number(), hash));
-		<ImportedHeaders<T, I>>::insert(hash, header);
+		<BestFinalized<T, I>>::put(HeaderId(*header.number(), hash));
+		<ImportedHeaders<T, I>>::insert(hash, header.build());
 		<ImportedHashes<T, I>>::insert(index, hash);
 
 		// Update ring buffer pointer and remove old header.
@@ -526,21 +506,10 @@ pub mod pallet {
 				Error::TooManyAuthoritiesInSet
 			})?;
 		let initial_hash = header.hash();
-		let header = StoredBridgedHeader::<T, I>::try_from_inner(*header).map_err(|e| {
-			log::error!(
-					target: LOG_TARGET,
-					"Failed to initialize bridge. Size of header {:?} ({}) is larger that the configured value {}",
-					initial_hash,
-					e.value_size,
-					e.maximal_size,
-				);
-
-			Error::<T, I>::TooLargeHeader
-		})?;
 
 		<InitialHash<T, I>>::put(initial_hash);
 		<ImportedHashesPointer<T, I>>::put(0);
-		insert_header::<T, I>(header, initial_hash);
+		insert_header::<T, I>(*header, initial_hash);
 
 		<CurrentAuthoritySet<T, I>>::put(authority_set);
 
@@ -568,25 +537,15 @@ pub mod pallet {
 				Default::default(),
 			);
 			let hash = header.hash();
-			insert_header::<T, I>(
-				StoredBridgedHeader::<T, I>::try_from_inner(header)
-					.expect("only used from benchmarks; benchmarks are correct; qed"),
-				hash,
-			);
+			insert_header::<T, I>(header, hash);
 		}
 	}
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
-	/// Get the best finalized header the pallet knows of.
-	pub fn best_finalized() -> Option<BridgedHeader<T, I>> {
-		let (_, hash) = <BestFinalized<T, I>>::get()?;
-		<ImportedHeaders<T, I>>::get(hash).map(|h| h.into_inner())
-	}
-
-	/// Check if a particular header is known to the bridge pallet.
-	pub fn is_known_header(hash: BridgedBlockHash<T, I>) -> bool {
-		<ImportedHeaders<T, I>>::contains_key(hash)
+	/// Get the best finalized block number.
+	pub fn best_finalized_number() -> Option<BridgedBlockNumber<T, I>> {
+		BestFinalized::<T, I>::get().map(|id| id.number())
 	}
 }
 
@@ -594,8 +553,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 pub type GrandpaChainHeaders<T, I> = Pallet<T, I>;
 
 impl<T: Config<I>, I: 'static> HeaderChain<BridgedChain<T, I>> for GrandpaChainHeaders<T, I> {
-	fn finalized_header(hash: HashOf<BridgedChain<T, I>>) -> Option<HeaderOf<BridgedChain<T, I>>> {
-		ImportedHeaders::<T, I>::get(hash).map(|h| h.into_inner())
+	fn finalized_header_state_root(
+		header_hash: HashOf<BridgedChain<T, I>>,
+	) -> Option<HashOf<BridgedChain<T, I>>> {
+		ImportedHeaders::<T, I>::get(header_hash).map(|h| h.state_root)
 	}
 }
 
@@ -653,8 +614,9 @@ mod tests {
 	use super::*;
 	use crate::mock::{
 		run_test, test_header, RuntimeOrigin, TestHeader, TestNumber, TestRuntime,
-		MAX_BRIDGED_AUTHORITIES, MAX_HEADER_SIZE,
+		MAX_BRIDGED_AUTHORITIES,
 	};
+	use bp_header_chain::BridgeGrandpaCall;
 	use bp_runtime::BasicOperatingMode;
 	use bp_test_utils::{
 		authority_list, generate_owned_bridge_module_tests, make_default_justification,
@@ -742,10 +704,6 @@ mod tests {
 		Digest { logs: vec![DigestItem::Consensus(GRANDPA_ENGINE_ID, consensus_log.encode())] }
 	}
 
-	fn large_digest() -> Digest {
-		Digest { logs: vec![DigestItem::Other(vec![42; MAX_HEADER_SIZE as _])] }
-	}
-
 	#[test]
 	fn init_root_or_owner_origin_can_initialize_pallet() {
 		run_test(|| {
@@ -804,25 +762,6 @@ mod tests {
 			assert_noop!(
 				Pallet::<TestRuntime>::initialize(RuntimeOrigin::root(), init_data),
 				Error::<TestRuntime>::TooManyAuthoritiesInSet,
-			);
-		});
-	}
-
-	#[test]
-	fn init_fails_if_header_is_too_large() {
-		run_test(|| {
-			let mut genesis = test_header(0);
-			genesis.digest = large_digest();
-			let init_data = InitializationData {
-				header: Box::new(genesis),
-				authority_list: authority_list(),
-				set_id: 1,
-				operating_mode: BasicOperatingMode::Normal,
-			};
-
-			assert_noop!(
-				Pallet::<TestRuntime>::initialize(RuntimeOrigin::root(), init_data),
-				Error::<TestRuntime>::TooLargeHeader,
 			);
 		});
 	}
@@ -1074,31 +1013,6 @@ mod tests {
 	}
 
 	#[test]
-	fn importing_header_rejects_header_if_it_is_too_large() {
-		run_test(|| {
-			initialize_substrate_bridge();
-
-			// Need to update the header digest to indicate that our header signals an authority set
-			// change. However, the change doesn't happen until the next block.
-			let mut header = test_header(2);
-			header.digest = large_digest();
-
-			// Create a valid justification for the header
-			let justification = make_default_justification(&header);
-
-			// Should not be allowed to import this header
-			assert_err!(
-				Pallet::<TestRuntime>::submit_finality_proof(
-					RuntimeOrigin::signed(1),
-					Box::new(header),
-					justification
-				),
-				<Error<TestRuntime>>::TooLargeHeader
-			);
-		});
-	}
-
-	#[test]
 	fn parse_finalized_storage_proof_rejects_proof_on_unknown_header() {
 		run_test(|| {
 			assert_noop!(
@@ -1121,11 +1035,8 @@ mod tests {
 			header.set_state_root(state_root);
 
 			let hash = header.hash();
-			<BestFinalized<TestRuntime>>::put((2, hash));
-			<ImportedHeaders<TestRuntime>>::insert(
-				hash,
-				StoredBridgedHeader::<TestRuntime, ()>::try_from_inner(header).unwrap(),
-			);
+			<BestFinalized<TestRuntime>>::put(HeaderId(2, hash));
+			<ImportedHeaders<TestRuntime>>::insert(hash, header.build());
 
 			assert_ok!(
 				Pallet::<TestRuntime>::parse_finalized_storage_proof(hash, storage_proof, |_| (),),
@@ -1220,7 +1131,7 @@ mod tests {
 		run_test(|| {
 			initialize_substrate_bridge();
 			assert_ok!(submit_finality_proof(1));
-			let first_header = Pallet::<TestRuntime>::best_finalized().unwrap();
+			let first_header_hash = Pallet::<TestRuntime>::best_finalized().unwrap().hash();
 			next_block();
 
 			assert_ok!(submit_finality_proof(2));
@@ -1235,8 +1146,8 @@ mod tests {
 			assert_ok!(submit_finality_proof(6));
 
 			assert!(
-				!Pallet::<TestRuntime>::is_known_header(first_header.hash()),
-				"First header should be pruned."
+				!ImportedHeaders::<TestRuntime, ()>::contains_key(first_header_hash),
+				"First header should be pruned.",
 			);
 		})
 	}
@@ -1251,6 +1162,34 @@ mod tests {
 		assert_eq!(
 			BestFinalized::<TestRuntime>::storage_value_final_key().to_vec(),
 			bp_header_chain::storage_keys::best_finalized_key("Grandpa").0,
+		);
+	}
+
+	#[test]
+	fn test_bridge_grandpa_call_is_correctly_defined() {
+		let header = test_header(0);
+		let init_data = InitializationData {
+			header: Box::new(header.clone()),
+			authority_list: authority_list(),
+			set_id: 1,
+			operating_mode: BasicOperatingMode::Normal,
+		};
+		let justification = make_default_justification(&header);
+
+		let direct_initialize_call =
+			Call::<TestRuntime>::initialize { init_data: init_data.clone() };
+		let indirect_initialize_call = BridgeGrandpaCall::<TestHeader>::initialize(init_data);
+		assert_eq!(direct_initialize_call.encode(), indirect_initialize_call.encode());
+
+		let direct_submit_finality_proof_call = Call::<TestRuntime>::submit_finality_proof {
+			finality_target: Box::new(header.clone()),
+			justification: justification.clone(),
+		};
+		let indirect_submit_finality_proof_call =
+			BridgeGrandpaCall::<TestHeader>::submit_finality_proof(Box::new(header), justification);
+		assert_eq!(
+			direct_submit_finality_proof_call.encode(),
+			indirect_submit_finality_proof_call.encode()
 		);
 	}
 

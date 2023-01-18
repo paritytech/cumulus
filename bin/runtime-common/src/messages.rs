@@ -27,6 +27,7 @@ use bp_messages::{
 	InboundLaneData, LaneId, Message, MessageKey, MessageNonce, MessagePayload, OutboundLaneData,
 };
 use bp_runtime::{messages::MessageDispatchResult, Chain, ChainId, Size, StorageProofChecker};
+pub use bp_runtime::{UnderlyingChainOf, UnderlyingChainProvider};
 use codec::{Decode, DecodeLimit, Encode};
 use frame_support::{traits::Get, weights::Weight, RuntimeDebug};
 use hash_db::Hasher;
@@ -52,12 +53,6 @@ pub trait MessageBridge {
 	type BridgedChain: BridgedChainWithMessages;
 	/// Bridged header chain.
 	type BridgedHeaderChain: HeaderChain<UnderlyingChainOf<Self::BridgedChain>>;
-}
-
-/// A trait that provides the type of the underlying chain.
-pub trait UnderlyingChainProvider {
-	/// Underlying chain type.
-	type Chain: Chain;
 }
 
 /// This chain that has `pallet-bridge-messages` module.
@@ -87,8 +82,6 @@ pub trait BridgedChainWithMessages: UnderlyingChainProvider {
 pub type ThisChain<B> = <B as MessageBridge>::ThisChain;
 /// Bridged chain in context of message bridge.
 pub type BridgedChain<B> = <B as MessageBridge>::BridgedChain;
-/// Underlying chain type.
-pub type UnderlyingChainOf<C> = <C as UnderlyingChainProvider>::Chain;
 /// Hash used on the chain.
 pub type HashOf<C> = bp_runtime::HashOf<<C as UnderlyingChainProvider>::Chain>;
 /// Hasher used on the chain.
@@ -459,7 +452,7 @@ pub mod target {
 					// I have no idea why this method takes `&mut` reference and there's nothing
 					// about that in documentation. Hope it'll only mutate iff error is returned.
 					let weight = XcmWeigher::weight(&mut payload.xcm.1);
-					let weight = Weight::from_ref_time(weight.unwrap_or_else(|e| {
+					let weight = weight.unwrap_or_else(|e| {
 						log::debug!(
 							target: "runtime::bridge-dispatch",
 							"Failed to compute dispatch weight of incoming XCM message {:?}/{}: {:?}",
@@ -470,8 +463,8 @@ pub mod target {
 
 						// we shall return 0 and then the XCM executor will fail to execute XCM
 						// if we'll return something else (e.g. maximal value), the lane may stuck
-						0
-					}));
+						Weight::zero()
+					});
 
 					payload.weight = Some(weight);
 					weight
@@ -505,8 +498,8 @@ pub mod target {
 					location,
 					xcm,
 					hash,
-					weight_limit.unwrap_or_else(Weight::zero).ref_time(),
-					weight_credit.ref_time(),
+					weight_limit.unwrap_or_else(Weight::zero),
+					weight_credit,
 				);
 				Ok(xcm_outcome)
 			};
@@ -542,11 +535,7 @@ pub mod target {
 				},
 			}
 
-			MessageDispatchResult {
-				unspent_weight: Weight::zero(),
-				dispatch_fee_paid_during_dispatch: false,
-				dispatch_level_result: (),
-			}
+			MessageDispatchResult { unspent_weight: Weight::zero(), dispatch_level_result: () }
 		}
 	}
 
@@ -703,13 +692,19 @@ pub mod target {
 	}
 }
 
+/// The `BridgeMessagesCall` used by a chain.
+pub type BridgeMessagesCallOf<C> = bp_messages::BridgeMessagesCall<
+	bp_runtime::AccountIdOf<C>,
+	target::FromBridgedChainMessagesProof<bp_runtime::HashOf<C>>,
+	source::FromBridgedChainMessagesDeliveryProof<bp_runtime::HashOf<C>>,
+>;
+
 #[cfg(test)]
 mod tests {
 	use super::*;
 	use crate::messages_generation::{
 		encode_all_messages, encode_lane_data, prepare_messages_storage_proof,
 	};
-	use bp_runtime::HeaderOf;
 	use codec::{Decode, Encode};
 	use frame_support::weights::Weight;
 	use sp_core::H256;
@@ -885,17 +880,17 @@ mod tests {
 	struct BridgedHeaderChain;
 
 	impl HeaderChain<BridgedUnderlyingChain> for BridgedHeaderChain {
-		fn finalized_header(
+		fn finalized_header_state_root(
 			_hash: HashOf<BridgedChain>,
-		) -> Option<HeaderOf<BridgedUnderlyingChain>> {
-			TEST_BRIDGED_HEADER.with(|h| h.borrow().clone())
+		) -> Option<HashOf<BridgedChain>> {
+			TEST_BRIDGED_HEADER.with(|h| h.borrow().clone()).map(|h| *h.state_root())
 		}
 	}
 
 	struct ThisHeaderChain;
 
 	impl HeaderChain<ThisUnderlyingChain> for ThisHeaderChain {
-		fn finalized_header(_hash: HashOf<ThisChain>) -> Option<HeaderOf<ThisUnderlyingChain>> {
+		fn finalized_header_state_root(_hash: HashOf<ThisChain>) -> Option<HashOf<ThisChain>> {
 			unreachable!()
 		}
 	}
@@ -904,7 +899,7 @@ mod tests {
 		OutboundLaneData::default()
 	}
 
-	const TEST_LANE_ID: &LaneId = b"test";
+	const TEST_LANE_ID: &LaneId = &LaneId(*b"test");
 	const MAXIMAL_PENDING_MESSAGES_AT_TEST_LANE: MessageNonce = 32;
 
 	fn regular_outbound_message_payload() -> source::FromThisChainMessagePayload {
@@ -916,7 +911,7 @@ mod tests {
 		assert_eq!(
 			source::FromThisChainMessageVerifier::<OnThisChainBridge>::verify_message(
 				&ThisChainOrigin(Ok(frame_system::RawOrigin::Root)),
-				b"dsbl",
+				&LaneId(*b"dsbl"),
 				&test_lane_outbound_data(),
 				&regular_outbound_message_payload(),
 			),
