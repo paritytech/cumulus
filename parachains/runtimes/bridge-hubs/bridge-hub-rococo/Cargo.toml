@@ -75,6 +75,7 @@ parachains-common = { path = "../../../../parachains/common", default-features =
 bp-bridge-hub-rococo = { path = "../../../../bridges/primitives/chain-bridge-hub-rococo", default-features = false }
 bp-bridge-hub-wococo = { path = "../../../../bridges/primitives/chain-bridge-hub-wococo", default-features = false }
 bp-messages = { path = "../../../../bridges/primitives/messages", default-features = false }
+bp-parachains = { path = "../../../../bridges/primitives/parachains", default-features = false }
 bp-runtime = { path = "../../../../bridges/primitives/runtime", default-features = false }
 bp-rococo = { path = "../../../../bridges/primitives/chain-rococo", default-features = false }
 bp-wococo = { path = "../../../../bridges/primitives/chain-wococo", default-features = false }
@@ -95,6 +96,7 @@ std = [
 	"bp-bridge-hub-rococo/std",
 	"bp-bridge-hub-wococo/std",
 	"bp-messages/std",
+	"bp-parachains/std",
 	"bp-runtime/std",
 	"bp-rococo/std",
 	"bp-wococo/std",

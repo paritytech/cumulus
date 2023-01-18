@@ -100,16 +100,16 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 match_types! {
-	// TODO: map gov2 origins here - after merge https://github.com/paritytech/cumulus/pull/1895
-	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
+	pub type ParentOrParentsPlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
-		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
+		MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
 	};
 	pub type ParentOrSiblings: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(_) }
 	};
 }
+
 /// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
 /// account for proof size weights.
 ///
@@ -163,8 +163,8 @@ pub type Barrier = DenyThenTry<
 			(
 				// Allow anything to pay for execution.
 				AllowTopLevelPaidExecutionFrom<Everything>,
-				// Parent and its exec plurality get free execution.
-				AllowExplicitUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+				// Parent and its plurality (i.e. governance bodies) gets free execution.
+				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
 				// Subscriptions for version tracking are OK.
 				AllowSubscriptionsFrom<ParentOrSiblings>,
 			),

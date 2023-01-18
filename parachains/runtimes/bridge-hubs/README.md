@@ -60,7 +60,7 @@ cp target/release/substrate-relay ~/local_bridge_testing/bin/substrate-relay
 # (Optional) 5. Build polkadot-parachain-mint binary with statemine/westmint for moving assets
 cd <cumulus-git-repo-dir>
 git checkout -b bko-transfer-asset-via-bridge --track origin/bko-transfer-asset-via-bridge
-cargo build --release --locked -p polkadot-parachain@0.9.300
+cargo build --release --locked -p polkadot-parachain-bin
 cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain-mint
 ```
 

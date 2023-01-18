@@ -63,6 +63,7 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
+use bp_parachains::SingleParaStoredHeaderDataBuilder;
 use bp_runtime::{HeaderId, HeaderIdProvider};
 
 #[cfg(any(feature = "std", test))]
@@ -263,7 +264,7 @@ impl pallet_balances::Config for Runtime {
 
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
-	pub const TransactionByteFee: Balance = 10 * MICROUNIT;
+	pub const TransactionByteFee: Balance = 1 * MILLICENTS;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -392,10 +393,9 @@ pub type BridgeGrandpaWococoInstance = pallet_bridge_grandpa::Instance1;
 impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
 	type BridgedChain = bp_wococo::Wococo;
 	type MaxRequests = MaxRequests;
-	type HeadersToKeep = HeadersToKeep;
+	type HeadersToKeep = RelayChainHeadersToKeep;
 	type MaxBridgedAuthorities =
 		frame_support::traits::ConstU32<{ bp_wococo::MAX_AUTHORITIES_COUNT }>;
-	type MaxBridgedHeaderSize = frame_support::traits::ConstU32<{ bp_wococo::MAX_HEADER_SIZE }>;
 	type WeightInfo = pallet_bridge_grandpa::weights::BridgeWeight<Runtime>;
 }
 
@@ -404,19 +404,23 @@ pub type BridgeGrandpaRococoInstance = pallet_bridge_grandpa::Instance2;
 impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 	type BridgedChain = bp_rococo::Rococo;
 	type MaxRequests = MaxRequests;
-	type HeadersToKeep = HeadersToKeep;
+	type HeadersToKeep = RelayChainHeadersToKeep;
 	type MaxBridgedAuthorities =
 		frame_support::traits::ConstU32<{ bp_rococo::MAX_AUTHORITIES_COUNT }>;
-	type MaxBridgedHeaderSize = frame_support::traits::ConstU32<{ bp_rococo::MAX_HEADER_SIZE }>;
 	type WeightInfo = pallet_bridge_grandpa::weights::BridgeWeight<Runtime>;
 }
 
 pub const ROCOCO_BRIDGE_PARA_PALLET_NAME: &str = "Paras";
 pub const WOCOCO_BRIDGE_PARA_PALLET_NAME: &str = "Paras";
 parameter_types! {
+	pub const RelayChainHeadersToKeep: u32 = 1024;
 	pub const ParachainHeadsToKeep: u32 = 64;
+	pub const MaxRequests: u32 = 64;
+
 	pub const RococoBridgeParachainPalletName: &'static str = ROCOCO_BRIDGE_PARA_PALLET_NAME;
 	pub const WococoBridgeParachainPalletName: &'static str = WOCOCO_BRIDGE_PARA_PALLET_NAME;
+	pub const MaxRococoParaHeadDataSize: u32 = bp_rococo::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
+	pub const MaxWococoParaHeadDataSize: u32 = bp_wococo::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
 }
 
 /// Add parachain bridge pallet to track Wococo bridge hub parachain
@@ -426,10 +430,10 @@ impl pallet_bridge_parachains::Config<BridgeParachainWococoInstance> for Runtime
 	type WeightInfo = pallet_bridge_parachains::weights::BridgeWeight<Runtime>;
 	type BridgesGrandpaPalletInstance = BridgeGrandpaWococoInstance;
 	type ParasPalletName = WococoBridgeParachainPalletName;
-	type TrackedParachains = Everything;
+	type ParaStoredHeaderDataBuilder =
+		SingleParaStoredHeaderDataBuilder<bp_bridge_hub_wococo::BridgeHubWococo>;
 	type HeadsToKeep = ParachainHeadsToKeep;
-	type MaxParaHeadSize =
-		frame_support::traits::ConstU32<{ bp_wococo::MAX_NESTED_PARACHAIN_HEAD_SIZE }>;
+	type MaxParaHeadDataSize = MaxWococoParaHeadDataSize;
 }
 
 /// Add parachain bridge pallet to track Rococo bridge hub parachain
@@ -439,10 +443,10 @@ impl pallet_bridge_parachains::Config<BridgeParachainRococoInstance> for Runtime
 	type WeightInfo = pallet_bridge_parachains::weights::BridgeWeight<Runtime>;
 	type BridgesGrandpaPalletInstance = BridgeGrandpaRococoInstance;
 	type ParasPalletName = RococoBridgeParachainPalletName;
-	type TrackedParachains = Everything;
+	type ParaStoredHeaderDataBuilder =
+		SingleParaStoredHeaderDataBuilder<bp_bridge_hub_rococo::BridgeHubRococo>;
 	type HeadsToKeep = ParachainHeadsToKeep;
-	type MaxParaHeadSize =
-		frame_support::traits::ConstU32<{ bp_rococo::MAX_NESTED_PARACHAIN_HEAD_SIZE }>;
+	type MaxParaHeadDataSize = MaxRococoParaHeadDataSize;
 }
 
 /// Add XCM messages support for BrigdeHubRococo to support Rococo->Wococo XCM messages
@@ -463,10 +467,13 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 
 	type InboundPayload = XcmAsPlainPayload;
 	type InboundRelayer = AccountId;
+	// TODO:check-parameter - check delivery
+	type DeliveryPayments = ();
 
 	type TargetHeaderChain = bridge_hub_rococo_config::BridgeHubWococo;
 	type LaneMessageVerifier = bridge_hub_rococo_config::ToBridgeHubWococoMessageVerifier;
-	type MessageDeliveryAndDispatchPayment = ();
+	// TODO:check-parameter - check delivery
+	type DeliveryConfirmationPayments = ();
 
 	type SourceHeaderChain = bridge_hub_rococo_config::BridgeHubWococo;
 	type MessageDispatch = XcmBlobMessageDispatch<
@@ -494,10 +501,13 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 
 	type InboundPayload = XcmAsPlainPayload;
 	type InboundRelayer = AccountId;
+	// TODO:check-parameter - check delivery
+	type DeliveryPayments = ();
 
 	type TargetHeaderChain = bridge_hub_wococo_config::BridgeHubRococo;
 	type LaneMessageVerifier = bridge_hub_wococo_config::ToBridgeHubRococoMessageVerifier;
-	type MessageDeliveryAndDispatchPayment = ();
+	// TODO:check-parameter - check delivery
+	type DeliveryConfirmationPayments = ();
 
 	type SourceHeaderChain = bridge_hub_wococo_config::BridgeHubRococo;
 	type MessageDispatch = XcmBlobMessageDispatch<
@@ -541,7 +551,8 @@ construct_runtime!(
 
 		// Handy utilities.
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
-		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
+		// TODO:check-parameter - change back to 41 a align bridge pallets
+		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 36,
 
 		// Wococo bridge modules
 		BridgeWococoGrandpa: pallet_bridge_grandpa::<Instance1>::{Pallet, Call, Storage, Config<T>} = 41,
@@ -698,13 +709,13 @@ impl_runtime_apis! {
 
 	impl bp_rococo::RococoFinalityApi<Block> for Runtime {
 		fn best_finalized() -> Option<HeaderId<bp_rococo::Hash, bp_rococo::BlockNumber>> {
-			BridgeRococoGrandpa::best_finalized().map(|header| header.id())
+			BridgeRococoGrandpa::best_finalized()
 		}
 	}
 
 	impl bp_wococo::WococoFinalityApi<Block> for Runtime {
 		fn best_finalized() -> Option<HeaderId<bp_wococo::Hash, bp_wococo::BlockNumber>> {
-			BridgeWococoGrandpa::best_finalized().map(|header| header.id())
+			BridgeWococoGrandpa::best_finalized()
 		}
 	}
 

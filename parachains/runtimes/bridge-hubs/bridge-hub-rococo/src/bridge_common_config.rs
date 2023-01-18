@@ -21,21 +21,14 @@ use bp_messages::{
 };
 use bp_runtime::{messages::MessageDispatchResult, AccountIdOf, Chain};
 use codec::{Decode, Encode};
-use frame_support::{dispatch::Weight, parameter_types, CloneNoBound, EqNoBound, PartialEqNoBound};
+use frame_support::{dispatch::Weight, CloneNoBound, EqNoBound, PartialEqNoBound};
 use scale_info::TypeInfo;
 use xcm::latest::prelude::*;
-use xcm_builder::{DispatchBlob, DispatchBlobError, HaulBlob};
+use xcm_builder::{DispatchBlob, DispatchBlobError, HaulBlob, HaulBlobError};
 
 // TODO:check-parameter - we could possibly use BridgeMessage from xcm:v3 stuff
 /// PLain "XCM" payload, which we transfer through bridge
 pub type XcmAsPlainPayload = sp_std::prelude::Vec<u8>;
-
-// TODO:check-parameter
-parameter_types! {
-	pub const MaxMessagesToPruneAtOnce: bp_messages::MessageNonce = 8;
-	pub const MaxRequests: u32 = 64;
-	pub const HeadersToKeep: u32 = 1024;
-}
 
 #[derive(CloneNoBound, EqNoBound, PartialEqNoBound, Encode, Decode, Debug, TypeInfo)]
 pub enum XcmBlobMessageDispatchResult {
@@ -87,7 +80,6 @@ impl<SourceBridgeHubChain: Chain, TargetBridgeHubChain: Chain, BlobDispatcher: D
 				return MessageDispatchResult {
 					// TODO:check-parameter - setup uspent_weight?
 					unspent_weight: Weight::zero(),
-					dispatch_fee_paid_during_dispatch: false,
 					dispatch_level_result: XcmBlobMessageDispatchResult::InvalidPayload,
 				}
 			},
@@ -124,7 +116,6 @@ impl<SourceBridgeHubChain: Chain, TargetBridgeHubChain: Chain, BlobDispatcher: D
 		};
 		MessageDispatchResult {
 			// TODO:check-parameter - setup uspent_weight?
-			dispatch_fee_paid_during_dispatch: false,
 			unspent_weight: Weight::zero(),
 			dispatch_level_result,
 		}
@@ -146,20 +137,18 @@ pub trait XcmBlobHauler {
 
 pub struct XcmBlobHaulerAdapter<XcmBlobHauler>(sp_std::marker::PhantomData<XcmBlobHauler>);
 impl<H: XcmBlobHauler> HaulBlob for XcmBlobHaulerAdapter<H> {
-	fn haul_blob(blob: sp_std::prelude::Vec<u8>) {
+	fn haul_blob(blob: sp_std::prelude::Vec<u8>) -> Result<(), HaulBlobError> {
 		let lane = H::xcm_lane();
 		let result = H::MessageSender::send_message(
 			pallet_xcm::Origin::from(MultiLocation::from(H::message_sender_origin())).into(),
 			lane,
 			blob,
 		);
-		let result = result
-			.map(|artifacts| {
-				let hash = (lane, artifacts.nonce).using_encoded(sp_io::hashing::blake2_256);
-				hash
-			})
-			.map_err(|e| e);
+		let result = result.map(|artifacts| {
+			let hash = (lane, artifacts.nonce).using_encoded(sp_io::hashing::blake2_256);
+			hash
+		});
 		log::info!(target: crate::LOG_TARGET, "haul_blob result: {:?} on lane: {:?}", result, lane);
-		result.expect("failed to process: TODO:check-parameter - wait for origin/gav-xcm-v3, there is a comment about handliing errors for HaulBlob");
+		result.map(|_| ()).map_err(|_| HaulBlobError::Transport("MessageSenderError"))
 	}
 }
