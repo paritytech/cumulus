@@ -18,13 +18,12 @@
 
 use frame_support::traits::{
 	fungibles::{self, Balanced, CreditOf},
-	Contains, Currency, Get, Imbalance, OnUnbalanced,
+	Contains, ContainsPair, Currency, Get, Imbalance, OnUnbalanced,
 };
 use pallet_asset_tx_payment::HandleCredit;
 use sp_runtime::traits::Zero;
 use sp_std::marker::PhantomData;
 use xcm::latest::{AssetId, Fungibility::Fungible, MultiAsset, MultiLocation};
-use xcm_executor::traits::FilterAssetLocation;
 
 /// Type alias to conveniently refer to the `Currency::NegativeImbalance` associated type.
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
@@ -69,16 +68,17 @@ where
 
 /// A `HandleCredit` implementation that naively transfers the fees to the block author.
 /// Will drop and burn the assets in case the transfer fails.
-pub struct AssetsToBlockAuthor<R>(PhantomData<R>);
-impl<R> HandleCredit<AccountIdOf<R>, pallet_assets::Pallet<R>> for AssetsToBlockAuthor<R>
+pub struct AssetsToBlockAuthor<R, I>(PhantomData<(R, I)>);
+impl<R, I> HandleCredit<AccountIdOf<R>, pallet_assets::Pallet<R, I>> for AssetsToBlockAuthor<R, I>
 where
-	R: pallet_authorship::Config + pallet_assets::Config,
+	I: 'static,
+	R: pallet_authorship::Config + pallet_assets::Config<I>,
 	AccountIdOf<R>: From<polkadot_primitives::AccountId> + Into<polkadot_primitives::AccountId>,
 {
-	fn handle_credit(credit: CreditOf<AccountIdOf<R>, pallet_assets::Pallet<R>>) {
+	fn handle_credit(credit: CreditOf<AccountIdOf<R>, pallet_assets::Pallet<R, I>>) {
 		if let Some(author) = pallet_authorship::Pallet::<R>::author() {
 			// In case of error: Will drop the result triggering the `OnDrop` of the imbalance.
-			let _ = pallet_assets::Pallet::<R>::resolve(&author, credit);
+			let _ = pallet_assets::Pallet::<R, I>::resolve(&author, credit);
 		}
 	}
 }
@@ -97,8 +97,8 @@ where
 
 /// Asset filter that allows all assets from a certain location.
 pub struct AssetsFrom<T>(PhantomData<T>);
-impl<T: Get<MultiLocation>> FilterAssetLocation for AssetsFrom<T> {
-	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+impl<T: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation> for AssetsFrom<T> {
+	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
 		let loc = T::get();
 		&loc == origin &&
 			matches!(asset, MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) }
@@ -267,12 +267,9 @@ mod tests {
 			.clone()
 			.pushed_with_interior(GeneralIndex(42))
 			.expect("multilocation will only have 2 junctions; qed");
-		let asset = MultiAsset { id: Concrete(asset_location), fun: 1_000_000.into() };
+		let asset = MultiAsset { id: Concrete(asset_location), fun: 1_000_000u128.into() };
 		assert!(
-			AssetsFrom::<SomeSiblingParachain>::filter_asset_location(
-				&asset,
-				&SomeSiblingParachain::get()
-			),
+			AssetsFrom::<SomeSiblingParachain>::contains(&asset, &SomeSiblingParachain::get()),
 			"AssetsFrom should allow assets from any of its interior locations"
 		);
 	}
