@@ -302,7 +302,7 @@ impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
 	) -> sp_std::result::Result<Self::Success, RuntimeOrigin> {
 		let origin_location = EnsureXcm::<Everything>::try_origin(o.clone())?;
 		if !a.starts_with(&origin_location) {
-			return Err(o)
+			return Err(o);
 		}
 		SovereignAccountOf::convert(origin_location).map_err(|_| o)
 	}
@@ -334,30 +334,32 @@ impl Contains<MultiLocation> for TrustedBridgedNetworks {
 			MultiLocation {
 				parents: 2,
 				interior: X2(GlobalConsensus(consensus), AccountId32 { .. }),
-			} |
-			MultiLocation {
+			}
+			| MultiLocation {
 				parents: 2,
 				interior: X3(GlobalConsensus(consensus), Parachain(_), AccountId32 { .. }),
 			} => consensus,
 			_ => {
 				log::trace!(target: "xcm::contains_multi_location", "TrustedBridgedNetworks invalid MultiLocation: {:?}", origin);
-				return false
+				return false;
 			},
 		};
 
-		Self::get()
-			.iter()
-			.find(|(_, configured_bridged_network)| match configured_bridged_network {
+		match Self::get().iter().any(|(_, configured_bridged_network)| {
+			match configured_bridged_network {
 				GlobalConsensus(bridged_network) => bridged_network.eq(&consensus),
 				_ => false,
-			})
-			.map_or_else(|| {
+			}
+		}) {
+			false => {
 				log::trace!(target: "xcm::contains_multi_location", "TrustedBridgedNetworks  GlobalConsensus: {:?} is not Trusted", consensus);
 				false
-			}, |_| {
+			},
+			true => {
 				log::trace!(target: "xcm::contains_multi_location", "TrustedBridgedNetworks  GlobalConsensus: {:?} is Trusted", consensus);
 				true
-			})
+			},
+		}
 	}
 }
 
@@ -390,7 +392,7 @@ impl<BridgedNetworks: Contains<MultiLocation>> ShouldExecute
 
 		if !BridgedNetworks::contains(origin) {
 			log::trace!(target: "xcm::barriers", "AllowExecutionForBridgedOperationsFrom barrier failed on invalid Origin: {:?}", origin);
-			return Err(())
+			return Err(());
 		}
 
 		match instructions.iter().all(|instruction| match instruction {
@@ -460,15 +462,15 @@ impl<
 
 		if !BridgedNetworks::contains(&location) {
 			log::trace!(target: "xcm::location_conversion", "BridgedProxyAccountId MultiLocation: {:?} is not Trusted", location);
-			return Err(location)
+			return Err(location);
 		}
 
 		match location {
 			MultiLocation {
 				parents: 2,
 				interior: X2(GlobalConsensus(_), AccountId32 { id, network: _ }),
-			} |
-			MultiLocation {
+			}
+			| MultiLocation {
 				parents: 2,
 				interior: X3(GlobalConsensus(_), Parachain(_), AccountId32 { id, network: _ }),
 			} => Ok(id.into()),
