@@ -302,7 +302,7 @@ impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
 	) -> sp_std::result::Result<Self::Success, RuntimeOrigin> {
 		let origin_location = EnsureXcm::<Everything>::try_origin(o.clone())?;
 		if !a.starts_with(&origin_location) {
-			return Err(o);
+			return Err(o)
 		}
 		SovereignAccountOf::convert(origin_location).map_err(|_| o)
 	}
@@ -334,14 +334,14 @@ impl Contains<MultiLocation> for TrustedBridgedNetworks {
 			MultiLocation {
 				parents: 2,
 				interior: X2(GlobalConsensus(consensus), AccountId32 { .. }),
-			}
-			| MultiLocation {
+			} |
+			MultiLocation {
 				parents: 2,
 				interior: X3(GlobalConsensus(consensus), Parachain(_), AccountId32 { .. }),
 			} => consensus,
 			_ => {
 				log::trace!(target: "xcm::contains_multi_location", "TrustedBridgedNetworks invalid MultiLocation: {:?}", origin);
-				return false;
+				return false
 			},
 		};
 
@@ -362,12 +362,52 @@ impl Contains<MultiLocation> for TrustedBridgedNetworks {
 }
 
 pub type BridgedCallsBarrier = (
-	AllowExecutionForBridgesOperationFrom<TrustedBridgedNetworks>,
+	AllowExecutionForBridgedOperationsFrom<TrustedBridgedNetworks>,
 	// Expected responses are OK.
 	AllowKnownQueryResponses<PolkadotXcm>,
 	// Subscriptions for version tracking are OK.
 	AllowSubscriptionsFrom<Everything>,
 );
+
+/// Allow execution of Trap & Transact messages from specified bridged networks
+/// At first checks `origin` comes from specified networks
+/// Then verifies if each instruction is Trap or Transact
+pub struct AllowExecutionForBridgedOperationsFrom<BridgedNetworks>(PhantomData<BridgedNetworks>);
+impl<BridgedNetworks: Contains<MultiLocation>> ShouldExecute
+	for AllowExecutionForBridgedOperationsFrom<BridgedNetworks>
+{
+	fn should_execute<RuntimeCall>(
+		origin: &MultiLocation,
+		instructions: &mut [Instruction<RuntimeCall>],
+		_max_weight: Weight,
+		_weight_credit: &mut Weight,
+	) -> Result<(), ()> {
+		log::trace!(
+			target: "xcm::barriers",
+			"AllowExecutionForBridgedOperationsFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, weight_credit: {:?}",
+			origin, instructions, _max_weight, _weight_credit,
+		);
+
+		if !BridgedNetworks::contains(origin) {
+			log::trace!(target: "xcm::barriers", "AllowExecutionForBridgedOperationsFrom barrier failed on invalid Origin: {:?}", origin);
+			return Err(())
+		}
+
+		match instructions.iter().all(|instruction| match instruction {
+			Trap { .. } | Transact { .. } => true,
+			_ => false,
+		}) {
+			true => {
+				log::trace!(target: "xcm::barriers", "AllowExecutionForBridgedOperationsFrom barrier passed for origin: {:?}, instructions: {:?}", origin, instructions);
+				Ok(())
+			},
+			false => {
+				log::trace!(target: "xcm::barriers", "AllowExecutionForBridgedOperationsFrom barrier failed for origin: {:?}, instructions: {:?}", origin, instructions);
+				Err(())
+			},
+		}
+	}
+}
 
 pub struct BridgedSignedProxyAccountAsNative<LocationConverter, RuntimeOrigin>(
 	PhantomData<(LocationConverter, RuntimeOrigin)>,
@@ -406,35 +446,6 @@ where
 	}
 }
 
-/// Allow execution of specific messages from specified bridged networks
-/// At first checks `origin` comes from specified networks
-/// Then verifies if each instruction is Trap or Transact
-pub struct AllowExecutionForBridgesOperationFrom<BridgedNetworks>(PhantomData<BridgedNetworks>);
-impl<BridgedNetworks: Contains<MultiLocation>> ShouldExecute
-	for AllowExecutionForBridgesOperationFrom<BridgedNetworks>
-{
-	fn should_execute<RuntimeCall>(
-		origin: &MultiLocation,
-		instructions: &mut [Instruction<RuntimeCall>],
-		_max_weight: Weight,
-		_weight_credit: &mut Weight,
-	) -> Result<(), ()> {
-		log::trace!(
-			target: "xcm::barriers",
-			"AllowExecutionForBridgesOperationFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, weight_credit: {:?}",
-			origin, instructions, _max_weight, _weight_credit,
-		);
-
-		if !BridgedNetworks::contains(origin) {
-			log::trace!(target: "xcm::barriers", "AllowExecutionForBridgesOperationsFrom barrier failed on invalid Origin: {:?}", origin);
-			return Err(());
-		}
-
-		log::trace!(target: "xcm::barriers", "AllowExecutionForBridgesOperationsFrom barrier passed");
-		Ok(())
-	}
-}
-
 /// Extracts the `AccountId32` from the bridged `MultiLocation` if the network matches.
 pub struct BridgedProxyAccountId<BridgedNetworks, AccountId>(
 	PhantomData<(BridgedNetworks, AccountId)>,
@@ -449,15 +460,15 @@ impl<
 
 		if !BridgedNetworks::contains(&location) {
 			log::trace!(target: "xcm::location_conversion", "BridgedProxyAccountId MultiLocation: {:?} is not Trusted", location);
-			return Err(location);
+			return Err(location)
 		}
 
 		match location {
 			MultiLocation {
 				parents: 2,
 				interior: X2(GlobalConsensus(_), AccountId32 { id, network: _ }),
-			}
-			| MultiLocation {
+			} |
+			MultiLocation {
 				parents: 2,
 				interior: X3(GlobalConsensus(_), Parachain(_), AccountId32 { id, network: _ }),
 			} => Ok(id.into()),
