@@ -317,39 +317,69 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(5)]
 		#[pallet::weight(T::WeightInfo::add_invulnerable())]
 		pub fn add_invulnerable(
 			origin: OriginFor<T>,
 			new: <T>::AccountId,
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
-		
-			let mut bounded_invulnerables = <Invulnerables<T>>::get();
-			bounded_invulnerables.try_mutate(|invulnerables: BoundedVec<_, T::AccountId>| -> Result<usize, DispatchError> {
-				// check if invulnerable is not already in the list
-				if invulnerables.iter().any(|&invulnerable| invulnerable == new) {
-					Err(Error::<T>::AlreadyInvulnerable)?
-				} else {
-					// check if new invulnerable has associated validator key before it is added
-					let validator_key = 
+			
+			//let mut current_invulnerables = <Invulnerables<T>>::get();
+			let mut invulnerables = Self::invulnerables();
+
+			// ensure we don't overflow invulnerables quantity
+			let length = invulnerables.len();
+			ensure!(((length as u32)+1) < T::MaxInvulnerables::get(), Error::<T>::TooManyCandidates);
+			
+			// ensure this new invulnerable is not already nomitad
+			ensure!(!invulnerables.contains(&new), Error::<T>::AlreadyInvulnerable);
+			
+			// ensure this new invulnerable has registred a validator key
+			let validator_key = 
 						T::ValidatorIdOf::convert(new.clone()).ok_or(Error::<T>::NoAssociatedValidatorId)?;
 					ensure!(
 						T::ValidatorRegistration::is_registered(&validator_key),
 						Error::<T>::ValidatorNotRegistered
 					);
-					// add invulnerable
-					invulnerables.try_push(new).map_err(|_| Error::<T>::TooManyInvulnerables)?;
-					Ok(invulnerables.len())
-				}
-			})?;
+			
+			// add new invulnerable to invulnerables list
+			invulnerables.try_push(new).map_err(|_| Error::<T>::Unknown)?;
 
-			// replace invulnerables list with new invulnerable
-			<Invulnerables<T>>::put(&bounded_invulnerables);
+			// replace invulnerables list with new invulnerables list in memory
+			<Invulnerables<T>>::put(&invulnerables);
 
 			Self::deposit_event(Event::NewInvulnerable {
 				added: new,
 			});
 			Ok(().into())
+			//Ok(invulnerables.len())
+			
+			//current_invulnerables.try_mutate(|invulnerables: BoundedVec<_, T::AccountId>| -> Result<usize, DispatchError> {
+				//if invulnerables.iter().any(|invulnerable| invulnerable == new) {
+				//	Err(Error::<T>::AlreadyCandidate)?
+				//} else {
+					//T::Currency::reserve(&who, deposit)?;
+				//invulnerables.try_push(new).map_err(|_| Error::<T>::TooManyInvulnerables)?;
+				//<LastAuthoredBlock<T>>::insert(
+				//	who.clone(),
+				//	frame_system::Pallet::<T>::block_number() + T::KickThreshold::get(),
+				//);
+				// check if invulnerable is not already in the list
+				//if invulnerables.iter().any(|&invulnerable| invulnerable == new) {
+				//	Err(Error::<T>::AlreadyInvulnerable)?
+				//} else {
+					// check if new invulnerable has associated validator key before it is added
+					//let validator_key = 
+					//	T::ValidatorIdOf::convert(new.clone()).ok_or(Error::<T>::NoAssociatedValidatorId)?;
+					//ensure!(
+					//	T::ValidatorRegistration::is_registered(&validator_key),
+					//	Error::<T>::ValidatorNotRegistered
+					//);
+					// add invulnerable
+				//Ok(invulnerables.len())
+			//})?;
+
 		}
 
 		// #[pallet::weight(T::WeightInfo::remove_invulnerable())]
