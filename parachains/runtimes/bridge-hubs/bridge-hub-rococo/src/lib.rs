@@ -952,6 +952,11 @@ impl_runtime_apis! {
 				fn endow_account(_: &AccountId) {}
 				fn is_message_dispatched(_: bp_messages::MessageNonce) -> bool { true }
 
+				fn is_relayer_rewarded(_: &Self::AccountId) -> bool {
+					// TODO: implement me properly
+					true
+				}
+
 				fn prepare_message_proof(
 					params: MessageProofParams,
 				) -> (bridge_hub_rococo_config::FromWococoBridgeHubMessagesProof, Weight) {
@@ -983,6 +988,11 @@ impl_runtime_apis! {
 				fn bridged_relayer_id() -> AccountId { [0u8; 32].into() }
 				fn endow_account(_: &AccountId) {}
 				fn is_message_dispatched(_: bp_messages::MessageNonce) -> bool { true }
+
+				fn is_relayer_rewarded(_: &Self::AccountId) -> bool {
+					// TODO: implement me properly
+					true
+				}
 
 				fn prepare_message_proof(
 					params: MessageProofParams,
@@ -1017,6 +1027,11 @@ impl_runtime_apis! {
 			};
 
 			impl BridgeParachainsConfig<BridgeParachainWococoInstance> for Runtime {
+				fn parachains() -> Vec<bp_polkadot_core::parachains::ParaId> {
+					use bp_runtime::Parachain;
+					vec![bp_polkadot_core::parachains::ParaId(bp_bridge_hub_wococo::BridgeHubWococo::PARACHAIN_ID)]
+				}
+
 				fn prepare_parachain_heads_proof(
 					parachains: &[bp_polkadot_core::parachains::ParaId],
 					parachain_head_size: u32,
@@ -1036,6 +1051,11 @@ impl_runtime_apis! {
 			}
 
 			impl BridgeParachainsConfig<BridgeParachainRococoInstance> for Runtime {
+				fn parachains() -> Vec<bp_polkadot_core::parachains::ParaId> {
+					use bp_runtime::Parachain;
+					vec![bp_polkadot_core::parachains::ParaId(bp_bridge_hub_rococo::BridgeHubRococo::PARACHAIN_ID)]
+				}
+
 				fn prepare_parachain_heads_proof(
 					parachains: &[bp_polkadot_core::parachains::ParaId],
 					parachain_head_size: u32,
