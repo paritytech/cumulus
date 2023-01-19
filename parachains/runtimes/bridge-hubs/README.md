@@ -104,8 +104,10 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	~/local_bridge_testing/bin/substrate-relay init-bridge rococo-to-bridge-hub-wococo \
 	--source-host localhost \
 	--source-port 9942 \
+	--source-version-mode Auto \
 	--target-host localhost \
 	--target-port 8945 \
+	--target-version-mode Auto \
 	--target-signer //Bob
 
 # Wococo -> Rococo
@@ -113,8 +115,10 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	~/local_bridge_testing/bin/substrate-relay init-bridge wococo-to-bridge-hub-rococo \
 	--source-host localhost \
 	--source-port 9945 \
+	--source-version-mode Auto \
 	--target-host localhost \
 	--target-port 8943 \
+	--target-version-mode Auto \
 	--target-signer //Bob
 
 # 2. Relay relay-chain headers, parachain headers and messages**
@@ -122,16 +126,20 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
     ~/local_bridge_testing/bin/substrate-relay relay-headers-and-messages bridge-hub-rococo-bridge-hub-wococo \
     --rococo-host localhost \
     --rococo-port 9942 \
+	--rococo-version-mode Auto \
     --bridge-hub-rococo-host localhost \
     --bridge-hub-rococo-port 8943 \
+	--bridge-hub-rococo-version-mode Auto \
     --bridge-hub-rococo-signer //Charlie \
     --wococo-headers-to-bridge-hub-rococo-signer //Bob \
     --wococo-parachains-to-bridge-hub-rococo-signer //Bob \
     --bridge-hub-rococo-transactions-mortality 4 \
     --wococo-host localhost \
     --wococo-port 9945 \
+	--wococo-version-mode Auto \
     --bridge-hub-wococo-host localhost \
     --bridge-hub-wococo-port 8945 \
+	--bridge-hub-wococo-version-mode Auto \
     --bridge-hub-wococo-signer //Charlie \
     --rococo-headers-to-bridge-hub-wococo-signer //Bob \
     --rococo-parachains-to-bridge-hub-wococo-signer //Bob \
