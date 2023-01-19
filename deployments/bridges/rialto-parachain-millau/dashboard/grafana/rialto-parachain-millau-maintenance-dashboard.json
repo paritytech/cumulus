@@ -8,14 +8,22 @@
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
         "type": "dashboard"
       }
     ]
   },
   "editable": true,
+  "fiscalYearStartMonth": 0,
   "gnetId": null,
   "graphTooltip": 0,
   "links": [],
+  "liveNow": false,
   "panels": [
     {
       "alert": {
@@ -43,52 +51,6 @@
               "type": "last"
             },
             "type": "query"
-          },
-          {
-            "evaluator": {
-              "params": [
-                1000
-              ],
-              "type": "lt"
-            },
-            "operator": {
-              "type": "or"
-            },
-            "query": {
-              "params": [
-                "B",
-                "5m",
-                "now"
-              ]
-            },
-            "reducer": {
-              "params": [],
-              "type": "last"
-            },
-            "type": "query"
-          },
-          {
-            "evaluator": {
-              "params": [
-                1000
-              ],
-              "type": "lt"
-            },
-            "operator": {
-              "type": "or"
-            },
-            "query": {
-              "params": [
-                "C",
-                "5m",
-                "now"
-              ]
-            },
-            "reducer": {
-              "params": [],
-              "type": "last"
-            },
-            "type": "query"
           }
         ],
         "executionErrorState": "alerting",
@@ -104,19 +66,13 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 16
+        "y": 0
       },
       "hiddenSeries": false,
       "id": 10,
@@ -132,8 +88,11 @@
       "lines": true,
       "linewidth": 1,
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "percentage": false,
-      "pluginVersion": "7.1.3",
+      "pluginVersion": "8.2.6",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -143,16 +102,29 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "at_RialtoParachain_relay_MillauHeaders_balance{instance=\"relay-millau-rialto-parachain-1:9616\"}",
+          "exemplar": true,
+          "expr": "at_RialtoParachain_relay_MillauMessages_balance{instance=\"relay-millau-rialto-parachain-1:9616\"}",
+          "instant": false,
           "interval": "",
-          "legendFormat": "With-Millau headers relay account balance",
+          "legendFormat": "With-Millau relay account balance",
           "refId": "A"
         },
         {
-          "expr": "at_RialtoParachain_relay_MillauMessages_balance{instance=\"relay-millau-rialto-parachain-1:9616\"}",
+          "exemplar": true,
+          "expr": "at_RialtoParachain_relay_MillauMessages_reward_for_lane_00000000_with_Millau{instance=\"relay-millau-rialto-parachain-1:9616\"}",
+          "hide": false,
+          "instant": false,
           "interval": "",
-          "legendFormat": "With-Millau messages relay account balance",
+          "legendFormat": "With-Millau relay account reward",
           "refId": "B"
+        },
+        {
+          "exemplar": true,
+          "expr": "at_RialtoParachain_relay_MillauMessages_balance{instance=\"relay-millau-rialto-parachain-1:9616\"} + at_RialtoParachain_relay_MillauMessages_reward_for_lane_00000000_with_Millau{instance=\"relay-millau-rialto-parachain-1:9616\"}",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "With-Millau relay account total balance (balance + reward)",
+          "refId": "C"
         }
       ],
       "thresholds": [
@@ -161,7 +133,8 @@
           "fill": true,
           "line": true,
           "op": "lt",
-          "value": 1000
+          "value": 1000,
+          "visible": true
         }
       ],
       "timeFrom": null,
@@ -230,52 +203,6 @@
               "type": "last"
             },
             "type": "query"
-          },
-          {
-            "evaluator": {
-              "params": [
-                1000
-              ],
-              "type": "lt"
-            },
-            "operator": {
-              "type": "or"
-            },
-            "query": {
-              "params": [
-                "B",
-                "5m",
-                "now"
-              ]
-            },
-            "reducer": {
-              "params": [],
-              "type": "last"
-            },
-            "type": "query"
-          },
-          {
-            "evaluator": {
-              "params": [
-                1000
-              ],
-              "type": "lt"
-            },
-            "operator": {
-              "type": "or"
-            },
-            "query": {
-              "params": [
-                "C",
-                "5m",
-                "now"
-              ]
-            },
-            "reducer": {
-              "params": [],
-              "type": "last"
-            },
-            "type": "query"
           }
         ],
         "executionErrorState": "alerting",
@@ -291,19 +218,13 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 16
+        "y": 0
       },
       "hiddenSeries": false,
       "id": 12,
@@ -319,8 +240,11 @@
       "lines": true,
       "linewidth": 1,
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "percentage": false,
-      "pluginVersion": "7.1.3",
+      "pluginVersion": "8.2.6",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -330,21 +254,26 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "at_Millau_relay_RialtoHeaders_balance{instance=\"relay-millau-rialto-parachain-1:9616\"}",
+          "exemplar": true,
+          "expr": "at_Millau_relay_RialtoParachainMessages_balance{instance=\"relay-millau-rialto-parachain-1:9616\"}",
           "interval": "",
-          "legendFormat": "With-Rialto headers relay account balance",
+          "legendFormat": "With-Rialto relay account balance",
           "refId": "A"
         },
         {
-          "expr": "at_Millau_relay_RialtoParachainMessages_balance{instance=\"relay-millau-rialto-parachain-1:9616\"}",
+          "exemplar": true,
+          "expr": "at_Millau_relay_RialtoParachainMessages_reward_for_lane_00000000_with_RialtoParachain{instance=\"relay-millau-rialto-parachain-1:9616\"}",
+          "hide": false,
           "interval": "",
-          "legendFormat": "With-RialtoParachain messages relay account balance",
+          "legendFormat": "With-Rialto relay account reward",
           "refId": "B"
         },
         {
-          "expr": "at_Millau_relay_RialtoParachains_balance{instance=\"relay-millau-rialto-parachain-1:9616\"}",
+          "exemplar": true,
+          "expr": "at_Millau_relay_RialtoParachainMessages_balance{instance=\"relay-millau-rialto-parachain-1:9616\"} + \nat_Millau_relay_RialtoParachainMessages_reward_for_lane_00000000_with_RialtoParachain{instance=\"relay-millau-rialto-parachain-1:9616\"}",
+          "hide": false,
           "interval": "",
-          "legendFormat": "With-Rialto parachains relay account balance",
+          "legendFormat": "With-Rialto relay account total balance (balance + reward)",
           "refId": "C"
         }
       ],
@@ -354,7 +283,8 @@
           "fill": true,
           "line": true,
           "op": "lt",
-          "value": 1000
+          "value": 1000,
+          "visible": true
         }
       ],
       "timeFrom": null,
@@ -438,19 +368,13 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 24
+        "y": 8
       },
       "hiddenSeries": false,
       "id": 14,
@@ -466,8 +390,11 @@
       "lines": true,
       "linewidth": 1,
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "percentage": false,
-      "pluginVersion": "7.1.3",
+      "pluginVersion": "8.2.6",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -490,7 +417,8 @@
           "fill": true,
           "line": true,
           "op": "gt",
-          "value": 0
+          "value": 0,
+          "visible": true
         }
       ],
       "timeFrom": null,
@@ -574,19 +502,13 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 24
+        "y": 8
       },
       "hiddenSeries": false,
       "id": 16,
@@ -602,8 +524,11 @@
       "lines": true,
       "linewidth": 1,
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "percentage": false,
-      "pluginVersion": "7.1.3",
+      "pluginVersion": "8.2.6",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -625,7 +550,8 @@
           "fill": true,
           "line": true,
           "op": "gt",
-          "value": 0
+          "value": 0,
+          "visible": true
         }
       ],
       "timeFrom": null,
@@ -670,7 +596,7 @@
     }
   ],
   "refresh": "5s",
-  "schemaVersion": 26,
+  "schemaVersion": 32,
   "style": "dark",
   "tags": [],
   "templating": {

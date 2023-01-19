@@ -19,7 +19,7 @@
 pub mod runtime_wrapper;
 
 use bp_messages::MessageNonce;
-use bp_polkadot_core::{DefaultSignedExtension, PolkadotSignedExtension};
+use bp_polkadot_core::PolkadotSignedExtension;
 use codec::Encode;
 use relay_substrate_client::{
 	Chain, ChainWithBalances, ChainWithMessages, ChainWithTransactions, Error as SubstrateError,
@@ -63,6 +63,8 @@ impl ChainWithBalances for RialtoParachain {
 impl ChainWithMessages for RialtoParachain {
 	const WITH_CHAIN_MESSAGES_PALLET_NAME: &'static str =
 		bp_rialto_parachain::WITH_RIALTO_PARACHAIN_MESSAGES_PALLET_NAME;
+	// TODO (https://github.com/paritytech/parity-bridges-common/issues/1692): change the name
+	const WITH_CHAIN_RELAYERS_PALLET_NAME: Option<&'static str> = Some("BridgeRelayers");
 	const TO_CHAIN_MESSAGE_DETAILS_METHOD: &'static str =
 		bp_rialto_parachain::TO_RIALTO_PARACHAIN_MESSAGE_DETAILS_METHOD;
 	const FROM_CHAIN_MESSAGE_DETAILS_METHOD: &'static str =
@@ -77,7 +79,7 @@ impl ChainWithMessages for RialtoParachain {
 impl ChainWithTransactions for RialtoParachain {
 	type AccountKeyPair = sp_core::sr25519::Pair;
 	type SignedTransaction =
-		bp_polkadot_core::UncheckedExtrinsic<Self::Call, DefaultSignedExtension>;
+		bp_polkadot_core::UncheckedExtrinsic<Self::Call, bp_rialto_parachain::SignedExtension>;
 
 	fn sign_transaction(
 		param: SignParam<Self>,
@@ -85,7 +87,7 @@ impl ChainWithTransactions for RialtoParachain {
 	) -> Result<Self::SignedTransaction, SubstrateError> {
 		let raw_payload = SignedPayload::new(
 			unsigned.call,
-			bp_polkadot_core::DefaultSignedExtension::from_params(
+			bp_rialto_parachain::SignedExtension::from_params(
 				param.spec_version,
 				param.transaction_version,
 				unsigned.era,
