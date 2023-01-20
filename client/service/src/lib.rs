@@ -436,7 +436,7 @@ where
 
 			let target_block =
 				B::Header::decode(&mut &validation_data.parent_head.0[..]).map_err(|e| {
-					Box::new(WarpSyncError(format!("Failed to decode parachain head: {:?}", e)))
+					Box::new(format!("Failed to decode parachain head: {e:?}", e))
 						as Box<_>
 				})?;
 
