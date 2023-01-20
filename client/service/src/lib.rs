@@ -449,7 +449,7 @@ where
 						as Box<_>
 				})?;
 
-			log::debug!(target: LOG_TARGET, "Target block reached {:?}", target_block);
+			log::debug!(target: LOG_TARGET_SYNC, "Target block reached {:?}", target_block);
 			let _ = sender.send(target_block);
 			return Ok(())
 		}
