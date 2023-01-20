@@ -385,7 +385,7 @@ where
 				.await
 				.map_err(|e| {
 					log::error!(
-						target: LOG_TARGET,
+						target: LOG_TARGET_SYNC,
 						"Unable to determine parachain target block {:?}",
 						e
 					)
