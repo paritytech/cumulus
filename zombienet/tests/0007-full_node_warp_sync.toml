@@ -1,7 +1,7 @@
 [relaychain]
 default_image = "{{RELAY_IMAGE}}"
 default_command = "polkadot"
-default_db_snapshot = "https://github.com/samelamin/cumulus/blob/chain-snapshots/docker/snapshots/relaychain-0b03131ee21dd174ea695f9cbfaed84720b742d8.tgz?raw=true"
+default_db_snapshot = "https://storage.googleapis.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/relaychain-0b03131ee21dd174ea695f9cbfaed84720b742d8.tgz"
 
 chain = "rococo-local"
 
@@ -25,7 +25,7 @@ add_to_genesis = false
   image = "{{COL_IMAGE}}"
   command = "polkadot-parachain"
   args = [""]
-  db_snapshot = "https://github.com/samelamin/cumulus/blob/chain-snapshots/docker/snapshots/parachain-c460b5f3e807c3a5c3093da4541d03d658cfa10c.tgz?raw=true"
+  db_snapshot = "https://storage.googleapis.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/parachain-c460b5f3e807c3a5c3093da4541d03d658cfa10c.tgz"
 
   [[parachains.collators]]
   name = "dave"
@@ -33,7 +33,7 @@ add_to_genesis = false
   image = "{{COL_IMAGE}}"
   command = "polkadot-parachain"
   args = ["-lparachain=debug"]
-  db_snapshot = "https://github.com/samelamin/cumulus/blob/chain-snapshots/docker/snapshots/parachain-c460b5f3e807c3a5c3093da4541d03d658cfa10c.tgz?raw=true"
+  db_snapshot = "https://storage.googleapis.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/parachain-c460b5f3e807c3a5c3093da4541d03d658cfa10c.tgz"
 
   [[parachains.collators]]
   name = "eve"
@@ -41,7 +41,7 @@ add_to_genesis = false
   image = "{{COL_IMAGE}}"
   command = "polkadot-parachain"
   args = ["-lparachain=debug"]
-  db_snapshot = "https://github.com/samelamin/cumulus/blob/chain-snapshots/docker/snapshots/parachain-c460b5f3e807c3a5c3093da4541d03d658cfa10c.tgz?raw=true"
+  db_snapshot = "https://storage.googleapis.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/parachain-c460b5f3e807c3a5c3093da4541d03d658cfa10c.tgz"
 
   [[parachains.collators]]
   name = "ferdie"
@@ -49,7 +49,7 @@ add_to_genesis = false
   image = "{{COL_IMAGE}}"
   command = "polkadot-parachain"
   args = ["-lparachain=debug"]
-  db_snapshot = "https://github.com/samelamin/cumulus/blob/chain-snapshots/docker/snapshots/parachain-c460b5f3e807c3a5c3093da4541d03d658cfa10c.tgz?raw=true"
+  db_snapshot = "https://storage.googleapis.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/parachain-c460b5f3e807c3a5c3093da4541d03d658cfa10c.tgz"
 
   [[parachains.collators]]
   name = "one"
@@ -57,6 +57,6 @@ add_to_genesis = false
   image = "{{COL_IMAGE}}"
   command = "polkadot-parachain"
   args = ["-lsync=debug","--sync warp"]
-  db_snapshot = "https://github.com/samelamin/cumulus/blob/chain-snapshots/docker/snapshots/parachain-to-sync-2daf880e656929e7c6680769990984998715c7ec.tgz?raw=true"
+  db_snapshot = "https://storage.googleapis.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/parachain-to-sync-2daf880e656929e7c6680769990984998715c7ec.tgz"
 
 
