@@ -51,7 +51,7 @@ use std::{fmt, sync::Arc, time::Duration};
 // possibility to retry infinite times this value is more than enough.
 // In practice here we expect no more than one queued messages.
 const RECOVERY_CHAN_SIZE: usize = 8;
-const LOG_TARGET: &str = "sync::cumulus";
+const LOG_TARGET_SYNC: &str = "sync::cumulus";
 
 /// Parameters given to [`start_collator`].
 pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, RCInterface, Spawner> {
