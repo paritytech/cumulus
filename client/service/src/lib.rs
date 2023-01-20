@@ -46,15 +46,6 @@ use sp_core::{traits::SpawnNamed, Decode};
 use sp_runtime::traits::{Block as BlockT, BlockIdTo};
 use std::{fmt, sync::Arc, time::Duration};
 
-#[derive(Debug)]
-struct WarpSyncError(String);
-impl std::error::Error for WarpSyncError {}
-
-impl fmt::Display for WarpSyncError {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		self.0.fmt(f)
-	}
-}
 
 // Given the sporadic nature of the explicit recovery operation and the
 // possibility to retry infinite times this value is more than enough.
