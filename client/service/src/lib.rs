@@ -437,7 +437,7 @@ where
 					OccupiedCoreAssumption::TimedOut,
 				)
 				.await
-				.map_err(|e| Box::new(WarpSyncError(format!("{:?}", e))) as Box<_>)?
+				.map_err(|e| Box::new(format!("{e:?}", e)) as Box<_>)?
 				.ok_or_else(|| {
 					Box::new(WarpSyncError("Could not find parachain head in relay chain".into()))
 						as Box<_>
