@@ -421,7 +421,7 @@ where
 		let is_syncing = relay_chain_interface
 			.is_major_syncing()
 			.await
-			.map_err(|e| log::error!(target: LOG_TARGET, "Unable to determine sync status. {e}"))
+			.map_err(|e| log::error!(target: LOG_TARGET_SYNC, "Unable to determine sync status. {e}"))
 			.unwrap_or(false);
 
 		if !is_syncing {
