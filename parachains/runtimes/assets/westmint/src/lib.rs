@@ -61,9 +61,9 @@ use pallet_nfts::PalletFeatures;
 pub use parachains_common as common;
 use parachains_common::{
 	impls::{AssetsToBlockAuthor, DealWithFees},
-	opaque, AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
-	AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO,
-	SLOT_DURATION,
+	opaque, AccountId, AssetIdForTrustBackedAssets, AuraId, Balance, BlockNumber, Hash, Header,
+	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
+	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{
 	ForeignCreators, MultiLocationForAssetId, XcmConfig, XcmOriginToTransactDispatchOrigin,
@@ -89,7 +89,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("westmint"),
 	impl_name: create_runtime_str!("westmint"),
 	authoring_version: 1,
-	spec_version: 9360,
+	spec_version: 9370,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 11,
@@ -216,16 +216,16 @@ parameter_types! {
 
 pub type AssetsForceOrigin = EnsureRoot<AccountId>;
 
-// We should perhaps come up with a new name. "ReserveBackedAssets" collides with XCM terminology
-// and falsly implies that they are actually backed by some reserve. In reality, the user is
-// _trusting_ some `CreateOrigin` (AccountId) that the asset is what they claim.
+// Called "Trust Backed" assets because these are generally registered by some account, and users of
+// the asset assume it has some claimed backing. The pallet is called `Assets` in
+// `construct_runtime` to avoid breaking changes on storage reads.
 pub type TrustBackedAssetsInstance = pallet_assets::Instance1;
 type TrustBackedAssetsCall = pallet_assets::Call<Runtime, TrustBackedAssetsInstance>;
 impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
-	type AssetId = AssetId;
-	type AssetIdParameter = codec::Compact<AssetId>;
+	type AssetId = AssetIdForTrustBackedAssets;
+	type AssetIdParameter = codec::Compact<AssetIdForTrustBackedAssets>;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 	type ForceOrigin = AssetsForceOrigin;
@@ -266,7 +266,7 @@ impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type AssetAccountDeposit = AssetAccountDeposit;
 	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
 	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = ();
+	type BenchmarkHelper = xcm_config::XcmBenchmarkHelper;
 }
 
 parameter_types! {
@@ -703,7 +703,7 @@ pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
-
+/// Migrations to apply on runtime upgrade.
 pub type Migrations = ();
 
 /// Executive: handles dispatch to the various modules.

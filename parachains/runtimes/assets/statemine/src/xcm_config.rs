@@ -14,9 +14,9 @@
 // limitations under the License.
 
 use super::{
-	AccountId, AllPalletsWithSystem, AssetId, Assets, Authorship, Balance, Balances,
-	BridgeAssetsTransfer, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall,
-	RuntimeEvent, RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
+	AccountId, AllPalletsWithSystem, AssetIdForTrustBackedAssets, Assets, Authorship, Balance,
+	Balances, BridgeAssetsTransfer, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime,
+	RuntimeCall, RuntimeEvent, RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -90,9 +90,13 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	Assets,
 	// Use this currency when it is a fungible asset matching the given location or name:
 	ConvertedConcreteId<
-		AssetId,
+		AssetIdForTrustBackedAssets,
 		Balance,
-		AsPrefixedGeneralIndex<TrustBackedAssetsPalletLocation, AssetId, JustTry>,
+		AsPrefixedGeneralIndex<
+			TrustBackedAssetsPalletLocation,
+			AssetIdForTrustBackedAssets,
+			JustTry,
+		>,
 		JustTry,
 	>,
 	// Convert an XCM MultiLocation into a local account id:
@@ -299,9 +303,13 @@ impl xcm_executor::Config for XcmConfig {
 			AccountId,
 			AssetFeeAsExistentialDepositMultiplierFeeCharger,
 			ConvertedConcreteId<
-				AssetId,
+				AssetIdForTrustBackedAssets,
 				Balance,
-				AsPrefixedGeneralIndex<TrustBackedAssetsPalletLocation, AssetId, JustTry>,
+				AsPrefixedGeneralIndex<
+					TrustBackedAssetsPalletLocation,
+					AssetIdForTrustBackedAssets,
+					JustTry,
+				>,
 				JustTry,
 			>,
 			Assets,
