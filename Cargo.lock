@@ -2189,7 +2189,7 @@ dependencies = [
  "cumulus-relay-chain-interface",
  "cumulus-relay-chain-rpc-interface",
  "futures",
- "lru",
+ "lru 0.9.0",
  "polkadot-core-primitives",
  "polkadot-network-bridge",
  "polkadot-node-network-protocol",
@@ -2228,7 +2228,7 @@ dependencies = [
  "futures",
  "futures-timer",
  "jsonrpsee",
- "lru",
+ "lru 0.9.0",
  "parity-scale-codec",
  "polkadot-service",
  "sc-client-api",
@@ -3763,6 +3763,9 @@ name = "hashbrown"
 version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
+dependencies = [
+ "ahash 0.8.2",
+]
 
 [[package]]
 name = "heck"
@@ -4614,7 +4617,7 @@ dependencies = [
  "libp2p-core",
  "libp2p-swarm",
  "log",
- "lru",
+ "lru 0.8.1",
  "prost",
  "prost-build",
  "prost-codec",
@@ -5071,6 +5074,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6e8aaa3f231bb4bd57b84b2d5dc3ae7f350265df8aa96492e0bc394a1571909"
 dependencies = [
  "hashbrown 0.12.3",
+]
+
+[[package]]
+name = "lru"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "71e7d46de488603ffdd5f30afbc64fbba2378214a2c3a2fb83abf3d33126df17"
+dependencies = [
+ "hashbrown 0.13.2",
 ]
 
 [[package]]
@@ -7466,7 +7478,7 @@ dependencies = [
  "derive_more",
  "fatality",
  "futures",
- "lru",
+ "lru 0.8.1",
  "parity-scale-codec",
  "polkadot-erasure-coding",
  "polkadot-node-network-protocol",
@@ -7488,7 +7500,7 @@ source = "git+https://github.com/paritytech/polkadot?branch=master#5d8164fdda5d8
 dependencies = [
  "fatality",
  "futures",
- "lru",
+ "lru 0.8.1",
  "parity-scale-codec",
  "polkadot-erasure-coding",
  "polkadot-node-network-protocol",
@@ -7616,7 +7628,7 @@ dependencies = [
  "futures",
  "futures-timer",
  "indexmap",
- "lru",
+ "lru 0.8.1",
  "parity-scale-codec",
  "polkadot-erasure-coding",
  "polkadot-node-network-protocol",
@@ -7717,7 +7729,7 @@ dependencies = [
  "futures",
  "futures-timer",
  "kvdb",
- "lru",
+ "lru 0.8.1",
  "merlin",
  "parity-scale-codec",
  "polkadot-node-jaeger",
@@ -7849,7 +7861,7 @@ dependencies = [
  "fatality",
  "futures",
  "kvdb",
- "lru",
+ "lru 0.8.1",
  "parity-scale-codec",
  "polkadot-node-primitives",
  "polkadot-node-subsystem",
@@ -7949,7 +7961,7 @@ version = "0.9.37"
 source = "git+https://github.com/paritytech/polkadot?branch=master#5d8164fdda5d8870f3d87cc3a5d29ef0ec9c536b"
 dependencies = [
  "futures",
- "lru",
+ "lru 0.8.1",
  "polkadot-node-metrics",
  "polkadot-node-subsystem",
  "polkadot-node-subsystem-types",
@@ -8103,7 +8115,7 @@ dependencies = [
  "futures-channel",
  "itertools",
  "kvdb",
- "lru",
+ "lru 0.8.1",
  "parity-db",
  "parity-scale-codec",
  "parking_lot 0.11.2",
@@ -8132,7 +8144,7 @@ dependencies = [
  "async-trait",
  "futures",
  "futures-timer",
- "lru",
+ "lru 0.8.1",
  "orchestra",
  "parking_lot 0.12.1",
  "polkadot-node-metrics",
@@ -8539,7 +8551,7 @@ dependencies = [
  "kvdb",
  "kvdb-rocksdb",
  "log",
- "lru",
+ "lru 0.8.1",
  "mmr-gadget",
  "pallet-babe",
  "pallet-im-online",
@@ -10135,7 +10147,7 @@ name = "sc-executor"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#355e4a9c87f85637185c0852bda9aeb3db404b6d"
 dependencies = [
- "lru",
+ "lru 0.8.1",
  "parity-scale-codec",
  "parking_lot 0.12.1",
  "sc-executor-common",
@@ -10304,7 +10316,7 @@ dependencies = [
  "ip_network",
  "libp2p",
  "log",
- "lru",
+ "lru 0.8.1",
  "parity-scale-codec",
  "parking_lot 0.12.1",
  "pin-project",
@@ -10384,7 +10396,7 @@ dependencies = [
  "futures-timer",
  "libp2p",
  "log",
- "lru",
+ "lru 0.8.1",
  "sc-network-common",
  "sc-peerset",
  "sp-runtime",
@@ -10424,7 +10436,7 @@ dependencies = [
  "futures",
  "libp2p",
  "log",
- "lru",
+ "lru 0.8.1",
  "mockall",
  "parity-scale-codec",
  "prost",
@@ -11457,7 +11469,7 @@ source = "git+https://github.com/paritytech/substrate?branch=master#355e4a9c87f8
 dependencies = [
  "futures",
  "log",
- "lru",
+ "lru 0.8.1",
  "parity-scale-codec",
  "parking_lot 0.12.1",
  "sp-api",
@@ -11991,7 +12003,7 @@ dependencies = [
  "hash-db",
  "hashbrown 0.12.3",
  "lazy_static",
- "lru",
+ "lru 0.8.1",
  "memory-db",
  "nohash-hasher",
  "parity-scale-codec",
