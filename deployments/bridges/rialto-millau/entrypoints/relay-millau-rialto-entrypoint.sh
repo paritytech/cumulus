@@ -25,8 +25,9 @@ sleep 6
 	--millau-port 9944 \
 	--millau-signer //Rialto.HeadersAndMessagesRelay \
 	--millau-transactions-mortality=64 \
-	--rialto-host rialto-node-alice \
-	--rialto-port 9944 \
+	--rialto-host wss.rialto.brucke.link \
+	--rialto-port 443 \
+	--rialto-secure \
 	--rialto-signer //Millau.HeadersAndMessagesRelay \
 	--rialto-transactions-mortality=64 \
 	--lane=00000000 \

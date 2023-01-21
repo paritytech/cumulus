@@ -25,7 +25,7 @@ services:
       - ./bridges/common:/common
       - ./bridges/rialto-millau/entrypoints:/entrypoints
     environment:
-      RUST_LOG: rpc=trace,bridge=trace
+      RUST_LOG: rpc=trace,bridge=trace,jsonrpsee=trace,jsonrpsee_core=trace,jsonrpsee_ws_client=trace,rustls=trace,soketto=trace
     ports:
       - "10016:9616"
     depends_on: &all-nodes
