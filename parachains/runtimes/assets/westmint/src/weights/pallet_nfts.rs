@@ -423,10 +423,17 @@ impl<T: frame_system::Config> pallet_nfts::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(8))
 			.saturating_add(T::DbWeight::get().writes(11))
 	}
+	// Storage: Nfts Collection (r:1 w:1)
+	// Storage: Nfts CollectionConfigOf (r:1 w:0)
+	// Storage: Nfts Item (r:1 w:1)
+	// Storage: Nfts ItemConfigOf (r:1 w:1)
+	// Storage: System Account (r:1 w:1)
+	// Storage: Nfts ItemMetadataOf (r:1 w:1)
+	// Storage: Nfts Account (r:0 w:1)
 	fn mint_pre_signed() -> Weight {
-		// Minimum execution time: 87_000 nanoseconds.
-		Weight::from_ref_time(90_000_000)
-			.saturating_add(T::DbWeight::get().reads(8))
-			.saturating_add(T::DbWeight::get().writes(11))
+		// Minimum execution time: 125_160 nanoseconds.
+		Weight::from_ref_time(126_581_000)
+			.saturating_add(T::DbWeight::get().reads(6))
+			.saturating_add(T::DbWeight::get().writes(6))
 	}
 }
