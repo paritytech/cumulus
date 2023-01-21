@@ -690,23 +690,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bp-beefy"
-version = "0.1.0"
-dependencies = [
- "beefy-merkle-tree",
- "bp-runtime",
- "frame-support",
- "pallet-beefy-mmr",
- "pallet-mmr",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-beefy",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "bp-bridge-hub-cumulus"
 version = "0.1.0"
 dependencies = [
@@ -778,30 +761,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bp-millau"
-version = "0.1.0"
-dependencies = [
- "bp-beefy",
- "bp-messages",
- "bp-runtime",
- "fixed-hash 0.7.0",
- "frame-support",
- "frame-system",
- "hash256-std-hasher",
- "impl-codec",
- "impl-serde 0.3.2",
- "parity-util-mem",
- "scale-info",
- "serde",
- "sp-api",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "sp-trie",
-]
-
-[[package]]
 name = "bp-parachains"
 version = "0.1.0"
 dependencies = [
@@ -840,40 +799,10 @@ name = "bp-relayers"
 version = "0.1.0"
 dependencies = [
  "bp-messages",
- "bp-rialto",
  "bp-runtime",
  "frame-support",
  "hex",
  "hex-literal",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "bp-rialto"
-version = "0.1.0"
-dependencies = [
- "bp-messages",
- "bp-runtime",
- "frame-support",
- "frame-system",
- "sp-api",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "bp-rialto-parachain"
-version = "0.1.0"
-dependencies = [
- "bp-messages",
- "bp-polkadot-core",
- "bp-runtime",
- "frame-support",
- "frame-system",
- "sp-api",
- "sp-core",
  "sp-runtime",
  "sp-std",
 ]
@@ -922,16 +851,6 @@ dependencies = [
  "sp-finality-grandpa",
  "sp-runtime",
  "sp-std",
-]
-
-[[package]]
-name = "bp-westend"
-version = "0.1.0"
-dependencies = [
- "bp-polkadot-core",
- "bp-runtime",
- "frame-support",
- "sp-api",
 ]
 
 [[package]]
@@ -1111,14 +1030,12 @@ dependencies = [
  "bp-messages",
  "bp-parachains",
  "bp-polkadot-core",
- "bp-rialto",
  "bp-runtime",
  "bp-test-utils",
  "frame-support",
  "frame-system",
  "hash-db",
  "log",
- "millau-runtime",
  "pallet-balances",
  "pallet-bridge-grandpa",
  "pallet-bridge-messages",
@@ -3229,19 +3146,6 @@ dependencies = [
 
 [[package]]
 name = "env_logger"
-version = "0.8.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a19187fea3ac7e84da7dacf48de0c45d63c6a76f9490dae389aead16c243fce3"
-dependencies = [
- "atty",
- "humantime 2.1.0",
- "log",
- "regex",
- "termcolor",
-]
-
-[[package]]
-name = "env_logger"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b2cf0344971ee6c64c31be0d530793fba457d322dfec2810c453d0ef228f9c3"
@@ -3287,9 +3191,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c22d4b5885b6aa2fe5e8b9329fb8d232bf739e434e6b87347c63bdd00c120f60"
 dependencies = [
  "crunchy",
- "fixed-hash 0.8.0",
+ "fixed-hash",
  "impl-rlp",
- "impl-serde 0.4.0",
+ "impl-serde",
  "tiny-keccak",
 ]
 
@@ -3300,9 +3204,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "02d215cbf040552efcbe99a38372fe80ab9d00268e20012b79fcd0f073edd8ee"
 dependencies = [
  "ethbloom",
- "fixed-hash 0.8.0",
+ "fixed-hash",
  "impl-rlp",
- "impl-serde 0.4.0",
+ "impl-serde",
  "primitive-types",
  "uint",
 ]
@@ -3448,18 +3352,6 @@ dependencies = [
  "parity-scale-codec",
  "parking_lot 0.12.1",
  "scale-info",
-]
-
-[[package]]
-name = "fixed-hash"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfcf0ed7fe52a17a03854ec54a9f76d6d84508d1c0e66bc1793301c73fc8493c"
-dependencies = [
- "byteorder",
- "rand 0.8.5",
- "rustc-hex",
- "static_assertions",
 ]
 
 [[package]]
@@ -4414,15 +4306,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f28220f89297a075ddc7245cd538076ee98b01f2a9c23a53a4f1105d5a322808"
 dependencies = [
  "rlp",
-]
-
-[[package]]
-name = "impl-serde"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4551f042f3438e64dbd6226b20527fc84a6e1fe65688b58746a2f53623f25f5c"
-dependencies = [
- "serde",
 ]
 
 [[package]]
@@ -5622,68 +5505,6 @@ dependencies = [
  "futures",
  "rand 0.8.5",
  "thrift",
-]
-
-[[package]]
-name = "millau-runtime"
-version = "0.1.0"
-dependencies = [
- "bp-messages",
- "bp-millau",
- "bp-parachains",
- "bp-polkadot-core",
- "bp-relayers",
- "bp-rialto",
- "bp-rialto-parachain",
- "bp-runtime",
- "bp-westend",
- "bridge-runtime-common",
- "env_logger 0.8.4",
- "frame-benchmarking",
- "frame-executive",
- "frame-support",
- "frame-system",
- "frame-system-rpc-runtime-api",
- "hex-literal",
- "pallet-aura",
- "pallet-balances",
- "pallet-beefy",
- "pallet-beefy-mmr",
- "pallet-bridge-grandpa",
- "pallet-bridge-messages",
- "pallet-bridge-parachains",
- "pallet-bridge-relayers",
- "pallet-grandpa",
- "pallet-mmr",
- "pallet-randomness-collective-flip",
- "pallet-session",
- "pallet-shift-session-manager",
- "pallet-sudo",
- "pallet-timestamp",
- "pallet-transaction-payment",
- "pallet-transaction-payment-rpc-runtime-api",
- "pallet-utility",
- "pallet-xcm",
- "parity-scale-codec",
- "scale-info",
- "sp-api",
- "sp-beefy",
- "sp-block-builder",
- "sp-consensus-aura",
- "sp-core",
- "sp-inherents",
- "sp-io",
- "sp-offchain",
- "sp-runtime",
- "sp-session",
- "sp-std",
- "sp-transaction-pool",
- "sp-version",
- "static_assertions",
- "substrate-wasm-builder",
- "xcm",
- "xcm-builder",
- "xcm-executor",
 ]
 
 [[package]]
@@ -7153,21 +6974,6 @@ dependencies = [
  "rand 0.8.5",
  "sp-runtime",
  "sp-session",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-shift-session-manager"
-version = "0.1.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "pallet-session",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-runtime",
- "sp-staking",
  "sp-std",
 ]
 
@@ -9490,10 +9296,10 @@ version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5cfd65aea0c5fa0bfcc7c9e7ca828c921ef778f43d325325ec84bda371bfa75a"
 dependencies = [
- "fixed-hash 0.8.0",
+ "fixed-hash",
  "impl-codec",
  "impl-rlp",
- "impl-serde 0.4.0",
+ "impl-serde",
  "scale-info",
  "uint",
 ]
@@ -12166,7 +11972,7 @@ dependencies = [
  "futures",
  "hash-db",
  "hash256-std-hasher",
- "impl-serde 0.4.0",
+ "impl-serde",
  "lazy_static",
  "libsecp256k1",
  "log",
@@ -12522,7 +12328,7 @@ name = "sp-storage"
 version = "7.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#355e4a9c87f85637185c0852bda9aeb3db404b6d"
 dependencies = [
- "impl-serde 0.4.0",
+ "impl-serde",
  "parity-scale-codec",
  "ref-cast",
  "serde",
@@ -12610,7 +12416,7 @@ name = "sp-version"
 version = "5.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#355e4a9c87f85637185c0852bda9aeb3db404b6d"
 dependencies = [
- "impl-serde 0.4.0",
+ "impl-serde",
  "parity-scale-codec",
  "parity-wasm",
  "scale-info",
