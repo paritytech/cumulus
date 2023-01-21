@@ -41,6 +41,35 @@ function ensure_polkadot_js_api() {
         echo ''
         exit 1
     fi
+    generate_hex_encoded_call_data "check" "--"
+    local retVal=$?
+    if [ $retVal -ne 0 ]; then
+        echo ""
+        echo ""
+        echo "-------------------"
+        echo "Installing (nodejs) sub module: ./scripts/generate_hex_encoded_call"
+        pushd ./scripts/generate_hex_encoded_call
+        npm install
+        popd
+        exit 1
+    fi
+}
+
+function generate_hex_encoded_call_data() {
+    local type=$1
+    local endpoint=$2
+    local output=$3
+    shift
+    shift
+    shift
+    echo "Input params: $@"
+
+    node ./scripts/generate_hex_encoded_call "$type" "$endpoint" "$output" "$@"
+
+    if [ $type != "check" ]; then
+        local hex_encoded_data=$(cat $output)
+        echo "Generated hex-encoded bytes to file '$output': $hex_encoded_data"
+    fi
 }
 
 STATEMINE_ACCOUNT_SEED_FOR_LOCAL="//Alice"
@@ -52,11 +81,20 @@ function send_xcm_transact_remark_from_statemine() {
     local bridge_hub_para_id=$3
     local target_network=$4
     local target_network_para_id=$5
+    local target_network_para_endpoint=$6
     echo "  calling send_xcm_transact_remark_from_statemine:"
     echo "      url: ${url}"
     echo "      seed: ${seed}"
     echo "      bridge_hub_para_id: ${bridge_hub_para_id}"
+    echo "      target_network: ${target_network}"
+    echo "      target_network_para_id: ${target_network_para_id}"
+    echo "      target_network_para_endpoint: ${target_network_para_endpoint}"
     echo "      params:"
+
+    # generate data for Transact on the other side (Westmint)
+    local tmp_file=$(mktemp)
+    generate_hex_encoded_call_data "remark-with-event" "${target_network_para_endpoint}" "${tmp_file}"
+    local hex_encoded_data=$(cat $tmp_file)
 
     local dest=$(jq --null-input \
                     --arg bridge_hub_para_id "$bridge_hub_para_id" \
@@ -65,7 +103,9 @@ function send_xcm_transact_remark_from_statemine() {
     local message=$(jq --null-input \
                        --arg target_network "$target_network" \
                        --arg target_network_para_id "$target_network_para_id" \
-                       '{
+                       --argjson hex_encoded_data $hex_encoded_data \
+                       '
+                       {
                           "V3": [
                             {
                               "ExportMessage": {
@@ -84,7 +124,7 @@ function send_xcm_transact_remark_from_statemine() {
                                         "proof_size": 0,
                                       },
                                       "call": {
-                                        "encoded": [0, 7, 20, 72, 101, 108, 108, 111 ]
+                                        "encoded": $hex_encoded_data
                                       }
                                     }
                                   }
@@ -92,7 +132,8 @@ function send_xcm_transact_remark_from_statemine() {
                               }
                             }
                           ]
-                        }')
+                        }
+                        ')
 
     echo ""
     echo "          dest:"
@@ -130,7 +171,8 @@ function send_xcm_trap_from_statemine() {
     local message=$(jq --null-input \
                        --arg target_network "$target_network" \
                        --arg target_network_para_id "$target_network_para_id" \
-                       '{
+                       '
+                       {
                           "V3": [
                             {
                               "ExportMessage": {
@@ -148,7 +190,8 @@ function send_xcm_trap_from_statemine() {
                               }
                             }
                           ]
-                        }')
+                        }
+                        ')
 
     echo ""
     echo "          dest:"
@@ -165,6 +208,253 @@ function send_xcm_trap_from_statemine() {
         tx.polkadotXcm.send \
             "${dest}" \
             "${message}"
+}
+
+function allow_assets_transfer_from_statemine() {
+    local relay_url=$1
+    local relay_chain_seed=$2
+    local statemine_para_id=$3
+    local statemine_para_endpoint=$4
+    local bridge_hub_para_id=$5
+    local statemint_para_network=$6
+    local statemint_para_para_id=$7
+    echo "  calling allow_assets_transfer_from_statemine:"
+    echo "      relay_url: ${relay_url}"
+    echo "      relay_chain_seed: ${relay_chain_seed}"
+    echo "      statemine_para_id: ${statemine_para_id}"
+    echo "      statemine_para_endpoint: ${statemine_para_endpoint}"
+    echo "      bridge_hub_para_id: ${bridge_hub_para_id}"
+    echo "      statemint_para_network: ${statemint_para_network}"
+    echo "      statemint_para_para_id: ${statemint_para_para_id}"
+    echo "      params:"
+
+    # generate data for Transact on Statemine
+    local bridge_config=$(jq --null-input \
+                             --arg statemint_para_network "$statemint_para_network" \
+                             --arg bridge_hub_para_id "$bridge_hub_para_id" \
+                             --arg statemint_para_network "$statemint_para_network" \
+                             --arg statemint_para_para_id "$statemint_para_para_id" \
+        '
+            {
+                "bridgeLocation": {
+                    "parents": 1,
+                    "interior": {
+                        "X1": { "Parachain": $bridge_hub_para_id }
+                    }
+                },
+                "allowedTargetLocation": {
+                    "parents": 2,
+                    "interior": {
+                        "X2": [
+                            {
+                                "GlobalConsensus": $statemint_para_network,
+                            },
+                            {
+                                "Parachain": $statemint_para_para_id
+                            }
+                        ]
+                    }
+                }
+            }
+        '
+    )
+    local tmp_output_file=$(mktemp)
+    generate_hex_encoded_call_data "add-bridge-config" "${statemine_para_endpoint}" "${tmp_output_file}" $statemint_para_network "$bridge_config"
+    local hex_encoded_data=$(cat $tmp_output_file)
+
+    local dest=$(jq --null-input \
+                    --arg statemine_para_id "$statemine_para_id" \
+                    '{ "V3": { "parents": 0, "interior": { "X1": { "Parachain": $statemine_para_id } } } }')
+
+    local message=$(jq --null-input \
+                       --argjson hex_encoded_data $hex_encoded_data \
+                       '
+                       {
+                          "V3": [
+                                  {
+                                    "UnpaidExecution": {
+                                        "weight_limit": "Unlimited"
+                                    }
+                                  },
+                                  {
+                                    "Transact": {
+                                      "origin_kind": "Superuser",
+                                      "require_weight_at_most": {
+                                        "ref_time": 1000000000,
+                                        "proof_size": 0,
+                                      },
+                                      "call": {
+                                        "encoded": $hex_encoded_data
+                                      }
+                                    }
+                                  }
+                          ]
+                        }
+                        ')
+
+    echo ""
+    echo "          dest:"
+    echo "${dest}"
+    echo ""
+    echo "          message:"
+    echo "${message}"
+    echo ""
+    echo "--------------------------------------------------"
+
+    polkadot-js-api \
+        --ws "${relay_url?}" \
+        --seed "${relay_chain_seed?}" \
+        --sudo \
+        tx.xcmPallet.send \
+            "${dest}" \
+            "${message}"
+}
+
+function remove_assets_transfer_from_statemine() {
+    local relay_url=$1
+    local relay_chain_seed=$2
+    local statemine_para_id=$3
+    local statemine_para_endpoint=$4
+    local statemint_para_network=$5
+    echo "  calling remove_assets_transfer_from_statemine:"
+    echo "      relay_url: ${relay_url}"
+    echo "      relay_chain_seed: ${relay_chain_seed}"
+    echo "      statemine_para_id: ${statemine_para_id}"
+    echo "      statemine_para_endpoint: ${statemine_para_endpoint}"
+    echo "      statemint_para_network: ${statemint_para_network}"
+    echo "      params:"
+
+    local tmp_output_file=$(mktemp)
+    generate_hex_encoded_call_data "remove-bridge-config" "${statemine_para_endpoint}" "${tmp_output_file}" $statemint_para_network
+    local hex_encoded_data=$(cat $tmp_output_file)
+
+    local dest=$(jq --null-input \
+                    --arg statemine_para_id "$statemine_para_id" \
+                    '{ "V3": { "parents": 0, "interior": { "X1": { "Parachain": $statemine_para_id } } } }')
+
+    local message=$(jq --null-input \
+                       --argjson hex_encoded_data $hex_encoded_data \
+                       '
+                       {
+                          "V3": [
+                                  {
+                                    "UnpaidExecution": {
+                                        "weight_limit": "Unlimited"
+                                    }
+                                  },
+                                  {
+                                    "Transact": {
+                                      "origin_kind": "Superuser",
+                                      "require_weight_at_most": {
+                                        "ref_time": 1000000000,
+                                        "proof_size": 0,
+                                      },
+                                      "call": {
+                                        "encoded": $hex_encoded_data
+                                      }
+                                    }
+                                  }
+                          ]
+                        }
+                        ')
+
+    echo ""
+    echo "          dest:"
+    echo "${dest}"
+    echo ""
+    echo "          message:"
+    echo "${message}"
+    echo ""
+    echo "--------------------------------------------------"
+
+    polkadot-js-api \
+        --ws "${relay_url?}" \
+        --seed "${relay_chain_seed?}" \
+        --sudo \
+        tx.xcmPallet.send \
+            "${dest}" \
+            "${message}"
+}
+
+# TODO: we need to fill sovereign account for bridge-hub, because, small ammouts does not match ExistentialDeposit, so no reserve pass
+# SA for BH: MultiLocation { parents: 1, interior: X1(Parachain(1013)) } - 5Eg2fntRRwLinojmk3sh5xscp7F3S6Zzm5oDVtoLTALKiypR on Statemine
+
+function transfer_asset_via_bridge() {
+    local url=$1
+    local seed=$2
+    echo "  calling transfer_asset_via_bridge:"
+    echo "      url: ${url}"
+    echo "      seed: ${seed}"
+    echo "      params:"
+
+
+    local assets=$(jq --null-input \
+        '
+        {
+            "V3": [
+                {
+                    "id": {
+                        "Concrete": {
+                            "parents": 1,
+                            "interior": "Here"
+                        }
+                    },
+                    "fun": {
+                        "Fungible": 100000000
+                    }
+                }
+            ]
+        }
+        '
+    )
+
+
+## TODO: decode some account to bytes: "id": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+
+    local destination=$(jq --null-input \
+        '
+            {
+                "V3": {
+                    "parents": 2,
+                    "interior": {
+                        "X3": [
+                            {
+                                "GlobalConsensus": "Wococo"
+                            },
+                            {
+                                "Parachain": 1000
+                            },
+                            {
+                                "AccountId32": {
+                                    "id": [28, 189, 45, 67, 83, 10, 68, 112, 90, 208, 136, 175, 49, 62, 24, 248, 11, 83, 239, 22, 179, 97, 119, 205, 75, 119, 184, 70, 242, 165, 240, 124]
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        '
+    )
+
+    echo ""
+    echo "          assets:"
+    echo "${assets}"
+    echo ""
+    echo "          destination:"
+    echo "${destination}"
+    echo ""
+    echo "--------------------------------------------------"
+
+#    local tmp_output_file=$(mktemp)
+#    generate_hex_encoded_call_data "transfer-asset-via-bridge" "${url}" "${tmp_output_file}" "$assets" "$destination"
+#    local hex_encoded_data=$(cat $tmp_output_file)
+
+    polkadot-js-api \
+        --ws "${url?}" \
+        --seed "${seed?}" \
+        tx.bridgeAssetsTransfer.transferAssetViaBridge \
+            "${assets}" \
+            "${destination}"
 }
 
 function register_parachain() {
@@ -353,16 +643,17 @@ case "$1" in
   send-remark-local)
     ensure_polkadot_js_api
     send_xcm_transact_remark_from_statemine \
-        "ws://127.0.0.1:9910#/explorer" \
+        "ws://127.0.0.1:9910" \
         "${STATEMINE_ACCOUNT_SEED_FOR_LOCAL}" \
         1013 \
         "Wococo" \
-        1000
+        1000 \
+        "ws://127.0.0.1:9010"
     ;;
   send-trap-local)
     ensure_polkadot_js_api
     send_xcm_trap_from_statemine \
-        "ws://127.0.0.1:9910#/explorer" \
+        "ws://127.0.0.1:9910" \
         "${STATEMINE_ACCOUNT_SEED_FOR_LOCAL}" \
         1013 \
         "Wococo" \
@@ -375,7 +666,8 @@ case "$1" in
         "${ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO}" \
         1013 \
         "Wococo" \
-        1000
+        1000 \
+        "wss://ws-wococo-wockmint-collator-node-0.parity-testnet.parity.io"
     ;;
   send-trap-rococo)
     ensure_polkadot_js_api
@@ -386,9 +678,34 @@ case "$1" in
         "Wococo" \
         1000
     ;;
+  allow-transfer-on-statemine-local)
+      ensure_polkadot_js_api
+      allow_assets_transfer_from_statemine \
+          "ws://127.0.0.1:9942" \
+          "//Alice" \
+          1000 \
+          "ws://127.0.0.1:9910" \
+          1013 \
+          "Wococo" 1000
+      ;;
+  remove-assets-transfer-from-statemine-local)
+      ensure_polkadot_js_api
+      remove_assets_transfer_from_statemine \
+          "ws://127.0.0.1:9942" \
+          "//Alice" \
+          1000 \
+          "ws://127.0.0.1:9910" \
+          "Wococo"
+      ;;
+  transfer-asset)
+      ensure_polkadot_js_api
+      transfer_asset_via_bridge \
+          "ws://127.0.0.1:9910" \
+          "//Alice"
+      ;;
   stop)
     pkill -f polkadot
     pkill -f parachain
     ;;
-  *) echo "A command is require. Supported commands: start-rococo, start-wococo, init-ro-wo, init-wo-ro, run-relay, stop"; exit 1;;
+  *) echo "A command is require. Supported commands: run-relay, send-trap-rococo/send-trap-local, send-remark-local/send-remark-rococo, allow-transfer-on-statemine-local/remove-assets-transfer-from-statemine-local, transfer-asset"; exit 1;;
 esac
