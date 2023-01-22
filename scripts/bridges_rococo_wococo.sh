@@ -79,9 +79,12 @@ function send_xcm_transact_remark_from_statemine() {
                                   {
                                     "Transact": {
                                       "origin_kind": "SovereignAccount",
-                                      "require_weight_at_most": 1000000000,
+                                      "require_weight_at_most": {
+                                        "ref_time": 1000000000,
+                                        "proof_size": 0,
+                                      },
                                       "call": {
-                                        "encoded": [0, 8, 20, 104, 101, 108, 108, 111 ]
+                                        "encoded": [0, 7, 20, 72, 101, 108, 108, 111 ]
                                       }
                                     }
                                   }

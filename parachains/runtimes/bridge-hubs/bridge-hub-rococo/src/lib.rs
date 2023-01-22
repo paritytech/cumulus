@@ -30,7 +30,6 @@ mod weights;
 pub mod xcm_config;
 
 use bridge_common_config::*;
-use codec::Decode;
 use constants::currency::*;
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
@@ -64,7 +63,7 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 use bp_parachains::SingleParaStoredHeaderDataBuilder;
-use bp_runtime::{HeaderId, HeaderIdProvider};
+use bp_runtime::HeaderId;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -139,7 +138,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("bridge-hub-rococo"),
 	impl_name: create_runtime_str!("bridge-hub-rococo"),
 	authoring_version: 1,
-	spec_version: 9360,
+	spec_version: 9370,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -734,17 +733,17 @@ impl_runtime_apis! {
 
 	impl bp_bridge_hub_rococo::BridgeHubRococoFinalityApi<Block> for Runtime {
 		fn best_finalized() -> Option<HeaderId<Hash, BlockNumber>> {
-			let encoded_head = BridgeRococoParachain::best_parachain_head(bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID.into())?;
-			let head = bp_bridge_hub_rococo::Header::decode(&mut &encoded_head.0[..]).ok()?;
-			Some(head.id())
+			BridgeRococoParachain::best_parachain_head_id::<
+				bp_bridge_hub_rococo::BridgeHubRococo
+			>().unwrap_or(None)
 		}
 	}
 
 	impl bp_bridge_hub_wococo::BridgeHubWococoFinalityApi<Block> for Runtime {
 		fn best_finalized() -> Option<HeaderId<Hash, BlockNumber>> {
-			let encoded_head = BridgeWococoParachain::best_parachain_head(bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID.into())?;
-			let head = bp_bridge_hub_wococo::Header::decode(&mut &encoded_head.0[..]).ok()?;
-			Some(head.id())
+			BridgeWococoParachain::best_parachain_head_id::<
+				bp_bridge_hub_wococo::BridgeHubWococo
+			>().unwrap_or(None)
 		}
 	}
 

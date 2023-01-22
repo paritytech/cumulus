@@ -20,8 +20,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use bp_messages::LaneId;
+use bp_runtime::StorageDoubleMapKeyProvider;
+use frame_support::{Blake2_128Concat, Identity};
 use sp_runtime::{
-	codec::{Decode, Encode},
+	codec::{Codec, Decode, Encode, EncodeLike},
 	traits::AccountIdConversion,
 };
 use sp_std::{fmt::Debug, marker::PhantomData};
@@ -33,6 +35,14 @@ pub trait PaymentProcedure<Relayer, Reward> {
 
 	/// Pay reward to the relayer for serving given message lane.
 	fn pay_reward(relayer: &Relayer, lane_id: LaneId, reward: Reward) -> Result<(), Self::Error>;
+}
+
+impl<Relayer, Reward> PaymentProcedure<Relayer, Reward> for () {
+	type Error = &'static str;
+
+	fn pay_reward(_: &Relayer, _: LaneId, _: Reward) -> Result<(), Self::Error> {
+		Ok(())
+	}
 }
 
 /// Reward payment procedure that does `balances::transfer` call from the account, derived from
@@ -65,24 +75,39 @@ where
 	}
 }
 
+/// Can be use to access the runtime storage key within the `RelayerRewards` map of the relayers
+/// pallet.
+pub struct RelayerRewardsKeyProvider<AccountId, Reward>(PhantomData<(AccountId, Reward)>);
+
+impl<AccountId, Reward> StorageDoubleMapKeyProvider for RelayerRewardsKeyProvider<AccountId, Reward>
+where
+	AccountId: Codec + EncodeLike,
+	Reward: Codec + EncodeLike,
+{
+	const MAP_NAME: &'static str = "RelayerRewards";
+
+	type Hasher1 = Blake2_128Concat;
+	type Key1 = AccountId;
+	type Hasher2 = Identity;
+	type Key2 = LaneId;
+	type Value = Reward;
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use sp_runtime::testing::H256;
 
 	#[test]
 	fn lanes_are_using_different_accounts() {
 		assert_eq!(
-			PayLaneRewardFromAccount::<(), bp_rialto::AccountId>::lane_rewards_account(LaneId([
-				0, 0, 0, 0
-			])),
+			PayLaneRewardFromAccount::<(), H256>::lane_rewards_account(LaneId([0, 0, 0, 0])),
 			hex_literal::hex!("626c616e000000006272696467652d6c616e6500000000000000000000000000")
 				.into(),
 		);
 
 		assert_eq!(
-			PayLaneRewardFromAccount::<(), bp_rialto::AccountId>::lane_rewards_account(LaneId([
-				0, 0, 0, 1
-			])),
+			PayLaneRewardFromAccount::<(), H256>::lane_rewards_account(LaneId([0, 0, 0, 1])),
 			hex_literal::hex!("626c616e000000016272696467652d6c616e6500000000000000000000000000")
 				.into(),
 		);

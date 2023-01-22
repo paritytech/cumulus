@@ -26,6 +26,7 @@ use bp_runtime::{Chain, ChainId};
 use codec::Encode;
 use frame_support::{storage::generator::StorageValue, traits::Get};
 use frame_system::limits;
+use sp_runtime::traits::SignedExtension;
 
 /// Macro that ensures that the runtime configuration and chain primitives crate are sharing
 /// the same types (index, block number, hash, hasher, account id and header).
@@ -80,8 +81,8 @@ macro_rules! assert_bridge_messages_pallet_types(
 			// configuration is used), or something has broke existing configuration (meaning that all bridged chains
 			// and relays will stop functioning)
 			use $crate::messages::{
-				source::FromThisChainMessagePayload,
-				target::FromBridgedChainMessagePayload,
+				source::{FromThisChainMessagePayload, TargetHeaderChainAdapter},
+				target::{FromBridgedChainMessagePayload, SourceHeaderChainAdapter},
 				AccountIdOf, BalanceOf, BridgedChain, CallOf, ThisChain,
 			};
 			use pallet_bridge_messages::Config as MessagesConfig;
@@ -92,16 +93,16 @@ macro_rules! assert_bridge_messages_pallet_types(
 			assert_type_eq_all!(<$r as MessagesConfig<$i>>::InboundPayload, FromBridgedChainMessagePayload<CallOf<ThisChain<$bridge>>>);
 			assert_type_eq_all!(<$r as MessagesConfig<$i>>::InboundRelayer, AccountIdOf<BridgedChain<$bridge>>);
 
-			assert_type_eq_all!(<$r as MessagesConfig<$i>>::TargetHeaderChain, BridgedChain<$bridge>);
-			assert_type_eq_all!(<$r as MessagesConfig<$i>>::SourceHeaderChain, BridgedChain<$bridge>);
+			assert_type_eq_all!(<$r as MessagesConfig<$i>>::TargetHeaderChain, TargetHeaderChainAdapter<$bridge>);
+			assert_type_eq_all!(<$r as MessagesConfig<$i>>::SourceHeaderChain, SourceHeaderChainAdapter<$bridge>);
 		}
 	}
 );
 
 /// Macro that combines four other macro calls - `assert_chain_types`, `assert_bridge_types`,
 /// `assert_bridge_grandpa_pallet_types` and `assert_bridge_messages_pallet_types`. It may be used
-/// at the chain that is implemeting complete standard messages bridge (i.e. with bridge GRANDPA and
-/// messages pallets deployed).
+/// at the chain that is implementing complete standard messages bridge (i.e. with bridge GRANDPA
+/// and messages pallets deployed).
 #[macro_export]
 macro_rules! assert_complete_bridge_types(
 	(
@@ -318,4 +319,16 @@ pub fn check_message_lane_weights<C: Chain, T: frame_system::Config>(
 		this_chain_max_unrewarded_relayers,
 		this_chain_max_unconfirmed_messages,
 	);
+}
+
+/// Check that the `AdditionalSigned` type of a wrapped runtime is the same as the one of the
+/// corresponding actual runtime.
+///
+/// This method doesn't perform any `assert`. If the condition is not true it will generate a
+/// compile-time error.
+pub fn check_additional_signed<SignedExt, IndirectSignedExt: SignedExtension>()
+where
+	SignedExt: SignedExtension,
+	IndirectSignedExt: SignedExtension<AdditionalSigned = SignedExt::AdditionalSigned>,
+{
 }
