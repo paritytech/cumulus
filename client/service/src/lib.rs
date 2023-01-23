@@ -435,10 +435,7 @@ where
 				})?;
 
 			let target_block =
-				B::Header::decode(&mut &validation_data.parent_head.0[..]).map_err(|e| {
-					Box::new(format!("Failed to decode parachain head: {e:?}", e))
-						as Box<_>
-				})?;
+				B::Header::decode(&mut &validation_data.parent_head.0[..]).map_err(|e| format!("Failed to decode parachain head: {e}"))?;
 
 			log::debug!(target: LOG_TARGET_SYNC, "Target block reached {:?}", target_block);
 			let _ = sender.send(target_block);
