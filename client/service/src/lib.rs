@@ -44,8 +44,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{HeaderBackend, HeaderMetadata};
 use sp_core::{traits::SpawnNamed, Decode};
 use sp_runtime::traits::{Block as BlockT, BlockIdTo};
-use std::{fmt, sync::Arc, time::Duration};
-
+use std::{sync::Arc, time::Duration};
 
 // Given the sporadic nature of the explicit recovery operation and the
 // possibility to retry infinite times this value is more than enough.
@@ -366,7 +365,7 @@ async fn warp_sync_get<B, RCInterface>(
 	para_id: ParaId,
 	relay_chain_interface: RCInterface,
 	spawner: SpawnTaskHandle,
-) -> Result<oneshot::Receiver<<B as BlockT>::Header>, WarpSyncError>
+) -> Result<oneshot::Receiver<<B as BlockT>::Header>, ()>
 where
 	B: BlockT + 'static,
 	RCInterface: RelayChainInterface + 'static,
@@ -409,11 +408,11 @@ where
 {
 	let mut imported_blocks = relay_chain_interface.import_notification_stream().await?.fuse();
 	while imported_blocks.next().await.is_some() {
-		let is_syncing = relay_chain_interface
-			.is_major_syncing()
-			.await
-			.map_err(|e| log::error!(target: LOG_TARGET_SYNC, "Unable to determine sync status. {e}"))
-			.unwrap_or(false);
+		let is_syncing = relay_chain_interface.is_major_syncing().await.map_err(|e| {
+			Box::<dyn std::error::Error + Send + Sync>::from(format!(
+				"Unable to determine sync status. {e}"
+			))
+		})?;
 
 		if !is_syncing {
 			let relay_chain_best_hash = relay_chain_interface
@@ -428,14 +427,11 @@ where
 					OccupiedCoreAssumption::TimedOut,
 				)
 				.await
-				.map_err(|e| Box::new(format!("{e:?}", e)) as Box<_>)?
-				.ok_or_else(|| {
-					Box::new("Could not find parachain head in relay chain")
-						as Box<_>
-				})?;
+				.map_err(|e| format!("{e:?}"))?
+				.ok_or_else(|| "Could not find parachain head in relay chain")?;
 
-			let target_block =
-				B::Header::decode(&mut &validation_data.parent_head.0[..]).map_err(|e| format!("Failed to decode parachain head: {e}"))?;
+			let target_block = B::Header::decode(&mut &validation_data.parent_head.0[..])
+				.map_err(|e| format!("Failed to decode parachain head: {e}"))?;
 
 			log::debug!(target: LOG_TARGET_SYNC, "Target block reached {:?}", target_block);
 			let _ = sender.send(target_block);
