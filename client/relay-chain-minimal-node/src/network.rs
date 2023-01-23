@@ -105,7 +105,7 @@ pub(crate) fn build_collator_network(
 		.to_vec(),
 	};
 
-	let network_worker = sc_network::NetworkWorker::new(network_params)?;
+	let mut network_worker = sc_network::NetworkWorker::new(network_params)?;
 	let network_service = network_worker.service().clone();
 
 	let (network_start_tx, network_start_rx) = futures::channel::oneshot::channel();
