@@ -20,7 +20,10 @@ use super::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{ConstU32, Contains, EnsureOrigin, EnsureOriginWithArg, Everything, Nothing, PalletInfoAccess},
+	traits::{
+		ConstU32, Contains, EnsureOrigin, EnsureOriginWithArg, Everything, Nothing,
+		PalletInfoAccess,
+	},
 };
 use pallet_xcm::{EnsureXcm, XcmPassthrough};
 use parachains_common::{

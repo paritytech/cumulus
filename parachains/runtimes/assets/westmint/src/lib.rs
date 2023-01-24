@@ -65,7 +65,9 @@ use parachains_common::{
 	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
-use xcm_config::{ForeignCreators, MultiLocationForAssetId, XcmConfig, XcmOriginToTransactDispatchOrigin};
+use xcm_config::{
+	ForeignCreators, MultiLocationForAssetId, XcmConfig, XcmOriginToTransactDispatchOrigin,
+};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
