@@ -120,6 +120,30 @@ benchmarks! {
 		assert_last_event::<T>(Event::NewInvulnerables{invulnerables: new_invulnerables}.into());
 	}
 
+	add_invulnerables {
+		let new = register_validators::<T>(1);
+		let origin = T::UpdateOrigin::successful_origin();
+	}: {
+		assert_ok!(
+			<CollatorSelection<T>>::add_invulnerables(origin, new.clone())
+		);
+	}
+	verify {
+		assert_last_event::<T>(Event::NewInvulnerables{added: new}.into());
+	}
+
+	remove_invulnerables {
+		let to_remove = register_validators::<T>(1);
+		let origin = T::UpdateOrigin::successful_origin();
+	}: {
+		assert_ok!(
+			<CollatorSelection<T>>::remove_invulnerables(origin, to_remove.clone())
+		);
+	}
+	verify {
+		assert_last_event::<T>(Event::InvulnerableRemoved{removed: to_remove}.into());
+	}
+
 	set_desired_candidates {
 		let max: u32 = 999;
 		let origin = T::UpdateOrigin::successful_origin();

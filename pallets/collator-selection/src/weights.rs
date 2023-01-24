@@ -27,6 +27,8 @@ use sp_std::marker::PhantomData;
 // The weight info trait for `pallet_collator_selection`.
 pub trait WeightInfo {
 	fn set_invulnerables(_b: u32) -> Weight;
+	fn add_invulnerable() -> Weight;
+	fn remove_invulnerable() -> Weight;
 	fn set_desired_candidates() -> Weight;
 	fn set_candidacy_bond() -> Weight;
 	fn register_as_candidate(_c: u32) -> Weight;
@@ -42,6 +44,16 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_ref_time(18_563_000 as u64)
 			// Standard Error: 0
 			.saturating_add(Weight::from_ref_time(68_000 as u64).saturating_mul(b as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
+	}
+	fn add_invulnerable() -> Weight {
+		Weight::from_ref_time(18_563_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
+	}
+	fn remove_invulnerable() -> Weight {
+		Weight::from_ref_time(18_563_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	fn set_desired_candidates() -> Weight {
@@ -89,6 +101,16 @@ impl WeightInfo for () {
 			// Standard Error: 0
 			.saturating_add(Weight::from_ref_time(68_000 as u64).saturating_mul(b as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
+	}
+	fn add_invulnerable() -> Weight {
+		Weight::from_ref_time(18_563_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
+	}
+	fn remove_invulnerable() -> Weight {
+		Weight::from_ref_time(18_563_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	fn set_desired_candidates() -> Weight {
 		Weight::from_ref_time(16_363_000 as u64)
