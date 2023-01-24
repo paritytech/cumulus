@@ -23,7 +23,7 @@ add_to_genesis = false
   name = "charlie"
   validator = true
   image = "{{COL_IMAGE}}"
-  command = "polkadot-parachain"
+  command = "test-parachain"
   args = [""]
   db_snapshot = "https://storage.googleapis.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/parachain-c460b5f3e807c3a5c3093da4541d03d658cfa10c.tgz"
 
