@@ -18,9 +18,9 @@ use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{
-		new_partial, Block, BridgeHubKusamaRuntimeExecutor, BridgeHubRococoRuntimeExecutor,
-		CollectivesPolkadotRuntimeExecutor, StatemineRuntimeExecutor, StatemintRuntimeExecutor,
-		WestmintRuntimeExecutor,
+		new_partial, Block, BridgeHubKusamaRuntimeExecutor, BridgeHubPolkadotRuntimeExecutor,
+		BridgeHubRococoRuntimeExecutor, CollectivesPolkadotRuntimeExecutor,
+		StatemineRuntimeExecutor, StatemintRuntimeExecutor, WestmintRuntimeExecutor,
 	},
 };
 use codec::Encode;
@@ -643,6 +643,10 @@ pub fn run() -> Result<()> {
 							Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
 								cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
 							Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
+								chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
+								chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotLocal |
+								chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotDevelopment =>
+									cmd.run::<Block, BridgeHubPolkadotRuntimeExecutor>(config),
 								chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
 								chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal |
 								chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment =>
@@ -736,6 +740,14 @@ pub fn run() -> Result<()> {
 						))
 					}),
 				Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotLocal |
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotDevelopment => runner.async_run(|_| {
+						Ok((
+							cmd.run::<Block, HostFunctionsOf<BridgeHubPolkadotRuntimeExecutor>>(),
+							task_manager,
+						))
+					}),
 					chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
 					chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal |
 					chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment => runner.async_run(|_| {
