@@ -13,19 +13,20 @@ chain = "rococo-local"
   name = "bob"
   validator = true
 
+  [[relaychain.nodes]]
+  name = "charlie"
+  validator = true
+
+  [[relaychain.nodes]]
+  name = "dave"
+  validator = true
+  args = ["--sync warp", "--reserved-only", "--reserved-nodes {{'alice'|zombie('multiAddress')}} {{'bob'|zombie('multiAddress')}} {{'charlie'|zombie('multiAddress')}}"]
+
 [[parachains]]
 id = 2000
 cumulus_based = true
 chain_spec_path = "zombienet/tests/0007-warp-sync-parachain-spec.json"
 add_to_genesis = false
-
-  [[parachains.collators]]
-  name = "charlie"
-  validator = true
-  image = "{{COL_IMAGE}}"
-  command = "test-parachain"
-  args = [""]
-  db_snapshot = "https://storage.googleapis.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/parachain-c460b5f3e807c3a5c3093da4541d03d658cfa10c.tgz"
 
   [[parachains.collators]]
   name = "dave"
@@ -56,7 +57,21 @@ add_to_genesis = false
   validator = false
   image = "{{COL_IMAGE}}"
   command = "polkadot-parachain"
-  args = ["-lsync=debug","--sync warp"]
+  args = ["-lsync=debug","--sync warp","--", "--sync warp"]
   db_snapshot = "https://storage.googleapis.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/parachain-to-sync-2daf880e656929e7c6680769990984998715c7ec.tgz"
 
+  [[parachains.collators]]
+  name = "two"
+  validator = false
+  image = "{{COL_IMAGE}}"
+  command = "polkadot-parachain"
+  args = ["-lsync=debug","--sync warp","--relay-chain-rpc-urls {{'alice'|zombie('wsUri')}}"]
+  db_snapshot = "https://storage.googleapis.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/parachain-to-sync-2daf880e656929e7c6680769990984998715c7ec.tgz"
 
+  [[parachains.collators]]
+  name = "three"
+  validator = false
+  image = "{{COL_IMAGE}}"
+  command = "polkadot-parachain"
+  args = ["-lsync=debug","--sync warp","--relay-chain-rpc-urls {{'dave'|zombie('wsUri')}}"]
+  db_snapshot = "https://storage.googleapis.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/parachain-to-sync-2daf880e656929e7c6680769990984998715c7ec.tgz"
