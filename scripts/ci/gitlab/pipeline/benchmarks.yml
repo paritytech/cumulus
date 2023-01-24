@@ -66,6 +66,7 @@ benchmarks-bridge-hubs:
     - !reference [.docker-env, before_script]
   timeout:                         1d
   script:
+    - ./scripts/benchmarks-ci.sh bridge-hubs bridge-hub-polkadot ./artifacts
     - ./scripts/benchmarks-ci.sh bridge-hubs bridge-hub-kusama ./artifacts
     - ./scripts/benchmarks-ci.sh bridge-hubs bridge-hub-rococo ./artifacts
     - export CURRENT_TIME=$(date '+%s')

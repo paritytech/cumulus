@@ -479,6 +479,19 @@ macro_rules! construct_async_run {
 			},
 			Runtime::BridgeHub(bridge_hub_runtime_type) => {
 				 match bridge_hub_runtime_type {
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotLocal |
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotDevelopment => {
+						runner.async_run(|$config| {
+							let $components = new_partial::<chain_spec::bridge_hubs::polkadot::RuntimeApi, _>(
+								&$config,
+								crate::service::aura_build_import_queue::<_, AuraId>,
+							)?;
+
+							let task_manager = $components.task_manager;
+							{ $( $code )* }.map(|v| (v, task_manager))
+						})
+					},
 					chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
 					chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal |
 					chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment => {
@@ -870,6 +883,15 @@ pub fn run() -> Result<()> {
 					.map(|r| r.0)
 					.map_err(Into::into),
 					Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotLocal |
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotDevelopment =>
+							crate::service::start_generic_aura_node::<
+								chain_spec::bridge_hubs::polkadot::RuntimeApi,
+								AuraId,
+							>(config, polkadot_config, collator_options, id, hwbench)
+								.await
+								.map(|r| r.0),
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal |
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment =>
