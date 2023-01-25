@@ -155,13 +155,13 @@ impl BridgeHubRuntimeType {
 				wococo::BRIDGE_HUB_WOCOCO,
 				"Wococo BridgeHub",
 				"wococo",
-				ParaId::new(1013),
+				ParaId::new(1014),
 			))),
 			BridgeHubRuntimeType::WococoLocal => Ok(Box::new(wococo::local_config(
 				wococo::BRIDGE_HUB_WOCOCO_LOCAL,
 				"Wococo BridgeHub Local",
 				"wococo-local",
-				ParaId::new(1013),
+				ParaId::new(1014),
 			))),
 		}
 	}
