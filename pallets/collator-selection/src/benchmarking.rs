@@ -121,9 +121,12 @@ benchmarks! {
 	}
 
 	add_invulnerable {
-		let b in 1 .. T::MaxInvulnerables::get() - 1;
-		let new = register_validators::<T>(b);
 		let origin = T::UpdateOrigin::successful_origin();
+		let max_invulnerables = T::MaxInvulnerables::get();
+		let b in 1 .. max_invulnerables;
+		let existing_set = register_validators::<T>(b);
+		let invulnerables = <CollatorSelection<T>>::set_invulnerables(origin, existing_set.clone());
+		let new = register_validators(max_invulnerables)
 	}: {
 		assert_ok!(
 			<CollatorSelection<T>>::add_invulnerables(origin, new.clone())
@@ -134,16 +137,18 @@ benchmarks! {
 	}
 
 	remove_invulnerable {
-		let b in 1 .. T::MaxInvulnerables::get();
-		let to_remove = register_validators::<T>(b);
 		let origin = T::UpdateOrigin::successful_origin();
+		let max_invulnerables = T::MaxInvulnerables::get();
+		let b in 1 .. max_invulnerables + 1;
+		let existing_set = register_validators::<T>(b);
+		let invulnerables = <CollatorSelection<T>>::set_invulnerables(origin, existing_set.clone());
 	}: {
 		assert_ok!(
-			<CollatorSelection<T>>::remove_invulnerables(origin, to_remove.clone())
+			<CollatorSelection<T>>::remove_invulnerables(origin, max_invulnerables.clone())
 		);
 	}
 	verify {
-		assert_last_event::<T>(Event::InvulnerableRemoved{removed: to_remove}.into());
+		assert_last_event::<T>(Event::InvulnerableRemoved{removed: max_invulnerables}.into());
 	}
 
 	set_desired_candidates {
