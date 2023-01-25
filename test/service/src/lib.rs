@@ -385,10 +385,7 @@ where
 			para_id,
 			relay_chain_interface,
 			import_queue: import_queue_service,
-			// The slot duration is currently used internally only to configure
-			// the recovery delay of pov-recovery. We don't want to wait for too
-			// long on the full node to recover, so we reduce this time here.
-			relay_chain_slot_duration: Duration::from_millis(6),
+			relay_chain_slot_duration: Duration::from_secs(6),
 		};
 
 		start_full_node(params)?;

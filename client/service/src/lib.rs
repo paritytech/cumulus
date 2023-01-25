@@ -121,7 +121,10 @@ where
 		overseer_handle.clone(),
 		// We want that collators wait at maximum the relay chain slot duration before starting
 		// to recover blocks.
-		RecoveryDelay { min: core::time::Duration::ZERO, max: relay_chain_slot_duration },
+		RecoveryDelay {
+			min: relay_chain_slot_duration.checked_div(2).expect("2 is larger than 0; qed"),
+			max: relay_chain_slot_duration,
+		},
 		client.clone(),
 		import_queue,
 		relay_chain_interface.clone(),
