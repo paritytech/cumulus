@@ -120,8 +120,9 @@ benchmarks! {
 		assert_last_event::<T>(Event::NewInvulnerables{invulnerables: new_invulnerables}.into());
 	}
 
-	add_invulnerables {
-		let new = register_validators::<T>(1);
+	add_invulnerable {
+		let b in 1 .. T::MaxInvulnerables::get() - 1;
+		let new = register_validators::<T>(b);
 		let origin = T::UpdateOrigin::successful_origin();
 	}: {
 		assert_ok!(
@@ -132,8 +133,9 @@ benchmarks! {
 		assert_last_event::<T>(Event::NewInvulnerables{added: new}.into());
 	}
 
-	remove_invulnerables {
-		let to_remove = register_validators::<T>(1);
+	remove_invulnerable {
+		let b in 1 .. T::MaxInvulnerables::get();
+		let to_remove = register_validators::<T>(b);
 		let origin = T::UpdateOrigin::successful_origin();
 	}: {
 		assert_ok!(
