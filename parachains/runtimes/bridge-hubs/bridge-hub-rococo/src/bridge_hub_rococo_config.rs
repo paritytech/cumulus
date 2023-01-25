@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+//! Bridge definitions that are used on Rococo to bridge with Wococo.
+
 use crate::{
 	BridgeParachainWococoInstance, ParachainInfo, Runtime, WithBridgeHubWococoMessagesInstance,
 	XcmAsPlainPayload, XcmBlobHauler, XcmBlobHaulerAdapter, XcmRouter,

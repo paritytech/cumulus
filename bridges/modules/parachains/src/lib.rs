@@ -27,9 +27,13 @@ pub use weights::WeightInfo;
 pub use weights_ext::WeightInfoExt;
 
 use bp_header_chain::HeaderChain;
-use bp_parachains::{parachain_head_storage_key_at_source, ParaInfo, ParaStoredHeaderData};
+use bp_parachains::{
+	parachain_head_storage_key_at_source, ParaInfo, ParaStoredHeaderData,
+	ParaStoredHeaderDataBuilder,
+};
 use bp_polkadot_core::parachains::{ParaHash, ParaHead, ParaHeadsProof, ParaId};
-use bp_runtime::{Chain, HashOf, HeaderId, HeaderIdOf, Parachain, StorageProofError};
+use bp_runtime::{Chain, HashOf, HeaderId, HeaderIdOf, HeaderOf, Parachain, StorageProofError};
+use codec::Encode;
 use frame_support::dispatch::PostDispatchInfo;
 use sp_std::{marker::PhantomData, vec::Vec};
 
@@ -652,6 +656,25 @@ impl<T: Config<I>, I: 'static, C: Parachain<Hash = ParaHash>> HeaderChain<C>
 			.and_then(|head| head.decode_parachain_head_data::<C>().ok())
 			.map(|h| h.state_root)
 	}
+}
+
+/// (Re)initialize pallet with given header for using it in `pallet-bridge-messages` benchmarks.
+#[cfg(feature = "runtime-benchmarks")]
+pub fn initialize_for_benchmarks<T: Config<I>, I: 'static, PC: Parachain<Hash = ParaHash>>(
+	header: HeaderOf<PC>,
+) {
+	let parachain = ParaId(PC::PARACHAIN_ID);
+	let parachain_head = ParaHead(header.encode());
+	let updated_head_data = T::ParaStoredHeaderDataBuilder::try_build(parachain, &parachain_head)
+		.expect("failed to build stored parachain head in benchmarks");
+	Pallet::<T, I>::update_parachain_head(
+		parachain,
+		None,
+		0,
+		updated_head_data,
+		parachain_head.hash(),
+	)
+	.expect("failed to insert parachain head in benchmarks");
 }
 
 #[cfg(test)]

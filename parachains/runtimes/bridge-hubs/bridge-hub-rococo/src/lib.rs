@@ -937,7 +937,7 @@ impl_runtime_apis! {
 			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
 			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
-			use bridge_runtime_common::messages_benchmarking::{prepare_message_delivery_proof, prepare_message_proof};
+			use bridge_runtime_common::messages_benchmarking::{prepare_message_delivery_proof_from_parachain, prepare_message_proof_from_parachain};
 			use pallet_bridge_messages::benchmarking::{
 				Config as BridgeMessagesConfig,
 				Pallet as BridgeMessagesBench,
@@ -954,25 +954,20 @@ impl_runtime_apis! {
 				fn prepare_message_proof(
 					params: MessageProofParams,
 				) -> (bridge_hub_rococo_config::FromWococoBridgeHubMessagesProof, Weight) {
-					prepare_message_proof::<
+					prepare_message_proof_from_parachain::<
 						Runtime,
-						(),
 						BridgeGrandpaWococoInstance,
 						bridge_hub_rococo_config::WithBridgeHubWococoMessageBridge,
-						bp_bridge_hub_wococo::Header,
-						bp_bridge_hub_wococo::Hasher,
 					>(params)
 				}
 
 				fn prepare_message_delivery_proof(
 					params: MessageDeliveryProofParams<AccountId>,
 				) -> bridge_hub_rococo_config::ToWococoBridgeHubMessagesDeliveryProof {
-					prepare_message_delivery_proof::<
+					prepare_message_delivery_proof_from_parachain::<
 						Runtime,
 						BridgeGrandpaWococoInstance,
 						bridge_hub_rococo_config::WithBridgeHubWococoMessageBridge,
-						bp_bridge_hub_wococo::Header,
-						bp_bridge_hub_wococo::Hasher,
 					>(params)
 				}
 			}
@@ -986,25 +981,20 @@ impl_runtime_apis! {
 				fn prepare_message_proof(
 					params: MessageProofParams,
 				) -> (bridge_hub_wococo_config::FromRococoBridgeHubMessagesProof, Weight) {
-					prepare_message_proof::<
+					prepare_message_proof_from_parachain::<
 						Runtime,
-						(),
 						BridgeGrandpaRococoInstance,
 						bridge_hub_wococo_config::WithBridgeHubRococoMessageBridge,
-						bp_bridge_hub_rococo::Header,
-						bp_bridge_hub_rococo::Hasher,
 					>(params)
 				}
 
 				fn prepare_message_delivery_proof(
 					params: MessageDeliveryProofParams<AccountId>,
 				) -> bridge_hub_wococo_config::ToRococoBridgeHubMessagesDeliveryProof {
-					prepare_message_delivery_proof::<
+					prepare_message_delivery_proof_from_parachain::<
 						Runtime,
 						BridgeGrandpaRococoInstance,
 						bridge_hub_wococo_config::WithBridgeHubRococoMessageBridge,
-						bp_bridge_hub_rococo::Header,
-						bp_bridge_hub_rococo::Hasher,
 					>(params)
 				}
 			}
