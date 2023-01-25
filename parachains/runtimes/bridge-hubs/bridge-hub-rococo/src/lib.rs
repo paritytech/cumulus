@@ -73,9 +73,13 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 use crate::{
-	bridge_hub_rococo_config::OnBridgeHubRococoBlobDispatcher,
-	bridge_hub_wococo_config::OnBridgeHubWococoBlobDispatcher, constants::fee::WeightToFee,
+	bridge_hub_rococo_config::{OnBridgeHubRococoBlobDispatcher, WithBridgeHubWococoMessageBridge},
+	bridge_hub_wococo_config::{OnBridgeHubWococoBlobDispatcher, WithBridgeHubRococoMessageBridge},
+	constants::fee::WeightToFee,
 	xcm_config::XcmRouter,
+};
+use bridge_runtime_common::messages::{
+	source::TargetHeaderChainAdapter, target::SourceHeaderChainAdapter,
 };
 use parachains_common::{
 	opaque, AccountId, Balance, BlockNumber, Hash, Header, Index, Signature,
@@ -469,12 +473,12 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 	// TODO:check-parameter - check delivery
 	type DeliveryPayments = ();
 
-	type TargetHeaderChain = bridge_hub_rococo_config::BridgeHubWococo;
+	type TargetHeaderChain = TargetHeaderChainAdapter<WithBridgeHubWococoMessageBridge>;
 	type LaneMessageVerifier = bridge_hub_rococo_config::ToBridgeHubWococoMessageVerifier;
 	// TODO:check-parameter - check delivery
 	type DeliveryConfirmationPayments = ();
 
-	type SourceHeaderChain = bridge_hub_rococo_config::BridgeHubWococo;
+	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubWococoMessageBridge>;
 	type MessageDispatch = XcmBlobMessageDispatch<
 		bp_bridge_hub_wococo::BridgeHubWococo,
 		bp_bridge_hub_rococo::BridgeHubRococo,
@@ -503,12 +507,12 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 	// TODO:check-parameter - check delivery
 	type DeliveryPayments = ();
 
-	type TargetHeaderChain = bridge_hub_wococo_config::BridgeHubRococo;
+	type TargetHeaderChain = TargetHeaderChainAdapter<WithBridgeHubRococoMessageBridge>;
 	type LaneMessageVerifier = bridge_hub_wococo_config::ToBridgeHubRococoMessageVerifier;
 	// TODO:check-parameter - check delivery
 	type DeliveryConfirmationPayments = ();
 
-	type SourceHeaderChain = bridge_hub_wococo_config::BridgeHubRococo;
+	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubRococoMessageBridge>;
 	type MessageDispatch = XcmBlobMessageDispatch<
 		bp_bridge_hub_rococo::BridgeHubRococo,
 		bp_bridge_hub_wococo::BridgeHubWococo,
@@ -971,4 +975,42 @@ cumulus_pallet_parachain_system::register_validate_block! {
 	Runtime = Runtime,
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
 	CheckInherents = CheckInherents,
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use bridge_runtime_common::integrity::check_additional_signed;
+	use codec::Encode;
+	use sp_runtime::generic::Era;
+
+	#[test]
+	fn ensure_signed_extension_definition_is_correct() {
+		let payload: SignedExtra = (
+			frame_system::CheckNonZeroSender::new(),
+			frame_system::CheckSpecVersion::new(),
+			frame_system::CheckTxVersion::new(),
+			frame_system::CheckGenesis::new(),
+			frame_system::CheckEra::from(Era::Immortal),
+			frame_system::CheckNonce::from(10),
+			frame_system::CheckWeight::new(),
+			pallet_transaction_payment::ChargeTransactionPayment::from(10),
+			BridgeRejectObsoleteHeadersAndMessages {},
+		);
+
+		let bhr_indirect_payload = bp_bridge_hub_rococo::SignedExtension::new(
+			((), (), (), (), Era::Immortal, 10.into(), (), 10.into(), ()),
+			None,
+		);
+		assert_eq!(payload.encode(), bhr_indirect_payload.encode());
+
+		let bhw_indirect_payload = bp_bridge_hub_wococo::SignedExtension::new(
+			((), (), (), (), Era::Immortal, 10.into(), (), 10.into(), ()),
+			None,
+		);
+		assert_eq!(payload.encode(), bhw_indirect_payload.encode());
+
+		check_additional_signed::<SignedExtra, bp_bridge_hub_rococo::SignedExtension>();
+		check_additional_signed::<SignedExtra, bp_bridge_hub_wococo::SignedExtension>();
+	}
 }
