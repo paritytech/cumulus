@@ -14,7 +14,7 @@ benchmarks-build:
     - mkdir -p artifacts
     - cp target/production/polkadot-parachain ./artifacts/
 
-benchmarks-assets:
+benchmarks-assets1:
   stage:                           benchmarks-run
   timeout:                         1d
   extends:
@@ -26,9 +26,57 @@ benchmarks-assets:
     - !reference [.docker-env, before_script]
   script:
     - ./scripts/benchmarks-ci.sh assets statemine ./artifacts
+    # - ./scripts/benchmarks-ci.sh assets statemint ./artifacts
+    # - ./scripts/benchmarks-ci.sh assets westmint ./artifacts
+    - git diff -P > ./artifacts/assets_statemine_weights_${CI_COMMIT_SHORT_SHA}.patch
+    # - export CURRENT_TIME=$(date '+%s')
+    # - export BRANCHNAME="weights-statemint-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
+    # - !reference [.git-commit-push, script]
+    # - ./scripts/ci/create-benchmark-pr.sh "[benchmarks] Update weights for statemine/t" "$BRANCHNAME"
+    - rm -f ./artifacts/polkadot-parachain
+    - rm -f ./artifacts/test-parachain
+  after_script:
+    - rm -rf .git/config
+  tags:
+    - weights-vm
+
+benchmarks-assets2:
+  stage:                           benchmarks-run
+  timeout:                         1d
+  extends:
+    - .docker-env
+    - .collect-artifacts
+    # - .benchmarks-refs
+    - .pr-refs
+  before_script:
+    - !reference [.docker-env, before_script]
+  script:
     - ./scripts/benchmarks-ci.sh assets statemint ./artifacts
+    - git diff -P > ./artifacts/assets_statemint_weights_${CI_COMMIT_SHORT_SHA}.patch
+    # - export CURRENT_TIME=$(date '+%s')
+    # - export BRANCHNAME="weights-statemint-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
+    # - !reference [.git-commit-push, script]
+    # - ./scripts/ci/create-benchmark-pr.sh "[benchmarks] Update weights for statemine/t" "$BRANCHNAME"
+    - rm -f ./artifacts/polkadot-parachain
+    - rm -f ./artifacts/test-parachain
+  after_script:
+    - rm -rf .git/config
+  tags:
+    - weights-vm
+
+benchmarks-assets3:
+  stage:                           benchmarks-run
+  timeout:                         1d
+  extends:
+    - .docker-env
+    - .collect-artifacts
+    # - .benchmarks-refs
+    - .pr-refs
+  before_script:
+    - !reference [.docker-env, before_script]
+  script:
     - ./scripts/benchmarks-ci.sh assets westmint ./artifacts
-    - git diff -P > ./artifacts/assets_weights_${CI_COMMIT_SHORT_SHA}.patch
+    - git diff -P > ./artifacts/assets_westmint_weights_${CI_COMMIT_SHORT_SHA}.patch
     # - export CURRENT_TIME=$(date '+%s')
     # - export BRANCHNAME="weights-statemint-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
     # - !reference [.git-commit-push, script]
