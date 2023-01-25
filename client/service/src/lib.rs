@@ -122,7 +122,7 @@ where
 		// We want that collators wait at maximum the relay chain slot duration before starting
 		// to recover blocks.
 		RecoveryDelay {
-			min: relay_chain_slot_duration.checked_div(2).expect("2 is larger than 0; qed"),
+			min: relay_chain_slot_duration / 2,
 			max: relay_chain_slot_duration,
 		},
 		client.clone(),
