@@ -87,7 +87,10 @@ pallet-bridge-relayers = { path = "../../../../bridges/modules/relayers", defaul
 bridge-runtime-common = { path = "../../../../bridges/bin/runtime-common", default-features = false }
 
 [dev-dependencies]
+serial_test = "0.9.0"
+static_assertions = "1.1"
 bridge-hub-test-utils = { path = "../test-utils"}
+bridge-runtime-common = { path = "../../../../bridges/bin/runtime-common", features = ["integrity-test"] }
 
 [features]
 default = [

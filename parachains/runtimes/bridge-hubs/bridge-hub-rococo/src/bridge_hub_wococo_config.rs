@@ -18,13 +18,9 @@
 
 use crate::{
 	BridgeParachainRococoInstance, ParachainInfo, Runtime, WithBridgeHubRococoMessagesInstance,
-	XcmAsPlainPayload, XcmBlobHauler, XcmBlobHaulerAdapter, XcmRouter,
+	XcmBlobHauler, XcmBlobHaulerAdapter, XcmRouter,
 };
-use bp_messages::{
-	source_chain::TargetHeaderChain,
-	target_chain::{ProvedMessages, SourceHeaderChain},
-	InboundLaneData, LaneId, Message, MessageNonce,
-};
+use bp_messages::{LaneId, MessageNonce};
 use bp_runtime::ChainId;
 use bridge_runtime_common::{
 	messages,
@@ -74,8 +70,11 @@ impl XcmBlobHauler for ToBridgeHubRococoXcmBlobHauler {
 	type MessageSender =
 		pallet_bridge_messages::Pallet<Runtime, WithBridgeHubRococoMessagesInstance>;
 
-	fn message_sender_origin() -> InteriorMultiLocation {
-		crate::xcm_config::UniversalLocation::get()
+	type MessageSenderOrigin = super::RuntimeOrigin;
+
+	fn message_sender_origin() -> super::RuntimeOrigin {
+		pallet_xcm::Origin::from(MultiLocation::new(1, crate::xcm_config::UniversalLocation::get()))
+			.into()
 	}
 
 	fn xcm_lane() -> LaneId {
@@ -116,36 +115,6 @@ impl UnderlyingChainProvider for BridgeHubRococo {
 	type Chain = bp_bridge_hub_rococo::BridgeHubRococo;
 }
 
-impl SourceHeaderChain for BridgeHubRococo {
-	type Error = &'static str;
-	type MessagesProof = FromRococoBridgeHubMessagesProof;
-
-	fn verify_messages_proof(
-		proof: Self::MessagesProof,
-		messages_count: u32,
-	) -> Result<ProvedMessages<Message>, Self::Error> {
-		bridge_runtime_common::messages::target::verify_messages_proof::<
-			WithBridgeHubRococoMessageBridge,
-		>(proof, messages_count)
-		.map_err(Into::into)
-	}
-}
-
-impl TargetHeaderChain<XcmAsPlainPayload, crate::AccountId> for BridgeHubRococo {
-	type Error = &'static str;
-	type MessagesDeliveryProof = ToRococoBridgeHubMessagesDeliveryProof;
-
-	fn verify_message(payload: &XcmAsPlainPayload) -> Result<(), Self::Error> {
-		messages::source::verify_chain_message::<WithBridgeHubRococoMessageBridge>(payload)
-	}
-
-	fn verify_messages_delivery_proof(
-		proof: Self::MessagesDeliveryProof,
-	) -> Result<(LaneId, InboundLaneData<bp_bridge_hub_wococo::AccountId>), Self::Error> {
-		messages::source::verify_messages_delivery_proof::<WithBridgeHubRococoMessageBridge>(proof)
-	}
-}
-
 impl messages::BridgedChainWithMessages for BridgeHubRococo {
 	fn verify_dispatch_weight(_message_payload: &[u8]) -> bool {
 		true
@@ -175,5 +144,67 @@ impl ThisChainWithMessages for BridgeHubWococo {
 			"[BridgeHubWococo::ThisChainWithMessages] maximal_pending_messages_at_outbound_lane"
 		);
 		MessageNonce::MAX / 2
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::BridgeGrandpaRococoInstance;
+	use bridge_runtime_common::{
+		assert_complete_bridge_types,
+		integrity::{
+			assert_complete_bridge_constants, check_message_lane_weights,
+			AssertBridgeMessagesPalletConstants, AssertBridgePalletNames, AssertChainConstants,
+			AssertCompleteBridgeConstants,
+		},
+	};
+
+	#[test]
+	fn ensure_bridge_hub_wococo_message_lane_weights_are_correct() {
+		check_message_lane_weights::<bp_bridge_hub_wococo::BridgeHubWococo, Runtime>(
+			bp_bridge_hub_rococo::EXTRA_STORAGE_PROOF_SIZE,
+			bp_bridge_hub_wococo::MAX_UNREWARDED_RELAYERS_IN_CONFIRMATION_TX,
+			bp_bridge_hub_wococo::MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX,
+		);
+	}
+
+	#[test]
+	fn ensure_bridge_integrity() {
+		assert_complete_bridge_types!(
+			runtime: Runtime,
+			with_bridged_chain_grandpa_instance: BridgeGrandpaRococoInstance,
+			with_bridged_chain_messages_instance: WithBridgeHubRococoMessagesInstance,
+			bridge: WithBridgeHubRococoMessageBridge,
+			this_chain: bp_wococo::Wococo,
+			bridged_chain: bp_rococo::Rococo,
+		);
+
+		assert_complete_bridge_constants::<
+			Runtime,
+			BridgeGrandpaRococoInstance,
+			WithBridgeHubRococoMessagesInstance,
+			WithBridgeHubRococoMessageBridge,
+			bp_wococo::Wococo,
+		>(AssertCompleteBridgeConstants {
+			this_chain_constants: AssertChainConstants {
+				block_length: bp_bridge_hub_wococo::BlockLength::get(),
+				block_weights: bp_bridge_hub_wococo::BlockWeights::get(),
+			},
+			messages_pallet_constants: AssertBridgeMessagesPalletConstants {
+				max_unrewarded_relayers_in_bridged_confirmation_tx:
+					bp_bridge_hub_rococo::MAX_UNREWARDED_RELAYERS_IN_CONFIRMATION_TX,
+				max_unconfirmed_messages_in_bridged_confirmation_tx:
+					bp_bridge_hub_rococo::MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX,
+				bridged_chain_id: bp_runtime::BRIDGE_HUB_ROCOCO_CHAIN_ID,
+			},
+			pallet_names: AssertBridgePalletNames {
+				with_this_chain_messages_pallet_name:
+					bp_bridge_hub_wococo::WITH_BRIDGE_HUB_WOCOCO_MESSAGES_PALLET_NAME,
+				with_bridged_chain_grandpa_pallet_name: bp_rococo::WITH_ROCOCO_GRANDPA_PALLET_NAME,
+				with_bridged_chain_messages_pallet_name:
+					bp_bridge_hub_rococo::WITH_BRIDGE_HUB_ROCOCO_MESSAGES_PALLET_NAME,
+			},
+		});
 	}
 }

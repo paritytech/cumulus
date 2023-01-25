@@ -23,12 +23,12 @@ use bp_runtime::{messages::MessageDispatchResult, AccountIdOf, Chain};
 use codec::{Decode, Encode};
 use frame_support::{dispatch::Weight, CloneNoBound, EqNoBound, PartialEqNoBound};
 use scale_info::TypeInfo;
-use xcm::latest::prelude::*;
 use xcm_builder::{DispatchBlob, DispatchBlobError, HaulBlob, HaulBlobError};
 
 /// PLain "XCM" payload, which we transfer through bridge
 pub type XcmAsPlainPayload = sp_std::prelude::Vec<u8>;
 
+/// Message dispatch result type for single message
 #[derive(CloneNoBound, EqNoBound, PartialEqNoBound, Encode, Decode, Debug, TypeInfo)]
 pub enum XcmBlobMessageDispatchResult {
 	InvalidPayload,
@@ -62,11 +62,6 @@ impl<SourceBridgeHubChain: Chain, TargetBridgeHubChain: Chain, BlobDispatcher: D
 		_relayer_account: &AccountIdOf<SourceBridgeHubChain>,
 		message: DispatchMessage<Self::DispatchPayload>,
 	) -> MessageDispatchResult<Self::DispatchLevelResult> {
-		log::warn!(
-			target: crate::LOG_TARGET,
-			"[XcmBlobMessageDispatch] DispatchBlob::dispatch_blob triggering - message_nonce: {:?}",
-			message.key.nonce
-		);
 		let payload = match message.data.payload {
 			Ok(payload) => payload,
 			Err(e) => {
@@ -125,29 +120,42 @@ impl<SourceBridgeHubChain: Chain, TargetBridgeHubChain: Chain, BlobDispatcher: D
 /// where on the other it can be dispatched by [`XcmBlobMessageDispatch`].
 pub trait XcmBlobHauler {
 	/// Runtime message sender adapter.
-	type MessageSender: MessagesBridge<super::RuntimeOrigin, XcmAsPlainPayload>;
+	type MessageSender: MessagesBridge<Self::MessageSenderOrigin, XcmAsPlainPayload>;
 
+	/// Runtime message sender origin, which is used by MessageSender.
+	type MessageSenderOrigin;
 	/// Our location within the Consensus Universe.
-	fn message_sender_origin() -> InteriorMultiLocation;
+	fn message_sender_origin() -> Self::MessageSenderOrigin;
 
 	/// Return message lane (as "point-to-point link") used to deliver XCM messages.
 	fn xcm_lane() -> LaneId;
 }
 
 pub struct XcmBlobHaulerAdapter<XcmBlobHauler>(sp_std::marker::PhantomData<XcmBlobHauler>);
-impl<H: XcmBlobHauler> HaulBlob for XcmBlobHaulerAdapter<H> {
+impl<HaulerOrigin, H: XcmBlobHauler<MessageSenderOrigin = HaulerOrigin>> HaulBlob
+	for XcmBlobHaulerAdapter<H>
+{
 	fn haul_blob(blob: sp_std::prelude::Vec<u8>) -> Result<(), HaulBlobError> {
 		let lane = H::xcm_lane();
-		let result = H::MessageSender::send_message(
-			pallet_xcm::Origin::from(MultiLocation::from(H::message_sender_origin())).into(),
-			lane,
-			blob,
-		);
+		let result = H::MessageSender::send_message(H::message_sender_origin(), lane, blob);
 		let result = result.map(|artifacts| {
 			let hash = (lane, artifacts.nonce).using_encoded(sp_io::hashing::blake2_256);
 			hash
 		});
-		log::info!(target: crate::LOG_TARGET, "haul_blob result: {:?} on lane: {:?}", result, lane);
+		match &result {
+			Ok(result) => log::info!(
+				target: crate::LOG_TARGET,
+				"haul_blob result - ok: {:?} on lane: {:?}",
+				result,
+				lane
+			),
+			Err(error) => log::error!(
+				target: crate::LOG_TARGET,
+				"haul_blob result - error: {:?} on lane: {:?}",
+				error,
+				lane
+			),
+		};
 		result.map(|_| ()).map_err(|_| HaulBlobError::Transport("MessageSenderError"))
 	}
 }
