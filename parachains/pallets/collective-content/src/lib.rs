@@ -95,7 +95,7 @@ pub mod pallet {
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// A new charter has been set.
 		NewCharterSet { cid: Cid },
-		/// A new announcement has been proposed.
+		/// A new announcement has been made.
 		AnnouncementAnnounced { cid: Cid },
 		/// An on-chain announcement has been removed.
 		AnnouncementRemoved { cid: Cid },

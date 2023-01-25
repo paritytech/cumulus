@@ -52,10 +52,15 @@ pub type AmbassadorContentInstance = pallet_collective_content::Instance1;
 impl pallet_collective_content::Config<AmbassadorContentInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type CharterOrigin = EnsureAmbassador;
-	type AnnouncementOrigin = pallet_ranked_collective::EnsureMember<
-		Runtime,
-		AmbassadorCollectiveInstance,
-		{ ranks::AMBASSADOR },
+	// An announcement can be submitted by a Senior Ambassador member or the [Origin::Ambassador] plurality voice
+	// taken via referendum on the [tracks::constants::AMBASSADOR] track.
+	type AnnouncementOrigin = EitherOfDiverse<
+		pallet_ranked_collective::EnsureMember<
+			Runtime,
+			AmbassadorCollectiveInstance,
+			{ ranks::SENIOR_AMBASSADOR },
+		>,
+		EnsureAmbassador,
 	>;
 	type MaxAnnouncementsCount = ConstU32<100>;
 	type WeightInfo = weights::pallet_ambassador_content::WeightInfo<Runtime>;

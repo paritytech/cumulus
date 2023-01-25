@@ -131,7 +131,7 @@ where
 	}
 }
 
-/// Used the compare the privilege of an origin inside the scheduler.
+/// Used to compare the privilege of an origin inside the scheduler.
 pub struct EqualOrGreatestRootCmp;
 
 impl PrivilegeCmp<OriginCaller> for EqualOrGreatestRootCmp {

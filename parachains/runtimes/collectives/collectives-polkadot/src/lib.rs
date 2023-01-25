@@ -285,6 +285,8 @@ pub enum ProxyType {
 	Collator,
 	/// Alliance proxy. Allows calls related to the Alliance.
 	Alliance,
+	/// Ambassador proxy. Allows calls related to the Ambassador Program.
+	Ambassador,
 }
 impl Default for ProxyType {
 	fn default() -> Self {
@@ -318,6 +320,14 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 				c,
 				RuntimeCall::AllianceMotion { .. } |
 					RuntimeCall::Alliance { .. } |
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
+			),
+			ProxyType::Ambassador => matches!(
+				c,
+				RuntimeCall::AmbassadorCollective { .. } |
+					RuntimeCall::AmbassadorReferenda { .. } |
+					RuntimeCall::AmbassadorContent { .. } |
 					RuntimeCall::Utility { .. } |
 					RuntimeCall::Multisig { .. }
 			),
