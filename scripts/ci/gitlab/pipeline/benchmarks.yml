@@ -28,12 +28,13 @@ benchmarks-assets:
     - ./scripts/benchmarks-ci.sh assets statemine ./artifacts
     - ./scripts/benchmarks-ci.sh assets statemint ./artifacts
     - ./scripts/benchmarks-ci.sh assets westmint ./artifacts
+    - git diff -P > ./artifacts/assets_weights_${CI_COMMIT_SHORT_SHA}.patch
     # - export CURRENT_TIME=$(date '+%s')
     # - export BRANCHNAME="weights-statemint-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
     # - !reference [.git-commit-push, script]
     # - ./scripts/ci/create-benchmark-pr.sh "[benchmarks] Update weights for statemine/t" "$BRANCHNAME"
-    # - rm -f ./artifacts/polkadot-parachain
-    # - rm -f ./artifacts/test-parachain
+    - rm -f ./artifacts/polkadot-parachain
+    - rm -f ./artifacts/test-parachain
   after_script:
     - rm -rf .git/config
   tags:
@@ -51,13 +52,14 @@ benchmarks-collectives:
     - !reference [.docker-env, before_script]
   script:
     - ./scripts/benchmarks-ci.sh collectives collectives-polkadot ./artifacts
+    - git diff -P > ./artifacts/collectives_weights_${CI_COMMIT_SHORT_SHA}.patch
     # - git status
     # - export CURRENT_TIME=$(date '+%s')
     # - export BRANCHNAME="weights-collectives-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
     # - !reference [.git-commit-push, script]
     # - ./scripts/ci/create-benchmark-pr.sh "[benchmarks] Update weights for collectives" "$BRANCHNAME"
-    # - rm -f ./artifacts/polkadot-parachain
-    # - rm -f ./artifacts/test-parachain
+    - rm -f ./artifacts/polkadot-parachain
+    - rm -f ./artifacts/test-parachain
   after_script:
     - rm -rf .git/config
   tags:
@@ -76,12 +78,13 @@ benchmarks-bridge-hubs:
   script:
     - ./scripts/benchmarks-ci.sh bridge-hubs bridge-hub-kusama ./artifacts
     - ./scripts/benchmarks-ci.sh bridge-hubs bridge-hub-rococo ./artifacts
+    - git diff -P > ./artifacts/bridge_hubs_weights_${CI_COMMIT_SHORT_SHA}.patch
     # - export CURRENT_TIME=$(date '+%s')
     # - export BRANCHNAME="weights-bridge-hubs-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
     # - !reference [.git-commit-push, script]
     # - ./scripts/ci/create-benchmark-pr.sh "[benchmarks] Update weights for bridge-hubs" "$BRANCHNAME"
-    # - rm -f ./artifacts/polkadot-parachain
-    # - rm -f ./artifacts/test-parachain
+    - rm -f ./artifacts/polkadot-parachain
+    - rm -f ./artifacts/test-parachain
   after_script:
     - rm -rf .git/config
   tags:
