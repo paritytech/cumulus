@@ -399,7 +399,7 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
 	type HeadersToKeep = RelayChainHeadersToKeep;
 	type MaxBridgedAuthorities =
 		frame_support::traits::ConstU32<{ bp_wococo::MAX_AUTHORITIES_COUNT }>;
-	type WeightInfo = pallet_bridge_grandpa::weights::BridgeWeight<Runtime>;
+	type WeightInfo = weights::pallet_bridge_grandpa_bridge_wococo_grandpa::WeightInfo<Runtime>;
 }
 
 /// Add granda bridge pallet to track Rococo relay chain
@@ -410,7 +410,7 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 	type HeadersToKeep = RelayChainHeadersToKeep;
 	type MaxBridgedAuthorities =
 		frame_support::traits::ConstU32<{ bp_rococo::MAX_AUTHORITIES_COUNT }>;
-	type WeightInfo = pallet_bridge_grandpa::weights::BridgeWeight<Runtime>;
+	type WeightInfo = weights::pallet_bridge_grandpa_bridge_rococo_grandpa::WeightInfo<Runtime>;
 }
 
 pub const ROCOCO_BRIDGE_PARA_PALLET_NAME: &str = "Paras";
@@ -430,7 +430,7 @@ parameter_types! {
 pub type BridgeParachainWococoInstance = pallet_bridge_parachains::Instance1;
 impl pallet_bridge_parachains::Config<BridgeParachainWococoInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_bridge_parachains::weights::BridgeWeight<Runtime>;
+	type WeightInfo = weights::pallet_bridge_parachains_bridge_parachains_bench_runtime_bridge_parachain_wococo_instance::WeightInfo<Runtime>;
 	type BridgesGrandpaPalletInstance = BridgeGrandpaWococoInstance;
 	type ParasPalletName = WococoBridgeParachainPalletName;
 	type ParaStoredHeaderDataBuilder =
@@ -443,7 +443,7 @@ impl pallet_bridge_parachains::Config<BridgeParachainWococoInstance> for Runtime
 pub type BridgeParachainRococoInstance = pallet_bridge_parachains::Instance2;
 impl pallet_bridge_parachains::Config<BridgeParachainRococoInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_bridge_parachains::weights::BridgeWeight<Runtime>;
+	type WeightInfo = weights::pallet_bridge_parachains_bridge_parachains_bench_runtime_bridge_parachain_rococo_instance::WeightInfo<Runtime>;
 	type BridgesGrandpaPalletInstance = BridgeGrandpaRococoInstance;
 	type ParasPalletName = RococoBridgeParachainPalletName;
 	type ParaStoredHeaderDataBuilder =
@@ -456,7 +456,7 @@ impl pallet_bridge_parachains::Config<BridgeParachainRococoInstance> for Runtime
 pub type WithBridgeHubWococoMessagesInstance = pallet_bridge_messages::Instance1;
 impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_bridge_messages::weights::BridgeWeight<Runtime>;
+	type WeightInfo = weights::pallet_bridge_messages_bridge_messages_bench_runtime_with_bridge_hub_wococo_messages_instance::WeightInfo<Runtime>;
 	type BridgedChainId = bridge_hub_rococo_config::BridgeHubWococoChainId;
 	type ActiveOutboundLanes = bridge_hub_rococo_config::ActiveOutboundLanesToBridgeHubWococo;
 	type MaxUnrewardedRelayerEntriesAtInboundLane =
@@ -490,7 +490,7 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 pub type WithBridgeHubRococoMessagesInstance = pallet_bridge_messages::Instance2;
 impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_bridge_messages::weights::BridgeWeight<Runtime>;
+	type WeightInfo = weights::pallet_bridge_messages_bridge_messages_bench_runtime_with_bridge_hub_rococo_messages_instance::WeightInfo<Runtime>;
 	type BridgedChainId = bridge_hub_wococo_config::BridgeHubRococoChainId;
 	type ActiveOutboundLanes = bridge_hub_wococo_config::ActiveOutboundLanesToBridgeHubRococo;
 	type MaxUnrewardedRelayerEntriesAtInboundLane =
