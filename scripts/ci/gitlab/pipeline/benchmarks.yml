@@ -43,8 +43,7 @@ benchmarks-collectives:
   extends:
     - .docker-env
     - .collect-artifacts
-    # - .benchmarks-refs
-    - .pr-refs
+    - .benchmarks-refs
   before_script:
     - !reference [.docker-env, before_script]
   script:
@@ -67,8 +66,7 @@ benchmarks-bridge-hubs:
   extends:
     - .docker-env
     - .collect-artifacts
-    # - .benchmarks-refs
-    - .pr-refs
+    - .benchmarks-refs
   before_script:
     - !reference [.docker-env, before_script]
   script:
