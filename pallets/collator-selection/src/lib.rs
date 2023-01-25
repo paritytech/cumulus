@@ -299,7 +299,7 @@ pub mod pallet {
 			new: Vec<T::AccountId>,
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
-			let bounded_invulnerables = BoundedVec::<_, T::MaxInvulnerables>::try_from(new)
+			let mut bounded_invulnerables = BoundedVec::<_, T::MaxInvulnerables>::try_from(new)
 				.map_err(|_| Error::<T>::TooManyInvulnerables)?;
 
 			// check if the invulnerables have associated validator keys before they are set
@@ -311,6 +311,8 @@ pub mod pallet {
 					Error::<T>::ValidatorNotRegistered
 				);
 			}
+
+			bounded_invulnerables.sort();
 
 			<Invulnerables<T>>::put(&bounded_invulnerables);
 			Self::deposit_event(Event::NewInvulnerables {
@@ -327,7 +329,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
 			
-			let mut invulnerables = Self::invulnerables().to_vec();
+			let invulnerables = Self::invulnerables().to_vec();
 
 			// ensure we don't overflow invulnerables quantity
 			let length = invulnerables.len();
@@ -344,14 +346,11 @@ pub mod pallet {
 					Error::<T>::ValidatorNotRegistered
 				);
 			
-			// add new invulnerable to invulnerables list
-			invulnerables.push(new.clone());
-
-			let bounded_invulnerables = BoundedVec::<_, T::MaxInvulnerables>::try_from(invulnerables)
-				.map_err(|_| Error::<T>::Unknown)?;
-
-			// replace invulnerables list with new invulnerables list in memory
-			<Invulnerables<T>>::put(&bounded_invulnerables);
+			<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
+				invulnerables.try_push(new.clone()).map_err(|_| Error::<T>::Unknown)?;
+				invulnerables.sort();
+				Ok(())
+			})?;
 
 			Self::deposit_event(Event::NewInvulnerable {
 				added: new,
@@ -387,14 +386,9 @@ pub mod pallet {
 					.ok()
 					.ok_or(Error::<T>::NotInvulnerable)?;
 				invulnerables.remove(pos);
+				invulnerables.sort();
 				Ok(())
 			})?;
-
-			//let bounded_invulnerables = BoundedVec::<_, T::MaxInvulnerables>::try_from(invulnerables)
-			//	.map_err(|_| Error::<T>::Unknown)?;
-
-		 	// replace invulnerables list with new invulnerables list in memory
-		 	//<Invulnerables<T>>::put(&bounded_invulnerables);
 			
 		 	Self::deposit_event(Event::InvulnerableRemoved {
 		 		removed: to_remove,
