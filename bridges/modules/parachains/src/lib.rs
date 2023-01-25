@@ -27,15 +27,18 @@ pub use weights::WeightInfo;
 pub use weights_ext::WeightInfoExt;
 
 use bp_header_chain::HeaderChain;
-use bp_parachains::{
-	parachain_head_storage_key_at_source, ParaInfo, ParaStoredHeaderData,
-	ParaStoredHeaderDataBuilder,
-};
+use bp_parachains::{parachain_head_storage_key_at_source, ParaInfo, ParaStoredHeaderData};
 use bp_polkadot_core::parachains::{ParaHash, ParaHead, ParaHeadsProof, ParaId};
 use bp_runtime::{Chain, HashOf, HeaderId, HeaderIdOf, HeaderOf, Parachain, StorageProofError};
-use codec::Encode;
 use frame_support::dispatch::PostDispatchInfo;
 use sp_std::{marker::PhantomData, vec::Vec};
+
+#[cfg(feature = "runtime-benchmarks")]
+use bp_parachains::ParaStoredHeaderDataBuilder;
+#[cfg(feature = "runtime-benchmarks")]
+use bp_runtime::HeaderOf;
+#[cfg(feature = "runtime-benchmarks")]
+use codec::Encode;
 
 // Re-export in crate namespace for `construct_runtime!`.
 pub use pallet::*;
