@@ -38,16 +38,22 @@ pub mod weights;
 pub use pallet::*;
 pub use weights::WeightInfo;
 
-use frame_support::BoundedVec;
+use frame_support::{traits::schedule::DispatchTime, BoundedVec};
 use sp_core::ConstU32;
 
 /// IPFS compatible CID.
 // worst case 2 bytes base and codec, 2 bytes hash type and size, 64 bytes hash digest.
 pub type Cid = BoundedVec<u8, ConstU32<68>>;
 
+/// The block number type of [frame_system::Config].
+pub type BlockNumberFor<T> = <T as frame_system::Config>::BlockNumber;
+
+/// [DispatchTime] of [frame_system::Config].
+pub type DispatchTimeFor<T> = DispatchTime<BlockNumberFor<T>>;
+
 #[frame_support::pallet]
 pub mod pallet {
-	use super::{Cid, WeightInfo};
+	use super::{Cid, DispatchTimeFor, WeightInfo};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -87,6 +93,8 @@ pub mod pallet {
 		MissingAnnouncement,
 		/// Number of announcements exceeds `MaxAnnouncementsCount`.
 		TooManyAnnouncements,
+		/// Cannot expire in the past.
+		InvalidExpire,
 	}
 
 	/// Events emitted by the pallet.
@@ -96,7 +104,7 @@ pub mod pallet {
 		/// A new charter has been set.
 		NewCharterSet { cid: Cid },
 		/// A new announcement has been made.
-		AnnouncementAnnounced { cid: Cid },
+		AnnouncementAnnounced { cid: Cid, maybe_expire_at: Option<T::BlockNumber> },
 		/// An on-chain announcement has been removed.
 		AnnouncementRemoved { cid: Cid },
 	}
@@ -109,8 +117,16 @@ pub mod pallet {
 	/// The collective announcements.
 	#[pallet::storage]
 	#[pallet::getter(fn announcements)]
-	pub type Announcements<T: Config<I>, I: 'static = ()> =
-		StorageValue<_, BoundedVec<Cid, T::MaxAnnouncementsCount>, ValueQuery>;
+	pub type Announcements<T: Config<I>, I: 'static = ()> = StorageValue<
+		_,
+		BoundedVec<(Cid, Option<T::BlockNumber>), T::MaxAnnouncementsCount>,
+		ValueQuery,
+	>;
+
+	/// The closest expiration block number of an announcement.
+	#[pallet::storage]
+	pub type NextAnnouncementExpire<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, T::BlockNumber, OptionQuery>;
 
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
@@ -137,20 +153,35 @@ pub mod pallet {
 		/// Parameters:
 		/// - `origin`: Must be the [Config::CharterOrigin].
 		/// - `cid`: [CID](super::Cid) of the IPFS document to announce.
+		/// - `maybe_expire`: expiration block of the announcement.
 		///
 		/// Weight: `O(1)`.
 		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::announce())]
-		pub fn announce(origin: OriginFor<T>, cid: Cid) -> DispatchResult {
+		#[pallet::weight(T::WeightInfo::announce(maybe_expire.map_or(0, |_| 1)))]
+		pub fn announce(
+			origin: OriginFor<T>,
+			cid: Cid,
+			maybe_expire: Option<DispatchTimeFor<T>>,
+		) -> DispatchResult {
 			T::AnnouncementOrigin::ensure_origin(origin)?;
+
+			let now = frame_system::Pallet::<T>::block_number();
+			let maybe_expire_at = maybe_expire.map(|e| e.evaluate(now));
+			ensure!(maybe_expire_at.map_or(true, |e| e > now), Error::<T, I>::InvalidExpire);
 
 			let mut announcements = <Announcements<T, I>>::get();
 			announcements
-				.try_push(cid.clone())
+				.try_push((cid.clone(), maybe_expire_at.clone()))
 				.map_err(|_| Error::<T, I>::TooManyAnnouncements)?;
 			<Announcements<T, I>>::put(announcements);
 
-			Self::deposit_event(Event::<T, I>::AnnouncementAnnounced { cid });
+			if let Some(expire_at) = maybe_expire_at {
+				if NextAnnouncementExpire::<T, I>::get().map_or(true, |n| n > expire_at) {
+					NextAnnouncementExpire::<T, I>::put(expire_at);
+				}
+			}
+
+			Self::deposit_event(Event::<T, I>::AnnouncementAnnounced { cid, maybe_expire_at });
 			Ok(())
 		}
 
@@ -168,7 +199,7 @@ pub mod pallet {
 
 			let mut announcements = <Announcements<T, I>>::get();
 			let pos = announcements
-				.binary_search(&cid)
+				.binary_search_by_key(&cid, |(c, _)| c.clone())
 				.ok()
 				.ok_or(Error::<T, I>::MissingAnnouncement)?;
 			announcements.remove(pos);

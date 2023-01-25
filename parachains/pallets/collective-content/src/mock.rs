@@ -50,7 +50,7 @@ impl pallet_collective_content::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type CharterOrigin = EnsureSignedBy<CharterManager, AccountId>;
 	type AnnouncementOrigin = EnsureSignedBy<AnnouncementManager, AccountId>;
-	type MaxAnnouncementsCount = ConstU32<2>;
+	type MaxAnnouncementsCount = ConstU32<5>;
 	type WeightInfo = ();
 }
 

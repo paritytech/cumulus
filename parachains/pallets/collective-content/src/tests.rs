@@ -48,35 +48,83 @@ fn set_charter_works() {
 #[test]
 fn announce_works() {
 	new_test_ext().execute_with(|| {
+		let now = frame_system::Pallet::<Test>::block_number();
 		// wrong origin.
 		let origin = RuntimeOrigin::signed(OtherAccount::get());
 		let cid: Cid = b"ipfs_hash_fail".to_vec().try_into().unwrap();
 
-		assert_noop!(CollectiveContent::announce(origin, cid), BadOrigin);
+		assert_noop!(CollectiveContent::announce(origin, cid, None), BadOrigin);
 
 		// success.
 		let origin = RuntimeOrigin::signed(AnnouncementManager::get());
 		let cid: Cid = b"ipfs_hash_success".to_vec().try_into().unwrap();
+		let maybe_expire_at = None;
 
-		assert_ok!(CollectiveContent::announce(origin, cid.clone()));
+		assert_ok!(CollectiveContent::announce(origin, cid.clone(), maybe_expire_at));
+		assert_eq!(NextAnnouncementExpire::<Test>::get(), None);
 		System::assert_last_event(RuntimeEvent::CollectiveContent(Event::AnnouncementAnnounced {
 			cid,
+			maybe_expire_at: None,
 		}));
 
 		// one more. success.
 		let origin = RuntimeOrigin::signed(AnnouncementManager::get());
 		let cid: Cid = b"ipfs_hash_success_2".to_vec().try_into().unwrap();
+		let maybe_expire_at = None;
 
-		assert_ok!(CollectiveContent::announce(origin, cid.clone()));
+		assert_ok!(CollectiveContent::announce(origin, cid.clone(), maybe_expire_at));
+		assert_eq!(NextAnnouncementExpire::<Test>::get(), None);
 		System::assert_last_event(RuntimeEvent::CollectiveContent(Event::AnnouncementAnnounced {
 			cid,
+			maybe_expire_at: None,
+		}));
+
+		// one more with expire. success.
+		let origin = RuntimeOrigin::signed(AnnouncementManager::get());
+		let cid: Cid = b"ipfs_hash_success_2".to_vec().try_into().unwrap();
+		let maybe_expire_at = DispatchTimeFor::<Test>::After(10);
+
+		assert_ok!(CollectiveContent::announce(origin, cid.clone(), Some(maybe_expire_at)));
+		assert_eq!(NextAnnouncementExpire::<Test>::get(), Some(maybe_expire_at.evaluate(now)));
+		System::assert_last_event(RuntimeEvent::CollectiveContent(Event::AnnouncementAnnounced {
+			cid,
+			maybe_expire_at: Some(maybe_expire_at.evaluate(now)),
+		}));
+
+		// one more with later expire. success.
+		let origin = RuntimeOrigin::signed(AnnouncementManager::get());
+		let cid: Cid = b"ipfs_hash_success_2".to_vec().try_into().unwrap();
+		let prev_maybe_expire_at = DispatchTimeFor::<Test>::After(10);
+		let maybe_expire_at = DispatchTimeFor::<Test>::At(now + 20);
+
+		assert_ok!(CollectiveContent::announce(origin, cid.clone(), Some(maybe_expire_at)));
+		assert_eq!(NextAnnouncementExpire::<Test>::get(), Some(prev_maybe_expire_at.evaluate(now)));
+		System::assert_last_event(RuntimeEvent::CollectiveContent(Event::AnnouncementAnnounced {
+			cid,
+			maybe_expire_at: Some(maybe_expire_at.evaluate(now)),
+		}));
+
+		// one more with earlier expire. success.
+		let origin = RuntimeOrigin::signed(AnnouncementManager::get());
+		let cid: Cid = b"ipfs_hash_success_2".to_vec().try_into().unwrap();
+		let maybe_expire_at = DispatchTimeFor::<Test>::At(now + 5);
+
+		assert_ok!(CollectiveContent::announce(origin, cid.clone(), Some(maybe_expire_at)));
+		assert_eq!(NextAnnouncementExpire::<Test>::get(), Some(maybe_expire_at.evaluate(now)));
+		System::assert_last_event(RuntimeEvent::CollectiveContent(Event::AnnouncementAnnounced {
+			cid,
+			maybe_expire_at: Some(maybe_expire_at.evaluate(now)),
 		}));
 
 		// too many announcements.
 		let origin = RuntimeOrigin::signed(AnnouncementManager::get());
 		let cid: Cid = b"ipfs_hash_success_2".to_vec().try_into().unwrap();
+		let maybe_expire_at = None;
 
-		assert_noop!(CollectiveContent::announce(origin, cid), Error::<Test>::TooManyAnnouncements);
+		assert_noop!(
+			CollectiveContent::announce(origin, cid, maybe_expire_at),
+			Error::<Test>::TooManyAnnouncements
+		);
 	});
 }
 
@@ -99,17 +147,36 @@ fn remove_announcement_works() {
 		);
 
 		// success.
+		// add announcement.
 		let origin = RuntimeOrigin::signed(AnnouncementManager::get());
 		let cid: Cid = b"ipfs_hash_success".to_vec().try_into().unwrap();
+		assert_ok!(CollectiveContent::announce(origin.clone(), cid.clone(), None));
 
-		assert_ok!(CollectiveContent::announce(origin.clone(), cid.clone()));
+		// one more announcement.
+		let cid_2: Cid = b"ipfs_hash_success_2".to_vec().try_into().unwrap();
+		let expire_at_2 = DispatchTimeFor::<Test>::At(10);
+		assert_ok!(CollectiveContent::announce(origin.clone(), cid_2.clone(), Some(expire_at_2)));
+		// two announcements registered.
+		assert_eq!(<Announcements<Test>>::get().len(), 2);
 
+		// remove first announcement and assert.
 		assert_ok!(CollectiveContent::remove_announcement(origin.clone(), cid.clone()));
 		System::assert_last_event(RuntimeEvent::CollectiveContent(Event::AnnouncementRemoved {
 			cid: cid.clone(),
 		}));
 		assert_noop!(
-			CollectiveContent::remove_announcement(origin, cid),
+			CollectiveContent::remove_announcement(origin.clone(), cid),
+			Error::<Test>::MissingAnnouncement
+		);
+		assert_eq!(<Announcements<Test>>::get().len(), 1);
+
+		// remove second announcement and assert.
+		assert_ok!(CollectiveContent::remove_announcement(origin.clone(), cid_2.clone()));
+		System::assert_last_event(RuntimeEvent::CollectiveContent(Event::AnnouncementRemoved {
+			cid: cid_2.clone(),
+		}));
+		assert_noop!(
+			CollectiveContent::remove_announcement(origin, cid_2),
 			Error::<Test>::MissingAnnouncement
 		);
 	});

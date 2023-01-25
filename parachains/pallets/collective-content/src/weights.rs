@@ -22,7 +22,7 @@ pub trait WeightInfo {
 	/// Returns the weight of the set_charter extrinsic.
 	fn set_charter() -> Weight;
 	/// Returns the announce of the set_charter extrinsic.
-	fn announce() -> Weight;
+	fn announce(_x: u32) -> Weight;
 	/// Returns the remove_announcement of the set_charter extrinsic.
 	fn remove_announcement() -> Weight;
 }
@@ -32,7 +32,7 @@ impl WeightInfo for () {
 	fn set_charter() -> Weight {
 		Weight::zero()
 	}
-	fn announce() -> Weight {
+	fn announce(_x: u32) -> Weight {
 		Weight::zero()
 	}
 	fn remove_announcement() -> Weight {

@@ -15,7 +15,7 @@
 
 //! The pallet benchmarks.
 
-use super::{Pallet as CollectiveContent, *};
+use super::{DispatchTimeFor, Pallet as CollectiveContent, *};
 use frame_benchmarking::benchmarks_instance_pallet;
 use frame_support::traits::{EnsureOrigin, UnfilteredDispatchable};
 use sp_core::Get;
@@ -37,13 +37,27 @@ benchmarks_instance_pallet! {
 	}
 
 	announce {
+		let x in 0 .. 1;
+
+		let mut maybe_expire = None;
+		if x == 1 {
+			maybe_expire = Some(DispatchTimeFor::<T>::At(10u32.into()));
+		}
+		let now = frame_system::Pallet::<T>::block_number();
 		let cid: Cid = b"ipfs_hash".to_vec().try_into().unwrap();
-		let call = Call::<T, I>::announce { cid: cid.clone() };
+		let call = Call::<T, I>::announce {
+			cid: cid.clone(),
+			maybe_expire: maybe_expire.clone(),
+		};
 		let origin = T::AnnouncementOrigin::successful_origin();
 	}: { call.dispatch_bypass_filter(origin)? }
 	verify {
 		assert_eq!(CollectiveContent::<T, I>::announcements().len(), 1);
-		assert_last_event::<T, I>(Event::AnnouncementAnnounced { cid }.into());
+		assert_eq!(NextAnnouncementExpire::<T, I>::get().map_or(0, |_| 1), x);
+		assert_last_event::<T, I>(Event::AnnouncementAnnounced {
+			cid,
+			maybe_expire_at: maybe_expire.map_or(None, |e| Some(e.evaluate(now))),
+		}.into());
 	}
 
 	remove_announcement {
@@ -52,7 +66,7 @@ benchmarks_instance_pallet! {
 		let max_count = T::MaxAnnouncementsCount::get() as usize;
 
 		// fill the announcements vec for the worst case.
-		let announcements = vec![cid.clone(); max_count];
+		let announcements = vec![(cid.clone(), None); max_count];
 		let announcements: BoundedVec<_, T::MaxAnnouncementsCount> = BoundedVec::try_from(announcements).unwrap();
 		Announcements::<T, I>::put(announcements);
 		assert_eq!(CollectiveContent::<T, I>::announcements().len(), max_count);
