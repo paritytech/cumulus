@@ -104,13 +104,13 @@ impl WeightInfo for () {
 	}
 	fn add_invulnerable() -> Weight {
 		Weight::from_ref_time(18_563_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+			.saturating_add(RocksDbWeight::get().reads(1 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	fn remove_invulnerable() -> Weight {
 		Weight::from_ref_time(18_563_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+			.saturating_add(RocksDbWeight::get().reads(1 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	fn set_desired_candidates() -> Weight {
 		Weight::from_ref_time(16_363_000 as u64)

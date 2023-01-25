@@ -327,7 +327,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
 			
-			let mut invulnerables = Self::invulnerables();
+			let mut invulnerables = Self::invulnerables().to_vec();
 
 			// ensure we don't overflow invulnerables quantity
 			let length = invulnerables.len();
@@ -345,10 +345,13 @@ pub mod pallet {
 				);
 			
 			// add new invulnerable to invulnerables list
-			invulnerables.push(new);
+			invulnerables.push(new.clone());
+
+			let bounded_invulnerables = BoundedVec::<_, T::MaxInvulnerables>::try_from(invulnerables)
+				.map_err(|_| Error::<T>::Unknown)?;
 
 			// replace invulnerables list with new invulnerables list in memory
-			<Invulnerables<T>>::put(&invulnerables);
+			<Invulnerables<T>>::put(&bounded_invulnerables);
 
 			Self::deposit_event(Event::NewInvulnerable {
 				added: new,
@@ -364,7 +367,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
 			
-			let mut invulnerables = Self::invulnerables();
+			let mut invulnerables = Self::invulnerables().to_vec();
  
 			// ensure invulnerable is actually in the list before trying to remove it
 			 ensure!(invulnerables.contains(&to_remove), Error::<T>::NotInvulnerable);
@@ -379,9 +382,12 @@ pub mod pallet {
 
 			// remove invulnerable from invulnerables list
 			invulnerables.retain(|&x| x != to_remove);
+			
+			let bounded_invulnerables = BoundedVec::<_, T::MaxInvulnerables>::try_from(invulnerables)
+				.map_err(|_| Error::<T>::Unknown)?;
 
 		 	// replace invulnerables list with new invulnerables list in memory
-		 	<Invulnerables<T>>::put(&invulnerables);
+		 	<Invulnerables<T>>::put(&bounded_invulnerables);
 			
 		 	Self::deposit_event(Event::InvulnerableRemoved {
 		 		removed: to_remove,
