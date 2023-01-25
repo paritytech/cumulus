@@ -73,9 +73,13 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 use crate::{
-	bridge_hub_rococo_config::OnBridgeHubRococoBlobDispatcher,
-	bridge_hub_wococo_config::OnBridgeHubWococoBlobDispatcher, constants::fee::WeightToFee,
+	bridge_hub_rococo_config::{OnBridgeHubRococoBlobDispatcher, WithBridgeHubWococoMessageBridge},
+	bridge_hub_wococo_config::{OnBridgeHubWococoBlobDispatcher, WithBridgeHubRococoMessageBridge},
+	constants::fee::WeightToFee,
 	xcm_config::XcmRouter,
+};
+use bridge_runtime_common::messages::{
+	source::TargetHeaderChainAdapter, target::SourceHeaderChainAdapter,
 };
 use parachains_common::{
 	opaque, AccountId, Balance, BlockNumber, Hash, Header, Index, Signature,
@@ -469,12 +473,12 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 	// TODO:check-parameter - check delivery
 	type DeliveryPayments = ();
 
-	type TargetHeaderChain = bridge_hub_rococo_config::BridgeHubWococo;
+	type TargetHeaderChain = TargetHeaderChainAdapter<WithBridgeHubWococoMessageBridge>;
 	type LaneMessageVerifier = bridge_hub_rococo_config::ToBridgeHubWococoMessageVerifier;
 	// TODO:check-parameter - check delivery
 	type DeliveryConfirmationPayments = ();
 
-	type SourceHeaderChain = bridge_hub_rococo_config::BridgeHubWococo;
+	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubWococoMessageBridge>;
 	type MessageDispatch = XcmBlobMessageDispatch<
 		bp_bridge_hub_wococo::BridgeHubWococo,
 		bp_bridge_hub_rococo::BridgeHubRococo,
@@ -503,12 +507,12 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 	// TODO:check-parameter - check delivery
 	type DeliveryPayments = ();
 
-	type TargetHeaderChain = bridge_hub_wococo_config::BridgeHubRococo;
+	type TargetHeaderChain = TargetHeaderChainAdapter<WithBridgeHubRococoMessageBridge>;
 	type LaneMessageVerifier = bridge_hub_wococo_config::ToBridgeHubRococoMessageVerifier;
 	// TODO:check-parameter - check delivery
 	type DeliveryConfirmationPayments = ();
 
-	type SourceHeaderChain = bridge_hub_wococo_config::BridgeHubRococo;
+	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubRococoMessageBridge>;
 	type MessageDispatch = XcmBlobMessageDispatch<
 		bp_bridge_hub_rococo::BridgeHubRococo,
 		bp_bridge_hub_wococo::BridgeHubWococo,

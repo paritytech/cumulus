@@ -16,20 +16,13 @@
 
 use crate::{
 	BridgeParachainWococoInstance, ParachainInfo, Runtime, WithBridgeHubWococoMessagesInstance,
-	XcmAsPlainPayload, XcmBlobHauler, XcmBlobHaulerAdapter, XcmRouter,
+	XcmBlobHauler, XcmBlobHaulerAdapter, XcmRouter,
 };
-use bp_messages::{
-	source_chain::TargetHeaderChain,
-	target_chain::{ProvedMessages, SourceHeaderChain},
-	InboundLaneData, LaneId, Message, MessageNonce,
-};
+use bp_messages::{LaneId, MessageNonce};
 use bp_runtime::ChainId;
 use bridge_runtime_common::{
 	messages,
-	messages::{
-		target::FromBridgedChainMessagesProof, MessageBridge, ThisChainWithMessages,
-		UnderlyingChainProvider,
-	},
+	messages::{MessageBridge, ThisChainWithMessages, UnderlyingChainProvider},
 };
 use frame_support::{parameter_types, RuntimeDebug};
 use xcm::{
@@ -108,37 +101,6 @@ pub struct BridgeHubWococo;
 
 impl UnderlyingChainProvider for BridgeHubWococo {
 	type Chain = bp_bridge_hub_wococo::BridgeHubWococo;
-}
-
-impl SourceHeaderChain for BridgeHubWococo {
-	type Error = &'static str;
-	type MessagesProof = FromBridgedChainMessagesProof<crate::Hash>;
-
-	fn verify_messages_proof(
-		proof: Self::MessagesProof,
-		messages_count: u32,
-	) -> Result<ProvedMessages<Message>, Self::Error> {
-		bridge_runtime_common::messages::target::verify_messages_proof::<
-			WithBridgeHubWococoMessageBridge,
-		>(proof, messages_count)
-		.map_err(Into::into)
-	}
-}
-
-impl TargetHeaderChain<XcmAsPlainPayload, crate::AccountId> for BridgeHubWococo {
-	type Error = &'static str;
-	type MessagesDeliveryProof =
-		messages::source::FromBridgedChainMessagesDeliveryProof<bp_bridge_hub_wococo::Hash>;
-
-	fn verify_message(payload: &XcmAsPlainPayload) -> Result<(), Self::Error> {
-		messages::source::verify_chain_message::<WithBridgeHubWococoMessageBridge>(payload)
-	}
-
-	fn verify_messages_delivery_proof(
-		proof: Self::MessagesDeliveryProof,
-	) -> Result<(LaneId, InboundLaneData<bp_bridge_hub_rococo::AccountId>), Self::Error> {
-		messages::source::verify_messages_delivery_proof::<WithBridgeHubWococoMessageBridge>(proof)
-	}
 }
 
 impl messages::BridgedChainWithMessages for BridgeHubWococo {
