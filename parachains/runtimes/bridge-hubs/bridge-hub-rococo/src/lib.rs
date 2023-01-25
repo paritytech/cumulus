@@ -946,11 +946,6 @@ impl_runtime_apis! {
 			};
 
 			impl BridgeMessagesConfig<WithBridgeHubWococoMessagesInstance> for Runtime {
-				// TODO: remove me after bridges subtree update
-				fn bridged_relayer_id() -> AccountId { [0u8; 32].into() }
-				fn endow_account(_: &AccountId) {}
-				fn is_message_dispatched(_: bp_messages::MessageNonce) -> bool { true }
-
 				fn is_relayer_rewarded(_: &Self::AccountId) -> bool {
 					// TODO: implement me properly
 					true
@@ -983,11 +978,6 @@ impl_runtime_apis! {
 			}
 
 			impl BridgeMessagesConfig<WithBridgeHubRococoMessagesInstance> for Runtime {
-				// TODO: remove me after bridges subtree update
-				fn bridged_relayer_id() -> AccountId { [0u8; 32].into() }
-				fn endow_account(_: &AccountId) {}
-				fn is_message_dispatched(_: bp_messages::MessageNonce) -> bool { true }
-
 				fn is_relayer_rewarded(_: &Self::AccountId) -> bool {
 					// TODO: implement me properly
 					true
