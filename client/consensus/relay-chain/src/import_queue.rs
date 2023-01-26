@@ -58,15 +58,11 @@ where
 		&mut self,
 		mut block_params: BlockImportParams<Block, ()>,
 	) -> Result<(BlockImportParams<Block, ()>, Option<Vec<(CacheKeyId, Vec<u8>)>>), String> {
-		if block_params.with_state() {
-			return Ok((block_params, Default::default()))
-		}
-
-		// Skip checks that include execution, if being told so.
+		// Skip checks that include execution, if being told so, or when importing only state.
 		//
 		// This is done for example when gap syncing and it is expected that the block after the gap
 		// was checked/chosen properly, e.g. by warp syncing to this block using a finality proof.
-		if block_params.state_action.skip_execution_checks() {
+		if block_params.state_action.skip_execution_checks() || block_params.with_state() {
 			return Ok((block_params, Default::default()))
 		}
 
