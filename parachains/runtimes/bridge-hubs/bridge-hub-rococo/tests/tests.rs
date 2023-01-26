@@ -21,9 +21,12 @@ pub use bridge_hub_rococo_runtime::{
 	xcm_config::{XcmConfig, XcmRouter},
 	Runtime, *,
 };
+use codec::Encode;
 use xcm::latest::prelude::*;
 
 use bridge_hub_test_utils::*;
+use frame_support::weights::Weight;
+use xcm_executor::XcmExecutor;
 
 fn execute_on_runtime<R>(
 	with_para_id: u32,
@@ -42,7 +45,7 @@ fn execute_on_runtime<R>(
 }
 
 #[test]
-fn test_bridge_hub_wococo_dispatch_blob_and_xcm_routing_works() {
+fn dispatch_blob_and_xcm_routing_works_on_bridge_hub_wococo() {
 	let universal_source_as_senders =
 		vec![X1(GlobalConsensus(Rococo)), X2(GlobalConsensus(Rococo), Parachain(1000))];
 	let runtime_para_id = bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID;
@@ -111,7 +114,7 @@ fn test_bridge_hub_wococo_dispatch_blob_and_xcm_routing_works() {
 }
 
 #[test]
-fn test_bridge_hub_rococo_dispatch_blob_and_xcm_routing_works() {
+fn dispatch_blob_and_xcm_routing_works_on_bridge_hub_rococo() {
 	let universal_source_as_senders =
 		vec![X1(GlobalConsensus(Wococo)), X2(GlobalConsensus(Wococo), Parachain(1000))];
 	let runtime_para_id = bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID;
@@ -177,4 +180,88 @@ fn test_bridge_hub_rococo_dispatch_blob_and_xcm_routing_works() {
 		);
 		assert_eq!(result.dispatch_level_result, XcmBlobMessageDispatchResult::Dispatched);
 	}
+}
+
+#[test]
+fn can_govornance_call_xcm_transact_with_initialize_on_bridge_hub_rococo() {
+	// prepare xcm as govornance will do
+	let initialize_call: RuntimeCall =
+		RuntimeCall::BridgeRococoGrandpa(pallet_bridge_grandpa::Call::<
+			Runtime,
+			BridgeGrandpaRococoInstance,
+		>::initialize {
+			init_data: mock_initialiation_data(),
+		});
+	let xcm = Xcm(vec![
+		UnpaidExecution { weight_limit: Unlimited, check_origin: None },
+		Transact {
+			origin_kind: OriginKind::Superuser,
+			require_weight_at_most: Weight::from_ref_time(1000000000),
+			call: initialize_call.encode().into(),
+		},
+	]);
+	// origin as relay chain
+	let origin = MultiLocation { parents: 1, interior: Here };
+
+	execute_on_runtime(bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID, None, || {
+		// check mode before
+		assert_eq!(
+			pallet_bridge_grandpa::PalletOperatingMode::<Runtime, BridgeGrandpaRococoInstance>::try_get(),
+			Err(())
+		);
+
+		// initialize bridge through governance-like
+		let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
+		let weight_limit = Weight::from_ref_time(41666666666);
+		let outcome = XcmExecutor::<XcmConfig>::execute_xcm(origin, xcm, hash, weight_limit);
+
+		// check mode after
+		assert_eq!(outcome.ensure_complete(), Ok(()));
+		assert_eq!(
+			pallet_bridge_grandpa::PalletOperatingMode::<Runtime, BridgeGrandpaRococoInstance>::try_get(),
+			Ok(bp_runtime::BasicOperatingMode::Normal)
+		);
+	})
+}
+
+#[test]
+fn can_govornance_call_xcm_transact_with_initialize_bridge_on_bridge_hub_wococo() {
+	// prepare xcm as govornance will do
+	let initialize_call: RuntimeCall =
+		RuntimeCall::BridgeWococoGrandpa(pallet_bridge_grandpa::Call::<
+			Runtime,
+			BridgeGrandpaWococoInstance,
+		>::initialize {
+			init_data: mock_initialiation_data(),
+		});
+	let xcm = Xcm(vec![
+		UnpaidExecution { weight_limit: Unlimited, check_origin: None },
+		Transact {
+			origin_kind: OriginKind::Superuser,
+			require_weight_at_most: Weight::from_ref_time(1000000000),
+			call: initialize_call.encode().into(),
+		},
+	]);
+	// origin as relay chain
+	let origin = MultiLocation { parents: 1, interior: Here };
+
+	execute_on_runtime(bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID, None, || {
+		// check mode before
+		assert_eq!(
+			pallet_bridge_grandpa::PalletOperatingMode::<Runtime, BridgeGrandpaWococoInstance>::try_get(),
+			Err(())
+		);
+
+		// initialize bridge through governance-like
+		let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
+		let weight_limit = Weight::from_ref_time(41666666666);
+		let outcome = XcmExecutor::<XcmConfig>::execute_xcm(origin, xcm, hash, weight_limit);
+
+		// check mode after
+		assert_eq!(outcome.ensure_complete(), Ok(()));
+		assert_eq!(
+			pallet_bridge_grandpa::PalletOperatingMode::<Runtime, BridgeGrandpaWococoInstance>::try_get(),
+			Ok(bp_runtime::BasicOperatingMode::Normal)
+		);
+	})
 }

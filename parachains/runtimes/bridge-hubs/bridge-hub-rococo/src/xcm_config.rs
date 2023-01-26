@@ -15,8 +15,9 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-	AccountId, AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
-	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
+	AccountId, AllPalletsWithSystem, Balances, BridgeGrandpaRococoInstance,
+	BridgeGrandpaWococoInstance, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall,
+	RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
 use crate::{
 	bridge_hub_rococo_config::ToBridgeHubWococoHaulBlobExporter,
@@ -152,6 +153,18 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 		}
 
 		match call {
+			RuntimeCall::BridgeRococoGrandpa(pallet_bridge_grandpa::Call::<
+				Runtime,
+				BridgeGrandpaRococoInstance,
+			>::initialize {
+				..
+			}) |
+			RuntimeCall::BridgeWococoGrandpa(pallet_bridge_grandpa::Call::<
+				Runtime,
+				BridgeGrandpaWococoInstance,
+			>::initialize {
+				..
+			}) |
 			RuntimeCall::System(
 				frame_system::Call::set_heap_pages { .. } |
 				frame_system::Call::set_code { .. } |

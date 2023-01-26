@@ -10,6 +10,7 @@ description = "Utils for BridgeHub testing"
 # Substrate
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Cumulus
 parachains-common = { path = "../../../common", default-features = false }
@@ -28,7 +29,10 @@ xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 # Bridges
+bp-header-chain = { path = "../../../../bridges/primitives/header-chain", default-features = false }
 bp-messages = { path = "../../../../bridges/primitives/messages", default-features = false }
+bp-polkadot-core = { path = "../../../../bridges/primitives/polkadot-core", default-features = false }
+bp-runtime = { path = "../../../../bridges/primitives/runtime", default-features = false }
 
 [features]
 default = [ "std" ]
@@ -36,6 +40,9 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"bp-messages/std",
+	"bp-polkadot-core/std",
+	"bp-header-chain/std",
+	"bp-runtime/std",
 	"parachains-common/std",
 	"parachain-info/std",
 	"cumulus-primitives-core/std",
@@ -44,6 +51,7 @@ std = [
 	"cumulus-test-relay-sproof-builder/std",
 	"polkadot-parachain/std",
 	"pallet-xcm/std",
+	"sp-runtime/std",
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",

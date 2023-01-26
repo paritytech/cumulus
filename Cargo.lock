@@ -1008,7 +1008,10 @@ dependencies = [
 name = "bridge-hub-test-utils"
 version = "0.1.0"
 dependencies = [
+ "bp-header-chain",
  "bp-messages",
+ "bp-polkadot-core",
+ "bp-runtime",
  "cumulus-pallet-parachain-system",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
@@ -1020,6 +1023,7 @@ dependencies = [
  "parachain-info",
  "parachains-common",
  "polkadot-parachain",
+ "sp-runtime",
  "xcm",
  "xcm-builder",
  "xcm-executor",
