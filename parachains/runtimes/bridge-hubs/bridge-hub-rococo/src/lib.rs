@@ -399,7 +399,7 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
 	type HeadersToKeep = RelayChainHeadersToKeep;
 	type MaxBridgedAuthorities =
 		frame_support::traits::ConstU32<{ bp_wococo::MAX_AUTHORITIES_COUNT }>;
-	type WeightInfo = pallet_bridge_grandpa::weights::BridgeWeight<Runtime>;
+	type WeightInfo = weights::pallet_bridge_grandpa_bridge_wococo_grandpa::WeightInfo<Runtime>;
 }
 
 /// Add granda bridge pallet to track Rococo relay chain
@@ -410,7 +410,7 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 	type HeadersToKeep = RelayChainHeadersToKeep;
 	type MaxBridgedAuthorities =
 		frame_support::traits::ConstU32<{ bp_rococo::MAX_AUTHORITIES_COUNT }>;
-	type WeightInfo = pallet_bridge_grandpa::weights::BridgeWeight<Runtime>;
+	type WeightInfo = weights::pallet_bridge_grandpa_bridge_rococo_grandpa::WeightInfo<Runtime>;
 }
 
 pub const ROCOCO_BRIDGE_PARA_PALLET_NAME: &str = "Paras";
@@ -430,7 +430,7 @@ parameter_types! {
 pub type BridgeParachainWococoInstance = pallet_bridge_parachains::Instance1;
 impl pallet_bridge_parachains::Config<BridgeParachainWococoInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_bridge_parachains::weights::BridgeWeight<Runtime>;
+	type WeightInfo = weights::pallet_bridge_parachains_bridge_parachains_bench_runtime_bridge_parachain_wococo_instance::WeightInfo<Runtime>;
 	type BridgesGrandpaPalletInstance = BridgeGrandpaWococoInstance;
 	type ParasPalletName = WococoBridgeParachainPalletName;
 	type ParaStoredHeaderDataBuilder =
@@ -443,7 +443,7 @@ impl pallet_bridge_parachains::Config<BridgeParachainWococoInstance> for Runtime
 pub type BridgeParachainRococoInstance = pallet_bridge_parachains::Instance2;
 impl pallet_bridge_parachains::Config<BridgeParachainRococoInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_bridge_parachains::weights::BridgeWeight<Runtime>;
+	type WeightInfo = weights::pallet_bridge_parachains_bridge_parachains_bench_runtime_bridge_parachain_rococo_instance::WeightInfo<Runtime>;
 	type BridgesGrandpaPalletInstance = BridgeGrandpaRococoInstance;
 	type ParasPalletName = RococoBridgeParachainPalletName;
 	type ParaStoredHeaderDataBuilder =
@@ -456,7 +456,7 @@ impl pallet_bridge_parachains::Config<BridgeParachainRococoInstance> for Runtime
 pub type WithBridgeHubWococoMessagesInstance = pallet_bridge_messages::Instance1;
 impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_bridge_messages::weights::BridgeWeight<Runtime>;
+	type WeightInfo = weights::pallet_bridge_messages_bridge_messages_bench_runtime_with_bridge_hub_wococo_messages_instance::WeightInfo<Runtime>;
 	type BridgedChainId = bridge_hub_rococo_config::BridgeHubWococoChainId;
 	type ActiveOutboundLanes = bridge_hub_rococo_config::ActiveOutboundLanesToBridgeHubWococo;
 	type MaxUnrewardedRelayerEntriesAtInboundLane =
@@ -490,7 +490,7 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 pub type WithBridgeHubRococoMessagesInstance = pallet_bridge_messages::Instance2;
 impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_bridge_messages::weights::BridgeWeight<Runtime>;
+	type WeightInfo = weights::pallet_bridge_messages_bridge_messages_bench_runtime_with_bridge_hub_rococo_messages_instance::WeightInfo<Runtime>;
 	type BridgedChainId = bridge_hub_wococo_config::BridgeHubRococoChainId;
 	type ActiveOutboundLanes = bridge_hub_wococo_config::ActiveOutboundLanesToBridgeHubRococo;
 	type MaxUnrewardedRelayerEntriesAtInboundLane =
@@ -557,12 +557,16 @@ construct_runtime!(
 		// TODO:check-parameter - change back to 41 a align bridge pallets
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 36,
 
-		// Wococo bridge modules
+		// Rococo and Wococo Bridge Hubs are sharing the runtime, so this runtime has two sets of
+		// bridge pallets. Both are deployed at both runtimes, but only one set is actually used
+		// at particular runtime.
+
+		// With-Wococo bridge modules that are active (used) at Rococo Bridge Hub runtime.
 		BridgeWococoGrandpa: pallet_bridge_grandpa::<Instance1>::{Pallet, Call, Storage, Config<T>} = 41,
 		BridgeWococoParachain: pallet_bridge_parachains::<Instance1>::{Pallet, Call, Storage, Event<T>} = 42,
 		BridgeWococoMessages: pallet_bridge_messages::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 46,
 
-		// Rococo bridge modules
+		// With-Rococo bridge modules that are active (used) at Wococo Bridge Hub runtime.
 		BridgeRococoGrandpa: pallet_bridge_grandpa::<Instance2>::{Pallet, Call, Storage, Config<T>} = 43,
 		BridgeRococoParachain: pallet_bridge_parachains::<Instance2>::{Pallet, Call, Storage, Event<T>} = 44,
 		BridgeRococoMessages: pallet_bridge_messages::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 45,
@@ -600,6 +604,14 @@ mod benches {
 		// NOTE: Make sure you point to the individual modules below.
 		[pallet_xcm_benchmarks::fungible, XcmBalances]
 		[pallet_xcm_benchmarks::generic, XcmGeneric]
+		// Bridge pallets at Rococo
+		[pallet_bridge_grandpa, BridgeWococoGrandpa]
+		[pallet_bridge_parachains, BridgeParachainsBench::<Runtime, BridgeParachainWococoInstance>]
+		[pallet_bridge_messages, BridgeMessagesBench::<Runtime, WithBridgeHubWococoMessagesInstance>]
+		// Bridge pallets at Wococo
+		[pallet_bridge_grandpa, BridgeRococoGrandpa]
+		[pallet_bridge_parachains, BridgeParachainsBench::<Runtime, BridgeParachainRococoInstance>]
+		[pallet_bridge_messages, BridgeMessagesBench::<Runtime, WithBridgeHubRococoMessagesInstance>]
 	);
 }
 
@@ -827,6 +839,9 @@ impl_runtime_apis! {
 			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
 			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
+			use pallet_bridge_parachains::benchmarking::Pallet as BridgeParachainsBench;
+			use pallet_bridge_messages::benchmarking::Pallet as BridgeMessagesBench;
+
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
 
@@ -925,6 +940,122 @@ impl_runtime_apis! {
 
 			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
 			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
+
+			use bridge_runtime_common::messages_benchmarking::{prepare_message_delivery_proof_from_parachain, prepare_message_proof_from_parachain};
+			use pallet_bridge_messages::benchmarking::{
+				Config as BridgeMessagesConfig,
+				Pallet as BridgeMessagesBench,
+				MessageDeliveryProofParams,
+				MessageProofParams,
+			};
+
+			impl BridgeMessagesConfig<WithBridgeHubWococoMessagesInstance> for Runtime {
+				fn is_relayer_rewarded(_: &Self::AccountId) -> bool {
+					// TODO: implement me properly
+					true
+				}
+
+				fn prepare_message_proof(
+					params: MessageProofParams,
+				) -> (bridge_hub_rococo_config::FromWococoBridgeHubMessagesProof, Weight) {
+					prepare_message_proof_from_parachain::<
+						Runtime,
+						BridgeGrandpaWococoInstance,
+						bridge_hub_rococo_config::WithBridgeHubWococoMessageBridge,
+					>(params)
+				}
+
+				fn prepare_message_delivery_proof(
+					params: MessageDeliveryProofParams<AccountId>,
+				) -> bridge_hub_rococo_config::ToWococoBridgeHubMessagesDeliveryProof {
+					prepare_message_delivery_proof_from_parachain::<
+						Runtime,
+						BridgeGrandpaWococoInstance,
+						bridge_hub_rococo_config::WithBridgeHubWococoMessageBridge,
+					>(params)
+				}
+			}
+
+			impl BridgeMessagesConfig<WithBridgeHubRococoMessagesInstance> for Runtime {
+				fn is_relayer_rewarded(_: &Self::AccountId) -> bool {
+					// TODO: implement me properly
+					true
+				}
+
+				fn prepare_message_proof(
+					params: MessageProofParams,
+				) -> (bridge_hub_wococo_config::FromRococoBridgeHubMessagesProof, Weight) {
+					prepare_message_proof_from_parachain::<
+						Runtime,
+						BridgeGrandpaRococoInstance,
+						bridge_hub_wococo_config::WithBridgeHubRococoMessageBridge,
+					>(params)
+				}
+
+				fn prepare_message_delivery_proof(
+					params: MessageDeliveryProofParams<AccountId>,
+				) -> bridge_hub_wococo_config::ToRococoBridgeHubMessagesDeliveryProof {
+					prepare_message_delivery_proof_from_parachain::<
+						Runtime,
+						BridgeGrandpaRococoInstance,
+						bridge_hub_wococo_config::WithBridgeHubRococoMessageBridge,
+					>(params)
+				}
+			}
+
+			use bridge_runtime_common::parachains_benchmarking::prepare_parachain_heads_proof;
+			use pallet_bridge_parachains::benchmarking::{
+				Config as BridgeParachainsConfig,
+				Pallet as BridgeParachainsBench,
+			};
+
+			impl BridgeParachainsConfig<BridgeParachainWococoInstance> for Runtime {
+				fn parachains() -> Vec<bp_polkadot_core::parachains::ParaId> {
+					use bp_runtime::Parachain;
+					vec![bp_polkadot_core::parachains::ParaId(bp_bridge_hub_wococo::BridgeHubWococo::PARACHAIN_ID)]
+				}
+
+				fn prepare_parachain_heads_proof(
+					parachains: &[bp_polkadot_core::parachains::ParaId],
+					parachain_head_size: u32,
+					proof_size: bp_runtime::StorageProofSize,
+				) -> (
+					pallet_bridge_parachains::RelayBlockNumber,
+					pallet_bridge_parachains::RelayBlockHash,
+					bp_polkadot_core::parachains::ParaHeadsProof,
+					Vec<(bp_polkadot_core::parachains::ParaId, bp_polkadot_core::parachains::ParaHash)>,
+				) {
+					prepare_parachain_heads_proof::<Runtime, BridgeParachainWococoInstance>(
+						parachains,
+						parachain_head_size,
+						proof_size,
+					)
+				}
+			}
+
+			impl BridgeParachainsConfig<BridgeParachainRococoInstance> for Runtime {
+				fn parachains() -> Vec<bp_polkadot_core::parachains::ParaId> {
+					use bp_runtime::Parachain;
+					vec![bp_polkadot_core::parachains::ParaId(bp_bridge_hub_rococo::BridgeHubRococo::PARACHAIN_ID)]
+				}
+
+				fn prepare_parachain_heads_proof(
+					parachains: &[bp_polkadot_core::parachains::ParaId],
+					parachain_head_size: u32,
+					proof_size: bp_runtime::StorageProofSize,
+				) -> (
+					pallet_bridge_parachains::RelayBlockNumber,
+					pallet_bridge_parachains::RelayBlockHash,
+					bp_polkadot_core::parachains::ParaHeadsProof,
+					Vec<(bp_polkadot_core::parachains::ParaId, bp_polkadot_core::parachains::ParaHash)>,
+				) {
+					prepare_parachain_heads_proof::<Runtime, BridgeParachainRococoInstance>(
+						parachains,
+						parachain_head_size,
+						proof_size,
+					)
+				}
+			}
 
 			let whitelist: Vec<TrackedStorageKey> = vec![
 				// Block Number

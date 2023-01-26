@@ -22,6 +22,12 @@ pub mod cumulus_pallet_xcmp_queue;
 pub mod extrinsic_weights;
 pub mod frame_system;
 pub mod pallet_balances;
+pub mod pallet_bridge_grandpa_bridge_rococo_grandpa;
+pub mod pallet_bridge_grandpa_bridge_wococo_grandpa;
+pub mod pallet_bridge_messages_bridge_messages_bench_runtime_with_bridge_hub_rococo_messages_instance;
+pub mod pallet_bridge_messages_bridge_messages_bench_runtime_with_bridge_hub_wococo_messages_instance;
+pub mod pallet_bridge_parachains_bridge_parachains_bench_runtime_bridge_parachain_rococo_instance;
+pub mod pallet_bridge_parachains_bridge_parachains_bench_runtime_bridge_parachain_wococo_instance;
 pub mod pallet_collator_selection;
 pub mod pallet_multisig;
 pub mod pallet_session;
@@ -36,3 +42,27 @@ pub use block_weights::constants::BlockExecutionWeight;
 pub use extrinsic_weights::constants::ExtrinsicBaseWeight;
 pub use paritydb_weights::constants::ParityDbWeight;
 pub use rocksdb_weights::constants::RocksDbWeight;
+
+impl pallet_bridge_messages::WeightInfoExt for pallet_bridge_messages_bridge_messages_bench_runtime_with_bridge_hub_rococo_messages_instance::WeightInfo<crate::Runtime> {
+	fn expected_extra_storage_proof_size() -> u32 {
+		bp_bridge_hub_rococo::EXTRA_STORAGE_PROOF_SIZE
+	}
+}
+
+impl pallet_bridge_messages::WeightInfoExt for pallet_bridge_messages_bridge_messages_bench_runtime_with_bridge_hub_wococo_messages_instance::WeightInfo<crate::Runtime> {
+	fn expected_extra_storage_proof_size() -> u32 {
+		bp_bridge_hub_wococo::EXTRA_STORAGE_PROOF_SIZE
+	}
+}
+
+impl pallet_bridge_parachains::WeightInfoExt for pallet_bridge_parachains_bridge_parachains_bench_runtime_bridge_parachain_rococo_instance::WeightInfo<crate::Runtime> {
+	fn expected_extra_storage_proof_size() -> u32 {
+		bp_bridge_hub_wococo::EXTRA_STORAGE_PROOF_SIZE
+	}
+}
+
+impl pallet_bridge_parachains::WeightInfoExt for pallet_bridge_parachains_bridge_parachains_bench_runtime_bridge_parachain_wococo_instance::WeightInfo<crate::Runtime> {
+	fn expected_extra_storage_proof_size() -> u32 {
+		bp_bridge_hub_rococo::EXTRA_STORAGE_PROOF_SIZE
+	}
+}

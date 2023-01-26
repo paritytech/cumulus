@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+//! Bridge definitions that are used on Wococo to bridge with Rococo.
+
 use crate::{
 	BridgeParachainRococoInstance, ParachainInfo, Runtime, WithBridgeHubRococoMessagesInstance,
 	XcmBlobHauler, XcmBlobHaulerAdapter, XcmRouter,
@@ -22,7 +24,10 @@ use bp_messages::{LaneId, MessageNonce};
 use bp_runtime::ChainId;
 use bridge_runtime_common::{
 	messages,
-	messages::{MessageBridge, ThisChainWithMessages, UnderlyingChainProvider},
+	messages::{
+		source::FromBridgedChainMessagesDeliveryProof, target::FromBridgedChainMessagesProof,
+		MessageBridge, ThisChainWithMessages, UnderlyingChainProvider,
+	},
 };
 use frame_support::{parameter_types, RuntimeDebug};
 use xcm::{
@@ -42,6 +47,13 @@ parameter_types! {
 	pub RococoGlobalConsensusNetwork: NetworkId = NetworkId::Rococo;
 	pub ActiveOutboundLanesToBridgeHubRococo: &'static [bp_messages::LaneId] = &[DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO];
 }
+
+/// Proof of messages, coming from Rococo.
+pub type FromRococoBridgeHubMessagesProof =
+	FromBridgedChainMessagesProof<bp_bridge_hub_rococo::Hash>;
+/// Messages delivery proof for Rococo Bridge Hub -> Wococo Bridge Hub messages.
+pub type ToRococoBridgeHubMessagesDeliveryProof =
+	FromBridgedChainMessagesDeliveryProof<bp_bridge_hub_rococo::Hash>;
 
 /// Dispatches received XCM messages from other bridge
 pub type OnBridgeHubWococoBlobDispatcher =

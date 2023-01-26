@@ -934,6 +934,7 @@ dependencies = [
  "bp-bridge-hub-wococo",
  "bp-messages",
  "bp-parachains",
+ "bp-polkadot-core",
  "bp-rococo",
  "bp-runtime",
  "bp-wococo",
