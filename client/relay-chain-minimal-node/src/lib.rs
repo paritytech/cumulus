@@ -25,7 +25,7 @@ use polkadot_node_network_protocol::{
 };
 
 use polkadot_node_subsystem_util::metrics::prometheus::Registry;
-use polkadot_primitives::v2::CollatorPair;
+use polkadot_primitives::CollatorPair;
 
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
 use sc_network::{Event, NetworkService};
@@ -126,10 +126,6 @@ async fn new_minimal_relay_chain(
 	relay_chain_rpc_client: Arc<BlockChainRpcClient>,
 ) -> Result<NewMinimalNode, RelayChainError> {
 	let role = config.role.clone();
-
-	// Use the given RPC node as bootnode, since we do not have a chain spec with valid boot nodes
-	let mut boot_node_address = relay_chain_rpc_client.local_listen_addresses().await?;
-	config.network.boot_nodes.append(&mut boot_node_address);
 
 	let task_manager = {
 		let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
