@@ -492,6 +492,17 @@ macro_rules! construct_async_run {
 							{ $( $code )* }.map(|v| (v, task_manager))
 						})
 					},
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::Westend => {
+						runner.async_run(|$config| {
+							let $components = new_partial::<chain_spec::bridge_hubs::westend::RuntimeApi, _>(
+								&$config,
+								crate::service::aura_build_import_queue::<_, AuraId>,
+							)?;
+
+							let task_manager = $components.task_manager;
+							{ $( $code )* }.map(|v| (v, task_manager))
+						})
+					},
 					chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
 					chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal |
 					chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoDevelopment => {
@@ -760,14 +771,11 @@ pub fn run() -> Result<()> {
 			let collator_options = cli.run.collator_options();
 
 			runner.run_node_until_exit(|config| async move {
-				let hwbench = if !cli.no_hardware_benchmarks {
+				let hwbench = (!cli.no_hardware_benchmarks).then_some(
 					config.database.path().map(|database_path| {
 						let _ = std::fs::create_dir_all(&database_path);
 						sc_sysinfo::gather_hwbench(Some(database_path))
-					})
-				} else {
-					None
-				};
+					})).flatten();
 
 				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
 					.map(|e| e.para_id)
@@ -867,6 +875,13 @@ pub fn run() -> Result<()> {
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment =>
 							crate::service::start_generic_aura_node::<
 								chain_spec::bridge_hubs::kusama::RuntimeApi,
+								AuraId,
+							>(config, polkadot_config, collator_options, id, hwbench)
+							.await
+							.map(|r| r.0),
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::Westend =>
+							crate::service::start_generic_aura_node::<
+								chain_spec::bridge_hubs::westend::RuntimeApi,
 								AuraId,
 							>(config, polkadot_config, collator_options, id, hwbench)
 							.await
