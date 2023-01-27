@@ -19,6 +19,7 @@ pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", def
 pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+pallet-dex = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 sp-io = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
@@ -33,6 +34,7 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", default-feature
 
 # Cumulus
 pallet-collator-selection = { path = "../../pallets/collator-selection", default-features = false }
+cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 cumulus-primitives-utility = { path = "../../primitives/utility", default-features = false }
 
 [dev-dependencies]
@@ -56,6 +58,7 @@ std = [
 	"sp-io/std",
 	"sp-std/std",
 	"pallet-collator-selection/std",
+	"cumulus-primitives-core/std",
 	"cumulus-primitives-utility/std",
 	"xcm/std",
 	"xcm-executor/std",

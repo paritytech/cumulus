@@ -28,27 +28,31 @@ pub mod constants;
 mod weights;
 pub mod xcm_config;
 
+use crate::xcm_config::{ForeignCreators, MultiLocationForAssetId};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+use frame_support::traits::ConstU128;
+use frame_system::EnsureSignedBy;
+use parachains_common::impls::{DoubleAsset, MultiLocationConverter};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
+	traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
-
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+use xcm::opaque::v3::MultiLocation;
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
-	parameter_types,
+	ord_parameter_types, parameter_types,
 	traits::{AsEnsureOriginWithArg, ConstU32, ConstU64, ConstU8, InstanceFilter},
 	weights::{ConstantMultiplier, Weight},
 	PalletId, RuntimeDebug,
@@ -57,13 +61,13 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot, EnsureSigned,
 };
+use pallet_dex_tx_payment::FungiblesAdapter;
 use pallet_nfts::PalletFeatures;
 pub use parachains_common as common;
 use parachains_common::{
-	impls::{AssetsToBlockAuthor, DealWithFees},
-	opaque, AccountId, AssetIdForTrustBackedAssets, AuraId, Balance, BlockNumber, Hash, Header,
-	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
-	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
+	impls::DealWithFees, opaque, AccountId, AssetIdForTrustBackedAssets, AuraId, Balance,
+	BlockNumber, Hash, Header, Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS,
+	MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
@@ -237,9 +241,90 @@ impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
 	type CallbackHandle = ();
 	type AssetAccountDeposit = AssetAccountDeposit;
-	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
+	type RemoveItemsLimit = ConstU32<1000>;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
+}
+
+/// Assets managed by some foreign location.
+type ForeignAssetsInstance = pallet_assets::Instance2;
+impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = Balance;
+	type AssetId = MultiLocationForAssetId;
+	type AssetIdParameter = MultiLocationForAssetId;
+	type Currency = Balances;
+	type CreateOrigin = ForeignCreators;
+	type ForceOrigin = AssetsForceOrigin;
+	type AssetDeposit = AssetDeposit;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = AssetsStringLimit;
+	type Freezer = ();
+	type Extra = ();
+	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
+	type CallbackHandle = ();
+	type AssetAccountDeposit = AssetAccountDeposit;
+	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = xcm_config::XcmBenchmarkHelper;
+}
+
+parameter_types! {
+	pub const DexPalletId: PalletId = PalletId(*b"py/dexer");
+	pub storage AllowMultiAssetPools: bool = false;
+}
+
+ord_parameter_types! {
+	pub const DexOrigin: sp_runtime::AccountId32 = AccountIdConversion::<sp_runtime::AccountId32>::into_account_truncating(&DexPalletId::get());
+}
+
+const MAX_SWAP_PATH_LEN: u32 = 4;
+
+pub type PoolAssetsInstance = pallet_assets::Instance3;
+impl pallet_assets::Config<PoolAssetsInstance> for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = Balance;
+	type RemoveItemsLimit = ConstU32<1000>;
+	type AssetId = u32;
+	type AssetIdParameter = u32;
+	type Currency = Balances;
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSignedBy<DexOrigin, sp_runtime::AccountId32>>;
+	type ForceOrigin = AssetsForceOrigin;
+	type AssetDeposit = ConstU128<0>;
+	type AssetAccountDeposit = ConstU128<0>;
+	type MetadataDepositBase = ConstU128<0>;
+	type MetadataDepositPerByte = ConstU128<0>;
+	type ApprovalDeposit = ConstU128<0>;
+	type StringLimit = ConstU32<50>;
+	type Freezer = ();
+	type Extra = ();
+	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
+	type CallbackHandle = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
+}
+
+impl pallet_dex::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Fee = ConstU32<3>;
+	type Currency = Balances;
+	type AssetBalance = <Self as pallet_balances::Config>::Balance;
+	type AssetId = MultiLocation;
+	type PoolAssetId = u32;
+	type Assets = LocalAndForeignAssets;
+	type PoolAssets = PoolAssets;
+	type PalletId = DexPalletId;
+	type WeightInfo = ();
+	type AllowMultiAssetPools = AllowMultiAssetPools;
+	type MaxSwapPathLength = ConstU32<MAX_SWAP_PATH_LEN>;
+
+	type MultiAssetId = MultiLocation;
+	type MultiAssetIdConverter = MultiLocationConverter<Balances, parachain_info::Pallet<Runtime>>;
+
+	type Balance = u128;
+	type PromotedBalance = u128; // TODO U256 https://github.com/paritytech/parity-common/issues/714
 }
 
 parameter_types! {
@@ -525,18 +610,12 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Runtime>;
 }
 
-impl pallet_asset_tx_payment::Config for Runtime {
+type LocalAndForeignAssets = DoubleAsset<Assets, ForeignAssets, parachain_info::Pallet<Runtime>>;
+
+impl pallet_dex_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type Fungibles = Assets;
-	type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
-		pallet_assets::BalanceToAssetBalance<
-			Balances,
-			Runtime,
-			ConvertInto,
-			TrustBackedAssetsInstance,
-		>,
-		AssetsToBlockAuthor<Runtime, TrustBackedAssetsInstance>,
-	>;
+	type Fungibles = LocalAndForeignAssets;
+	type OnChargeAssetTransactionBySwap = FungiblesAdapter<Dex>;
 }
 
 parameter_types! {
@@ -621,7 +700,8 @@ construct_runtime!(
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
-		AssetTxPayment: pallet_asset_tx_payment::{Pallet, Event<T>} = 12,
+		// AssetTxPayment: pallet_asset_tx_payment::{Pallet, Event<T>} = 12,
+		DexTxPayment: pallet_dex_tx_payment = 13, // Deliberatly different to AssetTxPayment.
 
 		// Collator support. the order of these 5 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
@@ -643,8 +723,11 @@ construct_runtime!(
 
 		// The main stage.
 		Assets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>} = 50,
+		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 53,
+		PoolAssets: pallet_assets::<Instance3>::{Pallet, Call, Storage, Event<T>} = 54,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		Nfts: pallet_nfts::{Pallet, Call, Storage, Event<T>} = 52,
+		Dex: pallet_dex::{Pallet, Call, Storage, Event<T>} = 55,
 	}
 );
 
@@ -665,7 +748,7 @@ pub type SignedExtra = (
 	frame_system::CheckEra<Runtime>,
 	frame_system::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
-	pallet_asset_tx_payment::ChargeAssetTxPayment<Runtime>,
+	pallet_dex_tx_payment::ChargeAssetTxPaymentBySwap<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
@@ -694,6 +777,9 @@ mod benches {
 	define_benchmarks!(
 		[frame_system, SystemBench::<Runtime>]
 		[pallet_assets, Assets]
+		[pallet_assets, ForeignAssets]
+		[pallet_assets, PoolAssets]
+		[pallet_dex, Dex]
 		[pallet_balances, Balances]
 		[pallet_multisig, Multisig]
 		[pallet_nfts, Nfts]

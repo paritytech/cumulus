@@ -15,15 +15,29 @@
 
 //! Auxiliary struct/enums for parachain runtimes.
 //! Taken from polkadot/runtime/common (at a21cd64) and adapted for parachains.
-
-use frame_support::traits::{
-	fungibles::{self, Balanced, CreditOf},
-	Contains, ContainsPair, Currency, Get, Imbalance, OnUnbalanced,
+use crate::impls::fungibles::Inspect;
+use cumulus_primitives_core::ParaId;
+use frame_support::{
+	pallet_prelude::DispatchError,
+	traits::{
+		fungibles::{self, Balanced, CreditOf, Transfer, Unbalanced},
+		tokens::{DepositConsequence, WithdrawConsequence},
+		Contains, ContainsPair, Currency, Get, Imbalance, OnUnbalanced, PalletInfoAccess,
+	},
 };
+use pallet_dex::MultiAssetIdConverter;
 use pallet_asset_tx_payment::HandleCredit;
-use sp_runtime::traits::Zero;
+use polkadot_primitives::AccountId;
+use sp_runtime::{traits::Zero, DispatchResult};
 use sp_std::marker::PhantomData;
-use xcm::latest::{AssetId, Fungibility::Fungible, MultiAsset, MultiLocation};
+use xcm::{
+	latest::{AssetId, Fungibility::Fungible, MultiAsset, MultiLocation},
+	opaque::lts::{
+		Junction,
+		Junction::Parachain,
+		Junctions::{X2, X3},
+	},
+};
 
 /// Type alias to conveniently refer to the `Currency::NegativeImbalance` associated type.
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
@@ -103,6 +117,208 @@ impl<T: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation> for AssetsFr
 		&loc == origin &&
 			matches!(asset, MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) }
 			if asset_loc.match_and_split(&loc).is_some())
+	}
+}
+/// Whether the multilocation refers to an asset in the local assets pallet or not,
+/// and if return the asset id.
+fn is_local<SelfParaId: Get<ParaId>, Assets>(multilocation: MultiLocation) -> Option<u32>
+where
+	Assets: PalletInfoAccess,
+{
+	if let MultiLocation {
+		parents: 1,
+		interior:
+			X3(
+				Parachain(para_id),
+				Junction::PalletInstance(pallet_index),
+				Junction::GeneralIndex(asset_id),
+			),
+	} = multilocation
+	{
+		if ParaId::from(para_id) != SelfParaId::get() {
+			None
+		} else if pallet_index != <Assets as PalletInfoAccess>::index() as u8 {
+			None
+		} else {
+			<u128 as TryInto<u32>>::try_into(asset_id).ok()
+		}
+	} else {
+		None
+	}
+}
+
+pub struct MultiLocationConverter<Balances, SelfParaId: Get<ParaId>> {
+	_phantom: PhantomData<(Balances, SelfParaId)>,
+}
+
+impl<Balances, SelfParaId> MultiAssetIdConverter<MultiLocation, MultiLocation>
+	for MultiLocationConverter<Balances, SelfParaId>
+where
+	Balances: PalletInfoAccess,
+	SelfParaId: Get<ParaId>,
+{
+	fn get_native() -> MultiLocation {
+		MultiLocation {
+			parents: 1,
+			interior: X2(
+				Parachain(SelfParaId::get().into()),
+				Junction::PalletInstance(<Balances as PalletInfoAccess>::index() as u8),
+			),
+		}
+	}
+
+	fn try_convert(asset: MultiLocation) -> Result<MultiLocation, ()> {
+		Ok(asset)
+	}
+
+	fn into_multiasset_id(asset: MultiLocation) -> MultiLocation {
+		asset
+	}
+}
+
+pub struct DoubleAsset<Assets, ForeignAssets, SelfParaId> {
+	_ignore: PhantomData<(Assets, ForeignAssets, SelfParaId)>,
+}
+
+impl<Assets, ForeignAssets, SelfParaId> Unbalanced<AccountId>
+	for DoubleAsset<Assets, ForeignAssets, SelfParaId>
+where
+	SelfParaId: Get<ParaId>,
+	ForeignAssets:
+		Inspect<AccountId, Balance = u128, AssetId = MultiLocation> + Unbalanced<AccountId>,
+	Assets: Inspect<AccountId, Balance = u128, AssetId = u32>
+		+ PalletInfoAccess
+		+ Unbalanced<AccountId>,
+{
+	fn set_balance(asset: Self::AssetId, who: &AccountId, amount: Self::Balance) -> DispatchResult {
+		if let Some(asset) = is_local::<SelfParaId, Assets>(asset) {
+			Assets::set_balance(asset, who, amount)
+		} else {
+			ForeignAssets::set_balance(asset, who, amount)
+		}
+	}
+
+	/// Set the total issuance of `asset` to `amount`.
+	fn set_total_issuance(asset: Self::AssetId, amount: Self::Balance) {
+		if let Some(asset) = is_local::<SelfParaId, Assets>(asset) {
+			Assets::set_total_issuance(asset, amount)
+		} else {
+			ForeignAssets::set_total_issuance(asset, amount)
+		}
+	}
+}
+
+impl<Assets, ForeignAssets, SelfParaId> Inspect<AccountId>
+	for DoubleAsset<Assets, ForeignAssets, SelfParaId>
+where
+	SelfParaId: Get<ParaId>,
+	ForeignAssets: Inspect<AccountId, Balance = u128, AssetId = MultiLocation>,
+	Assets: Inspect<AccountId, Balance = u128, AssetId = u32> + PalletInfoAccess,
+{
+	type AssetId = MultiLocation;
+	type Balance = u128;
+
+	/// The total amount of issuance in the system.
+	fn total_issuance(asset: Self::AssetId) -> Self::Balance {
+		if let Some(asset) = is_local::<SelfParaId, Assets>(asset) {
+			Assets::total_issuance(asset)
+		} else {
+			ForeignAssets::total_issuance(asset)
+		}
+	}
+
+	/// The minimum balance any single account may have.
+	fn minimum_balance(asset: Self::AssetId) -> Self::Balance {
+		if let Some(asset) = is_local::<SelfParaId, Assets>(asset) {
+			Assets::total_issuance(asset)
+		} else {
+			ForeignAssets::minimum_balance(asset)
+		}
+	}
+
+	/// Get the `asset` balance of `who`.
+	fn balance(asset: Self::AssetId, who: &AccountId) -> Self::Balance {
+		if let Some(asset) = is_local::<SelfParaId, Assets>(asset) {
+			Assets::balance(asset, who)
+		} else {
+			ForeignAssets::balance(asset, who)
+		}
+	}
+
+	/// Get the maximum amount of `asset` that `who` can withdraw/transfer successfully.
+	fn reducible_balance(asset: Self::AssetId, who: &AccountId, keep_alive: bool) -> Self::Balance {
+		if let Some(asset) = is_local::<SelfParaId, Assets>(asset) {
+			Assets::reducible_balance(asset, who, keep_alive)
+		} else {
+			ForeignAssets::reducible_balance(asset, who, keep_alive)
+		}
+	}
+
+	/// Returns `true` if the `asset` balance of `who` may be increased by `amount`.
+	///
+	/// - `asset`: The asset that should be deposited.
+	/// - `who`: The account of which the balance should be increased by `amount`.
+	/// - `amount`: How much should the balance be increased?
+	/// - `mint`: Will `amount` be minted to deposit it into `account`?
+	fn can_deposit(
+		asset: Self::AssetId,
+		who: &AccountId,
+		amount: Self::Balance,
+		mint: bool,
+	) -> DepositConsequence {
+		if let Some(asset) = is_local::<SelfParaId, Assets>(asset) {
+			Assets::can_deposit(asset, who, amount, mint)
+		} else {
+			ForeignAssets::can_deposit(asset, who, amount, mint)
+		}
+	}
+
+	/// Returns `Failed` if the `asset` balance of `who` may not be decreased by `amount`, otherwise
+	/// the consequence.
+	fn can_withdraw(
+		asset: Self::AssetId,
+		who: &AccountId,
+		amount: Self::Balance,
+	) -> WithdrawConsequence<Self::Balance> {
+		if let Some(asset) = is_local::<SelfParaId, Assets>(asset) {
+			Assets::can_withdraw(asset, who, amount)
+		} else {
+			ForeignAssets::can_withdraw(asset, who, amount)
+		}
+	}
+
+	/// Returns `true` if an `asset` exists.
+	fn asset_exists(asset: Self::AssetId) -> bool {
+		if let Some(asset) = is_local::<SelfParaId, Assets>(asset) {
+			Assets::asset_exists(asset)
+		} else {
+			ForeignAssets::asset_exists(asset)
+		}
+	}
+}
+
+impl<Assets, ForeignAssets, SelfParaId> Transfer<AccountId>
+	for DoubleAsset<Assets, ForeignAssets, SelfParaId>
+where
+	SelfParaId: Get<ParaId>,
+	ForeignAssets: Transfer<AccountId, Balance = u128>
+		+ Inspect<AccountId, Balance = u128, AssetId = MultiLocation>,
+	Assets:
+		Transfer<AccountId> + Inspect<AccountId, Balance = u128, AssetId = u32> + PalletInfoAccess,
+{
+	/// Transfer funds from one account into another.
+	fn transfer(
+		asset: MultiLocation,
+		source: &AccountId,
+		dest: &AccountId,
+		amount: Self::Balance,
+		keep_alive: bool,
+	) -> Result<Self::Balance, DispatchError> {
+		if let Some(asset_id) = is_local::<SelfParaId, Assets>(asset) {
+			Assets::transfer(asset_id, source, dest, amount, keep_alive)
+		} else {
+			ForeignAssets::transfer(asset, source, dest, amount, keep_alive)
+		}
 	}
 }
 

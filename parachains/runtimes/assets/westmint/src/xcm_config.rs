@@ -15,34 +15,38 @@
 
 use super::{
 	AccountId, AllPalletsWithSystem, AssetIdForTrustBackedAssets, Assets, Authorship, Balance,
-	Balances, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent,
-	RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
+	Balances, ForeignAssets, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall,
+	RuntimeEvent, RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
+	traits::{
+		ConstU32, Contains, EnsureOrigin, EnsureOriginWithArg, Everything, Nothing,
+		PalletInfoAccess,
+	},
 };
-use pallet_xcm::XcmPassthrough;
+use pallet_xcm::{EnsureXcm, XcmPassthrough};
 use parachains_common::{
 	impls::ToStakingPot,
 	xcm_config::{
 		AssetFeeAsExistentialDepositMultiplier, DenyReserveTransferToRelayChain, DenyThenTry,
 	},
+	AssetIdForForeignAssets,
 };
-use polkadot_parachain::primitives::Sibling;
+use polkadot_parachain::primitives::{Id as ParaId, Sibling};
 use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
 	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, AsPrefixedGeneralIndex,
 	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FungiblesAdapter, IsConcrete, LocalMint,
-	NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
-	WithComputedOrigin,
+	NativeAsset, NonLocalMint, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+	WeightInfoBounds, WithComputedOrigin,
 };
 use xcm_executor::{
-	traits::{JustTry, WithOriginFilter},
+	traits::{Convert, JustTry, WithOriginFilter},
 	XcmExecutor,
 };
 
@@ -55,6 +59,8 @@ parameter_types! {
 	pub const Local: MultiLocation = Here.into_location();
 	pub TrustBackedAssetsPalletLocation: MultiLocation =
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
+	pub ForeignAssetsPalletLocation: MultiLocation =
+		PalletInstance(<ForeignAssets as PalletInfoAccess>::index() as u8).into();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
@@ -109,8 +115,30 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	// The account to use for tracking teleports.
 	CheckingAccount,
 >;
+
+/// Means for transacting assets besides the native currency on this chain.
+pub type ForeignFungiblesTransactor = FungiblesAdapter<
+	// Use this fungibles implementation:
+	ForeignAssets,
+	// Use this currency when it is a fungible asset matching the given location or name:
+	ConvertedConcreteId<
+		AssetIdForForeignAssets,
+		Balance,
+		AsPrefixedGeneralIndex<ForeignAssetsPalletLocation, AssetIdForForeignAssets, JustTry>,
+		JustTry,
+	>,
+	// Convert an XCM MultiLocation into a local account id:
+	LocationToAccountId,
+	// Our chain's account ID type (we can't get away without mentioning it explicitly):
+	AccountId,
+	// TODO: We want to allow no teleports.
+	NonLocalMint<parachains_common::impls::NonZeroIssuance<AccountId, ForeignAssets>>,
+	// The account to use for tracking teleports.
+	CheckingAccount,
+>;
+
 /// Means for transacting assets on this chain.
-pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
+pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor); //, ForeignFungiblesTransactor);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -379,4 +407,46 @@ impl pallet_xcm::Config for Runtime {
 impl cumulus_pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
+}
+
+pub type MultiLocationForAssetId = MultiLocation;
+
+pub type SovereignAccountOf = (
+	SiblingParachainConvertsVia<ParaId, AccountId>,
+	AccountId32Aliases<RelayNetwork, AccountId>,
+	ParentIsPreset<AccountId>,
+);
+
+// `EnsureOriginWithArg` impl for `CreateOrigin` which allows only XCM origins that are locations
+// containing the class location.
+pub struct ForeignCreators;
+impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
+	type Success = AccountId;
+
+	fn try_origin(
+		o: RuntimeOrigin,
+		a: &MultiLocation,
+	) -> sp_std::result::Result<Self::Success, RuntimeOrigin> {
+		let origin_location = EnsureXcm::<Everything>::try_origin(o.clone())?;
+		if !a.starts_with(&origin_location) {
+			return Err(o)
+		}
+		SovereignAccountOf::convert(origin_location).map_err(|_| o)
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn successful_origin(a: &MultiLocation) -> RuntimeOrigin {
+		pallet_xcm::Origin::Xcm(a.clone()).into()
+	}
+}
+
+/// Simple conversion of `u32` into an `AssetId` for use in benchmarking.
+pub struct XcmBenchmarkHelper;
+#[cfg(feature = "runtime-benchmarks")]
+use pallet_assets::BenchmarkHelper;
+#[cfg(feature = "runtime-benchmarks")]
+impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
+	fn create_asset_id_parameter(id: u32) -> MultiLocation {
+		MultiLocation { parents: 1, interior: X1(Parachain(id)) }
+	}
 }

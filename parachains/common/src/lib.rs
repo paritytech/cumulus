@@ -24,6 +24,7 @@ pub use types::*;
 /// Common types of parachains.
 mod types {
 	use sp_runtime::traits::{IdentifyAccount, Verify};
+	use xcm::v2::MultiLocation;
 
 	/// An index to a block.
 	pub type BlockNumber = u32;
@@ -42,7 +43,7 @@ mod types {
 	/// Balance of an account.
 	pub type Balance = u128;
 
-	/// Index of a transaction in the chain.
+	/// Index of a transaction in a block.
 	pub type Index = u32;
 
 	/// A hash of some data used by the chain.
@@ -63,6 +64,9 @@ mod types {
 
 	// Id used for identifying assets.
 	pub type AssetIdForTrustBackedAssets = u32;
+
+	// Id used for identifying foreign assets.
+	pub type AssetIdForForeignAssets = MultiLocation;
 }
 
 /// Common constants of parachains.
