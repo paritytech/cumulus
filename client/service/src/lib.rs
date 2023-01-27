@@ -122,10 +122,7 @@ where
 		// We want that collators wait at maximum the relay chain slot duration before starting
 		// to recover blocks. Additionally, we wait at least half the slot time to give the
 		// relay chain the chance to increase availability.
-		RecoveryDelay {
-			min: relay_chain_slot_duration / 2,
-			max: relay_chain_slot_duration,
-		},
+		RecoveryDelay { min: relay_chain_slot_duration / 2, max: relay_chain_slot_duration },
 		client.clone(),
 		import_queue,
 		relay_chain_interface.clone(),
