@@ -9,6 +9,6 @@ dave: is up within 30 seconds
 eve: is up within 30 seconds
 ferdie: is up within 30 seconds
 alice: parachain 2000 is registered within 225 seconds
-one: reports block height is at least 7 within 225 seconds
-two: reports block height is at least 7 within 225 seconds
-three: reports block height is at least 7 within 225 seconds
+one: reports block height is at least 770 within 225 seconds
+two: reports block height is at least 770 within 225 seconds
+three: reports block height is at least 770 within 225 seconds

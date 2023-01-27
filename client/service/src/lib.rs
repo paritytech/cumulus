@@ -338,9 +338,7 @@ where
 				para_id,
 				relay_chain_interface.clone(),
 				spawn_handle.clone(),
-			)
-			.await
-			.map_err(|e| format!("Error: {:?}", e))?;
+			);
 			Some(WarpSyncParams::WaitForTarget(target_block))
 		},
 		_ => None,
@@ -361,11 +359,11 @@ where
 }
 
 /// Creates a new background task to wait for the relay chain to sync up and retrieve the parachain header
-async fn warp_sync_get<B, RCInterface>(
+fn warp_sync_get<B, RCInterface>(
 	para_id: ParaId,
 	relay_chain_interface: RCInterface,
 	spawner: SpawnTaskHandle,
-) -> Result<oneshot::Receiver<<B as BlockT>::Header>, ()>
+) -> oneshot::Receiver<<B as BlockT>::Header>
 where
 	B: BlockT + 'static,
 	RCInterface: RelayChainInterface + 'static,
@@ -393,7 +391,7 @@ where
 		.boxed(),
 	);
 
-	Ok(receiver)
+	receiver
 }
 
 /// Waits for the relay chain to have finished syncing and then gets the parachain header that corresponds to the last finalized relay chain block.
