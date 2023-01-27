@@ -21,10 +21,12 @@ use frame_support::weights::Weight;
 pub trait WeightInfo {
 	/// Returns the weight of the set_charter extrinsic.
 	fn set_charter() -> Weight;
-	/// Returns the announce of the set_charter extrinsic.
+	/// Returns the weight of the announce extrinsic.
 	fn announce(_x: u32) -> Weight;
-	/// Returns the remove_announcement of the set_charter extrinsic.
+	/// Returns the weight of the remove_announcement extrinsic.
 	fn remove_announcement() -> Weight;
+	/// Returns the weight of the action.
+	fn cleanup_announcements() -> Weight;
 }
 
 /// Unit implementation of the [WeightInfo].
@@ -36,6 +38,9 @@ impl WeightInfo for () {
 		Weight::zero()
 	}
 	fn remove_announcement() -> Weight {
+		Weight::zero()
+	}
+	fn cleanup_announcements() -> Weight {
 		Weight::zero()
 	}
 }

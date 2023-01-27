@@ -16,9 +16,11 @@
 //! Test utilities.
 
 pub use crate as pallet_collective_content;
+use crate::WeightInfo;
 use frame_support::{
-	ord_parameter_types,
+	ord_parameter_types, parameter_types,
 	traits::{ConstU32, ConstU64},
+	weights::Weight,
 };
 use frame_system::EnsureSignedBy;
 use sp_runtime::traits::IdentityLookup;
@@ -46,12 +48,16 @@ ord_parameter_types! {
 	pub const OtherAccount: u64 = 3;
 }
 
+parameter_types! {
+	pub static MaxAnnouncementsCount: u32 = 5;
+}
+
 impl pallet_collective_content::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type CharterOrigin = EnsureSignedBy<CharterManager, AccountId>;
 	type AnnouncementOrigin = EnsureSignedBy<AnnouncementManager, AccountId>;
-	type MaxAnnouncementsCount = ConstU32<5>;
-	type WeightInfo = ();
+	type MaxAnnouncementsCount = MaxAnnouncementsCount;
+	type WeightInfo = CCWeightInfo;
 }
 
 impl frame_system::Config for Test {
@@ -79,6 +85,22 @@ impl frame_system::Config for Test {
 	type SS58Prefix = ();
 	type OnSetCode = ();
 	type MaxConsumers = ConstU32<16>;
+}
+pub struct CCWeightInfo;
+impl WeightInfo for CCWeightInfo {
+	fn set_charter() -> Weight {
+		Weight::zero()
+	}
+	fn announce(_x: u32) -> Weight {
+		Weight::zero()
+	}
+	fn remove_announcement() -> Weight {
+		Weight::zero()
+	}
+	fn cleanup_announcements() -> Weight {
+		// used in tests.
+		Weight::from_ref_time(10)
+	}
 }
 
 // Build test environment.

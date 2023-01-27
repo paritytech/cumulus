@@ -40,6 +40,7 @@ pub use weights::WeightInfo;
 
 use frame_support::{traits::schedule::DispatchTime, BoundedVec};
 use sp_core::ConstU32;
+use sp_std::prelude::*;
 
 /// IPFS compatible CID.
 // worst case 2 bytes base and codec, 2 bytes hash type and size, 64 bytes hash digest.
@@ -53,7 +54,7 @@ pub type DispatchTimeFor<T> = DispatchTime<BlockNumberFor<T>>;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use super::{Cid, DispatchTimeFor, WeightInfo};
+	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -79,6 +80,8 @@ pub mod pallet {
 		type CharterOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
 		/// The maximum number of announcements.
+		///
+		/// NOTE: Benchmarks need to be re-run if this changes.
 		#[pallet::constant]
 		type MaxAnnouncementsCount: Get<u32>;
 
@@ -125,7 +128,7 @@ pub mod pallet {
 
 	/// The closest expiration block number of an announcement.
 	#[pallet::storage]
-	pub type NextAnnouncementExpire<T: Config<I>, I: 'static = ()> =
+	pub type NextAnnouncementExpireAt<T: Config<I>, I: 'static = ()> =
 		StorageValue<_, T::BlockNumber, OptionQuery>;
 
 	#[pallet::call]
@@ -176,8 +179,8 @@ pub mod pallet {
 			<Announcements<T, I>>::put(announcements);
 
 			if let Some(expire_at) = maybe_expire_at {
-				if NextAnnouncementExpire::<T, I>::get().map_or(true, |n| n > expire_at) {
-					NextAnnouncementExpire::<T, I>::put(expire_at);
+				if NextAnnouncementExpireAt::<T, I>::get().map_or(true, |n| n > expire_at) {
+					NextAnnouncementExpireAt::<T, I>::put(expire_at);
 				}
 			}
 
@@ -207,6 +210,63 @@ pub mod pallet {
 
 			Self::deposit_event(Event::<T, I>::AnnouncementRemoved { cid });
 			Ok(())
+		}
+	}
+
+	impl<T: Config<I>, I: 'static> Pallet<T, I> {
+		/// Cleanup expired announcements.
+		pub fn cleanup_announcements(now: T::BlockNumber) {
+			if NextAnnouncementExpireAt::<T, I>::get().map_or(true, |next| next > now) {
+				// no expired announcements expected.
+				return
+			}
+			// find expired announcements.
+			let announcements = <Announcements<T, I>>::get();
+			let (live, expired): (Vec<(_, _)>, Vec<(_, _)>) =
+				announcements.clone().into_iter().partition(|(_, maybe_expire_at)| {
+					maybe_expire_at.map_or(true, |expire_at| expire_at > now)
+				});
+			if expired.len() == 0 {
+				// no expired announcements.
+				return
+			}
+			// convert into bounded vec.
+			let live: BoundedVec<(_, _), T::MaxAnnouncementsCount> = live.try_into().map_or_else(
+				|err| {
+					// should never happen.
+					debug_assert!(false, "failed to convert into bounded vec: {:?}", err);
+					announcements
+				},
+				|live| live,
+			);
+			// determine the next announcement expire at.
+			NextAnnouncementExpireAt::<T, I>::set(live.clone().into_iter().fold(
+				None,
+				|next, (_, maybe_expire_at)| match (next, maybe_expire_at) {
+					(Some(next), Some(expire_at)) if next > expire_at => Some(expire_at),
+					(None, Some(expire_at)) => Some(expire_at),
+					_ => next,
+				},
+			));
+			// save new list of announcements.
+			<Announcements<T, I>>::put(live);
+			// publish events for removed announcements.
+			expired.into_iter().for_each(|(cid, _)| {
+				Self::deposit_event(Event::<T, I>::AnnouncementRemoved { cid })
+			});
+		}
+	}
+
+	#[pallet::hooks]
+	impl<T: Config<I>, I: 'static> Hooks<T::BlockNumber> for Pallet<T, I> {
+		/// Cleanup expired announcements if there is enough `remaining_weight` weight left.
+		fn on_idle(now: T::BlockNumber, remaining_weight: Weight) -> Weight {
+			let weight = T::WeightInfo::cleanup_announcements();
+			if remaining_weight.any_lt(weight) {
+				return Weight::from_ref_time(0)
+			}
+			Self::cleanup_announcements(now);
+			weight
 		}
 	}
 }
