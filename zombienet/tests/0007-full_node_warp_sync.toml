@@ -4,18 +4,22 @@ default_command = "polkadot"
 default_args = [ "-lparachain=debug" ]
 default_db_snapshot = "https://github.com/samelamin/cumulus/blob/chain-snapshots/docker/snapshots/relaychain-1964f8b557f10085cdc18f4105ad0bbb3df4c4c6.tgz?raw=true"
 chain = "rococo-local"
+chain_spec_path = "zombienet/tests/0007-warp-sync-relaychain-spec.json"
 
   [[relaychain.nodes]]
   name = "alice"
   validator = true
+  db_snapshot = "https://github.com/samelamin/cumulus/blob/chain-snapshots/docker/snapshots/relaychain-1964f8b557f10085cdc18f4105ad0bbb3df4c4c6.tgz?raw=true"
 
   [[relaychain.nodes]]
   name = "bob"
   validator = true
+  db_snapshot = "https://github.com/samelamin/cumulus/blob/chain-snapshots/docker/snapshots/relaychain-1964f8b557f10085cdc18f4105ad0bbb3df4c4c6.tgz?raw=true"
 
   [[relaychain.nodes]]
   name = "charlie"
   validator = true
+  db_snapshot = "https://github.com/samelamin/cumulus/blob/chain-snapshots/docker/snapshots/relaychain-1964f8b557f10085cdc18f4105ad0bbb3df4c4c6.tgz?raw=true"
 
   [[relaychain.nodes]]
   name = "dave"
