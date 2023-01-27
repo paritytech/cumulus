@@ -256,14 +256,11 @@ pub fn run() -> Result<()> {
 			let collator_options = cli.run.collator_options();
 
 			runner.run_node_until_exit(|config| async move {
-				let hwbench = if !cli.no_hardware_benchmarks {
+				let hwbench = (!cli.no_hardware_benchmarks).then_some(
 					config.database.path().map(|database_path| {
 						let _ = std::fs::create_dir_all(&database_path);
 						sc_sysinfo::gather_hwbench(Some(database_path))
-					})
-				} else {
-					None
-				};
+					})).flatten();
 
 				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
 					.map(|e| e.para_id)
@@ -277,7 +274,7 @@ pub fn run() -> Result<()> {
 				let id = ParaId::from(para_id);
 
 				let parachain_account =
-					AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
+					AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(&id);
 
 				let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
 				let block: Block = generate_genesis_block(&*config.chain_spec, state_version)

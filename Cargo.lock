@@ -139,9 +139,9 @@ dependencies = [
 
 [[package]]
 name = "ahash"
-version = "0.8.3"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c99f64d1e06488f620f932677e24bc6e2897582980441ae90a671415bd7ec2f"
+checksum = "bf6ccdb167abbf410dcb915cabd428929d7f6a04980b54a11f26a39f1c7f7107"
 dependencies = [
  "cfg-if",
  "getrandom 0.2.8",
@@ -305,9 +305,9 @@ checksum = "e22d1f4b888c298a027c99dc9048015fac177587de20fc30232a057dfbe24a21"
 
 [[package]]
 name = "assert_cmd"
-version = "2.0.7"
+version = "2.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa3d466004a8b4cb1bc34044240a2fd29d17607e2e3bd613eb44fd48e8100da3"
+checksum = "9834fcc22e0874394a010230586367d4a3e9f11b560f469262678547e1d2575e"
 dependencies = [
  "bstr 1.1.0",
  "doc-comment",
@@ -1115,9 +1115,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.0.32"
+version = "4.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7db700bc935f9e43e88d00b0850dae18a63773cfbec6d8e070fccf7fef89a39"
+checksum = "4ec7a4128863c188deefe750ac1d1dfe66c236909f845af04beed823638dc1b2"
 dependencies = [
  "bitflags",
  "clap_derive",
@@ -1130,9 +1130,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "4.0.21"
+version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0177313f9f02afc995627906bbd8967e2be069f5261954222dac78290c2b9014"
+checksum = "684a277d672e91966334af371f1a7b5833f9aa00b07c84e92fbce95e00208ce8"
 dependencies = [
  "heck",
  "proc-macro-error",
@@ -1697,7 +1697,7 @@ dependencies = [
 name = "cumulus-client-cli"
 version = "0.1.0"
 dependencies = [
- "clap 4.0.32",
+ "clap 4.1.1",
  "parity-scale-codec",
  "sc-chain-spec",
  "sc-cli",
@@ -1965,6 +1965,7 @@ dependencies = [
  "sp-tracing",
  "sp-trie",
  "sp-version",
+ "xcm",
 ]
 
 [[package]]
@@ -2032,6 +2033,7 @@ dependencies = [
  "log",
  "pallet-balances",
  "parity-scale-codec",
+ "polkadot-runtime-common",
  "rand_chacha 0.3.1",
  "scale-info",
  "sp-core",
@@ -2070,6 +2072,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-trie",
+ "xcm",
 ]
 
 [[package]]
@@ -2119,6 +2122,8 @@ dependencies = [
  "frame-support",
  "log",
  "parity-scale-codec",
+ "polkadot-runtime-common",
+ "sp-io",
  "sp-runtime",
  "sp-std",
  "xcm",
@@ -2328,7 +2333,7 @@ name = "cumulus-test-service"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "clap 4.0.32",
+ "clap 4.1.1",
  "criterion",
  "cumulus-client-cli",
  "cumulus-client-consensus-common",
@@ -3190,7 +3195,7 @@ dependencies = [
  "Inflector",
  "array-bytes 4.2.0",
  "chrono",
- "clap 4.0.32",
+ "clap 4.1.1",
  "comfy-table",
  "frame-benchmarking",
  "frame-support",
@@ -3772,7 +3777,7 @@ version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
 dependencies = [
- "ahash 0.8.3",
+ "ahash 0.8.2",
 ]
 
 [[package]]
@@ -6970,7 +6975,7 @@ dependencies = [
 name = "parachain-template-node"
 version = "0.1.0"
 dependencies = [
- "clap 4.0.32",
+ "clap 4.1.1",
  "cumulus-client-cli",
  "cumulus-client-consensus-aura",
  "cumulus-client-consensus-common",
@@ -7102,6 +7107,7 @@ dependencies = [
  "sp-std",
  "substrate-wasm-builder",
  "xcm",
+ "xcm-builder",
  "xcm-executor",
 ]
 
@@ -7126,9 +7132,9 @@ dependencies = [
 
 [[package]]
 name = "parity-scale-codec"
-version = "3.3.0"
+version = "3.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3840933452adf7b3b9145e27086a5a3376c619dca1a21b1e5a5af0d54979bed"
+checksum = "e7ab01d0f889e957861bc65888d5ccbe82c158d0270136ba46820d43837cdf72"
 dependencies = [
  "arrayvec 0.7.2",
  "bitvec",
@@ -7549,7 +7555,7 @@ name = "polkadot-cli"
 version = "0.9.37"
 source = "git+https://github.com/paritytech/polkadot?branch=master#8318bf4036cccd3ddf5427251991ea74b924ebd2"
 dependencies = [
- "clap 4.0.32",
+ "clap 4.1.1",
  "frame-benchmarking-cli",
  "futures",
  "log",
@@ -8207,13 +8213,13 @@ dependencies = [
 
 [[package]]
 name = "polkadot-parachain-bin"
-version = "0.9.360"
+version = "0.9.370"
 dependencies = [
  "assert_cmd",
  "async-trait",
  "bridge-hub-kusama-runtime",
  "bridge-hub-rococo-runtime",
- "clap 4.0.32",
+ "clap 4.1.1",
  "collectives-polkadot-runtime",
  "contracts-rococo-runtime",
  "cumulus-client-cli",
@@ -9938,7 +9944,7 @@ source = "git+https://github.com/paritytech/substrate?branch=master#248fdf0d4b5e
 dependencies = [
  "array-bytes 4.2.0",
  "chrono",
- "clap 4.0.32",
+ "clap 4.1.1",
  "fdlimit",
  "futures",
  "libp2p",
@@ -10245,7 +10251,7 @@ name = "sc-finality-grandpa"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#248fdf0d4b5e3758cfdadb283b5eca5f0731e466"
 dependencies = [
- "ahash 0.8.3",
+ "ahash 0.8.2",
  "array-bytes 4.2.0",
  "async-trait",
  "dyn-clone",
@@ -10422,7 +10428,7 @@ name = "sc-network-gossip"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#248fdf0d4b5e3758cfdadb283b5eca5f0731e466"
 dependencies = [
- "ahash 0.8.3",
+ "ahash 0.8.2",
  "futures",
  "futures-timer",
  "libp2p",
@@ -10731,7 +10737,7 @@ name = "sc-storage-monitor"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#248fdf0d4b5e3758cfdadb283b5eca5f0731e466"
 dependencies = [
- "clap 4.0.32",
+ "clap 4.1.1",
  "futures",
  "log",
  "nix 0.26.2",
@@ -10938,7 +10944,7 @@ version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "772575a524feeb803e5b0fcbc6dd9f367e579488197c94c6e4023aad2305774d"
 dependencies = [
- "ahash 0.8.3",
+ "ahash 0.8.2",
  "cfg-if",
  "hashbrown 0.13.2",
 ]
@@ -12047,7 +12053,7 @@ name = "sp-trie"
 version = "7.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#248fdf0d4b5e3758cfdadb283b5eca5f0731e466"
 dependencies = [
- "ahash 0.8.3",
+ "ahash 0.8.2",
  "hash-db",
  "hashbrown 0.12.3",
  "lazy_static",
@@ -13165,7 +13171,7 @@ name = "try-runtime-cli"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#248fdf0d4b5e3758cfdadb283b5eca5f0731e466"
 dependencies = [
- "clap 4.0.32",
+ "clap 4.1.1",
  "frame-remote-externalities",
  "frame-try-runtime",
  "hex",

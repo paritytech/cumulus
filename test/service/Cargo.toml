@@ -10,7 +10,7 @@ path = "src/main.rs"
 
 [dependencies]
 async-trait = "0.1.60"
-clap = { version = "4.0.32", features = ["derive"] }
+clap = { version = "4.1.1", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 criterion = { version = "0.4.0", features = [ "async_tokio" ] }
 jsonrpsee = { version = "0.16.2", features = ["server"] }
@@ -81,6 +81,9 @@ polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch
 # Substrate dependencies
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
+[features]
+runtime-benchmarks = ["polkadot-test-service/runtime-benchmarks"]
 
 [[bench]]
 name = "transaction_throughput"

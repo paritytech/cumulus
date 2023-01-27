@@ -97,10 +97,7 @@ pub type UncheckedExtrinsic =
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
-pub type Migrations = (
-	pallet_contracts::Migration<Runtime>,
-	pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,
-);
+pub type Migrations = (pallet_contracts::Migration<Runtime>,);
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -123,7 +120,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("contracts-rococo"),
 	impl_name: create_runtime_str!("contracts-rococo"),
 	authoring_version: 1,
-	spec_version: 9360,
+	spec_version: 9370,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 4,
@@ -385,6 +382,7 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
 		[pallet_contracts, Contracts]
+		[pallet_xcm, PolkadotXcm]
 	);
 }
 

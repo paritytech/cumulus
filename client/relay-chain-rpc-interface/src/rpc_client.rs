@@ -17,13 +17,11 @@
 use crate::reconnecting_ws_client::ReconnectingWsClient;
 use cumulus_primitives_core::{
 	relay_chain::{
-		v2::{
-			CandidateCommitments, CandidateEvent, CommittedCandidateReceipt, CoreState,
-			DisputeState, GroupRotationInfo, OccupiedCoreAssumption, OldV1SessionInfo,
-			PvfCheckStatement, ScrapedOnChainVotes, SessionIndex, SessionInfo, ValidationCode,
-			ValidationCodeHash, ValidatorId, ValidatorIndex, ValidatorSignature,
-		},
-		CandidateHash, Hash as RelayHash, Header as RelayHeader, InboundHrmpMessage,
+		CandidateCommitments, CandidateEvent, CandidateHash, CommittedCandidateReceipt, CoreState,
+		DisputeState, GroupRotationInfo, Hash as RelayHash, Header as RelayHeader,
+		InboundHrmpMessage, OccupiedCoreAssumption, OldV1SessionInfo, PvfCheckStatement,
+		ScrapedOnChainVotes, SessionIndex, SessionInfo, ValidationCode, ValidationCodeHash,
+		ValidatorId, ValidatorIndex, ValidatorSignature,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
@@ -143,12 +141,9 @@ impl RelayChainRpcClient {
 		at: RelayHash,
 		index: SessionIndex,
 	) -> Result<Option<OldV1SessionInfo>, RelayChainError> {
-		self.call_remote_runtime_function(
-			"ParachainHost_session_info_before_version_2",
-			at,
-			Some(index),
-		)
-		.await
+		// The function in wasm never changes/gets augmented with a version
+		self.call_remote_runtime_function("ParachainHost_session_info", at, Some(index))
+			.await
 	}
 
 	/// Scrape dispute relevant from on-chain, backing votes and resolved disputes.
