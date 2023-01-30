@@ -36,15 +36,15 @@ pub const LOG_TARGET: &str = "runtime::bridge-assets-transfer";
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct BridgeConfig {
 	/// Contains location, which is able to bridge XCM messages to bridged network
-	bridge_location: MultiLocation,
+	pub bridge_location: MultiLocation,
 
 	/// Contains target destination on bridged network. E.g.: MultiLocation of Statemine/t on different consensus
 	// TODO:check-parameter - lets start with 1..1, maybe later we could extend this with BoundedVec
 	// TODO: bridged bridge-hub should have router for this
-	allowed_target_location: MultiLocation,
+	pub allowed_target_location: MultiLocation,
 
 	/// Fee which could be needed to pay in `bridge_location`
-	fee: Option<MultiAsset>,
+	pub fee: Option<MultiAsset>,
 }
 
 impl From<BridgeConfig> for (MultiLocation, Option<MultiAsset>) {
@@ -84,11 +84,11 @@ pub mod pallet {
 		/// How to withdraw and deposit an asset for reserve.
 		type AssetTransactor: TransactAsset;
 
+		/// The configurable origin to allow bridges configuration management
+		type AdminOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
 		/// Required origin for asset transfer. If successful, it resolves to `MultiLocation`.
-		type TransferXcmOrigin: EnsureOrigin<
-			<Self as frame_system::Config>::RuntimeOrigin,
-			Success = MultiLocation,
-		>;
+		type TransferOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = MultiLocation>;
 	}
 
 	/// Details of configured bridges which are allowed for transfer.
@@ -144,7 +144,7 @@ pub mod pallet {
 			assets: Box<VersionedMultiAssets>,
 			destination: Box<VersionedMultiLocation>,
 		) -> DispatchResult {
-			let origin_location = T::TransferXcmOrigin::ensure_origin(origin)?;
+			let origin_location = T::TransferOrigin::ensure_origin(origin)?;
 
 			// Check remote destination + bridge_config
 			let (bridge_config, remote_destination) =
@@ -274,7 +274,7 @@ pub mod pallet {
 			bridged_network: NetworkId,
 			bridge_config: Box<BridgeConfig>,
 		) -> DispatchResult {
-			let _ = ensure_root(origin)?;
+			let _ = T::AdminOrigin::ensure_origin(origin)?;
 			ensure!(!Bridges::<T>::contains_key(bridged_network), Error::<T>::InvalidConfiguration);
 			let allowed_target_location_network = bridge_config
 				.allowed_target_location
@@ -302,7 +302,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			bridged_network: NetworkId,
 		) -> DispatchResult {
-			let _ = ensure_root(origin)?;
+			let _ = T::AdminOrigin::ensure_origin(origin)?;
 			ensure!(Bridges::<T>::contains_key(bridged_network), Error::<T>::InvalidConfiguration);
 
 			Bridges::<T>::remove(bridged_network);
@@ -323,7 +323,7 @@ pub mod pallet {
 			bridged_network: NetworkId,
 			fee: Option<MultiAsset>,
 		) -> DispatchResult {
-			let _ = ensure_root(origin)?;
+			let _ = T::AdminOrigin::ensure_origin(origin)?;
 			ensure!(Bridges::<T>::contains_key(bridged_network), Error::<T>::InvalidConfiguration);
 
 			Bridges::<T>::try_mutate_exists(bridged_network, |bridge_config| {
@@ -396,6 +396,7 @@ mod tests {
 	use frame_support::{
 		assert_noop, assert_ok, dispatch::DispatchError, parameter_types, sp_io, sp_tracing,
 	};
+	use frame_system::EnsureRoot;
 	use polkadot_parachain::primitives::Sibling;
 	use sp_runtime::{
 		testing::{Header, H256},
@@ -563,7 +564,8 @@ mod tests {
 		type UniversalLocation = UniversalLocation;
 		type WeightInfo = ();
 		type AssetTransactor = CurrencyTransactor;
-		type TransferXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+		type AdminOrigin = EnsureRoot<AccountId>;
+		type TransferOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 	}
 
 	pub(crate) fn new_test_ext() -> sp_io::TestExternalities {

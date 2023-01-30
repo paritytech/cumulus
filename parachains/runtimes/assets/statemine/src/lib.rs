@@ -603,7 +603,8 @@ impl pallet_bridge_assets_transfer::Config for Runtime {
 	type UniversalLocation = UniversalLocation;
 	type WeightInfo = pallet_bridge_assets_transfer::weights::SubstrateWeight<Runtime>;
 	type AssetTransactor = AssetTransactors;
-	type TransferXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+	type AdminOrigin = AssetsForceOrigin;
+	type TransferOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

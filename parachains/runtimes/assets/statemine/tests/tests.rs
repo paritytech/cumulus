@@ -1,18 +1,21 @@
 use asset_test_utils::{mock_open_hrmp_channel, ExtBuilder, RuntimeHelper};
+use codec::Encode;
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
 	assert_noop, assert_ok,
 	traits::PalletInfo,
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
+use pallet_bridge_assets_transfer::BridgeConfig;
 use parachains_common::{AccountId, AuraId};
 use statemine_runtime::xcm_config::AssetFeeAsExistentialDepositMultiplierFeeCharger;
 pub use statemine_runtime::{
 	constants::fee::WeightToFee, xcm_config::XcmConfig, Assets, Balances, ExistentialDeposit,
-	ParachainSystem, PolkadotXcm, Runtime, RuntimeEvent, RuntimeOrigin, SessionKeys, System,
+	ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, SessionKeys,
+	System,
 };
 use xcm::{latest::prelude::*, VersionedMultiLocation, VersionedXcm};
-use xcm_executor::traits::WeightTrader;
+use xcm_executor::{traits::WeightTrader, XcmExecutor};
 
 pub const ALICE: [u8; 32] = [1u8; 32];
 
@@ -445,4 +448,65 @@ fn test_send_xcm_transact_with_remark_with_event_works() {
 				RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::XcmpMessageSent { .. })
 			)));
 		});
+}
+
+#[test]
+fn can_govornance_call_xcm_transact_with_bridge_assets_transfer_configuration() {
+	ExtBuilder::<Runtime>::default()
+		.with_collators(vec![AccountId::from(ALICE)])
+		.with_session_keys(vec![(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+		)])
+		.with_tracing()
+		.with_safe_xcm_version(3)
+		.build()
+		.execute_with(|| {
+			// bridge cfg data
+			let bridged_network = NetworkId::Polkadot;
+			let bridge_config = BridgeConfig {
+				bridge_location: (Parent, Parachain(1013)).into(),
+				allowed_target_location: MultiLocation::new(
+					2,
+					X2(GlobalConsensus(bridged_network), Parachain(1000)),
+				),
+				fee: None,
+			};
+
+			// check cfg before
+			let cfg = pallet_bridge_assets_transfer::Pallet::<Runtime>::bridges(&bridged_network);
+			assert!(cfg.is_none());
+
+			// prepare xcm as governance will do
+			let add_bridge_config: RuntimeCall = RuntimeCall::BridgeAssetsTransfer(
+				pallet_bridge_assets_transfer::Call::<Runtime>::add_bridge_config {
+					bridged_network,
+					bridge_config: Box::new(bridge_config.clone()),
+				},
+			);
+
+			// add bridge config call
+			let xcm = Xcm(vec![
+				UnpaidExecution { weight_limit: Unlimited, check_origin: None },
+				Transact {
+					origin_kind: OriginKind::Superuser,
+					require_weight_at_most: Weight::from_ref_time(1000000000),
+					call: add_bridge_config.encode().into(),
+				},
+			]);
+
+			// origin as relay chain
+			let origin = MultiLocation { parents: 1, interior: Here };
+
+			// initialize bridge through governance-like
+			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
+			let weight_limit = Weight::from_ref_time(41666666666);
+			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(origin, xcm, hash, weight_limit);
+			assert_eq!(outcome.ensure_complete(), Ok(()));
+
+			// check cfg after
+			let cfg = pallet_bridge_assets_transfer::Pallet::<Runtime>::bridges(&bridged_network);
+			assert_eq!(cfg, Some(bridge_config));
+		})
 }
