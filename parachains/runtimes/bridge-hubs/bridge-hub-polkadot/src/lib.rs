@@ -289,7 +289,6 @@ impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
-// TODO: map gov2 origins here - after merge https://github.com/paritytech/cumulus/pull/1895
 /// Privileged origin that represents Root or the majority of the Relay Chain Council.
 pub type RootOrExecutiveSimpleMajority = EitherOfDiverse<
 	EnsureRoot<AccountId>,
@@ -343,7 +342,6 @@ parameter_types! {
 	pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
-// TODO: map gov2 origins here - after merge https://github.com/paritytech/cumulus/pull/1895
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
 pub type CollatorSelectionUpdateOrigin = RootOrExecutiveSimpleMajority;
 
