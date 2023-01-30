@@ -140,7 +140,7 @@ impl CheckAssociatedRelayNumber for AnyRelayNumber {
 pub enum AggregateMessageOrigin {
 	Loopback,
 	Parent, // DMP
-	Sibling(ParaId), // HRMP
+	Sibling(ParaId), // HRMPo
 }
 
 #[frame_support::pallet]
@@ -442,6 +442,7 @@ pub mod pallet {
 			//	downward_messages,
 			//);
 			// FAIL-CI weight
+			// We enqueue the messages here. Processing happens `on_initialize`.
 			Self::enqueue_inbound_downward_messages(
 				relevant_messaging_state.dmq_mqc_head,
 				downward_messages,

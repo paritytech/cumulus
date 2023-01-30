@@ -31,13 +31,14 @@ mod test_pallet;
 
 use frame_support::traits::OnRuntimeUpgrade;
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
-use sp_core::OpaqueMetadata;
+use sp_core::{ConstU32, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{BlakeTwo256, Block as BlockT, IdentifyAccount, IdentityLookup, Verify},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
+use cumulus_pallet_parachain_system::AggregateMessageOrigin;
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -265,7 +266,9 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type OutboundXcmpMessageSource = ();
-	type DmpMessageHandler = ();
+	type DmpMessageMaxLen = ConstU32<0>;
+	type MessageEnqueue = ();
+	type MessageService = frame_support::traits::NoopServiceQueues< (AggregateMessageOrigin, u32, u32)>;
 	type ReservedDmpWeight = ();
 	type XcmpMessageHandler = ();
 	type ReservedXcmpWeight = ();

@@ -401,7 +401,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 //	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 //}
 
-use pallet_message_queue::OnQueueChanged;
+use frame_support::traits::OnQueueChanged;
 
 pub struct MessageProcessor;
 impl ProcessMessage for MessageProcessor {
@@ -409,12 +409,12 @@ impl ProcessMessage for MessageProcessor {
 
 	fn process_message(
 		_message: &[u8],
-		_origin: Self::Origin,
+		origin: Self::Origin,
 		weight_limit: Weight,
 	) -> Result<(bool, Weight), ProcessMessageError> {
 		let weight = Weight::from_parts(1, 1);
 
-		log::info!(target: "message-processor", "Processing message with {:?} weight", weight);
+		log::info!(target: "message-processor", "Processing message from {:?}", origin);
 		if weight.all_lte(weight_limit) {
 			Ok((true, weight))
 		} else {
@@ -423,25 +423,25 @@ impl ProcessMessage for MessageProcessor {
 	}
 }
 
+use cumulus_pallet_parachain_system::AggregateMessageOrigin;
+
 parameter_types! {
 	// FAIL-CI: pick good value
 	pub MessageQueueServiceWeight: Weight = Perbill::from_percent(20) *
 	RuntimeBlockWeights::get().max_block;
-	pub const MessageQueueHeapSize: u32 = 64 * 1024;
-	pub const MessageQueueMaxStale: u32 = 8;
 }
 
 impl pallet_message_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
-	//#[cfg(feature = "runtime-benchmarks")]
-	//type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor;
+	#[cfg(feature = "runtime-benchmarks")]
+	type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<AggregateMessageOrigin>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	type MessageProcessor = MessageProcessor;
+	type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<AggregateMessageOrigin>;
 	type Size = u32;
 	type QueueChangeHandler = ();
-	type HeapSize = MessageQueueHeapSize;
-	type MaxStale = MessageQueueMaxStale;
+	type HeapSize = ConstU32<{ 64 * 1024 }>;
+	type MaxStale = ConstU32<8>;
 	type ServiceWeight = MessageQueueServiceWeight;
 }
 
