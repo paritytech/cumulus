@@ -20,16 +20,19 @@ use super::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
+	traits::{
+		ConstU32, Contains, EnsureOrigin, EnsureOriginWithArg, Everything, Nothing,
+		PalletInfoAccess,
+	},
 };
-use pallet_xcm::XcmPassthrough;
+use pallet_xcm::{EnsureXcm, XcmPassthrough};
 use parachains_common::{
 	impls::ToStakingPot,
 	xcm_config::{
 		AssetFeeAsExistentialDepositMultiplier, DenyReserveTransferToRelayChain, DenyThenTry,
 	},
 };
-use polkadot_parachain::primitives::Sibling;
+use polkadot_parachain::primitives::{Id as ParaId, Sibling};
 use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -42,7 +45,7 @@ use xcm_builder::{
 	WeightInfoBounds, WithComputedOrigin,
 };
 use xcm_executor::{
-	traits::{JustTry, WithOriginFilter},
+	traits::{Convert, JustTry, WithOriginFilter},
 	XcmExecutor,
 };
 
@@ -392,6 +395,48 @@ impl pallet_xcm::Config for Runtime {
 impl cumulus_pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
+}
+
+pub type MultiLocationForAssetId = MultiLocation;
+
+pub type SovereignAccountOf = (
+	SiblingParachainConvertsVia<ParaId, AccountId>,
+	AccountId32Aliases<RelayNetwork, AccountId>,
+	ParentIsPreset<AccountId>,
+);
+
+// `EnsureOriginWithArg` impl for `CreateOrigin` that allows only XCM origins that are locations
+// containing the class location.
+pub struct ForeignCreators;
+impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
+	type Success = AccountId;
+
+	fn try_origin(
+		o: RuntimeOrigin,
+		a: &MultiLocation,
+	) -> sp_std::result::Result<Self::Success, RuntimeOrigin> {
+		let origin_location = EnsureXcm::<Everything>::try_origin(o.clone())?;
+		if !a.starts_with(&origin_location) {
+			return Err(o)
+		}
+		SovereignAccountOf::convert(origin_location).map_err(|_| o)
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn successful_origin(a: &MultiLocation) -> RuntimeOrigin {
+		pallet_xcm::Origin::Xcm(a.clone()).into()
+	}
+}
+
+/// Simple conversion of `u32` into an `AssetId` for use in benchmarking.
+pub struct XcmBenchmarkHelper;
+#[cfg(feature = "runtime-benchmarks")]
+use pallet_assets::BenchmarkHelper;
+#[cfg(feature = "runtime-benchmarks")]
+impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
+	fn create_asset_id_parameter(id: u32) -> MultiLocation {
+		MultiLocation { parents: 1, interior: X1(Parachain(id)) }
+	}
 }
 
 /// Bridge router, which wraps and sends xcm to BridgeHub to be delivered to the different GlobalConsensus

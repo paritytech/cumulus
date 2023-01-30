@@ -402,7 +402,7 @@ pub type SovereignAccountOf = (
 	ParentIsPreset<AccountId>,
 );
 
-// `EnsureOriginWithArg` impl for `CreateOrigin` which allows only XCM origins that are locations
+// `EnsureOriginWithArg` impl for `CreateOrigin` that allows only XCM origins that are locations
 // containing the class location.
 pub struct ForeignCreators;
 impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
@@ -422,6 +422,17 @@ impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
 	#[cfg(feature = "runtime-benchmarks")]
 	fn successful_origin(a: &MultiLocation) -> RuntimeOrigin {
 		pallet_xcm::Origin::Xcm(a.clone()).into()
+	}
+}
+
+/// Simple conversion of `u32` into an `AssetId` for use in benchmarking.
+pub struct XcmBenchmarkHelper;
+#[cfg(feature = "runtime-benchmarks")]
+use pallet_assets::BenchmarkHelper;
+#[cfg(feature = "runtime-benchmarks")]
+impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
+	fn create_asset_id_parameter(id: u32) -> MultiLocation {
+		MultiLocation { parents: 1, interior: X1(Parachain(id)) }
 	}
 }
 
@@ -566,16 +577,5 @@ where
 		} else {
 			Err(origin)
 		}
-	}
-}
-
-/// Simple conversion of `u32` into an `AssetId` for use in benchmarking.
-pub struct XcmBenchmarkHelper;
-#[cfg(feature = "runtime-benchmarks")]
-use pallet_assets::BenchmarkHelper;
-#[cfg(feature = "runtime-benchmarks")]
-impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
-	fn create_asset_id_parameter(id: u32) -> MultiLocation {
-		MultiLocation { parents: 1, interior: X1(Parachain(id)) }
 	}
 }

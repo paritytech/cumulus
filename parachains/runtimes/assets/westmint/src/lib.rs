@@ -242,7 +242,10 @@ impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 	type BenchmarkHelper = ();
 }
 
-/// Assets managed by some foreign location.
+/// Assets managed by some foreign location. Note: we do not declare a `ForeignAssetsCall` type, as
+/// this type is used in proxy definitions. We assume that a foreign location would not want to set
+/// an individual, local account as a proxy for the issuance of their assets. This issuance should
+/// be managed by the foreign location's governance.
 type ForeignAssetsInstance = pallet_assets::Instance2;
 impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -552,9 +555,6 @@ impl pallet_collator_selection::Config for Runtime {
 
 impl pallet_asset_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	// TODO https://github.com/paritytech/substrate/issues/12724
-	// This should be able to take assets from any pallet instance. For now we only allow
-	// sufficient, trust backed assets to pay for transaction fees.
 	type Fungibles = Assets;
 	type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
 		pallet_assets::BalanceToAssetBalance<

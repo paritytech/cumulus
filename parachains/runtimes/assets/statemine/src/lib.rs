@@ -65,8 +65,8 @@ use parachains_common::{
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{
-	AssetTransactors, BridgeXcmSender, KsmLocation, LocalOriginToLocation, UniversalLocation,
-	XcmConfig,
+	AssetTransactors, BridgeXcmSender, ForeignCreators, KsmLocation, LocalOriginToLocation,
+	MultiLocationForAssetId, UniversalLocation, XcmConfig,
 };
 
 #[cfg(any(feature = "std", test))]
@@ -260,6 +260,34 @@ impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
+}
+
+/// Assets managed by some foreign location. Note: we do not declare a `ForeignAssetsCall` type, as
+/// this type is used in proxy definitions. We assume that a foreign location would not want to set
+/// an individual, local account as a proxy for the issuance of their assets. This issuance should
+/// be managed by the foreign location's governance.
+type ForeignAssetsInstance = pallet_assets::Instance2;
+impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = Balance;
+	type AssetId = MultiLocationForAssetId;
+	type AssetIdParameter = MultiLocationForAssetId;
+	type Currency = Balances;
+	type CreateOrigin = ForeignCreators;
+	type ForceOrigin = AssetsForceOrigin;
+	type AssetDeposit = AssetDeposit;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = AssetsStringLimit;
+	type Freezer = ();
+	type Extra = ();
+	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
+	type CallbackHandle = ();
+	type AssetAccountDeposit = AssetAccountDeposit;
+	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = xcm_config::XcmBenchmarkHelper;
 }
 
 parameter_types! {
@@ -550,9 +578,6 @@ impl pallet_collator_selection::Config for Runtime {
 
 impl pallet_asset_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	// TODO https://github.com/paritytech/substrate/issues/12724
-	// This should be able to take assets from any pallet instance. For now we only allow
-	// sufficient, trust backed assets to pay for transaction fees.
 	type Fungibles = Assets;
 	type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
 		pallet_assets::BalanceToAssetBalance<
@@ -649,7 +674,10 @@ construct_runtime!(
 		// The main stage.
 		Assets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>} = 50,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
-		BridgeAssetsTransfer: pallet_bridge_assets_transfer::{Pallet, Call, Storage, Event<T>} = 52,
+		// Reserving 52 for pallet_nfts
+		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 53,
+		// TODO:check-parameter - do we need just one instance? or BridgeAssetsTransfer vs BridgeForeignAssetsTransfer(for transfer back) ?
+		BridgeAssetsTransfer: pallet_bridge_assets_transfer::{Pallet, Call, Storage, Event<T>} = 54,
 
 		#[cfg(feature = "state-trie-version-1")]
 		StateTrieMigration: pallet_state_trie_migration = 70,
@@ -702,6 +730,7 @@ mod benches {
 	define_benchmarks!(
 		[frame_system, SystemBench::<Runtime>]
 		[pallet_assets, Assets]
+		[pallet_assets, ForeignAssets]
 		[pallet_balances, Balances]
 		[pallet_multisig, Multisig]
 		[pallet_proxy, Proxy]
