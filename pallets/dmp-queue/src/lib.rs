@@ -289,81 +289,83 @@ pub mod pallet {
 			iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
 			limit: Weight,
 		) -> Weight {
-			let mut messages_processed = 0;
-			let mut page_index = PageIndex::<T>::get();
-			let config = Configuration::<T>::get();
 
-			// First try to use `max_weight` to service the current queue.
-			let mut used = Self::do_service_queue(limit, &mut page_index, &mut messages_processed);
-
-			// Then if the queue is empty, use the weight remaining to service the incoming messages
-			// and once we run out of weight, place them in the queue.
-			let item_count = iter.size_hint().0;
-			let mut maybe_enqueue_page = if page_index.end_used > page_index.begin_used {
-				// queue is already non-empty - start a fresh page.
-				Some(Vec::with_capacity(item_count))
-			} else {
-				None
-			};
-
-			for (i, (sent_at, data)) in iter.enumerate() {
-				if messages_processed >= MAX_MESSAGES_PER_BLOCK {
-					break
-				}
-				if maybe_enqueue_page.is_none() {
-					// We're not currently enqueuing - try to execute inline.
-					let remaining_weight = limit.saturating_sub(used);
-					messages_processed += 1;
-					match Self::try_service_message(remaining_weight, sent_at, &data[..]) {
-						Ok(consumed) => used += consumed,
-						Err((message_id, required_weight)) =>
-						// Too much weight required right now.
-						{
-							let is_under_limit = Overweight::<T>::count() < MAX_OVERWEIGHT_MESSAGES;
-							used.saturating_accrue(T::DbWeight::get().reads(1));
-							if required_weight.any_gt(config.max_individual) && is_under_limit {
-								// overweight - add to overweight queue and continue with
-								// message execution.
-								let overweight_index = page_index.overweight_count;
-								Overweight::<T>::insert(overweight_index, (sent_at, data));
-								Self::deposit_event(Event::OverweightEnqueued {
-									message_id,
-									overweight_index,
-									required_weight,
-								});
-								page_index.overweight_count += 1;
-								// Not needed for control flow, but only to ensure that the compiler
-								// understands that we won't attempt to re-use `data` later.
-								continue
-							} else {
-								// not overweight. stop executing inline and enqueue normally
-								// from here on.
-								let item_count_left = item_count.saturating_sub(i);
-								maybe_enqueue_page = Some(Vec::with_capacity(item_count_left));
-								Self::deposit_event(Event::WeightExhausted {
-									message_id,
-									remaining_weight,
-									required_weight,
-								});
-							}
-						},
-					}
-				}
-				// Cannot be an `else` here since the `maybe_enqueue_page` may have changed.
-				if let Some(ref mut enqueue_page) = maybe_enqueue_page {
-					enqueue_page.push((sent_at, data));
-				}
-			}
-
-			// Deposit the enqueued page if any and save the index.
-			if let Some(enqueue_page) = maybe_enqueue_page {
-				Pages::<T>::insert(page_index.end_used, enqueue_page);
-				page_index.end_used += 1;
-			}
-			PageIndex::<T>::put(page_index);
-
-			used
 		}
+		// 	let mut messages_processed = 0;
+		// 	let mut page_index = PageIndex::<T>::get();
+		// 	let config = Configuration::<T>::get();
+
+		// 	// First try to use `max_weight` to service the current queue.
+		// 	let mut used = Self::do_service_queue(limit, &mut page_index, &mut messages_processed);
+
+		// 	// Then if the queue is empty, use the weight remaining to service the incoming messages
+		// 	// and once we run out of weight, place them in the queue.
+		// 	let item_count = iter.size_hint().0;
+		// 	let mut maybe_enqueue_page = if page_index.end_used > page_index.begin_used {
+		// 		// queue is already non-empty - start a fresh page.
+		// 		Some(Vec::with_capacity(item_count))
+		// 	} else {
+		// 		None
+		// 	};
+
+		// 	for (i, (sent_at, data)) in iter.enumerate() {
+		// 		if messages_processed >= MAX_MESSAGES_PER_BLOCK {
+		// 			break
+		// 		}
+		// 		if maybe_enqueue_page.is_none() {
+		// 			// We're not currently enqueuing - try to execute inline.
+		// 			let remaining_weight = limit.saturating_sub(used);
+		// 			messages_processed += 1;
+		// 			match Self::try_service_message(remaining_weight, sent_at, &data[..]) {
+		// 				Ok(consumed) => used += consumed,
+		// 				Err((message_id, required_weight)) =>
+		// 				// Too much weight required right now.
+		// 				{
+		// 					let is_under_limit = Overweight::<T>::count() < MAX_OVERWEIGHT_MESSAGES;
+		// 					used.saturating_accrue(T::DbWeight::get().reads(1));
+		// 					if required_weight.any_gt(config.max_individual) && is_under_limit {
+		// 						// overweight - add to overweight queue and continue with
+		// 						// message execution.
+		// 						let overweight_index = page_index.overweight_count;
+		// 						Overweight::<T>::insert(overweight_index, (sent_at, data));
+		// 						Self::deposit_event(Event::OverweightEnqueued {
+		// 							message_id,
+		// 							overweight_index,
+		// 							required_weight,
+		// 						});
+		// 						page_index.overweight_count += 1;
+		// 						// Not needed for control flow, but only to ensure that the compiler
+		// 						// understands that we won't attempt to re-use `data` later.
+		// 						continue
+		// 					} else {
+		// 						// not overweight. stop executing inline and enqueue normally
+		// 						// from here on.
+		// 						let item_count_left = item_count.saturating_sub(i);
+		// 						maybe_enqueue_page = Some(Vec::with_capacity(item_count_left));
+		// 						Self::deposit_event(Event::WeightExhausted {
+		// 							message_id,
+		// 							remaining_weight,
+		// 							required_weight,
+		// 						});
+		// 					}
+		// 				},
+		// 			}
+		// 		}
+		// 		// Cannot be an `else` here since the `maybe_enqueue_page` may have changed.
+		// 		if let Some(ref mut enqueue_page) = maybe_enqueue_page {
+		// 			enqueue_page.push((sent_at, data));
+		// 		}
+		// 	}
+
+		// 	// Deposit the enqueued page if any and save the index.
+		// 	if let Some(enqueue_page) = maybe_enqueue_page {
+		// 		Pages::<T>::insert(page_index.end_used, enqueue_page);
+		// 		page_index.end_used += 1;
+		// 	}
+		// 	PageIndex::<T>::put(page_index);
+
+		// 	used
+		// }
 	}
 }
 

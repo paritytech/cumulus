@@ -91,7 +91,7 @@ pub mod pallet {
 		/// Something to execute an XCM message. We need this to service the XCMoXCMP queue.
 		type XcmExecutor: ExecuteXcm<Self::RuntimeCall>;
 
-		/// Information on the avaialble XCMP channels.
+		/// Information on the available XCMP channels.
 		type ChannelInfo: GetChannelInfo;
 
 		/// Means of converting an `Xcm` into a `VersionedXcm`.

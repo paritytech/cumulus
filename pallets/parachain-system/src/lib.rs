@@ -27,7 +27,8 @@
 //!
 //! Users must ensure that they register this pallet as an inherent provider.
 
-use codec::Encode;
+use codec::{MaxEncodedLen, Encode, Decode};
+use scale_info::TypeInfo;
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
 	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError,
@@ -43,6 +44,7 @@ use frame_support::{
 	traits::Get,
 	weights::Weight,
 };
+use frame_support::traits::{ServiceQueues, EnqueueMessage};
 use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
 use sp_runtime::{
@@ -134,6 +136,13 @@ impl CheckAssociatedRelayNumber for AnyRelayNumber {
 	fn check_associated_relay_number(_: RelayChainBlockNumber, _: RelayChainBlockNumber) {}
 }
 
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Eq, PartialEq, TypeInfo, Debug)]
+pub enum AggregateMessageOrigin {
+	Loopback,
+	Parent, // DMP
+	Sibling(ParaId), // HRMP
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -160,8 +169,18 @@ pub mod pallet {
 		/// The place where outbound XCMP messages come from. This is queried in `finalize_block`.
 		type OutboundXcmpMessageSource: XcmpMessageSource;
 
-		/// The message handler that will be invoked when messages are received via DMP.
-		type DmpMessageHandler: DmpMessageHandler;
+		#[pallet::constant]
+		type DmpMessageMaxLen: Get<u32>;
+
+		/// Enqueue a inbound downward message for later processing.
+		///
+		/// This is normally a [`EnqueueMessage`] wrapped in a [`EnqueueWithOrigin`].
+		type MessageEnqueue: EnqueueMessage<AggregateMessageOrigin>;
+
+		/// Process inbound downward messages which had been enqueued via [`Self::MessageEnqueue`].
+		///
+		/// FAIL-CI this is a bit inflexible...
+		type MessageService: ServiceQueues<OverweightMessageAddress=(AggregateMessageOrigin, u32, u32)>;
 
 		/// The weight we reserve at the beginning of the block for processing DMP messages.
 		type ReservedDmpWeight: Get<Weight>;
@@ -418,7 +437,12 @@ pub mod pallet {
 
 			// TODO: This is more than zero, but will need benchmarking to figure out what.
 			let mut total_weight = Weight::zero();
-			total_weight += Self::process_inbound_downward_messages(
+			//total_weight += Self::process_inbound_downward_messages(
+			//	relevant_messaging_state.dmq_mqc_head,
+			//	downward_messages,
+			//);
+			// FAIL-CI weight
+			Self::enqueue_inbound_downward_messages(
 				relevant_messaging_state.dmq_mqc_head,
 				downward_messages,
 			);
@@ -770,7 +794,7 @@ impl<T: Config> GetChannelInfo for Pallet<T> {
 }
 
 impl<T: Config> Pallet<T> {
-	/// Process all inbound downward messages relayed by the collator.
+	/// Enqueue all inbound downward messages relayed by the collator into the MQ pallet.
 	///
 	/// Checks if the sequence of the messages is valid, dispatches them and communicates the
 	/// number of processed messages to the collator via a storage update.
@@ -779,10 +803,11 @@ impl<T: Config> Pallet<T> {
 	///
 	/// If it turns out that after processing all messages the Message Queue Chain
 	/// hash doesn't match the expected.
-	fn process_inbound_downward_messages(
+	fn enqueue_inbound_downward_messages(
 		expected_dmq_mqc_head: relay_chain::Hash,
 		downward_messages: Vec<InboundDownwardMessage>,
 	) -> Weight {
+		use sp_runtime::BoundedSlice;
 		let dm_count = downward_messages.len() as u32;
 		let mut dmq_head = <LastDmqMqcHead<T>>::get();
 
@@ -792,13 +817,16 @@ impl<T: Config> Pallet<T> {
 			let max_weight =
 				<ReservedDmpWeightOverride<T>>::get().unwrap_or_else(T::ReservedDmpWeight::get);
 
-			let message_iter = downward_messages
-				.into_iter()
+			let bounded = downward_messages
+				.iter()
 				.inspect(|m| {
 					dmq_head.extend_downward(m);
 				})
-				.map(|m| (m.sent_at, m.msg));
-			weight_used += T::DmpMessageHandler::handle_dmp_messages(message_iter, max_weight);
+				// FAIL-CI propagate bound
+				.filter_map(|m| BoundedSlice::try_from(&m.msg[..]).ok());
+			//weight_used += T::DmpMessageHandler::handle_dmp_messages(message_iter, max_weight);
+			// Put all messages into the MQ pallet. // FAIL-CI weight
+			T::MessageEnqueue::enqueue_messages(bounded, AggregateMessageOrigin::Parent);
 			<LastDmqMqcHead<T>>::put(&dmq_head);
 
 			Self::deposit_event(Event::DownwardMessagesProcessed {

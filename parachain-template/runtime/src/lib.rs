@@ -358,14 +358,21 @@ impl pallet_transaction_payment::Config for Runtime {
 parameter_types! {
 	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
 	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+	// FAIL-CI how to do a more compact TypedGet here?
+	pub const DmpAggregateOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
 }
+
+use cumulus_pallet_parachain_system::AggregateMessageOrigin;
+use frame_support::traits::*;
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
 	type OutboundXcmpMessageSource = XcmpQueue;
-	type DmpMessageHandler = DmpQueue;
+	type DmpMessageMaxLen = pallet_message_queue::MaxMessageLenOf<Runtime>;
+	type MessageEnqueue = MessageQueue;
+	type MessageService = MessageQueue;
 	type ReservedDmpWeight = ReservedDmpWeight;
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
@@ -388,10 +395,54 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type PriceForSiblingDelivery = ();
 }
 
-impl cumulus_pallet_dmp_queue::Config for Runtime {
+//impl cumulus_pallet_dmp_queue::Config for Runtime {
+//	type RuntimeEvent = RuntimeEvent;
+//	type XcmExecutor = XcmExecutor<XcmConfig>;
+//	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+//}
+
+use pallet_message_queue::OnQueueChanged;
+
+pub struct MessageProcessor;
+impl ProcessMessage for MessageProcessor {
+	type Origin = AggregateMessageOrigin;
+
+	fn process_message(
+		_message: &[u8],
+		_origin: Self::Origin,
+		weight_limit: Weight,
+	) -> Result<(bool, Weight), ProcessMessageError> {
+		let weight = Weight::from_parts(1, 1);
+
+		log::info!(target: "message-processor", "Processing message with {:?} weight", weight);
+		if weight.all_lte(weight_limit) {
+			Ok((true, weight))
+		} else {
+			Err(ProcessMessageError::Overweight(weight))
+		}
+	}
+}
+
+parameter_types! {
+	// FAIL-CI: pick good value
+	pub MessageQueueServiceWeight: Weight = Perbill::from_percent(20) *
+	RuntimeBlockWeights::get().max_block;
+	pub const MessageQueueHeapSize: u32 = 64 * 1024;
+	pub const MessageQueueMaxStale: u32 = 8;
+}
+
+impl pallet_message_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+	type WeightInfo = ();
+	//#[cfg(feature = "runtime-benchmarks")]
+	//type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor;
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	type MessageProcessor = MessageProcessor;
+	type Size = u32;
+	type QueueChangeHandler = ();
+	type HeapSize = MessageQueueHeapSize;
+	type MaxStale = MessageQueueMaxStale;
+	type ServiceWeight = MessageQueueServiceWeight;
 }
 
 parameter_types! {
@@ -480,7 +531,8 @@ construct_runtime!(
 		XcmpQueue: cumulus_pallet_xcmp_queue = 30,
 		PolkadotXcm: pallet_xcm = 31,
 		CumulusXcm: cumulus_pallet_xcm = 32,
-		DmpQueue: cumulus_pallet_dmp_queue = 33,
+		// RIP DmpQueue 33,
+		MessageQueue: pallet_message_queue = 34,
 
 		// Template
 		TemplatePallet: pallet_template = 40,
