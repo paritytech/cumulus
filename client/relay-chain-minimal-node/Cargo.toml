@@ -15,22 +15,22 @@ polkadot-node-network-protocol = { git = "https://github.com/paritytech/polkadot
 polkadot-network-bridge = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # substrate deps
-sc-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-network-common = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-keystore = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-network-common = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sp-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
 
 # cumulus deps
 cumulus-relay-chain-interface = { path = "../relay-chain-interface" }

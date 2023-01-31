@@ -363,7 +363,6 @@ parameter_types! {
 }
 
 use cumulus_pallet_parachain_system::AggregateMessageOrigin;
-use frame_support::traits::*;
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;

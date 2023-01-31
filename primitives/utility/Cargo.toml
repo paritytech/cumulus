@@ -9,10 +9,10 @@ codec = { package = "parity-scale-codec", version = "3.0.0", default-features = 
 log = { version = "0.4.17", default-features = false }
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
 
 # Polkadot
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }

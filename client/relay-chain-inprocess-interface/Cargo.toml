@@ -10,16 +10,16 @@ futures = "0.3.25"
 futures-timer = "3.0.2"
 
 # Substrate
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
 
 # Polkadot
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false, features = ["cli"] }
@@ -33,7 +33,7 @@ cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 [dev-dependencies]
 
 # Substrate
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
 
 # Polkadot
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }

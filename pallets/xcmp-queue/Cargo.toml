@@ -11,11 +11,11 @@ rand_chacha = { version = "0.3.0", default-features = false }
 scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
 
 # Polkadot
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -26,13 +26,13 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", default-feature
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 
 # Optional import for benchmarking
-frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
 
 [dev-dependencies]
 
 # Substrate
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
 
 # Polkadot
 xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "master" }

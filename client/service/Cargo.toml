@@ -9,16 +9,16 @@ parking_lot = "0.12.1"
 futures = "0.3.24"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
 
 # Polkadot
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }

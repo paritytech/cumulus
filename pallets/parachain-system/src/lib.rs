@@ -139,7 +139,7 @@ impl CheckAssociatedRelayNumber for AnyRelayNumber {
 pub enum AggregateMessageOrigin {
 	Loopback,
 	Parent,          // DMP
-	Sibling(ParaId), // HRMPo
+	Sibling(ParaId), // HRMP
 }
 
 #[frame_support::pallet]
@@ -173,12 +173,12 @@ pub mod pallet {
 
 		/// Enqueue a inbound downward message for later processing.
 		///
-		/// This is normally a [`EnqueueMessage`] wrapped in a [`EnqueueWithOrigin`].
+		/// This is normally an [`EnqueueMessage`] wrapped in an [`EnqueueWithOrigin`].
 		type MessageEnqueue: EnqueueMessage<AggregateMessageOrigin>;
 
 		/// Process inbound downward messages which had been enqueued via [`Self::MessageEnqueue`].
 		///
-		/// FAIL-CI this is a bit inflexible...
+		/// FAIL-CI should probably use `TransformOrigin`
 		type MessageService: ServiceQueues<
 			OverweightMessageAddress = (AggregateMessageOrigin, u32, u32),
 		>;
