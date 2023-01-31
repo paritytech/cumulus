@@ -117,6 +117,52 @@ struct Candidate<Block: BlockT> {
 	waiting_recovery: bool,
 }
 
+struct RecoveryQueue<Block: BlockT> {
+	candidate_queue: VecDeque<Block::Hash>,
+	signaling_queue: FuturesUnordered<Pin<Box<dyn Future<Output = ()> + Send>>>,
+}
+
+impl<Block: BlockT> RecoveryQueue<Block> {
+	pub fn new() -> Self {
+		return Self { candidate_queue: VecDeque::new(), signaling_queue: FuturesUnordered::new() }
+	}
+
+	pub fn push_candidate(&mut self, hash: Block::Hash, delay: RecoveryDelay) {
+		let delay = delay.min + delay.max.saturating_sub(delay.min).mul_f64(thread_rng().gen());
+		tracing::debug!(
+			target: LOG_TARGET,
+			block_hash = ?hash,
+			"Starting block recovery in {:?} sec",
+			delay.as_secs(),
+		);
+		self.candidate_queue.push_back(hash);
+		self.signaling_queue.push(
+			async move {
+				Delay::new(delay).await;
+			}
+			.boxed(),
+		);
+	}
+
+	pub async fn next_candidate(&mut self) -> Block::Hash {
+		loop {
+			if let Some(_) = self.signaling_queue.next().await {
+				if let Some(hash) = self.candidate_queue.pop_front() {
+					return hash
+				} else {
+					tracing::warn!(
+						target: LOG_TARGET,
+						"Recovery was signaled, but no candidate hash available."
+					);
+					futures::pending!()
+				};
+			} else {
+				futures::pending!()
+			}
+		}
+	}
+}
+
 /// Encapsulates the logic of the pov recovery.
 pub struct PoVRecovery<Block: BlockT, PC, RC> {
 	/// All the pending candidates that we are waiting for to be imported or that need to be
@@ -124,9 +170,9 @@ pub struct PoVRecovery<Block: BlockT, PC, RC> {
 	candidates: HashMap<Block::Hash, Candidate<Block>>,
 	/// A stream of futures that resolve to hashes of candidates that need to be recovered.
 	///
-	/// The candidates to the hashes are stored in `pending_candidates`. If a candidate is not
+	/// The candidates to the hashes are stored in `candidates`. If a candidate is not
 	/// available anymore in this map, it means that it was already imported.
-	next_candidate_to_recover: FuturesUnordered<Pin<Box<dyn Future<Output = Block::Hash> + Send>>>,
+	candidate_recovery_queue: RecoveryQueue<Block>,
 	active_candidate_recovery: ActiveCandidateRecovery<Block>,
 	/// Blocks that wait that the parent is imported.
 	///
@@ -158,7 +204,7 @@ where
 	) -> Self {
 		Self {
 			candidates: HashMap::new(),
-			next_candidate_to_recover: Default::default(),
+			candidate_recovery_queue: RecoveryQueue::new(),
 			active_candidate_recovery: ActiveCandidateRecovery::new(overseer_handle),
 			recovery_delay,
 			waiting_for_parent: HashMap::new(),
@@ -438,22 +484,7 @@ where
 
 		if do_recover {
 			for hash in to_recover.into_iter().rev() {
-				let delay =
-					delay.min + delay.max.saturating_sub(delay.min).mul_f64(thread_rng().gen());
-				tracing::debug!(
-					target: LOG_TARGET,
-					block_hash = ?hash,
-					"Starting {:?} block recovery in {:?} sec",
-					kind,
-					delay.as_secs(),
-				);
-				self.next_candidate_to_recover.push(
-					async move {
-						Delay::new(delay).await;
-						hash
-					}
-					.boxed(),
-				);
+				self.candidate_recovery_queue.push_candidate(hash, delay);
 			}
 		}
 	}
@@ -507,10 +538,8 @@ where
 						return;
 					}
 				},
-				next_to_recover = self.next_candidate_to_recover.next() => {
-					if let Some(block_hash) = next_to_recover {
-						self.recover_candidate(block_hash).await;
-					}
+				next_to_recover = self.candidate_recovery_queue.next_candidate().fuse() => {
+						self.recover_candidate(next_to_recover).await;
 				},
 				(block_hash, available_data) =
 					self.active_candidate_recovery.wait_for_recovery().fuse() =>
