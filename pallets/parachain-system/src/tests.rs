@@ -17,8 +17,8 @@ use super::*;
 
 use codec::Encode;
 use cumulus_primitives_core::{
-	relay_chain::BlockNumber as RelayBlockNumber, AbridgedHrmpChannel, InboundDownwardMessage,
-	InboundHrmpMessage, PersistedValidationData,
+	relay_chain::BlockNumber as RelayBlockNumber, AbridgedHrmpChannel, DmpMessageHandler,
+	InboundDownwardMessage, InboundHrmpMessage, PersistedValidationData,
 };
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use frame_support::{
@@ -26,7 +26,7 @@ use frame_support::{
 	dispatch::UnfilteredDispatchable,
 	inherent::{InherentData, ProvideInherent},
 	parameter_types,
-	traits::{OnFinalize, OnInitialize},
+	traits::{OnFinalize, OnInitialize, ProcessMessage, ProcessMessageError},
 	weights::Weight,
 };
 use frame_system::RawOrigin;
@@ -53,6 +53,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		ParachainSystem: parachain_system::{Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned},
+		MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -98,25 +99,45 @@ impl frame_system::Config for Test {
 	type OnSetCode = ParachainSetCode<Self>;
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
+
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = ParachainId;
 	type OutboundXcmpMessageSource = FromThreadLocal;
 	type DmpMessageMaxLen = sp_core::ConstU32<0>;
-	type MessageEnqueue = ();
-	type MessageService = frame_support::traits::NoopServiceQueues< (AggregateMessageOrigin, u32, u32)>;
+	type MessageEnqueue = MessageQueue;
+	type MessageService = MessageQueue;
 	type ReservedDmpWeight = ReservedDmpWeight;
 	type XcmpMessageHandler = SaveIntoThreadLocal;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
+parameter_types! {
+	pub const MaxWeight: Weight = Weight::MAX;
+}
+
+impl pallet_message_queue::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type MessageProcessor =
+		pallet_message_queue::mock_helpers::NoopMessageProcessor<AggregateMessageOrigin>;
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	type MessageProcessor = SaveIntoThreadLocal;
+	type Size = u32;
+	type QueueChangeHandler = ();
+	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
+	type MaxStale = sp_core::ConstU32<8>;
+	type ServiceWeight = MaxWeight;
+}
+
 pub struct FromThreadLocal;
 pub struct SaveIntoThreadLocal;
 
 std::thread_local! {
-	static HANDLED_DMP_MESSAGES: RefCell<Vec<(relay_chain::BlockNumber, Vec<u8>)>> = RefCell::new(Vec::new());
+	static HANDLED_DMP_MESSAGES: RefCell<Vec<Vec<u8>>> = RefCell::new(Vec::new());
 	static HANDLED_XCMP_MESSAGES: RefCell<Vec<(ParaId, relay_chain::BlockNumber, Vec<u8>)>> = RefCell::new(Vec::new());
 	static SENT_MESSAGES: RefCell<Vec<(ParaId, Vec<u8>)>> = RefCell::new(Vec::new());
 }
@@ -148,17 +169,21 @@ impl XcmpMessageSource for FromThreadLocal {
 	}
 }
 
-impl DmpMessageHandler for SaveIntoThreadLocal {
-	fn handle_dmp_messages(
-		iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
-		_max_weight: Weight,
-	) -> Weight {
+impl ProcessMessage for SaveIntoThreadLocal {
+	type Origin = AggregateMessageOrigin;
+
+	fn process_message(
+		message: &[u8],
+		origin: Self::Origin,
+		_weight_limit: Weight,
+	) -> Result<(bool, Weight), ProcessMessageError> {
+		assert_eq!(origin, Self::Origin::Parent); // FAIL-CI use transformed origin
+
 		HANDLED_DMP_MESSAGES.with(|m| {
-			for i in iter {
-				m.borrow_mut().push(i);
-			}
+			m.borrow_mut().push(message.to_vec());
 			Weight::zero()
-		})
+		});
+		Ok((true, Weight::zero()))
 	}
 }
 
@@ -718,7 +743,7 @@ fn receive_dmp() {
 		.add(1, || {
 			HANDLED_DMP_MESSAGES.with(|m| {
 				let mut m = m.borrow_mut();
-				assert_eq!(&*m, &[(MSG.sent_at, MSG.msg.clone())]);
+				assert_eq!(&*m, &[(MSG.msg.clone())]);
 				m.clear();
 			});
 		});
@@ -726,6 +751,7 @@ fn receive_dmp() {
 
 #[test]
 fn receive_dmp_after_pause() {
+	sp_tracing::try_init_simple();
 	lazy_static::lazy_static! {
 		static ref MSG_1: InboundDownwardMessage = InboundDownwardMessage {
 			sent_at: 1,
@@ -773,7 +799,7 @@ fn receive_dmp_after_pause() {
 		.add(1, || {
 			HANDLED_DMP_MESSAGES.with(|m| {
 				let mut m = m.borrow_mut();
-				assert_eq!(&*m, &[(MSG_1.sent_at, MSG_1.msg.clone())]);
+				assert_eq!(&*m, &[(MSG_1.msg.clone())]);
 				m.clear();
 			});
 		})
@@ -781,7 +807,7 @@ fn receive_dmp_after_pause() {
 		.add(3, || {
 			HANDLED_DMP_MESSAGES.with(|m| {
 				let mut m = m.borrow_mut();
-				assert_eq!(&*m, &[(MSG_2.sent_at, MSG_2.msg.clone())]);
+				assert_eq!(&*m, &[(MSG_2.msg.clone())]);
 				m.clear();
 			});
 		});

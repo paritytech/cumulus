@@ -27,13 +27,12 @@
 //!
 //! Users must ensure that they register this pallet as an inherent provider.
 
-use codec::{MaxEncodedLen, Encode, Decode};
-use scale_info::TypeInfo;
+use codec::{Decode, Encode, MaxEncodedLen};
 use cumulus_primitives_core::{
-	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
-	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError,
-	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
-	XcmpMessageHandler, XcmpMessageSource,
+	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, GetChannelInfo,
+	InboundDownwardMessage, InboundHrmpMessage, MessageSendError, OutboundHrmpMessage, ParaId,
+	PersistedValidationData, UpwardMessage, UpwardMessageSender, XcmpMessageHandler,
+	XcmpMessageSource,
 };
 use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
 use frame_support::{
@@ -41,12 +40,12 @@ use frame_support::{
 	ensure,
 	inherent::{InherentData, InherentIdentifier, ProvideInherent},
 	storage,
-	traits::Get,
+	traits::{EnqueueMessage, Get, ServiceQueues},
 	weights::Weight,
 };
-use frame_support::traits::{ServiceQueues, EnqueueMessage};
 use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
+use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{Block as BlockT, BlockNumberProvider, Hash},
 	transaction_validity::{
@@ -139,7 +138,7 @@ impl CheckAssociatedRelayNumber for AnyRelayNumber {
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Eq, PartialEq, TypeInfo, Debug)]
 pub enum AggregateMessageOrigin {
 	Loopback,
-	Parent, // DMP
+	Parent,          // DMP
 	Sibling(ParaId), // HRMPo
 }
 
@@ -180,7 +179,9 @@ pub mod pallet {
 		/// Process inbound downward messages which had been enqueued via [`Self::MessageEnqueue`].
 		///
 		/// FAIL-CI this is a bit inflexible...
-		type MessageService: ServiceQueues<OverweightMessageAddress=(AggregateMessageOrigin, u32, u32)>;
+		type MessageService: ServiceQueues<
+			OverweightMessageAddress = (AggregateMessageOrigin, u32, u32),
+		>;
 
 		/// The weight we reserve at the beginning of the block for processing DMP messages.
 		type ReservedDmpWeight: Get<Weight>;
@@ -442,11 +443,13 @@ pub mod pallet {
 			//	downward_messages,
 			//);
 			// FAIL-CI weight
-			// We enqueue the messages here. Processing happens `on_initialize`.
 			Self::enqueue_inbound_downward_messages(
 				relevant_messaging_state.dmq_mqc_head,
 				downward_messages,
 			);
+			// FAIL-CI do this in on_initialize or manually here?
+			T::MessageService::service_queues(Weight::MAX);
+
 			total_weight += Self::process_inbound_horizontal_messages(
 				&relevant_messaging_state.ingress_channels,
 				horizontal_messages,
@@ -812,10 +815,10 @@ impl<T: Config> Pallet<T> {
 		let dm_count = downward_messages.len() as u32;
 		let mut dmq_head = <LastDmqMqcHead<T>>::get();
 
-		let mut weight_used = Weight::zero();
+		let weight_used = Weight::zero();
 		if dm_count != 0 {
 			Self::deposit_event(Event::DownwardMessagesReceived { count: dm_count });
-			let max_weight =
+			let _max_weight =
 				<ReservedDmpWeightOverride<T>>::get().unwrap_or_else(T::ReservedDmpWeight::get);
 
 			let bounded = downward_messages

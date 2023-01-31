@@ -188,7 +188,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			) |
 			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 			RuntimeCall::XcmpQueue(..) |
-			RuntimeCall::DmpQueue(..) |
 			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
 			RuntimeCall::Assets(
 				pallet_assets::Call::create { .. } |

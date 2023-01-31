@@ -381,6 +381,29 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 
 impl parachain_info::Config for Runtime {}
 
+parameter_types! {
+	// FAIL-CI: pick good value
+	pub MessageQueueServiceWeight: Weight = Weight::MAX;
+}
+
+impl pallet_message_queue::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
+		cumulus_pallet_parachain_system::AggregateMessageOrigin,
+	>;
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
+		cumulus_pallet_parachain_system::AggregateMessageOrigin,
+	>;
+	type Size = u32;
+	type QueueChangeHandler = ();
+	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
+	type MaxStale = sp_core::ConstU32<8>;
+	type ServiceWeight = MessageQueueServiceWeight;
+}
+
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
@@ -393,56 +416,6 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = ();
 	type PriceForSiblingDelivery = ();
-}
-
-//impl cumulus_pallet_dmp_queue::Config for Runtime {
-//	type RuntimeEvent = RuntimeEvent;
-//	type XcmExecutor = XcmExecutor<XcmConfig>;
-//	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-//}
-
-use frame_support::traits::OnQueueChanged;
-
-pub struct MessageProcessor;
-impl ProcessMessage for MessageProcessor {
-	type Origin = AggregateMessageOrigin;
-
-	fn process_message(
-		_message: &[u8],
-		origin: Self::Origin,
-		weight_limit: Weight,
-	) -> Result<(bool, Weight), ProcessMessageError> {
-		let weight = Weight::from_parts(1, 1);
-
-		log::info!(target: "message-processor", "Processing message from {:?}", origin);
-		if weight.all_lte(weight_limit) {
-			Ok((true, weight))
-		} else {
-			Err(ProcessMessageError::Overweight(weight))
-		}
-	}
-}
-
-use cumulus_pallet_parachain_system::AggregateMessageOrigin;
-
-parameter_types! {
-	// FAIL-CI: pick good value
-	pub MessageQueueServiceWeight: Weight = Perbill::from_percent(20) *
-	RuntimeBlockWeights::get().max_block;
-}
-
-impl pallet_message_queue::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
-	#[cfg(feature = "runtime-benchmarks")]
-	type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<AggregateMessageOrigin>;
-	#[cfg(not(feature = "runtime-benchmarks"))]
-	type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<AggregateMessageOrigin>;
-	type Size = u32;
-	type QueueChangeHandler = ();
-	type HeapSize = ConstU32<{ 64 * 1024 }>;
-	type MaxStale = ConstU32<8>;
-	type ServiceWeight = MessageQueueServiceWeight;
 }
 
 parameter_types! {

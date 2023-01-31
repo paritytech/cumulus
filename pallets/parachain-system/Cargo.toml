@@ -16,6 +16,7 @@ scale-info = { version = "2.3.1", default-features = false, features = ["derive"
 # Substrate
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-message-queue = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-externalities = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -23,6 +24,7 @@ sp-io = { git = "https://github.com/paritytech/substrate", default-features = fa
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
@@ -61,18 +63,24 @@ std = [
 	"cumulus-primitives-parachain-inherent/std",
 	"frame-support/std",
 	"frame-system/std",
+	"pallet-message-queue/std",
 	"sp-core/std",
 	"sp-externalities/std",
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-state-machine/std",
 	"sp-std/std",
+	"sp-tracing/std",
 	"sp-trie/std",
 	"xcm/std",
 ]
 
 runtime-benchmarks = [
-	"sp-runtime/runtime-benchmarks"
+	"sp-runtime/runtime-benchmarks",
+	"pallet-message-queue/runtime-benchmarks",
 ]
 
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"frame-support/try-runtime",
+	"pallet-message-queue/try-runtime",
+]
