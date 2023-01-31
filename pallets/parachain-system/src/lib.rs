@@ -171,7 +171,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type DmpMessageMaxLen: Get<u32>;
 
-		/// Enqueue a inbound downward message for later processing.
+		/// Enqueue an inbound downward message for later processing.
 		///
 		/// This is normally an [`EnqueueMessage`] wrapped in an [`EnqueueWithOrigin`].
 		type MessageEnqueue: EnqueueMessage<AggregateMessageOrigin>;
