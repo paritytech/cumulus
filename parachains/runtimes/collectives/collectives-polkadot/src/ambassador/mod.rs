@@ -16,10 +16,12 @@
 //! The Ambassador Program.
 //!
 //! The module defines the following on-chain functionality of the Ambassador Program:
-//! - managed set of the program members, where every member has a [rank](ranks) (via [pallet_ranked_collective]).
-//! - referendum functionality for the program members to propose, vote and execute passed proposals on behalf
-//! of the members of a certain [rank](Origin) (via [pallet_referenda]).
-//! - managed content (charter, announcements) (via [pallet_collective_content]).
+//!
+//! - Managed set of program members, where every member has a [rank](ranks) (via
+//!   [pallet_ranked_collective]).
+//! - Referendum functionality for the program members to propose, vote on, and execute proposals on
+//!   behalf of the members of a certain [rank](Origin) (via [pallet_referenda]).
+//! - Managed content (charter, announcements) (via [pallet_collective_content]).
 
 pub mod origins;
 mod tracks;
@@ -36,7 +38,7 @@ use sp_runtime::{
 	traits::{ConstU16, TypedGet},
 };
 
-/// The Ambassador Program members ranks.
+/// The Ambassador Program's member ranks.
 pub mod ranks {
 	use pallet_ranked_collective::Rank;
 

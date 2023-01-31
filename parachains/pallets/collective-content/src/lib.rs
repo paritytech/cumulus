@@ -13,16 +13,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Managed collective content.
+//! Managed Collective Content Pallet
 //!
-//! The pallet provides the functionality to store different types of the content.
-//! The content presented as a [Cid] of the IPFS document which might contain any type of data.
-//! Every type of the content has its own origin to be manage. The origins are configurable by clients.
-//! Storing the content does not require a deposit, the content expected to be managed by a trusted collective.
+//! The pallet provides the functionality to store different types of content. This would typically
+//! be used by an on-chain collective, such as the Polkadot Alliance or Ambassador Program.
+//!
+//! The pallet stores content as a [Cid], which should correspond to some off-chain hosting service,
+//! such as IPFS, and contain any type of data. Each type of content has its own origin from which
+//! it can be managed. The origins are configurable in the runtime. Storing content does not require
+//! a deposit, as it is expected to be managed by a trusted collective.
 //!
 //! Content types:
-//! - the collective [charter](pallet::Charter). A single document managed by [CharterOrigin](pallet::Config::CharterOrigin).
-//! - the collective [announcements](pallet::Announcements). A list of announcements managed by [AnnouncementOrigin](pallet::Config::AnnouncementOrigin).
+//!
+//! - Collective [charter](pallet::Charter): A single document (`Cid`) managed by
+//!   [CharterOrigin](pallet::Config::CharterOrigin).
+//! - Collective [announcements](pallet::Announcements): A list of announcements managed by
+//!   [AnnouncementOrigin](pallet::Config::AnnouncementOrigin).
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -85,11 +91,10 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxAnnouncementsCount: Get<u32>;
 
-		/// Weights information needed for the pallet.
+		/// Weight information needed for the pallet.
 		type WeightInfo: WeightInfo;
 	}
 
-	/// Errors encountered by the pallet (not a full list).
 	#[pallet::error]
 	pub enum Error<T, I = ()> {
 		/// The announcement is not found.
@@ -97,10 +102,9 @@ pub mod pallet {
 		/// Number of announcements exceeds `MaxAnnouncementsCount`.
 		TooManyAnnouncements,
 		/// Cannot expire in the past.
-		InvalidExpire,
+		InvalidExpiration,
 	}
 
-	/// Events emitted by the pallet.
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
@@ -156,7 +160,7 @@ pub mod pallet {
 		/// Parameters:
 		/// - `origin`: Must be the [Config::CharterOrigin].
 		/// - `cid`: [CID](super::Cid) of the IPFS document to announce.
-		/// - `maybe_expire`: expiration block of the announcement.
+		/// - `maybe_expire`: Expiration block of the announcement.
 		///
 		/// Weight: `O(1)`.
 		#[pallet::call_index(1)]
@@ -170,7 +174,7 @@ pub mod pallet {
 
 			let now = frame_system::Pallet::<T>::block_number();
 			let maybe_expire_at = maybe_expire.map(|e| e.evaluate(now));
-			ensure!(maybe_expire_at.map_or(true, |e| e > now), Error::<T, I>::InvalidExpire);
+			ensure!(maybe_expire_at.map_or(true, |e| e > now), Error::<T, I>::InvalidExpiration);
 
 			let mut announcements = <Announcements<T, I>>::get();
 			announcements
@@ -214,7 +218,7 @@ pub mod pallet {
 	}
 
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
-		/// Cleanup expired announcements.
+		/// Clean up expired announcements.
 		pub fn cleanup_announcements(now: T::BlockNumber) {
 			if NextAnnouncementExpireAt::<T, I>::get().map_or(true, |next| next > now) {
 				// no expired announcements expected.
@@ -259,7 +263,7 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config<I>, I: 'static> Hooks<T::BlockNumber> for Pallet<T, I> {
-		/// Cleanup expired announcements if there is enough `remaining_weight` weight left.
+		/// Clean up expired announcements if there is enough `remaining_weight` weight left.
 		fn on_idle(now: T::BlockNumber, remaining_weight: Weight) -> Weight {
 			let weight = T::WeightInfo::cleanup_announcements();
 			if remaining_weight.any_lt(weight) {

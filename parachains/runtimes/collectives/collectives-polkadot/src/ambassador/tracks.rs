@@ -13,16 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! The Ambassador Program referendum voting tracks.
+//! The Ambassador Program's referenda voting tracks.
 
 use super::Origin;
 use crate::{Balance, BlockNumber, RuntimeOrigin, DAYS, MINUTES, UNITS};
 use sp_runtime::Perbill;
 
-/// Referendum TrackId type.
+/// Referendum `TrackId` type.
 pub type TrackId = u16;
 
-/// Referendum tracks ids.
+/// Referendum track IDs.
 pub mod constants {
 	use super::TrackId;
 

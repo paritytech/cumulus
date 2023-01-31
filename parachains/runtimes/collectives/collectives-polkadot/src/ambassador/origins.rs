@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! The Ambassador Program origins.
+//! The Ambassador Program's origins.
 
 #[frame_support::pallet]
 pub mod pallet_origins {
@@ -77,8 +77,8 @@ pub mod pallet_origins {
 		}
 	}
 
-	/// Implementation of the [EnsureOrigin] trait for the plurality voice [Origin]s with the success result
-	/// of the corresponding [Rank]. Not implemented for the [Origin::Candidate].
+	/// Implementation of the [EnsureOrigin] trait for the plurality voice [Origin]s with the
+	/// success result of the corresponding [Rank]. Not implemented for [Origin::Candidate].
 	pub struct EnsureRankedAmbassador;
 
 	impl<O: Into<Result<Origin, O>> + From<Origin>> EnsureOrigin<O> for EnsureRankedAmbassador {
