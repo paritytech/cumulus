@@ -40,29 +40,53 @@ cat chain-spec-plain.json | jq --rawfile code rt-hex.txt '.genesis.runtime.syste
     | jq '.id = "bridge-hub-polkadot"' \
     | jq '.chainType = "Live"' \
     | jq '.bootNodes = [
+                        "/dns/polkadot-bridge-hub-connect-a-0.polkadot.io/tcp/30334/p2p/12D3KooWAVQMhkXmc5ueSYasdsRWQbKus2YGZ6HDZUB4ViJMCxXy",
+                        "/dns/polkadot-bridge-hub-connect-a-1.polkadot.io/tcp/30334/p2p/12D3KooWG4ypDHLKGCv4BZ6PuaGUwQHKAH6p2D6arR2uQ1eiR1T3",
+                        "/dns/polkadot-bridge-hub-connect-b-0.polkadot.io/tcp/30334/p2p/12D3KooWCwGKxjpJXnx1mwXKvaxGQm769EM3b6Pg5vbU33wbhsNw",
+                        "/dns/polkadot-bridge-hub-connect-b-1.polkadot.io/tcp/30334/p2p/12D3KooWLiSEdhriJUPdZKFtAjZrQncxN2ssEoDKVrt5mGM4Qu4J",
 
+                        "/dns/polkadot-bridge-hub-connect-a-0.polkadot.io/tcp/443/wss/p2p/12D3KooWAVQMhkXmc5ueSYasdsRWQbKus2YGZ6HDZUB4ViJMCxXy",
+                        "/dns/polkadot-bridge-hub-connect-a-1.polkadot.io/tcp/443/wss/p2p/12D3KooWG4ypDHLKGCv4BZ6PuaGUwQHKAH6p2D6arR2uQ1eiR1T3",
+                        "/dns/polkadot-bridge-hub-connect-b-0.polkadot.io/tcp/443/wss/p2p/12D3KooWCwGKxjpJXnx1mwXKvaxGQm769EM3b6Pg5vbU33wbhsNw",
+                        "/dns/polkadot-bridge-hub-connect-b-1.polkadot.io/tcp/443/wss/p2p/12D3KooWLiSEdhriJUPdZKFtAjZrQncxN2ssEoDKVrt5mGM4Qu4J"
                        ]' \
     | jq '.relay_chain = "polkadot"' \
     | jq --argjson para_id $para_id '.para_id = $para_id' \
     | jq --argjson para_id $para_id '.genesis.runtime.parachainInfo.parachainId = $para_id' \
     | jq '.genesis.runtime.balances.balances = []' \
     | jq '.genesis.runtime.collatorSelection.invulnerables = [
-                                                                "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-                                                                "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
+                                                                "TODO:ACC1",
+                                                                "TODO:ACC2",
+                                                                "TODO:ACC3",
+                                                                "TODO:ACC4"
                                                              ]' \
     | jq '.genesis.runtime.session.keys = [
                                               [
-                                                "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-                                                "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+                                                "TODO:ACC1",
+                                                "TODO:ACC1",
                                                 {
-                                                  "aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+                                                  "aura": "5EX6AnyuSPEFQ7HAPjRgzqk1sxgh8cyacGimwJ16y1nJ2w7g"
                                                 }
                                               ],
                                               [
-                                                "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-                                                "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+                                                "TODO:ACC2",
+                                                "TODO:ACC2",
                                                 {
-                                                  "aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
+                                                  "aura": "5DZN8UhaJftvKhMMARmJBwrwzuEDpoUzzBvvWMbFXYsJ4CmK"
+                                                }
+                                              ],
+                                              [
+                                                "TODO:ACC3",
+                                                "TODO:ACC3",
+                                                {
+                                                  "aura": "5FKsn83rXQQiw7HwoeYoLMoYS5GP9YVNHZiCHwA4DSwDcPVa"
+                                                }
+                                              ],
+                                              [
+                                                "TODO:ACC4",
+                                                "TODO:ACC4",
+                                                {
+                                                  "aura": "5DCg19ckcJz4m52Th4o1LcSRK3H7NsUcQsRbu7pTDM3mZ26v"
                                                 }
                                               ]
                                           ]' \
