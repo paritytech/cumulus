@@ -23,7 +23,7 @@ use frame_support::{
 };
 use pallet_alliance::{ProposalIndex, ProposalProvider};
 use sp_std::{cmp::Ordering, marker::PhantomData, prelude::*};
-use xcm::latest::{Fungibility, Junction, NetworkId, Parent};
+use xcm::latest::{Fungibility, Junction, Parent};
 
 type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 
