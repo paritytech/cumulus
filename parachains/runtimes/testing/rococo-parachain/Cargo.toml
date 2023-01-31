@@ -10,29 +10,29 @@ codec = { package = "parity-scale-codec", version = "3.0.0", default-features = 
 scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
 
 # Substrate
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", optional = true, default-features = false, branch = "oty-mp-queue" }
-frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", optional = true, default-features = false, branch = "master" }
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -43,7 +43,7 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", default-feature
 
 # Cumulus
 cumulus-pallet-aura-ext = { path = "../../../../pallets/aura-ext", default-features = false }
-pallet-message-queue = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
+pallet-message-queue = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 cumulus-pallet-parachain-system = { path = "../../../../pallets/parachain-system", default-features = false }
 cumulus-pallet-xcm = { path = "../../../../pallets/xcm", default-features = false }
@@ -56,7 +56,7 @@ parachains-common = { path = "../../../common", default-features = false }
 parachain-info = { path = "../../../pallets/parachain-info", default-features = false }
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [features]
 default = [ "std" ]

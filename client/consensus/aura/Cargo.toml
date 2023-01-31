@@ -12,22 +12,22 @@ futures = "0.3.25"
 tracing = "0.1.37"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sc-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sc-consensus-slots = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-application-crypto = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus-slots = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-application-crypto = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Cumulus
 cumulus-client-consensus-common = { path = "../common" }

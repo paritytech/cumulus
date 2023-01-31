@@ -14,19 +14,19 @@ log = { version = "0.4.17", default-features = false }
 scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-pallet-message-queue = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-externalities = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-tracing = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
-sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "oty-mp-queue" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-message-queue = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-externalities = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, features = [ "wasm-api" ], branch = "master" }
@@ -42,10 +42,10 @@ hex-literal = "0.3.4"
 lazy_static = "1.4"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-version = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-version = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Cumulus
 cumulus-test-client = { path = "../../test/client" }

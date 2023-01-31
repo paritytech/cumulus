@@ -10,10 +10,10 @@ polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "m
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 tokio = { version = "1.24.2", features = ["sync"] }
 futures = "0.3.25"

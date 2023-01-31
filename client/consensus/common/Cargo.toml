@@ -14,12 +14,12 @@ log = "0.4.17"
 tracing = "0.1.37"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -33,7 +33,7 @@ cumulus-client-pov-recovery = { path = "../../pov-recovery" }
 futures-timer = "3.0.2"
 
 # Substrate
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "oty-mp-queue" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Cumulus
 cumulus-test-client = { path = "../../../test/client" }
