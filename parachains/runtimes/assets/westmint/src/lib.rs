@@ -32,7 +32,7 @@ use crate::xcm_config::{ForeignCreators, MultiLocationForAssetId};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::traits::ConstU128;
 use frame_system::EnsureSignedBy;
-use parachains_common::impls::{DoubleAsset, MultiLocationConverter};
+use parachains_common::impls::{DoubleAsset, MultiLocationConverter, WrappedU256};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -324,7 +324,7 @@ impl pallet_dex::Config for Runtime {
 	type MultiAssetIdConverter = MultiLocationConverter<Balances, parachain_info::Pallet<Runtime>>;
 
 	type Balance = u128;
-	type PromotedBalance = u128; // TODO U256 https://github.com/paritytech/parity-common/issues/714
+	type PromotedBalance = WrappedU256;
 }
 
 parameter_types! {
