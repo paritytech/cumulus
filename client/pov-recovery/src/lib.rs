@@ -112,6 +112,8 @@ struct Candidate<Block: BlockT> {
 	block_number: NumberFor<Block>,
 	parent_hash: Block::Hash,
 	// Lazy recovery has been submitted.
+	// Should be true iff a block is either queued to be recovered or
+	// recovery is currently in progress.
 	waiting_recovery: bool,
 }
 
@@ -217,8 +219,8 @@ where
 		});
 	}
 
-	/// Handle an imported block.
-	fn handle_block_imported(&mut self, block_hash: &Block::Hash) {
+	/// Block is no longer waiting for recovery
+	fn clear_waiting_recovery(&mut self, block_hash: &Block::Hash) {
 		self.candidates.get_mut(block_hash).map(|candidate| {
 			// Prevents triggering an already enqueued recovery request
 			candidate.waiting_recovery = false;
@@ -263,6 +265,7 @@ where
 			Some(data) => data,
 			None => {
 				self.clear_waiting_for_parent(block_hash);
+				self.clear_waiting_recovery(&block_hash);
 				return
 			},
 		};
@@ -276,6 +279,7 @@ where
 				tracing::debug!(target: LOG_TARGET, ?error, "Failed to decompress PoV");
 
 				self.clear_waiting_for_parent(block_hash);
+				self.clear_waiting_recovery(&block_hash);
 
 				return
 			},
@@ -290,6 +294,7 @@ where
 					"Failed to decode parachain block data from recovered PoV",
 				);
 
+				self.clear_waiting_recovery(&block_hash);
 				self.clear_waiting_for_parent(block_hash);
 
 				return
@@ -302,12 +307,18 @@ where
 
 		match self.parachain_client.block_status(parent) {
 			Ok(BlockStatus::Unknown) => {
-				if self.active_candidate_recovery.is_being_recovered(&parent) {
+				// If the parent block is currently being recovered or is scheduled to be recovered, we want to wait for the parent.
+				let parent_scheduled_for_recovery =
+					self.candidates.get(&parent).map_or(false, |parent| parent.waiting_recovery);
+				if self.active_candidate_recovery.is_being_recovered(&parent) ||
+					parent_scheduled_for_recovery
+				{
 					tracing::debug!(
 						target: LOG_TARGET,
 						?block_hash,
 						parent_hash = ?parent,
-						"Parent is still being recovered, waiting.",
+						parent_scheduled_for_recovery,
+						"Waiting for recovery of parent.",
 					);
 
 					self.waiting_for_parent.entry(parent).or_default().push(block);
@@ -321,6 +332,7 @@ where
 					);
 
 					self.clear_waiting_for_parent(block_hash);
+					self.clear_waiting_recovery(&block_hash);
 
 					return
 				}
@@ -334,6 +346,7 @@ where
 				);
 
 				self.clear_waiting_for_parent(block_hash);
+				self.clear_waiting_recovery(&block_hash);
 
 				return
 			},
@@ -480,7 +493,7 @@ where
 				},
 				imported = imported_blocks.next() => {
 					if let Some(imported) = imported {
-						self.handle_block_imported(&imported.hash);
+						self.clear_waiting_recovery(&imported.hash);
 					} else {
 						tracing::debug!(target: LOG_TARGET,	"Imported blocks stream ended");
 						return;
