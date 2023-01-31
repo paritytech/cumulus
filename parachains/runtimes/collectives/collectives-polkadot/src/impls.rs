@@ -64,8 +64,8 @@ where
 			RuntimeOrigin::signed(temp_account.into()),
 			Box::new(Parent.into()),
 			Box::new(
-				Junction::AccountId32 { network: NetworkId::Any, id: treasury_acc.into() }
-					.into()
+				Junction::AccountId32 { network: None, id: treasury_acc.into() }
+					.into_location()
 					.into(),
 			),
 			Box::new((Parent, imbalance).into()),
