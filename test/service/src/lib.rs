@@ -385,7 +385,7 @@ where
 			para_id,
 			relay_chain_interface,
 			import_queue: import_queue_service,
-			relay_chain_slot_duration: Duration::from_secs(6),
+			relay_chain_slot_duration: Duration::from_millis(600),
 		};
 
 		start_full_node(params)?;
