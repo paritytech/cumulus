@@ -15,14 +15,14 @@
 
 use super::{
 	AccountId, AllPalletsWithSystem, AssetIdForTrustBackedAssets, Assets, Authorship, Balance,
-	Balances, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent,
-	RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
+	Balances, ForeignAssets, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall,
+	RuntimeEvent, RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
 use frame_support::{
 	match_types, parameter_types,
 	traits::{
-		ConstU32, Contains, EnsureOrigin, EnsureOriginWithArg, Everything, OriginTrait,
-		PalletInfoAccess,
+		ConstU32, Contains, ContainsPair, EnsureOrigin, EnsureOriginWithArg, Everything,
+		OriginTrait, PalletInfoAccess,
 	},
 };
 use pallet_xcm::{EnsureXcm, XcmPassthrough};
@@ -40,13 +40,13 @@ use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
 	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, AsPrefixedGeneralIndex,
 	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FungiblesAdapter, IsConcrete, LocalMint,
-	NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
-	WithComputedOrigin,
+	NativeAsset, NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+	WeightInfoBounds, WithComputedOrigin,
 };
 use xcm_executor::{
-	traits::{Convert, ConvertOrigin, JustTry, ShouldExecute, WithOriginFilter},
+	traits::{Convert, ConvertOrigin, Identity, JustTry, ShouldExecute, WithOriginFilter},
 	XcmExecutor,
 };
 
@@ -92,7 +92,7 @@ pub type CurrencyTransactor = CurrencyAdapter<
 /// Means for transacting assets besides the native currency on this chain.
 pub type FungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
-	Assets, // todo: accept all instances
+	Assets,
 	// Use this currency when it is a fungible asset matching the given location or name:
 	ConvertedConcreteId<
 		AssetIdForTrustBackedAssets,
@@ -114,8 +114,27 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	// The account to use for tracking teleports.
 	CheckingAccount,
 >;
+
+/// Means for transacting foreign assets from different global consensus.
+pub type ForeignFungiblesTransactor = FungiblesAdapter<
+	// Use this fungibles implementation:
+	ForeignAssets,
+	// Use this currency when it is a fungible asset matching the given location or name:
+	ConvertedConcreteId<MultiLocationForAssetId, Balance, Identity, JustTry>,
+	// Convert an XCM MultiLocation into a local account id:
+	LocationToAccountId,
+	// Our chain's account ID type (we can't get away without mentioning it explicitly):
+	AccountId,
+	// TODO:check-parameter - no teleports
+	NoChecking,
+	// The account to use for tracking teleports.
+	CheckingAccount,
+>;
+
 /// Means for transacting assets on this chain.
-pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
+// TODO:check-paramter - FungiblesTransactor cannot be in the middle, because stops tuple execution, check/fix?
+// TODO:check-paramter - possible bug for matches_fungibles and return error and tuple processing?
+pub type AssetTransactors = (CurrencyTransactor, ForeignFungiblesTransactor, FungiblesTransactor);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -293,10 +312,10 @@ impl xcm_executor::Config for XcmConfig {
 	type XcmSender = XcmRouter;
 	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	// Westmint does not recognize a reserve location for any asset. This does not prevent
-	// Westmint acting _as_ a reserve location for WND and assets created under `pallet-assets`.
+	// Westmint is acting _as_ a reserve location for WND and assets created under `pallet-assets`.
 	// For WND, users must use teleport where allowed (e.g. with the Relay Chain).
-	type IsReserve = ();
+	type IsReserve =
+		(ConcreteFungibleAssetsFromTrustedBridgedReserves<TrustedBridgedReserveLocations>);
 	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of WND
 	type UniversalLocation = UniversalLocation;
 	type Barrier = Barrier;
@@ -317,10 +336,10 @@ impl xcm_executor::Config for XcmConfig {
 					TrustBackedAssetsPalletLocation,
 					AssetIdForTrustBackedAssets,
 					JustTry,
-				>, // todo: accept all instances
+				>,
 				JustTry,
 			>,
-			Assets, // todo: accept all instances
+			Assets,
 			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
 				FungiblesTransactor,
 				AccountId,
@@ -429,6 +448,7 @@ impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
 pub struct XcmBenchmarkHelper;
 #[cfg(feature = "runtime-benchmarks")]
 use pallet_assets::BenchmarkHelper;
+
 #[cfg(feature = "runtime-benchmarks")]
 impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 	fn create_asset_id_parameter(id: u32) -> MultiLocation {
@@ -437,10 +457,21 @@ impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 }
 
 parameter_types! {
+	// TODO:check-parameter - join all together in one on-chain cfg (statemine/t, eth(chain_ids), ...)
+
 	// TODO:check-parameter - add new pallet and persist/manage this via governance?
 	// Means, that we accept some `GlobalConsensus` from some `MultiLocation` (which is supposed to be our bridge-hub)
 	pub TrustedBridgedNetworks: sp_std::vec::Vec<(MultiLocation, Junction)> = sp_std::vec![
 		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Rococo))
+	];
+	// TODO:check-parameter - add new pallet and persist/manage this via governance?
+	// TODO:check-parameter - we specify here just trusted location, we can extend this with some AssetFilter patterns to trust only to several assets
+	pub TrustedBridgedReserveLocations: sp_std::vec::Vec<MultiLocation> = sp_std::vec![
+		// TODO:check-parameter - tmp values that cover local/live Rococo/Wococo run
+		MultiLocation { parents: 2, interior: X2(GlobalConsensus(Rococo), Parachain(1000)) },
+		MultiLocation { parents: 2, interior: X2(GlobalConsensus(Kusama), Parachain(1000)) },
+		MultiLocation { parents: 2, interior: X2(GlobalConsensus(Rococo), Parachain(1015)) },
+		MultiLocation { parents: 2, interior: X2(GlobalConsensus(Kusama), Parachain(1015)) },
 	];
 }
 
@@ -450,16 +481,47 @@ impl Contains<(MultiLocation, Junction)> for TrustedBridgedNetworks {
 	}
 }
 
+impl Contains<MultiLocation> for TrustedBridgedReserveLocations {
+	fn contains(t: &MultiLocation) -> bool {
+		Self::get().contains(t)
+	}
+}
+
 pub type BridgedCallsBarrier = (
 	// TODO:check-parameter - verify, if we need for production (usefull at least for testing connection in production)
 	AllowExecutionForTrapFrom<Everything>,
 	// TODO:check-parameter - verify, if we need for production
 	AllowExecutionForTransactFrom<Everything>,
+	// TODO:check-parameter - setup fess
+	// TODO:check-parameter - change Everything to some Contains with trusted BridgeHub configuration
+	// Configured trusted BridgeHub gets free execution.
+	AllowExplicitUnpaidExecutionFrom<Everything>,
 	// Expected responses are OK.
 	AllowKnownQueryResponses<PolkadotXcm>,
 	// Subscriptions for version tracking are OK.
 	AllowSubscriptionsFrom<Everything>,
 );
+
+/// Asset filter that allows all assets from trusted bridge location
+pub struct ConcreteFungibleAssetsFromTrustedBridgedReserves<TrustedReserverLocations>(
+	sp_std::marker::PhantomData<TrustedReserverLocations>,
+);
+impl<TrustedReserverLocations: Contains<MultiLocation>> ContainsPair<MultiAsset, MultiLocation>
+	for ConcreteFungibleAssetsFromTrustedBridgedReserves<TrustedReserverLocations>
+{
+	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+		log::trace!(
+			target: "xcm::barriers",
+			"ConcreteFungibleAssetsFromTrustedBridgedReserves origin: {:?}, asset: {:?}",
+			origin, asset,
+		);
+		if !TrustedReserverLocations::contains(origin) {
+			return false
+		}
+		// TODO:check-parameter - better assets filtering
+		matches!(asset, MultiAsset { id: AssetId::Concrete(_), fun: Fungible(_) })
+	}
+}
 
 pub struct AllowExecutionForTrapFrom<T>(sp_std::marker::PhantomData<T>);
 impl<T: Contains<MultiLocation>> ShouldExecute for AllowExecutionForTrapFrom<T> {

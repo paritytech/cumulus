@@ -214,6 +214,8 @@ pub mod pallet {
 				.expect("aaa");
 
 			let xcm: Xcm<()> = sp_std::vec![
+				// TODO:check-parameter - setup fees
+				UnpaidExecution { weight_limit: Unlimited, check_origin: None },
 				ReserveAssetDeposited(asset.into()),
 				ClearOrigin,
 				DepositAsset { assets: All.into(), beneficiary: remote_destination }
