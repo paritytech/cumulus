@@ -21,9 +21,28 @@ use bp_messages::{
 };
 use bp_runtime::{messages::MessageDispatchResult, AccountIdOf, Chain};
 use codec::{Decode, Encode};
-use frame_support::{dispatch::Weight, CloneNoBound, EqNoBound, PartialEqNoBound};
-use scale_info::TypeInfo;
+use frame_support::{
+	dispatch::Weight, ensure, traits::Get, CloneNoBound, EqNoBound, PartialEqNoBound,
+};
 use xcm_builder::{DispatchBlob, DispatchBlobError, HaulBlob, HaulBlobError};
+
+use rustc_hex::ToHexIter;
+
+use scale_info::{
+	prelude::{format, string::String},
+	TypeInfo,
+};
+
+use sp_std::{marker::PhantomData, vec::Vec};
+
+use xcm::{latest::prelude::*, prelude::*};
+
+pub fn bytes_to_hex(bytes: &[u8]) -> String {
+	let iter = ToHexIter::new(bytes.iter());
+	format!("0x{}", iter.collect::<String>())
+}
+
+const LOG_TARGET: &str = "bridge-hub-debug";
 
 /// PLain "XCM" payload, which we transfer through bridge
 pub type XcmAsPlainPayload = sp_std::prelude::Vec<u8>;
@@ -34,6 +53,55 @@ pub enum XcmBlobMessageDispatchResult {
 	InvalidPayload,
 	Dispatched,
 	NotDispatched(#[codec(skip)] &'static str),
+}
+
+#[derive(Clone, Encode, Decode)]
+pub struct BridgedMessage {
+	/// The message destination as a *Universal Location*. This means it begins with a
+	/// `GlobalConsensus` junction describing the network under which global consensus happens.
+	/// If this does not match our global consensus then it's a fatal error.
+	universal_dest: VersionedInteriorMultiLocation,
+	message: VersionedXcm<()>,
+}
+
+pub struct DebugBridgeBlobDispatcher<Router, OurPlace>(PhantomData<(Router, OurPlace)>);
+impl<Router: SendXcm, OurPlace: Get<InteriorMultiLocation>> DispatchBlob
+	for DebugBridgeBlobDispatcher<Router, OurPlace>
+{
+	fn dispatch_blob(blob: Vec<u8>) -> Result<(), DispatchBlobError> {
+		let our_universal = OurPlace::get();
+		let our_global =
+			our_universal.global_consensus().map_err(|()| DispatchBlobError::Unbridgable)?;
+		log::error!(target: LOG_TARGET, "Encoded message: {:?}", bytes_to_hex(&blob));
+		log::error!(target: LOG_TARGET, "Our global: {:?}", our_global);
+		let BridgedMessage { universal_dest, message } =
+			Decode::decode(&mut &blob[..]).map_err(|_| DispatchBlobError::InvalidEncoding)?;
+		log::error!(
+			target: LOG_TARGET,
+			"Universal dest: {:?}, message: {:?}",
+			universal_dest,
+			message
+		);
+		let universal_dest: InteriorMultiLocation = universal_dest
+			.try_into()
+			.map_err(|_| DispatchBlobError::UnsupportedLocationVersion)?;
+		// `universal_dest` is the desired destination within the universe: first we need to check
+		// we're in the right global consensus.
+		let intended_global = universal_dest
+			.global_consensus()
+			.map_err(|()| DispatchBlobError::NonUniversalDestination)?;
+		ensure!(intended_global == our_global, DispatchBlobError::WrongGlobal);
+
+		let dest = universal_dest.relative_to(&our_universal);
+		log::error!(target: LOG_TARGET, "Relative dest: {:?}", dest);
+
+		let message: Xcm<()> =
+			message.try_into().map_err(|_| DispatchBlobError::UnsupportedXcmVersion)?;
+		log::error!(target: LOG_TARGET, "XCM message: {:?}", message);
+
+		send_xcm::<Router>(dest, message).map_err(|_| DispatchBlobError::RoutingError)?;
+		Ok(())
+	}
 }
 
 /// [`XcmBlobMessageDispatch`] is responsible for dispatching received messages from other BridgeHub

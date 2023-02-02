@@ -981,6 +981,7 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-runtime-common",
  "rococo-runtime-constants",
+ "rustc-hex",
  "scale-info",
  "serde",
  "serial_test",

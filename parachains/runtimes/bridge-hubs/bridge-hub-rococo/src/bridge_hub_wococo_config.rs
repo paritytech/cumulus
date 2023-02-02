@@ -34,7 +34,9 @@ use xcm::{
 	latest::prelude::*,
 	prelude::{InteriorMultiLocation, NetworkId},
 };
-use xcm_builder::{BridgeBlobDispatcher, HaulBlobExporter};
+use xcm_builder::HaulBlobExporter;
+
+use crate::DebugBridgeBlobDispatcher;
 
 // TODO:check-parameter
 parameter_types! {
@@ -57,7 +59,7 @@ pub type ToRococoBridgeHubMessagesDeliveryProof =
 
 /// Dispatches received XCM messages from other bridge
 pub type OnBridgeHubWococoBlobDispatcher =
-	BridgeBlobDispatcher<XcmRouter, BridgeHubWococoUniversalLocation>;
+	DebugBridgeBlobDispatcher<XcmRouter, BridgeHubWococoUniversalLocation>;
 
 /// Export XCM messages to be relayed to the otherside
 pub type ToBridgeHubRococoHaulBlobExporter = HaulBlobExporter<
