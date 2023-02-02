@@ -40,7 +40,7 @@ add_to_genesis = false
   validator = true # collator
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["-lparachain::availability=trace,sync=debug,parachain=debug,cumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements", "--bootnodes {{'bob'|zombie('multiAddress')}}",  "--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
+  args = ["-lparachain::availability=trace,sync=debug,parachain=debug,cumulus-pov-recovery=debug,cumulus-consensus=debug", "--use-null-consensus", "--disable-block-announcements", "--bootnodes {{'bob'|zombie('multiAddress')}}",  "--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
 
   # run eve as a parachain full node
   [[parachains.collators]]

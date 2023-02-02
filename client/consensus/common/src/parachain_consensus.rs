@@ -56,7 +56,7 @@ where
 		Ok(finalized_heads_stream) => finalized_heads_stream,
 		Err(err) => {
 			tracing::error!(target: LOG_TARGET, error = ?err, "Unable to retrieve finalized heads stream.");
-			return;
+			return
 		},
 	};
 
@@ -67,7 +67,7 @@ where
 			h
 		} else {
 			tracing::debug!(target: LOG_TARGET, "Stopping following finalized head.");
-			return;
+			return
 		};
 
 		let header = match Block::Header::decode(&mut &finalized_head[..]) {
@@ -78,7 +78,7 @@ where
 					error = ?err,
 					"Could not decode parachain header while following finalized heads.",
 				);
-				continue;
+				continue
 			},
 		};
 
@@ -171,15 +171,15 @@ async fn follow_new_best<P, R, Block, B>(
 	R: RelayChainInterface + Clone,
 	B: Backend<Block>,
 {
-	let new_best_heads = match new_best_heads(relay_chain, para_id).await {
-		Ok(best_heads_stream) => best_heads_stream.fuse(),
+	let new_best_relay_heads = match new_best_heads(relay_chain, para_id).await {
+		Ok(best_relay_heads_stream) => best_relay_heads_stream.fuse(),
 		Err(err) => {
 			tracing::error!(target: LOG_TARGET, error = ?err, "Unable to retrieve best heads stream.");
-			return;
+			return
 		},
 	};
 
-	pin_mut!(new_best_heads);
+	pin_mut!(new_best_relay_heads);
 
 	let mut imported_blocks = parachain.import_notification_stream().fuse();
 	// The unset best header of the parachain. Will be `Some(_)` when we have imported a relay chain
@@ -189,10 +189,10 @@ async fn follow_new_best<P, R, Block, B>(
 
 	loop {
 		select! {
-			h = new_best_heads.next() => {
-				match h {
-					Some(h) => handle_new_best_parachain_head(
-						h,
+			relay_header = new_best_relay_heads.next() => {
+				match relay_header {
+					Some(relay_header) => handle_new_best_parachain_head(
+						relay_header,
 						&*parachain,
 						&mut unset_best_header,
 						recovery_chan_tx.as_mut(),
@@ -252,12 +252,12 @@ async fn handle_new_block_imported<Block, P>(
 	};
 
 	let unset_hash = if notification.header.number() < unset_best_header.number() {
-		return;
+		return
 	} else if notification.header.number() == unset_best_header.number() {
 		let unset_hash = unset_best_header.hash();
 
 		if unset_hash != notification.hash {
-			return;
+			return
 		} else {
 			unset_hash
 		}
@@ -307,7 +307,7 @@ async fn handle_new_best_parachain_head<Block, P>(
 				error = ?err,
 				"Could not decode Parachain header while following best heads.",
 			);
-			return;
+			return
 		},
 	};
 
@@ -391,7 +391,7 @@ where
 			"Skipping importing block as new best block, because there already exists a \
 			 best block with an higher number",
 		);
-		return;
+		return
 	}
 
 	// Make it the new best block
