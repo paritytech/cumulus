@@ -1368,7 +1368,7 @@ dependencies = [
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-multisig",
- "pallet-randomness-collective-flip",
+ "pallet-insecure-randomness-collective-flip",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -6598,7 +6598,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-randomness-collective-flip"
+name = "pallet-insecure-randomness-collective-flip"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#fdff2b23009f25dd42d3a12fee6c998864399de3"
 dependencies = [
