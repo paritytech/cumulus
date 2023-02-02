@@ -63,7 +63,7 @@ use futures_timer::Delay;
 use rand::{thread_rng, Rng};
 
 use std::{
-	collections::{HashMap, VecDeque},
+	collections::{HashMap, HashSet, VecDeque},
 	pin::Pin,
 	sync::Arc,
 	time::Duration,
@@ -105,6 +105,13 @@ pub struct RecoveryDelay {
 	pub max: Duration,
 }
 
+impl RecoveryDelay {
+	/// Produce a randomized duration between `min` and `max`.
+	fn duration(&self) -> Duration {
+		self.min + self.max.saturating_sub(self.min).mul_f64(thread_rng().gen())
+	}
+}
+
 /// Represents an outstanding block candidate.
 struct Candidate<Block: BlockT> {
 	receipt: CandidateReceipt,
@@ -119,7 +126,7 @@ struct Candidate<Block: BlockT> {
 
 struct RecoveryQueue<Block: BlockT> {
 	candidate_queue: VecDeque<Block::Hash>,
-	signaling_queue: FuturesUnordered<Pin<Box<dyn Future<Output = ()> + Send>>>,
+	signaling_queue: FuturesUnordered<Pin<Box<dyn Future<Output = Option<Block::Hash>> + Send>>>,
 }
 
 impl<Block: BlockT> RecoveryQueue<Block> {
@@ -127,18 +134,39 @@ impl<Block: BlockT> RecoveryQueue<Block> {
 		return Self { candidate_queue: VecDeque::new(), signaling_queue: FuturesUnordered::new() }
 	}
 
-	pub fn push_candidate(&mut self, hash: Block::Hash, delay: RecoveryDelay) {
-		let delay = delay.min + delay.max.saturating_sub(delay.min).mul_f64(thread_rng().gen());
+	/// Add hash of a block that should be recovered after `delay` has passed.
+	/// In contrast to [`push_ordered_candidate`] this will start recovering `hash`,
+	/// ignoring the queue position.
+	pub fn push_unordered_candidate(&mut self, hash: Block::Hash, delay: Duration) {
 		tracing::debug!(
 			target: LOG_TARGET,
 			block_hash = ?hash,
-			"Starting block recovery in {:?} sec",
+			"Adding block to queue and adding new recovery slot in {:?} sec",
+			delay.as_secs(),
+		);
+		self.signaling_queue.push(
+			async move {
+				Delay::new(delay).await;
+				Some(hash)
+			}
+			.boxed(),
+		);
+	}
+
+	/// Add hash of a block that should go to the end of the recovery queue.
+	/// A new recovery will be signaled after `delay` has passed.
+	pub fn push_ordered_candidate(&mut self, hash: Block::Hash, delay: Duration) {
+		tracing::debug!(
+			target: LOG_TARGET,
+			block_hash = ?hash,
+			"Adding block to queue and adding new recovery slot in {:?} sec",
 			delay.as_secs(),
 		);
 		self.candidate_queue.push_back(hash);
 		self.signaling_queue.push(
 			async move {
 				Delay::new(delay).await;
+				None
 			}
 			.boxed(),
 		);
@@ -146,16 +174,21 @@ impl<Block: BlockT> RecoveryQueue<Block> {
 
 	pub async fn next_candidate(&mut self) -> Block::Hash {
 		loop {
-			if let Some(_) = self.signaling_queue.next().await {
-				if let Some(hash) = self.candidate_queue.pop_front() {
-					return hash
-				} else {
-					tracing::warn!(
-						target: LOG_TARGET,
-						"Recovery was signaled, but no candidate hash available."
-					);
-					futures::pending!()
-				};
+			if let Some(result) = self.signaling_queue.next().await {
+				match result {
+					Some(hash) => return hash,
+					None => {
+						if let Some(hash) = self.candidate_queue.pop_front() {
+							return hash
+						} else {
+							tracing::warn!(
+								target: LOG_TARGET,
+								"Recovery was signaled, but no candidate hash available."
+							);
+							futures::pending!()
+						};
+					},
+				}
 			} else {
 				futures::pending!()
 			}
@@ -185,6 +218,8 @@ pub struct PoVRecovery<Block: BlockT, PC, RC> {
 	para_id: ParaId,
 	/// Explicit block recovery requests channel.
 	recovery_chan_rx: Receiver<RecoveryRequest<Block>>,
+	/// Blocks that we are retrying currently
+	blocks_in_retry: HashSet<Block::Hash>,
 }
 
 impl<Block: BlockT, PC, RCInterface> PoVRecovery<Block, PC, RCInterface>
@@ -212,6 +247,7 @@ where
 			parachain_import_queue,
 			relay_chain_interface,
 			para_id,
+			blocks_in_retry: HashSet::new(),
 			recovery_chan_rx,
 		}
 	}
@@ -308,11 +344,36 @@ where
 		available_data: Option<AvailableData>,
 	) {
 		let available_data = match available_data {
-			Some(data) => data,
+			Some(data) => {
+				self.blocks_in_retry.remove(&block_hash);
+				data
+			},
 			None => {
-				self.clear_waiting_for_parent(block_hash);
-				self.clear_waiting_recovery(&block_hash);
-				return
+				if !self.blocks_in_retry.contains(&block_hash) {
+					// Retry recovery after 6 seconds. After that time, the
+					// block should be available.
+					// TODO: Double check to use relay chain slot duration here.
+					let duration = Duration::from_secs(6);
+					tracing::debug!(
+						target: LOG_TARGET,
+						?block_hash,
+						"Retrying block recovery in {:?} seconds",
+						duration
+					);
+					self.blocks_in_retry.insert(block_hash);
+					self.candidate_recovery_queue.push_unordered_candidate(block_hash, duration);
+					return
+				} else {
+					tracing::debug!(
+						target: LOG_TARGET,
+						?block_hash,
+						"Unable to recover block after retry. Block should be available by now, this is likely a bug.",
+					);
+					self.blocks_in_retry.remove(&block_hash);
+					self.clear_waiting_for_parent(block_hash);
+					self.clear_waiting_recovery(&block_hash);
+					return
+				}
 			},
 		};
 
@@ -484,7 +545,7 @@ where
 
 		if do_recover {
 			for hash in to_recover.into_iter().rev() {
-				self.candidate_recovery_queue.push_candidate(hash, delay);
+				self.candidate_recovery_queue.push_ordered_candidate(hash, delay.duration());
 			}
 		}
 	}
