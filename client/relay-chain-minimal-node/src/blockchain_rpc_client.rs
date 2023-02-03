@@ -19,7 +19,9 @@ use std::pin::Pin;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRpcClient;
 use futures::{Future, Stream, StreamExt};
-use polkadot_core_primitives::{Block, Hash, Header};
+use polkadot_core_primitives::{
+	vstaging, Block, CandidateHash, Hash, Header, SessionIndex, ValidatorId,
+};
 use polkadot_overseer::RuntimeApiSubsystemClient;
 use polkadot_service::{AuxStore, HeaderBackend};
 use sc_authority_discovery::AuthorityDiscovery;
@@ -320,6 +322,32 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		ApiError,
 	> {
 		Ok(self.rpc_client.parachain_host_staging_get_disputes(at).await?)
+	}
+
+	// The methods below are only supposed to be called by relay chain validators.
+
+	async fn unapplied_slashes(
+		&self,
+		at: Hash,
+	) -> Result<Vec<(SessionIndex, CandidateHash, vstaging::slashing::PendingSlashes)>, ApiError> {
+		Ok(Vec::new())
+	}
+
+	async fn key_ownership_proof(
+		&self,
+		at: Hash,
+		validator_id: ValidatorId,
+	) -> Result<Option<vstaging::slashing::OpaqueKeyOwnershipProof>, ApiError> {
+		Ok(None)
+	}
+
+	async fn submit_report_dispute_lost(
+		&self,
+		at: Hash,
+		dispute_proof: vstaging::slashing::DisputeProof,
+		key_ownership_proof: vstaging::slashing::OpaqueKeyOwnershipProof,
+	) -> Result<Option<()>, ApiError> {
+		Ok(None)
 	}
 }
 
