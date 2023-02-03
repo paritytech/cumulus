@@ -47,6 +47,7 @@ use sp_consensus::{BlockOrigin, BlockStatus};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, NumberFor};
 
 use polkadot_node_primitives::{AvailableData, POV_BOMB_LIMIT};
+use polkadot_node_subsystem::messages::AvailabilityRecoveryMessage;
 use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::{
 	CandidateReceipt, CommittedCandidateReceipt, Id as ParaId, SessionIndex,
@@ -73,6 +74,18 @@ mod active_candidate_recovery;
 use active_candidate_recovery::ActiveCandidateRecovery;
 
 const LOG_TARGET: &str = "cumulus-pov-recovery";
+
+#[async_trait::async_trait]
+pub trait RecoveryHandle: Send {
+	async fn recover(&mut self, message: AvailabilityRecoveryMessage, origin: &'static str);
+}
+
+#[async_trait::async_trait]
+impl RecoveryHandle for OverseerHandle {
+	async fn recover(&mut self, message: AvailabilityRecoveryMessage, origin: &'static str) {
+		self.send_msg(message, origin).await;
+	}
+}
 
 /// Type of recovery to trigger.
 #[derive(Debug, PartialEq)]
@@ -236,7 +249,7 @@ where
 {
 	/// Create a new instance.
 	pub fn new(
-		overseer_handle: OverseerHandle,
+		recovery_handle: Box<dyn RecoveryHandle>,
 		recovery_delay: RecoveryDelay,
 		parachain_client: Arc<PC>,
 		parachain_import_queue: Box<dyn ImportQueueService<Block>>,
@@ -248,7 +261,7 @@ where
 		Self {
 			candidates: HashMap::new(),
 			candidate_recovery_queue: RecoveryQueue::new(),
-			active_candidate_recovery: ActiveCandidateRecovery::new(overseer_handle),
+			active_candidate_recovery: ActiveCandidateRecovery::new(recovery_handle),
 			recovery_delay,
 			waiting_for_parent: HashMap::new(),
 			parachain_client,
@@ -357,11 +370,8 @@ where
 				self.blocks_in_retry.remove(&block_hash);
 				data
 			},
-			None => {
+			None =>
 				if !self.blocks_in_retry.contains(&block_hash) {
-					// Retry recovery after 6 seconds. After that time, the
-					// block should be available.
-					// TODO: Double check to use relay chain slot duration here.
 					tracing::debug!(
 						target: LOG_TARGET,
 						?block_hash,
@@ -376,14 +386,13 @@ where
 					tracing::debug!(
 						target: LOG_TARGET,
 						?block_hash,
-						"Unable to recover block after retry. Block should be available by now, this is likely a bug.",
+						"Unable to recover block after retry.",
 					);
 					self.blocks_in_retry.remove(&block_hash);
 					self.clear_waiting_for_parent(block_hash);
 					self.clear_waiting_recovery(&block_hash);
 					return
-				}
-			},
+				},
 		};
 
 		let raw_block_data = match sp_maybe_compressed_blob::decompress(

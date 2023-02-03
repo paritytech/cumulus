@@ -50,6 +50,14 @@ add_to_genesis = false
   command = "test-parachain"
   args = ["-lparachain::availability=trace,sync=debug,parachain=debug,cumulus-pov-recovery=debug,cumulus-consensus=debug", "--disable-block-announcements", "--bootnodes {{'bob'|zombie('multiAddress')}}","--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
 
+  # we fail recovery for eve from time to time to test retries
+  [[parachains.collators]]
+  name = "eve"
+  validator = true # collator
+  image = "{{COL_IMAGE}}"
+  command = "test-parachain"
+  args = ["-lparachain::availability=trace,sync=debug,parachain=debug,cumulus-pov-recovery=debug,cumulus-consensus=debug", "--fail-pov-recovery", "--use-null-consensus", "--disable-block-announcements", "--bootnodes {{'bob'|zombie('multiAddress')}}",  "--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
+
   # run one as a RPC collator who does not produce blocks
   [[parachains.collators]]
   name = "one"
