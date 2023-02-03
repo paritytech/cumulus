@@ -50,6 +50,10 @@ parameter_types! {
 	pub ActiveOutboundLanesToBridgeHubWococo: &'static [bp_messages::LaneId] = &[DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO];
 }
 
+/// Dispatches received XCM messages from other bridge
+pub type EncodedMessageDispatcher =
+	DebugBridgeBlobDispatcher<XcmRouter, BridgeHubRococoUniversalLocation>;
+
 /// Proof of messages, coming from Wococo.
 pub type FromWococoBridgeHubMessagesProof =
 	FromBridgedChainMessagesProof<bp_bridge_hub_wococo::Hash>;

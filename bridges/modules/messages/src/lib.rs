@@ -68,6 +68,8 @@ use frame_support::{dispatch::PostDispatchInfo, ensure, fail, traits::Get};
 use sp_runtime::traits::UniqueSaturatedFrom;
 use sp_std::{cell::RefCell, marker::PhantomData, prelude::*};
 
+use xcm_builder::DispatchBlob;
+
 mod inbound_lane;
 mod outbound_lane;
 mod weights_ext;
@@ -164,7 +166,15 @@ pub mod pallet {
 			Self::AccountId,
 			DispatchPayload = Self::InboundPayload,
 		>;
+
+		/// Maximum encoded bridged message length
+		#[pallet::constant]
+		type MaxMessageLength: Get<u32>;
+
+		type BlobDispatcher: DispatchBlob;
 	}
+
+	pub type EncodedBridgedMessage<T, I> = BoundedVec<u8, <T as Config<I>>::MaxMessageLength>;
 
 	/// Shortcut to messages proof type for Config.
 	pub type MessagesProofOf<T, I> =
@@ -503,6 +513,32 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// Execute encoded messages to be relayed from any bridged chain.
+		/// This extrinsic is only for development purpose
+		#[pallet::call_index(4)]
+		#[pallet::weight(Weight::from_ref_time(10_000))]
+		pub fn execute_encoded_message(
+			origin: OriginFor<T>,
+			message: EncodedBridgedMessage<T, I>,
+		) -> DispatchResult {
+			let relayer_id_at_this_chain = ensure_signed(origin)?;
+
+			let success = match T::BlobDispatcher::dispatch_blob(message.into()) {
+				Ok(()) => true,
+				Err(err) => {
+					log::error!(target: "bridge-hub-debug", "On error occured during message execution, err: {:?}", err);
+					false
+				},
+			};
+
+			Self::deposit_event(Event::BridgedMessageExecuted {
+				relayer: relayer_id_at_this_chain,
+				success,
+			});
+
+			Ok(())
+		}
 	}
 
 	#[pallet::event]
@@ -520,6 +556,8 @@ pub mod pallet {
 		),
 		/// Messages in the inclusive range have been delivered to the bridged chain.
 		MessagesDelivered { lane_id: LaneId, messages: DeliveredMessages },
+		/// Copy-pasted encoded message has been executed
+		BridgedMessageExecuted { relayer: T::AccountId, success: bool },
 	}
 
 	#[pallet::error]

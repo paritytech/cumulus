@@ -452,6 +452,10 @@ impl pallet_bridge_parachains::Config<BridgeParachainRococoInstance> for Runtime
 	type MaxParaHeadDataSize = MaxRococoParaHeadDataSize;
 }
 
+parameter_types! {
+	pub const MaxMessageLength: u32 = 16_384;
+}
+
 /// Add XCM messages support for BrigdeHubRococo to support Rococo->Wococo XCM messages
 pub type WithBridgeHubWococoMessagesInstance = pallet_bridge_messages::Instance1;
 impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Runtime {
@@ -484,6 +488,9 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 		bp_bridge_hub_rococo::BridgeHubRococo,
 		OnBridgeHubRococoBlobDispatcher,
 	>;
+
+	type MaxMessageLength = MaxMessageLength;
+	type BlobDispatcher = bridge_hub_wococo_config::EncodedMessageDispatcher;
 }
 
 /// Add XCM messages support for BrigdeHubWococo to support Wococo->Rococo XCM messages
@@ -518,6 +525,9 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 		bp_bridge_hub_wococo::BridgeHubWococo,
 		OnBridgeHubWococoBlobDispatcher,
 	>;
+
+	type MaxMessageLength = MaxMessageLength;
+	type BlobDispatcher = bridge_hub_rococo_config::EncodedMessageDispatcher;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
