@@ -35,7 +35,8 @@ use parachains_common::{
 use polkadot_parachain::primitives::{Id as ParaId, Sibling};
 use sp_core::Get;
 use sp_runtime::traits::ConvertInto;
-use xcm::latest::prelude::*;
+use sp_std::marker::PhantomData;
+use xcm::latest::{prelude::*, Weight};
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
 	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, AsPrefixedGeneralIndex,
@@ -315,7 +316,7 @@ impl xcm_executor::Config for XcmConfig {
 	// Westmint is acting _as_ a reserve location for WND and assets created under `pallet-assets`.
 	// For WND, users must use teleport where allowed (e.g. with the Relay Chain).
 	type IsReserve =
-		(ConcreteFungibleAssetsFromTrustedBridgedReserves<TrustedBridgedReserveLocations>);
+		ConcreteFungibleAssetsFromTrustedBridgedReserves<TrustedBridgedReserveLocations>;
 	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of WND
 	type UniversalLocation = UniversalLocation;
 	type Barrier = Barrier;
@@ -463,6 +464,9 @@ parameter_types! {
 	// Means, that we accept some `GlobalConsensus` from some `MultiLocation` (which is supposed to be our bridge-hub)
 	pub TrustedBridgedNetworks: sp_std::vec::Vec<(MultiLocation, Junction)> = sp_std::vec![
 		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Rococo))
+	// TODO add Ethereum
+		// (MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Ethereum))
+
 	];
 	// TODO:check-parameter - add new pallet and persist/manage this via governance?
 	// TODO:check-parameter - we specify here just trusted location, we can extend this with some AssetFilter patterns to trust only to several assets
@@ -481,6 +485,41 @@ impl Contains<(MultiLocation, Junction)> for TrustedBridgedNetworks {
 	}
 }
 
+impl Contains<MultiLocation> for TrustedBridgedNetworks {
+	fn contains(origin: &MultiLocation) -> bool {
+		let consensus = match origin {
+			MultiLocation {
+				parents: 2,
+				interior: X2(GlobalConsensus(consensus), AccountId32 { .. }),
+			} |
+			MultiLocation {
+				parents: 2,
+				interior: X3(GlobalConsensus(consensus), Parachain(_), AccountId32 { .. }),
+			} => consensus,
+			_ => {
+				log::trace!(target: "xcm::contains_multi_location", "TrustedBridgedNetworks invalid MultiLocation: {:?}", origin);
+				return false
+			},
+		};
+
+		match Self::get().iter().any(|(_, configured_bridged_network)| {
+			match configured_bridged_network {
+				GlobalConsensus(bridged_network) => bridged_network.eq(&consensus),
+				_ => false,
+			}
+		}) {
+			false => {
+				log::trace!(target: "xcm::contains_multi_location", "TrustedBridgedNetworks  GlobalConsensus: {:?} is not Trusted", consensus);
+				false
+			},
+			true => {
+				log::trace!(target: "xcm::contains_multi_location", "TrustedBridgedNetworks  GlobalConsensus: {:?} is Trusted", consensus);
+				true
+			},
+		}
+	}
+}
+
 impl Contains<MultiLocation> for TrustedBridgedReserveLocations {
 	fn contains(t: &MultiLocation) -> bool {
 		Self::get().contains(t)
@@ -488,10 +527,7 @@ impl Contains<MultiLocation> for TrustedBridgedReserveLocations {
 }
 
 pub type BridgedCallsBarrier = (
-	// TODO:check-parameter - verify, if we need for production (usefull at least for testing connection in production)
-	AllowExecutionForTrapFrom<Everything>,
-	// TODO:check-parameter - verify, if we need for production
-	AllowExecutionForTransactFrom<Everything>,
+	AllowExecutionForBridgedOperationsFrom<TrustedBridgedNetworks>,
 	// TODO:check-parameter - setup fess
 	// TODO:check-parameter - change Everything to some Contains with trusted BridgeHub configuration
 	// Configured trusted BridgeHub gets free execution.
@@ -520,49 +556,6 @@ impl<TrustedReserverLocations: Contains<MultiLocation>> ContainsPair<MultiAsset,
 		}
 		// TODO:check-parameter - better assets filtering
 		matches!(asset, MultiAsset { id: AssetId::Concrete(_), fun: Fungible(_) })
-	}
-}
-
-pub struct AllowExecutionForTrapFrom<T>(sp_std::marker::PhantomData<T>);
-impl<T: Contains<MultiLocation>> ShouldExecute for AllowExecutionForTrapFrom<T> {
-	fn should_execute<RuntimeCall>(
-		origin: &MultiLocation,
-		instructions: &mut [Instruction<RuntimeCall>],
-		max_weight: xcm::latest::Weight,
-		_weight_credit: &mut xcm::latest::Weight,
-	) -> Result<(), ()> {
-		log::warn!(
-			target: "xcm::barriers",
-			"(TODO:remove-in-production) AllowExecutionForTrapFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, weight_credit: {:?}",
-			origin, instructions, max_weight, _weight_credit,
-		);
-
-		match instructions.first() {
-			Some(Trap { .. }) => Ok(()),
-			_ => Err(()),
-		}
-	}
-}
-
-pub struct AllowExecutionForTransactFrom<T>(sp_std::marker::PhantomData<T>);
-impl<T: Contains<MultiLocation>> ShouldExecute for AllowExecutionForTransactFrom<T> {
-	fn should_execute<RuntimeCall>(
-		origin: &MultiLocation,
-		instructions: &mut [Instruction<RuntimeCall>],
-		max_weight: xcm::latest::Weight,
-		_weight_credit: &mut xcm::latest::Weight,
-	) -> Result<(), ()> {
-		log::error!(
-			target: "xcm::barriers",
-			"(TODO:change/remove-in-production) AllowExecutionForTransactFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, weight_credit: {:?}",
-			origin, instructions, max_weight, _weight_credit,
-		);
-
-		match instructions.first() {
-			// TODO:check-parameter - filter just remark/remark_with_event
-			Some(Transact { .. }) => Ok(()),
-			_ => Err(()),
-		}
 	}
 }
 
@@ -638,6 +631,46 @@ where
 			}
 		} else {
 			Err(origin)
+		}
+	}
+}
+
+/// Allow execution of Trap & Transact messages from specified bridged networks
+/// At first checks `origin` comes from specified networks
+/// Then verifies if each instruction is Trap or Transact
+pub struct AllowExecutionForBridgedOperationsFrom<BridgedNetworks>(PhantomData<BridgedNetworks>);
+impl<BridgedNetworks: Contains<MultiLocation>> ShouldExecute
+	for AllowExecutionForBridgedOperationsFrom<BridgedNetworks>
+{
+	fn should_execute<RuntimeCall>(
+		origin: &MultiLocation,
+		instructions: &mut [Instruction<RuntimeCall>],
+		_max_weight: Weight,
+		_weight_credit: &mut Weight,
+	) -> Result<(), ()> {
+		log::trace!(
+			target: "xcm::barriers",
+			"AllowExecutionForBridgedOperationsFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, weight_credit: {:?}",
+			origin, instructions, _max_weight, _weight_credit,
+		);
+
+		if !BridgedNetworks::contains(origin) {
+			log::trace!(target: "xcm::barriers", "AllowExecutionForBridgedOperationsFrom barrier failed on invalid Origin: {:?}", origin);
+			return Err(())
+		}
+
+		match instructions.iter().all(|instruction| match instruction {
+			Trap { .. } | Transact { .. } => true,
+			_ => false,
+		}) {
+			true => {
+				log::trace!(target: "xcm::barriers", "AllowExecutionForBridgedOperationsFrom barrier passed for origin: {:?}, instructions: {:?}", origin, instructions);
+				Ok(())
+			},
+			false => {
+				log::trace!(target: "xcm::barriers", "AllowExecutionForBridgedOperationsFrom barrier failed for origin: {:?}, instructions: {:?}", origin, instructions);
+				Err(())
+			},
 		}
 	}
 }
