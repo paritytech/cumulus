@@ -159,10 +159,11 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
 	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
 	XcmPassthrough<RuntimeOrigin>,
-	// TODO:check-parameter - find a better solution
-	// Bridged account origins from different globalConsensus converts as SovereignAccount
-	BridgedSignedAccountId32AsNative<LocationToAccountId, RuntimeOrigin, TrustedBridgedNetworks>,
-	// TODO: add here alternative for BridgedRelayChainAs... or BridgedParachainAs...
+	// Bridged account origins from different GlobalConsensus as Proxy Accounts
+	BridgedSignedProxyAccountAsNative<
+		BridgedProxyAccountId<TrustedBridgedNetworks, AccountId>,
+		RuntimeOrigin,
+	>,
 );
 
 parameter_types! {
@@ -671,6 +672,81 @@ impl<BridgedNetworks: Contains<MultiLocation>> ShouldExecute
 				log::trace!(target: "xcm::barriers", "AllowExecutionForBridgedOperationsFrom barrier failed for origin: {:?}, instructions: {:?}", origin, instructions);
 				Err(())
 			},
+		}
+	}
+}
+
+/// Extracts the `AccountId32` from the bridged `MultiLocation` if the network matches.
+pub struct BridgedProxyAccountId<BridgedNetworks, AccountId>(
+	PhantomData<(BridgedNetworks, AccountId)>,
+);
+impl<
+		BridgedNetworks: Contains<MultiLocation>,
+		AccountId: From<[u8; 32]> + Into<[u8; 32]> + Clone,
+	> Convert<MultiLocation, AccountId> for BridgedProxyAccountId<BridgedNetworks, AccountId>
+{
+	fn convert(location: MultiLocation) -> Result<AccountId, MultiLocation> {
+		log::trace!(target: "xcm::location_conversion", "BridgedProxyAccountId source: {:?}", location);
+
+		if !BridgedNetworks::contains(&location) {
+			log::trace!(target: "xcm::location_conversion", "BridgedProxyAccountId MultiLocation: {:?} is not Trusted", location);
+			return Err(location)
+		}
+
+		match location {
+			MultiLocation {
+				parents: 2,
+				interior: X2(GlobalConsensus(_), AccountId32 { id, network: _ }),
+			} |
+			MultiLocation {
+				parents: 2,
+				interior: X3(GlobalConsensus(_), Parachain(_), AccountId32 { id, network: _ }),
+			} => Ok(id.into()),
+			_ => {
+				log::trace!(target: "xcm::location_conversion", "BridgedProxyAccountId cannot extract AccountId from MultiLocation: {:?}", location);
+				Err(location)
+			},
+		}
+	}
+
+	fn reverse(who: AccountId) -> Result<MultiLocation, AccountId> {
+		Ok(AccountId32 { id: who.into(), network: None }.into())
+	}
+}
+
+pub struct BridgedSignedProxyAccountAsNative<LocationConverter, RuntimeOrigin>(
+	PhantomData<(LocationConverter, RuntimeOrigin)>,
+);
+impl<
+		LocationConverter: Convert<MultiLocation, RuntimeOrigin::AccountId>,
+		RuntimeOrigin: OriginTrait,
+	> ConvertOrigin<RuntimeOrigin>
+	for BridgedSignedProxyAccountAsNative<LocationConverter, RuntimeOrigin>
+where
+	RuntimeOrigin::AccountId: Clone,
+{
+	fn convert_origin(
+		origin: impl Into<MultiLocation>,
+		kind: OriginKind,
+	) -> Result<RuntimeOrigin, MultiLocation> {
+		let origin = origin.into();
+		log::trace!(
+			target: "xcm::origin_conversion",
+			"BridgedSignedProxyAccountAsNative origin: {:?}, kind: {:?}",
+			origin, kind,
+		);
+
+		if let OriginKind::SovereignAccount = kind {
+			let location = LocationConverter::convert(origin)?;
+			Ok(RuntimeOrigin::signed(location).into())
+		} else {
+			log::trace!(
+				target: "xcm::origin_conversion",
+				"BridgedSignedProxyAccountAsNative origin: {:?} is not a SovereignAccount, kind: {:?}",
+				origin, kind
+			);
+
+			Err(origin)
 		}
 	}
 }
