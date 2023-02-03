@@ -29,14 +29,18 @@
 //!
 //! 1. For every included relay chain block we note the backed candidate of our parachain. If the
 //!    block belonging to the PoV is already known, we do nothing. Otherwise we start
-//!    a timer that waits a random time between 0..relay_chain_slot_length before starting to recover
+//!    a timer that waits for a randomized time inside a specified interval before starting to recover
 //!    the PoV.
 //!
 //! 2. If between starting and firing the timer the block is imported, we skip the recovery of the
 //!    PoV.
 //!
-//! 3. If the timer fired we recover the PoV using the relay chain PoV recovery protocol. After it
-//!    is recovered, we restore the block and import it.
+//! 3. If the timer fired we recover the PoV using the relay chain PoV recovery protocol.
+//!
+//! 4a. After it is recovered, we restore the block and import it.
+//!
+//! 4b. Since we are trying to recover pending candidates, availability is not guaranteed. If the block
+//! 	PoV is not yet available, we retry.
 //!
 //! If we need to recover multiple PoV blocks (which should hopefully not happen in real life), we
 //! make sure that the blocks are imported in the correct order.
@@ -75,6 +79,7 @@ use active_candidate_recovery::ActiveCandidateRecovery;
 
 const LOG_TARGET: &str = "cumulus-pov-recovery";
 
+/// Test-friendly wrapper trait for the overseer handle.
 #[async_trait::async_trait]
 pub trait RecoveryHandle: Send {
 	async fn recover(&mut self, message: AvailabilityRecoveryMessage, origin: &'static str);

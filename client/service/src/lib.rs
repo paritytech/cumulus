@@ -126,7 +126,7 @@ where
 		relay_chain_interface.clone(),
 		para_id,
 		recovery_chan_rx,
-		relay_chain_slot_duration,
+		relay_chain_slot_duration / 2,
 	);
 
 	task_manager
@@ -219,7 +219,7 @@ where
 		relay_chain_interface,
 		para_id,
 		recovery_chan_rx,
-		relay_chain_slot_duration,
+		relay_chain_slot_duration / 2,
 	);
 
 	task_manager
