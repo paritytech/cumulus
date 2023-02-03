@@ -630,6 +630,10 @@ impl pallet_nfts::Config for Runtime {
 	type Helper = ();
 }
 
+impl pallet_playground::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -674,6 +678,9 @@ construct_runtime!(
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		Nfts: pallet_nfts::{Pallet, Call, Storage, Event<T>} = 52,
 		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 53,
+
+		// Additional Playground stuff
+		Playground: pallet_playground::{Pallet, Call, Storage, Event<T>} = 69
 	}
 );
 
