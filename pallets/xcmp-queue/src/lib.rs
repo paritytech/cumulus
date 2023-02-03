@@ -40,11 +40,11 @@ pub use weights::WeightInfo;
 
 use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_core::{
-	relay_chain::BlockNumber as RelayBlockNumber, ChannelStatus, GetChannelInfo, MessageSendError,
+	relay_chain::BlockNumber as RelayBlockNumber, ChannelStatus, GetChannelInfo, MessageSendError, AggregateMessageOrigin,
 	ParaId, XcmpMessageFormat, XcmpMessageHandler, XcmpMessageSource,
 };
 use frame_support::{
-	traits::{EnsureOrigin, Get},
+	traits::{EnsureOrigin, Get, ServiceQueues, EnqueueMessage},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight},
 };
 use polkadot_runtime_common::xcm_sender::ConstantPrice;
@@ -52,6 +52,8 @@ use rand_chacha::{
 	rand_core::{RngCore, SeedableRng},
 	ChaChaRng,
 };
+use sp_runtime::BoundedSlice;
+use frame_support::defensive;
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::{convert::TryFrom, prelude::*};
@@ -66,10 +68,7 @@ pub type OverweightIndex = u64;
 const LOG_TARGET: &str = "xcmp_queue";
 const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
 
-// Maximum amount of messages to process per block. This is a temporary measure until we properly
-// account for proof size weights.
-const MAX_MESSAGES_PER_BLOCK: u8 = 10;
-// Maximum amount of messages that can exist in the overweight queue at any given time.
+// FAIL-CI remove
 const MAX_OVERWEIGHT_MESSAGES: u32 = 1000;
 
 #[frame_support::pallet]
@@ -96,6 +95,23 @@ pub mod pallet {
 
 		/// Means of converting an `Xcm` into a `VersionedXcm`.
 		type VersionWrapper: WrapVersion;
+
+		#[pallet::constant]
+		type HrmpMessageMaxLen: Get<u32>;
+
+		/// Enqueue an inbound horizontal message for later processing.
+		///
+		/// This is normally an [`EnqueueMessage`] wrapped in an [`EnqueueWithOrigin`].
+		type EnqueueHrmp: EnqueueMessage<AggregateMessageOrigin>;
+
+		/// Process inbound horizontal messages which had been enqueued via [`Self::HrmpEnqueue`].
+		///
+		/// FAIL-CI should probably use `TransformOrigin`
+		type ServiceHrmp: ServiceQueues<
+			OverweightMessageAddress = (AggregateMessageOrigin, u32, u32),
+		>;
+
+		type ProcessHrmp: ProcessMessage;
 
 		/// The origin that is allowed to execute overweight messages.
 		type ExecuteOverweightOrigin: EnsureOrigin<Self::RuntimeOrigin>;
@@ -396,10 +412,10 @@ pub struct InboundChannelDetails {
 	sender: ParaId,
 	/// The state of the channel.
 	state: InboundState,
-	/// The ordered metadata of each inbound message.
-	///
-	/// Contains info about the relay block number that the message was sent at, and the format
-	/// of the incoming message.
+	// The ordered metadata of each inbound message.
+	//
+	// Contains info about the relay block number that the message was sent at, and the format
+	// of the incoming message.
 	message_metadata: Vec<(RelayBlockNumber, XcmpMessageFormat)>,
 }
 
@@ -604,16 +620,6 @@ impl<T: Config> Pallet<T> {
 		shuffled
 	}
 
-	fn handle_blob_message(
-		_sender: ParaId,
-		_sent_at: RelayBlockNumber,
-		_blob: Vec<u8>,
-		_weight_limit: Weight,
-	) -> Result<Weight, bool> {
-		debug_assert!(false, "Blob messages not handled.");
-		Err(false)
-	}
-
 	fn handle_xcm_message(
 		sender: ParaId,
 		_sent_at: RelayBlockNumber,
@@ -646,7 +652,7 @@ impl<T: Config> Pallet<T> {
 		result
 	}
 
-	fn process_xcmp_message(
+	/*fn process_xcmp_message(
 		sender: ParaId,
 		(sent_at, format): (RelayBlockNumber, XcmpMessageFormat),
 		messages_processed: &mut u8,
@@ -713,7 +719,7 @@ impl<T: Config> Pallet<T> {
 							},
 						}
 					} else {
-						debug_assert!(false, "Invalid incoming XCMP message data");
+						defensive!("Invalid incoming XCMP message data");
 						remaining_fragments = &b""[..];
 					}
 				}
@@ -738,13 +744,13 @@ impl<T: Config> Pallet<T> {
 							},
 						}
 					} else {
-						debug_assert!(false, "Invalid incoming blob message data");
+						defensive!("Invalid incoming blob message data");
 						remaining_fragments = &b""[..];
 					}
 				}
 			},
 			XcmpMessageFormat::Signals => {
-				debug_assert!(false, "All signals are handled immediately; qed");
+				defensive!("All signals are handled immediately; qed");
 				remaining_fragments = &b""[..];
 			},
 		}
@@ -755,7 +761,7 @@ impl<T: Config> Pallet<T> {
 			<InboundXcmpMessages<T>>::insert(sender, sent_at, remaining_fragments);
 		}
 		(weight_used, is_empty)
-	}
+	}*/
 
 	/// Puts a given XCM into the list of overweight messages, allowing it to be executed later.
 	fn stash_overweight(
@@ -801,6 +807,9 @@ impl<T: Config> Pallet<T> {
 	/// for the second &c. though empirical and or practical factors may give rise to adjusting it
 	/// further.
 	fn service_xcmp_queue(max_weight: Weight) -> Weight {
+		Weight::zero()
+	}
+	/*fn service_xcmp_queue(max_weight: Weight) -> Weight {
 		let suspended = QueueSuspended::<T>::get();
 		let mut messages_processed = 0;
 
@@ -864,7 +873,7 @@ impl<T: Config> Pallet<T> {
 			}
 
 			let weight_processed = if status[index].message_metadata.is_empty() {
-				debug_assert!(false, "channel exists in status; there must be messages; qed");
+				defensive!("channel exists in status; there must be messages; qed");
 				Weight::zero()
 			} else {
 				// Process up to one block's worth for now.
@@ -912,7 +921,7 @@ impl<T: Config> Pallet<T> {
 
 		<InboundXcmpStatus<T>>::put(status);
 		weight_used
-	}
+	}*/
 
 	fn suspend_channel(target: ParaId) {
 		<OutboundXcmpStatus<T>>::mutate(|s| {
@@ -940,22 +949,24 @@ impl<T: Config> Pallet<T> {
 					s[index].state = OutboundState::Ok;
 				}
 			} else {
-				debug_assert!(false, "WARNING: Attempt to resume channel that was not suspended.");
+				defensive!("WARNING: Attempt to resume channel that was not suspended.");
 			}
 		});
 	}
 }
+
+
 
 impl<T: Config> XcmpMessageHandler for Pallet<T> {
 	fn handle_xcmp_messages<'a, I: Iterator<Item = (ParaId, RelayBlockNumber, &'a [u8])>>(
 		iter: I,
 		max_weight: Weight,
 	) -> Weight {
-		let mut status = <InboundXcmpStatus<T>>::get();
+		//let mut status = <InboundXcmpStatus<T>>::get();
 
-		let QueueConfigData { suspend_threshold, drop_threshold, .. } = <QueueConfig<T>>::get();
+		//let QueueConfigData { suspend_threshold, drop_threshold, .. } = <QueueConfig<T>>::get();
 
-		for (sender, sent_at, data) in iter {
+		for (sender, _sent_at, data) in iter {
 			// Figure out the message format.
 			let mut data_ref = data;
 			let format = match XcmpMessageFormat::decode_with_depth_limit(
@@ -964,7 +975,7 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 			) {
 				Ok(f) => f,
 				Err(_) => {
-					debug_assert!(false, "Unknown XCMP message format. Silently dropping message");
+					defensive!("Unknown XCMP message format. Silently dropping message");
 					continue
 				},
 			};
@@ -974,50 +985,109 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 					match ChannelSignal::decode(&mut data_ref) {
 						Ok(Suspend) => Self::suspend_channel(sender),
 						Ok(Resume) => Self::resume_channel(sender),
-						Err(_) => break,
+						Err(_) => {
+							defensive!("Undecodable channel signal. Silently dropping message");
+							break
+						},
 					}
 				}
 			} else {
-				// Record the fact we received it.
-				match status.binary_search_by_key(&sender, |item| item.sender) {
-					Ok(i) => {
-						let count = status[i].message_metadata.len();
-						if count as u32 >= suspend_threshold && status[i].state == InboundState::Ok
-						{
-							status[i].state = InboundState::Suspended;
-							let r = Self::send_signal(sender, ChannelSignal::Suspend);
-							if r.is_err() {
-								log::warn!(
-									"Attempt to suspend channel failed. Messages may be dropped."
-								);
-							}
-						}
-						if (count as u32) < drop_threshold {
-							status[i].message_metadata.push((sent_at, format));
-						} else {
-							debug_assert!(
-								false,
-								"XCMP channel queue full. Silently dropping message"
-							);
-						}
-					},
-					Err(_) => status.push(InboundChannelDetails {
-						sender,
-						state: InboundState::Ok,
-						message_metadata: vec![(sent_at, format)],
-					}),
-				}
 				// Queue the payload for later execution.
-				<InboundXcmpMessages<T>>::insert(sender, sent_at, data_ref);
+				// FAIL-CI optimize
+				let data = (format, data_ref).encode();
+				if let Ok(bounded) = BoundedSlice::try_from(&data[..]) {
+					T::EnqueueHrmp::enqueue_message(bounded, AggregateMessageOrigin::Sibling(sender));
+				} else {
+					defensive!("XCMP message too large. Silently dropping message");
+				}
+				//<InboundXcmpMessages<T>>::insert(sender, sent_at, data_ref);
 			}
 
 			// Optimization note; it would make sense to execute messages immediately if
 			// `status.is_empty()` here.
 		}
-		status.sort();
-		<InboundXcmpStatus<T>>::put(status);
+		//status.sort();
+		//<InboundXcmpStatus<T>>::put(status);
 
 		Self::service_xcmp_queue(max_weight)
+	}
+}
+
+use frame_support::traits::{ProcessMessage, ProcessMessageError};
+
+use frame_support::defensive_assert;
+use frame_support::weights::WeightMeter;
+
+impl<T: Config> ProcessMessage for Pallet<T> {
+	type Origin = AggregateMessageOrigin;
+
+	/*fn process_xcmp_message(
+		sender: ParaId,
+		(sent_at, format): (RelayBlockNumber, XcmpMessageFormat),
+		messages_processed: &mut u8,
+		max_weight: Weight,
+		max_individual_weight: Weight,
+	) -> (Weight, bool) {*/
+	fn process_message(
+		mut message: &[u8],
+		origin: Self::Origin,
+		limit: Weight,
+	) -> Result<(bool, Weight), ProcessMessageError> {
+		let AggregateMessageOrigin::Sibling(para) = origin else {
+			panic!("FAIL-CI handle local");
+			//return Err(ProcessMessageError::Unsupported);
+		};
+
+		let mut meter = WeightMeter::from_limit(limit);
+		// FAIL-CI track weight
+		let format = match XcmpMessageFormat::decode_with_depth_limit(
+			MAX_XCM_DECODE_DEPTH,
+			&mut message,
+		) {
+			Ok(f) => f,
+			Err(_) => {
+				defensive!("Unknown XCMP message format. Silently dropping message");
+				return Err(ProcessMessageError::Corrupt);
+			},
+		};
+		match format {
+			XcmpMessageFormat::ConcatenatedVersionedXcm => {
+				loop {
+					let xcm = match VersionedXcm::<T::RuntimeCall>::decode_with_depth_limit(MAX_XCM_DECODE_DEPTH, &mut message) {
+						Ok(xcm) => xcm,
+						Err(_) => {
+							defensive!("Corrupt XCMP message. Refusing execution");
+							return Err(ProcessMessageError::Corrupt);
+						},
+					};
+
+					match Self::handle_xcm_message(para, 0, xcm, meter.remaining()) {
+						Ok((weight, true)) => {
+							// The message processor should have bailed instead of over-consumed.
+							meter.defensive_saturating_accrue(weight);
+							break;
+						},
+						Ok((weight, false)) => {
+							meter.spend(weight);
+						},
+						Err(_) => {
+							defensive!("XCMP message execution failed. Refusing further execution");
+							break;
+						},
+					}
+				}
+				defensive_assert!(message.is_empty(), "All data was consumed");
+			},
+			XcmpMessageFormat::ConcatenatedEncodedBlob => {
+				// NOTE: we do not even try to decode the blobs here. Therefore all `Corrupted` errors are returned as `Unsupported`.
+				return Err(ProcessMessageError::Unsupported);
+			},
+			XcmpMessageFormat::Signals => {
+				defensive!("All signals are handled immediately; qed");
+			},
+		}
+
+		meter.consumed()
 	}
 }
 

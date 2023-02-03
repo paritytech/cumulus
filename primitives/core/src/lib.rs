@@ -18,7 +18,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
+use codec::{Decode, MaxEncodedLen, Encode};
+use scale_info::TypeInfo;
 use polkadot_parachain::primitives::HeadData;
 use sp_runtime::{traits::Block as BlockT, RuntimeDebug};
 use sp_std::prelude::*;
@@ -69,6 +70,15 @@ impl From<MessageSendError> for &'static str {
 			Other => "Other",
 		}
 	}
+}
+
+/// The origin of an inbound message.
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Eq, PartialEq, TypeInfo, Debug)]
+pub enum AggregateMessageOrigin {
+	/// The message came from the para-chain itself.
+	Loopback,
+	Parent,          // DMP
+	Sibling(ParaId), // HRMP
 }
 
 /// Information about an XCMP channel.

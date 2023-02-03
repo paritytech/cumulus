@@ -135,13 +135,6 @@ impl CheckAssociatedRelayNumber for AnyRelayNumber {
 	fn check_associated_relay_number(_: RelayChainBlockNumber, _: RelayChainBlockNumber) {}
 }
 
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Eq, PartialEq, TypeInfo, Debug)]
-pub enum AggregateMessageOrigin {
-	Loopback,
-	Parent,          // DMP
-	Sibling(ParaId), // HRMP
-}
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;

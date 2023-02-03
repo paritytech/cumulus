@@ -15,6 +15,7 @@ members = [
 	"client/relay-chain-minimal-node",
 	"pallets/aura-ext",
 	"pallets/collator-selection",
+	"pallets/dmp-queue",
 	"pallets/parachain-system",
 	"pallets/parachain-system/proc-macro",
 	"pallets/session-benchmarking",

@@ -468,8 +468,6 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
-impl parachain_info::Config for Runtime {}
-
 parameter_types! {
 	// FAIL-CI: pick good value
 	pub MessageQueueServiceWeight: Weight = Weight::MAX;
@@ -492,6 +490,8 @@ impl pallet_message_queue::Config for Runtime {
 	type MaxStale = sp_core::ConstU32<8>;
 	type ServiceWeight = MessageQueueServiceWeight;
 }
+
+impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
