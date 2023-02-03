@@ -125,19 +125,22 @@ struct Candidate<Block: BlockT> {
 }
 
 struct RecoveryQueue<Block: BlockT> {
-	candidate_queue: VecDeque<Block::Hash>,
+	// Queue that keeps the hashes of blocks to be recovered
+	recovery_queue: VecDeque<Block::Hash>,
+	// Futures that resolve when a new recovery should be started.
 	signaling_queue: FuturesUnordered<Pin<Box<dyn Future<Output = Option<Block::Hash>> + Send>>>,
 }
 
+/// Queue that is used to decide when to start PoV-recovery operations.
 impl<Block: BlockT> RecoveryQueue<Block> {
 	pub fn new() -> Self {
-		return Self { candidate_queue: VecDeque::new(), signaling_queue: FuturesUnordered::new() }
+		return Self { recovery_queue: VecDeque::new(), signaling_queue: FuturesUnordered::new() }
 	}
 
 	/// Add hash of a block that should be recovered after `delay` has passed.
 	/// In contrast to [`push_ordered_candidate`] this will start recovering `hash`,
 	/// ignoring the queue position.
-	pub fn push_unordered_candidate(&mut self, hash: Block::Hash, delay: Duration) {
+	pub fn push_unordered_recovery(&mut self, hash: Block::Hash, delay: Duration) {
 		tracing::debug!(
 			target: LOG_TARGET,
 			block_hash = ?hash,
@@ -155,14 +158,14 @@ impl<Block: BlockT> RecoveryQueue<Block> {
 
 	/// Add hash of a block that should go to the end of the recovery queue.
 	/// A new recovery will be signaled after `delay` has passed.
-	pub fn push_ordered_candidate(&mut self, hash: Block::Hash, delay: Duration) {
+	pub fn push_ordered_recovery(&mut self, hash: Block::Hash, delay: Duration) {
 		tracing::debug!(
 			target: LOG_TARGET,
 			block_hash = ?hash,
 			"Adding block to queue and adding new recovery slot in {:?} sec",
 			delay.as_secs(),
 		);
-		self.candidate_queue.push_back(hash);
+		self.recovery_queue.push_back(hash);
 		self.signaling_queue.push(
 			async move {
 				Delay::new(delay).await;
@@ -172,13 +175,15 @@ impl<Block: BlockT> RecoveryQueue<Block> {
 		);
 	}
 
-	pub async fn next_candidate(&mut self) -> Block::Hash {
+	/// Get the next hash for block recovery.
+	pub async fn next_recovery(&mut self) -> Block::Hash {
 		loop {
 			if let Some(result) = self.signaling_queue.next().await {
+				// If the return future resolves to `None`, we want to process the queue
 				match result {
 					Some(hash) => return hash,
 					None => {
-						if let Some(hash) = self.candidate_queue.pop_front() {
+						if let Some(hash) = self.recovery_queue.pop_front() {
 							return hash
 						} else {
 							tracing::warn!(
@@ -220,6 +225,8 @@ pub struct PoVRecovery<Block: BlockT, PC, RC> {
 	recovery_chan_rx: Receiver<RecoveryRequest<Block>>,
 	/// Blocks that we are retrying currently
 	blocks_in_retry: HashSet<Block::Hash>,
+	/// Waiting time before a retry
+	retry_delay: Duration,
 }
 
 impl<Block: BlockT, PC, RCInterface> PoVRecovery<Block, PC, RCInterface>
@@ -236,6 +243,7 @@ where
 		relay_chain_interface: RCInterface,
 		para_id: ParaId,
 		recovery_chan_rx: Receiver<RecoveryRequest<Block>>,
+		retry_delay: Duration,
 	) -> Self {
 		Self {
 			candidates: HashMap::new(),
@@ -249,6 +257,7 @@ where
 			para_id,
 			blocks_in_retry: HashSet::new(),
 			recovery_chan_rx,
+			retry_delay,
 		}
 	}
 
@@ -353,15 +362,15 @@ where
 					// Retry recovery after 6 seconds. After that time, the
 					// block should be available.
 					// TODO: Double check to use relay chain slot duration here.
-					let duration = Duration::from_secs(6);
 					tracing::debug!(
 						target: LOG_TARGET,
 						?block_hash,
 						"Retrying block recovery in {:?} seconds",
-						duration
+						self.retry_delay
 					);
 					self.blocks_in_retry.insert(block_hash);
-					self.candidate_recovery_queue.push_unordered_candidate(block_hash, duration);
+					self.candidate_recovery_queue
+						.push_unordered_recovery(block_hash, self.retry_delay);
 					return
 				} else {
 					tracing::debug!(
@@ -545,7 +554,7 @@ where
 
 		if do_recover {
 			for hash in to_recover.into_iter().rev() {
-				self.candidate_recovery_queue.push_ordered_candidate(hash, delay.duration());
+				self.candidate_recovery_queue.push_ordered_recovery(hash, delay.duration());
 			}
 		}
 	}
@@ -599,7 +608,7 @@ where
 						return;
 					}
 				},
-				next_to_recover = self.candidate_recovery_queue.next_candidate().fuse() => {
+				next_to_recover = self.candidate_recovery_queue.next_recovery().fuse() => {
 						self.recover_candidate(next_to_recover).await;
 				},
 				(block_hash, available_data) =
