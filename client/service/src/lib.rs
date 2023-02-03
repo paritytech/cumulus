@@ -20,7 +20,7 @@
 
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::ParachainConsensus;
-use cumulus_client_pov_recovery::{PoVRecovery, RecoveryHandle, RecoveryDelay};
+use cumulus_client_pov_recovery::{PoVRecovery, RecoveryDelay, RecoveryHandle};
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
