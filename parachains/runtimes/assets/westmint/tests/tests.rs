@@ -5,16 +5,20 @@ use frame_support::{
 	traits::PalletInfo,
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
-use parachains_common::{AccountId, AuraId};
-use westmint_runtime::xcm_config::AssetFeeAsExistentialDepositMultiplierFeeCharger;
+use parachains_common::{AccountId, AssetIdForTrustBackedAssets, AuraId};
+use westmint_runtime::xcm_config::{
+	AssetFeeAsExistentialDepositMultiplierFeeCharger, TrustBackedAssetsPalletLocation,
+};
 pub use westmint_runtime::{
 	constants::fee::WeightToFee, xcm_config::XcmConfig, Assets, Balances, ExistentialDeposit,
 	Runtime, SessionKeys, System,
 };
 use xcm::latest::prelude::*;
-use xcm_executor::traits::WeightTrader;
+use xcm_builder::AsPrefixedGeneralIndex;
+use xcm_executor::traits::{Convert, JustTry, TransactAsset, WeightTrader};
 
 pub const ALICE: [u8; 32] = [1u8; 32];
+pub const BOB: [u8; 32] = [2u8; 32];
 
 #[test]
 fn test_asset_xcm_trader() {
@@ -385,4 +389,85 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 			// We also need to ensure the total supply NOT increased
 			assert_eq!(Assets::total_supply(1), minimum_asset_balance);
 		});
+}
+
+#[test]
+fn test_asset_transactor_with_trust_backed_assets_works() {
+	ExtBuilder::<Runtime>::default()
+		.with_collators(vec![AccountId::from(ALICE)])
+		.with_session_keys(vec![(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+		)])
+		.with_tracing()
+		.build()
+		.execute_with(|| {
+			// We need root origin to create a sufficient asset
+			let minimum_asset_balance = 3333333_u128;
+			let local_asset_id = 1;
+			assert_ok!(Assets::force_create(
+				RuntimeHelper::<Runtime>::root_origin(),
+				local_asset_id.into(),
+				AccountId::from(ALICE).into(),
+				true,
+				minimum_asset_balance
+			));
+
+			// We first mint enough asset for the account to exist for assets
+			assert_ok!(Assets::mint(
+				RuntimeHelper::<Runtime>::origin_of(AccountId::from(ALICE)),
+				local_asset_id.into(),
+				AccountId::from(ALICE).into(),
+				minimum_asset_balance * 6
+			));
+
+			// check Assets before
+			assert_eq!(
+				Assets::balance(local_asset_id, AccountId::from(ALICE)),
+				minimum_asset_balance * 6
+			);
+			assert_eq!(Assets::balance(local_asset_id, AccountId::from(BOB)), 0);
+
+			// transfer_asset (deposit/withdraw)
+			let origin_location = MultiLocation {
+				parents: 0,
+				interior: X1(AccountId32 { network: None, id: AccountId::from(ALICE).into() }),
+			};
+			let target_account_location = MultiLocation {
+				parents: 0,
+				interior: X1(AccountId32 { network: None, id: AccountId::from(BOB).into() }),
+			};
+
+			type AssetIdConverter = AsPrefixedGeneralIndex<
+				TrustBackedAssetsPalletLocation,
+				AssetIdForTrustBackedAssets,
+				JustTry,
+			>;
+			let multi_asset = MultiAsset {
+				id: Concrete(AssetIdConverter::reverse_ref(local_asset_id).unwrap()),
+				fun: Fungible(minimum_asset_balance),
+			};
+
+			type AssetTransactor = <XcmConfig as xcm_executor::Config>::AssetTransactor;
+			let _ = <AssetTransactor as TransactAsset>::transfer_asset(
+				&multi_asset,
+				&origin_location,
+				&target_account_location,
+				// We aren't able to track the XCM that initiated the fee deposit, so we create a
+				// fake message hash here
+				&XcmContext::with_message_hash([0; 32]),
+			)
+			.expect("no error");
+
+			// check Assets after
+			assert_eq!(
+				Assets::balance(local_asset_id, AccountId::from(ALICE)),
+				minimum_asset_balance * 5
+			);
+			assert_eq!(
+				Assets::balance(local_asset_id, AccountId::from(BOB)),
+				minimum_asset_balance
+			);
+		})
 }
