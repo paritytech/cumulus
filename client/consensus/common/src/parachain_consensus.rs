@@ -18,6 +18,7 @@ use sc_client_api::{
 	Backend, BlockBackend, BlockImportNotification, BlockchainEvents, Finalizer, UsageProvider,
 };
 use sc_consensus::{BlockImport, BlockImportParams, ForkChoiceStrategy};
+use schnellru::{ByLength, LruMap};
 use sp_blockchain::Error as ClientError;
 use sp_consensus::{BlockOrigin, BlockStatus};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
@@ -41,6 +42,55 @@ const LOG_TARGET: &str = "cumulus-consensus";
 const RECOVERY_DELAY: RecoveryDelay =
 	RecoveryDelay { min: Duration::ZERO, max: Duration::from_secs(30) };
 
+fn handle_new_finalized_head<P, Block, B>(
+	parachain: &Arc<P>,
+	finalized_head: Vec<u8>,
+	last_seen_finalized_hashes: &mut LruMap<Block::Hash, ()>,
+) where
+	Block: BlockT,
+	B: Backend<Block>,
+	P: Finalizer<Block, B> + UsageProvider<Block> + BlockchainEvents<Block>,
+{
+	let header = match Block::Header::decode(&mut &finalized_head[..]) {
+		Ok(header) => header,
+		Err(err) => {
+			tracing::debug!(
+				target: LOG_TARGET,
+				error = ?err,
+				"Could not decode parachain header while following finalized heads.",
+			);
+			return
+		},
+	};
+
+	let hash = header.hash();
+
+	last_seen_finalized_hashes.insert(hash, ());
+	// don't finalize the same block multiple times.
+	if parachain.usage_info().chain.finalized_hash != hash {
+		tracing::debug!(
+			target: LOG_TARGET,
+			block_hash = ?hash,
+			"Attempting to finalize header.",
+		);
+		if let Err(e) = parachain.finalize_block(hash, None, true) {
+			match e {
+				ClientError::UnknownBlock(_) => tracing::debug!(
+					target: LOG_TARGET,
+					block_hash = ?hash,
+					"Could not finalize block because it is unknown.",
+				),
+				_ => tracing::warn!(
+					target: LOG_TARGET,
+					error = ?e,
+					block_hash = ?hash,
+					"Failed to finalize block",
+				),
+			}
+		}
+	}
+}
+
 /// Follow the finalized head of the given parachain.
 ///
 /// For every finalized block of the relay chain, it will get the included parachain header
@@ -48,62 +98,74 @@ const RECOVERY_DELAY: RecoveryDelay =
 async fn follow_finalized_head<P, Block, B, R>(para_id: ParaId, parachain: Arc<P>, relay_chain: R)
 where
 	Block: BlockT,
-	P: Finalizer<Block, B> + UsageProvider<Block>,
+	P: Finalizer<Block, B> + UsageProvider<Block> + BlockchainEvents<Block>,
 	R: RelayChainInterface + Clone,
 	B: Backend<Block>,
 {
 	let finalized_heads = match finalized_heads(relay_chain, para_id).await {
-		Ok(finalized_heads_stream) => finalized_heads_stream,
+		Ok(finalized_heads_stream) => finalized_heads_stream.fuse(),
 		Err(err) => {
 			tracing::error!(target: LOG_TARGET, error = ?err, "Unable to retrieve finalized heads stream.");
 			return
 		},
 	};
 
+	let mut imported_blocks = parachain.import_notification_stream().fuse();
+
 	pin_mut!(finalized_heads);
 
+	// We use this cache to finalize blocks that are imported late.
+	// For example, a block that has been recovered via PoV-Recovery
+	// on a full node can have several minutes delay. With this cache
+	// we have some "memory" of recently finalized blocks.
+	let mut last_seen_finalized_hashes = LruMap::new(ByLength::new(40));
+
 	loop {
-		let finalized_head = if let Some(h) = finalized_heads.next().await {
-			h
-		} else {
-			tracing::debug!(target: LOG_TARGET, "Stopping following finalized head.");
-			return
-		};
-
-		let header = match Block::Header::decode(&mut &finalized_head[..]) {
-			Ok(header) => header,
-			Err(err) => {
-				tracing::debug!(
-					target: LOG_TARGET,
-					error = ?err,
-					"Could not decode parachain header while following finalized heads.",
-				);
-				continue
+		select! {
+			fin = finalized_heads.next() => {
+				match fin {
+					Some(finalized_head) =>
+						handle_new_finalized_head(&parachain, finalized_head, &mut last_seen_finalized_hashes),
+					None => {
+						tracing::debug!(target: LOG_TARGET, "Stopping following finalized head.");
+						return
+					}
+				}
 			},
-		};
+			imported = imported_blocks.next() => {
+				match imported {
+					Some(imported_block) => {
+						// When we see a block import that is already finalized, we immediately finalize it.
+						if last_seen_finalized_hashes.peek(&imported_block.hash).is_some() {
+							tracing::debug!(
+								target: LOG_TARGET,
+								"Setting newly imported block as finalized.",
+							);
 
-		let hash = header.hash();
-
-		// don't finalize the same block multiple times.
-		if parachain.usage_info().chain.finalized_hash != hash {
-			tracing::debug!(
-				target: LOG_TARGET,
-				block_hash = ?hash,
-				"Attempting to finalize header.",
-			);
-			if let Err(e) = parachain.finalize_block(hash, None, true) {
-				match e {
-					ClientError::UnknownBlock(_) => tracing::debug!(
-						target: LOG_TARGET,
-						block_hash = ?hash,
-						"Could not finalize block because it is unknown.",
-					),
-					_ => tracing::warn!(
-						target: LOG_TARGET,
-						error = ?e,
-						block_hash = ?hash,
-						"Failed to finalize block",
-					),
+							if let Err(e) = parachain.finalize_block(imported_block.hash, None, true) {
+								match e {
+									ClientError::UnknownBlock(_) => tracing::debug!(
+										target: LOG_TARGET,
+										block_hash = ?imported_block.hash,
+										"Could not finalize block because it is unknown.",
+									),
+									_ => tracing::warn!(
+										target: LOG_TARGET,
+										error = ?e,
+										block_hash = ?imported_block.hash,
+										"Failed to finalize block",
+									),
+								}
+							}
+						}
+					},
+					None => {
+						tracing::debug!(
+							target: LOG_TARGET,
+							"Stopping following imported blocks.",
+						);
+						return
+					}
 				}
 			}
 		}
@@ -171,7 +233,7 @@ async fn follow_new_best<P, R, Block, B>(
 	R: RelayChainInterface + Clone,
 	B: Backend<Block>,
 {
-	let new_best_relay_heads = match new_best_heads(relay_chain, para_id).await {
+	let new_best_heads = match new_best_heads(relay_chain, para_id).await {
 		Ok(best_relay_heads_stream) => best_relay_heads_stream.fuse(),
 		Err(err) => {
 			tracing::error!(target: LOG_TARGET, error = ?err, "Unable to retrieve best heads stream.");
@@ -179,7 +241,7 @@ async fn follow_new_best<P, R, Block, B>(
 		},
 	};
 
-	pin_mut!(new_best_relay_heads);
+	pin_mut!(new_best_heads);
 
 	let mut imported_blocks = parachain.import_notification_stream().fuse();
 	// The unset best header of the parachain. Will be `Some(_)` when we have imported a relay chain
@@ -189,10 +251,10 @@ async fn follow_new_best<P, R, Block, B>(
 
 	loop {
 		select! {
-			relay_header = new_best_relay_heads.next() => {
-				match relay_header {
-					Some(relay_header) => handle_new_best_parachain_head(
-						relay_header,
+			h = new_best_heads.next() => {
+				match h {
+					Some(header) => handle_new_best_parachain_head(
+						header,
 						&*parachain,
 						&mut unset_best_header,
 						recovery_chan_tx.as_mut(),
