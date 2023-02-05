@@ -188,13 +188,12 @@ where
 
 		let new_validation_code = crate::NewValidationCode::<PSC>::get();
 		let upward_messages = crate::UpwardMessages::<PSC>::get().try_into().expect(
-			"Number of upward messages should not be greater than `MAX_UPWARD_MESSAGE_NUM`"
+			"Number of upward messages should not be greater than `MAX_UPWARD_MESSAGE_NUM`",
 		);
 		let processed_downward_messages = crate::ProcessedDownwardMessages::<PSC>::get();
-		let horizontal_messages =
-			crate::HrmpOutboundMessages::<PSC>::get().try_into().expect(
-				"Number of horizontal messages should not be greater than `MAX_HORIZONTAL_MESSAGE_NUM`"
-			);
+		let horizontal_messages = crate::HrmpOutboundMessages::<PSC>::get().try_into().expect(
+			"Number of horizontal messages should not be greater than `MAX_HORIZONTAL_MESSAGE_NUM`",
+		);
 		let hrmp_watermark = crate::HrmpWatermark::<PSC>::get();
 
 		let head_data =
