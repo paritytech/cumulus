@@ -36,7 +36,6 @@ impl WeighMultiAssets for MultiAssetFilter {
 			Self::Definite(assets) =>
 				weight.saturating_mul(assets.inner().into_iter().count() as u64),
 			Self::Wild(asset) => match asset {
-				// TODO: Investigate if this is the right solution
 				All => weight.saturating_mul(MAX_ASSETS as u64),
 				AllOf { .. } => weight,
 				AllCounted(count) => weight.saturating_mul(*count as u64),

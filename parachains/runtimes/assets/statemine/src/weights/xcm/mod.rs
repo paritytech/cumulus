@@ -35,7 +35,12 @@ impl WeighMultiAssets for MultiAssetFilter {
 		match self {
 			Self::Definite(assets) =>
 				weight.saturating_mul(assets.inner().into_iter().count() as u64),
-			Self::Wild(_) => weight.saturating_mul(MAX_ASSETS as u64),
+			Self::Wild(asset) => match asset {
+				All => weight.saturating_mul(MAX_ASSETS as u64),
+				AllOf { .. } => weight,
+				AllCounted(count) => weight.saturating_mul(*count as u64),
+				AllOfCounted { count, .. } => weight.saturating_mul(*count as u64),
+			}
 		}
 	}
 }
@@ -138,10 +143,7 @@ impl<Call> XcmWeightInfo<Call> for StatemineXcmWeight<Call> {
 		_dest: &MultiLocation,
 		_xcm: &Xcm<()>,
 	) -> Weight {
-		// Hardcoded till the XCM pallet is fixed
-		let hardcoded_weight = Weight::from_ref_time(200_000_000 as u64);
-		let weight = assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::initiate_teleport());
-		hardcoded_weight.min(weight)
+		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::initiate_teleport())
 	}
 	fn report_holding(_response_info: &QueryResponseInfo, _assets: &MultiAssetFilter) -> Weight {
 		XcmGeneric::<Runtime>::report_holding()
