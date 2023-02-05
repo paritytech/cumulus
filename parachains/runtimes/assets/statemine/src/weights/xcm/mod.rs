@@ -40,7 +40,7 @@ impl WeighMultiAssets for MultiAssetFilter {
 				AllOf { .. } => weight,
 				AllCounted(count) => weight.saturating_mul(*count as u64),
 				AllOfCounted { count, .. } => weight.saturating_mul(*count as u64),
-			}
+			},
 		}
 	}
 }
