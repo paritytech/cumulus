@@ -198,15 +198,32 @@ where
 			.ok()
 			.flatten()?;
 
+		let upward_messages = collation_info
+			.upward_messages
+			.map_err(|e| {
+				tracing::error!(
+					target: LOG_TARGET,
+					error = ?e,
+					"Number of upward messages should not be greater than `MAX_UPWARD_MESSAGE_NUM`",
+				)
+			})
+			.ok()?;
+		let horizontal_messages = collation_info
+			.horizontal_messages
+			.map_err(|e| {
+				tracing::error!(
+					target: LOG_TARGET,
+					error = ?e,
+					"Number of horizontal messages should not be greater than `MAX_HORIZONTAL_MESSAGE_NUM`",
+				)
+			})
+			.ok()?;
+
 		Some(Collation {
-			upward_messages: collation_info.upward_messages.try_into().expect(
-				"Number of upward messages should not be greater than `MAX_UPWARD_MESSAGE_NUM`",
-			),
+			upward_messages,
 			new_validation_code: collation_info.new_validation_code,
 			processed_downward_messages: collation_info.processed_downward_messages,
-			horizontal_messages: collation_info.horizontal_messages.try_into().expect(
-				"Number of horizontal messages should not be greater than `MAX_HORIZONTAL_MESSAGE_NUM`",
-			),
+			horizontal_messages,
 			hrmp_watermark: collation_info.hrmp_watermark,
 			head_data: collation_info.head_data,
 			proof_of_validity: MaybeCompressedPoV::Compressed(pov),
