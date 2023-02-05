@@ -199,7 +199,7 @@ where
 			.flatten()?;
 
 		Some(Collation {
-			upward_messages: collation_info.upward_messages.expect(
+			upward_messages: collation_info.upward_messages.try_into().expect(
 				"Number of upward messages should not be greater than `MAX_UPWARD_MESSAGE_NUM`",
 			),
 			new_validation_code: collation_info.new_validation_code,
