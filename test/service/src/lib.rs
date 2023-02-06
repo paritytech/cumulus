@@ -140,13 +140,19 @@ pub struct FailingRecoveryHandle {
 impl FailingRecoveryHandle {
 	/// Create a new FailingRecoveryHandle
 	pub fn new(overseer_handle: OverseerHandle) -> Self {
-		Self { overseer_handle, counter: 1 }
+		Self { overseer_handle, counter: 0 }
 	}
 }
 
 #[async_trait::async_trait]
 impl RecoveryHandle for FailingRecoveryHandle {
-	async fn recover(&mut self, message: AvailabilityRecoveryMessage, origin: &'static str) {
+	async fn send_recovery_msg(
+		&mut self,
+		message: AvailabilityRecoveryMessage,
+		origin: &'static str,
+	) {
+		// For every 5th block we immediately return [`RecoveryError::Unavailable`] to trigger
+		// a retry.
 		if self.counter % 5 == 0 {
 			let AvailabilityRecoveryMessage::RecoverAvailableData(_, _, _, back_sender) = message;
 			tracing::info!(target: LOG_TARGET, "Failing pov recovery.");

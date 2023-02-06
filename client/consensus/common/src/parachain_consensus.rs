@@ -34,6 +34,7 @@ use futures::{channel::mpsc::Sender, pin_mut, select, FutureExt, Stream, StreamE
 use std::{sync::Arc, time::Duration};
 
 const LOG_TARGET: &str = "cumulus-consensus";
+const FINALIZATION_CACHE_SIZE: u32 = 40;
 
 // Delay range to trigger explicit requests.
 // The chosen value doesn't have any special meaning, a random delay within the order of
@@ -118,7 +119,7 @@ where
 	// For example, a block that has been recovered via PoV-Recovery
 	// on a full node can have several minutes delay. With this cache
 	// we have some "memory" of recently finalized blocks.
-	let mut last_seen_finalized_hashes = LruMap::new(ByLength::new(40));
+	let mut last_seen_finalized_hashes = LruMap::new(ByLength::new(FINALIZATION_CACHE_SIZE));
 
 	loop {
 		select! {

@@ -80,14 +80,23 @@ use active_candidate_recovery::ActiveCandidateRecovery;
 const LOG_TARGET: &str = "cumulus-pov-recovery";
 
 /// Test-friendly wrapper trait for the overseer handle.
+/// Can be used to simulate failing recovery requests.
 #[async_trait::async_trait]
 pub trait RecoveryHandle: Send {
-	async fn recover(&mut self, message: AvailabilityRecoveryMessage, origin: &'static str);
+	async fn send_recovery_msg(
+		&mut self,
+		message: AvailabilityRecoveryMessage,
+		origin: &'static str,
+	);
 }
 
 #[async_trait::async_trait]
 impl RecoveryHandle for OverseerHandle {
-	async fn recover(&mut self, message: AvailabilityRecoveryMessage, origin: &'static str) {
+	async fn send_recovery_msg(
+		&mut self,
+		message: AvailabilityRecoveryMessage,
+		origin: &'static str,
+	) {
 		self.send_msg(message, origin).await;
 	}
 }
@@ -388,7 +397,7 @@ where
 						.push_unordered_recovery(block_hash, self.retry_delay);
 					return
 				} else {
-					tracing::debug!(
+					tracing::warn!(
 						target: LOG_TARGET,
 						?block_hash,
 						"Unable to recover block after retry.",

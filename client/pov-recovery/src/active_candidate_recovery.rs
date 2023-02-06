@@ -52,7 +52,7 @@ impl<Block: BlockT> ActiveCandidateRecovery<Block> {
 		let (tx, rx) = oneshot::channel();
 
 		self.recovery_handle
-			.recover(
+			.send_recovery_msg(
 				AvailabilityRecoveryMessage::RecoverAvailableData(
 					candidate.receipt.clone(),
 					candidate.session_index,
