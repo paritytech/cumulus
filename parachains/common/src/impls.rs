@@ -28,7 +28,6 @@ use frame_support::{
 use pallet_asset_tx_payment::HandleCredit;
 use pallet_dex::MultiAssetIdConverter;
 use polkadot_primitives::AccountId;
-use sp_core::U256;
 use sp_runtime::{traits::Zero, DispatchResult};
 use sp_std::marker::PhantomData;
 use xcm::{
@@ -320,99 +319,6 @@ where
 		} else {
 			ForeignAssets::transfer(asset, source, dest, amount, keep_alive)
 		}
-	}
-}
-
-// TODO: remove this wrapper once https://github.com/paritytech/parity-common/pull/716 is merged.
-#[derive(Clone, Copy, PartialEq, PartialOrd)]
-pub struct WrappedU256(sp_core::U256);
-
-impl From<u128> for WrappedU256 {
-	fn from(val: u128) -> Self {
-		Self(U256::from(val))
-	}
-}
-impl From<u64> for WrappedU256 {
-	fn from(val: u64) -> Self {
-		Self(U256::from(val))
-	}
-}
-impl From<u32> for WrappedU256 {
-	fn from(val: u32) -> Self {
-		Self(U256::from(val))
-	}
-}
-
-impl TryInto<u128> for WrappedU256 {
-	type Error = &'static str;
-	fn try_into(self) -> Result<u128, <Self as TryInto<u128>>::Error> {
-		U256::try_into(self.0)
-	}
-}
-
-impl sp_runtime::traits::IntegerSquareRoot for WrappedU256 {
-	fn integer_sqrt_checked(&self) -> Option<WrappedU256> {
-		self.0.integer_sqrt_checked().map(|val| Self(val))
-	}
-}
-
-impl sp_runtime::traits::One for WrappedU256 {
-	fn one() -> Self {
-		Self(U256::one())
-	}
-}
-
-impl sp_runtime::traits::Zero for WrappedU256 {
-	fn zero() -> Self {
-		Self(U256::zero())
-	}
-	fn is_zero(&self) -> bool {
-		self.0.is_zero()
-	}
-}
-
-impl sp_std::ops::Mul for WrappedU256 {
-	type Output = WrappedU256;
-	fn mul(self, other: WrappedU256) -> <Self as sp_std::ops::Mul<WrappedU256>>::Output {
-		Self(self.0.mul(other.0))
-	}
-}
-impl sp_std::ops::Add for WrappedU256 {
-	type Output = WrappedU256;
-	fn add(self, other: WrappedU256) -> <Self as sp_std::ops::Add<WrappedU256>>::Output {
-		Self(self.0.add(other.0))
-	}
-}
-impl sp_std::ops::Sub for WrappedU256 {
-	type Output = WrappedU256;
-	fn sub(self, other: WrappedU256) -> <Self as sp_std::ops::Sub<WrappedU256>>::Output {
-		Self(self.0.sub(other.0))
-	}
-}
-impl sp_std::ops::Div for WrappedU256 {
-	type Output = WrappedU256;
-	fn div(self, other: WrappedU256) -> <Self as sp_std::ops::Div<WrappedU256>>::Output {
-		Self(self.0.div(other.0))
-	}
-}
-impl sp_runtime::traits::CheckedAdd for WrappedU256 {
-	fn checked_add(&self, other: &WrappedU256) -> Option<WrappedU256> {
-		self.0.checked_add(other.0).map(|res| Self(res))
-	}
-}
-impl sp_runtime::traits::CheckedSub for WrappedU256 {
-	fn checked_sub(&self, other: &WrappedU256) -> Option<WrappedU256> {
-		self.0.checked_sub(other.0).map(|res| Self(res))
-	}
-}
-impl sp_runtime::traits::CheckedMul for WrappedU256 {
-	fn checked_mul(&self, other: &WrappedU256) -> Option<WrappedU256> {
-		self.0.checked_mul(other.0).map(|res| Self(res))
-	}
-}
-impl sp_runtime::traits::CheckedDiv for WrappedU256 {
-	fn checked_div(&self, other: &WrappedU256) -> Option<WrappedU256> {
-		self.0.checked_div(other.0).map(|res| Self(res))
 	}
 }
 
