@@ -20,7 +20,7 @@
 
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::ParachainConsensus;
-use cumulus_client_pov_recovery::{PoVRecovery, RecoveryDelay, RecoveryHandle};
+use cumulus_client_pov_recovery::{PoVRecovery, RecoveryDelayRange, RecoveryHandle};
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
@@ -120,7 +120,7 @@ where
 		// We want that collators wait at maximum the relay chain slot duration before starting
 		// to recover blocks. Additionally, we wait at least half the slot time to give the
 		// relay chain the chance to increase availability.
-		RecoveryDelay { min: relay_chain_slot_duration / 2, max: relay_chain_slot_duration },
+		RecoveryDelayRange { min: relay_chain_slot_duration / 2, max: relay_chain_slot_duration },
 		client.clone(),
 		import_queue,
 		relay_chain_interface.clone(),
@@ -213,7 +213,10 @@ where
 		// the recovery way before full nodes try to recover a certain block and then share the
 		// block with the network using "the normal way". Full nodes are just the "last resort"
 		// for block recovery.
-		RecoveryDelay { min: relay_chain_slot_duration * 25, max: relay_chain_slot_duration * 50 },
+		RecoveryDelayRange {
+			min: relay_chain_slot_duration * 25,
+			max: relay_chain_slot_duration * 50,
+		},
 		client,
 		import_queue,
 		relay_chain_interface,

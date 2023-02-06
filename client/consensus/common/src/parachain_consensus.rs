@@ -23,7 +23,7 @@ use sp_blockchain::Error as ClientError;
 use sp_consensus::{BlockOrigin, BlockStatus};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
-use cumulus_client_pov_recovery::{RecoveryDelay, RecoveryKind, RecoveryRequest};
+use cumulus_client_pov_recovery::{RecoveryDelayRange, RecoveryKind, RecoveryRequest};
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 
 use polkadot_primitives::{Hash as PHash, Id as ParaId, OccupiedCoreAssumption};
@@ -40,8 +40,8 @@ const FINALIZATION_CACHE_SIZE: u32 = 40;
 // The chosen value doesn't have any special meaning, a random delay within the order of
 // seconds in practice should be a good enough to allow a quick recovery without DOSing
 // the relay chain.
-const RECOVERY_DELAY: RecoveryDelay =
-	RecoveryDelay { min: Duration::ZERO, max: Duration::from_secs(30) };
+const RECOVERY_DELAY: RecoveryDelayRange =
+	RecoveryDelayRange { min: Duration::ZERO, max: Duration::from_secs(30) };
 
 fn handle_new_finalized_head<P, Block, B>(
 	parachain: &Arc<P>,

@@ -65,7 +65,7 @@ use futures::{
 	channel::mpsc::Receiver, select, stream::FuturesUnordered, Future, FutureExt, Stream, StreamExt,
 };
 use futures_timer::Delay;
-use rand::{thread_rng, Rng};
+use rand::{distributions::Uniform, prelude::Distribution, thread_rng};
 
 use std::{
 	collections::{HashMap, HashSet, VecDeque},
@@ -118,24 +118,24 @@ pub struct RecoveryRequest<Block: BlockT> {
 	/// can be used to prevent self-DOSing if the recovery request is part of a
 	/// distributed protocol and there is the possibility that multiple actors are
 	/// requiring to perform the recovery action at approximately the same time.
-	pub delay: RecoveryDelay,
+	pub delay: RecoveryDelayRange,
 	/// Recovery type.
 	pub kind: RecoveryKind,
 }
 
 /// The delay between observing an unknown block and triggering the recovery of a block.
 #[derive(Clone, Copy)]
-pub struct RecoveryDelay {
+pub struct RecoveryDelayRange {
 	/// Start recovering after `min` delay.
 	pub min: Duration,
 	/// Start recovering before `max` delay.
 	pub max: Duration,
 }
 
-impl RecoveryDelay {
+impl RecoveryDelayRange {
 	/// Produce a randomized duration between `min` and `max`.
 	fn duration(&self) -> Duration {
-		self.min + self.max.saturating_sub(self.min).mul_f64(thread_rng().gen())
+		Uniform::from(self.min..=self.max).sample(&mut thread_rng())
 	}
 }
 
@@ -215,7 +215,7 @@ pub struct PoVRecovery<Block: BlockT, PC, RC> {
 	///
 	/// Uses parent -> blocks mapping.
 	waiting_for_parent: HashMap<Block::Hash, Vec<Block>>,
-	recovery_delay: RecoveryDelay,
+	recovery_delay: RecoveryDelayRange,
 	parachain_client: Arc<PC>,
 	parachain_import_queue: Box<dyn ImportQueueService<Block>>,
 	relay_chain_interface: RC,
@@ -236,7 +236,7 @@ where
 	/// Create a new instance.
 	pub fn new(
 		recovery_handle: Box<dyn RecoveryHandle>,
-		recovery_delay: RecoveryDelay,
+		recovery_delay: RecoveryDelayRange,
 		parachain_client: Arc<PC>,
 		parachain_import_queue: Box<dyn ImportQueueService<Block>>,
 		relay_chain_interface: RCInterface,
