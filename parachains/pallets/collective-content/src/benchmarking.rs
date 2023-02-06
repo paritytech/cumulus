@@ -24,9 +24,16 @@ fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 
+/// returns CID hash of 68 bytes of given `i`.
+fn create_cid(i: u8) -> OpaqueCid {
+	let cid: OpaqueCid = [i; 68].to_vec().try_into().unwrap();
+	cid
+}
+
 benchmarks_instance_pallet! {
 	set_charter {
-		let cid: Cid = b"ipfs_hash".to_vec().try_into().unwrap();
+		let cid: OpaqueCid = b"bafkreif2mywzuu2b2uwehi6c6fojgd7dhcqngus5gzy23uangvpa2kc5si"
+			.to_vec().try_into().unwrap();
 		let call = Call::<T, I>::set_charter { cid: cid.clone() };
 		let origin = T::CharterOrigin::successful_origin();
 	}: { call.dispatch_bypass_filter(origin)? }
@@ -43,7 +50,7 @@ benchmarks_instance_pallet! {
 			maybe_expire = Some(DispatchTimeFor::<T>::At(10u32.into()));
 		}
 		let now = frame_system::Pallet::<T>::block_number();
-		let cid: Cid = b"ipfs_hash".to_vec().try_into().unwrap();
+		let cid: OpaqueCid = create_cid(1);
 		let call = Call::<T, I>::announce {
 			cid: cid.clone(),
 			maybe_expire: maybe_expire.clone(),
@@ -60,7 +67,7 @@ benchmarks_instance_pallet! {
 	}
 
 	remove_announcement {
-		let cid: Cid = b"ipfs_hash".to_vec().try_into().unwrap();
+		let cid: OpaqueCid = create_cid(1);
 		let origin = T::AnnouncementOrigin::successful_origin();
 		let max_count = T::MaxAnnouncementsCount::get() as usize;
 
@@ -82,7 +89,7 @@ benchmarks_instance_pallet! {
 		let max_count = T::MaxAnnouncementsCount::get() as usize;
 
 		for i in 0..max_count {
-			let cid: Cid = i.to_ne_bytes().to_vec().try_into().unwrap();
+			let cid: OpaqueCid = create_cid(i as u8);
 			CollectiveContent::<T, I>::announce(
 				origin.clone(),
 				cid,

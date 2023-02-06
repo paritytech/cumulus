@@ -18,14 +18,14 @@
 //! The pallet provides the functionality to store different types of content. This would typically
 //! be used by an on-chain collective, such as the Polkadot Alliance or Ambassador Program.
 //!
-//! The pallet stores content as a [Cid], which should correspond to some off-chain hosting service,
+//! The pallet stores content as a [OpaqueCid], which should correspond to some off-chain hosting service,
 //! such as IPFS, and contain any type of data. Each type of content has its own origin from which
 //! it can be managed. The origins are configurable in the runtime. Storing content does not require
 //! a deposit, as it is expected to be managed by a trusted collective.
 //!
 //! Content types:
 //!
-//! - Collective [charter](pallet::Charter): A single document (`Cid`) managed by
+//! - Collective [charter](pallet::Charter): A single document (`OpaqueCid`) managed by
 //!   [CharterOrigin](pallet::Config::CharterOrigin).
 //! - Collective [announcements](pallet::Announcements): A list of announcements managed by
 //!   [AnnouncementOrigin](pallet::Config::AnnouncementOrigin).
@@ -50,7 +50,7 @@ use sp_std::prelude::*;
 
 /// IPFS compatible CID.
 // worst case 2 bytes base and codec, 2 bytes hash type and size, 64 bytes hash digest.
-pub type Cid = BoundedVec<u8, ConstU32<68>>;
+pub type OpaqueCid = BoundedVec<u8, ConstU32<68>>;
 
 /// The block number type of [frame_system::Config].
 pub type BlockNumberFor<T> = <T as frame_system::Config>::BlockNumber;
@@ -109,24 +109,24 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// A new charter has been set.
-		NewCharterSet { cid: Cid },
+		NewCharterSet { cid: OpaqueCid },
 		/// A new announcement has been made.
-		AnnouncementAnnounced { cid: Cid, maybe_expire_at: Option<T::BlockNumber> },
+		AnnouncementAnnounced { cid: OpaqueCid, maybe_expire_at: Option<T::BlockNumber> },
 		/// An on-chain announcement has been removed.
-		AnnouncementRemoved { cid: Cid },
+		AnnouncementRemoved { cid: OpaqueCid },
 	}
 
 	/// The collective charter.
 	#[pallet::storage]
 	#[pallet::getter(fn charter)]
-	pub type Charter<T: Config<I>, I: 'static = ()> = StorageValue<_, Cid, OptionQuery>;
+	pub type Charter<T: Config<I>, I: 'static = ()> = StorageValue<_, OpaqueCid, OptionQuery>;
 
 	/// The collective announcements.
 	#[pallet::storage]
 	#[pallet::getter(fn announcements)]
 	pub type Announcements<T: Config<I>, I: 'static = ()> = StorageValue<
 		_,
-		BoundedVec<(Cid, Option<T::BlockNumber>), T::MaxAnnouncementsCount>,
+		BoundedVec<(OpaqueCid, Option<T::BlockNumber>), T::MaxAnnouncementsCount>,
 		ValueQuery,
 	>;
 
@@ -141,12 +141,12 @@ pub mod pallet {
 		///
 		/// Parameters:
 		/// - `origin`: Must be the [Config::CharterOrigin].
-		/// - `cid`: [CID](super::Cid) of the IPFS document of the collective charter.
+		/// - `cid`: [CID](super::OpaqueCid) of the IPFS document of the collective charter.
 		///
 		/// Weight: `O(1)`.
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::set_charter())]
-		pub fn set_charter(origin: OriginFor<T>, cid: Cid) -> DispatchResult {
+		pub fn set_charter(origin: OriginFor<T>, cid: OpaqueCid) -> DispatchResult {
 			T::CharterOrigin::ensure_origin(origin)?;
 
 			Charter::<T, I>::put(&cid);
@@ -159,7 +159,7 @@ pub mod pallet {
 		///
 		/// Parameters:
 		/// - `origin`: Must be the [Config::CharterOrigin].
-		/// - `cid`: [CID](super::Cid) of the IPFS document to announce.
+		/// - `cid`: [CID](super::OpaqueCid) of the IPFS document to announce.
 		/// - `maybe_expire`: Expiration block of the announcement.
 		///
 		/// Weight: `O(1)`.
@@ -167,7 +167,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::announce(maybe_expire.map_or(0, |_| 1)))]
 		pub fn announce(
 			origin: OriginFor<T>,
-			cid: Cid,
+			cid: OpaqueCid,
 			maybe_expire: Option<DispatchTimeFor<T>>,
 		) -> DispatchResult {
 			T::AnnouncementOrigin::ensure_origin(origin)?;
@@ -196,12 +196,12 @@ pub mod pallet {
 		///
 		/// Parameters:
 		/// - `origin`: Must be the [Config::CharterOrigin].
-		/// - `cid`: [CID](super::Cid) of the IPFS document to remove.
+		/// - `cid`: [CID](super::OpaqueCid) of the IPFS document to remove.
 		///
 		/// Weight: `O(1)`, less of the [Config::MaxAnnouncementsCount] is lower.
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::remove_announcement())]
-		pub fn remove_announcement(origin: OriginFor<T>, cid: Cid) -> DispatchResult {
+		pub fn remove_announcement(origin: OriginFor<T>, cid: OpaqueCid) -> DispatchResult {
 			T::AnnouncementOrigin::ensure_origin(origin)?;
 
 			let mut announcements = <Announcements<T, I>>::get();
@@ -230,7 +230,7 @@ pub mod pallet {
 				announcements.clone().into_iter().partition(|(_, maybe_expire_at)| {
 					maybe_expire_at.map_or(true, |expire_at| expire_at > now)
 				});
-			if expired.len() == 0 {
+			if expired.is_empty() {
 				// no expired announcements.
 				return
 			}
