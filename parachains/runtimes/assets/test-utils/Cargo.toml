@@ -23,6 +23,10 @@ sp-core = { git = "https://github.com/paritytech/substrate", default-features = 
 pallet-collator-selection = { path = "../../../../pallets/collator-selection", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
 
+# Polkadot
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+
 [dev-dependencies]
 hex-literal = "0.3.4"
 
@@ -42,4 +46,6 @@ std = [
     "sp-io/std",
     "sp-runtime/std",
     "sp-std/std",
+    "xcm/std",
+    "xcm-executor/std",
 ]

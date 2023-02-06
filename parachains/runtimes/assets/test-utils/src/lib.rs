@@ -6,6 +6,11 @@ use parachains_common::AccountId;
 use sp_consensus_aura::AURA_ENGINE_ID;
 use sp_core::Encode;
 use sp_runtime::{Digest, DigestItem};
+use xcm::{
+	latest::{MultiAsset, MultiLocation, XcmContext},
+	prelude::{Concrete, Fungible, XcmError},
+};
+use xcm_executor::{traits::TransactAsset, Assets};
 
 pub type BalanceOf<Runtime> = <Runtime as pallet_balances::Config>::Balance;
 pub type AccountIdOf<Runtime> = <Runtime as frame_system::Config>::AccountId;
@@ -135,5 +140,22 @@ where
 		account_id: AccountIdOf<Runtime>,
 	) -> <Runtime as frame_system::Config>::RuntimeOrigin {
 		<Runtime as frame_system::Config>::RuntimeOrigin::signed(account_id.into())
+	}
+}
+
+impl<XcmConfig: xcm_executor::Config> RuntimeHelper<XcmConfig> {
+	pub fn do_transfer(
+		from: MultiLocation,
+		to: MultiLocation,
+		(asset, amount): (MultiLocation, u128),
+	) -> Result<Assets, XcmError> {
+		<XcmConfig::AssetTransactor as TransactAsset>::transfer_asset(
+			&MultiAsset { id: Concrete(asset), fun: Fungible(amount) },
+			&from,
+			&to,
+			// We aren't able to track the XCM that initiated the fee deposit, so we create a
+			// fake message hash here
+			&XcmContext::with_message_hash([0; 32]),
+		)
 	}
 }

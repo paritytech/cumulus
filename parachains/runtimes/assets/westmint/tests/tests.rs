@@ -2,16 +2,19 @@ use asset_test_utils::{ExtBuilder, RuntimeHelper};
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
 	assert_noop, assert_ok,
-	traits::PalletInfo,
+	traits::{fungibles::InspectEnumerable, PalletInfo},
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
 use parachains_common::{AccountId, AssetIdForTrustBackedAssets, AuraId};
+use std::convert::Into;
 use westmint_runtime::xcm_config::{
 	AssetFeeAsExistentialDepositMultiplierFeeCharger, TrustBackedAssetsPalletLocation,
 };
 pub use westmint_runtime::{
-	constants::fee::WeightToFee, xcm_config::XcmConfig, Assets, Balances, ExistentialDeposit,
-	Runtime, SessionKeys, System,
+	constants::fee::WeightToFee,
+	xcm_config::{SovereignAccountOf, XcmConfig},
+	AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets, Runtime, SessionKeys,
+	System,
 };
 use xcm::latest::prelude::*;
 use xcm_builder::AsPrefixedGeneralIndex;
@@ -19,6 +22,8 @@ use xcm_executor::traits::{Convert, JustTry, TransactAsset, WeightTrader};
 
 pub const ALICE: [u8; 32] = [1u8; 32];
 pub const BOB: [u8; 32] = [2u8; 32];
+pub const CHARLIE: [u8; 32] = [3u8; 32];
+pub const SOME_ASSET_OWNER: [u8; 32] = [4u8; 32];
 
 #[test]
 fn test_asset_xcm_trader() {
@@ -392,7 +397,9 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 }
 
 #[test]
-fn test_asset_transactor_with_trust_backed_assets_works() {
+fn test_asset_transactor_transfer_with_local_consensus_currency_works() {
+	let unit = ExistentialDeposit::get();
+
 	ExtBuilder::<Runtime>::default()
 		.with_collators(vec![AccountId::from(ALICE)])
 		.with_session_keys(vec![(
@@ -400,74 +407,155 @@ fn test_asset_transactor_with_trust_backed_assets_works() {
 			AccountId::from(ALICE),
 			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
 		)])
+		.with_balances(vec![(AccountId::from(ALICE), 10 * unit)])
 		.with_tracing()
 		.build()
 		.execute_with(|| {
-			// We need root origin to create a sufficient asset
-			let minimum_asset_balance = 3333333_u128;
+			// check Balances before
+			assert_eq!(Balances::free_balance(AccountId::from(ALICE)), 10 * unit);
+			assert_eq!(Balances::free_balance(AccountId::from(BOB)), 0 * unit);
+			assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
+			assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
+
+			// transfer_asset (deposit/withdraw) ALICE -> BOB
+			let _ = RuntimeHelper::<XcmConfig>::do_transfer(
+				MultiLocation {
+					parents: 0,
+					interior: X1(AccountId32 { network: None, id: AccountId::from(ALICE).into() }),
+				},
+				MultiLocation {
+					parents: 0,
+					interior: X1(AccountId32 { network: None, id: AccountId::from(BOB).into() }),
+				},
+				// local_consensus_currency_asset, e.g.: relaychain token (KSM, DOT, ...)
+				(MultiLocation { parents: 1, interior: Here }, 1 * unit),
+			)
+			.expect("no error");
+
+			// check Balances after
+			assert_eq!(Balances::free_balance(AccountId::from(ALICE)), 9 * unit);
+			assert_eq!(Balances::free_balance(AccountId::from(BOB)), 1 * unit);
+			assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
+			assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
+		})
+}
+
+#[test]
+fn test_asset_transactor_transfer_with_trust_backed_assets_works() {
+	ExtBuilder::<Runtime>::default()
+		.with_collators(vec![AccountId::from(ALICE)])
+		.with_session_keys(vec![(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+		)])
+		.with_balances(vec![
+			(AccountId::from(SOME_ASSET_OWNER), ExistentialDeposit::get() + AssetDeposit::get()),
+			(AccountId::from(ALICE), ExistentialDeposit::get()),
+			(AccountId::from(BOB), ExistentialDeposit::get())
+		])
+		.with_tracing()
+		.build()
+		.execute_with(|| {
+			// create  some asset class
+			let asset_minimum_asset_balance = 3333333_u128;
 			let local_asset_id = 1;
-			assert_ok!(Assets::force_create(
-				RuntimeHelper::<Runtime>::root_origin(),
+			let local_asset_id_as_multilocation = {
+				type AssetIdConverter = AsPrefixedGeneralIndex<
+					TrustBackedAssetsPalletLocation,
+					AssetIdForTrustBackedAssets,
+					JustTry,
+				>;
+				AssetIdConverter::reverse_ref(local_asset_id).unwrap()
+			};
+			assert_ok!(Assets::create(
+				RuntimeHelper::<Runtime>::origin_of(AccountId::from(SOME_ASSET_OWNER)),
 				local_asset_id.into(),
-				AccountId::from(ALICE).into(),
-				true,
-				minimum_asset_balance
+				AccountId::from(SOME_ASSET_OWNER).into(),
+				asset_minimum_asset_balance
 			));
 
 			// We first mint enough asset for the account to exist for assets
 			assert_ok!(Assets::mint(
-				RuntimeHelper::<Runtime>::origin_of(AccountId::from(ALICE)),
+				RuntimeHelper::<Runtime>::origin_of(AccountId::from(SOME_ASSET_OWNER)),
 				local_asset_id.into(),
 				AccountId::from(ALICE).into(),
-				minimum_asset_balance * 6
+				6 * asset_minimum_asset_balance
 			));
 
 			// check Assets before
 			assert_eq!(
 				Assets::balance(local_asset_id, AccountId::from(ALICE)),
-				minimum_asset_balance * 6
+				6 * asset_minimum_asset_balance
 			);
 			assert_eq!(Assets::balance(local_asset_id, AccountId::from(BOB)), 0);
+			assert_eq!(
+				Assets::balance(local_asset_id, AccountId::from(CHARLIE)),
+				0
+			);
+			assert_eq!(
+				Assets::balance(local_asset_id, AccountId::from(SOME_ASSET_OWNER)),
+				0
+			);
+			assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
+			assert_eq!(Balances::free_balance(AccountId::from(SOME_ASSET_OWNER)), ExistentialDeposit::get());
+			assert_eq!(Balances::free_balance(AccountId::from(ALICE)), ExistentialDeposit::get());
+			assert_eq!(Balances::free_balance(AccountId::from(BOB)), ExistentialDeposit::get());
+			assert_eq!(Balances::free_balance(AccountId::from(CHARLIE)), 0);
 
-			// transfer_asset (deposit/withdraw)
-			let origin_location = MultiLocation {
-				parents: 0,
-				interior: X1(AccountId32 { network: None, id: AccountId::from(ALICE).into() }),
-			};
-			let target_account_location = MultiLocation {
-				parents: 0,
-				interior: X1(AccountId32 { network: None, id: AccountId::from(BOB).into() }),
-			};
+			// transfer_asset (deposit/withdraw) ALICE -> CHARLIE (not ok - Charlie does not have ExistentialDeposit)
+			assert!(matches!(
+				RuntimeHelper::<XcmConfig>::do_transfer(
+				MultiLocation {
+					parents: 0,
+					interior: X1(AccountId32 { network: None, id: AccountId::from(ALICE).into() }),
+				},
+				MultiLocation {
+					parents: 0,
+					interior: X1(AccountId32 { network: None, id: AccountId::from(CHARLIE).into() }),
+				},
+				(local_asset_id_as_multilocation, 1 * asset_minimum_asset_balance),
+				),
+				Err(XcmError::FailedToTransactAsset(reason)) if reason == Into::<&str>::into(sp_runtime::TokenError::CannotCreate)
+			));
 
-			type AssetIdConverter = AsPrefixedGeneralIndex<
-				TrustBackedAssetsPalletLocation,
-				AssetIdForTrustBackedAssets,
-				JustTry,
-			>;
-			let multi_asset = MultiAsset {
-				id: Concrete(AssetIdConverter::reverse_ref(local_asset_id).unwrap()),
-				fun: Fungible(minimum_asset_balance),
-			};
-
-			type AssetTransactor = <XcmConfig as xcm_executor::Config>::AssetTransactor;
-			let _ = <AssetTransactor as TransactAsset>::transfer_asset(
-				&multi_asset,
-				&origin_location,
-				&target_account_location,
-				// We aren't able to track the XCM that initiated the fee deposit, so we create a
-				// fake message hash here
-				&XcmContext::with_message_hash([0; 32]),
-			)
-			.expect("no error");
+			// transfer_asset (deposit/withdraw) ALICE -> BOB (ok - has ExistentialDeposit)
+			assert!(matches!(
+				RuntimeHelper::<XcmConfig>::do_transfer(
+				MultiLocation {
+					parents: 0,
+					interior: X1(AccountId32 { network: None, id: AccountId::from(ALICE).into() }),
+				},
+				MultiLocation {
+					parents: 0,
+					interior: X1(AccountId32 { network: None, id: AccountId::from(BOB).into() }),
+				},
+				(local_asset_id_as_multilocation, 1 * asset_minimum_asset_balance),
+				),
+				Ok(_)
+			));
 
 			// check Assets after
 			assert_eq!(
 				Assets::balance(local_asset_id, AccountId::from(ALICE)),
-				minimum_asset_balance * 5
+				5 * asset_minimum_asset_balance
 			);
 			assert_eq!(
 				Assets::balance(local_asset_id, AccountId::from(BOB)),
-				minimum_asset_balance
+				1 * asset_minimum_asset_balance
 			);
+			assert_eq!(
+				Assets::balance(local_asset_id, AccountId::from(CHARLIE)),
+				0
+			);
+			assert_eq!(
+				Assets::balance(local_asset_id, AccountId::from(SOME_ASSET_OWNER)),
+				0
+			);
+			assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
+			assert_eq!(Balances::free_balance(AccountId::from(SOME_ASSET_OWNER)), ExistentialDeposit::get());
+			assert_eq!(Balances::free_balance(AccountId::from(ALICE)), ExistentialDeposit::get());
+			assert_eq!(Balances::free_balance(AccountId::from(BOB)), ExistentialDeposit::get());
+			assert_eq!(Balances::free_balance(AccountId::from(CHARLIE)), 0);
 		})
 }
