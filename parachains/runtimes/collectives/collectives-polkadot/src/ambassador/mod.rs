@@ -64,7 +64,6 @@ impl pallet_collective_content::Config<AmbassadorContentInstance> for Runtime {
 		>,
 		EnsureAmbassador,
 	>;
-	type MaxAnnouncementsCount = ConstU32<100>;
 	type WeightInfo = weights::pallet_ambassador_content::WeightInfo<Runtime>;
 }
 

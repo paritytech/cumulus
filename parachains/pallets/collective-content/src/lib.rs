@@ -85,12 +85,6 @@ pub mod pallet {
 		/// The origin to control the collective charter.
 		type CharterOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
-		/// The maximum number of announcements.
-		///
-		/// NOTE: Benchmarks need to be re-run if this changes.
-		#[pallet::constant]
-		type MaxAnnouncementsCount: Get<u32>;
-
 		/// Weight information needed for the pallet.
 		type WeightInfo: WeightInfo;
 	}
@@ -124,11 +118,13 @@ pub mod pallet {
 	/// The collective announcements.
 	#[pallet::storage]
 	#[pallet::getter(fn announcements)]
-	pub type Announcements<T: Config<I>, I: 'static = ()> = StorageValue<
-		_,
-		BoundedVec<(OpaqueCid, Option<T::BlockNumber>), T::MaxAnnouncementsCount>,
-		ValueQuery,
-	>;
+	pub type Announcements<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, OpaqueCid, Option<T::BlockNumber>, ValueQuery>;
+
+	/// The current count of the announcements.
+	#[pallet::storage]
+	#[pallet::getter(fn announcements_count)]
+	pub type AnnouncementsCount<T: Config<I>, I: 'static = ()> = StorageValue<_, u32, ValueQuery>;
 
 	/// The closest expiration block number of an announcement.
 	#[pallet::storage]
@@ -176,11 +172,8 @@ pub mod pallet {
 			let maybe_expire_at = maybe_expire.map(|e| e.evaluate(now));
 			ensure!(maybe_expire_at.map_or(true, |e| e > now), Error::<T, I>::InvalidExpiration);
 
-			let mut announcements = <Announcements<T, I>>::get();
-			announcements
-				.try_push((cid.clone(), maybe_expire_at.clone()))
-				.map_err(|_| Error::<T, I>::TooManyAnnouncements)?;
-			<Announcements<T, I>>::put(announcements);
+			<Announcements<T, I>>::insert(cid.clone(), maybe_expire_at.clone());
+			<AnnouncementsCount<T, I>>::mutate(|count| *count += 1);
 
 			if let Some(expire_at) = maybe_expire_at {
 				if NextAnnouncementExpireAt::<T, I>::get().map_or(true, |n| n > expire_at) {
@@ -198,19 +191,18 @@ pub mod pallet {
 		/// - `origin`: Must be the [Config::CharterOrigin].
 		/// - `cid`: [CID](super::OpaqueCid) of the IPFS document to remove.
 		///
-		/// Weight: `O(1)`, less of the [Config::MaxAnnouncementsCount] is lower.
+		/// Weight: `O(1)`.
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::remove_announcement())]
 		pub fn remove_announcement(origin: OriginFor<T>, cid: OpaqueCid) -> DispatchResult {
 			T::AnnouncementOrigin::ensure_origin(origin)?;
+			ensure!(
+				<Announcements<T, I>>::contains_key(cid.clone()),
+				Error::<T, I>::MissingAnnouncement
+			);
 
-			let mut announcements = <Announcements<T, I>>::get();
-			let pos = announcements
-				.binary_search_by_key(&cid, |(c, _)| c.clone())
-				.ok()
-				.ok_or(Error::<T, I>::MissingAnnouncement)?;
-			announcements.remove(pos);
-			<Announcements<T, I>>::put(announcements);
+			<Announcements<T, I>>::remove(cid.clone());
+			<AnnouncementsCount<T, I>>::mutate(|count| *count -= 1);
 
 			Self::deposit_event(Event::<T, I>::AnnouncementRemoved { cid });
 			Ok(())
@@ -224,40 +216,32 @@ pub mod pallet {
 				// no expired announcements expected.
 				return
 			}
-			// find expired announcements.
-			let announcements = <Announcements<T, I>>::get();
-			let (live, expired): (Vec<(_, _)>, Vec<(_, _)>) =
-				announcements.clone().into_iter().partition(|(_, maybe_expire_at)| {
-					maybe_expire_at.map_or(true, |expire_at| expire_at > now)
-				});
-			if expired.is_empty() {
-				// no expired announcements.
-				return
-			}
-			// convert into bounded vec.
-			let live: BoundedVec<(_, _), T::MaxAnnouncementsCount> = live.try_into().map_or_else(
-				|err| {
-					// should never happen.
-					debug_assert!(false, "failed to convert into bounded vec: {:?}", err);
-					announcements
-				},
-				|live| live,
-			);
-			// determine the next announcement expire at.
-			NextAnnouncementExpireAt::<T, I>::set(live.clone().into_iter().fold(
-				None,
-				|next, (_, maybe_expire_at)| match (next, maybe_expire_at) {
-					(Some(next), Some(expire_at)) if next > expire_at => Some(expire_at),
-					(None, Some(expire_at)) => Some(expire_at),
-					_ => next,
-				},
-			));
-			// save new list of announcements.
-			<Announcements<T, I>>::put(live);
-			// publish events for removed announcements.
-			expired.into_iter().for_each(|(cid, _)| {
-				Self::deposit_event(Event::<T, I>::AnnouncementRemoved { cid })
+			let mut maybe_next: Option<T::BlockNumber> = None;
+			let mut count = 0;
+			<Announcements<T, I>>::translate(|cid, maybe_expire_at: Option<T::BlockNumber>| {
+				match maybe_expire_at {
+					Some(expire_at) if now >= expire_at => {
+						Self::deposit_event(Event::<T, I>::AnnouncementRemoved { cid });
+						None
+					},
+					Some(expire_at) => {
+						// determine `NextAnnouncementExpireAt`.
+						maybe_next = match maybe_next {
+							Some(next) if expire_at > next => Some(next),
+							_ => Some(expire_at),
+						};
+						count += 1;
+						// return translated `maybe_expire_at`.
+						Some(maybe_expire_at)
+					},
+					None => {
+						count += 1;
+						Some(maybe_expire_at)
+					},
+				}
 			});
+			<NextAnnouncementExpireAt<T, I>>::set(maybe_next);
+			<AnnouncementsCount<T, I>>::set(count);
 		}
 	}
 
@@ -265,9 +249,9 @@ pub mod pallet {
 	impl<T: Config<I>, I: 'static> Hooks<T::BlockNumber> for Pallet<T, I> {
 		/// Clean up expired announcements if there is enough `remaining_weight` weight left.
 		fn on_idle(now: T::BlockNumber, remaining_weight: Weight) -> Weight {
-			let weight = T::WeightInfo::cleanup_announcements();
+			let weight = T::WeightInfo::cleanup_announcements(<AnnouncementsCount<T, I>>::get());
 			if remaining_weight.any_lt(weight) {
-				return Weight::from_ref_time(0)
+				return T::DbWeight::get().reads(1)
 			}
 			Self::cleanup_announcements(now);
 			weight

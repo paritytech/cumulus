@@ -18,7 +18,6 @@
 use super::{DispatchTimeFor, Pallet as CollectiveContent, *};
 use frame_benchmarking::benchmarks_instance_pallet;
 use frame_support::traits::{EnsureOrigin, UnfilteredDispatchable};
-use sp_core::Get;
 
 fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::RuntimeEvent) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
@@ -32,8 +31,7 @@ fn create_cid(i: u8) -> OpaqueCid {
 
 benchmarks_instance_pallet! {
 	set_charter {
-		let cid: OpaqueCid = b"bafkreif2mywzuu2b2uwehi6c6fojgd7dhcqngus5gzy23uangvpa2kc5si"
-			.to_vec().try_into().unwrap();
+		let cid: OpaqueCid = create_cid(1);
 		let call = Call::<T, I>::set_charter { cid: cid.clone() };
 		let origin = T::CharterOrigin::successful_origin();
 	}: { call.dispatch_bypass_filter(origin)? }
@@ -58,7 +56,7 @@ benchmarks_instance_pallet! {
 		let origin = T::AnnouncementOrigin::successful_origin();
 	}: { call.dispatch_bypass_filter(origin)? }
 	verify {
-		assert_eq!(CollectiveContent::<T, I>::announcements().len(), 1);
+		assert_eq!(CollectiveContent::<T, I>::announcements_count(), 1);
 		assert_eq!(NextAnnouncementExpireAt::<T, I>::get().map_or(0, |_| 1), x);
 		assert_last_event::<T, I>(Event::AnnouncementAnnounced {
 			cid,
@@ -69,25 +67,25 @@ benchmarks_instance_pallet! {
 	remove_announcement {
 		let cid: OpaqueCid = create_cid(1);
 		let origin = T::AnnouncementOrigin::successful_origin();
-		let max_count = T::MaxAnnouncementsCount::get() as usize;
-
-		// fill the announcements vec for the worst case.
-		let announcements = vec![(cid.clone(), None); max_count];
-		let announcements: BoundedVec<_, T::MaxAnnouncementsCount> = BoundedVec::try_from(announcements).unwrap();
-		Announcements::<T, I>::put(announcements);
-		assert_eq!(CollectiveContent::<T, I>::announcements().len(), max_count);
+		CollectiveContent::<T, I>::announce(
+			origin.clone(),
+			cid.clone(),
+			None,
+		).expect("could not publish an announcement");
+		assert_eq!(CollectiveContent::<T, I>::announcements_count(), 1);
 
 		let call = Call::<T, I>::remove_announcement { cid: cid.clone() };
 	}: { call.dispatch_bypass_filter(origin)? }
 	verify {
-		assert_eq!(CollectiveContent::<T, I>::announcements().len(), max_count - 1);
+		assert_eq!(CollectiveContent::<T, I>::announcements_count(), 0);
 		assert_last_event::<T, I>(Event::AnnouncementRemoved { cid }.into());
 	}
 
 	cleanup_announcements {
+		let x in 0 .. 100;
 		let origin = T::AnnouncementOrigin::successful_origin();
-		let max_count = T::MaxAnnouncementsCount::get() as usize;
 
+		let max_count = x;
 		for i in 0..max_count {
 			let cid: OpaqueCid = create_cid(i as u8);
 			CollectiveContent::<T, I>::announce(
@@ -96,13 +94,13 @@ benchmarks_instance_pallet! {
 				Some(DispatchTimeFor::<T>::At(5u32.into())),
 			).expect("could not publish an announcement");
 		}
-		assert_eq!(CollectiveContent::<T, I>::announcements().len(), max_count);
+		assert_eq!(CollectiveContent::<T, I>::announcements_count(), max_count);
 		frame_system::Pallet::<T>::set_block_number(10u32.into());
 	}: {
 		CollectiveContent::<T, I>::cleanup_announcements(10u32.into());
 	} verify {
-		assert_eq!(CollectiveContent::<T, I>::announcements().len(), 0);
-		assert_eq!(frame_system::Pallet::<T>::events().len(), max_count)
+		assert_eq!(CollectiveContent::<T, I>::announcements_count(), 0);
+		assert_eq!(frame_system::Pallet::<T>::events().len() as u32, max_count)
 	}
 
 	impl_benchmark_test_suite!(CollectiveContent, super::mock::new_bench_ext(), super::mock::Test);

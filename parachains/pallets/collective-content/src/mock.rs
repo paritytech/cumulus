@@ -18,7 +18,7 @@
 pub use crate as pallet_collective_content;
 use crate::WeightInfo;
 use frame_support::{
-	ord_parameter_types, parameter_types,
+	ord_parameter_types,
 	traits::{ConstU32, ConstU64},
 	weights::Weight,
 };
@@ -48,15 +48,10 @@ ord_parameter_types! {
 	pub const OtherAccount: u64 = 3;
 }
 
-parameter_types! {
-	pub static MaxAnnouncementsCount: u32 = 5;
-}
-
 impl pallet_collective_content::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type CharterOrigin = EnsureSignedBy<CharterManager, AccountId>;
 	type AnnouncementOrigin = EnsureSignedBy<AnnouncementManager, AccountId>;
-	type MaxAnnouncementsCount = MaxAnnouncementsCount;
 	type WeightInfo = CCWeightInfo;
 }
 
@@ -97,7 +92,7 @@ impl WeightInfo for CCWeightInfo {
 	fn remove_announcement() -> Weight {
 		Weight::zero()
 	}
-	fn cleanup_announcements() -> Weight {
+	fn cleanup_announcements(_x: u32) -> Weight {
 		// used in tests.
 		Weight::from_ref_time(10)
 	}
