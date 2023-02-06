@@ -25,11 +25,9 @@ mkdir -p parachain-snapshot/charlie/data/chains/local_testnet/db/
 # Relay data
 mkdir -p parachain-snapshot/charlie/relay-data/chains/rococo_local_testnet/db/
 
+cp -r chain-data/charlie/data/chains/local_testnet/db/. parachain-snapshot/charlie/data/chains/local_testnet/db/
 
-cp -r chain-data/charlie/data/chains/local_testnet/db/ parachain-snapshot/charlie/data/chains/local_testnet/db/
-
-
-cp -r chain-data/charlie/relay-data/chains/rococo_local_testnet/db/ parachain-snapshot/charlie/relay-data/chains/rococo_local_testnet/db/
+cp -r chain-data/charlie/relay-data/chains/rococo_local_testnet/db/. parachain-snapshot/charlie/relay-data/chains/rococo_local_testnet/db/
 
 tar -C parachain-snapshot/charlie/ -czf parachain.tgz data relay-data
 ```
