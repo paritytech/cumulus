@@ -27,12 +27,12 @@
 //!
 //! Users must ensure that they register this pallet as an inherent provider.
 
-use codec::{Decode, Encode, MaxEncodedLen};
+use codec::Encode;
 use cumulus_primitives_core::{
-	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, GetChannelInfo,
-	InboundDownwardMessage, InboundHrmpMessage, MessageSendError, OutboundHrmpMessage, ParaId,
-	PersistedValidationData, UpwardMessage, UpwardMessageSender, XcmpMessageHandler,
-	XcmpMessageSource,
+	relay_chain, AbridgedHostConfiguration, AggregateMessageOrigin, ChannelStatus, CollationInfo,
+	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError,
+	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
+	XcmpMessageHandler, XcmpMessageSource,
 };
 use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
 use frame_support::{
@@ -45,7 +45,6 @@ use frame_support::{
 };
 use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
-use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{Block as BlockT, BlockNumberProvider, Hash},
 	transaction_validity::{
@@ -440,14 +439,14 @@ pub mod pallet {
 				relevant_messaging_state.dmq_mqc_head,
 				downward_messages,
 			);
-			// FAIL-CI do this in on_initialize or manually here?
-			T::MessageService::service_queues(Weight::MAX);
-
-			total_weight += Self::process_inbound_horizontal_messages(
+			total_weight += Self::enqueue_inbound_horizontal_messages(
 				&relevant_messaging_state.ingress_channels,
 				horizontal_messages,
 				vfp.relay_parent_number,
 			);
+
+			// FAIL-CI do this in on_initialize or manually here?
+			T::MessageService::service_queues(Weight::MAX);
 
 			Ok(PostDispatchInfo { actual_weight: Some(total_weight), pays_fee: Pays::No })
 		}
@@ -846,14 +845,14 @@ impl<T: Config> Pallet<T> {
 
 	/// Process all inbound horizontal messages relayed by the collator.
 	///
-	/// This is similar to [`process_inbound_downward_messages`], but works on multiple inbound
-	/// channels.
+	/// This is similar to [`enqueue_inbound_downward_messages`], but works on multiple inbound
+	/// channels. It immediately dispatches signals and queues all other XCM. Blob messages are ignored.
 	///
 	/// **Panics** if either any of horizontal messages submitted by the collator was sent from
 	///            a para which has no open channel to this parachain or if after processing
 	///            messages across all inbound channels MQCs were obtained which do not
 	///            correspond to the ones found on the relay-chain.
-	fn process_inbound_horizontal_messages(
+	fn enqueue_inbound_horizontal_messages(
 		ingress_channels: &[(ParaId, cumulus_primitives_core::AbridgedHrmpChannel)],
 		horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
 		relay_parent_number: relay_chain::BlockNumber,

@@ -18,9 +18,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, MaxEncodedLen, Encode};
-use scale_info::TypeInfo;
+use codec::{Decode, Encode, MaxEncodedLen};
 use polkadot_parachain::primitives::HeadData;
+use scale_info::TypeInfo;
 use sp_runtime::{traits::Block as BlockT, RuntimeDebug};
 use sp_std::prelude::*;
 

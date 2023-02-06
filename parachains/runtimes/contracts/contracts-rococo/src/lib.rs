@@ -280,11 +280,11 @@ impl pallet_message_queue::Config for Runtime {
 	type WeightInfo = ();
 	#[cfg(feature = "runtime-benchmarks")]
 	type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
-		cumulus_pallet_parachain_system::AggregateMessageOrigin,
+		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
-		cumulus_pallet_parachain_system::AggregateMessageOrigin,
+		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
 	type Size = u32;
 	type QueueChangeHandler = ();

@@ -174,7 +174,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type DmpMessageMaxLen = sp_core::ConstU32<{ u32::MAX }>;
 	type MessageEnqueue = ();
 	type MessageService = frame_support::traits::NoopServiceQueues<(
-		cumulus_pallet_parachain_system::AggregateMessageOrigin,
+		cumulus_primitives_core::AggregateMessageOrigin,
 		u32,
 		u32,
 	)>;

@@ -297,11 +297,11 @@ impl pallet_message_queue::Config for Runtime {
 	type WeightInfo = ();
 	#[cfg(feature = "runtime-benchmarks")]
 	type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
-		cumulus_pallet_parachain_system::AggregateMessageOrigin,
+		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
-		cumulus_pallet_parachain_system::AggregateMessageOrigin,
+		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
 	type Size = u32;
 	type QueueChangeHandler = ();
@@ -324,6 +324,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
+	type EnqueueXcmOverHrmp = MessageQueue;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type ControllerOrigin = RootOrExecutiveSimpleMajority;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
