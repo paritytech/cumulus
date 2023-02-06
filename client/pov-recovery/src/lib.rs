@@ -152,10 +152,10 @@ struct Candidate<Block: BlockT> {
 }
 
 struct RecoveryQueue<Block: BlockT> {
-	// Queue that keeps the hashes of blocks to be recovered
+	// Queue that keeps the hashes of blocks to be recovered.
 	recovery_queue: VecDeque<Block::Hash>,
 	// Futures that resolve when a new recovery should be started.
-	signaling_queue: FuturesUnordered<Pin<Box<dyn Future<Output = Option<Block::Hash>> + Send>>>,
+	signaling_queue: FuturesUnordered<Pin<Box<dyn Future<Output = ()> + Send>>>,
 }
 
 /// Queue that is used to decide when to start PoV-recovery operations.
@@ -164,28 +164,9 @@ impl<Block: BlockT> RecoveryQueue<Block> {
 		return Self { recovery_queue: VecDeque::new(), signaling_queue: FuturesUnordered::new() }
 	}
 
-	/// Add hash of a block that should be recovered after `delay` has passed.
-	/// In contrast to [`push_ordered_candidate`] this will start recovering `hash`,
-	/// ignoring the queue position.
-	pub fn push_unordered_recovery(&mut self, hash: Block::Hash, delay: Duration) {
-		tracing::debug!(
-			target: LOG_TARGET,
-			block_hash = ?hash,
-			"Adding block to queue and adding new recovery slot in {:?} sec",
-			delay.as_secs(),
-		);
-		self.signaling_queue.push(
-			async move {
-				Delay::new(delay).await;
-				Some(hash)
-			}
-			.boxed(),
-		);
-	}
-
 	/// Add hash of a block that should go to the end of the recovery queue.
 	/// A new recovery will be signaled after `delay` has passed.
-	pub fn push_ordered_recovery(&mut self, hash: Block::Hash, delay: Duration) {
+	pub fn push_recovery(&mut self, hash: Block::Hash, delay: Duration) {
 		tracing::debug!(
 			target: LOG_TARGET,
 			block_hash = ?hash,
@@ -196,7 +177,6 @@ impl<Block: BlockT> RecoveryQueue<Block> {
 		self.signaling_queue.push(
 			async move {
 				Delay::new(delay).await;
-				None
 			}
 			.boxed(),
 		);
@@ -205,25 +185,17 @@ impl<Block: BlockT> RecoveryQueue<Block> {
 	/// Get the next hash for block recovery.
 	pub async fn next_recovery(&mut self) -> Block::Hash {
 		loop {
-			if let Some(result) = self.signaling_queue.next().await {
-				// If the return future resolves to `None`, we want to process the queue
-				match result {
-					Some(hash) => return hash,
-					None => {
-						if let Some(hash) = self.recovery_queue.pop_front() {
-							return hash
-						} else {
-							tracing::warn!(
-								target: LOG_TARGET,
-								"Recovery was signaled, but no candidate hash available."
-							);
-							futures::pending!()
-						};
-					},
-				}
-			} else {
-				futures::pending!()
+			if let Some(_) = self.signaling_queue.next().await {
+				if let Some(hash) = self.recovery_queue.pop_front() {
+					return hash
+				} else {
+					tracing::warn!(
+						target: LOG_TARGET,
+						"Recovery was signaled, but no candidate hash available. This is a bug."
+					);
+				};
 			}
+			futures::pending!()
 		}
 	}
 }
@@ -393,8 +365,7 @@ where
 						self.retry_delay
 					);
 					self.blocks_in_retry.insert(block_hash);
-					self.candidate_recovery_queue
-						.push_unordered_recovery(block_hash, self.retry_delay);
+					self.candidate_recovery_queue.push_recovery(block_hash, self.retry_delay);
 					return
 				} else {
 					tracing::warn!(
@@ -577,7 +548,7 @@ where
 
 		if do_recover {
 			for hash in to_recover.into_iter().rev() {
-				self.candidate_recovery_queue.push_ordered_recovery(hash, delay.duration());
+				self.candidate_recovery_queue.push_recovery(hash, delay.duration());
 			}
 		}
 	}
