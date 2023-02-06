@@ -151,7 +151,7 @@ impl RecoveryHandle for FailingRecoveryHandle {
 		message: AvailabilityRecoveryMessage,
 		origin: &'static str,
 	) {
-		// For every 5th block we immediately return [`RecoveryError::Unavailable`] to trigger
+		// For every 5th block we immediately signal unavailability to trigger
 		// a retry.
 		if self.counter % 5 == 0 {
 			let AvailabilityRecoveryMessage::RecoverAvailableData(_, _, _, back_sender) = message;
@@ -365,6 +365,7 @@ where
 	let overseer_handle = relay_chain_interface
 		.overseer_handle()
 		.map_err(|e| sc_service::Error::Application(Box::new(e)))?;
+
 	let recovery_handle: Box<dyn RecoveryHandle> = if fail_pov_recovery {
 		Box::new(FailingRecoveryHandle::new(overseer_handle))
 	} else {

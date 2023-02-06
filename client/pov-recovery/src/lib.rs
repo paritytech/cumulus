@@ -223,7 +223,7 @@ pub struct PoVRecovery<Block: BlockT, PC, RC> {
 	/// Explicit block recovery requests channel.
 	recovery_chan_rx: Receiver<RecoveryRequest<Block>>,
 	/// Blocks that we are retrying currently
-	blocks_in_retry: HashSet<Block::Hash>,
+	candidates_in_retry: HashSet<Block::Hash>,
 	/// Waiting time before a retry
 	retry_delay: Duration,
 }
@@ -254,7 +254,7 @@ where
 			parachain_import_queue,
 			relay_chain_interface,
 			para_id,
-			blocks_in_retry: HashSet::new(),
+			candidates_in_retry: HashSet::new(),
 			recovery_chan_rx,
 			retry_delay,
 		}
@@ -353,18 +353,13 @@ where
 	) {
 		let available_data = match available_data {
 			Some(data) => {
-				self.blocks_in_retry.remove(&block_hash);
+				self.candidates_in_retry.remove(&block_hash);
 				data
 			},
 			None =>
-				if !self.blocks_in_retry.contains(&block_hash) {
-					tracing::debug!(
-						target: LOG_TARGET,
-						?block_hash,
-						"Retrying block recovery in {:?} seconds",
-						self.retry_delay
-					);
-					self.blocks_in_retry.insert(block_hash);
+				if !self.candidates_in_retry.contains(&block_hash) {
+					tracing::debug!(target: LOG_TARGET, ?block_hash, "Recovery failed, retrying.");
+					self.candidates_in_retry.insert(block_hash);
 					self.candidate_recovery_queue.push_recovery(block_hash, self.retry_delay);
 					return
 				} else {
@@ -373,7 +368,7 @@ where
 						?block_hash,
 						"Unable to recover block after retry.",
 					);
-					self.blocks_in_retry.remove(&block_hash);
+					self.candidates_in_retry.remove(&block_hash);
 					self.clear_waiting_for_parent(block_hash);
 					self.clear_waiting_recovery(&block_hash);
 					return

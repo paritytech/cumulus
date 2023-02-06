@@ -235,7 +235,7 @@ async fn follow_new_best<P, R, Block, B>(
 	B: Backend<Block>,
 {
 	let new_best_heads = match new_best_heads(relay_chain, para_id).await {
-		Ok(best_relay_heads_stream) => best_relay_heads_stream.fuse(),
+		Ok(best_heads_stream) => best_heads_stream.fuse(),
 		Err(err) => {
 			tracing::error!(target: LOG_TARGET, error = ?err, "Unable to retrieve best heads stream.");
 			return
@@ -254,8 +254,8 @@ async fn follow_new_best<P, R, Block, B>(
 		select! {
 			h = new_best_heads.next() => {
 				match h {
-					Some(header) => handle_new_best_parachain_head(
-						header,
+					Some(h) => handle_new_best_parachain_head(
+						h,
 						&*parachain,
 						&mut unset_best_header,
 						recovery_chan_tx.as_mut(),
