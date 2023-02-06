@@ -200,6 +200,7 @@ where
 
 		let upward_messages = collation_info
 			.upward_messages
+			.try_into()
 			.map_err(|e| {
 				tracing::error!(
 					target: LOG_TARGET,
@@ -210,6 +211,7 @@ where
 			.ok()?;
 		let horizontal_messages = collation_info
 			.horizontal_messages
+			.try_into()
 			.map_err(|e| {
 				tracing::error!(
 					target: LOG_TARGET,
