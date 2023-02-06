@@ -1,4 +1,4 @@
-// Copyright 2022 Parity Technologies (UK) Ltd.
+// Copyright 2023 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -68,7 +68,7 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 // XCM Imports
-use crate::xcm_config::KsmRelayLocation;
+use crate::xcm_config::DotRelayLocation;
 use parachains_common::{
 	opaque, AccountId, Balance, BlockNumber, Hash, Header, Index, Signature,
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
@@ -124,8 +124,8 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("bridge-hub-kusama"),
-	impl_name: create_runtime_str!("bridge-hub-kusama"),
+	spec_name: create_runtime_str!("bridge-hub-polkadot"),
+	impl_name: create_runtime_str!("bridge-hub-polkadot"),
 	authoring_version: 1,
 	spec_version: 9370,
 	impl_version: 0,
@@ -167,7 +167,7 @@ parameter_types! {
 		})
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
-	pub const SS58Prefix: u8 = 2;
+	pub const SS58Prefix: u8 = 0;
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -287,11 +287,10 @@ impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
-// TODO: map gov2 origins here - after merge https://github.com/paritytech/cumulus/pull/1895
 /// Privileged origin that represents Root or the majority of the Relay Chain Council.
 pub type RootOrExecutiveSimpleMajority = EitherOfDiverse<
 	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<KsmRelayLocation, ExecutiveBody>>,
+	EnsureXcm<IsMajorityOfBody<DotRelayLocation, ExecutiveBody>>,
 >;
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
@@ -341,7 +340,6 @@ parameter_types! {
 	pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
-// TODO: map gov2 origins here - after merge https://github.com/paritytech/cumulus/pull/1895
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
 pub type CollatorSelectionUpdateOrigin = RootOrExecutiveSimpleMajority;
 
@@ -614,19 +612,19 @@ impl_runtime_apis! {
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
 			use xcm::latest::prelude::*;
-			use xcm_config::KsmRelayLocation;
+			use xcm_config::DotRelayLocation;
 
 			impl pallet_xcm_benchmarks::Config for Runtime {
 				type XcmConfig = xcm_config::XcmConfig;
 				type AccountIdConverter = xcm_config::LocationToAccountId;
 				fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
-					Ok(KsmRelayLocation::get())
+					Ok(DotRelayLocation::get())
 				}
 				fn worst_case_holding(_depositable_count: u32) -> MultiAssets {
 					// just concrete assets according to relay chain.
 					let assets: Vec<MultiAsset> = vec![
 						MultiAsset {
-							id: Concrete(KsmRelayLocation::get()),
+							id: Concrete(DotRelayLocation::get()),
 							fun: Fungible(1_000_000 * UNITS),
 						}
 					];
@@ -636,8 +634,8 @@ impl_runtime_apis! {
 
 			parameter_types! {
 				pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = Some((
-					KsmRelayLocation::get(),
-					MultiAsset { fun: Fungible(1 * UNITS), id: Concrete(KsmRelayLocation::get()) },
+					DotRelayLocation::get(),
+					MultiAsset { fun: Fungible(1 * UNITS), id: Concrete(DotRelayLocation::get()) },
 				));
 				pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
 			}
@@ -650,7 +648,7 @@ impl_runtime_apis! {
 
 				fn get_multi_asset() -> MultiAsset {
 					MultiAsset {
-						id: Concrete(KsmRelayLocation::get()),
+						id: Concrete(DotRelayLocation::get()),
 						fun: Fungible(1 * UNITS),
 					}
 				}
@@ -672,16 +670,16 @@ impl_runtime_apis! {
 				}
 
 				fn transact_origin_and_runtime_call() -> Result<(MultiLocation, RuntimeCall), BenchmarkError> {
-					Ok((KsmRelayLocation::get(), frame_system::Call::remark_with_event { remark: vec![] }.into()))
+					Ok((DotRelayLocation::get(), frame_system::Call::remark_with_event { remark: vec![] }.into()))
 				}
 
 				fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
-					Ok(KsmRelayLocation::get())
+					Ok(DotRelayLocation::get())
 				}
 
 				fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
-					let origin = KsmRelayLocation::get();
-					let assets: MultiAssets = (Concrete(KsmRelayLocation::get()), 1_000 * UNITS).into();
+					let origin = DotRelayLocation::get();
+					let assets: MultiAssets = (Concrete(DotRelayLocation::get()), 1_000 * UNITS).into();
 					let ticket = MultiLocation { parents: 0, interior: Here };
 					Ok((origin, ticket, assets))
 				}
