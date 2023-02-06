@@ -10,7 +10,7 @@ To prepare snapshot for a relay chain we need to copy the database.
 ```
 mkdir -p relaychain-snapshot/alice/data/chains/rococo_local_testnet/db/
 
-cp -r chain-data/alice/data/chains/rococo_local_testnet/db/ relaychain-snapshot/alice/data/chains/rococo_local_testnet/db/ 
+cp -r chain-data/alice/data/chains/rococo_local_testnet/db/. relaychain-snapshot/alice/data/chains/rococo_local_testnet/db/ 
 
 tar -C relaychain-snapshot/alice/ -czf relaychain.tgz data
 ```
