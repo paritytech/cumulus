@@ -324,7 +324,7 @@ impl pallet_dex::Config for Runtime {
 	type MultiAssetIdConverter = MultiLocationConverter<Balances, parachain_info::Pallet<Runtime>>;
 
 	type Balance = u128;
-	type PromotedBalance = sp_core::U256;
+	type HigherPrecisionBalance = sp_core::U256;
 }
 
 parameter_types! {
