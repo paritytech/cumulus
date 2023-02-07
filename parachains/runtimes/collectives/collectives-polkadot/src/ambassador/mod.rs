@@ -64,7 +64,7 @@ impl pallet_collective_content::Config<AmbassadorContentInstance> for Runtime {
 		>,
 		EnsureAmbassador,
 	>;
-	type WeightInfo = weights::pallet_ambassador_content::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_collective_content::WeightInfo<Runtime>;
 }
 
 impl pallet_ambassador_origins::Config for Runtime {}
@@ -78,7 +78,7 @@ parameter_types! {
 pub type AmbassadorReferendaInstance = pallet_referenda::Instance1;
 
 impl pallet_referenda::Config<AmbassadorReferendaInstance> for Runtime {
-	type WeightInfo = weights::pallet_ambassador_referenda::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_referenda::WeightInfo<Runtime>;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type Scheduler = Scheduler;
@@ -119,7 +119,7 @@ morph_types! {
 pub type AmbassadorCollectiveInstance = pallet_ranked_collective::Instance1;
 
 impl pallet_ranked_collective::Config<AmbassadorCollectiveInstance> for Runtime {
-	type WeightInfo = weights::pallet_ambassador_collective::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_ranked_collective::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
 	// Promotion is by any of:
 	// - Root can promote arbitrarily.
