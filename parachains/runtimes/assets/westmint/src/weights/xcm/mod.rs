@@ -207,7 +207,8 @@ impl<Call> XcmWeightInfo<Call> for WestmintXcmWeight<Call> {
 		XcmGeneric::<Runtime>::clear_transact_status()
 	}
 	fn universal_origin(_: &Junction) -> Weight {
-		Weight::MAX
+		// TODO:check-parameter - temporary fix - replace with correct weight for benchmark (set UniversalAliases)
+		XcmGeneric::<Runtime>::unpaid_execution()
 	}
 	fn export_message(_: &NetworkId, _: &Junctions, _: &Xcm<()>) -> Weight {
 		Weight::MAX

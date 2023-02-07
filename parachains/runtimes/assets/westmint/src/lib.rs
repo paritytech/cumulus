@@ -25,6 +25,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod constants;
+mod foreign_conversions;
 mod weights;
 pub mod xcm_config;
 
@@ -246,7 +247,7 @@ impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 /// this type is used in proxy definitions. We assume that a foreign location would not want to set
 /// an individual, local account as a proxy for the issuance of their assets. This issuance should
 /// be managed by the foreign location's governance.
-type ForeignAssetsInstance = pallet_assets::Instance2;
+pub type ForeignAssetsInstance = pallet_assets::Instance2;
 impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;

@@ -18,12 +18,13 @@ use super::{
 	Balances, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent,
 	RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
+use crate::foreign_conversions::{
+	BridgedUniversalAliases, GlobalConsensusAsAccountId, GlobalConsensusConvertsVia,
+	IsTrustedGlobalConsensus,
+};
 use frame_support::{
 	match_types, parameter_types,
-	traits::{
-		ConstU32, Contains, EnsureOrigin, EnsureOriginWithArg, Everything, Nothing,
-		PalletInfoAccess,
-	},
+	traits::{ConstU32, Contains, EnsureOrigin, EnsureOriginWithArg, Everything, PalletInfoAccess},
 };
 use pallet_xcm::{EnsureXcm, XcmPassthrough};
 use parachains_common::{
@@ -187,7 +188,11 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 			RuntimeCall::XcmpQueue(..) |
 			RuntimeCall::DmpQueue(..) |
-			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
+			RuntimeCall::Utility(
+				pallet_utility::Call::as_derivative { .. } |
+				pallet_utility::Call::batch { .. } |
+				pallet_utility::Call::batch_all { .. },
+			) |
 			RuntimeCall::Assets(
 				pallet_assets::Call::create { .. } |
 				pallet_assets::Call::force_create { .. } |
@@ -215,6 +220,9 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_assets::Call::transfer_approved { .. } |
 				pallet_assets::Call::touch { .. } |
 				pallet_assets::Call::refund { .. },
+			) |
+			RuntimeCall::ForeignAssets(
+				pallet_assets::Call::create { .. } | pallet_assets::Call::set_metadata { .. },
 			) |
 			RuntimeCall::Uniques(
 				pallet_uniques::Call::create { .. } |
@@ -263,6 +271,8 @@ pub type Barrier = DenyThenTry<
 				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
 				// Subscriptions for version tracking are OK.
 				AllowSubscriptionsFrom<Everything>,
+				// Specific barrier for calls from different globalConsensus/network
+				ForeignGlobalConsensusExecutionBarrier,
 			),
 			UniversalLocation,
 			ConstU32<8>,
@@ -328,7 +338,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetExchanger = ();
 	type FeeManager = ();
 	type MessageExporter = ();
-	type UniversalAliases = Nothing;
+	type UniversalAliases = TrustedBridgedNetworks;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
 	type SafeCallFilter = SafeCallFilter;
 }
@@ -386,10 +396,15 @@ impl cumulus_pallet_xcm::Config for Runtime {
 
 pub type MultiLocationForAssetId = MultiLocation;
 
-pub type SovereignAccountOf = (
+pub type ForeignCreatorsSovereignAccountOf = (
 	SiblingParachainConvertsVia<ParaId, AccountId>,
 	AccountId32Aliases<RelayNetwork, AccountId>,
 	ParentIsPreset<AccountId>,
+	GlobalConsensusConvertsVia<
+		IsTrustedGlobalConsensus<TrustedBridgedNetworks>,
+		GlobalConsensusAsAccountId,
+		AccountId,
+	>,
 );
 
 // `EnsureOriginWithArg` impl for `CreateOrigin` that allows only XCM origins that are locations
@@ -406,7 +421,7 @@ impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
 		if !a.starts_with(&origin_location) {
 			return Err(o)
 		}
-		SovereignAccountOf::convert(origin_location).map_err(|_| o)
+		ForeignCreatorsSovereignAccountOf::convert(origin_location).map_err(|_| o)
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
@@ -425,3 +440,27 @@ impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 		MultiLocation { parents: 1, interior: X1(Parachain(id)) }
 	}
 }
+
+parameter_types! {
+	// TODO:check-parameter - join all together in one on-chain cfg (statemine/t, eth(chain_ids), ...)
+	// TODO:check-parameter - collect all required cfg also from ReserveAssetDeposited and add new pallet and persist/manage this via governance
+	// Means, that we accept some `GlobalConsensus` from some `MultiLocation` (e.g. our local bridge-hub)
+	pub TrustedBridgedNetworks: BridgedUniversalAliases = sp_std::vec![
+		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Rococo)),
+		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Kusama)),
+		(MultiLocation { parents: 1, interior: X1(Parachain(1002)) }, GlobalConsensus(NetworkId::Kusama))
+	];
+}
+
+impl Contains<(MultiLocation, Junction)> for TrustedBridgedNetworks {
+	fn contains(t: &(MultiLocation, Junction)) -> bool {
+		Self::get().contains(t)
+	}
+}
+
+/// Barrier dedicated to calls from different global consensus
+pub type ForeignGlobalConsensusExecutionBarrier = (
+	// TODO:check-parameter - change "Contains with trusted BridgeHub configuration" or set BuyExecution
+	// Configured trusted BridgeHub gets free execution.
+	AllowExplicitUnpaidExecutionFrom<IsTrustedGlobalConsensus<TrustedBridgedNetworks>>,
+);

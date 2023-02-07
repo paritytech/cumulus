@@ -1,24 +1,30 @@
 use asset_test_utils::{ExtBuilder, RuntimeHelper};
+use codec::Encode;
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
-	assert_noop, assert_ok,
+	assert_noop, assert_ok, sp_io,
 	traits::{fungibles::InspectEnumerable, PalletInfo},
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
 use parachains_common::{AccountId, AssetIdForTrustBackedAssets, AuraId};
 use std::convert::Into;
-use westmint_runtime::xcm_config::{
-	AssetFeeAsExistentialDepositMultiplierFeeCharger, TrustBackedAssetsPalletLocation,
-};
 pub use westmint_runtime::{
-	constants::fee::WeightToFee,
-	xcm_config::{SovereignAccountOf, XcmConfig},
-	AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets, Runtime, SessionKeys,
-	System,
+	constants::fee::WeightToFee, xcm_config::XcmConfig, AssetDeposit, Assets, Balances,
+	ExistentialDeposit, ForeignAssets, ForeignAssetsInstance, Runtime, SessionKeys, System,
+};
+use westmint_runtime::{
+	xcm_config::{
+		AssetFeeAsExistentialDepositMultiplierFeeCharger, ForeignCreatorsSovereignAccountOf,
+		TrustBackedAssetsPalletLocation,
+	},
+	RuntimeCall, RuntimeEvent,
 };
 use xcm::latest::prelude::*;
 use xcm_builder::AsPrefixedGeneralIndex;
-use xcm_executor::traits::{Convert, JustTry, TransactAsset, WeightTrader};
+use xcm_executor::{
+	traits::{Convert, JustTry, WeightTrader},
+	XcmExecutor,
+};
 
 pub const ALICE: [u8; 32] = [1u8; 32];
 pub const BOB: [u8; 32] = [2u8; 32];
@@ -559,3 +565,114 @@ fn test_asset_transactor_transfer_with_trust_backed_assets_works() {
 			assert_eq!(Balances::free_balance(AccountId::from(CHARLIE)), 0);
 		})
 }
+
+#[test]
+fn test_create_foreign_assets_for_different_consensus_relaychain_token_works() {
+	let foreign_creator = MultiLocation { parents: 2, interior: X1(GlobalConsensus(Kusama)) };
+	let foreign_creator_as_account_id =
+		ForeignCreatorsSovereignAccountOf::convert(foreign_creator).expect("");
+
+	ExtBuilder::<Runtime>::default()
+		.with_collators(vec![AccountId::from(ALICE)])
+		.with_session_keys(vec![(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+		)])
+		.with_balances(vec![(
+			foreign_creator_as_account_id.clone(),
+			ExistentialDeposit::get() + AssetDeposit::get(),
+		)])
+		.with_tracing()
+		.build()
+		.execute_with(|| {
+			assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
+
+			// execute XCM with Transact to create foreign asset
+			let foreign_asset_id_multilocation =
+				MultiLocation { parents: 2, interior: X1(GlobalConsensus(Kusama)) };
+
+			let foreign_asset_create: RuntimeCall =
+				RuntimeCall::Utility(pallet_utility::Call::<Runtime>::batch {
+					calls: vec![
+						RuntimeCall::ForeignAssets(pallet_assets::Call::<
+							Runtime,
+							ForeignAssetsInstance,
+						>::create {
+							id: foreign_asset_id_multilocation,
+							// TODO:check-parameter - how to setup admin account?
+							admin: foreign_creator_as_account_id.clone().into(),
+							min_balance: 1,
+						}),
+						// TODO:check-parameter - cannot call in one batch, because set_metadata uses just `ensure_signed()`
+						// RuntimeCall::ForeignAssets(pallet_assets::Call::<
+						// 	Runtime,
+						// 	ForeignAssetsInstance,
+						// >::set_metadata {
+						// 	id: foreign_asset_id_multilocation,
+						// 	name: Default::default(),
+						// 	symbol: Default::default(),
+						// 	decimals: 12,
+						// }),
+					],
+				});
+
+			// lets simulate this was triggered by relay chain from different global consensus
+			let xcm = Xcm(vec![
+				UniversalOrigin(GlobalConsensus(Kusama)),
+				DescendOrigin(Here),
+				UnpaidExecution { weight_limit: Unlimited, check_origin: None },
+				Transact {
+					origin_kind: OriginKind::Xcm,
+					require_weight_at_most: Weight::from_ref_time(80_000_000_000),
+					call: foreign_asset_create.encode().into(),
+				},
+			]);
+
+			// messages with different consensus should go through the local bridge-hub
+			let local_bridge_hub_origin =
+				MultiLocation { parents: 1, interior: X1(Parachain(1014)) };
+			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
+			let weight_limit = Weight::from_ref_time(100_000_000_000);
+
+			// execute xcm as XcmpQueue would do
+			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(
+				local_bridge_hub_origin,
+				xcm,
+				hash,
+				weight_limit,
+			);
+			assert_eq!(outcome.ensure_complete(), Ok(()));
+
+			// check events
+			let mut events = System::events().into_iter().map(|e| e.event);
+			assert!(events.any(|e| matches!(
+				e,
+				RuntimeEvent::ForeignAssets(pallet_assets::Event::Created { .. })
+			)));
+			// TODO:check-parameter - cannot call in one batch, because set_metadata uses just `ensure_signed()`
+			// assert!(
+			// 	events
+			// 		.any(|e| matches!(e, RuntimeEvent::ForeignAssets(pallet_assets::Event::MetadataSet { .. })))
+			// );
+			assert!(
+				events.any(|e| e.eq(&RuntimeEvent::Utility(pallet_utility::Event::BatchCompleted)))
+			);
+
+			// check assets after
+			assert!(!ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
+			use frame_support::traits::tokens::fungibles::roles::Inspect;
+			assert_eq!(
+				ForeignAssets::owner(foreign_asset_id_multilocation),
+				Some(foreign_creator_as_account_id.clone())
+			);
+			assert_eq!(
+				ForeignAssets::admin(foreign_asset_id_multilocation),
+				Some(foreign_creator_as_account_id)
+			);
+		})
+}
+
+// TODO: fn test_create_foreign_assets_for_different_consensus_parachain_assets_works
+// TODO: fn test_asset_transactor_transfer_with_foreign_assets_works
+// TODO: test that simulates ETH scenario for creating asset wETH on Statemine/t
