@@ -151,6 +151,7 @@ struct Candidate<Block: BlockT> {
 	waiting_recovery: bool,
 }
 
+/// Queue that is used to decide when to start PoV-recovery operations.
 struct RecoveryQueue<Block: BlockT> {
 	// Queue that keeps the hashes of blocks to be recovered.
 	recovery_queue: VecDeque<Block::Hash>,
@@ -158,10 +159,9 @@ struct RecoveryQueue<Block: BlockT> {
 	signaling_queue: FuturesUnordered<Pin<Box<dyn Future<Output = ()> + Send>>>,
 }
 
-/// Queue that is used to decide when to start PoV-recovery operations.
 impl<Block: BlockT> RecoveryQueue<Block> {
 	pub fn new() -> Self {
-		return Self { recovery_queue: VecDeque::new(), signaling_queue: FuturesUnordered::new() }
+		Self { recovery_queue: Default::default(), signaling_queue: Default::default() }
 	}
 
 	/// Add hash of a block that should go to the end of the recovery queue.
@@ -189,7 +189,7 @@ impl<Block: BlockT> RecoveryQueue<Block> {
 				if let Some(hash) = self.recovery_queue.pop_front() {
 					return hash
 				} else {
-					tracing::warn!(
+					tracing::error!(
 						target: LOG_TARGET,
 						"Recovery was signaled, but no candidate hash available. This is a bug."
 					);
@@ -357,9 +357,8 @@ where
 				data
 			},
 			None =>
-				if !self.candidates_in_retry.contains(&block_hash) {
+				if self.candidates_in_retry.insert(block_hash) {
 					tracing::debug!(target: LOG_TARGET, ?block_hash, "Recovery failed, retrying.");
-					self.candidates_in_retry.insert(block_hash);
 					self.candidate_recovery_queue.push_recovery(block_hash, self.retry_delay);
 					return
 				} else {

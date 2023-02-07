@@ -140,6 +140,7 @@ where
 						if last_seen_finalized_hashes.peek(&imported_block.hash).is_some() {
 							tracing::debug!(
 								target: LOG_TARGET,
+								block_hash = ?imported_block.hash,
 								"Setting newly imported block as finalized.",
 							);
 
