@@ -141,12 +141,9 @@ impl RelayChainRpcClient {
 		at: RelayHash,
 		index: SessionIndex,
 	) -> Result<Option<OldV1SessionInfo>, RelayChainError> {
-		self.call_remote_runtime_function(
-			"ParachainHost_session_info_before_version_2",
-			at,
-			Some(index),
-		)
-		.await
+		// The function in wasm never changes/gets augmented with a version
+		self.call_remote_runtime_function("ParachainHost_session_info", at, Some(index))
+			.await
 	}
 
 	/// Scrape dispute relevant from on-chain, backing votes and resolved disputes.
@@ -180,11 +177,6 @@ impl RelayChainRpcClient {
 			Some((stmt, signature)),
 		)
 		.await
-	}
-
-	/// Get local listen address of the node
-	pub async fn system_local_listen_addresses(&self) -> Result<Vec<String>, RelayChainError> {
-		self.request("system_localListenAddresses", rpc_params![]).await
 	}
 
 	/// Get system health information
