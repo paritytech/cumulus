@@ -14,84 +14,86 @@
 // limitations under the License.
 
 use super::*;
+use XcmpMessageFormat::*;
+
 use cumulus_primitives_core::XcmpMessageHandler;
-use frame_support::{assert_noop, assert_ok};
-use mock::{new_test_ext, RuntimeCall, RuntimeOrigin, Test, XcmpQueue};
+use frame_support::{assert_noop, assert_ok, assert_storage_noop};
+use mock::{new_test_ext, RuntimeOrigin, Test, XcmpQueue};
 use sp_runtime::traits::BadOrigin;
+use std::iter::once;
 
 #[test]
-fn one_message_does_not_panic() {
+fn empty_concatenated_works() {
 	new_test_ext().execute_with(|| {
-		let message_format = XcmpMessageFormat::ConcatenatedVersionedXcm.encode();
-		let messages = vec![(Default::default(), 1u32.into(), message_format.as_slice())];
+		let data = ConcatenatedVersionedXcm.encode();
 
-		// This shouldn't cause a panic
-		XcmpQueue::handle_xcmp_messages(messages.into_iter(), Weight::MAX);
+		assert_storage_noop!(XcmpQueue::handle_xcmp_messages(
+			once((1000.into(), 1, data.as_slice())),
+			Weight::MAX,
+		));
 	})
 }
 
 #[test]
-#[should_panic = "Invalid incoming blob message data"]
+#[should_panic = "Blob messages not handled"]
 #[cfg(debug_assertions)]
-fn bad_message_is_handled() {
+fn bad_blob_message_is_ignored() {
 	new_test_ext().execute_with(|| {
-		let bad_data = vec![
-			1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 64, 239, 139, 0,
-			0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 37, 0,
-			0, 0, 0, 0, 0, 0, 16, 0, 127, 147,
-		];
-		InboundXcmpMessages::<Test>::insert(ParaId::from(1000), 1, bad_data);
-		let format = XcmpMessageFormat::ConcatenatedEncodedBlob;
-		// This should exit with an error.
-		XcmpQueue::process_xcmp_message(
-			1000.into(),
-			(1, format),
-			&mut 0,
-			Weight::from_ref_time(10_000_000_000),
-			Weight::from_ref_time(10_000_000_000),
-		);
+		let data = [ConcatenatedEncodedBlob.encode(), vec![1]].concat();
+
+		XcmpQueue::handle_xcmp_messages(once((1000.into(), 1, data.as_slice())), Weight::MAX);
 	});
 }
 
-/// Tests that a blob message is handled. Currently this isn't implemented and panics when debug assertions
-/// are enabled. When this feature is enabled, this test should be rewritten properly.
+/// Message blobs are not supported and panic in debug mode.
 #[test]
-#[should_panic = "Blob messages not handled."]
+#[should_panic = "Blob messages not handled"]
 #[cfg(debug_assertions)]
 fn handle_blob_message() {
 	new_test_ext().execute_with(|| {
-		let bad_data = vec![
-			1, 1, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 64, 239,
-			139, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0,
-			37, 0, 0, 0, 0, 0, 0, 0, 16, 0, 127, 147,
-		];
-		InboundXcmpMessages::<Test>::insert(ParaId::from(1000), 1, bad_data);
-		let format = XcmpMessageFormat::ConcatenatedEncodedBlob;
-		XcmpQueue::process_xcmp_message(
-			1000.into(),
-			(1, format),
-			&mut 0,
-			Weight::from_ref_time(10_000_000_000),
-			Weight::from_ref_time(10_000_000_000),
-		);
+		let data = [ConcatenatedEncodedBlob.encode(), vec![1].encode()].concat();
+
+		XcmpQueue::handle_xcmp_messages(once((1000.into(), 1, data.as_slice())), Weight::MAX);
 	});
 }
 
+/// Message blobs do not panic in release mode but are just a No-OP.
+#[test]
+#[cfg(not(debug_assertions))]
+fn handle_blob_message() {
+	new_test_ext().execute_with(|| {
+		let data = [ConcatenatedEncodedBlob.encode(), vec![1].encode()].concat();
+
+		assert_storage_noop!(XcmpQueue::handle_xcmp_messages(
+			once((1000.into(), 1, data.as_slice())),
+			Weight::MAX,
+		));
+	});
+}
+
+/// Invalid concatenated XCMs panic in debug mode.
 #[test]
 #[should_panic = "Invalid incoming XCMP message data"]
 #[cfg(debug_assertions)]
-fn handle_invalid_data() {
+fn handle_invalid_data_panics() {
 	new_test_ext().execute_with(|| {
-		let data = Xcm::<Test>(vec![]).encode();
-		InboundXcmpMessages::<Test>::insert(ParaId::from(1000), 1, data);
-		let format = XcmpMessageFormat::ConcatenatedVersionedXcm;
-		XcmpQueue::process_xcmp_message(
-			1000.into(),
-			(1, format),
-			&mut 0,
-			Weight::from_ref_time(10_000_000_000),
-			Weight::from_ref_time(10_000_000_000),
-		);
+		let data = [ConcatenatedVersionedXcm.encode(), Xcm::<Test>(vec![]).encode()].concat();
+
+		XcmpQueue::handle_xcmp_messages(once((1000.into(), 1, data.as_slice())), Weight::MAX);
+	});
+}
+
+/// Invalid concatenated XCMs do not panic in release mode but are just a No-OP.
+#[test]
+#[cfg(not(debug_assertions))]
+fn handle_invalid_data_no_panic() {
+	new_test_ext().execute_with(|| {
+		let data = [ConcatenatedVersionedXcm.encode(), Xcm::<Test>(vec![]).encode()].concat();
+
+		assert_storage_noop!(XcmpQueue::handle_xcmp_messages(
+			once((1000.into(), 1, data.as_slice())),
+			Weight::MAX,
+		));
 	});
 }
 
@@ -99,7 +101,7 @@ fn handle_invalid_data() {
 fn service_overweight_unknown() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(
-			XcmpQueue::service_overweight(RuntimeOrigin::root(), 0, Weight::from_parts(1000, 1000)),
+			XcmpQueue::service_overweight(RuntimeOrigin::root(), 0, Weight::MAX),
 			Error::<Test>::BadOverweightIndex,
 		);
 	});
@@ -112,40 +114,41 @@ fn service_overweight_bad_xcm_format() {
 		Overweight::<Test>::insert(0, (ParaId::from(1000), 0, bad_xcm));
 
 		assert_noop!(
-			XcmpQueue::service_overweight(RuntimeOrigin::root(), 0, Weight::from_parts(1000, 1000)),
+			XcmpQueue::service_overweight(RuntimeOrigin::root(), 0, Weight::MAX),
 			Error::<Test>::BadXcm
 		);
 	});
 }
 
-#[test]
-fn suspend_xcm_execution_works() {
-	new_test_ext().execute_with(|| {
-		QueueSuspended::<Test>::put(true);
+// FAIL-CI add queue-suspension
+//#[test]
+//fn suspend_xcm_execution_works() {
+//	new_test_ext().execute_with(|| {
+//		QueueSuspended::<Test>::put(true);
+//
+//		let xcm =
+//			VersionedXcm::from(Xcm::<RuntimeCall>(vec![Instruction::<RuntimeCall>::ClearOrigin]))
+//				.encode();
+//
+//		let data = [ConcatenatedVersionedXcm.encode(), xcm.encode()].concat();
+//		// This should have executed the incoming XCM, because it came from a system parachain
+//		XcmpQueue::handle_xcmp_messages(
+//			once((999.into(), 1, data.as_slice())),
+//			Weight::MAX
+//		);
+//
+//		// This should have queue instead of executing since it comes from a sibling.
+//		XcmpQueue::handle_xcmp_messages(
+//			once((2000.into(), 1, data.as_slice())),
+//			Weight::MAX
+//		);
+//
+//		let queued_xcm = mock::EnqueueToLocalStorage::get(AggregateMessageOrigin::Sibling(ParaId::from(2000)));
+//		assert_eq!(queued_xcm, vec![xcm]);
+//	});
+//}
 
-		let xcm =
-			VersionedXcm::from(Xcm::<RuntimeCall>(vec![Instruction::<RuntimeCall>::ClearOrigin]))
-				.encode();
-		let mut message_format = XcmpMessageFormat::ConcatenatedVersionedXcm.encode();
-		message_format.extend(xcm.clone());
-		let messages = vec![(ParaId::from(999), 1u32.into(), message_format.as_slice())];
-
-		// This should have executed the incoming XCM, because it came from a system parachain
-		XcmpQueue::handle_xcmp_messages(messages.into_iter(), Weight::MAX);
-
-		let queued_xcm = InboundXcmpMessages::<Test>::get(ParaId::from(999), 1u32);
-		assert!(queued_xcm.is_empty());
-
-		let messages = vec![(ParaId::from(2000), 1u32.into(), message_format.as_slice())];
-
-		// This shouldn't have executed the incoming XCM
-		XcmpQueue::handle_xcmp_messages(messages.into_iter(), Weight::MAX);
-
-		let queued_xcm = InboundXcmpMessages::<Test>::get(ParaId::from(2000), 1u32);
-		assert_eq!(queued_xcm, xcm);
-	});
-}
-
+// FAIL-CI reimplement and test back-pressure
 #[test]
 fn update_suspend_threshold_works() {
 	new_test_ext().execute_with(|| {

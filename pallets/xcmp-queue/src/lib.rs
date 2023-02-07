@@ -358,16 +358,17 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type QueueConfig<T: Config> = StorageValue<_, QueueConfigData, ValueQuery>;
 
-	/// The messages that exceeded max individual message weight budget.
-	///
-	/// These message stay in this storage map until they are manually dispatched via
-	/// `service_overweight`.
+	// The messages that exceeded max individual message weight budget.
+	//
+	// These message stay in this storage map until they are manually dispatched via
+	// `service_overweight`.
+	// FAIL-CI remove
 	#[pallet::storage]
 	pub(super) type Overweight<T: Config> =
 		CountedStorageMap<_, Twox64Concat, OverweightIndex, (ParaId, RelayBlockNumber, Vec<u8>)>;
 
-	/// The number of overweight messages ever recorded in `Overweight`. Also doubles as the next
-	/// available free overweight index.
+	// The number of overweight messages ever recorded in `Overweight`. Also doubles as the next
+	// available free overweight index.
 	#[pallet::storage]
 	pub(super) type OverweightCount<T: Config> = StorageValue<_, OverweightIndex, ValueQuery>;
 
@@ -938,6 +939,9 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 					},
 				XcmpMessageFormat::ConcatenatedVersionedXcm => {
 					match Self::prepare_concatenated_xcms(&mut data) {
+						Ok(xcms) if xcms.is_empty() => {
+							// Implementations of `enqueue_messages` may or may not handle empty iters in a suboptimal way, so let's not try it.
+						},
 						Ok(xcms) => {
 							T::EnqueueXcmOverHrmp::enqueue_messages(
 								xcms.iter().map(|xcm| xcm.as_bounded_slice()),
@@ -945,14 +949,14 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 							);
 						},
 						Err(()) => {
-							defensive!("Undecodable XCM. Message silently dropped.");
+							defensive!("Invalid incoming XCMP message data");
 							continue
 						},
 					}
 					defensive_assert!(data.is_empty(), "All XCM data must be consumed.");
 				},
 				XcmpMessageFormat::ConcatenatedEncodedBlob => {
-					defensive!("XCMP format 'ConcatenatedEncodedBlob' is not supported. Message silently dropped.");
+					defensive!("Blob messages not handled");
 					continue
 				},
 			}

@@ -201,11 +201,72 @@ impl<RuntimeOrigin: OriginTrait> ConvertOrigin<RuntimeOrigin>
 	}
 }
 
+parameter_types! {
+	pub storage EnqueuedMessages: Vec<(AggregateMessageOrigin, Vec<u8>)> = Default::default();
+}
+
+use frame_support::{traits::Footprint, BoundedSlice};
+
+pub struct EnqueueToLocalStorage;
+
+impl EnqueueToLocalStorage {
+	pub fn get(origin: AggregateMessageOrigin) -> Vec<Vec<u8>> {
+		EnqueuedMessages::get()
+			.into_iter()
+			.filter(|(o, _)| *o == origin)
+			.map(|(_, m)| m)
+			.collect()
+	}
+}
+
+impl EnqueueMessage<AggregateMessageOrigin> for EnqueueToLocalStorage {
+	type MaxMessageLen = sp_core::ConstU32<1024>;
+
+	fn enqueue_message(
+		message: BoundedSlice<u8, Self::MaxMessageLen>,
+		origin: AggregateMessageOrigin,
+	) {
+		let mut msgs = EnqueuedMessages::get();
+		msgs.push((origin, message.to_vec()));
+		EnqueuedMessages::set(&msgs);
+	}
+
+	fn enqueue_messages<'a>(
+		iter: impl Iterator<Item = BoundedSlice<'a, u8, Self::MaxMessageLen>>,
+		origin: AggregateMessageOrigin,
+	) {
+		let mut msgs = EnqueuedMessages::get();
+		for message in iter {
+			msgs.push((origin.clone(), message.to_vec()));
+		}
+		EnqueuedMessages::set(&msgs);
+	}
+
+	fn sweep_queue(origin: AggregateMessageOrigin) {
+		let mut msgs = EnqueuedMessages::get();
+		msgs.retain(|(o, _)| o != &origin);
+		EnqueuedMessages::set(&msgs);
+	}
+
+	fn footprint(origin: AggregateMessageOrigin) -> Footprint {
+		let msgs = EnqueuedMessages::get();
+		let mut footprint = Footprint::default();
+		for (o, m) in msgs {
+			if o == origin {
+				footprint.count += 1;
+				footprint.size += m.len() as u64;
+			}
+		}
+		footprint
+	}
+}
+
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = xcm_executor::XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = ();
+	type EnqueueXcmOverHrmp = EnqueueToLocalStorage;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type ControllerOrigin = EnsureRoot<AccountId>;
 	type ControllerOriginConverter = SystemParachainAsSuperuser<RuntimeOrigin>;
