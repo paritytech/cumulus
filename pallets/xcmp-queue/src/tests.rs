@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use super::*;
+use super::{mock::EnqueuedMessages, *};
 use XcmpMessageFormat::*;
 
 use cumulus_primitives_core::XcmpMessageHandler;
@@ -35,21 +35,76 @@ fn empty_concatenated_works() {
 }
 
 #[test]
-#[should_panic = "Blob messages not handled"]
-#[cfg(debug_assertions)]
-fn bad_blob_message_is_ignored() {
+fn xcm_enqueueing_basic_works() {
 	new_test_ext().execute_with(|| {
-		let data = [ConcatenatedEncodedBlob.encode(), vec![1]].concat();
+		let xcm = VersionedXcm::<Test>::from(Xcm::<Test>(vec![ClearOrigin])).encode();
+		let data = [ConcatenatedVersionedXcm.encode(), xcm.clone()].concat();
 
 		XcmpQueue::handle_xcmp_messages(once((1000.into(), 1, data.as_slice())), Weight::MAX);
-	});
+
+		assert_eq!(
+			EnqueuedMessages::get(),
+			vec![(AggregateMessageOrigin::Sibling(1000.into()), xcm)]
+		);
+	})
+}
+
+#[test]
+fn xcm_enqueueing_many_works() {
+	new_test_ext().execute_with(|| {
+		let mut encoded_xcms = vec![];
+		for i in 0..10 {
+			let xcm = VersionedXcm::<Test>::from(Xcm::<Test>(vec![ClearOrigin; i as usize]));
+			encoded_xcms.push(xcm.encode());
+		}
+		let mut data = ConcatenatedVersionedXcm.encode();
+		data.extend(encoded_xcms.iter().flatten());
+
+		XcmpQueue::handle_xcmp_messages(once((1000.into(), 1, data.as_slice())), Weight::MAX);
+
+		assert_eq!(
+			EnqueuedMessages::get(),
+			encoded_xcms
+				.into_iter()
+				.map(|xcm| (AggregateMessageOrigin::Sibling(1000.into()), xcm))
+				.collect::<Vec<_>>(),
+		);
+	})
+}
+
+#[test]
+fn xcm_enqueueing_multiple_times_works() {
+	new_test_ext().execute_with(|| {
+		let mut encoded_xcms = vec![];
+		for i in 0..10 {
+			let xcm = VersionedXcm::<Test>::from(Xcm::<Test>(vec![ClearOrigin; i as usize]));
+			encoded_xcms.push(xcm.encode());
+		}
+		let mut data = ConcatenatedVersionedXcm.encode();
+		data.extend(encoded_xcms.iter().flatten());
+
+		for i in 0..10 {
+			XcmpQueue::handle_xcmp_messages(once((1000.into(), 1, data.as_slice())), Weight::MAX);
+			assert_eq!((i + 1) * 10, EnqueuedMessages::get().len());
+		}
+
+		assert_eq!(
+			EnqueuedMessages::get(),
+			encoded_xcms
+				.into_iter()
+				.map(|xcm| (AggregateMessageOrigin::Sibling(1000.into()), xcm))
+				.cycle()
+				.take(100)
+				.collect::<Vec<_>>(),
+		);
+	})
 }
 
 /// Message blobs are not supported and panic in debug mode.
 #[test]
 #[should_panic = "Blob messages not handled"]
 #[cfg(debug_assertions)]
-fn handle_blob_message() {
+fn bad_blob_message_panics() {
 	new_test_ext().execute_with(|| {
 		let data = [ConcatenatedEncodedBlob.encode(), vec![1].encode()].concat();
 
@@ -60,7 +115,7 @@ fn handle_blob_message() {
 /// Message blobs do not panic in release mode but are just a No-OP.
 #[test]
 #[cfg(not(debug_assertions))]
-fn handle_blob_message() {
+fn bad_blob_message_no_panic() {
 	new_test_ext().execute_with(|| {
 		let data = [ConcatenatedEncodedBlob.encode(), vec![1].encode()].concat();
 

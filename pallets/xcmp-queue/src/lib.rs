@@ -45,7 +45,7 @@ use cumulus_primitives_core::{
 	XcmpMessageSource,
 };
 use frame_support::{
-	defensive, defensive_assert,
+	defensive,
 	traits::{EnqueueMessage, EnsureOrigin, Get},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight},
 };
@@ -92,8 +92,6 @@ pub mod pallet {
 		type VersionWrapper: WrapVersion;
 
 		/// Enqueue an inbound horizontal message for later processing.
-		///
-		/// This is normally an [`EnqueueMessage`] wrapped in an [`EnqueueWithOrigin`].
 		type EnqueueXcmOverHrmp: EnqueueMessage<AggregateMessageOrigin>;
 
 		/// The origin that is allowed to resume or suspend the XCMP queue.
@@ -305,15 +303,6 @@ pub mod pallet {
 	/// The configuration which controls the dynamics of the outbound queue.
 	#[pallet::storage]
 	pub(super) type QueueConfig<T: Config> = StorageValue<_, QueueConfigData, ValueQuery>;
-
-	//#[pallet::storage]
-	//pub(super) type Overweight<T: Config> =
-	//	CountedStorageMap<_, Twox64Concat, OverweightIndex, (ParaId, RelayBlockNumber, Vec<u8>)>;
-
-	// The number of overweight messages ever recorded in `Overweight`. Also doubles as the next
-	// available free overweight index.
-	//#[pallet::storage]
-	//pub(super) type OverweightCount<T: Config> = StorageValue<_, OverweightIndex, ValueQuery>;
 
 	/// Whether or not the XCMP queue is suspended from executing incoming XCMs or not.
 	#[pallet::storage]
@@ -896,7 +885,9 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 							continue
 						},
 					}
-					defensive_assert!(data.is_empty(), "All XCM data must be consumed.");
+					if !data.is_empty() {
+						defensive!("All XCM data must be consumed.");
+					}
 				},
 				XcmpMessageFormat::ConcatenatedEncodedBlob => {
 					defensive!("Blob messages not handled");

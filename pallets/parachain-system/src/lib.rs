@@ -171,9 +171,9 @@ pub mod pallet {
 		/// Process inbound downward messages which had been enqueued via [`Self::MessageEnqueue`].
 		///
 		/// FAIL-CI should probably use `TransformOrigin`
-		type MessageService: ServiceQueues<
-			OverweightMessageAddress = (AggregateMessageOrigin, u32, u32),
-		>;
+		//type MessageService: ServiceQueues<
+		//	OverweightMessageAddress = (AggregateMessageOrigin, u32, u32),
+		//>;
 
 		/// The weight we reserve at the beginning of the block for processing DMP messages.
 		type ReservedDmpWeight: Get<Weight>;
@@ -446,7 +446,7 @@ pub mod pallet {
 			);
 
 			// FAIL-CI do this in on_initialize or manually here?
-			T::MessageService::service_queues(Weight::MAX);
+			//T::MessageService::service_queues(Weight::MAX);
 
 			Ok(PostDispatchInfo { actual_weight: Some(total_weight), pays_fee: Pays::No })
 		}
