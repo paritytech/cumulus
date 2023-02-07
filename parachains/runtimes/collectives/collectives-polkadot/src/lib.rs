@@ -497,7 +497,16 @@ impl pallet_alliance::Config for Runtime {
 
 parameter_types! {
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) * RuntimeBlockWeights::get().max_block;
-	pub const MaxScheduledPerBlock: u32 = 200; // TODO replace by 50, after fixing referendum benches
+}
+
+#[cfg(not(feature = "runtime-benchmarks"))]
+parameter_types! {
+	pub const MaxScheduledPerBlock: u32 = 50;
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+parameter_types! {
+	pub const MaxScheduledPerBlock: u32 = 200;
 }
 
 impl pallet_scheduler::Config for Runtime {
