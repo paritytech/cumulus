@@ -267,7 +267,6 @@ impl Config for Test {
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = ();
 	type EnqueueXcmOverHrmp = EnqueueToLocalStorage;
-	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type ControllerOrigin = EnsureRoot<AccountId>;
 	type ControllerOriginConverter = SystemParachainAsSuperuser<RuntimeOrigin>;
 	type WeightInfo = ();

@@ -52,7 +52,7 @@ use frame_support::{
 use polkadot_runtime_common::xcm_sender::ConstantPrice;
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
-use sp_std::{convert::TryFrom, prelude::*};
+use sp_std::prelude::*;
 use xcm::{latest::prelude::*, VersionedXcm, WrapVersion, MAX_XCM_DECODE_DEPTH};
 use xcm_executor::traits::ConvertOrigin;
 
@@ -96,9 +96,6 @@ pub mod pallet {
 		/// This is normally an [`EnqueueMessage`] wrapped in an [`EnqueueWithOrigin`].
 		type EnqueueXcmOverHrmp: EnqueueMessage<AggregateMessageOrigin>;
 
-		/// The origin that is allowed to execute overweight messages.
-		type ExecuteOverweightOrigin: EnsureOrigin<Self::RuntimeOrigin>;
-
 		/// The origin that is allowed to resume or suspend the XCMP queue.
 		type ControllerOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
@@ -127,42 +124,6 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Services a single overweight XCM.
-		///
-		/// - `origin`: Must pass `ExecuteOverweightOrigin`.
-		/// - `index`: The index of the overweight XCM to service
-		/// - `weight_limit`: The amount of weight that XCM execution may take.
-		///
-		/// Errors:
-		/// - `BadOverweightIndex`: XCM under `index` is not found in the `Overweight` storage map.
-		/// - `BadXcm`: XCM under `index` cannot be properly decoded into a valid XCM format.
-		/// - `WeightOverLimit`: XCM execution may use greater `weight_limit`.
-		///
-		/// Events:
-		/// - `OverweightServiced`: On success.
-		#[pallet::call_index(0)]
-		#[pallet::weight((weight_limit.saturating_add(Weight::from_ref_time(1_000_000)), DispatchClass::Operational))]
-		pub fn service_overweight(
-			origin: OriginFor<T>,
-			index: OverweightIndex,
-			weight_limit: Weight,
-		) -> DispatchResultWithPostInfo {
-			T::ExecuteOverweightOrigin::ensure_origin(origin)?;
-
-			let (sender, sent_at, data) =
-				Overweight::<T>::get(index).ok_or(Error::<T>::BadOverweightIndex)?;
-			let xcm = VersionedXcm::<T::RuntimeCall>::decode_all_with_depth_limit(
-				MAX_XCM_DECODE_DEPTH,
-				&mut data.as_slice(),
-			)
-			.map_err(|_| Error::<T>::BadXcm)?;
-			let used = Self::handle_xcm_message(sender, sent_at, xcm, weight_limit)
-				.map_err(|_| Error::<T>::WeightOverLimit)?;
-			Overweight::<T>::remove(index);
-			Self::deposit_event(Event::OverweightServiced { index, used });
-			Ok(Some(used.saturating_add(Weight::from_ref_time(1_000_000))).into())
-		}
-
 		/// Suspends all XCM executions for the XCMP queue, regardless of the sender's origin.
 		///
 		/// - `origin`: Must pass `ControllerOrigin`.
@@ -291,15 +252,6 @@ pub mod pallet {
 		BadFormat { message_hash: Option<XcmHash> },
 		/// An HRMP message was sent to a sibling parachain.
 		XcmpMessageSent { message_hash: Option<XcmHash> },
-		/// An XCM exceeded the individual message weight budget.
-		OverweightEnqueued {
-			sender: ParaId,
-			sent_at: RelayBlockNumber,
-			index: OverweightIndex,
-			required: Weight,
-		},
-		/// An XCM from the overweight queue was executed with the given actual weight used.
-		OverweightServiced { index: OverweightIndex, used: Weight },
 	}
 
 	#[pallet::error]
@@ -310,10 +262,6 @@ pub mod pallet {
 		BadXcmOrigin,
 		/// Bad XCM data.
 		BadXcm,
-		/// Bad overweight index.
-		BadOverweightIndex,
-		/// Provided weight is possibly not enough to execute the message.
-		WeightOverLimit,
 	}
 
 	/// Status of the inbound XCMP channels.
@@ -358,19 +306,14 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type QueueConfig<T: Config> = StorageValue<_, QueueConfigData, ValueQuery>;
 
-	// The messages that exceeded max individual message weight budget.
-	//
-	// These message stay in this storage map until they are manually dispatched via
-	// `service_overweight`.
-	// FAIL-CI remove
-	#[pallet::storage]
-	pub(super) type Overweight<T: Config> =
-		CountedStorageMap<_, Twox64Concat, OverweightIndex, (ParaId, RelayBlockNumber, Vec<u8>)>;
+	//#[pallet::storage]
+	//pub(super) type Overweight<T: Config> =
+	//	CountedStorageMap<_, Twox64Concat, OverweightIndex, (ParaId, RelayBlockNumber, Vec<u8>)>;
 
 	// The number of overweight messages ever recorded in `Overweight`. Also doubles as the next
 	// available free overweight index.
-	#[pallet::storage]
-	pub(super) type OverweightCount<T: Config> = StorageValue<_, OverweightIndex, ValueQuery>;
+	//#[pallet::storage]
+	//pub(super) type OverweightCount<T: Config> = StorageValue<_, OverweightIndex, ValueQuery>;
 
 	/// Whether or not the XCMP queue is suspended from executing incoming XCMs or not.
 	#[pallet::storage]
@@ -588,7 +531,7 @@ impl<T: Config> Pallet<T> {
 		Self::send_fragment(recipient, XcmpMessageFormat::ConcatenatedVersionedXcm, xcm)
 	}
 
-	fn handle_xcm_message(
+	/*fn handle_xcm_message(
 		sender: ParaId,
 		_sent_at: RelayBlockNumber,
 		xcm: VersionedXcm<T::RuntimeCall>,
@@ -618,7 +561,7 @@ impl<T: Config> Pallet<T> {
 		};
 		Self::deposit_event(event);
 		result
-	}
+	}*/
 
 	/*fn process_xcmp_message(
 		sender: ParaId,

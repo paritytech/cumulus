@@ -105,9 +105,14 @@ pub fn migrate_to_v2<T: Config>() -> Weight {
 }
 
 pub fn migrate_to_v3<T: Config>() -> Weight {
-	let overweight_messages = <Pallet<T> as Store>::Overweight::initialize_counter() as u64;
-
-	T::DbWeight::get().reads_writes(overweight_messages, 1)
+	//#[frame_support::storage_alias]
+	//pub(super) type OldOverweight<T: Config> =
+	//	CountedStorageMap<Twox64Concat, OverweightIndex, (ParaId, RelayBlockNumber, Vec<u8>)>;
+	//let overweight_messages = OldOverweight::<T>::initialize_counter() as u64;
+//
+	//T::DbWeight::get().reads_writes(overweight_messages, 1)
+	// FAIL-CI todo
+	Weight::zero()
 }
 
 #[cfg(test)]

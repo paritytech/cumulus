@@ -97,7 +97,7 @@ fn handle_invalid_data_no_panic() {
 	});
 }
 
-#[test]
+/*#[test]
 fn service_overweight_unknown() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(
@@ -118,7 +118,7 @@ fn service_overweight_bad_xcm_format() {
 			Error::<Test>::BadXcm
 		);
 	});
-}
+}*/
 
 // FAIL-CI add queue-suspension
 //#[test]
