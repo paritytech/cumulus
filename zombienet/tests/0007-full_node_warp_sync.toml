@@ -8,17 +8,17 @@ chain_spec_path = "zombienet/tests/0007-warp-sync-relaychain-spec.json"
   [[relaychain.nodes]]
   name = "alice"
   validator = true
-  db_snapshot = "https://storage.cloud.google.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/relaychain-1964f8b557f10085cdc18f4105ad0bbb3df4c4c6.tgz"
+  db_snapshot = "https://storage.googleapis.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/relaychain-1964f8b557f10085cdc18f4105ad0bbb3df4c4c6.tgz"
 
   [[relaychain.nodes]]
   name = "bob"
   validator = true
-  db_snapshot = "https://storage.cloud.google.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/relaychain-1964f8b557f10085cdc18f4105ad0bbb3df4c4c6.tgz"
+  db_snapshot = "https://storage.googleapis.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/relaychain-1964f8b557f10085cdc18f4105ad0bbb3df4c4c6.tgz"
 
   [[relaychain.nodes]]
   name = "charlie"
   validator = true
-  db_snapshot = "https://storage.cloud.google.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/relaychain-1964f8b557f10085cdc18f4105ad0bbb3df4c4c6.tgz"
+  db_snapshot = "https://storage.googleapis.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/relaychain-1964f8b557f10085cdc18f4105ad0bbb3df4c4c6.tgz"
 
   [[relaychain.nodes]]
   name = "dave"
@@ -37,7 +37,7 @@ add_to_genesis = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
   args = ["-lparachain=debug"]
-  db_snapshot = "https://storage.cloud.google.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/parachain-587c1ed24ddd7de05c237cf7c158fff53b8f5b26.tgz"
+  db_snapshot = "https://storage.googleapis.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/parachain-587c1ed24ddd7de05c237cf7c158fff53b8f5b26.tgz"
 
   [[parachains.collators]]
   name = "eve"
@@ -45,7 +45,7 @@ add_to_genesis = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
   args = ["-lparachain=debug"]
-  db_snapshot = "https://storage.cloud.google.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/parachain-587c1ed24ddd7de05c237cf7c158fff53b8f5b26.tgz"
+  db_snapshot = "https://storage.googleapis.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/parachain-587c1ed24ddd7de05c237cf7c158fff53b8f5b26.tgz"
 
   [[parachains.collators]]
   name = "ferdie"
@@ -53,7 +53,7 @@ add_to_genesis = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
   args = ["-lparachain=debug"]
-  db_snapshot = "https://storage.cloud.google.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/parachain-587c1ed24ddd7de05c237cf7c158fff53b8f5b26.tgz"
+  db_snapshot = "https://storage.googleapis.com/zombienet-db-snaps/cumulus/0007-full_node_warp_sync/parachain-587c1ed24ddd7de05c237cf7c158fff53b8f5b26.tgz"
 
   [[parachains.collators]]
   name = "one"
