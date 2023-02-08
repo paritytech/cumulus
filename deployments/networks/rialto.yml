@@ -56,8 +56,6 @@ services:
       - --unsafe-rpc-external
       - --unsafe-ws-external
       - --prometheus-external
-    environment:
-      RUST_LOG: runtime=trace,rpc=debug,txpool=trace,runtime::bridge=trace,beefy=debug,jsonrpsee=trace,jsonrpsee_core=trace,jsonrpsee_server=trace,rustls=trace,soketto=trace
     ports:
       - "10133:9933"
       - "10144:9944"

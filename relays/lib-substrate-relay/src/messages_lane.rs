@@ -315,7 +315,7 @@ where
 /// the variant for the `receive_messages_proof` call within that first option.
 #[rustfmt::skip]
 #[macro_export]
-macro_rules! generate_mocked_receive_message_proof_call_builder {
+macro_rules! generate_receive_message_proof_call_builder {
 	($pipeline:ident, $mocked_builder:ident, $bridge_messages:path, $receive_messages_proof:path) => {
 		pub struct $mocked_builder;
 
@@ -335,12 +335,14 @@ macro_rules! generate_mocked_receive_message_proof_call_builder {
 			) -> relay_substrate_client::CallOf<
 				<$pipeline as $crate::messages_lane::SubstrateMessageLane>::TargetChain
 			> {
-				$bridge_messages($receive_messages_proof(
-					relayer_id_at_source,
-					proof.1,
-					messages_count,
-					dispatch_weight,
-				))
+				bp_runtime::paste::item! {
+					$bridge_messages($receive_messages_proof {
+						relayer_id_at_bridged_chain: relayer_id_at_source,
+						proof: proof.1,
+						messages_count: messages_count,
+						dispatch_weight: dispatch_weight,
+					})
+				}
 			}
 		}
 	};
@@ -409,7 +411,7 @@ where
 /// the variant for the `receive_messages_delivery_proof` call within that first option.
 #[rustfmt::skip]
 #[macro_export]
-macro_rules! generate_mocked_receive_message_delivery_proof_call_builder {
+macro_rules! generate_receive_message_delivery_proof_call_builder {
 	($pipeline:ident, $mocked_builder:ident, $bridge_messages:path, $receive_messages_delivery_proof:path) => {
 		pub struct $mocked_builder;
 
@@ -424,7 +426,12 @@ macro_rules! generate_mocked_receive_message_delivery_proof_call_builder {
 			) -> relay_substrate_client::CallOf<
 				<$pipeline as $crate::messages_lane::SubstrateMessageLane>::SourceChain
 			> {
-				$bridge_messages($receive_messages_delivery_proof(proof.1, proof.0))
+				bp_runtime::paste::item! {
+					$bridge_messages($receive_messages_delivery_proof {
+						proof: proof.1,
+						relayers_state: proof.0
+					})
+				}
 			}
 		}
 	};
@@ -480,10 +487,14 @@ mod tests {
 		pallet_bridge_messages::weights::BridgeWeight<rialto_runtime::Runtime>;
 
 	#[test]
-	fn select_delivery_transaction_limits_works() {
+	fn select_delivery_transaction_limits_is_sane() {
+		// we want to check the `proof_size` component here too. But for Rialto and Millau
+		// it is set to `u64::MAX` (as for Polkadot and other relay/standalone chains).
+		// So let's use RialtoParachain limits here - it has `proof_size` limit as all
+		// Cumulus-based parachains do.
 		let (max_count, max_weight) =
 			select_delivery_transaction_limits::<RialtoToMillauMessagesWeights>(
-				bp_millau::Millau::max_extrinsic_weight(),
+				bp_rialto_parachain::RialtoParachain::max_extrinsic_weight(),
 				bp_rialto::MAX_UNREWARDED_RELAYERS_IN_CONFIRMATION_TX,
 			);
 		assert_eq!(
@@ -493,9 +504,7 @@ mod tests {
 			// i.e. weight reserved for messages dispatch allows dispatch of non-trivial messages.
 			//
 			// Any significant change in this values should attract additional attention.
-			//
-			// TODO: https://github.com/paritytech/parity-bridges-common/issues/1543 - remove `set_proof_size`
-			(1024, Weight::from_ref_time(216_600_684_000).set_proof_size(217)),
+			(1024, Weight::from_parts(866_600_106_667, 2_271_915)),
 		);
 	}
 }

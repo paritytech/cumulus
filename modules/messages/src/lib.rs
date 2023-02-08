@@ -398,7 +398,7 @@ pub mod pallet {
 
 			Self::deposit_event(Event::MessagesReceived(messages_received_status));
 
-			Ok(PostDispatchInfo { actual_weight: Some(actual_weight), pays_fee: Pays::No })
+			Ok(PostDispatchInfo { actual_weight: Some(actual_weight), pays_fee: Pays::Yes })
 		}
 
 		/// Receive messages delivery proof from bridged chain.
@@ -899,6 +899,7 @@ mod tests {
 	use bp_test_utils::generate_owned_bridge_module_tests;
 	use frame_support::{
 		assert_noop, assert_ok,
+		dispatch::Pays,
 		storage::generator::{StorageMap, StorageValue},
 		traits::Hooks,
 		weights::Weight,
@@ -1270,7 +1271,7 @@ mod tests {
 					TEST_RELAYER_A,
 					Err(()).into(),
 					1,
-					Weight::from_ref_time(0),
+					Weight::zero(),
 				),
 				Error::<TestRuntime, ()>::InvalidMessagesProof,
 			);
@@ -1286,7 +1287,7 @@ mod tests {
 					TEST_RELAYER_A,
 					Ok(vec![message(1, REGULAR_PAYLOAD)]).into(),
 					u32::MAX,
-					Weight::from_ref_time(0),
+					Weight::zero(),
 				),
 				Error::<TestRuntime, ()>::TooManyMessagesInTheProof,
 			);
@@ -1478,8 +1479,8 @@ mod tests {
 				TEST_RELAYER_A,
 				Ok(vec![invalid_message]).into(),
 				1,
-				Weight::from_ref_time(0), /* weight may be zero in this case (all messages are
-				                           * improperly encoded) */
+				Weight::zero(), /* weight may be zero in this case (all messages are
+				                 * improperly encoded) */
 			),);
 
 			assert_eq!(InboundLanes::<TestRuntime>::get(TEST_LANE_ID).last_delivered_nonce(), 1,);
@@ -1543,16 +1544,19 @@ mod tests {
 						messages_count,
 						REGULAR_PAYLOAD.declared_weight,
 					);
-				let post_dispatch_weight = Pallet::<TestRuntime>::receive_messages_proof(
+				let result = Pallet::<TestRuntime>::receive_messages_proof(
 					RuntimeOrigin::signed(1),
 					TEST_RELAYER_A,
 					proof,
 					messages_count,
 					REGULAR_PAYLOAD.declared_weight,
 				)
-				.expect("delivery has failed")
-				.actual_weight
-				.expect("receive_messages_proof always returns Some");
+				.expect("delivery has failed");
+				let post_dispatch_weight =
+					result.actual_weight.expect("receive_messages_proof always returns Some");
+
+				// message delivery transactions are never free
+				assert_eq!(result.pays_fee, Pays::Yes);
 
 				(pre_dispatch_weight, post_dispatch_weight)
 			}
@@ -1706,11 +1710,7 @@ mod tests {
 				Pallet::<TestRuntime>::inbound_message_data(
 					TEST_LANE_ID,
 					REGULAR_PAYLOAD.encode(),
-					OutboundMessageDetails {
-						nonce: 0,
-						dispatch_weight: Weight::from_ref_time(0),
-						size: 0,
-					},
+					OutboundMessageDetails { nonce: 0, dispatch_weight: Weight::zero(), size: 0 },
 				),
 				InboundMessageDetails { dispatch_weight: REGULAR_PAYLOAD.declared_weight },
 			);
@@ -1928,12 +1928,12 @@ mod tests {
 			AccountId,
 			TestMessagesProof,
 			TestMessagesDeliveryProof,
-		>::receive_messages_proof(
-			account_id,
-			message_proof,
-			1,
-			REGULAR_PAYLOAD.declared_weight,
-		);
+		>::receive_messages_proof {
+			relayer_id_at_bridged_chain: account_id,
+			proof: message_proof,
+			messages_count: 1,
+			dispatch_weight: REGULAR_PAYLOAD.declared_weight,
+		};
 		assert_eq!(
 			direct_receive_messages_proof_call.encode(),
 			indirect_receive_messages_proof_call.encode()
@@ -1948,10 +1948,10 @@ mod tests {
 			AccountId,
 			TestMessagesProof,
 			TestMessagesDeliveryProof,
-		>::receive_messages_delivery_proof(
-			message_delivery_proof,
-			unrewarded_relayer_state,
-		);
+		>::receive_messages_delivery_proof {
+			proof: message_delivery_proof,
+			relayers_state: unrewarded_relayer_state,
+		};
 		assert_eq!(
 			direct_receive_messages_delivery_proof_call.encode(),
 			indirect_receive_messages_delivery_proof_call.encode()

@@ -46,7 +46,7 @@ updates:
   - dependency-name: polkadot-*
     versions:
     - ">= 0"
-  - dependency-name: xcm-*
+  - dependency-name: xcm*
     versions:
     - ">= 0"
   # Cumulus dependencies

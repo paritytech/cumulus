@@ -5,21 +5,24 @@ stages:
   - build
   - publish
 
-workflow:
-  rules:
-    - if: $CI_COMMIT_TAG
-    - if: $CI_COMMIT_BRANCH
-
-variables:                         &default-vars
+variables:
   GIT_STRATEGY:                    fetch
   GIT_DEPTH:                       100
   CARGO_INCREMENTAL:               0
   ARCH:                            "x86_64"
   CI_IMAGE:                        "paritytech/bridges-ci:production"
+  BUILDAH_IMAGE:                   "quay.io/buildah/stable:v1.27"
   RUST_BACKTRACE:                  full
 
 default:
   cache:                           {}
+  interruptible:                   true
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - unknown_failure
+      - api_failure
 
 .collect-artifacts:                &collect-artifacts
   artifacts:
@@ -32,7 +35,6 @@ default:
 .kubernetes-build:                 &kubernetes-build
   tags:
     - kubernetes-parity-build
-  interruptible:                   true
 
 .docker-env:                       &docker-env
   image:                           "${CI_IMAGE}"
@@ -41,16 +43,8 @@ default:
     - cargo --version
     - rustup +nightly show
     - cargo +nightly --version
-    - sccache -s
-  retry:
-    max: 2
-    when:
-      - runner_system_failure
-      - unknown_failure
-      - api_failure
-  interruptible:                   true
   tags:
-    - linux-docker
+    - linux-docker-vm-c2
 
 .test-refs:                        &test-refs
   rules:
@@ -112,7 +106,7 @@ spellcheck:
   <<:                              *docker-env
   <<:                              *test-refs
   script:
-    - cargo spellcheck check --cfg=.config/spellcheck.toml --checkers hunspell -m 1
+    - cargo spellcheck check --cfg=.config/spellcheck.toml --checkers hunspell -m 1 $(find . -type f -name '*.rs' ! -path "./target/*" ! -name 'codegen_runtime.rs' ! -name 'weights.rs')
 
 #### stage:                        check
 
@@ -197,6 +191,15 @@ benchmarks-test:
   # we may live with failing benchmarks, it is just a signal for us
   allow_failure:                   true
 
+partial-repo-build-test:
+  stage:                           test
+  <<:                              *docker-env
+  <<:                              *nightly-test
+  script:
+    - ./scripts/verify-pallets-build.sh --no-revert
+  # we may live with failing partial repo build, it is just a signal for us
+  allow_failure:                   true
+
 #### stage:                        build
 
 build:
@@ -237,7 +240,7 @@ build-nightly:
 
 .build-push-image:                 &build-push-image
   <<:                              *kubernetes-build
-  image:                           quay.io/buildah/stable:v1.27
+  image:                           $BUILDAH_IMAGE
   <<:                              *build-refs
   variables:                       &image-variables
     GIT_STRATEGY:                  none
@@ -248,7 +251,7 @@ build-nightly:
   needs:
     - job:                         build
       artifacts:                   true
-  before_script:                   &check-versions
+  before_script:
     - echo "Starting docker image build/push with name '${IMAGE_NAME}' for '${BRIDGES_PROJECT}' with Dockerfile = '${DOCKERFILE}'"
     - if [[ "${CI_COMMIT_TAG}" ]]; then
         VERSION=${CI_COMMIT_TAG};

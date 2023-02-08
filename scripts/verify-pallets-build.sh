@@ -8,6 +8,35 @@
 # - modules/relayers;
 # - everything required from primitives folder.
 
+set -eux
+
+# show CLI help
+function show_help() {
+  set +x
+  echo " "
+  echo Error: $1
+  echo "Usage:"
+  echo "  ./scripts/verify-pallets-build.sh          Exit with code 0 if pallets code is well decoupled from the other code in the repo"
+  echo "Options:"
+  echo "  --no-revert                                Leaves only runtime code on exit"
+  exit 1
+}
+
+# parse CLI args
+NO_REVERT=
+for i in "$@"
+do
+	case $i in
+		--no-revert)
+			NO_REVERT=true
+			shift
+			;;
+		*)
+			show_help "Unknown option: $i"
+			;;
+	esac
+done
+
 # the script is able to work only on clean git copy
 [[ -z "$(git status --porcelain)" ]] || { echo >&2 "The git copy must be clean"; exit 1; }
 
@@ -18,8 +47,7 @@ BRIDGES_FOLDER="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && p
 
 # let's leave repository/subtree in its original (clean) state if something fails below
 function revert_to_clean_state {
-	echo "Reverting to clean state..."
-	git reset --hard
+	[[ ! -z "${NO_REVERT}" ]] || { echo "Reverting to clean state..."; git checkout .; }
 }
 trap revert_to_clean_state EXIT
 
@@ -40,6 +68,7 @@ rm -rf $BRIDGES_FOLDER/primitives/chain-rialto
 rm -rf $BRIDGES_FOLDER/primitives/chain-rialto-parachain
 rm -rf $BRIDGES_FOLDER/primitives/chain-westend
 rm -rf $BRIDGES_FOLDER/relays
+rm -rf $BRIDGES_FOLDER/tools
 rm -f $BRIDGES_FOLDER/.dockerignore
 rm -f $BRIDGES_FOLDER/.gitlab-ci.yml
 rm -f $BRIDGES_FOLDER/Cargo.lock
@@ -48,17 +77,18 @@ rm -f $BRIDGES_FOLDER/ci.Dockerfile
 rm -f $BRIDGES_FOLDER/Dockerfile
 
 # let's fix Cargo.toml a bit (it'll be helpful if we are in the bridges repo)
+if [[ ! -f "Cargo.toml" ]]; then
+	cat > Cargo.toml <<-CARGO_TOML
+	[workspace]
+	resolver = "2"
 
-cat > $BRIDGES_FOLDER/Cargo.toml <<-CARGO_TOML
-[workspace]
-resolver = "2"
-
-members = [
-	"bin/runtime-common",
-	"modules/*",
-	"primitives/*",
-]
-CARGO_TOML
+	members = [
+		"bin/runtime-common",
+		"modules/*",
+		"primitives/*",
+	]
+	CARGO_TOML
+fi
 
 # let's test if everything we need compiles
 

@@ -20,14 +20,17 @@ sleep 15
 # Give chain a little bit of time to process initialization transaction
 sleep 6
 
+RIALTO_NODE_CONNECTION_PARAMS=$([ -z ${GLOBAL_DEPLOYMENTS} ] && \
+	echo "--rialto-host rialto-node-alice --rialto-port 9944" \
+	|| \
+	echo "--rialto-host wss.rialto.brucke.link --rialto-port 443 --rialto-secure" )
+
 /home/user/substrate-relay relay-headers-and-messages millau-rialto \
 	--millau-host millau-node-alice \
 	--millau-port 9944 \
 	--millau-signer //Rialto.HeadersAndMessagesRelay \
 	--millau-transactions-mortality=64 \
-	--rialto-host wss.rialto.brucke.link \
-	--rialto-port 443 \
-	--rialto-secure \
+	$RIALTO_NODE_CONNECTION_PARAMS \
 	--rialto-signer //Millau.HeadersAndMessagesRelay \
 	--rialto-transactions-mortality=64 \
 	--lane=00000000 \

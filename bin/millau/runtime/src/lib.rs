@@ -61,7 +61,9 @@ pub use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{ConstU32, ConstU8, Currency, ExistenceRequirement, Imbalance, KeyOwnerProofSystem},
+	traits::{
+		ConstU32, ConstU64, ConstU8, Currency, ExistenceRequirement, Imbalance, KeyOwnerProofSystem,
+	},
 	weights::{
 		constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, IdentityFee, RuntimeDbWeight,
 		Weight,
@@ -240,6 +242,7 @@ impl pallet_grandpa::Config for Runtime {
 	// TODO: update me (https://github.com/paritytech/parity-bridges-common/issues/78)
 	type WeightInfo = ();
 	type MaxAuthorities = ConstU32<10>;
+	type MaxSetIdSessionEntries = ConstU64<0>;
 }
 
 /// MMR helper types.
@@ -384,30 +387,12 @@ impl pallet_bridge_relayers::Config for Runtime {
 	type WeightInfo = ();
 }
 
-#[cfg(feature = "runtime-benchmarks")]
-parameter_types! {
-	/// Number of headers to keep in benchmarks.
-	///
-	/// In benchmarks we always populate with full number of `HeadersToKeep` to make sure that
-	/// pruning is taken into account.
-	///
-	/// Note: This is lower than regular value, to speed up benchmarking setup.
-	pub const HeadersToKeep: u32 = 1024;
-	/// Maximal number of authorities at Rialto.
-	///
-	/// In benchmarks we're using sets of up to `1024` authorities to prepare for possible
-	/// upgrades in the future and see if performance degrades when number of authorities
-	/// grow.
-	pub const MaxAuthoritiesAtRialto: u32 = pallet_bridge_grandpa::benchmarking::MAX_VALIDATOR_SET_SIZE;
-}
-
-#[cfg(not(feature = "runtime-benchmarks"))]
 parameter_types! {
 	/// Number of headers to keep.
 	///
 	/// Assuming the worst case of every header being finalized, we will keep headers at least for a
-	/// week.
-	pub const HeadersToKeep: u32 = 7 * bp_rialto::DAYS;
+	/// day.
+	pub const HeadersToKeep: u32 = bp_rialto::DAYS;
 	/// Maximal number of authorities at Rialto.
 	pub const MaxAuthoritiesAtRialto: u32 = bp_rialto::MAX_AUTHORITIES_COUNT;
 }
@@ -752,6 +737,12 @@ impl_runtime_apis! {
 		fn query_fee_details(uxt: <Block as BlockT>::Extrinsic, len: u32) -> FeeDetails<Balance> {
 			TransactionPayment::query_fee_details(uxt, len)
 		}
+		fn query_weight_to_fee(weight: Weight) -> Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+		fn query_length_to_fee(length: u32) -> Balance {
+			TransactionPayment::length_to_fee(length)
+		}
 	}
 
 	impl sp_session::SessionKeys<Block> for Runtime {
@@ -767,6 +758,10 @@ impl_runtime_apis! {
 	}
 
 	impl sp_beefy::BeefyApi<Block> for Runtime {
+		fn beefy_genesis() -> Option<BlockNumber> {
+			Beefy::genesis_block()
+		}
+
 		fn validator_set() -> Option<ValidatorSet<BeefyId>> {
 			Beefy::validator_set()
 		}
@@ -983,7 +978,7 @@ impl_runtime_apis! {
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
 
-			use bridge_runtime_common::messages_benchmarking::{prepare_message_delivery_proof, prepare_message_proof};
+			use bridge_runtime_common::messages_benchmarking::{prepare_message_delivery_proof_from_grandpa_chain, prepare_message_proof_from_grandpa_chain};
 			use pallet_bridge_messages::benchmarking::{
 				Pallet as MessagesBench,
 				Config as MessagesConfig,
@@ -1004,7 +999,7 @@ impl_runtime_apis! {
 				fn prepare_message_proof(
 					params: MessageProofParams,
 				) -> (rialto_messages::FromRialtoMessagesProof, Weight) {
-					prepare_message_proof::<Runtime, (), (), WithRialtoMessageBridge, bp_rialto::Header, bp_rialto::Hasher>(
+					prepare_message_proof_from_grandpa_chain::<Runtime, RialtoGrandpaInstance, WithRialtoMessageBridge>(
 						params,
 					)
 				}
@@ -1012,7 +1007,7 @@ impl_runtime_apis! {
 				fn prepare_message_delivery_proof(
 					params: MessageDeliveryProofParams<Self::AccountId>,
 				) -> rialto_messages::ToRialtoMessagesDeliveryProof {
-					prepare_message_delivery_proof::<Runtime, (), WithRialtoMessageBridge, bp_rialto::Header, bp_rialto::Hasher>(
+					prepare_message_delivery_proof_from_grandpa_chain::<Runtime, RialtoGrandpaInstance, WithRialtoMessageBridge>(
 						params,
 					)
 				}

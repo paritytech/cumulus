@@ -43,6 +43,16 @@ pub use sp_runtime::{traits::Convert, Perbill};
 
 pub mod parachains;
 
+/// Maximal number of GRANDPA authorities at Polkadot-like chains.
+///
+/// Ideally, we would set it to the value of `MaxAuthorities` constant from bridged runtime
+/// configurations. But right now it is set to the `100_000`, which makes PoV size for
+/// our bridge hub parachains huge. So let's stick to the real-world value here.
+///
+/// Right now both Kusama and Polkadot aim to have around 1000 validators. Let's be safe here and
+/// take twice as much here.
+pub const MAX_AUTHORITIES_COUNT: u32 = 2_048;
+
 /// Number of extra bytes (excluding size of storage value itself) of storage proof, built at
 /// Polkadot-like chain. This mostly depends on number of entries in the storage trie.
 /// Some reserve is reserved to account future chain growth.
@@ -71,10 +81,8 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// All Polkadot-like chains allow 2 seconds of compute with a 6-second average block time.
 ///
 /// This is a copy-paste from the Polkadot repo's `polkadot-runtime-common` crate.
-// TODO: https://github.com/paritytech/parity-bridges-common/issues/1543 - remove `set_proof_size`
-pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND)
-	.set_proof_size(1_000)
-	.saturating_mul(2);
+pub const MAXIMUM_BLOCK_WEIGHT: Weight =
+	Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2), u64::MAX);
 
 /// All Polkadot-like chains assume that an on-initialize consumes 1 percent of the weight on
 /// average, hence a single extrinsic will not be allowed to consume more than
