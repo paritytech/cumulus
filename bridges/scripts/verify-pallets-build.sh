@@ -19,16 +19,22 @@ function show_help() {
   echo "  ./scripts/verify-pallets-build.sh          Exit with code 0 if pallets code is well decoupled from the other code in the repo"
   echo "Options:"
   echo "  --no-revert                                Leaves only runtime code on exit"
+  echo "  --ignore-git-state                         Ignores git actual state"
   exit 1
 }
 
 # parse CLI args
 NO_REVERT=
+IGNORE_GIT_STATE=
 for i in "$@"
 do
 	case $i in
 		--no-revert)
 			NO_REVERT=true
+			shift
+			;;
+		--ignore-git-state)
+			IGNORE_GIT_STATE=true
 			shift
 			;;
 		*)
@@ -37,12 +43,12 @@ do
 	esac
 done
 
-# the script is able to work only on clean git copy
-[[ -z "$(git status --porcelain)" ]] || { echo >&2 "The git copy must be clean"; exit 1; }
+# the script is able to work only on clean git copy, unless we want to ignore this check
+[[ ! -z "${IGNORE_GIT_STATE}" ]] || [[ -z "$(git status --porcelain)" ]] || { echo >&2 "The git copy must be clean"; exit 1; }
 
 # let's avoid any restrictions on where this script can be called for - bridges repo may be
 # plugged into any other repo folder. So the script (and other stuff that needs to be removed)
-# may be located either in call dir, or one of it subdirs. 
+# may be located either in call dir, or one of it subdirs.
 BRIDGES_FOLDER="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )/.."
 
 # let's leave repository/subtree in its original (clean) state if something fails below
@@ -58,6 +64,7 @@ rm -rf $BRIDGES_FOLDER/.maintain
 rm -rf $BRIDGES_FOLDER/bin/millau
 rm -rf $BRIDGES_FOLDER/bin/rialto
 rm -rf $BRIDGES_FOLDER/bin/rialto-parachain
+rm -rf $BRIDGES_FOLDER/bin/.keep
 rm -rf $BRIDGES_FOLDER/deployments
 rm -rf $BRIDGES_FOLDER/fuzz
 rm -rf $BRIDGES_FOLDER/modules/beefy
@@ -68,6 +75,16 @@ rm -rf $BRIDGES_FOLDER/primitives/chain-rialto
 rm -rf $BRIDGES_FOLDER/primitives/chain-rialto-parachain
 rm -rf $BRIDGES_FOLDER/primitives/chain-westend
 rm -rf $BRIDGES_FOLDER/relays
+rm -rf $BRIDGES_FOLDER/scripts/add_license.sh
+rm -rf $BRIDGES_FOLDER/scripts/build-containers.sh
+rm -rf $BRIDGES_FOLDER/scripts/ci-cache.sh
+rm -rf $BRIDGES_FOLDER/scripts/dump-logs.sh
+rm -rf $BRIDGES_FOLDER/scripts/license_header
+rm -rf $BRIDGES_FOLDER/scripts/send-message-from-millau-rialto.sh
+rm -rf $BRIDGES_FOLDER/scripts/send-message-from-rialto-millau.sh
+rm -rf $BRIDGES_FOLDER/scripts/update-weights.sh
+rm -rf $BRIDGES_FOLDER/scripts/update-weights-setup.sh
+rm -rf $BRIDGES_FOLDER/scripts/update_substrate.sh
 rm -rf $BRIDGES_FOLDER/tools
 rm -f $BRIDGES_FOLDER/.dockerignore
 rm -f $BRIDGES_FOLDER/.gitlab-ci.yml
