@@ -50,35 +50,30 @@ use frame_benchmarking::{benchmarks_instance_pallet, whitelisted_caller};
 use frame_support::traits::Get;
 use frame_system::RawOrigin;
 use sp_finality_grandpa::AuthorityId;
-use sp_runtime::traits::Zero;
+use sp_runtime::traits::{One, Zero};
 use sp_std::vec::Vec;
 
-// The maximum number of vote ancestries to include in a justification.
-//
-// In practice this would be limited by the session length (number of blocks a single authority set
-// can produce) of a given chain.
+/// The maximum number of vote ancestries to include in a justification.
+///
+/// In practice this would be limited by the session length (number of blocks a single authority set
+/// can produce) of a given chain.
 const MAX_VOTE_ANCESTRIES: u32 = 1000;
 
-// The maximum number of pre-commits to include in a justification. In practice this scales with the
-// number of validators.
-pub const MAX_VALIDATOR_SET_SIZE: u32 = 1024;
-
-// `1..MAX_VALIDATOR_SET_SIZE` and `1..MAX_VOTE_ANCESTRIES` are too large && benchmarks are
-// running for almost 40m (steps=50, repeat=20) on a decent laptop, which is too much. Since
-// we're building linear function here, let's just select some limited subrange for benchmarking.
-const VALIDATOR_SET_SIZE_RANGE_BEGIN: u32 = MAX_VALIDATOR_SET_SIZE / 20;
-const VALIDATOR_SET_SIZE_RANGE_END: u32 =
-	VALIDATOR_SET_SIZE_RANGE_BEGIN + VALIDATOR_SET_SIZE_RANGE_BEGIN;
+// `1..MAX_VOTE_ANCESTRIES` is too large && benchmarks are running for almost 40m (steps=50,
+// repeat=20) on a decent laptop, which is too much. Since we're building linear function here,
+// let's just select some limited subrange for benchmarking.
 const MAX_VOTE_ANCESTRIES_RANGE_BEGIN: u32 = MAX_VOTE_ANCESTRIES / 20;
 const MAX_VOTE_ANCESTRIES_RANGE_END: u32 =
 	MAX_VOTE_ANCESTRIES_RANGE_BEGIN + MAX_VOTE_ANCESTRIES_RANGE_BEGIN;
 
-/// Returns number of first header to be imported.
-///
-/// Since we bootstrap the pallet with `HeadersToKeep` already imported headers,
-/// this function computes the next expected header number to import.
-fn header_number<T: Config<I>, I: 'static, N: From<u32>>() -> N {
-	(T::HeadersToKeep::get() + 1).into()
+// the same with validators - if there are too much validators, let's run benchmarks on subrange
+fn validator_set_range_end<T: Config<I>, I: 'static>() -> u32 {
+	let max_bridged_authorities = T::MaxBridgedAuthorities::get();
+	if max_bridged_authorities > 128 {
+		sp_std::cmp::max(128, max_bridged_authorities / 5)
+	} else {
+		max_bridged_authorities
+	}
 }
 
 /// Prepare header and its justification to submit using `submit_finality_proof`.
@@ -91,16 +86,19 @@ fn prepare_benchmark_data<T: Config<I>, I: 'static>(
 		.map(|id| (AuthorityId::from(*id), 1))
 		.collect::<Vec<_>>();
 
+	let genesis_header: BridgedHeader<T, I> = bp_test_utils::test_header(Zero::zero());
+	let genesis_hash = genesis_header.hash();
 	let init_data = InitializationData {
-		header: Box::new(bp_test_utils::test_header(Zero::zero())),
+		header: Box::new(genesis_header),
 		authority_list,
 		set_id: TEST_GRANDPA_SET_ID,
 		operating_mode: BasicOperatingMode::Normal,
 	};
 
 	bootstrap_bridge::<T, I>(init_data);
+	assert!(<ImportedHeaders<T, I>>::contains_key(genesis_hash));
 
-	let header: BridgedHeader<T, I> = bp_test_utils::test_header(header_number::<T, I, _>());
+	let header: BridgedHeader<T, I> = bp_test_utils::test_header(One::one());
 	let params = JustificationGeneratorParams {
 		header: header.clone(),
 		round: TEST_GRANDPA_ROUND,
@@ -117,16 +115,21 @@ benchmarks_instance_pallet! {
 	// This is the "gold standard" benchmark for this extrinsic, and it's what should be used to
 	// annotate the weight in the pallet.
 	submit_finality_proof {
-		let p in VALIDATOR_SET_SIZE_RANGE_BEGIN..VALIDATOR_SET_SIZE_RANGE_END;
+		let p in 1 .. validator_set_range_end::<T, I>();
 		let v in MAX_VOTE_ANCESTRIES_RANGE_BEGIN..MAX_VOTE_ANCESTRIES_RANGE_END;
 		let caller: T::AccountId = whitelisted_caller();
 		let (header, justification) = prepare_benchmark_data::<T, I>(p, v);
 	}: submit_finality_proof(RawOrigin::Signed(caller), Box::new(header), justification)
 	verify {
-		let header: BridgedHeader<T, I> = bp_test_utils::test_header(header_number::<T, I, _>());
+		let genesis_header: BridgedHeader<T, I> = bp_test_utils::test_header(Zero::zero());
+		let header: BridgedHeader<T, I> = bp_test_utils::test_header(One::one());
 		let expected_hash = header.hash();
 
+		// check that the header#1 has been inserted
 		assert_eq!(<BestFinalized<T, I>>::get().unwrap().1, expected_hash);
 		assert!(<ImportedHeaders<T, I>>::contains_key(expected_hash));
+
+		// check that the header#0 has been pruned
+		assert!(!<ImportedHeaders<T, I>>::contains_key(genesis_header.hash()));
 	}
 }

@@ -231,13 +231,23 @@ Add Bridges repo as a local remote and synchronize it with latest `master` from 
 ### How to update `bridges` subtree
 ```
 cd <cumulus-git-repo-dir>
+
+# this will update new git branches from bridges repo
+# there could be unresolved conflicts, but dont worry,
+# lots of them are caused because of removed unneeded files with patch step :)
+# so before solving conflicts just run patch
 ./scripts/bridges_update_subtree.sh fetch
 
+# this will remove unneeded files and checks if subtree modules compiles
+./scripts/bridges_update_subtree.sh patch
 
+# if there are conflicts, this could help, removes locally deleted files at least
+# (but you can also do this manually)
+./scripts/bridges_update_subtree.sh merge
 
-# Synchro bridges repo
-git fetch bridges --prune
-git subtree pull --prefix=bridges bridges master --squash
+# when conflicts resolved, you can check build again - should pass
+# also important: this updates global Cargo.lock
+./scripts/bridges_update_subtree.sh patch
 ````
 We use `--squash` to avoid adding individual commits and rather squashing them
 all into one.
