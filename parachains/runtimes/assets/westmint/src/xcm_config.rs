@@ -18,9 +18,13 @@ use super::{
 	Balances, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent,
 	RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
-use crate::foreign_conversions::{
-	BridgedUniversalAliases, GlobalConsensusAsAccountId, GlobalConsensusConvertsVia,
-	IsTrustedGlobalConsensus,
+use crate::{
+	asset_conversions::AssetIdConversionFailedToAssetNotFoundWrapper,
+	foreign_conversions::{
+		BridgedUniversalAliases, GlobalConsensusAsAccountId, GlobalConsensusConvertsVia,
+		IsTrustedGlobalConsensus,
+	},
+	ForeignAssets,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -40,13 +44,13 @@ use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
 	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, AsPrefixedGeneralIndex,
 	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FungiblesAdapter, IsConcrete, LocalMint,
-	NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
-	WithComputedOrigin,
+	NativeAsset, NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+	WeightInfoBounds, WithComputedOrigin,
 };
 use xcm_executor::{
-	traits::{Convert, JustTry, WithOriginFilter},
+	traits::{Convert, Identity, JustTry, WithOriginFilter},
 	XcmExecutor,
 };
 
@@ -92,16 +96,18 @@ pub type CurrencyTransactor = CurrencyAdapter<
 pub type FungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
 	Assets,
-	// Use this currency when it is a fungible asset matching the given location or name:
-	ConvertedConcreteId<
-		AssetIdForTrustBackedAssets,
-		Balance,
-		AsPrefixedGeneralIndex<
-			TrustBackedAssetsPalletLocation,
+	AssetIdConversionFailedToAssetNotFoundWrapper<
+		// Use this currency when it is a fungible asset matching the given location or name:
+		ConvertedConcreteId<
 			AssetIdForTrustBackedAssets,
+			Balance,
+			AsPrefixedGeneralIndex<
+				TrustBackedAssetsPalletLocation,
+				AssetIdForTrustBackedAssets,
+				JustTry,
+			>,
 			JustTry,
 		>,
-		JustTry,
 	>,
 	// Convert an XCM MultiLocation into a local account id:
 	LocationToAccountId,
@@ -113,8 +119,27 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	// The account to use for tracking teleports.
 	CheckingAccount,
 >;
+
+/// Means for transacting foreign assets from different global consensus.
+pub type ForeignFungiblesTransactor = FungiblesAdapter<
+	// Use this fungibles implementation:
+	ForeignAssets,
+	AssetIdConversionFailedToAssetNotFoundWrapper<
+		// Use this currency when it is a fungible asset matching the given location or name:
+		ConvertedConcreteId<MultiLocationForAssetId, Balance, Identity, JustTry>,
+	>,
+	// Convert an XCM MultiLocation into a local account id:
+	LocationToAccountId,
+	// Our chain's account ID type (we can't get away without mentioning it explicitly):
+	AccountId,
+	// TODO:check-parameter - no teleports
+	NoChecking,
+	// The account to use for tracking teleports.
+	CheckingAccount,
+>;
+
 /// Means for transacting assets on this chain.
-pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
+pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor, ForeignFungiblesTransactor);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can

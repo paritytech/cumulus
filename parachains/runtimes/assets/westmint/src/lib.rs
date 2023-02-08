@@ -24,6 +24,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+mod asset_conversions;
 pub mod constants;
 mod foreign_conversions;
 mod weights;
