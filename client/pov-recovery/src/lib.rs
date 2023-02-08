@@ -401,9 +401,7 @@ where
 				// we want to wait for the parent.
 				let parent_scheduled_for_recovery =
 					self.candidates.get(&parent).map_or(false, |parent| parent.waiting_recovery);
-				if self.active_candidate_recovery.is_recovering(&parent) ||
-					parent_scheduled_for_recovery
-				{
+				if parent_scheduled_for_recovery {
 					tracing::debug!(
 						target: LOG_TARGET,
 						?block_hash,
@@ -441,9 +439,6 @@ where
 			_ => (),
 		}
 
-		// This is not necessary in the happy case, as the flag will be cleared on import
-		// If import fails for any reason however, we still want to have the flag cleared.
-		self.clear_waiting_recovery(&block_hash);
 		self.import_block(block).await;
 	}
 
@@ -489,7 +484,7 @@ where
 		let RecoveryRequest { mut hash, kind } = req;
 		let mut to_recover = Vec::new();
 
-		let do_recover = loop {
+		loop {
 			let candidate = match self.candidates.get_mut(&hash) {
 				Some(candidate) => candidate,
 				None => {
@@ -498,7 +493,7 @@ where
 						block_hash = ?hash,
 						"Cound not recover. Block was never announced as candidate"
 					);
-					break false
+					return
 				},
 			};
 
@@ -507,29 +502,28 @@ where
 					candidate.waiting_recovery = true;
 					to_recover.push(hash);
 				},
-				Ok(_) => break true,
+				Ok(_) => break,
 				Err(e) => {
+					candidate.waiting_recovery = false;
 					tracing::error!(
 						target: LOG_TARGET,
 						error = ?e,
 						block_hash = ?hash,
 						"Failed to get block status",
 					);
-					break false
+					return
 				},
 			}
 
 			if kind == RecoveryKind::Simple {
-				break true
+				break
 			}
 
 			hash = candidate.parent_hash;
-		};
+		}
 
-		if do_recover {
-			for hash in to_recover.into_iter().rev() {
-				self.candidate_recovery_queue.push_recovery(hash);
-			}
+		for hash in to_recover.into_iter().rev() {
+			self.candidate_recovery_queue.push_recovery(hash);
 		}
 	}
 
