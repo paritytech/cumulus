@@ -65,10 +65,10 @@ fn it_should_set_invulnerables() {
 fn add_invulnerable_works(){
 	new_test_ext().execute_with(|| {
 		let new = 21;
-		CollatorSelection::register_validators(new);
+		//CollatorSelection::register_validators(new);
 
 		// function runs
-		assert_ok!(CollatorSelection::add_invulnerable(
+		assert_ok!(CollatorSelection::set_invulnerables(
 			RuntimeOrigin::signed(RootAccount::get()),
 			new.clone()
 		));
