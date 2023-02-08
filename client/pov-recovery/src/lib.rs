@@ -328,9 +328,9 @@ where
 		}
 	}
 
-	/// Clear `waiting_for_parent` from the given `hash` and do this recursively for all child
-	/// blocks.
-	fn clear_waiting_for_parent(&mut self, hash: Block::Hash) {
+	/// Clear `waiting_for_parent` and `waiting_recovery` for the candidate with `hash`.
+	/// Also clears children blocks waiting for this parent.
+	fn reset_candidate(&mut self, hash: Block::Hash) {
 		let mut blocks_to_delete = vec![hash];
 
 		while let Some(delete) = blocks_to_delete.pop() {
@@ -338,6 +338,7 @@ where
 				blocks_to_delete.extend(childs.iter().map(BlockT::hash));
 			}
 		}
+		self.clear_waiting_recovery(&hash);
 	}
 
 	/// Handle a recovered candidate.
@@ -363,8 +364,7 @@ where
 						"Unable to recover block after retry.",
 					);
 					self.candidates_in_retry.remove(&block_hash);
-					self.clear_waiting_for_parent(block_hash);
-					self.clear_waiting_recovery(&block_hash);
+					self.reset_candidate(block_hash);
 					return
 				},
 		};
@@ -377,9 +377,7 @@ where
 			Err(error) => {
 				tracing::debug!(target: LOG_TARGET, ?error, "Failed to decompress PoV");
 
-				self.clear_waiting_for_parent(block_hash);
-				self.clear_waiting_recovery(&block_hash);
-
+				self.reset_candidate(block_hash);
 				return
 			},
 		};
@@ -393,9 +391,7 @@ where
 					"Failed to decode parachain block data from recovered PoV",
 				);
 
-				self.clear_waiting_recovery(&block_hash);
-				self.clear_waiting_for_parent(block_hash);
-
+				self.reset_candidate(block_hash);
 				return
 			},
 		};
@@ -406,10 +402,11 @@ where
 
 		match self.parachain_client.block_status(parent) {
 			Ok(BlockStatus::Unknown) => {
-				// If the parent block is currently being recovered or is scheduled to be recovered, we want to wait for the parent.
+				// If the parent block is currently being recovered or is scheduled to be recovered,
+				// we want to wait for the parent.
 				let parent_scheduled_for_recovery =
 					self.candidates.get(&parent).map_or(false, |parent| parent.waiting_recovery);
-				if self.active_candidate_recovery.is_being_recovered(&parent) ||
+				if self.active_candidate_recovery.is_recovering(&parent) ||
 					parent_scheduled_for_recovery
 				{
 					tracing::debug!(
@@ -430,9 +427,7 @@ where
 						"Parent not found while trying to import recovered block.",
 					);
 
-					self.clear_waiting_for_parent(block_hash);
-					self.clear_waiting_recovery(&block_hash);
-
+					self.reset_candidate(block_hash);
 					return
 				}
 			},
@@ -444,15 +439,16 @@ where
 					"Error while checking block status",
 				);
 
-				self.clear_waiting_for_parent(block_hash);
-				self.clear_waiting_recovery(&block_hash);
-
+				self.reset_candidate(block_hash);
 				return
 			},
 			// Any other status is fine to "ignore/accept"
 			_ => (),
 		}
 
+		// This is not necessary in the happy case, as the flag will be cleared on import
+		// If import fails for any reason however, we still want to have the flag cleared.
+		self.clear_waiting_recovery(&block_hash);
 		self.import_block(block).await;
 	}
 

@@ -92,7 +92,7 @@ impl<Block: BlockT> ActiveCandidateRecovery<Block> {
 	}
 
 	/// Returns if the given `candidate` is being recovered.
-	pub fn is_being_recovered(&self, candidate: &Block::Hash) -> bool {
+	pub fn is_recovering(&self, candidate: &Block::Hash) -> bool {
 		self.candidates.contains(candidate)
 	}
 
