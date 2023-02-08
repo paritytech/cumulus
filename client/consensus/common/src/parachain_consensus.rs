@@ -60,8 +60,9 @@ fn handle_new_finalized_head<P, Block, B>(
 	let hash = header.hash();
 
 	last_seen_finalized_hashes.insert(hash, ());
-	// don't finalize the same block multiple times.
-	if parachain.usage_info().chain.finalized_hash != hash {
+
+	// Only finalize if we are below the incoming finalized parachain head
+	if parachain.usage_info().chain.finalized_number < *header.number() {
 		tracing::debug!(
 			target: LOG_TARGET,
 			block_hash = ?hash,
