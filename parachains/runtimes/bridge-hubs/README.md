@@ -220,14 +220,20 @@ or
 zombienet-linux --provider native spawn ./zombienet/examples/bridge_hub_polkadot_local_network.toml
 ```
 
+## How to test local BridgeHubPolkadot
+TODO: from master
+
 ----
 ## Git subtree `./bridges`
 
 Add Bridges repo as a local remote and synchronize it with latest `master` from bridges repo:
+
+### How to update `bridges` subtree
 ```
-git remote add -f bridges git@github.com:paritytech/parity-bridges-common.git
-# (ran just only first time, when subtree was initialized)
-# git subtree add --prefix=bridges bridges master --squash
+cd <cumulus-git-repo-dir>
+./scripts/bridges_update_subtree.sh fetch
+
+
 
 # Synchro bridges repo
 git fetch bridges --prune
@@ -235,7 +241,12 @@ git subtree pull --prefix=bridges bridges master --squash
 ````
 We use `--squash` to avoid adding individual commits and rather squashing them
 all into one.
-
 Now we use `master` branch, but in future, it could change to some release branch/tag.
 
-Original `./bridges/Cargo.toml` was renamed to `./bridges/Cargo.toml_removed_for_bridges_subtree_feature` to avoid confusion for `Cargo` having multiple workspaces.
+### How was first time initialized (dont need anymore)
+```
+cd <cumulus-git-repo-dir>
+git remote add -f bridges git@github.com:paritytech/parity-bridges-common.git
+# (ran just only first time, when subtree was initialized)
+git subtree add --prefix=bridges bridges master --squash
+```
