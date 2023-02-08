@@ -23,7 +23,7 @@ use sp_blockchain::Error as ClientError;
 use sp_consensus::{BlockOrigin, BlockStatus};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
-use cumulus_client_pov_recovery::{RecoveryDelayRange, RecoveryKind, RecoveryRequest};
+use cumulus_client_pov_recovery::{RecoveryKind, RecoveryRequest};
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 
 use polkadot_primitives::{Hash as PHash, Id as ParaId, OccupiedCoreAssumption};
@@ -31,17 +31,10 @@ use polkadot_primitives::{Hash as PHash, Id as ParaId, OccupiedCoreAssumption};
 use codec::Decode;
 use futures::{channel::mpsc::Sender, pin_mut, select, FutureExt, Stream, StreamExt};
 
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 const LOG_TARGET: &str = "cumulus-consensus";
 const FINALIZATION_CACHE_SIZE: u32 = 40;
-
-// Delay range to trigger explicit requests.
-// The chosen value doesn't have any special meaning, a random delay within the order of
-// seconds in practice should be a good enough to allow a quick recovery without DOSing
-// the relay chain.
-const RECOVERY_DELAY: RecoveryDelayRange =
-	RecoveryDelayRange { min: Duration::ZERO, max: Duration::from_secs(30) };
 
 fn handle_new_finalized_head<P, Block, B>(
 	parachain: &Arc<P>,
@@ -415,8 +408,7 @@ async fn handle_new_best_parachain_head<Block, P>(
 					// Best effort channel to actively encourage block recovery.
 					// An error here is not fatal; the relay chain continuously re-announces
 					// the best block, thus we will have other opportunities to retry.
-					let req =
-						RecoveryRequest { hash, delay: RECOVERY_DELAY, kind: RecoveryKind::Full };
+					let req = RecoveryRequest { hash, kind: RecoveryKind::Full };
 					if let Err(err) = recovery_chan_tx.try_send(req) {
 						tracing::warn!(
 							target: LOG_TARGET,

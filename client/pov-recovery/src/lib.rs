@@ -114,16 +114,15 @@ pub enum RecoveryKind {
 pub struct RecoveryRequest<Block: BlockT> {
 	/// Hash of the last block to recover.
 	pub hash: Block::Hash,
-	/// Recovery delay range. Randomizing the start of the recovery within this interval
-	/// can be used to prevent self-DOSing if the recovery request is part of a
-	/// distributed protocol and there is the possibility that multiple actors are
-	/// requiring to perform the recovery action at approximately the same time.
-	pub delay: RecoveryDelayRange,
 	/// Recovery type.
 	pub kind: RecoveryKind,
 }
 
 /// The delay between observing an unknown block and triggering the recovery of a block.
+/// Randomizing the start of the recovery within this interval
+/// can be used to prevent self-DOSing if the recovery request is part of a
+/// distributed protocol and there is the possibility that multiple actors are
+/// requiring to perform the recovery action at approximately the same time.
 #[derive(Clone, Copy)]
 pub struct RecoveryDelayRange {
 	/// Start recovering after `min` delay.
@@ -153,6 +152,7 @@ struct Candidate<Block: BlockT> {
 
 /// Queue that is used to decide when to start PoV-recovery operations.
 struct RecoveryQueue<Block: BlockT> {
+	recovery_delay_range: RecoveryDelayRange,
 	// Queue that keeps the hashes of blocks to be recovered.
 	recovery_queue: VecDeque<Block::Hash>,
 	// Futures that resolve when a new recovery should be started.
@@ -160,13 +160,18 @@ struct RecoveryQueue<Block: BlockT> {
 }
 
 impl<Block: BlockT> RecoveryQueue<Block> {
-	pub fn new() -> Self {
-		Self { recovery_queue: Default::default(), signaling_queue: Default::default() }
+	pub fn new(recovery_delay_range: RecoveryDelayRange) -> Self {
+		Self {
+			recovery_delay_range,
+			recovery_queue: Default::default(),
+			signaling_queue: Default::default(),
+		}
 	}
 
 	/// Add hash of a block that should go to the end of the recovery queue.
 	/// A new recovery will be signaled after `delay` has passed.
-	pub fn push_recovery(&mut self, hash: Block::Hash, delay: Duration) {
+	pub fn push_recovery(&mut self, hash: Block::Hash) {
+		let delay = self.recovery_delay_range.duration();
 		tracing::debug!(
 			target: LOG_TARGET,
 			block_hash = ?hash,
@@ -215,7 +220,6 @@ pub struct PoVRecovery<Block: BlockT, PC, RC> {
 	///
 	/// Uses parent -> blocks mapping.
 	waiting_for_parent: HashMap<Block::Hash, Vec<Block>>,
-	recovery_delay: RecoveryDelayRange,
 	parachain_client: Arc<PC>,
 	parachain_import_queue: Box<dyn ImportQueueService<Block>>,
 	relay_chain_interface: RC,
@@ -224,8 +228,6 @@ pub struct PoVRecovery<Block: BlockT, PC, RC> {
 	recovery_chan_rx: Receiver<RecoveryRequest<Block>>,
 	/// Blocks that we are retrying currently
 	candidates_in_retry: HashSet<Block::Hash>,
-	/// Waiting time before a retry
-	retry_delay: Duration,
 }
 
 impl<Block: BlockT, PC, RCInterface> PoVRecovery<Block, PC, RCInterface>
@@ -236,19 +238,17 @@ where
 	/// Create a new instance.
 	pub fn new(
 		recovery_handle: Box<dyn RecoveryHandle>,
-		recovery_delay: RecoveryDelayRange,
+		recovery_delay_range: RecoveryDelayRange,
 		parachain_client: Arc<PC>,
 		parachain_import_queue: Box<dyn ImportQueueService<Block>>,
 		relay_chain_interface: RCInterface,
 		para_id: ParaId,
 		recovery_chan_rx: Receiver<RecoveryRequest<Block>>,
-		retry_delay: Duration,
 	) -> Self {
 		Self {
 			candidates: HashMap::new(),
-			candidate_recovery_queue: RecoveryQueue::new(),
+			candidate_recovery_queue: RecoveryQueue::new(recovery_delay_range),
 			active_candidate_recovery: ActiveCandidateRecovery::new(recovery_handle),
-			recovery_delay,
 			waiting_for_parent: HashMap::new(),
 			parachain_client,
 			parachain_import_queue,
@@ -256,7 +256,6 @@ where
 			para_id,
 			candidates_in_retry: HashSet::new(),
 			recovery_chan_rx,
-			retry_delay,
 		}
 	}
 
@@ -302,11 +301,7 @@ where
 
 		// If required, triggers a lazy recovery request that will eventually be blocked
 		// if in the meantime the block is imported.
-		self.recover(RecoveryRequest {
-			hash,
-			delay: self.recovery_delay,
-			kind: RecoveryKind::Simple,
-		});
+		self.recover(RecoveryRequest { hash, kind: RecoveryKind::Simple });
 	}
 
 	/// Block is no longer waiting for recovery
@@ -359,7 +354,7 @@ where
 			None =>
 				if self.candidates_in_retry.insert(block_hash) {
 					tracing::debug!(target: LOG_TARGET, ?block_hash, "Recovery failed, retrying.");
-					self.candidate_recovery_queue.push_recovery(block_hash, self.retry_delay);
+					self.candidate_recovery_queue.push_recovery(block_hash);
 					return
 				} else {
 					tracing::warn!(
@@ -500,7 +495,7 @@ where
 
 	/// Attempts an explicit recovery of one or more blocks.
 	pub fn recover(&mut self, req: RecoveryRequest<Block>) {
-		let RecoveryRequest { mut hash, delay, kind } = req;
+		let RecoveryRequest { mut hash, kind } = req;
 		let mut to_recover = Vec::new();
 
 		let do_recover = loop {
@@ -542,7 +537,7 @@ where
 
 		if do_recover {
 			for hash in to_recover.into_iter().rev() {
-				self.candidate_recovery_queue.push_recovery(hash, delay.duration());
+				self.candidate_recovery_queue.push_recovery(hash);
 			}
 		}
 	}
