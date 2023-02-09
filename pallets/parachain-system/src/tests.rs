@@ -13,12 +13,13 @@
 
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
+
 use super::*;
 
 use codec::Encode;
 use cumulus_primitives_core::{
-	relay_chain::BlockNumber as RelayBlockNumber, AbridgedHrmpChannel, DmpMessageHandler,
-	InboundDownwardMessage, InboundHrmpMessage, PersistedValidationData,
+	relay_chain::BlockNumber as RelayBlockNumber, AbridgedHrmpChannel, InboundDownwardMessage,
+	InboundHrmpMessage, PersistedValidationData,
 };
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use frame_support::{
@@ -31,6 +32,7 @@ use frame_support::{
 };
 use frame_system::RawOrigin;
 use hex_literal::hex;
+use rand::Rng;
 use relay_chain::HrmpChannelId;
 use sp_core::H256;
 use sp_runtime::{
@@ -252,6 +254,7 @@ struct BlockTests {
 	tests: Vec<BlockTest>,
 	pending_upgrade: Option<RelayChainBlockNumber>,
 	ran: bool,
+	without_externalities: bool,
 	relay_sproof_builder_hook:
 		Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut RelayStateSproofBuilder)>>,
 	persisted_validation_data_hook: Option<Box<dyn Fn(&BlockTests, &mut PersistedValidationData)>>,
@@ -262,6 +265,12 @@ struct BlockTests {
 impl BlockTests {
 	fn new() -> BlockTests {
 		Default::default()
+	}
+
+	fn new_without_externalities() -> BlockTests {
+		let mut tests = BlockTests::new();
+		tests.without_externalities = true;
+		tests
 	}
 
 	fn add_raw(mut self, test: BlockTest) -> Self {
@@ -318,91 +327,104 @@ impl BlockTests {
 	}
 
 	fn run(&mut self) {
-		self.ran = true;
 		wasm_ext().execute_with(|| {
-			for BlockTest { n, within_block, after_block } in self.tests.iter() {
-				// clear pending updates, as applicable
-				if let Some(upgrade_block) = self.pending_upgrade {
-					if n >= &upgrade_block.into() {
-						self.pending_upgrade = None;
-					}
-				}
+			self.run_without_ext();
+		});
+	}
 
-				// begin initialization
-				System::reset_events();
-				System::initialize(&n, &Default::default(), &Default::default());
+	fn run_without_ext(&mut self) {
+		self.ran = true;
 
-				// now mess with the storage the way validate_block does
-				let mut sproof_builder = RelayStateSproofBuilder::default();
-				if let Some(ref hook) = self.relay_sproof_builder_hook {
-					hook(self, *n as RelayChainBlockNumber, &mut sproof_builder);
-				}
-				let (relay_parent_storage_root, relay_chain_state) =
-					sproof_builder.into_state_root_and_proof();
-				let mut vfp = PersistedValidationData {
-					relay_parent_number: *n as RelayChainBlockNumber,
-					relay_parent_storage_root,
-					..Default::default()
-				};
-				if let Some(ref hook) = self.persisted_validation_data_hook {
-					hook(self, &mut vfp);
-				}
-
-				<ValidationData<Test>>::put(&vfp);
-				NewValidationCode::<Test>::kill();
-
-				// It is insufficient to push the validation function params
-				// to storage; they must also be included in the inherent data.
-				let inherent_data = {
-					let mut inherent_data = InherentData::default();
-					let mut system_inherent_data = ParachainInherentData {
-						validation_data: vfp.clone(),
-						relay_chain_state,
-						downward_messages: Default::default(),
-						horizontal_messages: Default::default(),
-					};
-					if let Some(ref hook) = self.inherent_data_hook {
-						hook(self, *n as RelayChainBlockNumber, &mut system_inherent_data);
-					}
-					inherent_data
-						.put_data(
-							cumulus_primitives_parachain_inherent::INHERENT_IDENTIFIER,
-							&system_inherent_data,
-						)
-						.expect("failed to put VFP inherent");
-					inherent_data
-				};
-
-				// execute the block
-				ParachainSystem::on_initialize(*n);
-				ParachainSystem::create_inherent(&inherent_data)
-					.expect("got an inherent")
-					.dispatch_bypass_filter(RawOrigin::None.into())
-					.expect("dispatch succeeded");
-				within_block();
-				ParachainSystem::on_finalize(*n);
-
-				// did block execution set new validation code?
-				if NewValidationCode::<Test>::exists() {
-					if self.pending_upgrade.is_some() {
-						panic!("attempted to set validation code while upgrade was pending");
-					}
-				}
-
-				// clean up
-				System::finalize();
-				if let Some(after_block) = after_block {
-					after_block();
+		for BlockTest { n, within_block, after_block } in self.tests.iter() {
+			// clear pending updates, as applicable
+			if let Some(upgrade_block) = self.pending_upgrade {
+				if n >= &upgrade_block.into() {
+					self.pending_upgrade = None;
 				}
 			}
-		});
+
+			// begin initialization
+			System::reset_events();
+			System::initialize(&n, &Default::default(), &Default::default());
+
+			// now mess with the storage the way validate_block does
+			let mut sproof_builder = RelayStateSproofBuilder::default();
+			if let Some(ref hook) = self.relay_sproof_builder_hook {
+				hook(self, *n as RelayChainBlockNumber, &mut sproof_builder);
+			}
+			let (relay_parent_storage_root, relay_chain_state) =
+				sproof_builder.into_state_root_and_proof();
+			let mut vfp = PersistedValidationData {
+				relay_parent_number: *n as RelayChainBlockNumber,
+				relay_parent_storage_root,
+				..Default::default()
+			};
+			if let Some(ref hook) = self.persisted_validation_data_hook {
+				hook(self, &mut vfp);
+			}
+
+			<ValidationData<Test>>::put(&vfp);
+			NewValidationCode::<Test>::kill();
+
+			// It is insufficient to push the validation function params
+			// to storage; they must also be included in the inherent data.
+			let inherent_data = {
+				let mut inherent_data = InherentData::default();
+				let mut system_inherent_data = ParachainInherentData {
+					validation_data: vfp.clone(),
+					relay_chain_state,
+					downward_messages: Default::default(),
+					horizontal_messages: Default::default(),
+				};
+				if let Some(ref hook) = self.inherent_data_hook {
+					hook(self, *n as RelayChainBlockNumber, &mut system_inherent_data);
+				}
+				inherent_data
+					.put_data(
+						cumulus_primitives_parachain_inherent::INHERENT_IDENTIFIER,
+						&system_inherent_data,
+					)
+					.expect("failed to put VFP inherent");
+				inherent_data
+			};
+
+			// execute the block
+			ParachainSystem::on_initialize(*n);
+			ParachainSystem::create_inherent(&inherent_data)
+				.expect("got an inherent")
+				.dispatch_bypass_filter(RawOrigin::None.into())
+				.expect("dispatch succeeded");
+			MessageQueue::on_initialize(*n);
+
+			within_block();
+
+			MessageQueue::on_finalize(*n);
+			ParachainSystem::on_finalize(*n);
+
+			// did block execution set new validation code?
+			if NewValidationCode::<Test>::exists() {
+				if self.pending_upgrade.is_some() {
+					panic!("attempted to set validation code while upgrade was pending");
+				}
+			}
+
+			// clean up
+			System::finalize();
+			if let Some(after_block) = after_block {
+				after_block();
+			}
+		}
 	}
 }
 
 impl Drop for BlockTests {
 	fn drop(&mut self) {
 		if !self.ran {
-			self.run();
+			if self.without_externalities {
+				self.run_without_ext();
+			} else {
+				self.run();
+			}
 		}
 	}
 }
@@ -752,33 +774,23 @@ fn receive_dmp() {
 #[test]
 fn receive_dmp_after_pause() {
 	sp_tracing::try_init_simple();
-	lazy_static::lazy_static! {
-		static ref MSG_1: InboundDownwardMessage = InboundDownwardMessage {
-			sent_at: 1,
-			msg: b"down1".to_vec(),
-		};
-		static ref MSG_2: InboundDownwardMessage = InboundDownwardMessage {
-			sent_at: 3,
-			msg: b"down2".to_vec(),
-		};
-	}
 
 	BlockTests::new()
 		.with_relay_sproof_builder(|_, relay_block_num, sproof| match relay_block_num {
 			1 => {
 				sproof.dmq_mqc_head =
-					Some(MessageQueueChain::default().extend_downward(&MSG_1).head());
+					Some(MessageQueueChain::default().extend_downward(&mk_dmp(1)).head());
 			},
 			2 => {
 				// no new messages, mqc stayed the same.
 				sproof.dmq_mqc_head =
-					Some(MessageQueueChain::default().extend_downward(&MSG_1).head());
+					Some(MessageQueueChain::default().extend_downward(&mk_dmp(1)).head());
 			},
 			3 => {
 				sproof.dmq_mqc_head = Some(
 					MessageQueueChain::default()
-						.extend_downward(&MSG_1)
-						.extend_downward(&MSG_2)
+						.extend_downward(&mk_dmp(1))
+						.extend_downward(&mk_dmp(3))
 						.head(),
 				);
 			},
@@ -786,20 +798,20 @@ fn receive_dmp_after_pause() {
 		})
 		.with_inherent_data(|_, relay_block_num, data| match relay_block_num {
 			1 => {
-				data.downward_messages.push(MSG_1.clone());
+				data.downward_messages.push(mk_dmp(1));
 			},
 			2 => {
 				// no new messages
 			},
 			3 => {
-				data.downward_messages.push(MSG_2.clone());
+				data.downward_messages.push(mk_dmp(3));
 			},
 			_ => unreachable!(),
 		})
 		.add(1, || {
 			HANDLED_DMP_MESSAGES.with(|m| {
 				let mut m = m.borrow_mut();
-				assert_eq!(&*m, &[(MSG_1.msg.clone())]);
+				assert_eq!(&*m, &[(mk_dmp(1).msg.clone())]);
 				m.clear();
 			});
 		})
@@ -807,54 +819,97 @@ fn receive_dmp_after_pause() {
 		.add(3, || {
 			HANDLED_DMP_MESSAGES.with(|m| {
 				let mut m = m.borrow_mut();
-				assert_eq!(&*m, &[(MSG_2.msg.clone())]);
+				assert_eq!(&*m, &[(mk_dmp(3).msg.clone())]);
 				m.clear();
 			});
 		});
 }
 
+fn mk_dmp(sent_at: u32) -> InboundDownwardMessage {
+	InboundDownwardMessage { sent_at, msg: format!("down{}", sent_at).into_bytes() }
+}
+
+fn mk_hrmp(sent_at: u32) -> InboundHrmpMessage {
+	InboundHrmpMessage { sent_at, data: format!("{}", sent_at).into_bytes() }
+}
+
+// Sent up to 100 DMP messages per block over a period of 100 blocks.
+#[test]
+fn receive_dmp_many() {
+	sp_tracing::try_init_simple();
+
+	wasm_ext().execute_with(|| {
+		parameter_types! {
+			pub storage MqcHead: MessageQueueChain = Default::default();
+			pub storage SentInBlock: Vec<Vec<InboundDownwardMessage>> = Default::default();
+		}
+
+		let mut sent_in_block = vec![vec![]];
+		let mut rng = rand::thread_rng();
+
+		for block in 1..100 {
+			let mut msgs = vec![];
+			for _ in 1..=rng.gen_range(1..=100) {
+				// Just use the same message multiple times per block.
+				msgs.push(mk_dmp(block));
+			}
+			sent_in_block.push(msgs);
+		}
+		SentInBlock::set(&sent_in_block);
+
+		let mut tester = BlockTests::new_without_externalities()
+			.with_relay_sproof_builder(|_, relay_block_num, sproof| {
+				let mut new_hash = MqcHead::get();
+
+				for msg in SentInBlock::get()[relay_block_num as usize].iter() {
+					new_hash.extend_downward(&msg);
+				}
+
+				sproof.dmq_mqc_head = Some(new_hash.head());
+				MqcHead::set(&new_hash);
+			})
+			.with_inherent_data(|_, relay_block_num, data| {
+				for msg in SentInBlock::get()[relay_block_num as usize].iter() {
+					data.downward_messages.push(msg.clone());
+				}
+			});
+
+		for block in 1..100 {
+			tester = tester.add(block, move || {
+				HANDLED_DMP_MESSAGES.with(|m| {
+					let mut m = m.borrow_mut();
+					let msgs = SentInBlock::get()[block as usize]
+						.iter()
+						.map(|m| m.msg.clone())
+						.collect::<Vec<_>>();
+					assert_eq!(&*m, &msgs);
+					m.clear();
+				});
+			});
+		}
+	});
+}
+
 #[test]
 fn receive_hrmp() {
-	lazy_static::lazy_static! {
-		static ref MSG_1: InboundHrmpMessage = InboundHrmpMessage {
-			sent_at: 1,
-			data: b"1".to_vec(),
-		};
-
-		static ref MSG_2: InboundHrmpMessage = InboundHrmpMessage {
-			sent_at: 1,
-			data: b"2".to_vec(),
-		};
-
-		static ref MSG_3: InboundHrmpMessage = InboundHrmpMessage {
-			sent_at: 2,
-			data: b"3".to_vec(),
-		};
-
-		static ref MSG_4: InboundHrmpMessage = InboundHrmpMessage {
-			sent_at: 2,
-			data: b"4".to_vec(),
-		};
-	}
-
 	BlockTests::new()
 		.with_relay_sproof_builder(|_, relay_block_num, sproof| match relay_block_num {
 			1 => {
 				// 200 - doesn't exist yet
 				// 300 - one new message
 				sproof.upsert_inbound_channel(ParaId::from(300)).mqc_head =
-					Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
+					Some(MessageQueueChain::default().extend_hrmp(&mk_hrmp(1)).head());
 			},
 			2 => {
 				// 200 - now present with one message
 				// 300 - two new messages
 				sproof.upsert_inbound_channel(ParaId::from(200)).mqc_head =
-					Some(MessageQueueChain::default().extend_hrmp(&MSG_4).head());
+					Some(MessageQueueChain::default().extend_hrmp(&mk_hrmp(2)).head());
 				sproof.upsert_inbound_channel(ParaId::from(300)).mqc_head = Some(
 					MessageQueueChain::default()
-						.extend_hrmp(&MSG_1)
-						.extend_hrmp(&MSG_2)
-						.extend_hrmp(&MSG_3)
+						.extend_hrmp(&mk_hrmp(1))
+						.extend_hrmp(&mk_hrmp(1))
+						.extend_hrmp(&mk_hrmp(2))
 						.head(),
 				);
 			},
@@ -862,13 +917,13 @@ fn receive_hrmp() {
 				// 200 - no new messages
 				// 300 - is gone
 				sproof.upsert_inbound_channel(ParaId::from(200)).mqc_head =
-					Some(MessageQueueChain::default().extend_hrmp(&MSG_4).head());
+					Some(MessageQueueChain::default().extend_hrmp(&mk_hrmp(2)).head());
 			},
 			_ => unreachable!(),
 		})
 		.with_inherent_data(|_, relay_block_num, data| match relay_block_num {
 			1 => {
-				data.horizontal_messages.insert(ParaId::from(300), vec![MSG_1.clone()]);
+				data.horizontal_messages.insert(ParaId::from(300), vec![mk_hrmp(1)]);
 			},
 			2 => {
 				data.horizontal_messages.insert(
@@ -877,11 +932,11 @@ fn receive_hrmp() {
 						// can't be sent at the block 1 actually. However, we cheat here
 						// because we want to test the case where there are multiple messages
 						// but the harness at the moment doesn't support block skipping.
-						MSG_2.clone(),
-						MSG_3.clone(),
+						mk_hrmp(1).clone(),
+						mk_hrmp(2).clone(),
 					],
 				);
-				data.horizontal_messages.insert(ParaId::from(200), vec![MSG_4.clone()]);
+				data.horizontal_messages.insert(ParaId::from(200), vec![mk_hrmp(2)]);
 			},
 			3 => {},
 			_ => unreachable!(),
@@ -899,9 +954,9 @@ fn receive_hrmp() {
 				assert_eq!(
 					&*m,
 					&[
-						(ParaId::from(300), 1, b"2".to_vec()),
-						(ParaId::from(200), 2, b"4".to_vec()),
-						(ParaId::from(300), 2, b"3".to_vec()),
+						(ParaId::from(300), 1, b"1".to_vec()),
+						(ParaId::from(200), 2, b"2".to_vec()),
+						(ParaId::from(300), 2, b"2".to_vec()),
 					]
 				);
 				m.clear();
@@ -930,55 +985,46 @@ fn receive_hrmp_empty_channel() {
 
 #[test]
 fn receive_hrmp_after_pause() {
-	lazy_static::lazy_static! {
-		static ref MSG_1: InboundHrmpMessage = InboundHrmpMessage {
-			sent_at: 1,
-			data: b"mikhailinvanovich".to_vec(),
-		};
-
-		static ref MSG_2: InboundHrmpMessage = InboundHrmpMessage {
-			sent_at: 3,
-			data: b"1000000000".to_vec(),
-		};
-	}
-
 	const ALICE: ParaId = ParaId::new(300);
 
 	BlockTests::new()
 		.with_relay_sproof_builder(|_, relay_block_num, sproof| match relay_block_num {
 			1 => {
 				sproof.upsert_inbound_channel(ALICE).mqc_head =
-					Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
+					Some(MessageQueueChain::default().extend_hrmp(&mk_hrmp(1)).head());
 			},
 			2 => {
 				// 300 - no new messages, mqc stayed the same.
 				sproof.upsert_inbound_channel(ALICE).mqc_head =
-					Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
+					Some(MessageQueueChain::default().extend_hrmp(&mk_hrmp(1)).head());
 			},
 			3 => {
 				// 300 - new message.
 				sproof.upsert_inbound_channel(ALICE).mqc_head = Some(
-					MessageQueueChain::default().extend_hrmp(&MSG_1).extend_hrmp(&MSG_2).head(),
+					MessageQueueChain::default()
+						.extend_hrmp(&mk_hrmp(1))
+						.extend_hrmp(&mk_hrmp(3))
+						.head(),
 				);
 			},
 			_ => unreachable!(),
 		})
 		.with_inherent_data(|_, relay_block_num, data| match relay_block_num {
 			1 => {
-				data.horizontal_messages.insert(ALICE, vec![MSG_1.clone()]);
+				data.horizontal_messages.insert(ALICE, vec![mk_hrmp(1)]);
 			},
 			2 => {
 				// no new messages
 			},
 			3 => {
-				data.horizontal_messages.insert(ALICE, vec![MSG_2.clone()]);
+				data.horizontal_messages.insert(ALICE, vec![mk_hrmp(3)]);
 			},
 			_ => unreachable!(),
 		})
 		.add(1, || {
 			HANDLED_XCMP_MESSAGES.with(|m| {
 				let mut m = m.borrow_mut();
-				assert_eq!(&*m, &[(ALICE, 1, b"mikhailinvanovich".to_vec())]);
+				assert_eq!(&*m, &[(ALICE, 1, b"1".to_vec())]);
 				m.clear();
 			});
 		})
@@ -986,10 +1032,68 @@ fn receive_hrmp_after_pause() {
 		.add(3, || {
 			HANDLED_XCMP_MESSAGES.with(|m| {
 				let mut m = m.borrow_mut();
-				assert_eq!(&*m, &[(ALICE, 3, b"1000000000".to_vec())]);
+				assert_eq!(&*m, &[(ALICE, 3, b"3".to_vec())]);
 				m.clear();
 			});
 		});
+}
+
+// Sent up to 100 HRMP messages per block over a period of 100 blocks.
+#[test]
+fn receive_hrmp_many() {
+	sp_tracing::try_init_simple();
+	const ALICE: ParaId = ParaId::new(300);
+
+	wasm_ext().execute_with(|| {
+		parameter_types! {
+			pub storage MqcHead: MessageQueueChain = Default::default();
+			pub storage SentInBlock: Vec<Vec<InboundHrmpMessage>> = Default::default();
+		}
+
+		let mut sent_in_block = vec![vec![]];
+		let mut rng = rand::thread_rng();
+
+		for block in 1..100 {
+			let mut msgs = vec![];
+			for _ in 1..=rng.gen_range(1..=100) {
+				// Just use the same message multiple times per block.
+				msgs.push(mk_hrmp(block));
+			}
+			sent_in_block.push(msgs);
+		}
+		SentInBlock::set(&sent_in_block);
+
+		let mut tester = BlockTests::new_without_externalities()
+			.with_relay_sproof_builder(|_, relay_block_num, sproof| {
+				let mut new_hash = MqcHead::get();
+
+				for msg in SentInBlock::get()[relay_block_num as usize].iter() {
+					new_hash.extend_hrmp(&msg);
+				}
+
+				sproof.upsert_inbound_channel(ALICE).mqc_head = Some(new_hash.head());
+				MqcHead::set(&new_hash);
+			})
+			.with_inherent_data(|_, relay_block_num, data| {
+				// TODO use vector for dmp as well
+				data.horizontal_messages
+					.insert(ALICE, SentInBlock::get()[relay_block_num as usize].clone());
+			});
+
+		for block in 1..100 {
+			tester = tester.add(block, move || {
+				HANDLED_XCMP_MESSAGES.with(|m| {
+					let mut m = m.borrow_mut();
+					let msgs = SentInBlock::get()[block as usize]
+						.iter()
+						.map(|m| (ALICE.clone(), m.sent_at, m.data.clone()))
+						.collect::<Vec<_>>();
+					assert_eq!(&*m, &msgs);
+					m.clear();
+				});
+			});
+		}
+	});
 }
 
 #[test]

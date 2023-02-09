@@ -29,7 +29,6 @@ pub mod wasm_spec_version_incremented {
 
 mod test_pallet;
 
-use cumulus_primitives_core::AggregateMessageOrigin;
 use frame_support::traits::OnRuntimeUpgrade;
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
 use sp_core::{ConstU32, OpaqueMetadata};

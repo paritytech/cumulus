@@ -40,7 +40,7 @@ use frame_support::{
 	ensure,
 	inherent::{InherentData, InherentIdentifier, ProvideInherent},
 	storage,
-	traits::{EnqueueMessage, Get, ServiceQueues},
+	traits::{EnqueueMessage, Get},
 	weights::Weight,
 };
 use frame_system::{ensure_none, ensure_root};
