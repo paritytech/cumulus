@@ -107,43 +107,43 @@ fn add_invulnerable_works(){
 }
 
 //#[test]
-// fn remove_invulnerable_works(){
-// 	new_test_ext().execute_with(|| {
-// 		let to_remove = CollatorSelection::invulnerables().first().clone();
-// 		// remove associated validator
+fn remove_invulnerable_works(){
+	new_test_ext().execute_with(|| {
+		let to_remove = CollatorSelection::invulnerables().to_vec()[0].clone();
+		// remove associated validator
 
-// 		// function runs
-// 		assert_ok!(CollatorSelection::remove_invulnerable(
-// 			RuntimeOrigin::signed(RootAccount::get()),
-// 			to_remove.clone()
-// 		));
+		// function runs
+		assert_ok!(CollatorSelection::remove_invulnerable(
+			RuntimeOrigin::signed(RootAccount::get()),
+			to_remove.clone()
+		));
 
-// 		// element cannot be removed more than once from the list
-// 		assert_noop!(
-// 			CollatorSelection::remove_invulnerable(
-// 				RuntimeOrigin::signed(RootAccount::get()),
-// 				to_remove.clone()
-// 			),
-// 			Error::<Test>::NotInvulnerable
-// 		);
+		// element cannot be removed more than once from the list
+		assert_noop!(
+			CollatorSelection::remove_invulnerable(
+				RuntimeOrigin::signed(RootAccount::get()),
+				to_remove.clone()
+			),
+			Error::<Test>::NotInvulnerable
+		);
 
-// 		// cannot set with non-root
-// 		assert_noop!(
-// 			CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(1), to_remove.clone()),
-// 			BadOrigin
-// 		);
+		// cannot set with non-root
+		assert_noop!(
+			CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(1), to_remove.clone()),
+			BadOrigin
+		);
 
-// 		// cannot remove invulnerables still with associated validator keys
-// 		let still_validator = CollatorSelection::invulnerables().clone().last();
-// 		assert_noop!(
-// 			CollatorSelection::remove_invulnerable(
-// 				RuntimeOrigin::signed(RootAccount::get()),
-// 				still_validator.clone()
-// 			),
-// 			Error::<Test>::ValidatorStillRegistered
-// 		);
-// 	});
-// }
+		// cannot remove invulnerables still with associated validator keys
+		// let still_validator = CollatorSelection::invulnerables().clone().last();
+		// assert_noop!(
+		// 	CollatorSelection::remove_invulnerable(
+		// 		RuntimeOrigin::signed(RootAccount::get()),
+		// 		still_validator.clone()
+		// 	),
+		// 	Error::<Test>::ValidatorStillRegistered
+		// );
+	});
+}
 
 #[test]
 fn set_desired_candidates_works() {
