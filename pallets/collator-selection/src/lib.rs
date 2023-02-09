@@ -378,7 +378,6 @@ pub mod pallet {
 					.ok()
 					.ok_or(Error::<T>::NotInvulnerable)?;
 				invulnerables.remove(pos);
-				invulnerables.sort();
 				Ok(())
 			})?;
 			
