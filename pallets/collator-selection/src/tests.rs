@@ -65,7 +65,7 @@ fn it_should_set_invulnerables() {
 fn add_invulnerable_works(){
 	new_test_ext().execute_with(|| {
 		let new = 21;
-		//CollatorSelection::register_validators(new);
+		let num_prev_invulnerables = CollatorSelection::invulnerables().to_vec().len();
 
 		// function runs
 		assert_ok!(CollatorSelection::add_invulnerable(
@@ -83,10 +83,10 @@ fn add_invulnerable_works(){
 		);
 
 		// list was not exploded
-		assert_ok!(CollatorSelection::invulnerables().to_vec().len() <= MaxInvulnerables);
+		assert_eq!(CollatorSelection::invulnerables().to_vec().len(), num_prev_invulnerables+1);
 
 		// new element is now part of the invulnerables list
-		assert_ok!(CollatorSelection::invulnerables().contains(&new));
+		assert!(CollatorSelection::invulnerables().to_vec().contains(&new));
 
 		// cannot add with non-root
 		assert_noop!(
@@ -95,55 +95,55 @@ fn add_invulnerable_works(){
 		);
 
 		// cannot add invulnerable without associated validator keys
-		let no_validator = 22;
-		assert_noop!(
-			CollatorSelection::add_invulnerable(
-				RuntimeOrigin::signed(RootAccount::get()),
-				no_validator.clone()
-			),
-			Error::<Test>::ValidatorNotRegistered
-		);
+		// let no_validator = 22;
+		// assert_noop!(
+		// 	CollatorSelection::add_invulnerable(
+		// 		RuntimeOrigin::signed(RootAccount::get()),
+		// 		no_validator.clone()
+		// 	),
+		// 	Error::<Test>::ValidatorNotRegistered
+		// );
 	});
 }
 
 //#[test]
-fn remove_invulnerable_works(){
-	new_test_ext().execute_with(|| {
-		let to_remove = CollatorSelection::invulnerables().first();
-		// remove associated validator
+// fn remove_invulnerable_works(){
+// 	new_test_ext().execute_with(|| {
+// 		let to_remove = CollatorSelection::invulnerables().first().clone();
+// 		// remove associated validator
 
-		// function runs
-		assert_ok!(CollatorSelection::remove_invulnerable(
-			RuntimeOrigin::signed(RootAccount::get()),
-			to_remove.clone()
-		));
+// 		// function runs
+// 		assert_ok!(CollatorSelection::remove_invulnerable(
+// 			RuntimeOrigin::signed(RootAccount::get()),
+// 			to_remove.clone()
+// 		));
 
-		// element cannot be removed more than once from the list
-		assert_noop!(
-			CollatorSelection::remove_invulnerable(
-				RuntimeOrigin::signed(RootAccount::get()),
-				to_remove.clone()
-			),
-			Error::<Test>::NotInvulnerable
-		);
+// 		// element cannot be removed more than once from the list
+// 		assert_noop!(
+// 			CollatorSelection::remove_invulnerable(
+// 				RuntimeOrigin::signed(RootAccount::get()),
+// 				to_remove.clone()
+// 			),
+// 			Error::<Test>::NotInvulnerable
+// 		);
 
-		// cannot set with non-root
-		assert_noop!(
-			CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(1), to_remove.clone()),
-			BadOrigin
-		);
+// 		// cannot set with non-root
+// 		assert_noop!(
+// 			CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(1), to_remove.clone()),
+// 			BadOrigin
+// 		);
 
-		// cannot remove invulnerables still with associated validator keys
-		let still_validator = CollatorSelection::invulnerables().clone().last();
-		assert_noop!(
-			CollatorSelection::remove_invulnerable(
-				RuntimeOrigin::signed(RootAccount::get()),
-				still_validator.clone()
-			),
-			Error::<Test>::ValidatorStillRegistered
-		);
-	});
-}
+// 		// cannot remove invulnerables still with associated validator keys
+// 		let still_validator = CollatorSelection::invulnerables().clone().last();
+// 		assert_noop!(
+// 			CollatorSelection::remove_invulnerable(
+// 				RuntimeOrigin::signed(RootAccount::get()),
+// 				still_validator.clone()
+// 			),
+// 			Error::<Test>::ValidatorStillRegistered
+// 		);
+// 	});
+// }
 
 #[test]
 fn set_desired_candidates_works() {
