@@ -74,10 +74,13 @@ fn add_invulnerable_works(){
 		));
 
 		// same element cannot be added more than once
-		assert_noop!(CollatorSelection::add_invulnerable(
-			RuntimeOrigin::signed(RootAccount::get()),
-			new.clone()
-		));
+		assert_noop!(
+			CollatorSelection::add_invulnerable(
+				RuntimeOrigin::signed(RootAccount::get()),
+				new.clone()
+			),
+			Error::<Test>::AlreadyInvulnerable
+		);
 
 		// list was not exploded
 		assert_ok!(CollatorSelection::invulnerables().to_vec().len() <= T::MaxInvulnerables);
