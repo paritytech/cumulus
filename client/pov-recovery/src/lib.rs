@@ -509,13 +509,15 @@ where
 				},
 				Ok(_) => break,
 				Err(e) => {
-					candidate.waiting_recovery = false;
 					tracing::error!(
 						target: LOG_TARGET,
 						error = ?e,
 						block_hash = ?hash,
 						"Failed to get block status",
 					);
+					for hash in to_recover {
+						self.clear_waiting_recovery(&hash);
+					}
 					return
 				},
 			}
