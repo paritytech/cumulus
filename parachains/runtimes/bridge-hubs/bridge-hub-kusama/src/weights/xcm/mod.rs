@@ -42,7 +42,7 @@ impl WeighMultiAssets for MultiAssetFilter {
 					// Magic number 2 has to do with the fact that we could have up to 2 times
 					// MaxAssetsIntoHolding in the worst-case scenario.
 					WildFungibility::NonFungible =>
-						weight.saturating_mul(MaxAssetsIntoHolding::get() * 2 as u64),
+						weight.saturating_mul((MaxAssetsIntoHolding::get() * 2) as u64),
 				},
 				AllCounted(count) => weight.saturating_mul(*count as u64),
 				AllOfCounted { count, .. } => weight.saturating_mul(*count as u64),
