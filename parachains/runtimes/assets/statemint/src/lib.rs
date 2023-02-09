@@ -89,8 +89,8 @@ use frame_system::{
 pub use parachains_common as common;
 use parachains_common::{
 	impls::{AssetsToBlockAuthor, DealWithFees},
-	opaque, AccountId, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
-	StatemintAuraId as AuraId, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
+	opaque, AccountId, AssetIdForTrustBackedAssets, Balance, BlockNumber, Hash, Header, Index,
+	Signature, StatemintAuraId as AuraId, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{DotLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
@@ -117,7 +117,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("statemint"),
 	impl_name: create_runtime_str!("statemint"),
 	authoring_version: 1,
-	spec_version: 9360,
+	spec_version: 9370,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 11,
@@ -193,8 +193,6 @@ impl pallet_timestamp::Config for Runtime {
 
 impl pallet_authorship::Config for Runtime {
 	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
-	type UncleGenerations = ConstU32<0>;
-	type FilterUncle = ();
 	type EventHandler = (CollatorSelection,);
 }
 
@@ -247,11 +245,16 @@ parameter_types! {
 pub type AssetsForceOrigin =
 	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
 
-impl pallet_assets::Config for Runtime {
+// Called "Trust Backed" assets because these are generally registered by some account, and users of
+// the asset assume it has some claimed backing. The pallet is called `Assets` in
+// `construct_runtime` to avoid breaking changes on storage reads.
+pub type TrustBackedAssetsInstance = pallet_assets::Instance1;
+type TrustBackedAssetsCall = pallet_assets::Call<Runtime, TrustBackedAssetsInstance>;
+impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
-	type AssetId = AssetId;
-	type AssetIdParameter = codec::Compact<AssetId>;
+	type AssetId = AssetIdForTrustBackedAssets;
+	type AssetIdParameter = codec::Compact<AssetIdForTrustBackedAssets>;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 	type ForceOrigin = AssetsForceOrigin;
@@ -369,15 +372,15 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			},
 			ProxyType::AssetOwner => matches!(
 				c,
-				RuntimeCall::Assets(pallet_assets::Call::create { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::start_destroy { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::destroy_accounts { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::destroy_approvals { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::finish_destroy { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::transfer_ownership { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::set_team { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::set_metadata { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::clear_metadata { .. }) |
+				RuntimeCall::Assets(TrustBackedAssetsCall::create { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::start_destroy { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::destroy_accounts { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::destroy_approvals { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::finish_destroy { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::transfer_ownership { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::set_team { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::set_metadata { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::clear_metadata { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::create { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::destroy { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::transfer_ownership { .. }) |
@@ -394,12 +397,12 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			),
 			ProxyType::AssetManager => matches!(
 				c,
-				RuntimeCall::Assets(pallet_assets::Call::mint { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::burn { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::freeze { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::thaw { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::freeze_asset { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::thaw_asset { .. }) |
+				RuntimeCall::Assets(TrustBackedAssetsCall::mint { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::burn { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::freeze { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::thaw { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::freeze_asset { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::thaw_asset { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::mint { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::burn { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::freeze { .. }) |
@@ -545,8 +548,13 @@ impl pallet_asset_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Fungibles = Assets;
 	type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
-		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
-		AssetsToBlockAuthor<Runtime>,
+		pallet_assets::BalanceToAssetBalance<
+			Balances,
+			Runtime,
+			ConvertInto,
+			TrustBackedAssetsInstance,
+		>,
+		AssetsToBlockAuthor<Runtime, TrustBackedAssetsInstance>,
 	>;
 }
 
@@ -604,7 +612,7 @@ construct_runtime!(
 		AssetTxPayment: pallet_asset_tx_payment::{Pallet, Event<T>} = 12,
 
 		// Collator support. the order of these 5 are important and shall not change.
-		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
+		Authorship: pallet_authorship::{Pallet, Storage} = 20,
 		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
@@ -622,7 +630,7 @@ construct_runtime!(
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 42,
 
 		// The main stage.
-		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
+		Assets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>} = 50,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 	}
 );
@@ -651,7 +659,7 @@ pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
-
+/// Migrations to apply on runtime upgrade.
 pub type Migrations = ();
 
 /// Executive: handles dispatch to the various modules.
@@ -789,6 +797,12 @@ impl_runtime_apis! {
 		) -> pallet_transaction_payment::FeeDetails<Balance> {
 			TransactionPayment::query_fee_details(uxt, len)
 		}
+		fn query_weight_to_fee(weight: Weight) -> Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+		fn query_length_to_fee(length: u32) -> Balance {
+			TransactionPayment::length_to_fee(length)
+		}
 	}
 
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
@@ -805,6 +819,12 @@ impl_runtime_apis! {
 			len: u32,
 		) -> pallet_transaction_payment::FeeDetails<Balance> {
 			TransactionPayment::query_call_fee_details(call, len)
+		}
+		fn query_weight_to_fee(weight: Weight) -> Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+		fn query_length_to_fee(length: u32) -> Balance {
+			TransactionPayment::length_to_fee(length)
 		}
 	}
 
