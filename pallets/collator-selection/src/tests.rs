@@ -83,7 +83,7 @@ fn add_invulnerable_works(){
 		);
 
 		// list was not exploded
-		assert_ok!(CollatorSelection::invulnerables().to_vec().len() <= T::MaxInvulnerables);
+		assert_ok!(CollatorSelection::invulnerables().to_vec().len() <= MaxInvulnerables);
 
 		// new element is now part of the invulnerables list
 		assert_ok!(CollatorSelection::invulnerables().contains(&new));
@@ -111,7 +111,6 @@ fn remove_invulnerable_works(){
 	new_test_ext().execute_with(|| {
 		let to_remove = CollatorSelection::invulnerables().first();
 		// remove associated validator
-		
 
 		// function runs
 		assert_ok!(CollatorSelection::remove_invulnerable(
@@ -120,13 +119,13 @@ fn remove_invulnerable_works(){
 		));
 
 		// element cannot be removed more than once from the list
-		assert_noop!(CollatorSelection::remove_invulnerable(
-			RuntimeOrigin::signed(RootAccount::get()),
-			to_remove.clone()
-		));
-
-		// element is not part of the invulnerables set anymore
-		assert_noop!(CollatorSelection::invulnerables().contains(&to_remove));
+		assert_noop!(
+			CollatorSelection::remove_invulnerable(
+				RuntimeOrigin::signed(RootAccount::get()),
+				to_remove.clone()
+			),
+			Error::<Test>::NotInvulnerable
+		);
 
 		// cannot set with non-root
 		assert_noop!(
@@ -135,11 +134,11 @@ fn remove_invulnerable_works(){
 		);
 
 		// cannot remove invulnerables still with associated validator keys
-		let to_remove = CollatorSelection::invulnerables().clone().last();
+		let still_validator = CollatorSelection::invulnerables().clone().last();
 		assert_noop!(
 			CollatorSelection::remove_invulnerable(
 				RuntimeOrigin::signed(RootAccount::get()),
-				invulnerable.clone()
+				still_validator.clone()
 			),
 			Error::<Test>::ValidatorStillRegistered
 		);
