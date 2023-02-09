@@ -109,7 +109,6 @@ impl Config for Test {
 	type OutboundXcmpMessageSource = FromThreadLocal;
 	type DmpMessageMaxLen = sp_core::ConstU32<0>;
 	type MessageEnqueue = MessageQueue;
-	//type MessageService = MessageQueue;
 	type ReservedDmpWeight = ReservedDmpWeight;
 	type XcmpMessageHandler = SaveIntoThreadLocal;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
@@ -773,8 +772,6 @@ fn receive_dmp() {
 
 #[test]
 fn receive_dmp_after_pause() {
-	sp_tracing::try_init_simple();
-
 	BlockTests::new()
 		.with_relay_sproof_builder(|_, relay_block_num, sproof| match relay_block_num {
 			1 => {
@@ -836,8 +833,6 @@ fn mk_hrmp(sent_at: u32) -> InboundHrmpMessage {
 // Sent up to 100 DMP messages per block over a period of 100 blocks.
 #[test]
 fn receive_dmp_many() {
-	sp_tracing::try_init_simple();
-
 	wasm_ext().execute_with(|| {
 		parameter_types! {
 			pub storage MqcHead: MessageQueueChain = Default::default();
@@ -1041,7 +1036,6 @@ fn receive_hrmp_after_pause() {
 // Sent up to 100 HRMP messages per block over a period of 100 blocks.
 #[test]
 fn receive_hrmp_many() {
-	sp_tracing::try_init_simple();
 	const ALICE: ParaId = ParaId::new(300);
 
 	wasm_ext().execute_with(|| {

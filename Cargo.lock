@@ -2017,6 +2017,7 @@ dependencies = [
  "pallet-message-queue",
  "parity-scale-codec",
  "polkadot-parachain",
+ "rand 0.8.5",
  "sc-client-api",
  "scale-info",
  "sp-core",

@@ -430,20 +430,16 @@ pub mod pallet {
 
 			// TODO: This is more than zero, but will need benchmarking to figure out what.
 			let mut total_weight = Weight::zero();
-			//total_weight += Self::process_inbound_downward_messages(
-			//	relevant_messaging_state.dmq_mqc_head,
-			//	downward_messages,
-			//);
 			// FAIL-CI weight
-			Self::enqueue_inbound_downward_messages(
+			total_weight.saturating_accrue(Self::enqueue_inbound_downward_messages(
 				relevant_messaging_state.dmq_mqc_head,
 				downward_messages,
-			);
-			total_weight += Self::enqueue_inbound_horizontal_messages(
+			));
+			total_weight.saturating_accrue(Self::enqueue_inbound_horizontal_messages(
 				&relevant_messaging_state.ingress_channels,
 				horizontal_messages,
 				vfp.relay_parent_number,
-			);
+			));
 
 			// FAIL-CI do this in on_initialize or manually here?
 			//T::MessageService::service_queues(Weight::MAX);
@@ -820,7 +816,6 @@ impl<T: Config> Pallet<T> {
 				})
 				// FAIL-CI propagate bound
 				.filter_map(|m| BoundedSlice::try_from(&m.msg[..]).ok());
-			//weight_used += T::DmpMessageHandler::handle_dmp_messages(message_iter, max_weight);
 			// Put all messages into the MQ pallet. // FAIL-CI weight
 			T::MessageEnqueue::enqueue_messages(bounded, AggregateMessageOrigin::Parent);
 			<LastDmqMqcHead<T>>::put(&dmq_head);
