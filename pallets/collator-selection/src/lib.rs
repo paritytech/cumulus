@@ -371,14 +371,6 @@ pub mod pallet {
 			// ensure invulnerable is actually in the list before trying to remove it
 			 ensure!(invulnerables.contains(&to_remove), Error::<T>::NotInvulnerable);
 
-		 	// check if old invulnerable still has associated validator keys before it is removed
-		 	let validator_key = 
-				T::ValidatorIdOf::convert(to_remove.clone()).ok_or(Error::<T>::NoAssociatedValidatorId)?;
-		 		ensure!(
-		 			!T::ValidatorRegistration::is_registered(&validator_key),
-		 			Error::<T>::ValidatorStillRegistered
-		 		);
-
 			// remove invulnerable from invulnerables list
 			<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
 				let pos = invulnerables
