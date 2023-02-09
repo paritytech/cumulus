@@ -7,7 +7,7 @@ use frame_support::{
 };
 use sp_runtime::traits::Get;
 use xcm::latest::prelude::*;
-use xcm_executor::traits::ShouldExecute;
+use xcm_executor::traits::{RejectReason, ShouldExecute};
 
 //TODO: move DenyThenTry to polkadot's xcm module.
 /// Deny executing the XCM if it matches any of the Deny filter regardless of anything else.
@@ -27,7 +27,7 @@ where
 		message: &mut [Instruction<RuntimeCall>],
 		max_weight: Weight,
 		weight_credit: &mut Weight,
-	) -> Result<(), ()> {
+	) -> Result<(), RejectReason> {
 		Deny::should_execute(origin, message, max_weight, weight_credit)?;
 		Allow::should_execute(origin, message, max_weight, weight_credit)
 	}
@@ -41,7 +41,7 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 		message: &mut [Instruction<RuntimeCall>],
 		_max_weight: Weight,
 		_weight_credit: &mut Weight,
-	) -> Result<(), ()> {
+	) -> Result<(), RejectReason> {
 		if message.iter().any(|inst| {
 			matches!(
 				inst,
@@ -55,7 +55,7 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 					}
 			)
 		}) {
-			return Err(()) // Deny
+			return Err(RejectReason::ForbiddenInstructions) // Deny
 		}
 
 		// An unexpected reserve transfer has arrived from the Relay Chain. Generally, `IsReserve`
