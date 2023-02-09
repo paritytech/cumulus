@@ -155,8 +155,7 @@ struct RecoveryQueue<Block: BlockT> {
 	recovery_delay_range: RecoveryDelayRange,
 	// Queue that keeps the hashes of blocks to be recovered.
 	recovery_queue: VecDeque<Block::Hash>,
-	// Futures that resolve when a new recovery should be started.
-	signaling_queue: FuturesUnordered<Pin<Box<dyn Future<Output = ()> + Send>>>,
+	timer: Option<Delay>,
 }
 
 impl<Block: BlockT> RecoveryQueue<Block> {
@@ -164,7 +163,7 @@ impl<Block: BlockT> RecoveryQueue<Block> {
 		Self {
 			recovery_delay_range,
 			recovery_queue: Default::default(),
-			signaling_queue: Default::default(),
+			timer: Default::default(),
 		}
 	}
 
@@ -172,35 +171,31 @@ impl<Block: BlockT> RecoveryQueue<Block> {
 	/// A new recovery will be signaled after `delay` has passed.
 	pub fn push_recovery(&mut self, hash: Block::Hash) {
 		let delay = self.recovery_delay_range.duration();
-		tracing::debug!(
-			target: LOG_TARGET,
-			block_hash = ?hash,
-			"Adding block to queue and adding new recovery slot in {:?} sec",
-			delay.as_secs(),
-		);
 		self.recovery_queue.push_back(hash);
-		self.signaling_queue.push(
-			async move {
-				Delay::new(delay).await;
-			}
-			.boxed(),
-		);
+		if self.timer.is_none() {
+			self.timer = Some(Delay::new(delay));
+		}
 	}
 
 	/// Get the next hash for block recovery.
 	pub async fn next_recovery(&mut self) -> Block::Hash {
 		loop {
-			if let Some(_) = self.signaling_queue.next().await {
+			if let Some(timer) = &mut self.timer {
+				(&mut timer).await;
+
 				if let Some(hash) = self.recovery_queue.pop_front() {
+					if self.recovery_queue.is_empty() {
+						drop(timer);
+						self.timer.take();
+					} else {
+						timer.reset(self.recovery_delay_range.duration());
+					}		
+			
 					return hash
-				} else {
-					tracing::error!(
-						target: LOG_TARGET,
-						"Recovery was signaled, but no candidate hash available. This is a bug."
-					);
-				};
+				}
+			} else {
+				futures::pending!();
 			}
-			futures::pending!()
 		}
 	}
 }
