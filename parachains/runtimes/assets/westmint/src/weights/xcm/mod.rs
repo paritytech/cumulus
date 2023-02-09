@@ -149,10 +149,7 @@ impl<Call> XcmWeightInfo<Call> for WestmintXcmWeight<Call> {
 		_dest: &MultiLocation,
 		_xcm: &Xcm<()>,
 	) -> Weight {
-		// Hardcoded till the XCM pallet is fixed
-		let hardcoded_weight = Weight::from_ref_time(200_000_000 as u64);
-		let weight = assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::initiate_teleport());
-		hardcoded_weight.min(weight)
+		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::initiate_teleport())
 	}
 	fn report_holding(_response_info: &QueryResponseInfo, _assets: &MultiAssetFilter) -> Weight {
 		XcmGeneric::<Runtime>::report_holding()
