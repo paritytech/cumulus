@@ -168,13 +168,6 @@ pub mod pallet {
 		/// This is normally an [`EnqueueMessage`] wrapped in an [`EnqueueWithOrigin`].
 		type MessageEnqueue: EnqueueMessage<AggregateMessageOrigin>;
 
-		/// Process inbound downward messages which had been enqueued via [`Self::MessageEnqueue`].
-		///
-		/// FAIL-CI should probably use `TransformOrigin`
-		//type MessageService: ServiceQueues<
-		//	OverweightMessageAddress = (AggregateMessageOrigin, u32, u32),
-		//>;
-
 		/// The weight we reserve at the beginning of the block for processing DMP messages.
 		type ReservedDmpWeight: Get<Weight>;
 

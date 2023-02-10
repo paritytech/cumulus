@@ -105,13 +105,8 @@ pub fn migrate_to_v2<T: Config>() -> Weight {
 }
 
 pub fn migrate_to_v3<T: Config>() -> Weight {
-	use crate::*;
-	// FAIL-CI <https://github.com/paritytech/substrate/issues/13353>
-	//type OldOverweight<T> =
-	//	CountedStorageMap<Pallet<T>, Twox64Concat, OverweightIndex, (ParaId, RelayBlockNumber, Vec<u8>)>;
-	//let overweight_messages = OldOverweight::<T>::initialize_counter() as u64;
-
-	T::DbWeight::get().reads_writes(1, 1)
+	// FAIL-CI Add migration <https://github.com/paritytech/substrate/issues/13353>
+	Weight::zero()
 }
 
 #[cfg(test)]
