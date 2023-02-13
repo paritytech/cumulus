@@ -18,6 +18,8 @@ use super::{
 	Balances, ForeignAssets, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall,
 	RuntimeEvent, RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
+
+use codec::Encode;
 use frame_support::{
 	match_types, parameter_types,
 	traits::{
@@ -33,7 +35,6 @@ use parachains_common::{
 	},
 };
 use polkadot_parachain::primitives::{Id as ParaId, Sibling};
-use sp_core::Get;
 use sp_runtime::traits::ConvertInto;
 use sp_std::marker::PhantomData;
 use xcm::latest::{prelude::*, Weight};
@@ -50,6 +51,8 @@ use xcm_executor::{
 	traits::{Convert, ConvertOrigin, Identity, JustTry, ShouldExecute, WithOriginFilter},
 	XcmExecutor,
 };
+
+use polkadot_core_primitives::{BlakeTwo256, HashT as _};
 
 parameter_types! {
 	pub const WestendLocation: MultiLocation = MultiLocation::parent();
@@ -465,9 +468,12 @@ parameter_types! {
 	// TODO:check-parameter - add new pallet and persist/manage this via governance?
 	// Means, that we accept some `GlobalConsensus` from some `MultiLocation` (which is supposed to be our bridge-hub)
 	pub TrustedBridgedNetworks: sp_std::vec::Vec<(MultiLocation, Junction)> = sp_std::vec![
-		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Rococo))
-	// TODO add Ethereum
-		// (MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Ethereum))
+		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Rococo)),
+		// Ethereum dev network
+		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Ethereum {chain_id: 1337})),
+		// Ethereum Goerli testnet
+		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Ethereum {chain_id: 5}))
+
 
 	];
 	// TODO:check-parameter - add new pallet and persist/manage this via governance?
@@ -490,13 +496,20 @@ impl Contains<(MultiLocation, Junction)> for TrustedBridgedNetworks {
 impl Contains<MultiLocation> for TrustedBridgedNetworks {
 	fn contains(origin: &MultiLocation) -> bool {
 		let consensus = match origin {
+			// Rococo relay chain
 			MultiLocation {
 				parents: 2,
 				interior: X2(GlobalConsensus(consensus), AccountId32 { .. }),
 			} |
+			// A parachain on Rococo
 			MultiLocation {
 				parents: 2,
 				interior: X3(GlobalConsensus(consensus), Parachain(_), AccountId32 { .. }),
+			} |
+			// Ethereum chain
+			MultiLocation {
+				parents: 2,
+				interior: X2(GlobalConsensus(consensus), AccountKey20 { .. }),
 			} => consensus,
 			_ => {
 				log::trace!(target: "xcm::contains_multi_location", "TrustedBridgedNetworks invalid MultiLocation: {:?}", origin);
@@ -561,82 +574,6 @@ impl<TrustedReserverLocations: Contains<MultiLocation>> ContainsPair<MultiAsset,
 	}
 }
 
-pub struct BridgedSignedAccountId32AsNative<LocationConverter, RuntimeOrigin, BridgedNetworks>(
-	sp_std::marker::PhantomData<(LocationConverter, RuntimeOrigin, BridgedNetworks)>,
-);
-impl<
-		LocationConverter: Convert<MultiLocation, RuntimeOrigin::AccountId>,
-		RuntimeOrigin: OriginTrait,
-		BridgedNetworks: Get<sp_std::vec::Vec<(MultiLocation, Junction)>>,
-	> ConvertOrigin<RuntimeOrigin>
-	for BridgedSignedAccountId32AsNative<LocationConverter, RuntimeOrigin, BridgedNetworks>
-where
-	RuntimeOrigin::AccountId: Clone,
-{
-	fn convert_origin(
-		origin: impl Into<MultiLocation>,
-		kind: OriginKind,
-	) -> Result<RuntimeOrigin, MultiLocation> {
-		let origin = origin.into();
-		log::trace!(
-			target: "xcm::origin_conversion",
-			"BridgedSignedAccountId32AsNative origin: {:?}, kind: {:?}",
-			origin, kind,
-		);
-		if let OriginKind::SovereignAccount = kind {
-			match origin {
-				// this represents remote relaychain
-				MultiLocation {
-					parents: 2,
-					interior:
-						X2(
-							GlobalConsensus(remote_network),
-							AccountId32 { network: _network, id: _id },
-						),
-				} |
-				// this represents remote parachain
-				MultiLocation {
-					parents: 2,
-					interior:
-					X3(
-						GlobalConsensus(remote_network),
-						Parachain(_),
-						AccountId32 { network: _network, id: _id },
-					),
-				} => {
-					// TODO:check-parameter - hack - configured local bridge-hub behaves on behalf of any origin from configured bridged network (just to pass Transact/System::remark_with_event - ensure_signed)
-					// find configured local bridge_hub for remote network
-					let bridge_hub_location = BridgedNetworks::get()
-						.iter()
-						.find(|(_, configured_bridged_network)| match configured_bridged_network {
-							GlobalConsensus(bridged_network) => bridged_network.eq(&remote_network),
-							_ => false,
-						})
-						.map(|(bridge_hub_location, _)| bridge_hub_location.clone());
-
-					// try to convert local bridge-hub location
-					match bridge_hub_location {
-						Some(bridge_hub_location) => {
-							let new_origin = bridge_hub_location;
-							log::error!(
-								target: "xcm::origin_conversion",
-								"BridgedSignedAccountId32AsNative replacing origin: {:?} to new_origin: {:?}, kind: {:?}",
-								origin, new_origin, kind,
-							);
-							let location = LocationConverter::convert(new_origin)?;
-							Ok(RuntimeOrigin::signed(location).into())
-						},
-						_ => Err(origin),
-					}
-				},
-				_ => Err(origin),
-			}
-		} else {
-			Err(origin)
-		}
-	}
-}
-
 /// Allow execution of Trap & Transact messages from specified bridged networks
 /// At first checks `origin` comes from specified networks
 /// Then verifies if each instruction is Trap or Transact
@@ -677,7 +614,7 @@ impl<BridgedNetworks: Contains<MultiLocation>> ShouldExecute
 	}
 }
 
-/// Extracts the `AccountId32` from the bridged `MultiLocation` if the network matches.
+/// Creates the `AccountId32` from the bridged `MultiLocation` if the network matches.
 pub struct BridgedProxyAccountId<BridgedNetworks, AccountId>(
 	PhantomData<(BridgedNetworks, AccountId)>,
 );
@@ -694,20 +631,8 @@ impl<
 			return Err(location)
 		}
 
-		match location {
-			MultiLocation {
-				parents: 2,
-				interior: X2(GlobalConsensus(_), AccountId32 { id, network: _ }),
-			} |
-			MultiLocation {
-				parents: 2,
-				interior: X3(GlobalConsensus(_), Parachain(_), AccountId32 { id, network: _ }),
-			} => Ok(id.into()),
-			_ => {
-				log::trace!(target: "xcm::location_conversion", "BridgedProxyAccountId cannot extract AccountId from MultiLocation: {:?}", location);
-				Err(location)
-			},
-		}
+		let id: [u8; 32] = BlakeTwo256::hash_of(&Encode::encode(&location)).into();
+		Ok(id.into())
 	}
 
 	fn reverse(who: AccountId) -> Result<MultiLocation, AccountId> {
@@ -737,17 +662,20 @@ where
 			origin, kind,
 		);
 
-		if let OriginKind::SovereignAccount = kind {
-			let location = LocationConverter::convert(origin)?;
-			Ok(RuntimeOrigin::signed(location).into())
-		} else {
-			log::trace!(
-				target: "xcm::origin_conversion",
-				"BridgedSignedProxyAccountAsNative origin: {:?} is not a SovereignAccount, kind: {:?}",
-				origin, kind
-			);
+		match kind {
+			OriginKind::SovereignAccount => {
+				let account_id = LocationConverter::convert(origin)?;
+				Ok(RuntimeOrigin::signed(account_id).into())
+			},
+			_ => {
+				log::trace!(
+					target: "xcm::origin_conversion",
+					"BridgedSignedProxyAccountAsNative origin: {:?} is not a SovereignAccount, kind: {:?}",
+					origin, kind
+				);
 
-			Err(origin)
+				Err(origin)
+			},
 		}
 	}
 }
