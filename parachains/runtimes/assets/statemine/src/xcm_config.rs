@@ -32,7 +32,7 @@ use parachains_common::{
 		AssetFeeAsExistentialDepositMultiplier, DenyReserveTransferToRelayChain, DenyThenTry,
 	},
 };
-use polkadot_parachain::primitives::{Id as ParaId, Sibling};
+use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -396,7 +396,7 @@ impl cumulus_pallet_xcm::Config for Runtime {
 pub type MultiLocationForAssetId = MultiLocation;
 
 pub type SovereignAccountOf = (
-	SiblingParachainConvertsVia<ParaId, AccountId>,
+	SiblingParachainConvertsVia<Sibling, AccountId>,
 	AccountId32Aliases<RelayNetwork, AccountId>,
 	ParentIsPreset<AccountId>,
 );
