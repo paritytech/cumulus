@@ -720,12 +720,12 @@ fn test_asset_transactor_transfer_with_foreign_assets_works() {
 }
 
 #[test]
-fn test_create_foreign_assets_for_different_consensus_relaychain_token_works() {
+fn create_foreign_assets_for_different_consensus_relaychain_token_works() {
 	// foreign relaychain currency as asset
 	let foreign_asset_id_multilocation =
 		MultiLocation { parents: 2, interior: X1(GlobalConsensus(Kusama)) };
 
-	// foreign creator, which can only be relaychain governance-like origin to match ForeignCreators
+	// foreign creator, which can be relaychain governance-like origin to match ForeignCreators
 	let foreign_creator = MultiLocation { parents: 2, interior: X1(GlobalConsensus(Kusama)) };
 	let foreign_creator_as_account_id =
 		ForeignCreatorsSovereignAccountOf::convert(foreign_creator).expect("");
@@ -744,7 +744,12 @@ fn test_create_foreign_assets_for_different_consensus_relaychain_token_works() {
 		.with_tracing()
 		.build()
 		.execute_with(|| {
+			assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
 			assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
+			assert_eq!(
+				Balances::free_balance(&foreign_creator_as_account_id),
+				ExistentialDeposit::get() + AssetDeposit::get()
+			);
 
 			// execute XCM with Transact to create foreign asset
 			let foreign_asset_create: RuntimeCall =
@@ -815,6 +820,7 @@ fn test_create_foreign_assets_for_different_consensus_relaychain_token_works() {
 			);
 
 			// check assets after
+			assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
 			assert!(!ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
 			use frame_support::traits::tokens::fungibles::roles::Inspect;
 			assert_eq!(
@@ -823,7 +829,131 @@ fn test_create_foreign_assets_for_different_consensus_relaychain_token_works() {
 			);
 			assert_eq!(
 				ForeignAssets::admin(foreign_asset_id_multilocation),
-				Some(foreign_creator_as_account_id)
+				Some(foreign_creator_as_account_id.clone())
+			);
+			assert_eq!(
+				Balances::free_balance(foreign_creator_as_account_id),
+				ExistentialDeposit::get()
+			);
+		})
+}
+
+#[test]
+fn create_foreign_assets_for_local_consensus_parachain_assets_works() {
+	// foreign parachain with the same consenus currency as asset
+	let foreign_asset_id_multilocation =
+		MultiLocation { parents: 1, interior: X2(Parachain(2222), GeneralIndex(1234567)) };
+
+	// foreign creator, which can be sibling parachain to match ForeignCreators
+	let foreign_creator = MultiLocation { parents: 1, interior: X1(Parachain(2222)) };
+	let foreign_creator_as_account_id =
+		ForeignCreatorsSovereignAccountOf::convert(foreign_creator).expect("");
+
+	// we want to buy execution with local relay chain currency
+	let buy_execution_fee_amount =
+		WeightToFee::weight_to_fee(&Weight::from_ref_time(90_000_000_000));
+	let buy_execution_fee = MultiAsset {
+		id: Concrete(MultiLocation::parent()),
+		fun: Fungible(buy_execution_fee_amount),
+	};
+
+	ExtBuilder::<Runtime>::default()
+		.with_collators(vec![AccountId::from(ALICE)])
+		.with_session_keys(vec![(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+		)])
+		.with_balances(vec![(
+			foreign_creator_as_account_id.clone(),
+			ExistentialDeposit::get() + AssetDeposit::get() + buy_execution_fee_amount,
+		)])
+		.with_tracing()
+		.build()
+		.execute_with(|| {
+			assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
+			assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
+			assert_eq!(
+				Balances::free_balance(&foreign_creator_as_account_id),
+				ExistentialDeposit::get() + AssetDeposit::get() + buy_execution_fee_amount
+			);
+
+			// execute XCM with Transact to create foreign asset
+			let foreign_asset_create: RuntimeCall =
+				RuntimeCall::Utility(pallet_utility::Call::<Runtime>::batch {
+					calls: vec![
+						RuntimeCall::ForeignAssets(pallet_assets::Call::<
+							Runtime,
+							ForeignAssetsInstance,
+						>::create {
+							id: foreign_asset_id_multilocation,
+							// TODO:check-parameter - how to setup admin account?
+							admin: foreign_creator_as_account_id.clone().into(),
+							min_balance: 1,
+						}),
+						// TODO:check-parameter - cannot call in one batch, because set_metadata uses just `ensure_signed()`
+						// RuntimeCall::ForeignAssets(pallet_assets::Call::<
+						// 	Runtime,
+						// 	ForeignAssetsInstance,
+						// >::set_metadata {
+						// 	id: foreign_asset_id_multilocation,
+						// 	name: Default::default(),
+						// 	symbol: Default::default(),
+						// 	decimals: 12,
+						// }),
+					],
+				});
+
+			// lets simulate this was triggered by relay chain from local consensus sibling parachain
+			let xcm = Xcm(vec![
+				WithdrawAsset(buy_execution_fee.clone().into()),
+				BuyExecution { fees: buy_execution_fee.into(), weight_limit: Unlimited },
+				Transact {
+					origin_kind: OriginKind::Xcm,
+					require_weight_at_most: Weight::from_ref_time(80_000_000_000),
+					call: foreign_asset_create.encode().into(),
+				},
+			]);
+
+			// messages with different consensus should go through the local bridge-hub
+			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
+			let weight_limit = Weight::from_ref_time(100_000_000_000);
+
+			// execute xcm as XcmpQueue would do
+			let outcome =
+				XcmExecutor::<XcmConfig>::execute_xcm(foreign_creator, xcm, hash, weight_limit);
+			assert_eq!(outcome.ensure_complete(), Ok(()));
+
+			// check events
+			let mut events = System::events().into_iter().map(|e| e.event);
+			assert!(events.any(|e| matches!(
+				e,
+				RuntimeEvent::ForeignAssets(pallet_assets::Event::Created { .. })
+			)));
+			// TODO:check-parameter - cannot call in one batch, because set_metadata uses just `ensure_signed()`
+			// assert!(
+			// 	events
+			// 		.any(|e| matches!(e, RuntimeEvent::ForeignAssets(pallet_assets::Event::MetadataSet { .. })))
+			// );
+			assert!(
+				events.any(|e| e.eq(&RuntimeEvent::Utility(pallet_utility::Event::BatchCompleted)))
+			);
+
+			// check assets after
+			assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
+			assert!(!ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
+			use frame_support::traits::tokens::fungibles::roles::Inspect;
+			assert_eq!(
+				ForeignAssets::owner(foreign_asset_id_multilocation),
+				Some(foreign_creator_as_account_id.clone())
+			);
+			assert_eq!(
+				ForeignAssets::admin(foreign_asset_id_multilocation),
+				Some(foreign_creator_as_account_id.clone())
+			);
+			assert_eq!(
+				Balances::free_balance(&foreign_creator_as_account_id),
+				ExistentialDeposit::get()
 			);
 		})
 }
