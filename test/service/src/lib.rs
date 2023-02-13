@@ -33,8 +33,6 @@ use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::{
 	ParachainBlockImport as TParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
-
-use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_pov_recovery::RecoveryHandle;
 use cumulus_client_service::{
 	build_network, prepare_node_config, start_collator, start_full_node, BuildNetworkParams,
