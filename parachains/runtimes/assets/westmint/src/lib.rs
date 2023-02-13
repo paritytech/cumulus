@@ -24,6 +24,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+pub mod assets_api;
 pub mod constants;
 mod weights;
 pub mod xcm_config;
@@ -837,6 +838,18 @@ impl_runtime_apis! {
 		}
 		fn query_length_to_fee(length: u32) -> Balance {
 			TransactionPayment::length_to_fee(length)
+		}
+	}
+
+	impl assets_api::AssetsApi<
+		Block,
+		AccountId,
+		Balance,
+		AssetIdForTrustBackedAssets,
+	> for Runtime
+	{
+		fn account_balances(account: AccountId) -> Vec<(AssetIdForTrustBackedAssets, Balance)> {
+			Assets::account_balances(account)
 		}
 	}
 
