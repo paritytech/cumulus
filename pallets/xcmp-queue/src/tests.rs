@@ -18,7 +18,7 @@ use XcmpMessageFormat::*;
 
 use cumulus_primitives_core::XcmpMessageHandler;
 use frame_support::{assert_noop, assert_ok, assert_storage_noop};
-use mock::{new_test_ext, RuntimeOrigin, Test, XcmpQueue};
+use mock::{new_test_ext, RuntimeOrigin as Origin, Test, XcmpQueue};
 use sp_runtime::traits::BadOrigin;
 use std::iter::once;
 
@@ -156,7 +156,7 @@ fn handle_invalid_data_no_panic() {
 fn service_overweight_unknown() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(
-			XcmpQueue::service_overweight(RuntimeOrigin::root(), 0, Weight::MAX),
+			XcmpQueue::service_overweight(Origin::root(), 0, Weight::MAX),
 			Error::<Test>::BadOverweightIndex,
 		);
 	});
@@ -169,147 +169,140 @@ fn service_overweight_bad_xcm_format() {
 		Overweight::<Test>::insert(0, (ParaId::from(1000), 0, bad_xcm));
 
 		assert_noop!(
-			XcmpQueue::service_overweight(RuntimeOrigin::root(), 0, Weight::MAX),
+			XcmpQueue::service_overweight(Origin::root(), 0, Weight::MAX),
 			Error::<Test>::BadXcm
 		);
 	});
 }*/
 
-// FAIL-CI add queue-suspension
-//#[test]
-//fn suspend_xcm_execution_works() {
-//	new_test_ext().execute_with(|| {
-//		QueueSuspended::<Test>::put(true);
-//
-//		let xcm =
-//			VersionedXcm::from(Xcm::<RuntimeCall>(vec![Instruction::<RuntimeCall>::ClearOrigin]))
-//				.encode();
-//
-//		let data = [ConcatenatedVersionedXcm.encode(), xcm.encode()].concat();
-//		// This should have executed the incoming XCM, because it came from a system parachain
-//		XcmpQueue::handle_xcmp_messages(
-//			once((999.into(), 1, data.as_slice())),
-//			Weight::MAX
-//		);
-//
-//		// This should have queue instead of executing since it comes from a sibling.
-//		XcmpQueue::handle_xcmp_messages(
-//			once((2000.into(), 1, data.as_slice())),
-//			Weight::MAX
-//		);
-//
-//		let queued_xcm = mock::EnqueueToLocalStorage::get(AggregateMessageOrigin::Sibling(ParaId::from(2000)));
-//		assert_eq!(queued_xcm, vec![xcm]);
-//	});
-//}
+#[test]
+fn suspend_xcm_execution_works() {
+	new_test_ext().execute_with(|| {
+		QueueSuspended::<Test>::put(true);
+
+		let xcm = VersionedXcm::<Test>::from(Xcm::<Test>(vec![ClearOrigin])).encode();
+		let data = [ConcatenatedVersionedXcm.encode(), xcm.clone()].concat();
+
+		// This should have executed the incoming XCM, because it came from a system parachain
+		XcmpQueue::handle_xcmp_messages(once((999.into(), 1, data.as_slice())), Weight::MAX);
+
+		// This should have queue instead of executing since it comes from a sibling.
+		XcmpQueue::handle_xcmp_messages(once((2000.into(), 1, data.as_slice())), Weight::MAX);
+
+		let queued_xcm =
+			mock::enqueued_messages(AggregateMessageOrigin::Sibling(ParaId::from(2000)));
+		assert_eq!(queued_xcm, vec![xcm]);
+	});
+}
+
+#[test]
+fn suspend_and_resume_xcm_execution_work() {
+	new_test_ext().execute_with(|| {
+		assert_noop!(XcmpQueue::suspend_xcm_execution(Origin::signed(1)), BadOrigin);
+		assert_ok!(XcmpQueue::suspend_xcm_execution(Origin::root()));
+		assert_noop!(
+			XcmpQueue::suspend_xcm_execution(Origin::root()),
+			Error::<Test>::AlreadySuspended
+		);
+		assert!(QueueSuspended::<Test>::get());
+
+		assert_noop!(XcmpQueue::resume_xcm_execution(Origin::signed(1)), BadOrigin);
+		assert_ok!(XcmpQueue::resume_xcm_execution(Origin::root()));
+		assert_noop!(XcmpQueue::resume_xcm_execution(Origin::root()), Error::<Test>::NotSuspended);
+		assert!(!QueueSuspended::<Test>::get());
+	});
+}
 
 // FAIL-CI reimplement and test back-pressure
 #[test]
 fn update_suspend_threshold_works() {
 	new_test_ext().execute_with(|| {
-		let data: QueueConfigData = <QueueConfig<Test>>::get();
-		assert_eq!(data.suspend_threshold, 2);
-		assert_ok!(XcmpQueue::update_suspend_threshold(RuntimeOrigin::root(), 3));
-		assert_noop!(XcmpQueue::update_suspend_threshold(RuntimeOrigin::signed(2), 5), BadOrigin);
-		let data: QueueConfigData = <QueueConfig<Test>>::get();
+		assert_eq!(<QueueConfig<Test>>::get().suspend_threshold, 200);
+		assert_noop!(XcmpQueue::update_suspend_threshold(Origin::signed(2), 5), BadOrigin);
 
-		assert_eq!(data.suspend_threshold, 3);
+		assert_ok!(XcmpQueue::update_suspend_threshold(Origin::root(), 300));
+		assert_eq!(<QueueConfig<Test>>::get().suspend_threshold, 300);
 	});
 }
 
 #[test]
 fn update_drop_threshold_works() {
 	new_test_ext().execute_with(|| {
-		let data: QueueConfigData = <QueueConfig<Test>>::get();
-		assert_eq!(data.drop_threshold, 5);
-		assert_ok!(XcmpQueue::update_drop_threshold(RuntimeOrigin::root(), 6));
-		assert_noop!(XcmpQueue::update_drop_threshold(RuntimeOrigin::signed(2), 7), BadOrigin);
-		let data: QueueConfigData = <QueueConfig<Test>>::get();
+		assert_eq!(<QueueConfig<Test>>::get().drop_threshold, 500);
+		assert_ok!(XcmpQueue::update_drop_threshold(Origin::root(), 600));
+		assert_noop!(XcmpQueue::update_drop_threshold(Origin::signed(2), 7), BadOrigin);
 
-		assert_eq!(data.drop_threshold, 6);
+		assert_eq!(<QueueConfig<Test>>::get().drop_threshold, 600);
 	});
 }
 
 #[test]
 fn update_resume_threshold_works() {
 	new_test_ext().execute_with(|| {
-		let data: QueueConfigData = <QueueConfig<Test>>::get();
-		assert_eq!(data.resume_threshold, 1);
-		assert_ok!(XcmpQueue::update_resume_threshold(RuntimeOrigin::root(), 2));
-		assert_noop!(XcmpQueue::update_resume_threshold(RuntimeOrigin::signed(7), 3), BadOrigin);
-		let data: QueueConfigData = <QueueConfig<Test>>::get();
+		assert_eq!(<QueueConfig<Test>>::get().resume_threshold, 100);
+		assert_noop!(
+			XcmpQueue::update_resume_threshold(Origin::root(), 0),
+			Error::<Test>::BadQueueConfig
+		);
+		assert_ok!(XcmpQueue::update_resume_threshold(Origin::root(), 110));
+		assert_noop!(XcmpQueue::update_resume_threshold(Origin::signed(7), 3), BadOrigin);
 
-		assert_eq!(data.resume_threshold, 2);
+		assert_eq!(<QueueConfig<Test>>::get().resume_threshold, 110);
 	});
 }
 
 #[test]
 fn update_threshold_weight_works() {
 	new_test_ext().execute_with(|| {
-		let data: QueueConfigData = <QueueConfig<Test>>::get();
-		assert_eq!(data.threshold_weight, Weight::from_ref_time(100_000));
-		assert_ok!(XcmpQueue::update_threshold_weight(
-			RuntimeOrigin::root(),
-			Weight::from_ref_time(10_000)
-		));
+		assert_eq!(<QueueConfig<Test>>::get().threshold_weight, Weight::from_ref_time(100_000));
+		assert_ok!(XcmpQueue::update_threshold_weight(Origin::root(), Weight::from_parts(10, 20)));
 		assert_noop!(
-			XcmpQueue::update_threshold_weight(
-				RuntimeOrigin::signed(5),
-				Weight::from_ref_time(10_000_000),
-			),
+			XcmpQueue::update_threshold_weight(Origin::signed(5), Weight::MAX,),
 			BadOrigin
 		);
-		let data: QueueConfigData = <QueueConfig<Test>>::get();
 
-		assert_eq!(data.threshold_weight, Weight::from_ref_time(10_000));
+		assert_eq!(<QueueConfig<Test>>::get().threshold_weight, Weight::from_parts(10, 20));
 	});
 }
 
 #[test]
 fn update_weight_restrict_decay_works() {
 	new_test_ext().execute_with(|| {
-		let data: QueueConfigData = <QueueConfig<Test>>::get();
-		assert_eq!(data.weight_restrict_decay, Weight::from_ref_time(2));
+		assert_eq!(<QueueConfig<Test>>::get().weight_restrict_decay, Weight::from_ref_time(2));
 		assert_ok!(XcmpQueue::update_weight_restrict_decay(
-			RuntimeOrigin::root(),
+			Origin::root(),
 			Weight::from_ref_time(5)
 		));
 		assert_noop!(
-			XcmpQueue::update_weight_restrict_decay(
-				RuntimeOrigin::signed(6),
-				Weight::from_ref_time(4),
-			),
+			XcmpQueue::update_weight_restrict_decay(Origin::signed(6), Weight::from_ref_time(4),),
 			BadOrigin
 		);
-		let data: QueueConfigData = <QueueConfig<Test>>::get();
 
-		assert_eq!(data.weight_restrict_decay, Weight::from_ref_time(5));
+		assert_eq!(<QueueConfig<Test>>::get().weight_restrict_decay, Weight::from_ref_time(5));
 	});
 }
 
 #[test]
 fn update_xcmp_max_individual_weight() {
 	new_test_ext().execute_with(|| {
-		let data: QueueConfigData = <QueueConfig<Test>>::get();
 		assert_eq!(
-			data.xcmp_max_individual_weight,
+			<QueueConfig<Test>>::get().xcmp_max_individual_weight,
 			Weight::from_parts(20u64 * WEIGHT_REF_TIME_PER_MILLIS, DEFAULT_POV_SIZE),
 		);
 		assert_ok!(XcmpQueue::update_xcmp_max_individual_weight(
-			RuntimeOrigin::root(),
+			Origin::root(),
 			Weight::from_ref_time(30u64 * WEIGHT_REF_TIME_PER_MILLIS)
 		));
 		assert_noop!(
 			XcmpQueue::update_xcmp_max_individual_weight(
-				RuntimeOrigin::signed(3),
+				Origin::signed(3),
 				Weight::from_ref_time(10u64 * WEIGHT_REF_TIME_PER_MILLIS)
 			),
 			BadOrigin
 		);
-		let data: QueueConfigData = <QueueConfig<Test>>::get();
 
 		assert_eq!(
-			data.xcmp_max_individual_weight,
+			<QueueConfig<Test>>::get().xcmp_max_individual_weight,
 			Weight::from_ref_time(30u64 * WEIGHT_REF_TIME_PER_MILLIS)
 		);
 	});

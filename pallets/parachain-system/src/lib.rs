@@ -173,9 +173,7 @@ pub mod pallet {
 
 		/// The message handler that will be invoked when messages are received via XCMP.
 		///
-		/// The messages are dispatched in the order they were relayed by the relay chain. If
-		/// multiple messages were relayed at one block, these will be dispatched in ascending
-		/// order of the sender's para ID.
+		/// Received messages need to be processed immediately but can be queued. This should normally link to the XCMP pallet.
 		type XcmpMessageHandler: XcmpMessageHandler;
 
 		/// The weight we reserve at the beginning of the block for processing XCMP messages.

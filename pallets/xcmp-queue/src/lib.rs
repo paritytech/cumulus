@@ -38,6 +38,7 @@ mod benchmarking;
 pub mod weights;
 pub use weights::WeightInfo;
 
+use bounded_collections::BoundedBTreeSet;
 use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_core::{
 	relay_chain::BlockNumber as RelayBlockNumber, AggregateMessageOrigin, ChannelStatus,
@@ -45,8 +46,8 @@ use cumulus_primitives_core::{
 	XcmpMessageSource,
 };
 use frame_support::{
-	defensive,
-	traits::{EnqueueMessage, EnsureOrigin, Get},
+	defensive, defensive_assert,
+	traits::{EnqueueMessage, EnsureOrigin, Get, OnQueueChanged, ProcessMessage},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight, WeightMeter},
 	BoundedVec,
 };
@@ -62,7 +63,7 @@ pub use pallet::*;
 /// Index used to identify overweight XCMs.
 pub type OverweightIndex = u64;
 pub type XcmOverHrmpMaxLenOf<T> =
-	<<T as Config>::EnqueueXcmOverHrmp as EnqueueMessage<AggregateMessageOrigin>>::MaxMessageLen;
+	<<T as Config>::XcmpEnqueuer as EnqueueMessage<AggregateMessageOrigin>>::MaxMessageLen;
 
 const LOG_TARGET: &str = "xcmp_queue";
 const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
@@ -93,7 +94,15 @@ pub mod pallet {
 		type VersionWrapper: WrapVersion;
 
 		/// Enqueue an inbound horizontal message for later processing.
-		type EnqueueXcmOverHrmp: EnqueueMessage<AggregateMessageOrigin>;
+		type XcmpEnqueuer: EnqueueMessage<AggregateMessageOrigin>;
+
+		type XcmpMessageProcessor: ProcessMessage<Origin = AggregateMessageOrigin>;
+
+		/// The maximum number of inbound XCMP channels that can be suspended simultaneously.
+		///
+		/// Any further channel suspensions will fail and messages may get dropped without further notice. Choosing a high value (1000) is okay; the trade-off that is described in [InboundXcmpSuspended] still applies at that scale.
+		#[pallet::constant]
+		type MaxInboundSuspended: Get<u32>;
 
 		/// The origin that is allowed to resume or suspend the XCMP queue.
 		type ControllerOrigin: EnsureOrigin<Self::RuntimeOrigin>;
@@ -131,9 +140,14 @@ pub mod pallet {
 		pub fn suspend_xcm_execution(origin: OriginFor<T>) -> DispatchResult {
 			T::ControllerOrigin::ensure_origin(origin)?;
 
-			QueueSuspended::<T>::put(true);
-
-			Ok(())
+			QueueSuspended::<T>::try_mutate(|suspended| {
+				if *suspended {
+					Err(Error::<T>::AlreadySuspended.into())
+				} else {
+					*suspended = true;
+					Ok(())
+				}
+			})
 		}
 
 		/// Resumes all XCM executions for the XCMP queue.
@@ -146,9 +160,14 @@ pub mod pallet {
 		pub fn resume_xcm_execution(origin: OriginFor<T>) -> DispatchResult {
 			T::ControllerOrigin::ensure_origin(origin)?;
 
-			QueueSuspended::<T>::put(false);
-
-			Ok(())
+			QueueSuspended::<T>::try_mutate(|suspended| {
+				if !*suspended {
+					Err(Error::<T>::NotSuspended.into())
+				} else {
+					*suspended = false;
+					Ok(())
+				}
+			})
 		}
 
 		/// Overwrites the number of pages of messages which must be in the queue for the other side to be told to
@@ -160,9 +179,11 @@ pub mod pallet {
 		#[pallet::weight((T::WeightInfo::set_config_with_u32(), DispatchClass::Operational,))]
 		pub fn update_suspend_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
-			QueueConfig::<T>::mutate(|data| data.suspend_threshold = new);
 
-			Ok(())
+			QueueConfig::<T>::try_mutate(|data| {
+				data.suspend_threshold = new;
+				data.validate::<T>()
+			})
 		}
 
 		/// Overwrites the number of pages of messages which must be in the queue after which we drop any further
@@ -174,9 +195,11 @@ pub mod pallet {
 		#[pallet::weight((T::WeightInfo::set_config_with_u32(),DispatchClass::Operational,))]
 		pub fn update_drop_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
-			QueueConfig::<T>::mutate(|data| data.drop_threshold = new);
 
-			Ok(())
+			QueueConfig::<T>::try_mutate(|data| {
+				data.drop_threshold = new;
+				data.validate::<T>()
+			})
 		}
 
 		/// Overwrites the number of pages of messages which the queue must be reduced to before it signals that
@@ -188,9 +211,11 @@ pub mod pallet {
 		#[pallet::weight((T::WeightInfo::set_config_with_u32(), DispatchClass::Operational,))]
 		pub fn update_resume_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
-			QueueConfig::<T>::mutate(|data| data.resume_threshold = new);
 
-			Ok(())
+			QueueConfig::<T>::try_mutate(|data| {
+				data.resume_threshold = new;
+				data.validate::<T>()
+			})
 		}
 
 		/// Overwrites the amount of remaining weight under which we stop processing messages.
@@ -201,9 +226,11 @@ pub mod pallet {
 		#[pallet::weight((T::WeightInfo::set_config_with_weight(), DispatchClass::Operational,))]
 		pub fn update_threshold_weight(origin: OriginFor<T>, new: Weight) -> DispatchResult {
 			ensure_root(origin)?;
-			QueueConfig::<T>::mutate(|data| data.threshold_weight = new);
 
-			Ok(())
+			QueueConfig::<T>::try_mutate(|data| {
+				data.threshold_weight = new;
+				data.validate::<T>()
+			})
 		}
 
 		/// Overwrites the speed to which the available weight approaches the maximum weight.
@@ -215,9 +242,11 @@ pub mod pallet {
 		#[pallet::weight((T::WeightInfo::set_config_with_weight(), DispatchClass::Operational,))]
 		pub fn update_weight_restrict_decay(origin: OriginFor<T>, new: Weight) -> DispatchResult {
 			ensure_root(origin)?;
-			QueueConfig::<T>::mutate(|data| data.weight_restrict_decay = new);
 
-			Ok(())
+			QueueConfig::<T>::try_mutate(|data| {
+				data.weight_restrict_decay = new;
+				data.validate::<T>()
+			})
 		}
 
 		/// Overwrite the maximum amount of weight any individual message may consume.
@@ -232,9 +261,11 @@ pub mod pallet {
 			new: Weight,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-			QueueConfig::<T>::mutate(|data| data.xcmp_max_individual_weight = new);
 
-			Ok(())
+			QueueConfig::<T>::try_mutate(|data| {
+				data.xcmp_max_individual_weight = new;
+				data.validate::<T>()
+			})
 		}
 	}
 
@@ -261,12 +292,19 @@ pub mod pallet {
 		BadXcmOrigin,
 		/// Bad XCM data.
 		BadXcm,
+		BadQueueConfig,
+		AlreadySuspended,
+		NotSuspended,
 	}
 
-	/// Status of the inbound XCMP channels.
+	/// The suspended inbound XCMP channels. All others are not suspended.
+	///
+	/// This is a `StorageValue` instead of a `StorageMap` since we expect multiple reads per block to different keys with a one byte payload. The access to `BoundedBTreeSet` will be cached within the block and therefore only included once in the proof size.
+	///
+	/// NOTE: The PoV benchmarking cannot know this and will over-estimate, but the actual proof will be smaller.
 	#[pallet::storage]
-	pub(super) type InboundXcmpStatus<T: Config> =
-		StorageValue<_, Vec<InboundChannelDetails>, ValueQuery>;
+	pub(super) type InboundXcmpSuspended<T: Config> =
+		StorageValue<_, BoundedBTreeSet<ParaId, T::MaxInboundSuspended>, ValueQuery>;
 
 	/// Inbound aggregate XCMP messages. It can only be one per ParaId/block.
 	#[pallet::storage]
@@ -310,25 +348,10 @@ pub mod pallet {
 	pub(super) type QueueSuspended<T: Config> = StorageValue<_, bool, ValueQuery>;
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub enum InboundState {
-	Ok,
-	Suspended,
-}
-
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum OutboundState {
 	Ok,
 	Suspended,
-}
-
-/// Struct containing detailed information about the inbound channel.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
-pub struct InboundChannelDetails {
-	/// The `ParaId` of the parachain that this channel is connected with.
-	sender: ParaId,
-	/// The state of the channel.
-	state: InboundState,
 }
 
 /// Struct containing detailed information about the outbound channel.
@@ -392,15 +415,28 @@ pub struct QueueConfigData {
 impl Default for QueueConfigData {
 	fn default() -> Self {
 		Self {
-			suspend_threshold: 2,
-			drop_threshold: 5,
-			resume_threshold: 1,
+			suspend_threshold: 200,
+			drop_threshold: 500,
+			resume_threshold: 100,
 			threshold_weight: Weight::from_ref_time(100_000),
 			weight_restrict_decay: Weight::from_ref_time(2),
 			xcmp_max_individual_weight: Weight::from_parts(
 				20u64 * WEIGHT_REF_TIME_PER_MILLIS,
 				DEFAULT_POV_SIZE,
 			),
+		}
+	}
+}
+
+impl QueueConfigData {
+	pub fn validate<T: crate::Config>(&self) -> sp_runtime::DispatchResult {
+		if self.resume_threshold < self.suspend_threshold &&
+			self.suspend_threshold <= self.drop_threshold &&
+			self.resume_threshold > 0
+		{
+			Ok(())
+		} else {
+			Err(Error::<T>::BadQueueConfig.into())
 		}
 	}
 }
@@ -486,7 +522,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Sends a signal to the `dest` chain over XCMP. This is guaranteed to be dispatched on this
 	/// block.
-	fn _send_signal(dest: ParaId, signal: ChannelSignal) -> Result<(), ()> {
+	fn send_signal(dest: ParaId, signal: ChannelSignal) -> Result<(), ()> {
 		let mut s = <OutboundXcmpStatus<T>>::get();
 		if let Some(details) = s.iter_mut().find(|item| item.recipient == dest) {
 			details.signals_exist = true;
@@ -562,6 +598,110 @@ impl<T: Config> Pallet<T> {
 		}
 		Ok(encoded_xcms)
 	}
+
+	fn enqueue_xcmp_messages(
+		sender: ParaId,
+		mut xcms: Vec<BoundedVec<u8, XcmOverHrmpMaxLenOf<T>>>,
+		_meter: &mut WeightMeter,
+	) {
+		if xcms.is_empty() {
+			return
+		}
+		// FAIL-CI check these values before setting them.
+		let QueueConfigData { drop_threshold, .. } = <QueueConfig<T>>::get();
+		let fp = T::XcmpEnqueuer::footprint(AggregateMessageOrigin::Sibling(sender));
+		let new_count = xcms.len().saturating_add(fp.count as usize);
+		let to_enqueue = (drop_threshold as usize).saturating_sub(new_count) as usize;
+		if to_enqueue < xcms.len() {
+			// We drop messages here since the back-pressure logic in `on_queue_changed` will suspended the channel.
+			log::error!(
+				"XCMP queue for sibling {:?} is full; dropping {} messages.",
+				sender,
+				xcms.len() - to_enqueue,
+			);
+			xcms.truncate(to_enqueue);
+		}
+
+		if !xcms.is_empty() {
+			T::XcmpEnqueuer::enqueue_messages(
+				xcms.iter().map(|xcm| xcm.as_bounded_slice()),
+				AggregateMessageOrigin::Sibling(sender),
+			);
+		}
+		// FAIL-CI consume weight
+	}
+}
+
+use frame_support::traits::ProcessMessageError;
+
+impl<T: Config> OnQueueChanged<AggregateMessageOrigin> for Pallet<T> {
+	// Suspends/Resumes the queue when certain thresholds are reached.
+	fn on_queue_changed(id: AggregateMessageOrigin, count: u64, _size: u64) {
+		let AggregateMessageOrigin::Sibling(para) = id else {
+			defensive!("XCMP queue should only process messages from sibling parachains.");
+			return;
+		};
+
+		let QueueConfigData { resume_threshold, suspend_threshold, .. } = <QueueConfig<T>>::get();
+		defensive_assert!(resume_threshold < suspend_threshold);
+
+		let mut suspended_channels = <InboundXcmpSuspended<T>>::get();
+		let suspended = suspended_channels.contains(&para);
+
+		if suspended && count <= resume_threshold as u64 {
+			if let Err(err) = Self::send_signal(para, ChannelSignal::Resume) {
+				log::error!("Cannot resume channel from sibling {:?}: {:?}", para, err);
+			} else {
+				suspended_channels.remove(&para);
+				<InboundXcmpSuspended<T>>::put(suspended_channels);
+			}
+		} else if !suspended && count >= suspend_threshold as u64 {
+			log::warn!("XCMP queue for sibling {:?} is full; suspending channel.", para);
+
+			if let Err(err) = Self::send_signal(para, ChannelSignal::Suspend) {
+				// This is an edge-case, but we will not regard the channel as `Suspended` without confirmation. It will just re-try to suspend in the next block.
+				log::error!("Cannot suspend channel from sibling {:?}: {:?}; further messages may be dropped.", para, err);
+			} else if let Err(err) = suspended_channels.try_insert(para) {
+				log::error!("Too many channels suspended; cannot suspend sibling {:?}: {:?}; further messages may be dropped.", para, err);
+			} else {
+				<InboundXcmpSuspended<T>>::put(suspended_channels);
+			}
+		}
+	}
+}
+
+impl<T: Config> ProcessMessage for Pallet<T> {
+	type Origin = AggregateMessageOrigin;
+
+	fn process_message(
+		message: &[u8],
+		origin: Self::Origin,
+		weight_limit: Weight,
+	) -> Result<(bool, Weight), ProcessMessageError> {
+		let AggregateMessageOrigin::Sibling(para) = origin else {
+			defensive!("XCMP queue should only process messages from sibling parachains.");
+			return Err(ProcessMessageError::Unsupported);
+		};
+		let sender_origin = T::ControllerOriginConverter::convert_origin(
+			// FAIL-CI why the into?
+			(Parent, Parachain(para.into())),
+			OriginKind::Superuser,
+		);
+		let is_controller =
+			sender_origin.map_or(false, |origin| T::ControllerOrigin::try_origin(origin).is_ok());
+
+		let pallet_suspended = QueueSuspended::<T>::get();
+		if pallet_suspended && !is_controller {
+			// Nothing to do for this queue; go to the next one.
+			return Err(ProcessMessageError::Yield)
+		}
+
+		T::XcmpMessageProcessor::process_message(
+			message,
+			AggregateMessageOrigin::Sibling(para),
+			weight_limit,
+		)
+	}
 }
 
 impl<T: Config> XcmpMessageHandler for Pallet<T> {
@@ -569,7 +709,7 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 		iter: I,
 		max_weight: Weight,
 	) -> Weight {
-		let meter = WeightMeter::from_limit(max_weight);
+		let mut meter = WeightMeter::from_limit(max_weight);
 		// FAIL-CI how do i return an out-of-weight error?
 
 		for (sender, _sent_at, mut data) in iter {
@@ -596,14 +736,8 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 					},
 				XcmpMessageFormat::ConcatenatedVersionedXcm => {
 					match Self::split_concatenated_xcms(&mut data) {
-						Ok(xcms) if xcms.is_empty() => {
-							// Implementations of `enqueue_messages` may or may not handle empty iters in a suboptimal way, so let's not try it.
-						},
 						Ok(xcms) => {
-							T::EnqueueXcmOverHrmp::enqueue_messages(
-								xcms.iter().map(|xcm| xcm.as_bounded_slice()),
-								AggregateMessageOrigin::Sibling(sender),
-							);
+							Self::enqueue_xcmp_messages(sender, xcms, &mut meter);
 						},
 						Err(()) => {
 							defensive!("Invalid incoming XCMP message data");

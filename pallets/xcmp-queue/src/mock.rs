@@ -202,19 +202,19 @@ parameter_types! {
 
 use frame_support::{traits::Footprint, BoundedSlice};
 
-pub struct EnqueueToLocalStorage;
+pub struct EnqueueToLocalStorage<T>(PhantomData<T>);
 
-impl EnqueueToLocalStorage {
-	pub fn get(origin: AggregateMessageOrigin) -> Vec<Vec<u8>> {
-		EnqueuedMessages::get()
-			.into_iter()
-			.filter(|(o, _)| *o == origin)
-			.map(|(_, m)| m)
-			.collect()
-	}
+pub fn enqueued_messages(origin: AggregateMessageOrigin) -> Vec<Vec<u8>> {
+	EnqueuedMessages::get()
+		.into_iter()
+		.filter(|(o, _)| *o == origin)
+		.map(|(_, m)| m)
+		.collect()
 }
 
-impl EnqueueMessage<AggregateMessageOrigin> for EnqueueToLocalStorage {
+impl<T: OnQueueChanged<AggregateMessageOrigin>> EnqueueMessage<AggregateMessageOrigin>
+	for EnqueueToLocalStorage<T>
+{
 	type MaxMessageLen = sp_core::ConstU32<1024>;
 
 	fn enqueue_message(
@@ -222,8 +222,9 @@ impl EnqueueMessage<AggregateMessageOrigin> for EnqueueToLocalStorage {
 		origin: AggregateMessageOrigin,
 	) {
 		let mut msgs = EnqueuedMessages::get();
-		msgs.push((origin, message.to_vec()));
+		msgs.push((origin.clone(), message.to_vec()));
 		EnqueuedMessages::set(&msgs);
+		T::on_queue_changed(origin, msgs.len() as u64, 0);
 	}
 
 	fn enqueue_messages<'a>(
@@ -235,12 +236,14 @@ impl EnqueueMessage<AggregateMessageOrigin> for EnqueueToLocalStorage {
 			msgs.push((origin.clone(), message.to_vec()));
 		}
 		EnqueuedMessages::set(&msgs);
+		T::on_queue_changed(origin, msgs.len() as u64, 0);
 	}
 
 	fn sweep_queue(origin: AggregateMessageOrigin) {
 		let mut msgs = EnqueuedMessages::get();
 		msgs.retain(|(o, _)| o != &origin);
 		EnqueuedMessages::set(&msgs);
+		T::on_queue_changed(origin, msgs.len() as u64, 0); // FAIL-CI not 0 here
 	}
 
 	fn footprint(origin: AggregateMessageOrigin) -> Footprint {
@@ -261,7 +264,10 @@ impl Config for Test {
 	type XcmExecutor = xcm_executor::XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = ();
-	type EnqueueXcmOverHrmp = EnqueueToLocalStorage;
+	type XcmpEnqueuer = EnqueueToLocalStorage<Pallet<Test>>;
+	type XcmpMessageProcessor =
+		pallet_message_queue::mock_helpers::NoopMessageProcessor<AggregateMessageOrigin>;
+	type MaxInboundSuspended = sp_core::ConstU32<1_000>;
 	type ControllerOrigin = EnsureRoot<AccountId>;
 	type ControllerOriginConverter = SystemParachainAsSuperuser<RuntimeOrigin>;
 	type WeightInfo = ();
