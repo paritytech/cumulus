@@ -103,8 +103,7 @@ impl pallet_referenda::Config<AmbassadorReferendaInstance> for Runtime {
 }
 
 parameter_types! {
-	// TODO remove "+10", use [ranks::HEAD_AMBASSADOR] instead. To make this possible the benches
-	// of pallet_ranked_collective should be improved.
+	// The benches requires max member rank to be at least 10. This rank is available only for root.
 	pub const MaxAmbassadorRank: pallet_ranked_collective::Rank = ranks::HEAD_AMBASSADOR + 10;
 }
 
