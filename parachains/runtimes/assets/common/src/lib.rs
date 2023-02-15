@@ -23,7 +23,7 @@ use xcm::latest::MultiLocation;
 use xcm_builder::AsPrefixedGeneralIndex;
 use xcm_executor::traits::{Convert, JustTry};
 
-/// [`MultiLocation`] converter for [`TrustBackedAssets`]'s [`AssetIdForTrustBackedAssets`]
+/// [`MultiLocation`] vs [`AssetIdForTrustBackedAssets`] converter for `TrustBackedAssets`
 pub type AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation> =
 	AsPrefixedGeneralIndex<TrustBackedAssetsPalletLocation, AssetIdForTrustBackedAssets, JustTry>;
 
