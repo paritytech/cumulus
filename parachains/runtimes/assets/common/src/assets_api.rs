@@ -18,8 +18,16 @@
 
 //! Runtime API definition for assets.
 
-use codec::Codec;
+use codec::{Codec, Decode, Encode};
+use frame_support::RuntimeDebug;
 use sp_std::vec::Vec;
+
+/// The possible errors that can happen querying the storage of assets.
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+pub enum AssetsAccessError {
+	/// `MultiLocation` to `AssetId`/`ClassId` conversion failed.
+	AssetIdConversionFailed,
+}
 
 sp_api::decl_runtime_apis! {
 	pub trait AssetsApi<AccountId, AssetBalance, AssetId>
@@ -29,6 +37,6 @@ sp_api::decl_runtime_apis! {
 		AssetId: Codec,
 	{
 		/// Returns the list of `AssetId`s and corresponding balance that an `AccountId` has.
-		fn account_balances(account: AccountId) -> Vec<(AssetId, AssetBalance)>;
+		fn account_balances(account: AccountId) -> Result<Vec<(AssetId, AssetBalance)>, AssetsAccessError>;
 	}
 }

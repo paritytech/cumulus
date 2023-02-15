@@ -34,12 +34,11 @@ use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
-	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, AsPrefixedGeneralIndex,
-	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FungiblesAdapter, IsConcrete, LocalMint,
-	NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
-	WithComputedOrigin,
+	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter,
+	EnsureXcmOrigin, FungiblesAdapter, IsConcrete, LocalMint, NativeAsset, ParentAsSuperuser,
+	ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+	UsingComponents, WeightInfoBounds, WithComputedOrigin,
 };
 use xcm_executor::{
 	traits::{JustTry, WithOriginFilter},
@@ -84,6 +83,10 @@ pub type CurrencyTransactor = CurrencyAdapter<
 	(),
 >;
 
+/// `AssetId` converter for [`AssetIdForTrustBackedAssets`]
+pub type AssetIdForTrustBackedAssetsConvert =
+	assets_common::AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>;
+
 /// Means for transacting assets besides the native currency on this chain.
 pub type FungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
@@ -92,11 +95,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	ConvertedConcreteId<
 		AssetIdForTrustBackedAssets,
 		Balance,
-		AsPrefixedGeneralIndex<
-			TrustBackedAssetsPalletLocation,
-			AssetIdForTrustBackedAssets,
-			JustTry,
-		>,
+		AssetIdForTrustBackedAssetsConvert,
 		JustTry,
 	>,
 	// Convert an XCM MultiLocation into a local account id:
@@ -300,11 +299,7 @@ impl xcm_executor::Config for XcmConfig {
 			ConvertedConcreteId<
 				AssetIdForTrustBackedAssets,
 				Balance,
-				AsPrefixedGeneralIndex<
-					TrustBackedAssetsPalletLocation,
-					AssetIdForTrustBackedAssets,
-					JustTry,
-				>,
+				AssetIdForTrustBackedAssetsConvert,
 				JustTry,
 			>,
 			Assets,

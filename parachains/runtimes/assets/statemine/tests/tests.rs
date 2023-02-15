@@ -2,17 +2,18 @@ use asset_test_utils::{ExtBuilder, RuntimeHelper};
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
 	assert_noop, assert_ok,
-	traits::PalletInfo,
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
 use parachains_common::{AccountId, AuraId};
-use statemine_runtime::xcm_config::AssetFeeAsExistentialDepositMultiplierFeeCharger;
+use statemine_runtime::xcm_config::{
+	AssetFeeAsExistentialDepositMultiplierFeeCharger, AssetIdForTrustBackedAssetsConvert,
+};
 pub use statemine_runtime::{
 	constants::fee::WeightToFee, xcm_config::XcmConfig, Assets, Balances, ExistentialDeposit,
 	Runtime, SessionKeys, System,
 };
 use xcm::latest::prelude::*;
-use xcm_executor::traits::WeightTrader;
+use xcm_executor::traits::{Convert, WeightTrader};
 
 pub const ALICE: [u8; 32] = [1u8; 32];
 
@@ -47,16 +48,8 @@ fn test_asset_xcm_trader() {
 			));
 
 			// get asset id as multilocation
-			let asset_multilocation = MultiLocation::new(
-				0,
-				X2(
-					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
-							as u8,
-					),
-					GeneralIndex(local_asset_id.into()),
-				),
-			);
+			let asset_multilocation =
+				AssetIdForTrustBackedAssetsConvert::reverse_ref(local_asset_id).unwrap();
 
 			// Set Alice as block author, who will receive fees
 			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
@@ -94,12 +87,15 @@ fn test_asset_xcm_trader() {
 
 			// Make sure author(Alice) has received the amount
 			assert_eq!(
-				Assets::balance(1, AccountId::from(ALICE)),
+				Assets::balance(local_asset_id, AccountId::from(ALICE)),
 				minimum_asset_balance + asset_amount_needed
 			);
 
 			// We also need to ensure the total supply increased
-			assert_eq!(Assets::total_supply(1), minimum_asset_balance + asset_amount_needed);
+			assert_eq!(
+				Assets::total_supply(local_asset_id),
+				minimum_asset_balance + asset_amount_needed
+			);
 		});
 }
 
@@ -140,16 +136,7 @@ fn test_asset_xcm_trader_with_refund() {
 			// We are going to buy 4e9 weight
 			let bought = Weight::from_ref_time(4_000_000_000u64);
 
-			let asset_multilocation = MultiLocation::new(
-				0,
-				X2(
-					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
-							as u8,
-					),
-					GeneralIndex(1),
-				),
-			);
+			let asset_multilocation = AssetIdForTrustBackedAssetsConvert::reverse_ref(1).unwrap();
 
 			// lets calculate amount needed
 			let amount_bought = WeightToFee::weight_to_fee(&bought);
@@ -218,16 +205,7 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 			// We are going to buy small amount
 			let bought = Weight::from_ref_time(500_000_000u64);
 
-			let asset_multilocation = MultiLocation::new(
-				0,
-				X2(
-					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
-							as u8,
-					),
-					GeneralIndex(1),
-				),
-			);
+			let asset_multilocation = AssetIdForTrustBackedAssetsConvert::reverse_ref(1).unwrap();
 
 			let amount_bought = WeightToFee::weight_to_fee(&bought);
 
@@ -278,16 +256,7 @@ fn test_that_buying_ed_refund_does_not_refund() {
 			// We are gonna buy ED
 			let bought = Weight::from_ref_time(ExistentialDeposit::get().try_into().unwrap());
 
-			let asset_multilocation = MultiLocation::new(
-				0,
-				X2(
-					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
-							as u8,
-					),
-					GeneralIndex(1),
-				),
-			);
+			let asset_multilocation = AssetIdForTrustBackedAssetsConvert::reverse_ref(1).unwrap();
 
 			let amount_bought = WeightToFee::weight_to_fee(&bought);
 
@@ -362,16 +331,7 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 			// lets calculate amount needed
 			let asset_amount_needed = WeightToFee::weight_to_fee(&bought);
 
-			let asset_multilocation = MultiLocation::new(
-				0,
-				X2(
-					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
-							as u8,
-					),
-					GeneralIndex(1),
-				),
-			);
+			let asset_multilocation = AssetIdForTrustBackedAssetsConvert::reverse_ref(1).unwrap();
 
 			let asset: MultiAsset = (asset_multilocation, asset_amount_needed).into();
 
@@ -386,5 +346,56 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 
 			// We also need to ensure the total supply NOT increased
 			assert_eq!(Assets::total_supply(1), minimum_asset_balance);
+		});
+}
+
+#[test]
+fn test_assets_balances_api_works() {
+	use assets_common::assets_api::runtime_decl_for_AssetsApi::AssetsApi;
+
+	ExtBuilder::<Runtime>::default()
+		.with_collators(vec![AccountId::from(ALICE)])
+		.with_session_keys(vec![(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+		)])
+		.build()
+		.execute_with(|| {
+			let local_asset_id = 1;
+
+			// check before
+			assert_eq!(Assets::balance(local_asset_id, AccountId::from(ALICE)), 0);
+			assert!(Runtime::account_balances(AccountId::from(ALICE)).unwrap().is_empty());
+
+			// We need root origin to create a sufficient asset
+			let minimum_asset_balance = 3333333_u128;
+			assert_ok!(Assets::force_create(
+				RuntimeHelper::<Runtime>::root_origin(),
+				local_asset_id.into(),
+				AccountId::from(ALICE).into(),
+				true,
+				minimum_asset_balance
+			));
+
+			// We first mint enough asset for the account to exist for assets
+			assert_ok!(Assets::mint(
+				RuntimeHelper::<Runtime>::origin_of(AccountId::from(ALICE)),
+				local_asset_id.into(),
+				AccountId::from(ALICE).into(),
+				minimum_asset_balance
+			));
+
+			// check after
+			assert_eq!(
+				Assets::balance(local_asset_id, AccountId::from(ALICE)),
+				minimum_asset_balance
+			);
+			let result = Runtime::account_balances(AccountId::from(ALICE)).unwrap();
+			assert_eq!(result.len(), 1);
+			assert!(result.iter().any(|asset| asset.eq(&(
+				AssetIdForTrustBackedAssetsConvert::reverse_ref(local_asset_id).unwrap(),
+				minimum_asset_balance
+			))));
 		});
 }
