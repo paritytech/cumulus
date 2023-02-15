@@ -56,6 +56,7 @@ parameter_types! {
 	pub TrustBackedAssetsPalletLocation: MultiLocation =
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
+	pub CollectivesLocation: MultiLocation = MultiLocation::new(1, Parachain(1001));
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used

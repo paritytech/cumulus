@@ -93,7 +93,7 @@ use parachains_common::{
 	Signature, StatemintAuraId as AuraId, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
-use xcm_config::{DotLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
+use xcm_config::{CollectivesLocation, DotLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -486,7 +486,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 		EnsureRoot<AccountId>,
 		EnsureXcm<(
 			IsMajorityOfBody<DotLocation, ExecutiveBody>,
-			IsVoiceOfBody<DotLocation, FellowsBodyId>,// todo Collectives locations
+			IsVoiceOfBody<CollectivesLocation, FellowsBodyId>,
 		)>,
 	>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
