@@ -119,6 +119,7 @@ else
       --slurpfile srtool_polkadot_collectives %s \
       --slurpfile srtool_bridge_hub_rococo %s \
       --slurpfile srtool_bridge_hub_kusama %s \
+      --slurpfile srtool_bridge_hub_polkadot %s \
       -n \'{
             cumulus: $cumulus[0],
             substrate: $substrate[0],
