@@ -75,4 +75,8 @@ impl<T: frame_system::Config> pallet_utility::WeightInfo for WeightInfo<T> {
 			// Standard Error: 1_690
 			.saturating_add(Weight::from_ref_time(4_374_663).saturating_mul(c.into()))
 	}
+	fn ensure_dispatch_as() -> Weight {
+		// Minimum execution time: 14_418 nanoseconds.
+		Weight::from_ref_time(14_786_000)
+	}
 }
