@@ -15,12 +15,15 @@
 
 pub mod account {
 	use frame_support::PalletId;
-	use sp_runtime::AccountId32;
 
 	/// Relay Chain treasury pallet id, used to convert into AccountId
 	pub const RELAY_TREASURY_PALL_ID: PalletId = PalletId(*b"py/trsry");
-	/// account used to temporarily deposit slashed imbalance before teleporting
-	pub const SLASHED_IMBALANCE_ACC_ID: AccountId32 = AccountId32::new([7u8; 32]);
+	/// Alliance pallet id.
+	/// Used as an account to temporarily deposit slashed imbalance before teleporting.
+	pub const ALLIANCE_PALLET_ID: PalletId = PalletId(*b"py/allia");
+	/// Referenda pallet id.
+	/// Used as an account to temporarily deposit slashed imbalance before teleporting.
+	pub const REFERENDA_PALLET_ID: PalletId = PalletId(*b"py/refer");
 }
 
 pub mod currency {
