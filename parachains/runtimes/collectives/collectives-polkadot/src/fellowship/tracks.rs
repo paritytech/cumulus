@@ -269,7 +269,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 	}
 	fn track_for(id: &Self::RuntimeOrigin) -> Result<Self::Id, ()> {
 		use super::origins::Origin;
-		use constants::*;
+		use constants as tracks;
 
 		#[cfg(feature = "runtime-benchmarks")]
 		{
@@ -282,16 +282,16 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 		}
 
 		match Origin::try_from(id.clone()) {
-			Ok(Origin::FellowshipInitiates) => Ok(CANDIDATES),
-			Ok(Origin::Fellowship1Dan) => Ok(MEMBERS),
-			Ok(Origin::Fellowship2Dan) => Ok(PROFICIENTS),
-			Ok(Origin::Fellowship3Dan) | Ok(Origin::Fellows) => Ok(FELLOWS),
-			Ok(Origin::Fellowship4Dan) => Ok(SENIOR_FELLOWS),
-			Ok(Origin::Fellowship5Dan) | Ok(Origin::FellowshipExperts) => Ok(EXPERTS),
-			Ok(Origin::Fellowship6Dan) => Ok(SENIOR_EXPERTS),
-			Ok(Origin::Fellowship7Dan | Origin::FellowshipMasters) => Ok(MASTERS),
-			Ok(Origin::Fellowship8Dan) => Ok(SENIOR_MASTERS),
-			Ok(Origin::Fellowship9Dan) => Ok(GRAND_MASTERS),
+			Ok(Origin::FellowshipInitiates) => Ok(tracks::CANDIDATES),
+			Ok(Origin::Fellowship1Dan) => Ok(tracks::MEMBERS),
+			Ok(Origin::Fellowship2Dan) => Ok(tracks::PROFICIENTS),
+			Ok(Origin::Fellowship3Dan) | Ok(Origin::Fellows) => Ok(tracks::FELLOWS),
+			Ok(Origin::Fellowship4Dan) => Ok(tracks::SENIOR_FELLOWS),
+			Ok(Origin::Fellowship5Dan) | Ok(Origin::FellowshipExperts) => Ok(tracks::EXPERTS),
+			Ok(Origin::Fellowship6Dan) => Ok(tracks::SENIOR_EXPERTS),
+			Ok(Origin::Fellowship7Dan | Origin::FellowshipMasters) => Ok(tracks::MASTERS),
+			Ok(Origin::Fellowship8Dan) => Ok(tracks::SENIOR_MASTERS),
+			Ok(Origin::Fellowship9Dan) => Ok(tracks::GRAND_MASTERS),
 			_ => Err(()),
 		}
 	}
