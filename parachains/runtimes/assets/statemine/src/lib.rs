@@ -24,7 +24,6 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-pub mod assets_api;
 pub mod constants;
 mod weights;
 pub mod xcm_config;
@@ -65,7 +64,7 @@ use parachains_common::{
 	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
-use xcm_config::{KsmLocation, XcmConfig};
+use xcm_config::{AssetIdForTrustBackedAssetsConvert, KsmLocation, XcmConfig};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -832,15 +831,17 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl assets_api::AssetsApi<
+	impl assets_common::assets_api::AssetsApi<
 		Block,
 		AccountId,
 		Balance,
-		AssetIdForTrustBackedAssets,
+		xcm::latest::MultiLocation,
 	> for Runtime
 	{
-		fn account_balances(account: AccountId) -> Vec<(AssetIdForTrustBackedAssets, Balance)> {
-			Assets::account_balances(account)
+		fn account_balances(account: AccountId) -> Result<Vec<(xcm::latest::MultiLocation, Balance)>, assets_common::assets_api::AssetsAccessError> {
+			Ok([
+				assets_common::convert_asset_id::<_, _, AssetIdForTrustBackedAssetsConvert>(Assets::account_balances(account))?,
+			].concat())
 		}
 	}
 
