@@ -22,7 +22,7 @@ use codec::{Codec, Decode, Encode};
 use frame_support::RuntimeDebug;
 use sp_std::vec::Vec;
 
-/// The possible errors that can happen querying the storage of a assets.
+/// The possible errors that can happen querying the storage of assets.
 #[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug)]
 pub enum AssetsAccessError {
 	/// `MultiLocation` to `AssetId`/`ClassId` conversion failed.
