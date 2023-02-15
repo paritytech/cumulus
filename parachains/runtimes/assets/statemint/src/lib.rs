@@ -348,7 +348,6 @@ impl Default for ProxyType {
 impl InstanceFilter<RuntimeCall> for ProxyType {
 	fn filter(&self, c: &RuntimeCall) -> bool {
 		match self {
-			// todo update
 			ProxyType::Any => true,
 			ProxyType::NonTransfer => !matches!(
 				c,
@@ -487,7 +486,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 		EnsureRoot<AccountId>,
 		EnsureXcm<(
 			IsMajorityOfBody<DotLocation, ExecutiveBody>,
-			IsVoiceOfBody<DotLocation, FellowsBodyId>,
+			IsVoiceOfBody<DotLocation, FellowsBodyId>,// todo Collectives locations
 		)>,
 	>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
