@@ -216,8 +216,7 @@ fn build_block<B: InitBlockBuilder>(
 ) -> Block {
 	let builder = match at {
 		Some(at) => match timestamp {
-			Some(ts) =>
-				builder.init_block_builder_with_timestamp(at, None, Default::default(), ts),
+			Some(ts) => builder.init_block_builder_with_timestamp(at, None, Default::default(), ts),
 			None => builder.init_block_builder_at(at, None, Default::default()),
 		},
 		None => builder.init_block_builder(None, Default::default()),
@@ -424,8 +423,7 @@ fn follow_finalized_does_not_stop_on_unknown_block() {
 	let block = build_and_import_block(client.clone(), false);
 
 	let unknown_block = {
-		let block_builder =
-			client.init_block_builder_at(block.hash(), None, Default::default());
+		let block_builder = client.init_block_builder_at(block.hash(), None, Default::default());
 		block_builder.build().unwrap().block
 	};
 
@@ -474,8 +472,7 @@ fn follow_new_best_sets_best_after_it_is_imported() {
 	let block = build_and_import_block(client.clone(), false);
 
 	let unknown_block = {
-		let block_builder =
-			client.init_block_builder_at(block.hash(), None, Default::default());
+		let block_builder = client.init_block_builder_at(block.hash(), None, Default::default());
 		block_builder.build().unwrap().block
 	};
 

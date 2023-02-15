@@ -123,11 +123,7 @@ impl InitBlockBuilder for Client {
 		relay_sproof_builder: RelayStateSproofBuilder,
 	) -> BlockBuilder<Block, Client, Backend> {
 		let chain_info = self.chain_info();
-		self.init_block_builder_at(
-			chain_info.best_hash,
-			validation_data,
-			relay_sproof_builder,
-		)
+		self.init_block_builder_at(chain_info.best_hash, validation_data, relay_sproof_builder)
 	}
 
 	fn init_block_builder_at(

@@ -19,9 +19,8 @@ use std::{pin::Pin, sync::Arc, time::Duration};
 use async_trait::async_trait;
 use cumulus_primitives_core::{
 	relay_chain::{
-		runtime_api::ParachainHost, Block as PBlock, CommittedCandidateReceipt,
-		Hash as PHash, Header as PHeader, InboundHrmpMessage, OccupiedCoreAssumption, SessionIndex,
-		ValidatorId,
+		runtime_api::ParachainHost, Block as PBlock, CommittedCandidateReceipt, Hash as PHash,
+		Header as PHeader, InboundHrmpMessage, OccupiedCoreAssumption, SessionIndex, ValidatorId,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
@@ -129,10 +128,7 @@ where
 		hash: PHash,
 		para_id: ParaId,
 	) -> RelayChainResult<Option<CommittedCandidateReceipt>> {
-		Ok(self
-			.full_client
-			.runtime_api()
-			.candidate_pending_availability(hash, para_id)?)
+		Ok(self.full_client.runtime_api().candidate_pending_availability(hash, para_id)?)
 	}
 
 	async fn session_index_for_child(&self, hash: PHash) -> RelayChainResult<SessionIndex> {

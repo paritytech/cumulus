@@ -80,11 +80,7 @@ where
 			let inherent_res = self
 				.client
 				.runtime_api()
-				.check_inherents(
-					*block.header().parent_hash(),
-					block.clone(),
-					inherent_data,
-				)
+				.check_inherents(*block.header().parent_hash(), block.clone(), inherent_data)
 				.map_err(|e| format!("{:?}", e))?;
 
 			if !inherent_res.ok() {
