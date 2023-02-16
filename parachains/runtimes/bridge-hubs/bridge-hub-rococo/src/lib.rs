@@ -524,8 +524,7 @@ impl pallet_bridge_relayers::Config for Runtime {
 	type Reward = Balance;
 	type PaymentProcedure =
 		bp_relayers::PayLaneRewardFromAccount<pallet_balances::Pallet<Runtime>, AccountId>;
-	// TODO:check-parameter - weights for relayer
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_bridge_relayers::WeightInfo<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
