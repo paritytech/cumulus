@@ -24,8 +24,9 @@ pub use origins::{
 };
 
 use crate::{
-	constants, impls::ToParentTreasury, AccountId, Balance, Balances, BlockNumber, DotLocation,
-	FellowshipReferenda, Preimage, Runtime, RuntimeCall, RuntimeEvent, Scheduler, DAYS,
+	constants, impls::ToParentTreasury, weights, AccountId, Balance, Balances, BlockNumber,
+	DotLocation, FellowshipReferenda, Preimage, Runtime, RuntimeCall, RuntimeEvent, Scheduler,
+	DAYS,
 };
 use frame_support::{
 	parameter_types,
@@ -75,7 +76,7 @@ impl pallet_fellowship_origins::Config for Runtime {}
 pub type FellowshipReferendaInstance = pallet_referenda::Instance1;
 
 impl pallet_referenda::Config<FellowshipReferendaInstance> for Runtime {
-	type WeightInfo = (); // todo
+	type WeightInfo = weights::pallet_referenda::WeightInfo<Runtime>;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type Scheduler = Scheduler;
@@ -108,7 +109,7 @@ morph_types! {
 // IsMajorityOfBody<KsmLocation, ExecutiveBody>,
 
 impl pallet_ranked_collective::Config<FellowshipCollectiveInstance> for Runtime {
-	type WeightInfo = (); // todo
+	type WeightInfo = weights::pallet_ranked_collective::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
 	// Promotion is by any of:
 	// - Root can demote arbitrarily.

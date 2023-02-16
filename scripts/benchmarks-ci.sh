@@ -38,6 +38,10 @@ elif [[ $runtimeName == "collectives-polkadot" ]]; then
 		pallet_utility
 		cumulus_pallet_xcmp_queue
 		frame_system
+		pallet_scheduler
+		pallet_preimage
+		pallet_referenda
+		pallet_ranked_collective
 	)
 elif [[ $runtimeName == "bridge-hub-kusama" ]] || [[ $runtimeName == "bridge-hub-polkadot" ]]; then
 	pallets=(
