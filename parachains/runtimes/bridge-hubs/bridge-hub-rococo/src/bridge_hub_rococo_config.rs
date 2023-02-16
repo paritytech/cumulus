@@ -185,7 +185,6 @@ mod tests {
 			BridgeGrandpaWococoInstance,
 			WithBridgeHubWococoMessagesInstance,
 			WithBridgeHubWococoMessageBridge,
-			bp_rococo::Rococo,
 		>(AssertCompleteBridgeConstants {
 			this_chain_constants: AssertChainConstants {
 				block_length: bp_bridge_hub_rococo::BlockLength::get(),
