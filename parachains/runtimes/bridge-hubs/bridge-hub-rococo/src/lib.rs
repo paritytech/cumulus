@@ -518,6 +518,16 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 	>;
 }
 
+/// Allows collect and claim rewards for relayers
+impl pallet_bridge_relayers::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Reward = Balance;
+	type PaymentProcedure =
+		bp_relayers::PayLaneRewardFromAccount<pallet_balances::Pallet<Runtime>, AccountId>;
+	// TODO:check-parameter - weights for relayer
+	type WeightInfo = ();
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -568,6 +578,8 @@ construct_runtime!(
 		BridgeRococoGrandpa: pallet_bridge_grandpa::<Instance2>::{Pallet, Call, Storage, Config<T>} = 43,
 		BridgeRococoParachain: pallet_bridge_parachains::<Instance2>::{Pallet, Call, Storage, Event<T>} = 44,
 		BridgeRococoMessages: pallet_bridge_messages::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 45,
+
+		BridgeRelayers: pallet_bridge_relayers::{Pallet, Call, Storage, Event<T>} = 47,
 	}
 );
 
@@ -610,6 +622,8 @@ mod benches {
 		[pallet_bridge_grandpa, BridgeRococoGrandpa]
 		[pallet_bridge_parachains, BridgeParachainsBench::<Runtime, BridgeParachainRococoInstance>]
 		[pallet_bridge_messages, BridgeMessagesBench::<Runtime, WithBridgeHubRococoMessagesInstance>]
+		// Bridge relayer pallets
+		[pallet_bridge_relayers, BridgeRelayersBench::<Runtime>]
 	);
 }
 
@@ -845,6 +859,7 @@ impl_runtime_apis! {
 
 			use pallet_bridge_parachains::benchmarking::Pallet as BridgeParachainsBench;
 			use pallet_bridge_messages::benchmarking::Pallet as BridgeMessagesBench;
+			use pallet_bridge_relayers::benchmarking::Pallet as BridgeRelayersBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
@@ -954,9 +969,9 @@ impl_runtime_apis! {
 			};
 
 			impl BridgeMessagesConfig<WithBridgeHubWococoMessagesInstance> for Runtime {
-				fn is_relayer_rewarded(_: &Self::AccountId) -> bool {
-					// TODO: implement me properly
-					true
+				fn is_relayer_rewarded(relayer: &Self::AccountId) -> bool {
+					let bench_lane_id = <Self as BridgeMessagesConfig<WithBridgeHubWococoMessagesInstance>>::bench_lane_id();
+					pallet_bridge_relayers::Pallet::<Runtime>::relayer_reward(relayer, &bench_lane_id).is_some()
 				}
 
 				fn prepare_message_proof(
@@ -981,9 +996,9 @@ impl_runtime_apis! {
 			}
 
 			impl BridgeMessagesConfig<WithBridgeHubRococoMessagesInstance> for Runtime {
-				fn is_relayer_rewarded(_: &Self::AccountId) -> bool {
-					// TODO: implement me properly
-					true
+				fn is_relayer_rewarded(relayer: &Self::AccountId) -> bool {
+					let bench_lane_id = <Self as BridgeMessagesConfig<WithBridgeHubRococoMessagesInstance>>::bench_lane_id();
+					pallet_bridge_relayers::Pallet::<Runtime>::relayer_reward(relayer, &bench_lane_id).is_some()
 				}
 
 				fn prepare_message_proof(
@@ -1011,6 +1026,10 @@ impl_runtime_apis! {
 			use pallet_bridge_parachains::benchmarking::{
 				Config as BridgeParachainsConfig,
 				Pallet as BridgeParachainsBench,
+			};
+			use pallet_bridge_relayers::benchmarking::{
+				Pallet as BridgeRelayersBench,
+				Config as BridgeRelayersConfig,
 			};
 
 			impl BridgeParachainsConfig<BridgeParachainWococoInstance> for Runtime {
@@ -1058,6 +1077,20 @@ impl_runtime_apis! {
 						parachain_head_size,
 						proof_size,
 					)
+				}
+			}
+
+			impl BridgeRelayersConfig for Runtime {
+				fn prepare_environment(
+					lane: bp_messages::LaneId,
+					reward: Balance,
+				) {
+					use frame_support::traits::fungible::Mutate;
+					let lane_rewards_account = bp_relayers::PayLaneRewardFromAccount::<
+						Balances,
+						AccountId
+					>::lane_rewards_account(lane);
+					Balances::mint_into(&lane_rewards_account, reward).unwrap();
 				}
 			}
 

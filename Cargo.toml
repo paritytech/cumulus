@@ -8,6 +8,7 @@ members = [
 	"bridges/modules/parachains",
 	"bridges/modules/relayers",
 	"bridges/primitives/messages",
+	"bridges/primitives/relayers",
 	"bridges/primitives/runtime",
 	"bridges/primitives/chain-bridge-hub-rococo",
 	"bridges/primitives/chain-bridge-hub-wococo",

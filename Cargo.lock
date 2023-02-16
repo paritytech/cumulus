@@ -1009,6 +1009,7 @@ dependencies = [
  "bp-messages",
  "bp-parachains",
  "bp-polkadot-core",
+ "bp-relayers",
  "bp-rococo",
  "bp-runtime",
  "bp-wococo",

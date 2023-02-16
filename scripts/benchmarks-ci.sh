@@ -67,6 +67,7 @@ elif [[ $runtimeName == "bridge-hub-rococo" ]]; then
                 pallet_bridge_grandpa
                 pallet_bridge_parachains
                 pallet_bridge_messages
+                pallet_bridge_relayers
 	)
 else
 	echo "$runtimeName pallet list not found in benchmarks-ci.sh"
