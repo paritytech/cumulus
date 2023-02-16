@@ -43,9 +43,10 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 	type Id = TrackId;
 	type RuntimeOrigin = <RuntimeOrigin as frame_support::traits::OriginTrait>::PalletsOrigin;
 	fn tracks() -> &'static [(Self::Id, pallet_referenda::TrackInfo<Balance, BlockNumber>)] {
+		use constants as tracks;
 		static DATA: [(TrackId, pallet_referenda::TrackInfo<Balance, BlockNumber>); 10] = [
 			(
-				constants::CANDIDATES,
+				tracks::CANDIDATES,
 				pallet_referenda::TrackInfo {
 					name: "candidates",
 					max_deciding: 10,
@@ -67,7 +68,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				},
 			),
 			(
-				constants::MEMBERS,
+				tracks::MEMBERS,
 				pallet_referenda::TrackInfo {
 					name: "members",
 					max_deciding: 10,
@@ -89,7 +90,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				},
 			),
 			(
-				constants::PROFICIENTS,
+				tracks::PROFICIENTS,
 				pallet_referenda::TrackInfo {
 					name: "proficients",
 					max_deciding: 10,
@@ -111,7 +112,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				},
 			),
 			(
-				constants::FELLOWS,
+				tracks::FELLOWS,
 				pallet_referenda::TrackInfo {
 					name: "fellows",
 					max_deciding: 10,
@@ -133,7 +134,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				},
 			),
 			(
-				constants::SENIOR_FELLOWS,
+				tracks::SENIOR_FELLOWS,
 				pallet_referenda::TrackInfo {
 					name: "senior fellows",
 					max_deciding: 10,
@@ -155,7 +156,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				},
 			),
 			(
-				constants::EXPERTS,
+				tracks::EXPERTS,
 				pallet_referenda::TrackInfo {
 					name: "experts",
 					max_deciding: 10,
@@ -177,7 +178,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				},
 			),
 			(
-				constants::SENIOR_EXPERTS,
+				tracks::SENIOR_EXPERTS,
 				pallet_referenda::TrackInfo {
 					name: "senior experts",
 					max_deciding: 10,
@@ -199,7 +200,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				},
 			),
 			(
-				constants::MASTERS,
+				tracks::MASTERS,
 				pallet_referenda::TrackInfo {
 					name: "masters",
 					max_deciding: 10,
@@ -221,7 +222,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				},
 			),
 			(
-				constants::SENIOR_MASTERS,
+				tracks::SENIOR_MASTERS,
 				pallet_referenda::TrackInfo {
 					name: "senior masters",
 					max_deciding: 10,
@@ -243,7 +244,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				},
 			),
 			(
-				constants::GRAND_MASTERS,
+				tracks::GRAND_MASTERS,
 				pallet_referenda::TrackInfo {
 					name: "grand masters",
 					max_deciding: 10,
@@ -277,7 +278,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 			// It is important that this is not available in production!
 			let root: Self::RuntimeOrigin = frame_system::RawOrigin::Root.into();
 			if &root == id {
-				return Ok(GRAND_MASTERS)
+				return Ok(tracks::GRAND_MASTERS)
 			}
 		}
 
