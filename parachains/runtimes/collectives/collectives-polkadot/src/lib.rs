@@ -284,6 +284,8 @@ pub enum ProxyType {
 	Collator,
 	/// Alliance proxy. Allows calls related to the Alliance.
 	Alliance,
+	/// Fellowship proxy. Allows calls related to the Fellowship.
+	Fellowship,
 }
 impl Default for ProxyType {
 	fn default() -> Self {
@@ -293,7 +295,6 @@ impl Default for ProxyType {
 impl InstanceFilter<RuntimeCall> for ProxyType {
 	fn filter(&self, c: &RuntimeCall) -> bool {
 		match self {
-			// todo update proxy
 			ProxyType::Any => true,
 			ProxyType::NonTransfer => !matches!(c, RuntimeCall::Balances { .. }),
 			ProxyType::CancelProxy => matches!(
@@ -314,6 +315,10 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 					RuntimeCall::Alliance { .. } |
 					RuntimeCall::Utility { .. } |
 					RuntimeCall::Multisig { .. }
+			),
+			ProxyType::Fellowship => matches!(
+				c,
+				RuntimeCall::FellowshipCollective { .. } | RuntimeCall::FellowshipReferenda { .. }
 			),
 		}
 	}
