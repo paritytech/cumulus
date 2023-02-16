@@ -73,6 +73,8 @@ parameter_types! {
 	pub const AlarmInterval: BlockNumber = 1;
 	pub const SubmissionDeposit: Balance = 0;
 	pub const UndecidingTimeout: BlockNumber = 7 * DAYS;
+	// The Ambassador Referenda pallet account, used as a temporarily place to deposit a slashed imbalance before teleport to the treasury.
+	pub AmbassadorPalletAccId: AccountId = constants::account::AMBASSADOR_REFERENDA_PALLET_ID.into_account_truncating();
 }
 
 pub type AmbassadorReferendaInstance = pallet_referenda::Instance1;
@@ -91,7 +93,7 @@ impl pallet_referenda::Config<AmbassadorReferendaInstance> for Runtime {
 	>;
 	type CancelOrigin = EitherOf<EnsureRoot<AccountId>, EnsureSeniorAmbassador>;
 	type KillOrigin = EitherOf<EnsureRoot<AccountId>, EnsureSeniorAmbassador>;
-	type Slash = ToParentTreasury<Runtime>;
+	type Slash = ToParentTreasury<RelayTreasuryAccId, AmbassadorPalletAccId, Runtime>;
 	type Votes = pallet_ranked_collective::Votes;
 	type Tally = pallet_ranked_collective::TallyOf<Runtime, AmbassadorCollectiveInstance>;
 	type SubmissionDeposit = SubmissionDeposit;

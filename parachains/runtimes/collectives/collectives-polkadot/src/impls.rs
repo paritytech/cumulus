@@ -13,15 +13,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use super::{AccountId, OriginCaller};
-use crate::{PolkadotXcm, RelayTreasuryAccId, RuntimeOrigin, SlashedImbalanceAccId};
+use crate::OriginCaller;
 use frame_support::{
 	dispatch::{DispatchError, DispatchResultWithPostInfo},
 	log,
-	traits::{Currency, Imbalance, OnUnbalanced, PrivilegeCmp},
+	traits::{Currency, Get, Imbalance, OnUnbalanced, OriginTrait, PrivilegeCmp},
 	weights::Weight,
 };
 use pallet_alliance::{ProposalIndex, ProposalProvider};
+use parachains_common::impls::NegativeImbalance;
 use sp_std::{cmp::Ordering, marker::PhantomData, prelude::*};
 use xcm::latest::{Fungibility, Junction, Parent};
 
@@ -31,37 +31,36 @@ type ProposalOf<T, I> = <T as pallet_collective::Config<I>>::Proposal;
 
 type HashOf<T> = <T as frame_system::Config>::Hash;
 
-type NegativeImbalanceOf<T, I> = <<T as pallet_alliance::Config<I>>::Currency as Currency<
-	<T as frame_system::Config>::AccountId,
->>::NegativeImbalance;
-
-type BalanceOf<T, I> = <<T as pallet_alliance::Config<I>>::Currency as Currency<
-	<T as frame_system::Config>::AccountId,
->>::Balance;
+/// Type alias to conveniently refer to the `Currency::Balance` associated type.
+pub type BalanceOf<T> =
+	<pallet_balances::Pallet<T> as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 /// Implements `OnUnbalanced::on_unbalanced` to teleport slashed assets to relay chain treasury account.
-pub struct ToParentTreasury<T, I = ()>(PhantomData<(T, I)>);
+pub struct ToParentTreasury<TreasuryAcc, PalletAcc, T>(PhantomData<(TreasuryAcc, PalletAcc, T)>);
 
-impl<T, I: 'static> OnUnbalanced<NegativeImbalanceOf<T, I>> for ToParentTreasury<T, I>
+impl<TreasuryAcc, PalletAcc, T> OnUnbalanced<NegativeImbalance<T>>
+	for ToParentTreasury<TreasuryAcc, PalletAcc, T>
 where
-	T: pallet_alliance::Config<I> + frame_system::Config,
-	[u8; 32]: From<AccountId>,
-	BalanceOf<T, I>: Into<Fungibility>,
-	<T as frame_system::Config>::AccountId: From<AccountId>,
+	T: pallet_balances::Config + pallet_xcm::Config + frame_system::Config,
+	<<T as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId: From<AccountIdOf<T>>,
+	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
+	TreasuryAcc: Get<AccountIdOf<T>>,
+	PalletAcc: Get<AccountIdOf<T>>,
+	BalanceOf<T>: Into<Fungibility>,
 {
-	fn on_unbalanced(amount: NegativeImbalanceOf<T, I>) {
+	fn on_unbalanced(amount: NegativeImbalance<T>) {
 		let amount = match amount.drop_zero() {
 			Ok(..) => return,
 			Err(amount) => amount,
 		};
 		let imbalance = amount.peek();
-		let temp_account: AccountId = SlashedImbalanceAccId::get();
-		let treasury_acc: AccountId = RelayTreasuryAccId::get();
+		let pallet_acc: AccountIdOf<T> = PalletAcc::get();
+		let treasury_acc: AccountIdOf<T> = TreasuryAcc::get();
 
-		T::Currency::resolve_creating(&temp_account.clone().into(), amount);
+		<pallet_balances::Pallet<T>>::resolve_creating(&pallet_acc.clone(), amount);
 
-		let result = PolkadotXcm::teleport_assets(
-			RuntimeOrigin::signed(temp_account.into()),
+		let result = <pallet_xcm::Pallet<T>>::teleport_assets(
+			<<T as frame_system::Config>::RuntimeOrigin>::signed(pallet_acc.into()),
 			Box::new(Parent.into()),
 			Box::new(
 				Junction::AccountId32 { network: None, id: treasury_acc.into() }
