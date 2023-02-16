@@ -869,8 +869,10 @@ dependencies = [
 name = "bp-kusama"
 version = "0.1.0"
 dependencies = [
+ "bp-header-chain",
  "bp-polkadot-core",
  "bp-runtime",
+ "frame-support",
  "sp-api",
 ]
 
@@ -894,6 +896,7 @@ name = "bp-millau"
 version = "0.1.0"
 dependencies = [
  "bp-beefy",
+ "bp-header-chain",
  "bp-messages",
  "bp-runtime",
  "fixed-hash",
@@ -933,8 +936,10 @@ dependencies = [
 name = "bp-polkadot"
 version = "0.1.0"
 dependencies = [
+ "bp-header-chain",
  "bp-polkadot-core",
  "bp-runtime",
+ "frame-support",
  "sp-api",
 ]
 
@@ -973,6 +978,7 @@ dependencies = [
 name = "bp-rialto"
 version = "0.1.0"
 dependencies = [
+ "bp-header-chain",
  "bp-messages",
  "bp-runtime",
  "frame-support",
@@ -1002,6 +1008,7 @@ dependencies = [
 name = "bp-rococo"
 version = "0.1.0"
 dependencies = [
+ "bp-header-chain",
  "bp-polkadot-core",
  "bp-runtime",
  "frame-support",
@@ -1048,6 +1055,7 @@ dependencies = [
 name = "bp-westend"
 version = "0.1.0"
 dependencies = [
+ "bp-header-chain",
  "bp-polkadot-core",
  "bp-runtime",
  "frame-support",
@@ -1058,9 +1066,11 @@ dependencies = [
 name = "bp-wococo"
 version = "0.1.0"
 dependencies = [
+ "bp-header-chain",
  "bp-polkadot-core",
  "bp-rococo",
  "bp-runtime",
+ "frame-support",
  "sp-api",
 ]
 
