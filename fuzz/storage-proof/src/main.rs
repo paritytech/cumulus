@@ -24,10 +24,11 @@ use honggfuzz::fuzz;
 use sp_core::{Blake2Hasher, H256};
 use sp_state_machine::{backend::Backend, prove_read, InMemoryBackend};
 use sp_std::vec::Vec;
-use sp_trie::StorageProof;
 use std::collections::HashMap;
 
-fn craft_known_storage_proof(input_vec: Vec<(Vec<u8>, Vec<u8>)>) -> (H256, StorageProof) {
+fn craft_known_storage_proof(
+	input_vec: Vec<(Vec<u8>, Vec<u8>)>,
+) -> (H256, bp_runtime::RawStorageProof) {
 	let storage_proof_vec =
 		vec![(None, input_vec.iter().map(|x| (x.0.clone(), Some(x.1.clone()))).collect())];
 	log::info!("Storage proof vec {:?}", storage_proof_vec);
@@ -36,7 +37,7 @@ fn craft_known_storage_proof(input_vec: Vec<(Vec<u8>, Vec<u8>)>) -> (H256, Stora
 	let root = backend.storage_root(std::iter::empty(), state_version).0;
 	let vector_element_proof =
 		prove_read(backend, input_vec.iter().map(|x| x.0.as_slice())).unwrap();
-	(root, vector_element_proof)
+	(root, vector_element_proof.iter_nodes().cloned().collect())
 }
 
 fn transform_into_unique(input_vec: Vec<(Vec<u8>, Vec<u8>)>) -> Vec<(Vec<u8>, Vec<u8>)> {
@@ -58,7 +59,7 @@ fn run_fuzzer() {
 		}
 		let unique_input_vec = transform_into_unique(input_vec);
 		let (root, craft_known_storage_proof) = craft_known_storage_proof(unique_input_vec.clone());
-		let checker =
+		let mut checker =
 			<bp_runtime::StorageProofChecker<Blake2Hasher>>::new(root, craft_known_storage_proof)
 				.expect("Valid proof passed; qed");
 		for key_value_pair in unique_input_vec {
