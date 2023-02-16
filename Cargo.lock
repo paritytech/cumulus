@@ -822,6 +822,7 @@ dependencies = [
 name = "bp-rococo"
 version = "0.1.0"
 dependencies = [
+ "bp-header-chain",
  "bp-polkadot-core",
  "bp-runtime",
  "frame-support",
@@ -868,9 +869,11 @@ dependencies = [
 name = "bp-wococo"
 version = "0.1.0"
 dependencies = [
+ "bp-header-chain",
  "bp-polkadot-core",
  "bp-rococo",
  "bp-runtime",
+ "frame-support",
  "sp-api",
 ]
 
