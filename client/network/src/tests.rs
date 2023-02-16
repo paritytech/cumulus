@@ -133,8 +133,8 @@ impl RelayChainInterface for DummyRelayChainInterface {
 					validation_code_hash: ValidationCodeHash::from(PHash::random()),
 				},
 				commitments: CandidateCommitments {
-					upward_messages: Vec::new().try_into().unwrap(),
-					horizontal_messages: Vec::new().try_into().unwrap(),
+					upward_messages: Default::default(),
+					horizontal_messages: Default::default(),
 					new_validation_code: None,
 					head_data: HeadData(Vec::new()),
 					processed_downward_messages: 0,
