@@ -87,7 +87,7 @@ const DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO: LaneId = LaneId([0, 0, 0, 1]);
 pub struct WithBridgeHubWococoMessageBridge;
 impl MessageBridge for WithBridgeHubWococoMessageBridge {
 	const THIS_CHAIN_ID: ChainId = bp_runtime::BRIDGE_HUB_ROCOCO_CHAIN_ID;
-	const BRIDGED_CHAIN_ID: ChainId = bp_runtime::BRIDGE_HUB_WOCOCO_CHAIN_ID;
+	const BRIDGED_CHAIN_ID: ChainId = BridgeHubWococoChainId::get();
 	const BRIDGED_MESSAGES_PALLET_NAME: &'static str =
 		bp_bridge_hub_rococo::WITH_BRIDGE_HUB_ROCOCO_MESSAGES_PALLET_NAME;
 	type ThisChain = BridgeHubRococo;

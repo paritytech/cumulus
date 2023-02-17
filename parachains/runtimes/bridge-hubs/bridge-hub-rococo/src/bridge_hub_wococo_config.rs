@@ -17,7 +17,7 @@
 //! Bridge definitions that are used on Wococo to bridge with Rococo.
 
 use crate::{
-	BridgeParachainRococoInstance, ParachainInfo, Runtime, WithBridgeHubRococoMessagesInstance,
+	BridgeGrandpaRococoInstance, BridgeParachainRococoInstance, ParachainInfo, Runtime, WithBridgeHubRococoMessagesInstance,
 	XcmBlobHauler, XcmBlobHaulerAdapter, XcmRouter,
 };
 use bp_messages::{LaneId, MessageNonce};
@@ -87,7 +87,7 @@ const DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO: LaneId = LaneId([0, 0, 0, 1]);
 pub struct WithBridgeHubRococoMessageBridge;
 impl MessageBridge for WithBridgeHubRococoMessageBridge {
 	const THIS_CHAIN_ID: ChainId = bp_runtime::BRIDGE_HUB_WOCOCO_CHAIN_ID;
-	const BRIDGED_CHAIN_ID: ChainId = bp_runtime::BRIDGE_HUB_ROCOCO_CHAIN_ID;
+	const BRIDGED_CHAIN_ID: ChainId = BridgeHubRococoChainId::get();
 	const BRIDGED_MESSAGES_PALLET_NAME: &'static str =
 		bp_bridge_hub_wococo::WITH_BRIDGE_HUB_WOCOCO_MESSAGES_PALLET_NAME;
 	type ThisChain = BridgeHubWococo;
@@ -146,6 +146,26 @@ impl ThisChainWithMessages for BridgeHubWococo {
 		MessageNonce::MAX / 2
 	}
 }
+
+parameter_types! {
+	pub const BridgeHubRococoMessagesLane: bp_messages::LaneId = DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO;
+	pub const BridgeHubRococoParachainId: u32 = {
+		use bp_runtime::Parachain;
+		BridgeHubRococo::PARACHAIN_ID
+	};
+}
+
+/// Signed extension that refunds relayers that are delivering messages from the Rococo parachain.
+pub type BridgeRefundBridgeHubRococoRelayers =
+bridge_runtime_common::refund_relayer_extension::RefundRelayerForMessagesFromParachain<
+	Runtime,
+	BridgeGrandpaRococoInstance,
+	BridgeParachainRococoInstance,
+	WithBridgeHubRococoMessagesInstance,
+	BridgeHubRococoParachainId,
+	BridgeHubRococoMessagesLane,
+	Runtime,
+>;
 
 #[cfg(test)]
 mod tests {

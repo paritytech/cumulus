@@ -87,6 +87,7 @@ use parachains_common::{
 };
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
+use crate::bridge_hub_wococo_config::BridgeRefundBridgeHubRococoRelayers;
 
 pub const LOG_TARGET: &str = "runtime::bridge-hub";
 
@@ -113,6 +114,8 @@ pub type SignedExtra = (
 	frame_system::CheckWeight<Runtime>,
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 	BridgeRejectObsoleteHeadersAndMessages,
+	// TODO:check-parameter - initialy, we refund for receive_message_proof only on BridgeHubWococo, needs fix: https://github.com/paritytech/parity-bridges-common/issues/1667
+	BridgeRefundBridgeHubRococoRelayers,
 );
 
 /// Unchecked extrinsic type as expected by this runtime.
@@ -398,7 +401,7 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
 	type WeightInfo = weights::pallet_bridge_grandpa_bridge_wococo_grandpa::WeightInfo<Runtime>;
 }
 
-/// Add granda bridge pallet to track Rococo relay chain
+/// Add granda bridge pallet to track Rococo relay chain on Wococo BridgeHub
 pub type BridgeGrandpaRococoInstance = pallet_bridge_grandpa::Instance2;
 impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 	type BridgedChain = bp_rococo::Rococo;
@@ -407,17 +410,19 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 	type WeightInfo = weights::pallet_bridge_grandpa_bridge_rococo_grandpa::WeightInfo<Runtime>;
 }
 
-pub const ROCOCO_BRIDGE_PARA_PALLET_NAME: &str = "Paras";
-pub const WOCOCO_BRIDGE_PARA_PALLET_NAME: &str = "Paras";
 parameter_types! {
 	pub const RelayChainHeadersToKeep: u32 = 1024;
 	pub const ParachainHeadsToKeep: u32 = 64;
 	pub const MaxRequests: u32 = 64;
 
-	pub const RococoBridgeParachainPalletName: &'static str = ROCOCO_BRIDGE_PARA_PALLET_NAME;
-	pub const WococoBridgeParachainPalletName: &'static str = WOCOCO_BRIDGE_PARA_PALLET_NAME;
+	pub const RococoBridgeParachainPalletName: &'static str = "Paras";
+	pub const WococoBridgeParachainPalletName: &'static str = "Paras";
 	pub const MaxRococoParaHeadDataSize: u32 = bp_rococo::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
 	pub const MaxWococoParaHeadDataSize: u32 = bp_wococo::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
+
+	// TODO:check-parameter - setup hard-coded rewards somehow or store them on-chain?
+	pub const DeliveryRewardInBalance: u64 = 100_000;
+	pub const ConfirmationRewardInBalance: u64 = 10_000;
 }
 
 /// Add parachain bridge pallet to track Wococo bridge hub parachain
@@ -464,13 +469,15 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 
 	type InboundPayload = XcmAsPlainPayload;
 	type InboundRelayer = AccountId;
-	// TODO:check-parameter - check delivery
 	type DeliveryPayments = ();
 
 	type TargetHeaderChain = TargetHeaderChainAdapter<WithBridgeHubWococoMessageBridge>;
 	type LaneMessageVerifier = bridge_hub_rococo_config::ToBridgeHubWococoMessageVerifier;
-	// TODO:check-parameter - check delivery
-	type DeliveryConfirmationPayments = ();
+	type DeliveryConfirmationPayments = pallet_bridge_relayers::DeliveryConfirmationPaymentsAdapter<
+		Runtime,
+		DeliveryRewardInBalance,
+		ConfirmationRewardInBalance,
+	>;
 
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubWococoMessageBridge>;
 	type MessageDispatch = XcmBlobMessageDispatch<
@@ -498,13 +505,15 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 
 	type InboundPayload = XcmAsPlainPayload;
 	type InboundRelayer = AccountId;
-	// TODO:check-parameter - check delivery
 	type DeliveryPayments = ();
 
 	type TargetHeaderChain = TargetHeaderChainAdapter<WithBridgeHubRococoMessageBridge>;
 	type LaneMessageVerifier = bridge_hub_wococo_config::ToBridgeHubRococoMessageVerifier;
-	// TODO:check-parameter - check delivery
-	type DeliveryConfirmationPayments = ();
+	type DeliveryConfirmationPayments = pallet_bridge_relayers::DeliveryConfirmationPaymentsAdapter<
+		Runtime,
+		DeliveryRewardInBalance,
+		ConfirmationRewardInBalance,
+	>;
 
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubRococoMessageBridge>;
 	type MessageDispatch = XcmBlobMessageDispatch<
