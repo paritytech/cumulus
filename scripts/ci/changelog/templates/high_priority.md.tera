@@ -31,8 +31,7 @@
 {%- endif -%}
 
 <!-- detected max prio is: {{p}} -->
-
-{%- if prio -%}
+{% if prio -%}
 {{prio}}: {{text}}
 {%- else -%}
 <!-- No relevant Priority label as been detected -->
@@ -45,7 +44,7 @@ The changes motivating this priority level are:
     {%- if pr.meta.C -%}
         {%- if pr.meta.C.agg.max >= p %}
 - {{ m_c::change(c=pr) }}
-{%- if pr.meta.B and pr.meta.X and pr.meta.B.B1 and pr.meta.X.X1 %}
+{%- if pr.meta.B and pr.meta.B.B1 and pr.meta.T and pr.meta.T.T1 %}
 (RUNTIME)
 {% endif %}
 

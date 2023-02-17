@@ -9,7 +9,7 @@
     {#- We skip silent ones -#}
     {%- else -%}
 
-        {%- if pr.meta.B.B5 and not pr.title is containing("ompanion") %}
+        {%- if pr.meta.B.B1 and pr.meta.T and pr.meta.T.T0 and not pr.title is containing("ompanion") %}
 - {{ m_c::change(c=pr) }}
         {%- endif -%}
     {% endif -%}
