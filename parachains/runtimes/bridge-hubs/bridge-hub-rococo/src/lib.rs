@@ -395,8 +395,6 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
 	type BridgedChain = bp_wococo::Wococo;
 	type MaxRequests = MaxRequests;
 	type HeadersToKeep = RelayChainHeadersToKeep;
-	type MaxBridgedAuthorities =
-		frame_support::traits::ConstU32<{ bp_wococo::MAX_AUTHORITIES_COUNT }>;
 	type WeightInfo = weights::pallet_bridge_grandpa_bridge_wococo_grandpa::WeightInfo<Runtime>;
 }
 
@@ -406,8 +404,6 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 	type BridgedChain = bp_rococo::Rococo;
 	type MaxRequests = MaxRequests;
 	type HeadersToKeep = RelayChainHeadersToKeep;
-	type MaxBridgedAuthorities =
-		frame_support::traits::ConstU32<{ bp_rococo::MAX_AUTHORITIES_COUNT }>;
 	type WeightInfo = weights::pallet_bridge_grandpa_bridge_rococo_grandpa::WeightInfo<Runtime>;
 }
 
