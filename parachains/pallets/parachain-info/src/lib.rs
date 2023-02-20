@@ -69,7 +69,7 @@ pub mod pallet {
 
 	impl<T: Config> Get<ParaId> for Pallet<T> {
 		fn get() -> ParaId {
-			Self::parachain_id()
+			ParachainId::<T>::get()
 		}
 	}
 }

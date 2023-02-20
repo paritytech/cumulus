@@ -22,6 +22,7 @@ use frame_support::{
 	traits::{Everything, Nothing},
 	weights::Weight,
 };
+use sp_core::Get;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AllowExplicitUnpaidExecutionFrom, FixedWeightBounds, ParentAsSuperuser, ParentIsPreset,
@@ -31,7 +32,7 @@ use xcm_builder::{
 parameter_types! {
 	pub const RococoLocation: MultiLocation = MultiLocation::parent();
 	pub const RococoNetwork: Option<NetworkId> = Some(NetworkId::Rococo);
-	pub UniversalLocation: InteriorMultiLocation = X1(Parachain(ParachainInfo::parachain_id().into()));
+	pub UniversalLocation: InteriorMultiLocation = X1(Parachain(ParachainInfo::get().into()));
 }
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,

@@ -210,7 +210,7 @@ pub mod pallet {
 				"set_validation_data inherent needs to be present in every block!"
 			);
 
-			let host_config = match Self::host_configuration() {
+			let host_config = match HostConfiguration::<T>::get() {
 				Some(ok) => ok,
 				None => {
 					debug_assert!(
@@ -220,7 +220,7 @@ pub mod pallet {
 					return
 				},
 			};
-			let relevant_messaging_state = match Self::relevant_messaging_state() {
+			let relevant_messaging_state = match RelevantMessagingState::<T>::get() {
 				Some(ok) => ok,
 				None => {
 					debug_assert!(
@@ -325,7 +325,7 @@ pub mod pallet {
 			// than the announced, we would waste some of weight. In the case the actual value is
 			// greater than the announced, we will miss opportunity to send a couple of messages.
 			weight += T::DbWeight::get().reads_writes(1, 1);
-			let hrmp_max_message_num_per_candidate = Self::host_configuration()
+			let hrmp_max_message_num_per_candidate = HostConfiguration::<T>::get()
 				.map(|cfg| cfg.hrmp_max_message_num_per_candidate)
 				.unwrap_or(0);
 			<AnnouncedHrmpMessagesPerCandidate<T>>::put(hrmp_max_message_num_per_candidate);
@@ -781,7 +781,7 @@ impl<T: Config> GetChannelInfo for Pallet<T> {
 		//
 		// Here it a similar case, with the difference that the realization that the channel is
 		// closed came the same block.
-		let channels = match Self::relevant_messaging_state() {
+		let channels = match RelevantMessagingState::<T>::get() {
 			None => {
 				log::warn!("calling `get_channel_status` with no RelevantMessagingState?!");
 				return ChannelStatus::Closed
@@ -809,7 +809,7 @@ impl<T: Config> GetChannelInfo for Pallet<T> {
 	}
 
 	fn get_channel_max(id: ParaId) -> Option<usize> {
-		let channels = Self::relevant_messaging_state()?.egress_channels;
+		let channels = RelevantMessagingState::<T>::get()?.egress_channels;
 		let index = channels.binary_search_by_key(&id, |item| item.0).ok()?;
 		Some(channels[index].1.max_message_size as usize)
 	}
@@ -989,7 +989,7 @@ impl<T: Config> Pallet<T> {
 		ensure!(<UpgradeRestrictionSignal<T>>::get().is_none(), Error::<T>::ProhibitedByPolkadot);
 
 		ensure!(!<PendingValidationCode<T>>::exists(), Error::<T>::OverlappingUpgrades);
-		let cfg = Self::host_configuration().ok_or(Error::<T>::HostConfigurationNotAvailable)?;
+		let cfg = HostConfiguration::<T>::get().ok_or(Error::<T>::HostConfigurationNotAvailable)?;
 		ensure!(validation_function.len() <= cfg.max_code_size as usize, Error::<T>::TooBig);
 
 		// When a code upgrade is scheduled, it has to be applied in two
@@ -1066,7 +1066,7 @@ impl<T: Config> Pallet<T> {
 		// may change so that the message is no longer valid.
 		//
 		// However, changing this setting is expected to be rare.
-		match Self::host_configuration() {
+		match HostConfiguration::<T>::get() {
 			Some(cfg) =>
 				if message.len() > cfg.max_upward_message_size as usize {
 					return Err(MessageSendError::TooBig)
@@ -1157,9 +1157,7 @@ impl<T: Config> BlockNumberProvider for RelaychainBlockNumberProvider<T> {
 	type BlockNumber = relay_chain::BlockNumber;
 
 	fn current_block_number() -> relay_chain::BlockNumber {
-		Pallet::<T>::validation_data()
-			.map(|d| d.relay_parent_number)
-			.unwrap_or_default()
+		ValidationData::<T>::get().map(|d| d.relay_parent_number).unwrap_or_default()
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
@@ -1204,7 +1202,7 @@ impl<T: Config> BlockNumberProvider for RelaychainDataProvider<T> {
 
 	#[cfg(feature = "runtime-benchmarks")]
 	fn set_block_number(block: Self::BlockNumber) {
-		let mut validation_data = Pallet::<T>::validation_data().unwrap_or_else(||
+		let mut validation_data = ValidationData::<T>::get().unwrap_or_else(||
 			// PersistedValidationData does not impl default in non-std
 			PersistedValidationData {
 				parent_head: vec![].into(),
