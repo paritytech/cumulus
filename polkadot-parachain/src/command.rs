@@ -788,13 +788,13 @@ pub fn run() -> Result<()> {
 					},
 				Runtime::Shell => runner.async_run(|_| {
 					Ok((
-						cmd.run::<Block, HostFunctionsOf<crate::service::ShellRuntimeExecutor>>(),
+						cmd.run::<Block, HostFunctionsOf<crate::service::ShellRuntimeExecutor>, _>(Some(info_provider)),
 						task_manager,
 					))
 				}),
 				Runtime::ContractsRococo => runner.async_run(|_| {
 					Ok((
-						cmd.run::<Block, HostFunctionsOf<crate::service::ContractsRococoRuntimeExecutor>>(),
+						cmd.run::<Block, HostFunctionsOf<crate::service::ContractsRococoRuntimeExecutor>, _>(Some(info_provider)),
 						task_manager,
 					))
 				}),
