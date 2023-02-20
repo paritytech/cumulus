@@ -20,18 +20,15 @@ use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, Slo
 use cumulus_client_consensus_common::{
 	ParachainBlockImport as TParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
-use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
-	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
+	build_network, build_relay_chain_interface, prepare_node_config, start_collator,
+	start_full_node, BuildNetworkParams, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::{
-	relay_chain::v2::{Hash as PHash, PersistedValidationData},
+	relay_chain::{Hash as PHash, PersistedValidationData},
 	ParaId,
 };
-use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
-use polkadot_service::CollatorPair;
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
 use sp_core::Pair;
 
 use jsonrpsee::RpcModule;
@@ -73,7 +70,8 @@ type ParachainClient<RuntimeApi> = TFullClient<Block, RuntimeApi, WasmExecutor<H
 
 type ParachainBackend = TFullBackend<Block>;
 
-type ParachainBlockImport<RuntimeApi> = TParachainBlockImport<Arc<ParachainClient<RuntimeApi>>>;
+type ParachainBlockImport<RuntimeApi> =
+	TParachainBlockImport<Block, Arc<ParachainClient<RuntimeApi>>, ParachainBackend>;
 
 /// Native executor instance.
 pub struct ShellRuntimeExecutor;
@@ -147,6 +145,51 @@ impl sc_executor::NativeExecutionDispatch for CollectivesPolkadotRuntimeExecutor
 
 	fn native_version() -> sc_executor::NativeVersion {
 		collectives_polkadot_runtime::native_version()
+	}
+}
+
+// Native BridgeHubPolkadot executor instance.
+pub struct BridgeHubPolkadotRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for BridgeHubPolkadotRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		bridge_hub_polkadot_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		bridge_hub_polkadot_runtime::native_version()
+	}
+}
+
+// Native BridgeHubKusama executor instance.
+pub struct BridgeHubKusamaRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for BridgeHubKusamaRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		bridge_hub_kusama_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		bridge_hub_kusama_runtime::native_version()
+	}
+}
+
+// Native BridgeHubRococo executor instance.
+pub struct BridgeHubRococoRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for BridgeHubRococoRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		bridge_hub_rococo_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		bridge_hub_rococo_runtime::native_version()
 	}
 }
 
@@ -247,7 +290,7 @@ where
 		client.clone(),
 	);
 
-	let block_import = ParachainBlockImport::new(client.clone());
+	let block_import = ParachainBlockImport::new(client.clone(), backend.clone());
 
 	let import_queue = build_import_queue(
 		client.clone(),
@@ -269,27 +312,6 @@ where
 	};
 
 	Ok(params)
-}
-
-async fn build_relay_chain_interface(
-	polkadot_config: Configuration,
-	parachain_config: &Configuration,
-	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
-	task_manager: &mut TaskManager,
-	collator_options: CollatorOptions,
-	hwbench: Option<sc_sysinfo::HwBench>,
-) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
-	match collator_options.relay_chain_rpc_url {
-		Some(relay_chain_url) =>
-			build_minimal_relay_chain_node(polkadot_config, task_manager, relay_chain_url).await,
-		None => build_inprocess_relay_chain(
-			polkadot_config,
-			parachain_config,
-			telemetry_worker_handle,
-			task_manager,
-			hwbench,
-		),
-	}
 }
 
 /// Start a shell node with the given parachain `Configuration` and relay chain `Configuration`.
@@ -367,9 +389,6 @@ where
 		s => s.to_string().into(),
 	})?;
 
-	let block_announce_validator =
-		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
-
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
@@ -377,17 +396,16 @@ where
 	let import_queue_service = params.import_queue.service();
 
 	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
-		sc_service::build_network(sc_service::BuildNetworkParams {
-			config: &parachain_config,
+		build_network(BuildNetworkParams {
+			parachain_config: &parachain_config,
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
+			para_id,
 			spawn_handle: task_manager.spawn_handle(),
+			relay_chain_interface: relay_chain_interface.clone(),
 			import_queue: params.import_queue,
-			block_announce_validator_builder: Some(Box::new(|_| {
-				Box::new(block_announce_validator)
-			})),
-			warp_sync: None,
-		})?;
+		})
+		.await?;
 
 	let rpc_client = client.clone();
 	let rpc_builder = Box::new(move |_, _| rpc_ext_builder(rpc_client.clone()));
@@ -409,6 +427,9 @@ where
 
 	if let Some(hwbench) = hwbench {
 		sc_sysinfo::print_hwbench(&hwbench);
+		if validator {
+			warn_if_slow_hardware(&hwbench);
+		}
 
 		if let Some(ref mut telemetry) = telemetry {
 			let telemetry_handle = telemetry.handle();
@@ -426,6 +447,10 @@ where
 	};
 
 	let relay_chain_slot_duration = Duration::from_secs(6);
+
+	let overseer_handle = relay_chain_interface
+		.overseer_handle()
+		.map_err(|e| sc_service::Error::Application(Box::new(e)))?;
 
 	if validator {
 		let parachain_consensus = build_consensus(
@@ -455,6 +480,7 @@ where
 			import_queue: import_queue_service,
 			collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
 			relay_chain_slot_duration,
+			recovery_handle: Box::new(overseer_handle),
 		};
 
 		start_collator(params).await?;
@@ -467,6 +493,7 @@ where
 			relay_chain_interface,
 			relay_chain_slot_duration,
 			import_queue: import_queue_service,
+			recovery_handle: Box::new(overseer_handle),
 		};
 
 		start_full_node(params)?;
@@ -552,9 +579,6 @@ where
 		s => s.to_string().into(),
 	})?;
 
-	let block_announce_validator =
-		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
-
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
@@ -562,17 +586,16 @@ where
 	let import_queue_service = params.import_queue.service();
 
 	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
-		sc_service::build_network(sc_service::BuildNetworkParams {
-			config: &parachain_config,
+		build_network(BuildNetworkParams {
+			parachain_config: &parachain_config,
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
+			para_id,
 			spawn_handle: task_manager.spawn_handle(),
+			relay_chain_interface: relay_chain_interface.clone(),
 			import_queue: params.import_queue,
-			block_announce_validator_builder: Some(Box::new(|_| {
-				Box::new(block_announce_validator)
-			})),
-			warp_sync: None,
-		})?;
+		})
+		.await?;
 
 	let rpc_builder = {
 		let client = client.clone();
@@ -607,6 +630,9 @@ where
 
 	if let Some(hwbench) = hwbench {
 		sc_sysinfo::print_hwbench(&hwbench);
+		if validator {
+			warn_if_slow_hardware(&hwbench);
+		}
 
 		if let Some(ref mut telemetry) = telemetry {
 			let telemetry_handle = telemetry.handle();
@@ -625,6 +651,9 @@ where
 
 	let relay_chain_slot_duration = Duration::from_secs(6);
 
+	let overseer_handle = relay_chain_interface
+		.overseer_handle()
+		.map_err(|e| sc_service::Error::Application(Box::new(e)))?;
 	if validator {
 		let parachain_consensus = build_consensus(
 			client.clone(),
@@ -653,6 +682,7 @@ where
 			import_queue: import_queue_service,
 			collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
 			relay_chain_slot_duration,
+			recovery_handle: Box::new(overseer_handle),
 		};
 
 		start_collator(params).await?;
@@ -665,6 +695,7 @@ where
 			relay_chain_interface,
 			relay_chain_slot_duration,
 			import_queue: import_queue_service,
+			recovery_handle: Box::new(overseer_handle),
 		};
 
 		start_full_node(params)?;
@@ -1137,6 +1168,7 @@ where
 			let telemetry2 = telemetry.clone();
 			let prometheus_registry2 = prometheus_registry.map(|r| (*r).clone());
 			let relay_chain_for_aura = relay_chain_interface.clone();
+
 			let aura_consensus = BuildOnAccess::Uninitialized(Some(Box::new(move || {
 				let slot_duration =
 					cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
@@ -1323,9 +1355,6 @@ where
 		s => s.to_string().into(),
 	})?;
 
-	let block_announce_validator =
-		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
-
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
@@ -1333,17 +1362,16 @@ where
 	let import_queue_service = params.import_queue.service();
 
 	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
-		sc_service::build_network(sc_service::BuildNetworkParams {
-			config: &parachain_config,
+		build_network(BuildNetworkParams {
+			parachain_config: &parachain_config,
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
+			para_id,
 			spawn_handle: task_manager.spawn_handle(),
+			relay_chain_interface: relay_chain_interface.clone(),
 			import_queue: params.import_queue,
-			block_announce_validator_builder: Some(Box::new(|_| {
-				Box::new(block_announce_validator)
-			})),
-			warp_sync: None,
-		})?;
+		})
+		.await?;
 
 	let rpc_builder = {
 		let client = client.clone();
@@ -1377,6 +1405,9 @@ where
 
 	if let Some(hwbench) = hwbench {
 		sc_sysinfo::print_hwbench(&hwbench);
+		if validator {
+			warn_if_slow_hardware(&hwbench);
+		}
 
 		if let Some(ref mut telemetry) = telemetry {
 			let telemetry_handle = telemetry.handle();
@@ -1395,6 +1426,9 @@ where
 
 	let relay_chain_slot_duration = Duration::from_secs(6);
 
+	let overseer_handle = relay_chain_interface
+		.overseer_handle()
+		.map_err(|e| sc_service::Error::Application(Box::new(e)))?;
 	if validator {
 		let parachain_consensus = build_consensus(
 			client.clone(),
@@ -1423,6 +1457,7 @@ where
 			import_queue: import_queue_service,
 			collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
 			relay_chain_slot_duration,
+			recovery_handle: Box::new(overseer_handle),
 		};
 
 		start_collator(params).await?;
@@ -1435,6 +1470,7 @@ where
 			relay_chain_interface,
 			relay_chain_slot_duration,
 			import_queue: import_queue_service,
+			recovery_handle: Box::new(overseer_handle),
 		};
 
 		start_full_node(params)?;
@@ -1573,4 +1609,16 @@ pub async fn start_contracts_rococo_node(
 		hwbench,
 	)
 	.await
+}
+
+/// Checks that the hardware meets the requirements and print a warning otherwise.
+fn warn_if_slow_hardware(hwbench: &sc_sysinfo::HwBench) {
+	// Polkadot para-chains should generally use these requirements to ensure that the relay-chain
+	// will not take longer than expected to import its blocks.
+	if !frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE.check_hardware(hwbench) {
+		log::warn!(
+			"⚠️  The hardware does not meet the minimal requirements for role 'Authority' find out more at:\n\
+			https://wiki.polkadot.network/docs/maintain-guides-how-to-validate-polkadot#reference-hardware"
+		);
+	}
 }

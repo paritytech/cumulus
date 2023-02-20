@@ -19,9 +19,9 @@ use std::{pin::Pin, sync::Arc, time::Duration};
 use async_trait::async_trait;
 use cumulus_primitives_core::{
 	relay_chain::{
-		runtime_api::ParachainHost,
-		v2::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
-		Block as PBlock, BlockId, Hash as PHash, Header as PHeader, InboundHrmpMessage,
+		runtime_api::ParachainHost, Block as PBlock, BlockId, CommittedCandidateReceipt,
+		Hash as PHash, Header as PHeader, InboundHrmpMessage, OccupiedCoreAssumption, SessionIndex,
+		ValidatorId,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
@@ -167,6 +167,10 @@ where
 		Ok(self.backend.blockchain().info().best_hash)
 	}
 
+	async fn finalized_block_hash(&self) -> RelayChainResult<PHash> {
+		Ok(self.backend.blockchain().info().finalized_hash)
+	}
+
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {
 		Ok(self.sync_oracle.is_major_syncing())
 	}
@@ -265,9 +269,7 @@ where
 {
 	let _lock = backend.get_import_lock().read();
 
-	let block_id = BlockId::Hash(hash);
-
-	if backend.blockchain().status(block_id)? == BlockStatus::InChain {
+	if backend.blockchain().status(hash)? == BlockStatus::InChain {
 		return Ok(BlockCheckStatus::InChain)
 	}
 
@@ -389,7 +391,7 @@ pub fn build_inprocess_relay_chain(
 mod tests {
 	use super::*;
 
-	use polkadot_primitives::v2::Block as PBlock;
+	use polkadot_primitives::Block as PBlock;
 	use polkadot_test_client::{
 		construct_transfer_extrinsic, BlockBuilderExt, Client, ClientBlockImportExt,
 		DefaultTestClientBuilderExt, ExecutionStrategy, InitPolkadotBlockBuilder,

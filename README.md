@@ -120,7 +120,7 @@ cargo build --release --bin polkadot-parachain
 
 This repository also contains the Statemint runtime (as well as the canary runtime Statemine and the
 test runtime Westmint).
-Statemint is a common good parachain providing an asset store for the Polkadot ecosystem.
+Statemint is a system parachain providing an asset store for the Polkadot ecosystem.
 
 ### Build & Launch a Node
 
@@ -143,6 +143,10 @@ Refer to the [setup instructions](#local-setup) to run a local network for devel
 ## Contracts 📝
 
 See [the `contracts-rococo` readme](parachains/runtimes/contracts/contracts-rococo/README.md) for details.
+
+## Bridge-hub 📝
+
+See [the `bridge-hubs` readme](parachains/runtimes/bridge-hubs/README.md) for details.
 
 ## Rococo 👑
 

@@ -37,7 +37,7 @@ use polkadot_node_primitives::{
 };
 use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
 use polkadot_overseer::Handle as OverseerHandle;
-use polkadot_primitives::v2::{CollatorPair, Id as ParaId};
+use polkadot_primitives::{CollatorPair, Id as ParaId};
 
 use codec::{Decode, Encode};
 use futures::{channel::oneshot, FutureExt};
@@ -91,7 +91,7 @@ where
 	///
 	/// Returns `true` if the block could be found and is good to be build on.
 	fn check_block_status(&self, hash: Block::Hash, header: &Block::Header) -> bool {
-		match self.block_status.block_status(&BlockId::Hash(hash)) {
+		match self.block_status.block_status(hash) {
 			Ok(BlockStatus::Queued) => {
 				tracing::debug!(
 					target: LOG_TARGET,
@@ -198,11 +198,34 @@ where
 			.ok()
 			.flatten()?;
 
+		let upward_messages = collation_info
+			.upward_messages
+			.try_into()
+			.map_err(|e| {
+				tracing::error!(
+					target: LOG_TARGET,
+					error = ?e,
+					"Number of upward messages should not be greater than `MAX_UPWARD_MESSAGE_NUM`",
+				)
+			})
+			.ok()?;
+		let horizontal_messages = collation_info
+			.horizontal_messages
+			.try_into()
+			.map_err(|e| {
+				tracing::error!(
+					target: LOG_TARGET,
+					error = ?e,
+					"Number of horizontal messages should not be greater than `MAX_HORIZONTAL_MESSAGE_NUM`",
+				)
+			})
+			.ok()?;
+
 		Some(Collation {
-			upward_messages: collation_info.upward_messages,
+			upward_messages,
 			new_validation_code: collation_info.new_validation_code,
 			processed_downward_messages: collation_info.processed_downward_messages,
-			horizontal_messages: collation_info.horizontal_messages,
+			horizontal_messages,
 			hrmp_watermark: collation_info.hrmp_watermark,
 			head_data: collation_info.head_data,
 			proof_of_validity: MaybeCompressedPoV::Compressed(pov),
@@ -422,7 +445,7 @@ mod tests {
 		let para_id = ParaId::from(100);
 		let announce_block = |_, _| ();
 		let client = Arc::new(TestClientBuilder::new().build());
-		let header = client.header(&BlockId::Number(0)).unwrap().unwrap();
+		let header = client.header(client.chain_info().genesis_hash).unwrap().unwrap();
 
 		let (sub_tx, sub_rx) = mpsc::channel(64);
 

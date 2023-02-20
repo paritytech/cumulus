@@ -29,14 +29,13 @@ use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use cumulus_relay_chain_interface::RelayChainInterface;
 use polkadot_node_primitives::{CollationSecondedSignal, Statement};
 use polkadot_parachain::primitives::HeadData;
-use polkadot_primitives::v2::{
+use polkadot_primitives::{
 	CandidateReceipt, CompactStatement, Hash as PHash, Id as ParaId, OccupiedCoreAssumption,
 	SigningContext, UncheckedSigned,
 };
 
 use codec::{Decode, DecodeAll, Encode};
 use futures::{channel::oneshot, future::FutureExt, Future};
-
 use std::{convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc};
 
 #[cfg(test)]

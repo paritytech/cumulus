@@ -16,14 +16,7 @@
 
 use std::{collections::BTreeMap, pin::Pin, sync::Arc};
 
-use cumulus_primitives_core::{
-	relay_chain::{
-		v2::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
-		Hash as PHash, Header as PHeader, InboundHrmpMessage,
-	},
-	InboundDownwardMessage, ParaId, PersistedValidationData,
-};
-use polkadot_overseer::{prometheus::PrometheusError, Handle as OverseerHandle};
+use polkadot_overseer::prometheus::PrometheusError;
 use polkadot_service::SubstrateServiceError;
 use sc_client_api::StorageProof;
 
@@ -33,7 +26,16 @@ use async_trait::async_trait;
 use jsonrpsee_core::Error as JsonRpcError;
 use parity_scale_codec::Error as CodecError;
 use sp_api::ApiError;
-use sp_state_machine::StorageValue;
+
+pub use cumulus_primitives_core::{
+	relay_chain::{
+		CommittedCandidateReceipt, Hash as PHash, Header as PHeader, InboundHrmpMessage,
+		OccupiedCoreAssumption, SessionIndex, ValidatorId,
+	},
+	InboundDownwardMessage, ParaId, PersistedValidationData,
+};
+pub use polkadot_overseer::Handle as OverseerHandle;
+pub use sp_state_machine::StorageValue;
 
 pub type RelayChainResult<T> = Result<T, RelayChainError>;
 
@@ -51,11 +53,11 @@ pub enum RelayChainError {
 	BlockchainError(#[from] sp_blockchain::Error),
 	#[error("State machine error occured: {0}")]
 	StateMachineError(Box<dyn sp_state_machine::Error>),
-	#[error("Unable to call RPC method '{0}' due to error: {1}")]
-	RpcCallError(String, JsonRpcError),
+	#[error("Unable to call RPC method '{0}'")]
+	RpcCallError(String),
 	#[error("RPC Error: '{0}'")]
 	JsonRpcError(#[from] JsonRpcError),
-	#[error("Unable to reach RpcStreamWorker: {0}")]
+	#[error("Unable to communicate with RPC worker: {0}")]
 	WorkerCommunicationError(String),
 	#[error("Scale codec deserialization error: {0}")]
 	DeserializationError(CodecError),
@@ -102,6 +104,9 @@ pub trait RelayChainInterface: Send + Sync {
 
 	/// Get the hash of the current best block.
 	async fn best_block_hash(&self) -> RelayChainResult<PHash>;
+
+	/// Get the hash of the finalized block.
+	async fn finalized_block_hash(&self) -> RelayChainResult<PHash>;
 
 	/// Returns the whole contents of the downward message queue for the parachain we are collating
 	/// for.
@@ -244,6 +249,10 @@ where
 
 	async fn best_block_hash(&self) -> RelayChainResult<PHash> {
 		(**self).best_block_hash().await
+	}
+
+	async fn finalized_block_hash(&self) -> RelayChainResult<PHash> {
+		(**self).finalized_block_hash().await
 	}
 
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {
