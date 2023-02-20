@@ -38,7 +38,7 @@ tests:
     describes:
       - name: polkadotXcm.limitedTeleportAssets
         before:
-          - name: DEPENDANCY | Do a 'limitedTeleportAssets' from the Relay Chain to the Assets Parachain to have funds to send them back
+          - name: DEPENDENCY | Do a 'limitedTeleportAssets' from the Relay Chain to the Assets Parachain to have funds to send them back
             actions:
               - extrinsics:
                 - chain: *relay_chain
@@ -54,16 +54,16 @@ tests:
                   ]
                   events:
                     - name: xcmPallet.Attempted
-                      attribute:
-                        type: XcmV2TraitsOutcome
-                        isComplete: true
+                      attributes:
+                        - type: XcmV2TraitsOutcome
+                          xcmOutcome: Complete
                     - name: dmpQueue.ExecutedDownward
                       chain: *assets_parachain
-                      attribute:
-                        type: XcmV2TraitsOutcome
-                        isComplete: true
-                        threshold: [10, 10]
-                        value: 1,021,973,000
+                      attributes:
+                        - type: XcmV2TraitsOutcome
+                          xcmOutcome: Complete
+                          threshold: [10, 10]
+                          value: 1,021,973,000
 
           - name: Get the balances of the Assets Parachain's sender & Relay Chain's receiver
             actions:
@@ -95,18 +95,18 @@ tests:
                   ]
                   events:
                     - name: polkadotXcm.Attempted
-                      attribute:
-                        type: XcmV2TraitsOutcome
-                        isComplete: true
-                        threshold: [10, 10]
-                        value: 360,315,000
+                      attributes:
+                        - type: XcmV2TraitsOutcome
+                          xcmOutcome: Complete
+                          threshold: [10, 10]
+                          value: 360,315,000
                     - name: ump.ExecutedUpward
                       chain: *relay_chain
-                      attribute:
-                        type: XcmV2TraitsOutcome
-                        isComplete: true
-                        threshold: [10, 10]
-                        value: 297,578,000
+                      attributes:
+                        - type: XcmV2TraitsOutcome
+                          xcmOutcome: Complete
+                          threshold: [10, 10]
+                          value: 297,578,000
               - queries:
                   balance_ap_sender_after:
                     chain: *assets_parachain
@@ -148,7 +148,7 @@ tests:
 
       - name: polkadotXcm.send | Native - Transact(system.remark)
         its:
-          - name: Assets Parachain SHOULD NOT be able to dipatch 'send' call
+          - name: Assets Parachain SHOULD NOT be able to dispatch 'send' call
             actions:
               - extrinsics:
                 - chain: *assets_parachain
@@ -171,9 +171,9 @@ tests:
                   ]
                   events:
                     - name: system.ExtrinsicFailed
-                      attribute:
-                        type: SpRuntimeDispatchError
-                        value: BadOrigin
+                      attributes:
+                        - type: SpRuntimeDispatchError
+                          value: BadOrigin
 
       - name: polkadotXcm.limitedReserveTransferAssets
         its:
@@ -193,7 +193,7 @@ tests:
                   ]
                   events:
                     - name: polkadotXcm.Attempted
-                      attribute:
-                        type: XcmV2TraitsOutcome
-                        isError: true
-                        value: Barrier
+                      attributes:
+                        - type: XcmV2TraitsOutcome
+                          xcmOutcome: Error
+                          value: Barrier

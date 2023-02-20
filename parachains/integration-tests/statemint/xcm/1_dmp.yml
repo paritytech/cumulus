@@ -2,9 +2,9 @@
 settings:
   chains:
     relay_chain: &relay_chain
-      wsPort: 9900
+      wsPort: 9800
     assets_parachain: &assets_parachain
-      wsPort: 9910
+      wsPort: 9810
       paraId: &ap_id 1000
   variables:
     relay_chain:
@@ -69,16 +69,16 @@ tests:
                   ]
                   events:
                     - name: xcmPallet.Attempted
-                      attribute:
-                        type: XcmV2TraitsOutcome
-                        isComplete: true
+                      attributes:
+                        - type: XcmV2TraitsOutcome
+                          xcmOutcome: Complete
                     - name: dmpQueue.ExecutedDownward
                       chain: *assets_parachain
-                      attribute:
-                        type: XcmV2TraitsOutcome
-                        isComplete: true
-                        threshold: [10, 10]
-                        value: 1,021,635,000
+                      attributes:
+                        - type: XcmV2TraitsOutcome
+                          xcmOutcome: Complete
+                          threshold: [10, 10]
+                          value: 1,021,635,000
               - queries:
                   balance_rc_sender_after:
                     chain: *relay_chain
@@ -146,11 +146,11 @@ tests:
                     - name: xcmPallet.Sent
                     - name: dmpQueue.ExecutedDownward
                       chain: *assets_parachain
-                      attribute:
-                        type: XcmV2TraitsOutcome
-                        isComplete: true
-                        threshold: [10, 10]
-                        value: 1,020,807,000
+                      attributes:
+                        - type: XcmV2TraitsOutcome
+                          xcmOutcome: Complete
+                          threshold: [10, 10]
+                          value: 1,020,807,000
               - queries:
                   forced_created_asset:
                     chain: *assets_parachain
@@ -186,9 +186,9 @@ tests:
                   ]
                   events:
                     - name: system.ExtrinsicFailed
-                      attribute:
-                        type: SpRuntimeDispatchError
-                        value: BadOrigin
+                      attributes:
+                        - type: SpRuntimeDispatchError
+                          value: BadOrigin
 
       - name: xcmPallet.limitedReserveTransferAssets
         before: *before_get_balances
@@ -209,16 +209,16 @@ tests:
                   ]
                   events:
                     - name: xcmPallet.Attempted
-                      attribute:
-                        type: XcmV2TraitsOutcome
-                        isComplete: true
-                        value: 1,000,000,000
+                      attributes:
+                        - type: XcmV2TraitsOutcome
+                          xcmOutcome: Complete
+                          value: 1,000,000,000
                     - name: dmpQueue.ExecutedDownward
                       chain: *assets_parachain
-                      attribute:
-                        type: XcmV2TraitsOutcome
-                        isError: true
-                        value: "WeightNotComputable"
+                      attributes:
+                        - type: XcmV2TraitsOutcome
+                          xcmOutcome: Error
+                          value: "WeightNotComputable"
               - queries:
                   balance_rc_sender_after:
                     chain: *relay_chain
