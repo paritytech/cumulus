@@ -1034,7 +1034,7 @@ dependencies = [
  "sp-state-machine 0.13.0",
  "sp-std 5.0.0",
  "sp-trie 7.0.0",
- "trie-db 0.25.0",
+ "trie-db 0.25.1",
 ]
 
 [[package]]
@@ -1392,9 +1392,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.1.4"
+version = "4.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f13b9c79b5d1dd500d20ef541215a6423c75829ef43117e1b4d17fd8af0b5d76"
+checksum = "ec0b0588d44d4d63a87dbd75c136c166bbfd9a86a31cb89e09906521c7d3f5e3"
 dependencies = [
  "bitflags",
  "clap_derive",
@@ -1818,7 +1818,7 @@ name = "cumulus-client-cli"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus?branch=master#445f9277ab55b4d930ced4fbbb38d27c617c6658"
 dependencies = [
- "clap 4.1.4",
+ "clap 4.1.6",
  "parity-scale-codec",
  "sc-chain-spec",
  "sc-cli",
@@ -3151,7 +3151,7 @@ dependencies = [
  "Inflector",
  "array-bytes 4.2.0",
  "chrono",
- "clap 4.1.4",
+ "clap 4.1.6",
  "comfy-table",
  "frame-benchmarking",
  "frame-support",
@@ -5451,7 +5451,7 @@ version = "0.1.0"
 dependencies = [
  "beefy-gadget",
  "beefy-gadget-rpc",
- "clap 4.1.4",
+ "clap 4.1.6",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "jsonrpsee 0.16.2",
@@ -5859,7 +5859,7 @@ name = "node-inspect"
 version = "0.9.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#51cf2e790f118f6cfe8d94fb9ca96bc580bd7c98"
 dependencies = [
- "clap 4.1.4",
+ "clap 4.1.6",
  "parity-scale-codec",
  "sc-cli",
  "sc-client-api",
@@ -7554,7 +7554,7 @@ name = "polkadot-cli"
 version = "0.9.37"
 source = "git+https://github.com/paritytech/polkadot?branch=master#4f331d74c3004d9765b735ec66acc92edea62c7f"
 dependencies = [
- "clap 4.1.4",
+ "clap 4.1.6",
  "frame-benchmarking-cli",
  "futures",
  "log",
@@ -9432,7 +9432,7 @@ dependencies = [
 name = "rialto-bridge-node"
 version = "0.1.0"
 dependencies = [
- "clap 4.1.4",
+ "clap 4.1.6",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "frame-support",
@@ -9459,7 +9459,7 @@ dependencies = [
 name = "rialto-parachain-collator"
 version = "0.1.0"
 dependencies = [
- "clap 4.1.4",
+ "clap 4.1.6",
  "cumulus-client-cli",
  "cumulus-client-consensus-aura",
  "cumulus-client-consensus-common",
@@ -9999,7 +9999,7 @@ source = "git+https://github.com/paritytech/substrate?branch=master#51cf2e790f11
 dependencies = [
  "array-bytes 4.2.0",
  "chrono",
- "clap 4.1.4",
+ "clap 4.1.6",
  "fdlimit",
  "futures",
  "libp2p",
@@ -10793,7 +10793,7 @@ name = "sc-storage-monitor"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#51cf2e790f118f6cfe8d94fb9ca96bc580bd7c98"
 dependencies = [
- "clap 4.1.4",
+ "clap 4.1.6",
  "futures",
  "log",
  "nix 0.26.2",
@@ -13015,9 +13015,9 @@ dependencies = [
 
 [[package]]
 name = "sysinfo"
-version = "0.27.7"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "975fe381e0ecba475d4acff52466906d95b153a40324956552e027b2a9eaa89e"
+checksum = "727220a596b4ca0af040a07091e49f5c105ec8f2592674339a5bf35be592f76e"
 dependencies = [
  "cfg-if 1.0.0",
  "core-foundation-sys",
@@ -13532,9 +13532,9 @@ dependencies = [
 
 [[package]]
 name = "trie-db"
-version = "0.25.0"
+version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9bcd4e7fbb3bcab17b02596b53876e36eb39663ddd87884bfd88c69cdeb2ebd6"
+checksum = "3390c0409daaa6027d6681393316f4ccd3ff82e1590a1e4725014e3ae2bf1920"
 dependencies = [
  "hash-db",
  "hashbrown 0.13.2",
@@ -13609,7 +13609,7 @@ name = "try-runtime-cli"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#51cf2e790f118f6cfe8d94fb9ca96bc580bd7c98"
 dependencies = [
- "clap 4.1.4",
+ "clap 4.1.6",
  "frame-remote-externalities",
  "hex",
  "log",
@@ -13665,7 +13665,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 0.1.10",
+ "cfg-if 1.0.0",
  "digest 0.10.6",
  "rand 0.8.5",
  "static_assertions",
