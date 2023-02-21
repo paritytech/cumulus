@@ -40,6 +40,20 @@ impl<T: frame_system::Config> pallet_teerex::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
+
+	// TODO benchmark dcap registration
+	fn register_dcap_enclave() -> Weight {
+		Weight::from_ref_time(3_969_500_000)
+			.saturating_add(T::DbWeight::get().reads(2))
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
+	// TODO benchmark dcap registration
+	fn register_quoting_enclave() -> Weight {
+		Weight::from_ref_time(3_969_500_000)
+			.saturating_add(T::DbWeight::get().reads(2))
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
+	
 	// Storage: Teerex EnclaveIndex (r:1 w:2)
 	// Storage: Teerex EnclaveCount (r:1 w:1)
 	// Storage: Teerex EnclaveRegistry (r:1 w:2)
@@ -58,5 +72,11 @@ impl<T: frame_system::Config> pallet_teerex::WeightInfo for WeightInfo<T> {
 		// Minimum execution time: 26_600 nanoseconds.
 		Weight::from_ref_time(27_000_000)
 			.saturating_add(T::DbWeight::get().reads(1))
+	}
+
+	fn publish_hash() -> Weight {
+		Weight::from_ref_time(3_969_500_000)
+			.saturating_add(T::DbWeight::get().reads(2))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
 }

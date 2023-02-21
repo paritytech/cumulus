@@ -2,6 +2,16 @@
 
 This is the repository to run Integritee as a parachain on Kusama and Rococo. It is forked from the [Cumulus](https://github.com/paritytech/cumulus) repository.
 
+## Bump Dependencies
+1. Run these commands with the suitable polkadot version.
+```bash
+diener update --cumulus --branch polkadot-v0.9.xx
+diener update --substrate --branch polkadot-v0.9.xx
+diener update --polkadot --branch release-v0.9.xx
+```
+2. Search and replace `integritee-network/` dependencies to point to new `polkadot-v0.9.xx` branch.
+3. Search and replace `orml` dependencies to point to new `polkadot-v0.9.xx` branch.
+
 ## Launch a local setup including a Relay Chain and a Parachain
 
 ### Polkadot-launch
