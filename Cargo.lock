@@ -1090,6 +1090,7 @@ dependencies = [
  "bp-messages",
  "bp-polkadot-core",
  "bp-runtime",
+ "bp-test-utils",
  "cumulus-pallet-parachain-system",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",

@@ -33,6 +33,8 @@ use xcm::{latest::prelude::*, prelude::XcmVersion};
 use xcm_builder::{HaulBlob, HaulBlobError, HaulBlobExporter};
 use xcm_executor::traits::{validate_export, ExportXcm};
 
+pub use bp_test_utils::test_header;
+
 /// Dummy xcm
 pub fn dummy_xcm() -> Xcm<()> {
 	vec![Trap(42)].into()
