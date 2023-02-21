@@ -42,7 +42,7 @@ pub trait InitBlockBuilder {
 	/// Init a specific block builder at a specific block that works for the test runtime.
 	///
 	/// Same as [`InitBlockBuilder::init_block_builder`] besides that it takes a
-	/// [`Hash`] to say which should be the parent block of the block that is being build.
+	/// [`type@Hash`] to say which should be the parent block of the block that is being build.
 	fn init_block_builder_at(
 		&self,
 		at: Hash,
@@ -53,7 +53,7 @@ pub trait InitBlockBuilder {
 	/// Init a specific block builder that works for the test runtime.
 	///
 	/// Same as [`InitBlockBuilder::init_block_builder`] besides that it takes a
-	/// [`Hash`] to say which should be the parent block of the block that is being build and
+	/// [`type@Hash`] to say which should be the parent block of the block that is being build and
 	/// it will use the given `timestamp` as input for the timestamp inherent.
 	fn init_block_builder_with_timestamp(
 		&self,
