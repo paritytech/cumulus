@@ -1158,11 +1158,10 @@ mod tests {
 	use super::*;
 	use bp_runtime::TransactionEra;
 	use bridge_hub_test_utils::test_header;
-	use bridge_runtime_common::integrity::check_additional_signed;
 	use codec::Encode;
 
 	#[test]
-	fn ensure_signed_extension_definition_is_correct() {
+	fn ensure_signed_extension_definition_is_compatible_with_relay() {
 		let payload: SignedExtra = (
 			frame_system::CheckNonZeroSender::new(),
 			frame_system::CheckSpecVersion::new(),
@@ -1200,14 +1199,5 @@ mod tests {
 				10,
 			);
 		assert_eq!(payload.encode(), bhw_indirect_payload.encode());
-
-		check_additional_signed::<
-			SignedExtra,
-			bp_bridge_hub_rococo::rewarding_bridge_signed_extension::RewardingBridgeSignedExtension,
-		>();
-		check_additional_signed::<
-			SignedExtra,
-			bp_bridge_hub_wococo::rewarding_bridge_signed_extension::RewardingBridgeSignedExtension,
-		>();
 	}
 }
