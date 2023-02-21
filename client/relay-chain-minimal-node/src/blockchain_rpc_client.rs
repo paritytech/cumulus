@@ -21,7 +21,7 @@ use cumulus_relay_chain_rpc_interface::RelayChainRpcClient;
 use futures::{Future, Stream, StreamExt};
 use polkadot_core_primitives::{Block, Hash, Header};
 use polkadot_overseer::RuntimeApiSubsystemClient;
-use polkadot_service::{AuxStore, HeaderBackend};
+use polkadot_service::HeaderBackend;
 use sc_authority_discovery::AuthorityDiscovery;
 
 use sp_api::{ApiError, RuntimeApiInfo};
@@ -49,28 +49,6 @@ impl BlockChainRpcClient {
 		number: Option<polkadot_service::BlockNumber>,
 	) -> Result<Option<Hash>, RelayChainError> {
 		self.rpc_client.chain_get_block_hash(number).await
-	}
-}
-
-// Implementation required by Availability-Distribution subsystem
-// but never called in our case.
-impl AuxStore for BlockChainRpcClient {
-	fn insert_aux<
-		'a,
-		'b: 'a,
-		'c: 'a,
-		I: IntoIterator<Item = &'a (&'c [u8], &'c [u8])>,
-		D: IntoIterator<Item = &'a &'b [u8]>,
-	>(
-		&self,
-		_insert: I,
-		_delete: D,
-	) -> sp_blockchain::Result<()> {
-		unimplemented!("Not supported on the RPC collator")
-	}
-
-	fn get_aux(&self, _key: &[u8]) -> sp_blockchain::Result<Option<Vec<u8>>> {
-		unimplemented!("Not supported on the RPC collator")
 	}
 }
 

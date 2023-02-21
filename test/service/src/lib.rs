@@ -487,6 +487,7 @@ pub struct TestNodeBuilder {
 	storage_update_func_relay_chain: Option<Box<dyn Fn()>>,
 	consensus: Consensus,
 	relay_chain_full_node_url: Vec<Url>,
+	embedded_light_client: bool,
 }
 
 impl TestNodeBuilder {
@@ -509,6 +510,7 @@ impl TestNodeBuilder {
 			storage_update_func_relay_chain: None,
 			consensus: Consensus::RelayChain,
 			relay_chain_full_node_url: vec![],
+			embedded_light_client: false,
 		}
 	}
 
@@ -636,8 +638,10 @@ impl TestNodeBuilder {
 			false,
 		);
 
-		let collator_options =
-			CollatorOptions { relay_chain_rpc_urls: self.relay_chain_full_node_url };
+		let collator_options = CollatorOptions {
+			relay_chain_rpc_urls: self.relay_chain_full_node_url,
+			embedded_light_client: self.embedded_light_client,
+		};
 
 		relay_chain_config.network.node_name =
 			format!("{} (relay chain)", relay_chain_config.network.node_name);

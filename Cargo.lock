@@ -1959,6 +1959,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-relay-chain-inprocess-interface",
  "cumulus-relay-chain-interface",
+ "cumulus-relay-chain-light-client-interface",
  "cumulus-relay-chain-minimal-node",
  "futures",
  "parking_lot 0.12.1",
@@ -2259,6 +2260,35 @@ dependencies = [
  "sp-state-machine",
  "thiserror",
  "tokio",
+]
+
+[[package]]
+name = "cumulus-relay-chain-light-client-interface"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
+ "futures",
+ "futures-timer",
+ "jsonrpsee",
+ "lru 0.9.0",
+ "parity-scale-codec",
+ "polkadot-service",
+ "sc-client-api",
+ "sc-rpc-api",
+ "sc-service",
+ "serde",
+ "serde_json",
+ "sp-api",
+ "sp-authority-discovery",
+ "sp-consensus-babe",
+ "sp-core",
+ "sp-state-machine",
+ "sp-storage",
+ "tokio",
+ "tracing",
+ "url",
 ]
 
 [[package]]

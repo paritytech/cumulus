@@ -298,6 +298,10 @@ pub struct RunCmd {
 		alias = "relay-chain-rpc-url"
 	)]
 	pub relay_chain_rpc_urls: Vec<Url>,
+
+	/// Embed a light client for the relay chain
+	#[arg(long)]
+	pub embedded_light_client: bool,
 }
 
 impl RunCmd {
@@ -312,7 +316,10 @@ impl RunCmd {
 
 	/// Create [`CollatorOptions`] representing options only relevant to parachain collator nodes
 	pub fn collator_options(&self) -> CollatorOptions {
-		CollatorOptions { relay_chain_rpc_urls: self.relay_chain_rpc_urls.clone() }
+		CollatorOptions {
+			relay_chain_rpc_urls: self.relay_chain_rpc_urls.clone(),
+			embedded_light_client: self.embedded_light_client,
+		}
 	}
 }
 
@@ -321,6 +328,8 @@ impl RunCmd {
 pub struct CollatorOptions {
 	/// Location of relay chain full node
 	pub relay_chain_rpc_urls: Vec<Url>,
+
+	pub embedded_light_client: bool,
 }
 
 /// A non-redundant version of the `RunCmd` that sets the `validator` field when the
