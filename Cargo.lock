@@ -815,6 +815,7 @@ version = "0.1.0"
 dependencies = [
  "bp-messages",
  "bp-polkadot-core",
+ "bp-runtime",
  "frame-support",
  "frame-system",
  "polkadot-primitives",
