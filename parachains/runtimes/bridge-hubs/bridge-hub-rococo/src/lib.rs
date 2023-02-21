@@ -73,8 +73,14 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 use crate::{
-	bridge_hub_rococo_config::{OnBridgeHubRococoBlobDispatcher, WithBridgeHubWococoMessageBridge},
-	bridge_hub_wococo_config::{OnBridgeHubWococoBlobDispatcher, WithBridgeHubRococoMessageBridge},
+	bridge_hub_rococo_config::{
+		BridgeRefundBridgeHubWococoMessages, OnBridgeHubRococoBlobDispatcher,
+		WithBridgeHubWococoMessageBridge,
+	},
+	bridge_hub_wococo_config::{
+		BridgeRefundBridgeHubRococoMessages, OnBridgeHubWococoBlobDispatcher,
+		WithBridgeHubRococoMessageBridge,
+	},
 	constants::fee::WeightToFee,
 	xcm_config::XcmRouter,
 };
@@ -87,7 +93,6 @@ use parachains_common::{
 };
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
-use crate::bridge_hub_wococo_config::BridgeRefundBridgeHubRococoRelayers;
 
 pub const LOG_TARGET: &str = "runtime::bridge-hub";
 
@@ -114,8 +119,7 @@ pub type SignedExtra = (
 	frame_system::CheckWeight<Runtime>,
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 	BridgeRejectObsoleteHeadersAndMessages,
-	// TODO:check-parameter - initialy, we refund for receive_message_proof only on BridgeHubWococo, needs fix: https://github.com/paritytech/parity-bridges-common/issues/1667
-	BridgeRefundBridgeHubRococoRelayers,
+	(BridgeRefundBridgeHubRococoMessages, BridgeRefundBridgeHubWococoMessages),
 );
 
 /// Unchecked extrinsic type as expected by this runtime.
@@ -1168,6 +1172,7 @@ mod tests {
 			frame_system::CheckWeight::new(),
 			pallet_transaction_payment::ChargeTransactionPayment::from(10),
 			BridgeRejectObsoleteHeadersAndMessages {},
+			(BridgeRefundBridgeHubRococoMessages, BridgeRefundBridgeHubWococoMessages)
 		);
 
 		let bhr_indirect_payload = bp_bridge_hub_rococo::SignedExtension::new(

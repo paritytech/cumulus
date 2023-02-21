@@ -17,7 +17,7 @@
 //! Bridge definitions that are used on Wococo to bridge with Rococo.
 
 use crate::{
-	BridgeGrandpaRococoInstance, BridgeParachainRococoInstance, ParachainInfo, Runtime, WithBridgeHubRococoMessagesInstance,
+	BridgeParachainRococoInstance, ParachainInfo, Runtime, WithBridgeHubRococoMessagesInstance,
 	XcmBlobHauler, XcmBlobHaulerAdapter, XcmRouter,
 };
 use bp_messages::{LaneId, MessageNonce};
@@ -27,6 +27,10 @@ use bridge_runtime_common::{
 	messages::{
 		source::FromBridgedChainMessagesDeliveryProof, target::FromBridgedChainMessagesProof,
 		MessageBridge, ThisChainWithMessages, UnderlyingChainProvider,
+	},
+	refund_relayer_extension::{
+		ActualFeeRefund, RefundBridgedParachainMessages, RefundableMessagesLane,
+		RefundableParachain,
 	},
 };
 use frame_support::{parameter_types, RuntimeDebug};
@@ -147,6 +151,16 @@ impl ThisChainWithMessages for BridgeHubWococo {
 	}
 }
 
+/// Signed extension that refunds relayers that are delivering messages from the Rococo parachain.
+pub type BridgeRefundBridgeHubRococoMessages = RefundBridgedParachainMessages<
+	Runtime,
+	RefundableParachain<BridgeParachainRococoInstance, BridgeHubRococoParachainId>,
+	RefundableMessagesLane<WithBridgeHubRococoMessagesInstance, BridgeHubRococoMessagesLane>,
+	ActualFeeRefund<Runtime>,
+	StrBridgeRefundBridgeHubRococoMessages,
+>;
+bp_runtime::generate_static_str_provider!(BridgeRefundBridgeHubRococoMessages);
+
 parameter_types! {
 	pub const BridgeHubRococoMessagesLane: bp_messages::LaneId = DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO;
 	pub const BridgeHubRococoParachainId: u32 = {
@@ -154,18 +168,6 @@ parameter_types! {
 		BridgeHubRococo::PARACHAIN_ID
 	};
 }
-
-/// Signed extension that refunds relayers that are delivering messages from the Rococo parachain.
-pub type BridgeRefundBridgeHubRococoRelayers =
-bridge_runtime_common::refund_relayer_extension::RefundRelayerForMessagesFromParachain<
-	Runtime,
-	BridgeGrandpaRococoInstance,
-	BridgeParachainRococoInstance,
-	WithBridgeHubRococoMessagesInstance,
-	BridgeHubRococoParachainId,
-	BridgeHubRococoMessagesLane,
-	Runtime,
->;
 
 #[cfg(test)]
 mod tests {
