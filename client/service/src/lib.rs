@@ -34,18 +34,21 @@ use polkadot_primitives::{CollatorPair, OccupiedCoreAssumption};
 use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, ProofProvider, UsageProvider,
 };
-use sc_consensus::{import_queue::{ImportQueueService, ImportQueue}, BlockImport};
-use sc_service::{Configuration, NetworkStarter, SpawnTaskHandle, TaskManager, WarpSyncParams};
+use sc_consensus::{
+	import_queue::{ImportQueue, ImportQueueService},
+	BlockImport,
+};
 use sc_network::NetworkService;
 use sc_network_common::config::SyncMode;
 use sc_network_sync::SyncingService;
 use sc_network_transactions::TransactionsHandlerController;
+use sc_service::{Configuration, NetworkStarter, SpawnTaskHandle, TaskManager, WarpSyncParams};
 use sc_telemetry::{log, TelemetryWorkerHandle};
 use sc_utils::mpsc::TracingUnboundedSender;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{HeaderBackend, HeaderMetadata};
 use sp_core::{traits::SpawnNamed, Decode};
-use sp_runtime::traits::{BlockIdTo, Block as BlockT};
+use sp_runtime::traits::{Block as BlockT, BlockIdTo};
 use std::{sync::Arc, time::Duration};
 
 // Given the sporadic nature of the explicit recovery operation and the
