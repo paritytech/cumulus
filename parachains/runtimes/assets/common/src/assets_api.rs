@@ -21,22 +21,44 @@
 use codec::{Codec, Decode, Encode};
 use frame_support::RuntimeDebug;
 use sp_std::vec::Vec;
+use xcm::latest::{MultiAsset, MultiLocation};
+use xcm_executor::traits::Convert;
 
 /// The possible errors that can happen querying the storage of assets.
 #[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug)]
 pub enum AssetsAccessError {
 	/// `MultiLocation` to `AssetId`/`ClassId` conversion failed.
 	AssetIdConversionFailed,
+	/// `u128` amount to currency `Balance` conversion failed.
+	AmountToBalanceConversionFailed,
+}
+
+/// Helper function to convert collections with (`AssetId`, 'Balance') to (`MultiAsset`)
+pub fn convert_asset<AssetId: Clone, Balance: Clone, ConvertAssetId, ConvertBalance>(
+	assets_balances: Vec<(AssetId, Balance)>,
+) -> Result<Vec<MultiAsset>, AssetsAccessError>
+where
+	ConvertAssetId: Convert<MultiLocation, AssetId>,
+	ConvertBalance: Convert<u128, Balance>,
+{
+	assets_balances
+		.into_iter()
+		.map(|(asset_id, balance)| match ConvertAssetId::reverse_ref(asset_id) {
+			Ok(asset_id_as_multilocation) => match ConvertBalance::reverse_ref(balance) {
+				Ok(amount) => Ok((asset_id_as_multilocation, amount).into()),
+				Err(_) => Err(AssetsAccessError::AmountToBalanceConversionFailed),
+			},
+			Err(_) => Err(AssetsAccessError::AssetIdConversionFailed),
+		})
+		.collect()
 }
 
 sp_api::decl_runtime_apis! {
-	pub trait AssetsApi<AccountId, AssetBalance, AssetId>
+	pub trait AssetsApi<AccountId>
 	where
 		AccountId: Codec,
-		AssetBalance: Codec,
-		AssetId: Codec,
 	{
 		/// Returns the list of `AssetId`s and corresponding balance that an `AccountId` has.
-		fn account_balances(account: AccountId) -> Result<Vec<(AssetId, AssetBalance)>, AssetsAccessError>;
+		fn query_account_balances(account: AccountId) -> Result<Vec<MultiAsset>, AssetsAccessError>;
 	}
 }

@@ -18,31 +18,12 @@
 pub mod assets_api;
 
 use parachains_common::AssetIdForTrustBackedAssets;
-use sp_std::prelude::Vec;
-use xcm::latest::MultiLocation;
 use xcm_builder::AsPrefixedGeneralIndex;
-use xcm_executor::traits::{Convert, JustTry};
+use xcm_executor::traits::JustTry;
 
 /// [`MultiLocation`] vs [`AssetIdForTrustBackedAssets`] converter for `TrustBackedAssets`
 pub type AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation> =
 	AsPrefixedGeneralIndex<TrustBackedAssetsPalletLocation, AssetIdForTrustBackedAssets, JustTry>;
-
-/// Helper function to convert collections with (`AssetId`, 'Balance') to (`MultiLocation`, 'Balance')
-pub fn convert_asset_id<AssetId: Clone, Balance, ConvertAssetId>(
-	assets_balances: Vec<(AssetId, Balance)>,
-) -> Result<Vec<(MultiLocation, Balance)>, assets_api::AssetsAccessError>
-where
-	ConvertAssetId: Convert<MultiLocation, AssetId>,
-{
-	assets_balances
-		.into_iter()
-		.map(|(asset_id, balance)| {
-			ConvertAssetId::reverse_ref(asset_id)
-				.map(|converted_asset_id| (converted_asset_id, balance))
-				.map_err(|_| assets_api::AssetsAccessError::AssetIdConversionFailed)
-		})
-		.collect()
-}
 
 #[cfg(test)]
 mod tests {
