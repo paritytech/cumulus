@@ -73,8 +73,14 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 use crate::{
-	bridge_hub_rococo_config::{OnBridgeHubRococoBlobDispatcher, WithBridgeHubWococoMessageBridge},
-	bridge_hub_wococo_config::{OnBridgeHubWococoBlobDispatcher, WithBridgeHubRococoMessageBridge},
+	bridge_hub_rococo_config::{
+		BridgeRefundBridgeHubWococoMessages, OnBridgeHubRococoBlobDispatcher,
+		WithBridgeHubWococoMessageBridge,
+	},
+	bridge_hub_wococo_config::{
+		BridgeRefundBridgeHubRococoMessages, OnBridgeHubWococoBlobDispatcher,
+		WithBridgeHubRococoMessageBridge,
+	},
 	constants::fee::WeightToFee,
 	xcm_config::XcmRouter,
 };
@@ -113,6 +119,7 @@ pub type SignedExtra = (
 	frame_system::CheckWeight<Runtime>,
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 	BridgeRejectObsoleteHeadersAndMessages,
+	(BridgeRefundBridgeHubRococoMessages, BridgeRefundBridgeHubWococoMessages),
 );
 
 /// Unchecked extrinsic type as expected by this runtime.
@@ -398,7 +405,7 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
 	type WeightInfo = weights::pallet_bridge_grandpa_bridge_wococo_grandpa::WeightInfo<Runtime>;
 }
 
-/// Add granda bridge pallet to track Rococo relay chain
+/// Add granda bridge pallet to track Rococo relay chain on Wococo BridgeHub
 pub type BridgeGrandpaRococoInstance = pallet_bridge_grandpa::Instance2;
 impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 	type BridgedChain = bp_rococo::Rococo;
@@ -407,17 +414,19 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 	type WeightInfo = weights::pallet_bridge_grandpa_bridge_rococo_grandpa::WeightInfo<Runtime>;
 }
 
-pub const ROCOCO_BRIDGE_PARA_PALLET_NAME: &str = "Paras";
-pub const WOCOCO_BRIDGE_PARA_PALLET_NAME: &str = "Paras";
 parameter_types! {
 	pub const RelayChainHeadersToKeep: u32 = 1024;
 	pub const ParachainHeadsToKeep: u32 = 64;
 	pub const MaxRequests: u32 = 64;
 
-	pub const RococoBridgeParachainPalletName: &'static str = ROCOCO_BRIDGE_PARA_PALLET_NAME;
-	pub const WococoBridgeParachainPalletName: &'static str = WOCOCO_BRIDGE_PARA_PALLET_NAME;
+	pub const RococoBridgeParachainPalletName: &'static str = "Paras";
+	pub const WococoBridgeParachainPalletName: &'static str = "Paras";
 	pub const MaxRococoParaHeadDataSize: u32 = bp_rococo::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
 	pub const MaxWococoParaHeadDataSize: u32 = bp_wococo::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
+
+	// TODO:check-parameter - setup initial values https://github.com/paritytech/parity-bridges-common/issues/1677
+	pub storage DeliveryRewardInBalance: u64 = 1_000_000;
+	pub storage ConfirmationRewardInBalance: u64 = 100_000;
 }
 
 /// Add parachain bridge pallet to track Wococo bridge hub parachain
@@ -464,13 +473,15 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 
 	type InboundPayload = XcmAsPlainPayload;
 	type InboundRelayer = AccountId;
-	// TODO:check-parameter - check delivery
 	type DeliveryPayments = ();
 
 	type TargetHeaderChain = TargetHeaderChainAdapter<WithBridgeHubWococoMessageBridge>;
 	type LaneMessageVerifier = bridge_hub_rococo_config::ToBridgeHubWococoMessageVerifier;
-	// TODO:check-parameter - check delivery
-	type DeliveryConfirmationPayments = ();
+	type DeliveryConfirmationPayments = pallet_bridge_relayers::DeliveryConfirmationPaymentsAdapter<
+		Runtime,
+		DeliveryRewardInBalance,
+		ConfirmationRewardInBalance,
+	>;
 
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubWococoMessageBridge>;
 	type MessageDispatch = XcmBlobMessageDispatch<
@@ -498,13 +509,15 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 
 	type InboundPayload = XcmAsPlainPayload;
 	type InboundRelayer = AccountId;
-	// TODO:check-parameter - check delivery
 	type DeliveryPayments = ();
 
 	type TargetHeaderChain = TargetHeaderChainAdapter<WithBridgeHubRococoMessageBridge>;
 	type LaneMessageVerifier = bridge_hub_wococo_config::ToBridgeHubRococoMessageVerifier;
-	// TODO:check-parameter - check delivery
-	type DeliveryConfirmationPayments = ();
+	type DeliveryConfirmationPayments = pallet_bridge_relayers::DeliveryConfirmationPaymentsAdapter<
+		Runtime,
+		DeliveryRewardInBalance,
+		ConfirmationRewardInBalance,
+	>;
 
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubRococoMessageBridge>;
 	type MessageDispatch = XcmBlobMessageDispatch<
@@ -512,6 +525,15 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 		bp_bridge_hub_wococo::BridgeHubWococo,
 		OnBridgeHubWococoBlobDispatcher,
 	>;
+}
+
+/// Allows collect and claim rewards for relayers
+impl pallet_bridge_relayers::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Reward = Balance;
+	type PaymentProcedure =
+		bp_relayers::PayLaneRewardFromAccount<pallet_balances::Pallet<Runtime>, AccountId>;
+	type WeightInfo = weights::pallet_bridge_relayers::WeightInfo<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -564,6 +586,8 @@ construct_runtime!(
 		BridgeRococoGrandpa: pallet_bridge_grandpa::<Instance2>::{Pallet, Call, Storage, Config<T>} = 43,
 		BridgeRococoParachain: pallet_bridge_parachains::<Instance2>::{Pallet, Call, Storage, Event<T>} = 44,
 		BridgeRococoMessages: pallet_bridge_messages::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 45,
+
+		BridgeRelayers: pallet_bridge_relayers::{Pallet, Call, Storage, Event<T>} = 47,
 	}
 );
 
@@ -606,6 +630,8 @@ mod benches {
 		[pallet_bridge_grandpa, BridgeRococoGrandpa]
 		[pallet_bridge_parachains, BridgeParachainsBench::<Runtime, BridgeParachainRococoInstance>]
 		[pallet_bridge_messages, BridgeMessagesBench::<Runtime, WithBridgeHubRococoMessagesInstance>]
+		// Bridge relayer pallets
+		[pallet_bridge_relayers, BridgeRelayersBench::<Runtime>]
 	);
 }
 
@@ -841,6 +867,7 @@ impl_runtime_apis! {
 
 			use pallet_bridge_parachains::benchmarking::Pallet as BridgeParachainsBench;
 			use pallet_bridge_messages::benchmarking::Pallet as BridgeMessagesBench;
+			use pallet_bridge_relayers::benchmarking::Pallet as BridgeRelayersBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
@@ -950,9 +977,9 @@ impl_runtime_apis! {
 			};
 
 			impl BridgeMessagesConfig<WithBridgeHubWococoMessagesInstance> for Runtime {
-				fn is_relayer_rewarded(_: &Self::AccountId) -> bool {
-					// TODO: implement me properly
-					true
+				fn is_relayer_rewarded(relayer: &Self::AccountId) -> bool {
+					let bench_lane_id = <Self as BridgeMessagesConfig<WithBridgeHubWococoMessagesInstance>>::bench_lane_id();
+					pallet_bridge_relayers::Pallet::<Runtime>::relayer_reward(relayer, &bench_lane_id).is_some()
 				}
 
 				fn prepare_message_proof(
@@ -977,9 +1004,9 @@ impl_runtime_apis! {
 			}
 
 			impl BridgeMessagesConfig<WithBridgeHubRococoMessagesInstance> for Runtime {
-				fn is_relayer_rewarded(_: &Self::AccountId) -> bool {
-					// TODO: implement me properly
-					true
+				fn is_relayer_rewarded(relayer: &Self::AccountId) -> bool {
+					let bench_lane_id = <Self as BridgeMessagesConfig<WithBridgeHubRococoMessagesInstance>>::bench_lane_id();
+					pallet_bridge_relayers::Pallet::<Runtime>::relayer_reward(relayer, &bench_lane_id).is_some()
 				}
 
 				fn prepare_message_proof(
@@ -1007,6 +1034,10 @@ impl_runtime_apis! {
 			use pallet_bridge_parachains::benchmarking::{
 				Config as BridgeParachainsConfig,
 				Pallet as BridgeParachainsBench,
+			};
+			use pallet_bridge_relayers::benchmarking::{
+				Pallet as BridgeRelayersBench,
+				Config as BridgeRelayersConfig,
 			};
 
 			impl BridgeParachainsConfig<BridgeParachainWococoInstance> for Runtime {
@@ -1054,6 +1085,20 @@ impl_runtime_apis! {
 						parachain_head_size,
 						proof_size,
 					)
+				}
+			}
+
+			impl BridgeRelayersConfig for Runtime {
+				fn prepare_environment(
+					lane: bp_messages::LaneId,
+					reward: Balance,
+				) {
+					use frame_support::traits::fungible::Mutate;
+					let lane_rewards_account = bp_relayers::PayLaneRewardFromAccount::<
+						Balances,
+						AccountId
+					>::lane_rewards_account(lane);
+					Balances::mint_into(&lane_rewards_account, reward).unwrap();
 				}
 			}
 
@@ -1111,37 +1156,48 @@ cumulus_pallet_parachain_system::register_validate_block! {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use bridge_runtime_common::integrity::check_additional_signed;
+	use bp_runtime::TransactionEra;
+	use bridge_hub_test_utils::test_header;
 	use codec::Encode;
-	use sp_runtime::generic::Era;
 
 	#[test]
-	fn ensure_signed_extension_definition_is_correct() {
+	fn ensure_signed_extension_definition_is_compatible_with_relay() {
 		let payload: SignedExtra = (
 			frame_system::CheckNonZeroSender::new(),
 			frame_system::CheckSpecVersion::new(),
 			frame_system::CheckTxVersion::new(),
 			frame_system::CheckGenesis::new(),
-			frame_system::CheckEra::from(Era::Immortal),
+			frame_system::CheckEra::from(sp_runtime::generic::Era::Immortal),
 			frame_system::CheckNonce::from(10),
 			frame_system::CheckWeight::new(),
 			pallet_transaction_payment::ChargeTransactionPayment::from(10),
 			BridgeRejectObsoleteHeadersAndMessages {},
+			(
+				BridgeRefundBridgeHubRococoMessages::default(),
+				BridgeRefundBridgeHubWococoMessages::default(),
+			),
 		);
 
-		let bhr_indirect_payload = bp_bridge_hub_rococo::SignedExtension::new(
-			((), (), (), (), Era::Immortal, 10.into(), (), 10.into(), ()),
-			None,
-		);
+		let bhr_indirect_payload =
+			bp_bridge_hub_rococo::rewarding_bridge_signed_extension::from_params(
+				10,
+				10,
+				TransactionEra::Immortal,
+				test_header::<bridge_hub_test_utils::RelayBlockHeader>(1).hash(),
+				10,
+				10,
+			);
 		assert_eq!(payload.encode(), bhr_indirect_payload.encode());
 
-		let bhw_indirect_payload = bp_bridge_hub_wococo::SignedExtension::new(
-			((), (), (), (), Era::Immortal, 10.into(), (), 10.into(), ()),
-			None,
-		);
+		let bhw_indirect_payload =
+			bp_bridge_hub_wococo::rewarding_bridge_signed_extension::from_params(
+				10,
+				10,
+				TransactionEra::Immortal,
+				test_header::<bridge_hub_test_utils::RelayBlockHeader>(1).hash(),
+				10,
+				10,
+			);
 		assert_eq!(payload.encode(), bhw_indirect_payload.encode());
-
-		check_additional_signed::<SignedExtra, bp_bridge_hub_rococo::SignedExtension>();
-		check_additional_signed::<SignedExtra, bp_bridge_hub_wococo::SignedExtension>();
 	}
 }

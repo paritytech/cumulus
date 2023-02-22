@@ -33,6 +33,7 @@ bp-header-chain = { path = "../../../../bridges/primitives/header-chain", defaul
 bp-messages = { path = "../../../../bridges/primitives/messages", default-features = false }
 bp-polkadot-core = { path = "../../../../bridges/primitives/polkadot-core", default-features = false }
 bp-runtime = { path = "../../../../bridges/primitives/runtime", default-features = false }
+bp-test-utils = { path = "../../../../bridges/primitives/test-utils", default-features = false }
 
 [features]
 default = [ "std" ]
@@ -43,6 +44,7 @@ std = [
 	"bp-polkadot-core/std",
 	"bp-header-chain/std",
 	"bp-runtime/std",
+	"bp-test-utils/std",
 	"parachains-common/std",
 	"parachain-info/std",
 	"cumulus-primitives-core/std",
