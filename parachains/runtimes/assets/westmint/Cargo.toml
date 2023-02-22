@@ -144,6 +144,7 @@ std = [
 	"pallet-balances/std",
 	"pallet-multisig/std",
 	"pallet-nfts/std",
+	"pallet-nfts-runtime-api/std",
 	"pallet-proxy/std",
 	"pallet-session/std",
 	"pallet-timestamp/std",
