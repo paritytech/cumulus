@@ -11,12 +11,12 @@ settings:
       paraId: &pp_id 2000
   variables:
     common:
-      xcm_version: &xcm_version '2'
-      require_weight_at_most: &weight_at_most 1000000000
+      xcm_version: &xcm_version '3'
+      require_weight_at_most: &weight_at_most {refTime: 1000000000, proofSize: 0}
     chains:
       relay_chain:
         signer: &rc_signer //Alice
-        assets_parachain_destination: &ap_dest { v1: { 0, interior: { x1: { parachain: *ap_id }}}}
+        assets_parachain_destination: &ap_dest { v3: { 0, interior: { x1: { parachain: *ap_id }}}}
       penpal_parachain:
         signer: &pp_signer //Alice
   decodedCalls:
@@ -98,13 +98,31 @@ tests:
               args: [
                 *ap_dest, # destination
                 {
-                  v2: [ #message
+                  v3: [ #message
+                    {
+                      UnpaidExecution: {
+                        weightLimit: Unlimited,
+                        originType: Superuser
+                      }
+                    },
                     {
                       Transact: {
                         originType: Superuser,
                         requireWeightAtMost: *weight_at_most,
                         call: $ap_force_xcm_version
                       }
+                    }
+                    ,{
+                      # ExpectTransactStatus: Success
+
+                      # NOTE: this is a workaround - this report accidentally triggers the relay 
+                      # chain to update the parachain to the later version which then makes
+                      # the test pass.
+                      ReportTransactStatus: {
+                        destination: { parents: 1, interior: Here },
+                        query_id: 42,
+                        max_weight: *weight_at_most,
+                      },
                     }
                   ]
                 }
