@@ -45,9 +45,10 @@ use cumulus_primitives_core::{
 	GetChannelInfo, MessageSendError, ParaId, XcmpMessageFormat, XcmpMessageHandler,
 	XcmpMessageSource,
 };
+use pallet_message_queue::OnQueueChanged;
 use frame_support::{
 	defensive, defensive_assert,
-	traits::{EnqueueMessage, EnsureOrigin, Get, OnQueueChanged, ProcessMessage},
+	traits::{EnqueueMessage, EnsureOrigin, Get, ProcessMessage},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight, WeightMeter},
 	BoundedVec,
 };
@@ -676,8 +677,9 @@ impl<T: Config> ProcessMessage for Pallet<T> {
 	fn process_message(
 		message: &[u8],
 		origin: Self::Origin,
-		weight_limit: Weight,
-	) -> Result<(bool, Weight), ProcessMessageError> {
+		meter: &mut WeightMeter,
+	) -> Result<bool, ProcessMessageError> {
+		// FAIL-CI weight
 		let AggregateMessageOrigin::Sibling(para) = origin else {
 			defensive!("XCMP queue should only process messages from sibling parachains.");
 			return Err(ProcessMessageError::Unsupported);
@@ -699,7 +701,7 @@ impl<T: Config> ProcessMessage for Pallet<T> {
 		T::XcmpMessageProcessor::process_message(
 			message,
 			AggregateMessageOrigin::Sibling(para),
-			weight_limit,
+			meter,
 		)
 	}
 }

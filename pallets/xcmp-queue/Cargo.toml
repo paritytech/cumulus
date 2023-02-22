@@ -15,6 +15,7 @@ frame-system = { git = "https://github.com/paritytech/substrate", default-featur
 sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-message-queue = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -33,7 +34,6 @@ bounded-collections = { version = "0.1.4", default-features = false }
 # Substrate
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-message-queue = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
 xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -52,6 +52,7 @@ std = [
 	"frame-system/std",
 	"log/std",
 	"polkadot-runtime-common/std",
+	"pallet-message-queue/std",
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
