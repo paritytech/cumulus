@@ -47,28 +47,3 @@ tests:
                   attributes:
                     - type: XcmV3TraitsOutcome
                       xcmOutcome: Incomplete
-
-      # Fails with the message - "RpcError: 1010: Invalid Transaction: Transaction would exhaust the block limits"
-      # Because of the u64::MAX weight set fot the extrinsic to disable it.
-      # The test tool does not allow to assert such a fail. 
-
-      # - name: Reserve assets from Collectives Parachain to Relay Chain fails
-      #   actions:
-      #     - extrinsics:
-      #       - chain: *collectives_parachain
-      #         signer: *alice_signer
-      #         pallet: polkadotXcm
-      #         call: reserveTransferAssets
-      #         args: [
-      #           { v3: { parents: 1, interior: { here: true }}}, # destination
-      #           { v3: { parents: 0, interior: { x1: { accountId32: { id: *alice_acc32 }}}}}, # beneficiary
-      #           {
-      #             v3: [ 
-      #               { 
-      #                 id: { concrete: { parents: 1, interior: { here: true }}}, 
-      #                 fun: { fungible: 10000000000000 } # 10_000_000_000_000
-      #               }
-      #             ] 
-      #           }, # assets
-      #           0, # feeAssetItem
-      #         ]
