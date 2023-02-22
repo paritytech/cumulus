@@ -5,6 +5,7 @@
 benchmarks-build:
   stage:                           benchmarks-build
   extends:
+    - .docker-env
     - .collect-artifacts
     # - .benchmarks-manual-refs
     - .pr-refs
