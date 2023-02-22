@@ -10,13 +10,13 @@ settings:
     relay_chain:
       signer: &rc_signer //Alice
       wallet: &rc_wallet HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F
-      assets_parachain_destination: &ap_dest { v1: { parents: 0, interior: { x1: { parachain: *ap_id }}}}
+      assets_parachain_destination: &ap_dest { v3: { parents: 0, interior: { x1: { parachain: *ap_id }}}}
       assets_parachain_account: &ap_acc '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d'
-      assets_parachain_beneficiary: &ap_benf {v1: { parents: 0, interior: { x1: { accountId32: { network: { any: true }, id: *ap_acc }}}}}
+      assets_parachain_beneficiary: &ap_benf {v3: { parents: 0, interior: { x1: { accountId32: { id: *ap_acc }}}}}
       ksm: &rc_ksm { concrete: { parents: 0, interior: { here: true }}}
       amount: &amount 1000000000000
       ksm_fungible: &rc_ksm_fungible { id: *rc_ksm, fun: { fungible: *amount }}
-      require_weight_at_most: &rc_weight_at_most 1000000000
+      require_weight_at_most: &rc_weight_at_most {refTime: 1000000000, proofSize: 0}
     assets_parachain_account:
       wallet: &ap_wallet HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F
       asset_id: &asset_id 1
@@ -63,22 +63,24 @@ tests:
                   args: [
                     *ap_dest, # destination
                     *ap_benf, # beneficiary
-                    { v1: [ *rc_ksm_fungible ] }, # assets
+                    { v3: [ *rc_ksm_fungible ] }, # assets
                     0, # feeAssetItem
                     { unlimited: true } # weightLimit
                   ]
                   events:
                     - name: xcmPallet.Attempted
                       attributes:
-                        - type: XcmV2TraitsOutcome
-                          xcmOutcome: Complete
+                        - type: XcmV3TraitsOutcome
+                          # xcmOutcome: Complete
                     - name: dmpQueue.ExecutedDownward
                       chain: *assets_parachain
                       attributes:
-                        - type: XcmV2TraitsOutcome
-                          xcmOutcome: Complete
-                          threshold: [10, 10]
-                          value: 1,021,973,000
+                        - type: XcmV3TraitsOutcome
+                          # xcmOutcome: Complete
+                          # threshold: [10, 10]
+                          # value: "100"
+                          value: {"Complete":{"refTime":"1,010,034,000","proofSize":"0"}}
+                          #{"Complete":{"refTime":"1010034000","proofSize":"0"}}
               - queries:
                   balance_rc_sender_after:
                     chain: *relay_chain
@@ -131,7 +133,13 @@ tests:
                   args: [
                     *ap_dest, # destination
                     {
-                      v2: [ #message
+                      v3: [ #message
+                        {
+                          UnpaidExecution: {
+                            weightLimit: Unlimited,
+                            originType: Superuser
+                          }
+                        },
                         {
                           Transact: {
                             originType: Superuser,
@@ -147,10 +155,10 @@ tests:
                     - name: dmpQueue.ExecutedDownward
                       chain: *assets_parachain
                       attributes:
-                        - type: XcmV2TraitsOutcome
-                          xcmOutcome: Complete
-                          threshold: [10, 10]
-                          value: 1,021,258,000
+                        - type: XcmV3TraitsOutcome
+                          # xcmOutcome: Complete
+                          # threshold: [10, 10]
+                          value: {"Complete":{"refTime":"1,014,103,000","proofSize":"0"}}
               - queries:
                   forced_created_asset:
                     chain: *assets_parachain
@@ -173,7 +181,13 @@ tests:
                   args: [
                     *ap_dest, # destination
                     {
-                      v2: [ #message
+                      v3: [ #message
+                        {
+                          UnpaidExecution: {
+                            weightLimit: Unlimited,
+                            originType: Superuser
+                          }
+                        },
                         {
                           Transact: {
                             originType: Native,
@@ -203,23 +217,24 @@ tests:
                   args: [
                     *ap_dest, # destination
                     *ap_benf, # beneficiary
-                    { v1: [ *rc_ksm_fungible ] }, # assets
+                    { v3: [ *rc_ksm_fungible ] }, # assets
                     0, # feeAssetItem
                     { unlimited: true } # weightLimit
                   ]
                   events:
                     - name: xcmPallet.Attempted
                       attributes:
-                        - type: XcmV2TraitsOutcome
-                          xcmOutcome: Complete
-                          threshold: [10, 10]
-                          value: 750,645,000
+                        - type: XcmV3TraitsOutcome
+                          # xcmOutcome: Complete
+                          # threshold: [10, 10]
+                          value: {"Complete":{"refTime":"750,645,000","proofSize":"0"}}
                     - name: dmpQueue.ExecutedDownward
                       chain: *assets_parachain
                       attributes:
-                        - type: XcmV2TraitsOutcome
-                          xcmOutcome: Error
-                          value: "WeightNotComputable"
+                        - type: XcmV3TraitsOutcome
+                          # xcmOutcome: Error
+                          # value: "WeightNotComputable"
+                          value: {"Incomplete":[{"refTime":"1,000,000,000","proofSize":"0"},"UntrustedReserveLocation"]}
               - queries:
                   balance_rc_sender_after:
                     chain: *relay_chain
