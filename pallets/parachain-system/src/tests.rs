@@ -28,7 +28,7 @@ use frame_support::{
 	inherent::{InherentData, ProvideInherent},
 	parameter_types,
 	traits::{OnFinalize, OnInitialize, ProcessMessage, ProcessMessageError},
-	weights::Weight,
+	weights::{Weight, WeightMeter},
 };
 use frame_system::RawOrigin;
 use hex_literal::hex;
@@ -176,15 +176,15 @@ impl ProcessMessage for SaveIntoThreadLocal {
 	fn process_message(
 		message: &[u8],
 		origin: Self::Origin,
-		_weight_limit: Weight,
-	) -> Result<(bool, Weight), ProcessMessageError> {
+		_meter: &mut WeightMeter,
+	) -> Result<bool, ProcessMessageError> {
 		assert_eq!(origin, Self::Origin::Parent); // FAIL-CI use transformed origin
 
 		HANDLED_DMP_MESSAGES.with(|m| {
 			m.borrow_mut().push(message.to_vec());
 			Weight::zero()
 		});
-		Ok((true, Weight::zero()))
+		Ok(true)
 	}
 }
 

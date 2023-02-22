@@ -45,13 +45,13 @@ use cumulus_primitives_core::{
 	GetChannelInfo, MessageSendError, ParaId, XcmpMessageFormat, XcmpMessageHandler,
 	XcmpMessageSource,
 };
-use pallet_message_queue::OnQueueChanged;
 use frame_support::{
 	defensive, defensive_assert,
 	traits::{EnqueueMessage, EnsureOrigin, Get, ProcessMessage},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight, WeightMeter},
 	BoundedVec,
 };
+use pallet_message_queue::OnQueueChanged;
 use polkadot_runtime_common::xcm_sender::ConstantPrice;
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
