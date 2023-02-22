@@ -424,9 +424,9 @@ parameter_types! {
 	pub const MaxRococoParaHeadDataSize: u32 = bp_rococo::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
 	pub const MaxWococoParaHeadDataSize: u32 = bp_wococo::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
 
-	// TODO:check-parameter - setup hard-coded rewards somehow or store them on-chain?
-	pub const DeliveryRewardInBalance: u64 = 100_000;
-	pub const ConfirmationRewardInBalance: u64 = 10_000;
+	// TODO:check-parameter - setup initial values https://github.com/paritytech/parity-bridges-common/issues/1677
+	pub storage DeliveryRewardInBalance: u64 = 1_000_000;
+	pub storage ConfirmationRewardInBalance: u64 = 100_000;
 }
 
 /// Add parachain bridge pallet to track Wococo bridge hub parachain

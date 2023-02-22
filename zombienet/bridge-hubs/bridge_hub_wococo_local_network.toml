@@ -48,19 +48,19 @@ cumulus_based = true
 	]
 
 	# run bob as parachain collator
-#	[[parachains.collators]]
-#	name = "bob-collator-wo"
-#	validator = true
-#	command = "{{POLKADOT_PARACHAIN_BINARY_PATH}}"
-#	rpc_port = 8936
-#	ws_port = 8946
-#	args = [
-#		"-lparachain=trace,runtime::mmr=info,substrate=info,runtime=info,runtime::bridge-hub=trace,runtime::bridge=trace,runtime::bridge-dispatch=trace,bridge=trace,runtime::bridge-messages=trace,xcm::weight=trace,xcm::filter_asset_location=trace,xcm::send_xcm=trace,xcm::barriers=trace,xcm::barrier=trace,xcm::execute_xcm=trace,xcm::contains=trace,xcm::execute_xcm_in_credit,xcm::process_instruction=trace,xcm::currency_adapter=trace,xcm::origin_conversion=trace,xcm::fungibles_adapter=trace,xcm::process=trace,xcm::execute=trace,xcm::should_execute=trace",
-#	]
-#	extra_args = [
-#		"--force-authoring", "--no-mdns", "--bootnodes {{'alice-collator-wo'|zombie('multiAddress')}}",
-#		"-- --port 41336 --rpc-port 48936 --ws-port 48946 --no-mdns", "--bootnodes {{'bob-validator-wo'|zombie('multiAddress')}}"
-#	]
+	[[parachains.collators]]
+	name = "bob-collator-wo"
+	validator = true
+	command = "{{POLKADOT_PARACHAIN_BINARY_PATH}}"
+	rpc_port = 8936
+	ws_port = 8946
+	args = [
+		"-lparachain=trace,runtime::mmr=info,substrate=info,runtime=info,runtime::bridge-hub=trace,runtime::bridge=trace,runtime::bridge-dispatch=trace,bridge=trace,runtime::bridge-messages=trace,xcm::weight=trace,xcm::filter_asset_location=trace,xcm::send_xcm=trace,xcm::barriers=trace,xcm::barrier=trace,xcm::execute_xcm=trace,xcm::contains=trace,xcm::execute_xcm_in_credit,xcm::process_instruction=trace,xcm::currency_adapter=trace,xcm::origin_conversion=trace,xcm::fungibles_adapter=trace,xcm::process=trace,xcm::execute=trace,xcm::should_execute=trace",
+	]
+	extra_args = [
+		"--force-authoring", "--no-mdns", "--bootnodes {{'alice-collator-wo'|zombie('multiAddress')}}",
+		"-- --port 41336 --rpc-port 48936 --ws-port 48946 --no-mdns", "--bootnodes {{'bob-validator-wo'|zombie('multiAddress')}}"
+	]
 
 [[parachains]]
 id = 1000
@@ -80,16 +80,16 @@ cumulus_based = true
 		"-- --port 31333 --rpc-port 38933 --ws-port 38943 --no-mdns", "--bootnodes {{'alice-validator-wo'|zombie('multiAddress')}}"
 	]
 
-#	[[parachains.collators]]
-#	name = "wockmint-collator2"
-#	command = "{{POLKADOT_PARACHAIN_BINARY_PATH_FOR_WOCKMINT}}"
-#	args = [
-#		"-lparachain=debug,xcm::weight=trace,xcm::filter_asset_location=trace,xcm::send_xcm=trace,xcm::barriers=trace,xcm::barrier=trace,xcm::execute_xcm=trace,xcm::contains=trace,xcm::execute_xcm_in_credit,xcm::process_instruction=trace,xcm::currency_adapter=trace,xcm::origin_conversion=trace,xcm::fungibles_adapter=trace,xcm::process=trace,xcm::execute=trace,xcm::should_execute=trace",
-#	]
-#	extra_args = [
-#		"--no-mdns", "--bootnodes {{'wockmint-collator1'|zombie('multiAddress')}}",
-#		"-- --port 31433 --rpc-port 38833 --ws-port 38843 --no-mdns", "--bootnodes {{'alice-validator-wo'|zombie('multiAddress')}}"
-#	]
+	[[parachains.collators]]
+	name = "wockmint-collator2"
+	command = "{{POLKADOT_PARACHAIN_BINARY_PATH_FOR_WOCKMINT}}"
+	args = [
+		"-lparachain=debug,xcm::weight=trace,xcm::filter_asset_location=trace,xcm::send_xcm=trace,xcm::barriers=trace,xcm::barrier=trace,xcm::execute_xcm=trace,xcm::contains=trace,xcm::execute_xcm_in_credit,xcm::process_instruction=trace,xcm::currency_adapter=trace,xcm::origin_conversion=trace,xcm::fungibles_adapter=trace,xcm::process=trace,xcm::execute=trace,xcm::should_execute=trace",
+	]
+	extra_args = [
+		"--no-mdns", "--bootnodes {{'wockmint-collator1'|zombie('multiAddress')}}",
+		"-- --port 31433 --rpc-port 38833 --ws-port 38843 --no-mdns", "--bootnodes {{'alice-validator-wo'|zombie('multiAddress')}}"
+	]
 
 [[hrmp_channels]]
 sender = 1000
