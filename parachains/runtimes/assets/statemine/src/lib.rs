@@ -489,7 +489,10 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
-	type EnqueueXcmOverHrmp = MessageQueue;
+	type XcmpEnqueuer = MessageQueue;
+	// We use the `XcmpQueue` itself as processor to respect the channel suspension logic.
+	type XcmpMessageProcessor = XcmpQueue;
+	type MaxInboundSuspended = sp_core::ConstU32<1_000>;
 	type ControllerOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		EnsureXcm<(
