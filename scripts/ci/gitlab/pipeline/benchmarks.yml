@@ -88,7 +88,8 @@ benchmarks-collectives:
   timeout:                         1d
   extends:
     - .collect-artifacts
-    - .benchmarks-refs
+    # - .benchmarks-refs
+    - .pr-refs
   before_script:
     - !reference [.docker-env, before_script]
   script:
@@ -111,7 +112,8 @@ benchmarks-bridge-hubs:
   timeout:                         1d
   extends:
     - .collect-artifacts
-    - .benchmarks-refs
+    # - .benchmarks-refs
+    - .pr-refs
   before_script:
     - !reference [.docker-env, before_script]
   script:
