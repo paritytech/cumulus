@@ -110,7 +110,6 @@ benchmarks-bridge-hubs:
   stage:                           benchmarks-run
   timeout:                         1d
   extends:
-    - .docker-env
     - .collect-artifacts
     - .benchmarks-refs
   before_script:
