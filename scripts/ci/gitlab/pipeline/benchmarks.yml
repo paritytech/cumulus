@@ -23,6 +23,8 @@ benchmarks-assets:
     - !reference [.docker-env, before_script]
   script:
     - ./scripts/benchmarks-ci.sh assets statemine ./artifacts
+    - ./scripts/benchmarks-ci.sh assets statemint ./artifacts
+    - ./scripts/benchmarks-ci.sh assets westmint ./artifacts
     - export CURRENT_TIME=$(date '+%s')
     - export BRANCHNAME="weights-statemint-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
     - !reference [.git-commit-push, script]
