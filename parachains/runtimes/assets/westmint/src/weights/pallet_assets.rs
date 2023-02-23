@@ -19,7 +19,7 @@
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-02-23, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
-//! HOSTNAME: `bm3`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
+//! HOSTNAME: `bm6`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("westmint-dev"), DB CACHE: 1024
 
 // Executed Command:
@@ -58,8 +58,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `141`
 		//  Estimated: `5288`
-		// Minimum execution time: 21_815 nanoseconds.
-		Weight::from_ref_time(22_271_000)
+		// Minimum execution time: 22_416 nanoseconds.
+		Weight::from_ref_time(22_823_000)
 			.saturating_add(Weight::from_proof_size(5288))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
@@ -70,8 +70,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `6`
 		//  Estimated: `2685`
-		// Minimum execution time: 11_200 nanoseconds.
-		Weight::from_ref_time(16_641_000)
+		// Minimum execution time: 10_961 nanoseconds.
+		Weight::from_ref_time(11_269_000)
 			.saturating_add(Weight::from_proof_size(2685))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -82,8 +82,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `309`
 		//  Estimated: `2685`
-		// Minimum execution time: 12_849 nanoseconds.
-		Weight::from_ref_time(13_128_000)
+		// Minimum execution time: 12_883 nanoseconds.
+		Weight::from_ref_time(13_285_000)
 			.saturating_add(Weight::from_proof_size(2685))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -99,11 +99,11 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0 + c * (240 ±0)`
 		//  Estimated: `5262 + c * (5180 ±0)`
-		// Minimum execution time: 15_755 nanoseconds.
-		Weight::from_ref_time(15_964_000)
+		// Minimum execution time: 15_800 nanoseconds.
+		Weight::from_ref_time(15_974_000)
 			.saturating_add(Weight::from_proof_size(5262))
-			// Standard Error: 10_900
-			.saturating_add(Weight::from_ref_time(13_864_060).saturating_mul(c.into()))
+			// Standard Error: 9_990
+			.saturating_add(Weight::from_ref_time(14_113_289).saturating_mul(c.into()))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().reads((2_u64).saturating_mul(c.into())))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -119,11 +119,11 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `446 + a * (86 ±0)`
 		//  Estimated: `5308 + a * (2623 ±0)`
-		// Minimum execution time: 16_539 nanoseconds.
-		Weight::from_ref_time(16_626_000)
+		// Minimum execution time: 16_295 nanoseconds.
+		Weight::from_ref_time(16_673_000)
 			.saturating_add(Weight::from_proof_size(5308))
-			// Standard Error: 7_050
-			.saturating_add(Weight::from_ref_time(13_532_455).saturating_mul(a.into()))
+			// Standard Error: 7_865
+			.saturating_add(Weight::from_ref_time(13_815_019).saturating_mul(a.into()))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(a.into())))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -138,8 +138,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `275`
 		//  Estimated: `5300`
-		// Minimum execution time: 12_377 nanoseconds.
-		Weight::from_ref_time(12_928_000)
+		// Minimum execution time: 12_819 nanoseconds.
+		Weight::from_ref_time(13_166_000)
 			.saturating_add(Weight::from_proof_size(5300))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -152,8 +152,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `275`
 		//  Estimated: `5262`
-		// Minimum execution time: 22_912 nanoseconds.
-		Weight::from_ref_time(23_362_000)
+		// Minimum execution time: 23_053 nanoseconds.
+		Weight::from_ref_time(23_383_000)
 			.saturating_add(Weight::from_proof_size(5262))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
@@ -166,8 +166,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `383`
 		//  Estimated: `5262`
-		// Minimum execution time: 29_077 nanoseconds.
-		Weight::from_ref_time(29_944_000)
+		// Minimum execution time: 29_168 nanoseconds.
+		Weight::from_ref_time(29_454_000)
 			.saturating_add(Weight::from_proof_size(5262))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
@@ -182,8 +182,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `383`
 		//  Estimated: `10442`
-		// Minimum execution time: 38_725 nanoseconds.
-		Weight::from_ref_time(39_392_000)
+		// Minimum execution time: 39_425 nanoseconds.
+		Weight::from_ref_time(40_296_000)
 			.saturating_add(Weight::from_proof_size(10442))
 			.saturating_add(T::DbWeight::get().reads(4))
 			.saturating_add(T::DbWeight::get().writes(4))
@@ -198,8 +198,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `383`
 		//  Estimated: `10442`
-		// Minimum execution time: 35_102 nanoseconds.
-		Weight::from_ref_time(35_468_000)
+		// Minimum execution time: 33_647 nanoseconds.
+		Weight::from_ref_time(34_362_000)
 			.saturating_add(Weight::from_proof_size(10442))
 			.saturating_add(T::DbWeight::get().reads(4))
 			.saturating_add(T::DbWeight::get().writes(4))
@@ -214,8 +214,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `383`
 		//  Estimated: `10442`
-		// Minimum execution time: 38_797 nanoseconds.
-		Weight::from_ref_time(39_566_000)
+		// Minimum execution time: 39_713 nanoseconds.
+		Weight::from_ref_time(40_050_000)
 			.saturating_add(Weight::from_proof_size(10442))
 			.saturating_add(T::DbWeight::get().reads(4))
 			.saturating_add(T::DbWeight::get().writes(4))
@@ -228,8 +228,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `383`
 		//  Estimated: `5262`
-		// Minimum execution time: 16_386 nanoseconds.
-		Weight::from_ref_time(16_810_000)
+		// Minimum execution time: 16_259 nanoseconds.
+		Weight::from_ref_time(16_649_000)
 			.saturating_add(Weight::from_proof_size(5262))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -242,8 +242,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `383`
 		//  Estimated: `5262`
-		// Minimum execution time: 16_036 nanoseconds.
-		Weight::from_ref_time(16_393_000)
+		// Minimum execution time: 16_311 nanoseconds.
+		Weight::from_ref_time(16_797_000)
 			.saturating_add(Weight::from_proof_size(5262))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -254,8 +254,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `309`
 		//  Estimated: `2685`
-		// Minimum execution time: 12_791 nanoseconds.
-		Weight::from_ref_time(13_086_000)
+		// Minimum execution time: 12_952 nanoseconds.
+		Weight::from_ref_time(13_223_000)
 			.saturating_add(Weight::from_proof_size(2685))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -266,8 +266,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `309`
 		//  Estimated: `2685`
-		// Minimum execution time: 12_795 nanoseconds.
-		Weight::from_ref_time(13_094_000)
+		// Minimum execution time: 12_885 nanoseconds.
+		Weight::from_ref_time(13_148_000)
 			.saturating_add(Weight::from_proof_size(2685))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -280,8 +280,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `275`
 		//  Estimated: `5300`
-		// Minimum execution time: 13_731 nanoseconds.
-		Weight::from_ref_time(14_134_000)
+		// Minimum execution time: 13_942 nanoseconds.
+		Weight::from_ref_time(14_395_000)
 			.saturating_add(Weight::from_proof_size(5300))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -292,8 +292,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `275`
 		//  Estimated: `2685`
-		// Minimum execution time: 12_782 nanoseconds.
-		Weight::from_ref_time(13_087_000)
+		// Minimum execution time: 12_942 nanoseconds.
+		Weight::from_ref_time(13_214_000)
 			.saturating_add(Weight::from_proof_size(2685))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -304,15 +304,15 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 	/// Proof: Assets Metadata (max_values: None, max_size: Some(140), added: 2615, mode: MaxEncodedLen)
 	/// The range of component `n` is `[0, 50]`.
 	/// The range of component `s` is `[0, 50]`.
-	fn set_metadata(n: u32, _s: u32, ) -> Weight {
+	fn set_metadata(_n: u32, s: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `275`
 		//  Estimated: `5300`
-		// Minimum execution time: 22_330 nanoseconds.
-		Weight::from_ref_time(25_189_062)
+		// Minimum execution time: 22_690 nanoseconds.
+		Weight::from_ref_time(23_667_556)
 			.saturating_add(Weight::from_proof_size(5300))
-			// Standard Error: 10_160
-			.saturating_add(Weight::from_ref_time(6_086).saturating_mul(n.into()))
+			// Standard Error: 735
+			.saturating_add(Weight::from_ref_time(3_455).saturating_mul(s.into()))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -324,8 +324,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `471`
 		//  Estimated: `5300`
-		// Minimum execution time: 23_222 nanoseconds.
-		Weight::from_ref_time(23_886_000)
+		// Minimum execution time: 23_420 nanoseconds.
+		Weight::from_ref_time(23_943_000)
 			.saturating_add(Weight::from_proof_size(5300))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -336,13 +336,15 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 	/// Proof: Assets Metadata (max_values: None, max_size: Some(140), added: 2615, mode: MaxEncodedLen)
 	/// The range of component `n` is `[0, 50]`.
 	/// The range of component `s` is `[0, 50]`.
-	fn force_set_metadata(_n: u32, _s: u32, ) -> Weight {
+	fn force_set_metadata(_n: u32, s: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `82`
 		//  Estimated: `5300`
-		// Minimum execution time: 11_992 nanoseconds.
-		Weight::from_ref_time(13_673_860)
+		// Minimum execution time: 12_256 nanoseconds.
+		Weight::from_ref_time(12_757_408)
 			.saturating_add(Weight::from_proof_size(5300))
+			// Standard Error: 314
+			.saturating_add(Weight::from_ref_time(1_716).saturating_mul(s.into()))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -354,8 +356,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `471`
 		//  Estimated: `5300`
-		// Minimum execution time: 22_884 nanoseconds.
-		Weight::from_ref_time(23_327_000)
+		// Minimum execution time: 23_436 nanoseconds.
+		Weight::from_ref_time(23_878_000)
 			.saturating_add(Weight::from_proof_size(5300))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -366,8 +368,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `275`
 		//  Estimated: `2685`
-		// Minimum execution time: 12_066 nanoseconds.
-		Weight::from_ref_time(12_412_000)
+		// Minimum execution time: 12_269 nanoseconds.
+		Weight::from_ref_time(12_408_000)
 			.saturating_add(Weight::from_proof_size(2685))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -380,8 +382,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `309`
 		//  Estimated: `5308`
-		// Minimum execution time: 25_850 nanoseconds.
-		Weight::from_ref_time(26_322_000)
+		// Minimum execution time: 26_380 nanoseconds.
+		Weight::from_ref_time(26_803_000)
 			.saturating_add(Weight::from_proof_size(5308))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
@@ -398,8 +400,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `553`
 		//  Estimated: `13065`
-		// Minimum execution time: 52_886 nanoseconds.
-		Weight::from_ref_time(53_253_000)
+		// Minimum execution time: 52_810 nanoseconds.
+		Weight::from_ref_time(53_520_000)
 			.saturating_add(Weight::from_proof_size(13065))
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(5))
@@ -412,8 +414,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `479`
 		//  Estimated: `5308`
-		// Minimum execution time: 27_869 nanoseconds.
-		Weight::from_ref_time(28_232_000)
+		// Minimum execution time: 28_292 nanoseconds.
+		Weight::from_ref_time(28_698_000)
 			.saturating_add(Weight::from_proof_size(5308))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
@@ -426,8 +428,8 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `479`
 		//  Estimated: `5308`
-		// Minimum execution time: 28_157 nanoseconds.
-		Weight::from_ref_time(28_471_000)
+		// Minimum execution time: 28_978 nanoseconds.
+		Weight::from_ref_time(29_411_000)
 			.saturating_add(Weight::from_proof_size(5308))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))

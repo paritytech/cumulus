@@ -19,7 +19,7 @@
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-02-23, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
-//! HOSTNAME: `bm3`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
+//! HOSTNAME: `bm6`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("bridge-hub-kusama-dev"), DB CACHE: 1024
 
 // Executed Command:
@@ -55,22 +55,22 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 1_581 nanoseconds.
-		Weight::from_ref_time(99_568)
+		// Minimum execution time: 1_501 nanoseconds.
+		Weight::from_ref_time(1_561_000)
 			.saturating_add(Weight::from_proof_size(0))
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(412).saturating_mul(b.into()))
+			.saturating_add(Weight::from_ref_time(415).saturating_mul(b.into()))
 	}
 	/// The range of component `b` is `[0, 3932160]`.
 	fn remark_with_event(b: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 10_669 nanoseconds.
-		Weight::from_ref_time(10_707_000)
+		// Minimum execution time: 6_765 nanoseconds.
+		Weight::from_ref_time(6_904_000)
 			.saturating_add(Weight::from_proof_size(0))
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(1_773).saturating_mul(b.into()))
+			.saturating_add(Weight::from_ref_time(1_763).saturating_mul(b.into()))
 	}
 	/// Storage: System Digest (r:1 w:1)
 	/// Proof Skipped: System Digest (max_values: Some(1), max_size: None, mode: Measured)
@@ -80,8 +80,8 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `495`
-		// Minimum execution time: 5_516 nanoseconds.
-		Weight::from_ref_time(5_646_000)
+		// Minimum execution time: 3_381 nanoseconds.
+		Weight::from_ref_time(3_628_000)
 			.saturating_add(Weight::from_proof_size(495))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(2))
@@ -93,11 +93,11 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 1_611 nanoseconds.
-		Weight::from_ref_time(1_672_000)
+		// Minimum execution time: 1_663 nanoseconds.
+		Weight::from_ref_time(1_706_000)
 			.saturating_add(Weight::from_proof_size(0))
-			// Standard Error: 1_950
-			.saturating_add(Weight::from_ref_time(566_436).saturating_mul(i.into()))
+			// Standard Error: 1_537
+			.saturating_add(Weight::from_ref_time(578_227).saturating_mul(i.into()))
 			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(i.into())))
 	}
 	/// Storage: Skipped Metadata (r:0 w:0)
@@ -107,11 +107,11 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 3_155 nanoseconds.
-		Weight::from_ref_time(3_181_000)
+		// Minimum execution time: 1_655 nanoseconds.
+		Weight::from_ref_time(1_746_000)
 			.saturating_add(Weight::from_proof_size(0))
-			// Standard Error: 815
-			.saturating_add(Weight::from_ref_time(428_951).saturating_mul(i.into()))
+			// Standard Error: 803
+			.saturating_add(Weight::from_ref_time(447_830).saturating_mul(i.into()))
 			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(i.into())))
 	}
 	/// Storage: Skipped Metadata (r:0 w:0)
@@ -121,11 +121,11 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `68 + p * (69 ±0)`
 		//  Estimated: `66 + p * (70 ±0)`
-		// Minimum execution time: 3_519 nanoseconds.
-		Weight::from_ref_time(3_590_000)
+		// Minimum execution time: 3_615 nanoseconds.
+		Weight::from_ref_time(3_691_000)
 			.saturating_add(Weight::from_proof_size(66))
-			// Standard Error: 1_088
-			.saturating_add(Weight::from_ref_time(999_686).saturating_mul(p.into()))
+			// Standard Error: 1_032
+			.saturating_add(Weight::from_ref_time(983_994).saturating_mul(p.into()))
 			.saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(p.into())))
 			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(p.into())))
 			.saturating_add(Weight::from_proof_size(70).saturating_mul(p.into()))

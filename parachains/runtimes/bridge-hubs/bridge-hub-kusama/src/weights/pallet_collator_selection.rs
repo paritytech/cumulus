@@ -19,7 +19,7 @@
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-02-23, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
-//! HOSTNAME: `bm3`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
+//! HOSTNAME: `bm6`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("bridge-hub-kusama-dev"), DB CACHE: 1024
 
 // Executed Command:
@@ -59,11 +59,11 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 		// Proof Size summary in bytes:
 		//  Measured:  `214 + b * (78 ±0)`
 		//  Estimated: `213 + b * (2554 ±0)`
-		// Minimum execution time: 13_644 nanoseconds.
-		Weight::from_ref_time(16_500_441)
+		// Minimum execution time: 14_379 nanoseconds.
+		Weight::from_ref_time(15_320_663)
 			.saturating_add(Weight::from_proof_size(213))
-			// Standard Error: 4_351
-			.saturating_add(Weight::from_ref_time(2_406_503).saturating_mul(b.into()))
+			// Standard Error: 5_420
+			.saturating_add(Weight::from_ref_time(2_497_471).saturating_mul(b.into()))
 			.saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(b.into())))
 			.saturating_add(T::DbWeight::get().writes(1))
 			.saturating_add(Weight::from_proof_size(2554).saturating_mul(b.into()))
@@ -74,8 +74,8 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 6_810 nanoseconds.
-		Weight::from_ref_time(7_003_000)
+		// Minimum execution time: 6_994 nanoseconds.
+		Weight::from_ref_time(7_160_000)
 			.saturating_add(Weight::from_proof_size(0))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -85,8 +85,8 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 6_757 nanoseconds.
-		Weight::from_ref_time(7_027_000)
+		// Minimum execution time: 7_378 nanoseconds.
+		Weight::from_ref_time(7_622_000)
 			.saturating_add(Weight::from_proof_size(0))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -107,11 +107,11 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 		// Proof Size summary in bytes:
 		//  Measured:  `1167 + c * (48 ±0)`
 		//  Estimated: `56785 + c * (49 ±0)`
-		// Minimum execution time: 35_390 nanoseconds.
-		Weight::from_ref_time(26_622_683)
+		// Minimum execution time: 35_985 nanoseconds.
+		Weight::from_ref_time(28_129_355)
 			.saturating_add(Weight::from_proof_size(56785))
-			// Standard Error: 1_397
-			.saturating_add(Weight::from_ref_time(106_150).saturating_mul(c.into()))
+			// Standard Error: 1_296
+			.saturating_add(Weight::from_ref_time(109_494).saturating_mul(c.into()))
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(2))
 			.saturating_add(Weight::from_proof_size(49).saturating_mul(c.into()))
@@ -125,11 +125,11 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 		// Proof Size summary in bytes:
 		//  Measured:  `503 + c * (48 ±0)`
 		//  Estimated: `48497`
-		// Minimum execution time: 26_500 nanoseconds.
-		Weight::from_ref_time(15_960_673)
+		// Minimum execution time: 27_288 nanoseconds.
+		Weight::from_ref_time(16_563_155)
 			.saturating_add(Weight::from_proof_size(48497))
-			// Standard Error: 1_386
-			.saturating_add(Weight::from_ref_time(106_407).saturating_mul(c.into()))
+			// Standard Error: 1_315
+			.saturating_add(Weight::from_ref_time(109_180).saturating_mul(c.into()))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -143,8 +143,8 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 		// Proof Size summary in bytes:
 		//  Measured:  `187`
 		//  Estimated: `5749`
-		// Minimum execution time: 25_565 nanoseconds.
-		Weight::from_ref_time(26_001_000)
+		// Minimum execution time: 27_158 nanoseconds.
+		Weight::from_ref_time(27_663_000)
 			.saturating_add(Weight::from_proof_size(5749))
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(4))
@@ -165,11 +165,11 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 		// Proof Size summary in bytes:
 		//  Measured:  `22878 + r * (148 ±0) + c * (97 ±0)`
 		//  Estimated: `52737 + c * (2519 ±0) + r * (2602 ±0)`
-		// Minimum execution time: 14_205 nanoseconds.
-		Weight::from_ref_time(14_302_000)
+		// Minimum execution time: 14_407 nanoseconds.
+		Weight::from_ref_time(14_608_000)
 			.saturating_add(Weight::from_proof_size(52737))
-			// Standard Error: 771_648
-			.saturating_add(Weight::from_ref_time(28_219_665).saturating_mul(c.into()))
+			// Standard Error: 799_677
+			.saturating_add(Weight::from_ref_time(28_998_881).saturating_mul(c.into()))
 			.saturating_add(T::DbWeight::get().reads(4))
 			.saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(c.into())))
 			.saturating_add(T::DbWeight::get().writes(1))

@@ -19,7 +19,7 @@
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-02-23, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
-//! HOSTNAME: `bm3`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
+//! HOSTNAME: `bm6`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("collectives-polkadot-dev"), DB CACHE: 1024
 
 // Executed Command:
@@ -55,11 +55,11 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 11_398 nanoseconds.
-		Weight::from_ref_time(11_904_257)
+		// Minimum execution time: 11_849 nanoseconds.
+		Weight::from_ref_time(12_414_180)
 			.saturating_add(Weight::from_proof_size(0))
 			// Standard Error: 2
-			.saturating_add(Weight::from_ref_time(490).saturating_mul(z.into()))
+			.saturating_add(Weight::from_ref_time(528).saturating_mul(z.into()))
 	}
 	/// Storage: Multisig Multisigs (r:1 w:1)
 	/// Proof: Multisig Multisigs (max_values: None, max_size: Some(3346), added: 5821, mode: MaxEncodedLen)
@@ -69,13 +69,13 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `311 + s * (2 ±0)`
 		//  Estimated: `5821`
-		// Minimum execution time: 35_187 nanoseconds.
-		Weight::from_ref_time(28_603_314)
+		// Minimum execution time: 36_624 nanoseconds.
+		Weight::from_ref_time(28_847_035)
 			.saturating_add(Weight::from_proof_size(5821))
-			// Standard Error: 697
-			.saturating_add(Weight::from_ref_time(71_958).saturating_mul(s.into()))
+			// Standard Error: 650
+			.saturating_add(Weight::from_ref_time(84_122).saturating_mul(s.into()))
 			// Standard Error: 6
-			.saturating_add(Weight::from_ref_time(1_516).saturating_mul(z.into()))
+			.saturating_add(Weight::from_ref_time(1_525).saturating_mul(z.into()))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -87,13 +87,13 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `313`
 		//  Estimated: `5821`
-		// Minimum execution time: 26_496 nanoseconds.
-		Weight::from_ref_time(20_463_530)
+		// Minimum execution time: 26_762 nanoseconds.
+		Weight::from_ref_time(20_282_728)
 			.saturating_add(Weight::from_proof_size(5821))
-			// Standard Error: 1_503
-			.saturating_add(Weight::from_ref_time(62_122).saturating_mul(s.into()))
-			// Standard Error: 14
-			.saturating_add(Weight::from_ref_time(1_523).saturating_mul(z.into()))
+			// Standard Error: 540
+			.saturating_add(Weight::from_ref_time(70_141).saturating_mul(s.into()))
+			// Standard Error: 5
+			.saturating_add(Weight::from_ref_time(1_555).saturating_mul(z.into()))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -107,13 +107,13 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `448 + s * (33 ±0)`
 		//  Estimated: `8424`
-		// Minimum execution time: 39_813 nanoseconds.
-		Weight::from_ref_time(31_873_552)
+		// Minimum execution time: 40_589 nanoseconds.
+		Weight::from_ref_time(31_618_238)
 			.saturating_add(Weight::from_proof_size(8424))
-			// Standard Error: 590
-			.saturating_add(Weight::from_ref_time(86_856).saturating_mul(s.into()))
-			// Standard Error: 5
-			.saturating_add(Weight::from_ref_time(1_529).saturating_mul(z.into()))
+			// Standard Error: 701
+			.saturating_add(Weight::from_ref_time(95_913).saturating_mul(s.into()))
+			// Standard Error: 6
+			.saturating_add(Weight::from_ref_time(1_592).saturating_mul(z.into()))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -124,11 +124,11 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `318 + s * (2 ±0)`
 		//  Estimated: `5821`
-		// Minimum execution time: 25_092 nanoseconds.
-		Weight::from_ref_time(27_928_366)
+		// Minimum execution time: 25_751 nanoseconds.
+		Weight::from_ref_time(27_420_213)
 			.saturating_add(Weight::from_proof_size(5821))
-			// Standard Error: 2_603
-			.saturating_add(Weight::from_ref_time(69_832).saturating_mul(s.into()))
+			// Standard Error: 718
+			.saturating_add(Weight::from_ref_time(80_178).saturating_mul(s.into()))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -139,11 +139,11 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `313`
 		//  Estimated: `5821`
-		// Minimum execution time: 17_044 nanoseconds.
-		Weight::from_ref_time(18_600_989)
+		// Minimum execution time: 17_022 nanoseconds.
+		Weight::from_ref_time(18_547_252)
 			.saturating_add(Weight::from_proof_size(5821))
-			// Standard Error: 649
-			.saturating_add(Weight::from_ref_time(72_295).saturating_mul(s.into()))
+			// Standard Error: 623
+			.saturating_add(Weight::from_ref_time(78_400).saturating_mul(s.into()))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -154,11 +154,11 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `517 + s * (1 ±0)`
 		//  Estimated: `5821`
-		// Minimum execution time: 26_122 nanoseconds.
-		Weight::from_ref_time(28_686_133)
+		// Minimum execution time: 25_895 nanoseconds.
+		Weight::from_ref_time(28_195_060)
 			.saturating_add(Weight::from_proof_size(5821))
-			// Standard Error: 2_278
-			.saturating_add(Weight::from_ref_time(73_340).saturating_mul(s.into()))
+			// Standard Error: 845
+			.saturating_add(Weight::from_ref_time(84_661).saturating_mul(s.into()))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
