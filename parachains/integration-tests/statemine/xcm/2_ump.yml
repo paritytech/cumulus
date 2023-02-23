@@ -162,13 +162,12 @@ tests:
                       v3: [ #message
                         {
                           UnpaidExecution: {
-                            weightLimit: Unlimited,
-                            originType: Superuser
+                            weightLimit: Unlimited
                           }
                         },
                         {
                           Transact: {
-                            originType: Native,
+                            originKind: Native,
                             requireWeightAtMost: *weight_at_most,
                             call: $system_remark
                           }

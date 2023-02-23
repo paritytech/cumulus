@@ -16,7 +16,7 @@ settings:
       ksm: &rc_ksm { concrete: { parents: 0, interior: { here: true }}}
       amount: &amount 1000000000000
       ksm_fungible: &rc_ksm_fungible { id: *rc_ksm, fun: { fungible: *amount }}
-      require_weight_at_most: &rc_weight_at_most {refTime: 1000000000, proofSize: 0}
+      require_weight_at_most: &rc_weight_at_most {refTime: 1000000000, proofSize: 200000}
     assets_parachain_account:
       wallet: &ap_wallet HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F
       asset_id: &asset_id 1
@@ -63,7 +63,7 @@ tests:
                   args: [
                     *ap_dest, # destination
                     *ap_benf, # beneficiary
-                    { v3: [ *rc_ksm_fungible ] }, # assets
+                    { v3: [ *rc_ksm_fungible ] },
                     0, # feeAssetItem
                     { unlimited: true } # weightLimit
                   ]
@@ -136,13 +136,12 @@ tests:
                       v3: [ #message
                         {
                           UnpaidExecution: {
-                            weightLimit: Unlimited,
-                            originType: Superuser
+                            weightLimit: Unlimited
                           }
                         },
                         {
                           Transact: {
-                            originType: Superuser,
+                            originKind: Superuser,
                             requireWeightAtMost: *rc_weight_at_most,
                             call: $force_create_asset
                           }
@@ -158,7 +157,7 @@ tests:
                         - type: XcmV3TraitsOutcome
                           # xcmOutcome: Complete
                           # threshold: [10, 10]
-                          value: {"Complete":{"refTime":"1,014,103,000","proofSize":"0"}}
+                          value: {"Complete":{"refTime":"1,014,103,000","proofSize":"200,000"}}
               - queries:
                   forced_created_asset:
                     chain: *assets_parachain
@@ -184,13 +183,12 @@ tests:
                       v3: [ #message
                         {
                           UnpaidExecution: {
-                            weightLimit: Unlimited,
-                            originType: Superuser
+                            weightLimit: Unlimited
                           }
                         },
                         {
                           Transact: {
-                            originType: Native,
+                            originKind: Native,
                             requireWeightAtMost: *rc_weight_at_most,
                             call: $force_create_asset
                           }
