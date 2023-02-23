@@ -7,8 +7,7 @@ benchmarks-build:
   extends:
     - .docker-env
     - .collect-artifacts
-    # - .benchmarks-manual-refs
-    - .pr-refs
+    - .benchmarks-manual-refs
   script:
     - time cargo build --profile production --locked --features runtime-benchmarks
     - mkdir -p artifacts
@@ -19,63 +18,15 @@ benchmarks-assets:
   timeout:                         1d
   extends:
     - .collect-artifacts
-    # - .benchmarks-refs
-    - .pr-refs
+    - .benchmarks-refs
   before_script:
     - !reference [.docker-env, before_script]
   script:
     - ./scripts/benchmarks-ci.sh assets statemine ./artifacts
-    - git diff -P > ./artifacts/assets_weights_statemine_${CI_COMMIT_SHORT_SHA}.patch
-    # - export CURRENT_TIME=$(date '+%s')
-    # - export BRANCHNAME="weights-statemint-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
-    # - !reference [.git-commit-push, script]
-    # - ./scripts/ci/create-benchmark-pr.sh "[benchmarks] Update weights for statemine/t" "$BRANCHNAME"
-    - rm -f ./artifacts/polkadot-parachain
-    - rm -f ./artifacts/test-parachain
-  after_script:
-    - rm -rf .git/config
-  tags:
-    - weights
-
-benchmarks-assets2:
-  stage:                           benchmarks-run
-  timeout:                         1d
-  extends:
-    - .collect-artifacts
-    # - .benchmarks-refs
-    - .pr-refs
-  before_script:
-    - !reference [.docker-env, before_script]
-  script:
-    - ./scripts/benchmarks-ci.sh assets statemint ./artifacts
-    - git diff -P > ./artifacts/assets_weights_statemint_${CI_COMMIT_SHORT_SHA}.patch
-    # - export CURRENT_TIME=$(date '+%s')
-    # - export BRANCHNAME="weights-statemint-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
-    # - !reference [.git-commit-push, script]
-    # - ./scripts/ci/create-benchmark-pr.sh "[benchmarks] Update weights for statemine/t" "$BRANCHNAME"
-    - rm -f ./artifacts/polkadot-parachain
-    - rm -f ./artifacts/test-parachain
-  after_script:
-    - rm -rf .git/config
-  tags:
-    - weights
-
-benchmarks-assets3:
-  stage:                           benchmarks-run
-  timeout:                         1d
-  extends:
-    - .collect-artifacts
-    # - .benchmarks-refs
-    - .pr-refs
-  before_script:
-    - !reference [.docker-env, before_script]
-  script:
-    - ./scripts/benchmarks-ci.sh assets westmint ./artifacts
-    - git diff -P > ./artifacts/assets_weights_westmint_${CI_COMMIT_SHORT_SHA}.patch
-    # - export CURRENT_TIME=$(date '+%s')
-    # - export BRANCHNAME="weights-statemint-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
-    # - !reference [.git-commit-push, script]
-    # - ./scripts/ci/create-benchmark-pr.sh "[benchmarks] Update weights for statemine/t" "$BRANCHNAME"
+    - export CURRENT_TIME=$(date '+%s')
+    - export BRANCHNAME="weights-statemint-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
+    - !reference [.git-commit-push, script]
+    - ./scripts/ci/create-benchmark-pr.sh "[benchmarks] Update weights for statemine/t" "$BRANCHNAME"
     - rm -f ./artifacts/polkadot-parachain
     - rm -f ./artifacts/test-parachain
   after_script:
@@ -88,18 +39,15 @@ benchmarks-collectives:
   timeout:                         1d
   extends:
     - .collect-artifacts
-    # - .benchmarks-refs
-    - .pr-refs
+    - .benchmarks-refs
   before_script:
     - !reference [.docker-env, before_script]
   script:
     - ./scripts/benchmarks-ci.sh collectives collectives-polkadot ./artifacts
-    - git diff -P > ./artifacts/collectives_weights_${CI_COMMIT_SHORT_SHA}.patch
-    # - git status
-    # - export CURRENT_TIME=$(date '+%s')
-    # - export BRANCHNAME="weights-collectives-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
-    # - !reference [.git-commit-push, script]
-    # - ./scripts/ci/create-benchmark-pr.sh "[benchmarks] Update weights for collectives" "$BRANCHNAME"
+    - export CURRENT_TIME=$(date '+%s')
+    - export BRANCHNAME="weights-collectives-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
+    - !reference [.git-commit-push, script]
+    - ./scripts/ci/create-benchmark-pr.sh "[benchmarks] Update weights for collectives" "$BRANCHNAME"
     - rm -f ./artifacts/polkadot-parachain
     - rm -f ./artifacts/test-parachain
   after_script:
@@ -112,19 +60,17 @@ benchmarks-bridge-hubs:
   timeout:                         1d
   extends:
     - .collect-artifacts
-    # - .benchmarks-refs
-    - .pr-refs
+    - .benchmarks-refs
   before_script:
     - !reference [.docker-env, before_script]
   script:
     - ./scripts/benchmarks-ci.sh bridge-hubs bridge-hub-polkadot ./artifacts
     - ./scripts/benchmarks-ci.sh bridge-hubs bridge-hub-kusama ./artifacts
     - ./scripts/benchmarks-ci.sh bridge-hubs bridge-hub-rococo ./artifacts
-    - git diff -P > ./artifacts/bridge_hubs_weights_${CI_COMMIT_SHORT_SHA}.patch
-    # - export CURRENT_TIME=$(date '+%s')
-    # - export BRANCHNAME="weights-bridge-hubs-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
-    # - !reference [.git-commit-push, script]
-    # - ./scripts/ci/create-benchmark-pr.sh "[benchmarks] Update weights for bridge-hubs" "$BRANCHNAME"
+    - export CURRENT_TIME=$(date '+%s')
+    - export BRANCHNAME="weights-bridge-hubs-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
+    - !reference [.git-commit-push, script]
+    - ./scripts/ci/create-benchmark-pr.sh "[benchmarks] Update weights for bridge-hubs" "$BRANCHNAME"
     - rm -f ./artifacts/polkadot-parachain
     - rm -f ./artifacts/test-parachain
   after_script:
