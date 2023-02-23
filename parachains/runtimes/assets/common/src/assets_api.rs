@@ -75,6 +75,19 @@ where
 	items.map(Converter::convert_ref).collect()
 }
 
+/// Helper function to convert [`Balance`] with [`MultiLocation`] to [`MultiAsset`]
+pub fn convert_balance<
+	T: frame_support::pallet_prelude::Get<MultiLocation>,
+	Balance: TryInto<u128>,
+>(
+	balance: Balance,
+) -> Result<MultiAsset, AssetsAccessError> {
+	match balance.try_into() {
+		Ok(balance) => Ok((T::get(), balance).into()),
+		Err(_) => Err(AssetsAccessError::AmountToBalanceConversionFailed),
+	}
+}
+
 /// The possible errors that can happen querying the storage of assets.
 #[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug)]
 pub enum AssetsAccessError {
@@ -89,7 +102,7 @@ sp_api::decl_runtime_apis! {
 	where
 		AccountId: Codec,
 	{
-		/// Returns the list of `AssetId`s and corresponding balance that an `AccountId` has.
+		/// Returns the list of all [`MultiAsset`] that an `AccountId` has.
 		fn query_account_balances(account: AccountId) -> Result<Vec<MultiAsset>, AssetsAccessError>;
 	}
 }
