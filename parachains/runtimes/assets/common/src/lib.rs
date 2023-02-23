@@ -18,18 +18,28 @@
 pub mod assets_api;
 
 use parachains_common::AssetIdForTrustBackedAssets;
-use xcm_builder::AsPrefixedGeneralIndex;
+use xcm_builder::{AsPrefixedGeneralIndex, ConvertedConcreteId};
 use xcm_executor::traits::JustTry;
 
 /// [`MultiLocation`] vs [`AssetIdForTrustBackedAssets`] converter for `TrustBackedAssets`
 pub type AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation> =
 	AsPrefixedGeneralIndex<TrustBackedAssetsPalletLocation, AssetIdForTrustBackedAssets, JustTry>;
 
+/// [`ConvertedConcreteId`] converter dedicated for [`TrustBackedAssets`]
+pub type TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance> =
+	ConvertedConcreteId<
+		AssetIdForTrustBackedAssets,
+		Balance,
+		AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>,
+		JustTry,
+	>;
+
 #[cfg(test)]
 mod tests {
 
 	use super::*;
 	use xcm::latest::prelude::*;
+	use xcm_executor::traits::Convert;
 
 	frame_support::parameter_types! {
 		pub TrustBackedAssetsPalletLocation: MultiLocation = MultiLocation::new(5, X1(PalletInstance(13)));
