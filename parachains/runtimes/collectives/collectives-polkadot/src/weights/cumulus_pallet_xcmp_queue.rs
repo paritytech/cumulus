@@ -19,17 +19,20 @@
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-02-23, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
-//! HOSTNAME: `bm6`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
+//! HOSTNAME: `bm3`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("collectives-polkadot-dev"), DB CACHE: 1024
 
 // Executed Command:
-// ./artifacts/polkadot-parachain
+// ./target/production/polkadot-parachain
 // benchmark
 // pallet
 // --chain=collectives-polkadot-dev
 // --execution=wasm
 // --wasm-execution=compiled
 // --pallet=cumulus_pallet_xcmp_queue
+// --no-storage-info
+// --no-median-slopes
+// --no-min-squares
 // --extrinsic=*
 // --steps=50
 // --repeat=20
@@ -53,8 +56,8 @@ impl<T: frame_system::Config> cumulus_pallet_xcmp_queue::WeightInfo for WeightIn
 		// Proof Size summary in bytes:
 		//  Measured:  `76`
 		//  Estimated: `571`
-		// Minimum execution time: 4_808 nanoseconds.
-		Weight::from_ref_time(4_966_000)
+		// Minimum execution time: 4_689 nanoseconds.
+		Weight::from_ref_time(4_958_000)
 			.saturating_add(Weight::from_proof_size(571))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -65,8 +68,8 @@ impl<T: frame_system::Config> cumulus_pallet_xcmp_queue::WeightInfo for WeightIn
 		// Proof Size summary in bytes:
 		//  Measured:  `76`
 		//  Estimated: `571`
-		// Minimum execution time: 5_014 nanoseconds.
-		Weight::from_ref_time(5_135_000)
+		// Minimum execution time: 4_642 nanoseconds.
+		Weight::from_ref_time(4_918_000)
 			.saturating_add(Weight::from_proof_size(571))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))

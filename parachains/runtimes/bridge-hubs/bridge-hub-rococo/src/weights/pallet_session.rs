@@ -19,17 +19,20 @@
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-02-23, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
-//! HOSTNAME: `bm6`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
+//! HOSTNAME: `bm3`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("bridge-hub-rococo-dev"), DB CACHE: 1024
 
 // Executed Command:
-// ./artifacts/polkadot-parachain
+// ./target/production/polkadot-parachain
 // benchmark
 // pallet
 // --chain=bridge-hub-rococo-dev
 // --execution=wasm
 // --wasm-execution=compiled
 // --pallet=pallet_session
+// --no-storage-info
+// --no-median-slopes
+// --no-min-squares
 // --extrinsic=*
 // --steps=50
 // --repeat=20
@@ -55,8 +58,8 @@ impl<T: frame_system::Config> pallet_session::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `297`
 		//  Estimated: `5544`
-		// Minimum execution time: 15_721 nanoseconds.
-		Weight::from_ref_time(16_081_000)
+		// Minimum execution time: 16_159 nanoseconds.
+		Weight::from_ref_time(16_633_000)
 			.saturating_add(Weight::from_proof_size(5544))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
@@ -69,8 +72,8 @@ impl<T: frame_system::Config> pallet_session::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `279`
 		//  Estimated: `3033`
-		// Minimum execution time: 12_031 nanoseconds.
-		Weight::from_ref_time(12_339_000)
+		// Minimum execution time: 12_321 nanoseconds.
+		Weight::from_ref_time(18_595_000)
 			.saturating_add(Weight::from_proof_size(3033))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(2))

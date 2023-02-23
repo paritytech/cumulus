@@ -19,17 +19,20 @@
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-02-23, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
-//! HOSTNAME: `bm6`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
+//! HOSTNAME: `bm3`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("bridge-hub-polkadot-dev"), DB CACHE: 1024
 
 // Executed Command:
-// ./artifacts/polkadot-parachain
+// ./target/production/polkadot-parachain
 // benchmark
 // pallet
 // --chain=bridge-hub-polkadot-dev
 // --execution=wasm
 // --wasm-execution=compiled
 // --pallet=pallet_balances
+// --no-storage-info
+// --no-median-slopes
+// --no-min-squares
 // --extrinsic=*
 // --steps=50
 // --repeat=20
@@ -51,10 +54,10 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for WeightInfo<T> {
 	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	fn transfer() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `1316`
+		//  Measured:  `1319`
 		//  Estimated: `2603`
-		// Minimum execution time: 44_427 nanoseconds.
-		Weight::from_ref_time(45_164_000)
+		// Minimum execution time: 45_545 nanoseconds.
+		Weight::from_ref_time(46_192_000)
 			.saturating_add(Weight::from_proof_size(2603))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -63,10 +66,10 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for WeightInfo<T> {
 	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	fn transfer_keep_alive() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `1200`
+		//  Measured:  `1203`
 		//  Estimated: `2603`
-		// Minimum execution time: 34_287 nanoseconds.
-		Weight::from_ref_time(34_918_000)
+		// Minimum execution time: 34_120 nanoseconds.
+		Weight::from_ref_time(34_627_000)
 			.saturating_add(Weight::from_proof_size(2603))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -75,10 +78,10 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for WeightInfo<T> {
 	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	fn set_balance_creating() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `1350`
+		//  Measured:  `1353`
 		//  Estimated: `2603`
-		// Minimum execution time: 25_850 nanoseconds.
-		Weight::from_ref_time(26_521_000)
+		// Minimum execution time: 26_084 nanoseconds.
+		Weight::from_ref_time(26_611_000)
 			.saturating_add(Weight::from_proof_size(2603))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -87,10 +90,10 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for WeightInfo<T> {
 	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	fn set_balance_killing() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `1350`
+		//  Measured:  `1353`
 		//  Estimated: `2603`
-		// Minimum execution time: 29_118 nanoseconds.
-		Weight::from_ref_time(29_706_000)
+		// Minimum execution time: 29_016 nanoseconds.
+		Weight::from_ref_time(29_893_000)
 			.saturating_add(Weight::from_proof_size(2603))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -99,10 +102,10 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for WeightInfo<T> {
 	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	fn force_transfer() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `1312`
+		//  Measured:  `1315`
 		//  Estimated: `5206`
-		// Minimum execution time: 45_010 nanoseconds.
-		Weight::from_ref_time(45_568_000)
+		// Minimum execution time: 45_197 nanoseconds.
+		Weight::from_ref_time(45_719_000)
 			.saturating_add(Weight::from_proof_size(5206))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
@@ -111,10 +114,10 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for WeightInfo<T> {
 	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	fn transfer_all() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `1200`
+		//  Measured:  `1203`
 		//  Estimated: `2603`
-		// Minimum execution time: 39_332 nanoseconds.
-		Weight::from_ref_time(40_015_000)
+		// Minimum execution time: 39_549 nanoseconds.
+		Weight::from_ref_time(40_223_000)
 			.saturating_add(Weight::from_proof_size(2603))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -123,10 +126,10 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for WeightInfo<T> {
 	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	fn force_unreserve() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `1234`
+		//  Measured:  `1237`
 		//  Estimated: `2603`
-		// Minimum execution time: 22_710 nanoseconds.
-		Weight::from_ref_time(23_111_000)
+		// Minimum execution time: 22_636 nanoseconds.
+		Weight::from_ref_time(23_498_000)
 			.saturating_add(Weight::from_proof_size(2603))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))

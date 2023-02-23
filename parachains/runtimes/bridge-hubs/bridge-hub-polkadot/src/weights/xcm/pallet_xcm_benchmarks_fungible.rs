@@ -19,11 +19,11 @@
 //!
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-02-23, STEPS: `50`, REPEAT: 20, LOW RANGE: `[]`, HIGH RANGE: `[]`
-//! HOSTNAME: `bm6`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
+//! HOSTNAME: `bm3`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("bridge-hub-polkadot-dev"), DB CACHE: 1024
 
 // Executed Command:
-// ./artifacts/polkadot-parachain
+// ./target/production/polkadot-parachain
 // benchmark
 // pallet
 // --template=./templates/xcm-bench-template.hbs
@@ -31,6 +31,9 @@
 // --execution=wasm
 // --wasm-execution=compiled
 // --pallet=pallet_xcm_benchmarks::fungible
+// --no-storage-info
+// --no-median-slopes
+// --no-min-squares
 // --extrinsic=*
 // --steps=50
 // --repeat=20
@@ -51,14 +54,14 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: System Account (r:1 w:1)
 	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	pub(crate) fn withdraw_asset() -> Weight {
-		Weight::from_ref_time(18_910_000 as u64)
+		Weight::from_ref_time(19_241_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: System Account (r:2 w:2)
 	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	pub(crate) fn transfer_asset() -> Weight {
-		Weight::from_ref_time(29_462_000 as u64)
+		Weight::from_ref_time(30_736_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -77,17 +80,17 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
 	pub(crate) fn transfer_reserve_asset() -> Weight {
-		Weight::from_ref_time(51_265_000 as u64)
+		Weight::from_ref_time(52_287_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(8 as u64))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
 	pub(crate) fn receive_teleported_asset() -> Weight {
-		Weight::from_ref_time(3_874_000 as u64)
+		Weight::from_ref_time(4_057_000 as u64)
 	}
 	// Storage: System Account (r:1 w:1)
 	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	pub(crate) fn deposit_asset() -> Weight {
-		Weight::from_ref_time(23_139_000 as u64)
+		Weight::from_ref_time(21_999_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -106,7 +109,7 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
 	pub(crate) fn deposit_reserve_asset() -> Weight {
-		Weight::from_ref_time(49_375_000 as u64)
+		Weight::from_ref_time(45_971_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(7 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
@@ -123,7 +126,7 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
 	pub(crate) fn initiate_teleport() -> Weight {
-		Weight::from_ref_time(28_809_000 as u64)
+		Weight::from_ref_time(27_168_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(6 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}

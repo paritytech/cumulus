@@ -19,11 +19,11 @@
 //!
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-02-23, STEPS: `50`, REPEAT: 20, LOW RANGE: `[]`, HIGH RANGE: `[]`
-//! HOSTNAME: `bm6`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
+//! HOSTNAME: `bm3`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("statemint-dev"), DB CACHE: 1024
 
 // Executed Command:
-// ./artifacts/polkadot-parachain
+// ./target/production/polkadot-parachain
 // benchmark
 // pallet
 // --template=./templates/xcm-bench-template.hbs
@@ -31,6 +31,9 @@
 // --execution=wasm
 // --wasm-execution=compiled
 // --pallet=pallet_xcm_benchmarks::generic
+// --no-storage-info
+// --no-median-slopes
+// --no-min-squares
 // --extrinsic=*
 // --steps=50
 // --repeat=20
@@ -61,39 +64,39 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
 	pub(crate) fn report_holding() -> Weight {
-		Weight::from_ref_time(352_828_000 as u64)
+		Weight::from_ref_time(372_502_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(6 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	pub(crate) fn buy_execution() -> Weight {
-		Weight::from_ref_time(3_719_000 as u64)
+		Weight::from_ref_time(3_742_000 as u64)
 	}
 	// Storage: PolkadotXcm Queries (r:1 w:0)
 	// Proof Skipped: PolkadotXcm Queries (max_values: None, max_size: None, mode: Measured)
 	pub(crate) fn query_response() -> Weight {
-		Weight::from_ref_time(10_697_000 as u64)
+		Weight::from_ref_time(15_463_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 	}
 	pub(crate) fn transact() -> Weight {
-		Weight::from_ref_time(12_215_000 as u64)
+		Weight::from_ref_time(17_340_000 as u64)
 	}
 	pub(crate) fn refund_surplus() -> Weight {
-		Weight::from_ref_time(3_925_000 as u64)
+		Weight::from_ref_time(6_116_000 as u64)
 	}
 	pub(crate) fn set_error_handler() -> Weight {
-		Weight::from_ref_time(2_782_000 as u64)
+		Weight::from_ref_time(2_794_000 as u64)
 	}
 	pub(crate) fn set_appendix() -> Weight {
-		Weight::from_ref_time(2_765_000 as u64)
+		Weight::from_ref_time(2_818_000 as u64)
 	}
 	pub(crate) fn clear_error() -> Weight {
-		Weight::from_ref_time(2_766_000 as u64)
+		Weight::from_ref_time(2_779_000 as u64)
 	}
 	pub(crate) fn descend_origin() -> Weight {
-		Weight::from_ref_time(3_553_000 as u64)
+		Weight::from_ref_time(3_860_000 as u64)
 	}
 	pub(crate) fn clear_origin() -> Weight {
-		Weight::from_ref_time(2_732_000 as u64)
+		Weight::from_ref_time(2_877_000 as u64)
 	}
 	// Storage: ParachainInfo ParachainId (r:1 w:0)
 	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
@@ -108,19 +111,19 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
 	pub(crate) fn report_error() -> Weight {
-		Weight::from_ref_time(23_189_000 as u64)
+		Weight::from_ref_time(23_352_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(6 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	// Storage: PolkadotXcm AssetTraps (r:1 w:1)
 	// Proof Skipped: PolkadotXcm AssetTraps (max_values: None, max_size: None, mode: Measured)
 	pub(crate) fn claim_asset() -> Weight {
-		Weight::from_ref_time(14_569_000 as u64)
+		Weight::from_ref_time(21_391_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	pub(crate) fn trap() -> Weight {
-		Weight::from_ref_time(2_759_000 as u64)
+		Weight::from_ref_time(2_794_000 as u64)
 	}
 	// Storage: PolkadotXcm VersionNotifyTargets (r:1 w:1)
 	// Proof Skipped: PolkadotXcm VersionNotifyTargets (max_values: None, max_size: None, mode: Measured)
@@ -135,14 +138,14 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
 	pub(crate) fn subscribe_version() -> Weight {
-		Weight::from_ref_time(24_423_000 as u64)
+		Weight::from_ref_time(24_517_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(6 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 	// Storage: PolkadotXcm VersionNotifyTargets (r:0 w:1)
 	// Proof Skipped: PolkadotXcm VersionNotifyTargets (max_values: None, max_size: None, mode: Measured)
 	pub(crate) fn unsubscribe_version() -> Weight {
-		Weight::from_ref_time(4_575_000 as u64)
+		Weight::from_ref_time(4_777_000 as u64)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: ParachainInfo ParachainId (r:1 w:0)
@@ -158,24 +161,24 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
 	pub(crate) fn initiate_reserve_withdraw() -> Weight {
-		Weight::from_ref_time(406_184_000 as u64)
+		Weight::from_ref_time(421_990_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(6 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	pub(crate) fn burn_asset() -> Weight {
-		Weight::from_ref_time(125_739_000 as u64)
+		Weight::from_ref_time(134_576_000 as u64)
 	}
 	pub(crate) fn expect_asset() -> Weight {
-		Weight::from_ref_time(13_105_000 as u64)
+		Weight::from_ref_time(12_431_000 as u64)
 	}
 	pub(crate) fn expect_origin() -> Weight {
-		Weight::from_ref_time(2_823_000 as u64)
+		Weight::from_ref_time(2_897_000 as u64)
 	}
 	pub(crate) fn expect_error() -> Weight {
 		Weight::from_ref_time(2_771_000 as u64)
 	}
 	pub(crate) fn expect_transact_status() -> Weight {
-		Weight::from_ref_time(2_883_000 as u64)
+		Weight::from_ref_time(3_040_000 as u64)
 	}
 	// Storage: ParachainInfo ParachainId (r:1 w:0)
 	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
@@ -190,12 +193,12 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
 	pub(crate) fn query_pallet() -> Weight {
-		Weight::from_ref_time(25_695_000 as u64)
+		Weight::from_ref_time(25_985_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(6 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	pub(crate) fn expect_pallet() -> Weight {
-		Weight::from_ref_time(4_650_000 as u64)
+		Weight::from_ref_time(4_441_000 as u64)
 	}
 	// Storage: ParachainInfo ParachainId (r:1 w:0)
 	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
@@ -210,23 +213,23 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
 	pub(crate) fn report_transact_status() -> Weight {
-		Weight::from_ref_time(23_415_000 as u64)
+		Weight::from_ref_time(23_702_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(6 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	pub(crate) fn clear_transact_status() -> Weight {
-		Weight::from_ref_time(2_756_000 as u64)
+		Weight::from_ref_time(4_247_000 as u64)
 	}
 	pub(crate) fn set_topic() -> Weight {
-		Weight::from_ref_time(2_702_000 as u64)
+		Weight::from_ref_time(2_762_000 as u64)
 	}
 	pub(crate) fn clear_topic() -> Weight {
-		Weight::from_ref_time(2_738_000 as u64)
+		Weight::from_ref_time(4_160_000 as u64)
 	}
 	pub(crate) fn set_fees_mode() -> Weight {
-		Weight::from_ref_time(2_700_000 as u64)
+		Weight::from_ref_time(2_862_000 as u64)
 	}
 	pub(crate) fn unpaid_execution() -> Weight {
-		Weight::from_ref_time(2_894_000 as u64)
+		Weight::from_ref_time(2_865_000 as u64)
 	}
 }
