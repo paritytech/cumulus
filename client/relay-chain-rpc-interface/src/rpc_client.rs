@@ -14,7 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::reconnecting_ws_client::ReconnectingWsClient;
+use std::path::PathBuf;
+
+use crate::{
+	light_client,
+	reconnecting_ws_client::{ReconnectingWebsocketWorker, ReconnectingWsClient},
+};
 use cumulus_primitives_core::{
 	relay_chain::{
 		vstaging::ExecutorParams, CandidateCommitments, CandidateEvent, CandidateHash,
@@ -48,12 +53,40 @@ pub struct RelayChainRpcClient {
 	ws_client: ReconnectingWsClient,
 }
 
+pub async fn create_client_and_start_light_client_worker(
+	chain_spec_path: PathBuf,
+	task_manager: &mut polkadot_service::TaskManager,
+) -> RelayChainResult<RelayChainRpcClient> {
+	let spec = std::fs::read_to_string(chain_spec_path)
+		.map_err(|e| RelayChainError::GenericError(e.to_string()))?;
+	let (client, chain_id, json_rpc_responses) =
+		light_client::get_light_client(task_manager.spawn_handle(), &spec).await;
+	let (worker, sender) =
+		light_client::LightClientRpcWorker::new(client, json_rpc_responses, chain_id);
+
+	task_manager
+		.spawn_essential_handle()
+		.spawn("relay-chain-rpc-worker", None, worker.run());
+
+	let ws_client = ReconnectingWsClient::new(sender).await?;
+
+	let client = RelayChainRpcClient::new(ws_client).await?;
+
+	Ok(client)
+}
+
 /// Entry point to create [`RelayChainRpcClient`] and start a worker that distributes notifications.
 pub async fn create_client_and_start_worker(
 	urls: Vec<Url>,
 	task_manager: &mut TaskManager,
 ) -> RelayChainResult<RelayChainRpcClient> {
-	let ws_client = ReconnectingWsClient::new(urls, task_manager).await?;
+	let (worker, sender) = ReconnectingWebsocketWorker::new(urls).await;
+
+	task_manager
+		.spawn_essential_handle()
+		.spawn("relay-chain-rpc-worker", None, worker.run());
+
+	let ws_client = ReconnectingWsClient::new(sender).await?;
 
 	let client = RelayChainRpcClient::new(ws_client).await?;
 

@@ -24,6 +24,7 @@ mod genesis;
 use std::{
 	future::Future,
 	net::{IpAddr, Ipv4Addr, SocketAddr},
+	path::PathBuf,
 	time::Duration,
 };
 use url::Url;
@@ -487,7 +488,7 @@ pub struct TestNodeBuilder {
 	storage_update_func_relay_chain: Option<Box<dyn Fn()>>,
 	consensus: Consensus,
 	relay_chain_full_node_url: Vec<Url>,
-	embedded_light_client: bool,
+	embedded_light_client: Option<PathBuf>,
 }
 
 impl TestNodeBuilder {
@@ -510,7 +511,7 @@ impl TestNodeBuilder {
 			storage_update_func_relay_chain: None,
 			consensus: Consensus::RelayChain,
 			relay_chain_full_node_url: vec![],
-			embedded_light_client: false,
+			embedded_light_client: None,
 		}
 	}
 

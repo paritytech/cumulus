@@ -25,8 +25,9 @@ use cumulus_client_pov_recovery::{PoVRecovery, RecoveryDelayRange, RecoveryHandl
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_light_client_interface::build_light_client_relay_chain;
-use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
+use cumulus_relay_chain_minimal_node::{
+	build_minimal_relay_chain_node, build_minimal_relay_chain_node_light_client,
+};
 use futures::{
 	channel::{mpsc, oneshot},
 	FutureExt, StreamExt,
@@ -265,8 +266,9 @@ pub async fn build_relay_chain_interface(
 			collator_options.relay_chain_rpc_urls,
 		)
 		.await
-	} else if collator_options.embedded_light_client {
-		build_light_client_relay_chain(polkadot_config, task_manager).await
+	} else if let Some(chain_spec_path) = collator_options.embedded_light_client {
+		build_minimal_relay_chain_node_light_client(polkadot_config, task_manager, chain_spec_path)
+			.await
 	} else {
 		build_inprocess_relay_chain(
 			polkadot_config,

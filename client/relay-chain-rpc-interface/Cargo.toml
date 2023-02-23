@@ -19,7 +19,9 @@ sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "
 sp-storage = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
 tokio = { version = "1.25.0", features = ["sync"] }
+tokio-util = { version = "0.7.7", features = ["compat"] }
 
 futures = "0.3.26"
 futures-timer = "3.0.2"
@@ -31,3 +33,11 @@ url = "2.3.1"
 serde_json = "1.0.93"
 serde = "1.0.152"
 lru = "0.9.0"
+
+smoldot = { path = "../../../smoldot" }
+smoldot-light = { path = "../../../smoldot/bin/light-base" }
+
+itertools = "0.10.5"
+parking_lot = "0.12.1"
+either = "1.8.1"
+event-listener = "2.5.3"

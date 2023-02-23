@@ -34,9 +34,14 @@ use std::pin::Pin;
 
 pub use url::Url;
 
+mod light_client;
 mod reconnecting_ws_client;
 mod rpc_client;
-pub use rpc_client::{create_client_and_start_worker, RelayChainRpcClient};
+
+pub use rpc_client::{
+	create_client_and_start_light_client_worker, create_client_and_start_worker,
+	RelayChainRpcClient,
+};
 
 const TIMEOUT_IN_SECONDS: u64 = 6;
 

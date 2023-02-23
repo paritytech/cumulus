@@ -37,7 +37,6 @@ use jsonrpsee::{
 	ws_client::WsClientBuilder,
 };
 use lru::LruCache;
-use polkadot_service::TaskManager;
 use std::{num::NonZeroUsize, sync::Arc};
 use tokio::sync::mpsc::{
 	channel as tokio_channel, Receiver as TokioReceiver, Sender as TokioSender,
@@ -49,7 +48,7 @@ const LOG_TARGET: &str = "reconnecting-websocket-client";
 
 /// Messages for communication between [`ReconnectingWsClient`] and [`ReconnectingWebsocketWorker`].
 #[derive(Debug)]
-enum RpcDispatcherMessage {
+pub enum RpcDispatcherMessage {
 	RegisterBestHeadListener(Sender<RelayHeader>),
 	RegisterImportListener(Sender<RelayHeader>),
 	RegisterFinalizationListener(Sender<RelayHeader>),
@@ -66,14 +65,8 @@ pub struct ReconnectingWsClient {
 
 impl ReconnectingWsClient {
 	/// Create a new websocket client frontend.
-	pub async fn new(urls: Vec<Url>, task_manager: &mut TaskManager) -> RelayChainResult<Self> {
+	pub async fn new(sender: TokioSender<RpcDispatcherMessage>) -> RelayChainResult<Self> {
 		tracing::debug!(target: LOG_TARGET, "Instantiating reconnecting websocket client");
-
-		let (worker, sender) = ReconnectingWebsocketWorker::new(urls).await;
-
-		task_manager
-			.spawn_essential_handle()
-			.spawn("relay-chain-rpc-worker", None, worker.run());
 
 		Ok(Self { to_worker_channel: sender })
 	}
@@ -143,7 +136,7 @@ impl ReconnectingWsClient {
 }
 
 /// Worker that should be used in combination with [`RelayChainRpcClient`]. Must be polled to distribute header notifications to listeners.
-struct ReconnectingWebsocketWorker {
+pub struct ReconnectingWebsocketWorker {
 	ws_urls: Vec<Url>,
 	/// Communication channel with the RPC client
 	client_receiver: TokioReceiver<RpcDispatcherMessage>,
@@ -322,7 +315,7 @@ enum ConnectionStatus {
 
 impl ReconnectingWebsocketWorker {
 	/// Create new worker. Returns the worker and a channel to register new listeners.
-	async fn new(
+	pub async fn new(
 		urls: Vec<Url>,
 	) -> (ReconnectingWebsocketWorker, TokioSender<RpcDispatcherMessage>) {
 		let (tx, rx) = tokio_channel(100);
@@ -384,7 +377,7 @@ impl ReconnectingWebsocketWorker {
 	///   If an error occurs during sending, the receiver has been closed and we remove the sender from the list.
 	/// - Find a new valid RPC server to connect to in case the websocket connection is terminated.
 	///   If the worker is not able to connec to an RPC server from the list, the worker shuts down.
-	async fn run(mut self) {
+	pub async fn run(mut self) {
 		let mut pending_requests = FuturesUnordered::new();
 
 		let urls = std::mem::take(&mut self.ws_urls);

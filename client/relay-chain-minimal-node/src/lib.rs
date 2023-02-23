@@ -30,7 +30,7 @@ use polkadot_primitives::CollatorPair;
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
 use sc_network::{Event, NetworkService};
 use sc_network_common::service::NetworkEventStream;
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 
 use polkadot_service::{Configuration, TaskManager};
 
@@ -106,6 +106,29 @@ pub async fn build_minimal_relay_chain_node(
 	))
 }
 
+pub async fn build_minimal_relay_chain_node_light_client(
+	polkadot_config: Configuration,
+	task_manager: &mut TaskManager,
+	chain_spec_path: PathBuf,
+) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
+	let client = cumulus_relay_chain_rpc_interface::create_client_and_start_light_client_worker(
+		chain_spec_path,
+		task_manager,
+	)
+	.await?;
+	let collator_pair = CollatorPair::generate().0;
+	let collator_node = new_minimal_relay_chain(
+		polkadot_config,
+		collator_pair.clone(),
+		Arc::new(BlockChainRpcClient::new(client.clone())),
+	)
+	.await?;
+	task_manager.add_child(collator_node.task_manager);
+	Ok((
+		Arc::new(RelayChainRpcInterface::new(client, collator_node.overseer_handle)),
+		Some(collator_pair),
+	))
+}
 /// Builds a minimal relay chain node. Chain data is fetched
 /// via [`BlockChainRpcClient`] and fed into the overseer and its subsystems.
 ///
