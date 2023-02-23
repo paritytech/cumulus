@@ -64,7 +64,7 @@ use parachains_common::{
 	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
-use xcm_config::{AssetIdForTrustBackedAssetsConvert, KsmLocation, XcmConfig};
+use xcm_config::{KsmLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -834,13 +834,27 @@ impl_runtime_apis! {
 	impl assets_common::assets_api::AssetsApi<
 		Block,
 		AccountId,
-		Balance,
-		xcm::latest::MultiLocation,
 	> for Runtime
 	{
-		fn account_balances(account: AccountId) -> Result<Vec<(xcm::latest::MultiLocation, Balance)>, assets_common::assets_api::AssetsAccessError> {
+		fn query_account_balances(account: AccountId) -> Result<Vec<xcm::latest::MultiAsset>, assets_common::assets_api::AssetsAccessError> {
+			use assets_common::assets_api::{convert, convert_balance};
 			Ok([
-				assets_common::convert_asset_id::<_, _, AssetIdForTrustBackedAssetsConvert>(Assets::account_balances(account))?,
+				// collect pallet_balance
+				{
+					let balance = Balances::free_balance(account.clone());
+					if balance > 0 {
+						vec![convert_balance::<KsmLocation, Balance>(balance)?]
+					} else {
+						vec![]
+					}
+				},
+				// collect pallet_assets (TrustBackedAssets)
+				convert::<_, _, _, _, TrustBackedAssetsConvertedConcreteId>(
+					Assets::account_balances(account)
+						.iter()
+						.filter(|(_, balance)| balance > &0)
+				)?,
+				// collect ... e.g. pallet_assets ForeignAssets
 			].concat())
 		}
 	}

@@ -4,18 +4,22 @@ use frame_support::{
 	assert_noop, assert_ok,
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
-use parachains_common::{AccountId, AuraId};
+use parachains_common::{AccountId, AuraId, Balance};
 use westmint_runtime::xcm_config::{
-	AssetFeeAsExistentialDepositMultiplierFeeCharger, AssetIdForTrustBackedAssetsConvert,
+	AssetFeeAsExistentialDepositMultiplierFeeCharger, WestendLocation,
 };
 pub use westmint_runtime::{
-	constants::fee::WeightToFee, xcm_config::XcmConfig, Assets, Balances, ExistentialDeposit,
-	Runtime, SessionKeys, System,
+	constants::fee::WeightToFee,
+	xcm_config::{TrustBackedAssetsPalletLocation, XcmConfig},
+	Assets, Balances, ExistentialDeposit, Runtime, SessionKeys, System,
 };
 use xcm::latest::prelude::*;
 use xcm_executor::traits::{Convert, WeightTrader};
 
 pub const ALICE: [u8; 32] = [1u8; 32];
+
+type AssetIdForTrustBackedAssetsConvert =
+	assets_common::AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>;
 
 #[test]
 fn test_asset_xcm_trader() {
@@ -364,7 +368,13 @@ fn test_assets_balances_api_works() {
 
 			// check before
 			assert_eq!(Assets::balance(local_asset_id, AccountId::from(ALICE)), 0);
-			assert!(Runtime::account_balances(AccountId::from(ALICE)).unwrap().is_empty());
+			assert_eq!(Balances::free_balance(AccountId::from(ALICE)), 0);
+			assert!(Runtime::query_account_balances(AccountId::from(ALICE)).unwrap().is_empty());
+
+			// Drip some balance
+			use frame_support::traits::fungible::Mutate;
+			let some_currency = ExistentialDeposit::get();
+			Balances::mint_into(&AccountId::from(ALICE), some_currency).unwrap();
 
 			// We need root origin to create a sufficient asset
 			let minimum_asset_balance = 3333333_u128;
@@ -389,11 +399,23 @@ fn test_assets_balances_api_works() {
 				Assets::balance(local_asset_id, AccountId::from(ALICE)),
 				minimum_asset_balance
 			);
-			let result = Runtime::account_balances(AccountId::from(ALICE)).unwrap();
-			assert_eq!(result.len(), 1);
+			assert_eq!(Balances::free_balance(AccountId::from(ALICE)), some_currency);
+
+			let result = Runtime::query_account_balances(AccountId::from(ALICE)).unwrap();
+			assert_eq!(result.len(), 2);
+
+			// check currency
+			assert!(result.iter().any(|asset| asset.eq(
+				&assets_common::assets_api::convert_balance::<WestendLocation, Balance>(
+					some_currency
+				)
+				.unwrap()
+			)));
+			// check trusted asset
 			assert!(result.iter().any(|asset| asset.eq(&(
 				AssetIdForTrustBackedAssetsConvert::reverse_ref(local_asset_id).unwrap(),
 				minimum_asset_balance
-			))));
+			)
+				.into())));
 		});
 }
