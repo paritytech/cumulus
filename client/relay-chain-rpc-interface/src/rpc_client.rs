@@ -17,9 +17,9 @@
 use crate::reconnecting_ws_client::ReconnectingWsClient;
 use cumulus_primitives_core::{
 	relay_chain::{
-		CandidateCommitments, CandidateEvent, CandidateHash, CommittedCandidateReceipt, CoreState,
-		DisputeState, GroupRotationInfo, Hash as RelayHash, Header as RelayHeader,
-		InboundHrmpMessage, OccupiedCoreAssumption, OldV1SessionInfo, PvfCheckStatement,
+		vstaging::ExecutorParams, CandidateCommitments, CandidateEvent, CandidateHash,
+		CommittedCandidateReceipt, CoreState, DisputeState, GroupRotationInfo, Hash as RelayHash,
+		Header as RelayHeader, InboundHrmpMessage, OccupiedCoreAssumption, PvfCheckStatement,
 		ScrapedOnChainVotes, SessionIndex, SessionInfo, ValidationCode, ValidationCodeHash,
 		ValidatorId, ValidatorIndex, ValidatorSignature,
 	},
@@ -133,17 +133,6 @@ impl RelayChainRpcClient {
 	/// Returns information regarding the current epoch.
 	pub async fn babe_api_current_epoch(&self, at: RelayHash) -> Result<Epoch, RelayChainError> {
 		self.call_remote_runtime_function("BabeApi_current_epoch", at, None::<()>).await
-	}
-
-	/// Old method to fetch v1 session info.
-	pub async fn parachain_host_session_info_before_version_2(
-		&self,
-		at: RelayHash,
-		index: SessionIndex,
-	) -> Result<Option<OldV1SessionInfo>, RelayChainError> {
-		// The function in wasm never changes/gets augmented with a version
-		self.call_remote_runtime_function("ParachainHost_session_info", at, Some(index))
-			.await
 	}
 
 	/// Scrape dispute relevant from on-chain, backing votes and resolved disputes.
@@ -386,6 +375,20 @@ impl RelayChainRpcClient {
 	) -> Result<Option<SessionInfo>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_session_info", at, Some(index))
 			.await
+	}
+
+	/// Get the executor parameters for the given session, if stored
+	pub async fn parachain_host_session_executor_params(
+		&self,
+		at: RelayHash,
+		session_index: SessionIndex,
+	) -> Result<Option<ExecutorParams>, RelayChainError> {
+		self.call_remote_runtime_function(
+			"ParachainHost_session_executor_params",
+			at,
+			Some(session_index),
+		)
+		.await
 	}
 
 	/// Get header at specified hash
