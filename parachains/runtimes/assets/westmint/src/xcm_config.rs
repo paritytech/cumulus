@@ -18,17 +18,13 @@ use super::{
 	Balances, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent,
 	RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
-use crate::{
-	asset_conversions::AssetIdConversionFailedToAssetNotFoundWrapper,
-	foreign_conversions::{
-		BridgedUniversalAliases, GlobalConsensusAsAccountId, GlobalConsensusConvertsVia,
-		IsTrustedGlobalConsensus,
-	},
-	ForeignAssets,
-};
+use crate::{asset_conversions::AssetIdConversionFailedToAssetNotFoundWrapper, ForeignAssets};
 use frame_support::{
 	match_types, parameter_types,
-	traits::{ConstU32, Contains, EnsureOrigin, EnsureOriginWithArg, Everything, PalletInfoAccess},
+	traits::{
+		ConstU32, Contains, EnsureOrigin, EnsureOriginWithArg, Everything, Nothing,
+		PalletInfoAccess,
+	},
 };
 use pallet_xcm::{EnsureXcm, XcmPassthrough};
 use parachains_common::{
@@ -295,8 +291,6 @@ pub type Barrier = DenyThenTry<
 				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
 				// Subscriptions for version tracking are OK.
 				AllowSubscriptionsFrom<Everything>,
-				// Specific barrier for calls from different globalConsensus/network
-				ForeignGlobalConsensusExecutionBarrier,
 			),
 			UniversalLocation,
 			ConstU32<8>,
@@ -362,7 +356,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetExchanger = ();
 	type FeeManager = ();
 	type MessageExporter = ();
-	type UniversalAliases = TrustedBridgedNetworks;
+	type UniversalAliases = Nothing;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
 	type SafeCallFilter = SafeCallFilter;
 }
@@ -424,11 +418,6 @@ pub type ForeignCreatorsSovereignAccountOf = (
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	AccountId32Aliases<RelayNetwork, AccountId>,
 	ParentIsPreset<AccountId>,
-	GlobalConsensusConvertsVia<
-		IsTrustedGlobalConsensus<TrustedBridgedNetworks>,
-		GlobalConsensusAsAccountId,
-		AccountId,
-	>,
 );
 
 // `EnsureOriginWithArg` impl for `CreateOrigin` that allows only XCM origins that are locations
@@ -464,27 +453,3 @@ impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 		MultiLocation { parents: 1, interior: X1(Parachain(id)) }
 	}
 }
-
-parameter_types! {
-	// TODO:check-parameter - join all together in one on-chain cfg (statemine/t, eth(chain_ids), ...)
-	// TODO:check-parameter - collect all required cfg also from ReserveAssetDeposited and add new pallet and persist/manage this via governance
-	// Means, that we accept some `GlobalConsensus` from some `MultiLocation` (e.g. our local bridge-hub)
-	pub TrustedBridgedNetworks: BridgedUniversalAliases = sp_std::vec![
-		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Rococo)),
-		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Kusama)),
-		(MultiLocation { parents: 1, interior: X1(Parachain(1002)) }, GlobalConsensus(NetworkId::Kusama))
-	];
-}
-
-impl Contains<(MultiLocation, Junction)> for TrustedBridgedNetworks {
-	fn contains(t: &(MultiLocation, Junction)) -> bool {
-		Self::get().contains(t)
-	}
-}
-
-/// Barrier dedicated to calls from different global consensus
-pub type ForeignGlobalConsensusExecutionBarrier = (
-	// TODO:check-parameter - change "Contains with trusted BridgeHub configuration" or set BuyExecution
-	// Configured trusted BridgeHub gets free execution.
-	AllowExplicitUnpaidExecutionFrom<IsTrustedGlobalConsensus<TrustedBridgedNetworks>>,
-);

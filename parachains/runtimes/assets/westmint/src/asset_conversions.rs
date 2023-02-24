@@ -17,6 +17,7 @@ use xcm::latest::MultiAsset;
 use xcm_executor::traits::{Error, MatchesFungibles};
 
 // TODO:check-parameter - workaround for ConvertedConcreteId/MatchesFungibles and multiple FungiblesAdapter for AssetTransactor tuple (find a nicer way)
+// TODO:check-parameter - waiting for https://github.com/paritytech/polkadot/pull/6739
 //
 // Problem is combination [`(FungiblesAdapter<Assets1, ConvertedConcreteId<..>, ...>, FungiblesAdapter<Assets2, ConvertedConcreteId<..>, ...>)`]
 // where ConvertedConcreteId for ConvertAssetId returns AssetIdConversionFailed,
