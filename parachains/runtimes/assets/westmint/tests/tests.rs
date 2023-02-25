@@ -9,7 +9,7 @@ use frame_support::{
 use parachains_common::{AccountId, AuraId};
 pub use westmint_runtime::{
 	constants::fee::WeightToFee, xcm_config::XcmConfig, Assets, Balances, ExistentialDeposit,
-	Runtime, SessionKeys, System,
+	ReservedDmpWeight, Runtime, SessionKeys, System,
 };
 use westmint_runtime::{xcm_config::AssetFeeAsExistentialDepositMultiplierFeeCharger, RuntimeCall};
 use xcm::{latest::prelude::*, VersionedXcm, MAX_XCM_DECODE_DEPTH};
@@ -392,10 +392,6 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 fn receive_teleported_asset_works() {
 	frame_support::sp_tracing::try_init_simple();
 
-	frame_support::parameter_types! {
-		pub const ReservedDmpWeight: Weight = parachains_common::MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-	}
-
 	ExtBuilder::<Runtime>::default()
 		.with_collators(vec![AccountId::from(ALICE)])
 		.with_session_keys(vec![(
@@ -445,10 +441,6 @@ fn receive_teleported_asset_works() {
 #[test]
 fn plain_receive_teleported_asset_works() {
 	frame_support::sp_tracing::try_init_simple();
-
-	frame_support::parameter_types! {
-		pub const ReservedDmpWeight: Weight = parachains_common::MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-	}
 
 	ExtBuilder::<Runtime>::default()
 		.with_collators(vec![AccountId::from(ALICE)])
