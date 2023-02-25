@@ -318,7 +318,8 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			),
 			ProxyType::Fellowship => matches!(
 				c,
-				RuntimeCall::FellowshipCollective { .. } | RuntimeCall::FellowshipReferenda { .. } |
+				RuntimeCall::FellowshipCollective { .. } |
+					RuntimeCall::FellowshipReferenda { .. } |
 					RuntimeCall::Utility { .. } |
 					RuntimeCall::Multisig { .. }
 			),
