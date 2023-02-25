@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! The Polkadot Fellowship.
+//! The Polkadot Technical Fellowship.
 
 mod origins;
 mod tracks;
@@ -112,8 +112,8 @@ impl pallet_ranked_collective::Config<FellowshipCollectiveInstance> for Runtime 
 	type WeightInfo = weights::pallet_ranked_collective::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
 	// Promotion is by any of:
-	// - Root can demote arbitrarily.
-	// - the FellowshipAdmin origin (i.e. token holder referendum);
+	// - Root can promote arbitrarily.
+	// - a majority of the Technical Committee (for initialization, to be later removed);
 	// - a vote by the rank *above* the new rank.
 	type PromoteOrigin = EitherOf<
 		EitherOf<

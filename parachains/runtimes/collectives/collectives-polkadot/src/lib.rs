@@ -318,7 +318,9 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			),
 			ProxyType::Fellowship => matches!(
 				c,
-				RuntimeCall::FellowshipCollective { .. } | RuntimeCall::FellowshipReferenda { .. }
+				RuntimeCall::FellowshipCollective { .. } | RuntimeCall::FellowshipReferenda { .. } |
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 		}
 	}
@@ -461,8 +463,8 @@ pub const MAX_ALLIES: u32 = 100;
 
 parameter_types! {
 	pub const AllyDeposit: Balance = 1_000 * UNITS; // 1,000 DOT bond to join as an Ally
-	// The Alliance pallet account, used as a temporarily place to deposit a slashed imbalance
-	// before the teleport to the treasury.
+	// The Alliance pallet account, used as a temporary place to deposit a slashed imbalance
+	// before the teleport to the Treasury.
 	pub AlliancePalletAccId: AccountId = constants::account::ALLIANCE_PALLET_ID.into_account_truncating();
 	pub RelayTreasuryAccId: AccountId = constants::account::RELAY_TREASURY_PALL_ID.into_account_truncating();
 	// The number of blocks a member must wait between giving a retirement notice and retiring.
