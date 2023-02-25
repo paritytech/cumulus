@@ -93,7 +93,7 @@ pub mod pallet_origins {
 		() => {}
 	}
 	decl_unit_ensures!(
-		FellowshipInitiates: Rank = ranks::INITIATES,
+		FellowshipInitiates: Rank = ranks::CANDIDATES,
 		Fellows: Rank = ranks::DAN_3,
 		FellowshipExperts: Rank = ranks::DAN_5,
 		FellowshipMasters: Rank = ranks::DAN_7,

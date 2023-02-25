@@ -25,8 +25,8 @@ pub use origins::{
 
 use crate::{
 	constants, impls::ToParentTreasury, weights, AccountId, Balance, Balances, BlockNumber,
-	DotLocation, FellowshipReferenda, Preimage, Runtime, RuntimeCall, RuntimeEvent, Scheduler,
-	DAYS,
+	DotLocation, FellowshipReferenda, Preimage, RelayTreasuryAccount, Runtime, RuntimeCall,
+	RuntimeEvent, Scheduler, DAYS,
 };
 use frame_support::{
 	parameter_types,
@@ -48,7 +48,7 @@ use self::origins::EnsureFellowship;
 pub mod ranks {
 	use pallet_ranked_collective::Rank;
 
-	pub const INITIATES: Rank = 0;
+	pub const CANDIDATES: Rank = 0;
 	pub const DAN_1: Rank = 1;
 	pub const DAN_2: Rank = 2;
 	pub const DAN_3: Rank = 3; // aka Fellows.
@@ -66,8 +66,7 @@ parameter_types! {
 	pub const UndecidingTimeout: BlockNumber = 7 * DAYS;
 	pub const TechnicalCommittee: BodyId = BodyId::Technical;
 	// Referenda pallet account, used to temporarily deposit slashed imbalance before teleporting.
-	pub ReferendaPalletAccId: AccountId = constants::account::REFERENDA_PALLET_ID.into_account_truncating();
-	pub RelayTreasuryAccId: AccountId = constants::account::RELAY_TREASURY_PALL_ID.into_account_truncating();
+	pub ReferendaPalletAccount: AccountId = constants::account::REFERENDA_PALLET_ID.into_account_truncating();
 	pub const FellowshipAdminBodyId: BodyId = BodyId::Index(FELLOWSHIP_ADMIN_INDEX);
 }
 
@@ -85,7 +84,7 @@ impl pallet_referenda::Config<FellowshipReferendaInstance> for Runtime {
 		pallet_ranked_collective::EnsureMember<Runtime, FellowshipCollectiveInstance, 1>;
 	type CancelOrigin = FellowshipExperts;
 	type KillOrigin = FellowshipMasters;
-	type Slash = ToParentTreasury<RelayTreasuryAccId, ReferendaPalletAccId, Runtime>;
+	type Slash = ToParentTreasury<RelayTreasuryAccount, ReferendaPalletAccount, Runtime>;
 	type Votes = pallet_ranked_collective::Votes;
 	type Tally = pallet_ranked_collective::TallyOf<Runtime, FellowshipCollectiveInstance>;
 	type SubmissionDeposit = SubmissionDeposit;

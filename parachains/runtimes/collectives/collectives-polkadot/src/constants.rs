@@ -17,7 +17,7 @@ pub mod account {
 	use frame_support::PalletId;
 
 	/// Relay Chain treasury pallet id, used to convert into AccountId
-	pub const RELAY_TREASURY_PALL_ID: PalletId = PalletId(*b"py/trsry");
+	pub const RELAY_TREASURY_PALLET_ID: PalletId = PalletId(*b"py/trsry");
 	/// Alliance pallet id.
 	/// It is used as a temporarily place to deposit a slashed imbalance
 	/// before the teleport to the treasury.
