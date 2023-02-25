@@ -404,8 +404,6 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 
 #[test]
 fn receive_teleported_asset_works() {
-	frame_support::sp_tracing::try_init_simple();
-
 	ExtBuilder::<Runtime>::default()
 		.with_collators(vec![AccountId::from(ALICE)])
 		.with_session_keys(vec![(
