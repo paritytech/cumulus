@@ -54,7 +54,7 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
-use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
+use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
@@ -287,11 +287,15 @@ impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
-// TODO: map gov2 origins here - after merge https://github.com/paritytech/cumulus/pull/1895
-/// Privileged origin that represents Root or the majority of the Relay Chain Council.
-pub type RootOrExecutiveSimpleMajority = EitherOfDiverse<
+parameter_types! {
+	// Fellows pluralistic body.
+	pub const FellowsBodyId: BodyId = BodyId::Technical;
+}
+
+/// Privileged origin that represents Root or Fellows pluralistic body.
+pub type RootOrFellows = EitherOfDiverse<
 	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<KsmRelayLocation, ExecutiveBody>>,
+	EnsureXcm<IsVoiceOfBody<KsmRelayLocation, FellowsBodyId>>,
 >;
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
@@ -300,7 +304,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-	type ControllerOrigin = RootOrExecutiveSimpleMajority;
+	type ControllerOrigin = RootOrFellows;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
 	type PriceForSiblingDelivery = ();
@@ -338,12 +342,15 @@ impl pallet_aura::Config for Runtime {
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
 	pub const SessionLength: BlockNumber = 6 * HOURS;
-	pub const ExecutiveBody: BodyId = BodyId::Executive;
+	// StakingAdmin pluralistic body.
+	pub const StakingAdminBodyId: BodyId = BodyId::Defense;
 }
 
-// TODO: map gov2 origins here - after merge https://github.com/paritytech/cumulus/pull/1895
-/// We allow root and the Relay Chain council to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin = RootOrExecutiveSimpleMajority;
+/// We allow root, the StakingAdmin to execute privileged collator selection operations.
+pub type CollatorSelectionUpdateOrigin = EitherOfDiverse<
+	EnsureRoot<AccountId>,
+	EnsureXcm<IsVoiceOfBody<KsmRelayLocation, StakingAdminBodyId>>,
+>;
 
 impl pallet_collator_selection::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;

@@ -47,6 +47,7 @@ parameter_types! {
 		X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
+	pub CollectivesLocation: MultiLocation = MultiLocation::new(1, Parachain(1001));
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used

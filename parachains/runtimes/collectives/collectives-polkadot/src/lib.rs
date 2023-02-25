@@ -87,7 +87,7 @@ use xcm_config::{DotLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
 pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
-use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
+use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use xcm::latest::BodyId;
 use xcm_executor::XcmExecutor;
@@ -118,9 +118,6 @@ pub fn native_version() -> NativeVersion {
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
-/// Privileged origin that represents Root or the majority of the Relay Chain Council.
-pub type RootOrExecutiveSimpleMajority =
-	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
 /// Privileged origin that represents Root or more than two thirds of the Alliance.
 pub type RootOrAllianceTwoThirdsMajority = EitherOfDiverse<
 	EnsureRoot<AccountId>,
@@ -378,7 +375,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-	type ControllerOrigin = RootOrExecutiveSimpleMajority;
+	type ControllerOrigin = EitherOfDiverse<EnsureRoot<AccountId>, Fellows>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
 	type PriceForSiblingDelivery = ();
@@ -416,11 +413,15 @@ impl pallet_aura::Config for Runtime {
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
 	pub const SessionLength: BlockNumber = 6 * HOURS;
-	pub const ExecutiveBody: BodyId = BodyId::Executive;
+	// StakingAdmin pluralistic body.
+	pub const StakingAdminBodyId: BodyId = BodyId::Defense;
 }
 
-/// We allow root and the Relay Chain council to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin = RootOrExecutiveSimpleMajority;
+/// We allow root and the StakingAdmin to execute privileged collator selection operations.
+pub type CollatorSelectionUpdateOrigin = EitherOfDiverse<
+	EnsureRoot<AccountId>,
+	EnsureXcm<IsVoiceOfBody<DotLocation, StakingAdminBodyId>>,
+>;
 
 impl pallet_collator_selection::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;

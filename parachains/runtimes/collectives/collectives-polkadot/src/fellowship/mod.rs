@@ -106,8 +106,6 @@ morph_types! {
 	} where N::Type: CheckedSub;
 }
 
-// IsMajorityOfBody<KsmLocation, ExecutiveBody>,
-
 impl pallet_ranked_collective::Config<FellowshipCollectiveInstance> for Runtime {
 	type WeightInfo = weights::pallet_ranked_collective::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
