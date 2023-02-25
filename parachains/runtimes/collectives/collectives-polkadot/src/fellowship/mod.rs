@@ -32,7 +32,7 @@ use frame_support::{
 	parameter_types,
 	traits::{EitherOf, MapSuccess, TryMapSuccess},
 };
-use pallet_xcm::{EnsureXcm, IsMajorityOfBody, IsVoiceOfBody};
+use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use polkadot_runtime_constants::xcm::body::FELLOWSHIP_ADMIN_INDEX;
 use sp_arithmetic::traits::CheckedSub;
 use sp_core::ConstU32;
@@ -64,7 +64,6 @@ parameter_types! {
 	pub const AlarmInterval: BlockNumber = 1;
 	pub const SubmissionDeposit: Balance = 0;
 	pub const UndecidingTimeout: BlockNumber = 7 * DAYS;
-	pub const TechnicalCommittee: BodyId = BodyId::Technical;
 	// Referenda pallet account, used to temporarily deposit slashed imbalance before teleporting.
 	pub ReferendaPalletAccount: AccountId = constants::account::REFERENDA_PALLET_ID.into_account_truncating();
 	pub const FellowshipAdminBodyId: BodyId = BodyId::Index(FELLOWSHIP_ADMIN_INDEX);
@@ -110,16 +109,10 @@ impl pallet_ranked_collective::Config<FellowshipCollectiveInstance> for Runtime 
 	type RuntimeEvent = RuntimeEvent;
 	// Promotion is by any of:
 	// - Root can promote arbitrarily.
-	// - a majority of the Technical Committee (for initialization, to be later removed);
+	// - the FellowshipAdmin origin (i.e. token holder referendum);
 	// - a vote by the rank *above* the new rank.
 	type PromoteOrigin = EitherOf<
-		EitherOf<
-			frame_system::EnsureRootWithSuccess<Self::AccountId, ConstU16<65535>>,
-			MapSuccess<
-				EnsureXcm<IsMajorityOfBody<DotLocation, TechnicalCommittee>>,
-				Replace<ConstU16<6>>,
-			>,
-		>,
+		frame_system::EnsureRootWithSuccess<Self::AccountId, ConstU16<65535>>,
 		EitherOf<
 			MapSuccess<
 				EnsureXcm<IsVoiceOfBody<DotLocation, FellowshipAdminBodyId>>,
