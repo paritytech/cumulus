@@ -17,8 +17,8 @@
 //!
 //! (Initial version: https://github.com/paritytech/cumulus/pull/2180#issuecomment-1442952274)
 
-use frame_support::RuntimeDebug;
 use codec::{Codec, Decode, Encode};
+use frame_support::RuntimeDebug;
 use sp_std::vec::Vec;
 use xcm::latest::MultiAsset;
 

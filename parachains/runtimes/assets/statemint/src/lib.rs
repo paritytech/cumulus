@@ -830,13 +830,13 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl assets_common::assets_api::AssetsApi<
+	impl assets_common::runtime_api::FungiblesApi<
 		Block,
 		AccountId,
 	> for Runtime
 	{
-		fn query_account_balances(account: AccountId) -> Result<Vec<xcm::latest::MultiAsset>, assets_common::assets_api::AssetsAccessError> {
-			use assets_common::assets_api::{convert, convert_balance};
+		fn query_account_balances(account: AccountId) -> Result<Vec<xcm::latest::MultiAsset>, assets_common::runtime_api::FungiblesAccessError> {
+			use assets_common::fungible_conversion::{convert, convert_balance};
 			Ok([
 				// collect pallet_balance
 				{

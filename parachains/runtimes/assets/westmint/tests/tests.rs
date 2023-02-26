@@ -353,7 +353,7 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 
 #[test]
 fn test_assets_balances_api_works() {
-	use assets_common::assets_api::runtime_decl_for_AssetsApi::AssetsApi;
+	use assets_common::runtime_api::runtime_decl_for_FungiblesApi::FungiblesApi;
 
 	ExtBuilder::<Runtime>::default()
 		.with_collators(vec![AccountId::from(ALICE)])
@@ -406,7 +406,7 @@ fn test_assets_balances_api_works() {
 
 			// check currency
 			assert!(result.iter().any(|asset| asset.eq(
-				&assets_common::assets_api::convert_balance::<WestendLocation, Balance>(
+				&assets_common::fungible_conversion::convert_balance::<WestendLocation, Balance>(
 					some_currency
 				)
 				.unwrap()

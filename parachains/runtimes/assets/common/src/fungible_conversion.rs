@@ -34,8 +34,9 @@ where
 	ConvertAssetId: Convert<MultiLocation, AssetId>,
 	ConvertBalance: Convert<u128, Balance>,
 {
-	fn convert_ref(value: impl Borrow<(AssetId, Balance)>)
-		-> Result<MultiAsset, FungiblesAccessError>;
+	fn convert_ref(
+		value: impl Borrow<(AssetId, Balance)>,
+	) -> Result<MultiAsset, FungiblesAccessError>;
 }
 
 impl<
