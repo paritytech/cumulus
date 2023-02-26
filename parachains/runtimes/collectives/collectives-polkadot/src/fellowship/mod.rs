@@ -16,6 +16,7 @@
 
 //! The Polkadot Technical Fellowship.
 
+pub(crate) mod migrations;
 mod origins;
 mod tracks;
 pub use origins::{
