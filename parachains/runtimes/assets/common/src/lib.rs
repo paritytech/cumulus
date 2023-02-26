@@ -15,7 +15,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub mod assets_api;
+pub mod fungible_conversion;
+pub mod runtime_api;
 
 use parachains_common::AssetIdForTrustBackedAssets;
 use xcm_builder::{AsPrefixedGeneralIndex, ConvertedConcreteId};

@@ -18,8 +18,7 @@
 
 //! Runtime API definition for assets.
 
-use codec::{Codec, Decode, Encode};
-use frame_support::RuntimeDebug;
+use crate::runtime_api::FungiblesAccessError;
 use sp_std::{borrow::Borrow, vec::Vec};
 use xcm::latest::{MultiAsset, MultiLocation};
 use xcm_builder::ConvertedConcreteId;
@@ -36,7 +35,7 @@ where
 	ConvertBalance: Convert<u128, Balance>,
 {
 	fn convert_ref(value: impl Borrow<(AssetId, Balance)>)
-		-> Result<MultiAsset, AssetsAccessError>;
+		-> Result<MultiAsset, FungiblesAccessError>;
 }
 
 impl<
@@ -49,14 +48,14 @@ impl<
 {
 	fn convert_ref(
 		value: impl Borrow<(AssetId, Balance)>,
-	) -> Result<MultiAsset, AssetsAccessError> {
+	) -> Result<MultiAsset, FungiblesAccessError> {
 		let (asset_id, balance) = value.borrow();
 		match ConvertAssetId::reverse_ref(asset_id) {
 			Ok(asset_id_as_multilocation) => match ConvertBalance::reverse_ref(balance) {
 				Ok(amount) => Ok((asset_id_as_multilocation, amount).into()),
-				Err(_) => Err(AssetsAccessError::AmountToBalanceConversionFailed),
+				Err(_) => Err(FungiblesAccessError::AmountToBalanceConversionFailed),
 			},
-			Err(_) => Err(AssetsAccessError::AssetIdConversionFailed),
+			Err(_) => Err(FungiblesAccessError::AssetIdConversionFailed),
 		}
 	}
 }
@@ -64,7 +63,7 @@ impl<
 /// Helper function to convert collections with [`(AssetId, Balance)`] to [`MultiAsset`]
 pub fn convert<'a, AssetId, Balance, ConvertAssetId, ConvertBalance, Converter>(
 	items: impl Iterator<Item = &'a (AssetId, Balance)>,
-) -> Result<Vec<MultiAsset>, AssetsAccessError>
+) -> Result<Vec<MultiAsset>, FungiblesAccessError>
 where
 	AssetId: Clone + 'a,
 	Balance: Clone + 'a,
@@ -81,29 +80,10 @@ pub fn convert_balance<
 	Balance: TryInto<u128>,
 >(
 	balance: Balance,
-) -> Result<MultiAsset, AssetsAccessError> {
+) -> Result<MultiAsset, FungiblesAccessError> {
 	match balance.try_into() {
 		Ok(balance) => Ok((T::get(), balance).into()),
-		Err(_) => Err(AssetsAccessError::AmountToBalanceConversionFailed),
-	}
-}
-
-/// The possible errors that can happen querying the storage of assets.
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug)]
-pub enum AssetsAccessError {
-	/// `MultiLocation` to `AssetId`/`ClassId` conversion failed.
-	AssetIdConversionFailed,
-	/// `u128` amount to currency `Balance` conversion failed.
-	AmountToBalanceConversionFailed,
-}
-
-sp_api::decl_runtime_apis! {
-	pub trait AssetsApi<AccountId>
-	where
-		AccountId: Codec,
-	{
-		/// Returns the list of all [`MultiAsset`] that an `AccountId` has.
-		fn query_account_balances(account: AccountId) -> Result<Vec<MultiAsset>, AssetsAccessError>;
+		Err(_) => Err(FungiblesAccessError::AmountToBalanceConversionFailed),
 	}
 }
 
