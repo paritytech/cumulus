@@ -81,7 +81,7 @@ use parachains_common::{
 	Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT, MINUTES,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
-use xcm_config::{DotLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
+use xcm_config::{GovernanceLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -420,7 +420,7 @@ parameter_types! {
 /// We allow root and the StakingAdmin to execute privileged collator selection operations.
 pub type CollatorSelectionUpdateOrigin = EitherOfDiverse<
 	EnsureRoot<AccountId>,
-	EnsureXcm<IsVoiceOfBody<DotLocation, StakingAdminBodyId>>,
+	EnsureXcm<IsVoiceOfBody<GovernanceLocation, StakingAdminBodyId>>,
 >;
 
 impl pallet_collator_selection::Config for Runtime {

@@ -36,16 +36,18 @@ pub type BalanceOf<T> =
 	<pallet_balances::Pallet<T> as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 /// Implements `OnUnbalanced::on_unbalanced` to teleport slashed assets to relay chain treasury account.
-pub struct ToParentTreasury<TreasuryAcc, PalletAcc, T>(PhantomData<(TreasuryAcc, PalletAcc, T)>);
+pub struct ToParentTreasury<TreasuryAccount, PalletAccount, T>(
+	PhantomData<(TreasuryAccount, PalletAccount, T)>,
+);
 
-impl<TreasuryAcc, PalletAcc, T> OnUnbalanced<NegativeImbalance<T>>
-	for ToParentTreasury<TreasuryAcc, PalletAcc, T>
+impl<TreasuryAccount, PalletAccount, T> OnUnbalanced<NegativeImbalance<T>>
+	for ToParentTreasury<TreasuryAccount, PalletAccount, T>
 where
 	T: pallet_balances::Config + pallet_xcm::Config + frame_system::Config,
 	<<T as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId: From<AccountIdOf<T>>,
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
-	TreasuryAcc: Get<AccountIdOf<T>>,
-	PalletAcc: Get<AccountIdOf<T>>,
+	TreasuryAccount: Get<AccountIdOf<T>>,
+	PalletAccount: Get<AccountIdOf<T>>,
 	BalanceOf<T>: Into<Fungibility>,
 {
 	fn on_unbalanced(amount: NegativeImbalance<T>) {
@@ -54,8 +56,8 @@ where
 			Err(amount) => amount,
 		};
 		let imbalance = amount.peek();
-		let pallet_acc: AccountIdOf<T> = PalletAcc::get();
-		let treasury_acc: AccountIdOf<T> = TreasuryAcc::get();
+		let pallet_acc: AccountIdOf<T> = PalletAccount::get();
+		let treasury_acc: AccountIdOf<T> = TreasuryAccount::get();
 
 		<pallet_balances::Pallet<T>>::resolve_creating(&pallet_acc.clone(), amount);
 

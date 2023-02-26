@@ -283,7 +283,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 		}
 
 		match Origin::try_from(id.clone()) {
-			Ok(Origin::FellowshipInitiates) => Ok(tracks::CANDIDATES),
+			Ok(Origin::FellowshipCandidates) => Ok(tracks::CANDIDATES),
 			Ok(Origin::Fellowship1Dan) => Ok(tracks::MEMBERS),
 			Ok(Origin::Fellowship2Dan) => Ok(tracks::PROFICIENTS),
 			Ok(Origin::Fellowship3Dan) | Ok(Origin::Fellows) => Ok(tracks::FELLOWS),

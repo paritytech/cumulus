@@ -19,13 +19,13 @@
 mod origins;
 mod tracks;
 pub use origins::{
-	pallet_origins as pallet_fellowship_origins, Fellows, FellowshipExperts, FellowshipInitiates,
+	pallet_origins as pallet_fellowship_origins, Fellows, FellowshipCandidates, FellowshipExperts,
 	FellowshipMasters,
 };
 
 use crate::{
 	constants, impls::ToParentTreasury, weights, AccountId, Balance, Balances, BlockNumber,
-	DotLocation, FellowshipReferenda, Preimage, RelayTreasuryAccount, Runtime, RuntimeCall,
+	FellowshipReferenda, GovernanceLocation, Preimage, RelayTreasuryAccount, Runtime, RuntimeCall,
 	RuntimeEvent, Scheduler, DAYS,
 };
 use frame_support::{
@@ -115,7 +115,7 @@ impl pallet_ranked_collective::Config<FellowshipCollectiveInstance> for Runtime 
 		frame_system::EnsureRootWithSuccess<Self::AccountId, ConstU16<65535>>,
 		EitherOf<
 			MapSuccess<
-				EnsureXcm<IsVoiceOfBody<DotLocation, FellowshipAdminBodyId>>,
+				EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
 				Replace<ConstU16<9>>,
 			>,
 			TryMapSuccess<EnsureFellowship, CheckedReduceBy<ConstU16<1>>>,
@@ -129,7 +129,7 @@ impl pallet_ranked_collective::Config<FellowshipCollectiveInstance> for Runtime 
 		frame_system::EnsureRootWithSuccess<Self::AccountId, ConstU16<65535>>,
 		EitherOf<
 			MapSuccess<
-				EnsureXcm<IsVoiceOfBody<DotLocation, FellowshipAdminBodyId>>,
+				EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
 				Replace<ConstU16<9>>,
 			>,
 			TryMapSuccess<EnsureFellowship, CheckedReduceBy<ConstU16<2>>>,

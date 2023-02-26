@@ -93,7 +93,9 @@ use parachains_common::{
 	Signature, StatemintAuraId as AuraId, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
-use xcm_config::{CollectivesLocation, DotLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
+use xcm_config::{
+	FellowshipLocation, GovernanceLocation, XcmConfig, XcmOriginToTransactDispatchOrigin,
+};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -482,7 +484,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type ControllerOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
-		EnsureXcm<IsVoiceOfBody<CollectivesLocation, FellowsBodyId>>,
+		EnsureXcm<IsVoiceOfBody<FellowshipLocation, FellowsBodyId>>,
 	>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 	type PriceForSiblingDelivery = ();
@@ -532,7 +534,7 @@ parameter_types! {
 /// We allow root and the StakingAdmin to execute privileged collator selection operations.
 pub type CollatorSelectionUpdateOrigin = EitherOfDiverse<
 	EnsureRoot<AccountId>,
-	EnsureXcm<IsVoiceOfBody<DotLocation, StakingAdminBodyId>>,
+	EnsureXcm<IsVoiceOfBody<GovernanceLocation, StakingAdminBodyId>>,
 >;
 
 impl pallet_collator_selection::Config for Runtime {

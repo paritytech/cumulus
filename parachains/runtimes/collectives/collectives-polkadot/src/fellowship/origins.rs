@@ -35,7 +35,7 @@ pub mod pallet_origins {
 	#[pallet::origin]
 	pub enum Origin {
 		/// Origin commanded by any members of the Polkadot Fellowship (no Dan grade needed).
-		FellowshipInitiates,
+		FellowshipCandidates,
 		/// Origin commanded by Polkadot Fellows (3rd Dan fellows or greater).
 		Fellows,
 		/// Origin commanded by Polkadot Experts (5th Dan fellows or greater).
@@ -93,7 +93,7 @@ pub mod pallet_origins {
 		() => {}
 	}
 	decl_unit_ensures!(
-		FellowshipInitiates: Rank = ranks::CANDIDATES,
+		FellowshipCandidates: Rank = ranks::CANDIDATES,
 		Fellows: Rank = ranks::DAN_3,
 		FellowshipExperts: Rank = ranks::DAN_5,
 		FellowshipMasters: Rank = ranks::DAN_7,

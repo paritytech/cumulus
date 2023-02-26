@@ -57,7 +57,9 @@ use frame_system::{
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
-use xcm_config::{CollectivesLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
+use xcm_config::{
+	FellowshipLocation, GovernanceLocation, XcmConfig, XcmOriginToTransactDispatchOrigin,
+};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -67,12 +69,11 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
-// XCM Imports
-use crate::xcm_config::DotRelayLocation;
 use parachains_common::{
 	opaque, AccountId, Balance, BlockNumber, Hash, Header, Index, Signature,
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
+// XCM Imports
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
 
@@ -295,7 +296,7 @@ parameter_types! {
 /// Privileged origin that represents Root or Fellows.
 pub type RootOrFellows = EitherOfDiverse<
 	EnsureRoot<AccountId>,
-	EnsureXcm<IsVoiceOfBody<CollectivesLocation, FellowsBodyId>>,
+	EnsureXcm<IsVoiceOfBody<FellowshipLocation, FellowsBodyId>>,
 >;
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
@@ -349,7 +350,7 @@ parameter_types! {
 /// We allow root, the StakingAdmin to execute privileged collator selection operations.
 pub type CollatorSelectionUpdateOrigin = EitherOfDiverse<
 	EnsureRoot<AccountId>,
-	EnsureXcm<IsVoiceOfBody<DotRelayLocation, StakingAdminBodyId>>,
+	EnsureXcm<IsVoiceOfBody<GovernanceLocation, StakingAdminBodyId>>,
 >;
 
 impl pallet_collator_selection::Config for Runtime {

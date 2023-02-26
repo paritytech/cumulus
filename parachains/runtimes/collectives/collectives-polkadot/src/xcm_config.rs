@@ -47,6 +47,7 @@ parameter_types! {
 		X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
 	pub const Local: MultiLocation = Here.into_location();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
+	pub const GovernanceLocation: MultiLocation = MultiLocation::parent();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
