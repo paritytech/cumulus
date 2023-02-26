@@ -14,8 +14,6 @@
 // limitations under the License.
 
 //! Runtime API definition for fungibles.
-//!
-//! (Initial version: https://github.com/paritytech/cumulus/pull/2180#issuecomment-1442952274)
 
 use codec::{Codec, Decode, Encode};
 use frame_support::RuntimeDebug;

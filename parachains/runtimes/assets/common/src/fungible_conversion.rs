@@ -75,7 +75,7 @@ where
 	items.map(Converter::convert_ref).collect()
 }
 
-/// Helper function to convert [`Balance`] with [`MultiLocation`] to [`MultiAsset`]
+/// Helper function to convert `Balance` with MultiLocation` to `MultiAsset`
 pub fn convert_balance<
 	T: frame_support::pallet_prelude::Get<MultiLocation>,
 	Balance: TryInto<u128>,

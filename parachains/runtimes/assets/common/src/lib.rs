@@ -22,11 +22,11 @@ use parachains_common::AssetIdForTrustBackedAssets;
 use xcm_builder::{AsPrefixedGeneralIndex, ConvertedConcreteId};
 use xcm_executor::traits::JustTry;
 
-/// [`MultiLocation`] vs [`AssetIdForTrustBackedAssets`] converter for `TrustBackedAssets`
+/// `MultiLocation` vs `AssetIdForTrustBackedAssets` converter for `TrustBackedAssets`
 pub type AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation> =
 	AsPrefixedGeneralIndex<TrustBackedAssetsPalletLocation, AssetIdForTrustBackedAssets, JustTry>;
 
-/// [`ConvertedConcreteId`] converter dedicated for [`TrustBackedAssets`]
+/// [`ConvertedConcreteId`] converter dedicated for `TrustBackedAssets`
 pub type TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance> =
 	ConvertedConcreteId<
 		AssetIdForTrustBackedAssets,
