@@ -25,7 +25,6 @@ use xcm_builder::ConvertedConcreteId;
 use xcm_executor::traits::{Convert, MatchesFungibles};
 
 /// Converting any [`(AssetId, Balance)`] to [`MultiAsset`]
-// TODO: could be replaced by [`Convert<(AssetId, Balance), MultiAsset>`] and/or move to Polkadot repo [`xcm`] module - issue https://github.com/paritytech/polkadot/pull/6760
 pub trait MultiAssetConverter<AssetId, Balance, ConvertAssetId, ConvertBalance>:
 	MatchesFungibles<AssetId, Balance>
 where
