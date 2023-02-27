@@ -164,6 +164,8 @@ pub(crate) mod import_kusama_fellowship {
 #[cfg(test)]
 pub mod tests {
 	use super::import_kusama_fellowship::FellowshipAddresses;
+	use crate::{FellowshipCollectiveInstance as Fellowship, Runtime, System};
+	use frame_support::traits::OnRuntimeUpgrade;
 	use pallet_ranked_collective::Rank;
 	use parachains_common::AccountId;
 	use sp_core::crypto::Ss58Codec;
@@ -229,5 +231,30 @@ pub mod tests {
 			);
 			assert_eq!(fellowship_addresses[index].1, account32, "accounts must be equal.");
 		}
+	}
+
+	#[test]
+	fn test_fellowship_import() {
+		use super::import_kusama_fellowship::Migration;
+		use pallet_ranked_collective::{IdToIndex, IndexToId, MemberCount, MemberRecord, Members};
+
+		let t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
+		let mut ext = sp_io::TestExternalities::new(t);
+		ext.execute_with(|| System::set_block_number(1));
+		ext.execute_with(|| {
+			assert_eq!(MemberCount::<Runtime, Fellowship>::get(0), 0);
+			Migration::<Runtime, Fellowship>::on_runtime_upgrade();
+			for (rank, account_id32) in FellowshipAddresses::get() {
+				let who = <Runtime as frame_system::Config>::AccountId::from(account_id32);
+				assert!(IdToIndex::<Runtime, Fellowship>::get(0, &who).is_some());
+				assert!(IdToIndex::<Runtime, Fellowship>::get(rank + 1, &who).is_none());
+				let index = IdToIndex::<Runtime, Fellowship>::get(rank, &who).unwrap();
+				assert_eq!(IndexToId::<Runtime, Fellowship>::get(rank, &index).unwrap(), who);
+				assert_eq!(
+					Members::<Runtime, Fellowship>::get(&who).unwrap(),
+					MemberRecord::new(rank)
+				);
+			}
+		});
 	}
 }

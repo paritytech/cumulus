@@ -76,6 +76,9 @@ parachains-common = { path = "../../../common", default-features = false }
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
+[dev-dependencies]
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+
 [features]
 default = [ "std" ]
 runtime-benchmarks = [
