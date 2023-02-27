@@ -557,6 +557,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
 
 [[package]]
+name = "base64"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4a4ddaa51a5bc52a6948f74c06d20aaaddb71924eab79b8c97a8c556e942d6a"
+
+[[package]]
 name = "base64ct"
 version = "1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -663,9 +669,9 @@ dependencies = [
 
 [[package]]
 name = "bip39"
-version = "1.0.1"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9e89470017230c38e52b82b3ee3f530db1856ba1d434e3a67a3456a8a8dec5f"
+checksum = "f5b9d9748b5770d1539657653dc5ac3cd9353549e74238dc0d96c22919128b94"
 dependencies = [
  "bitcoin_hashes",
  "rand_core 0.4.2",
@@ -673,9 +679,9 @@ dependencies = [
 
 [[package]]
 name = "bitcoin_hashes"
-version = "0.9.7"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ce18265ec2324ad075345d5814fbeed4f41f0a660055dc78840b74d19b874b1"
+checksum = "90064b8dee6815a6470d60bad07bbbaee885c0e12d04177138fa3291a01b7bc4"
 
 [[package]]
 name = "bitflags"
@@ -2478,6 +2484,7 @@ dependencies = [
  "sc-client-api",
  "sc-rpc-api",
  "sc-service",
+ "sc-tracing",
  "serde",
  "serde_json",
  "smoldot",
@@ -5264,7 +5271,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "95b09eff1b35ed3b33b877ced3a691fc7a481919c7e29c53c906226fcf55e2a1"
 dependencies = [
  "arrayref",
- "base64",
+ "base64 0.13.1",
  "digest 0.9.0",
  "hmac-drbg",
  "libsecp256k1-core",
@@ -7581,7 +7588,7 @@ version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "03c64931a1a212348ec4f3b4362585eca7159d0d09cbdf4a7f74f02173596fd4"
 dependencies = [
- "base64",
+ "base64 0.13.1",
 ]
 
 [[package]]
@@ -10081,7 +10088,7 @@ version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "35edb675feee39aec9c99fa5ff985081995a06d594114ae14cbe797ad7b7a6d7"
 dependencies = [
- "base64",
+ "base64 0.13.1",
  "log",
  "ring",
  "sct 0.6.1",
@@ -10118,7 +10125,7 @@ version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5eebeaeb360c87bfb72e84abdb3447159c0eaececf1bef2aecd65a8be949d1c9"
 dependencies = [
- "base64",
+ "base64 0.13.1",
 ]
 
 [[package]]
@@ -11749,7 +11756,7 @@ dependencies = [
  "arrayvec 0.7.2",
  "async-std",
  "atomic",
- "base64",
+ "base64 0.21.0",
  "bip39",
  "blake2-rfc",
  "bs58",
@@ -11790,7 +11797,7 @@ dependencies = [
  "sqlite",
  "tiny-keccak",
  "twox-hash",
- "wasmi 0.26.1",
+ "wasmi 0.27.0",
  "wasmtime",
 ]
 
@@ -11809,7 +11816,7 @@ dependencies = [
  "hex",
  "itertools",
  "log",
- "lru 0.8.1",
+ "lru 0.9.0",
  "parking_lot 0.12.1",
  "rand 0.8.5",
  "serde",
@@ -11857,7 +11864,7 @@ version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "41d1c5305e39e09653383c2c7244f2f78b3bcae37cf50c64cb4789c9f5096ec2"
 dependencies = [
- "base64",
+ "base64 0.13.1",
  "bytes",
  "flate2",
  "futures",
@@ -12880,7 +12887,7 @@ version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a7e94b1ec00bad60e6410e058b52f1c66de3dc5fe4d62d09b3e52bb7d3b73e25"
 dependencies = [
- "base64",
+ "base64 0.13.1",
  "crc",
  "lazy_static",
  "md-5",
@@ -13749,7 +13756,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4712ee30d123ec7ae26d1e1b218395a16c87cdbaf4b3925d170d684af62ea5e8"
 dependencies = [
  "async-trait",
- "base64",
+ "base64 0.13.1",
  "futures",
  "log",
  "md-5",
@@ -14149,9 +14156,9 @@ dependencies = [
 
 [[package]]
 name = "wasmi"
-version = "0.26.1"
+version = "0.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35653e9f82eacc22583f303fa34f4c2d4efdee6521e70b46b6ca4c68c0e432d8"
+checksum = "fd3fdd2e118c188a4d070df4f7690295243f79f88a5425caf805fc7053c6547c"
 dependencies = [
  "spin 0.9.4",
  "wasmi_arena 0.4.0",
@@ -14288,7 +14295,7 @@ version = "5.0.0"
 source = "git+https://github.com/paritytech/wasmtime.git?branch=v5.0.0_lto_fix#8a02705ad378108e43abe23c538688adf73f3b71"
 dependencies = [
  "anyhow",
- "base64",
+ "base64 0.13.1",
  "bincode",
  "directories-next",
  "file-per-thread-logger",
@@ -15192,7 +15199,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9fb9bace5b5589ffead1afb76e43e34cff39cd0f3ce7e170ae0c29e53b88eb1c"
 dependencies = [
  "asn1-rs 0.3.1",
- "base64",
+ "base64 0.13.1",
  "data-encoding",
  "der-parser 7.0.0",
  "lazy_static",
@@ -15211,7 +15218,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0ecbeb7b67ce215e40e3cc7f2ff902f94a223acf44995934763467e7b1febc8"
 dependencies = [
  "asn1-rs 0.5.1",
- "base64",
+ "base64 0.13.1",
  "data-encoding",
  "der-parser 8.1.0",
  "lazy_static",
