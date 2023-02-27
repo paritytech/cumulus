@@ -443,6 +443,7 @@ impl pallet_collective::Config<AllianceCollective> for Runtime {
 	type MaxProposals = ConstU32<ALLIANCE_MAX_PROPOSALS>;
 	type MaxMembers = ConstU32<ALLIANCE_MAX_MEMBERS>;
 	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
+	type SetMembersOrigin = EnsureRoot<AccountId>;
 	type WeightInfo = weights::pallet_collective::WeightInfo<Runtime>;
 }
 
@@ -549,6 +550,9 @@ pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
+// All migrations executed on runtime upgrade as a nested tuple of types implementing
+// `OnRuntimeUpgrade`. Included migrations must be idempotent.
+type Migrations = ();
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -559,13 +563,6 @@ pub type Executive = frame_executive::Executive<
 	AllPalletsWithSystem,
 	Migrations,
 >;
-
-// All migrations executed on runtime upgrade as a nested tuple of types implementing `OnRuntimeUpgrade`.
-// Included migrations must be idempotent.
-type Migrations = (
-	pallet_alliance::migration::Migration<Runtime>,
-	pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,
-);
 
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
