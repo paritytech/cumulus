@@ -36,7 +36,7 @@ impl WeighMultiAssets for MultiAssetFilter {
 			Self::Definite(assets) =>
 				weight.saturating_mul(assets.inner().into_iter().count() as u64),
 			Self::Wild(asset) => match asset {
-				All => weight.saturating_mul(MAX_ASSETS as u64),
+				All => weight.saturating_mul(MAX_ASSETS),
 				AllOf { fun, .. } => match fun {
 					WildFungibility::Fungible => weight,
 					// Magic number 2 has to do with the fact that we could have up to 2 times
