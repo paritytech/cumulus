@@ -17,7 +17,7 @@
 mod pallet_xcm_benchmarks_fungible;
 mod pallet_xcm_benchmarks_generic;
 
-use crate::Runtime;
+use crate::{xcm_config::MaxAssetsIntoHolding, Runtime};
 use frame_support::weights::Weight;
 use pallet_xcm_benchmarks_fungible::WeightInfo as XcmFungibleWeight;
 use pallet_xcm_benchmarks_generic::WeightInfo as XcmGeneric;
@@ -28,14 +28,25 @@ trait WeighMultiAssets {
 	fn weigh_multi_assets(&self, weight: Weight) -> Weight;
 }
 
-const MAX_ASSETS: u32 = 100;
+const MAX_ASSETS: u64 = 100;
 
 impl WeighMultiAssets for MultiAssetFilter {
 	fn weigh_multi_assets(&self, weight: Weight) -> Weight {
 		match self {
 			Self::Definite(assets) =>
 				weight.saturating_mul(assets.inner().into_iter().count() as u64),
-			Self::Wild(_) => weight.saturating_mul(MAX_ASSETS as u64),
+			Self::Wild(asset) => match asset {
+				All => weight.saturating_mul(MAX_ASSETS),
+				AllOf { fun, .. } => match fun {
+					WildFungibility::Fungible => weight,
+					// Magic number 2 has to do with the fact that we could have up to 2 times
+					// MaxAssetsIntoHolding in the worst-case scenario.
+					WildFungibility::NonFungible =>
+						weight.saturating_mul((MaxAssetsIntoHolding::get() * 2) as u64),
+				},
+				AllCounted(count) => weight.saturating_mul(MAX_ASSETS.min(*count as u64)),
+				AllOfCounted { count, .. } => weight.saturating_mul(MAX_ASSETS.min(*count as u64)),
+			},
 		}
 	}
 }
@@ -138,10 +149,7 @@ impl<Call> XcmWeightInfo<Call> for WestmintXcmWeight<Call> {
 		_dest: &MultiLocation,
 		_xcm: &Xcm<()>,
 	) -> Weight {
-		// Hardcoded till the XCM pallet is fixed
-		let hardcoded_weight = Weight::from_ref_time(200_000_000 as u64);
-		let weight = assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::initiate_teleport());
-		hardcoded_weight.min(weight)
+		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::initiate_teleport())
 	}
 	fn report_holding(_response_info: &QueryResponseInfo, _assets: &MultiAssetFilter) -> Weight {
 		XcmGeneric::<Runtime>::report_holding()
