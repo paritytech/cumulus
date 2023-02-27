@@ -20,6 +20,7 @@ sp-std = { git = "https://github.com/paritytech/substrate", default-features = f
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Cumulus
+cumulus-pallet-parachain-system = { path = "../../../../pallets/parachain-system", default-features = false }
 pallet-collator-selection = { path = "../../../../pallets/collator-selection", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
 
@@ -39,6 +40,7 @@ std = [
     "frame-support/std",
 	"frame-system/std",
 	"pallet-balances/std",
+	"cumulus-pallet-parachain-system/std",
 	"pallet-collator-selection/std",
     "pallet-session/std",
     "parachains-common/std",

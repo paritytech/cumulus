@@ -1,4 +1,4 @@
-use asset_test_utils::{ExtBuilder, RuntimeHelper};
+use asset_test_utils::{ExtBuilder, RuntimeHelper, XcmReceivedFrom};
 use codec::Encode;
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
@@ -798,11 +798,14 @@ fn create_foreign_assets_for_local_consensus_parachain_assets_works() {
 
 			// messages with different consensus should go through the local bridge-hub
 			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-			let weight_limit = Weight::from_parts(100_000_000_000, 6000);
 
 			// execute xcm as XcmpQueue would do
-			let outcome =
-				XcmExecutor::<XcmConfig>::execute_xcm(foreign_creator, xcm, hash, weight_limit);
+			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(
+				foreign_creator,
+				xcm,
+				hash,
+				RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Sibling),
+			);
 			assert_eq!(outcome.ensure_complete(), Ok(()));
 
 			// check events

@@ -1,7 +1,7 @@
 use frame_support::traits::GenesisBuild;
 use sp_std::marker::PhantomData;
 
-use frame_support::traits::OriginTrait;
+use frame_support::{traits::OriginTrait, weights::Weight};
 use parachains_common::AccountId;
 use sp_consensus_aura::AURA_ENGINE_ID;
 use sp_core::Encode;
@@ -157,5 +157,20 @@ impl<XcmConfig: xcm_executor::Config> RuntimeHelper<XcmConfig> {
 			// fake message hash here
 			&XcmContext::with_message_hash([0; 32]),
 		)
+	}
+}
+
+pub enum XcmReceivedFrom {
+	Parent,
+	Sibling,
+}
+
+impl<ParachainSystem: cumulus_pallet_parachain_system::Config> RuntimeHelper<ParachainSystem> {
+	pub fn xcm_max_weight(from: XcmReceivedFrom) -> Weight {
+		use frame_support::traits::Get;
+		match from {
+			XcmReceivedFrom::Parent => ParachainSystem::ReservedDmpWeight::get(),
+			XcmReceivedFrom::Sibling => ParachainSystem::ReservedXcmpWeight::get(),
+		}
 	}
 }
