@@ -20,7 +20,6 @@ sp-storage = { git = "https://github.com/paritytech/substrate", branch = "master
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 tokio = { version = "1.25.0", features = ["sync"] }
 tokio-util = { version = "0.7.7", features = ["compat"] }
 
@@ -38,7 +37,6 @@ lru = "0.9.0"
 smoldot = { path = "../../../smoldot/lib" }
 smoldot-light = { path = "../../../smoldot/light-base" }
 
-itertools = "0.10.5"
 parking_lot = "0.12.1"
 either = "1.8.1"
 event-listener = "2.5.3"
