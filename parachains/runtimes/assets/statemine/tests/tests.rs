@@ -1,4 +1,4 @@
-use asset_test_utils::{ExtBuilder, RuntimeHelper};
+use asset_test_utils::{ExtBuilder, RuntimeHelper, XcmReceivedFrom};
 use codec::Encode;
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
@@ -391,7 +391,7 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 }
 
 #[test]
-fn receive_teleported_asset_works() {
+fn receive_teleported_asset_for_native_asset_works() {
 	ExtBuilder::<Runtime>::default()
 		.with_collators(vec![AccountId::from(ALICE)])
 		.with_session_keys(vec![(
@@ -431,9 +431,12 @@ fn receive_teleported_asset_works() {
 			]);
 			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
 
-			let weight_limit = ReservedDmpWeight::get();
-
-			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(Parent, xcm, hash, weight_limit);
+			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(
+				Parent,
+				xcm,
+				hash,
+				RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Parent),
+			);
 			assert_eq!(outcome.ensure_complete(), Ok(()));
 		})
 }
