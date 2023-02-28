@@ -111,7 +111,7 @@
         },
         {
           "exemplar": true,
-          "expr": "at_RialtoParachain_relay_MillauMessages_reward_for_lane_00000000_with_Millau{instance=\"relay-millau-rialto-parachain-1:9616\"}",
+          "expr": "at_RialtoParachain_relay_MillauMessages_reward_for_msgs_from_Millau_on_lane_00000000{instance=\"relay-millau-rialto-parachain-1:9616\"} + at_RialtoParachain_relay_MillauMessages_reward_for_msgs_to_Millau_on_lane_00000000{instance=\"relay-millau-rialto-parachain-1:9616\"}",
           "hide": false,
           "instant": false,
           "interval": "",
@@ -120,7 +120,7 @@
         },
         {
           "exemplar": true,
-          "expr": "at_RialtoParachain_relay_MillauMessages_balance{instance=\"relay-millau-rialto-parachain-1:9616\"} + at_RialtoParachain_relay_MillauMessages_reward_for_lane_00000000_with_Millau{instance=\"relay-millau-rialto-parachain-1:9616\"}",
+          "expr": "at_RialtoParachain_relay_MillauMessages_balance{instance=\"relay-millau-rialto-parachain-1:9616\"} + at_RialtoParachain_relay_MillauMessages_reward_for_msgs_from_Millau_on_lane_00000000{instance=\"relay-millau-rialto-parachain-1:9616\"} + at_RialtoParachain_relay_MillauMessages_reward_for_msgs_to_Millau_on_lane_00000000{instance=\"relay-millau-rialto-parachain-1:9616\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "With-Millau relay account total balance (balance + reward)",
@@ -262,7 +262,7 @@
         },
         {
           "exemplar": true,
-          "expr": "at_Millau_relay_RialtoParachainMessages_reward_for_lane_00000000_with_RialtoParachain{instance=\"relay-millau-rialto-parachain-1:9616\"}",
+          "expr": "at_Millau_relay_RialtoParachainMessages_reward_for_msgs_from_RialtoParachain_on_lane_00000000{instance=\"relay-millau-rialto-parachain-1:9616\"} + at_Millau_relay_RialtoParachainMessages_reward_for_msgs_to_RialtoParachain_on_lane_00000000{instance=\"relay-millau-rialto-parachain-1:9616\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "With-Rialto relay account reward",
@@ -270,7 +270,7 @@
         },
         {
           "exemplar": true,
-          "expr": "at_Millau_relay_RialtoParachainMessages_balance{instance=\"relay-millau-rialto-parachain-1:9616\"} + \nat_Millau_relay_RialtoParachainMessages_reward_for_lane_00000000_with_RialtoParachain{instance=\"relay-millau-rialto-parachain-1:9616\"}",
+          "expr": "at_Millau_relay_RialtoParachainMessages_balance{instance=\"relay-millau-rialto-parachain-1:9616\"} + at_Millau_relay_RialtoParachainMessages_reward_for_msgs_from_RialtoParachain_on_lane_00000000{instance=\"relay-millau-rialto-parachain-1:9616\"} + at_Millau_relay_RialtoParachainMessages_reward_for_msgs_to_RialtoParachain_on_lane_00000000{instance=\"relay-millau-rialto-parachain-1:9616\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "With-Rialto relay account total balance (balance + reward)",

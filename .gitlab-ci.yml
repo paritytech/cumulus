@@ -4,6 +4,7 @@ stages:
   - test
   - build
   - publish
+  - publish-docker-description
 
 variables:
   GIT_STRATEGY:                    fetch
@@ -314,5 +315,49 @@ bridges-common-relay:
     <<:                            *image-variables
     BRIDGES_PROJECT:               substrate-relay
     DOCKER_IMAGE_NAME:             bridges-common-relay
+
+# Publish Docker images description to hub.docker.com
+
+.publish-docker-image-description: &publish-docker-image-description
+  stage:                           publish-docker-description
+  image:                           paritytech/dockerhub-description
+  variables:
+    DOCKER_USERNAME:               $Docker_Hub_User_Parity
+    DOCKER_PASSWORD:               $Docker_Hub_Pass_Parity
+    README_FILEPATH:               $CI_PROJECT_DIR/docs/${CI_JOB_NAME}.README.md
+  rules:
+  - if: $CI_COMMIT_REF_NAME == "master"
+    changes:
+    - docs/${CI_JOB_NAME}.README.md
+  script:
+    - export DOCKERHUB_REPOSITORY="paritytech/${CI_JOB_NAME:10}"
+    - cd / && sh entrypoint.sh
+  tags:
+    - kubernetes-parity-build
+
+dockerhub-rialto-bridge-node:
+  extends:                .publish-docker-image-description
+  variables:
+    SHORT_DESCRIPTION:    "rialto-bridge-node"
+
+dockerhub-rialto-parachain-collator:
+  extends:                .publish-docker-image-description
+  variables:
+    SHORT_DESCRIPTION:    "rialto-parachain-collator"
+
+dockerhub-millau-bridge-node:
+  extends:                .publish-docker-image-description
+  variables:
+    SHORT_DESCRIPTION:    "millau-bridge-node"
+
+dockerhub-substrate-relay:
+  extends:                .publish-docker-image-description
+  variables:
+    SHORT_DESCRIPTION:    "substrate-relay"
+
+dockerhub-bridges-common-relay:
+  extends:                .publish-docker-image-description
+  variables:
+    SHORT_DESCRIPTION:    "bridges-common-relay"
 
 # FIXME: publish binaries
