@@ -13,7 +13,7 @@ jobs:
 
       - name: Set output
         id: vars
-        run: echo "tag=${GITHUB_REF#refs/*/} >> $GITHUB_OUTPUT
+        run: echo "{tag}={${GITHUB_REF#refs/*/}}" >> $GITHUB_OUTPUT
 
       - name: Check output
         env:
