@@ -19,11 +19,12 @@ use super::{
 	RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
 use crate::{asset_conversions::AssetIdConversionFailedToAssetNotFoundWrapper, ForeignAssets};
+use cumulus_primitives_core::ParaId;
 use frame_support::{
 	match_types, parameter_types,
 	traits::{
-		ConstU32, Contains, EnsureOrigin, EnsureOriginWithArg, Everything, Nothing,
-		PalletInfoAccess,
+		ConstU32, Contains, ContainsPair, EnsureOrigin, EnsureOriginWithArg, Everything, Get,
+		Nothing, PalletInfoAccess,
 	},
 };
 use pallet_xcm::{EnsureXcm, XcmPassthrough};
@@ -315,7 +316,9 @@ impl xcm_executor::Config for XcmConfig {
 	// Westmint acting _as_ a reserve location for WND and assets created under `pallet-assets`.
 	// For WND, users must use teleport where allowed (e.g. with the Relay Chain).
 	type IsReserve = ();
-	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of WND
+	// should be enough to allow teleportation of WND plus allow to ForeignCreators to telerport their assets here
+	type IsTeleporter =
+		(NativeAsset, IsForeignConcreteAsset<IsSiblingParachain<parachain_info::Pallet<Runtime>>>);
 	type UniversalLocation = UniversalLocation;
 	type Barrier = Barrier;
 	type Weigher = WeightInfoBounds<
@@ -420,26 +423,65 @@ pub type ForeignCreatorsSovereignAccountOf = (
 	ParentIsPreset<AccountId>,
 );
 
+// TODO:check-parameter - move to assets_common and add some tests
+
 // `EnsureOriginWithArg` impl for `CreateOrigin` that allows only XCM origins that are locations
 // containing the class location.
-pub struct ForeignCreators;
-impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
+pub struct ForeignCreators<IsForeign>(sp_std::marker::PhantomData<IsForeign>);
+impl<IsForeign: ContainsPair<MultiLocation, MultiLocation>>
+	EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators<IsForeign>
+{
 	type Success = AccountId;
 
 	fn try_origin(
-		o: RuntimeOrigin,
-		a: &MultiLocation,
+		origin: RuntimeOrigin,
+		asset_location: &MultiLocation,
 	) -> sp_std::result::Result<Self::Success, RuntimeOrigin> {
-		let origin_location = EnsureXcm::<Everything>::try_origin(o.clone())?;
-		if !a.starts_with(&origin_location) {
-			return Err(o)
+		let origin_location = EnsureXcm::<Everything>::try_origin(origin.clone())?;
+		if !IsForeign::contains(&asset_location, &origin_location) {
+			return Err(origin)
 		}
-		ForeignCreatorsSovereignAccountOf::convert(origin_location).map_err(|_| o)
+		ForeignCreatorsSovereignAccountOf::convert(origin_location).map_err(|_| origin)
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
 	fn try_successful_origin(a: &MultiLocation) -> Result<RuntimeOrigin, ()> {
 		Ok(pallet_xcm::Origin::Xcm(a.clone()).into())
+	}
+}
+
+/// Accepts an asset if it is from the origin.
+pub struct IsForeignConcreteAsset<IsForeign>(sp_std::marker::PhantomData<IsForeign>);
+impl<IsForeign: ContainsPair<MultiLocation, MultiLocation>> ContainsPair<MultiAsset, MultiLocation>
+	for IsForeignConcreteAsset<IsForeign>
+{
+	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+		log::trace!(target: "xcm::contains", "IsForeignAsset asset: {:?}, origin: {:?}", asset, origin);
+		matches!(asset.id, Concrete(ref id) if IsForeign::contains(id, &origin))
+	}
+}
+
+/// Checks if 'a' is from sibling location `b`, so means that
+pub struct IsSiblingParachain<SelfParaId>(sp_std::marker::PhantomData<SelfParaId>);
+impl<SelfParaId: Get<ParaId>> ContainsPair<MultiLocation, MultiLocation>
+	for IsSiblingParachain<SelfParaId>
+{
+	fn contains(a: &MultiLocation, b: &MultiLocation) -> bool {
+		// `a` needs to be from `b` at least
+		if !a.starts_with(&b) {
+			return false
+		}
+
+		// here we check if sibling
+		match a {
+			MultiLocation { parents: 1, interior } => match interior.first() {
+				Some(Parachain(sibling_para_id))
+					if sibling_para_id.ne(&u32::from(SelfParaId::get())) =>
+					true,
+				_ => false,
+			},
+			_ => false,
+		}
 	}
 }
 

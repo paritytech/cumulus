@@ -80,6 +80,7 @@ pub use sp_runtime::BuildStorage;
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use xcm_executor::XcmExecutor;
 
+use crate::xcm_config::IsSiblingParachain;
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 impl_opaque_keys! {
@@ -257,7 +258,7 @@ impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type AssetId = MultiLocationForAssetId;
 	type AssetIdParameter = MultiLocationForAssetId;
 	type Currency = Balances;
-	type CreateOrigin = ForeignCreators;
+	type CreateOrigin = ForeignCreators<(IsSiblingParachain<parachain_info::Pallet<Runtime>>,)>;
 	type ForceOrigin = AssetsForceOrigin;
 	type AssetDeposit = AssetDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
