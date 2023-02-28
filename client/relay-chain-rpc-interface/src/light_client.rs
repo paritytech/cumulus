@@ -38,6 +38,7 @@ use smoldot_light::{
 	ChainId, Client, ClientConfig, JsonRpcResponses,
 };
 use std::{
+	borrow::Borrow,
 	collections::{HashMap, VecDeque},
 	io::IoSlice,
 	net::{IpAddr, SocketAddr},
@@ -365,7 +366,6 @@ pub async fn get_light_client(
 	};
 	let mut client: Client<TokioPlatform, ()> = Client::new(config);
 
-	tracing::info!(target: "skunert", "Initializing light client");
 	// Ask the client to connect to a chain.
 	let smoldot_light::AddChainSuccess { chain_id, json_rpc_responses } = client
 		.add_chain(smoldot_light::AddChainConfig {
@@ -436,69 +436,6 @@ fn distribute_header(header: RelayHeader, senders: &mut Vec<Sender<RelayHeader>>
 			});
 }
 
-fn handle_notification_response(
-	subscription: SubscriptionResponse<RelayHeader>,
-	subscription_lookup: &mut HashMap<String, Subscriptions>,
-	all_head: &mut Vec<Sender<RelayHeader>>,
-	new_head: &mut Vec<Sender<RelayHeader>>,
-	finalized_head: &mut Vec<Sender<RelayHeader>>,
-) {
-	tracing::info!(target: LOG_TARGET, size = ?subscription_lookup.len(), "Subscription lookup size");
-	if let SubscriptionId::Str(id) = subscription.params.subscription {
-		let id = id.to_string();
-		match subscription_lookup.get(&id) {
-			Some(Subscriptions::AllHead) => {
-				tracing::info!(target: LOG_TARGET, "received all notification");
-				distribute_header(subscription.params.result, all_head)
-			},
-			Some(Subscriptions::FinalizedHead) => {
-				tracing::info!(target: LOG_TARGET, "received finalized notification");
-				distribute_header(subscription.params.result, finalized_head)
-			},
-			Some(Subscriptions::NewHead) => {
-				tracing::info!(target: LOG_TARGET, "received new notification");
-				distribute_header(subscription.params.result, new_head)
-			},
-			None => {
-				tracing::error!(target: LOG_TARGET, ?id, "received notification with unknown id");
-			},
-		}
-	}
-}
-
-fn handle_single_response(
-	response: jsonrpsee::types::Response<JsonValue>,
-	lookup: &mut HashMap<u64, RequestType>,
-	subscription_lookup: &mut HashMap<String, Subscriptions>,
-) {
-	let id = match response.id {
-		jsonrpsee::types::params::Id::Number(num) => num,
-		_ => return,
-	};
-
-	match lookup.remove(&id) {
-		Some(RequestType::Request(response_sender)) => {
-			response_sender.send(Ok(response.result)).expect("Should send response");
-		},
-		Some(RequestType::PendingAllHeadSubscription) => {
-			let sub_id = response.result.as_str().expect("id hsould be a string").to_string();
-			tracing::info!(target: LOG_TARGET, sub_id, "allHead stream initialized");
-			subscription_lookup.insert(sub_id, Subscriptions::AllHead);
-		},
-		Some(RequestType::PendingFinalizedHeadSubscription) => {
-			let sub_id = response.result.as_str().expect("id hsould be a string").to_string();
-			tracing::info!(target: LOG_TARGET, sub_id, "finalizedHead stream initialized");
-			subscription_lookup.insert(sub_id, Subscriptions::FinalizedHead);
-		},
-		Some(RequestType::PendingNewHeadSubscription) => {
-			let sub_id = response.result.as_str().expect("id hsould be a string").to_string();
-			tracing::info!(target: LOG_TARGET, sub_id, "newHead stream initialized");
-			subscription_lookup.insert(sub_id, Subscriptions::NewHead);
-		},
-		None => {},
-	}
-}
-
 enum RequestType {
 	Request(OneshotSender<Result<JsonValue, JsonRpseeError>>),
 	PendingNewHeadSubscription,
@@ -515,9 +452,9 @@ impl LightClientRpcWorker {
 		let (tx, rx) = tokio_channel(100);
 		let worker = LightClientRpcWorker {
 			client_receiver: rx,
-			imported_header_listeners: Vec::new(),
-			finalized_header_listeners: Vec::new(),
-			best_header_listeners: Vec::new(),
+			imported_header_listeners: Default::default(),
+			finalized_header_listeners: Default::default(),
+			best_header_listeners: Default::default(),
 			smoldot_client,
 			json_rpc_responses,
 			chain_id,
@@ -528,26 +465,91 @@ impl LightClientRpcWorker {
 		(worker, tx)
 	}
 
-	fn handle_response(&mut self, response: String) -> Result<(), &str> {
-		tracing::debug!(target: LOG_TARGET, "Got response {response:?}");
+	fn handle_single_response(
+		&mut self,
+		response: jsonrpsee::types::Response<JsonValue>,
+	) -> Result<(), String> {
+		let id = match response.id {
+			jsonrpsee::types::params::Id::Number(num) => num,
+			_ => return Err("We only accept numbered IDs".to_string()),
+		};
+
+		match self.id_request_mapping.remove(&id) {
+			Some(RequestType::Request(response_sender)) => {
+				if response_sender.send(Ok(response.result)).is_err() {
+					tracing::debug!(
+						target: LOG_TARGET,
+						id = ?response.id,
+						"Requester is not interested in return value."
+					);
+				};
+			},
+			Some(RequestType::PendingAllHeadSubscription) => {
+				let sub_id = response
+					.result
+					.as_str()
+					.ok_or("Expected subscription id to be a string.".to_string())?
+					.to_string();
+				tracing::debug!(target: LOG_TARGET, sub_id, "allHead stream initialized");
+				self.id_subscription_mapping.insert(sub_id, Subscriptions::AllHead);
+			},
+			Some(RequestType::PendingFinalizedHeadSubscription) => {
+				let sub_id = response
+					.result
+					.as_str()
+					.ok_or("Expected subscription id to be a string.".to_string())?
+					.to_string();
+				tracing::debug!(target: LOG_TARGET, sub_id, "finalizedHead stream initialized");
+				self.id_subscription_mapping.insert(sub_id, Subscriptions::FinalizedHead);
+			},
+			Some(RequestType::PendingNewHeadSubscription) => {
+				let sub_id = response
+					.result
+					.as_str()
+					.ok_or("Expected subscription id to be a string.".to_string())?
+					.to_string();
+				tracing::debug!(target: LOG_TARGET, sub_id, "newHead stream initialized");
+				self.id_subscription_mapping.insert(sub_id, Subscriptions::NewHead);
+			},
+			None => {
+				tracing::debug!(target: LOG_TARGET, "Received response with unknown ID.")
+			},
+		};
+		Ok(())
+	}
+
+	fn handle_notification_response(&mut self, subscription: SubscriptionResponse<RelayHeader>) {
+		if let SubscriptionId::Str(id) = subscription.params.subscription {
+			tracing::debug!(target: LOG_TARGET, id = ?id, header_hash = ?subscription.params.result.hash(), "Notification");
+			match self.id_subscription_mapping.get::<str>(id.borrow()) {
+				Some(Subscriptions::AllHead) => distribute_header(
+					subscription.params.result,
+					&mut self.imported_header_listeners,
+				),
+				Some(Subscriptions::FinalizedHead) => distribute_header(
+					subscription.params.result,
+					&mut self.finalized_header_listeners,
+				),
+				Some(Subscriptions::NewHead) =>
+					distribute_header(subscription.params.result, &mut self.best_header_listeners),
+				None => tracing::debug!(
+					target: LOG_TARGET,
+					?id,
+					"received notification with unknown id"
+				),
+			}
+		}
+	}
+
+	fn handle_response(&mut self, response: String) -> Result<(), String> {
+		tracing::trace!(target: LOG_TARGET, response, "Response from light-client.");
 		if let Ok(response) = from_str::<jsonrpsee::types::Response<JsonValue>>(&response) {
-			handle_single_response(
-				response,
-				&mut self.id_request_mapping,
-				&mut self.id_subscription_mapping,
-			);
-			Ok(())
+			self.handle_single_response(response)
 		} else if let Ok(subscription) = from_str::<SubscriptionResponse<RelayHeader>>(&response) {
-			handle_notification_response(
-				subscription,
-				&mut self.id_subscription_mapping,
-				&mut self.imported_header_listeners,
-				&mut self.best_header_listeners,
-				&mut self.finalized_header_listeners,
-			);
+			self.handle_notification_response(subscription);
 			Ok(())
 		} else {
-			Err("Received unexpected response")
+			Err("Received unexpected response".to_string())
 		}
 	}
 
@@ -558,6 +560,7 @@ impl LightClientRpcWorker {
 		request_type: RequestType,
 	) -> Result<(), String> {
 		self.current_id += 1;
+
 		let request = serde_json::to_string(&RequestSer::owned(
 			jsonrpsee::types::Id::Number(self.current_id),
 			method,
