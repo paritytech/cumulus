@@ -815,6 +815,8 @@ dependencies = [
  "frame-support",
  "hex",
  "hex-literal",
+ "parity-scale-codec",
+ "scale-info",
  "sp-runtime",
  "sp-std",
 ]
@@ -849,7 +851,7 @@ dependencies = [
  "sp-state-machine",
  "sp-std",
  "sp-trie",
- "trie-db",
+ "trie-db 0.26.0",
 ]
 
 [[package]]
@@ -1116,6 +1118,7 @@ dependencies = [
  "bp-messages",
  "bp-parachains",
  "bp-polkadot-core",
+ "bp-relayers",
  "bp-runtime",
  "bp-test-utils",
  "frame-support",
@@ -6479,6 +6482,7 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-balances",
+ "pallet-bridge-messages",
  "parity-scale-codec",
  "scale-info",
  "sp-arithmetic",
@@ -12568,7 +12572,7 @@ dependencies = [
  "sp-std",
  "thiserror",
  "tracing",
- "trie-db",
+ "trie-db 0.25.1",
  "trie-root",
 ]
 
@@ -12990,7 +12994,7 @@ dependencies = [
  "sp-runtime",
  "sp-state-machine",
  "sp-trie",
- "trie-db",
+ "trie-db 0.25.1",
 ]
 
 [[package]]
@@ -13646,6 +13650,19 @@ name = "trie-db"
 version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3390c0409daaa6027d6681393316f4ccd3ff82e1590a1e4725014e3ae2bf1920"
+dependencies = [
+ "hash-db",
+ "hashbrown 0.13.2",
+ "log",
+ "rustc-hex",
+ "smallvec",
+]
+
+[[package]]
+name = "trie-db"
+version = "0.26.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "879380c0061b165ba1f036325b7f3478bc1a947814d9fc36d22c5d8e960b11bd"
 dependencies = [
  "hash-db",
  "hashbrown 0.13.2",
