@@ -329,6 +329,7 @@ pub struct CollatorOptions {
 	/// Location of relay chain full node
 	pub relay_chain_rpc_urls: Vec<Url>,
 
+	/// EXPERIMENTAL: Use embedded light client for the relay chain
 	pub embedded_light_client: Option<PathBuf>,
 }
 
