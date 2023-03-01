@@ -34,7 +34,7 @@ use std::pin::Pin;
 
 pub use url::Url;
 
-mod light_client;
+mod light_client_worker;
 mod reconnecting_ws_client;
 mod rpc_client;
 mod tokio_platform;

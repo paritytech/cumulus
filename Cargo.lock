@@ -669,9 +669,9 @@ dependencies = [
 
 [[package]]
 name = "bip39"
-version = "1.1.0"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5b9d9748b5770d1539657653dc5ac3cd9353549e74238dc0d96c22919128b94"
+checksum = "29b9e657de8ff1c3488a4ab77cb51d604eab53415ce34f0bc800f2eac9b13c28"
 dependencies = [
  "bitcoin_hashes",
  "rand_core 0.4.2",
@@ -2475,7 +2475,6 @@ dependencies = [
  "event-listener",
  "futures",
  "futures-timer",
- "itertools",
  "jsonrpsee",
  "lru 0.9.0",
  "parity-scale-codec",
@@ -2484,7 +2483,6 @@ dependencies = [
  "sc-client-api",
  "sc-rpc-api",
  "sc-service",
- "sc-tracing",
  "serde",
  "serde_json",
  "smoldot",
@@ -2495,6 +2493,7 @@ dependencies = [
  "sp-core",
  "sp-state-machine",
  "sp-storage",
+ "thiserror",
  "tokio",
  "tokio-util 0.7.7",
  "tracing",

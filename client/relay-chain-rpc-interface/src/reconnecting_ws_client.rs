@@ -17,12 +17,8 @@
 use cumulus_primitives_core::relay_chain::{
 	Block as RelayBlock, BlockNumber as RelayNumber, Hash as RelayHash, Header as RelayHeader,
 };
-use cumulus_relay_chain_interface::RelayChainError;
 use futures::{
-	channel::{
-		mpsc::{Receiver, Sender},
-		oneshot::Sender as OneshotSender,
-	},
+	channel::{mpsc::Sender, oneshot::Sender as OneshotSender},
 	future::BoxFuture,
 	stream::FuturesUnordered,
 	FutureExt, StreamExt,
@@ -44,96 +40,9 @@ use tokio::sync::mpsc::{
 };
 use url::Url;
 
-const NOTIFICATION_CHANNEL_SIZE_LIMIT: usize = 20;
+use crate::rpc_client::RpcDispatcherMessage;
+
 const LOG_TARGET: &str = "reconnecting-websocket-client";
-
-/// Messages for communication between [`ReconnectingWsClient`] and [`ReconnectingWebsocketWorker`].
-#[derive(Debug)]
-pub enum RpcDispatcherMessage {
-	RegisterBestHeadListener(Sender<RelayHeader>),
-	RegisterImportListener(Sender<RelayHeader>),
-	RegisterFinalizationListener(Sender<RelayHeader>),
-	Request(String, ArrayParams, OneshotSender<Result<JsonValue, JsonRpseeError>>),
-}
-
-/// Frontend for performing websocket requests.
-/// Requests and stream requests are forwarded to [`ReconnectingWebsocketWorker`].
-#[derive(Debug, Clone)]
-pub struct RpcFrontend {
-	/// Channel to communicate with the RPC worker
-	to_worker_channel: TokioSender<RpcDispatcherMessage>,
-}
-
-impl RpcFrontend {
-	/// Create a new websocket client frontend.
-	pub fn new(sender: TokioSender<RpcDispatcherMessage>) -> Self {
-		tracing::debug!(target: LOG_TARGET, "Instantiating reconnecting websocket client");
-		Self { to_worker_channel: sender }
-	}
-}
-
-impl RpcFrontend {
-	/// Perform a request via websocket connection.
-	pub async fn request<R>(&self, method: &str, params: ArrayParams) -> Result<R, RelayChainError>
-	where
-		R: serde::de::DeserializeOwned,
-	{
-		let (tx, rx) = futures::channel::oneshot::channel();
-
-		let message = RpcDispatcherMessage::Request(method.into(), params, tx);
-		self.to_worker_channel.send(message).await.map_err(|err| {
-			RelayChainError::WorkerCommunicationError(format!(
-				"Unable to send message to RPC worker: {}",
-				err
-			))
-		})?;
-
-		let value = rx.await.map_err(|err| {
-			RelayChainError::WorkerCommunicationError(format!(
-				"Unexpected channel close on RPC worker side: {}",
-				err
-			))
-		})??;
-
-		serde_json::from_value(value)
-			.map_err(|_| RelayChainError::GenericError("Unable to deserialize value".to_string()))
-	}
-
-	/// Get a stream of new best relay chain headers
-	pub fn get_best_heads_stream(&self) -> Result<Receiver<RelayHeader>, RelayChainError> {
-		let (tx, rx) =
-			futures::channel::mpsc::channel::<RelayHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
-		self.send_register_message_to_worker(RpcDispatcherMessage::RegisterBestHeadListener(tx))?;
-		Ok(rx)
-	}
-
-	/// Get a stream of finalized relay chain headers
-	pub fn get_finalized_heads_stream(&self) -> Result<Receiver<RelayHeader>, RelayChainError> {
-		let (tx, rx) =
-			futures::channel::mpsc::channel::<RelayHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
-		self.send_register_message_to_worker(RpcDispatcherMessage::RegisterFinalizationListener(
-			tx,
-		))?;
-		Ok(rx)
-	}
-
-	/// Get a stream of all imported relay chain headers
-	pub fn get_imported_heads_stream(&self) -> Result<Receiver<RelayHeader>, RelayChainError> {
-		let (tx, rx) =
-			futures::channel::mpsc::channel::<RelayHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
-		self.send_register_message_to_worker(RpcDispatcherMessage::RegisterImportListener(tx))?;
-		Ok(rx)
-	}
-
-	fn send_register_message_to_worker(
-		&self,
-		message: RpcDispatcherMessage,
-	) -> Result<(), RelayChainError> {
-		self.to_worker_channel
-			.try_send(message)
-			.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))
-	}
-}
 
 /// Worker that should be used in combination with [`RelayChainRpcClient`]. Must be polled to distribute header notifications to listeners.
 pub struct ReconnectingWebsocketWorker {
