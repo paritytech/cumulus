@@ -138,7 +138,8 @@ impl CheckAssociatedRelayNumber for AnyRelayNumber {
 
 /// Information needed when a new runtime binary is submitted and needs to be authorized before
 /// replacing the current runtime.
-#[derive(Decode, Encode, Default, PartialEq, Eq, MaxEncodedLen)]
+#[derive(Decode, Encode, Default, PartialEq, Eq, MaxEncodedLen, TypeInfo)]
+#[scale_info(skip_type_params(T))]
 struct CodeUpgradeAuthorization<T>
 where
 	T: Config,
@@ -147,23 +148,6 @@ where
 	code_hash: T::Hash,
 	/// Whether or not to carry out version checks.
 	check_version: bool,
-}
-
-impl<T> TypeInfo for CodeUpgradeAuthorization<T>
-where
-	T: Config,
-{
-	type Identity = Self;
-
-	fn type_info() -> scale_info::Type {
-		scale_info::Type::builder()
-			.path(scale_info::Path::new("CodeUpgradeAuthorization", module_path!()))
-			.composite(scale_info::build::Fields::unnamed().field(|f| {
-				f.ty::<u8>().docs(&[
-					"Raw code upgrade authorization bytes, encodes code_hash + check_version",
-				])
-			}))
-	}
 }
 
 #[frame_support::pallet]
@@ -507,7 +491,7 @@ pub mod pallet {
 		/// Note that this function will not apply the new `code`, but only attempt to schedule the
 		/// upgrade with the Relay Chain.
 		///
-		/// The origin for this call should be unsigned.
+		/// All origins are allowed.
 		#[pallet::call_index(3)]
 		#[pallet::weight(1_000_000)]
 		pub fn enact_authorized_upgrade(
@@ -782,18 +766,7 @@ impl<T: Config> Pallet<T> {
 
 		// check versions if required as part of the authorization
 		if authorization.check_version {
-			let current_version = T::Version::get();
-			let new_version = sp_io::misc::runtime_version(code)
-				.and_then(|v| RuntimeVersion::decode(&mut &v[..]).ok())
-				.ok_or(Error::<T>::FailedToExtractRuntimeVersion)?;
-
-			if new_version.spec_name != current_version.spec_name {
-				return Err(Error::<T>::InvalidSpecName.into())
-			}
-
-			if new_version.spec_version <= current_version.spec_version {
-				return Err(Error::<T>::SpecVersionNeedsToIncrease.into())
-			}
+			frame_system::Pallet::<T>::can_set_code(code)?;
 		}
 
 		Ok(actual_hash)
