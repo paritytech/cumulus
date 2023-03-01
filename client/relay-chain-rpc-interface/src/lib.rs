@@ -44,9 +44,6 @@ pub use rpc_client::{
 };
 
 const TIMEOUT_IN_SECONDS: u64 = 6;
-const FINALIZED_HEADS_RPC_NAME: &str = "chain_subscribeFinalizedHeads";
-const ALL_HEADS_RPC_NAME: &str = "chain_subscribeNewHeads";
-const NEW_HEADS_RPC_NAME: &str = "chain_subscribeAllHeads";
 
 /// RelayChainRpcInterface is used to interact with a full node that is running locally
 /// in the same process.

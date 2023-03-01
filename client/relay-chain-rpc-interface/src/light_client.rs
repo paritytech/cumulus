@@ -15,33 +15,29 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use core::time::Duration;
-use cumulus_primitives_core::relay_chain::Header as RelayHeader;
+use cumulus_primitives_core::relay_chain::{
+	Block as RelayBlock, BlockNumber as RelayNumber, Hash as RelayHash, Header as RelayHeader,
+};
 use futures::{
-	channel::{
-		mpsc::{self, Sender},
-		oneshot::Sender as OneshotSender,
-	},
+	channel::mpsc::{self, Sender},
 	prelude::*,
+	stream::FuturesUnordered,
 	task::Poll,
 };
-use jsonrpsee::{
-	core::{error::Error as JsonRpseeError, params::ArrayParams, traits::ToRpcParams},
-	rpc_params,
-	types::{
-		response::{SubscriptionError, SubscriptionResponse},
-		RequestSer, SubscriptionId,
-	},
+use jsonrpsee::core::{
+	client::{ClientT, TransportReceiverT, TransportSenderT},
+	Error,
 };
+use polkadot_service::generic::SignedBlock;
+use sc_rpc_api::chain::ChainApiClient;
 use sc_service::SpawnTaskHandle;
-use serde_json::{from_str, Value as JsonValue};
 use smoldot::libp2p::{multiaddr::ProtocolRef, websocket, Multiaddr};
 use smoldot_light::{
 	platform::{ConnectError, PlatformConnection, PlatformSubstreamDirection, ReadBuffer},
 	ChainId, Client, ClientConfig, JsonRpcResponses,
 };
 use std::{
-	borrow::Borrow,
-	collections::{HashMap, VecDeque},
+	collections::VecDeque,
 	io::IoSlice,
 	net::{IpAddr, SocketAddr},
 	pin::Pin,
@@ -53,10 +49,7 @@ use tokio::{
 };
 use tokio_util::compat::TokioAsyncReadCompatExt;
 
-use crate::{
-	reconnecting_ws_client::RpcDispatcherMessage, ALL_HEADS_RPC_NAME, FINALIZED_HEADS_RPC_NAME,
-	NEW_HEADS_RPC_NAME,
-};
+use crate::reconnecting_ws_client::RpcDispatcherMessage;
 
 const LOG_TARGET: &str = "rpc-light-client-worker";
 
@@ -390,15 +383,6 @@ pub struct LightClientRpcWorker {
 	smoldot_client: smoldot_light::Client<TokioPlatform, ()>,
 	json_rpc_responses: JsonRpcResponses,
 	chain_id: ChainId,
-	id_request_mapping: HashMap<u64, PendingRequestType>,
-	id_subscription_mapping: HashMap<String, Subscriptions>,
-	current_id: u64,
-}
-
-enum Subscriptions {
-	AllHead,
-	NewHead,
-	FinalizedHead,
 }
 
 fn distribute_header(header: RelayHeader, senders: &mut Vec<Sender<RelayHeader>>) {
@@ -418,11 +402,22 @@ fn distribute_header(header: RelayHeader, senders: &mut Vec<Sender<RelayHeader>>
 			});
 }
 
-enum PendingRequestType {
-	Request(OneshotSender<Result<JsonValue, JsonRpseeError>>),
-	PendingNewHeadSubscription,
-	PendingAllHeadSubscription,
-	PendingFinalizedHeadSubscription,
+fn handle_notification(
+	maybe_header: Option<Result<RelayHeader, Error>>,
+	senders: &mut Vec<Sender<RelayHeader>>,
+) -> bool {
+	match maybe_header {
+		Some(Ok(header)) => distribute_header(header, senders),
+		None => {
+			tracing::error!(target: LOG_TARGET, "Subscription closed.");
+			return true
+		},
+		Some(Err(error)) => {
+			tracing::error!(target: LOG_TARGET, ?error, "Error in RPC subscription.");
+			return true
+		},
+	};
+	return false
 }
 
 impl LightClientRpcWorker {
@@ -440,155 +435,60 @@ impl LightClientRpcWorker {
 			smoldot_client,
 			json_rpc_responses,
 			chain_id,
-			id_subscription_mapping: Default::default(),
-			id_request_mapping: Default::default(),
-			current_id: 0,
 		};
 		(worker, tx)
-	}
-
-	fn handle_single_response(
-		&mut self,
-		response: jsonrpsee::types::Response<JsonValue>,
-	) -> Result<(), String> {
-		let id = match response.id {
-			jsonrpsee::types::params::Id::Number(num) => num,
-			_ => return Err("We only accept numbered IDs".to_string()),
-		};
-
-		match self.id_request_mapping.remove(&id) {
-			Some(PendingRequestType::Request(response_sender)) => {
-				if response_sender.send(Ok(response.result)).is_err() {
-					tracing::debug!(
-						target: LOG_TARGET,
-						id = ?response.id,
-						"Requester is not interested in return value."
-					);
-				};
-			},
-			Some(request_type) => {
-				let subscription_id = response
-					.result
-					.as_str()
-					.ok_or("Subscription id needs to be a string.".to_string())?
-					.to_string();
-
-				tracing::debug!(target: LOG_TARGET, subscription_id, "allHead stream initialized");
-				let subscription = match request_type {
-					PendingRequestType::PendingNewHeadSubscription => Subscriptions::NewHead,
-					PendingRequestType::PendingAllHeadSubscription => Subscriptions::AllHead,
-					PendingRequestType::PendingFinalizedHeadSubscription =>
-						Subscriptions::FinalizedHead,
-					PendingRequestType::Request(_) =>
-						unreachable!("This case should be covered by the outer match"),
-				};
-				self.id_subscription_mapping.insert(subscription_id, subscription);
-			},
-			None => {
-				tracing::debug!(target: LOG_TARGET, "Received response with unknown ID.")
-			},
-		};
-		Ok(())
-	}
-
-	fn handle_notification_response(&mut self, subscription: SubscriptionResponse<RelayHeader>) {
-		if let SubscriptionId::Str(id) = subscription.params.subscription {
-			tracing::debug!(target: LOG_TARGET, id = ?id, header_hash = ?subscription.params.result.hash(), "Notification");
-			match self.id_subscription_mapping.get::<str>(id.borrow()) {
-				Some(Subscriptions::AllHead) => distribute_header(
-					subscription.params.result,
-					&mut self.imported_header_listeners,
-				),
-				Some(Subscriptions::FinalizedHead) => distribute_header(
-					subscription.params.result,
-					&mut self.finalized_header_listeners,
-				),
-				Some(Subscriptions::NewHead) =>
-					distribute_header(subscription.params.result, &mut self.best_header_listeners),
-				None => tracing::debug!(
-					target: LOG_TARGET,
-					?id,
-					"received notification with unknown id"
-				),
-			}
-		}
-	}
-
-	fn handle_response(&mut self, response: String) -> Result<(), String> {
-		tracing::trace!(target: LOG_TARGET, response, "Response from light-client.");
-		if let Ok(response) = from_str::<jsonrpsee::types::Response<_>>(&response) {
-			self.handle_single_response(response)
-		} else if let Ok(subscription) = from_str::<SubscriptionResponse<_>>(&response) {
-			self.handle_notification_response(subscription);
-			Ok(())
-		} else {
-			Err(format!("Received unexpected response: {}", response))
-		}
-	}
-
-	fn submit_request(
-		&mut self,
-		method: &str,
-		params: ArrayParams,
-		request_type: PendingRequestType,
-	) -> Result<(), String> {
-		self.current_id += 1;
-
-		let request = serde_json::to_string(&RequestSer::owned(
-			jsonrpsee::types::Id::Number(self.current_id),
-			method,
-			params.to_rpc_params().map_err(|e| e.to_string())?,
-		))
-		.map_err(|e| e.to_string())?;
-
-		self.smoldot_client
-			.json_rpc_request(request, self.chain_id)
-			.map_err(|e| e.to_string())?;
-		self.id_request_mapping.insert(self.current_id, request_type);
-		Ok(())
 	}
 
 	pub async fn run(mut self) {
 		tokio::time::sleep(Duration::from_secs(20)).await;
 
-		if let Err(message) = self.submit_request(
-			ALL_HEADS_RPC_NAME,
-			rpc_params![],
-			PendingRequestType::PendingAllHeadSubscription,
-		) {
+		let some_sender =
+			SimpleStringSender { inner: self.smoldot_client, chain_id: self.chain_id };
+		let some_receiver = SimpleStringReceiver { inner: self.json_rpc_responses };
+		let smoldot_client = Arc::new(
+			jsonrpsee::core::client::ClientBuilder::default()
+				.build_with_tokio(some_sender, some_receiver),
+		);
+
+		let mut pending_requests = FuturesUnordered::new();
+
+		let Ok(mut new_head_subscription) = <jsonrpsee::core::client::Client as ChainApiClient<
+			RelayNumber,
+			RelayHash,
+			RelayHeader,
+			SignedBlock<RelayBlock>,
+		>>::subscribe_new_heads(&smoldot_client)
+		.await else {
 			tracing::error!(
 				target: LOG_TARGET,
-				message,
-				sub = ALL_HEADS_RPC_NAME,
-				"Unable to request subscription."
+				"Unable to initialize new heads subscription"
 			);
-			return
+			return;
 		};
 
-		if let Err(message) = self.submit_request(
-			NEW_HEADS_RPC_NAME,
-			rpc_params![],
-			PendingRequestType::PendingNewHeadSubscription,
-		) {
+		let Ok(mut finalized_head_subscription) = <jsonrpsee::core::client::Client as ChainApiClient<
+			RelayNumber,
+			RelayHash,
+			RelayHeader,
+			SignedBlock<RelayBlock>,
+		>>::subscribe_finalized_heads(&smoldot_client)
+		.await else {
 			tracing::error!(
 				target: LOG_TARGET,
-				message,
-				sub = NEW_HEADS_RPC_NAME,
-				"Unable to request subscription."
+				"Unable to initialize finalized heads subscription"
 			);
-			return
+			return;
 		};
 
-		if let Err(message) = self.submit_request(
-			FINALIZED_HEADS_RPC_NAME,
-			rpc_params![],
-			PendingRequestType::PendingFinalizedHeadSubscription,
-		) {
+		let Ok(mut all_head_subscription) = <jsonrpsee::core::client::Client as ChainApiClient<
+			RelayNumber,
+			RelayHash,
+			RelayHeader,
+			SignedBlock<RelayBlock>,
+		>>::subscribe_all_heads(&smoldot_client).await else {
 			tracing::error!(
 				target: LOG_TARGET,
-				message,
-				sub = FINALIZED_HEADS_RPC_NAME,
-				"Unable to request subscription."
+				"Unable to initialize all heads subscription"
 			);
 			return
 		};
@@ -606,23 +506,121 @@ impl LightClientRpcWorker {
 						self.finalized_header_listeners.push(tx)
 					},
 					Some(RpcDispatcherMessage::Request(method, params, response_sender)) => {
-						if let Err(message) = self.submit_request(&method, params, PendingRequestType::Request(response_sender)) {
-							tracing::debug!(target: LOG_TARGET, message, "Request failed.");
-						};
+						let closure_client = smoldot_client.clone();
+						tracing::info!(
+							target: LOG_TARGET,
+							len = pending_requests.len(),
+							"Inserting request: {method:?}"
+						);
+						pending_requests.push(async move {
+							let response = closure_client.request(&method, params).await;
+								tracing::info!(
+									target: LOG_TARGET,
+									method,
+									?response,
+									"Response"
+								);
+							if let Err(err) = response_sender.send(response) {
+								tracing::debug!(
+									target: LOG_TARGET,
+									?err,
+									"Recipient no longer interested in request result"
+								);
+							};
+						});
 					},
 					None => {
 						tracing::error!(target: LOG_TARGET, "RPC client receiver closed. Stopping RPC Worker.");
 						return;
 					}
 				},
-				response = self.json_rpc_responses.next() => {
-					if let Some(response) = response {
-						if let Err(message) = self.handle_response(response) {
-							tracing::debug!(target: LOG_TARGET, message, "Unable to handle response.")
-						}
+				_ = pending_requests.next(), if !pending_requests.is_empty() => {},
+				import_event = all_head_subscription.next() => {
+					if handle_notification(import_event, &mut self.imported_header_listeners) {
+						return
+					}
+				},
+				best_header_event = new_head_subscription.next() => {
+					if handle_notification(best_header_event, &mut self.best_header_listeners) {
+						return
+					}
+				}
+				finalized_event = finalized_head_subscription.next() => {
+					if handle_notification(finalized_event, &mut self.finalized_header_listeners) {
+						return
 					}
 				}
 			}
 		}
+	}
+}
+
+#[derive(thiserror::Error, Debug)]
+enum LightClientError {
+	#[error("Error occured while calling inserting smoldot request: {0}")]
+	SmoldotError(String),
+	#[error("Nothing returned from json_rpc_responses")]
+	EmptyReturn,
+}
+
+struct SimpleStringSender {
+	inner: smoldot_light::Client<TokioPlatform, ()>,
+	chain_id: ChainId,
+}
+
+impl TransportSenderT for SimpleStringSender {
+	type Error = LightClientError;
+
+	fn send<'life0, 'async_trait>(
+		&'life0 mut self,
+		msg: String,
+	) -> core::pin::Pin<
+		Box<
+			dyn core::future::Future<Output = Result<(), Self::Error>>
+				+ core::marker::Send
+				+ 'async_trait,
+		>,
+	>
+	where
+		'life0: 'async_trait,
+		Self: 'async_trait,
+	{
+		Box::pin(async {
+			self.inner
+				.json_rpc_request(msg, self.chain_id)
+				.map_err(|e| LightClientError::SmoldotError(e.to_string()))
+		})
+	}
+}
+
+struct SimpleStringReceiver {
+	inner: JsonRpcResponses,
+}
+
+impl TransportReceiverT for SimpleStringReceiver {
+	type Error = LightClientError;
+
+	fn receive<'life0, 'async_trait>(
+		&'life0 mut self,
+	) -> core::pin::Pin<
+		Box<
+			dyn core::future::Future<
+					Output = Result<jsonrpsee::core::client::ReceivedMessage, Self::Error>,
+				> + core::marker::Send
+				+ 'async_trait,
+		>,
+	>
+	where
+		'life0: 'async_trait,
+		Self: 'async_trait,
+	{
+		async {
+			self.inner
+				.next()
+				.await
+				.map(|message| jsonrpsee::core::client::ReceivedMessage::Text(message))
+				.ok_or(LightClientError::EmptyReturn)
+		}
+		.boxed()
 	}
 }

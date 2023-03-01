@@ -40,3 +40,4 @@ smoldot-light = { path = "../../../smoldot/light-base" }
 parking_lot = "0.12.1"
 either = "1.8.1"
 event-listener = "2.5.3"
+thiserror = "1.0.38"
