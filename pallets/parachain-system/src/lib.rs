@@ -54,7 +54,6 @@ use sp_runtime::{
 	},
 };
 use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
-use sp_version::RuntimeVersion;
 use xcm::latest::XcmHash;
 
 mod migration;
@@ -543,13 +542,6 @@ pub mod pallet {
 		NothingAuthorized,
 		/// The given code upgrade has not been authorized.
 		Unauthorized,
-		/// Failed to extract (or decode) the runtime version from the new runtime.
-		FailedToExtractRuntimeVersion,
-		/// The name of specification for the new runtime does not match the current runtime's.
-		InvalidSpecName,
-		/// The specification version of the new runtime is not allowed to decrease from or remain
-		/// equal to the current runtime's.
-		SpecVersionNeedsToIncrease,
 	}
 
 	/// In case of a scheduled upgrade, this storage field contains the validation code to be applied.
