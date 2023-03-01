@@ -16,18 +16,18 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-//! cumulus-pallet-parachain-system is a base pallet for cumulus-based parachains.
+//! `cumulus-pallet-parachain-system` is a base pallet for Cumulus-based parachains.
 //!
-//! This pallet handles low-level details of being a parachain. It's responsibilities include:
+//! This pallet handles low-level details of being a parachain. Its responsibilities include:
 //!
-//! - ingestion of the parachain validation data
-//! - ingestion of incoming downward and lateral messages and dispatching them
-//! - coordinating upgrades with the relay-chain
-//! - communication of parachain outputs, such as sent messages, signalling an upgrade, etc.
+//! - ingestion of the parachain validation data;
+//! - ingestion and dispatch of incoming downward and lateral messages;
+//! - coordinating upgrades with the Relay Chain; and
+//! - communication of parachain outputs, such as sent messages, signaling an upgrade, etc.
 //!
 //! Users must ensure that they register this pallet as an inherent provider.
 
-use codec::Encode;
+use codec::{Decode, Encode, MaxEncodedLen};
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
 	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError,
@@ -45,6 +45,7 @@ use frame_support::{
 };
 use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
+use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{Block as BlockT, BlockNumberProvider, Hash},
 	transaction_validity::{
@@ -53,6 +54,7 @@ use sp_runtime::{
 	},
 };
 use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
+use sp_version::RuntimeVersion;
 use xcm::latest::XcmHash;
 
 mod migration;
@@ -132,6 +134,36 @@ pub struct AnyRelayNumber;
 
 impl CheckAssociatedRelayNumber for AnyRelayNumber {
 	fn check_associated_relay_number(_: RelayChainBlockNumber, _: RelayChainBlockNumber) {}
+}
+
+/// Information needed when a new runtime binary is submitted and needs to be authorized before
+/// replacing the current runtime.
+#[derive(Decode, Encode, Default, PartialEq, Eq, MaxEncodedLen)]
+struct CodeUpgradeAuthorization<T>
+where
+	T: Config,
+{
+	/// Hash of the new runtime binary.
+	code_hash: T::Hash,
+	/// Whether or not to carry out version checks.
+	check_version: bool,
+}
+
+impl<T> TypeInfo for CodeUpgradeAuthorization<T>
+where
+	T: Config,
+{
+	type Identity = Self;
+
+	fn type_info() -> scale_info::Type {
+		scale_info::Type::builder()
+			.path(scale_info::Path::new("CodeUpgradeAuthorization", module_path!()))
+			.composite(scale_info::build::Fields::unnamed().field(|f| {
+				f.ty::<u8>().docs(&[
+					"Raw code upgrade authorization bytes, encodes code_hash + check_version",
+				])
+			}))
+	}
 }
 
 #[frame_support::pallet]
@@ -442,17 +474,40 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
+		/// later.
+		///
+		/// The `check_version` parameter sets a boolean flag for whether or not the runtime's spec
+		/// version and name should be verified on upgrade. Since the authorization only has a hash,
+		/// it cannot actually perform the verification.
+		///
+		/// This call requires Root origin.
 		#[pallet::call_index(2)]
 		#[pallet::weight((1_000_000, DispatchClass::Operational))]
-		pub fn authorize_upgrade(origin: OriginFor<T>, code_hash: T::Hash) -> DispatchResult {
+		pub fn authorize_upgrade(
+			origin: OriginFor<T>,
+			code_hash: T::Hash,
+			check_version: bool,
+		) -> DispatchResult {
 			ensure_root(origin)?;
-
-			AuthorizedUpgrade::<T>::put(&code_hash);
+			AuthorizedUpgrade::<T>::put(CodeUpgradeAuthorization {
+				code_hash: code_hash.clone(),
+				check_version,
+			});
 
 			Self::deposit_event(Event::UpgradeAuthorized { code_hash });
 			Ok(())
 		}
 
+		/// Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
+		///
+		/// If the authorization required a version check, this call will ensure the spec name
+		/// remains unchanged and that the spec version has increased.
+		///
+		/// Note that this function will not apply the new `code`, but only attempt to schedule the
+		/// upgrade with the Relay Chain.
+		///
+		/// The origin for this call should be unsigned.
 		#[pallet::call_index(3)]
 		#[pallet::weight(1_000_000)]
 		pub fn enact_authorized_upgrade(
@@ -487,16 +542,16 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Attempt to upgrade validation function while existing upgrade pending
+		/// Attempt to upgrade validation function while existing upgrade pending.
 		OverlappingUpgrades,
-		/// Polkadot currently prohibits this parachain from upgrading its validation function
+		/// Polkadot currently prohibits this parachain from upgrading its validation function.
 		ProhibitedByPolkadot,
 		/// The supplied validation function has compiled into a blob larger than Polkadot is
-		/// willing to run
+		/// willing to run.
 		TooBig,
-		/// The inherent which supplies the validation data did not run this block
+		/// The inherent which supplies the validation data did not run this block.
 		ValidationDataNotAvailable,
-		/// The inherent which supplies the host configuration did not run this block
+		/// The inherent which supplies the host configuration did not run this block.
 		HostConfigurationNotAvailable,
 		/// No validation function upgrade is currently scheduled.
 		NotScheduled,
@@ -504,6 +559,13 @@ pub mod pallet {
 		NothingAuthorized,
 		/// The given code upgrade has not been authorized.
 		Unauthorized,
+		/// Failed to extract (or decode) the runtime version from the new runtime.
+		FailedToExtractRuntimeVersion,
+		/// The name of specification for the new runtime does not match the current runtime's.
+		InvalidSpecName,
+		/// The specification version of the new runtime is not allowed to decrease from or remain
+		/// equal to the current runtime's.
+		SpecVersionNeedsToIncrease,
 	}
 
 	/// In case of a scheduled upgrade, this storage field contains the validation code to be applied.
@@ -645,7 +707,7 @@ pub mod pallet {
 
 	/// The next authorized upgrade, if there is one.
 	#[pallet::storage]
-	pub(super) type AuthorizedUpgrade<T: Config> = StorageValue<_, T::Hash>;
+	pub(super) type AuthorizedUpgrade<T: Config> = StorageValue<_, CodeUpgradeAuthorization<T>>;
 
 	/// A custom head data that should be returned as result of `validate_block`.
 	///
@@ -712,9 +774,28 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	fn validate_authorized_upgrade(code: &[u8]) -> Result<T::Hash, DispatchError> {
-		let required_hash = AuthorizedUpgrade::<T>::get().ok_or(Error::<T>::NothingAuthorized)?;
+		let authorization = AuthorizedUpgrade::<T>::get().ok_or(Error::<T>::NothingAuthorized)?;
+
+		// ensure that the actual hash matches the authorized hash
 		let actual_hash = T::Hashing::hash(&code[..]);
-		ensure!(actual_hash == required_hash, Error::<T>::Unauthorized);
+		ensure!(actual_hash == authorization.code_hash, Error::<T>::Unauthorized);
+
+		// check versions if required as part of the authorization
+		if authorization.check_version {
+			let current_version = T::Version::get();
+			let new_version = sp_io::misc::runtime_version(code)
+				.and_then(|v| RuntimeVersion::decode(&mut &v[..]).ok())
+				.ok_or(Error::<T>::FailedToExtractRuntimeVersion)?;
+
+			if new_version.spec_name != current_version.spec_name {
+				return Err(Error::<T>::InvalidSpecName.into())
+			}
+
+			if new_version.spec_version <= current_version.spec_version {
+				return Err(Error::<T>::SpecVersionNeedsToIncrease.into())
+			}
+		}
+
 		Ok(actual_hash)
 	}
 }
