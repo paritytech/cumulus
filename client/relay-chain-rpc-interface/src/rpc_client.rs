@@ -18,7 +18,7 @@ use std::path::PathBuf;
 
 use crate::{
 	light_client,
-	reconnecting_ws_client::{ReconnectingWebsocketWorker, ReconnectingWsClient},
+	reconnecting_ws_client::{ReconnectingWebsocketWorker, RpcFrontend},
 };
 use cumulus_primitives_core::{
 	relay_chain::{
@@ -50,7 +50,7 @@ const LOG_TARGET: &str = "relay-chain-rpc-client";
 #[derive(Clone)]
 pub struct RelayChainRpcClient {
 	/// Websocket client to make calls
-	ws_client: ReconnectingWsClient,
+	ws_client: RpcFrontend,
 }
 
 pub async fn create_client_and_start_light_client_worker(
@@ -60,7 +60,7 @@ pub async fn create_client_and_start_light_client_worker(
 	let spec = std::fs::read_to_string(chain_spec_path)
 		.map_err(|e| RelayChainError::GenericError(e.to_string()))?;
 	let (client, chain_id, json_rpc_responses) =
-		light_client::get_light_client(task_manager.spawn_handle(), &spec).await;
+		light_client::build_smoldot_client(task_manager.spawn_handle(), &spec).await;
 	let (worker, sender) =
 		light_client::LightClientRpcWorker::new(client, json_rpc_responses, chain_id);
 
@@ -68,9 +68,9 @@ pub async fn create_client_and_start_light_client_worker(
 		.spawn_essential_handle()
 		.spawn("relay-chain-rpc-worker", None, worker.run());
 
-	let ws_client = ReconnectingWsClient::new(sender).await?;
+	let rpc_frontend = RpcFrontend::new(sender);
 
-	let client = RelayChainRpcClient::new(ws_client).await?;
+	let client = RelayChainRpcClient::new(rpc_frontend);
 
 	Ok(client)
 }
@@ -86,19 +86,17 @@ pub async fn create_client_and_start_worker(
 		.spawn_essential_handle()
 		.spawn("relay-chain-rpc-worker", None, worker.run());
 
-	let ws_client = ReconnectingWsClient::new(sender).await?;
+	let ws_client = RpcFrontend::new(sender);
 
-	let client = RelayChainRpcClient::new(ws_client).await?;
+	let client = RelayChainRpcClient::new(ws_client);
 
 	Ok(client)
 }
 
 impl RelayChainRpcClient {
 	/// Initialize new RPC Client.
-	async fn new(ws_client: ReconnectingWsClient) -> RelayChainResult<Self> {
-		let client = RelayChainRpcClient { ws_client };
-
-		Ok(client)
+	fn new(ws_client: RpcFrontend) -> Self {
+		RelayChainRpcClient { ws_client }
 	}
 
 	/// Call a call to `state_call` rpc method.

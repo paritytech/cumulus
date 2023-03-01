@@ -15,9 +15,9 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use cumulus_primitives_core::relay_chain::{
-	BlockNumber as RelayBlockNumber, Header as RelayHeader,
+	Block as RelayBlock, BlockNumber as RelayNumber, Hash as RelayHash, Header as RelayHeader,
 };
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
+use cumulus_relay_chain_interface::RelayChainError;
 use futures::{
 	channel::{
 		mpsc::{Receiver, Sender},
@@ -29,14 +29,15 @@ use futures::{
 };
 use jsonrpsee::{
 	core::{
-		client::{Client as JsonRpcClient, ClientT, Subscription, SubscriptionClientT},
+		client::{Client as JsonRpcClient, ClientT, Subscription},
 		params::ArrayParams,
 		Error as JsonRpseeError, JsonValue,
 	},
-	rpc_params,
 	ws_client::WsClientBuilder,
 };
 use lru::LruCache;
+use polkadot_service::generic::SignedBlock;
+use sc_rpc_api::chain::ChainApiClient;
 use std::{num::NonZeroUsize, sync::Arc};
 use tokio::sync::mpsc::{
 	channel as tokio_channel, Receiver as TokioReceiver, Sender as TokioSender,
@@ -58,21 +59,20 @@ pub enum RpcDispatcherMessage {
 /// Frontend for performing websocket requests.
 /// Requests and stream requests are forwarded to [`ReconnectingWebsocketWorker`].
 #[derive(Debug, Clone)]
-pub struct ReconnectingWsClient {
+pub struct RpcFrontend {
 	/// Channel to communicate with the RPC worker
 	to_worker_channel: TokioSender<RpcDispatcherMessage>,
 }
 
-impl ReconnectingWsClient {
+impl RpcFrontend {
 	/// Create a new websocket client frontend.
-	pub async fn new(sender: TokioSender<RpcDispatcherMessage>) -> RelayChainResult<Self> {
+	pub fn new(sender: TokioSender<RpcDispatcherMessage>) -> Self {
 		tracing::debug!(target: LOG_TARGET, "Instantiating reconnecting websocket client");
-
-		Ok(Self { to_worker_channel: sender })
+		Self { to_worker_channel: sender }
 	}
 }
 
-impl ReconnectingWsClient {
+impl RpcFrontend {
 	/// Perform a request via websocket connection.
 	pub async fn request<R>(&self, method: &str, params: ArrayParams) -> Result<R, RelayChainError>
 	where
@@ -219,54 +219,53 @@ impl ClientManager {
 	}
 
 	async fn get_subscriptions(&self) -> Result<RelayChainSubscriptions, JsonRpseeError> {
-		let import_subscription = self
-			.active_client
-			.subscribe::<RelayHeader, _>(
-				"chain_subscribeAllHeads",
-				rpc_params![],
-				"chain_unsubscribeAllHeads",
-			)
-			.await
-			.map_err(|e| {
-				tracing::error!(
-					target: LOG_TARGET,
-					?e,
-					"Unable to open `chain_subscribeAllHeads` subscription."
-				);
-				e
-			})?;
-		let best_subscription = self
-			.active_client
-			.subscribe::<RelayHeader, _>(
-				"chain_subscribeNewHeads",
-				rpc_params![],
-				"chain_unsubscribeNewHeads",
-			)
-			.await
-			.map_err(|e| {
-				tracing::error!(
-					target: LOG_TARGET,
-					?e,
-					"Unable to open `chain_subscribeNewHeads` subscription."
-				);
-				e
-			})?;
-		let finalized_subscription = self
-			.active_client
-			.subscribe::<RelayHeader, _>(
-				"chain_subscribeFinalizedHeads",
-				rpc_params![],
-				"chain_unsubscribeFinalizedHeads",
-			)
-			.await
-			.map_err(|e| {
-				tracing::error!(
-					target: LOG_TARGET,
-					?e,
-					"Unable to open `chain_subscribeFinalizedHeads` subscription."
-				);
-				e
-			})?;
+		let import_subscription = <JsonRpcClient as ChainApiClient<
+			RelayNumber,
+			RelayHash,
+			RelayHeader,
+			SignedBlock<RelayBlock>,
+		>>::subscribe_all_heads(&self.active_client)
+		.await
+		.map_err(|e| {
+			tracing::error!(
+				target: LOG_TARGET,
+				?e,
+				"Unable to open `chain_subscribeAllHeads` subscription."
+			);
+			e
+		})?;
+
+		let best_subscription = <JsonRpcClient as ChainApiClient<
+			RelayNumber,
+			RelayHash,
+			RelayHeader,
+			SignedBlock<RelayBlock>,
+		>>::subscribe_new_heads(&self.active_client)
+		.await
+		.map_err(|e| {
+			tracing::error!(
+				target: LOG_TARGET,
+				?e,
+				"Unable to open `chain_subscribeNewHeads` subscription."
+			);
+			e
+		})?;
+
+		let finalized_subscription = <JsonRpcClient as ChainApiClient<
+			RelayNumber,
+			RelayHash,
+			RelayHeader,
+			SignedBlock<RelayBlock>,
+		>>::subscribe_finalized_heads(&self.active_client)
+		.await
+		.map_err(|e| {
+			tracing::error!(
+				target: LOG_TARGET,
+				?e,
+				"Unable to open `chain_subscribeFinalizedHeads` subscription."
+			);
+			e
+		})?;
 
 		Ok(RelayChainSubscriptions {
 			import_subscription,
@@ -393,7 +392,7 @@ impl ReconnectingWebsocketWorker {
 		let mut imported_blocks_cache =
 			LruCache::new(NonZeroUsize::new(40).expect("40 is nonzero; qed."));
 		let mut should_reconnect = ConnectionStatus::Connected;
-		let mut last_seen_finalized_num: RelayBlockNumber = 0;
+		let mut last_seen_finalized_num: RelayNumber = 0;
 		loop {
 			// This branch is taken if the websocket connection to the current RPC server is closed.
 			if let ConnectionStatus::ReconnectRequired(maybe_failed_request) = should_reconnect {

@@ -37,6 +37,7 @@ pub use url::Url;
 mod light_client;
 mod reconnecting_ws_client;
 mod rpc_client;
+mod tokio_platform;
 
 pub use rpc_client::{
 	create_client_and_start_light_client_worker, create_client_and_start_worker,
