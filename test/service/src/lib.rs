@@ -41,7 +41,9 @@ use cumulus_client_service::{
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::RelayChainInProcessInterface;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
+use cumulus_relay_chain_minimal_node::{
+	build_minimal_relay_chain_node, build_minimal_relay_chain_node_light_client,
+};
 
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 
@@ -242,6 +244,12 @@ async fn build_relay_chain_interface(
 		)
 		.await
 		.map(|r| r.0)
+	}
+
+	if collator_options.embedded_light_client {
+		return build_minimal_relay_chain_node_light_client(relay_chain_config, task_manager)
+			.await
+			.map(|r| r.0)
 	}
 
 	let relay_chain_full_node = polkadot_test_service::new_full(

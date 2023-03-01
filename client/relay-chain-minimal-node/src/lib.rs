@@ -120,7 +120,7 @@ pub async fn build_minimal_relay_chain_node_light_client(
 
 	let spec = polkadot_config
 		.chain_spec
-		.as_json(true)
+		.as_json(false)
 		.map_err(RelayChainError::GenericError)?;
 
 	let client = cumulus_relay_chain_rpc_interface::create_client_and_start_light_client_worker(
@@ -152,8 +152,6 @@ pub async fn build_minimal_relay_chain_node_light_client(
 /// - NetworkBridgeRx
 /// - NetworkBridgeTx
 /// - RuntimeApi
-/// - ChainApi
-/// - AvailabilityDistribution
 #[sc_tracing::logging::prefix_logs_with("Relaychain")]
 async fn new_minimal_relay_chain(
 	mut config: Configuration,

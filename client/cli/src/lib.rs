@@ -299,8 +299,9 @@ pub struct RunCmd {
 	)]
 	pub relay_chain_rpc_urls: Vec<Url>,
 
-	/// EXPERIMENTAL: Embed a light client for the relay chain
-	#[arg(long, conflicts_with = "relay_chain_rpc_url")]
+	/// EXPERIMENTAL: Embed a light client for the relay chain. Only supported for full-nodes.
+	/// Will use the specified relay chain chainspec.
+	#[arg(long, conflicts_with_all = ["relay_chain_rpc_url", "validator"])]
 	pub embedded_light_client: bool,
 }
 
