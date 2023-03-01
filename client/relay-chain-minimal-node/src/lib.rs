@@ -30,7 +30,7 @@ use polkadot_primitives::CollatorPair;
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
 use sc_network::{Event, NetworkService};
 use sc_network_common::service::NetworkEventStream;
-use std::{path::PathBuf, sync::Arc};
+use std::sync::Arc;
 
 use polkadot_service::{Configuration, TaskManager};
 
@@ -38,12 +38,13 @@ use futures::StreamExt;
 
 use sp_runtime::{app_crypto::Pair, traits::Block as BlockT};
 
+mod blockchain_rpc_client;
 mod collator_overseer;
-
 mod network;
 
-mod blockchain_rpc_client;
 pub use blockchain_rpc_client::BlockChainRpcClient;
+
+const LOG_TARGET: &str = "minimal-relaychain-node";
 
 fn build_authority_discovery_service<Block: BlockT>(
 	task_manager: &TaskManager,
@@ -109,10 +110,21 @@ pub async fn build_minimal_relay_chain_node(
 pub async fn build_minimal_relay_chain_node_light_client(
 	polkadot_config: Configuration,
 	task_manager: &mut TaskManager,
-	chain_spec_path: PathBuf,
 ) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
+	tracing::info!(
+		target: LOG_TARGET,
+		chain_name = polkadot_config.chain_spec.name(),
+		chain_id = polkadot_config.chain_spec.id(),
+		"Initializing embedded light client with chain spec."
+	);
+
+	let spec = polkadot_config
+		.chain_spec
+		.as_json(true)
+		.map_err(RelayChainError::GenericError)?;
+
 	let client = cumulus_relay_chain_rpc_interface::create_client_and_start_light_client_worker(
-		chain_spec_path,
+		spec,
 		task_manager,
 	)
 	.await?;

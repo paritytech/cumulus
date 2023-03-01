@@ -40,7 +40,7 @@ use tokio::sync::mpsc::{
 };
 use url::Url;
 
-use crate::rpc_client::RpcDispatcherMessage;
+use crate::rpc_client::{distribute_header, RpcDispatcherMessage};
 
 const LOG_TARGET: &str = "reconnecting-websocket-client";
 
@@ -54,23 +54,6 @@ pub struct ReconnectingWebsocketWorker {
 	imported_header_listeners: Vec<Sender<RelayHeader>>,
 	finalized_header_listeners: Vec<Sender<RelayHeader>>,
 	best_header_listeners: Vec<Sender<RelayHeader>>,
-}
-
-fn distribute_header(header: RelayHeader, senders: &mut Vec<Sender<RelayHeader>>) {
-	senders.retain_mut(|e| {
-				match e.try_send(header.clone()) {
-					// Receiver has been dropped, remove Sender from list.
-					Err(error) if error.is_disconnected() => false,
-					// Channel is full. This should not happen.
-					// TODO: Improve error handling here
-					// https://github.com/paritytech/cumulus/issues/1482
-					Err(error) => {
-						tracing::error!(target: LOG_TARGET, ?error, "Event distribution channel has reached its limit. This can lead to missed notifications.");
-						true
-					},
-					_ => true,
-				}
-			});
 }
 
 /// Manages the active websocket client.

@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::path::PathBuf;
-
 use futures::channel::{
 	mpsc::{Receiver, Sender},
 	oneshot::Sender as OneshotSender,
@@ -85,13 +83,11 @@ pub async fn create_client_and_start_worker(
 }
 
 pub async fn create_client_and_start_light_client_worker(
-	chain_spec_path: PathBuf,
+	chain_spec: String,
 	task_manager: &mut polkadot_service::TaskManager,
 ) -> RelayChainResult<RelayChainRpcClient> {
-	let spec = std::fs::read_to_string(chain_spec_path)
-		.map_err(|e| RelayChainError::GenericError(e.to_string()))?;
 	let (client, chain_id, json_rpc_responses) =
-		build_smoldot_client(task_manager.spawn_handle(), &spec).await;
+		build_smoldot_client(task_manager.spawn_handle(), &chain_spec).await?;
 	let (worker, sender) = LightClientRpcWorker::new(client, json_rpc_responses, chain_id);
 
 	task_manager
@@ -615,4 +611,21 @@ impl RelayChainRpcClient {
 	pub fn get_finalized_heads_stream(&self) -> Result<Receiver<RelayHeader>, RelayChainError> {
 		self.ws_client.get_finalized_heads_stream()
 	}
+}
+
+pub fn distribute_header(header: RelayHeader, senders: &mut Vec<Sender<RelayHeader>>) {
+	senders.retain_mut(|e| {
+				match e.try_send(header.clone()) {
+					// Receiver has been dropped, remove Sender from list.
+					Err(error) if error.is_disconnected() => false,
+					// Channel is full. This should not happen.
+					// TODO: Improve error handling here
+					// https://github.com/paritytech/cumulus/issues/1482
+					Err(error) => {
+						tracing::error!(target: LOG_TARGET, ?error, "Event distribution channel has reached its limit. This can lead to missed notifications.");
+						true
+					},
+					_ => true,
+				}
+			});
 }

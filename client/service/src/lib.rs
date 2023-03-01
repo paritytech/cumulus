@@ -266,9 +266,12 @@ pub async fn build_relay_chain_interface(
 			collator_options.relay_chain_rpc_urls,
 		)
 		.await
-	} else if let Some(chain_spec_path) = collator_options.embedded_light_client {
-		build_minimal_relay_chain_node_light_client(polkadot_config, task_manager, chain_spec_path)
-			.await
+	} else if collator_options.embedded_light_client {
+		build_minimal_relay_chain_node_light_client(
+			polkadot_config,
+			task_manager,
+		)
+		.await
 	} else {
 		build_inprocess_relay_chain(
 			polkadot_config,
