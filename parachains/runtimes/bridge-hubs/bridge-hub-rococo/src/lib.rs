@@ -426,6 +426,7 @@ parameter_types! {
 
 	// TODO:check-parameter - setup initial values https://github.com/paritytech/parity-bridges-common/issues/1677
 	pub storage DeliveryRewardInBalance: u64 = 1_000_000;
+	pub storage ConfirmationRewardInBalance: u64 = 100_000;
 }
 
 /// Add parachain bridge pallet to track Wococo bridge hub parachain
@@ -478,8 +479,8 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 	type LaneMessageVerifier = bridge_hub_rococo_config::ToBridgeHubWococoMessageVerifier;
 	type DeliveryConfirmationPayments = pallet_bridge_relayers::DeliveryConfirmationPaymentsAdapter<
 		Runtime,
-		WithBridgeHubWococoMessagesInstance,
 		DeliveryRewardInBalance,
+		ConfirmationRewardInBalance,
 	>;
 
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubWococoMessageBridge>;
@@ -514,8 +515,8 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 	type LaneMessageVerifier = bridge_hub_wococo_config::ToBridgeHubRococoMessageVerifier;
 	type DeliveryConfirmationPayments = pallet_bridge_relayers::DeliveryConfirmationPaymentsAdapter<
 		Runtime,
-		WithBridgeHubRococoMessagesInstance,
 		DeliveryRewardInBalance,
+		ConfirmationRewardInBalance,
 	>;
 
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubRococoMessageBridge>;
@@ -531,7 +532,7 @@ impl pallet_bridge_relayers::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Reward = Balance;
 	type PaymentProcedure =
-		bp_relayers::PayRewardFromAccount<pallet_balances::Pallet<Runtime>, AccountId>;
+		bp_relayers::PayLaneRewardFromAccount<pallet_balances::Pallet<Runtime>, AccountId>;
 	type WeightInfo = weights::pallet_bridge_relayers::WeightInfo<Runtime>;
 }
 

@@ -20,10 +20,9 @@
 //! (parachain or relay chain).
 
 use crate::messages_call_ext::{
-	CallHelper as MessagesCallHelper, CallInfo as MessagesCallInfo, MessagesCallSubType,
+	MessagesCallSubType, ReceiveMessagesProofHelper, ReceiveMessagesProofInfo,
 };
 use bp_messages::LaneId;
-use bp_relayers::{RewardsAccountOwner, RewardsAccountParams};
 use bp_runtime::StaticStrProvider;
 use codec::{Decode, Encode};
 use frame_support::{
@@ -143,23 +142,23 @@ pub struct PreDispatchData<AccountId> {
 /// Type of the call that the extension recognizes.
 #[derive(RuntimeDebugNoBound, PartialEq)]
 pub enum CallInfo {
-	/// Relay chain finality + parachain finality + message delivery/confirmation calls.
-	AllFinalityAndMsgs(
+	/// Relay chain finality + parachain finality + message delivery calls.
+	AllFinalityAndDelivery(
 		SubmitFinalityProofInfo<RelayBlockNumber>,
 		SubmitParachainHeadsInfo,
-		MessagesCallInfo,
+		ReceiveMessagesProofInfo,
 	),
-	/// Parachain finality + message delivery/confirmation calls.
-	ParachainFinalityAndMsgs(SubmitParachainHeadsInfo, MessagesCallInfo),
-	/// Standalone message delivery/confirmation call.
-	Msgs(MessagesCallInfo),
+	/// Parachain finality + message delivery calls.
+	ParachainFinalityAndDelivery(SubmitParachainHeadsInfo, ReceiveMessagesProofInfo),
+	/// Standalone message delivery call.
+	Delivery(ReceiveMessagesProofInfo),
 }
 
 impl CallInfo {
 	/// Returns the pre-dispatch `finality_target` sent to the `SubmitFinalityProof` call.
 	fn submit_finality_proof_info(&self) -> Option<SubmitFinalityProofInfo<RelayBlockNumber>> {
 		match *self {
-			Self::AllFinalityAndMsgs(info, _, _) => Some(info),
+			Self::AllFinalityAndDelivery(info, _, _) => Some(info),
 			_ => None,
 		}
 	}
@@ -167,18 +166,18 @@ impl CallInfo {
 	/// Returns the pre-dispatch `SubmitParachainHeadsInfo`.
 	fn submit_parachain_heads_info(&self) -> Option<&SubmitParachainHeadsInfo> {
 		match self {
-			Self::AllFinalityAndMsgs(_, info, _) => Some(info),
-			Self::ParachainFinalityAndMsgs(info, _) => Some(info),
+			Self::AllFinalityAndDelivery(_, info, _) => Some(info),
+			Self::ParachainFinalityAndDelivery(info, _) => Some(info),
 			_ => None,
 		}
 	}
 
 	/// Returns the pre-dispatch `ReceiveMessagesProofInfo`.
-	fn messages_call_info(&self) -> &MessagesCallInfo {
+	fn receive_messages_proof_info(&self) -> &ReceiveMessagesProofInfo {
 		match self {
-			Self::AllFinalityAndMsgs(_, _, info) => info,
-			Self::ParachainFinalityAndMsgs(_, info) => info,
-			Self::Msgs(info) => info,
+			Self::AllFinalityAndDelivery(_, _, info) => info,
+			Self::ParachainFinalityAndDelivery(_, info) => info,
+			Self::Delivery(info) => info,
 		}
 	}
 }
@@ -269,7 +268,7 @@ where
 			for nested_call in calls {
 				nested_call.check_obsolete_submit_finality_proof()?;
 				nested_call.check_obsolete_submit_parachain_heads()?;
-				nested_call.check_obsolete_call()?;
+				nested_call.check_obsolete_receive_messages_proof()?;
 			}
 		}
 
@@ -290,16 +289,18 @@ where
 		let parse_call = || {
 			let mut calls = self.expand_call(call)?.into_iter();
 			match calls.len() {
-				3 => Some(CallInfo::AllFinalityAndMsgs(
+				3 => Some(CallInfo::AllFinalityAndDelivery(
 					calls.next()?.submit_finality_proof_info()?,
 					calls.next()?.submit_parachain_heads_info_for(Para::Id::get())?,
-					calls.next()?.call_info_for(Msgs::Id::get())?,
+					calls.next()?.receive_messages_proof_info_for(Msgs::Id::get())?,
 				)),
-				2 => Some(CallInfo::ParachainFinalityAndMsgs(
+				2 => Some(CallInfo::ParachainFinalityAndDelivery(
 					calls.next()?.submit_parachain_heads_info_for(Para::Id::get())?,
-					calls.next()?.call_info_for(Msgs::Id::get())?,
+					calls.next()?.receive_messages_proof_info_for(Msgs::Id::get())?,
 				)),
-				1 => Some(CallInfo::Msgs(calls.next()?.call_info_for(Msgs::Id::get())?)),
+				1 => Some(CallInfo::Delivery(
+					calls.next()?.receive_messages_proof_info_for(Msgs::Id::get())?,
+				)),
 				_ => None,
 			}
 		};
@@ -372,9 +373,10 @@ where
 
 		// Check if the `ReceiveMessagesProof` call delivered at least some of the messages that
 		// it contained. If this happens, we consider the transaction "helpful" and refund it.
-		let msgs_call_info = call_info.messages_call_info();
-		if !MessagesCallHelper::<Runtime, Msgs::Instance>::was_partially_successful(msgs_call_info)
-		{
+		let msgs_proof_info = call_info.receive_messages_proof_info();
+		if !ReceiveMessagesProofHelper::<Runtime, Msgs::Instance>::was_partially_successful(
+			msgs_proof_info,
+		) {
 			return Ok(())
 		}
 
@@ -395,19 +397,7 @@ where
 		let refund = Refund::compute_refund(info, &post_info, post_info_len, tip);
 
 		// finally - register refund in relayers pallet
-		let rewards_account_owner = match msgs_call_info {
-			MessagesCallInfo::ReceiveMessagesProof(_) => RewardsAccountOwner::ThisChain,
-			MessagesCallInfo::ReceiveMessagesDeliveryProof(_) => RewardsAccountOwner::BridgedChain,
-		};
-		RelayersPallet::<Runtime>::register_relayer_reward(
-			RewardsAccountParams::new(
-				Msgs::Id::get(),
-				Runtime::BridgedChainId::get(),
-				rewards_account_owner,
-			),
-			&relayer,
-			refund,
-		);
+		RelayersPallet::<Runtime>::register_relayer_reward(Msgs::Id::get(), &relayer, refund);
 
 		log::trace!(
 			target: "runtime::bridge",
@@ -426,16 +416,8 @@ where
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::{
-		messages::{
-			source::FromBridgedChainMessagesDeliveryProof, target::FromBridgedChainMessagesProof,
-		},
-		messages_call_ext::{
-			BaseMessagesProofInfo, ReceiveMessagesDeliveryProofInfo, ReceiveMessagesProofInfo,
-		},
-		mock::*,
-	};
-	use bp_messages::{InboundLaneData, MessageNonce, OutboundLaneData, UnrewardedRelayersState};
+	use crate::{messages::target::FromBridgedChainMessagesProof, mock::*};
+	use bp_messages::{InboundLaneData, MessageNonce};
 	use bp_parachains::{BestParaHeadHash, ParaInfo};
 	use bp_polkadot_core::parachains::{ParaHash, ParaHeadsProof, ParaId};
 	use bp_runtime::HeaderId;
@@ -451,8 +433,6 @@ mod tests {
 	parameter_types! {
 		TestParachain: u32 = 1000;
 		pub TestLaneId: LaneId = TEST_LANE_ID;
-		pub MsgProofsRewardsAccount: RewardsAccountParams = RewardsAccountParams::new(TEST_LANE_ID, TEST_BRIDGED_CHAIN_ID, RewardsAccountOwner::ThisChain);
-		pub MsgDeliveryProofsRewardsAccount: RewardsAccountParams = RewardsAccountParams::new(TEST_LANE_ID, TEST_BRIDGED_CHAIN_ID, RewardsAccountOwner::BridgedChain);
 	}
 
 	bp_runtime::generate_static_str_provider!(TestExtension);
@@ -476,7 +456,7 @@ mod tests {
 		best_relay_header_number: RelayBlockNumber,
 		parachain_head_at_relay_header_number: RelayBlockNumber,
 		parachain_head_hash: ParaHash,
-		best_message: MessageNonce,
+		best_delivered_message: MessageNonce,
 	) {
 		let authorities = test_keyring().into_iter().map(|(a, w)| (a.into(), w)).collect();
 		let best_relay_header = HeaderId(best_relay_header_number, RelayBlockHash::default());
@@ -496,13 +476,9 @@ mod tests {
 		pallet_bridge_parachains::ParasInfo::<TestRuntime>::insert(para_id, para_info);
 
 		let lane_id = TestLaneId::get();
-		let in_lane_data =
-			InboundLaneData { last_confirmed_nonce: best_message, ..Default::default() };
-		pallet_bridge_messages::InboundLanes::<TestRuntime>::insert(lane_id, in_lane_data);
-
-		let out_lane_data =
-			OutboundLaneData { latest_received_nonce: best_message, ..Default::default() };
-		pallet_bridge_messages::OutboundLanes::<TestRuntime>::insert(lane_id, out_lane_data);
+		let lane_data =
+			InboundLaneData { last_confirmed_nonce: best_delivered_message, ..Default::default() };
+		pallet_bridge_messages::InboundLanes::<TestRuntime>::insert(lane_id, lane_data);
 	}
 
 	fn submit_relay_header_call(relay_header_number: RelayBlockNumber) -> RuntimeCall {
@@ -546,20 +522,6 @@ mod tests {
 		})
 	}
 
-	fn message_confirmation_call(best_message: MessageNonce) -> RuntimeCall {
-		RuntimeCall::BridgeMessages(MessagesCall::receive_messages_delivery_proof {
-			proof: FromBridgedChainMessagesDeliveryProof {
-				bridged_header_hash: Default::default(),
-				storage_proof: vec![],
-				lane: TestLaneId::get(),
-			},
-			relayers_state: UnrewardedRelayersState {
-				last_delivered_nonce: best_message,
-				..Default::default()
-			},
-		})
-	}
-
 	fn parachain_finality_and_delivery_batch_call(
 		parachain_head_at_relay_header_number: RelayBlockNumber,
 		best_message: MessageNonce,
@@ -568,18 +530,6 @@ mod tests {
 			calls: vec![
 				submit_parachain_head_call(parachain_head_at_relay_header_number),
 				message_delivery_call(best_message),
-			],
-		})
-	}
-
-	fn parachain_finality_and_confirmation_batch_call(
-		parachain_head_at_relay_header_number: RelayBlockNumber,
-		best_message: MessageNonce,
-	) -> RuntimeCall {
-		RuntimeCall::Utility(UtilityCall::batch_all {
-			calls: vec![
-				submit_parachain_head_call(parachain_head_at_relay_header_number),
-				message_confirmation_call(best_message),
 			],
 		})
 	}
@@ -598,24 +548,10 @@ mod tests {
 		})
 	}
 
-	fn all_finality_and_confirmation_batch_call(
-		relay_header_number: RelayBlockNumber,
-		parachain_head_at_relay_header_number: RelayBlockNumber,
-		best_message: MessageNonce,
-	) -> RuntimeCall {
-		RuntimeCall::Utility(UtilityCall::batch_all {
-			calls: vec![
-				submit_relay_header_call(relay_header_number),
-				submit_parachain_head_call(parachain_head_at_relay_header_number),
-				message_confirmation_call(best_message),
-			],
-		})
-	}
-
 	fn all_finality_pre_dispatch_data() -> PreDispatchData<ThisChainAccountId> {
 		PreDispatchData {
 			relayer: relayer_account_at_this_chain(),
-			call_info: CallInfo::AllFinalityAndMsgs(
+			call_info: CallInfo::AllFinalityAndDelivery(
 				SubmitFinalityProofInfo {
 					block_number: 200,
 					extra_weight: Weight::zero(),
@@ -626,38 +562,11 @@ mod tests {
 					para_id: ParaId(TestParachain::get()),
 					para_head_hash: [1u8; 32].into(),
 				},
-				MessagesCallInfo::ReceiveMessagesProof(ReceiveMessagesProofInfo(
-					BaseMessagesProofInfo {
-						lane_id: TEST_LANE_ID,
-						best_bundled_nonce: 200,
-						best_stored_nonce: 100,
-					},
-				)),
-			),
-		}
-	}
-
-	fn all_finality_confirmation_pre_dispatch_data() -> PreDispatchData<ThisChainAccountId> {
-		PreDispatchData {
-			relayer: relayer_account_at_this_chain(),
-			call_info: CallInfo::AllFinalityAndMsgs(
-				SubmitFinalityProofInfo {
-					block_number: 200,
-					extra_weight: Weight::zero(),
-					extra_size: 0,
+				ReceiveMessagesProofInfo {
+					lane_id: TEST_LANE_ID,
+					best_proof_nonce: 200,
+					best_stored_nonce: 100,
 				},
-				SubmitParachainHeadsInfo {
-					at_relay_block_number: 200,
-					para_id: ParaId(TestParachain::get()),
-					para_head_hash: [1u8; 32].into(),
-				},
-				MessagesCallInfo::ReceiveMessagesDeliveryProof(ReceiveMessagesDeliveryProofInfo(
-					BaseMessagesProofInfo {
-						lane_id: TEST_LANE_ID,
-						best_bundled_nonce: 200,
-						best_stored_nonce: 100,
-					},
-				)),
 			),
 		}
 	}
@@ -665,39 +574,17 @@ mod tests {
 	fn parachain_finality_pre_dispatch_data() -> PreDispatchData<ThisChainAccountId> {
 		PreDispatchData {
 			relayer: relayer_account_at_this_chain(),
-			call_info: CallInfo::ParachainFinalityAndMsgs(
+			call_info: CallInfo::ParachainFinalityAndDelivery(
 				SubmitParachainHeadsInfo {
 					at_relay_block_number: 200,
 					para_id: ParaId(TestParachain::get()),
 					para_head_hash: [1u8; 32].into(),
 				},
-				MessagesCallInfo::ReceiveMessagesProof(ReceiveMessagesProofInfo(
-					BaseMessagesProofInfo {
-						lane_id: TEST_LANE_ID,
-						best_bundled_nonce: 200,
-						best_stored_nonce: 100,
-					},
-				)),
-			),
-		}
-	}
-
-	fn parachain_finality_confirmation_pre_dispatch_data() -> PreDispatchData<ThisChainAccountId> {
-		PreDispatchData {
-			relayer: relayer_account_at_this_chain(),
-			call_info: CallInfo::ParachainFinalityAndMsgs(
-				SubmitParachainHeadsInfo {
-					at_relay_block_number: 200,
-					para_id: ParaId(TestParachain::get()),
-					para_head_hash: [1u8; 32].into(),
+				ReceiveMessagesProofInfo {
+					lane_id: TEST_LANE_ID,
+					best_proof_nonce: 200,
+					best_stored_nonce: 100,
 				},
-				MessagesCallInfo::ReceiveMessagesDeliveryProof(ReceiveMessagesDeliveryProofInfo(
-					BaseMessagesProofInfo {
-						lane_id: TEST_LANE_ID,
-						best_bundled_nonce: 200,
-						best_stored_nonce: 100,
-					},
-				)),
 			),
 		}
 	}
@@ -705,26 +592,11 @@ mod tests {
 	fn delivery_pre_dispatch_data() -> PreDispatchData<ThisChainAccountId> {
 		PreDispatchData {
 			relayer: relayer_account_at_this_chain(),
-			call_info: CallInfo::Msgs(MessagesCallInfo::ReceiveMessagesProof(
-				ReceiveMessagesProofInfo(BaseMessagesProofInfo {
-					lane_id: TEST_LANE_ID,
-					best_bundled_nonce: 200,
-					best_stored_nonce: 100,
-				}),
-			)),
-		}
-	}
-
-	fn confirmation_pre_dispatch_data() -> PreDispatchData<ThisChainAccountId> {
-		PreDispatchData {
-			relayer: relayer_account_at_this_chain(),
-			call_info: CallInfo::Msgs(MessagesCallInfo::ReceiveMessagesDeliveryProof(
-				ReceiveMessagesDeliveryProofInfo(BaseMessagesProofInfo {
-					lane_id: TEST_LANE_ID,
-					best_bundled_nonce: 200,
-					best_stored_nonce: 100,
-				}),
-			)),
+			call_info: CallInfo::Delivery(ReceiveMessagesProofInfo {
+				lane_id: TEST_LANE_ID,
+				best_proof_nonce: 200,
+				best_stored_nonce: 100,
+			}),
 		}
 	}
 
@@ -787,26 +659,14 @@ mod tests {
 			initialize_environment(100, 100, Default::default(), 100);
 
 			assert_eq!(run_validate(message_delivery_call(200)), Ok(ValidTransaction::default()),);
-			assert_eq!(
-				run_validate(message_confirmation_call(200)),
-				Ok(ValidTransaction::default()),
-			);
 
 			assert_eq!(
 				run_validate(parachain_finality_and_delivery_batch_call(200, 200)),
 				Ok(ValidTransaction::default()),
 			);
-			assert_eq!(
-				run_validate(parachain_finality_and_confirmation_batch_call(200, 200)),
-				Ok(ValidTransaction::default()),
-			);
 
 			assert_eq!(
 				run_validate(all_finality_and_delivery_batch_call(200, 200, 200)),
-				Ok(ValidTransaction::default()),
-			);
-			assert_eq!(
-				run_validate(all_finality_and_confirmation_batch_call(200, 200, 200)),
 				Ok(ValidTransaction::default()),
 			);
 		});
@@ -838,15 +698,17 @@ mod tests {
 				run_pre_dispatch(all_finality_and_delivery_batch_call(101, 100, 200)),
 				Err(TransactionValidityError::Invalid(InvalidTransaction::Stale)),
 			);
-			assert_eq!(
-				run_validate(all_finality_and_delivery_batch_call(101, 100, 200)),
-				Err(TransactionValidityError::Invalid(InvalidTransaction::Stale)),
-			);
 
 			assert_eq!(
 				run_pre_dispatch(parachain_finality_and_delivery_batch_call(100, 200)),
 				Err(TransactionValidityError::Invalid(InvalidTransaction::Stale)),
 			);
+
+			assert_eq!(
+				run_validate(all_finality_and_delivery_batch_call(101, 100, 200)),
+				Err(TransactionValidityError::Invalid(InvalidTransaction::Stale)),
+			);
+
 			assert_eq!(
 				run_validate(parachain_finality_and_delivery_batch_call(100, 200)),
 				Err(TransactionValidityError::Invalid(InvalidTransaction::Stale)),
@@ -863,8 +725,9 @@ mod tests {
 				run_pre_dispatch(all_finality_and_delivery_batch_call(200, 200, 100)),
 				Err(TransactionValidityError::Invalid(InvalidTransaction::Stale)),
 			);
+
 			assert_eq!(
-				run_pre_dispatch(all_finality_and_confirmation_batch_call(200, 200, 100)),
+				run_pre_dispatch(parachain_finality_and_delivery_batch_call(200, 100)),
 				Err(TransactionValidityError::Invalid(InvalidTransaction::Stale)),
 			);
 
@@ -872,26 +735,9 @@ mod tests {
 				run_validate(all_finality_and_delivery_batch_call(200, 200, 100)),
 				Err(TransactionValidityError::Invalid(InvalidTransaction::Stale)),
 			);
-			assert_eq!(
-				run_validate(all_finality_and_confirmation_batch_call(200, 200, 100)),
-				Err(TransactionValidityError::Invalid(InvalidTransaction::Stale)),
-			);
-
-			assert_eq!(
-				run_pre_dispatch(parachain_finality_and_delivery_batch_call(200, 100)),
-				Err(TransactionValidityError::Invalid(InvalidTransaction::Stale)),
-			);
-			assert_eq!(
-				run_pre_dispatch(parachain_finality_and_confirmation_batch_call(200, 100)),
-				Err(TransactionValidityError::Invalid(InvalidTransaction::Stale)),
-			);
 
 			assert_eq!(
 				run_validate(parachain_finality_and_delivery_batch_call(200, 100)),
-				Err(TransactionValidityError::Invalid(InvalidTransaction::Stale)),
-			);
-			assert_eq!(
-				run_validate(parachain_finality_and_confirmation_batch_call(200, 100)),
 				Err(TransactionValidityError::Invalid(InvalidTransaction::Stale)),
 			);
 		});
@@ -906,10 +752,6 @@ mod tests {
 				run_pre_dispatch(all_finality_and_delivery_batch_call(200, 200, 200)),
 				Ok(Some(all_finality_pre_dispatch_data())),
 			);
-			assert_eq!(
-				run_pre_dispatch(all_finality_and_confirmation_batch_call(200, 200, 200)),
-				Ok(Some(all_finality_confirmation_pre_dispatch_data())),
-			);
 		});
 	}
 
@@ -921,10 +763,6 @@ mod tests {
 			assert_eq!(
 				run_pre_dispatch(parachain_finality_and_delivery_batch_call(200, 200)),
 				Ok(Some(parachain_finality_pre_dispatch_data())),
-			);
-			assert_eq!(
-				run_pre_dispatch(parachain_finality_and_confirmation_batch_call(200, 200)),
-				Ok(Some(parachain_finality_confirmation_pre_dispatch_data())),
 			);
 		});
 	}
@@ -953,17 +791,13 @@ mod tests {
 	}
 
 	#[test]
-	fn pre_dispatch_parses_message_transaction() {
+	fn pre_dispatch_parses_message_delivery_transaction() {
 		run_test(|| {
 			initialize_environment(100, 100, Default::default(), 100);
 
 			assert_eq!(
 				run_pre_dispatch(message_delivery_call(200)),
 				Ok(Some(delivery_pre_dispatch_data())),
-			);
-			assert_eq!(
-				run_pre_dispatch(message_confirmation_call(200)),
-				Ok(Some(confirmation_pre_dispatch_data())),
 			);
 		});
 	}
@@ -1018,16 +852,6 @@ mod tests {
 				Ok(())
 			));
 			assert_storage_noop!(run_post_dispatch(Some(delivery_pre_dispatch_data()), Ok(())));
-
-			assert_storage_noop!(run_post_dispatch(
-				Some(all_finality_confirmation_pre_dispatch_data()),
-				Ok(())
-			));
-			assert_storage_noop!(run_post_dispatch(
-				Some(parachain_finality_confirmation_pre_dispatch_data()),
-				Ok(())
-			));
-			assert_storage_noop!(run_post_dispatch(Some(confirmation_pre_dispatch_data()), Ok(())));
 		});
 	}
 
@@ -1048,7 +872,7 @@ mod tests {
 			assert_eq!(
 				RelayersPallet::<TestRuntime>::relayer_reward(
 					relayer_account_at_this_chain(),
-					MsgProofsRewardsAccount::get()
+					TestLaneId::get()
 				),
 				Some(regular_reward),
 			);
@@ -1056,7 +880,7 @@ mod tests {
 			// now repeat the same with size+weight refund: we expect smaller reward
 			let mut pre_dispatch_data = all_finality_pre_dispatch_data();
 			match pre_dispatch_data.call_info {
-				CallInfo::AllFinalityAndMsgs(ref mut info, ..) => {
+				CallInfo::AllFinalityAndDelivery(ref mut info, ..) => {
 					info.extra_weight.set_ref_time(
 						frame_support::weights::constants::WEIGHT_REF_TIME_PER_SECOND,
 					);
@@ -1067,7 +891,7 @@ mod tests {
 			run_post_dispatch(Some(pre_dispatch_data), Ok(()));
 			let reward_after_two_calls = RelayersPallet::<TestRuntime>::relayer_reward(
 				relayer_account_at_this_chain(),
-				MsgProofsRewardsAccount::get(),
+				TestLaneId::get(),
 			)
 			.unwrap();
 			assert!(
@@ -1088,16 +912,7 @@ mod tests {
 			assert_eq!(
 				RelayersPallet::<TestRuntime>::relayer_reward(
 					relayer_account_at_this_chain(),
-					MsgProofsRewardsAccount::get()
-				),
-				Some(expected_reward()),
-			);
-
-			run_post_dispatch(Some(all_finality_confirmation_pre_dispatch_data()), Ok(()));
-			assert_eq!(
-				RelayersPallet::<TestRuntime>::relayer_reward(
-					relayer_account_at_this_chain(),
-					MsgDeliveryProofsRewardsAccount::get()
+					TestLaneId::get()
 				),
 				Some(expected_reward()),
 			);
@@ -1113,16 +928,7 @@ mod tests {
 			assert_eq!(
 				RelayersPallet::<TestRuntime>::relayer_reward(
 					relayer_account_at_this_chain(),
-					MsgProofsRewardsAccount::get()
-				),
-				Some(expected_reward()),
-			);
-
-			run_post_dispatch(Some(parachain_finality_confirmation_pre_dispatch_data()), Ok(()));
-			assert_eq!(
-				RelayersPallet::<TestRuntime>::relayer_reward(
-					relayer_account_at_this_chain(),
-					MsgDeliveryProofsRewardsAccount::get()
+					TestLaneId::get()
 				),
 				Some(expected_reward()),
 			);
@@ -1130,7 +936,7 @@ mod tests {
 	}
 
 	#[test]
-	fn post_dispatch_refunds_relayer_in_message_transaction() {
+	fn post_dispatch_refunds_relayer_in_message_delivery_transaction() {
 		run_test(|| {
 			initialize_environment(200, 200, Default::default(), 200);
 
@@ -1138,16 +944,7 @@ mod tests {
 			assert_eq!(
 				RelayersPallet::<TestRuntime>::relayer_reward(
 					relayer_account_at_this_chain(),
-					MsgProofsRewardsAccount::get()
-				),
-				Some(expected_reward()),
-			);
-
-			run_post_dispatch(Some(confirmation_pre_dispatch_data()), Ok(()));
-			assert_eq!(
-				RelayersPallet::<TestRuntime>::relayer_reward(
-					relayer_account_at_this_chain(),
-					MsgDeliveryProofsRewardsAccount::get()
+					TestLaneId::get()
 				),
 				Some(expected_reward()),
 			);

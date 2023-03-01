@@ -77,7 +77,8 @@ where
 	/// even honest relayers may lose their funds if there are multiple relays running and
 	/// submitting the same messages/confirmations.
 	fn validate(call: &T::RuntimeCall) -> TransactionValidity {
-		call.check_obsolete_call()
+		call.check_obsolete_receive_messages_proof()?;
+		call.check_obsolete_receive_messages_delivery_proof()
 	}
 }
 

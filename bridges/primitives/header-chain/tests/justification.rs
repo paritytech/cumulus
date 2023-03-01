@@ -17,8 +17,7 @@
 //! Tests for Grandpa Justification code.
 
 use bp_header_chain::justification::{
-	required_justification_precommits, verify_and_optimize_justification, verify_justification,
-	Error,
+	optimize_justification, required_justification_precommits, verify_justification, Error,
 };
 use bp_test_utils::*;
 
@@ -200,7 +199,7 @@ fn optimizer_does_noting_with_minimal_justification() {
 	let justification = make_default_justification::<TestHeader>(&test_header(1));
 
 	let num_precommits_before = justification.commit.precommits.len();
-	let justification = verify_and_optimize_justification::<TestHeader>(
+	let justification = optimize_justification::<TestHeader>(
 		header_id::<TestHeader>(1),
 		TEST_GRANDPA_SET_ID,
 		&voter_set(),
@@ -223,7 +222,7 @@ fn unknown_authority_votes_are_removed_by_optimizer() {
 	));
 
 	let num_precommits_before = justification.commit.precommits.len();
-	let justification = verify_and_optimize_justification::<TestHeader>(
+	let justification = optimize_justification::<TestHeader>(
 		header_id::<TestHeader>(1),
 		TEST_GRANDPA_SET_ID,
 		&voter_set(),
@@ -244,7 +243,7 @@ fn duplicate_authority_votes_are_removed_by_optimizer() {
 		.push(justification.commit.precommits.first().cloned().unwrap());
 
 	let num_precommits_before = justification.commit.precommits.len();
-	let justification = verify_and_optimize_justification::<TestHeader>(
+	let justification = optimize_justification::<TestHeader>(
 		header_id::<TestHeader>(1),
 		TEST_GRANDPA_SET_ID,
 		&voter_set(),
@@ -267,7 +266,7 @@ fn redundant_authority_votes_are_removed_by_optimizer() {
 	));
 
 	let num_precommits_before = justification.commit.precommits.len();
-	let justification = verify_and_optimize_justification::<TestHeader>(
+	let justification = optimize_justification::<TestHeader>(
 		header_id::<TestHeader>(1),
 		TEST_GRANDPA_SET_ID,
 		&voter_set(),
