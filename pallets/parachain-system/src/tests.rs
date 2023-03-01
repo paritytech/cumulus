@@ -979,11 +979,11 @@ fn test() {
 #[test]
 fn upgrade_version_checks_should_work() {
 	let test_data = vec![
-		("test", 0, 1, Err(Error::<Test>::SpecVersionNeedsToIncrease)),
-		("test", 1, 0, Err(Error::<Test>::SpecVersionNeedsToIncrease)),
-		("test", 1, 1, Err(Error::<Test>::SpecVersionNeedsToIncrease)),
-		("test", 1, 2, Err(Error::<Test>::SpecVersionNeedsToIncrease)),
-		("test2", 1, 1, Err(Error::<Test>::InvalidSpecName)),
+		("test", 0, 1, Err(frame_system::Error::<Test>::SpecVersionNeedsToIncrease)),
+		("test", 1, 0, Err(frame_system::Error::<Test>::SpecVersionNeedsToIncrease)),
+		("test", 1, 1, Err(frame_system::Error::<Test>::SpecVersionNeedsToIncrease)),
+		("test", 1, 2, Err(frame_system::Error::<Test>::SpecVersionNeedsToIncrease)),
+		("test2", 1, 1, Err(frame_system::Error::<Test>::InvalidSpecName)),
 	];
 
 	for (spec_name, spec_version, impl_version, expected) in test_data.into_iter() {
