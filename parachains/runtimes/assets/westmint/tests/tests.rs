@@ -456,6 +456,7 @@ fn receive_teleported_asset_for_native_asset_works() {
 				ClearOrigin,
 				BuyExecution {
 					fees: MultiAsset {
+						// TODO: refactor here little bit: MultiLocation::parent()
 						id: Concrete(MultiLocation { parents: 1, interior: Here }),
 						fun: Fungible(10000000000000),
 					},
@@ -901,6 +902,8 @@ fn create_foreign_assets_for_local_consensus_parachain_assets_works() {
 					],
 				});
 
+			// TODO:: try this this with multiple Transacts with different origin_kind
+
 			// lets simulate this was triggered by relay chain from local consensus sibling parachain
 			let xcm = Xcm(vec![
 				WithdrawAsset(buy_execution_fee.clone().into()),
@@ -1015,4 +1018,110 @@ fn create_foreign_assets_for_local_consensus_parachain_assets_works() {
 		})
 }
 
-// TODO: test for ReserveAssetTeleported (IsTeleporter) - rebase + rename existing test to native
+#[test]
+fn receive_teleported_asset_from_foreign_creator_works() {
+	// foreign parachain with the same consenus currency as asset
+	let foreign_asset_id_multilocation =
+		MultiLocation { parents: 1, interior: X2(Parachain(2222), GeneralIndex(1234567)) };
+
+	// foreign creator, which can be sibling parachain to match ForeignCreators
+	let foreign_creator = MultiLocation { parents: 1, interior: X1(Parachain(2222)) };
+	let foreign_creator_as_account_id =
+		ForeignCreatorsSovereignAccountOf::convert(foreign_creator).expect("");
+
+	// we want to buy execution with local relay chain currency
+	let buy_execution_fee_amount =
+		WeightToFee::weight_to_fee(&Weight::from_parts(90_000_000_000, 0));
+	let buy_execution_fee = MultiAsset {
+		id: Concrete(MultiLocation::parent()),
+		fun: Fungible(buy_execution_fee_amount),
+	};
+
+	let target_account = AccountId::from(BOB);
+	let teleported_foreign_asset_amount = 10000000000000;
+
+	ExtBuilder::<Runtime>::default()
+		.with_collators(vec![AccountId::from(ALICE)])
+		.with_session_keys(vec![(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+		)])
+		.with_balances(vec![
+			(
+				foreign_creator_as_account_id.clone(),
+				ExistentialDeposit::get() +
+					AssetDeposit::get() + MetadataDepositBase::get() +
+					(buy_execution_fee_amount * 2),
+			),
+			(target_account.clone(), ExistentialDeposit::get()),
+		])
+		.with_tracing()
+		.build()
+		.execute_with(|| {
+			// checks before
+			assert_eq!(Balances::free_balance(&target_account), ExistentialDeposit::get());
+			assert_eq!(
+				ForeignAssets::balance(foreign_asset_id_multilocation, target_account.clone()),
+				0
+			);
+
+			// create foreign asset
+			let asset_minimum_asset_balance = 3333333_u128;
+			assert_ok!(ForeignAssets::force_create(
+				RuntimeHelper::<Runtime>::root_origin(),
+				foreign_asset_id_multilocation.clone().into(),
+				AccountId::from(SOME_ASSET_ADMIN).into(),
+				false,
+				asset_minimum_asset_balance
+			));
+			assert!(teleported_foreign_asset_amount > asset_minimum_asset_balance);
+
+			// prepare xcm
+			let xcm = Xcm(vec![
+				// BuyExecution with relaychain native token
+				WithdrawAsset(buy_execution_fee.clone().into()),
+				BuyExecution {
+					fees: MultiAsset {
+						id: Concrete(MultiLocation::parent()),
+						fun: Fungible(buy_execution_fee_amount),
+					},
+					weight_limit: Limited(Weight::from_parts(403531000, 1024)),
+				},
+				// Process teleported asset
+				ReceiveTeleportedAsset(MultiAssets::from(vec![MultiAsset {
+					id: Concrete(foreign_asset_id_multilocation),
+					fun: Fungible(teleported_foreign_asset_amount),
+				}])),
+				DepositAsset {
+					assets: Wild(AllOf {
+						id: Concrete(foreign_asset_id_multilocation),
+						fun: WildFungibility::Fungible,
+					}),
+					beneficiary: MultiLocation {
+						parents: 0,
+						interior: X1(AccountId32 {
+							network: None,
+							id: target_account.clone().into(),
+						}),
+					},
+				},
+			]);
+			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
+
+			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(
+				foreign_creator,
+				xcm,
+				hash,
+				RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Sibling),
+			);
+			assert_eq!(outcome.ensure_complete(), Ok(()));
+
+			// checks after
+			assert_eq!(Balances::free_balance(&target_account), ExistentialDeposit::get());
+			assert_eq!(
+				ForeignAssets::balance(foreign_asset_id_multilocation, target_account.clone()),
+				teleported_foreign_asset_amount
+			);
+		})
+}
