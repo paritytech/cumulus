@@ -246,7 +246,7 @@ async fn build_relay_chain_interface(
 		.map(|r| r.0)
 	}
 
-	if collator_options.embedded_light_client {
+	if collator_options.relay_chain_light_client {
 		return build_minimal_relay_chain_node_light_client(relay_chain_config, task_manager)
 			.await
 			.map(|r| r.0)
@@ -495,7 +495,7 @@ pub struct TestNodeBuilder {
 	storage_update_func_relay_chain: Option<Box<dyn Fn()>>,
 	consensus: Consensus,
 	relay_chain_full_node_url: Vec<Url>,
-	embedded_light_client: bool,
+	relay_chain_light_client: bool,
 }
 
 impl TestNodeBuilder {
@@ -518,7 +518,7 @@ impl TestNodeBuilder {
 			storage_update_func_relay_chain: None,
 			consensus: Consensus::RelayChain,
 			relay_chain_full_node_url: vec![],
-			embedded_light_client: false,
+			relay_chain_light_client: false,
 		}
 	}
 
@@ -648,7 +648,7 @@ impl TestNodeBuilder {
 
 		let collator_options = CollatorOptions {
 			relay_chain_rpc_urls: self.relay_chain_full_node_url,
-			embedded_light_client: self.embedded_light_client,
+			relay_chain_light_client: self.relay_chain_light_client,
 		};
 
 		relay_chain_config.network.node_name =

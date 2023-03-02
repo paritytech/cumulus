@@ -47,4 +47,4 @@ cumulus_based = true
   validator = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "--embedded-light-client"]
+  args = ["--relay-chain-light-client", "--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}"]

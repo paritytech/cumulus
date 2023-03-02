@@ -73,3 +73,11 @@ add_to_genesis = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
   args = ["-lparachain::availability=trace,sync=debug,parachain=debug,cumulus-pov-recovery=debug,cumulus-consensus=debug", "--disable-block-announcements", "--bootnodes {{'bob'|zombie('multiAddress')}}", "--relay-chain-rpc-url {{'ferdie'|zombie('wsUri')}}", "--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
+
+  # run two as a RPC parachain full node
+  [[parachains.collators]]
+  name = "three"
+  validator = false # full node
+  image = "{{COL_IMAGE}}"
+  command = "test-parachain"
+  args = ["-lparachain::availability=trace,sync=debug,parachain=debug,cumulus-pov-recovery=debug,cumulus-consensus=debug", "--disable-block-announcements", "--bootnodes {{'bob'|zombie('multiAddress')}}", "--relay-chain-light-client", "--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]

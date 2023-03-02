@@ -301,8 +301,8 @@ pub struct RunCmd {
 
 	/// EXPERIMENTAL: Embed a light client for the relay chain. Only supported for full-nodes.
 	/// Will use the specified relay chain chainspec.
-	#[arg(long, conflicts_with_all = ["relay_chain_rpc_url", "validator"])]
-	pub embedded_light_client: bool,
+	#[arg(long, conflicts_with_all = ["relay_chain_rpc_urls", "validator"])]
+	pub relay_chain_light_client: bool,
 }
 
 impl RunCmd {
@@ -319,7 +319,7 @@ impl RunCmd {
 	pub fn collator_options(&self) -> CollatorOptions {
 		CollatorOptions {
 			relay_chain_rpc_urls: self.relay_chain_rpc_urls.clone(),
-			embedded_light_client: self.embedded_light_client,
+			relay_chain_light_client: self.relay_chain_light_client,
 		}
 	}
 }
@@ -331,7 +331,7 @@ pub struct CollatorOptions {
 	pub relay_chain_rpc_urls: Vec<Url>,
 
 	/// Use embedded light client for the relay chain
-	pub embedded_light_client: bool,
+	pub relay_chain_light_client: bool,
 }
 
 /// A non-redundant version of the `RunCmd` that sets the `validator` field when the

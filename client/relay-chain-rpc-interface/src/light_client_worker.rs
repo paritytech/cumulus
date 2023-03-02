@@ -97,7 +97,7 @@ pub async fn build_smoldot_client(
 		tasks_spawner: Box::new(move |_, task| {
 			spawner.spawn("cumulus-relay-chain-light-client-task", None, task);
 		}),
-		system_name: "cumulus-embedded-light-client".to_string(),
+		system_name: "cumulus-relay-chain-light-client".to_string(),
 		system_version: env!("CARGO_PKG_VERSION").to_string(),
 	};
 
