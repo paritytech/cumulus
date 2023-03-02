@@ -122,7 +122,7 @@ impl sp_consensus::SyncOracle for SyncOracle {
 	}
 }
 
-pub fn get_block_announce_proto_config<B: BlockT>(
+fn get_block_announce_proto_config<B: BlockT>(
 	protocol_id: ProtocolId,
 	fork_id: &Option<String>,
 	roles: Roles,
