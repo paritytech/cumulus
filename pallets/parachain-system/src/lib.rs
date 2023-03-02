@@ -1125,13 +1125,39 @@ pub trait OnSystemEvent {
 	/// Called when the validation code is being applied, aka from the next block on this is the new runtime.
 	fn on_validation_code_applied();
 }
+/// Holds the relay chain state root and block number.
+pub struct RelayChainState {
+	/// Current relay chain height.
+	pub number: relay_chain::BlockNumber,
+	/// State root for current relay chain height.
+	pub state_root: relay_chain::Hash,
+}
 
-/// Implements [`BlockNumberProvider`] that returns relay chain block number fetched from
+/// This exposes the [`RelayChainState`] to other runtime modules.
+///
+/// Enables parachains to read relay chain state via state proofs.
+pub trait RelaychainStateProvider {
+	/// Maybe called by any runtime module to obtain the current state of the relay chain.
+	fn current_relay_chain_state() -> RelayChainState;
+}
+
+impl<T: Config> RelaychainStateProvider for RelaychainDataProvider<T> {
+	fn current_relay_chain_state() -> RelayChainState {
+		Pallet::<T>::validation_data()
+			.map(|d| RelayChainState {
+				number: d.relay_parent_number,
+				state_root: d.relay_parent_storage_root,
+			})
+			.unwrap_or_default()
+	}
+}
+
+/// Implements [`BlockNumberProvider`] and [`RelaychainStateProvider`] that returns relevant relay data fetched from
 /// validation data.
-/// NTOE: When validation data is not available (e.g. within on_initialize), 0 will be returned.
-pub struct RelaychainBlockNumberProvider<T>(sp_std::marker::PhantomData<T>);
+/// NTOE: When validation data is not available (e.g. within on_initialize), default values will be returned.
+pub struct RelaychainDataProvider<T>(sp_std::marker::PhantomData<T>);
 
-impl<T: Config> BlockNumberProvider for RelaychainBlockNumberProvider<T> {
+impl<T: Config> BlockNumberProvider for RelaychainDataProvider<T> {
 	type BlockNumber = relay_chain::BlockNumber;
 
 	fn current_block_number() -> relay_chain::BlockNumber {
