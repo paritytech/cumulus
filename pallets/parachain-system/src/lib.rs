@@ -57,10 +57,16 @@ use xcm::latest::XcmHash;
 
 mod migration;
 mod relay_state_snapshot;
+pub mod weights;
 #[macro_use]
 pub mod validate_block;
 #[cfg(test)]
 mod tests;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+#[cfg(test)]
+mod mock;
 
 /// Register the `validate_block` function that is used by parachains to validate blocks on a
 /// validator.
@@ -137,6 +143,7 @@ impl CheckAssociatedRelayNumber for AnyRelayNumber {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	pub use crate::weights::WeightInfo;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -178,6 +185,9 @@ pub mod pallet {
 
 		/// Something that can check the associated relay parent block number.
 		type CheckAssociatedRelayNumber: CheckAssociatedRelayNumber;
+
+		/// The weight information of this pallet.
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::hooks]
@@ -337,8 +347,7 @@ pub mod pallet {
 		/// As a side effect, this function upgrades the current validation function
 		/// if the appropriate time has come.
 		#[pallet::call_index(0)]
-		#[pallet::weight((0, DispatchClass::Mandatory))]
-		// TODO: This weight should be corrected.
+    #[pallet::weight((T::WeightInfo::set_validation_data_no_messages(), DispatchClass::Mandatory))]
 		pub fn set_validation_data(
 			origin: OriginFor<T>,
 			data: ParachainInherentData,
@@ -427,12 +436,11 @@ pub mod pallet {
 				horizontal_messages,
 				vfp.relay_parent_number,
 			);
-
 			Ok(PostDispatchInfo { actual_weight: Some(total_weight), pays_fee: Pays::No })
 		}
 
 		#[pallet::call_index(1)]
-		#[pallet::weight((1_000, DispatchClass::Operational))]
+    #[pallet::weight((T::WeightInfo::sudo_send_upward_message(), DispatchClass::Operational))]
 		pub fn sudo_send_upward_message(
 			origin: OriginFor<T>,
 			message: UpwardMessage,
@@ -443,7 +451,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(2)]
-		#[pallet::weight((1_000_000, DispatchClass::Operational))]
+    #[pallet::weight((T::WeightInfo::authorize_upgrade(), DispatchClass::Operational))]
 		pub fn authorize_upgrade(origin: OriginFor<T>, code_hash: T::Hash) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -454,7 +462,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(3)]
-		#[pallet::weight(1_000_000)]
+    #[pallet::weight(T::WeightInfo::enact_authorized_upgrade())]
 		pub fn enact_authorized_upgrade(
 			_: OriginFor<T>,
 			code: Vec<u8>,
