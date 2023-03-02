@@ -32,7 +32,6 @@ use tokio::net::TcpStream;
 use tokio_util::compat::TokioAsyncReadCompatExt;
 pub struct TokioPlatform;
 
-/// Implementation detail of [`AsyncStdTcpWebSocket`].
 pub struct TokioStream {
 	shared: Arc<StreamShared>,
 	read_data_rx: Arc<parking_lot::Mutex<stream::Peekable<mpsc::Receiver<Vec<u8>>>>>,

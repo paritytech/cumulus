@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! This module contains a worker that sends RPC requests to an
+//! This module contains a backend that sends RPC requests to an
 //! embedded light client. Even though no networking is involved,
-//! we treat the light-client as a normal JsonRpc target.
+//! we treat the light-client as a normal JsonRPC target.
 
 use core::time::Duration;
 use std::sync::Arc;
@@ -98,7 +98,7 @@ pub async fn build_smoldot_client(
 		tasks_spawner: Box::new(move |_, task| {
 			spawner.spawn("cumulus-relay-chain-light-client-task", None, task);
 		}),
-		system_name: env!("CARGO_PKG_NAME").to_string(),
+		system_name: "cumulus-embedded-light-client".to_string(),
 		system_version: env!("CARGO_PKG_VERSION").to_string(),
 	};
 
@@ -118,6 +118,9 @@ pub async fn build_smoldot_client(
 	Ok((client, chain_id, json_rpc_responses.expect("JSON RPC is not disabled; qed")))
 }
 
+/// Worker to process incoming [`RpcDispatcherMessage`] to process requests.
+/// On startup, this worker opens subscriptions for imported, best and finalized
+/// heads. Incoming notifications are distributed to registered listeners.
 pub struct LightClientRpcWorker {
 	client_receiver: Receiver<RpcDispatcherMessage>,
 	imported_header_listeners: Vec<Sender<RelayHeader>>,
@@ -129,22 +132,25 @@ pub struct LightClientRpcWorker {
 fn handle_notification(
 	maybe_header: Option<Result<RelayHeader, Error>>,
 	senders: &mut Vec<Sender<RelayHeader>>,
-) -> bool {
+) -> Result<(), ()> {
 	match maybe_header {
-		Some(Ok(header)) => crate::rpc_client::distribute_header(header, senders),
+		Some(Ok(header)) => {
+			crate::rpc_client::distribute_header(header, senders);
+			Ok(())
+		},
 		None => {
 			tracing::error!(target: LOG_TARGET, "Subscription closed.");
-			return true
+			Err(())
 		},
 		Some(Err(error)) => {
 			tracing::error!(target: LOG_TARGET, ?error, "Error in RPC subscription.");
-			return true
+			Err(())
 		},
-	};
-	return false
+	}
 }
 
 impl LightClientRpcWorker {
+	/// Create new light-client worker
 	pub fn new(
 		smoldot_client: smoldot_light::Client<TokioPlatform, ()>,
 		json_rpc_responses: JsonRpcResponses,
@@ -257,17 +263,17 @@ impl LightClientRpcWorker {
 				},
 				_ = pending_requests.next(), if !pending_requests.is_empty() => {},
 				import_event = all_head_subscription.next() => {
-					if handle_notification(import_event, &mut self.imported_header_listeners) {
+					if handle_notification(import_event, &mut self.imported_header_listeners).is_err() {
 						return
 					}
 				},
 				best_header_event = new_head_subscription.next() => {
-					if handle_notification(best_header_event, &mut self.best_header_listeners) {
+					if handle_notification(best_header_event, &mut self.best_header_listeners).is_err() {
 						return
 					}
 				}
 				finalized_event = finalized_head_subscription.next() => {
-					if handle_notification(finalized_event, &mut self.finalized_header_listeners) {
+					if handle_notification(finalized_event, &mut self.finalized_header_listeners).is_err() {
 						return
 					}
 				}

@@ -669,12 +669,11 @@ dependencies = [
 
 [[package]]
 name = "bip39"
-version = "1.2.0"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29b9e657de8ff1c3488a4ab77cb51d604eab53415ce34f0bc800f2eac9b13c28"
+checksum = "93f2635620bf0b9d4576eb7bb9a38a55df78bd1205d26fa994b25911a69f212f"
 dependencies = [
  "bitcoin_hashes",
- "rand_core 0.4.2",
 ]
 
 [[package]]
@@ -9621,12 +9620,6 @@ dependencies = [
 
 [[package]]
 name = "rand_core"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c33a3c44ca05fa6f1807d8e6743f3824e8509beca625669633be0acbdf509dc"
-
-[[package]]
-name = "rand_core"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "90bde5296fc891b0cef12a6d03ddccc162ce7b2aff54160af9338f8d40df6d19"
@@ -11788,6 +11781,7 @@ checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 [[package]]
 name = "smoldot"
 version = "0.5.0"
+source = "git+https://github.com/smol-dot/smoldot?branch=main#54d88891b1da202b4bf612a150df7b4dbfa03a55"
 dependencies = [
  "anyhow",
  "arrayvec 0.7.2",
@@ -11841,6 +11835,7 @@ dependencies = [
 [[package]]
 name = "smoldot-light"
 version = "0.3.0"
+source = "git+https://github.com/smol-dot/smoldot?branch=main#54d88891b1da202b4bf612a150df7b4dbfa03a55"
 dependencies = [
  "async-std",
  "blake2-rfc",
@@ -14339,9 +14334,11 @@ dependencies = [
 
 [[package]]
 name = "wasmtime-component-macro"
-version = "5.0.0"
-source = "git+https://github.com/paritytech/wasmtime.git?branch=v5.0.0_lto_fix#8a02705ad378108e43abe23c538688adf73f3b71"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9086679497e0a0b441d47ebb4781def9fed3d224feee913464a9a9e2950bac89"
 dependencies = [
+ "anyhow",
  "proc-macro2",
  "quote",
  "syn",
@@ -14352,8 +14349,9 @@ dependencies = [
 
 [[package]]
 name = "wasmtime-component-util"
-version = "5.0.0"
-source = "git+https://github.com/paritytech/wasmtime.git?branch=v5.0.0_lto_fix#8a02705ad378108e43abe23c538688adf73f3b71"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a3dd61938af6e06b60b9c5b916b48c9d2b77102e80559fcb4e5afb0c5f5bfdf"
 
 [[package]]
 name = "wasmtime-cranelift"
@@ -14397,8 +14395,9 @@ dependencies = [
 
 [[package]]
 name = "wasmtime-fiber"
-version = "5.0.0"
-source = "git+https://github.com/paritytech/wasmtime.git?branch=v5.0.0_lto_fix#8a02705ad378108e43abe23c538688adf73f3b71"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9172517a3331b2a486266f7e16b637b27db6cdf5cddf7d055cd145da14cada46"
 dependencies = [
  "cc",
  "cfg-if",
@@ -14492,8 +14491,9 @@ dependencies = [
 
 [[package]]
 name = "wasmtime-wit-bindgen"
-version = "5.0.0"
-source = "git+https://github.com/paritytech/wasmtime.git?branch=v5.0.0_lto_fix#8a02705ad378108e43abe23c538688adf73f3b71"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92eb1c58cfa115b29e04ff3882ecbd1c8b6db3639b200c72418be5fd43eab3ff"
 dependencies = [
  "anyhow",
  "heck",
@@ -15188,15 +15188,17 @@ dependencies = [
 
 [[package]]
 name = "wit-parser"
-version = "0.3.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "703eb1d2f89ff2c52d50f7ff002735e423cea75f0a5dc5c8a4626c4c47cd9ca6"
+checksum = "b48914ea89d43d7b51fed072143b86b499059a85e27b401e6cdbd0ca1f0c1dc9"
 dependencies = [
  "anyhow",
  "id-arena",
  "indexmap",
+ "log",
  "pulldown-cmark",
  "unicode-xid",
+ "url",
 ]
 
 [[package]]
