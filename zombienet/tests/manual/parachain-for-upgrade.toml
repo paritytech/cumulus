@@ -1,0 +1,28 @@
+[relaychain]
+default_command = "{{POLKADOT_BINARY_PATH}}"
+default_args = [ "-lparachain=debug,xcm=trace" ]
+
+chain = "{{RELAY_CHAIN}}"
+
+  [[relaychain.nodes]]
+  name = "alice"
+  ws_port = 9700
+  validator = true
+
+  [[relaychain.nodes]]
+  name = "bob"
+  validator = true
+
+[[parachains]]
+id = 2000
+cumulus_based = true
+chain = "{{PARA_CHAIN}}"
+
+  # run charlie as parachain collator
+  [[parachains.collators]]
+  name = "charlie"
+  validator = true
+  image = "{{POLKADOT_PARACHAIN_IMAGE}}"
+  command = "{{POLKADOT_PARACHAIN_CMD}}"
+  ws_port = 9910
+  args = ["-lparachain=debug,xcm=trace", "--force-authoring"]
