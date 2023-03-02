@@ -18,7 +18,6 @@
 //! embedded light client. Even though no networking is involved,
 //! we treat the light-client as a normal JsonRPC target.
 
-use core::time::Duration;
 use std::sync::Arc;
 
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
@@ -174,8 +173,6 @@ impl LightClientRpcWorker {
 	}
 
 	pub async fn run(mut self) {
-		tokio::time::sleep(Duration::from_secs(20)).await;
-
 		let mut pending_requests = FuturesUnordered::new();
 
 		let Ok(mut new_head_subscription) = <JsonRpseeClient as ChainApiClient<

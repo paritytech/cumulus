@@ -47,6 +47,9 @@ struct StreamSharedGuarded {
 	write_queue: VecDeque<u8>,
 }
 
+/// Platform implementation for tokio
+/// This implementation is a conversion of the implementation for async-std:
+/// https://github.com/smol-dot/smoldot/blob/54d88891b1da202b4bf612a150df7b4dbfa03a55/light-base/src/platform/async_std.rs#L40
 impl smoldot_light::platform::Platform for TokioPlatform {
 	type Delay = future::BoxFuture<'static, ()>;
 	type Yield = future::Ready<()>;
@@ -112,7 +115,7 @@ impl smoldot_light::platform::Platform for TokioPlatform {
 				})
 			}
 
-			// TODO: doesn't support WebSocket secure connections
+			// doesn't support WebSocket secure connections
 
 			// Ensure ahead of time that the multiaddress is supported.
 			let (addr, host_if_websocket) = match (&proto1, &proto2, &proto3) {
@@ -129,7 +132,7 @@ impl smoldot_light::platform::Platform for TokioPlatform {
 					(either::Left(addr), Some(addr.to_string()))
 				},
 
-				// TODO: we don't care about the differences between Dns, Dns4, and Dns6
+				// we don't care about the differences between Dns, Dns4, and Dns6
 				(
 					ProtocolRef::Dns(addr) | ProtocolRef::Dns4(addr) | ProtocolRef::Dns6(addr),
 					ProtocolRef::Tcp(port),
@@ -190,8 +193,8 @@ impl smoldot_light::platform::Platform for TokioPlatform {
 			let mut read_buffer = vec![0; 4096];
 			let mut write_queue_pushed_listener = shared.write_queue_pushed.listen();
 
-			// TODO: this whole code is a mess, but the Platform trait must be modified to fix it
-			// TODO: spawning a task per connection is necessary because the Platform trait isn't suitable for better strategies
+			// this whole code is a mess, but the Platform trait must be modified to fix it
+			// spawning a task per connection is necessary because the Platform trait isn't suitable for better strategies
 			tokio::spawn(future::poll_fn(move |cx| {
 				let mut lock = shared.guarded.lock();
 
@@ -291,7 +294,7 @@ impl smoldot_light::platform::Platform for TokioPlatform {
 
 	fn read_buffer(stream: &mut Self::Stream) -> ReadBuffer {
 		if stream.read_buffer.is_none() {
-			// TODO: the implementation doesn't let us differentiate between Closed and Reset
+			// the implementation doesn't let us differentiate between Closed and Reset
 			return ReadBuffer::Reset
 		}
 
@@ -311,7 +314,6 @@ impl smoldot_light::platform::Platform for TokioPlatform {
 
 	fn advance_read_cursor(stream: &mut Self::Stream, bytes: usize) {
 		if let Some(read_buffer) = &mut stream.read_buffer {
-			// TODO: meh for copying
 			*read_buffer = read_buffer[bytes..].to_vec();
 		}
 	}
