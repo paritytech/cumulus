@@ -154,6 +154,9 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			RuntimeCall::XcmpQueue(..) |
 			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
 			RuntimeCall::Alliance(
+				// `init_members` accepts unbounded vecs as arguments,
+				// but the call can be initiated only by root origin.
+				pallet_alliance::Call::init_members { .. } |
 				pallet_alliance::Call::vote { .. } |
 				pallet_alliance::Call::close_old_weight { .. } |
 				pallet_alliance::Call::disband { .. } |
@@ -174,7 +177,8 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_collective::Call::close_old_weight { .. } |
 				pallet_collective::Call::disapprove_proposal { .. } |
 				pallet_collective::Call::close { .. },
-			) => true,
+			) |
+			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) => true,
 			_ => false,
 		}
 	}
