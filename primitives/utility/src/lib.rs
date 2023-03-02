@@ -540,7 +540,7 @@ mod tests {
 		// prepare test data
 		let asset: MultiAsset = (Here, AMOUNT).into();
 		let payment = Assets::from(asset.clone());
-		let weight_to_buy = Weight::from_parts(1_0000, 0);
+		let weight_to_buy = Weight::from_parts(1_000, 1_000);
 
 		// lets do first call (success)
 		assert_ok!(trader.buy_weight(weight_to_buy, payment.clone()));
