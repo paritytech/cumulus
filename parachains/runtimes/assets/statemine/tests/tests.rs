@@ -11,7 +11,7 @@ use statemine_runtime::xcm_config::{
 };
 pub use statemine_runtime::{
 	constants::fee::WeightToFee, xcm_config::XcmConfig, Assets, Balances, ExistentialDeposit,
-	ReservedDmpWeight, Runtime, SessionKeys, System,
+	Runtime, SessionKeys, System,
 };
 use xcm::latest::prelude::*;
 use xcm_executor::{

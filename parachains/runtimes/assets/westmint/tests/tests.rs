@@ -12,7 +12,7 @@ pub use westmint_runtime::{
 	constants::fee::WeightToFee,
 	xcm_config::{TrustBackedAssetsPalletLocation, XcmConfig},
 	AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets, ForeignAssetsInstance,
-	ReservedDmpWeight, Runtime, SessionKeys, System,
+	Runtime, SessionKeys, System,
 };
 use westmint_runtime::{
 	xcm_config::{
@@ -508,10 +508,8 @@ fn plain_receive_teleported_asset_works() {
 			)
 				.map(xcm::v3::Xcm::<RuntimeCall>::try_from).expect("failed").expect("failed");
 
-			let weight_limit = ReservedDmpWeight::get();
-
 			let outcome =
-				XcmExecutor::<XcmConfig>::execute_xcm(Parent, maybe_msg, message_id, weight_limit);
+				XcmExecutor::<XcmConfig>::execute_xcm(Parent, maybe_msg, message_id, RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Parent));
 			assert_eq!(outcome.ensure_complete(), Ok(()));
 		})
 }
