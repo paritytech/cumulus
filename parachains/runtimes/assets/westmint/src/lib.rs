@@ -24,7 +24,6 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-mod asset_conversions;
 pub mod constants;
 mod weights;
 pub mod xcm_config;
@@ -70,18 +69,18 @@ use parachains_common::{
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{
-	ForeignCreators, MultiLocationForAssetId, TrustBackedAssetsConvertedConcreteId,
-	WestendLocation, XcmConfig, XcmOriginToTransactDispatchOrigin,
+	MultiLocationForAssetId, TrustBackedAssetsConvertedConcreteId, WestendLocation, XcmConfig,
+	XcmOriginToTransactDispatchOrigin,
 };
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-// Polkadot imports
+use assets_common::{foreign_creators::ForeignCreators, matching::IsSiblingParachain};
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use xcm_executor::XcmExecutor;
 
-use crate::xcm_config::IsSiblingParachain;
+use crate::xcm_config::ForeignCreatorsSovereignAccountOf;
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 impl_opaque_keys! {
@@ -259,7 +258,11 @@ impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type AssetId = MultiLocationForAssetId;
 	type AssetIdParameter = MultiLocationForAssetId;
 	type Currency = Balances;
-	type CreateOrigin = ForeignCreators<(IsSiblingParachain<parachain_info::Pallet<Runtime>>,)>;
+	type CreateOrigin = ForeignCreators<
+		(IsSiblingParachain<parachain_info::Pallet<Runtime>>,),
+		ForeignCreatorsSovereignAccountOf,
+		AccountId,
+	>;
 	type ForceOrigin = AssetsForceOrigin;
 	type AssetDeposit = AssetDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
