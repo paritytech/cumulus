@@ -87,7 +87,7 @@ pub async fn create_client_and_start_worker(
 /// with an embedded smoldot instance.
 pub async fn create_client_and_start_light_client_worker(
 	chain_spec: String,
-	task_manager: &mut polkadot_service::TaskManager,
+	task_manager: &mut TaskManager,
 ) -> RelayChainResult<RelayChainRpcClient> {
 	let (client, chain_id, json_rpc_responses) =
 		build_smoldot_client(task_manager.spawn_handle(), &chain_spec).await?;

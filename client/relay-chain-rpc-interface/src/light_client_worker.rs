@@ -46,7 +46,7 @@ const LOG_TARGET: &str = "rpc-light-client-worker";
 
 #[derive(thiserror::Error, Debug)]
 enum LightClientError {
-	#[error("Error occured while calling inserting smoldot request: {0}")]
+	#[error("Error occured while executing smoldot request: {0}")]
 	SmoldotError(String),
 	#[error("Nothing returned from json_rpc_responses")]
 	EmptyReturn,
@@ -116,7 +116,7 @@ pub async fn build_smoldot_client(
 	Ok((client, chain_id, json_rpc_responses.expect("JSON RPC is not disabled; qed")))
 }
 
-/// Worker to process incoming [`RpcDispatcherMessage`] to process requests.
+/// Worker to process incoming [`RpcDispatcherMessage`] requests.
 /// On startup, this worker opens subscriptions for imported, best and finalized
 /// heads. Incoming notifications are distributed to registered listeners.
 pub struct LightClientRpcWorker {
