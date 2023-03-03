@@ -1153,6 +1153,7 @@ pub trait RelaychainStateProvider {
 #[deprecated]
 pub struct RelaychainBlockNumberProvider<T>(sp_std::marker::PhantomData<T>);
 
+#[allow(deprecated)]
 impl<T: Config> BlockNumberProvider for RelaychainBlockNumberProvider<T> {
 	type BlockNumber = relay_chain::BlockNumber;
 
