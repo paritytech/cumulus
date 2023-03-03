@@ -2495,6 +2495,7 @@ dependencies = [
  "serde_json",
  "smoldot",
  "smoldot-light",
+ "soketto",
  "sp-api",
  "sp-authority-discovery",
  "sp-consensus-babe",
@@ -11837,7 +11838,6 @@ name = "smoldot-light"
 version = "0.3.0"
 source = "git+https://github.com/smol-dot/smoldot?branch=main#54d88891b1da202b4bf612a150df7b4dbfa03a55"
 dependencies = [
- "async-std",
  "blake2-rfc",
  "derive_more",
  "either",
@@ -11849,7 +11849,6 @@ dependencies = [
  "itertools",
  "log",
  "lru 0.9.0",
- "parking_lot 0.12.1",
  "rand 0.8.5",
  "serde",
  "serde_json",
