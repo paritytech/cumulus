@@ -18,9 +18,6 @@
 //! embedded light client. Even though no networking is involved,
 //! we treat the light-client as a normal JsonRPC target.
 
-use std::sync::Arc;
-
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use futures::{channel::mpsc::Sender, prelude::*, stream::FuturesUnordered};
 use jsonrpsee::core::{
 	client::{
@@ -30,11 +27,13 @@ use jsonrpsee::core::{
 	Error,
 };
 use smoldot_light::{ChainId, Client as SmoldotClient, ClientConfig, JsonRpcResponses};
+use std::sync::Arc;
 use tokio::sync::mpsc::{channel as tokio_channel, Receiver, Sender as TokioSender};
 
 use cumulus_primitives_core::relay_chain::{
 	Block as RelayBlock, BlockNumber as RelayNumber, Hash as RelayHash, Header as RelayHeader,
 };
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 
 use polkadot_service::generic::SignedBlock;
 
@@ -149,7 +148,8 @@ fn handle_notification(
 }
 
 impl LightClientRpcWorker {
-	/// Create new light-client worker
+	/// Create new light-client worker.
+	/// Returns the worker itself and a channel to send messages.
 	pub fn new(
 		smoldot_client: smoldot_light::Client<TokioPlatform, ()>,
 		json_rpc_responses: JsonRpcResponses,
@@ -158,10 +158,13 @@ impl LightClientRpcWorker {
 		let (tx, rx) = tokio_channel(100);
 		let smoldot_adapter_sender = SimpleStringSender { inner: smoldot_client, chain_id };
 		let smoldot_adapter_receiver = SimpleStringReceiver { inner: json_rpc_responses };
+
+		// Build jsonrpsee client that will talk to the inprocess smoldot node
 		let smoldot_jsonrpsee_client = Arc::new(
 			ClientBuilder::default()
 				.build_with_tokio(smoldot_adapter_sender, smoldot_adapter_receiver),
 		);
+
 		let worker = LightClientRpcWorker {
 			client_receiver: rx,
 			imported_header_listeners: Default::default(),
@@ -172,6 +175,13 @@ impl LightClientRpcWorker {
 		(worker, tx)
 	}
 
+	// Main worker loop. Does the following:
+	// 1. Initialize notification streams
+	// 2. Enter main loop
+	// 	 a. On listening request, register listener for respective notification stream
+	// 	 b. On incoming notification, distribute notification to listeners
+	// 	 c. On incoming request, forward request to smoldot
+	// 	 d. Advance execution of pending requests
 	pub async fn run(mut self) {
 		let mut pending_requests = FuturesUnordered::new();
 

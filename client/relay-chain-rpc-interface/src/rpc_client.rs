@@ -64,7 +64,8 @@ pub struct RelayChainRpcClient {
 	ws_client: RpcFrontend,
 }
 
-/// Entry point to create [`RelayChainRpcClient`] and start a worker that distributes notifications.
+/// Entry point to create [`RelayChainRpcClient`] and start a worker that communicates
+/// to JsonRPC servers over the network.
 pub async fn create_client_and_start_worker(
 	urls: Vec<Url>,
 	task_manager: &mut TaskManager,
@@ -82,6 +83,8 @@ pub async fn create_client_and_start_worker(
 	Ok(client)
 }
 
+/// Entry point to create [`RelayChainRpcClient`] and start a worker that communicates
+/// with an embedded smoldot instance.
 pub async fn create_client_and_start_light_client_worker(
 	chain_spec: String,
 	task_manager: &mut polkadot_service::TaskManager,
@@ -111,7 +114,7 @@ pub enum RpcDispatcherMessage {
 }
 
 /// Frontend for performing websocket requests.
-/// Requests and stream requests are forwarded to [`ReconnectingWebsocketWorker`].
+/// Requests and stream requests are forwarded to a processing worker.
 #[derive(Debug, Clone)]
 pub struct RpcFrontend {
 	/// Channel to communicate with the RPC worker
