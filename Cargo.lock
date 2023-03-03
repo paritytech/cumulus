@@ -11848,7 +11848,7 @@ checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 [[package]]
 name = "smoldot"
 version = "0.5.0"
-source = "git+https://github.com/smol-dot/smoldot?branch=main#897b6d6ffb258882cc0b772b5576ba1e98a45092"
+source = "git+https://github.com/smol-dot/smoldot?branch=main#cd29f5908af69c7cd429d74d1e3fac75dbbe2b50"
 dependencies = [
  "anyhow",
  "arrayvec 0.7.2",
@@ -11902,7 +11902,7 @@ dependencies = [
 [[package]]
 name = "smoldot-light"
 version = "0.3.0"
-source = "git+https://github.com/smol-dot/smoldot?branch=main#897b6d6ffb258882cc0b772b5576ba1e98a45092"
+source = "git+https://github.com/smol-dot/smoldot?branch=main#cd29f5908af69c7cd429d74d1e3fac75dbbe2b50"
 dependencies = [
  "blake2-rfc",
  "derive_more",
@@ -13861,7 +13861,7 @@ checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
  "cfg-if",
  "digest 0.10.6",
- "rand 0.8.5",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
