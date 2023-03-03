@@ -40,7 +40,7 @@ impl<Matcher: MatchesFungibles<AssetId, Balance>, AssetId: Clone, Balance: Clone
 {
 	fn matches_fungibles(asset: &MultiAsset) -> Result<(AssetId, Balance), Error> {
 		match Matcher::matches_fungibles(asset) {
-			Err(Error::AssetIdConversionFailed) => Err(Error::AssetNotFound),
+			Err(Error::AssetIdConversionFailed) => Err(Error::AssetNotHandled),
 			result => result,
 		}
 	}
