@@ -42,6 +42,7 @@ use frame_support::{
 	storage,
 	traits::Get,
 	weights::Weight,
+	RuntimeDebug,
 };
 use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
@@ -1125,7 +1126,9 @@ pub trait OnSystemEvent {
 	/// Called when the validation code is being applied, aka from the next block on this is the new runtime.
 	fn on_validation_code_applied();
 }
-/// Holds the relay chain state root and block number.
+
+/// Holds the most recent relay-parent state root and block number of the current parachain block.
+#[derive(PartialEq, Eq, Clone, Encode, Decode, TypeInfo, Default, RuntimeDebug)]
 pub struct RelayChainState {
 	/// Current relay chain height.
 	pub number: relay_chain::BlockNumber,
@@ -1138,7 +1141,40 @@ pub struct RelayChainState {
 /// Enables parachains to read relay chain state via state proofs.
 pub trait RelaychainStateProvider {
 	/// Maybe called by any runtime module to obtain the current state of the relay chain.
+	///
+	/// **NOTE**: This is not guaranteed to return monotonically increasing relay parents.
 	fn current_relay_chain_state() -> RelayChainState;
+}
+
+/// Implements [`BlockNumberProvider`] that returns relay chain block number fetched from validation data.
+/// When validation data is not available (e.g. within on_initialize), 0 will be returned.
+///
+/// **NOTE**: This has been deprecated, please use [`RelaychainDataProvider`]
+#[deprecated]
+pub struct RelaychainBlockNumberProvider<T>(sp_std::marker::PhantomData<T>);
+
+impl<T: Config> BlockNumberProvider for RelaychainBlockNumberProvider<T> {
+	type BlockNumber = relay_chain::BlockNumber;
+
+	fn current_block_number() -> relay_chain::BlockNumber {
+		Pallet::<T>::validation_data()
+			.map(|d| d.relay_parent_number)
+			.unwrap_or_default()
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn set_block_number(block: Self::BlockNumber) {
+		let mut validation_data = Pallet::<T>::validation_data().unwrap_or_else(||
+			// PersistedValidationData does not impl default in non-std
+			PersistedValidationData {
+				parent_head: vec![].into(),
+				relay_parent_number: Default::default(),
+				max_pov_size: Default::default(),
+				relay_parent_storage_root: Default::default(),
+			});
+		validation_data.relay_parent_number = block;
+		ValidationData::<T>::put(validation_data)
+	}
 }
 
 impl<T: Config> RelaychainStateProvider for RelaychainDataProvider<T> {
@@ -1165,6 +1201,7 @@ impl<T: Config> BlockNumberProvider for RelaychainDataProvider<T> {
 			.map(|d| d.relay_parent_number)
 			.unwrap_or_default()
 	}
+
 	#[cfg(feature = "runtime-benchmarks")]
 	fn set_block_number(block: Self::BlockNumber) {
 		let mut validation_data = Pallet::<T>::validation_data().unwrap_or_else(||
