@@ -96,10 +96,8 @@ pub type TrustBackedAssetsConvertedConcreteId =
 pub type FungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
 	Assets,
-	AssetIdConversionFailedToAssetNotFoundWrapper<
-		// Use this currency when it is a fungible asset matching the given location or name:
-		TrustBackedAssetsConvertedConcreteId,
-	>,
+	// Use this currency when it is a fungible asset matching the given location or name:
+	TrustBackedAssetsConvertedConcreteId,
 	// Convert an XCM MultiLocation into a local account id:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -115,10 +113,9 @@ pub type FungiblesTransactor = FungiblesAdapter<
 pub type ForeignFungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
 	ForeignAssets,
-	AssetIdConversionFailedToAssetNotFoundWrapper<
-		// Use this currency when it is a fungible asset matching the given location or name:
-		ConvertedConcreteId<MultiLocationForAssetId, Balance, Identity, JustTry>,
-	>,
+	// TODO:check-parameter - create foreign alternative to assets-common
+	// Use this currency when it is a fungible asset matching the given location or name:
+	ConvertedConcreteId<MultiLocationForAssetId, Balance, Identity, JustTry>,
 	// Convert an XCM MultiLocation into a local account id:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):

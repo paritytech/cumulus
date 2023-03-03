@@ -843,7 +843,7 @@ fn create_foreign_assets_for_local_consensus_parachain_assets_works() {
 
 	// we want to buy execution with local relay chain currency
 	let buy_execution_fee_amount =
-		WeightToFee::weight_to_fee(&Weight::from_ref_time(90_000_000_000));
+		WeightToFee::weight_to_fee(&Weight::from_parts(90_000_000_000, 0));
 	let buy_execution_fee = MultiAsset {
 		id: Concrete(MultiLocation::parent()),
 		fun: Fungible(buy_execution_fee_amount),
