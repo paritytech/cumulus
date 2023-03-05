@@ -1150,7 +1150,7 @@ pub trait RelaychainStateProvider {
 /// When validation data is not available (e.g. within on_initialize), 0 will be returned.
 ///
 /// **NOTE**: This has been deprecated, please use [`RelaychainDataProvider`]
-#[deprecated]
+#[deprecated = "Use `RelaychainDataProvider` instead"]
 pub struct RelaychainBlockNumberProvider<T>(sp_std::marker::PhantomData<T>);
 
 #[allow(deprecated)]
