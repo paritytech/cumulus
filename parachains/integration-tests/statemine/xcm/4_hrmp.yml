@@ -12,7 +12,7 @@ settings:
   variables:
     common:
       amount: &amount 1000000000000
-      require_weight_at_most: &weight_at_most {refTime: 1000000000, proofSize: 0}
+      require_weight_at_most: &weight_at_most {refTime: 1000000000, proofSize: 20000}
       amount_to_send: &amount_to_send 500000000000
     chains:
       relay_chain:
@@ -30,7 +30,7 @@ settings:
         ksm_fungible: &ap_ksm_fungible { id: *ap_ksm, fun: { fungible: *amount }}
         suff_asset: &suff_asset { concrete: { parents: 0, interior: { x2: [ { PalletInstance: *assets_pallet_id }, { GeneralIndex: *asset_id } ] }}}
         suff_asset_fail: &suff_asset_fail { concrete: { parents: 0, interior: { x2: [ { PalletInstance: *assets_pallet_id }, { GeneralIndex: 3 } ] }}}
-        suff_asset_fungible: &ap_suff_asset_fungible { id: *suff_asset, fun: { fungible: *weight_at_most }}
+        suff_asset_fungible: &ap_suff_asset_fungible { id: *suff_asset, fun: { fungible: *amount }}
         suff_asset_fungible_fail: &ap_suff_asset_fungible_fail { id: *suff_asset_fail, fun: { fungible: *weight_at_most }}
       penpal_parachain:
         sovereign_account: &pp_sovereign_sibl FBeL7EAeUroLWXW1yfKboiqTqVfbRBcsUKd6QqVf4kGBySS
@@ -71,8 +71,16 @@ tests:
                     {
                       v3: [ #message
                         {
+                          UnpaidExecution: {
+                            weightLimit: Unlimited
+                          }
+                        },
+                        {
+                          SetTopic: "0x0123456789012345678901234567891201234567890123456789012345678912"
+                        },
+                        {
                           Transact: {
-                            originType: Superuser,
+                            originKind: Superuser,
                             requireWeightAtMost: *weight_at_most,
                             call: $force_create_asset
                           }
@@ -88,7 +96,7 @@ tests:
                         - type: XcmV3TraitsOutcome
                           # xcmOutcome: Complete
                           # threshold: [10, 10]
-                          value: 1,021,258,000
+                          value: {"refTime":"1,016,703,000","proofSize":"20,000"}
               - queries:
                   forced_created_asset:
                     chain: *assets_parachain
@@ -130,7 +138,6 @@ tests:
                         interior: {
                           X1: {
                             AccountId32: {
-                              network: Any,
                               id: *pp_acc
                             }
                           }
@@ -170,7 +177,7 @@ tests:
                         - type: XcmV3TraitsOutcome
                           # xcmOutcome: Complete
                           # threshold: [10, 10]
-                          value: 654,608,000
+                          value: {"refTime":"650,855,000","proofSize":"0"}
                     - name: assets.Transferred
                       attributes:
                         - type: AccountId32
@@ -197,7 +204,6 @@ tests:
                         interior: {
                           X1: {
                             AccountId32: {
-                              network: Any,
                               id: *pp_acc
                             }
                           }
@@ -218,15 +224,15 @@ tests:
                         - type: XcmV3TraitsOutcome
                           # xcmOutcome: Complete
                           # threshold: [10, 10]
-                          value: 654,608,000
-                    - name: balances.Endowed
-                      attributes:
-                        - type: AccountId32
-                          value: *pp_sovereign_sibl
-                    - name: balances.Endowed
-                      attributes:
-                        - type: u128
-                          value: *amount
+                          value: {"refTime":"650,855,000","proofSize":"0"}
+                    # - name: balances.Transfer
+                    #   attributes:
+                    #     - type: AccountId32
+                    #       value: *pp_sovereign_sibl
+                    # - name: balances.Transfer
+                    #   attributes:
+                    #     - type: u128
+                    #       value: *amount
 
       - name: polkadotXcm.send( system.remarkWithEvent() ) | Penpal Parachain -> Assets Parachain
         before:
@@ -255,17 +261,31 @@ tests:
                     {
                       v3: [ #message
                         {
-                          WithdrawAsset: [*ap_suff_asset_fungible]
+                          WithdrawAsset: [
+                            { 
+                              id: { 
+                                concrete: { 
+                                  parents: 0, 
+                                  interior: { 
+                                    X2: [ 
+                                      { PalletInstance: *assets_pallet_id }, 
+                                      { GeneralIndex: *asset_id } 
+                                    ] 
+                                  }
+                                }
+                              }, 
+                              fun: { fungible: *amount }}
+                          ]
                         },
                         {
                           BuyExecution: {
-                              fees: *ap_suff_asset_fungible,
+                              fees: { id: *suff_asset, fun: { fungible: *amount }},
                               weightLimit: Unlimited
                           }
                         },
                         {
                           Transact: {
-                            originType: SovereignAccount,
+                            originKind: SovereignAccount,
                             requireWeightAtMost: *weight_at_most,
                             call: $system_remark_with_event
                           }
@@ -340,7 +360,7 @@ tests:
                         },
                         {
                           Transact: {
-                            originType: SovereignAccount,
+                            originKind: SovereignAccount,
                             requireWeightAtMost: *weight_at_most,
                             call: $system_remark_with_event
                           }
