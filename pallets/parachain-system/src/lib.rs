@@ -1140,7 +1140,7 @@ pub struct RelayChainState {
 ///
 /// Enables parachains to read relay chain state via state proofs.
 pub trait RelaychainStateProvider {
-	/// Maybe called by any runtime module to obtain the current state of the relay chain.
+	/// May be called by any runtime module to obtain the current state of the relay chain.
 	///
 	/// **NOTE**: This is not guaranteed to return monotonically increasing relay parents.
 	fn current_relay_chain_state() -> RelayChainState;
@@ -1191,7 +1191,7 @@ impl<T: Config> RelaychainStateProvider for RelaychainDataProvider<T> {
 
 /// Implements [`BlockNumberProvider`] and [`RelaychainStateProvider`] that returns relevant relay data fetched from
 /// validation data.
-/// NTOE: When validation data is not available (e.g. within on_initialize), default values will be returned.
+/// NOTE: When validation data is not available (e.g. within on_initialize), default values will be returned.
 pub struct RelaychainDataProvider<T>(sp_std::marker::PhantomData<T>);
 
 impl<T: Config> BlockNumberProvider for RelaychainDataProvider<T> {
