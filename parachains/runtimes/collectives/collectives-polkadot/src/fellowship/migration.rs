@@ -27,6 +27,8 @@ pub(crate) mod import_kusama_fellowship {
 		Config, IdToIndex, IndexToId, MemberCount, MemberRecord, Members,
 		Pallet as RankedCollective, Rank,
 	};
+	#[cfg(feature = "try-runtime")]
+	use sp_std::vec::Vec;
 
 	const TARGET: &'static str = "runtime::migration::import_fellowship";
 
@@ -91,12 +93,12 @@ pub(crate) mod import_kusama_fellowship {
 	{
 		#[cfg(feature = "try-runtime")]
 		fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
-			let onchain_version = Pallet::<T, I>::on_chain_storage_version();
+			let onchain_version = RankedCollective::<T, I>::on_chain_storage_version();
 			assert_eq!(onchain_version, 0, "the storage version must be 0.");
 			let member_count = MemberCount::<T, I>::get(0);
 			assert_eq!(member_count, 0, "the collective must be uninitialized.");
 
-			Ok(())
+			Ok(Vec::new())
 		}
 
 		fn on_runtime_upgrade() -> Weight {
@@ -148,7 +150,7 @@ pub(crate) mod import_kusama_fellowship {
 		}
 
 		#[cfg(feature = "try-runtime")]
-		fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
+		fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
 			assert_eq!(MemberCount::<T, I>::get(0), 46, "invalid members count at rank 0.");
 			assert_eq!(MemberCount::<T, I>::get(1), 46, "invalid members count at rank 1.");
 			assert_eq!(MemberCount::<T, I>::get(2), 24, "invalid members count at rank 2.");
