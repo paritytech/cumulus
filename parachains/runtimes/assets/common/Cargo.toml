@@ -44,6 +44,7 @@ std = [
 ]
 
 runtime-benchmarks = [
+	"frame-support/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
 ]
