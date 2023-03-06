@@ -47,12 +47,12 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	fn add_invulnerable() -> Weight {
-		Weight::from_ref_time(18_563_000 as u64)
+		Weight::from_parts(18_563_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	fn remove_invulnerable() -> Weight {
-		Weight::from_ref_time(18_563_000 as u64)
+		Weight::from_parts(18_563_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -103,12 +103,12 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	fn add_invulnerable() -> Weight {
-		Weight::from_ref_time(18_563_000 as u64)
+		Weight::from_parts(18_563_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(1 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	fn remove_invulnerable() -> Weight {
-		Weight::from_ref_time(18_563_000 as u64)
+		Weight::from_parts(18_563_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(1 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
