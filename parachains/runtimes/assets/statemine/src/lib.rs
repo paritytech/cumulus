@@ -361,6 +361,7 @@ impl Default for ProxyType {
 		Self::Any
 	}
 }
+// TODO:check-parameter - setup ProxyType for ForeignAssets?
 impl InstanceFilter<RuntimeCall> for ProxyType {
 	fn filter(&self, c: &RuntimeCall) -> bool {
 		match self {

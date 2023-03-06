@@ -174,3 +174,20 @@ impl<ParachainSystem: cumulus_pallet_parachain_system::Config> RuntimeHelper<Par
 		}
 	}
 }
+
+impl<Assets> RuntimeHelper<Assets>
+where
+	Assets: frame_support::traits::tokens::fungibles::InspectMetadata<AccountId>
+		+ frame_support::traits::tokens::fungibles::Inspect<AccountId>,
+{
+	pub fn assert_metadata(
+		asset_id: &Assets::AssetId,
+		expected_name: &str,
+		expected_symbol: &str,
+		expected_decimals: u8,
+	) {
+		assert_eq!(Assets::name(asset_id), Vec::from(expected_name),);
+		assert_eq!(Assets::symbol(asset_id), Vec::from(expected_symbol),);
+		assert_eq!(Assets::decimals(asset_id), expected_decimals);
+	}
+}

@@ -832,7 +832,7 @@ fn test_asset_transactor_transfer_with_foreign_assets_works() {
 }
 
 #[test]
-fn create_foreign_assets_for_local_consensus_parachain_assets_works() {
+fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_works() {
 	// foreign parachain with the same consenus currency as asset
 	let foreign_asset_id_multilocation =
 		MultiLocation { parents: 1, interior: X2(Parachain(2222), GeneralIndex(1234567)) };
@@ -850,6 +850,8 @@ fn create_foreign_assets_for_local_consensus_parachain_assets_works() {
 		fun: Fungible(buy_execution_fee_amount),
 	};
 
+	let bob = AccountId::from(BOB);
+
 	ExtBuilder::<Runtime>::default()
 		.with_collators(vec![AccountId::from(ALICE)])
 		.with_session_keys(vec![(
@@ -862,7 +864,7 @@ fn create_foreign_assets_for_local_consensus_parachain_assets_works() {
 			ExistentialDeposit::get() +
 				AssetDeposit::get() +
 				MetadataDepositBase::get() +
-				(buy_execution_fee_amount * 2),
+				buy_execution_fee_amount,
 		)])
 		.with_tracing()
 		.build()
@@ -873,36 +875,37 @@ fn create_foreign_assets_for_local_consensus_parachain_assets_works() {
 				Balances::free_balance(&foreign_creator_as_account_id),
 				ExistentialDeposit::get() +
 					AssetDeposit::get() + MetadataDepositBase::get() +
-					(buy_execution_fee_amount * 2)
+					buy_execution_fee_amount
 			);
 
-			// execute XCM with Transact to create foreign asset
-			let foreign_asset_create: RuntimeCall =
-				RuntimeCall::Utility(pallet_utility::Call::<Runtime>::batch {
-					calls: vec![
-						RuntimeCall::ForeignAssets(pallet_assets::Call::<
-							Runtime,
-							ForeignAssetsInstance,
-						>::create {
-							id: foreign_asset_id_multilocation,
-							// TODO:check-parameter - how to setup admin account?
-							admin: foreign_creator_as_account_id.clone().into(),
-							min_balance: 1,
-						}),
-						// TODO:check-parameter - cannot call in one batch, because set_metadata uses just `ensure_signed()`
-						// RuntimeCall::ForeignAssets(pallet_assets::Call::<
-						// 	Runtime,
-						// 	ForeignAssetsInstance,
-						// >::set_metadata {
-						// 	id: foreign_asset_id_multilocation,
-						// 	name: Default::default(),
-						// 	symbol: Default::default(),
-						// 	decimals: 12,
-						// }),
-					],
-				});
-
-			// TODO:: try this this with multiple Transacts with different origin_kind
+			// execute XCM with Transacts to create/manage foreign assets by foreign governance
+			// prepapre data for xcm::Transact(create)
+			let foreign_asset_create: RuntimeCall = RuntimeCall::ForeignAssets(
+				pallet_assets::Call::<Runtime, ForeignAssetsInstance>::create {
+					id: foreign_asset_id_multilocation,
+					// admin as sovereign_account
+					admin: foreign_creator_as_account_id.clone().into(),
+					min_balance: 1,
+				},
+			);
+			// prepapre data for xcm::Transact(set_metadata)
+			let foreign_asset_set_metadata: RuntimeCall = RuntimeCall::ForeignAssets(
+				pallet_assets::Call::<Runtime, ForeignAssetsInstance>::set_metadata {
+					id: foreign_asset_id_multilocation,
+					name: Vec::from("My super coin"),
+					symbol: Vec::from("MY_S_COIN"),
+					decimals: 12,
+				},
+			);
+			// prepapre data for xcm::Transact(set_team - change just freezer to Bob)
+			let foreign_asset_set_team: RuntimeCall = RuntimeCall::ForeignAssets(
+				pallet_assets::Call::<Runtime, ForeignAssetsInstance>::set_team {
+					id: foreign_asset_id_multilocation,
+					issuer: foreign_creator_as_account_id.clone().into(),
+					admin: foreign_creator_as_account_id.clone().into(),
+					freezer: bob.clone().into(),
+				},
+			);
 
 			// lets simulate this was triggered by relay chain from local consensus sibling parachain
 			let xcm = Xcm(vec![
@@ -910,8 +913,18 @@ fn create_foreign_assets_for_local_consensus_parachain_assets_works() {
 				BuyExecution { fees: buy_execution_fee.clone().into(), weight_limit: Unlimited },
 				Transact {
 					origin_kind: OriginKind::Xcm,
-					require_weight_at_most: Weight::from_parts(80_000_000_000, 6000),
+					require_weight_at_most: Weight::from_parts(40_000_000_000, 6000),
 					call: foreign_asset_create.encode().into(),
+				},
+				Transact {
+					origin_kind: OriginKind::SovereignAccount,
+					require_weight_at_most: Weight::from_parts(20_000_000_000, 6000),
+					call: foreign_asset_set_metadata.encode().into(),
+				},
+				Transact {
+					origin_kind: OriginKind::SovereignAccount,
+					require_weight_at_most: Weight::from_parts(20_000_000_000, 6000),
+					call: foreign_asset_set_team.encode().into(),
 				},
 			]);
 
@@ -933,18 +946,20 @@ fn create_foreign_assets_for_local_consensus_parachain_assets_works() {
 				e,
 				RuntimeEvent::ForeignAssets(pallet_assets::Event::Created { .. })
 			)));
-			// TODO:check-parameter - cannot call in one batch, because set_metadata uses just `ensure_signed()`
-			// assert!(
-			// 	events
-			// 		.any(|e| matches!(e, RuntimeEvent::ForeignAssets(pallet_assets::Event::MetadataSet { .. })))
-			// );
-			assert!(
-				events.any(|e| e.eq(&RuntimeEvent::Utility(pallet_utility::Event::BatchCompleted)))
-			);
+			assert!(events.any(|e| matches!(
+				e,
+				RuntimeEvent::ForeignAssets(pallet_assets::Event::MetadataSet { .. })
+			)));
+			assert!(events.any(|e| matches!(
+				e,
+				RuntimeEvent::ForeignAssets(pallet_assets::Event::TeamChanged { .. })
+			)));
 
 			// check assets after
 			assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
 			assert!(!ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
+
+			// check update metadata
 			use frame_support::traits::tokens::fungibles::roles::Inspect as InspectRoles;
 			assert_eq!(
 				ForeignAssets::owner(foreign_asset_id_multilocation),
@@ -955,66 +970,38 @@ fn create_foreign_assets_for_local_consensus_parachain_assets_works() {
 				Some(foreign_creator_as_account_id.clone())
 			);
 			assert_eq!(
-				Balances::free_balance(&foreign_creator_as_account_id),
-				ExistentialDeposit::get() + MetadataDepositBase::get() + buy_execution_fee_amount
+				ForeignAssets::issuer(foreign_asset_id_multilocation),
+				Some(foreign_creator_as_account_id.clone())
+			);
+			assert_eq!(ForeignAssets::freezer(foreign_asset_id_multilocation), Some(bob.clone()));
+			assert!(
+				Balances::free_balance(&foreign_creator_as_account_id) <
+					ExistentialDeposit::get() + buy_execution_fee_amount
+			);
+			RuntimeHelper::<ForeignAssets>::assert_metadata(
+				&foreign_asset_id_multilocation,
+				"My super coin",
+				"MY_S_COIN",
+				12,
 			);
 
-			// update set_metadata
-			use frame_support::traits::tokens::fungibles::InspectMetadata;
-
-			// check before
-			assert_eq!(ForeignAssets::name(&foreign_asset_id_multilocation), Vec::<u8>::new());
-			assert_eq!(ForeignAssets::symbol(&foreign_asset_id_multilocation), Vec::<u8>::new());
-			assert_eq!(ForeignAssets::decimals(&foreign_asset_id_multilocation), 0);
-
-			// prepapre xcm::Transact(set_metadata)
-			let foreign_asset_set_metadata: RuntimeCall = RuntimeCall::ForeignAssets(
-				pallet_assets::Call::<Runtime, ForeignAssetsInstance>::set_metadata {
-					id: foreign_asset_id_multilocation,
-					name: Vec::from("My super coin"),
-					symbol: Vec::from("MY_S_COIN"),
-					decimals: 12,
-				},
+			// check if changed freezer, can freeze
+			assert_noop!(
+				ForeignAssets::freeze(
+					RuntimeHelper::<Runtime>::origin_of(bob),
+					foreign_asset_id_multilocation.clone(),
+					AccountId::from(ALICE).into()
+				),
+				pallet_assets::Error::<Runtime, ForeignAssetsInstance>::NoAccount
 			);
-
-			let xcm = Xcm(vec![
-				WithdrawAsset(buy_execution_fee.clone().into()),
-				BuyExecution { fees: buy_execution_fee.into(), weight_limit: Unlimited },
-				Transact {
-					origin_kind: OriginKind::SovereignAccount,
-					require_weight_at_most: Weight::from_parts(80_000_000_000, 6000),
-					call: foreign_asset_set_metadata.encode().into(),
-				},
-			]);
-
-			// messages with different consensus should go through the local bridge-hub
-			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-
-			// execute xcm as XcmpQueue would do
-			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(
-				foreign_creator,
-				xcm,
-				hash,
-				RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Sibling),
+			assert_noop!(
+				ForeignAssets::freeze(
+					RuntimeHelper::<Runtime>::origin_of(foreign_creator_as_account_id),
+					foreign_asset_id_multilocation.clone(),
+					AccountId::from(ALICE).into()
+				),
+				pallet_assets::Error::<Runtime, ForeignAssetsInstance>::NoPermission
 			);
-			assert_eq!(outcome.ensure_complete(), Ok(()));
-
-			let mut events = System::events().into_iter().map(|e| e.event);
-			assert!(events.any(|e| matches!(
-				e,
-				RuntimeEvent::ForeignAssets(pallet_assets::Event::MetadataSet { .. })
-			)));
-
-			// check after
-			assert_eq!(
-				ForeignAssets::name(&foreign_asset_id_multilocation),
-				Vec::from("My super coin"),
-			);
-			assert_eq!(
-				ForeignAssets::symbol(&foreign_asset_id_multilocation),
-				Vec::from("MY_S_COIN"),
-			);
-			assert_eq!(ForeignAssets::decimals(&foreign_asset_id_multilocation), 12);
 		})
 }
 
