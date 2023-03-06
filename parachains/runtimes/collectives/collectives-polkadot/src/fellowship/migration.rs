@@ -175,7 +175,7 @@ pub mod tests {
 	fn check_fellowship_addresses() {
 		let fellowship_addresses = FellowshipAddresses::get();
 		let kusama_fellowship_ss58: [(Rank, _); 45] = [
-			(6, "FcxNWVy5RESDsErjwyZmPCW6Z8Y3fbfLzmou34YZTrbcraL"),
+			(6, "16SDAKg9N6kKAbhgDyxBXdHEwpwHUHs2CNEiLNGeZV55qHna"), // proof https://kusama.subscan.io/extrinsic/16832707-4
 			(6, "J8ww78Qx3LVLW54bva3t4SzXcWKMdUWHEZR3V2VNKbmQgE8"),
 			(6, "FFFF3gBSSDFSvK2HBq4qgLH75DHqXWPHeCnR1BSksAMacBs"),
 			(5, "G7YVCdxZb8JLpAm9WMnJdNuojNT84AzU62zmvx5P1FMNtg2"),
@@ -184,16 +184,16 @@ pub mod tests {
 			(5, "J9nD3s7zssCX7bion1xctAF6xcVexcpy2uwy4jTm9JL8yuK"),
 			(4, "EGVQCe73TpFyAZx5uKfE1222XfkT3BSKozjgcqzLBnc5eYo"),
 			(4, "HL8bEp8YicBdrUmJocCAWVLKUaR2dd1y6jnD934pbre3un1"),
-			(4, "HyBryanRsB1GGKa9ZfqvRc3XpTDipYyRvxNNyZYfWFcenhd"),
+			(4, "14DsLzVyTUTDMm2eP3czwPbH53KgqnQRp3CJJZS9GR7yxGDP"), // proof https://kusama.subscan.io/extrinsic/16917519-2
 			(3, "GAWwkmjbLhM5pnAVbdZEkwd3QjHE7kaxJSCi3Ec91Q3QSDW"),
 			(3, "H25aCspunTUqAt4D1gC776vKZ8FX3MvQJ3Jde6qDXPQaFxk"),
 			(3, "GtLQoW4ZqcjExMPq6qB22bYc6NaX1yMzRuGWpSRiHqnzRb9"),
-			(3, "G5MVrgFmBaYei8N6t6DnDrb8JE53wKDkazLv5f46wVpi14y"),
+			(3, "15db5ksZgmhWE9U8MDq4wLKUdFivLVBybztWV8nmaJvv3NU1"), // proof https://kusama.subscan.io/extrinsic/16876631-2
 			(3, "HfFpz4QUxfbocHudf8UU7cMgHqkHpf855Me5X846PZAsAYE"),
 			(3, "DSbhnaGBytDGRfZTmdcArzCL6T3HQ8gcZxWpF5gLBP6y1Qe"),
 			(3, "CzEPpMr7XNS6dK7nQFnQbfnJQYLq7nvULK5kL9U8Zb6CTJm"),
 			(2, "Ddb9puChKMHq4gM6o47E551wAmaNeu6kHngX1jzNNqAw782"),
-			(2, "GcDZZCVPwkPqoWxx8vfLb4Yfpz9yQ1f4XEyqngSH8ygsL9p"),
+			(2, "15DCWHQknBjc5YPFoVj8Pn2KoqrqYywJJ95BYNYJ4Fj3NLqz"), // proof https://kusama.subscan.io/extrinsic/16834952-2
 			(2, "GA3yPifemubFga7sTSFtLY2KFFiSRp6Bb8w31FS4xqgAvCz"),
 			(2, "HxhDbS3grLurk1dhDgPiuDaRowHY1xHCU8Vu8on3fdg85tx"),
 			(2, "HTk3eccL7WBkiyxz1gBcqQRghsJigoDMD7mnQaz1UAbMpQV"),
@@ -202,10 +202,10 @@ pub mod tests {
 			(1, "GfbnnEgRU94n9ed4RFZ6Z9dBAWs5obykigJSwXKU9hsT2uU"),
 			(1, "HA5NtttvyZsxo4wGxGoJJSMaWtdEFZAuGUMFHVWD7fgenPv"),
 			(1, "Hj44XnjZui7SQ3A5eBMoJFa4H4nVhiyWnL2i2xw5f1YqzRX"),
-			(1, "Ea6jhP5gF4r7NqhkEoAXJDgSgYpNQNaTYU6gPsrEGfctaKR"),
+			(1, "16a357f5Sxab3V2ne4emGQvqJaCLeYpTMx3TCjnQhmJQ71DX"), // proof https://kusama.subscan.io/extrinsic/16836396-5
 			(1, "CbCmCwFkfFkQo7bQtVczYg7sJ3oue6Ez2Z4RMGR8gi8deRk"),
 			(1, "FJq9JpA9P7EXbmfsN9YiewJaDbQyL6vQyksGtJvzfbn6zf8"),
-			(1, "EvoLanodoqDsgHb98Ymbu41uXXKfCPDKxeM6dXHyJ2JoVus"),
+			(1, "15oLanodWWweiZJSoDTEBtrX7oGfq6e8ct5y5E6fVRDPhUgj"), // proof https://kusama.subscan.io/extrinsic/16876423-7
 			(1, "EaBqDJJNsZmYdQ4xn1vomPJVNh7fjA6UztZeEjn7ZzdeT7V"),
 			(1, "HTxCvXKVvUZ7PQq175kCRRLu7XkGfTfErrdNXr1ZuuwVZWv"),
 			(1, "HZe91A6a1xqbKaw6ofx3GFepJjhVXHrwHEwn6YUDDFphpX9"),
