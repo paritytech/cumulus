@@ -41,14 +41,14 @@ pub(crate) mod import_kusama_fellowship {
 			(5, hex_literal::hex!("2e1884c53071526483b14004e894415f02b55fc2e2aef8e1df8ccf7ce5bd5570"),),
 			(5, hex_literal::hex!("f6b21d624832094b03aa672e016462a020e217cc67b1434785b99114a2b4fa5a"),),
 			(4, hex_literal::hex!("4adf51a47b72795366d52285e329229c836ea7bbfe139dbe8fa0700c4f86fc56"),),
-			(4, hex_literal::hex!("d25af2fedd4eb672f218932fde44f97f10c1d7788efd0079957ffad4f186ae78"),),
+			(4, hex_literal::hex!("1c90e3dabd3fd0f6bc648045018f78fcee8fe24122c22d8d2a14e9905073d10f"),),
 			(4, hex_literal::hex!("8e851ed992228f2268ee8c614fe6075d3800060ae14098e0309413a0a81c4470"),),
 			(3, hex_literal::hex!("720d807d46b941703ffe0278e8b173dc6738c5af8af812ceffc90c69390bbf1f"),),
 			(3, hex_literal::hex!("c4965f7fe7be8174717a24ffddf684986d122c7e293ddf875cdf9700a07b6812"),),
 			(3, hex_literal::hex!("beae5bcad1a8c156291b7ddf46b38b0c61a6aaacebd57b21c75627bfe7f9ab71"),),
 			(3, hex_literal::hex!("ccd87fa65729f7bdaa8305581a7a499aa24c118e83f5714152c0e22617c6fc63"),),
 			(3, hex_literal::hex!("e0f0f94962fc0a8c1a0f0527dc8e592c67939c46c903b6016cc0a8515da0044d"),),
-			(3, hex_literal::hex!("2658c2083dcab9b118b5e828fb81344c4245deb8eed43fa890c8c0ae9cae526d"),),
+			(3, hex_literal::hex!("984e16482c99cfad1436111e321a86d87d0fac203bf64538f888e45d793b5413"),),
 			(3, hex_literal::hex!("123ca466ff6a76cdf3e73dc01bc1e8c4db195249e3b2e39a90036c6ded3db93a"),),
 			(2, hex_literal::hex!("2eba9a39dbfdd5f3cba964355d45e27319f0271023c0353d97dc6df2401b0e3d"),),
 			(2, hex_literal::hex!("ba3e9b87792bcfcc237fa8181185b8883c77f3e24f45e4a92ab31d07a4703520"),),
@@ -59,9 +59,9 @@ pub(crate) mod import_kusama_fellowship {
 			(2, hex_literal::hex!("18d30040a8245c5ff17afc9a8169d7d0771fe7ab4135a64a022c254117340720"),),
 			(1, hex_literal::hex!("b4f7f03bebc56ebe96bc52ea5ed3159d45a0ce3a8d7f082983c33ef133274747"),),
 			(1, hex_literal::hex!("caafae0aaa6333fcf4dc193146945fe8e4da74aa6c16d481eef0ca35b8279d73"),),
-			(1, hex_literal::hex!("e3d658975d1894d14c40bfa6f8b7e661cd2ee47b3f3c83f9258a4e9e8331df4e"),),
+			(1, hex_literal::hex!("a66e0f4e1a121cc83fddf3096e8ec8c9e9c85989f276e39e951fb0e4a5398763"),),
 			(1, hex_literal::hex!("f65f3cade8f68e8f34c6266b0d37e58a754059ca96816e964f98e17c79505073"),),
-			(1, hex_literal::hex!("00ac81b86d05495a73dd7e98d33fb5bf55a837c6b87e3da0bf45618fed00be6d"),),
+			(1, hex_literal::hex!("8c232c91ef2a9983ba65c4b75bb86fcbae4d909900ea8aa06c3644ca1161db48"),),
 			(1, hex_literal::hex!("78e4813814891bd48bc745b79254a978833d41fbe0f387df93cd87eae2468926"),),
 			(1, hex_literal::hex!("d44824ac8d1edecca67639ca74d208bd2044a10e67c9677e288080191e3fec13"),),
 			(1, hex_literal::hex!("585e982d74da4f4290d20a73800cfd705cf59e1f5880aaee5506b5eaaf544f49"),),
@@ -77,7 +77,7 @@ pub(crate) mod import_kusama_fellowship {
 			(1, hex_literal::hex!("12c039004da5e1e846aae808277098c719cef1f4985aed00161a42ac4f0e002f"),),
 			(1, hex_literal::hex!("7460ac178015d2a7c289bb68ef9fdaac071596ab4425c276a0040aaac7055566"),),
 			(1, hex_literal::hex!("eec4bd650a277342ebba0954ac786df2623bd6a9d6d3e69b484482336c549f79"),),
-			(1, hex_literal::hex!("ca76c36de0085c8c561dbb64575cb016d4d6e7cef42b666d3ea978543f1c935a"),),
+			(1, hex_literal::hex!("e287c7494655d636a846f5c3347ad2cb3c462a8d46e0832be70fcc0ab54ee62d"),),
 			(1, hex_literal::hex!("82bf733f44a840f0a5c1935a002d4e541d81298fad6d1da8124073485983860e"),),
 		];
 	}
@@ -184,14 +184,14 @@ pub mod tests {
 			(5, "Dcm1BqR4N7nHuV43TXdET7pNibt1Nzm42FggPHpxKRven53"),
 			(5, "J9nD3s7zssCX7bion1xctAF6xcVexcpy2uwy4jTm9JL8yuK"),
 			(4, "EGVQCe73TpFyAZx5uKfE1222XfkT3BSKozjgcqzLBnc5eYo"),
-			(4, "HL8bEp8YicBdrUmJocCAWVLKUaR2dd1y6jnD934pbre3un1"),
+			(4, "1eTPAR2TuqLyidmPT9rMmuycHVm9s9czu78sePqg2KHMDrE"), // proof https://kusama.subscan.io/extrinsic/16921712-3
 			(4, "14DsLzVyTUTDMm2eP3czwPbH53KgqnQRp3CJJZS9GR7yxGDP"), // proof https://kusama.subscan.io/extrinsic/16917519-2
 			(3, "13aYUFHB3umoPoxBEAHSv451iR3RpsNi3t5yBZjX2trCtTp6"), // proof https://kusama.subscan.io/extrinsic/16917832-3
 			(3, "H25aCspunTUqAt4D1gC776vKZ8FX3MvQJ3Jde6qDXPQaFxk"),
 			(3, "GtLQoW4ZqcjExMPq6qB22bYc6NaX1yMzRuGWpSRiHqnzRb9"),
 			(3, "15db5ksZgmhWE9U8MDq4wLKUdFivLVBybztWV8nmaJvv3NU1"), // proof https://kusama.subscan.io/extrinsic/16876631-2
 			(3, "HfFpz4QUxfbocHudf8UU7cMgHqkHpf855Me5X846PZAsAYE"),
-			(3, "DSbhnaGBytDGRfZTmdcArzCL6T3HQ8gcZxWpF5gLBP6y1Qe"),
+			(3, "14ShUZUYUR35RBZW6uVVt1zXDxmSQddkeDdXf1JkMA6P721N"), // proof https://kusama.subscan.io/extrinsic/16918890-8
 			(3, "CzEPpMr7XNS6dK7nQFnQbfnJQYLq7nvULK5kL9U8Zb6CTJm"),
 			(2, "Ddb9puChKMHq4gM6o47E551wAmaNeu6kHngX1jzNNqAw782"),
 			(2, "15DCWHQknBjc5YPFoVj8Pn2KoqrqYywJJ95BYNYJ4Fj3NLqz"), // proof https://kusama.subscan.io/extrinsic/16834952-2
@@ -202,9 +202,9 @@ pub mod tests {
 			(2, "D8sM6vKjWaeKy2zCPYWGkLLbWdUtWQrXBTQqr4dSYnVQo21"),
 			(1, "GfbnnEgRU94n9ed4RFZ6Z9dBAWs5obykigJSwXKU9hsT2uU"),
 			(1, "HA5NtttvyZsxo4wGxGoJJSMaWtdEFZAuGUMFHVWD7fgenPv"),
-			(1, "Hj44XnjZui7SQ3A5eBMoJFa4H4nVhiyWnL2i2xw5f1YqzRX"),
+			(1, "14mDeKZ7qp9hqBjjDg51c8BFrf9o69om8piSSRwj2fT5Yb1i"), // proof https://kusama.subscan.io/extrinsic/16919020-4
 			(1, "16a357f5Sxab3V2ne4emGQvqJaCLeYpTMx3TCjnQhmJQ71DX"), // proof https://kusama.subscan.io/extrinsic/16836396-5
-			(1, "CbCmCwFkfFkQo7bQtVczYg7sJ3oue6Ez2Z4RMGR8gi8deRk"),
+			(1, "14Ak9rrF6RKHHoLLRUYMnzcvvi1t8E1yAMa7tcmiwUfaqzYK"), // proof https://kusama.subscan.io/extrinsic/16921990-3
 			(1, "FJq9JpA9P7EXbmfsN9YiewJaDbQyL6vQyksGtJvzfbn6zf8"),
 			(1, "15oLanodWWweiZJSoDTEBtrX7oGfq6e8ct5y5E6fVRDPhUgj"), // proof https://kusama.subscan.io/extrinsic/16876423-7
 			(1, "EaBqDJJNsZmYdQ4xn1vomPJVNh7fjA6UztZeEjn7ZzdeT7V"),
@@ -220,7 +220,7 @@ pub mod tests {
 			(1, "CzuUtvKhZNZBjyAXeYviaRXwrLhVrsupJ9PrWmdq7BJTjGR"),
 			(1, "FCunn2Rx8JqfT5g6noUKKazph4jLDba5rUee7o3ZmJ362Ju"),
 			(1, "HyPMjWRHCpJS7x2SZ2R6M2XG5ZiCiZag4U4r7gBHRsE5mTc"),
-			(1, "H9nUFL5DasuMeAiTC77QyZFCVX39crW6h7knXNrDF4PrSJf"),
+			(1, "1682A5hxfiS1Kn1jrUnMYv14T9EuEnsgnBbujGfYbeEbSK3w"), // proof https://kusama.subscan.io/extrinsic/16919077-2
 			(1, "13xS6fK6MHjApLnjdX7TJYw1niZmiXasSN91bNtiXQjgEtNx"), // proof https://kusama.subscan.io/extrinsic/16918212-7
 		];
 
