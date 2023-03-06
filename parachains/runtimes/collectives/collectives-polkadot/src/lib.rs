@@ -46,7 +46,7 @@ pub mod fellowship;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use fellowship::{
-	migrations::import_kusama_fellowship, pallet_fellowship_origins, Fellows,
+	migration::import_kusama_fellowship, pallet_fellowship_origins, Fellows,
 	FellowshipCollectiveInstance,
 };
 use impls::{AllianceProposalProvider, EqualOrGreatestRootCmp, ToParentTreasury};
