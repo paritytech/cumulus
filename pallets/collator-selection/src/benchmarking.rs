@@ -124,34 +124,34 @@ benchmarks! {
 	}
 
 	add_invulnerable {
-		let origin = T::UpdateOrigin::successful_origin();
-		let max_invulnerables = T::MaxInvulnerables::get();
-		let b in 1 .. max_invulnerables;
-		let existing_set = register_validators::<T>(b);
-		let invulnerables = <CollatorSelection<T>>::set_invulnerables(origin, existing_set.clone());
-		let new = register_validators(max_invulnerables)
+		let origin =
+			T::UpdateOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
+
+		let b in 1 .. T::MaxInvulnerables::get() - 1;
+		register_validators::<T>(b);
+		let new: T::AccountId = whitelisted_caller();	
 	}: {
 		assert_ok!(
-			<CollatorSelection<T>>::add_invulnerables(origin, new.clone())
+			<CollatorSelection<T>>::add_invulnerable(origin, new.clone())
 		);
 	}
 	verify {
-		assert_last_event::<T>(Event::NewInvulnerables{added: new}.into());
+		assert_last_event::<T>(Event::NewInvulnerable{added: new}.into());
 	}
 
 	remove_invulnerable {
-		let origin = T::UpdateOrigin::successful_origin();
-		let max_invulnerables = T::MaxInvulnerables::get();
-		let b in 1 .. max_invulnerables + 1;
-		let existing_set = register_validators::<T>(b);
-		let invulnerables = <CollatorSelection<T>>::set_invulnerables(origin, existing_set.clone());
+		let origin =
+			T::UpdateOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
+
+		let b in 1 .. T::MaxInvulnerables::get();
+		let to_remove: T::AccountId = whitelisted_caller();
 	}: {
 		assert_ok!(
-			<CollatorSelection<T>>::remove_invulnerables(origin, max_invulnerables.clone())
+			<CollatorSelection<T>>::remove_invulnerable(origin, to_remove.clone())
 		);
 	}
 	verify {
-		assert_last_event::<T>(Event::InvulnerableRemoved{removed: max_invulnerables}.into());
+		assert_last_event::<T>(Event::InvulnerableRemoved{removed: to_remove}.into());
 	}
 
 	set_desired_candidates {
