@@ -65,6 +65,25 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 			.saturating_add(T::DbWeight::get().writes(1))
 			.saturating_add(Weight::from_parts(0, 2554).saturating_mul(b.into()))
 	}
+	fn add_invulnerable() -> Weight {
+		Weight::from_parts(18_563_000 as u64, 0)
+		.saturating_add(Weight::from_parts(0, 213))
+			// Standard Error: 2_987
+			// Standard Error: 1_259
+			.saturating_add(Weight::from_parts(101_424, 0).saturating_mul(c.into()))
+			.saturating_add(T::DbWeight::get().reads(5))
+			.saturating_add(T::DbWeight::get().writes(2))
+			.saturating_add(Weight::from_parts(0, 49).saturating_mul(c.into()))
+	}
+	fn remove_invulnerable() -> Weight {
+		Weight::from_parts(18_563_000 as u64, 0)
+		.saturating_add(Weight::from_parts(0, 213))
+			// Standard Error: 2_987
+			.saturating_add(Weight::from_parts(101_424, 0).saturating_mul(c.into()))
+			.saturating_add(T::DbWeight::get().reads(5))
+			.saturating_add(T::DbWeight::get().writes(2))
+			.saturating_add(Weight::from_parts(0, 49).saturating_mul(c.into()))
+	}
 	/// Storage: CollatorSelection DesiredCandidates (r:0 w:1)
 	/// Proof: CollatorSelection DesiredCandidates (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	fn set_desired_candidates() -> Weight {
