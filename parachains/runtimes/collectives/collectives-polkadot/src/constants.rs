@@ -18,13 +18,13 @@ pub mod account {
 
 	/// Relay Chain treasury pallet id, used to convert into AccountId
 	pub const RELAY_TREASURY_PALLET_ID: PalletId = PalletId(*b"py/trsry");
-	/// Alliance pallet id.
+	/// Alliance pallet ID.
 	/// It is used as a temporarily place to deposit a slashed imbalance
-	/// before the teleport to the treasury.
+	/// before the teleport to the Treasury.
 	pub const ALLIANCE_PALLET_ID: PalletId = PalletId(*b"py/allia");
-	/// Referenda pallet id.
+	/// Referenda pallet ID.
 	/// It is used as a temporarily place to deposit a slashed imbalance
-	/// before the teleport to the treasury.
+	/// before the teleport to the Treasury.
 	pub const REFERENDA_PALLET_ID: PalletId = PalletId(*b"py/refer");
 }
 
