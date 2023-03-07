@@ -43,6 +43,8 @@ integration-tests-run:
       artifacts: true
     - job: integration-tests-build-polkadot
       artifacts: true
+  before_script:
+    - echo ok
   script:
     - mkdir -p ./bin
     - mkdir -p ./logs
