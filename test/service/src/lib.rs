@@ -212,7 +212,8 @@ async fn build_relay_chain_interface(
 			polkadot_service::IsCollator::Yes(CollatorPair::generate().0)
 		},
 		None,
-	)?;
+	)
+	.map_err(|e| RelayChainError::Application(Box::new(e) as Box<_>))?;
 
 	task_manager.add_child(relay_chain_full_node.task_manager);
 	tracing::info!("Using inprocess node.");
@@ -268,10 +269,7 @@ where
 		&mut task_manager,
 	)
 	.await
-	.map_err(|e| match e {
-		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
-		s => s.to_string().into(),
-	})?;
+	.map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
 	let block_announce_validator =
 		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
