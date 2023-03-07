@@ -56,6 +56,8 @@ pub(crate) struct CollatorOverseerGenArgs<'a> {
 	pub runtime_client: Arc<BlockChainRpcClient>,
 	/// Underlying network service implementation.
 	pub network_service: Arc<sc_network::NetworkService<Block, PHash>>,
+	/// Syncing oracle.
+	pub sync_oracle: Box<dyn sp_consensus::SyncOracle + Send>,
 	/// Underlying authority discovery service.
 	pub authority_discovery_service: AuthorityDiscoveryService,
 	/// Receiver for collation request protocol
@@ -79,6 +81,7 @@ fn build_overseer<'a>(
 	CollatorOverseerGenArgs {
 		runtime_client,
 		network_service,
+		sync_oracle,
 		authority_discovery_service,
 		collation_req_receiver,
 		available_data_req_receiver,
@@ -92,7 +95,6 @@ fn build_overseer<'a>(
 	(Overseer<SpawnGlue<sc_service::SpawnTaskHandle>, Arc<BlockChainRpcClient>>, OverseerHandle),
 	Error,
 > {
-	let leaves = Vec::new();
 	let metrics = <OverseerMetrics as MetricsTrait>::register(registry)?;
 	let spawner = SpawnGlue(spawner);
 	let network_bridge_metrics: NetworkBridgeMetrics = Metrics::register(registry)?;
@@ -122,7 +124,7 @@ fn build_overseer<'a>(
 		.network_bridge_rx(NetworkBridgeRxSubsystem::new(
 			network_service.clone(),
 			authority_discovery_service.clone(),
-			Box::new(network_service.clone()),
+			sync_oracle,
 			network_bridge_metrics.clone(),
 			peer_set_protocol_names.clone(),
 		))
@@ -146,11 +148,6 @@ fn build_overseer<'a>(
 		.dispute_coordinator(DummySubsystem)
 		.dispute_distribution(DummySubsystem)
 		.chain_selection(DummySubsystem)
-		.leaves(Vec::from_iter(
-			leaves
-				.into_iter()
-				.map(|BlockInfo { hash, parent_hash: _, number }| (hash, number)),
-		))
 		.activation_external_listeners(Default::default())
 		.span_per_active_leaf(Default::default())
 		.active_leaves(Default::default())

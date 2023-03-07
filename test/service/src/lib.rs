@@ -267,7 +267,7 @@ async fn build_relay_chain_interface(
 	Ok(Arc::new(RelayChainInProcessInterface::new(
 		relay_chain_full_node.client.clone(),
 		relay_chain_full_node.backend.clone(),
-		Arc::new(relay_chain_full_node.network.clone()),
+		relay_chain_full_node.sync_service.clone(),
 		relay_chain_full_node.overseer_handle.ok_or(RelayChainError::GenericError(
 			"Overseer should be running in full node.".to_string(),
 		))?,
@@ -323,8 +323,7 @@ where
 	})?;
 
 	let import_queue_service = params.import_queue.service();
-
-	let (network, system_rpc_tx, tx_handler_controller, start_network) =
+	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
 		build_network(BuildNetworkParams {
 			parachain_config: &parachain_config,
 			client: client.clone(),
@@ -352,14 +351,15 @@ where
 		keystore: params.keystore_container.sync_keystore(),
 		backend: backend.clone(),
 		network: network.clone(),
+		sync_service: sync_service.clone(),
 		system_rpc_tx,
 		tx_handler_controller,
 		telemetry: None,
 	})?;
 
 	let announce_block = {
-		let network = network.clone();
-		Arc::new(move |hash, data| network.announce_block(hash, data))
+		let sync_service = sync_service.clone();
+		Arc::new(move |hash, data| sync_service.announce_block(hash, data))
 	};
 
 	let announce_block = wrap_announce_block
@@ -804,7 +804,7 @@ impl TestNode {
 		self.send_extrinsic(
 			runtime::SudoCall::sudo_unchecked_weight {
 				call: Box::new(call.into()),
-				weight: Weight::from_ref_time(1_000),
+				weight: Weight::from_parts(1_000, 0),
 			},
 			Sr25519Keyring::Alice,
 		)
