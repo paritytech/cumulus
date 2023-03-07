@@ -130,7 +130,7 @@ benchmarks! {
 
 		let b in 1 .. T::MaxInvulnerables::get() - 1;
 		let new = register_validators::<T>(b);
-		let new: T::AccountId = whitelisted_caller();	
+		let new: T::AccountId = whitelisted_caller();
 	}: {
 		assert_ok!(
 			<CollatorSelection<T>>::add_invulnerable(origin, new.clone())

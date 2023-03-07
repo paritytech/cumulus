@@ -62,7 +62,7 @@ fn it_should_set_invulnerables() {
 }
 
 #[test]
-fn add_invulnerable_works(){
+fn add_invulnerable_works() {
 	new_test_ext().execute_with(|| {
 		let new = 3;
 		let num_prev_invulnerables = CollatorSelection::invulnerables().to_vec().len();
@@ -83,7 +83,7 @@ fn add_invulnerable_works(){
 		);
 
 		// list was not exploded
-		assert_eq!(CollatorSelection::invulnerables().to_vec().len(), num_prev_invulnerables+1);
+		assert_eq!(CollatorSelection::invulnerables().to_vec().len(), num_prev_invulnerables + 1);
 
 		// new element is now part of the invulnerables list
 		assert!(CollatorSelection::invulnerables().to_vec().contains(&new));
@@ -107,7 +107,7 @@ fn add_invulnerable_works(){
 }
 
 #[test]
-fn remove_invulnerable_works(){
+fn remove_invulnerable_works() {
 	new_test_ext().execute_with(|| {
 		let to_remove = 1;
 

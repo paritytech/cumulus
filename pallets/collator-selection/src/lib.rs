@@ -283,7 +283,7 @@ pub mod pallet {
 		/// Validator ID is not yet registered
 		ValidatorNotRegistered,
 		/// Validator ID still associated with invalid Invulnerable
-		ValidatorStillRegistered
+		ValidatorStillRegistered,
 	}
 
 	#[pallet::hooks]
@@ -328,48 +328,46 @@ pub mod pallet {
 			new: <T>::AccountId,
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
-			
+
 			let invulnerables = Self::invulnerables().to_vec();
 
 			// ensure we don't overflow invulnerables quantity
 			let length = invulnerables.len();
 			ensure!((length as u32) < T::MaxInvulnerables::get(), Error::<T>::TooManyInvulnerables);
-			
+
 			// ensure this new invulnerable is not already nomitad
 			ensure!(!invulnerables.contains(&new), Error::<T>::AlreadyInvulnerable);
-			
+
 			// ensure this new invulnerable has registred a validator key
-			let validator_key = 
-				T::ValidatorIdOf::convert(new.clone()).ok_or(Error::<T>::NoAssociatedValidatorId)?;
-				ensure!(
-					T::ValidatorRegistration::is_registered(&validator_key),
-					Error::<T>::ValidatorNotRegistered
-				);
-			
+			let validator_key = T::ValidatorIdOf::convert(new.clone())
+				.ok_or(Error::<T>::NoAssociatedValidatorId)?;
+			ensure!(
+				T::ValidatorRegistration::is_registered(&validator_key),
+				Error::<T>::ValidatorNotRegistered
+			);
+
 			<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
 				invulnerables.try_push(new.clone()).map_err(|_| Error::<T>::Unknown)?;
 				invulnerables.sort();
 				Ok(())
 			})?;
 
-			Self::deposit_event(Event::NewInvulnerable {
-				added: new,
-			});
+			Self::deposit_event(Event::NewInvulnerable { added: new });
 			Ok(().into())
 		}
 
 		#[pallet::call_index(6)]
 		#[pallet::weight(T::WeightInfo::remove_invulnerable())]
 		pub fn remove_invulnerable(
-		 	origin: OriginFor<T>,
-		 	to_remove: <T>::AccountId,
+			origin: OriginFor<T>,
+			to_remove: <T>::AccountId,
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
-			
+
 			let invulnerables = Self::invulnerables().to_vec();
- 
+
 			// ensure invulnerable is actually in the list before trying to remove it
-			 ensure!(invulnerables.contains(&to_remove), Error::<T>::NotInvulnerable);
+			ensure!(invulnerables.contains(&to_remove), Error::<T>::NotInvulnerable);
 
 			// remove invulnerable from invulnerables list
 			<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
@@ -380,13 +378,10 @@ pub mod pallet {
 				invulnerables.remove(pos);
 				Ok(())
 			})?;
-			
-		 	Self::deposit_event(Event::InvulnerableRemoved {
-		 		removed: to_remove,
-		 	});
-		 	Ok(().into())
+
+			Self::deposit_event(Event::InvulnerableRemoved { removed: to_remove });
+			Ok(().into())
 		}
-		
 
 		/// Set the ideal number of collators (not including the invulnerables).
 		/// If lowering this number, then the number of running collators could be higher than this figure.
