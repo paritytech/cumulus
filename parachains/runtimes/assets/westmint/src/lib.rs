@@ -51,7 +51,7 @@ use frame_support::{
 	parameter_types,
 	traits::{
 		tokens::nonfungibles_v2::Inspect, AsEnsureOriginWithArg, ConstU32, ConstU64, ConstU8,
-		InstanceFilter,
+		Everything, InstanceFilter,
 	},
 	weights::{ConstantMultiplier, Weight},
 	PalletId, RuntimeDebug,
@@ -269,6 +269,7 @@ impl pallet_utility::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	type PalletsOrigin = OriginCaller;
 	type WeightInfo = weights::pallet_utility::WeightInfo<Runtime>;
+	type CallFilter = Everything;
 }
 
 parameter_types! {

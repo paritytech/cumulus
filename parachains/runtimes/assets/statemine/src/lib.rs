@@ -49,7 +49,10 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{AsEnsureOriginWithArg, ConstU32, ConstU64, ConstU8, EitherOfDiverse, InstanceFilter},
+	traits::{
+		AsEnsureOriginWithArg, ConstU32, ConstU64, ConstU8, EitherOfDiverse, Everything,
+		InstanceFilter,
+	},
 	weights::{ConstantMultiplier, Weight},
 	PalletId, RuntimeDebug,
 };
@@ -281,6 +284,7 @@ impl pallet_utility::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	type PalletsOrigin = OriginCaller;
 	type WeightInfo = weights::pallet_utility::WeightInfo<Runtime>;
+	type CallFilter = Everything;
 }
 
 parameter_types! {
