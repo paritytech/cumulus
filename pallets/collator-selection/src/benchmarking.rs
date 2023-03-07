@@ -110,10 +110,11 @@ benchmarks! {
 	where_clause { where T: pallet_authorship::Config + session::Config }
 
 	set_invulnerables {
-		let b in 1 .. T::MaxInvulnerables::get();
-		let new_invulnerables = register_validators::<T>(b);
 		let origin =
 			T::UpdateOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
+
+		let b in 1 .. T::MaxInvulnerables::get();
+		let new_invulnerables = register_validators::<T>(b);
 	}: {
 		assert_ok!(
 			<CollatorSelection<T>>::set_invulnerables(origin, new_invulnerables.clone())
@@ -128,7 +129,7 @@ benchmarks! {
 			T::UpdateOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
 
 		let b in 1 .. T::MaxInvulnerables::get() - 1;
-		register_validators::<T>(b);
+		let new = register_validators::<T>(b);
 		let new: T::AccountId = whitelisted_caller();	
 	}: {
 		assert_ok!(
@@ -143,8 +144,10 @@ benchmarks! {
 		let origin =
 			T::UpdateOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
 
-		let b in 1 .. T::MaxInvulnerables::get();
+		let b in 1 .. T::MaxInvulnerables::get() - 1;
+		let to_remove = register_validators::<T>(b);
 		let to_remove: T::AccountId = whitelisted_caller();
+		println!("{}", to_remove);
 	}: {
 		assert_ok!(
 			<CollatorSelection<T>>::remove_invulnerable(origin, to_remove.clone())
