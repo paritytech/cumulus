@@ -111,7 +111,7 @@ pub async fn build_smoldot_client(
 			database_content: "",
 			user_data: (),
 		})
-		.map_err(RelayChainError::GenericError)?;
+		.map_err(|e| RelayChainError::GenericError(e.to_string()))?;
 
 	Ok((client, chain_id, json_rpc_responses.expect("JSON RPC is not disabled; qed")))
 }

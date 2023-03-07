@@ -301,7 +301,7 @@ pub struct RunCmd {
 
 	/// EXPERIMENTAL: Embed a light client for the relay chain. Only supported for full-nodes.
 	/// Will use the specified relay chain chainspec.
-	#[arg(long, conflicts_with = "relay_chain_rpc_urls")]
+	#[arg(long, conflicts_with_all = ["relay_chain_rpc_urls", "collator"])]
 	pub relay_chain_light_client: bool,
 }
 
