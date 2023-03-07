@@ -166,7 +166,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 		}
 
 		match call {
-			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
 			RuntimeCall::System(
 				frame_system::Call::set_heap_pages { .. } |
 				frame_system::Call::set_code { .. } |
