@@ -11,7 +11,7 @@ use frame_support::{
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
-use xcm::latest::prelude::*;
+use xcm::{latest::prelude::*, CreateMatcher, MatchXcm};
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowTopLevelPaidExecutionFrom,
 	CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, IsConcrete, NativeAsset, ParentIsPreset,
@@ -122,32 +122,29 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 		_max_weight: Weight,
 		_weight_credit: &mut Weight,
 	) -> Result<(), ()> {
-		if message.iter().any(|inst| {
-			matches!(
-				inst,
-				InitiateReserveWithdraw {
-					reserve: MultiLocation { parents: 1, interior: Here },
-					..
-				} | DepositReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. } |
-					TransferReserveAsset {
-						dest: MultiLocation { parents: 1, interior: Here },
-						..
-					}
-			)
-		}) {
-			return Err(()) // Deny
-		}
+		message.matcher().match_next_inst_while(true, |inst| match inst {
+			InitiateReserveWithdraw {
+				reserve: MultiLocation { parents: 1, interior: Here },
+				..
+			} |
+			DepositReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. } |
+			TransferReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. } => {
+				Err(()) // Deny
+			},
+			// An unexpected reserve transfer has arrived from the Relay Chain. Generally,
+			// `IsReserve` should not allow this, but we just log it here.
+			ReserveAssetDeposited { .. }
+				if matches!(origin, MultiLocation { parents: 1, interior: Here }) =>
+			{
+				log::warn!(
+					target: "xcm::barrier",
+					"Unexpected ReserveAssetDeposited from the Relay Chain",
+				);
+				Ok(ControlFlow::Continue)
+			},
+			_ => Ok(ControlFlow::Continue),
+		})?;
 
-		// An unexpected reserve transfer has arrived from the Relay Chain. Generally, `IsReserve`
-		// should not allow this, but we just log it here.
-		if matches!(origin, MultiLocation { parents: 1, interior: Here }) &&
-			message.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
-		{
-			log::warn!(
-				target: "xcm::barriers",
-				"Unexpected ReserveAssetDeposited from the Relay Chain",
-			);
-		}
 		// Permit everything else
 		Ok(())
 	}
