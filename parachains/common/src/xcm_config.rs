@@ -61,10 +61,10 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 					target: "xcm::barrier",
 					"Unexpected ReserveAssetDeposited from the Relay Chain",
 				);
-				Ok(ControlFlow::Continue)
+				Ok(ControlFlow::Continue(()))
 			},
 
-			_ => Ok(ControlFlow::Continue),
+			_ => Ok(ControlFlow::Continue(())),
 		})?;
 
 		// Permit everything else
