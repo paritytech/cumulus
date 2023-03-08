@@ -16,7 +16,7 @@
 
 //! A module that is responsible for migration of storage.
 
-use crate::{Config, Pallet, Overweight, QueueConfig, DEFAULT_POV_SIZE};
+use crate::{Config, Overweight, Pallet, QueueConfig, DEFAULT_POV_SIZE};
 use frame_support::{
 	pallet_prelude::*,
 	traits::StorageVersion,
