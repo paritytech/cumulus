@@ -54,5 +54,3 @@ where
 		Ok(pallet_xcm::Origin::Xcm(a.clone()).into())
 	}
 }
-
-// TODO:check-parameter - add some tests here

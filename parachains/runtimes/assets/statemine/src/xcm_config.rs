@@ -85,7 +85,7 @@ pub type CurrencyTransactor = CurrencyAdapter<
 	(),
 >;
 
-/// `AssetId/Balancer` converter for `TrustBackedAssets`
+/// `AssetId/Balance` converter for `TrustBackedAssets`
 pub type TrustBackedAssetsConvertedConcreteId =
 	assets_common::TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance>;
 

@@ -24,7 +24,7 @@ use westmint_runtime::{
 use xcm::{latest::prelude::*, VersionedXcm, MAX_XCM_DECODE_DEPTH};
 use xcm_builder::AsPrefixedGeneralIndex;
 use xcm_executor::{
-	traits::{Convert, JustTry, WeightTrader},
+	traits::{Convert, Identity, JustTry, WeightTrader},
 	XcmExecutor,
 };
 
@@ -382,9 +382,15 @@ fn test_assets_balances_api_works() {
 		.build()
 		.execute_with(|| {
 			let local_asset_id = 1;
+			let foreign_asset_id_multilocation =
+				MultiLocation { parents: 2, interior: X1(GlobalConsensus(Kusama)) };
 
 			// check before
 			assert_eq!(Assets::balance(local_asset_id, AccountId::from(ALICE)), 0);
+			assert_eq!(
+				ForeignAssets::balance(foreign_asset_id_multilocation, AccountId::from(ALICE)),
+				0
+			);
 			assert_eq!(Balances::free_balance(AccountId::from(ALICE)), 0);
 			assert!(Runtime::query_account_balances(AccountId::from(ALICE)).unwrap().is_empty());
 
@@ -411,15 +417,37 @@ fn test_assets_balances_api_works() {
 				minimum_asset_balance
 			));
 
+			// create foreign asset
+			let foreign_asset_minimum_asset_balance = 3333333_u128;
+			assert_ok!(ForeignAssets::force_create(
+				RuntimeHelper::<Runtime>::root_origin(),
+				foreign_asset_id_multilocation.clone().into(),
+				AccountId::from(SOME_ASSET_ADMIN).into(),
+				false,
+				foreign_asset_minimum_asset_balance
+			));
+
+			// We first mint enough asset for the account to exist for assets
+			assert_ok!(ForeignAssets::mint(
+				RuntimeHelper::<Runtime>::origin_of(AccountId::from(SOME_ASSET_ADMIN)),
+				foreign_asset_id_multilocation.clone().into(),
+				AccountId::from(ALICE).into(),
+				6 * foreign_asset_minimum_asset_balance
+			));
+
 			// check after
 			assert_eq!(
 				Assets::balance(local_asset_id, AccountId::from(ALICE)),
 				minimum_asset_balance
 			);
+			assert_eq!(
+				ForeignAssets::balance(foreign_asset_id_multilocation, AccountId::from(ALICE)),
+				6 * minimum_asset_balance
+			);
 			assert_eq!(Balances::free_balance(AccountId::from(ALICE)), some_currency);
 
 			let result = Runtime::query_account_balances(AccountId::from(ALICE)).unwrap();
-			assert_eq!(result.len(), 2);
+			assert_eq!(result.len(), 3);
 
 			// check currency
 			assert!(result.iter().any(|asset| asset.eq(
@@ -432,6 +460,12 @@ fn test_assets_balances_api_works() {
 			assert!(result.iter().any(|asset| asset.eq(&(
 				AssetIdForTrustBackedAssetsConvert::reverse_ref(local_asset_id).unwrap(),
 				minimum_asset_balance
+			)
+				.into())));
+			// check foreign asset
+			assert!(result.iter().any(|asset| asset.eq(&(
+				Identity::reverse_ref(foreign_asset_id_multilocation).unwrap(),
+				6 * foreign_asset_minimum_asset_balance
 			)
 				.into())));
 		});

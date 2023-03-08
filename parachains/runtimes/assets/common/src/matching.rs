@@ -30,6 +30,18 @@ impl<Location: Get<MultiLocation>> Contains<MultiLocation> for StartsWith<Locati
 	}
 }
 
+pub struct Equals<T>(sp_std::marker::PhantomData<T>);
+impl<Location: Get<MultiLocation>> Contains<MultiLocation> for Equals<Location> {
+	fn contains(t: &MultiLocation) -> bool {
+		t == &Location::get()
+	}
+}
+
+frame_support::parameter_types! {
+	pub LocalMultiLocationPattern: MultiLocation = MultiLocation::new(0, Here);
+	pub ParentLocation: MultiLocation = MultiLocation::parent();
+}
+
 /// Accepts an asset if it is from the origin.
 pub struct IsForeignConcreteAsset<IsForeign>(sp_std::marker::PhantomData<IsForeign>);
 impl<IsForeign: ContainsPair<MultiLocation, MultiLocation>> ContainsPair<MultiAsset, MultiLocation>
@@ -42,11 +54,11 @@ impl<IsForeign: ContainsPair<MultiLocation, MultiLocation>> ContainsPair<MultiAs
 }
 
 /// Checks if 'a' is from sibling location `b`, so means that `MultiLocation-a' starts with `MultiLocation-b'
-pub struct IsSiblingParachain<SelfParaId>(sp_std::marker::PhantomData<SelfParaId>);
+pub struct FromSiblingParachain<SelfParaId>(sp_std::marker::PhantomData<SelfParaId>);
 impl<SelfParaId: Get<ParaId>> ContainsPair<MultiLocation, MultiLocation>
-	for IsSiblingParachain<SelfParaId>
+	for FromSiblingParachain<SelfParaId>
 {
-	fn contains(a: &MultiLocation, b: &MultiLocation) -> bool {
+	fn contains(&a: &MultiLocation, b: &MultiLocation) -> bool {
 		// `a` needs to be from `b` at least
 		if !a.starts_with(&b) {
 			return false
@@ -64,5 +76,3 @@ impl<SelfParaId: Get<ParaId>> ContainsPair<MultiLocation, MultiLocation>
 		}
 	}
 }
-
-// TODO:check-parameter - add some tests here
