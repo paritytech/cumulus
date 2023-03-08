@@ -42,30 +42,37 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 		_max_weight: Weight,
 		_weight_credit: &mut Weight,
 	) -> Result<(), ()> {
-		message.matcher().match_next_inst_while(|_| true, |inst| match inst {
-			InitiateReserveWithdraw {
-				reserve: MultiLocation { parents: 1, interior: Here },
-				..
-			} |
-			DepositReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. } |
-			TransferReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. } => {
-				Err(()) // Deny
-			},
+		message.matcher().match_next_inst_while(
+			|_| true,
+			|inst| match inst {
+				InitiateReserveWithdraw {
+					reserve: MultiLocation { parents: 1, interior: Here },
+					..
+				} |
+				DepositReserveAsset {
+					dest: MultiLocation { parents: 1, interior: Here }, ..
+				} |
+				TransferReserveAsset {
+					dest: MultiLocation { parents: 1, interior: Here }, ..
+				} => {
+					Err(()) // Deny
+				},
 
-			// An unexpected reserve transfer has arrived from the Relay Chain. Generally,
-			// `IsReserve` should not allow this, but we just log it here.
-			ReserveAssetDeposited { .. }
-				if matches!(origin, MultiLocation { parents: 1, interior: Here }) =>
-			{
-				log::warn!(
-					target: "xcm::barrier",
-					"Unexpected ReserveAssetDeposited from the Relay Chain",
-				);
-				Ok(ControlFlow::Continue(()))
-			},
+				// An unexpected reserve transfer has arrived from the Relay Chain. Generally,
+				// `IsReserve` should not allow this, but we just log it here.
+				ReserveAssetDeposited { .. }
+					if matches!(origin, MultiLocation { parents: 1, interior: Here }) =>
+				{
+					log::warn!(
+						target: "xcm::barrier",
+						"Unexpected ReserveAssetDeposited from the Relay Chain",
+					);
+					Ok(ControlFlow::Continue(()))
+				},
 
-			_ => Ok(ControlFlow::Continue(())),
-		})?;
+				_ => Ok(ControlFlow::Continue(())),
+			},
+		)?;
 
 		// Permit everything else
 		Ok(())
