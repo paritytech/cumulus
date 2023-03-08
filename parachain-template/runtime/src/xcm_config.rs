@@ -122,7 +122,7 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 		_max_weight: Weight,
 		_weight_credit: &mut Weight,
 	) -> Result<(), ()> {
-		message.matcher().match_next_inst_while(true, |inst| match inst {
+		message.matcher().match_next_inst_while(|_| true, |inst| match inst {
 			InitiateReserveWithdraw {
 				reserve: MultiLocation { parents: 1, interior: Here },
 				..
