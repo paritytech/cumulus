@@ -30,7 +30,7 @@ use sp_runtime::{
 };
 use xcm::prelude::*;
 use xcm_builder::{CurrencyAdapter, FixedWeightBounds, IsConcrete, NativeAsset, ParentIsPreset};
-use xcm_executor::traits::ConvertOrigin;
+use xcm_executor::traits::{ConvertOrigin, ShouldExecute};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -138,6 +138,19 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 
 pub type LocationToAccountId = (ParentIsPreset<AccountId>,);
 
+pub struct BarrierMock {}
+
+impl ShouldExecute for BarrierMock {
+	fn should_execute<RuntimeCall>(
+		_origin: &MultiLocation,
+		_instructions: &mut [Instruction<RuntimeCall>],
+		_max_weight: Weight,
+		_weight_credit: &mut Weight,
+	) -> Result<(), ()> {
+		Ok(())
+	}
+}
+
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
 	type RuntimeCall = RuntimeCall;
@@ -148,7 +161,7 @@ impl xcm_executor::Config for XcmConfig {
 	type IsReserve = NativeAsset;
 	type IsTeleporter = NativeAsset;
 	type UniversalLocation = UniversalLocation;
-	type Barrier = ();
+	type Barrier = BarrierMock;
 	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 	type Trader = ();
 	type ResponseHandler = ();
@@ -180,8 +193,8 @@ impl<RuntimeOrigin: OriginTrait> ConvertOrigin<RuntimeOrigin>
 		kind: OriginKind,
 	) -> Result<RuntimeOrigin, MultiLocation> {
 		let origin = origin.into();
-		if kind == OriginKind::Superuser &&
-			matches!(
+		if kind == OriginKind::Superuser
+			&& matches!(
 				origin,
 				MultiLocation {
 					parents: 1,
@@ -195,6 +208,18 @@ impl<RuntimeOrigin: OriginTrait> ConvertOrigin<RuntimeOrigin>
 	}
 }
 
+pub struct XcmDeferFilterMock;
+
+impl XcmDeferFilter<RuntimeCall> for XcmDeferFilterMock {
+	fn deferred_by(
+		_para: ParaId,
+		_sent_at: RelayBlockNumber,
+		_xcm: &VersionedXcm<RuntimeCall>,
+	) -> Option<RelayBlockNumber> {
+		Some(5)
+	}
+}
+
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = xcm_executor::XcmExecutor<XcmConfig>;
@@ -205,9 +230,15 @@ impl Config for Test {
 	type ControllerOriginConverter = SystemParachainAsSuperuser<RuntimeOrigin>;
 	type WeightInfo = ();
 	type PriceForSiblingDelivery = ();
+	type XcmDeferFilter = XcmDeferFilterMock;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	t.into()
+
+	let mut r: sp_io::TestExternalities = t.into();
+
+	r.execute_with(|| System::set_block_number(1));
+
+	r
 }
