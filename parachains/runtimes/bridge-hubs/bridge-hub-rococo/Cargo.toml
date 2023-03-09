@@ -72,6 +72,9 @@ pallet-collator-selection = { path = "../../../../pallets/collator-selection", d
 parachain-info = { path = "../../../../parachains/pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../../parachains/common", default-features = false }
 
+# Ethereum Beacon Client (Snowbridge)
+ethereum-beacon-client = { git = "https://github.com/Snowfork/snowbridge.git", package = "snowbridge-ethereum-beacon-client", default-features = false, branch = "main", features=["minimal"]}
+
 [features]
 default = [
 	"std",
@@ -126,6 +129,7 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"xcm/std",
+	"ethereum-beacon-client/std",
 ]
 
 runtime-benchmarks = [
@@ -144,6 +148,7 @@ runtime-benchmarks = [
 	"pallet-collator-selection/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
+	"ethereum-beacon-client/runtime-benchmarks",
 ]
 
 try-runtime = [

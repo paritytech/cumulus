@@ -413,6 +413,63 @@ impl pallet_utility::Config for Runtime {
 	type WeightInfo = weights::pallet_utility::WeightInfo<Runtime>;
 }
 
+// Ethereum Bridge
+parameter_types! {
+	pub const MaxSyncCommitteeSize: u32 = 32;
+	pub const MaxProofBranchSize: u32 = 20;
+	pub const MaxExtraDataSize: u32 = 32;
+	pub const MaxLogsBloomSize: u32 = 256;
+	pub const MaxFeeRecipientSize: u32 = 20;
+	pub const MaxDepositDataSize: u32 = 16;
+	pub const MaxPublicKeySize: u32 = 48;
+	pub const MaxSignatureSize: u32 = 96;
+	pub const MaxProposerSlashingSize: u32 = 16;
+	pub const MaxAttesterSlashingSize: u32 = 2;
+	pub const MaxVoluntaryExitSize: u32 = 16;
+	pub const MaxAttestationSize: u32 = 128;
+	pub const MaxValidatorsPerCommittee: u32 = 2048;
+	pub const MaxSlotsPerHistoricalRoot: u64 = 64;
+	pub const MaxFinalizedHeaderSlotArray: u32 = 1000;
+	pub const WeakSubjectivityPeriodSeconds: u32 = 97200;
+	pub const ChainForkVersions: ForkVersions = ForkVersions{
+		genesis: Fork {
+			version: [0, 0, 0, 1], // 0x00000001
+			epoch: 0,
+		},
+		altair: Fork {
+			version: [1, 0, 0, 1], // 0x01000001
+			epoch: 0,
+		},
+		bellatrix: Fork {
+			version: [2, 0, 0, 1], // 0x02000001
+			epoch: 0,
+		},
+	};
+}
+
+impl ethereum_beacon_client::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
+	type MaxSyncCommitteeSize = MaxSyncCommitteeSize;
+	type MaxProofBranchSize = MaxProofBranchSize;
+	type MaxExtraDataSize = MaxExtraDataSize;
+	type MaxLogsBloomSize = MaxLogsBloomSize;
+	type MaxFeeRecipientSize = MaxFeeRecipientSize;
+	type MaxDepositDataSize = MaxDepositDataSize;
+	type MaxPublicKeySize = MaxPublicKeySize;
+	type MaxSignatureSize = MaxSignatureSize;
+	type MaxProposerSlashingSize = MaxProposerSlashingSize;
+	type MaxAttesterSlashingSize = MaxAttesterSlashingSize;
+	type MaxVoluntaryExitSize = MaxVoluntaryExitSize;
+	type MaxAttestationSize = MaxAttestationSize;
+	type MaxValidatorsPerCommittee = MaxValidatorsPerCommittee;
+	type MaxSlotsPerHistoricalRoot = MaxSlotsPerHistoricalRoot;
+	type MaxFinalizedHeaderSlotArray = MaxFinalizedHeaderSlotArray;
+	type ForkVersions = ChainForkVersions;
+	type WeakSubjectivityPeriodSeconds = WeakSubjectivityPeriodSeconds;
+	type WeightInfo = weights::ethereum_beacon_client::SnowbridgeWeight<Self>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -448,6 +505,9 @@ construct_runtime!(
 		// Handy utilities.
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
+
+		// Ethereum Bridge
+		EthereumBeaconClient: ethereum_beacon_client::{Pallet, Call, Config<T>, Storage, Event<T>} = 50,
 	}
 );
 
@@ -471,6 +531,8 @@ mod benches {
 		// NOTE: Make sure you point to the individual modules below.
 		[pallet_xcm_benchmarks::fungible, XcmBalances]
 		[pallet_xcm_benchmarks::generic, XcmGeneric]
+		// Ethereum Bridge
+		[ethereum_beacon_client, EthereumBeaconClient]
 	);
 }
 
