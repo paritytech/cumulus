@@ -27,6 +27,7 @@ mod weights;
 pub mod xcm_config;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+use ethereum_beacon_primitives::{Fork, ForkVersions};
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -467,7 +468,7 @@ impl ethereum_beacon_client::Config for Runtime {
 	type MaxFinalizedHeaderSlotArray = MaxFinalizedHeaderSlotArray;
 	type ForkVersions = ChainForkVersions;
 	type WeakSubjectivityPeriodSeconds = WeakSubjectivityPeriodSeconds;
-	type WeightInfo = weights::ethereum_beacon_client::SnowbridgeWeight<Self>;
+	type WeightInfo = ethereum_beacon_client::weights::SnowbridgeWeight<Self>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

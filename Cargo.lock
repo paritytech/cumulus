@@ -865,6 +865,7 @@ dependencies = [
  "scale-info",
  "serde",
  "smallvec",
+ "snowbridge-beacon-primitives",
  "snowbridge-ethereum-beacon-client",
  "sp-api",
  "sp-block-builder",

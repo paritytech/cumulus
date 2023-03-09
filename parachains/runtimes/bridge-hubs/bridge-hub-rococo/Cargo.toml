@@ -74,6 +74,7 @@ parachains-common = { path = "../../../../parachains/common", default-features =
 
 # Ethereum Beacon Client (Snowbridge)
 ethereum-beacon-client = { git = "https://github.com/Snowfork/snowbridge.git", package = "snowbridge-ethereum-beacon-client", default-features = false, branch = "main", features=["minimal"]}
+ethereum-beacon-primitives = { git = "https://github.com/Snowfork/snowbridge.git", package = "snowbridge-beacon-primitives", default-features = false, branch = "main" }
 
 [features]
 default = [
