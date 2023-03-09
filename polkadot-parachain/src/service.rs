@@ -28,7 +28,7 @@ use cumulus_primitives_core::{
 	relay_chain::{Hash as PHash, PersistedValidationData},
 	ParaId,
 };
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
+use cumulus_relay_chain_interface::RelayChainInterface;
 use sp_core::Pair;
 
 use jsonrpsee::RpcModule;
@@ -43,12 +43,11 @@ use sc_consensus::{
 	BlockImportParams, ImportQueue,
 };
 use sc_executor::WasmExecutor;
-use sc_network::NetworkService;
 use sc_network_common::service::NetworkBlock;
+use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::{ApiExt, ConstructRuntimeApi};
-use sp_consensus::CacheKeyId;
 use sp_consensus_aura::AuraApi;
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::{
@@ -359,7 +358,7 @@ where
 		&TaskManager,
 		Arc<dyn RelayChainInterface>,
 		Arc<sc_transaction_pool::FullPool<Block, ParachainClient<RuntimeApi>>>,
-		Arc<NetworkService<Block, Hash>>,
+		Arc<SyncingService<Block>>,
 		SyncCryptoStorePtr,
 		bool,
 	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
@@ -383,10 +382,7 @@ where
 		hwbench.clone(),
 	)
 	.await
-	.map_err(|e| match e {
-		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
-		s => s.to_string().into(),
-	})?;
+	.map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
@@ -394,7 +390,7 @@ where
 	let transaction_pool = params.transaction_pool.clone();
 	let import_queue_service = params.import_queue.service();
 
-	let (network, system_rpc_tx, tx_handler_controller, start_network) =
+	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
 		build_network(BuildNetworkParams {
 			parachain_config: &parachain_config,
 			client: client.clone(),
@@ -418,6 +414,7 @@ where
 		keystore: params.keystore_container.sync_keystore(),
 		backend: backend.clone(),
 		network: network.clone(),
+		sync_service: sync_service.clone(),
 		system_rpc_tx,
 		tx_handler_controller,
 		telemetry: telemetry.as_mut(),
@@ -440,8 +437,8 @@ where
 	}
 
 	let announce_block = {
-		let network = network.clone();
-		Arc::new(move |hash, data| network.announce_block(hash, data))
+		let sync_service = sync_service.clone();
+		Arc::new(move |hash, data| sync_service.announce_block(hash, data))
 	};
 
 	let relay_chain_slot_duration = Duration::from_secs(6);
@@ -459,7 +456,7 @@ where
 			&task_manager,
 			relay_chain_interface.clone(),
 			transaction_pool,
-			network,
+			sync_service,
 			params.keystore_container.sync_keystore(),
 			force_authoring,
 		)?;
@@ -549,7 +546,7 @@ where
 		&TaskManager,
 		Arc<dyn RelayChainInterface>,
 		Arc<sc_transaction_pool::FullPool<Block, ParachainClient<RuntimeApi>>>,
-		Arc<NetworkService<Block, Hash>>,
+		Arc<SyncingService<Block>>,
 		SyncCryptoStorePtr,
 		bool,
 	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
@@ -572,10 +569,7 @@ where
 		hwbench.clone(),
 	)
 	.await
-	.map_err(|e| match e {
-		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
-		s => s.to_string().into(),
-	})?;
+	.map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
@@ -583,8 +577,8 @@ where
 	let transaction_pool = params.transaction_pool.clone();
 	let import_queue_service = params.import_queue.service();
 
-	let (network, system_rpc_tx, tx_handler_controller, start_network) =
-		build_network(cumulus_client_service::BuildNetworkParams {
+	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
+		build_network(BuildNetworkParams {
 			parachain_config: &parachain_config,
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
@@ -620,6 +614,7 @@ where
 		keystore: params.keystore_container.sync_keystore(),
 		backend: backend.clone(),
 		network: network.clone(),
+		sync_service: sync_service.clone(),
 		system_rpc_tx,
 		tx_handler_controller,
 		telemetry: telemetry.as_mut(),
@@ -642,8 +637,8 @@ where
 	}
 
 	let announce_block = {
-		let network = network.clone();
-		Arc::new(move |hash, data| network.announce_block(hash, data))
+		let sync_service = sync_service.clone();
+		Arc::new(move |hash, data| sync_service.announce_block(hash, data))
 	};
 
 	let relay_chain_slot_duration = Duration::from_secs(6);
@@ -660,7 +655,7 @@ where
 			&task_manager,
 			relay_chain_interface.clone(),
 			transaction_pool,
-			network,
+			sync_service,
 			params.keystore_container.sync_keystore(),
 			force_authoring,
 		)?;
@@ -1032,7 +1027,7 @@ where
 	async fn verify(
 		&mut self,
 		block_import: BlockImportParams<Block, ()>,
-	) -> Result<(BlockImportParams<Block, ()>, Option<Vec<(CacheKeyId, Vec<u8>)>>), String> {
+	) -> Result<BlockImportParams<Block, ()>, String> {
 		if self
 			.client
 			.runtime_api()
@@ -1321,7 +1316,7 @@ where
 		&TaskManager,
 		Arc<dyn RelayChainInterface>,
 		Arc<sc_transaction_pool::FullPool<Block, ParachainClient<RuntimeApi>>>,
-		Arc<NetworkService<Block, Hash>>,
+		Arc<SyncingService<Block>>,
 		SyncCryptoStorePtr,
 		bool,
 	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
@@ -1344,10 +1339,7 @@ where
 		hwbench.clone(),
 	)
 	.await
-	.map_err(|e| match e {
-		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
-		s => s.to_string().into(),
-	})?;
+	.map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
@@ -1355,7 +1347,7 @@ where
 	let transaction_pool = params.transaction_pool.clone();
 	let import_queue_service = params.import_queue.service();
 
-	let (network, system_rpc_tx, tx_handler_controller, start_network) =
+	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
 		build_network(BuildNetworkParams {
 			parachain_config: &parachain_config,
 			client: client.clone(),
@@ -1391,6 +1383,7 @@ where
 		keystore: params.keystore_container.sync_keystore(),
 		backend: backend.clone(),
 		network: network.clone(),
+		sync_service: sync_service.clone(),
 		system_rpc_tx,
 		tx_handler_controller,
 		telemetry: telemetry.as_mut(),
@@ -1413,8 +1406,8 @@ where
 	}
 
 	let announce_block = {
-		let network = network.clone();
-		Arc::new(move |hash, data| network.announce_block(hash, data))
+		let sync_service = sync_service.clone();
+		Arc::new(move |hash, data| sync_service.announce_block(hash, data))
 	};
 
 	let relay_chain_slot_duration = Duration::from_secs(6);
@@ -1431,7 +1424,7 @@ where
 			&task_manager,
 			relay_chain_interface.clone(),
 			transaction_pool,
-			network,
+			sync_service,
 			params.keystore_container.sync_keystore(),
 			force_authoring,
 		)?;
