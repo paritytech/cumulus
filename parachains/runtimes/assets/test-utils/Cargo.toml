@@ -11,6 +11,7 @@ codec = { package = "parity-scale-codec", version = "3.0.0", default-features = 
 # Substrate
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -39,6 +40,7 @@ default = [ "std" ]
 std = [
     "frame-support/std",
 	"frame-system/std",
+	"pallet-assets/std",
 	"pallet-balances/std",
 	"cumulus-pallet-parachain-system/std",
 	"pallet-collator-selection/std",

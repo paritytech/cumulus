@@ -9,8 +9,9 @@ use statemine_runtime::xcm_config::{
 	AssetFeeAsExistentialDepositMultiplierFeeCharger, KsmLocation, TrustBackedAssetsPalletLocation,
 };
 pub use statemine_runtime::{
-	constants::fee::WeightToFee, xcm_config::XcmConfig, Assets, Balances, ExistentialDeposit,
-	Runtime, SessionKeys, System,
+	constants::fee::WeightToFee,
+	xcm_config::{ForeignCreatorsSovereignAccountOf, XcmConfig},
+	Assets, Balances, ExistentialDeposit, ForeignAssetsInstance, Runtime, SessionKeys, System,
 };
 use xcm::latest::prelude::*;
 use xcm_executor::traits::{Convert, WeightTrader};
@@ -430,6 +431,19 @@ asset_test_utils::include_receive_teleported_asset_for_native_asset_works!(
 		AccountId::from(ALICE),
 		AccountId::from(ALICE),
 		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+	)
+);
+
+asset_test_utils::include_receive_teleported_asset_from_foreign_creator_works!(
+	Runtime,
+	XcmConfig,
+	WeightToFee,
+	ForeignCreatorsSovereignAccountOf,
+	ForeignAssetsInstance,
+	asset_test_utils::CollatorSessionKeys::new(
+		AccountId::from(ALICE),
+		AccountId::from(ALICE),
+		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
 	),
-	AccountId::from(BOB)
+	ExistentialDeposit::get()
 );

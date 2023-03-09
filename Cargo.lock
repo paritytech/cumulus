@@ -331,6 +331,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex-literal",
+ "pallet-assets",
  "pallet-balances",
  "pallet-collator-selection",
  "pallet-session",

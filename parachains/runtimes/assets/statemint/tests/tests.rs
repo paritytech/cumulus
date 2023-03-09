@@ -442,6 +442,5 @@ asset_test_utils::include_receive_teleported_asset_for_native_asset_works!(
 		AccountId::from(ALICE),
 		AccountId::from(ALICE),
 		SessionKeys { aura: AuraId::from(sp_core::ed25519::Public::from_raw(ALICE)) }
-	),
-	AccountId::from(BOB)
+	)
 );

@@ -64,20 +64,21 @@ use parachains_common::{
 	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
-use xcm_config::{
-	ForeignCreators, KsmLocation, MultiLocationForAssetId, TrustBackedAssetsConvertedConcreteId,
-	XcmConfig,
-};
+use xcm_config::{KsmLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
+use assets_common::{
+	foreign_creators::ForeignCreators, matching::FromSiblingParachain, MultiLocationForAssetId,
+};
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, IsVoiceOfBody};
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use xcm::latest::BodyId;
 use xcm_executor::XcmExecutor;
 
+use crate::xcm_config::ForeignCreatorsSovereignAccountOf;
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 impl_opaque_keys! {
@@ -261,29 +262,43 @@ impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 	type BenchmarkHelper = ();
 }
 
+parameter_types! {
+	// we just reuse the same deposits
+	pub const ForeignAssetsAssetDeposit: Balance = AssetDeposit::get();
+	pub const ForeignAssetsAssetAccountDeposit: Balance = AssetAccountDeposit::get();
+	pub const ForeignAssetsApprovalDeposit: Balance = ApprovalDeposit::get();
+	pub const ForeignAssetsAssetsStringLimit: u32 = AssetsStringLimit::get();
+	pub const ForeignAssetsMetadataDepositBase: Balance = MetadataDepositBase::get();
+	pub const ForeignAssetsMetadataDepositPerByte: Balance = MetadataDepositPerByte::get();
+}
+
 /// Assets managed by some foreign location. Note: we do not declare a `ForeignAssetsCall` type, as
 /// this type is used in proxy definitions. We assume that a foreign location would not want to set
 /// an individual, local account as a proxy for the issuance of their assets. This issuance should
 /// be managed by the foreign location's governance.
-type ForeignAssetsInstance = pallet_assets::Instance2;
+pub type ForeignAssetsInstance = pallet_assets::Instance2;
 impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type AssetId = MultiLocationForAssetId;
 	type AssetIdParameter = MultiLocationForAssetId;
 	type Currency = Balances;
-	type CreateOrigin = ForeignCreators;
+	type CreateOrigin = ForeignCreators<
+		(FromSiblingParachain<parachain_info::Pallet<Runtime>>,),
+		ForeignCreatorsSovereignAccountOf,
+		AccountId,
+	>;
 	type ForceOrigin = AssetsForceOrigin;
-	type AssetDeposit = AssetDeposit;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ApprovalDeposit = ApprovalDeposit;
-	type StringLimit = AssetsStringLimit;
+	type AssetDeposit = ForeignAssetsAssetDeposit;
+	type MetadataDepositBase = ForeignAssetsMetadataDepositBase;
+	type MetadataDepositPerByte = ForeignAssetsMetadataDepositPerByte;
+	type ApprovalDeposit = ForeignAssetsApprovalDeposit;
+	type StringLimit = ForeignAssetsAssetsStringLimit;
 	type Freezer = ();
 	type Extra = ();
 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
 	type CallbackHandle = ();
-	type AssetAccountDeposit = AssetAccountDeposit;
+	type AssetAccountDeposit = ForeignAssetsAssetAccountDeposit;
 	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = xcm_config::XcmBenchmarkHelper;
