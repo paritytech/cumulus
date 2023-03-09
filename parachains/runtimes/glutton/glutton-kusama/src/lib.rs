@@ -269,6 +269,11 @@ impl pallet_transaction_payment::Config for Runtime {
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
+impl pallet_glutton::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = weights::pallet_glutton::WeightInfo<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -297,6 +302,7 @@ construct_runtime!(
 		// Handy utilities.
 
 		// The main stage.
+		Glutton: pallet_glutton::{Pallet, Call, Storage, Event} = 40,
 	}
 );
 
