@@ -49,7 +49,7 @@ enum LightClientError {
 	#[error("Error occured while executing smoldot request: {0}")]
 	SmoldotError(String),
 	#[error("Nothing returned from json_rpc_responses")]
-	EmptyReturn,
+	EmptyResult,
 }
 
 /// Sending adapter allowing JsonRpsee to send messages to smoldot
@@ -83,7 +83,7 @@ impl TransportReceiverT for SimpleStringReceiver {
 			.next()
 			.await
 			.map(|message| jsonrpsee::core::client::ReceivedMessage::Text(message))
-			.ok_or(LightClientError::EmptyReturn)
+			.ok_or(LightClientError::EmptyResult)
 	}
 }
 
@@ -113,7 +113,7 @@ pub async fn build_smoldot_client(
 		})
 		.map_err(|e| RelayChainError::GenericError(e.to_string()))?;
 
-	Ok((client, chain_id, json_rpc_responses.expect("JSON RPC is not disabled; qed")))
+	Ok((client, chain_id, json_rpc_responses.expect("JSON RPC is enabled; qed")))
 }
 
 /// Worker to process incoming [`RpcDispatcherMessage`] requests.

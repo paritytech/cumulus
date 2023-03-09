@@ -605,6 +605,8 @@ impl RelayChainRpcClient {
 	}
 }
 
+/// Send `header` through all channels contained in `senders`.
+/// If no one is listening to the sender, it is removed from the vector.
 pub fn distribute_header(header: RelayHeader, senders: &mut Vec<Sender<RelayHeader>>) {
 	senders.retain_mut(|e| {
 				match e.try_send(header.clone()) {

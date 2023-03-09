@@ -30,8 +30,8 @@ use std::{
 use tokio::net::TcpStream;
 
 use tokio_util::compat::TokioAsyncReadCompatExt;
-pub struct TokioPlatform;
 
+/// Platform internal representation of the connection stream.
 pub struct TokioStream {
 	shared: Arc<StreamShared>,
 	read_data_rx: Arc<parking_lot::Mutex<stream::Peekable<mpsc::Receiver<Vec<u8>>>>>,
@@ -50,6 +50,8 @@ struct StreamSharedGuarded {
 /// Platform implementation for tokio
 /// This implementation is a conversion of the implementation for async-std:
 /// https://github.com/smol-dot/smoldot/blob/54d88891b1da202b4bf612a150df7b4dbfa03a55/light-base/src/platform/async_std.rs#L40
+pub struct TokioPlatform;
+
 impl smoldot_light::platform::Platform for TokioPlatform {
 	type Delay = future::BoxFuture<'static, ()>;
 	type Yield = future::Ready<()>;
