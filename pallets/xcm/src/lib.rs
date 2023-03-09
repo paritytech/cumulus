@@ -22,7 +22,7 @@
 
 use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_core::{
-	relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler, ParaId,
+	relay_chain::BlockNumber as RelayBlockNumber, ParaId,
 };
 use frame_support::dispatch::Weight;
 pub use pallet::*;
