@@ -3793,7 +3793,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "glutton-runtime"
+name = "glutton-kusama-runtime"
 version = "1.0.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
