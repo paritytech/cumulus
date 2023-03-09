@@ -64,7 +64,9 @@ use parachains_common::{
 	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
-use xcm_config::{KsmLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig};
+use xcm_config::{
+	ForeignAssetsConvertedConcreteId, KsmLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig,
+};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -900,11 +902,17 @@ impl_runtime_apis! {
 				},
 				// collect pallet_assets (TrustBackedAssets)
 				convert::<_, _, _, _, TrustBackedAssetsConvertedConcreteId>(
-					Assets::account_balances(account)
+					Assets::account_balances(account.clone())
 						.iter()
 						.filter(|(_, balance)| balance > &0)
 				)?,
-				// collect ... e.g. pallet_assets ForeignAssets
+				// collect pallet_assets (ForeignAssets)
+				convert::<_, _, _, _, ForeignAssetsConvertedConcreteId>(
+					ForeignAssets::account_balances(account)
+						.iter()
+						.filter(|(_, balance)| balance > &0)
+				)?,
+				// collect ... e.g. other tokens
 			].concat())
 		}
 	}

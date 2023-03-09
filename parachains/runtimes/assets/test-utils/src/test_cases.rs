@@ -138,6 +138,7 @@ macro_rules! include_receive_teleported_asset_for_native_asset_works(
 	}
 );
 
+/// Test-case makes sure, that `Runtime` can receive teleported assets from sibling parachain relay chain
 pub fn receive_teleported_asset_from_foreign_creator_works<
 	Runtime,
 	XcmConfig,
