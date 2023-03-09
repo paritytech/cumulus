@@ -21,7 +21,9 @@ use cumulus_relay_chain_rpc_interface::{RelayChainRpcInterface, Url};
 use polkadot_network_bridge::{peer_sets_info, IsAuthority};
 use polkadot_node_network_protocol::{
 	peer_set::PeerSetProtocolNames,
-	request_response::{v1, IncomingRequest, IncomingRequestReceiver, Protocol, ReqProtocolNames},
+	request_response::{
+		v1, vstaging, IncomingRequest, IncomingRequestReceiver, Protocol, ReqProtocolNames,
+	},
 };
 
 use polkadot_node_subsystem_util::metrics::prometheus::Registry;
@@ -149,7 +151,7 @@ async fn new_minimal_relay_chain(
 		.extend(peer_sets_info(is_authority, &peer_set_protocol_names));
 
 	let request_protocol_names = ReqProtocolNames::new(genesis_hash, config.chain_spec.fork_id());
-	let (collation_req_receiver, available_data_req_receiver) =
+	let (collation_req_receiver_v1, collation_req_receiver_vstaging, available_data_req_receiver) =
 		build_request_response_protocol_receivers(&request_protocol_names, &mut config);
 
 	let (network, network_starter, sync_oracle) =
@@ -174,7 +176,8 @@ async fn new_minimal_relay_chain(
 		network_service: network.clone(),
 		sync_oracle,
 		authority_discovery_service,
-		collation_req_receiver,
+		collation_req_receiver_v1,
+		collation_req_receiver_vstaging,
 		available_data_req_receiver,
 		registry: prometheus_registry.as_ref(),
 		spawner: task_manager.spawn_handle(),
@@ -200,9 +203,13 @@ fn build_request_response_protocol_receivers(
 	config: &mut Configuration,
 ) -> (
 	IncomingRequestReceiver<v1::CollationFetchingRequest>,
+	IncomingRequestReceiver<vstaging::CollationFetchingRequest>,
 	IncomingRequestReceiver<v1::AvailableDataFetchingRequest>,
 ) {
-	let (collation_req_receiver, cfg) =
+	let (collation_req_receiver_v1, cfg) =
+		IncomingRequest::get_config_receiver(request_protocol_names);
+	config.network.request_response_protocols.push(cfg);
+	let (collation_req_receiver_vstaging, cfg) =
 		IncomingRequest::get_config_receiver(request_protocol_names);
 	config.network.request_response_protocols.push(cfg);
 	let (available_data_req_receiver, cfg) =
@@ -210,5 +217,5 @@ fn build_request_response_protocol_receivers(
 	config.network.request_response_protocols.push(cfg);
 	let cfg = Protocol::ChunkFetchingV1.get_outbound_only_config(request_protocol_names);
 	config.network.request_response_protocols.push(cfg);
-	(collation_req_receiver, available_data_req_receiver)
+	(collation_req_receiver_v1, collation_req_receiver_vstaging, available_data_req_receiver)
 }

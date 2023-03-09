@@ -14,9 +14,9 @@ sp-api = { git = "https://github.com/paritytech/substrate", default-features = f
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
 
 # Cumulus
 parachains-common = { path = "../../../common", default-features = false }

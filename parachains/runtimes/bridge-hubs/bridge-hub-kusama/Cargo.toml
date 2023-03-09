@@ -48,15 +48,15 @@ sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default
 sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot
-kusama-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false, optional = true }
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+kusama-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", default-features = false, optional = true , branch = "rh-async-backing-feature" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
 
 # Cumulus
 cumulus-pallet-aura-ext = { path = "../../../../pallets/aura-ext", default-features = false }

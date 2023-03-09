@@ -24,6 +24,8 @@ use polkadot_overseer::RuntimeApiSubsystemClient;
 use polkadot_service::{AuxStore, HeaderBackend};
 use sc_authority_discovery::AuthorityDiscovery;
 
+use polkadot_primitives::vstaging::{AsyncBackingParameters, BackingState};
+
 use sp_api::{ApiError, RuntimeApiInfo};
 use sp_blockchain::Info;
 
@@ -323,6 +325,21 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		ApiError,
 	> {
 		Ok(self.rpc_client.parachain_host_staging_get_disputes(at).await?)
+	}
+
+	async fn staging_async_backing_parameters(
+		&self,
+		at: Hash,
+	) -> Result<AsyncBackingParameters, ApiError> {
+		Ok(self.rpc_client.parachain_host_staging_async_backing_parameters(at).await?)
+	}
+
+	async fn staging_para_backing_state(
+		&self,
+		at: Hash,
+		para_id: cumulus_primitives_core::ParaId,
+	) -> Result<Option<BackingState>, ApiError> {
+		Ok(self.rpc_client.parachain_host_staging_para_backing_state(at, para_id).await?)
 	}
 }
 

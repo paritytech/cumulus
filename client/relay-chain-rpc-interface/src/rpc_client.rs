@@ -17,11 +17,12 @@
 use crate::reconnecting_ws_client::ReconnectingWsClient;
 use cumulus_primitives_core::{
 	relay_chain::{
-		vstaging::ExecutorParams, CandidateCommitments, CandidateEvent, CandidateHash,
-		CommittedCandidateReceipt, CoreState, DisputeState, GroupRotationInfo, Hash as RelayHash,
-		Header as RelayHeader, InboundHrmpMessage, OccupiedCoreAssumption, PvfCheckStatement,
-		ScrapedOnChainVotes, SessionIndex, SessionInfo, ValidationCode, ValidationCodeHash,
-		ValidatorId, ValidatorIndex, ValidatorSignature,
+		vstaging::{AsyncBackingParameters, BackingState, ExecutorParams},
+		CandidateCommitments, CandidateEvent, CandidateHash, CommittedCandidateReceipt, CoreState,
+		DisputeState, GroupRotationInfo, Hash as RelayHash, Header as RelayHeader,
+		InboundHrmpMessage, OccupiedCoreAssumption, PvfCheckStatement, ScrapedOnChainVotes,
+		SessionIndex, SessionInfo, ValidationCode, ValidationCodeHash, ValidatorId, ValidatorIndex,
+		ValidatorSignature,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
@@ -458,6 +459,33 @@ impl RelayChainRpcClient {
 	) -> Result<Vec<InboundDownwardMessage>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_dmq_contents", at, Some(para_id))
 			.await
+	}
+
+	#[allow(missing_docs)]
+	pub async fn parachain_host_staging_async_backing_parameters(
+		&self,
+		at: RelayHash,
+	) -> Result<AsyncBackingParameters, RelayChainError> {
+		self.call_remote_runtime_function(
+			"ParachainHost_staging_async_backing_parameters",
+			at,
+			None::<()>,
+		)
+		.await
+	}
+
+	#[allow(missing_docs)]
+	pub async fn parachain_host_staging_para_backing_state(
+		&self,
+		at: RelayHash,
+		para_id: ParaId,
+	) -> Result<Option<BackingState>, RelayChainError> {
+		self.call_remote_runtime_function(
+			"ParachainHost_staging_para_backing_state",
+			at,
+			Some(para_id),
+		)
+		.await
 	}
 
 	/// Get a stream of all imported relay chain headers
