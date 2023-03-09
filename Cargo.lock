@@ -335,6 +335,7 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-session",
  "parachains-common",
+ "parity-scale-codec",
  "sp-consensus-aura",
  "sp-core",
  "sp-io",

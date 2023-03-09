@@ -471,57 +471,16 @@ fn test_assets_balances_api_works() {
 		});
 }
 
-#[test]
-fn receive_teleported_asset_for_native_asset_works() {
-	ExtBuilder::<Runtime>::default()
-		.with_collators(vec![AccountId::from(ALICE)])
-		.with_session_keys(vec![(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
-		)])
-		.build()
-		.execute_with(|| {
-			let xcm = Xcm(vec![
-				ReceiveTeleportedAsset(MultiAssets::from(vec![MultiAsset {
-					id: Concrete(MultiLocation { parents: 1, interior: Here }),
-					fun: Fungible(10000000000000),
-				}])),
-				ClearOrigin,
-				BuyExecution {
-					fees: MultiAsset {
-						// TODO: refactor here little bit: MultiLocation::parent()
-						id: Concrete(MultiLocation { parents: 1, interior: Here }),
-						fun: Fungible(10000000000000),
-					},
-					weight_limit: Limited(Weight::from_parts(303531000, 65536)),
-				},
-				DepositAsset {
-					assets: Wild(AllCounted(1)),
-					beneficiary: MultiLocation {
-						parents: 0,
-						interior: X1(AccountId32 {
-							network: None,
-							id: [
-								18, 153, 85, 112, 1, 245, 88, 21, 211, 252, 181, 60, 116, 70, 58,
-								203, 12, 246, 209, 77, 70, 57, 179, 64, 152, 44, 96, 135, 127, 56,
-								70, 9,
-							],
-						}),
-					},
-				},
-			]);
-			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-
-			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(
-				Parent,
-				xcm,
-				hash,
-				RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Parent),
-			);
-			assert_eq!(outcome.ensure_complete(), Ok(()));
-		})
-}
+asset_test_utils::include_receive_teleported_asset_for_native_asset_works!(
+	Runtime,
+	XcmConfig,
+	asset_test_utils::CollatorSessionKeys::new(
+		AccountId::from(ALICE),
+		AccountId::from(ALICE),
+		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+	),
+	AccountId::from(BOB)
+);
 
 #[test]
 fn plain_receive_teleported_asset_works() {
