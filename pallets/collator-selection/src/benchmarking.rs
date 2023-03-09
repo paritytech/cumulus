@@ -144,10 +144,14 @@ benchmarks! {
 		let origin =
 			T::UpdateOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
 
-		let b in 1 .. T::MaxInvulnerables::get() - 1;
-		let to_remove = register_validators::<T>(b);
-		let to_remove: T::AccountId = whitelisted_caller();
-		println!("{}", to_remove);
+		let b in 1 .. T::MaxInvulnerables::get();
+		let c = register_validators::<T>(b);
+
+		let v: frame_support::BoundedVec<_, T::MaxInvulnerables> = frame_support::BoundedVec::try_from(c).unwrap();
+		<Invulnerables<T>>::put(v);
+
+		let to_remove = <Invulnerables<T>>::get().last().unwrap().clone();
+		whitelist!(to_remove);
 	}: {
 		assert_ok!(
 			<CollatorSelection<T>>::remove_invulnerable(origin, to_remove.clone())
