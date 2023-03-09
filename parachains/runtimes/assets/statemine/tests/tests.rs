@@ -2,6 +2,7 @@ use asset_test_utils::{ExtBuilder, RuntimeHelper};
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
 	assert_noop, assert_ok,
+	traits::fungibles::InspectEnumerable,
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
 use parachains_common::{AccountId, AuraId, Balance};
@@ -11,7 +12,8 @@ use statemine_runtime::xcm_config::{
 pub use statemine_runtime::{
 	constants::fee::WeightToFee,
 	xcm_config::{ForeignCreatorsSovereignAccountOf, XcmConfig},
-	Assets, Balances, ExistentialDeposit, ForeignAssetsInstance, Runtime, SessionKeys, System,
+	Assets, Balances, ExistentialDeposit, ForeignAssets, ForeignAssetsInstance, Runtime,
+	SessionKeys, System,
 };
 use xcm::latest::prelude::*;
 use xcm_executor::traits::{Convert, WeightTrader};
@@ -446,4 +448,23 @@ asset_test_utils::include_receive_teleported_asset_from_foreign_creator_works!(
 		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
 	),
 	ExistentialDeposit::get()
+);
+
+asset_test_utils::include_asset_transactor_transfer_with_local_consensus_currency_works!(
+	Runtime,
+	XcmConfig,
+	asset_test_utils::CollatorSessionKeys::new(
+		AccountId::from(ALICE),
+		AccountId::from(ALICE),
+		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+	),
+	ExistentialDeposit::get(),
+	Box::new(|| {
+		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
+		assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
+	}),
+	Box::new(|| {
+		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
+		assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
+	})
 );

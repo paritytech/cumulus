@@ -20,7 +20,7 @@ use crate::{
 use codec::Encode;
 use frame_support::{assert_ok, traits::OriginTrait, weights::Weight};
 use parachains_common::Balance;
-use sp_runtime::traits::StaticLookup;
+use sp_runtime::traits::{StaticLookup, Zero};
 use xcm::latest::prelude::*;
 use xcm_executor::{traits::Convert, XcmExecutor};
 
@@ -200,10 +200,7 @@ pub fn receive_teleported_asset_from_foreign_creator_works<
 		.with_balances(vec![
 			(
 				foreign_creator_as_account_id.clone(),
-				existential_deposit +
-					// +
-					// AssetDeposit::get() + MetadataDepositBase::get() +
-					(buy_execution_fee_amount * 2).into(),
+				existential_deposit + (buy_execution_fee_amount * 2).into(),
 			),
 			(target_account.clone(), existential_deposit),
 		])
@@ -316,6 +313,116 @@ macro_rules! include_receive_teleported_asset_from_foreign_creator_works(
 				$sovereign_account_of,
 				$assets_pallet_instance
 			>($collator_session_key, target_account, $existential_deposit, asset_admin)
+		}
+	}
+);
+
+pub fn asset_transactor_transfer_with_local_consensus_currency_works<Runtime, XcmConfig>(
+	collator_session_keys: CollatorSessionKeys<Runtime>,
+	source_account: AccountIdOf<Runtime>,
+	target_account: AccountIdOf<Runtime>,
+	existential_deposit: BalanceOf<Runtime>,
+	additional_checks_before: Box<dyn Fn()>,
+	additional_checks_after: Box<dyn Fn()>,
+) where
+	Runtime: frame_system::Config
+		+ pallet_balances::Config
+		+ pallet_session::Config
+		+ pallet_collator_selection::Config
+		+ cumulus_pallet_parachain_system::Config,
+	AccountIdOf<Runtime>: Into<[u8; 32]>,
+	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
+	BalanceOf<Runtime>: From<Balance>,
+	XcmConfig: xcm_executor::Config,
+	<Runtime as pallet_balances::Config>::Balance: From<Balance> + Into<u128>,
+	<Runtime as frame_system::Config>::AccountId:
+		Into<<<Runtime as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId>,
+	<<Runtime as frame_system::Config>::Lookup as StaticLookup>::Source:
+		From<<Runtime as frame_system::Config>::AccountId>,
+{
+	let unit = existential_deposit;
+
+	ExtBuilder::<Runtime>::default()
+		.with_collators(collator_session_keys.collators())
+		.with_session_keys(collator_session_keys.session_keys())
+		.with_balances(vec![(source_account.clone(), (BalanceOf::<Runtime>::from(10_u128) * unit))])
+		.with_tracing()
+		.build()
+		.execute_with(|| {
+			// check Balances before
+			assert_eq!(
+				<pallet_balances::Pallet<Runtime>>::free_balance(source_account.clone()),
+				(BalanceOf::<Runtime>::from(10_u128) * unit)
+			);
+			assert_eq!(
+				<pallet_balances::Pallet<Runtime>>::free_balance(target_account.clone()),
+				(BalanceOf::<Runtime>::zero() * unit)
+			);
+
+			// additional check before
+			additional_checks_before();
+
+			// transfer_asset (deposit/withdraw) ALICE -> BOB
+			let _ = RuntimeHelper::<XcmConfig>::do_transfer(
+				MultiLocation {
+					parents: 0,
+					interior: X1(AccountId32 { network: None, id: source_account.clone().into() }),
+				},
+				MultiLocation {
+					parents: 0,
+					interior: X1(AccountId32 { network: None, id: target_account.clone().into() }),
+				},
+				// local_consensus_currency_asset, e.g.: relaychain token (KSM, DOT, ...)
+				(
+					MultiLocation { parents: 1, interior: Here },
+					(BalanceOf::<Runtime>::from(1_u128) * unit).into(),
+				),
+			)
+			.expect("no error");
+
+			// check Balances after
+			assert_eq!(
+				<pallet_balances::Pallet<Runtime>>::free_balance(source_account),
+				(BalanceOf::<Runtime>::from(9_u128) * unit)
+			);
+			assert_eq!(
+				<pallet_balances::Pallet<Runtime>>::free_balance(target_account),
+				(BalanceOf::<Runtime>::from(1_u128) * unit)
+			);
+
+			// additional check after
+			additional_checks_after();
+		})
+}
+
+#[macro_export]
+macro_rules! include_asset_transactor_transfer_with_local_consensus_currency_works(
+	(
+		$runtime:path,
+		$xcm_config:path,
+		$collator_session_key:expr,
+		$existential_deposit:expr,
+		$additional_checks_before:expr,
+		$additional_checks_after:expr
+	) => {
+		#[test]
+		fn asset_transactor_transfer_with_local_consensus_currency_works() {
+			const ALICE: [u8; 32] = [1u8; 32];
+			let source_account = parachains_common::AccountId::from(ALICE);
+			const BOB: [u8; 32] = [2u8; 32];
+			let target_account = parachains_common::AccountId::from(BOB);
+
+			asset_test_utils::test_cases::asset_transactor_transfer_with_local_consensus_currency_works::<
+				$runtime,
+				$xcm_config
+			>(
+				$collator_session_key,
+				source_account,
+				target_account,
+				$existential_deposit,
+				$additional_checks_before,
+				$additional_checks_after
+			)
 		}
 	}
 );

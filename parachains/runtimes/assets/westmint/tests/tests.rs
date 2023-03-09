@@ -521,49 +521,24 @@ fn plain_receive_teleported_asset_works() {
 		})
 }
 
-#[test]
-fn test_asset_transactor_transfer_with_local_consensus_currency_works() {
-	let unit = ExistentialDeposit::get();
-
-	ExtBuilder::<Runtime>::default()
-		.with_collators(vec![AccountId::from(ALICE)])
-		.with_session_keys(vec![(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
-		)])
-		.with_balances(vec![(AccountId::from(ALICE), 10 * unit)])
-		.with_tracing()
-		.build()
-		.execute_with(|| {
-			// check Balances before
-			assert_eq!(Balances::free_balance(AccountId::from(ALICE)), 10 * unit);
-			assert_eq!(Balances::free_balance(AccountId::from(BOB)), 0 * unit);
-			assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
-			assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
-
-			// transfer_asset (deposit/withdraw) ALICE -> BOB
-			let _ = RuntimeHelper::<XcmConfig>::do_transfer(
-				MultiLocation {
-					parents: 0,
-					interior: X1(AccountId32 { network: None, id: AccountId::from(ALICE).into() }),
-				},
-				MultiLocation {
-					parents: 0,
-					interior: X1(AccountId32 { network: None, id: AccountId::from(BOB).into() }),
-				},
-				// local_consensus_currency_asset, e.g.: relaychain token (KSM, DOT, ...)
-				(MultiLocation { parents: 1, interior: Here }, 1 * unit),
-			)
-			.expect("no error");
-
-			// check Balances after
-			assert_eq!(Balances::free_balance(AccountId::from(ALICE)), 9 * unit);
-			assert_eq!(Balances::free_balance(AccountId::from(BOB)), 1 * unit);
-			assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
-			assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
-		})
-}
+asset_test_utils::include_asset_transactor_transfer_with_local_consensus_currency_works!(
+	Runtime,
+	XcmConfig,
+	asset_test_utils::CollatorSessionKeys::new(
+		AccountId::from(ALICE),
+		AccountId::from(ALICE),
+		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+	),
+	ExistentialDeposit::get(),
+	Box::new(|| {
+		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
+		assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
+	}),
+	Box::new(|| {
+		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
+		assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
+	})
+);
 
 #[test]
 fn test_asset_transactor_transfer_with_trust_backed_assets_works() {
