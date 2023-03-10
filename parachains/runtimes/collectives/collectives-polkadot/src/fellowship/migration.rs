@@ -36,12 +36,12 @@ pub(crate) mod import_kusama_fellowship {
 		// The Fellowship addresses from Kusama state.
 		pub const FellowshipAddresses: [(Rank, [u8; 32]); 46] = [
 			(6, hex_literal::hex!("f0673d30606ee26672707e4fd2bc8b58d3becb7aba2d5f60add64abb5fea4710"),),
-			(6, hex_literal::hex!("f60f9b64ebf26b9487c65ada132908745572692aef7cd9c987daf8c9c0c2ff3a"),),
+			(6, hex_literal::hex!("3c235e80e35082b668682531b9b062fda39a46edb94f884d9122d86885fd5f1b"),),
 			(6, hex_literal::hex!("7628a5be63c4d3c8dbb96c2904b1a9682e02831a1af836c7efc808020b92fa63"),),
 			(5, hex_literal::hex!("9c84f75e0b1b92f6b003bde6212a8b2c9b776f3720f942b33fed8709f103a268"),),
 			(5, hex_literal::hex!("bc64065524532ed9e805fb0d39a5c0199216b52871168e5e4d0ab612f8797d61"),),
 			(5, hex_literal::hex!("2e1884c53071526483b14004e894415f02b55fc2e2aef8e1df8ccf7ce5bd5570"),),
-			(5, hex_literal::hex!("f6b21d624832094b03aa672e016462a020e217cc67b1434785b99114a2b4fa5a"),),
+			(5, hex_literal::hex!("5c5062779d44ea2ab0469e155b8cf3e004fce71b3b3d38263cd9fa9478f12f28"),),
 			(4, hex_literal::hex!("4adf51a47b72795366d52285e329229c836ea7bbfe139dbe8fa0700c4f86fc56"),),
 			(4, hex_literal::hex!("1c90e3dabd3fd0f6bc648045018f78fcee8fe24122c22d8d2a14e9905073d10f"),),
 			(4, hex_literal::hex!("8e851ed992228f2268ee8c614fe6075d3800060ae14098e0309413a0a81c4470"),),
@@ -51,7 +51,7 @@ pub(crate) mod import_kusama_fellowship {
 			(3, hex_literal::hex!("ccd87fa65729f7bdaa8305581a7a499aa24c118e83f5714152c0e22617c6fc63"),),
 			(3, hex_literal::hex!("e0f0f94962fc0a8c1a0f0527dc8e592c67939c46c903b6016cc0a8515da0044d"),),
 			(3, hex_literal::hex!("984e16482c99cfad1436111e321a86d87d0fac203bf64538f888e45d793b5413"),),
-			(3, hex_literal::hex!("123ca466ff6a76cdf3e73dc01bc1e8c4db195249e3b2e39a90036c6ded3db93a"),),
+			(3, hex_literal::hex!("44a3efb5bfa9023d4ef27b7d31d76f531b4d7772b1679b7fb32b6263ac39100e"),),
 			(2, hex_literal::hex!("2eba9a39dbfdd5f3cba964355d45e27319f0271023c0353d97dc6df2401b0e3d"),),
 			(2, hex_literal::hex!("ba3e9b87792bcfcc237fa8181185b8883c77f3e24f45e4a92ab31d07a4703520"),),
 			(2, hex_literal::hex!("9e6eb74b0a6b39de36fb58d1fab20bc2b3fea96023ce5a47941c20480d99f92e"),),
@@ -179,12 +179,12 @@ pub mod tests {
 		let fellowship_addresses = FellowshipAddresses::get();
 		let kusama_fellowship_ss58: [(Rank, _); 46] = [
 			(6, "16SDAKg9N6kKAbhgDyxBXdHEwpwHUHs2CNEiLNGeZV55qHna"), // proof https://kusama.subscan.io/extrinsic/16832707-4
-			(6, "J8ww78Qx3LVLW54bva3t4SzXcWKMdUWHEZR3V2VNKbmQgE8"),
+			(6, "12MrP337azmkTdfCUKe5XLnSQrbgEKqqfZ4PQC7CZTJKAWR3"), // proof https://kusama.subscan.io/extrinsic/16967809-2
 			(6, "FFFF3gBSSDFSvK2HBq4qgLH75DHqXWPHeCnR1BSksAMacBs"),
 			(5, "G7YVCdxZb8JLpAm9WMnJdNuojNT84AzU62zmvx5P1FMNtg2"),
 			(5, "15G1iXDLgFyfnJ51FKq1ts44TduMyUtekvzQi9my4hgYt2hs"), // proof https://kusama.subscan.io/extrinsic/16917610-2
 			(5, "Dcm1BqR4N7nHuV43TXdET7pNibt1Nzm42FggPHpxKRven53"),
-			(5, "J9nD3s7zssCX7bion1xctAF6xcVexcpy2uwy4jTm9JL8yuK"),
+			(5, "1363HWTPzDrzAQ6ChFiMU6mP4b6jmQid2ae55JQcKtZnpLGv"), // proof https://kusama.subscan.io/extrinsic/16961180-2
 			(4, "EGVQCe73TpFyAZx5uKfE1222XfkT3BSKozjgcqzLBnc5eYo"),
 			(4, "1eTPAR2TuqLyidmPT9rMmuycHVm9s9czu78sePqg2KHMDrE"), // proof https://kusama.subscan.io/extrinsic/16921712-3
 			(4, "14DsLzVyTUTDMm2eP3czwPbH53KgqnQRp3CJJZS9GR7yxGDP"), // proof https://kusama.subscan.io/extrinsic/16917519-2
@@ -194,10 +194,10 @@ pub mod tests {
 			(3, "15db5ksZgmhWE9U8MDq4wLKUdFivLVBybztWV8nmaJvv3NU1"), // proof https://kusama.subscan.io/extrinsic/16876631-2
 			(3, "HfFpz4QUxfbocHudf8UU7cMgHqkHpf855Me5X846PZAsAYE"),
 			(3, "14ShUZUYUR35RBZW6uVVt1zXDxmSQddkeDdXf1JkMA6P721N"), // proof https://kusama.subscan.io/extrinsic/16918890-8
-			(3, "CzEPpMr7XNS6dK7nQFnQbfnJQYLq7nvULK5kL9U8Zb6CTJm"),
+			(3, "12YzxR5TvGzfMVZNnhAJ5Hwi5zExpRWMKv2MuMwZTrddvgoi"), // proof https://kusama.subscan.io/extrinsic/16924324-3
 			(2, "Ddb9puChKMHq4gM6o47E551wAmaNeu6kHngX1jzNNqAw782"),
 			(2, "15DCWHQknBjc5YPFoVj8Pn2KoqrqYywJJ95BYNYJ4Fj3NLqz"), // proof https://kusama.subscan.io/extrinsic/16834952-2
-			(2, "GA3yPifemubFga7sTSFtLY2KFFiSRp6Bb8w31FS4xqgAvCz"),
+			(2, "14ajTQdrtCA8wZmC4PgD8Y1B2Gy8L4Z3oi2fodxq9FehcFrM"), // proof https://kusama.subscan.io/extrinsic/16944257-2
 			(2, "HxhDbS3grLurk1dhDgPiuDaRowHY1xHCU8Vu8on3fdg85tx"),
 			(2, "HTk3eccL7WBkiyxz1gBcqQRghsJigoDMD7mnQaz1UAbMpQV"),
 			(2, "EcNWrSPSDcVBRymwr26kk4JVFg92PdoU5Xwp87W2FgFSt9c"),
