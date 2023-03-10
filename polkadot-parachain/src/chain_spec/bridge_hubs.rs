@@ -327,6 +327,10 @@ pub mod rococo {
 						get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
 						get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 						get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+						// Ethereum Bridge Relayer Accounts
+						get_account_id_from_seed::<sr25519::Public>("Relay"),
+						get_account_id_from_seed::<sr25519::Public>("BeaconRelay"),
+						get_account_id_from_seed::<sr25519::Public>("ExecutionRelay"),
 					],
 					para_id,
 				)
