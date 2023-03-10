@@ -144,6 +144,9 @@ match_types! {
 		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(_) }
 	};
+	pub type FellowsPlurality: impl Contains<MultiLocation> = {
+		MultiLocation { parents: 1, interior: X2(Parachain(1001), Plurality { id: BodyId::Technical, ..}) }
+	};
 }
 
 /// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
@@ -177,7 +180,8 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_collator_selection::Call::set_desired_candidates { .. } |
 				pallet_collator_selection::Call::set_candidacy_bond { .. } |
 				pallet_collator_selection::Call::register_as_candidate { .. } |
-				pallet_collator_selection::Call::leave_intent { .. },
+				pallet_collator_selection::Call::leave_intent { .. } |
+				pallet_collator_selection::Call::set_invulnerables { .. },
 			) |
 			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 			RuntimeCall::XcmpQueue(..) |
@@ -237,6 +241,9 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_uniques::Call::set_collection_max_supply { .. } |
 				pallet_uniques::Call::set_price { .. } |
 				pallet_uniques::Call::buy_item { .. },
+			) |
+			RuntimeCall::PolkadotXcm(
+				pallet_xcm::Call::force_xcm_version { .. } | pallet_xcm::Call::send { .. },
 			) => true,
 			_ => false,
 		}
@@ -258,6 +265,8 @@ pub type Barrier = DenyThenTry<
 				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
 				// Subscriptions for version tracking are OK.
 				AllowSubscriptionsFrom<ParentOrSiblings>,
+				// Fellows plurality gets free execution.
+				AllowExplicitUnpaidExecutionFrom<FellowsPlurality>,
 			),
 			UniversalLocation,
 			ConstU32<8>,

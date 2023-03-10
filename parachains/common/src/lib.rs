@@ -16,6 +16,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod impls;
+pub mod prod_or_fast;
 pub mod xcm_config;
 pub use constants::*;
 pub use opaque::*;

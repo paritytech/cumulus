@@ -17,6 +17,7 @@
 //! Track configurations for Fellowship.
 
 use crate::{Balance, BlockNumber, RuntimeOrigin, DAYS, DOLLARS, MINUTES};
+use parachains_common::prod_or_fast;
 use sp_runtime::Perbill;
 
 /// Referendum `TrackId` type.
@@ -117,10 +118,10 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					name: "fellows",
 					max_deciding: 10,
 					decision_deposit: 10 * DOLLARS,
-					prepare_period: 30 * MINUTES,
-					decision_period: 7 * DAYS,
-					confirm_period: 30 * MINUTES,
-					min_enactment_period: 1 * MINUTES,
+					prepare_period: prod_or_fast!(30 * MINUTES, 2),
+					decision_period: prod_or_fast!(7 * DAYS, 1),
+					confirm_period: prod_or_fast!(30 * MINUTES, 1),
+					min_enactment_period: prod_or_fast!(1 * MINUTES, 1),
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
 						length: Perbill::from_percent(100),
 						floor: Perbill::from_percent(50),
