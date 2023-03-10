@@ -12,8 +12,8 @@ use statemine_runtime::xcm_config::{
 pub use statemine_runtime::{
 	constants::fee::WeightToFee,
 	xcm_config::{ForeignCreatorsSovereignAccountOf, XcmConfig},
-	Assets, Balances, ExistentialDeposit, ForeignAssets, ForeignAssetsInstance, Runtime,
-	SessionKeys, System,
+	AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets, ForeignAssetsInstance,
+	Runtime, SessionKeys, System, TrustBackedAssetsInstance,
 };
 use xcm::latest::prelude::*;
 use xcm_executor::traits::{Convert, WeightTrader};
@@ -465,6 +465,26 @@ asset_test_utils::include_asset_transactor_transfer_with_local_consensus_currenc
 	}),
 	Box::new(|| {
 		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
+		assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
+	})
+);
+
+asset_test_utils::include_asset_transactor_transfer_with_trust_backed_assets_works!(
+	Runtime,
+	XcmConfig,
+	TrustBackedAssetsInstance,
+	TrustBackedAssetsPalletLocation,
+	asset_test_utils::CollatorSessionKeys::new(
+		AccountId::from(ALICE),
+		AccountId::from(ALICE),
+		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+	),
+	ExistentialDeposit::get(),
+	AssetDeposit::get(),
+	Box::new(|| {
+		assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
+	}),
+	Box::new(|| {
 		assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
 	})
 );

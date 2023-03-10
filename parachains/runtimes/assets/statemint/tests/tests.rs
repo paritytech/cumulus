@@ -10,8 +10,8 @@ use statemint_runtime::xcm_config::{
 	AssetFeeAsExistentialDepositMultiplierFeeCharger, DotLocation, TrustBackedAssetsPalletLocation,
 };
 pub use statemint_runtime::{
-	constants::fee::WeightToFee, xcm_config::XcmConfig, Assets, Balances, ExistentialDeposit,
-	Runtime, SessionKeys, System,
+	constants::fee::WeightToFee, xcm_config::XcmConfig, AssetDeposit, Assets, Balances,
+	ExistentialDeposit, Runtime, SessionKeys, System, TrustBackedAssetsInstance,
 };
 use xcm::latest::prelude::*;
 use xcm_executor::traits::{Convert, WeightTrader};
@@ -461,4 +461,20 @@ asset_test_utils::include_asset_transactor_transfer_with_local_consensus_currenc
 	Box::new(|| {
 		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
 	})
+);
+
+asset_test_utils::include_asset_transactor_transfer_with_trust_backed_assets_works!(
+	Runtime,
+	XcmConfig,
+	TrustBackedAssetsInstance,
+	TrustBackedAssetsPalletLocation,
+	asset_test_utils::CollatorSessionKeys::new(
+		AccountId::from(ALICE),
+		AccountId::from(ALICE),
+		SessionKeys { aura: AuraId::from(sp_core::ed25519::Public::from_raw(ALICE)) }
+	),
+	ExistentialDeposit::get(),
+	AssetDeposit::get(),
+	Box::new(|| {}),
+	Box::new(|| {})
 );
