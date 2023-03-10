@@ -20,6 +20,7 @@ pub const CONTRACTS_DEBUG_OUTPUT: bool = true;
 parameter_types! {
 	pub const DepositPerItem: Balance = deposit(1, 0);
 	pub const DepositPerByte: Balance = deposit(0, 1);
+	pub const DefaultDepositLimit: Balance = deposit(1024, 1024 * 1024);
 	// The lazy deletion runs inside on_initialize.
 	pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
 		RuntimeBlockWeights::get().max_block;
@@ -47,6 +48,7 @@ impl Config for Runtime {
 	type CallFilter = Nothing;
 	type DepositPerItem = DepositPerItem;
 	type DepositPerByte = DepositPerByte;
+	type DefaultDepositLimit = DefaultDepositLimit;
 	type WeightPrice = pallet_transaction_payment::Pallet<Self>;
 	type WeightInfo = SubstrateWeight<Self>;
 	type ChainExtension = ();
