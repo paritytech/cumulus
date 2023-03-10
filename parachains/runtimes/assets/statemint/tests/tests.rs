@@ -5,7 +5,9 @@ use frame_support::{
 	traits::fungibles::InspectEnumerable,
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
-use parachains_common::{AccountId, Balance, StatemintAuraId as AuraId};
+use parachains_common::{
+	AccountId, AssetIdForTrustBackedAssets, Balance, StatemintAuraId as AuraId,
+};
 use statemint_runtime::xcm_config::{
 	AssetFeeAsExistentialDepositMultiplierFeeCharger, DotLocation, TrustBackedAssetsPalletLocation,
 };
@@ -463,18 +465,20 @@ asset_test_utils::include_asset_transactor_transfer_with_local_consensus_currenc
 	})
 );
 
-asset_test_utils::include_asset_transactor_transfer_with_trust_backed_assets_works!(
+asset_test_utils::include_asset_transactor_transfer_with_pallet_assets_instance_works!(
+	asset_transactor_transfer_with_pallet_assets_instance_works,
 	Runtime,
 	XcmConfig,
 	TrustBackedAssetsInstance,
-	TrustBackedAssetsPalletLocation,
+	AssetIdForTrustBackedAssets,
+	AssetIdForTrustBackedAssetsConvert,
 	asset_test_utils::CollatorSessionKeys::new(
 		AccountId::from(ALICE),
 		AccountId::from(ALICE),
 		SessionKeys { aura: AuraId::from(sp_core::ed25519::Public::from_raw(ALICE)) }
 	),
 	ExistentialDeposit::get(),
-	AssetDeposit::get(),
+	12345,
 	Box::new(|| {}),
 	Box::new(|| {})
 );

@@ -22,7 +22,6 @@ use westmint_runtime::{
 	MetadataDepositBase, RuntimeCall, RuntimeEvent,
 };
 use xcm::{latest::prelude::*, VersionedXcm, MAX_XCM_DECODE_DEPTH};
-use xcm_builder::AsPrefixedGeneralIndex;
 use xcm_executor::{
 	traits::{Convert, Identity, JustTry, WeightTrader},
 	XcmExecutor,
@@ -495,32 +494,6 @@ asset_test_utils::include_receive_teleported_asset_from_foreign_creator_works!(
 	ExistentialDeposit::get()
 );
 
-#[test]
-fn plain_receive_teleported_asset_works() {
-	ExtBuilder::<Runtime>::default()
-		.with_collators(vec![AccountId::from(ALICE)])
-		.with_session_keys(vec![(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
-		)])
-		.build()
-		.execute_with(|| {
-			let data = hex_literal::hex!("02100204000100000b00a0724e18090a13000100000b00a0724e180901e20f5e480d010004000101001299557001f55815d3fcb53c74463acb0cf6d14d4639b340982c60877f384609").to_vec();
-			let message_id = sp_io::hashing::blake2_256(&data);
-
-			let maybe_msg = VersionedXcm::<RuntimeCall>::decode_all_with_depth_limit(
-				MAX_XCM_DECODE_DEPTH,
-				&mut data.as_ref(),
-			)
-				.map(xcm::v3::Xcm::<RuntimeCall>::try_from).expect("failed").expect("failed");
-
-			let outcome =
-				XcmExecutor::<XcmConfig>::execute_xcm(Parent, maybe_msg, message_id, RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Parent));
-			assert_eq!(outcome.ensure_complete(), Ok(()));
-		})
-}
-
 asset_test_utils::include_asset_transactor_transfer_with_local_consensus_currency_works!(
 	Runtime,
 	XcmConfig,
@@ -540,18 +513,20 @@ asset_test_utils::include_asset_transactor_transfer_with_local_consensus_currenc
 	})
 );
 
-asset_test_utils::include_asset_transactor_transfer_with_trust_backed_assets_works!(
+asset_test_utils::include_asset_transactor_transfer_with_pallet_assets_instance_works!(
+	asset_transactor_transfer_with_trust_backed_assets_works,
 	Runtime,
 	XcmConfig,
 	TrustBackedAssetsInstance,
-	TrustBackedAssetsPalletLocation,
+	AssetIdForTrustBackedAssets,
+	AssetIdForTrustBackedAssetsConvert,
 	asset_test_utils::CollatorSessionKeys::new(
 		AccountId::from(ALICE),
 		AccountId::from(ALICE),
 		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
 	),
 	ExistentialDeposit::get(),
-	AssetDeposit::get(),
+	12345,
 	Box::new(|| {
 		assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
 	}),
@@ -560,277 +535,27 @@ asset_test_utils::include_asset_transactor_transfer_with_trust_backed_assets_wor
 	})
 );
 
-#[test]
-fn test_asset_transactor_transfer_with_trust_backed_assets_works() {
-	ExtBuilder::<Runtime>::default()
-		.with_collators(vec![AccountId::from(ALICE)])
-		.with_session_keys(vec![(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
-		)])
-		.with_balances(vec![
-			(AccountId::from(SOME_ASSET_OWNER), ExistentialDeposit::get() + AssetDeposit::get()),
-			(AccountId::from(ALICE), ExistentialDeposit::get()),
-			(AccountId::from(BOB), ExistentialDeposit::get()),
-		])
-		.with_tracing()
-		.build()
-		.execute_with(|| {
-			// create  some asset class
-			let asset_minimum_asset_balance = 3333333_u128;
-			let local_asset_id = 1;
-			let local_asset_id_as_multilocation = {
-				type AssetIdConverter = AsPrefixedGeneralIndex<
-					TrustBackedAssetsPalletLocation,
-					AssetIdForTrustBackedAssets,
-					JustTry,
-				>;
-				AssetIdConverter::reverse_ref(local_asset_id).unwrap()
-			};
-			assert_ok!(Assets::create(
-				RuntimeHelper::<Runtime>::origin_of(AccountId::from(SOME_ASSET_OWNER)),
-				local_asset_id.into(),
-				AccountId::from(SOME_ASSET_OWNER).into(),
-				asset_minimum_asset_balance
-			));
-
-			// We first mint enough asset for the account to exist for assets
-			assert_ok!(Assets::mint(
-				RuntimeHelper::<Runtime>::origin_of(AccountId::from(SOME_ASSET_OWNER)),
-				local_asset_id.into(),
-				AccountId::from(ALICE).into(),
-				6 * asset_minimum_asset_balance
-			));
-
-			// check Assets before
-			assert_eq!(
-				Assets::balance(local_asset_id, AccountId::from(ALICE)),
-				6 * asset_minimum_asset_balance
-			);
-			assert_eq!(Assets::balance(local_asset_id, AccountId::from(BOB)), 0);
-			assert_eq!(Assets::balance(local_asset_id, AccountId::from(CHARLIE)), 0);
-			assert_eq!(Assets::balance(local_asset_id, AccountId::from(SOME_ASSET_OWNER)), 0);
-			assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
-			assert_eq!(Balances::free_balance(AccountId::from(ALICE)), ExistentialDeposit::get());
-			assert_eq!(Balances::free_balance(AccountId::from(BOB)), ExistentialDeposit::get());
-			assert_eq!(Balances::free_balance(AccountId::from(CHARLIE)), 0);
-			assert_eq!(
-				Balances::free_balance(AccountId::from(SOME_ASSET_OWNER)),
-				ExistentialDeposit::get()
-			);
-
-			// transfer_asset (deposit/withdraw) ALICE -> CHARLIE (not ok - Charlie does not have ExistentialDeposit)
-			assert_noop!(
-				RuntimeHelper::<XcmConfig>::do_transfer(
-					MultiLocation {
-						parents: 0,
-						interior: X1(AccountId32 {
-							network: None,
-							id: AccountId::from(ALICE).into()
-						}),
-					},
-					MultiLocation {
-						parents: 0,
-						interior: X1(AccountId32 {
-							network: None,
-							id: AccountId::from(CHARLIE).into()
-						}),
-					},
-					(local_asset_id_as_multilocation, 1 * asset_minimum_asset_balance),
-				),
-				XcmError::FailedToTransactAsset(Into::<&str>::into(
-					sp_runtime::TokenError::CannotCreate
-				))
-			);
-
-			// transfer_asset (deposit/withdraw) ALICE -> BOB (ok - has ExistentialDeposit)
-			assert!(matches!(
-				RuntimeHelper::<XcmConfig>::do_transfer(
-					MultiLocation {
-						parents: 0,
-						interior: X1(AccountId32 {
-							network: None,
-							id: AccountId::from(ALICE).into()
-						}),
-					},
-					MultiLocation {
-						parents: 0,
-						interior: X1(AccountId32 {
-							network: None,
-							id: AccountId::from(BOB).into()
-						}),
-					},
-					(local_asset_id_as_multilocation, 1 * asset_minimum_asset_balance),
-				),
-				Ok(_)
-			));
-
-			// check Assets after
-			assert_eq!(
-				Assets::balance(local_asset_id, AccountId::from(ALICE)),
-				5 * asset_minimum_asset_balance
-			);
-			assert_eq!(
-				Assets::balance(local_asset_id, AccountId::from(BOB)),
-				1 * asset_minimum_asset_balance
-			);
-			assert_eq!(Assets::balance(local_asset_id, AccountId::from(CHARLIE)), 0);
-			assert_eq!(Assets::balance(local_asset_id, AccountId::from(SOME_ASSET_OWNER)), 0);
-			assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
-			assert_eq!(Balances::free_balance(AccountId::from(ALICE)), ExistentialDeposit::get());
-			assert_eq!(Balances::free_balance(AccountId::from(BOB)), ExistentialDeposit::get());
-			assert_eq!(Balances::free_balance(AccountId::from(CHARLIE)), 0);
-			assert_eq!(
-				Balances::free_balance(AccountId::from(SOME_ASSET_OWNER)),
-				ExistentialDeposit::get()
-			);
-		})
-}
-
-#[test]
-fn test_asset_transactor_transfer_with_foreign_assets_works() {
-	ExtBuilder::<Runtime>::default()
-		.with_collators(vec![AccountId::from(ALICE)])
-		.with_session_keys(vec![(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
-		)])
-		.with_balances(vec![
-			(AccountId::from(SOME_ASSET_ADMIN), ExistentialDeposit::get()),
-			(AccountId::from(ALICE), ExistentialDeposit::get()),
-			(AccountId::from(BOB), ExistentialDeposit::get()),
-		])
-		.with_tracing()
-		.build()
-		.execute_with(|| {
-			// create foreign asset
-			// foreign relaychain currency as asset
-			let foreign_asset_id_multilocation =
-				MultiLocation { parents: 2, interior: X1(GlobalConsensus(Kusama)) };
-			let asset_minimum_asset_balance = 3333333_u128;
-			assert_ok!(ForeignAssets::force_create(
-				RuntimeHelper::<Runtime>::root_origin(),
-				foreign_asset_id_multilocation.clone().into(),
-				AccountId::from(SOME_ASSET_ADMIN).into(),
-				false,
-				asset_minimum_asset_balance
-			));
-
-			// We first mint enough asset for the account to exist for assets
-			assert_ok!(ForeignAssets::mint(
-				RuntimeHelper::<Runtime>::origin_of(AccountId::from(SOME_ASSET_ADMIN)),
-				foreign_asset_id_multilocation.clone().into(),
-				AccountId::from(ALICE).into(),
-				6 * asset_minimum_asset_balance
-			));
-
-			// check Assets before
-			assert_eq!(
-				ForeignAssets::balance(foreign_asset_id_multilocation, AccountId::from(ALICE)),
-				6 * asset_minimum_asset_balance
-			);
-			assert_eq!(
-				ForeignAssets::balance(foreign_asset_id_multilocation, AccountId::from(BOB)),
-				0
-			);
-			assert_eq!(
-				ForeignAssets::balance(foreign_asset_id_multilocation, AccountId::from(CHARLIE)),
-				0
-			);
-			assert_eq!(
-				ForeignAssets::balance(
-					foreign_asset_id_multilocation,
-					AccountId::from(SOME_ASSET_ADMIN)
-				),
-				0
-			);
-			assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
-			assert_eq!(Balances::free_balance(AccountId::from(ALICE)), ExistentialDeposit::get());
-			assert_eq!(Balances::free_balance(AccountId::from(BOB)), ExistentialDeposit::get());
-			assert_eq!(Balances::free_balance(AccountId::from(CHARLIE)), 0);
-			assert_eq!(
-				Balances::free_balance(AccountId::from(SOME_ASSET_ADMIN)),
-				ExistentialDeposit::get()
-			);
-
-			// transfer_asset (deposit/withdraw) ALICE -> CHARLIE (not ok - Charlie does not have ExistentialDeposit)
-			assert_noop!(
-				RuntimeHelper::<XcmConfig>::do_transfer(
-					MultiLocation {
-						parents: 0,
-						interior: X1(AccountId32 {
-							network: None,
-							id: AccountId::from(ALICE).into()
-						}),
-					},
-					MultiLocation {
-						parents: 0,
-						interior: X1(AccountId32 {
-							network: None,
-							id: AccountId::from(CHARLIE).into()
-						}),
-					},
-					(foreign_asset_id_multilocation, 1 * asset_minimum_asset_balance),
-				),
-				XcmError::FailedToTransactAsset(Into::<&str>::into(
-					sp_runtime::TokenError::CannotCreate
-				))
-			);
-
-			// transfer_asset (deposit/withdraw) ALICE -> BOB (ok - has ExistentialDeposit)
-			assert!(matches!(
-				RuntimeHelper::<XcmConfig>::do_transfer(
-					MultiLocation {
-						parents: 0,
-						interior: X1(AccountId32 {
-							network: None,
-							id: AccountId::from(ALICE).into()
-						}),
-					},
-					MultiLocation {
-						parents: 0,
-						interior: X1(AccountId32 {
-							network: None,
-							id: AccountId::from(BOB).into()
-						}),
-					},
-					(foreign_asset_id_multilocation, 1 * asset_minimum_asset_balance),
-				),
-				Ok(_)
-			));
-
-			// check Assets after
-			assert_eq!(
-				ForeignAssets::balance(foreign_asset_id_multilocation, AccountId::from(ALICE)),
-				5 * asset_minimum_asset_balance
-			);
-			assert_eq!(
-				ForeignAssets::balance(foreign_asset_id_multilocation, AccountId::from(BOB)),
-				1 * asset_minimum_asset_balance
-			);
-			assert_eq!(
-				ForeignAssets::balance(foreign_asset_id_multilocation, AccountId::from(CHARLIE)),
-				0
-			);
-			assert_eq!(
-				ForeignAssets::balance(
-					foreign_asset_id_multilocation,
-					AccountId::from(SOME_ASSET_ADMIN)
-				),
-				0
-			);
-			assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
-			assert_eq!(Balances::free_balance(AccountId::from(ALICE)), ExistentialDeposit::get());
-			assert_eq!(Balances::free_balance(AccountId::from(BOB)), ExistentialDeposit::get());
-			assert_eq!(Balances::free_balance(AccountId::from(CHARLIE)), 0);
-			assert_eq!(
-				Balances::free_balance(AccountId::from(SOME_ASSET_ADMIN)),
-				ExistentialDeposit::get()
-			);
-		})
-}
+asset_test_utils::include_asset_transactor_transfer_with_pallet_assets_instance_works!(
+	asset_transactor_transfer_with_foreign_assets_works,
+	Runtime,
+	XcmConfig,
+	ForeignAssetsInstance,
+	MultiLocation,
+	JustTry,
+	asset_test_utils::CollatorSessionKeys::new(
+		AccountId::from(ALICE),
+		AccountId::from(ALICE),
+		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+	),
+	ExistentialDeposit::get(),
+	MultiLocation { parents: 1, interior: X2(Parachain(1313), GeneralIndex(12345)) },
+	Box::new(|| {
+		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
+	}),
+	Box::new(|| {
+		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
+	})
+);
 
 #[test]
 fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_works() {
@@ -1003,5 +728,31 @@ fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_works()
 				),
 				pallet_assets::Error::<Runtime, ForeignAssetsInstance>::NoPermission
 			);
+		})
+}
+
+#[test]
+fn plain_receive_teleported_asset_works() {
+	ExtBuilder::<Runtime>::default()
+		.with_collators(vec![AccountId::from(ALICE)])
+		.with_session_keys(vec![(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+		)])
+		.build()
+		.execute_with(|| {
+			let data = hex_literal::hex!("02100204000100000b00a0724e18090a13000100000b00a0724e180901e20f5e480d010004000101001299557001f55815d3fcb53c74463acb0cf6d14d4639b340982c60877f384609").to_vec();
+			let message_id = sp_io::hashing::blake2_256(&data);
+
+			let maybe_msg = VersionedXcm::<RuntimeCall>::decode_all_with_depth_limit(
+				MAX_XCM_DECODE_DEPTH,
+				&mut data.as_ref(),
+			)
+				.map(xcm::v3::Xcm::<RuntimeCall>::try_from).expect("failed").expect("failed");
+
+			let outcome =
+				XcmExecutor::<XcmConfig>::execute_xcm(Parent, maybe_msg, message_id, RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Parent));
+			assert_eq!(outcome.ensure_complete(), Ok(()));
 		})
 }

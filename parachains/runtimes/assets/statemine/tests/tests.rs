@@ -5,7 +5,7 @@ use frame_support::{
 	traits::fungibles::InspectEnumerable,
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
-use parachains_common::{AccountId, AuraId, Balance};
+use parachains_common::{AccountId, AssetIdForTrustBackedAssets, AuraId, Balance};
 use statemine_runtime::xcm_config::{
 	AssetFeeAsExistentialDepositMultiplierFeeCharger, KsmLocation, TrustBackedAssetsPalletLocation,
 };
@@ -16,7 +16,7 @@ pub use statemine_runtime::{
 	Runtime, SessionKeys, System, TrustBackedAssetsInstance,
 };
 use xcm::latest::prelude::*;
-use xcm_executor::traits::{Convert, WeightTrader};
+use xcm_executor::traits::{Convert, JustTry, WeightTrader};
 
 pub const ALICE: [u8; 32] = [1u8; 32];
 pub const BOB: [u8; 32] = [2u8; 32];
@@ -469,22 +469,46 @@ asset_test_utils::include_asset_transactor_transfer_with_local_consensus_currenc
 	})
 );
 
-asset_test_utils::include_asset_transactor_transfer_with_trust_backed_assets_works!(
+asset_test_utils::include_asset_transactor_transfer_with_pallet_assets_instance_works!(
+	asset_transactor_transfer_with_trust_backed_assets_works,
 	Runtime,
 	XcmConfig,
 	TrustBackedAssetsInstance,
-	TrustBackedAssetsPalletLocation,
+	AssetIdForTrustBackedAssets,
+	AssetIdForTrustBackedAssetsConvert,
 	asset_test_utils::CollatorSessionKeys::new(
 		AccountId::from(ALICE),
 		AccountId::from(ALICE),
 		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
 	),
 	ExistentialDeposit::get(),
-	AssetDeposit::get(),
+	12345,
 	Box::new(|| {
 		assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
 	}),
 	Box::new(|| {
 		assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
+	})
+);
+
+asset_test_utils::include_asset_transactor_transfer_with_pallet_assets_instance_works!(
+	asset_transactor_transfer_with_foreign_assets_works,
+	Runtime,
+	XcmConfig,
+	ForeignAssetsInstance,
+	MultiLocation,
+	JustTry,
+	asset_test_utils::CollatorSessionKeys::new(
+		AccountId::from(ALICE),
+		AccountId::from(ALICE),
+		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+	),
+	ExistentialDeposit::get(),
+	MultiLocation { parents: 1, interior: X2(Parachain(1313), GeneralIndex(12345)) },
+	Box::new(|| {
+		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
+	}),
+	Box::new(|| {
+		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
 	})
 );

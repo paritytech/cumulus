@@ -17,12 +17,9 @@ use crate::{
 	AccountIdOf, BalanceOf, ExtBuilder, RuntimeHelper, SessionKeysOf, ValidatorIdOf,
 	XcmReceivedFrom,
 };
-use assets_common::AssetIdForTrustBackedAssetsConvert;
 use codec::Encode;
-use frame_support::{
-	assert_noop, assert_ok, pallet_prelude::Get, traits::OriginTrait, weights::Weight,
-};
-use parachains_common::{AssetIdForTrustBackedAssets, Balance};
+use frame_support::{assert_noop, assert_ok, traits::OriginTrait, weights::Weight};
+use parachains_common::Balance;
 use sp_runtime::traits::{StaticLookup, Zero};
 use xcm::latest::prelude::*;
 use xcm_executor::{traits::Convert, XcmExecutor};
@@ -432,15 +429,16 @@ macro_rules! include_asset_transactor_transfer_with_local_consensus_currency_wor
 );
 
 ///Test-case makes sure that `Runtime`'s `xcm::AssetTransactor` can handle native relay chain currency
-pub fn asset_transactor_transfer_with_trust_backed_assets_works<
+pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 	Runtime,
 	XcmConfig,
 	AssetsPalletInstance,
-	TrustBackedAssetsPalletLocation,
+	AssetId,
+	AssetIdConverter,
 >(
 	collator_session_keys: CollatorSessionKeys<Runtime>,
 	existential_deposit: BalanceOf<Runtime>,
-	asset_deposit: BalanceOf<Runtime>,
+	asset_id: AssetId,
 	asset_owner: AccountIdOf<Runtime>,
 	alice_account: AccountIdOf<Runtime>,
 	bob_account: AccountIdOf<Runtime>,
@@ -459,22 +457,23 @@ pub fn asset_transactor_transfer_with_trust_backed_assets_works<
 	BalanceOf<Runtime>: From<Balance>,
 	XcmConfig: xcm_executor::Config,
 	<Runtime as pallet_assets::Config<AssetsPalletInstance>>::AssetId:
-		From<AssetIdForTrustBackedAssets> + Into<AssetIdForTrustBackedAssets>,
+		From<AssetId> + Into<AssetId>,
 	<Runtime as pallet_assets::Config<AssetsPalletInstance>>::AssetIdParameter:
-		From<AssetIdForTrustBackedAssets> + Into<AssetIdForTrustBackedAssets>,
+		From<AssetId> + Into<AssetId>,
 	<Runtime as pallet_assets::Config<AssetsPalletInstance>>::Balance: From<Balance> + Into<u128>,
 	<Runtime as frame_system::Config>::AccountId:
 		Into<<<Runtime as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId>,
 	<<Runtime as frame_system::Config>::Lookup as StaticLookup>::Source:
 		From<<Runtime as frame_system::Config>::AccountId>,
 	AssetsPalletInstance: 'static,
-	TrustBackedAssetsPalletLocation: Get<MultiLocation>,
+	AssetId: Clone,
+	AssetIdConverter: Convert<MultiLocation, AssetId>,
 {
 	ExtBuilder::<Runtime>::default()
 		.with_collators(collator_session_keys.collators())
 		.with_session_keys(collator_session_keys.session_keys())
 		.with_balances(vec![
-			(asset_owner.clone(), existential_deposit + asset_deposit),
+			(asset_owner.clone(), existential_deposit),
 			(alice_account.clone(), existential_deposit),
 			(bob_account.clone(), existential_deposit),
 		])
@@ -483,22 +482,19 @@ pub fn asset_transactor_transfer_with_trust_backed_assets_works<
 		.execute_with(|| {
 			// create  some asset class
 			let asset_minimum_asset_balance = 3333333_u128;
-			let local_asset_id = 1;
-			let local_asset_id_as_multilocation = AssetIdForTrustBackedAssetsConvert::<
-				TrustBackedAssetsPalletLocation,
-			>::reverse_ref(local_asset_id)
-			.unwrap();
-			assert_ok!(<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::create(
-				RuntimeHelper::<Runtime>::origin_of(asset_owner.clone()),
-				local_asset_id.into(),
+			let asset_id_as_multilocation = AssetIdConverter::reverse_ref(&asset_id).unwrap();
+			assert_ok!(<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::force_create(
+				RuntimeHelper::<Runtime>::root_origin(),
+				asset_id.clone().into(),
 				asset_owner.clone().into(),
+				false,
 				asset_minimum_asset_balance.into()
 			));
 
 			// We first mint enough asset for the account to exist for assets
 			assert_ok!(<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::mint(
 				RuntimeHelper::<Runtime>::origin_of(asset_owner.clone()),
-				local_asset_id.into(),
+				asset_id.clone().into(),
 				alice_account.clone().into(),
 				(6 * asset_minimum_asset_balance).into()
 			));
@@ -506,28 +502,28 @@ pub fn asset_transactor_transfer_with_trust_backed_assets_works<
 			// check Assets before
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::balance(
-					local_asset_id.into(),
+					asset_id.clone().into(),
 					&alice_account
 				),
 				(6 * asset_minimum_asset_balance).into()
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::balance(
-					local_asset_id.into(),
+					asset_id.clone().into(),
 					&bob_account
 				),
 				0.into()
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::balance(
-					local_asset_id.into(),
+					asset_id.clone().into(),
 					&charlie_account
 				),
 				0.into()
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::balance(
-					local_asset_id.into(),
+					asset_id.clone().into(),
 					&asset_owner
 				),
 				0.into()
@@ -567,7 +563,7 @@ pub fn asset_transactor_transfer_with_trust_backed_assets_works<
 							id: charlie_account.clone().into()
 						}),
 					},
-					(local_asset_id_as_multilocation, 1 * asset_minimum_asset_balance),
+					(asset_id_as_multilocation, 1 * asset_minimum_asset_balance),
 				),
 				XcmError::FailedToTransactAsset(Into::<&str>::into(
 					sp_runtime::TokenError::CannotCreate
@@ -588,7 +584,7 @@ pub fn asset_transactor_transfer_with_trust_backed_assets_works<
 						parents: 0,
 						interior: X1(AccountId32 { network: None, id: bob_account.clone().into() }),
 					},
-					(local_asset_id_as_multilocation, 1 * asset_minimum_asset_balance),
+					(asset_id_as_multilocation, 1 * asset_minimum_asset_balance),
 				),
 				Ok(_)
 			));
@@ -596,28 +592,28 @@ pub fn asset_transactor_transfer_with_trust_backed_assets_works<
 			// check Assets after
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::balance(
-					local_asset_id.into(),
+					asset_id.clone().into(),
 					&alice_account
 				),
 				(5 * asset_minimum_asset_balance).into()
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::balance(
-					local_asset_id.into(),
+					asset_id.clone().into(),
 					&bob_account
 				),
 				(1 * asset_minimum_asset_balance).into()
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::balance(
-					local_asset_id.into(),
+					asset_id.clone().into(),
 					&charlie_account
 				),
 				0.into()
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::balance(
-					local_asset_id.into(),
+					asset_id.into(),
 					&asset_owner
 				),
 				0.into()
@@ -643,20 +639,22 @@ pub fn asset_transactor_transfer_with_trust_backed_assets_works<
 }
 
 #[macro_export]
-macro_rules! include_asset_transactor_transfer_with_trust_backed_assets_works(
+macro_rules! include_asset_transactor_transfer_with_pallet_assets_instance_works(
 	(
+		$test_name:tt,
 		$runtime:path,
 		$xcm_config:path,
 		$assets_pallet_instance:path,
-		$trust_backed_assets_pallet_location:path,
+		$asset_id:path,
+		$asset_id_converter:path,
 		$collator_session_key:expr,
 		$existential_deposit:expr,
-		$asset_deposit:expr,
+		$tested_asset_id:expr,
 		$additional_checks_before:expr,
 		$additional_checks_after:expr
 	) => {
 		#[test]
-		fn asset_transactor_transfer_with_trust_backed_assets_works() {
+		fn $test_name() {
 			const SOME_ASSET_OWNER: [u8; 32] = [5u8; 32];
 			let asset_owner = parachains_common::AccountId::from(SOME_ASSET_OWNER);
 			const ALICE: [u8; 32] = [1u8; 32];
@@ -666,15 +664,16 @@ macro_rules! include_asset_transactor_transfer_with_trust_backed_assets_works(
 			const CHARLIE: [u8; 32] = [3u8; 32];
 			let charlie_account = parachains_common::AccountId::from(CHARLIE);
 
-			asset_test_utils::test_cases::asset_transactor_transfer_with_trust_backed_assets_works::<
+			asset_test_utils::test_cases::asset_transactor_transfer_with_pallet_assets_instance_works::<
 				$runtime,
 				$xcm_config,
 				$assets_pallet_instance,
-				$trust_backed_assets_pallet_location
+				$asset_id,
+				$asset_id_converter
 			>(
 				$collator_session_key,
 				$existential_deposit,
-				$asset_deposit,
+				$tested_asset_id,
 				asset_owner,
 				alice_account,
 				bob_account,
