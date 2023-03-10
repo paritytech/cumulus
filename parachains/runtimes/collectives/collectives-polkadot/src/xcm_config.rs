@@ -189,7 +189,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_ranked_collective::Call::demote_member { .. } |
 				pallet_ranked_collective::Call::remove_member { .. },
 			) => true,
-
 			_ => false,
 		}
 	}
