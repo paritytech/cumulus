@@ -378,6 +378,9 @@ pub mod rococo {
 			polkadot_xcm: bridge_hub_rococo_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
 			},
+			ethereum_beacon_client: bridge_hub_rococo_runtime::EthereumBeaconClientConfig {
+				initial_sync: Default::default(),
+			},
 		}
 	}
 }
