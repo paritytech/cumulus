@@ -259,12 +259,10 @@ pub type Barrier = DenyThenTry<
 			(
 				// If the message is one that immediately attemps to pay for execution, then allow it.
 				AllowTopLevelPaidExecutionFrom<Everything>,
-				// Parent and its plurality (i.e. governance bodies) gets free execution.
-				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
+				// Parent, its plurality (i.e. governance bodies) and Fellows plurality gets free execution.
+				AllowExplicitUnpaidExecutionFrom<(ParentOrParentsPlurality, FellowsPlurality)>,
 				// Subscriptions for version tracking are OK.
 				AllowSubscriptionsFrom<ParentOrSiblings>,
-				// Fellows plurality gets free execution.
-				AllowExplicitUnpaidExecutionFrom<FellowsPlurality>,
 			),
 			UniversalLocation,
 			ConstU32<8>,
