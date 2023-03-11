@@ -23,17 +23,19 @@ use codec::Encode;
 use frame_support::{
 	match_types, parameter_types,
 	traits::{
-		ConstU32, Contains, ContainsPair, EnsureOrigin, EnsureOriginWithArg, Everything,
-		OriginTrait, PalletInfoAccess,
+		ConstU32, Contains, ContainsPair, EnsureOriginWithArg, Everything, OriginTrait,
+		PalletInfoAccess,
 	},
 };
-use pallet_xcm::{EnsureXcm, XcmPassthrough};
+use frame_system::RawOrigin;
+use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
 	xcm_config::{
 		AssetFeeAsExistentialDepositMultiplier, DenyReserveTransferToRelayChain, DenyThenTry,
 	},
 };
+
 use polkadot_parachain::primitives::{Id as ParaId, Sibling};
 use sp_runtime::traits::ConvertInto;
 use sp_std::marker::PhantomData;
@@ -248,6 +250,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_assets::Call::touch { .. } |
 				pallet_assets::Call::refund { .. },
 			) |
+			RuntimeCall::ForeignAssets(..) |
 			RuntimeCall::Uniques(
 				pallet_uniques::Call::create { .. } |
 				pallet_uniques::Call::force_create { .. } |
@@ -427,21 +430,34 @@ pub type SovereignAccountOf = (
 	ParentIsPreset<AccountId>,
 );
 
-// `EnsureOriginWithArg` impl for `CreateOrigin` that allows only XCM origins that are locations
-// containing the class location.
+// `EnsureOriginWithArg` impl for `CreateOrigin` that allows only XCM origins
+// that are Proxy Accounts.
 pub struct ForeignCreators;
 impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
 	type Success = AccountId;
 
 	fn try_origin(
-		o: RuntimeOrigin,
-		a: &MultiLocation,
+		origin: RuntimeOrigin,
+		location: &MultiLocation,
 	) -> sp_std::result::Result<Self::Success, RuntimeOrigin> {
-		let origin_location = EnsureXcm::<Everything>::try_origin(o.clone())?;
-		if !a.starts_with(&origin_location) {
-			return Err(o)
+		log::trace!(target: "xcm::foreign_creators", "ForeignCreators entry point, origin: {:?} MultiLocation: {:?}", origin, location);
+
+		if !TrustedForeignAssetsLocations::contains(location) {
+			return Err(origin)
 		}
-		SovereignAccountOf::convert(origin_location).map_err(|_| o)
+
+		log::trace!(target: "xcm::foreign_creators", "TrustedForeignAssetsLocations passed");
+
+		match origin.clone().into() {
+			Ok(RawOrigin::Signed(account)) => {
+				log::trace!(target: "xcm::foreign_creators", "ForeignCreators works, account: {:?}", account);
+				Ok(account)
+			},
+			e => {
+				log::trace!(target: "xcm::foreign_creators", "ForeignCreators does not work, result: {:?}", e);
+				Err(origin)
+			},
+		}
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
@@ -485,8 +501,54 @@ parameter_types! {
 		MultiLocation { parents: 2, interior: X2(GlobalConsensus(Rococo), Parachain(1015)) },
 		MultiLocation { parents: 2, interior: X2(GlobalConsensus(Kusama), Parachain(1015)) },
 	];
+
+	pub TrustedForeignAssetsLocations: sp_std::vec::Vec<MultiLocation> = sp_std::vec![
+		// TODO:check-parameter - tmp values that cover local/live Rococo/Wococo run
+		MultiLocation { parents: 2, interior: X3(GlobalConsensus(Rococo), Parachain(1000), PalletInstance(50)) },
+		MultiLocation { parents: 2, interior: X1(GlobalConsensus(Ethereum{chain_id: 1337})) },
+		MultiLocation { parents: 2, interior: X1(GlobalConsensus(Ethereum{chain_id: 5})) },
+	];
+
 }
 
+impl Contains<MultiLocation> for TrustedForeignAssetsLocations {
+	fn contains(location: &MultiLocation) -> bool {
+		let mapped_location = match location {
+			// Parachain as Statemine/Statemint
+			MultiLocation {
+				parents,
+				interior:
+					X4(
+						GlobalConsensus(consensus),
+						Parachain(para_id),
+						PalletInstance(pallet_idx),
+						GeneralIndex(_asset_id),
+					),
+			} => MultiLocation {
+				parents: *parents,
+				interior: X3(
+					GlobalConsensus(*consensus),
+					Parachain(*para_id),
+					PalletInstance(*pallet_idx),
+				),
+			},
+			// Ethereum token (Smart Contract)
+			MultiLocation {
+				parents,
+				interior: X2(GlobalConsensus(consensus), AccountKey20 { .. }),
+			} => MultiLocation { parents: *parents, interior: X1(GlobalConsensus(*consensus)) },
+			_ => {
+				log::trace!(target: "xcm::TrustedForeignAssetsLocations", "Invalid Asset MultiLocation: {:?}", location);
+				return false
+			},
+		};
+
+		let res = Self::get().contains(&mapped_location);
+
+		log::trace!(target: "xcm::TrustedForeignAssetsLocations", "Asset MultiLocation: {:?}, Mapped MultiLocation: {:?}, result: {:?}", location, mapped_location, res);
+		res
+	}
+}
 impl Contains<(MultiLocation, Junction)> for TrustedBridgedNetworks {
 	fn contains(t: &(MultiLocation, Junction)) -> bool {
 		Self::get().contains(t)
