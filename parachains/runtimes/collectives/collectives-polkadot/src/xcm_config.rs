@@ -182,7 +182,13 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_collective::Call::disapprove_proposal { .. } |
 				pallet_collective::Call::close { .. },
 			) |
-			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) => true,
+			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
+			RuntimeCall::FellowshipCollective(
+				pallet_ranked_collective::Call::add_member { .. } |
+				pallet_ranked_collective::Call::promote_member { .. } |
+				pallet_ranked_collective::Call::demote_member { .. } |
+				pallet_ranked_collective::Call::remove_member { .. },
+			) => true,
 			_ => false,
 		}
 	}
