@@ -54,6 +54,7 @@ enum Runtime {
 	ContractsRococo,
 	CollectivesPolkadot,
 	CollectivesWestend,
+	GluttonKusama,
 	BridgeHub(chain_spec::bridge_hubs::BridgeHubRuntimeType),
 }
 
@@ -111,6 +112,8 @@ fn runtime(id: &str) -> Runtime {
 			id.parse::<chain_spec::bridge_hubs::BridgeHubRuntimeType>()
 				.expect("Invalid value"),
 		)
+	} else if id.starts_with("glutton-kusama") {
+		Runtime::GluttonKusama
 	} else {
 		log::warn!("No specific runtime was recognized for ChainSpec's id: '{}', so Runtime::default() will be used", id);
 		Runtime::default()
@@ -214,6 +217,15 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			"polkadot-local",
 		)),
 
+		// -- Glutton
+		"glutton-dev" => Box::new(chain_spec::glutton::glutton_development_config()),
+		// the chain spec as used for generating the upgrade genesis values
+		"glutton-genesis" => Box::new(chain_spec::glutton::glutton_config()),
+		// the shell-based chain spec as used for syncing
+		"glutton" => Box::new(chain_spec::glutton::GluttonChainSpec::from_json_bytes(
+			&include_bytes!("../../parachains/chain-specs/glutton.json")[..],
+		)?),
+
 		// -- Fallback (generic chainspec)
 		"" => {
 			log::warn!("No ChainSpec.id specified, so using default one, based on rococo-parachain runtime");
@@ -243,6 +255,8 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 					bridge_hub_runtime_type.chain_spec_from_json_file(path.into())?,
 				Runtime::Penpal(_para_id) =>
 					Box::new(chain_spec::penpal::PenpalChainSpec::from_json_file(path)?),
+				Runtime::Glutton =>
+					Box::new(chain_spec::glutton::GluttonChainSpec::from_json_file(path)?),
 				Runtime::Default => Box::new(
 					chain_spec::rococo_parachain::RococoParachainChainSpec::from_json_file(path)?,
 				),
@@ -321,6 +335,7 @@ impl SubstrateCli for Cli {
 			Runtime::BridgeHub(bridge_hub_runtime_type) =>
 				bridge_hub_runtime_type.runtime_version(),
 			Runtime::Penpal(_) => &penpal_runtime::VERSION,
+			Runtime::Glutton => &glutton_kusama_runtime::VERSION,
 			Runtime::Default => &rococo_parachain_runtime::VERSION,
 		}
 	}
@@ -551,6 +566,16 @@ macro_rules! construct_async_run {
 					>(
 						&$config,
 						crate::service::rococo_parachain_build_import_queue,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			},
+			Runtime::Glutton => {
+				runner.async_run(|$config| {
+					let $components = new_partial::<glutton_kusama_runtime::RuntimeApi, _>(
+						&$config,
+						crate::service::shell_build_import_queue,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -798,6 +823,12 @@ pub fn run() -> Result<()> {
 						task_manager,
 					))
 				}),
+				Runtime::Glutton => runner.async_run(|_| {
+					Ok((
+						cmd.run::<Block, HostFunctionsOf<crate::service::GluttonRuntimeExecutor>, _>(Some(info_provider)),
+						task_manager,
+					))
+				}),
 				_ => Err("Chain doesn't support try-runtime".into()),
 			}
 		},
@@ -956,6 +987,17 @@ pub fn run() -> Result<()> {
 					.map_err(Into::into),
 					Runtime::Penpal(_) | Runtime::Default =>
 						crate::service::start_rococo_parachain_node(
+							config,
+							polkadot_config,
+							collator_options,
+							id,
+							hwbench,
+						)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into),
+					Runtime::Glutton =>
+						crate::service::start_shell_node::<glutton_kusama_runtime::RuntimeApi>(
 							config,
 							polkadot_config,
 							collator_options,

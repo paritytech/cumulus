@@ -1,5 +1,5 @@
 [package]
-name = "glutton-kusama-runtime"
+name = "glutton-runtime"
 version = "1.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"

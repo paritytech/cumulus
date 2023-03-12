@@ -3784,7 +3784,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "glutton-kusama-runtime"
+name = "glutton-runtime"
 version = "1.0.0"
 dependencies = [
  "cumulus-pallet-parachain-system",
@@ -8395,6 +8395,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "futures",
+ "glutton-runtime",
  "hex-literal",
  "jsonrpsee",
  "log",
