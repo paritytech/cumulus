@@ -39,6 +39,23 @@ pub fn glutton_development_config() -> GluttonChainSpec {
 	)
 }
 
+pub fn glutton_local_config() -> GluttonChainSpec {
+	GluttonChainSpec::from_genesis(
+		// Name
+		"Glutton Local",
+		// ID
+		"glutton_local",
+		ChainType::Local,
+		move || glutton_genesis(2005.into()),
+		Vec::new(),
+		None,
+		None,
+		None,
+		None,
+		Extensions { relay_chain: "rococo-local".into(), para_id: 2005 },
+	)
+}
+
 pub fn glutton_config() -> GluttonChainSpec {
 	GluttonChainSpec::from_genesis(
 		// Name
