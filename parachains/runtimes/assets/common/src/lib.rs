@@ -60,8 +60,8 @@ pub type MultiLocationConvertedConcreteId<MultiLocationFilter, Balance> =
 /// - parent as relay chain
 /// - all local MultiLocations
 ///
-/// `MultiLocationFilter` can customize additional excluded MultiLocations
-pub type ForeignAssetsConvertedConcreteId<AdditinalMultiLocationFilter, Balance> =
+/// `AdditinalMultiLocationExcludeFilter` can customize additional excluded MultiLocations
+pub type ForeignAssetsConvertedConcreteId<AdditinalMultiLocationExcludeFilter, Balance> =
 	MultiLocationConvertedConcreteId<
 		EverythingBut<(
 			// Excludes relay/parent chain currency
@@ -71,7 +71,7 @@ pub type ForeignAssetsConvertedConcreteId<AdditinalMultiLocationFilter, Balance>
 			// assert!(X1(Parachain(100)).starts_with(&Here));
 			StartsWith<LocalMultiLocationPattern>,
 			// Here we can exclude more stuff or leave it as `()`
-			AdditinalMultiLocationFilter,
+			AdditinalMultiLocationExcludeFilter,
 		)>,
 		Balance,
 	>;
