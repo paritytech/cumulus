@@ -73,9 +73,9 @@ parachain-info = { path = "../../../../parachains/pallets/parachain-info", defau
 parachains-common = { path = "../../../../parachains/common", default-features = false }
 
 # Ethereum Bridge (Snowbridge)
-snowbridge-core = { git = "https://github.com/Snowfork/snowbridge.git", default-features = false }
-snowbridge-basic-channel = { git = "https://github.com/Snowfork/snowbridge.git", default-features = false }
-dispatch = { git = "https://github.com/Snowfork/snowbridge.git", package = "snowbridge-dispatch", default-features = false }
+snowbridge-core = { git = "https://github.com/Snowfork/snowbridge.git", default-features = false, branch = "main" }
+snowbridge-basic-channel = { git = "https://github.com/Snowfork/snowbridge.git", default-features = false, branch = "main" }
+dispatch = { git = "https://github.com/Snowfork/snowbridge.git", package = "snowbridge-dispatch", default-features = false, branch = "main" }
 ethereum-beacon-client = { git = "https://github.com/Snowfork/snowbridge.git", package = "snowbridge-ethereum-beacon-client", default-features = false, branch = "main", features=["minimal"]}
 ethereum-beacon-primitives = { git = "https://github.com/Snowfork/snowbridge.git", package = "snowbridge-beacon-primitives", default-features = false, branch = "main" }
 
@@ -136,6 +136,7 @@ std = [
     "snowbridge-basic-channel/std",
 	"snowbridge-core/std",
 	"ethereum-beacon-client/std",
+	"ethereum-beacon-primitives/std",
 	"dispatch/std",
 ]
 
