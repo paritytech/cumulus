@@ -179,8 +179,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_collective::Call::close_old_weight { .. } |
 				pallet_collective::Call::disapprove_proposal { .. } |
 				pallet_collective::Call::close { .. },
-			) |
-			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) => true,
+			) => true,
 			_ => false,
 		}
 	}
