@@ -347,7 +347,9 @@ pub mod pallet {
 			);
 
 			<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
-				invulnerables.try_push(new.clone()).map_err(|_| Error::<T>::TooManyInvulnerables)?;
+				invulnerables
+					.try_push(new.clone())
+					.map_err(|_| Error::<T>::TooManyInvulnerables)?;
 				invulnerables.sort();
 				Ok(())
 			})?;
