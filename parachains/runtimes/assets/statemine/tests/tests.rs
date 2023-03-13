@@ -1,4 +1,5 @@
 use asset_test_utils::{ExtBuilder, RuntimeHelper};
+use codec::{Decode, Encode};
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
 	assert_noop, assert_ok,
@@ -13,13 +14,13 @@ pub use statemine_runtime::{
 	constants::fee::WeightToFee,
 	xcm_config::{ForeignCreatorsSovereignAccountOf, XcmConfig},
 	AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets, ForeignAssetsInstance,
-	Runtime, SessionKeys, System, TrustBackedAssetsInstance,
+	MetadataDepositBase, Runtime, RuntimeCall, RuntimeEvent, SessionKeys, System,
+	TrustBackedAssetsInstance,
 };
 use xcm::latest::prelude::*;
 use xcm_executor::traits::{Convert, JustTry, WeightTrader};
 
-pub const ALICE: [u8; 32] = [1u8; 32];
-pub const BOB: [u8; 32] = [2u8; 32];
+const ALICE: [u8; 32] = [1u8; 32];
 
 type AssetIdForTrustBackedAssetsConvert =
 	assets_common::AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>;
@@ -505,6 +506,37 @@ asset_test_utils::include_asset_transactor_transfer_with_pallet_assets_instance_
 	),
 	ExistentialDeposit::get(),
 	MultiLocation { parents: 1, interior: X2(Parachain(1313), GeneralIndex(12345)) },
+	Box::new(|| {
+		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
+	}),
+	Box::new(|| {
+		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
+	})
+);
+
+asset_test_utils::include_create_and_manage_foreign_assets_for_local_consensus_parachain_assets_works!(
+	Runtime,
+	XcmConfig,
+	WeightToFee,
+	ForeignCreatorsSovereignAccountOf,
+	ForeignAssetsInstance,
+	MultiLocation,
+	JustTry,
+	asset_test_utils::CollatorSessionKeys::new(
+		AccountId::from(ALICE),
+		AccountId::from(ALICE),
+		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+	),
+	ExistentialDeposit::get(),
+	AssetDeposit::get(),
+	MetadataDepositBase::get(),
+	Box::new(|pallet_asset_call| RuntimeCall::ForeignAssets(pallet_asset_call).encode()),
+	Box::new(|runtime_event_encoded: Vec<u8>| {
+		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+			Ok(RuntimeEvent::ForeignAssets(pallet_asset_event)) => Some(pallet_asset_event),
+			_ => None,
+		}
+	}),
 	Box::new(|| {
 		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
 	}),

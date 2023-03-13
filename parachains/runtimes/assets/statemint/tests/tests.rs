@@ -18,8 +18,7 @@ pub use statemint_runtime::{
 use xcm::latest::prelude::*;
 use xcm_executor::traits::{Convert, WeightTrader};
 
-pub const ALICE: [u8; 32] = [1u8; 32];
-pub const BOB: [u8; 32] = [2u8; 32];
+const ALICE: [u8; 32] = [1u8; 32];
 
 type AssetIdForTrustBackedAssetsConvert =
 	assets_common::AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>;
