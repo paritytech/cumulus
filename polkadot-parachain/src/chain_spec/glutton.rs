@@ -52,7 +52,7 @@ pub fn glutton_local_config() -> GluttonChainSpec {
 		None,
 		None,
 		None,
-		Extensions { relay_chain: "rococo-local".into(), para_id: 2005 },
+		Extensions { relay_chain: "kusama-local".into(), para_id: 2005 },
 	)
 }
 

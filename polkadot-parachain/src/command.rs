@@ -224,8 +224,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"glutton-genesis" => Box::new(chain_spec::glutton::glutton_config()),
 		// the shell-based chain spec as used for syncing
 		"glutton" => Box::new(chain_spec::glutton::GluttonChainSpec::from_json_bytes(
-			&include_bytes!("../../parachains/chain-specs/statemint.json")[..],
-			// The file path needs to be updated ^^^^
+			&include_bytes!("../../parachains/chain-specs/glutton.json")[..],
 		)?),
 
 		// -- Fallback (generic chainspec)
