@@ -579,9 +579,11 @@ asset_test_utils::include_create_and_manage_foreign_assets_for_local_consensus_p
 	}),
 	Box::new(|| {
 		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
+		assert!(ForeignAssets::asset_ids().collect::<Vec<_>>().is_empty());
 	}),
 	Box::new(|| {
 		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
+		assert_eq!(ForeignAssets::asset_ids().collect::<Vec<_>>().len(), 1);
 	})
 );
 

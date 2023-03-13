@@ -26,7 +26,10 @@ use frame_support::{
 	weights::Weight,
 };
 use parachains_common::Balance;
-use sp_runtime::traits::{StaticLookup, Zero};
+use sp_runtime::{
+	traits::{StaticLookup, Zero},
+	DispatchError,
+};
 use xcm::latest::prelude::*;
 use xcm_executor::{traits::Convert, XcmExecutor};
 
@@ -107,6 +110,7 @@ pub fn receive_teleported_asset_for_native_asset_works<Runtime, XcmConfig>(
 						}),
 					},
 				},
+				ExpectTransactStatus(MaybeErrorCode::Success),
 			]);
 
 			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
@@ -268,6 +272,7 @@ pub fn receive_teleported_asset_from_foreign_creator_works<
 						}),
 					},
 				},
+				ExpectTransactStatus(MaybeErrorCode::Success),
 			]);
 			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
 
@@ -766,6 +771,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 			foreign_creator_as_account_id.clone(),
 			existential_deposit +
 				asset_deposit + metadata_deposit_base +
+				buy_execution_fee_amount.into() +
 				buy_execution_fee_amount.into(),
 		)])
 		.with_tracing()
@@ -778,6 +784,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 				<pallet_balances::Pallet<Runtime>>::free_balance(&foreign_creator_as_account_id),
 				existential_deposit +
 					asset_deposit + metadata_deposit_base +
+					buy_execution_fee_amount.into() +
 					buy_execution_fee_amount.into()
 			);
 			additional_checks_before();
@@ -833,6 +840,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 					require_weight_at_most: Weight::from_parts(20_000_000_000, 6000),
 					call: foreign_asset_set_team.into(),
 				},
+				ExpectTransactStatus(MaybeErrorCode::Success),
 			]);
 
 			// messages with different consensus should go through the local bridge-hub
@@ -888,7 +896,9 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 			);
 			assert!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(&foreign_creator_as_account_id) <
-					existential_deposit + buy_execution_fee_amount.into()
+					existential_deposit +
+						buy_execution_fee_amount.into() +
+						buy_execution_fee_amount.into()
 			);
 			assert_metadata::<
 				pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>,
@@ -906,12 +916,50 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 			);
 			assert_noop!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::freeze(
-					RuntimeHelper::<Runtime>::origin_of(foreign_creator_as_account_id),
+					RuntimeHelper::<Runtime>::origin_of(foreign_creator_as_account_id.clone()),
 					asset_id.clone().into(),
 					alice_account.into()
 				),
 				pallet_assets::Error::<Runtime, ForeignAssetsPalletInstance>::NoPermission
 			);
+
+			// lets try create asset for different parachain(3333) (foreign_creator(2222) can create just his assets)
+			let foreign_asset_id_multilocation =
+				MultiLocation { parents: 1, interior: X2(Parachain(3333), GeneralIndex(1234567)) };
+			let asset_id = AssetIdConverter::convert(foreign_asset_id_multilocation).unwrap();
+
+			// prepapre data for xcm::Transact(create)
+			let foreign_asset_create = runtime_call_encode(pallet_assets::Call::<
+				Runtime,
+				ForeignAssetsPalletInstance,
+			>::create {
+				id: asset_id.clone().into(),
+				// admin as sovereign_account
+				admin: foreign_creator_as_account_id.clone().into(),
+				min_balance: 1.into(),
+			});
+			let xcm = Xcm(vec![
+				WithdrawAsset(buy_execution_fee.clone().into()),
+				BuyExecution { fees: buy_execution_fee.clone().into(), weight_limit: Unlimited },
+				Transact {
+					origin_kind: OriginKind::Xcm,
+					require_weight_at_most: Weight::from_parts(20_000_000_000, 6000),
+					call: foreign_asset_create.into(),
+				},
+				ExpectTransactStatus(MaybeErrorCode::from(DispatchError::BadOrigin.encode())),
+			]);
+
+			// messages with different consensus should go through the local bridge-hub
+			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
+
+			// execute xcm as XcmpQueue would do
+			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(
+				foreign_creator,
+				xcm,
+				hash,
+				RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Sibling),
+			);
+			assert_eq!(outcome.ensure_complete(), Ok(()));
 
 			additional_checks_after();
 		})
