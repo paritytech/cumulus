@@ -54,7 +54,7 @@ enum Runtime {
 	ContractsRococo,
 	CollectivesPolkadot,
 	CollectivesWestend,
-	GluttonKusama,
+	Glutton,
 	BridgeHub(chain_spec::bridge_hubs::BridgeHubRuntimeType),
 }
 
@@ -112,8 +112,8 @@ fn runtime(id: &str) -> Runtime {
 			id.parse::<chain_spec::bridge_hubs::BridgeHubRuntimeType>()
 				.expect("Invalid value"),
 		)
-	} else if id.starts_with("glutton-kusama") {
-		Runtime::GluttonKusama
+	} else if id.starts_with("glutton") {
+		Runtime::Glutton
 	} else {
 		log::warn!("No specific runtime was recognized for ChainSpec's id: '{}', so Runtime::default() will be used", id);
 		Runtime::default()
@@ -223,7 +223,8 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"glutton-genesis" => Box::new(chain_spec::glutton::glutton_config()),
 		// the shell-based chain spec as used for syncing
 		"glutton" => Box::new(chain_spec::glutton::GluttonChainSpec::from_json_bytes(
-			&include_bytes!("../../parachains/chain-specs/glutton.json")[..],
+			&include_bytes!("../../parachains/chain-specs/statemint.json")[..],
+			// The file path needs to be updated ^^^^
 		)?),
 
 		// -- Fallback (generic chainspec)
@@ -335,7 +336,7 @@ impl SubstrateCli for Cli {
 			Runtime::BridgeHub(bridge_hub_runtime_type) =>
 				bridge_hub_runtime_type.runtime_version(),
 			Runtime::Penpal(_) => &penpal_runtime::VERSION,
-			Runtime::Glutton => &glutton_kusama_runtime::VERSION,
+			Runtime::Glutton => &glutton_runtime::VERSION,
 			Runtime::Default => &rococo_parachain_runtime::VERSION,
 		}
 	}
@@ -573,7 +574,7 @@ macro_rules! construct_async_run {
 			},
 			Runtime::Glutton => {
 				runner.async_run(|$config| {
-					let $components = new_partial::<glutton_kusama_runtime::RuntimeApi, _>(
+					let $components = new_partial::<glutton_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::shell_build_import_queue,
 					)?;
@@ -997,7 +998,7 @@ pub fn run() -> Result<()> {
 						.map(|r| r.0)
 						.map_err(Into::into),
 					Runtime::Glutton =>
-						crate::service::start_shell_node::<glutton_kusama_runtime::RuntimeApi>(
+						crate::service::start_shell_node::<glutton_runtime::RuntimeApi>(
 							config,
 							polkadot_config,
 							collator_options,

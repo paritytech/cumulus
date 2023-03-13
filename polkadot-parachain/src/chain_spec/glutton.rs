@@ -20,7 +20,7 @@ use sc_service::ChainType;
 
 /// Specialized `ChainSpec` for the Glutton parachain runtime.
 pub type GluttonChainSpec =
-	sc_service::GenericChainSpec<statemine_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<glutton_runtime::GenesisConfig, Extensions>;
 
 pub fn glutton_development_config() -> GluttonChainSpec {
 	GluttonChainSpec::from_genesis(
@@ -29,12 +29,12 @@ pub fn glutton_development_config() -> GluttonChainSpec {
 		// ID
 		"glutton_dev",
 		ChainType::Local,
-		move || statemine_genesis(2005.into()),
+		move || glutton_genesis(2005.into()),
 		Vec::new(),
 		None,
 		None,
 		None,
-		Some(properties),
+		None,
 		Extensions { relay_chain: "kusama-dev".into(), para_id: 2005 },
 	)
 }
@@ -46,17 +46,17 @@ pub fn glutton_config() -> GluttonChainSpec {
 		// ID
 		"glutton",
 		ChainType::Live,
-		move || statemine_genesis(2005.into()),
+		move || glutton_genesis(2005.into()),
 		Vec::new(),
 		None,
 		None,
 		None,
-		Some(properties),
+		None,
 		Extensions { relay_chain: "kusama".into(), para_id: 2005 },
 	)
 }
 
-fn glutton_genesis(id: ParaId) -> glutton_runtime::GenesisConfig {
+fn glutton_genesis(parachain_id: ParaId) -> glutton_runtime::GenesisConfig {
 	glutton_runtime::GenesisConfig {
 		system: glutton_runtime::SystemConfig {
 			code: glutton_runtime::WASM_BINARY
