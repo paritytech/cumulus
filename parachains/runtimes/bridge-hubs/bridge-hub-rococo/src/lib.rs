@@ -33,7 +33,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, Keccak256},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -65,6 +65,8 @@ use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+
+pub use snowbridge_core::MessageId;
 
 // Polkadot imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
@@ -415,6 +417,40 @@ impl pallet_utility::Config for Runtime {
 }
 
 // Ethereum Bridge
+
+impl dispatch::Config for Runtime {
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeEvent = RuntimeEvent;
+	type MessageId = MessageId;
+	type RuntimeCall = RuntimeCall;
+	type CallFilter = Everything;
+}
+
+use snowbridge_basic_channel::{
+	inbound as basic_channel_inbound, outbound as basic_channel_outbound,
+};
+
+impl basic_channel_inbound::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Verifier = ethereum_beacon_client::Pallet<Runtime>;
+	type MessageDispatch = dispatch::Pallet<Runtime>;
+	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const MaxMessagePayloadSize: u32 = 256;
+	pub const MaxMessagesPerCommit: u32 = 20;
+}
+
+impl basic_channel_outbound::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Hashing = Keccak256;
+	type SourceId = <Self as frame_system::Config>::AccountId;
+	type MaxMessagePayloadSize = MaxMessagePayloadSize;
+	type MaxMessagesPerCommit = MaxMessagesPerCommit;
+	type WeightInfo = basic_channel_outbound::weights::SnowbridgeWeight<Self>;
+}
+
 parameter_types! {
 	pub const MaxSyncCommitteeSize: u32 = 32;
 	pub const MaxProofBranchSize: u32 = 20;
@@ -508,7 +544,10 @@ construct_runtime!(
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
 
 		// Ethereum Bridge
-		EthereumBeaconClient: ethereum_beacon_client::{Pallet, Call, Config<T>, Storage, Event<T>} = 50,
+		BasicInboundChannel: basic_channel_inbound::{Pallet, Call, Config, Storage, Event<T>} = 50,
+		BasicOutboundChannel: basic_channel_outbound::{Pallet, Config<T>, Storage, Event<T>} = 51,
+		Dispatch: dispatch::{Pallet, Call, Storage, Event<T>, Origin} = 52,
+		EthereumBeaconClient: ethereum_beacon_client::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
 	}
 );
 

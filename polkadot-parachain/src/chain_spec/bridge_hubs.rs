@@ -382,6 +382,11 @@ pub mod rococo {
 			polkadot_xcm: bridge_hub_rococo_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
 			},
+			// Ethereum Bridge
+			basic_inbound_channel: snowbase_runtime::BasicInboundChannelConfig {
+				source_channel: Default::default(),
+			},
+			basic_outbound_channel: snowbase_runtime::BasicOutboundChannelConfig { interval: 1 },
 			ethereum_beacon_client: bridge_hub_rococo_runtime::EthereumBeaconClientConfig {
 				initial_sync: Default::default(),
 			},
