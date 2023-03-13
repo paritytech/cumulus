@@ -30,13 +30,11 @@ use polkadot_primitives::CollatorPair;
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
 use sc_network::{Event, NetworkService};
 use sc_network_common::service::NetworkEventStream;
-use std::sync::Arc;
-
-use polkadot_service::{Configuration, TaskManager};
+use sc_service::{Configuration, TaskManager};
+use sp_runtime::{app_crypto::Pair, traits::Block as BlockT};
 
 use futures::StreamExt;
-
-use sp_runtime::{app_crypto::Pair, traits::Block as BlockT};
+use std::sync::Arc;
 
 mod collator_overseer;
 
@@ -152,13 +150,14 @@ async fn new_minimal_relay_chain(
 	let (collation_req_receiver, available_data_req_receiver) =
 		build_request_response_protocol_receivers(&request_protocol_names, &mut config);
 
-	let (network, network_starter) =
+	let (network, network_starter, sync_oracle) =
 		network::build_collator_network(network::BuildCollatorNetworkParams {
 			config: &config,
 			client: relay_chain_rpc_client.clone(),
 			spawn_handle: task_manager.spawn_handle(),
 			genesis_hash,
-		})?;
+		})
+		.map_err(|e| RelayChainError::Application(Box::new(e) as Box<_>))?;
 
 	let authority_discovery_service = build_authority_discovery_service(
 		&task_manager,
@@ -171,6 +170,7 @@ async fn new_minimal_relay_chain(
 	let overseer_args = CollatorOverseerGenArgs {
 		runtime_client: relay_chain_rpc_client.clone(),
 		network_service: network.clone(),
+		sync_oracle,
 		authority_discovery_service,
 		collation_req_receiver,
 		available_data_req_receiver,
@@ -185,7 +185,8 @@ async fn new_minimal_relay_chain(
 		overseer_args,
 		&task_manager,
 		relay_chain_rpc_client.clone(),
-	)?;
+	)
+	.map_err(|e| RelayChainError::Application(Box::new(e) as Box<_>))?;
 
 	network_starter.start_network();
 
