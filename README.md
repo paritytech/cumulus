@@ -43,7 +43,7 @@ To operate a parachain node a connection to the corresponding relaychain is nece
 2. Connect to an external relaychain node via websocket RPC
 
 #### In-process Relaychain Node
-By default if an external relaychain node is not specified then a full relaychain node will be spawned within the same process.
+If an external relaychain node is not specified (default behavior) then a full relaychain node will be spawned within the same process.
 
 This node has all of the typical components of a normal Polkadot node, and will have to fully sync with the relaychain to work.
 
@@ -56,7 +56,7 @@ polkadot-parachain --chain parachain-chainspec.json --tmp -- --chain relaychain-
 ```
 
 #### External Relaychain Node
-You can connect to an external relaychain node via websocket RPC by using the  `--relay-chain-rpc-urls` command line argument. This option accepts one or more space-separated websocket URLs to a full relay chain node. By default only the first URL will be used, with the rest acting as a backup in case the connection to the first node will be lost.
+An external relaychain node can be connected via websocket RPC by using the  `--relay-chain-rpc-urls` command line argument. This option accepts one or more space-separated websocket URLs to a full relay chain node. By default only the first URL will be used, with the rest acting as a backup in case the connection to the first node will be lost.
 
 Parachain nodes using this feature won't have to fully sync with the relay chain to work, so in general they will use significantly less system resources.
 
