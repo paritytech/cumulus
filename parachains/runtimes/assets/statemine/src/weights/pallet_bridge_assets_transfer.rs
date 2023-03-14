@@ -70,8 +70,8 @@ impl<T: frame_system::Config> pallet_bridge_assets_transfer::WeightInfo for Weig
 		// Proof Size summary in bytes:
 		//  Measured:  `542`
 		//  Estimated: `17786`
-		// Minimum execution time: 99_930 nanoseconds.
-		Weight::from_parts(101_075_000, 17786)
+		// Minimum execution time: 99_958 nanoseconds.
+		Weight::from_parts(101_321_000, 17786)
 			.saturating_add(T::DbWeight::get().reads(9))
 			.saturating_add(T::DbWeight::get().writes(5))
 	}
@@ -81,8 +81,8 @@ impl<T: frame_system::Config> pallet_bridge_assets_transfer::WeightInfo for Weig
 		// Proof Size summary in bytes:
 		//  Measured:  `76`
 		//  Estimated: `4374`
-		// Minimum execution time: 13_023 nanoseconds.
-		Weight::from_parts(13_566_000, 4374)
+		// Minimum execution time: 13_133 nanoseconds.
+		Weight::from_parts(13_473_000, 4374)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -92,8 +92,8 @@ impl<T: frame_system::Config> pallet_bridge_assets_transfer::WeightInfo for Weig
 		// Proof Size summary in bytes:
 		//  Measured:  `131`
 		//  Estimated: `4374`
-		// Minimum execution time: 12_459 nanoseconds.
-		Weight::from_parts(12_755_000, 4374)
+		// Minimum execution time: 12_449 nanoseconds.
+		Weight::from_parts(12_798_000, 4374)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -103,8 +103,8 @@ impl<T: frame_system::Config> pallet_bridge_assets_transfer::WeightInfo for Weig
 		// Proof Size summary in bytes:
 		//  Measured:  `131`
 		//  Estimated: `4374`
-		// Minimum execution time: 15_479 nanoseconds.
-		Weight::from_parts(15_821_000, 4374)
+		// Minimum execution time: 21_405 nanoseconds.
+		Weight::from_parts(21_653_000, 4374)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
