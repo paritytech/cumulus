@@ -626,7 +626,7 @@ impl pallet_bridge_assets_transfer::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type BridgeXcmSender = BridgeXcmSender;
 	type UniversalLocation = UniversalLocation;
-	type WeightInfo = ();
+	type WeightInfo = weights::bridge_assets_transfer::WeightInfo<Runtime>;
 	type AssetTransactor = AssetTransactors;
 	type AdminOrigin = AssetsForceOrigin;
 	type TransferOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
