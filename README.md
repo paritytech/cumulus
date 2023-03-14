@@ -38,13 +38,14 @@ A Polkadot [collator](https://wiki.polkadot.network/docs/en/learn-collator) for 
 implemented by the `polkadot-parachain` binary (previously called `polkadot-collator`).
 
 ### Relaychain Interaction
-To operate a parachain, we need a connection to the corresponding relaychain.
-Currently, there are two options available:
-1. Use an in-process relaychain full-node
+To operate a parachain node a connection to the corresponding relaychain is necessary. This can be achieved in one of two ways:
+1. Run a full relaychain node within the parachain node (default)
 2. Connect to an external relaychain node via websocket RPC
 
 #### In-process Relaychain Node
-This is the default. If a relaychain chain spec is passed to the node via command line arguments, the collator node spawns an in-process full node. This full node has all the typical components, including all polkadot subsystems, its own substrate networking stack, and the relaychain runtime.
+By default if an external relaychain node is not specified then a full relaychain node will be spawned within the same process.
+
+This node has all of the typical components of a normal Polkadot node, and will have to fully sync with the relaychain to work.
 
 ##### Example command
 ```shell=
@@ -55,11 +56,11 @@ polkadot-parachain --chain parachain-chainspec.json --tmp -- --chain relaychain-
 ```
 
 #### External Relaychain Node
-You can connect to an external relaychain node via websocket RPC by using the  `--relay-chain-rpc-urls ws://<url>:<port>` command line argument. The specified remote node will be used to perform runtime calls and fetch information about new/best/finalized blocks from the relaychain.
+You can connect to an external relaychain node via websocket RPC by using the  `--relay-chain-rpc-urls` command line argument. This option accepts one or more space-separated websocket URLs to a full relay chain node. By default only the first URL will be used, with the rest acting as a backup in case the connection to the first node will be lost.
 
-Parachain nodes using this feature are generally more light-weight since it does not need to sync the relaychain. You can specify multiple websocket addresses to provide backup nodes. In case of connection loss, the parachain node will switch to the next node in the list.
+Parachain nodes using this feature won't have to fully sync with the relay chain to work, so in general they will use significantly less system resources.
 
-**Note:** At this time parachain nodes will still spawn a minimal relaychain node in-process. The minimal relaychain node contains only a subset of the polkadot subsystems and a separate substrate networking stack.
+**Note:** At this time any parachain nodes using this feature will still spawn a very cut down relaychain node in-process, hence even though they lack the majority of normal Polkadot subsystems they will still need to be able to directly connect to the relay chain network.
 ##### Example command
 ```shell=
 #                                                                                    Perform runtime calls and fetch                                                   Still required since we connect
