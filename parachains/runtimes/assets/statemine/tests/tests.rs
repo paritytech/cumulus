@@ -451,7 +451,7 @@ fn test_send_xcm_transact_with_remark_with_event_works() {
 }
 
 #[test]
-fn can_govornance_call_xcm_transact_with_bridge_assets_transfer_configuration() {
+fn can_governance_call_xcm_transact_with_bridge_assets_transfer_configuration() {
 	ExtBuilder::<Runtime>::default()
 		.with_collators(vec![AccountId::from(ALICE)])
 		.with_session_keys(vec![(
@@ -491,7 +491,7 @@ fn can_govornance_call_xcm_transact_with_bridge_assets_transfer_configuration() 
 				UnpaidExecution { weight_limit: Unlimited, check_origin: None },
 				Transact {
 					origin_kind: OriginKind::Superuser,
-					require_weight_at_most: Weight::from_ref_time(1000000000),
+					require_weight_at_most: Weight::from_parts(2000000000, 2000000000),
 					call: add_bridge_config.encode().into(),
 				},
 			]);
@@ -501,7 +501,7 @@ fn can_govornance_call_xcm_transact_with_bridge_assets_transfer_configuration() 
 
 			// initialize bridge through governance-like
 			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-			let weight_limit = Weight::from_ref_time(41666666666);
+			let weight_limit = Weight::from_parts(5000000000, 5000000000);
 			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(origin, xcm, hash, weight_limit);
 			assert_eq!(outcome.ensure_complete(), Ok(()));
 
