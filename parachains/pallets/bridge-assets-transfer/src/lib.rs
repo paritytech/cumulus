@@ -614,15 +614,6 @@ pub(crate) mod tests {
 		}
 
 		fn prepare_transfer() -> (RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation) {
-			let runtime_para_id = 1015;
-			let bridge_hub_para_id = 1013;
-
-			// we'll need an HRMP channel between our parachain and bridge hub parachain
-			mock_open_hrmp_channel::<Runtime, ParachainSystem>(
-				runtime_para_id.into(),
-				bridge_hub_para_id.into(),
-			);
-
 			// sender account must have enough funds
 			let sender_account = account(1);
 			let _ = Balances::deposit_creating(&sender_account, ExistentialDeposit::get() * 10);
@@ -684,7 +675,7 @@ pub(crate) mod tests {
 	fn test_ensure_remote_destination() {
 		new_test_ext().execute_with(|| {
 			// insert bridge config
-			let bridge_config = test_bridge_config();
+			let bridge_config = test_bridge_config().1;
 			assert_ok!(BridgeAssetsTransfer::add_bridge_config(
 				RuntimeOrigin::root(),
 				Wococo,
@@ -840,7 +831,14 @@ pub(crate) mod tests {
 	#[test]
 	fn test_bridge_config_management_works() {
 		let bridged_network = Rococo;
-		let bridged_config = Box::new(test_bridge_config().1);
+		let bridged_config = Box::new(BridgeConfig {
+			bridge_location: (Parent, Parachain(1013)).into(),
+			allowed_target_location: MultiLocation::new(
+				2,
+				X2(GlobalConsensus(bridged_network), Parachain(1000)),
+			),
+			fee: None,
+		});
 		let dummy_xcm = Xcm(vec![]);
 		let dummy_remote_interior_multilocation = X1(Parachain(1234));
 
