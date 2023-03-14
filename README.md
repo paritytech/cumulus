@@ -63,11 +63,11 @@ Parachain nodes using this feature won't have to fully sync with the relay chain
 **Note:** At this time any parachain nodes using this feature will still spawn a very cut down relaychain node in-process, hence even though they lack the majority of normal Polkadot subsystems they will still need to be able to directly connect to the relay chain network.
 ##### Example command
 ```shell=
-#                                                                                    Perform runtime calls and fetch                                                   Still required since we connect
-#                                                                                    data via RPC from here.                     Backup node                           to the relaychain network
-#                                                                                              |                                      |                                           |
-#                                                                                |-------------------------------| |--------------------------------------|            |-----------------------|
-polkadot-parachain --chain parachain-chainspec.json --tmp --relay-chain-rpc-urls ws://relaychain-rpc-endpoint:9944 ws://relaychain-rpc-endpoint-backup:9944 -- --chain relaychain-chainspec.json
+#                                                                                     Perform runtime calls and fetch                                                     Still required since we connect
+#                                                                                     data via RPC from here.                      Backup node                            to the relaychain network
+#                                                                                               |                                       |                                           |
+#                                                                                |---------------------------------| |----------------------------------------|            |-----------------------|
+polkadot-parachain --chain parachain-chainspec.json --tmp --relay-chain-rpc-urls "ws://relaychain-rpc-endpoint:9944" "ws://relaychain-rpc-endpoint-backup:9944" -- --chain relaychain-chainspec.json
 ```
 
 ## Installation and Setup
