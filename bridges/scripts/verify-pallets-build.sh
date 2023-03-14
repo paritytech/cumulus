@@ -66,6 +66,7 @@ rm -rf $BRIDGES_FOLDER/bin/rialto
 rm -rf $BRIDGES_FOLDER/bin/rialto-parachain
 rm -rf $BRIDGES_FOLDER/bin/.keep
 rm -rf $BRIDGES_FOLDER/deployments
+rm -f $BRIDGES_FOLDER/docs/dockerhub-*
 rm -rf $BRIDGES_FOLDER/fuzz
 rm -rf $BRIDGES_FOLDER/modules/beefy
 rm -rf $BRIDGES_FOLDER/modules/shift-session-manager
@@ -88,7 +89,6 @@ rm -rf $BRIDGES_FOLDER/scripts/update_substrate.sh
 rm -rf $BRIDGES_FOLDER/tools
 rm -f $BRIDGES_FOLDER/.dockerignore
 rm -f $BRIDGES_FOLDER/.gitlab-ci.yml
-rm -f $BRIDGES_FOLDER/Cargo.lock
 rm -f $BRIDGES_FOLDER/Cargo.toml
 rm -f $BRIDGES_FOLDER/ci.Dockerfile
 rm -f $BRIDGES_FOLDER/Dockerfile
@@ -123,5 +123,9 @@ cargo check -p pallet-bridge-relayers --features runtime-benchmarks
 cargo check -p pallet-bridge-relayers --features try-runtime
 cargo check -p bridge-runtime-common
 cargo check -p bridge-runtime-common --features runtime-benchmarks
+
+# we're removing lock file after all chechs are done. Otherwise we may use different
+# Substrate/Polkadot/Cumulus commits and our checks will fail
+rm -f $BRIDGES_FOLDER/Cargo.lock
 
 echo "OK"

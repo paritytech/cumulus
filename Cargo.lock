@@ -724,8 +724,8 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "sp-consensus-grandpa",
  "sp-core",
- "sp-finality-grandpa",
  "sp-runtime",
  "sp-std",
 ]
@@ -824,7 +824,7 @@ dependencies = [
  "sp-state-machine",
  "sp-std",
  "sp-trie",
- "trie-db 0.26.0",
+ "trie-db",
 ]
 
 [[package]]
@@ -836,7 +836,7 @@ dependencies = [
  "finality-grandpa",
  "parity-scale-codec",
  "sp-application-crypto",
- "sp-finality-grandpa",
+ "sp-consensus-grandpa",
  "sp-runtime",
  "sp-std",
 ]
@@ -6430,8 +6430,8 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "scale-info",
+ "sp-consensus-grandpa",
  "sp-core",
- "sp-finality-grandpa",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -12670,7 +12670,7 @@ dependencies = [
  "sp-std",
  "thiserror",
  "tracing",
- "trie-db 0.25.1",
+ "trie-db",
  "trie-root",
 ]
 
@@ -13094,7 +13094,7 @@ dependencies = [
  "sp-runtime",
  "sp-state-machine",
  "sp-trie",
- "trie-db 0.25.1",
+ "trie-db",
 ]
 
 [[package]]

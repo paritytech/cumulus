@@ -25,10 +25,11 @@ use bp_runtime::{
 };
 use codec::{Codec, Decode, Encode, EncodeLike, MaxEncodedLen};
 use core::{clone::Clone, cmp::Eq, default::Default, fmt::Debug};
+use frame_support::PalletError;
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_finality_grandpa::{AuthorityList, ConsensusLog, SetId, GRANDPA_ENGINE_ID};
+use sp_consensus_grandpa::{AuthorityList, ConsensusLog, SetId, GRANDPA_ENGINE_ID};
 use sp_runtime::{traits::Header as HeaderT, Digest, RuntimeDebug};
 use sp_std::boxed::Box;
 
@@ -36,21 +37,12 @@ pub mod justification;
 pub mod storage_keys;
 
 /// Header chain error.
-#[derive(Clone, Eq, PartialEq, RuntimeDebug)]
+#[derive(Clone, Decode, Encode, Eq, PartialEq, PalletError, Debug, TypeInfo)]
 pub enum HeaderChainError {
 	/// Header with given hash is missing from the chain.
 	UnknownHeader,
 	/// Storage proof related error.
 	StorageProof(StorageProofError),
-}
-
-impl From<HeaderChainError> for &'static str {
-	fn from(err: HeaderChainError) -> &'static str {
-		match err {
-			HeaderChainError::UnknownHeader => "UnknownHeader",
-			HeaderChainError::StorageProof(e) => e.into(),
-		}
-	}
 }
 
 /// Header data that we're storing on-chain.
@@ -153,7 +145,7 @@ pub struct GrandpaConsensusLogReader<Number>(sp_std::marker::PhantomData<Number>
 impl<Number: Codec> GrandpaConsensusLogReader<Number> {
 	pub fn find_authorities_change(
 		digest: &Digest,
-	) -> Option<sp_finality_grandpa::ScheduledChange<Number>> {
+	) -> Option<sp_consensus_grandpa::ScheduledChange<Number>> {
 		// find the first consensus digest with the right ID which converts to
 		// the right kind of consensus log.
 		digest
