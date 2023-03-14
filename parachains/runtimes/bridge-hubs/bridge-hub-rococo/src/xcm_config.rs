@@ -153,18 +153,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 		}
 
 		match call {
-			RuntimeCall::BridgeRococoGrandpa(pallet_bridge_grandpa::Call::<
-				Runtime,
-				BridgeGrandpaRococoInstance,
-			>::initialize {
-				..
-			}) |
-			RuntimeCall::BridgeWococoGrandpa(pallet_bridge_grandpa::Call::<
-				Runtime,
-				BridgeGrandpaWococoInstance,
-			>::initialize {
-				..
-			}) |
+			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
 			RuntimeCall::System(
 				frame_system::Call::set_heap_pages { .. } |
 				frame_system::Call::set_code { .. } |
@@ -183,7 +172,15 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 			RuntimeCall::XcmpQueue(..) |
 			RuntimeCall::DmpQueue(..) |
-			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) => true,
+			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
+			RuntimeCall::BridgeRococoGrandpa(pallet_bridge_grandpa::Call::<
+				Runtime,
+				BridgeGrandpaRococoInstance,
+			>::initialize { .. }) |
+			RuntimeCall::BridgeWococoGrandpa(pallet_bridge_grandpa::Call::<
+				Runtime,
+				BridgeGrandpaWococoInstance,
+			>::initialize { .. }) => true,
 			_ => false,
 		}
 	}

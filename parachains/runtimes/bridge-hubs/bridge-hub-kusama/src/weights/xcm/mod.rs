@@ -28,7 +28,7 @@ trait WeighMultiAssets {
 	fn weigh_multi_assets(&self, weight: Weight) -> Weight;
 }
 
-const MAX_ASSETS: u32 = 100;
+const MAX_ASSETS: u64 = 100;
 
 impl WeighMultiAssets for MultiAssetFilter {
 	fn weigh_multi_assets(&self, weight: Weight) -> Weight {
@@ -36,7 +36,7 @@ impl WeighMultiAssets for MultiAssetFilter {
 			Self::Definite(assets) =>
 				weight.saturating_mul(assets.inner().into_iter().count() as u64),
 			Self::Wild(asset) => match asset {
-				All => weight.saturating_mul(MAX_ASSETS as u64),
+				All => weight.saturating_mul(MAX_ASSETS),
 				AllOf { fun, .. } => match fun {
 					WildFungibility::Fungible => weight,
 					// Magic number 2 has to do with the fact that we could have up to 2 times
@@ -44,8 +44,8 @@ impl WeighMultiAssets for MultiAssetFilter {
 					WildFungibility::NonFungible =>
 						weight.saturating_mul((MaxAssetsIntoHolding::get() * 2) as u64),
 				},
-				AllCounted(count) => weight.saturating_mul(*count as u64),
-				AllOfCounted { count, .. } => weight.saturating_mul(*count as u64),
+				AllCounted(count) => weight.saturating_mul(MAX_ASSETS.min(*count as u64)),
+				AllOfCounted { count, .. } => weight.saturating_mul(MAX_ASSETS.min(*count as u64)),
 			},
 		}
 	}
@@ -65,7 +65,7 @@ impl<Call> XcmWeightInfo<Call> for BridgeHubKusamaXcmWeight<Call> {
 	// Currently there is no trusted reserve
 	fn reserve_asset_deposited(_assets: &MultiAssets) -> Weight {
 		// TODO: hardcoded - fix https://github.com/paritytech/cumulus/issues/1974
-		Weight::from_ref_time(1_000_000_000 as u64)
+		Weight::from_parts(1_000_000_000 as u64, 0)
 	}
 	fn receive_teleported_asset(assets: &MultiAssets) -> Weight {
 		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::receive_teleported_asset())
@@ -123,7 +123,7 @@ impl<Call> XcmWeightInfo<Call> for BridgeHubKusamaXcmWeight<Call> {
 
 	fn deposit_asset(assets: &MultiAssetFilter, _dest: &MultiLocation) -> Weight {
 		// Hardcoded till the XCM pallet is fixed
-		let hardcoded_weight = Weight::from_ref_time(1_000_000_000 as u64);
+		let hardcoded_weight = Weight::from_parts(1_000_000_000 as u64, 0);
 		let weight = assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_asset());
 		hardcoded_weight.min(weight)
 	}
