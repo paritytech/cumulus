@@ -357,15 +357,11 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 					RuntimeCall::Assets(TrustBackedAssetsCall::clear_metadata { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::create { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::destroy { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::redeposit { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::transfer_ownership { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::set_team { .. }) |
-					RuntimeCall::Nfts(pallet_nfts::Call::lock_item_properties { .. }) |
-					RuntimeCall::Nfts(pallet_nfts::Call::set_metadata { .. }) |
-					RuntimeCall::Nfts(pallet_nfts::Call::set_collection_metadata { .. }) |
-					RuntimeCall::Nfts(pallet_nfts::Call::clear_metadata { .. }) |
-					RuntimeCall::Nfts(pallet_nfts::Call::clear_collection_metadata { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::set_collection_max_supply { .. }) |
-					RuntimeCall::Nfts(pallet_nfts::Call::update_mint_settings { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::lock_collection { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::create { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::destroy { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::transfer_ownership { .. }) |
@@ -389,10 +385,16 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 					RuntimeCall::Assets(TrustBackedAssetsCall::freeze_asset { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::thaw_asset { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::force_mint { .. }) |
-					RuntimeCall::Nfts(pallet_nfts::Call::burn { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::update_mint_settings { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::mint_pre_signed { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::set_attributes_pre_signed { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::lock_item_transfer { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::unlock_item_transfer { .. }) |
-					RuntimeCall::Nfts(pallet_nfts::Call::lock_collection { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::lock_item_properties { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::set_metadata { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::clear_metadata { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::set_collection_metadata { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::clear_collection_metadata { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::mint { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::burn { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::freeze { .. }) |
@@ -546,12 +548,12 @@ impl pallet_asset_tx_payment::Config for Runtime {
 parameter_types! {
 	pub const CollectionDeposit: Balance = UNITS / 10; // 1 / 10 UNIT deposit to create asset class
 	pub const ItemDeposit: Balance = UNITS / 1_000; // 1 / 1000 UNIT deposit to create asset instance
-	pub const KeyLimit: u32 = 32;	// Max 32 bytes per key
-	pub const ValueLimit: u32 = 64;	// Max 64 bytes per value
+	pub const KeyLimit: u32 = 64;	// Max 64 bytes per key
+	pub const ValueLimit: u32 = 256;	// Max 256 bytes per value
 	pub const UniquesMetadataDepositBase: Balance = deposit(1, 129);
 	pub const AttributeDepositBase: Balance = deposit(1, 0);
 	pub const DepositPerByte: Balance = deposit(0, 1);
-	pub const UniquesStringLimit: u32 = 128;
+	pub const UniquesStringLimit: u32 = 256;
 }
 
 impl pallet_uniques::Config for Runtime {

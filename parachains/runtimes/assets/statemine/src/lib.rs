@@ -57,11 +57,12 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot, EnsureSigned,
 };
+use pallet_nfts::PalletFeatures;
 pub use parachains_common as common;
 use parachains_common::{
 	impls::{AssetsToBlockAuthor, DealWithFees},
 	opaque, AccountId, AssetIdForTrustBackedAssets, AuraId, Balance, BlockNumber, Hash, Header,
-	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
+	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{KsmLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig};
@@ -338,6 +339,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 				c,
 				RuntimeCall::Balances { .. } |
 					RuntimeCall::Assets { .. } |
+					RuntimeCall::Nfts { .. } |
 					RuntimeCall::Uniques { .. }
 			),
 			ProxyType::CancelProxy => matches!(
@@ -352,7 +354,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 					RuntimeCall::Assets { .. } |
 						RuntimeCall::Utility { .. } |
 						RuntimeCall::Multisig { .. } |
-						RuntimeCall::Uniques { .. }
+						RuntimeCall::Nfts { .. } | RuntimeCall::Uniques { .. }
 				)
 			},
 			ProxyType::AssetOwner => matches!(
@@ -366,6 +368,13 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 					RuntimeCall::Assets(TrustBackedAssetsCall::set_team { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::set_metadata { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::clear_metadata { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::create { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::destroy { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::redeposit { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::transfer_ownership { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::set_team { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::set_collection_max_supply { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::lock_collection { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::create { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::destroy { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::transfer_ownership { .. }) |
@@ -388,6 +397,17 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 					RuntimeCall::Assets(TrustBackedAssetsCall::thaw { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::freeze_asset { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::thaw_asset { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::force_mint { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::update_mint_settings { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::mint_pre_signed { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::set_attributes_pre_signed { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::lock_item_transfer { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::unlock_item_transfer { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::lock_item_properties { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::set_metadata { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::clear_metadata { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::set_collection_metadata { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::clear_collection_metadata { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::mint { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::burn { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::freeze { .. }) |
@@ -561,12 +581,12 @@ impl pallet_asset_tx_payment::Config for Runtime {
 parameter_types! {
 	pub const CollectionDeposit: Balance = UNITS / 10; // 1 / 10 UNIT deposit to create asset class
 	pub const ItemDeposit: Balance = UNITS / 1_000; // 1 / 1000 UNIT deposit to create asset instance
-	pub const KeyLimit: u32 = 32;	// Max 32 bytes per key
-	pub const ValueLimit: u32 = 64;	// Max 64 bytes per value
+	pub const KeyLimit: u32 = 64;	// Max 64 bytes per key
+	pub const ValueLimit: u32 = 256;	// Max 256 bytes per value
 	pub const UniquesMetadataDepositBase: Balance = deposit(1, 129);
 	pub const AttributeDepositBase: Balance = deposit(1, 0);
 	pub const DepositPerByte: Balance = deposit(0, 1);
-	pub const UniquesStringLimit: u32 = 128;
+	pub const UniquesStringLimit: u32 = 256;
 }
 
 impl pallet_uniques::Config for Runtime {
@@ -588,6 +608,40 @@ impl pallet_uniques::Config for Runtime {
 	type Helper = ();
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 	type Locker = ();
+}
+
+parameter_types! {
+	pub NftsPalletFeatures: PalletFeatures = PalletFeatures::all_enabled();
+	pub const NftsMaxDeadlineDuration: BlockNumber = 12 * 30 * DAYS;
+}
+
+impl pallet_nfts::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type CollectionId = u32;
+	type ItemId = u32;
+	type Currency = Balances;
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+	type ForceOrigin = AssetsForceOrigin;
+	type Locker = ();
+	type CollectionDeposit = CollectionDeposit;
+	type ItemDeposit = ItemDeposit;
+	type MetadataDepositBase = UniquesMetadataDepositBase;
+	type AttributeDepositBase = AttributeDepositBase;
+	type DepositPerByte = DepositPerByte;
+	type StringLimit = UniquesStringLimit;
+	type KeyLimit = KeyLimit;
+	type ValueLimit = ValueLimit;
+	type ApprovalsLimit = ConstU32<20>;
+	type ItemAttributesApprovalsLimit = ConstU32<30>;
+	type MaxTips = ConstU32<10>;
+	type MaxDeadlineDuration = NftsMaxDeadlineDuration;
+	type MaxAttributesPerCall = ConstU32<10>;
+	type Features = NftsPalletFeatures;
+	type OffchainSignature = Signature;
+	type OffchainPublic = <Signature as Verify>::Signer;
+	type WeightInfo = weights::pallet_nfts::WeightInfo<Runtime>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type Helper = ();
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -632,6 +686,7 @@ construct_runtime!(
 		// The main stage.
 		Assets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>} = 50,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
+		Nfts: pallet_nfts::{Pallet, Call, Storage, Event<T>} = 52,
 
 		#[cfg(feature = "state-trie-version-1")]
 		StateTrieMigration: pallet_state_trie_migration = 70,
@@ -686,6 +741,7 @@ mod benches {
 		[pallet_assets, Assets]
 		[pallet_balances, Balances]
 		[pallet_multisig, Multisig]
+		[pallet_nfts, Nfts]
 		[pallet_proxy, Proxy]
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_uniques, Uniques]
