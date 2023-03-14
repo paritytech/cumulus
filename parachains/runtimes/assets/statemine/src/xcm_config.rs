@@ -446,6 +446,7 @@ pub type BridgeXcmSender = UnpaidRemoteExporter<BridgeAssetsTransfer, XcmRouter,
 #[cfg(feature = "runtime-benchmarks")]
 pub struct BridgeAssetsTransferBenchmarksHelper;
 
+#[cfg(feature = "runtime-benchmarks")]
 impl BridgeAssetsTransferBenchmarksHelper {
 	/// Asset that we're transferring and paying fees in.
 	fn make_asset(fungible: u128) -> MultiAsset {

@@ -57,8 +57,9 @@ impl From<BridgeConfig> for (MultiLocation, Option<MultiAsset>) {
 
 #[frame_support::pallet]
 pub mod pallet {
+	pub use crate::weights::WeightInfo;
+
 	use super::*;
-	use crate::weights::WeightInfo;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use xcm::latest::Error as XcmError;
