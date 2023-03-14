@@ -195,17 +195,17 @@ construct_runtime! {
 		NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
+		System: frame_system::{Pallet, Call, Storage, Config, Event<T>} = 0,
 		ParachainSystem: cumulus_pallet_parachain_system::{
 			Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
-		},
-		ParachainInfo: parachain_info::{Pallet, Storage, Config},
+		} = 1,
+		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 2,
 
 		// DMP handler.
-		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
+		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 10,
 
 		// The main stage.
-		Glutton: pallet_glutton::{Pallet, Call, Storage, Event},
+		Glutton: pallet_glutton::{Pallet, Call, Storage, Event} = 20,
 	}
 }
 
