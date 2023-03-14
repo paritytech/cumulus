@@ -38,7 +38,11 @@ A Polkadot [collator](https://wiki.polkadot.network/docs/en/learn-collator) for 
 implemented by the `polkadot-parachain` binary (previously called `polkadot-collator`).
 
 ### Relaychain Interaction
-To operate a parachain, we need a connection to the corresponding relaychain. Currently, there are two available options:
+To operate a parachain, we need a connection to the corresponding relaychain.
+Currently, there are two options available:
+1. Use an in-process relaychain full-node
+2. Connect to an external relaychain node via websocket RPC
+
 #### In-process Relaychain Node
 This is the default. If a relaychain chain spec is passed to the node via command line arguments, the collator node spawns an in-process full node. This full node has all the typical components, including all polkadot subsystems, its own substrate networking stack, and the relaychain runtime.
 
