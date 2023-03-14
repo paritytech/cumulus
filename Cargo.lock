@@ -6049,6 +6049,7 @@ name = "pallet-bridge-assets-transfer"
 version = "0.1.0"
 dependencies = [
  "cumulus-pallet-xcmp-queue",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",

@@ -441,3 +441,65 @@ impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 
 /// Bridge router, which wraps and sends xcm to BridgeHub to be delivered to the different GlobalConsensus
 pub type BridgeXcmSender = UnpaidRemoteExporter<BridgeAssetsTransfer, XcmRouter, UniversalLocation>;
+
+/// Benchmarks helper for over-bridge assets transfer pallet.
+#[cfg(feature = "runtime-benchmarks")]
+pub struct BridgeAssetsTransferBenchmarksHelper;
+
+impl BridgeAssetsTransferBenchmarksHelper {
+	/// Asset that we're transferring and paying fees in.
+	fn make_asset(fungible: u128) -> MultiAsset {
+		MultiAsset { fun: Fungible(fungible.into()), id: Concrete(KsmLocation::get()) }
+	}
+
+	/// Parachain at the other side of the bridge that we're connected to.
+	fn allowed_target_location() -> MultiLocation {
+		MultiLocation::new(2, X2(GlobalConsensus(Polkadot), Parachain(1000)))
+	}
+
+	/// Identifier of the sibling bridge-hub parachain.
+	fn bridge_hub_para_id() -> u32 {
+		1013
+	}
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_bridge_assets_transfer::BenchmarkHelper<RuntimeOrigin>
+	for BridgeAssetsTransferBenchmarksHelper
+{
+	fn bridge_config() -> (NetworkId, pallet_bridge_assets_transfer::BridgeConfig) {
+		(
+			Polkadot,
+			pallet_bridge_assets_transfer::BridgeConfig {
+				bridge_location: (Parent, Parachain(Self::bridge_hub_para_id())).into(),
+				allowed_target_location: Self::allowed_target_location(),
+				// TODO: right now `UnpaidRemoteExporter` is used to send XCM messages and it requires
+				// fee to be `None`. If we're going to change that (are we?), then we should replace
+				// this `None` with `Some(Self::make_asset(crate::ExistentialDeposit::get()))`
+				fee: None,
+			},
+		)
+	}
+
+	fn prepare_transfer() -> (RuntimeOrigin, xcm::VersionedMultiAssets, xcm::VersionedMultiLocation)
+	{
+		use frame_support::traits::Currency;
+
+		// our `BridgeXcmSender` assumes that the HRMP channel is opened between this
+		// parachain and the sibling bridge-hub parachain
+		cumulus_pallet_parachain_system::Pallet::<Runtime>::open_outbound_hrmp_channel_for_benchmarks(
+			Self::bridge_hub_para_id().into(),
+		);
+
+		// deposit enough funds to the sender account
+		let sender_account = AccountId::from([42u8; 32]);
+		let existential_deposit = crate::ExistentialDeposit::get();
+		let _ = Balances::deposit_creating(&sender_account, existential_deposit * 10);
+
+		// finaly - prepare assets and destination
+		let assets = xcm::VersionedMultiAssets::V3(Self::make_asset(existential_deposit).into());
+		let destination = xcm::VersionedMultiLocation::V3(Self::allowed_target_location());
+
+		(RuntimeOrigin::signed(sender_account), assets, destination)
+	}
+}

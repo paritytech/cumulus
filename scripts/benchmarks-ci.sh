@@ -25,6 +25,11 @@ if [[ $runtimeName == "statemint" ]] || [[ $runtimeName == "statemine" ]] || [[ 
 		pallet_xcm_benchmarks::generic
 		pallet_xcm_benchmarks::fungible
 	)
+
+	# bridge-assets-transfer pallet is only deployed at the Statemine
+	if [[ $runtimeName == "statemine" ]]; then
+		pallets+=("pallet_bridge_assets_transfer")
+	fi
 elif [[ $runtimeName == "collectives-polkadot" ]]; then
 	pallets=(
 		pallet_alliance

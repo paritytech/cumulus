@@ -626,10 +626,12 @@ impl pallet_bridge_assets_transfer::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type BridgeXcmSender = BridgeXcmSender;
 	type UniversalLocation = UniversalLocation;
-	type WeightInfo = pallet_bridge_assets_transfer::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = ();
 	type AssetTransactor = AssetTransactors;
 	type AdminOrigin = AssetsForceOrigin;
 	type TransferOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = xcm_config::BridgeAssetsTransferBenchmarksHelper;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -745,6 +747,7 @@ mod benches {
 		// NOTE: Make sure you point to the individual modules below.
 		[pallet_xcm_benchmarks::fungible, XcmBalances]
 		[pallet_xcm_benchmarks::generic, XcmGeneric]
+		[pallet_bridge_assets_transfer, BridgeAssetsTransfer]
 	);
 }
 

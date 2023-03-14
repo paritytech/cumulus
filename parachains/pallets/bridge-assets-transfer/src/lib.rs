@@ -28,6 +28,8 @@ use sp_std::boxed::Box;
 pub use pallet::*;
 use xcm::prelude::*;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 pub mod weights;
 
 /// The log target of this pallet.
@@ -67,6 +69,28 @@ pub mod pallet {
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
+	/// Everything we need to run benchmarks.
+	#[cfg(feature = "runtime-benchmarks")]
+	pub trait BenchmarkHelper<RuntimeOrigin> {
+		/// Returns proper bridge configuration, supported by the runtime.
+		///
+		/// We expect that the XCM environment (`BridgeXcmSender`) has everything enabled
+		/// to support transfer to this destination **after** we our `prepare_transfer` call.
+		fn bridge_config() -> (NetworkId, BridgeConfig);
+		/// Prepare environment for assets transfer and return transfer origin and assets
+		/// to transfer. After this function is called, we expect `transfer_asset_via_bridge`
+		/// to succeed, so in proper environment, it should:
+		///
+		/// - deposit enough funds (fee from `bridge_config()` and transferred assets) to the sender account;
+		///
+		/// - ensure that the `BridgeXcmSender` is properly configured for the transfer;
+		///
+		/// - be close to the worst possible scenario - i.e. if some account may need to be created during
+		///   the assets transfer, it should be created. If there are multiple bridges, the "worst possible"
+		///   (in terms of performance) bridge must be selected for the transfer.
+		fn prepare_transfer() -> (RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation);
+	}
+
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
@@ -89,6 +113,10 @@ pub mod pallet {
 
 		/// Required origin for asset transfer. If successful, it resolves to `MultiLocation`.
 		type TransferOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = MultiLocation>;
+
+		/// Benchmarks helper.
+		#[cfg(feature = "runtime-benchmarks")]
+		type BenchmarkHelper: BenchmarkHelper<Self::RuntimeOrigin>;
 	}
 
 	/// Details of configured bridges which are allowed for transfer.
@@ -390,7 +418,7 @@ pub mod pallet {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
 	use super::*;
 	use crate as bridge_assets_transfer;
 	use frame_support::traits::Currency;
@@ -560,6 +588,62 @@ mod tests {
 		(),
 	>;
 
+	/// Bridge configuration we use in our tests.
+	fn test_bridge_config() -> (NetworkId, BridgeConfig) {
+		(
+			Wococo,
+			BridgeConfig {
+				bridge_location: (Parent, Parachain(1013)).into(),
+				allowed_target_location: MultiLocation::new(
+					2,
+					X2(GlobalConsensus(Wococo), Parachain(1000)),
+				),
+				fee: None,
+			},
+		)
+	}
+
+	/// Benchmarks helper.
+	#[cfg(feature = "runtime-benchmarks")]
+	pub struct TestBenchmarkHelper;
+
+	#[cfg(feature = "runtime-benchmarks")]
+	impl BenchmarkHelper<RuntimeOrigin> for TestBenchmarkHelper {
+		fn bridge_config() -> (NetworkId, BridgeConfig) {
+			test_bridge_config()
+		}
+
+		fn prepare_transfer() -> (RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation) {
+			let runtime_para_id = 1015;
+			let bridge_hub_para_id = 1013;
+
+			// we'll need an HRMP channel between our parachain and bridge hub parachain
+			mock_open_hrmp_channel::<Runtime, ParachainSystem>(
+				runtime_para_id.into(),
+				bridge_hub_para_id.into(),
+			);
+
+			// sender account must have enough funds
+			let sender_account = account(1);
+			let _ = Balances::deposit_creating(&sender_account, ExistentialDeposit::get() * 10);
+
+			// finally - prepare assets and destination
+			let assets = VersionedMultiAssets::V3(
+				MultiAsset {
+					fun: Fungible(ExistentialDeposit::get().into()),
+					id: Concrete(RelayLocation::get()),
+				}
+				.into(),
+			);
+			let destination = VersionedMultiLocation::V3(MultiLocation::new(
+				2,
+				X3(GlobalConsensus(Wococo), Parachain(1000), consensus_account(Wococo, 2)),
+			));
+
+			(RuntimeOrigin::signed(sender_account), assets, destination)
+		}
+	}
+
 	impl Config for TestRuntime {
 		type RuntimeEvent = RuntimeEvent;
 		type BridgeXcmSender = TestBridgeXcmSender;
@@ -568,6 +652,8 @@ mod tests {
 		type AssetTransactor = CurrencyTransactor;
 		type AdminOrigin = EnsureRoot<AccountId>;
 		type TransferOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+		#[cfg(feature = "runtime-benchmarks")]
+		type BenchmarkHelper = TestBenchmarkHelper;
 	}
 
 	pub(crate) fn new_test_ext() -> sp_io::TestExternalities {
@@ -598,14 +684,7 @@ mod tests {
 	fn test_ensure_remote_destination() {
 		new_test_ext().execute_with(|| {
 			// insert bridge config
-			let bridge_config = BridgeConfig {
-				bridge_location: (Parent, Parachain(1013)).into(),
-				allowed_target_location: MultiLocation::new(
-					2,
-					X2(GlobalConsensus(Wococo), Parachain(1000)),
-				),
-				fee: None,
-			};
+			let bridge_config = test_bridge_config();
 			assert_ok!(BridgeAssetsTransfer::add_bridge_config(
 				RuntimeOrigin::root(),
 				Wococo,
@@ -683,14 +762,7 @@ mod tests {
 			assert_ok!(BridgeAssetsTransfer::add_bridge_config(
 				RuntimeOrigin::root(),
 				bridged_network,
-				Box::new(BridgeConfig {
-					bridge_location: (Parent, Parachain(1013)).into(),
-					allowed_target_location: MultiLocation::new(
-						2,
-						X2(GlobalConsensus(Wococo), Parachain(1000))
-					),
-					fee: None
-				}),
+				Box::new(test_bridge_config().1),
 			));
 			let bridge_location = Bridges::<TestRuntime>::get(bridged_network)
 				.expect("stored BridgeConfig for bridged_network")
@@ -768,14 +840,7 @@ mod tests {
 	#[test]
 	fn test_bridge_config_management_works() {
 		let bridged_network = Rococo;
-		let bridged_config = Box::new(BridgeConfig {
-			bridge_location: (Parent, Parachain(1013)).into(),
-			allowed_target_location: MultiLocation::new(
-				2,
-				X2(GlobalConsensus(bridged_network), Parachain(1000)),
-			),
-			fee: None,
-		});
+		let bridged_config = Box::new(test_bridge_config().1);
 		let dummy_xcm = Xcm(vec![]);
 		let dummy_remote_interior_multilocation = X1(Parachain(1234));
 
@@ -797,14 +862,7 @@ mod tests {
 				BridgeAssetsTransfer::add_bridge_config(RuntimeOrigin::root(), bridged_network, {
 					let remote_network = Westend;
 					assert_ne!(bridged_network, remote_network);
-					Box::new(BridgeConfig {
-						bridge_location: (Parent, Parachain(1013)).into(),
-						allowed_target_location: MultiLocation::new(
-							2,
-							X2(GlobalConsensus(remote_network), Parachain(1000)),
-						),
-						fee: None,
-					})
+					Box::new(test_bridge_config().1)
 				}),
 				DispatchError::Module(ModuleError {
 					index: 52,

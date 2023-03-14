@@ -17,6 +17,7 @@ log = { version = "0.4.14", default-features = false }
 # Substrate
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", branch = "master" }
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
@@ -45,7 +46,8 @@ std = [
 	"xcm-executor/std",
 ]
 runtime-benchmarks = [
-	"sp-runtime/runtime-benchmarks",
+	"frame-benchmarking",
 	"frame-system/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
 ]
 try-runtime = ["frame-support/try-runtime"]
