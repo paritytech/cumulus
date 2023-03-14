@@ -9,14 +9,14 @@ license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 async-std = { version = "1.6.5", features = ["attributes"] }
 async-trait = "0.1"
 codec = { package = "parity-scale-codec", version = "3.1.5" }
-futures = "0.3.26"
+futures = "0.3.27"
 jsonrpsee = { version = "0.16", features = ["macros", "ws-client"] }
 log = "0.4.17"
 num-traits = "0.2"
 rand = "0.8"
 scale-info = { version = "2.1.1", features = ["derive"] }
-tokio = { version = "1.25", features = ["rt-multi-thread"] }
-thiserror = "1.0.26"
+tokio = { version = "1.26", features = ["rt-multi-thread"] }
+thiserror = "1.0.39"
 
 # Bridge dependencies
 

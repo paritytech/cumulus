@@ -133,7 +133,7 @@ pub mod pallet {
 		fn on_initialize(_n: T::BlockNumber) -> frame_support::weights::Weight {
 			<RequestCount<T, I>>::mutate(|count| *count = count.saturating_sub(1));
 
-			Weight::from_ref_time(0)
+			Weight::from_parts(0, 0)
 				.saturating_add(T::DbWeight::get().reads(1))
 				.saturating_add(T::DbWeight::get().writes(1))
 		}
@@ -419,7 +419,7 @@ mod tests {
 	use frame_support::{assert_noop, assert_ok, traits::Get};
 	use mock::*;
 	use mock_chain::*;
-	use sp_beefy::mmr::BeefyAuthoritySet;
+	use sp_consensus_beefy::mmr::BeefyAuthoritySet;
 	use sp_runtime::DispatchError;
 
 	fn next_block() {

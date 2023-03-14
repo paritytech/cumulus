@@ -98,19 +98,19 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "Westend_to_Millau_Parachains_best_parachain_block_number_at_source{parachain='para_2000'}",
+            "expr": "Westend_to_Millau_Parachains_1000_best_parachain_block_number_at_source",
             "interval": "",
             "legendFormat": "At Westend",
             "refId": "A"
           },
           {
-            "expr": "Westend_to_Millau_Parachains_best_parachain_block_number_at_target{parachain='para_2000'}",
+            "expr": "Westend_to_Millau_Parachains_1000_best_parachain_block_number_at_target",
             "interval": "",
             "legendFormat": "At Millau",
             "refId": "B"
           },
           {
-            "expr": "Westend_to_Millau_Parachains_best_parachain_block_number_at_source{parachain='para_2000'} - Westend_to_Millau_Parachains_best_parachain_block_number_at_target{parachain='para_2000'}",
+            "expr": "Westend_to_Millau_Parachains_1000_best_parachain_block_number_at_source - Westend_to_Millau_Parachains_1000_best_parachain_block_number_at_target",
             "hide": true,
             "interval": "",
             "legendFormat": "Missing Westmint headers at Millau",

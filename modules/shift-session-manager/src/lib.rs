@@ -35,7 +35,6 @@ pub mod pallet {
 	pub trait Config: pallet_session::Config {}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
@@ -152,7 +151,7 @@ mod tests {
 	}
 
 	parameter_types! {
-		pub const MaximumBlockWeight: Weight = Weight::from_ref_time(1024);
+		pub const MaximumBlockWeight: Weight = Weight::from_parts(1024, 0);
 		pub const MaximumBlockLength: u32 = 2 * 1024;
 		pub const AvailableBlockRatio: Perbill = Perbill::one();
 	}

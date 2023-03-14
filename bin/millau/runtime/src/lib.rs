@@ -41,9 +41,9 @@ use pallet_grandpa::{
 };
 use pallet_transaction_payment::{FeeDetails, Multiplier, RuntimeDispatchInfo};
 use sp_api::impl_runtime_apis;
-use sp_beefy::{crypto::AuthorityId as BeefyId, mmr::MmrLeafVersion, ValidatorSet};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_consensus_beefy::{crypto::AuthorityId as BeefyId, mmr::MmrLeafVersion, ValidatorSet};
+use sp_core::OpaqueMetadata;
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{Block as BlockT, IdentityLookup, Keccak256, NumberFor, OpaqueKeys},
@@ -223,8 +223,6 @@ impl frame_system::Config for Runtime {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
-impl pallet_randomness_collective_flip::Config for Runtime {}
-
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type MaxAuthorities = ConstU32<10>;
@@ -234,23 +232,21 @@ impl pallet_aura::Config for Runtime {
 impl pallet_beefy::Config for Runtime {
 	type BeefyId = BeefyId;
 	type MaxAuthorities = ConstU32<10>;
+	type MaxSetIdSessionEntries = ConstU64<0>;
 	type OnNewValidatorSet = MmrLeaf;
+	type WeightInfo = ();
+	type KeyOwnerProof = sp_core::Void;
+	type EquivocationReportSystem = ();
 }
 
 impl pallet_grandpa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type KeyOwnerProofSystem = ();
-	type KeyOwnerProof =
-		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
-	type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-		KeyTypeId,
-		GrandpaId,
-	)>>::IdentificationTuple;
-	type HandleEquivocation = ();
 	// TODO: update me (https://github.com/paritytech/parity-bridges-common/issues/78)
 	type WeightInfo = ();
 	type MaxAuthorities = ConstU32<10>;
 	type MaxSetIdSessionEntries = ConstU64<0>;
+	type KeyOwnerProof = sp_core::Void;
+	type EquivocationReportSystem = ();
 }
 
 /// MMR helper types.
@@ -292,7 +288,7 @@ parameter_types! {
 
 pub struct BeefyDummyDataProvider;
 
-impl sp_beefy::mmr::BeefyDataProvider<()> for BeefyDummyDataProvider {
+impl sp_consensus_beefy::mmr::BeefyDataProvider<()> for BeefyDummyDataProvider {
 	fn extra_data() {}
 }
 
@@ -555,7 +551,6 @@ construct_runtime!(
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
 		Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
 		ShiftSessionManager: pallet_shift_session_manager::{Pallet},
-		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 
 		// BEEFY Bridges support.
 		Beefy: pallet_beefy::{Pallet, Storage, Config<T>},
@@ -743,7 +738,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl sp_beefy::BeefyApi<Block> for Runtime {
+	impl sp_consensus_beefy::BeefyApi<Block> for Runtime {
 		fn beefy_genesis() -> Option<BlockNumber> {
 			Beefy::genesis_block()
 		}
@@ -751,6 +746,20 @@ impl_runtime_apis! {
 		fn validator_set() -> Option<ValidatorSet<BeefyId>> {
 			Beefy::validator_set()
 		}
+
+		fn submit_report_equivocation_unsigned_extrinsic(
+			_equivocation_proof: sp_consensus_beefy::EquivocationProof<
+				NumberFor<Block>,
+				sp_consensus_beefy::crypto::AuthorityId,
+				sp_consensus_beefy::crypto::Signature
+			>,
+			_key_owner_proof: sp_consensus_beefy::OpaqueKeyOwnershipProof,
+		) -> Option<()> { None }
+
+		fn generate_key_ownership_proof(
+			_set_id: sp_consensus_beefy::ValidatorSetId,
+			_authority_id: sp_consensus_beefy::crypto::AuthorityId,
+		) -> Option<sp_consensus_beefy::OpaqueKeyOwnershipProof> { None }
 	}
 
 	impl pallet_mmr::primitives::MmrApi<
@@ -933,9 +942,10 @@ impl_runtime_apis! {
 
 			let mut list = Vec::<BenchmarkList>::new();
 
-			list_benchmark!(list, extra, pallet_bridge_messages, MessagesBench::<Runtime, WithRialtoMessagesInstance>);
+			list_benchmark!(list, extra, RialtoParachainMessages, MessagesBench::<Runtime, WithRialtoParachainMessagesInstance>);
+			list_benchmark!(list, extra, RialtoMessages, MessagesBench::<Runtime, WithRialtoMessagesInstance>);
 			list_benchmark!(list, extra, pallet_bridge_grandpa, BridgeRialtoGrandpa);
-			list_benchmark!(list, extra, pallet_bridge_parachains, ParachainsBench::<Runtime, WithRialtoMessagesInstance>);
+			list_benchmark!(list, extra, pallet_bridge_parachains, ParachainsBench::<Runtime, WithRialtoParachainsInstance>);
 			list_benchmark!(list, extra, pallet_bridge_relayers, RelayersBench::<Runtime>);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
@@ -964,7 +974,12 @@ impl_runtime_apis! {
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
 
-			use bridge_runtime_common::messages_benchmarking::{prepare_message_delivery_proof_from_grandpa_chain, prepare_message_proof_from_grandpa_chain};
+			use bridge_runtime_common::messages_benchmarking::{
+				prepare_message_delivery_proof_from_grandpa_chain,
+				prepare_message_delivery_proof_from_parachain,
+				prepare_message_proof_from_grandpa_chain,
+				prepare_message_proof_from_parachain,
+			};
 			use pallet_bridge_messages::benchmarking::{
 				Pallet as MessagesBench,
 				Config as MessagesConfig,
@@ -980,28 +995,66 @@ impl_runtime_apis! {
 				Config as RelayersConfig,
 			};
 			use rialto_messages::WithRialtoMessageBridge;
+			use rialto_parachain_messages::WithRialtoParachainMessageBridge;
 
-			impl MessagesConfig<WithRialtoMessagesInstance> for Runtime {
+			impl MessagesConfig<WithRialtoParachainMessagesInstance> for Runtime {
 				fn prepare_message_proof(
 					params: MessageProofParams,
 				) -> (rialto_messages::FromRialtoMessagesProof, Weight) {
-					prepare_message_proof_from_grandpa_chain::<Runtime, RialtoGrandpaInstance, WithRialtoMessageBridge>(
-						params,
-					)
+					prepare_message_proof_from_parachain::<
+						Runtime,
+						WithRialtoParachainsInstance,
+						WithRialtoParachainMessageBridge,
+					>(params)
 				}
 
 				fn prepare_message_delivery_proof(
 					params: MessageDeliveryProofParams<Self::AccountId>,
 				) -> rialto_messages::ToRialtoMessagesDeliveryProof {
-					prepare_message_delivery_proof_from_grandpa_chain::<Runtime, RialtoGrandpaInstance, WithRialtoMessageBridge>(
-						params,
-					)
+					prepare_message_delivery_proof_from_parachain::<
+						Runtime,
+						WithRialtoParachainsInstance,
+						WithRialtoParachainMessageBridge,
+					>(params)
 				}
 
 				fn is_relayer_rewarded(relayer: &Self::AccountId) -> bool {
 					use bridge_runtime_common::messages::MessageBridge;
 
-					let lane = Self::bench_lane_id();
+					let lane = <Self as MessagesConfig<WithRialtoParachainMessagesInstance>>::bench_lane_id();
+					let bridged_chain_id = WithRialtoParachainMessageBridge::BRIDGED_CHAIN_ID;
+					pallet_bridge_relayers::Pallet::<Runtime>::relayer_reward(
+						relayer,
+						RewardsAccountParams::new(lane, bridged_chain_id, RewardsAccountOwner::BridgedChain)
+					).is_some()
+				}
+			}
+
+			impl MessagesConfig<WithRialtoMessagesInstance> for Runtime {
+				fn prepare_message_proof(
+					params: MessageProofParams,
+				) -> (rialto_messages::FromRialtoMessagesProof, Weight) {
+					prepare_message_proof_from_grandpa_chain::<
+						Runtime,
+						RialtoGrandpaInstance,
+						WithRialtoMessageBridge,
+					>(params)
+				}
+
+				fn prepare_message_delivery_proof(
+					params: MessageDeliveryProofParams<Self::AccountId>,
+				) -> rialto_messages::ToRialtoMessagesDeliveryProof {
+					prepare_message_delivery_proof_from_grandpa_chain::<
+						Runtime,
+						RialtoGrandpaInstance,
+						WithRialtoMessageBridge,
+					>(params)
+				}
+
+				fn is_relayer_rewarded(relayer: &Self::AccountId) -> bool {
+					use bridge_runtime_common::messages::MessageBridge;
+
+					let lane = <Self as MessagesConfig<WithRialtoMessagesInstance>>::bench_lane_id();
 					let bridged_chain_id = WithRialtoMessageBridge::BRIDGED_CHAIN_ID;
 					pallet_bridge_relayers::Pallet::<Runtime>::relayer_reward(
 						relayer,
@@ -1026,7 +1079,10 @@ impl_runtime_apis! {
 					bp_polkadot_core::parachains::ParaHeadsProof,
 					Vec<(bp_polkadot_core::parachains::ParaId, bp_polkadot_core::parachains::ParaHash)>,
 				) {
-					bridge_runtime_common::parachains_benchmarking::prepare_parachain_heads_proof::<Runtime, WithRialtoParachainsInstance>(
+					bridge_runtime_common::parachains_benchmarking::prepare_parachain_heads_proof::<
+						Runtime,
+						WithRialtoParachainsInstance,
+					>(
 						parachains,
 						parachain_head_size,
 						proof_size,
@@ -1051,7 +1107,13 @@ impl_runtime_apis! {
 			add_benchmark!(
 				params,
 				batches,
-				pallet_bridge_messages,
+				RialtoParachainMessages,
+				MessagesBench::<Runtime, WithRialtoParachainMessagesInstance>
+			);
+			add_benchmark!(
+				params,
+				batches,
+				RialtoMessages,
 				MessagesBench::<Runtime, WithRialtoMessagesInstance>
 			);
 			add_benchmark!(params, batches, pallet_bridge_grandpa, BridgeRialtoGrandpa);

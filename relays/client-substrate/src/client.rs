@@ -26,7 +26,7 @@ use crate::{
 	Result, SignParam, TransactionTracker, UnsignedTransaction,
 };
 
-use async_std::sync::{Arc, Mutex};
+use async_std::sync::{Arc, Mutex, RwLock};
 use async_trait::async_trait;
 use bp_runtime::{HeaderIdProvider, StorageDoubleMapKeyProvider, StorageMapKeyProvider};
 use codec::{Decode, Encode};
@@ -111,23 +111,31 @@ pub enum ChainRuntimeVersion {
 
 /// Substrate client type.
 ///
-/// Cloning `Client` is a cheap operation.
+/// Cloning `Client` is a cheap operation that only clones internal references. Different
+/// clones of the same client are guaranteed to use the same references.
 pub struct Client<C: Chain> {
-	/// Tokio runtime handle.
-	tokio: Arc<tokio::runtime::Runtime>,
+	// Lock order: `submit_signed_extrinsic_lock`, `data`
 	/// Client connection params.
 	params: Arc<ConnectionParams>,
-	/// Substrate RPC client.
-	client: Arc<RpcClient>,
-	/// Genesis block hash.
-	genesis_hash: HashOf<C>,
+	/// Saved chain runtime version.
+	chain_runtime_version: ChainRuntimeVersion,
 	/// If several tasks are submitting their transactions simultaneously using
 	/// `submit_signed_extrinsic` method, they may get the same transaction nonce. So one of
 	/// transactions will be rejected from the pool. This lock is here to prevent situations like
 	/// that.
 	submit_signed_extrinsic_lock: Arc<Mutex<()>>,
-	/// Saved chain runtime version
-	chain_runtime_version: ChainRuntimeVersion,
+	/// Genesis block hash.
+	genesis_hash: HashOf<C>,
+	/// Shared dynamic data.
+	data: Arc<RwLock<ClientData>>,
+}
+
+/// Client data, shared by all `Client` clones.
+struct ClientData {
+	/// Tokio runtime handle.
+	tokio: Arc<tokio::runtime::Runtime>,
+	/// Substrate RPC client.
+	client: Arc<RpcClient>,
 }
 
 #[async_trait]
@@ -135,9 +143,10 @@ impl<C: Chain> relay_utils::relay_loop::Client for Client<C> {
 	type Error = Error;
 
 	async fn reconnect(&mut self) -> Result<()> {
+		let mut data = self.data.write().await;
 		let (tokio, client) = Self::build_client(&self.params).await?;
-		self.tokio = tokio;
-		self.client = client;
+		data.tokio = tokio;
+		data.client = client;
 		Ok(())
 	}
 }
@@ -145,12 +154,11 @@ impl<C: Chain> relay_utils::relay_loop::Client for Client<C> {
 impl<C: Chain> Clone for Client<C> {
 	fn clone(&self) -> Self {
 		Client {
-			tokio: self.tokio.clone(),
 			params: self.params.clone(),
-			client: self.client.clone(),
-			genesis_hash: self.genesis_hash,
-			submit_signed_extrinsic_lock: self.submit_signed_extrinsic_lock.clone(),
 			chain_runtime_version: self.chain_runtime_version.clone(),
+			submit_signed_extrinsic_lock: self.submit_signed_extrinsic_lock.clone(),
+			genesis_hash: self.genesis_hash,
+			data: self.data.clone(),
 		}
 	}
 }
@@ -199,12 +207,11 @@ impl<C: Chain> Client<C> {
 
 		let chain_runtime_version = params.chain_runtime_version.clone();
 		Ok(Self {
-			tokio,
 			params,
-			client,
-			genesis_hash,
-			submit_signed_extrinsic_lock: Arc::new(Mutex::new(())),
 			chain_runtime_version,
+			submit_signed_extrinsic_lock: Arc::new(Mutex::new(())),
+			genesis_hash,
+			data: Arc::new(RwLock::new(ClientData { tokio, client })),
 		})
 	}
 
@@ -271,6 +278,10 @@ impl<C: Chain> Client<C> {
 			Ok(SubstrateChainClient::<C>::finalized_head(&*client).await?)
 		})
 		.await
+		.map_err(|e| Error::FailedToReadBestFinalizedHeaderHash {
+			chain: C::NAME.into(),
+			error: e.boxed(),
+		})
 	}
 
 	/// Return number of the best finalized block.
@@ -292,6 +303,7 @@ impl<C: Chain> Client<C> {
 			Ok(SubstrateChainClient::<C>::header(&*client, None).await?)
 		})
 		.await
+		.map_err(|e| Error::FailedToReadBestHeader { chain: C::NAME.into(), error: e.boxed() })
 	}
 
 	/// Get a Substrate block from its hash.
@@ -311,6 +323,11 @@ impl<C: Chain> Client<C> {
 			Ok(SubstrateChainClient::<C>::header(&*client, Some(block_hash)).await?)
 		})
 		.await
+		.map_err(|e| Error::FailedToReadHeaderByHash {
+			chain: C::NAME.into(),
+			hash: format!("{block_hash}"),
+			error: e.boxed(),
+		})
 	}
 
 	/// Get a Substrate block hash by its number.
@@ -394,10 +411,17 @@ impl<C: Chain> Client<C> {
 		storage_key: StorageKey,
 		block_hash: Option<C::Hash>,
 	) -> Result<Option<StorageData>> {
+		let cloned_storage_key = storage_key.clone();
 		self.jsonrpsee_execute(move |client| async move {
-			Ok(SubstrateStateClient::<C>::storage(&*client, storage_key, block_hash).await?)
+			Ok(SubstrateStateClient::<C>::storage(&*client, storage_key.clone(), block_hash)
+				.await?)
 		})
 		.await
+		.map_err(|e| Error::FailedToReadRuntimeStorageValue {
+			chain: C::NAME.into(),
+			key: cloned_storage_key,
+			error: e.boxed(),
+		})
 	}
 
 	/// Return native tokens balance of the account.
@@ -555,7 +579,7 @@ impl<C: Chain> Client<C> {
 				Ok((tracker, subscription))
 			})
 			.await?;
-		self.tokio.spawn(Subscription::background_worker(
+		self.data.read().await.tokio.spawn(Subscription::background_worker(
 			C::NAME.into(),
 			"extrinsic".into(),
 			subscription,
@@ -640,7 +664,14 @@ impl<C: Chain> Client<C> {
 		input: Input,
 		at_block: Option<C::Hash>,
 	) -> Result<Output> {
-		let encoded_output = self.state_call(method_name, Bytes(input.encode()), at_block).await?;
+		let encoded_output = self
+			.state_call(method_name.clone(), Bytes(input.encode()), at_block)
+			.await
+			.map_err(|e| Error::ErrorExecutingRuntimeCall {
+				chain: C::NAME.into(),
+				method: method_name,
+				error: e.boxed(),
+			})?;
 		Output::decode(&mut &encoded_output.0[..]).map_err(Error::ResponseParseFailed)
 	}
 
@@ -695,7 +726,7 @@ impl<C: Chain> Client<C> {
 			})
 			.await?;
 		let (sender, receiver) = futures::channel::mpsc::channel(MAX_SUBSCRIPTION_CAPACITY);
-		self.tokio.spawn(Subscription::background_worker(
+		self.data.read().await.tokio.spawn(Subscription::background_worker(
 			C::NAME.into(),
 			"justification".into(),
 			subscription,
@@ -711,8 +742,9 @@ impl<C: Chain> Client<C> {
 		F: Future<Output = Result<T>> + Send,
 		T: Send + 'static,
 	{
-		let client = self.client.clone();
-		self.tokio.spawn(async move { make_jsonrpsee_future(client).await }).await?
+		let data = self.data.read().await;
+		let client = data.client.clone();
+		data.tokio.spawn(async move { make_jsonrpsee_future(client).await }).await?
 	}
 
 	/// Returns `true` if version guard can be started.

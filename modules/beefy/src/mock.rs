@@ -32,7 +32,7 @@ use sp_runtime::{
 	Perbill,
 };
 
-pub use sp_beefy::crypto::{AuthorityId as BeefyId, Pair as BeefyPair};
+pub use sp_consensus_beefy::crypto::{AuthorityId as BeefyId, Pair as BeefyPair};
 use sp_core::crypto::Wraps;
 use sp_runtime::traits::Keccak256;
 
@@ -49,7 +49,7 @@ pub type TestBridgedMmrHashing = BridgedMmrHashing<TestRuntime, ()>;
 pub type TestBridgedMmrHash = BridgedMmrHash<TestRuntime, ()>;
 pub type TestBridgedBeefyMmrLeafExtra = BridgedBeefyMmrLeafExtra<TestRuntime, ()>;
 pub type TestBridgedMmrProof = BridgedMmrProof<TestRuntime, ()>;
-pub type TestBridgedRawMmrLeaf = sp_beefy::mmr::MmrLeaf<
+pub type TestBridgedRawMmrLeaf = sp_consensus_beefy::mmr::MmrLeaf<
 	TestBridgedBlockNumber,
 	TestBridgedBlockHash,
 	TestBridgedMmrHash,
@@ -72,7 +72,7 @@ construct_runtime! {
 }
 
 parameter_types! {
-	pub const MaximumBlockWeight: Weight = Weight::from_ref_time(1024);
+	pub const MaximumBlockWeight: Weight = Weight::from_parts(1024, 0);
 	pub const MaximumBlockLength: u32 = 2 * 1024;
 	pub const AvailableBlockRatio: Perbill = Perbill::one();
 }
