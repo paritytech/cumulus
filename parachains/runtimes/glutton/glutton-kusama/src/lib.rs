@@ -33,7 +33,7 @@
 //!
 //! Since the main goal of Glutton is solely stress testing, the parachain will
 //! only be able receive XCM messages from Kusama via DMP. This way the Glutton
-//! parachains will be able to listen for upgrades that are comming from the
+//! parachains will be able to listen for upgrades that are coming from the
 //! Relay chain.
 
 #![cfg_attr(not(feature = "std"), no_std)]
