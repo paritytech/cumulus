@@ -37,18 +37,18 @@ and treat as best.
 A Polkadot [collator](https://wiki.polkadot.network/docs/en/learn-collator) for the parachain is
 implemented by the `polkadot-parachain` binary (previously called `polkadot-collator`).
 
-### Relaychain Interaction
-To operate a parachain node, a connection to the corresponding relaychain is necessary. This can be
+### Relay Chain Interaction
+To operate a parachain node, a connection to the corresponding relay chain is necessary. This can be
 achieved in one of two ways:
-1. Run a full relaychain node within the parachain node (default)
-2. Connect to an external relaychain node via WebSocket RPC
+1. Run a full relay chain node within the parachain node (default)
+2. Connect to an external relay chain node via WebSocket RPC
 
-#### In-process Relaychain Node
-If an external relaychain node is not specified (default behavior), then a full relaychain node is
+#### In-process Relay Chain Node
+If an external relay chain node is not specified (default behavior), then a full relay chain node is
 spawned within the same process.
 
 This node has all of the typical components of a regular Polkadot node and will have to fully sync
-with the relaychain to work.
+with the relay chain to work.
 
 ##### Example command
 ```shell=
@@ -59,8 +59,8 @@ polkadot-parachain \
 	--chain relaychain-chainspec.json
 ```
 
-#### External Relaychain Node
-An external relaychain node is connected via WebsSocket RPC by using the  `--relay-chain-rpc-urls`
+#### External Relay Chain Node
+An external relay chain node is connected via WebsSocket RPC by using the  `--relay-chain-rpc-urls`
 command line argument. This option accepts one or more space-separated WebSocket URLs to a full relay
 chain node. By default, only the first URL will be used, with the rest as a backup in case the
 connection to the first node is lost.
@@ -69,7 +69,7 @@ Parachain nodes using this feature won't have to fully sync with the relay chain
 they will use fewer system resources.
 
 **Note:** At this time, any parachain nodes using this feature will still spawn a significantly cut-down
-relaychain node in-process. Even though they lack the majority of normal Polkadot subsystems, they
+relay chain node in-process. Even though they lack the majority of normal Polkadot subsystems, they
 will still need to connect directly to the relay chain network.
 ##### Example command
 ```shell=
