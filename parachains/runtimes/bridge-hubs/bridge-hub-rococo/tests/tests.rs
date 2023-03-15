@@ -16,7 +16,6 @@
 
 use bp_messages::target_chain::MessageDispatch;
 use bp_runtime::messages::MessageDispatchResult;
-use bridge_hub_rococo_runtime::bridge_common_config::XcmBlobMessageDispatchResult;
 pub use bridge_hub_rococo_runtime::{
 	xcm_config::{XcmConfig, XcmRouter},
 	Runtime, *,
@@ -25,6 +24,7 @@ use codec::Encode;
 use xcm::latest::prelude::*;
 
 use bridge_hub_test_utils::*;
+use bridge_runtime_common::messages_xcm_extension::XcmBlobMessageDispatchResult;
 use frame_support::weights::Weight;
 use xcm_executor::XcmExecutor;
 

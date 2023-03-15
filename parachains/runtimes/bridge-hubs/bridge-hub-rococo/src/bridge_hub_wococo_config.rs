@@ -18,7 +18,7 @@
 
 use crate::{
 	BridgeParachainRococoInstance, ParachainInfo, Runtime, WithBridgeHubRococoMessagesInstance,
-	XcmBlobHauler, XcmBlobHaulerAdapter, XcmRouter,
+	XcmRouter,
 };
 use bp_messages::{LaneId, MessageNonce};
 use bp_runtime::ChainId;
@@ -28,6 +28,7 @@ use bridge_runtime_common::{
 		source::FromBridgedChainMessagesDeliveryProof, target::FromBridgedChainMessagesProof,
 		MessageBridge, ThisChainWithMessages, UnderlyingChainProvider,
 	},
+	messages_xcm_extension::{XcmBlobHauler, XcmBlobHaulerAdapter},
 	refund_relayer_extension::{
 		ActualFeeRefund, RefundBridgedParachainMessages, RefundableMessagesLane,
 		RefundableParachain,

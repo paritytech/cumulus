@@ -22,14 +22,12 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-pub mod bridge_common_config;
 pub mod bridge_hub_rococo_config;
 pub mod bridge_hub_wococo_config;
 pub mod constants;
 mod weights;
 pub mod xcm_config;
 
-use bridge_common_config::*;
 use constants::currency::*;
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
@@ -82,10 +80,11 @@ use crate::{
 		WithBridgeHubRococoMessageBridge,
 	},
 	constants::fee::WeightToFee,
-	xcm_config::XcmRouter,
+	xcm_config::{XcmRouter, XcmRouterWeigher},
 };
-use bridge_runtime_common::messages::{
-	source::TargetHeaderChainAdapter, target::SourceHeaderChainAdapter,
+use bridge_runtime_common::{
+	messages::{source::TargetHeaderChainAdapter, target::SourceHeaderChainAdapter},
+	messages_xcm_extension::{XcmAsPlainPayload, XcmBlobMessageDispatch},
 };
 use parachains_common::{
 	opaque, AccountId, Balance, BlockNumber, Hash, Header, Index, Signature,
@@ -487,6 +486,7 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 		bp_bridge_hub_wococo::BridgeHubWococo,
 		bp_bridge_hub_rococo::BridgeHubRococo,
 		OnBridgeHubRococoBlobDispatcher,
+		XcmRouterWeigher,
 	>;
 }
 
@@ -523,6 +523,7 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 		bp_bridge_hub_rococo::BridgeHubRococo,
 		bp_bridge_hub_wococo::BridgeHubWococo,
 		OnBridgeHubWococoBlobDispatcher,
+		XcmRouterWeigher,
 	>;
 }
 
