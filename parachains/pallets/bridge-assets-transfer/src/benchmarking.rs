@@ -25,8 +25,12 @@ use sp_std::prelude::*;
 
 benchmarks! {
 	transfer_asset_via_bridge {
+		// every asset has its own configuration and ledger, so there's a performance dependency
+		// TODO: add proper range after once pallet works with multiple assets
+		// (be sure to use "worst" of assets)
+		// let a in 1 .. 1;
 		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config();
-		let (origin, assets, destination) = T::BenchmarkHelper::prepare_transfer();
+		let (origin, assets, destination) = T::BenchmarkHelper::prepare_transfer(1);
 		Bridges::<T>::insert(bridged_network, bridge_config);
 	}: _<T::RuntimeOrigin>(origin, Box::new(assets), Box::new(destination))
 	verify {

@@ -89,7 +89,9 @@ pub mod pallet {
 		/// - be close to the worst possible scenario - i.e. if some account may need to be created during
 		///   the assets transfer, it should be created. If there are multiple bridges, the "worst possible"
 		///   (in terms of performance) bridge must be selected for the transfer.
-		fn prepare_transfer() -> (RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation);
+		fn prepare_transfer(
+			assets_count: u32,
+		) -> (RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation);
 	}
 
 	#[pallet::config]
@@ -614,17 +616,22 @@ pub(crate) mod tests {
 			test_bridge_config()
 		}
 
-		fn prepare_transfer() -> (RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation) {
+		fn prepare_transfer(
+			assets_count: u32,
+		) -> (RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation) {
 			// sender account must have enough funds
 			let sender_account = account(1);
-			let _ = Balances::deposit_creating(&sender_account, ExistentialDeposit::get() * 10);
+			let total_deposit = ExistentialDeposit::get() * (1 + assets_count as u64);
+			let _ = Balances::deposit_creating(&sender_account, total_deposit);
 
 			// finally - prepare assets and destination
 			let assets = VersionedMultiAssets::V3(
-				MultiAsset {
+				std::iter::repeat(MultiAsset {
 					fun: Fungible(ExistentialDeposit::get().into()),
 					id: Concrete(RelayLocation::get()),
-				}
+				})
+				.take(assets_count as usize)
+				.collect::<Vec<_>>()
 				.into(),
 			);
 			let destination = VersionedMultiLocation::V3(MultiLocation::new(

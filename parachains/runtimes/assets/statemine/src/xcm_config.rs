@@ -482,9 +482,12 @@ impl pallet_bridge_assets_transfer::BenchmarkHelper<RuntimeOrigin>
 		)
 	}
 
-	fn prepare_transfer() -> (RuntimeOrigin, xcm::VersionedMultiAssets, xcm::VersionedMultiLocation)
-	{
+	fn prepare_transfer(
+		assets_count: u32,
+	) -> (RuntimeOrigin, xcm::VersionedMultiAssets, xcm::VersionedMultiLocation) {
 		use frame_support::traits::Currency;
+
+		assert_eq!(assets_count, 1, "Benchmarks needs to be fixed to support multiple assets");
 
 		// our `BridgeXcmSender` assumes that the HRMP channel is opened between this
 		// parachain and the sibling bridge-hub parachain
