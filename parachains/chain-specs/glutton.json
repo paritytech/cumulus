@@ -9,7 +9,7 @@
   "protocolId": null,
   "properties": null,
   "relay_chain": "kusama",
-  "para_id": 2005,
+  "para_id": 1500,
   "codeSubstitutes": {},
   "genesis": {
     "raw": {
