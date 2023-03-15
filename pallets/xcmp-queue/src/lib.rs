@@ -79,7 +79,6 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::storage_version(migration::STORAGE_VERSION)]
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
@@ -142,7 +141,7 @@ pub mod pallet {
 		/// Events:
 		/// - `OverweightServiced`: On success.
 		#[pallet::call_index(0)]
-		#[pallet::weight((weight_limit.saturating_add(Weight::from_ref_time(1_000_000)), DispatchClass::Operational))]
+		#[pallet::weight((weight_limit.saturating_add(Weight::from_parts(1_000_000, 0)), DispatchClass::Operational))]
 		pub fn service_overweight(
 			origin: OriginFor<T>,
 			index: OverweightIndex,
@@ -161,7 +160,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::WeightOverLimit)?;
 			Overweight::<T>::remove(index);
 			Self::deposit_event(Event::OverweightServiced { index, used });
-			Ok(Some(used.saturating_add(Weight::from_ref_time(1_000_000))).into())
+			Ok(Some(used.saturating_add(Weight::from_parts(1_000_000, 0))).into())
 		}
 
 		/// Suspends all XCM executions for the XCMP queue, regardless of the sender's origin.
@@ -467,8 +466,8 @@ impl Default for QueueConfigData {
 			suspend_threshold: 2,
 			drop_threshold: 5,
 			resume_threshold: 1,
-			threshold_weight: Weight::from_ref_time(100_000),
-			weight_restrict_decay: Weight::from_ref_time(2),
+			threshold_weight: Weight::from_parts(100_000, 0),
+			weight_restrict_decay: Weight::from_parts(2, 0),
 			xcmp_max_individual_weight: Weight::from_parts(
 				20u64 * WEIGHT_REF_TIME_PER_MILLIS,
 				DEFAULT_POV_SIZE,
@@ -763,13 +762,13 @@ impl<T: Config> Pallet<T> {
 		sent_at: RelayBlockNumber,
 		xcm: Vec<u8>,
 	) -> OverweightIndex {
-		let index = <Self as Store>::OverweightCount::mutate(|count| {
+		let index = OverweightCount::<T>::mutate(|count| {
 			let index = *count;
 			*count += 1;
 			index
 		});
 
-		<Self as Store>::Overweight::insert(index, (sender, sent_at, xcm));
+		Overweight::<T>::insert(index, (sender, sent_at, xcm));
 		index
 	}
 

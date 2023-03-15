@@ -165,7 +165,6 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	/// The invulnerable, fixed collators.
@@ -495,10 +494,6 @@ pub mod pallet {
 				T::WeightInfo::note_author(),
 				DispatchClass::Mandatory,
 			);
-		}
-
-		fn note_uncle(_author: T::AccountId, _age: T::BlockNumber) {
-			//TODO can we ignore this?
 		}
 	}
 
