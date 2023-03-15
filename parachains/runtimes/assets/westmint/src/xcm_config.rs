@@ -315,7 +315,7 @@ impl xcm_executor::Config for XcmConfig {
 	// Westmint is acting _as_ a reserve location for WND and assets created under `pallet-assets`.
 	// For WND, users must use teleport where allowed (e.g. with the Relay Chain).
 	type IsReserve =
-		(ConcreteFungibleAssetsFromTrustedBridgedReserves<TrustedBridgedReserveLocations>);
+		ConcreteFungibleAssetsFromTrustedBridgedReserves<TrustedBridgedReserveLocations>;
 	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of WND
 	type UniversalLocation = UniversalLocation;
 	type Barrier = Barrier;
