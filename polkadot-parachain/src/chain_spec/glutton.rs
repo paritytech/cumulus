@@ -29,13 +29,13 @@ pub fn glutton_development_config() -> GluttonChainSpec {
 		// ID
 		"glutton_dev",
 		ChainType::Local,
-		move || glutton_genesis(2005.into()),
+		move || glutton_genesis(1500.into()),
 		Vec::new(),
 		None,
 		None,
 		None,
 		None,
-		Extensions { relay_chain: "kusama-dev".into(), para_id: 2005 },
+		Extensions { relay_chain: "kusama-dev".into(), para_id: 1500 },
 	)
 }
 
@@ -46,13 +46,13 @@ pub fn glutton_local_config() -> GluttonChainSpec {
 		// ID
 		"glutton_local",
 		ChainType::Local,
-		move || glutton_genesis(2005.into()),
+		move || glutton_genesis(1500.into()),
 		Vec::new(),
 		None,
 		None,
 		None,
 		None,
-		Extensions { relay_chain: "kusama-local".into(), para_id: 2005 },
+		Extensions { relay_chain: "kusama-local".into(), para_id: 1500 },
 	)
 }
 
@@ -63,13 +63,13 @@ pub fn glutton_config() -> GluttonChainSpec {
 		// ID
 		"glutton",
 		ChainType::Live,
-		move || glutton_genesis(2005.into()),
+		move || glutton_genesis(1500.into()),
 		Vec::new(),
 		None,
 		None,
 		None,
 		None,
-		Extensions { relay_chain: "kusama".into(), para_id: 2005 },
+		Extensions { relay_chain: "kusama".into(), para_id: 1500 },
 	)
 }
 
