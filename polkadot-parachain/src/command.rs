@@ -222,7 +222,6 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"glutton-local" => Box::new(chain_spec::glutton::glutton_local_config()),
 		// the chain spec as used for generating the upgrade genesis values
 		"glutton-genesis" => Box::new(chain_spec::glutton::glutton_config()),
-		// the shell-based chain spec as used for syncing
 		"glutton" => Box::new(chain_spec::glutton::GluttonChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/glutton.json")[..],
 		)?),
