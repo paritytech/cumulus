@@ -51,7 +51,6 @@ function ensure_polkadot_js_api() {
         pushd ./scripts/generate_hex_encoded_call
         npm install
         popd
-        exit 1
     fi
 }
 
@@ -65,11 +64,14 @@ function generate_hex_encoded_call_data() {
     echo "Input params: $@"
 
     node ./scripts/generate_hex_encoded_call "$type" "$endpoint" "$output" "$@"
+    local retVal=$?
 
     if [ $type != "check" ]; then
         local hex_encoded_data=$(cat $output)
         echo "Generated hex-encoded bytes to file '$output': $hex_encoded_data"
     fi
+
+    return $retVal
 }
 
 STATEMINE_ACCOUNT_SEED_FOR_LOCAL="//Alice"
