@@ -133,7 +133,7 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"xcm/std",
-    "snowbridge-basic-channel/std",
+	"snowbridge-basic-channel/std",
 	"snowbridge-core/std",
 	"ethereum-beacon-client/std",
 	"ethereum-beacon-primitives/std",
@@ -158,7 +158,7 @@ runtime-benchmarks = [
 	"pallet-xcm-benchmarks/runtime-benchmarks",
 	"ethereum-beacon-client/runtime-benchmarks",
 	"snowbridge-core/runtime-benchmarks",
-    "snowbridge-basic-channel/runtime-benchmarks",
+	"snowbridge-basic-channel/runtime-benchmarks",
 	"dispatch/runtime-benchmarks",
 ]
 
