@@ -977,8 +977,17 @@ impl_runtime_apis! {
 
 			impl BridgeMessagesConfig<WithBridgeHubWococoMessagesInstance> for Runtime {
 				fn is_relayer_rewarded(relayer: &Self::AccountId) -> bool {
+					use bridge_runtime_common::messages::MessageBridge;
 					let bench_lane_id = <Self as BridgeMessagesConfig<WithBridgeHubWococoMessagesInstance>>::bench_lane_id();
-					pallet_bridge_relayers::Pallet::<Runtime>::relayer_reward(relayer, &bench_lane_id).is_some()
+					let bridged_chain_id = bridge_hub_rococo_config::WithBridgeHubWococoMessageBridge::BRIDGED_CHAIN_ID;
+					pallet_bridge_relayers::Pallet::<Runtime>::relayer_reward(
+						relayer,
+						bp_relayers::RewardsAccountParams::new(
+							bench_lane_id,
+							bridged_chain_id,
+							bp_relayers::RewardsAccountOwner::BridgedChain
+						)
+					).is_some()
 				}
 
 				fn prepare_message_proof(
@@ -1004,8 +1013,17 @@ impl_runtime_apis! {
 
 			impl BridgeMessagesConfig<WithBridgeHubRococoMessagesInstance> for Runtime {
 				fn is_relayer_rewarded(relayer: &Self::AccountId) -> bool {
+					use bridge_runtime_common::messages::MessageBridge;
 					let bench_lane_id = <Self as BridgeMessagesConfig<WithBridgeHubRococoMessagesInstance>>::bench_lane_id();
-					pallet_bridge_relayers::Pallet::<Runtime>::relayer_reward(relayer, &bench_lane_id).is_some()
+					let bridged_chain_id = bridge_hub_wococo_config::WithBridgeHubRococoMessageBridge::BRIDGED_CHAIN_ID;
+					pallet_bridge_relayers::Pallet::<Runtime>::relayer_reward(
+						relayer,
+						bp_relayers::RewardsAccountParams::new(
+							bench_lane_id,
+							bridged_chain_id,
+							bp_relayers::RewardsAccountOwner::BridgedChain
+						)
+					).is_some()
 				}
 
 				fn prepare_message_proof(
@@ -1089,15 +1107,15 @@ impl_runtime_apis! {
 
 			impl BridgeRelayersConfig for Runtime {
 				fn prepare_environment(
-					lane: bp_messages::LaneId,
+					account_params: bp_relayers::RewardsAccountParams,
 					reward: Balance,
 				) {
 					use frame_support::traits::fungible::Mutate;
-					let lane_rewards_account = bp_relayers::PayLaneRewardFromAccount::<
+					let rewards_account = bp_relayers::PayRewardFromAccount::<
 						Balances,
 						AccountId
-					>::lane_rewards_account(lane);
-					Balances::mint_into(&lane_rewards_account, reward).unwrap();
+					>::rewards_account(account_params);
+					Balances::mint_into(&rewards_account, reward).unwrap();
 				}
 			}
 

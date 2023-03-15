@@ -176,11 +176,15 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			RuntimeCall::BridgeRococoGrandpa(pallet_bridge_grandpa::Call::<
 				Runtime,
 				BridgeGrandpaRococoInstance,
-			>::initialize { .. }) |
+			>::initialize {
+				..
+			}) |
 			RuntimeCall::BridgeWococoGrandpa(pallet_bridge_grandpa::Call::<
 				Runtime,
 				BridgeGrandpaWococoInstance,
-			>::initialize { .. }) => true,
+			>::initialize {
+				..
+			}) => true,
 			_ => false,
 		}
 	}

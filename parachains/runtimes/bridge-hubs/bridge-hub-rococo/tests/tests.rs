@@ -196,7 +196,7 @@ fn can_govornance_call_xcm_transact_with_initialize_on_bridge_hub_rococo() {
 		UnpaidExecution { weight_limit: Unlimited, check_origin: None },
 		Transact {
 			origin_kind: OriginKind::Superuser,
-			require_weight_at_most: Weight::from_ref_time(1000000000),
+			require_weight_at_most: Weight::from_parts(1000000000, 0),
 			call: initialize_call.encode().into(),
 		},
 	]);
@@ -212,7 +212,7 @@ fn can_govornance_call_xcm_transact_with_initialize_on_bridge_hub_rococo() {
 
 		// initialize bridge through governance-like
 		let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-		let weight_limit = Weight::from_ref_time(41666666666);
+		let weight_limit = Weight::from_parts(41666666666, 0);
 		let outcome = XcmExecutor::<XcmConfig>::execute_xcm(origin, xcm, hash, weight_limit);
 
 		// check mode after
@@ -238,7 +238,7 @@ fn can_govornance_call_xcm_transact_with_initialize_bridge_on_bridge_hub_wococo(
 		UnpaidExecution { weight_limit: Unlimited, check_origin: None },
 		Transact {
 			origin_kind: OriginKind::Superuser,
-			require_weight_at_most: Weight::from_ref_time(1000000000),
+			require_weight_at_most: Weight::from_parts(1000000000, 0),
 			call: initialize_call.encode().into(),
 		},
 	]);
@@ -254,7 +254,7 @@ fn can_govornance_call_xcm_transact_with_initialize_bridge_on_bridge_hub_wococo(
 
 		// initialize bridge through governance-like
 		let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-		let weight_limit = Weight::from_ref_time(41666666666);
+		let weight_limit = Weight::from_parts(41666666666, 0);
 		let outcome = XcmExecutor::<XcmConfig>::execute_xcm(origin, xcm, hash, weight_limit);
 
 		// check mode after
