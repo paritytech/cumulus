@@ -45,7 +45,6 @@ parameter_types! {
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub UniversalLocation: InteriorMultiLocation =
 		X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
-	pub const Local: MultiLocation = Here.into_location();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
@@ -151,10 +150,14 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_collator_selection::Call::leave_intent { .. },
 			) |
 			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
+			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
 			RuntimeCall::XcmpQueue(..) |
 			RuntimeCall::DmpQueue(..) |
 			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
 			RuntimeCall::Alliance(
+				// `init_members` accepts unbounded vecs as arguments,
+				// but the call can be initiated only by root origin.
+				pallet_alliance::Call::init_members { .. } |
 				pallet_alliance::Call::vote { .. } |
 				pallet_alliance::Call::close_old_weight { .. } |
 				pallet_alliance::Call::disband { .. } |

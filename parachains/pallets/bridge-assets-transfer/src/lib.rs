@@ -67,7 +67,6 @@ pub mod pallet {
 	use xcm_executor::traits::TransactAsset;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	/// Everything we need to run benchmarks.
