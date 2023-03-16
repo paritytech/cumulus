@@ -43,6 +43,7 @@ mod weights;
 pub mod xcm_config;
 // Fellowship configurations.
 pub mod fellowship;
+pub mod opengov;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use fellowship::{pallet_fellowship_origins, Fellows};
@@ -590,6 +591,9 @@ construct_runtime!(
 		// pub type FellowshipReferendaInstance = pallet_referenda::Instance1;
 		FellowshipReferenda: pallet_referenda::<Instance1>::{Pallet, Call, Storage, Event<T>} = 61,
 		FellowshipOrigins: pallet_fellowship_origins::{Origin} = 62,
+
+		ConvictionVoting: pallet_conviction_voting::{Pallet, Call, Storage, Event<T>} = 63,
+		Referenda: pallet_referenda::{Pallet, Call, Storage, Event<T>} = 64,
 	}
 );
 
