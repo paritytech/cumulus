@@ -121,7 +121,7 @@ pub struct TakeFirstAssetTrader<
 	AccountId,
 	FeeCharger: ChargeWeightInFungibles<AccountId, ConcreteAssets>,
 	Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-	ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId> + fungibles::Balanced<AccountId>,
+	ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
 	HandleRefund: TakeRevenue,
 >(
 	Option<AssetTraderRefunder>,
@@ -131,9 +131,7 @@ impl<
 		AccountId,
 		FeeCharger: ChargeWeightInFungibles<AccountId, ConcreteAssets>,
 		Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-		ConcreteAssets: fungibles::Mutate<AccountId>
-			+ fungibles::Transfer<AccountId>
-			+ fungibles::Balanced<AccountId>,
+		ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
 		HandleRefund: TakeRevenue,
 	> WeightTrader
 	for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, ConcreteAssets, HandleRefund>
@@ -260,9 +258,7 @@ impl<
 		AccountId,
 		FeeCharger: ChargeWeightInFungibles<AccountId, ConcreteAssets>,
 		Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-		ConcreteAssets: fungibles::Mutate<AccountId>
-			+ fungibles::Transfer<AccountId>
-			+ fungibles::Balanced<AccountId>,
+		ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
 		HandleRefund: TakeRevenue,
 	> Drop for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, ConcreteAssets, HandleRefund>
 {
@@ -451,7 +447,12 @@ mod tests {
 				todo!()
 			}
 
-			fn reducible_balance(_: Self::AssetId, _: &TestAccountId, _: bool) -> Self::Balance {
+			fn reducible_balance(
+				_: Self::AssetId,
+				_: &TestAccountId,
+				_: Preservation,
+				_: Fortitude,
+			) -> Self::Balance {
 				todo!()
 			}
 
@@ -459,7 +460,7 @@ mod tests {
 				_: Self::AssetId,
 				_: &TestAccountId,
 				_: Self::Balance,
-				_: bool,
+				_: Provenance,
 			) -> DepositConsequence {
 				todo!()
 			}
@@ -476,31 +477,11 @@ mod tests {
 				todo!()
 			}
 		}
-		impl fungibles::Mutate<TestAccountId> for TestAssets {
-			fn mint_into(_: Self::AssetId, _: &TestAccountId, _: Self::Balance) -> DispatchResult {
-				todo!()
-			}
-
-			fn burn_from(
-				_: Self::AssetId,
-				_: &TestAccountId,
-				_: Self::Balance,
-			) -> Result<Self::Balance, DispatchError> {
-				todo!()
-			}
-		}
-		impl fungibles::Transfer<TestAccountId> for TestAssets {
-			fn transfer(
-				_: Self::AssetId,
-				_: &TestAccountId,
-				_: &TestAccountId,
-				_: Self::Balance,
-				_: bool,
-			) -> Result<Self::Balance, DispatchError> {
-				todo!()
-			}
-		}
+		impl fungibles::Mutate<TestAccountId> for TestAssets {}
 		impl fungibles::Unbalanced<TestAccountId> for TestAssets {
+			fn handle_dust(_: fungibles::Dust<AccountId, Self>) {
+				todo!()
+			}
 			fn set_balance(
 				_: Self::AssetId,
 				_: &TestAccountId,
