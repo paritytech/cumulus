@@ -19,7 +19,7 @@ use std::pin::Pin;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRpcClient;
 use futures::{Future, Stream, StreamExt};
-use polkadot_core_primitives::{Block, CandidateHash, Hash, Header};
+use polkadot_core_primitives::{Block, BlockNumber, Hash, Header};
 use polkadot_overseer::RuntimeApiSubsystemClient;
 use polkadot_primitives::vstaging;
 use sc_authority_discovery::AuthorityDiscovery;
