@@ -27,7 +27,7 @@ use sc_network::NetworkBlock;
 use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
-use sp_keystore::SyncCryptoStorePtr;
+use sp_keystore::KeystorePtr;
 use substrate_prometheus_endpoint::Registry;
 
 /// Native executor type.
@@ -352,7 +352,7 @@ fn build_consensus(
 	relay_chain_interface: Arc<dyn RelayChainInterface>,
 	transaction_pool: Arc<sc_transaction_pool::FullPool<Block, ParachainClient>>,
 	sync_oracle: Arc<SyncingService<Block>>,
-	keystore: SyncCryptoStorePtr,
+	keystore: KeystorePtr,
 	force_authoring: bool,
 	para_id: ParaId,
 ) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error> {

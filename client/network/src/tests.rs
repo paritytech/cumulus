@@ -38,7 +38,7 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::BlockOrigin;
 use sp_core::{Pair, H256};
 use sp_keyring::Sr25519Keyring;
-use sp_keystore::{testing::KeyStore, SyncCryptoStore, SyncCryptoStorePtr};
+use sp_keystore::{testing::MemoryKeystore, Keystore, KeystorePtr};
 use sp_runtime::RuntimeAppPublic;
 use sp_state_machine::StorageValue;
 use std::{collections::BTreeMap, time::Duration};
@@ -273,8 +273,8 @@ async fn make_gossip_message_and_header(
 	relay_parent: H256,
 	validator_index: u32,
 ) -> (CollationSecondedSignal, Header) {
-	let keystore: SyncCryptoStorePtr = Arc::new(KeyStore::new());
-	let alice_public = SyncCryptoStore::sr25519_generate_new(
+	let keystore: KeystorePtr = Arc::new(MemoryKeystore::new());
+	let alice_public = Keystore::sr25519_generate_new(
 		&*keystore,
 		ValidatorId::ID,
 		Some(&Sr25519Keyring::Alice.to_seed()),
@@ -454,8 +454,8 @@ async fn check_statement_seconded() {
 	let header = default_header();
 	let relay_parent = H256::from_low_u64_be(1);
 
-	let keystore: SyncCryptoStorePtr = Arc::new(KeyStore::new());
-	let alice_public = SyncCryptoStore::sr25519_generate_new(
+	let keystore: KeystorePtr = Arc::new(MemoryKeystore::new());
+	let alice_public = Keystore::sr25519_generate_new(
 		&*keystore,
 		ValidatorId::ID,
 		Some(&Sr25519Keyring::Alice.to_seed()),
