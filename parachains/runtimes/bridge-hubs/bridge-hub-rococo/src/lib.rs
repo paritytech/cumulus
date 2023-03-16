@@ -27,7 +27,7 @@ mod weights;
 pub mod xcm_config;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-use ethereum_beacon_primitives::{Fork, ForkVersions};
+use snowbridge_beacon_primitives::{Fork, ForkVersions};
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -418,7 +418,7 @@ impl pallet_utility::Config for Runtime {
 
 // Ethereum Bridge
 
-impl dispatch::Config for Runtime {
+impl snowbridge_dispatch::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
 	type MessageId = MessageId;
@@ -432,8 +432,8 @@ use snowbridge_basic_channel::{
 
 impl basic_channel_inbound::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type Verifier = ethereum_beacon_client::Pallet<Runtime>;
-	type MessageDispatch = dispatch::Pallet<Runtime>;
+	type Verifier = snowbridge_ethereum_beacon_client::Pallet<Runtime>;
+	type MessageDispatch = snowbridge_dispatch::Pallet<Runtime>;
 	type WeightInfo = ();
 }
 
@@ -478,7 +478,7 @@ parameter_types! {
 	};
 }
 
-impl ethereum_beacon_client::Config for Runtime {
+impl snowbridge_ethereum_beacon_client::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
 	type MaxSyncCommitteeSize = MaxSyncCommitteeSize;
@@ -492,7 +492,7 @@ impl ethereum_beacon_client::Config for Runtime {
 	type MaxFinalizedHeaderSlotArray = MaxFinalizedHeaderSlotArray;
 	type ForkVersions = ChainForkVersions;
 	type WeakSubjectivityPeriodSeconds = WeakSubjectivityPeriodSeconds;
-	type WeightInfo = ethereum_beacon_client::weights::SnowbridgeWeight<Self>;
+	type WeightInfo = snowbridge_ethereum_beacon_client::weights::SnowbridgeWeight<Self>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -534,8 +534,8 @@ construct_runtime!(
 		// Ethereum Bridge
 		BasicInboundChannel: basic_channel_inbound::{Pallet, Call, Config, Storage, Event<T>} = 50,
 		BasicOutboundChannel: basic_channel_outbound::{Pallet, Config<T>, Storage, Event<T>} = 51,
-		Dispatch: dispatch::{Pallet, Call, Storage, Event<T>, Origin} = 52,
-		EthereumBeaconClient: ethereum_beacon_client::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
+		Dispatch: snowbridge_dispatch::{Pallet, Call, Storage, Event<T>, Origin} = 52,
+		EthereumBeaconClient: snowbridge_ethereum_beacon_client::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
 	}
 );
 
@@ -560,7 +560,10 @@ mod benches {
 		[pallet_xcm_benchmarks::fungible, XcmBalances]
 		[pallet_xcm_benchmarks::generic, XcmGeneric]
 		// Ethereum Bridge
-		[ethereum_beacon_client, EthereumBeaconClient]
+		//[basic_channel::inbound, BasicInboundChannel]
+		[basic_channel::outbound, BasicOutboundChannel]
+		//[snowbridge_dispatch::inbound, Dispatch]
+		[snowbridge_ethereum_beacon_client, EthereumBeaconClient]
 	);
 }
 
