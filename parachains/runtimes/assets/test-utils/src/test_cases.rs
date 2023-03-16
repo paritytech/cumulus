@@ -928,7 +928,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 				MultiLocation { parents: 1, interior: X2(Parachain(3333), GeneralIndex(1234567)) };
 			let asset_id = AssetIdConverter::convert(foreign_asset_id_multilocation).unwrap();
 
-			// prepapre data for xcm::Transact(create)
+			// prepare data for xcm::Transact(create)
 			let foreign_asset_create = runtime_call_encode(pallet_assets::Call::<
 				Runtime,
 				ForeignAssetsPalletInstance,
