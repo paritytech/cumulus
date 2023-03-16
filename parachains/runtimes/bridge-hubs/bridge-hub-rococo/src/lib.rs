@@ -448,7 +448,7 @@ impl basic_channel_outbound::Config for Runtime {
 	type SourceId = <Self as frame_system::Config>::AccountId;
 	type MaxMessagePayloadSize = MaxMessagePayloadSize;
 	type MaxMessagesPerCommit = MaxMessagesPerCommit;
-	type WeightInfo = basic_channel_outbound::weights::SnowbridgeWeight<Self>;
+	type WeightInfo = weights::snowbridge_basic_channel_outbound::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -492,7 +492,7 @@ impl snowbridge_ethereum_beacon_client::Config for Runtime {
 	type MaxFinalizedHeaderSlotArray = MaxFinalizedHeaderSlotArray;
 	type ForkVersions = ChainForkVersions;
 	type WeakSubjectivityPeriodSeconds = WeakSubjectivityPeriodSeconds;
-	type WeightInfo = snowbridge_ethereum_beacon_client::weights::SnowbridgeWeight<Self>;
+	type WeightInfo = weights::snowbridge_ethereum_beacon_client::WeightInfo<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -560,9 +560,9 @@ mod benches {
 		[pallet_xcm_benchmarks::fungible, XcmBalances]
 		[pallet_xcm_benchmarks::generic, XcmGeneric]
 		// Ethereum Bridge
-		//[basic_channel::inbound, BasicInboundChannel]
-		[basic_channel::outbound, BasicOutboundChannel]
-		//[snowbridge_dispatch::inbound, Dispatch]
+		//[snowbridge_basic_channel::inbound, BasicInboundChannel]
+		[snowbridge_basic_channel::outbound, BasicOutboundChannel]
+		//[snowbridge_dispatch, Dispatch]
 		[snowbridge_ethereum_beacon_client, EthereumBeaconClient]
 	);
 }

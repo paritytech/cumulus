@@ -64,8 +64,8 @@ elif [[ $runtimeName == "bridge-hub-rococo" ]]; then
                 cumulus_pallet_xcmp_queue
                 pallet_xcm_benchmarks::generic
                 pallet_xcm_benchmarks::fungible
-                # basic_channel::inbound
-                basic_channel::outbound
+                # snowbridge_basic_channel::inbound
+                snowbridge_basic_channel::outbound
                 # snowbridge_dispatch
                 snowbridge_ethereum_beacon_client
 	)
