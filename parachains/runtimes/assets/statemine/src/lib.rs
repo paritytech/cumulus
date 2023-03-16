@@ -1137,7 +1137,7 @@ mod tests {
 		assert!(fit >= 1000, "{} should be at least 1000", fit);
 	}
 
-	/// The fee for one transfer it at most 1 CENT.
+	/// The fee for one transfer is at most 1 CENT.
 	#[test]
 	fn sane_transfer_fee() {
 		use pallet_balances::WeightInfo;
@@ -1158,7 +1158,7 @@ mod tests {
 		assert_eq!(fee, CENTS, "10kb maps to CENT");
 	}
 
-	/// Filling up a block by proof size is at most 30 times more expensive then ref time.
+	/// Filling up a block by proof size is at most 30 times more expensive than ref time.
 	///
 	/// This is just a sanity check.
 	#[test]
