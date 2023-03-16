@@ -69,8 +69,8 @@ impl<T: frame_system::Config> snowbridge_ethereum_beacon_client::WeightInfo for 
 		// Proof Size summary in bytes:
 		//  Measured:  `1911`
 		//  Estimated: `19205`
-		// Minimum execution time: 51_718_111 nanoseconds.
-		Weight::from_parts(51_769_224_000, 19205)
+		// Minimum execution time: 50_722_558 nanoseconds.
+		Weight::from_parts(50_766_373_000, 19205)
 			.saturating_add(T::DbWeight::get().reads(8))
 			.saturating_add(T::DbWeight::get().writes(6))
 	}
@@ -94,8 +94,8 @@ impl<T: frame_system::Config> snowbridge_ethereum_beacon_client::WeightInfo for 
 		// Proof Size summary in bytes:
 		//  Measured:  `1911`
 		//  Estimated: `14634`
-		// Minimum execution time: 51_346_040 nanoseconds.
-		Weight::from_parts(51_394_169_000, 14634)
+		// Minimum execution time: 50_507_521 nanoseconds.
+		Weight::from_parts(50_554_579_000, 14634)
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(4))
 	}
@@ -117,8 +117,8 @@ impl<T: frame_system::Config> snowbridge_ethereum_beacon_client::WeightInfo for 
 		// Proof Size summary in bytes:
 		//  Measured:  `1991`
 		//  Estimated: `8748`
-		// Minimum execution time: 51_531_537 nanoseconds.
-		Weight::from_parts(51_572_907_000, 8748)
+		// Minimum execution time: 50_578_129 nanoseconds.
+		Weight::from_parts(50_629_364_000, 8748)
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
