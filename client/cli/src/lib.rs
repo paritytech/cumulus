@@ -265,6 +265,10 @@ impl sc_cli::CliConfiguration for ExportGenesisWasmCommand {
 fn validate_relay_chain_url(arg: &str) -> Result<Url, String> {
 	let url = Url::parse(arg).map_err(|e| e.to_string())?;
 
+	if !url.has_host() {
+		return Err("Please provide a URL with a valid host.".to_string())
+	}
+
 	let scheme = url.scheme();
 	if scheme == "ws" || scheme == "wss" {
 		Ok(url)
