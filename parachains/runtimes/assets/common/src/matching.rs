@@ -37,6 +37,18 @@ impl<Location: Get<MultiLocation>> Contains<MultiLocation> for Equals<Location> 
 	}
 }
 
+pub struct StartsWithExplicitGlobalConsensus<T>(sp_std::marker::PhantomData<T>);
+impl<Network: Get<NetworkId>> Contains<MultiLocation>
+	for StartsWithExplicitGlobalConsensus<Network>
+{
+	fn contains(t: &MultiLocation) -> bool {
+		match t.interior.global_consensus() {
+			Ok(requested_network) if requested_network.eq(&Network::get()) => true,
+			_ => false,
+		}
+	}
+}
+
 frame_support::parameter_types! {
 	pub LocalMultiLocationPattern: MultiLocation = MultiLocation::new(0, Here);
 	pub ParentLocation: MultiLocation = MultiLocation::parent();

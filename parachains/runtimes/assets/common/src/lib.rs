@@ -79,6 +79,7 @@ pub type ForeignAssetsConvertedConcreteId<AdditionalMultiLocationExclusionFilter
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate::matching::StartsWithExplicitGlobalConsensus;
 	use xcm::latest::prelude::*;
 	use xcm_executor::traits::{Convert, Error as MatchError, MatchesFungibles};
 
@@ -197,10 +198,17 @@ mod tests {
 	fn multi_location_converted_concrete_id_converter_works() {
 		frame_support::parameter_types! {
 			pub Parachain100Pattern: MultiLocation = MultiLocation::new(1, X1(Parachain(100)));
+			pub UniversalLocationNetworkId: NetworkId = NetworkId::ByGenesis([9; 32]);
 		}
 
 		// setup convert
-		type Convert = ForeignAssetsConvertedConcreteId<StartsWith<Parachain100Pattern>, u128>;
+		type Convert = ForeignAssetsConvertedConcreteId<
+			(
+				StartsWith<Parachain100Pattern>,
+				StartsWithExplicitGlobalConsensus<UniversalLocationNetworkId>,
+			),
+			u128,
+		>;
 
 		let test_data = vec![
 			// excluded as local
@@ -212,11 +220,31 @@ mod tests {
 			),
 			// excluded as parent
 			(ma_1000(1, Here), Err(MatchError::AssetNotHandled)),
-			// excluded as additional filter
+			// excluded as additional filter - Parachain100Pattern
 			(ma_1000(1, X1(Parachain(100))), Err(MatchError::AssetNotHandled)),
 			(ma_1000(1, X2(Parachain(100), GeneralIndex(1234))), Err(MatchError::AssetNotHandled)),
 			(
 				ma_1000(1, X3(Parachain(100), PalletInstance(13), GeneralIndex(1234))),
+				Err(MatchError::AssetNotHandled),
+			),
+			// excluded as additional filter - StartsWithExplicitGlobalConsensus
+			(
+				ma_1000(1, X1(GlobalConsensus(NetworkId::ByGenesis([9; 32])))),
+				Err(MatchError::AssetNotHandled),
+			),
+			(
+				ma_1000(2, X1(GlobalConsensus(NetworkId::ByGenesis([9; 32])))),
+				Err(MatchError::AssetNotHandled),
+			),
+			(
+				ma_1000(
+					2,
+					X3(
+						GlobalConsensus(NetworkId::ByGenesis([9; 32])),
+						Parachain(200),
+						GeneralIndex(1234),
+					),
+				),
 				Err(MatchError::AssetNotHandled),
 			),
 			// ok
@@ -229,6 +257,34 @@ mod tests {
 			(
 				ma_1000(2, X2(Parachain(200), GeneralIndex(1234))),
 				Ok((MultiLocation::new(2, X2(Parachain(200), GeneralIndex(1234))), 1000)),
+			),
+			(
+				ma_1000(2, X1(GlobalConsensus(NetworkId::ByGenesis([7; 32])))),
+				Ok((
+					MultiLocation::new(2, X1(GlobalConsensus(NetworkId::ByGenesis([7; 32])))),
+					1000,
+				)),
+			),
+			(
+				ma_1000(
+					2,
+					X3(
+						GlobalConsensus(NetworkId::ByGenesis([7; 32])),
+						Parachain(200),
+						GeneralIndex(1234),
+					),
+				),
+				Ok((
+					MultiLocation::new(
+						2,
+						X3(
+							GlobalConsensus(NetworkId::ByGenesis([7; 32])),
+							Parachain(200),
+							GeneralIndex(1234),
+						),
+					),
+					1000,
+				)),
 			),
 		];
 
