@@ -167,7 +167,7 @@ checksum = "fbf688625d06217d5b1bb0ea9d9c44a1635fd0ee3534466388d18203174f4d11"
 [[package]]
 name = "amcl"
 version = "0.3.0"
-source = "git+https://github.com/Snowfork/milagro_bls#2c9e8b383981308a8b4cbbc19e0b897dcf14534b"
+source = "git+https://github.com/Snowfork/milagro_bls#bc2b5b5e8d48b7e2e1bfaa56dc2d93e13cb32095"
 
 [[package]]
 name = "anes"
@@ -5397,7 +5397,7 @@ dependencies = [
 [[package]]
 name = "milagro_bls"
 version = "1.5.0"
-source = "git+https://github.com/Snowfork/milagro_bls#2c9e8b383981308a8b4cbbc19e0b897dcf14534b"
+source = "git+https://github.com/Snowfork/milagro_bls#bc2b5b5e8d48b7e2e1bfaa56dc2d93e13cb32095"
 dependencies = [
  "amcl",
  "hex",
@@ -8410,6 +8410,7 @@ dependencies = [
  "seedling-runtime",
  "serde",
  "shell-runtime",
+ "snowbridge-basic-channel-rpc",
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
@@ -11555,7 +11556,7 @@ dependencies = [
 [[package]]
 name = "snowbridge-basic-channel"
 version = "0.1.1"
-source = "git+https://github.com/Snowfork/snowbridge.git?branch=main#be58054456a890b46574d5a8483b520ac11b09ef"
+source = "git+https://github.com/Snowfork/snowbridge.git?branch=main#4f5bfd68456afd41f6c7626c53268d726149a972"
 dependencies = [
  "ethabi-decode 1.3.3 (git+https://github.com/Snowfork/ethabi-decode.git?branch=master)",
  "frame-benchmarking",
@@ -11578,7 +11579,7 @@ dependencies = [
 [[package]]
 name = "snowbridge-basic-channel-merkle-proof"
 version = "0.1.1"
-source = "git+https://github.com/Snowfork/snowbridge.git?branch=main#be58054456a890b46574d5a8483b520ac11b09ef"
+source = "git+https://github.com/Snowfork/snowbridge.git?branch=main#4f5bfd68456afd41f6c7626c53268d726149a972"
 dependencies = [
  "parity-scale-codec",
  "sp-core",
@@ -11586,9 +11587,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "snowbridge-basic-channel-rpc"
+version = "0.1.0"
+source = "git+https://github.com/Snowfork/snowbridge.git?branch=main#4f5bfd68456afd41f6c7626c53268d726149a972"
+dependencies = [
+ "jsonrpsee",
+ "parity-scale-codec",
+ "parking_lot 0.11.2",
+ "snowbridge-basic-channel-merkle-proof",
+ "sp-core",
+ "sp-offchain",
+ "sp-runtime",
+]
+
+[[package]]
 name = "snowbridge-beacon-primitives"
 version = "0.0.1"
-source = "git+https://github.com/Snowfork/snowbridge.git?branch=main#1e7f48716744b4ee22b833d32ceb6eb090ce387e"
+source = "git+https://github.com/Snowfork/snowbridge.git?branch=main#4f5bfd68456afd41f6c7626c53268d726149a972"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -11607,7 +11622,7 @@ dependencies = [
 [[package]]
 name = "snowbridge-core"
 version = "0.1.1"
-source = "git+https://github.com/Snowfork/snowbridge.git?branch=main#1e7f48716744b4ee22b833d32ceb6eb090ce387e"
+source = "git+https://github.com/Snowfork/snowbridge.git?branch=main#4f5bfd68456afd41f6c7626c53268d726149a972"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -11623,7 +11638,7 @@ dependencies = [
 [[package]]
 name = "snowbridge-dispatch"
 version = "0.1.1"
-source = "git+https://github.com/Snowfork/snowbridge.git?branch=main#be58054456a890b46574d5a8483b520ac11b09ef"
+source = "git+https://github.com/Snowfork/snowbridge.git?branch=main#4f5bfd68456afd41f6c7626c53268d726149a972"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -11641,7 +11656,7 @@ dependencies = [
 [[package]]
 name = "snowbridge-ethereum"
 version = "0.1.0"
-source = "git+https://github.com/Snowfork/snowbridge.git?branch=main#1e7f48716744b4ee22b833d32ceb6eb090ce387e"
+source = "git+https://github.com/Snowfork/snowbridge.git?branch=main#4f5bfd68456afd41f6c7626c53268d726149a972"
 dependencies = [
  "ethabi-decode 1.3.3 (git+https://github.com/snowfork/ethabi-decode.git?rev=6f63405bb33ef4365a1c62b72d499fa0f448118e)",
  "ethbloom",
@@ -11663,7 +11678,7 @@ dependencies = [
 [[package]]
 name = "snowbridge-ethereum-beacon-client"
 version = "0.0.1"
-source = "git+https://github.com/Snowfork/snowbridge.git?branch=main#1e7f48716744b4ee22b833d32ceb6eb090ce387e"
+source = "git+https://github.com/Snowfork/snowbridge.git?branch=main#4f5bfd68456afd41f6c7626c53268d726149a972"
 dependencies = [
  "byte-slice-cast",
  "frame-benchmarking",
