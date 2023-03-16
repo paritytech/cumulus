@@ -6,11 +6,12 @@ edition = "2021"
 description = "Statemint parachain runtime"
 
 [dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
 
 # Substrate
-
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -20,8 +21,14 @@ sp-std = { git = "https://github.com/paritytech/substrate", default-features = f
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Cumulus
+cumulus-pallet-parachain-system = { path = "../../../../pallets/parachain-system", default-features = false }
 pallet-collator-selection = { path = "../../../../pallets/collator-selection", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
+assets-common = { path = "../common", default-features = false }
+
+# Polkadot
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 [dev-dependencies]
 hex-literal = "0.3.4"
@@ -34,12 +41,17 @@ default = [ "std" ]
 std = [
     "frame-support/std",
 	"frame-system/std",
+	"pallet-assets/std",
 	"pallet-balances/std",
+	"cumulus-pallet-parachain-system/std",
 	"pallet-collator-selection/std",
     "pallet-session/std",
+    "assets-common/std",
     "parachains-common/std",
     "sp-consensus-aura/std",
     "sp-io/std",
     "sp-runtime/std",
     "sp-std/std",
+    "xcm/std",
+    "xcm-executor/std",
 ]
