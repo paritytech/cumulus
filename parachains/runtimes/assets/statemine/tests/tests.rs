@@ -374,7 +374,7 @@ fn test_assets_balances_api_works() {
 		.execute_with(|| {
 			let local_asset_id = 1;
 			let foreign_asset_id_multilocation =
-				MultiLocation { parents: 2, interior: X1(GlobalConsensus(Kusama)) };
+				MultiLocation { parents: 1, interior: X2(Parachain(1234), GeneralIndex(12345)) };
 
 			// check before
 			assert_eq!(Assets::balance(local_asset_id, AccountId::from(ALICE)), 0);
