@@ -313,10 +313,11 @@ mod tests {
 	use cumulus_primitives_core::UpwardMessage;
 	use frame_support::{
 		assert_ok,
-		dispatch::DispatchResult,
-		traits::tokens::{DepositConsequence, WithdrawConsequence},
+		dispatch::DispatchError,
+		traits::tokens::{
+			DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence,
+		},
 	};
-	use sp_runtime::DispatchError;
 	use xcm_executor::{traits::Error, Assets};
 
 	/// Validates [`validate`] for required Some(destination) and Some(message)
@@ -447,6 +448,10 @@ mod tests {
 				todo!()
 			}
 
+			fn total_balance(_: Self::AssetId, _: &TestAccountId) -> Self::Balance {
+				todo!()
+			}
+
 			fn reducible_balance(
 				_: Self::AssetId,
 				_: &TestAccountId,
@@ -478,15 +483,19 @@ mod tests {
 			}
 		}
 		impl fungibles::Mutate<TestAccountId> for TestAssets {}
+		impl fungibles::Balanced<TestAccountId> for TestAssets {
+			type OnDropCredit = fungibles::DecreaseIssuance<TestAccountId, Self>;
+			type OnDropDebt = fungibles::IncreaseIssuance<TestAccountId, Self>;
+		}
 		impl fungibles::Unbalanced<TestAccountId> for TestAssets {
-			fn handle_dust(_: fungibles::Dust<AccountId, Self>) {
+			fn handle_dust(_: fungibles::Dust<TestAccountId, Self>) {
 				todo!()
 			}
-			fn set_balance(
+			fn write_balance(
 				_: Self::AssetId,
 				_: &TestAccountId,
 				_: Self::Balance,
-			) -> DispatchResult {
+			) -> Result<Option<Self::Balance>, DispatchError> {
 				todo!()
 			}
 

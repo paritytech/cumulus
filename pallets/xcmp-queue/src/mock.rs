@@ -20,7 +20,7 @@ use cumulus_pallet_parachain_system::AnyRelayNumber;
 use cumulus_primitives_core::{IsSystem, ParaId};
 use frame_support::{
 	parameter_types,
-	traits::{Everything, Nothing, OriginTrait},
+	traits::{ConstU32, Everything, Nothing, OriginTrait},
 };
 use frame_system::EnsureRoot;
 use sp_core::H256;

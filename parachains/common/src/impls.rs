@@ -111,7 +111,7 @@ mod tests {
 	use super::*;
 	use frame_support::{
 		parameter_types,
-		traits::{FindAuthor, ValidatorRegistration},
+		traits::{ConstU32, FindAuthor, ValidatorRegistration},
 		PalletId,
 	};
 	use frame_system::{limits, EnsureRoot};
@@ -185,6 +185,10 @@ mod tests {
 		type WeightInfo = ();
 		type MaxReserves = MaxReserves;
 		type ReserveIdentifier = [u8; 8];
+		type HoldIdentifier = ();
+		type FreezeIdentifier = ();
+		type MaxHolds = ConstU32<1>;
+		type MaxFreezes = ConstU32<1>;
 	}
 
 	pub struct OneAuthor;
