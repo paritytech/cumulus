@@ -22,54 +22,54 @@ use sc_service::ChainType;
 pub type GluttonChainSpec =
 	sc_service::GenericChainSpec<glutton_runtime::GenesisConfig, Extensions>;
 
-pub fn glutton_development_config() -> GluttonChainSpec {
+pub fn glutton_development_config(para_id: ParaId) -> GluttonChainSpec {
 	GluttonChainSpec::from_genesis(
 		// Name
 		"Glutton Development",
 		// ID
 		"glutton_dev",
 		ChainType::Local,
-		move || glutton_genesis(1500.into()),
+		move || glutton_genesis(para_id),
 		Vec::new(),
 		None,
 		None,
 		None,
 		None,
-		Extensions { relay_chain: "kusama-dev".into(), para_id: 1500 },
+		Extensions { relay_chain: "kusama-dev".into(), para_id },
 	)
 }
 
-pub fn glutton_local_config() -> GluttonChainSpec {
+pub fn glutton_local_config(para_id: ParaId) -> GluttonChainSpec {
 	GluttonChainSpec::from_genesis(
 		// Name
 		"Glutton Local",
 		// ID
 		"glutton_local",
 		ChainType::Local,
-		move || glutton_genesis(1500.into()),
+		move || glutton_genesis(para_id),
 		Vec::new(),
 		None,
 		None,
 		None,
 		None,
-		Extensions { relay_chain: "kusama-local".into(), para_id: 1500 },
+		Extensions { relay_chain: "kusama-local".into(), para_id },
 	)
 }
 
-pub fn glutton_config() -> GluttonChainSpec {
+pub fn glutton_config(para_id: ParaId) -> GluttonChainSpec {
 	GluttonChainSpec::from_genesis(
 		// Name
 		"Glutton",
 		// ID
 		"glutton",
 		ChainType::Live,
-		move || glutton_genesis(1500.into()),
+		move || glutton_genesis(para_id),
 		Vec::new(),
 		None,
 		None,
 		None,
 		None,
-		Extensions { relay_chain: "kusama".into(), para_id: 1500 },
+		Extensions { relay_chain: "kusama".into(), para_id },
 	)
 }
 
