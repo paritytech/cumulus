@@ -62,6 +62,7 @@ pub mod fee {
 			let time_poly: FeePolynomial<Balance> = RefTimeToFee::polynomial().into();
 			let proof_poly: FeePolynomial<Balance> = ProofSizeToFee::polynomial().into();
 
+			// Take the maximum instead of the sum to charge by the more scarce resource.
 			time_poly.eval(weight.ref_time()).max(proof_poly.eval(weight.proof_size()))
 		}
 	}
