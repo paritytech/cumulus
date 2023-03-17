@@ -64,6 +64,10 @@ elif [[ $runtimeName == "bridge-hub-rococo" ]]; then
                 cumulus_pallet_xcmp_queue
                 pallet_xcm_benchmarks::generic
                 pallet_xcm_benchmarks::fungible
+                # snowbridge_basic_channel::inbound
+                snowbridge_basic_channel::outbound
+                # snowbridge_dispatch
+                snowbridge_ethereum_beacon_client
 	)
 else
 	echo "$runtimeName pallet list not found in benchmarks-ci.sh"

@@ -28,11 +28,12 @@ pub mod xcm_config;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use smallvec::smallvec;
+use snowbridge_beacon_primitives::{Fork, ForkVersions};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, Keccak256},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -64,6 +65,8 @@ use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+
+pub use snowbridge_core::MessageId;
 
 // Polkadot imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
@@ -413,6 +416,85 @@ impl pallet_utility::Config for Runtime {
 	type WeightInfo = weights::pallet_utility::WeightInfo<Runtime>;
 }
 
+// Ethereum Bridge
+
+impl snowbridge_dispatch::Config for Runtime {
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeEvent = RuntimeEvent;
+	type MessageId = MessageId;
+	type RuntimeCall = RuntimeCall;
+	type CallFilter = Everything;
+}
+
+use snowbridge_basic_channel::{
+	inbound as basic_channel_inbound, outbound as basic_channel_outbound,
+};
+
+impl basic_channel_inbound::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Verifier = snowbridge_ethereum_beacon_client::Pallet<Runtime>;
+	type MessageDispatch = snowbridge_dispatch::Pallet<Runtime>;
+	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const MaxMessagePayloadSize: u32 = 256;
+	pub const MaxMessagesPerCommit: u32 = 20;
+}
+
+impl basic_channel_outbound::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Hashing = Keccak256;
+	type SourceId = <Self as frame_system::Config>::AccountId;
+	type MaxMessagePayloadSize = MaxMessagePayloadSize;
+	type MaxMessagesPerCommit = MaxMessagesPerCommit;
+	type WeightInfo = weights::snowbridge_basic_channel_outbound::WeightInfo<Runtime>;
+}
+
+parameter_types! {
+	pub const MaxSyncCommitteeSize: u32 = 32;
+	pub const MaxProofBranchSize: u32 = 20;
+	pub const MaxExtraDataSize: u32 = 32;
+	pub const MaxLogsBloomSize: u32 = 256;
+	pub const MaxFeeRecipientSize: u32 = 20;
+	pub const MaxPublicKeySize: u32 = 48;
+	pub const MaxSignatureSize: u32 = 96;
+	pub const MaxSlotsPerHistoricalRoot: u64 = 64;
+	pub const MaxFinalizedHeaderSlotArray: u32 = 1000;
+	pub const WeakSubjectivityPeriodSeconds: u32 = 97200;
+	pub const ChainForkVersions: ForkVersions = ForkVersions{
+		genesis: Fork {
+			version: [0, 0, 0, 1], // 0x00000001
+			epoch: 0,
+		},
+		altair: Fork {
+			version: [1, 0, 0, 1], // 0x01000001
+			epoch: 0,
+		},
+		bellatrix: Fork {
+			version: [2, 0, 0, 1], // 0x02000001
+			epoch: 0,
+		},
+	};
+}
+
+impl snowbridge_ethereum_beacon_client::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
+	type MaxSyncCommitteeSize = MaxSyncCommitteeSize;
+	type MaxProofBranchSize = MaxProofBranchSize;
+	type MaxExtraDataSize = MaxExtraDataSize;
+	type MaxLogsBloomSize = MaxLogsBloomSize;
+	type MaxFeeRecipientSize = MaxFeeRecipientSize;
+	type MaxPublicKeySize = MaxPublicKeySize;
+	type MaxSignatureSize = MaxSignatureSize;
+	type MaxSlotsPerHistoricalRoot = MaxSlotsPerHistoricalRoot;
+	type MaxFinalizedHeaderSlotArray = MaxFinalizedHeaderSlotArray;
+	type ForkVersions = ChainForkVersions;
+	type WeakSubjectivityPeriodSeconds = WeakSubjectivityPeriodSeconds;
+	type WeightInfo = weights::snowbridge_ethereum_beacon_client::WeightInfo<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -448,6 +530,12 @@ construct_runtime!(
 		// Handy utilities.
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
+
+		// Ethereum Bridge
+		BasicInboundChannel: basic_channel_inbound::{Pallet, Call, Config, Storage, Event<T>} = 50,
+		BasicOutboundChannel: basic_channel_outbound::{Pallet, Config<T>, Storage, Event<T>} = 51,
+		Dispatch: snowbridge_dispatch::{Pallet, Call, Storage, Event<T>, Origin} = 52,
+		EthereumBeaconClient: snowbridge_ethereum_beacon_client::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
 	}
 );
 
@@ -471,6 +559,11 @@ mod benches {
 		// NOTE: Make sure you point to the individual modules below.
 		[pallet_xcm_benchmarks::fungible, XcmBalances]
 		[pallet_xcm_benchmarks::generic, XcmGeneric]
+		// Ethereum Bridge
+		//[snowbridge_basic_channel::inbound, BasicInboundChannel]
+		[snowbridge_basic_channel::outbound, BasicOutboundChannel]
+		//[snowbridge_dispatch, Dispatch]
+		[snowbridge_ethereum_beacon_client, EthereumBeaconClient]
 	);
 }
 

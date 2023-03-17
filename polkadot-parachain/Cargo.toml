@@ -90,6 +90,9 @@ cumulus-primitives-core = { path = "../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../primitives/parachain-inherent" }
 cumulus-relay-chain-interface = { path = "../client/relay-chain-interface" }
 
+# Ethereum Bridge
+snowbridge-basic-channel-rpc = { git = "https://github.com/Snowfork/snowbridge.git", branch = "main" }
+
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.38" }
 

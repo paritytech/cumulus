@@ -72,6 +72,13 @@ pallet-collator-selection = { path = "../../../../pallets/collator-selection", d
 parachain-info = { path = "../../../../parachains/pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../../parachains/common", default-features = false }
 
+# Ethereum Bridge (Snowbridge)
+snowbridge-basic-channel = { git = "https://github.com/Snowfork/snowbridge.git", default-features = false, branch = "main" }
+snowbridge-core = { git = "https://github.com/Snowfork/snowbridge.git", default-features = false, branch = "main" }
+snowbridge-dispatch = { git = "https://github.com/Snowfork/snowbridge.git", default-features = false, branch = "main" }
+snowbridge-ethereum-beacon-client = { git = "https://github.com/Snowfork/snowbridge.git", default-features = false, branch = "main", features=["minimal"]}
+snowbridge-beacon-primitives = { git = "https://github.com/Snowfork/snowbridge.git", default-features = false, branch = "main" }
+
 [features]
 default = [
 	"std",
@@ -126,6 +133,11 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"xcm/std",
+	"snowbridge-basic-channel/std",
+	"snowbridge-core/std",
+	"snowbridge-dispatch/std",
+	"snowbridge-ethereum-beacon-client/std",
+	"snowbridge-beacon-primitives/std",
 ]
 
 runtime-benchmarks = [
@@ -144,6 +156,10 @@ runtime-benchmarks = [
 	"pallet-collator-selection/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
+	"snowbridge-basic-channel/runtime-benchmarks",
+	"snowbridge-core/runtime-benchmarks",
+	"snowbridge-dispatch/runtime-benchmarks",
+	"snowbridge-ethereum-beacon-client/runtime-benchmarks",
 ]
 
 try-runtime = [

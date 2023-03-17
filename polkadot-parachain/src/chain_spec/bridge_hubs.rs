@@ -327,6 +327,9 @@ pub mod rococo {
 						get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
 						get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 						get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+						// Ethereum Bridge Relayer Accounts
+						get_account_id_from_seed::<sr25519::Public>("BeaconRelay"),
+						get_account_id_from_seed::<sr25519::Public>("ExecutionRelay"),
 					],
 					para_id,
 				)
@@ -377,6 +380,16 @@ pub mod rococo {
 			parachain_system: Default::default(),
 			polkadot_xcm: bridge_hub_rococo_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
+			},
+			// Ethereum Bridge
+			basic_inbound_channel: bridge_hub_rococo_runtime::BasicInboundChannelConfig {
+				source_channel: Default::default(),
+			},
+			basic_outbound_channel: bridge_hub_rococo_runtime::BasicOutboundChannelConfig {
+				interval: 1,
+			},
+			ethereum_beacon_client: bridge_hub_rococo_runtime::EthereumBeaconClientConfig {
+				initial_sync: Default::default(),
 			},
 		}
 	}
