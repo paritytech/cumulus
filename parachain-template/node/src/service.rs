@@ -212,7 +212,7 @@ async fn start_node_impl(
 		transaction_pool: transaction_pool.clone(),
 		task_manager: &mut task_manager,
 		config: parachain_config,
-		keystore: params.keystore_container.sync_keystore(),
+		keystore: params.keystore_container.keystore(),
 		backend,
 		network: network.clone(),
 		sync_service: sync_service.clone(),
@@ -263,7 +263,7 @@ async fn start_node_impl(
 			relay_chain_interface.clone(),
 			transaction_pool,
 			sync_service,
-			params.keystore_container.sync_keystore(),
+			params.keystore_container.keystore(),
 			force_authoring,
 			para_id,
 		)?;
