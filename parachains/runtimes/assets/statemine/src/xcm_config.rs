@@ -14,7 +14,7 @@
 // limitations under the License.
 
 use super::{
-	AccountId, AllPalletsWithSystem, Assets, Authorship, Balance, Balances, BridgeAssetsTransfer,
+	AccountId, AllPalletsWithSystem, Assets, Authorship, Balance, Balances, BridgeTransfer,
 	ForeignAssets, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent,
 	RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
@@ -215,7 +215,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			RuntimeCall::XcmpQueue(..) |
 			RuntimeCall::DmpQueue(..) |
 			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
-			RuntimeCall::BridgeAssetsTransfer(..) |
+			RuntimeCall::BridgeTransfer(..) |
 			RuntimeCall::Assets(
 				pallet_assets::Call::create { .. } |
 				pallet_assets::Call::force_create { .. } |
@@ -462,14 +462,14 @@ impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 }
 
 /// Bridge router, which wraps and sends xcm to BridgeHub to be delivered to the different GlobalConsensus
-pub type BridgeXcmSender = UnpaidRemoteExporter<BridgeAssetsTransfer, XcmRouter, UniversalLocation>;
+pub type BridgeXcmSender = UnpaidRemoteExporter<BridgeTransfer, XcmRouter, UniversalLocation>;
 
-/// Benchmarks helper for over-bridge assets transfer pallet.
+/// Benchmarks helper for over-bridge transfer pallet.
 #[cfg(feature = "runtime-benchmarks")]
-pub struct BridgeAssetsTransferBenchmarksHelper;
+pub struct BridgeTransferBenchmarksHelper;
 
 #[cfg(feature = "runtime-benchmarks")]
-impl BridgeAssetsTransferBenchmarksHelper {
+impl BridgeTransferBenchmarksHelper {
 	/// Asset that we're transferring and paying fees in.
 	fn make_asset(fungible: u128) -> MultiAsset {
 		MultiAsset { fun: Fungible(fungible.into()), id: Concrete(KsmLocation::get()) }
@@ -487,13 +487,11 @@ impl BridgeAssetsTransferBenchmarksHelper {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-impl pallet_bridge_assets_transfer::BenchmarkHelper<RuntimeOrigin>
-	for BridgeAssetsTransferBenchmarksHelper
-{
-	fn bridge_config() -> (NetworkId, pallet_bridge_assets_transfer::BridgeConfig) {
+impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBenchmarksHelper {
+	fn bridge_config() -> (NetworkId, pallet_bridge_transfer::BridgeConfig) {
 		(
 			Polkadot,
-			pallet_bridge_assets_transfer::BridgeConfig {
+			pallet_bridge_transfer::BridgeConfig {
 				bridge_location: (Parent, Parachain(Self::bridge_hub_para_id())).into(),
 				allowed_target_location: Self::allowed_target_location(),
 				// TODO: right now `UnpaidRemoteExporter` is used to send XCM messages and it requires

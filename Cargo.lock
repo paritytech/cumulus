@@ -6148,7 +6148,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-bridge-assets-transfer"
+name = "pallet-bridge-transfer"
 version = "0.1.0"
 dependencies = [
  "cumulus-pallet-xcmp-queue",
@@ -12434,7 +12434,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-bridge-assets-transfer",
+ "pallet-bridge-transfer",
  "pallet-collator-selection",
  "pallet-multisig",
  "pallet-proxy",

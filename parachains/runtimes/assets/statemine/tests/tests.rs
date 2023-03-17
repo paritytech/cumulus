@@ -6,7 +6,7 @@ use frame_support::{
 	traits::fungibles::InspectEnumerable,
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
-use pallet_bridge_assets_transfer::BridgeConfig;
+use pallet_bridge_transfer::BridgeConfig;
 use parachains_common::{AccountId, AssetIdForTrustBackedAssets, AuraId, Balance};
 use statemine_runtime::xcm_config::{
 	AssetFeeAsExistentialDepositMultiplierFeeCharger, KsmLocation, TrustBackedAssetsPalletLocation,
@@ -446,12 +446,12 @@ fn can_governance_call_xcm_transact_with_bridge_assets_transfer_configuration() 
 			};
 
 			// check cfg before
-			let cfg = pallet_bridge_assets_transfer::Pallet::<Runtime>::bridges(&bridged_network);
+			let cfg = pallet_bridge_transfer::Pallet::<Runtime>::bridges(&bridged_network);
 			assert!(cfg.is_none());
 
 			// prepare xcm as governance will do
-			let add_bridge_config: RuntimeCall = RuntimeCall::BridgeAssetsTransfer(
-				pallet_bridge_assets_transfer::Call::<Runtime>::add_bridge_config {
+			let add_bridge_config: RuntimeCall = RuntimeCall::BridgeTransfer(
+				pallet_bridge_transfer::Call::<Runtime>::add_bridge_config {
 					bridged_network,
 					bridge_config: Box::new(bridge_config.clone()),
 				},
@@ -477,7 +477,7 @@ fn can_governance_call_xcm_transact_with_bridge_assets_transfer_configuration() 
 			assert_eq!(outcome.ensure_complete(), Ok(()));
 
 			// check cfg after
-			let cfg = pallet_bridge_assets_transfer::Pallet::<Runtime>::bridges(&bridged_network);
+			let cfg = pallet_bridge_transfer::Pallet::<Runtime>::bridges(&bridged_network);
 			assert_eq!(cfg, Some(bridge_config));
 		})
 }

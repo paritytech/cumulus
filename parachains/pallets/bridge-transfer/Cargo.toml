@@ -1,12 +1,12 @@
 [package]
-name = "pallet-bridge-assets-transfer"
+name = "pallet-bridge-transfer"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 license = "Apache-2.0"
 homepage = "https://docs.substrate.io/"
 repository = "https://github.com/paritytech/cumulus/"
-description = "Pallet message transfers through bridges"
+description = "Pallet for message transfer through bridges"
 readme = "README.md"
 
 [dependencies]

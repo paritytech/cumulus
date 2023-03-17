@@ -47,7 +47,7 @@ use sp_std::marker::PhantomData;
 
 /// Weight functions for `pallet_bridge_assets_transfer`.
 pub struct WeightInfo<T>(PhantomData<T>);
-impl<T: frame_system::Config> pallet_bridge_assets_transfer::WeightInfo for WeightInfo<T> {
+impl<T: frame_system::Config> pallet_bridge_transfer::WeightInfo for WeightInfo<T> {
 	/// Storage: ParachainInfo ParachainId (r:1 w:0)
 	/// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	/// Storage: BridgeAssetsTransfer Bridges (r:1 w:0)

@@ -13,9 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Bridge Asset Transfer Pallet
+//! # Bridge Transfer Pallet
 //!
-//! A utility which could help move assets through bridges, e.g. move assets between different global consensus...
+//! A utility which could help transfer through bridges, e.g. move assets between different global consensus...
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -114,7 +114,7 @@ pub mod pallet {
 		type AdminOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
 		/// Required origin for asset transfer. If successful, it resolves to `MultiLocation`.
-		type TransferOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = MultiLocation>;
+		type TransferAssetOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = MultiLocation>;
 
 		/// Benchmarks helper.
 		#[cfg(feature = "runtime-benchmarks")]
@@ -174,7 +174,7 @@ pub mod pallet {
 			assets: Box<VersionedMultiAssets>,
 			destination: Box<VersionedMultiLocation>,
 		) -> DispatchResult {
-			let origin_location = T::TransferOrigin::ensure_origin(origin)?;
+			let origin_location = T::TransferAssetOrigin::ensure_origin(origin)?;
 
 			// Check remote destination + bridge_config
 			let (bridge_config, remote_destination) =
@@ -422,7 +422,7 @@ pub mod pallet {
 #[cfg(test)]
 pub(crate) mod tests {
 	use super::*;
-	use crate as bridge_assets_transfer;
+	use crate as bridge_transfer;
 	use frame_support::traits::Currency;
 
 	use frame_support::{
@@ -453,7 +453,7 @@ pub(crate) mod tests {
 		{
 			System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 			Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-			BridgeAssetsTransfer: bridge_assets_transfer::{Pallet, Call, Event<T>} = 52,
+			BridgeTransfer: bridge_transfer::{Pallet, Call, Event<T>} = 52,
 		}
 	);
 
@@ -564,7 +564,7 @@ pub(crate) mod tests {
 
 	/// Bridge router, which wraps and sends xcm to BridgeHub to be delivered to the different GlobalConsensus
 	pub type TestBridgeXcmSender =
-		UnpaidRemoteExporter<BridgeAssetsTransfer, ThreadLocalXcmRouter, UniversalLocation>;
+		UnpaidRemoteExporter<BridgeTransfer, ThreadLocalXcmRouter, UniversalLocation>;
 
 	/// No local origins on this chain are allowed to dispatch XCM sends/executions.
 	pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, RelayNetwork>;
@@ -649,7 +649,7 @@ pub(crate) mod tests {
 		type WeightInfo = ();
 		type AssetTransactor = CurrencyTransactor;
 		type AdminOrigin = EnsureRoot<AccountId>;
-		type TransferOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+		type TransferAssetOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 		#[cfg(feature = "runtime-benchmarks")]
 		type BenchmarkHelper = TestBenchmarkHelper;
 	}
@@ -683,7 +683,7 @@ pub(crate) mod tests {
 		new_test_ext().execute_with(|| {
 			// insert bridge config
 			let bridge_config = test_bridge_config().1;
-			assert_ok!(BridgeAssetsTransfer::add_bridge_config(
+			assert_ok!(BridgeTransfer::add_bridge_config(
 				RuntimeOrigin::root(),
 				Wococo,
 				Box::new(bridge_config.clone()),
@@ -691,7 +691,7 @@ pub(crate) mod tests {
 
 			// v2 not supported
 			assert_eq!(
-				BridgeAssetsTransfer::ensure_remote_destination(VersionedMultiLocation::V2(
+				BridgeTransfer::ensure_remote_destination(VersionedMultiLocation::V2(
 					xcm::v2::MultiLocation::default()
 				)),
 				Err(Error::<TestRuntime>::UnsupportedDestination)
@@ -699,14 +699,14 @@ pub(crate) mod tests {
 
 			// v3 - "parent: 0" wrong
 			assert_eq!(
-				BridgeAssetsTransfer::ensure_remote_destination(VersionedMultiLocation::V3(
+				BridgeTransfer::ensure_remote_destination(VersionedMultiLocation::V3(
 					MultiLocation::new(0, X2(GlobalConsensus(Wococo), Parachain(1000)))
 				)),
 				Err(Error::<TestRuntime>::UnsupportedDestination)
 			);
 			// v3 - "parent: 1" wrong
 			assert_eq!(
-				BridgeAssetsTransfer::ensure_remote_destination(VersionedMultiLocation::V3(
+				BridgeTransfer::ensure_remote_destination(VersionedMultiLocation::V3(
 					MultiLocation::new(1, X2(GlobalConsensus(Wococo), Parachain(1000)))
 				)),
 				Err(Error::<TestRuntime>::UnsupportedDestination)
@@ -714,7 +714,7 @@ pub(crate) mod tests {
 
 			// v3 - Rococo is not supported
 			assert_eq!(
-				BridgeAssetsTransfer::ensure_remote_destination(VersionedMultiLocation::V3(
+				BridgeTransfer::ensure_remote_destination(VersionedMultiLocation::V3(
 					MultiLocation::new(2, X2(GlobalConsensus(Rococo), Parachain(1000)))
 				)),
 				Err(Error::<TestRuntime>::UnsupportedDestination)
@@ -722,7 +722,7 @@ pub(crate) mod tests {
 
 			// v3 - remote_destination is not allowed
 			assert_eq!(
-				BridgeAssetsTransfer::ensure_remote_destination(VersionedMultiLocation::V3(
+				BridgeTransfer::ensure_remote_destination(VersionedMultiLocation::V3(
 					MultiLocation::new(2, X2(GlobalConsensus(Wococo), Parachain(1234)))
 				)),
 				Err(Error::<TestRuntime>::UnsupportedDestination)
@@ -730,7 +730,7 @@ pub(crate) mod tests {
 
 			// v3 - ok (allowed)
 			assert_eq!(
-				BridgeAssetsTransfer::ensure_remote_destination(VersionedMultiLocation::V3(
+				BridgeTransfer::ensure_remote_destination(VersionedMultiLocation::V3(
 					MultiLocation::new(2, X2(GlobalConsensus(Wococo), Parachain(1000)))
 				)),
 				Ok((
@@ -757,7 +757,7 @@ pub(crate) mod tests {
 
 			// insert bridge config
 			let bridged_network = Wococo;
-			assert_ok!(BridgeAssetsTransfer::add_bridge_config(
+			assert_ok!(BridgeTransfer::add_bridge_config(
 				RuntimeOrigin::root(),
 				bridged_network,
 				Box::new(test_bridge_config().1),
@@ -788,7 +788,7 @@ pub(crate) mod tests {
 			)));
 
 			// trigger asset transfer
-			assert_ok!(BridgeAssetsTransfer::transfer_asset_via_bridge(
+			assert_ok!(BridgeTransfer::transfer_asset_via_bridge(
 				RuntimeOrigin::signed(account(1)),
 				assets,
 				destination,
@@ -809,11 +809,11 @@ pub(crate) mod tests {
 			// check reserve asset deposited event
 			assert!(System::events().iter().any(|r| matches!(
 				r.event,
-				RuntimeEvent::BridgeAssetsTransfer(Event::ReserveAssetsDeposited { .. })
+				RuntimeEvent::BridgeTransfer(Event::ReserveAssetsDeposited { .. })
 			)));
 			assert!(System::events().iter().any(|r| matches!(
 				r.event,
-				RuntimeEvent::BridgeAssetsTransfer(Event::TransferInitiated { .. })
+				RuntimeEvent::BridgeTransfer(Event::TransferInitiated { .. })
 			)));
 
 			// check fired XCM ExportMessage to bridge-hub
@@ -854,7 +854,7 @@ pub(crate) mod tests {
 
 			// should fail - just root is allowed
 			assert_noop!(
-				BridgeAssetsTransfer::add_bridge_config(
+				BridgeTransfer::add_bridge_config(
 					RuntimeOrigin::signed(account(1)),
 					bridged_network,
 					bridged_config.clone(),
@@ -864,7 +864,7 @@ pub(crate) mod tests {
 
 			// should fail - cannot bridged_network should match allowed_target_location
 			assert_noop!(
-				BridgeAssetsTransfer::add_bridge_config(RuntimeOrigin::root(), bridged_network, {
+				BridgeTransfer::add_bridge_config(RuntimeOrigin::root(), bridged_network, {
 					let remote_network = Westend;
 					assert_ne!(bridged_network, remote_network);
 					Box::new(test_bridge_config().1)
@@ -877,7 +877,7 @@ pub(crate) mod tests {
 			);
 			assert_eq!(Bridges::<TestRuntime>::iter().count(), 0);
 			assert_eq!(
-				BridgeAssetsTransfer::exporter_for(
+				BridgeTransfer::exporter_for(
 					&bridged_network,
 					&dummy_remote_interior_multilocation,
 					&dummy_xcm
@@ -886,7 +886,7 @@ pub(crate) mod tests {
 			);
 
 			// add with root
-			assert_ok!(BridgeAssetsTransfer::add_bridge_config(
+			assert_ok!(BridgeTransfer::add_bridge_config(
 				RuntimeOrigin::root(),
 				bridged_network,
 				bridged_config.clone(),
@@ -898,7 +898,7 @@ pub(crate) mod tests {
 			);
 			assert_eq!(Bridges::<TestRuntime>::get(Wococo), None);
 			assert_eq!(
-				BridgeAssetsTransfer::exporter_for(
+				BridgeTransfer::exporter_for(
 					&bridged_network,
 					&dummy_remote_interior_multilocation,
 					&dummy_xcm
@@ -906,7 +906,7 @@ pub(crate) mod tests {
 				Some((*bridged_config.clone()).into())
 			);
 			assert_eq!(
-				BridgeAssetsTransfer::exporter_for(
+				BridgeTransfer::exporter_for(
 					&Wococo,
 					&dummy_remote_interior_multilocation,
 					&dummy_xcm
@@ -916,7 +916,7 @@ pub(crate) mod tests {
 
 			// update fee
 			// remove
-			assert_ok!(BridgeAssetsTransfer::update_bridge_config(
+			assert_ok!(BridgeTransfer::update_bridge_config(
 				RuntimeOrigin::root(),
 				bridged_network,
 				Some((Parent, 200u128).into()),
@@ -931,7 +931,7 @@ pub(crate) mod tests {
 				})
 			);
 			assert_eq!(
-				BridgeAssetsTransfer::exporter_for(
+				BridgeTransfer::exporter_for(
 					&bridged_network,
 					&dummy_remote_interior_multilocation,
 					&dummy_xcm
@@ -940,7 +940,7 @@ pub(crate) mod tests {
 			);
 
 			// remove
-			assert_ok!(BridgeAssetsTransfer::remove_bridge_config(
+			assert_ok!(BridgeTransfer::remove_bridge_config(
 				RuntimeOrigin::root(),
 				bridged_network,
 			));

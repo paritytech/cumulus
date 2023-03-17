@@ -641,16 +641,16 @@ impl pallet_uniques::Config for Runtime {
 	type Locker = ();
 }
 
-impl pallet_bridge_assets_transfer::Config for Runtime {
+impl pallet_bridge_transfer::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type BridgeXcmSender = BridgeXcmSender;
 	type UniversalLocation = UniversalLocation;
-	type WeightInfo = weights::pallet_bridge_assets_transfer::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_bridge_transfer::WeightInfo<Runtime>;
 	type AssetTransactor = AssetTransactors;
 	type AdminOrigin = AssetsForceOrigin;
-	type TransferOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+	type TransferAssetOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = xcm_config::BridgeAssetsTransferBenchmarksHelper;
+	type BenchmarkHelper = xcm_config::BridgeTransferBenchmarksHelper;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -697,7 +697,7 @@ construct_runtime!(
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		// Reserving 52 for pallet_nfts
 		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 53,
-		BridgeAssetsTransfer: pallet_bridge_assets_transfer::{Pallet, Call, Storage, Event<T>} = 54,
+		BridgeTransfer: pallet_bridge_transfer::{Pallet, Call, Storage, Event<T>} = 54,
 
 		#[cfg(feature = "state-trie-version-1")]
 		StateTrieMigration: pallet_state_trie_migration = 70,
@@ -765,7 +765,7 @@ mod benches {
 		// NOTE: Make sure you point to the individual modules below.
 		[pallet_xcm_benchmarks::fungible, XcmBalances]
 		[pallet_xcm_benchmarks::generic, XcmGeneric]
-		[pallet_bridge_assets_transfer, BridgeAssetsTransfer]
+		[pallet_bridge_transfer, BridgeTransfer]
 	);
 }
 
