@@ -309,7 +309,6 @@ async fn make_gossip_message_and_header(
 		validator_index.into(),
 		&alice_public.into(),
 	)
-	.await
 	.ok()
 	.flatten()
 	.expect("Signing statement");
@@ -466,13 +465,13 @@ async fn check_statement_seconded() {
 
 	let statement = Statement::Valid(Default::default());
 
-	let signed_statement = block_on(SignedFullStatement::sign(
+	let signed_statement = SignedFullStatement::sign(
 		&keystore,
 		statement,
 		&signing_context,
 		0.into(),
 		&alice_public.into(),
-	))
+	)
 	.ok()
 	.flatten()
 	.expect("Signs statement");
