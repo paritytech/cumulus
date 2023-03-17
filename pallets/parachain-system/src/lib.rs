@@ -53,6 +53,7 @@ use sp_runtime::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidity,
 		ValidTransaction,
 	},
+	FixedU128, Saturating,
 };
 use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
 use xcm::latest::XcmHash;
@@ -90,6 +91,8 @@ pub use cumulus_pallet_parachain_system_proc_macro::register_validate_block;
 pub use relay_state_snapshot::{MessagingStateSnapshot, RelayChainStateProof};
 
 pub use pallet::*;
+
+pub const MULTIPLICATIVE_FEE_FACTOR_UMP: FixedU128 = FixedU128::from_rational(101, 100); // 1.01
 
 /// Something that can check the associated relay block number.
 ///
@@ -261,6 +264,9 @@ pub mod pallet {
 
 				UpwardMessages::<T>::put(&up[..num]);
 				*up = up.split_off(num);
+				if num > 0 {
+					Self::decrement_ump_fee_factor();
+				}
 			});
 
 			// Sending HRMP messages is a little bit more involved. There are the following
@@ -691,6 +697,16 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type CustomValidationHeadData<T: Config> = StorageValue<_, Vec<u8>, OptionQuery>;
 
+	frame_support::parameter_types! {
+		pub InitialFactor: FixedU128 = FixedU128::from_u32(1);
+	}
+
+	/// The number to multiply the base delivery fee by.
+	#[pallet::storage]
+	#[pallet::getter(fn delivery_fee_factor_ump)]
+	pub(crate) type DeliveryFeeFactorUMP<T: Config> =
+		StorageValue<_, FixedU128, ValueQuery, InitialFactor>;
+
 	#[pallet::inherent]
 	impl<T: Config> ProvideInherent for Pallet<T> {
 		type Call = Call<T>;
@@ -1069,7 +1085,7 @@ impl<T: Config> Pallet<T> {
 		match Self::host_configuration() {
 			Some(cfg) =>
 				if message.len() > cfg.max_upward_message_size as usize {
-					return Err(MessageSendError::TooBig)
+					Self::increment_ump_fee_factor();
 				},
 			None => {
 				// This storage field should carry over from the previous block. So if it's None
@@ -1090,6 +1106,28 @@ impl<T: Config> Pallet<T> {
 		let hash = sp_io::hashing::blake2_256(&message);
 		Self::deposit_event(Event::UpwardMessageSent { message_hash: Some(hash) });
 		Ok((0, hash))
+	}
+
+	/// Raise the delivery fee factor by a multiplicative factor and stores the resulting value.
+	///
+	/// Returns the new delivery fee factor after the increment.
+	pub(crate) fn increment_ump_fee_factor() -> FixedU128 {
+		<DeliveryFeeFactorUMP<T>>::mutate(|f| {
+			*f = f.saturating_mul(MULTIPLICATIVE_FEE_FACTOR_UMP);
+			*f
+		})
+	}
+
+	/// Reduce the delivery fee factor by a multiplicative factor and stores the resulting value.
+	///
+	/// Does not reduce the fee factor below the initial value, which is currently set as 1.
+	///
+	/// Returns the new delivery fee factor after the decrement.
+	pub(crate) fn decrement_ump_fee_factor() -> FixedU128 {
+		<DeliveryFeeFactorUMP<T>>::mutate(|f| {
+			*f = InitialFactor::get().max(*f / MULTIPLICATIVE_FEE_FACTOR_UMP);
+			*f
+		})
 	}
 }
 

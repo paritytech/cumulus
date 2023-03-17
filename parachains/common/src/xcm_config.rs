@@ -1,11 +1,13 @@
 use crate::impls::AccountIdOf;
 use core::{marker::PhantomData, ops::ControlFlow};
+use cumulus_primitives_utility::PriceForParentDelivery;
 use frame_support::{
 	log,
 	traits::{fungibles::Inspect, tokens::BalanceConversion, ContainsPair},
 	weights::{Weight, WeightToFee, WeightToFeePolynomial},
 };
-use sp_runtime::traits::Get;
+use sp_core::Encode;
+use sp_runtime::{traits::Get, FixedPointNumber, FixedU128};
 use xcm::{latest::prelude::*, CreateMatcher, MatchXcm};
 use xcm_executor::traits::ShouldExecute;
 
@@ -132,5 +134,24 @@ impl<Location: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation>
 			"ConcreteNativeAsset asset: {:?}, origin: {:?}, location: {:?}",
 			asset, origin, Location::get());
 		matches!(asset.id, Concrete(ref id) if id == origin && origin == &Location::get())
+	}
+}
+
+//TODO: just reference this from polkadot once https://github.com/paritytech/polkadot/pull/6843 merges
+/// Implementation of `PriceForParentDelivery` which returns an exponentially increasing price.
+/// The `A` type parameter is used to denote the asset ID that will be used for paying the delivery
+/// fee.
+///
+/// The formula for the fee is based on the sum of a base fee plus a message length fee, multiplied
+/// by a specified factor. In mathematical form, it is `F * (B + msg_len * M)`.
+pub struct ExponentialPrice<A, B, M, F>(sp_std::marker::PhantomData<(A, B, M, F)>);
+impl<A: Get<AssetId>, B: Get<u128>, M: Get<u128>, F: Get<FixedU128>> PriceForParentDelivery
+	for ExponentialPrice<A, B, M, F>
+{
+	fn price_for_parent_delivery(msg: &Xcm<()>) -> MultiAssets {
+		let msg_fee = (msg.encoded_size() as u128).saturating_mul(M::get());
+		let fee_sum = B::get().saturating_add(msg_fee);
+		let amount = F::get().saturating_mul_int(fee_sum);
+		(A::get(), amount).into()
 	}
 }

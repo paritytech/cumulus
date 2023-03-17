@@ -54,10 +54,6 @@ impl<T: Get<MultiAssets>> PriceForParentDelivery for ConstantPrice<T> {
 /// Xcm router which recognises the `Parent` destination and handles it by sending the message into
 /// the given UMP `UpwardMessageSender` implementation. Thus this essentially adapts an
 /// `UpwardMessageSender` trait impl into a `SendXcm` trait impl.
-///
-/// NOTE: This is a pretty dumb "just send it" router; we will probably want to introduce queuing
-/// to UMP eventually and when we do, the pallet which implements the queuing will be responsible
-/// for the `SendXcm` implementation.
 pub struct ParentAsUmp<T, W, P>(PhantomData<(T, W, P)>);
 impl<T, W, P> SendXcm for ParentAsUmp<T, W, P>
 where
