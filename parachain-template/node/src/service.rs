@@ -5,27 +5,26 @@ use std::{sync::Arc, time::Duration};
 
 use cumulus_client_cli::CollatorOptions;
 // Local Runtime Types
-use parachain_template_runtime::{opaque::Block, Hash, RuntimeApi};
+use parachain_template_runtime::{opaque::Block, RuntimeApi};
 
 // Cumulus Imports
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::{
 	ParachainBlockImport as TParachainBlockImport, ParachainConsensus,
 };
-use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
-	build_relay_chain_interface, prepare_node_config, start_collator, start_full_node,
-	StartCollatorParams, StartFullNodeParams,
+	build_network, build_relay_chain_interface, prepare_node_config, start_collator,
+	start_full_node, BuildNetworkParams, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
+use cumulus_relay_chain_interface::RelayChainInterface;
 
 // Substrate Imports
 use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
 use sc_consensus::ImportQueue;
 use sc_executor::NativeElseWasmExecutor;
-use sc_network::NetworkService;
-use sc_network_common::service::NetworkBlock;
+use sc_network::NetworkBlock;
+use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_keystore::SyncCryptoStorePtr;
@@ -163,13 +162,7 @@ async fn start_node_impl(
 		hwbench.clone(),
 	)
 	.await
-	.map_err(|e| match e {
-		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
-		s => s.to_string().into(),
-	})?;
-
-	let block_announce_validator =
-		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
+	.map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
@@ -177,18 +170,17 @@ async fn start_node_impl(
 	let transaction_pool = params.transaction_pool.clone();
 	let import_queue_service = params.import_queue.service();
 
-	let (network, system_rpc_tx, tx_handler_controller, start_network) =
-		sc_service::build_network(sc_service::BuildNetworkParams {
-			config: &parachain_config,
+	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
+		build_network(BuildNetworkParams {
+			parachain_config: &parachain_config,
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
+			para_id,
 			spawn_handle: task_manager.spawn_handle(),
+			relay_chain_interface: relay_chain_interface.clone(),
 			import_queue: params.import_queue,
-			block_announce_validator_builder: Some(Box::new(|_| {
-				Box::new(block_announce_validator)
-			})),
-			warp_sync: None,
-		})?;
+		})
+		.await?;
 
 	if parachain_config.offchain_worker.enabled {
 		sc_service::build_offchain_workers(
@@ -223,6 +215,7 @@ async fn start_node_impl(
 		keystore: params.keystore_container.sync_keystore(),
 		backend,
 		network: network.clone(),
+		sync_service: sync_service.clone(),
 		system_rpc_tx,
 		tx_handler_controller,
 		telemetry: telemetry.as_mut(),
@@ -250,8 +243,8 @@ async fn start_node_impl(
 	}
 
 	let announce_block = {
-		let network = network.clone();
-		Arc::new(move |hash, data| network.announce_block(hash, data))
+		let sync_service = sync_service.clone();
+		Arc::new(move |hash, data| sync_service.announce_block(hash, data))
 	};
 
 	let relay_chain_slot_duration = Duration::from_secs(6);
@@ -269,7 +262,7 @@ async fn start_node_impl(
 			&task_manager,
 			relay_chain_interface.clone(),
 			transaction_pool,
-			network,
+			sync_service,
 			params.keystore_container.sync_keystore(),
 			force_authoring,
 			para_id,
@@ -358,7 +351,7 @@ fn build_consensus(
 	task_manager: &TaskManager,
 	relay_chain_interface: Arc<dyn RelayChainInterface>,
 	transaction_pool: Arc<sc_transaction_pool::FullPool<Block, ParachainClient>>,
-	sync_oracle: Arc<NetworkService<Block, Hash>>,
+	sync_oracle: Arc<SyncingService<Block>>,
 	keystore: SyncCryptoStorePtr,
 	force_authoring: bool,
 	para_id: ParaId,

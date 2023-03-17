@@ -33,10 +33,10 @@ use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::{
 	ParachainBlockImport as TParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
-use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_pov_recovery::RecoveryHandle;
 use cumulus_client_service::{
-	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
+	build_network, prepare_node_config, start_collator, start_full_node, BuildNetworkParams,
+	StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::RelayChainInProcessInterface;
@@ -52,8 +52,9 @@ use polkadot_primitives::{CollatorPair, Hash as PHash, PersistedValidationData};
 use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_consensus::ImportQueue;
-use sc_network::{multiaddr, NetworkBlock, NetworkService};
-use sc_network_common::{config::TransportConfig, service::NetworkStateInfo};
+use sc_network::{
+	config::TransportConfig, multiaddr, NetworkBlock, NetworkService, NetworkStateInfo,
+};
 use sc_service::{
 	config::{
 		BlocksPruning, DatabaseSource, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
@@ -252,14 +253,15 @@ async fn build_relay_chain_interface(
 			polkadot_service::IsCollator::Yes(CollatorPair::generate().0)
 		},
 		None,
-	)?;
+	)
+	.map_err(|e| RelayChainError::Application(Box::new(e) as Box<_>))?;
 
 	task_manager.add_child(relay_chain_full_node.task_manager);
 	tracing::info!("Using inprocess node.");
 	Ok(Arc::new(RelayChainInProcessInterface::new(
 		relay_chain_full_node.client.clone(),
 		relay_chain_full_node.backend.clone(),
-		Arc::new(relay_chain_full_node.network.clone()),
+		relay_chain_full_node.sync_service.clone(),
 		relay_chain_full_node.overseer_handle.ok_or(RelayChainError::GenericError(
 			"Overseer should be running in full node.".to_string(),
 		))?,
@@ -309,28 +311,22 @@ where
 		&mut task_manager,
 	)
 	.await
-	.map_err(|e| match e {
-		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
-		s => s.to_string().into(),
-	})?;
+	.map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
-	let block_announce_validator =
-		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
-	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
-
-	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let import_queue_service = params.import_queue.service();
-
-	let (network, system_rpc_tx, tx_handler_controller, start_network) =
-		sc_service::build_network(sc_service::BuildNetworkParams {
-			config: &parachain_config,
+	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
+		build_network(BuildNetworkParams {
+			parachain_config: &parachain_config,
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
+			para_id,
 			spawn_handle: task_manager.spawn_handle(),
+			relay_chain_interface: relay_chain_interface.clone(),
 			import_queue: params.import_queue,
-			block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
-			warp_sync: None,
-		})?;
+		})
+		.await?;
+
+	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 
 	let rpc_builder = {
 		let client = client.clone();
@@ -346,14 +342,15 @@ where
 		keystore: params.keystore_container.sync_keystore(),
 		backend: backend.clone(),
 		network: network.clone(),
+		sync_service: sync_service.clone(),
 		system_rpc_tx,
 		tx_handler_controller,
 		telemetry: None,
 	})?;
 
 	let announce_block = {
-		let network = network.clone();
-		Arc::new(move |hash, data| network.announce_block(hash, data))
+		let sync_service = sync_service.clone();
+		Arc::new(move |hash, data| sync_service.announce_block(hash, data))
 	};
 
 	let announce_block = wrap_announce_block
@@ -703,7 +700,7 @@ pub fn node_config(
 	if nodes_exlusive {
 		network_config.default_peers_set.reserved_nodes = nodes;
 		network_config.default_peers_set.non_reserved_mode =
-			sc_network_common::config::NonReservedPeerMode::Deny;
+			sc_network::config::NonReservedPeerMode::Deny;
 	} else {
 		network_config.boot_nodes = nodes;
 	}
@@ -795,7 +792,7 @@ impl TestNode {
 		self.send_extrinsic(
 			runtime::SudoCall::sudo_unchecked_weight {
 				call: Box::new(call.into()),
-				weight: Weight::from_ref_time(1_000),
+				weight: Weight::from_parts(1_000, 0),
 			},
 			Sr25519Keyring::Alice,
 		)
@@ -809,7 +806,7 @@ pub fn fetch_nonce(client: &Client, account: sp_core::sr25519::Public) -> u32 {
 	let best_hash = client.chain_info().best_hash;
 	client
 		.runtime_api()
-		.account_nonce(&generic::BlockId::Hash(best_hash), account.into())
+		.account_nonce(best_hash, account.into())
 		.expect("Fetching account nonce works; qed")
 }
 
