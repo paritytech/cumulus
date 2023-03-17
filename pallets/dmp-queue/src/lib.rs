@@ -181,8 +181,6 @@ pub mod pallet {
 		ExecutedDownward { message_id: MessageId, outcome: Outcome },
 		/// The weight limit for handling downward messages was reached.
 		WeightExhausted { message_id: MessageId, remaining_weight: Weight, required_weight: Weight },
-		/// The maximum number of downward messages was.
-		MaxMessagesExhausted { message_id: MessageId },
 		/// Downward message is overweight and was placed in the overweight queue.
 		OverweightEnqueued {
 			message_id: MessageId,
@@ -191,6 +189,8 @@ pub mod pallet {
 		},
 		/// Downward message from the overweight queue was executed.
 		OverweightServiced { overweight_index: OverweightIndex, weight_used: Weight },
+		/// The maximum number of downward messages was.
+		MaxMessagesExhausted { message_id: MessageId },
 	}
 
 	impl<T: Config> Pallet<T> {
