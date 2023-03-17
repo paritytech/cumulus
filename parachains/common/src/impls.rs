@@ -22,8 +22,9 @@ use frame_support::traits::{
 };
 use pallet_asset_tx_payment::HandleCredit;
 use sp_runtime::traits::Zero;
-use sp_std::marker::PhantomData;
-use xcm::latest::{AssetId, Fungibility::Fungible, MultiAsset, MultiLocation};
+use sp_std::{marker::PhantomData, mem};
+use xcm::latest::{AssetId, Fungibility::Fungible, MultiAsset, MultiAssets, MultiLocation};
+use xcm_executor::traits::{FeeManager, FeeReason};
 
 /// Type alias to conveniently refer to the `Currency::NegativeImbalance` associated type.
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
@@ -44,6 +45,39 @@ where
 	fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
 		let staking_pot = <pallet_collator_selection::Pallet<R>>::account_id();
 		<pallet_balances::Pallet<R>>::resolve_creating(&staking_pot, amount);
+	}
+}
+
+/// Implementation of `FeeManager` that will deposit any fees from the XCM executor into the staking
+/// pot under control of the Collator Selection pallet.
+pub struct XcmFeesToStakingPot<R>(PhantomData<R>);
+impl<R> FeeManager for XcmFeesToStakingPot<R>
+where
+	R: pallet_balances::Config + pallet_collator_selection::Config,
+	R::Balance: From<u128>,
+{
+	fn is_waived(_: Option<&MultiLocation>, _: FeeReason) -> bool {
+		// we don't waive fees for any origin or reason.
+		false
+	}
+	fn handle_fee(assets: MultiAssets) {
+		// `assets` is an ordered vec, and the fee-paying asset is always first.
+		// https://github.com/paritytech/cumulus/pull/1910#discussion_r1032479542
+		if let Some(fee_asset) = assets.get(0) {
+			match fee_asset.fun {
+				Fungible(amount) => {
+					let staking_pot = <pallet_collator_selection::Pallet<R>>::account_id();
+					let imbalance =
+						<pallet_balances::Pallet<R>>::deposit_creating(&staking_pot, amount.into());
+					// `deposit_creating` returns an imbalance, but we don't actually have an
+					// imbalance here since any asset should have been accounted for in the teleport
+					// or reserve transfer mechanism. We just want to forget it as `drop` would
+					// change the `TotalIssuance` accordingly.
+					mem::forget(imbalance);
+				},
+				_ => {},
+			}
+		}
 	}
 }
 

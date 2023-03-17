@@ -23,8 +23,9 @@ use frame_support::{
 	traits::{ConstU32, Contains, Everything, Nothing},
 };
 use pallet_xcm::XcmPassthrough;
-use parachains_common::xcm_config::{
-	ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry,
+use parachains_common::{
+	impls::XcmFeesToStakingPot,
+	xcm_config::{ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry},
 };
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
@@ -203,7 +204,7 @@ impl xcm_executor::Config for XcmConfig {
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 	type AssetLocker = ();
 	type AssetExchanger = ();
-	type FeeManager = ();
+	type FeeManager = XcmFeesToStakingPot<Runtime>;
 	type MessageExporter = ();
 	type UniversalAliases = Nothing;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
