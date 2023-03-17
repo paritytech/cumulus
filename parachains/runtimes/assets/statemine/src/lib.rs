@@ -645,7 +645,7 @@ impl pallet_bridge_assets_transfer::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type BridgeXcmSender = BridgeXcmSender;
 	type UniversalLocation = UniversalLocation;
-	type WeightInfo = weights::bridge_assets_transfer::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_bridge_assets_transfer::WeightInfo<Runtime>;
 	type AssetTransactor = AssetTransactors;
 	type AdminOrigin = AssetsForceOrigin;
 	type TransferOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
@@ -697,7 +697,6 @@ construct_runtime!(
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		// Reserving 52 for pallet_nfts
 		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 53,
-		// TODO:check-parameter - do we need just one instance? or BridgeAssetsTransfer vs BridgeForeignAssetsTransfer(for transfer back) ?
 		BridgeAssetsTransfer: pallet_bridge_assets_transfer::{Pallet, Call, Storage, Event<T>} = 54,
 
 		#[cfg(feature = "state-trie-version-1")]
