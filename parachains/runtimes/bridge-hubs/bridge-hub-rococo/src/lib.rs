@@ -50,7 +50,7 @@ use frame_support::{
 	parameter_types,
 	traits::{ConstU32, ConstU64, ConstU8, Everything},
 	weights::{
-		ConstantMultiplier, FeePolynomial, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
+		ConstantMultiplier, FeePolynomial, WeightToFeeCoefficient, WeightToFeeCoefficients,
 		WeightToFeePolynomial,
 	},
 	PalletId,

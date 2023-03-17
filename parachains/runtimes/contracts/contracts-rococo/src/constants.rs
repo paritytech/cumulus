@@ -33,9 +33,12 @@ pub mod currency {
 
 /// Fee-related.
 pub mod fee {
-	use frame_support::weights::{
-		constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-		WeightToFeePolynomial,
+	use frame_support::{
+		pallet_prelude::Weight,
+		weights::{
+			constants::ExtrinsicBaseWeight, FeePolynomial, WeightToFeeCoefficient,
+			WeightToFeeCoefficients, WeightToFeePolynomial,
+		},
 	};
 	use polkadot_core_primitives::Balance;
 	use smallvec::smallvec;
