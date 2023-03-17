@@ -5,15 +5,15 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.39" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.39" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 
 tokio = { version = "1.25.0", features = ["sync"] }
 futures = "0.3.26"
