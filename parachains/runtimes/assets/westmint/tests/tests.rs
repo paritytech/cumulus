@@ -641,7 +641,7 @@ fn test_receive_bridged_xcm_trap_works() {
 				Trap(1234),
 			]);
 			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-			let weight_limit = Weight::from_ref_time(41666666666);
+			let weight_limit = Weight::from_parts(41666666666, 0);
 
 			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(origin, xcm, hash, weight_limit);
 			assert_eq!(outcome.ensure_complete(), Err(xcm::latest::Error::Trap(1234)));
@@ -684,12 +684,12 @@ fn test_receive_bridged_xcm_transact_with_remark_with_event_works() {
 				)),
 				Transact {
 					origin_kind: OriginKind::SovereignAccount,
-					require_weight_at_most: Weight::from_ref_time(1000000000),
+					require_weight_at_most: Weight::from_parts(1000000000, 0),
 					call: remark_with_event.encode().into(),
 				},
 			]);
 			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-			let weight_limit = Weight::from_ref_time(41666666666);
+			let weight_limit = Weight::from_parts(41666666666, 0);
 
 			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(origin, xcm, hash, weight_limit);
 			assert_eq!(outcome.ensure_complete(), Ok(()));
@@ -776,7 +776,7 @@ fn test_receive_bridged_xcm_reserve_asset_deposited_works() {
 			]);
 
 			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-			let weight_limit = Weight::from_ref_time(41666666666);
+			let weight_limit = Weight::from_parts(41666666666, 0);
 
 			// execute xcm as XcmpQueue would do
 			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(origin, xcm, hash, weight_limit);
