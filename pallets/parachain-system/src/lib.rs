@@ -704,7 +704,7 @@ pub mod pallet {
 	/// The number to multiply the base delivery fee by.
 	#[pallet::storage]
 	#[pallet::getter(fn delivery_fee_factor_ump)]
-	pub(crate) type DeliveryFeeFactorUMP<T: Config> =
+	pub(crate) type DeliveryFeeFactorUmp<T: Config> =
 		StorageValue<_, FixedU128, ValueQuery, InitialFactor>;
 
 	#[pallet::inherent]
