@@ -19,24 +19,24 @@
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-03-17, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
-//! HOSTNAME: `bm3`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
+//! HOSTNAME: `bkontur-ThinkPad-P14s-Gen-2i`, CPU: `11th Gen Intel(R) Core(TM) i7-1185G7 @ 3.00GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("statemine-dev"), DB CACHE: 1024
 
 // Executed Command:
-// target/production/polkadot-parachain
+// ./target/production/polkadot-parachain
 // benchmark
 // pallet
 // --steps=50
-// --repeat=20
+// --repeat=2
 // --extrinsic=*
 // --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
-// --json-file=/var/lib/gitlab-runner/builds/zyw4fam_/0/parity/mirrors/cumulus/.git/.artifacts/bench.json
-// --pallet=pallet_bridge_transfer
-// --chain=statemine-dev
+// --json-file=./bench.json
 // --header=./file_header.txt
-// --output=./parachains/runtimes/assets/statemine/src/weights/
+// --chain=statemine-dev
+// --pallet=pallet_bridge_transfer
+// --output=./parachains/runtimes/assets/statemine/src/weights
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
@@ -75,6 +75,32 @@ impl<T: frame_system::Config> pallet_bridge_transfer::WeightInfo for WeightInfo<
 			.saturating_add(Weight::from_parts(0, 25088))
 			.saturating_add(T::DbWeight::get().reads(9))
 			.saturating_add(T::DbWeight::get().writes(5))
+	}
+	/// Storage: ParachainInfo ParachainId (r:1 w:0)
+	/// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
+	/// Storage: BridgeTransfer Bridges (r:1 w:0)
+	/// Proof: BridgeTransfer Bridges (max_values: None, max_size: Some(1899), added: 4374, mode: MaxEncodedLen)
+	/// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	/// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	/// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	/// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainSystem RelevantMessagingState (r:1 w:0)
+	/// Proof Skipped: ParachainSystem RelevantMessagingState (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: XcmpQueue OutboundXcmpStatus (r:1 w:1)
+	/// Proof Skipped: XcmpQueue OutboundXcmpStatus (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: XcmpQueue OutboundXcmpMessages (r:0 w:1)
+	/// Proof Skipped: XcmpQueue OutboundXcmpMessages (max_values: None, max_size: None, mode: Measured)
+	fn ping_via_bridge() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `299`
+		//  Estimated: `18052`
+		// Minimum execution time: 50_086_000 picoseconds.
+		Weight::from_parts(66_186_000, 0)
+			.saturating_add(Weight::from_parts(0, 18052))
+			.saturating_add(T::DbWeight::get().reads(7))
+			.saturating_add(T::DbWeight::get().writes(3))
 	}
 	/// Storage: BridgeTransfer Bridges (r:1 w:1)
 	/// Proof: BridgeTransfer Bridges (max_values: None, max_size: Some(1899), added: 4374, mode: MaxEncodedLen)

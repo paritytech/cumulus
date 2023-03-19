@@ -17,10 +17,10 @@
 
 //! `BridgeTransfer` pallet benchmarks.
 
-use crate::{BenchmarkHelper, Bridges, Call, Config, Event, Pallet};
+use crate::{BenchmarkHelper, Bridges, Call, Config, Event, Pallet, PingMessageBuilder};
 
-use frame_benchmarking::{benchmarks, BenchmarkError};
-use frame_support::traits::EnsureOrigin;
+use frame_benchmarking::{benchmarks, BenchmarkError, BenchmarkResult};
+use frame_support::{traits::EnsureOrigin, weights::Weight};
 use sp_std::prelude::*;
 
 benchmarks! {
@@ -30,9 +30,32 @@ benchmarks! {
 		// (be sure to use "worst" of assets)
 		// let a in 1 .. 1;
 		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config();
-		let (origin, assets, destination) = T::BenchmarkHelper::prepare_transfer(1);
+		let (origin, assets, destination) = T::BenchmarkHelper::prepare_asset_transfer(1);
 		Bridges::<T>::insert(bridged_network, bridge_config);
 	}: _<T::RuntimeOrigin>(origin, Box::new(assets), Box::new(destination))
+	verify {
+		// we don't care about message hash here, just check that the transfer has been initiated
+		let actual_event = frame_system::Pallet::<T>::events().pop().map(|r| r.event);
+		let expected_event: <T as Config>::RuntimeEvent = Event::TransferInitiated(Default::default()).into();
+		assert!(matches!(actual_event, Some(expected_event)));
+	}
+
+	ping_via_bridge {
+		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config();
+		Bridges::<T>::insert(bridged_network, bridge_config);
+
+		let (origin, destination) = T::BenchmarkHelper::prepare_ping();
+
+		let origin_location = T::TransferPingOrigin::ensure_origin(origin.clone()).map_err(|_|
+			BenchmarkError::Override(BenchmarkResult::from_weight(Weight::MAX)),
+		)?;
+		let (_, _, destination_location) = Pallet::<T>::ensure_remote_destination(destination.clone()).map_err(|_|
+			BenchmarkError::Override(BenchmarkResult::from_weight(Weight::MAX)),
+		)?;
+		let _ = T::PingMessageBuilder::try_build(&origin_location, &bridged_network, &destination_location).ok_or(
+			BenchmarkError::Override(BenchmarkResult::from_weight(Weight::MAX)),
+		)?;
+	}: _<T::RuntimeOrigin>(origin, Box::new(destination))
 	verify {
 		// we don't care about message hash here, just check that the transfer has been initiated
 		let actual_event = frame_system::Pallet::<T>::events().pop().map(|r| r.event);

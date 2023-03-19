@@ -649,6 +649,8 @@ impl pallet_bridge_transfer::Config for Runtime {
 	type AssetTransactor = AssetTransactors;
 	type AdminOrigin = AssetsForceOrigin;
 	type TransferAssetOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+	type TransferPingOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+	type PingMessageBuilder = pallet_bridge_transfer::UnpaidTrapMessageBuilder<ConstU64<12345>>;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = xcm_config::BridgeTransferBenchmarksHelper;
 }

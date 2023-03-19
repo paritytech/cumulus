@@ -26,6 +26,9 @@ use sp_std::marker::PhantomData;
 pub trait WeightInfo {
 	/// Weight of the `transfer_asset_via_bridge` call.
 	fn transfer_asset_via_bridge() -> Weight;
+	/// Weight of the `ping_via_bridge` call.
+	fn ping_via_bridge() -> Weight;
+
 	/// Weight of the `add_bridge_config` call.
 	fn add_bridge_config() -> Weight;
 	/// Weight of the `remove_bridge_config` call.
@@ -37,6 +40,10 @@ pub trait WeightInfo {
 // Zero weights to use in tests
 impl WeightInfo for () {
 	fn transfer_asset_via_bridge() -> Weight {
+		Weight::zero()
+	}
+
+	fn ping_via_bridge() -> Weight {
 		Weight::zero()
 	}
 

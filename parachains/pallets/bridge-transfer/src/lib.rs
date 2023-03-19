@@ -55,6 +55,31 @@ impl From<BridgeConfig> for (MultiLocation, Option<MultiAsset>) {
 	}
 }
 
+/// Trait for constructing ping message.
+pub trait PingMessageBuilder {
+	fn try_build(
+		local_origin: &MultiLocation,
+		network: &NetworkId,
+		remote_destination: &MultiLocation,
+	) -> Option<Xcm<()>>;
+}
+
+impl PingMessageBuilder for () {
+	fn try_build(_: &MultiLocation, _: &NetworkId, _: &MultiLocation) -> Option<Xcm<()>> {
+		None
+	}
+}
+
+/// Builder creates xcm message just with `Trap` instruction.
+pub struct UnpaidTrapMessageBuilder<TrapCode>(sp_std::marker::PhantomData<TrapCode>);
+impl<TrapCode: frame_support::traits::Get<u64>> PingMessageBuilder
+	for UnpaidTrapMessageBuilder<TrapCode>
+{
+	fn try_build(_: &MultiLocation, _: &NetworkId, _: &MultiLocation) -> Option<Xcm<()>> {
+		Some(Xcm(sp_std::vec![Trap(TrapCode::get())]))
+	}
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	pub use crate::weights::WeightInfo;
@@ -75,8 +100,9 @@ pub mod pallet {
 		/// Returns proper bridge configuration, supported by the runtime.
 		///
 		/// We expect that the XCM environment (`BridgeXcmSender`) has everything enabled
-		/// to support transfer to this destination **after** we our `prepare_transfer` call.
+		/// to support transfer to this destination **after** `prepare_asset_transfer` call.
 		fn bridge_config() -> (NetworkId, BridgeConfig);
+
 		/// Prepare environment for assets transfer and return transfer origin and assets
 		/// to transfer. After this function is called, we expect `transfer_asset_via_bridge`
 		/// to succeed, so in proper environment, it should:
@@ -88,9 +114,22 @@ pub mod pallet {
 		/// - be close to the worst possible scenario - i.e. if some account may need to be created during
 		///   the assets transfer, it should be created. If there are multiple bridges, the "worst possible"
 		///   (in terms of performance) bridge must be selected for the transfer.
-		fn prepare_transfer(
+		fn prepare_asset_transfer(
 			assets_count: u32,
 		) -> (RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation);
+
+		/// Prepare environment for ping transfer and return transfer origin and assets
+		/// to transfer. After this function is called, we expect `ping_via_bridge`
+		/// to succeed, so in proper environment, it should:
+		///
+		/// - deposit enough funds (fee from `bridge_config()`) to the sender account;
+		///
+		/// - ensure that the `BridgeXcmSender` is properly configured for the transfer;
+		///
+		/// - be close to the worst possible scenario - i.e. if some account may need to be created during
+		///  it should be created. If there are multiple bridges, the "worst possible"
+		///   (in terms of performance) bridge must be selected for the transfer.
+		fn prepare_ping() -> (RuntimeOrigin, VersionedMultiLocation);
 	}
 
 	#[pallet::config]
@@ -116,6 +155,12 @@ pub mod pallet {
 		/// Required origin for asset transfer. If successful, it resolves to `MultiLocation`.
 		type TransferAssetOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = MultiLocation>;
 
+		/// Required origin for ping transfer. If successful, it resolves to `MultiLocation`.
+		type TransferPingOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = MultiLocation>;
+
+		/// Configurable ping message, `None` means no message will be transferred.
+		type PingMessageBuilder: PingMessageBuilder;
+
 		/// Benchmarks helper.
 		#[cfg(feature = "runtime-benchmarks")]
 		type BenchmarkHelper: BenchmarkHelper<Self::RuntimeOrigin>;
@@ -135,6 +180,7 @@ pub mod pallet {
 		UnsupportedDestination,
 		BridgeCallError,
 		FailedToReserve,
+		UnsupportedPing,
 	}
 
 	#[pallet::event]
@@ -177,7 +223,7 @@ pub mod pallet {
 			let origin_location = T::TransferAssetOrigin::ensure_origin(origin)?;
 
 			// Check remote destination + bridge_config
-			let (bridge_config, remote_destination) =
+			let (_, bridge_config, remote_destination) =
 				Self::ensure_remote_destination(*destination)?;
 
 			// Check reserve account - sovereign account of bridge
@@ -241,7 +287,7 @@ pub mod pallet {
 			asset.reanchor(&allowed_target_location, T::UniversalLocation::get(), None);
 			let remote_destination = remote_destination
 				.reanchored(&allowed_target_location, T::UniversalLocation::get())
-				.expect("aaa");
+				.expect("TODO: handle compenstaion?");
 
 			let xcm: Xcm<()> = sp_std::vec![
 				// TODO:check-parameter - setup fees
@@ -253,44 +299,38 @@ pub mod pallet {
 			.into();
 
 			// TODO: how to compensate if this call fails?
+			Self::initiate_bridge_transfer(allowed_target_location, xcm).map_err(Into::into)
+		}
 
-			// call bridge
-			log::info!(
-				target: LOG_TARGET,
-				"[T::BridgeXcmSender] send to bridge, allowed_target_location: {:?}, xcm: {:?}",
-				allowed_target_location,
-				xcm,
-			);
-			// TODO: use fn send_msg - which does: validate + deliver - but find out what to do with the fees?
-			let (ticket, fees) =
-				T::BridgeXcmSender::validate(&mut Some(allowed_target_location), &mut Some(xcm))
-					.map_err(|e| {
-						log::error!(
-							target: LOG_TARGET,
-							"[BridgeXcmSender::validate] SendError occurred, error: {:?}",
-							e
-						);
-						Self::deposit_event(Event::BridgeCallError(e));
-						Error::<T>::BridgeCallError
-					})?;
-			log::info!(
-				target: LOG_TARGET,
-				"[T::BridgeXcmSender::validate] (TODO: process) fees: {:?}",
-				fees
-			);
-			// TODO: what to do with fees - we have fees here, pay here or ignore?
-			let xcm_hash = T::BridgeXcmSender::deliver(ticket).map_err(|e| {
-				log::error!(
-					target: LOG_TARGET,
-					"[BridgeXcmSender::deliver] SendError occurred, error: {:?}",
-					e
-				);
-				Self::deposit_event(Event::BridgeCallError(e));
-				Error::<T>::BridgeCallError
-			})?;
+		/// Transfer `ping` via bridge to different global consensus.
+		///
+		/// - can be used for testing purposes that bridge transfer is working and configured for `destination`
+		///
+		/// Parameters:
+		///
+		/// * `destination`: Different consensus location, e.g. Polkadot's Statemint: `2, X2(GlobalConsensus(NetworkId::Polkadot), Parachain(1000))`
+		#[pallet::call_index(4)]
+		#[pallet::weight(T::WeightInfo::ping_via_bridge())]
+		pub fn ping_via_bridge(
+			origin: OriginFor<T>,
+			destination: Box<VersionedMultiLocation>,
+		) -> DispatchResult {
+			let origin_location = T::TransferPingOrigin::ensure_origin(origin)?;
 
-			Self::deposit_event(Event::TransferInitiated(xcm_hash));
-			Ok(())
+			// Check remote destination + bridge_config
+			let (network, bridge_config, remote_destination) =
+				Self::ensure_remote_destination(*destination)?;
+
+			// Check reserve account - sovereign account of bridge
+			let allowed_target_location = bridge_config.allowed_target_location;
+
+			// Prepare `ping` message
+			let xcm: Xcm<()> =
+				T::PingMessageBuilder::try_build(&origin_location, &network, &remote_destination)
+					.ok_or(Error::<T>::UnsupportedPing)?;
+
+			// Initiate bridge transfer
+			Self::initiate_bridge_transfer(allowed_target_location, xcm).map_err(Into::into)
 		}
 
 		/// Adds new bridge configuration, which allows transfer to this `bridged_network`.
@@ -373,7 +413,7 @@ pub mod pallet {
 		/// Returns: correct remote location, where we should be able to bridge
 		pub(crate) fn ensure_remote_destination(
 			remote_destination: VersionedMultiLocation,
-		) -> Result<(BridgeConfig, MultiLocation), Error<T>> {
+		) -> Result<(NetworkId, BridgeConfig, MultiLocation), Error<T>> {
 			match remote_destination {
 				VersionedMultiLocation::V3(remote_location) => {
 					ensure!(
@@ -394,7 +434,7 @@ pub mod pallet {
 								remote_location.starts_with(&bridge_config.allowed_target_location),
 								Error::<T>::UnsupportedDestination
 							);
-							Ok((bridge_config, remote_location))
+							Ok((remote_network, bridge_config, remote_location))
 						},
 						None => return Err(Error::<T>::UnsupportedDestination),
 					}
@@ -405,6 +445,49 @@ pub mod pallet {
 
 		fn get_bridge_for(network: &NetworkId) -> Option<BridgeConfig> {
 			Bridges::<T>::get(network)
+		}
+
+		fn initiate_bridge_transfer(
+			allowed_target_location: MultiLocation,
+			xcm: Xcm<()>,
+		) -> Result<(), Error<T>> {
+			// call bridge
+			log::info!(
+				target: LOG_TARGET,
+				"[T::BridgeXcmSender] send to bridge, allowed_target_location: {:?}, xcm: {:?}",
+				allowed_target_location,
+				xcm,
+			);
+			// TODO: use fn send_msg - which does: validate + deliver - but find out what to do with the fees?
+			let (ticket, fees) =
+				T::BridgeXcmSender::validate(&mut Some(allowed_target_location), &mut Some(xcm))
+					.map_err(|e| {
+						log::error!(
+							target: LOG_TARGET,
+							"[BridgeXcmSender::validate] SendError occurred, error: {:?}",
+							e
+						);
+						Self::deposit_event(Event::BridgeCallError(e));
+						Error::<T>::BridgeCallError
+					})?;
+			log::info!(
+				target: LOG_TARGET,
+				"[T::BridgeXcmSender::validate] (TODO: process) fees: {:?}",
+				fees
+			);
+			// TODO: what to do with fees - we have fees here, pay here or ignore?
+			let xcm_hash = T::BridgeXcmSender::deliver(ticket).map_err(|e| {
+				log::error!(
+					target: LOG_TARGET,
+					"[BridgeXcmSender::deliver] SendError occurred, error: {:?}",
+					e
+				);
+				Self::deposit_event(Event::BridgeCallError(e));
+				Error::<T>::BridgeCallError
+			})?;
+
+			Self::deposit_event(Event::TransferInitiated(xcm_hash));
+			Ok(())
 		}
 	}
 
@@ -615,7 +698,7 @@ pub(crate) mod tests {
 			test_bridge_config()
 		}
 
-		fn prepare_transfer(
+		fn prepare_asset_transfer(
 			assets_count: u32,
 		) -> (RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation) {
 			// sender account must have enough funds
@@ -640,6 +723,14 @@ pub(crate) mod tests {
 
 			(RuntimeOrigin::signed(sender_account), assets, destination)
 		}
+
+		fn prepare_ping() {
+			unimplemented!("Not implemented here - not needed");
+		}
+	}
+
+	parameter_types! {
+		pub const TrapCode: u64 = 12345;
 	}
 
 	impl Config for TestRuntime {
@@ -650,6 +741,8 @@ pub(crate) mod tests {
 		type AssetTransactor = CurrencyTransactor;
 		type AdminOrigin = EnsureRoot<AccountId>;
 		type TransferAssetOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+		type TransferPingOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+		type PingMessageBuilder = UnpaidTrapMessageBuilder<TrapCode>;
 		#[cfg(feature = "runtime-benchmarks")]
 		type BenchmarkHelper = TestBenchmarkHelper;
 	}
@@ -682,10 +775,11 @@ pub(crate) mod tests {
 	fn test_ensure_remote_destination() {
 		new_test_ext().execute_with(|| {
 			// insert bridge config
+			let bridge_network = Wococo;
 			let bridge_config = test_bridge_config().1;
 			assert_ok!(BridgeTransfer::add_bridge_config(
 				RuntimeOrigin::root(),
-				Wococo,
+				bridge_network,
 				Box::new(bridge_config.clone()),
 			));
 
@@ -734,6 +828,7 @@ pub(crate) mod tests {
 					MultiLocation::new(2, X2(GlobalConsensus(Wococo), Parachain(1000)))
 				)),
 				Ok((
+					bridge_network,
 					bridge_config,
 					MultiLocation::new(2, X2(GlobalConsensus(Wococo), Parachain(1000)))
 				))
@@ -829,6 +924,60 @@ pub(crate) mod tests {
 				assert!(xcm.0.iter().any(|instr| matches!(instr, ReserveAssetDeposited(..))));
 				assert!(xcm.0.iter().any(|instr| matches!(instr, ClearOrigin)));
 				assert!(xcm.0.iter().any(|instr| matches!(instr, DepositAsset { .. })));
+			} else {
+				assert!(false, "Does not contains [`ExportMessage`], fired_xcm: {:?}", fired_xcm);
+			}
+		});
+	}
+
+	#[test]
+	fn test_ping_via_bridge_works() {
+		new_test_ext().execute_with(|| {
+			// insert bridge config
+			let bridged_network = Wococo;
+			assert_ok!(BridgeTransfer::add_bridge_config(
+				RuntimeOrigin::root(),
+				bridged_network,
+				Box::new(test_bridge_config().1),
+			));
+
+			// checks before
+			assert!(ROUTED_MESSAGE.with(|r| r.borrow().is_none()));
+
+			// trigger ping_via_bridge - should trigger new ROUTED_MESSAGE
+			// destination is account from different consensus
+			let destination = Box::new(VersionedMultiLocation::V3(MultiLocation::new(
+				2,
+				X3(GlobalConsensus(Wococo), Parachain(1000), consensus_account(Wococo, 2)),
+			)));
+
+			// trigger asset transfer
+			assert_ok!(BridgeTransfer::ping_via_bridge(
+				RuntimeOrigin::signed(account(1)),
+				destination,
+			));
+
+			// check events
+			let events = System::events();
+			assert!(!events.is_empty());
+
+			// check TransferInitiated
+			assert!(System::events().iter().any(|r| matches!(
+				r.event,
+				RuntimeEvent::BridgeTransfer(Event::TransferInitiated { .. })
+			)));
+
+			// check fired XCM ExportMessage to bridge-hub
+			let fired_xcm =
+				ROUTED_MESSAGE.with(|r| r.take().expect("xcm::ExportMessage should be here"));
+
+			if let Some(ExportMessage { xcm, .. }) = fired_xcm.0.iter().find(|instr| {
+				matches!(
+					instr,
+					ExportMessage { network: Wococo, destination: X1(Parachain(1000)), .. }
+				)
+			}) {
+				assert!(xcm.0.iter().any(|instr| matches!(instr, Trap(TrapCode::get()))));
 			} else {
 				assert!(false, "Does not contains [`ExportMessage`], fired_xcm: {:?}", fired_xcm);
 			}

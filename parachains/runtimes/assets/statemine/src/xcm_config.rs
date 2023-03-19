@@ -502,7 +502,7 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 		)
 	}
 
-	fn prepare_transfer(
+	fn prepare_asset_transfer(
 		assets_count: u32,
 	) -> (RuntimeOrigin, xcm::VersionedMultiAssets, xcm::VersionedMultiLocation) {
 		use frame_support::traits::Currency;
@@ -520,10 +520,26 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 		let existential_deposit = crate::ExistentialDeposit::get();
 		let _ = Balances::deposit_creating(&sender_account, existential_deposit * 10);
 
-		// finaly - prepare assets and destination
+		// finally - prepare assets and destination
 		let assets = xcm::VersionedMultiAssets::V3(Self::make_asset(existential_deposit).into());
 		let destination = xcm::VersionedMultiLocation::V3(Self::allowed_target_location());
 
 		(RuntimeOrigin::signed(sender_account), assets, destination)
+	}
+
+	fn prepare_ping() -> (RuntimeOrigin, xcm::VersionedMultiLocation) {
+		// our `BridgeXcmSender` assumes that the HRMP channel is opened between this
+		// parachain and the sibling bridge-hub parachain
+		cumulus_pallet_parachain_system::Pallet::<Runtime>::open_outbound_hrmp_channel_for_benchmarks(
+			Self::bridge_hub_para_id().into(),
+		);
+
+		// sender account
+		let sender_account = AccountId::from([42u8; 32]);
+
+		// finally - prepare destination
+		let destination = xcm::VersionedMultiLocation::V3(Self::allowed_target_location());
+
+		(RuntimeOrigin::signed(sender_account), destination)
 	}
 }

@@ -17,7 +17,8 @@ log = { version = "0.4.14", default-features = false }
 # Substrate
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", optional = true, default-features = false, branch = "master" }
+frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", optional = true, default-features = false, branch = "master" }
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
@@ -36,6 +37,7 @@ cumulus-pallet-xcmp-queue = { path = "../../../pallets/xcmp-queue" }
 default = ["std"]
 std = [
 	"codec/std",
+	"log/std",
 	"scale-info/std",
 	"sp-std/std",
 	"sp-runtime/std",
@@ -46,8 +48,11 @@ std = [
 	"xcm-executor/std",
 ]
 runtime-benchmarks = [
-	"frame-benchmarking",
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"frame-system-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
+	"xcm-builder/runtime-benchmarks",
 ]
 try-runtime = ["frame-support/try-runtime"]
