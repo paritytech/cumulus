@@ -218,7 +218,9 @@ impl<Call> XcmWeightInfo<Call> for StatemineXcmWeight<Call> {
 		Weight::MAX
 	}
 	fn export_message(_: &NetworkId, _: &Junctions, _: &Xcm<()>) -> Weight {
-		Weight::MAX
+		// TODO:check-parameter - remove this from here, we wont use export_message
+		// TODO:check-parameter - new pallet_xcm.send requires to set this up - check how to set properly
+		Weight::from_parts(100_000_000 as u64, 0)
 	}
 	fn lock_asset(_: &MultiAsset, _: &MultiLocation) -> Weight {
 		Weight::MAX
