@@ -114,7 +114,7 @@ mod tests {
 			pub TrustBackedAssetsPalletLocation: MultiLocation = MultiLocation::new(0, X1(PalletInstance(13)));
 		}
 		// setup convert
-		type TrustBackAssetsConvert =
+		type TrustBackedAssetsConvert =
 			TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, u128>;
 
 		let test_data = vec![
