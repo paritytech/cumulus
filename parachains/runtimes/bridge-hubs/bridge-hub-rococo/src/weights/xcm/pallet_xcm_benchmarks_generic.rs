@@ -226,6 +226,9 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	pub(crate) fn set_fees_mode() -> Weight {
 		Weight::from_parts(3_216_000 as u64, 0)
 	}
+	pub(crate) fn export_message() -> Weight {
+		Weight::from_parts(3_394_000 as u64, 0)
+	}
 	pub(crate) fn unpaid_execution() -> Weight {
 		Weight::from_parts(3_394_000 as u64, 0)
 	}

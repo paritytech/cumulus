@@ -218,12 +218,7 @@ impl<Call> XcmWeightInfo<Call> for BridgeHubRococoXcmWeight<Call> {
 		Weight::MAX
 	}
 	fn export_message(_: &NetworkId, _: &Junctions, _: &Xcm<()>) -> Weight {
-		log::error!(
-			target: crate::LOG_TARGET,
-			"TODO: Calling weight: export_message -> triggers unpaid_execution -> need fix here!"
-		);
-		// TODO:check-parameter - add correct weight also add it to the polkadot gav-xcm-v3
-		XcmGeneric::<Runtime>::unpaid_execution()
+		XcmGeneric::<Runtime>::export_message()
 	}
 	fn lock_asset(_: &MultiAsset, _: &MultiLocation) -> Weight {
 		Weight::MAX
