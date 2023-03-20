@@ -203,8 +203,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				frame_system::Call::set_heap_pages { .. } |
 				frame_system::Call::set_code { .. } |
 				frame_system::Call::set_code_without_checks { .. } |
-				// TODO:check-parameter - verify, if we need for production (remark_with_event)
-				frame_system::Call::remark_with_event { .. } |
 				frame_system::Call::kill_prefix { .. },
 			) |
 			RuntimeCall::ParachainSystem(..) |
