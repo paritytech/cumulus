@@ -977,7 +977,7 @@ pub(crate) mod tests {
 					ExportMessage { network: Wococo, destination: X1(Parachain(1000)), .. }
 				)
 			}) {
-				assert!(xcm.0.iter().any(|instr| matches!(instr, Trap(TrapCode::get()))));
+				assert!(xcm.0.iter().any(|instr| instr.eq(&Trap(TrapCode::get()))));
 			} else {
 				assert!(false, "Does not contains [`ExportMessage`], fired_xcm: {:?}", fired_xcm);
 			}
