@@ -66,6 +66,13 @@ pub struct ReconnectingWsClient {
 
 /// Format url and force addition of a port
 fn url_to_string_with_port(url: Url) -> Option<String> {
+	// This is already validated on CLI side, just defensive here
+	if (url.scheme() != "ws" && url.scheme() != "wss") || url.host_str().is_none() {
+		tracing::warn!(target: LOG_TARGET, ?url, "Non-WebSocket URL or missing host.");
+		return None
+	}
+
+	// Either we have a user-supplied port or use the default for 'ws' or 'wss' here
 	Some(format!(
 		"{}://{}:{}{}{}",
 		url.scheme(),
