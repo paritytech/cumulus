@@ -444,7 +444,7 @@ macro_rules! include_asset_transactor_transfer_with_local_consensus_currency_wor
 	}
 );
 
-///Test-case makes sure that `Runtime`'s `xcm::AssetTransactor` can handle native relay chain currency
+/// Test-case makes sure that `Runtime`'s `xcm::AssetTransactor` can handle native relay chain currency
 pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 	Runtime,
 	XcmConfig,
@@ -704,6 +704,7 @@ macro_rules! include_asset_transactor_transfer_with_pallet_assets_instance_works
 	}
 );
 
+/// Test-case makes sure that `Runtime`'s can create and manage `ForeignAssets`
 pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_works<
 	Runtime,
 	XcmConfig,
@@ -1020,6 +1021,152 @@ macro_rules! include_create_and_manage_foreign_assets_for_local_consensus_parach
 				$unwrap_pallet_assets_event,
 				$additional_checks_before,
 				$additional_checks_after
+			)
+		}
+	}
+);
+
+/// Test-case makes sure that `Runtime` can manage `bridge_transfer` configuration by governance
+pub fn can_governance_change_bridge_transfer_configuration<Runtime, XcmConfig>(
+	collator_session_keys: CollatorSessionKeys<Runtime>,
+	runtime_call_encode: Box<dyn Fn(pallet_bridge_transfer::Call<Runtime>) -> Vec<u8>>,
+	unwrap_pallet_bridge_transfer_event: Box<
+		dyn Fn(Vec<u8>) -> Option<pallet_bridge_transfer::Event<Runtime>>,
+	>,
+) where
+	Runtime: frame_system::Config
+		+ pallet_balances::Config
+		+ pallet_session::Config
+		+ pallet_xcm::Config
+		+ parachain_info::Config
+		+ pallet_collator_selection::Config
+		+ cumulus_pallet_parachain_system::Config
+		+ pallet_bridge_transfer::Config,
+	AccountIdOf<Runtime>: Into<[u8; 32]>,
+	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
+	BalanceOf<Runtime>: From<Balance>,
+	XcmConfig: xcm_executor::Config,
+{
+	ExtBuilder::<Runtime>::default()
+		.with_collators(collator_session_keys.collators())
+		.with_session_keys(collator_session_keys.session_keys())
+		.with_tracing()
+		.with_safe_xcm_version(3)
+		.build()
+		.execute_with(|| {
+			// bridge cfg data
+			let bridged_network = NetworkId::ByGenesis([9; 32]);
+			let bridge_config = pallet_bridge_transfer::BridgeConfig {
+				bridge_location: (Parent, Parachain(1013)).into(),
+				allowed_target_location: MultiLocation::new(
+					2,
+					X2(GlobalConsensus(bridged_network), Parachain(1000)),
+				),
+				fee: None,
+			};
+
+			// helper to execute BridgeTransfer call
+			let execute_as_governance = |call| -> Outcome {
+				// prepare xcm as governance will do
+				let xcm = Xcm(vec![
+					UnpaidExecution { weight_limit: Unlimited, check_origin: None },
+					Transact {
+						origin_kind: OriginKind::Superuser,
+						require_weight_at_most: Weight::from_parts(150_000_000, 6000),
+						call: runtime_call_encode(call).into(),
+					},
+				]);
+
+				// origin as relay chain
+				let origin = MultiLocation { parents: 1, interior: Here };
+
+				// initialize bridge through governance-like
+				let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
+				XcmExecutor::<XcmConfig>::execute_xcm(
+					origin,
+					xcm,
+					hash,
+					RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Parent),
+				)
+			};
+
+			// check no cfg
+			assert!(pallet_bridge_transfer::Pallet::<Runtime>::bridges(&bridged_network).is_none());
+
+			// governance can add bridge config
+			assert_ok!(execute_as_governance(
+				pallet_bridge_transfer::Call::<Runtime>::add_bridge_config {
+					bridged_network,
+					bridge_config: Box::new(bridge_config.clone()),
+				},
+			)
+			.ensure_complete());
+			assert!(<frame_system::Pallet<Runtime>>::events()
+				.into_iter()
+				.filter_map(|e| unwrap_pallet_bridge_transfer_event(e.event.encode()))
+				.any(|e| matches!(e, pallet_bridge_transfer::Event::BridgeAdded)));
+			{
+				let cfg = pallet_bridge_transfer::Pallet::<Runtime>::bridges(&bridged_network);
+				assert!(cfg.is_some());
+				let cfg = cfg.unwrap();
+				assert_eq!(cfg.bridge_location, bridge_config.bridge_location);
+				assert_eq!(cfg.allowed_target_location, bridge_config.allowed_target_location);
+				assert_eq!(cfg.fee, None);
+			}
+
+			// governance can update bridge config
+			let new_fee: MultiAsset = (Concrete(MultiLocation::parent()), 1_000).into();
+			assert_ok!(execute_as_governance(
+				pallet_bridge_transfer::Call::<Runtime>::update_bridge_config {
+					bridged_network,
+					fee: Some(new_fee.clone()),
+				},
+			)
+			.ensure_complete());
+			assert!(<frame_system::Pallet<Runtime>>::events()
+				.into_iter()
+				.filter_map(|e| unwrap_pallet_bridge_transfer_event(e.event.encode()))
+				.any(|e| matches!(e, pallet_bridge_transfer::Event::BridgeUpdated)));
+			{
+				let cfg = pallet_bridge_transfer::Pallet::<Runtime>::bridges(&bridged_network);
+				assert!(cfg.is_some());
+				let cfg = cfg.unwrap();
+				assert_eq!(cfg.bridge_location, bridge_config.bridge_location);
+				assert_eq!(cfg.allowed_target_location, bridge_config.allowed_target_location);
+				assert_eq!(cfg.fee, Some(new_fee));
+			}
+
+			// governance can remove bridge config
+			assert_ok!(execute_as_governance(
+				pallet_bridge_transfer::Call::<Runtime>::remove_bridge_config { bridged_network },
+			)
+			.ensure_complete());
+			assert!(pallet_bridge_transfer::Pallet::<Runtime>::bridges(&bridged_network).is_none());
+			assert!(<frame_system::Pallet<Runtime>>::events()
+				.into_iter()
+				.filter_map(|e| unwrap_pallet_bridge_transfer_event(e.event.encode()))
+				.any(|e| matches!(e, pallet_bridge_transfer::Event::BridgeRemoved)));
+		})
+}
+
+#[macro_export]
+macro_rules! include_can_governance_change_bridge_transfer_configuration(
+	(
+		$runtime:path,
+		$xcm_config:path,
+		$collator_session_key:expr,
+		$runtime_call_encode:expr,
+		$unwrap_pallet_assets_event:expr
+	) => {
+		#[test]
+		fn can_governance_change_bridge_transfer_configuration() {
+			asset_test_utils::test_cases::can_governance_change_bridge_transfer_configuration::<
+				$runtime,
+				$xcm_config,
+			>(
+				$collator_session_key,
+				$runtime_call_encode,
+				$unwrap_pallet_assets_event,
 			)
 		}
 	}

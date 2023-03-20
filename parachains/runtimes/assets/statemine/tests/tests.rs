@@ -6,7 +6,6 @@ use frame_support::{
 	traits::fungibles::InspectEnumerable,
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
-use pallet_bridge_transfer::BridgeConfig;
 use parachains_common::{AccountId, AssetIdForTrustBackedAssets, AuraId, Balance};
 use statemine_runtime::xcm_config::{
 	AssetFeeAsExistentialDepositMultiplierFeeCharger, KsmLocation, TrustBackedAssetsPalletLocation,
@@ -19,10 +18,7 @@ pub use statemine_runtime::{
 	RuntimeOrigin, SessionKeys, System, TrustBackedAssetsInstance,
 };
 use xcm::latest::prelude::*;
-use xcm_executor::{
-	traits::{Convert, Identity, JustTry, WeightTrader},
-	XcmExecutor,
-};
+use xcm_executor::traits::{Convert, Identity, JustTry, WeightTrader};
 
 const ALICE: [u8; 32] = [1u8; 32];
 const SOME_ASSET_ADMIN: [u8; 32] = [5u8; 32];
@@ -364,67 +360,6 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 }
 
 #[test]
-fn can_governance_call_xcm_transact_with_bridge_assets_transfer_configuration() {
-	ExtBuilder::<Runtime>::default()
-		.with_collators(vec![AccountId::from(ALICE)])
-		.with_session_keys(vec![(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
-		)])
-		.with_tracing()
-		.with_safe_xcm_version(3)
-		.build()
-		.execute_with(|| {
-			// bridge cfg data
-			let bridged_network = NetworkId::Polkadot;
-			let bridge_config = BridgeConfig {
-				bridge_location: (Parent, Parachain(1013)).into(),
-				allowed_target_location: MultiLocation::new(
-					2,
-					X2(GlobalConsensus(bridged_network), Parachain(1000)),
-				),
-				fee: None,
-			};
-
-			// check cfg before
-			let cfg = pallet_bridge_transfer::Pallet::<Runtime>::bridges(&bridged_network);
-			assert!(cfg.is_none());
-
-			// prepare xcm as governance will do
-			let add_bridge_config: RuntimeCall = RuntimeCall::BridgeTransfer(
-				pallet_bridge_transfer::Call::<Runtime>::add_bridge_config {
-					bridged_network,
-					bridge_config: Box::new(bridge_config.clone()),
-				},
-			);
-
-			// add bridge config call
-			let xcm = Xcm(vec![
-				UnpaidExecution { weight_limit: Unlimited, check_origin: None },
-				Transact {
-					origin_kind: OriginKind::Superuser,
-					require_weight_at_most: Weight::from_parts(2000000000, 2000000000),
-					call: add_bridge_config.encode().into(),
-				},
-			]);
-
-			// origin as relay chain
-			let origin = MultiLocation { parents: 1, interior: Here };
-
-			// initialize bridge through governance-like
-			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-			let weight_limit = Weight::from_parts(5000000000, 5000000000);
-			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(origin, xcm, hash, weight_limit);
-			assert_eq!(outcome.ensure_complete(), Ok(()));
-
-			// check cfg after
-			let cfg = pallet_bridge_transfer::Pallet::<Runtime>::bridges(&bridged_network);
-			assert_eq!(cfg, Some(bridge_config));
-		})
-}
-
-#[test]
 fn test_assets_balances_api_works() {
 	use assets_common::runtime_api::runtime_decl_for_fungibles_api::FungiblesApi;
 
@@ -644,5 +579,22 @@ asset_test_utils::include_create_and_manage_foreign_assets_for_local_consensus_p
 	Box::new(|| {
 		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
 		assert_eq!(ForeignAssets::asset_ids().collect::<Vec<_>>().len(), 1);
+	})
+);
+
+asset_test_utils::include_can_governance_change_bridge_transfer_configuration!(
+	Runtime,
+	XcmConfig,
+	asset_test_utils::CollatorSessionKeys::new(
+		AccountId::from(ALICE),
+		AccountId::from(ALICE),
+		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+	),
+	Box::new(|call| RuntimeCall::BridgeTransfer(call).encode()),
+	Box::new(|runtime_event_encoded: Vec<u8>| {
+		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+			Ok(RuntimeEvent::BridgeTransfer(event)) => Some(event),
+			_ => None,
+		}
 	})
 );

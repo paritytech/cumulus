@@ -337,6 +337,7 @@ dependencies = [
  "hex-literal",
  "pallet-assets",
  "pallet-balances",
+ "pallet-bridge-transfer",
  "pallet-collator-selection",
  "pallet-session",
  "pallet-xcm",

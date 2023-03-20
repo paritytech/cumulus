@@ -357,6 +357,11 @@ pub mod pallet {
 				bridged_network == allowed_target_location_network,
 				Error::<T>::InvalidConfiguration
 			);
+			// bridged consensus must be different
+			let local_network = T::UniversalLocation::get()
+				.global_consensus()
+				.map_err(|_| Error::<T>::InvalidConfiguration)?;
+			ensure!(bridged_network != local_network, Error::<T>::InvalidConfiguration);
 
 			Bridges::<T>::insert(bridged_network, bridge_config);
 			Self::deposit_event(Event::BridgeAdded);
@@ -1011,13 +1016,26 @@ pub(crate) mod tests {
 				DispatchError::BadOrigin
 			);
 
-			// should fail - cannot bridged_network should match allowed_target_location
+			// should fail - bridged_network should match allowed_target_location
 			assert_noop!(
 				BridgeTransfer::add_bridge_config(RuntimeOrigin::root(), bridged_network, {
 					let remote_network = Westend;
 					assert_ne!(bridged_network, remote_network);
 					Box::new(test_bridge_config().1)
 				}),
+				DispatchError::Module(ModuleError {
+					index: 52,
+					error: [0, 0, 0, 0],
+					message: Some("InvalidConfiguration")
+				})
+			);
+			// should fail - bridged_network must be different global consensus than our `UniversalLocation`
+			assert_noop!(
+				BridgeTransfer::add_bridge_config(
+					RuntimeOrigin::root(),
+					UniversalLocation::get().global_consensus().expect("any `NetworkId`"),
+					bridged_config.clone()
+				),
 				DispatchError::Module(ModuleError {
 					index: 52,
 					error: [0, 0, 0, 0],

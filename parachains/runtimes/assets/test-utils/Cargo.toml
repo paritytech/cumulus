@@ -29,6 +29,7 @@ cumulus-primitives-core = { path = "../../../../primitives/core", default-featur
 cumulus-primitives-parachain-inherent = { path = "../../../../primitives/parachain-inherent", default-features = false }
 cumulus-test-relay-sproof-builder = { path = "../../../../test/relay-sproof-builder", default-features = false }
 parachain-info = { path = "../../../../parachains/pallets/parachain-info", default-features = false }
+pallet-bridge-transfer = { path = "../../../pallets/bridge-transfer", default-features = false }
 
 # Polkadot
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -67,4 +68,5 @@ std = [
     "sp-std/std",
     "xcm/std",
     "xcm-executor/std",
+    "pallet-bridge-transfer/std",
 ]
