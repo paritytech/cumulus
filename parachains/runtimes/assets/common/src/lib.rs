@@ -189,7 +189,7 @@ mod tests {
 
 		for (multi_asset, expected_result) in test_data {
 			assert_eq!(
-				<TrustBackAssetsConvert as MatchesFungibles<AssetIdForTrustBackedAssets, u128>>::matches_fungibles(&multi_asset),
+				<TrustBackedAssetsConvert as MatchesFungibles<AssetIdForTrustBackedAssets, u128>>::matches_fungibles(&multi_asset),
 				expected_result, "multi_asset: {:?}", multi_asset);
 		}
 	}
