@@ -973,6 +973,11 @@ impl_runtime_apis! {
 				fn unlockable_asset() -> Result<(MultiLocation, MultiLocation, MultiAsset), BenchmarkError> {
 					Err(BenchmarkError::Skip)
 				}
+
+				fn export_message_origin_and_destination(
+				) -> Result<(MultiLocation, NetworkId, InteriorMultiLocation), BenchmarkError> {
+					Ok((RelayLocation::get(), NetworkId::Wococo, X1(Parachain(100))))
+				}
 			}
 
 			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;

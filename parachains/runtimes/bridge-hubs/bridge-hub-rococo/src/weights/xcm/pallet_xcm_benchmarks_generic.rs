@@ -338,6 +338,9 @@ impl<T: frame_system::Config> WeightInfo<T> {
 		// Minimum execution time: 2_901_000 picoseconds.
 		Weight::from_parts(2_977_000, 0)
 	}
+	pub(crate) fn export_message() -> Weight {
+		Weight::from_parts(3_394_000 as u64, 0)
+	}
 	pub fn unpaid_execution() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
