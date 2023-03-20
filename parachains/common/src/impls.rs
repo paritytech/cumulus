@@ -179,7 +179,7 @@ mod tests {
 		type Balance = u64;
 		type RuntimeEvent = RuntimeEvent;
 		type DustRemoval = ();
-		type ExistentialDeposit = ();
+		type ExistentialDeposit = sp_core::ConstU64<1>;
 		type AccountStore = System;
 		type MaxLocks = ();
 		type WeightInfo = ();
