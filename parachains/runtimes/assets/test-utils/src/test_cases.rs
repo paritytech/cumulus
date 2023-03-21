@@ -28,7 +28,7 @@ use frame_support::{
 use parachains_common::Balance;
 use sp_runtime::{
 	traits::{StaticLookup, Zero},
-	DispatchError,
+	DispatchError, Saturating,
 };
 use xcm::latest::prelude::*;
 use xcm_executor::{traits::Convert, XcmExecutor};
@@ -709,6 +709,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 	existential_deposit: BalanceOf<Runtime>,
 	asset_deposit: BalanceOf<Runtime>,
 	metadata_deposit_base: BalanceOf<Runtime>,
+	metadata_deposit_per_byte: BalanceOf<Runtime>,
 	alice_account: AccountIdOf<Runtime>,
 	bob_account: AccountIdOf<Runtime>,
 	runtime_call_encode: Box<
@@ -764,6 +765,11 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 		fun: Fungible(buy_execution_fee_amount),
 	};
 
+	const ASSET_NAME: &str = "My super coin";
+	const ASSET_SYMBOL: &str = "MY_S_COIN";
+	let metadata_deposit_per_byte_eta = metadata_deposit_per_byte
+		.saturating_mul(((ASSET_NAME.len() + ASSET_SYMBOL.len()) as u128).into());
+
 	ExtBuilder::<Runtime>::default()
 		.with_collators(collator_session_keys.collators())
 		.with_session_keys(collator_session_keys.session_keys())
@@ -771,6 +777,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 			foreign_creator_as_account_id.clone(),
 			existential_deposit +
 				asset_deposit + metadata_deposit_base +
+				metadata_deposit_per_byte_eta +
 				buy_execution_fee_amount.into() +
 				buy_execution_fee_amount.into(),
 		)])
@@ -784,6 +791,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 				<pallet_balances::Pallet<Runtime>>::free_balance(&foreign_creator_as_account_id),
 				existential_deposit +
 					asset_deposit + metadata_deposit_base +
+					metadata_deposit_per_byte_eta +
 					buy_execution_fee_amount.into() +
 					buy_execution_fee_amount.into()
 			);
@@ -806,8 +814,8 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 				ForeignAssetsPalletInstance,
 			>::set_metadata {
 				id: asset_id.clone().into(),
-				name: Vec::from("My super coin"),
-				symbol: Vec::from("MY_S_COIN"),
+				name: Vec::from(ASSET_NAME),
+				symbol: Vec::from(ASSET_SYMBOL),
 				decimals: 12,
 			});
 			// prepapre data for xcm::Transact(set_team - change just freezer to Bob)
@@ -895,15 +903,16 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 				Some(bob_account.clone())
 			);
 			assert!(
-				<pallet_balances::Pallet<Runtime>>::free_balance(&foreign_creator_as_account_id) <
-					existential_deposit +
-						buy_execution_fee_amount.into() +
-						buy_execution_fee_amount.into()
+				<pallet_balances::Pallet<Runtime>>::free_balance(&foreign_creator_as_account_id) >=
+					existential_deposit + buy_execution_fee_amount.into(),
+				"Free balance: {:?} should be ge {:?}",
+				<pallet_balances::Pallet<Runtime>>::free_balance(&foreign_creator_as_account_id),
+				existential_deposit + buy_execution_fee_amount.into()
 			);
 			assert_metadata::<
 				pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>,
 				AccountIdOf<Runtime>,
-			>(asset_id.clone().into(), "My super coin", "MY_S_COIN", 12);
+			>(asset_id.clone().into(), ASSET_NAME, ASSET_SYMBOL, 12);
 
 			// check if changed freezer, can freeze
 			assert_noop!(
@@ -979,6 +988,7 @@ macro_rules! include_create_and_manage_foreign_assets_for_local_consensus_parach
 		$existential_deposit:expr,
 		$asset_deposit:expr,
 		$metadata_deposit_base:expr,
+		$metadata_deposit_per_byte:expr,
 		$runtime_call_encode:expr,
 		$unwrap_pallet_assets_event:expr,
 		$additional_checks_before:expr,
@@ -1004,6 +1014,7 @@ macro_rules! include_create_and_manage_foreign_assets_for_local_consensus_parach
 				$existential_deposit,
 				$asset_deposit,
 				$metadata_deposit_base,
+				$metadata_deposit_per_byte,
 				alice_account,
 				bob_account,
 				$runtime_call_encode,

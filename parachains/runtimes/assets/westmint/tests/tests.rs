@@ -19,7 +19,7 @@ use westmint_runtime::{
 		AssetFeeAsExistentialDepositMultiplierFeeCharger, ForeignCreatorsSovereignAccountOf,
 		WestendLocation,
 	},
-	MetadataDepositBase, RuntimeCall, RuntimeEvent,
+	MetadataDepositBase, MetadataDepositPerByte, RuntimeCall, RuntimeEvent,
 };
 use xcm::{latest::prelude::*, VersionedXcm, MAX_XCM_DECODE_DEPTH};
 use xcm_executor::{
@@ -570,6 +570,7 @@ asset_test_utils::include_create_and_manage_foreign_assets_for_local_consensus_p
 	ExistentialDeposit::get(),
 	AssetDeposit::get(),
 	MetadataDepositBase::get(),
+	MetadataDepositPerByte::get(),
 	Box::new(|pallet_asset_call| RuntimeCall::ForeignAssets(pallet_asset_call).encode()),
 	Box::new(|runtime_event_encoded: Vec<u8>| {
 		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {

@@ -14,8 +14,8 @@ pub use statemine_runtime::{
 	constants::fee::WeightToFee,
 	xcm_config::{ForeignCreatorsSovereignAccountOf, XcmConfig},
 	AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets, ForeignAssetsInstance,
-	MetadataDepositBase, Runtime, RuntimeCall, RuntimeEvent, SessionKeys, System,
-	TrustBackedAssetsInstance,
+	MetadataDepositBase, MetadataDepositPerByte, Runtime, RuntimeCall, RuntimeEvent, SessionKeys,
+	System, TrustBackedAssetsInstance,
 };
 use xcm::latest::prelude::*;
 use xcm_executor::traits::{Convert, Identity, JustTry, WeightTrader};
@@ -565,6 +565,7 @@ asset_test_utils::include_create_and_manage_foreign_assets_for_local_consensus_p
 	ExistentialDeposit::get(),
 	AssetDeposit::get(),
 	MetadataDepositBase::get(),
+	MetadataDepositPerByte::get(),
 	Box::new(|pallet_asset_call| RuntimeCall::ForeignAssets(pallet_asset_call).encode()),
 	Box::new(|runtime_event_encoded: Vec<u8>| {
 		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
