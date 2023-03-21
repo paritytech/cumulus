@@ -329,6 +329,7 @@ version = "1.0.0"
 dependencies = [
  "assets-common",
  "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
  "cumulus-test-relay-sproof-builder",

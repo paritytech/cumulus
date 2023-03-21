@@ -1,3 +1,4 @@
+use codec::DecodeLimit;
 use cumulus_primitives_core::{AbridgedHrmpChannel, ParaId, PersistedValidationData};
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
@@ -10,13 +11,14 @@ use sp_std::marker::PhantomData;
 
 use frame_support::{traits::OriginTrait, weights::Weight};
 use parachains_common::AccountId;
-use polkadot_parachain::primitives::{HrmpChannelId, RelayChainBlockNumber};
+use polkadot_parachain::primitives::{HrmpChannelId, RelayChainBlockNumber, XcmpMessageFormat};
 use sp_consensus_aura::AURA_ENGINE_ID;
 use sp_core::Encode;
 use sp_runtime::{Digest, DigestItem};
 use xcm::{
 	latest::{MultiAsset, MultiLocation, XcmContext},
 	prelude::{Concrete, Fungible, XcmError, XcmVersion},
+	VersionedXcm, MAX_XCM_DECODE_DEPTH,
 };
 use xcm_executor::{traits::TransactAsset, Assets};
 
@@ -215,8 +217,8 @@ pub fn mock_open_hrmp_channel<
 			max_capacity: 10,
 			max_total_size: 10_000_000_u32,
 			max_message_size: 10_000_000_u32,
-			msg_count: 10,
-			total_size: 10_000_000_u32,
+			msg_count: 0,
+			total_size: 0_u32,
 			mqc_head: None,
 		},
 	);
@@ -282,6 +284,31 @@ impl<ParachainSystem: cumulus_pallet_parachain_system::Config> RuntimeHelper<Par
 		match from {
 			XcmReceivedFrom::Parent => ParachainSystem::ReservedDmpWeight::get(),
 			XcmReceivedFrom::Sibling => ParachainSystem::ReservedXcmpWeight::get(),
+		}
+	}
+}
+
+impl<HrmpChannelSource: cumulus_primitives_core::XcmpMessageSource>
+	RuntimeHelper<HrmpChannelSource>
+{
+	pub fn take_xcm(sent_to_para_id: ParaId) -> Option<VersionedXcm<()>> {
+		match HrmpChannelSource::take_outbound_messages(10)[..] {
+			[(para_id, ref mut xcm_message_data)] if para_id.eq(&sent_to_para_id.into()) => {
+				let mut xcm_message_data = &xcm_message_data[..];
+				// decode
+				let _ = XcmpMessageFormat::decode_with_depth_limit(
+					MAX_XCM_DECODE_DEPTH,
+					&mut xcm_message_data,
+				)
+				.expect("valid format");
+				VersionedXcm::<()>::decode_with_depth_limit(
+					MAX_XCM_DECODE_DEPTH,
+					&mut xcm_message_data,
+				)
+				.map(|x| Some(x))
+				.expect("result with xcm")
+			},
+			_ => return None,
 		}
 	}
 }

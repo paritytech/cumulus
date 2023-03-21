@@ -279,18 +279,17 @@ pub mod pallet {
 				Error::<T>::FailedToReserve
 			})?;
 
-			// TODO: asset.clone for compensation + add test for compensation
+			// TODO:check-parameter - asset.clone for compensation or transactional + add test for compensation?
 
-			// prepare ReserveAssetDeposited msg to bridge to the other side - reanchor stuff
-			// We need to convert local asset's id/MultiLocation to format, that could be understood by different consensus and from their point-of-view
-			// assets.prepend_location(&T::UniversalLocation::get().into_location());
+			// Prepare `ReserveAssetDeposited` msg to bridge to the other side.
+			// Reanchor stuff: we need to convert local asset id/MultiLocation to format, that could be understood by different consensus and from their point-of-view
 			asset.reanchor(&allowed_target_location, T::UniversalLocation::get(), None);
 			let remote_destination = remote_destination
 				.reanchored(&allowed_target_location, T::UniversalLocation::get())
-				.expect("TODO: handle compenstaion?");
+				.expect("// TODO:check-parameter - handle compenstaion?");
 
 			let xcm: Xcm<()> = sp_std::vec![
-				// TODO:check-parameter - setup fees
+				// TODO:check-parameter - setup fees - check teleporter for ForeignAssets - customizable AccountOf for BuyExecution + converters
 				UnpaidExecution { weight_limit: Unlimited, check_origin: None },
 				ReserveAssetDeposited(asset.into()),
 				ClearOrigin,
@@ -298,7 +297,7 @@ pub mod pallet {
 			]
 			.into();
 
-			// TODO: how to compensate if this call fails?
+			// TODO:check-parameter how to compensate if this call fails? return back deposisted assets?
 			Self::initiate_bridge_transfer(allowed_target_location, xcm).map_err(Into::into)
 		}
 
@@ -870,7 +869,7 @@ pub(crate) mod tests {
 			assert!(ROUTED_MESSAGE.with(|r| r.borrow().is_none()));
 			assert_eq!(Balances::free_balance(&user_account), user_account_init_balance);
 			let bridge_location_as_sovereign_account =
-				SiblingParachainConvertsVia::<Sibling, AccountId>::convert_ref(bridge_location)
+				LocationToAccountId::convert_ref(bridge_location)
 					.expect("converted bridge location as accountId");
 			assert_eq!(Balances::free_balance(&bridge_location_as_sovereign_account), 0);
 
@@ -879,10 +878,10 @@ pub(crate) mod tests {
 				fun: Fungible(balance_to_transfer.into()),
 				id: Concrete(RelayLocation::get()),
 			};
-			let assets = Box::new(VersionedMultiAssets::V3(asset.into()));
+			let assets = Box::new(VersionedMultiAssets::from(MultiAssets::from(asset)));
 
 			// destination is account from different consensus
-			let destination = Box::new(VersionedMultiLocation::V3(MultiLocation::new(
+			let destination = Box::new(VersionedMultiLocation::from(MultiLocation::new(
 				2,
 				X3(GlobalConsensus(Wococo), Parachain(1000), consensus_account(Wococo, 2)),
 			)));
