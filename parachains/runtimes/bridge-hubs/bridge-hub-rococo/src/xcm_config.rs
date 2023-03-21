@@ -22,11 +22,11 @@ use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing},
 };
+use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::xcm_config::{
 	ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry,
 };
-use frame_system::EnsureRoot;
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
 use xcm::latest::prelude::*;
