@@ -33,7 +33,7 @@ use sp_runtime::{traits::Saturating, SaturatedConversion};
 use sp_std::{marker::PhantomData, prelude::*};
 use xcm::{latest::prelude::*, WrapVersion};
 use xcm_builder::TakeRevenue;
-use xcm_executor::traits::{MatchesFungibles, TransactAsset, WeightTrader};
+use xcm_executor::traits::{FeeManager, FeeReason, MatchesFungibles, TransactAsset, WeightTrader};
 
 pub trait PriceForParentDelivery {
 	fn price_for_parent_delivery(message: &Xcm<()>) -> MultiAssets;
@@ -270,7 +270,7 @@ impl<
 }
 
 /// XCM fee depositor to which we implement the TakeRevenue trait
-/// It receives a Transact implemented argument, a 32 byte convertible acocuntId, and the fee receiver account
+/// It receives a Transact implemented argument, a 32 byte convertible accountId, and the fee receiver account
 /// FungiblesMutateAdapter should be identical to that implemented by WithdrawAsset
 pub struct XcmFeesTo32ByteAccount<FungiblesMutateAdapter, AccountId, ReceiverAccount>(
 	PhantomData<(FungiblesMutateAdapter, AccountId, ReceiverAccount)>,
@@ -293,6 +293,43 @@ impl<
 			.is_ok();
 
 			debug_assert!(ok, "`deposit_asset` cannot generally fail; qed");
+		}
+	}
+}
+
+pub struct XcmFeeManagerToAccount<FungiblesMutateAdapter, AccountId, ReceiverAccount>
+where
+	FungiblesMutateAdapter: xcm_executor::traits::TransactAsset,
+{
+	_phantom: PhantomData<(FungiblesMutateAdapter, AccountId, ReceiverAccount)>,
+}
+
+impl<FungiblesMutateAdapter, AccountId, ReceiverAccount> FeeManager
+	for XcmFeeManagerToAccount<FungiblesMutateAdapter, AccountId, ReceiverAccount>
+where
+	FungiblesMutateAdapter: xcm_executor::traits::TransactAsset,
+	AccountId: Clone + Into<[u8; 32]>,
+	ReceiverAccount: frame_support::traits::Get<Option<AccountId>>,
+{
+	fn is_waived(_origin: Option<&MultiLocation>, _: FeeReason) -> bool {
+		false
+	}
+
+	fn handle_fee(fee: MultiAssets) {
+		if let Some(receiver) = ReceiverAccount::get() {
+			let dest = X1(AccountId32 { network: None, id: receiver.into() }).into();
+			for asset in fee.into_inner() {
+				let ok = FungiblesMutateAdapter::deposit_asset(
+					&asset,
+					&dest,
+					// We aren't able to track the XCM that initiated the fee deposit, so we create a
+					// fake message hash here
+					&XcmContext::with_message_hash([0; 32]),
+				)
+				.is_ok();
+
+				debug_assert!(ok, "`deposit_asset` cannot generally fail");
+			}
 		}
 	}
 }

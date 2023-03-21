@@ -18,16 +18,19 @@ use super::{
 	AccountId, AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
 	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
+use cumulus_primitives_utility::XcmFeeManagerToAccount;
 use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing},
 };
 use pallet_xcm::XcmPassthrough;
-use parachains_common::xcm_config::{
-	ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry,
+use parachains_common::{
+	xcm_config::{ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry},
+	RELAY_TREASURY_PALLET_ID,
 };
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
+use sp_runtime::traits::AccountIdConversion;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
@@ -47,6 +50,7 @@ parameter_types! {
 		X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
+	pub XcmAssetFeesReceiverToTreasury: Option<AccountId> = Some(RELAY_TREASURY_PALLET_ID.into_account_truncating());
 	pub const GovernanceLocation: MultiLocation = MultiLocation::parent();
 	pub const FellowshipLocation: MultiLocation = MultiLocation::parent();
 }
@@ -205,7 +209,8 @@ impl xcm_executor::Config for XcmConfig {
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 	type AssetLocker = ();
 	type AssetExchanger = ();
-	type FeeManager = ();
+	type FeeManager =
+		XcmFeeManagerToAccount<CurrencyTransactor, AccountId, XcmAssetFeesReceiverToTreasury>;
 	type MessageExporter = ();
 	type UniversalAliases = Nothing;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;

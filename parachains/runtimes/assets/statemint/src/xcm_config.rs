@@ -18,6 +18,7 @@ use super::{
 	ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
 	TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
+use cumulus_primitives_utility::XcmFeeManagerToAccount;
 use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
@@ -28,9 +29,10 @@ use parachains_common::{
 	xcm_config::{
 		AssetFeeAsExistentialDepositMultiplier, DenyReserveTransferToRelayChain, DenyThenTry,
 	},
+	RELAY_TREASURY_PALLET_ID,
 };
 use polkadot_parachain::primitives::Sibling;
-use sp_runtime::traits::ConvertInto;
+use sp_runtime::traits::{AccountIdConversion, ConvertInto};
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
@@ -133,6 +135,7 @@ parameter_types! {
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
 	pub XcmAssetFeesReceiver: Option<AccountId> = Authorship::author();
+	pub XcmAssetFeesReceiverToTreasury: Option<AccountId> = Some(RELAY_TREASURY_PALLET_ID.into_account_truncating());
 }
 
 match_types! {
@@ -317,7 +320,8 @@ impl xcm_executor::Config for XcmConfig {
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 	type AssetLocker = ();
 	type AssetExchanger = ();
-	type FeeManager = ();
+	type FeeManager =
+		XcmFeeManagerToAccount<AssetTransactors, AccountId, XcmAssetFeesReceiverToTreasury>;
 	type MessageExporter = ();
 	type UniversalAliases = Nothing;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
