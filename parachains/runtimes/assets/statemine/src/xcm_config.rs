@@ -244,13 +244,14 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_assets::Call::refund { .. },
 			) |
 			RuntimeCall::ForeignAssets(
-				/* avoided: mint, burn */
 				pallet_assets::Call::create { .. } |
 				pallet_assets::Call::force_create { .. } |
 				pallet_assets::Call::start_destroy { .. } |
 				pallet_assets::Call::destroy_accounts { .. } |
 				pallet_assets::Call::destroy_approvals { .. } |
 				pallet_assets::Call::finish_destroy { .. } |
+				pallet_assets::Call::mint { .. } |
+				pallet_assets::Call::burn { .. } |
 				pallet_assets::Call::transfer { .. } |
 				pallet_assets::Call::transfer_keep_alive { .. } |
 				pallet_assets::Call::force_transfer { .. } |
