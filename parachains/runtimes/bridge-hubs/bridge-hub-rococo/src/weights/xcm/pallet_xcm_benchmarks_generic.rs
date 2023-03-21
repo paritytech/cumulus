@@ -338,8 +338,18 @@ impl<T: frame_system::Config> WeightInfo<T> {
 		// Minimum execution time: 2_901_000 picoseconds.
 		Weight::from_parts(2_977_000, 0)
 	}
+	// Storage: ParachainInfo ParachainId (r:1 w:0)
+	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
+	// Storage: BridgeWococoMessages PalletOperatingMode (r:1 w:0)
+	// Proof: BridgeWococoMessages PalletOperatingMode (max_values: Some(1), max_size: Some(2), added: 497, mode: MaxEncodedLen)
+	// Storage: BridgeWococoMessages OutboundLanes (r:1 w:1)
+	// Proof: BridgeWococoMessages OutboundLanes (max_values: Some(1), max_size: Some(44), added: 539, mode: MaxEncodedLen)
+	// Storage: BridgeWococoMessages OutboundMessages (r:0 w:1)
+	// Proof: BridgeWococoMessages OutboundMessages (max_values: None, max_size: Some(2621472), added: 2623947, mode: MaxEncodedLen)
 	pub(crate) fn export_message() -> Weight {
-		Weight::from_parts(3_394_000 as u64, 0)
+		Weight::from_parts(30_496_000 as u64, 0)
+			.saturating_add(T::DbWeight::get().reads(3 as u64))
+			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	pub fn unpaid_execution() -> Weight {
 		// Proof Size summary in bytes:
