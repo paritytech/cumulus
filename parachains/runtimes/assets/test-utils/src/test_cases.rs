@@ -903,7 +903,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 			assert_metadata::<
 				pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>,
 				AccountIdOf<Runtime>,
-			>(&asset_id.clone().into(), "My super coin", "MY_S_COIN", 12);
+			>(asset_id.clone().into(), "My super coin", "MY_S_COIN", 12);
 
 			// check if changed freezer, can freeze
 			assert_noop!(

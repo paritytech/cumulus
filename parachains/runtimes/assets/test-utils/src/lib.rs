@@ -179,12 +179,12 @@ impl<ParachainSystem: cumulus_pallet_parachain_system::Config> RuntimeHelper<Par
 }
 
 pub fn assert_metadata<Assets, AccountId>(
-	asset_id: &Assets::AssetId,
+	asset_id: Assets::AssetId,
 	expected_name: &str,
 	expected_symbol: &str,
 	expected_decimals: u8,
 ) where
-	Assets: frame_support::traits::tokens::fungibles::InspectMetadata<AccountId>
+	Assets: frame_support::traits::tokens::fungibles::metadata::Inspect<AccountId>
 		+ frame_support::traits::tokens::fungibles::Inspect<AccountId>,
 {
 	assert_eq!(Assets::name(asset_id), Vec::from(expected_name),);
