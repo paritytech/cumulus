@@ -74,7 +74,7 @@ parachain-info = { path = "../../../pallets/parachain-info", default-features = 
 parachains-common = { path = "../../../common", default-features = false }
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
 [dev-dependencies]
 sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -186,4 +186,5 @@ std = [
 	"pallet-preimage/std",
 	"pallet-referenda/std",
 	"pallet-ranked-collective/std",
+	"substrate-wasm-builder",
 ]
