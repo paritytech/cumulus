@@ -154,6 +154,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_collator_selection::Call::leave_intent { .. },
 			) |
 			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
+			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
 			RuntimeCall::XcmpQueue(..) |
 			RuntimeCall::DmpQueue(..) |
 			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
@@ -182,7 +183,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_collective::Call::disapprove_proposal { .. } |
 				pallet_collective::Call::close { .. },
 			) |
-			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
 			RuntimeCall::FellowshipCollective(
 				pallet_ranked_collective::Call::add_member { .. } |
 				pallet_ranked_collective::Call::promote_member { .. } |
