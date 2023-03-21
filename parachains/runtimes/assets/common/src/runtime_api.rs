@@ -16,12 +16,12 @@
 //! Runtime API definition for fungibles.
 
 use codec::{Codec, Decode, Encode};
-use frame_support::RuntimeDebug;
+use frame_support::{RuntimeDebug, TypeInfo};
 use sp_std::vec::Vec;
 use xcm::latest::MultiAsset;
 
 /// The possible errors that can happen querying the storage of assets.
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum FungiblesAccessError {
 	/// `MultiLocation` to `AssetId`/`ClassId` conversion failed.
 	AssetIdConversionFailed,
