@@ -66,7 +66,8 @@ use parachains_common::{
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{
-	ForeignAssetsConvertedConcreteId, KsmLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig,
+	FellowshipLocation, ForeignAssetsConvertedConcreteId, GovernanceLocation, KsmLocation,
+	TrustBackedAssetsConvertedConcreteId, XcmConfig,
 };
 
 #[cfg(any(feature = "std", test))]
@@ -76,7 +77,7 @@ pub use sp_runtime::BuildStorage;
 use assets_common::{
 	foreign_creators::ForeignCreators, matching::FromSiblingParachain, MultiLocationForAssetId,
 };
-use pallet_xcm::{EnsureXcm, IsMajorityOfBody, IsVoiceOfBody};
+use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use xcm::latest::BodyId;
 use xcm_executor::XcmExecutor;
@@ -234,12 +235,10 @@ parameter_types! {
 	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
 	pub const MetadataDepositBase: Balance = deposit(1, 68);
 	pub const MetadataDepositPerByte: Balance = deposit(0, 1);
-	pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
-/// We allow root and the Relay Chain council to execute privileged asset operations.
-pub type AssetsForceOrigin =
-	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>>;
+/// We allow root to execute privileged asset operations.
+pub type AssetsForceOrigin = EnsureRoot<AccountId>;
 
 // Called "Trust Backed" assets because these are generally registered by some account, and users of
 // the asset assume it has some claimed backing. The pallet is called `Assets` in
@@ -541,10 +540,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type ControllerOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
-		EnsureXcm<(
-			IsMajorityOfBody<KsmLocation, ExecutiveBody>,
-			IsVoiceOfBody<KsmLocation, FellowsBodyId>,
-		)>,
+		EnsureXcm<IsVoiceOfBody<FellowshipLocation, FellowsBodyId>>,
 	>;
 	type ControllerOriginConverter = xcm_config::XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
@@ -592,13 +588,10 @@ parameter_types! {
 	pub const StakingAdminBodyId: BodyId = BodyId::Defense;
 }
 
-/// We allow root, the Relay Chain council and the StakingAdmin to execute privileged collator selection operations.
+/// We allow root the StakingAdmin to execute privileged collator selection operations.
 pub type CollatorSelectionUpdateOrigin = EitherOfDiverse<
 	EnsureRoot<AccountId>,
-	EnsureXcm<(
-		IsMajorityOfBody<KsmLocation, ExecutiveBody>,
-		IsVoiceOfBody<KsmLocation, StakingAdminBodyId>,
-	)>,
+	EnsureXcm<IsVoiceOfBody<GovernanceLocation, StakingAdminBodyId>>,
 >;
 
 impl pallet_collator_selection::Config for Runtime {
