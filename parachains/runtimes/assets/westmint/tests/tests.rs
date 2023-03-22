@@ -10,9 +10,9 @@ use parachains_common::{AccountId, AssetIdForTrustBackedAssets, AuraId, Balance}
 use std::convert::Into;
 pub use westmint_runtime::{
 	constants::fee::WeightToFee,
-	xcm_config::{TrustBackedAssetsPalletLocation, XcmConfig},
+	xcm_config::{CheckingAccount, TrustBackedAssetsPalletLocation, XcmConfig},
 	AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets, ForeignAssetsInstance,
-	Runtime, SessionKeys, System, TrustBackedAssetsInstance,
+	ParachainSystem, Runtime, SessionKeys, System, TrustBackedAssetsInstance,
 };
 use westmint_runtime::{
 	xcm_config::{
@@ -467,19 +467,36 @@ fn test_assets_balances_api_works() {
 		});
 }
 
-asset_test_utils::include_receive_teleported_asset_for_native_asset_works!(
+asset_test_utils::include_teleports_for_native_asset_works!(
 	Runtime,
 	XcmConfig,
+	CheckingAccount,
+	WeightToFee,
+	ParachainSystem,
 	asset_test_utils::CollatorSessionKeys::new(
 		AccountId::from(ALICE),
 		AccountId::from(ALICE),
 		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-	)
+	),
+	ExistentialDeposit::get(),
+	Box::new(|runtime_event_encoded: Vec<u8>| {
+		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+			Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
+			_ => None,
+		}
+	}),
+	Box::new(|runtime_event_encoded: Vec<u8>| {
+		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+			Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
+			_ => None,
+		}
+	})
 );
 
 asset_test_utils::include_receive_teleported_asset_from_foreign_creator_works!(
 	Runtime,
 	XcmConfig,
+	CheckingAccount,
 	WeightToFee,
 	ForeignCreatorsSovereignAccountOf,
 	ForeignAssetsInstance,
