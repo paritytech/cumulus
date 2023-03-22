@@ -703,6 +703,9 @@ impl<T: Config> Pallet<T> {
 								remaining_fragments = last_remaining_fragments;
 								break
 							},
+							// FIXME: if `max_weight < required < max_individual_weight` then
+							// xcm message is dropped/lost (doesn't match any of above branches)...
+							// what am I missing?!
 							Err(error) => {
 								log::error!(
 									"Failed to process XCMP-XCM message, caused by {:?}",
@@ -867,6 +870,9 @@ impl<T: Config> Pallet<T> {
 				Weight::zero()
 			} else {
 				// Process up to one block's worth for now.
+				// FIXME: what happens if we call `Self::process_xcmp_message()` with some
+				// `weight_remaining < xcmp_max_individual_weight` => some xcm message might simply
+				// be dropped inside `process_xcmp_message`... what am I missing?!
 				let weight_remaining = weight_available.saturating_sub(weight_used);
 				let (weight_processed, is_empty) = Self::process_xcmp_message(
 					sender,
