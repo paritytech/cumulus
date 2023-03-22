@@ -18,6 +18,7 @@ use super::{
 	ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
 	TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
+use crate::{TransactionByteFee, CENTS};
 use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
@@ -27,10 +28,11 @@ use parachains_common::{
 	impls::ToStakingPot,
 	xcm_config::{
 		AssetFeeAsExistentialDepositMultiplier, DenyReserveTransferToRelayChain, DenyThenTry,
+		ExponentialPrice,
 	},
 };
 use polkadot_parachain::primitives::Sibling;
-use sp_runtime::traits::ConvertInto;
+use sp_runtime::{traits::ConvertInto, FixedU128};
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
@@ -131,6 +133,19 @@ pub type XcmOriginToTransactDispatchOrigin = (
 
 parameter_types! {
 	pub const MaxInstructions: u32 = 100;
+
+	/// The asset ID for the asset that we use to pay for message delivery fees.
+	pub FeeAssetId: AssetId = Concrete(Here.into());
+
+	/// The base fee for the message delivery fees.
+	pub const BaseDeliveryFee: u128 = CENTS.saturating_mul(3);
+
+	/// The factor to multiply by for the message delivery fees.
+	pub UmpFeeFactor: FixedU128 = ParachainSystem::delivery_fee_factor_ump();
+
+	/// The factor to multiply by for the message delivery fees.
+	pub XcmpFeeFactor: FixedU128 = XcmpQueue::delivery_fee_factor_xcmp();
+
 	pub const MaxAssetsIntoHolding: u32 = 64;
 	pub XcmAssetFeesReceiver: Option<AccountId> = Authorship::author();
 }
@@ -366,7 +381,11 @@ pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, R
 /// queues.
 pub type XcmRouter = (
 	// Two routers - use UMP to communicate with the relay chain:
-	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, ()>,
+	cumulus_primitives_utility::ParentAsUmp<
+		ParachainSystem,
+		PolkadotXcm,
+		ExponentialPrice<FeeAssetId, BaseDeliveryFee, TransactionByteFee, UmpFeeFactor>,
+	>,
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
 );

@@ -53,7 +53,7 @@ use rand_chacha::{
 	ChaChaRng,
 };
 use scale_info::TypeInfo;
-use sp_runtime::RuntimeDebug;
+use sp_runtime::{FixedPointNumber, FixedU128, RuntimeDebug, Saturating};
 use sp_std::{convert::TryFrom, prelude::*};
 use xcm::{latest::prelude::*, VersionedXcm, WrapVersion, MAX_XCM_DECODE_DEPTH};
 use xcm_executor::traits::ConvertOrigin;
@@ -71,6 +71,8 @@ const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
 const MAX_MESSAGES_PER_BLOCK: u8 = 10;
 // Maximum amount of messages that can exist in the overweight queue at any given time.
 const MAX_OVERWEIGHT_MESSAGES: u32 = 1000;
+
+pub const MULTIPLICATIVE_FEE_FACTOR_XCMP: FixedU128 = FixedU128::from_rational(101, 100); // 1.01
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -374,6 +376,16 @@ pub mod pallet {
 	/// Whether or not the XCMP queue is suspended from executing incoming XCMs or not.
 	#[pallet::storage]
 	pub(super) type QueueSuspended<T: Config> = StorageValue<_, bool, ValueQuery>;
+
+	frame_support::parameter_types! {
+		pub InitialFactor: FixedU128 = FixedU128::from_u32(1);
+	}
+
+	/// The number to multiply the base delivery fee by.
+	#[pallet::storage]
+	#[pallet::getter(fn delivery_fee_factor_xcmp)]
+	pub(crate) type DeliveryFeeFactor<T: Config> =
+		StorageValue<_, FixedU128, ValueQuery, InitialFactor>;
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
@@ -516,7 +528,7 @@ impl<T: Config> Pallet<T> {
 		let max_message_size =
 			T::ChannelInfo::get_channel_max(recipient).ok_or(MessageSendError::NoChannel)?;
 		if data.len() > max_message_size {
-			return Err(MessageSendError::TooBig)
+			Self::increment_xcmp_fee_factor();
 		}
 
 		let mut s = <OutboundXcmpStatus<T>>::get();
@@ -943,6 +955,28 @@ impl<T: Config> Pallet<T> {
 			}
 		});
 	}
+
+	/// Raise the delivery fee factor by a multiplicative factor and stores the resulting value.
+	///
+	/// Returns the new delivery fee factor after the increment.
+	pub(crate) fn increment_xcmp_fee_factor() -> FixedU128 {
+		<DeliveryFeeFactorXCMP<T>>::mutate(|f| {
+			*f = f.saturating_mul(MULTIPLICATIVE_FEE_FACTOR_XCMP);
+			*f
+		})
+	}
+
+	/// Reduce the delivery fee factor by a multiplicative factor and stores the resulting value.
+	///
+	/// Does not reduce the fee factor below the initial value, which is currently set as 1.
+	///
+	/// Returns the new delivery fee factor after the decrement.
+	pub(crate) fn decrement_xcmp_fee_factor() -> FixedU128 {
+		<DeliveryFeeFactorXCMP<T>>::mutate(|f| {
+			*f = InitialFactor::get().max(*f / MULTIPLICATIVE_FEE_FACTOR_XCMP);
+			*f
+		})
+	}
 }
 
 impl<T: Config> XcmpMessageHandler for Pallet<T> {
@@ -1129,6 +1163,9 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 
 		<OutboundXcmpStatus<T>>::put(statuses);
 
+		if !result.is_empty() {
+			Self::decrement_xcmp_fee_factor();
+		}
 		result
 	}
 }
@@ -1188,5 +1225,23 @@ impl<T: Config> SendXcm for Pallet<T> {
 			},
 			Err(e) => Err(SendError::Transport(<&'static str>::from(e))),
 		}
+	}
+}
+
+/// Implementation of `PriceForSiblingDelivery` which returns an exponentially increasing price.
+/// The `A` type parameter is used to denote the asset ID that will be used for paying the delivery
+/// fee.
+///
+/// The formula for the fee is based on the sum of a base fee plus a message length fee, multiplied
+/// by a specified factor. In mathematical form, it is `F * (B + msg_len * M)`.
+pub struct SiblingExponentialPrice<A, B, M, F>(sp_std::marker::PhantomData<(A, B, M, F)>);
+impl<A: Get<AssetId>, B: Get<u128>, M: Get<u128>, F: Get<FixedU128>> PriceForSiblingDelivery
+	for SiblingExponentialPrice<A, B, M, F>
+{
+	fn price_for_sibling_delivery(_para_id: ParaId, msg: &Xcm<()>) -> MultiAssets {
+		let msg_fee = (msg.encoded_size() as u128).saturating_mul(M::get());
+		let fee_sum = B::get().saturating_add(msg_fee);
+		let amount = F::get().saturating_mul_int(fee_sum);
+		(A::get(), amount).into()
 	}
 }

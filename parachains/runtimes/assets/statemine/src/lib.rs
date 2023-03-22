@@ -28,7 +28,9 @@ pub mod constants;
 mod weights;
 pub mod xcm_config;
 
+use crate::xcm_config::{BaseDeliveryFee, FeeAssetId, XcmpFeeFactor};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+use cumulus_pallet_xcmp_queue::SiblingExponentialPrice;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -497,7 +499,8 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	>;
 	type ControllerOriginConverter = xcm_config::XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
-	type PriceForSiblingDelivery = ();
+	type PriceForSiblingDelivery =
+		SiblingExponentialPrice<FeeAssetId, BaseDeliveryFee, TransactionByteFee, XcmpFeeFactor>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
