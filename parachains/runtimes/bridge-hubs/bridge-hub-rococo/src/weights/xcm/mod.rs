@@ -21,6 +21,7 @@ use crate::{xcm_config::MaxAssetsIntoHolding, Runtime};
 use frame_support::weights::Weight;
 use pallet_xcm_benchmarks_fungible::WeightInfo as XcmFungibleWeight;
 use pallet_xcm_benchmarks_generic::WeightInfo as XcmGeneric;
+use parity_scale_codec::Encode;
 use sp_std::prelude::*;
 use xcm::{latest::prelude::*, DoubleEncoded};
 
@@ -217,8 +218,9 @@ impl<Call> XcmWeightInfo<Call> for BridgeHubRococoXcmWeight<Call> {
 	fn universal_origin(_: &Junction) -> Weight {
 		Weight::MAX
 	}
-	fn export_message(_: &NetworkId, _: &Junctions, _: &Xcm<()>) -> Weight {
-		XcmGeneric::<Runtime>::export_message()
+	fn export_message(_: &NetworkId, _: &Junctions, inner: &Xcm<()>) -> Weight {
+		let inner_encoded_len = inner.encode().len() as u32;
+		XcmGeneric::<Runtime>::export_message(inner_encoded_len)
 	}
 	fn lock_asset(_: &MultiAsset, _: &MultiLocation) -> Weight {
 		Weight::MAX
