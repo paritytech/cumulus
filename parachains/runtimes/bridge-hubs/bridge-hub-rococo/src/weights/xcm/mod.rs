@@ -18,10 +18,10 @@ mod pallet_xcm_benchmarks_fungible;
 mod pallet_xcm_benchmarks_generic;
 
 use crate::{xcm_config::MaxAssetsIntoHolding, Runtime};
+use codec::Encode;
 use frame_support::weights::Weight;
 use pallet_xcm_benchmarks_fungible::WeightInfo as XcmFungibleWeight;
 use pallet_xcm_benchmarks_generic::WeightInfo as XcmGeneric;
-use parity_scale_codec::Encode;
 use sp_std::prelude::*;
 use xcm::{latest::prelude::*, DoubleEncoded};
 
