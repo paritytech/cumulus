@@ -488,11 +488,12 @@ asset_test_utils::include_teleports_for_native_asset_works!(
 	})
 );
 
-asset_test_utils::include_receive_teleported_asset_from_foreign_creator_works!(
+asset_test_utils::include_teleports_for_foreign_assets_works!(
 	Runtime,
 	XcmConfig,
 	CheckingAccount,
 	WeightToFee,
+	ParachainSystem,
 	ForeignCreatorsSovereignAccountOf,
 	ForeignAssetsInstance,
 	asset_test_utils::CollatorSessionKeys::new(
@@ -500,7 +501,19 @@ asset_test_utils::include_receive_teleported_asset_from_foreign_creator_works!(
 		AccountId::from(ALICE),
 		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
 	),
-	ExistentialDeposit::get()
+	ExistentialDeposit::get(),
+	Box::new(|runtime_event_encoded: Vec<u8>| {
+		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+			Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
+			_ => None,
+		}
+	}),
+	Box::new(|runtime_event_encoded: Vec<u8>| {
+		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+			Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
+			_ => None,
+		}
+	})
 );
 
 asset_test_utils::include_asset_transactor_transfer_with_local_consensus_currency_works!(

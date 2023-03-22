@@ -106,7 +106,7 @@ pub fn teleports_for_native_asset_works<
 	ExtBuilder::<Runtime>::default()
 		.with_collators(collator_session_keys.collators())
 		.with_session_keys(collator_session_keys.session_keys())
-		.with_safe_xcm_version(3)
+		.with_safe_xcm_version(XCM_VERSION)
 		.with_para_id(runtime_para_id.into())
 		.build()
 		.execute_with(|| {
@@ -124,7 +124,7 @@ pub fn teleports_for_native_asset_works<
 			let native_asset_amount_received =
 				native_asset_amount_unit * 10.into() + buy_execution_fee_amount_eta.into();
 
-			// process received teleported assets from relaychain
+			// 1. process received teleported assets from relaychain
 			let xcm = Xcm(vec![
 				ReceiveTeleportedAsset(MultiAssets::from(vec![MultiAsset {
 					id: Concrete(native_asset_id),
@@ -298,11 +298,12 @@ macro_rules! include_teleports_for_native_asset_works(
 );
 
 /// Test-case makes sure that `Runtime` can receive teleported assets from sibling parachain relay chain
-pub fn receive_teleported_asset_from_foreign_creator_works<
+pub fn teleports_for_foreign_assets_works<
 	Runtime,
 	XcmConfig,
 	CheckingAccount,
 	WeightToFee,
+	HrmpChannelOpener,
 	SovereignAccountOf,
 	ForeignAssetsPalletInstance,
 >(
@@ -310,6 +311,10 @@ pub fn receive_teleported_asset_from_foreign_creator_works<
 	target_account: AccountIdOf<Runtime>,
 	existential_deposit: BalanceOf<Runtime>,
 	asset_owner: AccountIdOf<Runtime>,
+	unwrap_pallet_xcm_event: Box<dyn Fn(Vec<u8>) -> Option<pallet_xcm::Event<Runtime>>>,
+	unwrap_xcmp_queue_event: Box<
+		dyn Fn(Vec<u8>) -> Option<cumulus_pallet_xcmp_queue::Event<Runtime>>,
+	>,
 ) where
 	Runtime: frame_system::Config
 		+ pallet_balances::Config
@@ -318,12 +323,16 @@ pub fn receive_teleported_asset_from_foreign_creator_works<
 		+ parachain_info::Config
 		+ pallet_collator_selection::Config
 		+ cumulus_pallet_parachain_system::Config
+		+ cumulus_pallet_xcmp_queue::Config
 		+ pallet_assets::Config<ForeignAssetsPalletInstance>,
 	AccountIdOf<Runtime>: Into<[u8; 32]>,
 	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
 	BalanceOf<Runtime>: From<Balance>,
 	XcmConfig: xcm_executor::Config,
 	CheckingAccount: Get<AccountIdOf<Runtime>>,
+	HrmpChannelOpener: frame_support::inherent::ProvideInherent<
+		Call = cumulus_pallet_parachain_system::Call<Runtime>,
+	>,
 	WeightToFee: frame_support::weights::WeightToFee<Balance = Balance>,
 	<WeightToFee as frame_support::weights::WeightToFee>::Balance: From<u128> + Into<u128>,
 	SovereignAccountOf: Convert<MultiLocation, AccountIdOf<Runtime>>,
@@ -340,11 +349,14 @@ pub fn receive_teleported_asset_from_foreign_creator_works<
 	ForeignAssetsPalletInstance: 'static,
 {
 	// foreign parachain with the same consenus currency as asset
-	let foreign_asset_id_multilocation =
-		MultiLocation { parents: 1, interior: X2(Parachain(2222), GeneralIndex(1234567)) };
+	let foreign_para_id = 2222;
+	let foreign_asset_id_multilocation = MultiLocation {
+		parents: 1,
+		interior: X2(Parachain(foreign_para_id), GeneralIndex(1234567)),
+	};
 
 	// foreign creator, which can be sibling parachain to match ForeignCreators
-	let foreign_creator = MultiLocation { parents: 1, interior: X1(Parachain(2222)) };
+	let foreign_creator = MultiLocation { parents: 1, interior: X1(Parachain(foreign_para_id)) };
 	let foreign_creator_as_account_id = SovereignAccountOf::convert(foreign_creator).expect("");
 
 	// we want to buy execution with local relay chain currency
@@ -356,7 +368,7 @@ pub fn receive_teleported_asset_from_foreign_creator_works<
 	};
 
 	let teleported_foreign_asset_amount = 10000000000000;
-
+	let runtime_para_id = 1000;
 	ExtBuilder::<Runtime>::default()
 		.with_collators(collator_session_keys.collators())
 		.with_session_keys(collator_session_keys.session_keys())
@@ -367,6 +379,8 @@ pub fn receive_teleported_asset_from_foreign_creator_works<
 			),
 			(target_account.clone(), existential_deposit),
 		])
+		.with_safe_xcm_version(XCM_VERSION)
+		.with_para_id(runtime_para_id.into())
 		.with_tracing()
 		.build()
 		.execute_with(|| {
@@ -394,7 +408,7 @@ pub fn receive_teleported_asset_from_foreign_creator_works<
 				0.into()
 			);
 
-			// create foreign asset
+			// create foreign asset (0 total issuance)
 			let asset_minimum_asset_balance = 3333333_u128;
 			assert_ok!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::force_create(
@@ -405,9 +419,15 @@ pub fn receive_teleported_asset_from_foreign_creator_works<
 					asset_minimum_asset_balance.into()
 				)
 			);
+			assert_eq!(
+				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::total_supply(
+					foreign_asset_id_multilocation.clone().into()
+				),
+				0.into()
+			);
 			assert!(teleported_foreign_asset_amount > asset_minimum_asset_balance);
 
-			// prepare xcm
+			// 1. process received teleported assets from relaychain
 			let xcm = Xcm(vec![
 				// BuyExecution with relaychain native token
 				WithdrawAsset(buy_execution_fee.clone().into()),
@@ -471,36 +491,111 @@ pub fn receive_teleported_asset_from_foreign_creator_works<
 				),
 				0.into()
 			);
+			assert_eq!(
+				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::total_supply(
+					foreign_asset_id_multilocation.into()
+				),
+				teleported_foreign_asset_amount.into()
+			);
+
+			// 2. try to teleport asset back to source parachain (foreign_para_id)
+			{
+				let dest = MultiLocation::new(1, X1(Parachain(foreign_para_id)));
+				let dest_beneficiary = MultiLocation::new(1, X1(Parachain(foreign_para_id)))
+					.appended_with(AccountId32 {
+						network: None,
+						id: sp_runtime::AccountId32::new([3; 32]).into(),
+					})
+					.unwrap();
+
+				let target_account_balance_before_teleport =
+					<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::balance(
+						foreign_asset_id_multilocation.into(),
+						&target_account,
+					);
+				let asset_to_teleport_away = asset_minimum_asset_balance * 3;
+				assert!(
+					asset_to_teleport_away <
+						(target_account_balance_before_teleport -
+							asset_minimum_asset_balance.into())
+						.into()
+				);
+
+				assert_ok!(RuntimeHelper::<Runtime>::do_teleport_assets::<HrmpChannelOpener>(
+					RuntimeHelper::<Runtime>::origin_of(target_account.clone()),
+					dest,
+					dest_beneficiary,
+					(foreign_asset_id_multilocation, asset_to_teleport_away.clone().into()),
+					Some((runtime_para_id, foreign_para_id)),
+				));
+
+				// check balances
+				assert_eq!(
+					<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::balance(
+						foreign_asset_id_multilocation.into(),
+						&target_account
+					),
+					(target_account_balance_before_teleport - asset_to_teleport_away.into())
+				);
+				assert_eq!(
+					<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::balance(
+						foreign_asset_id_multilocation.into(),
+						&CheckingAccount::get()
+					),
+					0.into()
+				);
+
+				// check events
+				RuntimeHelper::<Runtime>::assert_pallet_xcm_event_outcome(
+					&unwrap_pallet_xcm_event,
+					|outcome| {
+						assert_ok!(outcome.ensure_complete());
+					},
+				);
+				assert!(RuntimeHelper::<Runtime>::xcmp_queue_message_sent(unwrap_xcmp_queue_event)
+					.is_some());
+			}
 		})
 }
 
 #[macro_export]
-macro_rules! include_receive_teleported_asset_from_foreign_creator_works(
+macro_rules! include_teleports_for_foreign_assets_works(
 	(
 		$runtime:path,
 		$xcm_config:path,
 		$checking_account:path,
 		$weight_to_fee:path,
+		$hrmp_channel_opener:path,
 		$sovereign_account_of:path,
 		$assets_pallet_instance:path,
 		$collator_session_key:expr,
-		$existential_deposit:expr
+		$existential_deposit:expr,
+		$unwrap_pallet_xcm_event:expr,
+		$unwrap_xcmp_queue_event:expr
 	) => {
 		#[test]
-		fn receive_teleported_asset_from_foreign_creator_works() {
+		fn teleports_for_foreign_assets_works() {
 			const BOB: [u8; 32] = [2u8; 32];
 			let target_account = parachains_common::AccountId::from(BOB);
 			const SOME_ASSET_OWNER: [u8; 32] = [5u8; 32];
 			let asset_owner = parachains_common::AccountId::from(SOME_ASSET_OWNER);
 
-			asset_test_utils::test_cases::receive_teleported_asset_from_foreign_creator_works::<
+			asset_test_utils::test_cases::teleports_for_foreign_assets_works::<
 				$runtime,
 				$xcm_config,
 				$checking_account,
 				$weight_to_fee,
+				$hrmp_channel_opener,
 				$sovereign_account_of,
 				$assets_pallet_instance
-			>($collator_session_key, target_account, $existential_deposit, asset_owner)
+			>(
+				$collator_session_key,
+				target_account,
+				$existential_deposit,
+				asset_owner,
+				$unwrap_pallet_xcm_event,
+				$unwrap_xcmp_queue_event
+			)
 		}
 	}
 );
