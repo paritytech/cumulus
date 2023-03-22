@@ -356,6 +356,7 @@ dependencies = [
  "frame-support",
  "parachains-common",
  "parity-scale-codec",
+ "scale-info",
  "sp-api",
  "sp-std",
  "substrate-wasm-builder",
