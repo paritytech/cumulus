@@ -38,7 +38,7 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
 	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin,
-	FungiblesAdapter, IsConcrete, LocalMint, NativeAsset, NoChecking, ParentAsSuperuser,
+	FungiblesAdapter, IsConcrete, LocalMint, NativeAsset, NonLocalMint, ParentAsSuperuser,
 	ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
 	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 	UsingComponents, WeightInfoBounds, WithComputedOrigin,
@@ -129,8 +129,8 @@ pub type ForeignFungiblesTransactor = FungiblesAdapter<
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
 	AccountId,
-	// TODO:check-parameter - no teleports
-	NoChecking,
+	// We only want to allow teleports of known assets.
+	NonLocalMint<parachains_common::impls::AssetExists<AccountId, ForeignAssets>>,
 	// The account to use for tracking teleports.
 	CheckingAccount,
 >;

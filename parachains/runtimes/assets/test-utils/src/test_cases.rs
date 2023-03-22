@@ -378,21 +378,23 @@ pub fn teleports_for_foreign_assets_works<
 				existential_deposit + (buy_execution_fee_amount * 2).into(),
 			),
 			(target_account.clone(), existential_deposit),
+			(CheckingAccount::get(), existential_deposit),
 		])
 		.with_safe_xcm_version(XCM_VERSION)
 		.with_para_id(runtime_para_id.into())
 		.with_tracing()
 		.build()
 		.execute_with(|| {
-			// checks before
+			// checks target_account before
 			assert_eq!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(&target_account),
 				existential_deposit
 			);
 			assert_eq!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(&CheckingAccount::get()),
-				0.into()
+				existential_deposit
 			);
+			// check `CheckingAccount` before
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::balance(
 					foreign_asset_id_multilocation.into(),
@@ -404,6 +406,13 @@ pub fn teleports_for_foreign_assets_works<
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::balance(
 					foreign_asset_id_multilocation.into(),
 					&CheckingAccount::get()
+				),
+				0.into()
+			);
+			// check total supply before
+			assert_eq!(
+				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::total_supply(
+					foreign_asset_id_multilocation.into()
 				),
 				0.into()
 			);
@@ -468,7 +477,7 @@ pub fn teleports_for_foreign_assets_works<
 			);
 			assert_eq!(outcome.ensure_complete(), Ok(()));
 
-			// checks after
+			// checks target_account after
 			assert_eq!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(&target_account),
 				existential_deposit
@@ -480,22 +489,24 @@ pub fn teleports_for_foreign_assets_works<
 				),
 				teleported_foreign_asset_amount.into()
 			);
+			// checks `CheckingAccount` after
 			assert_eq!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(&CheckingAccount::get()),
-				0.into()
+				existential_deposit
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::balance(
 					foreign_asset_id_multilocation.into(),
 					&CheckingAccount::get()
 				),
-				0.into()
+				teleported_foreign_asset_amount.into()
 			);
+			// check total supply after (twice: target_account + CheckingAccount)
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::total_supply(
 					foreign_asset_id_multilocation.into()
 				),
-				teleported_foreign_asset_amount.into()
+				(teleported_foreign_asset_amount + teleported_foreign_asset_amount).into()
 			);
 
 			// 2. try to teleport asset back to source parachain (foreign_para_id)
@@ -542,7 +553,17 @@ pub fn teleports_for_foreign_assets_works<
 						foreign_asset_id_multilocation.into(),
 						&CheckingAccount::get()
 					),
-					0.into()
+					(target_account_balance_before_teleport - asset_to_teleport_away.into())
+				);
+				// check total supply after (twice: target_account + CheckingAccount)
+				assert_eq!(
+					<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::total_supply(
+						foreign_asset_id_multilocation.into()
+					),
+					(teleported_foreign_asset_amount - asset_to_teleport_away +
+						teleported_foreign_asset_amount -
+						asset_to_teleport_away)
+						.into()
 				);
 
 				// check events
