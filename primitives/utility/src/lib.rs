@@ -311,8 +311,8 @@ where
 	AccountId: Clone + Into<[u8; 32]>,
 	ReceiverAccount: frame_support::traits::Get<Option<AccountId>>,
 {
-	fn is_waived(_origin: Option<&MultiLocation>, _: FeeReason) -> bool {
-		false
+	fn is_waived(origin: Option<&MultiLocation>, _: FeeReason) -> bool {
+		matches!(origin, Some(MultiLocation { parents: 1, interior: Here }))
 	}
 
 	fn handle_fee(fee: MultiAssets) {
