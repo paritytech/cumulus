@@ -30,11 +30,12 @@ use core::marker::PhantomData;
 use frame_support::{
 	match_types, parameter_types,
 	traits::{
-		fungibles::{self, Balanced, CreditOf},
+		fungibles::{self, Balanced, Credit},
 		ConstU32, Contains, ContainsPair, Everything, Get, Nothing,
 	},
 	weights::Weight,
 };
+use frame_system::EnsureRoot;
 use pallet_asset_tx_payment::HandleCredit;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry};
@@ -208,7 +209,7 @@ where
 	R: pallet_authorship::Config + pallet_assets::Config,
 	AccountIdOf<R>: From<polkadot_primitives::AccountId> + Into<polkadot_primitives::AccountId>,
 {
-	fn handle_credit(credit: CreditOf<AccountIdOf<R>, pallet_assets::Pallet<R>>) {
+	fn handle_credit(credit: Credit<AccountIdOf<R>, pallet_assets::Pallet<R>>) {
 		if let Some(author) = pallet_authorship::Pallet::<R>::author() {
 			// In case of error: Will drop the result triggering the `OnDrop` of the imbalance.
 			let _ = pallet_assets::Pallet::<R>::resolve(&author, credit);
@@ -337,6 +338,7 @@ impl pallet_xcm::Config for Runtime {
 	type WeightInfo = pallet_xcm::TestWeightInfo;
 	#[cfg(feature = "runtime-benchmarks")]
 	type ReachableDest = ReachableDest;
+	type AdminOrigin = EnsureRoot<AccountId>;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
