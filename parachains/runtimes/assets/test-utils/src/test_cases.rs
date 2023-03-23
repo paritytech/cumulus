@@ -16,8 +16,8 @@
 //! Module contains predefined test-case scenarios for `Runtime` with various assets.
 
 use crate::{
-	assert_metadata, AccountIdOf, BalanceOf, ExtBuilder, RuntimeHelper, SessionKeysOf,
-	ValidatorIdOf, XcmReceivedFrom,
+	assert_metadata, assert_total, AccountIdOf, BalanceOf, ExtBuilder, RuntimeHelper,
+	SessionKeysOf, ValidatorIdOf, XcmReceivedFrom,
 };
 use codec::Encode;
 use frame_support::{
@@ -409,31 +409,27 @@ pub fn teleports_for_foreign_assets_works<
 				),
 				0.into()
 			);
-			// check total supply before
-			assert_eq!(
-				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::total_supply(
-					foreign_asset_id_multilocation.into()
-				),
-				0.into()
-			);
+			// check totals before
+			assert_total::<
+				pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>,
+				AccountIdOf<Runtime>,
+			>(foreign_asset_id_multilocation, 0, 0);
 
 			// create foreign asset (0 total issuance)
 			let asset_minimum_asset_balance = 3333333_u128;
 			assert_ok!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::force_create(
 					RuntimeHelper::<Runtime>::root_origin(),
-					foreign_asset_id_multilocation.clone().into(),
+					foreign_asset_id_multilocation.into(),
 					asset_owner.into(),
 					false,
 					asset_minimum_asset_balance.into()
 				)
 			);
-			assert_eq!(
-				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::total_supply(
-					foreign_asset_id_multilocation.clone().into()
-				),
-				0.into()
-			);
+			assert_total::<
+				pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>,
+				AccountIdOf<Runtime>,
+			>(foreign_asset_id_multilocation, 0, 0);
 			assert!(teleported_foreign_asset_amount > asset_minimum_asset_balance);
 
 			// 1. process received teleported assets from relaychain
@@ -499,14 +495,16 @@ pub fn teleports_for_foreign_assets_works<
 					foreign_asset_id_multilocation.into(),
 					&CheckingAccount::get()
 				),
-				teleported_foreign_asset_amount.into()
+				0.into()
 			);
-			// check total supply after (twice: target_account + CheckingAccount)
-			assert_eq!(
-				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::total_supply(
-					foreign_asset_id_multilocation.into()
-				),
-				(teleported_foreign_asset_amount + teleported_foreign_asset_amount).into()
+			// check total after (twice: target_account + CheckingAccount)
+			assert_total::<
+				pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>,
+				AccountIdOf<Runtime>,
+			>(
+				foreign_asset_id_multilocation,
+				teleported_foreign_asset_amount,
+				teleported_foreign_asset_amount,
 			);
 
 			// 2. try to teleport asset back to source parachain (foreign_para_id)
@@ -553,17 +551,16 @@ pub fn teleports_for_foreign_assets_works<
 						foreign_asset_id_multilocation.into(),
 						&CheckingAccount::get()
 					),
-					(target_account_balance_before_teleport - asset_to_teleport_away.into())
+					0.into()
 				);
-				// check total supply after (twice: target_account + CheckingAccount)
-				assert_eq!(
-					<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::total_supply(
-						foreign_asset_id_multilocation.into()
-					),
-					(teleported_foreign_asset_amount - asset_to_teleport_away +
-						teleported_foreign_asset_amount -
-						asset_to_teleport_away)
-						.into()
+				// check total after (twice: target_account + CheckingAccount)
+				assert_total::<
+					pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>,
+					AccountIdOf<Runtime>,
+				>(
+					foreign_asset_id_multilocation,
+					teleported_foreign_asset_amount - asset_to_teleport_away,
+					teleported_foreign_asset_amount - asset_to_teleport_away,
 				);
 
 				// check events
@@ -658,11 +655,11 @@ pub fn asset_transactor_transfer_with_local_consensus_currency_works<Runtime, Xc
 		.execute_with(|| {
 			// check Balances before
 			assert_eq!(
-				<pallet_balances::Pallet<Runtime>>::free_balance(source_account.clone()),
+				<pallet_balances::Pallet<Runtime>>::free_balance(&source_account),
 				(BalanceOf::<Runtime>::from(10_u128) * unit)
 			);
 			assert_eq!(
-				<pallet_balances::Pallet<Runtime>>::free_balance(target_account.clone()),
+				<pallet_balances::Pallet<Runtime>>::free_balance(&target_account),
 				(BalanceOf::<Runtime>::zero() * unit)
 			);
 
@@ -773,7 +770,7 @@ pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 	<<Runtime as frame_system::Config>::Lookup as StaticLookup>::Source:
 		From<<Runtime as frame_system::Config>::AccountId>,
 	AssetsPalletInstance: 'static,
-	AssetId: Clone,
+	AssetId: Clone + Copy,
 	AssetIdConverter: Convert<MultiLocation, AssetId>,
 {
 	ExtBuilder::<Runtime>::default()
@@ -792,7 +789,7 @@ pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 			let asset_id_as_multilocation = AssetIdConverter::reverse_ref(&asset_id).unwrap();
 			assert_ok!(<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::force_create(
 				RuntimeHelper::<Runtime>::root_origin(),
-				asset_id.clone().into(),
+				asset_id.into(),
 				asset_owner.clone().into(),
 				false,
 				asset_minimum_asset_balance.into()
@@ -801,7 +798,7 @@ pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 			// We first mint enough asset for the account to exist for assets
 			assert_ok!(<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::mint(
 				RuntimeHelper::<Runtime>::origin_of(asset_owner.clone()),
-				asset_id.clone().into(),
+				asset_id.into(),
 				alice_account.clone().into(),
 				(6 * asset_minimum_asset_balance).into()
 			));
@@ -809,28 +806,28 @@ pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 			// check Assets before
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::balance(
-					asset_id.clone().into(),
+					asset_id.into(),
 					&alice_account
 				),
 				(6 * asset_minimum_asset_balance).into()
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::balance(
-					asset_id.clone().into(),
+					asset_id.into(),
 					&bob_account
 				),
 				0.into()
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::balance(
-					asset_id.clone().into(),
+					asset_id.into(),
 					&charlie_account
 				),
 				0.into()
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::balance(
-					asset_id.clone().into(),
+					asset_id.into(),
 					&asset_owner
 				),
 				0.into()
@@ -899,21 +896,21 @@ pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 			// check Assets after
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::balance(
-					asset_id.clone().into(),
+					asset_id.into(),
 					&alice_account
 				),
 				(5 * asset_minimum_asset_balance).into()
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::balance(
-					asset_id.clone().into(),
+					asset_id.into(),
 					&bob_account
 				),
 				(1 * asset_minimum_asset_balance).into()
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::balance(
-					asset_id.clone().into(),
+					asset_id.into(),
 					&charlie_account
 				),
 				0.into()
@@ -1044,7 +1041,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 	<<Runtime as frame_system::Config>::Lookup as StaticLookup>::Source:
 		From<<Runtime as frame_system::Config>::AccountId>,
 	ForeignAssetsPalletInstance: 'static,
-	AssetId: Clone,
+	AssetId: Clone + Copy,
 	AssetIdConverter: Convert<MultiLocation, AssetId>,
 {
 	// foreign parachain with the same consenus currency as asset
@@ -1102,7 +1099,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 				Runtime,
 				ForeignAssetsPalletInstance,
 			>::create {
-				id: asset_id.clone().into(),
+				id: asset_id.into(),
 				// admin as sovereign_account
 				admin: foreign_creator_as_account_id.clone().into(),
 				min_balance: 1.into(),
@@ -1112,7 +1109,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 				Runtime,
 				ForeignAssetsPalletInstance,
 			>::set_metadata {
-				id: asset_id.clone().into(),
+				id: asset_id.into(),
 				name: Vec::from(ASSET_NAME),
 				symbol: Vec::from(ASSET_SYMBOL),
 				decimals: 12,
@@ -1122,7 +1119,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 				Runtime,
 				ForeignAssetsPalletInstance,
 			>::set_team {
-				id: asset_id.clone().into(),
+				id: asset_id.into(),
 				issuer: foreign_creator_as_account_id.clone().into(),
 				admin: foreign_creator_as_account_id.clone().into(),
 				freezer: bob_account.clone().into(),
@@ -1179,25 +1176,25 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 			use frame_support::traits::tokens::fungibles::roles::Inspect as InspectRoles;
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::owner(
-					asset_id.clone().into()
+					asset_id.into()
 				),
 				Some(foreign_creator_as_account_id.clone())
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::admin(
-					asset_id.clone().into()
+					asset_id.into()
 				),
 				Some(foreign_creator_as_account_id.clone())
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::issuer(
-					asset_id.clone().into()
+					asset_id.into()
 				),
 				Some(foreign_creator_as_account_id.clone())
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::freezer(
-					asset_id.clone().into()
+					asset_id.into()
 				),
 				Some(bob_account.clone())
 			);
@@ -1211,13 +1208,13 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 			assert_metadata::<
 				pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>,
 				AccountIdOf<Runtime>,
-			>(asset_id.clone().into(), ASSET_NAME, ASSET_SYMBOL, 12);
+			>(asset_id, ASSET_NAME, ASSET_SYMBOL, 12);
 
 			// check if changed freezer, can freeze
 			assert_noop!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::freeze(
 					RuntimeHelper::<Runtime>::origin_of(bob_account),
-					asset_id.clone().into(),
+					asset_id.into(),
 					alice_account.clone().into()
 				),
 				pallet_assets::Error::<Runtime, ForeignAssetsPalletInstance>::NoAccount
@@ -1225,7 +1222,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 			assert_noop!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::freeze(
 					RuntimeHelper::<Runtime>::origin_of(foreign_creator_as_account_id.clone()),
-					asset_id.clone().into(),
+					asset_id.into(),
 					alice_account.into()
 				),
 				pallet_assets::Error::<Runtime, ForeignAssetsPalletInstance>::NoPermission
@@ -1241,7 +1238,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 				Runtime,
 				ForeignAssetsPalletInstance,
 			>::create {
-				id: asset_id.clone().into(),
+				id: asset_id.into(),
 				// admin as sovereign_account
 				admin: foreign_creator_as_account_id.clone().into(),
 				min_balance: 1.into(),

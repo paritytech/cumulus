@@ -302,18 +302,30 @@ impl<Runtime: frame_system::Config + cumulus_pallet_xcmp_queue::Config> RuntimeH
 	}
 }
 
-pub fn assert_metadata<Assets, AccountId>(
-	asset_id: Assets::AssetId,
+pub fn assert_metadata<Fungibles, AccountId>(
+	asset_id: impl Into<Fungibles::AssetId> + Copy,
 	expected_name: &str,
 	expected_symbol: &str,
 	expected_decimals: u8,
 ) where
-	Assets: frame_support::traits::tokens::fungibles::metadata::Inspect<AccountId>
+	Fungibles: frame_support::traits::tokens::fungibles::metadata::Inspect<AccountId>
 		+ frame_support::traits::tokens::fungibles::Inspect<AccountId>,
 {
-	assert_eq!(Assets::name(asset_id), Vec::from(expected_name),);
-	assert_eq!(Assets::symbol(asset_id), Vec::from(expected_symbol),);
-	assert_eq!(Assets::decimals(asset_id), expected_decimals);
+	assert_eq!(Fungibles::name(asset_id.into()), Vec::from(expected_name),);
+	assert_eq!(Fungibles::symbol(asset_id.into()), Vec::from(expected_symbol),);
+	assert_eq!(Fungibles::decimals(asset_id.into()), expected_decimals);
+}
+
+pub fn assert_total<Fungibles, AccountId>(
+	asset_id: impl Into<Fungibles::AssetId> + Copy,
+	expected_total_issuance: impl Into<Fungibles::Balance>,
+	expected_active_issuance: impl Into<Fungibles::Balance>,
+) where
+	Fungibles: frame_support::traits::tokens::fungibles::metadata::Inspect<AccountId>
+		+ frame_support::traits::tokens::fungibles::Inspect<AccountId>,
+{
+	assert_eq!(Fungibles::total_issuance(asset_id.into()), expected_total_issuance.into());
+	assert_eq!(Fungibles::active_issuance(asset_id.into()), expected_active_issuance.into());
 }
 
 /// Helper function which emulates opening HRMP channel which is needed for `XcmpQueue` to pass
