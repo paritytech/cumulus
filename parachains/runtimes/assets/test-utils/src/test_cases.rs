@@ -441,7 +441,7 @@ pub fn teleports_for_foreign_assets_works<
 						id: Concrete(MultiLocation::parent()),
 						fun: Fungible(buy_execution_fee_amount.into()),
 					},
-					weight_limit: Limited(Weight::from_parts(403531000, 1024)),
+					weight_limit: Limited(Weight::from_parts(403531000, 65536)),
 				},
 				// Process teleported asset
 				ReceiveTeleportedAsset(MultiAssets::from(vec![MultiAsset {
