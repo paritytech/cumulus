@@ -25,6 +25,7 @@ use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, ContainsPair, Everything, OriginTrait, PalletInfoAccess},
 };
+use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
@@ -131,7 +132,7 @@ pub type ForeignFungiblesTransactor = FungiblesAdapter<
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
 	AccountId,
-	// TODO:check-parameter - no teleports
+	// We dont need to check teleports here.
 	NoChecking,
 	// The account to use for tracking teleports.
 	CheckingAccount,
@@ -251,13 +252,14 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_assets::Call::refund { .. },
 			) |
 			RuntimeCall::ForeignAssets(
-				/* avoided: mint, burn */
 				pallet_assets::Call::create { .. } |
 				pallet_assets::Call::force_create { .. } |
 				pallet_assets::Call::start_destroy { .. } |
 				pallet_assets::Call::destroy_accounts { .. } |
 				pallet_assets::Call::destroy_approvals { .. } |
 				pallet_assets::Call::finish_destroy { .. } |
+				pallet_assets::Call::mint { .. } |
+				pallet_assets::Call::burn { .. } |
 				pallet_assets::Call::transfer { .. } |
 				pallet_assets::Call::transfer_keep_alive { .. } |
 				pallet_assets::Call::force_transfer { .. } |
@@ -277,6 +279,44 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_assets::Call::transfer_approved { .. } |
 				pallet_assets::Call::touch { .. } |
 				pallet_assets::Call::refund { .. },
+			) |
+			RuntimeCall::Nfts(
+				pallet_nfts::Call::create { .. } |
+				pallet_nfts::Call::force_create { .. } |
+				pallet_nfts::Call::destroy { .. } |
+				pallet_nfts::Call::mint { .. } |
+				pallet_nfts::Call::force_mint { .. } |
+				pallet_nfts::Call::burn { .. } |
+				pallet_nfts::Call::transfer { .. } |
+				pallet_nfts::Call::lock_item_transfer { .. } |
+				pallet_nfts::Call::unlock_item_transfer { .. } |
+				pallet_nfts::Call::lock_collection { .. } |
+				pallet_nfts::Call::transfer_ownership { .. } |
+				pallet_nfts::Call::set_team { .. } |
+				pallet_nfts::Call::force_collection_owner { .. } |
+				pallet_nfts::Call::force_collection_config { .. } |
+				pallet_nfts::Call::approve_transfer { .. } |
+				pallet_nfts::Call::cancel_approval { .. } |
+				pallet_nfts::Call::clear_all_transfer_approvals { .. } |
+				pallet_nfts::Call::lock_item_properties { .. } |
+				pallet_nfts::Call::set_attribute { .. } |
+				pallet_nfts::Call::force_set_attribute { .. } |
+				pallet_nfts::Call::clear_attribute { .. } |
+				pallet_nfts::Call::approve_item_attributes { .. } |
+				pallet_nfts::Call::cancel_item_attributes_approval { .. } |
+				pallet_nfts::Call::set_metadata { .. } |
+				pallet_nfts::Call::clear_metadata { .. } |
+				pallet_nfts::Call::set_collection_metadata { .. } |
+				pallet_nfts::Call::clear_collection_metadata { .. } |
+				pallet_nfts::Call::set_accept_ownership { .. } |
+				pallet_nfts::Call::set_collection_max_supply { .. } |
+				pallet_nfts::Call::update_mint_settings { .. } |
+				pallet_nfts::Call::set_price { .. } |
+				pallet_nfts::Call::buy_item { .. } |
+				pallet_nfts::Call::pay_tips { .. } |
+				pallet_nfts::Call::create_swap { .. } |
+				pallet_nfts::Call::cancel_swap { .. } |
+				pallet_nfts::Call::claim_swap { .. },
 			) |
 			RuntimeCall::Uniques(
 				pallet_uniques::Call::create { .. } |
@@ -438,6 +478,7 @@ impl pallet_xcm::Config for Runtime {
 	type WeightInfo = crate::weights::pallet_xcm::WeightInfo<Runtime>;
 	#[cfg(feature = "runtime-benchmarks")]
 	type ReachableDest = ReachableDest;
+	type AdminOrigin = EnsureRoot<AccountId>;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
@@ -455,7 +496,6 @@ pub type ForeignCreatorsSovereignAccountOf = (
 pub struct XcmBenchmarkHelper;
 #[cfg(feature = "runtime-benchmarks")]
 use pallet_assets::BenchmarkHelper;
-
 #[cfg(feature = "runtime-benchmarks")]
 impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 	fn create_asset_id_parameter(id: u32) -> MultiLocation {

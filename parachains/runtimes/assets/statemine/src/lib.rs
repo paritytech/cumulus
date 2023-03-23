@@ -33,7 +33,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, Verify},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -57,16 +57,18 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot, EnsureSigned,
 };
+use pallet_nfts::PalletFeatures;
 pub use parachains_common as common;
 use parachains_common::{
 	impls::{AssetsToBlockAuthor, DealWithFees},
 	opaque, AccountId, AssetIdForTrustBackedAssets, AuraId, Balance, BlockNumber, Hash, Header,
-	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
+	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{
-	AssetTransactors, BridgeXcmSender, ForeignAssetsConvertedConcreteId, KsmLocation,
-	LocalOriginToLocation, TrustBackedAssetsConvertedConcreteId, UniversalLocation, XcmConfig,
+	AssetTransactors, BridgeXcmSender, FellowshipLocation, ForeignAssetsConvertedConcreteId,
+	GovernanceLocation, KsmLocation, LocalOriginToLocation, TrustBackedAssetsConvertedConcreteId,
+	UniversalLocation, XcmConfig,
 };
 
 #[cfg(any(feature = "std", test))]
@@ -76,7 +78,7 @@ pub use sp_runtime::BuildStorage;
 use assets_common::{
 	foreign_creators::ForeignCreators, matching::FromSiblingParachain, MultiLocationForAssetId,
 };
-use pallet_xcm::{EnsureXcm, IsMajorityOfBody, IsVoiceOfBody};
+use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use xcm::latest::BodyId;
 use xcm_builder::EnsureXcmOrigin;
@@ -205,6 +207,10 @@ impl pallet_balances::Config for Runtime {
 	type WeightInfo = weights::pallet_balances::WeightInfo<Runtime>;
 	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = [u8; 8];
+	type HoldIdentifier = ();
+	type FreezeIdentifier = ();
+	type MaxHolds = ConstU32<0>;
+	type MaxFreezes = ConstU32<0>;
 }
 
 parameter_types! {
@@ -231,12 +237,10 @@ parameter_types! {
 	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
 	pub const MetadataDepositBase: Balance = deposit(1, 68);
 	pub const MetadataDepositPerByte: Balance = deposit(0, 1);
-	pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
-/// We allow root and the Relay Chain council to execute privileged asset operations.
-pub type AssetsForceOrigin =
-	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>>;
+/// We allow root to execute privileged asset operations.
+pub type AssetsForceOrigin = EnsureRoot<AccountId>;
 
 // Called "Trust Backed" assets because these are generally registered by some account, and users of
 // the asset assume it has some claimed backing. The pallet is called `Assets` in
@@ -389,6 +393,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 				c,
 				RuntimeCall::Balances { .. } |
 					RuntimeCall::Assets { .. } |
+					RuntimeCall::Nfts { .. } |
 					RuntimeCall::Uniques { .. }
 			),
 			ProxyType::CancelProxy => matches!(
@@ -403,7 +408,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 					RuntimeCall::Assets { .. } |
 						RuntimeCall::Utility { .. } |
 						RuntimeCall::Multisig { .. } |
-						RuntimeCall::Uniques { .. }
+						RuntimeCall::Nfts { .. } | RuntimeCall::Uniques { .. }
 				)
 			},
 			ProxyType::AssetOwner => matches!(
@@ -417,6 +422,13 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 					RuntimeCall::Assets(TrustBackedAssetsCall::set_team { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::set_metadata { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::clear_metadata { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::create { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::destroy { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::redeposit { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::transfer_ownership { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::set_team { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::set_collection_max_supply { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::lock_collection { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::create { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::destroy { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::transfer_ownership { .. }) |
@@ -439,6 +451,17 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 					RuntimeCall::Assets(TrustBackedAssetsCall::thaw { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::freeze_asset { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::thaw_asset { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::force_mint { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::update_mint_settings { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::mint_pre_signed { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::set_attributes_pre_signed { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::lock_item_transfer { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::unlock_item_transfer { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::lock_item_properties { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::set_metadata { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::clear_metadata { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::set_collection_metadata { .. }) |
+					RuntimeCall::Nfts(pallet_nfts::Call::clear_collection_metadata { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::mint { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::burn { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::freeze { .. }) |
@@ -519,10 +542,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type ControllerOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
-		EnsureXcm<(
-			IsMajorityOfBody<KsmLocation, ExecutiveBody>,
-			IsVoiceOfBody<KsmLocation, FellowsBodyId>,
-		)>,
+		EnsureXcm<IsVoiceOfBody<FellowshipLocation, FellowsBodyId>>,
 	>;
 	type ControllerOriginConverter = xcm_config::XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
@@ -570,13 +590,10 @@ parameter_types! {
 	pub const StakingAdminBodyId: BodyId = BodyId::Defense;
 }
 
-/// We allow root, the Relay Chain council and the StakingAdmin to execute privileged collator selection operations.
+/// We allow root the StakingAdmin to execute privileged collator selection operations.
 pub type CollatorSelectionUpdateOrigin = EitherOfDiverse<
 	EnsureRoot<AccountId>,
-	EnsureXcm<(
-		IsMajorityOfBody<KsmLocation, ExecutiveBody>,
-		IsVoiceOfBody<KsmLocation, StakingAdminBodyId>,
-	)>,
+	EnsureXcm<IsVoiceOfBody<GovernanceLocation, StakingAdminBodyId>>,
 >;
 
 impl pallet_collator_selection::Config for Runtime {
@@ -610,14 +627,11 @@ impl pallet_asset_tx_payment::Config for Runtime {
 }
 
 parameter_types! {
-	pub const CollectionDeposit: Balance = UNITS / 10; // 1 / 10 UNIT deposit to create asset class
-	pub const ItemDeposit: Balance = UNITS / 1_000; // 1 / 1000 UNIT deposit to create asset instance
-	pub const KeyLimit: u32 = 32;	// Max 32 bytes per key
-	pub const ValueLimit: u32 = 64;	// Max 64 bytes per value
+	pub const UniquesCollectionDeposit: Balance = UNITS / 10; // 1 / 10 UNIT deposit to create a collection
+	pub const UniquesItemDeposit: Balance = UNITS / 1_000; // 1 / 1000 UNIT deposit to mint an item
 	pub const UniquesMetadataDepositBase: Balance = deposit(1, 129);
-	pub const AttributeDepositBase: Balance = deposit(1, 0);
-	pub const DepositPerByte: Balance = deposit(0, 1);
-	pub const UniquesStringLimit: u32 = 128;
+	pub const UniquesAttributeDepositBase: Balance = deposit(1, 0);
+	pub const UniquesDepositPerByte: Balance = deposit(0, 1);
 }
 
 impl pallet_uniques::Config for Runtime {
@@ -626,19 +640,59 @@ impl pallet_uniques::Config for Runtime {
 	type ItemId = u32;
 	type Currency = Balances;
 	type ForceOrigin = AssetsForceOrigin;
-	type CollectionDeposit = CollectionDeposit;
-	type ItemDeposit = ItemDeposit;
+	type CollectionDeposit = UniquesCollectionDeposit;
+	type ItemDeposit = UniquesItemDeposit;
 	type MetadataDepositBase = UniquesMetadataDepositBase;
-	type AttributeDepositBase = AttributeDepositBase;
-	type DepositPerByte = DepositPerByte;
-	type StringLimit = UniquesStringLimit;
-	type KeyLimit = KeyLimit;
-	type ValueLimit = ValueLimit;
+	type AttributeDepositBase = UniquesAttributeDepositBase;
+	type DepositPerByte = UniquesDepositPerByte;
+	type StringLimit = ConstU32<128>;
+	type KeyLimit = ConstU32<32>;
+	type ValueLimit = ConstU32<64>;
 	type WeightInfo = weights::pallet_uniques::WeightInfo<Runtime>;
 	#[cfg(feature = "runtime-benchmarks")]
 	type Helper = ();
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 	type Locker = ();
+}
+
+parameter_types! {
+	pub NftsPalletFeatures: PalletFeatures = PalletFeatures::all_enabled();
+	pub const NftsMaxDeadlineDuration: BlockNumber = 12 * 30 * DAYS;
+	// re-use the Uniques deposits
+	pub const NftsCollectionDeposit: Balance = UniquesCollectionDeposit::get();
+	pub const NftsItemDeposit: Balance = UniquesItemDeposit::get();
+	pub const NftsMetadataDepositBase: Balance = UniquesMetadataDepositBase::get();
+	pub const NftsAttributeDepositBase: Balance = UniquesAttributeDepositBase::get();
+	pub const NftsDepositPerByte: Balance = UniquesDepositPerByte::get();
+}
+
+impl pallet_nfts::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type CollectionId = u32;
+	type ItemId = u32;
+	type Currency = Balances;
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+	type ForceOrigin = AssetsForceOrigin;
+	type Locker = ();
+	type CollectionDeposit = NftsCollectionDeposit;
+	type ItemDeposit = NftsItemDeposit;
+	type MetadataDepositBase = NftsMetadataDepositBase;
+	type AttributeDepositBase = NftsAttributeDepositBase;
+	type DepositPerByte = NftsDepositPerByte;
+	type StringLimit = ConstU32<256>;
+	type KeyLimit = ConstU32<64>;
+	type ValueLimit = ConstU32<256>;
+	type ApprovalsLimit = ConstU32<20>;
+	type ItemAttributesApprovalsLimit = ConstU32<30>;
+	type MaxTips = ConstU32<10>;
+	type MaxDeadlineDuration = NftsMaxDeadlineDuration;
+	type MaxAttributesPerCall = ConstU32<10>;
+	type Features = NftsPalletFeatures;
+	type OffchainSignature = Signature;
+	type OffchainPublic = <Signature as Verify>::Signer;
+	type WeightInfo = weights::pallet_nfts::WeightInfo<Runtime>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type Helper = ();
 }
 
 impl pallet_bridge_transfer::Config for Runtime {
@@ -697,7 +751,7 @@ construct_runtime!(
 		// The main stage.
 		Assets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>} = 50,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
-		// Reserving 52 for pallet_nfts
+		Nfts: pallet_nfts::{Pallet, Call, Storage, Event<T>} = 52,
 		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 53,
 		BridgeTransfer: pallet_bridge_transfer::{Pallet, Call, Storage, Event<T>} = 54,
 
@@ -755,6 +809,7 @@ mod benches {
 		[pallet_assets, ForeignAssets]
 		[pallet_balances, Balances]
 		[pallet_multisig, Multisig]
+		[pallet_nfts, Nfts]
 		[pallet_proxy, Proxy]
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_uniques, Uniques]
@@ -1215,7 +1270,8 @@ mod tests {
 		use pallet_balances::WeightInfo;
 		let block = RuntimeBlockWeights::get().max_block;
 		let base = RuntimeBlockWeights::get().get(DispatchClass::Normal).base_extrinsic;
-		let transfer = base + weights::pallet_balances::WeightInfo::<Runtime>::transfer();
+		let transfer =
+			base + weights::pallet_balances::WeightInfo::<Runtime>::transfer_allow_death();
 
 		let fit = block.checked_div_per_component(&transfer).unwrap_or_default();
 		assert!(fit >= 1000, "{} should be at least 1000", fit);
@@ -1226,7 +1282,8 @@ mod tests {
 	fn sane_transfer_fee() {
 		use pallet_balances::WeightInfo;
 		let base = RuntimeBlockWeights::get().get(DispatchClass::Normal).base_extrinsic;
-		let transfer = base + weights::pallet_balances::WeightInfo::<Runtime>::transfer();
+		let transfer =
+			base + weights::pallet_balances::WeightInfo::<Runtime>::transfer_allow_death();
 
 		let fee: Balance = fee::WeightToFee::weight_to_fee(&transfer);
 		assert!(fee <= CENTS, "{} MILLICENTS should be at most 1000", fee / MILLICENTS);

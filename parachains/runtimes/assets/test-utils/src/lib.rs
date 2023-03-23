@@ -12,12 +12,14 @@ use sp_std::marker::PhantomData;
 use frame_support::{traits::OriginTrait, weights::Weight};
 use parachains_common::AccountId;
 use polkadot_parachain::primitives::{HrmpChannelId, RelayChainBlockNumber, XcmpMessageFormat};
+
+use frame_support::dispatch::DispatchResult;
 use sp_consensus_aura::AURA_ENGINE_ID;
 use sp_core::Encode;
 use sp_runtime::{Digest, DigestItem};
 use xcm::{
-	latest::{MultiAsset, MultiLocation, XcmContext},
-	prelude::{Concrete, Fungible, XcmError, XcmVersion},
+	latest::{MultiAsset, MultiLocation, XcmContext, XcmHash},
+	prelude::{Concrete, Fungible, Outcome, XcmError, XcmVersion},
 	VersionedXcm, MAX_XCM_DECODE_DEPTH,
 };
 use xcm_executor::{traits::TransactAsset, Assets};
@@ -32,7 +34,11 @@ pub type SessionKeysOf<Runtime> = <Runtime as pallet_session::Config>::Keys;
 
 // Basic builder based on balances, collators and pallet_sessopm
 pub struct ExtBuilder<
-	Runtime: frame_system::Config + pallet_balances::Config + pallet_session::Config,
+	Runtime: frame_system::Config
+		+ pallet_balances::Config
+		+ pallet_session::Config
+		+ pallet_xcm::Config
+		+ parachain_info::Config,
 > {
 	// endowed accounts with balances
 	balances: Vec<(AccountIdOf<Runtime>, BalanceOf<Runtime>)>,
@@ -51,7 +57,8 @@ impl<
 		Runtime: frame_system::Config
 			+ pallet_balances::Config
 			+ pallet_session::Config
-			+ pallet_xcm::Config,
+			+ pallet_xcm::Config
+			+ parachain_info::Config,
 	> Default for ExtBuilder<Runtime>
 {
 	fn default() -> ExtBuilder<Runtime> {
@@ -200,7 +207,132 @@ where
 	}
 }
 
-/// Helper function which emulates opening HRMP channel which is needed for XcmpQueue xcm router to pass
+impl<XcmConfig: xcm_executor::Config> RuntimeHelper<XcmConfig> {
+	pub fn do_transfer(
+		from: MultiLocation,
+		to: MultiLocation,
+		(asset, amount): (MultiLocation, u128),
+	) -> Result<Assets, XcmError> {
+		<XcmConfig::AssetTransactor as TransactAsset>::transfer_asset(
+			&MultiAsset { id: Concrete(asset), fun: Fungible(amount) },
+			&from,
+			&to,
+			// We aren't able to track the XCM that initiated the fee deposit, so we create a
+			// fake message hash here
+			&XcmContext::with_message_hash([0; 32]),
+		)
+	}
+}
+
+impl<Runtime: pallet_xcm::Config + cumulus_pallet_parachain_system::Config> RuntimeHelper<Runtime> {
+	pub fn do_teleport_assets<HrmpChannelOpener>(
+		origin: <Runtime as frame_system::Config>::RuntimeOrigin,
+		dest: MultiLocation,
+		beneficiary: MultiLocation,
+		(asset, amount): (MultiLocation, u128),
+		open_hrmp_channel: Option<(u32, u32)>,
+	) -> DispatchResult
+	where
+		HrmpChannelOpener: frame_support::inherent::ProvideInherent<
+			Call = cumulus_pallet_parachain_system::Call<Runtime>,
+		>,
+	{
+		// open hrmp (if needed)
+		if let Some((source_para_id, target_para_id)) = open_hrmp_channel {
+			mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(
+				source_para_id.into(),
+				target_para_id.into(),
+			);
+		}
+
+		// do teleport
+		<pallet_xcm::Pallet<Runtime>>::teleport_assets(
+			origin,
+			Box::new(dest.into()),
+			Box::new(beneficiary.into()),
+			Box::new((Concrete(asset), amount).into()),
+			0,
+		)
+	}
+}
+
+pub enum XcmReceivedFrom {
+	Parent,
+	Sibling,
+}
+
+impl<ParachainSystem: cumulus_pallet_parachain_system::Config> RuntimeHelper<ParachainSystem> {
+	pub fn xcm_max_weight(from: XcmReceivedFrom) -> Weight {
+		use frame_support::traits::Get;
+		match from {
+			XcmReceivedFrom::Parent => ParachainSystem::ReservedDmpWeight::get(),
+			XcmReceivedFrom::Sibling => ParachainSystem::ReservedXcmpWeight::get(),
+		}
+	}
+}
+
+impl<Runtime: frame_system::Config + pallet_xcm::Config> RuntimeHelper<Runtime> {
+	pub fn assert_pallet_xcm_event_outcome(
+		unwrap_pallet_xcm_event: &Box<dyn Fn(Vec<u8>) -> Option<pallet_xcm::Event<Runtime>>>,
+		assert_outcome: fn(Outcome),
+	) {
+		let outcome = <frame_system::Pallet<Runtime>>::events()
+			.into_iter()
+			.filter_map(|e| unwrap_pallet_xcm_event(e.event.encode()))
+			.find_map(|e| match e {
+				pallet_xcm::Event::Attempted(outcome) => Some(outcome),
+				_ => None,
+			});
+		match outcome {
+			Some(outcome) => assert_outcome(outcome),
+			None => assert!(false, "No `pallet_xcm::Event::Attempted(outcome)` event found!"),
+		}
+	}
+}
+
+impl<Runtime: frame_system::Config + cumulus_pallet_xcmp_queue::Config> RuntimeHelper<Runtime> {
+	pub fn xcmp_queue_message_sent(
+		unwrap_xcmp_queue_event: Box<
+			dyn Fn(Vec<u8>) -> Option<cumulus_pallet_xcmp_queue::Event<Runtime>>,
+		>,
+	) -> Option<XcmHash> {
+		<frame_system::Pallet<Runtime>>::events()
+			.into_iter()
+			.filter_map(|e| unwrap_xcmp_queue_event(e.event.encode()))
+			.find_map(|e| match e {
+				cumulus_pallet_xcmp_queue::Event::XcmpMessageSent { message_hash } => message_hash,
+				_ => None,
+			})
+	}
+}
+
+pub fn assert_metadata<Fungibles, AccountId>(
+	asset_id: impl Into<Fungibles::AssetId> + Copy,
+	expected_name: &str,
+	expected_symbol: &str,
+	expected_decimals: u8,
+) where
+	Fungibles: frame_support::traits::tokens::fungibles::metadata::Inspect<AccountId>
+		+ frame_support::traits::tokens::fungibles::Inspect<AccountId>,
+{
+	assert_eq!(Fungibles::name(asset_id.into()), Vec::from(expected_name),);
+	assert_eq!(Fungibles::symbol(asset_id.into()), Vec::from(expected_symbol),);
+	assert_eq!(Fungibles::decimals(asset_id.into()), expected_decimals);
+}
+
+pub fn assert_total<Fungibles, AccountId>(
+	asset_id: impl Into<Fungibles::AssetId> + Copy,
+	expected_total_issuance: impl Into<Fungibles::Balance>,
+	expected_active_issuance: impl Into<Fungibles::Balance>,
+) where
+	Fungibles: frame_support::traits::tokens::fungibles::metadata::Inspect<AccountId>
+		+ frame_support::traits::tokens::fungibles::Inspect<AccountId>,
+{
+	assert_eq!(Fungibles::total_issuance(asset_id.into()), expected_total_issuance.into());
+	assert_eq!(Fungibles::active_issuance(asset_id.into()), expected_active_issuance.into());
+}
+
+/// Helper function which emulates opening HRMP channel which is needed for `XcmpQueue` to pass
 pub fn mock_open_hrmp_channel<
 	C: cumulus_pallet_parachain_system::Config,
 	T: ProvideInherent<Call = cumulus_pallet_parachain_system::Call<C>>,
@@ -256,38 +388,6 @@ pub fn mock_open_hrmp_channel<
 		.expect("dispatch succeeded");
 }
 
-impl<XcmConfig: xcm_executor::Config> RuntimeHelper<XcmConfig> {
-	pub fn do_transfer(
-		from: MultiLocation,
-		to: MultiLocation,
-		(asset, amount): (MultiLocation, u128),
-	) -> Result<Assets, XcmError> {
-		<XcmConfig::AssetTransactor as TransactAsset>::transfer_asset(
-			&MultiAsset { id: Concrete(asset), fun: Fungible(amount) },
-			&from,
-			&to,
-			// We aren't able to track the XCM that initiated the fee deposit, so we create a
-			// fake message hash here
-			&XcmContext::with_message_hash([0; 32]),
-		)
-	}
-}
-
-pub enum XcmReceivedFrom {
-	Parent,
-	Sibling,
-}
-
-impl<ParachainSystem: cumulus_pallet_parachain_system::Config> RuntimeHelper<ParachainSystem> {
-	pub fn xcm_max_weight(from: XcmReceivedFrom) -> Weight {
-		use frame_support::traits::Get;
-		match from {
-			XcmReceivedFrom::Parent => ParachainSystem::ReservedDmpWeight::get(),
-			XcmReceivedFrom::Sibling => ParachainSystem::ReservedXcmpWeight::get(),
-		}
-	}
-}
-
 impl<HrmpChannelSource: cumulus_primitives_core::XcmpMessageSource>
 	RuntimeHelper<HrmpChannelSource>
 {
@@ -311,18 +411,4 @@ impl<HrmpChannelSource: cumulus_primitives_core::XcmpMessageSource>
 			_ => return None,
 		}
 	}
-}
-
-pub fn assert_metadata<Assets, AccountId>(
-	asset_id: &Assets::AssetId,
-	expected_name: &str,
-	expected_symbol: &str,
-	expected_decimals: u8,
-) where
-	Assets: frame_support::traits::tokens::fungibles::InspectMetadata<AccountId>
-		+ frame_support::traits::tokens::fungibles::Inspect<AccountId>,
-{
-	assert_eq!(Assets::name(asset_id), Vec::from(expected_name),);
-	assert_eq!(Assets::symbol(asset_id), Vec::from(expected_symbol),);
-	assert_eq!(Assets::decimals(asset_id), expected_decimals);
 }

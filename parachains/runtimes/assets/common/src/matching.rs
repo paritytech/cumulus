@@ -65,7 +65,8 @@ impl<IsForeign: ContainsPair<MultiLocation, MultiLocation>> ContainsPair<MultiAs
 	}
 }
 
-/// Checks if 'a' is from sibling location `b`, so means that `MultiLocation-a' starts with `MultiLocation-b'
+/// Checks if `a` is from sibling location `b`. Checks that `MultiLocation-a` starts with
+/// `MultiLocation-b`, and that the `ParaId` of `b` is not equal to `a`.
 pub struct FromSiblingParachain<SelfParaId>(sp_std::marker::PhantomData<SelfParaId>);
 impl<SelfParaId: Get<ParaId>> ContainsPair<MultiLocation, MultiLocation>
 	for FromSiblingParachain<SelfParaId>

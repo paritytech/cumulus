@@ -114,7 +114,7 @@ mod tests {
 			pub TrustBackedAssetsPalletLocation: MultiLocation = MultiLocation::new(0, X1(PalletInstance(13)));
 		}
 		// setup convert
-		type TrustBackAssetsConvert =
+		type TrustBackedAssetsConvert =
 			TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, u128>;
 
 		let test_data = vec![
@@ -189,7 +189,7 @@ mod tests {
 
 		for (multi_asset, expected_result) in test_data {
 			assert_eq!(
-				<TrustBackAssetsConvert as MatchesFungibles<AssetIdForTrustBackedAssets, u128>>::matches_fungibles(&multi_asset),
+				<TrustBackedAssetsConvert as MatchesFungibles<AssetIdForTrustBackedAssets, u128>>::matches_fungibles(&multi_asset),
 				expected_result, "multi_asset: {:?}", multi_asset);
 		}
 	}

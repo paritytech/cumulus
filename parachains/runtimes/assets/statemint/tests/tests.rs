@@ -1,4 +1,5 @@
 use asset_test_utils::{ExtBuilder, RuntimeHelper};
+use codec::Decode;
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
 	assert_noop, assert_ok,
@@ -9,11 +10,13 @@ use parachains_common::{
 	AccountId, AssetIdForTrustBackedAssets, Balance, StatemintAuraId as AuraId,
 };
 use statemint_runtime::xcm_config::{
-	AssetFeeAsExistentialDepositMultiplierFeeCharger, DotLocation, TrustBackedAssetsPalletLocation,
+	AssetFeeAsExistentialDepositMultiplierFeeCharger, CheckingAccount, DotLocation,
+	TrustBackedAssetsPalletLocation,
 };
 pub use statemint_runtime::{
 	constants::fee::WeightToFee, xcm_config::XcmConfig, AssetDeposit, Assets, Balances,
-	ExistentialDeposit, Runtime, SessionKeys, System, TrustBackedAssetsInstance,
+	ExistentialDeposit, ParachainSystem, Runtime, RuntimeEvent, SessionKeys, System,
+	TrustBackedAssetsInstance,
 };
 use xcm::latest::prelude::*;
 use xcm_executor::traits::{Convert, WeightTrader};
@@ -437,14 +440,30 @@ fn test_assets_balances_api_works() {
 		});
 }
 
-asset_test_utils::include_receive_teleported_asset_for_native_asset_works!(
+asset_test_utils::include_teleports_for_native_asset_works!(
 	Runtime,
 	XcmConfig,
+	CheckingAccount,
+	WeightToFee,
+	ParachainSystem,
 	asset_test_utils::CollatorSessionKeys::new(
 		AccountId::from(ALICE),
 		AccountId::from(ALICE),
 		SessionKeys { aura: AuraId::from(sp_core::ed25519::Public::from_raw(ALICE)) }
-	)
+	),
+	ExistentialDeposit::get(),
+	Box::new(|runtime_event_encoded: Vec<u8>| {
+		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+			Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
+			_ => None,
+		}
+	}),
+	Box::new(|runtime_event_encoded: Vec<u8>| {
+		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+			Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
+			_ => None,
+		}
+	})
 );
 
 asset_test_utils::include_asset_transactor_transfer_with_local_consensus_currency_works!(
