@@ -3883,6 +3883,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "glutton-runtime"
+version = "1.0.0"
+dependencies = [
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcm",
+ "cumulus-primitives-core",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "frame-try-runtime",
+ "pallet-glutton",
+ "parachain-info",
+ "parachains-common",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-block-builder",
+ "sp-core",
+ "sp-inherents",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-std",
+ "sp-transaction-pool",
+ "sp-version",
+ "substrate-wasm-builder",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
+]
+
+[[package]]
 name = "group"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6445,6 +6477,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-glutton"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate?branch=master#a14236059c2d3da052fb08295082341aa7b87240"
+dependencies = [
+ "blake2",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-grandpa"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#a14236059c2d3da052fb08295082341aa7b87240"
@@ -8454,6 +8504,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "futures",
+ "glutton-runtime",
  "hex-literal",
  "jsonrpsee",
  "log",
