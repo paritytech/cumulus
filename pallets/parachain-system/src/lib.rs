@@ -181,7 +181,7 @@ pub mod pallet {
 		/// Enqueue an inbound downward message for later processing.
 		///
 		/// This is normally an [`EnqueueMessage`] wrapped in an [`EnqueueWithOrigin`].
-		type MessageEnqueue: EnqueueMessage<AggregateMessageOrigin>;
+		type DmpQueue: EnqueueMessage<AggregateMessageOrigin>;
 
 		/// The weight we reserve at the beginning of the block for processing DMP messages.
 		type ReservedDmpWeight: Get<Weight>;

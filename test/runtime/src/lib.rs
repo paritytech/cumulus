@@ -270,7 +270,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type OnSystemEvent = ();
 	type OutboundXcmpMessageSource = ();
 	type DmpMessageMaxLen = ConstU32<0>;
-	type MessageEnqueue = ();
+	type DmpQueue = ();
 	//type MessageService =
 	//	frame_support::traits::NoopServiceQueues<(AggregateMessageOrigin, u32, u32)>;
 	type ReservedDmpWeight = ();

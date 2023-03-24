@@ -109,7 +109,7 @@ impl Config for Test {
 	type SelfParaId = ParachainId;
 	type OutboundXcmpMessageSource = FromThreadLocal;
 	type DmpMessageMaxLen = sp_core::ConstU32<0>;
-	type MessageEnqueue = MessageQueue;
+	type DmpQueue = MessageQueue;
 	type ReservedDmpWeight = ReservedDmpWeight;
 	type XcmpMessageHandler = SaveIntoThreadLocal;
 	type ReservedXcmpWeight = ReservedXcmpWeight;

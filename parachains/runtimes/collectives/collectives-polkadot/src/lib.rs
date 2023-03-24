@@ -362,7 +362,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
 	type DmpMessageMaxLen = pallet_message_queue::MaxMessageLenOf<Runtime>;
-	type MessageEnqueue = MessageQueue;
+	type DmpQueue = MessageQueue;
 	type ReservedDmpWeight = ReservedDmpWeight;
 	type OutboundXcmpMessageSource = XcmpQueue;
 	type XcmpMessageHandler = XcmpQueue;
