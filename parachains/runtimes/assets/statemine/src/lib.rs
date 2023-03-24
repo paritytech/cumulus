@@ -1292,8 +1292,10 @@ mod tests {
 	#[test]
 	fn full_block_fee_ratio() {
 		let block = RuntimeBlockWeights::get().max_block;
-		let time_fee: Balance = fee::WeightToFee::weight_to_fee(&block.without_proof_size());
-		let proof_fee: Balance = fee::WeightToFee::weight_to_fee(&block.without_ref_time());
+		let time_fee: Balance =
+			fee::WeightToFee::weight_to_fee(&Weight::from_parts(block.ref_time(), 0));
+		let proof_fee: Balance =
+			fee::WeightToFee::weight_to_fee(&Weight::from_parts(0, block.proof_size()));
 
 		let proof_o_time = proof_fee.checked_div(time_fee).unwrap_or_default();
 		assert!(proof_o_time <= 30, "{} should be at most 30", proof_o_time);
