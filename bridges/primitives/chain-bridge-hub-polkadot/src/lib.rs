@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Module with configuration which reflects BridgeHubWococo runtime setup
+//! Module with configuration which reflects BridgeHubPolkadot runtime setup
 //! (AccountId, Headers, Hashes...)
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -27,11 +27,11 @@ use bp_runtime::{
 use frame_support::{dispatch::DispatchClass, RuntimeDebug};
 use sp_std::prelude::*;
 
-/// BridgeHubWococo parachain.
+/// BridgeHubPolkadot parachain.
 #[derive(RuntimeDebug)]
-pub struct BridgeHubWococo;
+pub struct BridgeHubPolkadot;
 
-impl Chain for BridgeHubWococo {
+impl Chain for BridgeHubPolkadot {
 	type BlockNumber = BlockNumber;
 	type Hash = Hash;
 	type Hasher = Hasher;
@@ -54,19 +54,22 @@ impl Chain for BridgeHubWococo {
 	}
 }
 
-impl Parachain for BridgeHubWococo {
-	const PARACHAIN_ID: u32 = BRIDGE_HUB_WOCOCO_PARACHAIN_ID;
+impl Parachain for BridgeHubPolkadot {
+	const PARACHAIN_ID: u32 = BRIDGE_HUB_POLKADOT_PARACHAIN_ID;
 }
 
-/// Identifier of BridgeHubWococo in the Wococo relay chain.
-pub const BRIDGE_HUB_WOCOCO_PARACHAIN_ID: u32 = 1014;
+/// Identifier of BridgeHubPolkadot in the Polkadot relay chain.
+// TODO: check me (https://github.com/paritytech/parity-bridges-common/issues/1945)
+pub const BRIDGE_HUB_POLKADOT_PARACHAIN_ID: u32 = 1002;
 
-/// Name of the With-BridgeHubWococo messages pallet instance that is deployed at bridged chains.
-pub const WITH_BRIDGE_HUB_WOCOCO_MESSAGES_PALLET_NAME: &str = "BridgeWococoMessages";
+/// Name of the With-BridgeHubPolkadot messages pallet instance that is deployed at bridged chains.
+// TODO: check me (https://github.com/paritytech/parity-bridges-common/issues/1945)
+pub const WITH_BRIDGE_HUB_POLKADOT_MESSAGES_PALLET_NAME: &str = "BridgePolkadotMessages";
 
-/// Name of the With-BridgeHubWococo bridge-relayers pallet instance that is deployed at bridged
+/// Name of the With-BridgeHubPolkadot bridge-relayers pallet instance that is deployed at bridged
 /// chains.
-pub const WITH_BRIDGE_HUB_WOCOCO_RELAYERS_PALLET_NAME: &str = "BridgeRelayers";
+// TODO: check me (https://github.com/paritytech/parity-bridges-common/issues/1945)
+pub const WITH_BRIDGE_HUB_POLKADOT_RELAYERS_PALLET_NAME: &str = "BridgeRelayers";
 
-decl_bridge_finality_runtime_apis!(bridge_hub_wococo);
-decl_bridge_messages_runtime_apis!(bridge_hub_wococo);
+decl_bridge_finality_runtime_apis!(bridge_hub_polkadot);
+decl_bridge_messages_runtime_apis!(bridge_hub_polkadot);

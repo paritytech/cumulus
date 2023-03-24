@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Module with configuration which reflects BridgeHubRococo runtime setup (AccountId, Headers,
+//! Module with configuration which reflects BridgeHubKusama runtime setup (AccountId, Headers,
 //! Hashes...)
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -31,11 +31,11 @@ use frame_support::{
 };
 use sp_std::prelude::*;
 
-/// BridgeHubRococo parachain.
+/// BridgeHubKusama parachain.
 #[derive(RuntimeDebug)]
-pub struct BridgeHubRococo;
+pub struct BridgeHubKusama;
 
-impl Chain for BridgeHubRococo {
+impl Chain for BridgeHubKusama {
 	type BlockNumber = BlockNumber;
 	type Hash = Hash;
 	type Hasher = Hasher;
@@ -58,8 +58,8 @@ impl Chain for BridgeHubRococo {
 	}
 }
 
-impl Parachain for BridgeHubRococo {
-	const PARACHAIN_ID: u32 = BRIDGE_HUB_ROCOCO_PARACHAIN_ID;
+impl Parachain for BridgeHubKusama {
+	const PARACHAIN_ID: u32 = BRIDGE_HUB_KUSAMA_PARACHAIN_ID;
 }
 
 /// Public key of the chain account that may be used to verify signatures.
@@ -68,15 +68,17 @@ pub type AccountSigner = MultiSigner;
 /// The address format for describing accounts.
 pub type Address = MultiAddress<AccountId, ()>;
 
-/// Identifier of BridgeHubRococo in the Rococo relay chain.
-pub const BRIDGE_HUB_ROCOCO_PARACHAIN_ID: u32 = 1013;
+/// Identifier of BridgeHubKusama in the Kusama relay chain.
+pub const BRIDGE_HUB_KUSAMA_PARACHAIN_ID: u32 = 1002;
 
-/// Name of the With-BridgeHubRococo messages pallet instance that is deployed at bridged chains.
-pub const WITH_BRIDGE_HUB_ROCOCO_MESSAGES_PALLET_NAME: &str = "BridgeRococoMessages";
+/// Name of the With-BridgeHubKusama messages pallet instance that is deployed at bridged chains.
+// TODO: check me (https://github.com/paritytech/parity-bridges-common/issues/1945)
+pub const WITH_BRIDGE_HUB_KUSAMA_MESSAGES_PALLET_NAME: &str = "BridgeKusamaMessages";
 
-/// Name of the With-BridgeHubRococo bridge-relayers pallet instance that is deployed at bridged
+/// Name of the With-BridgeHubKusama bridge-relayers pallet instance that is deployed at bridged
 /// chains.
-pub const WITH_BRIDGE_HUB_ROCOCO_RELAYERS_PALLET_NAME: &str = "BridgeRelayers";
+// TODO: check me (https://github.com/paritytech/parity-bridges-common/issues/1945)
+pub const WITH_BRIDGE_HUB_KUSAMA_RELAYERS_PALLET_NAME: &str = "BridgeRelayers";
 
-decl_bridge_finality_runtime_apis!(bridge_hub_rococo);
-decl_bridge_messages_runtime_apis!(bridge_hub_rococo);
+decl_bridge_finality_runtime_apis!(bridge_hub_kusama);
+decl_bridge_messages_runtime_apis!(bridge_hub_kusama);
