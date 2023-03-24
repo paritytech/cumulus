@@ -28,8 +28,10 @@ use bp_messages::{
 };
 use bp_runtime::{messages::MessageDispatchResult, AccountIdOf, Chain};
 use codec::{Decode, Encode};
-use frame_support::{dispatch::Weight, traits::Get, CloneNoBound, EqNoBound, PartialEqNoBound};
+use frame_support::{dispatch::Weight, CloneNoBound, EqNoBound, PartialEqNoBound};
+use pallet_bridge_messages::WeightInfoExt as MessagesPalletWeights;
 use scale_info::TypeInfo;
+use sp_runtime::SaturatedConversion;
 use xcm_builder::{DispatchBlob, DispatchBlobError, HaulBlob, HaulBlobError};
 
 /// Plain "XCM" payload, which we transfer through bridge
@@ -44,38 +46,36 @@ pub enum XcmBlobMessageDispatchResult {
 }
 
 /// [`XcmBlobMessageDispatch`] is responsible for dispatching received messages
-pub struct XcmBlobMessageDispatch<
-	SourceBridgeHubChain,
-	TargetBridgeHubChain,
-	DispatchBlob,
-	DispatchBlobWeigher,
-> {
+pub struct XcmBlobMessageDispatch<SourceBridgeHubChain, TargetBridgeHubChain, DispatchBlob, Weights>
+{
 	_marker: sp_std::marker::PhantomData<(
 		SourceBridgeHubChain,
 		TargetBridgeHubChain,
 		DispatchBlob,
-		DispatchBlobWeigher,
+		Weights,
 	)>,
 }
 
 impl<
+		'a,
 		SourceBridgeHubChain: Chain,
 		TargetBridgeHubChain: Chain,
 		BlobDispatcher: DispatchBlob,
-		DispatchBlobWeigher: Get<Weight>,
+		Weights: MessagesPalletWeights,
 	> MessageDispatch<AccountIdOf<SourceBridgeHubChain>>
-	for XcmBlobMessageDispatch<
-		SourceBridgeHubChain,
-		TargetBridgeHubChain,
-		BlobDispatcher,
-		DispatchBlobWeigher,
-	>
+	for XcmBlobMessageDispatch<SourceBridgeHubChain, TargetBridgeHubChain, BlobDispatcher, Weights>
 {
 	type DispatchPayload = XcmAsPlainPayload;
 	type DispatchLevelResult = XcmBlobMessageDispatchResult;
 
-	fn dispatch_weight(_message: &mut DispatchMessage<Self::DispatchPayload>) -> Weight {
-		DispatchBlobWeigher::get()
+	fn dispatch_weight(message: &mut DispatchMessage<Self::DispatchPayload>) -> Weight {
+		match message.data.payload {
+			Ok(ref payload) => {
+				let payload_size = payload.encoded_size().saturated_into();
+				Weights::message_dispatch_weight(payload_size)
+			},
+			Err(_) => Weight::zero(),
+		}
 	}
 
 	fn dispatch(
@@ -92,7 +92,6 @@ impl<
 					message.key.nonce
 				);
 				return MessageDispatchResult {
-					// TODO:check-parameter - setup uspent_weight? https://github.com/paritytech/polkadot/issues/6629
 					unspent_weight: Weight::zero(),
 					dispatch_level_result: XcmBlobMessageDispatchResult::InvalidPayload,
 				}
@@ -128,11 +127,7 @@ impl<
 				XcmBlobMessageDispatchResult::NotDispatched(e)
 			},
 		};
-		MessageDispatchResult {
-			// TODO:check-parameter - setup uspent_weight?  https://github.com/paritytech/polkadot/issues/6629
-			unspent_weight: Weight::zero(),
-			dispatch_level_result,
-		}
+		MessageDispatchResult { unspent_weight: Weight::zero(), dispatch_level_result }
 	}
 }
 
@@ -159,23 +154,24 @@ impl<HaulerOrigin, H: XcmBlobHauler<MessageSenderOrigin = HaulerOrigin>> HaulBlo
 {
 	fn haul_blob(blob: sp_std::prelude::Vec<u8>) -> Result<(), HaulBlobError> {
 		let lane = H::xcm_lane();
-		let result = H::MessageSender::send_message(H::message_sender_origin(), lane, blob);
-		let result = result
-			.map(|artifacts| (lane, artifacts.nonce).using_encoded(sp_io::hashing::blake2_256));
-		match &result {
-			Ok(result) => log::info!(
-				target: crate::LOG_TARGET_BRIDGE_DISPATCH,
-				"haul_blob result - ok: {:?} on lane: {:?}",
-				result,
-				lane
-			),
-			Err(error) => log::error!(
-				target: crate::LOG_TARGET_BRIDGE_DISPATCH,
-				"haul_blob result - error: {:?} on lane: {:?}",
-				error,
-				lane
-			),
-		};
-		result.map(|_| ()).map_err(|_| HaulBlobError::Transport("MessageSenderError"))
+		H::MessageSender::send_message(H::message_sender_origin(), lane, blob)
+			.map(|artifacts| (lane, artifacts.nonce).using_encoded(sp_io::hashing::blake2_256))
+			.map(|result| {
+				log::info!(
+					target: crate::LOG_TARGET_BRIDGE_DISPATCH,
+					"haul_blob result - ok: {:?} on lane: {:?}",
+					result,
+					lane
+				)
+			})
+			.map_err(|error| {
+				log::error!(
+					target: crate::LOG_TARGET_BRIDGE_DISPATCH,
+					"haul_blob result - error: {:?} on lane: {:?}",
+					error,
+					lane
+				);
+				HaulBlobError::Transport("MessageSenderError")
+			})
 	}
 }

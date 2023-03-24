@@ -26,7 +26,6 @@ use crate::{
 use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing},
-	weights::Weight,
 };
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
@@ -45,7 +44,6 @@ use xcm_executor::{
 	XcmExecutor,
 };
 
-use crate::weights::RocksDbWeight;
 use parachains_common::xcm_config::{
 	ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry,
 };
@@ -263,25 +261,6 @@ pub type XcmRouter = (
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
 );
-
-/// Simple weigher for xcm dispatch:
-///
-/// `ParentAsUmp` does `<PendingUpwardMessages<T>>::append(` means one write
-/// `XcmpQueue` does:
-///  - `wrap_version` - 1 read
-///  - `send_fragment`:
-///   - `get_channel_max` - 1 read
-///   - `<OutboundXcmpStatus<T>>::get()` - 1 read
-///   - `<OutboundXcmpMessages<T>>::mutate(` - 1 write
-/// 		or
-///   - `<OutboundXcmpMessages<T>>::insert(` - 1 write
-///   - `<OutboundXcmpStatus<T>>::put - 1 write` - 1 write
-pub struct XcmRouterWeigher;
-impl Get<Weight> for XcmRouterWeigher {
-	fn get() -> Weight {
-		RocksDbWeight::get().reads_writes(1, 2)
-	}
-}
 
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
