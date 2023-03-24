@@ -18,6 +18,7 @@
 
 #![warn(missing_docs)]
 
+mod bridges;
 mod chains;
 mod cli;
 

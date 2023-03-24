@@ -14,7 +14,7 @@ clap = { version = "4.0.8", features = ["derive", "cargo"] }
 codec = { package = "parity-scale-codec", version = "3.1.5", default-features = false, features = ["derive"] }
 color-eyre = "0.6.1"
 proc-macro2 = "1.0.51"
-subxt-codegen = { git = "https://github.com/paritytech/subxt", branch = "master" }
+subxt-codegen = "0.27.1"
 syn = "1.0"
 wasm-loader = { git = "https://github.com/chevdor/subwasm", branch = "master" }
 wasm-testbed = { git = "https://github.com/chevdor/subwasm", branch = "master" }

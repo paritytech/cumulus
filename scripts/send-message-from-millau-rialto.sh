@@ -15,4 +15,4 @@ RUST_LOG=runtime=trace,substrate-relay=trace,bridge=trace \
 	--source-host localhost \
 	--source-port $MILLAU_PORT \
 	--source-signer //Alice \
-	raw 020419ac
+	raw 030426020109020419a8

@@ -16,7 +16,7 @@
 
 //! Types used to connect to the BridgeHub-Wococo-Substrate parachain.
 
-use bp_bridge_hub_wococo::AVERAGE_BLOCK_INTERVAL;
+use bp_bridge_hub_wococo::{BridgeHubSignedExtension, AVERAGE_BLOCK_INTERVAL};
 use bp_messages::MessageNonce;
 use bp_runtime::ChainId;
 use codec::Encode;
@@ -44,7 +44,6 @@ impl UnderlyingChainProvider for BridgeHubWococo {
 impl Chain for BridgeHubWococo {
 	const ID: ChainId = bp_runtime::BRIDGE_HUB_WOCOCO_CHAIN_ID;
 	const NAME: &'static str = "BridgeHubWococo";
-	const TOKEN_ID: Option<&'static str> = None;
 	const BEST_FINALIZED_HEADER_ID_METHOD: &'static str =
 		bp_bridge_hub_wococo::BEST_FINALIZED_BRIDGE_HUB_WOCOCO_HEADER_METHOD;
 	const AVERAGE_BLOCK_INTERVAL: Duration = AVERAGE_BLOCK_INTERVAL;
@@ -73,7 +72,7 @@ impl ChainWithTransactions for BridgeHubWococo {
 	) -> Result<Self::SignedTransaction, SubstrateError> {
 		let raw_payload = SignedPayload::new(
 			unsigned.call,
-			runtime::rewarding_bridge_signed_extension::from_params(
+			runtime::SignedExtension::from_params(
 				param.spec_version,
 				param.transaction_version,
 				unsigned.era,
@@ -110,20 +109,15 @@ impl ChainWithTransactions for BridgeHubWococo {
 
 	fn parse_transaction(tx: Self::SignedTransaction) -> Option<UnsignedTransaction<Self>> {
 		let extra = &tx.signature.as_ref()?.2;
-		Some(
-			UnsignedTransaction::new(
-				tx.function,
-				runtime::rewarding_bridge_signed_extension::nonce(extra),
-			)
-			.tip(runtime::rewarding_bridge_signed_extension::tip(extra)),
-		)
+		Some(UnsignedTransaction::new(tx.function, extra.nonce()).tip(extra.tip()))
 	}
 }
 
 impl ChainWithMessages for BridgeHubWococo {
 	const WITH_CHAIN_MESSAGES_PALLET_NAME: &'static str =
 		bp_bridge_hub_wococo::WITH_BRIDGE_HUB_WOCOCO_MESSAGES_PALLET_NAME;
-	const WITH_CHAIN_RELAYERS_PALLET_NAME: Option<&'static str> = None;
+	const WITH_CHAIN_RELAYERS_PALLET_NAME: Option<&'static str> =
+		Some(bp_bridge_hub_wococo::WITH_BRIDGE_HUB_WOCOCO_RELAYERS_PALLET_NAME);
 
 	const TO_CHAIN_MESSAGE_DETAILS_METHOD: &'static str =
 		bp_bridge_hub_wococo::TO_BRIDGE_HUB_WOCOCO_MESSAGE_DETAILS_METHOD;

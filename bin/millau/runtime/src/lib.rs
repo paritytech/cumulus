@@ -331,6 +331,10 @@ impl pallet_balances::Config for Runtime {
 	type MaxLocks = ConstU32<50>;
 	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = [u8; 8];
+	type HoldIdentifier = ();
+	type FreezeIdentifier = ();
+	type MaxHolds = ConstU32<0>;
+	type MaxFreezes = ConstU32<0>;
 }
 
 parameter_types! {
@@ -393,6 +397,7 @@ impl pallet_bridge_relayers::Config for Runtime {
 
 pub type RialtoGrandpaInstance = ();
 impl pallet_bridge_grandpa::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
 	type BridgedChain = bp_rialto::Rialto;
 	// This is a pretty unscientific cap.
 	//
@@ -405,6 +410,7 @@ impl pallet_bridge_grandpa::Config for Runtime {
 
 pub type WestendGrandpaInstance = pallet_bridge_grandpa::Instance1;
 impl pallet_bridge_grandpa::Config<WestendGrandpaInstance> for Runtime {
+	type RuntimeEvent = RuntimeEvent;
 	type BridgedChain = bp_westend::Westend;
 	type MaxRequests = ConstU32<50>;
 	type HeadersToKeep = ConstU32<{ bp_westend::DAYS }>;
@@ -559,11 +565,11 @@ construct_runtime!(
 
 		// Rialto bridge modules.
 		BridgeRelayers: pallet_bridge_relayers::{Pallet, Call, Storage, Event<T>},
-		BridgeRialtoGrandpa: pallet_bridge_grandpa::{Pallet, Call, Storage},
+		BridgeRialtoGrandpa: pallet_bridge_grandpa::{Pallet, Call, Storage, Event<T>},
 		BridgeRialtoMessages: pallet_bridge_messages::{Pallet, Call, Storage, Event<T>, Config<T>},
 
 		// Westend bridge modules.
-		BridgeWestendGrandpa: pallet_bridge_grandpa::<Instance1>::{Pallet, Call, Config<T>, Storage},
+		BridgeWestendGrandpa: pallet_bridge_grandpa::<Instance1>::{Pallet, Call, Config<T>, Storage, Event<T>},
 		BridgeWestendParachains: pallet_bridge_parachains::<Instance1>::{Pallet, Call, Storage, Event<T>},
 
 		// RialtoParachain bridge modules.
@@ -652,6 +658,14 @@ impl_runtime_apis! {
 	impl sp_api::Metadata<Block> for Runtime {
 		fn metadata() -> OpaqueMetadata {
 			OpaqueMetadata::new(Runtime::metadata().into())
+		}
+
+		fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+			Runtime::metadata_at_version(version)
+		}
+
+		fn metadata_versions() -> sp_std::vec::Vec<u32> {
+			Runtime::metadata_versions()
 		}
 	}
 
@@ -1005,7 +1019,7 @@ impl_runtime_apis! {
 						Runtime,
 						WithRialtoParachainsInstance,
 						WithRialtoParachainMessageBridge,
-					>(params)
+					>(params, xcm::v3::Junctions::Here)
 				}
 
 				fn prepare_message_delivery_proof(
@@ -1019,10 +1033,8 @@ impl_runtime_apis! {
 				}
 
 				fn is_relayer_rewarded(relayer: &Self::AccountId) -> bool {
-					use bridge_runtime_common::messages::MessageBridge;
-
 					let lane = <Self as MessagesConfig<WithRialtoParachainMessagesInstance>>::bench_lane_id();
-					let bridged_chain_id = WithRialtoParachainMessageBridge::BRIDGED_CHAIN_ID;
+					let bridged_chain_id = bp_runtime::RIALTO_PARACHAIN_CHAIN_ID;
 					pallet_bridge_relayers::Pallet::<Runtime>::relayer_reward(
 						relayer,
 						RewardsAccountParams::new(lane, bridged_chain_id, RewardsAccountOwner::BridgedChain)
@@ -1038,7 +1050,7 @@ impl_runtime_apis! {
 						Runtime,
 						RialtoGrandpaInstance,
 						WithRialtoMessageBridge,
-					>(params)
+					>(params, xcm::v3::Junctions::Here)
 				}
 
 				fn prepare_message_delivery_proof(
@@ -1052,10 +1064,8 @@ impl_runtime_apis! {
 				}
 
 				fn is_relayer_rewarded(relayer: &Self::AccountId) -> bool {
-					use bridge_runtime_common::messages::MessageBridge;
-
 					let lane = <Self as MessagesConfig<WithRialtoMessagesInstance>>::bench_lane_id();
-					let bridged_chain_id = WithRialtoMessageBridge::BRIDGED_CHAIN_ID;
+					let bridged_chain_id = bp_runtime::RIALTO_CHAIN_ID;
 					pallet_bridge_relayers::Pallet::<Runtime>::relayer_reward(
 						relayer,
 						RewardsAccountParams::new(lane, bridged_chain_id, RewardsAccountOwner::BridgedChain)

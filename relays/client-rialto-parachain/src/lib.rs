@@ -18,8 +18,8 @@
 
 pub mod codegen_runtime;
 
+use bp_bridge_hub_cumulus::BridgeHubSignedExtension;
 use bp_messages::MessageNonce;
-use bp_polkadot_core::PolkadotSignedExtension;
 use bp_runtime::ChainId;
 use codec::Encode;
 use relay_substrate_client::{
@@ -51,8 +51,6 @@ impl UnderlyingChainProvider for RialtoParachain {
 impl Chain for RialtoParachain {
 	const ID: ChainId = bp_runtime::RIALTO_PARACHAIN_CHAIN_ID;
 	const NAME: &'static str = "RialtoParachain";
-	// RialtoParachain token has no value, but we associate it with DOT token
-	const TOKEN_ID: Option<&'static str> = Some("polkadot");
 	const BEST_FINALIZED_HEADER_ID_METHOD: &'static str =
 		bp_rialto_parachain::BEST_FINALIZED_RIALTO_PARACHAIN_HEADER_METHOD;
 	const AVERAGE_BLOCK_INTERVAL: Duration = Duration::from_secs(5);

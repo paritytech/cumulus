@@ -25,7 +25,7 @@ services:
     volumes:
       - rialto-share:/rialto-share:z
     environment:
-      RUST_LOG: runtime=trace,rpc=trace,txpool=trace,parachain=trace,parity_ws=trace,sc_basic_authorship=trace
+      RUST_LOG: runtime=trace,rpc=trace,txpool=trace,parachain=trace,parity_ws=trace,sc_basic_authorship=trace,xcm=trace
     depends_on:
       - rialto-chainspec-exporter
     ports:

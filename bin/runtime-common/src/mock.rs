@@ -33,7 +33,7 @@ use crate::messages::{
 };
 
 use bp_header_chain::{ChainWithGrandpa, HeaderChain};
-use bp_messages::{target_chain::ForbidInboundMessages, LaneId, MessageNonce};
+use bp_messages::{target_chain::ForbidInboundMessages, LaneId};
 use bp_parachains::SingleParaStoredHeaderDataBuilder;
 use bp_runtime::{Chain, ChainId, Parachain, UnderlyingChainProvider};
 use codec::{Decode, Encode};
@@ -87,10 +87,6 @@ pub type BridgedChainHeader =
 pub const TEST_LANE_ID: LaneId = LaneId([0, 0, 0, 0]);
 /// Bridged chain id used in tests.
 pub const TEST_BRIDGED_CHAIN_ID: ChainId = *b"brdg";
-/// Maximal number of queued messages at the test lane.
-pub const MAXIMAL_PENDING_MESSAGES_AT_TEST_LANE: MessageNonce = 32;
-/// Minimal extrinsic weight at the `BridgedChain`.
-pub const BRIDGED_CHAIN_MIN_EXTRINSIC_WEIGHT: usize = 5;
 /// Maximal extrinsic weight at the `BridgedChain`.
 pub const BRIDGED_CHAIN_MAX_EXTRINSIC_WEIGHT: usize = 2048;
 /// Maximal extrinsic size at the `BridgedChain`.
@@ -107,7 +103,7 @@ frame_support::construct_runtime! {
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},
 		BridgeRelayers: pallet_bridge_relayers::{Pallet, Call, Storage, Event<T>},
-		BridgeGrandpa: pallet_bridge_grandpa::{Pallet, Call, Storage},
+		BridgeGrandpa: pallet_bridge_grandpa::{Pallet, Call, Storage, Event<T>},
 		BridgeParachains: pallet_bridge_parachains::{Pallet, Call, Storage, Event<T>},
 		BridgeMessages: pallet_bridge_messages::{Pallet, Call, Storage, Event<T>, Config<T>},
 	}
@@ -176,6 +172,10 @@ impl pallet_balances::Config for TestRuntime {
 	type MaxLocks = ConstU32<50>;
 	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = [u8; 8];
+	type HoldIdentifier = ();
+	type FreezeIdentifier = ();
+	type MaxHolds = ConstU32<0>;
+	type MaxFreezes = ConstU32<0>;
 }
 
 impl pallet_transaction_payment::Config for TestRuntime {
@@ -194,6 +194,7 @@ impl pallet_transaction_payment::Config for TestRuntime {
 }
 
 impl pallet_bridge_grandpa::Config for TestRuntime {
+	type RuntimeEvent = RuntimeEvent;
 	type BridgedChain = BridgedUnderlyingChain;
 	type MaxRequests = ConstU32<50>;
 	type HeadersToKeep = ConstU32<8>;
@@ -221,7 +222,7 @@ impl pallet_bridge_messages::Config for TestRuntime {
 	type MaximalOutboundPayloadSize = FromThisChainMaximalOutboundPayloadSize<OnThisChainBridge>;
 	type OutboundPayload = FromThisChainMessagePayload;
 
-	type InboundPayload = FromBridgedChainMessagePayload<ThisChainRuntimeCall>;
+	type InboundPayload = FromBridgedChainMessagePayload;
 	type InboundRelayer = BridgedChainAccountId;
 	type DeliveryPayments = ();
 
@@ -234,8 +235,7 @@ impl pallet_bridge_messages::Config for TestRuntime {
 	>;
 
 	type SourceHeaderChain = SourceHeaderChainAdapter<OnThisChainBridge>;
-	type MessageDispatch =
-		ForbidInboundMessages<(), FromBridgedChainMessagePayload<ThisChainRuntimeCall>>;
+	type MessageDispatch = ForbidInboundMessages<(), FromBridgedChainMessagePayload>;
 	type BridgedChainId = BridgedChainId;
 }
 
@@ -252,8 +252,6 @@ impl pallet_bridge_relayers::Config for TestRuntime {
 pub struct OnThisChainBridge;
 
 impl MessageBridge for OnThisChainBridge {
-	const THIS_CHAIN_ID: ChainId = *b"this";
-	const BRIDGED_CHAIN_ID: ChainId = TEST_BRIDGED_CHAIN_ID;
 	const BRIDGED_MESSAGES_PALLET_NAME: &'static str = "";
 
 	type ThisChain = ThisChain;
@@ -267,8 +265,6 @@ impl MessageBridge for OnThisChainBridge {
 pub struct OnBridgedChainBridge;
 
 impl MessageBridge for OnBridgedChainBridge {
-	const THIS_CHAIN_ID: ChainId = TEST_BRIDGED_CHAIN_ID;
-	const BRIDGED_CHAIN_ID: ChainId = *b"this";
 	const BRIDGED_MESSAGES_PALLET_NAME: &'static str = "";
 
 	type ThisChain = BridgedChain;
@@ -330,22 +326,9 @@ impl UnderlyingChainProvider for ThisChain {
 
 impl ThisChainWithMessages for ThisChain {
 	type RuntimeOrigin = ThisChainCallOrigin;
-	type RuntimeCall = ThisChainRuntimeCall;
-
-	fn is_message_accepted(_send_origin: &Self::RuntimeOrigin, lane: &LaneId) -> bool {
-		*lane == TEST_LANE_ID
-	}
-
-	fn maximal_pending_messages_at_outbound_lane() -> MessageNonce {
-		MAXIMAL_PENDING_MESSAGES_AT_TEST_LANE
-	}
 }
 
-impl BridgedChainWithMessages for ThisChain {
-	fn verify_dispatch_weight(_message_payload: &[u8]) -> bool {
-		unreachable!()
-	}
-}
+impl BridgedChainWithMessages for ThisChain {}
 
 /// Underlying chain of `BridgedChain`.
 pub struct BridgedUnderlyingChain;
@@ -412,20 +395,6 @@ impl UnderlyingChainProvider for BridgedChain {
 
 impl ThisChainWithMessages for BridgedChain {
 	type RuntimeOrigin = BridgedChainOrigin;
-	type RuntimeCall = BridgedChainCall;
-
-	fn is_message_accepted(_send_origin: &Self::RuntimeOrigin, _lane: &LaneId) -> bool {
-		unreachable!()
-	}
-
-	fn maximal_pending_messages_at_outbound_lane() -> MessageNonce {
-		unreachable!()
-	}
 }
 
-impl BridgedChainWithMessages for BridgedChain {
-	fn verify_dispatch_weight(message_payload: &[u8]) -> bool {
-		message_payload.len() >= BRIDGED_CHAIN_MIN_EXTRINSIC_WEIGHT &&
-			message_payload.len() <= BRIDGED_CHAIN_MAX_EXTRINSIC_WEIGHT
-	}
-}
+impl BridgedChainWithMessages for BridgedChain {}

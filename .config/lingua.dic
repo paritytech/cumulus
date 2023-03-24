@@ -19,6 +19,8 @@ BridgeStorage
 BridgeHub
 BridgeHubRococo
 BridgeHubWococo
+BridgeHubKusama
+BridgeHubPolkadot
 CLI/MS
 Chain1
 Chain2

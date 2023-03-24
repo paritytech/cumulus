@@ -12,7 +12,6 @@
 # SECONDARY_EXTRA_ARGS - optional, for example "--use-xcm-pallet"
 # EXTRA_ARGS - for example "--use-xcm-pallet"
 # REGULAR_PAYLOAD
-# BATCH_PAYLOAD
 # MAX_UNCONFIRMED_MESSAGES_AT_INBOUND_LANE
 
 SECONDARY_EXTRA_ARGS=${SECONDARY_EXTRA_ARGS:-""}
@@ -59,7 +58,7 @@ do
 		do
 			$SEND_MESSAGE \
 				$EXTRA_ARGS \
-				raw $BATCH_PAYLOAD
+				raw $REGULAR_PAYLOAD
 		done
 
 	fi

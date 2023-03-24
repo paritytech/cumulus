@@ -20,7 +20,8 @@ SEND_MESSAGE="$SHARED_CMD $SHARED_HOST $SOURCE_SIGNER"
 SOURCE_CHAIN="Millau"
 TARGET_CHAIN="RialtoParachain"
 EXTRA_ARGS=""
-REGULAR_PAYLOAD="020419ac"
-BATCH_PAYLOAD="010109020419A8"
+# It is the encoded `xcm::VersionedXcm::V3(prepare_outbound_xcm_message(RialtoParachainNetwork::get())`
+# from the `xcm_messages_to_rialto_parachain_are_sent_using_bridge_exporter` test in the `millau-runtime`
+REGULAR_PAYLOAD="030426040109040419a8"
 
 source /common/generate_messages.sh

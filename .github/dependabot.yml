@@ -39,6 +39,9 @@ updates:
   - dependency-name: try-runtime-cli
     versions:
     - ">= 0"
+  - dependency-name: binary-merkle-tree
+    versions:
+    - ">= 0"
   # Polkadot dependencies
   - dependency-name: kusama-*
     versions:

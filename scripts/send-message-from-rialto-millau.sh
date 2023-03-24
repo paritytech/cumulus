@@ -15,4 +15,4 @@ RUST_LOG=runtime=trace,substrate-relay=trace,bridge=trace \
 	--source-host localhost \
 	--source-port $RIALTO_PORT \
 	--source-signer //Bob \
-	raw 020419ac
+	raw 030426030109030419a8

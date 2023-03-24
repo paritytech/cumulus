@@ -34,5 +34,4 @@ RIALTO_NODE_CONNECTION_PARAMS=$([ -z ${GLOBAL_DEPLOYMENTS} ] && \
 	--rialto-signer //Millau.HeadersAndMessagesRelay \
 	--rialto-transactions-mortality=64 \
 	--lane=00000000 \
-	--lane=73776170 \
 	--prometheus-host=0.0.0.0

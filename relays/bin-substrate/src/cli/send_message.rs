@@ -15,11 +15,15 @@
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-	chains::{
-		millau_headers_to_rialto::MillauToRialtoCliBridge,
-		millau_headers_to_rialto_parachain::MillauToRialtoParachainCliBridge,
-		rialto_headers_to_millau::RialtoToMillauCliBridge,
-		rialto_parachains_to_millau::RialtoParachainToMillauCliBridge,
+	bridges::{
+		rialto_millau::{
+			millau_headers_to_rialto::MillauToRialtoCliBridge,
+			rialto_headers_to_millau::RialtoToMillauCliBridge,
+		},
+		rialto_parachain_millau::{
+			millau_headers_to_rialto_parachain::MillauToRialtoParachainCliBridge,
+			rialto_parachains_to_millau::RialtoParachainToMillauCliBridge,
+		},
 	},
 	cli::{
 		bridge::{FullBridge, MessagesCliBridge},
@@ -71,10 +75,7 @@ where
 		let source_sign = data.source_sign.to_keypair::<Self::Source>()?;
 
 		let payload_len = payload.encoded_size();
-		let send_message_call = Self::Source::encode_send_xcm(
-			decode_xcm(payload)?,
-			data.bridge.bridge_instance_index(),
-		)?;
+		let send_message_call = Self::Source::encode_execute_xcm(decode_xcm(payload)?)?;
 
 		source_client
 			.submit_signed_extrinsic(&source_sign, move |_, transaction_nonce| {
@@ -114,13 +115,19 @@ impl SendMessage {
 			FullBridge::BridgeHubWococoToBridgeHubRococo => unimplemented!(
 				"Sending message from BridgeHubWococo to BridgeHubRococo is not supported"
 			),
+			FullBridge::BridgeHubKusamaToBridgeHubPolkadot => unimplemented!(
+				"Sending message from BridgeHubKusama to BridgeHubPolkadot is not supported"
+			),
+			FullBridge::BridgeHubPolkadotToBridgeHubKusama => unimplemented!(
+				"Sending message from BridgeHubPolkadot to BridgeHubKusama is not supported"
+			),
 		}
 		.await
 	}
 }
 
 /// Decode SCALE encoded raw XCM message.
-pub(crate) fn decode_xcm(message: RawMessage) -> anyhow::Result<xcm::VersionedXcm<()>> {
+pub(crate) fn decode_xcm<Call>(message: RawMessage) -> anyhow::Result<xcm::VersionedXcm<Call>> {
 	Decode::decode(&mut &message[..])
 		.map_err(|e| anyhow::format_err!("Failed to decode XCM program: {:?}", e))
 }

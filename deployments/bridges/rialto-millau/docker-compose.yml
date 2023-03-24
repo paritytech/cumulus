@@ -41,21 +41,10 @@ services:
       - rialto-node-dave
       - rialto-node-eve
 
-  relay-messages-millau-to-rialto-lane-00000001:
-    <<: *sub-bridge-relay
-    environment:
-      MSG_EXCHANGE_GEN_LANE: "00000001"
-    entrypoint: /entrypoints/relay-messages-millau-to-rialto-entrypoint.sh
-    ports:
-      - "10116:9616"
-    depends_on:
-      - relay-millau-rialto
-
   relay-messages-millau-to-rialto-generator:
     <<: *sub-bridge-relay
     environment:
       RUST_LOG: bridge=trace
-      MSG_EXCHANGE_GEN_SECONDARY_LANE: "00000001"
     entrypoint: /entrypoints/relay-messages-to-rialto-generator-entrypoint.sh
     ports:
       - "10216:9616"
@@ -72,22 +61,10 @@ services:
     depends_on:
       - relay-messages-millau-to-rialto-generator
 
-  relay-messages-rialto-to-millau-lane-00000001:
-    <<: *sub-bridge-relay
-    environment:
-      RUST_LOG: bridge=trace
-      MSG_EXCHANGE_GEN_LANE: "00000001"
-    entrypoint: /entrypoints/relay-messages-rialto-to-millau-entrypoint.sh
-    ports:
-      - "10416:9616"
-    depends_on:
-      - relay-millau-rialto
-
   relay-messages-rialto-to-millau-generator:
     <<: *sub-bridge-relay
     environment:
       RUST_LOG: bridge=trace
-      MSG_EXCHANGE_GEN_SECONDARY_LANE: "00000001"
     entrypoint: /entrypoints/relay-messages-to-millau-generator-entrypoint.sh
     ports:
       - "10516:9616"

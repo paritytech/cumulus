@@ -7,7 +7,7 @@ license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 
 [dependencies]
 anyhow = "1.0"
-thiserror = "1.0.39"
+thiserror = "1.0.40"
 async-std = "1.9.0"
 async-trait = "0.1"
 codec = { package = "parity-scale-codec", version = "3.1.5" }
@@ -24,7 +24,7 @@ bp-polkadot-core = { path = "../../primitives/polkadot-core" }
 bp-relayers = { path = "../../primitives/relayers" }
 bridge-runtime-common = { path = "../../bin/runtime-common" }
 
-finality-grandpa = { version = "0.16.0" }
+finality-grandpa = { version = "0.16.2" }
 finality-relay = { path = "../finality" }
 parachains-relay = { path = "../parachains" }
 relay-utils = { path = "../utils" }
