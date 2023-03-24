@@ -268,8 +268,8 @@ impl Config for Test {
 	type XcmExecutor = xcm_executor::XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = ();
-	type XcmpEnqueuer = EnqueueToLocalStorage<Pallet<Test>>;
-	type XcmpMessageProcessor =
+	type XcmpQueue = EnqueueToLocalStorage<Pallet<Test>>;
+	type XcmpProcessor =
 		pallet_message_queue::mock_helpers::NoopMessageProcessor<AggregateMessageOrigin>;
 	type MaxInboundSuspended = sp_core::ConstU32<1_000>;
 	type ControllerOrigin = EnsureRoot<AccountId>;

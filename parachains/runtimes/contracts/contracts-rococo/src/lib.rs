@@ -275,7 +275,8 @@ impl parachain_info::Config for Runtime {}
 
 parameter_types! {
 	// FAIL-CI: pick good value
-	pub MessageQueueServiceWeight: Weight = Weight::MAX;
+	pub MessageQueueServiceWeight: Weight = Perbill::from_percent(10) *
+		BlockWeights::get().max_block; // FAIL-CI this is probably too conservative.
 }
 
 impl pallet_message_queue::Config for Runtime {

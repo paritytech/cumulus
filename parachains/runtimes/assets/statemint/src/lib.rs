@@ -473,14 +473,14 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 }
 
 parameter_types! {
-	// FAIL-CI: pick good value
-	pub MessageQueueServiceWeight: Weight = Weight::MAX;
+	pub MessageQueueServiceWeight: Weight = Perbill::from_percent(10) *
+		BlockWeights::get().max_block; // FAIl-CI this is probably too conservative.
 }
 
 impl pallet_message_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_message_queue::WeightInfo<Runtime>;
-	#[cfg(feature = "runtime-benchmarks")]
+	#[cfg(feature = "runtime-benchmarks")] // FAIL-CI and all other runtimes
 	type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
 		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
@@ -510,9 +510,9 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
-	type XcmpEnqueuer = MessageQueue;
+	type XcmpQueue = MessageQueue;
 	// We use the `XcmpQueue` itself as processor to respect the channel suspension logic.
-	type XcmpMessageProcessor = XcmpQueue;
+	type XcmpProcessor = XcmpQueue;
 	type MaxInboundSuspended = sp_core::ConstU32<1_000>;
 	type ControllerOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
