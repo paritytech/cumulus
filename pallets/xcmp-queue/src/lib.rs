@@ -47,7 +47,7 @@ use cumulus_primitives_core::{
 };
 use frame_support::{
 	defensive, defensive_assert,
-	traits::{EnqueueMessage, EnsureOrigin, Get, ProcessMessage},
+	traits::{EnqueueMessage, EnsureOrigin, Get, ProcessMessage, ProcessMessageError},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight, WeightMeter},
 	BoundedVec,
 };
@@ -94,9 +94,9 @@ pub mod pallet {
 		type VersionWrapper: WrapVersion;
 
 		/// Enqueue an inbound horizontal message for later processing.
-		type XcmpEnqueuer: EnqueueMessage<AggregateMessageOrigin>;
+		type XcmpQueue: EnqueueMessage<AggregateMessageOrigin>;
 
-		type XcmpMessageProcessor: ProcessMessage<Origin = AggregateMessageOrigin>;
+		type XcmpProcessor: ProcessMessage<Origin = AggregateMessageOrigin>;
 
 		/// The maximum number of inbound XCMP channels that can be suspended simultaneously.
 		///
@@ -162,7 +162,7 @@ pub mod pallet {
 
 			QueueSuspended::<T>::try_mutate(|suspended| {
 				if !*suspended {
-					Err(Error::<T>::NotSuspended.into())
+					Err(Error::<T>::AlreadyResumed.into())
 				} else {
 					*suspended = false;
 					Ok(())
@@ -292,9 +292,12 @@ pub mod pallet {
 		BadXcmOrigin,
 		/// Bad XCM data.
 		BadXcm,
+		/// Setting the queue config failed since one of its values was invalid.
 		BadQueueConfig,
+		/// The execution is already suspended.
 		AlreadySuspended,
-		NotSuspended,
+		/// The execution is already resumed.
+		AlreadyResumed,
 	}
 
 	/// The suspended inbound XCMP channels. All others are not suspended.
@@ -402,33 +405,18 @@ pub struct QueueConfigData {
 	/// The number of pages of messages which the queue must be reduced to before it signals that
 	/// message sending may recommence after it has been suspended.
 	resume_threshold: u32,
-	/// The amount of remaining weight under which we stop processing messages.
-	threshold_weight: Weight,
-	/// The speed to which the available weight approaches the maximum weight. A lower number
-	/// results in a faster progression. A value of 1 makes the entire weight available initially.
-	weight_restrict_decay: Weight,
-	/// The maximum amount of weight any individual message may consume. Messages above this weight
-	/// go into the overweight queue and may only be serviced explicitly.
-	xcmp_max_individual_weight: Weight,
 }
 
 impl Default for QueueConfigData {
 	fn default() -> Self {
-		Self {
-			suspend_threshold: 200,
-			drop_threshold: 500,
-			resume_threshold: 100,
-			threshold_weight: Weight::from_ref_time(100_000),
-			weight_restrict_decay: Weight::from_ref_time(2),
-			xcmp_max_individual_weight: Weight::from_parts(
-				20u64 * WEIGHT_REF_TIME_PER_MILLIS,
-				DEFAULT_POV_SIZE,
-			),
-		}
+		Self { suspend_threshold: 200, drop_threshold: 500, resume_threshold: 100 }
 	}
 }
 
 impl QueueConfigData {
+	/// Validate all assumptions about `Self`.
+	///
+	/// Should be called prior to accepting this as new config.
 	pub fn validate<T: crate::Config>(&self) -> sp_runtime::DispatchResult {
 		if self.resume_threshold < self.suspend_threshold &&
 			self.suspend_threshold <= self.drop_threshold &&
@@ -568,7 +556,7 @@ impl<T: Config> Pallet<T> {
 		<OutboundXcmpStatus<T>>::mutate(|s| {
 			if let Some(index) = s.iter().position(|item| item.recipient == target) {
 				let suspended = s[index].state == OutboundState::Suspended;
-				debug_assert!(
+				defensive_assert!(
 					suspended,
 					"WARNING: Attempt to resume channel that was not suspended."
 				);
@@ -583,22 +571,6 @@ impl<T: Config> Pallet<T> {
 		});
 	}
 
-	/// Split concatenated encoded `VersionedXcm`s into individual items.
-	fn split_concatenated_xcms(
-		data: &mut &[u8],
-	) -> Result<Vec<BoundedVec<u8, XcmOverHrmpMaxLenOf<T>>>, ()> {
-		// FAIL-CI add benchmark to check for OOM depending on `MAX_XCM_DECODE_DEPTH`.
-		let mut encoded_xcms = Vec::new();
-		while !data.is_empty() {
-			let xcm =
-				VersionedXcm::<T::RuntimeCall>::decode_with_depth_limit(MAX_XCM_DECODE_DEPTH, data)
-					.map_err(|_| ())?;
-			let bounded = xcm.encode().try_into().map_err(|_| ())?;
-			encoded_xcms.push(bounded);
-		}
-		Ok(encoded_xcms)
-	}
-
 	fn enqueue_xcmp_messages(
 		sender: ParaId,
 		mut xcms: Vec<BoundedVec<u8, XcmOverHrmpMaxLenOf<T>>>,
@@ -607,13 +579,13 @@ impl<T: Config> Pallet<T> {
 		if xcms.is_empty() {
 			return
 		}
-		// FAIL-CI check these values before setting them.
 		let QueueConfigData { drop_threshold, .. } = <QueueConfig<T>>::get();
 		let fp = T::XcmpEnqueuer::footprint(AggregateMessageOrigin::Sibling(sender));
+
 		let new_count = xcms.len().saturating_add(fp.count as usize);
 		let to_enqueue = (drop_threshold as usize).saturating_sub(new_count) as usize;
 		if to_enqueue < xcms.len() {
-			// We drop messages here since the back-pressure logic in `on_queue_changed` will suspended the channel.
+			// This should not happen since the channel should have been suspended in [`on_queue_changed`].
 			log::error!(
 				"XCMP queue for sibling {:?} is full; dropping {} messages.",
 				sender,
@@ -630,9 +602,25 @@ impl<T: Config> Pallet<T> {
 		}
 		// FAIL-CI consume weight
 	}
-}
 
-use frame_support::traits::ProcessMessageError;
+	/// Split concatenated encoded `VersionedXcm`s into individual items.
+	///
+	/// We directly encode them again since that is needed later on.
+	fn split_concatenated_xcms(
+		data: &mut &[u8],
+	) -> Result<Vec<BoundedVec<u8, XcmOverHrmpMaxLenOf<T>>>, ()> {
+		// FAIL-CI add benchmark to check for OOM depending on `MAX_XCM_DECODE_DEPTH`.
+		let mut encoded_xcms = Vec::new();
+		while !data.is_empty() {
+			let xcm =
+				VersionedXcm::<T::RuntimeCall>::decode_with_depth_limit(MAX_XCM_DECODE_DEPTH, data)
+					.map_err(|_| ())?;
+			let bounded = xcm.encode().try_into().map_err(|_| ())?;
+			encoded_xcms.push(bounded);
+		}
+		Ok(encoded_xcms)
+	}
+}
 
 impl<T: Config> OnQueueChanged<AggregateMessageOrigin> for Pallet<T> {
 	// Suspends/Resumes the queue when certain thresholds are reached.
@@ -643,7 +631,6 @@ impl<T: Config> OnQueueChanged<AggregateMessageOrigin> for Pallet<T> {
 		};
 
 		let QueueConfigData { resume_threshold, suspend_threshold, .. } = <QueueConfig<T>>::get();
-		defensive_assert!(resume_threshold < suspend_threshold);
 
 		let mut suspended_channels = <InboundXcmpSuspended<T>>::get();
 		let suspended = suspended_channels.contains(&para);

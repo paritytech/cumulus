@@ -176,7 +176,6 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type SelfParaId = parachain_info::Pallet<Runtime>;
 	type OutboundXcmpMessageSource = ();
 	// FAIL-CI make immediate execute
-	type DmpMessageMaxLen = sp_core::ConstU32<{ u32::MAX }>;
 	type DmpQueue = ();
 	type ReservedDmpWeight = ReservedDmpWeight;
 	type XcmpMessageHandler = ();

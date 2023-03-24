@@ -111,7 +111,6 @@ impl cumulus_pallet_parachain_system::Config for Test {
 	type OnSystemEvent = ();
 	type SelfParaId = ();
 	type OutboundXcmpMessageSource = XcmpQueue;
-	type DmpMessageMaxLen = sp_core::ConstU32<0>;
 	type DmpQueue = ();
 	type ReservedDmpWeight = ();
 	type XcmpMessageHandler = XcmpQueue;

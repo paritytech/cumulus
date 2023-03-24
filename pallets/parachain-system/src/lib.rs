@@ -150,6 +150,10 @@ where
 	check_version: bool,
 }
 
+/// The maximal length of a DMP message.
+pub type MaxDmpMessageLenOf<T> =
+	<<T as Config>::DmpQueue as EnqueueMessage<AggregateMessageOrigin>>::MaxMessageLen;
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -175,12 +179,9 @@ pub mod pallet {
 		/// The place where outbound XCMP messages come from. This is queried in `finalize_block`.
 		type OutboundXcmpMessageSource: XcmpMessageSource;
 
-		#[pallet::constant]
-		type DmpMessageMaxLen: Get<u32>;
-
-		/// Enqueue an inbound downward message for later processing.
+		/// Queues inbound downward messages for delayed processing.
 		///
-		/// This is normally an [`EnqueueMessage`] wrapped in an [`EnqueueWithOrigin`].
+		/// This defines the maximal DMP message length through [`crate::MaxDmpMessageLenOf`].
 		type DmpQueue: EnqueueMessage<AggregateMessageOrigin>;
 
 		/// The weight we reserve at the beginning of the block for processing DMP messages.
@@ -854,7 +855,7 @@ impl<T: Config> Pallet<T> {
 				// FAIL-CI propagate bound
 				.filter_map(|m| BoundedSlice::try_from(&m.msg[..]).ok());
 			// Put all messages into the MQ pallet. // FAIL-CI weight
-			T::MessageEnqueue::enqueue_messages(bounded, AggregateMessageOrigin::Parent);
+			T::DmpQueue::enqueue_messages(bounded, AggregateMessageOrigin::Parent);
 			<LastDmqMqcHead<T>>::put(&dmq_head);
 
 			Self::deposit_event(Event::DownwardMessagesProcessed {

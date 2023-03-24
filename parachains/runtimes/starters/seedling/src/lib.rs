@@ -171,7 +171,6 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type OnSystemEvent = cumulus_pallet_solo_to_para::Pallet<Runtime>;
 	type SelfParaId = parachain_info::Pallet<Runtime>;
 	type OutboundXcmpMessageSource = ();
-	type DmpMessageMaxLen = sp_core::ConstU32<{ u32::MAX }>;
 	type DmpQueue = ();
 	type ReservedDmpWeight = ();
 	type XcmpMessageHandler = ();
