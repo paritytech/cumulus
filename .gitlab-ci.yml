@@ -206,7 +206,17 @@ benchmarks-test:
   # we may live with failing benchmarks, it is just a signal for us
   allow_failure:                   true
 
-partial-repo-build-test:
+check-rustdoc:
+  stage:                           test
+  <<:                              *docker-env
+  <<:                              *test-refs
+  variables:
+    SKIP_WASM_BUILD:               1
+    RUSTDOCFLAGS:                  "-Dwarnings"
+  script:
+    - time cargo +nightly doc --workspace --verbose --no-deps --exclude relay-rialto-parachain-client
+
+partial-repo-pallets-build-test:
   stage:                           test
   <<:                              *docker-env
   <<:                              *nightly-test
