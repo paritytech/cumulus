@@ -15,18 +15,17 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use polkadot_core_primitives::{Block, Hash};
-use polkadot_service::{BlockT, NumberFor};
+use sp_runtime::traits::{Block as BlockT, NumberFor};
 
-use sc_network::NetworkService;
-
-use sc_client_api::HeaderBackend;
-use sc_network_common::{
+use sc_network::{
 	config::{
 		NonDefaultSetConfig, NonReservedPeerMode, NotificationHandshake, ProtocolId, SetConfig,
 	},
-	protocol::role::Roles,
-	sync::message::BlockAnnouncesHandshake,
+	NetworkService,
 };
+
+use sc_client_api::HeaderBackend;
+use sc_network_common::{role::Roles, sync::message::BlockAnnouncesHandshake};
 use sc_service::{error::Error, Configuration, NetworkStarter, SpawnTaskHandle};
 
 use std::{iter, sync::Arc};

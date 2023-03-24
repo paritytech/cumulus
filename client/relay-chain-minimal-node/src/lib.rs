@@ -28,15 +28,12 @@ use polkadot_node_subsystem_util::metrics::prometheus::Registry;
 use polkadot_primitives::CollatorPair;
 
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
-use sc_network::{Event, NetworkService};
-use sc_network_common::service::NetworkEventStream;
-use std::sync::Arc;
-
-use polkadot_service::{Configuration, TaskManager};
+use sc_network::{Event, NetworkEventStream, NetworkService};
+use sc_service::{Configuration, TaskManager};
+use sp_runtime::{app_crypto::Pair, traits::Block as BlockT};
 
 use futures::StreamExt;
-
-use sp_runtime::{app_crypto::Pair, traits::Block as BlockT};
+use std::sync::Arc;
 
 mod collator_overseer;
 
