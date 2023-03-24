@@ -1229,8 +1229,9 @@ mod tests {
 			),
 		);
 
-		let bhr_indirect_payload =
-			bp_bridge_hub_rococo::rewarding_bridge_signed_extension::from_params(
+		{
+			use bp_bridge_hub_rococo::BridgeHubSignedExtension;
+			let bhr_indirect_payload = bp_bridge_hub_rococo::SignedExtension::from_params(
 				10,
 				10,
 				TransactionEra::Immortal,
@@ -1238,10 +1239,12 @@ mod tests {
 				10,
 				10,
 			);
-		assert_eq!(payload.encode(), bhr_indirect_payload.encode());
+			assert_eq!(payload.encode(), bhr_indirect_payload.encode());
+		}
 
-		let bhw_indirect_payload =
-			bp_bridge_hub_wococo::rewarding_bridge_signed_extension::from_params(
+		{
+			use bp_bridge_hub_wococo::BridgeHubSignedExtension;
+			let bhw_indirect_payload = bp_bridge_hub_wococo::SignedExtension::from_params(
 				10,
 				10,
 				TransactionEra::Immortal,
@@ -1249,6 +1252,7 @@ mod tests {
 				10,
 				10,
 			);
-		assert_eq!(payload.encode(), bhw_indirect_payload.encode());
+			assert_eq!(payload.encode(), bhw_indirect_payload.encode());
+		}
 	}
 }
