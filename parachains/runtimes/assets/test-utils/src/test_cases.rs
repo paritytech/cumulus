@@ -1358,11 +1358,12 @@ pub fn can_governance_change_bridge_transfer_configuration<Runtime, XcmConfig>(
 			let bridged_network = ByGenesis([9; 32]);
 			let bridge_config = pallet_bridge_transfer::BridgeConfig {
 				bridge_location: (Parent, Parachain(1013)).into(),
+				bridge_location_fee: None,
 				allowed_target_location: MultiLocation::new(
 					2,
 					X2(GlobalConsensus(bridged_network), Parachain(1000)),
 				),
-				fee: None,
+				target_location_fee: None,
 			};
 
 			// helper to execute BridgeTransfer call
@@ -1410,16 +1411,21 @@ pub fn can_governance_change_bridge_transfer_configuration<Runtime, XcmConfig>(
 				assert!(cfg.is_some());
 				let cfg = cfg.unwrap();
 				assert_eq!(cfg.bridge_location, bridge_config.bridge_location);
+				assert_eq!(cfg.bridge_location_fee, None);
 				assert_eq!(cfg.allowed_target_location, bridge_config.allowed_target_location);
-				assert_eq!(cfg.fee, None);
+				assert_eq!(cfg.target_location_fee, None);
 			}
 
 			// governance can update bridge config
-			let new_fee: MultiAsset = (Concrete(MultiLocation::parent()), 1_000).into();
+			let new_bridge_location_fee: MultiAsset =
+				(Concrete(MultiLocation::parent()), 1_000).into();
+			let new_target_location_fee: MultiAsset =
+				(Concrete(MultiLocation::parent()), 1_000_000).into();
 			assert_ok!(execute_as_governance(
 				pallet_bridge_transfer::Call::<Runtime>::update_bridge_config {
 					bridged_network,
-					fee: Some(new_fee.clone()),
+					bridge_location_fee: Some(new_bridge_location_fee.clone()),
+					target_location_fee: Some(new_target_location_fee.clone()),
 				},
 			)
 			.ensure_complete());
@@ -1432,8 +1438,9 @@ pub fn can_governance_change_bridge_transfer_configuration<Runtime, XcmConfig>(
 				assert!(cfg.is_some());
 				let cfg = cfg.unwrap();
 				assert_eq!(cfg.bridge_location, bridge_config.bridge_location);
+				assert_eq!(cfg.bridge_location_fee, Some(new_bridge_location_fee));
 				assert_eq!(cfg.allowed_target_location, bridge_config.allowed_target_location);
-				assert_eq!(cfg.fee, Some(new_fee));
+				assert_eq!(cfg.target_location_fee, Some(new_target_location_fee));
 			}
 
 			// governance can remove bridge config
@@ -1531,10 +1538,12 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 				.expect("BridgeHub's Sovereign account");
 			let target_location_from_different_consensus =
 				MultiLocation::new(2, X2(GlobalConsensus(bridged_network), Parachain(1000)));
+			let target_location_fee: MultiAsset = (MultiLocation::parent(), 1_000_000).into();
 			let bridge_config = pallet_bridge_transfer::BridgeConfig {
 				bridge_location: bridge_hub_location,
+				bridge_location_fee: None,
 				allowed_target_location: target_location_from_different_consensus,
-				fee: None,
+				target_location_fee: Some(target_location_fee.clone()),
 			};
 			let balance_to_transfer = 1000_u128;
 			let native_asset = MultiLocation::parent();
@@ -1679,10 +1688,20 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 							.0
 							.matcher()
 							.match_next_inst(|next_instr| match next_instr {
-								UnpaidExecution { .. } => Ok(()),
+								WithdrawAsset(fees)
+									if fees == &MultiAssets::from(target_location_fee.clone()) =>
+									Ok(()),
 								_ => Err(()),
 							})
-							.expect("contains UnpaidExecution")
+							.expect("contains WithdrawAsset")
+							.match_next_inst(|next_instr| match next_instr {
+								BuyExecution { ref fees, ref weight_limit }
+									if fees == &target_location_fee &&
+										weight_limit == &Unlimited =>
+									Ok(()),
+								_ => Err(()),
+							})
+							.expect("contains BuyExecution")
 							.match_next_inst(|inner_xcm_instr| match inner_xcm_instr {
 								ReserveAssetDeposited(ref deposited)
 									if deposited.eq(&reanchored_assets) =>

@@ -39,14 +39,18 @@ pub const LOG_TARGET: &str = "runtime::bridge-assets-transfer";
 pub struct BridgeConfig {
 	/// Contains location, which is able to bridge XCM messages to bridged network
 	pub bridge_location: MultiLocation,
+	/// Fee which could be needed to pay in `bridge_location`
+	/// `MultiAsset` is here from the point of view of `bridge_location`, e.g.: `MultiLocation::parent()` means relay chain token of `bridge_location`
+	pub bridge_location_fee: Option<MultiAsset>,
 
 	/// Contains target destination on bridged network. E.g.: MultiLocation of Statemine/t on different consensus
 	// TODO:check-parameter - lets start with 1..1, maybe later we could extend this with BoundedVec
 	// TODO: bridged bridge-hub should have router for this
 	pub allowed_target_location: MultiLocation,
-
-	/// Fee which could be needed to pay in `bridge_location`
-	pub fee: Option<MultiAsset>,
+	// TODO:check-parameter - can we store Option<Weight> and then aviod using `Unlimited`?
+	/// If `None` then `UnpaidExecution` is used, else `Withdraw(target_location_fee)/BuyExecution(target_location_fee, Unlimited)`
+	/// `MultiAsset` is here from the point of view of `allowed_target_location`, e.g.: `MultiLocation::parent()` means relay chain token of `allowed_target_location`
+	pub target_location_fee: Option<MultiAsset>,
 }
 
 /// Trait for constructing ping message.
@@ -283,20 +287,27 @@ pub mod pallet {
 				.reanchored(&allowed_target_location, T::UniversalLocation::get())
 				.expect("// TODO:check-parameter - handle compensation?");
 
-			let xcm: Xcm<()> = sp_std::vec![
-				// TODO:check-parameter - setup fees - check teleporter for ForeignAssets - customizable AccountOf for BuyExecution + converters
-				UnpaidExecution { weight_limit: Unlimited, check_origin: None },
+			// prepare xcm message (maybe_paid + ReserveAssetDeposited stuff)
+			let mut xcm_instructions = match bridge_config.target_location_fee {
+				Some(target_location_fee) => sp_std::vec![
+					WithdrawAsset(target_location_fee.clone().into()),
+					BuyExecution { fees: target_location_fee, weight_limit: Unlimited },
+				],
+				None =>
+					sp_std::vec![UnpaidExecution { check_origin: None, weight_limit: Unlimited }],
+			};
+			xcm_instructions.extend(sp_std::vec![
 				ReserveAssetDeposited(asset.clone().into()),
 				ClearOrigin,
 				DepositAsset {
 					assets: MultiAssetFilter::from(MultiAssets::from(asset)),
 					beneficiary: remote_destination
 				}
-			]
-			.into();
+			]);
 
 			// TODO:check-parameter how to compensate if this call fails? return back deposisted assets?
-			Self::initiate_bridge_transfer(allowed_target_location, xcm).map_err(Into::into)
+			Self::initiate_bridge_transfer(allowed_target_location, xcm_instructions.into())
+				.map_err(Into::into)
 		}
 
 		/// Transfer `ping` via bridge to different global consensus.
@@ -395,14 +406,17 @@ pub mod pallet {
 		pub fn update_bridge_config(
 			origin: OriginFor<T>,
 			bridged_network: NetworkId,
-			fee: Option<MultiAsset>,
+			bridge_location_fee: Option<MultiAsset>,
+			target_location_fee: Option<MultiAsset>,
 		) -> DispatchResult {
 			let _ = T::AdminOrigin::ensure_origin(origin)?;
 			ensure!(Bridges::<T>::contains_key(bridged_network), Error::<T>::InvalidConfiguration);
 
 			Bridges::<T>::try_mutate_exists(bridged_network, |bridge_config| {
-				let deposit = bridge_config.as_mut().ok_or(Error::<T>::InvalidConfiguration)?;
-				deposit.fee = fee;
+				let bridge_config =
+					bridge_config.as_mut().ok_or(Error::<T>::InvalidConfiguration)?;
+				bridge_config.bridge_location_fee = bridge_location_fee;
+				bridge_config.target_location_fee = target_location_fee;
 				Self::deposit_event(Event::BridgeUpdated);
 				Ok(())
 			})
@@ -500,8 +514,9 @@ pub mod pallet {
 			_remote_location: &InteriorMultiLocation,
 			_message: &Xcm<()>,
 		) -> Option<(MultiLocation, Option<MultiAsset>)> {
-			Pallet::<T>::get_bridge_for(network)
-				.map(|bridge_config| (bridge_config.bridge_location, bridge_config.fee))
+			Pallet::<T>::get_bridge_for(network).map(|bridge_config| {
+				(bridge_config.bridge_location, bridge_config.bridge_location_fee)
+			})
 		}
 	}
 }
@@ -687,11 +702,12 @@ pub(crate) mod tests {
 			Wococo,
 			BridgeConfig {
 				bridge_location: (Parent, Parachain(1013)).into(),
+				bridge_location_fee: None,
 				allowed_target_location: MultiLocation::new(
 					2,
 					X2(GlobalConsensus(Wococo), Parachain(1000)),
 				),
-				fee: None,
+				target_location_fee: None,
 			},
 		)
 	}
@@ -929,6 +945,7 @@ pub(crate) mod tests {
 					ExportMessage { network: Wococo, destination: X1(Parachain(1000)), .. }
 				)
 			}) {
+				assert!(xcm.0.iter().any(|instr| matches!(instr, UnpaidExecution { .. })));
 				assert!(xcm.0.iter().any(|instr| matches!(instr, ReserveAssetDeposited(..))));
 				assert!(xcm.0.iter().any(|instr| matches!(instr, ClearOrigin)));
 				assert!(xcm.0.iter().any(|instr| matches!(instr, DepositAsset { .. })));
@@ -997,11 +1014,12 @@ pub(crate) mod tests {
 		let bridged_network = Rococo;
 		let bridged_config = Box::new(BridgeConfig {
 			bridge_location: (Parent, Parachain(1013)).into(),
+			bridge_location_fee: None,
 			allowed_target_location: MultiLocation::new(
 				2,
 				X2(GlobalConsensus(bridged_network), Parachain(1000)),
 			),
-			fee: None,
+			target_location_fee: None,
 		});
 		let dummy_xcm = Xcm(vec![]);
 		let dummy_remote_interior_multilocation = X1(Parachain(1234));
@@ -1070,7 +1088,7 @@ pub(crate) mod tests {
 					&dummy_remote_interior_multilocation,
 					&dummy_xcm
 				),
-				Some((bridged_config.bridge_location, bridged_config.fee))
+				Some((bridged_config.bridge_location, bridged_config.bridge_location_fee))
 			);
 			assert_eq!(
 				BridgeTransfer::exporter_for(
@@ -1087,14 +1105,16 @@ pub(crate) mod tests {
 				RuntimeOrigin::root(),
 				bridged_network,
 				Some((Parent, 200u128).into()),
+				Some((Parent, 300u128).into()),
 			));
 			assert_eq!(Bridges::<TestRuntime>::iter().count(), 1);
 			assert_eq!(
 				Bridges::<TestRuntime>::get(bridged_network),
 				Some(BridgeConfig {
 					bridge_location: bridged_config.bridge_location.clone(),
+					bridge_location_fee: Some((Parent, 200u128).into()),
 					allowed_target_location: bridged_config.allowed_target_location.clone(),
-					fee: Some((Parent, 200u128).into())
+					target_location_fee: Some((Parent, 300u128).into()),
 				})
 			);
 			assert_eq!(
