@@ -208,7 +208,10 @@ fn suspend_and_resume_xcm_execution_work() {
 
 		assert_noop!(XcmpQueue::resume_xcm_execution(Origin::signed(1)), BadOrigin);
 		assert_ok!(XcmpQueue::resume_xcm_execution(Origin::root()));
-		assert_noop!(XcmpQueue::resume_xcm_execution(Origin::root()), Error::<Test>::NotSuspended);
+		assert_noop!(
+			XcmpQueue::resume_xcm_execution(Origin::root()),
+			Error::<Test>::AlreadyResumed
+		);
 		assert!(!QueueSuspended::<Test>::get());
 	});
 }
@@ -248,63 +251,6 @@ fn update_resume_threshold_works() {
 		assert_noop!(XcmpQueue::update_resume_threshold(Origin::signed(7), 3), BadOrigin);
 
 		assert_eq!(<QueueConfig<Test>>::get().resume_threshold, 110);
-	});
-}
-
-#[test]
-fn update_threshold_weight_works() {
-	new_test_ext().execute_with(|| {
-		assert_eq!(<QueueConfig<Test>>::get().threshold_weight, Weight::from_ref_time(100_000));
-		assert_ok!(XcmpQueue::update_threshold_weight(Origin::root(), Weight::from_parts(10, 20)));
-		assert_noop!(
-			XcmpQueue::update_threshold_weight(Origin::signed(5), Weight::MAX,),
-			BadOrigin
-		);
-
-		assert_eq!(<QueueConfig<Test>>::get().threshold_weight, Weight::from_parts(10, 20));
-	});
-}
-
-#[test]
-fn update_weight_restrict_decay_works() {
-	new_test_ext().execute_with(|| {
-		assert_eq!(<QueueConfig<Test>>::get().weight_restrict_decay, Weight::from_ref_time(2));
-		assert_ok!(XcmpQueue::update_weight_restrict_decay(
-			Origin::root(),
-			Weight::from_ref_time(5)
-		));
-		assert_noop!(
-			XcmpQueue::update_weight_restrict_decay(Origin::signed(6), Weight::from_ref_time(4),),
-			BadOrigin
-		);
-
-		assert_eq!(<QueueConfig<Test>>::get().weight_restrict_decay, Weight::from_ref_time(5));
-	});
-}
-
-#[test]
-fn update_xcmp_max_individual_weight() {
-	new_test_ext().execute_with(|| {
-		assert_eq!(
-			<QueueConfig<Test>>::get().xcmp_max_individual_weight,
-			Weight::from_parts(20u64 * WEIGHT_REF_TIME_PER_MILLIS, DEFAULT_POV_SIZE),
-		);
-		assert_ok!(XcmpQueue::update_xcmp_max_individual_weight(
-			Origin::root(),
-			Weight::from_ref_time(30u64 * WEIGHT_REF_TIME_PER_MILLIS)
-		));
-		assert_noop!(
-			XcmpQueue::update_xcmp_max_individual_weight(
-				Origin::signed(3),
-				Weight::from_ref_time(10u64 * WEIGHT_REF_TIME_PER_MILLIS)
-			),
-			BadOrigin
-		);
-
-		assert_eq!(
-			<QueueConfig<Test>>::get().xcmp_max_individual_weight,
-			Weight::from_ref_time(30u64 * WEIGHT_REF_TIME_PER_MILLIS)
-		);
 	});
 }
 

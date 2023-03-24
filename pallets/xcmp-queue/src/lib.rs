@@ -64,7 +64,7 @@ pub use pallet::*;
 /// Index used to identify overweight XCMs.
 pub type OverweightIndex = u64;
 pub type XcmOverHrmpMaxLenOf<T> =
-	<<T as Config>::XcmpEnqueuer as EnqueueMessage<AggregateMessageOrigin>>::MaxMessageLen;
+	<<T as Config>::XcmpQueue as EnqueueMessage<AggregateMessageOrigin>>::MaxMessageLen;
 
 const LOG_TARGET: &str = "xcmp_queue";
 const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
@@ -96,6 +96,7 @@ pub mod pallet {
 		/// Enqueue an inbound horizontal message for later processing.
 		type XcmpQueue: EnqueueMessage<AggregateMessageOrigin>;
 
+		/// Should be set to the this pallet in order to respect execution suspension.
 		type XcmpProcessor: ProcessMessage<Origin = AggregateMessageOrigin>;
 
 		/// The maximum number of inbound XCMP channels that can be suspended simultaneously.
@@ -214,56 +215,6 @@ pub mod pallet {
 
 			QueueConfig::<T>::try_mutate(|data| {
 				data.resume_threshold = new;
-				data.validate::<T>()
-			})
-		}
-
-		/// Overwrites the amount of remaining weight under which we stop processing messages.
-		///
-		/// - `origin`: Must pass `Root`.
-		/// - `new`: Desired value for `QueueConfigData.threshold_weight`
-		#[pallet::call_index(6)]
-		#[pallet::weight((T::WeightInfo::set_config_with_weight(), DispatchClass::Operational,))]
-		pub fn update_threshold_weight(origin: OriginFor<T>, new: Weight) -> DispatchResult {
-			ensure_root(origin)?;
-
-			QueueConfig::<T>::try_mutate(|data| {
-				data.threshold_weight = new;
-				data.validate::<T>()
-			})
-		}
-
-		/// Overwrites the speed to which the available weight approaches the maximum weight.
-		/// A lower number results in a faster progression. A value of 1 makes the entire weight available initially.
-		///
-		/// - `origin`: Must pass `Root`.
-		/// - `new`: Desired value for `QueueConfigData.weight_restrict_decay`.
-		#[pallet::call_index(7)]
-		#[pallet::weight((T::WeightInfo::set_config_with_weight(), DispatchClass::Operational,))]
-		pub fn update_weight_restrict_decay(origin: OriginFor<T>, new: Weight) -> DispatchResult {
-			ensure_root(origin)?;
-
-			QueueConfig::<T>::try_mutate(|data| {
-				data.weight_restrict_decay = new;
-				data.validate::<T>()
-			})
-		}
-
-		/// Overwrite the maximum amount of weight any individual message may consume.
-		/// Messages above this weight go into the overweight queue and may only be serviced explicitly.
-		///
-		/// - `origin`: Must pass `Root`.
-		/// - `new`: Desired value for `QueueConfigData.xcmp_max_individual_weight`.
-		#[pallet::call_index(8)]
-		#[pallet::weight((T::WeightInfo::set_config_with_weight(), DispatchClass::Operational,))]
-		pub fn update_xcmp_max_individual_weight(
-			origin: OriginFor<T>,
-			new: Weight,
-		) -> DispatchResult {
-			ensure_root(origin)?;
-
-			QueueConfig::<T>::try_mutate(|data| {
-				data.xcmp_max_individual_weight = new;
 				data.validate::<T>()
 			})
 		}
@@ -405,11 +356,30 @@ pub struct QueueConfigData {
 	/// The number of pages of messages which the queue must be reduced to before it signals that
 	/// message sending may recommence after it has been suspended.
 	resume_threshold: u32,
+	/// The amount of remaining weight under which we stop processing messages.
+	threshold_weight: Weight,
+	/// The speed to which the available weight approaches the maximum weight. A lower number
+	/// results in a faster progression. A value of 1 makes the entire weight available initially.
+	weight_restrict_decay: Weight,
+	/// The maximum amount of weight any individual message may consume. Messages above this weight
+	/// go into the overweight queue and may only be serviced explicitly.
+	xcmp_max_individual_weight: Weight,
 }
 
 impl Default for QueueConfigData {
 	fn default() -> Self {
-		Self { suspend_threshold: 200, drop_threshold: 500, resume_threshold: 100 }
+		Self {
+			suspend_threshold: 200,
+			drop_threshold: 500,
+			resume_threshold: 100,
+			// FAIl-CI remove this
+			threshold_weight: Weight::from_parts(100_000, 0),
+			weight_restrict_decay: Weight::from_parts(2, 0),
+			xcmp_max_individual_weight: Weight::from_parts(
+				20u64 * WEIGHT_REF_TIME_PER_MILLIS,
+				DEFAULT_POV_SIZE,
+			),
+		}
 	}
 }
 
@@ -580,7 +550,7 @@ impl<T: Config> Pallet<T> {
 			return
 		}
 		let QueueConfigData { drop_threshold, .. } = <QueueConfig<T>>::get();
-		let fp = T::XcmpEnqueuer::footprint(AggregateMessageOrigin::Sibling(sender));
+		let fp = T::XcmpQueue::footprint(AggregateMessageOrigin::Sibling(sender));
 
 		let new_count = xcms.len().saturating_add(fp.count as usize);
 		let to_enqueue = (drop_threshold as usize).saturating_sub(new_count) as usize;
@@ -595,7 +565,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		if !xcms.is_empty() {
-			T::XcmpEnqueuer::enqueue_messages(
+			T::XcmpQueue::enqueue_messages(
 				xcms.iter().map(|xcm| xcm.as_bounded_slice()),
 				AggregateMessageOrigin::Sibling(sender),
 			);
@@ -684,11 +654,7 @@ impl<T: Config> ProcessMessage for Pallet<T> {
 			return Err(ProcessMessageError::Yield)
 		}
 
-		T::XcmpMessageProcessor::process_message(
-			message,
-			AggregateMessageOrigin::Sibling(para),
-			meter,
-		)
+		T::XcmpProcessor::process_message(message, AggregateMessageOrigin::Sibling(para), meter)
 	}
 }
 
