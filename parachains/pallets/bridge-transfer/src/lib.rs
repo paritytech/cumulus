@@ -49,12 +49,6 @@ pub struct BridgeConfig {
 	pub fee: Option<MultiAsset>,
 }
 
-impl From<BridgeConfig> for (MultiLocation, Option<MultiAsset>) {
-	fn from(bridge_config: BridgeConfig) -> (MultiLocation, Option<MultiAsset>) {
-		(bridge_config.bridge_location, bridge_config.fee)
-	}
-}
-
 /// Trait for constructing ping message.
 pub trait PingMessageBuilder {
 	fn try_build(
@@ -215,6 +209,7 @@ pub mod pallet {
 		/// * `destination`: Different consensus location, where the assets will be deposited, e.g. Polkadot's Statemint: `2, X2(GlobalConsensus(NetworkId::Polkadot), Parachain(1000))`
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::transfer_asset_via_bridge())]
+		// TODO:check-parameter - instead of compensations, use #[transactional] + add test
 		pub fn transfer_asset_via_bridge(
 			origin: OriginFor<T>,
 			assets: Box<VersionedMultiAssets>,
@@ -286,14 +281,17 @@ pub mod pallet {
 			asset.reanchor(&allowed_target_location, T::UniversalLocation::get(), None);
 			let remote_destination = remote_destination
 				.reanchored(&allowed_target_location, T::UniversalLocation::get())
-				.expect("// TODO:check-parameter - handle compenstaion?");
+				.expect("// TODO:check-parameter - handle compensation?");
 
 			let xcm: Xcm<()> = sp_std::vec![
 				// TODO:check-parameter - setup fees - check teleporter for ForeignAssets - customizable AccountOf for BuyExecution + converters
 				UnpaidExecution { weight_limit: Unlimited, check_origin: None },
-				ReserveAssetDeposited(asset.into()),
+				ReserveAssetDeposited(asset.clone().into()),
 				ClearOrigin,
-				DepositAsset { assets: All.into(), beneficiary: remote_destination }
+				DepositAsset {
+					assets: MultiAssetFilter::from(MultiAssets::from(asset)),
+					beneficiary: remote_destination
+				}
 			]
 			.into();
 
@@ -435,6 +433,7 @@ pub mod pallet {
 					match Bridges::<T>::get(remote_network) {
 						Some(bridge_config) => {
 							ensure!(
+								// TODO:check-parameter - verify and prepare test for ETH scenario - https://github.com/paritytech/cumulus/pull/2013#discussion_r1094909290
 								remote_location.starts_with(&bridge_config.allowed_target_location),
 								Error::<T>::UnsupportedDestination
 							);
@@ -501,7 +500,8 @@ pub mod pallet {
 			_remote_location: &InteriorMultiLocation,
 			_message: &Xcm<()>,
 		) -> Option<(MultiLocation, Option<MultiAsset>)> {
-			Pallet::<T>::get_bridge_for(network).map(Into::into)
+			Pallet::<T>::get_bridge_for(network)
+				.map(|bridge_config| (bridge_config.bridge_location, bridge_config.fee))
 		}
 	}
 }
@@ -1062,10 +1062,7 @@ pub(crate) mod tests {
 				bridged_config.clone(),
 			));
 			assert_eq!(Bridges::<TestRuntime>::iter().count(), 1);
-			assert_eq!(
-				Bridges::<TestRuntime>::get(bridged_network),
-				Some((*bridged_config.clone()).into())
-			);
+			assert_eq!(Bridges::<TestRuntime>::get(bridged_network), Some(*bridged_config.clone()));
 			assert_eq!(Bridges::<TestRuntime>::get(Wococo), None);
 			assert_eq!(
 				BridgeTransfer::exporter_for(
@@ -1073,7 +1070,7 @@ pub(crate) mod tests {
 					&dummy_remote_interior_multilocation,
 					&dummy_xcm
 				),
-				Some((*bridged_config.clone()).into())
+				Some((bridged_config.bridge_location, bridged_config.fee))
 			);
 			assert_eq!(
 				BridgeTransfer::exporter_for(

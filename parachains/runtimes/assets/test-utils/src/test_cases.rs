@@ -1696,8 +1696,9 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 							})
 							.expect("contains ClearOrigin")
 							.match_next_inst(|inner_xcm_instr| match inner_xcm_instr {
-								DepositAsset { assets: Wild(filter), ref beneficiary }
-									if filter == &All &&
+								DepositAsset { assets: filter, ref beneficiary }
+									if filter ==
+										&MultiAssetFilter::from(reanchored_assets.clone()) &&
 										beneficiary.eq(&reanchored_destination_account) =>
 									Ok(()),
 								_ => Err(()),
