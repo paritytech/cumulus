@@ -146,6 +146,7 @@ runtime-benchmarks = [
 	"pallet-collator-selection/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
+	"cumulus-primitives-core/runtime-benchmarks",
 ]
 
 try-runtime = [

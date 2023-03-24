@@ -76,8 +76,25 @@ impl From<MessageSendError> for &'static str {
 pub enum AggregateMessageOrigin {
 	/// The message came from the para-chain itself.
 	Loopback,
-	Parent,          // DMP
-	Sibling(ParaId), // HRMP
+	/// The message came from the relay-chain.
+	///
+	/// This is used by the DMP queue.
+	Parent,
+	/// The message came from a sibling para-chain.
+	///
+	/// This is used by the HRMP queue.
+	Sibling(ParaId),
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl From<u32> for AggregateMessageOrigin {
+	fn from(x: u32) -> Self {
+		match x {
+			0 => Self::Loopback,
+			1 => Self::Parent,
+			p => Self::Sibling(ParaId::from(p)),
+		}
+	}
 }
 
 /// Information about an XCMP channel.
