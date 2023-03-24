@@ -80,7 +80,7 @@ use crate::{
 		WithBridgeHubRococoMessageBridge,
 	},
 	constants::fee::WeightToFee,
-	xcm_config::{XcmRouter, XcmRouterWeigher},
+	xcm_config::XcmRouter,
 };
 use bridge_runtime_common::{
 	messages::{source::TargetHeaderChainAdapter, target::SourceHeaderChainAdapter},
@@ -488,7 +488,7 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 		bp_bridge_hub_wococo::BridgeHubWococo,
 		bp_bridge_hub_rococo::BridgeHubRococo,
 		OnBridgeHubRococoBlobDispatcher,
-		XcmRouterWeigher,
+		Self::WeightInfo,
 	>;
 }
 
@@ -525,7 +525,7 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 		bp_bridge_hub_rococo::BridgeHubRococo,
 		bp_bridge_hub_wococo::BridgeHubWococo,
 		OnBridgeHubWococoBlobDispatcher,
-		XcmRouterWeigher,
+		Self::WeightInfo,
 	>;
 }
 
@@ -1009,11 +1009,14 @@ impl_runtime_apis! {
 				fn prepare_message_proof(
 					params: MessageProofParams,
 				) -> (bridge_hub_rococo_config::FromWococoBridgeHubMessagesProof, Weight) {
+					use cumulus_primitives_core::XcmpMessageSource;
+					assert!(XcmpQueue::take_outbound_messages(usize::MAX).is_empty());
+					ParachainSystem::open_outbound_hrmp_channel_for_benchmarks(42.into());
 					prepare_message_proof_from_parachain::<
 						Runtime,
 						BridgeGrandpaWococoInstance,
 						bridge_hub_rococo_config::WithBridgeHubWococoMessageBridge,
-					>(params)
+					>(params, X2(GlobalConsensus(Rococo), Parachain(42)))
 				}
 
 				fn prepare_message_delivery_proof(
@@ -1024,6 +1027,11 @@ impl_runtime_apis! {
 						BridgeGrandpaWococoInstance,
 						bridge_hub_rococo_config::WithBridgeHubWococoMessageBridge,
 					>(params)
+				}
+
+				fn is_message_successfully_dispatched(_nonce: bp_messages::MessageNonce) -> bool {
+					use cumulus_primitives_core::XcmpMessageSource;
+					!XcmpQueue::take_outbound_messages(usize::MAX).is_empty()
 				}
 			}
 
@@ -1045,11 +1053,14 @@ impl_runtime_apis! {
 				fn prepare_message_proof(
 					params: MessageProofParams,
 				) -> (bridge_hub_wococo_config::FromRococoBridgeHubMessagesProof, Weight) {
+					use cumulus_primitives_core::XcmpMessageSource;
+					assert!(XcmpQueue::take_outbound_messages(usize::MAX).is_empty());
+					ParachainSystem::open_outbound_hrmp_channel_for_benchmarks(42.into());
 					prepare_message_proof_from_parachain::<
 						Runtime,
 						BridgeGrandpaRococoInstance,
 						bridge_hub_wococo_config::WithBridgeHubRococoMessageBridge,
-					>(params)
+					>(params, X2(GlobalConsensus(Wococo), Parachain(42)))
 				}
 
 				fn prepare_message_delivery_proof(
@@ -1060,6 +1071,11 @@ impl_runtime_apis! {
 						BridgeGrandpaRococoInstance,
 						bridge_hub_wococo_config::WithBridgeHubRococoMessageBridge,
 					>(params)
+				}
+
+				fn is_message_successfully_dispatched(_nonce: bp_messages::MessageNonce) -> bool {
+					use cumulus_primitives_core::XcmpMessageSource;
+					!XcmpQueue::take_outbound_messages(usize::MAX).is_empty()
 				}
 			}
 

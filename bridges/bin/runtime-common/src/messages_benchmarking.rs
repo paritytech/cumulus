@@ -21,7 +21,8 @@
 
 use crate::{
 	messages::{
-		source::FromBridgedChainMessagesDeliveryProof, target::FromBridgedChainMessagesProof,
+		source::FromBridgedChainMessagesDeliveryProof,
+		target::FromBridgedChainMessagesProof,
 		AccountIdOf, BridgedChain, HashOf, HasherOf, MessageBridge, ThisChain,
 	},
 	messages_generation::{
