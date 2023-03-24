@@ -16,7 +16,7 @@
 
 //! A module that is responsible for migration of storage.
 
-use crate::{Config, Overweight, Pallet, QueueConfig, DEFAULT_POV_SIZE};
+use crate::{Config, OverweightIndex, Pallet, ParaId, QueueConfig, DEFAULT_POV_SIZE};
 use frame_support::{
 	pallet_prelude::*,
 	traits::StorageVersion,
@@ -105,6 +105,9 @@ pub fn migrate_to_v2<T: Config>() -> Weight {
 }
 
 pub fn migrate_to_v3<T: Config>() -> Weight {
+	#[frame_support::storage_alias]
+	type Overweight<T: Config> =
+		CountedStorageMap<Pallet<T>, Twox64Concat, OverweightIndex, ParaId>;
 	let overweight_messages = Overweight::<T>::initialize_counter() as u64;
 
 	T::DbWeight::get().reads_writes(overweight_messages, 1)
