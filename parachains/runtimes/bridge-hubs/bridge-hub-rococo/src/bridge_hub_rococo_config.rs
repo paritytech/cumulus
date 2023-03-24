@@ -91,8 +91,6 @@ const DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO: LaneId = LaneId([0, 0, 0, 1]);
 /// Messaging Bridge configuration for BridgeHubRococo -> BridgeHubWococo
 pub struct WithBridgeHubWococoMessageBridge;
 impl MessageBridge for WithBridgeHubWococoMessageBridge {
-	const THIS_CHAIN_ID: ChainId = bp_runtime::BRIDGE_HUB_ROCOCO_CHAIN_ID;
-	const BRIDGED_CHAIN_ID: ChainId = BridgeHubWococoChainId::get();
 	const BRIDGED_MESSAGES_PALLET_NAME: &'static str =
 		bp_bridge_hub_rococo::WITH_BRIDGE_HUB_ROCOCO_MESSAGES_PALLET_NAME;
 	type ThisChain = BridgeHubRococo;
@@ -120,11 +118,7 @@ impl UnderlyingChainProvider for BridgeHubWococo {
 	type Chain = bp_bridge_hub_wococo::BridgeHubWococo;
 }
 
-impl messages::BridgedChainWithMessages for BridgeHubWococo {
-	fn verify_dispatch_weight(_message_payload: &[u8]) -> bool {
-		true
-	}
-}
+impl messages::BridgedChainWithMessages for BridgeHubWococo {}
 
 /// BridgeHubRococo chain from message lane point of view.
 #[derive(RuntimeDebug, Clone, Copy)]
@@ -136,20 +130,6 @@ impl UnderlyingChainProvider for BridgeHubRococo {
 
 impl ThisChainWithMessages for BridgeHubRococo {
 	type RuntimeOrigin = crate::RuntimeOrigin;
-	type RuntimeCall = crate::RuntimeCall;
-
-	fn is_message_accepted(origin: &Self::RuntimeOrigin, lane: &LaneId) -> bool {
-		log::info!(target: crate::LOG_TARGET, "[BridgeHubRococo::ThisChainWithMessages] is_message_accepted - origin: {:?}, lane: {:?}", origin, lane);
-		lane == &DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO
-	}
-
-	fn maximal_pending_messages_at_outbound_lane() -> MessageNonce {
-		log::info!(
-			target: crate::LOG_TARGET,
-			"[BridgeHubRococo::ThisChainWithMessages] maximal_pending_messages_at_outbound_lane"
-		);
-		MessageNonce::MAX / 2
-	}
 }
 
 /// Signed extension that refunds relayers that are delivering messages from the Wococo parachain.

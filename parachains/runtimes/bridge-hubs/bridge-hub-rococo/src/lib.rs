@@ -400,6 +400,7 @@ impl pallet_utility::Config for Runtime {
 /// Add granda bridge pallet to track Wococo relay chain on Rococo BridgeHub
 pub type BridgeGrandpaWococoInstance = pallet_bridge_grandpa::Instance1;
 impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
+	type RuntimeEvent = RuntimeEvent;
 	type BridgedChain = bp_wococo::Wococo;
 	type MaxRequests = MaxRequests;
 	type HeadersToKeep = RelayChainHeadersToKeep;
@@ -409,6 +410,7 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
 /// Add granda bridge pallet to track Rococo relay chain on Wococo BridgeHub
 pub type BridgeGrandpaRococoInstance = pallet_bridge_grandpa::Instance2;
 impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
+	type RuntimeEvent = RuntimeEvent;
 	type BridgedChain = bp_rococo::Rococo;
 	type MaxRequests = MaxRequests;
 	type HeadersToKeep = RelayChainHeadersToKeep;
@@ -580,12 +582,12 @@ construct_runtime!(
 		// at particular runtime.
 
 		// With-Wococo bridge modules that are active (used) at Rococo Bridge Hub runtime.
-		BridgeWococoGrandpa: pallet_bridge_grandpa::<Instance1>::{Pallet, Call, Storage, Config<T>} = 41,
+		BridgeWococoGrandpa: pallet_bridge_grandpa::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 41,
 		BridgeWococoParachain: pallet_bridge_parachains::<Instance1>::{Pallet, Call, Storage, Event<T>} = 42,
 		BridgeWococoMessages: pallet_bridge_messages::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 46,
 
 		// With-Rococo bridge modules that are active (used) at Wococo Bridge Hub runtime.
-		BridgeRococoGrandpa: pallet_bridge_grandpa::<Instance2>::{Pallet, Call, Storage, Config<T>} = 43,
+		BridgeRococoGrandpa: pallet_bridge_grandpa::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 43,
 		BridgeRococoParachain: pallet_bridge_parachains::<Instance2>::{Pallet, Call, Storage, Event<T>} = 44,
 		BridgeRococoMessages: pallet_bridge_messages::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 45,
 
