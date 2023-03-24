@@ -20,8 +20,7 @@ use crate::{
 	BridgeParachainRococoInstance, ParachainInfo, Runtime, WithBridgeHubRococoMessagesInstance,
 	XcmRouter,
 };
-use bp_messages::{LaneId, MessageNonce};
-use bp_runtime::ChainId;
+use bp_messages::LaneId;
 use bridge_runtime_common::{
 	messages,
 	messages::{
