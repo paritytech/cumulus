@@ -510,7 +510,7 @@ pub mod pallet {
 pub(crate) mod tests {
 	use super::*;
 	use crate as bridge_transfer;
-	use frame_support::traits::Currency;
+	use frame_support::traits::{ConstU32, Currency};
 
 	use frame_support::{
 		assert_noop, assert_ok, dispatch::DispatchError, parameter_types, sp_io, sp_tracing,
@@ -602,6 +602,10 @@ pub(crate) mod tests {
 		type MaxLocks = ();
 		type MaxReserves = MaxReserves;
 		type ReserveIdentifier = [u8; 8];
+		type HoldIdentifier = ();
+		type FreezeIdentifier = ();
+		type MaxHolds = ConstU32<0>;
+		type MaxFreezes = ConstU32<0>;
 	}
 
 	parameter_types! {
