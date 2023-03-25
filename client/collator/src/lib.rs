@@ -149,6 +149,99 @@ where
 	}
 }
 
+/// Relay-chain-driven collators are those whose block production is driven purely
+/// by new relay chain blocks and the most recently included parachain blocks
+/// within them.
+///
+/// This method of driving collators is not suited to anything but the most simple parachain
+/// consensus mechanisms, and this module may soon be deprecated.
+pub mod relay_chain_driven {
+	use futures::{prelude::*, channel::{mpsc, oneshot}};
+	use polkadot_primitives::{CollatorPair, Id as ParaId};
+	use polkadot_overseer::Handle as OverseerHandle;
+	use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
+	use polkadot_node_primitives::{
+		CollationGenerationConfig, CollationResult,
+	};
+
+	use cumulus_primitives_core::{
+		relay_chain::Hash as PHash, PersistedValidationData,
+	};
+
+	/// A request to author a collation, based on the advancement of the relay chain.
+	///
+	/// See the module docs for more info on relay-chain-driven collators.
+	pub struct CollationRequest {
+		relay_parent: PHash,
+		pvd: PersistedValidationData,
+		sender: oneshot::Sender<Option<CollationResult>>,
+	}
+
+	impl CollationRequest {
+		/// Get the relay parent of the collation request.
+		pub fn relay_parent(&self) -> &PHash {
+			&self.relay_parent
+		}
+
+		/// Get the [`PersistedValidationData`] for the request.
+		pub fn persisted_validation_data(&self) -> &PersistedValidationData {
+			&self.pvd
+		}
+
+		/// Complete the request with a collation, if any.
+		pub fn complete(self, collation: Option<CollationResult>) {
+			let _ = self.sender.send(collation);
+		}
+	}
+
+	/// Initialize the collator with Polkadot's collation-generation
+	/// subsystem, returning a stream of collation requests to handle.
+	pub async fn init(
+		key: CollatorPair,
+		para_id: ParaId,
+		overseer_handle: OverseerHandle,
+	) -> mpsc::Receiver<CollationRequest> {
+		let mut overseer_handle = overseer_handle;
+
+		let (stream_tx, stream_rx) = mpsc::channel(32);
+		let config = CollationGenerationConfig {
+			key,
+			para_id,
+			collator: Box::new(move |relay_parent, validation_data| {
+				let mut stream_tx = stream_tx.clone();
+				let validation_data = validation_data.clone();
+				Box::pin(async move {
+					let (this_tx, this_rx) = oneshot::channel();
+					let request = CollationRequest {
+						relay_parent,
+						pvd: validation_data,
+						sender: this_tx,
+					};
+
+					if let Err(_) = stream_tx.send(request).await {
+						return None
+					}
+
+					match this_rx.await {
+						Ok(x) => x,
+						Err(_) => None,
+					}
+				})
+			}),
+		};
+
+		overseer_handle
+			.send_msg(CollationGenerationMessage::Initialize(config), "StartCollator")
+			.await;
+
+		overseer_handle
+			.send_msg(CollatorProtocolMessage::CollateOn(para_id), "StartCollator")
+			.await;
+
+		stream_rx
+	}
+}
+
 /// Parameters for [`start_collator`].
 pub struct StartCollatorParams<Block: BlockT, RA, BS, Spawner> {
 	pub para_id: ParaId,
