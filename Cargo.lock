@@ -1912,6 +1912,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-client-consensus-proposer"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "cumulus-client-consensus-common",
+ "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
+ "futures",
+ "parity-scale-codec",
+ "sp-consensus",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
+ "tracing",
+]
+
+[[package]]
 name = "cumulus-client-consensus-relay-chain"
 version = "0.1.0"
 dependencies = [
