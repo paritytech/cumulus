@@ -28,15 +28,12 @@ use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
 use cumulus_client_collator_service::CollatorService;
 use cumulus_client_consensus_common::ParachainConsensus;
-use polkadot_node_primitives::{
-	CollationGenerationConfig, CollationResult, MaybeCompressedPoV,
-};
-use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
+use polkadot_node_primitives::{CollationResult, MaybeCompressedPoV};
 use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::{CollatorPair, Id as ParaId};
 
 use codec::{Decode, Encode};
-use futures::FutureExt;
+use futures::prelude::*;
 use std::sync::Arc;
 use tracing::Instrument;
 
@@ -260,7 +257,7 @@ pub async fn start_collator<Block, RA, BS, Spawner>(
 		para_id,
 		block_status,
 		announce_block,
-		mut overseer_handle,
+		overseer_handle,
 		spawner,
 		key,
 		parachain_consensus,
@@ -275,7 +272,7 @@ pub async fn start_collator<Block, RA, BS, Spawner>(
 {
 	let collator_service = CollatorService::new(
 		block_status,
-		Arc::new(spawner),
+		Arc::new(spawner.clone()),
 		announce_block,
 		runtime_api,
 	);
@@ -285,26 +282,25 @@ pub async fn start_collator<Block, RA, BS, Spawner>(
 		parachain_consensus,
 	);
 
-	let span = tracing::Span::current();
-	let config = CollationGenerationConfig {
+	let mut request_stream = relay_chain_driven::init(
 		key,
 		para_id,
-		collator: Box::new(move |relay_parent, validation_data| {
-			let collator = collator.clone();
-			collator
-				.produce_candidate(relay_parent, validation_data.clone())
-				.instrument(span.clone())
-				.boxed()
-		}),
-	};
+		overseer_handle,
+	).await;
 
-	overseer_handle
-		.send_msg(CollationGenerationMessage::Initialize(config), "StartCollator")
-		.await;
+	let collation_future = Box::pin(async move {
+		let span = tracing::Span::current();
+		while let Some(request) = request_stream.next().await {
+			let collation = collator.clone().produce_candidate(
+				*request.relay_parent(),
+				request.persisted_validation_data().clone(),
+			).instrument(span.clone()).await;
 
-	overseer_handle
-		.send_msg(CollatorProtocolMessage::CollateOn(para_id), "StartCollator")
-		.await;
+			request.complete(collation);
+		}
+	});
+
+	spawner.spawn("cumulus-relay-driven-collator", None, collation_future);
 }
 
 #[cfg(test)]
