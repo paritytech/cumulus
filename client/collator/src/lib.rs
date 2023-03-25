@@ -16,29 +16,27 @@
 
 //! Cumulus Collator implementation for Substrate.
 
-use cumulus_client_network::WaitToAnnounce;
 use cumulus_primitives_core::{
-	relay_chain::Hash as PHash, CollationInfo, CollectCollationInfo, ParachainBlockData,
+	relay_chain::Hash as PHash, CollectCollationInfo,
 	PersistedValidationData,
 };
 
 use sc_client_api::BlockBackend;
-use sp_api::{ApiExt, ProvideRuntimeApi};
-use sp_consensus::BlockStatus;
+use sp_api::ProvideRuntimeApi;
 use sp_core::traits::SpawnNamed;
-use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT, Zero};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
+use cumulus_client_collator_service::CollatorService;
 use cumulus_client_consensus_common::ParachainConsensus;
 use polkadot_node_primitives::{
-	BlockData, Collation, CollationGenerationConfig, CollationResult, MaybeCompressedPoV, PoV,
+	CollationGenerationConfig, CollationResult, MaybeCompressedPoV,
 };
 use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
 use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::{CollatorPair, Id as ParaId};
 
 use codec::{Decode, Encode};
-use futures::{channel::oneshot, FutureExt};
-use parking_lot::Mutex;
+use futures::FutureExt;
 use std::sync::Arc;
 use tracing::Instrument;
 
@@ -46,20 +44,20 @@ use tracing::Instrument;
 const LOG_TARGET: &str = "cumulus-collator";
 
 /// The implementation of the Cumulus `Collator`.
+///
+/// Note that this implementation is soon to be deprecated and removed, and it is suggested to
+/// directly use the [`CollatorService`] instead, so consensus engine implementations
+/// live at the top level.
 pub struct Collator<Block: BlockT, BS, RA> {
-	block_status: Arc<BS>,
+	service: CollatorService<Block, BS, RA>,
 	parachain_consensus: Box<dyn ParachainConsensus<Block>>,
-	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
-	runtime_api: Arc<RA>,
 }
 
 impl<Block: BlockT, BS, RA> Clone for Collator<Block, BS, RA> {
 	fn clone(&self) -> Self {
-		Self {
-			block_status: self.block_status.clone(),
-			wait_to_announce: self.wait_to_announce.clone(),
+		Collator {
+			service: self.service.clone(),
 			parachain_consensus: self.parachain_consensus.clone(),
-			runtime_api: self.runtime_api.clone(),
 		}
 	}
 }
@@ -73,159 +71,10 @@ where
 {
 	/// Create a new instance.
 	fn new(
-		block_status: Arc<BS>,
-		spawner: Arc<dyn SpawnNamed + Send + Sync>,
-		announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
-		runtime_api: Arc<RA>,
+		collator_service: CollatorService<Block, BS, RA>,
 		parachain_consensus: Box<dyn ParachainConsensus<Block>>,
 	) -> Self {
-		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(spawner, announce_block)));
-
-		Self { block_status, wait_to_announce, runtime_api, parachain_consensus }
-	}
-
-	/// Checks the status of the given block hash in the Parachain.
-	///
-	/// Returns `true` if the block could be found and is good to be build on.
-	fn check_block_status(&self, hash: Block::Hash, header: &Block::Header) -> bool {
-		match self.block_status.block_status(hash) {
-			Ok(BlockStatus::Queued) => {
-				tracing::debug!(
-					target: LOG_TARGET,
-					block_hash = ?hash,
-					"Skipping candidate production, because block is still queued for import.",
-				);
-				false
-			},
-			Ok(BlockStatus::InChainWithState) => true,
-			Ok(BlockStatus::InChainPruned) => {
-				tracing::error!(
-					target: LOG_TARGET,
-					"Skipping candidate production, because block `{:?}` is already pruned!",
-					hash,
-				);
-				false
-			},
-			Ok(BlockStatus::KnownBad) => {
-				tracing::error!(
-					target: LOG_TARGET,
-					block_hash = ?hash,
-					"Block is tagged as known bad and is included in the relay chain! Skipping candidate production!",
-				);
-				false
-			},
-			Ok(BlockStatus::Unknown) => {
-				if header.number().is_zero() {
-					tracing::error!(
-						target: LOG_TARGET,
-						block_hash = ?hash,
-						"Could not find the header of the genesis block in the database!",
-					);
-				} else {
-					tracing::debug!(
-						target: LOG_TARGET,
-						block_hash = ?hash,
-						"Skipping candidate production, because block is unknown.",
-					);
-				}
-				false
-			},
-			Err(e) => {
-				tracing::error!(
-					target: LOG_TARGET,
-					block_hash = ?hash,
-					error = ?e,
-					"Failed to get block status.",
-				);
-				false
-			},
-		}
-	}
-
-	/// Fetch the collation info from the runtime.
-	///
-	/// Returns `Ok(Some(_))` on success, `Err(_)` on error or `Ok(None)` if the runtime api isn't implemented by the runtime.
-	fn fetch_collation_info(
-		&self,
-		block_hash: Block::Hash,
-		header: &Block::Header,
-	) -> Result<Option<CollationInfo>, sp_api::ApiError> {
-		let runtime_api = self.runtime_api.runtime_api();
-
-		let api_version =
-			match runtime_api.api_version::<dyn CollectCollationInfo<Block>>(block_hash)? {
-				Some(version) => version,
-				None => {
-					tracing::error!(
-						target: LOG_TARGET,
-						"Could not fetch `CollectCollationInfo` runtime api version."
-					);
-					return Ok(None)
-				},
-			};
-
-		let collation_info = if api_version < 2 {
-			#[allow(deprecated)]
-			runtime_api
-				.collect_collation_info_before_version_2(block_hash)?
-				.into_latest(header.encode().into())
-		} else {
-			runtime_api.collect_collation_info(block_hash, header)?
-		};
-
-		Ok(Some(collation_info))
-	}
-
-	fn build_collation(
-		&self,
-		block: ParachainBlockData<Block>,
-		block_hash: Block::Hash,
-		pov: PoV,
-	) -> Option<Collation> {
-		let collation_info = self
-			.fetch_collation_info(block_hash, block.header())
-			.map_err(|e| {
-				tracing::error!(
-					target: LOG_TARGET,
-					error = ?e,
-					"Failed to collect collation info.",
-				)
-			})
-			.ok()
-			.flatten()?;
-
-		let upward_messages = collation_info
-			.upward_messages
-			.try_into()
-			.map_err(|e| {
-				tracing::error!(
-					target: LOG_TARGET,
-					error = ?e,
-					"Number of upward messages should not be greater than `MAX_UPWARD_MESSAGE_NUM`",
-				)
-			})
-			.ok()?;
-		let horizontal_messages = collation_info
-			.horizontal_messages
-			.try_into()
-			.map_err(|e| {
-				tracing::error!(
-					target: LOG_TARGET,
-					error = ?e,
-					"Number of horizontal messages should not be greater than `MAX_HORIZONTAL_MESSAGE_NUM`",
-				)
-			})
-			.ok()?;
-
-		Some(Collation {
-			upward_messages,
-			new_validation_code: collation_info.new_validation_code,
-			processed_downward_messages: collation_info.processed_downward_messages,
-			horizontal_messages,
-			hrmp_watermark: collation_info.hrmp_watermark,
-			head_data: collation_info.head_data,
-			proof_of_validity: MaybeCompressedPoV::Compressed(pov),
-		})
+		Self { service: collator_service, parachain_consensus }
 	}
 
 	async fn produce_candidate(
@@ -252,7 +101,7 @@ where
 		};
 
 		let last_head_hash = last_head.hash();
-		if !self.check_block_status(last_head_hash, &last_head) {
+		if !self.service.check_block_status(last_head_hash, &last_head) {
 			return None
 		}
 
@@ -268,21 +117,13 @@ where
 			.produce_candidate(&last_head, relay_parent, &validation_data)
 			.await?;
 
-		let (header, extrinsics) = candidate.block.deconstruct();
+		let block_hash = candidate.block.header().hash();
 
-		let compact_proof = match candidate
-			.proof
-			.into_compact_proof::<HashFor<Block>>(last_head.state_root().clone())
-		{
-			Ok(proof) => proof,
-			Err(e) => {
-				tracing::error!(target: "cumulus-collator", "Failed to compact proof: {:?}", e);
-				return None
-			},
-		};
-
-		// Create the parachain block data for the validators.
-		let b = ParachainBlockData::<Block>::new(header, extrinsics, compact_proof);
+		let (collation, b) = self.service.build_collation(
+			&last_head,
+			block_hash,
+			candidate,
+		)?;
 
 		tracing::info!(
 			target: LOG_TARGET,
@@ -292,21 +133,15 @@ where
 			b.storage_proof().encode().len() as f64 / 1024f64,
 		);
 
-		let pov =
-			polkadot_node_primitives::maybe_compress_pov(PoV { block_data: BlockData(b.encode()) });
+		if let MaybeCompressedPoV::Compressed(ref pov) = collation.proof_of_validity {
+			tracing::info!(
+				target: LOG_TARGET,
+				"Compressed PoV size: {}kb",
+				pov.block_data.0.len() as f64 / 1024f64,
+			);
+		}
 
-		tracing::info!(
-			target: LOG_TARGET,
-			"Compressed PoV size: {}kb",
-			pov.block_data.0.len() as f64 / 1024f64,
-		);
-
-		let block_hash = b.header().hash();
-		let collation = self.build_collation(b, block_hash, pov)?;
-
-		let (result_sender, signed_stmt_recv) = oneshot::channel();
-
-		self.wait_to_announce.lock().wait_to_announce(block_hash, signed_stmt_recv);
+		let result_sender = self.service.announce_with_barrier(block_hash);
 
 		tracing::info!(target: LOG_TARGET, ?block_hash, "Produced proof-of-validity candidate.",);
 
@@ -345,11 +180,15 @@ pub async fn start_collator<Block, RA, BS, Spawner>(
 	RA: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	RA::Api: CollectCollationInfo<Block>,
 {
-	let collator = Collator::new(
+	let collator_service = CollatorService::new(
 		block_status,
 		Arc::new(spawner),
 		announce_block,
 		runtime_api,
+	);
+
+	let collator = Collator::new(
+		collator_service,
 		parachain_consensus,
 	);
 
@@ -385,6 +224,7 @@ mod tests {
 		TestClientBuilder, TestClientBuilderExt,
 	};
 	use cumulus_test_runtime::{Block, Header};
+	use cumulus_primitives_core::ParachainBlockData;
 	use futures::{channel::mpsc, executor::block_on, StreamExt};
 	use polkadot_node_subsystem_test_helpers::ForwardSubsystem;
 	use polkadot_overseer::{dummy::dummy_overseer_builder, HeadSupportsParachains};

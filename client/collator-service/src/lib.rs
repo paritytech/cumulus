@@ -177,12 +177,14 @@ where
 	/// Build a full [`Collation`] from a given [`ParachainCandidate`]. This requires
 	/// that the underlying block has been fully imported into the underlying client,
 	/// as it fetches underlying runtime API data.
+	///
+	/// This also returns the unencoded parachain block data, in case that is desired.
 	pub fn build_collation(
 		&self,
 		parent_header: &Block::Header,
 		block_hash: Block::Hash,
 		candidate: ParachainCandidate<Block>,
-	) -> Option<Collation> {
+	) -> Option<(Collation, ParachainBlockData<Block>)> {
 		let (header, extrinsics) = candidate.block.deconstruct();
 
 		let compact_proof = match candidate
@@ -215,7 +217,6 @@ where
 			PoV { block_data: BlockData(b.encode()) },
 		);
 
-
 		let upward_messages = collation_info
 			.upward_messages
 			.try_into()
@@ -239,7 +240,7 @@ where
 			})
 			.ok()?;
 
-		Some(Collation {
+		let c = Collation {
 			upward_messages,
 			new_validation_code: collation_info.new_validation_code,
 			processed_downward_messages: collation_info.processed_downward_messages,
@@ -247,7 +248,9 @@ where
 			hrmp_watermark: collation_info.hrmp_watermark,
 			head_data: collation_info.head_data,
 			proof_of_validity: MaybeCompressedPoV::Compressed(pov),
-		})
+		};
+
+		Some((c, b))
 	}
 
 	/// Inform the networking systems that the block should be announced after an appropriate

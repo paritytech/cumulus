@@ -1833,14 +1833,13 @@ name = "cumulus-client-collator"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cumulus-client-collator-service",
  "cumulus-client-consensus-common",
- "cumulus-client-network",
  "cumulus-primitives-core",
  "cumulus-test-client",
  "cumulus-test-runtime",
  "futures",
  "parity-scale-codec",
- "parking_lot 0.12.1",
  "polkadot-node-primitives",
  "polkadot-node-subsystem",
  "polkadot-node-subsystem-test-helpers",
