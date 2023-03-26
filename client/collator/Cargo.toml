@@ -5,12 +5,14 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 
 [dependencies]
+parking_lot = "0.12.1"
 codec = { package = "parity-scale-codec", version = "3.0.0", features = [ "derive" ] }
 futures = "0.3.21"
 tracing = "0.1.25"
 
 # Substrate
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -22,15 +24,14 @@ polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus
-cumulus-client-collator-service = { path = "../collator-service" }
 cumulus-client-consensus-common = { path = "../consensus/common" }
+cumulus-client-network = { path = "../network" }
 cumulus-primitives-core = { path = "../../primitives/core" }
 
 [dev-dependencies]
 async-trait = "0.1.42"
 
 # Substrate
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }

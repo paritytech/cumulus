@@ -3,7 +3,6 @@ resolver = "2"
 
 members = [
 	"client/cli",
-	"client/collator-service",
 	"client/consensus/aura",
 	"client/consensus/common",
 	"client/consensus/proposer",

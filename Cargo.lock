@@ -1833,34 +1833,6 @@ name = "cumulus-client-collator"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "cumulus-client-collator-service",
- "cumulus-client-consensus-common",
- "cumulus-primitives-core",
- "cumulus-test-client",
- "cumulus-test-runtime",
- "futures",
- "parity-scale-codec",
- "polkadot-node-primitives",
- "polkadot-node-subsystem",
- "polkadot-node-subsystem-test-helpers",
- "polkadot-overseer",
- "polkadot-primitives",
- "sc-client-api",
- "sp-api",
- "sp-consensus",
- "sp-core",
- "sp-maybe-compressed-blob",
- "sp-runtime",
- "sp-state-machine",
- "sp-tracing",
- "tracing",
-]
-
-[[package]]
-name = "cumulus-client-collator-service"
-version = "0.1.0"
-dependencies = [
- "async-trait",
  "cumulus-client-consensus-common",
  "cumulus-client-network",
  "cumulus-primitives-core",

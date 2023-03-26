@@ -26,7 +26,6 @@ use sp_api::ProvideRuntimeApi;
 use sp_core::traits::SpawnNamed;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
-use cumulus_client_collator_service::CollatorService;
 use cumulus_client_consensus_common::ParachainConsensus;
 use polkadot_node_primitives::{CollationResult, MaybeCompressedPoV};
 use polkadot_overseer::Handle as OverseerHandle;
@@ -36,6 +35,10 @@ use codec::{Decode, Encode};
 use futures::prelude::*;
 use std::sync::Arc;
 use tracing::Instrument;
+
+use crate::service::CollatorService;
+
+pub mod service;
 
 /// The logging target.
 const LOG_TARGET: &str = "cumulus-collator";
@@ -316,6 +319,7 @@ mod tests {
 	use cumulus_primitives_core::ParachainBlockData;
 	use futures::{channel::mpsc, executor::block_on, StreamExt};
 	use polkadot_node_subsystem_test_helpers::ForwardSubsystem;
+	use polkadot_node_subsystem::messages::CollationGenerationMessage;
 	use polkadot_overseer::{dummy::dummy_overseer_builder, HeadSupportsParachains};
 	use sp_consensus::BlockOrigin;
 	use sp_core::{testing::TaskExecutor, Pair};
