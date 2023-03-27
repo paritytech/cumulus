@@ -17,14 +17,18 @@ use super::{
 	AccountId, AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
 	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
+use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use frame_support::{
 	match_types, parameter_types,
-	traits::{ConstU32, EitherOfDiverse, Everything, Nothing},
+	traits::{ConstU32, EitherOfDiverse, Everything, Nothing, TransformOrigin},
 	weights::Weight,
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
-use parachains_common::xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry};
+use parachains_common::{
+	process_xcm_message::{ParaIdToSibling, ProcessFromSibling, ProcessXcmMessage},
+	xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry},
+};
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -217,17 +221,24 @@ impl pallet_xcm::Config for Runtime {
 
 impl cumulus_pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type XcmExecutor = XcmExecutor<XcmConfig>; // FAIL-CI remove
 }
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
-	type XcmpQueue = crate::MessageQueue;
-	// We use the `XcmpQueue` itself as processor to respect the channel suspension logic.
-	type XcmpProcessor = XcmpQueue;
+	// Enqueue XCMP messages from siblings for later processing.
+	type XcmpQueue =
+		TransformOrigin<crate::MessageQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling>;
+	// Process XCMP messages from siblings. This is type-safe to only accept `ParaId`s.
+	type XcmpProcessor = ProcessFromSibling<
+		ProcessXcmMessage<
+			AggregateMessageOrigin,
+			xcm_executor::XcmExecutor<XcmConfig>,
+			RuntimeCall,
+		>,
+	>;
 	type MaxInboundSuspended = sp_core::ConstU32<1_000>;
 	type ControllerOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,

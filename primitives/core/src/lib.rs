@@ -86,6 +86,16 @@ pub enum AggregateMessageOrigin {
 	Sibling(ParaId),
 }
 
+impl From<AggregateMessageOrigin> for xcm::v3::MultiLocation {
+	fn from(origin: AggregateMessageOrigin) -> Self {
+		match origin {
+			AggregateMessageOrigin::Loopback => MultiLocation::here(),
+			AggregateMessageOrigin::Parent => MultiLocation::parent(),
+			AggregateMessageOrigin::Sibling(id) => Junction::Parachain(id.into()).into(),
+		}
+	}
+}
+
 #[cfg(feature = "runtime-benchmarks")]
 impl From<u32> for AggregateMessageOrigin {
 	fn from(x: u32) -> Self {

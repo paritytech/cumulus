@@ -7287,6 +7287,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-xcm",
  "parachain-info",
+ "parachains-common",
  "parity-scale-codec",
  "polkadot-parachain",
  "polkadot-runtime-common",
@@ -7313,6 +7314,7 @@ dependencies = [
 name = "parachains-common"
 version = "1.0.0"
 dependencies = [
+ "cumulus-primitives-core",
  "cumulus-primitives-utility",
  "frame-support",
  "frame-system",
@@ -7329,6 +7331,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "sp-weights",
  "substrate-wasm-builder",
  "xcm",
  "xcm-builder",

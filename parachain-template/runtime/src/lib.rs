@@ -25,11 +25,12 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{ConstU32, ConstU64, ConstU8, EitherOfDiverse, Everything},
+	traits::{ConstU32, ConstU64, ConstU8, EitherOfDiverse, Everything, TransformOrigin},
 	weights::{
 		constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, Weight, WeightToFeeCoefficient,
 		WeightToFeeCoefficients, WeightToFeePolynomial,
@@ -41,9 +42,12 @@ use frame_system::{
 	EnsureRoot,
 };
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
+use parachains_common::process_xcm_message::{
+	ParaIdToSibling, ProcessFromSibling, ProcessXcmMessage,
+};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
-use xcm_config::{RelayLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
+use xcm_config::{RelayLocation, XcmOriginToTransactDispatchOrigin};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -55,7 +59,6 @@ use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 // XCM Imports
 use xcm::latest::prelude::BodyId;
-use xcm_executor::XcmExecutor;
 
 /// Import the template pallet.
 pub use pallet_template;
@@ -367,8 +370,6 @@ parameter_types! {
 	pub const DmpAggregateOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
 }
 
-use cumulus_primitives_core::AggregateMessageOrigin;
-
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
@@ -384,9 +385,8 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 impl parachain_info::Config for Runtime {}
 
 parameter_types! {
-	// FAIL-CI: pick good value
-	pub MessageQueueServiceWeight: Weight = Perbill::from_percent(10) *
-		BlockWeights::get().max_block; // FAIL-CI this is probably too conservative.
+		pub MessageQueueServiceWeight: Weight = Perbill::from_percent(10) *
+		RuntimeBlockWeights::get().max_block; // FAIL-CI this is probably too conservative.
 }
 
 impl pallet_message_queue::Config for Runtime {
@@ -397,8 +397,13 @@ impl pallet_message_queue::Config for Runtime {
 		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
-		cumulus_primitives_core::AggregateMessageOrigin,
+	type MessageProcessor = parachains_common::process_xcm_message::SplitMessages<
+		ProcessXcmMessage<
+			AggregateMessageOrigin,
+			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
+			RuntimeCall,
+		>,
+		XcmpQueue,
 	>;
 	type Size = u32;
 	type QueueChangeHandler = ();
@@ -411,12 +416,18 @@ impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = ();
-	type XcmpQueue = MessageQueue;
-	// We use the `XcmpQueue` itself as processor to respect the channel suspension logic.
-	type XcmpProcessor = XcmpQueue;
+	// Enqueue XCMP messages from siblings for later processing.
+	type XcmpQueue = TransformOrigin<MessageQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling>;
+	// Process XCMP messages from siblings. This is type-safe to only accept `ParaId`s.
+	type XcmpProcessor = ProcessFromSibling<
+		ProcessXcmMessage<
+			AggregateMessageOrigin,
+			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
+			RuntimeCall,
+		>,
+	>;
 	type MaxInboundSuspended = sp_core::ConstU32<1_000>;
 	type ControllerOrigin = EnsureRoot<AccountId>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;

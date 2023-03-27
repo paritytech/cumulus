@@ -41,9 +41,8 @@ pub use weights::WeightInfo;
 use bounded_collections::BoundedBTreeSet;
 use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_core::{
-	relay_chain::BlockNumber as RelayBlockNumber, AggregateMessageOrigin, ChannelStatus,
-	GetChannelInfo, MessageSendError, ParaId, XcmpMessageFormat, XcmpMessageHandler,
-	XcmpMessageSource,
+	relay_chain::BlockNumber as RelayBlockNumber, ChannelStatus, GetChannelInfo, MessageSendError,
+	ParaId, XcmpMessageFormat, XcmpMessageHandler, XcmpMessageSource,
 };
 use frame_support::{
 	defensive, defensive_assert,
@@ -64,7 +63,7 @@ pub use pallet::*;
 /// Index used to identify overweight XCMs.
 pub type OverweightIndex = u64;
 pub type XcmOverHrmpMaxLenOf<T> =
-	<<T as Config>::XcmpQueue as EnqueueMessage<AggregateMessageOrigin>>::MaxMessageLen;
+	<<T as Config>::XcmpQueue as EnqueueMessage<ParaId>>::MaxMessageLen;
 
 const LOG_TARGET: &str = "xcmp_queue";
 const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
@@ -84,8 +83,8 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		/// Something to execute an XCM message. We need this to service the XCMoXCMP queue.
-		type XcmExecutor: ExecuteXcm<Self::RuntimeCall>;
+		// Something to execute an XCM message. We need this to service the XCMoXCMP queue.
+		//type XcmExecutor: ExecuteXcm<Self::RuntimeCall>;
 
 		/// Information on the available XCMP channels.
 		type ChannelInfo: GetChannelInfo;
@@ -94,10 +93,10 @@ pub mod pallet {
 		type VersionWrapper: WrapVersion;
 
 		/// Enqueue an inbound horizontal message for later processing.
-		type XcmpQueue: EnqueueMessage<AggregateMessageOrigin>;
+		type XcmpQueue: EnqueueMessage<ParaId>;
 
-		/// Should be set to the this pallet in order to respect execution suspension.
-		type XcmpProcessor: ProcessMessage<Origin = AggregateMessageOrigin>;
+		/// This pallet itself implements the [`frame_support::traits::ProcessMessage`] trait. After checking the suspension logic it forwards the messages to this `XcmpProcessor` type.
+		type XcmpProcessor: ProcessMessage<Origin = ParaId>;
 
 		/// The maximum number of inbound XCMP channels that can be suspended simultaneously.
 		///
@@ -550,7 +549,7 @@ impl<T: Config> Pallet<T> {
 			return
 		}
 		let QueueConfigData { drop_threshold, .. } = <QueueConfig<T>>::get();
-		let fp = T::XcmpQueue::footprint(AggregateMessageOrigin::Sibling(sender));
+		let fp = T::XcmpQueue::footprint(sender);
 
 		let new_count = xcms.len().saturating_add(fp.count as usize);
 		let to_enqueue = (drop_threshold as usize).saturating_sub(new_count) as usize;
@@ -565,10 +564,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		if !xcms.is_empty() {
-			T::XcmpQueue::enqueue_messages(
-				xcms.iter().map(|xcm| xcm.as_bounded_slice()),
-				AggregateMessageOrigin::Sibling(sender),
-			);
+			T::XcmpQueue::enqueue_messages(xcms.iter().map(|xcm| xcm.as_bounded_slice()), sender);
 		}
 		// FAIL-CI consume weight
 	}
@@ -592,14 +588,9 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-impl<T: Config> OnQueueChanged<AggregateMessageOrigin> for Pallet<T> {
+impl<T: Config> OnQueueChanged<ParaId> for Pallet<T> {
 	// Suspends/Resumes the queue when certain thresholds are reached.
-	fn on_queue_changed(id: AggregateMessageOrigin, count: u64, _size: u64) {
-		let AggregateMessageOrigin::Sibling(para) = id else {
-			defensive!("XCMP queue should only process messages from sibling parachains.");
-			return;
-		};
-
+	fn on_queue_changed(para: ParaId, count: u64, _size: u64) {
 		let QueueConfigData { resume_threshold, suspend_threshold, .. } = <QueueConfig<T>>::get();
 
 		let mut suspended_channels = <InboundXcmpSuspended<T>>::get();
@@ -628,7 +619,7 @@ impl<T: Config> OnQueueChanged<AggregateMessageOrigin> for Pallet<T> {
 }
 
 impl<T: Config> ProcessMessage for Pallet<T> {
-	type Origin = AggregateMessageOrigin;
+	type Origin = ParaId;
 
 	fn process_message(
 		message: &[u8],
@@ -636,13 +627,8 @@ impl<T: Config> ProcessMessage for Pallet<T> {
 		meter: &mut WeightMeter,
 	) -> Result<bool, ProcessMessageError> {
 		// FAIL-CI weight
-		let AggregateMessageOrigin::Sibling(para) = origin else {
-			defensive!("XCMP queue should only process messages from sibling parachains.");
-			return Err(ProcessMessageError::Unsupported);
-		};
 		let sender_origin = T::ControllerOriginConverter::convert_origin(
-			// FAIL-CI why the into?
-			(Parent, Parachain(para.into())),
+			(Parent, Parachain(origin.into())),
 			OriginKind::Superuser,
 		);
 		let is_controller =
@@ -654,7 +640,7 @@ impl<T: Config> ProcessMessage for Pallet<T> {
 			return Err(ProcessMessageError::Yield)
 		}
 
-		T::XcmpProcessor::process_message(message, AggregateMessageOrigin::Sibling(para), meter)
+		T::XcmpProcessor::process_message(message, origin, meter)
 	}
 }
 
@@ -782,7 +768,7 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 
 			if page.len() > max_size_ever {
 				// TODO: #274 This means that the channel's max message size has changed since
-				//   the message was sent. We should parse it and split into smaller mesasges but
+				//   the message was sent. We should parse it and split into smaller messages but
 				//   since it's so unlikely then for now we just drop it.
 				log::warn!("WARNING: oversize message in queue. silently dropping.");
 			} else {

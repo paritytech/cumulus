@@ -26,10 +26,7 @@ pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{traits::BadOrigin, RuntimeDebug};
 use sp_std::prelude::*;
-use xcm::{
-	latest::{ExecuteXcm, Outcome},
-	VersionedXcm, MAX_XCM_DECODE_DEPTH,
-};
+use xcm::latest::{ExecuteXcm, Outcome};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -59,7 +56,6 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {}
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Downward message is invalid XCM.
 		/// \[ id \]

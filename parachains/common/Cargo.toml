@@ -24,6 +24,7 @@ sp-core = { git = "https://github.com/paritytech/substrate", default-features = 
 sp-io = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+sp-weights = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 
 # Polkadot
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -34,6 +35,7 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", default-feature
 # Cumulus
 pallet-collator-selection = { path = "../../pallets/collator-selection", default-features = false }
 cumulus-primitives-utility = { path = "../../primitives/utility", default-features = false }
+cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 
 [dev-dependencies]
 pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -57,6 +59,7 @@ std = [
 	"sp-std/std",
 	"pallet-collator-selection/std",
 	"cumulus-primitives-utility/std",
+	"cumulus-primitives-core/std",
 	"xcm/std",
 	"xcm-executor/std",
 ]

@@ -200,14 +200,14 @@ impl<RuntimeOrigin: OriginTrait> ConvertOrigin<RuntimeOrigin>
 }
 
 parameter_types! {
-	pub storage EnqueuedMessages: Vec<(AggregateMessageOrigin, Vec<u8>)> = Default::default();
+	pub storage EnqueuedMessages: Vec<(ParaId, Vec<u8>)> = Default::default();
 }
 
 use frame_support::{traits::Footprint, BoundedSlice};
 
 pub struct EnqueueToLocalStorage<T>(PhantomData<T>);
 
-pub fn enqueued_messages(origin: AggregateMessageOrigin) -> Vec<Vec<u8>> {
+pub fn enqueued_messages(origin: ParaId) -> Vec<Vec<u8>> {
 	EnqueuedMessages::get()
 		.into_iter()
 		.filter(|(o, _)| *o == origin)
@@ -215,15 +215,10 @@ pub fn enqueued_messages(origin: AggregateMessageOrigin) -> Vec<Vec<u8>> {
 		.collect()
 }
 
-impl<T: OnQueueChanged<AggregateMessageOrigin>> EnqueueMessage<AggregateMessageOrigin>
-	for EnqueueToLocalStorage<T>
-{
+impl<T: OnQueueChanged<ParaId>> EnqueueMessage<ParaId> for EnqueueToLocalStorage<T> {
 	type MaxMessageLen = sp_core::ConstU32<1024>;
 
-	fn enqueue_message(
-		message: BoundedSlice<u8, Self::MaxMessageLen>,
-		origin: AggregateMessageOrigin,
-	) {
+	fn enqueue_message(message: BoundedSlice<u8, Self::MaxMessageLen>, origin: ParaId) {
 		let mut msgs = EnqueuedMessages::get();
 		msgs.push((origin.clone(), message.to_vec()));
 		EnqueuedMessages::set(&msgs);
@@ -232,7 +227,7 @@ impl<T: OnQueueChanged<AggregateMessageOrigin>> EnqueueMessage<AggregateMessageO
 
 	fn enqueue_messages<'a>(
 		iter: impl Iterator<Item = BoundedSlice<'a, u8, Self::MaxMessageLen>>,
-		origin: AggregateMessageOrigin,
+		origin: ParaId,
 	) {
 		let mut msgs = EnqueuedMessages::get();
 		for message in iter {
@@ -242,14 +237,14 @@ impl<T: OnQueueChanged<AggregateMessageOrigin>> EnqueueMessage<AggregateMessageO
 		T::on_queue_changed(origin, msgs.len() as u64, 0);
 	}
 
-	fn sweep_queue(origin: AggregateMessageOrigin) {
+	fn sweep_queue(origin: ParaId) {
 		let mut msgs = EnqueuedMessages::get();
 		msgs.retain(|(o, _)| o != &origin);
 		EnqueuedMessages::set(&msgs);
 		T::on_queue_changed(origin, msgs.len() as u64, 0); // FAIL-CI not 0 here
 	}
 
-	fn footprint(origin: AggregateMessageOrigin) -> Footprint {
+	fn footprint(origin: ParaId) -> Footprint {
 		let msgs = EnqueuedMessages::get();
 		let mut footprint = Footprint::default();
 		for (o, m) in msgs {
@@ -264,12 +259,10 @@ impl<T: OnQueueChanged<AggregateMessageOrigin>> EnqueueMessage<AggregateMessageO
 
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
-	type XcmExecutor = xcm_executor::XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = ();
 	type XcmpQueue = EnqueueToLocalStorage<Pallet<Test>>;
-	type XcmpProcessor =
-		pallet_message_queue::mock_helpers::NoopMessageProcessor<AggregateMessageOrigin>;
+	type XcmpProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<ParaId>;
 	type MaxInboundSuspended = sp_core::ConstU32<1_000>;
 	type ControllerOrigin = EnsureRoot<AccountId>;
 	type ControllerOriginConverter = SystemParachainAsSuperuser<RuntimeOrigin>;

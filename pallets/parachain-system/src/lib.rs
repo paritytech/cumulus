@@ -189,7 +189,7 @@ pub mod pallet {
 
 		/// The message handler that will be invoked when messages are received via XCMP.
 		///
-		/// Received messages need to be processed immediately but can be queued. This should normally link to the XCMP pallet.
+		/// This should normally link to the XCMP Queue pallet.
 		type XcmpMessageHandler: XcmpMessageHandler;
 
 		/// The weight we reserve at the beginning of the block for processing XCMP messages.

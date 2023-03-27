@@ -42,10 +42,7 @@ fn xcm_enqueueing_basic_works() {
 
 		XcmpQueue::handle_xcmp_messages(once((1000.into(), 1, data.as_slice())), Weight::MAX);
 
-		assert_eq!(
-			EnqueuedMessages::get(),
-			vec![(AggregateMessageOrigin::Sibling(1000.into()), xcm)]
-		);
+		assert_eq!(EnqueuedMessages::get(), vec![(1000.into(), xcm)]);
 	})
 }
 
@@ -64,10 +61,7 @@ fn xcm_enqueueing_many_works() {
 
 		assert_eq!(
 			EnqueuedMessages::get(),
-			encoded_xcms
-				.into_iter()
-				.map(|xcm| (AggregateMessageOrigin::Sibling(1000.into()), xcm))
-				.collect::<Vec<_>>(),
+			encoded_xcms.into_iter().map(|xcm| (1000.into(), xcm)).collect::<Vec<_>>(),
 		);
 	})
 }
@@ -92,7 +86,7 @@ fn xcm_enqueueing_multiple_times_works() {
 			EnqueuedMessages::get(),
 			encoded_xcms
 				.into_iter()
-				.map(|xcm| (AggregateMessageOrigin::Sibling(1000.into()), xcm))
+				.map(|xcm| (1000.into(), xcm))
 				.cycle()
 				.take(100)
 				.collect::<Vec<_>>(),
@@ -189,8 +183,7 @@ fn suspend_xcm_execution_works() {
 		// This should have queue instead of executing since it comes from a sibling.
 		XcmpQueue::handle_xcmp_messages(once((2000.into(), 1, data.as_slice())), Weight::MAX);
 
-		let queued_xcm =
-			mock::enqueued_messages(AggregateMessageOrigin::Sibling(ParaId::from(2000)));
+		let queued_xcm = mock::enqueued_messages(ParaId::from(2000));
 		assert_eq!(queued_xcm, vec![xcm]);
 	});
 }

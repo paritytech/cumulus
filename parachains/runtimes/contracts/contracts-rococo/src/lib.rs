@@ -37,7 +37,7 @@ use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult,
+	ApplyExtrinsicResult, Perbill,
 };
 
 use sp_std::prelude::*;
@@ -46,6 +46,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use constants::{currency::*, fee::WeightToFee};
+use cumulus_primitives_core::AggregateMessageOrigin;
 use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
@@ -57,9 +58,9 @@ use frame_support::{
 use frame_system::limits::{BlockLength, BlockWeights};
 pub use parachains_common as common;
 use parachains_common::{
-	impls::DealWithFees, opaque, AccountId, BlockNumber, Hash, Header, Index, Signature,
-	AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT, MINUTES, NORMAL_DISPATCH_RATIO,
-	SLOT_DURATION,
+	impls::DealWithFees, opaque, process_xcm_message::ProcessXcmMessage, AccountId, BlockNumber,
+	Hash, Header, Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT, MINUTES,
+	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 pub use parachains_common::{AuraId, Balance};
 use xcm_config::CollatorSelectionUpdateOrigin;
@@ -273,9 +274,8 @@ impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
 impl parachain_info::Config for Runtime {}
 
 parameter_types! {
-	// FAIL-CI: pick good value
-	pub MessageQueueServiceWeight: Weight = Perbill::from_percent(10) *
-		BlockWeights::get().max_block; // FAIL-CI this is probably too conservative.
+		pub MessageQueueServiceWeight: Weight = Perbill::from_percent(10) *
+		RuntimeBlockWeights::get().max_block; // FAIL-CI this is probably too conservative.
 }
 
 impl pallet_message_queue::Config for Runtime {
@@ -285,9 +285,13 @@ impl pallet_message_queue::Config for Runtime {
 	type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
 		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
-	#[cfg(not(feature = "runtime-benchmarks"))]
-	type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
-		cumulus_primitives_core::AggregateMessageOrigin,
+	type MessageProcessor = parachains_common::process_xcm_message::SplitMessages<
+		ProcessXcmMessage<
+			AggregateMessageOrigin,
+			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
+			RuntimeCall,
+		>,
+		XcmpQueue,
 	>;
 	type Size = u32;
 	type QueueChangeHandler = ();
