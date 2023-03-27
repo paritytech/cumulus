@@ -19,9 +19,12 @@
 //!
 //! This utility is designed to be composed within any collator consensus algorithm.
 
+use async_trait::async_trait;
+
 use sp_inherents::InherentData;
 use sp_consensus::{EnableProofRecording, Proposer as SubstrateProposer, Proposal, Environment};
-use sp_runtime::Digest;
+use sp_runtime::{traits::Block as BlockT, Digest};
+use sp_state_machine::StorageProof;
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 
 use std::fmt::Debug;
@@ -72,6 +75,43 @@ enum ErrorInner {
 	Proposing(Box<dyn Debug>),
 }
 
+/// An interface for proposers.
+#[async_trait]
+pub trait ProposerInterface<Block: BlockT> {
+	/// The underlying DB transaction type produced with the block proposal.
+	type Transaction;
+
+	/// Propose a collation using the supplied `InherentData` and the provided
+	/// `ParachainInherentData`.
+	///
+	/// Also specify any required inherent digests, the maximum proposal duration,
+	/// and the block size limit in bytes. See the documentation on [`sp_consensus::Proposer::propose`]
+	/// for more details on how to interpret these parameters.
+	///
+	/// The `InherentData` and `Digest` are left deliberately general in order to accommodate
+	/// all possible collator selection algorithms or inherent creation mechanisms,
+	/// while the `ParachainInherentData` is made explicit so it will be constructed appropriately.
+	///
+	/// If the `InherentData` passed into this function already has a `ParachainInherentData`,
+	/// this will throw an error.
+	async fn propose(
+		&mut self,
+		parent_header: &Block::Header,
+		paras_inherent_data: &ParachainInherentData,
+		other_inherent_data: InherentData,
+		inherent_digests: Digest,
+		max_duration: Duration,
+		block_size_limit: Option<usize>,
+	) -> Result<
+		Proposal<
+			Block,
+			Self::Transaction,
+			StorageProof,
+		>,
+		Error,
+	>;
+}
+
 /// A simple wrapper around a Substrate proposer for creating collations.
 pub struct Proposer<B, T> {
 	inner: T,
@@ -89,26 +129,16 @@ impl<B, T> Proposer<B, T> {
 
 }
 
-impl<B, T> Proposer<B, T>
+#[async_trait]
+impl<B, T> ProposerInterface<B> for Proposer<B, T>
 	where
 		B: sp_runtime::traits::Block,
-		T: Environment<B>,
-		T::Proposer: SubstrateProposer<B, ProofRecording=EnableProofRecording>,
+		T: Environment<B> + Send,
+		T::Proposer: SubstrateProposer<B, ProofRecording=EnableProofRecording, Proof=StorageProof>,
 {
-	/// Propose a collation using the supplied `InherentData` and the provided
-	/// `ParachainInherentData`.
-	///
-	/// Also specify any required inherent digests, the maximum proposal duration,
-	/// and the block size limit in bytes. See the documentation on [`sp_consensus::Proposer::propose`]
-	/// for more details on how to interpret these parameters.
-	///
-	/// The `InherentData` and `Digest` are left deliberately general in order to accommodate
-	/// all possible collator selection algorithms or inherent creation mechanisms,
-	/// while the `ParachainInherentData` is made explicit so it will be constructed appropriately.
-	///
-	/// If the `InherentData` passed into this function already has a `ParachainInherentData`,
-	/// this will throw an error.
-	pub async fn propose(
+	type Transaction = <<T as Environment<B>>::Proposer as SubstrateProposer<B>>::Transaction;
+
+	async fn propose(
 		&mut self,
 		parent_header: &B::Header,
 		paras_inherent_data: &ParachainInherentData,
@@ -119,8 +149,8 @@ impl<B, T> Proposer<B, T>
 	) -> Result<
 		Proposal<
 			B,
-			<<T as Environment<B>>::Proposer as SubstrateProposer<B>>::Transaction,
-			<<T as Environment<B>>::Proposer as SubstrateProposer<B>>::Proof,
+			Self::Transaction,
+			StorageProof,
 		>,
 		Error,
 	> {

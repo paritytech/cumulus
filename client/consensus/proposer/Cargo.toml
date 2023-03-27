@@ -7,10 +7,13 @@ edition = "2021"
 
 [dependencies]
 
+async-trait = "0.1"
+
 # Substrate
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Cumulus
 cumulus-primitives-parachain-inherent = { path = "../../../primitives/parachain-inherent" }
