@@ -291,6 +291,7 @@ impl pallet_message_queue::Config for Runtime {
 	type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
 		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	type MessageProcessor = parachains_common::process_xcm_message::SplitMessages<
 		ProcessXcmMessage<
 			AggregateMessageOrigin,
