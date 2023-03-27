@@ -169,6 +169,23 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 
 ### Send messages (Rococo, Wococo)
 
+#### Transfer assets via bridge
+
+1. allow bridge transfer on statemine/westmint (governance-like):
+   ```
+   ./scripts/bridges_rococo_wococo.sh allow-transfers-local
+   ```
+
+2. do transfer from statemine to westmint
+   ```
+   ./scripts/bridges_rococo_wococo.sh transfer-asset-from-statemine-local
+   ```
+
+#### Ping via bridge
+```
+./scripts/bridges_rococo_wococo.sh allow-transfers-local
+./scripts/bridges_rococo_wococo.sh ping-via-bridge-from-statemine-local
+```
 
 #### Local Rococo:Statemine -> Wococo:Westmint
 - check that relayers are up and running (see above)

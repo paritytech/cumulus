@@ -74,65 +74,70 @@ function generate_hex_encoded_call_data() {
     return $retVal
 }
 
-STATEMINE_ACCOUNT_SEED_FOR_LOCAL="//Alice"
-ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO="scatter feed race company oxygen trip extra elbow slot bundle auto canoe"
-
-function send_xcm_transact_remark_from_statemine() {
-    local url=$1
+function transfer_balance() {
+    local runtime_para_endpoint=$1
     local seed=$2
-    local bridge_hub_para_id=$3
-    local target_network=$4
-    local target_network_para_id=$5
-    local target_network_para_endpoint=$6
-    echo "  calling send_xcm_transact_remark_from_statemine:"
-    echo "      url: ${url}"
+    local target_account=$3
+    local amount=$4
+    echo "  calling transfer_balance:"
+    echo "      runtime_para_endpoint: ${runtime_para_endpoint}"
     echo "      seed: ${seed}"
-    echo "      bridge_hub_para_id: ${bridge_hub_para_id}"
-    echo "      target_network: ${target_network}"
-    echo "      target_network_para_id: ${target_network_para_id}"
-    echo "      target_network_para_endpoint: ${target_network_para_endpoint}"
+    echo "      target_account: ${target_account}"
+    echo "      amount: ${amount}"
+    echo "--------------------------------------------------"
+
+    polkadot-js-api \
+        --ws "${runtime_para_endpoint}" \
+        --seed "${seed?}" \
+        tx.balances.transfer \
+            "${target_account}" \
+            "${amount}"
+}
+
+function send_governance_transact() {
+    local relay_url=$1
+    local relay_chain_seed=$2
+    local para_id=$3
+    local hex_encoded_data=$4
+    local require_weight_at_most_ref_time=$5
+    local require_weight_at_most_proof_size=$6
+    echo "  calling send_governance_transact:"
+    echo "      relay_url: ${relay_url}"
+    echo "      relay_chain_seed: ${relay_chain_seed}"
+    echo "      para_id: ${para_id}"
+    echo "      hex_encoded_data: ${hex_encoded_data}"
+    echo "      require_weight_at_most_ref_time: ${require_weight_at_most_ref_time}"
+    echo "      require_weight_at_most_proof_size: ${require_weight_at_most_proof_size}"
     echo "      params:"
 
-    # generate data for Transact on the other side (Westmint)
-    local tmp_file=$(mktemp)
-    generate_hex_encoded_call_data "remark-with-event" "${target_network_para_endpoint}" "${tmp_file}"
-    local hex_encoded_data=$(cat $tmp_file)
-
     local dest=$(jq --null-input \
-                    --arg bridge_hub_para_id "$bridge_hub_para_id" \
-                    '{ "V3": { "parents": 1, "interior": { "X1": { "Parachain": $bridge_hub_para_id } } } }')
+                    --arg para_id "$para_id" \
+                    '{ "V3": { "parents": 0, "interior": { "X1": { "Parachain": $para_id } } } }')
 
     local message=$(jq --null-input \
-                       --arg target_network "$target_network" \
-                       --arg target_network_para_id "$target_network_para_id" \
                        --argjson hex_encoded_data $hex_encoded_data \
+                       --arg require_weight_at_most_ref_time "$require_weight_at_most_ref_time" \
+                       --arg require_weight_at_most_proof_size "$require_weight_at_most_proof_size" \
                        '
                        {
                           "V3": [
-                            {
-                              "ExportMessage": {
-                                "network": $target_network,
-                                "destination": {
-                                  "X1": {
-                                    "Parachain": $target_network_para_id
-                                  }
-                                },
-                                "xcm": [
+                                  {
+                                    "UnpaidExecution": {
+                                        "weight_limit": "Unlimited"
+                                    }
+                                  },
                                   {
                                     "Transact": {
-                                      "origin_kind": "SovereignAccount",
+                                      "origin_kind": "Superuser",
                                       "require_weight_at_most": {
-                                        "ref_time": 1000000000,
-                                        "proof_size": 0,
+                                        "ref_time": $require_weight_at_most_ref_time,
+                                        "proof_size": $require_weight_at_most_proof_size,
                                       },
                                       "call": {
                                         "encoded": $hex_encoded_data
                                       }
                                     }
                                   }
-                                ]
-                              }
-                            }
                           ]
                         }
                         ')
@@ -147,12 +152,16 @@ function send_xcm_transact_remark_from_statemine() {
     echo "--------------------------------------------------"
 
     polkadot-js-api \
-        --ws "${url?}" \
-        --seed "${seed?}" \
-        tx.polkadotXcm.send \
+        --ws "${relay_url?}" \
+        --seed "${relay_chain_seed?}" \
+        --sudo \
+        tx.xcmPallet.send \
             "${dest}" \
             "${message}"
 }
+
+STATEMINE_ACCOUNT_SEED_FOR_LOCAL="//Alice"
+ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO="scatter feed race company oxygen trip extra elbow slot bundle auto canoe"
 
 function send_xcm_trap_from_statemine() {
     local url=$1
@@ -212,30 +221,29 @@ function send_xcm_trap_from_statemine() {
             "${message}"
 }
 
-function allow_assets_transfer_from_statemine() {
+function allow_assets_transfer_send() {
     local relay_url=$1
     local relay_chain_seed=$2
-    local statemine_para_id=$3
-    local statemine_para_endpoint=$4
+    local runtime_para_id=$3
+    local runtime_para_endpoint=$4
     local bridge_hub_para_id=$5
-    local statemint_para_network=$6
-    local statemint_para_para_id=$7
-    echo "  calling allow_assets_transfer_from_statemine:"
+    local bridged_para_network=$6
+    local bridged_para_para_id=$7
+    echo "  calling allow_assets_transfer_send:"
     echo "      relay_url: ${relay_url}"
     echo "      relay_chain_seed: ${relay_chain_seed}"
-    echo "      statemine_para_id: ${statemine_para_id}"
-    echo "      statemine_para_endpoint: ${statemine_para_endpoint}"
+    echo "      runtime_para_id: ${runtime_para_id}"
+    echo "      runtime_para_endpoint: ${runtime_para_endpoint}"
     echo "      bridge_hub_para_id: ${bridge_hub_para_id}"
-    echo "      statemint_para_network: ${statemint_para_network}"
-    echo "      statemint_para_para_id: ${statemint_para_para_id}"
+    echo "      bridged_para_network: ${bridged_para_network}"
+    echo "      bridged_para_para_id: ${bridged_para_para_id}"
     echo "      params:"
 
-    # generate data for Transact on Statemine
+    # 1. generate data for Transact (add_exporter_config)
     local bridge_config=$(jq --null-input \
-                             --arg statemint_para_network "$statemint_para_network" \
                              --arg bridge_hub_para_id "$bridge_hub_para_id" \
-                             --arg statemint_para_network "$statemint_para_network" \
-                             --arg statemint_para_para_id "$statemint_para_para_id" \
+                             --arg bridged_para_network "$bridged_para_network" \
+                             --arg bridged_para_para_id "$bridged_para_para_id" \
         '
             {
                 "bridgeLocation": {
@@ -249,133 +257,149 @@ function allow_assets_transfer_from_statemine() {
                     "interior": {
                         "X2": [
                             {
-                                "GlobalConsensus": $statemint_para_network,
+                                "GlobalConsensus": $bridged_para_network,
                             },
                             {
-                                "Parachain": $statemint_para_para_id
+                                "Parachain": $bridged_para_para_id
                             }
                         ]
+                    }
+                },
+                "targetLocationFee": {
+                    "id": {
+                        "Concrete": {
+                            "parents": 1,
+                            "interior": "Here"
+                        }
+                    },
+                    "fun": {
+                        "Fungible": 50000000000
                     }
                 }
             }
         '
     )
     local tmp_output_file=$(mktemp)
-    generate_hex_encoded_call_data "add-bridge-config" "${statemine_para_endpoint}" "${tmp_output_file}" $statemint_para_network "$bridge_config"
+    generate_hex_encoded_call_data "add-exporter-config" "${runtime_para_endpoint}" "${tmp_output_file}" $bridged_para_network "$bridge_config"
     local hex_encoded_data=$(cat $tmp_output_file)
 
-    local dest=$(jq --null-input \
-                    --arg statemine_para_id "$statemine_para_id" \
-                    '{ "V3": { "parents": 0, "interior": { "X1": { "Parachain": $statemine_para_id } } } }')
-
-    local message=$(jq --null-input \
-                       --argjson hex_encoded_data $hex_encoded_data \
-                       '
-                       {
-                          "V3": [
-                                  {
-                                    "UnpaidExecution": {
-                                        "weight_limit": "Unlimited"
-                                    }
-                                  },
-                                  {
-                                    "Transact": {
-                                      "origin_kind": "Superuser",
-                                      "require_weight_at_most": {
-                                        "ref_time": 1000000000,
-                                        "proof_size": 0,
-                                      },
-                                      "call": {
-                                        "encoded": $hex_encoded_data
-                                      }
-                                    }
-                                  }
-                          ]
-                        }
-                        ')
-
-    echo ""
-    echo "          dest:"
-    echo "${dest}"
-    echo ""
-    echo "          message:"
-    echo "${message}"
-    echo ""
-    echo "--------------------------------------------------"
-
-    polkadot-js-api \
-        --ws "${relay_url?}" \
-        --seed "${relay_chain_seed?}" \
-        --sudo \
-        tx.xcmPallet.send \
-            "${dest}" \
-            "${message}"
+    send_governance_transact "${relay_url}" "${relay_chain_seed}" "${runtime_para_id}" "${hex_encoded_data}" 200000000 12000
 }
 
-function remove_assets_transfer_from_statemine() {
+function force_create_foreign_asset() {
     local relay_url=$1
     local relay_chain_seed=$2
-    local statemine_para_id=$3
-    local statemine_para_endpoint=$4
-    local statemint_para_network=$5
-    echo "  calling remove_assets_transfer_from_statemine:"
+    local runtime_para_id=$3
+    local runtime_para_endpoint=$4
+    local global_consensus=$5
+    local asset_owner_account_id=$6
+    echo "  calling force_create_foreign_asset:"
     echo "      relay_url: ${relay_url}"
     echo "      relay_chain_seed: ${relay_chain_seed}"
-    echo "      statemine_para_id: ${statemine_para_id}"
-    echo "      statemine_para_endpoint: ${statemine_para_endpoint}"
-    echo "      statemint_para_network: ${statemint_para_network}"
+    echo "      runtime_para_id: ${runtime_para_id}"
+    echo "      runtime_para_endpoint: ${runtime_para_endpoint}"
+    echo "      global_consensus: ${global_consensus}"
+    echo "      asset_owner_account_id: ${asset_owner_account_id}"
+    echo "      params:"
+
+    # 1. generate data for Transact (ForeignAssets::force_create)
+    local asset_id=$(jq --null-input \
+                             --arg global_consensus "$global_consensus" \
+        '
+            {
+                "parents": 2,
+                "interior": {
+                    "X1": {
+                        "GlobalConsensus": $global_consensus,
+                    }
+                }
+            }
+        '
+    )
+    local tmp_output_file=$(mktemp)
+    generate_hex_encoded_call_data "force-create-asset" "${runtime_para_endpoint}" "${tmp_output_file}" "$asset_id" "$asset_owner_account_id" false "1000"
+    local hex_encoded_data=$(cat $tmp_output_file)
+
+    send_governance_transact "${relay_url}" "${relay_chain_seed}" "${runtime_para_id}" "${hex_encoded_data}" 200000000 12000
+}
+
+function allow_assets_transfer_receive() {
+    local relay_url=$1
+    local relay_chain_seed=$2
+    local runtime_para_id=$3
+    local runtime_para_endpoint=$4
+    local bridge_hub_para_id=$5
+    local bridged_network=$6
+    local bridged_para_id=$7
+    echo "  calling allow_assets_transfer_receive:"
+    echo "      relay_url: ${relay_url}"
+    echo "      relay_chain_seed: ${relay_chain_seed}"
+    echo "      runtime_para_id: ${runtime_para_id}"
+    echo "      runtime_para_endpoint: ${runtime_para_endpoint}"
+    echo "      bridge_hub_para_id: ${bridge_hub_para_id}"
+    echo "      bridged_network: ${bridged_network}"
+    echo "      bridged_para_id: ${bridged_para_id}"
+    echo "      params:"
+
+    # 1. generate data for Transact (add_universal_alias)
+    local location=$(jq --null-input \
+                        --arg bridge_hub_para_id "$bridge_hub_para_id" \
+                        '{ "V3": { "parents": 1, "interior": { "X1": { "Parachain": $bridge_hub_para_id } } } }')
+
+    local junction=$(jq --null-input \
+                        --arg bridged_network "$bridged_network" \
+                        '{ "GlobalConsensus": $bridged_network } ')
+
+    local tmp_output_file=$(mktemp)
+    generate_hex_encoded_call_data "add-universal-alias" "${runtime_para_endpoint}" "${tmp_output_file}" "$location" "$junction"
+    local hex_encoded_data=$(cat $tmp_output_file)
+
+    send_governance_transact "${relay_url}" "${relay_chain_seed}" "${runtime_para_id}" "${hex_encoded_data}" 200000000 12000
+
+    # 2. generate data for Transact (add_reserve_location)
+    local reserve_location=$(jq --null-input \
+                        --arg bridged_network "$bridged_network" \
+                        --arg bridged_para_id "$bridged_para_id" \
+                        '{ "V3": {
+                            "parents": 2,
+                            "interior": {
+                                "X2": [
+                                    {
+                                        "GlobalConsensus": $bridged_network,
+                                    },
+                                    {
+                                        "Parachain": $bridged_para_id
+                                    }
+                                ]
+                            }
+                        } }')
+
+    local tmp_output_file=$(mktemp)
+    generate_hex_encoded_call_data "add-reserve-location" "${runtime_para_endpoint}" "${tmp_output_file}" "$reserve_location"
+    local hex_encoded_data=$(cat $tmp_output_file)
+
+    send_governance_transact "${relay_url}" "${relay_chain_seed}" "${runtime_para_id}" "${hex_encoded_data}" 200000000 12000
+}
+
+function remove_assets_transfer_send() {
+    local relay_url=$1
+    local relay_chain_seed=$2
+    local runtime_para_id=$3
+    local runtime_para_endpoint=$4
+    local bridged_network=$5
+    echo "  calling remove_assets_transfer_send:"
+    echo "      relay_url: ${relay_url}"
+    echo "      relay_chain_seed: ${relay_chain_seed}"
+    echo "      runtime_para_id: ${runtime_para_id}"
+    echo "      runtime_para_endpoint: ${runtime_para_endpoint}"
+    echo "      bridged_network: ${bridged_network}"
     echo "      params:"
 
     local tmp_output_file=$(mktemp)
-    generate_hex_encoded_call_data "remove-bridge-config" "${statemine_para_endpoint}" "${tmp_output_file}" $statemint_para_network
+    generate_hex_encoded_call_data "remove-exporter-config" "${runtime_para_endpoint}" "${tmp_output_file}" $bridged_network
     local hex_encoded_data=$(cat $tmp_output_file)
 
-    local dest=$(jq --null-input \
-                    --arg statemine_para_id "$statemine_para_id" \
-                    '{ "V3": { "parents": 0, "interior": { "X1": { "Parachain": $statemine_para_id } } } }')
-
-    local message=$(jq --null-input \
-                       --argjson hex_encoded_data $hex_encoded_data \
-                       '
-                       {
-                          "V3": [
-                                  {
-                                    "UnpaidExecution": {
-                                        "weight_limit": "Unlimited"
-                                    }
-                                  },
-                                  {
-                                    "Transact": {
-                                      "origin_kind": "Superuser",
-                                      "require_weight_at_most": {
-                                        "ref_time": 1000000000,
-                                        "proof_size": 0,
-                                      },
-                                      "call": {
-                                        "encoded": $hex_encoded_data
-                                      }
-                                    }
-                                  }
-                          ]
-                        }
-                        ')
-
-    echo ""
-    echo "          dest:"
-    echo "${dest}"
-    echo ""
-    echo "          message:"
-    echo "${message}"
-    echo ""
-    echo "--------------------------------------------------"
-
-    polkadot-js-api \
-        --ws "${relay_url?}" \
-        --seed "${relay_chain_seed?}" \
-        --sudo \
-        tx.xcmPallet.send \
-            "${dest}" \
-            "${message}"
+    send_governance_transact "${relay_url}" "${relay_chain_seed}" "${runtime_para_id}" "${hex_encoded_data}" 200000000 12000
 }
 
 # TODO: we need to fill sovereign account for bridge-hub, because, small ammouts does not match ExistentialDeposit, so no reserve pass
@@ -411,7 +435,9 @@ function transfer_asset_via_bridge() {
     )
 
 
-## TODO: decode some account to bytes: "id": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+## // TODO:check-parameter - find dynamic way to decode some account to bytes: "id": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+## AccountId32::from_str("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").unwrap().0` -> [u8; 32]
+## [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]
 
     local destination=$(jq --null-input \
         '
@@ -428,7 +454,7 @@ function transfer_asset_via_bridge() {
                             },
                             {
                                 "AccountId32": {
-                                    "id": [28, 189, 45, 67, 83, 10, 68, 112, 90, 208, 136, 175, 49, 62, 24, 248, 11, 83, 239, 22, 179, 97, 119, 205, 75, 119, 184, 70, 242, 165, 240, 124]
+                                    "id": [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]
                                 }
                             }
                         ]
@@ -447,63 +473,12 @@ function transfer_asset_via_bridge() {
     echo ""
     echo "--------------------------------------------------"
 
-#    local tmp_output_file=$(mktemp)
-#    generate_hex_encoded_call_data "transfer-asset-via-bridge" "${url}" "${tmp_output_file}" "$assets" "$destination"
-#    local hex_encoded_data=$(cat $tmp_output_file)
-
     polkadot-js-api \
         --ws "${url?}" \
         --seed "${seed?}" \
-        tx.bridgeAssetsTransfer.transferAssetViaBridge \
+        tx.bridgeTransfer.transferAssetViaBridge \
             "${assets}" \
             "${destination}"
-}
-
-function register_parachain() {
-    local PORT=$1
-    local PARA_ID=$2
-    local GENESIS_FILE=$3
-    local GENESIS_WASM_FILE=$4
-
-    echo ""
-    echo ""
-    echo "  Please, register parachain: https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A${PORT}#/sudo"
-    echo "  parasSudoWrapper.sudoScheduleParaInitialize:"
-    echo "      ParaId: $PARA_ID"
-    echo "      Genesis (file): $GENESIS_FILE"
-    echo "      Genesis wasm (file): $GENESIS_WASM_FILE"
-    echo "      Parachain: Yes"
-    echo ""
-    echo ""
-
-    # TODO: find the way to do it automatically
-}
-
-function show_node_log_file() {
-    local NAME=$1
-    local WS_PORT=$2
-    local FILE_PATH=$3
-
-    echo ""
-    echo ""
-    echo "  Node(${NAME}): ws-port: ${WS_PORT}"
-    echo "  Logs: ${FILE_PATH}"
-    echo ""
-    echo ""
-}
-
-function check_parachain_collator() {
-    local PORT=$1
-    local PALLET=$2
-
-    echo ""
-    echo ""
-    echo "  Once relayers work, check parachain: https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A${PORT}#/chainstate"
-    echo "  Pallet: ${PALLET}"
-    echo "  Keys:"
-    echo "      bestFinalized()"
-    echo ""
-    echo ""
 }
 
 function init_ro_wo() {
@@ -563,94 +538,10 @@ function run_relay() {
 }
 
 case "$1" in
-  start-rococo)
-    ensure_binaries
-
-    # TODO: change to generate: ./bin/polkadot key generate-node-key
-    VALIDATOR_KEY_ALICE=(12D3KooWRD6kEQuKDn7BCsMfW71U8AEFDYTc7N2dFQthRsjSR8J5 aa5dc9a97f82f9af38d1f16fbc9c72e915577c3ca654f7d33601645ca5b9a8a5)
-    VALIDATOR_KEY_BOB=(12D3KooWELR4gpc8unmH8WiauK133v397KoMfkkjESWJrzg7Y3Pq 556a36beaeeb95225eb84ae2633bd8135e5ace22f03291853654f07bc5da20ae)
-    VALIDATOR_KEY_CHARLIE=(12D3KooWRatYNHCRpyzhjPqfSPHYsUTi1zX4452kxSWg8ek99Vun 56e6593340685021d27509c0f48836c1dcb84c5aeba730ada68f54a9ae242e67)
-    COLLATOR_KEY_ALICE=(12D3KooWAU51GKCfPBfhaKK8gr6XmHNVXd4e96BYL9v2QkWtDrAm 15642c2e078ddfaacd1e68afcc8bab6dd8085b72b3038b799ddfb46bec18696c)
-    COLLATOR_KEY_BOB=(12D3KooWPg8SEatSi9HvdPJVYBNxeNAvyPTo3Rd4WPdzLRcM8gaS ac651cd6b9a2c7768bca92369ecd4807b54059c33775257e6ba5f72ae91a136d)
-
-    # Start Rococo relay
-    ~/local_bridge_testing/bin/polkadot build-spec --chain rococo-local --disable-default-bootnode --raw > ~/local_bridge_testing/rococo-local-cfde.json
-    ~/local_bridge_testing/bin/polkadot --chain ~/local_bridge_testing/rococo-local-cfde.json --alice --tmp --port 30332 --rpc-port 9932 --ws-port 9942 --no-mdns --node-key ${VALIDATOR_KEY_ALICE[1]} --bootnodes=/ip4/127.0.0.1/tcp/30333/p2p/${VALIDATOR_KEY_BOB[0]} &> ~/local_bridge_testing/logs/rococo_relay_alice.log &
-    ~/local_bridge_testing/bin/polkadot --chain ~/local_bridge_testing/rococo-local-cfde.json --bob --tmp --port 30333 --rpc-port 9933 --ws-port 9943 --no-mdns --node-key ${VALIDATOR_KEY_BOB[1]} --bootnodes=/ip4/127.0.0.1/tcp/30332/p2p/${VALIDATOR_KEY_ALICE[0]} &> ~/local_bridge_testing/logs/rococo_relay_bob.log &
-    ~/local_bridge_testing/bin/polkadot --chain ~/local_bridge_testing/rococo-local-cfde.json --charlie --tmp --port 30334 --rpc-port 9934 --ws-port 9944 --no-mdns ${VALIDATOR_KEY_CHARLIE[1]} --bootnodes=/ip4/127.0.0.1/tcp/30332/p2p/${VALIDATOR_KEY_ALICE[0]} &> ~/local_bridge_testing/logs/rococo_relay_charlie.log &
-    sleep 2
-
-    # Prepare Rococo parachain
-    rm ~/local_bridge_testing/bridge-hub-rococo-local-raw.json
-    ~/local_bridge_testing/bin/polkadot-parachain build-spec --chain bridge-hub-rococo-local --raw --disable-default-bootnode > ~/local_bridge_testing/bridge-hub-rococo-local-raw.json
-    ~/local_bridge_testing/bin/polkadot-parachain export-genesis-state --chain ~/local_bridge_testing/bridge-hub-rococo-local-raw.json > ~/local_bridge_testing/bridge-hub-rococo-local-genesis
-    ~/local_bridge_testing/bin/polkadot-parachain export-genesis-wasm --chain ~/local_bridge_testing/bridge-hub-rococo-local-raw.json > ~/local_bridge_testing/bridge-hub-rococo-local-genesis-wasm
-
-    # Rococo
-    ~/local_bridge_testing/bin/polkadot-parachain --chain ~/local_bridge_testing/bridge-hub-rococo-local-raw.json --collator --alice --force-authoring --tmp --port 40333 --rpc-port 8933 --ws-port 8943 --no-mdns --node-key ${COLLATOR_KEY_ALICE[1]} --bootnodes=/ip4/127.0.0.1/tcp/40334/p2p/${COLLATOR_KEY_BOB[0]} -- --execution wasm --chain ~/local_bridge_testing/rococo-local-cfde.json --port 41333 --rpc-port 48933 --ws-port 48943 --no-mdns --node-key ${COLLATOR_KEY_ALICE[1]} --bootnodes=/ip4/127.0.0.1/tcp/30332/p2p/${VALIDATOR_KEY_ALICE[0]} &> ~/local_bridge_testing/logs/rococo_para_alice.log &
-    show_node_log_file alice 8943 ~/local_bridge_testing/logs/rococo_para_alice.log
-    ~/local_bridge_testing/bin/polkadot-parachain --chain ~/local_bridge_testing/bridge-hub-rococo-local-raw.json --collator --bob --force-authoring --tmp --port 40334 --rpc-port 8934 --ws-port 8944 --no-mdns --node-key ${COLLATOR_KEY_BOB[1]} --bootnodes=/ip4/127.0.0.1/tcp/40333/p2p/${COLLATOR_KEY_ALICE[0]} -- --execution wasm --chain ~/local_bridge_testing/rococo-local-cfde.json --port 41334 --rpc-port 48934 --ws-port 48944 --no-mdns --node-key ${COLLATOR_KEY_BOB[1]} --bootnodes=/ip4/127.0.0.1/tcp/30333/p2p/${VALIDATOR_KEY_BOB[0]} &> ~/local_bridge_testing/logs/rococo_para_bob.log &
-    show_node_log_file bob 8944 ~/local_bridge_testing/logs/rococo_para_bob.log
-
-    register_parachain 9942 1013 ~/local_bridge_testing/bridge-hub-rococo-local-genesis ~/local_bridge_testing/bridge-hub-rococo-local-genesis-wasm
-    check_parachain_collator 8943 bridgeWococoGrandpa
-    ;;
-  start-wococo)
-    ensure_binaries
-
-    # TODO: change to generate: ./bin/polkadot key generate-node-key
-    VALIDATOR_KEY_ALICE=(12D3KooWKB4SqNJAttmDHXEKtETLPr8Nixso8gUNzNKDS9b6HtYj 8c87694d3a3b3a0e201caceaae095aac66a76ba37545c439f7e0d986670da8e6)
-    VALIDATOR_KEY_BOB=(12D3KooWJq6xkfyV3LFxoNgsCskAwLv6VfLhL3cjHfW4UxDNwroF 9ebcd7371b427d63c087762fe3dc5a1d4b01875cb8611c263feda21364d4a329)
-    VALIDATOR_KEY_CHARLIE=(12D3KooW9yQQXz6xUJY2YgizKTFLS5fPaPi4KznQdMHEW4Hzt3NL 8bb1c50421a73082b8275ead6e3f150a774a0f8d6ad4a786df5d5b7688115cb1)
-    VALIDATOR_KEY_DAVE=(12D3KooWJP1R7XxqEuSryXSKYRVz9wdMRvd5LSqjRpdK4AvjnB12 e160d8b0ef4d66e02abf6663417b024f27f6cb2f826b746f3d267c58a32e9c05)
-    COLLATOR_KEY_ALICE=(12D3KooWNsQbEdW1eyC6TXAJCXxZ8qzkCJPWFqhWjco1SYYdaKPU 93ac8257255961b3d3ec0038747f0f9c7ddaa5dd352297daa352e098285965b7)
-    COLLATOR_KEY_BOB=(12D3KooWQ9yxdcf7kavoaKNWmt92tkCGQ8C4sq2JNBgCjvGtvvFg 7e396f01a8a74ecf2010ab2d57ca9fc6c5d673914d97ad6a066fe724e60c3412)
-
-    # Start Wococo relay
-    ~/local_bridge_testing/bin/polkadot build-spec --chain wococo-local --disable-default-bootnode --raw > ~/local_bridge_testing/wococo-local-cfde.json
-    ~/local_bridge_testing/bin/polkadot --chain ~/local_bridge_testing/wococo-local-cfde.json --alice --tmp --port 30335 --rpc-port 9935 --ws-port 9945 --no-mdns --node-key ${VALIDATOR_KEY_ALICE[1]} --bootnodes=/ip4/127.0.0.1/tcp/30336/p2p/${VALIDATOR_KEY_BOB[0]} &> ~/local_bridge_testing/logs/wococo_relay_alice.log &
-    ~/local_bridge_testing/bin/polkadot --chain ~/local_bridge_testing/wococo-local-cfde.json --bob --tmp --port 30336 --rpc-port 9936 --ws-port 9946 --no-mdns --node-key ${VALIDATOR_KEY_BOB[1]} --bootnodes=/ip4/127.0.0.1/tcp/30335/p2p/${VALIDATOR_KEY_ALICE[0]} &> ~/local_bridge_testing/logs/wococo_relay_bob.log &
-    ~/local_bridge_testing/bin/polkadot --chain ~/local_bridge_testing/wococo-local-cfde.json --charlie --tmp --port 30337 --rpc-port 9937 --ws-port 9947 --no-mdns --node-key ${VALIDATOR_KEY_CHARLIE[1]} --bootnodes=/ip4/127.0.0.1/tcp/30335/p2p/${VALIDATOR_KEY_ALICE[0]} &> ~/local_bridge_testing/logs/wococo_relay_charlie.log &
-    ~/local_bridge_testing/bin/polkadot --chain ~/local_bridge_testing/wococo-local-cfde.json --dave --tmp --port 30338 --rpc-port 9938 --ws-port 9948 --no-mdns --node-key ${VALIDATOR_KEY_DAVE[1]} --bootnodes=/ip4/127.0.0.1/tcp/30336/p2p/${VALIDATOR_KEY_BOB[0]} &> ~/local_bridge_testing/logs/wococo_relay_dave.log &
-    sleep 2
-
-    # Prepare Wococo parachain
-    rm ~/local_bridge_testing/bridge-hub-wococo-local-raw.json
-    ~/local_bridge_testing/bin/polkadot-parachain build-spec --chain bridge-hub-wococo-local --raw --disable-default-bootnode > ~/local_bridge_testing/bridge-hub-wococo-local-raw.json
-    ~/local_bridge_testing/bin/polkadot-parachain export-genesis-state --chain ~/local_bridge_testing/bridge-hub-wococo-local-raw.json > ~/local_bridge_testing/bridge-hub-wococo-local-genesis
-    ~/local_bridge_testing/bin/polkadot-parachain export-genesis-wasm --chain ~/local_bridge_testing/bridge-hub-wococo-local-raw.json > ~/local_bridge_testing/bridge-hub-wococo-local-genesis-wasm
-
-    # Wococo
-    ~/local_bridge_testing/bin/polkadot-parachain --chain ~/local_bridge_testing/bridge-hub-wococo-local-raw.json --collator --alice --force-authoring --tmp --port 40335 --rpc-port 8935 --ws-port 8945 --no-mdns --node-key ${COLLATOR_KEY_ALICE[1]} --bootnodes=/ip4/127.0.0.1/tcp/40336/p2p/${COLLATOR_KEY_BOB[0]} -- --execution wasm --chain ~/local_bridge_testing/wococo-local-cfde.json --port 41335 --rpc-port 48935 --ws-port 48945 --no-mdns --node-key ${COLLATOR_KEY_ALICE[1]} --bootnodes=/ip4/127.0.0.1/tcp/30335/p2p/${VALIDATOR_KEY_ALICE[0]} &> ~/local_bridge_testing/logs/wococo_para_alice.log &
-    show_node_log_file alice 8945 ~/local_bridge_testing/logs/wococo_para_alice.log
-    ~/local_bridge_testing/bin/polkadot-parachain --chain ~/local_bridge_testing/bridge-hub-wococo-local-raw.json --collator --bob --force-authoring --tmp --port 40336 --rpc-port 8936 --ws-port 8946 --no-mdns --node-key ${COLLATOR_KEY_BOB[1]} --bootnodes=/ip4/127.0.0.1/tcp/40335/p2p/${COLLATOR_KEY_ALICE[0]} -- --execution wasm --chain ~/local_bridge_testing/wococo-local-cfde.json --port 41336 --rpc-port 48936 --ws-port 48946 --no-mdns --node-key ${COLLATOR_KEY_BOB[1]} --bootnodes=/ip4/127.0.0.1/tcp/30336/p2p/${VALIDATOR_KEY_BOB[0]} &> ~/local_bridge_testing/logs/wococo_para_bob.log &
-    show_node_log_file bob 8946 ~/local_bridge_testing/logs/wococo_para_bob.log
-
-    register_parachain 9945 1013 ~/local_bridge_testing/bridge-hub-wococo-local-genesis ~/local_bridge_testing/bridge-hub-wococo-local-genesis-wasm
-    check_parachain_collator 8945 bridgeRococoGrandpa
-    ;;
-  init-ro-wo)
-    # Init bridge Rococo->Wococo
-    init_ro_wo
-    ;;
-  init-wo-ro)
-    # Init bridge Wococo->Rococo
-    init_wo_ro
-    ;;
   run-relay)
     init_ro_wo
     init_wo_ro
     run_relay
-    ;;
-  send-remark-local)
-    ensure_polkadot_js_api
-    send_xcm_transact_remark_from_statemine \
-        "ws://127.0.0.1:9910" \
-        "${STATEMINE_ACCOUNT_SEED_FOR_LOCAL}" \
-        1013 \
-        "Wococo" \
-        1000 \
-        "ws://127.0.0.1:9010"
     ;;
   send-trap-local)
     ensure_polkadot_js_api
@@ -661,16 +552,6 @@ case "$1" in
         "Wococo" \
         1000
     ;;
-  send-remark-rococo)
-    ensure_polkadot_js_api
-    send_xcm_transact_remark_from_statemine \
-        "wss://ws-rococo-rockmine2-collator-node-0.parity-testnet.parity.io" \
-        "${ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO}" \
-        1013 \
-        "Wococo" \
-        1000 \
-        "wss://ws-wococo-wockmint-collator-node-0.parity-testnet.parity.io"
-    ;;
   send-trap-rococo)
     ensure_polkadot_js_api
     send_xcm_trap_from_statemine \
@@ -680,9 +561,15 @@ case "$1" in
         "Wococo" \
         1000
     ;;
+  allow-transfers-local)
+      # this allows send transfers on statemine (by governance-like)
+      ./$0 "allow-transfer-on-statemine-local"
+      # this allows receive transfers on westmint (by governance-like)
+      ./$0 "allow-transfer-on-westmint-local"
+      ;;
   allow-transfer-on-statemine-local)
       ensure_polkadot_js_api
-      allow_assets_transfer_from_statemine \
+      allow_assets_transfer_send \
           "ws://127.0.0.1:9942" \
           "//Alice" \
           1000 \
@@ -690,24 +577,56 @@ case "$1" in
           1013 \
           "Wococo" 1000
       ;;
+  allow-transfer-on-westmint-local)
+      ensure_polkadot_js_api
+      allow_assets_transfer_receive \
+          "ws://127.0.0.1:9945" \
+          "//Alice" \
+          1000 \
+          "ws://127.0.0.1:9010" \
+          1014 \
+          "Rococo" \
+          1000
+      # drip SovereignAccount for `MultiLocation { parents: 2, interior: X2(GlobalConsensus(Rococo), Parachain(1000)) }`
+      transfer_balance \
+          "ws://127.0.0.1:9010" \
+          "//Alice" \
+          "5DHZvp523gmJWxg9UcLVbofyu5nZkPvATeP1ciYncpFpXtiG" \
+          $((1000000000 + 50000000000 * 20)) # ExistentialDeposit + targetLocationFee * 20
+      # create foreign assets for native Statemine token (yes, Kusama, because we are using Statemine runtime on rococo)
+      force_create_foreign_asset \
+          "ws://127.0.0.1:9945" \
+          "//Alice" \
+          1000 \
+          "ws://127.0.0.1:9010" \
+          "Kusama" \
+          "5DHZvp523gmJWxg9UcLVbofyu5nZkPvATeP1ciYncpFpXtiG"
+      ;;
   remove-assets-transfer-from-statemine-local)
       ensure_polkadot_js_api
-      remove_assets_transfer_from_statemine \
+      remove_assets_transfer_send \
           "ws://127.0.0.1:9942" \
           "//Alice" \
           1000 \
           "ws://127.0.0.1:9910" \
           "Wococo"
       ;;
-  transfer-asset)
+  transfer-asset-from-statemine-local)
       ensure_polkadot_js_api
       transfer_asset_via_bridge \
           "ws://127.0.0.1:9910" \
           "//Alice"
       ;;
+  drip)
+      transfer_balance \
+          "ws://127.0.0.1:9010" \
+          "//Alice" \
+          "5DHZvp523gmJWxg9UcLVbofyu5nZkPvATeP1ciYncpFpXtiG" \
+          $((1000000000 + 50000000000 * 20))
+      ;;
   stop)
     pkill -f polkadot
     pkill -f parachain
     ;;
-  *) echo "A command is require. Supported commands: run-relay, send-trap-rococo/send-trap-local, send-remark-local/send-remark-rococo, allow-transfer-on-statemine-local/remove-assets-transfer-from-statemine-local, transfer-asset"; exit 1;;
+  *) echo "A command is require. Supported commands: run-relay, send-trap-rococo/send-trap-local, send-remark-local/send-remark-rococo, allow-transfers-local/allow-transfer-on-statemine-local/remove-assets-transfer-from-statemine-local, allow-transfer-on-westmint-local, transfer-asset-from-statemine-local"; exit 1;;
 esac
