@@ -15,60 +15,44 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use core::time::Duration;
-use futures::{channel::mpsc, prelude::*, task::Poll};
+use futures::{prelude::*, task::Poll};
 use smoldot::libp2p::{multiaddr::ProtocolRef, websocket, Multiaddr};
 use smoldot_light::platform::{
-	ConnectError, PlatformConnection, PlatformSubstreamDirection, ReadBuffer,
+	ConnectError, Platform, PlatformConnection, PlatformSubstreamDirection, ReadBuffer,
 };
 use std::{
 	collections::VecDeque,
 	io::IoSlice,
 	net::{IpAddr, SocketAddr},
 	pin::Pin,
-	sync::Arc,
 };
 use tokio::net::TcpStream;
 
-use tokio_util::compat::TokioAsyncReadCompatExt;
-
-/// Platform internal representation of the connection stream.
-pub struct TokioStream {
-	shared: Arc<StreamShared>,
-	read_data_rx: Arc<parking_lot::Mutex<stream::Peekable<mpsc::Receiver<Vec<u8>>>>>,
-	read_buffer: Option<Vec<u8>>,
-}
-
-struct StreamShared {
-	guarded: parking_lot::Mutex<StreamSharedGuarded>,
-	write_queue_pushed: event_listener::Event,
-}
-
-struct StreamSharedGuarded {
-	write_queue: VecDeque<u8>,
-}
+use tokio_util::compat::{Compat, TokioAsyncReadCompatExt};
+type CompatTcpStream = Compat<TcpStream>;
 
 /// Platform implementation for tokio
 /// This implementation is a conversion of the implementation for async-std:
 /// https://github.com/smol-dot/smoldot/blob/54d88891b1da202b4bf612a150df7b4dbfa03a55/light-base/src/platform/async_std.rs#L40
 pub struct TokioPlatform;
 
-impl smoldot_light::platform::Platform for TokioPlatform {
+impl Platform for TokioPlatform {
 	type Delay = future::BoxFuture<'static, ()>;
 	type Yield = future::Ready<()>;
 	type Instant = std::time::Instant;
 	type Connection = std::convert::Infallible;
-	type Stream = TokioStream;
+	type Stream = Stream;
 	type ConnectFuture = future::BoxFuture<
 		'static,
 		Result<PlatformConnection<Self::Stream, Self::Connection>, ConnectError>,
 	>;
-	type StreamDataFuture<'a> = future::BoxFuture<'a, ()>;
+	type StreamUpdateFuture<'a> = future::BoxFuture<'a, ()>;
 	type NextSubstreamFuture<'a> =
 		future::Pending<Option<(Self::Stream, PlatformSubstreamDirection)>>;
 
 	fn now_from_unix_epoch() -> Duration {
 		// Intentionally panic if the time is configured earlier than the UNIX EPOCH.
-		std::time::UNIX_EPOCH.elapsed().expect("Time should be after unix epoch.")
+		std::time::UNIX_EPOCH.elapsed().unwrap()
 	}
 
 	fn now() -> Self::Instant {
@@ -80,7 +64,8 @@ impl smoldot_light::platform::Platform for TokioPlatform {
 	}
 
 	fn sleep_until(when: Self::Instant) -> Self::Delay {
-		tokio::time::sleep_until(when.into()).boxed()
+		let duration = when.saturating_duration_since(std::time::Instant::now());
+		Self::sleep(duration)
 	}
 
 	fn yield_after_cpu_intensive() -> Self::Yield {
@@ -96,28 +81,28 @@ impl smoldot_light::platform::Platform for TokioPlatform {
 		Box::pin(async move {
 			let addr = multiaddr.parse::<Multiaddr>().map_err(|_| ConnectError {
 				is_bad_addr: true,
-				message: format!("Failed to parse address"),
+				message: "Failed to parse address".to_string(),
 			})?;
 
 			let mut iter = addr.iter().fuse();
 			let proto1 = iter.next().ok_or(ConnectError {
 				is_bad_addr: true,
-				message: format!("Unknown protocols combination"),
+				message: "Unknown protocols combination".to_string(),
 			})?;
 			let proto2 = iter.next().ok_or(ConnectError {
 				is_bad_addr: true,
-				message: format!("Unknown protocols combination"),
+				message: "Unknown protocols combination".to_string(),
 			})?;
 			let proto3 = iter.next();
 
 			if iter.next().is_some() {
 				return Err(ConnectError {
 					is_bad_addr: true,
-					message: format!("Unknown protocols combination"),
+					message: "Unknown protocols combination".to_string(),
 				})
 			}
 
-			// doesn't support WebSocket secure connections
+			// TODO: doesn't support WebSocket secure connections
 
 			// Ensure ahead of time that the multiaddress is supported.
 			let (addr, host_if_websocket) = match (&proto1, &proto2, &proto3) {
@@ -134,7 +119,7 @@ impl smoldot_light::platform::Platform for TokioPlatform {
 					(either::Left(addr), Some(addr.to_string()))
 				},
 
-				// we don't care about the differences between Dns, Dns4, and Dns6
+				// TODO: we don't care about the differences between Dns, Dns4, and Dns6
 				(
 					ProtocolRef::Dns(addr) | ProtocolRef::Dns4(addr) | ProtocolRef::Dns6(addr),
 					ProtocolRef::Tcp(port),
@@ -149,20 +134,21 @@ impl smoldot_light::platform::Platform for TokioPlatform {
 				_ =>
 					return Err(ConnectError {
 						is_bad_addr: true,
-						message: format!("Unknown protocols combination"),
+						message: "Unknown protocols combination".to_string(),
 					}),
 			};
 
 			let tcp_socket = match addr {
-				either::Left(socket_addr) => TcpStream::connect(socket_addr).await,
-				either::Right((dns, port)) => TcpStream::connect((&dns[..], port)).await,
+				either::Left(socket_addr) => tokio::net::TcpStream::connect(socket_addr).await,
+				either::Right((dns, port)) =>
+					tokio::net::TcpStream::connect((&dns[..], port)).await,
 			};
 
 			if let Ok(tcp_socket) = &tcp_socket {
 				let _ = tcp_socket.set_nodelay(true);
 			}
 
-			let mut socket = match (tcp_socket, host_if_websocket) {
+			let socket: TcpOrWs = match (tcp_socket, host_if_websocket) {
 				(Ok(tcp_socket), Some(host)) => future::Either::Right(
 					websocket::websocket_client_handshake(websocket::Config {
 						tcp_socket: tcp_socket.compat(),
@@ -171,7 +157,7 @@ impl smoldot_light::platform::Platform for TokioPlatform {
 					})
 					.await
 					.map_err(|err| ConnectError {
-						message: format!("Failed to negotiate WebSocket: {}", err),
+						message: format!("Failed to negotiate WebSocket: {err}"),
 						is_bad_addr: false,
 					})?,
 				),
@@ -179,93 +165,20 @@ impl smoldot_light::platform::Platform for TokioPlatform {
 				(Err(err), _) =>
 					return Err(ConnectError {
 						is_bad_addr: false,
-						message: format!("Failed to reach peer: {}", err),
+						message: format!("Failed to reach peer: {err}"),
 					}),
 			};
 
-			let shared = Arc::new(StreamShared {
-				guarded: parking_lot::Mutex::new(StreamSharedGuarded {
-					write_queue: VecDeque::with_capacity(1024),
-				}),
-				write_queue_pushed: event_listener::Event::new(),
-			});
-			let shared_clone = shared.clone();
-
-			let (mut read_data_tx, read_data_rx) = mpsc::channel(2);
-			let mut read_buffer = vec![0; 4096];
-			let mut write_queue_pushed_listener = shared.write_queue_pushed.listen();
-
-			// this whole code is a mess, but the Platform trait must be modified to fix it
-			// spawning a task per connection is necessary because the Platform trait isn't suitable for better strategies
-			tokio::spawn(future::poll_fn(move |cx| {
-				let mut lock = shared.guarded.lock();
-
-				loop {
-					match Pin::new(&mut read_data_tx).poll_ready(cx) {
-						Poll::Ready(Ok(())) => {
-							match Pin::new(&mut socket).poll_read(cx, &mut read_buffer) {
-								Poll::Pending => break,
-								Poll::Ready(result) => {
-									match result {
-										Ok(0) | Err(_) => return Poll::Ready(()), // End the task
-										Ok(bytes) => {
-											let _ = read_data_tx
-												.try_send(read_buffer[..bytes].to_vec());
-										},
-									}
-								},
-							}
-						},
-						Poll::Ready(Err(_)) => return Poll::Ready(()), // End the task
-						Poll::Pending => break,
-					}
-				}
-
-				loop {
-					if lock.write_queue.is_empty() {
-						if let Poll::Ready(Err(_)) = Pin::new(&mut socket).poll_flush(cx) {
-							// End the task
-							return Poll::Ready(())
-						}
-
-						break
-					} else {
-						let write_queue_slices = lock.write_queue.as_slices();
-						if let Poll::Ready(result) = Pin::new(&mut socket).poll_write_vectored(
-							cx,
-							&[
-								IoSlice::new(write_queue_slices.0),
-								IoSlice::new(write_queue_slices.1),
-							],
-						) {
-							match result {
-								Ok(bytes) =>
-									for _ in 0..bytes {
-										lock.write_queue.pop_front();
-									},
-								Err(_) => return Poll::Ready(()), // End the task
-							}
-						} else {
-							break
-						}
-					}
-				}
-
-				loop {
-					if let Poll::Ready(()) = Pin::new(&mut write_queue_pushed_listener).poll(cx) {
-						write_queue_pushed_listener = shared.write_queue_pushed.listen();
-					} else {
-						break
-					}
-				}
-
-				Poll::Pending
-			}));
-
-			Ok(PlatformConnection::SingleStreamMultistreamSelectNoiseYamux(TokioStream {
-				shared: shared_clone,
-				read_data_rx: Arc::new(parking_lot::Mutex::new(read_data_rx.peekable())),
-				read_buffer: Some(Vec::with_capacity(4096)),
+			Ok(PlatformConnection::SingleStreamMultistreamSelectNoiseYamux(Stream {
+				socket,
+				buffers: Some((
+					StreamReadBuffer::Open { buffer: vec![0; 16384], cursor: 0..0 },
+					StreamWriteBuffer::Open {
+						buffer: VecDeque::with_capacity(16384),
+						must_close: false,
+						must_flush: false,
+					},
+				)),
 			}))
 		})
 	}
@@ -282,48 +195,181 @@ impl smoldot_light::platform::Platform for TokioPlatform {
 		match *c {}
 	}
 
-	fn wait_more_data(stream: &'_ mut Self::Stream) -> Self::StreamDataFuture<'_> {
-		if stream.read_buffer.as_ref().map_or(true, |b| !b.is_empty()) {
-			return Box::pin(future::ready(()))
-		}
+	fn update_stream(stream: &'_ mut Self::Stream) -> Self::StreamUpdateFuture<'_> {
+		Box::pin(future::poll_fn(|cx| {
+			let Some((read_buffer, write_buffer)) = stream.buffers.as_mut() else { return Poll::Pending };
 
-		let read_data_rx = stream.read_data_rx.clone();
-		Box::pin(future::poll_fn(move |cx| {
-			let mut lock = read_data_rx.lock();
-			Pin::new(&mut *lock).poll_peek(cx).map(|_| ())
+			// Whether the future returned by `update_stream` should return `Ready` or `Pending`.
+			let mut update_stream_future_ready = false;
+
+			if let StreamReadBuffer::Open { buffer: ref mut buf, ref mut cursor } = read_buffer {
+				// When reading data from the socket, `poll_read` might return "EOF". In that
+				// situation, we transition to the `Closed` state, which would discard the data
+				// currently in the buffer. For this reason, we only try to read if there is no
+				// data left in the buffer.
+				if cursor.start == cursor.end {
+					if let Poll::Ready(result) = Pin::new(&mut stream.socket).poll_read(cx, buf) {
+						update_stream_future_ready = true;
+						match result {
+							Err(_) => {
+								// End the stream.
+								stream.buffers = None;
+								return Poll::Ready(())
+							},
+							Ok(0) => {
+								// EOF.
+								*read_buffer = StreamReadBuffer::Closed;
+							},
+							Ok(bytes) => {
+								*cursor = 0..bytes;
+							},
+						}
+					}
+				}
+			}
+
+			if let StreamWriteBuffer::Open { buffer: ref mut buf, must_flush, must_close } =
+				write_buffer
+			{
+				while !buf.is_empty() {
+					let write_queue_slices = buf.as_slices();
+					if let Poll::Ready(result) = Pin::new(&mut stream.socket).poll_write_vectored(
+						cx,
+						&[IoSlice::new(write_queue_slices.0), IoSlice::new(write_queue_slices.1)],
+					) {
+						if !*must_close {
+							// In the situation where the API user wants to close the writing
+							// side, simply sending the buffered data isn't enough to justify
+							// making the future ready.
+							update_stream_future_ready = true;
+						}
+
+						match result {
+							Err(_) => {
+								// End the stream.
+								stream.buffers = None;
+								return Poll::Ready(())
+							},
+							Ok(bytes) => {
+								*must_flush = true;
+								for _ in 0..bytes {
+									buf.pop_front();
+								}
+							},
+						}
+					} else {
+						break
+					}
+				}
+
+				if buf.is_empty() && *must_close {
+					if let Poll::Ready(result) = Pin::new(&mut stream.socket).poll_close(cx) {
+						update_stream_future_ready = true;
+						match result {
+							Err(_) => {
+								// End the stream.
+								stream.buffers = None;
+								return Poll::Ready(())
+							},
+							Ok(()) => {
+								*write_buffer = StreamWriteBuffer::Closed;
+							},
+						}
+					}
+				} else if *must_flush {
+					if let Poll::Ready(result) = Pin::new(&mut stream.socket).poll_flush(cx) {
+						update_stream_future_ready = true;
+						match result {
+							Err(_) => {
+								// End the stream.
+								stream.buffers = None;
+								return Poll::Ready(())
+							},
+							Ok(()) => {
+								*must_flush = false;
+							},
+						}
+					}
+				}
+			}
+
+			if update_stream_future_ready {
+				Poll::Ready(())
+			} else {
+				Poll::Pending
+			}
 		}))
 	}
 
 	fn read_buffer(stream: &mut Self::Stream) -> ReadBuffer {
-		if stream.read_buffer.is_none() {
-			// the implementation doesn't let us differentiate between Closed and Reset
-			return ReadBuffer::Reset
+		match stream.buffers.as_ref().map(|(r, _)| r) {
+			None => ReadBuffer::Reset,
+			Some(StreamReadBuffer::Closed) => ReadBuffer::Closed,
+			Some(StreamReadBuffer::Open { buffer, cursor }) =>
+				ReadBuffer::Open(&buffer[cursor.clone()]),
 		}
-
-		let mut lock = stream.read_data_rx.lock();
-		while let Some(buf) = lock.next().now_or_never() {
-			match buf {
-				Some(b) => stream.read_buffer.as_mut().unwrap().extend(b),
-				None => {
-					stream.read_buffer = None;
-					return ReadBuffer::Reset
-				},
-			}
-		}
-
-		ReadBuffer::Open(stream.read_buffer.as_ref().unwrap())
 	}
 
-	fn advance_read_cursor(stream: &mut Self::Stream, bytes: usize) {
-		if let Some(read_buffer) = &mut stream.read_buffer {
-			*read_buffer = read_buffer[bytes..].to_vec();
-		}
+	fn advance_read_cursor(stream: &mut Self::Stream, extra_bytes: usize) {
+		let Some(StreamReadBuffer::Open { ref mut cursor, .. }) =
+            stream.buffers.as_mut().map(|(r, _)| r)
+        else {
+            assert_eq!(extra_bytes, 0);
+            return
+        };
+
+		assert!(cursor.start + extra_bytes <= cursor.end);
+		cursor.start += extra_bytes;
+	}
+
+	fn writable_bytes(stream: &mut Self::Stream) -> usize {
+		let Some(StreamWriteBuffer::Open { ref mut buffer, must_close: false, ..}) =
+            stream.buffers.as_mut().map(|(_, w)| w) else { return 0 };
+		buffer.capacity() - buffer.len()
 	}
 
 	fn send(stream: &mut Self::Stream, data: &[u8]) {
-		let mut lock = stream.shared.guarded.lock();
-		lock.write_queue.reserve(data.len());
-		lock.write_queue.extend(data.iter().copied());
-		stream.shared.write_queue_pushed.notify(usize::max_value());
+		debug_assert!(!data.is_empty());
+
+		// Because `writable_bytes` returns 0 if the writing side is closed, and because `data`
+		// must always have a size inferior or equal to `writable_bytes`, we know for sure that
+		// the writing side isn't closed.
+		let Some(StreamWriteBuffer::Open { ref mut buffer, .. } )=
+            stream.buffers.as_mut().map(|(_, w)| w) else { panic!() };
+		buffer.reserve(data.len());
+		buffer.extend(data.iter().copied());
+	}
+
+	fn close_send(stream: &mut Self::Stream) {
+		// It is not illegal to call this on an already-reset stream.
+		let Some((_, write_buffer)) = stream.buffers.as_mut() else { return };
+
+		match write_buffer {
+			StreamWriteBuffer::Open { must_close: must_close @ false, .. } => *must_close = true,
+			_ => {
+				// However, it is illegal to call this on a stream that was already close
+				// attempted.
+				panic!()
+			},
+		}
 	}
 }
+
+/// Implementation detail of [`AsyncStdTcpWebSocket`].
+pub struct Stream {
+	socket: TcpOrWs,
+	/// Read and write buffers of the connection, or `None` if the socket has been reset.
+	buffers: Option<(StreamReadBuffer, StreamWriteBuffer)>,
+}
+
+enum StreamReadBuffer {
+	Open { buffer: Vec<u8>, cursor: std::ops::Range<usize> },
+	Closed,
+}
+
+enum StreamWriteBuffer {
+	Open { buffer: VecDeque<u8>, must_flush: bool, must_close: bool },
+	Closed,
+}
+
+type TcpOrWs = future::Either<CompatTcpStream, websocket::Connection<CompatTcpStream>>;
