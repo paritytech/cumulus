@@ -83,9 +83,6 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		// Something to execute an XCM message. We need this to service the XCMoXCMP queue.
-		//type XcmExecutor: ExecuteXcm<Self::RuntimeCall>;
-
 		/// Information on the available XCMP channels.
 		type ChannelInfo: GetChannelInfo;
 
@@ -123,11 +120,6 @@ pub mod pallet {
 		fn on_runtime_upgrade() -> Weight {
 			migration::migrate_to_latest::<T>()
 		}
-
-		//fn on_idle(_now: T::BlockNumber, max_weight: Weight) -> Weight {
-		// on_idle processes additional messages with any remaining block weight.
-		//Self::service_xcmp_queue(max_weight)
-		//}
 	}
 
 	#[pallet::call]

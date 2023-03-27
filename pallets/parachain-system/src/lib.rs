@@ -448,9 +448,6 @@ pub mod pallet {
 				vfp.relay_parent_number,
 			));
 
-			// FAIL-CI do this in on_initialize or manually here?
-			//T::MessageService::service_queues(Weight::MAX);
-
 			Ok(PostDispatchInfo { actual_weight: Some(total_weight), pays_fee: Pays::No })
 		}
 
