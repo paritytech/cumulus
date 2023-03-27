@@ -54,8 +54,9 @@ use polkadot_primitives::{CollatorPair, Hash as PHash, PersistedValidationData};
 use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_consensus::ImportQueue;
-use sc_network::{multiaddr, NetworkBlock, NetworkService};
-use sc_network_common::{config::TransportConfig, service::NetworkStateInfo};
+use sc_network::{
+	config::TransportConfig, multiaddr, NetworkBlock, NetworkService, NetworkStateInfo,
+};
 use sc_service::{
 	config::{
 		BlocksPruning, DatabaseSource, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
@@ -260,7 +261,8 @@ async fn build_relay_chain_interface(
 			polkadot_service::IsCollator::Yes(CollatorPair::generate().0)
 		},
 		None,
-	)?;
+	)
+	.map_err(|e| RelayChainError::Application(Box::new(e) as Box<_>))?;
 
 	task_manager.add_child(relay_chain_full_node.task_manager);
 	tracing::info!("Using inprocess node.");
@@ -317,10 +319,7 @@ where
 		&mut task_manager,
 	)
 	.await
-	.map_err(|e| match e {
-		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
-		s => s.to_string().into(),
-	})?;
+	.map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
 	let import_queue_service = params.import_queue.service();
 	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
@@ -348,7 +347,7 @@ where
 		transaction_pool: transaction_pool.clone(),
 		task_manager: &mut task_manager,
 		config: parachain_config,
-		keystore: params.keystore_container.sync_keystore(),
+		keystore: params.keystore_container.keystore(),
 		backend: backend.clone(),
 		network: network.clone(),
 		sync_service: sync_service.clone(),
@@ -712,7 +711,7 @@ pub fn node_config(
 	if nodes_exlusive {
 		network_config.default_peers_set.reserved_nodes = nodes;
 		network_config.default_peers_set.non_reserved_mode =
-			sc_network_common::config::NonReservedPeerMode::Deny;
+			sc_network::config::NonReservedPeerMode::Deny;
 	} else {
 		network_config.boot_nodes = nodes;
 	}
@@ -733,7 +732,6 @@ pub fn node_config(
 		transaction_pool: Default::default(),
 		network: network_config,
 		keystore: KeystoreConfig::InMemory,
-		keystore_remote: Default::default(),
 		database: DatabaseSource::RocksDb { path: root.join("db"), cache_size: 128 },
 		trie_cache_maximum_size: Some(64 * 1024 * 1024),
 		state_pruning: Some(PruningMode::ArchiveAll),

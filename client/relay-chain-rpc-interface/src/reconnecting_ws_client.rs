@@ -46,7 +46,7 @@ const LOG_TARGET: &str = "reconnecting-websocket-client";
 
 /// Worker that should be used in combination with [`RelayChainRpcClient`]. Must be polled to distribute header notifications to listeners.
 pub struct ReconnectingWebsocketWorker {
-	ws_urls: Vec<Url>,
+	ws_urls: Vec<String>,
 	/// Communication channel with the RPC client
 	client_receiver: TokioReceiver<RpcDispatcherMessage>,
 
@@ -56,12 +56,31 @@ pub struct ReconnectingWebsocketWorker {
 	best_header_listeners: Vec<Sender<RelayHeader>>,
 }
 
+/// Format url and force addition of a port
+fn url_to_string_with_port(url: Url) -> Option<String> {
+	// This is already validated on CLI side, just defensive here
+	if (url.scheme() != "ws" && url.scheme() != "wss") || url.host_str().is_none() {
+		tracing::warn!(target: LOG_TARGET, ?url, "Non-WebSocket URL or missing host.");
+		return None
+	}
+
+	// Either we have a user-supplied port or use the default for 'ws' or 'wss' here
+	Some(format!(
+		"{}://{}:{}{}{}",
+		url.scheme(),
+		url.host_str()?,
+		url.port_or_known_default()?,
+		url.path(),
+		url.query().map(|query| format!("?{}", query)).unwrap_or_default()
+	))
+}
+
 /// Manages the active websocket client.
 /// Responsible for creating request futures, subscription streams
 /// and reconnections.
 #[derive(Debug)]
 struct ClientManager {
-	urls: Vec<Url>,
+	urls: Vec<String>,
 	active_client: Arc<JsonRpcClient>,
 	active_index: usize,
 }
@@ -74,7 +93,7 @@ struct RelayChainSubscriptions {
 
 /// Try to find a new RPC server to connect to.
 async fn connect_next_available_rpc_server(
-	urls: &Vec<Url>,
+	urls: &Vec<String>,
 	starting_position: usize,
 ) -> Result<(usize, Arc<JsonRpcClient>), ()> {
 	tracing::debug!(target: LOG_TARGET, starting_position, "Connecting to RPC server.");
@@ -83,18 +102,19 @@ async fn connect_next_available_rpc_server(
 		tracing::info!(
 			target: LOG_TARGET,
 			index,
-			?url,
+			url,
 			"Trying to connect to next external relaychain node.",
 		);
-		if let Ok(ws_client) = WsClientBuilder::default().build(url).await {
-			return Ok((index, Arc::new(ws_client)))
+		match WsClientBuilder::default().build(&url).await {
+			Ok(ws_client) => return Ok((index, Arc::new(ws_client))),
+			Err(err) => tracing::debug!(target: LOG_TARGET, url, ?err, "Unable to connect."),
 		};
 	}
 	Err(())
 }
 
 impl ClientManager {
-	pub async fn new(urls: Vec<Url>) -> Result<Self, ()> {
+	pub async fn new(urls: Vec<String>) -> Result<Self, ()> {
 		if urls.is_empty() {
 			return Err(())
 		}
@@ -209,6 +229,8 @@ impl ReconnectingWebsocketWorker {
 	pub async fn new(
 		urls: Vec<Url>,
 	) -> (ReconnectingWebsocketWorker, TokioSender<RpcDispatcherMessage>) {
+		let urls = urls.into_iter().filter_map(url_to_string_with_port).collect();
+
 		let (tx, rx) = tokio_channel(100);
 		let worker = ReconnectingWebsocketWorker {
 			ws_urls: urls,
@@ -400,5 +422,38 @@ impl ReconnectingWebsocketWorker {
 				}
 			}
 		}
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use super::url_to_string_with_port;
+	use url::Url;
+
+	#[test]
+	fn url_to_string_works() {
+		let url = Url::parse("wss://something/path").unwrap();
+		assert_eq!(Some("wss://something:443/path".to_string()), url_to_string_with_port(url));
+
+		let url = Url::parse("ws://something/path").unwrap();
+		assert_eq!(Some("ws://something:80/path".to_string()), url_to_string_with_port(url));
+
+		let url = Url::parse("wss://something:100/path").unwrap();
+		assert_eq!(Some("wss://something:100/path".to_string()), url_to_string_with_port(url));
+
+		let url = Url::parse("wss://something:100/path").unwrap();
+		assert_eq!(Some("wss://something:100/path".to_string()), url_to_string_with_port(url));
+
+		let url = Url::parse("wss://something/path?query=yes").unwrap();
+		assert_eq!(
+			Some("wss://something:443/path?query=yes".to_string()),
+			url_to_string_with_port(url)
+		);
+
+		let url = Url::parse("wss://something:9090/path?query=yes").unwrap();
+		assert_eq!(
+			Some("wss://something:9090/path?query=yes".to_string()),
+			url_to_string_with_port(url)
+		);
 	}
 }

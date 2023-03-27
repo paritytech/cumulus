@@ -31,11 +31,11 @@ use polkadot_service::{BlockNumber, TaskManager};
 
 use cumulus_primitives_core::{
 	relay_chain::{
-		vstaging::ExecutorParams, CandidateCommitments, CandidateEvent, CandidateHash,
-		CommittedCandidateReceipt, CoreState, DisputeState, GroupRotationInfo, Hash as RelayHash,
-		Header as RelayHeader, InboundHrmpMessage, OccupiedCoreAssumption, PvfCheckStatement,
-		ScrapedOnChainVotes, SessionIndex, SessionInfo, ValidationCode, ValidationCodeHash,
-		ValidatorId, ValidatorIndex, ValidatorSignature,
+		CandidateCommitments, CandidateEvent, CandidateHash, CommittedCandidateReceipt, CoreState,
+		DisputeState, ExecutorParams, GroupRotationInfo, Hash as RelayHash, Header as RelayHeader,
+		InboundHrmpMessage, OccupiedCoreAssumption, PvfCheckStatement, ScrapedOnChainVotes,
+		SessionIndex, SessionInfo, ValidationCode, ValidationCodeHash, ValidatorId, ValidatorIndex,
+		ValidatorSignature,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
@@ -390,7 +390,7 @@ impl RelayChainRpcClient {
 	/// Get hash of n-th block.
 	pub async fn chain_get_block_hash(
 		&self,
-		block_number: Option<polkadot_service::BlockNumber>,
+		block_number: Option<BlockNumber>,
 	) -> Result<Option<RelayHash>, RelayChainError> {
 		let params = rpc_params![block_number];
 		self.request("chain_getBlockHash", params).await

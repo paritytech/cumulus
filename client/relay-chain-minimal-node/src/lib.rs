@@ -28,15 +28,12 @@ use polkadot_node_subsystem_util::metrics::prometheus::Registry;
 use polkadot_primitives::CollatorPair;
 
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
-use sc_network::{Event, NetworkService};
-use sc_network_common::service::NetworkEventStream;
-use std::sync::Arc;
-
-use polkadot_service::{Configuration, TaskManager};
+use sc_network::{Event, NetworkEventStream, NetworkService};
+use sc_service::{Configuration, TaskManager};
+use sp_runtime::{app_crypto::Pair, traits::Block as BlockT};
 
 use futures::StreamExt;
-
-use sp_runtime::{app_crypto::Pair, traits::Block as BlockT};
+use std::sync::Arc;
 
 mod blockchain_rpc_client;
 mod collator_overseer;
@@ -191,7 +188,8 @@ async fn new_minimal_relay_chain(
 			client: relay_chain_rpc_client.clone(),
 			spawn_handle: task_manager.spawn_handle(),
 			genesis_hash,
-		})?;
+		})
+		.map_err(|e| RelayChainError::Application(Box::new(e) as Box<_>))?;
 
 	let authority_discovery_service = build_authority_discovery_service(
 		&task_manager,
@@ -219,7 +217,8 @@ async fn new_minimal_relay_chain(
 		overseer_args,
 		&task_manager,
 		relay_chain_rpc_client.clone(),
-	)?;
+	)
+	.map_err(|e| RelayChainError::Application(Box::new(e) as Box<_>))?;
 
 	network_starter.start_network();
 
