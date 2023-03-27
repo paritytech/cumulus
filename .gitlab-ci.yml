@@ -214,7 +214,7 @@ check-rustdoc:
     SKIP_WASM_BUILD:               1
     RUSTDOCFLAGS:                  "-Dwarnings"
   script:
-    - time cargo +nightly doc --workspace --verbose --no-deps --exclude relay-rialto-parachain-client
+    - time cargo +nightly doc --workspace --verbose --no-deps --all-features --exclude relay-rialto-parachain-client
 
 partial-repo-pallets-build-test:
   stage:                           test
