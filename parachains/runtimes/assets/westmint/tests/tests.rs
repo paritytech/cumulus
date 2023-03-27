@@ -647,41 +647,6 @@ fn plain_receive_teleported_asset_works() {
 }
 
 #[test]
-fn test_receive_bridged_xcm_trap_works() {
-	ExtBuilder::<Runtime>::default()
-		.with_collators(vec![AccountId::from(ALICE)])
-		.with_session_keys(vec![(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
-		)])
-		.with_tracing()
-		.build()
-		.execute_with(|| {
-			// simulate received message:
-			// 2022-12-21 14:38:54.047 DEBUG tokio-runtime-worker xcm::execute_xcm: [Parachain] origin: MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, message: Xcm([UniversalOrigin(GlobalConsensus(Rococo)), DescendOrigin(X1(AccountId32 { network: Some(Rococo), id: [28, 189, 45, 67, 83, 10, 68, 112, 90, 208, 136, 175, 49, 62, 24, 248, 11, 83, 239, 22, 179, 97, 119, 205, 75, 119, 184, 70, 242, 165, 240, 124] })), Transact { origin_kind: SovereignAccount, require_weight_at_most: 1000000000, call: [0, 8, 20, 104, 101, 108, 108, 111] }]), weight_limit: 41666666666
-			// origin as BridgeHub
-			let origin = MultiLocation { parents: 1, interior: X1(Parachain(1014)) };
-			let xcm = Xcm(vec![
-				UniversalOrigin(GlobalConsensus(Rococo)),
-				DescendOrigin(X1(AccountId32 {
-					network: Some(Rococo),
-					id: [
-						28, 189, 45, 67, 83, 10, 68, 112, 90, 208, 136, 175, 49, 62, 24, 248, 11,
-						83, 239, 22, 179, 97, 119, 205, 75, 119, 184, 70, 242, 165, 240, 124,
-					],
-				})),
-				Trap(1234),
-			]);
-			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-			let weight_limit = Weight::from_parts(41666666666, 0);
-
-			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(origin, xcm, hash, weight_limit);
-			assert_eq!(outcome.ensure_complete(), Err(xcm::latest::Error::Trap(1234)));
-		});
-}
-
-#[test]
 fn test_receive_bridged_xcm_reserve_asset_deposited_works() {
 	ExtBuilder::<Runtime>::default()
 		.with_collators(vec![AccountId::from(ALICE)])

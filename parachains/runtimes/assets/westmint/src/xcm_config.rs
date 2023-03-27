@@ -23,7 +23,7 @@ use assets_common::matching::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{ConstU32, Contains, ContainsPair, Everything, OriginTrait, PalletInfoAccess},
+	traits::{ConstU32, Contains, ContainsPair, Everything, PalletInfoAccess},
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
@@ -34,7 +34,6 @@ use parachains_common::{
 	},
 };
 use polkadot_parachain::primitives::Sibling;
-use sp_core::Get;
 use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -46,7 +45,7 @@ use xcm_builder::{
 	UsingComponents, WeightInfoBounds, WithComputedOrigin,
 };
 use xcm_executor::{
-	traits::{Convert, ConvertOrigin, ShouldExecute, WithOriginFilter},
+	traits::WithOriginFilter,
 	XcmExecutor,
 };
 
@@ -163,10 +162,6 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
 	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
 	XcmPassthrough<RuntimeOrigin>,
-	// TODO:check-parameter - find a better solution
-	// Bridged account origins from different globalConsensus converts as SovereignAccount
-	BridgedSignedAccountId32AsNative<LocationToAccountId, RuntimeOrigin, TrustedBridgedNetworks>,
-	// TODO: add here alternative for BridgedRelayChainAs... or BridgedParachainAs...
 );
 
 parameter_types! {
@@ -365,8 +360,6 @@ pub type Barrier = DenyThenTry<
 				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
 				// Subscriptions for version tracking are OK.
 				AllowSubscriptionsFrom<Everything>,
-				// Specific barrier for bridged calls from different globalConsensus/network
-				BridgedCallsBarrier,
 			),
 			UniversalLocation,
 			ConstU32<8>,
@@ -534,21 +527,6 @@ impl Contains<MultiLocation> for TrustedBridgedReserveLocations {
 	}
 }
 
-pub type BridgedCallsBarrier = (
-	// TODO:check-parameter - verify, if we need for production (usefull at least for testing connection in production)
-	AllowExecutionForTrapFrom<Everything>,
-	// TODO:check-parameter - verify, if we need for production
-	AllowExecutionForTransactFrom<Everything>,
-	// TODO:check-parameter - setup fess
-	// TODO:check-parameter - change Everything to some Contains with trusted BridgeHub configuration
-	// Configured trusted BridgeHub gets free execution.
-	AllowExplicitUnpaidExecutionFrom<Everything>,
-	// Expected responses are OK.
-	AllowKnownQueryResponses<PolkadotXcm>,
-	// Subscriptions for version tracking are OK.
-	AllowSubscriptionsFrom<Everything>,
-);
-
 /// Asset filter that allows all assets from trusted bridge location
 pub struct ConcreteFungibleAssetsFromTrustedBridgedReserves<TrustedReserverLocations>(
 	sp_std::marker::PhantomData<TrustedReserverLocations>,
@@ -567,124 +545,5 @@ impl<TrustedReserverLocations: Contains<MultiLocation>> ContainsPair<MultiAsset,
 		}
 		// TODO:check-parameter - better assets filtering
 		matches!(asset, MultiAsset { id: AssetId::Concrete(_), fun: Fungible(_) })
-	}
-}
-
-pub struct AllowExecutionForTrapFrom<T>(sp_std::marker::PhantomData<T>);
-impl<T: Contains<MultiLocation>> ShouldExecute for AllowExecutionForTrapFrom<T> {
-	fn should_execute<RuntimeCall>(
-		origin: &MultiLocation,
-		instructions: &mut [Instruction<RuntimeCall>],
-		max_weight: xcm::latest::Weight,
-		_weight_credit: &mut xcm::latest::Weight,
-	) -> Result<(), ()> {
-		log::warn!(
-			target: "xcm::barriers",
-			"(TODO:remove-in-production) AllowExecutionForTrapFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, weight_credit: {:?}",
-			origin, instructions, max_weight, _weight_credit,
-		);
-
-		match instructions.first() {
-			Some(Trap { .. }) => Ok(()),
-			_ => Err(()),
-		}
-	}
-}
-
-pub struct AllowExecutionForTransactFrom<T>(sp_std::marker::PhantomData<T>);
-impl<T: Contains<MultiLocation>> ShouldExecute for AllowExecutionForTransactFrom<T> {
-	fn should_execute<RuntimeCall>(
-		origin: &MultiLocation,
-		instructions: &mut [Instruction<RuntimeCall>],
-		max_weight: xcm::latest::Weight,
-		_weight_credit: &mut xcm::latest::Weight,
-	) -> Result<(), ()> {
-		log::error!(
-			target: "xcm::barriers",
-			"(TODO:change/remove-in-production) AllowExecutionForTransactFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, weight_credit: {:?}",
-			origin, instructions, max_weight, _weight_credit,
-		);
-
-		match instructions.first() {
-			// TODO:check-parameter - filter just remark/remark_with_event
-			Some(Transact { .. }) => Ok(()),
-			_ => Err(()),
-		}
-	}
-}
-
-pub struct BridgedSignedAccountId32AsNative<LocationConverter, RuntimeOrigin, BridgedNetworks>(
-	sp_std::marker::PhantomData<(LocationConverter, RuntimeOrigin, BridgedNetworks)>,
-);
-impl<
-		LocationConverter: Convert<MultiLocation, RuntimeOrigin::AccountId>,
-		RuntimeOrigin: OriginTrait,
-		BridgedNetworks: Get<sp_std::vec::Vec<(MultiLocation, Junction)>>,
-	> ConvertOrigin<RuntimeOrigin>
-	for BridgedSignedAccountId32AsNative<LocationConverter, RuntimeOrigin, BridgedNetworks>
-where
-	RuntimeOrigin::AccountId: Clone,
-{
-	fn convert_origin(
-		origin: impl Into<MultiLocation>,
-		kind: OriginKind,
-	) -> Result<RuntimeOrigin, MultiLocation> {
-		let origin = origin.into();
-		log::trace!(
-			target: "xcm::origin_conversion",
-			"BridgedSignedAccountId32AsNative origin: {:?}, kind: {:?}",
-			origin, kind,
-		);
-		if let OriginKind::SovereignAccount = kind {
-			match origin {
-				// this represents remote relaychain
-				MultiLocation {
-					parents: 2,
-					interior:
-						X2(
-							GlobalConsensus(remote_network),
-							AccountId32 { network: _network, id: _id },
-						),
-				} |
-				// this represents remote parachain
-				MultiLocation {
-					parents: 2,
-					interior:
-					X3(
-						GlobalConsensus(remote_network),
-						Parachain(_),
-						AccountId32 { network: _network, id: _id },
-					),
-				} => {
-					// TODO:check-parameter - hack - configured local bridge-hub behaves on behalf of any origin from configured bridged network (just to pass Transact/System::remark_with_event - ensure_signed)
-					// find configured local bridge_hub for remote network
-					let bridge_hub_location = BridgedNetworks::get()
-						.iter()
-						.find(|(_, configured_bridged_network)| match configured_bridged_network {
-							GlobalConsensus(bridged_network) => bridged_network.eq(&remote_network),
-							_ => false,
-						})
-						.map(|(bridge_hub_location, _)| bridge_hub_location.clone());
-
-					// try to convert local bridge-hub location
-					match bridge_hub_location {
-						Some(bridge_hub_location) => {
-							let new_origin = bridge_hub_location;
-							log::error!(
-								target: "xcm::origin_conversion",
-								"BridgedSignedAccountId32AsNative replacing origin: {:?} to new_origin: {:?}, kind: {:?}",
-								origin, new_origin, kind,
-							);
-							let location = LocationConverter::convert(new_origin)?;
-							Ok(RuntimeOrigin::signed(location).into())
-						},
-						_ => Err(origin),
-					}
-				},
-				_ => Err(origin),
-			}
-		} else {
-			Err(origin)
-		}
 	}
 }
