@@ -995,9 +995,8 @@ impl_runtime_apis! {
 
 			impl BridgeMessagesConfig<WithBridgeHubWococoMessagesInstance> for Runtime {
 				fn is_relayer_rewarded(relayer: &Self::AccountId) -> bool {
-					use bridge_runtime_common::messages::MessageBridge;
 					let bench_lane_id = <Self as BridgeMessagesConfig<WithBridgeHubWococoMessagesInstance>>::bench_lane_id();
-					let bridged_chain_id = bridge_hub_rococo_config::WithBridgeHubWococoMessageBridge::BRIDGED_CHAIN_ID;
+					let bridged_chain_id = bp_runtime::BRIDGE_HUB_WOCOCO_CHAIN_ID;
 					pallet_bridge_relayers::Pallet::<Runtime>::relayer_reward(
 						relayer,
 						bp_relayers::RewardsAccountParams::new(
@@ -1039,9 +1038,8 @@ impl_runtime_apis! {
 
 			impl BridgeMessagesConfig<WithBridgeHubRococoMessagesInstance> for Runtime {
 				fn is_relayer_rewarded(relayer: &Self::AccountId) -> bool {
-					use bridge_runtime_common::messages::MessageBridge;
 					let bench_lane_id = <Self as BridgeMessagesConfig<WithBridgeHubRococoMessagesInstance>>::bench_lane_id();
-					let bridged_chain_id = bridge_hub_wococo_config::WithBridgeHubRococoMessageBridge::BRIDGED_CHAIN_ID;
+					let bridged_chain_id = bp_runtime::BRIDGE_HUB_ROCOCO_CHAIN_ID;
 					pallet_bridge_relayers::Pallet::<Runtime>::relayer_reward(
 						relayer,
 						bp_relayers::RewardsAccountParams::new(
