@@ -620,6 +620,25 @@ asset_test_utils::include_create_and_manage_foreign_assets_for_local_consensus_p
 	})
 );
 
+asset_test_utils::include_receive_reserve_asset_deposited_from_different_consensus_works!(
+	Runtime,
+	XcmConfig,
+	LocationToAccountId,
+	ForeignAssetsInstance,
+	asset_test_utils::CollatorSessionKeys::new(
+		AccountId::from(ALICE),
+		AccountId::from(ALICE),
+		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+	),
+	ExistentialDeposit::get(),
+	Box::new(|runtime_event_encoded: Vec<u8>| {
+		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+			Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
+			_ => None,
+		}
+	})
+);
+
 #[test]
 fn plain_receive_teleported_asset_works() {
 	ExtBuilder::<Runtime>::default()
@@ -643,84 +662,5 @@ fn plain_receive_teleported_asset_works() {
 			let outcome =
 				XcmExecutor::<XcmConfig>::execute_xcm(Parent, maybe_msg, message_id, RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Parent));
 			assert_eq!(outcome.ensure_complete(), Ok(()));
-		})
-}
-
-#[test]
-fn test_receive_bridged_xcm_reserve_asset_deposited_works() {
-	ExtBuilder::<Runtime>::default()
-		.with_collators(vec![AccountId::from(ALICE)])
-		.with_session_keys(vec![(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
-		)])
-		.with_tracing()
-		.build()
-		.execute_with(|| {
-			use xcm_executor::traits::Convert;
-			// TODO:check-parameter - xcm origin of original and not bridge-hub?
-			let local_bridge_hub: MultiLocation = (Parent, Parachain(1014)).into();
-			let local_bridge_hub_sovereign_account =
-				ForeignCreatorsSovereignAccountOf::convert_ref(local_bridge_hub)
-					.expect("converted bridge location as accountId");
-
-			// create foreign asset
-			let foreign_asset_id =
-				MultiLocation { parents: 2, interior: X1(GlobalConsensus(Rococo)) };
-			let minimum_asset_balance = 1_000_000_u128;
-			assert_ok!(ForeignAssets::force_create(
-				// TODO:check-parameter - tests for create and real ForeignCreators check
-				// RuntimeHelper::<Runtime>::origin_of(local_bridge_hub_sovereign_account.clone()),
-				RuntimeHelper::<Runtime>::root_origin(),
-				foreign_asset_id.clone(),
-				local_bridge_hub_sovereign_account.into(),
-				false,
-				minimum_asset_balance
-			));
-
-			// check ForeinAssets before
-			assert_eq!(ForeignAssets::balance(foreign_asset_id, AccountId::from(ALICE)), 0);
-
-			// simulate received message:
-			// 2023-01-31 22:14:18.393 DEBUG toki -runtime-worker xcm::execute_xcm: [Parachain] origin: MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, message: Xcm([UniversalOrigin(GlobalConsensus(Rococo)), DescendOrigin(X1(Parachain(1000))), ReserveAssetDeposited(MultiAssets([MultiAsset { id: Concrete(MultiLocation { parents: 2, interior: X1(GlobalConsensus(Kusama)) }), fun: Fungible(100000000) }])), ClearOrigin, DepositAsset { assets: Wild(All), beneficiary: MultiLocation { parents: 0, interior: X1(AccountId32 { network: None, id: [28, 189, 45, 67, 83, 10, 68, 112, 90, 208, 136, 175, 49, 62, 24, 248, 11, 83, 239, 22, 179, 97, 119, 205, 75, 119, 184, 70, 242, 165, 240, 124] }) } }])
-			// origin as BridgeHub
-			let origin = MultiLocation { parents: 1, interior: X1(Parachain(1014)) };
-			let xcm = Xcm(vec![
-				UniversalOrigin(GlobalConsensus(Rococo)),
-				DescendOrigin(X1(Parachain(1000))),
-				UnpaidExecution { weight_limit: Unlimited, check_origin: None },
-				ReserveAssetDeposited(MultiAssets::from(vec![MultiAsset {
-					id: Concrete(MultiLocation {
-						parents: 2,
-						interior: X1(GlobalConsensus(Rococo)),
-					}),
-					fun: Fungible(100_000_000),
-				}])),
-				ClearOrigin,
-				DepositAsset {
-					assets: Wild(All),
-					beneficiary: MultiLocation {
-						parents: 0,
-						interior: X1(AccountId32 {
-							network: None,
-							id: AccountId::from(ALICE).into(),
-						}),
-					},
-				},
-			]);
-
-			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-			let weight_limit = Weight::from_parts(41666666666, 0);
-
-			// execute xcm as XcmpQueue would do
-			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(origin, xcm, hash, weight_limit);
-			assert_eq!(outcome.ensure_complete(), Ok(()));
-
-			// check ForeinAssets after
-			assert_eq!(
-				ForeignAssets::balance(foreign_asset_id, AccountId::from(ALICE)),
-				100_000_000
-			);
 		})
 }

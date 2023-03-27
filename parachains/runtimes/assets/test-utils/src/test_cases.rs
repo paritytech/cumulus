@@ -1767,3 +1767,189 @@ macro_rules! include_initiate_transfer_asset_via_bridge_for_native_asset_works(
 		}
 	}
 );
+
+pub fn receive_reserve_asset_deposited_from_different_consensus_works<
+	Runtime,
+	XcmConfig,
+	LocationToAccountId,
+	ForeignAssetsPalletInstance,
+>(
+	collator_session_keys: CollatorSessionKeys<Runtime>,
+	existential_deposit: BalanceOf<Runtime>,
+	target_account: AccountIdOf<Runtime>,
+	unwrap_pallet_xcm_event: Box<dyn Fn(Vec<u8>) -> Option<pallet_xcm::Event<Runtime>>>) where
+	Runtime: frame_system::Config
+	+ pallet_balances::Config
+	+ pallet_session::Config
+	+ pallet_xcm::Config
+	+ parachain_info::Config
+	+ pallet_collator_selection::Config
+	+ cumulus_pallet_parachain_system::Config
+	+ cumulus_pallet_xcmp_queue::Config
+	+ pallet_assets::Config<ForeignAssetsPalletInstance>,
+	AccountIdOf<Runtime>: Into<[u8; 32]>,
+	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
+	BalanceOf<Runtime>: From<Balance>,
+	<Runtime as frame_system::Config>::AccountId:
+	Into<<<Runtime as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId>,
+	<<Runtime as frame_system::Config>::Lookup as StaticLookup>::Source:
+	From<<Runtime as frame_system::Config>::AccountId>,
+	XcmConfig: xcm_executor::Config,
+	<Runtime as pallet_assets::Config<ForeignAssetsPalletInstance>>::AssetId:
+	From<MultiLocation> + Into<MultiLocation>,
+	<Runtime as pallet_assets::Config<ForeignAssetsPalletInstance>>::AssetIdParameter:
+	From<MultiLocation> + Into<MultiLocation>,
+	<Runtime as pallet_assets::Config<ForeignAssetsPalletInstance>>::Balance:
+	From<Balance> + Into<u128>,
+	LocationToAccountId: Convert<MultiLocation, AccountIdOf<Runtime>>,
+	ForeignAssetsPalletInstance: 'static,
+{
+	let remote_parachain_sovereign_account = LocationToAccountId::convert_ref(MultiLocation {
+		parents: 2,
+		interior: X2(GlobalConsensus(Kusama), Parachain(1000)),
+	})
+		.expect("Sovereign account works");
+	let foreign_asset_id_multilocation =
+		MultiLocation { parents: 2, interior: X1(GlobalConsensus(Kusama)) };
+	let buy_execution_fee_amount = 50000000000;
+	let reserve_asset_deposisted = 100_000_000;
+
+	ExtBuilder::<Runtime>::default()
+		.with_collators(collator_session_keys.collators())
+		.with_session_keys(collator_session_keys.session_keys())
+		.with_balances(vec![
+			(
+				remote_parachain_sovereign_account.clone(),
+				existential_deposit + buy_execution_fee_amount.into(),
+			),
+			(target_account.clone(), existential_deposit),
+		])
+		.with_tracing()
+		.build()
+		.execute_with(|| {
+			// create foreign asset
+			let asset_minimum_asset_balance = 1_000_000_u128;
+			assert_ok!(<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::force_create(
+				RuntimeHelper::<Runtime>::root_origin(),
+				foreign_asset_id_multilocation.clone().into(),
+				remote_parachain_sovereign_account.clone().into(),
+				false,
+				asset_minimum_asset_balance.into()
+			));
+
+			// check before
+			assert_eq!(
+				<pallet_balances::Pallet<Runtime>>::free_balance(&remote_parachain_sovereign_account),
+				existential_deposit + buy_execution_fee_amount.into()
+			);
+			assert_eq!(<pallet_balances::Pallet<Runtime>>::free_balance(&target_account), existential_deposit);
+			assert_eq!(<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::balance(foreign_asset_id_multilocation.into(), &target_account), 0.into());
+
+			// origin as BridgeHub
+			let origin = MultiLocation { parents: 1, interior: X1(Parachain(1014)) };
+			let xcm = Xcm(vec![
+				UniversalOrigin(GlobalConsensus(Kusama)),
+				DescendOrigin(X1(Parachain(1000))),
+				WithdrawAsset(MultiAssets::from(vec![MultiAsset {
+					id: Concrete(MultiLocation { parents: 1, interior: Here }),
+					fun: Fungible(buy_execution_fee_amount),
+				}])),
+				BuyExecution {
+					fees: MultiAsset {
+						id: Concrete(MultiLocation { parents: 1, interior: Here }),
+						fun: Fungible(buy_execution_fee_amount),
+					},
+					weight_limit: Unlimited,
+				},
+				ReserveAssetDeposited(MultiAssets::from(vec![MultiAsset {
+					id: Concrete(MultiLocation {
+						parents: 2,
+						interior: X1(GlobalConsensus(Kusama)),
+					}),
+					fun: Fungible(reserve_asset_deposisted),
+				}])),
+				ClearOrigin,
+				DepositAsset {
+					assets: Definite(MultiAssets::from(vec![MultiAsset {
+						id: Concrete(MultiLocation {
+							parents: 2,
+							interior: X1(GlobalConsensus(Kusama)),
+						}),
+						fun: Fungible(reserve_asset_deposisted),
+					}])),
+					beneficiary: MultiLocation {
+						parents: 0,
+						interior: X1(AccountId32 {
+							network: None,
+							id: target_account.clone().into(),
+						}),
+					},
+				},
+			]);
+
+			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
+
+			// execute xcm as XcmpQueue would do
+			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(
+				origin,
+				xcm,
+				hash,
+				RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Sibling),
+			);
+			assert_eq!(outcome.ensure_complete(), Ok(()));
+
+			// check after
+			assert!(
+				<pallet_balances::Pallet<Runtime>>::free_balance(&remote_parachain_sovereign_account) <
+					existential_deposit + buy_execution_fee_amount.into()
+			);
+			assert_eq!(<pallet_balances::Pallet<Runtime>>::free_balance(&target_account), existential_deposit);
+			assert_eq!(
+				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::balance(foreign_asset_id_multilocation.into(), &target_account),
+				reserve_asset_deposisted.into()
+			);
+
+			// check asset trap (because big buy fee)
+			let mut pallet_xcm_events = <frame_system::Pallet<Runtime>>::events()
+				.into_iter()
+				.filter_map(|e| unwrap_pallet_xcm_event(e.event.encode()));
+			assert!(pallet_xcm_events.any(|e| match e {
+				pallet_xcm::Event::AssetsTrapped(_, trapped_for, _) => {
+					assert_eq!(trapped_for, origin, "We expect trapped assets for origin: {:?}, but it is trapped for: {:?}", origin, trapped_for);
+					true
+				},
+				_ => false,
+			}));
+		})
+}
+
+#[macro_export]
+macro_rules! include_receive_reserve_asset_deposited_from_different_consensus_works(
+	(
+		$runtime:path,
+		$xcm_config:path,
+		$location_to_account_id:path,
+		$assets_pallet_instance:path,
+		$collator_session_key:expr,
+		$existential_deposit:expr,
+		$unwrap_pallet_xcm_event:expr
+	) => {
+		#[test]
+		fn receive_reserve_asset_deposited_from_different_consensus_works() {
+			const BOB: [u8; 32] = [2u8; 32];
+			let target_account = parachains_common::AccountId::from(BOB);
+
+			asset_test_utils::test_cases::receive_reserve_asset_deposited_from_different_consensus_works::<
+				$runtime,
+				$xcm_config,
+				$location_to_account_id,
+				$assets_pallet_instance
+			>(
+				$collator_session_key,
+				$existential_deposit,
+				target_account,
+				$unwrap_pallet_xcm_event
+			)
+		}
+	}
+);
