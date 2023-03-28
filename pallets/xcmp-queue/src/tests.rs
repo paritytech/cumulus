@@ -17,7 +17,7 @@ use super::{mock::EnqueuedMessages, *};
 use XcmpMessageFormat::*;
 
 use cumulus_primitives_core::XcmpMessageHandler;
-use frame_support::{assert_noop, assert_ok, assert_storage_noop};
+use frame_support::{assert_noop, assert_ok};
 use mock::{new_test_ext, RuntimeOrigin as Origin, Test, XcmpQueue};
 use sp_runtime::traits::BadOrigin;
 use std::iter::once;
@@ -110,7 +110,7 @@ fn bad_blob_message_no_panic() {
 	new_test_ext().execute_with(|| {
 		let data = [ConcatenatedEncodedBlob.encode(), vec![1].encode()].concat();
 
-		assert_storage_noop!(XcmpQueue::handle_xcmp_messages(
+		frame_support::assert_storage_noop!(XcmpQueue::handle_xcmp_messages(
 			once((1000.into(), 1, data.as_slice())),
 			Weight::MAX,
 		));
@@ -136,14 +136,14 @@ fn handle_invalid_data_no_panic() {
 	new_test_ext().execute_with(|| {
 		let data = [ConcatenatedVersionedXcm.encode(), Xcm::<Test>(vec![]).encode()].concat();
 
-		assert_storage_noop!(XcmpQueue::handle_xcmp_messages(
+		frame_support::assert_storage_noop!(XcmpQueue::handle_xcmp_messages(
 			once((1000.into(), 1, data.as_slice())),
 			Weight::MAX,
 		));
 	});
 }
 
-/*#[test]
+/*#[test] FAIL-CI
 fn service_overweight_unknown() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(
