@@ -46,7 +46,6 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use constants::{currency::*, fee::WeightToFee};
-use cumulus_primitives_core::AggregateMessageOrigin;
 use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
@@ -58,9 +57,9 @@ use frame_support::{
 use frame_system::limits::{BlockLength, BlockWeights};
 pub use parachains_common as common;
 use parachains_common::{
-	impls::DealWithFees, opaque, process_xcm_message::ProcessXcmMessage, AccountId, BlockNumber,
-	Hash, Header, Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT, MINUTES,
-	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
+	impls::DealWithFees, opaque, AccountId, BlockNumber, Hash, Header, Index, Signature,
+	AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT, MINUTES, NORMAL_DISPATCH_RATIO,
+	SLOT_DURATION,
 };
 pub use parachains_common::{AuraId, Balance};
 use xcm_config::CollatorSelectionUpdateOrigin;
@@ -258,6 +257,7 @@ parameter_types! {
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
+	type WeightInfo = ();
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
@@ -287,8 +287,8 @@ impl pallet_message_queue::Config for Runtime {
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type MessageProcessor = parachains_common::process_xcm_message::SplitMessages<
-		ProcessXcmMessage<
-			AggregateMessageOrigin,
+		process_xcm_message::ProcessXcmMessage<
+			cumulus_primitives_core::AggregateMessageOrigin,
 			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
 			RuntimeCall,
 		>,

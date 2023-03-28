@@ -167,6 +167,7 @@ impl cumulus_pallet_solo_to_para::Config for Runtime {
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
+	type WeightInfo = ();
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = cumulus_pallet_solo_to_para::Pallet<Runtime>;
 	type SelfParaId = parachain_info::Pallet<Runtime>;

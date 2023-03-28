@@ -66,6 +66,9 @@ pub mod validate_block;
 mod mock;
 #[cfg(test)]
 mod tests;
+pub mod weights;
+
+pub use weights::WeightInfo;
 
 /// Register the `validate_block` function that is used by parachains to validate blocks on a
 /// validator.
@@ -200,6 +203,11 @@ pub mod pallet {
 
 		/// Something that can check the associated relay parent block number.
 		type CheckAssociatedRelayNumber: CheckAssociatedRelayNumber;
+
+		/// Weight info for functions and calls.
+		///
+		/// Should be benchmarked for each runtime. For testing you can use the default `()`.
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::hooks]
