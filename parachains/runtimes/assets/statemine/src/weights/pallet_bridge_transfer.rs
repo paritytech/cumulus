@@ -104,7 +104,7 @@ impl<T: frame_system::Config> pallet_bridge_transfer::WeightInfo for WeightInfo<
 	}
 	/// Storage: BridgeTransfer Bridges (r:1 w:1)
 	/// Proof: BridgeTransfer Bridges (max_values: None, max_size: Some(1899), added: 4374, mode: MaxEncodedLen)
-	fn add_bridge_config() -> Weight {
+	fn add_exporter_config() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `109`
 		//  Estimated: `5364`
@@ -116,7 +116,7 @@ impl<T: frame_system::Config> pallet_bridge_transfer::WeightInfo for WeightInfo<
 	}
 	/// Storage: BridgeTransfer Bridges (r:1 w:1)
 	/// Proof: BridgeTransfer Bridges (max_values: None, max_size: Some(1899), added: 4374, mode: MaxEncodedLen)
-	fn remove_bridge_config() -> Weight {
+	fn remove_exporter_config() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `164`
 		//  Estimated: `5364`
@@ -128,7 +128,7 @@ impl<T: frame_system::Config> pallet_bridge_transfer::WeightInfo for WeightInfo<
 	}
 	/// Storage: BridgeTransfer Bridges (r:1 w:1)
 	/// Proof: BridgeTransfer Bridges (max_values: None, max_size: Some(1899), added: 4374, mode: MaxEncodedLen)
-	fn update_bridge_config() -> Weight {
+	fn update_exporter_config() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `164`
 		//  Estimated: `5364`

@@ -29,12 +29,12 @@ pub trait WeightInfo {
 	/// Weight of the `ping_via_bridge` call.
 	fn ping_via_bridge() -> Weight;
 
-	/// Weight of the `add_bridge_config` call.
-	fn add_bridge_config() -> Weight;
-	/// Weight of the `remove_bridge_config` call.
-	fn remove_bridge_config() -> Weight;
-	/// Weight of the `update_bridge_config` call.
-	fn update_bridge_config() -> Weight;
+	/// Weight of the `add_exporter_config` call.
+	fn add_exporter_config() -> Weight;
+	/// Weight of the `remove_exporter_config` call.
+	fn remove_exporter_config() -> Weight;
+	/// Weight of the `update_exporter_config` call.
+	fn update_exporter_config() -> Weight;
 }
 
 // Zero weights to use in tests
@@ -47,15 +47,15 @@ impl WeightInfo for () {
 		Weight::zero()
 	}
 
-	fn add_bridge_config() -> Weight {
+	fn add_exporter_config() -> Weight {
 		Weight::zero()
 	}
 
-	fn remove_bridge_config() -> Weight {
+	fn remove_exporter_config() -> Weight {
 		Weight::zero()
 	}
 
-	fn update_bridge_config() -> Weight {
+	fn update_exporter_config() -> Weight {
 		Weight::zero()
 	}
 }

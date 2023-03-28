@@ -697,11 +697,11 @@ impl pallet_nfts::Config for Runtime {
 
 impl pallet_bridge_transfer::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type BridgeXcmSender = BridgeXcmSender;
 	type UniversalLocation = UniversalLocation;
 	type WeightInfo = weights::pallet_bridge_transfer::WeightInfo<Runtime>;
 	type AssetTransactor = AssetTransactors;
 	type AdminOrigin = AssetsForceOrigin;
+	type BridgeXcmSender = BridgeXcmSender;
 	type TransferAssetOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 	type TransferPingOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 	type PingMessageBuilder = pallet_bridge_transfer::UnpaidTrapMessageBuilder<ConstU64<12345>>;

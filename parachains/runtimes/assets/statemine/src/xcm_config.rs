@@ -521,6 +521,8 @@ impl BridgeTransferBenchmarksHelper {
 		MultiLocation::new(2, X2(GlobalConsensus(Polkadot), Parachain(1000)))
 	}
 
+	fn target_location_fee() -> MultiAsset {}
+
 	/// Identifier of the sibling bridge-hub parachain.
 	fn bridge_hub_para_id() -> u32 {
 		1013
@@ -534,13 +536,21 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 			Polkadot,
 			pallet_bridge_transfer::BridgeConfig {
 				bridge_location: (Parent, Parachain(Self::bridge_hub_para_id())).into(),
-				allowed_target_location: Self::allowed_target_location(),
 				// TODO: right now `UnpaidRemoteExporter` is used to send XCM messages and it requires
 				// fee to be `None`. If we're going to change that (are we?), then we should replace
 				// this `None` with `Some(Self::make_asset(crate::ExistentialDeposit::get()))`
-				fee: None,
+				bridge_location_fee: None,
+				allowed_target_location: Self::allowed_target_location(),
+				target_location_fee: None,
 			},
 		)
+	}
+
+	fn target_location_fee_for_update() -> Option<Box<xcm::VersionedMultiAsset>> {
+		Some(Box::new(xcm::VersionedMultiAsset::V3(MultiAsset {
+			id: Concrete(MultiLocation::parent()),
+			fun: Fungible(50_000_000),
+		})))
 	}
 
 	fn prepare_asset_transfer(

@@ -32,7 +32,8 @@ use sp_runtime::{
 	DispatchError, Saturating,
 };
 use xcm::{
-	latest::prelude::*, CreateMatcher, MatchXcm, VersionedMultiAssets, VersionedMultiLocation,
+	latest::prelude::*, CreateMatcher, MatchXcm, VersionedMultiAsset, VersionedMultiAssets,
+	VersionedMultiLocation,
 };
 use xcm_executor::{traits::Convert, XcmExecutor};
 
@@ -1392,11 +1393,12 @@ pub fn can_governance_change_bridge_transfer_configuration<Runtime, XcmConfig>(
 			};
 
 			// check no cfg
-			assert!(pallet_bridge_transfer::Pallet::<Runtime>::bridges(&bridged_network).is_none());
+			assert!(pallet_bridge_transfer::Pallet::<Runtime>::allowed_exporters(&bridged_network)
+				.is_none());
 
 			// governance can add bridge config
 			assert_ok!(execute_as_governance(
-				pallet_bridge_transfer::Call::<Runtime>::add_bridge_config {
+				pallet_bridge_transfer::Call::<Runtime>::add_exporter_config {
 					bridged_network,
 					bridge_config: Box::new(bridge_config.clone()),
 				},
@@ -1407,7 +1409,8 @@ pub fn can_governance_change_bridge_transfer_configuration<Runtime, XcmConfig>(
 				.filter_map(|e| unwrap_pallet_bridge_transfer_event(e.event.encode()))
 				.any(|e| matches!(e, pallet_bridge_transfer::Event::BridgeAdded)));
 			{
-				let cfg = pallet_bridge_transfer::Pallet::<Runtime>::bridges(&bridged_network);
+				let cfg =
+					pallet_bridge_transfer::Pallet::<Runtime>::allowed_exporters(&bridged_network);
 				assert!(cfg.is_some());
 				let cfg = cfg.unwrap();
 				assert_eq!(cfg.bridge_location, bridge_config.bridge_location);
@@ -1422,10 +1425,14 @@ pub fn can_governance_change_bridge_transfer_configuration<Runtime, XcmConfig>(
 			let new_target_location_fee: MultiAsset =
 				(Concrete(MultiLocation::parent()), 1_000_000).into();
 			assert_ok!(execute_as_governance(
-				pallet_bridge_transfer::Call::<Runtime>::update_bridge_config {
+				pallet_bridge_transfer::Call::<Runtime>::update_exporter_config {
 					bridged_network,
-					bridge_location_fee: Some(new_bridge_location_fee.clone()),
-					target_location_fee: Some(new_target_location_fee.clone()),
+					bridge_location_fee: Some(Box::new(VersionedMultiAsset::V3(
+						new_bridge_location_fee.clone()
+					))),
+					target_location_fee: Some(Box::new(VersionedMultiAsset::V3(
+						new_target_location_fee.clone()
+					))),
 				},
 			)
 			.ensure_complete());
@@ -1434,7 +1441,8 @@ pub fn can_governance_change_bridge_transfer_configuration<Runtime, XcmConfig>(
 				.filter_map(|e| unwrap_pallet_bridge_transfer_event(e.event.encode()))
 				.any(|e| matches!(e, pallet_bridge_transfer::Event::BridgeUpdated)));
 			{
-				let cfg = pallet_bridge_transfer::Pallet::<Runtime>::bridges(&bridged_network);
+				let cfg =
+					pallet_bridge_transfer::Pallet::<Runtime>::allowed_exporters(&bridged_network);
 				assert!(cfg.is_some());
 				let cfg = cfg.unwrap();
 				assert_eq!(cfg.bridge_location, bridge_config.bridge_location);
@@ -1445,10 +1453,11 @@ pub fn can_governance_change_bridge_transfer_configuration<Runtime, XcmConfig>(
 
 			// governance can remove bridge config
 			assert_ok!(execute_as_governance(
-				pallet_bridge_transfer::Call::<Runtime>::remove_bridge_config { bridged_network },
+				pallet_bridge_transfer::Call::<Runtime>::remove_exporter_config { bridged_network },
 			)
 			.ensure_complete());
-			assert!(pallet_bridge_transfer::Pallet::<Runtime>::bridges(&bridged_network).is_none());
+			assert!(pallet_bridge_transfer::Pallet::<Runtime>::allowed_exporters(&bridged_network)
+				.is_none());
 			assert!(<frame_system::Pallet<Runtime>>::events()
 				.into_iter()
 				.filter_map(|e| unwrap_pallet_bridge_transfer_event(e.event.encode()))
@@ -1580,7 +1589,7 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 			);
 
 			// insert bridge config
-			assert_ok!(<pallet_bridge_transfer::Pallet<Runtime>>::add_bridge_config(
+			assert_ok!(<pallet_bridge_transfer::Pallet<Runtime>>::add_exporter_config(
 				RuntimeHelper::<Runtime>::root_origin(),
 				bridged_network,
 				Box::new(bridge_config),
@@ -1777,30 +1786,31 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 	collator_session_keys: CollatorSessionKeys<Runtime>,
 	existential_deposit: BalanceOf<Runtime>,
 	target_account: AccountIdOf<Runtime>,
-	unwrap_pallet_xcm_event: Box<dyn Fn(Vec<u8>) -> Option<pallet_xcm::Event<Runtime>>>) where
+	unwrap_pallet_xcm_event: Box<dyn Fn(Vec<u8>) -> Option<pallet_xcm::Event<Runtime>>>,
+) where
 	Runtime: frame_system::Config
-	+ pallet_balances::Config
-	+ pallet_session::Config
-	+ pallet_xcm::Config
-	+ parachain_info::Config
-	+ pallet_collator_selection::Config
-	+ cumulus_pallet_parachain_system::Config
-	+ cumulus_pallet_xcmp_queue::Config
-	+ pallet_assets::Config<ForeignAssetsPalletInstance>,
+		+ pallet_balances::Config
+		+ pallet_session::Config
+		+ pallet_xcm::Config
+		+ parachain_info::Config
+		+ pallet_collator_selection::Config
+		+ cumulus_pallet_parachain_system::Config
+		+ cumulus_pallet_xcmp_queue::Config
+		+ pallet_assets::Config<ForeignAssetsPalletInstance>,
 	AccountIdOf<Runtime>: Into<[u8; 32]>,
 	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
 	BalanceOf<Runtime>: From<Balance>,
 	<Runtime as frame_system::Config>::AccountId:
-	Into<<<Runtime as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId>,
+		Into<<<Runtime as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId>,
 	<<Runtime as frame_system::Config>::Lookup as StaticLookup>::Source:
-	From<<Runtime as frame_system::Config>::AccountId>,
+		From<<Runtime as frame_system::Config>::AccountId>,
 	XcmConfig: xcm_executor::Config,
 	<Runtime as pallet_assets::Config<ForeignAssetsPalletInstance>>::AssetId:
-	From<MultiLocation> + Into<MultiLocation>,
+		From<MultiLocation> + Into<MultiLocation>,
 	<Runtime as pallet_assets::Config<ForeignAssetsPalletInstance>>::AssetIdParameter:
-	From<MultiLocation> + Into<MultiLocation>,
+		From<MultiLocation> + Into<MultiLocation>,
 	<Runtime as pallet_assets::Config<ForeignAssetsPalletInstance>>::Balance:
-	From<Balance> + Into<u128>,
+		From<Balance> + Into<u128>,
 	LocationToAccountId: Convert<MultiLocation, AccountIdOf<Runtime>>,
 	ForeignAssetsPalletInstance: 'static,
 {
@@ -1808,7 +1818,7 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 		parents: 2,
 		interior: X2(GlobalConsensus(Kusama), Parachain(1000)),
 	})
-		.expect("Sovereign account works");
+	.expect("Sovereign account works");
 	let foreign_asset_id_multilocation =
 		MultiLocation { parents: 2, interior: X1(GlobalConsensus(Kusama)) };
 	let buy_execution_fee_amount = 50000000000;
@@ -1829,21 +1839,34 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 		.execute_with(|| {
 			// create foreign asset
 			let asset_minimum_asset_balance = 1_000_000_u128;
-			assert_ok!(<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::force_create(
-				RuntimeHelper::<Runtime>::root_origin(),
-				foreign_asset_id_multilocation.clone().into(),
-				remote_parachain_sovereign_account.clone().into(),
-				false,
-				asset_minimum_asset_balance.into()
-			));
+			assert_ok!(
+				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::force_create(
+					RuntimeHelper::<Runtime>::root_origin(),
+					foreign_asset_id_multilocation.clone().into(),
+					remote_parachain_sovereign_account.clone().into(),
+					false,
+					asset_minimum_asset_balance.into()
+				)
+			);
 
 			// check before
 			assert_eq!(
-				<pallet_balances::Pallet<Runtime>>::free_balance(&remote_parachain_sovereign_account),
+				<pallet_balances::Pallet<Runtime>>::free_balance(
+					&remote_parachain_sovereign_account
+				),
 				existential_deposit + buy_execution_fee_amount.into()
 			);
-			assert_eq!(<pallet_balances::Pallet<Runtime>>::free_balance(&target_account), existential_deposit);
-			assert_eq!(<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::balance(foreign_asset_id_multilocation.into(), &target_account), 0.into());
+			assert_eq!(
+				<pallet_balances::Pallet<Runtime>>::free_balance(&target_account),
+				existential_deposit
+			);
+			assert_eq!(
+				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::balance(
+					foreign_asset_id_multilocation.into(),
+					&target_account
+				),
+				0.into()
+			);
 
 			// origin as BridgeHub
 			let origin = MultiLocation { parents: 1, interior: X1(Parachain(1014)) };
@@ -1900,12 +1923,19 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 
 			// check after
 			assert!(
-				<pallet_balances::Pallet<Runtime>>::free_balance(&remote_parachain_sovereign_account) <
-					existential_deposit + buy_execution_fee_amount.into()
+				<pallet_balances::Pallet<Runtime>>::free_balance(
+					&remote_parachain_sovereign_account
+				) < existential_deposit + buy_execution_fee_amount.into()
 			);
-			assert_eq!(<pallet_balances::Pallet<Runtime>>::free_balance(&target_account), existential_deposit);
 			assert_eq!(
-				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::balance(foreign_asset_id_multilocation.into(), &target_account),
+				<pallet_balances::Pallet<Runtime>>::free_balance(&target_account),
+				existential_deposit
+			);
+			assert_eq!(
+				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::balance(
+					foreign_asset_id_multilocation.into(),
+					&target_account
+				),
 				reserve_asset_deposisted.into()
 			);
 
@@ -1915,7 +1945,11 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 				.filter_map(|e| unwrap_pallet_xcm_event(e.event.encode()));
 			assert!(pallet_xcm_events.any(|e| match e {
 				pallet_xcm::Event::AssetsTrapped(_, trapped_for, _) => {
-					assert_eq!(trapped_for, origin, "We expect trapped assets for origin: {:?}, but it is trapped for: {:?}", origin, trapped_for);
+					assert_eq!(
+						trapped_for, origin,
+						"We expect trapped assets for origin: {:?}, but it is trapped for: {:?}",
+						origin, trapped_for
+					);
 					true
 				},
 				_ => false,

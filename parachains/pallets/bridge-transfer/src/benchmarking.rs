@@ -17,7 +17,7 @@
 
 //! `BridgeTransfer` pallet benchmarks.
 
-use crate::{BenchmarkHelper, Bridges, Call, Config, Event, Pallet, PingMessageBuilder};
+use crate::{AllowedExporters, BenchmarkHelper, Call, Config, Event, Pallet, PingMessageBuilder};
 
 use frame_benchmarking::{benchmarks, BenchmarkError, BenchmarkResult};
 use frame_support::{traits::EnsureOrigin, weights::Weight};
@@ -31,7 +31,7 @@ benchmarks! {
 		// let a in 1 .. 1;
 		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config();
 		let (origin, assets, destination) = T::BenchmarkHelper::prepare_asset_transfer(1);
-		Bridges::<T>::insert(bridged_network, bridge_config);
+		AllowedExporters::<T>::insert(bridged_network, bridge_config);
 	}: _<T::RuntimeOrigin>(origin, Box::new(assets), Box::new(destination))
 	verify {
 		// we don't care about message hash here, just check that the transfer has been initiated
@@ -42,7 +42,7 @@ benchmarks! {
 
 	ping_via_bridge {
 		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config();
-		Bridges::<T>::insert(bridged_network, bridge_config);
+		AllowedExporters::<T>::insert(bridged_network, bridge_config);
 
 		let (origin, destination) = T::BenchmarkHelper::prepare_ping();
 
@@ -63,32 +63,35 @@ benchmarks! {
 		assert!(matches!(actual_event, Some(expected_event)));
 	}
 
-	add_bridge_config {
+	add_exporter_config {
 		let origin = T::AdminOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
 		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config();
 	}: _<T::RuntimeOrigin>(origin, bridged_network, Box::new(bridge_config.clone()))
 	verify {
-		assert_eq!(Bridges::<T>::get(bridged_network), Some(bridge_config));
+		assert_eq!(AllowedExporters::<T>::get(bridged_network), Some(bridge_config));
 	}
 
-	remove_bridge_config {
+	remove_exporter_config {
 		let origin = T::AdminOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
 		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config();
-		Bridges::<T>::insert(bridged_network, bridge_config);
+		AllowedExporters::<T>::insert(bridged_network, bridge_config);
 	}: _<T::RuntimeOrigin>(origin, bridged_network)
 	verify {
-		assert_eq!(Bridges::<T>::get(bridged_network), None);
+		assert_eq!(AllowedExporters::<T>::get(bridged_network), None);
 	}
 
-	update_bridge_config {
+	update_exporter_config {
 		let origin = T::AdminOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
 		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config();
-		Bridges::<T>::insert(bridged_network, bridge_config);
+		AllowedExporters::<T>::insert(bridged_network, bridge_config);
 
-		let fee = None;
-	}: _<T::RuntimeOrigin>(origin, bridged_network, fee)
+		let bridge_location_fee = None;
+		let target_location_fee = T::BenchmarkHelper::target_location_fee_for_update();
+	}: _<T::RuntimeOrigin>(origin, bridged_network, bridge_location_fee.clone(), target_location_fee.clone())
 	verify {
-		assert_eq!(Bridges::<T>::get(bridged_network).unwrap().fee, None);
+		let exporter = AllowedExporters::<T>::get(bridged_network).unwrap();
+		assert_eq!(exporter.bridge_location_fee, bridge_location_fee);
+		assert_eq!(exporter.allowed_target_location, target_location_fee.map(|fee| MultiAsset::try_from(*fee).unwrap()));
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::tests::new_test_ext(), crate::tests::TestRuntime);

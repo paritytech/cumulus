@@ -101,6 +101,9 @@ pub mod pallet {
 		/// to support transfer to this destination **after** `prepare_asset_transfer` call.
 		fn bridge_config() -> (NetworkId, BridgeConfig);
 
+		/// Returns some fee, which will be used for `update_exporter_config`.
+		fn target_location_fee_for_update() -> Option<Box<VersionedMultiAsset>>;
+
 		/// Prepare environment for assets transfer and return transfer origin and assets
 		/// to transfer. After this function is called, we expect `transfer_asset_via_bridge`
 		/// to succeed, so in proper environment, it should:
@@ -135,9 +138,6 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		/// XCM sender which sends messages to the BridgeHub
-		type BridgeXcmSender: SendXcm;
-
 		/// Runtime's universal location
 		type UniversalLocation: Get<InteriorMultiLocation>;
 
@@ -150,12 +150,12 @@ pub mod pallet {
 		/// The configurable origin to allow bridges configuration management
 		type AdminOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
+		/// XCM sender which sends messages to the BridgeHub
+		type BridgeXcmSender: SendXcm;
 		/// Required origin for asset transfer. If successful, it resolves to `MultiLocation`.
 		type TransferAssetOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = MultiLocation>;
-
 		/// Required origin for ping transfer. If successful, it resolves to `MultiLocation`.
 		type TransferPingOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = MultiLocation>;
-
 		/// Configurable ping message, `None` means no message will be transferred.
 		type PingMessageBuilder: PingMessageBuilder;
 
@@ -164,10 +164,11 @@ pub mod pallet {
 		type BenchmarkHelper: BenchmarkHelper<Self::RuntimeOrigin>;
 	}
 
-	/// Details of configured bridges which are allowed for transfer.
+	/// Details of configured bridges which are allowed for **transfer out**.
 	#[pallet::storage]
-	#[pallet::getter(fn bridges)]
-	pub(super) type Bridges<T: Config> = StorageMap<_, Blake2_128Concat, NetworkId, BridgeConfig>;
+	#[pallet::getter(fn allowed_exporters)]
+	pub(super) type AllowedExporters<T: Config> =
+		StorageMap<_, Blake2_128Concat, NetworkId, BridgeConfig>;
 
 	#[pallet::error]
 	#[cfg_attr(test, derive(PartialEq))]
@@ -348,14 +349,17 @@ pub mod pallet {
 		/// * `bridged_network`: Network where we want to allow transfer funds
 		/// * `bridge_config`: contains location for BridgeHub in our network + fee
 		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::add_bridge_config())]
-		pub fn add_bridge_config(
+		#[pallet::weight(T::WeightInfo::add_exporter_config())]
+		pub fn add_exporter_config(
 			origin: OriginFor<T>,
 			bridged_network: NetworkId,
 			bridge_config: Box<BridgeConfig>,
 		) -> DispatchResult {
 			let _ = T::AdminOrigin::ensure_origin(origin)?;
-			ensure!(!Bridges::<T>::contains_key(bridged_network), Error::<T>::InvalidConfiguration);
+			ensure!(
+				!AllowedExporters::<T>::contains_key(bridged_network),
+				Error::<T>::InvalidConfiguration
+			);
 			let allowed_target_location_network = bridge_config
 				.allowed_target_location
 				.interior()
@@ -371,7 +375,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InvalidConfiguration)?;
 			ensure!(bridged_network != local_network, Error::<T>::InvalidConfiguration);
 
-			Bridges::<T>::insert(bridged_network, bridge_config);
+			AllowedExporters::<T>::insert(bridged_network, bridge_config);
 			Self::deposit_event(Event::BridgeAdded);
 			Ok(())
 		}
@@ -382,15 +386,18 @@ pub mod pallet {
 		///
 		/// * `bridged_network`: Network where we want to remove
 		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::remove_bridge_config())]
-		pub fn remove_bridge_config(
+		#[pallet::weight(T::WeightInfo::remove_exporter_config())]
+		pub fn remove_exporter_config(
 			origin: OriginFor<T>,
 			bridged_network: NetworkId,
 		) -> DispatchResult {
 			let _ = T::AdminOrigin::ensure_origin(origin)?;
-			ensure!(Bridges::<T>::contains_key(bridged_network), Error::<T>::InvalidConfiguration);
+			ensure!(
+				AllowedExporters::<T>::contains_key(bridged_network),
+				Error::<T>::InvalidConfiguration
+			);
 
-			Bridges::<T>::remove(bridged_network);
+			AllowedExporters::<T>::remove(bridged_network);
 			Self::deposit_event(Event::BridgeRemoved);
 			Ok(())
 		}
@@ -402,17 +409,28 @@ pub mod pallet {
 		/// * `bridged_network`: Network where we want to remove
 		/// * `fee`: New fee to update
 		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::update_bridge_config())]
-		pub fn update_bridge_config(
+		#[pallet::weight(T::WeightInfo::update_exporter_config())]
+		pub fn update_exporter_config(
 			origin: OriginFor<T>,
 			bridged_network: NetworkId,
-			bridge_location_fee: Option<MultiAsset>,
-			target_location_fee: Option<MultiAsset>,
+			bridge_location_fee: Option<Box<VersionedMultiAsset>>,
+			target_location_fee: Option<Box<VersionedMultiAsset>>,
 		) -> DispatchResult {
 			let _ = T::AdminOrigin::ensure_origin(origin)?;
-			ensure!(Bridges::<T>::contains_key(bridged_network), Error::<T>::InvalidConfiguration);
+			ensure!(
+				AllowedExporters::<T>::contains_key(bridged_network),
+				Error::<T>::InvalidConfiguration
+			);
+			let bridge_location_fee = bridge_location_fee
+				.map(|fee| MultiAsset::try_from(*fee))
+				.transpose()
+				.map_err(|_| Error::<T>::InvalidConfiguration)?;
+			let target_location_fee = target_location_fee
+				.map(|fee| MultiAsset::try_from(*fee))
+				.transpose()
+				.map_err(|_| Error::<T>::InvalidConfiguration)?;
 
-			Bridges::<T>::try_mutate_exists(bridged_network, |bridge_config| {
+			AllowedExporters::<T>::try_mutate_exists(bridged_network, |bridge_config| {
 				let bridge_config =
 					bridge_config.as_mut().ok_or(Error::<T>::InvalidConfiguration)?;
 				bridge_config.bridge_location_fee = bridge_location_fee;
@@ -444,7 +462,7 @@ pub mod pallet {
 						.global_consensus()
 						.map_err(|_| Error::<T>::UnsupportedDestination)?;
 					ensure!(local_network != remote_network, Error::<T>::UnsupportedDestination);
-					match Bridges::<T>::get(remote_network) {
+					match AllowedExporters::<T>::get(remote_network) {
 						Some(bridge_config) => {
 							ensure!(
 								// TODO:check-parameter - verify and prepare test for ETH scenario - https://github.com/paritytech/cumulus/pull/2013#discussion_r1094909290
@@ -461,7 +479,7 @@ pub mod pallet {
 		}
 
 		fn get_bridge_for(network: &NetworkId) -> Option<BridgeConfig> {
-			Bridges::<T>::get(network)
+			AllowedExporters::<T>::get(network)
 		}
 
 		fn initiate_bridge_transfer(
@@ -759,11 +777,11 @@ pub(crate) mod tests {
 
 	impl Config for TestRuntime {
 		type RuntimeEvent = RuntimeEvent;
-		type BridgeXcmSender = TestBridgeXcmSender;
 		type UniversalLocation = UniversalLocation;
 		type WeightInfo = ();
 		type AssetTransactor = CurrencyTransactor;
 		type AdminOrigin = EnsureRoot<AccountId>;
+		type BridgeXcmSender = TestBridgeXcmSender;
 		type TransferAssetOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 		type TransferPingOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 		type PingMessageBuilder = UnpaidTrapMessageBuilder<TrapCode>;
@@ -801,7 +819,7 @@ pub(crate) mod tests {
 			// insert bridge config
 			let bridge_network = Wococo;
 			let bridge_config = test_bridge_config().1;
-			assert_ok!(BridgeTransfer::add_bridge_config(
+			assert_ok!(BridgeTransfer::add_exporter_config(
 				RuntimeOrigin::root(),
 				bridge_network,
 				Box::new(bridge_config.clone()),
@@ -876,12 +894,12 @@ pub(crate) mod tests {
 
 			// insert bridge config
 			let bridged_network = Wococo;
-			assert_ok!(BridgeTransfer::add_bridge_config(
+			assert_ok!(BridgeTransfer::add_exporter_config(
 				RuntimeOrigin::root(),
 				bridged_network,
 				Box::new(test_bridge_config().1),
 			));
-			let bridge_location = Bridges::<TestRuntime>::get(bridged_network)
+			let bridge_location = AllowedExporters::<TestRuntime>::get(bridged_network)
 				.expect("stored BridgeConfig for bridged_network")
 				.bridge_location;
 
@@ -960,7 +978,7 @@ pub(crate) mod tests {
 		new_test_ext().execute_with(|| {
 			// insert bridge config
 			let bridged_network = Wococo;
-			assert_ok!(BridgeTransfer::add_bridge_config(
+			assert_ok!(BridgeTransfer::add_exporter_config(
 				RuntimeOrigin::root(),
 				bridged_network,
 				Box::new(test_bridge_config().1),
@@ -1025,11 +1043,11 @@ pub(crate) mod tests {
 		let dummy_remote_interior_multilocation = X1(Parachain(1234));
 
 		new_test_ext().execute_with(|| {
-			assert_eq!(Bridges::<TestRuntime>::iter().count(), 0);
+			assert_eq!(AllowedExporters::<TestRuntime>::iter().count(), 0);
 
 			// should fail - just root is allowed
 			assert_noop!(
-				BridgeTransfer::add_bridge_config(
+				BridgeTransfer::add_exporter_config(
 					RuntimeOrigin::signed(account(1)),
 					bridged_network,
 					bridged_config.clone(),
@@ -1039,7 +1057,7 @@ pub(crate) mod tests {
 
 			// should fail - bridged_network should match allowed_target_location
 			assert_noop!(
-				BridgeTransfer::add_bridge_config(RuntimeOrigin::root(), bridged_network, {
+				BridgeTransfer::add_exporter_config(RuntimeOrigin::root(), bridged_network, {
 					let remote_network = Westend;
 					assert_ne!(bridged_network, remote_network);
 					Box::new(test_bridge_config().1)
@@ -1052,7 +1070,7 @@ pub(crate) mod tests {
 			);
 			// should fail - bridged_network must be different global consensus than our `UniversalLocation`
 			assert_noop!(
-				BridgeTransfer::add_bridge_config(
+				BridgeTransfer::add_exporter_config(
 					RuntimeOrigin::root(),
 					UniversalLocation::get().global_consensus().expect("any `NetworkId`"),
 					bridged_config.clone()
@@ -1063,7 +1081,7 @@ pub(crate) mod tests {
 					message: Some("InvalidConfiguration")
 				})
 			);
-			assert_eq!(Bridges::<TestRuntime>::iter().count(), 0);
+			assert_eq!(AllowedExporters::<TestRuntime>::iter().count(), 0);
 			assert_eq!(
 				BridgeTransfer::exporter_for(
 					&bridged_network,
@@ -1074,14 +1092,17 @@ pub(crate) mod tests {
 			);
 
 			// add with root
-			assert_ok!(BridgeTransfer::add_bridge_config(
+			assert_ok!(BridgeTransfer::add_exporter_config(
 				RuntimeOrigin::root(),
 				bridged_network,
 				bridged_config.clone(),
 			));
-			assert_eq!(Bridges::<TestRuntime>::iter().count(), 1);
-			assert_eq!(Bridges::<TestRuntime>::get(bridged_network), Some(*bridged_config.clone()));
-			assert_eq!(Bridges::<TestRuntime>::get(Wococo), None);
+			assert_eq!(AllowedExporters::<TestRuntime>::iter().count(), 1);
+			assert_eq!(
+				AllowedExporters::<TestRuntime>::get(bridged_network),
+				Some(*bridged_config.clone())
+			);
+			assert_eq!(AllowedExporters::<TestRuntime>::get(Wococo), None);
 			assert_eq!(
 				BridgeTransfer::exporter_for(
 					&bridged_network,
@@ -1101,15 +1122,15 @@ pub(crate) mod tests {
 
 			// update fee
 			// remove
-			assert_ok!(BridgeTransfer::update_bridge_config(
+			assert_ok!(BridgeTransfer::update_exporter_config(
 				RuntimeOrigin::root(),
 				bridged_network,
 				Some((Parent, 200u128).into()),
 				Some((Parent, 300u128).into()),
 			));
-			assert_eq!(Bridges::<TestRuntime>::iter().count(), 1);
+			assert_eq!(AllowedExporters::<TestRuntime>::iter().count(), 1);
 			assert_eq!(
-				Bridges::<TestRuntime>::get(bridged_network),
+				AllowedExporters::<TestRuntime>::get(bridged_network),
 				Some(BridgeConfig {
 					bridge_location: bridged_config.bridge_location.clone(),
 					bridge_location_fee: Some((Parent, 200u128).into()),
@@ -1127,12 +1148,12 @@ pub(crate) mod tests {
 			);
 
 			// remove
-			assert_ok!(BridgeTransfer::remove_bridge_config(
+			assert_ok!(BridgeTransfer::remove_exporter_config(
 				RuntimeOrigin::root(),
 				bridged_network,
 			));
-			assert_eq!(Bridges::<TestRuntime>::get(bridged_network), None);
-			assert_eq!(Bridges::<TestRuntime>::iter().count(), 0);
+			assert_eq!(AllowedExporters::<TestRuntime>::get(bridged_network), None);
+			assert_eq!(AllowedExporters::<TestRuntime>::iter().count(), 0);
 		})
 	}
 }
