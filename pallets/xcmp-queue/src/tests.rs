@@ -27,10 +27,7 @@ fn empty_concatenated_works() {
 	new_test_ext().execute_with(|| {
 		let data = ConcatenatedVersionedXcm.encode();
 
-		assert_storage_noop!(XcmpQueue::handle_xcmp_messages(
-			once((1000.into(), 1, data.as_slice())),
-			Weight::MAX,
-		));
+		XcmpQueue::handle_xcmp_messages(once((1000.into(), 1, data.as_slice())), Weight::MAX);
 	})
 }
 
@@ -209,7 +206,7 @@ fn suspend_and_resume_xcm_execution_work() {
 	});
 }
 
-// FAIL-CI reimplement and test back-pressure
+// FAIL-CI test back-pressure
 #[test]
 fn update_suspend_threshold_works() {
 	new_test_ext().execute_with(|| {

@@ -348,22 +348,25 @@ pub struct QueueConfigData {
 	/// message sending may recommence after it has been suspended.
 	resume_threshold: u32,
 	/// The amount of remaining weight under which we stop processing messages.
+	#[deprecated(note = "Will be removed")]
 	threshold_weight: Weight,
 	/// The speed to which the available weight approaches the maximum weight. A lower number
 	/// results in a faster progression. A value of 1 makes the entire weight available initially.
+	#[deprecated(note = "Will be removed")]
 	weight_restrict_decay: Weight,
 	/// The maximum amount of weight any individual message may consume. Messages above this weight
 	/// go into the overweight queue and may only be serviced explicitly.
+	#[deprecated(note = "Will be removed")]
 	xcmp_max_individual_weight: Weight,
 }
 
 impl Default for QueueConfigData {
 	fn default() -> Self {
+		#![allow(deprecated)]
 		Self {
 			suspend_threshold: 200,
 			drop_threshold: 500,
 			resume_threshold: 100,
-			// FAIl-CI remove this
 			threshold_weight: Weight::from_parts(100_000, 0),
 			weight_restrict_decay: Weight::from_parts(2, 0),
 			xcmp_max_individual_weight: Weight::from_parts(
@@ -535,9 +538,9 @@ impl<T: Config> Pallet<T> {
 	fn enqueue_xcmp_messages(
 		sender: ParaId,
 		mut xcms: Vec<BoundedVec<u8, XcmOverHrmpMaxLenOf<T>>>,
-		_meter: &mut WeightMeter,
+		meter: &mut WeightMeter,
 	) {
-		if xcms.is_empty() {
+		if !meter.check_accrue(T::WeightInfo::enqueue_xcmp_messages(xcms.len() as u32)) {
 			return
 		}
 		let QueueConfigData { drop_threshold, .. } = <QueueConfig<T>>::get();
@@ -555,10 +558,7 @@ impl<T: Config> Pallet<T> {
 			xcms.truncate(to_enqueue);
 		}
 
-		if !xcms.is_empty() {
-			T::XcmpQueue::enqueue_messages(xcms.iter().map(|xcm| xcm.as_bounded_slice()), sender);
-		}
-		// FAIL-CI consume weight
+		T::XcmpQueue::enqueue_messages(xcms.iter().map(|xcm| xcm.as_bounded_slice()), sender);
 	}
 
 	/// Split concatenated encoded `VersionedXcm`s into individual items.
@@ -618,7 +618,10 @@ impl<T: Config> ProcessMessage for Pallet<T> {
 		origin: Self::Origin,
 		meter: &mut WeightMeter,
 	) -> Result<bool, ProcessMessageError> {
-		// FAIL-CI weight
+		if !meter.check_accrue(T::WeightInfo::process_message()) {
+			return Err(ProcessMessageError::Overweight(T::WeightInfo::process_message()))
+		}
+
 		let sender_origin = T::ControllerOriginConverter::convert_origin(
 			(Parent, Parachain(origin.into())),
 			OriginKind::Superuser,
@@ -632,6 +635,7 @@ impl<T: Config> ProcessMessage for Pallet<T> {
 			return Err(ProcessMessageError::Yield)
 		}
 
+		// This should not be benchmarked since it already meters its own weight.
 		T::XcmpProcessor::process_message(message, origin, meter)
 	}
 }

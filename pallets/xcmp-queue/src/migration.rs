@@ -79,6 +79,7 @@ mod v1 {
 ///
 /// NOTE: Only use this function if you know what you're doing. Default to using
 /// `migrate_to_latest`.
+#[allow(deprecated)]
 pub fn migrate_to_v2<T: Config>() -> Weight {
 	let translate = |pre: v1::QueueConfigData| -> super::QueueConfigData {
 		super::QueueConfigData {
@@ -124,6 +125,7 @@ mod tests {
 	use crate::mock::{new_test_ext, Test};
 
 	#[test]
+	#[allow(deprecated)]
 	fn test_migration_to_v2() {
 		let v1 = v1::QueueConfigData {
 			suspend_threshold: 5,

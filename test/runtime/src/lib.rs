@@ -265,6 +265,7 @@ impl pallet_sudo::Config for Runtime {
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
+	type WeightInfo = ();
 	type SelfParaId = ParachainId;
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();

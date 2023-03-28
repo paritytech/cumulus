@@ -107,6 +107,7 @@ impl pallet_balances::Config for Test {
 }
 
 impl cumulus_pallet_parachain_system::Config for Test {
+	type WeightInfo = ();
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = ();
@@ -230,18 +231,20 @@ impl<T: OnQueueChanged<ParaId>> EnqueueMessage<ParaId> for EnqueueToLocalStorage
 		origin: ParaId,
 	) {
 		let mut msgs = EnqueuedMessages::get();
+		let mut l = 0;
 		for message in iter {
+			l += message.len();
 			msgs.push((origin.clone(), message.to_vec()));
 		}
 		EnqueuedMessages::set(&msgs);
-		T::on_queue_changed(origin, msgs.len() as u64, 0);
+		T::on_queue_changed(origin, msgs.len() as u64, l as u64);
 	}
 
 	fn sweep_queue(origin: ParaId) {
 		let mut msgs = EnqueuedMessages::get();
 		msgs.retain(|(o, _)| o != &origin);
 		EnqueuedMessages::set(&msgs);
-		T::on_queue_changed(origin, msgs.len() as u64, 0); // FAIL-CI not 0 here
+		T::on_queue_changed(origin, msgs.len() as u64, 0);
 	}
 
 	fn footprint(origin: ParaId) -> Footprint {

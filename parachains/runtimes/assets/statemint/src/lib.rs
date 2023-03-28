@@ -485,7 +485,7 @@ parameter_types! {
 impl pallet_message_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_message_queue::WeightInfo<Runtime>;
-	#[cfg(feature = "runtime-benchmarks")] // FAIL-CI and all other runtimes
+	#[cfg(feature = "runtime-benchmarks")]
 	type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
 		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
@@ -522,6 +522,9 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	// Enqueue XCMP messages from siblings for later processing.
 	type XcmpQueue = TransformOrigin<MessageQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling>;
 	// Process XCMP messages from siblings. This is type-safe to only accept `ParaId`s.
+	#[cfg(feature = "runtime-benchmarks")]
+	type XcmpProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<ParaId>;
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	type XcmpProcessor = ProcessFromSibling<
 		ProcessXcmMessage<
 			AggregateMessageOrigin,

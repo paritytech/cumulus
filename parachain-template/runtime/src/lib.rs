@@ -366,12 +366,10 @@ impl pallet_transaction_payment::Config for Runtime {
 parameter_types! {
 	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
 	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-	// FAIL-CI how to do a more compact TypedGet here?
-	pub const DmpAggregateOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
-	type WeightInfo = weights::cumulus_pallet_parachain_system::WeightInfo<Runtime>;
+	type WeightInfo = ();
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
@@ -422,6 +420,9 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	// Enqueue XCMP messages from siblings for later processing.
 	type XcmpQueue = TransformOrigin<MessageQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling>;
 	// Process XCMP messages from siblings. This is type-safe to only accept `ParaId`s.
+	#[cfg(feature = "runtime-benchmarks")]
+	type XcmpProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<ParaId>;
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	type XcmpProcessor = ProcessFromSibling<
 		ProcessXcmMessage<
 			AggregateMessageOrigin,

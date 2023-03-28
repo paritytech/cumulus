@@ -221,7 +221,7 @@ impl pallet_xcm::Config for Runtime {
 
 impl cumulus_pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type XcmExecutor = XcmExecutor<XcmConfig>; // FAIL-CI remove
+	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
@@ -229,9 +229,15 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
 	// Enqueue XCMP messages from siblings for later processing.
+	#[cfg(feature = "runtime-benchmarks")]
+	type XcmpQueue = ();
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	type XcmpQueue =
 		TransformOrigin<crate::MessageQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling>;
 	// Process XCMP messages from siblings. This is type-safe to only accept `ParaId`s.
+	#[cfg(feature = "runtime-benchmarks")]
+	type XcmpProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<ParaId>;
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	type XcmpProcessor = ProcessFromSibling<
 		ProcessXcmMessage<
 			AggregateMessageOrigin,

@@ -446,13 +446,12 @@ pub mod pallet {
 
 			<T::OnSystemEvent as OnSystemEvent>::on_validation_data(&vfp);
 
-			// TODO: This is more than zero, but will need benchmarking to figure out what.
 			let mut total_weight = Weight::zero();
-			// FAIL-CI weight
 			total_weight.saturating_accrue(Self::enqueue_inbound_downward_messages(
 				relevant_messaging_state.dmq_mqc_head,
 				downward_messages,
 			));
+			// TODO: This is more than zero, but will need benchmarking to figure out what.
 			total_weight.saturating_accrue(Self::enqueue_inbound_horizontal_messages(
 				&relevant_messaging_state.ingress_channels,
 				horizontal_messages,
@@ -848,20 +847,19 @@ impl<T: Config> Pallet<T> {
 		let dm_count = downward_messages.len() as u32;
 		let mut dmq_head = <LastDmqMqcHead<T>>::get();
 
-		let weight_used = Weight::zero();
+		let weight_used = T::WeightInfo::enqueue_inbound_downward_messages(dm_count);
 		if dm_count != 0 {
 			Self::deposit_event(Event::DownwardMessagesReceived { count: dm_count });
 			let _max_weight =
 				<ReservedDmpWeightOverride<T>>::get().unwrap_or_else(T::ReservedDmpWeight::get);
 
+			for m in &downward_messages {
+				dmq_head.extend_downward(m);
+			}
 			let bounded = downward_messages
 				.iter()
-				.inspect(|m| {
-					dmq_head.extend_downward(m);
-				})
-				// FAIL-CI propagate bound
 				.filter_map(|m| BoundedSlice::try_from(&m.msg[..]).ok());
-			// Put all messages into the MQ pallet. // FAIL-CI weight
+			// Put all messages into the MQ pallet.
 			T::DmpQueue::enqueue_messages(bounded, AggregateMessageOrigin::Parent);
 			<LastDmqMqcHead<T>>::put(&dmq_head);
 

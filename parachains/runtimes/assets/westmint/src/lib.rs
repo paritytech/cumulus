@@ -550,6 +550,9 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	// Enqueue XCMP messages from siblings for later processing.
 	type XcmpQueue = TransformOrigin<MessageQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling>;
 	// Process XCMP messages from siblings. This is type-safe to only accept `ParaId`s.
+	#[cfg(feature = "runtime-benchmarks")]
+	type XcmpProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<ParaId>;
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	type XcmpProcessor = ProcessFromSibling<
 		ProcessXcmMessage<
 			AggregateMessageOrigin,
@@ -798,7 +801,6 @@ mod benches {
 		[pallet_utility, Utility]
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
-		[cumulus_pallet_parachain_system, ParachainSystem]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		// XCM
 		[pallet_xcm, PolkadotXcm]
