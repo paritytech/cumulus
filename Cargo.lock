@@ -2224,7 +2224,7 @@ dependencies = [
  "polkadot-primitives",
  "polkadot-service",
  "polkadot-test-client",
- "prioritized-metered-channel 0.4.0",
+ "prioritized-metered-channel",
  "sc-cli",
  "sc-client-api",
  "sc-sysinfo",
@@ -2279,6 +2279,7 @@ dependencies = [
  "sc-network-common",
  "sc-service",
  "sc-tracing",
+ "sc-utils",
  "sp-api",
  "sp-blockchain",
  "sp-consensus",
@@ -5855,7 +5856,7 @@ dependencies = [
  "futures-timer",
  "orchestra-proc-macro",
  "pin-project",
- "prioritized-metered-channel 0.2.0",
+ "prioritized-metered-channel",
  "thiserror",
  "tracing",
 ]
@@ -8154,7 +8155,7 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "polkadot-primitives",
- "prioritized-metered-channel 0.2.0",
+ "prioritized-metered-channel",
  "sc-cli",
  "sc-service",
  "sc-tracing",
@@ -8282,7 +8283,7 @@ dependencies = [
  "polkadot-node-subsystem",
  "polkadot-overseer",
  "polkadot-primitives",
- "prioritized-metered-channel 0.2.0",
+ "prioritized-metered-channel",
  "rand 0.8.5",
  "sp-application-crypto",
  "sp-core",
@@ -9082,23 +9083,6 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "382698e48a268c832d0b181ed438374a6bb708a82a8ca273bb0f61c74cf209c4"
 dependencies = [
- "coarsetime",
- "crossbeam-queue",
- "derive_more",
- "futures",
- "futures-timer",
- "nanorand",
- "thiserror",
- "tracing",
-]
-
-[[package]]
-name = "prioritized-metered-channel"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3caef72a78ca8e77cbdfa87dd516ebb79d4cbe5b42e3b8435b463a8261339ff"
-dependencies = [
- "async-channel",
  "coarsetime",
  "crossbeam-queue",
  "derive_more",
