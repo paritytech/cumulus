@@ -38,7 +38,6 @@ mod benchmarks {
 		};
 		let msgs = vec![msg; n as usize];
 		let head = mqp_head(&msgs);
-		LastDmqMqcHead::<T>::take();
 
 		#[block]
 		{

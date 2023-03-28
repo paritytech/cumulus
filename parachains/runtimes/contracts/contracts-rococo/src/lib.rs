@@ -287,7 +287,7 @@ impl pallet_message_queue::Config for Runtime {
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type MessageProcessor = parachains_common::process_xcm_message::SplitMessages<
-		process_xcm_message::ProcessXcmMessage<
+		parachains_common::process_xcm_message::ProcessXcmMessage<
 			cumulus_primitives_core::AggregateMessageOrigin,
 			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
 			RuntimeCall,

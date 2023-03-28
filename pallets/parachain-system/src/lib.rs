@@ -850,8 +850,6 @@ impl<T: Config> Pallet<T> {
 		let weight_used = T::WeightInfo::enqueue_inbound_downward_messages(dm_count);
 		if dm_count != 0 {
 			Self::deposit_event(Event::DownwardMessagesReceived { count: dm_count });
-			let _max_weight =
-				<ReservedDmpWeightOverride<T>>::get().unwrap_or_else(T::ReservedDmpWeight::get);
 
 			for m in &downward_messages {
 				dmq_head.extend_downward(m);

@@ -92,12 +92,13 @@ pub mod pallet {
 		/// Enqueue an inbound horizontal message for later processing.
 		type XcmpQueue: EnqueueMessage<ParaId>;
 
-		/// This pallet itself implements the [`frame_support::traits::ProcessMessage`] trait. After checking the suspension logic it forwards the messages to this `XcmpProcessor` type.
+		/// The message processor that this pallet uses after checking the suspension logic.
 		type XcmpProcessor: ProcessMessage<Origin = ParaId>;
 
 		/// The maximum number of inbound XCMP channels that can be suspended simultaneously.
 		///
-		/// Any further channel suspensions will fail and messages may get dropped without further notice. Choosing a high value (1000) is okay; the trade-off that is described in [InboundXcmpSuspended] still applies at that scale.
+		/// Any further channel suspensions will fail and messages may get dropped without further
+		/// notice. Choosing a high value (1000) is okay; the trade-off that is described in [InboundXcmpSuspended] still applies at that scale.
 		#[pallet::constant]
 		type MaxInboundSuspended: Get<u32>;
 
@@ -599,7 +600,8 @@ impl<T: Config> OnQueueChanged<ParaId> for Pallet<T> {
 			log::warn!("XCMP queue for sibling {:?} is full; suspending channel.", para);
 
 			if let Err(err) = Self::send_signal(para, ChannelSignal::Suspend) {
-				// This is an edge-case, but we will not regard the channel as `Suspended` without confirmation. It will just re-try to suspend in the next block.
+				// This is an edge-case, but we will not regard the channel as `Suspended` without
+				// confirmation. It will just re-try to suspend in the next block.
 				log::error!("Cannot suspend channel from sibling {:?}: {:?}; further messages may be dropped.", para, err);
 			} else if let Err(err) = suspended_channels.try_insert(para) {
 				log::error!("Too many channels suspended; cannot suspend sibling {:?}: {:?}; further messages may be dropped.", para, err);
@@ -635,7 +637,6 @@ impl<T: Config> ProcessMessage for Pallet<T> {
 			return Err(ProcessMessageError::Yield)
 		}
 
-		// This should not be benchmarked since it already meters its own weight.
 		T::XcmpProcessor::process_message(message, origin, meter)
 	}
 }
@@ -661,6 +662,7 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 			match format {
 				XcmpMessageFormat::Signals =>
 					while !data.is_empty() {
+						// FAIL-CI consume weight here and above/below
 						match ChannelSignal::decode(&mut data) {
 							Ok(ChannelSignal::Suspend) => Self::suspend_channel(sender),
 							Ok(ChannelSignal::Resume) => Self::resume_channel(sender),
