@@ -58,10 +58,12 @@ use sp_runtime::{
 use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
 use xcm::latest::XcmHash;
 
+mod benchmarking;
 mod migration;
 mod relay_state_snapshot;
 #[macro_use]
 pub mod validate_block;
+mod mock;
 #[cfg(test)]
 mod tests;
 
