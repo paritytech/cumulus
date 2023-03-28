@@ -856,9 +856,8 @@ impl<T: Config> Pallet<T> {
 			for m in &downward_messages {
 				dmq_head.extend_downward(m);
 			}
-			let bounded = downward_messages
-				.iter()
-				.filter_map(|m| BoundedSlice::try_from(&m.msg[..]).ok());
+			let bounded =
+				downward_messages.iter().filter_map(|m| BoundedSlice::try_from(&m.msg[..]).ok());
 			// Put all messages into the MQ pallet.
 			T::DmpQueue::enqueue_messages(bounded, AggregateMessageOrigin::Parent);
 			<LastDmqMqcHead<T>>::put(&dmq_head);

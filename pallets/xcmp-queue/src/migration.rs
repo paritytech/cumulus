@@ -114,11 +114,6 @@ pub fn migrate_to_v3<T: Config>() -> Weight {
 	T::DbWeight::get().reads_writes(overweight_messages, 1)
 }
 
-pub fn migrate_to_v4<T: Config>() -> Weight {
-	// FAIL-CI Add migration <https://github.com/paritytech/substrate/issues/13353>
-	Weight::zero()
-}
-
 #[cfg(test)]
 mod tests {
 	use super::*;

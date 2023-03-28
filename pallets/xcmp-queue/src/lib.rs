@@ -646,7 +646,7 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 		max_weight: Weight,
 	) -> Weight {
 		let mut meter = WeightMeter::from_limit(max_weight);
-		// FAIL-CI how do i return an out-of-weight error?
+		// FAIL-CI how do i return an out-of-weight error in a `XcmpMessageHandler`?
 
 		for (sender, _sent_at, mut data) in iter {
 			let format =
