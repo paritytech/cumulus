@@ -14,6 +14,7 @@ log = { version = "0.4.17", default-features = false }
 scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
 
 # Substrate
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master", optional = true }
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-message-queue = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -62,6 +63,7 @@ std = [
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-parachain-inherent/std",
 	"frame-support/std",
+	"frame-benchmarking/std",
 	"frame-system/std",
 	"pallet-message-queue/std",
 	"sp-core/std",
@@ -76,9 +78,11 @@ std = [
 ]
 
 runtime-benchmarks = [
+	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"pallet-message-queue/runtime-benchmarks",
+	"cumulus-test-client/runtime-benchmarks",
 ]
 
 try-runtime = [
