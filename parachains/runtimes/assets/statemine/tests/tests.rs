@@ -448,7 +448,7 @@ fn receive_teleported_asset_works() {
 						id: Concrete(MultiLocation { parents: 1, interior: Here }),
 						fun: Fungible(10000000000000),
 					},
-					weight_limit: Limited(Weight::from_parts(303531000, 65536)),
+					weight_limit: Limited(Weight::from_parts(1303531000, 65536)),
 				},
 				DepositAsset {
 					assets: Wild(AllCounted(1)),
