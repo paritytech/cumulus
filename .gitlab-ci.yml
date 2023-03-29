@@ -26,7 +26,7 @@ variables:
   GIT_STRATEGY: fetch
   GIT_DEPTH: 100
   CARGO_INCREMENTAL: 0
-  CI_IMAGE: "paritytech/ci-linux:production"
+  CI_IMAGE: "paritytech/ci-linux@sha256:a8b63e4f1ab37f90034b9edd3a936a1d4ae897560e25010e0f2fccd8274c6f27" # staging 2023-03-28
   DOCKER_OS: "debian:stretch"
   ARCH: "x86_64"
   ZOMBIENET_IMAGE: "docker.io/paritytech/zombienet:v1.3.40"
