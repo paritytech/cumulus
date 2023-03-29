@@ -83,7 +83,6 @@ impl<TrapCode: frame_support::traits::Get<u64>> PingMessageBuilder
 #[frame_support::pallet]
 pub mod pallet {
 	pub use crate::weights::WeightInfo;
-	use frame_benchmarking::BenchmarkError;
 
 	use super::*;
 	use frame_support::pallet_prelude::*;
@@ -101,8 +100,9 @@ pub mod pallet {
 		///
 		/// We expect that the XCM environment (`BridgeXcmSender`) has everything enabled
 		/// to support transfer to this destination **after** `prepare_asset_transfer` call.
-		fn bridge_config() -> Result<(NetworkId, BridgeConfig), BenchmarkError> {
-			Err(BenchmarkError::Skip)
+		fn bridge_config() -> Result<(NetworkId, BridgeConfig), frame_benchmarking::BenchmarkError>
+		{
+			Err(frame_benchmarking::BenchmarkError::Skip)
 		}
 
 		/// Returns some fee, which will be used for `update_exporter_config`.
@@ -126,8 +126,11 @@ pub mod pallet {
 		///   (in terms of performance) bridge must be selected for the transfer.
 		fn prepare_asset_transfer(
 			_assets_count: u32,
-		) -> Result<(RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation), BenchmarkError> {
-			Err(BenchmarkError::Skip)
+		) -> Result<
+			(RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation),
+			frame_benchmarking::BenchmarkError,
+		> {
+			Err(frame_benchmarking::BenchmarkError::Skip)
 		}
 
 		/// Prepare environment for ping transfer and return transfer origin and assets
@@ -141,16 +144,19 @@ pub mod pallet {
 		/// - be close to the worst possible scenario - i.e. if some account may need to be created during
 		///  it should be created. If there are multiple bridges, the "worst possible"
 		///   (in terms of performance) bridge must be selected for the transfer.
-		fn prepare_ping() -> Result<(RuntimeOrigin, VersionedMultiLocation), BenchmarkError> {
-			Err(BenchmarkError::Skip)
+		fn prepare_ping(
+		) -> Result<(RuntimeOrigin, VersionedMultiLocation), frame_benchmarking::BenchmarkError> {
+			Err(frame_benchmarking::BenchmarkError::Skip)
 		}
 
-		fn universal_alias() -> Result<(VersionedMultiLocation, Junction), BenchmarkError> {
-			Err(BenchmarkError::Skip)
+		fn universal_alias(
+		) -> Result<(VersionedMultiLocation, Junction), frame_benchmarking::BenchmarkError> {
+			Err(frame_benchmarking::BenchmarkError::Skip)
 		}
 
-		fn reserve_location() -> Result<VersionedMultiLocation, BenchmarkError> {
-			Err(BenchmarkError::Skip)
+		fn reserve_location() -> Result<VersionedMultiLocation, frame_benchmarking::BenchmarkError>
+		{
+			Err(frame_benchmarking::BenchmarkError::Skip)
 		}
 	}
 
