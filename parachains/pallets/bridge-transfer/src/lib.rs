@@ -1,4 +1,4 @@
-// Copyright (C) 2022 Parity Technologies (UK) Ltd.
+// Copyright (C) 2023 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode, MaxEncodedLen};
+use frame_support::BoundedBTreeSet;
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::boxed::Box;
@@ -30,6 +31,7 @@ use xcm::prelude::*;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+pub mod impls;
 pub mod weights;
 
 /// The log target of this pallet.
@@ -81,12 +83,12 @@ impl<TrapCode: frame_support::traits::Get<u64>> PingMessageBuilder
 #[frame_support::pallet]
 pub mod pallet {
 	pub use crate::weights::WeightInfo;
+	use frame_benchmarking::BenchmarkError;
 
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use xcm::latest::Error as XcmError;
-	use xcm_builder::ExporterFor;
 	use xcm_executor::traits::TransactAsset;
 
 	#[pallet::pallet]
@@ -99,10 +101,17 @@ pub mod pallet {
 		///
 		/// We expect that the XCM environment (`BridgeXcmSender`) has everything enabled
 		/// to support transfer to this destination **after** `prepare_asset_transfer` call.
-		fn bridge_config() -> (NetworkId, BridgeConfig);
+		fn bridge_config() -> Result<(NetworkId, BridgeConfig), BenchmarkError> {
+			Err(BenchmarkError::Skip)
+		}
 
 		/// Returns some fee, which will be used for `update_exporter_config`.
-		fn target_location_fee_for_update() -> Option<Box<VersionedMultiAsset>>;
+		fn target_location_fee_for_update() -> Option<VersionedMultiAsset> {
+			Some(VersionedMultiAsset::V3(MultiAsset {
+				id: Concrete(MultiLocation::parent()),
+				fun: Fungible(1_000_0000),
+			}))
+		}
 
 		/// Prepare environment for assets transfer and return transfer origin and assets
 		/// to transfer. After this function is called, we expect `transfer_asset_via_bridge`
@@ -116,8 +125,10 @@ pub mod pallet {
 		///   the assets transfer, it should be created. If there are multiple bridges, the "worst possible"
 		///   (in terms of performance) bridge must be selected for the transfer.
 		fn prepare_asset_transfer(
-			assets_count: u32,
-		) -> (RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation);
+			_assets_count: u32,
+		) -> Result<(RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation), BenchmarkError> {
+			Err(BenchmarkError::Skip)
+		}
 
 		/// Prepare environment for ping transfer and return transfer origin and assets
 		/// to transfer. After this function is called, we expect `ping_via_bridge`
@@ -130,7 +141,17 @@ pub mod pallet {
 		/// - be close to the worst possible scenario - i.e. if some account may need to be created during
 		///  it should be created. If there are multiple bridges, the "worst possible"
 		///   (in terms of performance) bridge must be selected for the transfer.
-		fn prepare_ping() -> (RuntimeOrigin, VersionedMultiLocation);
+		fn prepare_ping() -> Result<(RuntimeOrigin, VersionedMultiLocation), BenchmarkError> {
+			Err(BenchmarkError::Skip)
+		}
+
+		fn universal_alias() -> Result<(VersionedMultiLocation, Junction), BenchmarkError> {
+			Err(BenchmarkError::Skip)
+		}
+
+		fn reserve_location() -> Result<VersionedMultiLocation, BenchmarkError> {
+			Err(BenchmarkError::Skip)
+		}
 	}
 
 	#[pallet::config]
@@ -144,19 +165,30 @@ pub mod pallet {
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
-		/// How to withdraw and deposit an asset for reserve.
-		type AssetTransactor: TransactAsset;
-
 		/// The configurable origin to allow bridges configuration management
 		type AdminOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
+		/// Max allowed universal aliases per one `MultiLocation`
+		/// (Config for transfer in)
+		type UniversalAliasesLimit: Get<u32>;
+		/// Max allowed reserve locations
+		/// (Config for transfer in)
+		type ReserveLocationsLimit: Get<u32>;
+
+		/// How to withdraw and deposit an asset for reserve.
+		/// (Config for transfer out)
+		type AssetTransactor: TransactAsset;
 		/// XCM sender which sends messages to the BridgeHub
+		/// (Config for transfer out)
 		type BridgeXcmSender: SendXcm;
 		/// Required origin for asset transfer. If successful, it resolves to `MultiLocation`.
+		/// (Config for transfer out)
 		type TransferAssetOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = MultiLocation>;
 		/// Required origin for ping transfer. If successful, it resolves to `MultiLocation`.
+		/// (Config for transfer out)
 		type TransferPingOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = MultiLocation>;
 		/// Configurable ping message, `None` means no message will be transferred.
+		/// (Config for transfer out)
 		type PingMessageBuilder: PingMessageBuilder;
 
 		/// Benchmarks helper.
@@ -169,6 +201,28 @@ pub mod pallet {
 	#[pallet::getter(fn allowed_exporters)]
 	pub(super) type AllowedExporters<T: Config> =
 		StorageMap<_, Blake2_128Concat, NetworkId, BridgeConfig>;
+
+	/// Holds allowed mappings `MultiLocation->Junction` for `UniversalAliases`
+	/// E.g:
+	/// 	BridgeHubMultiLocation1 -> NetworkId::Kusama
+	/// 	BridgeHubMultiLocation1 -> NetworkId::Polkadot
+	/// (Config for transfer in)
+	#[pallet::storage]
+	#[pallet::getter(fn allowed_universal_aliases)]
+	pub(super) type AllowedUniversalAliases<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		MultiLocation,
+		BoundedBTreeSet<Junction, T::UniversalAliasesLimit>,
+		ValueQuery,
+	>;
+
+	/// Holds allowed mappings `MultiLocation` as trusted reserve locations
+	/// (Config for transfer in)
+	#[pallet::storage]
+	#[pallet::getter(fn allowed_reserve_locations)]
+	pub(super) type AllowedReserveLocations<T: Config> =
+		StorageValue<_, BoundedBTreeSet<MultiLocation, T::ReserveLocationsLimit>, ValueQuery>;
 
 	#[pallet::error]
 	#[cfg_attr(test, derive(PartialEq))]
@@ -194,6 +248,16 @@ pub mod pallet {
 		BridgeRemoved,
 		/// Bridge configuration was updated
 		BridgeUpdated,
+
+		/// New universal alias was added
+		UniversalAliasAdded,
+		/// New universal alias was removed
+		UniversalAliasRemoved,
+
+		/// New reserve location was added
+		ReserveLocationAdded,
+		/// New reserve location was removed
+		ReserveLocationRemoved,
 
 		/// Reserve asset passed
 		ReserveAssetsDeposited { from: MultiLocation, to: MultiLocation, assets: MultiAssets },
@@ -221,7 +285,6 @@ pub mod pallet {
 			destination: Box<VersionedMultiLocation>,
 		) -> DispatchResult {
 			let origin_location = T::TransferAssetOrigin::ensure_origin(origin)?;
-
 			// Check remote destination + bridge_config
 			let (_, bridge_config, remote_destination) =
 				Self::ensure_remote_destination(*destination)?;
@@ -439,6 +502,120 @@ pub mod pallet {
 				Ok(())
 			})
 		}
+
+		/// Add `(MultiLocation, Junction)` mapping to [`AllowedUniversalAliases`]
+		///
+		/// Parameters:
+		///
+		/// * `location`: key
+		/// * `junction`: value
+		#[pallet::call_index(5)]
+		#[pallet::weight(T::WeightInfo::add_universal_alias())]
+		pub fn add_universal_alias(
+			origin: OriginFor<T>,
+			location: Box<VersionedMultiLocation>,
+			junction: Junction,
+		) -> DispatchResult {
+			let _ = T::AdminOrigin::ensure_origin(origin)?;
+
+			let location: MultiLocation =
+				(*location).try_into().map_err(|_| Error::<T>::UnsupportedDestination)?;
+			let added = AllowedUniversalAliases::<T>::try_mutate(location, |junctions| {
+				junctions.try_insert(junction)
+			})
+			.map_err(|_| Error::<T>::InvalidConfiguration)?;
+			if added {
+				Self::deposit_event(Event::UniversalAliasAdded);
+			}
+			Ok(())
+		}
+
+		/// Remove `(MultiLocation, Junction)` mapping from [`AllowedUniversalAliases`]
+		///
+		/// Parameters:
+		///
+		/// * `location`: key
+		/// * `junction`: value
+		#[pallet::call_index(6)]
+		#[pallet::weight(T::WeightInfo::remove_universal_alias())]
+		pub fn remove_universal_alias(
+			origin: OriginFor<T>,
+			location: Box<VersionedMultiLocation>,
+			junctions_to_remove: sp_std::prelude::Vec<Junction>,
+		) -> DispatchResult {
+			let _ = T::AdminOrigin::ensure_origin(origin)?;
+
+			let location: MultiLocation =
+				(*location).try_into().map_err(|_| Error::<T>::UnsupportedDestination)?;
+			let removed = AllowedUniversalAliases::<T>::try_mutate(
+				location,
+				|junctions| -> Result<bool, Error<T>> {
+					let mut removed = false;
+					for jtr in junctions_to_remove {
+						removed |= junctions.remove(&jtr);
+					}
+					Ok(removed)
+				},
+			)?;
+			if removed {
+				Self::deposit_event(Event::UniversalAliasRemoved);
+			}
+			Ok(())
+		}
+
+		/// Add `MultiLocation` mapping to [`AllowedReserveLocations`]
+		///
+		/// Parameters:
+		///
+		/// * `location`: as reserve `MultiLocation`
+		#[pallet::call_index(7)]
+		#[pallet::weight(T::WeightInfo::add_reserve_location())]
+		pub fn add_reserve_location(
+			origin: OriginFor<T>,
+			location: Box<VersionedMultiLocation>,
+		) -> DispatchResult {
+			let _ = T::AdminOrigin::ensure_origin(origin)?;
+
+			let location: MultiLocation =
+				(*location).try_into().map_err(|_| Error::<T>::UnsupportedDestination)?;
+			let added = AllowedReserveLocations::<T>::try_mutate(|locations| {
+				locations.try_insert(location)
+			})
+			.map_err(|_| Error::<T>::InvalidConfiguration)?;
+			if added {
+				Self::deposit_event(Event::ReserveLocationAdded);
+			}
+			Ok(())
+		}
+
+		/// Remove `MultiLocation` mapping from [`AllowedReserveLocations`]
+		///
+		/// Parameters:
+		///
+		/// * `location`: as reserve `MultiLocation`
+		#[pallet::call_index(8)]
+		#[pallet::weight(T::WeightInfo::remove_reserve_location())]
+		pub fn remove_reserve_location(
+			origin: OriginFor<T>,
+			locations_to_remove: sp_std::prelude::Vec<VersionedMultiLocation>,
+		) -> DispatchResult {
+			let _ = T::AdminOrigin::ensure_origin(origin)?;
+
+			let removed =
+				AllowedReserveLocations::<T>::try_mutate(|locations| -> Result<bool, Error<T>> {
+					let mut removed = false;
+					for ltr in locations_to_remove {
+						let ltr: MultiLocation =
+							ltr.try_into().map_err(|_| Error::<T>::UnsupportedDestination)?;
+						removed |= locations.remove(&ltr);
+					}
+					Ok(removed)
+				})?;
+			if removed {
+				Self::deposit_event(Event::ReserveLocationRemoved);
+			}
+			Ok(())
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -476,10 +653,6 @@ pub mod pallet {
 				},
 				_ => Err(Error::<T>::UnsupportedDestination),
 			}
-		}
-
-		fn get_bridge_for(network: &NetworkId) -> Option<BridgeConfig> {
-			AllowedExporters::<T>::get(network)
 		}
 
 		fn initiate_bridge_transfer(
@@ -525,26 +698,15 @@ pub mod pallet {
 			Ok(())
 		}
 	}
-
-	impl<T: Config> ExporterFor for Pallet<T> {
-		fn exporter_for(
-			network: &NetworkId,
-			_remote_location: &InteriorMultiLocation,
-			_message: &Xcm<()>,
-		) -> Option<(MultiLocation, Option<MultiAsset>)> {
-			Pallet::<T>::get_bridge_for(network).map(|bridge_config| {
-				(bridge_config.bridge_location, bridge_config.bridge_location_fee)
-			})
-		}
-	}
 }
 
 #[cfg(test)]
 pub(crate) mod tests {
 	use super::*;
 	use crate as bridge_transfer;
-	use frame_support::traits::{ConstU32, Currency};
+	use frame_support::traits::{ConstU32, Contains, ContainsPair, Currency, Everything};
 
+	use crate::impls::{AllowedUniversalAliasesOf, IsAllowedReserveOf};
 	use frame_support::{
 		assert_noop, assert_ok, dispatch::DispatchError, parameter_types, sp_io, sp_tracing,
 	};
@@ -643,7 +805,7 @@ pub(crate) mod tests {
 
 	parameter_types! {
 		// UniversalLocation as statemine
-		pub const RelayNetwork: NetworkId = NetworkId::Kusama;
+		pub const RelayNetwork: NetworkId = NetworkId::ByGenesis([9; 32]);
 		pub UniversalLocation: InteriorMultiLocation = X2(GlobalConsensus(RelayNetwork::get()), Parachain(1000));
 		// Test bridge cfg
 		pub TestBridgeTable: sp_std::prelude::Vec<(NetworkId, MultiLocation, Option<MultiAsset>)> = sp_std::vec![
@@ -779,8 +941,10 @@ pub(crate) mod tests {
 		type RuntimeEvent = RuntimeEvent;
 		type UniversalLocation = UniversalLocation;
 		type WeightInfo = ();
-		type AssetTransactor = CurrencyTransactor;
 		type AdminOrigin = EnsureRoot<AccountId>;
+		type UniversalAliasesLimit = ConstU32<2>;
+		type ReserveLocationsLimit = ConstU32<2>;
+		type AssetTransactor = CurrencyTransactor;
 		type BridgeXcmSender = TestBridgeXcmSender;
 		type TransferAssetOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 		type TransferPingOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
@@ -1028,7 +1192,7 @@ pub(crate) mod tests {
 	}
 
 	#[test]
-	fn test_bridge_config_management_works() {
+	fn allowed_exporters_management_works() {
 		let bridged_network = Rococo;
 		let bridged_config = Box::new(BridgeConfig {
 			bridge_location: (Parent, Parachain(1013)).into(),
@@ -1041,6 +1205,25 @@ pub(crate) mod tests {
 		});
 		let dummy_xcm = Xcm(vec![]);
 		let dummy_remote_interior_multilocation = X1(Parachain(1234));
+
+		{
+			let mut asset = xcm_executor::Assets::from(MultiAsset {
+				id: Concrete(MultiLocation::parent()),
+				fun: Fungible(1_000),
+			});
+			println!("before: {:?}", asset);
+			asset.reanchor(&bridged_config.allowed_target_location, UniversalLocation::get(), None);
+			println!("after: {:?}", asset);
+		}
+		{
+			let mut asset = xcm_executor::Assets::from(MultiAsset {
+				id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(3000)) }),
+				fun: Fungible(1_000),
+			});
+			println!("before: {:?}", asset);
+			asset.reanchor(&bridged_config.allowed_target_location, UniversalLocation::get(), None);
+			println!("after: {:?}", asset);
+		}
 
 		new_test_ext().execute_with(|| {
 			assert_eq!(AllowedExporters::<TestRuntime>::iter().count(), 0);
@@ -1125,8 +1308,8 @@ pub(crate) mod tests {
 			assert_ok!(BridgeTransfer::update_exporter_config(
 				RuntimeOrigin::root(),
 				bridged_network,
-				Some((Parent, 200u128).into()),
-				Some((Parent, 300u128).into()),
+				Some(VersionedMultiAsset::V3((Parent, 200u128).into()).into()),
+				Some(VersionedMultiAsset::V3((Parent, 300u128).into()).into()),
 			));
 			assert_eq!(AllowedExporters::<TestRuntime>::iter().count(), 1);
 			assert_eq!(
@@ -1154,6 +1337,115 @@ pub(crate) mod tests {
 			));
 			assert_eq!(AllowedExporters::<TestRuntime>::get(bridged_network), None);
 			assert_eq!(AllowedExporters::<TestRuntime>::iter().count(), 0);
+		})
+	}
+
+	#[test]
+	fn allowed_universal_aliases_management_works() {
+		new_test_ext().execute_with(|| {
+			assert_eq!(AllowedUniversalAliases::<TestRuntime>::iter().count(), 0);
+
+			let location1 = MultiLocation::new(1, X1(Parachain(1014)));
+			let junction1 = GlobalConsensus(ByGenesis([1; 32]));
+			let junction2 = GlobalConsensus(ByGenesis([2; 32]));
+
+			// should fail - just root is allowed
+			assert_noop!(
+				BridgeTransfer::add_universal_alias(
+					RuntimeOrigin::signed(account(1)),
+					Box::new(VersionedMultiLocation::V3(location1.clone())),
+					junction1.clone(),
+				),
+				DispatchError::BadOrigin
+			);
+			assert_eq!(AllowedUniversalAliases::<TestRuntime>::iter().count(), 0);
+			assert!(!AllowedUniversalAliasesOf::<TestRuntime>::contains(&(location1, junction1)));
+			assert!(!AllowedUniversalAliasesOf::<TestRuntime>::contains(&(location1, junction2)));
+
+			// add ok
+			assert_ok!(BridgeTransfer::add_universal_alias(
+				RuntimeOrigin::root(),
+				Box::new(VersionedMultiLocation::V3(location1.clone())),
+				junction1.clone(),
+			));
+			assert_ok!(BridgeTransfer::add_universal_alias(
+				RuntimeOrigin::root(),
+				Box::new(VersionedMultiLocation::V3(location1.clone())),
+				junction2.clone(),
+			));
+			assert!(AllowedUniversalAliasesOf::<TestRuntime>::contains(&(location1, junction1)));
+			assert!(AllowedUniversalAliasesOf::<TestRuntime>::contains(&(location1, junction2)));
+
+			// remove ok
+			assert_ok!(BridgeTransfer::remove_universal_alias(
+				RuntimeOrigin::root(),
+				Box::new(VersionedMultiLocation::V3(location1.clone())),
+				vec![junction1.clone()],
+			));
+			assert!(!AllowedUniversalAliasesOf::<TestRuntime>::contains(&(location1, junction1)));
+			assert!(AllowedUniversalAliasesOf::<TestRuntime>::contains(&(location1, junction2)));
+
+			assert_ok!(BridgeTransfer::remove_universal_alias(
+				RuntimeOrigin::root(),
+				Box::new(VersionedMultiLocation::V3(location1.clone())),
+				vec![junction2.clone()],
+			));
+			assert!(!AllowedUniversalAliasesOf::<TestRuntime>::contains(&(location1, junction1)));
+			assert!(!AllowedUniversalAliasesOf::<TestRuntime>::contains(&(location1, junction2)));
+		})
+	}
+
+	#[test]
+	fn allowed_reserve_locations_management_works() {
+		new_test_ext().execute_with(|| {
+			assert!(AllowedReserveLocations::<TestRuntime>::get().is_empty());
+
+			let location1 = MultiLocation::new(1, X1(Parachain(1014)));
+			let location2 =
+				MultiLocation::new(2, X2(GlobalConsensus(ByGenesis([1; 32])), Parachain(1014)));
+			let asset: MultiAsset = (Parent, 200u128).into();
+
+			// should fail - just root is allowed
+			assert_noop!(
+				BridgeTransfer::add_reserve_location(
+					RuntimeOrigin::signed(account(1)),
+					Box::new(VersionedMultiLocation::V3(location1.clone()))
+				),
+				DispatchError::BadOrigin
+			);
+			assert_eq!(AllowedReserveLocations::<TestRuntime>::get().len(), 0);
+			assert!(!IsAllowedReserveOf::<TestRuntime, Everything>::contains(&asset, &location1));
+			assert!(!IsAllowedReserveOf::<TestRuntime, Everything>::contains(&asset, &location2));
+
+			// add ok
+			assert_ok!(BridgeTransfer::add_reserve_location(
+				RuntimeOrigin::root(),
+				Box::new(VersionedMultiLocation::V3(location1.clone()))
+			));
+			assert_ok!(BridgeTransfer::add_reserve_location(
+				RuntimeOrigin::root(),
+				Box::new(VersionedMultiLocation::V3(location2.clone()))
+			));
+			assert_eq!(AllowedReserveLocations::<TestRuntime>::get().len(), 2);
+			assert!(IsAllowedReserveOf::<TestRuntime, Everything>::contains(&asset, &location1));
+			assert!(IsAllowedReserveOf::<TestRuntime, Everything>::contains(&asset, &location2));
+
+			// remove ok
+			assert_ok!(BridgeTransfer::remove_reserve_location(
+				RuntimeOrigin::root(),
+				vec![VersionedMultiLocation::V3(location1.clone())],
+			));
+			assert_eq!(AllowedReserveLocations::<TestRuntime>::get().len(), 1);
+			assert!(!IsAllowedReserveOf::<TestRuntime, Everything>::contains(&asset, &location1));
+			assert!(IsAllowedReserveOf::<TestRuntime, Everything>::contains(&asset, &location2));
+
+			assert_ok!(BridgeTransfer::remove_reserve_location(
+				RuntimeOrigin::root(),
+				vec![VersionedMultiLocation::V3(location2.clone())],
+			));
+			assert!(AllowedReserveLocations::<TestRuntime>::get().is_empty());
+			assert!(!IsAllowedReserveOf::<TestRuntime, Everything>::contains(&asset, &location1));
+			assert!(!IsAllowedReserveOf::<TestRuntime, Everything>::contains(&asset, &location2));
 		})
 	}
 }

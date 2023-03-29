@@ -14664,6 +14664,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-bridge-transfer",
  "pallet-collator-selection",
  "pallet-multisig",
  "pallet-nfts",

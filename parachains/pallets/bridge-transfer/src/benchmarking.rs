@@ -17,7 +17,10 @@
 
 //! `BridgeTransfer` pallet benchmarks.
 
-use crate::{AllowedExporters, BenchmarkHelper, Call, Config, Event, Pallet, PingMessageBuilder};
+use crate::{
+	AllowedExporters, AllowedReserveLocations, AllowedUniversalAliases, BenchmarkHelper, Call,
+	Config, Event, Pallet, PingMessageBuilder,
+};
 
 use frame_benchmarking::{benchmarks, BenchmarkError, BenchmarkResult};
 use frame_support::{traits::EnsureOrigin, weights::Weight};
@@ -29,8 +32,8 @@ benchmarks! {
 		// TODO: add proper range after once pallet works with multiple assets
 		// (be sure to use "worst" of assets)
 		// let a in 1 .. 1;
-		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config();
-		let (origin, assets, destination) = T::BenchmarkHelper::prepare_asset_transfer(1);
+		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config()?;
+		let (origin, assets, destination) = T::BenchmarkHelper::prepare_asset_transfer(1)?;
 		AllowedExporters::<T>::insert(bridged_network, bridge_config);
 	}: _<T::RuntimeOrigin>(origin, Box::new(assets), Box::new(destination))
 	verify {
@@ -41,10 +44,10 @@ benchmarks! {
 	}
 
 	ping_via_bridge {
-		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config();
+		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config()?;
 		AllowedExporters::<T>::insert(bridged_network, bridge_config);
 
-		let (origin, destination) = T::BenchmarkHelper::prepare_ping();
+		let (origin, destination) = T::BenchmarkHelper::prepare_ping()?;
 
 		let origin_location = T::TransferPingOrigin::ensure_origin(origin.clone()).map_err(|_|
 			BenchmarkError::Override(BenchmarkResult::from_weight(Weight::MAX)),
@@ -65,7 +68,7 @@ benchmarks! {
 
 	add_exporter_config {
 		let origin = T::AdminOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
-		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config();
+		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config()?;
 	}: _<T::RuntimeOrigin>(origin, bridged_network, Box::new(bridge_config.clone()))
 	verify {
 		assert_eq!(AllowedExporters::<T>::get(bridged_network), Some(bridge_config));
@@ -73,7 +76,7 @@ benchmarks! {
 
 	remove_exporter_config {
 		let origin = T::AdminOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
-		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config();
+		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config()?;
 		AllowedExporters::<T>::insert(bridged_network, bridge_config);
 	}: _<T::RuntimeOrigin>(origin, bridged_network)
 	verify {
@@ -82,16 +85,52 @@ benchmarks! {
 
 	update_exporter_config {
 		let origin = T::AdminOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
-		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config();
+		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config()?;
 		AllowedExporters::<T>::insert(bridged_network, bridge_config);
 
 		let bridge_location_fee = None;
 		let target_location_fee = T::BenchmarkHelper::target_location_fee_for_update();
-	}: _<T::RuntimeOrigin>(origin, bridged_network, bridge_location_fee.clone(), target_location_fee.clone())
+	}: _<T::RuntimeOrigin>(origin, bridged_network, bridge_location_fee.clone().map(Box::new), target_location_fee.clone().map(Box::new))
 	verify {
 		let exporter = AllowedExporters::<T>::get(bridged_network).unwrap();
-		assert_eq!(exporter.bridge_location_fee, bridge_location_fee);
-		assert_eq!(exporter.allowed_target_location, target_location_fee.map(|fee| MultiAsset::try_from(*fee).unwrap()));
+		assert_eq!(exporter.bridge_location_fee, bridge_location_fee.map(|fee| xcm::prelude::MultiAsset::try_from(fee).unwrap()));
+		assert_eq!(exporter.target_location_fee, target_location_fee.map(|fee| xcm::prelude::MultiAsset::try_from(fee).unwrap()));
+	}
+
+	add_universal_alias {
+		let origin = T::AdminOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
+		let (location, junction) = T::BenchmarkHelper::universal_alias()?;
+	}: _<T::RuntimeOrigin>(origin, Box::new(location.clone()), junction)
+	verify {
+		assert!(AllowedUniversalAliases::<T>::get(&location.try_as().unwrap()).contains(&junction));
+	}
+
+	remove_universal_alias {
+		let origin = T::AdminOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
+		let (location, junction) = T::BenchmarkHelper::universal_alias()?;
+		let multilocation: xcm::prelude::MultiLocation = location.clone().try_into().unwrap();
+		assert!(AllowedUniversalAliases::<T>::try_mutate(multilocation, |junctions| junctions.try_insert(junction)).unwrap());
+	}: _<T::RuntimeOrigin>(origin, Box::new(location.clone()), vec![junction.clone()])
+	verify {
+		assert!(!AllowedUniversalAliases::<T>::get(&location.try_as().unwrap()).contains(&junction));
+	}
+
+	add_reserve_location {
+		let origin = T::AdminOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
+		let location = T::BenchmarkHelper::reserve_location()?;
+	}: _<T::RuntimeOrigin>(origin, Box::new(location.clone()))
+	verify {
+		assert!(AllowedReserveLocations::<T>::get().contains(&location.try_as().unwrap()));
+	}
+
+	remove_reserve_location {
+		let origin = T::AdminOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
+		let location = T::BenchmarkHelper::reserve_location()?;
+		let multilocation: xcm::prelude::MultiLocation = location.clone().try_into().unwrap();
+		assert!(AllowedReserveLocations::<T>::try_mutate(|locations| locations.try_insert(multilocation)).unwrap());
+	}: _<T::RuntimeOrigin>(origin, vec![location.clone()])
+	verify {
+		assert!(!AllowedReserveLocations::<T>::get().contains(&location.try_as().unwrap()));
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::tests::new_test_ext(), crate::tests::TestRuntime);

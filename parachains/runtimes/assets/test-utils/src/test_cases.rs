@@ -1796,7 +1796,8 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 		+ pallet_collator_selection::Config
 		+ cumulus_pallet_parachain_system::Config
 		+ cumulus_pallet_xcmp_queue::Config
-		+ pallet_assets::Config<ForeignAssetsPalletInstance>,
+		+ pallet_assets::Config<ForeignAssetsPalletInstance>
+		+ pallet_bridge_transfer::Config,
 	AccountIdOf<Runtime>: Into<[u8; 32]>,
 	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
 	BalanceOf<Runtime>: From<Balance>,
@@ -1814,15 +1815,21 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 	LocationToAccountId: Convert<MultiLocation, AccountIdOf<Runtime>>,
 	ForeignAssetsPalletInstance: 'static,
 {
-	let remote_parachain_sovereign_account = LocationToAccountId::convert_ref(MultiLocation {
+	let remote_network_id = ByGenesis([7; 32]);
+	let remote_parachain_as_origin = MultiLocation {
 		parents: 2,
-		interior: X2(GlobalConsensus(Kusama), Parachain(1000)),
-	})
-	.expect("Sovereign account works");
+		interior: X2(GlobalConsensus(remote_network_id), Parachain(1000)),
+	};
+	let remote_parachain_sovereign_account =
+		LocationToAccountId::convert_ref(remote_parachain_as_origin)
+			.expect("Sovereign account works");
 	let foreign_asset_id_multilocation =
-		MultiLocation { parents: 2, interior: X1(GlobalConsensus(Kusama)) };
+		MultiLocation { parents: 2, interior: X1(GlobalConsensus(remote_network_id)) };
 	let buy_execution_fee_amount = 50000000000;
 	let reserve_asset_deposisted = 100_000_000;
+
+	let local_bridge_hub_multilocation =
+		MultiLocation { parents: 1, interior: X1(Parachain(1014)) };
 
 	ExtBuilder::<Runtime>::default()
 		.with_collators(collator_session_keys.collators())
@@ -1837,6 +1844,20 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 		.with_tracing()
 		.build()
 		.execute_with(|| {
+			// setup bridge transfer configuration
+
+			// add allowed univeral alias for remote network
+			assert_ok!(<pallet_bridge_transfer::Pallet<Runtime>>::add_universal_alias(
+				RuntimeHelper::<Runtime>::root_origin(),
+				Box::new(VersionedMultiLocation::V3(local_bridge_hub_multilocation)),
+				GlobalConsensus(remote_network_id)
+			));
+			// add allowed reserve location
+			assert_ok!(<pallet_bridge_transfer::Pallet<Runtime>>::add_reserve_location(
+				RuntimeHelper::<Runtime>::root_origin(),
+				Box::new(VersionedMultiLocation::V3(remote_parachain_as_origin))
+			));
+
 			// create foreign asset
 			let asset_minimum_asset_balance = 1_000_000_u128;
 			assert_ok!(
@@ -1868,11 +1889,11 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 				0.into()
 			);
 
-			// origin as BridgeHub
-			let origin = MultiLocation { parents: 1, interior: X1(Parachain(1014)) };
+			// xcm
 			let xcm = Xcm(vec![
-				UniversalOrigin(GlobalConsensus(Kusama)),
+				UniversalOrigin(GlobalConsensus(remote_network_id)),
 				DescendOrigin(X1(Parachain(1000))),
+				// buying execution as sovereign account `remote_parachain_sovereign_account` in *native asset on receiving runtime*
 				WithdrawAsset(MultiAssets::from(vec![MultiAsset {
 					id: Concrete(MultiLocation { parents: 1, interior: Here }),
 					fun: Fungible(buy_execution_fee_amount),
@@ -1884,10 +1905,11 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 					},
 					weight_limit: Unlimited,
 				},
+				// reserve deposited - assets transferred through bridge -  *native asset on sending runtime*
 				ReserveAssetDeposited(MultiAssets::from(vec![MultiAsset {
 					id: Concrete(MultiLocation {
 						parents: 2,
-						interior: X1(GlobalConsensus(Kusama)),
+						interior: X1(GlobalConsensus(remote_network_id)),
 					}),
 					fun: Fungible(reserve_asset_deposisted),
 				}])),
@@ -1896,7 +1918,7 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 					assets: Definite(MultiAssets::from(vec![MultiAsset {
 						id: Concrete(MultiLocation {
 							parents: 2,
-							interior: X1(GlobalConsensus(Kusama)),
+							interior: X1(GlobalConsensus(remote_network_id)),
 						}),
 						fun: Fungible(reserve_asset_deposisted),
 					}])),
@@ -1909,6 +1931,9 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 					},
 				},
 			]);
+
+			// origin as BridgeHub
+			let origin = local_bridge_hub_multilocation;
 
 			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
 

@@ -35,6 +35,16 @@ pub trait WeightInfo {
 	fn remove_exporter_config() -> Weight;
 	/// Weight of the `update_exporter_config` call.
 	fn update_exporter_config() -> Weight;
+
+	/// Weight of the `add_universal_alias` call.
+	fn add_universal_alias() -> Weight;
+	/// Weight of the `remove_universal_alias` call.
+	fn remove_universal_alias() -> Weight;
+
+	/// Weight of the `add_reserve_location` call.
+	fn add_reserve_location() -> Weight;
+	/// Weight of the `remove_reserve_location` call.
+	fn remove_reserve_location() -> Weight;
 }
 
 // Zero weights to use in tests
@@ -56,6 +66,22 @@ impl WeightInfo for () {
 	}
 
 	fn update_exporter_config() -> Weight {
+		Weight::zero()
+	}
+
+	fn add_universal_alias() -> Weight {
+		Weight::zero()
+	}
+
+	fn remove_universal_alias() -> Weight {
+		Weight::zero()
+	}
+
+	fn add_reserve_location() -> Weight {
+		Weight::zero()
+	}
+
+	fn remove_reserve_location() -> Weight {
 		Weight::zero()
 	}
 }

@@ -699,8 +699,12 @@ impl pallet_bridge_transfer::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type UniversalLocation = UniversalLocation;
 	type WeightInfo = weights::pallet_bridge_transfer::WeightInfo<Runtime>;
-	type AssetTransactor = AssetTransactors;
 	type AdminOrigin = AssetsForceOrigin;
+	// no transfer allowed in (now)
+	type UniversalAliasesLimit = ConstU32<0>;
+	// no transfer allowed in (now)
+	type ReserveLocationsLimit = ConstU32<0>;
+	type AssetTransactor = AssetTransactors;
 	type BridgeXcmSender = BridgeXcmSender;
 	type TransferAssetOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 	type TransferPingOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;

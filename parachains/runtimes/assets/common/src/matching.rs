@@ -89,3 +89,25 @@ impl<SelfParaId: Get<ParaId>> ContainsPair<MultiLocation, MultiLocation>
 		}
 	}
 }
+
+/// Accepts an asset if it is from different global consensus than self plus `parents > 1`
+pub struct IsDifferentGlobalConsensusConcreteAsset<SelfGlobalConsensus>(
+	sp_std::marker::PhantomData<SelfGlobalConsensus>,
+);
+impl<SelfGlobalConsensus: Get<NetworkId>> ContainsPair<MultiAsset, MultiLocation>
+	for IsDifferentGlobalConsensusConcreteAsset<SelfGlobalConsensus>
+{
+	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+		log::trace!(target: "xcm::contains", "IsDifferentGlobalConsensusConcreteAsset asset: {:?}, origin: {:?}", asset, origin);
+		match asset {
+			MultiAsset { id: Concrete(asset_location), .. } if asset_location.parents > 1 =>
+				match asset_location.first_interior() {
+					Some(GlobalConsensus(asset_consensus))
+						if asset_consensus != &SelfGlobalConsensus::get() =>
+						true,
+					_ => false,
+				},
+			_ => false,
+		}
+	}
+}

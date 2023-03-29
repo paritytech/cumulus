@@ -21,14 +21,16 @@ use super::{
 use assets_common::{
 	location_conversion::GlobalConsensusParachainConvert,
 	matching::{
-		FromSiblingParachain, IsForeignConcreteAsset, StartsWith, StartsWithExplicitGlobalConsensus,
+		FromSiblingParachain, IsDifferentGlobalConsensusConcreteAsset, IsForeignConcreteAsset,
+		StartsWith, StartsWithExplicitGlobalConsensus,
 	},
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{ConstU32, Contains, ContainsPair, Everything, PalletInfoAccess},
+	traits::{ConstU32, Contains, Everything, PalletInfoAccess},
 };
 use frame_system::EnsureRoot;
+use pallet_bridge_transfer::impls::{AllowedUniversalAliasesOf, IsAllowedReserveOf};
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
@@ -105,7 +107,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	AccountId,
 	// We only want to allow teleports of known assets. We use non-zero issuance as an indication
 	// that this asset is known.
-	LocalMint<parachains_common::impls::NonZeroIssuance<AccountId, Assets>>, // todo: accept all instances
+	LocalMint<parachains_common::impls::NonZeroIssuance<AccountId, Assets>>,
 	// The account to use for tracking teleports.
 	CheckingAccount,
 >;
@@ -384,8 +386,10 @@ impl xcm_executor::Config for XcmConfig {
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	// Westmint is acting _as_ a reserve location for WND and assets created under `pallet-assets`.
 	// For WND, users must use teleport where allowed (e.g. with the Relay Chain).
-	type IsReserve =
-		ConcreteFungibleAssetsFromTrustedBridgedReserves<TrustedBridgedReserveLocations>;
+	type IsReserve = IsAllowedReserveOf<
+		Runtime,
+		IsDifferentGlobalConsensusConcreteAsset<UniversalLocationNetworkId>,
+	>;
 	// We allow:
 	// - teleportation of WND
 	// - teleportation of sibling parachain's assets (as ForeignCreators)
@@ -424,7 +428,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetExchanger = ();
 	type FeeManager = ();
 	type MessageExporter = ();
-	type UniversalAliases = TrustedBridgedNetworks;
+	type UniversalAliases = AllowedUniversalAliasesOf<Runtime>;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
 	type SafeCallFilter = SafeCallFilter;
 }
@@ -498,55 +502,27 @@ impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 	}
 }
 
-parameter_types! {
-	// TODO:check-parameter - join all together in one on-chain cfg (statemine/t, eth(chain_ids), ...)
-
-	// TODO:check-parameter - add new pallet and persist/manage this via governance?
-	// Means, that we accept some `GlobalConsensus` from some `MultiLocation` (which is supposed to be our bridge-hub)
-	pub TrustedBridgedNetworks: sp_std::vec::Vec<(MultiLocation, Junction)> = sp_std::vec![
-		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Rococo)),
-		(MultiLocation { parents: 1, interior: X1(Parachain(1014)) }, GlobalConsensus(NetworkId::Kusama))
-	];
-	// TODO:check-parameter - add new pallet and persist/manage this via governance?
-	// TODO:check-parameter - we specify here just trusted location, we can extend this with some AssetFilter patterns to trust only to several assets
-	pub TrustedBridgedReserveLocations: sp_std::vec::Vec<MultiLocation> = sp_std::vec![
-		// TODO:check-parameter - tmp values that cover local/live Rococo/Wococo run
-		MultiLocation { parents: 2, interior: X2(GlobalConsensus(Rococo), Parachain(1000)) },
-		MultiLocation { parents: 2, interior: X2(GlobalConsensus(Kusama), Parachain(1000)) },
-		MultiLocation { parents: 2, interior: X2(GlobalConsensus(Rococo), Parachain(1015)) },
-		MultiLocation { parents: 2, interior: X2(GlobalConsensus(Kusama), Parachain(1015)) },
-	];
-}
-
-impl Contains<(MultiLocation, Junction)> for TrustedBridgedNetworks {
-	fn contains(t: &(MultiLocation, Junction)) -> bool {
-		Self::get().contains(t)
+/// Benchmarks helper for over-bridge transfer pallet.
+#[cfg(feature = "runtime-benchmarks")]
+pub struct BridgeTransferBenchmarksHelper;
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBenchmarksHelper {
+	fn universal_alias(
+	) -> Result<(xcm::VersionedMultiLocation, Junction), frame_benchmarking::BenchmarkError> {
+		Ok((
+			xcm::VersionedMultiLocation::V3(MultiLocation {
+				parents: 1,
+				interior: X1(Parachain(1014)),
+			}),
+			GlobalConsensus(NetworkId::Kusama),
+		))
 	}
-}
 
-impl Contains<MultiLocation> for TrustedBridgedReserveLocations {
-	fn contains(t: &MultiLocation) -> bool {
-		Self::get().contains(t)
-	}
-}
-
-/// Asset filter that allows all assets from trusted bridge location
-pub struct ConcreteFungibleAssetsFromTrustedBridgedReserves<TrustedReserverLocations>(
-	sp_std::marker::PhantomData<TrustedReserverLocations>,
-);
-impl<TrustedReserverLocations: Contains<MultiLocation>> ContainsPair<MultiAsset, MultiLocation>
-	for ConcreteFungibleAssetsFromTrustedBridgedReserves<TrustedReserverLocations>
-{
-	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
-		log::trace!(
-			target: "xcm::barriers",
-			"ConcreteFungibleAssetsFromTrustedBridgedReserves origin: {:?}, asset: {:?}",
-			origin, asset,
-		);
-		if !TrustedReserverLocations::contains(origin) {
-			return false
-		}
-		// TODO:check-parameter - better assets filtering
-		matches!(asset, MultiAsset { id: AssetId::Concrete(_), fun: Fungible(_) })
+	fn reserve_location() -> Result<xcm::VersionedMultiLocation, frame_benchmarking::BenchmarkError>
+	{
+		Ok(xcm::VersionedMultiLocation::V3(MultiLocation {
+			parents: 2,
+			interior: X2(GlobalConsensus(NetworkId::Kusama), Parachain(1000)),
+		}))
 	}
 }
