@@ -473,31 +473,3 @@ fn receive_teleported_asset_works() {
 			assert_eq!(outcome.ensure_complete(), Ok(()));
 		})
 }
-
-#[test]
-fn plain_receive_teleported_asset_works() {
-	ExtBuilder::<Runtime>::default()
-		.with_collators(vec![AccountId::from(ALICE)])
-		.with_session_keys(vec![(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
-		)])
-		.build()
-		.execute_with(|| {
-			let data = hex_literal::hex!("02100204000100000b00a0724e18090a13000100000b00a0724e180901e20f5e480d010004000101001299557001f55815d3fcb53c74463acb0cf6d14d4639b340982c60877f384609").to_vec();
-			let message_id = sp_io::hashing::blake2_256(&data);
-
-			let maybe_msg = VersionedXcm::<RuntimeCall>::decode_all_with_depth_limit(
-				MAX_XCM_DECODE_DEPTH,
-				&mut data.as_ref(),
-			)
-				.map(xcm::v3::Xcm::<RuntimeCall>::try_from).expect("failed").expect("failed");
-
-			let weight_limit = ReservedDmpWeight::get();
-
-			let outcome =
-				XcmExecutor::<XcmConfig>::execute_xcm(Parent, maybe_msg, message_id, weight_limit);
-			assert_eq!(outcome.ensure_complete(), Ok(()));
-		})
-}
