@@ -50,6 +50,7 @@ pub(crate) fn build_collator_network(
 		genesis_hash,
 	);
 
+	// RX is not used for anything because syncing is not started for the minimal node
 	let (tx, _rx) = tracing_unbounded("mpsc_syncing_engine_protocol", 100_000);
 	let network_params = sc_network::config::Params::<Block> {
 		role: config.role.clone(),
