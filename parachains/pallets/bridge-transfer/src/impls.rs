@@ -34,6 +34,7 @@ impl<T: Config> ExporterFor for Pallet<T> {
 pub struct AllowedUniversalAliasesOf<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> Contains<(MultiLocation, Junction)> for AllowedUniversalAliasesOf<T> {
 	fn contains((location, junction): &(MultiLocation, Junction)) -> bool {
+		log::trace!(target: "xcm::contains", "AllowedUniversalAliasesOf location: {:?}, junction: {:?}", location, junction);
 		Pallet::<T>::allowed_universal_aliases(location).contains(junction)
 	}
 }

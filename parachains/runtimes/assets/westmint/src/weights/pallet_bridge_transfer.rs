@@ -1,4 +1,4 @@
-// Copyright 2021 Parity Technologies (UK) Ltd.
+// Copyright Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -48,59 +48,21 @@ use sp_std::marker::PhantomData;
 /// Weight functions for `pallet_bridge_transfer`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_bridge_transfer::WeightInfo for WeightInfo<T> {
-	/// Storage: ParachainInfo ParachainId (r:1 w:0)
-	/// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
-	/// Storage: BridgeTransfer Bridges (r:1 w:0)
-	/// Proof: BridgeTransfer Bridges (max_values: None, max_size: Some(1899), added: 4374, mode: MaxEncodedLen)
-	/// Storage: System Account (r:2 w:2)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	/// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
-	/// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
-	/// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
-	/// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: ParachainSystem RelevantMessagingState (r:1 w:0)
-	/// Proof Skipped: ParachainSystem RelevantMessagingState (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: XcmpQueue OutboundXcmpStatus (r:1 w:1)
-	/// Proof Skipped: XcmpQueue OutboundXcmpStatus (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: XcmpQueue OutboundXcmpMessages (r:0 w:1)
-	/// Proof Skipped: XcmpQueue OutboundXcmpMessages (max_values: None, max_size: None, mode: Measured)
 	fn transfer_asset_via_bridge() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `439`
-		//  Estimated: `25088`
-		// Minimum execution time: 111_964_000 picoseconds.
-		Weight::from_parts(113_251_000, 0)
-			.saturating_add(Weight::from_parts(0, 25088))
-			.saturating_add(T::DbWeight::get().reads(9))
-			.saturating_add(T::DbWeight::get().writes(5))
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 0_000 picoseconds.
+		Weight::from_parts(0, 0)
+			.saturating_add(Weight::from_parts(0, 0))
 	}
-	/// Storage: ParachainInfo ParachainId (r:1 w:0)
-	/// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
-	/// Storage: BridgeTransfer Bridges (r:1 w:0)
-	/// Proof: BridgeTransfer Bridges (max_values: None, max_size: Some(1899), added: 4374, mode: MaxEncodedLen)
-	/// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
-	/// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
-	/// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
-	/// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: ParachainSystem RelevantMessagingState (r:1 w:0)
-	/// Proof Skipped: ParachainSystem RelevantMessagingState (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: XcmpQueue OutboundXcmpStatus (r:1 w:1)
-	/// Proof Skipped: XcmpQueue OutboundXcmpStatus (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: XcmpQueue OutboundXcmpMessages (r:0 w:1)
-	/// Proof Skipped: XcmpQueue OutboundXcmpMessages (max_values: None, max_size: None, mode: Measured)
 	fn ping_via_bridge() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `299`
-		//  Estimated: `18052`
-		// Minimum execution time: 57_960_000 picoseconds.
-		Weight::from_parts(58_812_000, 0)
-			.saturating_add(Weight::from_parts(0, 18052))
-			.saturating_add(T::DbWeight::get().reads(7))
-			.saturating_add(T::DbWeight::get().writes(3))
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 0_000 picoseconds.
+		Weight::from_parts(0, 0)
+			.saturating_add(Weight::from_parts(0, 0))
 	}
 	/// Storage: BridgeTransfer Bridges (r:1 w:1)
 	/// Proof: BridgeTransfer Bridges (max_values: None, max_size: Some(1899), added: 4374, mode: MaxEncodedLen)
@@ -138,20 +100,52 @@ impl<T: frame_system::Config> pallet_bridge_transfer::WeightInfo for WeightInfo<
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-
+	/// Storage: BridgeTransfer AllowedUniversalAliases (r:1 w:1)
+	/// Proof: BridgeTransfer AllowedUniversalAliases (max_values: None, max_size: Some(2419), added: 4894, mode: MaxEncodedLen)
 	fn add_universal_alias() -> Weight {
-		Weight::zero()
+		// Proof Size summary in bytes:
+		//  Measured:  `109`
+		//  Estimated: `5884`
+		// Minimum execution time: 17_805_000 picoseconds.
+		Weight::from_parts(17_805_000, 0)
+			.saturating_add(Weight::from_parts(0, 5884))
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
-
+	/// Storage: BridgeTransfer AllowedUniversalAliases (r:1 w:1)
+	/// Proof: BridgeTransfer AllowedUniversalAliases (max_values: None, max_size: Some(2419), added: 4894, mode: MaxEncodedLen)
 	fn remove_universal_alias() -> Weight {
-		Weight::zero()
+		// Proof Size summary in bytes:
+		//  Measured:  `158`
+		//  Estimated: `5884`
+		// Minimum execution time: 20_749_000 picoseconds.
+		Weight::from_parts(20_749_000, 0)
+			.saturating_add(Weight::from_parts(0, 5884))
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
-
+	/// Storage: BridgeTransfer AllowedReserveLocations (r:1 w:1)
+	/// Proof: BridgeTransfer AllowedReserveLocations (max_values: Some(1), max_size: Some(4817), added: 5312, mode: MaxEncodedLen)
 	fn add_reserve_location() -> Weight {
-		Weight::zero()
+		// Proof Size summary in bytes:
+		//  Measured:  `109`
+		//  Estimated: `6302`
+		// Minimum execution time: 17_832_000 picoseconds.
+		Weight::from_parts(17_832_000, 0)
+			.saturating_add(Weight::from_parts(0, 6302))
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
-
+	/// Storage: BridgeTransfer AllowedReserveLocations (r:1 w:1)
+	/// Proof: BridgeTransfer AllowedReserveLocations (max_values: Some(1), max_size: Some(4817), added: 5312, mode: MaxEncodedLen)
 	fn remove_reserve_location() -> Weight {
-		Weight::zero()
+		// Proof Size summary in bytes:
+		//  Measured:  `141`
+		//  Estimated: `6302`
+		// Minimum execution time: 20_772_000 picoseconds.
+		Weight::from_parts(20_772_000, 0)
+			.saturating_add(Weight::from_parts(0, 6302))
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
 }

@@ -821,12 +821,12 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[pallet_bridge_transfer, BridgeTransfer]
 		// XCM
 		[pallet_xcm, PolkadotXcm]
 		// NOTE: Make sure you point to the individual modules below.
 		[pallet_xcm_benchmarks::fungible, XcmBalances]
 		[pallet_xcm_benchmarks::generic, XcmGeneric]
-		[pallet_bridge_transfer, BridgeTransfer]
 	);
 }
 

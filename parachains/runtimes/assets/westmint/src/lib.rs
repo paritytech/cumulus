@@ -80,7 +80,6 @@ use assets_common::{
 	foreign_creators::ForeignCreators, matching::FromSiblingParachain, MultiLocationForAssetId,
 };
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
-use xcm_builder::EnsureXcmOrigin;
 use xcm_executor::XcmExecutor;
 
 use crate::xcm_config::{ForeignCreatorsSovereignAccountOf, UniversalLocation};
@@ -677,9 +676,11 @@ impl pallet_bridge_transfer::Config for Runtime {
 	// no transfer allowed out (now)
 	type BridgeXcmSender = ();
 	// no transfer allowed out (now)
-	type TransferAssetOrigin = EnsureXcmOrigin<RuntimeOrigin, ()>;
+	type TransferAssetOrigin =
+		frame_support::traits::NeverEnsureOrigin<xcm::latest::prelude::MultiLocation>;
 	// no transfer allowed out (now)
-	type TransferPingOrigin = EnsureXcmOrigin<RuntimeOrigin, ()>;
+	type TransferPingOrigin =
+		frame_support::traits::NeverEnsureOrigin<xcm::latest::prelude::MultiLocation>;
 	// no transfer allowed out (now)
 	type PingMessageBuilder = ();
 	#[cfg(feature = "runtime-benchmarks")]
@@ -791,6 +792,7 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[pallet_bridge_transfer, BridgeTransfer]
 		// XCM
 		[pallet_xcm, PolkadotXcm]
 		// NOTE: Make sure you point to the individual modules below.
@@ -1148,7 +1150,15 @@ impl_runtime_apis! {
 				}
 
 				fn universal_alias() -> Result<Junction, BenchmarkError> {
-					<<Runtime as pallet_bridge_transfer::Config>::BenchmarkHelper as pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin>>::universal_alias().map(|(_, junction)| junction)
+					match <<Runtime as pallet_bridge_transfer::Config>::BenchmarkHelper as pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin>>::universal_alias() {
+						Some((location, junction)) => {
+							<pallet_bridge_transfer::Pallet<Runtime>>::insert_universal_alias_for_benchmarks(
+								(location.clone().try_into().unwrap(), junction)
+							);
+							Ok(junction)
+						},
+						None => Err(BenchmarkError::Skip)
+					}
 				}
 
 				fn transact_origin_and_runtime_call() -> Result<(MultiLocation, RuntimeCall), BenchmarkError> {

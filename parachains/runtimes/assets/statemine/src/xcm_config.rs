@@ -521,22 +521,16 @@ impl BridgeTransferBenchmarksHelper {
 		MultiLocation::new(2, X2(GlobalConsensus(Polkadot), Parachain(1000)))
 	}
 
-	fn target_location_fee() -> MultiAsset {
-		MultiAsset { id: Concrete(MultiLocation::parent()), fun: Fungible(50_000_000) }
-	}
-
 	/// Identifier of the sibling bridge-hub parachain.
 	fn bridge_hub_para_id() -> u32 {
-		1013
+		1002
 	}
 }
 
 #[cfg(feature = "runtime-benchmarks")]
 impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBenchmarksHelper {
-	fn bridge_config(
-	) -> Result<(NetworkId, pallet_bridge_transfer::BridgeConfig), frame_benchmarking::BenchmarkError>
-	{
-		Ok((
+	fn bridge_config() -> Option<(NetworkId, pallet_bridge_transfer::BridgeConfig)> {
+		Some((
 			Polkadot,
 			pallet_bridge_transfer::BridgeConfig {
 				bridge_location: (Parent, Parachain(Self::bridge_hub_para_id())).into(),
@@ -550,16 +544,9 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 		))
 	}
 
-	fn target_location_fee_for_update() -> Option<xcm::VersionedMultiAsset> {
-		Some(xcm::VersionedMultiAsset::V3(Self::target_location_fee()))
-	}
-
 	fn prepare_asset_transfer(
 		assets_count: u32,
-	) -> Result<
-		(RuntimeOrigin, xcm::VersionedMultiAssets, xcm::VersionedMultiLocation),
-		frame_benchmarking::BenchmarkError,
-	> {
+	) -> Option<(RuntimeOrigin, xcm::VersionedMultiAssets, xcm::VersionedMultiLocation)> {
 		use frame_support::traits::Currency;
 
 		assert_eq!(assets_count, 1, "Benchmarks needs to be fixed to support multiple assets");
@@ -579,11 +566,10 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 		let assets = xcm::VersionedMultiAssets::V3(Self::make_asset(existential_deposit).into());
 		let destination = xcm::VersionedMultiLocation::V3(Self::allowed_target_location());
 
-		Ok((RuntimeOrigin::signed(sender_account), assets, destination))
+		Some((RuntimeOrigin::signed(sender_account), assets, destination))
 	}
 
-	fn prepare_ping(
-	) -> Result<(RuntimeOrigin, xcm::VersionedMultiLocation), frame_benchmarking::BenchmarkError> {
+	fn prepare_ping_transfer() -> Option<(RuntimeOrigin, xcm::VersionedMultiLocation)> {
 		// our `BridgeXcmSender` assumes that the HRMP channel is opened between this
 		// parachain and the sibling bridge-hub parachain
 		cumulus_pallet_parachain_system::Pallet::<Runtime>::open_outbound_hrmp_channel_for_benchmarks(
@@ -596,6 +582,6 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 		// finally - prepare destination
 		let destination = xcm::VersionedMultiLocation::V3(Self::allowed_target_location());
 
-		Ok((RuntimeOrigin::signed(sender_account), destination))
+		Some((RuntimeOrigin::signed(sender_account), destination))
 	}
 }

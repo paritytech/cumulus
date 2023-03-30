@@ -100,17 +100,8 @@ pub mod pallet {
 		///
 		/// We expect that the XCM environment (`BridgeXcmSender`) has everything enabled
 		/// to support transfer to this destination **after** `prepare_asset_transfer` call.
-		fn bridge_config() -> Result<(NetworkId, BridgeConfig), frame_benchmarking::BenchmarkError>
-		{
-			Err(frame_benchmarking::BenchmarkError::Skip)
-		}
-
-		/// Returns some fee, which will be used for `update_exporter_config`.
-		fn target_location_fee_for_update() -> Option<VersionedMultiAsset> {
-			Some(VersionedMultiAsset::V3(MultiAsset {
-				id: Concrete(MultiLocation::parent()),
-				fun: Fungible(1_000_0000),
-			}))
+		fn bridge_config() -> Option<(NetworkId, BridgeConfig)> {
+			None
 		}
 
 		/// Prepare environment for assets transfer and return transfer origin and assets
@@ -126,11 +117,8 @@ pub mod pallet {
 		///   (in terms of performance) bridge must be selected for the transfer.
 		fn prepare_asset_transfer(
 			_assets_count: u32,
-		) -> Result<
-			(RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation),
-			frame_benchmarking::BenchmarkError,
-		> {
-			Err(frame_benchmarking::BenchmarkError::Skip)
+		) -> Option<(RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation)> {
+			None
 		}
 
 		/// Prepare environment for ping transfer and return transfer origin and assets
@@ -144,19 +132,16 @@ pub mod pallet {
 		/// - be close to the worst possible scenario - i.e. if some account may need to be created during
 		///  it should be created. If there are multiple bridges, the "worst possible"
 		///   (in terms of performance) bridge must be selected for the transfer.
-		fn prepare_ping(
-		) -> Result<(RuntimeOrigin, VersionedMultiLocation), frame_benchmarking::BenchmarkError> {
-			Err(frame_benchmarking::BenchmarkError::Skip)
+		fn prepare_ping_transfer() -> Option<(RuntimeOrigin, VersionedMultiLocation)> {
+			None
 		}
 
-		fn universal_alias(
-		) -> Result<(VersionedMultiLocation, Junction), frame_benchmarking::BenchmarkError> {
-			Err(frame_benchmarking::BenchmarkError::Skip)
+		fn universal_alias() -> Option<(VersionedMultiLocation, Junction)> {
+			None
 		}
 
-		fn reserve_location() -> Result<VersionedMultiLocation, frame_benchmarking::BenchmarkError>
-		{
-			Err(frame_benchmarking::BenchmarkError::Skip)
+		fn reserve_location() -> Option<VersionedMultiLocation> {
+			None
 		}
 	}
 
@@ -509,7 +494,7 @@ pub mod pallet {
 			})
 		}
 
-		/// Add `(MultiLocation, Junction)` mapping to [`AllowedUniversalAliases`]
+		/// Add `(MultiLocation, Junction)` mapping to `AllowedUniversalAliases`
 		///
 		/// Parameters:
 		///
@@ -536,7 +521,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Remove `(MultiLocation, Junction)` mapping from [`AllowedUniversalAliases`]
+		/// Remove `(MultiLocation, Junction)` mapping from `AllowedUniversalAliases`
 		///
 		/// Parameters:
 		///
@@ -569,7 +554,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Add `MultiLocation` mapping to [`AllowedReserveLocations`]
+		/// Add `MultiLocation` mapping to `AllowedReserveLocations`
 		///
 		/// Parameters:
 		///
@@ -594,7 +579,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Remove `MultiLocation` mapping from [`AllowedReserveLocations`]
+		/// Remove `MultiLocation` mapping from `AllowedReserveLocations`
 		///
 		/// Parameters:
 		///
@@ -934,7 +919,7 @@ pub(crate) mod tests {
 			(RuntimeOrigin::signed(sender_account), assets, destination)
 		}
 
-		fn prepare_ping() {
+		fn prepare_ping_transfer() {
 			unimplemented!("Not implemented here - not needed");
 		}
 	}

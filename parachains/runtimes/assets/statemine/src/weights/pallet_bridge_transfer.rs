@@ -140,4 +140,36 @@ impl<T: frame_system::Config> pallet_bridge_transfer::WeightInfo for WeightInfo<
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
+	fn add_universal_alias() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 0_000 picoseconds.
+		Weight::from_parts(0, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+	}
+	fn remove_universal_alias() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 0_000 picoseconds.
+		Weight::from_parts(0, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+	}
+	fn add_reserve_location() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 0_000 picoseconds.
+		Weight::from_parts(0, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+	}
+	fn remove_reserve_location() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 0_000 picoseconds.
+		Weight::from_parts(0, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+	}
 }

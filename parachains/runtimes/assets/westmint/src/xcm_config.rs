@@ -505,24 +505,51 @@ impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 /// Benchmarks helper for over-bridge transfer pallet.
 #[cfg(feature = "runtime-benchmarks")]
 pub struct BridgeTransferBenchmarksHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl BridgeTransferBenchmarksHelper {
+	/// Parachain at the other side of the bridge that we're connected to.
+	fn allowed_target_location() -> MultiLocation {
+		MultiLocation::new(2, X2(GlobalConsensus(Kusama), Parachain(1000)))
+	}
+
+	/// Identifier of the sibling bridge-hub parachain.
+	fn bridge_hub_para_id() -> u32 {
+		1002
+	}
+}
+
 #[cfg(feature = "runtime-benchmarks")]
 impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBenchmarksHelper {
-	fn universal_alias(
-	) -> Result<(xcm::VersionedMultiLocation, Junction), frame_benchmarking::BenchmarkError> {
-		Ok((
-			xcm::VersionedMultiLocation::V3(MultiLocation {
-				parents: 1,
-				interior: X1(Parachain(1014)),
-			}),
-			GlobalConsensus(NetworkId::Kusama),
+	fn bridge_config() -> Option<(NetworkId, pallet_bridge_transfer::BridgeConfig)> {
+		Some((
+			Kusama,
+			pallet_bridge_transfer::BridgeConfig {
+				bridge_location: (Parent, Parachain(Self::bridge_hub_para_id())).into(),
+				// TODO: right now `UnpaidRemoteExporter` is used to send XCM messages and it requires
+				// fee to be `None`. If we're going to change that (are we?), then we should replace
+				// this `None` with `Some(Self::make_asset(crate::ExistentialDeposit::get()))`
+				bridge_location_fee: None,
+				allowed_target_location: Self::allowed_target_location(),
+				target_location_fee: None,
+			},
 		))
 	}
 
-	fn reserve_location() -> Result<xcm::VersionedMultiLocation, frame_benchmarking::BenchmarkError>
-	{
-		Ok(xcm::VersionedMultiLocation::V3(MultiLocation {
+	fn universal_alias() -> Option<(xcm::VersionedMultiLocation, Junction)> {
+		Some((
+			xcm::VersionedMultiLocation::V3(MultiLocation {
+				parents: 1,
+				interior: X1(Parachain(Self::bridge_hub_para_id())),
+			}),
+			GlobalConsensus(Kusama),
+		))
+	}
+
+	fn reserve_location() -> Option<xcm::VersionedMultiLocation> {
+		Some(xcm::VersionedMultiLocation::V3(MultiLocation {
 			parents: 2,
-			interior: X2(GlobalConsensus(NetworkId::Kusama), Parachain(1000)),
+			interior: X2(GlobalConsensus(Kusama), Parachain(1000)),
 		}))
 	}
 }
