@@ -165,6 +165,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fbf688625d06217d5b1bb0ea9d9c44a1635fd0ee3534466388d18203174f4d11"
 
 [[package]]
+name = "amcl"
+version = "0.3.0"
+source = "git+https://github.com/Snowfork/milagro_bls#bc2b5b5e8d48b7e2e1bfaa56dc2d93e13cb32095"
+
+[[package]]
 name = "anes"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1073,6 +1078,11 @@ dependencies = [
  "scale-info",
  "serde",
  "smallvec",
+ "snowbridge-basic-channel",
+ "snowbridge-beacon-primitives",
+ "snowbridge-core",
+ "snowbridge-dispatch",
+ "snowbridge-ethereum-beacon-client",
  "sp-api",
  "sp-block-builder",
  "sp-consensus-aura",
@@ -3375,6 +3385,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "ethabi-decode"
+version = "1.3.3"
+source = "git+https://github.com/Snowfork/ethabi-decode.git?branch=master#6f63405bb33ef4365a1c62b72d499fa0f448118e"
+dependencies = [
+ "ethereum-types",
+ "tiny-keccak 1.5.0",
+]
+
+[[package]]
+name = "ethabi-decode"
+version = "1.3.3"
+source = "git+https://github.com/snowfork/ethabi-decode.git?rev=6f63405bb33ef4365a1c62b72d499fa0f448118e#6f63405bb33ef4365a1c62b72d499fa0f448118e"
+dependencies = [
+ "ethereum-types",
+ "tiny-keccak 1.5.0",
+]
+
+[[package]]
 name = "ethbloom"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3382,9 +3410,11 @@ checksum = "c22d4b5885b6aa2fe5e8b9329fb8d232bf739e434e6b87347c63bdd00c120f60"
 dependencies = [
  "crunchy",
  "fixed-hash",
+ "impl-codec",
  "impl-rlp",
  "impl-serde",
- "tiny-keccak",
+ "scale-info",
+ "tiny-keccak 2.0.2",
 ]
 
 [[package]]
@@ -3395,9 +3425,11 @@ checksum = "02d215cbf040552efcbe99a38372fe80ab9d00268e20012b79fcd0f073edd8ee"
 dependencies = [
  "ethbloom",
  "fixed-hash",
+ "impl-codec",
  "impl-rlp",
  "impl-serde",
  "primitive-types",
+ "scale-info",
  "uint",
 ]
 
@@ -5769,6 +5801,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "milagro_bls"
+version = "1.5.0"
+source = "git+https://github.com/Snowfork/milagro_bls#bc2b5b5e8d48b7e2e1bfaa56dc2d93e13cb32095"
+dependencies = [
+ "amcl",
+ "hex",
+ "lazy_static",
+ "rand 0.8.5",
+ "zeroize",
+]
+
+[[package]]
 name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7712,6 +7756,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "parity-bytes"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "16b56e3a2420138bdb970f84dfb9c774aea80fa0e7371549eedec0d80c209c67"
+
+[[package]]
 name = "parity-db"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8911,6 +8961,7 @@ dependencies = [
  "seedling-runtime",
  "serde",
  "shell-runtime",
+ "snowbridge-basic-channel-rpc",
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
@@ -11915,6 +11966,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde-big-array"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd31f59f6fe2b0c055371bb2f16d7f0aa7d8881676c04a55b1596d1a17cd10a4"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "serde_derive"
 version = "1.0.156"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -12170,6 +12230,146 @@ dependencies = [
  "rustc_version 0.4.0",
  "sha2 0.10.2",
  "subtle",
+]
+
+[[package]]
+name = "snowbridge-basic-channel"
+version = "0.1.1"
+dependencies = [
+ "ethabi-decode 1.3.3 (git+https://github.com/Snowfork/ethabi-decode.git?branch=master)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "parity-scale-codec",
+ "rlp",
+ "scale-info",
+ "serde",
+ "snowbridge-basic-channel-merkle-proof",
+ "snowbridge-core",
+ "snowbridge-ethereum",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "snowbridge-basic-channel-merkle-proof"
+version = "0.1.1"
+dependencies = [
+ "parity-scale-codec",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
+name = "snowbridge-basic-channel-rpc"
+version = "0.1.0"
+dependencies = [
+ "jsonrpsee",
+ "parity-scale-codec",
+ "parking_lot 0.11.2",
+ "snowbridge-basic-channel-merkle-proof",
+ "sp-core",
+ "sp-offchain",
+ "sp-runtime",
+]
+
+[[package]]
+name = "snowbridge-beacon-primitives"
+version = "0.0.1"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "hex",
+ "parity-scale-codec",
+ "rlp",
+ "scale-info",
+ "serde",
+ "snowbridge-ethereum",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "snowbridge-core"
+version = "0.1.1"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "snowbridge-ethereum",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "snowbridge-dispatch"
+version = "0.1.1"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "snowbridge-core",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "snowbridge-ethereum"
+version = "0.1.0"
+dependencies = [
+ "ethabi-decode 1.3.3 (git+https://github.com/snowfork/ethabi-decode.git?rev=6f63405bb33ef4365a1c62b72d499fa0f448118e)",
+ "ethbloom",
+ "ethereum-types",
+ "hex-literal",
+ "parity-bytes",
+ "parity-scale-codec",
+ "rlp",
+ "rustc-hex",
+ "scale-info",
+ "serde",
+ "serde-big-array",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "snowbridge-ethereum-beacon-client"
+version = "0.0.1"
+dependencies = [
+ "byte-slice-cast",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "milagro_bls",
+ "parity-scale-codec",
+ "rlp",
+ "scale-info",
+ "serde",
+ "snowbridge-beacon-primitives",
+ "snowbridge-core",
+ "snowbridge-ethereum",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "ssz-rs",
+ "ssz-rs-derive",
 ]
 
 [[package]]
@@ -12960,6 +13160,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "ssz-rs"
+version = "0.8.0"
+source = "git+https://github.com/ralexstokes/ssz-rs?rev=d18af912abacbf84219be37ab3b42a9abcf10d2a#d18af912abacbf84219be37ab3b42a9abcf10d2a"
+dependencies = [
+ "bitvec",
+ "num-bigint",
+ "sha2 0.9.8",
+ "ssz-rs-derive",
+ "thiserror",
+]
+
+[[package]]
+name = "ssz-rs-derive"
+version = "0.8.0"
+source = "git+https://github.com/ralexstokes/ssz-rs?rev=d18af912abacbf84219be37ab3b42a9abcf10d2a#d18af912abacbf84219be37ab3b42a9abcf10d2a"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -13620,6 +13842,15 @@ dependencies = [
  "unicode-normalization",
  "wasm-bindgen",
  "zeroize",
+]
+
+[[package]]
+name = "tiny-keccak"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d8a021c69bb74a44ccedb824a046447e2c84a01df9e5c20779750acb38e11b2"
+dependencies = [
+ "crunchy",
 ]
 
 [[package]]

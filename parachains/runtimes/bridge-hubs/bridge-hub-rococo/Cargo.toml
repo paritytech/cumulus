@@ -87,6 +87,13 @@ pallet-bridge-parachains = { path = "../../../../bridges/modules/parachains", de
 pallet-bridge-relayers = { path = "../../../../bridges/modules/relayers", default-features = false }
 bridge-runtime-common = { path = "../../../../bridges/bin/runtime-common", default-features = false }
 
+# Ethereum Bridge (Snowbridge)
+snowbridge-core = { path = "../../../../../parachain/primitives/core", default-features = false }
+snowbridge-beacon-primitives = { path = "../../../../../parachain/primitives/beacon", default-features = false }
+snowbridge-basic-channel = { path = "../../../../../parachain/pallets/basic-channel", default-features = false }
+snowbridge-dispatch = { path = "../../../../../parachain/pallets/dispatch", default-features = false }
+snowbridge-ethereum-beacon-client = { path = "../../../../../parachain/pallets/ethereum-beacon-client", default-features = false, features=["minimal"]}
+
 [dev-dependencies]
 static_assertions = "1.1"
 bridge-hub-test-utils = { path = "../test-utils"}
@@ -160,6 +167,11 @@ std = [
 	"xcm-executor/std",
 	"xcm/std",
 	"substrate-wasm-builder",
+	"snowbridge-basic-channel/std",
+	"snowbridge-core/std",
+	"snowbridge-dispatch/std",
+	"snowbridge-ethereum-beacon-client/std",
+	"snowbridge-beacon-primitives/std",
 ]
 
 runtime-benchmarks = [
@@ -184,6 +196,10 @@ runtime-benchmarks = [
 	"cumulus-pallet-session-benchmarking/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
+	"snowbridge-basic-channel/runtime-benchmarks",
+	"snowbridge-core/runtime-benchmarks",
+	"snowbridge-dispatch/runtime-benchmarks",
+	"snowbridge-ethereum-beacon-client/runtime-benchmarks",
 ]
 
 try-runtime = [
