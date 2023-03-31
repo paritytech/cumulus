@@ -1,15 +1,13 @@
 use crate::{
 	constants::currency::deposit, Balance, Balances, RandomnessCollectiveFlip, Runtime,
-	RuntimeBlockWeights, RuntimeCall, RuntimeEvent, Timestamp,
+	RuntimeCall, RuntimeEvent, Timestamp,
 };
 use frame_support::{
 	parameter_types,
 	traits::{ConstBool, ConstU32, Nothing},
-	weights::Weight,
 };
 use pallet_contracts::{
-	weights::{SubstrateWeight, WeightInfo},
-	Config, DefaultAddressGenerator, Frame, Schedule,
+	weights::SubstrateWeight, Config, DefaultAddressGenerator, Frame, Schedule,
 };
 pub use parachains_common::AVERAGE_ON_INITIALIZE_RATIO;
 
