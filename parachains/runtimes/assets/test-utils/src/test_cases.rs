@@ -1374,7 +1374,7 @@ pub fn can_governance_change_bridge_transfer_configuration<Runtime, XcmConfig>(
 					UnpaidExecution { weight_limit: Unlimited, check_origin: None },
 					Transact {
 						origin_kind: OriginKind::Superuser,
-						require_weight_at_most: Weight::from_parts(150_000_000, 6000),
+						require_weight_at_most: Weight::from_parts(200_000_000, 12000),
 						call: runtime_call_encode(call).into(),
 					},
 				]);
