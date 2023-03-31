@@ -75,6 +75,9 @@ assets-common = { path = "../common", default-features = false }
 [dev-dependencies]
 hex-literal = "0.3.4"
 asset-test-utils = { path = "../test-utils"}
+xcm-simulator = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+penpal-runtime = { path = "../../testing/penpal"}
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }

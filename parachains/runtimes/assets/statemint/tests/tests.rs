@@ -26,6 +26,8 @@ const ALICE: [u8; 32] = [1u8; 32];
 type AssetIdForTrustBackedAssetsConvert =
 	assets_common::AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>;
 
+mod xcm_simulator;
+
 #[test]
 fn test_asset_xcm_trader() {
 	ExtBuilder::<Runtime>::default()
