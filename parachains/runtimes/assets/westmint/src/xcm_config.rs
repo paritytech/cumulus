@@ -222,6 +222,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_utility::Call::batch { .. } |
 				pallet_utility::Call::batch_all { .. },
 			) |
+			RuntimeCall::BridgeTransfer(..) |
 			RuntimeCall::Assets(
 				pallet_assets::Call::create { .. } |
 				pallet_assets::Call::force_create { .. } |
