@@ -51,7 +51,7 @@ const AFTER_HELP_EXAMPLE: &str = color_print::cstr!(
    <bold>parachain-template-node --chain plain-parachain-chainspec.json --tmp -- --chain rococo-local</>
            Launch a full node with chain specification loaded from plain-parachain-chainspec.json.
    <bold>parachain-template-node</>
-           Launch a full node with default parachain <italic>local-testnet</> and relay chain "rococo-local".
+           Launch a full node with default parachain <italic>local-testnet</> and relay chain <italic>rococo-local</>.
    <bold>parachain-template-node --collator</>
            Launch a collator with default parachain <italic>local-testnet</> and relay chain <italic>rococo-local</>.
  "#
