@@ -42,6 +42,30 @@ use std::sync::Arc;
 /// The logging target.
 const LOG_TARGET: &str = "cumulus-collator";
 
+/// Utility functions generally applicable to writing collators for Cumulus.
+pub trait ServiceInterface<Block: BlockT> {
+	/// Checks the status of the given block hash in the Parachain.
+	///
+	/// Returns `true` if the block could be found and is good to be build on.
+	fn check_block_status(&self, hash: Block::Hash, header: &Block::Header) -> bool;
+
+	/// Build a full [`Collation`] from a given [`ParachainCandidate`]. This requires
+	/// that the underlying block has been fully imported into the underlying client,
+	/// as implementations will fetch underlying runtime API data.
+	///
+	/// This also returns the unencoded parachain block data, in case that is desired.
+	fn build_collation(
+		&self,
+		parent_header: &Block::Header,
+		block_hash: Block::Hash,
+		candidate: ParachainCandidate<Block>,
+	) -> Option<(Collation, ParachainBlockData<Block>)>;
+
+	/// Inform networking systems that the block should be announced after an appropriate
+	/// signal has been received. This returns the sending half of the signal.
+	fn announce_with_barrier(&self, block_hash: Block::Hash) -> oneshot::Sender<CollationSecondedSignal>;
+}
+
 /// The [`CollatorService`] provides common utilities for parachain consensus and authoring.
 ///
 /// This includes logic for checking the block status of arbitrary parachain headers
@@ -259,5 +283,32 @@ where
 		let (result_sender, signed_stmt_recv) = oneshot::channel();
 		self.wait_to_announce.lock().wait_to_announce(block_hash, signed_stmt_recv);
 		result_sender
+	}
+}
+
+impl<Block, BS, RA> ServiceInterface<Block> for CollatorService<Block, BS, RA>
+where
+	Block: BlockT,
+	BS: BlockBackend<Block>,
+	RA: ProvideRuntimeApi<Block>,
+	RA::Api: CollectCollationInfo<Block>,
+{
+	fn check_block_status(&self, hash: Block::Hash, header: &Block::Header) -> bool {
+		CollatorService::check_block_status(self, hash, header)
+	}
+
+	fn build_collation(
+		&self,
+		parent_header: &Block::Header,
+		block_hash: Block::Hash,
+		candidate: ParachainCandidate<Block>,
+	) -> Option<(Collation, ParachainBlockData<Block>)> {
+		CollatorService::build_collation(self, parent_header, block_hash, candidate)
+	}
+
+	fn announce_with_barrier(&self, block_hash: Block::Hash)
+		-> oneshot::Sender<CollationSecondedSignal>
+	{
+		CollatorService::announce_with_barrier(self, block_hash)
 	}
 }
