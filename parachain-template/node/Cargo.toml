@@ -80,14 +80,3 @@ try-runtime = [
 	"try-runtime-cli/try-runtime",
 	"parachain-template-runtime/try-runtime"
 ]
-[features]
-default = []
-runtime-benchmarks = [
-	"try-runtime-cli/try-runtime",
-	"parachain-template-runtime/runtime-benchmarks",
-	"polkadot-cli/runtime-benchmarks",
-]
-try-runtime = [
-	"try-runtime-cli/try-runtime",
-	"parachain-template-runtime/try-runtime"
-]
