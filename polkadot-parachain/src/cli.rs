@@ -69,7 +69,7 @@ const AFTER_HELP_EXAMPLE: &str = color_print::cstr!(
    <bold>polkadot-parachain --chain statemint --sync warp -- --chain polkadot</>
            Launch a warp-syncing full node of the <italic>statemint</> parachain on the <italic>polkadot</> relay chain.
    <bold>polkadot-parachain --chain statemint --sync warp --relay-chain-rpc-url ws://rpc.example.com -- --chain polkadot</>
-           Launch a full node of the <italic>statemint</> parachain on the <italic>polkadot</> relay chain.
+           Launch a warp-syncing full node of the <italic>statemint</> parachain on the <italic>polkadot</> relay chain.
            Uses <italic>ws://rpc.example.com</> as remote relay chain node.
  "#
 );
