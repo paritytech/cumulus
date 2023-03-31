@@ -27,7 +27,7 @@ use cumulus_client_consensus_common::{
 	ParachainBlockImportMarker, ParachainCandidate,
 };
 use cumulus_client_consensus_proposer::ProposerInterface;
-use cumulus_client_collator::service::CollatorService;
+use cumulus_client_collator::service::ServiceInterface as CollatorServiceInterface;
 use cumulus_primitives_core::{relay_chain::Hash as PHash, CollectCollationInfo, PersistedValidationData};
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_relay_chain_interface::RelayChainInterface;
@@ -53,7 +53,7 @@ use sp_runtime::traits::{Block as BlockT, Header as HeaderT, Member};
 use std::{convert::TryFrom, error::Error, hash::Hash, sync::Arc};
 
 /// Parameters of [`run`].
-pub struct Params<Block: BlockT, BI, CIDP, Client, RClient, SO, Proposer> {
+pub struct Params<BI, CIDP, Client, RClient, SO, Proposer, CS> {
 	pub create_inherent_data_providers: CIDP,
 	pub block_import: BI,
 	pub para_client: Arc<Client>,
@@ -65,19 +65,19 @@ pub struct Params<Block: BlockT, BI, CIDP, Client, RClient, SO, Proposer> {
 	pub overseer_handle: OverseerHandle,
 	pub slot_duration: SlotDuration,
 	pub telemetry: Option<TelemetryHandle>,
-	pub service: CollatorService<Block, Client, Client>,
 	pub proposer: Proposer,
+	pub collator_service: CS,
 }
 
 /// Run Aura consensus as a parachain.
-pub async fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer>(
-	params: Params<Block, BI, CIDP, Client, RClient, SO, Proposer>,
+pub async fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
+	params: Params<BI, CIDP, Client, RClient, SO, Proposer, CS>,
 )
 where
 	Block: BlockT,
 	Client:
 		ProvideRuntimeApi<Block> + BlockOf + AuxStore + HeaderBackend<Block> + BlockBackend<Block> + Send + Sync + 'static,
-	Client::Api: AuraApi<Block, P::Public> + CollectCollationInfo<Block>,
+	Client::Api: AuraApi<Block, P::Public>,
 	RClient: RelayChainInterface,
 	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)> + 'static,
 	BI: BlockImport<Block>
@@ -88,11 +88,12 @@ where
 	SO: SyncOracle + Send + Sync + Clone + 'static,
 	Proposer: ProposerInterface<Block, Transaction=BI::Transaction>,
 	Proposer::Transaction: Sync,
+	CS: CollatorServiceInterface<Block>,
 	P: Pair + Send + Sync,
 	P::Public: AppPublic + Hash + Member + Encode + Decode,
 	P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
 {
-	let mut collator_service = params.service;
+	let mut collator_service = params.collator_service;
 	let mut proposer = params.proposer;
 
 	let mut collation_requests = cumulus_client_collator::relay_chain_driven::init(
@@ -115,7 +116,7 @@ async fn collate<Block: BlockT, P, Client, BI, CIDP>(
 	relay_chain_interface: &impl RelayChainInterface,
 	parent_header: Block::Header,
 	proposer: &mut impl ProposerInterface<Block, Transaction=BI::Transaction>,
-	collator_service: CollatorService<Block, Client, Client>,
+	collator_service: &impl CollatorServiceInterface<Block>,
 	slot_duration: SlotDuration,
 	keystore: &KeystorePtr,
 	block_import: BI,
@@ -195,7 +196,7 @@ where
 			&paras_inherent_data,
 			other_inherent_data,
 			sp_runtime::generic::Digest { logs: vec![pre_digest] },
-			unimplemented!(), // max duration
+			unimplemented!(), // TODO [now] max duration
 			// Set the block limit to 50% of the maximum PoV size.
 			//
 			// TODO: If we got benchmarking that includes the proof size,
