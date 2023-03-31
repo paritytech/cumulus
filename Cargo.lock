@@ -1833,7 +1833,6 @@ name = "cumulus-client-cli"
 version = "0.1.0"
 dependencies = [
  "clap 4.1.13",
- "color-print",
  "parity-scale-codec",
  "sc-chain-spec",
  "sc-cli",
@@ -7214,6 +7213,7 @@ name = "parachain-template-node"
 version = "0.1.0"
 dependencies = [
  "clap 4.1.13",
+ "color-print",
  "cumulus-client-cli",
  "cumulus-client-consensus-aura",
  "cumulus-client-consensus-common",
@@ -8473,6 +8473,7 @@ dependencies = [
  "bridge-hub-rococo-runtime",
  "clap 4.1.13",
  "collectives-polkadot-runtime",
+ "color-print",
  "contracts-rococo-runtime",
  "cumulus-client-cli",
  "cumulus-client-consensus-aura",

@@ -87,6 +87,7 @@ cumulus-client-service = { path = "../client/service" }
 cumulus-primitives-core = { path = "../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../primitives/parachain-inherent" }
 cumulus-relay-chain-interface = { path = "../client/relay-chain-interface" }
+color-print = "0.3.4"
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -102,24 +103,5 @@ polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "maste
 
 [features]
 default = []
-runtime-benchmarks = [
-	"polkadot-service/runtime-benchmarks",
-	"statemint-runtime/runtime-benchmarks",
-	"statemine-runtime/runtime-benchmarks",
-	"westmint-runtime/runtime-benchmarks",
-	"bridge-hub-rococo-runtime/runtime-benchmarks",
-	"bridge-hub-kusama-runtime/runtime-benchmarks",
-	"bridge-hub-polkadot-runtime/runtime-benchmarks",
-	"collectives-polkadot-runtime/runtime-benchmarks",
-	"rococo-parachain-runtime/runtime-benchmarks",
-	"contracts-rococo-runtime/runtime-benchmarks",
-	"contracts-rococo-runtime/runtime-benchmarks",
-	"penpal-runtime/runtime-benchmarks",
-]
-try-runtime = [
-	"statemint-runtime/try-runtime",
-	"statemine-runtime/try-runtime",
-	"westmint-runtime/try-runtime",
-	"shell-runtime/try-runtime",
-	"try-runtime-cli/try-runtime",
-]
+runtime-benchmarks = ["polkadot-service/runtime-benchmarks", "statemint-runtime/runtime-benchmarks", "statemine-runtime/runtime-benchmarks", "westmint-runtime/runtime-benchmarks", "bridge-hub-rococo-runtime/runtime-benchmarks", "bridge-hub-kusama-runtime/runtime-benchmarks", "bridge-hub-polkadot-runtime/runtime-benchmarks", "collectives-polkadot-runtime/runtime-benchmarks", "rococo-parachain-runtime/runtime-benchmarks", "contracts-rococo-runtime/runtime-benchmarks", "contracts-rococo-runtime/runtime-benchmarks", "penpal-runtime/runtime-benchmarks"]
+try-runtime = ["statemint-runtime/try-runtime", "statemine-runtime/try-runtime", "westmint-runtime/try-runtime", "shell-runtime/try-runtime", "try-runtime-cli/try-runtime"]

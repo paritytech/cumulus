@@ -275,20 +275,10 @@ fn validate_relay_chain_url(arg: &str) -> Result<Url, String> {
 		))
 	}
 }
-const EXAMPLE_TEXT: &str = color_print::cstr!(
-	r#"<bold><underline>Examples:</underline></bold>
-  <bold>--chain statemint --tmp --sync warp -- --chain polkadot</bold>
-          Launch a warp-syncing full node of the <italic>statemint</> parachain on the <italic>polkadot</> relay chain.
-  <bold>--chain statemint --tmp --sync warp --relay-chain-rpc-url ws://rpc.example.com -- --chain polkadot</bold>
-          Launch a full node of the <italic>statemint</> parachain on the <italic>polkadot</> relay chain.
-          Uses <italic>ws://rpc.example.com</> as remote relay chain node.
-"#
-);
 
 /// The `run` command used to run a node.
 #[derive(Debug, clap::Parser)]
 #[group(skip)]
-#[clap(after_help = EXAMPLE_TEXT)]
 pub struct RunCmd {
 	/// The cumulus RunCmd inherents from sc_cli's
 	#[command(flatten)]

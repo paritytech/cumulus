@@ -15,7 +15,6 @@ sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "mas
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-color-print = "0.3.4"
 
 [features]
 default = []
