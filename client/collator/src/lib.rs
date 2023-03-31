@@ -218,14 +218,11 @@ pub mod relay_chain_driven {
 						sender: this_tx,
 					};
 
-					if let Err(_) = stream_tx.send(request).await {
+					if stream_tx.send(request).await.is_err() {
 						return None
 					}
 
-					match this_rx.await {
-						Ok(x) => x,
-						Err(_) => None,
-					}
+					this_rx.await.ok().flatten()
 				})
 			}),
 		};

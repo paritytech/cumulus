@@ -27,6 +27,7 @@ use sp_runtime::{traits::Block as BlockT, Digest};
 use sp_state_machine::StorageProof;
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 
+use std::error::Error as StdError;
 use std::fmt::Debug;
 use std::time::Duration;
 
@@ -53,16 +54,16 @@ impl Debug for Error {
 	}
 }
 
-impl std::error::Error for Error {}
+impl StdError for Error {}
 
 impl Error {
-	fn proposer_creation(x: impl Debug + 'static) -> Self {
+	fn proposer_creation(x: impl StdError + 'static) -> Self {
 		Error {
 			inner: ErrorInner::ProposerCreation(Box::new(x)),
 		}
 	}
 
-	fn proposing(x: impl Debug + 'static) -> Self {
+	fn proposing(x: impl StdError + 'static) -> Self {
 		Error {
 			inner: ErrorInner::Proposing(Box::new(x)),
 		}
@@ -71,8 +72,8 @@ impl Error {
 
 #[derive(Debug)]
 enum ErrorInner {
-	ProposerCreation(Box<dyn Debug>),
-	Proposing(Box<dyn Debug>),
+	ProposerCreation(Box<dyn StdError>),
+	Proposing(Box<dyn StdError>),
 }
 
 /// An interface for proposers.
