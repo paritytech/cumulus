@@ -15,8 +15,3 @@ sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "mas
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-
-[features]
-default = []
-example-polkadot-parachain = []
-example-parachain-template = []
