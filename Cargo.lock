@@ -11912,18 +11912,18 @@ checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
 name = "serde"
-version = "1.0.158"
+version = "1.0.159"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "771d4d9c4163ee138805e12c710dd365e4f44be8be0503cb1bb9eb989425d9c9"
+checksum = "3c04e8343c3daeec41f58990b9d77068df31209f2af111e059e9fe9646693065"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.158"
+version = "1.0.159"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e801c1712f48475582b7696ac71e0ca34ebb30e09338425384269d9717c62cad"
+checksum = "4c614d17805b093df4b147b51339e7e44bf05ef59fba1e45d83500bcfb4d8585"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -11932,9 +11932,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.94"
+version = "1.0.95"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c533a59c9d8a93a09c6ab31f0fd5e5f4dd1b8fc9434804029839884765d04ea"
+checksum = "d721eca97ac802aa7777b701877c8004d950fc142651367300d21c1cc0194744"
 dependencies = [
  "itoa 1.0.4",
  "ryu",
@@ -12160,7 +12160,7 @@ checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 [[package]]
 name = "smoldot"
 version = "0.5.0"
-source = "git+https://github.com/smol-dot/smoldot?rev=7ffa3c87c5818541b5f7d11bd244acb9a475a614#7ffa3c87c5818541b5f7d11bd244acb9a475a614"
+source = "git+https://github.com/smol-dot/smoldot?rev=5390303#53903038b043f6b8776f5c1a18309d4d47d5694c"
 dependencies = [
  "arrayvec 0.7.2",
  "async-std",
@@ -12213,7 +12213,7 @@ dependencies = [
 [[package]]
 name = "smoldot-light"
 version = "0.3.0"
-source = "git+https://github.com/smol-dot/smoldot?rev=7ffa3c87c5818541b5f7d11bd244acb9a475a614#7ffa3c87c5818541b5f7d11bd244acb9a475a614"
+source = "git+https://github.com/smol-dot/smoldot?rev=5390303#53903038b043f6b8776f5c1a18309d4d47d5694c"
 dependencies = [
  "blake2-rfc",
  "derive_more",
@@ -14197,7 +14197,7 @@ checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
  "cfg-if",
  "digest 0.10.6",
- "rand 0.7.3",
+ "rand 0.8.5",
  "static_assertions",
 ]
 
