@@ -12,12 +12,12 @@ path = "src/main.rs"
 
 [dependencies]
 async-trait = "0.1.68"
-clap = { version = "4.1.11", features = ["derive"] }
+clap = { version = "4.1.13", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
-futures = "0.3.26"
+futures = "0.3.27"
 hex-literal = "0.3.4"
 log = "0.4.17"
-serde = { version = "1.0.156", features = ["derive"] }
+serde = { version = "1.0.159", features = ["derive"] }
 
 # Local
 rococo-parachain-runtime = { path = "../parachains/runtimes/testing/rococo-parachain" }
@@ -94,8 +94,8 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 [dev-dependencies]
 assert_cmd = "2.0"
 nix = { version = "0.26.1", features = ["signal"] }
-tempfile = "3.4.0"
-tokio = { version = "1.26.0", features = ["macros", "time", "parking_lot"] }
+tempfile = "3.5.0"
+tokio = { version = "1.27.0", features = ["macros", "time", "parking_lot"] }
 wait-timeout = "0.2"
 # purge_chain_works works with rococo-local and needs to allow this
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", features = ["rococo-native"] }
