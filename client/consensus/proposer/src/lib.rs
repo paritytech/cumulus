@@ -79,7 +79,7 @@ enum ErrorInner {
 #[async_trait]
 pub trait ProposerInterface<Block: BlockT> {
 	/// The underlying DB transaction type produced with the block proposal.
-	type Transaction;
+	type Transaction: Default + Send + 'static;
 
 	/// Propose a collation using the supplied `InherentData` and the provided
 	/// `ParachainInherentData`.

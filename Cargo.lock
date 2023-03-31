@@ -1862,10 +1862,14 @@ name = "cumulus-client-consensus-aura"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cumulus-client-collator",
  "cumulus-client-consensus-common",
+ "cumulus-client-consensus-proposer",
  "cumulus-primitives-core",
  "futures",
  "parity-scale-codec",
+ "polkadot-overseer",
+ "polkadot-primitives",
  "sc-client-api",
  "sc-consensus",
  "sc-consensus-aura",
@@ -1881,6 +1885,7 @@ dependencies = [
  "sp-inherents",
  "sp-keystore",
  "sp-runtime",
+ "sp-state-machine",
  "substrate-prometheus-endpoint",
  "tracing",
 ]
@@ -1915,10 +1920,12 @@ dependencies = [
 name = "cumulus-client-consensus-proposer"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "cumulus-primitives-parachain-inherent",
  "sp-consensus",
  "sp-inherents",
  "sp-runtime",
+ "sp-state-machine",
 ]
 
 [[package]]
