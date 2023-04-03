@@ -14,8 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
-use cumulus_relay_chain_interface::RelayChainError;
+use futures::{select, StreamExt};
 use lru::LruCache;
+use std::sync::Arc;
+
 use polkadot_node_network_protocol::{
 	peer_set::PeerSetProtocolNames,
 	request_response::{
@@ -25,8 +27,8 @@ use polkadot_node_network_protocol::{
 };
 use polkadot_node_subsystem_util::metrics::{prometheus::Registry, Metrics};
 use polkadot_overseer::{
-	BlockInfo, DummySubsystem, MetricsTrait, Overseer, OverseerHandle, OverseerMetrics, SpawnGlue,
-	KNOWN_LEAVES_CACHE_SIZE,
+	BlockInfo, DummySubsystem, Handle, MetricsTrait, Overseer, OverseerHandle, OverseerMetrics,
+	SpawnGlue, KNOWN_LEAVES_CACHE_SIZE,
 };
 use polkadot_primitives::CollatorPair;
 use polkadot_service::{
@@ -37,18 +39,16 @@ use polkadot_service::{
 	},
 	Error, OverseerConnector,
 };
+
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
 use sc_network::NetworkStateInfo;
-
-use std::sync::Arc;
+use sc_service::TaskManager;
+use sp_runtime::traits::Block as BlockT;
 
 use cumulus_primitives_core::relay_chain::{Block, Hash as PHash};
-
-use polkadot_service::{Handle, TaskManager};
+use cumulus_relay_chain_interface::RelayChainError;
 
 use crate::BlockChainRpcClient;
-use futures::{select, StreamExt};
-use sp_runtime::traits::Block as BlockT;
 
 /// Arguments passed for overseer construction.
 pub(crate) struct CollatorOverseerGenArgs<'a> {
@@ -114,7 +114,7 @@ fn build_overseer<'a>(
 		.collation_generation(CollationGenerationSubsystem::new(Metrics::register(registry)?))
 		.collator_protocol({
 			let side = ProtocolSide::Collator(
-				network_service.local_peer_id().clone(),
+				network_service.local_peer_id(),
 				collator_pair,
 				collation_req_receiver,
 				Metrics::register(registry)?,
@@ -129,8 +129,8 @@ fn build_overseer<'a>(
 			peer_set_protocol_names.clone(),
 		))
 		.network_bridge_tx(NetworkBridgeTxSubsystem::new(
-			network_service.clone(),
-			authority_discovery_service.clone(),
+			network_service,
+			authority_discovery_service,
 			network_bridge_metrics,
 			req_protocol_names,
 			peer_set_protocol_names,
@@ -170,7 +170,7 @@ pub(crate) fn spawn_overseer(
 		e
 	})?;
 
-	let overseer_handle = Handle::new(overseer_handle.clone());
+	let overseer_handle = Handle::new(overseer_handle);
 	{
 		let handle = overseer_handle.clone();
 		task_manager.spawn_essential_handle().spawn_blocking(

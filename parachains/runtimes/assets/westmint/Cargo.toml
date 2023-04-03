@@ -9,7 +9,7 @@ description = "Westend variant of Statemint parachain runtime"
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
 hex-literal = { version = "0.3.4", optional = true }
 log = { version = "0.4.17", default-features = false }
-scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 smallvec = "1.10.0"
 
 # Substrate
@@ -78,7 +78,7 @@ hex-literal = "0.3.4"
 asset-test-utils = { path = "../test-utils"}
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
 [features]
 default = [ "std" ]
@@ -103,6 +103,7 @@ runtime-benchmarks = [
 	"pallet-collator-selection/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
+	"assets-common/runtime-benchmarks",
 ]
 try-runtime = [
 	"cumulus-pallet-aura-ext/try-runtime",
@@ -184,4 +185,5 @@ std = [
 	"parachain-info/std",
 	"parachains-common/std",
 	"assets-common/std",
+	"substrate-wasm-builder",
 ]
