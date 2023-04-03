@@ -18,6 +18,15 @@ use futures::{select, StreamExt};
 use lru::LruCache;
 use std::sync::Arc;
 
+use polkadot_availability_recovery::AvailabilityRecoverySubsystem;
+use polkadot_collator_protocol::CollatorProtocolSubsystem;
+use polkadot_collator_protocol::ProtocolSide;
+use polkadot_network_bridge::{
+	Metrics as NetworkBridgeMetrics, NetworkBridgeRx as NetworkBridgeRxSubsystem,
+	NetworkBridgeTx as NetworkBridgeTxSubsystem,
+};
+use polkadot_node_collation_generation::CollationGenerationSubsystem;
+use polkadot_node_core_runtime_api::RuntimeApiSubsystem;
 use polkadot_node_network_protocol::{
 	peer_set::PeerSetProtocolNames,
 	request_response::{
@@ -27,18 +36,10 @@ use polkadot_node_network_protocol::{
 };
 use polkadot_node_subsystem_util::metrics::{prometheus::Registry, Metrics};
 use polkadot_overseer::{
-	BlockInfo, DummySubsystem, Handle, MetricsTrait, Overseer, OverseerHandle, OverseerMetrics,
-	SpawnGlue, KNOWN_LEAVES_CACHE_SIZE,
+	BlockInfo, DummySubsystem, Handle, MetricsTrait, Overseer, OverseerConnector, OverseerHandle,
+	OverseerMetrics, SpawnGlue, KNOWN_LEAVES_CACHE_SIZE,
 };
 use polkadot_primitives::CollatorPair;
-use polkadot_service::{
-	overseer::{
-		AvailabilityRecoverySubsystem, CollationGenerationSubsystem, CollatorProtocolSubsystem,
-		NetworkBridgeMetrics, NetworkBridgeRxSubsystem, NetworkBridgeTxSubsystem, ProtocolSide,
-		RuntimeApiSubsystem,
-	},
-	Error, OverseerConnector,
-};
 
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
 use sc_network::NetworkStateInfo;
@@ -93,16 +94,18 @@ fn build_overseer<'a>(
 	}: CollatorOverseerGenArgs<'a>,
 ) -> Result<
 	(Overseer<SpawnGlue<sc_service::SpawnTaskHandle>, Arc<BlockChainRpcClient>>, OverseerHandle),
-	Error,
+	String,
 > {
-	let metrics = <OverseerMetrics as MetricsTrait>::register(registry)?;
+	let metrics =
+		<OverseerMetrics as MetricsTrait>::register(registry).map_err(|e| e.to_string())?;
 	let spawner = SpawnGlue(spawner);
-	let network_bridge_metrics: NetworkBridgeMetrics = Metrics::register(registry)?;
+	let network_bridge_metrics: NetworkBridgeMetrics =
+		Metrics::register(registry).map_err(|e| e.to_string())?;
 	let builder = Overseer::builder()
 		.availability_distribution(DummySubsystem)
 		.availability_recovery(AvailabilityRecoverySubsystem::with_chunks_only(
 			available_data_req_receiver,
-			Metrics::register(registry)?,
+			Metrics::register(registry).map_err(|e| e.to_string())?,
 		))
 		.availability_store(DummySubsystem)
 		.bitfield_distribution(DummySubsystem)
@@ -111,13 +114,15 @@ fn build_overseer<'a>(
 		.candidate_validation(DummySubsystem)
 		.pvf_checker(DummySubsystem)
 		.chain_api(DummySubsystem)
-		.collation_generation(CollationGenerationSubsystem::new(Metrics::register(registry)?))
+		.collation_generation(CollationGenerationSubsystem::new(
+			Metrics::register(registry).map_err(|e| e.to_string())?,
+		))
 		.collator_protocol({
 			let side = ProtocolSide::Collator(
 				network_service.local_peer_id(),
 				collator_pair,
 				collation_req_receiver,
-				Metrics::register(registry)?,
+				Metrics::register(registry).map_err(|e| e.to_string())?,
 			);
 			CollatorProtocolSubsystem::new(side)
 		})
@@ -138,7 +143,7 @@ fn build_overseer<'a>(
 		.provisioner(DummySubsystem)
 		.runtime_api(RuntimeApiSubsystem::new(
 			runtime_client.clone(),
-			Metrics::register(registry)?,
+			Metrics::register(registry).map_err(|e| e.to_string())?,
 			spawner.clone(),
 		))
 		.statement_distribution(DummySubsystem)
@@ -156,14 +161,14 @@ fn build_overseer<'a>(
 		.metrics(metrics)
 		.spawner(spawner);
 
-	builder.build_with_connector(connector).map_err(|e| e.into())
+	builder.build_with_connector(connector).map_err(|e| e.to_string())
 }
 
 pub(crate) fn spawn_overseer(
 	overseer_args: CollatorOverseerGenArgs,
 	task_manager: &TaskManager,
 	relay_chain_rpc_client: Arc<BlockChainRpcClient>,
-) -> Result<polkadot_overseer::Handle, polkadot_service::Error> {
+) -> Result<polkadot_overseer::Handle, String> {
 	let (overseer, overseer_handle) = build_overseer(OverseerConnector::default(), overseer_args)
 		.map_err(|e| {
 		tracing::error!("Failed to initialize overseer: {}", e);
