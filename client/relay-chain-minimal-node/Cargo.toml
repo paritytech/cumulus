@@ -21,6 +21,7 @@ sc-network = { git = "https://github.com/paritytech/substrate", branch = "master
 sc-network-common = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -35,6 +36,6 @@ cumulus-primitives-core = { path = "../../primitives/core" }
 array-bytes = "6.0"
 lru = "0.9"
 tracing = "0.1.37"
-async-trait = "0.1.66"
-futures = "0.3.26"
-tokio = { version = "1.26.0", features = ["macros"] }
+async-trait = "0.1.68"
+futures = "0.3.28"
+tokio = { version = "1.27.0", features = ["macros"] }
