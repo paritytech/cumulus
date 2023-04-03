@@ -86,6 +86,12 @@ impl From<RelayChainError> for sp_blockchain::Error {
 	}
 }
 
+impl<T: std::error::Error + Send + Sync + 'static> From<Box<T>> for RelayChainError {
+	fn from(r: Box<T>) -> Self {
+		RelayChainError::Application(r)
+	}
+}
+
 /// Trait that provides all necessary methods for interaction between collator and relay chain.
 #[async_trait]
 pub trait RelayChainInterface: Send + Sync {

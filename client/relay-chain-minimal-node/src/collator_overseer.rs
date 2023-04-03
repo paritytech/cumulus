@@ -94,18 +94,15 @@ fn build_overseer<'a>(
 	}: CollatorOverseerGenArgs<'a>,
 ) -> Result<
 	(Overseer<SpawnGlue<sc_service::SpawnTaskHandle>, Arc<BlockChainRpcClient>>, OverseerHandle),
-	String,
+	RelayChainError,
 > {
-	let metrics =
-		<OverseerMetrics as MetricsTrait>::register(registry).map_err(|e| e.to_string())?;
 	let spawner = SpawnGlue(spawner);
-	let network_bridge_metrics: NetworkBridgeMetrics =
-		Metrics::register(registry).map_err(|e| e.to_string())?;
+	let network_bridge_metrics: NetworkBridgeMetrics = Metrics::register(registry)?;
 	let builder = Overseer::builder()
 		.availability_distribution(DummySubsystem)
 		.availability_recovery(AvailabilityRecoverySubsystem::with_chunks_only(
 			available_data_req_receiver,
-			Metrics::register(registry).map_err(|e| e.to_string())?,
+			Metrics::register(registry)?,
 		))
 		.availability_store(DummySubsystem)
 		.bitfield_distribution(DummySubsystem)
@@ -114,15 +111,13 @@ fn build_overseer<'a>(
 		.candidate_validation(DummySubsystem)
 		.pvf_checker(DummySubsystem)
 		.chain_api(DummySubsystem)
-		.collation_generation(CollationGenerationSubsystem::new(
-			Metrics::register(registry).map_err(|e| e.to_string())?,
-		))
+		.collation_generation(CollationGenerationSubsystem::new(Metrics::register(registry)?))
 		.collator_protocol({
 			let side = ProtocolSide::Collator(
 				network_service.local_peer_id(),
 				collator_pair,
 				collation_req_receiver,
-				Metrics::register(registry).map_err(|e| e.to_string())?,
+				Metrics::register(registry)?,
 			);
 			CollatorProtocolSubsystem::new(side)
 		})
@@ -143,7 +138,7 @@ fn build_overseer<'a>(
 		.provisioner(DummySubsystem)
 		.runtime_api(RuntimeApiSubsystem::new(
 			runtime_client.clone(),
-			Metrics::register(registry).map_err(|e| e.to_string())?,
+			Metrics::register(registry)?,
 			spawner.clone(),
 		))
 		.statement_distribution(DummySubsystem)
@@ -158,17 +153,19 @@ fn build_overseer<'a>(
 		.active_leaves(Default::default())
 		.supports_parachains(runtime_client)
 		.known_leaves(LruCache::new(KNOWN_LEAVES_CACHE_SIZE))
-		.metrics(metrics)
+		.metrics(Metrics::register(registry)?)
 		.spawner(spawner);
 
-	builder.build_with_connector(connector).map_err(|e| e.to_string())
+	builder
+		.build_with_connector(connector)
+		.map_err(|e| RelayChainError::Application(e.into()))
 }
 
 pub(crate) fn spawn_overseer(
 	overseer_args: CollatorOverseerGenArgs,
 	task_manager: &TaskManager,
 	relay_chain_rpc_client: Arc<BlockChainRpcClient>,
-) -> Result<polkadot_overseer::Handle, String> {
+) -> Result<polkadot_overseer::Handle, RelayChainError> {
 	let (overseer, overseer_handle) = build_overseer(OverseerConnector::default(), overseer_args)
 		.map_err(|e| {
 		tracing::error!("Failed to initialize overseer: {}", e);
