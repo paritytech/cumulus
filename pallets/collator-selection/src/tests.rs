@@ -64,29 +64,8 @@ fn it_should_set_invulnerables() {
 #[test]
 fn add_invulnerable_works() {
 	new_test_ext().execute_with(|| {
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
 		let new = 3;
-		let num_prev_invulnerables = CollatorSelection::invulnerables().to_vec().len();
-
-		// function runs
-		assert_ok!(CollatorSelection::add_invulnerable(
-			RuntimeOrigin::signed(RootAccount::get()),
-			new.clone()
-		));
-
-		// same element cannot be added more than once
-		assert_noop!(
-			CollatorSelection::add_invulnerable(
-				RuntimeOrigin::signed(RootAccount::get()),
-				new.clone()
-			),
-			Error::<Test>::AlreadyInvulnerable
-		);
-
-		// list was not exploded
-		assert_eq!(CollatorSelection::invulnerables().to_vec().len(), num_prev_invulnerables + 1);
-
-		// new element is now part of the invulnerables list
-		assert!(CollatorSelection::invulnerables().to_vec().contains(&new));
 
 		// cannot add with non-root
 		assert_noop!(
@@ -103,13 +82,38 @@ fn add_invulnerable_works() {
 			),
 			Error::<Test>::ValidatorNotRegistered
 		);
+
+		// function runs
+		assert_ok!(CollatorSelection::add_invulnerable(
+			RuntimeOrigin::signed(RootAccount::get()),
+			new.clone()
+		));
+
+		// same element cannot be added more than once
+		assert_noop!(
+			CollatorSelection::add_invulnerable(
+				RuntimeOrigin::signed(RootAccount::get()),
+				new.clone()
+			),
+			Error::<Test>::AlreadyInvulnerable
+		);
+
+		// new element is now part of the invulnerables list
+		assert!(CollatorSelection::invulnerables().to_vec().contains(&new));
 	});
 }
 
 #[test]
 fn remove_invulnerable_works() {
 	new_test_ext().execute_with(|| {
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
 		let to_remove = 1;
+
+		// cannot remove with non-root
+		assert_noop!(
+			CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(1), to_remove.clone()),
+			BadOrigin
+		);
 
 		// function runs
 		assert_ok!(CollatorSelection::remove_invulnerable(
@@ -125,15 +129,9 @@ fn remove_invulnerable_works() {
 			),
 			Error::<Test>::NotInvulnerable
 		);
-
+		
 		// element is no longer part of the list
-		assert!(!CollatorSelection::invulnerables().to_vec().contains(&to_remove));
-
-		// cannot set with non-root
-		assert_noop!(
-			CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(1), to_remove.clone()),
-			BadOrigin
-		);
+		assert!(!CollatorSelection::invulnerables().to_vec().contains(&to_remove));	
 	});
 }
 

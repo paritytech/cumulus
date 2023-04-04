@@ -312,7 +312,7 @@ pub mod pallet {
 				);
 			}
 
-			bounded_invulnerables.sort();
+			//bounded_invulnerables.sort();
 
 			<Invulnerables<T>>::put(&bounded_invulnerables);
 			Self::deposit_event(Event::NewInvulnerables {
@@ -361,28 +361,53 @@ pub mod pallet {
 		#[pallet::call_index(6)]
 		#[pallet::weight(T::WeightInfo::remove_invulnerable())]
 		pub fn remove_invulnerable(
-			origin: OriginFor<T>,
-			to_remove: <T>::AccountId,
-		) -> DispatchResultWithPostInfo {
-			T::UpdateOrigin::ensure_origin(origin)?;
+			//origin: OriginFor<T>,
+			to_remove: &T::AccountId) -> DispatchResultWithPostInfo {
+			//T::UpdateOrigin::ensure_origin(origin)?;
 
-			let invulnerables = Self::invulnerables().to_vec();
+			//let invulnerables = Self::invulnerables().to_vec();
 
 			// ensure invulnerable is actually in the list before trying to remove it
-			ensure!(invulnerables.contains(&to_remove), Error::<T>::NotInvulnerable);
+			//ensure!(invulnerables.contains(to_remove), Error::<T>::NotInvulnerable);
 
 			// remove invulnerable from invulnerables list
-			<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
-				let pos = invulnerables
-					.binary_search(&to_remove)
-					.ok()
-					.ok_or(Error::<T>::NotInvulnerable)?;
-				invulnerables.remove(pos);
-				Ok(())
-			})?;
+			//<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
+			//	let pos = invulnerables
+			//		.binary_search(&to_remove)
+			//		.ok()
+			//		.ok_or(Error::<T>::NotInvulnerable)?;
+			//	invulnerables.remove(pos);
+			//	Ok(())
+			//})?;
 
-			Self::deposit_event(Event::InvulnerableRemoved { removed: to_remove });
-			Ok(().into())
+			// fn try_remove_candidate(who: &T::AccountId) -> Result<usize, DispatchError> {
+			// 	let current_count =
+			// 		<Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
+			// 			let index = candidates
+			// 				.iter()
+			// 				.position(|candidate| candidate.who == *who)
+			// 				.ok_or(Error::<T>::NotCandidate)?;
+			// 			let candidate = candidates.remove(index);
+			// 			T::Currency::unreserve(who, candidate.deposit);
+			// 			<LastAuthoredBlock<T>>::remove(who.clone());
+			// 			Ok(candidates.len())
+			// 		})?;
+			// 	Self::deposit_event(Event::CandidateRemoved { account_id: who.clone() });
+			// 	Ok(current_count)
+			// }
+
+			let current_count =
+				<Invulnerables<T>>::try_mutate(|invulnerables| -> Result<usize, DispatchError> {
+					let index = invulnerables
+						.iter()
+						.position(|invulnerable| invulnerable.who == *to_remove)
+						.ok_or(Error::<T>::NotInvulnerable)?;
+					let invulnerable = invulnerables.remove(index);
+					Ok(invulnerables.len())
+				})?;
+
+			Self::deposit_event(Event::InvulnerableRemoved { removed: to_remove.clone() });
+			Ok(current_count)
 		}
 
 		/// Set the ideal number of collators (not including the invulnerables).
