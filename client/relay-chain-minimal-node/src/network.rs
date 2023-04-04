@@ -89,7 +89,7 @@ pub(crate) fn build_collator_network(
 			);
 			// This `return` might seem unnecessary, but we don't want to make it look like
 			// everything is working as normal even though the user is clearly misusing the API.
-			return;
+			return
 		}
 
 		network_worker.run().await;
