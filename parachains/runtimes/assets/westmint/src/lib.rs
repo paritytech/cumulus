@@ -1149,13 +1149,13 @@ impl_runtime_apis! {
 					Err(BenchmarkError::Skip)
 				}
 
-				fn universal_alias() -> Result<Junction, BenchmarkError> {
+				fn universal_alias() -> Result<(MultiLocation, Junction), BenchmarkError> {
 					match <<Runtime as pallet_bridge_transfer::Config>::BenchmarkHelper as pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin>>::universal_alias() {
 						Some((location, junction)) => {
 							<pallet_bridge_transfer::Pallet<Runtime>>::insert_universal_alias_for_benchmarks(
 								(location.clone().try_into().unwrap(), junction)
 							);
-							Ok(junction)
+							Ok((location.clone().try_into().unwrap(), junction))
 						},
 						None => Err(BenchmarkError::Skip)
 					}
