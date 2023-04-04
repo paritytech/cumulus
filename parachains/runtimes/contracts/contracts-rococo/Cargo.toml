@@ -8,13 +8,13 @@ edition = "2021"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
-hex-literal = { version = "0.3.4", optional = true }
+hex-literal = { version = "0.4.0", optional = true }
 log = { version = "0.4.17", default-features = false }
-scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 smallvec = "1.10.0"
 
 # Substrate
@@ -38,7 +38,7 @@ frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", d
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-insecure-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-multisig = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -47,7 +47,7 @@ pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", 
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-contracts = { git = "https://github.com/paritytech/substrate", default-features = false, features = ["unstable-interface"], branch = "master" }
+pallet-contracts = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot
@@ -94,7 +94,7 @@ std = [
 	"pallet-contracts-primitives/std",
 	"pallet-contracts/std",
 	"pallet-multisig/std",
-	"pallet-randomness-collective-flip/std",
+	"pallet-insecure-randomness-collective-flip/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
@@ -129,6 +129,7 @@ std = [
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-timestamp/std",
 	"cumulus-primitives-utility/std",
+	"substrate-wasm-builder",
 ]
 
 runtime-benchmarks = [
@@ -164,7 +165,7 @@ try-runtime = [
 	"pallet-collator-selection/try-runtime",
 	"pallet-contracts/try-runtime",
 	"pallet-multisig/try-runtime",
-	"pallet-randomness-collective-flip/try-runtime",
+	"pallet-insecure-randomness-collective-flip/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",

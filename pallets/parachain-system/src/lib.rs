@@ -16,18 +16,18 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-//! cumulus-pallet-parachain-system is a base pallet for cumulus-based parachains.
+//! `cumulus-pallet-parachain-system` is a base pallet for Cumulus-based parachains.
 //!
-//! This pallet handles low-level details of being a parachain. It's responsibilities include:
+//! This pallet handles low-level details of being a parachain. Its responsibilities include:
 //!
-//! - ingestion of the parachain validation data
-//! - ingestion of incoming downward and lateral messages and dispatching them
-//! - coordinating upgrades with the relay-chain
-//! - communication of parachain outputs, such as sent messages, signalling an upgrade, etc.
+//! - ingestion of the parachain validation data;
+//! - ingestion and dispatch of incoming downward and lateral messages;
+//! - coordinating upgrades with the Relay Chain; and
+//! - communication of parachain outputs, such as sent messages, signaling an upgrade, etc.
 //!
 //! Users must ensure that they register this pallet as an inherent provider.
 
-use codec::Encode;
+use codec::{Decode, Encode, MaxEncodedLen};
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
 	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError,
@@ -42,9 +42,11 @@ use frame_support::{
 	storage,
 	traits::Get,
 	weights::Weight,
+	RuntimeDebug,
 };
 use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
+use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{Block as BlockT, BlockNumberProvider, Hash},
 	transaction_validity::{
@@ -53,6 +55,7 @@ use sp_runtime::{
 	},
 };
 use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
+use xcm::latest::XcmHash;
 
 mod migration;
 mod relay_state_snapshot;
@@ -133,6 +136,20 @@ impl CheckAssociatedRelayNumber for AnyRelayNumber {
 	fn check_associated_relay_number(_: RelayChainBlockNumber, _: RelayChainBlockNumber) {}
 }
 
+/// Information needed when a new runtime binary is submitted and needs to be authorized before
+/// replacing the current runtime.
+#[derive(Decode, Encode, Default, PartialEq, Eq, MaxEncodedLen, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+struct CodeUpgradeAuthorization<T>
+where
+	T: Config,
+{
+	/// Hash of the new runtime binary.
+	code_hash: T::Hash,
+	/// Whether or not to carry out version checks.
+	check_version: bool,
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -141,7 +158,6 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::storage_version(migration::STORAGE_VERSION)]
-	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
@@ -335,6 +351,7 @@ pub mod pallet {
 		///
 		/// As a side effect, this function upgrades the current validation function
 		/// if the appropriate time has come.
+		#[pallet::call_index(0)]
 		#[pallet::weight((0, DispatchClass::Mandatory))]
 		// TODO: This weight should be corrected.
 		pub fn set_validation_data(
@@ -353,8 +370,6 @@ pub mod pallet {
 				downward_messages,
 				horizontal_messages,
 			} = data;
-
-			Self::validate_validation_data(&vfp);
 
 			// Check that the associated relay chain block number is as expected.
 			T::CheckAssociatedRelayNumber::check_associated_relay_number(
@@ -377,7 +392,7 @@ pub mod pallet {
 				.read_upgrade_go_ahead_signal()
 				.expect("Invalid upgrade go ahead signal");
 			match upgrade_go_ahead_signal {
-				Some(relay_chain::v2::UpgradeGoAhead::GoAhead) => {
+				Some(relay_chain::UpgradeGoAhead::GoAhead) => {
 					assert!(
 						<PendingValidationCode<T>>::exists(),
 						"No new validation function found in storage, GoAhead signal is not expected",
@@ -390,7 +405,7 @@ pub mod pallet {
 						relay_chain_block_num: vfp.relay_parent_number,
 					});
 				},
-				Some(relay_chain::v2::UpgradeGoAhead::Abort) => {
+				Some(relay_chain::UpgradeGoAhead::Abort) => {
 					<PendingValidationCode<T>>::kill();
 					Self::deposit_event(Event::ValidationFunctionDiscarded);
 				},
@@ -431,6 +446,7 @@ pub mod pallet {
 			Ok(PostDispatchInfo { actual_weight: Some(total_weight), pays_fee: Pays::No })
 		}
 
+		#[pallet::call_index(1)]
 		#[pallet::weight((1_000, DispatchClass::Operational))]
 		pub fn sudo_send_upward_message(
 			origin: OriginFor<T>,
@@ -441,17 +457,42 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
+		/// later.
+		///
+		/// The `check_version` parameter sets a boolean flag for whether or not the runtime's spec
+		/// version and name should be verified on upgrade. Since the authorization only has a hash,
+		/// it cannot actually perform the verification.
+		///
+		/// This call requires Root origin.
+		#[pallet::call_index(2)]
 		#[pallet::weight((1_000_000, DispatchClass::Operational))]
-		pub fn authorize_upgrade(origin: OriginFor<T>, code_hash: T::Hash) -> DispatchResult {
+		pub fn authorize_upgrade(
+			origin: OriginFor<T>,
+			code_hash: T::Hash,
+			check_version: bool,
+		) -> DispatchResult {
 			ensure_root(origin)?;
-
-			AuthorizedUpgrade::<T>::put(&code_hash);
+			AuthorizedUpgrade::<T>::put(CodeUpgradeAuthorization {
+				code_hash: code_hash.clone(),
+				check_version,
+			});
 
 			Self::deposit_event(Event::UpgradeAuthorized { code_hash });
 			Ok(())
 		}
 
-		#[pallet::weight(1_000_000)]
+		/// Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
+		///
+		/// If the authorization required a version check, this call will ensure the spec name
+		/// remains unchanged and that the spec version has increased.
+		///
+		/// Note that this function will not apply the new `code`, but only attempt to schedule the
+		/// upgrade with the Relay Chain.
+		///
+		/// All origins are allowed.
+		#[pallet::call_index(3)]
+		#[pallet::weight({1_000_000})]
 		pub fn enact_authorized_upgrade(
 			_: OriginFor<T>,
 			code: Vec<u8>,
@@ -478,20 +519,22 @@ pub mod pallet {
 		DownwardMessagesReceived { count: u32 },
 		/// Downward messages were processed using the given weight.
 		DownwardMessagesProcessed { weight_used: Weight, dmq_head: relay_chain::Hash },
+		/// An upward message was sent to the relay chain.
+		UpwardMessageSent { message_hash: Option<XcmHash> },
 	}
 
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Attempt to upgrade validation function while existing upgrade pending
+		/// Attempt to upgrade validation function while existing upgrade pending.
 		OverlappingUpgrades,
-		/// Polkadot currently prohibits this parachain from upgrading its validation function
+		/// Polkadot currently prohibits this parachain from upgrading its validation function.
 		ProhibitedByPolkadot,
 		/// The supplied validation function has compiled into a blob larger than Polkadot is
-		/// willing to run
+		/// willing to run.
 		TooBig,
-		/// The inherent which supplies the validation data did not run this block
+		/// The inherent which supplies the validation data did not run this block.
 		ValidationDataNotAvailable,
-		/// The inherent which supplies the host configuration did not run this block
+		/// The inherent which supplies the host configuration did not run this block.
 		HostConfigurationNotAvailable,
 		/// No validation function upgrade is currently scheduled.
 		NotScheduled,
@@ -544,7 +587,7 @@ pub mod pallet {
 	/// set after the inherent.
 	#[pallet::storage]
 	pub(super) type UpgradeRestrictionSignal<T: Config> =
-		StorageValue<_, Option<relay_chain::v2::UpgradeRestriction>, ValueQuery>;
+		StorageValue<_, Option<relay_chain::UpgradeRestriction>, ValueQuery>;
 
 	/// The state proof for the last relay parent block.
 	///
@@ -603,7 +646,7 @@ pub mod pallet {
 	/// This will be cleared in `on_initialize` of each new block.
 	#[pallet::storage]
 	pub(super) type HrmpWatermark<T: Config> =
-		StorageValue<_, relay_chain::v2::BlockNumber, ValueQuery>;
+		StorageValue<_, relay_chain::BlockNumber, ValueQuery>;
 
 	/// HRMP messages that were sent in a block.
 	///
@@ -640,7 +683,7 @@ pub mod pallet {
 
 	/// The next authorized upgrade, if there is one.
 	#[pallet::storage]
-	pub(super) type AuthorizedUpgrade<T: Config> = StorageValue<_, T::Hash>;
+	pub(super) type AuthorizedUpgrade<T: Config> = StorageValue<_, CodeUpgradeAuthorization<T>>;
 
 	/// A custom head data that should be returned as result of `validate_block`.
 	///
@@ -707,9 +750,17 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	fn validate_authorized_upgrade(code: &[u8]) -> Result<T::Hash, DispatchError> {
-		let required_hash = AuthorizedUpgrade::<T>::get().ok_or(Error::<T>::NothingAuthorized)?;
+		let authorization = AuthorizedUpgrade::<T>::get().ok_or(Error::<T>::NothingAuthorized)?;
+
+		// ensure that the actual hash matches the authorized hash
 		let actual_hash = T::Hashing::hash(&code[..]);
-		ensure!(actual_hash == required_hash, Error::<T>::Unauthorized);
+		ensure!(actual_hash == authorization.code_hash, Error::<T>::Unauthorized);
+
+		// check versions if required as part of the authorization
+		if authorization.check_version {
+			frame_system::Pallet::<T>::can_set_code(code)?;
+		}
+
 		Ok(actual_hash)
 	}
 }
@@ -741,7 +792,7 @@ impl<T: Config> GetChannelInfo for Pallet<T> {
 		// None then it must be that this is an edge-case where a message is attempted to be
 		// sent at the first block. It should be safe to assume that there are no channels
 		// opened at all so early. At least, relying on this assumption seems to be a better
-		// tradeoff, compared to introducing an error variant that the clients should be
+		// trade-off, compared to introducing an error variant that the clients should be
 		// prepared to handle.
 		let index = match channels.binary_search_by_key(&id, |item| item.0) {
 			Err(_) => return ChannelStatus::Closed,
@@ -765,34 +816,6 @@ impl<T: Config> GetChannelInfo for Pallet<T> {
 }
 
 impl<T: Config> Pallet<T> {
-	/// Validate the given [`PersistedValidationData`] against the
-	/// [`ValidationParams`](polkadot_parachain::primitives::ValidationParams).
-	///
-	/// This check will only be executed when the block is currently being executed in the context
-	/// of [`validate_block`]. If this is being executed in the context of block building or block
-	/// import, this is a no-op.
-	///
-	/// # Panics
-	///
-	/// Panics while validating the `PoV` on the relay chain if the [`PersistedValidationData`]
-	/// passed by the block author was incorrect.
-	fn validate_validation_data(validation_data: &PersistedValidationData) {
-		validate_block::with_validation_params(|params| {
-			assert_eq!(
-				params.parent_head, validation_data.parent_head,
-				"Parent head doesn't match"
-			);
-			assert_eq!(
-				params.relay_parent_number, validation_data.relay_parent_number,
-				"Relay parent number doesn't match",
-			);
-			assert_eq!(
-				params.relay_parent_storage_root, validation_data.relay_parent_storage_root,
-				"Relay parent storage root doesn't match",
-			);
-		});
-	}
-
 	/// Process all inbound downward messages relayed by the collator.
 	///
 	/// Checks if the sequence of the messages is valid, dispatches them and communicates the
@@ -854,7 +877,7 @@ impl<T: Config> Pallet<T> {
 	fn process_inbound_horizontal_messages(
 		ingress_channels: &[(ParaId, cumulus_primitives_core::AbridgedHrmpChannel)],
 		horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
-		relay_parent_number: relay_chain::v2::BlockNumber,
+		relay_parent_number: relay_chain::BlockNumber,
 	) -> Weight {
 		// First, check that all submitted messages are sent from channels that exist. The
 		// channel exists if its MQC head is present in `vfp.hrmp_mqc_heads`.
@@ -1030,7 +1053,7 @@ impl<T: Config> frame_system::SetCode<T> for ParachainSetCode<T> {
 }
 
 impl<T: Config> Pallet<T> {
-	pub fn send_upward_message(message: UpwardMessage) -> Result<u32, MessageSendError> {
+	pub fn send_upward_message(message: UpwardMessage) -> Result<(u32, XcmHash), MessageSendError> {
 		// Check if the message fits into the relay-chain constraints.
 		//
 		// Note, that we are using `host_configuration` here which may be from the previous
@@ -1060,13 +1083,18 @@ impl<T: Config> Pallet<T> {
 				// Thus fall through here.
 			},
 		};
-		<PendingUpwardMessages<T>>::append(message);
-		Ok(0)
+		<PendingUpwardMessages<T>>::append(message.clone());
+
+		// The relay ump does not use using_encoded
+		// We apply the same this to use the same hash
+		let hash = sp_io::hashing::blake2_256(&message);
+		Self::deposit_event(Event::UpwardMessageSent { message_hash: Some(hash) });
+		Ok((0, hash))
 	}
 }
 
 impl<T: Config> UpwardMessageSender for Pallet<T> {
-	fn send_upward_message(message: UpwardMessage) -> Result<u32, MessageSendError> {
+	fn send_upward_message(message: UpwardMessage) -> Result<(u32, XcmHash), MessageSendError> {
 		Self::send_upward_message(message)
 	}
 }
@@ -1098,11 +1126,33 @@ pub trait OnSystemEvent {
 	fn on_validation_code_applied();
 }
 
-/// Implements [`BlockNumberProvider`] that returns relay chain block number fetched from
-/// validation data.
-/// NTOE: When validation data is not available (e.g. within on_initialize), 0 will be returned.
+/// Holds the most recent relay-parent state root and block number of the current parachain block.
+#[derive(PartialEq, Eq, Clone, Encode, Decode, TypeInfo, Default, RuntimeDebug)]
+pub struct RelayChainState {
+	/// Current relay chain height.
+	pub number: relay_chain::BlockNumber,
+	/// State root for current relay chain height.
+	pub state_root: relay_chain::Hash,
+}
+
+/// This exposes the [`RelayChainState`] to other runtime modules.
+///
+/// Enables parachains to read relay chain state via state proofs.
+pub trait RelaychainStateProvider {
+	/// May be called by any runtime module to obtain the current state of the relay chain.
+	///
+	/// **NOTE**: This is not guaranteed to return monotonically increasing relay parents.
+	fn current_relay_chain_state() -> RelayChainState;
+}
+
+/// Implements [`BlockNumberProvider`] that returns relay chain block number fetched from validation data.
+/// When validation data is not available (e.g. within on_initialize), 0 will be returned.
+///
+/// **NOTE**: This has been deprecated, please use [`RelaychainDataProvider`]
+#[deprecated = "Use `RelaychainDataProvider` instead"]
 pub struct RelaychainBlockNumberProvider<T>(sp_std::marker::PhantomData<T>);
 
+#[allow(deprecated)]
 impl<T: Config> BlockNumberProvider for RelaychainBlockNumberProvider<T> {
 	type BlockNumber = relay_chain::BlockNumber;
 
@@ -1111,6 +1161,47 @@ impl<T: Config> BlockNumberProvider for RelaychainBlockNumberProvider<T> {
 			.map(|d| d.relay_parent_number)
 			.unwrap_or_default()
 	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn set_block_number(block: Self::BlockNumber) {
+		let mut validation_data = Pallet::<T>::validation_data().unwrap_or_else(||
+			// PersistedValidationData does not impl default in non-std
+			PersistedValidationData {
+				parent_head: vec![].into(),
+				relay_parent_number: Default::default(),
+				max_pov_size: Default::default(),
+				relay_parent_storage_root: Default::default(),
+			});
+		validation_data.relay_parent_number = block;
+		ValidationData::<T>::put(validation_data)
+	}
+}
+
+impl<T: Config> RelaychainStateProvider for RelaychainDataProvider<T> {
+	fn current_relay_chain_state() -> RelayChainState {
+		Pallet::<T>::validation_data()
+			.map(|d| RelayChainState {
+				number: d.relay_parent_number,
+				state_root: d.relay_parent_storage_root,
+			})
+			.unwrap_or_default()
+	}
+}
+
+/// Implements [`BlockNumberProvider`] and [`RelaychainStateProvider`] that returns relevant relay data fetched from
+/// validation data.
+/// NOTE: When validation data is not available (e.g. within on_initialize), default values will be returned.
+pub struct RelaychainDataProvider<T>(sp_std::marker::PhantomData<T>);
+
+impl<T: Config> BlockNumberProvider for RelaychainDataProvider<T> {
+	type BlockNumber = relay_chain::BlockNumber;
+
+	fn current_block_number() -> relay_chain::BlockNumber {
+		Pallet::<T>::validation_data()
+			.map(|d| d.relay_parent_number)
+			.unwrap_or_default()
+	}
+
 	#[cfg(feature = "runtime-benchmarks")]
 	fn set_block_number(block: Self::BlockNumber) {
 		let mut validation_data = Pallet::<T>::validation_data().unwrap_or_else(||

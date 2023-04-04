@@ -18,24 +18,23 @@ use collator_overseer::{CollatorOverseerGenArgs, NewMinimalNode};
 
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::{RelayChainRpcInterface, Url};
+use network::build_collator_network;
 use polkadot_network_bridge::{peer_sets_info, IsAuthority};
 use polkadot_node_network_protocol::{
 	peer_set::PeerSetProtocolNames,
-	request_response::{self, IncomingRequest, ReqProtocolNames},
+	request_response::{v1, IncomingRequest, IncomingRequestReceiver, Protocol, ReqProtocolNames},
 };
+
 use polkadot_node_subsystem_util::metrics::prometheus::Registry;
-use polkadot_primitives::v2::CollatorPair;
+use polkadot_primitives::CollatorPair;
 
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
-use sc_network::{Event, NetworkService};
-use sc_network_common::service::NetworkEventStream;
-use std::sync::Arc;
-
-use polkadot_service::{open_database, Configuration, TaskManager};
+use sc_network::{Event, NetworkEventStream, NetworkService};
+use sc_service::{Configuration, TaskManager};
+use sp_runtime::{app_crypto::Pair, traits::Block as BlockT};
 
 use futures::StreamExt;
-
-use sp_runtime::{app_crypto::Pair, traits::Block as BlockT};
+use std::sync::Arc;
 
 mod collator_overseer;
 
@@ -70,7 +69,7 @@ fn build_authority_discovery_service<Block: BlockT>(
 		network.clone(),
 		Box::pin(dht_event_stream),
 		authority_discovery_role,
-		prometheus_registry.clone(),
+		prometheus_registry,
 	);
 
 	task_manager.spawn_handle().spawn(
@@ -84,7 +83,7 @@ fn build_authority_discovery_service<Block: BlockT>(
 pub async fn build_minimal_relay_chain_node(
 	polkadot_config: Configuration,
 	task_manager: &mut TaskManager,
-	relay_chain_url: Url,
+	relay_chain_url: Vec<Url>,
 ) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
 	let client = cumulus_relay_chain_rpc_interface::create_client_and_start_worker(
 		relay_chain_url,
@@ -126,10 +125,6 @@ async fn new_minimal_relay_chain(
 ) -> Result<NewMinimalNode, RelayChainError> {
 	let role = config.role.clone();
 
-	// Use the given RPC node as bootnode, since we do not have a chain spec with valid boot nodes
-	let mut boot_node_address = relay_chain_rpc_client.local_listen_addresses().await?;
-	config.network.boot_nodes.append(&mut boot_node_address);
-
 	let task_manager = {
 		let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
 		TaskManager::new(config.tokio_handle.clone(), registry)?
@@ -152,15 +147,16 @@ async fn new_minimal_relay_chain(
 		.extend(peer_sets_info(is_authority, &peer_set_protocol_names));
 
 	let request_protocol_names = ReqProtocolNames::new(genesis_hash, config.chain_spec.fork_id());
-	let (collation_req_receiver, available_data_req_receiver, pov_req_receiver, chunk_req_receiver) =
+	let (collation_req_receiver, available_data_req_receiver) =
 		build_request_response_protocol_receivers(&request_protocol_names, &mut config);
-	let (network, network_starter) =
-		network::build_collator_network(network::BuildCollatorNetworkParams {
-			config: &config,
-			client: relay_chain_rpc_client.clone(),
-			spawn_handle: task_manager.spawn_handle(),
-			genesis_hash,
-		})?;
+
+	let best_header = relay_chain_rpc_client
+		.chain_get_header(None)
+		.await?
+		.ok_or_else(|| RelayChainError::RpcCallError("Unable to fetch best header".to_string()))?;
+	let (network, network_starter, sync_oracle) =
+		build_collator_network(&config, task_manager.spawn_handle(), genesis_hash, best_header)
+			.map_err(|e| RelayChainError::Application(Box::new(e) as Box<_>))?;
 
 	let authority_discovery_service = build_authority_discovery_service(
 		&task_manager,
@@ -170,11 +166,10 @@ async fn new_minimal_relay_chain(
 		prometheus_registry.clone(),
 	);
 
-	let parachains_db = open_database(&config.database)?;
-
 	let overseer_args = CollatorOverseerGenArgs {
 		runtime_client: relay_chain_rpc_client.clone(),
 		network_service: network.clone(),
+		sync_oracle,
 		authority_discovery_service,
 		collation_req_receiver,
 		available_data_req_receiver,
@@ -183,17 +178,10 @@ async fn new_minimal_relay_chain(
 		collator_pair,
 		req_protocol_names: request_protocol_names,
 		peer_set_protocol_names,
-		parachains_db,
-		availability_config: polkadot_service::AVAILABILITY_CONFIG,
-		pov_req_receiver,
-		chunk_req_receiver,
 	};
 
-	let overseer_handle = collator_overseer::spawn_overseer(
-		overseer_args,
-		&task_manager,
-		relay_chain_rpc_client.clone(),
-	)?;
+	let overseer_handle =
+		collator_overseer::spawn_overseer(overseer_args, &task_manager, relay_chain_rpc_client)?;
 
 	network_starter.start_network();
 
@@ -204,10 +192,8 @@ fn build_request_response_protocol_receivers(
 	request_protocol_names: &ReqProtocolNames,
 	config: &mut Configuration,
 ) -> (
-	request_response::IncomingRequestReceiver<request_response::v1::CollationFetchingRequest>,
-	request_response::IncomingRequestReceiver<request_response::v1::AvailableDataFetchingRequest>,
-	request_response::IncomingRequestReceiver<request_response::v1::PoVFetchingRequest>,
-	request_response::IncomingRequestReceiver<request_response::v1::ChunkFetchingRequest>,
+	IncomingRequestReceiver<v1::CollationFetchingRequest>,
+	IncomingRequestReceiver<v1::AvailableDataFetchingRequest>,
 ) {
 	let (collation_req_receiver, cfg) =
 		IncomingRequest::get_config_receiver(request_protocol_names);
@@ -215,9 +201,7 @@ fn build_request_response_protocol_receivers(
 	let (available_data_req_receiver, cfg) =
 		IncomingRequest::get_config_receiver(request_protocol_names);
 	config.network.request_response_protocols.push(cfg);
-	let (pov_req_receiver, cfg) = IncomingRequest::get_config_receiver(request_protocol_names);
+	let cfg = Protocol::ChunkFetchingV1.get_outbound_only_config(request_protocol_names);
 	config.network.request_response_protocols.push(cfg);
-	let (chunk_req_receiver, cfg) = IncomingRequest::get_config_receiver(request_protocol_names);
-	config.network.request_response_protocols.push(cfg);
-	(collation_req_receiver, available_data_req_receiver, pov_req_receiver, chunk_req_receiver)
+	(collation_req_receiver, available_data_req_receiver)
 }

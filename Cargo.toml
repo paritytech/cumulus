@@ -35,9 +35,13 @@ members = [
 	"parachains/runtimes/testing/rococo-parachain",
 	"parachains/runtimes/starters/shell",
 	"parachains/runtimes/starters/seedling",
+	"parachains/runtimes/assets/common",
 	"parachains/runtimes/assets/statemint",
 	"parachains/runtimes/assets/statemine",
 	"parachains/runtimes/assets/westmint",
+	"parachains/runtimes/bridge-hubs/bridge-hub-rococo",
+	"parachains/runtimes/bridge-hubs/bridge-hub-kusama",
+	"parachains/runtimes/bridge-hubs/bridge-hub-polkadot",
 	"parachains/runtimes/collectives/collectives-polkadot",
 	"parachains/runtimes/contracts/contracts-rococo",
 	"parachains/runtimes/testing/penpal",
@@ -56,3 +60,4 @@ opt-level = 3
 inherits = "release"
 lto = true
 codegen-units = 1
+

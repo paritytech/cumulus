@@ -18,11 +18,12 @@ use sp_runtime::traits::Block as BlockT;
 
 use polkadot_node_primitives::AvailableData;
 use polkadot_node_subsystem::messages::AvailabilityRecoveryMessage;
-use polkadot_overseer::Handle as OverseerHandle;
 
 use futures::{channel::oneshot, stream::FuturesUnordered, Future, FutureExt, StreamExt};
 
 use std::{collections::HashSet, pin::Pin};
+
+use crate::RecoveryHandle;
 
 /// The active candidate recovery.
 ///
@@ -34,27 +35,27 @@ pub(crate) struct ActiveCandidateRecovery<Block: BlockT> {
 	>,
 	/// The block hashes of the candidates currently being recovered.
 	candidates: HashSet<Block::Hash>,
-	overseer_handle: OverseerHandle,
+	recovery_handle: Box<dyn RecoveryHandle>,
 }
 
 impl<Block: BlockT> ActiveCandidateRecovery<Block> {
-	pub fn new(overseer_handle: OverseerHandle) -> Self {
-		Self { recoveries: Default::default(), candidates: Default::default(), overseer_handle }
+	pub fn new(recovery_handle: Box<dyn RecoveryHandle>) -> Self {
+		Self { recoveries: Default::default(), candidates: Default::default(), recovery_handle }
 	}
 
-	/// Recover the given `pending_candidate`.
+	/// Recover the given `candidate`.
 	pub async fn recover_candidate(
 		&mut self,
 		block_hash: Block::Hash,
-		pending_candidate: crate::PendingCandidate<Block>,
+		candidate: &crate::Candidate<Block>,
 	) {
 		let (tx, rx) = oneshot::channel();
 
-		self.overseer_handle
-			.send_msg(
+		self.recovery_handle
+			.send_recovery_msg(
 				AvailabilityRecoveryMessage::RecoverAvailableData(
-					pending_candidate.receipt,
-					pending_candidate.session_index,
+					candidate.receipt.clone(),
+					candidate.session_index,
 					None,
 					tx,
 				),
@@ -88,11 +89,6 @@ impl<Block: BlockT> ActiveCandidateRecovery<Block> {
 			}
 			.boxed(),
 		);
-	}
-
-	/// Returns if the given `candidate` is being recovered.
-	pub fn is_being_recovered(&self, candidate: &Block::Hash) -> bool {
-		self.candidates.contains(candidate)
 	}
 
 	/// Waits for the next recovery.

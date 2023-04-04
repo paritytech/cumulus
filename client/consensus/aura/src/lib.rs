@@ -24,9 +24,9 @@
 
 use codec::{Decode, Encode};
 use cumulus_client_consensus_common::{
-	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
+	ParachainBlockImportMarker, ParachainCandidate, ParachainConsensus,
 };
-use cumulus_primitives_core::{relay_chain::v2::Hash as PHash, PersistedValidationData};
+use cumulus_primitives_core::{relay_chain::Hash as PHash, PersistedValidationData};
 
 use futures::lock::Mutex;
 use sc_client_api::{backend::AuxStore, BlockOf};
@@ -39,8 +39,8 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::{EnableProofRecording, Environment, ProofRecording, Proposer, SyncOracle};
 use sp_consensus_aura::{AuraApi, SlotDuration};
 use sp_core::crypto::Pair;
-use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvider};
-use sp_keystore::SyncCryptoStorePtr;
+use sp_inherents::CreateInherentDataProviders;
+use sp_keystore::KeystorePtr;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, Member, NumberFor};
 use std::{convert::TryFrom, hash::Hash, marker::PhantomData, sync::Arc};
 
@@ -75,11 +75,11 @@ impl<B, CIDP, W> Clone for AuraConsensus<B, CIDP, W> {
 pub struct BuildAuraConsensusParams<PF, BI, CIDP, Client, BS, SO> {
 	pub proposer_factory: PF,
 	pub create_inherent_data_providers: CIDP,
-	pub block_import: ParachainBlockImport<BI>,
+	pub block_import: BI,
 	pub para_client: Arc<Client>,
 	pub backoff_authoring_blocks: Option<BS>,
 	pub sync_oracle: SO,
-	pub keystore: SyncCryptoStorePtr,
+	pub keystore: KeystorePtr,
 	pub force_authoring: bool,
 	pub slot_duration: SlotDuration,
 	pub telemetry: Option<TelemetryHandle>,
@@ -114,7 +114,11 @@ where
 		Client:
 			ProvideRuntimeApi<B> + BlockOf + AuxStore + HeaderBackend<B> + Send + Sync + 'static,
 		Client::Api: AuraApi<B, P::Public>,
-		BI: BlockImport<B, Transaction = sp_api::TransactionFor<Client, B>> + Send + Sync + 'static,
+		BI: BlockImport<B, Transaction = sp_api::TransactionFor<Client, B>>
+			+ ParachainBlockImportMarker
+			+ Send
+			+ Sync
+			+ 'static,
 		SO: SyncOracle + Send + Sync + Clone + 'static,
 		BS: BackoffAuthoringBlocksStrategy<NumberFor<B>> + Send + Sync + 'static,
 		PF: Environment<B, Error = Error> + Send + Sync + 'static,
@@ -170,9 +174,8 @@ where
 		parent: B::Hash,
 		validation_data: &PersistedValidationData,
 		relay_parent: PHash,
-	) -> Option<(InherentData, CIDP::InherentDataProviders)> {
-		let inherent_data_providers = self
-			.create_inherent_data_providers
+	) -> Option<CIDP::InherentDataProviders> {
+		self.create_inherent_data_providers
 			.create_inherent_data_providers(parent, (relay_parent, validation_data.clone()))
 			.await
 			.map_err(|e| {
@@ -182,19 +185,7 @@ where
 					"Failed to create inherent data providers.",
 				)
 			})
-			.ok()?;
-
-		inherent_data_providers
-			.create_inherent_data()
-			.map_err(|e| {
-				tracing::error!(
-					target: LOG_TARGET,
-					error = ?e,
-					"Failed to create inherent data.",
-				)
-			})
 			.ok()
-			.map(|d| (d, inherent_data_providers))
 	}
 }
 
@@ -213,12 +204,12 @@ where
 		relay_parent: PHash,
 		validation_data: &PersistedValidationData,
 	) -> Option<ParachainCandidate<B>> {
-		let (inherent_data, inherent_data_providers) =
+		let inherent_data_providers =
 			self.inherent_data(parent.hash(), validation_data, relay_parent).await?;
 
 		let info = SlotInfo::new(
 			inherent_data_providers.slot(),
-			inherent_data,
+			Box::new(inherent_data_providers),
 			self.slot_duration.as_duration(),
 			parent.clone(),
 			// Set the block limit to 50% of the maximum PoV size.

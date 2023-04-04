@@ -1,13 +1,13 @@
 use crate::impls::AccountIdOf;
-use core::marker::PhantomData;
+use core::{marker::PhantomData, ops::ControlFlow};
 use frame_support::{
 	log,
-	traits::{fungibles::Inspect, tokens::BalanceConversion},
-	weights::{Weight, WeightToFee, WeightToFeePolynomial},
+	traits::{fungibles::Inspect, tokens::ConversionToAssetBalance, ContainsPair},
+	weights::Weight,
 };
 use sp_runtime::traits::Get;
-use xcm::latest::{prelude::*, Weight as XCMWeight};
-use xcm_executor::traits::{FilterAssetLocation, ShouldExecute};
+use xcm::{latest::prelude::*, CreateMatcher, MatchXcm};
+use xcm_executor::traits::ShouldExecute;
 
 //TODO: move DenyThenTry to polkadot's xcm module.
 /// Deny executing the XCM if it matches any of the Deny filter regardless of anything else.
@@ -24,9 +24,9 @@ where
 {
 	fn should_execute<RuntimeCall>(
 		origin: &MultiLocation,
-		message: &mut Xcm<RuntimeCall>,
-		max_weight: XCMWeight,
-		weight_credit: &mut XCMWeight,
+		message: &mut [Instruction<RuntimeCall>],
+		max_weight: Weight,
+		weight_credit: &mut Weight,
 	) -> Result<(), ()> {
 		Deny::should_execute(origin, message, max_weight, weight_credit)?;
 		Allow::should_execute(origin, message, max_weight, weight_credit)
@@ -38,36 +38,42 @@ pub struct DenyReserveTransferToRelayChain;
 impl ShouldExecute for DenyReserveTransferToRelayChain {
 	fn should_execute<RuntimeCall>(
 		origin: &MultiLocation,
-		message: &mut Xcm<RuntimeCall>,
-		_max_weight: XCMWeight,
-		_weight_credit: &mut XCMWeight,
+		message: &mut [Instruction<RuntimeCall>],
+		_max_weight: Weight,
+		_weight_credit: &mut Weight,
 	) -> Result<(), ()> {
-		if message.0.iter().any(|inst| {
-			matches!(
-				inst,
+		message.matcher().match_next_inst_while(
+			|_| true,
+			|inst| match inst {
 				InitiateReserveWithdraw {
 					reserve: MultiLocation { parents: 1, interior: Here },
 					..
-				} | DepositReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. } |
-					TransferReserveAsset {
-						dest: MultiLocation { parents: 1, interior: Here },
-						..
-					}
-			)
-		}) {
-			return Err(()) // Deny
-		}
+				} |
+				DepositReserveAsset {
+					dest: MultiLocation { parents: 1, interior: Here }, ..
+				} |
+				TransferReserveAsset {
+					dest: MultiLocation { parents: 1, interior: Here }, ..
+				} => {
+					Err(()) // Deny
+				},
 
-		// An unexpected reserve transfer has arrived from the Relay Chain. Generally, `IsReserve`
-		// should not allow this, but we just log it here.
-		if matches!(origin, MultiLocation { parents: 1, interior: Here }) &&
-			message.0.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
-		{
-			log::warn!(
-				target: "xcm::barrier",
-				"Unexpected ReserveAssetDeposited from the Relay Chain",
-			);
-		}
+				// An unexpected reserve transfer has arrived from the Relay Chain. Generally,
+				// `IsReserve` should not allow this, but we just log it here.
+				ReserveAssetDeposited { .. }
+					if matches!(origin, MultiLocation { parents: 1, interior: Here }) =>
+				{
+					log::warn!(
+						target: "xcm::barrier",
+						"Unexpected ReserveAssetDeposited from the Relay Chain",
+					);
+					Ok(ControlFlow::Continue(()))
+				},
+
+				_ => Ok(ControlFlow::Continue(())),
+			},
+		)?;
+
 		// Permit everything else
 		Ok(())
 	}
@@ -76,30 +82,37 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 /// A `ChargeFeeInFungibles` implementation that converts the output of
 /// a given WeightToFee implementation an amount charged in
 /// a particular assetId from pallet-assets
-pub struct AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceConverter>(
-	PhantomData<(Runtime, WeightToFee, BalanceConverter)>,
-);
-impl<CurrencyBalance, Runtime, WeightToFee, BalanceConverter>
+pub struct AssetFeeAsExistentialDepositMultiplier<
+	Runtime,
+	WeightToFee,
+	BalanceConverter,
+	AssetInstance: 'static,
+>(PhantomData<(Runtime, WeightToFee, BalanceConverter, AssetInstance)>);
+impl<CurrencyBalance, Runtime, WeightToFee, BalanceConverter, AssetInstance>
 	cumulus_primitives_utility::ChargeWeightInFungibles<
 		AccountIdOf<Runtime>,
-		pallet_assets::Pallet<Runtime>,
-	> for AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceConverter>
+		pallet_assets::Pallet<Runtime, AssetInstance>,
+	> for AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceConverter, AssetInstance>
 where
-	Runtime: pallet_assets::Config,
-	WeightToFee: WeightToFeePolynomial<Balance = CurrencyBalance>,
-	BalanceConverter: BalanceConversion<
+	Runtime: pallet_assets::Config<AssetInstance>,
+	WeightToFee: frame_support::weights::WeightToFee<Balance = CurrencyBalance>,
+	BalanceConverter: ConversionToAssetBalance<
 		CurrencyBalance,
-		<Runtime as pallet_assets::Config>::AssetId,
-		<Runtime as pallet_assets::Config>::Balance,
+		<Runtime as pallet_assets::Config<AssetInstance>>::AssetId,
+		<Runtime as pallet_assets::Config<AssetInstance>>::Balance,
 	>,
 	AccountIdOf<Runtime>:
-		From<polkadot_primitives::v2::AccountId> + Into<polkadot_primitives::v2::AccountId>,
+		From<polkadot_primitives::AccountId> + Into<polkadot_primitives::AccountId>,
 {
 	fn charge_weight_in_fungibles(
-		asset_id: <pallet_assets::Pallet<Runtime> as Inspect<AccountIdOf<Runtime>>>::AssetId,
+		asset_id: <pallet_assets::Pallet<Runtime, AssetInstance> as Inspect<
+			AccountIdOf<Runtime>,
+		>>::AssetId,
 		weight: Weight,
-	) -> Result<<pallet_assets::Pallet<Runtime> as Inspect<AccountIdOf<Runtime>>>::Balance, XcmError>
-	{
+	) -> Result<
+		<pallet_assets::Pallet<Runtime, AssetInstance> as Inspect<AccountIdOf<Runtime>>>::Balance,
+		XcmError,
+	> {
 		let amount = WeightToFee::weight_to_fee(&weight);
 		// If the amount gotten is not at least the ED, then make it be the ED of the asset
 		// This is to avoid burning assets and decreasing the supply
@@ -111,8 +124,10 @@ where
 
 /// Accepts an asset if it is a native asset from a particular `MultiLocation`.
 pub struct ConcreteNativeAssetFrom<Location>(PhantomData<Location>);
-impl<Location: Get<MultiLocation>> FilterAssetLocation for ConcreteNativeAssetFrom<Location> {
-	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+impl<Location: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation>
+	for ConcreteNativeAssetFrom<Location>
+{
+	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
 		log::trace!(target: "xcm::filter_asset_location",
 			"ConcreteNativeAsset asset: {:?}, origin: {:?}, location: {:?}",
 			asset, origin, Location::get());

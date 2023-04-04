@@ -17,18 +17,18 @@
 use super::*;
 use async_trait::async_trait;
 use cumulus_relay_chain_inprocess_interface::{check_block_in_chain, BlockCheckStatus};
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
+use cumulus_relay_chain_interface::{
+	OverseerHandle, PHeader, ParaId, RelayChainError, RelayChainResult,
+};
 use cumulus_test_service::runtime::{Block, Hash, Header};
 use futures::{executor::block_on, poll, task::Poll, FutureExt, Stream, StreamExt};
 use parking_lot::Mutex;
 use polkadot_node_primitives::{SignedFullStatement, Statement};
-use polkadot_primitives::v2::{
+use polkadot_primitives::{
 	CandidateCommitments, CandidateDescriptor, CollatorPair, CommittedCandidateReceipt,
-	Hash as PHash, HeadData, Header as PHeader, Id as ParaId, InboundDownwardMessage,
-	InboundHrmpMessage, OccupiedCoreAssumption, PersistedValidationData, SessionIndex,
-	SigningContext, ValidationCodeHash, ValidatorId,
+	Hash as PHash, HeadData, InboundDownwardMessage, InboundHrmpMessage, OccupiedCoreAssumption,
+	PersistedValidationData, SessionIndex, SigningContext, ValidationCodeHash, ValidatorId,
 };
-use polkadot_service::Handle;
 use polkadot_test_client::{
 	Client as PClient, ClientBlockImportExt, DefaultTestClientBuilderExt, FullBackend as PBackend,
 	InitPolkadotBlockBuilder, TestClientBuilder, TestClientBuilderExt,
@@ -38,7 +38,7 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::BlockOrigin;
 use sp_core::{Pair, H256};
 use sp_keyring::Sr25519Keyring;
-use sp_keystore::{testing::KeyStore, SyncCryptoStore, SyncCryptoStorePtr};
+use sp_keystore::{testing::MemoryKeystore, Keystore, KeystorePtr};
 use sp_runtime::RuntimeAppPublic;
 use sp_state_machine::StorageValue;
 use std::{collections::BTreeMap, time::Duration};
@@ -83,6 +83,9 @@ impl RelayChainInterface for DummyRelayChainInterface {
 
 	async fn best_block_hash(&self) -> RelayChainResult<PHash> {
 		Ok(self.relay_backend.blockchain().info().best_hash)
+	}
+	async fn finalized_block_hash(&self) -> RelayChainResult<PHash> {
+		Ok(self.relay_backend.blockchain().info().finalized_hash)
 	}
 
 	async fn retrieve_dmq_contents(
@@ -133,8 +136,8 @@ impl RelayChainInterface for DummyRelayChainInterface {
 					validation_code_hash: ValidationCodeHash::from(PHash::random()),
 				},
 				commitments: CandidateCommitments {
-					upward_messages: Vec::new(),
-					horizontal_messages: Vec::new(),
+					upward_messages: Default::default(),
+					horizontal_messages: Default::default(),
 					new_validation_code: None,
 					head_data: HeadData(Vec::new()),
 					processed_downward_messages: 0,
@@ -174,7 +177,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		Ok(false)
 	}
 
-	fn overseer_handle(&self) -> RelayChainResult<Handle> {
+	fn overseer_handle(&self) -> RelayChainResult<OverseerHandle> {
 		unimplemented!("Not needed for test")
 	}
 
@@ -270,8 +273,8 @@ async fn make_gossip_message_and_header(
 	relay_parent: H256,
 	validator_index: u32,
 ) -> (CollationSecondedSignal, Header) {
-	let keystore: SyncCryptoStorePtr = Arc::new(KeyStore::new());
-	let alice_public = SyncCryptoStore::sr25519_generate_new(
+	let keystore: KeystorePtr = Arc::new(MemoryKeystore::new());
+	let alice_public = Keystore::sr25519_generate_new(
 		&*keystore,
 		ValidatorId::ID,
 		Some(&Sr25519Keyring::Alice.to_seed()),
@@ -306,7 +309,6 @@ async fn make_gossip_message_and_header(
 		validator_index.into(),
 		&alice_public.into(),
 	)
-	.await
 	.ok()
 	.flatten()
 	.expect("Signing statement");
@@ -451,8 +453,8 @@ async fn check_statement_seconded() {
 	let header = default_header();
 	let relay_parent = H256::from_low_u64_be(1);
 
-	let keystore: SyncCryptoStorePtr = Arc::new(KeyStore::new());
-	let alice_public = SyncCryptoStore::sr25519_generate_new(
+	let keystore: KeystorePtr = Arc::new(MemoryKeystore::new());
+	let alice_public = Keystore::sr25519_generate_new(
 		&*keystore,
 		ValidatorId::ID,
 		Some(&Sr25519Keyring::Alice.to_seed()),
@@ -463,13 +465,13 @@ async fn check_statement_seconded() {
 
 	let statement = Statement::Valid(Default::default());
 
-	let signed_statement = block_on(SignedFullStatement::sign(
+	let signed_statement = SignedFullStatement::sign(
 		&keystore,
 		statement,
 		&signing_context,
 		0.into(),
 		&alice_public.into(),
-	))
+	)
 	.ok()
 	.flatten()
 	.expect("Signs statement");

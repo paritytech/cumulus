@@ -16,13 +16,12 @@
 
 //! A module that is responsible for migration of storage.
 
-use crate::{Config, Pallet, Store, DEFAULT_POV_SIZE};
+use crate::{Config, Overweight, Pallet, QueueConfig, DEFAULT_POV_SIZE};
 use frame_support::{
 	pallet_prelude::*,
 	traits::StorageVersion,
-	weights::{constants::WEIGHT_PER_MILLIS, Weight},
+	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight},
 };
-use xcm::latest::Weight as XcmWeight;
 
 /// The current storage version.
 pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
@@ -33,8 +32,15 @@ pub fn migrate_to_latest<T: Config>() -> Weight {
 	let mut weight = T::DbWeight::get().reads(1);
 
 	if StorageVersion::get::<Pallet<T>>() == 1 {
-		weight += migrate_to_v2::<T>();
+		weight.saturating_accrue(migrate_to_v2::<T>());
 		StorageVersion::new(2).put::<Pallet<T>>();
+		weight.saturating_accrue(T::DbWeight::get().writes(1));
+	}
+
+	if StorageVersion::get::<Pallet<T>>() == 2 {
+		weight.saturating_accrue(migrate_to_v3::<T>());
+		StorageVersion::new(3).put::<Pallet<T>>();
+		weight.saturating_accrue(T::DbWeight::get().writes(1));
 	}
 
 	weight
@@ -49,9 +55,9 @@ mod v1 {
 		pub suspend_threshold: u32,
 		pub drop_threshold: u32,
 		pub resume_threshold: u32,
-		pub threshold_weight: XcmWeight,
-		pub weight_restrict_decay: XcmWeight,
-		pub xcmp_max_individual_weight: XcmWeight,
+		pub threshold_weight: u64,
+		pub weight_restrict_decay: u64,
+		pub xcmp_max_individual_weight: u64,
 	}
 
 	impl Default for QueueConfigData {
@@ -62,7 +68,7 @@ mod v1 {
 				resume_threshold: 1,
 				threshold_weight: 100_000,
 				weight_restrict_decay: 2,
-				xcmp_max_individual_weight: 20u64 * WEIGHT_PER_MILLIS.ref_time(),
+				xcmp_max_individual_weight: 20u64 * WEIGHT_REF_TIME_PER_MILLIS,
 			}
 		}
 	}
@@ -79,8 +85,8 @@ pub fn migrate_to_v2<T: Config>() -> Weight {
 			suspend_threshold: pre.suspend_threshold,
 			drop_threshold: pre.drop_threshold,
 			resume_threshold: pre.resume_threshold,
-			threshold_weight: Weight::from_ref_time(pre.threshold_weight),
-			weight_restrict_decay: Weight::from_ref_time(pre.weight_restrict_decay),
+			threshold_weight: Weight::from_parts(pre.threshold_weight, 0),
+			weight_restrict_decay: Weight::from_parts(pre.weight_restrict_decay, 0),
 			xcmp_max_individual_weight: Weight::from_parts(
 				pre.xcmp_max_individual_weight,
 				DEFAULT_POV_SIZE,
@@ -88,7 +94,7 @@ pub fn migrate_to_v2<T: Config>() -> Weight {
 		}
 	};
 
-	if let Err(_) = <Pallet<T> as Store>::QueueConfig::translate(|pre| pre.map(translate)) {
+	if let Err(_) = QueueConfig::<T>::translate(|pre| pre.map(translate)) {
 		log::error!(
 			target: super::LOG_TARGET,
 			"unexpected error when performing translation of the QueueConfig type during storage upgrade to v2"
@@ -96,6 +102,12 @@ pub fn migrate_to_v2<T: Config>() -> Weight {
 	}
 
 	T::DbWeight::get().reads_writes(1, 1)
+}
+
+pub fn migrate_to_v3<T: Config>() -> Weight {
+	let overweight_messages = Overweight::<T>::initialize_counter() as u64;
+
+	T::DbWeight::get().reads_writes(overweight_messages, 1)
 }
 
 #[cfg(test)]

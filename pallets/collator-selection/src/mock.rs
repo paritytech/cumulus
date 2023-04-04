@@ -17,7 +17,7 @@ use super::*;
 use crate as collator_selection;
 use frame_support::{
 	ord_parameter_types, parameter_types,
-	traits::{FindAuthor, GenesisBuild, ValidatorRegistration},
+	traits::{ConstU32, ConstU64, FindAuthor, GenesisBuild, ValidatorRegistration},
 	PalletId,
 };
 use frame_system as system;
@@ -39,13 +39,13 @@ frame_support::construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
-		Aura: pallet_aura::{Pallet, Storage, Config<T>},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		CollatorSelection: collator_selection::{Pallet, Call, Storage, Event<T>},
-		Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent},
+		System: frame_system,
+		Timestamp: pallet_timestamp,
+		Session: pallet_session,
+		Aura: pallet_aura,
+		Balances: pallet_balances,
+		CollatorSelection: collator_selection,
+		Authorship: pallet_authorship,
 	}
 );
 
@@ -96,6 +96,10 @@ impl pallet_balances::Config for Test {
 	type MaxLocks = ();
 	type MaxReserves = MaxReserves;
 	type ReserveIdentifier = [u8; 8];
+	type HoldIdentifier = ();
+	type FreezeIdentifier = ();
+	type MaxHolds = ConstU32<0>;
+	type MaxFreezes = ConstU32<0>;
 }
 
 pub struct Author4;
@@ -110,25 +114,19 @@ impl FindAuthor<u64> for Author4 {
 
 impl pallet_authorship::Config for Test {
 	type FindAuthor = Author4;
-	type UncleGenerations = ();
-	type FilterUncle = ();
 	type EventHandler = CollatorSelection;
-}
-
-parameter_types! {
-	pub const MinimumPeriod: u64 = 1;
 }
 
 impl pallet_timestamp::Config for Test {
 	type Moment = u64;
 	type OnTimestampSet = Aura;
-	type MinimumPeriod = MinimumPeriod;
+	type MinimumPeriod = ConstU64<1>;
 	type WeightInfo = ();
 }
 
 impl pallet_aura::Config for Test {
 	type AuthorityId = sp_consensus_aura::sr25519::AuthorityId;
-	type MaxAuthorities = MaxAuthorities;
+	type MaxAuthorities = ConstU32<100_000>;
 	type DisabledValidators = ();
 }
 
@@ -192,7 +190,6 @@ parameter_types! {
 	pub const MaxCandidates: u32 = 20;
 	pub const MaxInvulnerables: u32 = 20;
 	pub const MinCandidates: u32 = 1;
-	pub const MaxAuthorities: u32 = 100_000;
 }
 
 pub struct IsRegistered;

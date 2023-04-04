@@ -50,6 +50,12 @@ jobs:
             runtime: statemint
           - category: assets
             runtime: westmint
+          - category: bridge-hubs
+            runtime: bridge-hub-polkadot
+          - category: bridge-hubs
+            runtime: bridge-hub-kusama
+          - category: bridge-hubs
+            runtime: bridge-hub-rococo
           - category: collectives
             runtime: collectives-polkadot
           - category: contracts
@@ -120,7 +126,7 @@ jobs:
           path: cumulus
           ref: ${{ github.event.inputs.ref2 }}
 
-      - uses: ruby/setup-ruby@f2c070bbf74632495b403899c87610cd4cb99dbe # v1.120.1
+      - uses: ruby/setup-ruby@93287a1fa82c6ddbb6d8db978df4b0119cd8879f # v1.133.2
         with:
           ruby-version: 3.0.0
 
@@ -150,6 +156,9 @@ jobs:
           WESTMINT_DIGEST: ${{ github.workspace}}/westmint-srtool-json/westmint-srtool-digest.json
           STATEMINE_DIGEST: ${{ github.workspace}}/statemine-srtool-json/statemine-srtool-digest.json
           STATEMINT_DIGEST: ${{ github.workspace}}/statemint-srtool-json/statemint-srtool-digest.json
+          BRIDGE_HUB_ROCOCO_DIGEST: ${{ github.workspace}}/bridge-hub-rococo-srtool-json/bridge-hub-rococo-srtool-digest.json
+          BRIDGE_HUB_KUSAMA_DIGEST: ${{ github.workspace}}/bridge-hub-kusama-srtool-json/bridge-hub-kusama-srtool-digest.json
+          BRIDGE_HUB_POLKADOT_DIGEST: ${{ github.workspace}}/bridge-hub-polkadot-srtool-json/bridge-hub-polkadot-srtool-digest.json
           COLLECTIVES_POLKADOT_DIGEST: ${{ github.workspace}}/collectives-polkadot-srtool-json/collectives-polkadot-srtool-digest.json
           ROCOCO_PARA_DIGEST: ${{ github.workspace}}/rococo-parachain-srtool-json/rococo-parachain-srtool-digest.json
           CANVAS_KUSAMA_DIGEST: ${{ github.workspace}}/contracts-rococo-srtool-json/contracts-rococo-srtool-digest.json
@@ -165,6 +174,9 @@ jobs:
             ls -al $WESTMINT_DIGEST || true
             ls -al $STATEMINE_DIGEST || true
             ls -al $STATEMINT_DIGEST || true
+            ls -al $BRIDGE_HUB_ROCOCO_DIGEST || true
+            ls -al $BRIDGE_HUB_KUSAMA_DIGEST || true
+            ls -al $BRIDGE_HUB_POLKADOT_DIGEST || true
             ls -al $COLLECTIVES_POLKADOT_DIGEST || true
             ls -al $ROCOCO_PARA_DIGEST || true
             ls -al $CANVAS_KUSAMA_DIGEST || true
@@ -216,6 +228,12 @@ jobs:
             runtime: statemint
           - category: assets
             runtime: westmint
+          - category: bridge-hubs
+            runtime: bridge-hub-polkadot
+          - category: bridge-hubs
+            runtime: bridge-hub-kusama
+          - category: bridge-hubs
+            runtime: bridge-hub-rococo
           - category: collectives
             runtime: collectives-polkadot
           - category: contracts
@@ -235,7 +253,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3.0.0
 
-      - uses: ruby/setup-ruby@f2c070bbf74632495b403899c87610cd4cb99dbe # v1.120.1
+      - uses: ruby/setup-ruby@93287a1fa82c6ddbb6d8db978df4b0119cd8879f # v1.133.2
         with:
           ruby-version: 3.0.0
 
@@ -255,7 +273,7 @@ jobs:
         id: fix-runtime-path
         run: |
           cd "${{ matrix.runtime }}-runtime/"
-          mv "$(sed -E 's/-(.*)/_\1/' <<< ${{ matrix.runtime }})_runtime.compact.compressed.wasm" "${{ matrix.runtime }}_runtime.compact.compressed.wasm" || true
+          mv "$(sed -E 's/- */_/g' <<< ${{ matrix.runtime }})_runtime.compact.compressed.wasm" "${{ matrix.runtime }}_runtime.compact.compressed.wasm" || true
 
       - name: Upload compressed ${{ matrix.runtime }} wasm
         uses: actions/upload-release-asset@e8f9f06c4b078e705bd2ea027f0926603fc9b4d5 # v1.0.2

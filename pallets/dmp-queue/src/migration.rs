@@ -16,13 +16,12 @@
 
 //! A module that is responsible for migration of storage.
 
-use crate::{Config, Pallet, Store, DEFAULT_POV_SIZE};
+use crate::{Config, Configuration, Overweight, Pallet, DEFAULT_POV_SIZE};
 use frame_support::{
 	pallet_prelude::*,
 	traits::StorageVersion,
-	weights::{constants::WEIGHT_PER_MILLIS, Weight},
+	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight},
 };
-use xcm::latest::Weight as XcmWeight;
 
 /// The current storage version.
 pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -33,8 +32,15 @@ pub fn migrate_to_latest<T: Config>() -> Weight {
 	let mut weight = T::DbWeight::get().reads(1);
 
 	if StorageVersion::get::<Pallet<T>>() == 0 {
-		weight += migrate_to_v1::<T>();
+		weight.saturating_accrue(migrate_to_v1::<T>());
 		StorageVersion::new(1).put::<Pallet<T>>();
+		weight.saturating_accrue(T::DbWeight::get().writes(1));
+	}
+
+	if StorageVersion::get::<Pallet<T>>() == 1 {
+		weight.saturating_accrue(migrate_to_v2::<T>());
+		StorageVersion::new(2).put::<Pallet<T>>();
+		weight.saturating_accrue(T::DbWeight::get().writes(1));
 	}
 
 	weight
@@ -46,12 +52,12 @@ mod v0 {
 
 	#[derive(Decode, Encode, Debug)]
 	pub struct ConfigData {
-		pub max_individual: XcmWeight,
+		pub max_individual: u64,
 	}
 
 	impl Default for ConfigData {
 		fn default() -> Self {
-			ConfigData { max_individual: 10u64 * WEIGHT_PER_MILLIS.ref_time() }
+			ConfigData { max_individual: 10u64 * WEIGHT_REF_TIME_PER_MILLIS }
 		}
 	}
 }
@@ -68,7 +74,7 @@ pub fn migrate_to_v1<T: Config>() -> Weight {
 		}
 	};
 
-	if let Err(_) = <Pallet<T> as Store>::Configuration::translate(|pre| pre.map(translate)) {
+	if let Err(_) = Configuration::<T>::translate(|pre| pre.map(translate)) {
 		log::error!(
 			target: "dmp_queue",
 			"unexpected error when performing translation of the QueueConfig type during storage upgrade to v2"
@@ -76,6 +82,16 @@ pub fn migrate_to_v1<T: Config>() -> Weight {
 	}
 
 	T::DbWeight::get().reads_writes(1, 1)
+}
+
+/// Migrates `Overweight` so that it initializes the storage map's counter.
+///
+/// NOTE: Only use this function if you know what you're doing. Default to using
+/// `migrate_to_latest`.
+pub fn migrate_to_v2<T: Config>() -> Weight {
+	let overweight_messages = Overweight::<T>::initialize_counter() as u64;
+
+	T::DbWeight::get().reads_writes(overweight_messages, 1)
 }
 
 #[cfg(test)]

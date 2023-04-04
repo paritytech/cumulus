@@ -20,20 +20,37 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::Encode;
-use cumulus_primitives_core::UpwardMessageSender;
+use cumulus_primitives_core::{MessageSendError, UpwardMessageSender};
 use frame_support::{
-	traits::tokens::{fungibles, fungibles::Inspect},
+	traits::{
+		tokens::{fungibles, fungibles::Inspect},
+		Get,
+	},
 	weights::Weight,
 };
+use polkadot_runtime_common::xcm_sender::ConstantPrice;
 use sp_runtime::{traits::Saturating, SaturatedConversion};
-
-use sp_std::marker::PhantomData;
-use xcm::{
-	latest::{prelude::*, Weight as XCMWeight},
-	WrapVersion,
-};
+use sp_std::{marker::PhantomData, prelude::*};
+use xcm::{latest::prelude::*, WrapVersion};
 use xcm_builder::TakeRevenue;
 use xcm_executor::traits::{MatchesFungibles, TransactAsset, WeightTrader};
+
+pub trait PriceForParentDelivery {
+	fn price_for_parent_delivery(message: &Xcm<()>) -> MultiAssets;
+}
+
+impl PriceForParentDelivery for () {
+	fn price_for_parent_delivery(_: &Xcm<()>) -> MultiAssets {
+		MultiAssets::new()
+	}
+}
+
+impl<T: Get<MultiAssets>> PriceForParentDelivery for ConstantPrice<T> {
+	fn price_for_parent_delivery(_: &Xcm<()>) -> MultiAssets {
+		T::get()
+	}
+}
+
 /// Xcm router which recognises the `Parent` destination and handles it by sending the message into
 /// the given UMP `UpwardMessageSender` implementation. Thus this essentially adapts an
 /// `UpwardMessageSender` trait impl into a `SendXcm` trait impl.
@@ -41,24 +58,45 @@ use xcm_executor::traits::{MatchesFungibles, TransactAsset, WeightTrader};
 /// NOTE: This is a pretty dumb "just send it" router; we will probably want to introduce queuing
 /// to UMP eventually and when we do, the pallet which implements the queuing will be responsible
 /// for the `SendXcm` implementation.
-pub struct ParentAsUmp<T, W>(PhantomData<(T, W)>);
-impl<T: UpwardMessageSender, W: WrapVersion> SendXcm for ParentAsUmp<T, W> {
-	fn send_xcm(dest: impl Into<MultiLocation>, msg: Xcm<()>) -> Result<(), SendError> {
-		let dest = dest.into();
+pub struct ParentAsUmp<T, W, P>(PhantomData<(T, W, P)>);
+impl<T, W, P> SendXcm for ParentAsUmp<T, W, P>
+where
+	T: UpwardMessageSender,
+	W: WrapVersion,
+	P: PriceForParentDelivery,
+{
+	type Ticket = Vec<u8>;
 
-		if dest.contains_parents_only(1) {
+	fn validate(
+		dest: &mut Option<MultiLocation>,
+		msg: &mut Option<Xcm<()>>,
+	) -> SendResult<Vec<u8>> {
+		let d = dest.take().ok_or(SendError::MissingArgument)?;
+
+		if d.contains_parents_only(1) {
 			// An upward message for the relay chain.
+			let xcm = msg.take().ok_or(SendError::MissingArgument)?;
+			let price = P::price_for_parent_delivery(&xcm);
 			let versioned_xcm =
-				W::wrap_version(&dest, msg).map_err(|()| SendError::DestinationUnsupported)?;
+				W::wrap_version(&d, xcm).map_err(|()| SendError::DestinationUnsupported)?;
 			let data = versioned_xcm.encode();
 
-			T::send_upward_message(data).map_err(|e| SendError::Transport(e.into()))?;
-
-			Ok(())
+			Ok((data, price))
 		} else {
-			// Anything else is unhandled. This includes a message this is meant for us.
-			Err(SendError::CannotReachDestination(dest, msg))
+			// Anything else is unhandled. This includes a message that is not meant for us.
+			// We need to make sure that dest/msg is not consumed here.
+			*dest = Some(d);
+			Err(SendError::NotApplicable)
 		}
+	}
+
+	fn deliver(data: Vec<u8>) -> Result<XcmHash, SendError> {
+		let (_, hash) = T::send_upward_message(data).map_err(|e| match e {
+			MessageSendError::TooBig => SendError::ExceedsMaxMessageSize,
+			e => SendError::Transport(e.into()),
+		})?;
+
+		Ok(hash)
 	}
 }
 
@@ -71,7 +109,7 @@ struct AssetTraderRefunder {
 	outstanding_concrete_asset: MultiAsset,
 }
 
-/// Charges for exercution in the first multiasset of those selected for fee payment
+/// Charges for execution in the first multiasset of those selected for fee payment
 /// Only succeeds for Concrete Fungible Assets
 /// First tries to convert the this MultiAsset into a local assetId
 /// Then charges for this assetId as described by FeeCharger
@@ -83,7 +121,7 @@ pub struct TakeFirstAssetTrader<
 	AccountId,
 	FeeCharger: ChargeWeightInFungibles<AccountId, ConcreteAssets>,
 	Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-	ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId> + fungibles::Balanced<AccountId>,
+	ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
 	HandleRefund: TakeRevenue,
 >(
 	Option<AssetTraderRefunder>,
@@ -93,9 +131,7 @@ impl<
 		AccountId,
 		FeeCharger: ChargeWeightInFungibles<AccountId, ConcreteAssets>,
 		Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-		ConcreteAssets: fungibles::Mutate<AccountId>
-			+ fungibles::Transfer<AccountId>
-			+ fungibles::Balanced<AccountId>,
+		ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
 		HandleRefund: TakeRevenue,
 	> WeightTrader
 	for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, ConcreteAssets, HandleRefund>
@@ -108,7 +144,7 @@ impl<
 	// If everything goes well, we charge.
 	fn buy_weight(
 		&mut self,
-		weight: XCMWeight,
+		weight: Weight,
 		payment: xcm_executor::Assets,
 	) -> Result<xcm_executor::Assets, XcmError> {
 		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::buy_weight weight: {:?}, payment: {:?}", weight, payment);
@@ -118,9 +154,8 @@ impl<
 			return Err(XcmError::NotWithdrawable)
 		}
 
-		let weight = Weight::from_ref_time(weight);
-
 		// We take the very first multiasset from payment
+		// (assets are sorted by fungibility/amount after this conversion)
 		let multiassets: MultiAssets = payment.clone().into();
 
 		// Take the first multiasset from the selected MultiAssets
@@ -160,15 +195,13 @@ impl<
 		Ok(unused)
 	}
 
-	fn refund_weight(&mut self, weight: XCMWeight) -> Option<MultiAsset> {
+	fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
 		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::refund_weight weight: {:?}", weight);
 		if let Some(AssetTraderRefunder {
 			mut weight_outstanding,
 			outstanding_concrete_asset: MultiAsset { id, fun },
 		}) = self.0.clone()
 		{
-			let weight = Weight::from_ref_time(weight).min(weight_outstanding);
-
 			// Get the local asset id in which we can refund fees
 			let (local_asset_id, outstanding_balance) =
 				Matcher::matches_fungibles(&(id.clone(), fun).into()).ok()?;
@@ -225,9 +258,7 @@ impl<
 		AccountId,
 		FeeCharger: ChargeWeightInFungibles<AccountId, ConcreteAssets>,
 		Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-		ConcreteAssets: fungibles::Mutate<AccountId>
-			+ fungibles::Transfer<AccountId>
-			+ fungibles::Balanced<AccountId>,
+		ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
 		HandleRefund: TakeRevenue,
 	> Drop for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, ConcreteAssets, HandleRefund>
 {
@@ -254,7 +285,10 @@ impl<
 		if let Some(receiver) = ReceiverAccount::get() {
 			let ok = FungiblesMutateAdapter::deposit_asset(
 				&revenue,
-				&(X1(AccountId32 { network: Any, id: receiver.into() }).into()),
+				&(X1(AccountId32 { network: None, id: receiver.into() }).into()),
+				// We aren't able to track the XCM that initiated the fee deposit, so we create a
+				// fake message hash here
+				&XcmContext::with_message_hash([0; 32]),
 			)
 			.is_ok();
 
@@ -271,4 +305,240 @@ pub trait ChargeWeightInFungibles<AccountId, Assets: fungibles::Inspect<AccountI
 		asset_id: <Assets as Inspect<AccountId>>::AssetId,
 		weight: Weight,
 	) -> Result<<Assets as Inspect<AccountId>>::Balance, XcmError>;
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use cumulus_primitives_core::UpwardMessage;
+	use frame_support::{
+		assert_ok,
+		dispatch::DispatchError,
+		traits::tokens::{
+			DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence,
+		},
+	};
+	use xcm_executor::{traits::Error, Assets};
+
+	/// Validates [`validate`] for required Some(destination) and Some(message)
+	struct OkFixedXcmHashWithAssertingRequiredInputsSender;
+	impl OkFixedXcmHashWithAssertingRequiredInputsSender {
+		const FIXED_XCM_HASH: [u8; 32] = [9; 32];
+
+		fn fixed_delivery_asset() -> MultiAssets {
+			MultiAssets::new()
+		}
+
+		fn expected_delivery_result() -> Result<(XcmHash, MultiAssets), SendError> {
+			Ok((Self::FIXED_XCM_HASH, Self::fixed_delivery_asset()))
+		}
+	}
+	impl SendXcm for OkFixedXcmHashWithAssertingRequiredInputsSender {
+		type Ticket = ();
+
+		fn validate(
+			destination: &mut Option<MultiLocation>,
+			message: &mut Option<Xcm<()>>,
+		) -> SendResult<Self::Ticket> {
+			assert!(destination.is_some());
+			assert!(message.is_some());
+			Ok(((), OkFixedXcmHashWithAssertingRequiredInputsSender::fixed_delivery_asset()))
+		}
+
+		fn deliver(_: Self::Ticket) -> Result<XcmHash, SendError> {
+			Ok(Self::FIXED_XCM_HASH)
+		}
+	}
+
+	/// Impl [`UpwardMessageSender`] that return `Other` error
+	struct OtherErrorUpwardMessageSender;
+	impl UpwardMessageSender for OtherErrorUpwardMessageSender {
+		fn send_upward_message(_: UpwardMessage) -> Result<(u32, XcmHash), MessageSendError> {
+			Err(MessageSendError::Other)
+		}
+	}
+
+	#[test]
+	fn parent_as_ump_does_not_consume_dest_or_msg_on_not_applicable() {
+		// dummy message
+		let message = Xcm(vec![Trap(5)]);
+
+		// ParentAsUmp - check dest is really not applicable
+		let dest = (Parent, Parent, Parent);
+		let mut dest_wrapper = Some(dest.clone().into());
+		let mut msg_wrapper = Some(message.clone());
+		assert_eq!(
+			Err(SendError::NotApplicable),
+			<ParentAsUmp<(), (), ()> as SendXcm>::validate(&mut dest_wrapper, &mut msg_wrapper)
+		);
+
+		// check wrapper were not consumed
+		assert_eq!(Some(dest.clone().into()), dest_wrapper.take());
+		assert_eq!(Some(message.clone()), msg_wrapper.take());
+
+		// another try with router chain with asserting sender
+		assert_eq!(
+			OkFixedXcmHashWithAssertingRequiredInputsSender::expected_delivery_result(),
+			send_xcm::<(ParentAsUmp<(), (), ()>, OkFixedXcmHashWithAssertingRequiredInputsSender)>(
+				dest.into(),
+				message
+			)
+		);
+	}
+
+	#[test]
+	fn parent_as_ump_consumes_dest_and_msg_on_ok_validate() {
+		// dummy message
+		let message = Xcm(vec![Trap(5)]);
+
+		// ParentAsUmp - check dest/msg is valid
+		let dest = (Parent, Here);
+		let mut dest_wrapper = Some(dest.clone().into());
+		let mut msg_wrapper = Some(message.clone());
+		assert!(<ParentAsUmp<(), (), ()> as SendXcm>::validate(
+			&mut dest_wrapper,
+			&mut msg_wrapper
+		)
+		.is_ok());
+
+		// check wrapper were consumed
+		assert_eq!(None, dest_wrapper.take());
+		assert_eq!(None, msg_wrapper.take());
+
+		// another try with router chain with asserting sender
+		assert_eq!(
+			Err(SendError::Transport("Other")),
+			send_xcm::<(
+				ParentAsUmp<OtherErrorUpwardMessageSender, (), ()>,
+				OkFixedXcmHashWithAssertingRequiredInputsSender
+			)>(dest.into(), message)
+		);
+	}
+
+	#[test]
+	fn take_first_asset_trader_buy_weight_called_twice_throws_error() {
+		const AMOUNT: u128 = 100;
+
+		// prepare prerequisites to instantiate `TakeFirstAssetTrader`
+		type TestAccountId = u32;
+		type TestAssetId = u32;
+		type TestBalance = u128;
+		struct TestAssets;
+		impl MatchesFungibles<TestAssetId, TestBalance> for TestAssets {
+			fn matches_fungibles(a: &MultiAsset) -> Result<(TestAssetId, TestBalance), Error> {
+				match a {
+					MultiAsset { fun: Fungible(amount), id: Concrete(_id) } => Ok((1, *amount)),
+					_ => Err(Error::AssetNotHandled),
+				}
+			}
+		}
+		impl fungibles::Inspect<TestAccountId> for TestAssets {
+			type AssetId = TestAssetId;
+			type Balance = TestBalance;
+
+			fn total_issuance(_: Self::AssetId) -> Self::Balance {
+				todo!()
+			}
+
+			fn minimum_balance(_: Self::AssetId) -> Self::Balance {
+				0
+			}
+
+			fn balance(_: Self::AssetId, _: &TestAccountId) -> Self::Balance {
+				todo!()
+			}
+
+			fn total_balance(_: Self::AssetId, _: &TestAccountId) -> Self::Balance {
+				todo!()
+			}
+
+			fn reducible_balance(
+				_: Self::AssetId,
+				_: &TestAccountId,
+				_: Preservation,
+				_: Fortitude,
+			) -> Self::Balance {
+				todo!()
+			}
+
+			fn can_deposit(
+				_: Self::AssetId,
+				_: &TestAccountId,
+				_: Self::Balance,
+				_: Provenance,
+			) -> DepositConsequence {
+				todo!()
+			}
+
+			fn can_withdraw(
+				_: Self::AssetId,
+				_: &TestAccountId,
+				_: Self::Balance,
+			) -> WithdrawConsequence<Self::Balance> {
+				todo!()
+			}
+
+			fn asset_exists(_: Self::AssetId) -> bool {
+				todo!()
+			}
+		}
+		impl fungibles::Mutate<TestAccountId> for TestAssets {}
+		impl fungibles::Balanced<TestAccountId> for TestAssets {
+			type OnDropCredit = fungibles::DecreaseIssuance<TestAccountId, Self>;
+			type OnDropDebt = fungibles::IncreaseIssuance<TestAccountId, Self>;
+		}
+		impl fungibles::Unbalanced<TestAccountId> for TestAssets {
+			fn handle_dust(_: fungibles::Dust<TestAccountId, Self>) {
+				todo!()
+			}
+			fn write_balance(
+				_: Self::AssetId,
+				_: &TestAccountId,
+				_: Self::Balance,
+			) -> Result<Option<Self::Balance>, DispatchError> {
+				todo!()
+			}
+
+			fn set_total_issuance(_: Self::AssetId, _: Self::Balance) {
+				todo!()
+			}
+		}
+
+		struct FeeChargerAssetsHandleRefund;
+		impl ChargeWeightInFungibles<TestAccountId, TestAssets> for FeeChargerAssetsHandleRefund {
+			fn charge_weight_in_fungibles(
+				_: <TestAssets as Inspect<TestAccountId>>::AssetId,
+				_: Weight,
+			) -> Result<<TestAssets as Inspect<TestAccountId>>::Balance, XcmError> {
+				Ok(AMOUNT)
+			}
+		}
+		impl TakeRevenue for FeeChargerAssetsHandleRefund {
+			fn take_revenue(_: MultiAsset) {}
+		}
+
+		// create new instance
+		type Trader = TakeFirstAssetTrader<
+			TestAccountId,
+			FeeChargerAssetsHandleRefund,
+			TestAssets,
+			TestAssets,
+			FeeChargerAssetsHandleRefund,
+		>;
+		let mut trader = <Trader as WeightTrader>::new();
+
+		// prepare test data
+		let asset: MultiAsset = (Here, AMOUNT).into();
+		let payment = Assets::from(asset.clone());
+		let weight_to_buy = Weight::from_parts(1_000, 1_000);
+
+		// lets do first call (success)
+		assert_ok!(trader.buy_weight(weight_to_buy, payment.clone()));
+
+		// lets do second call (error)
+		assert_eq!(
+			trader.buy_weight(weight_to_buy, payment.clone()),
+			Err(XcmError::NotWithdrawable)
+		);
+	}
 }

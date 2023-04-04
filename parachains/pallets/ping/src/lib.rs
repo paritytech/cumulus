@@ -40,7 +40,6 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	/// The module configuration trait.
@@ -78,9 +77,9 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		PingSent(ParaId, u32, Vec<u8>),
+		PingSent(ParaId, u32, Vec<u8>, XcmHash, MultiAssets),
 		Pinged(ParaId, u32, Vec<u8>),
-		PongSent(ParaId, u32, Vec<u8>),
+		PongSent(ParaId, u32, Vec<u8>, XcmHash, MultiAssets),
 		Ponged(ParaId, u32, Vec<u8>, T::BlockNumber),
 		ErrorSendingPing(SendError, ParaId, u32, Vec<u8>),
 		ErrorSendingPong(SendError, ParaId, u32, Vec<u8>),
@@ -103,11 +102,11 @@ pub mod pallet {
 					*seq += 1;
 					*seq
 				});
-				match T::XcmSender::send_xcm(
-					(1, Junction::Parachain(para.into())),
+				match send_xcm::<T::XcmSender>(
+					(Parent, Junction::Parachain(para.into())).into(),
 					Xcm(vec![Transact {
-						origin_type: OriginKind::Native,
-						require_weight_at_most: 1_000,
+						origin_kind: OriginKind::Native,
+						require_weight_at_most: Weight::from_parts(1_000, 1_000),
 						call: <T as Config>::RuntimeCall::from(Call::<T>::ping {
 							seq,
 							payload: payload.clone().to_vec(),
@@ -116,9 +115,15 @@ pub mod pallet {
 						.into(),
 					}]),
 				) {
-					Ok(()) => {
+					Ok((hash, cost)) => {
 						Pings::<T>::insert(seq, n);
-						Self::deposit_event(Event::PingSent(para, seq, payload.to_vec()));
+						Self::deposit_event(Event::PingSent(
+							para,
+							seq,
+							payload.to_vec(),
+							hash,
+							cost,
+						));
 					},
 					Err(e) => {
 						Self::deposit_event(Event::ErrorSendingPing(
@@ -135,7 +140,8 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(0)]
+		#[pallet::call_index(0)]
+		#[pallet::weight({0})]
 		pub fn start(origin: OriginFor<T>, para: ParaId, payload: Vec<u8>) -> DispatchResult {
 			ensure_root(origin)?;
 			let payload = BoundedVec::<u8, MaxPayloadSize>::try_from(payload)
@@ -146,7 +152,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::call_index(1)]
+		#[pallet::weight({0})]
 		pub fn start_many(
 			origin: OriginFor<T>,
 			para: ParaId,
@@ -165,7 +172,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::call_index(2)]
+		#[pallet::weight({0})]
 		pub fn stop(origin: OriginFor<T>, para: ParaId) -> DispatchResult {
 			ensure_root(origin)?;
 			Targets::<T>::mutate(|t| {
@@ -176,7 +184,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::call_index(3)]
+		#[pallet::weight({0})]
 		pub fn stop_all(origin: OriginFor<T>, maybe_para: Option<ParaId>) -> DispatchResult {
 			ensure_root(origin)?;
 			if let Some(para) = maybe_para {
@@ -187,17 +196,18 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::call_index(4)]
+		#[pallet::weight({0})]
 		pub fn ping(origin: OriginFor<T>, seq: u32, payload: Vec<u8>) -> DispatchResult {
 			// Only accept pings from other chains.
 			let para = ensure_sibling_para(<T as Config>::RuntimeOrigin::from(origin))?;
 
 			Self::deposit_event(Event::Pinged(para, seq, payload.clone()));
-			match T::XcmSender::send_xcm(
-				(1, Junction::Parachain(para.into())),
+			match send_xcm::<T::XcmSender>(
+				(Parent, Junction::Parachain(para.into())).into(),
 				Xcm(vec![Transact {
-					origin_type: OriginKind::Native,
-					require_weight_at_most: 1_000,
+					origin_kind: OriginKind::Native,
+					require_weight_at_most: Weight::from_parts(1_000, 1_000),
 					call: <T as Config>::RuntimeCall::from(Call::<T>::pong {
 						seq,
 						payload: payload.clone(),
@@ -206,13 +216,15 @@ pub mod pallet {
 					.into(),
 				}]),
 			) {
-				Ok(()) => Self::deposit_event(Event::PongSent(para, seq, payload)),
+				Ok((hash, cost)) =>
+					Self::deposit_event(Event::PongSent(para, seq, payload, hash, cost)),
 				Err(e) => Self::deposit_event(Event::ErrorSendingPong(e, para, seq, payload)),
 			}
 			Ok(())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::call_index(5)]
+		#[pallet::weight({0})]
 		pub fn pong(origin: OriginFor<T>, seq: u32, payload: Vec<u8>) -> DispatchResult {
 			// Only accept pings from other chains.
 			let para = ensure_sibling_para(<T as Config>::RuntimeOrigin::from(origin))?;

@@ -6,10 +6,11 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 
 [dependencies]
-async-trait = "0.1.58"
+async-trait = "0.1.68"
 codec = { package = "parity-scale-codec", version = "3.0.0", features = [ "derive" ] }
-dyn-clone = "1.0.9"
-futures = "0.3.25"
+dyn-clone = "1.0.11"
+futures = "0.3.28"
+log = "0.4.17"
 tracing = "0.1.37"
 
 # Substrate
@@ -24,7 +25,10 @@ sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus
+cumulus-primitives-core = { path = "../../../primitives/core" }
 cumulus-relay-chain-interface = { path = "../../relay-chain-interface" }
+cumulus-client-pov-recovery = { path = "../../pov-recovery" }
+schnellru = "0.2.1"
 
 [dev-dependencies]
 futures-timer = "3.0.2"

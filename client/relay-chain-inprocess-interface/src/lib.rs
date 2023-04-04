@@ -19,9 +19,8 @@ use std::{pin::Pin, sync::Arc, time::Duration};
 use async_trait::async_trait;
 use cumulus_primitives_core::{
 	relay_chain::{
-		runtime_api::ParachainHost,
-		v2::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
-		Block as PBlock, BlockId, Hash as PHash, Header as PHeader, InboundHrmpMessage,
+		runtime_api::ParachainHost, Block as PBlock, CommittedCandidateReceipt, Hash as PHash,
+		Header as PHeader, InboundHrmpMessage, OccupiedCoreAssumption, SessionIndex, ValidatorId,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
@@ -93,7 +92,7 @@ where
 		relay_parent: PHash,
 	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
 		Ok(self.full_client.runtime_api().dmq_contents_with_context(
-			&BlockId::hash(relay_parent),
+			relay_parent,
 			sp_core::ExecutionContext::Importing,
 			para_id,
 		)?)
@@ -105,7 +104,7 @@ where
 		relay_parent: PHash,
 	) -> RelayChainResult<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
 		Ok(self.full_client.runtime_api().inbound_hrmp_channels_contents_with_context(
-			&BlockId::hash(relay_parent),
+			relay_parent,
 			sp_core::ExecutionContext::Importing,
 			para_id,
 		)?)
@@ -118,7 +117,7 @@ where
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> RelayChainResult<Option<PersistedValidationData>> {
 		Ok(self.full_client.runtime_api().persisted_validation_data(
-			&BlockId::Hash(hash),
+			hash,
 			para_id,
 			occupied_core_assumption,
 		)?)
@@ -129,18 +128,15 @@ where
 		hash: PHash,
 		para_id: ParaId,
 	) -> RelayChainResult<Option<CommittedCandidateReceipt>> {
-		Ok(self
-			.full_client
-			.runtime_api()
-			.candidate_pending_availability(&BlockId::Hash(hash), para_id)?)
+		Ok(self.full_client.runtime_api().candidate_pending_availability(hash, para_id)?)
 	}
 
 	async fn session_index_for_child(&self, hash: PHash) -> RelayChainResult<SessionIndex> {
-		Ok(self.full_client.runtime_api().session_index_for_child(&BlockId::Hash(hash))?)
+		Ok(self.full_client.runtime_api().session_index_for_child(hash)?)
 	}
 
 	async fn validators(&self, hash: PHash) -> RelayChainResult<Vec<ValidatorId>> {
-		Ok(self.full_client.runtime_api().validators(&BlockId::Hash(hash))?)
+		Ok(self.full_client.runtime_api().validators(hash)?)
 	}
 
 	async fn import_notification_stream(
@@ -165,6 +161,10 @@ where
 
 	async fn best_block_hash(&self) -> RelayChainResult<PHash> {
 		Ok(self.backend.blockchain().info().best_hash)
+	}
+
+	async fn finalized_block_hash(&self) -> RelayChainResult<PHash> {
+		Ok(self.backend.blockchain().info().finalized_hash)
 	}
 
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {
@@ -265,9 +265,7 @@ where
 {
 	let _lock = backend.get_import_lock().read();
 
-	let block_id = BlockId::Hash(hash);
-
-	if backend.blockchain().status(block_id)? == BlockStatus::InChain {
+	if backend.blockchain().status(hash)? == BlockStatus::InChain {
 		return Ok(BlockCheckStatus::InChain)
 	}
 
@@ -369,13 +367,13 @@ pub fn build_inprocess_relay_chain(
 		parachain_config,
 		telemetry_worker_handle,
 		hwbench,
-	)?;
+	)
+	.map_err(|e| RelayChainError::Application(Box::new(e) as Box<_>))?;
 
-	let sync_oracle: Arc<dyn SyncOracle + Send + Sync> = Arc::new(full_node.network.clone());
 	let relay_chain_interface_builder = RelayChainInProcessInterfaceBuilder {
 		polkadot_client: full_node.client.clone(),
 		backend: full_node.backend.clone(),
-		sync_oracle,
+		sync_oracle: full_node.sync_service.clone(),
 		overseer_handle: full_node.overseer_handle.clone().ok_or(RelayChainError::GenericError(
 			"Overseer not running in full node.".to_string(),
 		))?,
@@ -390,7 +388,7 @@ pub fn build_inprocess_relay_chain(
 mod tests {
 	use super::*;
 
-	use polkadot_primitives::v2::Block as PBlock;
+	use polkadot_primitives::Block as PBlock;
 	use polkadot_test_client::{
 		construct_transfer_extrinsic, BlockBuilderExt, Client, ClientBlockImportExt,
 		DefaultTestClientBuilderExt, ExecutionStrategy, InitPolkadotBlockBuilder,

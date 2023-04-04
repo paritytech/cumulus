@@ -20,18 +20,15 @@ use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, Slo
 use cumulus_client_consensus_common::{
 	ParachainBlockImport as TParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
-use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
-	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
+	build_network, build_relay_chain_interface, prepare_node_config, start_collator,
+	start_full_node, BuildNetworkParams, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::{
-	relay_chain::v2::{Hash as PHash, PersistedValidationData},
+	relay_chain::{Hash as PHash, PersistedValidationData},
 	ParaId,
 };
-use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
-use polkadot_service::CollatorPair;
+use cumulus_relay_chain_interface::RelayChainInterface;
 use sp_core::Pair;
 
 use jsonrpsee::RpcModule;
@@ -43,20 +40,18 @@ use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use futures::lock::Mutex;
 use sc_consensus::{
 	import_queue::{BasicQueue, Verifier as VerifierT},
-	BlockImportParams,
+	BlockImportParams, ImportQueue,
 };
 use sc_executor::WasmExecutor;
-use sc_network::NetworkService;
-use sc_network_common::service::NetworkBlock;
+use sc_network::NetworkBlock;
+use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::{ApiExt, ConstructRuntimeApi};
-use sp_consensus::CacheKeyId;
 use sp_consensus_aura::AuraApi;
-use sp_keystore::SyncCryptoStorePtr;
+use sp_keystore::KeystorePtr;
 use sp_runtime::{
-	app_crypto::AppKey,
-	generic::BlockId,
+	app_crypto::AppCrypto,
 	traits::{BlakeTwo256, Header as HeaderT},
 };
 use std::{marker::PhantomData, sync::Arc, time::Duration};
@@ -73,7 +68,8 @@ type ParachainClient<RuntimeApi> = TFullClient<Block, RuntimeApi, WasmExecutor<H
 
 type ParachainBackend = TFullBackend<Block>;
 
-type ParachainBlockImport<RuntimeApi> = TParachainBlockImport<Arc<ParachainClient<RuntimeApi>>>;
+type ParachainBlockImport<RuntimeApi> =
+	TParachainBlockImport<Block, Arc<ParachainClient<RuntimeApi>>, ParachainBackend>;
 
 /// Native executor instance.
 pub struct ShellRuntimeExecutor;
@@ -147,6 +143,66 @@ impl sc_executor::NativeExecutionDispatch for CollectivesPolkadotRuntimeExecutor
 
 	fn native_version() -> sc_executor::NativeVersion {
 		collectives_polkadot_runtime::native_version()
+	}
+}
+
+// Native BridgeHubPolkadot executor instance.
+pub struct BridgeHubPolkadotRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for BridgeHubPolkadotRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		bridge_hub_polkadot_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		bridge_hub_polkadot_runtime::native_version()
+	}
+}
+
+// Native BridgeHubKusama executor instance.
+pub struct BridgeHubKusamaRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for BridgeHubKusamaRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		bridge_hub_kusama_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		bridge_hub_kusama_runtime::native_version()
+	}
+}
+
+// Native BridgeHubRococo executor instance.
+pub struct BridgeHubRococoRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for BridgeHubRococoRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		bridge_hub_rococo_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		bridge_hub_rococo_runtime::native_version()
+	}
+}
+
+// Native contracts executor instance.
+pub struct ContractsRococoRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for ContractsRococoRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		contracts_rococo_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		contracts_rococo_runtime::native_version()
 	}
 }
 
@@ -232,7 +288,7 @@ where
 		client.clone(),
 	);
 
-	let block_import = ParachainBlockImport::new(client.clone());
+	let block_import = ParachainBlockImport::new(client.clone(), backend.clone());
 
 	let import_queue = build_import_queue(
 		client.clone(),
@@ -254,27 +310,6 @@ where
 	};
 
 	Ok(params)
-}
-
-async fn build_relay_chain_interface(
-	polkadot_config: Configuration,
-	parachain_config: &Configuration,
-	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
-	task_manager: &mut TaskManager,
-	collator_options: CollatorOptions,
-	hwbench: Option<sc_sysinfo::HwBench>,
-) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
-	match collator_options.relay_chain_rpc_url {
-		Some(relay_chain_url) =>
-			build_minimal_relay_chain_node(polkadot_config, task_manager, relay_chain_url).await,
-		None => build_inprocess_relay_chain(
-			polkadot_config,
-			parachain_config,
-			telemetry_worker_handle,
-			task_manager,
-			hwbench,
-		),
-	}
 }
 
 /// Start a shell node with the given parachain `Configuration` and relay chain `Configuration`.
@@ -323,8 +358,8 @@ where
 		&TaskManager,
 		Arc<dyn RelayChainInterface>,
 		Arc<sc_transaction_pool::FullPool<Block, ParachainClient<RuntimeApi>>>,
-		Arc<NetworkService<Block, Hash>>,
-		SyncCryptoStorePtr,
+		Arc<SyncingService<Block>>,
+		KeystorePtr,
 		bool,
 	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
 {
@@ -347,31 +382,25 @@ where
 		hwbench.clone(),
 	)
 	.await
-	.map_err(|e| match e {
-		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
-		s => s.to_string().into(),
-	})?;
-
-	let block_announce_validator =
-		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
+	.map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let transaction_pool = params.transaction_pool.clone();
-	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
-	let (network, system_rpc_tx, tx_handler_controller, start_network) =
-		sc_service::build_network(sc_service::BuildNetworkParams {
-			config: &parachain_config,
+	let import_queue_service = params.import_queue.service();
+
+	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
+		build_network(BuildNetworkParams {
+			parachain_config: &parachain_config,
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
+			para_id,
 			spawn_handle: task_manager.spawn_handle(),
-			import_queue: import_queue.clone(),
-			block_announce_validator_builder: Some(Box::new(|_| {
-				Box::new(block_announce_validator)
-			})),
-			warp_sync: None,
-		})?;
+			relay_chain_interface: relay_chain_interface.clone(),
+			import_queue: params.import_queue,
+		})
+		.await?;
 
 	let rpc_client = client.clone();
 	let rpc_builder = Box::new(move |_, _| rpc_ext_builder(rpc_client.clone()));
@@ -382,9 +411,10 @@ where
 		transaction_pool: transaction_pool.clone(),
 		task_manager: &mut task_manager,
 		config: parachain_config,
-		keystore: params.keystore_container.sync_keystore(),
+		keystore: params.keystore_container.keystore(),
 		backend: backend.clone(),
 		network: network.clone(),
+		sync_service: sync_service.clone(),
 		system_rpc_tx,
 		tx_handler_controller,
 		telemetry: telemetry.as_mut(),
@@ -392,6 +422,9 @@ where
 
 	if let Some(hwbench) = hwbench {
 		sc_sysinfo::print_hwbench(&hwbench);
+		if validator {
+			warn_if_slow_hardware(&hwbench);
+		}
 
 		if let Some(ref mut telemetry) = telemetry {
 			let telemetry_handle = telemetry.handle();
@@ -404,11 +437,15 @@ where
 	}
 
 	let announce_block = {
-		let network = network.clone();
-		Arc::new(move |hash, data| network.announce_block(hash, data))
+		let sync_service = sync_service.clone();
+		Arc::new(move |hash, data| sync_service.announce_block(hash, data))
 	};
 
 	let relay_chain_slot_duration = Duration::from_secs(6);
+
+	let overseer_handle = relay_chain_interface
+		.overseer_handle()
+		.map_err(|e| sc_service::Error::Application(Box::new(e)))?;
 
 	if validator {
 		let parachain_consensus = build_consensus(
@@ -419,8 +456,8 @@ where
 			&task_manager,
 			relay_chain_interface.clone(),
 			transaction_pool,
-			network,
-			params.keystore_container.sync_keystore(),
+			sync_service,
+			params.keystore_container.keystore(),
 			force_authoring,
 		)?;
 
@@ -435,9 +472,10 @@ where
 			relay_chain_interface,
 			spawner,
 			parachain_consensus,
-			import_queue,
+			import_queue: import_queue_service,
 			collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
 			relay_chain_slot_duration,
+			recovery_handle: Box::new(overseer_handle),
 		};
 
 		start_collator(params).await?;
@@ -449,7 +487,8 @@ where
 			para_id,
 			relay_chain_interface,
 			relay_chain_slot_duration,
-			import_queue,
+			import_queue: import_queue_service,
+			recovery_handle: Box::new(overseer_handle),
 		};
 
 		start_full_node(params)?;
@@ -507,8 +546,8 @@ where
 		&TaskManager,
 		Arc<dyn RelayChainInterface>,
 		Arc<sc_transaction_pool::FullPool<Block, ParachainClient<RuntimeApi>>>,
-		Arc<NetworkService<Block, Hash>>,
-		SyncCryptoStorePtr,
+		Arc<SyncingService<Block>>,
+		KeystorePtr,
 		bool,
 	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
 {
@@ -530,31 +569,25 @@ where
 		hwbench.clone(),
 	)
 	.await
-	.map_err(|e| match e {
-		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
-		s => s.to_string().into(),
-	})?;
-
-	let block_announce_validator =
-		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
+	.map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let transaction_pool = params.transaction_pool.clone();
-	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
-	let (network, system_rpc_tx, tx_handler_controller, start_network) =
-		sc_service::build_network(sc_service::BuildNetworkParams {
-			config: &parachain_config,
+	let import_queue_service = params.import_queue.service();
+
+	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
+		build_network(BuildNetworkParams {
+			parachain_config: &parachain_config,
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
+			para_id,
 			spawn_handle: task_manager.spawn_handle(),
-			import_queue: import_queue.clone(),
-			block_announce_validator_builder: Some(Box::new(|_| {
-				Box::new(block_announce_validator)
-			})),
-			warp_sync: None,
-		})?;
+			relay_chain_interface: relay_chain_interface.clone(),
+			import_queue: params.import_queue,
+		})
+		.await?;
 
 	let rpc_builder = {
 		let client = client.clone();
@@ -578,9 +611,10 @@ where
 		transaction_pool: transaction_pool.clone(),
 		task_manager: &mut task_manager,
 		config: parachain_config,
-		keystore: params.keystore_container.sync_keystore(),
+		keystore: params.keystore_container.keystore(),
 		backend: backend.clone(),
 		network: network.clone(),
+		sync_service: sync_service.clone(),
 		system_rpc_tx,
 		tx_handler_controller,
 		telemetry: telemetry.as_mut(),
@@ -588,6 +622,9 @@ where
 
 	if let Some(hwbench) = hwbench {
 		sc_sysinfo::print_hwbench(&hwbench);
+		if validator {
+			warn_if_slow_hardware(&hwbench);
+		}
 
 		if let Some(ref mut telemetry) = telemetry {
 			let telemetry_handle = telemetry.handle();
@@ -600,12 +637,15 @@ where
 	}
 
 	let announce_block = {
-		let network = network.clone();
-		Arc::new(move |hash, data| network.announce_block(hash, data))
+		let sync_service = sync_service.clone();
+		Arc::new(move |hash, data| sync_service.announce_block(hash, data))
 	};
 
 	let relay_chain_slot_duration = Duration::from_secs(6);
 
+	let overseer_handle = relay_chain_interface
+		.overseer_handle()
+		.map_err(|e| sc_service::Error::Application(Box::new(e)))?;
 	if validator {
 		let parachain_consensus = build_consensus(
 			client.clone(),
@@ -615,8 +655,8 @@ where
 			&task_manager,
 			relay_chain_interface.clone(),
 			transaction_pool,
-			network,
-			params.keystore_container.sync_keystore(),
+			sync_service,
+			params.keystore_container.keystore(),
 			force_authoring,
 		)?;
 
@@ -631,9 +671,10 @@ where
 			relay_chain_interface: relay_chain_interface.clone(),
 			spawner,
 			parachain_consensus,
-			import_queue,
+			import_queue: import_queue_service,
 			collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
 			relay_chain_slot_duration,
+			recovery_handle: Box::new(overseer_handle),
 		};
 
 		start_collator(params).await?;
@@ -645,7 +686,8 @@ where
 			para_id,
 			relay_chain_interface,
 			relay_chain_slot_duration,
-			import_queue,
+			import_queue: import_queue_service,
+			recovery_handle: Box::new(overseer_handle),
 		};
 
 		start_full_node(params)?;
@@ -946,11 +988,10 @@ where
 		relay_parent: PHash,
 		validation_data: &PersistedValidationData,
 	) -> Option<ParachainCandidate<Block>> {
-		let block_id = BlockId::hash(parent.hash());
 		if self
 			.client
 			.runtime_api()
-			.has_api::<dyn AuraApi<Block, AuraId>>(&block_id)
+			.has_api::<dyn AuraApi<Block, AuraId>>(parent.hash())
 			.unwrap_or(false)
 		{
 			self.aura_consensus
@@ -986,13 +1027,11 @@ where
 	async fn verify(
 		&mut self,
 		block_import: BlockImportParams<Block, ()>,
-	) -> Result<(BlockImportParams<Block, ()>, Option<Vec<(CacheKeyId, Vec<u8>)>>), String> {
-		let block_id = BlockId::hash(*block_import.header.parent_hash());
-
+	) -> Result<BlockImportParams<Block, ()>, String> {
 		if self
 			.client
 			.runtime_api()
-			.has_api::<dyn AuraApi<Block, AuraId>>(&block_id)
+			.has_api::<dyn AuraApi<Block, AuraId>>(*block_import.header.parent_hash())
 			.unwrap_or(false)
 		{
 			self.aura_verifier.get_mut().verify(block_import).await
@@ -1003,7 +1042,7 @@ where
 }
 
 /// Build the import queue for Statemint and other Aura-based runtimes.
-pub fn aura_build_import_queue<RuntimeApi, AuraId: AppKey>(
+pub fn aura_build_import_queue<RuntimeApi, AuraId: AppCrypto>(
 	client: Arc<ParachainClient<RuntimeApi>>,
 	block_import: ParachainBlockImport<RuntimeApi>,
 	config: &Configuration,
@@ -1020,9 +1059,9 @@ where
 			StateBackend = sc_client_api::StateBackendFor<ParachainBackend, Block>,
 		> + sp_offchain::OffchainWorkerApi<Block>
 		+ sp_block_builder::BlockBuilder<Block>
-		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>,
+		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppCrypto>::Pair as Pair>::Public>,
 	sc_client_api::StateBackendFor<ParachainBackend, Block>: sp_api::StateBackend<BlakeTwo256>,
-	<<AuraId as AppKey>::Pair as Pair>::Signature:
+	<<AuraId as AppCrypto>::Pair as Pair>::Signature:
 		TryFrom<Vec<u8>> + std::hash::Hash + sp_runtime::traits::Member + Codec,
 {
 	let client2 = client.clone();
@@ -1030,25 +1069,26 @@ where
 	let aura_verifier = move || {
 		let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
 
-		Box::new(
-			cumulus_client_consensus_aura::build_verifier::<<AuraId as AppKey>::Pair, _, _, _>(
-				cumulus_client_consensus_aura::BuildVerifierParams {
-					client: client2.clone(),
-					create_inherent_data_providers: move |_, _| async move {
-						let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+		Box::new(cumulus_client_consensus_aura::build_verifier::<
+			<AuraId as AppCrypto>::Pair,
+			_,
+			_,
+			_,
+		>(cumulus_client_consensus_aura::BuildVerifierParams {
+			client: client2.clone(),
+			create_inherent_data_providers: move |_, _| async move {
+				let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
-						let slot =
+				let slot =
 							sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
 								*timestamp,
 								slot_duration,
 							);
 
-						Ok((slot, timestamp))
-					},
-					telemetry: telemetry_handle,
-				},
-			),
-		) as Box<_>
+				Ok((slot, timestamp))
+			},
+			telemetry: telemetry_handle,
+		})) as Box<_>
 	};
 
 	let relay_chain_verifier =
@@ -1069,7 +1109,7 @@ where
 
 /// Start an aura powered parachain node.
 /// (collective-polkadot and statemine/t use this)
-pub async fn start_generic_aura_node<RuntimeApi, AuraId: AppKey>(
+pub async fn start_generic_aura_node<RuntimeApi, AuraId: AppCrypto>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,
@@ -1087,11 +1127,11 @@ where
 		> + sp_offchain::OffchainWorkerApi<Block>
 		+ sp_block_builder::BlockBuilder<Block>
 		+ cumulus_primitives_core::CollectCollationInfo<Block>
-		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>
+		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppCrypto>::Pair as Pair>::Public>
 		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
 		+ frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	sc_client_api::StateBackendFor<ParachainBackend, Block>: sp_api::StateBackend<BlakeTwo256>,
-	<<AuraId as AppKey>::Pair as Pair>::Signature:
+	<<AuraId as AppCrypto>::Pair as Pair>::Signature:
 		TryFrom<Vec<u8>> + std::hash::Hash + sp_runtime::traits::Member + Codec,
 {
 	start_node_impl::<RuntimeApi, _, _, _>(
@@ -1118,6 +1158,7 @@ where
 			let telemetry2 = telemetry.clone();
 			let prometheus_registry2 = prometheus_registry.map(|r| (*r).clone());
 			let relay_chain_for_aura = relay_chain_interface.clone();
+
 			let aura_consensus = BuildOnAccess::Uninitialized(Some(Box::new(move || {
 				let slot_duration =
 					cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
@@ -1130,7 +1171,7 @@ where
 					telemetry2.clone(),
 				);
 
-				AuraConsensus::build::<<AuraId as AppKey>::Pair, _, _, _, _, _, _>(
+				AuraConsensus::build::<<AuraId as AppCrypto>::Pair, _, _, _, _, _, _>(
 					BuildAuraConsensusParams {
 						proposer_factory,
 						create_inherent_data_providers:
@@ -1276,8 +1317,8 @@ where
 		&TaskManager,
 		Arc<dyn RelayChainInterface>,
 		Arc<sc_transaction_pool::FullPool<Block, ParachainClient<RuntimeApi>>>,
-		Arc<NetworkService<Block, Hash>>,
-		SyncCryptoStorePtr,
+		Arc<SyncingService<Block>>,
+		KeystorePtr,
 		bool,
 	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
 {
@@ -1299,31 +1340,25 @@ where
 		hwbench.clone(),
 	)
 	.await
-	.map_err(|e| match e {
-		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
-		s => s.to_string().into(),
-	})?;
-
-	let block_announce_validator =
-		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
+	.map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let transaction_pool = params.transaction_pool.clone();
-	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
-	let (network, system_rpc_tx, tx_handler_controller, start_network) =
-		sc_service::build_network(sc_service::BuildNetworkParams {
-			config: &parachain_config,
+	let import_queue_service = params.import_queue.service();
+
+	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
+		build_network(BuildNetworkParams {
+			parachain_config: &parachain_config,
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
+			para_id,
 			spawn_handle: task_manager.spawn_handle(),
-			import_queue: import_queue.clone(),
-			block_announce_validator_builder: Some(Box::new(|_| {
-				Box::new(block_announce_validator)
-			})),
-			warp_sync: None,
-		})?;
+			relay_chain_interface: relay_chain_interface.clone(),
+			import_queue: params.import_queue,
+		})
+		.await?;
 
 	let rpc_builder = {
 		let client = client.clone();
@@ -1346,9 +1381,10 @@ where
 		transaction_pool: transaction_pool.clone(),
 		task_manager: &mut task_manager,
 		config: parachain_config,
-		keystore: params.keystore_container.sync_keystore(),
+		keystore: params.keystore_container.keystore(),
 		backend: backend.clone(),
 		network: network.clone(),
+		sync_service: sync_service.clone(),
 		system_rpc_tx,
 		tx_handler_controller,
 		telemetry: telemetry.as_mut(),
@@ -1356,6 +1392,9 @@ where
 
 	if let Some(hwbench) = hwbench {
 		sc_sysinfo::print_hwbench(&hwbench);
+		if validator {
+			warn_if_slow_hardware(&hwbench);
+		}
 
 		if let Some(ref mut telemetry) = telemetry {
 			let telemetry_handle = telemetry.handle();
@@ -1368,12 +1407,15 @@ where
 	}
 
 	let announce_block = {
-		let network = network.clone();
-		Arc::new(move |hash, data| network.announce_block(hash, data))
+		let sync_service = sync_service.clone();
+		Arc::new(move |hash, data| sync_service.announce_block(hash, data))
 	};
 
 	let relay_chain_slot_duration = Duration::from_secs(6);
 
+	let overseer_handle = relay_chain_interface
+		.overseer_handle()
+		.map_err(|e| sc_service::Error::Application(Box::new(e)))?;
 	if validator {
 		let parachain_consensus = build_consensus(
 			client.clone(),
@@ -1383,8 +1425,8 @@ where
 			&task_manager,
 			relay_chain_interface.clone(),
 			transaction_pool,
-			network,
-			params.keystore_container.sync_keystore(),
+			sync_service,
+			params.keystore_container.keystore(),
 			force_authoring,
 		)?;
 
@@ -1399,9 +1441,10 @@ where
 			relay_chain_interface,
 			spawner,
 			parachain_consensus,
-			import_queue,
+			import_queue: import_queue_service,
 			collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
 			relay_chain_slot_duration,
+			recovery_handle: Box::new(overseer_handle),
 		};
 
 		start_collator(params).await?;
@@ -1413,7 +1456,8 @@ where
 			para_id,
 			relay_chain_interface,
 			relay_chain_slot_duration,
-			import_queue,
+			import_queue: import_queue_service,
+			recovery_handle: Box::new(overseer_handle),
 		};
 
 		start_full_node(params)?;
@@ -1552,4 +1596,16 @@ pub async fn start_contracts_rococo_node(
 		hwbench,
 	)
 	.await
+}
+
+/// Checks that the hardware meets the requirements and print a warning otherwise.
+fn warn_if_slow_hardware(hwbench: &sc_sysinfo::HwBench) {
+	// Polkadot para-chains should generally use these requirements to ensure that the relay-chain
+	// will not take longer than expected to import its blocks.
+	if !frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE.check_hardware(hwbench) {
+		log::warn!(
+			"⚠️  The hardware does not meet the minimal requirements for role 'Authority' find out more at:\n\
+			https://wiki.polkadot.network/docs/maintain-guides-how-to-validate-polkadot#reference-hardware"
+		);
+	}
 }

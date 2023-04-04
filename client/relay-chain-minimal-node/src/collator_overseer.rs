@@ -14,49 +14,41 @@
 // You should have received a copy of the GNU General Public License
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
-use cumulus_relay_chain_interface::RelayChainError;
+use futures::{select, StreamExt};
 use lru::LruCache;
-use polkadot_availability_distribution::{
-	AvailabilityDistributionSubsystem, IncomingRequestReceivers,
+use std::sync::Arc;
+
+use polkadot_availability_recovery::AvailabilityRecoverySubsystem;
+use polkadot_collator_protocol::{CollatorProtocolSubsystem, ProtocolSide};
+use polkadot_network_bridge::{
+	Metrics as NetworkBridgeMetrics, NetworkBridgeRx as NetworkBridgeRxSubsystem,
+	NetworkBridgeTx as NetworkBridgeTxSubsystem,
 };
-use polkadot_node_core_av_store::Config;
+use polkadot_node_collation_generation::CollationGenerationSubsystem;
+use polkadot_node_core_runtime_api::RuntimeApiSubsystem;
 use polkadot_node_network_protocol::{
 	peer_set::PeerSetProtocolNames,
 	request_response::{
-		v1::{
-			AvailableDataFetchingRequest, ChunkFetchingRequest, CollationFetchingRequest,
-			PoVFetchingRequest,
-		},
+		v1::{AvailableDataFetchingRequest, CollationFetchingRequest},
 		IncomingRequestReceiver, ReqProtocolNames,
 	},
 };
 use polkadot_node_subsystem_util::metrics::{prometheus::Registry, Metrics};
 use polkadot_overseer::{
-	BlockInfo, DummySubsystem, MetricsTrait, Overseer, OverseerHandle, OverseerMetrics, SpawnGlue,
+	BlockInfo, DummySubsystem, Handle, Overseer, OverseerConnector, OverseerHandle, SpawnGlue,
 	KNOWN_LEAVES_CACHE_SIZE,
 };
-use polkadot_primitives::v2::CollatorPair;
-use polkadot_service::{
-	overseer::{
-		AvailabilityRecoverySubsystem, AvailabilityStoreSubsystem, ChainApiSubsystem,
-		CollationGenerationSubsystem, CollatorProtocolSubsystem, NetworkBridgeMetrics,
-		NetworkBridgeRxSubsystem, NetworkBridgeTxSubsystem, ProtocolSide, RuntimeApiSubsystem,
-	},
-	Error, OverseerConnector,
-};
-use sc_authority_discovery::Service as AuthorityDiscoveryService;
-use sc_keystore::LocalKeystore;
-use sc_network::NetworkStateInfo;
+use polkadot_primitives::CollatorPair;
 
-use std::sync::Arc;
+use sc_authority_discovery::Service as AuthorityDiscoveryService;
+use sc_network::NetworkStateInfo;
+use sc_service::TaskManager;
+use sp_runtime::traits::Block as BlockT;
 
 use cumulus_primitives_core::relay_chain::{Block, Hash as PHash};
-
-use polkadot_service::{Handle, TaskManager};
+use cumulus_relay_chain_interface::RelayChainError;
 
 use crate::BlockChainRpcClient;
-use futures::{select, StreamExt};
-use sp_runtime::traits::Block as BlockT;
 
 /// Arguments passed for overseer construction.
 pub(crate) struct CollatorOverseerGenArgs<'a> {
@@ -64,15 +56,13 @@ pub(crate) struct CollatorOverseerGenArgs<'a> {
 	pub runtime_client: Arc<BlockChainRpcClient>,
 	/// Underlying network service implementation.
 	pub network_service: Arc<sc_network::NetworkService<Block, PHash>>,
+	/// Syncing oracle.
+	pub sync_oracle: Box<dyn sp_consensus::SyncOracle + Send>,
 	/// Underlying authority discovery service.
 	pub authority_discovery_service: AuthorityDiscoveryService,
-	// Receiver for collation request protocol
+	/// Receiver for collation request protocol
 	pub collation_req_receiver: IncomingRequestReceiver<CollationFetchingRequest>,
-	// Receiver for PoV request protocol
-	pub pov_req_receiver: IncomingRequestReceiver<PoVFetchingRequest>,
-	// Receiver for chunk request protocol
-	pub chunk_req_receiver: IncomingRequestReceiver<ChunkFetchingRequest>,
-	// Receiver for availability request protocol
+	/// Receiver for availability request protocol
 	pub available_data_req_receiver: IncomingRequestReceiver<AvailableDataFetchingRequest>,
 	/// Prometheus registry, commonly used for production systems, less so for test.
 	pub registry: Option<&'a Registry>,
@@ -84,10 +74,6 @@ pub(crate) struct CollatorOverseerGenArgs<'a> {
 	pub req_protocol_names: ReqProtocolNames,
 	/// Peerset protocols name mapping
 	pub peer_set_protocol_names: PeerSetProtocolNames,
-	/// Config for the availability store
-	pub availability_config: Config,
-	/// The underlying key value store for the parachains.
-	pub parachains_db: Arc<dyn polkadot_node_subsystem_util::database::Database>,
 }
 
 fn build_overseer<'a>(
@@ -95,53 +81,39 @@ fn build_overseer<'a>(
 	CollatorOverseerGenArgs {
 		runtime_client,
 		network_service,
+		sync_oracle,
 		authority_discovery_service,
 		collation_req_receiver,
 		available_data_req_receiver,
-		availability_config,
 		registry,
 		spawner,
 		collator_pair,
 		req_protocol_names,
 		peer_set_protocol_names,
-		parachains_db,
-		pov_req_receiver,
-		chunk_req_receiver,
 	}: CollatorOverseerGenArgs<'a>,
 ) -> Result<
 	(Overseer<SpawnGlue<sc_service::SpawnTaskHandle>, Arc<BlockChainRpcClient>>, OverseerHandle),
-	Error,
+	RelayChainError,
 > {
-	let leaves = Vec::new();
-	let metrics = <OverseerMetrics as MetricsTrait>::register(registry)?;
-	let keystore = Arc::new(LocalKeystore::in_memory());
 	let spawner = SpawnGlue(spawner);
 	let network_bridge_metrics: NetworkBridgeMetrics = Metrics::register(registry)?;
 	let builder = Overseer::builder()
-		.availability_distribution(AvailabilityDistributionSubsystem::new(
-			keystore.clone(),
-			IncomingRequestReceivers { pov_req_receiver, chunk_req_receiver },
-			Metrics::register(registry)?,
-		))
+		.availability_distribution(DummySubsystem)
 		.availability_recovery(AvailabilityRecoverySubsystem::with_chunks_only(
 			available_data_req_receiver,
 			Metrics::register(registry)?,
 		))
-		.availability_store(AvailabilityStoreSubsystem::new(
-			parachains_db.clone(),
-			availability_config,
-			Metrics::register(registry)?,
-		))
+		.availability_store(DummySubsystem)
 		.bitfield_distribution(DummySubsystem)
 		.bitfield_signing(DummySubsystem)
 		.candidate_backing(DummySubsystem)
 		.candidate_validation(DummySubsystem)
 		.pvf_checker(DummySubsystem)
-		.chain_api(ChainApiSubsystem::new(runtime_client.clone(), Metrics::register(registry)?))
+		.chain_api(DummySubsystem)
 		.collation_generation(CollationGenerationSubsystem::new(Metrics::register(registry)?))
 		.collator_protocol({
 			let side = ProtocolSide::Collator(
-				network_service.local_peer_id().clone(),
+				network_service.local_peer_id(),
 				collator_pair,
 				collation_req_receiver,
 				Metrics::register(registry)?,
@@ -151,13 +123,13 @@ fn build_overseer<'a>(
 		.network_bridge_rx(NetworkBridgeRxSubsystem::new(
 			network_service.clone(),
 			authority_discovery_service.clone(),
-			Box::new(network_service.clone()),
+			sync_oracle,
 			network_bridge_metrics.clone(),
 			peer_set_protocol_names.clone(),
 		))
 		.network_bridge_tx(NetworkBridgeTxSubsystem::new(
-			network_service.clone(),
-			authority_discovery_service.clone(),
+			network_service,
+			authority_discovery_service,
 			network_bridge_metrics,
 			req_protocol_names,
 			peer_set_protocol_names,
@@ -175,34 +147,31 @@ fn build_overseer<'a>(
 		.dispute_coordinator(DummySubsystem)
 		.dispute_distribution(DummySubsystem)
 		.chain_selection(DummySubsystem)
-		.leaves(Vec::from_iter(
-			leaves
-				.into_iter()
-				.map(|BlockInfo { hash, parent_hash: _, number }| (hash, number)),
-		))
 		.activation_external_listeners(Default::default())
 		.span_per_active_leaf(Default::default())
 		.active_leaves(Default::default())
 		.supports_parachains(runtime_client)
 		.known_leaves(LruCache::new(KNOWN_LEAVES_CACHE_SIZE))
-		.metrics(metrics)
+		.metrics(Metrics::register(registry)?)
 		.spawner(spawner);
 
-	builder.build_with_connector(connector).map_err(|e| e.into())
+	builder
+		.build_with_connector(connector)
+		.map_err(|e| RelayChainError::Application(e.into()))
 }
 
 pub(crate) fn spawn_overseer(
 	overseer_args: CollatorOverseerGenArgs,
 	task_manager: &TaskManager,
 	relay_chain_rpc_client: Arc<BlockChainRpcClient>,
-) -> Result<polkadot_overseer::Handle, polkadot_service::Error> {
+) -> Result<polkadot_overseer::Handle, RelayChainError> {
 	let (overseer, overseer_handle) = build_overseer(OverseerConnector::default(), overseer_args)
 		.map_err(|e| {
 		tracing::error!("Failed to initialize overseer: {}", e);
 		e
 	})?;
 
-	let overseer_handle = Handle::new(overseer_handle.clone());
+	let overseer_handle = Handle::new(overseer_handle);
 	{
 		let handle = overseer_handle.clone();
 		task_manager.spawn_essential_handle().spawn_blocking(
@@ -252,8 +221,14 @@ async fn forward_collator_events(
 			f = finality.next() => {
 				match f {
 					Some(header) => {
-						tracing::info!(target: "minimal-polkadot-node", "Received finalized block via RPC: #{} ({})", header.number, header.hash());
-		let block_info = BlockInfo { hash: header.hash(), parent_hash: header.parent_hash, number: header.number };
+						tracing::info!(
+							target: "minimal-polkadot-node",
+							"Received finalized block via RPC: #{} ({} -> {})",
+							header.number,
+							header.parent_hash,
+							header.hash()
+						);
+						let block_info = BlockInfo { hash: header.hash(), parent_hash: header.parent_hash, number: header.number };
 						handle.block_finalized(block_info).await;
 					}
 					None => return Err(RelayChainError::GenericError("Relay chain finality stream ended.".to_string())),
@@ -262,8 +237,14 @@ async fn forward_collator_events(
 			i = imports.next() => {
 				match i {
 					Some(header) => {
-						tracing::info!(target: "minimal-polkadot-node", "Received imported block via RPC: #{} ({})", header.number, header.hash());
-		let block_info = BlockInfo { hash: header.hash(), parent_hash: header.parent_hash, number: header.number };
+						tracing::info!(
+							target: "minimal-polkadot-node",
+							"Received imported block via RPC: #{} ({} -> {})",
+							header.number,
+							header.parent_hash,
+							header.hash()
+						);
+						let block_info = BlockInfo { hash: header.hash(), parent_hash: header.parent_hash, number: header.number };
 						handle.block_imported(block_info).await;
 					}
 					None => return Err(RelayChainError::GenericError("Relay chain import stream ended.".to_string())),

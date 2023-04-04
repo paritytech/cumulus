@@ -7,9 +7,9 @@ description = "Statemint parachain runtime"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
-hex-literal = { version = "0.3.4", optional = true }
+hex-literal = { version = "0.4.0", optional = true }
 log = { version = "0.4.17", default-features = false }
-scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 smallvec = "1.10.0"
 
 # Substrate
@@ -44,9 +44,11 @@ sp-session = { git = "https://github.com/paritytech/substrate", default-features
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-weights = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false, optional = true }
 polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -68,14 +70,14 @@ cumulus-primitives-utility = { path = "../../../../primitives/utility", default-
 pallet-collator-selection = { path = "../../../../pallets/collator-selection", default-features = false }
 parachain-info = { path = "../../../pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
-pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false, optional = true }
+assets-common = { path = "../common", default-features = false }
 
 [dev-dependencies]
-hex-literal = "0.3.4"
+hex-literal = "0.4.0"
 asset-test-utils = { path = "../test-utils"}
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
 [features]
 default = [ "std" ]
@@ -99,6 +101,7 @@ runtime-benchmarks = [
 	"pallet-collator-selection/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
+	"assets-common/runtime-benchmarks",
 ]
 try-runtime = [
 	"cumulus-pallet-aura-ext/try-runtime",
@@ -176,4 +179,6 @@ std = [
 	"pallet-collator-selection/std",
 	"parachain-info/std",
 	"parachains-common/std",
+	"assets-common/std",
+	"substrate-wasm-builder",
 ]

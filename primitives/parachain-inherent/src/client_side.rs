@@ -19,7 +19,7 @@
 use crate::ParachainInherentData;
 use codec::Decode;
 use cumulus_primitives_core::{
-	relay_chain::{self, v2::HrmpChannelId, Hash as PHash},
+	relay_chain::{self, Hash as PHash, HrmpChannelId},
 	ParaId, PersistedValidationData,
 };
 use cumulus_relay_chain_interface::RelayChainInterface;
@@ -174,7 +174,7 @@ impl ParachainInherentData {
 
 #[async_trait::async_trait]
 impl sp_inherents::InherentDataProvider for ParachainInherentData {
-	fn provide_inherent_data(
+	async fn provide_inherent_data(
 		&self,
 		inherent_data: &mut sp_inherents::InherentData,
 	) -> Result<(), sp_inherents::Error> {

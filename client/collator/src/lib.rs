@@ -26,10 +26,7 @@ use sc_client_api::BlockBackend;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_consensus::BlockStatus;
 use sp_core::traits::SpawnNamed;
-use sp_runtime::{
-	generic::BlockId,
-	traits::{Block as BlockT, HashFor, Header as HeaderT, Zero},
-};
+use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT, Zero};
 
 use cumulus_client_consensus_common::ParachainConsensus;
 use polkadot_node_primitives::{
@@ -37,7 +34,7 @@ use polkadot_node_primitives::{
 };
 use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
 use polkadot_overseer::Handle as OverseerHandle;
-use polkadot_primitives::v2::{CollatorPair, Id as ParaId};
+use polkadot_primitives::{CollatorPair, Id as ParaId};
 
 use codec::{Decode, Encode};
 use futures::{channel::oneshot, FutureExt};
@@ -91,7 +88,7 @@ where
 	///
 	/// Returns `true` if the block could be found and is good to be build on.
 	fn check_block_status(&self, hash: Block::Hash, header: &Block::Header) -> bool {
-		match self.block_status.block_status(&BlockId::Hash(hash)) {
+		match self.block_status.block_status(hash) {
 			Ok(BlockStatus::Queued) => {
 				tracing::debug!(
 					target: LOG_TARGET,
@@ -154,10 +151,9 @@ where
 		header: &Block::Header,
 	) -> Result<Option<CollationInfo>, sp_api::ApiError> {
 		let runtime_api = self.runtime_api.runtime_api();
-		let block_id = BlockId::Hash(block_hash);
 
 		let api_version =
-			match runtime_api.api_version::<dyn CollectCollationInfo<Block>>(&block_id)? {
+			match runtime_api.api_version::<dyn CollectCollationInfo<Block>>(block_hash)? {
 				Some(version) => version,
 				None => {
 					tracing::error!(
@@ -171,10 +167,10 @@ where
 		let collation_info = if api_version < 2 {
 			#[allow(deprecated)]
 			runtime_api
-				.collect_collation_info_before_version_2(&block_id)?
+				.collect_collation_info_before_version_2(block_hash)?
 				.into_latest(header.encode().into())
 		} else {
-			runtime_api.collect_collation_info(&block_id, header)?
+			runtime_api.collect_collation_info(block_hash, header)?
 		};
 
 		Ok(Some(collation_info))
@@ -198,11 +194,34 @@ where
 			.ok()
 			.flatten()?;
 
+		let upward_messages = collation_info
+			.upward_messages
+			.try_into()
+			.map_err(|e| {
+				tracing::error!(
+					target: LOG_TARGET,
+					error = ?e,
+					"Number of upward messages should not be greater than `MAX_UPWARD_MESSAGE_NUM`",
+				)
+			})
+			.ok()?;
+		let horizontal_messages = collation_info
+			.horizontal_messages
+			.try_into()
+			.map_err(|e| {
+				tracing::error!(
+					target: LOG_TARGET,
+					error = ?e,
+					"Number of horizontal messages should not be greater than `MAX_HORIZONTAL_MESSAGE_NUM`",
+				)
+			})
+			.ok()?;
+
 		Some(Collation {
-			upward_messages: collation_info.upward_messages,
+			upward_messages,
 			new_validation_code: collation_info.new_validation_code,
 			processed_downward_messages: collation_info.processed_downward_messages,
-			horizontal_messages: collation_info.horizontal_messages,
+			horizontal_messages,
 			hrmp_watermark: collation_info.hrmp_watermark,
 			head_data: collation_info.head_data,
 			proof_of_validity: MaybeCompressedPoV::Compressed(pov),
@@ -396,9 +415,8 @@ mod tests {
 			_: PHash,
 			validation_data: &PersistedValidationData,
 		) -> Option<ParachainCandidate<Block>> {
-			let block_id = BlockId::Hash(parent.hash());
 			let builder = self.client.init_block_builder_at(
-				&block_id,
+				parent.hash(),
 				Some(validation_data.clone()),
 				Default::default(),
 			);
@@ -422,7 +440,7 @@ mod tests {
 		let para_id = ParaId::from(100);
 		let announce_block = |_, _| ();
 		let client = Arc::new(TestClientBuilder::new().build());
-		let header = client.header(&BlockId::Number(0)).unwrap().unwrap();
+		let header = client.header(client.chain_info().genesis_hash).unwrap().unwrap();
 
 		let (sub_tx, sub_rx) = mpsc::channel(64);
 
