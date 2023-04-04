@@ -12,10 +12,10 @@ path = "src/main.rs"
 
 [dependencies]
 async-trait = "0.1.68"
-clap = { version = "4.1.13", features = ["derive"] }
+clap = { version = "4.1.14", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
-futures = "0.3.27"
-hex-literal = "0.3.4"
+futures = "0.3.28"
+hex-literal = "0.4.0"
 log = "0.4.17"
 serde = { version = "1.0.159", features = ["derive"] }
 
@@ -87,6 +87,7 @@ cumulus-client-service = { path = "../client/service" }
 cumulus-primitives-core = { path = "../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../primitives/parachain-inherent" }
 cumulus-relay-chain-interface = { path = "../client/relay-chain-interface" }
+color-print = "0.3.4"
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -94,8 +95,8 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 [dev-dependencies]
 assert_cmd = "2.0"
 nix = { version = "0.26.1", features = ["signal"] }
-tempfile = "3.4.0"
-tokio = { version = "1.26.0", features = ["macros", "time", "parking_lot"] }
+tempfile = "3.5.0"
+tokio = { version = "1.27.0", features = ["macros", "time", "parking_lot"] }
 wait-timeout = "0.2"
 # purge_chain_works works with rococo-local and needs to allow this
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", features = ["rococo-native"] }
