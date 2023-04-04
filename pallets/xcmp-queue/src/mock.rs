@@ -151,6 +151,8 @@ impl ShouldExecute for BarrierMock {
 	}
 }
 
+pub type FixedWeigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
+
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
 	type RuntimeCall = RuntimeCall;
@@ -162,7 +164,7 @@ impl xcm_executor::Config for XcmConfig {
 	type IsTeleporter = NativeAsset;
 	type UniversalLocation = UniversalLocation;
 	type Barrier = BarrierMock;
-	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
+	type Weigher = FixedWeigher;
 	type Trader = ();
 	type ResponseHandler = ();
 	type AssetTrap = ();

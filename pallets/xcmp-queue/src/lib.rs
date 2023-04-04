@@ -400,7 +400,7 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
-	/// Inbound aggregate XCMP messages. It can only be one per ParaId/block.
+	/// Inbound aggregate XCMP messages. It can only be one per ParaId.
 	#[pallet::storage]
 	pub(super) type DeferredXcmMessages<T: Config> =
 		StorageMap<_, Blake2_128Concat, ParaId, DeferredMessageList<T::RuntimeCall>, ValueQuery>;
@@ -697,9 +697,6 @@ impl<T: Config> Pallet<T> {
 			Ok(xcm) => {
 				let location = (Parent, Parachain(sender.into()));
 
-				// Consider handling in process_xcmp_message to avoid deffering twice / complexity
-				// Extract to function
-
 				match T::XcmExecutor::execute_xcm(location, xcm, hash, max_weight) {
 					Outcome::Error(e) => (
 						Err(e),
@@ -978,6 +975,7 @@ impl<T: Config> Pallet<T> {
 					sent_at,
 					&mut deferred_messages,
 					weight_remaining.saturating_sub(weight_used),
+					xcmp_max_individual_weight,
 				));
 
 				if !deferred_messages.is_empty() {
@@ -1033,6 +1031,7 @@ impl<T: Config> Pallet<T> {
 	fn service_deferred_queue(
 		max_weight: Weight,
 		relay_chain_block_number: RelayBlockNumber,
+		max_individual_weight: Weight,
 	) -> Weight {
 		let mut weight_used = Weight::zero();
 		let mut unprocessed = Vec::new();
@@ -1043,6 +1042,7 @@ impl<T: Config> Pallet<T> {
 				relay_chain_block_number,
 				&mut deferred_messages,
 				max_weight.saturating_sub(weight_used),
+				max_individual_weight,
 			));
 
 			// store unprocessed messages after `drain` is done to avoid interfering with the iterator
@@ -1065,6 +1065,7 @@ impl<T: Config> Pallet<T> {
 		relay_chain_block: RelayBlockNumber,
 		deferred_messages: &mut DeferredMessageList<T::RuntimeCall>,
 		max_weight: Weight,
+		max_individual_weight: Weight,
 	) -> Weight {
 		let mut weight_used = Weight::zero();
 
@@ -1080,10 +1081,29 @@ impl<T: Config> Pallet<T> {
 					weight_used = weight_used.saturating_add(used);
 					return false;
 				},
+				Err(XcmError::WeightLimitReached(required))
+					if required.any_gt(max_individual_weight) =>
+				{
+					let is_under_limit = Overweight::<T>::count() < MAX_OVERWEIGHT_MESSAGES;
+					weight_used.saturating_accrue(T::DbWeight::get().reads(1));
+					if is_under_limit {
+						// overweight - add to overweight queue and continue with message
+						// execution consuming the message.
+						let overweight_xcm = msg.xcm.encode();
+						let index = Self::stash_overweight(sender, msg.sent_at, overweight_xcm);
+						let e = Event::OverweightEnqueued {
+							sender,
+							sent_at: msg.sent_at,
+							index,
+							required,
+						};
+						Self::deposit_event(e);
+					}
+					return false;
+				},
 				Err(XcmError::WeightLimitReached(_)) => {
 					return true;
 				},
-				// TODO: implement support for detecting and storing overweight messages
 				Err(_) => return false,
 			}
 		});
@@ -1131,7 +1151,9 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 		let mut last_block_number = 0;
 		let mut status = <InboundXcmpStatus<T>>::get();
 
-		let QueueConfigData { suspend_threshold, drop_threshold, .. } = <QueueConfig<T>>::get();
+		let QueueConfigData {
+			suspend_threshold, drop_threshold, xcmp_max_individual_weight, ..
+		} = <QueueConfig<T>>::get();
 
 		for (sender, sent_at, data) in iter {
 			// Figure out the message format.
@@ -1202,6 +1224,7 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 		let weight_used = weight_used.saturating_add(Self::service_deferred_queue(
 			max_weight.saturating_sub(weight_used),
 			last_block_number,
+			xcmp_max_individual_weight,
 		));
 
 		weight_used

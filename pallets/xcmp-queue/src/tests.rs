@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::mock::FixedWeigher;
+
 use super::*;
 use cumulus_primitives_core::XcmpMessageHandler;
 use frame_support::{assert_noop, assert_ok};
@@ -257,9 +259,55 @@ fn handle_xcmp_messages_should_execute_deferred_message_and_remove_from_deferred
 			create_bounded_vec(vec![deferred_message.clone(), deferred_message])
 		);
 
-		XcmpQueue::service_deferred_queue(Weight::MAX, 7);
+		let QueueConfigData { xcmp_max_individual_weight, .. } = <QueueConfig<Test>>::get();
+
+		XcmpQueue::service_deferred_queue(Weight::MAX, 7, xcmp_max_individual_weight);
 
 		assert_eq!(DeferredXcmMessages::<Test>::get(para_id), create_bounded_vec(vec![]));
+	});
+}
+
+#[test]
+fn service_deferred_queue_should_pass_overweight_messages_to_overweight_queue() {
+	new_test_ext().execute_with(|| {
+		use xcm_executor::traits::WeightBounds;
+		let assets = MultiAssets::new();
+		let mut xcm =
+			Xcm::<RuntimeCall>(vec![Instruction::<RuntimeCall>::ReserveAssetDeposited(assets)]);
+		// We just set a very low max_inidividual_weight to trigger the overweight logic
+		let low_max_weight = Weight::from_parts(100, 1);
+		assert!(FixedWeigher::weight(&mut xcm).unwrap().any_gt(low_max_weight));
+		let versioned_xcm = VersionedXcm::from(xcm);
+
+		let para_id = ParaId::from(999);
+
+		let encoded_xcm = versioned_xcm.encode();
+		let mut message_format = XcmpMessageFormat::ConcatenatedVersionedXcm.encode();
+		message_format.extend(encoded_xcm.clone());
+		let messages = vec![(para_id, 1u32.into(), message_format.as_slice())];
+
+		XcmpQueue::handle_xcmp_messages(messages.clone().into_iter(), Weight::MAX);
+
+		let deferred_message = DeferredMessage {
+			sent_at: 1u32.into(),
+			sender: para_id,
+			xcm: versioned_xcm.clone(),
+			deferred_to: 6,
+		};
+
+		assert_eq!(
+			DeferredXcmMessages::<Test>::get(para_id),
+			create_bounded_vec(vec![deferred_message])
+		);
+
+		assert_eq!(Overweight::<Test>::count(), 0);
+
+		XcmpQueue::service_deferred_queue(low_max_weight, 7, low_max_weight);
+
+		assert_eq!(DeferredXcmMessages::<Test>::get(para_id), create_bounded_vec(vec![]));
+
+		assert_eq!(Overweight::<Test>::get(0), Some((ParaId::from(999), 1, encoded_xcm)));
+		assert_eq!(Overweight::<Test>::count(), 1);
 	});
 }
 
@@ -303,8 +351,10 @@ fn handle_xcmp_messages_should_execute_deferred_message_from_different_blocks() 
 			}])
 		);
 
+		let QueueConfigData { xcmp_max_individual_weight, .. } = <QueueConfig<Test>>::get();
+
 		//Act
-		XcmpQueue::service_deferred_queue(Weight::MAX, 6);
+		XcmpQueue::service_deferred_queue(Weight::MAX, 6, xcmp_max_individual_weight);
 
 		//Assert
 		assert_eq!(DeferredXcmMessages::<Test>::get(para_id), create_bounded_vec(vec![]));
