@@ -14,7 +14,7 @@
 // limitations under the License.
 
 use crate as collator_selection;
-use crate::{mock::*, CandidateInfo, Error};
+use crate::{mock::*, pallet::CandidateInfo, Error};
 use frame_support::{
 	assert_noop, assert_ok,
 	traits::{Currency, GenesisBuild, OnInitialize},
@@ -178,7 +178,7 @@ fn set_candidacy_bond() {
 fn cannot_register_candidate_if_too_many() {
 	new_test_ext().execute_with(|| {
 		// reset desired candidates:
-		<crate::DesiredCandidates<Test>>::put(0);
+		<crate::pallet::DesiredCandidates<Test>>::put(0);
 
 		// can't accept anyone anymore.
 		assert_noop!(
@@ -187,7 +187,7 @@ fn cannot_register_candidate_if_too_many() {
 		);
 
 		// reset desired candidates:
-		<crate::DesiredCandidates<Test>>::put(1);
+		<crate::pallet::DesiredCandidates<Test>>::put(1);
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(4)));
 
 		// but no more
@@ -202,7 +202,7 @@ fn cannot_register_candidate_if_too_many() {
 fn cannot_unregister_candidate_if_too_few() {
 	new_test_ext().execute_with(|| {
 		// reset desired candidates:
-		<crate::DesiredCandidates<Test>>::put(1);
+		<crate::pallet::DesiredCandidates<Test>>::put(1);
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(4)));
 
 		// can not remove too few
