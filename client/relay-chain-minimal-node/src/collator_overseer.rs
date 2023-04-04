@@ -19,8 +19,7 @@ use lru::LruCache;
 use std::sync::Arc;
 
 use polkadot_availability_recovery::AvailabilityRecoverySubsystem;
-use polkadot_collator_protocol::CollatorProtocolSubsystem;
-use polkadot_collator_protocol::ProtocolSide;
+use polkadot_collator_protocol::{CollatorProtocolSubsystem, ProtocolSide};
 use polkadot_network_bridge::{
 	Metrics as NetworkBridgeMetrics, NetworkBridgeRx as NetworkBridgeRxSubsystem,
 	NetworkBridgeTx as NetworkBridgeTxSubsystem,
@@ -36,8 +35,8 @@ use polkadot_node_network_protocol::{
 };
 use polkadot_node_subsystem_util::metrics::{prometheus::Registry, Metrics};
 use polkadot_overseer::{
-	BlockInfo, DummySubsystem, Handle, MetricsTrait, Overseer, OverseerConnector, OverseerHandle,
-	OverseerMetrics, SpawnGlue, KNOWN_LEAVES_CACHE_SIZE,
+	BlockInfo, DummySubsystem, Handle, Overseer, OverseerConnector, OverseerHandle, SpawnGlue,
+	KNOWN_LEAVES_CACHE_SIZE,
 };
 use polkadot_primitives::CollatorPair;
 
