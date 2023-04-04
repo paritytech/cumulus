@@ -146,12 +146,10 @@ benchmarks! {
 
 		let b in 1 .. T::MaxInvulnerables::get();
 		let c = register_validators::<T>(b);
-
 		let v: frame_support::BoundedVec<_, T::MaxInvulnerables> = frame_support::BoundedVec::try_from(c).unwrap();
 		<Invulnerables<T>>::put(v);
 
-		let to_remove = <Invulnerables<T>>::get().last().unwrap().clone();
-		whitelist!(to_remove);
+		let to_remove = <Invulnerables<T>>::get().first().unwrap().clone();
 	}: {
 		assert_ok!(
 			<CollatorSelection<T>>::remove_invulnerable(origin, to_remove.clone())

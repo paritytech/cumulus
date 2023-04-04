@@ -129,9 +129,9 @@ fn remove_invulnerable_works() {
 			),
 			Error::<Test>::NotInvulnerable
 		);
-		
+
 		// element is no longer part of the list
-		assert!(!CollatorSelection::invulnerables().to_vec().contains(&to_remove));	
+		assert!(!CollatorSelection::invulnerables().to_vec().contains(&to_remove));
 	});
 }
 

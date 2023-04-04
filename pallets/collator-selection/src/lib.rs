@@ -362,7 +362,7 @@ pub mod pallet {
 			to_remove: <T>::AccountId,
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
-		
+
 			<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
 				let pos = invulnerables
 					.binary_search(&to_remove)
@@ -370,7 +370,7 @@ pub mod pallet {
 				invulnerables.remove(pos);
 				Ok(())
 			})?;
-		
+
 			Self::deposit_event(Event::InvulnerableRemoved { removed: to_remove });
 			Ok(().into())
 		}
