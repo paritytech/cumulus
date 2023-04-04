@@ -231,7 +231,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Transfer was successfully entered to the system (does not mean already delivered)
-		TransferInitiated(XcmHash),
+		TransferInitiated { message_hash: XcmHash, sender_cost: MultiAssets },
 
 		/// New bridge configuration was added
 		BridgeAdded,
@@ -646,46 +646,27 @@ pub mod pallet {
 			}
 		}
 
-		fn initiate_bridge_transfer(
-			allowed_target_location: MultiLocation,
-			xcm: Xcm<()>,
-		) -> Result<(), Error<T>> {
-			// call bridge
+		fn initiate_bridge_transfer(dest: MultiLocation, xcm: Xcm<()>) -> Result<(), Error<T>> {
 			log::info!(
 				target: LOG_TARGET,
-				"[T::BridgeXcmSender] send to bridge, allowed_target_location: {:?}, xcm: {:?}",
-				allowed_target_location,
+				"[T::BridgeXcmSender] send to bridge, dest: {:?}, xcm: {:?}",
+				dest,
 				xcm,
 			);
-			// TODO: use fn send_msg - which does: validate + deliver - but find out what to do with the fees?
-			let (ticket, fees) =
-				T::BridgeXcmSender::validate(&mut Some(allowed_target_location), &mut Some(xcm))
-					.map_err(|e| {
-						log::error!(
-							target: LOG_TARGET,
-							"[BridgeXcmSender::validate] SendError occurred, error: {:?}",
-							e
-						);
-						Self::deposit_event(Event::BridgeCallError(e));
-						Error::<T>::BridgeCallError
-					})?;
-			log::info!(
-				target: LOG_TARGET,
-				"[T::BridgeXcmSender::validate] (TODO: process) fees: {:?}",
-				fees
-			);
-			// TODO: what to do with fees - we have fees here, pay here or ignore?
-			let xcm_hash = T::BridgeXcmSender::deliver(ticket).map_err(|e| {
-				log::error!(
-					target: LOG_TARGET,
-					"[BridgeXcmSender::deliver] SendError occurred, error: {:?}",
-					e
-				);
-				Self::deposit_event(Event::BridgeCallError(e));
-				Error::<T>::BridgeCallError
-			})?;
+			// call bridge
+			let (message_hash, sender_cost) =
+				send_xcm::<T::BridgeXcmSender>(dest, xcm).map_err(|e| {
+					log::error!(
+						target: LOG_TARGET,
+						"[T::BridgeXcmSender] SendError occurred, error: {:?}",
+						e
+					);
+					Self::deposit_event(Event::BridgeCallError(e));
+					Error::<T>::BridgeCallError
+				})?;
 
-			Self::deposit_event(Event::TransferInitiated(xcm_hash));
+			// just fire event
+			Self::deposit_event(Event::TransferInitiated { message_hash, sender_cost });
 			Ok(())
 		}
 	}

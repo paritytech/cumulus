@@ -1636,12 +1636,21 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 				r,
 				pallet_bridge_transfer::Event::ReserveAssetsDeposited { .. }
 			)));
-			let xcm_hash = bridge_transfer_events.find_map(|e| match e {
-				pallet_bridge_transfer::Event::TransferInitiated(message_hash) =>
-					Some(message_hash),
+			let transfer_initiated_event = bridge_transfer_events.find_map(|e| match e {
+				pallet_bridge_transfer::Event::TransferInitiated { message_hash, sender_cost } =>
+					Some((message_hash, sender_cost)),
 				_ => None,
 			});
-			assert!(xcm_hash.is_some());
+			let xcm_hash = match transfer_initiated_event {
+				Some((message_hash, sender_cost)) => {
+					assert!(sender_cost.is_none());
+					Some(message_hash)
+				},
+				_ => {
+					assert!(false, "No `TransferInitiated` was fired");
+					None
+				},
+			};
 
 			let mut xcmp_queue_events = <frame_system::Pallet<Runtime>>::events()
 				.into_iter()
