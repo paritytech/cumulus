@@ -22,11 +22,8 @@ use log;
 /// Initial import of the Kusama Technical Fellowship.
 pub(crate) mod import_kusama_fellowship {
 	use super::*;
-	use frame_support::parameter_types;
-	use pallet_ranked_collective::{
-		Config, IdToIndex, IndexToId, MemberCount, MemberRecord, Members,
-		Pallet as RankedCollective, Rank,
-	};
+	use frame_support::{parameter_types, traits::RankedMembers};
+	use pallet_ranked_collective::{Config, MemberCount, Pallet as RankedCollective, Rank};
 	#[cfg(feature = "try-runtime")]
 	use sp_std::vec::Vec;
 
@@ -128,24 +125,19 @@ pub(crate) mod import_kusama_fellowship {
 				return weight
 			}
 
-			let mut max_rank = 0;
 			for (rank, account_id32) in FellowshipAddresses::get() {
 				let who: T::AccountId = account_id32.into();
-				Members::<T, I>::insert(&who, MemberRecord::new(rank));
-				weight.saturating_accrue(T::DbWeight::get().writes(1));
-				for inner_rank in 0..rank + 1 {
-					let index = MemberCount::<T, I>::get(rank);
-					MemberCount::<T, I>::insert(inner_rank, index + 1);
-					IdToIndex::<T, I>::insert(inner_rank, &who, index);
-					IndexToId::<T, I>::insert(inner_rank, index, &who);
-					max_rank = max_rank.max(inner_rank);
-					// 2 writes to IdToIndex and IndexToId.
+				let _ = <RankedCollective<T, I> as RankedMembers>::induct(&who);
+				for _ in 0..rank {
+					let _ = <RankedCollective<T, I> as RankedMembers>::promote(&who);
+					// 1 write to `IdToIndex` and `IndexToId` per member on each rank.
 					weight.saturating_accrue(T::DbWeight::get().writes(2));
 				}
+				// 1 write to `IdToIndex` and `IndexToId` per member on each rank.
+				weight.saturating_accrue(T::DbWeight::get().writes(2));
+				// 1 read and 1 write to `Members` and `MemberCount` per member.
+				weight.saturating_accrue(T::DbWeight::get().reads_writes(2, 2));
 			}
-			// writes to MemberCount.
-			weight.saturating_accrue(T::DbWeight::get().writes((max_rank as u64) + 1));
-
 			weight
 		}
 
@@ -248,6 +240,9 @@ pub mod tests {
 		ext.execute_with(|| {
 			assert_eq!(MemberCount::<Runtime, Fellowship>::get(0), 0);
 			Migration::<Runtime, Fellowship>::on_runtime_upgrade();
+			assert_eq!(MemberCount::<Runtime, Fellowship>::get(0), 46);
+			assert_eq!(MemberCount::<Runtime, Fellowship>::get(6), 3);
+			assert_eq!(MemberCount::<Runtime, Fellowship>::get(7), 0);
 			for (rank, account_id32) in FellowshipAddresses::get() {
 				let who = <Runtime as frame_system::Config>::AccountId::from(account_id32);
 				assert!(IdToIndex::<Runtime, Fellowship>::get(0, &who).is_some());
