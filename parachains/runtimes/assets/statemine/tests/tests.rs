@@ -616,7 +616,7 @@ asset_test_utils::include_create_and_manage_foreign_assets_for_local_consensus_p
 	})
 );
 
-asset_test_utils::include_can_governance_change_bridge_transfer_configuration!(
+asset_test_utils::include_can_governance_change_bridge_transfer_out_configuration!(
 	Runtime,
 	XcmConfig,
 	asset_test_utils::CollatorSessionKeys::new(

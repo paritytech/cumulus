@@ -511,11 +511,6 @@ pub struct BridgeTransferBenchmarksHelper;
 
 #[cfg(feature = "runtime-benchmarks")]
 impl BridgeTransferBenchmarksHelper {
-	/// Asset that we're transferring and paying fees in.
-	fn make_asset(fungible: u128) -> MultiAsset {
-		MultiAsset { fun: Fungible(fungible.into()), id: Concrete(KsmLocation::get()) }
-	}
-
 	/// Parachain at the other side of the bridge that we're connected to.
 	fn allowed_target_location() -> MultiLocation {
 		MultiLocation::new(2, X2(GlobalConsensus(Polkadot), Parachain(1000)))
@@ -534,7 +529,7 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 			Polkadot,
 			pallet_bridge_transfer::BridgeConfig {
 				bridge_location: (Parent, Parachain(Self::bridge_hub_para_id())).into(),
-				// TODO: right now `UnpaidRemoteExporter` is used to send XCM messages and it requires
+				// Right now `UnpaidRemoteExporter` is used to send XCM messages and it requires
 				// fee to be `None`. If we're going to change that (are we?), then we should replace
 				// this `None` with `Some(Self::make_asset(crate::ExistentialDeposit::get()))`
 				bridge_location_fee: None,
@@ -545,11 +540,8 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 	}
 
 	fn prepare_asset_transfer(
-		assets_count: u32,
 	) -> Option<(RuntimeOrigin, xcm::VersionedMultiAssets, xcm::VersionedMultiLocation)> {
 		use frame_support::traits::Currency;
-
-		assert_eq!(assets_count, 1, "Benchmarks needs to be fixed to support multiple assets");
 
 		// our `BridgeXcmSender` assumes that the HRMP channel is opened between this
 		// parachain and the sibling bridge-hub parachain
@@ -557,13 +549,41 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 			Self::bridge_hub_para_id().into(),
 		);
 
-		// deposit enough funds to the sender account
+		// sender account
 		let sender_account = AccountId::from([42u8; 32]);
+
+		// We need root origin to create asset
+		let minimum_asset_balance = 3333333_u128;
+		let local_asset_id = 1;
+		frame_support::assert_ok!(Assets::force_create(
+			RuntimeOrigin::root(),
+			local_asset_id.into(),
+			sender_account.clone().into(),
+			true,
+			minimum_asset_balance
+		));
+
+		// We mint enough asset for the account to exist for assets
+		frame_support::assert_ok!(Assets::mint(
+			RuntimeOrigin::signed(sender_account.clone()),
+			local_asset_id.into(),
+			sender_account.clone().into(),
+			minimum_asset_balance * 4
+		));
+
+		// deposit enough funds to the sender account
 		let existential_deposit = crate::ExistentialDeposit::get();
 		let _ = Balances::deposit_creating(&sender_account, existential_deposit * 10);
 
-		// finally - prepare assets and destination
-		let assets = xcm::VersionedMultiAssets::V3(Self::make_asset(existential_deposit).into());
+		// finally - prepare assets and destination (pallet_assets is worse than pallet_balances)
+		use xcm_executor::traits::Convert;
+		let asset_id_location = assets_common::AssetIdForTrustBackedAssetsConvert::<
+			TrustBackedAssetsPalletLocation,
+		>::reverse_ref(local_asset_id)
+		.unwrap();
+		let asset: MultiAsset = (Concrete(asset_id_location), minimum_asset_balance * 2).into();
+
+		let assets = xcm::VersionedMultiAssets::V3(asset.into());
 		let destination = xcm::VersionedMultiLocation::V3(Self::allowed_target_location());
 
 		Some((RuntimeOrigin::signed(sender_account), assets, destination))

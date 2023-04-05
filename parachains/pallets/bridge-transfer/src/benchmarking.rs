@@ -23,7 +23,10 @@ use crate::{
 };
 
 use frame_benchmarking::{benchmarks, BenchmarkError};
-use frame_support::traits::{EnsureOrigin, Get};
+use frame_support::{
+	ensure,
+	traits::{EnsureOrigin, Get},
+};
 use sp_std::prelude::*;
 use xcm::prelude::*;
 
@@ -43,19 +46,27 @@ benchmarks! {
 	transfer_asset_via_bridge {
 		let _ = T::TransferAssetOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
 		// every asset has its own configuration and ledger, so there's a performance dependency
-		// TODO: add proper range after once pallet works with multiple assets
 		// (be sure to use "worst" of assets)
-		// let a in 1 .. 1;
+		let max_assets_limit = T::MaxAssetsLimit::get();
+		ensure!(max_assets_limit > 0, "MaxAssetsLimit not set up correctly.");
 		let (bridged_network, bridge_config) = T::BenchmarkHelper::bridge_config()
 			.ok_or(BenchmarkError::Stop("missing `bridge_config` data"))?;
-		let (origin, assets, destination) = T::BenchmarkHelper::prepare_asset_transfer(1)
+		let (origin, assets, destination) = T::BenchmarkHelper::prepare_asset_transfer()
 			.ok_or(BenchmarkError::Stop("missing `prepare_asset_transfer` data"))?;
+		let assets_count = match &assets {
+			VersionedMultiAssets::V2(assets) => assets.len(),
+			VersionedMultiAssets::V3(assets) => assets.len(),
+		};
+		ensure!(assets_count == max_assets_limit as usize, "`assets` not set up correctly for worst case.");
 		AllowedExporters::<T>::insert(bridged_network, bridge_config);
 	}: _<T::RuntimeOrigin>(origin, Box::new(assets), Box::new(destination))
 	verify {
-		// we don't care about message hash here, just check that the transfer has been initiated
+		// we don't care about message hash or sender cost here, just check that the transfer has been initiated
 		let actual_event = frame_system::Pallet::<T>::events().pop().map(|r| r.event);
-		let expected_event: <T as Config>::RuntimeEvent = Event::TransferInitiated(Default::default()).into();
+		let expected_event: <T as Config>::RuntimeEvent = Event::TransferInitiated {
+			message_hash: Default::default(),
+			sender_cost: Default::default(),
+		}.into();
 		assert!(matches!(actual_event, Some(expected_event)));
 	}
 
@@ -79,9 +90,12 @@ benchmarks! {
 		)?;
 	}: _<T::RuntimeOrigin>(origin, Box::new(destination))
 	verify {
-		// we don't care about message hash here, just check that the transfer has been initiated
+		// we don't care about message hash or sender cost here, just check that the transfer has been initiated
 		let actual_event = frame_system::Pallet::<T>::events().pop().map(|r| r.event);
-		let expected_event: <T as Config>::RuntimeEvent = Event::TransferInitiated(Default::default()).into();
+		let expected_event: <T as Config>::RuntimeEvent = Event::TransferInitiated {
+			message_hash: Default::default(),
+			sender_cost: Default::default(),
+		}.into();
 		assert!(matches!(actual_event, Some(expected_event)));
 	}
 

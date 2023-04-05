@@ -679,6 +679,8 @@ impl pallet_bridge_transfer::Config for Runtime {
 	type TransferAssetOrigin =
 		frame_support::traits::NeverEnsureOrigin<xcm::latest::prelude::MultiLocation>;
 	// no transfer allowed out (now)
+	type MaxAssetsLimit = ConstU8<0>;
+	// no transfer allowed out (now)
 	type TransferPingOrigin =
 		frame_support::traits::NeverEnsureOrigin<xcm::latest::prelude::MultiLocation>;
 	// no transfer allowed out (now)

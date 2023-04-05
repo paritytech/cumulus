@@ -23,7 +23,7 @@ use codec::Encode;
 use cumulus_primitives_core::XcmpMessageSource;
 use frame_support::{
 	assert_noop, assert_ok,
-	traits::{fungibles::InspectEnumerable, Currency, Get, OriginTrait},
+	traits::{fungibles::InspectEnumerable, Contains, Currency, Get, OriginTrait},
 	weights::Weight,
 };
 use parachains_common::Balance;
@@ -1327,8 +1327,8 @@ macro_rules! include_create_and_manage_foreign_assets_for_local_consensus_parach
 	}
 );
 
-/// Test-case makes sure that `Runtime` can manage `bridge_transfer` configuration by governance
-pub fn can_governance_change_bridge_transfer_configuration<Runtime, XcmConfig>(
+/// Test-case makes sure that `Runtime` can manage `bridge_transfer out`  configuration by governance
+pub fn can_governance_change_bridge_transfer_out_configuration<Runtime, XcmConfig>(
 	collator_session_keys: CollatorSessionKeys<Runtime>,
 	runtime_call_encode: Box<dyn Fn(pallet_bridge_transfer::Call<Runtime>) -> Vec<u8>>,
 	unwrap_pallet_bridge_transfer_event: Box<
@@ -1466,7 +1466,7 @@ pub fn can_governance_change_bridge_transfer_configuration<Runtime, XcmConfig>(
 }
 
 #[macro_export]
-macro_rules! include_can_governance_change_bridge_transfer_configuration(
+macro_rules! include_can_governance_change_bridge_transfer_out_configuration(
 	(
 		$runtime:path,
 		$xcm_config:path,
@@ -1475,8 +1475,116 @@ macro_rules! include_can_governance_change_bridge_transfer_configuration(
 		$unwrap_pallet_bridge_transfer_event:expr
 	) => {
 		#[test]
-		fn can_governance_change_bridge_transfer_configuration() {
-			asset_test_utils::test_cases::can_governance_change_bridge_transfer_configuration::<
+		fn can_governance_change_bridge_transfer_out_configuration() {
+			asset_test_utils::test_cases::can_governance_change_bridge_transfer_out_configuration::<
+				$runtime,
+				$xcm_config,
+			>(
+				$collator_session_key,
+				$runtime_call_encode,
+				$unwrap_pallet_bridge_transfer_event,
+			)
+		}
+	}
+);
+
+/// Test-case makes sure that `Runtime` can manage `bridge_transfer in` configuration by governance
+pub fn can_governance_change_bridge_transfer_in_configuration<Runtime, XcmConfig>(
+	collator_session_keys: CollatorSessionKeys<Runtime>,
+	runtime_call_encode: Box<dyn Fn(pallet_bridge_transfer::Call<Runtime>) -> Vec<u8>>,
+	unwrap_pallet_bridge_transfer_event: Box<
+		dyn Fn(Vec<u8>) -> Option<pallet_bridge_transfer::Event<Runtime>>,
+	>,
+) where
+	Runtime: frame_system::Config
+		+ pallet_balances::Config
+		+ pallet_session::Config
+		+ pallet_xcm::Config
+		+ parachain_info::Config
+		+ pallet_collator_selection::Config
+		+ cumulus_pallet_parachain_system::Config
+		+ pallet_bridge_transfer::Config,
+	AccountIdOf<Runtime>: Into<[u8; 32]>,
+	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
+	BalanceOf<Runtime>: From<Balance>,
+	XcmConfig: xcm_executor::Config,
+{
+	ExtBuilder::<Runtime>::default()
+		.with_collators(collator_session_keys.collators())
+		.with_session_keys(collator_session_keys.session_keys())
+		.with_tracing()
+		.with_safe_xcm_version(3)
+		.build()
+		.execute_with(|| {
+			// bridge cfg data
+			let bridge_location = (Parent, Parachain(1013)).into();
+			let alias_junction = GlobalConsensus(ByGenesis([9; 32]));
+
+			// helper to execute BridgeTransfer call
+			let execute_as_governance = |call| -> Outcome {
+				// prepare xcm as governance will do
+				let xcm = Xcm(vec![
+					UnpaidExecution { weight_limit: Unlimited, check_origin: None },
+					Transact {
+						origin_kind: OriginKind::Superuser,
+						require_weight_at_most: Weight::from_parts(200_000_000, 12000),
+						call: runtime_call_encode(call).into(),
+					},
+				]);
+
+				// origin as relay chain
+				let origin = MultiLocation { parents: 1, interior: Here };
+
+				// initialize bridge through governance-like
+				let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
+				XcmExecutor::<XcmConfig>::execute_xcm(
+					origin,
+					xcm,
+					hash,
+					RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Parent),
+				)
+			};
+
+			// check before
+			assert!(
+				!pallet_bridge_transfer::impls::AllowedUniversalAliasesOf::<Runtime>::contains(&(
+					bridge_location,
+					alias_junction
+				))
+			);
+
+			// governance can add bridge config
+			assert_ok!(execute_as_governance(
+				pallet_bridge_transfer::Call::<Runtime>::add_universal_alias {
+					location: Box::new(VersionedMultiLocation::V3(bridge_location.clone())),
+					junction: alias_junction,
+				},
+			)
+			.ensure_complete());
+			assert!(<frame_system::Pallet<Runtime>>::events()
+				.into_iter()
+				.filter_map(|e| unwrap_pallet_bridge_transfer_event(e.event.encode()))
+				.any(|e| matches!(e, pallet_bridge_transfer::Event::UniversalAliasAdded)));
+
+			// check after
+			assert!(pallet_bridge_transfer::impls::AllowedUniversalAliasesOf::<Runtime>::contains(
+				&(bridge_location, alias_junction)
+			));
+		})
+}
+
+#[macro_export]
+macro_rules! include_can_governance_change_bridge_transfer_in_configuration(
+	(
+		$runtime:path,
+		$xcm_config:path,
+		$collator_session_key:expr,
+		$runtime_call_encode:expr,
+		$unwrap_pallet_bridge_transfer_event:expr
+	) => {
+		#[test]
+		fn can_governance_change_bridge_transfer_in_configuration() {
+			asset_test_utils::test_cases::can_governance_change_bridge_transfer_in_configuration::<
 				$runtime,
 				$xcm_config,
 			>(
