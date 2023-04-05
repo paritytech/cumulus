@@ -73,7 +73,7 @@ pallet-collator-selection = { path = "../../../../pallets/collator-selection", d
 parachain-info = { path = "../../../pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
 
-[build-dependencies]
+[dev-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
 [dev-dependencies]
