@@ -182,7 +182,7 @@ pub type Barrier = DenyThenTry<
 >;
 
 match_types! {
-	pub type RelayOrSystemParachains: impl Contains<MultiLocation> = {
+	pub type RelayOrOtherSystemParachains: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 0, interior: X1(Parachain(polkadot_runtime_constants::system_parachain::STATEMINT_ID |
 			polkadot_runtime_constants::system_parachain::COLLECTIVES_ID)) } |
 		MultiLocation { parents: 1, interior: Here }
@@ -217,7 +217,8 @@ impl xcm_executor::Config for XcmConfig {
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 	type AssetLocker = ();
 	type AssetExchanger = ();
-	type FeeManager = XcmFeesToAccount<Self, RelayOrSystemParachains, AccountId, TreasuryAccount>;
+	type FeeManager =
+		XcmFeesToAccount<Self, RelayOrOtherSystemParachains, AccountId, TreasuryAccount>;
 	type MessageExporter = ();
 	type UniversalAliases = Nothing;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
