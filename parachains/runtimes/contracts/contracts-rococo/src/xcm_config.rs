@@ -24,8 +24,12 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
-use parachains_common::xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry};
+use parachains_common::{
+	xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry},
+	TREASURY_PALLET_ID,
+};
 use polkadot_parachain::primitives::Sibling;
+use sp_runtime::traits::AccountIdConversion;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
@@ -33,7 +37,7 @@ use xcm_builder::{
 	FixedWeightBounds, IsConcrete, NativeAsset, ParentAsSuperuser, ParentIsPreset,
 	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
 	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-	UsingComponents, WithComputedOrigin,
+	UsingComponents, WithComputedOrigin, XcmFeesToAccount,
 };
 use xcm_executor::XcmExecutor;
 
@@ -43,6 +47,7 @@ parameter_types! {
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub const ExecutiveBody: BodyId = BodyId::Executive;
+	pub TreasuryAccount: Option<AccountId> = Some(TREASURY_PALLET_ID.into_account_truncating());
 }
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
@@ -140,6 +145,14 @@ pub type Barrier = DenyThenTry<
 	),
 >;
 
+match_types! {
+	pub type RelayOrOtherSystemParachains: impl Contains<MultiLocation> = {
+		MultiLocation { parents: 0, interior: X1(Parachain(rococo_runtime_constants::system_parachain::STATEMINE_ID |
+			rococo_runtime_constants::system_parachain::ENCOINTER_ID)) } |
+		MultiLocation { parents: 1, interior: Here }
+	};
+}
+
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
 	type RuntimeCall = RuntimeCall;
@@ -160,7 +173,8 @@ impl xcm_executor::Config for XcmConfig {
 	type MaxAssetsIntoHolding = ConstU32<8>;
 	type AssetLocker = ();
 	type AssetExchanger = ();
-	type FeeManager = ();
+	type FeeManager =
+		XcmFeesToAccount<Self, RelayOrOtherSystemParachains, AccountId, TreasuryAccount>;
 	type MessageExporter = ();
 	type UniversalAliases = Nothing;
 	type CallDispatcher = RuntimeCall;
