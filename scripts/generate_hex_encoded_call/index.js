@@ -34,11 +34,11 @@ function remarkWithEvent(endpoint, outputFile) {
 		});
 }
 
-function addBridgeConfig(endpoint, outputFile, bridgedNetwork, bridgeConfig) {
-	console.log(`Generating addBridgeConfig from RPC endpoint: ${endpoint} to outputFile: ${outputFile} based on bridgedNetwork: ${bridgedNetwork}, bridgeConfig: ${bridgeConfig}`);
+function addExporterConfig(endpoint, outputFile, bridgedNetwork, bridgeConfig) {
+	console.log(`Generating addExporterConfig from RPC endpoint: ${endpoint} to outputFile: ${outputFile} based on bridgedNetwork: ${bridgedNetwork}, bridgeConfig: ${bridgeConfig}`);
 	connect(endpoint)
 		.then((api) => {
-			const call = api.tx.bridgeAssetsTransfer.addBridgeConfig(bridgedNetwork, JSON.parse(bridgeConfig));
+			const call = api.tx.bridgeTransfer.addExporterConfig(bridgedNetwork, JSON.parse(bridgeConfig));
 			writeHexEncodedBytesToOutput(call.method, outputFile);
 			exit(0);
 		})
@@ -48,11 +48,11 @@ function addBridgeConfig(endpoint, outputFile, bridgedNetwork, bridgeConfig) {
 		});
 }
 
-function removeBridgeConfig(endpoint, outputFile, bridgedNetwork) {
-	console.log(`Generating removeBridgeConfig from RPC endpoint: ${endpoint} to outputFile: ${outputFile} based on bridgedNetwork: ${bridgedNetwork}`);
+function addUniversalAlias(endpoint, outputFile, location, junction) {
+	console.log(`Generating addUniversalAlias from RPC endpoint: ${endpoint} to outputFile: ${outputFile} based on location: ${location}, junction: ${junction}`);
 	connect(endpoint)
 		.then((api) => {
-			const call = api.tx.bridgeAssetsTransfer.removeBridgeConfig(bridgedNetwork);
+			const call = api.tx.bridgeTransfer.addUniversalAlias(JSON.parse(location), JSON.parse(junction));
 			writeHexEncodedBytesToOutput(call.method, outputFile);
 			exit(0);
 		})
@@ -62,11 +62,39 @@ function removeBridgeConfig(endpoint, outputFile, bridgedNetwork) {
 		});
 }
 
-function transferAssetViaBridge(endpoint, outputFile, assets, destination) {
-	console.log(`Generating transferAssetViaBridge from RPC endpoint: ${endpoint} to outputFile: ${outputFile} based on assets: ${assets}, destination: ${destination}`);
+function addReserveLocation(endpoint, outputFile, reserve_location) {
+	console.log(`Generating addReserveLocation from RPC endpoint: ${endpoint} to outputFile: ${outputFile} based on reserve_location: ${reserve_location}`);
 	connect(endpoint)
 		.then((api) => {
-			const call = api.tx.bridgeAssetsTransfer.transferAssetViaBridge(JSON.parse(assets), JSON.parse(destination));
+			const call = api.tx.bridgeTransfer.addReserveLocation(JSON.parse(reserve_location));
+			writeHexEncodedBytesToOutput(call.method, outputFile);
+			exit(0);
+		})
+		.catch((e) => {
+			console.error(e);
+			exit(1);
+		});
+}
+
+function removeExporterConfig(endpoint, outputFile, bridgedNetwork) {
+	console.log(`Generating removeExporterConfig from RPC endpoint: ${endpoint} to outputFile: ${outputFile} based on bridgedNetwork: ${bridgedNetwork}`);
+	connect(endpoint)
+		.then((api) => {
+			const call = api.tx.bridgeTransfer.removeExporterConfig(bridgedNetwork);
+			writeHexEncodedBytesToOutput(call.method, outputFile);
+			exit(0);
+		})
+		.catch((e) => {
+			console.error(e);
+			exit(1);
+		});
+}
+
+function forceCreateAsset(endpoint, outputFile, assetId, assetOwnerAccountId, isSufficient, minBalance) {
+	console.log(`Generating forceCreateAsset from RPC endpoint: ${endpoint} to outputFile: ${outputFile} based on assetId: ${assetId}, assetOwnerAccountId: ${assetOwnerAccountId}, isSufficient: ${isSufficient}, minBalance: ${minBalance}`);
+	connect(endpoint)
+		.then((api) => {
+			const call = api.tx.foreignAssets.forceCreate(JSON.parse(assetId), assetOwnerAccountId, isSufficient, minBalance);
 			writeHexEncodedBytesToOutput(call.method, outputFile);
 			exit(0);
 		})
@@ -95,14 +123,20 @@ switch (type) {
 	case 'remark-with-event':
 		remarkWithEvent(rpcEnpoint, output);
 		break;
-	case 'add-bridge-config':
-		addBridgeConfig(rpcEnpoint, output, inputArgs[0], inputArgs[1]);
+	case 'add-exporter-config':
+		addExporterConfig(rpcEnpoint, output, inputArgs[0], inputArgs[1]);
 		break;
-	case 'remove-bridge-config':
-		removeBridgeConfig(rpcEnpoint, output, inputArgs[0], inputArgs[1]);
+	case 'remove-exporter-config':
+		removeExporterConfig(rpcEnpoint, output, inputArgs[0], inputArgs[1]);
 		break;
-	case 'transfer-asset-via-bridge':
-		transferAssetViaBridge(rpcEnpoint, output, inputArgs[0], inputArgs[1]);
+	case 'add-universal-alias':
+		addUniversalAlias(rpcEnpoint, output, inputArgs[0], inputArgs[1]);
+		break;
+	case 'add-reserve-location':
+		addReserveLocation(rpcEnpoint, output, inputArgs[0]);
+		break;
+	case 'force-create-asset':
+		forceCreateAsset(rpcEnpoint, output, inputArgs[0], inputArgs[1], inputArgs[2], inputArgs[3]);
 		break;
 	case 'check':
 		console.log(`Checking nodejs installation, if you see this everything is ready!`);
