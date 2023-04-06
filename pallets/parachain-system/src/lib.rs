@@ -59,10 +59,13 @@ use xcm::latest::XcmHash;
 
 mod migration;
 mod relay_state_snapshot;
+mod unincluded_segment;
 #[macro_use]
 pub mod validate_block;
 #[cfg(test)]
 mod tests;
+
+use unincluded_segment::{BlockTracker, SegmentTracker};
 
 /// Register the `validate_block` function that is used by parachains to validate blocks on a
 /// validator.
@@ -296,6 +299,34 @@ pub mod pallet {
 				weight += T::DbWeight::get().writes(1);
 			}
 
+			let para_head = ParaHead::<T>::take();
+			weight += T::DbWeight::get().reads_writes(1, 1);
+
+			// Update unincluded segment related storage values.
+			if let Some(para_head) = para_head {
+				let dropped: Vec<BlockTracker> = <UnincludedSegment<T>>::mutate(|chain| {
+					let idx =
+						chain.iter().take_while(|block| block.para_head() != &para_head).count();
+					// Drop the block with an included para head too.
+					let idx = chain.len().min(idx + 1);
+
+					chain.drain(..idx).collect()
+				});
+				weight += T::DbWeight::get().reads_writes(1, 1);
+
+				if !dropped.is_empty() {
+					<AggregatedUnincludedSegment<T>>::mutate(|agg| {
+						let agg = agg.as_mut().expect(
+							"dropped part of the segment wasn't empty, hence value exists; qed",
+						);
+						for block in dropped {
+							agg.used_bandwidth.subtract(block.used_bandwidth());
+						}
+					});
+					weight += T::DbWeight::get().reads_writes(1, 1);
+				}
+			}
+
 			// Remove the validation from the old block.
 			ValidationData::<T>::kill();
 			ProcessedDownwardMessages::<T>::kill();
@@ -424,6 +455,13 @@ pub mod pallet {
 				.read_messaging_state_snapshot()
 				.expect("Invalid messaging state in relay chain state proof");
 
+			if let Some(para_head) = relay_state_proof
+				.read_para_head()
+				.expect("Invalid para head in relay chain state proof")
+			{
+				<ParaHead<T>>::put(para_head);
+			}
+
 			<ValidationData<T>>::put(&vfp);
 			<RelayStateProof<T>>::put(relay_chain_state);
 			<RelevantMessagingState<T>>::put(relevant_messaging_state.clone());
@@ -543,6 +581,19 @@ pub mod pallet {
 		/// The given code upgrade has not been authorized.
 		Unauthorized,
 	}
+
+	/// Latest parachain head data included in the relay chain.
+	///
+	/// This value is optional since it requires extra relay-chain state proof.
+	#[pallet::storage]
+	pub(super) type ParaHead<T: Config> = StorageValue<_, relay_chain::HeadData, OptionQuery>;
+
+	#[pallet::storage]
+	pub(super) type UnincludedSegment<T: Config> = StorageValue<_, Vec<BlockTracker>, ValueQuery>;
+
+	#[pallet::storage]
+	pub(super) type AggregatedUnincludedSegment<T: Config> =
+		StorageValue<_, SegmentTracker, OptionQuery>;
 
 	/// In case of a scheduled upgrade, this storage field contains the validation code to be applied.
 	///
