@@ -618,8 +618,10 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	RemoveCollectiveFlip,
+	Migrations,
 >;
+
+pub type Migrations = (pallet_assets::migration::v2::MigrateToV2<Runtime>, RemoveCollectiveFlip);
 
 pub struct RemoveCollectiveFlip;
 impl frame_support::traits::OnRuntimeUpgrade for RemoveCollectiveFlip {
