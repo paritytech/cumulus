@@ -5,7 +5,6 @@ members = [
 	"client/cli",
 	"client/consensus/aura",
 	"client/consensus/common",
-	"client/consensus/import-queue",
 	"client/consensus/proposer",
 	"client/consensus/relay-chain",
 	"client/network",

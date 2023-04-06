@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Composable utilities for constructing import queues for parachains.
+//! (unstable) Composable utilities for constructing import queues for parachains.
 //!
 //! Unlike standalone chains, parachains have the requirement that all consensus logic
 //! must be checked within the runtime. This property means that work which is normally
@@ -30,47 +30,13 @@
 //! At the time of writing, the inherent and consensus checks in most Cumulus runtimes
 //! are only performed during parachain validation, not full node block execution.
 
-use cumulus_client_consensus_common::ParachainBlockImportMarker;
-
-use sp_api::ProvideRuntimeApi;
-use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_consensus::error::Error as ConsensusError;
-use sp_inherents::{InherentData, InherentIdentifier};
-use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
+use sp_runtime::traits::Block as BlockT;
 
 use sc_consensus::import_queue::{BasicQueue, Verifier};
 use sc_consensus::block_import::{BlockImport, BlockImportParams};
 
-use std::error::Error as StdError;
-
-/// Call into the runtime API to check a block's inherents have been created faithfully.
-///
-/// All errors imply the block is unimportable. A callback provided by the caller is used
-/// to attempt to human-format errors where information is retrievable.
-pub fn check_block_inherents<Block, Client>(
-	client: &Client,
-	block: Block,
-	inherent_data: InherentData,
-	error_callback: impl Fn(InherentIdentifier, &[u8]) -> Box<dyn StdError>,
-) -> Result<(), Box<dyn StdError>>
-where
-	Block: BlockT,
-	Client: ProvideRuntimeApi<Block>,
-	Client::Api: BlockBuilderApi<Block>,
-{
-	let res = client
-		.runtime_api()
-		.check_inherents(*block.header().parent_hash(), block, inherent_data)
-		.map_err(Box::new)?;
-
-	if !res.ok() {
-		for (i, e) in res.into_errors() {
-			return Err(error_callback(i, &e));
-		}
-	}
-
-	Ok(())
-}
+use crate::ParachainBlockImportMarker;
 
 /// A [`Verifier`] for blocks which verifies absolutely nothing.
 ///
