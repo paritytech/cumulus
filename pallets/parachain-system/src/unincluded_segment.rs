@@ -30,15 +30,11 @@ pub struct HrmpChannelSize {
 }
 
 impl HrmpChannelSize {
-	pub fn is_empty(&self) -> bool {
+	fn is_empty(&self) -> bool {
 		self.msg_count == 0 && self.total_bytes == 0
 	}
 
-	pub fn append(
-		&self,
-		other: &Self,
-		limits: &BandwidthLimits,
-	) -> Result<Self, LimitExceededError> {
+	fn append(&self, other: &Self, limits: &BandwidthLimits) -> Result<Self, LimitExceededError> {
 		let mut new = *self;
 
 		new.msg_count = new.msg_count.saturating_add(other.msg_count);
@@ -47,7 +43,7 @@ impl HrmpChannelSize {
 		Ok(new)
 	}
 
-	pub fn subtract(&mut self, other: &Self) {
+	fn subtract(&mut self, other: &Self) {
 		self.msg_count -= other.msg_count;
 		self.total_bytes -= other.total_bytes;
 	}
@@ -61,11 +57,7 @@ pub struct UsedBandwidth {
 }
 
 impl UsedBandwidth {
-	pub fn append(
-		&self,
-		other: &Self,
-		limits: &BandwidthLimits,
-	) -> Result<Self, LimitExceededError> {
+	fn append(&self, other: &Self, limits: &BandwidthLimits) -> Result<Self, LimitExceededError> {
 		let mut new = self.clone();
 
 		new.ump_msg_count = new.ump_msg_count.saturating_add(other.ump_msg_count);
@@ -78,7 +70,7 @@ impl UsedBandwidth {
 		Ok(new)
 	}
 
-	pub fn subtract(&mut self, other: &Self) {
+	fn subtract(&mut self, other: &Self) {
 		self.ump_msg_count -= other.ump_msg_count;
 		self.ump_total_bytes -= other.ump_total_bytes;
 
@@ -112,6 +104,24 @@ impl BlockTracker {
 
 #[derive(Encode, Decode, TypeInfo)]
 pub struct SegmentTracker {
-	pub used_bandwidth: UsedBandwidth,
-	pub hrmp_watermark: relay_chain::BlockNumber,
+	used_bandwidth: UsedBandwidth,
+	hrmp_watermark: relay_chain::BlockNumber,
+}
+
+impl SegmentTracker {
+	pub fn append(
+		&mut self,
+		block: &BlockTracker,
+		hrmp_watermark: relay_chain::BlockNumber,
+		limits: &BandwidthLimits,
+	) -> Result<(), LimitExceededError> {
+		self.used_bandwidth = self.used_bandwidth.append(block.used_bandwidth(), limits)?;
+		self.hrmp_watermark = hrmp_watermark;
+
+		Ok(())
+	}
+
+	pub fn subtract(&mut self, block: &BlockTracker) {
+		self.used_bandwidth.subtract(block.used_bandwidth());
+	}
 }

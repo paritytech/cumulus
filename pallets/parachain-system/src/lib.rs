@@ -335,7 +335,7 @@ pub mod pallet {
 							"dropped part of the segment wasn't empty, hence value exists; qed",
 						);
 						for block in dropped {
-							agg.used_bandwidth.subtract(block.used_bandwidth());
+							agg.subtract(&block);
 						}
 					});
 					weight += T::DbWeight::get().reads_writes(1, 1);
