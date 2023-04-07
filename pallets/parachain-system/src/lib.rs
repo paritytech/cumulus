@@ -299,8 +299,23 @@ pub mod pallet {
 				weight += T::DbWeight::get().writes(1);
 			}
 
-			let para_head = ParaHead::<T>::take();
-			weight += T::DbWeight::get().reads_writes(1, 1);
+			let para_head = {
+				let relay_chain_state = Self::relay_state_proof()
+					.expect("relay state proof must be present in storage");
+				let validation_data =
+					Self::validation_data().expect("validation data must be present in storage");
+
+				let relay_state_proof = RelayChainStateProof::new(
+					T::SelfParaId::get(),
+					validation_data.relay_parent_storage_root,
+					relay_chain_state,
+				)
+				.expect("Invalid relay chain state proof");
+				relay_state_proof
+					.read_para_head()
+					.expect("Invalid para head in relay chain state proof")
+			};
+			weight += T::DbWeight::get().reads(2);
 
 			// Update unincluded segment related storage values.
 			if let Some(para_head) = para_head {
@@ -455,13 +470,6 @@ pub mod pallet {
 				.read_messaging_state_snapshot()
 				.expect("Invalid messaging state in relay chain state proof");
 
-			if let Some(para_head) = relay_state_proof
-				.read_para_head()
-				.expect("Invalid para head in relay chain state proof")
-			{
-				<ParaHead<T>>::put(para_head);
-			}
-
 			<ValidationData<T>>::put(&vfp);
 			<RelayStateProof<T>>::put(relay_chain_state);
 			<RelevantMessagingState<T>>::put(relevant_messaging_state.clone());
@@ -581,12 +589,6 @@ pub mod pallet {
 		/// The given code upgrade has not been authorized.
 		Unauthorized,
 	}
-
-	/// Latest parachain head data included in the relay chain.
-	///
-	/// This value is optional since it requires extra relay-chain state proof.
-	#[pallet::storage]
-	pub(super) type ParaHead<T: Config> = StorageValue<_, relay_chain::HeadData, OptionQuery>;
 
 	#[pallet::storage]
 	pub(super) type UnincludedSegment<T: Config> = StorageValue<_, Vec<BlockTracker>, ValueQuery>;
