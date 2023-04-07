@@ -1423,7 +1423,6 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "hex-literal 0.4.1",
- "kusama-runtime-constants",
  "log",
  "pallet-aura",
  "pallet-authorship",
