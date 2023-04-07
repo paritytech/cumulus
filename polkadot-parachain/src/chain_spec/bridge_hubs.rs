@@ -343,10 +343,10 @@ pub mod rococo {
 				..Default::default()
 			},
 			// Ethereum Bridge
-			basic_inbound_channel: bridge_hub_rococo_runtime::BasicInboundChannelConfig {
-				source_channel: Default::default(),
+			ethereum_inbound_queue: bridge_hub_rococo_runtime::EthereumInboundQueueConfig {
+				allowlist: Default::default(),
 			},
-			basic_outbound_channel: bridge_hub_rococo_runtime::BasicOutboundChannelConfig {
+			ethereum_outbound_queue: bridge_hub_rococo_runtime::EthereumOutboundQueueConfig {
 				interval: 1,
 			},
 			ethereum_beacon_client: bridge_hub_rococo_runtime::EthereumBeaconClientConfig {

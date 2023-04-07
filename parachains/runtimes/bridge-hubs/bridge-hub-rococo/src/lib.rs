@@ -545,22 +545,15 @@ impl pallet_bridge_relayers::Config for Runtime {
 
 // Ethereum Bridge
 
-impl snowbridge_dispatch::Config for Runtime {
-	type RuntimeOrigin = RuntimeOrigin;
-	type RuntimeEvent = RuntimeEvent;
-	type MessageId = MessageId;
-	type RuntimeCall = RuntimeCall;
-	type CallFilter = Everything;
+parameter_types! {
+	pub const Reward: u128 = 10;
 }
 
-use snowbridge_basic_channel::{
-	inbound as basic_channel_inbound, outbound as basic_channel_outbound,
-};
-
-impl basic_channel_inbound::Config for Runtime {
+impl snowbridge_inbound_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	type Token = Balances;
+	type Reward = Reward;
 	type Verifier = snowbridge_ethereum_beacon_client::Pallet<Runtime>;
-	type MessageDispatch = snowbridge_dispatch::Pallet<Runtime>;
 	type WeightInfo = ();
 }
 
@@ -569,13 +562,13 @@ parameter_types! {
 	pub const MaxMessagesPerCommit: u32 = 20;
 }
 
-impl basic_channel_outbound::Config for Runtime {
+impl snowbridge_outbound_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Hashing = Keccak256;
 	type SourceId = <Self as frame_system::Config>::AccountId;
 	type MaxMessagePayloadSize = MaxMessagePayloadSize;
 	type MaxMessagesPerCommit = MaxMessagesPerCommit;
-	type WeightInfo = weights::snowbridge_basic_channel_outbound::WeightInfo<Runtime>;
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -680,10 +673,9 @@ construct_runtime!(
 		BridgeRelayers: pallet_bridge_relayers::{Pallet, Call, Storage, Event<T>} = 47,
 
 		// Ethereum Bridge
-		BasicInboundChannel: basic_channel_inbound::{Pallet, Call, Config, Storage, Event<T>} = 50,
-		BasicOutboundChannel: basic_channel_outbound::{Pallet, Config<T>, Storage, Event<T>} = 51,
-		Dispatch: snowbridge_dispatch::{Pallet, Call, Storage, Event<T>, Origin} = 52,
-		EthereumBeaconClient: snowbridge_ethereum_beacon_client::{Pallet, Call, Config<T>, Storage, Event<T>} = 53,
+		EthereumInboundQueue: snowbridge_inbound_queue::{Pallet, Call, Config, Storage, Event<T>} = 48,
+		EthereumOutboundQueue: snowbridge_outbound_queue::{Pallet, Config<T>, Storage, Event<T>} = 49,
+		EthereumBeaconClient: snowbridge_ethereum_beacon_client::{Pallet, Call, Config<T>, Storage, Event<T>} = 50,
 	}
 );
 
@@ -730,7 +722,7 @@ mod benches {
 		[pallet_bridge_relayers, BridgeRelayersBench::<Runtime>]
 		// Ethereum Bridge
 		//[snowbridge_basic_channel::inbound, BasicInboundChannel]
-		[snowbridge_basic_channel::outbound, BasicOutboundChannel]
+		[snowbridge_outbound_queue, EthereumOutboundChannel]
 		//[snowbridge_dispatch, Dispatch]
 		[snowbridge_ethereum_beacon_client, EthereumBeaconClient]
 	);

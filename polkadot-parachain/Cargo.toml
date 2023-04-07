@@ -90,7 +90,7 @@ cumulus-relay-chain-interface = { path = "../client/relay-chain-interface" }
 color-print = "0.3.4"
 
 # Ethereum Bridge
-snowbridge-basic-channel-rpc = { path = "../../parachain/pallets/basic-channel/rpc" }
+snowbridge-outbound-queue-rpc = { path = "../../parachain/pallets/outbound-queue/rpc" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
