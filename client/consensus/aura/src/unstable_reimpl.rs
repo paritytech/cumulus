@@ -52,7 +52,7 @@ use sp_core::crypto::Pair;
 use sp_inherents::{CreateInherentDataProviders, InherentDataProvider};
 use sp_keystore::KeystorePtr;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, Member};
-use std::{convert::TryFrom, error::Error, fmt::Debug, hash::Hash, sync::Arc};
+use std::{convert::TryFrom, error::Error, fmt::Debug, hash::Hash, sync::Arc, time::Duration};
 
 /// Parameters of [`run`].
 pub struct Params<BI, CIDP, Client, RClient, SO, Proposer, CS> {
@@ -79,9 +79,9 @@ where
 	Block: BlockT,
 	Client:
 		ProvideRuntimeApi<Block> + BlockOf + AuxStore + HeaderBackend<Block> + BlockBackend<Block> + Send + Sync + 'static,
-	Client::Api: AuraApi<Block, P::Public>,
+	Client::Api: AuraApi<Block, P::Public> + CollectCollationInfo<Block>,
 	RClient: RelayChainInterface,
-	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)> + 'static,
+	CIDP: CreateInherentDataProviders<Block, ()> + 'static,
 	BI: BlockImport<Block>
 		+ ParachainBlockImportMarker
 		+ Send
@@ -95,8 +95,8 @@ where
 	P::Public: AppPublic + Hash + Member + Encode + Decode,
 	P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
 {
-	let mut collator_service = params.collator_service;
 	let mut proposer = params.proposer;
+	let mut block_import = params.block_import;
 
 	let mut collation_requests = cumulus_client_collator::relay_chain_driven::init(
 		params.key,
@@ -105,7 +105,37 @@ where
 	).await;
 
 	while let Some(request) = collation_requests.next().await {
-		// TODO [now]: invoke `collate`.
+		let res = collate::<P, _, _, _, _>(
+			CollationConstants {
+				para_id: params.para_id,
+				slot_duration: params.slot_duration,
+				keystore: &params.keystore,
+			},
+			CollationParams {
+				relay_parent: *request.relay_parent(),
+				validation_data: request.persisted_validation_data(),
+			},
+			CollationEnvironment {
+				client: &*params.para_client,
+				relay_chain_interface: &params.relay_client,
+				proposer: &mut proposer,
+				collator_service: &params.collator_service,
+				block_import: &mut block_import,
+				create_inherent_data_providers: &params.create_inherent_data_providers,
+			},
+		).await;
+
+		match res {
+			Ok(maybe_collation) => request.complete(maybe_collation),
+			Err(e) => {
+				request.complete(None);
+				tracing::error!(
+					target: crate::LOG_TARGET,
+					err = ?e,
+					"Collation failed"
+				);
+			}
+		}
 	}
 }
 
@@ -114,26 +144,45 @@ fn slot_now(slot_duration: SlotDuration) -> Slot {
 	Slot::from_timestamp(timestamp, slot_duration)
 }
 
-// Collate a block using the aura slot worker.
-async fn collate<Block: BlockT, P, Client, BI, CIDP>(
-	relay_parent: PHash,
-	validation_data: &PersistedValidationData,
+struct CollationConstants<'a> {
 	para_id: ParaId,
-	client: &Client,
-	relay_chain_interface: &impl RelayChainInterface,
-	parent_header: Block::Header,
-	proposer: &mut impl ProposerInterface<Block, Transaction=BI::Transaction>,
-	collator_service: &impl CollatorServiceInterface<Block>,
 	slot_duration: SlotDuration,
-	keystore: &KeystorePtr,
-	block_import: BI,
-	create_inherent_data_providers: &CIDP,
+	keystore: &'a KeystorePtr,
+}
+
+struct CollationParams<'a> {
+	relay_parent: PHash,
+	validation_data: &'a PersistedValidationData,
+}
+
+struct CollationEnvironment<'a, C: 'a, RCI: 'a, P: 'a, CS: 'a, BI, CIDP: 'a> {
+	client: &'a C,
+	relay_chain_interface: &'a RCI,
+	proposer: &'a mut P,
+	collator_service: &'a CS,
+	block_import: &'a mut BI,
+	create_inherent_data_providers: &'a CIDP,
+}
+
+// Collate a block using the aura slot worker.
+async fn collate<P, Block: BlockT, Client, BI, CIDP>(
+	const_params: CollationConstants<'_>,
+	params: CollationParams<'_>,
+	environment: CollationEnvironment<
+		'_,
+		Client,
+		impl RelayChainInterface,
+		impl ProposerInterface<Block, Transaction=BI::Transaction>,
+		impl CollatorServiceInterface<Block>,
+		BI,
+		CIDP,
+	>,
 ) -> Result<Option<CollationResult>, Box<dyn Error>>
 where
-	Block: BlockT,
 	P: Pair,
 	P::Public: AppPublic + Hash + Member + Encode + Decode,
 	P::Signature: Encode + Decode + TryFrom<Vec<u8>>,
+	Block: BlockT,
 	Client: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	Client::Api: AuraApi<Block, P::Public> + CollectCollationInfo<Block>,
 	BI: BlockImport<Block>
@@ -143,6 +192,24 @@ where
 		+ 'static,
 	CIDP: CreateInherentDataProviders<Block, ()>,
 {
+	let CollationConstants { para_id, slot_duration, keystore } = const_params;
+	let CollationParams { relay_parent, validation_data } = params;
+	let CollationEnvironment {
+		client,
+		relay_chain_interface,
+		proposer,
+		collator_service,
+		block_import,
+		create_inherent_data_providers,
+	} = environment;
+
+	let parent_header = match Block::Header::decode(&mut &validation_data.parent_head.0[..]) {
+		Ok(x) => x,
+		Err(e) => {
+			return Err(format!("Header decoding error during collation ({:?})", e).into());
+		}
+	};
+
 	let parent_hash = parent_header.hash();
 	if !collator_service.check_block_status(parent_hash, &parent_header) {
 		return Ok(None)
@@ -177,7 +244,7 @@ where
 	);
 
 	// propose the block.
-	let mut proposal = {
+	let proposal = {
 		let paras_inherent_data = ParachainInherentData::create_at(
 			relay_parent,
 			relay_chain_interface,
@@ -200,7 +267,10 @@ where
 			&paras_inherent_data,
 			other_inherent_data,
 			sp_runtime::generic::Digest { logs: vec![pre_digest] },
-			unimplemented!(), // TODO [now] max duration
+			// TODO [https://github.com/paritytech/cumulus/issues/2439]
+			// We should call out to a pluggable interface that provides
+			// the proposal duration.
+			Duration::from_millis(500),
 			// Set the block limit to 50% of the maximum PoV size.
 			//
 			// TODO: If we got benchmarking that includes the proof size,
@@ -213,11 +283,12 @@ where
 
 	let (pre_header, body) = proposal.block.deconstruct();
 	let pre_hash = pre_header.hash();
+	let block_number = *pre_header.number();
 
 	// seal the block.
 	let block_import_params = {
 		let seal_digest = aura_internal::seal::<_, P>(&pre_hash, &author_pub, keystore).map_err(Box::new)?;
-		let block_import_params = BlockImportParams::new(BlockOrigin::Own, pre_header);
+		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, pre_header);
 		block_import_params.post_digests.push(seal_digest);
 		block_import_params.body = Some(body.clone());
 		block_import_params.state_action =
@@ -230,7 +301,7 @@ where
 	tracing::info!(
 		target: crate::LOG_TARGET,
 		"🔖 Pre-sealed block for proposal at {}. Hash now {:?}, previously {:?}.",
-		pre_header.number(),
+		block_number,
 		post_hash,
 		pre_hash,
 	);
@@ -238,13 +309,7 @@ where
 	// import the block.
 	let block = Block::new(block_import_params.post_header(), body);
 	match block_import.import_block(block_import_params).await {
-		Ok(res) => {
-			res.handle_justification::<Block>(
-				&post_hash,
-				*pre_header.number(),
-				unimplemented!(), // TODO [now]: justification sync link.
-			)
-		}
+		Ok(_) => {}
 		Err(err) => {
 			tracing::warn!(
 				target: crate::LOG_TARGET,
@@ -339,7 +404,7 @@ where
 			);
 
 			match res {
-				Ok((pre_header, slot, seal_digest)) => {
+				Ok((pre_header, _slot, seal_digest)) => {
 					block_params.header = pre_header;
 					block_params.post_digests.push(seal_digest);
 					block_params.fork_choice = Some(ForkChoiceStrategy::LongestChain);
@@ -347,7 +412,7 @@ where
 
 					// TODO [now] telemetry
 				}
-				Err(aura_internal::SealVerificationError::Deferred(hdr, slot)) => {
+				Err(aura_internal::SealVerificationError::Deferred(_hdr, slot)) => {
 					// TODO [now]: telemetry
 
 					return Err(format!(
