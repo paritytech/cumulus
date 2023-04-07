@@ -165,8 +165,12 @@ impl xcm_executor::Config for XcmConfig {
 	type MaxAssetsIntoHolding = ConstU32<8>;
 	type AssetLocker = ();
 	type AssetExchanger = ();
-	type FeeManager =
-		XcmFeesToAccount<Self, rococo_common::RelayOrOtherSystemParachains<Runtime>, AccountId, TreasuryAccount>;
+	type FeeManager = XcmFeesToAccount<
+		Self,
+		rococo_common::RelayOrOtherSystemParachains<Runtime>,
+		AccountId,
+		TreasuryAccount,
+	>;
 	type MessageExporter = ();
 	type UniversalAliases = Nothing;
 	type CallDispatcher = RuntimeCall;

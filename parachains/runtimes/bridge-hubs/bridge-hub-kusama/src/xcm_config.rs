@@ -209,8 +209,12 @@ impl xcm_executor::Config for XcmConfig {
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 	type AssetLocker = ();
 	type AssetExchanger = ();
-	type FeeManager =
-		XcmFeesToAccount<Self, kusama_common::RelayOrOtherSystemParachains<Runtime>, AccountId, TreasuryAccount>;
+	type FeeManager = XcmFeesToAccount<
+		Self,
+		kusama_common::RelayOrOtherSystemParachains<Runtime>,
+		AccountId,
+		TreasuryAccount,
+	>;
 	type MessageExporter = ();
 	type UniversalAliases = Nothing;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
