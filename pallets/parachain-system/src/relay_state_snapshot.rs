@@ -237,10 +237,10 @@ impl RelayChainStateProof {
 			.map_err(Error::Config)
 	}
 
-	/// Read parachain [head data](`relay_chain::HeadData`) from the relay chain state proof.
+	/// Read latest included parachain [head data](`relay_chain::HeadData`) from the relay chain state proof.
 	///
 	/// Returns an error if anything failed at reading or decoding.
-	pub fn read_para_head(&self) -> Result<Option<relay_chain::HeadData>, Error> {
+	pub fn read_included_para_head(&self) -> Result<Option<relay_chain::HeadData>, Error> {
 		read_optional_entry(
 			&self.trie_backend,
 			&relay_chain::well_known_keys::para_head(self.para_id),

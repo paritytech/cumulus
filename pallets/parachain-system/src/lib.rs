@@ -312,7 +312,7 @@ pub mod pallet {
 				)
 				.expect("Invalid relay chain state proof");
 				relay_state_proof
-					.read_para_head()
+					.read_included_para_head()
 					.expect("Invalid para head in relay chain state proof")
 			};
 			weight += T::DbWeight::get().reads(2);
