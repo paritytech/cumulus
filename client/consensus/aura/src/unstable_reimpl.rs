@@ -39,18 +39,20 @@ use polkadot_node_primitives::{CollationResult, MaybeCompressedPoV};
 use futures::prelude::*;
 use sc_client_api::{backend::AuxStore, BlockBackend, BlockOf};
 use sc_consensus::{BlockImport, BlockImportParams, ForkChoiceStrategy, StateAction};
+use sc_consensus::import_queue::{BasicQueue, Verifier as VerifierT};
 use sc_consensus_aura::standalone as aura_internal;
 use sc_telemetry::TelemetryHandle;
 use sp_api::ProvideRuntimeApi;
 use sp_application_crypto::AppPublic;
+use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
-use sp_consensus::{BlockOrigin, SyncOracle};
+use sp_consensus::{error::Error as ConsensusError, BlockOrigin, SyncOracle};
 use sp_consensus_aura::{AuraApi, Slot, SlotDuration};
 use sp_core::crypto::Pair;
 use sp_inherents::{CreateInherentDataProviders, InherentDataProvider};
 use sp_keystore::KeystorePtr;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, Member};
-use std::{convert::TryFrom, error::Error, hash::Hash, sync::Arc};
+use std::{convert::TryFrom, error::Error, fmt::Debug, hash::Hash, sync::Arc};
 
 /// Parameters of [`run`].
 pub struct Params<BI, CIDP, Client, RClient, SO, Proposer, CS> {
@@ -107,6 +109,11 @@ where
 	}
 }
 
+fn slot_now(slot_duration: SlotDuration) -> Slot {
+	let timestamp = sp_timestamp::InherentDataProvider::from_system_time().timestamp();
+	Slot::from_timestamp(timestamp, slot_duration)
+}
+
 // Collate a block using the aura slot worker.
 async fn collate<Block: BlockT, P, Client, BI, CIDP>(
 	relay_parent: PHash,
@@ -127,7 +134,7 @@ where
 	P: Pair,
 	P::Public: AppPublic + Hash + Member + Encode + Decode,
 	P::Signature: Encode + Decode + TryFrom<Vec<u8>>,
-	Client: ProvideRuntimeApi<Block> + BlockOf + BlockBackend<Block> + Send + Sync + 'static,
+	Client: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	Client::Api: AuraApi<Block, P::Public> + CollectCollationInfo<Block>,
 	BI: BlockImport<Block>
 		+ ParachainBlockImportMarker
@@ -148,10 +155,7 @@ where
 		.map_err(Box::new)?;
 
 	// Determine the current slot.
-	let slot_now = {
-		let timestamp = sp_timestamp::InherentDataProvider::from_system_time().timestamp();
-		Slot::from_timestamp(timestamp, slot_duration)
-	};
+	let slot_now = slot_now(slot_duration);
 
 	// Try to claim the slot locally.
 	let author_pub = {
@@ -284,4 +288,163 @@ where
 		}
 		None => None,
 	})
+}
+
+struct Verifier<P, Client, Block, CIDP> {
+	client: Arc<Client>,
+	create_inherent_data_providers: CIDP,
+	slot_duration: SlotDuration,
+	_marker: std::marker::PhantomData<(Block, P)>,
+}
+
+#[async_trait::async_trait]
+impl<P, Client, Block, CIDP> VerifierT<Block> for Verifier<P, Client, Block, CIDP>
+where
+	P: Pair,
+	P::Signature: Encode + Decode,
+	P::Public: Encode + Decode + PartialEq + Clone + Debug,
+	Block: BlockT,
+	Client: ProvideRuntimeApi<Block> + Send + Sync,
+	<Client as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block> + AuraApi<Block, P::Public>,
+
+	CIDP: CreateInherentDataProviders<Block, ()>,
+{
+	async fn verify(
+		&mut self,
+		mut block_params: BlockImportParams<Block, ()>,
+	) -> Result<BlockImportParams<Block, ()>, String> {
+		// Skip checks that include execution, if being told so, or when importing only state.
+		//
+		// This is done for example when gap syncing and it is expected that the block after the gap
+		// was checked/chosen properly, e.g. by warp syncing to this block using a finality proof.
+		if block_params.state_action.skip_execution_checks() || block_params.with_state() {
+			return Ok(block_params)
+		}
+
+		let post_hash = block_params.header.hash();
+		let parent_hash = *block_params.header.parent_hash();
+
+		// check seal and update pre-hash/post-hash
+		{
+			let authorities = aura_internal::fetch_authorities(
+				self.client.as_ref(),
+				parent_hash,
+			).map_err(|e| format!("Could not fetch authorities at {:?}: {}", parent_hash, e))?;
+
+			let slot_now = slot_now(self.slot_duration);
+			let res = aura_internal::check_header_slot_and_seal::<Block, P>(
+				slot_now,
+				block_params.header,
+				&authorities,
+			);
+
+			match res {
+				Ok((pre_header, slot, seal_digest)) => {
+					block_params.header = pre_header;
+					block_params.post_digests.push(seal_digest);
+					block_params.fork_choice = Some(ForkChoiceStrategy::LongestChain);
+					block_params.post_hash = Some(post_hash);
+
+					// TODO [now] telemetry
+				}
+				Err(aura_internal::SealVerificationError::Deferred(hdr, slot)) => {
+					// TODO [now]: telemetry
+
+					return Err(format!(
+						"Rejecting block ({:?}) from future slot {:?}",
+						post_hash,
+						slot
+					));
+				}
+				Err(e) => {
+					return Err(
+						format!("Rejecting block ({:?}) with invalid seal ({:?})",
+						post_hash,
+						e
+					));
+				}
+			}
+		}
+
+		// check inherents.
+		if let Some(body) = block_params.body.clone() {
+			let block = Block::new(block_params.header.clone(), body);
+			let create_inherent_data_providers = self
+				.create_inherent_data_providers
+				.create_inherent_data_providers(parent_hash, ())
+				.await
+				.map_err(|e| format!("Could not create inherent data {:?}", e))?;
+
+			let inherent_data = create_inherent_data_providers
+				.create_inherent_data()
+				.await
+				.map_err(|e| format!("Could not create inherent data {:?}", e))?;
+
+			let inherent_res = self
+				.client
+				.runtime_api()
+				.check_inherents_with_context(
+					parent_hash,
+					block_params.origin.into(),
+					block,
+					inherent_data,
+				)
+				.map_err(|e| format!("Unable to check block inherents {:?}", e))?;
+
+			if !inherent_res.ok() {
+				for (i, e) in inherent_res.into_errors() {
+					match create_inherent_data_providers.try_handle_error(&i, &e).await {
+						Some(res) => res.map_err(|e| format!("Inherent Error {:?}", e))?,
+						None => return Err(format!(
+							"Unknown inherent error, source {:?}",
+							String::from_utf8_lossy(&i[..])
+						)),
+					}
+				}
+			}
+		}
+
+		Ok(block_params)
+	}
+}
+
+/// Start an import queue for a Cumulus node which checks blocks' seals and inherent data.
+///
+/// Pass in only inherent data providers which don't include aura or parachain consensus inherents,
+/// e.g. things like timestamp and custom inherents for the runtime.
+///
+/// The others are generated explicitly internally.
+///
+/// This should only be used for runtimes where the runtime does not check all inherents and
+/// seals in `execute_block` (see https://github.com/paritytech/cumulus/issues/2436)
+pub fn fully_verifying_import_queue<P, Client, Block: BlockT, I, CIDP>(
+	client: Arc<Client>,
+	block_import: I,
+	create_inherent_data_providers: CIDP,
+	slot_duration: SlotDuration,
+	spawner: &impl sp_core::traits::SpawnEssentialNamed,
+	registry: Option<&substrate_prometheus_endpoint::Registry>,
+) -> BasicQueue<Block, I::Transaction>
+where
+	P: Pair,
+	P::Signature: Encode + Decode,
+	P::Public: Encode + Decode + PartialEq + Clone + Debug,
+	I: BlockImport<Block, Error = ConsensusError>
+		+ ParachainBlockImportMarker
+		+ Send
+		+ Sync
+		+ 'static,
+	I::Transaction: Send,
+	Client: ProvideRuntimeApi<Block> + Send + Sync + 'static,
+	<Client as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block> + AuraApi<Block, P::Public>,
+	CIDP: CreateInherentDataProviders<Block, ()> + 'static,
+{
+	let verifier = Verifier::<P, _, _, _> {
+		client,
+		create_inherent_data_providers,
+		slot_duration,
+		_marker: std::marker::PhantomData,
+	};
+
+	BasicQueue::new(verifier, Box::new(block_import), None, spawner, registry)
 }

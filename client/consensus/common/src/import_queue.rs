@@ -29,6 +29,8 @@
 //! in full nodes versus executing those blocks in the parachain validation environment.
 //! At the time of writing, the inherent and consensus checks in most Cumulus runtimes
 //! are only performed during parachain validation, not full node block execution.
+//!
+//! See https://github.com/paritytech/cumulus/issues/2436 for details.
 
 use sp_consensus::error::Error as ConsensusError;
 use sp_runtime::traits::Block as BlockT;
