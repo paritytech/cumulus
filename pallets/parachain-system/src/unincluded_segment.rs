@@ -19,9 +19,23 @@ use cumulus_primitives_core::{relay_chain, ParaId};
 use scale_info::TypeInfo;
 use sp_std::collections::btree_map::BTreeMap;
 
-pub struct BandwidthLimits {}
+pub struct HrmpOutboundLimits {
+	pub bytes_remaining: u32,
+	pub messages_remaining: u32,
+}
 
-pub enum LimitExceededError {}
+pub struct TotalBandwidthLimits {
+	pub ump_messages_remaining: u32,
+	pub ump_bytes_remaining: u32,
+	pub hrmp_outgoing: BTreeMap<ParaId, HrmpOutboundLimits>,
+}
+
+pub enum LimitExceededError {
+	HrmpMessagesOverflow { recipient: ParaId, messages_remaining: u32, messages_submitted: u32 },
+	HrmpBytesOverflow { recipient: ParaId, bytes_remaining: u32, bytes_submitted: u32 },
+	UmpMessagesOverflow { messages_remaining: u32, messages_submitted: u32 },
+	UmpBytesOverflow { bytes_remaining: u32, bytes_submitted: u32 },
+}
 
 #[derive(Default, Copy, Clone, Encode, Decode, TypeInfo)]
 pub struct HrmpChannelSize {
@@ -34,11 +48,35 @@ impl HrmpChannelSize {
 		self.msg_count == 0 && self.total_bytes == 0
 	}
 
-	fn append(&self, other: &Self, limits: &BandwidthLimits) -> Result<Self, LimitExceededError> {
+	fn append(
+		&self,
+		other: &Self,
+		recipient: ParaId,
+		limits: &TotalBandwidthLimits,
+	) -> Result<Self, LimitExceededError> {
+		let limits = limits
+			.hrmp_outgoing
+			.get(&recipient)
+			.expect("limit for declared hrmp channel must be present; qed");
+
 		let mut new = *self;
 
 		new.msg_count = new.msg_count.saturating_add(other.msg_count);
+		if new.msg_count > limits.messages_remaining {
+			return Err(LimitExceededError::HrmpMessagesOverflow {
+				recipient,
+				messages_remaining: limits.messages_remaining,
+				messages_submitted: new.msg_count,
+			})
+		}
 		new.total_bytes = new.total_bytes.saturating_add(other.total_bytes);
+		if new.total_bytes > limits.bytes_remaining {
+			return Err(LimitExceededError::HrmpBytesOverflow {
+				recipient,
+				bytes_remaining: limits.bytes_remaining,
+				bytes_submitted: new.total_bytes,
+			})
+		}
 
 		Ok(new)
 	}
@@ -57,14 +95,31 @@ pub struct UsedBandwidth {
 }
 
 impl UsedBandwidth {
-	fn append(&self, other: &Self, limits: &BandwidthLimits) -> Result<Self, LimitExceededError> {
+	fn append(
+		&self,
+		other: &Self,
+		limits: &TotalBandwidthLimits,
+	) -> Result<Self, LimitExceededError> {
 		let mut new = self.clone();
 
 		new.ump_msg_count = new.ump_msg_count.saturating_add(other.ump_msg_count);
+		if new.ump_msg_count > limits.ump_messages_remaining {
+			return Err(LimitExceededError::UmpMessagesOverflow {
+				messages_remaining: limits.ump_messages_remaining,
+				messages_submitted: new.ump_msg_count,
+			})
+		}
 		new.ump_total_bytes = new.ump_total_bytes.saturating_add(other.ump_total_bytes);
+		if new.ump_total_bytes > limits.ump_bytes_remaining {
+			return Err(LimitExceededError::UmpBytesOverflow {
+				bytes_remaining: limits.ump_bytes_remaining,
+				bytes_submitted: new.ump_total_bytes,
+			})
+		}
 
 		for (id, channel) in other.hrmp_outgoing.iter() {
-			new.hrmp_outgoing.entry(*id).or_default().append(channel, limits)?;
+			let current = new.hrmp_outgoing.entry(*id).or_default();
+			*current = current.append(channel, *id, limits)?;
 		}
 
 		Ok(new)
@@ -113,7 +168,7 @@ impl SegmentTracker {
 		&mut self,
 		block: &BlockTracker,
 		hrmp_watermark: relay_chain::BlockNumber,
-		limits: &BandwidthLimits,
+		limits: &TotalBandwidthLimits,
 	) -> Result<(), LimitExceededError> {
 		self.used_bandwidth = self.used_bandwidth.append(block.used_bandwidth(), limits)?;
 		self.hrmp_watermark = hrmp_watermark;
