@@ -675,7 +675,7 @@ pub type UncheckedExtrinsic =
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 /// Migrations to apply on runtime upgrade.
 pub type Migrations =
-	(pallet_assets::migration::v1::MigrateToV1<Runtime, TrustBackedAssetsInstance>,);
+	(pallet_assets::migration::v2::MigrateToV2<Runtime, TrustBackedAssetsInstance>,);
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
