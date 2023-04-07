@@ -378,13 +378,6 @@ pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentia
 	TrustBackedAssetsInstance,
 >;
 
-match_types! {
-	pub type RelayOrOtherSystemParachains: impl Contains<MultiLocation> = {
-		MultiLocation { parents: 0, interior: X1(Parachain(
-			kusama_runtime_constants::system_parachain::ENCOINTER_ID)) } |
-		MultiLocation { parents: 1, interior: Here }
-	};
-}
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
@@ -432,8 +425,7 @@ impl xcm_executor::Config for XcmConfig {
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 	type AssetLocker = ();
 	type AssetExchanger = ();
-	type FeeManager =
-		XcmFeesToAccount<Self, RelayOrOtherSystemParachains, AccountId, TreasuryAccount>;
+	type FeeManager = XcmFeesToAccount<Self, kusama_common::RelayOrOtherSystemParachains<Runtime>, AccountId, TreasuryAccount>;
 	type MessageExporter = ();
 	type UniversalAliases = Nothing;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;

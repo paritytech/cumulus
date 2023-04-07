@@ -1,0 +1,43 @@
+[package]
+name = "westend-common"
+version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2021"
+description = "Logic which is common to the westend relay chain"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# Substrate
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+
+# Polkadot
+#TEMP!
+polkadot-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+westend-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+
+# Cumulus
+parachain-info = { path = "../../pallets/parachain-info", default-features = false }
+
+
+[features]
+default = [ "std" ]
+runtime-benchmarks = [
+    "frame-support/runtime-benchmarks",
+]
+try-runtime = [
+    "parachain-info/try-runtime",
+]
+std = [
+    "sp-core/std",
+    "frame-support/std",
+    "frame-system/std",
+    "westend-runtime-constants/std",
+    "xcm/std",
+    "parachain-info/std",
+    "sp-io/std",
+]

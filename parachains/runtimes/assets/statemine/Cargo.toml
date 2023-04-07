@@ -73,6 +73,7 @@ cumulus-primitives-utility = { path = "../../../../primitives/utility", default-
 pallet-collator-selection = { path = "../../../../pallets/collator-selection", default-features = false }
 parachain-info = { path = "../../../pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
+kusama-common = { path = "../../../common/kusama", default-features = false }
 assets-common = { path = "../common", default-features = false }
 
 [dev-dependencies]
@@ -195,6 +196,7 @@ std = [
 	"pallet-collator-selection/std",
 	"parachain-info/std",
 	"parachains-common/std",
+	"kusama-common/std",
 	"assets-common/std",
 	"substrate-wasm-builder",
 ]
