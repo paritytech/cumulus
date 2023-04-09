@@ -31,7 +31,7 @@ pub(crate) mod import_kusama_fellowship {
 
 	parameter_types! {
 		// The Fellowship addresses from Kusama state.
-		pub const FellowshipAddresses: [(Rank, [u8; 32]); 46] = [
+		pub const FellowshipAddresses: [(Rank, [u8; 32]); 47] = [
 			(6, hex_literal::hex!("f0673d30606ee26672707e4fd2bc8b58d3becb7aba2d5f60add64abb5fea4710"),),
 			(6, hex_literal::hex!("3c235e80e35082b668682531b9b062fda39a46edb94f884d9122d86885fd5f1b"),),
 			(6, hex_literal::hex!("7628a5be63c4d3c8dbb96c2904b1a9682e02831a1af836c7efc808020b92fa63"),),
@@ -78,6 +78,7 @@ pub(crate) mod import_kusama_fellowship {
 			(1, hex_literal::hex!("eec4bd650a277342ebba0954ac786df2623bd6a9d6d3e69b484482336c549f79"),),
 			(1, hex_literal::hex!("e287c7494655d636a846f5c3347ad2cb3c462a8d46e0832be70fcc0ab54ee62d"),),
 			(1, hex_literal::hex!("82bf733f44a840f0a5c1935a002d4e541d81298fad6d1da8124073485983860e"),),
+			(1, hex_literal::hex!("d5b89078eed9b9dfec5c7d8413bac0b720bad3bd4078c4d8c894325713192502"),),
 		];
 	}
 
@@ -143,8 +144,8 @@ pub(crate) mod import_kusama_fellowship {
 
 		#[cfg(feature = "try-runtime")]
 		fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
-			assert_eq!(MemberCount::<T, I>::get(0), 46, "invalid members count at rank 0.");
-			assert_eq!(MemberCount::<T, I>::get(1), 46, "invalid members count at rank 1.");
+			assert_eq!(MemberCount::<T, I>::get(0), 47, "invalid members count at rank 0.");
+			assert_eq!(MemberCount::<T, I>::get(1), 47, "invalid members count at rank 1.");
 			assert_eq!(MemberCount::<T, I>::get(2), 24, "invalid members count at rank 2.");
 			assert_eq!(MemberCount::<T, I>::get(3), 17, "invalid members count at rank 3.");
 			assert_eq!(MemberCount::<T, I>::get(4), 10, "invalid members count at rank 4.");
@@ -169,7 +170,7 @@ pub mod tests {
 	#[test]
 	fn check_fellowship_addresses() {
 		let fellowship_addresses = FellowshipAddresses::get();
-		let kusama_fellowship_ss58: [(Rank, _); 46] = [
+		let kusama_fellowship_ss58: [(Rank, _); 47] = [
 			(6, "16SDAKg9N6kKAbhgDyxBXdHEwpwHUHs2CNEiLNGeZV55qHna"), // proof https://kusama.subscan.io/extrinsic/16832707-4
 			(6, "12MrP337azmkTdfCUKe5XLnSQrbgEKqqfZ4PQC7CZTJKAWR3"), // proof https://kusama.subscan.io/extrinsic/16967809-2
 			(6, "FFFF3gBSSDFSvK2HBq4qgLH75DHqXWPHeCnR1BSksAMacBs"),
@@ -216,6 +217,7 @@ pub mod tests {
 			(1, "HyPMjWRHCpJS7x2SZ2R6M2XG5ZiCiZag4U4r7gBHRsE5mTc"),
 			(1, "1682A5hxfiS1Kn1jrUnMYv14T9EuEnsgnBbujGfYbeEbSK3w"), // proof https://kusama.subscan.io/extrinsic/16919077-2
 			(1, "13xS6fK6MHjApLnjdX7TJYw1niZmiXasSN91bNtiXQjgEtNx"), // proof https://kusama.subscan.io/extrinsic/16918212-7
+			(1, "15qE2YAQCs5Y962RHE7RzNjQxU6Pei21nhkkSM9Sojq1hHps"), // https://kusama.subscan.io/extrinsic/17352973-2
 		];
 
 		for (index, val) in kusama_fellowship_ss58.iter().enumerate() {
@@ -240,7 +242,7 @@ pub mod tests {
 		ext.execute_with(|| {
 			assert_eq!(MemberCount::<Runtime, Fellowship>::get(0), 0);
 			Migration::<Runtime, Fellowship>::on_runtime_upgrade();
-			assert_eq!(MemberCount::<Runtime, Fellowship>::get(0), 46);
+			assert_eq!(MemberCount::<Runtime, Fellowship>::get(0), 47);
 			assert_eq!(MemberCount::<Runtime, Fellowship>::get(6), 3);
 			assert_eq!(MemberCount::<Runtime, Fellowship>::get(7), 0);
 			for (rank, account_id32) in FellowshipAddresses::get() {
