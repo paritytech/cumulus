@@ -1071,6 +1071,7 @@ dependencies = [
  "snowbridge-ethereum-beacon-client",
  "snowbridge-inbound-queue",
  "snowbridge-outbound-queue",
+ "snowbridge-router-primitives",
  "sp-api",
  "sp-block-builder",
  "sp-consensus-aura",
@@ -12443,6 +12444,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "xcm",
 ]
 
 [[package]]

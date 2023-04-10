@@ -90,6 +90,7 @@ bridge-runtime-common = { path = "../../../../bridges/bin/runtime-common", defau
 # Ethereum Bridge (Snowbridge)
 snowbridge-core = { path = "../../../../../parachain/primitives/core", default-features = false }
 snowbridge-beacon-primitives = { path = "../../../../../parachain/primitives/beacon", default-features = false }
+snowbridge-router-primitives = { path = "../../../../../parachain/primitives/router", default-features = false }
 snowbridge-inbound-queue = { path = "../../../../../parachain/pallets/inbound-queue", default-features = false }
 snowbridge-outbound-queue = { path = "../../../../../parachain/pallets/outbound-queue", default-features = false }
 snowbridge-ethereum-beacon-client = { path = "../../../../../parachain/pallets/ethereum-beacon-client", default-features = false, features=["minimal"]}
@@ -168,6 +169,7 @@ std = [
 	"xcm/std",
 	"snowbridge-core/std",
 	"snowbridge-beacon-primitives/std",
+	"snowbridge-router-primitives/std",
 	"snowbridge-inbound-queue/std",
 	"snowbridge-outbound-queue/std",
 	"snowbridge-ethereum-beacon-client/std",
