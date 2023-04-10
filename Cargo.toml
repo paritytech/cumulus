@@ -37,6 +37,7 @@ members = [
 	"parachains/runtimes/starters/seedling",
 	"parachains/runtimes/assets/common",
 	"parachains/runtimes/assets/statemint",
+	"parachains/runtimes/assets/integration-tests",
 	"parachains/runtimes/assets/statemine",
 	"parachains/runtimes/assets/westmint",
 	"parachains/runtimes/bridge-hubs/bridge-hub-rococo",
@@ -61,3 +62,12 @@ inherits = "release"
 lto = true
 codegen-units = 1
 
+# make sure xcm-emulator works as otherwise it depends on cumulus master
+[patch.'https://github.com/paritytech/cumulus']
+cumulus-primitives-core = { path = "primitives/core" }
+cumulus-pallet-xcmp-queue = { path = "pallets/xcmp-queue" }
+cumulus-pallet-dmp-queue = { path = "pallets/dmp-queue" }
+cumulus-pallet-parachain-system = { path = "pallets/parachain-system"}
+parachain-info = { path = "parachains/pallets/parachain-info"}
+cumulus-primitives-parachain-inherent = { path = "primitives/parachain-inherent"}
+cumulus-test-relay-sproof-builder = { path = "test/relay-sproof-builder" }
