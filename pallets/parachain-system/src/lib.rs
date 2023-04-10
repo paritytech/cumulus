@@ -299,7 +299,9 @@ pub mod pallet {
 				weight += T::DbWeight::get().writes(1);
 			}
 
-			let para_head = {
+			// If `MaxUnincludedLen` is present in the storage, parachain head
+			// is always expected to be included into the relay storage proof.
+			let para_head = <MaxUnincludedLen<T>>::get().map(|_max_len| {
 				let relay_chain_state = Self::relay_state_proof()
 					.expect("relay state proof must be present in storage");
 				let validation_data =
@@ -314,11 +316,14 @@ pub mod pallet {
 				relay_state_proof
 					.read_included_para_head()
 					.expect("Invalid para head in relay chain state proof")
-			};
-			weight += T::DbWeight::get().reads(2);
+			});
+			weight += T::DbWeight::get().reads(1);
 
 			// Update unincluded segment related storage values.
 			if let Some(para_head) = para_head {
+				// Weight used for reading para head.
+				weight += T::DbWeight::get().reads(2);
+
 				let dropped: Vec<Ancestor> = <UnincludedSegment<T>>::mutate(|chain| {
 					// Drop everything up to the block with an included para head, if present.
 					let idx = chain
@@ -590,6 +595,9 @@ pub mod pallet {
 		/// The given code upgrade has not been authorized.
 		Unauthorized,
 	}
+
+	#[pallet::storage]
+	pub(super) type MaxUnincludedLen<T: Config> = StorageValue<_, T::BlockNumber, OptionQuery>;
 
 	#[pallet::storage]
 	pub(super) type UnincludedSegment<T: Config> = StorageValue<_, Vec<Ancestor>, ValueQuery>;
