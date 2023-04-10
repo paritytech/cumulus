@@ -320,10 +320,11 @@ pub mod pallet {
 			// Update unincluded segment related storage values.
 			if let Some(para_head) = para_head {
 				let dropped: Vec<BlockTracker> = <UnincludedSegment<T>>::mutate(|chain| {
-					let idx =
-						chain.iter().take_while(|block| block.para_head() != &para_head).count();
-					// Drop the block with an included para head too.
-					let idx = chain.len().min(idx + 1);
+					// Drop everything up to the block with an included para head, if present.
+					let idx = chain
+						.iter()
+						.position(|block| block.para_head() == &para_head)
+						.map_or(0, |idx| idx + 1); // inclusive.
 
 					chain.drain(..idx).collect()
 				});
