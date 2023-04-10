@@ -65,7 +65,7 @@ pub mod validate_block;
 #[cfg(test)]
 mod tests;
 
-use unincluded_segment::{BlockTracker, SegmentTracker};
+use unincluded_segment::{Ancestor, SegmentTracker};
 
 /// Register the `validate_block` function that is used by parachains to validate blocks on a
 /// validator.
@@ -319,7 +319,7 @@ pub mod pallet {
 
 			// Update unincluded segment related storage values.
 			if let Some(para_head) = para_head {
-				let dropped: Vec<BlockTracker> = <UnincludedSegment<T>>::mutate(|chain| {
+				let dropped: Vec<Ancestor> = <UnincludedSegment<T>>::mutate(|chain| {
 					// Drop everything up to the block with an included para head, if present.
 					let idx = chain
 						.iter()
@@ -592,7 +592,7 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
-	pub(super) type UnincludedSegment<T: Config> = StorageValue<_, Vec<BlockTracker>, ValueQuery>;
+	pub(super) type UnincludedSegment<T: Config> = StorageValue<_, Vec<Ancestor>, ValueQuery>;
 
 	#[pallet::storage]
 	pub(super) type AggregatedUnincludedSegment<T: Config> =

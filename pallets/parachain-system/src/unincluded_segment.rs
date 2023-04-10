@@ -142,12 +142,12 @@ impl UsedBandwidth {
 }
 
 #[derive(Encode, Decode, TypeInfo)]
-pub struct BlockTracker {
+pub struct Ancestor {
 	used_bandwidth: UsedBandwidth,
 	para_head: relay_chain::HeadData,
 }
 
-impl BlockTracker {
+impl Ancestor {
 	pub fn used_bandwidth(&self) -> &UsedBandwidth {
 		&self.used_bandwidth
 	}
@@ -166,7 +166,7 @@ pub struct SegmentTracker {
 impl SegmentTracker {
 	pub fn append(
 		&mut self,
-		block: &BlockTracker,
+		block: &Ancestor,
 		hrmp_watermark: relay_chain::BlockNumber,
 		limits: &TotalBandwidthLimits,
 	) -> Result<(), LimitExceededError> {
@@ -176,7 +176,7 @@ impl SegmentTracker {
 		Ok(())
 	}
 
-	pub fn subtract(&mut self, block: &BlockTracker) {
+	pub fn subtract(&mut self, block: &Ancestor) {
 		self.used_bandwidth.subtract(block.used_bandwidth());
 	}
 }
