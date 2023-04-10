@@ -6,23 +6,26 @@ edition = "2021"
 description = "Statemint parachain runtime integration tests"
 
 [dev-dependencies]
+codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false }
+
 xcm-emulator = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "ru/feature/xcm-emulator" }
-polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+parachains-common = { path = "../../../common", default-features = false }
+
+polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 penpal-runtime = { path = "../../testing/penpal"}
 statemint-runtime = { path = "../statemint"}
 
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-weights = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-parachains-common = { path = "../../../common", default-features = false }
-codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false }
