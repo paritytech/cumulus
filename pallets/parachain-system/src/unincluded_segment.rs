@@ -28,6 +28,7 @@ pub struct TotalBandwidthLimits {
 	pub ump_messages_remaining: u32,
 	pub ump_bytes_remaining: u32,
 	pub hrmp_outgoing: BTreeMap<ParaId, HrmpOutboundLimits>,
+	pub dmp_remaining_messages: u32,
 }
 
 pub enum LimitExceededError {
@@ -35,6 +36,7 @@ pub enum LimitExceededError {
 	HrmpBytesOverflow { recipient: ParaId, bytes_remaining: u32, bytes_submitted: u32 },
 	UmpMessagesOverflow { messages_remaining: u32, messages_submitted: u32 },
 	UmpBytesOverflow { bytes_remaining: u32, bytes_submitted: u32 },
+	DmpMessagesUnderflow { messages_remaining: u32, messages_processed: u32 },
 }
 
 #[derive(Default, Copy, Clone, Encode, Decode, TypeInfo)]
@@ -92,6 +94,7 @@ pub struct UsedBandwidth {
 	pub ump_msg_count: u32,
 	pub ump_total_bytes: u32,
 	pub hrmp_outgoing: BTreeMap<ParaId, HrmpChannelSize>,
+	pub dmp_processed_count: u32,
 }
 
 impl UsedBandwidth {
@@ -116,6 +119,13 @@ impl UsedBandwidth {
 				bytes_submitted: new.ump_total_bytes,
 			})
 		}
+		new.dmp_processed_count = new.dmp_processed_count.saturating_add(other.dmp_processed_count);
+		if new.dmp_processed_count > limits.dmp_remaining_messages {
+			return Err(LimitExceededError::DmpMessagesUnderflow {
+				messages_remaining: limits.dmp_remaining_messages,
+				messages_processed: new.dmp_processed_count,
+			})
+		}
 
 		for (id, channel) in other.hrmp_outgoing.iter() {
 			let current = new.hrmp_outgoing.entry(*id).or_default();
@@ -128,6 +138,7 @@ impl UsedBandwidth {
 	fn subtract(&mut self, other: &Self) {
 		self.ump_msg_count -= other.ump_msg_count;
 		self.ump_total_bytes -= other.ump_total_bytes;
+		self.dmp_processed_count -= other.dmp_processed_count;
 
 		for (id, channel) in other.hrmp_outgoing.iter() {
 			let entry = self
