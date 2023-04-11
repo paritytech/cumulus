@@ -35,7 +35,7 @@ pub fn glutton_development_config(para_id: ParaId) -> GluttonChainSpec {
 		None,
 		None,
 		None,
-		Extensions { relay_chain: "kusama-dev".into(), para_id },
+		Extensions { relay_chain: "kusama-dev".into(), para_id: para_id.into() },
 	)
 }
 
@@ -52,7 +52,7 @@ pub fn glutton_local_config(para_id: ParaId) -> GluttonChainSpec {
 		None,
 		None,
 		None,
-		Extensions { relay_chain: "kusama-local".into(), para_id },
+		Extensions { relay_chain: "kusama-local".into(), para_id: para_id.into() },
 	)
 }
 
@@ -69,7 +69,7 @@ pub fn glutton_config(para_id: ParaId) -> GluttonChainSpec {
 		None,
 		None,
 		None,
-		Extensions { relay_chain: "kusama".into(), para_id },
+		Extensions { relay_chain: "kusama".into(), para_id: para_id.into() },
 	)
 }
 
