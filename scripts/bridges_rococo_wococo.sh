@@ -161,65 +161,8 @@ function send_governance_transact() {
 }
 
 STATEMINE_ACCOUNT_SEED_FOR_LOCAL="//Alice"
+# Address: GegTpZJMyzkntLN7NJhRfHDk4GWukLbGSsag6PHrLSrCK4h
 ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO="scatter feed race company oxygen trip extra elbow slot bundle auto canoe"
-
-function send_xcm_trap_from_statemine() {
-    local url=$1
-    local seed=$2
-    local bridge_hub_para_id=$3
-    local target_network=$4
-    local target_network_para_id=$5
-    echo "  calling send_xcm_trap_from_statemine:"
-    echo "      url: ${url}"
-    echo "      seed: ${seed}"
-    echo "      bridge_hub_para_id: ${bridge_hub_para_id}"
-    echo "      params:"
-
-    local dest=$(jq --null-input \
-                    --arg bridge_hub_para_id "$bridge_hub_para_id" \
-                    '{ "V3": { "parents": 1, "interior": { "X1": { "Parachain": $bridge_hub_para_id } } } }')
-
-    local message=$(jq --null-input \
-                       --arg target_network "$target_network" \
-                       --arg target_network_para_id "$target_network_para_id" \
-                       '
-                       {
-                          "V3": [
-                            {
-                              "ExportMessage": {
-                                "network": $target_network,
-                                "destination": {
-                                  "X1": {
-                                    "Parachain": $target_network_para_id
-                                  }
-                                },
-                                "xcm": [
-                                  {
-                                    "Trap": 12345
-                                  }
-                                ]
-                              }
-                            }
-                          ]
-                        }
-                        ')
-
-    echo ""
-    echo "          dest:"
-    echo "${dest}"
-    echo ""
-    echo "          message:"
-    echo "${message}"
-    echo ""
-    echo "--------------------------------------------------"
-
-    polkadot-js-api \
-        --ws "${url?}" \
-        --seed "${seed?}" \
-        tx.polkadotXcm.send \
-            "${dest}" \
-            "${message}"
-}
 
 function allow_assets_transfer_send() {
     local relay_url=$1
@@ -481,6 +424,56 @@ function transfer_asset_via_bridge() {
             "${destination}"
 }
 
+function ping_via_bridge() {
+    local url=$1
+    local seed=$2
+    echo "  calling transfer_asset_via_bridge:"
+    echo "      url: ${url}"
+    echo "      seed: ${seed}"
+    echo "      params:"
+
+## // TODO:check-parameter - find dynamic way to decode some account to bytes: "id": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+## AccountId32::from_str("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").unwrap().0` -> [u8; 32]
+## [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]
+
+    local destination=$(jq --null-input \
+        '
+            {
+                "V3": {
+                    "parents": 2,
+                    "interior": {
+                        "X3": [
+                            {
+                                "GlobalConsensus": "Wococo"
+                            },
+                            {
+                                "Parachain": 1000
+                            },
+                            {
+                                "AccountId32": {
+                                    "id": [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        '
+    )
+
+    echo ""
+    echo "          destination:"
+    echo "${destination}"
+    echo ""
+    echo "--------------------------------------------------"
+
+    polkadot-js-api \
+        --ws "${url?}" \
+        --seed "${seed?}" \
+        tx.bridgeTransfer.pingViaBridge \
+            "${destination}"
+}
+
 function init_ro_wo() {
     ensure_relayer
 
@@ -543,24 +536,6 @@ case "$1" in
     init_wo_ro
     run_relay
     ;;
-  send-trap-local)
-    ensure_polkadot_js_api
-    send_xcm_trap_from_statemine \
-        "ws://127.0.0.1:9910" \
-        "${STATEMINE_ACCOUNT_SEED_FOR_LOCAL}" \
-        1013 \
-        "Wococo" \
-        1000
-    ;;
-  send-trap-rococo)
-    ensure_polkadot_js_api
-    send_xcm_trap_from_statemine \
-        "wss://ws-rococo-rockmine2-collator-node-0.parity-testnet.parity.io" \
-        "${ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO}" \
-        1013 \
-        "Wococo" \
-        1000
-    ;;
   allow-transfers-local)
       # this allows send transfers on statemine (by governance-like)
       ./$0 "allow-transfer-on-statemine-local"
@@ -587,7 +562,8 @@ case "$1" in
           1014 \
           "Rococo" \
           1000
-      # drip SovereignAccount for `MultiLocation { parents: 2, interior: X2(GlobalConsensus(Rococo), Parachain(1000)) }`
+      # drip SovereignAccount for `MultiLocation { parents: 2, interior: X2(GlobalConsensus(Rococo), Parachain(1000)) }` => 5DHZvp523gmJWxg9UcLVbofyu5nZkPvATeP1ciYncpFpXtiG
+      # drip SovereignAccount for `MultiLocation { parents: 2, interior: X2(GlobalConsensus(Rococo), Parachain(1015)) }` => 5FS75NFUdEYhWHuV3y3ncjSG4PFdHfC5X7V6SEzc3rnCciwb
       transfer_balance \
           "ws://127.0.0.1:9010" \
           "//Alice" \
@@ -617,6 +593,18 @@ case "$1" in
           "ws://127.0.0.1:9910" \
           "//Alice"
       ;;
+  ping-via-bridge-from-statemine-local)
+      ensure_polkadot_js_api
+      ping_via_bridge \
+          "ws://127.0.0.1:9910" \
+          "${STATEMINE_ACCOUNT_SEED_FOR_LOCAL}"
+      ;;
+  ping-via-bridge-from-statemine-rococo)
+      ensure_polkadot_js_api
+      ping_via_bridge \
+          "wss://ws-rococo-rockmine2-collator-node-0.parity-testnet.parity.io" \
+          "${ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO}"
+      ;;
   drip)
       transfer_balance \
           "ws://127.0.0.1:9010" \
@@ -628,5 +616,5 @@ case "$1" in
     pkill -f polkadot
     pkill -f parachain
     ;;
-  *) echo "A command is require. Supported commands: run-relay, send-trap-rococo/send-trap-local, send-remark-local/send-remark-rococo, allow-transfers-local/allow-transfer-on-statemine-local/remove-assets-transfer-from-statemine-local, allow-transfer-on-westmint-local, transfer-asset-from-statemine-local"; exit 1;;
+  *) echo "A command is require. Supported commands: run-relay, allow-transfers-local/allow-transfer-on-statemine-local/remove-assets-transfer-from-statemine-local, allow-transfer-on-westmint-local, transfer-asset-from-statemine-local/TODO:, ping-via-bridge-from-statemine-local/ping-via-bridge-from-statemine-rococo"; exit 1;;
 esac
