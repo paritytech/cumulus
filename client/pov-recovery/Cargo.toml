@@ -13,17 +13,17 @@ rand = "0.8.5"
 tracing = "0.1.37"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
-sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.41" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.41" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.41" }
+sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.41" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.41" }
 
 # Polkadot
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.40" }
-polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.40" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.40" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.40" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.41" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.41" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.41" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.41" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core" }
@@ -38,6 +38,6 @@ portpicker = "0.1.1"
 cumulus-test-service = { path = "../../test/service" }
 
 # Substrate
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.41" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.41" }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.41" }

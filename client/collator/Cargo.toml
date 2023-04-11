@@ -11,17 +11,17 @@ parking_lot = "0.12.0"
 tracing = "0.1.25"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.41" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.41" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.41" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.41" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.41" }
 
 # Polkadot
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.40" }
-polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.40" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.40" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.40" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.41" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.41" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.41" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.41" }
 
 # Cumulus
 cumulus-client-consensus-common = { path = "../consensus/common" }
@@ -32,12 +32,12 @@ cumulus-primitives-core = { path = "../../primitives/core" }
 async-trait = "0.1.42"
 
 # Substrate
-sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.40" }
+sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.41" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.41" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.41" }
 
 # Polkadot
-polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.40" }
+polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.41" }
 
 # Cumulus
 cumulus-test-client = { path = "../../test/client" }
