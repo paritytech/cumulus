@@ -21,7 +21,7 @@ pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", def
 pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-pallet-dex = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+pallet-asset-conversion = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 sp-io = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }

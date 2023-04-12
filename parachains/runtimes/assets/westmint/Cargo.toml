@@ -21,10 +21,10 @@ frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", o
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-try-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "master" }
 pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-asset-conversion = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-dex = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-dex-tx-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-multisig = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-nfts = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -92,8 +92,8 @@ runtime-benchmarks = [
 	"frame-system-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
+	"pallet-asset-conversion/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
-	"pallet-dex/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
 	"pallet-nfts/runtime-benchmarks",
 	"pallet-proxy/runtime-benchmarks",
@@ -119,11 +119,11 @@ try-runtime = [
 	"frame-system/try-runtime",
 	"frame-try-runtime/try-runtime",
 	"pallet-assets/try-runtime",
+	"pallet-asset-conversion/try-runtime",
 	"pallet-aura/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-balances/try-runtime",
 	"pallet-collator-selection/try-runtime",
-	"pallet-dex/try-runtime",
 	"pallet-dex-tx-payment/try-runtime",
 	"pallet-multisig/try-runtime",
 	"pallet-nfts/try-runtime",
@@ -145,10 +145,10 @@ std = [
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
 	"pallet-assets/std",
+	"pallet-asset-conversion/std",
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
-	"pallet-dex/std",
 	"pallet-dex-tx-payment/std",
 	"pallet-multisig/std",
 	"pallet-nfts/std",
