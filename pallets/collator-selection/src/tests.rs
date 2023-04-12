@@ -126,10 +126,9 @@ fn remove_invulnerable_works() {
 		);
 
 		// this is to work with a sorted vector from now on
-		CollatorSelection::set_invulnerables(
-			RuntimeOrigin::signed(RootAccount::get()), 
-			vec![1, 2]
-		).map_err(|err| println!("{:?}", err)).ok();
+		CollatorSelection::set_invulnerables(RuntimeOrigin::signed(RootAccount::get()), vec![1, 2])
+			.map_err(|err| println!("{:?}", err))
+			.ok();
 
 		let to_remove = 1;
 
