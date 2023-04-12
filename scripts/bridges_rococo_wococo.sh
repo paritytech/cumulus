@@ -593,6 +593,12 @@ case "$1" in
           "ws://127.0.0.1:9910" \
           "//Alice"
       ;;
+  transfer-asset-from-statemine-rococo)
+      ensure_polkadot_js_api
+      transfer_asset_via_bridge \
+          "wss://ws-rococo-rockmine2-collator-node-0.parity-testnet.parity.io" \
+          "${ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO}"
+      ;;
   ping-via-bridge-from-statemine-local)
       ensure_polkadot_js_api
       ping_via_bridge \
@@ -616,5 +622,19 @@ case "$1" in
     pkill -f polkadot
     pkill -f parachain
     ;;
-  *) echo "A command is require. Supported commands: run-relay, allow-transfers-local/allow-transfer-on-statemine-local/remove-assets-transfer-from-statemine-local, allow-transfer-on-westmint-local, transfer-asset-from-statemine-local/TODO:, ping-via-bridge-from-statemine-local/ping-via-bridge-from-statemine-rococo"; exit 1;;
+  *)
+    echo "A command is require. Supported commands for:
+    Local (zombienet) run:
+          - run-relay
+          - allow-transfers-local
+              - allow-transfer-on-statemine-local
+              - allow-transfer-on-westmint-local
+              - remove-assets-transfer-from-statemine-local
+          - transfer-asset-from-statemine-local
+          - ping-via-bridge-from-statemine-local
+    Live Rococo/Wococo run:
+          - transfer-asset-from-statemine-rococo
+          - ping-via-bridge-from-statemine-rococo";
+    exit 1
+    ;;
 esac
