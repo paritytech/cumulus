@@ -169,7 +169,7 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 
 ### Send messages (Rococo, Wococo)
 
-#### Transfer assets via bridge
+#### Local (zombienet) run
 
 1. allow bridge transfer on statemine/westmint (governance-like):
    ```
@@ -203,11 +203,11 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
   ./scripts/bridges_rococo_wococo.sh ping-via-bridge-from-statemine-rococo
   ```
 
-- open explorers: (see https://github.com/paritytech/parity-bridges-common/issues/1671)
-	- Rockmine2 (see `polkadotXcm.Sent`)
-	- BridgeHubRococo (see `bridgeWococoMessages.MessageAccepted`)
-	- BridgeHubWococo (see `bridgeRococoMessages.MessagesReceived`)
-	- Wockmint (see `xcmpQueue.Success` for `transfer-asset` and `xcmpQueue.Fail` for `ping-via-bridge`)
+- open explorers:
+	- Rockmine2 (see events `xcmpQueue.XcmpMessageSent`, `bridgeTransfer.ReserveAssetsDeposited`, `bridgeTransfer.TransferInitiated`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fws-rococo-rockmine2-collator-node-0.parity-testnet.parity.io#/explorer
+	- BridgeHubRococo (see `bridgeWococoMessages.MessageAccepted`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-bridge-hub-rpc.polkadot.io#/explorer
+	- BridgeHubWococo (see `bridgeRococoMessages.MessagesReceived`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fwococo-bridge-hub-rpc.polkadot.io#/explorer
+	- Wockmint (see `xcmpQueue.Success` for `transfer-asset` and `xcmpQueue.Fail` for `ping-via-bridge`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fws-wococo-wockmint-collator-node-0.parity-testnet.parity.io#/explorer
 	- BridgeHubRococo (see `bridgeWococoMessages.MessagesDelivered`)
 
 ## How to test local BridgeHubKusama

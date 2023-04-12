@@ -1,5 +1,34 @@
 #!/bin/bash
 
+# Address: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+# AccountId: [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]
+STATEMINE_ACCOUNT_SEED_FOR_LOCAL="//Alice"
+# Address: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+# AccountId: [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]
+WOCKMINT_ACCOUNT_ADDRESS_FOR_LOCAL="5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+
+# Address: GegTpZJMyzkntLN7NJhRfHDk4GWukLbGSsag6PHrLSrCK4h
+ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO="scatter feed race company oxygen trip extra elbow slot bundle auto canoe"
+
+# Adress: 5Ge7YcbctWCP1CccugzxWDn9hFnTxvTh3bL6PNy4ubNJmp7Y / H9jCvwVWsDJkrS4gPp1QB99qr4hmbGsVyAqn3F2PPaoWyU3
+# AccountId: [202, 107, 198, 135, 15, 25, 193, 165, 172, 73, 137, 218, 115, 177, 204, 0, 5, 155, 215, 86, 208, 51, 50, 130, 190, 110, 184, 143, 124, 50, 160, 20]
+WOCKMINT_ACCOUNT_ADDRESS_FOR_ROCOCO="5Ge7YcbctWCP1CccugzxWDn9hFnTxvTh3bL6PNy4ubNJmp7Y"
+WOCKMINT_ACCOUNT_SEED_FOR_WOCOCO="tone spirit magnet sunset cannon poverty forget lock river east blouse random"
+
+function address_to_account_id_bytes() {
+    local address=$1
+    local output=$2
+    echo "address_to_account_id_bytes - address: $address, output: $output"
+    if [ $address == "$WOCKMINT_ACCOUNT_ADDRESS_FOR_LOCAL" ]; then
+        jq --null-input '[212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]' > $output
+    elif [ $address == "$WOCKMINT_ACCOUNT_ADDRESS_FOR_ROCOCO" ]; then
+        jq --null-input '[202, 107, 198, 135, 15, 25, 193, 165, 172, 73, 137, 218, 115, 177, 204, 0, 5, 155, 215, 86, 208, 51, 50, 130, 190, 110, 184, 143, 124, 50, 160, 20]' > $output
+    else
+        echo -n "Sorry, unknown address: $address - please, add bytes here or function for that!"
+        exit 1
+    fi
+}
+
 function ensure_binaries() {
     if [[ ! -f ~/local_bridge_testing/bin/polkadot ]]; then
         echo "  Required polkadot binary '~/local_bridge_testing/bin/polkadot' does not exist!"
@@ -159,10 +188,6 @@ function send_governance_transact() {
             "${dest}" \
             "${message}"
 }
-
-STATEMINE_ACCOUNT_SEED_FOR_LOCAL="//Alice"
-# Address: GegTpZJMyzkntLN7NJhRfHDk4GWukLbGSsag6PHrLSrCK4h
-ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO="scatter feed race company oxygen trip extra elbow slot bundle auto canoe"
 
 function allow_assets_transfer_send() {
     local relay_url=$1
@@ -351,11 +376,12 @@ function remove_assets_transfer_send() {
 function transfer_asset_via_bridge() {
     local url=$1
     local seed=$2
+    local target_account=$3
     echo "  calling transfer_asset_via_bridge:"
     echo "      url: ${url}"
     echo "      seed: ${seed}"
+    echo "      target_account: ${target_account}"
     echo "      params:"
-
 
     local assets=$(jq --null-input \
         '
@@ -377,12 +403,12 @@ function transfer_asset_via_bridge() {
         '
     )
 
-
-## // TODO:check-parameter - find dynamic way to decode some account to bytes: "id": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
-## AccountId32::from_str("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").unwrap().0` -> [u8; 32]
-## [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]
+    local tmp_output_file=$(mktemp)
+    address_to_account_id_bytes "$target_account" "${tmp_output_file}"
+    local hex_encoded_data=$(cat $tmp_output_file)
 
     local destination=$(jq --null-input \
+                           --argjson hex_encoded_data "$hex_encoded_data" \
         '
             {
                 "V3": {
@@ -397,7 +423,7 @@ function transfer_asset_via_bridge() {
                             },
                             {
                                 "AccountId32": {
-                                    "id": [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]
+                                    "id": $hex_encoded_data
                                 }
                             }
                         ]
@@ -427,16 +453,19 @@ function transfer_asset_via_bridge() {
 function ping_via_bridge() {
     local url=$1
     local seed=$2
-    echo "  calling transfer_asset_via_bridge:"
+    local target_account=$3
+    echo "  calling ping_via_bridge:"
     echo "      url: ${url}"
     echo "      seed: ${seed}"
+    echo "      target_account: ${target_account}"
     echo "      params:"
 
-## // TODO:check-parameter - find dynamic way to decode some account to bytes: "id": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
-## AccountId32::from_str("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").unwrap().0` -> [u8; 32]
-## [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]
+    local tmp_output_file=$(mktemp)
+    address_to_account_id_bytes "$target_account" "${tmp_output_file}"
+    local hex_encoded_data=$(cat $tmp_output_file)
 
     local destination=$(jq --null-input \
+                           --argjson hex_encoded_data "$hex_encoded_data" \
         '
             {
                 "V3": {
@@ -451,7 +480,7 @@ function ping_via_bridge() {
                             },
                             {
                                 "AccountId32": {
-                                    "id": [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]
+                                    "id": $hex_encoded_data
                                 }
                             }
                         ]
@@ -591,25 +620,29 @@ case "$1" in
       ensure_polkadot_js_api
       transfer_asset_via_bridge \
           "ws://127.0.0.1:9910" \
-          "//Alice"
+          "$STATEMINE_ACCOUNT_SEED_FOR_LOCAL" \
+          "$WOCKMINT_ACCOUNT_ADDRESS_FOR_LOCAL"
       ;;
   transfer-asset-from-statemine-rococo)
       ensure_polkadot_js_api
       transfer_asset_via_bridge \
           "wss://ws-rococo-rockmine2-collator-node-0.parity-testnet.parity.io" \
-          "${ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO}"
+          "$ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO" \
+          "$WOCKMINT_ACCOUNT_ADDRESS_FOR_ROCOCO"
       ;;
   ping-via-bridge-from-statemine-local)
       ensure_polkadot_js_api
       ping_via_bridge \
           "ws://127.0.0.1:9910" \
-          "${STATEMINE_ACCOUNT_SEED_FOR_LOCAL}"
+          "$STATEMINE_ACCOUNT_SEED_FOR_LOCAL" \
+          "$WOCKMINT_ACCOUNT_ADDRESS_FOR_LOCAL"
       ;;
   ping-via-bridge-from-statemine-rococo)
       ensure_polkadot_js_api
       ping_via_bridge \
           "wss://ws-rococo-rockmine2-collator-node-0.parity-testnet.parity.io" \
-          "${ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO}"
+          "${ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO}" \
+          "$WOCKMINT_ACCOUNT_ADDRESS_FOR_ROCOCO"
       ;;
   drip)
       transfer_balance \
