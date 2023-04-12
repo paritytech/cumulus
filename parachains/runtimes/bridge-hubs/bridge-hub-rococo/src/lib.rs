@@ -545,7 +545,7 @@ impl pallet_bridge_relayers::Config for Runtime {
 
 // Ethereum Bridge
 
-use snowbridge_router_primitives::{ConvertTokenAddress, InboundMessageConverter};
+use snowbridge_router_primitives::InboundMessageConverter;
 
 parameter_types! {
 	pub const EthereumNetwork: xcm::v3::NetworkId = xcm::v3::NetworkId::Ethereum { chain_id: 1};
@@ -560,7 +560,7 @@ impl snowbridge_inbound_queue::Config for Runtime {
 	type Token = Balances;
 	type Reward = Reward;
 	type Verifier = snowbridge_ethereum_beacon_client::Pallet<Runtime>;
-	type MessageConversion = InboundMessageConverter<ConvertTokenAddress<EthereumNetwork>>;
+	type MessageConversion = InboundMessageConverter<EthereumNetwork>;
 	type XcmSender = XcmRouter;
 	type WeightInfo = ();
 }
