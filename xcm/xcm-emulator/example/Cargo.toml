@@ -1,8 +1,7 @@
 [package]
 name = "xcm-emulator-example"
 version = "0.1.0"
-license = "Apache-2.0"
-authors = ["Shaun Wang <spxwang@gmail.com>"]
+authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 
 [dependencies]
@@ -29,4 +28,10 @@ pallet-xcm = { git = "https://github.com/paritytech/polkadot", branch = "master"
 
 
 xcm-emulator = { path = ".." }
-yayoi = { path = "../yayoi" }
+test-runtime = { path = "../test_runtime" }
+
+[features]
+runtime-benchmarks = [
+    "kusama-runtime/runtime-benchmarks",
+    "test-runtime/runtime-benchmarks",
+]

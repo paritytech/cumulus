@@ -28,32 +28,32 @@ decl_test_relay_chain! {
 }
 
 decl_test_parachain! {
-	pub struct YayoiPumpkin {
-		Runtime = yayoi::Runtime,
-		RuntimeOrigin = yayoi::RuntimeOrigin,
-		XcmpMessageHandler = yayoi::XcmpQueue,
-		DmpMessageHandler = yayoi::DmpQueue,
-		new_ext = yayoi_ext(1),
+	pub struct ParachainA {
+		Runtime = test_runtime::Runtime,
+		RuntimeOrigin = test_runtime::RuntimeOrigin,
+		XcmpMessageHandler = test_runtime::XcmpQueue,
+		DmpMessageHandler = test_runtime::DmpQueue,
+		new_ext = parachain_ext(1),
 	}
 }
 
 decl_test_parachain! {
-	pub struct YayoiMushroom {
-		Runtime = yayoi::Runtime,
-		RuntimeOrigin = yayoi::RuntimeOrigin,
-		XcmpMessageHandler = yayoi::XcmpQueue,
-		DmpMessageHandler = yayoi::DmpQueue,
-		new_ext = yayoi_ext(2),
+	pub struct ParachainB {
+		Runtime = test_runtime::Runtime,
+		RuntimeOrigin = test_runtime::RuntimeOrigin,
+		XcmpMessageHandler = test_runtime::XcmpQueue,
+		DmpMessageHandler = test_runtime::DmpQueue,
+		new_ext = parachain_ext(2),
 	}
 }
 
 decl_test_parachain! {
-	pub struct YayoiOctopus {
-		Runtime = yayoi::Runtime,
-		RuntimeOrigin = yayoi::RuntimeOrigin,
-		XcmpMessageHandler = yayoi::XcmpQueue,
-		DmpMessageHandler = yayoi::DmpQueue,
-		new_ext = yayoi_ext(3),
+	pub struct ParachainC {
+		Runtime = test_runtime::Runtime,
+		RuntimeOrigin = test_runtime::RuntimeOrigin,
+		XcmpMessageHandler = test_runtime::XcmpQueue,
+		DmpMessageHandler = test_runtime::DmpQueue,
+		new_ext = parachain_ext(3),
 	}
 }
 
@@ -61,9 +61,9 @@ decl_test_network! {
 	pub struct Network {
 		relay_chain = KusamaNet,
 		parachains = vec![
-			(1, YayoiPumpkin),
-			(2, YayoiMushroom),
-			(3, YayoiOctopus),
+			(1, ParachainA),
+			(2, ParachainB),
+			(3, ParachainC),
 		],
 	}
 }
@@ -71,8 +71,8 @@ decl_test_network! {
 pub const ALICE: AccountId32 = AccountId32::new([0u8; 32]);
 pub const INITIAL_BALANCE: u128 = 1_000_000_000_000;
 
-pub fn yayoi_ext(para_id: u32) -> sp_io::TestExternalities {
-	use yayoi::{Runtime, System};
+pub fn parachain_ext(para_id: u32) -> sp_io::TestExternalities {
+	use test_runtime::{Runtime, System};
 
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
 
@@ -191,8 +191,8 @@ mod tests {
 			));
 		});
 
-		YayoiPumpkin::execute_with(|| {
-			use yayoi::{RuntimeEvent, System};
+		ParachainA::execute_with(|| {
+			use test_runtime::{RuntimeEvent, System};
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
 
 			assert!(System::events().iter().any(|r| matches!(
@@ -227,7 +227,7 @@ mod tests {
 				yayoi::RuntimeOrigin::root(),
 				Some(3)
 			));
-			assert_ok!(yayoi::PolkadotXcm::send_xcm(
+			assert_ok!(test_runtime::PolkadotXcm::send_xcm(
 				Here,
 				Parent,
 				Xcm(vec![
@@ -282,8 +282,8 @@ mod tests {
 			));
 		});
 
-		YayoiMushroom::execute_with(|| {
-			use yayoi::{RuntimeEvent, System};
+		ParachainB::execute_with(|| {
+			use test_runtime::{RuntimeEvent, System};
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
 
 			assert!(System::events().iter().any(|r| matches!(
@@ -295,7 +295,7 @@ mod tests {
 
 	#[test]
 	fn xcmp_through_a_parachain() {
-		use yayoi::{PolkadotXcm, Runtime, RuntimeCall};
+		use test_runtime::{PolkadotXcm, Runtime, RuntimeCall};
 
 		Network::reset();
 
@@ -315,7 +315,7 @@ mod tests {
 			send_xcm_to_octopus.get_dispatch_info().weight,
 			Weight::from_parts(110000010, 10000010)
 		);
-		YayoiPumpkin::execute_with(|| {
+		ParachainA::execute_with(|| {
 			assert_ok!(PolkadotXcm::send_xcm(
 				Here,
 				MultiLocation::new(1, X1(Parachain(2))),
@@ -327,8 +327,8 @@ mod tests {
 			));
 		});
 
-		YayoiMushroom::execute_with(|| {
-			use yayoi::{RuntimeEvent, System};
+		ParachainB::execute_with(|| {
+			use test_runtime::{RuntimeEvent, System};
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
 
 			assert!(System::events().iter().any(|r| matches!(
@@ -337,8 +337,8 @@ mod tests {
 			)));
 		});
 
-		YayoiOctopus::execute_with(|| {
-			use yayoi::{RuntimeEvent, System};
+		ParachainC::execute_with(|| {
+			use test_runtime::{RuntimeEvent, System};
 			// execution would fail, but good enough to check if the message is received
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
 
@@ -413,8 +413,8 @@ mod tests {
 	}
 
 	fn parachain_receive_and_reset_events(received: bool) {
-		YayoiPumpkin::execute_with(|| {
-			use yayoi::{RuntimeEvent, System};
+		ParachainA::execute_with(|| {
+			use test_runtime::{RuntimeEvent, System};
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
 
 			if received {

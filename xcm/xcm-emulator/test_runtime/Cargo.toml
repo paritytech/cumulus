@@ -1,9 +1,9 @@
 [package]
-name = "yayoi"
+name = "test-runtime"
 description = "A simple runtime for cross-chain messages tests."
 license = "Apache-2.0"
 version = "0.1.0"
-authors = ["Shaun Wang <spxwang@gmail.com>"]
+authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 
 [dependencies]
