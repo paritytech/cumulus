@@ -46,7 +46,7 @@ pub struct TotalBandwidthLimits {
 }
 
 /// The error type for updating bandwidth used by a segment.
-pub enum LimitExceededError {
+pub enum BandwidthUpdateError {
 	/// Too many messages submitted to HRMP channel.
 	HrmpMessagesOverflow {
 		/// Parachain id of the recipient.
@@ -65,15 +65,18 @@ pub enum LimitExceededError {
 		/// The amount of bytes submitted to the channel.
 		bytes_submitted: u32,
 	},
+	/// Too many messages submitted to UMP queue.
 	UmpMessagesOverflow {
+		/// The amount of remaining messages in the capacity of UMP.
 		messages_remaining: u32,
+		/// The amount of messages submitted to UMP.
 		messages_submitted: u32,
 	},
-	/// Too many messages submitted to UMP queue.
+	/// Too many bytes submitted to UMP.
 	UmpBytesOverflow {
-		/// The amount of remaining messages in the capacity of UMP.
+		/// The amount of remaining bytes in the capacity of UMP.
 		bytes_remaining: u32,
-		/// The amount of messages submitted to UMP.
+		/// The amount of bytes submitted to UMP.
 		bytes_submitted: u32,
 	},
 	/// Too many messages processed from DMP.
@@ -82,6 +85,13 @@ pub enum LimitExceededError {
 		messages_remaining: u32,
 		/// The amount of DMP messages processed.
 		messages_processed: u32,
+	},
+	/// Invalid HRMP watermark.
+	InvalidHrmpWatermark {
+		/// HRMP watermark submitted by the candidate.
+		submitted: relay_chain::BlockNumber,
+		/// Latest tracked HRMP watermark.
+		latest: relay_chain::BlockNumber,
 	},
 }
 
@@ -106,7 +116,7 @@ impl HrmpChannelUpdate {
 		other: &Self,
 		recipient: ParaId,
 		limits: &TotalBandwidthLimits,
-	) -> Result<Self, LimitExceededError> {
+	) -> Result<Self, BandwidthUpdateError> {
 		let limits = limits
 			.hrmp_outgoing
 			.get(&recipient)
@@ -116,7 +126,7 @@ impl HrmpChannelUpdate {
 
 		new.msg_count = new.msg_count.saturating_add(other.msg_count);
 		if new.msg_count > limits.messages_remaining {
-			return Err(LimitExceededError::HrmpMessagesOverflow {
+			return Err(BandwidthUpdateError::HrmpMessagesOverflow {
 				recipient,
 				messages_remaining: limits.messages_remaining,
 				messages_submitted: new.msg_count,
@@ -124,7 +134,7 @@ impl HrmpChannelUpdate {
 		}
 		new.total_bytes = new.total_bytes.saturating_add(other.total_bytes);
 		if new.total_bytes > limits.bytes_remaining {
-			return Err(LimitExceededError::HrmpBytesOverflow {
+			return Err(BandwidthUpdateError::HrmpBytesOverflow {
 				recipient,
 				bytes_remaining: limits.bytes_remaining,
 				bytes_submitted: new.total_bytes,
@@ -163,26 +173,26 @@ impl UsedBandwidth {
 		&self,
 		other: &Self,
 		limits: &TotalBandwidthLimits,
-	) -> Result<Self, LimitExceededError> {
+	) -> Result<Self, BandwidthUpdateError> {
 		let mut new = self.clone();
 
 		new.ump_msg_count = new.ump_msg_count.saturating_add(other.ump_msg_count);
 		if new.ump_msg_count > limits.ump_messages_remaining {
-			return Err(LimitExceededError::UmpMessagesOverflow {
+			return Err(BandwidthUpdateError::UmpMessagesOverflow {
 				messages_remaining: limits.ump_messages_remaining,
 				messages_submitted: new.ump_msg_count,
 			})
 		}
 		new.ump_total_bytes = new.ump_total_bytes.saturating_add(other.ump_total_bytes);
 		if new.ump_total_bytes > limits.ump_bytes_remaining {
-			return Err(LimitExceededError::UmpBytesOverflow {
+			return Err(BandwidthUpdateError::UmpBytesOverflow {
 				bytes_remaining: limits.ump_bytes_remaining,
 				bytes_submitted: new.ump_total_bytes,
 			})
 		}
 		new.dmp_processed_count = new.dmp_processed_count.saturating_add(other.dmp_processed_count);
 		if new.dmp_processed_count > limits.dmp_remaining_messages {
-			return Err(LimitExceededError::DmpMessagesUnderflow {
+			return Err(BandwidthUpdateError::DmpMessagesUnderflow {
 				messages_remaining: limits.dmp_remaining_messages,
 				messages_processed: new.dmp_processed_count,
 			})
@@ -253,7 +263,14 @@ impl SegmentTracker {
 		block: &Ancestor,
 		hrmp_watermark: relay_chain::BlockNumber,
 		limits: &TotalBandwidthLimits,
-	) -> Result<(), LimitExceededError> {
+	) -> Result<(), BandwidthUpdateError> {
+		if hrmp_watermark <= self.hrmp_watermark {
+			return Err(BandwidthUpdateError::InvalidHrmpWatermark {
+				submitted: hrmp_watermark,
+				latest: self.hrmp_watermark,
+			})
+		}
+
 		self.used_bandwidth = self.used_bandwidth.append(block.used_bandwidth(), limits)?;
 		self.hrmp_watermark = hrmp_watermark;
 
@@ -263,5 +280,7 @@ impl SegmentTracker {
 	/// Removes previously added block from the tracker.
 	pub fn subtract(&mut self, block: &Ancestor) {
 		self.used_bandwidth.subtract(block.used_bandwidth());
+		// Watermark doesn't need to be updated since the is always dropped
+		// from the tail of the segment.
 	}
 }
