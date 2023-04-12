@@ -171,10 +171,11 @@ mod tests {
 	fn dmp() {
 		Network::reset();
 
-		let remark =
-			yayoi::RuntimeCall::System(frame_system::Call::<yayoi::Runtime>::remark_with_event {
+		let remark = test_runtime::RuntimeCall::System(
+			frame_system::Call::<test_runtime::Runtime>::remark_with_event {
 				remark: "Hello from Kusama!".as_bytes().to_vec(),
-			});
+			},
+		);
 		KusamaNet::execute_with(|| {
 			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
 				kusama_runtime::RuntimeOrigin::root(),
@@ -222,9 +223,9 @@ mod tests {
 		>::remark_with_event {
 			remark: "Hello from Pumpkin!".as_bytes().to_vec(),
 		});
-		YayoiPumpkin::execute_with(|| {
-			assert_ok!(yayoi::PolkadotXcm::force_default_xcm_version(
-				yayoi::RuntimeOrigin::root(),
+		ParachainA::execute_with(|| {
+			assert_ok!(test_runtime::PolkadotXcm::force_default_xcm_version(
+				test_runtime::RuntimeOrigin::root(),
 				Some(3)
 			));
 			assert_ok!(test_runtime::PolkadotXcm::send_xcm(
@@ -266,12 +267,13 @@ mod tests {
 	fn xcmp() {
 		Network::reset();
 
-		let remark =
-			yayoi::RuntimeCall::System(frame_system::Call::<yayoi::Runtime>::remark_with_event {
+		let remark = test_runtime::RuntimeCall::System(
+			frame_system::Call::<test_runtime::Runtime>::remark_with_event {
 				remark: "Hello from Pumpkin!".as_bytes().to_vec(),
-			});
-		YayoiPumpkin::execute_with(|| {
-			assert_ok!(yayoi::PolkadotXcm::send_xcm(
+			},
+		);
+		ParachainA::execute_with(|| {
+			assert_ok!(test_runtime::PolkadotXcm::send_xcm(
 				Here,
 				MultiLocation::new(1, X1(Parachain(2))),
 				Xcm(vec![Transact {
@@ -390,10 +392,11 @@ mod tests {
 	}
 
 	fn kusama_send_rmrk(msg: &str, count: u32) {
-		let remark =
-			yayoi::RuntimeCall::System(frame_system::Call::<yayoi::Runtime>::remark_with_event {
+		let remark = test_runtime::RuntimeCall::System(
+			frame_system::Call::<test_runtime::Runtime>::remark_with_event {
 				remark: msg.as_bytes().to_vec(),
-			});
+			},
+		);
 		KusamaNet::execute_with(|| {
 			for _ in 0..count {
 				assert_ok!(kusama_runtime::XcmPallet::send_xcm(
