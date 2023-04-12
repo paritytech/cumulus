@@ -50,6 +50,9 @@ members = [
 	"test/relay-validation-worker-provider",
 	"test/runtime",
 	"test/service",
+	"xcm/xcm-emulator",
+	"xcm/xcm-emulator/example",
+	"xcm/xcm-emulator/yayoi",
 ]
 
 [profile.release]

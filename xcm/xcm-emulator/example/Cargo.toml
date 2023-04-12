@@ -1,0 +1,32 @@
+[package]
+name = "xcm-emulator-example"
+version = "0.1.0"
+license = "Apache-2.0"
+authors = ["Shaun Wang <spxwang@gmail.com>"]
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0.137", optional = true }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
+proc-macro2 = "1.0.40"
+
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
+cumulus-primitives-core = { path = "../../../primitives/core" }
+cumulus-pallet-xcmp-queue = { path = "../../../pallets/xcmp-queue" }
+parachain-info = { path = "../../../parachains/pallets/parachain-info" }
+
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+kusama-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+
+
+xcm-emulator = { path = ".." }
+yayoi = { path = "../yayoi" }
