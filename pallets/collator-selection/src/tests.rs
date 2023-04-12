@@ -42,7 +42,7 @@ fn it_should_set_invulnerables() {
 			new_set.clone()
 		));
 		assert_eq!(CollatorSelection::invulnerables(), new_set);
-		
+
 		// cannot set with non-root.
 		assert_noop!(
 			CollatorSelection::set_invulnerables(RuntimeOrigin::signed(1), new_set.clone()),
@@ -61,7 +61,7 @@ fn it_should_set_invulnerables() {
 
 		// invulnerables are sorted
 		let not_sort_new_set = vec![2, 1, 5, 4, 3];
-		let mut sort_new_set = not_sort_new_set.clone(); 
+		let mut sort_new_set = not_sort_new_set.clone();
 		sort_new_set.sort();
 		assert_ok!(CollatorSelection::set_invulnerables(
 			RuntimeOrigin::signed(RootAccount::get()),
@@ -126,11 +126,8 @@ fn remove_invulnerable_works() {
 		);
 
 		// this is to work with a sorted vector from now on
-		CollatorSelection::set_invulnerables(
-			RuntimeOrigin::signed(RootAccount::get()),
-			vec![1, 2]
-		);
-		
+		CollatorSelection::set_invulnerables(RuntimeOrigin::signed(RootAccount::get()), vec![1, 2]);
+
 		let to_remove = 1;
 
 		// function runs
