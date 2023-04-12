@@ -5,11 +5,14 @@
 		+ [Run relayers (Rococo, Wococo)](#run-relayers--rococo--wococo-)
 			- [Run with script (alternative 1)](#run-with-script--alternative-1-)
 			- [Run with binary (alternative 2)](#run-with-binary--alternative-2-)
-		+ [Send messages (Rococo, Wococo)](#send-messages--rococo--wococo-)
-			- [Local Rococo:Statemine -> Wococo:Westmint](#local-rococo-statemine----wococo-westmint)
-			- [Live Rococo:Rockmine2 -> Wococo:Wockmint](#live-rococo-rockmine2----wococo-wockmint)
+		+ [Send messages](#send-messages)
+			- [Local zombienet run](#local-zombienet-run)
+			- [Live Rockmine2 to Wockmint](#live-rockmine2-to-wockmint)
 	* [How to test local BridgeHubKusama](#how-to-test-local-bridgehubkusama)
+	* [How to test local BridgeHubPolkadot](#how-to-test-local-bridgehubpolkadot)
 	* [Git subtree `./bridges`](#git-subtree---bridges-)
+		+ [How to update `bridges` subtree](#how-to-update--bridges--subtree)
+		+ [How was first time initialized (dont need anymore)](#how-was-first-time-initialized--dont-need-anymore-)
 
 # Bridge-hub Parachains
 
@@ -167,9 +170,9 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	- Pallet: **bridgeRococoParachain**
 	- Keys: **bestParaHeads()**
 
-### Send messages (Rococo, Wococo)
+### Send messages
 
-#### Local (zombienet) run
+#### Local zombienet run
 
 1. allow bridge transfer on statemine/westmint (governance-like):
    ```
@@ -193,7 +196,7 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	- Westmint (see `xcmpQueue.Success` for `transfer-asset` and `xcmpQueue.Fail` for `ping-via-bridge`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9010#/explorer
     - BridgeHubRococo (see `bridgeWococoMessages.MessagesDelivered`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8943#/explorer
 
-#### Live Rococo:Rockmine2 -> Wococo:Wockmint
+#### Live Rockmine2 to Wockmint
 - uses account seed on Live Rococo:Rockmine2
   ```
   cd <cumulus-git-repo-dir>
