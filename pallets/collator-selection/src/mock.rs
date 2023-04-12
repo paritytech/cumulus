@@ -221,7 +221,7 @@ impl Config for Test {
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	sp_tracing::try_init_simple();
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	let invulnerables = vec![1, 2];
+	let invulnerables = vec![2, 1];
 
 	let balances = vec![(1, 100), (2, 100), (3, 100), (4, 100), (5, 100)];
 	let keys = balances

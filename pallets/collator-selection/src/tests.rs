@@ -29,7 +29,7 @@ fn basic_setup_works() {
 		assert_eq!(CollatorSelection::candidacy_bond(), 10);
 
 		assert!(CollatorSelection::candidates().is_empty());
-		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+		assert_eq!(CollatorSelection::invulnerables(), vec![2, 1]);
 	});
 }
 
@@ -42,7 +42,7 @@ fn it_should_set_invulnerables() {
 			new_set.clone()
 		));
 		assert_eq!(CollatorSelection::invulnerables(), new_set);
-
+		
 		// cannot set with non-root.
 		assert_noop!(
 			CollatorSelection::set_invulnerables(RuntimeOrigin::signed(1), new_set.clone()),
@@ -58,30 +58,23 @@ fn it_should_set_invulnerables() {
 			),
 			Error::<Test>::ValidatorNotRegistered
 		);
+
+		// invulnerables are sorted
+		let not_sort_new_set = vec![2, 1, 5, 4, 3];
+		let mut sort_new_set = not_sort_new_set.clone(); 
+		sort_new_set.sort();
+		assert_ok!(CollatorSelection::set_invulnerables(
+			RuntimeOrigin::signed(RootAccount::get()),
+			not_sort_new_set.clone()
+		));
+		assert_eq!(CollatorSelection::invulnerables(), sort_new_set);
 	});
 }
 
 #[test]
 fn add_invulnerable_works() {
 	new_test_ext().execute_with(|| {
-		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
-		let new = 3;
-
-		// cannot add with non-root
-		assert_noop!(
-			CollatorSelection::add_invulnerable(RuntimeOrigin::signed(1), new.clone()),
-			BadOrigin
-		);
-
-		// cannot add invulnerable without associated validator keys
-		let no_validator = 7;
-		assert_noop!(
-			CollatorSelection::add_invulnerable(
-				RuntimeOrigin::signed(RootAccount::get()),
-				no_validator.clone()
-			),
-			Error::<Test>::ValidatorNotRegistered
-		);
+		let new = 4;
 
 		// function runs
 		assert_ok!(CollatorSelection::add_invulnerable(
@@ -100,20 +93,45 @@ fn add_invulnerable_works() {
 
 		// new element is now part of the invulnerables list
 		assert!(CollatorSelection::invulnerables().to_vec().contains(&new));
+
+		// cannot add with non-root
+		assert_noop!(
+			CollatorSelection::add_invulnerable(RuntimeOrigin::signed(1), new.clone()),
+			BadOrigin
+		);
+
+		// cannot add invulnerable without associated validator keys
+		let no_validator = 7;
+		assert_noop!(
+			CollatorSelection::add_invulnerable(
+				RuntimeOrigin::signed(RootAccount::get()),
+				no_validator.clone()
+			),
+			Error::<Test>::ValidatorNotRegistered
+		);
 	});
 }
 
 #[test]
 fn remove_invulnerable_works() {
 	new_test_ext().execute_with(|| {
-		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
-		let to_remove = 1;
-
-		// cannot remove with non-root
+		//element not in order cannot be removed
+		let to_remove_2 = 2;
 		assert_noop!(
-			CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(1), to_remove.clone()),
-			BadOrigin
+			CollatorSelection::remove_invulnerable(
+				RuntimeOrigin::signed(RootAccount::get()),
+				to_remove_2.clone()
+			),
+			Error::<Test>::Permission
 		);
+
+		// this is to work with a sorted vector from now on
+		CollatorSelection::set_invulnerables(
+			RuntimeOrigin::signed(RootAccount::get()),
+			vec![1, 2]
+		);
+		
+		let to_remove = 1;
 
 		// function runs
 		assert_ok!(CollatorSelection::remove_invulnerable(
@@ -132,6 +150,22 @@ fn remove_invulnerable_works() {
 
 		// element is no longer part of the list
 		assert!(!CollatorSelection::invulnerables().to_vec().contains(&to_remove));
+
+		//non invulnerable cannot be removed
+		let to_remove_3 = 3;
+		assert_noop!(
+			CollatorSelection::remove_invulnerable(
+				RuntimeOrigin::signed(RootAccount::get()),
+				to_remove_3.clone()
+			),
+			Error::<Test>::NotInvulnerable
+		);
+
+		// cannot remove with non-root
+		assert_noop!(
+			CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(1), to_remove.clone()),
+			BadOrigin
+		);
 	});
 }
 
@@ -216,7 +250,7 @@ fn cannot_unregister_candidate_if_too_few() {
 #[test]
 fn cannot_register_as_candidate_if_invulnerable() {
 	new_test_ext().execute_with(|| {
-		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+		assert_eq!(CollatorSelection::invulnerables(), vec![2, 1]);
 
 		// can't 1 because it is invulnerable.
 		assert_noop!(
@@ -279,7 +313,7 @@ fn register_as_candidate_works() {
 		assert_eq!(CollatorSelection::desired_candidates(), 2);
 		assert_eq!(CollatorSelection::candidacy_bond(), 10);
 		assert_eq!(CollatorSelection::candidates(), Vec::new());
-		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+		assert_eq!(CollatorSelection::invulnerables(), vec![2, 1]);
 
 		// take two endowed, non-invulnerables accounts.
 		assert_eq!(Balances::free_balance(&3), 100);
@@ -373,34 +407,34 @@ fn session_management_works() {
 		initialize_to_block(1);
 
 		assert_eq!(SessionChangeBlock::get(), 0);
-		assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
+		assert_eq!(SessionHandlerCollators::get(), vec![2, 1]);
 
 		initialize_to_block(4);
 
 		assert_eq!(SessionChangeBlock::get(), 0);
-		assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
+		assert_eq!(SessionHandlerCollators::get(), vec![2, 1]);
 
 		// add a new collator
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)));
 
 		// session won't see this.
-		assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
+		assert_eq!(SessionHandlerCollators::get(), vec![2, 1]);
 		// but we have a new candidate.
 		assert_eq!(CollatorSelection::candidates().len(), 1);
 
 		initialize_to_block(10);
 		assert_eq!(SessionChangeBlock::get(), 10);
 		// pallet-session has 1 session delay; current validators are the same.
-		assert_eq!(Session::validators(), vec![1, 2]);
+		assert_eq!(Session::validators(), vec![2, 1]);
 		// queued ones are changed, and now we have 3.
 		assert_eq!(Session::queued_keys().len(), 3);
 		// session handlers (aura, et. al.) cannot see this yet.
-		assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
+		assert_eq!(SessionHandlerCollators::get(), vec![2, 1]);
 
 		initialize_to_block(20);
 		assert_eq!(SessionChangeBlock::get(), 20);
 		// changed are now reflected to session handlers.
-		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 3]);
+		assert_eq!(SessionHandlerCollators::get(), vec![2, 1, 3]);
 	});
 }
 
@@ -417,13 +451,13 @@ fn kick_mechanism() {
 		// 4 authored this block, gets to stay 3 was kicked
 		assert_eq!(CollatorSelection::candidates().len(), 1);
 		// 3 will be kicked after 1 session delay
-		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 3, 4]);
+		assert_eq!(SessionHandlerCollators::get(), vec![2, 1, 3, 4]);
 		let collator = CandidateInfo { who: 4, deposit: 10 };
 		assert_eq!(CollatorSelection::candidates(), vec![collator]);
 		assert_eq!(CollatorSelection::last_authored_block(4), 20);
 		initialize_to_block(30);
 		// 3 gets kicked after 1 session delay
-		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 4]);
+		assert_eq!(SessionHandlerCollators::get(), vec![2, 1, 4]);
 		// kicked collator gets funds back
 		assert_eq!(Balances::free_balance(3), 100);
 	});
@@ -442,13 +476,13 @@ fn should_not_kick_mechanism_too_few() {
 		// 4 authored this block, 5 gets to stay too few 3 was kicked
 		assert_eq!(CollatorSelection::candidates().len(), 1);
 		// 3 will be kicked after 1 session delay
-		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 3, 5]);
+		assert_eq!(SessionHandlerCollators::get(), vec![2, 1, 3, 5]);
 		let collator = CandidateInfo { who: 5, deposit: 10 };
 		assert_eq!(CollatorSelection::candidates(), vec![collator]);
 		assert_eq!(CollatorSelection::last_authored_block(4), 20);
 		initialize_to_block(30);
 		// 3 gets kicked after 1 session delay
-		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 5]);
+		assert_eq!(SessionHandlerCollators::get(), vec![2, 1, 5]);
 		// kicked collator gets funds back
 		assert_eq!(Balances::free_balance(3), 100);
 	});

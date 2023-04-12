@@ -363,6 +363,11 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
 
+			let invulnerables = Self::invulnerables().to_vec();
+			let mut sorted_invulnerables = invulnerables.clone();
+			sorted_invulnerables.sort();
+			ensure!(invulnerables == sorted_invulnerables, Error::<T>::Permission);
+
 			<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
 				let pos = invulnerables
 					.binary_search(&to_remove)
