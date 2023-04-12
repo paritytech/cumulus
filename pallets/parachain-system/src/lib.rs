@@ -596,12 +596,24 @@ pub mod pallet {
 		Unauthorized,
 	}
 
+	/// Maximum number of latest included block descendants the runtime is allowed to accept. In other words,
+	/// these are ancestor of the block being currently executed, not yet sent to the relay chain runtime.
+	///
+	/// This value is optional, but once set to `Some` by the governance, should never go back to `None`.
+	/// Requires latest included para head to be present in the relay chain storage proof.
 	#[pallet::storage]
 	pub(super) type MaxUnincludedLen<T: Config> = StorageValue<_, T::BlockNumber, OptionQuery>;
 
+	/// Latest included block descendants the runtime accepted. In other words, these are
+	/// ancestor of the block being currently executed, not yet sent to the relay chain runtime.
+	///
+	/// The segment length is limited by [`MaxUnincludedLen`].
 	#[pallet::storage]
 	pub(super) type UnincludedSegment<T: Config> = StorageValue<_, Vec<Ancestor>, ValueQuery>;
 
+	/// Storage field that keeps track of bandwidth used by the unincluded segment
+	/// along with the latest HRMP watermark. Used for limiting the acceptance of new
+	/// blocks with respect to relay chain constraints.
 	#[pallet::storage]
 	pub(super) type AggregatedUnincludedSegment<T: Config> =
 		StorageValue<_, SegmentTracker, OptionQuery>;

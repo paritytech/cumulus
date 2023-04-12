@@ -214,7 +214,7 @@ impl UsedBandwidth {
 	}
 }
 
-/// Ancestors of the block being currently executed which are not yet included
+/// Ancestor of the block being currently executed, not yet included
 /// into the relay chain.
 #[derive(Encode, Decode, TypeInfo)]
 pub struct Ancestor {
