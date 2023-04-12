@@ -20,6 +20,7 @@
 //! Unincluded segment describes a chain of latest included block descendants, which are not yet
 //! sent to relay chain.
 
+use super::relay_state_snapshot::MessagingStateSnapshot;
 use codec::{Decode, Encode};
 use cumulus_primitives_core::{relay_chain, ParaId};
 use scale_info::TypeInfo;
@@ -45,7 +46,31 @@ pub struct TotalBandwidthLimits {
 	pub dmp_remaining_messages: u32,
 }
 
+impl TotalBandwidthLimits {
+	/// Creates new limits from the messaging state.
+	pub fn new(messaging_state: &MessagingStateSnapshot, dmp_remaining_messages: u32) -> Self {
+		let (ump_messages_remaining, ump_bytes_remaining) =
+			messaging_state.relay_dispatch_queue_size;
+		let hrmp_outgoing = messaging_state
+			.egress_channels
+			.iter()
+			.map(|(id, channel)| {
+				(
+					*id,
+					HrmpOutboundLimits {
+						bytes_remaining: channel.max_total_size,
+						messages_remaining: channel.max_capacity,
+					},
+				)
+			})
+			.collect();
+
+		Self { ump_messages_remaining, ump_bytes_remaining, hrmp_outgoing, dmp_remaining_messages }
+	}
+}
+
 /// The error type for updating bandwidth used by a segment.
+#[derive(Debug)]
 pub enum BandwidthUpdateError {
 	/// Too many messages submitted to HRMP channel.
 	HrmpMessagesOverflow {
@@ -235,6 +260,11 @@ pub struct Ancestor {
 }
 
 impl Ancestor {
+	/// Creates new ancestor without validating the bandwidth used.
+	pub fn new_unchecked(used_bandwidth: UsedBandwidth, para_head: relay_chain::HeadData) -> Self {
+		Self { used_bandwidth, para_head }
+	}
+
 	/// Returns [`UsedBandwidth`] of this block.
 	pub fn used_bandwidth(&self) -> &UsedBandwidth {
 		&self.used_bandwidth
@@ -248,7 +278,7 @@ impl Ancestor {
 
 /// Struct that keeps track of bandwidth used by the unincluded part of the chain
 /// along with the latest HRMP watermark.
-#[derive(Encode, Decode, TypeInfo)]
+#[derive(Default, Encode, Decode, TypeInfo)]
 pub struct SegmentTracker {
 	/// Bandwidth used by the segment.
 	used_bandwidth: UsedBandwidth,
@@ -264,7 +294,7 @@ impl SegmentTracker {
 		hrmp_watermark: relay_chain::BlockNumber,
 		limits: &TotalBandwidthLimits,
 	) -> Result<(), BandwidthUpdateError> {
-		if hrmp_watermark <= self.hrmp_watermark {
+		if self.hrmp_watermark > 0 && hrmp_watermark <= self.hrmp_watermark {
 			return Err(BandwidthUpdateError::InvalidHrmpWatermark {
 				submitted: hrmp_watermark,
 				latest: self.hrmp_watermark,

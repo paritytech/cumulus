@@ -48,7 +48,7 @@ use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{Block as BlockT, BlockNumberProvider, Hash},
+	traits::{Block as BlockT, BlockNumberProvider, Hash, Zero},
 	transaction_validity::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidity,
 		ValidTransaction,
@@ -65,7 +65,9 @@ pub mod validate_block;
 #[cfg(test)]
 mod tests;
 
-use unincluded_segment::{Ancestor, SegmentTracker};
+use unincluded_segment::{
+	Ancestor, HrmpChannelUpdate, SegmentTracker, TotalBandwidthLimits, UsedBandwidth,
+};
 
 /// Register the `validate_block` function that is used by parachains to validate blocks on a
 /// validator.
@@ -235,7 +237,7 @@ pub mod pallet {
 				},
 			};
 
-			<PendingUpwardMessages<T>>::mutate(|up| {
+			let (ump_msg_count, ump_total_bytes) = <PendingUpwardMessages<T>>::mutate(|up| {
 				let (count, size) = relevant_messaging_state.relay_dispatch_queue_size;
 
 				let available_capacity = cmp::min(
@@ -246,24 +248,32 @@ pub mod pallet {
 
 				// Count the number of messages we can possibly fit in the given constraints, i.e.
 				// available_capacity and available_size.
-				let num = up
+				let (num, total_size) = up
 					.iter()
-					.scan((available_capacity as usize, available_size as usize), |state, msg| {
-						let (cap_left, size_left) = *state;
-						match (cap_left.checked_sub(1), size_left.checked_sub(msg.len())) {
-							(Some(new_cap), Some(new_size)) => {
+					.scan((0u32, 0u32), |state, msg| {
+						let (cap_used, size_used) = *state;
+						let new_cap = cap_used.saturating_add(1);
+						let new_size = size_used.saturating_add(msg.len() as u32);
+						match available_capacity
+							.checked_sub(new_cap)
+							.and(available_size.checked_sub(new_size))
+						{
+							Some(_) => {
 								*state = (new_cap, new_size);
-								Some(())
+								Some(*state)
 							},
 							_ => None,
 						}
 					})
-					.count();
+					.last()
+					.unwrap_or_default();
 
 				// TODO: #274 Return back messages that do not longer fit into the queue.
 
-				UpwardMessages::<T>::put(&up[..num]);
-				*up = up.split_off(num);
+				UpwardMessages::<T>::put(&up[..num as usize]);
+				*up = up.split_off(num as usize);
+
+				(num, total_size)
 			});
 
 			// Sending HRMP messages is a little bit more involved. There are the following
@@ -285,6 +295,40 @@ pub mod pallet {
 					.map(|(recipient, data)| OutboundHrmpMessage { recipient, data })
 					.collect::<Vec<_>>();
 
+			if MaxUnincludedLen::<T>::get().filter(|len| !len.is_zero()).is_some() {
+				let dmp_remaining_messages = PendingDownwardMessages::<T>::get().len() as u32;
+				let limits =
+					TotalBandwidthLimits::new(&relevant_messaging_state, dmp_remaining_messages);
+
+				let hrmp_outgoing = outbound_messages
+					.iter()
+					.map(|msg| {
+						(
+							msg.recipient,
+							HrmpChannelUpdate { msg_count: 1, total_bytes: msg.data.len() as u32 },
+						)
+					})
+					.collect();
+				let dmp_processed_count = ProcessedDownwardMessages::<T>::get();
+				let used_bandwidth = UsedBandwidth {
+					ump_msg_count,
+					ump_total_bytes,
+					hrmp_outgoing,
+					dmp_processed_count,
+				};
+				// The bandwidth constructed was ensured to satisfy relay chain constraints.
+				let ancestor = Ancestor::new_unchecked(used_bandwidth, todo!());
+
+				// Check in `on_initialize` guarantees there's space for this block.
+				UnincludedSegment::<T>::append(ancestor);
+
+				let watermark = HrmpWatermark::<T>::get();
+				AggregatedUnincludedSegment::<T>::mutate(|agg| {
+					let agg = agg.get_or_insert_with(SegmentTracker::default);
+					agg.append(&ancestor, watermark, &limits)
+						.expect("unincluded segment limits exceeded");
+				});
+			}
 			HrmpOutboundMessages::<T>::put(outbound_messages);
 		}
 
@@ -327,7 +371,10 @@ pub mod pallet {
 				// Weight used for reading para head.
 				weight += T::DbWeight::get().reads(2);
 
-				if max_len > 0u32.into() {
+				if !max_len.is_zero() {
+					// Weight used by `on_finalize` in case the len is non-zero.
+					weight += T::DbWeight::get().reads_writes(4, 2);
+
 					let (dropped, left_count): (Vec<Ancestor>, u32) =
 						<UnincludedSegment<T>>::mutate(|chain| {
 							// Drop everything up to the block with an included para head, if present.
@@ -371,8 +418,9 @@ pub mod pallet {
 			UpwardMessages::<T>::kill();
 			HrmpOutboundMessages::<T>::kill();
 			CustomValidationHeadData::<T>::kill();
+			PendingDownwardMessages::<T>::kill();
 
-			weight += T::DbWeight::get().writes(6);
+			weight += T::DbWeight::get().writes(7);
 
 			// Here, in `on_initialize` we must report the weight for both `on_initialize` and
 			// `on_finalize`.
@@ -403,6 +451,9 @@ pub mod pallet {
 				3 + hrmp_max_message_num_per_candidate as u64,
 				4 + hrmp_max_message_num_per_candidate as u64,
 			);
+
+			// Always try to read `MaxUnincludedLen` in `on_finalize`.
+			weight += T::DbWeight::get().reads(1);
 
 			weight
 		}
@@ -496,6 +547,7 @@ pub mod pallet {
 			<RelayStateProof<T>>::put(relay_chain_state);
 			<RelevantMessagingState<T>>::put(relevant_messaging_state.clone());
 			<HostConfiguration<T>>::put(host_config);
+			<PendingDownwardMessages<T>>::put(downward_messages.clone());
 
 			<T::OnSystemEvent as OnSystemEvent>::on_validation_data(&vfp);
 
@@ -633,6 +685,13 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type AggregatedUnincludedSegment<T: Config> =
 		StorageValue<_, SegmentTracker, OptionQuery>;
+
+	/// Downward messages sent by the relay chain waiting to be processed.
+	///
+	/// Updated on every block.
+	#[pallet::storage]
+	pub(super) type PendingDownwardMessages<T: Config> =
+		StorageValue<_, Vec<InboundDownwardMessage>, ValueQuery>;
 
 	/// In case of a scheduled upgrade, this storage field contains the validation code to be applied.
 	///
