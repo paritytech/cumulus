@@ -301,7 +301,7 @@ pub mod pallet {
 
 			// If `MaxUnincludedLen` is present in the storage, parachain head
 			// is always expected to be included into the relay storage proof.
-			let para_head = <MaxUnincludedLen<T>>::get().map(|_max_len| {
+			let para_head_with_len = <MaxUnincludedLen<T>>::get().map(|max_len| {
 				let relay_chain_state = Self::relay_state_proof()
 					.expect("relay state proof must be present in storage");
 				let validation_data =
@@ -313,38 +313,54 @@ pub mod pallet {
 					relay_chain_state,
 				)
 				.expect("Invalid relay chain state proof");
-				relay_state_proof
-					.read_included_para_head()
-					.expect("Invalid para head in relay chain state proof")
+				(
+					relay_state_proof
+						.read_included_para_head()
+						.expect("Invalid para head in relay chain state proof"),
+					max_len,
+				)
 			});
 			weight += T::DbWeight::get().reads(1);
 
 			// Update unincluded segment related storage values.
-			if let Some(para_head) = para_head {
+			if let Some((para_head, max_len)) = para_head_with_len {
 				// Weight used for reading para head.
 				weight += T::DbWeight::get().reads(2);
 
-				let dropped: Vec<Ancestor> = <UnincludedSegment<T>>::mutate(|chain| {
-					// Drop everything up to the block with an included para head, if present.
-					let idx = chain
-						.iter()
-						.position(|block| block.para_head() == &para_head)
-						.map_or(0, |idx| idx + 1); // inclusive.
+				if max_len > 0u32.into() {
+					let (dropped, left_count): (Vec<Ancestor>, u32) =
+						<UnincludedSegment<T>>::mutate(|chain| {
+							// Drop everything up to the block with an included para head, if present.
+							let idx = chain
+								.iter()
+								.position(|block| block.para_head() == &para_head)
+								.map_or(0, |idx| idx + 1); // inclusive.
 
-					chain.drain(..idx).collect()
-				});
-				weight += T::DbWeight::get().reads_writes(1, 1);
-
-				if !dropped.is_empty() {
-					<AggregatedUnincludedSegment<T>>::mutate(|agg| {
-						let agg = agg.as_mut().expect(
-							"dropped part of the segment wasn't empty, hence value exists; qed",
-						);
-						for block in dropped {
-							agg.subtract(&block);
-						}
-					});
+							let left_count = (idx..chain.len()).count() as u32;
+							let dropped = chain.drain(..idx).collect();
+							(dropped, left_count)
+						});
 					weight += T::DbWeight::get().reads_writes(1, 1);
+
+					// sanity-check there's place for the block at finalization phase.
+					//
+					// TODO: this potentially restricts parachains from decreasing `MaxUnincludedLen` value.
+					assert!(
+						max_len > left_count.into(),
+						"no space left for the block in the unincluded segment"
+					);
+
+					if !dropped.is_empty() {
+						<AggregatedUnincludedSegment<T>>::mutate(|agg| {
+							let agg = agg.as_mut().expect(
+								"dropped part of the segment wasn't empty, hence value exists; qed",
+							);
+							for block in dropped {
+								agg.subtract(&block);
+							}
+						});
+						weight += T::DbWeight::get().reads_writes(1, 1);
+					}
 				}
 			}
 
