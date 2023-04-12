@@ -121,7 +121,7 @@ pub struct TakeFirstAssetTrader<
 	AccountId,
 	FeeCharger: ChargeWeightInFungibles<AccountId, ConcreteAssets>,
 	Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-	ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId> + fungibles::Balanced<AccountId>,
+	ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
 	HandleRefund: TakeRevenue,
 >(
 	Option<AssetTraderRefunder>,
@@ -131,9 +131,7 @@ impl<
 		AccountId,
 		FeeCharger: ChargeWeightInFungibles<AccountId, ConcreteAssets>,
 		Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-		ConcreteAssets: fungibles::Mutate<AccountId>
-			+ fungibles::Transfer<AccountId>
-			+ fungibles::Balanced<AccountId>,
+		ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
 		HandleRefund: TakeRevenue,
 	> WeightTrader
 	for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, ConcreteAssets, HandleRefund>
@@ -260,9 +258,7 @@ impl<
 		AccountId,
 		FeeCharger: ChargeWeightInFungibles<AccountId, ConcreteAssets>,
 		Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-		ConcreteAssets: fungibles::Mutate<AccountId>
-			+ fungibles::Transfer<AccountId>
-			+ fungibles::Balanced<AccountId>,
+		ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
 		HandleRefund: TakeRevenue,
 	> Drop for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, ConcreteAssets, HandleRefund>
 {
@@ -315,6 +311,14 @@ pub trait ChargeWeightInFungibles<AccountId, Assets: fungibles::Inspect<AccountI
 mod tests {
 	use super::*;
 	use cumulus_primitives_core::UpwardMessage;
+	use frame_support::{
+		assert_ok,
+		dispatch::DispatchError,
+		traits::tokens::{
+			DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence,
+		},
+	};
+	use xcm_executor::{traits::Error, Assets};
 
 	/// Validates [`validate`] for required Some(destination) and Some(message)
 	struct OkFixedXcmHashWithAssertingRequiredInputsSender;
@@ -408,6 +412,133 @@ mod tests {
 				ParentAsUmp<OtherErrorUpwardMessageSender, (), ()>,
 				OkFixedXcmHashWithAssertingRequiredInputsSender
 			)>(dest.into(), message)
+		);
+	}
+
+	#[test]
+	fn take_first_asset_trader_buy_weight_called_twice_throws_error() {
+		const AMOUNT: u128 = 100;
+
+		// prepare prerequisites to instantiate `TakeFirstAssetTrader`
+		type TestAccountId = u32;
+		type TestAssetId = u32;
+		type TestBalance = u128;
+		struct TestAssets;
+		impl MatchesFungibles<TestAssetId, TestBalance> for TestAssets {
+			fn matches_fungibles(a: &MultiAsset) -> Result<(TestAssetId, TestBalance), Error> {
+				match a {
+					MultiAsset { fun: Fungible(amount), id: Concrete(_id) } => Ok((1, *amount)),
+					_ => Err(Error::AssetNotHandled),
+				}
+			}
+		}
+		impl fungibles::Inspect<TestAccountId> for TestAssets {
+			type AssetId = TestAssetId;
+			type Balance = TestBalance;
+
+			fn total_issuance(_: Self::AssetId) -> Self::Balance {
+				todo!()
+			}
+
+			fn minimum_balance(_: Self::AssetId) -> Self::Balance {
+				0
+			}
+
+			fn balance(_: Self::AssetId, _: &TestAccountId) -> Self::Balance {
+				todo!()
+			}
+
+			fn total_balance(_: Self::AssetId, _: &TestAccountId) -> Self::Balance {
+				todo!()
+			}
+
+			fn reducible_balance(
+				_: Self::AssetId,
+				_: &TestAccountId,
+				_: Preservation,
+				_: Fortitude,
+			) -> Self::Balance {
+				todo!()
+			}
+
+			fn can_deposit(
+				_: Self::AssetId,
+				_: &TestAccountId,
+				_: Self::Balance,
+				_: Provenance,
+			) -> DepositConsequence {
+				todo!()
+			}
+
+			fn can_withdraw(
+				_: Self::AssetId,
+				_: &TestAccountId,
+				_: Self::Balance,
+			) -> WithdrawConsequence<Self::Balance> {
+				todo!()
+			}
+
+			fn asset_exists(_: Self::AssetId) -> bool {
+				todo!()
+			}
+		}
+		impl fungibles::Mutate<TestAccountId> for TestAssets {}
+		impl fungibles::Balanced<TestAccountId> for TestAssets {
+			type OnDropCredit = fungibles::DecreaseIssuance<TestAccountId, Self>;
+			type OnDropDebt = fungibles::IncreaseIssuance<TestAccountId, Self>;
+		}
+		impl fungibles::Unbalanced<TestAccountId> for TestAssets {
+			fn handle_dust(_: fungibles::Dust<TestAccountId, Self>) {
+				todo!()
+			}
+			fn write_balance(
+				_: Self::AssetId,
+				_: &TestAccountId,
+				_: Self::Balance,
+			) -> Result<Option<Self::Balance>, DispatchError> {
+				todo!()
+			}
+
+			fn set_total_issuance(_: Self::AssetId, _: Self::Balance) {
+				todo!()
+			}
+		}
+
+		struct FeeChargerAssetsHandleRefund;
+		impl ChargeWeightInFungibles<TestAccountId, TestAssets> for FeeChargerAssetsHandleRefund {
+			fn charge_weight_in_fungibles(
+				_: <TestAssets as Inspect<TestAccountId>>::AssetId,
+				_: Weight,
+			) -> Result<<TestAssets as Inspect<TestAccountId>>::Balance, XcmError> {
+				Ok(AMOUNT)
+			}
+		}
+		impl TakeRevenue for FeeChargerAssetsHandleRefund {
+			fn take_revenue(_: MultiAsset) {}
+		}
+
+		// create new instance
+		type Trader = TakeFirstAssetTrader<
+			TestAccountId,
+			FeeChargerAssetsHandleRefund,
+			TestAssets,
+			TestAssets,
+			FeeChargerAssetsHandleRefund,
+		>;
+		let mut trader = <Trader as WeightTrader>::new();
+
+		// prepare test data
+		let asset: MultiAsset = (Here, AMOUNT).into();
+		let payment = Assets::from(asset.clone());
+		let weight_to_buy = Weight::from_parts(1_000, 1_000);
+
+		// lets do first call (success)
+		assert_ok!(trader.buy_weight(weight_to_buy, payment.clone()));
+
+		// lets do second call (error)
+		assert_eq!(
+			trader.buy_weight(weight_to_buy, payment.clone()),
+			Err(XcmError::NotWithdrawable)
 		);
 	}
 }

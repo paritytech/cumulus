@@ -54,10 +54,12 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
-use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
+use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
-use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
+use xcm_config::{
+	FellowshipLocation, GovernanceLocation, XcmConfig, XcmOriginToTransactDispatchOrigin,
+};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -67,12 +69,11 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
-// XCM Imports
-use crate::xcm_config::KsmRelayLocation;
 use parachains_common::{
 	opaque, AccountId, Balance, BlockNumber, Hash, Header, Index, Signature,
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
+// XCM Imports
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
 
@@ -127,10 +128,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("bridge-hub-kusama"),
 	impl_name: create_runtime_str!("bridge-hub-kusama"),
 	authoring_version: 1,
-	spec_version: 9370,
+	spec_version: 9400,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 1,
+	transaction_version: 3,
 	state_version: 1,
 };
 
@@ -231,8 +232,6 @@ impl pallet_timestamp::Config for Runtime {
 
 impl pallet_authorship::Config for Runtime {
 	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
-	type UncleGenerations = ConstU32<0>;
-	type FilterUncle = ();
 	type EventHandler = (CollatorSelection,);
 }
 
@@ -252,6 +251,10 @@ impl pallet_balances::Config for Runtime {
 	type MaxLocks = ConstU32<50>;
 	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = [u8; 8];
+	type HoldIdentifier = ();
+	type FreezeIdentifier = ();
+	type MaxHolds = ConstU32<0>;
+	type MaxFreezes = ConstU32<0>;
 }
 
 parameter_types! {
@@ -289,11 +292,15 @@ impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
-// TODO: map gov2 origins here - after merge https://github.com/paritytech/cumulus/pull/1895
-/// Privileged origin that represents Root or the majority of the Relay Chain Council.
-pub type RootOrExecutiveSimpleMajority = EitherOfDiverse<
+parameter_types! {
+	// Fellows pluralistic body.
+	pub const FellowsBodyId: BodyId = BodyId::Technical;
+}
+
+/// Privileged origin that represents Root or Fellows pluralistic body.
+pub type RootOrFellows = EitherOfDiverse<
 	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<KsmRelayLocation, ExecutiveBody>>,
+	EnsureXcm<IsVoiceOfBody<FellowshipLocation, FellowsBodyId>>,
 >;
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
@@ -302,7 +309,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-	type ControllerOrigin = RootOrExecutiveSimpleMajority;
+	type ControllerOrigin = RootOrFellows;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
 	type PriceForSiblingDelivery = ();
@@ -340,12 +347,15 @@ impl pallet_aura::Config for Runtime {
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
 	pub const SessionLength: BlockNumber = 6 * HOURS;
-	pub const ExecutiveBody: BodyId = BodyId::Executive;
+	// StakingAdmin pluralistic body.
+	pub const StakingAdminBodyId: BodyId = BodyId::Defense;
 }
 
-// TODO: map gov2 origins here - after merge https://github.com/paritytech/cumulus/pull/1895
-/// We allow root and the Relay Chain council to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin = RootOrExecutiveSimpleMajority;
+/// We allow root, the StakingAdmin to execute privileged collator selection operations.
+pub type CollatorSelectionUpdateOrigin = EitherOfDiverse<
+	EnsureRoot<AccountId>,
+	EnsureXcm<IsVoiceOfBody<GovernanceLocation, StakingAdminBodyId>>,
+>;
 
 impl pallet_collator_selection::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -407,7 +417,7 @@ construct_runtime!(
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
 
 		// Collator support. The order of these 4 are important and shall not change.
-		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
+		Authorship: pallet_authorship::{Pallet, Storage} = 20,
 		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
@@ -476,6 +486,14 @@ impl_runtime_apis! {
 	impl sp_api::Metadata<Block> for Runtime {
 		fn metadata() -> OpaqueMetadata {
 			OpaqueMetadata::new(Runtime::metadata().into())
+		}
+
+		fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+			Runtime::metadata_at_version(version)
+		}
+
+		fn metadata_versions() -> sp_std::vec::Vec<u32> {
+			Runtime::metadata_versions()
 		}
 	}
 
@@ -546,6 +564,12 @@ impl_runtime_apis! {
 			len: u32,
 		) -> pallet_transaction_payment::FeeDetails<Balance> {
 			TransactionPayment::query_fee_details(uxt, len)
+		}
+		fn query_weight_to_fee(weight: Weight) -> Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+		fn query_length_to_fee(length: u32) -> Balance {
+			TransactionPayment::length_to_fee(length)
 		}
 	}
 
@@ -663,7 +687,7 @@ impl_runtime_apis! {
 					Err(BenchmarkError::Skip)
 				}
 
-				fn universal_alias() -> Result<Junction, BenchmarkError> {
+				fn universal_alias() -> Result<(MultiLocation, Junction), BenchmarkError> {
 					Err(BenchmarkError::Skip)
 				}
 
@@ -683,6 +707,11 @@ impl_runtime_apis! {
 				}
 
 				fn unlockable_asset() -> Result<(MultiLocation, MultiLocation, MultiAsset), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+
+				fn export_message_origin_and_destination(
+				) -> Result<(MultiLocation, NetworkId, InteriorMultiLocation), BenchmarkError> {
 					Err(BenchmarkError::Skip)
 				}
 			}

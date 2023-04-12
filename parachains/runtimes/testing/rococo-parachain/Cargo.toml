@@ -7,7 +7,7 @@ description = "Simple runtime used by the rococo parachain(s)"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
-scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", optional = true, default-features = false, branch = "master" }
@@ -55,7 +55,7 @@ parachains-common = { path = "../../../common", default-features = false }
 parachain-info = { path = "../../../pallets/parachain-info", default-features = false }
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
 [features]
 default = [ "std" ]
@@ -99,9 +99,11 @@ std = [
 	"cumulus-primitives-utility/std",
 	"parachain-info/std",
 	"parachains-common/std",
+	"substrate-wasm-builder",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
+	"xcm-builder/runtime-benchmarks",
 ]
