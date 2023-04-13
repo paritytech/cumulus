@@ -15,7 +15,38 @@
 
 //! # Bridge Transfer Pallet
 //!
-//! A utility which could help transfer through bridges, e.g. move assets between different global consensus...
+//! Module which could help with different transfers through bridges,
+//! e.g. move assets between different global consensus...
+//!
+//! ## Overview
+//!
+//! Pallet supports configuration for two independent scenarios:
+//!
+//! ### Transfer out
+//!
+//! * see (Config for transfer out) in the code
+//! * if you want to allow initiate bridge transfer from runtime,
+//!   actually pallet supports asset transfer and ping with dedicated extrinsics `transfer_asset_via_bridge` / `ping_via_bridge`
+//! * e.g. for asset transfer with correct configuration it sends `ReserveAssetDeposited` over bridge,
+//!   you can configure bridge location and allowed target location with `AllowedExporters`
+//!
+//! ### Transfer in
+//!
+//! * see (Config for transfer in) in the code
+//! * e.g. if you want to allow process xcm `UniversalOrigin` instruction,
+//!   you can configure "allowed universal aliases" here and then use it for `xcm_executor::Config`:
+//!   `type UniversalAliases = AllowedUniversalAliasesOf<Runtime>;`
+//! * e.g. if you want to allow process xcm `ReserveAssetDeposited` instruction,
+//!   you can configure "allowed reserve locations" here and then use it for `xcm_executor::Config`:
+//!   ```nocompile
+//!   type IsReserve = IsAllowedReserveOf<
+//!			Runtime,
+//!			IsDifferentGlobalConsensusConcreteAsset<UniversalLocationNetworkId>,
+//!	  >;
+//!   ```
+//!
+//! Transfer in/out are independent so you can configure just to receive or just to send part.
+//! All configuration is done by dedicated extrinsics under `AdminOrigin` so for example runtime can allow to change this configuration just by governance.
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -189,6 +220,7 @@ pub mod pallet {
 	}
 
 	/// Details of configured bridges which are allowed for **transfer out**.
+	/// (Config for transfer out)
 	#[pallet::storage]
 	#[pallet::getter(fn allowed_exporters)]
 	pub(super) type AllowedExporters<T: Config> =
