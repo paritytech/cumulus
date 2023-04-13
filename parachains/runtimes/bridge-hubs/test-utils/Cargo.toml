@@ -1,0 +1,50 @@
+[package]
+name = "bridge-hub-test-utils"
+version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2021"
+description = "Utils for BridgeHub testing"
+
+[dependencies]
+
+# Substrate
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+
+# Cumulus
+parachains-common = { path = "../../../common", default-features = false }
+cumulus-primitives-core = { path = "../../../../primitives/core", default-features = false }
+cumulus-pallet-parachain-system = { path = "../../../../pallets/parachain-system", default-features = false }
+cumulus-primitives-parachain-inherent = { path = "../../../../primitives/parachain-inherent", default-features = false }
+cumulus-test-relay-sproof-builder = { path = "../../../../test/relay-sproof-builder", default-features = false }
+parachain-info = { path = "../../../../parachains/pallets/parachain-info", default-features = false }
+asset-test-utils = { path = "../../assets/test-utils"}
+
+# Polkadot
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false, optional = true }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+
+[features]
+default = [ "std" ]
+std = [
+	"frame-support/std",
+	"frame-system/std",
+	"parachains-common/std",
+	"parachain-info/std",
+	"cumulus-primitives-core/std",
+	"cumulus-pallet-parachain-system/std",
+	"cumulus-primitives-parachain-inherent/std",
+	"cumulus-test-relay-sproof-builder/std",
+	"polkadot-parachain/std",
+	"pallet-xcm/std",
+	"sp-runtime/std",
+	"xcm/std",
+	"xcm-builder/std",
+	"xcm-executor/std",
+	"asset-test-utils/std",
+]
