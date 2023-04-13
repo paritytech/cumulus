@@ -72,6 +72,9 @@ pallet-collator-selection = { path = "../../../../pallets/collator-selection", d
 parachain-info = { path = "../../../../parachains/pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../../parachains/common", default-features = false }
 
+[dev-dependencies]
+bridge-hub-test-utils = { path = "../test-utils"}
+
 [features]
 default = [
 	"std",
