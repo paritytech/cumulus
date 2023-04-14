@@ -194,7 +194,7 @@ impl<RelayerId> InboundLaneData<RelayerId> {
 }
 
 /// Outbound message details, returned by runtime APIs.
-#[derive(Clone, Encode, Decode, RuntimeDebug, PartialEq, Eq)]
+#[derive(Clone, Encode, Decode, RuntimeDebug, PartialEq, Eq, TypeInfo)]
 pub struct OutboundMessageDetails {
 	/// Nonce assigned to the message.
 	pub nonce: MessageNonce,
@@ -208,7 +208,7 @@ pub struct OutboundMessageDetails {
 }
 
 /// Inbound message details, returned by runtime APIs.
-#[derive(Clone, Encode, Decode, RuntimeDebug, PartialEq, Eq)]
+#[derive(Clone, Encode, Decode, RuntimeDebug, PartialEq, Eq, TypeInfo)]
 pub struct InboundMessageDetails {
 	/// Computed message dispatch weight.
 	///

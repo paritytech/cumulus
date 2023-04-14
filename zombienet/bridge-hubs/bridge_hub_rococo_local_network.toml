@@ -3,7 +3,7 @@ node_spawn_timeout = 240
 
 [relaychain]
 default_command = "{{POLKADOT_BINARY_PATH}}"
-default_args = [ "-lparachain=debug,xcm::weight=trace,xcm::filter_asset_location=trace,xcm::send_xcm=trace,xcm::barriers=trace,xcm::barrier=trace,xcm::execute_xcm=trace,xcm::contains=trace,xcm::execute_xcm_in_credit,xcm::process_instruction=trace,xcm::currency_adapter=trace,xcm::origin_conversion=trace,xcm::fungibles_adapter=trace,xcm::process=trace,xcm::execute=trace,xcm::should_execute=trace" ]
+default_args = [ "-lparachain=debug,xcm=trace" ]
 chain = "rococo-local"
 
 	[[relaychain.nodes]]
@@ -40,7 +40,7 @@ cumulus_based = true
 	rpc_port = 8933
 	ws_port = 8943
 	args = [
-		"-lparachain=debug,runtime::bridge-hub=trace,runtime::bridge=trace,runtime::bridge-dispatch=trace,bridge=trace,runtime::bridge-messages=trace,xcm::weight=trace,xcm::filter_asset_location=trace,xcm::send_xcm=trace,xcm::barriers=trace,xcm::barrier=trace,xcm::execute_xcm=trace,xcm::contains=trace,xcm::execute_xcm_in_credit,xcm::process_instruction=trace,xcm::currency_adapter=trace,xcm::origin_conversion=trace,xcm::fungibles_adapter=trace,xcm::process=trace,xcm::execute=trace,xcm::should_execute=trace",
+		"-lparachain=debug,runtime::bridge-hub=trace,runtime::bridge=trace,runtime::bridge-dispatch=trace,bridge=trace,runtime::bridge-messages=trace,xcm=trace",
 	]
 	extra_args = [
 		"--force-authoring", "--no-mdns", "--bootnodes {{'bob-collator'|zombie('multiAddress')}}",
@@ -55,7 +55,7 @@ cumulus_based = true
 	rpc_port = 8934
 	ws_port = 8944
 	args = [
-		"-lparachain=trace,runtime::bridge-hub=trace,runtime::bridge=trace,runtime::bridge-dispatch=trace,bridge=trace,runtime::bridge-messages=trace,xcm::weight=trace,xcm::filter_asset_location=trace,xcm::send_xcm=trace,xcm::barriers=trace,xcm::barrier=trace,xcm::execute_xcm=trace,xcm::contains=trace,xcm::execute_xcm_in_credit,xcm::process_instruction=trace,xcm::currency_adapter=trace,xcm::origin_conversion=trace,xcm::fungibles_adapter=trace,xcm::process=trace,xcm::execute=trace,xcm::should_execute=trace",
+		"-lparachain=trace,runtime::bridge-hub=trace,runtime::bridge=trace,runtime::bridge-dispatch=trace,bridge=trace,runtime::bridge-messages=trace,xcm=trace",
 	]
 	extra_args = [
 		"--force-authoring", "--no-mdns", "--bootnodes {{'alice-collator'|zombie('multiAddress')}}",
@@ -73,7 +73,7 @@ cumulus_based = true
 	ws_port = 9910
 	command = "{{POLKADOT_PARACHAIN_BINARY_PATH_FOR_ROCKMINE}}"
 	args = [
-		"-lparachain=debug,xcm::weight=trace,xcm::filter_asset_location=trace,xcm::send_xcm=trace,xcm::barriers=trace,xcm::barrier=trace,xcm::execute_xcm=trace,xcm::contains=trace,xcm::execute_xcm_in_credit,xcm::process_instruction=trace,xcm::currency_adapter=trace,xcm::origin_conversion=trace,xcm::fungibles_adapter=trace,xcm::process=trace,xcm::execute=trace,runtime::bridge-assets-transfer=trace,xcm::should_execute=trace",
+		"-lparachain=debug,xcm=trace",
 	]
 	extra_args = [
 		"--no-mdns", "--bootnodes {{'rockmine-collator2'|zombie('multiAddress')}}",
@@ -84,7 +84,7 @@ cumulus_based = true
 	name = "rockmine-collator2"
 	command = "{{POLKADOT_PARACHAIN_BINARY_PATH_FOR_ROCKMINE}}"
 	args = [
-		"-lparachain=debug,xcm::weight=trace,xcm::filter_asset_location=trace,xcm::send_xcm=trace,xcm::barriers=trace,xcm::barrier=trace,xcm::execute_xcm=trace,xcm::contains=trace,xcm::execute_xcm_in_credit,xcm::process_instruction=trace,xcm::currency_adapter=trace,xcm::origin_conversion=trace,xcm::fungibles_adapter=trace,xcm::process=trace,xcm::execute=trace,runtime::bridge-assets-transfer=trace,xcm::should_execute=trace",
+		"-lparachain=debug,xcm=trace",
 	]
 	extra_args = [
 		"--no-mdns", "--bootnodes {{'rockmine-collator1'|zombie('multiAddress')}}",
