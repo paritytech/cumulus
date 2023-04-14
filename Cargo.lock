@@ -891,21 +891,6 @@ name = "bridge-hub-test-utils"
 version = "0.1.0"
 dependencies = [
  "asset-test-utils",
- "cumulus-pallet-parachain-system",
- "cumulus-primitives-core",
- "cumulus-primitives-parachain-inherent",
- "cumulus-test-relay-sproof-builder",
- "frame-support",
- "frame-system",
- "pallet-xcm",
- "pallet-xcm-benchmarks",
- "parachain-info",
- "parachains-common",
- "polkadot-parachain",
- "sp-runtime",
- "xcm",
- "xcm-builder",
- "xcm-executor",
 ]
 
 [[package]]
