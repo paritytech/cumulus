@@ -63,7 +63,7 @@ use bp_messages::{
 	MessageKey, MessageNonce, MessagePayload, MessagesOperatingMode, OutboundLaneData,
 	OutboundMessageDetails, UnrewardedRelayersState,
 };
-use bp_runtime::{BasicOperatingMode, ChainId, OwnedBridgeModule, Size};
+use bp_runtime::{BasicOperatingMode, ChainId, OwnedBridgeModule, PreComputedSize, Size};
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{dispatch::PostDispatchInfo, ensure, fail, traits::Get};
 use sp_runtime::traits::UniqueSaturatedFrom;
@@ -90,6 +90,7 @@ pub const LOG_TARGET: &str = "runtime::bridge-messages";
 pub mod pallet {
 	use super::*;
 	use bp_messages::{ReceivalResult, ReceivedMessages};
+	use bp_runtime::RangeInclusiveExt;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -249,6 +250,22 @@ pub mod pallet {
 		/// The weight of the call assumes that the transaction always brings outbound lane
 		/// state update. Because of that, the submitter (relayer) has no benefit of not including
 		/// this data in the transaction, so reward confirmations lags should be minimal.
+		///
+		/// The call fails if:
+		///
+		/// - the pallet is halted;
+		///
+		/// - the call origin is not `Signed(_)`;
+		///
+		/// - there are too many messages in the proof;
+		///
+		/// - the proof verification procedure returns an error - e.g. because header used to craft
+		///   proof is not imported by the associated finality pallet;
+		///
+		/// - the `dispatch_weight` argument is not sufficient to dispatch all bundled messages.
+		///
+		/// The call may succeed, but some messages may not be delivered e.g. if they are not fit
+		/// into the unrewarded relayers vector.
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::receive_messages_proof_weight(proof, *messages_count, *dispatch_weight))]
 		pub fn receive_messages_proof(
@@ -324,17 +341,9 @@ pub mod pallet {
 
 				let mut lane_messages_received_status =
 					ReceivedMessages::new(lane_id, Vec::with_capacity(lane_data.messages.len()));
-				let mut is_lane_processing_stopped_no_weight_left = false;
-
 				for mut message in lane_data.messages {
 					debug_assert_eq!(message.key.lane_id, lane_id);
 					total_messages += 1;
-
-					if is_lane_processing_stopped_no_weight_left {
-						lane_messages_received_status
-							.push_skipped_for_not_enough_weight(message.key.nonce);
-						continue
-					}
 
 					// ensure that relayer has declared enough weight for dispatching next message
 					// on this lane. We can't dispatch lane messages out-of-order, so if declared
@@ -348,10 +357,8 @@ pub mod pallet {
 							message_dispatch_weight,
 							dispatch_weight_left,
 						);
-						lane_messages_received_status
-							.push_skipped_for_not_enough_weight(message.key.nonce);
-						is_lane_processing_stopped_no_weight_left = true;
-						continue
+
+						fail!(Error::<T, I>::InsufficientDispatchWeight);
 					}
 
 					let receival_result = lane.receive_message::<T::MessageDispatch, T::AccountId>(
@@ -417,10 +424,11 @@ pub mod pallet {
 		pub fn receive_messages_delivery_proof(
 			origin: OriginFor<T>,
 			proof: MessagesDeliveryProofOf<T, I>,
-			relayers_state: UnrewardedRelayersState,
-		) -> DispatchResult {
+			mut relayers_state: UnrewardedRelayersState,
+		) -> DispatchResultWithPostInfo {
 			Self::ensure_not_halted().map_err(Error::<T, I>::BridgeModule)?;
 
+			let proof_size = proof.size();
 			let confirmation_relayer = ensure_signed(origin)?;
 			let (lane_id, lane_data) = T::TargetHeaderChain::verify_messages_delivery_proof(proof)
 				.map_err(|err| {
@@ -493,13 +501,23 @@ pub mod pallet {
 				});
 
 				// if some new messages have been confirmed, reward relayers
-				T::DeliveryConfirmationPayments::pay_reward(
+				let actually_rewarded_relayers = T::DeliveryConfirmationPayments::pay_reward(
 					lane_id,
 					lane_data.relayers,
 					&confirmation_relayer,
 					&received_range,
 				);
-			}
+
+				// update relayers state with actual numbers to compute actual weight below
+				relayers_state.unrewarded_relayer_entries = sp_std::cmp::min(
+					relayers_state.unrewarded_relayer_entries,
+					actually_rewarded_relayers,
+				);
+				relayers_state.total_messages = sp_std::cmp::min(
+					relayers_state.total_messages,
+					received_range.checked_len().unwrap_or(MessageNonce::MAX),
+				);
+			};
 
 			log::trace!(
 				target: LOG_TARGET,
@@ -508,7 +526,15 @@ pub mod pallet {
 				lane_id,
 			);
 
-			Ok(())
+			// because of lags, the inbound lane state (`lane_data`) may have entries for
+			// already rewarded relayers and messages (if all entries are duplicated, then
+			// this transaction must be filtered out by our signed extension)
+			let actual_weight = T::WeightInfo::receive_messages_delivery_proof_weight(
+				&PreComputedSize(proof_size as usize),
+				&relayers_state,
+			);
+
+			Ok(PostDispatchInfo { actual_weight: Some(actual_weight), pays_fee: Pays::Yes })
 		}
 	}
 
@@ -554,8 +580,9 @@ pub mod pallet {
 		/// The relayer has declared invalid unrewarded relayers state in the
 		/// `receive_messages_delivery_proof` call.
 		InvalidUnrewardedRelayersState,
-		/// The message someone is trying to work with (i.e. increase fee) is already-delivered.
-		MessageIsAlreadyDelivered,
+		/// The cumulative dispatch weight, passed by relayer is not enough to cover dispatch
+		/// of all bundled messages.
+		InsufficientDispatchWeight,
 		/// The message someone is trying to work with (i.e. increase fee) is not yet sent.
 		MessageIsNotYetSent,
 		/// The number of actually confirmed messages is going to be larger than the number of
@@ -925,8 +952,9 @@ mod tests {
 		message, message_payload, run_test, unrewarded_relayer, AccountId, DbWeight,
 		RuntimeEvent as TestEvent, RuntimeOrigin, TestDeliveryConfirmationPayments,
 		TestDeliveryPayments, TestMessagesDeliveryProof, TestMessagesProof, TestRelayer,
-		TestRuntime, MAX_OUTBOUND_PAYLOAD_SIZE, PAYLOAD_REJECTED_BY_TARGET_CHAIN, REGULAR_PAYLOAD,
-		TEST_LANE_ID, TEST_LANE_ID_2, TEST_LANE_ID_3, TEST_RELAYER_A, TEST_RELAYER_B,
+		TestRuntime, TestWeightInfo, MAX_OUTBOUND_PAYLOAD_SIZE, PAYLOAD_REJECTED_BY_TARGET_CHAIN,
+		REGULAR_PAYLOAD, TEST_LANE_ID, TEST_LANE_ID_2, TEST_LANE_ID_3, TEST_RELAYER_A,
+		TEST_RELAYER_B,
 	};
 	use bp_messages::{BridgeMessagesCall, UnrewardedRelayer, UnrewardedRelayersState};
 	use bp_test_utils::generate_owned_bridge_module_tests;
@@ -1277,13 +1305,16 @@ mod tests {
 		run_test(|| {
 			let mut declared_weight = REGULAR_PAYLOAD.declared_weight;
 			*declared_weight.ref_time_mut() -= 1;
-			assert_ok!(Pallet::<TestRuntime>::receive_messages_proof(
-				RuntimeOrigin::signed(1),
-				TEST_RELAYER_A,
-				Ok(vec![message(1, REGULAR_PAYLOAD)]).into(),
-				1,
-				declared_weight,
-			));
+			assert_noop!(
+				Pallet::<TestRuntime>::receive_messages_proof(
+					RuntimeOrigin::signed(1),
+					TEST_RELAYER_A,
+					Ok(vec![message(1, REGULAR_PAYLOAD)]).into(),
+					1,
+					declared_weight,
+				),
+				Error::<TestRuntime, ()>::InsufficientDispatchWeight
+			);
 			assert_eq!(InboundLanes::<TestRuntime>::get(TEST_LANE_ID).last_delivered_nonce(), 0);
 		});
 	}
@@ -1348,50 +1379,78 @@ mod tests {
 			));
 
 			// this reports delivery of message 1 => reward is paid to TEST_RELAYER_A
-			assert_ok!(Pallet::<TestRuntime>::receive_messages_delivery_proof(
+			let single_message_delivery_proof = TestMessagesDeliveryProof(Ok((
+				TEST_LANE_ID,
+				InboundLaneData {
+					relayers: vec![unrewarded_relayer(1, 1, TEST_RELAYER_A)].into_iter().collect(),
+					..Default::default()
+				},
+			)));
+			let single_message_delivery_proof_size = single_message_delivery_proof.size();
+			let result = Pallet::<TestRuntime>::receive_messages_delivery_proof(
 				RuntimeOrigin::signed(1),
-				TestMessagesDeliveryProof(Ok((
-					TEST_LANE_ID,
-					InboundLaneData {
-						relayers: vec![unrewarded_relayer(1, 1, TEST_RELAYER_A)]
-							.into_iter()
-							.collect(),
-						..Default::default()
-					}
-				))),
+				single_message_delivery_proof,
 				UnrewardedRelayersState {
 					unrewarded_relayer_entries: 1,
 					total_messages: 1,
 					last_delivered_nonce: 1,
 					..Default::default()
 				},
-			));
+			);
+			assert_ok!(result);
+			assert_eq!(
+				result.unwrap().actual_weight.unwrap(),
+				TestWeightInfo::receive_messages_delivery_proof_weight(
+					&PreComputedSize(single_message_delivery_proof_size as _),
+					&UnrewardedRelayersState {
+						unrewarded_relayer_entries: 1,
+						total_messages: 1,
+						..Default::default()
+					},
+				)
+			);
 			assert!(TestDeliveryConfirmationPayments::is_reward_paid(TEST_RELAYER_A, 1));
 			assert!(!TestDeliveryConfirmationPayments::is_reward_paid(TEST_RELAYER_B, 1));
 
 			// this reports delivery of both message 1 and message 2 => reward is paid only to
 			// TEST_RELAYER_B
-			assert_ok!(Pallet::<TestRuntime>::receive_messages_delivery_proof(
+			let two_messages_delivery_proof = TestMessagesDeliveryProof(Ok((
+				TEST_LANE_ID,
+				InboundLaneData {
+					relayers: vec![
+						unrewarded_relayer(1, 1, TEST_RELAYER_A),
+						unrewarded_relayer(2, 2, TEST_RELAYER_B),
+					]
+					.into_iter()
+					.collect(),
+					..Default::default()
+				},
+			)));
+			let two_messages_delivery_proof_size = two_messages_delivery_proof.size();
+			let result = Pallet::<TestRuntime>::receive_messages_delivery_proof(
 				RuntimeOrigin::signed(1),
-				TestMessagesDeliveryProof(Ok((
-					TEST_LANE_ID,
-					InboundLaneData {
-						relayers: vec![
-							unrewarded_relayer(1, 1, TEST_RELAYER_A),
-							unrewarded_relayer(2, 2, TEST_RELAYER_B)
-						]
-						.into_iter()
-						.collect(),
-						..Default::default()
-					}
-				))),
+				two_messages_delivery_proof,
 				UnrewardedRelayersState {
 					unrewarded_relayer_entries: 2,
 					total_messages: 2,
 					last_delivered_nonce: 2,
 					..Default::default()
 				},
-			));
+			);
+			assert_ok!(result);
+			// even though the pre-dispatch weight was for two messages, the actual weight is
+			// for single message only
+			assert_eq!(
+				result.unwrap().actual_weight.unwrap(),
+				TestWeightInfo::receive_messages_delivery_proof_weight(
+					&PreComputedSize(two_messages_delivery_proof_size as _),
+					&UnrewardedRelayersState {
+						unrewarded_relayer_entries: 1,
+						total_messages: 1,
+						..Default::default()
+					},
+				)
+			);
 			assert!(!TestDeliveryConfirmationPayments::is_reward_paid(TEST_RELAYER_A, 1));
 			assert!(TestDeliveryConfirmationPayments::is_reward_paid(TEST_RELAYER_B, 1));
 		});
@@ -1541,15 +1600,18 @@ mod tests {
 			let message2 = message(2, message_payload(0, u64::MAX / 2));
 			let message3 = message(3, message_payload(0, u64::MAX / 2));
 
-			assert_ok!(Pallet::<TestRuntime, ()>::receive_messages_proof(
-				RuntimeOrigin::signed(1),
-				TEST_RELAYER_A,
-				// this may cause overflow if source chain storage is invalid
-				Ok(vec![message1, message2, message3]).into(),
-				3,
-				Weight::MAX,
-			));
-			assert_eq!(InboundLanes::<TestRuntime>::get(TEST_LANE_ID).last_delivered_nonce(), 2);
+			assert_noop!(
+				Pallet::<TestRuntime, ()>::receive_messages_proof(
+					RuntimeOrigin::signed(1),
+					TEST_RELAYER_A,
+					// this may cause overflow if source chain storage is invalid
+					Ok(vec![message1, message2, message3]).into(),
+					3,
+					Weight::MAX,
+				),
+				Error::<TestRuntime, ()>::InsufficientDispatchWeight
+			);
+			assert_eq!(InboundLanes::<TestRuntime>::get(TEST_LANE_ID).last_delivered_nonce(), 0);
 		});
 	}
 

@@ -33,7 +33,7 @@ use crate::messages::{
 };
 
 use bp_header_chain::{ChainWithGrandpa, HeaderChain};
-use bp_messages::{target_chain::ForbidInboundMessages, LaneId};
+use bp_messages::{target_chain::ForbidInboundMessages, LaneId, MessageNonce};
 use bp_parachains::SingleParaStoredHeaderDataBuilder;
 use bp_runtime::{Chain, ChainId, Parachain, UnderlyingChainProvider};
 use codec::{Decode, Encode};
@@ -126,6 +126,8 @@ parameter_types! {
 	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(3, 100_000);
 	pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000u128);
 	pub MaximumMultiplier: Multiplier = sp_runtime::traits::Bounded::max_value();
+	pub const MaxUnrewardedRelayerEntriesAtInboundLane: MessageNonce = 16;
+	pub const MaxUnconfirmedMessagesAtInboundLane: MessageNonce = 1_000;
 }
 
 impl frame_system::Config for TestRuntime {
@@ -196,7 +198,7 @@ impl pallet_transaction_payment::Config for TestRuntime {
 impl pallet_bridge_grandpa::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type BridgedChain = BridgedUnderlyingChain;
-	type MaxRequests = ConstU32<50>;
+	type MaxFreeMandatoryHeadersPerBlock = ConstU32<4>;
 	type HeadersToKeep = ConstU32<8>;
 	type WeightInfo = pallet_bridge_grandpa::weights::BridgeWeight<TestRuntime>;
 }
@@ -216,8 +218,8 @@ impl pallet_bridge_messages::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_bridge_messages::weights::BridgeWeight<TestRuntime>;
 	type ActiveOutboundLanes = ActiveOutboundLanes;
-	type MaxUnrewardedRelayerEntriesAtInboundLane = ConstU64<16>;
-	type MaxUnconfirmedMessagesAtInboundLane = ConstU64<16>;
+	type MaxUnrewardedRelayerEntriesAtInboundLane = MaxUnrewardedRelayerEntriesAtInboundLane;
+	type MaxUnconfirmedMessagesAtInboundLane = MaxUnconfirmedMessagesAtInboundLane;
 
 	type MaximalOutboundPayloadSize = FromThisChainMaximalOutboundPayloadSize<OnThisChainBridge>;
 	type OutboundPayload = FromThisChainMessagePayload;

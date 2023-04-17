@@ -20,7 +20,7 @@
 // RuntimeApi generated functions
 #![allow(clippy::too_many_arguments)]
 
-use bp_runtime::{BasicOperatingMode, OperatingMode};
+use bp_runtime::{BasicOperatingMode, OperatingMode, RangeInclusiveExt};
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::RuntimeDebug;
 use scale_info::TypeInfo;
@@ -238,8 +238,6 @@ pub struct ReceivedMessages<DispatchLevelResult> {
 	pub lane: LaneId,
 	/// Result of messages which we tried to dispatch
 	pub receive_results: Vec<(MessageNonce, ReceivalResult<DispatchLevelResult>)>,
-	/// Messages which were skipped and never dispatched
-	pub skipped_for_not_enough_weight: Vec<MessageNonce>,
 }
 
 impl<DispatchLevelResult> ReceivedMessages<DispatchLevelResult> {
@@ -247,15 +245,11 @@ impl<DispatchLevelResult> ReceivedMessages<DispatchLevelResult> {
 		lane: LaneId,
 		receive_results: Vec<(MessageNonce, ReceivalResult<DispatchLevelResult>)>,
 	) -> Self {
-		ReceivedMessages { lane, receive_results, skipped_for_not_enough_weight: Vec::new() }
+		ReceivedMessages { lane, receive_results }
 	}
 
 	pub fn push(&mut self, message: MessageNonce, result: ReceivalResult<DispatchLevelResult>) {
 		self.receive_results.push((message, result));
-	}
-
-	pub fn push_skipped_for_not_enough_weight(&mut self, message: MessageNonce) {
-		self.skipped_for_not_enough_weight.push(message);
 	}
 }
 
@@ -293,11 +287,7 @@ impl DeliveredMessages {
 
 	/// Return total count of delivered messages.
 	pub fn total_messages(&self) -> MessageNonce {
-		if self.end >= self.begin {
-			self.end - self.begin + 1
-		} else {
-			0
-		}
+		(self.begin..=self.end).checked_len().unwrap_or(0)
 	}
 
 	/// Note new dispatched message.

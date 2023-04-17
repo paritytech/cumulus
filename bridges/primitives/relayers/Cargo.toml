@@ -8,7 +8,7 @@ license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.1.5", default-features = false, features = ["derive", "bit-vec"] }
-scale-info = { version = "2.1.1", default-features = false, features = ["bit-vec", "derive"] }
+scale-info = { version = "2.5.0", default-features = false, features = ["bit-vec", "derive"] }
 
 # Bridge Dependencies
 
@@ -23,7 +23,7 @@ sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", d
 
 [dev-dependencies]
 hex = "0.4"
-hex-literal = "0.3"
+hex-literal = "0.4"
 
 [features]
 default = ["std"]
