@@ -50,6 +50,7 @@ parameter_types! {
 	pub BridgeHubRococoUniversalLocation: InteriorMultiLocation = X2(GlobalConsensus(Rococo), Parachain(ParachainInfo::parachain_id().into()));
 	pub WococoGlobalConsensusNetwork: NetworkId = NetworkId::Wococo;
 	pub ActiveOutboundLanesToBridgeHubWococo: &'static [bp_messages::LaneId] = &[DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO];
+	pub PriorityBoostPerMessage: u64 = 921_900_294;
 }
 
 /// Proof of messages, coming from Wococo.
@@ -137,6 +138,7 @@ pub type BridgeRefundBridgeHubWococoMessages = RefundBridgedParachainMessages<
 	RefundableParachain<BridgeParachainWococoInstance, BridgeHubWococoParachainId>,
 	RefundableMessagesLane<WithBridgeHubWococoMessagesInstance, BridgeHubWococoMessagesLane>,
 	ActualFeeRefund<Runtime>,
+	PriorityBoostPerMessage,
 	StrBridgeRefundBridgeHubWococoMessages,
 >;
 bp_runtime::generate_static_str_provider!(BridgeRefundBridgeHubWococoMessages);

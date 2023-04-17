@@ -402,7 +402,7 @@ pub type BridgeGrandpaWococoInstance = pallet_bridge_grandpa::Instance1;
 impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type BridgedChain = bp_wococo::Wococo;
-	type MaxRequests = MaxRequests;
+	type MaxFreeMandatoryHeadersPerBlock = ConstU32<4>;
 	type HeadersToKeep = RelayChainHeadersToKeep;
 	type WeightInfo = weights::pallet_bridge_grandpa_bridge_wococo_grandpa::WeightInfo<Runtime>;
 }
@@ -412,7 +412,7 @@ pub type BridgeGrandpaRococoInstance = pallet_bridge_grandpa::Instance2;
 impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type BridgedChain = bp_rococo::Rococo;
-	type MaxRequests = MaxRequests;
+	type MaxFreeMandatoryHeadersPerBlock = ConstU32<4>;
 	type HeadersToKeep = RelayChainHeadersToKeep;
 	type WeightInfo = weights::pallet_bridge_grandpa_bridge_rococo_grandpa::WeightInfo<Runtime>;
 }
