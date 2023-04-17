@@ -271,7 +271,7 @@ impl<H> Ancestor<H> {
 		&self.used_bandwidth
 	}
 
-	/// Returns [output head data](`relay_chain::HeadData`) of this block.
+	/// Returns hashed [output head data](`relay_chain::HeadData`) of this block.
 	pub fn para_head_hash(&self) -> Option<&H> {
 		self.para_head_hash.as_ref()
 	}
