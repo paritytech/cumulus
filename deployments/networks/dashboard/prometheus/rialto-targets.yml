@@ -1,0 +1,6 @@
+- targets:
+  - rialto-node-alice:9615
+  - rialto-node-bob:9615
+  - rialto-node-charlie:9615
+  - rialto-node-dave:9615
+  - rialto-node-eve:9615
