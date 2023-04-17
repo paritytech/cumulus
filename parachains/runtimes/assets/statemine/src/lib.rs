@@ -770,8 +770,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, Si
 /// Migrations to apply on runtime upgrade.
 //pub type Migrations = ();
 pub type Migrations = (
-	pallet_collator_selection<Instance1>::migration::v2::MigrateToV2<Runtime>,
-	pallet_collator_selection<Instance2>::migration::v2::MigrateToV2<Runtime>,
+	pallet_collator_selection::migration::v2::MigrateToV2<Runtime>,
 );
 
 /// Executive: handles dispatch to the various modules.
