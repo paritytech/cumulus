@@ -619,7 +619,10 @@ pub type Executive = frame_executive::Executive<
 	Runtime,
 	AllPalletsWithSystem,
 	RemoveCollectiveFlip,
+	Migrations,
 >;
+
+pub type Migrations = (pallet_collator_selection::migration::v2::MigrateToV2<Runtime>);
 
 pub struct RemoveCollectiveFlip;
 impl frame_support::traits::OnRuntimeUpgrade for RemoveCollectiveFlip {
