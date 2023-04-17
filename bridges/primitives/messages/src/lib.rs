@@ -20,7 +20,7 @@
 // RuntimeApi generated functions
 #![allow(clippy::too_many_arguments)]
 
-use bp_runtime::{BasicOperatingMode, OperatingMode};
+use bp_runtime::{BasicOperatingMode, OperatingMode, RangeInclusiveExt};
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::RuntimeDebug;
 use scale_info::TypeInfo;
@@ -164,11 +164,9 @@ impl<RelayerId> InboundLaneData<RelayerId> {
 	where
 		RelayerId: MaxEncodedLen,
 	{
-		let message_nonce_size = MessageNonce::max_encoded_len();
-		let relayer_id_encoded_size = RelayerId::max_encoded_len();
-		let relayers_entry_size = relayer_id_encoded_size.checked_add(2 * message_nonce_size)?;
-		let relayers_size = relayers_entries.checked_mul(relayers_entry_size)?;
-		relayers_size.checked_add(message_nonce_size)
+		relayers_entries
+			.checked_mul(UnrewardedRelayer::<RelayerId>::max_encoded_len())?
+			.checked_add(MessageNonce::max_encoded_len())
 	}
 
 	/// Returns the approximate size of the struct as u32, given a number of entries in the
@@ -194,7 +192,7 @@ impl<RelayerId> InboundLaneData<RelayerId> {
 }
 
 /// Outbound message details, returned by runtime APIs.
-#[derive(Clone, Encode, Decode, RuntimeDebug, PartialEq, Eq)]
+#[derive(Clone, Encode, Decode, RuntimeDebug, PartialEq, Eq, TypeInfo)]
 pub struct OutboundMessageDetails {
 	/// Nonce assigned to the message.
 	pub nonce: MessageNonce,
@@ -208,7 +206,7 @@ pub struct OutboundMessageDetails {
 }
 
 /// Inbound message details, returned by runtime APIs.
-#[derive(Clone, Encode, Decode, RuntimeDebug, PartialEq, Eq)]
+#[derive(Clone, Encode, Decode, RuntimeDebug, PartialEq, Eq, TypeInfo)]
 pub struct InboundMessageDetails {
 	/// Computed message dispatch weight.
 	///
@@ -223,7 +221,7 @@ pub struct InboundMessageDetails {
 ///
 /// This struct represents a continuous range of messages that have been delivered by the same
 /// relayer and whose confirmations are still pending.
-#[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq, TypeInfo)]
+#[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 pub struct UnrewardedRelayer<RelayerId> {
 	/// Identifier of the relayer.
 	pub relayer: RelayerId,
@@ -238,8 +236,6 @@ pub struct ReceivedMessages<DispatchLevelResult> {
 	pub lane: LaneId,
 	/// Result of messages which we tried to dispatch
 	pub receive_results: Vec<(MessageNonce, ReceivalResult<DispatchLevelResult>)>,
-	/// Messages which were skipped and never dispatched
-	pub skipped_for_not_enough_weight: Vec<MessageNonce>,
 }
 
 impl<DispatchLevelResult> ReceivedMessages<DispatchLevelResult> {
@@ -247,15 +243,11 @@ impl<DispatchLevelResult> ReceivedMessages<DispatchLevelResult> {
 		lane: LaneId,
 		receive_results: Vec<(MessageNonce, ReceivalResult<DispatchLevelResult>)>,
 	) -> Self {
-		ReceivedMessages { lane, receive_results, skipped_for_not_enough_weight: Vec::new() }
+		ReceivedMessages { lane, receive_results }
 	}
 
 	pub fn push(&mut self, message: MessageNonce, result: ReceivalResult<DispatchLevelResult>) {
 		self.receive_results.push((message, result));
-	}
-
-	pub fn push_skipped_for_not_enough_weight(&mut self, message: MessageNonce) {
-		self.skipped_for_not_enough_weight.push(message);
 	}
 }
 
@@ -276,7 +268,7 @@ pub enum ReceivalResult<DispatchLevelResult> {
 }
 
 /// Delivered messages with their dispatch result.
-#[derive(Clone, Default, Encode, Decode, RuntimeDebug, PartialEq, Eq, TypeInfo)]
+#[derive(Clone, Default, Encode, Decode, RuntimeDebug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 pub struct DeliveredMessages {
 	/// Nonce of the first message that has been delivered (inclusive).
 	pub begin: MessageNonce,
@@ -293,11 +285,7 @@ impl DeliveredMessages {
 
 	/// Return total count of delivered messages.
 	pub fn total_messages(&self) -> MessageNonce {
-		if self.end >= self.begin {
-			self.end - self.begin + 1
-		} else {
-			0
-		}
+		(self.begin..=self.end).checked_len().unwrap_or(0)
 	}
 
 	/// Note new dispatched message.

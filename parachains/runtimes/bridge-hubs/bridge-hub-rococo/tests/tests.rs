@@ -26,6 +26,7 @@ use xcm::latest::prelude::*;
 use bridge_hub_test_utils::*;
 use bridge_runtime_common::messages_xcm_extension::XcmBlobMessageDispatchResult;
 use frame_support::weights::Weight;
+use xcm_builder::DispatchBlobError;
 use xcm_executor::XcmExecutor;
 
 fn execute_on_runtime<R>(
@@ -95,7 +96,7 @@ fn dispatch_blob_and_xcm_routing_works_on_bridge_hub_wococo() {
 		);
 		assert_eq!(
 			result.dispatch_level_result,
-			XcmBlobMessageDispatchResult::NotDispatched("DispatchBlobError::RoutingError")
+			XcmBlobMessageDispatchResult::NotDispatched(Some(DispatchBlobError::RoutingError))
 		);
 
 		// 2.1. WITH hrmp channel -> Ok
@@ -164,7 +165,7 @@ fn dispatch_blob_and_xcm_routing_works_on_bridge_hub_rococo() {
 		);
 		assert_eq!(
 			result.dispatch_level_result,
-			XcmBlobMessageDispatchResult::NotDispatched("DispatchBlobError::RoutingError")
+			XcmBlobMessageDispatchResult::NotDispatched(Some(DispatchBlobError::RoutingError))
 		);
 
 		// 2.1. WITH hrmp channel -> Ok

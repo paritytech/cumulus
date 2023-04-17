@@ -5,11 +5,14 @@
 		+ [Run relayers (Rococo, Wococo)](#run-relayers--rococo--wococo-)
 			- [Run with script (alternative 1)](#run-with-script--alternative-1-)
 			- [Run with binary (alternative 2)](#run-with-binary--alternative-2-)
-		+ [Send messages (Rococo, Wococo)](#send-messages--rococo--wococo-)
-			- [Local Rococo:Statemine -> Wococo:Westmint](#local-rococo-statemine----wococo-westmint)
-			- [Live Rococo:Rockmine2 -> Wococo:Wockmint](#live-rococo-rockmine2----wococo-wockmint)
+		+ [Send messages](#send-messages)
+			- [Local zombienet run](#local-zombienet-run)
+			- [Live Rockmine2 to Wockmint](#live-rockmine2-to-wockmint)
 	* [How to test local BridgeHubKusama](#how-to-test-local-bridgehubkusama)
+	* [How to test local BridgeHubPolkadot](#how-to-test-local-bridgehubpolkadot)
 	* [Git subtree `./bridges`](#git-subtree---bridges-)
+		+ [How to update `bridges` subtree](#how-to-update--bridges--subtree)
+		+ [How was first time initialized (dont need anymore)](#how-was-first-time-initialized--dont-need-anymore-)
 
 # Bridge-hub Parachains
 
@@ -167,57 +170,47 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	- Pallet: **bridgeRococoParachain**
 	- Keys: **bestParaHeads()**
 
-### Send messages (Rococo, Wococo)
+### Send messages
 
-#### Transfer assets via bridge
+#### Local zombienet run
 
 1. allow bridge transfer on statemine/westmint (governance-like):
    ```
    ./scripts/bridges_rococo_wococo.sh allow-transfers-local
    ```
 
-2. do transfer from statemine to westmint
+2. do (asset) transfer from statemine to westmint
    ```
    ./scripts/bridges_rococo_wococo.sh transfer-asset-from-statemine-local
    ```
 
-#### Ping via bridge
-```
-./scripts/bridges_rococo_wococo.sh allow-transfers-local
-./scripts/bridges_rococo_wococo.sh ping-via-bridge-from-statemine-local
-```
+3. do (ping) transfer from statemine to westmint
+   ```
+   ./scripts/bridges_rococo_wococo.sh ping-via-bridge-from-statemine-local
+   ```
 
-#### Local Rococo:Statemine -> Wococo:Westmint
-- check that relayers are up and running (see above)
-- uses account seed `//Alice`
-  ```
-  cd <cumulus-git-repo-dir>
-
-  ./scripts/bridges_rococo_wococo.sh send-remark-local
-  or
-  ./scripts/bridges_rococo_wococo.sh send-trap-local
-  ```
 - open explorers: (see zombienets)
-	- Statemine (see `polkadotXcm.Sent`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9910#/explorer
+	- Statemine (see events `xcmpQueue.XcmpMessageSent`, `bridgeTransfer.ReserveAssetsDeposited`, `bridgeTransfer.TransferInitiated`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9910#/explorer
 	- BridgeHubRococo (see `bridgeWococoMessages.MessageAccepted`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8943#/explorer
 	- BridgeHubWococo (see `bridgeRococoMessages.MessagesReceived`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8945#/explorer
-	- Westmint (see `xcmpQueue.Success` for `remark` and `xcmpQueue.Fail` for `trap`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9010#/explorer
+	- Westmint (see `xcmpQueue.Success` for `transfer-asset` and `xcmpQueue.Fail` for `ping-via-bridge`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9010#/explorer
     - BridgeHubRococo (see `bridgeWococoMessages.MessagesDelivered`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8943#/explorer
 
-#### Live Rococo:Rockmine2 -> Wococo:Wockmint
+#### Live Rockmine2 to Wockmint
 - uses account seed on Live Rococo:Rockmine2
   ```
   cd <cumulus-git-repo-dir>
 
-  ./scripts/bridges_rococo_wococo.sh send-remark-rococo
+  ./scripts/bridges_rococo_wococo.sh transfer-asset-from-statemine-rococo
   or
-  ./scripts/bridges_rococo_wococo.sh send-trap-rococo
+  ./scripts/bridges_rococo_wococo.sh ping-via-bridge-from-statemine-rococo
   ```
-- open explorers: (see https://github.com/paritytech/parity-bridges-common/issues/1671)
-	- Rockmine2 (see `polkadotXcm.Sent`)
-	- BridgeHubRococo (see `bridgeWococoMessages.MessageAccepted`)
-	- BridgeHubWococo (see `bridgeRococoMessages.MessagesReceived`)
-	- Wockmint (see `xcmpQueue.Success` for `remark` and `xcmpQueue.Fail` for `trap`)
+
+- open explorers:
+	- Rockmine2 (see events `xcmpQueue.XcmpMessageSent`, `bridgeTransfer.ReserveAssetsDeposited`, `bridgeTransfer.TransferInitiated`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fws-rococo-rockmine2-collator-node-0.parity-testnet.parity.io#/explorer
+	- BridgeHubRococo (see `bridgeWococoMessages.MessageAccepted`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-bridge-hub-rpc.polkadot.io#/explorer
+	- BridgeHubWococo (see `bridgeRococoMessages.MessagesReceived`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fwococo-bridge-hub-rpc.polkadot.io#/explorer
+	- Wockmint (see `xcmpQueue.Success` for `transfer-asset` and `xcmpQueue.Fail` for `ping-via-bridge`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fws-wococo-wockmint-collator-node-0.parity-testnet.parity.io#/explorer
 	- BridgeHubRococo (see `bridgeWococoMessages.MessagesDelivered`)
 
 ## How to test local BridgeHubKusama
@@ -239,41 +232,3 @@ zombienet-linux --provider native spawn ./zombienet/examples/bridge_hub_polkadot
 
 ## How to test local BridgeHubPolkadot
 TODO: from master
-
-----
-## Git subtree `./bridges`
-
-Add Bridges repo as a local remote and synchronize it with latest `master` from bridges repo:
-
-### How to update `bridges` subtree
-```
-cd <cumulus-git-repo-dir>
-
-# this will update new git branches from bridges repo
-# there could be unresolved conflicts, but dont worry,
-# lots of them are caused because of removed unneeded files with patch step :)
-# so before solving conflicts just run patch
-./scripts/bridges_update_subtree.sh fetch
-
-# this will remove unneeded files and checks if subtree modules compiles
-./scripts/bridges_update_subtree.sh patch
-
-# if there are conflicts, this could help, removes locally deleted files at least
-# (but you can also do this manually)
-./scripts/bridges_update_subtree.sh merge
-
-# when conflicts resolved, you can check build again - should pass
-# also important: this updates global Cargo.lock
-./scripts/bridges_update_subtree.sh patch
-````
-We use `--squash` to avoid adding individual commits and rather squashing them
-all into one.
-Now we use `master` branch, but in future, it could change to some release branch/tag.
-
-### How was first time initialized (dont need anymore)
-```
-cd <cumulus-git-repo-dir>
-git remote add -f bridges git@github.com:paritytech/parity-bridges-common.git
-# (ran just only first time, when subtree was initialized)
-git subtree add --prefix=bridges bridges master --squash
-```
