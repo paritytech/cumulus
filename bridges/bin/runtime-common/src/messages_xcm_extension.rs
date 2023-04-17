@@ -57,7 +57,6 @@ pub struct XcmBlobMessageDispatch<SourceBridgeHubChain, TargetBridgeHubChain, Di
 }
 
 impl<
-		'a,
 		SourceBridgeHubChain: Chain,
 		TargetBridgeHubChain: Chain,
 		BlobDispatcher: DispatchBlob,
