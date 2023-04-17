@@ -289,7 +289,7 @@ pub struct SegmentTracker<H> {
 	/// Bandwidth used by the segment.
 	used_bandwidth: UsedBandwidth,
 	/// The mark which specifies the block number up to which all inbound HRMP messages are processed.
-	hrmp_watermark: relay_chain::BlockNumber,
+	hrmp_watermark: Option<relay_chain::BlockNumber>,
 	/// `H` is the type of para head hash.
 	phantom_data: PhantomData<H>,
 }
@@ -302,15 +302,17 @@ impl<H> SegmentTracker<H> {
 		hrmp_watermark: relay_chain::BlockNumber,
 		limits: &TotalBandwidthLimits,
 	) -> Result<(), BandwidthUpdateError> {
-		if self.hrmp_watermark > 0 && hrmp_watermark <= self.hrmp_watermark {
-			return Err(BandwidthUpdateError::InvalidHrmpWatermark {
-				submitted: hrmp_watermark,
-				latest: self.hrmp_watermark,
-			})
+		if let Some(watermark) = self.hrmp_watermark.as_ref() {
+			if &hrmp_watermark <= watermark {
+				return Err(BandwidthUpdateError::InvalidHrmpWatermark {
+					submitted: hrmp_watermark,
+					latest: *watermark,
+				})
+			}
 		}
 
 		self.used_bandwidth = self.used_bandwidth.append(block.used_bandwidth(), limits)?;
-		self.hrmp_watermark = hrmp_watermark;
+		self.hrmp_watermark.replace(hrmp_watermark);
 
 		Ok(())
 	}
