@@ -295,7 +295,7 @@ pub mod pallet {
 					.map(|(recipient, data)| OutboundHrmpMessage { recipient, data })
 					.collect::<Vec<_>>();
 
-			if MaxUnincludedLen::<T>::get().filter(|len| !len.is_zero()).is_some() {
+			if MaxUnincludedLen::<T>::get().map_or(false, |max_len| !max_len.is_zero()) {
 				let dmp_remaining_messages = PendingDownwardMessages::<T>::get().len() as u32;
 				let limits =
 					TotalBandwidthLimits::new(&relevant_messaging_state, dmp_remaining_messages);
@@ -317,10 +317,7 @@ pub mod pallet {
 					dmp_processed_count,
 				};
 				// The bandwidth constructed was ensured to satisfy relay chain constraints.
-				let ancestor = Ancestor::new_unchecked(used_bandwidth, todo!());
-
-				// Check in `on_initialize` guarantees there's space for this block.
-				UnincludedSegment::<T>::append(ancestor);
+				let ancestor = Ancestor::new_unchecked(used_bandwidth);
 
 				let watermark = HrmpWatermark::<T>::get();
 				AggregatedUnincludedSegment::<T>::mutate(|agg| {
@@ -328,6 +325,8 @@ pub mod pallet {
 					agg.append(&ancestor, watermark, &limits)
 						.expect("unincluded segment limits exceeded");
 				});
+				// Check in `on_initialize` guarantees there's space for this block.
+				UnincludedSegment::<T>::append(ancestor);
 			}
 			HrmpOutboundMessages::<T>::put(outbound_messages);
 		}
@@ -342,6 +341,23 @@ pub mod pallet {
 				NewValidationCode::<T>::kill();
 				weight += T::DbWeight::get().writes(1);
 			}
+
+			// New para head was unknown during block finalization, update it.
+			if MaxUnincludedLen::<T>::get().map_or(false, |max_len| !max_len.is_zero()) {
+				<UnincludedSegment<T>>::mutate(|chain| {
+					if let Some(ancestor) = chain.last_mut() {
+						let parent = frame_system::Pallet::<T>::parent_hash();
+						// Ancestor is the latest finalized block, thus current parent is
+						// its output head.
+						ancestor.replace_para_head_hash(parent);
+					}
+				});
+				weight += T::DbWeight::get().reads_writes(1, 1);
+
+				// Weight used during finalization.
+				weight += T::DbWeight::get().reads_writes(4, 2);
+			}
+			weight += T::DbWeight::get().reads(1);
 
 			// Remove the validation from the old block.
 			ValidationData::<T>::kill();
@@ -606,18 +622,19 @@ pub mod pallet {
 	pub(super) type MaxUnincludedLen<T: Config> = StorageValue<_, T::BlockNumber, OptionQuery>;
 
 	/// Latest included block descendants the runtime accepted. In other words, these are
-	/// ancestor of the block being currently executed, not yet sent to the relay chain runtime.
+	/// ancestors of the block being currently executed, not yet sent to the relay chain runtime.
 	///
 	/// The segment length is limited by [`MaxUnincludedLen`].
 	#[pallet::storage]
-	pub(super) type UnincludedSegment<T: Config> = StorageValue<_, Vec<Ancestor>, ValueQuery>;
+	pub(super) type UnincludedSegment<T: Config> =
+		StorageValue<_, Vec<Ancestor<T::Hash>>, ValueQuery>;
 
-	/// Storage field that keeps track of bandwidth used by the unincluded segment
-	/// along with the latest HRMP watermark. Used for limiting the acceptance of new
-	/// blocks with respect to relay chain constraints.
+	/// Storage field that keeps track of bandwidth used by the unincluded segment along with the latest
+	/// the latest HRMP watermark. Used for limiting the acceptance of new blocks with respect to relay
+	/// chain constraints.
 	#[pallet::storage]
 	pub(super) type AggregatedUnincludedSegment<T: Config> =
-		StorageValue<_, SegmentTracker, OptionQuery>;
+		StorageValue<_, SegmentTracker<T::Hash>, OptionQuery>;
 
 	/// Downward messages sent by the relay chain waiting to be processed.
 	///
@@ -1060,13 +1077,19 @@ impl<T: Config> Pallet<T> {
 		weight_used += T::DbWeight::get().reads(1);
 		let Some((para_head, max_len)) = para_head_with_len else { return weight_used };
 
+		let para_head_hash = T::Hashing::hash(&para_head.0);
 		if !max_len.is_zero() {
-			let (dropped, left_count): (Vec<Ancestor>, u32) =
+			let (dropped, left_count): (Vec<Ancestor<T::Hash>>, u32) =
 				<UnincludedSegment<T>>::mutate(|chain| {
 					// Drop everything up to the block with an included para head, if present.
 					let idx = chain
 						.iter()
-						.position(|block| block.para_head() == &para_head)
+						.position(|block| {
+							let head_hash = block.para_head_hash().expect(
+								"para head hash is updated during block initialization; qed",
+							);
+							head_hash == &para_head_hash
+						})
 						.map_or(0, |idx| idx + 1); // inclusive.
 
 					let left_count = (idx..chain.len()).count() as u32;

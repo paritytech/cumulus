@@ -24,7 +24,7 @@ use super::relay_state_snapshot::MessagingStateSnapshot;
 use codec::{Decode, Encode};
 use cumulus_primitives_core::{relay_chain, ParaId};
 use scale_info::TypeInfo;
-use sp_std::collections::btree_map::BTreeMap;
+use sp_std::{collections::btree_map::BTreeMap, marker::PhantomData};
 
 /// Constraints on outbound HRMP channel.
 pub struct HrmpOutboundLimits {
@@ -252,17 +252,18 @@ impl UsedBandwidth {
 /// Ancestor of the block being currently executed, not yet included
 /// into the relay chain.
 #[derive(Encode, Decode, TypeInfo)]
-pub struct Ancestor {
+pub struct Ancestor<H> {
 	/// Bandwidth used by this block.
 	used_bandwidth: UsedBandwidth,
-	/// Output head data of this block.
-	para_head: relay_chain::HeadData,
+	/// Output head data hash of this block. This may be optional in case the head data has not
+	/// yet been posted on chain, but should be updated during initialization of the next block.
+	para_head_hash: Option<H>,
 }
 
-impl Ancestor {
+impl<H> Ancestor<H> {
 	/// Creates new ancestor without validating the bandwidth used.
-	pub fn new_unchecked(used_bandwidth: UsedBandwidth, para_head: relay_chain::HeadData) -> Self {
-		Self { used_bandwidth, para_head }
+	pub fn new_unchecked(used_bandwidth: UsedBandwidth) -> Self {
+		Self { used_bandwidth, para_head_hash: None }
 	}
 
 	/// Returns [`UsedBandwidth`] of this block.
@@ -271,26 +272,33 @@ impl Ancestor {
 	}
 
 	/// Returns [output head data](`relay_chain::HeadData`) of this block.
-	pub fn para_head(&self) -> &relay_chain::HeadData {
-		&self.para_head
+	pub fn para_head_hash(&self) -> Option<&H> {
+		self.para_head_hash.as_ref()
+	}
+
+	/// Set para head hash of this block.
+	pub fn replace_para_head_hash(&mut self, para_head_hash: H) {
+		self.para_head_hash.replace(para_head_hash);
 	}
 }
 
 /// Struct that keeps track of bandwidth used by the unincluded part of the chain
 /// along with the latest HRMP watermark.
 #[derive(Default, Encode, Decode, TypeInfo)]
-pub struct SegmentTracker {
+pub struct SegmentTracker<H> {
 	/// Bandwidth used by the segment.
 	used_bandwidth: UsedBandwidth,
 	/// The mark which specifies the block number up to which all inbound HRMP messages are processed.
 	hrmp_watermark: relay_chain::BlockNumber,
+	/// `H` is the type of para head hash.
+	phantom_data: PhantomData<H>,
 }
 
-impl SegmentTracker {
+impl<H> SegmentTracker<H> {
 	/// Tries to append another block to the tracker, respecting given bandwidth limits.
 	pub fn append(
 		&mut self,
-		block: &Ancestor,
+		block: &Ancestor<H>,
 		hrmp_watermark: relay_chain::BlockNumber,
 		limits: &TotalBandwidthLimits,
 	) -> Result<(), BandwidthUpdateError> {
@@ -308,7 +316,7 @@ impl SegmentTracker {
 	}
 
 	/// Removes previously added block from the tracker.
-	pub fn subtract(&mut self, block: &Ancestor) {
+	pub fn subtract(&mut self, block: &Ancestor<H>) {
 		self.used_bandwidth.subtract(block.used_bandwidth());
 		// Watermark doesn't need to be updated since the is always dropped
 		// from the tail of the segment.
