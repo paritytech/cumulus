@@ -20,11 +20,13 @@ services:
       - --enable-offchain-indexing=true
       - --unsafe-rpc-external
       - --unsafe-ws-external
+      - --prometheus-external
     environment:
-      RUST_LOG: runtime=trace,rpc=debug,txpool=trace,runtime::bridge=trace,sc_basic_authorship=trace,beefy=debug,xcm=trace
+      RUST_LOG: runtime=trace,rpc=debug,txpool=trace,runtime::bridge=trace,sc_basic_authorship=trace,beefy=trace,xcm=trace
     ports:
       - "19933:9933"
       - "19944:9944"
+      - "19615:9615"
 
   millau-node-bob:
     <<: *millau-bridge-node
@@ -39,9 +41,11 @@ services:
       - --enable-offchain-indexing=true
       - --unsafe-rpc-external
       - --unsafe-ws-external
+      - --prometheus-external
     ports:
       - "20033:9933"
       - "20044:9944"
+      - "20015:9615"
 
   millau-node-charlie:
     <<: *millau-bridge-node
@@ -59,7 +63,7 @@ services:
     ports:
       - "20133:9933"
       - "20144:9944"
-      - "20615:9615"
+      - "20115:9615"
 
   millau-node-dave:
     <<: *millau-bridge-node
@@ -73,9 +77,11 @@ services:
       - --enable-offchain-indexing=true
       - --unsafe-rpc-external
       - --unsafe-ws-external
+      - --prometheus-external
     ports:
       - "20233:9933"
       - "20244:9944"
+      - "20215:9615"
 
   millau-node-eve:
     <<: *millau-bridge-node
@@ -89,13 +95,19 @@ services:
       - --enable-offchain-indexing=true
       - --unsafe-rpc-external
       - --unsafe-ws-external
+      - --prometheus-external
     ports:
       - "20333:9933"
       - "20344:9944"
+      - "20315:9615"
 
   # Note: These are being overridden from the top level `monitoring` compose file.
   prometheus-metrics:
     volumes:
       - ./networks/dashboard/prometheus/millau-targets.yml:/etc/prometheus/targets-millau-nodes.yml
     depends_on:
+      - millau-node-alice
+      - millau-node-bob
       - millau-node-charlie
+      - millau-node-dave
+      - millau-node-eve

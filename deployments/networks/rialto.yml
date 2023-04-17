@@ -20,11 +20,13 @@ services:
       - --enable-offchain-indexing=true
       - --unsafe-rpc-external
       - --unsafe-ws-external
+      - --prometheus-external
     environment:
-      RUST_LOG: runtime=trace,rpc=debug,txpool=trace,runtime::bridge=trace,beefy=debug,xcm=trace
+      RUST_LOG: runtime=trace,rpc=debug,txpool=trace,runtime::bridge=trace,beefy=trace,xcm=trace
     ports:
       - "9933:9933"
       - "9944:9944"
+      - "9915:9615"
 
   rialto-node-bob:
     <<: *rialto-bridge-node
@@ -39,9 +41,11 @@ services:
       - --enable-offchain-indexing=true
       - --unsafe-rpc-external
       - --unsafe-ws-external
+      - --prometheus-external
     ports:
       - "10033:9933"
       - "10044:9944"
+      - "10015:9615"
 
   rialto-node-charlie:
     <<: *rialto-bridge-node
@@ -59,7 +63,7 @@ services:
     ports:
       - "10133:9933"
       - "10144:9944"
-      - "10615:9615"
+      - "10115:9615"
 
   rialto-node-dave:
     <<: *rialto-bridge-node
@@ -73,9 +77,11 @@ services:
       - --enable-offchain-indexing=true
       - --unsafe-rpc-external
       - --unsafe-ws-external
+      - --prometheus-external
     ports:
       - "10233:9933"
       - "10244:9944"
+      - "10215:9615"
 
   rialto-node-eve:
     <<: *rialto-bridge-node
@@ -89,9 +95,11 @@ services:
       - --enable-offchain-indexing=true
       - --unsafe-rpc-external
       - --unsafe-ws-external
+      - --prometheus-external
     ports:
       - "10333:9933"
       - "10344:9944"
+      - "10315:9615"
 
   rialto-chainspec-exporter:
     image: ${RIALTO_BRIDGE_NODE_IMAGE:-paritytech/rialto-bridge-node}
@@ -105,7 +113,11 @@ services:
     volumes:
       - ./networks/dashboard/prometheus/rialto-targets.yml:/etc/prometheus/targets-rialto-nodes.yml
     depends_on:
+      - rialto-node-alice
+      - rialto-node-bob
       - rialto-node-charlie
+      - rialto-node-dave
+      - rialto-node-eve
 
 # we're using `/rialto-share` to expose Rialto chain spec to those who are interested. Right
 # now it is Rialto Parachain collator nodes. Local + tmpfs combination allows sharing writable

@@ -10,7 +10,7 @@ anyhow = "1.0"
 async-std = "1.9.0"
 async-trait = "0.1"
 codec = { package = "parity-scale-codec", version = "3.1.5" }
-futures = "0.3.27"
+futures = "0.3.28"
 hex = "0.4"
 log = "0.4.17"
 num-format = "0.4"
@@ -67,7 +67,7 @@ xcm = { git = "https://github.com/paritytech/polkadot", branch = "master", defau
 
 [dev-dependencies]
 bp-test-utils = { path = "../../primitives/test-utils" }
-hex-literal = "0.3"
+hex-literal = "0.4"
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
-tempfile = "3.4"
+tempfile = "3.5"
 finality-grandpa = { version = "0.16.2" }

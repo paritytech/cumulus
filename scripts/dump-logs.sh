@@ -15,8 +15,6 @@ cd $LOGS_DIR
 SERVICES=(\
 	deployments_relay-messages-millau-to-rialto-generator_1 \
 	deployments_relay-messages-rialto-to-millau-generator_1 \
-	deployments_relay-messages-millau-to-rialto-lane-00000001_1 \
-	deployments_relay-messages-rialto-to-millau-lane-00000001_1 \
 	deployments_relay-millau-rialto_1 \
 	deployments_relay-headers-westend-to-millau-1_1 \
 	deployments_relay-headers-westend-to-millau-2_1 \

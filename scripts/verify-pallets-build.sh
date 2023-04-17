@@ -88,7 +88,9 @@ rm -rf $BRIDGES_FOLDER/scripts/update-weights-setup.sh
 rm -rf $BRIDGES_FOLDER/scripts/update_substrate.sh
 rm -rf $BRIDGES_FOLDER/tools
 rm -f $BRIDGES_FOLDER/.dockerignore
+rm -f $BRIDGES_FOLDER/deny.toml
 rm -f $BRIDGES_FOLDER/.gitlab-ci.yml
+rm -f $BRIDGES_FOLDER/.editorconfig
 rm -f $BRIDGES_FOLDER/Cargo.toml
 rm -f $BRIDGES_FOLDER/ci.Dockerfile
 rm -f $BRIDGES_FOLDER/Dockerfile

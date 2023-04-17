@@ -199,7 +199,7 @@ parameter_types! {
 impl pallet_bridge_grandpa::Config<pallet_bridge_grandpa::Instance1> for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type BridgedChain = TestBridgedChain;
-	type MaxRequests = ConstU32<2>;
+	type MaxFreeMandatoryHeadersPerBlock = ConstU32<2>;
 	type HeadersToKeep = HeadersToKeep;
 	type WeightInfo = ();
 }
@@ -207,7 +207,7 @@ impl pallet_bridge_grandpa::Config<pallet_bridge_grandpa::Instance1> for TestRun
 impl pallet_bridge_grandpa::Config<pallet_bridge_grandpa::Instance2> for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type BridgedChain = TestBridgedChain;
-	type MaxRequests = ConstU32<2>;
+	type MaxFreeMandatoryHeadersPerBlock = ConstU32<2>;
 	type HeadersToKeep = HeadersToKeep;
 	type WeightInfo = ();
 }
@@ -226,6 +226,36 @@ impl pallet_bridge_parachains::Config for TestRuntime {
 	type ParaStoredHeaderDataBuilder = (Parachain1, Parachain2, Parachain3, BigParachain);
 	type HeadsToKeep = HeadsToKeep;
 	type MaxParaHeadDataSize = ConstU32<MAXIMAL_PARACHAIN_HEAD_DATA_SIZE>;
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_bridge_parachains::benchmarking::Config<()> for TestRuntime {
+	fn parachains() -> Vec<ParaId> {
+		vec![
+			ParaId(Parachain1::PARACHAIN_ID),
+			ParaId(Parachain2::PARACHAIN_ID),
+			ParaId(Parachain3::PARACHAIN_ID),
+		]
+	}
+
+	fn prepare_parachain_heads_proof(
+		parachains: &[ParaId],
+		_parachain_head_size: u32,
+		_proof_size: bp_runtime::StorageProofSize,
+	) -> (
+		crate::RelayBlockNumber,
+		crate::RelayBlockHash,
+		bp_polkadot_core::parachains::ParaHeadsProof,
+		Vec<(ParaId, bp_polkadot_core::parachains::ParaHash)>,
+	) {
+		// in mock run we only care about benchmarks correctness, not the benchmark results
+		// => ignore size related arguments
+		let (state_root, proof, parachains) = crate::tests::prepare_parachain_heads_proof(
+			parachains.iter().map(|p| (p.0, crate::tests::head_data(p.0, 1))).collect(),
+		);
+		let relay_genesis_hash = crate::tests::initialize(state_root);
+		(0, relay_genesis_hash, proof, parachains)
+	}
 }
 
 #[derive(Debug)]
@@ -290,14 +320,21 @@ impl ChainWithGrandpa for OtherBridgedChain {
 	const AVERAGE_HEADER_SIZE_IN_JUSTIFICATION: u32 = 64;
 }
 
+/// Return test externalities to use in tests.
+pub fn new_test_ext() -> sp_io::TestExternalities {
+	sp_io::TestExternalities::new(Default::default())
+}
+
+/// Run pallet test.
 pub fn run_test<T>(test: impl FnOnce() -> T) -> T {
-	sp_io::TestExternalities::new(Default::default()).execute_with(|| {
+	new_test_ext().execute_with(|| {
 		System::set_block_number(1);
 		System::reset_events();
 		test()
 	})
 }
 
+/// Return test relay chain header with given number.
 pub fn test_relay_header(
 	num: crate::RelayBlockNumber,
 	state_root: crate::RelayBlockHash,

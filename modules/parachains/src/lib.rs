@@ -294,6 +294,16 @@ pub mod pallet {
 		/// `polkadot-runtime-parachains::paras` pallet instance, deployed at the bridged chain.
 		/// The proof is supposed to be crafted at the `relay_header_hash` that must already be
 		/// imported by corresponding GRANDPA pallet at this chain.
+		///
+		/// The call fails if:
+		///
+		/// - the pallet is halted;
+		///
+		/// - the relay chain block `at_relay_block` is not imported by the associated bridge
+		///   GRANDPA pallet.
+		///
+		/// The call may succeed, but some heads may not be updated e.g. because pallet knows
+		/// better head or it isn't tracked by the pallet.
 		#[pallet::call_index(0)]
 		#[pallet::weight(WeightInfoOf::<T, I>::submit_parachain_heads_weight(
 			T::DbWeight::get(),
@@ -689,7 +699,7 @@ pub fn initialize_for_benchmarks<T: Config<I>, I: 'static, PC: Parachain<Hash = 
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
 	use super::*;
 	use crate::mock::{
 		run_test, test_relay_header, BigParachainHeader, RegularParachainHasher,
@@ -724,7 +734,7 @@ mod tests {
 	type WeightInfo = <TestRuntime as Config>::WeightInfo;
 	type DbWeight = <TestRuntime as frame_system::Config>::DbWeight;
 
-	fn initialize(state_root: RelayBlockHash) {
+	pub(crate) fn initialize(state_root: RelayBlockHash) -> RelayBlockHash {
 		pallet_bridge_grandpa::Pallet::<TestRuntime, BridgesGrandpaPalletInstance>::initialize(
 			RuntimeOrigin::root(),
 			bp_header_chain::InitializationData {
@@ -738,6 +748,8 @@ mod tests {
 
 		System::<TestRuntime>::set_block_number(1);
 		System::<TestRuntime>::reset_events();
+
+		test_relay_header(0, state_root).hash()
 	}
 
 	fn proceed(num: RelayBlockNumber, state_root: RelayBlockHash) -> ParaHash {
@@ -759,7 +771,7 @@ mod tests {
 		hash
 	}
 
-	fn prepare_parachain_heads_proof(
+	pub(crate) fn prepare_parachain_heads_proof(
 		heads: Vec<(u32, ParaHead)>,
 	) -> (RelayBlockHash, ParaHeadsProof, Vec<(ParaId, ParaHash)>) {
 		let mut parachains = Vec::with_capacity(heads.len());
@@ -795,7 +807,7 @@ mod tests {
 		}
 	}
 
-	fn head_data(parachain: u32, head_number: u32) -> ParaHead {
+	pub(crate) fn head_data(parachain: u32, head_number: u32) -> ParaHead {
 		ParaHead(
 			RegularParachainHeader::new(
 				head_number as _,

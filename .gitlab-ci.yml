@@ -155,7 +155,7 @@ test:
     # Enable this, when you see: "`cargo metadata` can not fail on project `Cargo.toml`"
     #- time cargo fetch --manifest-path=`cargo metadata --format-version=1 | jq --compact-output --raw-output  ".packages[] | select(.name == \"polkadot-runtime\").manifest_path"`
     #- time cargo fetch --manifest-path=`cargo metadata --format-version=1 | jq --compact-output --raw-output  ".packages[] | select(.name == \"kusama-runtime\").manifest_path"`
-    - CARGO_NET_OFFLINE=true SKIP_POLKADOT_RUNTIME_WASM_BUILD=1 SKIP_KUSAMA_RUNTIME_WASM_BUILD=1 SKIP_POLKADOT_TEST_RUNTIME_WASM_BUILD=1 time cargo test --verbose --workspace
+    - CARGO_NET_OFFLINE=true SKIP_WASM_BUILD=1 time cargo test --verbose --workspace --features runtime-benchmarks
 
 test-nightly:
   stage:                           test
@@ -238,7 +238,7 @@ build:
     # Enable this, when you see: "`cargo metadata` can not fail on project `Cargo.toml`"
     #- time cargo fetch --manifest-path=`cargo metadata --format-version=1 | jq --compact-output --raw-output  ".packages[] | select(.name == \"polkadot-runtime\").manifest_path"`
     #- time cargo fetch --manifest-path=`cargo metadata --format-version=1 | jq --compact-output --raw-output  ".packages[] | select(.name == \"kusama-runtime\").manifest_path"`
-    - CARGO_NET_OFFLINE=true SKIP_POLKADOT_RUNTIME_WASM_BUILD=1 SKIP_KUSAMA_RUNTIME_WASM_BUILD=1 SKIP_POLKADOT_TEST_RUNTIME_WASM_BUILD=1 time cargo build --release --verbose --workspace
+    - CARGO_NET_OFFLINE=true time cargo build --release --verbose --workspace
   after_script:
     # Prepare artifacts
     - mkdir -p ./artifacts

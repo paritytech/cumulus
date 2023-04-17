@@ -88,8 +88,7 @@
   },
   "DeliveredMessages": {
     "begin": "MessageNonce",
-    "end": "MessageNonce",
-    "dispatch_results": "BitVec"
+    "end": "MessageNonce"
   },
   "OutboundLaneData": {
     "oldest_unpruned_nonce": "MessageNonce",

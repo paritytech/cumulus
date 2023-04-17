@@ -8,14 +8,22 @@
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
         "type": "dashboard"
       }
     ]
   },
   "editable": true,
+  "fiscalYearStartMonth": 0,
   "gnetId": null,
   "graphTooltip": 0,
   "links": [],
+  "liveNow": false,
   "panels": [
     {
       "alert": {
@@ -81,28 +89,6 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": null
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -125,8 +111,11 @@
       "lines": true,
       "linewidth": 1,
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "percentage": false,
-      "pluginVersion": "7.1.3",
+      "pluginVersion": "8.2.6",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -136,24 +125,33 @@
       "steppedLine": false,
       "targets": [
         {
+          "exemplar": true,
           "expr": "substrate_beefy_best_block{chain=\"rialto_local\"}",
-          "legendFormat": "Rialto(Charlie)",
+          "interval": "",
+          "legendFormat": "",
           "refId": "A"
         },
         {
+          "exemplar": true,
           "expr": "substrate_beefy_best_block{chain=\"millau_local\"}",
-          "legendFormat": "Millau(Charlie)",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "",
           "refId": "B"
         },
         {
-          "expr": "max_over_time(substrate_beefy_best_block{chain=\"millau_local\"}[5m]) - min_over_time(substrate_beefy_best_block{chain=\"millau_local\"}[5m])",
+          "exemplar": true,
+          "expr": "increase(substrate_beefy_best_block{chain=\"millau_local\"}[5m])",
           "hide": true,
+          "interval": "",
           "legendFormat": "Millau Best Beefy blocks count in last 5 minutes",
           "refId": "C"
         },
         {
-          "expr": "max_over_time(substrate_beefy_best_block{chain=\"rialto_local\"}[5m]) - min_over_time(substrate_beefy_best_block{chain=\"rialto_local\"}[5m])",
+          "exemplar": true,
+          "expr": "increase(substrate_beefy_best_block{chain=\"rialto_local\"}[5m])",
           "hide": true,
+          "interval": "",
           "legendFormat": "Rialto Best Beefy blocks count in last 5 minutes",
           "refId": "D"
         }
@@ -164,180 +162,14 @@
           "fill": true,
           "line": true,
           "op": "lt",
-          "value": 1
+          "value": 1,
+          "visible": true
         }
       ],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
       "title": "Beefy Best block",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "yellow",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 14,
-        "w": 11,
-        "x": 12,
-        "y": 0
-      },
-      "id": 4,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "7.1.3",
-      "targets": [
-        {
-          "expr": "substrate_beefy_should_vote_on{chain=\"rialto_local\"}",
-          "legendFormat": "Rialto(Charlie) Should-Vote-On",
-          "refId": "C"
-        },
-        {
-          "expr": "substrate_beefy_round_concluded{chain=\"rialto_local\"}",
-          "legendFormat": "Rialto(Charlie) Round-Concluded",
-          "refId": "A"
-        },
-        {
-          "expr": "substrate_beefy_should_vote_on{chain=\"millau_local\"}",
-          "legendFormat": "Millau(Charlie) Should-Vote-On",
-          "refId": "D"
-        },
-        {
-          "expr": "substrate_beefy_round_concluded{chain=\"millau_local\"}",
-          "legendFormat": "Millau(Charlie) Round-Concluded",
-          "refId": "B"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Beefy Voting Rounds",
-      "type": "stat"
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 8,
-        "w": 18,
-        "x": 0,
-        "y": 14
-      },
-      "hiddenSeries": false,
-      "id": 6,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "percentage": false,
-      "pluginVersion": "7.1.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "substrate_beefy_votes_sent{chain=\"rialto_local\"}",
-          "legendFormat": "Rialto (node Charlie)",
-          "refId": "A"
-        },
-        {
-          "expr": "substrate_beefy_votes_sent{chain=\"millau_local\"}",
-          "legendFormat": "Millau (node Charlie)",
-          "refId": "B"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Beefy Votes Sent",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -438,35 +270,13 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": null
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 8,
-        "w": 5,
-        "x": 18,
-        "y": 14
+        "h": 14,
+        "w": 6,
+        "x": 12,
+        "y": 0
       },
       "hiddenSeries": false,
       "id": 8,
@@ -482,8 +292,11 @@
       "lines": true,
       "linewidth": 1,
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "percentage": false,
-      "pluginVersion": "7.1.3",
+      "pluginVersion": "8.2.6",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -493,13 +306,17 @@
       "steppedLine": false,
       "targets": [
         {
+          "exemplar": true,
           "expr": "substrate_beefy_lagging_sessions{chain=\"rialto_local\"}",
-          "legendFormat": "Rialto(Charlie)",
+          "interval": "",
+          "legendFormat": "",
           "refId": "A"
         },
         {
+          "exemplar": true,
           "expr": "substrate_beefy_lagging_sessions{chain=\"millau_local\"}",
-          "legendFormat": "Millau(Charlie)",
+          "interval": "",
+          "legendFormat": "",
           "refId": "B"
         }
       ],
@@ -509,7 +326,8 @@
           "fill": true,
           "line": true,
           "op": "gt",
-          "value": 0
+          "value": 0,
+          "visible": true
         }
       ],
       "timeFrom": null,
@@ -551,17 +369,114 @@
         "align": false,
         "alignLevel": null
       }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Prometheus",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 12,
+        "w": 18,
+        "x": 0,
+        "y": 14
+      },
+      "hiddenSeries": false,
+      "id": 6,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "8.2.6",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "substrate_beefy_votes_sent{chain=\"rialto_local\"}",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "substrate_beefy_votes_sent{chain=\"millau_local\"}",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Beefy Votes Sent",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     }
   ],
   "refresh": "5s",
-  "schemaVersion": 26,
+  "schemaVersion": 32,
   "style": "dark",
   "tags": [],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {
