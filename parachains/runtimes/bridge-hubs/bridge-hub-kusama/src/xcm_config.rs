@@ -23,9 +23,13 @@ use frame_support::{
 	traits::{ConstU32, Contains, Everything, Nothing},
 };
 use frame_system::EnsureRoot;
+use kusama_runtime_constants::system_parachain::SystemParachains;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
-	xcm_config::{ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry},
+	xcm_config::{
+		ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry,
+		RelayOrOtherSystemParachains,
+	},
 	TREASURY_PALLET_ID,
 };
 use polkadot_parachain::primitives::Sibling;
@@ -211,7 +215,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetExchanger = ();
 	type FeeManager = XcmFeesToAccount<
 		Self,
-		kusama_common::RelayOrOtherSystemParachains<Runtime>,
+		RelayOrOtherSystemParachains<SystemParachains, Runtime>,
 		AccountId,
 		TreasuryAccount,
 	>;

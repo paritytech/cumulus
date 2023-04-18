@@ -35,7 +35,8 @@ use parachains_common::{
 };
 use xcm_builder::XcmFeesToAccount;
 
-use parachains_common::TREASURY_PALLET_ID;
+use kusama_runtime_constants::system_parachain::SystemParachains;
+use parachains_common::{xcm_config::RelayOrOtherSystemParachains, TREASURY_PALLET_ID};
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::{AccountIdConversion, ConvertInto};
 use xcm::latest::prelude::*;
@@ -426,7 +427,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetExchanger = ();
 	type FeeManager = XcmFeesToAccount<
 		Self,
-		kusama_common::RelayOrOtherSystemParachains<Runtime>,
+		RelayOrOtherSystemParachains<SystemParachains, Runtime>,
 		AccountId,
 		TreasuryAccount,
 	>;

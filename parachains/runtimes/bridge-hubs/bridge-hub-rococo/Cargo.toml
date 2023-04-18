@@ -71,7 +71,6 @@ cumulus-primitives-utility = { path = "../../../../primitives/utility", default-
 pallet-collator-selection = { path = "../../../../pallets/collator-selection", default-features = false }
 parachain-info = { path = "../../../../parachains/pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../../parachains/common", default-features = false }
-rococo-common = { path = "../../../common/rococo", default-features = false }
 
 [features]
 default = [

@@ -28,10 +28,12 @@ use parachains_common::{
 	impls::ToStakingPot,
 	xcm_config::{
 		AssetFeeAsExistentialDepositMultiplier, DenyReserveTransferToRelayChain, DenyThenTry,
+		RelayOrOtherSystemParachains,
 	},
 	TREASURY_PALLET_ID,
 };
 use polkadot_parachain::primitives::Sibling;
+use polkadot_runtime_constants::system_parachain::SystemParachains;
 use sp_runtime::traits::{AccountIdConversion, ConvertInto};
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -321,7 +323,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetExchanger = ();
 	type FeeManager = XcmFeesToAccount<
 		Self,
-		polkadot_common::RelayOrOtherSystemParachains<Runtime>,
+		RelayOrOtherSystemParachains<SystemParachains, Runtime>,
 		AccountId,
 		TreasuryAccount,
 	>;

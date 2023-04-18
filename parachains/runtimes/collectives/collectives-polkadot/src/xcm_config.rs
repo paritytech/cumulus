@@ -26,10 +26,14 @@ use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
-	xcm_config::{ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry},
+	xcm_config::{
+		ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry,
+		RelayOrOtherSystemParachains,
+	},
 	TREASURY_PALLET_ID,
 };
 use polkadot_parachain::primitives::Sibling;
+use polkadot_runtime_constants::system_parachain::SystemParachains;
 use sp_runtime::traits::AccountIdConversion;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -245,7 +249,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetExchanger = ();
 	type FeeManager = XcmFeesToAccount<
 		Self,
-		polkadot_common::RelayOrOtherSystemParachains<Runtime>,
+		RelayOrOtherSystemParachains<SystemParachains, Runtime>,
 		AccountId,
 		TreasuryAccount,
 	>;
