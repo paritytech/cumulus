@@ -2009,6 +2009,7 @@ dependencies = [
  "sc-cli",
  "sc-client-api",
  "sc-consensus",
+ "sc-network-sync",
  "sp-consensus",
  "sp-maybe-compressed-blob",
  "sp-runtime",
