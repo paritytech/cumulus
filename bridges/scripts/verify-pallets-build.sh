@@ -93,6 +93,7 @@ rm -f $BRIDGES_FOLDER/.gitlab-ci.yml
 rm -f $BRIDGES_FOLDER/.editorconfig
 rm -f $BRIDGES_FOLDER/Cargo.toml
 rm -f $BRIDGES_FOLDER/ci.Dockerfile
+rm -f $BRIDGES_FOLDER/CODEOWNERS
 rm -f $BRIDGES_FOLDER/Dockerfile
 
 # let's fix Cargo.toml a bit (it'll be helpful if we are in the bridges repo)
