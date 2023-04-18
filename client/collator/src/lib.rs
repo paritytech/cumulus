@@ -203,11 +203,15 @@ pub mod relay_chain_driven {
 	) -> mpsc::Receiver<CollationRequest> {
 		let mut overseer_handle = overseer_handle;
 
-		let (stream_tx, stream_rx) = mpsc::channel(32);
+		let (stream_tx, stream_rx) = mpsc::channel(0);
 		let config = CollationGenerationConfig {
 			key,
 			para_id,
 			collator: Box::new(move |relay_parent, validation_data| {
+				// Cloning the channel on each usage effectively makes the channel
+				// unbounded. The channel is actually bounded by the block production
+				// and consensus systems of Polkadot, which limits the amount of possible
+				// blocks.
 				let mut stream_tx = stream_tx.clone();
 				let validation_data = validation_data.clone();
 				Box::pin(async move {

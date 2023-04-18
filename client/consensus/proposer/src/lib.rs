@@ -15,7 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 //! The Cumulus [`Proposer`] is a wrapper around a Substrate [`sp_consensus::Environment`]
-//! for creating
+//! for creating new parachain blocks.
 //!
 //! This utility is designed to be composed within any collator consensus algorithm.
 
@@ -76,6 +76,14 @@ enum ErrorInner {
 	Proposing(Box<dyn StdError>),
 }
 
+/// A type alias for easily referring to the type of a proposal produced by a specific
+/// [`Proposer`].
+pub type ProposalOf<B, T> = Proposal<
+	B,
+	<T as ProposerInterface<B>>::Transaction,
+	StorageProof,
+>;
+
 /// An interface for proposers.
 #[async_trait]
 pub trait ProposerInterface<Block: BlockT> {
@@ -94,7 +102,7 @@ pub trait ProposerInterface<Block: BlockT> {
 	/// while the `ParachainInherentData` is made explicit so it will be constructed appropriately.
 	///
 	/// If the `InherentData` passed into this function already has a `ParachainInherentData`,
-	/// this will throw an error.
+	/// this should throw an error.
 	async fn propose(
 		&mut self,
 		parent_header: &Block::Header,

@@ -49,9 +49,11 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::{error::Error as ConsensusError, BlockOrigin, SyncOracle};
 use sp_consensus_aura::{AuraApi, Slot, SlotDuration};
 use sp_core::crypto::Pair;
-use sp_inherents::{CreateInherentDataProviders, InherentDataProvider};
+use sp_inherents::{CreateInherentDataProviders, InherentDataProvider, InherentData};
 use sp_keystore::KeystorePtr;
-use sp_runtime::traits::{Block as BlockT, Header as HeaderT, Member};
+use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT, Member};
+use sp_runtime::generic::Digest;
+use sp_state_machine::StorageChanges;
 use std::{convert::TryFrom, error::Error, fmt::Debug, hash::Hash, sync::Arc, time::Duration};
 
 /// Parameters of [`run`].
@@ -71,8 +73,8 @@ pub struct Params<BI, CIDP, Client, RClient, SO, Proposer, CS> {
 	pub collator_service: CS,
 }
 
-/// Run Aura consensus as a parachain.
-pub async fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
+/// Run bare Aura consensus as a relay-chain-driven collator.
+pub async fn run_bare_relay_driven<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
 	params: Params<BI, CIDP, Client, RClient, SO, Proposer, CS>,
 )
 where
@@ -105,37 +107,123 @@ where
 	).await;
 
 	while let Some(request) = collation_requests.next().await {
-		let res = collate::<P, _, _, _, _>(
-			CollationConstants {
-				para_id: params.para_id,
-				slot_duration: params.slot_duration,
-				keystore: &params.keystore,
-			},
-			CollationParams {
-				relay_parent: *request.relay_parent(),
-				validation_data: request.persisted_validation_data(),
-			},
-			CollationEnvironment {
-				client: &*params.para_client,
-				relay_chain_interface: &params.relay_client,
-				proposer: &mut proposer,
-				collator_service: &params.collator_service,
-				block_import: &mut block_import,
-				create_inherent_data_providers: &params.create_inherent_data_providers,
-			},
-		).await;
-
-		match res {
-			Ok(maybe_collation) => request.complete(maybe_collation),
-			Err(e) => {
+		macro_rules! reject_with_error {
+			($err:expr) => {{
 				request.complete(None);
-				tracing::error!(
+				tracing::error!(target: crate::LOG_TARGET, err = ?{ $err });
+				continue;
+			}};
+		}
+
+		let validation_data = request.persisted_validation_data();
+
+		let parent_header = match Block::Header::decode(&mut &validation_data.parent_head.0[..]) {
+			Ok(x) => x,
+			Err(e) => reject_with_error!(e),
+		};
+
+		let parent_hash = parent_header.hash();
+
+		if !params.collator_service.check_block_status(parent_hash, &parent_header) {
+			continue;
+		}
+
+		let claim = match claim_slot::<_, _, P>(
+			&*params.para_client,
+			parent_hash,
+			params.slot_duration,
+			&params.keystore,
+		).await {
+			Ok(None) => continue,
+			Ok(Some(c)) => c,
+			Err(e) => reject_with_error!(e),
+		};
+
+		let (parachain_inherent_data, other_inherent_data) = match create_inherent_data(
+			*request.relay_parent(),
+			&validation_data,
+			parent_hash,
+			params.para_id,
+			&params.relay_client,
+			&params.create_inherent_data_providers,
+		).await {
+			Ok(x) => x,
+			Err(e) => reject_with_error!(e),
+		};
+
+		let proposal = match proposer.propose(
+			&parent_header,
+			&parachain_inherent_data,
+			other_inherent_data,
+			Digest { logs: vec![claim.pre_digest] },
+			// TODO [https://github.com/paritytech/cumulus/issues/2439]
+			// We should call out to a pluggable interface that provides
+			// the proposal duration.
+			Duration::from_millis(500),
+			// Set the block limit to 50% of the maximum PoV size.
+			//
+			// TODO: If we got benchmarking that includes the proof size,
+			// we should be able to use the maximum pov size.
+			Some((validation_data.max_pov_size / 2) as usize),
+		).await {
+			Ok(p) => p,
+			Err(e) => reject_with_error!(e),
+		};
+
+		let sealed_importable = match seal::<_, _, P>(
+			proposal.block,
+			proposal.storage_changes,
+			&claim.author_pub,
+			&params.keystore,
+		) {
+			Ok(s) => s,
+			Err(e) => reject_with_error!(e),
+		};
+
+		let post_hash = sealed_importable.post_hash();
+		let block = Block::new(
+			sealed_importable.post_header(),
+			sealed_importable.body
+				.as_ref()
+				.expect("body always created with this `propose` fn; qed")
+				.clone(),
+		);
+
+		if let Err(e) = block_import.import_block(sealed_importable).await {
+			reject_with_error!(e);
+		}
+
+		let response = if let Some((collation, b)) = params.collator_service.build_collation(
+			&parent_header,
+			post_hash,
+			ParachainCandidate {
+				block,
+				proof: proposal.proof,
+			},
+		) {
+			tracing::info!(
+				target: crate::LOG_TARGET,
+				"PoV size {{ header: {}kb, extrinsics: {}kb, storage_proof: {}kb }}",
+				b.header().encode().len() as f64 / 1024f64,
+				b.extrinsics().encode().len() as f64 / 1024f64,
+				b.storage_proof().encode().len() as f64 / 1024f64,
+			);
+
+			if let MaybeCompressedPoV::Compressed(ref pov) = collation.proof_of_validity {
+				tracing::info!(
 					target: crate::LOG_TARGET,
-					err = ?e,
-					"Collation failed"
+					"Compressed PoV size: {}kb",
+					pov.block_data.0.len() as f64 / 1024f64,
 				);
 			}
-		}
+
+			let result_sender = params.collator_service.announce_with_barrier(post_hash);
+			Some(CollationResult { collation, result_sender: Some(result_sender) })
+		} else {
+			None
+		};
+
+		request.complete(response);
 	}
 }
 
@@ -144,77 +232,37 @@ fn slot_now(slot_duration: SlotDuration) -> Slot {
 	Slot::from_timestamp(timestamp, slot_duration)
 }
 
-struct CollationConstants<'a> {
-	para_id: ParaId,
+pub struct SlotClaim<Pub> {
+	slot: Slot,
+	author_pub: Pub,
+	pre_digest: sp_runtime::DigestItem,
+}
+
+impl<Pub> SlotClaim<Pub> {
+	/// Access the underlying slot.
+	pub fn slot(&self) -> &Slot { &self.slot }
+
+	/// Access the underlying author public key owning this slot.
+	pub fn author_pub(&self) -> &Pub { &self.author_pub }
+
+	/// Access the underlying pre-digest used for authoring blocks in this slot.
+	pub fn pre_digest(&self) -> &sp_runtime::DigestItem { &self.pre_digest }
+}
+
+async fn claim_slot<B, C, P>(
+	client: &C,
+	parent_hash: B::Hash,
 	slot_duration: SlotDuration,
-	keystore: &'a KeystorePtr,
-}
-
-struct CollationParams<'a> {
-	relay_parent: PHash,
-	validation_data: &'a PersistedValidationData,
-}
-
-struct CollationEnvironment<'a, C: 'a, RCI: 'a, P: 'a, CS: 'a, BI, CIDP: 'a> {
-	client: &'a C,
-	relay_chain_interface: &'a RCI,
-	proposer: &'a mut P,
-	collator_service: &'a CS,
-	block_import: &'a mut BI,
-	create_inherent_data_providers: &'a CIDP,
-}
-
-// Collate a block using the aura slot worker.
-async fn collate<P, Block: BlockT, Client, BI, CIDP>(
-	const_params: CollationConstants<'_>,
-	params: CollationParams<'_>,
-	environment: CollationEnvironment<
-		'_,
-		Client,
-		impl RelayChainInterface,
-		impl ProposerInterface<Block, Transaction=BI::Transaction>,
-		impl CollatorServiceInterface<Block>,
-		BI,
-		CIDP,
-	>,
-) -> Result<Option<CollationResult>, Box<dyn Error>>
+	keystore: &KeystorePtr,
+) -> Result<Option<SlotClaim<P::Public>>, Box<dyn Error>>
 where
+	B: BlockT,
+	C: ProvideRuntimeApi<B> + Send + Sync + 'static,
+	C::Api: AuraApi<B, P::Public>,
 	P: Pair,
-	P::Public: AppPublic + Hash + Member + Encode + Decode,
-	P::Signature: Encode + Decode + TryFrom<Vec<u8>>,
-	Block: BlockT,
-	Client: ProvideRuntimeApi<Block> + Send + Sync + 'static,
-	Client::Api: AuraApi<Block, P::Public> + CollectCollationInfo<Block>,
-	BI: BlockImport<Block>
-		+ ParachainBlockImportMarker
-		+ Send
-		+ Sync
-		+ 'static,
-	CIDP: CreateInherentDataProviders<Block, ()>,
+	P::Public: Encode + Decode,
+	P::Signature: Encode + Decode,
 {
-	let CollationConstants { para_id, slot_duration, keystore } = const_params;
-	let CollationParams { relay_parent, validation_data } = params;
-	let CollationEnvironment {
-		client,
-		relay_chain_interface,
-		proposer,
-		collator_service,
-		block_import,
-		create_inherent_data_providers,
-	} = environment;
-
-	let parent_header = match Block::Header::decode(&mut &validation_data.parent_head.0[..]) {
-		Ok(x) => x,
-		Err(e) => {
-			return Err(format!("Header decoding error during collation ({:?})", e).into());
-		}
-	};
-
-	let parent_hash = parent_header.hash();
-	if !collator_service.check_block_status(parent_hash, &parent_header) {
-		return Ok(None)
-	}
-
 	// load authorities
 	let authorities = client
 		.runtime_api()
@@ -236,52 +284,55 @@ where
 	// Produce the pre-digest.
 	let pre_digest = aura_internal::pre_digest::<P>(slot_now);
 
-	tracing::info!(
-		target: crate::LOG_TARGET,
-		relay_parent = ?relay_parent,
-		at = ?parent_hash,
-		"Starting collation.",
-	);
+	Ok(Some(SlotClaim {
+		slot: slot_now,
+		author_pub,
+		pre_digest,
+	}))
+}
 
-	// propose the block.
-	let proposal = {
-		let paras_inherent_data = ParachainInherentData::create_at(
-			relay_parent,
-			relay_chain_interface,
-			validation_data,
-			para_id,
-		).await;
+async fn create_inherent_data<B: BlockT>(
+	relay_parent: PHash,
+	validation_data: &PersistedValidationData,
+	parent_hash: B::Hash,
+	para_id: ParaId,
+	relay_chain_interface: &impl RelayChainInterface,
+	create_inherent_data_providers: &impl CreateInherentDataProviders<B, ()>,
+) -> Result<(ParachainInherentData, InherentData), Box<dyn Error>> {
+	let paras_inherent_data = ParachainInherentData::create_at(
+		relay_parent,
+		relay_chain_interface,
+		validation_data,
+		para_id,
+	).await;
 
-		let paras_inherent_data = match paras_inherent_data {
-			Some(p) => p,
-			None => return Ok(None),
-		};
-
-		let other_inherent_data = create_inherent_data_providers
-			.create_inherent_data_providers(parent_hash, ())
-			.map_err(|e| e as Box<dyn Error>).await?
-			.create_inherent_data().await.map_err(Box::new)?;
-
-		proposer.propose(
-			&parent_header,
-			&paras_inherent_data,
-			other_inherent_data,
-			sp_runtime::generic::Digest { logs: vec![pre_digest] },
-			// TODO [https://github.com/paritytech/cumulus/issues/2439]
-			// We should call out to a pluggable interface that provides
-			// the proposal duration.
-			Duration::from_millis(500),
-			// Set the block limit to 50% of the maximum PoV size.
-			//
-			// TODO: If we got benchmarking that includes the proof size,
-			// we should be able to use the maximum pov size.
-			Some((validation_data.max_pov_size / 2) as usize),
-		)
-			.await
-			.map_err(Box::new)?
+	let paras_inherent_data = match paras_inherent_data {
+		Some(p) => p,
+		None => return Err(
+			format!("Could not create paras inherent data at {:?}", relay_parent).into()
+		),
 	};
 
-	let (pre_header, body) = proposal.block.deconstruct();
+	let other_inherent_data = create_inherent_data_providers
+		.create_inherent_data_providers(parent_hash, ())
+		.map_err(|e| e as Box<dyn Error>).await?
+		.create_inherent_data().await.map_err(Box::new)?;
+
+	Ok((paras_inherent_data, other_inherent_data))
+}
+
+fn seal<B: BlockT, T, P>(
+	pre_sealed: B,
+	storage_changes: StorageChanges<T, HashFor<B>>,
+	author_pub: &P::Public,
+	keystore: &KeystorePtr,
+) -> Result<BlockImportParams<B, T>, Box<dyn Error>>
+where
+	P: Pair,
+	P::Signature: Encode + Decode + TryFrom<Vec<u8>>,
+	P::Public: AppPublic,
+{
+	let (pre_header, body) = pre_sealed.deconstruct();
 	let pre_hash = pre_header.hash();
 	let block_number = *pre_header.number();
 
@@ -292,7 +343,7 @@ where
 		block_import_params.post_digests.push(seal_digest);
 		block_import_params.body = Some(body.clone());
 		block_import_params.state_action =
-			StateAction::ApplyChanges(sc_consensus::StorageChanges::Changes(proposal.storage_changes));
+			StateAction::ApplyChanges(sc_consensus::StorageChanges::Changes(storage_changes));
 		block_import_params.fork_choice = Some(ForkChoiceStrategy::LongestChain);
 		block_import_params
 	};
@@ -306,53 +357,7 @@ where
 		pre_hash,
 	);
 
-	// import the block.
-	let block = Block::new(block_import_params.post_header(), body);
-	match block_import.import_block(block_import_params).await {
-		Ok(_) => {}
-		Err(err) => {
-			tracing::warn!(
-				target: crate::LOG_TARGET,
-				"Error with block built on {:?}: {}", parent_hash, err,
-			);
-
-			return Ok(None);
-		}
-	}
-
-	// build a collation and announce it with a barrier.
-	let collation = collator_service.build_collation(
-		&parent_header,
-		post_hash,
-		ParachainCandidate {
-			block,
-			proof: proposal.proof,
-		}
-	);
-
-	Ok(match collation {
-		Some((collation, b)) => {
-			tracing::info!(
-				target: crate::LOG_TARGET,
-				"PoV size {{ header: {}kb, extrinsics: {}kb, storage_proof: {}kb }}",
-				b.header().encode().len() as f64 / 1024f64,
-				b.extrinsics().encode().len() as f64 / 1024f64,
-				b.storage_proof().encode().len() as f64 / 1024f64,
-			);
-
-			if let MaybeCompressedPoV::Compressed(ref pov) = collation.proof_of_validity {
-				tracing::info!(
-					target: crate::LOG_TARGET,
-					"Compressed PoV size: {}kb",
-					pov.block_data.0.len() as f64 / 1024f64,
-				);
-			}
-
-			let result_sender = collator_service.announce_with_barrier(post_hash);
-			Some(CollationResult { collation, result_sender: Some(result_sender) })
-		}
-		None => None,
-	})
+	Ok(block_import_params)
 }
 
 struct Verifier<P, Client, Block, CIDP> {
