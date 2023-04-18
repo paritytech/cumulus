@@ -127,3 +127,4 @@ try-runtime = [
 	"shell-runtime/try-runtime",
 	"try-runtime-cli/try-runtime",
 ]
+minimal = []
