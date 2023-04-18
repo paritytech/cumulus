@@ -21,7 +21,7 @@ use bp_header_chain::ChainWithGrandpa;
 use bp_runtime::Chain;
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU32, ConstU64},
+	traits::{ConstU32, ConstU64, Hooks},
 	weights::Weight,
 };
 use sp_core::sr25519::Signature;
@@ -87,7 +87,7 @@ impl frame_system::Config for TestRuntime {
 }
 
 parameter_types! {
-	pub const MaxRequests: u32 = 2;
+	pub const MaxFreeMandatoryHeadersPerBlock: u32 = 2;
 	pub const HeadersToKeep: u32 = 5;
 	pub const SessionLength: u64 = 5;
 	pub const NumValidators: u32 = 5;
@@ -96,7 +96,7 @@ parameter_types! {
 impl grandpa::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type BridgedChain = TestBridgedChain;
-	type MaxRequests = MaxRequests;
+	type MaxFreeMandatoryHeadersPerBlock = MaxFreeMandatoryHeadersPerBlock;
 	type HeadersToKeep = HeadersToKeep;
 	type WeightInfo = ();
 }
@@ -131,10 +131,20 @@ impl ChainWithGrandpa for TestBridgedChain {
 	const AVERAGE_HEADER_SIZE_IN_JUSTIFICATION: u32 = 64;
 }
 
-pub fn run_test<T>(test: impl FnOnce() -> T) -> T {
-	sp_io::TestExternalities::new(Default::default()).execute_with(test)
+/// Return test externalities to use in tests.
+pub fn new_test_ext() -> sp_io::TestExternalities {
+	sp_io::TestExternalities::new(Default::default())
 }
 
+/// Return test within default test externalities context.
+pub fn run_test<T>(test: impl FnOnce() -> T) -> T {
+	new_test_ext().execute_with(|| {
+		let _ = Grandpa::on_initialize(0);
+		test()
+	})
+}
+
+/// Return test header with given number.
 pub fn test_header(num: TestNumber) -> TestHeader {
 	// We wrap the call to avoid explicit type annotations in our tests
 	bp_test_utils::test_header(num)
