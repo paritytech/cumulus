@@ -724,7 +724,6 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "hex-literal 0.4.1",
- "kusama-common",
  "kusama-runtime-constants",
  "log",
  "pallet-aura",
@@ -805,7 +804,6 @@ dependencies = [
  "parachain-info",
  "parachains-common",
  "parity-scale-codec",
- "polkadot-common",
  "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-runtime-common",
@@ -872,7 +870,6 @@ dependencies = [
  "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-runtime-common",
- "rococo-common",
  "rococo-runtime-constants",
  "scale-info",
  "serde",
@@ -1316,7 +1313,6 @@ dependencies = [
  "parachain-info",
  "parachains-common",
  "parity-scale-codec",
- "polkadot-common",
  "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-runtime-common",
@@ -1453,7 +1449,6 @@ dependencies = [
  "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-runtime-common",
- "rococo-common",
  "rococo-runtime-constants",
  "scale-info",
  "smallvec",
@@ -4641,19 +4636,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67c21572b4949434e4fc1e1978b99c5f77064153c59d998bf13ecd96fb5ecba7"
 
 [[package]]
-name = "kusama-common"
-version = "0.1.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "kusama-runtime-constants",
- "parachain-info",
- "sp-core",
- "sp-io",
- "xcm",
-]
-
-[[package]]
 name = "kusama-runtime"
 version = "0.9.41"
 source = "git+https://github.com/paritytech/polkadot?branch=master#70a6e7e1e9351e989171d72a05ec0cd2a66a90db"
@@ -7420,6 +7402,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
+ "parachain-info",
  "parity-scale-codec",
  "polkadot-primitives",
  "scale-info",
@@ -7982,19 +7965,6 @@ dependencies = [
  "sp-runtime",
  "thiserror",
  "tracing-gum",
-]
-
-[[package]]
-name = "polkadot-common"
-version = "0.1.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "parachain-info",
- "polkadot-runtime-constants",
- "sp-core",
- "sp-io",
- "xcm",
 ]
 
 [[package]]
@@ -9871,19 +9841,6 @@ checksum = "7e9562ea1d70c0cc63a34a22d977753b50cca91cc6b6527750463bd5dd8697bc"
 dependencies = [
  "libc",
  "librocksdb-sys",
-]
-
-[[package]]
-name = "rococo-common"
-version = "0.1.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "parachain-info",
- "rococo-runtime-constants",
- "sp-core",
- "sp-io",
- "xcm",
 ]
 
 [[package]]
@@ -12755,7 +12712,6 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "hex-literal 0.4.1",
- "kusama-common",
  "kusama-runtime-constants",
  "log",
  "pallet-asset-tx-payment",
@@ -12846,7 +12802,6 @@ dependencies = [
  "parachain-info",
  "parachains-common",
  "parity-scale-codec",
- "polkadot-common",
  "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-runtime-common",
@@ -14695,20 +14650,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "westend-common"
-version = "0.1.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "parachain-info",
- "polkadot-runtime-constants",
- "sp-core",
- "sp-io",
- "westend-runtime-constants",
- "xcm",
-]
-
-[[package]]
 name = "westend-runtime"
 version = "0.9.41"
 source = "git+https://github.com/paritytech/polkadot?branch=master#70a6e7e1e9351e989171d72a05ec0cd2a66a90db"
@@ -14876,7 +14817,6 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "westend-common",
  "westend-runtime-constants",
  "xcm",
  "xcm-builder",
