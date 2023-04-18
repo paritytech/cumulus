@@ -109,16 +109,18 @@ where
 		self.import_counter = info.finalized_number;
 
 		for leaf in self.backend.blockchain().leaves().unwrap_or_default() {
-			let mut info = self.backend.blockchain().header_metadata(leaf).expect(ERR_MSG);
+			let mut meta = self.backend.blockchain().header_metadata(leaf).expect(ERR_MSG);
 
-			self.import_counter = self.import_counter.max(info.number);
+			self.import_counter = self.import_counter.max(meta.number);
 
 			// Populate the monitor until we don't hit an already imported branch
-			// or the block number is below the last finalized block number.
-			while info.number >= self.lowest_level && !self.freshness.contains_key(&info.hash) {
-				self.freshness.insert(info.hash, info.number);
-				self.levels.entry(info.number).or_default().insert(info.hash);
-				info = self.backend.blockchain().header_metadata(info.parent).expect(ERR_MSG);
+			while !self.freshness.contains_key(&meta.hash) {
+				self.freshness.insert(meta.hash, meta.number);
+				self.levels.entry(meta.number).or_default().insert(meta.hash);
+				if meta.number <= self.lowest_level {
+					break
+				}
+				meta = self.backend.blockchain().header_metadata(meta.parent).expect(ERR_MSG);
 			}
 		}
 
@@ -349,9 +351,9 @@ where
 
 	/// Add a new imported block information to the monitor.
 	pub fn block_imported(&mut self, number: NumberFor<Block>, hash: Block::Hash) {
+		self.import_counter += One::one();
 		self.freshness.insert(hash, self.import_counter);
 		self.levels.entry(number).or_default().insert(hash);
-		self.import_counter += One::one();
 
 		// Do cleanup once in a while, we are allowed to have some obsolete information.
 		let finalized_num = self.backend.blockchain().info().finalized_number;
