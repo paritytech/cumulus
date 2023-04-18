@@ -15,7 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use sc_client_api::{blockchain::Backend as _, Backend, HeaderBackend as _};
-use sp_blockchain::{HashAndNumber, TreeRoute};
+use sp_blockchain::{HashAndNumber, HeaderMetadata, TreeRoute};
 use sp_runtime::traits::{Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto, Zero};
 use std::{
 	collections::{HashMap, HashSet},
@@ -96,7 +96,9 @@ where
 	///
 	/// Level limits are not enforced during this phase.
 	fn restore(&mut self) {
+		const ERR_MSG: &str = "route from finalized to leaf should be available; qed";
 		let info = self.backend.blockchain().info();
+
 		log::debug!(
 			target: "parachain",
 			"Restoring chain level monitor from last finalized block: {} {}",
@@ -105,30 +107,22 @@ where
 
 		self.lowest_level = info.finalized_number;
 		self.import_counter = info.finalized_number;
-		self.block_imported(info.finalized_number, info.finalized_hash);
-
-		let mut counter_max = info.finalized_number;
 
 		for leaf in self.backend.blockchain().leaves().unwrap_or_default() {
-			let route =
-				sp_blockchain::tree_route(self.backend.blockchain(), info.finalized_hash, leaf)
-					.expect("Route from finalized to leaf should be available; qed");
-			if !route.retracted().is_empty() {
-				continue
+			let mut info = self.backend.blockchain().header_metadata(leaf).expect(ERR_MSG);
+
+			self.import_counter = self.import_counter.max(info.number);
+
+			// Populate the monitor until we don't hit an already imported branch
+			// or the block number is below the last finalized block number.
+			while info.number >= self.lowest_level && !self.freshness.contains_key(&info.hash) {
+				self.freshness.insert(info.hash, info.number);
+				self.levels.entry(info.number).or_default().insert(info.hash);
+				info = self.backend.blockchain().header_metadata(info.parent).expect(ERR_MSG);
 			}
-			route.enacted().iter().for_each(|elem| {
-				if !self.freshness.contains_key(&elem.hash) {
-					// Use the block height value as the freshness.
-					self.import_counter = elem.number;
-					self.block_imported(elem.number, elem.hash);
-				}
-			});
-			counter_max = std::cmp::max(self.import_counter, counter_max);
 		}
 
-		log::debug!(target: "parachain", "Restored chain level monitor up to height {}", counter_max);
-
-		self.import_counter = counter_max;
+		log::debug!(target: "parachain", "Restored chain level monitor up to height {}", self.import_counter);
 	}
 
 	/// Check and enforce the limit bound at the given height.
