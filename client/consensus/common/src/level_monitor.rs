@@ -48,17 +48,17 @@ pub enum LevelLimit {
 
 /// Support structure to constrain the number of leaves at each level.
 pub struct LevelMonitor<Block: BlockT, BE> {
-	// Max number of leaves for each level.
+	/// Max number of leaves for each level.
 	level_limit: usize,
-	// Monotonic counter used to keep track of block freshness.
+	/// Monotonic counter used to keep track of block freshness.
 	pub(crate) import_counter: NumberFor<Block>,
-	// Map between blocks hashes and freshness.
+	/// Map between blocks hashes and freshness.
 	pub(crate) freshness: HashMap<Block::Hash, NumberFor<Block>>,
-	// Blockchain levels cache.
+	/// Blockchain levels cache.
 	pub(crate) levels: HashMap<NumberFor<Block>, HashSet<Block::Hash>>,
-	// Lower level number stored by the levels map.
+	/// Lower level number stored by the levels map.
 	lowest_level: NumberFor<Block>,
-	// Backend reference to remove blocks on level saturation.
+	/// Backend reference to remove blocks on level saturation.
 	backend: Arc<BE>,
 }
 
