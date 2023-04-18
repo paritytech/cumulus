@@ -477,6 +477,8 @@ impl pallet_xcm::Config for Runtime {
 	#[cfg(feature = "runtime-benchmarks")]
 	type ReachableDest = ReachableDest;
 	type AdminOrigin = EnsureRoot<AccountId>;
+	type MaxRemoteLockUsers = ConstU32<0>;
+	type RemoteLockIdentifier = ();
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
