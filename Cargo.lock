@@ -12457,6 +12457,7 @@ dependencies = [
  "frame-system",
  "hex-literal 0.4.0",
  "parity-scale-codec",
+ "polkadot-parachain",
  "rlp",
  "scale-info",
  "serde",

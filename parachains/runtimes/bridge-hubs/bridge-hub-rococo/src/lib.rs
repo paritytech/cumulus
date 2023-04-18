@@ -573,7 +573,6 @@ parameter_types! {
 impl snowbridge_outbound_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Hashing = Keccak256;
-	type SourceId = <Self as frame_system::Config>::AccountId;
 	type MaxMessagePayloadSize = MaxMessagePayloadSize;
 	type MaxMessagesPerCommit = MaxMessagesPerCommit;
 	type WeightInfo = ();
