@@ -579,6 +579,7 @@ impl snowbridge_outbound_queue::Config for Runtime {
 	type WeightInfo = ();
 }
 
+#[cfg(feature = "minimal")]
 parameter_types! {
 	pub const MaxSyncCommitteeSize: u32 = 32;
 	pub const MaxProofBranchSize: u32 = 20;
@@ -606,6 +607,40 @@ parameter_types! {
 		capella: Fork {
 			version: [3, 0, 0, 1], // 0x03000001
 			epoch: 0,
+		},
+	};
+}
+
+#[cfg(not(feature = "minimal"))]
+parameter_types! {
+	pub const MaxSyncCommitteeSize: u32 = 512;
+	pub const MaxProofBranchSize: u32 = 20;
+	pub const MaxExtraDataSize: u32 = 32;
+	pub const MaxLogsBloomSize: u32 = 256;
+	pub const MaxFeeRecipientSize: u32 = 20;
+	pub const MaxPublicKeySize: u32 = 48;
+	pub const MaxSignatureSize: u32 = 96;
+	pub const MaxSlotsPerHistoricalRoot: u64 = 8192;
+	pub const MaxFinalizedHeaderSlotArray: u32 = 1000;
+	// accordingly to https://notes.ethereum.org/@adiasg/weak-subjectvity-eth2
+	// Epochs required is 3277 as 1258368 seconds about 2 weeks
+	pub const WeakSubjectivityPeriodSeconds: u32 = 1258368;
+	pub const ChainForkVersions: ForkVersions = ForkVersions{
+		genesis: Fork {
+			version: [0, 0, 16, 32], // 0x00001020
+			epoch: 0,
+		},
+		altair: Fork {
+			version: [1, 0, 16, 32], // 0x01001020
+			epoch: 36660,
+		},
+		bellatrix: Fork {
+			version: [2, 0, 16, 32], // 0x02001020
+			epoch: 112260,
+		},
+		capella: Fork {
+			version: [3, 0, 16, 32], // 0x03001020
+			epoch: 162304,
 		},
 	};
 }
@@ -730,7 +765,7 @@ mod benches {
 		[pallet_bridge_relayers, BridgeRelayersBench::<Runtime>]
 		// Ethereum Bridge
 		//[snowbridge_basic_channel::inbound, BasicInboundChannel]
-		[snowbridge_outbound_queue, EthereumOutboundChannel]
+		// [snowbridge_outbound_queue, EthereumOutboundChannel]
 		//[snowbridge_dispatch, Dispatch]
 		[snowbridge_ethereum_beacon_client, EthereumBeaconClient]
 	);

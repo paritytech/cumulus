@@ -93,7 +93,7 @@ snowbridge-beacon-primitives = { path = "../../../../../parachain/primitives/bea
 snowbridge-router-primitives = { path = "../../../../../parachain/primitives/router", default-features = false }
 snowbridge-inbound-queue = { path = "../../../../../parachain/pallets/inbound-queue", default-features = false }
 snowbridge-outbound-queue = { path = "../../../../../parachain/pallets/outbound-queue", default-features = false }
-snowbridge-ethereum-beacon-client = { path = "../../../../../parachain/pallets/ethereum-beacon-client", default-features = false, features=["minimal"]}
+snowbridge-ethereum-beacon-client = { path = "../../../../../parachain/pallets/ethereum-beacon-client", default-features = false }
 
 [dev-dependencies]
 static_assertions = "1.1"
@@ -228,4 +228,7 @@ try-runtime = [
 	"pallet-utility/try-runtime",
 	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",
+]
+minimal = [
+	"snowbridge-ethereum-beacon-client/minimal",
 ]
