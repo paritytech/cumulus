@@ -158,7 +158,6 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::storage_version(migration::STORAGE_VERSION)]
-	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
@@ -493,7 +492,7 @@ pub mod pallet {
 		///
 		/// All origins are allowed.
 		#[pallet::call_index(3)]
-		#[pallet::weight(1_000_000)]
+		#[pallet::weight({1_000_000})]
 		pub fn enact_authorized_upgrade(
 			_: OriginFor<T>,
 			code: Vec<u8>,
