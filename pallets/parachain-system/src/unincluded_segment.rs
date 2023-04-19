@@ -42,13 +42,13 @@ pub struct TotalBandwidthLimits {
 	pub ump_bytes_remaining: u32,
 	/// The limitations of all registered outbound HRMP channels.
 	pub hrmp_outgoing: BTreeMap<ParaId, HrmpOutboundLimits>,
-	/// Number of remaining DMP messages.
-	pub dmp_remaining_messages: u32,
+	// Downward queue is not checked against limits since new block always
+	// exhausts available messages from it.
 }
 
 impl TotalBandwidthLimits {
 	/// Creates new limits from the messaging state.
-	pub fn new(messaging_state: &MessagingStateSnapshot, dmp_remaining_messages: u32) -> Self {
+	pub fn new(messaging_state: &MessagingStateSnapshot) -> Self {
 		let (ump_messages_remaining, ump_bytes_remaining) =
 			messaging_state.relay_dispatch_queue_size;
 		let hrmp_outgoing = messaging_state
@@ -65,7 +65,7 @@ impl TotalBandwidthLimits {
 			})
 			.collect();
 
-		Self { ump_messages_remaining, ump_bytes_remaining, hrmp_outgoing, dmp_remaining_messages }
+		Self { ump_messages_remaining, ump_bytes_remaining, hrmp_outgoing }
 	}
 }
 
@@ -103,13 +103,6 @@ pub enum BandwidthUpdateError {
 		bytes_remaining: u32,
 		/// The amount of bytes submitted to UMP.
 		bytes_submitted: u32,
-	},
-	/// Too many messages processed from DMP.
-	DmpMessagesUnderflow {
-		/// The amount of messages waiting to be processed from DMP.
-		messages_remaining: u32,
-		/// The amount of DMP messages processed.
-		messages_processed: u32,
 	},
 	/// Invalid HRMP watermark.
 	InvalidHrmpWatermark {
@@ -188,8 +181,6 @@ pub struct UsedBandwidth {
 	pub ump_total_bytes: u32,
 	/// Outbound HRMP channels updates.
 	pub hrmp_outgoing: BTreeMap<ParaId, HrmpChannelUpdate>,
-	/// The amount of DMP messages processed.
-	pub dmp_processed_count: u32,
 }
 
 impl UsedBandwidth {
@@ -215,13 +206,6 @@ impl UsedBandwidth {
 				bytes_submitted: new.ump_total_bytes,
 			})
 		}
-		new.dmp_processed_count = new.dmp_processed_count.saturating_add(other.dmp_processed_count);
-		if new.dmp_processed_count > limits.dmp_remaining_messages {
-			return Err(BandwidthUpdateError::DmpMessagesUnderflow {
-				messages_remaining: limits.dmp_remaining_messages,
-				messages_processed: new.dmp_processed_count,
-			})
-		}
 
 		for (id, channel) in other.hrmp_outgoing.iter() {
 			let current = new.hrmp_outgoing.entry(*id).or_default();
@@ -235,7 +219,6 @@ impl UsedBandwidth {
 	fn subtract(&mut self, other: &Self) {
 		self.ump_msg_count -= other.ump_msg_count;
 		self.ump_total_bytes -= other.ump_total_bytes;
-		self.dmp_processed_count -= other.dmp_processed_count;
 
 		for (id, channel) in other.hrmp_outgoing.iter() {
 			let entry = self

@@ -296,9 +296,7 @@ pub mod pallet {
 					.collect::<Vec<_>>();
 
 			if MaxUnincludedLen::<T>::get().map_or(false, |max_len| !max_len.is_zero()) {
-				let dmp_remaining_messages = PendingDownwardMessages::<T>::get().len() as u32;
-				let limits =
-					TotalBandwidthLimits::new(&relevant_messaging_state, dmp_remaining_messages);
+				let limits = TotalBandwidthLimits::new(&relevant_messaging_state);
 
 				let hrmp_outgoing = outbound_messages
 					.iter()
@@ -309,13 +307,8 @@ pub mod pallet {
 						)
 					})
 					.collect();
-				let dmp_processed_count = ProcessedDownwardMessages::<T>::get();
-				let used_bandwidth = UsedBandwidth {
-					ump_msg_count,
-					ump_total_bytes,
-					hrmp_outgoing,
-					dmp_processed_count,
-				};
+				let used_bandwidth =
+					UsedBandwidth { ump_msg_count, ump_total_bytes, hrmp_outgoing };
 				// The bandwidth constructed was ensured to satisfy relay chain constraints.
 				let ancestor = Ancestor::new_unchecked(used_bandwidth);
 
@@ -366,9 +359,8 @@ pub mod pallet {
 			UpwardMessages::<T>::kill();
 			HrmpOutboundMessages::<T>::kill();
 			CustomValidationHeadData::<T>::kill();
-			PendingDownwardMessages::<T>::kill();
 
-			weight += T::DbWeight::get().writes(7);
+			weight += T::DbWeight::get().writes(6);
 
 			// Here, in `on_initialize` we must report the weight for both `on_initialize` and
 			// `on_finalize`.
@@ -495,7 +487,6 @@ pub mod pallet {
 			<RelayStateProof<T>>::put(relay_chain_state);
 			<RelevantMessagingState<T>>::put(relevant_messaging_state.clone());
 			<HostConfiguration<T>>::put(host_config);
-			<PendingDownwardMessages<T>>::put(downward_messages.clone());
 
 			<T::OnSystemEvent as OnSystemEvent>::on_validation_data(&vfp);
 
@@ -635,13 +626,6 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type AggregatedUnincludedSegment<T: Config> =
 		StorageValue<_, SegmentTracker<T::Hash>, OptionQuery>;
-
-	/// Downward messages sent by the relay chain waiting to be processed.
-	///
-	/// Updated on every block.
-	#[pallet::storage]
-	pub(super) type PendingDownwardMessages<T: Config> =
-		StorageValue<_, Vec<InboundDownwardMessage>, ValueQuery>;
 
 	/// In case of a scheduled upgrade, this storage field contains the validation code to be applied.
 	///
