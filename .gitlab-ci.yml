@@ -29,7 +29,7 @@ variables:
   CI_IMAGE: "paritytech/ci-linux:production"
   DOCKER_OS: "debian:stretch"
   ARCH: "x86_64"
-  ZOMBIENET_IMAGE: "docker.io/paritytech/zombienet:v1.3.40"
+  ZOMBIENET_IMAGE: "docker.io/paritytech/zombienet:v1.3.43"
 
 .common-before-script:
   before_script:
@@ -109,8 +109,6 @@ variables:
     - !reference [.common-before-script, before_script]
     - rustup show
     - cargo --version
-    - rustup +nightly show
-    - cargo +nightly --version
     - bash --version
   tags:
     - linux-docker-vm-c2
