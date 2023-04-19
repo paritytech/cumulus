@@ -369,6 +369,16 @@ parameter_types! {
 	pub const MaxSignatories: u32 = 100;
 }
 
+impl pallet_multisig::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type Currency = Balances;
+	type DepositBase = DepositBase;
+	type DepositFactor = DepositFactor;
+	type MaxSignatories = MaxSignatories;
+	type WeightInfo = weights::pallet_multisig::WeightInfo<Runtime>;
+}
+
 impl pallet_asset_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Fungibles = Assets;
@@ -381,16 +391,6 @@ impl pallet_asset_tx_payment::Config for Runtime {
 		>,
 		AssetsToBlockAuthor<Runtime, TrustBackedAssetsInstance>,
 	>;
-}
-
-impl pallet_multisig::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeCall = RuntimeCall;
-	type Currency = Balances;
-	type DepositBase = DepositBase;
-	type DepositFactor = DepositFactor;
-	type MaxSignatories = MaxSignatories;
-	type WeightInfo = weights::pallet_multisig::WeightInfo<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -771,10 +771,10 @@ construct_runtime!(
 
 		// The main stage.
 		Assets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>} = 50,
-		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 53,
-		PoolAssets: pallet_assets::<Instance3>::{Pallet, Call, Storage, Event<T>} = 54,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		Nfts: pallet_nfts::{Pallet, Call, Storage, Event<T>} = 52,
+		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 53,
+		PoolAssets: pallet_assets::<Instance3>::{Pallet, Call, Storage, Event<T>} = 54,
 		AssetConvesion: pallet_asset_conversion::{Pallet, Call, Storage, Event<T>} = 55,
 	}
 );
@@ -827,7 +827,7 @@ mod benches {
 		[pallet_assets, Assets]
 		[pallet_assets, ForeignAssets]
 		[pallet_assets, PoolAssets]
-		[pallet_dex, Dex]
+		[pallet_asset_convesion, AssetConvesion]
 		[pallet_balances, Balances]
 		[pallet_multisig, Multisig]
 		[pallet_nfts, Nfts]
