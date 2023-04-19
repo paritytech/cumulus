@@ -57,6 +57,16 @@ decl_test_parachain! {
 	}
 }
 
+decl_test_parachain! {
+	pub struct Statemine {
+		Runtime = statemine_runtime::Runtime,
+		RuntimeOrigin = statemine_runtime::RuntimeOrigin,
+		XcmpMessageHandler = statemine_runtime::XcmpQueue,
+		DmpMessageHandler = statemine_runtime::DmpQueue,
+		new_ext = parachain_ext(1000),
+	}
+}
+
 decl_test_network! {
 	pub struct Network {
 		relay_chain = KusamaNet,
@@ -64,6 +74,7 @@ decl_test_network! {
 			(1, ParachainA),
 			(2, ParachainB),
 			(3, ParachainC),
+			(1000, Statemine),
 		],
 	}
 }
