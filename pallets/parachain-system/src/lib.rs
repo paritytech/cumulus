@@ -348,7 +348,7 @@ pub mod pallet {
 				weight += T::DbWeight::get().reads_writes(1, 1);
 
 				// Weight used during finalization.
-				weight += T::DbWeight::get().reads_writes(4, 2);
+				weight += T::DbWeight::get().reads_writes(2, 2);
 			}
 			weight += T::DbWeight::get().reads(1);
 
