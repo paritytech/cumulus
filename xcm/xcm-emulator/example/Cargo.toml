@@ -29,6 +29,7 @@ pallet-xcm = { git = "https://github.com/paritytech/polkadot", branch = "master"
 
 xcm-emulator = { path = ".." }
 test-runtime = { path = "../test-runtime" }
+statemine-runtime = {path = "../../../parachains/runtimes/assets/statemine"}
 
 [features]
 runtime-benchmarks = [

@@ -15439,6 +15439,7 @@ dependencies = [
  "serde",
  "sp-io",
  "sp-runtime",
+ "statemine-runtime",
  "test-runtime",
  "xcm",
  "xcm-emulator",
