@@ -47,7 +47,6 @@
 
 use sc_client_api::{BlockBackend, BlockchainEvents, UsageProvider};
 use sc_consensus::import_queue::{ImportQueueService, IncomingBlock};
-use sc_network_sync::SyncingService;
 use sp_consensus::{BlockOrigin, BlockStatus, SyncOracle};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, NumberFor};
 
@@ -229,7 +228,7 @@ pub struct PoVRecovery<Block: BlockT, PC, RC> {
 	recovery_chan_rx: Receiver<RecoveryRequest<Block>>,
 	/// Blocks that we are retrying currently
 	candidates_in_retry: HashSet<Block::Hash>,
-	parachain_sync_service: Arc<dyn SyncOracle>,
+	parachain_sync_service: Arc<dyn SyncOracle + Sync + Send>,
 }
 
 impl<Block: BlockT, PC, RCInterface> PoVRecovery<Block, PC, RCInterface>
@@ -246,7 +245,7 @@ where
 		relay_chain_interface: RCInterface,
 		para_id: ParaId,
 		recovery_chan_rx: Receiver<RecoveryRequest<Block>>,
-		parachain_sync_service: Arc<SyncingService<Block>>,
+		parachain_sync_service: Arc<dyn SyncOracle + Sync + Send>,
 	) -> Self {
 		Self {
 			candidates: HashMap::new(),
@@ -606,10 +605,10 @@ where
 }
 
 /// Returns a stream over pending candidates for the parachain corresponding to `para_id`.
-async fn pending_candidates<Block: BlockT>(
+async fn pending_candidates(
 	relay_chain_client: impl RelayChainInterface + Clone,
 	para_id: ParaId,
-	sync_service: Arc<SyncingService<Block>>,
+	sync_service: Arc<dyn SyncOracle + Sync + Send>,
 ) -> RelayChainResult<impl Stream<Item = (CommittedCandidateReceipt, SessionIndex)>> {
 	let import_notification_stream = relay_chain_client.import_notification_stream().await?;
 
