@@ -36,25 +36,22 @@ use parachains_common::{
 	xcm_config::{
 		AssetFeeAsExistentialDepositMultiplier, DenyReserveTransferToRelayChain, DenyThenTry,
 	},
-	AssetIdForForeignAssets,
 };
 use polkadot_parachain::primitives::{Id as ParaId, Sibling};
 use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
-	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, AsPrefixedGeneralIndex,
-	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FungiblesAdapter, IsConcrete, LocalMint,
-	NativeAsset, NoChecking, NonLocalMint, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
-	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
-	WeightInfoBounds, WithComputedOrigin,
+	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin,
+	FungiblesAdapter, IsConcrete, LocalMint, NativeAsset, NoChecking, ParentAsSuperuser,
+	ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+	UsingComponents, WeightInfoBounds, WithComputedOrigin,
 };
 use xcm_executor::{
-	traits::{Convert, JustTry, WithOriginFilter},
+	traits::{Convert, WithOriginFilter},
 	XcmExecutor,
 };
-use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
 parameter_types! {
 	pub const WestendLocation: MultiLocation = MultiLocation::parent();
@@ -116,28 +113,6 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	// The account to use for tracking teleports.
 	CheckingAccount,
 >;
-
-/// Means for transacting assets besides the native currency on this chain.
-pub type ForeignFungiblesTransactor = FungiblesAdapter<
-	// Use this fungibles implementation:
-	ForeignAssets,
-	// Use this currency when it is a fungible asset matching the given location or name:
-	ConvertedConcreteId<
-		AssetIdForForeignAssets,
-		Balance,
-		AsPrefixedGeneralIndex<ForeignAssetsPalletLocation, AssetIdForForeignAssets, JustTry>,
-		JustTry,
-	>,
-	// Convert an XCM MultiLocation into a local account id:
-	LocationToAccountId,
-	// Our chain's account ID type (we can't get away without mentioning it explicitly):
-	AccountId,
-	// TODO: We want to allow no teleports.
-	NonLocalMint<parachains_common::impls::NonZeroIssuance<AccountId, ForeignAssets>>,
-	// The account to use for tracking teleports.
-	CheckingAccount,
->;
-
 
 /// `AssetId/Balance` converter for `TrustBackedAssets`
 pub type ForeignAssetsConvertedConcreteId = assets_common::ForeignAssetsConvertedConcreteId<

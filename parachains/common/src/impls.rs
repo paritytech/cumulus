@@ -20,15 +20,17 @@ use cumulus_primitives_core::ParaId;
 use frame_support::{
 	pallet_prelude::DispatchError,
 	traits::{
-		fungibles::{self, Balanced, Credit, Transfer, Unbalanced},
-		tokens::{DepositConsequence, WithdrawConsequence},
+		fungibles::{
+			self, Balanced, Credit, HandleImbalanceDrop, Mutate as MutateFungible, Unbalanced,
+		},
+		tokens::{DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence},
 		Contains, ContainsPair, Currency, Get, Imbalance, OnUnbalanced, PalletInfoAccess,
 	},
 };
+use pallet_asset_conversion::MultiAssetIdConverter;
 use pallet_asset_tx_payment::HandleCredit;
-use pallet_dex::MultiAssetIdConverter;
 use polkadot_primitives::AccountId;
-use sp_runtime::{traits::Zero, DispatchResult};
+use sp_runtime::traits::Zero;
 use sp_std::marker::PhantomData;
 use xcm::{
 	latest::{AssetId, Fungibility::Fungible, MultiAsset, MultiLocation},
@@ -179,6 +181,10 @@ where
 		}
 	}
 
+	fn is_native(asset_id: MultiLocation) -> bool {
+		asset_id == Self::get_native()
+	}
+
 	fn try_convert(asset: MultiLocation) -> Result<MultiLocation, ()> {
 		Ok(asset)
 	}
@@ -188,12 +194,12 @@ where
 	}
 }
 
-pub struct DoubleAsset<Assets, ForeignAssets, SelfParaId> {
+pub struct LocalAndForeignAssets<Assets, ForeignAssets, SelfParaId> {
 	_ignore: PhantomData<(Assets, ForeignAssets, SelfParaId)>,
 }
 
 impl<Assets, ForeignAssets, SelfParaId> Unbalanced<AccountId>
-	for DoubleAsset<Assets, ForeignAssets, SelfParaId>
+	for LocalAndForeignAssets<Assets, ForeignAssets, SelfParaId>
 where
 	SelfParaId: Get<ParaId>,
 	ForeignAssets:
@@ -201,12 +207,34 @@ where
 	Assets: Inspect<AccountId, Balance = u128, AssetId = u32>
 		+ PalletInfoAccess
 		+ Unbalanced<AccountId>,
+		// Assets: frame_support::traits::fungibles::Balanced<sp_runtime::AccountId32>,
+		// ForeignAssets: frame_support::traits::fungibles::Balanced<sp_runtime::AccountId32>
 {
-	fn set_balance(asset: Self::AssetId, who: &AccountId, amount: Self::Balance) -> DispatchResult {
+	fn handle_dust(dust: frame_support::traits::fungibles::Dust<AccountId, Self>) {
+		todo!("tricky.")
+		// let (asset, amount) = dust;
+		// let credit = dust.into_credit();
+		// //TODO need to handle credit drop here
+		 
+		// if let Some(asset) = is_local::<SelfParaId, Assets>(credit.asset()) {
+		// 	Assets::handle_raw_dust(asset, credit.peek());
+		// } else {
+		// 	ForeignAssets::handle_raw_dust(credit.asset(), credit.peek());
+		// }
+	}
+
+	fn write_balance(
+		asset: <Self as frame_support::traits::fungibles::Inspect<AccountId>>::AssetId,
+		who: &AccountId,
+		amount: <Self as frame_support::traits::fungibles::Inspect<AccountId>>::Balance,
+	) -> Result<
+		Option<<Self as frame_support::traits::fungibles::Inspect<AccountId>>::Balance>,
+		sp_runtime::DispatchError,
+	> {
 		if let Some(asset) = is_local::<SelfParaId, Assets>(asset) {
-			Assets::set_balance(asset, who, amount)
+			Assets::write_balance(asset, who, amount)
 		} else {
-			ForeignAssets::set_balance(asset, who, amount)
+			ForeignAssets::write_balance(asset, who, amount)
 		}
 	}
 
@@ -221,7 +249,7 @@ where
 }
 
 impl<Assets, ForeignAssets, SelfParaId> Inspect<AccountId>
-	for DoubleAsset<Assets, ForeignAssets, SelfParaId>
+	for LocalAndForeignAssets<Assets, ForeignAssets, SelfParaId>
 where
 	SelfParaId: Get<ParaId>,
 	ForeignAssets: Inspect<AccountId, Balance = u128, AssetId = MultiLocation>,
@@ -258,11 +286,16 @@ where
 	}
 
 	/// Get the maximum amount of `asset` that `who` can withdraw/transfer successfully.
-	fn reducible_balance(asset: Self::AssetId, who: &AccountId, keep_alive: bool) -> Self::Balance {
+	fn reducible_balance(
+		asset: Self::AssetId,
+		who: &AccountId,
+		presevation: Preservation,
+		fortitude: Fortitude,
+	) -> Self::Balance {
 		if let Some(asset) = is_local::<SelfParaId, Assets>(asset) {
-			Assets::reducible_balance(asset, who, keep_alive)
+			Assets::reducible_balance(asset, who, presevation, fortitude)
 		} else {
-			ForeignAssets::reducible_balance(asset, who, keep_alive)
+			ForeignAssets::reducible_balance(asset, who, presevation, fortitude)
 		}
 	}
 
@@ -276,7 +309,7 @@ where
 		asset: Self::AssetId,
 		who: &AccountId,
 		amount: Self::Balance,
-		mint: bool,
+		mint: Provenance,
 	) -> DepositConsequence {
 		if let Some(asset) = is_local::<SelfParaId, Assets>(asset) {
 			Assets::can_deposit(asset, who, amount, mint)
@@ -307,16 +340,28 @@ where
 			ForeignAssets::asset_exists(asset)
 		}
 	}
+
+	fn total_balance(
+		asset: <Self as frame_support::traits::fungibles::Inspect<AccountId>>::AssetId,
+		account: &AccountId,
+	) -> <Self as frame_support::traits::fungibles::Inspect<AccountId>>::Balance {
+		if let Some(asset) = is_local::<SelfParaId, Assets>(asset) {
+			Assets::total_balance(asset, account)
+		} else {
+			ForeignAssets::total_balance(asset, account)
+		}
+	}
 }
 
-impl<Assets, ForeignAssets, SelfParaId> Transfer<AccountId>
-	for DoubleAsset<Assets, ForeignAssets, SelfParaId>
+impl<Assets, ForeignAssets, SelfParaId> MutateFungible<AccountId>
+	for LocalAndForeignAssets<Assets, ForeignAssets, SelfParaId>
 where
 	SelfParaId: Get<ParaId>,
-	ForeignAssets: Transfer<AccountId, Balance = u128>
+	ForeignAssets: MutateFungible<AccountId, Balance = u128>
 		+ Inspect<AccountId, Balance = u128, AssetId = MultiLocation>,
-	Assets:
-		Transfer<AccountId> + Inspect<AccountId, Balance = u128, AssetId = u32> + PalletInfoAccess,
+	Assets: MutateFungible<AccountId>
+		+ Inspect<AccountId, Balance = u128, AssetId = u32>
+		+ PalletInfoAccess,
 {
 	/// Transfer funds from one account into another.
 	fn transfer(
@@ -324,12 +369,69 @@ where
 		source: &AccountId,
 		dest: &AccountId,
 		amount: Self::Balance,
-		keep_alive: bool,
+		keep_alive: Preservation,
 	) -> Result<Self::Balance, DispatchError> {
 		if let Some(asset_id) = is_local::<SelfParaId, Assets>(asset) {
 			Assets::transfer(asset_id, source, dest, amount, keep_alive)
 		} else {
 			ForeignAssets::transfer(asset, source, dest, amount, keep_alive)
+		}
+	}
+}
+
+impl<Assets, ForeignAssets, SelfParaId> Balanced<AccountId>
+	for LocalAndForeignAssets<Assets, ForeignAssets, SelfParaId>
+where
+	SelfParaId: Get<ParaId>,
+	ForeignAssets:
+		Balanced<AccountId> + Inspect<AccountId, Balance = u128, AssetId = MultiLocation>,
+	Assets:
+		Balanced<AccountId> + Inspect<AccountId, Balance = u128, AssetId = u32> + PalletInfoAccess,
+{
+	type OnDropDebt = DebtDropIndirection<Assets, ForeignAssets, SelfParaId>;
+	type OnDropCredit = CreditDropIndirection<Assets, ForeignAssets, SelfParaId>;
+}
+
+pub struct DebtDropIndirection<Assets, ForeignAssets, SelfParaId> {
+	_phantom: PhantomData<LocalAndForeignAssets<Assets, ForeignAssets, SelfParaId>>,
+}
+
+impl<Assets, ForeignAssets, SelfParaId> HandleImbalanceDrop<MultiLocation, u128>
+	for DebtDropIndirection<Assets, ForeignAssets, SelfParaId>
+where
+	SelfParaId: Get<ParaId>,
+	ForeignAssets:
+		Balanced<AccountId> + Inspect<AccountId, Balance = u128, AssetId = MultiLocation>,
+	Assets:
+		Balanced<AccountId> + Inspect<AccountId, Balance = u128, AssetId = u32> + PalletInfoAccess,
+{
+	fn handle(asset: MultiLocation, amount: u128) {
+		if let Some(asset_id) = is_local::<SelfParaId, Assets>(asset) {
+			Assets::OnDropDebt::handle(asset_id, amount);
+		} else {
+			ForeignAssets::OnDropDebt::handle(asset, amount);
+		}
+	}
+}
+
+pub struct CreditDropIndirection<Assets, ForeignAssets, SelfParaId> {
+	_phantom: PhantomData<LocalAndForeignAssets<Assets, ForeignAssets, SelfParaId>>,
+}
+
+impl<Assets, ForeignAssets, SelfParaId> HandleImbalanceDrop<MultiLocation, u128>
+	for CreditDropIndirection<Assets, ForeignAssets, SelfParaId>
+where
+	SelfParaId: Get<ParaId>,
+	ForeignAssets:
+		Balanced<AccountId> + Inspect<AccountId, Balance = u128, AssetId = MultiLocation>,
+	Assets:
+		Balanced<AccountId> + Inspect<AccountId, Balance = u128, AssetId = u32> + PalletInfoAccess,
+{
+	fn handle(asset: MultiLocation, amount: u128) {
+		if let Some(asset_id) = is_local::<SelfParaId, Assets>(asset) {
+			Assets::OnDropCredit::handle(asset_id, amount);
+		} else {
+			ForeignAssets::OnDropCredit::handle(asset, amount);
 		}
 	}
 }
