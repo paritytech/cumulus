@@ -51,5 +51,6 @@ bridge_hub_test_utils::test_cases::include_teleports_for_native_asset_works!(
 			Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
 			_ => None,
 		}
-	})
+	}),
+	1013
 );
