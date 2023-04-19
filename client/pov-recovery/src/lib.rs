@@ -229,7 +229,7 @@ pub struct PoVRecovery<Block: BlockT, PC, RC> {
 	recovery_chan_rx: Receiver<RecoveryRequest<Block>>,
 	/// Blocks that we are retrying currently
 	candidates_in_retry: HashSet<Block::Hash>,
-	parachain_sync_service: Arc<SyncingService<Block>>,
+	parachain_sync_service: Arc<dyn SyncOracle>,
 }
 
 impl<Block: BlockT, PC, RCInterface> PoVRecovery<Block, PC, RCInterface>
