@@ -82,6 +82,7 @@ pub fn teleports_for_native_asset_works<
 	unwrap_xcmp_queue_event: Box<
 		dyn Fn(Vec<u8>) -> Option<cumulus_pallet_xcmp_queue::Event<Runtime>>,
 	>,
+	runtime_para_id: u32,
 ) where
 	Runtime: frame_system::Config
 		+ pallet_balances::Config
@@ -106,7 +107,6 @@ pub fn teleports_for_native_asset_works<
 		Call = cumulus_pallet_parachain_system::Call<Runtime>,
 	>,
 {
-	let runtime_para_id = 1000;
 	ExtBuilder::<Runtime>::default()
 		.with_collators(collator_session_keys.collators())
 		.with_session_keys(collator_session_keys.session_keys())
@@ -277,7 +277,8 @@ macro_rules! include_teleports_for_native_asset_works(
 		$collator_session_key:expr,
 		$existential_deposit:expr,
 		$unwrap_pallet_xcm_event:expr,
-		$unwrap_xcmp_queue_event:expr
+		$unwrap_xcmp_queue_event:expr,
+		$runtime_para_id:expr
 	) => {
 		#[test]
 		fn teleports_for_native_asset_works() {
@@ -295,7 +296,8 @@ macro_rules! include_teleports_for_native_asset_works(
 				$existential_deposit,
 				target_account,
 				$unwrap_pallet_xcm_event,
-				$unwrap_xcmp_queue_event
+				$unwrap_xcmp_queue_event,
+				$runtime_para_id
 			)
 		}
 	}
