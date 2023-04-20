@@ -296,6 +296,12 @@ pub mod pallet {
 					.collect::<Vec<_>>();
 
 			if MaxUnincludedLen::<T>::get().map_or(false, |max_len| !max_len.is_zero()) {
+				// NOTE: these limits don't account for the amount of processed messages from
+				// downward and horizontal queues.
+				//
+				// This is correct because:
+				// - inherent never contains messages that were previously processed.
+				// - current implementation always attempts to exhaust each message queue.
 				let limits = TotalBandwidthLimits::new(&relevant_messaging_state);
 
 				let hrmp_outgoing = outbound_messages
@@ -423,6 +429,12 @@ pub mod pallet {
 				"ValidationData must be updated only once in a block",
 			);
 
+			// NOTE: the inherent data is expected to be unique, even if this block is built
+			// in the context of the same relay parent as the previous one. In particular,
+			// the inherent shouldn't contain messages that were already processed by any of the
+			// ancestors.
+			//
+			// This invariant should be upheld by the node-side.
 			let ParachainInherentData {
 				validation_data: vfp,
 				relay_chain_state,

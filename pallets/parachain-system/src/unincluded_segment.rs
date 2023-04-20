@@ -42,8 +42,6 @@ pub struct TotalBandwidthLimits {
 	pub ump_bytes_remaining: u32,
 	/// The limitations of all registered outbound HRMP channels.
 	pub hrmp_outgoing: BTreeMap<ParaId, HrmpOutboundLimits>,
-	// Downward queue is not checked against limits since new block always
-	// exhausts available messages from it.
 }
 
 impl TotalBandwidthLimits {
