@@ -195,7 +195,7 @@ where
 }
 
 pub struct LocalAndForeignAssets<Assets, ForeignAssets, SelfParaId> {
-	_ignore: PhantomData<(Assets, ForeignAssets, SelfParaId)>,
+	_phantom: PhantomData<(Assets, ForeignAssets, SelfParaId)>,
 }
 
 impl<Assets, ForeignAssets, SelfParaId> Unbalanced<AccountId>
