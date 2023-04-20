@@ -2492,7 +2492,7 @@ dependencies = [
 name = "cumulus-test-relay-validation-worker-provider"
 version = "0.1.0"
 dependencies = [
- "polkadot-node-core-pvf",
+ "polkadot-node-core-pvf-worker",
  "toml 0.7.3",
 ]
 
@@ -7929,7 +7929,7 @@ dependencies = [
  "futures",
  "log",
  "polkadot-client",
- "polkadot-node-core-pvf",
+ "polkadot-node-core-pvf-worker",
  "polkadot-node-metrics",
  "polkadot-performance-test",
  "polkadot-service",
@@ -7942,6 +7942,7 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-keyring",
+ "sp-maybe-compressed-blob",
  "substrate-build-script-utils",
  "thiserror",
  "try-runtime-cli",
@@ -8320,8 +8321,6 @@ version = "0.9.41"
 source = "git+https://github.com/paritytech/polkadot?branch=master#8e06c07264673ccc9fef25173ed5c0e078227173"
 dependencies = [
  "always-assert",
- "assert_matches",
- "cpu-time",
  "futures",
  "futures-timer",
  "libc",
@@ -8333,20 +8332,12 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "rand 0.8.5",
- "rayon",
- "sc-executor",
- "sc-executor-common",
- "sc-executor-wasmtime",
  "slotmap",
  "sp-core",
- "sp-externalities",
- "sp-io",
  "sp-maybe-compressed-blob",
  "sp-tracing",
  "sp-wasm-interface",
  "substrate-build-script-utils",
- "tempfile",
- "tikv-jemalloc-ctl",
  "tokio",
  "tracing-gum",
 ]
@@ -8364,6 +8355,34 @@ dependencies = [
  "polkadot-primitives",
  "sp-keystore",
  "thiserror",
+ "tracing-gum",
+]
+
+[[package]]
+name = "polkadot-node-core-pvf-worker"
+version = "0.9.41"
+dependencies = [
+ "assert_matches",
+ "cpu-time",
+ "futures",
+ "libc",
+ "parity-scale-codec",
+ "polkadot-node-core-pvf",
+ "polkadot-parachain",
+ "polkadot-primitives",
+ "rayon",
+ "sc-executor",
+ "sc-executor-common",
+ "sc-executor-wasmtime",
+ "sp-core",
+ "sp-externalities",
+ "sp-io",
+ "sp-maybe-compressed-blob",
+ "sp-tracing",
+ "substrate-build-script-utils",
+ "tempfile",
+ "tikv-jemalloc-ctl",
+ "tokio",
  "tracing-gum",
 ]
 
@@ -8677,10 +8696,12 @@ dependencies = [
  "kusama-runtime",
  "log",
  "polkadot-erasure-coding",
- "polkadot-node-core-pvf",
+ "polkadot-node-core-pvf-worker",
  "polkadot-node-primitives",
  "polkadot-primitives",
  "quote",
+ "sc-executor-common",
+ "sp-maybe-compressed-blob",
  "thiserror",
 ]
 
