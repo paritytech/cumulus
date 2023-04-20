@@ -317,6 +317,10 @@ impl pallet_asset_conversion::Config for Runtime {
 	type MintMinLiquidity = ConstU128<100>;
 
 	type WeightInfo = ();
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper =
+		crate::xcm_config::BenchmarkMultiLocationConverter<parachain_info::Pallet<Runtime>>;
 }
 
 parameter_types! {

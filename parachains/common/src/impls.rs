@@ -21,7 +21,8 @@ use frame_support::{
 	pallet_prelude::DispatchError,
 	traits::{
 		fungibles::{
-			self, Balanced, Credit, HandleImbalanceDrop, Mutate as MutateFungible, Unbalanced,
+			self, Balanced, Create, Credit, HandleImbalanceDrop, Mutate as MutateFungible,
+			Unbalanced,
 		},
 		tokens::{DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence},
 		Contains, ContainsPair, Currency, Get, Imbalance, OnUnbalanced, PalletInfoAccess,
@@ -30,7 +31,7 @@ use frame_support::{
 use pallet_asset_conversion::MultiAssetIdConverter;
 use pallet_asset_tx_payment::HandleCredit;
 use polkadot_primitives::AccountId;
-use sp_runtime::traits::Zero;
+use sp_runtime::{traits::Zero, DispatchResult};
 use sp_std::marker::PhantomData;
 use xcm::{
 	latest::{AssetId, Fungibility::Fungible, MultiAsset, MultiLocation},
@@ -375,6 +376,29 @@ where
 			Assets::transfer(asset_id, source, dest, amount, keep_alive)
 		} else {
 			ForeignAssets::transfer(asset, source, dest, amount, keep_alive)
+		}
+	}
+}
+
+impl<Assets, ForeignAssets, SelfParaId> Create<AccountId>
+	for LocalAndForeignAssets<Assets, ForeignAssets, SelfParaId>
+where
+	SelfParaId: Get<ParaId>,
+	ForeignAssets: Create<AccountId> + Inspect<AccountId, Balance = u128, AssetId = MultiLocation>,
+	Assets:
+		Create<AccountId> + Inspect<AccountId, Balance = u128, AssetId = u32> + PalletInfoAccess,
+{
+	/// Create a new fungible asset.
+	fn create(
+		asset_id: Self::AssetId,
+		admin: AccountId,
+		is_sufficient: bool,
+		min_balance: Self::Balance,
+	) -> DispatchResult {
+		if let Some(asset_id) = is_local::<SelfParaId, Assets>(asset_id) {
+			Assets::create(asset_id, admin, is_sufficient, min_balance)
+		} else {
+			ForeignAssets::create(asset_id, admin, is_sufficient, min_balance)
 		}
 	}
 }

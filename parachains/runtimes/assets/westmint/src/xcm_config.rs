@@ -53,6 +53,9 @@ use xcm_executor::{
 	XcmExecutor,
 };
 
+#[cfg(feature = "runtime-benchmarks")]
+use {pallet_assets::BenchmarkHelper, sp_core::Get};
+
 parameter_types! {
 	pub const WestendLocation: MultiLocation = MultiLocation::parent();
 	pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Westend);
@@ -517,12 +520,34 @@ impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
 
 /// Simple conversion of `u32` into an `AssetId` for use in benchmarking.
 pub struct XcmBenchmarkHelper;
-#[cfg(feature = "runtime-benchmarks")]
-use pallet_assets::BenchmarkHelper;
+
 #[cfg(feature = "runtime-benchmarks")]
 impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 	fn create_asset_id_parameter(id: u32) -> MultiLocation {
 		MultiLocation { parents: 1, interior: X1(Parachain(id)) }
+	}
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct BenchmarkMultiLocationConverter<SelfParaId> {
+	_phantom: sp_std::marker::PhantomData<SelfParaId>,
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl<SelfParaId> pallet_asset_conversion::BenchmarkHelper<MultiLocation>
+	for BenchmarkMultiLocationConverter<SelfParaId>
+where
+	SelfParaId: Get<ParaId>,
+{
+	fn asset_id(asset_id: u32) -> MultiLocation {
+		MultiLocation {
+			parents: 1,
+			interior: X3(
+				Parachain(SelfParaId::get().into()),
+				PalletInstance(<Assets as PalletInfoAccess>::index() as u8),
+				GeneralIndex(asset_id.into()),
+			),
+		}
 	}
 }
 
