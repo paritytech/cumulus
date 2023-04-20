@@ -41,7 +41,7 @@ use sc_client_api::{backend::AuxStore, BlockBackend, BlockOf};
 use sc_consensus::{BlockImport, BlockImportParams, ForkChoiceStrategy, StateAction};
 use sc_consensus::import_queue::{BasicQueue, Verifier as VerifierT};
 use sc_consensus_aura::standalone as aura_internal;
-use sc_telemetry::TelemetryHandle;
+use sc_telemetry::{telemetry, TelemetryHandle, CONSENSUS_DEBUG, CONSENSUS_TRACE};
 use sp_api::ProvideRuntimeApi;
 use sp_application_crypto::AppPublic;
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
@@ -68,7 +68,6 @@ pub struct Params<BI, CIDP, Client, RClient, SO, Proposer, CS> {
 	pub para_id: ParaId,
 	pub overseer_handle: OverseerHandle,
 	pub slot_duration: SlotDuration,
-	pub telemetry: Option<TelemetryHandle>,
 	pub proposer: Proposer,
 	pub collator_service: CS,
 }
@@ -364,6 +363,7 @@ struct Verifier<P, Client, Block, CIDP> {
 	client: Arc<Client>,
 	create_inherent_data_providers: CIDP,
 	slot_duration: SlotDuration,
+	telemetry: Option<TelemetryHandle>,
 	_marker: std::marker::PhantomData<(Block, P)>,
 }
 
@@ -410,15 +410,27 @@ where
 
 			match res {
 				Ok((pre_header, _slot, seal_digest)) => {
+					telemetry!(
+						self.telemetry;
+						CONSENSUS_TRACE;
+						"aura.checked_and_importing";
+						"pre_header" => ?pre_header,
+					);
+
 					block_params.header = pre_header;
 					block_params.post_digests.push(seal_digest);
 					block_params.fork_choice = Some(ForkChoiceStrategy::LongestChain);
 					block_params.post_hash = Some(post_hash);
-
-					// TODO [now] telemetry
 				}
-				Err(aura_internal::SealVerificationError::Deferred(_hdr, slot)) => {
-					// TODO [now]: telemetry
+				Err(aura_internal::SealVerificationError::Deferred(hdr, slot)) => {
+					telemetry!(
+						self.telemetry;
+						CONSENSUS_DEBUG;
+						"aura.header_too_far_in_future";
+						"hash" => ?post_hash,
+						"a" => ?hdr,
+						"b" => ?slot,
+					);
 
 					return Err(format!(
 						"Rejecting block ({:?}) from future slot {:?}",
@@ -494,6 +506,7 @@ pub fn fully_verifying_import_queue<P, Client, Block: BlockT, I, CIDP>(
 	slot_duration: SlotDuration,
 	spawner: &impl sp_core::traits::SpawnEssentialNamed,
 	registry: Option<&substrate_prometheus_endpoint::Registry>,
+	telemetry: Option<TelemetryHandle>,
 ) -> BasicQueue<Block, I::Transaction>
 where
 	P: Pair,
@@ -513,6 +526,7 @@ where
 		client,
 		create_inherent_data_providers,
 		slot_duration,
+		telemetry,
 		_marker: std::marker::PhantomData,
 	};
 
