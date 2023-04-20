@@ -827,7 +827,7 @@ mod benches {
 		[pallet_assets, Assets]
 		[pallet_assets, ForeignAssets]
 		[pallet_assets, PoolAssets]
-		[pallet_asset_convesion, AssetConvesion]
+		[pallet_asset_conversion, AssetConversion]
 		[pallet_balances, Balances]
 		[pallet_multisig, Multisig]
 		[pallet_nfts, Nfts]
