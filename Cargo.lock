@@ -384,6 +384,7 @@ name = "asset-test-utils"
 version = "1.0.0"
 dependencies = [
  "assets-common",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
