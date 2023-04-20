@@ -19,17 +19,25 @@ use bp_runtime::messages::MessageDispatchResult;
 pub use bridge_hub_rococo_runtime::{
 	constants::fee::WeightToFee,
 	xcm_config::{XcmConfig, XcmRouter},
-	Balances, ExistentialDeposit, ParachainSystem, PolkadotXcm, Runtime, RuntimeEvent, SessionKeys,
+	Balances, BridgeGrandpaRococoInstance, BridgeGrandpaWococoInstance, ExistentialDeposit,
+	ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, SessionKeys,
 };
 use codec::{Decode, Encode};
 use xcm::latest::prelude::*;
 
-use bridge_hub_test_utils::*;
+use bridge_hub_rococo_runtime::{
+	bridge_hub_rococo_config, bridge_hub_wococo_config, WithBridgeHubRococoMessagesInstance,
+	WithBridgeHubWococoMessagesInstance,
+};
+
+use bridge_hub_test_utils::{
+	dummy_account, dummy_xcm, mock_open_hrmp_channel, new_test_ext, simulate_export_message,
+	wrap_as_dispatch_message,
+};
 use bridge_runtime_common::messages_xcm_extension::XcmBlobMessageDispatchResult;
-use frame_support::{parameter_types, weights::Weight};
+use frame_support::parameter_types;
 use parachains_common::{AccountId, AuraId};
 use xcm_builder::DispatchBlobError;
-use xcm_executor::XcmExecutor;
 
 fn execute_on_runtime<R>(
 	with_para_id: u32,
@@ -185,90 +193,6 @@ fn dispatch_blob_and_xcm_routing_works_on_bridge_hub_rococo() {
 	}
 }
 
-#[test]
-fn can_govornance_call_xcm_transact_with_initialize_on_bridge_hub_rococo() {
-	// prepare xcm as govornance will do
-	let initialize_call: RuntimeCall =
-		RuntimeCall::BridgeRococoGrandpa(pallet_bridge_grandpa::Call::<
-			Runtime,
-			BridgeGrandpaRococoInstance,
-		>::initialize {
-			init_data: mock_initialiation_data(),
-		});
-	let xcm = Xcm(vec![
-		UnpaidExecution { weight_limit: Unlimited, check_origin: None },
-		Transact {
-			origin_kind: OriginKind::Superuser,
-			require_weight_at_most: Weight::from_parts(1000000000, 0),
-			call: initialize_call.encode().into(),
-		},
-	]);
-	// origin as relay chain
-	let origin = MultiLocation { parents: 1, interior: Here };
-
-	execute_on_runtime(bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID, None, || {
-		// check mode before
-		assert_eq!(
-			pallet_bridge_grandpa::PalletOperatingMode::<Runtime, BridgeGrandpaRococoInstance>::try_get(),
-			Err(())
-		);
-
-		// initialize bridge through governance-like
-		let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-		let weight_limit = Weight::from_parts(41666666666, 0);
-		let outcome = XcmExecutor::<XcmConfig>::execute_xcm(origin, xcm, hash, weight_limit);
-
-		// check mode after
-		assert_eq!(outcome.ensure_complete(), Ok(()));
-		assert_eq!(
-			pallet_bridge_grandpa::PalletOperatingMode::<Runtime, BridgeGrandpaRococoInstance>::try_get(),
-			Ok(bp_runtime::BasicOperatingMode::Normal)
-		);
-	})
-}
-
-#[test]
-fn can_govornance_call_xcm_transact_with_initialize_bridge_on_bridge_hub_wococo() {
-	// prepare xcm as govornance will do
-	let initialize_call: RuntimeCall =
-		RuntimeCall::BridgeWococoGrandpa(pallet_bridge_grandpa::Call::<
-			Runtime,
-			BridgeGrandpaWococoInstance,
-		>::initialize {
-			init_data: mock_initialiation_data(),
-		});
-	let xcm = Xcm(vec![
-		UnpaidExecution { weight_limit: Unlimited, check_origin: None },
-		Transact {
-			origin_kind: OriginKind::Superuser,
-			require_weight_at_most: Weight::from_parts(1000000000, 0),
-			call: initialize_call.encode().into(),
-		},
-	]);
-	// origin as relay chain
-	let origin = MultiLocation { parents: 1, interior: Here };
-
-	execute_on_runtime(bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID, None, || {
-		// check mode before
-		assert_eq!(
-			pallet_bridge_grandpa::PalletOperatingMode::<Runtime, BridgeGrandpaWococoInstance>::try_get(),
-			Err(())
-		);
-
-		// initialize bridge through governance-like
-		let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-		let weight_limit = Weight::from_parts(41666666666, 0);
-		let outcome = XcmExecutor::<XcmConfig>::execute_xcm(origin, xcm, hash, weight_limit);
-
-		// check mode after
-		assert_eq!(outcome.ensure_complete(), Ok(()));
-		assert_eq!(
-			pallet_bridge_grandpa::PalletOperatingMode::<Runtime, BridgeGrandpaWococoInstance>::try_get(),
-			Ok(bp_runtime::BasicOperatingMode::Normal)
-		);
-	})
-}
-
 // TODO:check-parameter - add test for DeliveryConfirmationPayments when receive_messages_delivery_proof
 
 const ALICE: [u8; 32] = [1u8; 32];
@@ -303,3 +227,62 @@ bridge_hub_test_utils::test_cases::include_teleports_for_native_asset_works!(
 	}),
 	1013
 );
+
+bridge_hub_test_utils::include_initialize_bridge_by_governance_works!(
+	initialize_bridge_to_wococo_by_governance_works,
+	Runtime,
+	XcmConfig,
+	BridgeGrandpaWococoInstance,
+	bridge_hub_test_utils::CollatorSessionKeys::new(
+		AccountId::from(ALICE),
+		AccountId::from(ALICE),
+		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+	),
+	Box::new(|call| RuntimeCall::BridgeWococoGrandpa(call).encode()),
+	1013
+);
+
+mod bridge_hub_wococo {
+	use super::*;
+
+	bridge_hub_test_utils::test_cases::include_teleports_for_native_asset_works!(
+		Runtime,
+		XcmConfig,
+		CheckingAccount,
+		WeightToFee,
+		ParachainSystem,
+		bridge_hub_test_utils::CollatorSessionKeys::new(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+		),
+		ExistentialDeposit::get(),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
+				_ => None,
+			}
+		}),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
+				_ => None,
+			}
+		}),
+		1014
+	);
+
+	bridge_hub_test_utils::include_initialize_bridge_by_governance_works!(
+		initialize_bridge_to_rococo_by_governance_works,
+		Runtime,
+		XcmConfig,
+		BridgeGrandpaRococoInstance,
+		bridge_hub_test_utils::CollatorSessionKeys::new(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+		),
+		Box::new(|call| RuntimeCall::BridgeRococoGrandpa(call).encode()),
+		1014
+	);
+}

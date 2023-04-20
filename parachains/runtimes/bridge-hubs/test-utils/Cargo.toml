@@ -11,9 +11,13 @@ description = "Utils for BridgeHub testing"
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Cumulus
 parachains-common = { path = "../../../common", default-features = false }
+cumulus-pallet-dmp-queue = { path = "../../../../pallets/dmp-queue", default-features = false }
+pallet-collator-selection = { path = "../../../../pallets/collator-selection", default-features = false }
 cumulus-primitives-core = { path = "../../../../primitives/core", default-features = false }
 cumulus-pallet-parachain-system = { path = "../../../../pallets/parachain-system", default-features = false }
 cumulus-primitives-parachain-inherent = { path = "../../../../primitives/parachain-inherent", default-features = false }
@@ -35,6 +39,7 @@ bp-messages = { path = "../../../../bridges/primitives/messages", default-featur
 bp-polkadot-core = { path = "../../../../bridges/primitives/polkadot-core", default-features = false }
 bp-runtime = { path = "../../../../bridges/primitives/runtime", default-features = false }
 bp-test-utils = { path = "../../../../bridges/primitives/test-utils", default-features = false }
+pallet-bridge-grandpa = { path = "../../../../bridges/modules/grandpa", default-features = false }
 
 [features]
 default = [ "std" ]
@@ -46,6 +51,7 @@ std = [
 	"bp-header-chain/std",
 	"bp-runtime/std",
 	"bp-test-utils/std",
+	"pallet-bridge-grandpa/std",
 	"parachains-common/std",
 	"parachain-info/std",
 	"cumulus-primitives-core/std",
@@ -59,4 +65,7 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"asset-test-utils/std",
+	"cumulus-pallet-dmp-queue/std",
+	"pallet-session/std",
+	"pallet-balances/std",
 ]

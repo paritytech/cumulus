@@ -178,35 +178,7 @@ pub fn mock_open_hrmp_channel<
 		.expect("dispatch succeeded");
 }
 
+// RelayChain header mock representation
 pub type RelayBlockNumber = bp_polkadot_core::BlockNumber;
 pub type RelayBlockHasher = bp_polkadot_core::Hasher;
 pub type RelayBlockHeader = sp_runtime::generic::Header<RelayBlockNumber, RelayBlockHasher>;
-
-/// Helper that creates InitializationData mock data, that can be used to initialize bridge GRANDPA pallet
-pub fn mock_initialiation_data() -> bp_header_chain::InitializationData<RelayBlockHeader> {
-	use sp_runtime::traits::Header;
-	use std::str::FromStr;
-
-	let header = RelayBlockHeader::new(
-		75,
-		bp_polkadot_core::Hash::from_str(
-			"0xd2c0afaab32de0cb8f7f0d89217e37c5ea302c1ffb5a7a83e10d20f12c32874d",
-		)
-		.expect("invalid value"),
-		bp_polkadot_core::Hash::from_str(
-			"0x92b965f0656a4e0e5fc0167da2d4b5ee72b3be2c1583c4c1e5236c8c12aa141b",
-		)
-		.expect("invalid value"),
-		bp_polkadot_core::Hash::from_str(
-			"0xae4a25acf250d72ed02c149ecc7dd3c9ee976d41a2888fc551de8064521dc01d",
-		)
-		.expect("invalid value"),
-		Default::default(),
-	);
-	bp_header_chain::InitializationData {
-		header: Box::new(header),
-		authority_list: Default::default(),
-		set_id: 6,
-		operating_mode: bp_runtime::BasicOperatingMode::Normal,
-	}
-}
