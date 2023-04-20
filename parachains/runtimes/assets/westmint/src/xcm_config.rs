@@ -532,7 +532,7 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 				// this `None` with `Some(Self::make_asset(crate::ExistentialDeposit::get()))`
 				bridge_location_fee: None,
 				allowed_target_location: Self::allowed_target_location(),
-				target_location_fee: None,
+				max_target_location_fee: None,
 			},
 		))
 	}

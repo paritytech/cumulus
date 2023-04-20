@@ -133,7 +133,7 @@ benchmarks! {
 	verify {
 		let exporter = AllowedExporters::<T>::get(bridged_network).unwrap();
 		assert_eq!(exporter.bridge_location_fee, bridge_location_fee.map(|fee| MultiAsset::try_from(fee).unwrap()));
-		assert_eq!(exporter.target_location_fee, target_location_fee.map(|fee| MultiAsset::try_from(fee).unwrap()));
+		assert_eq!(exporter.max_target_location_fee, target_location_fee.map(|fee| MultiAsset::try_from(fee).unwrap()));
 	}
 
 	add_universal_alias {

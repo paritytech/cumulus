@@ -1364,7 +1364,7 @@ pub fn can_governance_change_bridge_transfer_out_configuration<Runtime, XcmConfi
 					2,
 					X2(GlobalConsensus(bridged_network), Parachain(1000)),
 				),
-				target_location_fee: None,
+				max_target_location_fee: None,
 			};
 
 			// helper to execute BridgeTransfer call
@@ -1416,7 +1416,7 @@ pub fn can_governance_change_bridge_transfer_out_configuration<Runtime, XcmConfi
 				assert_eq!(cfg.bridge_location, bridge_config.bridge_location);
 				assert_eq!(cfg.bridge_location_fee, None);
 				assert_eq!(cfg.allowed_target_location, bridge_config.allowed_target_location);
-				assert_eq!(cfg.target_location_fee, None);
+				assert_eq!(cfg.max_target_location_fee, None);
 			}
 
 			// governance can update bridge config
@@ -1448,7 +1448,7 @@ pub fn can_governance_change_bridge_transfer_out_configuration<Runtime, XcmConfi
 				assert_eq!(cfg.bridge_location, bridge_config.bridge_location);
 				assert_eq!(cfg.bridge_location_fee, Some(new_bridge_location_fee));
 				assert_eq!(cfg.allowed_target_location, bridge_config.allowed_target_location);
-				assert_eq!(cfg.target_location_fee, Some(new_target_location_fee));
+				assert_eq!(cfg.max_target_location_fee, Some(new_target_location_fee));
 			}
 
 			// governance can remove bridge config
@@ -1660,7 +1660,7 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 				bridge_location: bridge_hub_location,
 				bridge_location_fee: None,
 				allowed_target_location: target_location_from_different_consensus,
-				target_location_fee: Some(target_location_fee.clone()),
+				max_target_location_fee: Some(target_location_fee.clone()),
 			};
 			let balance_to_transfer = 1000_u128;
 			let native_asset = MultiLocation::parent();

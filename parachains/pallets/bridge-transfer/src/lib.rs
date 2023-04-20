@@ -83,7 +83,7 @@ pub struct BridgeConfig {
 	// TODO:check-parameter - can we store Option<Weight> and then aviod using `Unlimited`?
 	/// If `None` then `UnpaidExecution` is used, else `Withdraw(target_location_fee)/BuyExecution(target_location_fee, Unlimited)`
 	/// `MultiAsset` is here from the point of view of `allowed_target_location`, e.g.: `MultiLocation::parent()` means relay chain token of `allowed_target_location`
-	pub target_location_fee: Option<MultiAsset>,
+	pub max_target_location_fee: Option<MultiAsset>,
 }
 
 /// Trait for constructing ping message.
@@ -252,9 +252,12 @@ pub mod pallet {
 	#[cfg_attr(test, derive(PartialEq))]
 	pub enum Error<T> {
 		InvalidConfiguration,
+		UnavailableConfiguration,
+		ConfigurationAlreadyExists,
 		InvalidAssets,
 		MaxAssetsLimitReached,
 		UnsupportedDestination,
+		UnsupportedXcmVersion,
 		InvalidRemoteDestination,
 		BridgeCallError,
 		FailedToReserve,
@@ -374,7 +377,7 @@ pub mod pallet {
 			let _ = T::AdminOrigin::ensure_origin(origin)?;
 			ensure!(
 				!AllowedExporters::<T>::contains_key(bridged_network),
-				Error::<T>::InvalidConfiguration
+				Error::<T>::ConfigurationAlreadyExists
 			);
 			let allowed_target_location_network = bridge_config
 				.allowed_target_location
@@ -410,7 +413,7 @@ pub mod pallet {
 			let _ = T::AdminOrigin::ensure_origin(origin)?;
 			ensure!(
 				AllowedExporters::<T>::contains_key(bridged_network),
-				Error::<T>::InvalidConfiguration
+				Error::<T>::UnavailableConfiguration
 			);
 
 			AllowedExporters::<T>::remove(bridged_network);
@@ -433,24 +436,18 @@ pub mod pallet {
 			target_location_fee: Option<Box<VersionedMultiAsset>>,
 		) -> DispatchResult {
 			let _ = T::AdminOrigin::ensure_origin(origin)?;
-			ensure!(
-				AllowedExporters::<T>::contains_key(bridged_network),
-				Error::<T>::InvalidConfiguration
-			);
-			let bridge_location_fee = bridge_location_fee
-				.map(|fee| MultiAsset::try_from(*fee))
-				.transpose()
-				.map_err(|_| Error::<T>::InvalidConfiguration)?;
-			let target_location_fee = target_location_fee
-				.map(|fee| MultiAsset::try_from(*fee))
-				.transpose()
-				.map_err(|_| Error::<T>::InvalidConfiguration)?;
 
-			AllowedExporters::<T>::try_mutate_exists(bridged_network, |bridge_config| {
+			AllowedExporters::<T>::try_mutate_exists(bridged_network, |maybe_bridge_config| {
 				let bridge_config =
-					bridge_config.as_mut().ok_or(Error::<T>::InvalidConfiguration)?;
-				bridge_config.bridge_location_fee = bridge_location_fee;
-				bridge_config.target_location_fee = target_location_fee;
+					maybe_bridge_config.as_mut().ok_or(Error::<T>::UnavailableConfiguration)?;
+				bridge_config.bridge_location_fee = bridge_location_fee
+					.map(|fee| MultiAsset::try_from(*fee))
+					.transpose()
+					.map_err(|_| Error::<T>::UnsupportedXcmVersion)?;
+				bridge_config.max_target_location_fee = target_location_fee
+					.map(|fee| MultiAsset::try_from(*fee))
+					.transpose()
+					.map_err(|_| Error::<T>::UnsupportedXcmVersion)?;
 				Self::deposit_event(Event::BridgeUpdated);
 				Ok(())
 			})
@@ -472,7 +469,7 @@ pub mod pallet {
 			let _ = T::AdminOrigin::ensure_origin(origin)?;
 
 			let location: MultiLocation =
-				(*location).try_into().map_err(|_| Error::<T>::UnsupportedDestination)?;
+				(*location).try_into().map_err(|_| Error::<T>::UnsupportedXcmVersion)?;
 			let added = AllowedUniversalAliases::<T>::try_mutate(location, |junctions| {
 				junctions.try_insert(junction)
 			})
@@ -499,7 +496,7 @@ pub mod pallet {
 			let _ = T::AdminOrigin::ensure_origin(origin)?;
 
 			let location: MultiLocation =
-				(*location).try_into().map_err(|_| Error::<T>::UnsupportedDestination)?;
+				(*location).try_into().map_err(|_| Error::<T>::UnsupportedXcmVersion)?;
 			let removed = AllowedUniversalAliases::<T>::try_mutate(
 				location,
 				|junctions| -> Result<bool, Error<T>> {
@@ -530,7 +527,7 @@ pub mod pallet {
 			let _ = T::AdminOrigin::ensure_origin(origin)?;
 
 			let location: MultiLocation =
-				(*location).try_into().map_err(|_| Error::<T>::UnsupportedDestination)?;
+				(*location).try_into().map_err(|_| Error::<T>::UnsupportedXcmVersion)?;
 			let added = AllowedReserveLocations::<T>::try_mutate(|locations| {
 				locations.try_insert(location)
 			})
@@ -559,7 +556,7 @@ pub mod pallet {
 					let mut removed = false;
 					for ltr in locations_to_remove {
 						let ltr: MultiLocation =
-							ltr.try_into().map_err(|_| Error::<T>::UnsupportedDestination)?;
+							ltr.try_into().map_err(|_| Error::<T>::UnsupportedXcmVersion)?;
 						removed |= locations.remove(&ltr);
 					}
 					Ok(removed)
@@ -604,7 +601,7 @@ pub mod pallet {
 						None => return Err(Error::<T>::UnsupportedDestination),
 					}
 				},
-				_ => Err(Error::<T>::UnsupportedDestination),
+				_ => Err(Error::<T>::UnsupportedXcmVersion),
 			}
 		}
 
@@ -678,7 +675,7 @@ pub mod pallet {
 			})?;
 
 			// prepare xcm message (maybe_paid + ReserveAssetDeposited stuff)
-			let mut xcm_instructions = match bridge_config.target_location_fee {
+			let mut xcm_instructions = match bridge_config.max_target_location_fee {
 				Some(target_location_fee) => sp_std::vec![
 					WithdrawAsset(target_location_fee.clone().into()),
 					BuyExecution { fees: target_location_fee, weight_limit: Unlimited },
@@ -707,6 +704,7 @@ pub mod pallet {
 				xcm,
 			);
 			// call bridge
+			// TODO: check-parameter - should we handle `sender_cost` somehow ?
 			let (message_hash, sender_cost) =
 				send_xcm::<T::BridgeXcmSender>(dest, xcm).map_err(|e| {
 					log::error!(
@@ -942,7 +940,7 @@ pub(crate) mod tests {
 					2,
 					X2(GlobalConsensus(Wococo), Parachain(1000)),
 				),
-				target_location_fee: None,
+				max_target_location_fee: None,
 			},
 		)
 	}
@@ -1052,7 +1050,7 @@ pub(crate) mod tests {
 				BridgeTransfer::ensure_remote_destination(VersionedMultiLocation::V2(
 					xcm::v2::MultiLocation::default()
 				)),
-				Err(Error::<TestRuntime>::UnsupportedDestination)
+				Err(Error::<TestRuntime>::UnsupportedXcmVersion)
 			);
 
 			// v3 - "parent: 0" wrong
@@ -1219,7 +1217,7 @@ pub(crate) mod tests {
 						2,
 						X2(GlobalConsensus(Wococo), Parachain(1000)),
 					),
-					target_location_fee: None,
+					max_target_location_fee: None,
 				}),
 			));
 
@@ -1263,7 +1261,7 @@ pub(crate) mod tests {
 				),
 				DispatchError::Module(ModuleError {
 					index: 52,
-					error: [5, 0, 0, 0],
+					error: [8, 0, 0, 0],
 					message: Some("BridgeCallError")
 				})
 			);
@@ -1346,7 +1344,7 @@ pub(crate) mod tests {
 				2,
 				X2(GlobalConsensus(bridged_network), Parachain(1000)),
 			),
-			target_location_fee: None,
+			max_target_location_fee: None,
 		});
 		let dummy_xcm = Xcm(vec![]);
 		let dummy_remote_interior_multilocation = X1(Parachain(1234));
@@ -1463,7 +1461,7 @@ pub(crate) mod tests {
 					bridge_location: bridged_config.bridge_location.clone(),
 					bridge_location_fee: Some((Parent, 200u128).into()),
 					allowed_target_location: bridged_config.allowed_target_location.clone(),
-					target_location_fee: Some((Parent, 300u128).into()),
+					max_target_location_fee: Some((Parent, 300u128).into()),
 				})
 			);
 			assert_eq!(
