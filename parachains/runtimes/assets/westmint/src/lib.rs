@@ -775,7 +775,7 @@ construct_runtime!(
 		Nfts: pallet_nfts::{Pallet, Call, Storage, Event<T>} = 52,
 		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 53,
 		PoolAssets: pallet_assets::<Instance3>::{Pallet, Call, Storage, Event<T>} = 54,
-		AssetConvesion: pallet_asset_conversion::{Pallet, Call, Storage, Event<T>} = 55,
+		AssetConversion: pallet_asset_conversion::{Pallet, Call, Storage, Event<T>} = 55,
 	}
 );
 
