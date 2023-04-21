@@ -302,6 +302,8 @@ pub mod pallet {
 				// This is correct because:
 				// - inherent never contains messages that were previously processed.
 				// - current implementation always attempts to exhaust each message queue.
+				//
+				// <https://github.com/paritytech/cumulus/issues/2472>
 				let limits = TotalBandwidthLimits::new(&relevant_messaging_state);
 
 				let hrmp_outgoing = outbound_messages
@@ -437,7 +439,7 @@ pub mod pallet {
 			// the inherent shouldn't contain messages that were already processed by any of the
 			// ancestors.
 			//
-			// This invariant should be upheld by the node-side.
+			// This invariant should be upheld by the `ProvideInherent` implementation.
 			let ParachainInherentData {
 				validation_data: vfp,
 				relay_chain_state,
