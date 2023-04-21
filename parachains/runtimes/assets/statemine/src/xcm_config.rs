@@ -38,11 +38,12 @@ use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
-	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin,
-	FungiblesAdapter, IsConcrete, LocalMint, NativeAsset, NoChecking, ParentAsSuperuser,
-	ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-	UsingComponents, WeightInfoBounds, WithComputedOrigin,
+	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
+	CurrencyAdapter, EnsureXcmOrigin, FungiblesAdapter, IsConcrete, LocalMint, NativeAsset,
+	NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
+	WithComputedOrigin,
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
@@ -352,7 +353,6 @@ pub type Barrier = DenyThenTry<
 		// Expected responses are OK.
 		// TODO(anthony): this would warrant my attention
 		AllowKnownQueryResponses<PolkadotXcm>,
-		xcm_builder::AllowUnpaidExecutionFrom<Everything>, // add this line, allow every xcm message
 		// Allow XCMs with some computed origins to pass through.
 		WithComputedOrigin<
 			(
@@ -362,6 +362,8 @@ pub type Barrier = DenyThenTry<
 				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
 				// Subscriptions for version tracking are OK.
 				AllowSubscriptionsFrom<ParentOrSiblings>,
+				// Allow unpaid execution when from a computed origin or plurarity on the relay chain
+				AllowUnpaidExecutionFrom<ParentOrParentsPlurality>,
 			),
 			UniversalLocation,
 			ConstU32<8>,

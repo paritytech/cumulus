@@ -180,10 +180,59 @@ dependencies = [
 ]
 
 [[package]]
+name = "anstream"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e579a7752471abc2a8268df8b20005e3eadd975f585398f17efcfd8d4927371"
+dependencies = [
+ "anstyle 1.0.0",
+ "anstyle-parse",
+ "anstyle-query",
+ "anstyle-wincon",
+ "colorchoice",
+ "is-terminal",
+ "utf8parse",
+]
+
+[[package]]
 name = "anstyle"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ba0b55c2201aa802adb684e7963ce2c3191675629e7df899774331e3ac747cf"
+
+[[package]]
+name = "anstyle"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41ed9a86bf92ae6580e0a31281f65a1b1d867c0cc68d5346e2ae128dddfa6a7d"
+
+[[package]]
+name = "anstyle-parse"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e765fd216e48e067936442276d1d57399e37bce53c264d6fefbe298080cb57ee"
+dependencies = [
+ "utf8parse",
+]
+
+[[package]]
+name = "anstyle-query"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ca11d4be1bab0c8bc8734a9aa7bf4ee8316d462a08c6ac5052f888fef5b494b"
+dependencies = [
+ "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "anstyle-wincon"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4bcd8291a340dd8ac70e18878bc4501dd7b4ff970cfa21c207d36ece51ea88fd"
+dependencies = [
+ "anstyle 1.0.0",
+ "windows-sys 0.48.0",
+]
 
 [[package]]
 name = "anyhow"
@@ -315,7 +364,7 @@ version = "2.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec0b2340f55d9661d76793b2bfc2eb0e62689bd79d067a95707ea762afd5e9dd"
 dependencies = [
- "anstyle",
+ "anstyle 0.3.4",
  "bstr 1.1.0",
  "doc-comment",
  "predicates 3.0.1",
@@ -418,6 +467,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6a8ea61bf9947a1007c5cada31e647dbc77b103c679858150003ba697ea798b"
 dependencies = [
  "event-listener",
+]
+
+[[package]]
+name = "async-recursion"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e97ce7de6cf12de5d7226c73f5ba9811622f4db3a5b91b55c53e987e5f91cba"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.15",
 ]
 
 [[package]]
@@ -1192,9 +1252,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.1.14"
+version = "4.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "906f7fe1da4185b7a282b2bc90172a496f9def1aca4545fe7526810741591e14"
+checksum = "956ac1f6381d8d82ab4684768f89c0ea3afe66925ceadb4eeb3fc452ffc55d62"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -1203,21 +1263,22 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.1.14"
+version = "4.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "351f9ad9688141ed83dfd8f5fb998a06225ef444b48ff4dc43de6d409b7fd10b"
+checksum = "84080e799e54cff944f4b4a4b0e71630b0e0443b25b985175c7dddc1a859b749"
 dependencies = [
+ "anstream",
+ "anstyle 1.0.0",
  "bitflags",
  "clap_lex 0.4.1",
- "is-terminal",
  "strsim",
 ]
 
 [[package]]
 name = "clap_derive"
-version = "4.1.14"
+version = "4.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81d7dc0031c3a59a04fc2ba395c8e2dd463cba1859275f065d225f6122221b45"
+checksum = "3f9644cd56d6b87dbe899ef8b053e331c0637664e9e21a33dfcdc36093f5c5c4"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -1350,6 +1411,12 @@ dependencies = [
  "quote",
  "syn 1.0.109",
 ]
+
+[[package]]
+name = "colorchoice"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "acbf1af155f9b9ef647e42cdc158db4b64a1b61f743629225fde6f3e0be2a7c7"
 
 [[package]]
 name = "comfy-table"
@@ -1832,7 +1899,7 @@ dependencies = [
 name = "cumulus-client-cli"
 version = "0.1.0"
 dependencies = [
- "clap 4.1.14",
+ "clap 4.2.4",
  "parity-scale-codec",
  "sc-chain-spec",
  "sc-cli",
@@ -2435,7 +2502,7 @@ dependencies = [
 name = "cumulus-test-relay-validation-worker-provider"
 version = "0.1.0"
 dependencies = [
- "polkadot-node-core-pvf",
+ "polkadot-node-core-pvf-worker",
  "toml 0.7.3",
 ]
 
@@ -2475,7 +2542,7 @@ name = "cumulus-test-service"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "clap 4.1.14",
+ "clap 4.2.4",
  "criterion",
  "cumulus-client-cli",
  "cumulus-client-consensus-common",
@@ -3430,7 +3497,7 @@ dependencies = [
  "Inflector",
  "array-bytes 4.2.0",
  "chrono",
- "clap 4.1.14",
+ "clap 4.2.4",
  "comfy-table",
  "frame-benchmarking",
  "frame-support",
@@ -3527,7 +3594,9 @@ dependencies = [
 name = "frame-remote-externalities"
 version = "0.10.0-dev"
 dependencies = [
+ "async-recursion",
  "futures",
+ "jsonrpsee",
  "log",
  "parity-scale-codec",
  "serde",
@@ -4044,12 +4113,9 @@ dependencies = [
 
 [[package]]
 name = "hermit-abi"
-version = "0.2.6"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee512640fe35acbfb4bb779db6f0d80704c2cacfa2e39b601ef3e3f47d1ae4c7"
-dependencies = [
- "libc",
-]
+checksum = "fed44880c466736ef9a5c5b5facefb5ed0785676d0c02d612db14e54f0d84286"
 
 [[package]]
 name = "hex"
@@ -4231,6 +4297,7 @@ dependencies = [
  "rustls-native-certs",
  "tokio",
  "tokio-rustls",
+ "webpki-roots",
 ]
 
 [[package]]
@@ -4420,14 +4487,14 @@ checksum = "11b0d96e660696543b251e58030cf9787df56da39dab19ad60eae7353040917e"
 
 [[package]]
 name = "is-terminal"
-version = "0.4.1"
+version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "927609f78c2913a6f6ac3c27a4fe87f43e2a35367c0c4b0f8265e8f49a104330"
+checksum = "adcf93614601c8129ddf72e2d5633df827ba6551541c6d8c59520a371475be1f"
 dependencies = [
- "hermit-abi 0.2.6",
+ "hermit-abi 0.3.1",
  "io-lifetimes 1.0.2",
- "rustix 0.36.7",
- "windows-sys 0.42.0",
+ "rustix 0.37.3",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -4476,6 +4543,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d291e3a5818a2384645fd9756362e6d89cf0541b0b916fa7702ea4a9833608e"
 dependencies = [
  "jsonrpsee-core",
+ "jsonrpsee-http-client",
  "jsonrpsee-proc-macros",
  "jsonrpsee-server",
  "jsonrpsee-types",
@@ -4527,6 +4595,25 @@ dependencies = [
  "serde",
  "serde_json",
  "soketto",
+ "thiserror",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "jsonrpsee-http-client"
+version = "0.16.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc345b0a43c6bc49b947ebeb936e886a419ee3d894421790c969cc56040542ad"
+dependencies = [
+ "async-trait",
+ "hyper",
+ "hyper-rustls",
+ "jsonrpsee-core",
+ "jsonrpsee-types",
+ "rustc-hash",
+ "serde",
+ "serde_json",
  "thiserror",
  "tokio",
  "tracing",
@@ -6188,7 +6275,7 @@ dependencies = [
  "scale-info",
  "sp-application-crypto",
  "sp-consensus-babe",
- "sp-consensus-vrf",
+ "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-session",
@@ -7193,7 +7280,7 @@ dependencies = [
 name = "parachain-template-node"
 version = "0.1.0"
 dependencies = [
- "clap 4.1.14",
+ "clap 4.2.4",
  "color-print",
  "cumulus-client-cli",
  "cumulus-client-consensus-aura",
@@ -7782,12 +7869,12 @@ dependencies = [
 name = "polkadot-cli"
 version = "0.9.41"
 dependencies = [
- "clap 4.1.14",
+ "clap 4.2.4",
  "frame-benchmarking-cli",
  "futures",
  "log",
  "polkadot-client",
- "polkadot-node-core-pvf",
+ "polkadot-node-core-pvf-worker",
  "polkadot-node-metrics",
  "polkadot-performance-test",
  "polkadot-service",
@@ -7800,6 +7887,7 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-keyring",
+ "sp-maybe-compressed-blob",
  "substrate-build-script-utils",
  "thiserror",
  "try-runtime-cli",
@@ -8159,8 +8247,6 @@ name = "polkadot-node-core-pvf"
 version = "0.9.41"
 dependencies = [
  "always-assert",
- "assert_matches",
- "cpu-time",
  "futures",
  "futures-timer",
  "libc",
@@ -8172,20 +8258,12 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "rand 0.8.5",
- "rayon",
- "sc-executor",
- "sc-executor-common",
- "sc-executor-wasmtime",
  "slotmap",
  "sp-core",
- "sp-externalities",
- "sp-io",
  "sp-maybe-compressed-blob",
  "sp-tracing",
  "sp-wasm-interface",
  "substrate-build-script-utils",
- "tempfile",
- "tikv-jemalloc-ctl",
  "tokio",
  "tracing-gum",
 ]
@@ -8202,6 +8280,34 @@ dependencies = [
  "polkadot-primitives",
  "sp-keystore",
  "thiserror",
+ "tracing-gum",
+]
+
+[[package]]
+name = "polkadot-node-core-pvf-worker"
+version = "0.9.41"
+dependencies = [
+ "assert_matches",
+ "cpu-time",
+ "futures",
+ "libc",
+ "parity-scale-codec",
+ "polkadot-node-core-pvf",
+ "polkadot-parachain",
+ "polkadot-primitives",
+ "rayon",
+ "sc-executor",
+ "sc-executor-common",
+ "sc-executor-wasmtime",
+ "sp-core",
+ "sp-externalities",
+ "sp-io",
+ "sp-maybe-compressed-blob",
+ "sp-tracing",
+ "substrate-build-script-utils",
+ "tempfile",
+ "tikv-jemalloc-ctl",
+ "tokio",
  "tracing-gum",
 ]
 
@@ -8423,7 +8529,7 @@ dependencies = [
  "bridge-hub-kusama-runtime",
  "bridge-hub-polkadot-runtime",
  "bridge-hub-rococo-runtime",
- "clap 4.1.14",
+ "clap 4.2.4",
  "collectives-polkadot-runtime",
  "color-print",
  "contracts-rococo-runtime",
@@ -8503,10 +8609,12 @@ dependencies = [
  "kusama-runtime",
  "log",
  "polkadot-erasure-coding",
- "polkadot-node-core-pvf",
+ "polkadot-node-core-pvf-worker",
  "polkadot-node-primitives",
  "polkadot-primitives",
  "quote",
+ "sc-executor-common",
+ "sp-maybe-compressed-blob",
  "thiserror",
 ]
 
@@ -9127,7 +9235,7 @@ version = "3.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ba7d6ead3e3966038f68caa9fc1f860185d95a793180bbcfe0d0da47b3961ed"
 dependencies = [
- "anstyle",
+ "anstyle 0.3.4",
  "difflib",
  "itertools",
  "predicates-core",
@@ -10186,7 +10294,7 @@ version = "0.10.0-dev"
 dependencies = [
  "array-bytes 4.2.0",
  "chrono",
- "clap 4.1.14",
+ "clap 4.2.4",
  "fdlimit",
  "futures",
  "libp2p",
@@ -10329,7 +10437,6 @@ dependencies = [
  "fork-tree",
  "futures",
  "log",
- "merlin",
  "num-bigint",
  "num-rational",
  "num-traits",
@@ -10342,7 +10449,6 @@ dependencies = [
  "sc-keystore",
  "sc-telemetry",
  "scale-info",
- "schnorrkel",
  "sp-api",
  "sp-application-crypto",
  "sp-block-builder",
@@ -10350,7 +10456,6 @@ dependencies = [
  "sp-consensus",
  "sp-consensus-babe",
  "sp-consensus-slots",
- "sp-consensus-vrf",
  "sp-core",
  "sp-inherents",
  "sp-keystore",
@@ -11013,7 +11118,7 @@ dependencies = [
 name = "sc-storage-monitor"
 version = "0.1.0"
 dependencies = [
- "clap 4.1.14",
+ "clap 4.2.4",
  "fs4",
  "futures",
  "log",
@@ -11846,7 +11951,6 @@ name = "sp-consensus-babe"
 version = "0.10.0-dev"
 dependencies = [
  "async-trait",
- "merlin",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -11854,7 +11958,6 @@ dependencies = [
  "sp-application-crypto",
  "sp-consensus",
  "sp-consensus-slots",
- "sp-consensus-vrf",
  "sp-core",
  "sp-inherents",
  "sp-keystore",
@@ -11907,18 +12010,6 @@ dependencies = [
  "serde",
  "sp-std",
  "sp-timestamp",
-]
-
-[[package]]
-name = "sp-consensus-vrf"
-version = "0.10.0-dev"
-dependencies = [
- "parity-scale-codec",
- "scale-info",
- "schnorrkel",
- "sp-core",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -12067,10 +12158,8 @@ name = "sp-keystore"
 version = "0.13.0"
 dependencies = [
  "futures",
- "merlin",
  "parity-scale-codec",
  "parking_lot 0.12.1",
- "schnorrkel",
  "serde",
  "sp-core",
  "sp-externalities",
@@ -13497,7 +13586,7 @@ name = "try-runtime-cli"
 version = "0.10.0-dev"
 dependencies = [
  "async-trait",
- "clap 4.1.14",
+ "clap 4.2.4",
  "frame-remote-externalities",
  "frame-try-runtime",
  "hex",
@@ -13660,6 +13749,12 @@ dependencies = [
  "idna 0.3.0",
  "percent-encoding",
 ]
+
+[[package]]
+name = "utf8parse"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
 
 [[package]]
 name = "uuid"
@@ -14694,12 +14789,12 @@ version = "0.42.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a3e1820f08b8513f676f7ab6c1f99ff312fb97b553d30ff4dd86f9f15728aa7"
 dependencies = [
- "windows_aarch64_gnullvm",
+ "windows_aarch64_gnullvm 0.42.2",
  "windows_aarch64_msvc 0.42.2",
  "windows_i686_gnu 0.42.2",
  "windows_i686_msvc 0.42.2",
  "windows_x86_64_gnu 0.42.2",
- "windows_x86_64_gnullvm",
+ "windows_x86_64_gnullvm 0.42.2",
  "windows_x86_64_msvc 0.42.2",
 ]
 
@@ -14709,7 +14804,16 @@ version = "0.45.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "75283be5efb2831d37ea142365f009c02ec203cd29a3ebecbc093d52315b66d0"
 dependencies = [
- "windows-targets",
+ "windows-targets 0.42.2",
+]
+
+[[package]]
+name = "windows-sys"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "677d2418bec65e3338edb076e806bc1ec15693c5d0104683f2efe857f61056a9"
+dependencies = [
+ "windows-targets 0.48.0",
 ]
 
 [[package]]
@@ -14718,13 +14822,28 @@ version = "0.42.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e5180c00cd44c9b1c88adb3693291f1cd93605ded80c250a75d472756b4d071"
 dependencies = [
- "windows_aarch64_gnullvm",
+ "windows_aarch64_gnullvm 0.42.2",
  "windows_aarch64_msvc 0.42.2",
  "windows_i686_gnu 0.42.2",
  "windows_i686_msvc 0.42.2",
  "windows_x86_64_gnu 0.42.2",
- "windows_x86_64_gnullvm",
+ "windows_x86_64_gnullvm 0.42.2",
  "windows_x86_64_msvc 0.42.2",
+]
+
+[[package]]
+name = "windows-targets"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b1eb6f0cd7c80c79759c929114ef071b87354ce476d9d94271031c0497adfd5"
+dependencies = [
+ "windows_aarch64_gnullvm 0.48.0",
+ "windows_aarch64_msvc 0.48.0",
+ "windows_i686_gnu 0.48.0",
+ "windows_i686_msvc 0.48.0",
+ "windows_x86_64_gnu 0.48.0",
+ "windows_x86_64_gnullvm 0.48.0",
+ "windows_x86_64_msvc 0.48.0",
 ]
 
 [[package]]
@@ -14732,6 +14851,12 @@ name = "windows_aarch64_gnullvm"
 version = "0.42.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "597a5118570b68bc08d8d59125332c54f1ba9d9adeedeef5b99b02ba2b0698f8"
+
+[[package]]
+name = "windows_aarch64_gnullvm"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "91ae572e1b79dba883e0d315474df7305d12f569b400fcf90581b06062f7e1bc"
 
 [[package]]
 name = "windows_aarch64_msvc"
@@ -14758,6 +14883,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e08e8864a60f06ef0d0ff4ba04124db8b0fb3be5776a5cd47641e942e58c4d43"
 
 [[package]]
+name = "windows_aarch64_msvc"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b2ef27e0d7bdfcfc7b868b317c1d32c641a6fe4629c171b8928c7b08d98d7cf3"
+
+[[package]]
 name = "windows_i686_gnu"
 version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -14780,6 +14911,12 @@ name = "windows_i686_gnu"
 version = "0.42.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c61d927d8da41da96a81f029489353e68739737d3beca43145c8afec9a31a84f"
+
+[[package]]
+name = "windows_i686_gnu"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "622a1962a7db830d6fd0a69683c80a18fda201879f0f447f065a3b7467daa241"
 
 [[package]]
 name = "windows_i686_msvc"
@@ -14806,6 +14943,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "44d840b6ec649f480a41c8d80f9c65108b92d89345dd94027bfe06ac444d1060"
 
 [[package]]
+name = "windows_i686_msvc"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4542c6e364ce21bf45d69fdd2a8e455fa38d316158cfd43b3ac1c5b1b19f8e00"
+
+[[package]]
 name = "windows_x86_64_gnu"
 version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -14830,10 +14973,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8de912b8b8feb55c064867cf047dda097f92d51efad5b491dfb98f6bbb70cb36"
 
 [[package]]
+name = "windows_x86_64_gnu"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca2b8a661f7628cbd23440e50b05d705db3686f894fc9580820623656af974b1"
+
+[[package]]
 name = "windows_x86_64_gnullvm"
 version = "0.42.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26d41b46a36d453748aedef1486d5c7a85db22e56aff34643984ea85514e94a3"
+
+[[package]]
+name = "windows_x86_64_gnullvm"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7896dbc1f41e08872e9d5e8f8baa8fdd2677f29468c4e156210174edc7f7b953"
 
 [[package]]
 name = "windows_x86_64_msvc"
@@ -14858,6 +15013,12 @@ name = "windows_x86_64_msvc"
 version = "0.42.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9aec5da331524158c6d1a4ac0ab1541149c0b9505fde06423b02f5ef0106b9f0"
+
+[[package]]
+name = "windows_x86_64_msvc"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1a515f5799fe4961cb532f983ce2b23082366b898e52ffbce459c86f67c8378a"
 
 [[package]]
 name = "winnow"
@@ -14970,8 +15131,8 @@ dependencies = [
  "log",
  "pallet-transaction-payment",
  "parity-scale-codec",
+ "polkadot-core-primitives",
  "polkadot-parachain",
- "polkadot-primitives",
  "scale-info",
  "sp-arithmetic",
  "sp-io",
@@ -15157,74 +15318,6 @@ dependencies = [
 ]
 
 [[patch.unused]]
-name = "polkadot"
-version = "0.9.41"
-
-[[patch.unused]]
-name = "polkadot-primitives-test-helpers"
-version = "0.9.41"
-
-[[patch.unused]]
-name = "polkadot-test-malus"
-version = "0.9.41"
-
-[[patch.unused]]
-name = "polkadot-voter-bags"
-version = "0.9.41"
-
-[[patch.unused]]
-name = "remote-ext-tests-bags-list"
-version = "0.9.41"
-
-[[patch.unused]]
-name = "staking-miner"
-version = "0.9.41"
-
-[[patch.unused]]
-name = "test-parachain-adder"
-version = "0.9.41"
-
-[[patch.unused]]
-name = "test-parachain-adder-collator"
-version = "0.9.41"
-
-[[patch.unused]]
-name = "test-parachain-halt"
-version = "0.9.41"
-
-[[patch.unused]]
-name = "test-parachain-undying"
-version = "0.9.41"
-
-[[patch.unused]]
-name = "test-parachain-undying-collator"
-version = "0.9.41"
-
-[[patch.unused]]
-name = "test-parachains"
-version = "0.9.41"
-
-[[patch.unused]]
-name = "xcm-executor-integration-tests"
-version = "0.9.41"
-
-[[patch.unused]]
-name = "xcm-simulator"
-version = "0.9.41"
-
-[[patch.unused]]
-name = "xcm-simulator-example"
-version = "0.9.41"
-
-[[patch.unused]]
-name = "xcm-simulator-fuzzer"
-version = "0.9.41"
-
-[[patch.unused]]
-name = "zombienet-backchannel"
-version = "0.9.41"
-
-[[patch.unused]]
 name = "chain-spec-builder"
 version = "2.0.0"
 
@@ -15297,6 +15390,10 @@ name = "node-testing"
 version = "3.0.0-dev"
 
 [[patch.unused]]
+name = "pallet-asset-rate"
+version = "4.0.0-dev"
+
+[[patch.unused]]
 name = "pallet-atomic-swap"
 version = "4.0.0-dev"
 
@@ -15310,6 +15407,10 @@ version = "4.0.0-dev"
 
 [[patch.unused]]
 name = "pallet-core-fellowship"
+version = "4.0.0-dev"
+
+[[patch.unused]]
+name = "pallet-dev-mode"
 version = "4.0.0-dev"
 
 [[patch.unused]]
@@ -15463,3 +15564,71 @@ version = "2.0.0"
 [[patch.unused]]
 name = "substrate-test-utils-test-crate"
 version = "0.1.0"
+
+[[patch.unused]]
+name = "polkadot"
+version = "0.9.41"
+
+[[patch.unused]]
+name = "polkadot-primitives-test-helpers"
+version = "0.9.41"
+
+[[patch.unused]]
+name = "polkadot-test-malus"
+version = "0.9.41"
+
+[[patch.unused]]
+name = "polkadot-voter-bags"
+version = "0.9.41"
+
+[[patch.unused]]
+name = "remote-ext-tests-bags-list"
+version = "0.9.41"
+
+[[patch.unused]]
+name = "staking-miner"
+version = "0.9.41"
+
+[[patch.unused]]
+name = "test-parachain-adder"
+version = "0.9.41"
+
+[[patch.unused]]
+name = "test-parachain-adder-collator"
+version = "0.9.41"
+
+[[patch.unused]]
+name = "test-parachain-halt"
+version = "0.9.41"
+
+[[patch.unused]]
+name = "test-parachain-undying"
+version = "0.9.41"
+
+[[patch.unused]]
+name = "test-parachain-undying-collator"
+version = "0.9.41"
+
+[[patch.unused]]
+name = "test-parachains"
+version = "0.9.41"
+
+[[patch.unused]]
+name = "xcm-executor-integration-tests"
+version = "0.9.41"
+
+[[patch.unused]]
+name = "xcm-simulator"
+version = "0.9.41"
+
+[[patch.unused]]
+name = "xcm-simulator-example"
+version = "0.9.41"
+
+[[patch.unused]]
+name = "xcm-simulator-fuzzer"
+version = "0.9.41"
+
+[[patch.unused]]
+name = "zombienet-backchannel"
+version = "0.9.41"

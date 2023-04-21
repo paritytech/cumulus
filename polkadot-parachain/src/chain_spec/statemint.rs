@@ -395,9 +395,9 @@ fn statemine_genesis(
 	id: ParaId,
 ) -> statemine_runtime::GenesisConfig {
 	statemine_runtime::GenesisConfig {
-		sudo: statemine_runtime::SudoConfig {
-			key: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
-		},
+		// sudo: statemine_runtime::SudoConfig {
+		// 	key: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
+		// },
 		system: statemine_runtime::SystemConfig {
 			code: statemine_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")

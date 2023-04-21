@@ -148,6 +148,7 @@ staking-miner = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/polkadot
 remote-ext-tests-bags-list = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/polkadot/utils/remote-ext-tests/bags-list" }
 polkadot-voter-bags = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/polkadot/utils/generate-bags" }
 polkadot = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/polkadot" }
+polkadot-node-core-pvf-worker = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/polkadot/node/core/pvf/worker" }
 
 [patch."https://github.com/paritytech/substrate"]
 node-template = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/substrate/bin/node-template/node" }
@@ -213,7 +214,6 @@ sp-session = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/substrate/p
 sp-staking = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/substrate/primitives/staking" }
 sp-consensus-babe = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/substrate/primitives/consensus/babe" }
 sp-consensus-slots = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/substrate/primitives/consensus/slots" }
-sp-consensus-vrf = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/substrate/primitives/consensus/vrf" }
 frame-election-provider-support = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/substrate/frame/election-provider-support" }
 frame-election-provider-solution-type = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/substrate/frame/election-provider-support/solution-type" }
 sp-npos-elections = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/substrate/primitives/npos-elections" }
@@ -401,4 +401,6 @@ generate-bags = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/substrat
 node-runtime-generate-bags = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/substrate/utils/frame/generate-bags/node-runtime" }
 sp-metadata-ir = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/substrate/primitives/metadata-ir" }
 substrate-cli-test-utils = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/substrate/test-utils/cli" }
+pallet-asset-rate = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/substrate/frame/asset-rate" }
+pallet-dev-mode = { path = "/Users/tonyalaribe.parity/Projects/parity/cub/substrate/frame/examples/dev-mode" }
 
