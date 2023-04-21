@@ -1096,7 +1096,8 @@ impl<T: Config> Pallet<T> {
 
 			// sanity-check there's place for the block at finalization phase.
 			//
-			// TODO: this potentially restricts parachains from decreasing `MaxUnincludedLen` value.
+			// If this fails, the max segment len is reached and parachain should wait
+			// for ancestor's inclusion.
 			assert!(
 				max_len > left_count.into(),
 				"no space left for the block in the unincluded segment"
