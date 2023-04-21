@@ -350,7 +350,9 @@ pub type Barrier = DenyThenTry<
 	(
 		TakeWeightCredit,
 		// Expected responses are OK.
+		// TODO(anthony): this would warrant my attention
 		AllowKnownQueryResponses<PolkadotXcm>,
+		xcm_builder::AllowUnpaidExecutionFrom<Everything>, // add this line, allow every xcm message
 		// Allow XCMs with some computed origins to pass through.
 		WithComputedOrigin<
 			(

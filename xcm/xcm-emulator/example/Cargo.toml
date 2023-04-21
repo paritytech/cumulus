@@ -31,6 +31,10 @@ xcm-emulator = { path = ".." }
 test-runtime = { path = "../test-runtime" }
 statemine-runtime = {path = "../../../parachains/runtimes/assets/statemine"}
 
+pallet-treasury= { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+
+env_logger = "0.9.0"
+
 [features]
 runtime-benchmarks = [
     "kusama-runtime/runtime-benchmarks",

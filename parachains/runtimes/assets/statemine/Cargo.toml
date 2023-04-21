@@ -8,7 +8,7 @@ description = "Kusama variant of Statemint parachain runtime"
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
 hex-literal = { version = "0.4.1" }
-log = { version = "0.4.17", default-features = false }
+# log = { version = "0.4.17", default-features = false }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 smallvec = "1.10.0"
 
@@ -74,6 +74,8 @@ pallet-collator-selection = { path = "../../../../pallets/collator-selection", d
 parachain-info = { path = "../../../pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
 assets-common = { path = "../common", default-features = false }
+
+pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 
 [dev-dependencies]
 asset-test-utils = { path = "../test-utils"}
@@ -143,7 +145,7 @@ try-runtime = [
 ]
 std = [
 	"codec/std",
-	"log/std",
+	# "log/std",
 	"scale-info/std",
 	"frame-executive/std",
 	"frame-support/std",

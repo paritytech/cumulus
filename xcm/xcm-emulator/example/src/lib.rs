@@ -15,6 +15,7 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use frame_support::{pallet_prelude::Weight, traits::GenesisBuild};
+use frame_system::GenesisConfig;
 use sp_runtime::AccountId32;
 
 use xcm_emulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
@@ -63,7 +64,7 @@ decl_test_parachain! {
 		RuntimeOrigin = statemine_runtime::RuntimeOrigin,
 		XcmpMessageHandler = statemine_runtime::XcmpQueue,
 		DmpMessageHandler = statemine_runtime::DmpQueue,
-		new_ext = parachain_ext(1000),
+		new_ext = statemint_ext(),
 	}
 }
 
@@ -71,16 +72,46 @@ decl_test_network! {
 	pub struct Network {
 		relay_chain = KusamaNet,
 		parachains = vec![
+			(1000, Statemine),
 			(1, ParachainA),
 			(2, ParachainB),
 			(3, ParachainC),
-			(1000, Statemine),
 		],
 	}
 }
+use frame_support::{log, PalletId};
+use polkadot_primitives::AccountId;
+use sp_runtime::traits::AccountIdConversion;
+
+use kusama_runtime::{TreasuryAccountId, TreasuryPalletId};
+// pub const TreasuryAccountId: AccountId32 =
+// 	AccountIdConversion::<AccountId>::into_account_truncating(&TreasuryPalletId::get());
 
 pub const ALICE: AccountId32 = AccountId32::new([0u8; 32]);
 pub const INITIAL_BALANCE: u128 = 1_000_000_000_000;
+
+// Define Statemint TestExternalities.
+pub fn statemint_ext() -> sp_io::TestExternalities {
+	use statemine_runtime::{Runtime, System};
+
+	let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
+
+	pallet_balances::GenesisConfig::<Runtime> {
+		balances: vec![
+			(ALICE, INITIAL_BALANCE),
+			(TreasuryAccountId::get().into(), INITIAL_BALANCE),
+		],
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+
+	let mut ext = sp_io::TestExternalities::new(t);
+	ext.execute_with(|| {
+		// sp_tracing::try_init_simple();
+		System::set_block_number(1);
+	});
+	ext
+}
 
 pub fn parachain_ext(para_id: u32) -> sp_io::TestExternalities {
 	use test_runtime::{Runtime, System};
@@ -149,8 +180,22 @@ fn default_parachains_host_configuration(
 
 pub fn kusama_ext() -> sp_io::TestExternalities {
 	use kusama_runtime::{Runtime, System};
+	use polkadot_runtime_parachains::configuration::HostConfiguration;
 
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
+
+	polkadot_runtime_parachains::configuration::GenesisConfig::<Runtime> {
+		config: HostConfiguration {
+			max_upward_queue_count: 10,
+			max_upward_queue_size: 51200,
+			max_upward_message_size: 51200,
+			max_upward_message_num_per_candidate: 10,
+			max_downward_message_size: 51200,
+			..Default::default()
+		},
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
 
 	pallet_balances::GenesisConfig::<Runtime> { balances: vec![(ALICE, INITIAL_BALANCE)] }
 		.assimilate_storage(&mut t)
@@ -445,5 +490,103 @@ mod tests {
 				)));
 			}
 		});
+	}
+
+	#[test]
+	fn treasury_over_xcm() {
+		Network::reset();
+		use frame_support::{log, PalletId};
+		use polkadot_primitives::AccountId;
+
+		println!("Hello native world!");
+		log::debug!("printing with log");
+
+		env_logger::init();
+
+		Statemine::execute_with(|| {
+			use statemine_runtime::{RuntimeEvent, RuntimeOrigin, System};
+			assert_ok!(statemine_runtime::Assets::create(
+				RuntimeOrigin::signed(ALICE.into()),
+				0.into(),
+				ALICE.into(),
+				1
+			));
+
+			let treasury: AccountId = PalletId(*b"py/trsry").into_account_truncating();
+			// Fund treasury account with enough assets
+			assert_ok!(statemine_runtime::Assets::mint(
+				RuntimeOrigin::signed(ALICE.into()),
+				0.into(),
+				treasury.into(),
+				10000
+			));
+
+			System::events().iter().any(|r| {
+				log::debug!("statemine events {:?}", r);
+				false
+			});
+		});
+
+		let asset_kind: MultiLocation = (PalletInstance(50), GeneralIndex(0)).into();
+		KusamaNet::execute_with(|| {
+			use frame_support::traits::OnInitialize;
+			use kusama_runtime::{Runtime, RuntimeEvent, RuntimeOrigin, System, Treasury};
+
+			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
+				kusama_runtime::RuntimeOrigin::root(),
+				Some(3)
+			));
+
+			assert_ok!(kusama_runtime::Treasury::spend(
+				kusama_runtime::RuntimeOrigin::root(),
+				asset_kind.into(),
+				100,
+				ALICE.into()
+			));
+			assert!(System::events().iter().any(|r| matches!(
+				r.event,
+				RuntimeEvent::Treasury(pallet_treasury::Event::PaymentQueued {
+					payment_index: 0,
+					amount: 100,
+					..
+				})
+			)));
+
+			// Set block number to the next SpendPeriod on kusama treasury
+			let spend_period = <Runtime as pallet_treasury::Config>::SpendPeriod::get();
+			Treasury::on_initialize(spend_period);
+			System::events().iter().any(|r| {
+				log::debug!("kusama events {:?}", r);
+				false
+			});
+			assert!(System::events().iter().any(|r| matches!(
+				r.event,
+				RuntimeEvent::Treasury(pallet_treasury::Event::ProcessingProposals {
+					waiting_proposals: 1,
+					..
+				})
+			)));
+			assert!(System::events().iter().any(|r| matches!(
+				r.event,
+				RuntimeEvent::Treasury(pallet_treasury::Event::RolloverPayments {
+					allocated_proposals: 1,
+					rollover_proposals: 0,
+					..
+				})
+			)));
+		});
+
+		Statemine::execute_with(|| {
+			use statemine_runtime::{RuntimeEvent, RuntimeOrigin, System};
+			assert_eq!(
+				statemine_runtime::Assets::account_balances(TreasuryAccountId::get().into()),
+				vec![(0, 9900)]
+			);
+
+			System::events().iter().any(|r| {
+				log::debug!("statemine events {:?}", r);
+				false
+			});
+		})
 	}
 }
