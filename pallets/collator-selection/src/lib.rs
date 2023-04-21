@@ -355,8 +355,8 @@ pub mod pallet {
 
 			// ensure we are below limit.
 			let length = <Candidates<T>>::decode_len().unwrap_or_default();
-			ensure!((length as u32) < Self::desired_candidates(), Error::<T>::TooManyCandidates);
-			ensure!(!Self::invulnerables().contains(&who), Error::<T>::AlreadyInvulnerable);
+			ensure!((length as u32) < DesiredCandidates::<T>::get(), Error::<T>::TooManyCandidates);
+			ensure!(!Invulnerables::<T>::get().contains(&who), Error::<T>::AlreadyInvulnerable);
 
 			let validator_key = T::ValidatorIdOf::convert(who.clone())
 				.ok_or(Error::<T>::NoAssociatedValidatorId)?;
@@ -365,7 +365,7 @@ pub mod pallet {
 				Error::<T>::ValidatorNotRegistered
 			);
 
-			let deposit = Self::candidacy_bond();
+			let deposit = CandidacyBond::<T>::get();
 			// First authored block is current block plus kick threshold to handle session delay
 			let incoming = CandidateInfo { who: who.clone(), deposit };
 
@@ -399,7 +399,7 @@ pub mod pallet {
 		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(
-				Self::candidates().len() as u32 > T::MinCandidates::get(),
+				Candidates::<T>::get().len() as u32 > T::MinCandidates::get(),
 				Error::<T>::TooFewCandidates
 			);
 			let current_count = Self::try_remove_candidate(&who)?;
@@ -437,7 +437,7 @@ pub mod pallet {
 		pub fn assemble_collators(
 			candidates: BoundedVec<T::AccountId, T::MaxCandidates>,
 		) -> Vec<T::AccountId> {
-			let mut collators = Self::invulnerables().to_vec();
+			let mut collators = Invulnerables::<T>::get().to_vec();
 			collators.extend(candidates);
 			collators
 		}
@@ -455,7 +455,7 @@ pub mod pallet {
 					let last_block = <LastAuthoredBlock<T>>::get(c.who.clone());
 					let since_last = now.saturating_sub(last_block);
 					if since_last < kick_threshold ||
-						Self::candidates().len() as u32 <= T::MinCandidates::get()
+						Candidates::<T>::get().len() as u32 <= T::MinCandidates::get()
 					{
 						Some(c.who)
 					} else {
@@ -506,7 +506,7 @@ pub mod pallet {
 				<frame_system::Pallet<T>>::block_number(),
 			);
 
-			let candidates = Self::candidates();
+			let candidates = Candidates::<T>::get();
 			let candidates_len_before = candidates.len();
 			let active_candidates = Self::kick_stale_candidates(candidates);
 			let removed = candidates_len_before - active_candidates.len();

@@ -24,7 +24,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
-use sp_core::OpaqueMetadata;
+use sp_core::{Get, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
@@ -282,7 +282,7 @@ parameter_types! {
 	pub const RocLocation: MultiLocation = MultiLocation::parent();
 	pub const RococoNetwork: Option<NetworkId> = Some(NetworkId::Rococo);
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-	pub UniversalLocation: InteriorMultiLocation = X1(Parachain(ParachainInfo::parachain_id().into()));
+	pub UniversalLocation: InteriorMultiLocation = X1(Parachain(ParachainInfo::get().into()));
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
