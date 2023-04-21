@@ -321,6 +321,9 @@ pub mod pallet {
 				let watermark = HrmpWatermark::<T>::get();
 				AggregatedUnincludedSegment::<T>::mutate(|agg| {
 					let agg = agg.get_or_insert_with(SegmentTracker::default);
+					// TODO: In order of this panic to be correct, outbound message source should
+					// respect bandwidth limits as well.
+					// <https://github.com/paritytech/cumulus/issues/2471>
 					agg.append(&ancestor, watermark, &limits)
 						.expect("unincluded segment limits exceeded");
 				});
