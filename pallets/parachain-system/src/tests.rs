@@ -38,6 +38,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 	DispatchErrorWithPostInfo,
 };
+use sp_std::collections::vec_deque::VecDeque;
 use sp_version::RuntimeVersion;
 use std::cell::RefCell;
 
@@ -231,6 +232,11 @@ struct BlockTests {
 	persisted_validation_data_hook: Option<Box<dyn Fn(&BlockTests, &mut PersistedValidationData)>>,
 	inherent_data_hook:
 		Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut ParachainInherentData)>>,
+	inclusion_delay: Option<usize>,
+	max_unincluded_len: Option<u64>,
+
+	included_para_head: Option<relay_chain::HeadData>,
+	pending_blocks: VecDeque<relay_chain::HeadData>,
 }
 
 impl BlockTests {
@@ -291,9 +297,25 @@ impl BlockTests {
 		self
 	}
 
+	fn with_unincluded_segment(mut self, inclusion_delay: usize, max_unincluded_len: u64) -> Self {
+		self.inclusion_delay.replace(inclusion_delay);
+		self.max_unincluded_len.replace(max_unincluded_len);
+		self
+	}
+
 	fn run(&mut self) {
 		self.ran = true;
 		wasm_ext().execute_with(|| {
+			let mut parent_head_data = {
+				let header = Header::new_from_number(0);
+				relay_chain::HeadData(header.encode())
+			};
+
+			if let Some(max_unincluded_len) = self.max_unincluded_len {
+				// Initialize included head if the segment is enabled.
+				self.included_para_head.replace(parent_head_data.clone());
+				<MaxUnincludedLen<Test>>::put(max_unincluded_len);
+			}
 			for BlockTest { n, within_block, after_block } in self.tests.iter() {
 				// clear pending updates, as applicable
 				if let Some(upgrade_block) = self.pending_upgrade {
@@ -303,11 +325,17 @@ impl BlockTests {
 				}
 
 				// begin initialization
+				let parent_hash = BlakeTwo256::hash(&parent_head_data.0);
 				System::reset_events();
-				System::initialize(&n, &Default::default(), &Default::default());
+				System::initialize(&n, &parent_hash, &Default::default());
 
 				// now mess with the storage the way validate_block does
 				let mut sproof_builder = RelayStateSproofBuilder::default();
+				sproof_builder.included_para_head = self
+					.included_para_head
+					.clone()
+					.unwrap_or_else(|| parent_head_data.clone())
+					.into();
 				if let Some(ref hook) = self.relay_sproof_builder_hook {
 					hook(self, *n as RelayChainBlockNumber, &mut sproof_builder);
 				}
@@ -364,7 +392,23 @@ impl BlockTests {
 				}
 
 				// clean up
-				System::finalize();
+				let header = System::finalize();
+				let head_data = relay_chain::HeadData(header.encode());
+				parent_head_data = head_data.clone();
+				match self.inclusion_delay {
+					Some(delay) if delay > 0 => {
+						self.pending_blocks.push_back(head_data);
+						if self.pending_blocks.len() > delay {
+							let included = self.pending_blocks.pop_front().unwrap();
+
+							self.included_para_head.replace(included);
+						}
+					},
+					_ => {
+						self.included_para_head.replace(head_data);
+					},
+				}
+
 				if let Some(after_block) = after_block {
 					after_block();
 				}
@@ -385,6 +429,55 @@ impl Drop for BlockTests {
 #[should_panic]
 fn block_tests_run_on_drop() {
 	BlockTests::new().add(123, || panic!("if this test passes, block tests run properly"));
+}
+
+#[test]
+fn unincluded_segment_works() {
+	BlockTests::new()
+		.with_unincluded_segment(1, 10)
+		.add_with_post_test(
+			123,
+			|| {},
+			|| {
+				let segment = <UnincludedSegment<Test>>::get();
+				assert_eq!(segment.len(), 1);
+				assert!(<AggregatedUnincludedSegment<Test>>::get().is_some());
+			},
+		)
+		.add_with_post_test(
+			124,
+			|| {},
+			|| {
+				let segment = <UnincludedSegment<Test>>::get();
+				assert_eq!(segment.len(), 2);
+			},
+		)
+		.add_with_post_test(
+			125,
+			|| {},
+			|| {
+				let segment = <UnincludedSegment<Test>>::get();
+				// Block 123 was popped from the segment, the len is still 2.
+				assert_eq!(segment.len(), 2);
+			},
+		);
+}
+
+#[test]
+#[should_panic]
+fn unincluded_segment_is_limited() {
+	BlockTests::new()
+		.with_unincluded_segment(10, 1)
+		.add_with_post_test(
+			123,
+			|| {},
+			|| {
+				let segment = <UnincludedSegment<Test>>::get();
+				assert_eq!(segment.len(), 1);
+				assert!(<AggregatedUnincludedSegment<Test>>::get().is_some());
+			},
+		)
+		.add(124, || {}); // The previous block wasn't included yet, should panic in `create_inherent`.
 }
 
 #[test]
