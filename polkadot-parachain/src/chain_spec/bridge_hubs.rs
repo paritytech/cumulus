@@ -130,13 +130,10 @@ impl BridgeHubRuntimeType {
 				Ok(Box::new(westend::BridgeHubChainSpec::from_json_bytes(
 					&include_bytes!("../../../parachains/chain-specs/bridge-hub-westend.json")[..],
 				)?)),
-			BridgeHubRuntimeType::Rococo => Ok(Box::new(rococo::live_config(
-				rococo::BRIDGE_HUB_ROCOCO,
-				"Rococo BridgeHub",
-				"rococo",
-				ParaId::new(1013),
-				|_| (),
-			))),
+			BridgeHubRuntimeType::Rococo =>
+				Ok(Box::new(rococo::BridgeHubChainSpec::from_json_bytes(
+					&include_bytes!("../../../parachains/chain-specs/bridge-hub-rococo.json")[..],
+				)?)),
 			BridgeHubRuntimeType::RococoLocal => Ok(Box::new(rococo::local_config(
 				rococo::BRIDGE_HUB_ROCOCO_LOCAL,
 				"Rococo BridgeHub Local",
@@ -151,12 +148,10 @@ impl BridgeHubRuntimeType {
 				ParaId::new(1013),
 				|_| (),
 			))),
-			BridgeHubRuntimeType::Wococo => Ok(Box::new(wococo::live_config(
-				wococo::BRIDGE_HUB_WOCOCO,
-				"Wococo BridgeHub",
-				"wococo",
-				ParaId::new(1014),
-			))),
+			BridgeHubRuntimeType::Wococo =>
+				Ok(Box::new(wococo::BridgeHubChainSpec::from_json_bytes(
+					&include_bytes!("../../../parachains/chain-specs/bridge-hub-wococo.json")[..],
+				)?)),
 			BridgeHubRuntimeType::WococoLocal => Ok(Box::new(wococo::local_config(
 				wococo::BRIDGE_HUB_WOCOCO_LOCAL,
 				"Wococo BridgeHub Local",
