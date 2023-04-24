@@ -45,6 +45,8 @@ members = [
 	"parachains/runtimes/collectives/collectives-polkadot",
 	"parachains/runtimes/contracts/contracts-rococo",
 	"parachains/runtimes/testing/penpal",
+	"parachains/integration-tests/xcm-emulator/assets/statemine",
+	"parachains/integration-tests/xcm-emulator/assets/statemint",
 	"test/client",
 	"test/relay-sproof-builder",
 	"test/relay-validation-worker-provider",
@@ -63,4 +65,3 @@ opt-level = 3
 inherits = "release"
 lto = true
 codegen-units = 1
-
