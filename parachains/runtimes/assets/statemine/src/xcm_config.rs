@@ -362,8 +362,6 @@ pub type Barrier = DenyThenTry<
 				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
 				// Subscriptions for version tracking are OK.
 				AllowSubscriptionsFrom<ParentOrSiblings>,
-				// Allow unpaid execution when from a computed origin or plurarity on the relay chain
-				AllowUnpaidExecutionFrom<ParentOrParentsPlurality>,
 			),
 			UniversalLocation,
 			ConstU32<8>,
