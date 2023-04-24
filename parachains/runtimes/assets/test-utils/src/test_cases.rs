@@ -1782,7 +1782,15 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 				.0
 				.matcher()
 				.match_next_inst(|instr| match instr {
-					// first instruction is ExportMessage (because we have unpaid execution on bridge-hub now)
+					// first instruction is UNpai (because we have explicit unpaid execution on bridge-hub now)
+					UnpaidExecution { weight_limit, check_origin }
+						if weight_limit == &Unlimited && check_origin.is_none() =>
+						Ok(()),
+					_ => Err(()),
+				})
+				.expect("contains UnpaidExecution")
+				.match_next_inst(|instr| match instr {
+					// second instruction is ExportMessage
 					ExportMessage { network, destination, xcm: inner_xcm } => {
 						assert_eq!(network, &bridged_network);
 						let (_, target_location_junctions_without_global_consensus) =
