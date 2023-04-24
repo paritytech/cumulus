@@ -33,3 +33,4 @@ statemint-runtime = { path = "../../../../runtimes/assets/statemint" }
 
 # Local
 xcm-emulator = { default-features = false, path = "../../../../../xcm/xcm-emulator" }
+integration-tests-common = { default-features = false, path = "../../common" }
