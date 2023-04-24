@@ -4370,6 +4370,7 @@ version = "1.0.0"
 dependencies = [
  "frame-support",
  "frame-system",
+ "kusama-runtime",
  "pallet-assets",
  "pallet-balances",
  "pallet-xcm",
@@ -4383,6 +4384,7 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-weights",
+ "statemine-runtime",
  "statemint-runtime",
  "xcm",
  "xcm-emulator",

@@ -22,6 +22,7 @@ polkadot-core-primitives = { default-features = false, git = "https://github.com
 polkadot-parachain = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+kusama-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 xcm = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 xcm-executor = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 pallet-xcm = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -30,6 +31,7 @@ pallet-xcm = { default-features = false, git = "https://github.com/paritytech/po
 parachains-common = { path = "../../../common" }
 penpal-runtime = { path = "../../../runtimes/testing/penpal" }
 statemint-runtime = { path = "../../../runtimes/assets/statemint" }
+statemine-runtime = { path = "../../../runtimes/assets/statemine" }
 
 # Local
 xcm-emulator = { default-features = false, path = "../../../../xcm/xcm-emulator" }

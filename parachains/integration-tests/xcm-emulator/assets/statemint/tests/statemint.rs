@@ -11,7 +11,7 @@ use polkadot_runtime_parachains::configuration::HostConfiguration;
 use sp_core::parameter_types;
 use statemint_runtime::constants::currency::DOLLARS;
 use xcm::prelude::*;
-use xcm_emulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain, TestExt};
+use xcm_emulator::TestExt;
 
 use xcm_executor::traits::Convert;
 
@@ -28,136 +28,7 @@ use xcm::{
 
 use integration_tests_common::{PolkadotMockNet, Polkadot, Statemint, Penpal, constants::accounts::{ALICE, BOB}};
 
-// pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
-// pub const BOB: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([1u8; 32]);
 pub const INITIAL_BALANCE: u128 = 1000 * DOLLARS;
-
-// decl_test_parachain! {
-// 	pub struct Statemint {
-// 		Runtime = statemint_runtime::Runtime,
-// 		RuntimeOrigin = statemint_runtime::RuntimeOrigin,
-// 		XcmpMessageHandler = statemint_runtime::XcmpQueue,
-// 		DmpMessageHandler = statemint_runtime::DmpQueue,
-// 		new_ext = statemint_ext(),
-// 	}
-// }
-
-// decl_test_parachain! {
-// 	pub struct Penpal {
-// 		Runtime = penpal_runtime::Runtime,
-// 		RuntimeOrigin = penpal_runtime::RuntimeOrigin,
-// 		XcmpMessageHandler = penpal_runtime::XcmpQueue,
-// 		DmpMessageHandler = penpal_runtime::DmpQueue,
-// 		new_ext = penpal_ext(),
-// 	}
-// }
-
-// decl_test_relay_chain! {
-// 	pub struct Relay {
-// 		Runtime = polkadot_runtime::Runtime,
-// 		XcmConfig = polkadot_runtime::xcm_config::XcmConfig,
-// 		new_ext = relay_ext(),
-// 	}
-// }
-
-// decl_test_network! {
-// 	pub struct MockNet {
-// 		relay_chain = Relay,
-// 		parachains = vec![
-// 			(1000, Statemint),
-// 			(2000, Penpal),
-// 		],
-// 	}
-// }
-
-// // Define Statemint TestExternalities.
-// pub fn statemint_ext() -> sp_io::TestExternalities {
-// 	use statemint_runtime::{Runtime, System};
-
-// 	let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
-
-// 	pallet_balances::GenesisConfig::<Runtime> {
-// 		balances: vec![(ALICE, INITIAL_BALANCE), (parent_account_id(), INITIAL_BALANCE)],
-// 	}
-// 	.assimilate_storage(&mut t)
-// 	.unwrap();
-
-// 	let mut ext = sp_io::TestExternalities::new(t);
-// 	ext.execute_with(|| {
-// 		sp_tracing::try_init_simple();
-// 		System::set_block_number(1);
-// 	});
-// 	ext
-// }
-
-// // Define Penpal TestExternalities.
-// pub fn penpal_ext() -> sp_io::TestExternalities {
-// 	use penpal_runtime::{Runtime, System};
-
-// 	let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
-
-// 	pallet_balances::GenesisConfig::<Runtime> {
-// 		balances: vec![(ALICE, INITIAL_BALANCE), (parent_account_id(), INITIAL_BALANCE)],
-// 	}
-// 	.assimilate_storage(&mut t)
-// 	.unwrap();
-
-// 	let mut ext = sp_io::TestExternalities::new(t);
-// 	ext.execute_with(|| {
-// 		sp_tracing::try_init_simple();
-// 		System::set_block_number(1);
-// 	});
-// 	ext
-// }
-
-// // Define Polkadot TestExternalities.
-// pub fn relay_ext() -> sp_io::TestExternalities {
-// 	use polkadot_runtime::{Runtime, RuntimeOrigin, System};
-
-// 	// <XcmConfig::XcmSender as xcm_executor::Config>::XcmSender = RelayChainXcmRouter;
-// 	// <Runtime as pallet_xcm::Config>::XcmRouter = RelayChainXcmRouter;
-
-// 	let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
-
-// 	polkadot_runtime_parachains::configuration::GenesisConfig::<Runtime> {
-// 		config: HostConfiguration {
-// 			max_upward_queue_count: 10,
-// 			max_upward_queue_size: 51200,
-// 			max_upward_message_size: 51200,
-// 			max_upward_message_num_per_candidate: 10,
-// 			max_downward_message_size: 51200,
-// 			..Default::default()
-// 		},
-// 	}
-// 	.assimilate_storage(&mut t)
-// 	.unwrap();
-
-// 	pallet_balances::GenesisConfig::<Runtime> {
-// 		balances: vec![
-// 			(ALICE, INITIAL_BALANCE),
-// 			(child_account_id(1000), INITIAL_BALANCE),
-// 			(child_account_id(2000), INITIAL_BALANCE),
-// 		],
-// 	}
-// 	.assimilate_storage(&mut t)
-// 	.unwrap();
-
-// 	let mut ext = sp_io::TestExternalities::new(t);
-// 	ext.execute_with(|| {
-// 		System::set_block_number(1);
-// 	});
-// 	ext
-// }
-
-// pub fn parent_account_id() -> parachains_common::AccountId {
-// 	let location = (Parent,);
-// 	statemint_runtime::xcm_config::LocationToAccountId::convert(location.into()).unwrap()
-// }
-
-// pub fn child_account_id(para: u32) -> polkadot_core_primitives::AccountId {
-// 	let location = (Parachain(para),);
-// 	polkadot_runtime::xcm_config::SovereignAccountOf::convert(location.into()).unwrap()
-// }
 
 pub type RelayChainPalletXcm = pallet_xcm::Pallet<polkadot_runtime::Runtime>;
 pub type StatemintPalletXcm = pallet_xcm::Pallet<statemint_runtime::Runtime>;

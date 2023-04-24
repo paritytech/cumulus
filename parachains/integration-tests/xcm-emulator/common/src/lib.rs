@@ -8,31 +8,40 @@ use frame_support::{
 	traits::{fungibles::Inspect, GenesisBuild},
 };
 use xcm::prelude::*;
-use xcm_emulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain, TestExt};
+use xcm_emulator::{decl_test_networks, decl_test_parachains, decl_test_relay_chains, TestExt};
 use polkadot_runtime_parachains::configuration::HostConfiguration;
 use xcm_executor::traits::Convert;
 use statemint_runtime::constants::currency::DOLLARS;
 pub use constants::{polkadot, kusama, accounts::{ALICE, BOB}};
 
-decl_test_relay_chain! {
+decl_test_relay_chains! {
 	pub struct Polkadot {
 		Runtime = polkadot_runtime::Runtime,
 		XcmConfig = polkadot_runtime::xcm_config::XcmConfig,
 		new_ext = relay_ext(),
+	},
+	pub struct Kusama {
+		Runtime = kusama_runtime::Runtime,
+		XcmConfig = kusama_runtime::xcm_config::XcmConfig,
+		new_ext = relay_ext(),
 	}
 }
 
-decl_test_parachain! {
+decl_test_parachains! {
+	pub struct Statemine {
+		Runtime = statemine_runtime::Runtime,
+		RuntimeOrigin = statemine_runtime::RuntimeOrigin,
+		XcmpMessageHandler = statemine_runtime::XcmpQueue,
+		DmpMessageHandler = statemine_runtime::DmpQueue,
+		new_ext = statemine_ext(),
+	},
 	pub struct Statemint {
 		Runtime = statemint_runtime::Runtime,
 		RuntimeOrigin = statemint_runtime::RuntimeOrigin,
 		XcmpMessageHandler = statemint_runtime::XcmpQueue,
 		DmpMessageHandler = statemint_runtime::DmpQueue,
 		new_ext = statemint_ext(),
-	}
-}
-
-decl_test_parachain! {
+	},
 	pub struct Penpal {
 		Runtime = penpal_runtime::Runtime,
 		RuntimeOrigin = penpal_runtime::RuntimeOrigin,
@@ -42,7 +51,7 @@ decl_test_parachain! {
 	}
 }
 
-decl_test_network! {
+decl_test_networks! {
 	pub struct PolkadotMockNet {
 		relay_chain = Polkadot,
 		parachains = vec![
@@ -98,6 +107,26 @@ pub fn relay_ext() -> sp_io::TestExternalities {
 // Define Statemint TestExternalities.
 pub fn statemint_ext() -> sp_io::TestExternalities {
 	use statemint_runtime::{Runtime, System};
+
+	let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
+
+	pallet_balances::GenesisConfig::<Runtime> {
+		balances: vec![(ALICE, INITIAL_BALANCE), (parent_account_id(), INITIAL_BALANCE)],
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+
+	let mut ext = sp_io::TestExternalities::new(t);
+	ext.execute_with(|| {
+		sp_tracing::try_init_simple();
+		System::set_block_number(1);
+	});
+	ext
+}
+
+// Define Statemine TestExternalities.
+pub fn statemine_ext() -> sp_io::TestExternalities {
+	use statemine_runtime::{Runtime, System};
 
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
 

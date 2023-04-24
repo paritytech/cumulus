@@ -6,15 +6,8 @@ pub mod accounts {
 	pub const BOB: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([1u8; 32]);
 }
 
-// pub mod polkadot {
-// 	pub const MAX_UPWARD_QUEUE_COUNT = 10;
-// 	pub const MAX_UPWARD_QUEUE_SIZE = 10;
-// 	pub const MAX_UPWARD_QUEUE_SIZE = 10;
-// }
-
 pub mod polkadot {
-	use super::HostConfiguration;
-	use super::BlockNumber;
+	use super::*;
 
 	pub fn get_host_config() -> HostConfiguration<BlockNumber> {
 		HostConfiguration {
@@ -29,8 +22,7 @@ pub mod polkadot {
 }
 
 pub mod kusama {
-	use super::HostConfiguration;
-	use super::BlockNumber;
+	use super::*;
 
 	pub fn get_host_config() -> HostConfiguration<BlockNumber> {
 		HostConfiguration {

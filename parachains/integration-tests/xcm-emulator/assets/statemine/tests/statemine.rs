@@ -68,45 +68,45 @@ decl_test_network! {
 	}
 }
 
-// Define Statemine TestExternalities.
-pub fn statemine_ext() -> sp_io::TestExternalities {
-	use statemine_runtime::{Runtime, System};
+// // Define Statemine TestExternalities.
+// pub fn statemine_ext() -> sp_io::TestExternalities {
+// 	use statemine_runtime::{Runtime, System};
 
-	let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
+// 	let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
 
-	pallet_balances::GenesisConfig::<Runtime> {
-		balances: vec![(ALICE, INITIAL_BALANCE), (parent_account_id(), INITIAL_BALANCE)],
-	}
-	.assimilate_storage(&mut t)
-	.unwrap();
+// 	pallet_balances::GenesisConfig::<Runtime> {
+// 		balances: vec![(ALICE, INITIAL_BALANCE), (parent_account_id(), INITIAL_BALANCE)],
+// 	}
+// 	.assimilate_storage(&mut t)
+// 	.unwrap();
 
-	let mut ext = sp_io::TestExternalities::new(t);
-	ext.execute_with(|| {
-		sp_tracing::try_init_simple();
-		System::set_block_number(1);
-	});
-	ext
-}
+// 	let mut ext = sp_io::TestExternalities::new(t);
+// 	ext.execute_with(|| {
+// 		sp_tracing::try_init_simple();
+// 		System::set_block_number(1);
+// 	});
+// 	ext
+// }
 
-// Define Penpal TestExternalities.
-pub fn penpal_ext() -> sp_io::TestExternalities {
-	use penpal_runtime::{Runtime, System};
+// // Define Penpal TestExternalities.
+// pub fn penpal_ext() -> sp_io::TestExternalities {
+// 	use penpal_runtime::{Runtime, System};
 
-	let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
+// 	let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
 
-	pallet_balances::GenesisConfig::<Runtime> {
-		balances: vec![(ALICE, INITIAL_BALANCE), (parent_account_id(), INITIAL_BALANCE)],
-	}
-	.assimilate_storage(&mut t)
-	.unwrap();
+// 	pallet_balances::GenesisConfig::<Runtime> {
+// 		balances: vec![(ALICE, INITIAL_BALANCE), (parent_account_id(), INITIAL_BALANCE)],
+// 	}
+// 	.assimilate_storage(&mut t)
+// 	.unwrap();
 
-	let mut ext = sp_io::TestExternalities::new(t);
-	ext.execute_with(|| {
-		sp_tracing::try_init_simple();
-		System::set_block_number(1);
-	});
-	ext
-}
+// 	let mut ext = sp_io::TestExternalities::new(t);
+// 	ext.execute_with(|| {
+// 		sp_tracing::try_init_simple();
+// 		System::set_block_number(1);
+// 	});
+// 	ext
+// }
 
 // Define Kusama TestExternalities.
 pub fn relay_ext() -> sp_io::TestExternalities {
