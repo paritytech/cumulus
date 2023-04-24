@@ -86,7 +86,7 @@ impl XcmBlobHauler for ToBridgeHubWococoXcmBlobHauler {
 		DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO
 	}
 }
-const DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO: LaneId = LaneId([0, 0, 0, 1]);
+pub const DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO: LaneId = LaneId([0, 0, 0, 1]);
 
 /// Messaging Bridge configuration for BridgeHubRococo -> BridgeHubWococo
 pub struct WithBridgeHubWococoMessageBridge;

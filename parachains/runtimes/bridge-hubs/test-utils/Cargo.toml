@@ -6,10 +6,12 @@ edition = "2021"
 description = "Utils for BridgeHub testing"
 
 [dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
 
 # Substrate
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -40,10 +42,12 @@ bp-polkadot-core = { path = "../../../../bridges/primitives/polkadot-core", defa
 bp-runtime = { path = "../../../../bridges/primitives/runtime", default-features = false }
 bp-test-utils = { path = "../../../../bridges/primitives/test-utils", default-features = false }
 pallet-bridge-grandpa = { path = "../../../../bridges/modules/grandpa", default-features = false }
+pallet-bridge-messages = { path = "../../../../bridges/modules/messages", default-features = false }
 
 [features]
 default = [ "std" ]
 std = [
+	"codec/std",
 	"frame-support/std",
 	"frame-system/std",
 	"bp-messages/std",
@@ -52,6 +56,7 @@ std = [
 	"bp-runtime/std",
 	"bp-test-utils/std",
 	"pallet-bridge-grandpa/std",
+	"pallet-bridge-messages/std",
 	"parachains-common/std",
 	"parachain-info/std",
 	"cumulus-primitives-core/std",
@@ -60,6 +65,7 @@ std = [
 	"cumulus-test-relay-sproof-builder/std",
 	"polkadot-parachain/std",
 	"pallet-xcm/std",
+	"sp-io/std",
 	"sp-runtime/std",
 	"xcm/std",
 	"xcm-builder/std",

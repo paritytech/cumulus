@@ -202,6 +202,7 @@ pub type Barrier = DenyThenTry<
 			(
 				// Allow anything to pay for execution.
 				AllowTopLevelPaidExecutionFrom<Everything>,
+				// TODO:check-parameter - add here "or SystemParachains" once merged https://github.com/paritytech/polkadot/pull/7005
 				// Parent and its plurality (i.e. governance bodies) gets free execution.
 				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
 				// Subscriptions for version tracking are OK.
@@ -210,7 +211,7 @@ pub type Barrier = DenyThenTry<
 			UniversalLocation,
 			ConstU32<8>,
 		>,
-		// TODO:check-parameter - supporting unpaid execution at first, then SovereignPaid
+		// TODO:check-parameter - supporting unpaid execution at first, then SovereignPaid, remove this once https://github.com/paritytech/polkadot/pull/7005
 		AllowUnpaidExecutionFrom<Everything>,
 	),
 >;

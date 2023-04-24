@@ -233,7 +233,7 @@ function allow_assets_transfer_send() {
                         ]
                     }
                 },
-                "targetLocationFee": {
+                "maxTargetLocationFee": {
                     "id": {
                         "Concrete": {
                             "parents": 1,
@@ -597,7 +597,7 @@ case "$1" in
           "ws://127.0.0.1:9010" \
           "//Alice" \
           "5DHZvp523gmJWxg9UcLVbofyu5nZkPvATeP1ciYncpFpXtiG" \
-          $((1000000000 + 50000000000 * 20)) # ExistentialDeposit + targetLocationFee * 20
+          $((1000000000 + 50000000000 * 20)) # ExistentialDeposit + maxTargetLocationFee * 20
       # create foreign assets for native Statemine token (yes, Kusama, because we are using Statemine runtime on rococo)
       force_create_foreign_asset \
           "ws://127.0.0.1:9945" \

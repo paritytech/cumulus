@@ -16,21 +16,27 @@
 
 //! Module contains predefined test-case scenarios for `Runtime` with bridging capabilities.
 
+use codec::Encode;
 use frame_support::{assert_ok, traits::Get};
+use xcm::latest::prelude::*;
+use xcm_executor::XcmExecutor;
 
 // Lets re-use this stuff from assets (later we plan to move it outside of assets as `runtimes/test-utils`)
 use asset_test_utils::{AccountIdOf, ExtBuilder, RuntimeHelper, ValidatorIdOf};
 
 // Re-export test_cases from assets
-pub use asset_test_utils::{include_teleports_for_native_asset_works, CollatorSessionKeys};
+pub use asset_test_utils::{
+	include_teleports_for_native_asset_works, CollatorSessionKeys, XcmReceivedFrom,
+};
+use bp_messages::{LaneId, OutboundLaneData};
 
 /// Test-case makes sure that `Runtime` can process bridging initialize via governance-like call
-pub fn initialize_bridge_by_governance_works<Runtime, XcmConfig, GrandpaPalletInstance>(
+pub fn initialize_bridge_by_governance_works<Runtime, GrandpaPalletInstance>(
 	collator_session_key: CollatorSessionKeys<Runtime>,
+	runtime_para_id: u32,
 	runtime_call_encode: Box<
 		dyn Fn(pallet_bridge_grandpa::Call<Runtime, GrandpaPalletInstance>) -> Vec<u8>,
 	>,
-	runtime_para_id: u32,
 ) where
 	Runtime: frame_system::Config
 		+ pallet_balances::Config
@@ -53,9 +59,9 @@ pub fn initialize_bridge_by_governance_works<Runtime, XcmConfig, GrandpaPalletIn
 		.execute_with(|| {
 			// check mode before
 			assert_eq!(
-			pallet_bridge_grandpa::PalletOperatingMode::<Runtime, GrandpaPalletInstance>::try_get(),
-			Err(())
-		);
+				pallet_bridge_grandpa::PalletOperatingMode::<Runtime, GrandpaPalletInstance>::try_get(),
+				Err(())
+			);
 
 			// encode `initialize` call
 			let initialize_call = runtime_call_encode(pallet_bridge_grandpa::Call::<
@@ -65,7 +71,7 @@ pub fn initialize_bridge_by_governance_works<Runtime, XcmConfig, GrandpaPalletIn
 				init_data: test_data::initialiation_data::<Runtime, GrandpaPalletInstance>(12345),
 			});
 
-			// overestimate - check `pallet_bridge_grandpa::Pallet::initialize()` call
+			// overestimate - check weight for `pallet_bridge_grandpa::Pallet::initialize()` call
 			let require_weight_at_most =
 				<Runtime as frame_system::Config>::DbWeight::get().reads_writes(7, 7);
 
@@ -79,9 +85,9 @@ pub fn initialize_bridge_by_governance_works<Runtime, XcmConfig, GrandpaPalletIn
 
 			// check mode after
 			assert_eq!(
-			pallet_bridge_grandpa::PalletOperatingMode::<Runtime, GrandpaPalletInstance>::try_get(),
-			Ok(bp_runtime::BasicOperatingMode::Normal)
-		);
+				pallet_bridge_grandpa::PalletOperatingMode::<Runtime, GrandpaPalletInstance>::try_get(),
+				Ok(bp_runtime::BasicOperatingMode::Normal)
+			);
 		})
 }
 
@@ -90,36 +96,142 @@ macro_rules! include_initialize_bridge_by_governance_works(
 	(
 		$test_name:tt,
 		$runtime:path,
-		$xcm_config:path,
 		$pallet_bridge_grandpa_instance:path,
 		$collator_session_key:expr,
-		$runtime_call_encode:expr,
-		$runtime_para_id:expr
+		$runtime_para_id:expr,
+		$runtime_call_encode:expr
 	) => {
 		#[test]
 		fn $test_name() {
 			$crate::test_cases::initialize_bridge_by_governance_works::<
 				$runtime,
-				$xcm_config,
 				$pallet_bridge_grandpa_instance,
 			>(
 				$collator_session_key,
-				$runtime_call_encode,
-				$runtime_para_id
+				$runtime_para_id,
+				$runtime_call_encode
 			)
 		}
 	}
 );
 
-// process_export_message_from_system_parachain_works
-//
-// test_back_preasure_xcmp
-//
-// dispatch_blob_and_xcm_routing_works_on_bridge_hub_rococo
-// dispatch_blob_and_xcm_routing_works_on_bridge_hub_wococo
-//
-// can_govornance_call_xcm_transact_with_initialize_on_bridge_hub_rococo
-// can_govornance_call_xcm_transact_with_initialize_bridge_on_bridge_hub_wococo
+/// Test-case makes sure that `Runtime` can handle xcm `ExportMessage`:
+/// Checks if received XCM messages is correctly added to the message outbound queue for delivery.
+/// For SystemParachains we expect unpaid execution.
+pub fn handle_export_message_from_system_parachain_to_outbound_queue_works<
+	Runtime,
+	XcmConfig,
+	MessagesPalletInstance,
+>(
+	collator_session_key: CollatorSessionKeys<Runtime>,
+	runtime_para_id: u32,
+	sibling_parachain_id: u32,
+	unwrap_pallet_bridge_messages_event: Box<
+		dyn Fn(Vec<u8>) -> Option<pallet_bridge_messages::Event<Runtime, MessagesPalletInstance>>,
+	>,
+	export_message_instruction: fn() -> Instruction<XcmConfig::RuntimeCall>,
+	expected_lane_id: LaneId,
+) where
+	Runtime: frame_system::Config
+		+ pallet_balances::Config
+		+ pallet_session::Config
+		+ pallet_xcm::Config
+		+ parachain_info::Config
+		+ pallet_collator_selection::Config
+		+ cumulus_pallet_dmp_queue::Config
+		+ cumulus_pallet_parachain_system::Config
+		+ pallet_bridge_messages::Config<MessagesPalletInstance>,
+	XcmConfig: xcm_executor::Config,
+	MessagesPalletInstance: 'static,
+	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
+{
+	assert_ne!(runtime_para_id, sibling_parachain_id);
+	let sibling_parachain_location = MultiLocation::new(1, Parachain(sibling_parachain_id));
+
+	ExtBuilder::<Runtime>::default()
+		.with_collators(collator_session_key.collators())
+		.with_session_keys(collator_session_key.session_keys())
+		.with_para_id(runtime_para_id.into())
+		.with_tracing()
+		.build()
+		.execute_with(|| {
+			// check queue before
+			assert_eq!(
+				pallet_bridge_messages::OutboundLanes::<Runtime, MessagesPalletInstance>::try_get(
+					&expected_lane_id
+				),
+				Err(())
+			);
+
+			// prepare `ExportMessage`
+			let xcm = Xcm(vec![
+				UnpaidExecution { weight_limit: Unlimited, check_origin: None },
+				export_message_instruction(),
+			]);
+
+			// execute XCM
+			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
+			assert_ok!(XcmExecutor::<XcmConfig>::execute_xcm(
+				sibling_parachain_location,
+				xcm,
+				hash,
+				RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Sibling),
+			)
+			.ensure_complete());
+
+			// check queue after
+			assert_eq!(
+				pallet_bridge_messages::OutboundLanes::<Runtime, MessagesPalletInstance>::try_get(
+					&expected_lane_id
+				),
+				Ok(OutboundLaneData {
+					oldest_unpruned_nonce: 1,
+					latest_received_nonce: 0,
+					latest_generated_nonce: 1,
+				})
+			);
+
+			// check events
+			let mut events = <frame_system::Pallet<Runtime>>::events()
+				.into_iter()
+				.filter_map(|e| unwrap_pallet_bridge_messages_event(e.event.encode()));
+			assert!(
+				events.any(|e| matches!(e, pallet_bridge_messages::Event::MessageAccepted { .. }))
+			);
+		})
+}
+
+#[macro_export]
+macro_rules! include_handle_export_message_from_system_parachain_to_outbound_queue_works(
+	(
+		$test_name:tt,
+		$runtime:path,
+		$xcm_config:path,
+		$pallet_bridge_messages_instance:path,
+		$collator_session_key:expr,
+		$runtime_para_id:expr,
+		$sibling_parachain_id:expr,
+		$unwrap_pallet_bridge_messages_event:expr,
+		$export_message_instruction:expr,
+		$expected_lane_id:expr
+	) => {
+		#[test]
+		fn $test_name() {
+			$crate::test_cases::handle_export_message_from_system_parachain_to_outbound_queue_works::<
+				$runtime,
+				$xcm_config,
+				$pallet_bridge_messages_instance
+			>(
+				$collator_session_key,
+				$runtime_para_id,
+				$sibling_parachain_id,
+				$unwrap_pallet_bridge_messages_event,
+				$export_message_instruction,
+				$expected_lane_id
+			)
+		}
+	}
+);
 
 mod test_data {
 

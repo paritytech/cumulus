@@ -231,15 +231,36 @@ bridge_hub_test_utils::test_cases::include_teleports_for_native_asset_works!(
 bridge_hub_test_utils::include_initialize_bridge_by_governance_works!(
 	initialize_bridge_to_wococo_by_governance_works,
 	Runtime,
-	XcmConfig,
 	BridgeGrandpaWococoInstance,
 	bridge_hub_test_utils::CollatorSessionKeys::new(
 		AccountId::from(ALICE),
 		AccountId::from(ALICE),
 		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
 	),
-	Box::new(|call| RuntimeCall::BridgeWococoGrandpa(call).encode()),
-	1013
+	1013,
+	Box::new(|call| RuntimeCall::BridgeWococoGrandpa(call).encode())
+);
+
+bridge_hub_test_utils::include_handle_export_message_from_system_parachain_to_outbound_queue_works!(
+	handle_export_message_from_system_parachain_to_outbound_queue_works_for_wococo,
+	Runtime,
+	XcmConfig,
+	WithBridgeHubWococoMessagesInstance,
+	bridge_hub_test_utils::CollatorSessionKeys::new(
+		AccountId::from(ALICE),
+		AccountId::from(ALICE),
+		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+	),
+	1013,
+	1000,
+	Box::new(|runtime_event_encoded: Vec<u8>| {
+		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+			Ok(RuntimeEvent::BridgeWococoMessages(event)) => Some(event),
+			_ => None,
+		}
+	}),
+	|| ExportMessage { network: Wococo, destination: X1(Parachain(1234)), xcm: Xcm(vec![]) },
+	bridge_hub_rococo_config::DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO
 );
 
 mod bridge_hub_wococo {
@@ -275,14 +296,35 @@ mod bridge_hub_wococo {
 	bridge_hub_test_utils::include_initialize_bridge_by_governance_works!(
 		initialize_bridge_to_rococo_by_governance_works,
 		Runtime,
-		XcmConfig,
 		BridgeGrandpaRococoInstance,
 		bridge_hub_test_utils::CollatorSessionKeys::new(
 			AccountId::from(ALICE),
 			AccountId::from(ALICE),
 			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
 		),
-		Box::new(|call| RuntimeCall::BridgeRococoGrandpa(call).encode()),
-		1014
+		1014,
+		Box::new(|call| RuntimeCall::BridgeRococoGrandpa(call).encode())
+	);
+
+	bridge_hub_test_utils::include_handle_export_message_from_system_parachain_to_outbound_queue_works!(
+		handle_export_message_from_system_parachain_to_outbound_queue_works_for_rococo,
+		Runtime,
+		XcmConfig,
+		WithBridgeHubRococoMessagesInstance,
+		bridge_hub_test_utils::CollatorSessionKeys::new(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+		),
+		1014,
+		1000,
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::BridgeRococoMessages(event)) => Some(event),
+				_ => None,
+			}
+		}),
+		|| ExportMessage { network: Rococo, destination: X1(Parachain(4321)), xcm: Xcm(vec![]) },
+		bridge_hub_wococo_config::DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO
 	);
 }
