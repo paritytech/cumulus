@@ -1344,6 +1344,7 @@ pub fn can_governance_change_bridge_transfer_out_configuration<Runtime, XcmConfi
 		+ parachain_info::Config
 		+ pallet_collator_selection::Config
 		+ cumulus_pallet_parachain_system::Config
+		+ cumulus_pallet_dmp_queue::Config
 		+ pallet_bridge_transfer::Config,
 	AccountIdOf<Runtime>: Into<[u8; 32]>,
 	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
@@ -1369,43 +1370,22 @@ pub fn can_governance_change_bridge_transfer_out_configuration<Runtime, XcmConfi
 				max_target_location_fee: None,
 			};
 
-			// helper to execute BridgeTransfer call
-			let execute_as_governance = |call| -> Outcome {
-				// prepare xcm as governance will do
-				let xcm = Xcm(vec![
-					UnpaidExecution { weight_limit: Unlimited, check_origin: None },
-					Transact {
-						origin_kind: OriginKind::Superuser,
-						require_weight_at_most: Weight::from_parts(200_000_000, 12000),
-						call: runtime_call_encode(call).into(),
-					},
-				]);
-
-				// origin as relay chain
-				let origin = MultiLocation { parents: 1, interior: Here };
-
-				// initialize bridge through governance-like
-				let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-				XcmExecutor::<XcmConfig>::execute_xcm(
-					origin,
-					xcm,
-					hash,
-					RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Parent),
-				)
-			};
-
 			// check no cfg
 			assert!(pallet_bridge_transfer::Pallet::<Runtime>::allowed_exporters(&bridged_network)
 				.is_none());
 
-			// governance can add bridge config
-			assert_ok!(execute_as_governance(
-				pallet_bridge_transfer::Call::<Runtime>::add_exporter_config {
-					bridged_network,
-					bridge_config: Box::new(bridge_config.clone()),
-				},
+			// governance can add exporter config
+			assert_ok!(RuntimeHelper::<Runtime>::execute_as_governance(
+				runtime_call_encode(
+					pallet_bridge_transfer::Call::<Runtime>::add_exporter_config {
+						bridged_network,
+						bridge_config: Box::new(bridge_config.clone()),
+					}
+				),
+				<<Runtime as pallet_bridge_transfer::Config>::WeightInfo as pallet_bridge_transfer::weights::WeightInfo>::add_exporter_config()
 			)
 			.ensure_complete());
+
 			assert!(<frame_system::Pallet<Runtime>>::events()
 				.into_iter()
 				.filter_map(|e| unwrap_pallet_bridge_transfer_event(e.event.encode()))
@@ -1426,16 +1406,19 @@ pub fn can_governance_change_bridge_transfer_out_configuration<Runtime, XcmConfi
 				(Concrete(MultiLocation::parent()), 1_000).into();
 			let new_target_location_fee: MultiAsset =
 				(Concrete(MultiLocation::parent()), 1_000_000).into();
-			assert_ok!(execute_as_governance(
-				pallet_bridge_transfer::Call::<Runtime>::update_exporter_config {
-					bridged_network,
-					bridge_location_fee: Some(Box::new(VersionedMultiAsset::V3(
-						new_bridge_location_fee.clone()
-					))),
-					target_location_fee: Some(Box::new(VersionedMultiAsset::V3(
-						new_target_location_fee.clone()
-					))),
-				},
+			assert_ok!(RuntimeHelper::<Runtime>::execute_as_governance(
+				runtime_call_encode(
+					pallet_bridge_transfer::Call::<Runtime>::update_exporter_config {
+						bridged_network,
+						bridge_location_fee: Some(Box::new(VersionedMultiAsset::V3(
+							new_bridge_location_fee.clone()
+						))),
+						target_location_fee: Some(Box::new(VersionedMultiAsset::V3(
+							new_target_location_fee.clone()
+						))),
+					}
+				),
+				<<Runtime as pallet_bridge_transfer::Config>::WeightInfo as pallet_bridge_transfer::weights::WeightInfo>::update_exporter_config()
 			)
 			.ensure_complete());
 			assert!(<frame_system::Pallet<Runtime>>::events()
@@ -1454,8 +1437,11 @@ pub fn can_governance_change_bridge_transfer_out_configuration<Runtime, XcmConfi
 			}
 
 			// governance can remove bridge config
-			assert_ok!(execute_as_governance(
-				pallet_bridge_transfer::Call::<Runtime>::remove_exporter_config { bridged_network },
+			assert_ok!(RuntimeHelper::<Runtime>::execute_as_governance(
+				runtime_call_encode(
+					pallet_bridge_transfer::Call::<Runtime>::remove_exporter_config { bridged_network }
+				),
+				<<Runtime as pallet_bridge_transfer::Config>::WeightInfo as pallet_bridge_transfer::weights::WeightInfo>::remove_exporter_config()
 			)
 			.ensure_complete());
 			assert!(pallet_bridge_transfer::Pallet::<Runtime>::allowed_exporters(&bridged_network)
@@ -1478,7 +1464,7 @@ macro_rules! include_can_governance_change_bridge_transfer_out_configuration(
 	) => {
 		#[test]
 		fn can_governance_change_bridge_transfer_out_configuration() {
-			asset_test_utils::test_cases::can_governance_change_bridge_transfer_out_configuration::<
+			$crate::test_cases::can_governance_change_bridge_transfer_out_configuration::<
 				$runtime,
 				$xcm_config,
 			>(
@@ -1505,6 +1491,7 @@ pub fn can_governance_change_bridge_transfer_in_configuration<Runtime, XcmConfig
 		+ parachain_info::Config
 		+ pallet_collator_selection::Config
 		+ cumulus_pallet_parachain_system::Config
+		+ cumulus_pallet_dmp_queue::Config
 		+ pallet_bridge_transfer::Config,
 	AccountIdOf<Runtime>: Into<[u8; 32]>,
 	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
@@ -1522,31 +1509,6 @@ pub fn can_governance_change_bridge_transfer_in_configuration<Runtime, XcmConfig
 			let bridge_location = (Parent, Parachain(1013)).into();
 			let alias_junction = GlobalConsensus(ByGenesis([9; 32]));
 
-			// helper to execute BridgeTransfer call
-			let execute_as_governance = |call| -> Outcome {
-				// prepare xcm as governance will do
-				let xcm = Xcm(vec![
-					UnpaidExecution { weight_limit: Unlimited, check_origin: None },
-					Transact {
-						origin_kind: OriginKind::Superuser,
-						require_weight_at_most: Weight::from_parts(200_000_000, 12000),
-						call: runtime_call_encode(call).into(),
-					},
-				]);
-
-				// origin as relay chain
-				let origin = MultiLocation { parents: 1, interior: Here };
-
-				// initialize bridge through governance-like
-				let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-				XcmExecutor::<XcmConfig>::execute_xcm(
-					origin,
-					xcm,
-					hash,
-					RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Parent),
-				)
-			};
-
 			// check before
 			assert!(
 				!pallet_bridge_transfer::impls::AllowedUniversalAliasesOf::<Runtime>::contains(&(
@@ -1556,11 +1518,14 @@ pub fn can_governance_change_bridge_transfer_in_configuration<Runtime, XcmConfig
 			);
 
 			// governance can add bridge config
-			assert_ok!(execute_as_governance(
-				pallet_bridge_transfer::Call::<Runtime>::add_universal_alias {
-					location: Box::new(VersionedMultiLocation::V3(bridge_location.clone())),
-					junction: alias_junction,
-				},
+			assert_ok!(RuntimeHelper::<Runtime>::execute_as_governance(
+				runtime_call_encode(
+					pallet_bridge_transfer::Call::<Runtime>::add_universal_alias {
+						location: Box::new(VersionedMultiLocation::V3(bridge_location.clone())),
+						junction: alias_junction,
+					}
+				),
+				<<Runtime as pallet_bridge_transfer::Config>::WeightInfo as pallet_bridge_transfer::weights::WeightInfo>::add_universal_alias()
 			)
 			.ensure_complete());
 			assert!(<frame_system::Pallet<Runtime>>::events()
@@ -1586,7 +1551,7 @@ macro_rules! include_can_governance_change_bridge_transfer_in_configuration(
 	) => {
 		#[test]
 		fn can_governance_change_bridge_transfer_in_configuration() {
-			asset_test_utils::test_cases::can_governance_change_bridge_transfer_in_configuration::<
+			$crate::test_cases::can_governance_change_bridge_transfer_in_configuration::<
 				$runtime,
 				$xcm_config,
 			>(
@@ -1887,7 +1852,7 @@ macro_rules! include_initiate_transfer_asset_via_bridge_for_native_asset_works(
 			const ALICE: [u8; 32] = [1u8; 32];
 			let alice_account = parachains_common::AccountId::from(ALICE);
 
-			asset_test_utils::test_cases::initiate_transfer_asset_via_bridge_for_native_asset_works::<
+			$crate::test_cases::initiate_transfer_asset_via_bridge_for_native_asset_works::<
 				$runtime,
 				$xcm_config,
 				$hrmp_channel_opener,
@@ -2125,7 +2090,7 @@ macro_rules! include_receive_reserve_asset_deposited_from_different_consensus_wo
 			const BOB: [u8; 32] = [2u8; 32];
 			let target_account = parachains_common::AccountId::from(BOB);
 
-			asset_test_utils::test_cases::receive_reserve_asset_deposited_from_different_consensus_works::<
+			$crate::test_cases::receive_reserve_asset_deposited_from_different_consensus_works::<
 				$runtime,
 				$xcm_config,
 				$location_to_account_id,
