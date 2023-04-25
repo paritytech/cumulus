@@ -51,6 +51,35 @@ pub trait TestExt {
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R;
 }
 
+
+pub trait RelayMessenger {
+	fn para_ids() -> Vec<u32>;
+
+	fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>);
+
+	fn hrmp_channel_parachain_inherent_data(
+		para_id: u32,
+		relay_parent_number: u32,
+	) -> ParachainInherentData;
+
+	fn process_messages();
+}
+
+pub trait ParachainMessenger {
+	fn send_horizontal_messages<
+		I: Iterator<Item = (ParaId, RelayBlockNumber, Vec<u8>)>,
+	>(to_para_id: u32, iter: I);
+
+	fn send_upward_message(from_para_id: u32, msg: Vec<u8>) {}
+
+	fn hrmp_channel_parachain_inherent_data(
+		para_id: u32,
+		relay_parent_number: u32,
+	) -> ParachainInherentData;
+
+	fn process_messages();
+}
+
 #[macro_export]
 macro_rules! decl_test_relay_chains {
 	(
@@ -169,7 +198,7 @@ macro_rules! __impl_ext_for_relay_chain {
 						use $crate::polkadot_primitives::runtime_api::runtime_decl_for_parachain_host::ParachainHostV4;
 
 						//TODO: mark sent count & filter out sent msg
-						for para_id in _para_ids() {
+						for para_id in <$name>::para_ids() {
 							// downward messages
 							let downward_messages = <$runtime>::dmq_contents(para_id.into())
 								.into_iter()
@@ -177,7 +206,7 @@ macro_rules! __impl_ext_for_relay_chain {
 							if downward_messages.len() == 0 {
 								continue;
 							}
-							_Messenger::send_downward_messages(para_id, downward_messages.into_iter());
+							<$name>::send_downward_messages(para_id, downward_messages.into_iter());
 
 							// Note: no need to handle horizontal messages, as the
 							// simulator directly sends them to dest (not relayed).
@@ -185,7 +214,7 @@ macro_rules! __impl_ext_for_relay_chain {
 					})
 				});
 
-				_process_messages();
+				<$name>::process_messages();
 
 				r
 			}
@@ -220,7 +249,7 @@ macro_rules! __impl_ext_for_parachain {
 
 						let _ = ParachainSystem::set_validation_data(
 							<$origin>::none(),
-							_hrmp_channel_parachain_inherent_data(para_id.into(), 1),
+							<$name>::hrmp_channel_parachain_inherent_data(para_id.into(), 1),
 						);
 						// set `AnnouncedHrmpMessagesPerCandidate`
 						ParachainSystem::on_initialize(block_number);
@@ -253,7 +282,7 @@ macro_rules! __impl_ext_for_parachain {
 							let relay_block = *v.borrow();
 							let _ = ParachainSystem::set_validation_data(
 								<$origin>::none(),
-								_hrmp_channel_parachain_inherent_data(para_id.into(), relay_block),
+								<$name>::hrmp_channel_parachain_inherent_data(para_id.into(), relay_block),
 							);
 						});
 					})
@@ -282,14 +311,14 @@ macro_rules! __impl_ext_for_parachain {
 						// send upward messages
 						let para_id = $crate::parachain_info::Pallet::<$runtime>::get();
 						for msg in collation_info.upward_messages.clone() {
-							_Messenger::send_upward_message(para_id.into(), msg);
+							<$name>::send_upward_message(para_id.into(), msg);
 						}
 
 						// send horizontal messages
 						for msg in collation_info.horizontal_messages {
 							$crate::GLOBAL_RELAY.with(|v| {
 								let relay_block = *v.borrow();
-								_Messenger::send_horizontal_messages(
+								<$name>::send_horizontal_messages(
 									msg.recipient.into(),
 									vec![(para_id.into(), relay_block, msg.data)].into_iter(),
 								);
@@ -301,7 +330,7 @@ macro_rules! __impl_ext_for_parachain {
 					})
 				});
 
-				_process_messages();
+				<$name>::process_messages();
 
 				r
 			}
@@ -340,6 +369,8 @@ macro_rules! decl_test_networks {
 		+
 	) => {
 		$(
+			use $crate::{RelayBlockNumber, ParaId, ParachainInherentData};
+
 			pub struct $name;
 
 			impl $name {
@@ -354,149 +385,208 @@ macro_rules! decl_test_networks {
 					$crate::DOWNWARD_MESSAGES.with(|b| b.replace(VecDeque::new()));
 					$crate::DMP_DONE.with(|b| b.replace(VecDeque::new()));
 				}
-			}
 
-			fn _para_ids() -> Vec<u32> {
-				vec![$( $para_id, )*]
-			}
-
-			fn _process_messages() {
-				while _has_unprocessed_messages() {
-					_process_upward_messages();
-					_process_horizontal_messages();
-					_process_downward_messages();
-				}
-			}
-
-			fn _has_unprocessed_messages() -> bool {
-				$crate::DOWNWARD_MESSAGES.with(|b| !b.borrow_mut().is_empty())
-				|| $crate::HORIZONTAL_MESSAGES.with(|b| !b.borrow_mut().is_empty())
-				|| $crate::UPWARD_MESSAGES.with(|b| !b.borrow_mut().is_empty())
-			}
-
-			fn _process_downward_messages() {
-				use $crate::{DmpMessageHandler, Bounded};
-				use polkadot_parachain::primitives::RelayChainBlockNumber;
-
-				while let Some((to_para_id, messages))
-					= $crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().pop_front()) {
-					match to_para_id {
-						$(
-							$para_id => {
-								let mut msg_dedup: Vec<(RelayChainBlockNumber, Vec<u8>)> = Vec::new();
-								for m in messages {
-									msg_dedup.push((m.0, m.1.clone()));
-								}
-								msg_dedup.dedup();
-
-								let msgs = msg_dedup.clone().into_iter().filter(|m| {
-									!$crate::DMP_DONE.with(|b| b.borrow_mut().contains(&(to_para_id, m.0, m.1.clone())))
-								}).collect::<Vec<(RelayChainBlockNumber, Vec<u8>)>>();
-								if msgs.len() != 0 {
-									<$parachain>::handle_dmp_messages(msgs.clone().into_iter(), $crate::Weight::max_value());
-									for m in msgs {
-										$crate::DMP_DONE.with(|b| b.borrow_mut().push_back((to_para_id, m.0, m.1)));
-									}
-								}
-							},
-						)*
-						_ => unreachable!(),
-					}
-				}
-			}
-
-			fn _process_horizontal_messages() {
-				use $crate::{XcmpMessageHandler, Bounded};
-
-				while let Some((to_para_id, messages))
-					= $crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().pop_front()) {
-					let iter = messages.iter().map(|(p, b, m)| (*p, *b, &m[..])).collect::<Vec<_>>().into_iter();
-					match to_para_id {
-						$(
-							$para_id => {
-								<$parachain>::handle_xcmp_messages(iter, $crate::Weight::max_value());
-							},
-						)*
-						_ => unreachable!(),
-					}
-				}
-			}
-
-			fn _process_upward_messages() {
-				use $crate::{UmpSink, Bounded};
-				while let Some((from_para_id, msg)) = $crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().pop_front()) {
-					let _ =  <$relay_chain>::process_upward_message(
-						from_para_id.into(),
-						&msg[..],
-						$crate::Weight::max_value(),
-					);
-				}
-			}
-
-			pub struct _Messenger;
-			impl _Messenger {
-				fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = ($crate::RelayBlockNumber, Vec<u8>)>) {
+				fn _send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = ($crate::RelayBlockNumber, Vec<u8>)>) {
 					$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().push_back((to_para_id, iter.collect())));
 				}
 
-				fn send_horizontal_messages<
+				fn _send_horizontal_messages<
 					I: Iterator<Item = ($crate::ParaId, $crate::RelayBlockNumber, Vec<u8>)>,
 				>(to_para_id: u32, iter: I) {
 					$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().push_back((to_para_id, iter.collect())));
 				}
 
-				fn send_upward_message(from_para_id: u32, msg: Vec<u8>) {
+				fn _send_upward_message(from_para_id: u32, msg: Vec<u8>) {
 					$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().push_back((from_para_id, msg)));
 				}
-			}
 
-			fn _hrmp_channel_parachain_inherent_data(
-				para_id: u32,
-				relay_parent_number: u32,
-			) -> $crate::ParachainInherentData {
-				use $crate::cumulus_primitives_core::{relay_chain::HrmpChannelId, AbridgedHrmpChannel};
+				fn _para_ids() -> Vec<u32> {
+					vec![$( $para_id, )*]
+				}
 
-				let mut sproof = $crate::RelayStateSproofBuilder::default();
-				sproof.para_id = para_id.into();
+				fn _process_messages() {
+					while Self::_has_unprocessed_messages() {
+						Self::_process_upward_messages();
+						Self::_process_horizontal_messages();
+						Self::_process_downward_messages();
+					}
+				}
 
-				// egress channel
-				let e_index = sproof.hrmp_egress_channel_index.get_or_insert_with(Vec::new);
-				for recipient_para_id in &[ $( $para_id, )* ] {
-					let recipient_para_id = $crate::ParaId::from(*recipient_para_id);
-					if let Err(idx) = e_index.binary_search(&recipient_para_id) {
-						e_index.insert(idx, recipient_para_id);
+				fn _has_unprocessed_messages() -> bool {
+					$crate::DOWNWARD_MESSAGES.with(|b| !b.borrow_mut().is_empty())
+					|| $crate::HORIZONTAL_MESSAGES.with(|b| !b.borrow_mut().is_empty())
+					|| $crate::UPWARD_MESSAGES.with(|b| !b.borrow_mut().is_empty())
+				}
+
+				fn _process_downward_messages() {
+					use $crate::{DmpMessageHandler, Bounded};
+					use polkadot_parachain::primitives::RelayChainBlockNumber;
+
+					while let Some((to_para_id, messages))
+						= $crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().pop_front()) {
+						match to_para_id {
+							$(
+								$para_id => {
+									let mut msg_dedup: Vec<(RelayChainBlockNumber, Vec<u8>)> = Vec::new();
+									for m in messages {
+										msg_dedup.push((m.0, m.1.clone()));
+									}
+									msg_dedup.dedup();
+
+									let msgs = msg_dedup.clone().into_iter().filter(|m| {
+										!$crate::DMP_DONE.with(|b| b.borrow_mut().contains(&(to_para_id, m.0, m.1.clone())))
+									}).collect::<Vec<(RelayChainBlockNumber, Vec<u8>)>>();
+									if msgs.len() != 0 {
+										<$parachain>::handle_dmp_messages(msgs.clone().into_iter(), $crate::Weight::max_value());
+										for m in msgs {
+											$crate::DMP_DONE.with(|b| b.borrow_mut().push_back((to_para_id, m.0, m.1)));
+										}
+									}
+								},
+							)*
+							_ => unreachable!(),
+						}
+					}
+				}
+
+				fn _process_horizontal_messages() {
+					use $crate::{XcmpMessageHandler, Bounded};
+
+					while let Some((to_para_id, messages))
+						= $crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().pop_front()) {
+						let iter = messages.iter().map(|(p, b, m)| (*p, *b, &m[..])).collect::<Vec<_>>().into_iter();
+						match to_para_id {
+							$(
+								$para_id => {
+									<$parachain>::handle_xcmp_messages(iter, $crate::Weight::max_value());
+								},
+							)*
+							_ => unreachable!(),
+						}
+					}
+				}
+
+				fn _process_upward_messages() {
+					use $crate::{UmpSink, Bounded};
+					while let Some((from_para_id, msg)) = $crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().pop_front()) {
+						let _ =  <$relay_chain>::process_upward_message(
+							from_para_id.into(),
+							&msg[..],
+							$crate::Weight::max_value(),
+						);
+					}
+				}
+
+				fn _hrmp_channel_parachain_inherent_data(
+					para_id: u32,
+					relay_parent_number: u32,
+				) -> $crate::ParachainInherentData {
+					use $crate::cumulus_primitives_core::{relay_chain::HrmpChannelId, AbridgedHrmpChannel};
+
+					let mut sproof = $crate::RelayStateSproofBuilder::default();
+					sproof.para_id = para_id.into();
+
+					// egress channel
+					let e_index = sproof.hrmp_egress_channel_index.get_or_insert_with(Vec::new);
+					for recipient_para_id in &[ $( $para_id, )* ] {
+						let recipient_para_id = $crate::ParaId::from(*recipient_para_id);
+						if let Err(idx) = e_index.binary_search(&recipient_para_id) {
+							e_index.insert(idx, recipient_para_id);
+						}
+
+						sproof
+							.hrmp_channels
+							.entry(HrmpChannelId {
+								sender: sproof.para_id,
+								recipient: recipient_para_id,
+							})
+							.or_insert_with(|| AbridgedHrmpChannel {
+								max_capacity: 1024,
+								max_total_size: 1024 * 1024,
+								max_message_size: 1024 * 1024,
+								msg_count: 0,
+								total_size: 0,
+								mqc_head: Option::None,
+							});
 					}
 
-					sproof
-						.hrmp_channels
-						.entry(HrmpChannelId {
-							sender: sproof.para_id,
-							recipient: recipient_para_id,
-						})
-						.or_insert_with(|| AbridgedHrmpChannel {
-							max_capacity: 1024,
-							max_total_size: 1024 * 1024,
-							max_message_size: 1024 * 1024,
-							msg_count: 0,
-							total_size: 0,
-							mqc_head: Option::None,
-						});
-				}
+					let (relay_storage_root, proof) = sproof.into_state_root_and_proof();
 
-				let (relay_storage_root, proof) = sproof.into_state_root_and_proof();
-
-				$crate::ParachainInherentData {
-					validation_data: $crate::PersistedValidationData {
-						parent_head: Default::default(),
-						relay_parent_number,
-						relay_parent_storage_root: relay_storage_root,
-						max_pov_size: Default::default(),
-					},
-					relay_chain_state: proof,
-					downward_messages: Default::default(),
-					horizontal_messages: Default::default(),
+					$crate::ParachainInherentData {
+						validation_data: $crate::PersistedValidationData {
+							parent_head: Default::default(),
+							relay_parent_number,
+							relay_parent_storage_root: relay_storage_root,
+							max_pov_size: Default::default(),
+						},
+						relay_chain_state: proof,
+						downward_messages: Default::default(),
+						horizontal_messages: Default::default(),
+					}
 				}
 			}
+
+			$crate::__impl_messenger_for_relay!($name, $relay_chain);
+
+			$(
+				$crate::__impl_messenger_for_parachain!($name, $parachain);
+			)*
 		)+
 	};
+}
+
+#[macro_export]
+macro_rules! __impl_messenger_for_relay {
+	($network_name:ident, $relay_chain:ty) => {
+
+		impl RelayMessenger for $relay_chain {
+			fn para_ids() -> Vec<u32> {
+				<$network_name>::_para_ids()
+			}
+
+			fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>) {
+				<$network_name>::_send_downward_messages(to_para_id, iter)
+			}
+
+			fn hrmp_channel_parachain_inherent_data(
+				para_id: u32,
+				relay_parent_number: u32,
+			) -> ParachainInherentData {
+				<$network_name>::_hrmp_channel_parachain_inherent_data(para_id, relay_parent_number)
+			}
+
+			fn process_messages() {
+				<$network_name>::_process_messages();
+			}
+		}
+	}
+}
+
+#[macro_export]
+macro_rules! __impl_messenger_for_parachain {
+	($network_name:ident, $parachain:ty) => {
+
+		impl ParachainMessenger for $parachain {
+			fn send_horizontal_messages<
+				I: Iterator<Item = (ParaId, RelayBlockNumber, Vec<u8>)>,
+			>(to_para_id: u32, iter: I) {
+				<$network_name>::_send_horizontal_messages(to_para_id, iter);
+			}
+
+			fn send_upward_message(from_para_id: u32, msg: Vec<u8>) {
+				<$network_name>::_send_upward_message(from_para_id, msg);
+			}
+
+			fn hrmp_channel_parachain_inherent_data(
+				para_id: u32,
+				relay_parent_number: u32,
+			) -> ParachainInherentData {
+				<$network_name>::_hrmp_channel_parachain_inherent_data(para_id, relay_parent_number)
+			}
+
+			fn process_messages() {
+				<$network_name>::_process_messages();
+			}
+		}
+	}
 }

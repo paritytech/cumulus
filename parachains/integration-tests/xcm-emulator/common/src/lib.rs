@@ -8,7 +8,7 @@ use frame_support::{
 	traits::{fungibles::Inspect, GenesisBuild},
 };
 use xcm::prelude::*;
-use xcm_emulator::{decl_test_networks, decl_test_parachains, decl_test_relay_chains, TestExt};
+use xcm_emulator::{decl_test_networks, decl_test_parachains, decl_test_relay_chains, TestExt, RelayMessenger, ParachainMessenger};
 use polkadot_runtime_parachains::configuration::HostConfiguration;
 use xcm_executor::traits::Convert;
 use statemint_runtime::constants::currency::DOLLARS;
@@ -19,12 +19,12 @@ decl_test_relay_chains! {
 		Runtime = polkadot_runtime::Runtime,
 		XcmConfig = polkadot_runtime::xcm_config::XcmConfig,
 		new_ext = relay_ext(),
-	},
-	pub struct Kusama {
-		Runtime = kusama_runtime::Runtime,
-		XcmConfig = kusama_runtime::xcm_config::XcmConfig,
-		new_ext = relay_ext(),
 	}
+	// pub struct Kusama {
+	// 	Runtime = kusama_runtime::Runtime,
+	// 	XcmConfig = kusama_runtime::xcm_config::XcmConfig,
+	// 	new_ext = relay_ext(),
+	// }
 }
 
 decl_test_parachains! {
@@ -60,6 +60,7 @@ decl_test_networks! {
 		],
 	}
 }
+
 
 pub const INITIAL_BALANCE: u128 = 1000 * DOLLARS;
 
