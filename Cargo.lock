@@ -15323,6 +15323,7 @@ dependencies = [
  "sp-arithmetic",
  "sp-io",
  "sp-std",
+ "sp-trie",
  "xcm",
  "xcm-executor",
 ]

@@ -19,12 +19,12 @@ decl_test_relay_chains! {
 		Runtime = polkadot_runtime::Runtime,
 		XcmConfig = polkadot_runtime::xcm_config::XcmConfig,
 		new_ext = relay_ext(),
+	},
+	pub struct Kusama {
+		Runtime = kusama_runtime::Runtime,
+		XcmConfig = kusama_runtime::xcm_config::XcmConfig,
+		new_ext = relay_ext(),
 	}
-	// pub struct Kusama {
-	// 	Runtime = kusama_runtime::Runtime,
-	// 	XcmConfig = kusama_runtime::xcm_config::XcmConfig,
-	// 	new_ext = relay_ext(),
-	// }
 }
 
 decl_test_parachains! {

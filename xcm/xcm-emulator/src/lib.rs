@@ -25,6 +25,7 @@ pub use frame_system;
 pub use sp_arithmetic::traits::Bounded;
 pub use sp_io::TestExternalities;
 pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, marker::PhantomData};
+pub use sp_trie::StorageProof;
 
 pub use cumulus_pallet_dmp_queue;
 pub use cumulus_pallet_parachain_system;
@@ -51,33 +52,56 @@ pub trait TestExt {
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R;
 }
 
-
 pub trait RelayMessenger {
-	fn para_ids() -> Vec<u32>;
+	fn para_ids() -> Vec<u32> { Default::default() }
 
-	fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>);
+	fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>) {}
 
 	fn hrmp_channel_parachain_inherent_data(
 		para_id: u32,
 		relay_parent_number: u32,
-	) -> ParachainInherentData;
+	) -> ParachainInherentData {
+		ParachainInherentData {
+			validation_data: PersistedValidationData {
+				parent_head: Default::default(),
+				relay_parent_number: Default::default(),
+				relay_parent_storage_root: Default::default(),
+				max_pov_size: Default::default(),
+			},
+			relay_chain_state:  StorageProof::new(Vec::new()),
+			downward_messages: Default::default(),
+			horizontal_messages: Default::default(),
+		}
+	}
 
-	fn process_messages();
+	fn process_messages() {}
 }
 
 pub trait ParachainMessenger {
 	fn send_horizontal_messages<
 		I: Iterator<Item = (ParaId, RelayBlockNumber, Vec<u8>)>,
-	>(to_para_id: u32, iter: I);
+	>(to_para_id: u32, iter: I) {}
 
 	fn send_upward_message(from_para_id: u32, msg: Vec<u8>) {}
 
 	fn hrmp_channel_parachain_inherent_data(
 		para_id: u32,
 		relay_parent_number: u32,
-	) -> ParachainInherentData;
+	) -> ParachainInherentData {
+		ParachainInherentData {
+			validation_data: PersistedValidationData {
+				parent_head: Default::default(),
+				relay_parent_number: Default::default(),
+				relay_parent_storage_root: Default::default(),
+				max_pov_size: Default::default(),
+			},
+			relay_chain_state:  StorageProof::new(Vec::new()),
+			downward_messages: Default::default(),
+			horizontal_messages: Default::default(),
+		}
+	}
 
-	fn process_messages();
+	fn process_messages() {}
 }
 
 #[macro_export]
@@ -94,6 +118,8 @@ macro_rules! decl_test_relay_chains {
 	) => {
 		$(
 			pub struct $name;
+
+			impl RelayMessenger for $name {}
 
 			$crate::__impl_ext_for_relay_chain!($name, $runtime, $new_ext);
 
@@ -130,6 +156,8 @@ macro_rules! decl_test_parachains {
 	) => {
 		$(
 			pub struct $name;
+
+			impl ParachainMessenger for $name {}
 
 			$crate::__impl_ext_for_parachain!($name, $runtime, $origin, $new_ext);
 
@@ -539,7 +567,7 @@ macro_rules! decl_test_networks {
 macro_rules! __impl_messenger_for_relay {
 	($network_name:ident, $relay_chain:ty) => {
 
-		impl RelayMessenger for $relay_chain {
+		impl $relay_chain {
 			fn para_ids() -> Vec<u32> {
 				<$network_name>::_para_ids()
 			}
@@ -566,7 +594,7 @@ macro_rules! __impl_messenger_for_relay {
 macro_rules! __impl_messenger_for_parachain {
 	($network_name:ident, $parachain:ty) => {
 
-		impl ParachainMessenger for $parachain {
+		impl $parachain {
 			fn send_horizontal_messages<
 				I: Iterator<Item = (ParaId, RelayBlockNumber, Vec<u8>)>,
 			>(to_para_id: u32, iter: I) {
