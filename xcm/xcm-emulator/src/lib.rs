@@ -52,11 +52,7 @@ pub trait TestExt {
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R;
 }
 
-pub trait RelayMessenger {
-	fn para_ids() -> Vec<u32> { Default::default() }
-
-	fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>) {}
-
+pub trait Messenger {
 	fn hrmp_channel_parachain_inherent_data(
 		para_id: u32,
 		relay_parent_number: u32,
@@ -76,32 +72,56 @@ pub trait RelayMessenger {
 
 	fn process_messages() {}
 }
+pub trait RelayMessenger: Messenger {
+	fn para_ids() -> Vec<u32> { Default::default() }
 
-pub trait ParachainMessenger {
+	fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>) {}
+
+	// fn hrmp_channel_parachain_inherent_data(
+	// 	para_id: u32,
+	// 	relay_parent_number: u32,
+	// ) -> ParachainInherentData {
+	// 	ParachainInherentData {
+	// 		validation_data: PersistedValidationData {
+	// 			parent_head: Default::default(),
+	// 			relay_parent_number: Default::default(),
+	// 			relay_parent_storage_root: Default::default(),
+	// 			max_pov_size: Default::default(),
+	// 		},
+	// 		relay_chain_state:  StorageProof::new(Vec::new()),
+	// 		downward_messages: Default::default(),
+	// 		horizontal_messages: Default::default(),
+	// 	}
+	// }
+
+	// fn process_messages() {}
+}
+
+pub trait ParachainMessenger: Messenger {
 	fn send_horizontal_messages<
 		I: Iterator<Item = (ParaId, RelayBlockNumber, Vec<u8>)>,
 	>(to_para_id: u32, iter: I) {}
 
 	fn send_upward_message(from_para_id: u32, msg: Vec<u8>) {}
 
-	fn hrmp_channel_parachain_inherent_data(
-		para_id: u32,
-		relay_parent_number: u32,
-	) -> ParachainInherentData {
-		ParachainInherentData {
-			validation_data: PersistedValidationData {
-				parent_head: Default::default(),
-				relay_parent_number: Default::default(),
-				relay_parent_storage_root: Default::default(),
-				max_pov_size: Default::default(),
-			},
-			relay_chain_state:  StorageProof::new(Vec::new()),
-			downward_messages: Default::default(),
-			horizontal_messages: Default::default(),
-		}
-	}
+	// fn hrmp_channel_parachain_inherent_data(
+	// 	para_id: u32,
+	// 	relay_parent_number: u32,
+	// ) -> ParachainInherentData {
+	// 	ParachainInherentData {
+	// 		validation_data: PersistedValidationData {
+	// 			parent_head: Default::default(),
+	// 			relay_parent_number: Default::default(),
+	// 			relay_parent_storage_root: Default::default(),
+	// 			max_pov_size: Default::default(),
+	// 		},
+	// 		relay_chain_state:  StorageProof::new(Vec::new()),
+	// 		downward_messages: Default::default(),
+	// 		horizontal_messages: Default::default(),
+	// 	}
+	// }
 
-	fn process_messages() {}
+	// fn process_messages() {}
 }
 
 #[macro_export]
@@ -119,6 +139,7 @@ macro_rules! decl_test_relay_chains {
 		$(
 			pub struct $name;
 
+			impl Messenger for $name {}
 			impl RelayMessenger for $name {}
 
 			$crate::__impl_ext_for_relay_chain!($name, $runtime, $new_ext);
@@ -157,6 +178,7 @@ macro_rules! decl_test_parachains {
 		$(
 			pub struct $name;
 
+			impl Messenger for $name {}
 			impl ParachainMessenger for $name {}
 
 			$crate::__impl_ext_for_parachain!($name, $runtime, $origin, $new_ext);
