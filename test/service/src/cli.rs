@@ -118,7 +118,11 @@ impl RelayChainCli {
 		relay_chain_args: impl Iterator<Item = &'a String>,
 	) -> Self {
 		let base_path = para_config.base_path.path().join("polkadot");
-		Self { base_path: Some(base_path), chain_id: None, base: clap::Parser::parse_from(relay_chain_args) }
+		Self {
+			base_path: Some(base_path),
+			chain_id: None,
+			base: clap::Parser::parse_from(relay_chain_args),
+		}
 	}
 }
 
