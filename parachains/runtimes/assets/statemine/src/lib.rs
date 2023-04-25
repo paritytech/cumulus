@@ -28,6 +28,9 @@ pub mod constants;
 mod weights;
 pub mod xcm_config;
 
+use assets_common::{
+	foreign_creators::ForeignCreators, matching::FromSiblingParachain, MultiLocationForAssetId,
+};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -74,9 +77,6 @@ use xcm_config::{
 pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
-use assets_common::{
-	foreign_creators::ForeignCreators, matching::FromSiblingParachain, MultiLocationForAssetId,
-};
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use xcm::latest::BodyId;
@@ -97,10 +97,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("statemine"),
 	impl_name: create_runtime_str!("statemine"),
 	authoring_version: 1,
-	spec_version: 9381,
+	spec_version: 9400,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 12,
+	transaction_version: 13,
 	state_version: 1,
 };
 
@@ -110,10 +110,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("statemine"),
 	impl_name: create_runtime_str!("statemine"),
 	authoring_version: 1,
-	spec_version: 9381,
+	spec_version: 9400,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 12,
+	transaction_version: 13,
 	state_version: 0,
 };
 
@@ -951,7 +951,7 @@ impl_runtime_apis! {
 		AccountId,
 	> for Runtime
 	{
-		fn query_account_balances(account: AccountId) -> Result<Vec<xcm::latest::MultiAsset>, assets_common::runtime_api::FungiblesAccessError> {
+		fn query_account_balances(account: AccountId) -> Result<xcm::VersionedMultiAssets, assets_common::runtime_api::FungiblesAccessError> {
 			use assets_common::fungible_conversion::{convert, convert_balance};
 			Ok([
 				// collect pallet_balance
@@ -976,7 +976,7 @@ impl_runtime_apis! {
 						.filter(|(_, balance)| balance > &0)
 				)?,
 				// collect ... e.g. other tokens
-			].concat())
+			].concat().into())
 		}
 	}
 
@@ -1113,7 +1113,7 @@ impl_runtime_apis! {
 					Err(BenchmarkError::Skip)
 				}
 
-				fn universal_alias() -> Result<Junction, BenchmarkError> {
+				fn universal_alias() -> Result<(MultiLocation, Junction), BenchmarkError> {
 					Err(BenchmarkError::Skip)
 				}
 
