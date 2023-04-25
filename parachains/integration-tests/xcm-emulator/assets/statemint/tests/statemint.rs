@@ -26,13 +26,13 @@ use xcm::{
 	VersionedMultiAssets,
 };
 
-use integration_tests_common::{PolkadotMockNet, Polkadot, Statemint, Penpal, constants::accounts::{ALICE, BOB}};
+use integration_tests_common::{PolkadotMockNet, Polkadot, Statemint, PenpalPolkadot, constants::accounts::{ALICE, BOB}};
 
 pub const INITIAL_BALANCE: u128 = 1000 * DOLLARS;
 
 pub type RelayChainPalletXcm = pallet_xcm::Pallet<polkadot_runtime::Runtime>;
 pub type StatemintPalletXcm = pallet_xcm::Pallet<statemint_runtime::Runtime>;
-pub type PenpalPalletXcm = pallet_xcm::Pallet<penpal_runtime::Runtime>;
+pub type PenpalPolkadotPalletXcm = pallet_xcm::Pallet<penpal_runtime::Runtime>;
 
 parameter_types! {
 	pub StatemintLocation: MultiLocation = (Ancestor(0), Parachain(1000)).into();
@@ -49,7 +49,7 @@ fn force_xcm_version() {
 		let statemint_location: MultiLocation = (Ancestor(0), Parachain(1000)).into();
 		let penpal_location: MultiLocation = (Ancestor(0), Parachain(2000)).into();
 
-		// Check that we can force xcm version for Statemint and Penpal from Polkadot.
+		// Check that we can force xcm version for Statemint and PenpalPolkadot from Polkadot.
 		for location in [statemint_location, penpal_location] {
 			assert_ok!(RelayChainPalletXcm::force_xcm_version(
 				polkadot_runtime::RuntimeOrigin::root(),
@@ -66,13 +66,13 @@ fn force_xcm_version() {
 		}
 	});
 
-	// Penpal forces Polkadot xcm version.
-	Penpal::execute_with(|| {
+	// PenpalPolkadot forces Polkadot xcm version.
+	PenpalPolkadot::execute_with(|| {
 		use penpal_runtime::{RuntimeEvent, System};
 
 		let location: MultiLocation = (Parent).into();
 
-		assert_ok!(PenpalPalletXcm::force_xcm_version(
+		assert_ok!(PenpalPolkadotPalletXcm::force_xcm_version(
 			penpal_runtime::RuntimeOrigin::root(),
 			Box::new(location),
 			xcm_version,

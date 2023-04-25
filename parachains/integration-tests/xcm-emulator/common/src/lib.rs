@@ -28,13 +28,7 @@ decl_test_relay_chains! {
 }
 
 decl_test_parachains! {
-	pub struct Statemine {
-		Runtime = statemine_runtime::Runtime,
-		RuntimeOrigin = statemine_runtime::RuntimeOrigin,
-		XcmpMessageHandler = statemine_runtime::XcmpQueue,
-		DmpMessageHandler = statemine_runtime::DmpQueue,
-		new_ext = statemine_ext(),
-	},
+	// Polkadot
 	pub struct Statemint {
 		Runtime = statemint_runtime::Runtime,
 		RuntimeOrigin = statemint_runtime::RuntimeOrigin,
@@ -42,7 +36,22 @@ decl_test_parachains! {
 		DmpMessageHandler = statemint_runtime::DmpQueue,
 		new_ext = statemint_ext(),
 	},
-	pub struct Penpal {
+	pub struct PenpalPolkadot {
+		Runtime = penpal_runtime::Runtime,
+		RuntimeOrigin = penpal_runtime::RuntimeOrigin,
+		XcmpMessageHandler = penpal_runtime::XcmpQueue,
+		DmpMessageHandler = penpal_runtime::DmpQueue,
+		new_ext = penpal_ext(),
+	},
+	// Kusama
+	pub struct Statemine {
+		Runtime = statemine_runtime::Runtime,
+		RuntimeOrigin = statemine_runtime::RuntimeOrigin,
+		XcmpMessageHandler = statemine_runtime::XcmpQueue,
+		DmpMessageHandler = statemine_runtime::DmpQueue,
+		new_ext = statemine_ext(),
+	},
+	pub struct PenpalKusama {
 		Runtime = penpal_runtime::Runtime,
 		RuntimeOrigin = penpal_runtime::RuntimeOrigin,
 		XcmpMessageHandler = penpal_runtime::XcmpQueue,
@@ -56,7 +65,14 @@ decl_test_networks! {
 		relay_chain = Polkadot,
 		parachains = vec![
 			(1000, Statemint),
-			(2000, Penpal),
+			(2000, PenpalPolkadot),
+		],
+	},
+	pub struct KusamaMockNet {
+		relay_chain = Kusama,
+		parachains = vec![
+			(1000, Statemine),
+			(2000, PenpalKusama),
 		],
 	}
 }

@@ -76,25 +76,6 @@ pub trait RelayMessenger: Messenger {
 	fn para_ids() -> Vec<u32> { Default::default() }
 
 	fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>) {}
-
-	// fn hrmp_channel_parachain_inherent_data(
-	// 	para_id: u32,
-	// 	relay_parent_number: u32,
-	// ) -> ParachainInherentData {
-	// 	ParachainInherentData {
-	// 		validation_data: PersistedValidationData {
-	// 			parent_head: Default::default(),
-	// 			relay_parent_number: Default::default(),
-	// 			relay_parent_storage_root: Default::default(),
-	// 			max_pov_size: Default::default(),
-	// 		},
-	// 		relay_chain_state:  StorageProof::new(Vec::new()),
-	// 		downward_messages: Default::default(),
-	// 		horizontal_messages: Default::default(),
-	// 	}
-	// }
-
-	// fn process_messages() {}
 }
 
 pub trait ParachainMessenger: Messenger {
@@ -103,25 +84,6 @@ pub trait ParachainMessenger: Messenger {
 	>(to_para_id: u32, iter: I) {}
 
 	fn send_upward_message(from_para_id: u32, msg: Vec<u8>) {}
-
-	// fn hrmp_channel_parachain_inherent_data(
-	// 	para_id: u32,
-	// 	relay_parent_number: u32,
-	// ) -> ParachainInherentData {
-	// 	ParachainInherentData {
-	// 		validation_data: PersistedValidationData {
-	// 			parent_head: Default::default(),
-	// 			relay_parent_number: Default::default(),
-	// 			relay_parent_storage_root: Default::default(),
-	// 			max_pov_size: Default::default(),
-	// 		},
-	// 		relay_chain_state:  StorageProof::new(Vec::new()),
-	// 		downward_messages: Default::default(),
-	// 		horizontal_messages: Default::default(),
-	// 	}
-	// }
-
-	// fn process_messages() {}
 }
 
 #[macro_export]
@@ -419,7 +381,7 @@ macro_rules! decl_test_networks {
 		+
 	) => {
 		$(
-			use $crate::{RelayBlockNumber, ParaId, ParachainInherentData};
+			// use $crate::{RelayBlockNumber, ParaId, ParachainInherentData};
 
 			pub struct $name;
 
@@ -594,14 +556,14 @@ macro_rules! __impl_messenger_for_relay {
 				<$network_name>::_para_ids()
 			}
 
-			fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>) {
+			fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = ($crate::RelayBlockNumber, Vec<u8>)>) {
 				<$network_name>::_send_downward_messages(to_para_id, iter)
 			}
 
 			fn hrmp_channel_parachain_inherent_data(
 				para_id: u32,
 				relay_parent_number: u32,
-			) -> ParachainInherentData {
+			) -> $crate::ParachainInherentData {
 				<$network_name>::_hrmp_channel_parachain_inherent_data(para_id, relay_parent_number)
 			}
 
@@ -618,7 +580,7 @@ macro_rules! __impl_messenger_for_parachain {
 
 		impl $parachain {
 			fn send_horizontal_messages<
-				I: Iterator<Item = (ParaId, RelayBlockNumber, Vec<u8>)>,
+				I: Iterator<Item = ($crate::ParaId, $crate::RelayBlockNumber, Vec<u8>)>,
 			>(to_para_id: u32, iter: I) {
 				<$network_name>::_send_horizontal_messages(to_para_id, iter);
 			}
@@ -630,7 +592,7 @@ macro_rules! __impl_messenger_for_parachain {
 			fn hrmp_channel_parachain_inherent_data(
 				para_id: u32,
 				relay_parent_number: u32,
-			) -> ParachainInherentData {
+			) -> $crate::ParachainInherentData {
 				<$network_name>::_hrmp_channel_parachain_inherent_data(para_id, relay_parent_number)
 			}
 
