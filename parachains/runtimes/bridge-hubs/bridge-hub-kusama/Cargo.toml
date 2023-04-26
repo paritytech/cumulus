@@ -6,14 +6,14 @@ edition = "2021"
 description = "Kusama's BridgeHub parachain runtime"
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
-hex-literal = { version = "0.3.4" }
+hex-literal = { version = "0.4.1" }
 log = { version = "0.4.17", default-features = false }
-scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
-serde = { version = "1.0.152", optional = true, features = ["derive"] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
+serde = { version = "1.0.160", optional = true, features = ["derive"] }
 smallvec = "1.8.1"
 
 # Substrate
@@ -29,7 +29,6 @@ pallet-authorship = { git = "https://github.com/paritytech/substrate", default-f
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-multisig = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -72,6 +71,9 @@ pallet-collator-selection = { path = "../../../../pallets/collator-selection", d
 parachain-info = { path = "../../../../parachains/pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../../parachains/common", default-features = false }
 
+[dev-dependencies]
+bridge-hub-test-utils = { path = "../test-utils"}
+
 [features]
 default = [
 	"std",
@@ -100,7 +102,6 @@ std = [
 	"pallet-collator-selection/std",
 	"pallet-multisig/std",
 	"pallet-session/std",
-	"pallet-sudo/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
@@ -126,6 +127,7 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"xcm/std",
+	"substrate-wasm-builder",
 ]
 
 runtime-benchmarks = [

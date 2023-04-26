@@ -22,12 +22,13 @@ use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing},
 };
+use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
-use parachains_common::xcm_config::{
-	ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry,
+use parachains_common::{
+	impls::ToStakingPot,
+	xcm_config::{ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry},
 };
 use polkadot_parachain::primitives::Sibling;
-use polkadot_runtime_common::impls::ToAuthor;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
@@ -47,6 +48,8 @@ parameter_types! {
 		X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
+	pub const GovernanceLocation: MultiLocation = MultiLocation::parent();
+	pub const FellowshipLocation: MultiLocation = MultiLocation::parent();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -71,7 +74,7 @@ pub type CurrencyTransactor = CurrencyAdapter<
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
 	AccountId,
-	// We don't track any teleports.
+	// We don't track any teleports of `Balances`.
 	(),
 >;
 
@@ -93,17 +96,16 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	// transaction from the Root origin.
 	ParentAsSuperuser<RuntimeOrigin>,
 	// Native signed account converter; this just converts an `AccountId32` origin into a normal
-	// `Origin::Signed` origin of the same 32-byte value.
+	// `RuntimeOrigin::Signed` origin of the same 32-byte value.
 	SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
 	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
 	XcmPassthrough<RuntimeOrigin>,
 );
 
 match_types! {
-	// TODO: map gov2 origins here - after merge https://github.com/paritytech/cumulus/pull/1895
-	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
+	pub type ParentOrParentsPlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
-		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
+		MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
 	};
 	pub type ParentOrSiblings: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
@@ -128,6 +130,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 		}
 
 		match call {
+			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
 			RuntimeCall::System(
 				frame_system::Call::set_heap_pages { .. } |
 				frame_system::Call::set_code { .. } |
@@ -161,10 +164,10 @@ pub type Barrier = DenyThenTry<
 		AllowKnownQueryResponses<PolkadotXcm>,
 		WithComputedOrigin<
 			(
-				// Allow anything to pay for execution.
+				// If the message is one that immediately attemps to pay for execution, then allow it.
 				AllowTopLevelPaidExecutionFrom<Everything>,
-				// Parent and its exec plurality get free execution.
-				AllowExplicitUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+				// Parent and its pluralities (i.e. governance bodies) get free execution.
+				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
 				// Subscriptions for version tracking are OK.
 				AllowSubscriptionsFrom<ParentOrSiblings>,
 			),
@@ -193,7 +196,7 @@ impl xcm_executor::Config for XcmConfig {
 		MaxInstructions,
 	>;
 	type Trader =
-		UsingComponents<WeightToFee, KsmRelayLocation, AccountId, Balances, ToAuthor<Runtime>>;
+		UsingComponents<WeightToFee, KsmRelayLocation, AccountId, Balances, ToStakingPot<Runtime>>;
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;
@@ -257,6 +260,7 @@ impl pallet_xcm::Config for Runtime {
 	type WeightInfo = crate::weights::pallet_xcm::WeightInfo<Runtime>;
 	#[cfg(feature = "runtime-benchmarks")]
 	type ReachableDest = ReachableDest;
+	type AdminOrigin = EnsureRoot<AccountId>;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {

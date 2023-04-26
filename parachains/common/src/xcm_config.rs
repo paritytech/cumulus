@@ -1,12 +1,12 @@
 use crate::impls::AccountIdOf;
-use core::marker::PhantomData;
+use core::{marker::PhantomData, ops::ControlFlow};
 use frame_support::{
 	log,
-	traits::{fungibles::Inspect, tokens::BalanceConversion, ContainsPair},
-	weights::{Weight, WeightToFee, WeightToFeePolynomial},
+	traits::{fungibles::Inspect, tokens::ConversionToAssetBalance, ContainsPair},
+	weights::Weight,
 };
 use sp_runtime::traits::Get;
-use xcm::latest::prelude::*;
+use xcm::{latest::prelude::*, CreateMatcher, MatchXcm};
 use xcm_executor::traits::ShouldExecute;
 
 //TODO: move DenyThenTry to polkadot's xcm module.
@@ -42,32 +42,38 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 		_max_weight: Weight,
 		_weight_credit: &mut Weight,
 	) -> Result<(), ()> {
-		if message.iter().any(|inst| {
-			matches!(
-				inst,
+		message.matcher().match_next_inst_while(
+			|_| true,
+			|inst| match inst {
 				InitiateReserveWithdraw {
 					reserve: MultiLocation { parents: 1, interior: Here },
 					..
-				} | DepositReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. } |
-					TransferReserveAsset {
-						dest: MultiLocation { parents: 1, interior: Here },
-						..
-					}
-			)
-		}) {
-			return Err(()) // Deny
-		}
+				} |
+				DepositReserveAsset {
+					dest: MultiLocation { parents: 1, interior: Here }, ..
+				} |
+				TransferReserveAsset {
+					dest: MultiLocation { parents: 1, interior: Here }, ..
+				} => {
+					Err(()) // Deny
+				},
 
-		// An unexpected reserve transfer has arrived from the Relay Chain. Generally, `IsReserve`
-		// should not allow this, but we just log it here.
-		if matches!(origin, MultiLocation { parents: 1, interior: Here }) &&
-			message.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
-		{
-			log::warn!(
-				target: "xcm::barriers",
-				"Unexpected ReserveAssetDeposited from the Relay Chain",
-			);
-		}
+				// An unexpected reserve transfer has arrived from the Relay Chain. Generally,
+				// `IsReserve` should not allow this, but we just log it here.
+				ReserveAssetDeposited { .. }
+					if matches!(origin, MultiLocation { parents: 1, interior: Here }) =>
+				{
+					log::warn!(
+						target: "xcm::barrier",
+						"Unexpected ReserveAssetDeposited from the Relay Chain",
+					);
+					Ok(ControlFlow::Continue(()))
+				},
+
+				_ => Ok(ControlFlow::Continue(())),
+			},
+		)?;
+
 		// Permit everything else
 		Ok(())
 	}
@@ -76,30 +82,37 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 /// A `ChargeFeeInFungibles` implementation that converts the output of
 /// a given WeightToFee implementation an amount charged in
 /// a particular assetId from pallet-assets
-pub struct AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceConverter>(
-	PhantomData<(Runtime, WeightToFee, BalanceConverter)>,
-);
-impl<CurrencyBalance, Runtime, WeightToFee, BalanceConverter>
+pub struct AssetFeeAsExistentialDepositMultiplier<
+	Runtime,
+	WeightToFee,
+	BalanceConverter,
+	AssetInstance: 'static,
+>(PhantomData<(Runtime, WeightToFee, BalanceConverter, AssetInstance)>);
+impl<CurrencyBalance, Runtime, WeightToFee, BalanceConverter, AssetInstance>
 	cumulus_primitives_utility::ChargeWeightInFungibles<
 		AccountIdOf<Runtime>,
-		pallet_assets::Pallet<Runtime>,
-	> for AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceConverter>
+		pallet_assets::Pallet<Runtime, AssetInstance>,
+	> for AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceConverter, AssetInstance>
 where
-	Runtime: pallet_assets::Config,
-	WeightToFee: WeightToFeePolynomial<Balance = CurrencyBalance>,
-	BalanceConverter: BalanceConversion<
+	Runtime: pallet_assets::Config<AssetInstance>,
+	WeightToFee: frame_support::weights::WeightToFee<Balance = CurrencyBalance>,
+	BalanceConverter: ConversionToAssetBalance<
 		CurrencyBalance,
-		<Runtime as pallet_assets::Config>::AssetId,
-		<Runtime as pallet_assets::Config>::Balance,
+		<Runtime as pallet_assets::Config<AssetInstance>>::AssetId,
+		<Runtime as pallet_assets::Config<AssetInstance>>::Balance,
 	>,
 	AccountIdOf<Runtime>:
 		From<polkadot_primitives::AccountId> + Into<polkadot_primitives::AccountId>,
 {
 	fn charge_weight_in_fungibles(
-		asset_id: <pallet_assets::Pallet<Runtime> as Inspect<AccountIdOf<Runtime>>>::AssetId,
+		asset_id: <pallet_assets::Pallet<Runtime, AssetInstance> as Inspect<
+			AccountIdOf<Runtime>,
+		>>::AssetId,
 		weight: Weight,
-	) -> Result<<pallet_assets::Pallet<Runtime> as Inspect<AccountIdOf<Runtime>>>::Balance, XcmError>
-	{
+	) -> Result<
+		<pallet_assets::Pallet<Runtime, AssetInstance> as Inspect<AccountIdOf<Runtime>>>::Balance,
+		XcmError,
+	> {
 		let amount = WeightToFee::weight_to_fee(&weight);
 		// If the amount gotten is not at least the ED, then make it be the ED of the asset
 		// This is to avoid burning assets and decreasing the supply

@@ -25,12 +25,9 @@ use sc_consensus::{
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::Result as ClientResult;
-use sp_consensus::{error::Error as ConsensusError, CacheKeyId};
+use sp_consensus::error::Error as ConsensusError;
 use sp_inherents::{CreateInherentDataProviders, InherentDataProvider};
-use sp_runtime::{
-	generic::BlockId,
-	traits::{Block as BlockT, Header as HeaderT},
-};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
 /// A verifier that just checks the inherents.
 pub struct Verifier<Client, Block, CIDP> {
@@ -57,7 +54,15 @@ where
 	async fn verify(
 		&mut self,
 		mut block_params: BlockImportParams<Block, ()>,
-	) -> Result<(BlockImportParams<Block, ()>, Option<Vec<(CacheKeyId, Vec<u8>)>>), String> {
+	) -> Result<BlockImportParams<Block, ()>, String> {
+		// Skip checks that include execution, if being told so, or when importing only state.
+		//
+		// This is done for example when gap syncing and it is expected that the block after the gap
+		// was checked/chosen properly, e.g. by warp syncing to this block using a finality proof.
+		if block_params.state_action.skip_execution_checks() || block_params.with_state() {
+			return Ok(block_params)
+		}
+
 		if let Some(inner_body) = block_params.body.take() {
 			let inherent_data_providers = self
 				.create_inherent_data_providers
@@ -75,11 +80,7 @@ where
 			let inherent_res = self
 				.client
 				.runtime_api()
-				.check_inherents(
-					&BlockId::Hash(*block.header().parent_hash()),
-					block.clone(),
-					inherent_data,
-				)
+				.check_inherents(*block.header().parent_hash(), block.clone(), inherent_data)
 				.map_err(|e| format!("{:?}", e))?;
 
 			if !inherent_res.ok() {
@@ -100,7 +101,7 @@ where
 
 		block_params.post_hash = Some(block_params.header.hash());
 
-		Ok((block_params, None))
+		Ok(block_params)
 	}
 }
 

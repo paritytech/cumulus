@@ -229,9 +229,12 @@ pub fn run() -> Result<()> {
 		},
 		#[cfg(feature = "try-runtime")]
 		Some(Subcommand::TryRuntime(cmd)) => {
+			use parachain_template_runtime::MILLISECS_PER_BLOCK;
+			use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
+			use try_runtime_cli::block_building_info::timestamp_with_aura_info;
+
 			let runner = cli.create_runner(cmd)?;
 
-			use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
 			type HostFunctionsOf<E> = ExtendedHostFunctions<
 				sp_io::SubstrateHostFunctions,
 				<E as NativeExecutionDispatch>::ExtendHostFunctions,
@@ -243,8 +246,15 @@ pub fn run() -> Result<()> {
 				sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
 					.map_err(|e| format!("Error: {:?}", e))?;
 
+			let info_provider = timestamp_with_aura_info(MILLISECS_PER_BLOCK);
+
 			runner.async_run(|_| {
-				Ok((cmd.run::<Block, HostFunctionsOf<ParachainNativeExecutor>>(), task_manager))
+				Ok((
+					cmd.run::<Block, HostFunctionsOf<ParachainNativeExecutor>, _>(Some(
+						info_provider,
+					)),
+					task_manager,
+				))
 			})
 		},
 		#[cfg(not(feature = "try-runtime"))]
@@ -256,14 +266,11 @@ pub fn run() -> Result<()> {
 			let collator_options = cli.run.collator_options();
 
 			runner.run_node_until_exit(|config| async move {
-				let hwbench = if !cli.no_hardware_benchmarks {
+				let hwbench = (!cli.no_hardware_benchmarks).then_some(
 					config.database.path().map(|database_path| {
 						let _ = std::fs::create_dir_all(&database_path);
 						sc_sysinfo::gather_hwbench(Some(database_path))
-					})
-				} else {
-					None
-				};
+					})).flatten();
 
 				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
 					.map(|e| e.para_id)

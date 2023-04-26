@@ -89,17 +89,20 @@ use frame_system::{
 pub use parachains_common as common;
 use parachains_common::{
 	impls::{AssetsToBlockAuthor, DealWithFees},
-	opaque, AccountId, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
-	StatemintAuraId as AuraId, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
+	opaque, AccountId, AssetIdForTrustBackedAssets, Balance, BlockNumber, Hash, Header, Index,
+	Signature, StatemintAuraId as AuraId, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
-use xcm_config::{DotLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
+use xcm_config::{
+	DotLocation, FellowshipLocation, GovernanceLocation, TrustBackedAssetsConvertedConcreteId,
+	XcmConfig, XcmOriginToTransactDispatchOrigin,
+};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
-use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
+use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use xcm::latest::BodyId;
 use xcm_executor::XcmExecutor;
@@ -117,10 +120,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("statemint"),
 	impl_name: create_runtime_str!("statemint"),
 	authoring_version: 1,
-	spec_version: 9360,
+	spec_version: 9400,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 11,
+	transaction_version: 13,
 	state_version: 0,
 };
 
@@ -193,8 +196,6 @@ impl pallet_timestamp::Config for Runtime {
 
 impl pallet_authorship::Config for Runtime {
 	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
-	type UncleGenerations = ConstU32<0>;
-	type FilterUncle = ();
 	type EventHandler = (CollatorSelection,);
 }
 
@@ -214,6 +215,10 @@ impl pallet_balances::Config for Runtime {
 	type WeightInfo = weights::pallet_balances::WeightInfo<Runtime>;
 	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = [u8; 8];
+	type HoldIdentifier = ();
+	type FreezeIdentifier = ();
+	type MaxHolds = ConstU32<0>;
+	type MaxFreezes = ConstU32<0>;
 }
 
 parameter_types! {
@@ -240,18 +245,21 @@ parameter_types! {
 	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
 	pub const MetadataDepositBase: Balance = deposit(1, 68);
 	pub const MetadataDepositPerByte: Balance = deposit(0, 1);
-	pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
-/// We allow root and the Relay Chain council to execute privileged asset operations.
-pub type AssetsForceOrigin =
-	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+/// We allow root to execute privileged asset operations.
+pub type AssetsForceOrigin = EnsureRoot<AccountId>;
 
-impl pallet_assets::Config for Runtime {
+// Called "Trust Backed" assets because these are generally registered by some account, and users of
+// the asset assume it has some claimed backing. The pallet is called `Assets` in
+// `construct_runtime` to avoid breaking changes on storage reads.
+pub type TrustBackedAssetsInstance = pallet_assets::Instance1;
+type TrustBackedAssetsCall = pallet_assets::Call<Runtime, TrustBackedAssetsInstance>;
+impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
-	type AssetId = AssetId;
-	type AssetIdParameter = codec::Compact<AssetId>;
+	type AssetId = AssetIdForTrustBackedAssets;
+	type AssetIdParameter = codec::Compact<AssetIdForTrustBackedAssets>;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 	type ForceOrigin = AssetsForceOrigin;
@@ -369,15 +377,15 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			},
 			ProxyType::AssetOwner => matches!(
 				c,
-				RuntimeCall::Assets(pallet_assets::Call::create { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::start_destroy { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::destroy_accounts { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::destroy_approvals { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::finish_destroy { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::transfer_ownership { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::set_team { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::set_metadata { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::clear_metadata { .. }) |
+				RuntimeCall::Assets(TrustBackedAssetsCall::create { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::start_destroy { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::destroy_accounts { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::destroy_approvals { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::finish_destroy { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::transfer_ownership { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::set_team { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::set_metadata { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::clear_metadata { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::create { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::destroy { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::transfer_ownership { .. }) |
@@ -394,12 +402,12 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			),
 			ProxyType::AssetManager => matches!(
 				c,
-				RuntimeCall::Assets(pallet_assets::Call::mint { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::burn { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::freeze { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::thaw { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::freeze_asset { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::thaw_asset { .. }) |
+				RuntimeCall::Assets(TrustBackedAssetsCall::mint { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::burn { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::freeze { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::thaw { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::freeze_asset { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::thaw_asset { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::mint { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::burn { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::freeze { .. }) |
@@ -467,6 +475,11 @@ impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
+parameter_types! {
+	// Fellows pluralistic body.
+	pub const FellowsBodyId: BodyId = BodyId::Technical;
+}
+
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
@@ -476,7 +489,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type ControllerOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
-		EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>,
+		EnsureXcm<IsVoiceOfBody<FellowshipLocation, FellowsBodyId>>,
 	>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 	type PriceForSiblingDelivery = ();
@@ -519,11 +532,15 @@ parameter_types! {
 	pub const MinCandidates: u32 = 5;
 	pub const SessionLength: BlockNumber = 6 * HOURS;
 	pub const MaxInvulnerables: u32 = 100;
+	// `StakingAdmin` pluralistic body.
+	pub const StakingAdminBodyId: BodyId = BodyId::Defense;
 }
 
-/// We allow root and the Relay Chain council to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin =
-	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+/// We allow root and the `StakingAdmin` to execute privileged collator selection operations.
+pub type CollatorSelectionUpdateOrigin = EitherOfDiverse<
+	EnsureRoot<AccountId>,
+	EnsureXcm<IsVoiceOfBody<GovernanceLocation, StakingAdminBodyId>>,
+>;
 
 impl pallet_collator_selection::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -545,8 +562,13 @@ impl pallet_asset_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Fungibles = Assets;
 	type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
-		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
-		AssetsToBlockAuthor<Runtime>,
+		pallet_assets::BalanceToAssetBalance<
+			Balances,
+			Runtime,
+			ConvertInto,
+			TrustBackedAssetsInstance,
+		>,
+		AssetsToBlockAuthor<Runtime, TrustBackedAssetsInstance>,
 	>;
 }
 
@@ -604,7 +626,7 @@ construct_runtime!(
 		AssetTxPayment: pallet_asset_tx_payment::{Pallet, Event<T>} = 12,
 
 		// Collator support. the order of these 5 are important and shall not change.
-		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
+		Authorship: pallet_authorship::{Pallet, Storage} = 20,
 		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
@@ -622,7 +644,7 @@ construct_runtime!(
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 42,
 
 		// The main stage.
-		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
+		Assets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>} = 50,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 	}
 );
@@ -651,7 +673,7 @@ pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
-
+/// Migrations to apply on runtime upgrade.
 pub type Migrations = ();
 
 /// Executive: handles dispatch to the various modules.
@@ -718,6 +740,14 @@ impl_runtime_apis! {
 	impl sp_api::Metadata<Block> for Runtime {
 		fn metadata() -> OpaqueMetadata {
 			OpaqueMetadata::new(Runtime::metadata().into())
+		}
+
+		fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+			Runtime::metadata_at_version(version)
+		}
+
+		fn metadata_versions() -> sp_std::vec::Vec<u32> {
+			Runtime::metadata_versions()
 		}
 	}
 
@@ -789,6 +819,12 @@ impl_runtime_apis! {
 		) -> pallet_transaction_payment::FeeDetails<Balance> {
 			TransactionPayment::query_fee_details(uxt, len)
 		}
+		fn query_weight_to_fee(weight: Weight) -> Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+		fn query_length_to_fee(length: u32) -> Balance {
+			TransactionPayment::length_to_fee(length)
+		}
 	}
 
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
@@ -805,6 +841,40 @@ impl_runtime_apis! {
 			len: u32,
 		) -> pallet_transaction_payment::FeeDetails<Balance> {
 			TransactionPayment::query_call_fee_details(call, len)
+		}
+		fn query_weight_to_fee(weight: Weight) -> Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+		fn query_length_to_fee(length: u32) -> Balance {
+			TransactionPayment::length_to_fee(length)
+		}
+	}
+
+	impl assets_common::runtime_api::FungiblesApi<
+		Block,
+		AccountId,
+	> for Runtime
+	{
+		fn query_account_balances(account: AccountId) -> Result<xcm::VersionedMultiAssets, assets_common::runtime_api::FungiblesAccessError> {
+			use assets_common::fungible_conversion::{convert, convert_balance};
+			Ok([
+				// collect pallet_balance
+				{
+					let balance = Balances::free_balance(account.clone());
+					if balance > 0 {
+						vec![convert_balance::<DotLocation, Balance>(balance)?]
+					} else {
+						vec![]
+					}
+				},
+				// collect pallet_assets (TrustBackedAssets)
+				convert::<_, _, _, _, TrustBackedAssetsConvertedConcreteId>(
+					Assets::account_balances(account)
+						.iter()
+						.filter(|(_, balance)| balance > &0)
+				)?,
+				// collect ... e.g. pallet_assets ForeignAssets
+			].concat().into())
 		}
 	}
 
@@ -940,7 +1010,7 @@ impl_runtime_apis! {
 					Err(BenchmarkError::Skip)
 				}
 
-				fn universal_alias() -> Result<Junction, BenchmarkError> {
+				fn universal_alias() -> Result<(MultiLocation, Junction), BenchmarkError> {
 					Err(BenchmarkError::Skip)
 				}
 
@@ -960,6 +1030,11 @@ impl_runtime_apis! {
 				}
 
 				fn unlockable_asset() -> Result<(MultiLocation, MultiLocation, MultiAsset), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+
+				fn export_message_origin_and_destination(
+				) -> Result<(MultiLocation, NetworkId, InteriorMultiLocation), BenchmarkError> {
 					Err(BenchmarkError::Skip)
 				}
 			}
@@ -1018,4 +1093,64 @@ cumulus_pallet_parachain_system::register_validate_block! {
 	Runtime = Runtime,
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
 	CheckInherents = CheckInherents,
+}
+
+#[cfg(test)]
+mod tests {
+	use super::{constants::fee, *};
+	use crate::{CENTS, MILLICENTS};
+	use sp_runtime::traits::Zero;
+	use sp_weights::WeightToFee;
+
+	/// We can fit at least 1000 transfers in a block.
+	#[test]
+	fn sane_block_weight() {
+		use pallet_balances::WeightInfo;
+		let block = RuntimeBlockWeights::get().max_block;
+		let base = RuntimeBlockWeights::get().get(DispatchClass::Normal).base_extrinsic;
+		let transfer =
+			base + weights::pallet_balances::WeightInfo::<Runtime>::transfer_allow_death();
+
+		let fit = block.checked_div_per_component(&transfer).unwrap_or_default();
+		assert!(fit >= 1000, "{} should be at least 1000", fit);
+	}
+
+	/// The fee for one transfer is at most 1 CENT.
+	#[test]
+	fn sane_transfer_fee() {
+		use pallet_balances::WeightInfo;
+		let base = RuntimeBlockWeights::get().get(DispatchClass::Normal).base_extrinsic;
+		let transfer =
+			base + weights::pallet_balances::WeightInfo::<Runtime>::transfer_allow_death();
+
+		let fee: Balance = fee::WeightToFee::weight_to_fee(&transfer);
+		assert!(fee <= CENTS, "{} MILLICENTS should be at most 1000", fee / MILLICENTS);
+	}
+
+	/// Weight is being charged for both dimensions.
+	#[test]
+	fn weight_charged_for_both_components() {
+		let fee: Balance = fee::WeightToFee::weight_to_fee(&Weight::from_parts(10_000, 0));
+		assert!(!fee.is_zero(), "Charges for ref time");
+
+		let fee: Balance = fee::WeightToFee::weight_to_fee(&Weight::from_parts(0, 10_000));
+		assert_eq!(fee, CENTS, "10kb maps to CENT");
+	}
+
+	/// Filling up a block by proof size is at most 30 times more expensive than ref time.
+	///
+	/// This is just a sanity check.
+	#[test]
+	fn full_block_fee_ratio() {
+		let block = RuntimeBlockWeights::get().max_block;
+		let time_fee: Balance =
+			fee::WeightToFee::weight_to_fee(&Weight::from_parts(block.ref_time(), 0));
+		let proof_fee: Balance =
+			fee::WeightToFee::weight_to_fee(&Weight::from_parts(0, block.proof_size()));
+
+		let proof_o_time = proof_fee.checked_div(time_fee).unwrap_or_default();
+		assert!(proof_o_time <= 30, "{} should be at most 30", proof_o_time);
+		let time_o_proof = time_fee.checked_div(proof_fee).unwrap_or_default();
+		assert!(time_o_proof <= 30, "{} should be at most 30", time_o_proof);
+	}
 }
