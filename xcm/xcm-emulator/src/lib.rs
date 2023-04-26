@@ -301,11 +301,6 @@ macro_rules! __impl_ext_for_parachain {
 
 				let network_name = <$name>::network_name();
 
-				println!("{:?}", network_name);
-				<$name>::relay_block_number().with(|v| {
-					println!("{:?}",  *v.borrow().get(&network_name).unwrap());
-				});
-
 				<$name>::relay_block_number().with(|v| {
 					*v.borrow_mut().get_mut(&network_name).unwrap() += 1;
 				});
@@ -420,12 +415,12 @@ macro_rules! decl_test_networks {
 
 					$( <$parachain>::prepare_for_xcmp(); )*
 
-					$crate::INITIALIZED.with(|b| b.borrow_mut().remove(&stringify!($name).to_string()));
-					$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().remove(&stringify!($name).to_string()));
-					$crate::DMP_DONE.with(|b| b.borrow_mut().remove(&stringify!($name).to_string()));
-					$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().remove(&stringify!($name).to_string()));
-					$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().remove(&stringify!($name).to_string()));
-					$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().remove(&stringify!($name).to_string()));
+					$crate::INITIALIZED.with(|b| b.borrow_mut().remove(stringify!($name)));
+					$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().remove(stringify!($name)));
+					$crate::DMP_DONE.with(|b| b.borrow_mut().remove(stringify!($name)));
+					$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().remove(stringify!($name)));
+					$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().remove(stringify!($name)));
+					$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().remove(stringify!($name)));
 				}
 
 				fn _network_name() -> String {
