@@ -54,7 +54,7 @@ pub trait TestExt {
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R;
 }
 
-pub trait Messenger {
+pub trait Network {
 	fn network_name() -> String { Default::default() }
 
 	fn init() {}
@@ -81,13 +81,13 @@ pub trait Messenger {
 	fn process_messages() {}
 }
 
-pub trait RelayMessenger: Messenger {
+pub trait Relay: Network {
 	fn para_ids() -> Vec<u32> { Default::default() }
 
 	fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>) {}
 }
 
-pub trait ParachainMessenger: Messenger {
+pub trait Parachain: Network {
 	fn send_horizontal_messages<
 		I: Iterator<Item = (ParaId, RelayBlockNumber, Vec<u8>)>,
 	>(to_para_id: u32, iter: I) {}
@@ -110,8 +110,8 @@ macro_rules! decl_test_relay_chains {
 		$(
 			pub struct $name;
 
-			impl Messenger for $name {}
-			impl RelayMessenger for $name {}
+			impl Network for $name {}
+			impl Relay for $name {}
 
 			$crate::__impl_ext_for_relay_chain!($name, $runtime, $new_ext);
 
@@ -149,8 +149,8 @@ macro_rules! decl_test_parachains {
 		$(
 			pub struct $name;
 
-			impl Messenger for $name {}
-			impl ParachainMessenger for $name {}
+			impl Network for $name {}
+			impl Parachain for $name {}
 
 			$crate::__impl_ext_for_parachain!($name, $runtime, $origin, $new_ext);
 
