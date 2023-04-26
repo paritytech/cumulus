@@ -59,7 +59,7 @@ pub trait Network {
 
 	fn init() {}
 
-	fn relay_block_number() -> LocalKey<RefCell<u32>> { RELAY_BLOCK_NUMBER }
+	fn relay_block_number() -> &'static LocalKey<RefCell<HashMap<String, u32>>> { &RELAY_BLOCK_NUMBER }
 
 	fn hrmp_channel_parachain_inherent_data(
 		para_id: u32,
@@ -299,18 +299,26 @@ macro_rules! __impl_ext_for_parachain {
 
 				type ParachainSystem = $crate::cumulus_pallet_parachain_system::Pallet<$runtime>;
 
-				$crate::RELAY_BLOCK_NUMBER.with(|v| {
-					*v.borrow_mut() += 1;
+				let network_name = <$name>::network_name();
+
+				println!("{:?}", network_name);
+				<$name>::relay_block_number().with(|v| {
+					println!("{:?}",  *v.borrow().get(&network_name).unwrap());
+				});
+
+				<$name>::relay_block_number().with(|v| {
+					*v.borrow_mut().get_mut(&network_name).unwrap() += 1;
 				});
 
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
 						let para_id = $crate::parachain_info::Pallet::<$runtime>::get();
-						$crate::RELAY_BLOCK_NUMBER.with(|v| {
-							let relay_block = *v.borrow();
+						<$name>::relay_block_number().with(|v| {
+							let relay_block_number = *v.borrow().get(&network_name).unwrap();
+							// let relay_block_number = *hash_map.get(stringify!($name)).unwrap();
 							let _ = ParachainSystem::set_validation_data(
 								<$origin>::none(),
-								<$name>::hrmp_channel_parachain_inherent_data(para_id.into(), relay_block),
+								<$name>::hrmp_channel_parachain_inherent_data(para_id.into(), relay_block_number),
 							);
 						});
 					})
@@ -344,11 +352,11 @@ macro_rules! __impl_ext_for_parachain {
 
 						// send horizontal messages
 						for msg in collation_info.horizontal_messages {
-							$crate::RELAY_BLOCK_NUMBER.with(|v| {
-								let relay_block = *v.borrow();
+							<$name>::relay_block_number().with(|v| {
+								let relay_block_number = *v.borrow().get(&network_name).unwrap();
 								<$name>::send_horizontal_messages(
 									msg.recipient.into(),
-									vec![(para_id.into(), relay_block, msg.data)].into_iter(),
+									vec![(para_id.into(), relay_block_number, msg.data)].into_iter(),
 								);
 							});
 						}
@@ -382,8 +390,8 @@ thread_local! {
 	/// Upward messages, each message is: `(from_para_id, msg)
 	pub static UPWARD_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<u8>)>>> = RefCell::new(HashMap::new());
 	/// Global incremental relay chain block number
-	// pub static RELAY_BLOCK_NUMBER: RefCell<HashMap<String, u32>> = RefCell::new(HashMap::new()); // RefCell::new(1);
-	pub static RELAY_BLOCK_NUMBER: RefCell<u32> = RefCell::new(1); // RefCell::new(1);
+	pub static RELAY_BLOCK_NUMBER: RefCell<HashMap<String, u32>> = RefCell::new(HashMap::new()); // RefCell::new(1);
+	// pub static RELAY_BLOCK_NUMBER: RefCell<u32> = RefCell::new(1); // RefCell::new(1);
 	// pub static DEFAULT_RELAY_BLOCK_NUMBER: RefCell<u32> = RefCell::new(1); // RefCell::new(1);
 	// pub static DEFAULT_RELAY_BLOCK_NUMBER: RefCell<HashMap<String, u32>> = RefCell::new(HashMap::new()); // RefCell::new(1);
 	pub static INITIALIZED: RefCell<HashMap<String, bool>> = RefCell::new(HashMap::new());
@@ -417,7 +425,7 @@ macro_rules! decl_test_networks {
 					$crate::DMP_DONE.with(|b| b.borrow_mut().remove(&stringify!($name).to_string()));
 					$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().remove(&stringify!($name).to_string()));
 					$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().remove(&stringify!($name).to_string()));
-					// $crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().remove(stringify!($name)));
+					$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().remove(&stringify!($name).to_string()));
 				}
 
 				fn _network_name() -> String {
@@ -432,7 +440,7 @@ macro_rules! decl_test_networks {
 						$crate::DMP_DONE.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
 						$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
 						$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
-						// $crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
+						$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), 1));
 					}
 				}
 
@@ -454,8 +462,8 @@ macro_rules! decl_test_networks {
 					vec![$( $para_id, )*]
 				}
 
-				fn _relay_block_number() -> $crate::LocalKey<$crate::RefCell<u32>> {
-					$crate::RELAY_BLOCK_NUMBER
+				fn _relay_block_number() -> &'static $crate::LocalKey<$crate::RefCell<$crate::HashMap<String, u32>>> {
+					&$crate::RELAY_BLOCK_NUMBER
 				}
 
 				fn _process_messages() {
@@ -602,7 +610,7 @@ macro_rules! __impl_messenger_for_relay {
 				<$network_name>::_init();
 			}
 
-			fn relay_block_number() -> $crate::LocalKey<$crate::RefCell<u32>> {
+			fn relay_block_number() -> &'static $crate::LocalKey<$crate::RefCell<$crate::HashMap<String, u32>>> {
 				<$network_name>::_relay_block_number()
 			}
 
@@ -641,7 +649,7 @@ macro_rules! __impl_messenger_for_parachain {
 				<$network_name>::_init();
 			}
 
-			fn relay_block_number() -> $crate::LocalKey<$crate::RefCell<u32>> {
+			fn relay_block_number() -> &'static $crate::LocalKey<$crate::RefCell<$crate::HashMap<String, u32>>> {
 				<$network_name>::_relay_block_number()
 			}
 
