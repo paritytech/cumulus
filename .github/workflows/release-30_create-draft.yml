@@ -74,7 +74,7 @@ jobs:
 
       - name: Cache target dir
         if: ${{ github.event.inputs.release_type != 'client' }}
-        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7 # v3.0.11
+        uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
         with:
           path: "${{ github.workspace }}/runtime/${{ matrix.runtime }}/target"
           key: srtool-target-${{ matrix.runtime }}-${{ github.sha }}
@@ -85,7 +85,7 @@ jobs:
       - name: Build ${{ matrix.runtime }} runtime
         if: ${{ github.event.inputs.release_type != 'client' }}
         id: srtool_build
-        uses: chevdor/srtool-actions@v0.6.0
+        uses: chevdor/srtool-actions@v0.7.0
         with:
           image: paritytech/srtool
           chain: ${{ matrix.runtime }}
@@ -99,14 +99,14 @@ jobs:
 
       - name: Upload ${{ matrix.runtime }} srtool json
         if: ${{ github.event.inputs.release_type != 'client' }}
-        uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb # v3.1.1
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: ${{ matrix.runtime }}-srtool-json
           path: ${{ matrix.runtime }}-srtool-digest.json
 
       - name: Upload ${{ matrix.runtime }} runtime
         if: ${{ github.event.inputs.release_type != 'client' }}
-        uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb # v3.1.1
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: ${{ matrix.runtime }}-runtime
           path: |
@@ -131,7 +131,7 @@ jobs:
           ruby-version: 3.0.0
 
       - name: Download srtool json output
-        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
 
       - name: Prepare tooling
         run: |
@@ -189,14 +189,14 @@ jobs:
 
       - name: Archive srtool json
         if: ${{ github.event.inputs.release_type != 'client' }}
-        uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb # v3.1.1
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: srtool-json
           path: |
             **/*-srtool-digest.json
 
       - name: Archive context artifact
-        uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb # v3.1.1
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: release-notes-context
           path: |
@@ -251,7 +251,7 @@ jobs:
           ref: ${{ github.event.inputs.ref2 }}
 
       - name: Download artifacts
-        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
 
       - uses: ruby/setup-ruby@6cecb48364174b0952995175c55f9bf5527e6682 # v1.147.0
         with:
