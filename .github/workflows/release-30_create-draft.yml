@@ -68,7 +68,7 @@ jobs:
             runtime: rococo-parachain
     steps:
       - name: Checkout sources
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
         with:
           ref: ${{ github.event.inputs.ref2 }}
 
@@ -120,13 +120,13 @@ jobs:
       asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
       - name: Checkout sources
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
         with:
           fetch-depth: 0
           path: cumulus
           ref: ${{ github.event.inputs.ref2 }}
 
-      - uses: ruby/setup-ruby@93287a1fa82c6ddbb6d8db978df4b0119cd8879f # v1.133.2
+      - uses: ruby/setup-ruby@6cecb48364174b0952995175c55f9bf5527e6682 # v1.147.0
         with:
           ruby-version: 3.0.0
 
@@ -246,14 +246,14 @@ jobs:
             runtime: rococo-parachain
     steps:
       - name: Checkout sources
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
         with:
           ref: ${{ github.event.inputs.ref2 }}
 
       - name: Download artifacts
         uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3.0.0
 
-      - uses: ruby/setup-ruby@93287a1fa82c6ddbb6d8db978df4b0119cd8879f # v1.133.2
+      - uses: ruby/setup-ruby@6cecb48364174b0952995175c55f9bf5527e6682 # v1.147.0
         with:
           ruby-version: 3.0.0
 
