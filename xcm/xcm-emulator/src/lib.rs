@@ -366,21 +366,23 @@ macro_rules! __impl_ext_for_parachain {
 thread_local! {
 	/// Downward messages, each message is: `(to_para_id, [(relay_block_number, msg)])`
 	#[allow(clippy::type_complexity)]
-	pub static DOWNWARD_MESSAGES: RefCell<VecDeque<(u32, Vec<(RelayBlockNumber, Vec<u8>)>)>>
-		= RefCell::new(VecDeque::new());
+	pub static DOWNWARD_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<(RelayBlockNumber, Vec<u8>)>)>>>
+		= RefCell::new(HashMap::new());
 	#[allow(clippy::type_complexity)]
 	/// Downward messages that already processed by parachains, each message is: `(to_para_id, relay_block_number, Vec<u8>)`
 	pub static DMP_DONE: RefCell<HashMap<String, VecDeque<(u32, RelayBlockNumber, Vec<u8>)>>>
 		= RefCell::new(HashMap::new());
 	/// Horizontal messages, each message is: `(to_para_id, [(from_para_id, relay_block_number, msg)])`
 	#[allow(clippy::type_complexity)]
-	pub static HORIZONTAL_MESSAGES: RefCell<VecDeque<(u32, Vec<(ParaId, RelayBlockNumber, Vec<u8>)>)>>
-		= RefCell::new(VecDeque::new());
+	pub static HORIZONTAL_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<(ParaId, RelayBlockNumber, Vec<u8>)>)>>>
+		= RefCell::new(HashMap::new());
 	/// Upward messages, each message is: `(from_para_id, msg)
-	pub static UPWARD_MESSAGES: RefCell<VecDeque<(u32, Vec<u8>)>> = RefCell::new(VecDeque::new());
+	pub static UPWARD_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<u8>)>>> = RefCell::new(HashMap::new());
 	/// Global incremental relay chain block number
-	pub static RELAY_BLOCK_NUMBER: RefCell<u32> = RefCell::new(1);
-	pub static DEFAULT_RELAY_BLOCK_NUMBER: RefCell<u32> = RefCell::new(1);
+	// pub static RELAY_BLOCK_NUMBER: RefCell<HashMap<String, u32>> = RefCell::new(HashMap::new()); // RefCell::new(1);
+	pub static RELAY_BLOCK_NUMBER: RefCell<u32> = RefCell::new(1); // RefCell::new(1);
+	pub static DEFAULT_RELAY_BLOCK_NUMBER: RefCell<u32> = RefCell::new(1); // RefCell::new(1);
+	// pub static DEFAULT_RELAY_BLOCK_NUMBER: RefCell<HashMap<String, u32>> = RefCell::new(HashMap::new()); // RefCell::new(1);
 	pub static INITIALIZED: RefCell<HashMap<String, bool>> = RefCell::new(HashMap::new());
 }
 
@@ -407,31 +409,38 @@ macro_rules! decl_test_networks {
 
 					$( <$parachain>::prepare_for_xcmp(); )*
 
-					$crate::DOWNWARD_MESSAGES.with(|b| b.replace(VecDeque::new()));
+					$crate::INITIALIZED.with(|b| b.replace($crate::HashMap::new()));
+					$crate::DOWNWARD_MESSAGES.with(|b| b.replace($crate::HashMap::new()));
 					$crate::DMP_DONE.with(|b| b.replace($crate::HashMap::new()));
-					$crate::INITIALIZED.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), false));
+					$crate::UPWARD_MESSAGES.with(|b| b.replace($crate::HashMap::new()));
+					$crate::HORIZONTAL_MESSAGES.with(|b| b.replace($crate::HashMap::new()));
+					// $crate::RELAY_BLOCK_NUMBER.with(|b| b.replace($crate::HashMap::new()));
 				}
 
 				fn _init() {
 					// If Network has not been itialized yet, it gets initialized
 					if $crate::INITIALIZED.with(|b| b.borrow_mut().get(stringify!($name)).is_none()) {
-						$crate::DMP_DONE.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
 						$crate::INITIALIZED.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), true));
+						$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
+						$crate::DMP_DONE.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
+						$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
+						$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
+						// $crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
 					}
 				}
 
 				fn _send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = ($crate::RelayBlockNumber, Vec<u8>)>) {
-					$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().push_back((to_para_id, iter.collect())));
+					$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().push_back((to_para_id, iter.collect())));
 				}
 
 				fn _send_horizontal_messages<
 					I: Iterator<Item = ($crate::ParaId, $crate::RelayBlockNumber, Vec<u8>)>,
 				>(to_para_id: u32, iter: I) {
-					$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().push_back((to_para_id, iter.collect())));
+					$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().push_back((to_para_id, iter.collect())));
 				}
 
 				fn _send_upward_message(from_para_id: u32, msg: Vec<u8>) {
-					$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().push_back((from_para_id, msg)));
+					$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().push_back((from_para_id, msg)));
 				}
 
 				fn _para_ids() -> Vec<u32> {
@@ -451,9 +460,9 @@ macro_rules! decl_test_networks {
 				}
 
 				fn _has_unprocessed_messages() -> bool {
-					$crate::DOWNWARD_MESSAGES.with(|b| !b.borrow_mut().is_empty())
-					|| $crate::HORIZONTAL_MESSAGES.with(|b| !b.borrow_mut().is_empty())
-					|| $crate::UPWARD_MESSAGES.with(|b| !b.borrow_mut().is_empty())
+					$crate::DOWNWARD_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
+					|| $crate::HORIZONTAL_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
+					|| $crate::UPWARD_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
 				}
 
 				fn _process_downward_messages() {
@@ -461,7 +470,7 @@ macro_rules! decl_test_networks {
 					use polkadot_parachain::primitives::RelayChainBlockNumber;
 
 					while let Some((to_para_id, messages))
-						= $crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().pop_front()) {
+						= $crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 						match to_para_id {
 							$(
 								$para_id => {
@@ -491,7 +500,7 @@ macro_rules! decl_test_networks {
 					use $crate::{XcmpMessageHandler, Bounded};
 
 					while let Some((to_para_id, messages))
-						= $crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().pop_front()) {
+						= $crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 						let iter = messages.iter().map(|(p, b, m)| (*p, *b, &m[..])).collect::<Vec<_>>().into_iter();
 						match to_para_id {
 							$(
@@ -506,7 +515,7 @@ macro_rules! decl_test_networks {
 
 				fn _process_upward_messages() {
 					use $crate::{UmpSink, Bounded};
-					while let Some((from_para_id, msg)) = $crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().pop_front()) {
+					while let Some((from_para_id, msg)) = $crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 						let _ =  <$relay_chain>::process_upward_message(
 							from_para_id.into(),
 							&msg[..],
