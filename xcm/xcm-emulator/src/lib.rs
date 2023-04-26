@@ -55,9 +55,11 @@ pub trait TestExt {
 }
 
 pub trait Messenger {
+	fn network_name() -> String { Default::default() }
+
 	fn init() {}
 
-	fn relay_block_number() -> LocalKey<RefCell<u32>> { DEFAULT_RELAY_BLOCK_NUMBER }
+	fn relay_block_number() -> LocalKey<RefCell<u32>> { RELAY_BLOCK_NUMBER }
 
 	fn hrmp_channel_parachain_inherent_data(
 		para_id: u32,
@@ -78,6 +80,7 @@ pub trait Messenger {
 
 	fn process_messages() {}
 }
+
 pub trait RelayMessenger: Messenger {
 	fn para_ids() -> Vec<u32> { Default::default() }
 
@@ -381,7 +384,7 @@ thread_local! {
 	/// Global incremental relay chain block number
 	// pub static RELAY_BLOCK_NUMBER: RefCell<HashMap<String, u32>> = RefCell::new(HashMap::new()); // RefCell::new(1);
 	pub static RELAY_BLOCK_NUMBER: RefCell<u32> = RefCell::new(1); // RefCell::new(1);
-	pub static DEFAULT_RELAY_BLOCK_NUMBER: RefCell<u32> = RefCell::new(1); // RefCell::new(1);
+	// pub static DEFAULT_RELAY_BLOCK_NUMBER: RefCell<u32> = RefCell::new(1); // RefCell::new(1);
 	// pub static DEFAULT_RELAY_BLOCK_NUMBER: RefCell<HashMap<String, u32>> = RefCell::new(HashMap::new()); // RefCell::new(1);
 	pub static INITIALIZED: RefCell<HashMap<String, bool>> = RefCell::new(HashMap::new());
 }
@@ -409,12 +412,16 @@ macro_rules! decl_test_networks {
 
 					$( <$parachain>::prepare_for_xcmp(); )*
 
-					$crate::INITIALIZED.with(|b| b.replace($crate::HashMap::new()));
-					$crate::DOWNWARD_MESSAGES.with(|b| b.replace($crate::HashMap::new()));
-					$crate::DMP_DONE.with(|b| b.replace($crate::HashMap::new()));
-					$crate::UPWARD_MESSAGES.with(|b| b.replace($crate::HashMap::new()));
-					$crate::HORIZONTAL_MESSAGES.with(|b| b.replace($crate::HashMap::new()));
-					// $crate::RELAY_BLOCK_NUMBER.with(|b| b.replace($crate::HashMap::new()));
+					$crate::INITIALIZED.with(|b| b.borrow_mut().remove(&stringify!($name).to_string()));
+					$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().remove(&stringify!($name).to_string()));
+					$crate::DMP_DONE.with(|b| b.borrow_mut().remove(&stringify!($name).to_string()));
+					$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().remove(&stringify!($name).to_string()));
+					$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().remove(&stringify!($name).to_string()));
+					// $crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().remove(stringify!($name)));
+				}
+
+				fn _network_name() -> String {
+					stringify!($name).to_string()
 				}
 
 				fn _init() {
@@ -587,6 +594,10 @@ macro_rules! __impl_messenger_for_relay {
 	($network_name:ident, $relay_chain:ty) => {
 
 		impl $relay_chain {
+			fn network_name() -> String {
+				<$network_name>::_network_name()
+			}
+
 			fn init() {
 				<$network_name>::_init();
 			}
@@ -622,6 +633,10 @@ macro_rules! __impl_messenger_for_parachain {
 	($network_name:ident, $parachain:ty) => {
 
 		impl $parachain {
+			fn network_name() -> String {
+				<$network_name>::_network_name()
+			}
+
 			fn init() {
 				<$network_name>::_init();
 			}
