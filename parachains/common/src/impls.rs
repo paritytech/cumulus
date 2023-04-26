@@ -31,7 +31,7 @@ use frame_support::{
 use pallet_asset_conversion::MultiAssetIdConverter;
 use pallet_asset_tx_payment::HandleCredit;
 use polkadot_primitives::AccountId;
-use sp_runtime::{traits::Zero, DispatchResult};
+use sp_runtime::{traits::Zero, AccountId32, DispatchResult};
 use sp_std::marker::PhantomData;
 use xcm::{
 	latest::{AssetId, Fungibility::Fungible, MultiAsset, MultiLocation},
@@ -203,25 +203,25 @@ impl<Assets, ForeignAssets, SelfParaId> Unbalanced<AccountId>
 	for LocalAndForeignAssets<Assets, ForeignAssets, SelfParaId>
 where
 	SelfParaId: Get<ParaId>,
-	ForeignAssets:
-		Inspect<AccountId, Balance = u128, AssetId = MultiLocation> + Unbalanced<AccountId>,
+	ForeignAssets: Inspect<AccountId, Balance = u128, AssetId = MultiLocation>
+		+ Unbalanced<AccountId>
+		+ Balanced<AccountId32>,
 	Assets: Inspect<AccountId, Balance = u128, AssetId = u32>
 		+ PalletInfoAccess
-		+ Unbalanced<AccountId>,
-	// Assets: frame_support::traits::fungibles::Balanced<sp_runtime::AccountId32>,
-	// ForeignAssets: frame_support::traits::fungibles::Balanced<sp_runtime::AccountId32>
+		+ Unbalanced<AccountId>
+		+ Balanced<AccountId32>,
 {
 	fn handle_dust(dust: frame_support::traits::fungibles::Dust<AccountId, Self>) {
-		todo!("tricky.")
-		// let (asset, amount) = dust;
-		// let credit = dust.into_credit();
-		// //TODO need to handle credit drop here
+		let credit = dust.into_credit();
 
-		// if let Some(asset) = is_local::<SelfParaId, Assets>(credit.asset()) {
-		// 	Assets::handle_raw_dust(asset, credit.peek());
-		// } else {
-		// 	ForeignAssets::handle_raw_dust(credit.asset(), credit.peek());
-		// }
+		if let Some(asset) = is_local::<SelfParaId, Assets>(credit.asset()) {
+			Assets::handle_raw_dust(asset, credit.peek());
+		} else {
+			ForeignAssets::handle_raw_dust(credit.asset(), credit.peek());
+		}
+
+		// As we have already handled the dust, we must stop credit's drop from happening:
+		sp_std::mem::forget(credit);
 	}
 
 	fn write_balance(
@@ -359,10 +359,12 @@ impl<Assets, ForeignAssets, SelfParaId> MutateFungible<AccountId>
 where
 	SelfParaId: Get<ParaId>,
 	ForeignAssets: MutateFungible<AccountId, Balance = u128>
-		+ Inspect<AccountId, Balance = u128, AssetId = MultiLocation>,
+		+ Inspect<AccountId, Balance = u128, AssetId = MultiLocation>
+		+ Balanced<AccountId32>,
 	Assets: MutateFungible<AccountId>
 		+ Inspect<AccountId, Balance = u128, AssetId = u32>
-		+ PalletInfoAccess,
+		+ PalletInfoAccess
+		+ Balanced<AccountId32>,
 {
 	/// Transfer funds from one account into another.
 	fn transfer(
