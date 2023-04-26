@@ -29,6 +29,8 @@ pallet-xcm = { default-features = false, git = "https://github.com/paritytech/po
 
 # Cumulus
 parachains-common = { path = "../../../common" }
+cumulus-test-service = { path = "../../../../test/service" }
+cumulus-primitives-core = { path = "../../../../primitives/core" }
 penpal-runtime = { path = "../../../runtimes/testing/penpal" }
 statemint-runtime = { path = "../../../runtimes/assets/statemint" }
 statemine-runtime = { path = "../../../runtimes/assets/statemine" }

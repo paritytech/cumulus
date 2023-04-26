@@ -12,7 +12,8 @@ use xcm_emulator::{decl_test_networks, decl_test_parachains, decl_test_relay_cha
 use polkadot_runtime_parachains::configuration::HostConfiguration;
 use xcm_executor::traits::Convert;
 use statemint_runtime::constants::currency::DOLLARS;
-pub use constants::{polkadot, kusama, accounts::{ALICE, BOB}};
+pub use constants::{polkadot, kusama, statemint, accounts::{ALICE, BOB}};
+use sp_runtime::BuildStorage;
 
 decl_test_relay_chains! {
 	pub struct Polkadot {
@@ -125,13 +126,15 @@ pub fn relay_ext() -> sp_io::TestExternalities {
 pub fn statemint_ext() -> sp_io::TestExternalities {
 	use statemint_runtime::{Runtime, System};
 
-	let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
+	let mut t = statemint::genesis().build_storage().unwrap();
 
-	pallet_balances::GenesisConfig::<Runtime> {
-		balances: vec![(ALICE, INITIAL_BALANCE), (parent_account_id(), INITIAL_BALANCE)],
-	}
-	.assimilate_storage(&mut t)
-	.unwrap();
+	// let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
+
+	// pallet_balances::GenesisConfig::<Runtime> {
+	// 	balances: vec![(ALICE, INITIAL_BALANCE), (parent_account_id(), INITIAL_BALANCE)],
+	// }
+	// .assimilate_storage(&mut t)
+	// .unwrap();
 
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| {

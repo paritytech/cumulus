@@ -4377,6 +4377,8 @@ dependencies = [
 name = "integration-tests-common"
 version = "1.0.0"
 dependencies = [
+ "cumulus-primitives-core",
+ "cumulus-test-service",
  "frame-support",
  "frame-system",
  "kusama-runtime",
