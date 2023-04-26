@@ -1,4 +1,4 @@
-// Copyright 2021 Parity Technologies (UK) Ltd.
+// Copyright 2023 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -14,14 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Provides the [`VALIDATION_WORKER`] for integration tests in Cumulus.
-//!
-//! The validation worker is used by the relay chain to validate parachains. This worker is placed
-//! in an extra process to provide better security and to ensure that a worker can be killed etc.
-//!
-//! !!This should only be used for tests!!
+//! Module contains predefined test-case scenarios for `Runtime` with bridging capabilities.
 
-pub use polkadot_node_core_pvf_worker;
-
-/// The path to the validation worker.
-pub const VALIDATION_WORKER: &str = concat!(env!("OUT_DIR"), "/validation-worker");
+// Re-export test_cases from assets
+pub use asset_test_utils::{include_teleports_for_native_asset_works, CollatorSessionKeys};
