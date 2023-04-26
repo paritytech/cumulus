@@ -31,7 +31,7 @@ use frame_support::{
 use pallet_asset_conversion::MultiAssetIdConverter;
 use pallet_asset_tx_payment::HandleCredit;
 use polkadot_primitives::AccountId;
-use sp_runtime::{traits::Zero, AccountId32, DispatchResult};
+use sp_runtime::{traits::Zero, DispatchResult};
 use sp_std::marker::PhantomData;
 use xcm::{
 	latest::{AssetId, Fungibility::Fungible, MultiAsset, MultiLocation},
@@ -205,11 +205,11 @@ where
 	SelfParaId: Get<ParaId>,
 	ForeignAssets: Inspect<AccountId, Balance = u128, AssetId = MultiLocation>
 		+ Unbalanced<AccountId>
-		+ Balanced<AccountId32>,
+		+ Balanced<AccountId>,
 	Assets: Inspect<AccountId, Balance = u128, AssetId = u32>
 		+ PalletInfoAccess
 		+ Unbalanced<AccountId>
-		+ Balanced<AccountId32>,
+		+ Balanced<AccountId>,
 {
 	fn handle_dust(dust: frame_support::traits::fungibles::Dust<AccountId, Self>) {
 		let credit = dust.into_credit();
@@ -360,11 +360,11 @@ where
 	SelfParaId: Get<ParaId>,
 	ForeignAssets: MutateFungible<AccountId, Balance = u128>
 		+ Inspect<AccountId, Balance = u128, AssetId = MultiLocation>
-		+ Balanced<AccountId32>,
+		+ Balanced<AccountId>,
 	Assets: MutateFungible<AccountId>
 		+ Inspect<AccountId, Balance = u128, AssetId = u32>
 		+ PalletInfoAccess
-		+ Balanced<AccountId32>,
+		+ Balanced<AccountId>,
 {
 	/// Transfer funds from one account into another.
 	fn transfer(
