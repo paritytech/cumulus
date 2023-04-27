@@ -370,6 +370,7 @@ where
 		import_queue,
 		block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
 		warp_sync_params,
+		block_relay: None,
 	})
 }
 
