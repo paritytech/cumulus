@@ -26,7 +26,7 @@ use bp_messages::{
 	target_chain::{DispatchMessage, MessageDispatch},
 	LaneId,
 };
-use bp_runtime::{messages::MessageDispatchResult, AccountIdOf, Chain};
+use bp_runtime::messages::MessageDispatchResult;
 use codec::{Decode, Encode};
 use frame_support::{dispatch::Weight, CloneNoBound, EqNoBound, PartialEqNoBound};
 use pallet_bridge_messages::WeightInfoExt as MessagesPalletWeights;
@@ -46,13 +46,12 @@ pub enum XcmBlobMessageDispatchResult {
 }
 
 /// [`XcmBlobMessageDispatch`] is responsible for dispatching received messages
-pub struct XcmBlobMessageDispatch<RelayerAccountChain, DispatchBlob, Weights> {
-	_marker: sp_std::marker::PhantomData<(RelayerAccountChain, DispatchBlob, Weights)>,
+pub struct XcmBlobMessageDispatch<DispatchBlob, Weights> {
+	_marker: sp_std::marker::PhantomData<(DispatchBlob, Weights)>,
 }
 
-impl<RelayerAccountChain: Chain, BlobDispatcher: DispatchBlob, Weights: MessagesPalletWeights>
-	MessageDispatch<AccountIdOf<RelayerAccountChain>>
-	for XcmBlobMessageDispatch<RelayerAccountChain, BlobDispatcher, Weights>
+impl<BlobDispatcher: DispatchBlob, Weights: MessagesPalletWeights> MessageDispatch
+	for XcmBlobMessageDispatch<BlobDispatcher, Weights>
 {
 	type DispatchPayload = XcmAsPlainPayload;
 	type DispatchLevelResult = XcmBlobMessageDispatchResult;
@@ -68,7 +67,6 @@ impl<RelayerAccountChain: Chain, BlobDispatcher: DispatchBlob, Weights: Messages
 	}
 
 	fn dispatch(
-		_relayer_account: &AccountIdOf<RelayerAccountChain>,
 		message: DispatchMessage<Self::DispatchPayload>,
 	) -> MessageDispatchResult<Self::DispatchLevelResult> {
 		let payload = match message.data.payload {

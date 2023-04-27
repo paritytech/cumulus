@@ -265,7 +265,6 @@ pub fn message_dispatch_routing_works<
 		dyn Fn(Vec<u8>) -> Option<cumulus_pallet_xcmp_queue::Event<Runtime>>,
 	>,
 	expected_lane_id: LaneId,
-	this_chain_relayer_account: AccountIdOf<Runtime>,
 ) where
 	Runtime: frame_system::Config
 		+ pallet_balances::Config
@@ -303,7 +302,6 @@ pub fn message_dispatch_routing_works<
 						(RuntimeNetwork::get(), Here)
 					);
 				let result = <<Runtime as pallet_bridge_messages::Config<MessagesPalletInstance>>::MessageDispatch>::dispatch(
-					&this_chain_relayer_account,
 					test_data::dispatch_message(expected_lane_id, 1, bridging_message)
 				);
 				assert_eq!(format!("{:?}", result.dispatch_level_result), format!("{:?}", XcmBlobMessageDispatchResult::Dispatched));
@@ -324,8 +322,7 @@ pub fn message_dispatch_routing_works<
 
 				// 2.1. WITHOUT opened hrmp channel -> RoutingError
 				let result =
-					<<Runtime as pallet_bridge_messages::Config<MessagesPalletInstance>>::MessageDispatch as MessageDispatch<_>>::dispatch(
-						&this_chain_relayer_account,
+					<<Runtime as pallet_bridge_messages::Config<MessagesPalletInstance>>::MessageDispatch>::dispatch(
 						DispatchMessage {
 							key: MessageKey { lane_id: expected_lane_id, nonce: 1 },
 							data: DispatchMessageData { payload: Ok(bridging_message.clone()) },
@@ -341,8 +338,7 @@ pub fn message_dispatch_routing_works<
 
 				// 2.1. WITH hrmp channel -> Ok
 				mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(runtime_para_id.into(), sibling_parachain_id.into());
-				let result = <<Runtime as pallet_bridge_messages::Config<MessagesPalletInstance>>::MessageDispatch as MessageDispatch<_>>::dispatch(
-					&this_chain_relayer_account,
+				let result = <<Runtime as pallet_bridge_messages::Config<MessagesPalletInstance>>::MessageDispatch>::dispatch(
 					DispatchMessage {
 						key: MessageKey { lane_id: expected_lane_id, nonce: 1 },
 						data: DispatchMessageData { payload: Ok(bridging_message) },
@@ -379,9 +375,6 @@ macro_rules! include_message_dispatch_routing_works(
 	) => {
 		#[test]
 		fn $test_name() {
-			const THIS_CHAIN_RELAYER: [u8; 32] = [2u8; 32];
-			let this_chain_relayer_account = parachains_common::AccountId::from(THIS_CHAIN_RELAYER);
-
 			$crate::test_cases::message_dispatch_routing_works::<
 				$runtime,
 				$xcm_config,
@@ -396,7 +389,6 @@ macro_rules! include_message_dispatch_routing_works(
 				$unwrap_cumulus_pallet_parachain_system_event,
 				$unwrap_cumulus_pallet_xcmp_queue_event,
 				$expected_lane_id,
-				this_chain_relayer_account
 			)
 		}
 	}

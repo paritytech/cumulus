@@ -29,6 +29,10 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
+use parachains_common::{
+	impls::ToStakingPot,
+	xcm_config::{ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry},
+};
 use polkadot_parachain::primitives::Sibling;
 use sp_core::Get;
 use xcm::latest::prelude::*;
@@ -44,11 +48,6 @@ use xcm_executor::{
 	traits::{ExportXcm, WithOriginFilter},
 	XcmExecutor,
 };
-
-use parachains_common::xcm_config::{
-	ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry,
-};
-use polkadot_runtime_common::impls::ToAuthor;
 
 parameter_types! {
 	pub const RelayLocation: MultiLocation = MultiLocation::parent();
@@ -200,10 +199,10 @@ pub type Barrier = DenyThenTry<
 		AllowKnownQueryResponses<PolkadotXcm>,
 		WithComputedOrigin<
 			(
-				// Allow anything to pay for execution.
+				// If the message is one that immediately attemps to pay for execution, then allow it.
 				AllowTopLevelPaidExecutionFrom<Everything>,
 				// TODO:check-parameter - add here "or SystemParachains" once merged https://github.com/paritytech/polkadot/pull/7005
-				// Parent and its plurality (i.e. governance bodies) gets free execution.
+				// Parent and its pluralities (i.e. governance bodies) get free execution.
 				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
 				// Subscriptions for version tracking are OK.
 				AllowSubscriptionsFrom<ParentOrSiblings>,
@@ -235,7 +234,7 @@ impl xcm_executor::Config for XcmConfig {
 		MaxInstructions,
 	>;
 	type Trader =
-		UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ToAuthor<Runtime>>;
+		UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ToStakingPot<Runtime>>;
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;

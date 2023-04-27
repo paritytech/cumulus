@@ -236,7 +236,7 @@ where
 		.expect("Could not find `set_validation_data` inherent")
 }
 
-/// Validate the given [`PersistedValidationData`] against the [`ValidationParams`].
+/// Validate the given [`PersistedValidationData`] against the [`MemoryOptimizedValidationParams`].
 fn validate_validation_data(
 	validation_data: &PersistedValidationData,
 	relay_parent_number: RelayChainBlockNumber,
