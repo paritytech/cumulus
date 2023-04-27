@@ -101,6 +101,24 @@ services:
       - "10344:9944"
       - "10315:9615"
 
+  rialto-node-ferdie:
+    <<: *rialto-bridge-node
+    entrypoint:
+      - /home/user/rialto-bridge-node
+      - --execution=Native
+      - --chain=local
+      - --bootnodes=/dns4/rialto-node-alice/tcp/30333/p2p/12D3KooWMF6JvV319a7kJn5pqkKbhR3fcM2cvK5vCbYZHeQhYzFE
+      - --ferdie
+      - --rpc-cors=all
+      - --enable-offchain-indexing=true
+      - --unsafe-rpc-external
+      - --unsafe-ws-external
+      - --prometheus-external
+    ports:
+      - "10433:9933"
+      - "10444:9944"
+      - "10415:9615"
+
   rialto-chainspec-exporter:
     image: ${RIALTO_BRIDGE_NODE_IMAGE:-paritytech/rialto-bridge-node}
     entrypoint: /entrypoints/rialto-chainspec-exporter-entrypoint.sh
@@ -118,6 +136,7 @@ services:
       - rialto-node-charlie
       - rialto-node-dave
       - rialto-node-eve
+      - rialto-node-ferdie
 
 # we're using `/rialto-share` to expose Rialto chain spec to those who are interested. Right
 # now it is Rialto Parachain collator nodes. Local + tmpfs combination allows sharing writable

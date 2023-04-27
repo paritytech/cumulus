@@ -112,12 +112,21 @@ fn main() -> color_eyre::Result<()> {
 		pub mod api {}
 	);
 	// Default module derivatives.
-	let mut derives = DerivesRegistry::new(&CratePath::default());
-	derives.extend_for_all(vec![syn::parse_quote!(Clone)]);
+	let mut derives = DerivesRegistry::new();
+	derives.extend_for_all(
+		vec![
+			syn::parse_quote!(::codec::Encode),
+			syn::parse_quote!(::codec::Decode),
+			syn::parse_quote!(Clone),
+			syn::parse_quote!(Debug),
+		],
+		vec![],
+	);
 	// Type substitutes
 	let mut type_substitutes = TypeSubstitutes::new(&CratePath::default());
-	type_substitutes.extend(
-		vec![
+	type_substitutes
+		.extend(
+			vec![
 			TypeSubstitute::simple("sp_core::crypto::AccountId32"),
 			TypeSubstitute::custom("bp_millau::millau_hash::MillauHash", "::bp_millau::MillauHash"),
 			TypeSubstitute::simple("bp_millau::BlakeTwoAndKeccak256"),
@@ -141,9 +150,10 @@ fn main() -> color_eyre::Result<()> {
 			),
 			TypeSubstitute::simple("bp_messages::UnrewardedRelayersState"),
 		]
-		.drain(..)
-		.map(|substitute| (substitute.subxt_type, substitute.substitute.try_into().unwrap())),
-	);
+			.drain(..)
+			.map(|substitute| (substitute.subxt_type, substitute.substitute.try_into().unwrap())),
+		)
+		.map_err(|e| eyre::eyre!("Error extending type substitutes: {:?}", e))?;
 
 	// Generate the Runtime API.
 	let runtime_api = match metadata_source {
@@ -153,6 +163,8 @@ fn main() -> color_eyre::Result<()> {
 			derives,
 			type_substitutes,
 			CratePath::default(),
+			false,
+			true,
 		),
 		RuntimeMetadataSource::WasmFile(source) => {
 			let testbed = WasmTestBed::new(&source)
@@ -163,9 +175,12 @@ fn main() -> color_eyre::Result<()> {
 				derives,
 				type_substitutes,
 				CratePath::default(),
+				false,
+				true,
 			)
 		},
-	};
+	}
+	.map_err(|e| eyre::eyre!("Error generating runtime api: {:?}", e))?;
 
 	print_runtime(runtime_api);
 

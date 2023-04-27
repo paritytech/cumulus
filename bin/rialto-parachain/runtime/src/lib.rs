@@ -533,6 +533,7 @@ impl pallet_bridge_relayers::Config for Runtime {
 	type Reward = Balance;
 	type PaymentProcedure =
 		bp_relayers::PayRewardFromAccount<pallet_balances::Pallet<Runtime>, AccountId>;
+	type StakeAndSlash = ();
 	type WeightInfo = ();
 }
 
@@ -925,8 +926,7 @@ mod tests {
 
 			// we care only about handing message to the XCM dispatcher, so we don't care about its
 			// actual dispatch
-			let dispatch_result =
-				FromMillauMessageDispatch::dispatch(&AccountId::from([0u8; 32]), incoming_message);
+			let dispatch_result = FromMillauMessageDispatch::dispatch(incoming_message);
 			assert!(matches!(
 				dispatch_result.dispatch_level_result,
 				XcmBlobMessageDispatchResult::NotDispatched(_),

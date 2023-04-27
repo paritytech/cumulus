@@ -5,7 +5,7 @@
 # Set up your HS connections
 matrix:
 - name: matrix-parity-io
-  url: https://matrix.parity.io
+  url: https://m.parity.io
   # Create a user - log that user in using a post request
   # curl -XPOST -d '{"type": "m.login.password",
   #                  "user":"grafana",
@@ -22,7 +22,7 @@ msgtype: m.text
 # Set up notification ingress rules
 rules:
 - name: bridge              # Name of the rule
-  room: "#bridges-rialto-millau-alerts:matrix.parity.io" # Room or ID
+  room: "#bridges-rialto-millau-alerts:parity.io" # Room or ID
   matrix: matrix-parity-io     # The Matrix HS to use - defaults to first one
   msgtype: m.notice
   # The following values are optional:

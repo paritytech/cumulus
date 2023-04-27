@@ -40,6 +40,7 @@ services:
       - rialto-node-charlie
       - rialto-node-dave
       - rialto-node-eve
+      - rialto-node-ferdie
 
   relay-messages-millau-to-rialto-generator:
     <<: *sub-bridge-relay

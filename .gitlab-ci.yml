@@ -1,6 +1,4 @@
 stages:
-  - lint
-  - check
   - test
   - build
   - publish
@@ -13,8 +11,9 @@ variables:
   CARGO_INCREMENTAL:               0
   ARCH:                            "x86_64"
   CI_IMAGE:                        "paritytech/bridges-ci:production"
-  BUILDAH_IMAGE:                   "quay.io/buildah/stable:v1.27"
   RUST_BACKTRACE:                  full
+  BUILDAH_IMAGE:                   "quay.io/buildah/stable:v1.29"
+  BUILDAH_COMMAND:                 "buildah --storage-driver overlay2"
 
 default:
   cache:                           {}
@@ -50,15 +49,6 @@ default:
 
 .test-refs:                        &test-refs
   rules:
-    # FIXME: This is the cause why pipelines wouldn't start. The problem might be in our custom
-    # mirroring. This should be investigated further, but for now let's have the working
-    # pipeline.
-    # - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH
-    #   changes:
-    #     - '**.md'
-    #     - diagrams/*
-    #     - docs/*
-    #   when:                        never
     - if: $CI_PIPELINE_SOURCE == "pipeline"
     - if: $CI_PIPELINE_SOURCE == "web"
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -66,7 +56,11 @@ default:
     - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                         # PRs
     - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+.*$/              # i.e. v1.0, v2.1rc1
 
-.build-refs:                       &build-refs
+.test-only-refs:                   &test-only-refs
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                         # PRs
+
+.publish-refs:                     &publish-refs
   rules:
     # won't run on the CI image update pipeline
     - if: $CI_PIPELINE_SOURCE == "pipeline"
@@ -77,6 +71,12 @@ default:
     # 1. this one is triggered by the schedule with $PIPELINE == "nightly", it's for releasing.
     # this job runs only on nightly pipeline with the mentioned variable, against `master` branch
     - if: $CI_PIPELINE_SOURCE == "schedule" && $PIPELINE == "nightly"
+
+.nightly-test:                     &nightly-test
+  rules:
+    # 2. another is triggered by scripts repo $CI_PIPELINE_SOURCE == "pipeline" it's for the CI image
+    #    update, it also runs all the nightly checks.
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
 
 .deploy-refs:                       &deploy-refs
   rules:
@@ -89,16 +89,12 @@ default:
     - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]{4}-[0-9]{2}-[0-9]{2}.*$/  # i.e. v2021-09-27, v2021-09-27-1
       when: manual
 
-.nightly-test:                     &nightly-test
-  rules:
-    # 2. another is triggered by scripts repo $CI_PIPELINE_SOURCE == "pipeline" it's for the CI image
-    #    update, it also runs all the nightly checks.
-    - if: $CI_PIPELINE_SOURCE == "pipeline"
 
-#### stage:                        lint
+
+#### stage:                        test
 
 clippy-nightly:
-  stage:                           lint
+  stage:                           test
   <<:                              *docker-env
   <<:                              *test-refs
   variables:
@@ -108,23 +104,21 @@ clippy-nightly:
     - SKIP_WASM_BUILD=1 cargo +nightly clippy --all-targets -- -A clippy::redundant_closure -A clippy::derive-partial-eq-without-eq -A clippy::or_fun_call
 
 fmt:
-  stage:                           lint
+  stage:                           test
   <<:                              *docker-env
   <<:                              *test-refs
   script:
     - cargo +nightly fmt --all -- --check
 
 spellcheck:
-  stage:                           lint
+  stage:                           test
   <<:                              *docker-env
   <<:                              *test-refs
   script:
     - cargo spellcheck check --cfg=.config/spellcheck.toml --checkers hunspell -m 1 $(find . -type f -name '*.rs' ! -path "./target/*" ! -name 'codegen_runtime.rs' ! -name 'weights.rs')
 
-#### stage:                        check
-
 check:
-  stage:                           check
+  stage:                           test
   <<:                              *docker-env
   <<:                              *test-refs
   script:                          &check-script
@@ -135,14 +129,12 @@ check:
     - SKIP_WASM_BUILD=1 time cargo check -p millau-runtime --locked --features runtime-benchmarks --verbose
 
 check-nightly:
-  stage:                           check
+  stage:                           test
   <<:                              *docker-env
   <<:                              *nightly-test
   script:
     - rustup default nightly
     - *check-script
-
-#### stage:                        test
 
 test:
   stage:                           test
@@ -225,12 +217,17 @@ partial-repo-pallets-build-test:
   # we may live with failing partial repo build, it is just a signal for us
   allow_failure:                   true
 
-#### stage:                        build
-
 build:
-  stage:                           build
+  stage:                           test
+  rules:
+    # won't run on the CI image update pipeline
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: never
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+.*$/              # i.e. v1.0, v2.1rc1
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]{4}-[0-9]{2}-[0-9]{2}.*$/  # i.e. v2021-09-27, v2021-09-27-1
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $PIPELINE == "nightly"
+    - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                         # PRs
   <<:                              *docker-env
-  <<:                              *build-refs
   <<:                              *collect-artifacts
   # master
   script:                          &build-script
@@ -264,10 +261,66 @@ build-nightly:
 
 #### stage:                        publish
 
+# check that images can be built
+.build-image:                      &build-image
+  <<:                              *kubernetes-build
+  image:                           $BUILDAH_IMAGE
+  <<:                              *test-only-refs
+  variables:                       &build-image-variables
+    GIT_STRATEGY:                  none
+    DOCKERFILE:                    ci.Dockerfile
+  needs:
+    - job:                         build
+      artifacts:                   true
+  script:
+    # trim "-build-docker" from job name
+    - export DOCKER_IMAGE_NAME="${CI_JOB_NAME::-13}"
+    - if [[ "${CI_JOB_NAME::-13}" == "bridges-common-relay" ]]; then
+        export BRIDGES_PROJECT="substrate-relay";
+      else
+        export BRIDGES_PROJECT="${CI_JOB_NAME::-13}";
+      fi
+    - export IMAGE_NAME=docker.io/paritytech/${DOCKER_IMAGE_NAME}
+    - echo "Building ${IMAGE_NAME}"
+    - cd ./artifacts
+    - $BUILDAH_COMMAND build
+        --format=docker
+        --build-arg VCS_REF="${CI_COMMIT_SHORT_SHA}"
+        --build-arg BUILD_DATE="$(date +%d-%m-%Y)"
+        --build-arg PROJECT="${BRIDGES_PROJECT}"
+        --build-arg VERSION="${VERSION}"
+        --tag "${IMAGE_NAME}:latest"
+        --file "${DOCKERFILE}" .
+
+rialto-bridge-node-build-docker:
+  stage:                           publish
+  <<:                              *build-image
+
+rialto-parachain-collator-build-docker:
+  stage:                           publish
+  <<:                              *build-image
+
+millau-bridge-node-build-docker:
+  stage:                           publish
+  <<:                              *build-image
+
+substrate-relay-build-docker:
+  stage:                           publish
+  <<:                              *build-image
+
+bridges-common-relay-build-docker:
+  stage:                           publish
+  <<:                              *build-image
+  variables:
+    <<:                            *build-image-variables
+    BRIDGES_PROJECT:               substrate-relay
+    DOCKER_IMAGE_NAME:             bridges-common-relay
+
+# build and publish images
 .build-push-image:                 &build-push-image
   <<:                              *kubernetes-build
   image:                           $BUILDAH_IMAGE
-  <<:                              *build-refs
+  <<:                              *publish-refs
   variables:                       &image-variables
     GIT_STRATEGY:                  none
     DOCKERFILE:                    ci.Dockerfile
@@ -297,7 +350,7 @@ build-nightly:
     - test "${Docker_Hub_User_Parity}" -a "${Docker_Hub_Pass_Parity}" ||
         ( echo "no docker credentials provided"; exit 1 )
     - cd ./artifacts
-    - buildah bud
+    - $BUILDAH_COMMAND build
         --format=docker
         --build-arg VCS_REF="${CI_COMMIT_SHORT_SHA}"
         --build-arg BUILD_DATE="$(date +%d-%m-%Y)"
@@ -310,10 +363,10 @@ build-nightly:
     # The job will success only on the protected branch
     - echo "${Docker_Hub_Pass_Parity}" |
         buildah login --username "${Docker_Hub_User_Parity}" --password-stdin docker.io
-    - buildah info
-    - buildah push --format=v2s2 "${IMAGE_NAME}:${VERSION}"
-    - buildah push --format=v2s2 "${IMAGE_NAME}:sha-${CI_COMMIT_SHORT_SHA}"
-    - buildah push --format=v2s2 "${IMAGE_NAME}:${FLOATING_TAG}"
+    - $BUILDAH_COMMAND info
+    - $BUILDAH_COMMAND push --format=v2s2 "${IMAGE_NAME}:${VERSION}"
+    - $BUILDAH_COMMAND push --format=v2s2 "${IMAGE_NAME}:sha-${CI_COMMIT_SHORT_SHA}"
+    - $BUILDAH_COMMAND push --format=v2s2 "${IMAGE_NAME}:${FLOATING_TAG}"
   after_script:
     - env REGISTRY_AUTH_FILE= buildah logout --all
 
@@ -343,7 +396,7 @@ bridges-common-relay:
 
 # Publish Docker images description to hub.docker.com
 
-.publish-docker-image-description: &publish-docker-image-description
+.publish-docker-image-description:
   stage:                           publish-docker-description
   image:                           paritytech/dockerhub-description
   variables:
