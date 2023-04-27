@@ -487,7 +487,6 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubWococoMessageBridge>;
 	type MessageDispatch = XcmBlobMessageDispatch<
-		bp_bridge_hub_wococo::BridgeHubWococo,
 		bp_bridge_hub_rococo::BridgeHubRococo,
 		OnBridgeHubRococoBlobDispatcher,
 		Self::WeightInfo,
@@ -524,7 +523,6 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubRococoMessageBridge>;
 	type MessageDispatch = XcmBlobMessageDispatch<
-		bp_bridge_hub_rococo::BridgeHubRococo,
 		bp_bridge_hub_wococo::BridgeHubWococo,
 		OnBridgeHubWococoBlobDispatcher,
 		Self::WeightInfo,
@@ -1209,6 +1207,12 @@ mod tests {
 	use bridge_hub_test_utils::test_header;
 	use codec::Encode;
 
+	// RelayChain header mock representation
+	// pub type RelayBlockNumber = bp_polkadot_core::BlockNumber;
+	// pub type RelayBlockHasher = bp_polkadot_core::Hasher;
+	pub type TestBlockHeader =
+		sp_runtime::generic::Header<bp_polkadot_core::BlockNumber, bp_polkadot_core::Hasher>;
+
 	#[test]
 	fn ensure_signed_extension_definition_is_compatible_with_relay() {
 		let payload: SignedExtra = (
@@ -1233,7 +1237,7 @@ mod tests {
 				10,
 				10,
 				TransactionEra::Immortal,
-				test_header::<bridge_hub_test_utils::RelayBlockHeader>(1).hash(),
+				test_header::<TestBlockHeader>(1).hash(),
 				10,
 				10,
 			);
@@ -1246,7 +1250,7 @@ mod tests {
 				10,
 				10,
 				TransactionEra::Immortal,
-				test_header::<bridge_hub_test_utils::RelayBlockHeader>(1).hash(),
+				test_header::<TestBlockHeader>(1).hash(),
 				10,
 				10,
 			);

@@ -46,23 +46,13 @@ pub enum XcmBlobMessageDispatchResult {
 }
 
 /// [`XcmBlobMessageDispatch`] is responsible for dispatching received messages
-pub struct XcmBlobMessageDispatch<SourceBridgeHubChain, TargetBridgeHubChain, DispatchBlob, Weights>
-{
-	_marker: sp_std::marker::PhantomData<(
-		SourceBridgeHubChain,
-		TargetBridgeHubChain,
-		DispatchBlob,
-		Weights,
-	)>,
+pub struct XcmBlobMessageDispatch<RelayerAccountChain, DispatchBlob, Weights> {
+	_marker: sp_std::marker::PhantomData<(RelayerAccountChain, DispatchBlob, Weights)>,
 }
 
-impl<
-		SourceBridgeHubChain: Chain,
-		TargetBridgeHubChain: Chain,
-		BlobDispatcher: DispatchBlob,
-		Weights: MessagesPalletWeights,
-	> MessageDispatch<AccountIdOf<SourceBridgeHubChain>>
-	for XcmBlobMessageDispatch<SourceBridgeHubChain, TargetBridgeHubChain, BlobDispatcher, Weights>
+impl<RelayerAccountChain: Chain, BlobDispatcher: DispatchBlob, Weights: MessagesPalletWeights>
+	MessageDispatch<AccountIdOf<RelayerAccountChain>>
+	for XcmBlobMessageDispatch<RelayerAccountChain, BlobDispatcher, Weights>
 {
 	type DispatchPayload = XcmAsPlainPayload;
 	type DispatchLevelResult = XcmBlobMessageDispatchResult;
@@ -78,7 +68,7 @@ impl<
 	}
 
 	fn dispatch(
-		_relayer_account: &AccountIdOf<SourceBridgeHubChain>,
+		_relayer_account: &AccountIdOf<RelayerAccountChain>,
 		message: DispatchMessage<Self::DispatchPayload>,
 	) -> MessageDispatchResult<Self::DispatchLevelResult> {
 		let payload = match message.data.payload {
