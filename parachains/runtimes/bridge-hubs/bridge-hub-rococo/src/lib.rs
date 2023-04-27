@@ -490,10 +490,8 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 	>;
 
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubWococoMessageBridge>;
-	type MessageDispatch = XcmBlobMessageDispatch<
-		OnBridgeHubRococoBlobDispatcher,
-		Self::WeightInfo,
-	>;
+	type MessageDispatch =
+		XcmBlobMessageDispatch<OnBridgeHubRococoBlobDispatcher, Self::WeightInfo>;
 }
 
 /// Add XCM messages support for BrigdeHubWococo to support Wococo->Rococo XCM messages
@@ -525,10 +523,8 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 	>;
 
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubRococoMessageBridge>;
-	type MessageDispatch = XcmBlobMessageDispatch<
-		OnBridgeHubWococoBlobDispatcher,
-		Self::WeightInfo,
-	>;
+	type MessageDispatch =
+		XcmBlobMessageDispatch<OnBridgeHubWococoBlobDispatcher, Self::WeightInfo>;
 }
 
 /// Allows collect and claim rewards for relayers
