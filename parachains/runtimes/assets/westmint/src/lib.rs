@@ -304,7 +304,7 @@ impl pallet_asset_conversion::Config for Runtime {
 	type Assets = LocalAndForeignAssets<Assets, ForeignAssets, parachain_info::Pallet<Runtime>>;
 	type PoolAssets = PoolAssets;
 	type PoolAssetId = u32;
-	type PoolSetupFee = ConstU128<100>;
+	type PoolSetupFee = ConstU128<0>; // Asset class deposit fees are sufficient to prevent spam
 	type PoolSetupFeeReceiver = AssetConversionOrigin;
 	type LPFee = ConstU32<3>;
 	type PalletId = AssetConversionPalletId;
