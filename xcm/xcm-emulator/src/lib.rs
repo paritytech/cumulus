@@ -105,6 +105,8 @@ macro_rules! decl_test_relay_chains {
 			pub struct $name:ident {
 				Runtime = $runtime:path,
 				XcmConfig = $xcm_config:path,
+				System = $system:path,
+				genesis = $genesis:expr,
 				new_ext = $new_ext:expr,
 			}
 		),
@@ -116,7 +118,7 @@ macro_rules! decl_test_relay_chains {
 			impl Network for $name {}
 			impl Relay for $name {}
 
-			$crate::__impl_ext_for_relay_chain!($name, $runtime, $new_ext);
+			$crate::__impl_ext_for_relay_chain!($name, $runtime, $system, $genesis, $new_ext);
 
 			impl $crate::UmpSink for $name {
 				fn process_upward_message(
@@ -194,31 +196,30 @@ macro_rules! decl_test_parachains {
 #[macro_export]
 macro_rules! __impl_ext_for_relay_chain {
 	// entry point: generate ext name
-	($name:ident, $runtime:path, $new_ext:expr) => {
+	($name:ident, $runtime:path, $system:path, $genesis:expr, $new_ext:expr) => {
 		$crate::paste::paste! {
-			$crate::__impl_ext_for_relay_chain!(@impl $name, $runtime, $new_ext, [<EXT_ $name:upper>]);
+			$crate::__impl_ext_for_relay_chain!(@impl $name, $runtime, $system, $genesis, $new_ext, [<EXT_ $name:upper>]);
 		}
 	};
 	// impl
-	(@impl $name:ident, $runtime:path, $new_ext:expr, $ext_name:ident) => {
+	(@impl $name:ident, $runtime:path, $system:path, $genesis:expr, $new_ext:expr, $ext_name:ident) => {
 		thread_local! {
 			pub static $ext_name: $crate::RefCell<$crate::TestExternalities>
-				= $crate::RefCell::new($new_ext);
+				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
 		}
 
 		impl $crate::TestExt for $name {
 			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
-				// let mut ext = sp_io::TestExternalities::new(storage);
-				// ext.execute_with(|| {
-				// 	sp_tracing::try_init_simple();
-				// 	<$system>::set_block_number(1);
-				// });
-				// ext
-				$new_ext
+				let mut ext = sp_io::TestExternalities::new(storage);
+				ext.execute_with(|| {
+					sp_tracing::try_init_simple();
+					<$system>::set_block_number(1);
+				});
+				ext
 			}
 
 			fn new_ext() -> $crate::TestExternalities {
-				$new_ext
+				<$name>::build_new_ext($genesis)
 			}
 
 			fn reset_ext() {
@@ -273,7 +274,6 @@ macro_rules! __impl_ext_for_parachain {
 	(@impl $name:ident, $runtime:path, $origin:path, $system:path, $genesis:expr, $new_ext:expr, $ext_name:ident) => {
 		thread_local! {
 			pub static $ext_name: $crate::RefCell<$crate::TestExternalities>
-				// = $crate::RefCell::new($new_ext);
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
 		}
 
@@ -309,7 +309,7 @@ macro_rules! __impl_ext_for_parachain {
 			}
 
 			fn new_ext() -> $crate::TestExternalities {
-				$new_ext
+				<$name>::build_new_ext($genesis)
 			}
 
 			fn reset_ext() {
@@ -693,4 +693,11 @@ macro_rules! __impl_messenger_for_parachain {
 			}
 		}
 	}
+}
+
+#[macro_export]
+macro_rules! bx {
+    ($e:expr) => {
+        Box::new($e)
+    };
 }

@@ -1,9 +1,16 @@
 pub use polkadot_runtime_parachains::configuration::HostConfiguration;
+use polkadot_primitives::{AccountPublic, AssignmentId, ValidatorId};
 pub use parachains_common::{BlockNumber, AccountId, Balance, AuraId, StatemintAuraId};
 use cumulus_primitives_core::ParaId;
 pub use cumulus_test_service::{get_account_id_from_seed, get_from_seed};
 pub use xcm;
+use grandpa::AuthorityId as GrandpaId;
 use sp_core::{crypto::UncheckedInto, sr25519};
+use sp_runtime::{Perbill};
+use sp_consensus_babe::AuthorityId as BabeId;
+use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
+use polkadot_service::chain_spec::get_authority_keys_from_seed_no_beefy;
+use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 
 pub mod accounts {
 	use super::*;
@@ -58,12 +65,31 @@ pub mod collators {
 	}
 }
 
+pub mod validators {
+	use super::*;
+
+	pub fn initial_authorities() -> Vec<(
+		AccountId,
+		AccountId,
+		BabeId,
+		GrandpaId,
+		ImOnlineId,
+		ValidatorId,
+		AssignmentId,
+		AuthorityDiscoveryId,
+	)> {
+		vec![get_authority_keys_from_seed_no_beefy("Alice")]
+	}
+}
+
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
 // Polkadot
 pub mod polkadot {
 	use super::*;
+	pub const ED: Balance = polkadot_runtime_constants::currency::EXISTENTIAL_DEPOSIT;
+	const STASH: u128 = 100 * polkadot_runtime_constants::currency::UNITS;
 
 	pub fn get_host_config() -> HostConfiguration<BlockNumber> {
 		HostConfiguration {
@@ -75,11 +101,97 @@ pub mod polkadot {
 			..Default::default()
 		}
 	}
+
+	fn session_keys(
+		babe: BabeId,
+		grandpa: GrandpaId,
+		im_online: ImOnlineId,
+		para_validator: ValidatorId,
+		para_assignment: AssignmentId,
+		authority_discovery: AuthorityDiscoveryId,
+	) -> polkadot_runtime::SessionKeys {
+		polkadot_runtime::SessionKeys {
+			babe,
+			grandpa,
+			im_online,
+			para_validator,
+			para_assignment,
+			authority_discovery,
+		}
+	}
+
+	pub fn genesis() -> polkadot_runtime::GenesisConfig {
+		polkadot_runtime::GenesisConfig {
+			system: polkadot_runtime::SystemConfig { code: polkadot_runtime::WASM_BINARY.unwrap().to_vec() },
+			balances: polkadot_runtime::BalancesConfig {
+				balances: accounts::init_balances().iter().cloned().map(|k| (k, ED * 4096)).collect(),
+			},
+			indices: polkadot_runtime::IndicesConfig { indices: vec![] },
+			session: polkadot_runtime::SessionConfig {
+				keys: validators::initial_authorities()
+					.iter()
+					.map(|x| {
+						(
+							x.0.clone(),
+							x.0.clone(),
+							polkadot::session_keys(
+								x.2.clone(),
+								x.3.clone(),
+								x.4.clone(),
+								x.5.clone(),
+								x.6.clone(),
+								x.7.clone(),
+							),
+						)
+					})
+					.collect::<Vec<_>>(),
+			},
+			staking: polkadot_runtime::StakingConfig {
+				validator_count: validators::initial_authorities().len() as u32,
+				minimum_validator_count: 1,
+				stakers: validators::initial_authorities()
+					.iter()
+					.map(|x| (x.0.clone(), x.1.clone(), STASH, polkadot_runtime::StakerStatus::Validator))
+					.collect(),
+				invulnerables: validators::initial_authorities().iter().map(|x| x.0.clone()).collect(),
+				force_era: pallet_staking::Forcing::ForceNone,
+				slash_reward_fraction: Perbill::from_percent(10),
+				..Default::default()
+			},
+			phragmen_election: Default::default(),
+			democracy: Default::default(),
+			council: polkadot_runtime::CouncilConfig { members: vec![], phantom: Default::default() },
+			technical_committee: polkadot_runtime::TechnicalCommitteeConfig {
+				members: vec![],
+				phantom: Default::default(),
+			},
+			technical_membership: Default::default(),
+			babe: polkadot_runtime::BabeConfig {
+				authorities: Default::default(),
+				epoch_config: Some(polkadot_runtime::BABE_GENESIS_EPOCH_CONFIG),
+			},
+			grandpa: Default::default(),
+			im_online: Default::default(),
+			authority_discovery: polkadot_runtime::AuthorityDiscoveryConfig { keys: vec![] },
+			claims: polkadot_runtime::ClaimsConfig { claims: vec![], vesting: vec![] },
+			vesting: polkadot_runtime::VestingConfig { vesting: vec![] },
+			treasury: Default::default(),
+			hrmp: Default::default(),
+			configuration: polkadot_runtime::ConfigurationConfig {
+				config: get_host_config(),
+			},
+			paras: Default::default(),
+			xcm_pallet: Default::default(),
+			nomination_pools: Default::default(),
+		}
+	}
 }
 
 // Kusama
 pub mod kusama {
 	use super::*;
+	pub const ED: Balance = kusama_runtime_constants::currency::EXISTENTIAL_DEPOSIT;
+	const STASH: u128 = 100 * kusama_runtime_constants::currency::UNITS;
 
 	pub fn get_host_config() -> HostConfiguration<BlockNumber> {
 		HostConfiguration {
@@ -89,6 +201,83 @@ pub mod kusama {
 			max_upward_message_num_per_candidate: 10,
 			max_downward_message_size: 51200,
 			..Default::default()
+		}
+	}
+
+	fn session_keys(
+		babe: BabeId,
+		grandpa: GrandpaId,
+		im_online: ImOnlineId,
+		para_validator: ValidatorId,
+		para_assignment: AssignmentId,
+		authority_discovery: AuthorityDiscoveryId,
+	) -> kusama_runtime::SessionKeys {
+		kusama_runtime::SessionKeys {
+			babe,
+			grandpa,
+			im_online,
+			para_validator,
+			para_assignment,
+			authority_discovery,
+		}
+	}
+
+	pub fn genesis() -> kusama_runtime::GenesisConfig {
+		kusama_runtime::GenesisConfig {
+			system: kusama_runtime::SystemConfig { code: kusama_runtime::WASM_BINARY.unwrap().to_vec() },
+			balances: kusama_runtime::BalancesConfig {
+				balances: accounts::init_balances().iter().cloned().map(|k| (k, ED * 4096)).collect(),
+			},
+			indices: kusama_runtime::IndicesConfig { indices: vec![] },
+			session: kusama_runtime::SessionConfig {
+				keys: validators::initial_authorities()
+					.iter()
+					.map(|x| {
+						(
+							x.0.clone(),
+							x.0.clone(),
+							kusama::session_keys(
+								x.2.clone(),
+								x.3.clone(),
+								x.4.clone(),
+								x.5.clone(),
+								x.6.clone(),
+								x.7.clone(),
+							),
+						)
+					})
+					.collect::<Vec<_>>(),
+			},
+			staking: kusama_runtime::StakingConfig {
+				minimum_validator_count: 1,
+				validator_count: validators::initial_authorities().len() as u32,
+				stakers: validators::initial_authorities()
+					.iter()
+					.map(|x| (x.0.clone(), x.1.clone(), STASH, kusama_runtime::StakerStatus::Validator))
+					.collect(),
+				invulnerables: validators::initial_authorities().iter().map(|x| x.0.clone()).collect(),
+				force_era: pallet_staking::Forcing::NotForcing,
+				slash_reward_fraction: Perbill::from_percent(10),
+				..Default::default()
+			},
+			babe: kusama_runtime::BabeConfig {
+				authorities: Default::default(),
+				epoch_config: Some(kusama_runtime::BABE_GENESIS_EPOCH_CONFIG),
+			},
+			grandpa: Default::default(),
+			im_online: Default::default(),
+			authority_discovery: kusama_runtime::AuthorityDiscoveryConfig { keys: vec![] },
+			claims: kusama_runtime::ClaimsConfig { claims: vec![], vesting: vec![] },
+			vesting: kusama_runtime::VestingConfig { vesting: vec![] },
+			treasury: Default::default(),
+			hrmp: Default::default(),
+			configuration: kusama_runtime::ConfigurationConfig {
+				config: get_host_config(),
+			},
+			paras: Default::default(),
+			xcm_pallet: Default::default(),
+			nomination_pools: Default::default(),
+			nis_counterpart_balances: Default::default(),
 		}
 	}
 }

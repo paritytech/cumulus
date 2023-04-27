@@ -20,11 +20,15 @@ decl_test_relay_chains! {
 	pub struct Polkadot {
 		Runtime = polkadot_runtime::Runtime,
 		XcmConfig = polkadot_runtime::xcm_config::XcmConfig,
+		System = statemint_runtime::System,
+		genesis = polkadot_storage(),
 		new_ext = relay_ext(),
 	},
 	pub struct Kusama {
 		Runtime = kusama_runtime::Runtime,
 		XcmConfig = kusama_runtime::xcm_config::XcmConfig,
+		System = kusama_runtime::System,
+		genesis = kusama::genesis().build_storage().unwrap(),
 		new_ext = relay_ext(),
 	}
 }
@@ -131,8 +135,25 @@ pub fn relay_ext() -> sp_io::TestExternalities {
 	ext
 }
 
+pub fn polkadot_storage() -> Storage {
+	use polkadot_runtime::{Runtime};
+	let mut t = polkadot::genesis().build_storage().unwrap();
+
+	pallet_balances::GenesisConfig::<Runtime> {
+		balances: vec![
+			(ALICE, INITIAL_BALANCE),
+			(child_account_id(1000), INITIAL_BALANCE),
+			(child_account_id(2000), INITIAL_BALANCE),
+		],
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+
+	t
+}
+
 pub fn statemint_storage() -> Storage {
-	use statemint_runtime::{Runtime, System};
+	use statemint_runtime::{Runtime};
 	let mut t = statemint::genesis().build_storage().unwrap();
 
 	pallet_balances::GenesisConfig::<Runtime> {
