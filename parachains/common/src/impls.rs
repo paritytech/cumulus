@@ -38,7 +38,7 @@ use xcm::{
 	opaque::lts::{
 		Junction,
 		Junction::Parachain,
-		Junctions::{X2, X3},
+		Junctions::{Here, X3},
 	},
 };
 
@@ -173,13 +173,7 @@ where
 	SelfParaId: Get<ParaId>,
 {
 	fn get_native() -> MultiLocation {
-		MultiLocation {
-			parents: 1,
-			interior: X2(
-				Parachain(SelfParaId::get().into()),
-				Junction::PalletInstance(<Balances as PalletInfoAccess>::index() as u8),
-			),
-		}
+		MultiLocation { parents:0, interior: Here }
 	}
 
 	fn is_native(asset_id: MultiLocation) -> bool {
