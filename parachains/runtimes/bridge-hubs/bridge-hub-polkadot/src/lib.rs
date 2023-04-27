@@ -708,7 +708,6 @@ impl_runtime_apis! {
 
 				fn export_message_origin_and_destination(
 				) -> Result<(MultiLocation, NetworkId, InteriorMultiLocation), BenchmarkError> {
-					// TODO - don't skip
 					Err(BenchmarkError::Skip)
 				}
 			}

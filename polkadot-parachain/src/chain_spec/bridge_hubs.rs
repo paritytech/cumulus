@@ -153,7 +153,7 @@ impl BridgeHubRuntimeType {
 				|_| (),
 			))),
 			BridgeHubRuntimeType::Wococo =>
-				Ok(Box::new(rococo::BridgeHubChainSpec::from_json_bytes(
+				Ok(Box::new(wococo::BridgeHubChainSpec::from_json_bytes(
 					&include_bytes!("../../../parachains/chain-specs/bridge-hub-wococo.json")[..],
 				)?)),
 			BridgeHubRuntimeType::WococoLocal => Ok(Box::new(wococo::local_config(

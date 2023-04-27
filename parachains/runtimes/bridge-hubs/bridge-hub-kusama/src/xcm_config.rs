@@ -112,7 +112,6 @@ match_types! {
 		MultiLocation { parents: 1, interior: X1(_) }
 	};
 }
-
 /// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
 /// account for proof size weights.
 ///
