@@ -12356,6 +12356,7 @@ dependencies = [
 name = "snowbridge-beacon-primitives"
 version = "0.0.1"
 dependencies = [
+ "byte-slice-cast",
  "frame-support",
  "frame-system",
  "hex",
@@ -12368,6 +12369,9 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "ssz-rs",
+ "ssz-rs-derive",
+ "static_assertions",
 ]
 
 [[package]]
@@ -12429,6 +12433,7 @@ dependencies = [
  "sp-std",
  "ssz-rs",
  "ssz-rs-derive",
+ "static_assertions",
 ]
 
 [[package]]

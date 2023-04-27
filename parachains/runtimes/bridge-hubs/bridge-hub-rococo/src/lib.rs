@@ -580,15 +580,6 @@ impl snowbridge_outbound_queue::Config for Runtime {
 
 #[cfg(feature = "minimal")]
 parameter_types! {
-	pub const MaxSyncCommitteeSize: u32 = 32;
-	pub const MaxProofBranchSize: u32 = 20;
-	pub const MaxExtraDataSize: u32 = 32;
-	pub const MaxLogsBloomSize: u32 = 256;
-	pub const MaxFeeRecipientSize: u32 = 20;
-	pub const MaxPublicKeySize: u32 = 48;
-	pub const MaxSignatureSize: u32 = 96;
-	pub const MaxSlotsPerHistoricalRoot: u64 = 64;
-	pub const MaxFinalizedHeaderSlotArray: u32 = 1000;
 	pub const WeakSubjectivityPeriodSeconds: u32 = 97200;
 	pub const ChainForkVersions: ForkVersions = ForkVersions{
 		genesis: Fork {
@@ -612,15 +603,6 @@ parameter_types! {
 
 #[cfg(not(feature = "minimal"))]
 parameter_types! {
-	pub const MaxSyncCommitteeSize: u32 = 512;
-	pub const MaxProofBranchSize: u32 = 20;
-	pub const MaxExtraDataSize: u32 = 32;
-	pub const MaxLogsBloomSize: u32 = 256;
-	pub const MaxFeeRecipientSize: u32 = 20;
-	pub const MaxPublicKeySize: u32 = 48;
-	pub const MaxSignatureSize: u32 = 96;
-	pub const MaxSlotsPerHistoricalRoot: u64 = 8192;
-	pub const MaxFinalizedHeaderSlotArray: u32 = 1000;
 	// accordingly to https://notes.ethereum.org/@adiasg/weak-subjectvity-eth2
 	// Epochs required is 3277 as 1258368 seconds about 2 weeks
 	pub const WeakSubjectivityPeriodSeconds: u32 = 1258368;
@@ -647,15 +629,6 @@ parameter_types! {
 impl snowbridge_ethereum_beacon_client::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
-	type MaxSyncCommitteeSize = MaxSyncCommitteeSize;
-	type MaxProofBranchSize = MaxProofBranchSize;
-	type MaxExtraDataSize = MaxExtraDataSize;
-	type MaxLogsBloomSize = MaxLogsBloomSize;
-	type MaxFeeRecipientSize = MaxFeeRecipientSize;
-	type MaxPublicKeySize = MaxPublicKeySize;
-	type MaxSignatureSize = MaxSignatureSize;
-	type MaxSlotsPerHistoricalRoot = MaxSlotsPerHistoricalRoot;
-	type MaxFinalizedHeaderSlotArray = MaxFinalizedHeaderSlotArray;
 	type ForkVersions = ChainForkVersions;
 	type WeakSubjectivityPeriodSeconds = WeakSubjectivityPeriodSeconds;
 	type WeightInfo = weights::snowbridge_ethereum_beacon_client::WeightInfo<Runtime>;
@@ -717,7 +690,7 @@ construct_runtime!(
 		// Ethereum Bridge
 		EthereumInboundQueue: snowbridge_inbound_queue::{Pallet, Call, Config, Storage, Event<T>} = 48,
 		EthereumOutboundQueue: snowbridge_outbound_queue::{Pallet, Config<T>, Storage, Event<T>} = 49,
-		EthereumBeaconClient: snowbridge_ethereum_beacon_client::{Pallet, Call, Config<T>, Storage, Event<T>} = 50,
+		EthereumBeaconClient: snowbridge_ethereum_beacon_client::{Pallet, Call, Config, Storage, Event<T>} = 50,
 	}
 );
 
