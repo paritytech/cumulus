@@ -21,12 +21,14 @@ pub use casey::pascal;
 pub use frame_support::{
 	traits::{Get, Hooks},
 	weights::Weight,
+	sp_runtime::BuildStorage,
 };
 pub use frame_system;
 pub use sp_arithmetic::traits::Bounded;
 pub use sp_io::TestExternalities;
 pub use sp_std::{cell::RefCell, collections::{vec_deque::VecDeque}, marker::PhantomData};
 pub use sp_trie::StorageProof;
+pub use sp_core::storage::Storage;
 
 pub use cumulus_pallet_dmp_queue;
 pub use cumulus_pallet_parachain_system;
@@ -49,6 +51,7 @@ pub use xcm_executor::XcmExecutor;
 pub use std::{thread::LocalKey, collections::HashMap};
 
 pub trait TestExt {
+	fn build_new_ext(storage: Storage) -> sp_io::TestExternalities;
 	fn new_ext() -> sp_io::TestExternalities;
 	fn reset_ext();
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R;
@@ -141,6 +144,8 @@ macro_rules! decl_test_parachains {
 				RuntimeOrigin = $origin:path,
 				XcmpMessageHandler = $xcmp_message_handler:path,
 				DmpMessageHandler = $dmp_message_handler:path,
+				System = $system:path,
+				genesis = $genesis:expr,
 				new_ext = $new_ext:expr,
 			}
 		),
@@ -152,7 +157,7 @@ macro_rules! decl_test_parachains {
 			impl Network for $name {}
 			impl Parachain for $name {}
 
-			$crate::__impl_ext_for_parachain!($name, $runtime, $origin, $new_ext);
+			$crate::__impl_ext_for_parachain!($name, $runtime, $origin, $system, $genesis, $new_ext);
 
 			impl $crate::XcmpMessageHandler for $name {
 				fn handle_xcmp_messages<
@@ -202,6 +207,16 @@ macro_rules! __impl_ext_for_relay_chain {
 		}
 
 		impl $crate::TestExt for $name {
+			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
+				// let mut ext = sp_io::TestExternalities::new(storage);
+				// ext.execute_with(|| {
+				// 	sp_tracing::try_init_simple();
+				// 	<$system>::set_block_number(1);
+				// });
+				// ext
+				$new_ext
+			}
+
 			fn new_ext() -> $crate::TestExternalities {
 				$new_ext
 			}
@@ -249,16 +264,17 @@ macro_rules! __impl_ext_for_relay_chain {
 #[macro_export]
 macro_rules! __impl_ext_for_parachain {
 	// entry point: generate ext name
-	($name:ident, $runtime:path, $origin:path, $new_ext:expr) => {
+	($name:ident, $runtime:path, $origin:path, $system:path, $genesis:expr, $new_ext:expr) => {
 		$crate::paste::paste! {
-			$crate::__impl_ext_for_parachain!(@impl $name, $runtime, $origin, $new_ext, [<EXT_ $name:upper>]);
+			$crate::__impl_ext_for_parachain!(@impl $name, $runtime, $origin, $system, $genesis, $new_ext, [<EXT_ $name:upper>]);
 		}
 	};
 	// impl
-	(@impl $name:ident, $runtime:path, $origin:path, $new_ext:expr, $ext_name:ident) => {
+	(@impl $name:ident, $runtime:path, $origin:path, $system:path, $genesis:expr, $new_ext:expr, $ext_name:ident) => {
 		thread_local! {
 			pub static $ext_name: $crate::RefCell<$crate::TestExternalities>
-				= $crate::RefCell::new($new_ext);
+				// = $crate::RefCell::new($new_ext);
+				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
 		}
 
 		impl $name {
@@ -283,6 +299,15 @@ macro_rules! __impl_ext_for_parachain {
 		}
 
 		impl $crate::TestExt for $name {
+			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
+				let mut ext = sp_io::TestExternalities::new(storage);
+				ext.execute_with(|| {
+					sp_tracing::try_init_simple();
+					<$system>::set_block_number(1);
+				});
+				ext
+			}
+
 			fn new_ext() -> $crate::TestExternalities {
 				$new_ext
 			}
@@ -386,9 +411,7 @@ thread_local! {
 	pub static UPWARD_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<u8>)>>> = RefCell::new(HashMap::new());
 	/// Global incremental relay chain block number
 	pub static RELAY_BLOCK_NUMBER: RefCell<HashMap<String, u32>> = RefCell::new(HashMap::new()); // RefCell::new(1);
-	// pub static RELAY_BLOCK_NUMBER: RefCell<u32> = RefCell::new(1); // RefCell::new(1);
-	// pub static DEFAULT_RELAY_BLOCK_NUMBER: RefCell<u32> = RefCell::new(1); // RefCell::new(1);
-	// pub static DEFAULT_RELAY_BLOCK_NUMBER: RefCell<HashMap<String, u32>> = RefCell::new(HashMap::new()); // RefCell::new(1);
+	/// Flag indicating if global variables have been initialized for a certain Network
 	pub static INITIALIZED: RefCell<HashMap<String, bool>> = RefCell::new(HashMap::new());
 }
 

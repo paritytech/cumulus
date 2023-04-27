@@ -12,8 +12,9 @@ use xcm_emulator::{decl_test_networks, decl_test_parachains, decl_test_relay_cha
 use polkadot_runtime_parachains::configuration::HostConfiguration;
 use xcm_executor::traits::Convert;
 use statemint_runtime::constants::currency::DOLLARS;
-pub use constants::{polkadot, kusama, statemint, accounts::{ALICE, BOB}};
+pub use constants::{polkadot, kusama, statemint, statemine, penpal, accounts::{ALICE, BOB}};
 use sp_runtime::BuildStorage;
+pub use sp_core::storage::Storage;
 
 decl_test_relay_chains! {
 	pub struct Polkadot {
@@ -35,6 +36,8 @@ decl_test_parachains! {
 		RuntimeOrigin = statemint_runtime::RuntimeOrigin,
 		XcmpMessageHandler = statemint_runtime::XcmpQueue,
 		DmpMessageHandler = statemint_runtime::DmpQueue,
+		System = statemint_runtime::System,
+		genesis = statemint_storage(),
 		new_ext = statemint_ext(),
 	},
 	pub struct PenpalPolkadot {
@@ -42,6 +45,8 @@ decl_test_parachains! {
 		RuntimeOrigin = penpal_runtime::RuntimeOrigin,
 		XcmpMessageHandler = penpal_runtime::XcmpQueue,
 		DmpMessageHandler = penpal_runtime::DmpQueue,
+		System = penpal_runtime::System,
+		genesis = penpal::genesis(penpal::PARA_ID).build_storage().unwrap(),
 		new_ext = penpal_ext(),
 	},
 	// Kusama
@@ -50,6 +55,8 @@ decl_test_parachains! {
 		RuntimeOrigin = statemine_runtime::RuntimeOrigin,
 		XcmpMessageHandler = statemine_runtime::XcmpQueue,
 		DmpMessageHandler = statemine_runtime::DmpQueue,
+		System = statemine_runtime::System,
+		genesis = statemine::genesis().build_storage().unwrap(),
 		new_ext = statemine_ext(),
 	},
 	pub struct PenpalKusama {
@@ -57,6 +64,8 @@ decl_test_parachains! {
 		RuntimeOrigin = penpal_runtime::RuntimeOrigin,
 		XcmpMessageHandler = penpal_runtime::XcmpQueue,
 		DmpMessageHandler = penpal_runtime::DmpQueue,
+		System = penpal_runtime::System,
+		genesis = penpal::genesis(penpal::PARA_ID).build_storage().unwrap(),
 		new_ext = penpal_ext(),
 	}
 }
@@ -122,6 +131,18 @@ pub fn relay_ext() -> sp_io::TestExternalities {
 	ext
 }
 
+pub fn statemint_storage() -> Storage {
+	use statemint_runtime::{Runtime, System};
+	let mut t = statemint::genesis().build_storage().unwrap();
+
+	pallet_balances::GenesisConfig::<Runtime> {
+		balances: vec![(ALICE, INITIAL_BALANCE), (parent_account_id(), INITIAL_BALANCE)],
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+
+	t
+}
 // Define Statemint TestExternalities.
 pub fn statemint_ext() -> sp_io::TestExternalities {
 	use statemint_runtime::{Runtime, System};
@@ -130,11 +151,11 @@ pub fn statemint_ext() -> sp_io::TestExternalities {
 
 	// let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
 
-	// pallet_balances::GenesisConfig::<Runtime> {
-	// 	balances: vec![(ALICE, INITIAL_BALANCE), (parent_account_id(), INITIAL_BALANCE)],
-	// }
-	// .assimilate_storage(&mut t)
-	// .unwrap();
+	pallet_balances::GenesisConfig::<Runtime> {
+		balances: vec![(ALICE, INITIAL_BALANCE), (parent_account_id(), INITIAL_BALANCE)],
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
 
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| {

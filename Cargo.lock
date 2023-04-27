@@ -15333,6 +15333,7 @@ dependencies = [
  "polkadot-runtime-parachains",
  "quote",
  "sp-arithmetic",
+ "sp-core",
  "sp-io",
  "sp-std",
  "sp-trie",
