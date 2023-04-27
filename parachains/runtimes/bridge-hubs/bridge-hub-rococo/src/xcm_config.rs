@@ -201,7 +201,6 @@ pub type Barrier = DenyThenTry<
 			(
 				// If the message is one that immediately attemps to pay for execution, then allow it.
 				AllowTopLevelPaidExecutionFrom<Everything>,
-				// TODO:check-parameter - add here "or SystemParachains" once merged https://github.com/paritytech/polkadot/pull/7005
 				// Parent and its pluralities (i.e. governance bodies) get free execution.
 				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
 				// Subscriptions for version tracking are OK.
@@ -210,7 +209,8 @@ pub type Barrier = DenyThenTry<
 			UniversalLocation,
 			ConstU32<8>,
 		>,
-		// TODO:check-parameter - supporting unpaid execution at first, then SovereignPaid, remove this once https://github.com/paritytech/polkadot/pull/7005
+		// TODO:check-parameter - (https://github.com/paritytech/parity-bridges-common/issues/2084)
+		// remove this and extend `AllowExplicitUnpaidExecutionFrom` with "or SystemParachains" once merged https://github.com/paritytech/polkadot/pull/7005
 		AllowUnpaidExecutionFrom<Everything>,
 	),
 >;
@@ -275,7 +275,7 @@ impl pallet_xcm::Config for Runtime {
 	type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, ()>;
 	// We support local origins dispatching XCM executions in principle...
 	type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
-	type XcmExecuteFilter = Everything;
+	type XcmExecuteFilter = Nothing;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
 	type XcmReserveTransferFilter = Nothing; // This parachain is not meant as a reserve location.

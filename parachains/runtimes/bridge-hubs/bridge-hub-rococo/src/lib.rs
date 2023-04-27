@@ -428,7 +428,6 @@ parameter_types! {
 	pub const MaxRococoParaHeadDataSize: u32 = bp_rococo::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
 	pub const MaxWococoParaHeadDataSize: u32 = bp_wococo::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
 
-	// TODO:check-parameter - setup initial values https://github.com/paritytech/parity-bridges-common/issues/1677
 	pub storage DeliveryRewardInBalance: u64 = 1_000_000;
 	pub storage RequiredStakeForStakeAndSlash: Balance = 1_000_000;
 
@@ -578,7 +577,6 @@ construct_runtime!(
 
 		// Handy utilities.
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
-		// TODO:check-parameter - change back to 41 a align bridge pallets
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 36,
 
 		// Rococo and Wococo Bridge Hubs are sharing the runtime, so this runtime has two sets of
@@ -1213,9 +1211,6 @@ mod tests {
 	use bridge_hub_test_utils::test_header;
 	use codec::Encode;
 
-	// RelayChain header mock representation
-	// pub type RelayBlockNumber = bp_polkadot_core::BlockNumber;
-	// pub type RelayBlockHasher = bp_polkadot_core::Hasher;
 	pub type TestBlockHeader =
 		sp_runtime::generic::Header<bp_polkadot_core::BlockNumber, bp_polkadot_core::Hasher>;
 

@@ -199,12 +199,6 @@ See [the `contracts-rococo` readme](parachains/runtimes/contracts/contracts-roco
 
 See [the `bridge-hubs` readme](parachains/runtimes/bridge-hubs/README.md) for details.
 
-**_Important:_**
-
-BridgeHub stuff uses external dependencies from repo `https://github.com/paritytech/parity-bridges-common.git`, which are mirrored to `./bridges` directory with `git subtree` feature.
-
-See [readme](parachains/runtimes/bridge-hubs/README.md#git-subtree-bridges) for details
-
 ## Rococo 👑
 
 [Rococo](https://polkadot.js.org/apps/?rpc=wss://rococo-rpc.polkadot.io) is becoming a

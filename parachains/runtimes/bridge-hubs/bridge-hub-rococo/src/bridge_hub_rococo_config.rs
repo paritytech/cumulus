@@ -40,7 +40,6 @@ use xcm::{
 };
 use xcm_builder::{BridgeBlobDispatcher, HaulBlobExporter};
 
-// TODO:check-parameter
 parameter_types! {
 	pub const MaxUnrewardedRelayerEntriesAtInboundLane: bp_messages::MessageNonce =
 		bp_bridge_hub_rococo::MAX_UNREWARDED_RELAYERS_IN_CONFIRMATION_TX;

@@ -10,9 +10,6 @@
 			- [Live Rockmine2 to Wockmint](#live-rockmine2-to-wockmint)
 	* [How to test local BridgeHubKusama](#how-to-test-local-bridgehubkusama)
 	* [How to test local BridgeHubPolkadot](#how-to-test-local-bridgehubpolkadot)
-	* [Git subtree `./bridges`](#git-subtree---bridges-)
-		+ [How to update `bridges` subtree](#how-to-update--bridges--subtree)
-		+ [How was first time initialized (dont need anymore)](#how-was-first-time-initialized--dont-need-anymore-)
 
 # Bridge-hub Parachains
 
@@ -49,7 +46,9 @@ cp target/release/polkadot ~/local_bridge_testing/bin/polkadot
 
 # 3. Build cumulus polkadot-parachain binary
 cd <cumulus-git-repo-dir>
-git checkout -b bridge-hub-rococo-wococo --track origin/bridge-hub-rococo-wococo
+# checkout desired branch or use master:
+# git checkout -b bridge-hub-rococo-wococo --track origin/bridge-hub-rococo-wococo
+git checkout -b master --track origin/master
 cargo build --release --locked -p polkadot-parachain-bin
 cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain
 cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain-mint
