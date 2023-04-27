@@ -28,7 +28,7 @@ decl_test_relay_chains! {
 		Runtime = kusama_runtime::Runtime,
 		XcmConfig = kusama_runtime::xcm_config::XcmConfig,
 		System = kusama_runtime::System,
-		genesis = kusama::genesis().build_storage().unwrap(),
+		genesis = kusama::genesis(),
 		new_ext = relay_ext(),
 	}
 }
@@ -50,7 +50,7 @@ decl_test_parachains! {
 		XcmpMessageHandler = penpal_runtime::XcmpQueue,
 		DmpMessageHandler = penpal_runtime::DmpQueue,
 		System = penpal_runtime::System,
-		genesis = penpal::genesis(penpal::PARA_ID).build_storage().unwrap(),
+		genesis = penpal::genesis(penpal::PARA_ID),
 		new_ext = penpal_ext(),
 	},
 	// Kusama
@@ -60,7 +60,7 @@ decl_test_parachains! {
 		XcmpMessageHandler = statemine_runtime::XcmpQueue,
 		DmpMessageHandler = statemine_runtime::DmpQueue,
 		System = statemine_runtime::System,
-		genesis = statemine::genesis().build_storage().unwrap(),
+		genesis = statemine::genesis(),
 		new_ext = statemine_ext(),
 	},
 	pub struct PenpalKusama {
@@ -69,7 +69,7 @@ decl_test_parachains! {
 		XcmpMessageHandler = penpal_runtime::XcmpQueue,
 		DmpMessageHandler = penpal_runtime::DmpQueue,
 		System = penpal_runtime::System,
-		genesis = penpal::genesis(penpal::PARA_ID).build_storage().unwrap(),
+		genesis = penpal::genesis(penpal::PARA_ID),
 		new_ext = penpal_ext(),
 	}
 }
@@ -137,7 +137,7 @@ pub fn relay_ext() -> sp_io::TestExternalities {
 
 pub fn polkadot_storage() -> Storage {
 	use polkadot_runtime::{Runtime};
-	let mut t = polkadot::genesis().build_storage().unwrap();
+	let mut t = polkadot::genesis();
 
 	pallet_balances::GenesisConfig::<Runtime> {
 		balances: vec![
@@ -154,7 +154,7 @@ pub fn polkadot_storage() -> Storage {
 
 pub fn statemint_storage() -> Storage {
 	use statemint_runtime::{Runtime};
-	let mut t = statemint::genesis().build_storage().unwrap();
+	let mut t = statemint::genesis();
 
 	pallet_balances::GenesisConfig::<Runtime> {
 		balances: vec![(ALICE, INITIAL_BALANCE), (parent_account_id(), INITIAL_BALANCE)],

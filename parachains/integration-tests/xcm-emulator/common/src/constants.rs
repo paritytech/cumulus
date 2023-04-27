@@ -5,8 +5,8 @@ use cumulus_primitives_core::ParaId;
 pub use cumulus_test_service::{get_account_id_from_seed, get_from_seed};
 pub use xcm;
 use grandpa::AuthorityId as GrandpaId;
-use sp_core::{crypto::UncheckedInto, sr25519};
-use sp_runtime::{Perbill};
+use sp_core::{crypto::UncheckedInto, sr25519, storage::Storage};
+use sp_runtime::{Perbill, BuildStorage};
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use polkadot_service::chain_spec::get_authority_keys_from_seed_no_beefy;
@@ -120,8 +120,8 @@ pub mod polkadot {
 		}
 	}
 
-	pub fn genesis() -> polkadot_runtime::GenesisConfig {
-		polkadot_runtime::GenesisConfig {
+	pub fn genesis() -> Storage {
+		let genesis_config = polkadot_runtime::GenesisConfig {
 			system: polkadot_runtime::SystemConfig { code: polkadot_runtime::WASM_BINARY.unwrap().to_vec() },
 			balances: polkadot_runtime::BalancesConfig {
 				balances: accounts::init_balances().iter().cloned().map(|k| (k, ED * 4096)).collect(),
@@ -183,7 +183,9 @@ pub mod polkadot {
 			paras: Default::default(),
 			xcm_pallet: Default::default(),
 			nomination_pools: Default::default(),
-		}
+		};
+
+		genesis_config.build_storage().unwrap()
 	}
 }
 
@@ -222,8 +224,8 @@ pub mod kusama {
 		}
 	}
 
-	pub fn genesis() -> kusama_runtime::GenesisConfig {
-		kusama_runtime::GenesisConfig {
+	pub fn genesis() -> Storage {
+		let genesis_config = kusama_runtime::GenesisConfig {
 			system: kusama_runtime::SystemConfig { code: kusama_runtime::WASM_BINARY.unwrap().to_vec() },
 			balances: kusama_runtime::BalancesConfig {
 				balances: accounts::init_balances().iter().cloned().map(|k| (k, ED * 4096)).collect(),
@@ -278,7 +280,9 @@ pub mod kusama {
 			xcm_pallet: Default::default(),
 			nomination_pools: Default::default(),
 			nis_counterpart_balances: Default::default(),
-		}
+		};
+
+		genesis_config.build_storage().unwrap()
 	}
 }
 
@@ -288,8 +292,8 @@ pub mod statemint {
 	pub const PARA_ID: u32 = 1000;
 	pub const ED: Balance = statemint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
-	pub fn genesis() -> statemint_runtime::GenesisConfig {
-		statemint_runtime::GenesisConfig {
+	pub fn genesis() -> Storage {
+		let genesis_config = statemint_runtime::GenesisConfig {
 			system: statemint_runtime::SystemConfig {
 				code: statemint_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
@@ -322,7 +326,9 @@ pub mod statemint {
 			polkadot_xcm: statemint_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
 			},
-		}
+		};
+
+		genesis_config.build_storage().unwrap()
 	}
 }
 
@@ -332,8 +338,8 @@ pub mod statemine {
 	pub const PARA_ID: u32 = 1000;
 	pub const ED: Balance = statemine_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
-	pub fn genesis() -> statemine_runtime::GenesisConfig {
-		statemine_runtime::GenesisConfig {
+	pub fn genesis() -> Storage {
+		let genesis_config = statemine_runtime::GenesisConfig {
 			system: statemine_runtime::SystemConfig {
 				code: statemine_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
@@ -366,7 +372,9 @@ pub mod statemine {
 			polkadot_xcm: statemine_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
 			},
-		}
+		};
+
+		genesis_config.build_storage().unwrap()
 	}
 }
 
@@ -376,8 +384,8 @@ pub mod penpal {
 	pub const PARA_ID: u32 = 2000;
 	pub const ED: Balance = penpal_runtime::EXISTENTIAL_DEPOSIT;
 
-	pub fn genesis(para_id: u32) -> penpal_runtime::GenesisConfig {
-		penpal_runtime::GenesisConfig {
+	pub fn genesis(para_id: u32) -> Storage {
+		let genesis_config = penpal_runtime::GenesisConfig {
 			system: penpal_runtime::SystemConfig {
 				code: penpal_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
@@ -413,6 +421,8 @@ pub mod penpal {
 			sudo: penpal_runtime::SudoConfig {
 				key: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 			},
-		}
+		};
+
+		genesis_config.build_storage().unwrap()
 	}
 }
