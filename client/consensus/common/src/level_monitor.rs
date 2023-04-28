@@ -104,7 +104,8 @@ where
 		log::debug!(
 			target: LOG_TARGET,
 			"Restoring chain level monitor from last finalized block: {} {}",
-			info.finalized_number, info.finalized_hash
+			info.finalized_number,
+			info.finalized_hash
 		);
 
 		self.lowest_level = info.finalized_number;
@@ -126,7 +127,11 @@ where
 			}
 		}
 
-		log::debug!(target: LOG_TARGET, "Restored chain level monitor up to height {}", self.import_counter);
+		log::debug!(
+			target: LOG_TARGET,
+			"Restored chain level monitor up to height {}",
+			self.import_counter
+		);
 	}
 
 	/// Check and enforce the limit bound at the given height.
@@ -228,7 +233,9 @@ where
 								log::warn!(
 									target: LOG_TARGET,
 									"(Lookup) Unable getting route from {:?} to {:?}: {}",
-									blk_hash, leaf_hash, err,
+									blk_hash,
+									leaf_hash,
+									err,
 								);
 								None
 							},
@@ -341,7 +348,9 @@ where
 					log::warn!(
 						target: LOG_TARGET,
 						"(Removal) unable getting route from {:?} to {:?}: {}",
-						target_hash, leaf_hash, err,
+						target_hash,
+						leaf_hash,
+						err,
 					);
 				},
 				_ => (),
