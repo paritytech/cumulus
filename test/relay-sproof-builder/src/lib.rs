@@ -46,6 +46,7 @@ pub struct RelayStateSproofBuilder {
 	pub current_epoch: u64,
 	pub randomness: relay_chain::Hash,
 	pub additional_key_values: Vec<(Vec<u8>, Vec<u8>)>,
+	pub included_para_head: Option<relay_chain::HeadData>,
 }
 
 impl Default for RelayStateSproofBuilder {
@@ -73,6 +74,7 @@ impl Default for RelayStateSproofBuilder {
 			current_epoch: 0u64,
 			randomness: relay_chain::Hash::default(),
 			additional_key_values: vec![],
+			included_para_head: None,
 		}
 	}
 }
@@ -123,6 +125,9 @@ impl RelayStateSproofBuilder {
 					relay_chain::well_known_keys::dmq_mqc_head(self.para_id),
 					dmq_mqc_head.encode(),
 				);
+			}
+			if let Some(para_head) = self.included_para_head {
+				insert(relay_chain::well_known_keys::para_head(self.para_id), para_head.encode());
 			}
 			if let Some(relay_dispatch_queue_size) = self.relay_dispatch_queue_size {
 				insert(
