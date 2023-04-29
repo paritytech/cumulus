@@ -265,7 +265,7 @@ impl CollationInfoV1 {
 }
 
 /// Information about a collation.
-#[derive(Clone, Debug, codec::Decode, codec::Encode, PartialEq)]
+#[derive(Clone, Debug, codec::Decode, codec::Encode, PartialEq, TypeInfo)]
 pub struct CollationInfo {
 	/// Messages destined to be interpreted by the Relay chain itself.
 	pub upward_messages: Vec<UpwardMessage>,
