@@ -76,7 +76,7 @@ impl sp_runtime::traits::Convert<ParaId, AggregateMessageOrigin> for ParaIdToSib
 	}
 }
 
-/// A message processor that delegates execution to an [XcmExecutor].
+/// A message processor that delegates execution to an [`ExecuteXcm`].
 ///
 /// FAIL-CI Delete this once <https://github.com/paritytech/polkadot/pull/6271/> merges.
 pub struct ProcessXcmMessage<MessageOrigin, XcmExecutor, Call>(
