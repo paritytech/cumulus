@@ -17,8 +17,8 @@
 //! The AuRa consensus algorithm for parachains.
 //!
 //! This extends the Substrate provided AuRa consensus implementation to make it compatible for
-//! parachains. The main entry points for of this consensus algorithm are [`fn@run`]
-//! and [`fn@import_queue`].
+//! parachains. This provides the option to run a "bare" relay-chain driven Aura implementation,
+//! but also exposes the core functionalities separately to be composed into more complex implementations.
 //!
 //! For more information about AuRa, the Substrate crate should be checked.
 
@@ -56,7 +56,7 @@ use sp_runtime::generic::Digest;
 use sp_state_machine::StorageChanges;
 use std::{convert::TryFrom, error::Error, fmt::Debug, hash::Hash, sync::Arc, time::Duration};
 
-/// Parameters of [`run`].
+/// Parameters for [`fn@run_bare_relay_driven`].
 pub struct Params<BI, CIDP, Client, RClient, SO, Proposer, CS> {
 	pub create_inherent_data_providers: CIDP,
 	pub block_import: BI,
@@ -498,7 +498,7 @@ where
 /// The others are generated explicitly internally.
 ///
 /// This should only be used for runtimes where the runtime does not check all inherents and
-/// seals in `execute_block` (see https://github.com/paritytech/cumulus/issues/2436)
+/// seals in `execute_block` (see <https://github.com/paritytech/cumulus/issues/2436>)
 pub fn fully_verifying_import_queue<P, Client, Block: BlockT, I, CIDP>(
 	client: Arc<Client>,
 	block_import: I,
