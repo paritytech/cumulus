@@ -68,7 +68,8 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 use parachains_common::{
-	opaque, impls::DealWithFees,
+	impls::DealWithFees,
+	opaque,
 	process_xcm_message::{ParaIdToSibling, ProcessFromSibling, ProcessXcmMessage},
 	AccountId, Balance, BlockNumber, Hash, Header, Index, Signature, AVERAGE_ON_INITIALIZE_RATIO,
 	HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
