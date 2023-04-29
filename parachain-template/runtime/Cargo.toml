@@ -106,6 +106,7 @@ std = [
 	"pallet-transaction-payment/std",
 	"pallet-xcm/std",
 	"parachain-info/std",
+	"parachains-common/std",
 	"polkadot-parachain/std",
 	"polkadot-runtime-common/std",
 	"sp-api/std",
