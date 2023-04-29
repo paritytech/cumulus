@@ -98,7 +98,8 @@ pub mod pallet {
 		/// The maximum number of inbound XCMP channels that can be suspended simultaneously.
 		///
 		/// Any further channel suspensions will fail and messages may get dropped without further
-		/// notice. Choosing a high value (1000) is okay; the trade-off that is described in [InboundXcmpSuspended] still applies at that scale.
+		/// notice. Choosing a high value (1000) is okay; the trade-off that is described in
+		/// [`InboundXcmpSuspended`] still applies at that scale.
 		#[pallet::constant]
 		type MaxInboundSuspended: Get<u32>;
 
@@ -249,7 +250,7 @@ pub mod pallet {
 	///
 	/// NOTE: The PoV benchmarking cannot know this and will over-estimate, but the actual proof will be smaller.
 	#[pallet::storage]
-	pub(super) type InboundXcmpSuspended<T: Config> =
+	pub type InboundXcmpSuspended<T: Config> =
 		StorageValue<_, BoundedBTreeSet<ParaId, T::MaxInboundSuspended>, ValueQuery>;
 
 	/// Inbound aggregate XCMP messages. It can only be one per ParaId/block.
