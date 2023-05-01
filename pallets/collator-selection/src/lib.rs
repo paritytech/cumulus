@@ -60,6 +60,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub mod migration;
+
 pub use pallet::*;
 
 #[cfg(test)]
@@ -74,6 +76,7 @@ pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
+	#[pallet::storage_version(migration::STORAGE_VERSION)]
 	pub use crate::weights::WeightInfo;
 	use core::ops::Div;
 	use frame_support::{
@@ -284,7 +287,12 @@ pub mod pallet {
 	}
 
 	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_runtime_upgrade() -> Weight {
+			migration::migrate_to_latest::<T>()
+		}
+
+	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
