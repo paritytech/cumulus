@@ -12432,6 +12432,7 @@ dependencies = [
  "sp-std",
  "ssz-rs",
  "ssz-rs-derive",
+ "static_assertions",
 ]
 
 [[package]]
