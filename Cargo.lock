@@ -12428,12 +12428,10 @@ dependencies = [
  "snowbridge-core",
  "snowbridge-ethereum",
  "sp-core",
- "sp-io",
  "sp-runtime",
  "sp-std",
  "ssz-rs",
  "ssz-rs-derive",
- "static_assertions",
 ]
 
 [[package]]
