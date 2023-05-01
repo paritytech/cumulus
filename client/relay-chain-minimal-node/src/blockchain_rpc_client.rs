@@ -299,6 +299,13 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 	> {
 		Ok(self.rpc_client.parachain_host_staging_get_disputes(at).await?)
 	}
+
+	async fn pending_executor_params(
+		&self,
+		at: Hash,
+	) -> Result<polkadot_primitives::ExecutorParams, ApiError> {
+		Ok(self.rpc_client.parachain_host_pending_executor_params(at).await?)
+	}
 }
 
 #[async_trait::async_trait]
