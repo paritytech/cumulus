@@ -329,6 +329,8 @@ impl RelayChainRpcClient {
 			.await
 	}
 
+	/// Returns the latest pending executor parameter set, or the current set if no configuration
+	/// changes are pending
 	pub async fn parachain_host_pending_executor_params(
 		&self,
 		at: RelayHash,
