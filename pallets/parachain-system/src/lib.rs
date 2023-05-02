@@ -253,12 +253,11 @@ pub mod pallet {
 				host_config.max_upward_queue_count,
 				host_config.max_upward_queue_size,
 			);
-			let mut bandwidth_out = None;
-			if let Some(segment) = AggregatedUnincludedSegment::<T>::get() {
-				let mut b = total_bandwidth_out.clone();
-				b.subtract(segment.used_bandwidth());
-				bandwidth_out = Some(b);
-			}
+			let bandwidth_out = AggregatedUnincludedSegment::<T>::get().map(|segment| {
+				let mut bandwidth_out = total_bandwidth_out.clone();
+				bandwidth_out.subtract(segment.used_bandwidth());
+				bandwidth_out
+			});
 
 			let (ump_msg_count, ump_total_bytes) = <PendingUpwardMessages<T>>::mutate(|up| {
 				let bandwidth_out = bandwidth_out.as_ref().unwrap_or(&total_bandwidth_out);
