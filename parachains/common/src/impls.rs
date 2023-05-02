@@ -173,7 +173,7 @@ where
 	SelfParaId: Get<ParaId>,
 {
 	fn get_native() -> MultiLocation {
-		MultiLocation { parents:0, interior: Here }
+		MultiLocation { parents: 0, interior: Here }
 	}
 
 	fn is_native(asset_id: MultiLocation) -> bool {
