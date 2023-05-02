@@ -196,7 +196,7 @@ impl CliConfiguration<Self> for RelayChainCli {
 		self.base.base.rpc_methods()
 	}
 
-	fn rpc_max_connections(&self) -> CliResult<Option<usize>> {
+	fn rpc_max_connections(&self) -> CliResult<u32> {
 		self.base.base.rpc_max_connections()
 	}
 

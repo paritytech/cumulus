@@ -387,7 +387,7 @@ impl sc_cli::CliConfiguration for NormalizedRunCmd {
 		self.base.disable_grandpa()
 	}
 
-	fn rpc_max_connections(&self) -> sc_cli::Result<Option<usize>> {
+	fn rpc_max_connections(&self) -> sc_cli::Result<u32> {
 		self.base.rpc_max_connections()
 	}
 
@@ -403,15 +403,15 @@ impl sc_cli::CliConfiguration for NormalizedRunCmd {
 		self.base.rpc_methods()
 	}
 
-	fn rpc_max_request_size(&self) -> sc_cli::Result<Option<usize>> {
+	fn rpc_max_request_size(&self) -> sc_cli::Result<u32> {
 		Ok(self.base.rpc_max_request_size)
 	}
 
-	fn rpc_max_response_size(&self) -> sc_cli::Result<Option<usize>> {
+	fn rpc_max_response_size(&self) -> sc_cli::Result<u32> {
 		Ok(self.base.rpc_max_response_size)
 	}
 
-	fn rpc_max_subscriptions_per_connection(&self) -> sc_cli::Result<Option<usize>> {
+	fn rpc_max_subscriptions_per_connection(&self) -> sc_cli::Result<u32> {
 		Ok(self.base.rpc_max_subscriptions_per_connection)
 	}
 
