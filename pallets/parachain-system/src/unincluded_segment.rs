@@ -27,6 +27,7 @@ use scale_info::TypeInfo;
 use sp_std::{collections::btree_map::BTreeMap, marker::PhantomData};
 
 /// Constraints on outbound HRMP channel.
+#[derive(Clone)]
 pub struct HrmpOutboundLimits {
 	/// The maximum bytes that can be written to the channel.
 	pub bytes_remaining: u32,
@@ -34,8 +35,9 @@ pub struct HrmpOutboundLimits {
 	pub messages_remaining: u32,
 }
 
-/// Constraints imposed on the entire segment, i.e. based on the latest included parablock.
-pub struct TotalBandwidthLimits {
+/// Limits on outbound message bandwidth.
+#[derive(Clone)]
+pub struct OutboundBandwidthLimits {
 	/// The amount of UMP messages remaining.
 	pub ump_messages_remaining: u32,
 	/// The amount of UMP bytes remaining.
@@ -44,11 +46,24 @@ pub struct TotalBandwidthLimits {
 	pub hrmp_outgoing: BTreeMap<ParaId, HrmpOutboundLimits>,
 }
 
-impl TotalBandwidthLimits {
-	/// Creates new limits from the messaging state.
-	pub fn new(messaging_state: &MessagingStateSnapshot) -> Self {
-		let (ump_messages_remaining, ump_bytes_remaining) =
+impl OutboundBandwidthLimits {
+	/// Creates new limits from the messaging state and upward message queue maximums fetched
+	/// from the host configuration.
+	///
+	/// These will be the total bandwidth limits across the entire unincluded segment.
+	pub fn from_relay_chain_state(
+		messaging_state: &MessagingStateSnapshot,
+		max_upward_queue_count: u32,
+		max_upward_queue_size: u32,
+	) -> Self {
+		let (ump_messages_in_relay, ump_bytes_in_relay) =
 			messaging_state.relay_dispatch_queue_size;
+
+		let (ump_messages_remaining, ump_bytes_remaining) = (
+			max_upward_queue_count.saturating_sub(ump_messages_in_relay),
+			max_upward_queue_size.saturating_sub(ump_bytes_in_relay),
+		);
+
 		let hrmp_outgoing = messaging_state
 			.egress_channels
 			.iter()
@@ -56,14 +71,26 @@ impl TotalBandwidthLimits {
 				(
 					*id,
 					HrmpOutboundLimits {
-						bytes_remaining: channel.max_total_size,
-						messages_remaining: channel.max_capacity,
+						bytes_remaining: channel.max_total_size.saturating_sub(channel.total_size),
+						messages_remaining: channel.max_capacity.saturating_sub(channel.msg_count),
 					},
 				)
 			})
 			.collect();
 
 		Self { ump_messages_remaining, ump_bytes_remaining, hrmp_outgoing }
+	}
+
+	/// Compute the remaining bandwidth when accounting for the used amounts provided.
+	pub fn subtract(&mut self, used: &UsedBandwidth) {
+		self.ump_messages_remaining = self.ump_messages_remaining.saturating_sub(used.ump_msg_count);
+		self.ump_bytes_remaining = self.ump_bytes_remaining.saturating_sub(used.ump_total_bytes);
+		for (para_id, channel_limits) in self.hrmp_outgoing.iter_mut() {
+			if let Some(update) = used.hrmp_outgoing.get(para_id) {
+				channel_limits.bytes_remaining = channel_limits.bytes_remaining.saturating_sub(update.total_bytes);
+				channel_limits.messages_remaining = channel_limits.messages_remaining.saturating_sub(update.msg_count);
+			}
+		}
 	}
 }
 
@@ -131,7 +158,7 @@ impl HrmpChannelUpdate {
 		&self,
 		other: &Self,
 		recipient: ParaId,
-		limits: &TotalBandwidthLimits,
+		limits: &OutboundBandwidthLimits,
 	) -> Result<Self, BandwidthUpdateError> {
 		let limits = limits
 			.hrmp_outgoing
@@ -186,7 +213,7 @@ impl UsedBandwidth {
 	fn append(
 		&self,
 		other: &Self,
-		limits: &TotalBandwidthLimits,
+		limits: &OutboundBandwidthLimits,
 	) -> Result<Self, BandwidthUpdateError> {
 		let mut new = self.clone();
 
@@ -277,11 +304,13 @@ pub struct SegmentTracker<H> {
 
 impl<H> SegmentTracker<H> {
 	/// Tries to append another block to the tracker, respecting given bandwidth limits.
+	/// In practice, the bandwidth limits supplied should be the total allowed within the
+	/// block.
 	pub fn append(
 		&mut self,
 		block: &Ancestor<H>,
 		hrmp_watermark: relay_chain::BlockNumber,
-		limits: &TotalBandwidthLimits,
+		limits: &OutboundBandwidthLimits,
 	) -> Result<(), BandwidthUpdateError> {
 		if let Some(watermark) = self.hrmp_watermark.as_ref() {
 			if &hrmp_watermark <= watermark {
@@ -304,6 +333,11 @@ impl<H> SegmentTracker<H> {
 		// Watermark doesn't need to be updated since the is always dropped
 		// from the tail of the segment.
 	}
+
+	/// Return a reference to the used bandwidth across the entire segment.
+	pub fn used_bandwidth(&self) -> &UsedBandwidth {
+		&self.used_bandwidth
+	}
 }
 
 #[cfg(test)]
@@ -319,7 +353,7 @@ mod tests {
 		let para_1 = ParaId::from(1);
 		let para_1_limits = HrmpOutboundLimits { bytes_remaining: u32::MAX, messages_remaining: 3 };
 		let hrmp_outgoing = [(para_0, para_0_limits), (para_1, para_1_limits)].into();
-		let limits = TotalBandwidthLimits {
+		let limits = OutboundBandwidthLimits {
 			ump_messages_remaining: 0,
 			ump_bytes_remaining: 0,
 			hrmp_outgoing,
@@ -371,7 +405,7 @@ mod tests {
 			HrmpOutboundLimits { bytes_remaining: 25, messages_remaining: u32::MAX };
 
 		let hrmp_outgoing = [(para_0, para_0_limits)].into();
-		let limits = TotalBandwidthLimits {
+		let limits = OutboundBandwidthLimits {
 			ump_messages_remaining: 0,
 			ump_bytes_remaining: 0,
 			hrmp_outgoing,
@@ -410,7 +444,7 @@ mod tests {
 		let para_1 = ParaId::from(1);
 		let para_1_limits = HrmpOutboundLimits { bytes_remaining: 20, messages_remaining: 3 };
 		let hrmp_outgoing = [(para_0, para_0_limits), (para_1, para_1_limits)].into();
-		let limits = TotalBandwidthLimits {
+		let limits = OutboundBandwidthLimits {
 			ump_messages_remaining: 0,
 			ump_bytes_remaining: 0,
 			hrmp_outgoing,
@@ -477,7 +511,7 @@ mod tests {
 			hrmp_outgoing: BTreeMap::default(),
 		};
 
-		let limits = TotalBandwidthLimits {
+		let limits = OutboundBandwidthLimits {
 			ump_messages_remaining: 5,
 			ump_bytes_remaining: 50,
 			hrmp_outgoing: BTreeMap::default(),
@@ -535,7 +569,7 @@ mod tests {
 			used_bandwidth: UsedBandwidth::default(),
 			para_head_hash: None::<relay_chain::Hash>,
 		};
-		let limits = TotalBandwidthLimits {
+		let limits = OutboundBandwidthLimits {
 			ump_messages_remaining: 0,
 			ump_bytes_remaining: 0,
 			hrmp_outgoing: BTreeMap::default(),
@@ -579,7 +613,7 @@ mod tests {
 		let para_1_limits =
 			HrmpOutboundLimits { bytes_remaining: u32::MAX, messages_remaining: u32::MAX };
 		let hrmp_outgoing = [(para_0, para_0_limits), (para_1, para_1_limits)].into();
-		let limits = TotalBandwidthLimits {
+		let limits = OutboundBandwidthLimits {
 			ump_messages_remaining: 0,
 			ump_bytes_remaining: 0,
 			hrmp_outgoing,

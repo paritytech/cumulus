@@ -18,7 +18,10 @@ use codec::{Decode, DecodeAll, Encode};
 use cumulus_primitives_core::{ParachainBlockData, PersistedValidationData};
 use cumulus_test_client::{
 	generate_extrinsic,
-	runtime::{Block, Hash, Header, TestPalletCall, UncheckedExtrinsic, WASM_BINARY},
+	runtime::{
+		self as test_runtime, Block, Hash, Header, TestPalletCall, UncheckedExtrinsic,
+		WASM_BINARY,
+	},
 	transfer, BlockData, BuildParachainBlockData, Client, DefaultTestClientBuilderExt, HeadData,
 	InitBlockBuilder, TestClientBuilder, TestClientBuilderExt, ValidationParams,
 };
@@ -79,8 +82,10 @@ fn build_block_with_witness(
 	client: &Client,
 	extra_extrinsics: Vec<UncheckedExtrinsic>,
 	parent_head: Header,
-	sproof_builder: RelayStateSproofBuilder,
+	mut sproof_builder: RelayStateSproofBuilder,
 ) -> TestBlockData {
+	sproof_builder.para_id = test_runtime::PARACHAIN_ID.into();
+	sproof_builder.included_para_head = Some(HeadData(parent_head.encode()));
 	let (relay_parent_storage_root, _) = sproof_builder.clone().into_state_root_and_proof();
 	let mut validation_data = PersistedValidationData {
 		relay_parent_number: 1,
