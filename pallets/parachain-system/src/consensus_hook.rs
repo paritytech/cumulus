@@ -58,7 +58,10 @@ impl From<NonZeroU32> for UnincludedSegmentCapacity {
 /// desired unincluded segment length, as well as any rules for adapting it dynamically
 /// according to the relay-chain state.
 pub trait ConsensusHook {
-	// TODO [now]: docs. cover where this is called, invariants, etc
+	/// This hook is called partway through the `set_validation_data` inherent in parachain-system.
+	///
+	/// The hook is allowed to panic if customized consensus rules aren't met and is required
+	/// to return a maximum capacity for the unincluded segment.
 	fn on_state_proof(
 		state_proof: &RelayChainStateProof,
 	) -> UnincludedSegmentCapacity;
