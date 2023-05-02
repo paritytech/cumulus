@@ -33,7 +33,16 @@ pub use polkadot_primitives::{
 	AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData,
 };
 
-pub use xcm::latest::prelude::*;
+// TODO: reexport from polkadot-* when refactored in polkadot-companion: https://github.com/paritytech/polkadot/pull/7161
+/// Simple type used to identify messages for the purpose of reporting events. Secure if and only
+/// if the message content is unique.
+pub type MessageId = [u8; 32];
+
+// TODO: reexport from polkadot-* when refactored in polkadot-companion: https://github.com/paritytech/polkadot/pull/7161
+/// Returns a [`MessageId`] for the given message payload.
+pub fn message_id(data: &[u8]) -> MessageId {
+	sp_io::hashing::blake2_256(data)
+}
 
 /// A module that re-exports relevant relay chain definitions.
 pub mod relay_chain {
@@ -98,10 +107,10 @@ pub trait UpwardMessageSender {
 	/// Send the given UMP message; return the expected number of blocks before the message will
 	/// be dispatched or an error if the message cannot be sent.
 	/// return the hash of the message sent
-	fn send_upward_message(msg: UpwardMessage) -> Result<(u32, XcmHash), MessageSendError>;
+	fn send_upward_message(msg: UpwardMessage) -> Result<(u32, MessageId), MessageSendError>;
 }
 impl UpwardMessageSender for () {
-	fn send_upward_message(_msg: UpwardMessage) -> Result<(u32, XcmHash), MessageSendError> {
+	fn send_upward_message(_msg: UpwardMessage) -> Result<(u32, MessageId), MessageSendError> {
 		Err(MessageSendError::NoChannel)
 	}
 }

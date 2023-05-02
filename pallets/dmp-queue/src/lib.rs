@@ -24,7 +24,9 @@
 pub mod migration;
 
 use codec::{Decode, DecodeLimit, Encode};
-use cumulus_primitives_core::{relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler};
+use cumulus_primitives_core::{
+	message_id, relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler,
+};
 use frame_support::{
 	traits::EnsureOrigin,
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight},
@@ -251,7 +253,7 @@ pub mod pallet {
 			_sent_at: RelayBlockNumber,
 			mut data: &[u8],
 		) -> Result<Weight, (MessageId, Weight)> {
-			let message_id = sp_io::hashing::blake2_256(data);
+			let message_id = message_id(data);
 			let maybe_msg = VersionedXcm::<T::RuntimeCall>::decode_all_with_depth_limit(
 				MAX_XCM_DECODE_DEPTH,
 				&mut data,
@@ -314,7 +316,7 @@ pub mod pallet {
 						maybe_enqueue_page = Some(Vec::with_capacity(item_count_left));
 
 						Self::deposit_event(Event::MaxMessagesExhausted {
-							message_id: sp_io::hashing::blake2_256(&data),
+							message_id: message_id(&data),
 						});
 					} else {
 						// We're not currently enqueuing - try to execute inline.
