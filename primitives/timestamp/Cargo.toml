@@ -10,9 +10,9 @@ codec = { package = "parity-scale-codec", version = "3.0.0", default-features = 
 futures = "0.3.28"
 
 # Substrate
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../core", default-features = false }
@@ -20,9 +20,9 @@ cumulus-primitives-core = { path = "../core", default-features = false }
 [dev-dependencies]
 
 # Substrate
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
 
 # Cumulus
 cumulus-test-client = { path = "../../test/client" }
