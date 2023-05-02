@@ -398,7 +398,7 @@ impl pallet_utility::Config for Runtime {
 
 // Add bridge pallets (GPA)
 
-/// Add granda bridge pallet to track Wococo relay chain on Rococo BridgeHub
+/// Add GRANDPA bridge pallet to track Wococo relay chain on Rococo BridgeHub
 pub type BridgeGrandpaWococoInstance = pallet_bridge_grandpa::Instance1;
 impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -408,7 +408,7 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
 	type WeightInfo = weights::pallet_bridge_grandpa_bridge_wococo_grandpa::WeightInfo<Runtime>;
 }
 
-/// Add granda bridge pallet to track Rococo relay chain on Wococo BridgeHub
+/// Add GRANDPA bridge pallet to track Rococo relay chain on Wococo BridgeHub
 pub type BridgeGrandpaRococoInstance = pallet_bridge_grandpa::Instance2;
 impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -421,7 +421,7 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 parameter_types! {
 	pub const RelayChainHeadersToKeep: u32 = 1024;
 	pub const ParachainHeadsToKeep: u32 = 64;
-	pub const MaxRequests: u32 = 64;
+	pub const RelayerStakeLease: u32 = 8;
 
 	pub const RococoBridgeParachainPalletName: &'static str = "Paras";
 	pub const WococoBridgeParachainPalletName: &'static str = "Paras";
@@ -460,7 +460,7 @@ impl pallet_bridge_parachains::Config<BridgeParachainRococoInstance> for Runtime
 	type MaxParaHeadDataSize = MaxRococoParaHeadDataSize;
 }
 
-/// Add XCM messages support for BrigdeHubRococo to support Rococo->Wococo XCM messages
+/// Add XCM messages support for BridgeHubRococo to support Rococo->Wococo XCM messages
 pub type WithBridgeHubWococoMessagesInstance = pallet_bridge_messages::Instance1;
 impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -493,7 +493,7 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 		XcmBlobMessageDispatch<OnBridgeHubRococoBlobDispatcher, Self::WeightInfo>;
 }
 
-/// Add XCM messages support for BrigdeHubWococo to support Wococo->Rococo XCM messages
+/// Add XCM messages support for BridgeHubWococo to support Wococo->Rococo XCM messages
 pub type WithBridgeHubRococoMessagesInstance = pallet_bridge_messages::Instance2;
 impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -538,7 +538,7 @@ impl pallet_bridge_relayers::Config for Runtime {
 		Balances,
 		RelayerStakeReserveId,
 		RequiredStakeForStakeAndSlash,
-		ConstU32<8>,
+		RelayerStakeLease,
 	>;
 	type WeightInfo = weights::pallet_bridge_relayers::WeightInfo<Runtime>;
 }
@@ -616,7 +616,6 @@ mod benches {
 	define_benchmarks!(
 		[frame_system, SystemBench::<Runtime>]
 		[pallet_balances, Balances]
-		[pallet_session, SessionBench::<Runtime>]
 		[pallet_multisig, Multisig]
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_utility, Utility]
@@ -804,6 +803,7 @@ impl_runtime_apis! {
 		}
 	}
 
+	// This exposed by BridgeHubRococo
 	impl bp_bridge_hub_wococo::ToBridgeHubWococoOutboundLaneApi<Block> for Runtime {
 		fn message_details(
 			lane: bp_messages::LaneId,
@@ -830,6 +830,7 @@ impl_runtime_apis! {
 		}
 	}
 
+	// This is exposed by BridgeHubWococo
 	impl bp_bridge_hub_rococo::ToBridgeHubRococoOutboundLaneApi<Block> for Runtime {
 		fn message_details(
 			lane: bp_messages::LaneId,

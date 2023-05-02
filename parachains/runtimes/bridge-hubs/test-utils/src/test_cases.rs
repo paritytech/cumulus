@@ -77,7 +77,7 @@ pub fn initialize_bridge_by_governance_works<Runtime, GrandpaPalletInstance>(
 				Runtime,
 				GrandpaPalletInstance,
 			>::initialize {
-				init_data: test_data::initialiation_data::<Runtime, GrandpaPalletInstance>(12345),
+				init_data: test_data::initialization_data::<Runtime, GrandpaPalletInstance>(12345),
 			});
 
 			// overestimate - check weight for `pallet_bridge_grandpa::Pallet::initialize()` call
@@ -103,7 +103,6 @@ pub fn initialize_bridge_by_governance_works<Runtime, GrandpaPalletInstance>(
 #[macro_export]
 macro_rules! include_initialize_bridge_by_governance_works(
 	(
-		$test_name:tt,
 		$runtime:path,
 		$pallet_bridge_grandpa_instance:path,
 		$collator_session_key:expr,
@@ -111,7 +110,7 @@ macro_rules! include_initialize_bridge_by_governance_works(
 		$runtime_call_encode:expr
 	) => {
 		#[test]
-		fn $test_name() {
+		fn initialize_bridge_by_governance_works() {
 			$crate::test_cases::initialize_bridge_by_governance_works::<
 				$runtime,
 				$pallet_bridge_grandpa_instance,
@@ -213,7 +212,6 @@ pub fn handle_export_message_from_system_parachain_to_outbound_queue_works<
 #[macro_export]
 macro_rules! include_handle_export_message_from_system_parachain_to_outbound_queue_works(
 	(
-		$test_name:tt,
 		$runtime:path,
 		$xcm_config:path,
 		$pallet_bridge_messages_instance:path,
@@ -225,7 +223,7 @@ macro_rules! include_handle_export_message_from_system_parachain_to_outbound_que
 		$expected_lane_id:expr
 	) => {
 		#[test]
-		fn $test_name() {
+		fn handle_export_message_from_system_parachain_add_to_outbound_queue_works() {
 			$crate::test_cases::handle_export_message_from_system_parachain_to_outbound_queue_works::<
 				$runtime,
 				$xcm_config,
@@ -359,7 +357,6 @@ pub fn message_dispatch_routing_works<
 #[macro_export]
 macro_rules! include_message_dispatch_routing_works(
 	(
-		$test_name:tt,
 		$runtime:path,
 		$xcm_config:path,
 		$hrmp_channel_opener:path,
@@ -374,7 +371,7 @@ macro_rules! include_message_dispatch_routing_works(
 		$expected_lane_id:expr
 	) => {
 		#[test]
-		fn $test_name() {
+		fn message_dispatch_routing_works() {
 			$crate::test_cases::message_dispatch_routing_works::<
 				$runtime,
 				$xcm_config,
@@ -401,7 +398,7 @@ mod test_data {
 	use xcm_executor::traits::{validate_export, ExportXcm};
 
 	/// Helper that creates InitializationData mock data, that can be used to initialize bridge GRANDPA pallet
-	pub(crate) fn initialiation_data<
+	pub(crate) fn initialization_data<
 		Runtime: pallet_bridge_grandpa::Config<GrandpaPalletInstance>,
 		GrandpaPalletInstance: 'static,
 	>(

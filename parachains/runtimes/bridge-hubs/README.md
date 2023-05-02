@@ -13,14 +13,17 @@
 
 # Bridge-hub Parachains
 
-Implementation of _BridgeHub_, a blockchain to support message passing between Substrate based chains like Polkadot and Kusama networks.
-
-_BridgeHub_ allows users to:
-
-- Passing arbitrary messages between different Substrate chains (Polkadot <-> Kusama).
-
-_BridgeHub_ is meant to be **_system parachain_** with main responsibilities:
-- sync finality proofs between relay chains
+_BridgeHub(s)_ are **_system parachains_** that will house trustless bridges from the local
+ecosystem to others.
+The current trustless bridges planned for the BridgeHub(s) are:
+- `BridgeHubPolkadot` system parachain:
+	1. Polkadot <-> Kusama bridge
+	2. Polkadot <-> Ethereum bridge (Snowbridge)
+- `BridgeHubKusama` system parachain:
+	1. Kusama <-> Polkadot bridge
+	2. Kusama <-> Ethereum bridge
+	   The high-level responsibilities of each bridge living on BridgeHub:
+- sync finality proofs between relay chains (or equivalent)
 - sync finality proofs between BridgeHub parachains
 - pass (XCM) messages between different BridgeHub parachains
 
