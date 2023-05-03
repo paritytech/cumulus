@@ -19,14 +19,16 @@ use sp_runtime::AccountId32;
 
 use xcm_emulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
 
+// Setup relay chain.
 decl_test_relay_chain! {
-	pub struct KusamaNet {
+	pub struct KusamaRelay {
 		Runtime = kusama_runtime::Runtime,
 		XcmConfig = kusama_runtime::xcm_config::XcmConfig,
 		new_ext = kusama_ext(),
 	}
 }
 
+// Setup ParachainA.
 decl_test_parachain! {
 	pub struct ParachainA {
 		Runtime = test_runtime::Runtime,
@@ -37,6 +39,7 @@ decl_test_parachain! {
 	}
 }
 
+// Setup ParachainB.
 decl_test_parachain! {
 	pub struct ParachainB {
 		Runtime = test_runtime::Runtime,
@@ -47,6 +50,7 @@ decl_test_parachain! {
 	}
 }
 
+// Setup ParachainC.
 decl_test_parachain! {
 	pub struct ParachainC {
 		Runtime = test_runtime::Runtime,
@@ -57,9 +61,10 @@ decl_test_parachain! {
 	}
 }
 
+// Setup a network with all the declared parachains and a relay chain.
 decl_test_network! {
 	pub struct Network {
-		relay_chain = KusamaNet,
+		relay_chain = KusamaRelay,
 		parachains = vec![
 			(1, ParachainA),
 			(2, ParachainB),
@@ -71,6 +76,7 @@ decl_test_network! {
 pub const ALICE: AccountId32 = AccountId32::new([0u8; 32]);
 pub const INITIAL_BALANCE: u128 = 1_000_000_000_000;
 
+// Parachain TextExternalities setup.
 pub fn parachain_ext(para_id: u32) -> sp_io::TestExternalities {
 	use test_runtime::{Runtime, System};
 
@@ -136,6 +142,7 @@ fn default_parachains_host_configuration(
 	}
 }
 
+// Relay chain TestExternalities setup.
 pub fn kusama_ext() -> sp_io::TestExternalities {
 	use kusama_runtime::{Runtime, System};
 
@@ -164,7 +171,7 @@ mod tests {
 	use cumulus_primitives_core::ParaId;
 	use frame_support::{assert_ok, dispatch::GetDispatchInfo, traits::Currency};
 	use sp_runtime::traits::AccountIdConversion;
-	use xcm::{v3::prelude::*, VersionedMultiLocation, VersionedXcm};
+	use xcm::{latest::Error::BadOrigin, v3::prelude::*, VersionedMultiLocation, VersionedXcm};
 	use xcm_emulator::TestExt;
 
 	#[test]
@@ -176,7 +183,7 @@ mod tests {
 				remark: "Hello from Kusama!".as_bytes().to_vec(),
 			},
 		);
-		KusamaNet::execute_with(|| {
+		KusamaRelay::execute_with(|| {
 			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
 				kusama_runtime::RuntimeOrigin::root(),
 				Some(3)
@@ -207,7 +214,7 @@ mod tests {
 	fn ump() {
 		Network::reset();
 
-		KusamaNet::execute_with(|| {
+		KusamaRelay::execute_with(|| {
 			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
 				kusama_runtime::RuntimeOrigin::root(),
 				Some(3)
@@ -221,7 +228,7 @@ mod tests {
 		let remark = kusama_runtime::RuntimeCall::System(frame_system::Call::<
 			kusama_runtime::Runtime,
 		>::remark_with_event {
-			remark: "Hello from Pumpkin!".as_bytes().to_vec(),
+			remark: "Hello from ParachainA!".as_bytes().to_vec(),
 		});
 		ParachainA::execute_with(|| {
 			assert_ok!(test_runtime::PolkadotXcm::force_default_xcm_version(
@@ -245,7 +252,7 @@ mod tests {
 			));
 		});
 
-		KusamaNet::execute_with(|| {
+		KusamaRelay::execute_with(|| {
 			use kusama_runtime::{RuntimeEvent, System};
 			// TODO: https://github.com/paritytech/polkadot/pull/6824 or change this call to
 			// force_create_assets like we do in cumulus integration tests.
@@ -269,7 +276,7 @@ mod tests {
 
 		let remark = test_runtime::RuntimeCall::System(
 			frame_system::Call::<test_runtime::Runtime>::remark_with_event {
-				remark: "Hello from Pumpkin!".as_bytes().to_vec(),
+				remark: "Hello from ParachainA!".as_bytes().to_vec(),
 			},
 		);
 		ParachainA::execute_with(|| {
@@ -278,7 +285,7 @@ mod tests {
 				MultiLocation::new(1, X1(Parachain(2))),
 				Xcm(vec![Transact {
 					origin_kind: OriginKind::SovereignAccount,
-					require_weight_at_most: 20_000_000.into(),
+					require_weight_at_most: Weight::from_parts(9_000_000, 0),
 					call: remark.encode().into(),
 				}]),
 			));
@@ -301,21 +308,24 @@ mod tests {
 
 		Network::reset();
 
-		// The message goes through: Pumpkin --> Mushroom --> Octopus
+		// The message goes through: ParachainA --> ParachainB --> ParachainC
 		let remark = RuntimeCall::System(frame_system::Call::<Runtime>::remark_with_event {
-			remark: "Hello from Pumpkin!".as_bytes().to_vec(),
+			remark: "Hello from ParachainA!".as_bytes().to_vec(),
 		});
-		let send_xcm_to_octopus = RuntimeCall::PolkadotXcm(pallet_xcm::Call::<Runtime>::send {
+		let send_xcm_to_parachain_c = RuntimeCall::PolkadotXcm(pallet_xcm::Call::<Runtime>::send {
 			dest: Box::new(VersionedMultiLocation::V3(MultiLocation::new(1, X1(Parachain(3))))),
 			message: Box::new(VersionedXcm::V3(Xcm(vec![Transact {
 				origin_kind: OriginKind::SovereignAccount,
-				require_weight_at_most: 10_000_000.into(),
+				// The weight here does not matter, as this is going to fail with BadOrigin once it
+				// reaches ParachainC, as it's not going to satisfy AccountId32Aliases conversion
+				// rules.
+				require_weight_at_most: Weight::from_parts(0, 0),
 				call: remark.encode().into(),
 			}]))),
 		});
 		assert_eq!(
-			send_xcm_to_octopus.get_dispatch_info().weight,
-			Weight::from_parts(110000010, 10000010)
+			send_xcm_to_parachain_c.get_dispatch_info().weight,
+			Weight::from_parts(100000010, 10)
 		);
 		ParachainA::execute_with(|| {
 			assert_ok!(PolkadotXcm::send_xcm(
@@ -324,7 +334,7 @@ mod tests {
 				Xcm(vec![Transact {
 					origin_kind: OriginKind::SovereignAccount,
 					require_weight_at_most: 110_000_010.into(),
-					call: send_xcm_to_octopus.encode().into(),
+					call: send_xcm_to_parachain_c.encode().into(),
 				}]),
 			));
 		});
@@ -341,12 +351,11 @@ mod tests {
 
 		ParachainC::execute_with(|| {
 			use test_runtime::{RuntimeEvent, System};
-			// execution would fail, but good enough to check if the message is received
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
 
 			assert!(System::events().iter().any(|r| matches!(
 				r.event,
-				RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail { .. })
+				RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail { error, .. }) if error == BadOrigin
 			)));
 		});
 	}
@@ -354,50 +363,50 @@ mod tests {
 	#[test]
 	fn deduplicate_dmp() {
 		Network::reset();
-		KusamaNet::execute_with(|| {
+		KusamaRelay::execute_with(|| {
 			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
 				kusama_runtime::RuntimeOrigin::root(),
 				Some(3)
 			));
 		});
 
-		kusama_send_rmrk("Kusama", 2);
-		parachain_receive_and_reset_events(true);
+		send_remark_with_event_to_child_parachain_a("Kusama", 2);
+		parachain_a_verify_remark_event_and_reset_all_events(true);
 
 		// a different dmp message in same relay-parent-block allow execution.
-		kusama_send_rmrk("Polkadot", 1);
-		parachain_receive_and_reset_events(true);
+		send_remark_with_event_to_child_parachain_a("Polkadot", 1);
+		parachain_a_verify_remark_event_and_reset_all_events(true);
 
 		// same dmp message with same relay-parent-block wouldn't execution
-		kusama_send_rmrk("Kusama", 1);
-		parachain_receive_and_reset_events(false);
+		send_remark_with_event_to_child_parachain_a("Kusama", 1);
+		parachain_a_verify_remark_event_and_reset_all_events(false);
 
 		// different relay-parent-block allow dmp message execution
-		KusamaNet::execute_with(|| kusama_runtime::System::set_block_number(2));
+		KusamaRelay::execute_with(|| kusama_runtime::System::set_block_number(2));
 
-		kusama_send_rmrk("Kusama", 1);
-		parachain_receive_and_reset_events(true);
+		send_remark_with_event_to_child_parachain_a("Kusama", 1);
+		parachain_a_verify_remark_event_and_reset_all_events(true);
 
 		// reset can send same dmp message again
 		Network::reset();
-		KusamaNet::execute_with(|| {
+		KusamaRelay::execute_with(|| {
 			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
 				kusama_runtime::RuntimeOrigin::root(),
 				Some(3)
 			));
 		});
 
-		kusama_send_rmrk("Kusama", 1);
-		parachain_receive_and_reset_events(true);
+		send_remark_with_event_to_child_parachain_a("Kusama", 1);
+		parachain_a_verify_remark_event_and_reset_all_events(true);
 	}
 
-	fn kusama_send_rmrk(msg: &str, count: u32) {
+	fn send_remark_with_event_to_child_parachain_a(msg: &str, count: u32) {
 		let remark = test_runtime::RuntimeCall::System(
 			frame_system::Call::<test_runtime::Runtime>::remark_with_event {
 				remark: msg.as_bytes().to_vec(),
 			},
 		);
-		KusamaNet::execute_with(|| {
+		KusamaRelay::execute_with(|| {
 			for _ in 0..count {
 				assert_ok!(kusama_runtime::XcmPallet::send_xcm(
 					Here,
@@ -415,7 +424,7 @@ mod tests {
 		});
 	}
 
-	fn parachain_receive_and_reset_events(received: bool) {
+	fn parachain_a_verify_remark_event_and_reset_all_events(received: bool) {
 		ParachainA::execute_with(|| {
 			use test_runtime::{RuntimeEvent, System};
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
