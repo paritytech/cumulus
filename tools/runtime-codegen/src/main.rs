@@ -119,6 +119,7 @@ fn main() -> color_eyre::Result<()> {
 			syn::parse_quote!(::codec::Decode),
 			syn::parse_quote!(Clone),
 			syn::parse_quote!(Debug),
+			syn::parse_quote!(PartialEq),
 		],
 		vec![],
 	);
@@ -128,27 +129,30 @@ fn main() -> color_eyre::Result<()> {
 		.extend(
 			vec![
 			TypeSubstitute::simple("sp_core::crypto::AccountId32"),
+			TypeSubstitute::custom("sp_weights::weight_v2::Weight", "::sp_weights::Weight"),
+			TypeSubstitute::custom("sp_runtime::generic::era::Era", "::sp_runtime::generic::Era"),
+			TypeSubstitute::custom(
+				"sp_runtime::generic::header::Header",
+				"::sp_runtime::generic::Header",
+			),
+			TypeSubstitute::simple("sp_runtime::traits::BlakeTwo256"),
+			TypeSubstitute::simple("bp_header_chain::justification::GrandpaJustification"),
+			TypeSubstitute::simple("bp_header_chain::InitializationData"),
+			TypeSubstitute::simple("bp_polkadot_core::parachains::ParaId"),
+			TypeSubstitute::simple("bp_polkadot_core::parachains::ParaHeadsProof"),
+			TypeSubstitute::simple(
+				"bridge_runtime_common::messages::target::FromBridgedChainMessagesProof",
+			),
+			TypeSubstitute::simple(
+				"bridge_runtime_common::messages::source::FromBridgedChainMessagesDeliveryProof",
+			),
+			TypeSubstitute::simple("bp_messages::UnrewardedRelayersState"),
 			TypeSubstitute::custom("bp_millau::millau_hash::MillauHash", "::bp_millau::MillauHash"),
 			TypeSubstitute::simple("bp_millau::BlakeTwoAndKeccak256"),
 			TypeSubstitute::custom(
 				"sp_runtime::generic::digest::Digest",
 				"::sp_runtime::generic::Digest",
 			),
-			TypeSubstitute::custom("sp_runtime::generic::era::Era", "::sp_runtime::generic::Era"),
-			TypeSubstitute::custom(
-				"sp_runtime::generic::header::Header",
-				"::sp_runtime::generic::Header",
-			),
-			TypeSubstitute::simple("bp_header_chain::justification::GrandpaJustification"),
-			TypeSubstitute::simple("bp_header_chain::InitializationData"),
-			TypeSubstitute::simple(
-				"bridge_runtime_common::messages::target::FromBridgedChainMessagesProof",
-			),
-			TypeSubstitute::custom("sp_weights::weight_v2::Weight", "::sp_weights::Weight"),
-			TypeSubstitute::simple(
-				"bridge_runtime_common::messages::source::FromBridgedChainMessagesDeliveryProof",
-			),
-			TypeSubstitute::simple("bp_messages::UnrewardedRelayersState"),
 		]
 			.drain(..)
 			.map(|substitute| (substitute.subxt_type, substitute.substitute.try_into().unwrap())),

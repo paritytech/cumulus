@@ -9643,6 +9643,7 @@ dependencies = [
  "bp-header-chain",
  "bp-messages",
  "bp-parachains",
+ "bp-polkadot-core",
  "bp-runtime",
  "bp-wococo",
  "bridge-runtime-common",
@@ -9651,6 +9652,8 @@ dependencies = [
  "scale-info",
  "sp-core",
  "sp-runtime",
+ "sp-weights",
+ "subxt",
 ]
 
 [[package]]
@@ -9667,11 +9670,14 @@ dependencies = [
  "bp-runtime",
  "bridge-runtime-common",
  "parity-scale-codec",
+ "relay-bridge-hub-rococo-client",
  "relay-substrate-client",
  "scale-info",
  "sp-consensus-grandpa",
  "sp-core",
  "sp-runtime",
+ "sp-weights",
+ "subxt",
 ]
 
 [[package]]
