@@ -44,15 +44,37 @@ pub use extrinsic_weights::constants::ExtrinsicBaseWeight;
 pub use paritydb_weights::constants::ParityDbWeight;
 pub use rocksdb_weights::constants::RocksDbWeight;
 
+use crate::Runtime;
+use frame_support::weights::Weight;
+
+// import trait from dependency module
+use ::pallet_bridge_relayers::WeightInfoExt as _;
+
 impl pallet_bridge_messages::WeightInfoExt for pallet_bridge_messages_bridge_messages_bench_runtime_with_bridge_hub_rococo_messages_instance::WeightInfo<crate::Runtime> {
 	fn expected_extra_storage_proof_size() -> u32 {
 		bp_bridge_hub_rococo::EXTRA_STORAGE_PROOF_SIZE
+	}
+
+	fn receive_messages_proof_overhead_from_runtime() -> Weight {
+		pallet_bridge_relayers::WeightInfo::<Runtime>::receive_messages_proof_overhead_from_runtime()
+	}
+
+	fn receive_messages_delivery_proof_overhead_from_runtime() -> Weight {
+		pallet_bridge_relayers::WeightInfo::<Runtime>::receive_messages_delivery_proof_overhead_from_runtime()
 	}
 }
 
 impl pallet_bridge_messages::WeightInfoExt for pallet_bridge_messages_bridge_messages_bench_runtime_with_bridge_hub_wococo_messages_instance::WeightInfo<crate::Runtime> {
 	fn expected_extra_storage_proof_size() -> u32 {
 		bp_bridge_hub_wococo::EXTRA_STORAGE_PROOF_SIZE
+	}
+
+	fn receive_messages_proof_overhead_from_runtime() -> Weight {
+		pallet_bridge_relayers::WeightInfo::<Runtime>::receive_messages_proof_overhead_from_runtime()
+	}
+
+	fn receive_messages_delivery_proof_overhead_from_runtime() -> Weight {
+		pallet_bridge_relayers::WeightInfo::<Runtime>::receive_messages_delivery_proof_overhead_from_runtime()
 	}
 }
 

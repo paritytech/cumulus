@@ -62,4 +62,76 @@ impl<T: frame_system::Config> pallet_bridge_relayers::WeightInfo for WeightInfo<
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
+	/// Storage: BridgeRelayers RegisteredRelayers (r:1 w:1)
+	///
+	/// Proof: BridgeRelayers RegisteredRelayers (max_values: None, max_size: Some(64), added: 2539,
+	/// mode: MaxEncodedLen)
+	///
+	/// Storage: Balances Reserves (r:1 w:1)
+	///
+	/// Proof: Balances Reserves (max_values: None, max_size: Some(849), added: 3324, mode:
+	/// MaxEncodedLen)
+	fn register() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `87`
+		//  Estimated: `7843`
+		// Minimum execution time: 39_590 nanoseconds.
+		Weight::from_parts(40_546_000, 7843)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
+	}
+	/// Storage: BridgeRelayers RegisteredRelayers (r:1 w:1)
+	///
+	/// Proof: BridgeRelayers RegisteredRelayers (max_values: None, max_size: Some(64), added: 2539,
+	/// mode: MaxEncodedLen)
+	///
+	/// Storage: Balances Reserves (r:1 w:1)
+	///
+	/// Proof: Balances Reserves (max_values: None, max_size: Some(849), added: 3324, mode:
+	/// MaxEncodedLen)
+	fn deregister() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `264`
+		//  Estimated: `7843`
+		// Minimum execution time: 43_332 nanoseconds.
+		Weight::from_parts(45_087_000, 7843)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
+	}
+	/// Storage: BridgeRelayers RegisteredRelayers (r:1 w:1)
+	///
+	/// Proof: BridgeRelayers RegisteredRelayers (max_values: None, max_size: Some(64), added: 2539,
+	/// mode: MaxEncodedLen)
+	///
+	/// Storage: Balances Reserves (r:1 w:1)
+	///
+	/// Proof: Balances Reserves (max_values: None, max_size: Some(849), added: 3324, mode:
+	/// MaxEncodedLen)
+	///
+	/// Storage: System Account (r:1 w:1)
+	///
+	/// Proof: System Account (max_values: None, max_size: Some(104), added: 2579, mode:
+	/// MaxEncodedLen)
+	fn slash_and_deregister() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `380`
+		//  Estimated: `11412`
+		// Minimum execution time: 42_358 nanoseconds.
+		Weight::from_parts(43_539_000, 11412)
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
+	}
+	/// Storage: BridgeRelayers RelayerRewards (r:1 w:1)
+	///
+	/// Proof: BridgeRelayers RelayerRewards (max_values: None, max_size: Some(65), added: 2540,
+	/// mode: MaxEncodedLen)
+	fn register_relayer_reward() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `12`
+		//  Estimated: `3530`
+		// Minimum execution time: 6_338 nanoseconds.
+		Weight::from_parts(6_526_000, 3530)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
