@@ -90,7 +90,7 @@ use bridge_runtime_common::{
 	messages_xcm_extension::{XcmAsPlainPayload, XcmBlobMessageDispatch},
 };
 use parachains_common::{
-	opaque, AccountId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	impls::DealWithFees, opaque, AccountId, Balance, BlockNumber, Hash, Header, Index, Signature,
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_executor::XcmExecutor;
@@ -282,7 +282,8 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+	type OnChargeTransaction =
+		pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees<Runtime>>;
 	type OperationalFeeMultiplier = ConstU8<5>;
 	type WeightToFee = WeightToFee;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
@@ -400,7 +401,7 @@ impl pallet_utility::Config for Runtime {
 
 // Add bridge pallets (GPA)
 
-/// Add granda bridge pallet to track Wococo relay chain on Rococo BridgeHub
+/// Add GRANDPA bridge pallet to track Wococo relay chain on Rococo BridgeHub
 pub type BridgeGrandpaWococoInstance = pallet_bridge_grandpa::Instance1;
 impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -410,7 +411,7 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
 	type WeightInfo = weights::pallet_bridge_grandpa_bridge_wococo_grandpa::WeightInfo<Runtime>;
 }
 
-/// Add granda bridge pallet to track Rococo relay chain on Wococo BridgeHub
+/// Add GRANDPA bridge pallet to track Rococo relay chain on Wococo BridgeHub
 pub type BridgeGrandpaRococoInstance = pallet_bridge_grandpa::Instance2;
 impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -423,15 +424,17 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 parameter_types! {
 	pub const RelayChainHeadersToKeep: u32 = 1024;
 	pub const ParachainHeadsToKeep: u32 = 64;
-	pub const MaxRequests: u32 = 64;
+	pub const RelayerStakeLease: u32 = 8;
 
 	pub const RococoBridgeParachainPalletName: &'static str = "Paras";
 	pub const WococoBridgeParachainPalletName: &'static str = "Paras";
 	pub const MaxRococoParaHeadDataSize: u32 = bp_rococo::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
 	pub const MaxWococoParaHeadDataSize: u32 = bp_wococo::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
 
-	// TODO:check-parameter - setup initial values https://github.com/paritytech/parity-bridges-common/issues/1677
 	pub storage DeliveryRewardInBalance: u64 = 1_000_000;
+	pub storage RequiredStakeForStakeAndSlash: Balance = 1_000_000;
+
+	pub const RelayerStakeReserveId: [u8; 8] = *b"brdgrlrs";
 }
 
 /// Add parachain bridge pallet to track Wococo bridge hub parachain
@@ -460,7 +463,7 @@ impl pallet_bridge_parachains::Config<BridgeParachainRococoInstance> for Runtime
 	type MaxParaHeadDataSize = MaxRococoParaHeadDataSize;
 }
 
-/// Add XCM messages support for BrigdeHubRococo to support Rococo->Wococo XCM messages
+/// Add XCM messages support for BridgeHubRococo to support Rococo->Wococo XCM messages
 pub type WithBridgeHubWococoMessagesInstance = pallet_bridge_messages::Instance1;
 impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -489,15 +492,11 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 	>;
 
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubWococoMessageBridge>;
-	type MessageDispatch = XcmBlobMessageDispatch<
-		bp_bridge_hub_wococo::BridgeHubWococo,
-		bp_bridge_hub_rococo::BridgeHubRococo,
-		OnBridgeHubRococoBlobDispatcher,
-		Self::WeightInfo,
-	>;
+	type MessageDispatch =
+		XcmBlobMessageDispatch<OnBridgeHubRococoBlobDispatcher, Self::WeightInfo>;
 }
 
-/// Add XCM messages support for BrigdeHubWococo to support Wococo->Rococo XCM messages
+/// Add XCM messages support for BridgeHubWococo to support Wococo->Rococo XCM messages
 pub type WithBridgeHubRococoMessagesInstance = pallet_bridge_messages::Instance2;
 impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -526,12 +525,8 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 	>;
 
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubRococoMessageBridge>;
-	type MessageDispatch = XcmBlobMessageDispatch<
-		bp_bridge_hub_rococo::BridgeHubRococo,
-		bp_bridge_hub_wococo::BridgeHubWococo,
-		OnBridgeHubWococoBlobDispatcher,
-		Self::WeightInfo,
-	>;
+	type MessageDispatch =
+		XcmBlobMessageDispatch<OnBridgeHubWococoBlobDispatcher, Self::WeightInfo>;
 }
 
 /// Allows collect and claim rewards for relayers
@@ -540,6 +535,14 @@ impl pallet_bridge_relayers::Config for Runtime {
 	type Reward = Balance;
 	type PaymentProcedure =
 		bp_relayers::PayRewardFromAccount<pallet_balances::Pallet<Runtime>, AccountId>;
+	type StakeAndSlash = pallet_bridge_relayers::StakeAndSlashNamed<
+		AccountId,
+		BlockNumber,
+		Balances,
+		RelayerStakeReserveId,
+		RequiredStakeForStakeAndSlash,
+		RelayerStakeLease,
+	>;
 	type WeightInfo = weights::pallet_bridge_relayers::WeightInfo<Runtime>;
 }
 
@@ -695,7 +698,6 @@ construct_runtime!(
 
 		// Handy utilities.
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
-		// TODO:check-parameter - change back to 41 a align bridge pallets
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 36,
 
 		// Rococo and Wococo Bridge Hubs are sharing the runtime, so this runtime has two sets of
@@ -740,7 +742,6 @@ mod benches {
 	define_benchmarks!(
 		[frame_system, SystemBench::<Runtime>]
 		[pallet_balances, Balances]
-		[pallet_session, SessionBench::<Runtime>]
 		[pallet_multisig, Multisig]
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_utility, Utility]
@@ -933,6 +934,7 @@ impl_runtime_apis! {
 		}
 	}
 
+	// This exposed by BridgeHubRococo
 	impl bp_bridge_hub_wococo::ToBridgeHubWococoOutboundLaneApi<Block> for Runtime {
 		fn message_details(
 			lane: bp_messages::LaneId,
@@ -959,6 +961,7 @@ impl_runtime_apis! {
 		}
 	}
 
+	// This is exposed by BridgeHubWococo
 	impl bp_bridge_hub_rococo::ToBridgeHubRococoOutboundLaneApi<Block> for Runtime {
 		fn message_details(
 			lane: bp_messages::LaneId,
@@ -1269,16 +1272,20 @@ impl_runtime_apis! {
 			}
 
 			impl BridgeRelayersConfig for Runtime {
-				fn prepare_environment(
+				fn prepare_rewards_account(
 					account_params: bp_relayers::RewardsAccountParams,
 					reward: Balance,
 				) {
-					use frame_support::traits::fungible::Mutate;
 					let rewards_account = bp_relayers::PayRewardFromAccount::<
 						Balances,
 						AccountId
 					>::rewards_account(account_params);
-					Balances::mint_into(&rewards_account, reward).unwrap();
+					Self::deposit_account(rewards_account, reward);
+				}
+
+				fn deposit_account(account: AccountId, balance: Balance) {
+					use frame_support::traits::fungible::Mutate;
+					Balances::mint_into(&account, balance.saturating_add(ExistentialDeposit::get())).unwrap();
 				}
 			}
 
@@ -1340,6 +1347,9 @@ mod tests {
 	use bridge_hub_test_utils::test_header;
 	use codec::Encode;
 
+	pub type TestBlockHeader =
+		sp_runtime::generic::Header<bp_polkadot_core::BlockNumber, bp_polkadot_core::Hasher>;
+
 	#[test]
 	fn ensure_signed_extension_definition_is_compatible_with_relay() {
 		let payload: SignedExtra = (
@@ -1364,7 +1374,7 @@ mod tests {
 				10,
 				10,
 				TransactionEra::Immortal,
-				test_header::<bridge_hub_test_utils::RelayBlockHeader>(1).hash(),
+				test_header::<TestBlockHeader>(1).hash(),
 				10,
 				10,
 			);
@@ -1377,7 +1387,7 @@ mod tests {
 				10,
 				10,
 				TransactionEra::Immortal,
-				test_header::<bridge_hub_test_utils::RelayBlockHeader>(1).hash(),
+				test_header::<TestBlockHeader>(1).hash(),
 				10,
 				10,
 			);

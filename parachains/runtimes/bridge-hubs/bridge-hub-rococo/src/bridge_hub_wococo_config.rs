@@ -40,7 +40,6 @@ use xcm::{
 };
 use xcm_builder::{BridgeBlobDispatcher, HaulBlobExporter};
 
-// TODO:check-parameter
 parameter_types! {
 	pub const MaxUnrewardedRelayerEntriesAtInboundLane: bp_messages::MessageNonce =
 		bp_bridge_hub_wococo::MAX_UNREWARDED_RELAYERS_IN_CONFIRMATION_TX;
@@ -86,7 +85,7 @@ impl XcmBlobHauler for ToBridgeHubRococoXcmBlobHauler {
 		DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO
 	}
 }
-const DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO: LaneId = LaneId([0, 0, 0, 1]);
+pub const DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO: LaneId = LaneId([0, 0, 0, 1]);
 
 /// Messaging Bridge configuration for BridgeHubWococo -> BridgeHubRococo
 pub struct WithBridgeHubRococoMessageBridge;
@@ -166,10 +165,15 @@ mod tests {
 
 	#[test]
 	fn ensure_bridge_hub_wococo_message_lane_weights_are_correct() {
-		check_message_lane_weights::<bp_bridge_hub_wococo::BridgeHubWococo, Runtime>(
+		check_message_lane_weights::<
+			bp_bridge_hub_wococo::BridgeHubWococo,
+			Runtime,
+			WithBridgeHubRococoMessagesInstance,
+		>(
 			bp_bridge_hub_rococo::EXTRA_STORAGE_PROOF_SIZE,
 			bp_bridge_hub_wococo::MAX_UNREWARDED_RELAYERS_IN_CONFIRMATION_TX,
 			bp_bridge_hub_wococo::MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX,
+			true,
 		);
 	}
 
