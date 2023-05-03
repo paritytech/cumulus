@@ -33,12 +33,14 @@ pub use pallet::*;
 pub use payment_adapter::DeliveryConfirmationPaymentsAdapter;
 pub use stake_adapter::StakeAndSlashNamed;
 pub use weights::WeightInfo;
+pub use weights_ext::WeightInfoExt;
 
 pub mod benchmarking;
 
 mod mock;
 mod payment_adapter;
 mod stake_adapter;
+mod weights_ext;
 
 pub mod weights;
 
@@ -66,7 +68,7 @@ pub mod pallet {
 		/// Stake and slash scheme.
 		type StakeAndSlash: StakeAndSlash<Self::AccountId, Self::BlockNumber, Self::Reward>;
 		/// Pallet call weights.
-		type WeightInfo: WeightInfo;
+		type WeightInfo: WeightInfoExt;
 	}
 
 	#[pallet::pallet]
@@ -114,7 +116,7 @@ pub mod pallet {
 		///
 		/// Registration allows relayer to get priority boost for its message delivery transactions.
 		#[pallet::call_index(1)]
-		#[pallet::weight(Weight::zero())] // TODO: https://github.com/paritytech/parity-bridges-common/issues/2033
+		#[pallet::weight(T::WeightInfo::register())]
 		pub fn register(origin: OriginFor<T>, valid_till: T::BlockNumber) -> DispatchResult {
 			let relayer = ensure_signed(origin)?;
 
@@ -159,6 +161,7 @@ pub mod pallet {
 				}
 				registration.stake = required_stake;
 
+				log::trace!(target: LOG_TARGET, "Successfully registered relayer: {:?}", relayer);
 				Self::deposit_event(Event::<T>::RegistrationUpdated {
 					relayer: relayer.clone(),
 					registration,
@@ -175,7 +178,7 @@ pub mod pallet {
 		/// After this call, message delivery transactions of the relayer won't get any priority
 		/// boost.
 		#[pallet::call_index(2)]
-		#[pallet::weight(Weight::zero())] // TODO: https://github.com/paritytech/parity-bridges-common/issues/2033
+		#[pallet::weight(T::WeightInfo::deregister())]
 		pub fn deregister(origin: OriginFor<T>) -> DispatchResult {
 			let relayer = ensure_signed(origin)?;
 
@@ -196,6 +199,7 @@ pub mod pallet {
 					Self::do_unreserve(&relayer, registration.stake)?;
 				}
 
+				log::trace!(target: LOG_TARGET, "Successfully deregistered relayer: {:?}", relayer);
 				Self::deposit_event(Event::<T>::Deregistered { relayer: relayer.clone() });
 
 				*maybe_registration = None;
@@ -326,7 +330,7 @@ pub mod pallet {
 		}
 
 		/// Return required registration lease.
-		fn required_registration_lease() -> T::BlockNumber {
+		pub(crate) fn required_registration_lease() -> T::BlockNumber {
 			<T::StakeAndSlash as StakeAndSlash<
 				T::AccountId,
 				T::BlockNumber,
@@ -335,7 +339,7 @@ pub mod pallet {
 		}
 
 		/// Return required stake.
-		fn required_stake() -> T::Reward {
+		pub(crate) fn required_stake() -> T::Reward {
 			<T::StakeAndSlash as StakeAndSlash<
 				T::AccountId,
 				T::BlockNumber,
