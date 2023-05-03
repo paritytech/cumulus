@@ -81,6 +81,7 @@ rm -rf $BRIDGES_FOLDER/scripts/build-containers.sh
 rm -rf $BRIDGES_FOLDER/scripts/ci-cache.sh
 rm -rf $BRIDGES_FOLDER/scripts/dump-logs.sh
 rm -rf $BRIDGES_FOLDER/scripts/license_header
+rm -rf $BRIDGES_FOLDER/scripts/regenerate_runtimes.sh
 rm -rf $BRIDGES_FOLDER/scripts/send-message-from-millau-rialto.sh
 rm -rf $BRIDGES_FOLDER/scripts/send-message-from-rialto-millau.sh
 rm -rf $BRIDGES_FOLDER/scripts/update-weights.sh
