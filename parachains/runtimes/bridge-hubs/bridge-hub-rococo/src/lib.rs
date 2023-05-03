@@ -650,15 +650,6 @@ parameter_types! {
 impl snowbridge_ethereum_beacon_client::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
-	type MaxSyncCommitteeSize = MaxSyncCommitteeSize;
-	type MaxProofBranchSize = MaxProofBranchSize;
-	type MaxExtraDataSize = MaxExtraDataSize;
-	type MaxLogsBloomSize = MaxLogsBloomSize;
-	type MaxFeeRecipientSize = MaxFeeRecipientSize;
-	type MaxPublicKeySize = MaxPublicKeySize;
-	type MaxSignatureSize = MaxSignatureSize;
-	type MaxSlotsPerHistoricalRoot = MaxSlotsPerHistoricalRoot;
-	type MaxFinalizedHeaderSlotArray = MaxFinalizedHeaderSlotArray;
 	type ForkVersions = ChainForkVersions;
 	type WeakSubjectivityPeriodSeconds = WeakSubjectivityPeriodSeconds;
 	type WeightInfo = weights::snowbridge_ethereum_beacon_client::WeightInfo<Runtime>;
@@ -719,7 +710,7 @@ construct_runtime!(
 		// Ethereum Bridge
 		EthereumInboundQueue: snowbridge_inbound_queue::{Pallet, Call, Config, Storage, Event<T>} = 48,
 		EthereumOutboundQueue: snowbridge_outbound_queue::{Pallet, Config<T>, Storage, Event<T>} = 49,
-		EthereumBeaconClient: snowbridge_ethereum_beacon_client::{Pallet, Call, Config<T>, Storage, Event<T>} = 50,
+		EthereumBeaconClient: snowbridge_ethereum_beacon_client::{Pallet, Call, Config, Storage, Event<T>} = 50,
 	}
 );
 
