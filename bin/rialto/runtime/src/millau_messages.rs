@@ -149,11 +149,12 @@ mod tests {
 	};
 
 	#[test]
-	fn ensure_rialto_message_lane_weights_are_correct() {
+	fn ensure_millau_message_lane_weights_are_correct() {
 		check_message_lane_weights::<bp_rialto::Rialto, Runtime>(
 			bp_millau::EXTRA_STORAGE_PROOF_SIZE,
 			bp_rialto::MAX_UNREWARDED_RELAYERS_IN_CONFIRMATION_TX,
 			bp_rialto::MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX,
+			false,
 		);
 	}
 

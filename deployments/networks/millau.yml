@@ -11,7 +11,6 @@ services:
     image: ${MILLAU_BRIDGE_NODE_IMAGE:-paritytech/millau-bridge-node}
     entrypoint:
       - /home/user/millau-bridge-node
-      - --execution=Native
       - --chain=local
       - --bootnodes=/dns4/millau-node-bob/tcp/30333/p2p/12D3KooWM5LFR5ne4yTQ4sBSXJ75M4bDo2MAhAW2GhL3i8fe5aRb
       - --alice
@@ -32,7 +31,6 @@ services:
     <<: *millau-bridge-node
     entrypoint:
       - /home/user/millau-bridge-node
-      - --execution=Native
       - --chain=local
       - --bootnodes=/dns4/millau-node-alice/tcp/30333/p2p/12D3KooWFqiV73ipQ1jpfVmCfLqBCp8G9PLH3zPkY9EhmdrSGA4H
       - --bob
@@ -51,7 +49,6 @@ services:
     <<: *millau-bridge-node
     entrypoint:
       - /home/user/millau-bridge-node
-      - --execution=Native
       - --chain=local
       - --bootnodes=/dns4/millau-node-alice/tcp/30333/p2p/12D3KooWFqiV73ipQ1jpfVmCfLqBCp8G9PLH3zPkY9EhmdrSGA4H
       - --charlie
@@ -69,7 +66,6 @@ services:
     <<: *millau-bridge-node
     entrypoint:
       - /home/user/millau-bridge-node
-      - --execution=Native
       - --chain=local
       - --bootnodes=/dns4/millau-node-alice/tcp/30333/p2p/12D3KooWFqiV73ipQ1jpfVmCfLqBCp8G9PLH3zPkY9EhmdrSGA4H
       - --dave
@@ -87,7 +83,6 @@ services:
     <<: *millau-bridge-node
     entrypoint:
       - /home/user/millau-bridge-node
-      - --execution=Native
       - --chain=local
       - --bootnodes=/dns4/millau-node-alice/tcp/30333/p2p/12D3KooWFqiV73ipQ1jpfVmCfLqBCp8G9PLH3zPkY9EhmdrSGA4H
       - --eve

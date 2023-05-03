@@ -11,7 +11,6 @@ services:
     image: ${RIALTO_BRIDGE_NODE_IMAGE:-paritytech/rialto-bridge-node}
     entrypoint:
       - /home/user/rialto-bridge-node
-      - --execution=Native
       - --chain=local
       - --bootnodes=/dns4/rialto-node-bob/tcp/30333/p2p/12D3KooWSEpHJj29HEzgPFcRYVc5X3sEuP3KgiUoqJNCet51NiMX
       - --alice
@@ -32,7 +31,6 @@ services:
     <<: *rialto-bridge-node
     entrypoint:
       - /home/user/rialto-bridge-node
-      - --execution=Native
       - --chain=local
       - --bootnodes=/dns4/rialto-node-alice/tcp/30333/p2p/12D3KooWMF6JvV319a7kJn5pqkKbhR3fcM2cvK5vCbYZHeQhYzFE
       - --bob
@@ -51,7 +49,6 @@ services:
     <<: *rialto-bridge-node
     entrypoint:
       - /home/user/rialto-bridge-node
-      - --execution=Native
       - --chain=local
       - --bootnodes=/dns4/rialto-node-alice/tcp/30333/p2p/12D3KooWMF6JvV319a7kJn5pqkKbhR3fcM2cvK5vCbYZHeQhYzFE
       - --charlie
@@ -69,7 +66,6 @@ services:
     <<: *rialto-bridge-node
     entrypoint:
       - /home/user/rialto-bridge-node
-      - --execution=Native
       - --chain=local
       - --bootnodes=/dns4/rialto-node-alice/tcp/30333/p2p/12D3KooWMF6JvV319a7kJn5pqkKbhR3fcM2cvK5vCbYZHeQhYzFE
       - --dave
@@ -87,7 +83,6 @@ services:
     <<: *rialto-bridge-node
     entrypoint:
       - /home/user/rialto-bridge-node
-      - --execution=Native
       - --chain=local
       - --bootnodes=/dns4/rialto-node-alice/tcp/30333/p2p/12D3KooWMF6JvV319a7kJn5pqkKbhR3fcM2cvK5vCbYZHeQhYzFE
       - --eve
@@ -105,7 +100,6 @@ services:
     <<: *rialto-bridge-node
     entrypoint:
       - /home/user/rialto-bridge-node
-      - --execution=Native
       - --chain=local
       - --bootnodes=/dns4/rialto-node-alice/tcp/30333/p2p/12D3KooWMF6JvV319a7kJn5pqkKbhR3fcM2cvK5vCbYZHeQhYzFE
       - --ferdie

@@ -26,6 +26,7 @@ use bridge_runtime_common::{
 	messages_xcm_extension::{XcmBlobHauler, XcmBlobHaulerAdapter},
 };
 use frame_support::{parameter_types, weights::Weight, RuntimeDebug};
+use pallet_bridge_relayers::WeightInfoExt as _;
 use xcm::latest::prelude::*;
 use xcm_builder::HaulBlobExporter;
 
@@ -135,6 +136,20 @@ impl XcmBlobHauler for ToRialtoXcmBlobHauler {
 	}
 }
 
+impl pallet_bridge_messages::WeightInfoExt for crate::weights::RialtoMessagesWeightInfo<Runtime> {
+	fn expected_extra_storage_proof_size() -> u32 {
+		bp_rialto::EXTRA_STORAGE_PROOF_SIZE
+	}
+
+	fn receive_messages_proof_overhead_from_runtime() -> Weight {
+		pallet_bridge_relayers::weights::BridgeWeight::<Runtime>::receive_messages_proof_overhead_from_runtime()
+	}
+
+	fn receive_messages_delivery_proof_overhead_from_runtime() -> Weight {
+		pallet_bridge_relayers::weights::BridgeWeight::<Runtime>::receive_messages_delivery_proof_overhead_from_runtime()
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -155,6 +170,7 @@ mod tests {
 			bp_rialto::EXTRA_STORAGE_PROOF_SIZE,
 			bp_millau::MAX_UNREWARDED_RELAYERS_IN_CONFIRMATION_TX,
 			bp_millau::MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX,
+			false,
 		);
 	}
 

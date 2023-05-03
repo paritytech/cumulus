@@ -115,7 +115,7 @@ spellcheck:
   <<:                              *docker-env
   <<:                              *test-refs
   script:
-    - cargo spellcheck check --cfg=.config/spellcheck.toml --checkers hunspell -m 1 $(find . -type f -name '*.rs' ! -path "./target/*" ! -name 'codegen_runtime.rs' ! -name 'weights.rs')
+    - cargo spellcheck check --cfg=.config/spellcheck.toml --checkers hunspell -m 1 $(find . -type f -name '*.rs' ! -path "./target/*" ! -path "./bin/millau/runtime/src/weights/*" ! -name 'codegen_runtime.rs' ! -name 'weights.rs')
 
 check:
   stage:                           test
@@ -190,8 +190,7 @@ benchmarks-test:
   <<:                              *docker-env
   <<:                              *nightly-test
   script:
-    - time cargo run --release -p millau-bridge-node --features=runtime-benchmarks -- benchmark pallet --chain=dev --steps=2 --repeat=1 --pallet=RialtoMessages --extrinsic=* --execution=wasm --wasm-execution=Compiled --heap-pages=4096
-    - time cargo run --release -p millau-bridge-node --features=runtime-benchmarks -- benchmark pallet --chain=dev --steps=2 --repeat=1 --pallet=RialtoParachainMessages --extrinsic=* --execution=wasm --wasm-execution=Compiled --heap-pages=4096
+    - time cargo run --release -p millau-bridge-node --features=runtime-benchmarks -- benchmark pallet --chain=dev --steps=2 --repeat=1 --pallet=pallet_bridge_messages --extrinsic=* --execution=wasm --wasm-execution=Compiled --heap-pages=4096
     - time cargo run --release -p millau-bridge-node --features=runtime-benchmarks -- benchmark pallet --chain=dev --steps=2 --repeat=1 --pallet=pallet_bridge_grandpa --extrinsic=* --execution=wasm --wasm-execution=Compiled --heap-pages=4096
     - time cargo run --release -p millau-bridge-node --features=runtime-benchmarks -- benchmark pallet --chain=dev --steps=2 --repeat=1 --pallet=pallet_bridge_parachains --extrinsic=* --execution=wasm --wasm-execution=Compiled --heap-pages=4096
     - time cargo run --release -p millau-bridge-node --features=runtime-benchmarks -- benchmark pallet --chain=dev --steps=2 --repeat=1 --pallet=pallet_bridge_relayers --extrinsic=* --execution=wasm --wasm-execution=Compiled --heap-pages=4096
