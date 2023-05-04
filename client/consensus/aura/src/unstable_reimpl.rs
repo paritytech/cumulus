@@ -231,21 +231,10 @@ fn slot_now(slot_duration: SlotDuration) -> Slot {
 	Slot::from_timestamp(timestamp, slot_duration)
 }
 
-pub struct SlotClaim<Pub> {
-	slot: Slot,
+/// A claim on an Aura slot.
+struct SlotClaim<Pub> {
 	author_pub: Pub,
 	pre_digest: sp_runtime::DigestItem,
-}
-
-impl<Pub> SlotClaim<Pub> {
-	/// Access the underlying slot.
-	pub fn slot(&self) -> &Slot { &self.slot }
-
-	/// Access the underlying author public key owning this slot.
-	pub fn author_pub(&self) -> &Pub { &self.author_pub }
-
-	/// Access the underlying pre-digest used for authoring blocks in this slot.
-	pub fn pre_digest(&self) -> &sp_runtime::DigestItem { &self.pre_digest }
 }
 
 async fn claim_slot<B, C, P>(
@@ -284,7 +273,6 @@ where
 	let pre_digest = aura_internal::pre_digest::<P>(slot_now);
 
 	Ok(Some(SlotClaim {
-		slot: slot_now,
 		author_pub,
 		pre_digest,
 	}))
