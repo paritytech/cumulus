@@ -3,7 +3,8 @@ use core::{marker::PhantomData, ops::ControlFlow};
 use frame_support::{
 	log,
 	traits::{
-		fungibles::Inspect, tokens::ConversionToAssetBalance, Contains, ContainsPair, ProcessMessageError,
+		fungibles::Inspect, tokens::ConversionToAssetBalance, Contains, ContainsPair,
+		ProcessMessageError,
 	},
 	weights::Weight,
 };
