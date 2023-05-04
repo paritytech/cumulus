@@ -6,8 +6,9 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 
 [dependencies]
-
+anyhow = "1.0"
 async-trait = "0.1.68"
+thiserror = "1.0.40"
 
 # Substrate
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }

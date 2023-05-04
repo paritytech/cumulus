@@ -27,53 +27,26 @@ use sp_runtime::{traits::Block as BlockT, Digest};
 use sp_state_machine::StorageProof;
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 
-use std::error::Error as StdError;
 use std::fmt::Debug;
 use std::time::Duration;
 
 /// Errors that can occur when proposing a parachain block.
+#[derive(thiserror::Error, Debug)]
+#[error(transparent)]
 pub struct Error {
-	inner: ErrorInner,
+	inner: anyhow::Error
 }
-
-impl std::fmt::Display for Error {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		match self.inner {
-			ErrorInner::ProposerCreation(_) => write!(f, "Unable to create block proposer"),
-			ErrorInner::Proposing(_) => write!(f, "Unable to propose block"),
-		}
-	}
-}
-
-impl Debug for Error {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		match self.inner {
-			ErrorInner::ProposerCreation(ref e) => write!(f, "Unable to create block proposer: {:?}", e),
-			ErrorInner::Proposing(ref e) => write!(f, "Unable to propose block: {:?}", e),
-		}
-	}
-}
-
-impl StdError for Error {}
 
 impl Error {
-	fn proposer_creation(x: impl StdError + 'static) -> Self {
-		Error {
-			inner: ErrorInner::ProposerCreation(Box::new(x)),
-		}
+	/// Create an error tied to the creation of a proposer.
+	pub fn proposer_creation(err: impl Into<anyhow::Error>) -> Self {
+		Error { inner: err.into().context("Proposer Creation") }
 	}
 
-	fn proposing(x: impl StdError + 'static) -> Self {
-		Error {
-			inner: ErrorInner::Proposing(Box::new(x)),
-		}
+	/// Create an error tied to the proposing logic itself.
+	pub fn proposing(err: impl Into<anyhow::Error>) -> Self {
+		Error { inner: err.into().context("Proposing") }
 	}
-}
-
-#[derive(Debug)]
-enum ErrorInner {
-	ProposerCreation(Box<dyn StdError>),
-	Proposing(Box<dyn StdError>),
 }
 
 /// A type alias for easily referring to the type of a proposal produced by a specific
@@ -143,7 +116,9 @@ impl<B, T> ProposerInterface<B> for Proposer<B, T>
 	where
 		B: sp_runtime::traits::Block,
 		T: Environment<B> + Send,
+		T::Error: Send + Sync + 'static,
 		T::Proposer: SubstrateProposer<B, ProofRecording=EnableProofRecording, Proof=StorageProof>,
+		<T::Proposer as SubstrateProposer<B>>::Error: Send + Sync + 'static,
 {
 	type Transaction = <<T as Environment<B>>::Proposer as SubstrateProposer<B>>::Transaction;
 
@@ -166,19 +141,19 @@ impl<B, T> ProposerInterface<B> for Proposer<B, T>
 		let proposer = self.inner
 			.init(parent_header)
 			.await
-			.map_err(Error::proposer_creation)?;
+			.map_err(|e| Error::proposer_creation(anyhow::Error::new(e)))?;
 
 		let mut inherent_data = other_inherent_data;
 		inherent_data.put_data(
 			cumulus_primitives_parachain_inherent::INHERENT_IDENTIFIER,
 			&paras_inherent_data,
-		).map_err(Error::proposing)?;
+		).map_err(|e| Error::proposing(anyhow::Error::new(e)))?;
 
 		proposer.propose(
 			inherent_data,
 			inherent_digests,
 			max_duration,
 			block_size_limit,
-		).await.map_err(Error::proposing)
+		).await.map_err(|e| Error::proposing(anyhow::Error::new(e)).into())
 	}
 }

@@ -1941,12 +1941,14 @@ dependencies = [
 name = "cumulus-client-consensus-proposer"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "async-trait",
  "cumulus-primitives-parachain-inherent",
  "sp-consensus",
  "sp-inherents",
  "sp-runtime",
  "sp-state-machine",
+ "thiserror",
 ]
 
 [[package]]
