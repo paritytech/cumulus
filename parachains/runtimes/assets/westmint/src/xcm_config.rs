@@ -191,7 +191,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			}
 		}
 
-		match call {
+		matches!(call,
 			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
 			RuntimeCall::System(
 				frame_system::Call::set_heap_pages { .. } |
@@ -337,9 +337,8 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_uniques::Call::set_collection_max_supply { .. } |
 				pallet_uniques::Call::set_price { .. } |
 				pallet_uniques::Call::buy_item { .. },
-			) => true,
-			_ => false,
-		}
+			)
+		)
 	}
 }
 

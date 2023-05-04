@@ -42,10 +42,7 @@ impl<Network: Get<NetworkId>> Contains<MultiLocation>
 	for StartsWithExplicitGlobalConsensus<Network>
 {
 	fn contains(t: &MultiLocation) -> bool {
-		match t.interior.global_consensus() {
-			Ok(requested_network) if requested_network.eq(&Network::get()) => true,
-			_ => false,
-		}
+		matches!(t.interior.global_consensus(), Ok(requested_network) if requested_network.eq(&Network::get()))
 	}
 }
 
@@ -79,12 +76,9 @@ impl<SelfParaId: Get<ParaId>> ContainsPair<MultiLocation, MultiLocation>
 
 		// here we check if sibling
 		match a {
-			MultiLocation { parents: 1, interior } => match interior.first() {
-				Some(Parachain(sibling_para_id))
-					if sibling_para_id.ne(&u32::from(SelfParaId::get())) =>
-					true,
-				_ => false,
-			},
+			MultiLocation { parents: 1, interior } => 
+				matches!(interior.first(), Some(Parachain(sibling_para_id)) if sibling_para_id.ne(&u32::from(SelfParaId::get())))
+			,
 			_ => false,
 		}
 	}

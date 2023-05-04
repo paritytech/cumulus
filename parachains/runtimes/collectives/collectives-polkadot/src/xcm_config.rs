@@ -137,7 +137,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			}
 		}
 
-		match call {
+		matches!(call,
 			RuntimeCall::System(
 				frame_system::Call::set_heap_pages { .. } |
 				frame_system::Call::set_code { .. } |
@@ -186,9 +186,8 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_ranked_collective::Call::promote_member { .. } |
 				pallet_ranked_collective::Call::demote_member { .. } |
 				pallet_ranked_collective::Call::remove_member { .. },
-			) => true,
-			_ => false,
-		}
+			)
+		)
 	}
 }
 

@@ -132,7 +132,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			}
 		}
 
-		match call {
+		matches!(call,
 			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
 			RuntimeCall::System(
 				frame_system::Call::set_heap_pages { .. } |
@@ -152,9 +152,8 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 			RuntimeCall::XcmpQueue(..) |
 			RuntimeCall::DmpQueue(..) |
-			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) => true,
-			_ => false,
-		}
+			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. })
+		)
 	}
 }
 
