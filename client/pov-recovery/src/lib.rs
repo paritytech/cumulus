@@ -310,6 +310,7 @@ where
 	/// Block is no longer waiting for recovery
 	fn clear_waiting_recovery(&mut self, block_hash: &Block::Hash) {
 		if let Some(candidate) = self.candidates.get_mut(block_hash) {
+			// Prevents triggering an already enqueued recovery request
 			candidate.waiting_recovery = false;
 		}
 	}
