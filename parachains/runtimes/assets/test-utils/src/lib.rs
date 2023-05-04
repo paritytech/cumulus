@@ -303,8 +303,9 @@ impl<Runtime: frame_system::Config + pallet_xcm::Config> RuntimeHelper<Runtime> 
 			.find_map(|e| match e {
 				pallet_xcm::Event::Attempted(outcome) => Some(outcome),
 				_ => None,
-			}).expect("No `pallet_xcm::Event::Attempted(outcome)` event found!");
-		
+			})
+			.expect("No `pallet_xcm::Event::Attempted(outcome)` event found!");
+
 		assert_outcome(outcome);
 	}
 }

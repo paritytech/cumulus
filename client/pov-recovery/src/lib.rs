@@ -309,7 +309,9 @@ where
 
 	/// Block is no longer waiting for recovery
 	fn clear_waiting_recovery(&mut self, block_hash: &Block::Hash) {
-		if let Some(candidate) = self.candidates.get_mut(block_hash) { candidate.waiting_recovery = false; }
+		if let Some(candidate) = self.candidates.get_mut(block_hash) {
+			candidate.waiting_recovery = false;
+		}
 	}
 
 	/// Handle a finalized block with the given `block_number`.

@@ -905,9 +905,8 @@ mod tests {
 			enqueue(&[msg(1002), msg(1003)]);
 			enqueue(&[msg(1004), msg(1005)]);
 
-			let incoming = (0..MAX_MESSAGES_PER_BLOCK)
-				.map(|i| msg(1006 + i as u64))
-				.collect::<Vec<_>>();
+			let incoming =
+				(0..MAX_MESSAGES_PER_BLOCK).map(|i| msg(1006 + i as u64)).collect::<Vec<_>>();
 			handle_messages(&incoming, Weight::from_parts(25000, 25000));
 
 			assert_eq!(

@@ -33,8 +33,7 @@ const MAX_ASSETS: u64 = 100;
 impl WeighMultiAssets for MultiAssetFilter {
 	fn weigh_multi_assets(&self, weight: Weight) -> Weight {
 		match self {
-			Self::Definite(assets) =>
-				weight.saturating_mul(assets.inner().iter().count() as u64),
+			Self::Definite(assets) => weight.saturating_mul(assets.inner().iter().count() as u64),
 			Self::Wild(asset) => match asset {
 				All => weight.saturating_mul(MAX_ASSETS),
 				AllOf { fun, .. } => match fun {

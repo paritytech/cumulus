@@ -270,16 +270,14 @@ where
 
 		let (header, extrinsics) = candidate.block.deconstruct();
 
-		let compact_proof = match candidate
-			.proof
-			.into_compact_proof::<HashFor<Block>>(*last_head.state_root())
-		{
-			Ok(proof) => proof,
-			Err(e) => {
-				tracing::error!(target: "cumulus-collator", "Failed to compact proof: {:?}", e);
-				return None
-			},
-		};
+		let compact_proof =
+			match candidate.proof.into_compact_proof::<HashFor<Block>>(*last_head.state_root()) {
+				Ok(proof) => proof,
+				Err(e) => {
+					tracing::error!(target: "cumulus-collator", "Failed to compact proof: {:?}", e);
+					return None
+				},
+			};
 
 		// Create the parachain block data for the validators.
 		let b = ParachainBlockData::<Block>::new(header, extrinsics, compact_proof);
@@ -451,7 +449,7 @@ mod tests {
 				.build()
 				.expect("Builds overseer");
 
-		spawner.spawn("overseer", None, overseer.run().then(|_| async {  }).boxed());
+		spawner.spawn("overseer", None, overseer.run().then(|_| async {}).boxed());
 
 		let collator_start = start_collator(StartCollatorParams {
 			runtime_api: client.clone(),
@@ -471,10 +469,8 @@ mod tests {
 
 		let CollationGenerationMessage::Initialize(config) = msg;
 
-		let validation_data = PersistedValidationData {
-			parent_head: header.encode().into(),
-			.. Default::default()
-		};
+		let validation_data =
+			PersistedValidationData { parent_head: header.encode().into(), ..Default::default() };
 		let relay_parent = Default::default();
 
 		let collation = block_on((config.collator)(relay_parent, &validation_data))

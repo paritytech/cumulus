@@ -91,12 +91,10 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	fn set_desired_candidates() -> Weight {
-		Weight::from_parts(16_363_000_u64, 0)
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
+		Weight::from_parts(16_363_000_u64, 0).saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	fn set_candidacy_bond() -> Weight {
-		Weight::from_parts(16_840_000_u64, 0)
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
+		Weight::from_parts(16_840_000_u64, 0).saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	fn register_as_candidate(c: u32) -> Weight {
 		Weight::from_parts(71_196_000_u64, 0)

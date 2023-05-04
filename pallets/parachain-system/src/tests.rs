@@ -358,8 +358,8 @@ impl BlockTests {
 
 				// did block execution set new validation code?
 				if NewValidationCode::<Test>::exists() && self.pending_upgrade.is_some() {
-    						panic!("attempted to set validation code while upgrade was pending");
-    					}
+					panic!("attempted to set validation code while upgrade was pending");
+				}
 
 				// clean up
 				System::finalize();
@@ -413,9 +413,9 @@ fn events() {
 				let events = System::events();
 				assert_eq!(
 					events[0].event,
-					RuntimeEvent::ParachainSystem(
-						crate::Event::ValidationFunctionApplied { relay_chain_block_num: 1234 }
-					)
+					RuntimeEvent::ParachainSystem(crate::Event::ValidationFunctionApplied {
+						relay_chain_block_num: 1234
+					})
 				);
 			},
 		);

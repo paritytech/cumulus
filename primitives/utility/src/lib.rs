@@ -233,8 +233,7 @@ impl<
 			let asset_balance: u128 = asset_balance.saturated_into();
 
 			// Construct outstanding_concrete_asset with the same location id and substracted balance
-			let outstanding_concrete_asset: MultiAsset =
-				(id, outstanding_minus_substracted).into();
+			let outstanding_concrete_asset: MultiAsset = (id, outstanding_minus_substracted).into();
 
 			// Substract from existing weight and balance
 			weight_outstanding = weight_outstanding.saturating_sub(weight);
@@ -536,9 +535,6 @@ mod tests {
 		assert_ok!(trader.buy_weight(weight_to_buy, payment.clone()));
 
 		// lets do second call (error)
-		assert_eq!(
-			trader.buy_weight(weight_to_buy, payment),
-			Err(XcmError::NotWithdrawable)
-		);
+		assert_eq!(trader.buy_weight(weight_to_buy, payment), Err(XcmError::NotWithdrawable));
 	}
 }

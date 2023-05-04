@@ -473,10 +473,7 @@ pub mod pallet {
 			check_version: bool,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-			AuthorizedUpgrade::<T>::put(CodeUpgradeAuthorization {
-				code_hash,
-				check_version,
-			});
+			AuthorizedUpgrade::<T>::put(CodeUpgradeAuthorization { code_hash, check_version });
 
 			Self::deposit_event(Event::UpgradeAuthorized { code_hash });
 			Ok(())
