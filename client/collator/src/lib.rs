@@ -34,7 +34,6 @@ use polkadot_primitives::{CollatorPair, Id as ParaId};
 use codec::{Decode, Encode};
 use futures::prelude::*;
 use std::sync::Arc;
-use tracing::Instrument;
 
 use crate::service::CollatorService;
 
