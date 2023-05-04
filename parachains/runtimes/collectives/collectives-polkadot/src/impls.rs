@@ -73,10 +73,9 @@ where
 			0,
 		);
 
-		match result {
-			Err(err) => log::warn!("Failed to teleport slashed assets: {:?}", err),
-			_ => (),
-		};
+		if let Err(err) = result {
+			log::warn!("Failed to teleport slashed assets: {:?}", err);
+		}
 	}
 }
 

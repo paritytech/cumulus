@@ -303,11 +303,9 @@ impl<Runtime: frame_system::Config + pallet_xcm::Config> RuntimeHelper<Runtime> 
 			.find_map(|e| match e {
 				pallet_xcm::Event::Attempted(outcome) => Some(outcome),
 				_ => None,
-			});
-		match outcome {
-			Some(outcome) => assert_outcome(outcome),
-			None => assert!(false, "No `pallet_xcm::Event::Attempted(outcome)` event found!"),
-		}
+			}).expect("No `pallet_xcm::Event::Attempted(outcome)` event found!");
+		
+		assert_outcome(outcome);
 	}
 }
 
@@ -362,8 +360,11 @@ pub fn mock_open_hrmp_channel<
 	recipient: ParaId,
 ) {
 	let n = 1_u32;
-	let mut sproof_builder = RelayStateSproofBuilder::default();
-	sproof_builder.para_id = sender;
+	let mut sproof_builder = RelayStateSproofBuilder {
+		para_id: sender,
+		hrmp_egress_channel_index: Some(vec![recipient]),
+		..Default::default()
+	};
 	sproof_builder.hrmp_channels.insert(
 		HrmpChannelId { sender, recipient },
 		AbridgedHrmpChannel {
@@ -375,7 +376,6 @@ pub fn mock_open_hrmp_channel<
 			mqc_head: None,
 		},
 	);
-	sproof_builder.hrmp_egress_channel_index = Some(vec![recipient]);
 
 	let (relay_parent_storage_root, relay_chain_state) = sproof_builder.into_state_root_and_proof();
 	let vfp = PersistedValidationData {

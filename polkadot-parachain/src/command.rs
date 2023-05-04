@@ -258,12 +258,10 @@ fn extract_parachain_id(id: &str) -> (&str, &str, Option<ParaId>) {
 	const KUSAMA_TEST_PARA_PREFIX: &str = "penpal-kusama-";
 	const POLKADOT_TEST_PARA_PREFIX: &str = "penpal-polkadot-";
 
-	let (norm_id, orig_id, para) = if id.starts_with(KUSAMA_TEST_PARA_PREFIX) {
-		let suffix = &id[KUSAMA_TEST_PARA_PREFIX.len()..];
+	let (norm_id, orig_id, para) = if let Some(suffix) = id.strip_prefix(KUSAMA_TEST_PARA_PREFIX) {
 		let para_id: u32 = suffix.parse().expect("Invalid parachain-id suffix");
 		(&id[..KUSAMA_TEST_PARA_PREFIX.len() - 1], id, Some(para_id))
-	} else if id.starts_with(POLKADOT_TEST_PARA_PREFIX) {
-		let suffix = &id[POLKADOT_TEST_PARA_PREFIX.len()..];
+	} else if let Some(suffix) = id.strip_prefix(POLKADOT_TEST_PARA_PREFIX) {
 		let para_id: u32 = suffix.parse().expect("Invalid parachain-id suffix");
 		(&id[..POLKADOT_TEST_PARA_PREFIX.len() - 1], id, Some(para_id))
 	} else {

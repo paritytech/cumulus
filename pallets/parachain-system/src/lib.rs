@@ -1090,22 +1090,20 @@ impl<T: Config> Pallet<T> {
 		// may change so that the message is no longer valid.
 		//
 		// However, changing this setting is expected to be rare.
-		match Self::host_configuration() {
-			Some(cfg) =>
-				if message.len() > cfg.max_upward_message_size as usize {
-					return Err(MessageSendError::TooBig)
-				},
-			None => {
-				// This storage field should carry over from the previous block. So if it's None
-				// then it must be that this is an edge-case where a message is attempted to be
-				// sent at the first block.
-				//
-				// Let's pass this message through. I think it's not unreasonable to expect that
-				// the message is not huge and it comes through, but if it doesn't it can be
-				// returned back to the sender.
-				//
-				// Thus fall through here.
-			},
+		if let Some(cfg) = Self::host_configuration() {
+			if message.len() > cfg.max_upward_message_size as usize {
+				return Err(MessageSendError::TooBig)
+			}
+		} else {
+			// This storage field should carry over from the previous block. So if it's None
+			// then it must be that this is an edge-case where a message is attempted to be
+			// sent at the first block.
+			//
+			// Let's pass this message through. I think it's not unreasonable to expect that
+			// the message is not huge and it comes through, but if it doesn't it can be
+			// returned back to the sender.
+			//
+			// Thus fall through here.
 		};
 		<PendingUpwardMessages<T>>::append(message.clone());
 
