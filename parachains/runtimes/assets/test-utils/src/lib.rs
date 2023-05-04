@@ -134,12 +134,12 @@ impl<
 				.unwrap();
 		}
 
-		pallet_balances::GenesisConfig::<Runtime> { balances: self.balances.into() }
+		pallet_balances::GenesisConfig::<Runtime> { balances: self.balances }
 			.assimilate_storage(&mut t)
 			.unwrap();
 
 		pallet_collator_selection::GenesisConfig::<Runtime> {
-			invulnerables: self.collators.clone().into(),
+			invulnerables: self.collators.clone(),
 			candidacy_bond: Default::default(),
 			desired_candidates: Default::default(),
 		}
@@ -388,7 +388,7 @@ pub fn mock_open_hrmp_channel<
 	let inherent_data = {
 		let mut inherent_data = InherentData::default();
 		let system_inherent_data = ParachainInherentData {
-			validation_data: vfp.clone(),
+			validation_data: vfp,
 			relay_chain_state,
 			downward_messages: Default::default(),
 			horizontal_messages: Default::default(),

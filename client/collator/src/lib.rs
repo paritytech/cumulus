@@ -272,7 +272,7 @@ where
 
 		let compact_proof = match candidate
 			.proof
-			.into_compact_proof::<HashFor<Block>>(last_head.state_root().clone())
+			.into_compact_proof::<HashFor<Block>>(*last_head.state_root())
 		{
 			Ok(proof) => proof,
 			Err(e) => {
@@ -451,7 +451,7 @@ mod tests {
 				.build()
 				.expect("Builds overseer");
 
-		spawner.spawn("overseer", None, overseer.run().then(|_| async { () }).boxed());
+		spawner.spawn("overseer", None, overseer.run().then(|_| async {  }).boxed());
 
 		let collator_start = start_collator(StartCollatorParams {
 			runtime_api: client.clone(),
@@ -461,7 +461,7 @@ mod tests {
 			spawner,
 			para_id,
 			key: CollatorPair::generate().0,
-			parachain_consensus: Box::new(DummyParachainConsensus { client: client.clone() }),
+			parachain_consensus: Box::new(DummyParachainConsensus { client: client }),
 		});
 		block_on(collator_start);
 
@@ -469,9 +469,7 @@ mod tests {
 			.0
 			.expect("message should be send by `start_collator` above.");
 
-		let config = match msg {
-			CollationGenerationMessage::Initialize(config) => config,
-		};
+		let CollationGenerationMessage::Initialize(config) = msg;
 
 		let mut validation_data = PersistedValidationData::default();
 		validation_data.parent_head = header.encode().into();

@@ -61,7 +61,7 @@ impl<IsForeign: ContainsPair<MultiLocation, MultiLocation>> ContainsPair<MultiAs
 {
 	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
 		log::trace!(target: "xcm::contains", "IsForeignConcreteAsset asset: {:?}, origin: {:?}", asset, origin);
-		matches!(asset.id, Concrete(ref id) if IsForeign::contains(id, &origin))
+		matches!(asset.id, Concrete(ref id) if IsForeign::contains(id, origin))
 	}
 }
 
@@ -73,7 +73,7 @@ impl<SelfParaId: Get<ParaId>> ContainsPair<MultiLocation, MultiLocation>
 {
 	fn contains(&a: &MultiLocation, b: &MultiLocation) -> bool {
 		// `a` needs to be from `b` at least
-		if !a.starts_with(&b) {
+		if !a.starts_with(b) {
 			return false
 		}
 

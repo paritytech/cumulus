@@ -190,7 +190,7 @@ impl<Block: BlockT> RecoveryQueue<Block> {
 	/// Get the next hash for block recovery.
 	pub async fn next_recovery(&mut self) -> Block::Hash {
 		loop {
-			if let Some(_) = self.signaling_queue.next().await {
+			if (self.signaling_queue.next().await).is_some() {
 				if let Some(hash) = self.recovery_queue.pop_front() {
 					return hash
 				} else {
@@ -309,10 +309,7 @@ where
 
 	/// Block is no longer waiting for recovery
 	fn clear_waiting_recovery(&mut self, block_hash: &Block::Hash) {
-		self.candidates.get_mut(block_hash).map(|candidate| {
-			// Prevents triggering an already enqueued recovery request
-			candidate.waiting_recovery = false;
-		});
+		if let Some(candidate) = self.candidates.get_mut(block_hash) { candidate.waiting_recovery = false; }
 	}
 
 	/// Handle a finalized block with the given `block_number`.

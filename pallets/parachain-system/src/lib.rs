@@ -474,7 +474,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			AuthorizedUpgrade::<T>::put(CodeUpgradeAuthorization {
-				code_hash: code_hash.clone(),
+				code_hash,
 				check_version,
 			});
 
@@ -753,7 +753,7 @@ impl<T: Config> Pallet<T> {
 		let authorization = AuthorizedUpgrade::<T>::get().ok_or(Error::<T>::NothingAuthorized)?;
 
 		// ensure that the actual hash matches the authorized hash
-		let actual_hash = T::Hashing::hash(&code[..]);
+		let actual_hash = T::Hashing::hash(code);
 		ensure!(actual_hash == authorization.code_hash, Error::<T>::Unauthorized);
 
 		// check versions if required as part of the authorization
@@ -941,10 +941,10 @@ impl<T: Config> Pallet<T> {
 		// `running_mqc_heads`. Otherwise, in a block where no messages were sent in a channel
 		// it won't get into next block's `last_mqc_heads` and thus will be all zeros, which
 		// would corrupt the message queue chain.
-		for &(ref sender, ref channel) in ingress_channels {
+		for (sender, channel) in ingress_channels {
 			let cur_head = running_mqc_heads
 				.entry(sender)
-				.or_insert_with(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default())
+				.or_insert_with(|| last_mqc_heads.get(sender).cloned().unwrap_or_default())
 				.head();
 			let target_head = channel.mqc_head.unwrap_or_default();
 

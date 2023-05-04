@@ -84,7 +84,7 @@ fn test_asset_xcm_trader() {
 			// Lets pay with: asset_amount_needed + asset_amount_extra
 			let asset_amount_extra = 100_u128;
 			let asset: MultiAsset =
-				(asset_multilocation.clone(), asset_amount_needed + asset_amount_extra).into();
+				(asset_multilocation, asset_amount_needed + asset_amount_extra).into();
 
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
 
@@ -156,7 +156,7 @@ fn test_asset_xcm_trader_with_refund() {
 			// lets calculate amount needed
 			let amount_bought = WeightToFee::weight_to_fee(&bought);
 
-			let asset: MultiAsset = (asset_multilocation.clone(), amount_bought).into();
+			let asset: MultiAsset = (asset_multilocation, amount_bought).into();
 
 			// Make sure buy_weight does not return an error
 			assert_ok!(trader.buy_weight(bought, asset.clone().into()));
@@ -230,7 +230,7 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 				"we are testing what happens when the amount does not exceed ED"
 			);
 
-			let asset: MultiAsset = (asset_multilocation.clone(), amount_bought).into();
+			let asset: MultiAsset = (asset_multilocation, amount_bought).into();
 
 			// Buy weight should return an error
 			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::TooExpensive);
@@ -282,11 +282,11 @@ fn test_that_buying_ed_refund_does_not_refund() {
 
 			// We know we will have to buy at least ED, so lets make sure first it will
 			// fail with a payment of less than ED
-			let asset: MultiAsset = (asset_multilocation.clone(), amount_bought).into();
+			let asset: MultiAsset = (asset_multilocation, amount_bought).into();
 			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::TooExpensive);
 
 			// Now lets buy ED at least
-			let asset: MultiAsset = (asset_multilocation.clone(), ExistentialDeposit::get()).into();
+			let asset: MultiAsset = (asset_multilocation, ExistentialDeposit::get()).into();
 
 			// Buy weight should work
 			assert_ok!(trader.buy_weight(bought, asset.into()));
@@ -421,7 +421,7 @@ fn test_assets_balances_api_works() {
 			let foreign_asset_minimum_asset_balance = 3333333_u128;
 			assert_ok!(ForeignAssets::force_create(
 				RuntimeHelper::<Runtime>::root_origin(),
-				foreign_asset_id_multilocation.clone().into(),
+				foreign_asset_id_multilocation,
 				AccountId::from(SOME_ASSET_ADMIN).into(),
 				false,
 				foreign_asset_minimum_asset_balance
@@ -430,7 +430,7 @@ fn test_assets_balances_api_works() {
 			// We first mint enough asset for the account to exist for assets
 			assert_ok!(ForeignAssets::mint(
 				RuntimeHelper::<Runtime>::origin_of(AccountId::from(SOME_ASSET_ADMIN)),
-				foreign_asset_id_multilocation.clone().into(),
+				foreign_asset_id_multilocation,
 				AccountId::from(ALICE).into(),
 				6 * foreign_asset_minimum_asset_balance
 			));

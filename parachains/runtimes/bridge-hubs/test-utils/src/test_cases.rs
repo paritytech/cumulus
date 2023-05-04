@@ -166,7 +166,7 @@ pub fn handle_export_message_from_system_parachain_to_outbound_queue_works<
 			// check queue before
 			assert_eq!(
 				pallet_bridge_messages::OutboundLanes::<Runtime, MessagesPalletInstance>::try_get(
-					&expected_lane_id
+					expected_lane_id
 				),
 				Err(())
 			);
@@ -190,7 +190,7 @@ pub fn handle_export_message_from_system_parachain_to_outbound_queue_works<
 			// check queue after
 			assert_eq!(
 				pallet_bridge_messages::OutboundLanes::<Runtime, MessagesPalletInstance>::try_get(
-					&expected_lane_id
+					expected_lane_id
 				),
 				Ok(OutboundLaneData {
 					oldest_unpruned_nonce: 1,

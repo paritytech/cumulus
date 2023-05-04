@@ -183,7 +183,7 @@ where
 	let (_, bridged_header_hash) = insert_header_to_grandpa_pallet::<R, FI>(state_root);
 
 	FromBridgedChainMessagesDeliveryProof {
-		bridged_header_hash: bridged_header_hash.into(),
+		bridged_header_hash,
 		storage_proof,
 		lane,
 	}
@@ -212,7 +212,7 @@ where
 		insert_header_to_parachains_pallet::<R, PI, UnderlyingChainOf<BridgedChain<B>>>(state_root);
 
 	FromBridgedChainMessagesDeliveryProof {
-		bridged_header_hash: bridged_header_hash.into(),
+		bridged_header_hash,
 		storage_proof,
 		lane,
 	}
