@@ -235,10 +235,10 @@ where
 			.ok()
 			.flatten()?;
 
-		let b = ParachainBlockData::<Block>::new(header, extrinsics, compact_proof);
+		let block_data = ParachainBlockData::<Block>::new(header, extrinsics, compact_proof);
 
 		let pov = polkadot_node_primitives::maybe_compress_pov(
-			PoV { block_data: BlockData(b.encode()) },
+			PoV { block_data: BlockData(block_data.encode()) },
 		);
 
 		let upward_messages = collation_info
@@ -264,7 +264,7 @@ where
 			})
 			.ok()?;
 
-		let c = Collation {
+		let collation = Collation {
 			upward_messages,
 			new_validation_code: collation_info.new_validation_code,
 			processed_downward_messages: collation_info.processed_downward_messages,
@@ -274,7 +274,7 @@ where
 			proof_of_validity: MaybeCompressedPoV::Compressed(pov),
 		};
 
-		Some((c, b))
+		Some((collation, block_data))
 	}
 
 	/// Inform the networking systems that the block should be announced after an appropriate
