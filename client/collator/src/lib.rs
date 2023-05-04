@@ -293,12 +293,11 @@ pub async fn start_collator<Block, RA, BS, Spawner>(
 	).await;
 
 	let collation_future = Box::pin(async move {
-		let span = tracing::Span::current();
 		while let Some(request) = request_stream.next().await {
 			let collation = collator.clone().produce_candidate(
 				*request.relay_parent(),
 				request.persisted_validation_data().clone(),
-			).instrument(span.clone()).await;
+			).await;
 
 			request.complete(collation);
 		}
