@@ -56,7 +56,7 @@ use sp_runtime::generic::Digest;
 use sp_state_machine::StorageChanges;
 use std::{convert::TryFrom, error::Error, fmt::Debug, hash::Hash, sync::Arc, time::Duration};
 
-/// Parameters for [`fn@run_bare_relay_driven`].
+/// Parameters for [`run_bare_relay_driven`].
 pub struct Params<BI, CIDP, Client, RClient, SO, Proposer, CS> {
 	pub create_inherent_data_providers: CIDP,
 	pub block_import: BI,
