@@ -167,7 +167,11 @@ checksum = "fbf688625d06217d5b1bb0ea9d9c44a1635fd0ee3534466388d18203174f4d11"
 [[package]]
 name = "amcl"
 version = "0.3.0"
-source = "git+https://github.com/Snowfork/milagro_bls#bc2b5b5e8d48b7e2e1bfaa56dc2d93e13cb32095"
+source = "git+https://github.com/snowfork/milagro_bls?rev=a6d66e4eb89015e352fb1c9f7b661ecdbb5b2176#a6d66e4eb89015e352fb1c9f7b661ecdbb5b2176"
+dependencies = [
+ "parity-scale-codec",
+ "scale-info",
+]
 
 [[package]]
 name = "anes"
@@ -5868,12 +5872,14 @@ dependencies = [
 [[package]]
 name = "milagro_bls"
 version = "1.5.0"
-source = "git+https://github.com/Snowfork/milagro_bls#bc2b5b5e8d48b7e2e1bfaa56dc2d93e13cb32095"
+source = "git+https://github.com/snowfork/milagro_bls?rev=a6d66e4eb89015e352fb1c9f7b661ecdbb5b2176#a6d66e4eb89015e352fb1c9f7b661ecdbb5b2176"
 dependencies = [
  "amcl",
  "hex",
  "lazy_static",
+ "parity-scale-codec",
  "rand 0.8.5",
+ "scale-info",
  "zeroize",
 ]
 
@@ -12356,9 +12362,11 @@ dependencies = [
 name = "snowbridge-beacon-primitives"
 version = "0.0.1"
 dependencies = [
+ "byte-slice-cast",
  "frame-support",
  "frame-system",
  "hex",
+ "milagro_bls",
  "parity-scale-codec",
  "rlp",
  "scale-info",
@@ -12368,6 +12376,9 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "ssz-rs",
+ "ssz-rs-derive",
+ "static_assertions",
 ]
 
 [[package]]
@@ -12415,7 +12426,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex-literal 0.4.1",
- "milagro_bls",
  "parity-scale-codec",
  "rlp",
  "scale-info",
@@ -12424,11 +12434,11 @@ dependencies = [
  "snowbridge-core",
  "snowbridge-ethereum",
  "sp-core",
- "sp-io",
  "sp-runtime",
  "sp-std",
  "ssz-rs",
  "ssz-rs-derive",
+ "static_assertions",
 ]
 
 [[package]]
