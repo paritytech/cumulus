@@ -20,16 +20,16 @@ decl_test_relay_chains! {
 	pub struct Polkadot {
 		Runtime = polkadot_runtime::Runtime,
 		XcmConfig = polkadot_runtime::xcm_config::XcmConfig,
-		System = statemint_runtime::System,
+		System = polkadot_runtime::System,
 		genesis = polkadot_storage(),
-		new_ext = relay_ext(),
+		on_init = (),
 	},
 	pub struct Kusama {
 		Runtime = kusama_runtime::Runtime,
 		XcmConfig = kusama_runtime::xcm_config::XcmConfig,
 		System = kusama_runtime::System,
 		genesis = kusama::genesis(),
-		new_ext = relay_ext(),
+		on_init = (),
 	}
 }
 
@@ -42,7 +42,7 @@ decl_test_parachains! {
 		DmpMessageHandler = statemint_runtime::DmpQueue,
 		System = statemint_runtime::System,
 		genesis = statemint_storage(),
-		new_ext = statemint_ext(),
+		on_init = (),
 	},
 	pub struct PenpalPolkadot {
 		Runtime = penpal_runtime::Runtime,
@@ -51,7 +51,7 @@ decl_test_parachains! {
 		DmpMessageHandler = penpal_runtime::DmpQueue,
 		System = penpal_runtime::System,
 		genesis = penpal::genesis(penpal::PARA_ID),
-		new_ext = penpal_ext(),
+		on_init = (),
 	},
 	// Kusama
 	pub struct Statemine {
@@ -61,7 +61,7 @@ decl_test_parachains! {
 		DmpMessageHandler = statemine_runtime::DmpQueue,
 		System = statemine_runtime::System,
 		genesis = statemine::genesis(),
-		new_ext = statemine_ext(),
+		on_init = (),
 	},
 	pub struct PenpalKusama {
 		Runtime = penpal_runtime::Runtime,
@@ -70,7 +70,7 @@ decl_test_parachains! {
 		DmpMessageHandler = penpal_runtime::DmpQueue,
 		System = penpal_runtime::System,
 		genesis = penpal::genesis(penpal::PARA_ID),
-		new_ext = penpal_ext(),
+		on_init = (),
 	}
 }
 
@@ -90,6 +90,10 @@ decl_test_networks! {
 		],
 	}
 }
+
+// pub fn on_init() {
+// 	polkadot_runtime::System::set_block_number(1);
+// }
 
 
 pub const INITIAL_BALANCE: u128 = 1000 * DOLLARS;

@@ -107,7 +107,7 @@ macro_rules! decl_test_relay_chains {
 				XcmConfig = $xcm_config:path,
 				System = $system:path,
 				genesis = $genesis:expr,
-				new_ext = $new_ext:expr,
+				on_init = $on_init:expr,
 			}
 		),
 		+
@@ -118,7 +118,7 @@ macro_rules! decl_test_relay_chains {
 			impl Network for $name {}
 			impl Relay for $name {}
 
-			$crate::__impl_ext_for_relay_chain!($name, $runtime, $system, $genesis, $new_ext);
+			$crate::__impl_ext_for_relay_chain!($name, $runtime, $system, $genesis, $on_init);
 
 			impl $crate::UmpSink for $name {
 				fn process_upward_message(
@@ -148,7 +148,7 @@ macro_rules! decl_test_parachains {
 				DmpMessageHandler = $dmp_message_handler:path,
 				System = $system:path,
 				genesis = $genesis:expr,
-				new_ext = $new_ext:expr,
+				on_init = $on_init:expr,
 			}
 		),
 		+
@@ -159,7 +159,7 @@ macro_rules! decl_test_parachains {
 			impl Network for $name {}
 			impl Parachain for $name {}
 
-			$crate::__impl_ext_for_parachain!($name, $runtime, $origin, $system, $genesis, $new_ext);
+			$crate::__impl_ext_for_parachain!($name, $runtime, $origin, $system, $genesis, $on_init);
 
 			impl $crate::XcmpMessageHandler for $name {
 				fn handle_xcmp_messages<
@@ -196,13 +196,13 @@ macro_rules! decl_test_parachains {
 #[macro_export]
 macro_rules! __impl_ext_for_relay_chain {
 	// entry point: generate ext name
-	($name:ident, $runtime:path, $system:path, $genesis:expr, $new_ext:expr) => {
+	($name:ident, $runtime:path, $system:path, $genesis:expr, $on_init:expr) => {
 		$crate::paste::paste! {
-			$crate::__impl_ext_for_relay_chain!(@impl $name, $runtime, $system, $genesis, $new_ext, [<EXT_ $name:upper>]);
+			$crate::__impl_ext_for_relay_chain!(@impl $name, $runtime, $system, $genesis, $on_init, [<EXT_ $name:upper>]);
 		}
 	};
 	// impl
-	(@impl $name:ident, $runtime:path, $system:path, $genesis:expr, $new_ext:expr, $ext_name:ident) => {
+	(@impl $name:ident, $runtime:path, $system:path, $genesis:expr, $on_init:expr, $ext_name:ident) => {
 		thread_local! {
 			pub static $ext_name: $crate::RefCell<$crate::TestExternalities>
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
@@ -212,6 +212,7 @@ macro_rules! __impl_ext_for_relay_chain {
 			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
 				let mut ext = sp_io::TestExternalities::new(storage);
 				ext.execute_with(|| {
+					$on_init;
 					sp_tracing::try_init_simple();
 					<$system>::set_block_number(1);
 				});
@@ -223,7 +224,7 @@ macro_rules! __impl_ext_for_relay_chain {
 			}
 
 			fn reset_ext() {
-				$ext_name.with(|v| *v.borrow_mut() = $new_ext);
+				$ext_name.with(|v| *v.borrow_mut() = <$name>::build_new_ext($genesis));
 			}
 
 			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
@@ -265,13 +266,13 @@ macro_rules! __impl_ext_for_relay_chain {
 #[macro_export]
 macro_rules! __impl_ext_for_parachain {
 	// entry point: generate ext name
-	($name:ident, $runtime:path, $origin:path, $system:path, $genesis:expr, $new_ext:expr) => {
+	($name:ident, $runtime:path, $origin:path, $system:path, $genesis:expr, $on_init:expr) => {
 		$crate::paste::paste! {
-			$crate::__impl_ext_for_parachain!(@impl $name, $runtime, $origin, $system, $genesis, $new_ext, [<EXT_ $name:upper>]);
+			$crate::__impl_ext_for_parachain!(@impl $name, $runtime, $origin, $system, $genesis, $on_init, [<EXT_ $name:upper>]);
 		}
 	};
 	// impl
-	(@impl $name:ident, $runtime:path, $origin:path, $system:path, $genesis:expr, $new_ext:expr, $ext_name:ident) => {
+	(@impl $name:ident, $runtime:path, $origin:path, $system:path, $genesis:expr, $on_init:expr, $ext_name:ident) => {
 		thread_local! {
 			pub static $ext_name: $crate::RefCell<$crate::TestExternalities>
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
@@ -302,6 +303,7 @@ macro_rules! __impl_ext_for_parachain {
 			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
 				let mut ext = sp_io::TestExternalities::new(storage);
 				ext.execute_with(|| {
+					$on_init;
 					sp_tracing::try_init_simple();
 					<$system>::set_block_number(1);
 				});
@@ -313,7 +315,7 @@ macro_rules! __impl_ext_for_parachain {
 			}
 
 			fn reset_ext() {
-				$ext_name.with(|v| *v.borrow_mut() = $new_ext);
+				$ext_name.with(|v| *v.borrow_mut() = <$name>::build_new_ext($genesis));
 			}
 
 			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
