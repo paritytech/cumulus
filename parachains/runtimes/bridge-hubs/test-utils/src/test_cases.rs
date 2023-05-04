@@ -243,8 +243,8 @@ macro_rules! include_handle_export_message_from_system_parachain_to_outbound_que
 /// Test-case makes sure that Runtime can route XCM messages received in inbound queue,
 /// We just test here `MessageDispatch` configuration.
 /// We expect that runtime can route messages:
-/// 	1. to Parent (relay chain)
-/// 	2. to Sibling parachain
+///     1. to Parent (relay chain)
+///     2. to Sibling parachain
 pub fn message_dispatch_routing_works<
 	Runtime,
 	XcmConfig,

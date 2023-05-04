@@ -40,7 +40,7 @@
 //! 4a. After it is recovered, we restore the block and import it.
 //!
 //! 4b. Since we are trying to recover pending candidates, availability is not guaranteed. If the block
-//! 	PoV is not yet available, we retry.
+//!     PoV is not yet available, we retry.
 //!
 //! If we need to recover multiple PoV blocks (which should hopefully not happen in real life), we
 //! make sure that the blocks are imported in the correct order.
