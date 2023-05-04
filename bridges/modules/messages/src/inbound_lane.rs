@@ -153,7 +153,7 @@ impl<S: InboundLaneStorage> InboundLane<S> {
 		// Note: There will be max. 1 record to update as we don't allow messages from relayers to
 		// overlap.
 		match data.relayers.front_mut() {
-			Some(entry) if entry.messages.begin < new_confirmed_nonce => {
+			Some(entry) if entry.messages.begin <= new_confirmed_nonce => {
 				entry.messages.begin = new_confirmed_nonce + 1;
 			},
 			_ => {},
@@ -164,10 +164,9 @@ impl<S: InboundLaneStorage> InboundLane<S> {
 	}
 
 	/// Receive new message.
-	pub fn receive_message<Dispatch: MessageDispatch<AccountId>, AccountId>(
+	pub fn receive_message<Dispatch: MessageDispatch>(
 		&mut self,
 		relayer_at_bridged_chain: &S::Relayer,
-		relayer_at_this_chain: &AccountId,
 		nonce: MessageNonce,
 		message_data: DispatchMessageData<Dispatch::DispatchPayload>,
 	) -> ReceivalResult<Dispatch::DispatchLevelResult> {
@@ -189,13 +188,10 @@ impl<S: InboundLaneStorage> InboundLane<S> {
 		}
 
 		// then, dispatch message
-		let dispatch_result = Dispatch::dispatch(
-			relayer_at_this_chain,
-			DispatchMessage {
-				key: MessageKey { lane_id: self.storage.id(), nonce },
-				data: message_data,
-			},
-		);
+		let dispatch_result = Dispatch::dispatch(DispatchMessage {
+			key: MessageKey { lane_id: self.storage.id(), nonce },
+			data: message_data,
+		});
 
 		// now let's update inbound lane storage
 		match data.relayers.back_mut() {
@@ -221,20 +217,20 @@ mod tests {
 	use crate::{
 		inbound_lane,
 		mock::{
-			dispatch_result, inbound_message_data, run_test, unrewarded_relayer,
-			TestMessageDispatch, TestRuntime, REGULAR_PAYLOAD, TEST_LANE_ID, TEST_RELAYER_A,
-			TEST_RELAYER_B, TEST_RELAYER_C,
+			dispatch_result, inbound_message_data, inbound_unrewarded_relayers_state, run_test,
+			unrewarded_relayer, TestMessageDispatch, TestRuntime, REGULAR_PAYLOAD, TEST_LANE_ID,
+			TEST_RELAYER_A, TEST_RELAYER_B, TEST_RELAYER_C,
 		},
 		RuntimeInboundLaneStorage,
 	};
+	use bp_messages::UnrewardedRelayersState;
 
 	fn receive_regular_message(
 		lane: &mut InboundLane<RuntimeInboundLaneStorage<TestRuntime, ()>>,
 		nonce: MessageNonce,
 	) {
 		assert_eq!(
-			lane.receive_message::<TestMessageDispatch, _>(
-				&TEST_RELAYER_A,
+			lane.receive_message::<TestMessageDispatch>(
 				&TEST_RELAYER_A,
 				nonce,
 				inbound_message_data(REGULAR_PAYLOAD)
@@ -361,8 +357,7 @@ mod tests {
 		run_test(|| {
 			let mut lane = inbound_lane::<TestRuntime, _>(TEST_LANE_ID);
 			assert_eq!(
-				lane.receive_message::<TestMessageDispatch, _>(
-					&TEST_RELAYER_A,
+				lane.receive_message::<TestMessageDispatch>(
 					&TEST_RELAYER_A,
 					10,
 					inbound_message_data(REGULAR_PAYLOAD)
@@ -381,8 +376,7 @@ mod tests {
 				<TestRuntime as Config>::MaxUnrewardedRelayerEntriesAtInboundLane::get();
 			for current_nonce in 1..max_nonce + 1 {
 				assert_eq!(
-					lane.receive_message::<TestMessageDispatch, _>(
-						&(TEST_RELAYER_A + current_nonce),
+					lane.receive_message::<TestMessageDispatch>(
 						&(TEST_RELAYER_A + current_nonce),
 						current_nonce,
 						inbound_message_data(REGULAR_PAYLOAD)
@@ -392,8 +386,7 @@ mod tests {
 			}
 			// Fails to dispatch new message from different than latest relayer.
 			assert_eq!(
-				lane.receive_message::<TestMessageDispatch, _>(
-					&(TEST_RELAYER_A + max_nonce + 1),
+				lane.receive_message::<TestMessageDispatch>(
 					&(TEST_RELAYER_A + max_nonce + 1),
 					max_nonce + 1,
 					inbound_message_data(REGULAR_PAYLOAD)
@@ -402,8 +395,7 @@ mod tests {
 			);
 			// Fails to dispatch new messages from latest relayer. Prevents griefing attacks.
 			assert_eq!(
-				lane.receive_message::<TestMessageDispatch, _>(
-					&(TEST_RELAYER_A + max_nonce),
+				lane.receive_message::<TestMessageDispatch>(
 					&(TEST_RELAYER_A + max_nonce),
 					max_nonce + 1,
 					inbound_message_data(REGULAR_PAYLOAD)
@@ -420,8 +412,7 @@ mod tests {
 			let max_nonce = <TestRuntime as Config>::MaxUnconfirmedMessagesAtInboundLane::get();
 			for current_nonce in 1..=max_nonce {
 				assert_eq!(
-					lane.receive_message::<TestMessageDispatch, _>(
-						&TEST_RELAYER_A,
+					lane.receive_message::<TestMessageDispatch>(
 						&TEST_RELAYER_A,
 						current_nonce,
 						inbound_message_data(REGULAR_PAYLOAD)
@@ -431,8 +422,7 @@ mod tests {
 			}
 			// Fails to dispatch new message from different than latest relayer.
 			assert_eq!(
-				lane.receive_message::<TestMessageDispatch, _>(
-					&TEST_RELAYER_B,
+				lane.receive_message::<TestMessageDispatch>(
 					&TEST_RELAYER_B,
 					max_nonce + 1,
 					inbound_message_data(REGULAR_PAYLOAD)
@@ -441,8 +431,7 @@ mod tests {
 			);
 			// Fails to dispatch new messages from latest relayer.
 			assert_eq!(
-				lane.receive_message::<TestMessageDispatch, _>(
-					&TEST_RELAYER_A,
+				lane.receive_message::<TestMessageDispatch>(
 					&TEST_RELAYER_A,
 					max_nonce + 1,
 					inbound_message_data(REGULAR_PAYLOAD)
@@ -457,8 +446,7 @@ mod tests {
 		run_test(|| {
 			let mut lane = inbound_lane::<TestRuntime, _>(TEST_LANE_ID);
 			assert_eq!(
-				lane.receive_message::<TestMessageDispatch, _>(
-					&TEST_RELAYER_A,
+				lane.receive_message::<TestMessageDispatch>(
 					&TEST_RELAYER_A,
 					1,
 					inbound_message_data(REGULAR_PAYLOAD)
@@ -466,8 +454,7 @@ mod tests {
 				ReceivalResult::Dispatched(dispatch_result(0))
 			);
 			assert_eq!(
-				lane.receive_message::<TestMessageDispatch, _>(
-					&TEST_RELAYER_B,
+				lane.receive_message::<TestMessageDispatch>(
 					&TEST_RELAYER_B,
 					2,
 					inbound_message_data(REGULAR_PAYLOAD)
@@ -475,8 +462,7 @@ mod tests {
 				ReceivalResult::Dispatched(dispatch_result(0))
 			);
 			assert_eq!(
-				lane.receive_message::<TestMessageDispatch, _>(
-					&TEST_RELAYER_A,
+				lane.receive_message::<TestMessageDispatch>(
 					&TEST_RELAYER_A,
 					3,
 					inbound_message_data(REGULAR_PAYLOAD)
@@ -499,8 +485,7 @@ mod tests {
 		run_test(|| {
 			let mut lane = inbound_lane::<TestRuntime, _>(TEST_LANE_ID);
 			assert_eq!(
-				lane.receive_message::<TestMessageDispatch, _>(
-					&TEST_RELAYER_A,
+				lane.receive_message::<TestMessageDispatch>(
 					&TEST_RELAYER_A,
 					1,
 					inbound_message_data(REGULAR_PAYLOAD)
@@ -508,8 +493,7 @@ mod tests {
 				ReceivalResult::Dispatched(dispatch_result(0))
 			);
 			assert_eq!(
-				lane.receive_message::<TestMessageDispatch, _>(
-					&TEST_RELAYER_B,
+				lane.receive_message::<TestMessageDispatch>(
 					&TEST_RELAYER_B,
 					1,
 					inbound_message_data(REGULAR_PAYLOAD)
@@ -535,13 +519,37 @@ mod tests {
 			let mut payload = REGULAR_PAYLOAD;
 			*payload.dispatch_result.unspent_weight.ref_time_mut() = 1;
 			assert_eq!(
-				lane.receive_message::<TestMessageDispatch, _>(
-					&TEST_RELAYER_A,
+				lane.receive_message::<TestMessageDispatch>(
 					&TEST_RELAYER_A,
 					1,
 					inbound_message_data(payload)
 				),
 				ReceivalResult::Dispatched(dispatch_result(1))
+			);
+		});
+	}
+
+	#[test]
+	fn first_message_is_confirmed_correctly() {
+		run_test(|| {
+			let mut lane = inbound_lane::<TestRuntime, _>(TEST_LANE_ID);
+			receive_regular_message(&mut lane, 1);
+			receive_regular_message(&mut lane, 2);
+			assert_eq!(
+				lane.receive_state_update(OutboundLaneData {
+					latest_received_nonce: 1,
+					..Default::default()
+				}),
+				Some(1),
+			);
+			assert_eq!(
+				inbound_unrewarded_relayers_state(TEST_LANE_ID),
+				UnrewardedRelayersState {
+					unrewarded_relayer_entries: 1,
+					messages_in_oldest_entry: 1,
+					total_messages: 1,
+					last_delivered_nonce: 2,
+				},
 			);
 		});
 	}

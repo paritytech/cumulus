@@ -10,20 +10,20 @@
 			- [Live Rockmine2 to Wockmint](#live-rockmine2-to-wockmint)
 	* [How to test local BridgeHubKusama](#how-to-test-local-bridgehubkusama)
 	* [How to test local BridgeHubPolkadot](#how-to-test-local-bridgehubpolkadot)
-	* [Git subtree `./bridges`](#git-subtree---bridges-)
-		+ [How to update `bridges` subtree](#how-to-update--bridges--subtree)
-		+ [How was first time initialized (dont need anymore)](#how-was-first-time-initialized--dont-need-anymore-)
 
 # Bridge-hub Parachains
 
-Implementation of _BridgeHub_, a blockchain to support message passing between Substrate based chains like Polkadot and Kusama networks.
-
-_BridgeHub_ allows users to:
-
-- Passing arbitrary messages between different Substrate chains (Polkadot <-> Kusama).
-
-_BridgeHub_ is meant to be **_system parachain_** with main responsibilities:
-- sync finality proofs between relay chains
+_BridgeHub(s)_ are **_system parachains_** that will house trustless bridges from the local
+ecosystem to others.
+The current trustless bridges planned for the BridgeHub(s) are:
+- `BridgeHubPolkadot` system parachain:
+	1. Polkadot <-> Kusama bridge
+	2. Polkadot <-> Ethereum bridge (Snowbridge)
+- `BridgeHubKusama` system parachain:
+	1. Kusama <-> Polkadot bridge
+	2. Kusama <-> Ethereum bridge
+	   The high-level responsibilities of each bridge living on BridgeHub:
+- sync finality proofs between relay chains (or equivalent)
 - sync finality proofs between BridgeHub parachains
 - pass (XCM) messages between different BridgeHub parachains
 
@@ -49,7 +49,9 @@ cp target/release/polkadot ~/local_bridge_testing/bin/polkadot
 
 # 3. Build cumulus polkadot-parachain binary
 cd <cumulus-git-repo-dir>
-git checkout -b bridge-hub-rococo-wococo --track origin/bridge-hub-rococo-wococo
+# checkout desired branch or use master:
+# git checkout -b bridge-hub-rococo-wococo --track origin/bridge-hub-rococo-wococo
+git checkout -b master --track origin/master
 cargo build --release --locked -p polkadot-parachain-bin
 cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain
 cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain-mint

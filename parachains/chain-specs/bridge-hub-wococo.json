@@ -3,14 +3,10 @@
   "id": "bridge-hub-wococo",
   "chainType": "Live",
   "bootNodes": [
-    "/dns/wococo-bridge-hub-collator-0.parity-testnet.parity.io/tcp/30334/p2p/12D3KooWCNomXYZWuhwHsWhZpmrFmswEG8W89UY9NjEGExM38yCr",
-    "/dns/wococo-bridge-hub-collator-1.parity-testnet.parity.io/tcp/30334/p2p/12D3KooWKSq37RLqP3Ws3FtJDYB1xsjoBeJmehVYDZcCDRNLBXas",
-    "/dns/wococo-bridge-hub-collator-2.parity-testnet.parity.io/tcp/30334/p2p/12D3KooWDkSQzQYC7VwpJKF8VJtJZMG8bcvWXm1UEJSKk8UE2iv5",
-    "/dns/wococo-bridge-hub-collator-3.parity-testnet.parity.io/tcp/30334/p2p/12D3KooWQoUFxyPbpotTdUpfnsxQfQ4uyxz1beW5Z39LGM8JPhLi",
-    "/dns/wococo-bridge-hub-collator-0.parity-testnet.parity.io/tcp/443/wss/p2p/12D3KooWCNomXYZWuhwHsWhZpmrFmswEG8W89UY9NjEGExM38yCr",
-    "/dns/wococo-bridge-hub-collator-1.parity-testnet.parity.io/tcp/443/wss/p2p/12D3KooWKSq37RLqP3Ws3FtJDYB1xsjoBeJmehVYDZcCDRNLBXas",
-    "/dns/wococo-bridge-hub-collator-2.parity-testnet.parity.io/tcp/443/wss/p2p/12D3KooWDkSQzQYC7VwpJKF8VJtJZMG8bcvWXm1UEJSKk8UE2iv5",
-    "/dns/wococo-bridge-hub-collator-3.parity-testnet.parity.io/tcp/443/wss/p2p/12D3KooWQoUFxyPbpotTdUpfnsxQfQ4uyxz1beW5Z39LGM8JPhLi"
+    "/dns/wococo-bridge-hub-collator-node-0.parity-testnet.parity.io/tcp/30333/p2p/12D3KooWCNomXYZWuhwHsWhZpmrFmswEG8W89UY9NjEGExM38yCr",
+    "/dns/wococo-bridge-hub-collator-node-1.parity-testnet.parity.io/tcp/30333/p2p/12D3KooWKSq37RLqP3Ws3FtJDYB1xsjoBeJmehVYDZcCDRNLBXas",
+    "/dns/wococo-bridge-hub-collator-node-2.parity-testnet.parity.io/tcp/30333/p2p/12D3KooWDkSQzQYC7VwpJKF8VJtJZMG8bcvWXm1UEJSKk8UE2iv5",
+    "/dns/wococo-bridge-hub-collator-node-3.parity-testnet.parity.io/tcp/30333/p2p/12D3KooWQoUFxyPbpotTdUpfnsxQfQ4uyxz1beW5Z39LGM8JPhLi"
   ],
   "telemetryEndpoints": null,
   "protocolId": null,

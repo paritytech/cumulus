@@ -162,10 +162,7 @@ pub mod pallet {
 		/// Source header chain, as it is represented on target chain.
 		type SourceHeaderChain: SourceHeaderChain;
 		/// Message dispatch.
-		type MessageDispatch: MessageDispatch<
-			Self::AccountId,
-			DispatchPayload = Self::InboundPayload,
-		>;
+		type MessageDispatch: MessageDispatch<DispatchPayload = Self::InboundPayload>;
 	}
 
 	/// Shortcut to messages proof type for Config.
@@ -332,9 +329,10 @@ pub mod pallet {
 					if let Some(updated_latest_confirmed_nonce) = updated_latest_confirmed_nonce {
 						log::trace!(
 							target: LOG_TARGET,
-							"Received lane {:?} state update: latest_confirmed_nonce={}",
+							"Received lane {:?} state update: latest_confirmed_nonce={}. Unrewarded relayers: {:?}",
 							lane_id,
 							updated_latest_confirmed_nonce,
+							UnrewardedRelayersState::from(&lane.storage().data()),
 						);
 					}
 				}
@@ -361,9 +359,8 @@ pub mod pallet {
 						fail!(Error::<T, I>::InsufficientDispatchWeight);
 					}
 
-					let receival_result = lane.receive_message::<T::MessageDispatch, T::AccountId>(
+					let receival_result = lane.receive_message::<T::MessageDispatch>(
 						&relayer_id_at_bridged_chain,
-						&relayer_id_at_this_chain,
 						message.key.nonce,
 						message.data,
 					);
@@ -545,11 +542,7 @@ pub mod pallet {
 		MessageAccepted { lane_id: LaneId, nonce: MessageNonce },
 		/// Messages have been received from the bridged chain.
 		MessagesReceived(
-			Vec<
-				ReceivedMessages<
-					<T::MessageDispatch as MessageDispatch<T::AccountId>>::DispatchLevelResult,
-				>,
-			>,
+			Vec<ReceivedMessages<<T::MessageDispatch as MessageDispatch>::DispatchLevelResult>>,
 		),
 		/// Messages in the inclusive range have been delivered to the bridged chain.
 		MessagesDelivered { lane_id: LaneId, messages: DeliveredMessages },
@@ -949,12 +942,12 @@ fn verify_and_decode_messages_proof<Chain: SourceHeaderChain, DispatchPayload: D
 mod tests {
 	use super::*;
 	use crate::mock::{
-		message, message_payload, run_test, unrewarded_relayer, AccountId, DbWeight,
-		RuntimeEvent as TestEvent, RuntimeOrigin, TestDeliveryConfirmationPayments,
-		TestDeliveryPayments, TestMessagesDeliveryProof, TestMessagesProof, TestRelayer,
-		TestRuntime, TestWeightInfo, MAX_OUTBOUND_PAYLOAD_SIZE, PAYLOAD_REJECTED_BY_TARGET_CHAIN,
-		REGULAR_PAYLOAD, TEST_LANE_ID, TEST_LANE_ID_2, TEST_LANE_ID_3, TEST_RELAYER_A,
-		TEST_RELAYER_B,
+		inbound_unrewarded_relayers_state, message, message_payload, run_test, unrewarded_relayer,
+		AccountId, DbWeight, RuntimeEvent as TestEvent, RuntimeOrigin,
+		TestDeliveryConfirmationPayments, TestDeliveryPayments, TestMessagesDeliveryProof,
+		TestMessagesProof, TestRelayer, TestRuntime, TestWeightInfo, MAX_OUTBOUND_PAYLOAD_SIZE,
+		PAYLOAD_REJECTED_BY_TARGET_CHAIN, REGULAR_PAYLOAD, TEST_LANE_ID, TEST_LANE_ID_2,
+		TEST_LANE_ID_3, TEST_RELAYER_A, TEST_RELAYER_B,
 	};
 	use bp_messages::{BridgeMessagesCall, UnrewardedRelayer, UnrewardedRelayersState};
 	use bp_test_utils::generate_owned_bridge_module_tests;
@@ -971,23 +964,6 @@ mod tests {
 	fn get_ready_for_events() {
 		System::<TestRuntime>::set_block_number(1);
 		System::<TestRuntime>::reset_events();
-	}
-
-	fn inbound_unrewarded_relayers_state(
-		lane: bp_messages::LaneId,
-	) -> bp_messages::UnrewardedRelayersState {
-		let inbound_lane_data = InboundLanes::<TestRuntime, ()>::get(lane).0;
-		let last_delivered_nonce = inbound_lane_data.last_delivered_nonce();
-		let relayers = inbound_lane_data.relayers;
-		bp_messages::UnrewardedRelayersState {
-			unrewarded_relayer_entries: relayers.len() as _,
-			messages_in_oldest_entry: relayers
-				.front()
-				.map(|entry| 1 + entry.messages.end - entry.messages.begin)
-				.unwrap_or(0),
-			total_messages: total_unrewarded_messages(&relayers).unwrap_or(MessageNonce::MAX),
-			last_delivered_nonce,
-		}
 	}
 
 	fn send_regular_message() {

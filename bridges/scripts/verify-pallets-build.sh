@@ -81,6 +81,7 @@ rm -rf $BRIDGES_FOLDER/scripts/build-containers.sh
 rm -rf $BRIDGES_FOLDER/scripts/ci-cache.sh
 rm -rf $BRIDGES_FOLDER/scripts/dump-logs.sh
 rm -rf $BRIDGES_FOLDER/scripts/license_header
+rm -rf $BRIDGES_FOLDER/scripts/regenerate_runtimes.sh
 rm -rf $BRIDGES_FOLDER/scripts/send-message-from-millau-rialto.sh
 rm -rf $BRIDGES_FOLDER/scripts/send-message-from-rialto-millau.sh
 rm -rf $BRIDGES_FOLDER/scripts/update-weights.sh
@@ -93,6 +94,7 @@ rm -f $BRIDGES_FOLDER/.gitlab-ci.yml
 rm -f $BRIDGES_FOLDER/.editorconfig
 rm -f $BRIDGES_FOLDER/Cargo.toml
 rm -f $BRIDGES_FOLDER/ci.Dockerfile
+rm -f $BRIDGES_FOLDER/CODEOWNERS
 rm -f $BRIDGES_FOLDER/Dockerfile
 
 # let's fix Cargo.toml a bit (it'll be helpful if we are in the bridges repo)

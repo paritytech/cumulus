@@ -27,7 +27,7 @@ use bp_messages::{
 		ProvedLaneMessages, ProvedMessages, SourceHeaderChain,
 	},
 	DeliveredMessages, InboundLaneData, LaneId, Message, MessageKey, MessageNonce, MessagePayload,
-	OutboundLaneData, UnrewardedRelayer,
+	OutboundLaneData, UnrewardedRelayer, UnrewardedRelayersState,
 };
 use bp_runtime::{messages::MessageDispatchResult, Size};
 use codec::{Decode, Encode};
@@ -142,7 +142,7 @@ impl pallet_balances::Config for TestRuntime {
 parameter_types! {
 	pub const MaxMessagesToPruneAtOnce: u64 = 10;
 	pub const MaxUnrewardedRelayerEntriesAtInboundLane: u64 = 16;
-	pub const MaxUnconfirmedMessagesAtInboundLane: u64 = 32;
+	pub const MaxUnconfirmedMessagesAtInboundLane: u64 = 128;
 	pub const TestBridgedChainId: bp_runtime::ChainId = *b"test";
 	pub const ActiveOutboundLanes: &'static [LaneId] = &[TEST_LANE_ID, TEST_LANE_ID_2];
 }
@@ -416,7 +416,7 @@ impl SourceHeaderChain for TestSourceHeaderChain {
 #[derive(Debug)]
 pub struct TestMessageDispatch;
 
-impl MessageDispatch<AccountId> for TestMessageDispatch {
+impl MessageDispatch for TestMessageDispatch {
 	type DispatchPayload = TestPayload;
 	type DispatchLevelResult = TestDispatchLevelResult;
 
@@ -428,7 +428,6 @@ impl MessageDispatch<AccountId> for TestMessageDispatch {
 	}
 
 	fn dispatch(
-		_relayer_account: &AccountId,
 		message: DispatchMessage<TestPayload>,
 	) -> MessageDispatchResult<TestDispatchLevelResult> {
 		match message.data.payload.as_ref() {
@@ -481,6 +480,12 @@ pub fn unrewarded_relayer(
 	relayer: TestRelayer,
 ) -> UnrewardedRelayer<TestRelayer> {
 	UnrewardedRelayer { relayer, messages: DeliveredMessages { begin, end } }
+}
+
+/// Returns unrewarded relayers state at given lane.
+pub fn inbound_unrewarded_relayers_state(lane: bp_messages::LaneId) -> UnrewardedRelayersState {
+	let inbound_lane_data = crate::InboundLanes::<TestRuntime, ()>::get(lane).0;
+	UnrewardedRelayersState::from(&inbound_lane_data)
 }
 
 /// Return test externalities to use in tests.
