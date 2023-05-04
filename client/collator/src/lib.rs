@@ -461,7 +461,7 @@ mod tests {
 			spawner,
 			para_id,
 			key: CollatorPair::generate().0,
-			parachain_consensus: Box::new(DummyParachainConsensus { client: client }),
+			parachain_consensus: Box::new(DummyParachainConsensus { client }),
 		});
 		block_on(collator_start);
 
@@ -471,8 +471,10 @@ mod tests {
 
 		let CollationGenerationMessage::Initialize(config) = msg;
 
-		let mut validation_data = PersistedValidationData::default();
-		validation_data.parent_head = header.encode().into();
+		let validation_data = PersistedValidationData {
+			parent_head: header.encode().into(),
+			.. Default::default()
+		};
 		let relay_parent = Default::default();
 
 		let collation = block_on((config.collator)(relay_parent, &validation_data))

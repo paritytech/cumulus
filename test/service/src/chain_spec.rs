@@ -125,7 +125,6 @@ fn testnet_genesis(
 			code: cumulus_test_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			..Default::default()
 		},
 		parachain_system: Default::default(),
 		balances: cumulus_test_runtime::BalancesConfig {

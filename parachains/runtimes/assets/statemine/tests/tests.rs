@@ -82,14 +82,9 @@ fn test_asset_xcm_trader() {
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
 
 			// Lets buy_weight and make sure buy_weight does not return an error
-			match trader.buy_weight(bought, asset.into()) {
-				Ok(unused_assets) => {
-					// Check whether a correct amount of unused assets is returned
-					assert_ok!(unused_assets
-						.ensure_contains(&(asset_multilocation, asset_amount_extra).into()));
-				},
-				Err(e) => assert!(false, "Expected Ok(_). Got {:#?}", e),
-			}
+			let unused_assets = trader.buy_weight(bought, asset.into()).expect("Expected Ok");
+			// Check whether a correct amount of unused assets is returned
+			assert_ok!(unused_assets.ensure_contains(&(asset_multilocation, asset_amount_extra).into()));
 
 			// Drop trader
 			drop(trader);
