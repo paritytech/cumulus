@@ -325,7 +325,6 @@ async fn handle_new_block_imported<Block, P>(
 
 	match parachain.block_status(unset_hash) {
 		Ok(BlockStatus::InChainWithState) => {
-			drop(unset_best_header);
 			let unset_best_header = unset_best_header_opt
 				.take()
 				.expect("We checked above that the value is set; qed");
