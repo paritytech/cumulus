@@ -56,8 +56,7 @@ impl OutboundBandwidthLimits {
 		max_upward_queue_count: u32,
 		max_upward_queue_size: u32,
 	) -> Self {
-		let (ump_messages_in_relay, ump_bytes_in_relay) =
-			messaging_state.relay_dispatch_queue_size;
+		let (ump_messages_in_relay, ump_bytes_in_relay) = messaging_state.relay_dispatch_queue_size;
 
 		let (ump_messages_remaining, ump_bytes_remaining) = (
 			max_upward_queue_count.saturating_sub(ump_messages_in_relay),
@@ -83,12 +82,15 @@ impl OutboundBandwidthLimits {
 
 	/// Compute the remaining bandwidth when accounting for the used amounts provided.
 	pub fn subtract(&mut self, used: &UsedBandwidth) {
-		self.ump_messages_remaining = self.ump_messages_remaining.saturating_sub(used.ump_msg_count);
+		self.ump_messages_remaining =
+			self.ump_messages_remaining.saturating_sub(used.ump_msg_count);
 		self.ump_bytes_remaining = self.ump_bytes_remaining.saturating_sub(used.ump_total_bytes);
 		for (para_id, channel_limits) in self.hrmp_outgoing.iter_mut() {
 			if let Some(update) = used.hrmp_outgoing.get(para_id) {
-				channel_limits.bytes_remaining = channel_limits.bytes_remaining.saturating_sub(update.total_bytes);
-				channel_limits.messages_remaining = channel_limits.messages_remaining.saturating_sub(update.msg_count);
+				channel_limits.bytes_remaining =
+					channel_limits.bytes_remaining.saturating_sub(update.total_bytes);
+				channel_limits.messages_remaining =
+					channel_limits.messages_remaining.saturating_sub(update.msg_count);
 			}
 		}
 	}
@@ -386,7 +388,9 @@ mod tests {
 		let max_upward_queue_count = 11;
 		let max_upward_queue_size = 150;
 		let limits = OutboundBandwidthLimits::from_relay_chain_state(
-			&messaging_state, max_upward_queue_count, max_upward_queue_size
+			&messaging_state,
+			max_upward_queue_count,
+			max_upward_queue_size,
 		);
 
 		// UMP.
@@ -396,18 +400,10 @@ mod tests {
 		// HRMP.
 		let para_a_limits = limits.hrmp_outgoing.get(&para_a).expect("channel must be present");
 		let para_b_limits = limits.hrmp_outgoing.get(&para_b).expect("channel must be present");
-		assert_eq!(
-			para_a_limits.bytes_remaining, 10
-		);
-		assert_eq!(
-			para_a_limits.messages_remaining, 2
-		);
-		assert_eq!(
-			para_b_limits.bytes_remaining, 0
-		);
-		assert_eq!(
-			para_b_limits.messages_remaining, 10
-		);
+		assert_eq!(para_a_limits.bytes_remaining, 10);
+		assert_eq!(para_a_limits.messages_remaining, 2);
+		assert_eq!(para_b_limits.bytes_remaining, 0);
+		assert_eq!(para_b_limits.messages_remaining, 10);
 	}
 
 	#[test]

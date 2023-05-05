@@ -19,8 +19,7 @@ use cumulus_primitives_core::{ParachainBlockData, PersistedValidationData};
 use cumulus_test_client::{
 	generate_extrinsic,
 	runtime::{
-		self as test_runtime, Block, Hash, Header, TestPalletCall, UncheckedExtrinsic,
-		WASM_BINARY,
+		self as test_runtime, Block, Hash, Header, TestPalletCall, UncheckedExtrinsic, WASM_BINARY,
 	},
 	transfer, BlockData, BuildParachainBlockData, Client, DefaultTestClientBuilderExt, HeadData,
 	InitBlockBuilder, TestClientBuilder, TestClientBuilderExt, ValidationParams,

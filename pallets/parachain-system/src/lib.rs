@@ -59,9 +59,9 @@ use xcm::latest::XcmHash;
 
 mod migration;
 mod relay_state_snapshot;
-mod unincluded_segment;
 #[cfg(test)]
 mod tests;
+mod unincluded_segment;
 
 pub mod consensus_hook;
 #[macro_use]
@@ -71,6 +71,7 @@ use unincluded_segment::{
 	Ancestor, HrmpChannelUpdate, OutboundBandwidthLimits, SegmentTracker, UsedBandwidth,
 };
 
+pub use consensus_hook::ConsensusHook;
 /// Register the `validate_block` function that is used by parachains to validate blocks on a
 /// validator.
 ///
@@ -94,7 +95,6 @@ use unincluded_segment::{
 /// # fn main() {}
 /// ```
 pub use cumulus_pallet_parachain_system_proc_macro::register_validate_block;
-pub use consensus_hook::ConsensusHook;
 pub use relay_state_snapshot::{MessagingStateSnapshot, RelayChainStateProof};
 
 pub use pallet::*;
@@ -246,7 +246,6 @@ pub mod pallet {
 					return
 				},
 			};
-
 
 			let total_bandwidth_out = OutboundBandwidthLimits::from_relay_chain_state(
 				&relevant_messaging_state,
@@ -1089,10 +1088,8 @@ impl<T: Config> Pallet<T> {
 	) -> Weight {
 		let mut weight_used = Weight::zero();
 		// If the unincluded segment length is nonzero, then the parachain head must be present.
-		let para_head = relay_state_proof
-			.read_included_para_head()
-			.ok()
-			.map(|h| T::Hashing::hash(&h.0));
+		let para_head =
+			relay_state_proof.read_included_para_head().ok().map(|h| T::Hashing::hash(&h.0));
 
 		let unincluded_segment_len = <UnincludedSegment<T>>::decode_len().unwrap_or(0);
 		weight_used += T::DbWeight::get().reads(1);
@@ -1107,7 +1104,7 @@ impl<T: Config> Pallet<T> {
 				);
 
 				h
-			}
+			},
 			(Some(h), false) => h,
 			(None, true) => {
 				// All this logic is essentially a workaround to support collators which
@@ -1124,9 +1121,9 @@ impl<T: Config> Pallet<T> {
 				let idx = chain
 					.iter()
 					.position(|block| {
-						let head_hash = block.para_head_hash().expect(
-							"para head hash is updated during block initialization; qed",
-						);
+						let head_hash = block
+							.para_head_hash()
+							.expect("para head hash is updated during block initialization; qed");
 						head_hash == &para_head_hash
 					})
 					.map_or(0, |idx| idx + 1); // inclusive.
@@ -1155,10 +1152,7 @@ impl<T: Config> Pallet<T> {
 		//
 		// If this fails, the parachain needs to wait for ancestors to be included before
 		// a new block is allowed.
-		assert!(
-			new_len < capacity.get(),
-			"no space left for the block in the unincluded segment"
-		);
+		assert!(new_len < capacity.get(), "no space left for the block in the unincluded segment");
 		weight_used
 	}
 
