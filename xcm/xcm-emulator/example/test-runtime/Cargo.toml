@@ -19,12 +19,12 @@ pallet-balances = { git = "https://github.com/paritytech/substrate", default-fea
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 
-cumulus-pallet-dmp-queue = { path = "../../../pallets/dmp-queue", default-features = false }
-cumulus-pallet-xcmp-queue = { path = "../../../pallets/xcmp-queue", default-features = false }
-parachain-info = { path = "../../../parachains/pallets/parachain-info", default-features = false }
-cumulus-pallet-xcm = { path = "../../../pallets/xcm", default-features = false }
-cumulus-pallet-parachain-system = { path = "../../../pallets/parachain-system", default-features = false }
-cumulus-primitives-utility = { path = "../../../primitives/utility", default-features = false }
+cumulus-pallet-dmp-queue = { path = "../../../../pallets/dmp-queue", default-features = false }
+cumulus-pallet-xcmp-queue = { path = "../../../../pallets/xcmp-queue", default-features = false }
+parachain-info = { path = "../../../../parachains/pallets/parachain-info", default-features = false }
+cumulus-pallet-xcm = { path = "../../../../pallets/xcm", default-features = false }
+cumulus-pallet-parachain-system = { path = "../../../../pallets/parachain-system", default-features = false }
+cumulus-primitives-utility = { path = "../../../../primitives/utility", default-features = false }
 
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "master" }

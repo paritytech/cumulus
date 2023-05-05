@@ -57,7 +57,7 @@ members = [
 	"test/service",
 	"xcm/xcm-emulator",
 	"xcm/xcm-emulator/example",
-	"xcm/xcm-emulator/test-runtime",
+	"xcm/xcm-emulator/example/test-runtime",
 ]
 
 [profile.release]
