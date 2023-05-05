@@ -349,6 +349,7 @@ mod tests {
 			)));
 		});
 
+		// ParachainC: The origin should not satisfy AccountId32Aliases conversion rules and thus fail.
 		ParachainC::execute_with(|| {
 			use test_runtime::{RuntimeEvent, System};
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
