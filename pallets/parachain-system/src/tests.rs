@@ -466,7 +466,7 @@ fn unincluded_segment_works() {
 			|| {},
 			|| {
 				let segment = <UnincludedSegment<Test>>::get();
-				// Block 123 was popped from the segment, the len is still 1.
+				// Block 123 was popped from the segment, the len is still 2.
 				assert_eq!(segment.len(), 2);
 			},
 		);
