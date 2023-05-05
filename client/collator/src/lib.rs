@@ -384,8 +384,8 @@ mod tests {
 		Client, ClientBlockImportExt, DefaultTestClientBuilderExt, InitBlockBuilder,
 		TestClientBuilder, TestClientBuilderExt,
 	};
-	use cumulus_test_runtime::{Block, Header};
 	use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
+	use cumulus_test_runtime::{Block, Header};
 	use futures::{channel::mpsc, executor::block_on, StreamExt};
 	use polkadot_node_subsystem_test_helpers::ForwardSubsystem;
 	use polkadot_overseer::{dummy::dummy_overseer_builder, HeadSupportsParachains};

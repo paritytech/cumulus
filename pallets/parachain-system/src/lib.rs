@@ -337,10 +337,8 @@ pub mod pallet {
 				let ancestor = Ancestor::new_unchecked(used_bandwidth);
 
 				let watermark = HrmpWatermark::<T>::get();
-				let watermark_update = HrmpWatermarkUpdate::new(
-					watermark,
-					LastRelayChainBlockNumber::<T>::get(),
-				);
+				let watermark_update =
+					HrmpWatermarkUpdate::new(watermark, LastRelayChainBlockNumber::<T>::get());
 				AggregatedUnincludedSegment::<T>::mutate(|agg| {
 					let agg = agg.get_or_insert_with(SegmentTracker::default);
 					// TODO: In order of this panic to be correct, outbound message source should
