@@ -346,6 +346,71 @@ mod tests {
 	use assert_matches::assert_matches;
 
 	#[test]
+	fn outbound_limits_constructed_correctly() {
+		let para_a = ParaId::from(0);
+		let para_a_channel = relay_chain::AbridgedHrmpChannel {
+			max_message_size: 15,
+
+			// Msg count capacity left is 2.
+			msg_count: 5,
+			max_capacity: 7,
+
+			// Bytes capacity left is 10.
+			total_size: 50,
+			max_total_size: 60,
+			mqc_head: None,
+		};
+
+		let para_b = ParaId::from(1);
+		let para_b_channel = relay_chain::AbridgedHrmpChannel {
+			max_message_size: 15,
+
+			// Msg count capacity left is 10.
+			msg_count: 40,
+			max_capacity: 50,
+
+			// Bytes capacity left is 0.
+			total_size: 500,
+			max_total_size: 500,
+			mqc_head: None,
+		};
+		let messaging_state = MessagingStateSnapshot {
+			dmq_mqc_head: relay_chain::Hash::zero(),
+			// (msg_count, bytes)
+			relay_dispatch_queue_size: (10, 100),
+			ingress_channels: Vec::new(),
+
+			egress_channels: vec![(para_a, para_a_channel), (para_b, para_b_channel)],
+		};
+
+		let max_upward_queue_count = 11;
+		let max_upward_queue_size = 150;
+		let limits = OutboundBandwidthLimits::from_relay_chain_state(
+			&messaging_state, max_upward_queue_count, max_upward_queue_size
+		);
+
+		// UMP.
+		assert_eq!(limits.ump_messages_remaining, 1);
+		assert_eq!(limits.ump_bytes_remaining, 50);
+
+		// HRMP.
+		let para_a_limits = limits.hrmp_outgoing.get(&para_a).expect("channel must be present");
+		let para_b_limits = limits.hrmp_outgoing.get(&para_b).expect("channel must be present");
+		assert_eq!(
+			para_a_limits.bytes_remaining, 10
+		);
+		assert_eq!(
+			para_a_limits.messages_remaining, 2
+		);
+		assert_eq!(
+			para_b_limits.bytes_remaining, 0
+		);
+		assert_eq!(
+			para_b_limits.messages_remaining, 10
+		);
+	}
+
+	#[test]
 	fn hrmp_msg_count_limits() {
 		let para_0 = ParaId::from(0);
 		let para_0_limits = HrmpOutboundLimits { bytes_remaining: u32::MAX, messages_remaining: 5 };
