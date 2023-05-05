@@ -333,7 +333,7 @@ mod tests {
 				MultiLocation::new(1, X1(Parachain(2))),
 				Xcm(vec![Transact {
 					origin_kind: OriginKind::SovereignAccount,
-					require_weight_at_most: Weight::from_parts(110_000_010, 0),
+					require_weight_at_most: Weight::from_parts(110_000_010, 20_000),
 					call: send_xcm_to_parachain_c.encode().into(),
 				}]),
 			));
