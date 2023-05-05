@@ -51,6 +51,8 @@ pub use xcm_executor::XcmExecutor;
 pub use std::{thread::LocalKey, collections::HashMap};
 
 pub trait TestExt {
+	// fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R;
+	fn ext_wrapper<R>(func: R) -> R;
 	fn build_new_ext(storage: Storage) -> sp_io::TestExternalities;
 	fn new_ext() -> sp_io::TestExternalities;
 	fn reset_ext();
@@ -96,6 +98,12 @@ pub trait Relay: Network {
 }
 
 pub trait Parachain: Network {
+	type System;
+	type Runtime;
+	type Origin;
+	type XcmpMessageHandler;
+	type DmpMessageHandler;
+
 	fn para_id() -> ParaId {
 		Default::default()
 	}
@@ -168,9 +176,15 @@ macro_rules! decl_test_parachains {
 
 			impl Network for $name {}
 			impl Parachain for $name {
-				fn para_id() -> $crate::ParaId {
-					$para_id
-				}
+				// fn para_id() -> $crate::ParaId {
+				// 	$para_id
+				// }
+
+				type Runtime = $runtime;
+				type Origin = $origin;
+				type XcmpMessageHandler = $xcmp_message_handler;
+				type DmpMessageHandler = $dmp_message_handler;
+				type System = $system;
 			}
 
 			$crate::__impl_ext_for_parachain!($name, $runtime, $origin, $system, $genesis, $on_init, $para_id);
@@ -223,6 +237,18 @@ macro_rules! __impl_ext_for_relay_chain {
 		}
 
 		impl $crate::TestExt for $name {
+			// fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R {
+			// 	$ext_name.with(|v| {
+			// 		func()
+			// 	})
+			// }
+
+			fn ext_wrapper<R>(func: R) -> R {
+				$ext_name.with(|v| {
+					func
+				})
+			}
+
 			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
 				let mut ext = sp_io::TestExternalities::new(storage);
 				ext.execute_with(|| {
@@ -297,6 +323,16 @@ macro_rules! __impl_ext_for_parachain {
 		}
 
 		impl $name {
+			fn para_id() -> $crate::ParaId {
+				// $ext_name.with(|v| {
+				// 	$para_id
+				// })
+				// let a = Self::ext_wrapper($para_id);
+
+				// panic!("{:?}", $para_id);
+				$para_id
+			}
+
 			fn prepare_for_xcmp() {
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
@@ -304,9 +340,12 @@ macro_rules! __impl_ext_for_parachain {
 						type ParachainSystem = $crate::cumulus_pallet_parachain_system::Pallet<$runtime>;
 
 						// let block_number = $crate::frame_system::Pallet::<$runtime>::block_number();
-						let block_number = <$system>::block_number();
+						// let block_number = <$system>::block_number();
+						let block_number = <Self as Parachain>::System::block_number();
 						// let para_id = $crate::parachain_info::Pallet::<$runtime>::get();
-						let para_id = <$name>::para_id();
+						// let para_id = <$name>::para_id();
+						let para_id = Self::para_id();
+						// panic!("{:?}", para_id);
 
 						let _ = ParachainSystem::set_validation_data(
 							<$origin>::none(),
@@ -320,6 +359,18 @@ macro_rules! __impl_ext_for_parachain {
 		}
 
 		impl $crate::TestExt for $name {
+			// fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R {
+			// 	$ext_name.with(|v| {
+			// 		func()
+			// 	})
+			// }
+
+			fn ext_wrapper<R>(func: R) -> R {
+				$ext_name.with(|v| {
+					func
+				})
+			}
+
 			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
 				let mut ext = sp_io::TestExternalities::new(storage);
 				ext.execute_with(|| {
@@ -397,7 +448,7 @@ macro_rules! __impl_ext_for_parachain {
 					v.borrow_mut().execute_with(|| {
 						use sp_runtime::traits::Header as HeaderT;
 
-						let block_number = $crate::frame_system::Pallet::<$runtime>::block_number();
+						let block_number = <Self as Parachain>::System::block_number();
 						let mock_header = HeaderT::new(
 							0,
 							Default::default(),
