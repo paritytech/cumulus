@@ -1978,6 +1978,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-relay-chain-interface",
  "cumulus-test-client",
+ "cumulus-test-relay-sproof-builder",
  "dyn-clone",
  "futures",
  "futures-timer",
