@@ -110,10 +110,14 @@ mod tests {
 		timestamp: u64,
 		relay_chain_slot: Slot,
 	) -> (ParachainBlockData, PHash) {
-		let sproof_builder =
-			RelayStateSproofBuilder { current_slot: relay_chain_slot, ..Default::default() };
-
 		let parent_header = client.header(hash).ok().flatten().expect("Genesis header exists");
+
+		let sproof_builder = RelayStateSproofBuilder {
+			para_id: cumulus_test_client::runtime::PARACHAIN_ID.into(),
+			included_para_head: Some(HeadData(parent_header.encode())),
+			current_slot: relay_chain_slot,
+			..Default::default()
+		 };
 
 		let relay_parent_storage_root = sproof_builder.clone().into_state_root_and_proof().0;
 
