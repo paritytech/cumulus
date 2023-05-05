@@ -121,12 +121,14 @@ impl BridgeHubRuntimeType {
 				"Kusama BridgeHub Local",
 				"kusama-local",
 				ParaId::new(1003),
+				Some("Bob".to_string()),
 			))),
 			BridgeHubRuntimeType::KusamaDevelopment => Ok(Box::new(kusama::local_config(
 				kusama::BRIDGE_HUB_KUSAMA_DEVELOPMENT,
 				"Kusama BridgeHub Development",
 				"kusama-dev",
 				ParaId::new(1003),
+				Some("Bob".to_string()),
 			))),
 			BridgeHubRuntimeType::Westend =>
 				Ok(Box::new(westend::BridgeHubChainSpec::from_json_bytes(
@@ -400,6 +402,7 @@ pub mod kusama {
 		chain_name: &str,
 		relay_chain: &str,
 		para_id: ParaId,
+		bridges_pallet_owner_seed: Option<String>,
 	) -> BridgeHubChainSpec {
 		let mut properties = sc_chain_spec::Properties::new();
 		properties.insert("ss58Format".into(), 2.into());
@@ -440,6 +443,9 @@ pub mod kusama {
 						get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 					],
 					para_id,
+					bridges_pallet_owner_seed
+						.as_ref()
+						.map(|seed| get_account_id_from_seed::<sr25519::Public>(&seed)),
 				)
 			},
 			Vec::new(),
@@ -455,6 +461,7 @@ pub mod kusama {
 		invulnerables: Vec<(AccountId, AuraId)>,
 		endowed_accounts: Vec<AccountId>,
 		id: ParaId,
+		bridges_pallet_owner: Option<AccountId>,
 	) -> bridge_hub_kusama_runtime::GenesisConfig {
 		bridge_hub_kusama_runtime::GenesisConfig {
 			system: bridge_hub_kusama_runtime::SystemConfig {
@@ -492,6 +499,14 @@ pub mod kusama {
 			parachain_system: Default::default(),
 			polkadot_xcm: bridge_hub_kusama_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
+			},
+			bridge_polkadot_grandpa: bridge_hub_kusama_runtime::BridgePolkadotGrandpaConfig {
+				owner: bridges_pallet_owner.clone(),
+				..Default::default()
+			},
+			bridge_polkadot_messages: bridge_hub_kusama_runtime::BridgePolkadotMessagesConfig {
+				owner: bridges_pallet_owner,
+				..Default::default()
 			},
 		}
 	}

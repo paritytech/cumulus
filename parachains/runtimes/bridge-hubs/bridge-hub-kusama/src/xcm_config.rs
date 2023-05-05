@@ -18,6 +18,9 @@ use super::{
 	AccountId, AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
 	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
+use crate::{
+	bridge_hub_config::ToBridgeHubPolkadotHaulBlobExporter, BridgeGrandpaPolkadotInstance,
+};
 use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing},
@@ -86,7 +89,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	// using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
 	// foreign chains who want to have a local sovereign account on this chain which they control.
 	SovereignSignedViaLocation<LocationToAccountId, RuntimeOrigin>,
-	// Native converter for Relay-chain (Parent) location; will converts to a `Relay` origin when
+	// Native converter for Relay-chain (Parent) location; will convert to a `Relay` origin when
 	// recognized.
 	RelayChainAsNative<RelayChainOrigin, RuntimeOrigin>,
 	// Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
@@ -112,6 +115,7 @@ match_types! {
 		MultiLocation { parents: 1, interior: X1(_) }
 	};
 }
+
 /// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
 /// account for proof size weights.
 ///
@@ -149,7 +153,13 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 			RuntimeCall::XcmpQueue(..) |
 			RuntimeCall::DmpQueue(..) |
-			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) => true,
+			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
+			RuntimeCall::BridgePolkadotGrandpa(pallet_bridge_grandpa::Call::<
+				Runtime,
+				BridgeGrandpaPolkadotInstance,
+			>::initialize {
+				..
+			}) => true,
 			_ => false,
 		}
 	}
@@ -174,6 +184,9 @@ pub type Barrier = DenyThenTry<
 			UniversalLocation,
 			ConstU32<8>,
 		>,
+		// TODO:check-parameter - (https://github.com/paritytech/parity-bridges-common/issues/2084)
+		// remove this and extend `AllowExplicitUnpaidExecutionFrom` with "or SystemParachains" once merged https://github.com/paritytech/polkadot/pull/7005
+		xcm_builder::AllowUnpaidExecutionFrom<Everything>,
 	),
 >;
 
@@ -199,14 +212,14 @@ impl xcm_executor::Config for XcmConfig {
 		UsingComponents<WeightToFee, KsmRelayLocation, AccountId, Balances, ToStakingPot<Runtime>>;
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
+	type AssetLocker = ();
+	type AssetExchanger = ();
 	type AssetClaims = PolkadotXcm;
 	type SubscriptionService = PolkadotXcm;
 	type PalletInstancesInfo = AllPalletsWithSystem;
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
-	type AssetLocker = ();
-	type AssetExchanger = ();
 	type FeeManager = ();
-	type MessageExporter = ();
+	type MessageExporter = ToBridgeHubPolkadotHaulBlobExporter;
 	type UniversalAliases = Nothing;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
 	type SafeCallFilter = SafeCallFilter;
