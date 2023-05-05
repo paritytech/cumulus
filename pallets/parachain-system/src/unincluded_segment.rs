@@ -292,6 +292,34 @@ impl<H> Ancestor<H> {
 	}
 }
 
+/// An update to the HRMP watermark. This is always a relay-chain block number,
+/// but the two variants have different semantic meanings.
+pub enum HrmpWatermarkUpdate {
+	/// An update to the HRMP watermark where the new value is set to be equal to the
+	/// relay-parent's block number, i.e. the "head" of the relay chain.
+	/// This is always legal.
+	Head(relay_chain::BlockNumber),
+	/// An update to the HRMP watermark where the new value falls into the "trunk" of the
+	/// relay-chain. In this case, the watermark must be greater than the previous value.
+	Trunk(relay_chain::BlockNumber),
+}
+
+impl HrmpWatermarkUpdate {
+	/// Create a new update based on the desired watermark value and the current
+	/// relay-parent number.
+	pub fn new(
+		watermark: relay_chain::BlockNumber,
+		relay_parent_number: relay_chain::BlockNumber,
+	) -> Self {
+		// Hard constrain the watermark to the relay-parent number.
+		if watermark >= relay_parent_number {
+			HrmpWatermarkUpdate::Head(relay_parent_number)
+		} else {
+			HrmpWatermarkUpdate::Trunk(watermark)
+		}
+	}
+}
+
 /// Struct that keeps track of bandwidth used by the unincluded part of the chain
 /// along with the latest HRMP watermark.
 #[derive(Default, Encode, Decode, TypeInfo)]
@@ -311,20 +339,24 @@ impl<H> SegmentTracker<H> {
 	pub fn append(
 		&mut self,
 		block: &Ancestor<H>,
-		hrmp_watermark: relay_chain::BlockNumber,
+		new_watermark: HrmpWatermarkUpdate,
 		limits: &OutboundBandwidthLimits,
 	) -> Result<(), BandwidthUpdateError> {
 		if let Some(watermark) = self.hrmp_watermark.as_ref() {
-			if &hrmp_watermark <= watermark {
-				return Err(BandwidthUpdateError::InvalidHrmpWatermark {
-					submitted: hrmp_watermark,
-					latest: *watermark,
-				})
+			if let HrmpWatermarkUpdate::Trunk(new) = new_watermark {
+				if &new <= watermark {
+					return Err(BandwidthUpdateError::InvalidHrmpWatermark {
+						submitted: new,
+						latest: *watermark,
+					})
+				}
 			}
 		}
 
 		self.used_bandwidth = self.used_bandwidth.append(block.used_bandwidth(), limits)?;
-		self.hrmp_watermark.replace(hrmp_watermark);
+		self.hrmp_watermark.replace(match new_watermark {
+			HrmpWatermarkUpdate::Trunk(w) | HrmpWatermarkUpdate::Head(w) => w,
+		});
 
 		Ok(())
 	}

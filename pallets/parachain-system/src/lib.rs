@@ -68,7 +68,8 @@ pub mod consensus_hook;
 pub mod validate_block;
 
 use unincluded_segment::{
-	Ancestor, HrmpChannelUpdate, OutboundBandwidthLimits, SegmentTracker, UsedBandwidth,
+	Ancestor, HrmpChannelUpdate, HrmpWatermarkUpdate, OutboundBandwidthLimits, SegmentTracker,
+	UsedBandwidth,
 };
 
 pub use consensus_hook::ConsensusHook;
@@ -336,12 +337,16 @@ pub mod pallet {
 				let ancestor = Ancestor::new_unchecked(used_bandwidth);
 
 				let watermark = HrmpWatermark::<T>::get();
+				let watermark_update = HrmpWatermarkUpdate::new(
+					watermark,
+					LastRelayChainBlockNumber::<T>::get(),
+				);
 				AggregatedUnincludedSegment::<T>::mutate(|agg| {
 					let agg = agg.get_or_insert_with(SegmentTracker::default);
 					// TODO: In order of this panic to be correct, outbound message source should
 					// respect bandwidth limits as well.
 					// <https://github.com/paritytech/cumulus/issues/2471>
-					agg.append(&ancestor, watermark, &total_bandwidth_out)
+					agg.append(&ancestor, watermark_update, &total_bandwidth_out)
 						.expect("unincluded segment limits exceeded");
 				});
 				// Check in `on_initialize` guarantees there's space for this block.
@@ -374,7 +379,7 @@ pub mod pallet {
 				weight += T::DbWeight::get().reads_writes(1, 1);
 
 				// Weight used during finalization.
-				weight += T::DbWeight::get().reads_writes(2, 2);
+				weight += T::DbWeight::get().reads_writes(3, 2);
 			}
 
 			// Remove the validation from the old block.
