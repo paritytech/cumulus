@@ -95,7 +95,7 @@ pub const BRIDGE_HUB_WOCOCO_CHAIN_ID: ChainId = *b"bhwo";
 pub const BRIDGE_HUB_KUSAMA_CHAIN_ID: ChainId = *b"bhks";
 
 /// BridgeHubPolkadot chain id.
-pub const BRIDGE_HUB_POLKADOT_CHAIN_ID: ChainId = *b"bhwo";
+pub const BRIDGE_HUB_POLKADOT_CHAIN_ID: ChainId = *b"bhpd";
 
 /// Generic header Id.
 #[derive(
