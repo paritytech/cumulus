@@ -98,11 +98,12 @@ pub trait Relay: Network {
 }
 
 pub trait Parachain: Network {
-	type System;
 	type Runtime;
 	type Origin;
 	type XcmpMessageHandler;
 	type DmpMessageHandler;
+	type System;
+	type ParachainSystem;
 
 	fn para_id() -> ParaId {
 		Default::default()
@@ -164,6 +165,7 @@ macro_rules! decl_test_parachains {
 				XcmpMessageHandler = $xcmp_message_handler:path,
 				DmpMessageHandler = $dmp_message_handler:path,
 				System = $system:path,
+				ParachainSystem = $parachain_system:path,
 				genesis = $genesis:expr,
 				on_init = $on_init:expr,
 				para_id = $para_id:expr,
@@ -185,40 +187,49 @@ macro_rules! decl_test_parachains {
 				type XcmpMessageHandler = $xcmp_message_handler;
 				type DmpMessageHandler = $dmp_message_handler;
 				type System = $system;
+				type ParachainSystem = $parachain_system;
 			}
 
-			$crate::__impl_ext_for_parachain!($name, $runtime, $origin, $system, $genesis, $on_init, $para_id);
+			$crate::__impl_ext_for_parachain!($name, $genesis, $on_init, $para_id);
+			$crate::__impl_xcm_handlers_for_parachain!($name);
 
-			impl $crate::XcmpMessageHandler for $name {
-				fn handle_xcmp_messages<
-					'a,
-					I: Iterator<Item = ($crate::ParaId, $crate::RelayBlockNumber, &'a [u8])>,
-				>(
-					iter: I,
-					max_weight: $crate::Weight,
-				) -> $crate::Weight {
-					use $crate::{TestExt, XcmpMessageHandler};
 
-					$name::execute_with(|| {
-						<$xcmp_message_handler>::handle_xcmp_messages(iter, max_weight)
-					})
-				}
-			}
-
-			impl $crate::DmpMessageHandler for $name {
-				fn handle_dmp_messages(
-					iter: impl Iterator<Item = ($crate::RelayBlockNumber, Vec<u8>)>,
-					max_weight: $crate::Weight,
-				) -> $crate::Weight {
-					use $crate::{DmpMessageHandler, TestExt};
-
-					$name::execute_with(|| {
-						<$dmp_message_handler>::handle_dmp_messages(iter, max_weight)
-					})
-				}
-			}
 		)+
 	};
+}
+
+#[macro_export]
+macro_rules! __impl_xcm_handlers_for_parachain {
+	($name:ident) => {
+		impl $crate::XcmpMessageHandler for $name {
+			fn handle_xcmp_messages<
+				'a,
+				I: Iterator<Item = ($crate::ParaId, $crate::RelayBlockNumber, &'a [u8])>,
+			>(
+				iter: I,
+				max_weight: $crate::Weight,
+			) -> $crate::Weight {
+				use $crate::{TestExt, XcmpMessageHandler};
+
+				$name::execute_with(|| {
+					<Self as Parachain>::XcmpMessageHandler::handle_xcmp_messages(iter, max_weight)
+				})
+			}
+		}
+
+		impl $crate::DmpMessageHandler for $name {
+			fn handle_dmp_messages(
+				iter: impl Iterator<Item = ($crate::RelayBlockNumber, Vec<u8>)>,
+				max_weight: $crate::Weight,
+			) -> $crate::Weight {
+				use $crate::{DmpMessageHandler, TestExt};
+
+				$name::execute_with(|| {
+					<Self as Parachain>::DmpMessageHandler::handle_dmp_messages(iter, max_weight)
+				})
+			}
+		}
+	}
 }
 
 #[macro_export]
@@ -310,13 +321,13 @@ macro_rules! __impl_ext_for_relay_chain {
 #[macro_export]
 macro_rules! __impl_ext_for_parachain {
 	// entry point: generate ext name
-	($name:ident, $runtime:path, $origin:path, $system:path, $genesis:expr, $on_init:expr, $para_id:expr) => {
+	($name:ident, $genesis:expr, $on_init:expr, $para_id:expr) => {
 		$crate::paste::paste! {
-			$crate::__impl_ext_for_parachain!(@impl $name, $runtime, $origin, $system, $genesis, $on_init, $para_id, [<EXT_ $name:upper>]);
+			$crate::__impl_ext_for_parachain!(@impl $name, $genesis, $on_init, $para_id, [<EXT_ $name:upper>]);
 		}
 	};
 	// impl
-	(@impl $name:ident, $runtime:path, $origin:path, $system:path, $genesis:expr, $on_init:expr, $para_id:expr, $ext_name:ident) => {
+	(@impl $name:ident, $genesis:expr, $on_init:expr, $para_id:expr, $ext_name:ident) => {
 		thread_local! {
 			pub static $ext_name: $crate::RefCell<$crate::TestExternalities>
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
@@ -337,7 +348,7 @@ macro_rules! __impl_ext_for_parachain {
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
 						use $crate::{Get, Hooks};
-						type ParachainSystem = $crate::cumulus_pallet_parachain_system::Pallet<$runtime>;
+						// type ParachainSystem = $crate::cumulus_pallet_parachain_system::Pallet<$runtime>;
 
 						// let block_number = $crate::frame_system::Pallet::<$runtime>::block_number();
 						// let block_number = <$system>::block_number();
@@ -347,12 +358,12 @@ macro_rules! __impl_ext_for_parachain {
 						let para_id = Self::para_id();
 						// panic!("{:?}", para_id);
 
-						let _ = ParachainSystem::set_validation_data(
-							<$origin>::none(),
+						let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
+							<Self as Parachain>::Origin::none(),
 							<$name>::hrmp_channel_parachain_inherent_data(para_id.into(), 1),
 						);
 						// set `AnnouncedHrmpMessagesPerCandidate`
-						ParachainSystem::on_initialize(block_number);
+						<Self as Parachain>::ParachainSystem::on_initialize(block_number);
 					})
 				});
 			}
@@ -376,7 +387,7 @@ macro_rules! __impl_ext_for_parachain {
 				ext.execute_with(|| {
 					$on_init;
 					sp_tracing::try_init_simple();
-					<$system>::set_block_number(1);
+					<Self as Parachain>::System::set_block_number(1);
 				});
 				ext
 			}
@@ -395,7 +406,7 @@ macro_rules! __impl_ext_for_parachain {
 				// Make sure the Network is initialized
 				<$name>::init();
 
-				type ParachainSystem = $crate::cumulus_pallet_parachain_system::Pallet<$runtime>;
+				// type ParachainSystem = $crate::cumulus_pallet_parachain_system::Pallet<$runtime>;
 
 				let network_name = <$name>::network_name();
 
@@ -433,8 +444,8 @@ macro_rules! __impl_ext_for_parachain {
 						let para_id = <$name>::para_id().into();
 						// panic!("{}", relay_block_number);
 
-						let _ = ParachainSystem::set_validation_data(
-							<$origin>::none(),
+						let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
+							<Self as Parachain>::Origin::none(),
 							<$name>::hrmp_channel_parachain_inherent_data(para_id, relay_block_number),
 						);
 					})
@@ -458,8 +469,8 @@ macro_rules! __impl_ext_for_parachain {
 						);
 
 						// get messages
-						ParachainSystem::on_finalize(block_number);
-						let collation_info = ParachainSystem::collect_collation_info(&mock_header);
+						<Self as Parachain>::ParachainSystem::on_finalize(block_number);
+						let collation_info = <Self as Parachain>::ParachainSystem::collect_collation_info(&mock_header);
 
 						// send upward messages
 						// let para_id = $crate::parachain_info::Pallet::<$runtime>::get();
@@ -491,7 +502,7 @@ macro_rules! __impl_ext_for_parachain {
 
 
 						// clean messages
-						ParachainSystem::on_initialize(block_number);
+						<Self as Parachain>::ParachainSystem::on_initialize(block_number);
 					})
 				});
 
