@@ -458,7 +458,7 @@ mod tests {
 		for _ in 0..5 {
 			hrmp_update = hrmp_update
 				.append(&HrmpChannelUpdate { msg_count: 1, total_bytes: 10 }, para_0, &limits)
-				.expect("update is withing the limits");
+				.expect("update is within the limits");
 		}
 		assert_matches!(
 			hrmp_update.append(
@@ -476,7 +476,7 @@ mod tests {
 		let mut hrmp_update = HrmpChannelUpdate::default();
 		hrmp_update = hrmp_update
 			.append(&HrmpChannelUpdate { msg_count: 2, total_bytes: 10 }, para_1, &limits)
-			.expect("update is withing the limits");
+			.expect("update is within the limits");
 		assert_matches!(
 			hrmp_update.append(
 				&HrmpChannelUpdate { msg_count: 3, total_bytes: 10 },
@@ -510,7 +510,7 @@ mod tests {
 		for _ in 0..5 {
 			hrmp_update = hrmp_update
 				.append(&HrmpChannelUpdate { msg_count: 1, total_bytes: 4 }, para_0, &limits)
-				.expect("update is withing the limits");
+				.expect("update is within the limits");
 		}
 		assert_matches!(
 			hrmp_update.append(
@@ -550,7 +550,8 @@ mod tests {
 			used_bandwidth: create_used_hrmp([(para_0, para_0_update)].into()),
 			para_head_hash: None::<relay_chain::Hash>,
 		};
-		segment.append(&ancestor_0, 0, &limits).expect("update is withing the limits");
+		segment.append(&ancestor_0, HrmpWatermarkUpdate::Trunk(0), &limits)
+			.expect("update is within the limits");
 
 		for watermark in 1..5 {
 			let ancestor = Ancestor {
@@ -558,8 +559,8 @@ mod tests {
 				para_head_hash: None::<relay_chain::Hash>,
 			};
 			segment
-				.append(&ancestor, watermark, &limits)
-				.expect("update is withing the limits");
+				.append(&ancestor, HrmpWatermarkUpdate::Trunk(watermark), &limits)
+				.expect("update is within the limits");
 		}
 
 		let para_0_update = HrmpChannelUpdate { msg_count: 1, total_bytes: 1 };
@@ -568,7 +569,7 @@ mod tests {
 			para_head_hash: None::<relay_chain::Hash>,
 		};
 		assert_matches!(
-			segment.append(&ancestor_5, 5, &limits),
+			segment.append(&ancestor_5, HrmpWatermarkUpdate::Trunk(5), &limits),
 			Err(BandwidthUpdateError::HrmpBytesOverflow {
 				recipient,
 				bytes_remaining,
@@ -577,17 +578,18 @@ mod tests {
 		);
 		// Remove the first ancestor from the segment to make space.
 		segment.subtract(&ancestor_0);
-		segment.append(&ancestor_5, 5, &limits).expect("update is withing the limits");
+		segment.append(&ancestor_5, HrmpWatermarkUpdate::Trunk(5), &limits).expect("update is within the limits");
 
 		let para_1_update = HrmpChannelUpdate { msg_count: 3, total_bytes: 10 };
 		let ancestor = Ancestor {
 			used_bandwidth: create_used_hrmp([(para_1, para_1_update)].into()),
 			para_head_hash: None::<relay_chain::Hash>,
 		};
-		segment.append(&ancestor, 6, &limits).expect("update is withing the limits");
+		segment.append(&ancestor, HrmpWatermarkUpdate::Trunk(6), &limits)
+			.expect("update is within the limits");
 
 		assert_matches!(
-			segment.append(&ancestor, 7, &limits),
+			segment.append(&ancestor, HrmpWatermarkUpdate::Trunk(7), &limits),
 			Err(BandwidthUpdateError::HrmpMessagesOverflow {
 				recipient,
 				messages_remaining,
@@ -616,7 +618,8 @@ mod tests {
 			used_bandwidth: create_used_ump((1, 10)),
 			para_head_hash: None::<relay_chain::Hash>,
 		};
-		segment.append(&ancestor_0, 0, &limits).expect("update is withing the limits");
+		segment.append(&ancestor_0, HrmpWatermarkUpdate::Trunk(0), &limits)
+			.expect("update is within the limits");
 
 		for watermark in 1..4 {
 			let ancestor = Ancestor {
@@ -624,8 +627,8 @@ mod tests {
 				para_head_hash: None::<relay_chain::Hash>,
 			};
 			segment
-				.append(&ancestor, watermark, &limits)
-				.expect("update is withing the limits");
+				.append(&ancestor, HrmpWatermarkUpdate::Trunk(watermark), &limits)
+				.expect("update is within the limits");
 		}
 
 		let ancestor_4 = Ancestor {
@@ -633,7 +636,7 @@ mod tests {
 			para_head_hash: None::<relay_chain::Hash>,
 		};
 		assert_matches!(
-			segment.append(&ancestor_4, 4, &limits),
+			segment.append(&ancestor_4, HrmpWatermarkUpdate::Trunk(4), &limits),
 			Err(BandwidthUpdateError::UmpBytesOverflow {
 				bytes_remaining,
 				bytes_submitted,
@@ -644,9 +647,10 @@ mod tests {
 			used_bandwidth: create_used_ump((1, 5)),
 			para_head_hash: None::<relay_chain::Hash>,
 		};
-		segment.append(&ancestor, 4, &limits).expect("update is withing the limits");
+		segment.append(&ancestor, HrmpWatermarkUpdate::Trunk(4), &limits)
+			.expect("update is within the limits");
 		assert_matches!(
-			segment.append(&ancestor, 5, &limits),
+			segment.append(&ancestor, HrmpWatermarkUpdate::Trunk(5), &limits),
 			Err(BandwidthUpdateError::UmpMessagesOverflow {
 				messages_remaining,
 				messages_submitted,
@@ -669,10 +673,10 @@ mod tests {
 		};
 
 		segment
-			.append(&ancestor, 0, &limits)
+			.append(&ancestor, HrmpWatermarkUpdate::Head(0), &limits)
 			.expect("nothing to compare the watermark with in default segment");
 		assert_matches!(
-			segment.append(&ancestor, 0, &limits),
+			segment.append(&ancestor, HrmpWatermarkUpdate::Trunk(0), &limits),
 			Err(BandwidthUpdateError::InvalidHrmpWatermark {
 				submitted,
 				latest,
@@ -680,17 +684,19 @@ mod tests {
 		);
 
 		for watermark in 1..5 {
-			segment.append(&ancestor, watermark, &limits).expect("hrmp watermark is valid");
+			segment.append(&ancestor, HrmpWatermarkUpdate::Trunk(watermark), &limits).expect("hrmp watermark is valid");
 		}
 		for watermark in 0..5 {
 			assert_matches!(
-				segment.append(&ancestor, watermark, &limits),
+				segment.append(&ancestor, HrmpWatermarkUpdate::Trunk(watermark), &limits),
 				Err(BandwidthUpdateError::InvalidHrmpWatermark {
 					submitted,
 					latest,
 				}) if submitted == watermark && latest == 4
 			);
 		}
+
+		segment.append(&ancestor, HrmpWatermarkUpdate::Head(4), &limits).expect("head updates always valid");
 	}
 
 	#[test]
@@ -719,13 +725,15 @@ mod tests {
 			used_bandwidth: create_used_hrmp([(para_0, para_0_update)].into()),
 			para_head_hash: None::<relay_chain::Hash>,
 		};
-		segment.append(&ancestor_0, 0, &limits).expect("update is withing the limits");
+		segment.append(&ancestor_0, HrmpWatermarkUpdate::Head(0), &limits)
+			.expect("update is within the limits");
 		let para_1_update = HrmpChannelUpdate { msg_count: 3, total_bytes: 10 };
 		let ancestor_1 = Ancestor {
 			used_bandwidth: create_used_hrmp([(para_1, para_1_update)].into()),
 			para_head_hash: None::<relay_chain::Hash>,
 		};
-		segment.append(&ancestor_1, 1, &limits).expect("update is withing the limits");
+		segment.append(&ancestor_1, HrmpWatermarkUpdate::Head(1), &limits)
+			.expect("update is within the limits");
 
 		assert_eq!(segment.used_bandwidth.hrmp_outgoing.len(), 2);
 
