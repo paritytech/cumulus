@@ -1,5 +1,9 @@
 # xcm-emulator
 
-xcm-emulator uses relay chain and parachain runtimes.
-Users could plug in Kusama, Statemine, Polkadot and other pre-configured runtimes.
-With up-to-date chain specs, it's able to verify if specific XCM messages work in live networks.
+XCM-Emulator is a tool to emulate XCM program execution using pre-configured runtimes, including those
+used to run on live networks, such as Kusama, Polkadot, Statemine et cetera.  
+This allows for testing cross-chain message passing, verifying outcomes, weights and side-effects.
+
+## How to use
+
+Please refer to [example crate source-code](example/src/lib.rs) for usage examples.

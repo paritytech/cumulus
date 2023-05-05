@@ -1,6 +1,6 @@
 [package]
 name = "test-runtime"
-description = "A simple runtime for cross-chain messages tests."
+description = "A simple runtime for cross-chain message tests."
 license = "Apache-2.0"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
