@@ -632,18 +632,18 @@ fn send_upward_message_num_per_candidate() {
 				let v = UpwardMessages::<Test>::get();
 				assert_eq!(v, vec![b"Mr F was here".to_vec()]);
 			},
+		)
+		.add_with_post_test(
+			2,
+			|| {
+				assert_eq!(UnincludedSegment::<Test>::get().len(), 0);
+				/* do nothing within block */
+			},
+			|| {
+				let v = UpwardMessages::<Test>::get();
+				assert_eq!(v, vec![b"message 2".to_vec()]);
+			},
 		);
-	// .add_with_post_test(
-	// 	2,
-	// 	|| {
-	// 		assert_eq!(UnincludedSegment::<Test>::get().len(), 0);
-	// 		/* do nothing within block */
-	// 	},
-	// 	|| {
-	// 		let v = UpwardMessages::<Test>::get();
-	// 		assert_eq!(v, vec![b"message 2".to_vec()]);
-	// 	},
-	// );
 }
 
 #[test]
