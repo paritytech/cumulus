@@ -1920,6 +1920,7 @@ dependencies = [
  "cumulus-client-network",
  "cumulus-primitives-core",
  "cumulus-test-client",
+ "cumulus-test-relay-sproof-builder",
  "cumulus-test-runtime",
  "futures",
  "parity-scale-codec 3.4.0",

@@ -385,9 +385,11 @@ mod tests {
 		TestClientBuilder, TestClientBuilderExt,
 	};
 	use cumulus_test_runtime::{Block, Header};
+	use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 	use futures::{channel::mpsc, executor::block_on, StreamExt};
 	use polkadot_node_subsystem_test_helpers::ForwardSubsystem;
 	use polkadot_overseer::{dummy::dummy_overseer_builder, HeadSupportsParachains};
+	use polkadot_primitives::HeadData;
 	use sp_consensus::BlockOrigin;
 	use sp_core::{testing::TaskExecutor, Pair};
 	use sp_runtime::traits::BlakeTwo256;
@@ -415,10 +417,14 @@ mod tests {
 			_: PHash,
 			validation_data: &PersistedValidationData,
 		) -> Option<ParachainCandidate<Block>> {
+			let mut sproof = RelayStateSproofBuilder::default();
+			sproof.included_para_head = Some(HeadData(parent.encode()));
+			sproof.para_id = cumulus_test_runtime::PARACHAIN_ID.into();
+
 			let builder = self.client.init_block_builder_at(
 				parent.hash(),
 				Some(validation_data.clone()),
-				Default::default(),
+				sproof,
 			);
 
 			let (block, _, proof) = builder.build().expect("Creates block").into_inner();
