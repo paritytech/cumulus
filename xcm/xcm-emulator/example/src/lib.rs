@@ -271,7 +271,7 @@ mod tests {
 	}
 
 	#[test]
-	fn xcmp() {
+	fn para_to_para() {
 		Network::reset();
 
 		let remark = test_runtime::RuntimeCall::System(
