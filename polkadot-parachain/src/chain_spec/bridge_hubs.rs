@@ -1,4 +1,4 @@
-// Copyright 2019-2021 Parity Technologies (UK) Ltd.
+// Copyright 2022 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -14,10 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+use crate::chain_spec::{get_account_id_from_seed, get_collator_keys_from_seed};
 use cumulus_primitives_core::ParaId;
 use parachains_common::Balance as BridgeHubBalance;
 use sc_chain_spec::ChainSpec;
 use sc_cli::RuntimeVersion;
+use sp_core::sr25519;
 use std::{path::PathBuf, str::FromStr};
 
 /// Collects all supported BridgeHub configurations
@@ -130,18 +132,16 @@ impl BridgeHubRuntimeType {
 				Ok(Box::new(westend::BridgeHubChainSpec::from_json_bytes(
 					&include_bytes!("../../../parachains/chain-specs/bridge-hub-westend.json")[..],
 				)?)),
-			BridgeHubRuntimeType::Rococo => Ok(Box::new(rococo::live_config(
-				rococo::BRIDGE_HUB_ROCOCO,
-				"Rococo BridgeHub",
-				"rococo",
-				ParaId::new(1013),
-				|_| (),
-			))),
+			BridgeHubRuntimeType::Rococo =>
+				Ok(Box::new(rococo::BridgeHubChainSpec::from_json_bytes(
+					&include_bytes!("../../../parachains/chain-specs/bridge-hub-rococo.json")[..],
+				)?)),
 			BridgeHubRuntimeType::RococoLocal => Ok(Box::new(rococo::local_config(
 				rococo::BRIDGE_HUB_ROCOCO_LOCAL,
 				"Rococo BridgeHub Local",
 				"rococo-local",
 				ParaId::new(1013),
+				Some("Bob".to_string()),
 				|_| (),
 			))),
 			BridgeHubRuntimeType::RococoDevelopment => Ok(Box::new(rococo::local_config(
@@ -149,19 +149,19 @@ impl BridgeHubRuntimeType {
 				"Rococo BridgeHub Development",
 				"rococo-dev",
 				ParaId::new(1013),
+				Some("Bob".to_string()),
 				|_| (),
 			))),
-			BridgeHubRuntimeType::Wococo => Ok(Box::new(wococo::live_config(
-				wococo::BRIDGE_HUB_WOCOCO,
-				"Wococo BridgeHub",
-				"wococo",
-				ParaId::new(1014),
-			))),
+			BridgeHubRuntimeType::Wococo =>
+				Ok(Box::new(wococo::BridgeHubChainSpec::from_json_bytes(
+					&include_bytes!("../../../parachains/chain-specs/bridge-hub-wococo.json")[..],
+				)?)),
 			BridgeHubRuntimeType::WococoLocal => Ok(Box::new(wococo::local_config(
 				wococo::BRIDGE_HUB_WOCOCO_LOCAL,
 				"Wococo BridgeHub Local",
 				"wococo-local",
 				ParaId::new(1014),
+				Some("Bob".to_string()),
 			))),
 		}
 	}
@@ -202,13 +202,12 @@ fn ensure_id(id: &str) -> Result<&str, String> {
 
 /// Sub-module for Rococo setup
 pub mod rococo {
-	use super::{BridgeHubBalance, ParaId};
-	use crate::chain_spec::{
-		get_account_id_from_seed, get_collator_keys_from_seed, Extensions, SAFE_XCM_VERSION,
-	};
+	use super::{get_account_id_from_seed, get_collator_keys_from_seed, sr25519, ParaId};
+	use crate::chain_spec::{Extensions, SAFE_XCM_VERSION};
 	use parachains_common::{AccountId, AuraId};
 	use sc_chain_spec::ChainType;
-	use sp_core::sr25519;
+
+	use super::BridgeHubBalance;
 
 	pub(crate) const BRIDGE_HUB_ROCOCO: &str = "bridge-hub-rococo";
 	pub(crate) const BRIDGE_HUB_ROCOCO_LOCAL: &str = "bridge-hub-rococo-local";
@@ -222,70 +221,12 @@ pub mod rococo {
 
 	pub type RuntimeApi = bridge_hub_rococo_runtime::RuntimeApi;
 
-	pub fn live_config<ModifyProperties: Fn(&mut sc_chain_spec::Properties)>(
-		id: &str,
-		chain_name: &str,
-		relay_chain: &str,
-		para_id: ParaId,
-		modify_props: ModifyProperties,
-	) -> BridgeHubChainSpec {
-		// Rococo defaults
-		let mut properties = sc_chain_spec::Properties::new();
-		properties.insert("ss58Format".into(), 42.into());
-		properties.insert("tokenSymbol".into(), "ROC".into());
-		properties.insert("tokenDecimals".into(), 12.into());
-		modify_props(&mut properties);
-
-		BridgeHubChainSpec::from_genesis(
-			// Name
-			chain_name,
-			// ID
-			super::ensure_id(id).expect("invalid id"),
-			ChainType::Live,
-			move || {
-				genesis(
-					// initial collators.
-					vec![
-						(
-							get_account_id_from_seed::<sr25519::Public>("Alice"),
-							get_collator_keys_from_seed::<AuraId>("Alice"),
-						),
-						(
-							get_account_id_from_seed::<sr25519::Public>("Bob"),
-							get_collator_keys_from_seed::<AuraId>("Bob"),
-						),
-					],
-					vec![
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_account_id_from_seed::<sr25519::Public>("Charlie"),
-						get_account_id_from_seed::<sr25519::Public>("Dave"),
-						get_account_id_from_seed::<sr25519::Public>("Eve"),
-						get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-						get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-						get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-						get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-						get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-						get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-						get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-					],
-					para_id,
-				)
-			},
-			Vec::new(),
-			None,
-			None,
-			None,
-			Some(properties),
-			Extensions { relay_chain: relay_chain.to_string(), para_id: para_id.into() },
-		)
-	}
-
 	pub fn local_config<ModifyProperties: Fn(&mut sc_chain_spec::Properties)>(
 		id: &str,
 		chain_name: &str,
 		relay_chain: &str,
 		para_id: ParaId,
+		bridges_pallet_owner_seed: Option<String>,
 		modify_props: ModifyProperties,
 	) -> BridgeHubChainSpec {
 		// Rococo defaults
@@ -329,6 +270,9 @@ pub mod rococo {
 						get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 					],
 					para_id,
+					bridges_pallet_owner_seed
+						.as_ref()
+						.map(|seed| get_account_id_from_seed::<sr25519::Public>(&seed)),
 				)
 			},
 			Vec::new(),
@@ -344,6 +288,7 @@ pub mod rococo {
 		invulnerables: Vec<(AccountId, AuraId)>,
 		endowed_accounts: Vec<AccountId>,
 		id: ParaId,
+		bridges_pallet_owner: Option<AccountId>,
 	) -> bridge_hub_rococo_runtime::GenesisConfig {
 		bridge_hub_rococo_runtime::GenesisConfig {
 			system: bridge_hub_rococo_runtime::SystemConfig {
@@ -378,6 +323,22 @@ pub mod rococo {
 			polkadot_xcm: bridge_hub_rococo_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
 			},
+			bridge_wococo_grandpa: bridge_hub_rococo_runtime::BridgeWococoGrandpaConfig {
+				owner: bridges_pallet_owner.clone(),
+				..Default::default()
+			},
+			bridge_rococo_grandpa: bridge_hub_rococo_runtime::BridgeRococoGrandpaConfig {
+				owner: bridges_pallet_owner.clone(),
+				..Default::default()
+			},
+			bridge_rococo_messages: bridge_hub_rococo_runtime::BridgeRococoMessagesConfig {
+				owner: bridges_pallet_owner.clone(),
+				..Default::default()
+			},
+			bridge_wococo_messages: bridge_hub_rococo_runtime::BridgeWococoMessagesConfig {
+				owner: bridges_pallet_owner,
+				..Default::default()
+			},
 		}
 	}
 }
@@ -398,21 +359,18 @@ pub mod wococo {
 		chain_name: &str,
 		relay_chain: &str,
 		para_id: ParaId,
+		bridges_pallet_owner_seed: Option<String>,
 	) -> BridgeHubChainSpec {
-		rococo::local_config(id, chain_name, relay_chain, para_id, |properties| {
-			properties.insert("tokenSymbol".into(), "WOOK".into());
-		})
-	}
-
-	pub fn live_config(
-		id: &str,
-		chain_name: &str,
-		relay_chain: &str,
-		para_id: ParaId,
-	) -> BridgeHubChainSpec {
-		rococo::live_config(id, chain_name, relay_chain, para_id, |properties| {
-			properties.insert("tokenSymbol".into(), "WOOK".into());
-		})
+		rococo::local_config(
+			id,
+			chain_name,
+			relay_chain,
+			para_id,
+			bridges_pallet_owner_seed,
+			|properties| {
+				properties.insert("tokenSymbol".into(), "WOOK".into());
+			},
+		)
 	}
 }
 
