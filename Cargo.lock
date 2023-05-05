@@ -4388,6 +4388,7 @@ dependencies = [
  "pallet-im-online",
  "pallet-staking",
  "pallet-xcm",
+ "parachain-info",
  "parachains-common",
  "parity-scale-codec",
  "penpal-runtime",

@@ -14,7 +14,8 @@ use xcm_executor::traits::Convert;
 use statemint_runtime::constants::currency::DOLLARS;
 pub use constants::{polkadot, kusama, statemint, statemine, penpal, accounts::{ALICE, BOB}};
 use sp_runtime::BuildStorage;
-pub use sp_core::storage::Storage;
+pub use sp_core::{Get, storage::Storage};
+use parachain_info::pallet::Pallet;
 
 decl_test_relay_chains! {
 	pub struct Polkadot {
@@ -43,6 +44,7 @@ decl_test_parachains! {
 		System = statemint_runtime::System,
 		genesis = statemint_storage(),
 		on_init = (),
+		para_id = statemint_runtime::ParachainInfo::get(),
 	},
 	pub struct PenpalPolkadot {
 		Runtime = penpal_runtime::Runtime,
@@ -52,6 +54,7 @@ decl_test_parachains! {
 		System = penpal_runtime::System,
 		genesis = penpal::genesis(penpal::PARA_ID),
 		on_init = (),
+		para_id = penpal_runtime::ParachainInfo::get(),
 	},
 	// Kusama
 	pub struct Statemine {
@@ -62,6 +65,7 @@ decl_test_parachains! {
 		System = statemine_runtime::System,
 		genesis = statemine::genesis(),
 		on_init = (),
+		para_id = statemine_runtime::ParachainInfo::get(),
 	},
 	pub struct PenpalKusama {
 		Runtime = penpal_runtime::Runtime,
@@ -71,6 +75,7 @@ decl_test_parachains! {
 		System = penpal_runtime::System,
 		genesis = penpal::genesis(penpal::PARA_ID),
 		on_init = (),
+		para_id = penpal_runtime::ParachainInfo::get(),
 	}
 }
 
