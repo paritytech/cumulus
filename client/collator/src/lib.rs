@@ -17,8 +17,7 @@
 //! Cumulus Collator implementation for Substrate.
 
 use cumulus_primitives_core::{
-	relay_chain::Hash as PHash, CollectCollationInfo,
-	PersistedValidationData,
+	relay_chain::Hash as PHash, CollectCollationInfo, PersistedValidationData,
 };
 
 use sc_client_api::BlockBackend;
@@ -118,11 +117,7 @@ where
 
 		let block_hash = candidate.block.header().hash();
 
-		let (collation, b) = self.service.build_collation(
-			&last_head,
-			block_hash,
-			candidate,
-		)?;
+		let (collation, b) = self.service.build_collation(&last_head, block_hash, candidate)?;
 
 		tracing::info!(
 			target: LOG_TARGET,
@@ -155,17 +150,16 @@ where
 /// This method of driving collators is not suited to anything but the most simple parachain
 /// consensus mechanisms, and this module may soon be deprecated.
 pub mod relay_chain_driven {
-	use futures::{prelude::*, channel::{mpsc, oneshot}};
-	use polkadot_primitives::{CollatorPair, Id as ParaId};
-	use polkadot_overseer::Handle as OverseerHandle;
+	use futures::{
+		channel::{mpsc, oneshot},
+		prelude::*,
+	};
+	use polkadot_node_primitives::{CollationGenerationConfig, CollationResult};
 	use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
-	use polkadot_node_primitives::{
-		CollationGenerationConfig, CollationResult,
-	};
+	use polkadot_overseer::Handle as OverseerHandle;
+	use polkadot_primitives::{CollatorPair, Id as ParaId};
 
-	use cumulus_primitives_core::{
-		relay_chain::Hash as PHash, PersistedValidationData,
-	};
+	use cumulus_primitives_core::{relay_chain::Hash as PHash, PersistedValidationData};
 
 	/// A request to author a collation, based on the advancement of the relay chain.
 	///
@@ -215,11 +209,8 @@ pub mod relay_chain_driven {
 				let validation_data = validation_data.clone();
 				Box::pin(async move {
 					let (this_tx, this_rx) = oneshot::channel();
-					let request = CollationRequest {
-						relay_parent,
-						pvd: validation_data,
-						sender: this_tx,
-					};
+					let request =
+						CollationRequest { relay_parent, pvd: validation_data, sender: this_tx };
 
 					if stream_tx.send(request).await.is_err() {
 						return None
@@ -273,30 +264,22 @@ pub async fn start_collator<Block, RA, BS, Spawner>(
 	RA: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	RA::Api: CollectCollationInfo<Block>,
 {
-	let collator_service = CollatorService::new(
-		block_status,
-		Arc::new(spawner.clone()),
-		announce_block,
-		runtime_api,
-	);
+	let collator_service =
+		CollatorService::new(block_status, Arc::new(spawner.clone()), announce_block, runtime_api);
 
-	let collator = Collator::new(
-		collator_service,
-		parachain_consensus,
-	);
+	let collator = Collator::new(collator_service, parachain_consensus);
 
-	let mut request_stream = relay_chain_driven::init(
-		key,
-		para_id,
-		overseer_handle,
-	).await;
+	let mut request_stream = relay_chain_driven::init(key, para_id, overseer_handle).await;
 
 	let collation_future = Box::pin(async move {
 		while let Some(request) = request_stream.next().await {
-			let collation = collator.clone().produce_candidate(
-				*request.relay_parent(),
-				request.persisted_validation_data().clone(),
-			).await;
+			let collation = collator
+				.clone()
+				.produce_candidate(
+					*request.relay_parent(),
+					request.persisted_validation_data().clone(),
+				)
+				.await;
 
 			request.complete(collation);
 		}
@@ -310,15 +293,15 @@ mod tests {
 	use super::*;
 	use async_trait::async_trait;
 	use cumulus_client_consensus_common::ParachainCandidate;
+	use cumulus_primitives_core::ParachainBlockData;
 	use cumulus_test_client::{
 		Client, ClientBlockImportExt, DefaultTestClientBuilderExt, InitBlockBuilder,
 		TestClientBuilder, TestClientBuilderExt,
 	};
 	use cumulus_test_runtime::{Block, Header};
-	use cumulus_primitives_core::ParachainBlockData;
 	use futures::{channel::mpsc, executor::block_on, StreamExt};
-	use polkadot_node_subsystem_test_helpers::ForwardSubsystem;
 	use polkadot_node_subsystem::messages::CollationGenerationMessage;
+	use polkadot_node_subsystem_test_helpers::ForwardSubsystem;
 	use polkadot_overseer::{dummy::dummy_overseer_builder, HeadSupportsParachains};
 	use sp_consensus::BlockOrigin;
 	use sp_core::{testing::TaskExecutor, Pair};

@@ -35,8 +35,10 @@
 use sp_consensus::error::Error as ConsensusError;
 use sp_runtime::traits::Block as BlockT;
 
-use sc_consensus::import_queue::{BasicQueue, Verifier};
-use sc_consensus::block_import::{BlockImport, BlockImportParams};
+use sc_consensus::{
+	block_import::{BlockImport, BlockImportParams},
+	import_queue::{BasicQueue, Verifier},
+};
 
 use crate::ParachainBlockImportMarker;
 
@@ -61,7 +63,7 @@ impl<Block: BlockT> Verifier<Block> for VerifyNothing {
 pub fn verify_nothing_import_queue<Block: BlockT, I>(
 	block_import: I,
 	spawner: &impl sp_core::traits::SpawnEssentialNamed,
-	registry: Option<&substrate_prometheus_endpoint::Registry>
+	registry: Option<&substrate_prometheus_endpoint::Registry>,
 ) -> BasicQueue<Block, I::Transaction>
 where
 	I: BlockImport<Block, Error = ConsensusError>

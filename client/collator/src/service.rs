@@ -18,9 +18,7 @@
 //! operations used in parachain consensus/authoring.
 
 use cumulus_client_network::WaitToAnnounce;
-use cumulus_primitives_core::{
-	CollationInfo, CollectCollationInfo, ParachainBlockData,
-};
+use cumulus_primitives_core::{CollationInfo, CollectCollationInfo, ParachainBlockData};
 
 use sc_client_api::BlockBackend;
 use sp_api::{ApiExt, ProvideRuntimeApi};
@@ -30,8 +28,7 @@ use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT, Zero};
 
 use cumulus_client_consensus_common::ParachainCandidate;
 use polkadot_node_primitives::{
-	BlockData, Collation, MaybeCompressedPoV, PoV,
-	CollationSecondedSignal,
+	BlockData, Collation, CollationSecondedSignal, MaybeCompressedPoV, PoV,
 };
 
 use codec::Encode;
@@ -63,7 +60,10 @@ pub trait ServiceInterface<Block: BlockT> {
 
 	/// Inform networking systems that the block should be announced after an appropriate
 	/// signal has been received. This returns the sending half of the signal.
-	fn announce_with_barrier(&self, block_hash: Block::Hash) -> oneshot::Sender<CollationSecondedSignal>;
+	fn announce_with_barrier(
+		&self,
+		block_hash: Block::Hash,
+	) -> oneshot::Sender<CollationSecondedSignal>;
 }
 
 /// The [`CollatorService`] provides common utilities for parachain consensus and authoring.
@@ -237,9 +237,9 @@ where
 
 		let block_data = ParachainBlockData::<Block>::new(header, extrinsics, compact_proof);
 
-		let pov = polkadot_node_primitives::maybe_compress_pov(
-			PoV { block_data: BlockData(block_data.encode()) },
-		);
+		let pov = polkadot_node_primitives::maybe_compress_pov(PoV {
+			block_data: BlockData(block_data.encode()),
+		});
 
 		let upward_messages = collation_info
 			.upward_messages
@@ -279,7 +279,10 @@ where
 
 	/// Inform the networking systems that the block should be announced after an appropriate
 	/// signal has been received. This returns the sending half of the signal.
-	pub fn announce_with_barrier(&self, block_hash: Block::Hash) -> oneshot::Sender<CollationSecondedSignal> {
+	pub fn announce_with_barrier(
+		&self,
+		block_hash: Block::Hash,
+	) -> oneshot::Sender<CollationSecondedSignal> {
 		let (result_sender, signed_stmt_recv) = oneshot::channel();
 		self.wait_to_announce.lock().wait_to_announce(block_hash, signed_stmt_recv);
 		result_sender
@@ -306,9 +309,10 @@ where
 		CollatorService::build_collation(self, parent_header, block_hash, candidate)
 	}
 
-	fn announce_with_barrier(&self, block_hash: Block::Hash)
-		-> oneshot::Sender<CollationSecondedSignal>
-	{
+	fn announce_with_barrier(
+		&self,
+		block_hash: Block::Hash,
+	) -> oneshot::Sender<CollationSecondedSignal> {
 		CollatorService::announce_with_barrier(self, block_hash)
 	}
 }

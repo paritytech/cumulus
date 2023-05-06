@@ -23,23 +23,25 @@
 //! For more information about AuRa, the Substrate crate should be checked.
 
 use codec::{Decode, Encode};
-use cumulus_client_consensus_common::{
-	ParachainBlockImportMarker, ParachainCandidate,
-};
-use cumulus_client_consensus_proposer::ProposerInterface;
 use cumulus_client_collator::service::ServiceInterface as CollatorServiceInterface;
-use cumulus_primitives_core::{relay_chain::Hash as PHash, CollectCollationInfo, PersistedValidationData};
+use cumulus_client_consensus_common::{ParachainBlockImportMarker, ParachainCandidate};
+use cumulus_client_consensus_proposer::ProposerInterface;
+use cumulus_primitives_core::{
+	relay_chain::Hash as PHash, CollectCollationInfo, PersistedValidationData,
+};
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_relay_chain_interface::RelayChainInterface;
 
+use polkadot_node_primitives::{CollationResult, MaybeCompressedPoV};
 use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::{CollatorPair, Id as ParaId};
-use polkadot_node_primitives::{CollationResult, MaybeCompressedPoV};
 
 use futures::prelude::*;
 use sc_client_api::{backend::AuxStore, BlockBackend, BlockOf};
-use sc_consensus::{BlockImport, BlockImportParams, ForkChoiceStrategy, StateAction};
-use sc_consensus::import_queue::{BasicQueue, Verifier as VerifierT};
+use sc_consensus::{
+	import_queue::{BasicQueue, Verifier as VerifierT},
+	BlockImport, BlockImportParams, ForkChoiceStrategy, StateAction,
+};
 use sc_consensus_aura::standalone as aura_internal;
 use sc_telemetry::{telemetry, TelemetryHandle, CONSENSUS_DEBUG, CONSENSUS_TRACE};
 use sp_api::ProvideRuntimeApi;
@@ -49,10 +51,12 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::{error::Error as ConsensusError, BlockOrigin, SyncOracle};
 use sp_consensus_aura::{AuraApi, Slot, SlotDuration};
 use sp_core::crypto::Pair;
-use sp_inherents::{CreateInherentDataProviders, InherentDataProvider, InherentData};
+use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvider};
 use sp_keystore::KeystorePtr;
-use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT, Member};
-use sp_runtime::generic::Digest;
+use sp_runtime::{
+	generic::Digest,
+	traits::{Block as BlockT, HashFor, Header as HeaderT, Member},
+};
 use sp_state_machine::StorageChanges;
 use std::{convert::TryFrom, error::Error, fmt::Debug, hash::Hash, sync::Arc, time::Duration};
 
@@ -75,21 +79,22 @@ pub struct Params<BI, CIDP, Client, RClient, SO, Proposer, CS> {
 /// Run bare Aura consensus as a relay-chain-driven collator.
 pub async fn run_bare_relay_driven<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
 	params: Params<BI, CIDP, Client, RClient, SO, Proposer, CS>,
-)
-where
+) where
 	Block: BlockT,
-	Client:
-		ProvideRuntimeApi<Block> + BlockOf + AuxStore + HeaderBackend<Block> + BlockBackend<Block> + Send + Sync + 'static,
-	Client::Api: AuraApi<Block, P::Public> + CollectCollationInfo<Block>,
-	RClient: RelayChainInterface,
-	CIDP: CreateInherentDataProviders<Block, ()> + 'static,
-	BI: BlockImport<Block>
-		+ ParachainBlockImportMarker
+	Client: ProvideRuntimeApi<Block>
+		+ BlockOf
+		+ AuxStore
+		+ HeaderBackend<Block>
+		+ BlockBackend<Block>
 		+ Send
 		+ Sync
 		+ 'static,
+	Client::Api: AuraApi<Block, P::Public> + CollectCollationInfo<Block>,
+	RClient: RelayChainInterface,
+	CIDP: CreateInherentDataProviders<Block, ()> + 'static,
+	BI: BlockImport<Block> + ParachainBlockImportMarker + Send + Sync + 'static,
 	SO: SyncOracle + Send + Sync + Clone + 'static,
-	Proposer: ProposerInterface<Block, Transaction=BI::Transaction>,
+	Proposer: ProposerInterface<Block, Transaction = BI::Transaction>,
 	Proposer::Transaction: Sync,
 	CS: CollatorServiceInterface<Block>,
 	P: Pair + Send + Sync,
@@ -103,7 +108,8 @@ where
 		params.key,
 		params.para_id,
 		params.overseer_handle,
-	).await;
+	)
+	.await;
 
 	while let Some(request) = collation_requests.next().await {
 		macro_rules! reject_with_error {
@@ -124,7 +130,7 @@ where
 		let parent_hash = parent_header.hash();
 
 		if !params.collator_service.check_block_status(parent_hash, &parent_header) {
-			continue;
+			continue
 		}
 
 		let claim = match claim_slot::<_, _, P>(
@@ -132,7 +138,9 @@ where
 			parent_hash,
 			params.slot_duration,
 			&params.keystore,
-		).await {
+		)
+		.await
+		{
 			Ok(None) => continue,
 			Ok(Some(c)) => c,
 			Err(e) => reject_with_error!(e),
@@ -145,26 +153,31 @@ where
 			params.para_id,
 			&params.relay_client,
 			&params.create_inherent_data_providers,
-		).await {
+		)
+		.await
+		{
 			Ok(x) => x,
 			Err(e) => reject_with_error!(e),
 		};
 
-		let proposal = match proposer.propose(
-			&parent_header,
-			&parachain_inherent_data,
-			other_inherent_data,
-			Digest { logs: vec![claim.pre_digest] },
-			// TODO [https://github.com/paritytech/cumulus/issues/2439]
-			// We should call out to a pluggable interface that provides
-			// the proposal duration.
-			Duration::from_millis(500),
-			// Set the block limit to 50% of the maximum PoV size.
-			//
-			// TODO: If we got benchmarking that includes the proof size,
-			// we should be able to use the maximum pov size.
-			Some((validation_data.max_pov_size / 2) as usize),
-		).await {
+		let proposal = match proposer
+			.propose(
+				&parent_header,
+				&parachain_inherent_data,
+				other_inherent_data,
+				Digest { logs: vec![claim.pre_digest] },
+				// TODO [https://github.com/paritytech/cumulus/issues/2439]
+				// We should call out to a pluggable interface that provides
+				// the proposal duration.
+				Duration::from_millis(500),
+				// Set the block limit to 50% of the maximum PoV size.
+				//
+				// TODO: If we got benchmarking that includes the proof size,
+				// we should be able to use the maximum pov size.
+				Some((validation_data.max_pov_size / 2) as usize),
+			)
+			.await
+		{
 			Ok(p) => p,
 			Err(e) => reject_with_error!(e),
 		};
@@ -182,7 +195,8 @@ where
 		let post_hash = sealed_importable.post_hash();
 		let block = Block::new(
 			sealed_importable.post_header(),
-			sealed_importable.body
+			sealed_importable
+				.body
 				.as_ref()
 				.expect("body always created with this `propose` fn; qed")
 				.clone(),
@@ -195,10 +209,7 @@ where
 		let response = if let Some((collation, b)) = params.collator_service.build_collation(
 			&parent_header,
 			post_hash,
-			ParachainCandidate {
-				block,
-				proof: proposal.proof,
-			},
+			ParachainCandidate { block, proof: proposal.proof },
 		) {
 			tracing::info!(
 				target: crate::LOG_TARGET,
@@ -252,10 +263,7 @@ where
 	P::Signature: Encode + Decode,
 {
 	// load authorities
-	let authorities = client
-		.runtime_api()
-		.authorities(parent_hash)
-		.map_err(Box::new)?;
+	let authorities = client.runtime_api().authorities(parent_hash).map_err(Box::new)?;
 
 	// Determine the current slot.
 	let slot_now = slot_now(slot_duration);
@@ -272,10 +280,7 @@ where
 	// Produce the pre-digest.
 	let pre_digest = aura_internal::pre_digest::<P>(slot_now);
 
-	Ok(Some(SlotClaim {
-		author_pub,
-		pre_digest,
-	}))
+	Ok(Some(SlotClaim { author_pub, pre_digest }))
 }
 
 async fn create_inherent_data<B: BlockT>(
@@ -291,19 +296,22 @@ async fn create_inherent_data<B: BlockT>(
 		relay_chain_interface,
 		validation_data,
 		para_id,
-	).await;
+	)
+	.await;
 
 	let paras_inherent_data = match paras_inherent_data {
 		Some(p) => p,
-		None => return Err(
-			format!("Could not create paras inherent data at {:?}", relay_parent).into()
-		),
+		None =>
+			return Err(format!("Could not create paras inherent data at {:?}", relay_parent).into()),
 	};
 
 	let other_inherent_data = create_inherent_data_providers
 		.create_inherent_data_providers(parent_hash, ())
-		.map_err(|e| e as Box<dyn Error>).await?
-		.create_inherent_data().await.map_err(Box::new)?;
+		.map_err(|e| e as Box<dyn Error>)
+		.await?
+		.create_inherent_data()
+		.await
+		.map_err(Box::new)?;
 
 	Ok((paras_inherent_data, other_inherent_data))
 }
@@ -325,7 +333,8 @@ where
 
 	// seal the block.
 	let block_import_params = {
-		let seal_digest = aura_internal::seal::<_, P>(&pre_hash, &author_pub, keystore).map_err(Box::new)?;
+		let seal_digest =
+			aura_internal::seal::<_, P>(&pre_hash, &author_pub, keystore).map_err(Box::new)?;
 		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, pre_header);
 		block_import_params.post_digests.push(seal_digest);
 		block_import_params.body = Some(body.clone());
@@ -384,10 +393,10 @@ where
 
 		// check seal and update pre-hash/post-hash
 		{
-			let authorities = aura_internal::fetch_authorities(
-				self.client.as_ref(),
-				parent_hash,
-			).map_err(|e| format!("Could not fetch authorities at {:?}: {}", parent_hash, e))?;
+			let authorities = aura_internal::fetch_authorities(self.client.as_ref(), parent_hash)
+				.map_err(|e| {
+				format!("Could not fetch authorities at {:?}: {}", parent_hash, e)
+			})?;
 
 			let slot_now = slot_now(self.slot_duration);
 			let res = aura_internal::check_header_slot_and_seal::<Block, P>(
@@ -409,7 +418,7 @@ where
 					block_params.post_digests.push(seal_digest);
 					block_params.fork_choice = Some(ForkChoiceStrategy::LongestChain);
 					block_params.post_hash = Some(post_hash);
-				}
+				},
 				Err(aura_internal::SealVerificationError::Deferred(hdr, slot)) => {
 					telemetry!(
 						self.telemetry;
@@ -422,17 +431,15 @@ where
 
 					return Err(format!(
 						"Rejecting block ({:?}) from future slot {:?}",
-						post_hash,
-						slot
-					));
-				}
+						post_hash, slot
+					))
+				},
 				Err(e) => {
-					return Err(
-						format!("Rejecting block ({:?}) with invalid seal ({:?})",
-						post_hash,
-						e
-					));
-				}
+					return Err(format!(
+						"Rejecting block ({:?}) with invalid seal ({:?})",
+						post_hash, e
+					))
+				},
 			}
 		}
 
@@ -465,10 +472,11 @@ where
 				for (i, e) in inherent_res.into_errors() {
 					match create_inherent_data_providers.try_handle_error(&i, &e).await {
 						Some(res) => res.map_err(|e| format!("Inherent Error {:?}", e))?,
-						None => return Err(format!(
-							"Unknown inherent error, source {:?}",
-							String::from_utf8_lossy(&i[..])
-						)),
+						None =>
+							return Err(format!(
+								"Unknown inherent error, source {:?}",
+								String::from_utf8_lossy(&i[..])
+							)),
 					}
 				}
 			}
