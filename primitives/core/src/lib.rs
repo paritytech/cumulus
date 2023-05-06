@@ -24,6 +24,8 @@ use scale_info::TypeInfo;
 use sp_runtime::{traits::Block as BlockT, RuntimeDebug};
 use sp_std::prelude::*;
 
+use crate::substrate::{generic::{Digest, DigestItem}, traits::Block as BlockT, ConsensusEngineId};
+
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use polkadot_parachain::primitives::{
 	DmpMessageHandler, Id as ParaId, IsSystem, UpwardMessage, ValidationParams, XcmpMessageFormat,
@@ -39,6 +41,11 @@ pub use xcm::latest::prelude::*;
 pub mod relay_chain {
 	pub use polkadot_core_primitives::*;
 	pub use polkadot_primitives::*;
+}
+
+/// A module that re-exports relevant Substrate primitive types.
+pub mod substrate {
+	pub use sp_runtime::*;
 }
 
 /// An inbound HRMP message.
@@ -196,6 +203,39 @@ impl<B: BlockT> ParachainBlockData<B> {
 	pub fn deconstruct(self) -> (B::Header, sp_std::vec::Vec<B::Extrinsic>, sp_trie::CompactProof) {
 		(self.header, self.extrinsics, self.storage_proof)
 	}
+}
+
+/// A consensus engine ID indicating that this is a Cumulus Parachain.
+pub const CUMULUS_CONSENSUS_ID: ConsensusEngineId = *b"CMLS";
+
+/// Consensus header digests for Cumulus parachains.
+#[derive(Clone, RuntimeDebug, Decode, Encode, PartialEq)]
+pub enum CumulusDigestItem {
+	/// A digest item indicating that the parachain block has the provided relay-parent.
+	#[codec(index = 0)]
+	RelayParent(relay_chain::Hash),
+}
+
+impl CumulusDigestItem {
+	/// Encode this as a Substrate [`DigestItem`].
+	pub fn to_digest_item(&self) -> DigestItem {
+		DigestItem::Consensus(CUMULUS_CONSENSUS_ID, self.encode())
+	}
+}
+
+/// Extract the relay-parent from the provided header digest. Returns `None` if none were found.
+///
+/// If there are multiple valid digests, this returns the value of the first one, although
+/// well-behaving runtimes should not produce headers with more than one.
+pub fn extract_relay_parent(digest: &Digest) -> Option<relay_chain::Hash> {
+	digest.convert_first(|d| match d {
+		DigestItem::Consensus(id, val) if id == &CUMULUS_CONSENSUS_ID
+			=> match CumulusDigestItem::decode(&mut &val[..]) {
+				Ok(CumulusDigestItem::RelayParent(hash)) => Some(hash),
+				_ => None,
+			}
+		_ => None,
+	})
 }
 
 /// Information about a collation.
