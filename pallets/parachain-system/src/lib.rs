@@ -206,8 +206,13 @@ pub mod pallet {
 		/// An entry-point for higher-level logic to manage the backlog of unincluded parachain blocks
 		/// and authorship rights for those blocks.
 		///
-		/// To maintain the same behavior as prior to asynchronous backing, provide the
-		/// [`ExpectParentIncludedHook`] here.
+		/// Typically, this should be a hook tailored to the collator-selection/consensus mechanism
+		/// that is used for this chain.
+		///
+		/// However, to maintain the same behavior as prior to asynchronous backing, provide the
+		/// [`consensus_hook::ExpectParentIncludedHook`] here. This is only necessary in the case
+		/// that collators aren't expected to have node versions that supply the included block
+		/// in the relay-chain state proof.
 		type ConsensusHook: ConsensusHook;
 	}
 
