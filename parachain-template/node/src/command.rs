@@ -8,7 +8,7 @@ use log::{info, warn};
 use parachain_template_runtime::Block;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
-	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli, RpcAddrConfig
+	NetworkParams, Result, RpcAddrConfig, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
@@ -361,11 +361,8 @@ impl CliConfiguration<Self> for RelayChainCli {
 	fn rpc_addr(&self, _default_listen_port: u16) -> Result<Option<SocketAddr>> {
 		let curr_port = self.base.base.rpc_port;
 
-		let port = if curr_port == sc_cli::RPC_DEFAULT_PORT {
-			Self::rpc_listen_port()
-		} else {
-			curr_port
-		};
+		let port =
+			if curr_port == sc_cli::RPC_DEFAULT_PORT { Self::rpc_listen_port() } else { curr_port };
 
 		let cfg = RpcAddrConfig {
 			is_external: self.base.base.rpc_external,

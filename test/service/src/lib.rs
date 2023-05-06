@@ -22,10 +22,7 @@ pub mod chain_spec;
 mod genesis;
 
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
-use std::{
-	future::Future,
-	time::Duration,
-};
+use std::{future::Future, time::Duration};
 use url::Url;
 
 use crate::runtime::Weight;
