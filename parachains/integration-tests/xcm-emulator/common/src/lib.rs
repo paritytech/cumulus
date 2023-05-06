@@ -8,7 +8,7 @@ use frame_support::{
 	traits::{fungibles::Inspect, GenesisBuild},
 };
 use xcm::prelude::*;
-use xcm_emulator::{decl_test_networks, decl_test_parachains, decl_test_relay_chains, TestExt, Network, Relay, Parachain};
+use xcm_emulator::{decl_test_networks, decl_test_parachains, decl_test_relay_chains, TestExt, Network, RelayChain, Parachain};
 use polkadot_runtime_parachains::configuration::HostConfiguration;
 use xcm_executor::traits::Convert;
 use statemint_runtime::constants::currency::DOLLARS;

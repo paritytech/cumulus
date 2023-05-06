@@ -50,6 +50,27 @@ pub use xcm::{v3::prelude::*, VersionedXcm};
 pub use xcm_executor::XcmExecutor;
 pub use std::{thread::LocalKey, collections::HashMap};
 
+thread_local! {
+	/// Downward messages, each message is: `(to_para_id, [(relay_block_number, msg)])`
+	#[allow(clippy::type_complexity)]
+	pub static DOWNWARD_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<(RelayBlockNumber, Vec<u8>)>)>>>
+		= RefCell::new(HashMap::new());
+	#[allow(clippy::type_complexity)]
+	/// Downward messages that already processed by parachains, each message is: `(to_para_id, relay_block_number, Vec<u8>)`
+	pub static DMP_DONE: RefCell<HashMap<String, VecDeque<(u32, RelayBlockNumber, Vec<u8>)>>>
+		= RefCell::new(HashMap::new());
+	/// Horizontal messages, each message is: `(to_para_id, [(from_para_id, relay_block_number, msg)])`
+	#[allow(clippy::type_complexity)]
+	pub static HORIZONTAL_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<(ParaId, RelayBlockNumber, Vec<u8>)>)>>>
+		= RefCell::new(HashMap::new());
+	/// Upward messages, each message is: `(from_para_id, msg)
+	pub static UPWARD_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<u8>)>>> = RefCell::new(HashMap::new());
+	/// Global incremental relay chain block number
+	pub static RELAY_BLOCK_NUMBER: RefCell<HashMap<String, u32>> = RefCell::new(HashMap::new()); // RefCell::new(1);
+	/// Flag indicating if global variables have been initialized for a certain Network
+	pub static INITIALIZED: RefCell<HashMap<String, bool>> = RefCell::new(HashMap::new());
+}
+
 pub trait TestExt {
 	// fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R;
 	fn ext_wrapper<R>(func: R) -> R;
@@ -59,61 +80,15 @@ pub trait TestExt {
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R;
 	// fn get_ext() -> &'static sp_io::TestExternalities;
 }
+// Relay Chain Implementation
+pub trait RelayChain: Network {
+	type Runtime;
+	type XcmConfig;
+	type System;
 
-pub trait Network {
-	fn network_name() -> String { Default::default() }
-
-	fn init() {}
-
-	// fn relay_block_number() -> &'static LocalKey<RefCell<HashMap<String, u32>>> { &RELAY_BLOCK_NUMBER }
-
-	fn relay_block_number() -> u32 { Default::default() } // { &RELAY_BLOCK_NUMBER }
-
-	fn set_relay_block_number(block_number: u32) {} // { &RELAY_BLOCK_NUMBER }
-
-	fn hrmp_channel_parachain_inherent_data(
-		para_id: u32,
-		relay_parent_number: u32,
-	) -> ParachainInherentData {
-		ParachainInherentData {
-			validation_data: PersistedValidationData {
-				parent_head: Default::default(),
-				relay_parent_number: Default::default(),
-				relay_parent_storage_root: Default::default(),
-				max_pov_size: Default::default(),
-			},
-			relay_chain_state:  StorageProof::new(Vec::new()),
-			downward_messages: Default::default(),
-			horizontal_messages: Default::default(),
-		}
-	}
-
-	fn process_messages() {}
-}
-
-pub trait Relay: Network {
 	fn para_ids() -> Vec<u32> { Default::default() }
 
-	fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>) {}
-}
-
-pub trait Parachain: Network {
-	type Runtime;
-	type Origin;
-	type XcmpMessageHandler;
-	type DmpMessageHandler;
-	type System;
-	type ParachainSystem;
-
-	fn para_id() -> ParaId {
-		Default::default()
-	}
-
-	fn send_horizontal_messages<
-		I: Iterator<Item = (ParaId, RelayBlockNumber, Vec<u8>)>,
-	>(to_para_id: u32, iter: I) {}
-
-	fn send_upward_message(from_para_id: u32, msg: Vec<u8>) {}
+	fn send_downward_messages(_to_para_id: u32, _iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>) {}
 }
 
 #[macro_export]
@@ -134,9 +109,13 @@ macro_rules! decl_test_relay_chains {
 			pub struct $name;
 
 			impl Network for $name {}
-			impl Relay for $name {}
+			impl RelayChain for $name {
+				type Runtime = $runtime;
+				type XcmConfig = $xcm_config;
+				type System = $system;
+			}
 
-			$crate::__impl_ext_for_relay_chain!($name, $runtime, $system, $genesis, $on_init);
+			$crate::__impl_ext_for_relay_chain!($name, $genesis, $on_init);
 
 			impl $crate::UmpSink for $name {
 				fn process_upward_message(
@@ -147,12 +126,166 @@ macro_rules! decl_test_relay_chains {
 					use $crate::{TestExt, UmpSink};
 
 					Self::execute_with(|| {
-						$crate::XcmSink::<$crate::XcmExecutor<$xcm_config>, $runtime>::process_upward_message(origin, msg, max_weight)
+						$crate::XcmSink::<$crate::XcmExecutor<<Self as RelayChain>::XcmConfig>, <Self as RelayChain>::Runtime>::process_upward_message(origin, msg, max_weight)
 					})
 				}
 			}
 		)+
 	};
+}
+
+#[macro_export]
+macro_rules! __impl_ext_for_relay_chain {
+	// entry point: generate ext name
+	($name:ident, $genesis:expr, $on_init:expr) => {
+		$crate::paste::paste! {
+			$crate::__impl_ext_for_relay_chain!(@impl $name, $genesis, $on_init, [<EXT_ $name:upper>]);
+		}
+	};
+	// impl
+	(@impl $name:ident, $genesis:expr, $on_init:expr, $ext_name:ident) => {
+		thread_local! {
+			pub static $ext_name: $crate::RefCell<$crate::TestExternalities>
+				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
+		}
+
+		impl $crate::TestExt for $name {
+			// fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R {
+			// 	$ext_name.with(|v| {
+			// 		func()
+			// 	})
+			// }
+
+			fn ext_wrapper<R>(func: R) -> R {
+				$ext_name.with(|v| {
+					func
+				})
+			}
+
+			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
+				let mut ext = sp_io::TestExternalities::new(storage);
+				ext.execute_with(|| {
+					$on_init;
+					sp_tracing::try_init_simple();
+					<Self as RelayChain>::System::set_block_number(1);
+				});
+				ext
+			}
+
+			fn new_ext() -> $crate::TestExternalities {
+				<$name>::build_new_ext($genesis)
+			}
+
+			fn reset_ext() {
+				$ext_name.with(|v| *v.borrow_mut() = <$name>::build_new_ext($genesis));
+			}
+
+			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
+				// Make sure the Network is initialized
+				<$name>::init();
+
+				let r = $ext_name.with(|v| v.borrow_mut().execute_with(execute));
+
+				// send messages if needed
+				$ext_name.with(|v| {
+					v.borrow_mut().execute_with(|| {
+						use $crate::polkadot_primitives::runtime_api::runtime_decl_for_parachain_host::ParachainHostV4;
+
+						//TODO: mark sent count & filter out sent msg
+						for para_id in <$name>::para_ids() {
+							// downward messages
+							let downward_messages = <Self as RelayChain>::Runtime::dmq_contents(para_id.into())
+								.into_iter()
+								.map(|inbound| (inbound.sent_at, inbound.msg));
+							if downward_messages.len() == 0 {
+								continue;
+							}
+							<$name>::send_downward_messages(para_id, downward_messages.into_iter());
+
+							// Note: no need to handle horizontal messages, as the
+							// simulator directly sends them to dest (not relayed).
+						}
+					})
+				});
+
+				<$name>::process_messages();
+
+				r
+			}
+
+			// fn get_ext() -> &'static $crate::TestExternalities {
+			// 	$ext_name.with(|v| &*v.clone().borrow())
+			// }
+		}
+	};
+}
+
+#[macro_export]
+macro_rules! __impl_relay {
+	($network_name:ident, $relay_chain:ty) => {
+
+		impl $relay_chain {
+			fn network_name() -> String {
+				<$network_name>::_network_name()
+			}
+
+			fn init() {
+				<$network_name>::_init();
+			}
+
+			// fn relay_block_number() -> &'static $crate::LocalKey<$crate::RefCell<$crate::HashMap<String, u32>>> {
+			// 	<$network_name>::_relay_block_number()
+			// }
+
+			fn relay_block_number() -> u32 {
+				<$network_name>::_relay_block_number()
+			}
+
+			fn set_relay_block_number(block_number: u32) {
+				<$network_name>::_set_relay_block_number(block_number);
+			}
+
+			fn para_ids() -> Vec<u32> {
+				// panic!("{:?}", <$network_name>::_para_ids());
+				<$network_name>::_para_ids()
+			}
+
+			fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = ($crate::RelayBlockNumber, Vec<u8>)>) {
+				<$network_name>::_send_downward_messages(to_para_id, iter)
+			}
+
+			fn hrmp_channel_parachain_inherent_data(
+				para_id: u32,
+				relay_parent_number: u32,
+			) -> $crate::ParachainInherentData {
+				<$network_name>::_hrmp_channel_parachain_inherent_data(para_id, relay_parent_number)
+			}
+
+			fn process_messages() {
+				<$network_name>::_process_messages();
+			}
+		}
+	}
+}
+
+// Parachain Implementation
+pub trait Parachain: Network {
+	type Runtime;
+	type Origin;
+	type XcmpMessageHandler;
+	type DmpMessageHandler;
+	type System;
+	type ParachainSystem;
+
+	fn para_id() -> ParaId {
+		Default::default()
+	}
+
+	fn send_horizontal_messages<
+		I: Iterator<Item = (ParaId, RelayBlockNumber, Vec<u8>)>,
+	>(_to_para_id: u32, _iter: I) {}
+
+	fn send_upward_message(_from_para_id: u32, _msg: Vec<u8>) {}
 }
 
 #[macro_export]
@@ -192,8 +325,6 @@ macro_rules! decl_test_parachains {
 
 			$crate::__impl_ext_for_parachain!($name, $genesis, $on_init, $para_id);
 			$crate::__impl_xcm_handlers_for_parachain!($name);
-
-
 		)+
 	};
 }
@@ -230,92 +361,6 @@ macro_rules! __impl_xcm_handlers_for_parachain {
 			}
 		}
 	}
-}
-
-#[macro_export]
-macro_rules! __impl_ext_for_relay_chain {
-	// entry point: generate ext name
-	($name:ident, $runtime:path, $system:path, $genesis:expr, $on_init:expr) => {
-		$crate::paste::paste! {
-			$crate::__impl_ext_for_relay_chain!(@impl $name, $runtime, $system, $genesis, $on_init, [<EXT_ $name:upper>]);
-		}
-	};
-	// impl
-	(@impl $name:ident, $runtime:path, $system:path, $genesis:expr, $on_init:expr, $ext_name:ident) => {
-		thread_local! {
-			pub static $ext_name: $crate::RefCell<$crate::TestExternalities>
-				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
-		}
-
-		impl $crate::TestExt for $name {
-			// fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R {
-			// 	$ext_name.with(|v| {
-			// 		func()
-			// 	})
-			// }
-
-			fn ext_wrapper<R>(func: R) -> R {
-				$ext_name.with(|v| {
-					func
-				})
-			}
-
-			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
-				let mut ext = sp_io::TestExternalities::new(storage);
-				ext.execute_with(|| {
-					$on_init;
-					sp_tracing::try_init_simple();
-					<$system>::set_block_number(1);
-				});
-				ext
-			}
-
-			fn new_ext() -> $crate::TestExternalities {
-				<$name>::build_new_ext($genesis)
-			}
-
-			fn reset_ext() {
-				$ext_name.with(|v| *v.borrow_mut() = <$name>::build_new_ext($genesis));
-			}
-
-			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
-				// Make sure the Network is initialized
-				<$name>::init();
-
-				let r = $ext_name.with(|v| v.borrow_mut().execute_with(execute));
-
-				// send messages if needed
-				$ext_name.with(|v| {
-					v.borrow_mut().execute_with(|| {
-						use $crate::polkadot_primitives::runtime_api::runtime_decl_for_parachain_host::ParachainHostV4;
-
-						//TODO: mark sent count & filter out sent msg
-						for para_id in <$name>::para_ids() {
-							// downward messages
-							let downward_messages = <$runtime>::dmq_contents(para_id.into())
-								.into_iter()
-								.map(|inbound| (inbound.sent_at, inbound.msg));
-							if downward_messages.len() == 0 {
-								continue;
-							}
-							<$name>::send_downward_messages(para_id, downward_messages.into_iter());
-
-							// Note: no need to handle horizontal messages, as the
-							// simulator directly sends them to dest (not relayed).
-						}
-					})
-				});
-
-				<$name>::process_messages();
-
-				r
-			}
-
-			// fn get_ext() -> &'static $crate::TestExternalities {
-			// 	$ext_name.with(|v| &*v.clone().borrow())
-			// }
-		}
-	};
 }
 
 #[macro_export]
@@ -518,25 +563,85 @@ macro_rules! __impl_ext_for_parachain {
 	};
 }
 
-thread_local! {
-	/// Downward messages, each message is: `(to_para_id, [(relay_block_number, msg)])`
-	#[allow(clippy::type_complexity)]
-	pub static DOWNWARD_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<(RelayBlockNumber, Vec<u8>)>)>>>
-		= RefCell::new(HashMap::new());
-	#[allow(clippy::type_complexity)]
-	/// Downward messages that already processed by parachains, each message is: `(to_para_id, relay_block_number, Vec<u8>)`
-	pub static DMP_DONE: RefCell<HashMap<String, VecDeque<(u32, RelayBlockNumber, Vec<u8>)>>>
-		= RefCell::new(HashMap::new());
-	/// Horizontal messages, each message is: `(to_para_id, [(from_para_id, relay_block_number, msg)])`
-	#[allow(clippy::type_complexity)]
-	pub static HORIZONTAL_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<(ParaId, RelayBlockNumber, Vec<u8>)>)>>>
-		= RefCell::new(HashMap::new());
-	/// Upward messages, each message is: `(from_para_id, msg)
-	pub static UPWARD_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<u8>)>>> = RefCell::new(HashMap::new());
-	/// Global incremental relay chain block number
-	pub static RELAY_BLOCK_NUMBER: RefCell<HashMap<String, u32>> = RefCell::new(HashMap::new()); // RefCell::new(1);
-	/// Flag indicating if global variables have been initialized for a certain Network
-	pub static INITIALIZED: RefCell<HashMap<String, bool>> = RefCell::new(HashMap::new());
+#[macro_export]
+macro_rules! __impl_parachain {
+	($network_name:ident, $parachain:ty) => {
+
+		impl $parachain {
+			fn network_name() -> String {
+				<$network_name>::_network_name()
+			}
+
+			fn init() {
+				<$network_name>::_init();
+			}
+
+			// pub fn relay_block_number() -> &'static $crate::LocalKey<$crate::RefCell<$crate::HashMap<String, u32>>> {
+			// 	<$network_name>::_relay_block_number()
+			// }
+
+			fn relay_block_number() -> u32 {
+				<$network_name>::_relay_block_number()
+			}
+
+			fn set_relay_block_number(block_number: u32) {
+				<$network_name>::_set_relay_block_number(block_number);
+			}
+
+			fn send_horizontal_messages<
+				I: Iterator<Item = ($crate::ParaId, $crate::RelayBlockNumber, Vec<u8>)>,
+			>(to_para_id: u32, iter: I) {
+				<$network_name>::_send_horizontal_messages(to_para_id, iter);
+			}
+
+			fn send_upward_message(from_para_id: u32, msg: Vec<u8>) {
+				<$network_name>::_send_upward_message(from_para_id, msg);
+			}
+
+			fn hrmp_channel_parachain_inherent_data(
+				para_id: u32,
+				relay_parent_number: u32,
+			) -> $crate::ParachainInherentData {
+				<$network_name>::_hrmp_channel_parachain_inherent_data(para_id, relay_parent_number)
+			}
+
+			fn process_messages() {
+				<$network_name>::_process_messages();
+			}
+		}
+	}
+}
+
+// Network Implementation
+pub trait Network {
+	fn network_name() -> String { Default::default() }
+
+	fn init() {}
+
+	// fn relay_block_number() -> &'static LocalKey<RefCell<HashMap<String, u32>>> { &RELAY_BLOCK_NUMBER }
+
+	fn relay_block_number() -> u32 { Default::default() } // { &RELAY_BLOCK_NUMBER }
+
+	fn set_relay_block_number(_block_number: u32) {} // { &RELAY_BLOCK_NUMBER }
+
+	fn hrmp_channel_parachain_inherent_data(
+		_para_id: u32,
+		_relay_parent_number: u32,
+	) -> ParachainInherentData {
+		ParachainInherentData {
+			validation_data: PersistedValidationData {
+				parent_head: Default::default(),
+				relay_parent_number: Default::default(),
+				relay_parent_storage_root: Default::default(),
+				max_pov_size: Default::default(),
+			},
+			relay_chain_state:  StorageProof::new(Vec::new()),
+			downward_messages: Default::default(),
+			horizontal_messages: Default::default(),
+		}
+	}
+
+	fn process_messages() {}
 }
 
 #[macro_export]
@@ -752,103 +857,6 @@ macro_rules! decl_test_networks {
 			)*
 		)+
 	};
-}
-
-#[macro_export]
-macro_rules! __impl_relay {
-	($network_name:ident, $relay_chain:ty) => {
-
-		impl $relay_chain {
-			fn network_name() -> String {
-				<$network_name>::_network_name()
-			}
-
-			fn init() {
-				<$network_name>::_init();
-			}
-
-			// fn relay_block_number() -> &'static $crate::LocalKey<$crate::RefCell<$crate::HashMap<String, u32>>> {
-			// 	<$network_name>::_relay_block_number()
-			// }
-
-			fn relay_block_number() -> u32 {
-				<$network_name>::_relay_block_number()
-			}
-
-			fn set_relay_block_number(block_number: u32) {
-				<$network_name>::_set_relay_block_number(block_number);
-			}
-
-			fn para_ids() -> Vec<u32> {
-				// panic!("{:?}", <$network_name>::_para_ids());
-				<$network_name>::_para_ids()
-			}
-
-			fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = ($crate::RelayBlockNumber, Vec<u8>)>) {
-				<$network_name>::_send_downward_messages(to_para_id, iter)
-			}
-
-			fn hrmp_channel_parachain_inherent_data(
-				para_id: u32,
-				relay_parent_number: u32,
-			) -> $crate::ParachainInherentData {
-				<$network_name>::_hrmp_channel_parachain_inherent_data(para_id, relay_parent_number)
-			}
-
-			fn process_messages() {
-				<$network_name>::_process_messages();
-			}
-		}
-	}
-}
-
-#[macro_export]
-macro_rules! __impl_parachain {
-	($network_name:ident, $parachain:ty) => {
-
-		impl $parachain {
-			fn network_name() -> String {
-				<$network_name>::_network_name()
-			}
-
-			fn init() {
-				<$network_name>::_init();
-			}
-
-			// pub fn relay_block_number() -> &'static $crate::LocalKey<$crate::RefCell<$crate::HashMap<String, u32>>> {
-			// 	<$network_name>::_relay_block_number()
-			// }
-
-			fn relay_block_number() -> u32 {
-				<$network_name>::_relay_block_number()
-			}
-
-			fn set_relay_block_number(block_number: u32) {
-				<$network_name>::_set_relay_block_number(block_number);
-			}
-
-			fn send_horizontal_messages<
-				I: Iterator<Item = ($crate::ParaId, $crate::RelayBlockNumber, Vec<u8>)>,
-			>(to_para_id: u32, iter: I) {
-				<$network_name>::_send_horizontal_messages(to_para_id, iter);
-			}
-
-			fn send_upward_message(from_para_id: u32, msg: Vec<u8>) {
-				<$network_name>::_send_upward_message(from_para_id, msg);
-			}
-
-			fn hrmp_channel_parachain_inherent_data(
-				para_id: u32,
-				relay_parent_number: u32,
-			) -> $crate::ParachainInherentData {
-				<$network_name>::_hrmp_channel_parachain_inherent_data(para_id, relay_parent_number)
-			}
-
-			fn process_messages() {
-				<$network_name>::_process_messages();
-			}
-		}
-	}
 }
 
 #[macro_export]
