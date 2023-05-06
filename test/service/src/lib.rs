@@ -24,7 +24,6 @@ mod genesis;
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use std::{
 	future::Future,
-	net::{IpAddr, Ipv4Addr, SocketAddr},
 	time::Duration,
 };
 use url::Url;
@@ -753,6 +752,7 @@ pub fn node_config(
 		rpc_max_response_size: Default::default(),
 		rpc_id_provider: None,
 		rpc_max_subs_per_conn: Default::default(),
+		rpc_port: 9945,
 		prometheus_config: None,
 		telemetry_endpoints: None,
 		default_heap_pages: None,
@@ -879,7 +879,7 @@ pub fn run_relay_chain_validator_node(
 	);
 
 	if let Some(port) = port {
-		config.rpc_addr = Some(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), port));
+		config.rpc_addr = Some(([127, 0, 0, 1], port).into());
 	}
 
 	polkadot_test_service::run_validator_node(
