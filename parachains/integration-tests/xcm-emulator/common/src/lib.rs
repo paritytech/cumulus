@@ -87,15 +87,15 @@ decl_test_networks! {
 	pub struct PolkadotMockNet {
 		relay_chain = Polkadot,
 		parachains = vec![
-			(1000, Statemint),
-			(2000, PenpalPolkadot),
+			Statemint,
+			PenpalPolkadot,
 		],
 	},
 	pub struct KusamaMockNet {
 		relay_chain = Kusama,
 		parachains = vec![
-			(1000, Statemine),
-			(2000, PenpalKusama),
+			Statemine,
+			PenpalKusama,
 		],
 	}
 }

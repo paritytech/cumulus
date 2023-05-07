@@ -66,18 +66,19 @@ thread_local! {
 	/// Upward messages, each message is: `(from_para_id, msg)
 	pub static UPWARD_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<u8>)>>> = RefCell::new(HashMap::new());
 	/// Global incremental relay chain block number
-	pub static RELAY_BLOCK_NUMBER: RefCell<HashMap<String, u32>> = RefCell::new(HashMap::new()); // RefCell::new(1);
+	pub static RELAY_BLOCK_NUMBER: RefCell<HashMap<String, u32>> = RefCell::new(HashMap::new());
+	/// Parachains Ids in the Network
+	pub static PARA_IDS: RefCell<HashMap<String, Vec<u32>>> = RefCell::new(HashMap::new());
 	/// Flag indicating if global variables have been initialized for a certain Network
 	pub static INITIALIZED: RefCell<HashMap<String, bool>> = RefCell::new(HashMap::new());
 }
 
 pub trait TestExt {
-	// fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R;
-	fn ext_wrapper<R>(func: R) -> R;
 	fn build_new_ext(storage: Storage) -> sp_io::TestExternalities;
 	fn new_ext() -> sp_io::TestExternalities;
 	fn reset_ext();
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R;
+	fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R;
 }
 
 pub trait RelayChain: TestExt + UmpSink {
@@ -119,8 +120,8 @@ macro_rules! decl_test_relay_chains {
 				type System = $system;
 			}
 
-			$crate::__impl_test_ext_for_relay_chain!($name, $genesis, $on_init);
 			$crate::__impl_xcm_handlers_for_relay_chain!($name);
+			$crate::__impl_test_ext_for_relay_chain!($name, $genesis, $on_init);
 		)+
 	};
 }
@@ -160,18 +161,6 @@ macro_rules! __impl_test_ext_for_relay_chain {
 		}
 
 		impl $crate::TestExt for $name {
-			// fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R {
-			// 	$ext_name.with(|v| {
-			// 		func()
-			// 	})
-			// }
-
-			fn ext_wrapper<R>(func: R) -> R {
-				$ext_name.with(|v| {
-					func
-				})
-			}
-
 			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
 				let mut ext = sp_io::TestExternalities::new(storage);
 				ext.execute_with(|| {
@@ -221,6 +210,14 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				<$name>::process_messages();
 
 				r
+			}
+
+			fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R {
+				$ext_name.with(|v| {
+					v.borrow_mut().execute_with(|| {
+						func()
+					})
+				})
 			}
 		}
 	};
@@ -289,8 +286,8 @@ macro_rules! decl_test_parachains {
 				type ParachainSystem = $parachain_system;
 			}
 
-			$crate::__impl_test_ext_for_parachain!($name, $genesis, $on_init, $para_id);
 			$crate::__impl_xcm_for_parachain!($name);
+			$crate::__impl_test_ext_for_parachain!($name, $genesis, $on_init, $para_id);
 		)+
 	};
 }
@@ -369,18 +366,6 @@ macro_rules! __impl_test_ext_for_parachain {
 		}
 
 		impl $crate::TestExt for $name {
-			// fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R {
-			// 	$ext_name.with(|v| {
-			// 		func()
-			// 	})
-			// }
-
-			fn ext_wrapper<R>(func: R) -> R {
-				$ext_name.with(|v| {
-					func
-				})
-			}
-
 			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
 				let mut ext = sp_io::TestExternalities::new(storage);
 				ext.execute_with(|| {
@@ -414,8 +399,6 @@ macro_rules! __impl_test_ext_for_parachain {
 						// Make sure it has been recorded properly
 						let relay_block_number = <$name>::relay_block_number();
 						let para_id = <$name>::para_id().into();
-						// panic!("{}", relay_block_number);
-
 						let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
 							<Self as Parachain>::Origin::none(),
 							<$name>::hrmp_channel_parachain_inherent_data(para_id, relay_block_number),
@@ -468,6 +451,14 @@ macro_rules! __impl_test_ext_for_parachain {
 				<$name>::process_messages();
 
 				r
+			}
+
+			fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R {
+				$ext_name.with(|v| {
+					v.borrow_mut().execute_with(|| {
+						func()
+					})
+				})
 			}
 		}
 	};
@@ -525,7 +516,7 @@ macro_rules! decl_test_networks {
 		$(
 			pub struct $name:ident {
 				relay_chain = $relay_chain:ty,
-				parachains = vec![ $( ($para_id:expr, $parachain:ty), )* ],
+				parachains = vec![ $( $parachain:ty, )* ],
 			}
 		),
 		+
@@ -559,14 +550,16 @@ macro_rules! decl_test_networks {
 						$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
 						$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
 						$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), 1));
+						$crate::PARA_IDS.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), Self::_para_ids()));
 					}
 				}
 
 				fn _para_ids() -> Vec<u32> {
-					// vec![$( <$parachain>::para_id().into(), )*]
-					vec![$( <$parachain>::execute_with(|| {
-						<$parachain>::para_id().into()
-					}), )*]
+					vec![$(
+						<$parachain>::ext_wrapper(
+							|| <$parachain>::para_id().into()
+						),
+					)*]
 				}
 
 				fn _relay_block_number() -> u32 {
@@ -597,28 +590,27 @@ macro_rules! decl_test_networks {
 
 					while let Some((to_para_id, messages))
 						= $crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
-						match to_para_id {
-							$(
-								$para_id => {
-									let mut msg_dedup: Vec<(RelayChainBlockNumber, Vec<u8>)> = Vec::new();
-									for m in messages {
-										msg_dedup.push((m.0, m.1.clone()));
-									}
-									msg_dedup.dedup();
+						$(
+							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) {
+								let mut msg_dedup: Vec<(RelayChainBlockNumber, Vec<u8>)> = Vec::new();
+								for m in &messages {
+									msg_dedup.push((m.0, m.1.clone()));
+								}
+								msg_dedup.dedup();
 
-									let msgs = msg_dedup.clone().into_iter().filter(|m| {
-										!$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap_or(&mut $crate::VecDeque::new()).contains(&(to_para_id, m.0, m.1.clone())))
-									}).collect::<Vec<(RelayChainBlockNumber, Vec<u8>)>>();
-									if msgs.len() != 0 {
-										<$parachain>::handle_dmp_messages(msgs.clone().into_iter(), $crate::Weight::max_value());
-										for m in msgs {
-											$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().push_back((to_para_id, m.0, m.1)));
-										}
+								let msgs = msg_dedup.clone().into_iter().filter(|m| {
+									!$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap_or(&mut $crate::VecDeque::new()).contains(&(to_para_id, m.0, m.1.clone())))
+								}).collect::<Vec<(RelayChainBlockNumber, Vec<u8>)>>();
+								if msgs.len() != 0 {
+									<$parachain>::handle_dmp_messages(msgs.clone().into_iter(), $crate::Weight::max_value());
+									for m in msgs {
+										$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().push_back((to_para_id, m.0, m.1)));
 									}
-								},
-							)*
-							_ => unreachable!(),
-						}
+								}
+							} else {
+								unreachable!();
+							}
+						)*
 					}
 				}
 
@@ -628,14 +620,11 @@ macro_rules! decl_test_networks {
 					while let Some((to_para_id, messages))
 						= $crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 						let iter = messages.iter().map(|(p, b, m)| (*p, *b, &m[..])).collect::<Vec<_>>().into_iter();
-						match to_para_id {
-							$(
-								$para_id => {
-									<$parachain>::handle_xcmp_messages(iter, $crate::Weight::max_value());
-								},
-							)*
-							_ => unreachable!(),
-						}
+						$(
+							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) {
+								<$parachain>::handle_xcmp_messages(iter.clone(), $crate::Weight::max_value());
+							}
+						)*
 					}
 				}
 
@@ -661,8 +650,8 @@ macro_rules! decl_test_networks {
 
 					// egress channel
 					let e_index = sproof.hrmp_egress_channel_index.get_or_insert_with(Vec::new);
-					for recipient_para_id in &[ $( $para_id, )* ] {
-						let recipient_para_id = $crate::ParaId::from(*recipient_para_id);
+					for recipient_para_id in $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().clone()) {
+						let recipient_para_id = $crate::ParaId::from(recipient_para_id);
 						if let Err(idx) = e_index.binary_search(&recipient_para_id) {
 							e_index.insert(idx, recipient_para_id);
 						}
