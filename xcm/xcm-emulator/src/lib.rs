@@ -94,6 +94,7 @@ pub trait Parachain: TestExt + XcmpMessageHandler + DmpMessageHandler {
 	type DmpMessageHandler;
 	type System;
 	type ParachainSystem;
+	type ParachainInfo;
 }
 
 // Relay Chain Implementation
@@ -267,9 +268,9 @@ macro_rules! decl_test_parachains {
 				DmpMessageHandler = $dmp_message_handler:path,
 				System = $system:path,
 				ParachainSystem = $parachain_system:path,
+				ParachainInfo = $parachain_info:path,
 				genesis = $genesis:expr,
 				on_init = $on_init:expr,
-				para_id = $para_id:expr,
 			}
 		),
 		+
@@ -284,10 +285,11 @@ macro_rules! decl_test_parachains {
 				type DmpMessageHandler = $dmp_message_handler;
 				type System = $system;
 				type ParachainSystem = $parachain_system;
+				type ParachainInfo = $parachain_info;
 			}
 
 			$crate::__impl_xcm_for_parachain!($name);
-			$crate::__impl_test_ext_for_parachain!($name, $genesis, $on_init, $para_id);
+			$crate::__impl_test_ext_for_parachain!($name, $genesis, $on_init);
 		)+
 	};
 }
@@ -329,13 +331,13 @@ macro_rules! __impl_xcm_for_parachain {
 #[macro_export]
 macro_rules! __impl_test_ext_for_parachain {
 	// entry point: generate ext name
-	($name:ident, $genesis:expr, $on_init:expr, $para_id:expr) => {
+	($name:ident, $genesis:expr, $on_init:expr) => {
 		$crate::paste::paste! {
-			$crate::__impl_test_ext_for_parachain!(@impl $name, $genesis, $on_init, $para_id, [<EXT_ $name:upper>]);
+			$crate::__impl_test_ext_for_parachain!(@impl $name, $genesis, $on_init, [<EXT_ $name:upper>]);
 		}
 	};
 	// impl
-	(@impl $name:ident, $genesis:expr, $on_init:expr, $para_id:expr, $ext_name:ident) => {
+	(@impl $name:ident, $genesis:expr, $on_init:expr, $ext_name:ident) => {
 		thread_local! {
 			pub static $ext_name: $crate::RefCell<$crate::TestExternalities>
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
@@ -343,7 +345,7 @@ macro_rules! __impl_test_ext_for_parachain {
 
 		impl $name {
 			fn para_id() -> $crate::ParaId {
-				$para_id
+				<Self as Parachain>::ParachainInfo::get()
 			}
 
 			fn prepare_for_xcmp() {

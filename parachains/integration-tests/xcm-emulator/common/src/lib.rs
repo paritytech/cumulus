@@ -43,9 +43,9 @@ decl_test_parachains! {
 		DmpMessageHandler = statemint_runtime::DmpQueue,
 		System = statemint_runtime::System,
 		ParachainSystem = statemint_runtime::ParachainSystem,
+		ParachainInfo = statemint_runtime::ParachainInfo,
 		genesis = statemint_storage(),
 		on_init = (),
-		para_id = statemint_runtime::ParachainInfo::get(),
 	},
 	pub struct PenpalPolkadot {
 		Runtime = penpal_runtime::Runtime,
@@ -54,9 +54,9 @@ decl_test_parachains! {
 		DmpMessageHandler = penpal_runtime::DmpQueue,
 		System = penpal_runtime::System,
 		ParachainSystem = penpal_runtime::ParachainSystem,
+		ParachainInfo = penpal_runtime::ParachainInfo,
 		genesis = penpal::genesis(penpal::PARA_ID),
 		on_init = (),
-		para_id = penpal_runtime::ParachainInfo::get(),
 	},
 	// Kusama
 	pub struct Statemine {
@@ -66,9 +66,9 @@ decl_test_parachains! {
 		DmpMessageHandler = statemine_runtime::DmpQueue,
 		System = statemine_runtime::System,
 		ParachainSystem = statemine_runtime::ParachainSystem,
+		ParachainInfo = statemine_runtime::ParachainInfo,
 		genesis = statemine::genesis(),
 		on_init = (),
-		para_id = statemine_runtime::ParachainInfo::get(),
 	},
 	pub struct PenpalKusama {
 		Runtime = penpal_runtime::Runtime,
@@ -77,9 +77,9 @@ decl_test_parachains! {
 		DmpMessageHandler = penpal_runtime::DmpQueue,
 		System = penpal_runtime::System,
 		ParachainSystem = penpal_runtime::ParachainSystem,
+		ParachainInfo = penpal_runtime::ParachainInfo,
 		genesis = penpal::genesis(penpal::PARA_ID),
 		on_init = (),
-		para_id = penpal_runtime::ParachainInfo::get(),
 	}
 }
 
