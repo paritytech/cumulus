@@ -55,8 +55,8 @@ thread_local! {
 	#[allow(clippy::type_complexity)]
 	pub static DOWNWARD_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<(RelayBlockNumber, Vec<u8>)>)>>>
 		= RefCell::new(HashMap::new());
-	#[allow(clippy::type_complexity)]
 	/// Downward messages that already processed by parachains, each message is: `(to_para_id, relay_block_number, Vec<u8>)`
+	#[allow(clippy::type_complexity)]
 	pub static DMP_DONE: RefCell<HashMap<String, VecDeque<(u32, RelayBlockNumber, Vec<u8>)>>>
 		= RefCell::new(HashMap::new());
 	/// Horizontal messages, each message is: `(to_para_id, [(from_para_id, relay_block_number, msg)])`
@@ -67,7 +67,7 @@ thread_local! {
 	pub static UPWARD_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<u8>)>>> = RefCell::new(HashMap::new());
 	/// Global incremental relay chain block number
 	pub static RELAY_BLOCK_NUMBER: RefCell<HashMap<String, u32>> = RefCell::new(HashMap::new());
-	/// Parachains Ids in the Network
+	/// Parachains Ids a the Network
 	pub static PARA_IDS: RefCell<HashMap<String, Vec<u32>>> = RefCell::new(HashMap::new());
 	/// Flag indicating if global variables have been initialized for a certain Network
 	pub static INITIALIZED: RefCell<HashMap<String, bool>> = RefCell::new(HashMap::new());
@@ -343,30 +343,6 @@ macro_rules! __impl_test_ext_for_parachain {
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
 		}
 
-		impl $name {
-			fn para_id() -> $crate::ParaId {
-				<Self as Parachain>::ParachainInfo::get()
-			}
-
-			fn prepare_for_xcmp() {
-				$ext_name.with(|v| {
-					v.borrow_mut().execute_with(|| {
-						use $crate::{Get, Hooks};
-
-						let block_number = <Self as Parachain>::System::block_number();
-						let para_id = Self::para_id();
-
-						let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
-							<Self as Parachain>::Origin::none(),
-							<$name>::hrmp_channel_parachain_inherent_data(para_id.into(), 1),
-						);
-						// set `AnnouncedHrmpMessagesPerCandidate`
-						<Self as Parachain>::ParachainSystem::on_initialize(block_number);
-					})
-				});
-			}
-		}
-
 		impl $crate::TestExt for $name {
 			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
 				let mut ext = sp_io::TestExternalities::new(storage);
@@ -479,6 +455,10 @@ macro_rules! __impl_parachain {
 				<$network_name>::_init();
 			}
 
+			pub fn para_id() -> $crate::ParaId {
+				<Self as Parachain>::ParachainInfo::get()
+			}
+
 			fn relay_block_number() -> u32 {
 				<$network_name>::_relay_block_number()
 			}
@@ -502,6 +482,22 @@ macro_rules! __impl_parachain {
 				relay_parent_number: u32,
 			) -> $crate::ParachainInherentData {
 				<$network_name>::_hrmp_channel_parachain_inherent_data(para_id, relay_parent_number)
+			}
+
+			fn prepare_for_xcmp() {
+				<Self as TestExt>::ext_wrapper(|| {
+					use $crate::{Get, Hooks};
+
+					let block_number = <Self as Parachain>::System::block_number();
+					let para_id = Self::para_id();
+
+					let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
+						<Self as Parachain>::Origin::none(),
+						Self::hrmp_channel_parachain_inherent_data(para_id.into(), 1),
+					);
+					// set `AnnouncedHrmpMessagesPerCandidate`
+					<Self as Parachain>::ParachainSystem::on_initialize(block_number);
+				});
 			}
 
 			fn process_messages() {

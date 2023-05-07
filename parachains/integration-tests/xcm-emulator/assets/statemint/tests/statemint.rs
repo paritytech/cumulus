@@ -92,7 +92,7 @@ fn force_xcm_version() {
 mod dmp {
 	use super::*;
 	use xcm::latest::Error;
-	use xcm_emulator::cumulus_pallet_dmp_queue;
+	use xcm_emulator::{cumulus_pallet_dmp_queue, Parachain};
 
 	fn get_balances() -> (Balance, Balance) {
 		let mut relay_balance = Default::default();
