@@ -21,6 +21,7 @@
 pub mod chain_spec;
 mod genesis;
 
+use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use std::{
 	future::Future,
 	net::{IpAddr, Ipv4Addr, SocketAddr},
@@ -184,12 +185,20 @@ pub fn new_partial(
 	>,
 	sc_service::Error,
 > {
-	let executor = sc_executor::NativeElseWasmExecutor::<RuntimeExecutor>::new(
-		config.wasm_method,
-		config.default_heap_pages,
-		config.max_runtime_instances,
-		config.runtime_cache_size,
-	);
+	let heap_pages = config
+		.default_heap_pages
+		.map_or(DEFAULT_HEAP_ALLOC_STRATEGY, |h| HeapAllocStrategy::Static { extra_pages: h as _ });
+
+	let wasm = WasmExecutor::builder()
+		.with_execution_method(config.wasm_method)
+		.with_onchain_heap_alloc_strategy(heap_pages)
+		.with_offchain_heap_alloc_strategy(heap_pages)
+		.with_max_runtime_instances(config.max_runtime_instances)
+		.with_runtime_cache_size(config.runtime_cache_size)
+		.build();
+
+	let executor =
+		sc_executor::NativeElseWasmExecutor::<RuntimeExecutor>::new_with_wasm_executor(wasm);
 
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, _>(config, None, executor)?;
@@ -424,6 +433,7 @@ where
 			import_queue: import_queue_service,
 			relay_chain_slot_duration: Duration::from_secs(6),
 			recovery_handle,
+			sync_service,
 		};
 
 		start_collator(params).await?;
@@ -437,6 +447,7 @@ where
 			import_queue: import_queue_service,
 			relay_chain_slot_duration: Duration::from_secs(6),
 			recovery_handle,
+			sync_service,
 		};
 
 		start_full_node(params)?;
@@ -619,7 +630,7 @@ impl TestNodeBuilder {
 		let parachain_config = node_config(
 			self.storage_update_func_parachain.unwrap_or_else(|| Box::new(|| ())),
 			self.tokio_handle.clone(),
-			self.key.clone(),
+			self.key,
 			self.parachain_nodes,
 			self.parachain_nodes_exclusive,
 			self.para_id,
@@ -656,7 +667,7 @@ impl TestNodeBuilder {
 		.await
 		.expect("could not create Cumulus test service");
 
-		let peer_id = network.local_peer_id().clone();
+		let peer_id = network.local_peer_id();
 		let addr = MultiaddrWithPeerId { multiaddr, peer_id };
 
 		TestNode { task_manager, client, network, addr, rpc_handlers, transaction_pool }
@@ -679,7 +690,7 @@ pub fn node_config(
 	is_collator: bool,
 ) -> Result<Configuration, ServiceError> {
 	let base_path = BasePath::new_temp_dir()?;
-	let root = base_path.path().join(format!("cumulus_test_service_{}", key.to_string()));
+	let root = base_path.path().join(format!("cumulus_test_service_{}", key));
 	let role = if is_collator { Role::Authority } else { Role::Full };
 	let key_seed = key.to_seed();
 	let mut spec = Box::new(chain_spec::get_chain_spec(para_id));
@@ -734,18 +745,14 @@ pub fn node_config(
 			offchain_worker: sc_client_api::ExecutionStrategy::NativeWhenPossible,
 			other: sc_client_api::ExecutionStrategy::NativeWhenPossible,
 		},
-		rpc_http: None,
-		rpc_ws: None,
-		rpc_ipc: None,
-		rpc_ws_max_connections: None,
+		rpc_addr: None,
+		rpc_max_connections: Default::default(),
 		rpc_cors: None,
 		rpc_methods: Default::default(),
-		rpc_max_payload: None,
-		rpc_max_request_size: None,
-		rpc_max_response_size: None,
+		rpc_max_request_size: Default::default(),
+		rpc_max_response_size: Default::default(),
 		rpc_id_provider: None,
-		rpc_max_subs_per_conn: None,
-		ws_max_out_buffer_capacity: None,
+		rpc_max_subs_per_conn: Default::default(),
 		prometheus_config: None,
 		telemetry_endpoints: None,
 		default_heap_pages: None,
@@ -757,7 +764,8 @@ pub fn node_config(
 		tracing_receiver: Default::default(),
 		max_runtime_instances: 8,
 		announce_block: true,
-		base_path: Some(base_path),
+		data_path: root,
+		base_path,
 		informant_output_format: Default::default(),
 		wasm_runtime_overrides: None,
 		runtime_cache_size: 2,
@@ -778,7 +786,7 @@ impl TestNode {
 		function: impl Into<runtime::RuntimeCall>,
 		caller: Sr25519Keyring,
 	) -> Result<RpcTransactionOutput, RpcTransactionError> {
-		let extrinsic = construct_extrinsic(&*self.client, function, caller.pair(), Some(0));
+		let extrinsic = construct_extrinsic(&self.client, function, caller.pair(), Some(0));
 
 		self.rpc_handlers.send_transaction(extrinsic.into()).await
 	}
@@ -860,7 +868,7 @@ pub fn run_relay_chain_validator_node(
 	key: Sr25519Keyring,
 	storage_update_func: impl Fn(),
 	boot_nodes: Vec<MultiaddrWithPeerId>,
-	websocket_port: Option<u16>,
+	port: Option<u16>,
 ) -> polkadot_test_service::PolkadotTestNode {
 	let mut config = polkadot_test_service::node_config(
 		storage_update_func,
@@ -870,8 +878,8 @@ pub fn run_relay_chain_validator_node(
 		true,
 	);
 
-	if let Some(port) = websocket_port {
-		config.rpc_ws = Some(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), port));
+	if let Some(port) = port {
+		config.rpc_addr = Some(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), port));
 	}
 
 	polkadot_test_service::run_validator_node(

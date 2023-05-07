@@ -45,7 +45,10 @@ pub mod xcm_config;
 pub mod fellowship;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-use fellowship::{pallet_fellowship_origins, Fellows};
+use fellowship::{
+	migration::import_kusama_fellowship, pallet_fellowship_origins, Fellows,
+	FellowshipCollectiveInstance,
+};
 use impls::{AllianceProposalProvider, EqualOrGreatestRootCmp, ToParentTreasury};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -213,7 +216,7 @@ impl pallet_balances::Config for Runtime {
 
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
-	pub const TransactionByteFee: Balance = 1 * MILLICENTS;
+	pub const TransactionByteFee: Balance = MILLICENTS;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -447,6 +450,7 @@ pub const ALLIANCE_MOTION_DURATION: BlockNumber = 5 * DAYS;
 
 parameter_types! {
 	pub const AllianceMotionDuration: BlockNumber = ALLIANCE_MOTION_DURATION;
+	pub MaxProposalWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
 }
 pub const ALLIANCE_MAX_PROPOSALS: u32 = 100;
 pub const ALLIANCE_MAX_MEMBERS: u32 = 100;
@@ -462,6 +466,7 @@ impl pallet_collective::Config<AllianceCollective> for Runtime {
 	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
 	type SetMembersOrigin = EnsureRoot<AccountId>;
 	type WeightInfo = weights::pallet_collective::WeightInfo<Runtime>;
+	type MaxProposalWeight = MaxProposalWeight;
 }
 
 pub const MAX_FELLOWS: u32 = ALLIANCE_MAX_MEMBERS;
@@ -622,7 +627,7 @@ pub type UncheckedExtrinsic =
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 // All migrations executed on runtime upgrade as a nested tuple of types implementing
 // `OnRuntimeUpgrade`. Included migrations must be idempotent.
-type Migrations = ();
+type Migrations = import_kusama_fellowship::Migration<Runtime, FellowshipCollectiveInstance>;
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -838,7 +843,7 @@ impl_runtime_apis! {
 			list_benchmarks!(list, extra);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
-			return (list, storage_info)
+			(list, storage_info)
 		}
 
 		fn dispatch_benchmark(
@@ -894,7 +899,7 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 			.create_inherent_data()
 			.expect("Could not create the timestamp inherent data");
 
-		inherent_data.check_extrinsics(&block)
+		inherent_data.check_extrinsics(block)
 	}
 }
 
