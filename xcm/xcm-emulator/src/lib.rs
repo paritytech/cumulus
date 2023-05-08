@@ -86,18 +86,27 @@ pub trait TestExt {
 
 pub trait RelayChain: TestExt + UmpSink {
 	type Runtime;
+	type RuntimeOrigin;
+	type RuntimeEvent;
 	type XcmConfig;
 	type System;
+	type XcmPallet;
+	type Balances;
+	type SovereignAccountOf;
 }
 
 pub trait Parachain: TestExt + XcmpMessageHandler + DmpMessageHandler {
 	type Runtime;
-	type Origin;
+	type RuntimeOrigin;
+	type RuntimeEvent;
 	type XcmpMessageHandler;
 	type DmpMessageHandler;
 	type System;
 	type ParachainSystem;
 	type ParachainInfo;
+	type XcmPallet;
+	type Balances;
+	type LocationToAccountId;
 }
 
 // Relay Chain Implementation
@@ -107,8 +116,13 @@ macro_rules! decl_test_relay_chains {
 		$(
 			pub struct $name:ident {
 				Runtime = $runtime:path,
+				RuntimeOrigin = $runtime_origin:path,
+				RuntimeEvent = $runtime_event:path,
 				XcmConfig = $xcm_config:path,
 				System = $system:path,
+				XcmPallet = $xcm_pallet:path,
+				Balances = $balances_pallet:path,
+				SovereignAccountOf = $sovereign_account_of:path,
 				genesis = $genesis:expr,
 				on_init = $on_init:expr,
 			}
@@ -120,8 +134,14 @@ macro_rules! decl_test_relay_chains {
 
 			impl RelayChain for $name {
 				type Runtime = $runtime;
+				type RuntimeOrigin = $runtime_origin;
+				type RuntimeEvent = $runtime_event;
 				type XcmConfig = $xcm_config;
 				type System = $system;
+				type XcmPallet = $xcm_pallet;
+				type Balances = $balances_pallet;
+				type SovereignAccountOf = $sovereign_account_of;
+
 			}
 
 			$crate::__impl_xcm_handlers_for_relay_chain!($name);
@@ -256,6 +276,22 @@ macro_rules! __impl_relay {
 				Self::ext_wrapper(|| <Self as RelayChain>::System::account(account).data)
 			}
 
+			pub fn sovereign_account_id_of(location: $crate::MultiLocation) -> $crate::AccountId {
+				<Self as RelayChain>::SovereignAccountOf::convert(location.into()).unwrap()
+			}
+
+			pub fn fund_accounts(accounts: Vec<(AccountId, Balance)>) {
+				Self::ext_wrapper(|| {
+					for account in accounts {
+						let _ = <Self as RelayChain>::Balances::force_set_balance(
+							<Self as RelayChain>::RuntimeOrigin::root(),
+							account.0.into(),
+							account.1.into(),
+						);
+					}
+				});
+			}
+
 			fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = ($crate::RelayBlockNumber, Vec<u8>)>) {
 				$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::network_name()).unwrap().push_back((to_para_id, iter.collect())));
 			}
@@ -274,12 +310,16 @@ macro_rules! decl_test_parachains {
 		$(
 			pub struct $name:ident {
 				Runtime = $runtime:path,
-				RuntimeOrigin = $origin:path,
+				RuntimeOrigin = $runtime_origin:path,
+				RuntimeEvent = $runtime_event:path,
 				XcmpMessageHandler = $xcmp_message_handler:path,
 				DmpMessageHandler = $dmp_message_handler:path,
 				System = $system:path,
 				ParachainSystem = $parachain_system:path,
 				ParachainInfo = $parachain_info:path,
+				XcmPallet = $xcm_pallet:path,
+				Balances = $balances_pallet:path,
+				LocationToAccountId = $location_to_account:path,
 				genesis = $genesis:expr,
 				on_init = $on_init:expr,
 			}
@@ -291,12 +331,16 @@ macro_rules! decl_test_parachains {
 
 			impl Parachain for $name {
 				type Runtime = $runtime;
-				type Origin = $origin;
+				type RuntimeOrigin = $runtime_origin;
+				type RuntimeEvent = $runtime_event;
 				type XcmpMessageHandler = $xcmp_message_handler;
 				type DmpMessageHandler = $dmp_message_handler;
 				type System = $system;
 				type ParachainSystem = $parachain_system;
 				type ParachainInfo = $parachain_info;
+				type XcmPallet = $xcm_pallet;
+				type Balances = $balances_pallet;
+				type LocationToAccountId = $location_to_account;
 			}
 
 			$crate::__impl_xcm_for_parachain!($name);
@@ -389,7 +433,7 @@ macro_rules! __impl_test_ext_for_parachain {
 						let relay_block_number = <$name>::relay_block_number();
 						let para_id = <$name>::para_id().into();
 						let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
-							<Self as Parachain>::Origin::none(),
+							<Self as Parachain>::RuntimeOrigin::none(),
 							<$name>::hrmp_channel_parachain_inherent_data(para_id, relay_block_number),
 						);
 					})
@@ -486,6 +530,22 @@ macro_rules! __impl_parachain {
 				Self::ext_wrapper(|| <Self as Parachain>::System::account(account).data)
 			}
 
+			pub fn sovereign_account_id_of(location: $crate::MultiLocation) -> $crate::AccountId {
+				<Self as Parachain>::LocationToAccountId::convert(location.into()).unwrap()
+			}
+
+			pub fn fund_accounts(accounts: Vec<(AccountId, Balance)>) {
+				Self::ext_wrapper(|| {
+					for account in accounts {
+						let _ = <Self as Parachain>::Balances::force_set_balance(
+							<Self as Parachain>::RuntimeOrigin::root(),
+							account.0.into(),
+							account.1.into(),
+						);
+					}
+				});
+			}
+
 			fn send_horizontal_messages<
 				I: Iterator<Item = ($crate::ParaId, $crate::RelayBlockNumber, Vec<u8>)>,
 			>(to_para_id: u32, iter: I) {
@@ -511,7 +571,7 @@ macro_rules! __impl_parachain {
 					let para_id = Self::para_id();
 
 					let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
-						<Self as Parachain>::Origin::none(),
+						<Self as Parachain>::RuntimeOrigin::none(),
 						Self::hrmp_channel_parachain_inherent_data(para_id.into(), 1),
 					);
 					// set `AnnouncedHrmpMessagesPerCandidate`

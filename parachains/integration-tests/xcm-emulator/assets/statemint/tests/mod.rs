@@ -1,1 +1,1 @@
-pub mod teleports;
+pub mod teleport;
