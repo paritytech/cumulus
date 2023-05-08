@@ -148,15 +148,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				) | RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 				RuntimeCall::XcmpQueue(..) |
 				RuntimeCall::DmpQueue(..) |
-				RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
-				RuntimeCall::BridgeRococoGrandpa(pallet_bridge_grandpa::Call::<
-					Runtime,
-					BridgeGrandpaRococoInstance,
-				>::initialize { .. }) |
-				RuntimeCall::BridgeWococoGrandpa(pallet_bridge_grandpa::Call::<
-					Runtime,
-					BridgeGrandpaWococoInstance,
-				>::initialize { .. })
+				RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. })
 		)
 	}
 }
