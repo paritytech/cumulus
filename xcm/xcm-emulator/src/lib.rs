@@ -23,13 +23,15 @@ pub use frame_support::{
 	weights::Weight,
 	sp_runtime::BuildStorage,
 };
-pub use frame_system;
+pub use pallet_balances::AccountData;
+pub use frame_system::AccountInfo;
 pub use sp_arithmetic::traits::Bounded;
 pub use sp_io::TestExternalities;
 pub use sp_std::{cell::RefCell, collections::{vec_deque::VecDeque}, marker::PhantomData};
 pub use sp_trie::StorageProof;
 pub use sp_core::storage::Storage;
 
+pub use cumulus_test_service::get_account_id_from_seed;
 pub use cumulus_pallet_dmp_queue;
 pub use cumulus_pallet_parachain_system;
 pub use cumulus_pallet_xcmp_queue;
@@ -40,6 +42,7 @@ pub use cumulus_primitives_core::{
 pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 pub use parachain_info;
+pub use parachains_common::{BlockNumber, AccountId};
 
 pub use polkadot_primitives;
 pub use polkadot_runtime_parachains::{
@@ -243,6 +246,14 @@ macro_rules! __impl_relay {
 
 			fn para_ids() -> Vec<u32> {
 				<$network_name>::_para_ids()
+			}
+
+			pub fn account_id_of(seed: &str) -> $crate::AccountId {
+				$crate::get_account_id_from_seed::<sr25519::Public>(seed)
+			}
+
+			pub fn account_data_of(account: AccountId) -> $crate::AccountData<Balance> {
+				Self::ext_wrapper(|| <Self as RelayChain>::System::account(account).data)
 			}
 
 			fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = ($crate::RelayBlockNumber, Vec<u8>)>) {
@@ -465,6 +476,14 @@ macro_rules! __impl_parachain {
 
 			fn set_relay_block_number(block_number: u32) {
 				<$network_name>::_set_relay_block_number(block_number);
+			}
+
+			pub fn account_id_of(seed: &str) -> $crate::AccountId {
+				$crate::get_account_id_from_seed::<sr25519::Public>(seed)
+			}
+
+			pub fn account_data_of(account: AccountId) -> $crate::AccountData<Balance> {
+				Self::ext_wrapper(|| <Self as Parachain>::System::account(account).data)
 			}
 
 			fn send_horizontal_messages<

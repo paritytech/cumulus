@@ -14,23 +14,33 @@ use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 
 pub mod accounts {
 	use super::*;
-	pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
-	pub const BOB: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([1u8; 32]);
+	pub const ALICE: &str = "Alice";
+	pub const BOB: &str = "Bob";
+	pub const CHARLIE: &str = "Charlie";
+	pub const DAVE: &str = "Dave";
+	pub const EVE: &str = "Eve";
+	pub const FERDIE: &str = "Ferdeir";
+	pub const ALICE_STASH: &str = "Alice//stash";
+	pub const BOB_STASH: &str = "Bob//stash";
+	pub const CHARLIE_STASH: &str = "Charlie//stash";
+	pub const DAVE_STASH: &str = "Dave//stash";
+	pub const EVE_STASH: &str = "Eve//stash";
+	pub const FERDIE_STASH: &str = "Ferdie//stash";
 
 	pub fn init_balances() -> Vec<AccountId> {
 		vec![
-			get_account_id_from_seed::<sr25519::Public>("Alice"),
-			get_account_id_from_seed::<sr25519::Public>("Bob"),
-			get_account_id_from_seed::<sr25519::Public>("Charlie"),
-			get_account_id_from_seed::<sr25519::Public>("Dave"),
-			get_account_id_from_seed::<sr25519::Public>("Eve"),
-			get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-			get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-			get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-			get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-			get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-			get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-			get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+			get_account_id_from_seed::<sr25519::Public>(ALICE),
+			get_account_id_from_seed::<sr25519::Public>(BOB),
+			get_account_id_from_seed::<sr25519::Public>(CHARLIE),
+			get_account_id_from_seed::<sr25519::Public>(DAVE),
+			get_account_id_from_seed::<sr25519::Public>(EVE),
+			get_account_id_from_seed::<sr25519::Public>(FERDIE),
+			get_account_id_from_seed::<sr25519::Public>(ALICE_STASH),
+			get_account_id_from_seed::<sr25519::Public>(BOB_STASH),
+			get_account_id_from_seed::<sr25519::Public>(CHARLIE_STASH),
+			get_account_id_from_seed::<sr25519::Public>(DAVE_STASH),
+			get_account_id_from_seed::<sr25519::Public>(EVE_STASH),
+			get_account_id_from_seed::<sr25519::Public>(FERDIE_STASH),
 		]
 	}
 }
