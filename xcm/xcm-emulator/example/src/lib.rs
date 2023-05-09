@@ -19,7 +19,7 @@ use sp_runtime::AccountId32;
 
 use xcm_emulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
 
-// Setup relay chain.
+// Set up relay chain.
 decl_test_relay_chain! {
 	pub struct KusamaRelay {
 		Runtime = kusama_runtime::Runtime,
@@ -28,7 +28,7 @@ decl_test_relay_chain! {
 	}
 }
 
-// Setup ParachainA.
+// Set up ParachainA.
 decl_test_parachain! {
 	pub struct ParachainA {
 		Runtime = test_runtime::Runtime,
@@ -39,7 +39,7 @@ decl_test_parachain! {
 	}
 }
 
-// Setup ParachainB.
+// Set up ParachainB.
 decl_test_parachain! {
 	pub struct ParachainB {
 		Runtime = test_runtime::Runtime,
@@ -50,7 +50,7 @@ decl_test_parachain! {
 	}
 }
 
-// Setup ParachainC.
+// Set up ParachainC.
 decl_test_parachain! {
 	pub struct ParachainC {
 		Runtime = test_runtime::Runtime,
@@ -61,7 +61,7 @@ decl_test_parachain! {
 	}
 }
 
-// Setup a network with all the declared parachains and a relay chain.
+// Set up a network with all the declared parachains and a relay chain.
 decl_test_network! {
 	pub struct Network {
 		relay_chain = KusamaRelay,

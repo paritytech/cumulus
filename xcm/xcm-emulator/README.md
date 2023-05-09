@@ -20,7 +20,7 @@ repo) is the perfect tool for this.
 
 ## How to use
 
-1. Setup a relay chain:
+1. Set up a relay chain:
 
 ```rust
 decl_test_relay_chain! {
@@ -45,7 +45,7 @@ decl_test_parachain! {
 }
 ```
 
-3. Setup a network with all the declared parachains and a relay chain:
+3. Set up a network with all the declared parachains and a relay chain:
 ```rust
 decl_test_network! {
 	pub struct Network {
