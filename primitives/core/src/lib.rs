@@ -26,10 +26,8 @@ use crate::substrate::{
 use codec::{Decode, Encode};
 use polkadot_parachain::primitives::HeadData;
 use scale_info::TypeInfo;
-use sp_runtime::{traits::Block as BlockT, RuntimeDebug};
+use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
-
-use crate::substrate::{generic::{Digest, DigestItem}, traits::Block as BlockT, ConsensusEngineId};
 
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use polkadot_parachain::primitives::{
