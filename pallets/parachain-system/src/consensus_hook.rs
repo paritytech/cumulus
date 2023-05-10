@@ -18,6 +18,7 @@
 //! of parachain blocks ready to submit to the relay chain, as well as some basic implementations.
 
 use super::relay_state_snapshot::RelayChainStateProof;
+use frame_support::weights::Weight;
 use sp_std::num::NonZeroU32;
 
 /// The possible capacity of the unincluded segment.
@@ -61,8 +62,8 @@ pub trait ConsensusHook {
 	/// This hook is called partway through the `set_validation_data` inherent in parachain-system.
 	///
 	/// The hook is allowed to panic if customized consensus rules aren't met and is required
-	/// to return a maximum capacity for the unincluded segment.
-	fn on_state_proof(state_proof: &RelayChainStateProof) -> UnincludedSegmentCapacity;
+	/// to return a maximum capacity for the unincluded segment with weight consumed.
+	fn on_state_proof(state_proof: &RelayChainStateProof) -> (Weight, UnincludedSegmentCapacity);
 }
 
 /// A special consensus hook for handling the migration to asynchronous backing gracefully,
@@ -75,8 +76,11 @@ pub trait ConsensusHook {
 pub struct ExpectParentIncluded;
 
 impl ConsensusHook for ExpectParentIncluded {
-	fn on_state_proof(_state_proof: &RelayChainStateProof) -> UnincludedSegmentCapacity {
-		UnincludedSegmentCapacity(UnincludedSegmentCapacityInner::ExpectParentIncluded)
+	fn on_state_proof(_state_proof: &RelayChainStateProof) -> (Weight, UnincludedSegmentCapacity) {
+		(
+			Weight::zero(),
+			UnincludedSegmentCapacity(UnincludedSegmentCapacityInner::ExpectParentIncluded),
+		)
 	}
 }
 
@@ -88,10 +92,13 @@ impl ConsensusHook for ExpectParentIncluded {
 pub struct FixedCapacityUnincludedSegment<const N: u32>;
 
 impl<const N: u32> ConsensusHook for FixedCapacityUnincludedSegment<N> {
-	fn on_state_proof(_state_proof: &RelayChainStateProof) -> UnincludedSegmentCapacity {
-		NonZeroU32::new(sp_std::cmp::max(N, 1))
-			.expect("1 is the minimum value and non-zero; qed")
-			.into()
+	fn on_state_proof(_state_proof: &RelayChainStateProof) -> (Weight, UnincludedSegmentCapacity) {
+		(
+			Weight::zero(),
+			NonZeroU32::new(sp_std::cmp::max(N, 1))
+				.expect("1 is the minimum value and non-zero; qed")
+				.into(),
+		)
 	}
 }
 

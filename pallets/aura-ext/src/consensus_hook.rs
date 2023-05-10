@@ -24,6 +24,7 @@ use cumulus_pallet_parachain_system::{
 	consensus_hook::{ConsensusHook, UnincludedSegmentCapacity},
 	relay_state_snapshot::RelayChainStateProof,
 };
+use frame_support::pallet_prelude::*;
 use sp_std::{marker::PhantomData, num::NonZeroU32};
 
 /// A consensus hook for a fixed block processing velocity and unincluded segment capacity.
@@ -33,7 +34,7 @@ impl<T: pallet::Config, const V: u32, const C: u32> ConsensusHook
 	for FixedVelocityConsensusHook<T, V, C>
 {
 	// Validates the number of authored blocks within the slot with respect to the `V + 1` limit.
-	fn on_state_proof(_state_proof: &RelayChainStateProof) -> UnincludedSegmentCapacity {
+	fn on_state_proof(_state_proof: &RelayChainStateProof) -> (Weight, UnincludedSegmentCapacity) {
 		// Ensure velocity is non-zero.
 		let velocity = V.max(1);
 
@@ -43,9 +44,13 @@ impl<T: pallet::Config, const V: u32, const C: u32> ConsensusHook
 		if authored > velocity + 1 {
 			panic!("authored blocks limit is reached for the slot")
 		}
+		let weight = T::DbWeight::get().reads(1);
 
-		NonZeroU32::new(sp_std::cmp::max(C, 1))
-			.expect("1 is the minimum value and non-zero; qed")
-			.into()
+		(
+			weight,
+			NonZeroU32::new(sp_std::cmp::max(C, 1))
+				.expect("1 is the minimum value and non-zero; qed")
+				.into(),
+		)
 	}
 }
