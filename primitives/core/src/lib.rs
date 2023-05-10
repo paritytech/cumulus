@@ -251,6 +251,14 @@ pub fn extract_relay_parent(digest: &Digest) -> Option<relay_chain::Hash> {
 ///
 /// Runtimes using the parachain-system pallet are expected produce this digest item,
 /// but will stop as soon as they are able to provide the relay-parent hash directly.
+///
+/// The relay-chain storage root is, in practice, a unique identifier of a block
+/// in the absence of equivocations (which are slashable). This assumes that the relay chain
+/// uses BABE or SASSAFRAS, because the slot and the author's VRF randomness are both included
+/// in the relay-chain storage root in both cases.
+///
+/// Therefore, the relay-parent storage root is a suitable identifier of unique relay chain
+/// blocks in low-value scenarios such as performance optimizations.
 #[doc(hidden)]
 pub mod rpsr_digest {
 	use super::{relay_chain, ConsensusEngineId, Decode, Digest, DigestItem, Encode};
