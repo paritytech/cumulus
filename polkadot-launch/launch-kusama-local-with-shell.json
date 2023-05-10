@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../../bin/polkadot-v0.9.36",
+		"bin": "../../bin/polkadot-v0.9.39",
 		"chain": "kusama-local",
 		"nodes": [
 			{
@@ -23,7 +23,7 @@
 	"parachains": [
 		{
 			"bin": "./../target/release/integritee-collator",
-			"chain": "shell-kusama-local-dev",
+			"chain": "shell-kusama-lease3",
 			"nodes": [
 				{
 					"wsPort": 9944,

@@ -1,15 +1,12 @@
 {
-  "bootNodes": [
-    "/ip4/206.189.59.95/tcp/30333/p2p/12D3KooW9yxCm9MoTTtmH1cEQHwnTKhv3bCoiFwbRhRJU7sae4Yd",
-    "/ip4/167.172.167.196/tcp/30333/p2p/12D3KooWBR4UmiGadvQ77m6iwWuoEUwgRkFMMhzhecXn2Hc9QUhC"
-  ],
+  "bootNodes": [],
   "chainType": "Live",
   "codeSubstitutes": {},
   "genesis": {
     "raw": {
       "childrenDefault": {},
       "top": {
-        "0x0d715f2646c8f85767b5d2764bb2782604a74d81251e398fd8a0a4d55023bb3f": "0xdf070000",
+        "0x0d715f2646c8f85767b5d2764bb2782604a74d81251e398fd8a0a4d55023bb3f": "0xdb080000",
         "0x0d715f2646c8f85767b5d2764bb278264e7b9012096b41c4eb3aaf947f6ea429": "0x0000",
         "0x1b15508200b2e5ed48f9fc4146686f3f4e7b9012096b41c4eb3aaf947f6ea429": "0x0000",
         "0x26aa394eea5630e07c48ae0c9558cef74e7b9012096b41c4eb3aaf947f6ea429": "0x0000",
@@ -44,14 +41,14 @@
     }
   },
   "id": "integritee-kusama",
-  "name": "Integritee Shell",
-  "para_id": 2015,
+  "name": "Integritee Shell for swap",
+  "para_id": 2267,
   "properties": {
     "ss58Format": 13,
     "tokenDecimals": 12,
     "tokenSymbol": "TEER"
   },
-  "protocolId": "teer-k",
+  "protocolId": "teer-kl3",
   "relay_chain": "kusama",
   "telemetryEndpoints": null
 }
