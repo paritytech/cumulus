@@ -20,8 +20,6 @@
 use super::relay_state_snapshot::RelayChainStateProof;
 use sp_std::num::NonZeroU32;
 
-use cumulus_pallet_aura_ext::{consensus_hook as aura_consensus_hook, pallet as pallet_aura_ext};
-
 /// The possible capacity of the unincluded segment.
 #[derive(Clone)]
 pub struct UnincludedSegmentCapacity(UnincludedSegmentCapacityInner);
@@ -102,15 +100,3 @@ impl<const N: u32> ConsensusHook for FixedCapacityUnincludedSegment<N> {
 ///
 /// This is a simple type alias around a fixed-capacity unincluded segment with a size of 1.
 pub type RequireParentIncluded = FixedCapacityUnincludedSegment<1>;
-
-impl<T: pallet_aura_ext::Config, const V: u32, const C: u32> ConsensusHook
-	for aura_consensus_hook::FixedVelocityConsensusHook<T, V, C>
-{
-	fn on_state_proof(_state_proof: &RelayChainStateProof) -> UnincludedSegmentCapacity {
-		Self::validate_slot();
-
-		NonZeroU32::new(sp_std::cmp::max(C, 1))
-			.expect("1 is the minimum value and non-zero; qed")
-			.into()
-	}
-}

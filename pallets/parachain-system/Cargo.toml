@@ -34,7 +34,6 @@ xcm = { git = "https://github.com/paritytech/polkadot", default-features = false
 cumulus-pallet-parachain-system-proc-macro = { path = "proc-macro", default-features = false }
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent", default-features = false }
-cumulus-pallet-aura-ext = { path = "../aura-ext", default-features = false }
 
 [dev-dependencies]
 assert_matches = "1.5"
@@ -61,7 +60,6 @@ std = [
 	"cumulus-pallet-parachain-system-proc-macro/std",
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-parachain-inherent/std",
-	"cumulus-pallet-aura-ext/std",
 	"frame-support/std",
 	"frame-system/std",
 	"sp-core/std",

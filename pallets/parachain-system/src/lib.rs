@@ -58,7 +58,7 @@ use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
 use xcm::latest::XcmHash;
 
 mod migration;
-mod relay_state_snapshot;
+pub mod relay_state_snapshot;
 #[cfg(test)]
 mod tests;
 mod unincluded_segment;

@@ -2154,7 +2154,6 @@ version = "0.1.0"
 dependencies = [
  "assert_matches",
  "bytes",
- "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system-proc-macro",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
