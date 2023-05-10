@@ -2,9 +2,9 @@
 
 # Helper script to generate the wasm, state and chain-spec/ -raw.json for a given chain-spec.
 #
-# Usage: ./scripts/dump_wasm_state_and_spec.sh <chain-spec> <para-id> <collator-binary> <dump-dir>
+# Usage: ./scripts/dump_wasm_state_and_spec.sh <chain-spec> <collator-binary> <dump-dir>
 #
-# Example: ./scripts/dump_wasm_state_and_spec.sh shell-kusama-local-dev 2000 collator ./dump_dir
+# Example: ./scripts/dump_wasm_state_and_spec.sh shell-kusama-local-dev collator ./dump_dir
 #
 # chain-spec is mandatory, the rest is optional.
 

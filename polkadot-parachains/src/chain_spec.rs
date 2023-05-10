@@ -295,6 +295,10 @@ pub fn shell_kusama_lease2_config() -> Result<ShellChainSpec, String> {
 	ShellChainSpec::from_json_bytes(&include_bytes!("../chain-specs/shell-kusama-lease2.json")[..])
 }
 
+pub fn shell_kusama_lease3_config() -> Result<ShellChainSpec, String> {
+	ShellChainSpec::from_json_bytes(&include_bytes!("../chain-specs/shell-kusama-lease3.json")[..])
+}
+
 pub fn shell_polkadot_config() -> Result<ShellChainSpec, String> {
 	ShellChainSpec::from_json_bytes(&include_bytes!("../chain-specs/integritee-polkadot.json")[..])
 }

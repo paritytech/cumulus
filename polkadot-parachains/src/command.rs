@@ -19,7 +19,7 @@ use crate::{
 	chain_spec,
 	chain_spec::{
 		integritee_chain_spec, integritee_moonbase_config, shell_chain_spec, shell_kusama_config,
-		shell_kusama_lease2_config, shell_polkadot_config, shell_rococo_config,
+		shell_kusama_lease2_config, shell_kusama_lease3_config, shell_polkadot_config, shell_rococo_config,
 		shell_westend_config, GenesisKeys, RelayChain, ShellChainSpec,
 	},
 	cli::{Cli, RelayChainCli, Subcommand},
@@ -80,6 +80,7 @@ fn load_spec(
 		"integritee-moonbase" => Box::new(integritee_moonbase_config()?),
 		// chain-spec that has been registered for the next kusama slot lease
 		"shell-kusama-lease2" => Box::new(shell_kusama_lease2_config()?),
+		"shell-kusama-lease3" => Box::new(shell_kusama_lease3_config()?),
 
 		// live config initialize
 		"integritee-rococo-fresh" => Box::new(shell_chain_spec(ROCOCO_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::Rococo)),
