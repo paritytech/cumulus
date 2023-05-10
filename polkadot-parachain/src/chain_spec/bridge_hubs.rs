@@ -105,12 +105,14 @@ impl BridgeHubRuntimeType {
 				"Polkadot BridgeHub Local",
 				"polkadot-local",
 				ParaId::new(1002),
+				Some("Bob".to_string()),
 			))),
 			BridgeHubRuntimeType::PolkadotDevelopment => Ok(Box::new(polkadot::local_config(
 				polkadot::BRIDGE_HUB_POLKADOT_DEVELOPMENT,
 				"Polkadot BridgeHub Development",
 				"polkadot-dev",
 				ParaId::new(1002),
+				Some("Bob".to_string()),
 			))),
 			BridgeHubRuntimeType::Kusama =>
 				Ok(Box::new(kusama::BridgeHubChainSpec::from_json_bytes(
@@ -120,14 +122,14 @@ impl BridgeHubRuntimeType {
 				kusama::BRIDGE_HUB_KUSAMA_LOCAL,
 				"Kusama BridgeHub Local",
 				"kusama-local",
-				ParaId::new(1003),
+				ParaId::new(1002),
 				Some("Bob".to_string()),
 			))),
 			BridgeHubRuntimeType::KusamaDevelopment => Ok(Box::new(kusama::local_config(
 				kusama::BRIDGE_HUB_KUSAMA_DEVELOPMENT,
 				"Kusama BridgeHub Development",
 				"kusama-dev",
-				ParaId::new(1003),
+				ParaId::new(1002),
 				Some("Bob".to_string()),
 			))),
 			BridgeHubRuntimeType::Westend =>
@@ -547,6 +549,7 @@ pub mod polkadot {
 		chain_name: &str,
 		relay_chain: &str,
 		para_id: ParaId,
+		bridges_pallet_owner_seed: Option<String>,
 	) -> BridgeHubChainSpec {
 		let mut properties = sc_chain_spec::Properties::new();
 		properties.insert("ss58Format".into(), 0.into());
@@ -587,6 +590,9 @@ pub mod polkadot {
 						get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 					],
 					para_id,
+					bridges_pallet_owner_seed
+						.as_ref()
+						.map(|seed| get_account_id_from_seed::<sr25519::Public>(&seed)),
 				)
 			},
 			Vec::new(),
@@ -602,6 +608,7 @@ pub mod polkadot {
 		invulnerables: Vec<(AccountId, AuraId)>,
 		endowed_accounts: Vec<AccountId>,
 		id: ParaId,
+		bridges_pallet_owner: Option<AccountId>,
 	) -> bridge_hub_polkadot_runtime::GenesisConfig {
 		bridge_hub_polkadot_runtime::GenesisConfig {
 			system: bridge_hub_polkadot_runtime::SystemConfig {
@@ -639,6 +646,14 @@ pub mod polkadot {
 			parachain_system: Default::default(),
 			polkadot_xcm: bridge_hub_polkadot_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
+			},
+			bridge_kusama_grandpa: bridge_hub_polkadot_runtime::BridgeKusamaGrandpaConfig {
+				owner: bridges_pallet_owner.clone(),
+				..Default::default()
+			},
+			bridge_kusama_messages: bridge_hub_polkadot_runtime::BridgeKusamaMessagesConfig {
+				owner: bridges_pallet_owner,
+				..Default::default()
 			},
 		}
 	}

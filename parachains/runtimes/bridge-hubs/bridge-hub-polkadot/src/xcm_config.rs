@@ -18,6 +18,7 @@ use super::{
 	AccountId, AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
 	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
+use crate::{bridge_hub_config::ToBridgeHubKusamaHaulBlobExporter, BridgeGrandpaKusamaInstance};
 use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing},
@@ -153,7 +154,11 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				) | RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 				RuntimeCall::XcmpQueue(..) |
 				RuntimeCall::DmpQueue(..) |
-				RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. })
+				RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
+				RuntimeCall::BridgeKusamaGrandpa(pallet_bridge_grandpa::Call::<
+					Runtime,
+					BridgeGrandpaKusamaInstance,
+				>::initialize { .. })
 		)
 	}
 }
@@ -177,6 +182,9 @@ pub type Barrier = DenyThenTry<
 			UniversalLocation,
 			ConstU32<8>,
 		>,
+		// TODO:check-parameter - (https://github.com/paritytech/parity-bridges-common/issues/2084)
+		// remove this and extend `AllowExplicitUnpaidExecutionFrom` with "or SystemParachains" once merged https://github.com/paritytech/polkadot/pull/7005
+		xcm_builder::AllowUnpaidExecutionFrom<Everything>,
 	),
 >;
 
@@ -209,7 +217,7 @@ impl xcm_executor::Config for XcmConfig {
 	type PalletInstancesInfo = AllPalletsWithSystem;
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 	type FeeManager = ();
-	type MessageExporter = ();
+	type MessageExporter = ToBridgeHubKusamaHaulBlobExporter;
 	type UniversalAliases = Nothing;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
 	type SafeCallFilter = SafeCallFilter;

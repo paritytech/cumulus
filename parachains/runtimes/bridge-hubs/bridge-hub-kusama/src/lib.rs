@@ -1,4 +1,4 @@
-// Copyright 2022 Parity Technologies (UK) Ltd.
+// Copyright 2023 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -410,6 +410,7 @@ impl pallet_utility::Config for Runtime {
 	type PalletsOrigin = OriginCaller;
 	type WeightInfo = weights::pallet_utility::WeightInfo<Runtime>;
 }
+
 // Add bridge pallets (GPA)
 /// Add GRANDPA bridge pallet to track Polkadot relay chain on Kusama BridgeHub
 pub type BridgeGrandpaPolkadotInstance = pallet_bridge_grandpa::Instance1;
@@ -769,6 +770,7 @@ impl_runtime_apis! {
 			// are referenced in that call.
 			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
 			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
+
 			use pallet_bridge_parachains::benchmarking::Pallet as BridgeParachainsBench;
 			use pallet_bridge_messages::benchmarking::Pallet as BridgeMessagesBench;
 			use pallet_bridge_relayers::benchmarking::Pallet as BridgeRelayersBench;
@@ -1023,14 +1025,17 @@ cumulus_pallet_parachain_system::register_validate_block! {
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
 	CheckInherents = CheckInherents,
 }
+
 #[cfg(test)]
 mod tests {
 	use super::*;
 	use bp_runtime::TransactionEra;
 	use bridge_hub_test_utils::test_header;
 	use codec::Encode;
+
 	pub type TestBlockHeader =
-		sp_runtime::generic::Header<bp_polkadot_core::BlockNumber, bp_polkadot_core::Hasher>;
+		generic::Header<bp_polkadot_core::BlockNumber, bp_polkadot_core::Hasher>;
+
 	#[test]
 	fn ensure_signed_extension_definition_is_compatible_with_relay() {
 		let payload: SignedExtra = (
