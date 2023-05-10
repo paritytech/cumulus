@@ -244,8 +244,8 @@ pub fn extract_relay_parent(digest: &Digest) -> Option<relay_chain::Hash> {
 /// Utilities for handling the relay-parent storage root as a digest item.
 ///
 /// This is not intended to be part of the public API, as it is a workaround for
-/// https://github.com/paritytech/cumulus/issues/303 via
-/// https://github.com/paritytech/polkadot/issues/7191.
+/// <https://github.com/paritytech/cumulus/issues/303> via
+/// <https://github.com/paritytech/polkadot/issues/7191>.
 ///
 /// Runtimes using the parachain-system pallet are expected produce this digest item,
 /// but will stop as soon as they are able to provide the relay-parent hash directly.
