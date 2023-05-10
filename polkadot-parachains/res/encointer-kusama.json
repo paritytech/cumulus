@@ -1,7 +1,8 @@
 {
   "bootNodes": [
     "/ip4/104.248.131.111/tcp/30333/p2p/12D3KooWGa6QRfYmeCWCBHPvJAytaiXZsWzuq1L7zgzph4YHwGjB",
-    "/ip4/104.248.135.198/tcp/30333/p2p/12D3KooWCSzi8TmqvxKmrPdXT5jietrRMCeDVQGZUWQ5JT6MpZ9F"
+    "/ip4/104.248.135.198/tcp/30333/p2p/12D3KooWCSzi8TmqvxKmrPdXT5jietrRMCeDVQGZUWQ5JT6MpZ9F",
+    "/dns/kusama-encointer-boot-ng.dwellir.com/tcp/30342/p2p/12D3KooWMKBdoj1y5yxpPRsuioAuLDeYGyZFJw1aL1dDbBvWMrvx"
   ],
   "chainType": "Live",
   "codeSubstitutes": {},
