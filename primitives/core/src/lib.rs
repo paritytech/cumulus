@@ -18,6 +18,11 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use crate::substrate::{
+	generic::{Digest, DigestItem},
+	traits::Block as BlockT,
+	ConsensusEngineId,
+};
 use codec::{Decode, Encode};
 use polkadot_parachain::primitives::HeadData;
 use scale_info::TypeInfo;
@@ -229,13 +234,46 @@ impl CumulusDigestItem {
 /// well-behaving runtimes should not produce headers with more than one.
 pub fn extract_relay_parent(digest: &Digest) -> Option<relay_chain::Hash> {
 	digest.convert_first(|d| match d {
-		DigestItem::Consensus(id, val) if id == &CUMULUS_CONSENSUS_ID
-			=> match CumulusDigestItem::decode(&mut &val[..]) {
+		DigestItem::Consensus(id, val) if id == &CUMULUS_CONSENSUS_ID =>
+			match CumulusDigestItem::decode(&mut &val[..]) {
 				Ok(CumulusDigestItem::RelayParent(hash)) => Some(hash),
 				_ => None,
-			}
+			},
 		_ => None,
 	})
+}
+
+/// Utilities for handling the relay-parent storage root as a digest item.
+///
+/// This is not intended to be part of the public API, as it is a workaround for
+/// https://github.com/paritytech/cumulus/issues/303 via
+/// https://github.com/paritytech/polkadot/issues/7191
+#[doc(hidden)]
+pub mod rpsr_digest {
+	use super::{relay_chain, ConsensusEngineId, Decode, Digest, DigestItem, Encode};
+
+	/// A consensus engine ID for relay-parent storage root digests.
+	pub const RPSR_CONSENSUS_ID: ConsensusEngineId = *b"RPSR";
+
+	/// Construct a digest item for relay-parent storage roots.
+	pub fn relay_parent_storage_root_item(
+		relay_parent_storage_root: relay_chain::Hash,
+	) -> DigestItem {
+		DigestItem::Consensus(RPSR_CONSENSUS_ID, relay_parent_storage_root.encode())
+	}
+
+	/// Extract the relay-parent storage root from the provided header digest. Returns `None`
+	/// if none were found.
+	pub fn extract_relay_parent_storage_root(digest: &Digest) -> Option<relay_chain::Hash> {
+		digest.convert_first(|d| match d {
+			DigestItem::Consensus(id, val) if id == &RPSR_CONSENSUS_ID =>
+				match relay_chain::Hash::decode(&mut &val[..]) {
+					Ok(hash) => Some(hash),
+					_ => None,
+				},
+			_ => None,
+		})
+	}
 }
 
 /// Information about a collation.
