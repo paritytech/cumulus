@@ -43,7 +43,7 @@ use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::net::SocketAddr;
 
 const LOCAL_PARA_ID: u32 = 2015;
-const SHELL_PARA_ID: u32 = 2223;
+const SHELL_PARA_ID: u32 = 2267;
 const ROCOCO_PARA_ID: u32 = 2015;
 const WESTEND_PARA_ID: u32 = 2081;
 const KUSAMA_PARA_ID: u32 = 2015;
