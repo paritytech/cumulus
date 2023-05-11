@@ -74,6 +74,8 @@ decl_test_network! {
 }
 
 pub const ALICE: AccountId32 = AccountId32::new([0u8; 32]);
+pub const BOB: AccountId32 = AccountId32::new([1u8; 32]);
+
 pub const INITIAL_BALANCE: u128 = 1_000_000_000_000;
 
 // Parachain TextExternalities setup.
@@ -225,46 +227,50 @@ mod tests {
 			);
 		});
 
-		let remark = kusama_runtime::RuntimeCall::System(frame_system::Call::<
+		let bobs_balance = 1_000_000_000_u128;
+
+		let call = kusama_runtime::RuntimeCall::Balances(pallet_balances::Call::<
 			kusama_runtime::Runtime,
-		>::remark_with_event {
-			remark: "Hello from ParachainA!".as_bytes().to_vec(),
+		>::force_set_balance {
+			who: BOB.into(),
+			new_free: bobs_balance,
 		});
+
+		let xcm = Xcm(vec![
+			UnpaidExecution { weight_limit: WeightLimit::Unlimited, check_origin: None },
+			Transact {
+				require_weight_at_most: Weight::from_parts(168080000, 0),
+				origin_kind: OriginKind::Superuser,
+				call: call.encode().into(),
+			},
+		]);
+
 		ParachainA::execute_with(|| {
 			assert_ok!(test_runtime::PolkadotXcm::force_default_xcm_version(
 				test_runtime::RuntimeOrigin::root(),
 				Some(3)
 			));
-			assert_ok!(test_runtime::PolkadotXcm::send_xcm(
-				Here,
-				Parent,
-				Xcm(vec![
-					UnpaidExecution { weight_limit: Unlimited, check_origin: None },
-					Transact {
-						origin_kind: OriginKind::SovereignAccount,
-						require_weight_at_most: Weight::from_parts(
-							INITIAL_BALANCE as u64,
-							1024 * 1024
-						),
-						call: remark.encode().into(),
-					}
-				]),
+			assert_ok!(test_runtime::PolkadotXcm::send(
+				test_runtime::RuntimeOrigin::root(),
+				Box::new(Parent.into()),
+				Box::new(VersionedXcm::from(xcm)),
 			));
 		});
 
 		KusamaRelay::execute_with(|| {
 			use kusama_runtime::{RuntimeEvent, System};
-			// TODO: https://github.com/paritytech/polkadot/pull/6824 or change this call to
-			// force_create_assets like we do in cumulus integration tests.
-			// assert!(System::events().iter().any(|r| matches!(
-			// 	r.event,
-			// 	RuntimeEvent::System(frame_system::Event::Remarked { sender: _, hash: _ })
-			// )));
+
+			assert!(System::events().iter().any(|r| matches!(
+				&r.event,
+				RuntimeEvent::Balances(pallet_balances::Event::BalanceSet {who, free})
+					if *who == BOB && *free == bobs_balance
+			)));
+
 			assert!(System::events().iter().any(|r| matches!(
 				r.event,
 				RuntimeEvent::Ump(polkadot_runtime_parachains::ump::Event::ExecutedUpward(
 					_,
-					Outcome::Incomplete(_, XcmError::NoPermission)
+					Outcome::Complete(_)
 				))
 			)));
 		});
