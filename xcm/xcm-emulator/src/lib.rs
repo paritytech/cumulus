@@ -268,6 +268,10 @@ macro_rules! __impl_relay {
 				<$network_name>::_para_ids()
 			}
 
+			pub fn child_location_of(id: $crate::ParaId) -> MultiLocation {
+				(Ancestor(0), Parachain(id.into())).into()
+			}
+
 			pub fn account_id_of(seed: &str) -> $crate::AccountId {
 				$crate::get_account_id_from_seed::<sr25519::Public>(seed)
 			}
@@ -427,11 +431,12 @@ macro_rules! __impl_test_ext_for_parachain {
 				relay_block_number += 1;
 				<$name>::set_relay_block_number(relay_block_number);
 
+				let para_id = <$name>::para_id().into();
+
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
 						// Make sure it has been recorded properly
 						let relay_block_number = <$name>::relay_block_number();
-						let para_id = <$name>::para_id().into();
 						let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
 							<Self as Parachain>::RuntimeOrigin::none(),
 							<$name>::hrmp_channel_parachain_inherent_data(para_id, relay_block_number),
@@ -462,8 +467,6 @@ macro_rules! __impl_test_ext_for_parachain {
 
 						// send upward messages
 						let relay_block_number = <$name>::relay_block_number();
-						let para_id = <$name>::para_id().into();
-
 						for msg in collation_info.upward_messages.clone() {
 							<$name>::send_upward_message(para_id, msg);
 						}
@@ -511,7 +514,11 @@ macro_rules! __impl_parachain {
 			}
 
 			pub fn para_id() -> $crate::ParaId {
-				<Self as Parachain>::ParachainInfo::get()
+				Self::ext_wrapper(|| <Self as Parachain>::ParachainInfo::get())
+			}
+
+			pub fn parent_location() -> $crate::MultiLocation {
+				(Parent).into()
 			}
 
 			fn relay_block_number() -> u32 {
@@ -564,11 +571,13 @@ macro_rules! __impl_parachain {
 			}
 
 			fn prepare_for_xcmp() {
+				let para_id = Self::para_id();
+
 				<Self as TestExt>::ext_wrapper(|| {
 					use $crate::{Get, Hooks};
 
 					let block_number = <Self as Parachain>::System::block_number();
-					let para_id = Self::para_id();
+					// let para_id = Self::para_id();
 
 					let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
 						<Self as Parachain>::RuntimeOrigin::none(),
@@ -633,9 +642,7 @@ macro_rules! decl_test_networks {
 
 				fn _para_ids() -> Vec<u32> {
 					vec![$(
-						<$parachain>::ext_wrapper(
-							|| <$parachain>::para_id().into()
-						),
+						<$parachain>::para_id().into(),
 					)*]
 				}
 

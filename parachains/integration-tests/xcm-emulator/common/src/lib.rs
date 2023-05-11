@@ -147,6 +147,9 @@ parameter_types! {
 
 pub const INITIAL_BALANCE: u128 = 1000 * DOLLARS;
 
+pub const XCM_VERSION_2: u32 = 3;
+pub const XCM_VERSION_3: u32 = 2;
+
 pub fn parent_account_id() -> parachains_common::AccountId {
 	let location = (Parent,);
 	statemint_runtime::xcm_config::LocationToAccountId::convert(location.into()).unwrap()
