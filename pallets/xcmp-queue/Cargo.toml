@@ -11,31 +11,31 @@ rand_chacha = { version = "0.3.0", default-features = false }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "westmint-9425" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "westmint-9425" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "westmint-9425" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "westmint-9425" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "westmint-9425" }
 
 # Polkadot
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.42" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.42" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.42" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "westmint-9425" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "westmint-9425" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "westmint-9425" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 
 # Optional import for benchmarking
-frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
+frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", branch = "westmint-9425" }
 
 [dev-dependencies]
 
 # Substrate
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "westmint-9425" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "westmint-9425" }
 
 # Polkadot
-xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.42" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "westmint-9425" }
 
 # Cumulus
 cumulus-pallet-parachain-system = { path = "../parachain-system" }

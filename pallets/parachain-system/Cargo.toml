@@ -14,21 +14,21 @@ log = { version = "0.4.17", default-features = false }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
-sp-externalities = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
-sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "westmint-9425" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "westmint-9425" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "westmint-9425" }
+sp-externalities = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "westmint-9425" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "westmint-9425" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "westmint-9425" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "westmint-9425" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "westmint-9425" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "westmint-9425" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "westmint-9425" }
+sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "westmint-9425" }
 
 # Polkadot
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, features = [ "wasm-api" ], branch = "release-v0.9.42" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.42" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, features = [ "wasm-api" ], branch = "westmint-9425" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "westmint-9425" }
 
 # Cumulus
 cumulus-pallet-parachain-system-proc-macro = { path = "proc-macro", default-features = false }
@@ -40,10 +40,10 @@ hex-literal = "0.4.1"
 lazy_static = "1.4"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
-sp-version = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "westmint-9425" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "westmint-9425" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "westmint-9425" }
+sp-version = { git = "https://github.com/paritytech/substrate", branch = "westmint-9425" }
 
 # Cumulus
 cumulus-test-client = { path = "../../test/client" }
