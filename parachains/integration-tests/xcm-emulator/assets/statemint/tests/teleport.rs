@@ -57,7 +57,7 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 	let relay_sender_balance_before = Polkadot::account_data_of(PolkadotSender::get()).free;
 	let para_receiver_balance_before = Statemint::account_data_of(StatemintReceiver::get()).free;
 
-	// Call arguments
+	// Limited Teleport Assets call arguments
 	let origin = <Polkadot as Relay>::RuntimeOrigin::signed(PolkadotSender::get());
 	let assets_para_destination: VersionedMultiLocation = Polkadot::child_location_of(Statemint::para_id()).into();
 	let beneficiary: VersionedMultiLocation = AccountId32 { network: None, id: StatemintReceiver::get().into() }.into();
@@ -87,15 +87,20 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 
 	// Receive XCM message in Assets Parachain
 	Statemint::execute_with(|| {
-		use statemint_runtime::{Runtime, RuntimeEvent, System};
-		assert!(System::events().iter().any(|r| matches!(
-			&r.event,
-			RuntimeEvent::Balances(pallet_balances::Event::Deposit { who, .. })
-			if *who == Statemint::account_id_of(BOB).into()
-		)));
-		// panic!();
+		assert_expected_events!(
+			Statemint,
+			vec![
+				Balances(pallet_balances::Event::Deposit { who, .. }) => {
+					who: *who == StatemineReceiver::get().into(),
+				},
+				Balances(pallet_balances::Event::Deposit { who, .. }) => {
+					who: *who == StatemineReceiver::get().into(),
+				},
+			]
+		);
 	});
 
+	// Check if balances are updated accordingly in Relay Chain and Assets Parachain
 	let relay_sender_balance_after = Polkadot::account_data_of(PolkadotSender::get()).free;
 	let para_sender_balance_after = Statemint::account_data_of(StatemintReceiver::get()).free;
 

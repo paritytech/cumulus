@@ -347,14 +347,14 @@ macro_rules! decl_test_parachains {
 				type LocationToAccountId = $location_to_account;
 			}
 
-			$crate::__impl_xcm_for_parachain!($name);
+			$crate::__impl_xcm_handlers_for_parachain!($name);
 			$crate::__impl_test_ext_for_parachain!($name, $genesis, $on_init);
 		)+
 	};
 }
 
 #[macro_export]
-macro_rules! __impl_xcm_for_parachain {
+macro_rules! __impl_xcm_handlers_for_parachain {
 	($name:ident) => {
 		impl $crate::XcmpMessageHandler for $name {
 			fn handle_xcmp_messages<
@@ -551,6 +551,10 @@ macro_rules! __impl_parachain {
 						);
 					}
 				});
+			}
+
+			pub fn received_events(events: Vec<<Self as Parachain>::RuntimeEvent>) {
+
 			}
 
 			fn send_horizontal_messages<
@@ -779,6 +783,33 @@ macro_rules! decl_test_networks {
 			)*
 		)+
 	};
+}
+
+#[macro_export]
+macro_rules! assert_expected_events {
+	( $chain:ident, vec![$( $event_pat:pat => { $($attr:ident : $condition:expr, )* }, )*] ) => {
+
+		type RuntimeEvent = <$chain as $crate::Parachain>::RuntimeEvent;
+
+		<$chain as $crate::Parachain>::System::events().iter().any(|record|
+			match &record.event {
+				$(
+					$crate::paste::expr!(RuntimeEvent::$event_pat) => {
+						$(
+							if $condition {
+								true
+							} else {
+								// panic!("Expected event attribute '{:?}' received with a different value '{:?}'", stringify!($attr), $attr);
+								false
+							}
+						)*
+						// true
+					},
+				)*
+				_ => false
+			}
+		);
+    };
 }
 
 #[macro_export]

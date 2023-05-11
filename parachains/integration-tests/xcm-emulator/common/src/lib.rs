@@ -140,8 +140,6 @@ parameter_types! {
 	// Penpal Kusama
 	pub PenpalKusamaSender: AccountId = PenpalKusama::account_id_of(ALICE);
 	pub PenpalKusamaReceiver: AccountId = PenpalKusama::account_id_of(BOB);
-
-	pub StatemintLocation: MultiLocation = (Ancestor(0), Parachain(1000)).into();
 }
 
 
@@ -158,15 +156,4 @@ pub fn parent_account_id() -> parachains_common::AccountId {
 pub fn child_account_id(para: u32) -> polkadot_core_primitives::AccountId {
 	let location = (Parachain(para),);
 	polkadot_runtime::xcm_config::SovereignAccountOf::convert(location.into()).unwrap()
-}
-
-pub mod helpers {
-	use super::*;
-	// pub fn account_id_of(seed: &str) -> AccountId {
-	// 	get_account_id_from_seed::<sr25519::Public>(seed)
-	// }
-
-	// pub fn fund_accounts(accounts: (AccountId, Balance)) {
-
-	// }
 }
