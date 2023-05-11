@@ -58,12 +58,12 @@ use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
 use xcm::latest::XcmHash;
 
 mod migration;
-mod relay_state_snapshot;
 #[cfg(test)]
 mod tests;
 mod unincluded_segment;
 
 pub mod consensus_hook;
+pub mod relay_state_snapshot;
 #[macro_use]
 pub mod validate_block;
 
@@ -484,7 +484,8 @@ pub mod pallet {
 			.expect("Invalid relay chain state proof");
 
 			// Update the desired maximum capacity according to the consensus hook.
-			let capacity = T::ConsensusHook::on_state_proof(&relay_state_proof);
+			let (consensus_hook_weight, capacity) =
+				T::ConsensusHook::on_state_proof(&relay_state_proof);
 
 			// initialization logic: we know that this runs exactly once every block,
 			// which means we can put the initialization logic here to remove the
@@ -543,7 +544,7 @@ pub mod pallet {
 			// ancestor was included, the MQC heads wouldn't match and the block would be invalid.
 			//
 			// <https://github.com/paritytech/cumulus/issues/2472>
-			let mut total_weight = Weight::zero();
+			let mut total_weight = consensus_hook_weight;
 			total_weight += Self::process_inbound_downward_messages(
 				relevant_messaging_state.dmq_mqc_head,
 				downward_messages,

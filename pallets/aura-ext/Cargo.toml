@@ -18,6 +18,9 @@ sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-f
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
+# Cumulus
+cumulus-pallet-parachain-system = { path = "../parachain-system", default-features = false }
+
 [dev-dependencies]
 
 # Cumulus
@@ -35,5 +38,6 @@ std = [
 	"sp-consensus-aura/std",
 	"sp-runtime/std",
 	"sp-std/std",
+	"cumulus-pallet-parachain-system/std",
 ]
 try-runtime = ["frame-support/try-runtime"]
