@@ -276,10 +276,7 @@ pub mod rpsr_digest {
 	pub fn extract_relay_parent_storage_root(digest: &Digest) -> Option<relay_chain::Hash> {
 		digest.convert_first(|d| match d {
 			DigestItem::Consensus(id, val) if id == &RPSR_CONSENSUS_ID =>
-				match relay_chain::Hash::decode(&mut &val[..]) {
-					Ok(hash) => Some(hash),
-					_ => None,
-				},
+				relay_chain::Hash::decode(&mut &val[..]).ok(),
 			_ => None,
 		})
 	}
