@@ -9,8 +9,9 @@ a zombienet and as all the chains are in one process debugging using Clion is ea
 
 ## Limitations
 
-As the channels are mocked, using xcm-emulator tests to test
-channel setup would not be appropriate.
+As the messages do not physically go through the same messaging infrastructure 
+there is some code that is not being tested compared to using slower E2E tests. 
+In future it may be possible to run these XCM emulated tests as E2E tests (without changes).
 
 ## Alternatives
 
