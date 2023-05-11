@@ -21,7 +21,7 @@ use super::{
 };
 use crate::{
 	bridge_hub_rococo_config::ToBridgeHubWococoHaulBlobExporter,
-	bridge_hub_wococo_config::ToBridgeHubRococoHaulBlobExporter,
+	bridge_hub_wococo_config::ToBridgeHubRococoHaulBlobExporter, EthereumNetwork,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -305,6 +305,8 @@ impl cumulus_pallet_xcm::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
+use cumulus_primitives_core::SendError::Unroutable;
+
 /// Hacky switch implementation, because we have just one runtime for Rococo and Wococo BridgeHub, so it means we have just one XcmConfig
 pub struct BridgeHubRococoOrBridgeHubWococoSwitchExporter;
 impl ExportXcm for BridgeHubRococoOrBridgeHubWococoSwitchExporter {
@@ -317,6 +319,7 @@ impl ExportXcm for BridgeHubRococoOrBridgeHubWococoSwitchExporter {
 		destination: &mut Option<InteriorMultiLocation>,
 		message: &mut Option<Xcm<()>>,
 	) -> SendResult<Self::Ticket> {
+		let relay: NetworkId = RelayNetwork::get();
 		match network {
 			Rococo => ToBridgeHubRococoHaulBlobExporter::validate(
 				network,
@@ -334,15 +337,20 @@ impl ExportXcm for BridgeHubRococoOrBridgeHubWococoSwitchExporter {
 				message,
 			)
 			.map(|result| ((Wococo, result.0), result.1)),
+			location if location == EthereumNetwork::get() && relay == NetworkId::Rococo =>
+				Err(Unroutable),
 			_ => unimplemented!("Unsupported network: {:?}", network),
 		}
 	}
 
 	fn deliver(ticket: Self::Ticket) -> Result<XcmHash, SendError> {
 		let (network, ticket) = ticket;
+		let relay: NetworkId = RelayNetwork::get();
 		match network {
 			Rococo => ToBridgeHubRococoHaulBlobExporter::deliver(ticket),
 			Wococo => ToBridgeHubWococoHaulBlobExporter::deliver(ticket),
+			location if location == EthereumNetwork::get() && relay == NetworkId::Rococo =>
+				Err(Unroutable),
 			_ => unimplemented!("Unsupported network: {:?}", network),
 		}
 	}

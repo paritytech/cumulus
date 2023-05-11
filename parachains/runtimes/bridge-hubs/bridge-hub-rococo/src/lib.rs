@@ -551,7 +551,7 @@ impl pallet_bridge_relayers::Config for Runtime {
 use snowbridge_router_primitives::InboundMessageConverter;
 
 parameter_types! {
-	pub const EthereumNetwork: xcm::v3::NetworkId = xcm::v3::NetworkId::Ethereum { chain_id: 1};
+	pub const EthereumNetwork: xcm::v3::NetworkId = xcm::v3::NetworkId::Ethereum { chain_id: 1 };
 }
 
 parameter_types! {
