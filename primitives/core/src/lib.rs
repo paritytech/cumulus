@@ -214,7 +214,7 @@ pub const CUMULUS_CONSENSUS_ID: ConsensusEngineId = *b"CMLS";
 /// Consensus header digests for Cumulus parachains.
 #[derive(Clone, RuntimeDebug, Decode, Encode, PartialEq)]
 pub enum CumulusDigestItem {
-	/// A digest item indicating that the parachain block has the provided relay-parent.
+	/// A digest item indicating the relay-parent a parachain block was built against.
 	#[codec(index = 0)]
 	RelayParent(relay_chain::Hash),
 }
