@@ -247,7 +247,7 @@ pub fn extract_relay_parent(digest: &Digest) -> Option<relay_chain::Hash> {
 /// <https://github.com/paritytech/cumulus/issues/303> via
 /// <https://github.com/paritytech/polkadot/issues/7191>.
 ///
-/// Runtimes using the parachain-system pallet are expected produce this digest item,
+/// Runtimes using the parachain-system pallet are expected to produce this digest item,
 /// but will stop as soon as they are able to provide the relay-parent hash directly.
 ///
 /// The relay-chain storage root is, in practice, a unique identifier of a block
