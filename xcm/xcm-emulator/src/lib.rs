@@ -296,6 +296,10 @@ macro_rules! __impl_relay {
 				});
 			}
 
+			pub fn events() -> Vec<<Self as RelayChain>::RuntimeEvent> {
+				<Self as RelayChain>::System::events().iter().map(|record| record.event.clone()).collect()
+			}
+
 			fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = ($crate::RelayBlockNumber, Vec<u8>)>) {
 				$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::network_name()).unwrap().push_back((to_para_id, iter.collect())));
 			}
@@ -553,8 +557,8 @@ macro_rules! __impl_parachain {
 				});
 			}
 
-			pub fn received_events(events: Vec<<Self as Parachain>::RuntimeEvent>) {
-
+			pub fn events() -> Vec<<Self as Parachain>::RuntimeEvent> {
+				<Self as Parachain>::System::events().iter().map(|record| record.event.clone()).collect()
 			}
 
 			fn send_horizontal_messages<
@@ -789,12 +793,13 @@ macro_rules! decl_test_networks {
 macro_rules! assert_expected_events {
 	( $chain:ident, vec![$( $event_pat:pat => { $($attr:ident : $condition:expr, )* }, )*] ) => {
 
-		type RuntimeEvent = <$chain as $crate::Parachain>::RuntimeEvent;
+		type InnerRuntimeEvent = <$chain as $crate::Parachain>::RuntimeEvent;
 
-		<$chain as $crate::Parachain>::System::events().iter().any(|record|
-			match &record.event {
+		// <$chain as $crate::Parachain>::System::events().iter().any(|record|
+		<$chain>::events().iter().any(|event|
+			match event {
 				$(
-					$crate::paste::expr!(RuntimeEvent::$event_pat) => {
+					$crate::paste::expr!(InnerRuntimeEvent::$event_pat) => {
 						$(
 							if $condition {
 								true

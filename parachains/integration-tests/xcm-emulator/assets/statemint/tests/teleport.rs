@@ -84,7 +84,6 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 		)));
 	});
 
-
 	// Receive XCM message in Assets Parachain
 	Statemint::execute_with(|| {
 		assert_expected_events!(
