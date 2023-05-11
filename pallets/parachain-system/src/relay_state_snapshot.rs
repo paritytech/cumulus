@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+//! Relay chain state proof provides means for accessing part of relay chain storage for reads.
+
 use codec::{Decode, Encode};
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId,

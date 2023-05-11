@@ -58,12 +58,12 @@ use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
 use xcm::latest::XcmHash;
 
 mod migration;
-pub mod relay_state_snapshot;
 #[cfg(test)]
 mod tests;
 mod unincluded_segment;
 
 pub mod consensus_hook;
+pub mod relay_state_snapshot;
 #[macro_use]
 pub mod validate_block;
 

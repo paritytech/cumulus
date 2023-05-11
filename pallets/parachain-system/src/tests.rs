@@ -121,14 +121,14 @@ std::thread_local! {
 	static HANDLED_DMP_MESSAGES: RefCell<Vec<(relay_chain::BlockNumber, Vec<u8>)>> = RefCell::new(Vec::new());
 	static HANDLED_XCMP_MESSAGES: RefCell<Vec<(ParaId, relay_chain::BlockNumber, Vec<u8>)>> = RefCell::new(Vec::new());
 	static SENT_MESSAGES: RefCell<Vec<(ParaId, Vec<u8>)>> = RefCell::new(Vec::new());
-	static CONSENSUS_HOOK: RefCell<Box<dyn Fn(&RelayChainStateProof) -> UnincludedSegmentCapacity>>
-		= RefCell::new(Box::new(|_| NonZeroU32::new(1).unwrap().into()));
+	static CONSENSUS_HOOK: RefCell<Box<dyn Fn(&RelayChainStateProof) -> (Weight, UnincludedSegmentCapacity)>>
+		= RefCell::new(Box::new(|_| (Weight::zero(), NonZeroU32::new(1).unwrap().into())));
 }
 
 pub struct TestConsensusHook;
 
 impl ConsensusHook for TestConsensusHook {
-	fn on_state_proof(s: &RelayChainStateProof) -> UnincludedSegmentCapacity {
+	fn on_state_proof(s: &RelayChainStateProof) -> (Weight, UnincludedSegmentCapacity) {
 		CONSENSUS_HOOK.with(|f| f.borrow_mut()(s))
 	}
 }
@@ -440,7 +440,9 @@ fn block_tests_run_on_drop() {
 
 #[test]
 fn unincluded_segment_works() {
-	CONSENSUS_HOOK.with(|c| *c.borrow_mut() = Box::new(|_| NonZeroU32::new(10).unwrap().into()));
+	CONSENSUS_HOOK.with(|c| {
+		*c.borrow_mut() = Box::new(|_| (Weight::zero(), NonZeroU32::new(10).unwrap().into()))
+	});
 
 	BlockTests::new()
 		.with_inclusion_delay(1)
@@ -475,7 +477,9 @@ fn unincluded_segment_works() {
 #[test]
 #[should_panic = "no space left for the block in the unincluded segment"]
 fn unincluded_segment_is_limited() {
-	CONSENSUS_HOOK.with(|c| *c.borrow_mut() = Box::new(|_| NonZeroU32::new(1).unwrap().into()));
+	CONSENSUS_HOOK.with(|c| {
+		*c.borrow_mut() = Box::new(|_| (Weight::zero(), NonZeroU32::new(1).unwrap().into()))
+	});
 
 	BlockTests::new()
 		.with_inclusion_delay(2)
