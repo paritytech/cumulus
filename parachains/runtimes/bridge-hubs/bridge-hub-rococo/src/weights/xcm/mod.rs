@@ -18,6 +18,7 @@ mod pallet_xcm_benchmarks_fungible;
 mod pallet_xcm_benchmarks_generic;
 
 use crate::{xcm_config::MaxAssetsIntoHolding, Runtime};
+use codec::Encode;
 use frame_support::weights::Weight;
 use pallet_xcm_benchmarks_fungible::WeightInfo as XcmFungibleWeight;
 use pallet_xcm_benchmarks_generic::WeightInfo as XcmGeneric;
@@ -33,8 +34,7 @@ const MAX_ASSETS: u64 = 100;
 impl WeighMultiAssets for MultiAssetFilter {
 	fn weigh_multi_assets(&self, weight: Weight) -> Weight {
 		match self {
-			Self::Definite(assets) =>
-				weight.saturating_mul(assets.inner().into_iter().count() as u64),
+			Self::Definite(assets) => weight.saturating_mul(assets.inner().iter().count() as u64),
 			Self::Wild(asset) => match asset {
 				All => weight.saturating_mul(MAX_ASSETS),
 				AllOf { fun, .. } => match fun {
@@ -53,7 +53,7 @@ impl WeighMultiAssets for MultiAssetFilter {
 
 impl WeighMultiAssets for MultiAssets {
 	fn weigh_multi_assets(&self, weight: Weight) -> Weight {
-		weight.saturating_mul(self.inner().into_iter().count() as u64)
+		weight.saturating_mul(self.inner().iter().count() as u64)
 	}
 }
 
@@ -65,7 +65,7 @@ impl<Call> XcmWeightInfo<Call> for BridgeHubRococoXcmWeight<Call> {
 	// Currently there is no trusted reserve
 	fn reserve_asset_deposited(_assets: &MultiAssets) -> Weight {
 		// TODO: hardcoded - fix https://github.com/paritytech/cumulus/issues/1974
-		Weight::from_parts(1_000_000_000 as u64, 0)
+		Weight::from_parts(1_000_000_000_u64, 0)
 	}
 	fn receive_teleported_asset(assets: &MultiAssets) -> Weight {
 		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::receive_teleported_asset())
@@ -123,7 +123,7 @@ impl<Call> XcmWeightInfo<Call> for BridgeHubRococoXcmWeight<Call> {
 
 	fn deposit_asset(assets: &MultiAssetFilter, _dest: &MultiLocation) -> Weight {
 		// Hardcoded till the XCM pallet is fixed
-		let hardcoded_weight = Weight::from_parts(1_000_000_000 as u64, 0);
+		let hardcoded_weight = Weight::from_parts(1_000_000_000_u64, 0);
 		let weight = assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_asset());
 		hardcoded_weight.min(weight)
 	}
@@ -217,8 +217,9 @@ impl<Call> XcmWeightInfo<Call> for BridgeHubRococoXcmWeight<Call> {
 	fn universal_origin(_: &Junction) -> Weight {
 		Weight::MAX
 	}
-	fn export_message(_: &NetworkId, _: &Junctions, _: &Xcm<()>) -> Weight {
-		Weight::MAX
+	fn export_message(_: &NetworkId, _: &Junctions, inner: &Xcm<()>) -> Weight {
+		let inner_encoded_len = inner.encode().len() as u32;
+		XcmGeneric::<Runtime>::export_message(inner_encoded_len)
 	}
 	fn lock_asset(_: &MultiAsset, _: &MultiLocation) -> Weight {
 		Weight::MAX
