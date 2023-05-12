@@ -72,6 +72,7 @@ pallet-collator-selection = { path = "../../../../pallets/collator-selection", d
 parachain-info = { path = "../../../pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
 assets-common = { path = "../common", default-features = false }
+pallet-bridge-transfer = { path = "../../../pallets/bridge-transfer", default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.4.1"
@@ -104,6 +105,7 @@ runtime-benchmarks = [
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
 	"assets-common/runtime-benchmarks",
+	"pallet-bridge-transfer/runtime-benchmarks",
 ]
 try-runtime = [
 	"cumulus-pallet-aura-ext/try-runtime",
@@ -130,6 +132,7 @@ try-runtime = [
 	"pallet-utility/try-runtime",
 	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",
+	"pallet-bridge-transfer/try-runtime",
 ]
 std = [
 	"codec/std",
@@ -185,5 +188,6 @@ std = [
 	"parachain-info/std",
 	"parachains-common/std",
 	"assets-common/std",
+	"pallet-bridge-transfer/std",
 	"substrate-wasm-builder",
 ]

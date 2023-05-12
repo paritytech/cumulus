@@ -223,3 +223,29 @@ mod bridge_hub_wococo_tests {
 		bridge_hub_wococo_config::DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO
 	);
 }
+bridge_hub_test_utils::test_cases::include_teleports_for_native_asset_works!(
+	Runtime,
+	XcmConfig,
+	CheckingAccount,
+	WeightToFee,
+	ParachainSystem,
+	bridge_hub_test_utils::CollatorSessionKeys::new(
+		AccountId::from(ALICE),
+		AccountId::from(ALICE),
+		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+	),
+	ExistentialDeposit::get(),
+	Box::new(|runtime_event_encoded: Vec<u8>| {
+		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+			Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
+			_ => None,
+		}
+	}),
+	Box::new(|runtime_event_encoded: Vec<u8>| {
+		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+			Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
+			_ => None,
+		}
+	}),
+	1013
+);

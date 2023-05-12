@@ -489,3 +489,5 @@ mod test_data {
 		GRABBED_HAUL_BLOB_PAYLOAD.with(|r| r.take().expect("Encoded message should be here"))
 	}
 }
+// Re-export test_cases from assets
+pub use asset_test_utils::{include_teleports_for_native_asset_works, CollatorSessionKeys};

@@ -14,19 +14,23 @@
 // limitations under the License.
 
 use super::{
-	AccountId, AllPalletsWithSystem, Assets, Authorship, Balance, Balances, ParachainInfo,
-	ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
+	AccountId, AllPalletsWithSystem, Assets, Authorship, Balance, Balances, ForeignAssets,
+	ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
 	TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
-use crate::ForeignAssets;
-use assets_common::matching::{
-	FromSiblingParachain, IsForeignConcreteAsset, StartsWith, StartsWithExplicitGlobalConsensus,
+use assets_common::{
+	location_conversion::GlobalConsensusParachainConvert,
+	matching::{
+		FromSiblingParachain, IsDifferentGlobalConsensusConcreteAsset, IsForeignConcreteAsset,
+		StartsWith, StartsWithExplicitGlobalConsensus,
+	},
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
+	traits::{ConstU32, Contains, Everything, PalletInfoAccess},
 };
 use frame_system::EnsureRoot;
+use pallet_bridge_transfer::impls::{AllowedUniversalAliasesOf, IsAllowedReserveOf};
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
@@ -69,6 +73,8 @@ pub type LocationToAccountId = (
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
 	AccountId32Aliases<RelayNetwork, AccountId>,
+	// Different global consensus parachain sovereign account
+	GlobalConsensusParachainConvert<AccountId>,
 );
 
 /// Means for transacting the native currency on this chain.
@@ -216,6 +222,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_utility::Call::batch { .. } |
 				pallet_utility::Call::batch_all { .. },
 			) |
+			RuntimeCall::BridgeTransfer(..) |
 			RuntimeCall::Assets(
 				pallet_assets::Call::create { .. } |
 				pallet_assets::Call::force_create { .. } |
@@ -378,10 +385,12 @@ impl xcm_executor::Config for XcmConfig {
 	type XcmSender = XcmRouter;
 	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	// Westmint does not recognize a reserve location for any asset. This does not prevent
-	// Westmint acting _as_ a reserve location for WND and assets created under `pallet-assets`.
+	// Westmint is acting _as_ a reserve location for WND and assets created under `pallet-assets`.
 	// For WND, users must use teleport where allowed (e.g. with the Relay Chain).
-	type IsReserve = ();
+	type IsReserve = IsAllowedReserveOf<
+		Runtime,
+		IsDifferentGlobalConsensusConcreteAsset<UniversalLocationNetworkId>,
+	>;
 	// We allow:
 	// - teleportation of WND
 	// - teleportation of sibling parachain's assets (as ForeignCreators)
@@ -420,7 +429,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetExchanger = ();
 	type FeeManager = ();
 	type MessageExporter = ();
-	type UniversalAliases = Nothing;
+	type UniversalAliases = AllowedUniversalAliasesOf<Runtime>;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
 	type SafeCallFilter = SafeCallFilter;
 }
@@ -491,5 +500,57 @@ use pallet_assets::BenchmarkHelper;
 impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 	fn create_asset_id_parameter(id: u32) -> MultiLocation {
 		MultiLocation { parents: 1, interior: X1(Parachain(id)) }
+	}
+}
+
+/// Benchmarks helper for over-bridge transfer pallet.
+#[cfg(feature = "runtime-benchmarks")]
+pub struct BridgeTransferBenchmarksHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl BridgeTransferBenchmarksHelper {
+	/// Parachain at the other side of the bridge that we're connected to.
+	fn allowed_target_location() -> MultiLocation {
+		MultiLocation::new(2, X2(GlobalConsensus(Kusama), Parachain(1000)))
+	}
+
+	/// Identifier of the sibling bridge-hub parachain.
+	fn bridge_hub_para_id() -> u32 {
+		1002
+	}
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBenchmarksHelper {
+	fn bridge_config() -> Option<(NetworkId, pallet_bridge_transfer::BridgeConfig)> {
+		Some((
+			Kusama,
+			pallet_bridge_transfer::BridgeConfig {
+				bridge_location: (Parent, Parachain(Self::bridge_hub_para_id())).into(),
+				// TODO: right now `UnpaidRemoteExporter` is used to send XCM messages and it requires
+				// fee to be `None`. If we're going to change that (are we?), then we should replace
+				// this `None` with `Some(Self::make_asset(crate::ExistentialDeposit::get()))`
+				bridge_location_fee: None,
+				allowed_target_location: Self::allowed_target_location(),
+				max_target_location_fee: None,
+			},
+		))
+	}
+
+	fn universal_alias() -> Option<(xcm::VersionedMultiLocation, Junction)> {
+		Some((
+			xcm::VersionedMultiLocation::V3(MultiLocation {
+				parents: 1,
+				interior: X1(Parachain(Self::bridge_hub_para_id())),
+			}),
+			GlobalConsensus(Kusama),
+		))
+	}
+
+	fn reserve_location() -> Option<xcm::VersionedMultiLocation> {
+		Some(xcm::VersionedMultiLocation::V3(MultiLocation {
+			parents: 2,
+			interior: X2(GlobalConsensus(Kusama), Parachain(1000)),
+		}))
 	}
 }

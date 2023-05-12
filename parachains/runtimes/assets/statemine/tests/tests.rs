@@ -12,10 +12,13 @@ use statemine_runtime::xcm_config::{
 };
 pub use statemine_runtime::{
 	constants::fee::WeightToFee,
-	xcm_config::{CheckingAccount, ForeignCreatorsSovereignAccountOf, XcmConfig},
+	xcm_config::{
+		CheckingAccount, ForeignCreatorsSovereignAccountOf, LocationToAccountId, XcmConfig,
+	},
 	AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets, ForeignAssetsInstance,
-	MetadataDepositBase, MetadataDepositPerByte, ParachainSystem, Runtime, RuntimeCall,
-	RuntimeEvent, SessionKeys, System, TrustBackedAssetsInstance,
+	MetadataDepositBase, MetadataDepositPerByte, ParachainSystem, PolkadotXcm, Runtime,
+	RuntimeCall, RuntimeEvent, RuntimeOrigin, SessionKeys, System, TrustBackedAssetsInstance,
+	XcmpQueue,
 };
 use xcm::latest::prelude::*;
 use xcm_executor::traits::{Convert, Identity, JustTry, WeightTrader};
@@ -618,5 +621,48 @@ asset_test_utils::include_create_and_manage_foreign_assets_for_local_consensus_p
 	Box::new(|| {
 		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
 		assert_eq!(ForeignAssets::asset_ids().collect::<Vec<_>>().len(), 1);
+	})
+);
+
+asset_test_utils::include_can_governance_change_bridge_transfer_out_configuration!(
+	Runtime,
+	XcmConfig,
+	asset_test_utils::CollatorSessionKeys::new(
+		AccountId::from(ALICE),
+		AccountId::from(ALICE),
+		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+	),
+	Box::new(|call| RuntimeCall::BridgeTransfer(call).encode()),
+	Box::new(|runtime_event_encoded: Vec<u8>| {
+		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+			Ok(RuntimeEvent::BridgeTransfer(event)) => Some(event),
+			_ => None,
+		}
+	})
+);
+
+asset_test_utils::include_initiate_transfer_asset_via_bridge_for_native_asset_works!(
+	Runtime,
+	XcmConfig,
+	ParachainSystem,
+	XcmpQueue,
+	LocationToAccountId,
+	asset_test_utils::CollatorSessionKeys::new(
+		AccountId::from(ALICE),
+		AccountId::from(ALICE),
+		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
+	),
+	ExistentialDeposit::get(),
+	Box::new(|runtime_event_encoded: Vec<u8>| {
+		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+			Ok(RuntimeEvent::BridgeTransfer(event)) => Some(event),
+			_ => None,
+		}
+	}),
+	Box::new(|runtime_event_encoded: Vec<u8>| {
+		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+			Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
+			_ => None,
+		}
 	})
 );

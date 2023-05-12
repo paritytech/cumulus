@@ -26,7 +26,7 @@ if (!process.argv[2] || !process.argv[3]) {
 const input = process.argv[2];
 const output = process.argv[3];
 // default to localhost and the default Substrate port
-const rpcEnpoint = process.argv[4] || "ws://localhost:9944";
+const rpcEndpoint = process.argv[4] || "ws://localhost:9944";
 
 console.log("Processing", input, output);
 fs.readFile(input, "utf8", (err, data) => {
@@ -38,8 +38,8 @@ fs.readFile(input, "utf8", (err, data) => {
 	const genesis = JSON.parse(data);
 
 	console.log("loaded genesis, length =  ", genesis.length);
-	console.log(`Connecting to RPC endpoint: ${rpcEnpoint}`);
-	connect(rpcEnpoint)
+	console.log(`Connecting to RPC endpoint: ${rpcEndpoint}`);
+	connect(rpcEndpoint)
 		.then((api) => {
 			console.log('Connected');
 			const setStorage = api.tx.system.setStorage(genesis);

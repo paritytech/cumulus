@@ -82,7 +82,7 @@ use assets_common::{
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use xcm_executor::XcmExecutor;
 
-use crate::xcm_config::ForeignCreatorsSovereignAccountOf;
+use crate::xcm_config::{ForeignCreatorsSovereignAccountOf, UniversalLocation};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 impl_opaque_keys! {
@@ -664,6 +664,31 @@ impl pallet_nfts::Config for Runtime {
 	type Helper = ();
 }
 
+impl pallet_bridge_transfer::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type UniversalLocation = UniversalLocation;
+	type WeightInfo = weights::pallet_bridge_transfer::WeightInfo<Runtime>;
+	type AdminOrigin = AssetsForceOrigin;
+	type UniversalAliasesLimit = ConstU32<24>;
+	type ReserveLocationsLimit = ConstU32<8>;
+	// no transfer allowed out (now)
+	type AssetTransactor = ();
+	// no transfer allowed out (now)
+	type BridgeXcmSender = ();
+	// no transfer allowed out (now)
+	type TransferAssetOrigin =
+		frame_support::traits::NeverEnsureOrigin<xcm::latest::prelude::MultiLocation>;
+	// no transfer allowed out (now)
+	type MaxAssetsLimit = ConstU8<0>;
+	// no transfer allowed out (now)
+	type TransferPingOrigin =
+		frame_support::traits::NeverEnsureOrigin<xcm::latest::prelude::MultiLocation>;
+	// no transfer allowed out (now)
+	type PingMessageBuilder = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = xcm_config::BridgeTransferBenchmarksHelper;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -708,6 +733,7 @@ construct_runtime!(
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		Nfts: pallet_nfts::{Pallet, Call, Storage, Event<T>} = 52,
 		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 53,
+		BridgeTransfer: pallet_bridge_transfer::{Pallet, Call, Storage, Event<T>} = 54,
 	}
 );
 
@@ -768,6 +794,7 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[pallet_bridge_transfer, BridgeTransfer]
 		// XCM
 		[pallet_xcm, PolkadotXcm]
 		// NOTE: Make sure you point to the individual modules below.
@@ -1125,7 +1152,15 @@ impl_runtime_apis! {
 				}
 
 				fn universal_alias() -> Result<(MultiLocation, Junction), BenchmarkError> {
-					Err(BenchmarkError::Skip)
+					match <<Runtime as pallet_bridge_transfer::Config>::BenchmarkHelper as pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin>>::universal_alias() {
+						Some((location, junction)) => {
+							<pallet_bridge_transfer::Pallet<Runtime>>::insert_universal_alias_for_benchmarks(
+								(location.clone().try_into().unwrap(), junction)
+							);
+							Ok((location.clone().try_into().unwrap(), junction))
+						},
+						None => Err(BenchmarkError::Skip)
+					}
 				}
 
 				fn transact_origin_and_runtime_call() -> Result<(MultiLocation, RuntimeCall), BenchmarkError> {

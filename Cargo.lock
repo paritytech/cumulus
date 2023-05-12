@@ -404,6 +404,7 @@ dependencies = [
  "hex-literal 0.3.4",
  "pallet-assets",
  "pallet-balances",
+ "pallet-bridge-transfer",
  "pallet-collator-selection",
  "pallet-session",
  "pallet-xcm",
@@ -6854,6 +6855,28 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-bridge-transfer"
+version = "0.1.0"
+dependencies = [
+ "cumulus-pallet-xcmp-queue",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "log",
+ "pallet-balances",
+ "parity-scale-codec",
+ "polkadot-parachain",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
+ "sp-version",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
 ]
 
 [[package]]
@@ -13497,6 +13520,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-bridge-transfer",
  "pallet-collator-selection",
  "pallet-multisig",
  "pallet-nfts",
@@ -13524,6 +13548,7 @@ dependencies = [
  "sp-consensus-aura",
  "sp-core",
  "sp-inherents",
+ "sp-io",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -15573,6 +15598,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-bridge-transfer",
  "pallet-collator-selection",
  "pallet-multisig",
  "pallet-nfts",

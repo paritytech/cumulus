@@ -69,8 +69,9 @@ use parachains_common::{
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{
-	FellowshipLocation, ForeignAssetsConvertedConcreteId, GovernanceLocation, KsmLocation,
-	TrustBackedAssetsConvertedConcreteId, XcmConfig,
+	AssetTransactors, BridgeXcmSender, FellowshipLocation, ForeignAssetsConvertedConcreteId,
+	GovernanceLocation, KsmLocation, LocalOriginToLocation, TrustBackedAssetsConvertedConcreteId,
+	UniversalLocation, XcmConfig,
 };
 
 #[cfg(any(feature = "std", test))]
@@ -80,6 +81,7 @@ pub use sp_runtime::BuildStorage;
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use xcm::latest::BodyId;
+use xcm_builder::EnsureXcmOrigin;
 use xcm_executor::XcmExecutor;
 
 use crate::xcm_config::ForeignCreatorsSovereignAccountOf;
@@ -693,6 +695,25 @@ impl pallet_nfts::Config for Runtime {
 	type Helper = ();
 }
 
+impl pallet_bridge_transfer::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type UniversalLocation = UniversalLocation;
+	type WeightInfo = weights::pallet_bridge_transfer::WeightInfo<Runtime>;
+	type AdminOrigin = AssetsForceOrigin;
+	// no transfer allowed in (now)
+	type UniversalAliasesLimit = ConstU32<0>;
+	// no transfer allowed in (now)
+	type ReserveLocationsLimit = ConstU32<0>;
+	type AssetTransactor = AssetTransactors;
+	type BridgeXcmSender = BridgeXcmSender;
+	type TransferAssetOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+	type MaxAssetsLimit = ConstU8<1>;
+	type TransferPingOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+	type PingMessageBuilder = pallet_bridge_transfer::UnpaidTrapMessageBuilder<ConstU64<12345>>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = xcm_config::BridgeTransferBenchmarksHelper;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -737,6 +758,7 @@ construct_runtime!(
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		Nfts: pallet_nfts::{Pallet, Call, Storage, Event<T>} = 52,
 		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 53,
+		BridgeTransfer: pallet_bridge_transfer::{Pallet, Call, Storage, Event<T>} = 54,
 
 		#[cfg(feature = "state-trie-version-1")]
 		StateTrieMigration: pallet_state_trie_migration = 70,
@@ -800,6 +822,7 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[pallet_bridge_transfer, BridgeTransfer]
 		// XCM
 		[pallet_xcm, PolkadotXcm]
 		// NOTE: Make sure you point to the individual modules below.
