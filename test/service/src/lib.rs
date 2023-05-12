@@ -54,7 +54,8 @@ use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_consensus::ImportQueue;
 use sc_network::{
-	config::TransportConfig, multiaddr, NetworkBlock, NetworkService, NetworkStateInfo,
+	config::{FullNetworkConfiguration, TransportConfig},
+	multiaddr, NetworkBlock, NetworkService, NetworkStateInfo,
 };
 use sc_service::{
 	config::{
@@ -323,9 +324,12 @@ where
 	.map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
 	let import_queue_service = params.import_queue.service();
+	let net_config = FullNetworkConfiguration::new(&parachain_config.network);
+
 	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
 		build_network(BuildNetworkParams {
 			parachain_config: &parachain_config,
+			net_config,
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
 			para_id,
@@ -753,6 +757,7 @@ pub fn node_config(
 		rpc_max_response_size: Default::default(),
 		rpc_id_provider: None,
 		rpc_max_subs_per_conn: Default::default(),
+		rpc_port: 9945,
 		prometheus_config: None,
 		telemetry_endpoints: None,
 		default_heap_pages: None,
