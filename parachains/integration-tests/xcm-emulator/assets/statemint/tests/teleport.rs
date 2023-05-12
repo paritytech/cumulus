@@ -93,11 +93,9 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 		assert_expected_events!(
 			Statemint,
 			vec![
-				RuntimeEvent::Balances(pallet_balances::Event::Deposit { who, amount }) => {
+				RuntimeEvent::Balances(pallet_balances::Event::Deposit { who, .. }) => {
 					who: *who == StatemineReceiver::get().into(),
-					// amount: *amount == 10,
 				},
-				// RuntimeEvent::Balances(pallet_balances::Event::Withdraw { .. }) => {},
 			]
 		);
 	});

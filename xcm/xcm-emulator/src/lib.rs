@@ -790,16 +790,17 @@ macro_rules! decl_test_networks {
 #[macro_export]
 macro_rules! assert_expected_events {
 	( $chain:ident, vec![$( $event_pat:pat => { $($attr:ident : $condition:expr, )* }, )*] ) => {
+		let mut message: Vec<String> = Vec::new();
 		$(
 			let mut meet_conditions = true;
-			let mut message: Vec<String> = Vec::new();
+			let mut event_message: Vec<String> = Vec::new();
 
 			let event_received = <$chain>::events().iter().any(|event|
 				match event {
 					$event_pat => {
 						$(
 							if !$condition {
-								message.push(format!(" - The attribute {:?} = {:?} did not met the condition {:?}\n", stringify!($attr), $attr, stringify!($condition)));
+								event_message.push(format!(" - The attribute {:?} = {:?} did not met the condition {:?}\n", stringify!($attr), $attr, stringify!($condition)));
 								meet_conditions &= $condition
 							}
 						)*
@@ -810,11 +811,14 @@ macro_rules! assert_expected_events {
 			);
 
 			if event_received && !meet_conditions  {
-				panic!("\n\nEvent \x1b[31m{:?}\x1b[0m was received but some of its attributes did not meet the conditions:\n{}", stringify!($event_pat), message.concat());
+				message.push(format!("\n\nEvent \x1b[31m{}\x1b[0m was received but some of its attributes did not meet the conditions:\n{}", stringify!($event_pat), event_message.concat()));
 			} else if !event_received {
-				panic!("\n\nEvent \x1b[31m{:?}\x1b[0m was NOT received", stringify!($event_pat));
+				message.push(format!("\n\nEvent \x1b[31m{}\x1b[0m was never received", stringify!($event_pat)));
 			}
 		)*
+		if !message.is_empty() {
+			panic!("{}", message.concat())
+		}
     };
 }
 
