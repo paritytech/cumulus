@@ -1,9 +1,1 @@
-.git
 **/target/
-**/*.txt
-**/*.md
-/docker/
-!/target/release/polkadot-parachain
-
-# dotfiles in the repo root
-/.*
