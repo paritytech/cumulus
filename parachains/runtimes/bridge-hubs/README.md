@@ -8,8 +8,10 @@
 		+ [Send messages](#send-messages)
 			- [Local zombienet run](#local-zombienet-run)
 			- [Live Rockmine2 to Wockmint](#live-rockmine2-to-wockmint)
-	* [How to test local BridgeHubKusama](#how-to-test-local-bridgehubkusama)
-	* [How to test local BridgeHubPolkadot](#how-to-test-local-bridgehubpolkadot)
+	* [How to test locally Kusama <-> Polkadot bridge](#how-to-test-locally-kusama-----polkadot-bridge)
+		+ [1. Run chains (Kusama + BridgeHub, Polkadot + BridgeHub) with zombienet](#1-run-chains--kusama---bridgehub--polkadot---bridgehub--with-zombienet)
+		+ [2. Init bridge and run relayer (BridgeHubKusama, BridgeHubPolkadot)](#2-init-bridge-and-run-relayer--bridgehubkusama--bridgehubpolkadot-)
+		+ [3. Test bridge transfer](#3-test-bridge-transfer)
 
 # Bridge-hub Parachains
 
@@ -215,22 +217,57 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	- Wockmint (see `xcmpQueue.Success` for `transfer-asset` and `xcmpQueue.Fail` for `ping-via-bridge`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fws-wococo-wockmint-collator-node-0.parity-testnet.parity.io#/explorer
 	- BridgeHubRococo (see `bridgeWococoMessages.MessagesDelivered`)
 
-## How to test local BridgeHubKusama
+## How to test locally Kusama <-> Polkadot bridge
+
+Check [requirements](#requirements-for-local-runtesting) for "sudo pallet + fast-runtime".
+
+### 1. Run chains (Kusama + BridgeHub, Polkadot + BridgeHub) with zombienet
+
 ```
-cd <base-cumulus-repo-directory>
-cargo build --release -p polkadot-parachain-bin
-
-# script expect to have pre-built polkadot binary on the path: ../polkadot/target/release/polkadot
-# if using `kusama-local` / `polkadot-local`, build polkadot with `--features fast-runtime`
-
-# BridgeHubKusama
-zombienet-linux --provider native spawn ./zombienet/examples/bridge_hub_kusama_local_network.toml
-
-or
-
-# BridgeHubPolkadot
-zombienet-linux --provider native spawn ./zombienet/examples/bridge_hub_polkadot_local_network.toml
+# Kusama + BridgeHubKusama + Statemine
+POLKADOT_BINARY_PATH=~/local_bridge_testing/bin/polkadot \
+POLKADOT_PARACHAIN_BINARY_PATH=~/local_bridge_testing/bin/polkadot-parachain \
+POLKADOT_PARACHAIN_BINARY_PATH_FOR_STATEMINE=~/local_bridge_testing/bin/polkadot-parachain-mint \
+	~/local_bridge_testing/bin/zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_kusama_local_network.toml
 ```
 
-## How to test local BridgeHubPolkadot
-TODO: from master
+```
+# TODO:check-parameter - once Statemint is ready, switch it here instead of Westmint
+# Polkadot + BridgeHubPolkadot + Westmint
+POLKADOT_BINARY_PATH=~/local_bridge_testing/bin/polkadot \
+POLKADOT_PARACHAIN_BINARY_PATH=~/local_bridge_testing/bin/polkadot-parachain \
+POLKADOT_PARACHAIN_BINARY_PATH_FOR_STATEMINT=~/local_bridge_testing/bin/polkadot-parachain-mint \
+STATEMINT_CHAIN=westmint-local \
+	~/local_bridge_testing/bin/zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_polkadot_local_network.toml
+```
+
+### 2. Init bridge and run relayer (BridgeHubKusama, BridgeHubPolkadot)
+
+```
+cd <cumulus-git-repo-dir>
+./scripts/bridges_kusama_polkadot.sh run-relay
+```
+
+### 3. Test bridge transfer
+
+Allow bridge transfer on statemine/statemint (governance-like):
+```
+./scripts/bridges_kusama_polkadot.sh allow-transfers-local
+```
+
+Do (asset) transfer from statemine to statemint
+```
+./scripts/bridges_kusama_polkadot.sh transfer-asset-from-statemine-local
+```
+
+Do (ping) transfer from statemine to statemint
+```
+./scripts/bridges_kusama_polkadot.sh ping-via-bridge-from-statemine-local
+```
+
+- open explorers: (see zombienets)
+	- Statemine (see events `xcmpQueue.XcmpMessageSent`, `bridgeTransfer.ReserveAssetsDeposited`, `bridgeTransfer.TransferInitiated`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9910#/explorer
+	- BridgeHubKusama (see `bridgePolkadotMessages.MessageAccepted`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8943#/explorer
+	- BridgeHubPolkadot (see `bridgeKusamaMessages.MessagesReceived`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8945#/explorer
+	- Westmint (see `xcmpQueue.Success` for `transfer-asset` and `xcmpQueue.Fail` for `ping-via-bridge`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9010#/explorer
+	- BridgeHubKusama (see `bridgePolkadotMessages.MessagesDelivered`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8943#/explorer
