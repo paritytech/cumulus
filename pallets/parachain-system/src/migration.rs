@@ -16,7 +16,8 @@
 
 use crate::{Config, Pallet, ReservedDmpWeightOverride, ReservedXcmpWeightOverride};
 use frame_support::{
-	traits::{Get, StorageVersion},
+	pallet_prelude::*,
+	traits::{Get, OnRuntimeUpgrade, StorageVersion},
 	weights::Weight,
 };
 
@@ -42,6 +43,13 @@ pub fn on_runtime_upgrade<T: Config>() -> Weight {
 	}
 
 	weight
+}
+
+pub struct Migration<T: Config>(PhantomData<T>);
+impl<T: Config> OnRuntimeUpgrade for Migration<T> {
+	fn on_runtime_upgrade() -> Weight {
+		on_runtime_upgrade::<T>()
+	}
 }
 
 /// V2: Migrate to 2D weights for ReservedXcmpWeightOverride and ReservedDmpWeightOverride.

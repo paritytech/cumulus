@@ -19,12 +19,12 @@
 use crate::{Config, Configuration, Overweight, Pallet, DEFAULT_POV_SIZE};
 use frame_support::{
 	pallet_prelude::*,
-	traits::StorageVersion,
+	traits::{OnRuntimeUpgrade, StorageVersion},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight},
 };
 
 /// The current storage version.
-pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
 /// Migrates the pallet storage to the most recent version, checking and setting the
 /// `StorageVersion`.
@@ -44,6 +44,13 @@ pub fn migrate_to_latest<T: Config>() -> Weight {
 	}
 
 	weight
+}
+
+pub struct Migration<T: Config>(PhantomData<T>);
+impl<T: Config> OnRuntimeUpgrade for Migration<T> {
+	fn on_runtime_upgrade() -> Weight {
+		migrate_to_latest::<T>()
+	}
 }
 
 mod v0 {
