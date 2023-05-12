@@ -53,11 +53,11 @@ pub fn force_xcm_version() {
 
 #[test]
 fn teleport_native_assets_from_relay_to_assets_para() {
+	// Init tests variables
 	let amount = POLKADOT_ED * 1000;
 	let relay_sender_balance_before = Polkadot::account_data_of(PolkadotSender::get()).free;
 	let para_receiver_balance_before = Statemint::account_data_of(StatemintReceiver::get()).free;
 
-	// Limited Teleport Assets call arguments
 	let origin = <Polkadot as Relay>::RuntimeOrigin::signed(PolkadotSender::get());
 	let assets_para_destination: VersionedMultiLocation = Polkadot::child_location_of(Statemint::para_id()).into();
 	let beneficiary: VersionedMultiLocation = AccountId32 { network: None, id: StatemintReceiver::get().into() }.into();
@@ -67,8 +67,6 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 
 	// Send XCM message from Relay Chain
 	Polkadot::execute_with(|| {
-		use polkadot_runtime::{RuntimeEvent, RuntimeOrigin, System};
-
 		assert_ok!(<Polkadot as Relay>::XcmPallet::limited_teleport_assets(
 			origin,
 			bx!(assets_para_destination),
@@ -78,23 +76,28 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 			weight_limit,
 		));
 
-		assert!(<Polkadot as Relay>::System::events().iter().any(|r| matches!(
-			r.event,
-			RuntimeEvent::XcmPallet(pallet_xcm::Event::Attempted(Outcome::Complete { .. }))
-		)));
+		type RuntimeEvent = <Polkadot as Relay>::RuntimeEvent;
+
+		assert_expected_events!(
+			Polkadot,
+			vec![
+				RuntimeEvent::XcmPallet(pallet_xcm::Event::Attempted(Outcome::Complete { .. })) => {},
+			]
+		);
 	});
 
 	// Receive XCM message in Assets Parachain
 	Statemint::execute_with(|| {
+		type RuntimeEvent = <Statemint as Para>::RuntimeEvent;
+
 		assert_expected_events!(
 			Statemint,
 			vec![
-				Balances(pallet_balances::Event::Deposit { who, .. }) => {
+				RuntimeEvent::Balances(pallet_balances::Event::Deposit { who, amount }) => {
 					who: *who == StatemineReceiver::get().into(),
+					// amount: *amount == 10,
 				},
-				Balances(pallet_balances::Event::Deposit { who, .. }) => {
-					who: *who == StatemineReceiver::get().into(),
-				},
+				// RuntimeEvent::Balances(pallet_balances::Event::Withdraw { .. }) => {},
 			]
 		);
 	});

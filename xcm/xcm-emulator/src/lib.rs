@@ -141,7 +141,6 @@ macro_rules! decl_test_relay_chains {
 				type XcmPallet = $xcm_pallet;
 				type Balances = $balances_pallet;
 				type SovereignAccountOf = $sovereign_account_of;
-
 			}
 
 			$crate::__impl_xcm_handlers_for_relay_chain!($name);
@@ -184,7 +183,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
 		}
 
-		impl $crate::TestExt for $name {
+		impl TestExt for $name {
 			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
 				let mut ext = sp_io::TestExternalities::new(storage);
 				ext.execute_with(|| {
@@ -406,7 +405,7 @@ macro_rules! __impl_test_ext_for_parachain {
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
 		}
 
-		impl $crate::TestExt for $name {
+		impl TestExt for $name {
 			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
 				let mut ext = sp_io::TestExternalities::new(storage);
 				ext.execute_with(|| {
@@ -622,17 +621,16 @@ macro_rules! decl_test_networks {
 				pub fn reset() {
 					use $crate::{TestExt, VecDeque};
 
-					<$relay_chain>::reset_ext();
-					$( <$parachain>::reset_ext(); )*
-
-					$( <$parachain>::prepare_for_xcmp(); )*
-
 					$crate::INITIALIZED.with(|b| b.borrow_mut().remove(stringify!($name)));
 					$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().remove(stringify!($name)));
 					$crate::DMP_DONE.with(|b| b.borrow_mut().remove(stringify!($name)));
 					$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().remove(stringify!($name)));
 					$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().remove(stringify!($name)));
 					$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().remove(stringify!($name)));
+
+					<$relay_chain>::reset_ext();
+					$( <$parachain>::reset_ext(); )*
+					$( <$parachain>::prepare_for_xcmp(); )*
 				}
 
 				fn _init() {
@@ -792,28 +790,31 @@ macro_rules! decl_test_networks {
 #[macro_export]
 macro_rules! assert_expected_events {
 	( $chain:ident, vec![$( $event_pat:pat => { $($attr:ident : $condition:expr, )* }, )*] ) => {
+		$(
+			let mut meet_conditions = true;
+			let mut message: Vec<String> = Vec::new();
 
-		type InnerRuntimeEvent = <$chain as $crate::Parachain>::RuntimeEvent;
-
-		// <$chain as $crate::Parachain>::System::events().iter().any(|record|
-		<$chain>::events().iter().any(|event|
-			match event {
-				$(
-					$crate::paste::expr!(InnerRuntimeEvent::$event_pat) => {
+			let event_received = <$chain>::events().iter().any(|event|
+				match event {
+					$event_pat => {
 						$(
-							if $condition {
-								true
-							} else {
-								// panic!("Expected event attribute '{:?}' received with a different value '{:?}'", stringify!($attr), $attr);
-								false
+							if !$condition {
+								message.push(format!(" - The attribute {:?} = {:?} did not met the condition {:?}\n", stringify!($attr), $attr, stringify!($condition)));
+								meet_conditions &= $condition
 							}
 						)*
-						// true
+						true
 					},
-				)*
-				_ => false
+					_ => false
+				}
+			);
+
+			if event_received && !meet_conditions  {
+				panic!("\n\nEvent \x1b[31m{:?}\x1b[0m was received but some of its attributes did not meet the conditions:\n{}", stringify!($event_pat), message.concat());
+			} else if !event_received {
+				panic!("\n\nEvent \x1b[31m{:?}\x1b[0m was NOT received", stringify!($event_pat));
 			}
-		);
+		)*
     };
 }
 
