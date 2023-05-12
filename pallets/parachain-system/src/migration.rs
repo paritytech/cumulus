@@ -25,7 +25,7 @@ use frame_support::{
 pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
 /// Call this during the next runtime upgrade for this module.
-pub fn on_runtime_upgrade<T: Config>() -> Weight {
+fn on_runtime_upgrade<T: Config>() -> Weight {
 	let mut weight: Weight = T::DbWeight::get().reads(2);
 
 	if StorageVersion::get::<Pallet<T>>() == 0 {
