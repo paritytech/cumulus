@@ -391,6 +391,7 @@ pub mod pallet {
 			frame_system::Pallet::<T>::deposit_log(
 				cumulus_primitives_core::rpsr_digest::relay_parent_storage_root_item(
 					vfp.relay_parent_storage_root,
+					vfp.relay_parent_number,
 				),
 			);
 

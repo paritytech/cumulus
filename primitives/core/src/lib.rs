@@ -18,11 +18,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::substrate::{
-	generic::{Digest, DigestItem},
-	traits::Block as BlockT,
-	ConsensusEngineId,
-};
 use codec::{Decode, Encode};
 use polkadot_parachain::primitives::HeadData;
 use scale_info::TypeInfo;
@@ -38,17 +33,18 @@ pub use polkadot_primitives::{
 	AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData,
 };
 
+pub use sp_runtime::{
+	generic::{Digest, DigestItem},
+	traits::Block as BlockT,
+	ConsensusEngineId,
+};
+
 pub use xcm::latest::prelude::*;
 
 /// A module that re-exports relevant relay chain definitions.
 pub mod relay_chain {
 	pub use polkadot_core_primitives::*;
 	pub use polkadot_primitives::*;
-}
-
-/// A module that re-exports relevant Substrate primitive types.
-pub mod substrate {
-	pub use sp_runtime::*;
 }
 
 /// An inbound HRMP message.
@@ -260,23 +256,31 @@ pub fn extract_relay_parent(digest: &Digest) -> Option<relay_chain::Hash> {
 #[doc(hidden)]
 pub mod rpsr_digest {
 	use super::{relay_chain, ConsensusEngineId, Decode, Digest, DigestItem, Encode};
+	use codec::Compact;
 
 	/// A consensus engine ID for relay-parent storage root digests.
 	pub const RPSR_CONSENSUS_ID: ConsensusEngineId = *b"RPSR";
 
 	/// Construct a digest item for relay-parent storage roots.
 	pub fn relay_parent_storage_root_item(
-		relay_parent_storage_root: relay_chain::Hash,
+		storage_root: relay_chain::Hash,
+		number: impl Into<Compact<relay_chain::BlockNumber>>,
 	) -> DigestItem {
-		DigestItem::Consensus(RPSR_CONSENSUS_ID, relay_parent_storage_root.encode())
+		DigestItem::Consensus(RPSR_CONSENSUS_ID, (storage_root, number.into()).encode())
 	}
 
-	/// Extract the relay-parent storage root from the provided header digest. Returns `None`
+	/// Extract the relay-parent storage root and number from the provided header digest. Returns `None`
 	/// if none were found.
-	pub fn extract_relay_parent_storage_root(digest: &Digest) -> Option<relay_chain::Hash> {
+	pub fn extract_relay_parent_storage_root(
+		digest: &Digest,
+	) -> Option<(relay_chain::Hash, relay_chain::BlockNumber)> {
 		digest.convert_first(|d| match d {
-			DigestItem::Consensus(id, val) if id == &RPSR_CONSENSUS_ID =>
-				relay_chain::Hash::decode(&mut &val[..]).ok(),
+			DigestItem::Consensus(id, val) if id == &RPSR_CONSENSUS_ID => {
+				let (h, n): (relay_chain::Hash, Compact<relay_chain::BlockNumber>) =
+					Decode::decode(&mut &val[..]).ok()?;
+
+				Some((h, n.0))
+			},
 			_ => None,
 		})
 	}
