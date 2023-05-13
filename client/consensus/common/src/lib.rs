@@ -243,7 +243,9 @@ pub async fn find_potential_parents<B: BlockT>(
 			current_rp = header.parent_hash().clone();
 
 			// don't iterate back into the genesis block.
-			if header.number == 1 { break }
+			if header.number == 1 {
+				break
+			}
 		}
 
 		ancestry
@@ -253,22 +255,27 @@ pub async fn find_potential_parents<B: BlockT>(
 	let is_root_in_ancestry = |root| rp_ancestry.iter().any(|x| x.1 == root);
 
 	// 2. Get the included and pending availability blocks.
-	let included_header = relay_client.persisted_validation_data(
-		params.relay_parent,
-		params.para_id,
-		OccupiedCoreAssumption::TimedOut,
-	).await?;
+	let included_header = relay_client
+		.persisted_validation_data(
+			params.relay_parent,
+			params.para_id,
+			OccupiedCoreAssumption::TimedOut,
+		)
+		.await?;
 
 	let included_header = match included_header {
 		Some(pvd) => pvd.parent_head,
 		None => return Ok(Vec::new()), // this implies the para doesn't exist.
 	};
 
-	let pending_header = relay_client.persisted_validation_data(
-		params.relay_parent,
-		params.para_id,
-		OccupiedCoreAssumption::Included,
-	).await?.and_then(|x| if x.parent_head != included_header { Some(x.parent_head) } else { None });
+	let pending_header = relay_client
+		.persisted_validation_data(
+			params.relay_parent,
+			params.para_id,
+			OccupiedCoreAssumption::Included,
+		)
+		.await?
+		.and_then(|x| if x.parent_head != included_header { Some(x.parent_head) } else { None });
 
 	let included_header = match B::Header::decode(&mut &included_header.0[..]).ok() {
 		None => return Ok(Vec::new()),
@@ -290,8 +297,8 @@ pub async fn find_potential_parents<B: BlockT>(
 	// relay parents.
 	let mut potential_parents = Vec::new();
 	while let Some(entry) = frontier.pop() {
-		let is_pending = entry.depth == 1
-			&& pending_hash.as_ref().map_or(false, |h| &entry.hash == h);
+		let is_pending =
+			entry.depth == 1 && pending_hash.as_ref().map_or(false, |h| &entry.hash == h);
 		let is_included = entry.depth == 0;
 
 		// note: even if the pending block or included block have a relay parent
@@ -299,8 +306,7 @@ pub async fn find_potential_parents<B: BlockT>(
 		// because they have already been posted on chain.
 		let is_potential = is_pending || is_included || {
 			let digest = entry.header.digest();
-			cumulus_primitives_core::extract_relay_parent(digest)
-				.map_or(false, is_hash_in_ancestry) ||
+			cumulus_primitives_core::extract_relay_parent(digest).map_or(false, is_hash_in_ancestry) ||
 				cumulus_primitives_core::rpsr_digest::extract_relay_parent_storage_root(digest)
 					.map_or(false, is_root_in_ancestry)
 		};
@@ -313,14 +319,17 @@ pub async fn find_potential_parents<B: BlockT>(
 			potential_parents.push(entry);
 		}
 
-		if !is_potential || child_depth > params.max_depth { continue }
+		if !is_potential || child_depth > params.max_depth {
+			continue
+		}
 
 		// push children onto search frontier.
 		for child in client.children(hash).ok().into_iter().flat_map(|c| c) {
-			if params.ignore_alternative_branches
-				&& is_included
-				&& pending_hash.map_or(false, |h| child != h)
-			{ continue }
+			if params.ignore_alternative_branches &&
+				is_included && pending_hash.map_or(false, |h| child != h)
+			{
+				continue
+			}
 
 			let header = match client.header(child) {
 				Ok(Some(h)) => h,
