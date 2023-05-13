@@ -113,6 +113,9 @@ pub trait RelayChainInterface: Send + Sync {
 	/// Get the hash of the finalized block.
 	async fn finalized_block_hash(&self) -> RelayChainResult<PHash>;
 
+	/// Get a header by hash, if it exists.
+	async fn header(&self, block_id: PHash) -> RelayChainResult<Option<PHeader>>;
+
 	/// Returns the whole contents of the downward message queue for the parachain we are collating
 	/// for.
 	///
@@ -258,6 +261,10 @@ where
 
 	async fn finalized_block_hash(&self) -> RelayChainResult<PHash> {
 		(**self).finalized_block_hash().await
+	}
+
+	async fn header(&self, block_id: PHash) -> RelayChainResult<Option<PHeader>> {
+		(**self).header().await
 	}
 
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {

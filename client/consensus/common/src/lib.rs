@@ -16,6 +16,8 @@
 
 use polkadot_primitives::{Hash as PHash, PersistedValidationData};
 
+use cumulus_primitives_core::ParaId;
+
 use sc_client_api::Backend;
 use sc_consensus::{shared_data::SharedData, BlockImport, ImportResult};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
@@ -174,3 +176,160 @@ where
 pub trait ParachainBlockImportMarker {}
 
 impl<B: BlockT, BI, BE> ParachainBlockImportMarker for ParachainBlockImport<B, BI, BE> {}
+
+/// Parameters when searching for suitable parents to build on top of.
+pub struct ParentSearchParams {
+	/// The relay-parent that is intended to be used.
+	pub relay_parent: PHash,
+	/// The ID of the parachain.
+	pub para_id: ParaId,
+	/// A limitation on the age of relay parents for parachain blocks that are being
+	/// considered. This is relative to the `relay_parent` number.
+	pub ancestry_lookback: usize,
+	/// How "deep" parents can be relative to the included parachain block at the relay-parent.
+	/// The included block has depth 0.
+	pub max_depth: usize,
+	/// Whether to only ignore "alternative" branches, i.e. branches of the chain
+	/// which do not contain the block pending availability.
+	pub ignore_alternative_branches: bool,
+}
+
+/// A potential parent block returned from [`find_potential_parents`]
+pub struct PotentialParent<B: BlockT> {
+	/// The hash of the block.
+	pub hash: B::Hash,
+	/// The header of the block.
+	pub header: B::Header,
+	/// The depth of the block.
+	pub depth: usize,
+	/// Whether the block descends from the block pending availability.
+	///
+	/// This is false for the last inclued block as well as the block pending availability itself.
+	pub descends_from_pending: bool,
+}
+
+/// Perform a recursive search through blocks to find potential
+/// parent blocks for a new block.
+///
+/// This accepts a relay-chain block to be used as an anchor and a maximum search depth,
+/// along with some arguments for filtering parachain blocks and performs a recursive search
+/// for parachain blocks. The search begins at the last included parachain block and returns
+/// a set of [`PotentialParent`]s which could be potential parents of a new block with this
+/// relay-parent according to the search parameters.
+///
+/// A parachain block is a potential parent if it is either the last included parachain block, the pending
+/// parachain block (when `max_depth` >= 1), or all of the following hold:
+///   * its parent is a potential parent
+///   * its relay-parent is within `ancestry_lookback` of the targeted relay-parent.
+///   * the block number is within `max_depth` blocks of the included block
+pub async fn find_potential_parents<B: BlockT>(
+	params: ParentSearchParams,
+	client: &C,
+	relay_client: &impl RelayChainInterface,
+) -> Result<Vec<B::Hash>, RelayChainError> {
+	// 1. Build up the ancestry record of the relay chain to compare against.
+	let rp_ancestry = {
+		let mut ancestry = Vec::with_capacity(params.ancestry_lookback + 1);
+		let mut current_rp = params.relay_parent;
+		while ancestry.len() <= params.ancestry_lookback {
+			let header = match relay_client.header(current_rp).await? {
+				None => break,
+				Some(h) => h,
+			};
+
+			ancestry.push((current_rp, header.state_root().clone()));
+			current_rp = header.parent_hash().clone();
+
+			// don't iterate back into the genesis block.
+			if header.number == 1u32.into() { break }
+		}
+
+		rp_ancestry
+	};
+
+	let is_hash_in_ancestry = |hash| rp_ancestry.iter().any(|x| x.0 == hash);
+	let is_root_in_ancestry = |root| rp.ancestry.iter().any(|x| x.1 == root);
+
+	// 2. Get the included and pending availability blocks.
+	let included_header = relay_client.persisted_validation_data(
+		params.relay_parent,
+		params.para_id,
+		OccupiedCoreAssumption::TimedOut,
+	)?;
+
+	let included_header = match included_header {
+		Some(pvd) => pvd.parent_head,
+		None => return Ok(Vec::new()), // this implies the para doesn't exist.
+	};
+
+	let pending_header = relay_client.persisted_validation_data(
+		params.relay_parent,
+		params.para_id,
+		OccupiedCoreAssumption::Included,
+	)?.and_then(|x| if x.parent_head != included_header { Some(x.parent_head) } else { None });
+
+	let included_header = match B::Header::decode(&mut &included_header.0[..]).ok() {
+		None => return Ok(Vec::new()),
+		Some(x) => x,
+	};
+	// Silently swallow if pending block can't decode.
+	let pending_header = pending_header.map(|p| B::Header::decode(&mut &p.0[..]).ok()).flatten();
+	let included_hash = included_header.hash();
+	let pending_hash = pending_header.as_ref().map(|hdr| hdr.hash());
+
+	let mut frontier = vec![PotentialParent {
+		hash: included_hash,
+		header: included_header,
+		depth: 0,
+		descends_from_pending: false,
+	}];
+
+	// Recursive search through descendants of the included block which have acceptable
+	// relay parents.
+	let mut potential_parents = Vec::new();
+	while let Some(entry) = frontier.pop() {
+		let is_pending = entry.depth == 1
+			&& pending_hash.as_ref().map_or(false, |h| &entry.hash == h);
+		let is_included = entry.depth == 0;
+
+		// note: even if the pending block or included block have a relay parent
+		// outside of the expected part of the relay chain, they are always allowed
+		// because they have already been posted on chain.
+		let is_potential = is_pending || is_included || {
+			let digest = entry.header.digest();
+			cumulus_primitives_core::extract_relay_parent(digest)
+				.map_or(false, is_hash_in_ancestry) ||
+				cumulus_primitives_core::rpsr_digest::extract_relay_parent_storage_root(digest)
+					.map_or(false, is_root_in_ancestry)
+		};
+
+		if is_potential {
+			potential_parents.push(entry);
+		}
+
+		if !is_potential || entry.depth + 1 > max_depth { continue }
+
+		// push children onto search frontier.
+		for child in client.children(entry.hash).ok().flatten().into_iter().flat_map(|c| c) {
+			if params.ignore_alternative_branches
+				&& is_included
+				&& pending_hash.map_or(false, |h| &child != h)
+			{ continue }
+
+			let header = match client.header(child) {
+				Ok(Some(h)) => h,
+				Ok(None) => continue,
+				Err(_) => continue,
+			};
+
+			frontier.push(PotentialParent {
+				hash: child,
+				header,
+				depth: entry.depth + 1,
+				descends_from_pending: is_pending || entry.descends_from_pending,
+			});
+		}
+	}
+
+	Ok(potential_parents)
+}
