@@ -434,12 +434,11 @@ where
 						post_hash, slot
 					))
 				},
-				Err(e) => {
+				Err(e) =>
 					return Err(format!(
 						"Rejecting block ({:?}) with invalid seal ({:?})",
 						post_hash, e
-					))
-				},
+					)),
 			}
 		}
 
