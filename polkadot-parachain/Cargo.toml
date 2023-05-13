@@ -1,6 +1,6 @@
 [package]
 name = "polkadot-parachain-bin"
-version = "0.9.400"
+version = "0.9.420"
 authors = ["Parity Technologies <admin@parity.io>"]
 build = "build.rs"
 edition = "2021"
@@ -12,12 +12,12 @@ path = "src/main.rs"
 
 [dependencies]
 async-trait = "0.1.68"
-clap = { version = "4.1.14", features = ["derive"] }
+clap = { version = "4.2.7", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 futures = "0.3.28"
 hex-literal = "0.4.1"
 log = "0.4.17"
-serde = { version = "1.0.159", features = ["derive"] }
+serde = { version = "1.0.162", features = ["derive"] }
 
 # Local
 rococo-parachain-runtime = { path = "../parachains/runtimes/testing/rococo-parachain" }
@@ -96,7 +96,7 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 assert_cmd = "2.0"
 nix = { version = "0.26.1", features = ["signal"] }
 tempfile = "3.5.0"
-tokio = { version = "1.27.0", features = ["macros", "time", "parking_lot"] }
+tokio = { version = "1.28.0", features = ["macros", "time", "parking_lot"] }
 wait-timeout = "0.2"
 # purge_chain_works works with rococo-local and needs to allow this
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", features = ["rococo-native"] }

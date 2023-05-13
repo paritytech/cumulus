@@ -80,19 +80,16 @@ fn test_asset_xcm_trader() {
 			// Lets pay with: asset_amount_needed + asset_amount_extra
 			let asset_amount_extra = 100_u128;
 			let asset: MultiAsset =
-				(asset_multilocation.clone(), asset_amount_needed + asset_amount_extra).into();
+				(asset_multilocation, asset_amount_needed + asset_amount_extra).into();
 
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
 
 			// Lets buy_weight and make sure buy_weight does not return an error
-			match trader.buy_weight(bought, asset.into()) {
-				Ok(unused_assets) => {
-					// Check whether a correct amount of unused assets is returned
-					assert_ok!(unused_assets
-						.ensure_contains(&(asset_multilocation, asset_amount_extra).into()));
-				},
-				Err(e) => assert!(false, "Expected Ok(_). Got {:#?}", e),
-			}
+			let unused_assets = trader.buy_weight(bought, asset.into()).expect("Expected Ok");
+			// Check whether a correct amount of unused assets is returned
+			assert_ok!(
+				unused_assets.ensure_contains(&(asset_multilocation, asset_amount_extra).into())
+			);
 
 			// Drop trader
 			drop(trader);
@@ -156,7 +153,7 @@ fn test_asset_xcm_trader_with_refund() {
 			// lets calculate amount needed
 			let amount_bought = WeightToFee::weight_to_fee(&bought);
 
-			let asset: MultiAsset = (asset_multilocation.clone(), amount_bought).into();
+			let asset: MultiAsset = (asset_multilocation, amount_bought).into();
 
 			// Make sure buy_weight does not return an error
 			assert_ok!(trader.buy_weight(bought, asset.clone().into()));
@@ -233,7 +230,7 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 				"we are testing what happens when the amount does not exceed ED"
 			);
 
-			let asset: MultiAsset = (asset_multilocation.clone(), amount_bought).into();
+			let asset: MultiAsset = (asset_multilocation, amount_bought).into();
 
 			// Buy weight should return an error
 			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::TooExpensive);
@@ -286,11 +283,11 @@ fn test_that_buying_ed_refund_does_not_refund() {
 
 			// We know we will have to buy at least ED, so lets make sure first it will
 			// fail with a payment of less than ED
-			let asset: MultiAsset = (asset_multilocation.clone(), amount_bought).into();
+			let asset: MultiAsset = (asset_multilocation, amount_bought).into();
 			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::TooExpensive);
 
 			// Now lets buy ED at least
-			let asset: MultiAsset = (asset_multilocation.clone(), ExistentialDeposit::get()).into();
+			let asset: MultiAsset = (asset_multilocation, ExistentialDeposit::get()).into();
 
 			// Buy weight should work
 			assert_ok!(trader.buy_weight(bought, asset.into()));
@@ -389,7 +386,11 @@ fn test_assets_balances_api_works() {
 			// check before
 			assert_eq!(Assets::balance(local_asset_id, AccountId::from(ALICE)), 0);
 			assert_eq!(Balances::free_balance(AccountId::from(ALICE)), 0);
-			assert!(Runtime::query_account_balances(AccountId::from(ALICE)).unwrap().is_empty());
+			assert!(Runtime::query_account_balances(AccountId::from(ALICE))
+				.unwrap()
+				.try_as::<MultiAssets>()
+				.unwrap()
+				.is_none());
 
 			// Drip some balance
 			use frame_support::traits::fungible::Mutate;
@@ -421,18 +422,21 @@ fn test_assets_balances_api_works() {
 			);
 			assert_eq!(Balances::free_balance(AccountId::from(ALICE)), some_currency);
 
-			let result = Runtime::query_account_balances(AccountId::from(ALICE)).unwrap();
+			let result: MultiAssets = Runtime::query_account_balances(AccountId::from(ALICE))
+				.unwrap()
+				.try_into()
+				.unwrap();
 			assert_eq!(result.len(), 2);
 
 			// check currency
-			assert!(result.iter().any(|asset| asset.eq(
+			assert!(result.inner().iter().any(|asset| asset.eq(
 				&assets_common::fungible_conversion::convert_balance::<DotLocation, Balance>(
 					some_currency
 				)
 				.unwrap()
 			)));
 			// check trusted asset
-			assert!(result.iter().any(|asset| asset.eq(&(
+			assert!(result.inner().iter().any(|asset| asset.eq(&(
 				AssetIdForTrustBackedAssetsConvert::reverse_ref(local_asset_id).unwrap(),
 				minimum_asset_balance
 			)
@@ -463,7 +467,8 @@ asset_test_utils::include_teleports_for_native_asset_works!(
 			Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
 			_ => None,
 		}
-	})
+	}),
+	1000
 );
 
 asset_test_utils::include_asset_transactor_transfer_with_local_consensus_currency_works!(
