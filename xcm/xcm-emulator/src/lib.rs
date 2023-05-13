@@ -84,7 +84,68 @@ pub trait TestExt {
 	fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R;
 }
 
-pub trait RelayChain: TestExt + UmpSink {
+pub trait Network {
+	fn _init();
+	fn _para_ids() -> Vec<u32>;
+	fn _relay_block_number() -> u32;
+	fn _set_relay_block_number(block_number: u32);
+	fn _process_messages();
+	fn _has_unprocessed_messages() -> bool;
+	fn _process_downward_messages();
+	fn _process_horizontal_messages();
+	fn _process_upward_messages();
+	fn _hrmp_channel_parachain_inherent_data(
+		para_id: u32,
+		relay_parent_number: u32,
+	) -> ParachainInherentData;
+}
+
+pub trait NetworkComponent<N: Network> {
+	fn network_name() -> &'static str;
+
+	fn init() {
+		N::_init();
+	}
+
+	fn relay_block_number() -> u32 {
+		N::_relay_block_number()
+	}
+
+	fn set_relay_block_number(block_number: u32) {
+		N::_set_relay_block_number(block_number);
+	}
+
+	fn para_ids() -> Vec<u32> {
+		N::_para_ids()
+	}
+
+	fn send_horizontal_messages<
+		I: Iterator<Item = (ParaId, RelayBlockNumber, Vec<u8>)>,
+	>(to_para_id: u32, iter: I) {
+		HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::network_name()).unwrap().push_back((to_para_id, iter.collect())));
+	}
+
+	fn send_upward_message(from_para_id: u32, msg: Vec<u8>) {
+		UPWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::network_name()).unwrap().push_back((from_para_id, msg)));
+	}
+
+	fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>) {
+		DOWNWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::network_name()).unwrap().push_back((to_para_id, iter.collect())));
+	}
+
+	fn hrmp_channel_parachain_inherent_data(
+		para_id: u32,
+		relay_parent_number: u32,
+	) -> ParachainInherentData {
+		N::_hrmp_channel_parachain_inherent_data(para_id, relay_parent_number)
+	}
+
+	fn process_messages() {
+		N::_process_messages();
+	}
+}
+
+pub trait RelayChain: UmpSink  {
 	type Runtime;
 	type RuntimeOrigin;
 	type RuntimeEvent;
@@ -95,7 +156,7 @@ pub trait RelayChain: TestExt + UmpSink {
 	type SovereignAccountOf;
 }
 
-pub trait Parachain: TestExt + XcmpMessageHandler + DmpMessageHandler {
+pub trait Parachain: XcmpMessageHandler + DmpMessageHandler {
 	type Runtime;
 	type RuntimeOrigin;
 	type RuntimeEvent;
@@ -203,6 +264,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 			}
 
 			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
+				use $crate::{NetworkComponent};
 				// Make sure the Network is initialized
 				<$name>::init();
 
@@ -250,23 +312,13 @@ macro_rules! __impl_test_ext_for_relay_chain {
 macro_rules! __impl_relay {
 	($network_name:ident, $relay_chain:ty) => {
 
-		impl $relay_chain {
-			pub fn network_name() -> &'static str {
+		impl $crate::NetworkComponent<$network_name> for $relay_chain {
+			fn network_name() -> &'static str {
 				stringify!($network_name)
 			}
+		}
 
-			fn init() {
-				<$network_name>::_init();
-			}
-
-			pub fn relay_block_number() -> u32 {
-				<$network_name>::_relay_block_number()
-			}
-
-			fn para_ids() -> Vec<u32> {
-				<$network_name>::_para_ids()
-			}
-
+		impl $relay_chain {
 			pub fn child_location_of(id: $crate::ParaId) -> MultiLocation {
 				(Ancestor(0), Parachain(id.into())).into()
 			}
@@ -297,14 +349,6 @@ macro_rules! __impl_relay {
 
 			pub fn events() -> Vec<<Self as RelayChain>::RuntimeEvent> {
 				<Self as RelayChain>::System::events().iter().map(|record| record.event.clone()).collect()
-			}
-
-			fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = ($crate::RelayBlockNumber, Vec<u8>)>) {
-				$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::network_name()).unwrap().push_back((to_para_id, iter.collect())));
-			}
-
-			fn process_messages() {
-				<$network_name>::_process_messages();
 			}
 		}
 	}
@@ -425,7 +469,7 @@ macro_rules! __impl_test_ext_for_parachain {
 			}
 
 			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
-				use $crate::{Get, Hooks};
+				use $crate::{Get, Hooks, NetworkComponent};
 
 				// Make sure the Network is initialized
 				<$name>::init();
@@ -507,29 +551,19 @@ macro_rules! __impl_test_ext_for_parachain {
 macro_rules! __impl_parachain {
 	($network_name:ident, $parachain:ty) => {
 
-		impl $parachain {
-			pub fn network_name() -> &'static str {
+		impl $crate::NetworkComponent<$network_name> for $parachain {
+			fn network_name() -> &'static str {
 				stringify!($network_name)
 			}
+		}
 
-			fn init() {
-				<$network_name>::_init();
-			}
-
+		impl $parachain {
 			pub fn para_id() -> $crate::ParaId {
 				Self::ext_wrapper(|| <Self as Parachain>::ParachainInfo::get())
 			}
 
 			pub fn parent_location() -> $crate::MultiLocation {
 				(Parent).into()
-			}
-
-			fn relay_block_number() -> u32 {
-				<$network_name>::_relay_block_number()
-			}
-
-			fn set_relay_block_number(block_number: u32) {
-				<$network_name>::_set_relay_block_number(block_number);
 			}
 
 			pub fn account_id_of(seed: &str) -> $crate::AccountId {
@@ -560,31 +594,14 @@ macro_rules! __impl_parachain {
 				<Self as Parachain>::System::events().iter().map(|record| record.event.clone()).collect()
 			}
 
-			fn send_horizontal_messages<
-				I: Iterator<Item = ($crate::ParaId, $crate::RelayBlockNumber, Vec<u8>)>,
-			>(to_para_id: u32, iter: I) {
-				$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::network_name()).unwrap().push_back((to_para_id, iter.collect())));
-			}
-
-			fn send_upward_message(from_para_id: u32, msg: Vec<u8>) {
-				$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::network_name()).unwrap().push_back((from_para_id, msg)));
-			}
-
-			fn hrmp_channel_parachain_inherent_data(
-				para_id: u32,
-				relay_parent_number: u32,
-			) -> $crate::ParachainInherentData {
-				<$network_name>::_hrmp_channel_parachain_inherent_data(para_id, relay_parent_number)
-			}
-
 			fn prepare_for_xcmp() {
+				use $crate::NetworkComponent;
 				let para_id = Self::para_id();
 
 				<Self as TestExt>::ext_wrapper(|| {
 					use $crate::{Get, Hooks};
 
 					let block_number = <Self as Parachain>::System::block_number();
-					// let para_id = Self::para_id();
 
 					let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
 						<Self as Parachain>::RuntimeOrigin::none(),
@@ -593,10 +610,6 @@ macro_rules! __impl_parachain {
 					// set `AnnouncedHrmpMessagesPerCandidate`
 					<Self as Parachain>::ParachainSystem::on_initialize(block_number);
 				});
-			}
-
-			fn process_messages() {
-				<$network_name>::_process_messages();
 			}
 		}
 	}
@@ -632,7 +645,9 @@ macro_rules! decl_test_networks {
 					$( <$parachain>::reset_ext(); )*
 					$( <$parachain>::prepare_for_xcmp(); )*
 				}
+			}
 
+			impl $crate::Network for $name {
 				fn _init() {
 					// If Network has not been itialized yet, it gets initialized
 					if $crate::INITIALIZED.with(|b| b.borrow_mut().get(stringify!($name)).is_none()) {

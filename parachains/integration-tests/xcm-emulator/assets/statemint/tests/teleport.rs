@@ -1,5 +1,4 @@
 use statemint_it::*;
-// use xcm::v2::Junction::AccountId32;
 
 #[test]
 // NOTE: This needs to be run before every other test to ensure that chains can communicate with one
