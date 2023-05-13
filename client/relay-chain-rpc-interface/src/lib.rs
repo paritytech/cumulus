@@ -132,6 +132,10 @@ impl RelayChainInterface for RelayChainRpcInterface {
 		self.rpc_client.system_health().await.map(|h| h.is_syncing)
 	}
 
+	async fn header(&self, block_id: RelayHash) -> RelayChainResult<Option<RelayHeader>> {
+		self.rpc_client.chain_get_header(Some(block_id)).await
+	}
+
 	fn overseer_handle(&self) -> RelayChainResult<Handle> {
 		Ok(self.overseer_handle.clone())
 	}

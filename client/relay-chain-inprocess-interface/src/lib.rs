@@ -171,6 +171,10 @@ where
 		Ok(self.sync_oracle.is_major_syncing())
 	}
 
+	async fn header(&self, block_id: PHash) -> RelayChainResult<Option<PHeader>> {
+		Ok(self.backend.header(block_hash)?)
+	}
+
 	fn overseer_handle(&self) -> RelayChainResult<Handle> {
 		Ok(self.overseer_handle.clone())
 	}

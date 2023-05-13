@@ -237,6 +237,10 @@ impl RelayChainInterface for DummyRelayChainInterface {
 				});
 		Ok(Box::pin(notifications_stream))
 	}
+
+	async fn header(&self, block_id: PHash) -> RelayChainResult<Option<PHeader>> {
+		unimplemented!("Not needed for test")
+	}
 }
 
 fn make_validator_and_api(

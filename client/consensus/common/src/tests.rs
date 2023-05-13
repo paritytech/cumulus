@@ -186,7 +186,6 @@ impl RelayChainInterface for Relaychain {
 	}
 
 	async fn wait_for_block(&self, _: PHash) -> RelayChainResult<()> {
-		unimplemented!("Not needed for test")
 	}
 
 	async fn new_best_notification_stream(
@@ -206,6 +205,10 @@ impl RelayChainInterface for Relaychain {
 				h
 			})
 			.boxed())
+	}
+
+	async fn header(&self, block_id: PHash) -> RelayChainResult<Option<PHeader>> {
+		unimplemented!("Not needed for test")
 	}
 }
 
