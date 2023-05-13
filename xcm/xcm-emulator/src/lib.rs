@@ -148,26 +148,26 @@ pub trait NetworkComponent<N: Network> {
 pub trait RelayChain: UmpSink  {
 	type Runtime;
 	type RuntimeOrigin;
+	type RuntimeCall;
 	type RuntimeEvent;
 	type XcmConfig;
-	type System;
-	type XcmPallet;
-	type Balances;
 	type SovereignAccountOf;
+	type System;
+	type Balances;
 }
 
 pub trait Parachain: XcmpMessageHandler + DmpMessageHandler {
 	type Runtime;
 	type RuntimeOrigin;
+	type RuntimeCall;
 	type RuntimeEvent;
 	type XcmpMessageHandler;
 	type DmpMessageHandler;
+	type LocationToAccountId;
 	type System;
+	type Balances;
 	type ParachainSystem;
 	type ParachainInfo;
-	type XcmPallet;
-	type Balances;
-	type LocationToAccountId;
 }
 
 // Relay Chain Implementation
@@ -176,16 +176,21 @@ macro_rules! decl_test_relay_chains {
 	(
 		$(
 			pub struct $name:ident {
-				Runtime = $runtime:path,
-				RuntimeOrigin = $runtime_origin:path,
-				RuntimeEvent = $runtime_event:path,
-				XcmConfig = $xcm_config:path,
-				System = $system:path,
-				XcmPallet = $xcm_pallet:path,
-				Balances = $balances_pallet:path,
-				SovereignAccountOf = $sovereign_account_of:path,
 				genesis = $genesis:expr,
 				on_init = $on_init:expr,
+				runtime = {
+					Runtime: $($runtime:tt)::*,
+					RuntimeOrigin: $($runtime_origin:tt)::*,
+					RuntimeCall: $($runtime_call:tt)::*,
+					RuntimeEvent: $($runtime_event:tt)::*,
+					XcmConfig: $($xcm_config:tt)::*,
+					SovereignAccountOf: $($sovereign_acc_of:tt)::*,
+					System: $($system:tt)::*,
+					Balances: $($balances:tt)::*,
+				},
+				pallets_extra = {
+					$($pallet_name:ident: $pallet_path:path,)*
+				}
 			}
 		),
 		+
@@ -194,14 +199,28 @@ macro_rules! decl_test_relay_chains {
 			pub struct $name;
 
 			impl RelayChain for $name {
-				type Runtime = $runtime;
-				type RuntimeOrigin = $runtime_origin;
-				type RuntimeEvent = $runtime_event;
-				type XcmConfig = $xcm_config;
-				type System = $system;
-				type XcmPallet = $xcm_pallet;
-				type Balances = $balances_pallet;
-				type SovereignAccountOf = $sovereign_account_of;
+				type Runtime = $($runtime)::*;
+				type RuntimeOrigin = $($runtime_origin)::*;
+				type RuntimeCall = $($runtime_call)::*;
+				type RuntimeEvent = $($runtime_event)::*;
+				type XcmConfig = $($xcm_config)::*;
+				type SovereignAccountOf = $($sovereign_acc_of)::*;
+				type System = $($system)::*;
+				type Balances = $($balances)::*;
+			}
+
+			$crate::paste::paste! {
+				pub trait [<$name Pallet>] {
+					$(
+						type $pallet_name;
+					)?
+				}
+
+				impl [<$name Pallet>] for $name {
+					$(
+						type $pallet_name = $pallet_path;
+					)?
+				}
 			}
 
 			$crate::__impl_xcm_handlers_for_relay_chain!($name);
@@ -360,19 +379,24 @@ macro_rules! decl_test_parachains {
 	(
 		$(
 			pub struct $name:ident {
-				Runtime = $runtime:path,
-				RuntimeOrigin = $runtime_origin:path,
-				RuntimeEvent = $runtime_event:path,
-				XcmpMessageHandler = $xcmp_message_handler:path,
-				DmpMessageHandler = $dmp_message_handler:path,
-				System = $system:path,
-				ParachainSystem = $parachain_system:path,
-				ParachainInfo = $parachain_info:path,
-				XcmPallet = $xcm_pallet:path,
-				Balances = $balances_pallet:path,
-				LocationToAccountId = $location_to_account:path,
 				genesis = $genesis:expr,
 				on_init = $on_init:expr,
+				runtime = {
+					Runtime: $runtime:path,
+					RuntimeOrigin: $runtime_origin:path,
+					RuntimeCall: $runtime_call:path,
+					RuntimeEvent: $runtime_event:path,
+					XcmpMessageHandler: $xcmp_message_handler:path,
+					DmpMessageHandler: $dmp_message_handler:path,
+					LocationToAccountId: $location_to_account:path,
+					System: $system:path,
+					Balances: $balances_pallet:path,
+					ParachainSystem: $parachain_system:path,
+					ParachainInfo: $parachain_info:path,
+				},
+				pallets_extra = {
+					$($pallet_name:ident: $pallet_path:path,)*
+				}
 			}
 		),
 		+
@@ -383,15 +407,29 @@ macro_rules! decl_test_parachains {
 			impl Parachain for $name {
 				type Runtime = $runtime;
 				type RuntimeOrigin = $runtime_origin;
+				type RuntimeCall = $runtime_call;
 				type RuntimeEvent = $runtime_event;
 				type XcmpMessageHandler = $xcmp_message_handler;
 				type DmpMessageHandler = $dmp_message_handler;
+				type LocationToAccountId = $location_to_account;
 				type System = $system;
+				type Balances = $balances_pallet;
 				type ParachainSystem = $parachain_system;
 				type ParachainInfo = $parachain_info;
-				type XcmPallet = $xcm_pallet;
-				type Balances = $balances_pallet;
-				type LocationToAccountId = $location_to_account;
+			}
+
+			$crate::paste::paste! {
+				pub trait [<$name Pallet>] {
+					$(
+						type $pallet_name;
+					)*
+				}
+
+				impl [<$name Pallet>] for $name {
+					$(
+						type $pallet_name = $pallet_path;
+					)*
+				}
 			}
 
 			$crate::__impl_xcm_handlers_for_parachain!($name);

@@ -1,3 +1,4 @@
+use integration_tests_common::PolkadotPallet;
 use statemint_it::*;
 
 #[test]
@@ -16,7 +17,7 @@ fn reserve_transfer_native_asset_from_relay_to_assets() {
 
 	// Send XCM message from Relay Chain
 	Polkadot::execute_with(|| {
-		assert_ok!(<Polkadot as Relay>::XcmPallet::limited_reserve_transfer_assets(
+		assert_ok!(<Polkadot as PolkadotPallet>::XcmPallet::limited_reserve_transfer_assets(
 			origin,
 			bx!(assets_para_destination),
 			bx!(beneficiary),

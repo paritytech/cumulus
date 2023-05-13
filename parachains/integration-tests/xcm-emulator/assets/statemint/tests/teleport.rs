@@ -1,3 +1,4 @@
+use integration_tests_common::{PolkadotPallet, PenpalPolkadotPallet};
 use statemint_it::*;
 
 #[test]
@@ -12,7 +13,7 @@ pub fn force_xcm_version() {
 
 		// Check that we can force xcm version for Statemint and PenpalPolkadot from Polkadot.
 		for location in [statemint_location, penpal_location] {
-			assert_ok!(<Polkadot as Relay>::XcmPallet::force_xcm_version(
+			assert_ok!(<Polkadot as PolkadotPallet>::XcmPallet::force_xcm_version(
 				<Polkadot as Relay>::RuntimeOrigin::root(),
 				bx!(location),
 				xcm_version,
@@ -32,7 +33,7 @@ pub fn force_xcm_version() {
 		let origin = <PenpalPolkadot as Para>::RuntimeOrigin::root();
 		let location: MultiLocation = PenpalPolkadot::parent_location();
 
-		assert_ok!(<PenpalPolkadot as Para>::XcmPallet::force_xcm_version(
+		assert_ok!(<PenpalPolkadot as PenpalPolkadotPallet>::PolkadotXcm::force_xcm_version(
 			origin,
 			bx!(location),
 			xcm_version,
@@ -66,7 +67,7 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 
 	// Send XCM message from Relay Chain
 	Polkadot::execute_with(|| {
-		assert_ok!(<Polkadot as Relay>::XcmPallet::limited_teleport_assets(
+		assert_ok!(<Polkadot as PolkadotPallet>::XcmPallet::limited_teleport_assets(
 			origin,
 			bx!(assets_para_destination),
 			bx!(beneficiary),
