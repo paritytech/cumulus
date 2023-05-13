@@ -264,7 +264,7 @@ where
 	}
 
 	async fn header(&self, block_id: PHash) -> RelayChainResult<Option<PHeader>> {
-		(**self).header().await
+		(**self).header(block_id).await
 	}
 
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {

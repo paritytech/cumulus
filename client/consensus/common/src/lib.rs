@@ -14,9 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+use codec::Decode;
 use polkadot_primitives::{Hash as PHash, PersistedValidationData};
 
-use cumulus_primitives_core::ParaId;
+use cumulus_primitives_core::{relay_chain::OccupiedCoreAssumption, ParaId};
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
 
 use sc_client_api::Backend;
 use sc_consensus::{shared_data::SharedData, BlockImport, ImportResult};
@@ -224,9 +226,9 @@ pub struct PotentialParent<B: BlockT> {
 ///   * the block number is within `max_depth` blocks of the included block
 pub async fn find_potential_parents<B: BlockT>(
 	params: ParentSearchParams,
-	client: &C,
+	client: &impl sp_blockchain::Backend<B>,
 	relay_client: &impl RelayChainInterface,
-) -> Result<Vec<B::Hash>, RelayChainError> {
+) -> Result<Vec<PotentialParent<B>>, RelayChainError> {
 	// 1. Build up the ancestry record of the relay chain to compare against.
 	let rp_ancestry = {
 		let mut ancestry = Vec::with_capacity(params.ancestry_lookback + 1);
@@ -241,21 +243,21 @@ pub async fn find_potential_parents<B: BlockT>(
 			current_rp = header.parent_hash().clone();
 
 			// don't iterate back into the genesis block.
-			if header.number == 1u32.into() { break }
+			if header.number == 1 { break }
 		}
 
-		rp_ancestry
+		ancestry
 	};
 
 	let is_hash_in_ancestry = |hash| rp_ancestry.iter().any(|x| x.0 == hash);
-	let is_root_in_ancestry = |root| rp.ancestry.iter().any(|x| x.1 == root);
+	let is_root_in_ancestry = |root| rp_ancestry.iter().any(|x| x.1 == root);
 
 	// 2. Get the included and pending availability blocks.
 	let included_header = relay_client.persisted_validation_data(
 		params.relay_parent,
 		params.para_id,
 		OccupiedCoreAssumption::TimedOut,
-	)?;
+	).await?;
 
 	let included_header = match included_header {
 		Some(pvd) => pvd.parent_head,
@@ -266,7 +268,7 @@ pub async fn find_potential_parents<B: BlockT>(
 		params.relay_parent,
 		params.para_id,
 		OccupiedCoreAssumption::Included,
-	)?.and_then(|x| if x.parent_head != included_header { Some(x.parent_head) } else { None });
+	).await?.and_then(|x| if x.parent_head != included_header { Some(x.parent_head) } else { None });
 
 	let included_header = match B::Header::decode(&mut &included_header.0[..]).ok() {
 		None => return Ok(Vec::new()),
@@ -277,7 +279,7 @@ pub async fn find_potential_parents<B: BlockT>(
 	let included_hash = included_header.hash();
 	let pending_hash = pending_header.as_ref().map(|hdr| hdr.hash());
 
-	let mut frontier = vec![PotentialParent {
+	let mut frontier = vec![PotentialParent::<B> {
 		hash: included_hash,
 		header: included_header,
 		depth: 0,
@@ -303,17 +305,21 @@ pub async fn find_potential_parents<B: BlockT>(
 					.map_or(false, is_root_in_ancestry)
 		};
 
+		let descends_from_pending = entry.descends_from_pending;
+		let child_depth = entry.depth + 1;
+		let hash = entry.hash;
+
 		if is_potential {
 			potential_parents.push(entry);
 		}
 
-		if !is_potential || entry.depth + 1 > max_depth { continue }
+		if !is_potential || child_depth > params.max_depth { continue }
 
 		// push children onto search frontier.
-		for child in client.children(entry.hash).ok().flatten().into_iter().flat_map(|c| c) {
+		for child in client.children(hash).ok().into_iter().flat_map(|c| c) {
 			if params.ignore_alternative_branches
 				&& is_included
-				&& pending_hash.map_or(false, |h| &child != h)
+				&& pending_hash.map_or(false, |h| child != h)
 			{ continue }
 
 			let header = match client.header(child) {
@@ -325,8 +331,8 @@ pub async fn find_potential_parents<B: BlockT>(
 			frontier.push(PotentialParent {
 				hash: child,
 				header,
-				depth: entry.depth + 1,
-				descends_from_pending: is_pending || entry.descends_from_pending,
+				depth: child_depth,
+				descends_from_pending: is_pending || descends_from_pending,
 			});
 		}
 	}
