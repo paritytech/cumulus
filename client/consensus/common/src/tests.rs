@@ -582,7 +582,6 @@ fn do_not_set_best_block_to_older_block() {
 	let blocks = (0..NUM_BLOCKS)
 		.into_iter()
 		.map(|i| {
-			println!("{}", i);
 			build_and_import_block(client.clone(), true)
 		})
 		.collect::<Vec<_>>();
