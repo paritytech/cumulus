@@ -46,7 +46,6 @@ members = [
 	"parachains/runtimes/contracts/contracts-rococo",
 	"parachains/runtimes/testing/penpal",
 	"parachains/integration-tests/xcm-emulator/common",
-	"parachains/integration-tests/xcm-emulator/assets/statemine",
 	"parachains/integration-tests/xcm-emulator/assets/statemint",
 	"test/client",
 	"test/relay-sproof-builder",
@@ -54,7 +53,7 @@ members = [
 	"test/runtime",
 	"test/service",
 	"xcm/xcm-emulator",
-	"xcm/xcm-emulator/example",
+	# "xcm/xcm-emulator/example",
 	"xcm/xcm-emulator/test-runtime",
 ]
 
