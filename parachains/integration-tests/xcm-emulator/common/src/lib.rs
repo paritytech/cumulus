@@ -7,8 +7,7 @@ use frame_support::{
 use xcm::prelude::*;
 use xcm_emulator::{decl_test_networks, decl_test_parachains, decl_test_relay_chains, TestExt, RelayChain, Parachain};
 use xcm_executor::traits::Convert;
-use statemint_runtime::constants::currency::DOLLARS;
-pub use constants::{polkadot, kusama, statemint, statemine, penpal, accounts::{ALICE, BOB}};
+pub use constants::{polkadot, kusama, statemint, statemine, penpal, collectives, bridge_hub_kusama, bridge_hub_polkadot, accounts::{ALICE, BOB}};
 pub use sp_core::{Get, sr25519, storage::Storage};
 pub use parachains_common::{BlockNumber, AccountId, Balance, AuraId, StatemintAuraId};
 
@@ -136,6 +135,66 @@ decl_test_parachains! {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
 			Assets: penpal_runtime::Assets,
 		}
+	},
+	pub struct Collectives {
+		genesis = collectives::genesis(),
+		on_init = (),
+		runtime = {
+			Runtime: collectives_polkadot_runtime::Runtime,
+			RuntimeOrigin: collectives_polkadot_runtime::RuntimeOrigin,
+			RuntimeCall: collectives_polkadot_runtime::RuntimeEvent,
+			RuntimeEvent: collectives_polkadot_runtime::RuntimeEvent,
+			XcmpMessageHandler: collectives_polkadot_runtime::XcmpQueue,
+			DmpMessageHandler: collectives_polkadot_runtime::DmpQueue,
+			LocationToAccountId: collectives_polkadot_runtime::xcm_config::LocationToAccountId,
+			System: collectives_polkadot_runtime::System,
+			Balances: collectives_polkadot_runtime::Balances,
+			ParachainSystem: collectives_polkadot_runtime::ParachainSystem,
+			ParachainInfo: collectives_polkadot_runtime::ParachainInfo,
+		},
+		pallets_extra = {
+			PolkadotXcm: collectives_polkadot_runtime::PolkadotXcm,
+		}
+	},
+	pub struct BHKusama {
+		genesis = bridge_hub_kusama::genesis(),
+		on_init = (),
+		runtime = {
+			Runtime: bridge_hub_kusama_runtime::Runtime,
+			RuntimeOrigin: bridge_hub_kusama_runtime::RuntimeOrigin,
+			RuntimeCall: bridge_hub_kusama_runtime::RuntimeEvent,
+			RuntimeEvent: bridge_hub_kusama_runtime::RuntimeEvent,
+			XcmpMessageHandler: bridge_hub_kusama_runtime::XcmpQueue,
+			DmpMessageHandler: bridge_hub_kusama_runtime::DmpQueue,
+			LocationToAccountId: bridge_hub_kusama_runtime::xcm_config::LocationToAccountId,
+			System: bridge_hub_kusama_runtime::System,
+			Balances: bridge_hub_kusama_runtime::Balances,
+			ParachainSystem: bridge_hub_kusama_runtime::ParachainSystem,
+			ParachainInfo:bridge_hub_kusama_runtime::ParachainInfo,
+		},
+		pallets_extra = {
+			PolkadotXcm: bridge_hub_kusama_runtime::PolkadotXcm,
+		}
+	},
+	pub struct BHPolkadot {
+		genesis = bridge_hub_polkadot::genesis(),
+		on_init = (),
+		runtime = {
+			Runtime: bridge_hub_polkadot_runtime::Runtime,
+			RuntimeOrigin: bridge_hub_polkadot_runtime::RuntimeOrigin,
+			RuntimeCall: bridge_hub_polkadot_runtime::RuntimeEvent,
+			RuntimeEvent: bridge_hub_polkadot_runtime::RuntimeEvent,
+			XcmpMessageHandler: bridge_hub_polkadot_runtime::XcmpQueue,
+			DmpMessageHandler: bridge_hub_polkadot_runtime::DmpQueue,
+			LocationToAccountId: bridge_hub_polkadot_runtime::xcm_config::LocationToAccountId,
+			System: bridge_hub_polkadot_runtime::System,
+			Balances: bridge_hub_polkadot_runtime::Balances,
+			ParachainSystem: bridge_hub_polkadot_runtime::ParachainSystem,
+			ParachainInfo:bridge_hub_polkadot_runtime::ParachainInfo,
+		},
+		pallets_extra = {
+			PolkadotXcm: bridge_hub_polkadot_runtime::PolkadotXcm,
+		}
 	}
 }
 
@@ -145,6 +204,8 @@ decl_test_networks! {
 		parachains = vec![
 			Statemint,
 			PenpalPolkadot,
+			Collectives,
+			BHPolkadot,
 		],
 	},
 	pub struct KusamaMockNet {
@@ -152,6 +213,7 @@ decl_test_networks! {
 		parachains = vec![
 			Statemine,
 			PenpalKusama,
+			BHKusama,
 		],
 	}
 }
@@ -175,20 +237,13 @@ parameter_types! {
 	// Penpal Kusama
 	pub PenpalKusamaSender: AccountId = PenpalKusama::account_id_of(ALICE);
 	pub PenpalKusamaReceiver: AccountId = PenpalKusama::account_id_of(BOB);
-}
-
-
-pub const INITIAL_BALANCE: u128 = 1000 * DOLLARS;
-
-pub const XCM_VERSION_2: u32 = 3;
-pub const XCM_VERSION_3: u32 = 2;
-
-pub fn parent_account_id() -> parachains_common::AccountId {
-	let location = (Parent,);
-	statemint_runtime::xcm_config::LocationToAccountId::convert(location.into()).unwrap()
-}
-
-pub fn child_account_id(para: u32) -> polkadot_core_primitives::AccountId {
-	let location = (Parachain(para),);
-	polkadot_runtime::xcm_config::SovereignAccountOf::convert(location.into()).unwrap()
+	// Collectives
+	pub CollectivesSender: AccountId = Collectives::account_id_of(ALICE);
+	pub CollectivesReceiver: AccountId = Collectives::account_id_of(BOB);
+	// Bridge Hub Polkadot
+	pub BHPolkadotSender: AccountId = BHPolkadot::account_id_of(ALICE);
+	pub BHPolkadotReceiver: AccountId = BHPolkadot::account_id_of(BOB);
+	// Bridge Hub Kusama
+	pub BHKusamaSender: AccountId = BHKusama::account_id_of(ALICE);
+	pub BHKusamaReceiver: AccountId = BHKusama::account_id_of(BOB);
 }

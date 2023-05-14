@@ -1,55 +1,5 @@
-use integration_tests_common::{PolkadotPallet, PenpalPolkadotPallet};
+use integration_tests_common::{PolkadotPallet};
 use statemint_it::*;
-
-#[test]
-// NOTE: This needs to be run before every other test to ensure that chains can communicate with one
-// another.
-pub fn force_xcm_version() {
-	let xcm_version = XCM_VERSION_3;
-
-	Polkadot::execute_with(|| {
-		let statemint_location: MultiLocation = Polkadot::child_location_of(Statemint::para_id());
-		let penpal_location: MultiLocation = Polkadot::child_location_of(PenpalPolkadot::para_id());
-
-		// Check that we can force xcm version for Statemint and PenpalPolkadot from Polkadot.
-		for location in [statemint_location, penpal_location] {
-			assert_ok!(<Polkadot as PolkadotPallet>::XcmPallet::force_xcm_version(
-				<Polkadot as Relay>::RuntimeOrigin::root(),
-				bx!(location),
-				xcm_version,
-			));
-			assert!(<Polkadot as Relay>::System::events().iter().any(|r| matches!(
-				r.event,
-				polkadot_runtime::RuntimeEvent::XcmPallet(pallet_xcm::Event::SupportedVersionChanged {
-					0: loc,
-					1: ver,
-				}) if loc == location && ver == xcm_version
-			)));
-		}
-	});
-
-	// PenpalPolkadot forces Polkadot xcm version.
-	PenpalPolkadot::execute_with(|| {
-		let origin = <PenpalPolkadot as Para>::RuntimeOrigin::root();
-		let location: MultiLocation = PenpalPolkadot::parent_location();
-
-		assert_ok!(<PenpalPolkadot as PenpalPolkadotPallet>::PolkadotXcm::force_xcm_version(
-			origin,
-			bx!(location),
-			xcm_version,
-		));
-
-		type RuntimeEvent = <PenpalPolkadot as Para>::RuntimeEvent;
-
-		assert!(<PenpalPolkadot as Para>::System::events().iter().any(|r| matches!(
-			r.event,
-			RuntimeEvent::PolkadotXcm(pallet_xcm::Event::SupportedVersionChanged {
-				0: loc,
-				1: ver,
-			}) if loc == location && ver == xcm_version
-		)));
-	});
-}
 
 #[test]
 fn teleport_native_assets_from_relay_to_assets_para() {

@@ -44,6 +44,7 @@ cumulus-primitives-core = { path = "../../../../primitives/core" }
 penpal-runtime = { path = "../../../runtimes/testing/penpal" }
 statemint-runtime = { path = "../../../runtimes/assets/statemint" }
 statemine-runtime = { path = "../../../runtimes/assets/statemine" }
-
-# Local
+collectives-polkadot-runtime = { path = "../../../runtimes/collectives/collectives-polkadot" }
+bridge-hub-kusama-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-kusama" }
+bridge-hub-polkadot-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-polkadot" }
 xcm-emulator = { default-features = false, path = "../../../../xcm/xcm-emulator" }

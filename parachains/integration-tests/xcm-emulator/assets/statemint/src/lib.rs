@@ -12,7 +12,7 @@ pub use integration_tests_common::{
 	PolkadotSender, PolkadotReceiver, KusamaSender, KusamaReceiver,
 	StatemintSender, StatemintReceiver, StatemineSender, StatemineReceiver,
 	PenpalPolkadotSender, PenpalPolkadotReceiver, PenpalKusamaSender, PenpalKusamaReceiver,
-	constants::{accounts::{ALICE, BOB}, polkadot::{ED as POLKADOT_ED}}, XCM_VERSION_3
+	constants::{accounts::{ALICE, BOB}, polkadot::{ED as POLKADOT_ED}, XCM_V3},
 };
 
 #[cfg(test)]

@@ -4377,6 +4377,9 @@ dependencies = [
 name = "integration-tests-common"
 version = "1.0.0"
 dependencies = [
+ "bridge-hub-kusama-runtime",
+ "bridge-hub-polkadot-runtime",
+ "collectives-polkadot-runtime",
  "cumulus-primitives-core",
  "cumulus-test-service",
  "frame-support",
