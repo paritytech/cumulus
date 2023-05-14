@@ -37,7 +37,6 @@ use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::{net::SocketAddr, path::PathBuf};
-use sc_telemetry::serde_json;
 
 /// Helper enum that is used for better distinction of different parachain/runtime configuration
 /// (it is based/calculated on ChainSpec's ID attribute)
