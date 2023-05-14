@@ -1,8 +1,7 @@
-use integration_tests_common::{PolkadotPallet};
-use statemint_it::*;
+use crate::*;
 
 #[test]
-fn teleport_native_assets_from_relay_to_assets_para() {
+fn reserve_transfer_native_asset_from_relay_to_assets() {
 	// Init tests variables
 	let amount = POLKADOT_ED * 1000;
 	let relay_sender_balance_before = Polkadot::account_data_of(PolkadotSender::get()).free;
@@ -17,7 +16,7 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 
 	// Send XCM message from Relay Chain
 	Polkadot::execute_with(|| {
-		assert_ok!(<Polkadot as PolkadotPallet>::XcmPallet::limited_teleport_assets(
+		assert_ok!(<Polkadot as PolkadotPallet>::XcmPallet::limited_reserve_transfer_assets(
 			origin,
 			bx!(assets_para_destination),
 			bx!(beneficiary),
@@ -43,9 +42,10 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 		assert_expected_events!(
 			Statemint,
 			vec![
-				RuntimeEvent::Balances(pallet_balances::Event::Deposit { who, .. }) => {
-					who: *who == StatemineReceiver::get().into(),
-				},
+				RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
+					outcome: Outcome::Incomplete(_, Error::UntrustedReserveLocation),
+					..
+				}) => {},
 			]
 		);
 	});
@@ -55,5 +55,5 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 	let para_sender_balance_after = Statemint::account_data_of(StatemintReceiver::get()).free;
 
 	assert_eq!(relay_sender_balance_before - amount, relay_sender_balance_after);
-	assert!(para_sender_balance_after > para_receiver_balance_before);
+	assert_eq!(para_sender_balance_after, para_receiver_balance_before);
 }
