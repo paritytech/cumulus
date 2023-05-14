@@ -37,6 +37,7 @@ use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::{net::SocketAddr, path::PathBuf};
+use sc_telemetry::serde_json;
 
 /// Helper enum that is used for better distinction of different parachain/runtime configuration
 /// (it is based/calculated on ChainSpec's ID attribute)
@@ -77,7 +78,7 @@ impl RuntimeResolver for PathBuf {
 
 		let file = std::fs::File::open(self).expect("Failed to open file");
 		let reader = std::io::BufReader::new(file);
-		let chain_spec: EmptyChainSpecWithId = sp_serializer::from_reader(reader)
+		let chain_spec: EmptyChainSpecWithId = serde_json::from_reader(reader)
 			.expect("Failed to read 'json' file with ChainSpec configuration");
 
 		runtime(&chain_spec.id)

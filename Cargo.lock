@@ -9165,6 +9165,7 @@ dependencies = [
  "sc-transaction-pool-api",
  "seedling-runtime",
  "serde",
+ "serde_json",
  "shell-runtime",
  "sp-api",
  "sp-block-builder",
@@ -9175,7 +9176,6 @@ dependencies = [
  "sp-keystore",
  "sp-offchain",
  "sp-runtime",
- "sp-serializer",
  "sp-session",
  "sp-timestamp",
  "sp-transaction-pool",
@@ -13009,15 +13009,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.15",
-]
-
-[[package]]
-name = "sp-serializer"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#e6a13b807a88d25aa1cd0d320edb9412c3692c67"
-dependencies = [
- "serde",
- "serde_json",
 ]
 
 [[package]]
