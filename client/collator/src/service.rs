@@ -213,7 +213,7 @@ where
 
 		let compact_proof = match candidate
 			.proof
-			.into_compact_proof::<HashFor<Block>>(parent_header.state_root().clone())
+			.into_compact_proof::<HashFor<Block>>(*parent_header.state_root())
 		{
 			Ok(proof) => proof,
 			Err(e) => {
