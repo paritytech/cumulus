@@ -4,11 +4,13 @@ use crate::*;
 fn transact_sudo_from_relay_to_assets_para() {
 	// Init tests variables
 	// Call to be executed in Assets Parachain
+	const ASSET_ID: u32 = 1;
+
 	let call = <Statemint as Para>::RuntimeCall::Assets(pallet_assets::Call::<
 		<Statemint as Para>::Runtime,
 		Instance1,
 	>::force_create {
-		id: 1.into(),
+		id: ASSET_ID.into(),
 		is_sufficient: true,
 		min_balance: 1000,
 		owner: StatemintSender::get().into(),
@@ -54,6 +56,6 @@ fn transact_sudo_from_relay_to_assets_para() {
 
 	// Receive XCM message in Assets Parachain
 	Statemint::execute_with(|| {
-		assert!(<Statemint as StatemintPallet>::Assets::asset_exists(1));
+		assert!(<Statemint as StatemintPallet>::Assets::asset_exists(ASSET_ID));
 	});
 }
