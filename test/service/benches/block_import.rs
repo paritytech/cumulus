@@ -46,8 +46,6 @@ fn benchmark_block_import(c: &mut Criterion) {
 	);
 	let client = alice.client;
 
-	// Building the very first block is around ~30x slower than any subsequent one,
-	// so let's make sure it's built and imported before we benchmark anything.
 	let mut block_builder = client.new_block(Default::default()).unwrap();
 	block_builder.push(utils::extrinsic_set_time(&client)).unwrap();
 	let parent_hash = client.usage_info().chain.best_hash;

@@ -46,8 +46,6 @@ fn benchmark_block_production(c: &mut Criterion) {
 	);
 	let client = alice.client;
 
-	// Building the very first block is around ~30x slower than any subsequent one,
-	// so let's make sure it's built and imported before we benchmark anything.
 	let parent_hash = client.usage_info().chain.best_hash;
 	let parent_header = client.header(parent_hash).expect("Just fetched this hash.").unwrap();
 	let set_validation_data_extrinsic = utils::extrinsic_set_validation_data(parent_header);
@@ -56,6 +54,7 @@ fn benchmark_block_production(c: &mut Criterion) {
 	block_builder.push(utils::extrinsic_set_time(&client)).unwrap();
 	block_builder.push(set_validation_data_extrinsic.clone()).unwrap();
 	let built_block = block_builder.build().unwrap();
+
 	runtime.block_on(utils::import_block(&client, &built_block.block, false));
 
 	let (max_transfer_count, mut extrinsics) =

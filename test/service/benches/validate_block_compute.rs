@@ -149,8 +149,6 @@ fn set_glutton_parameters(
 	compute_percent: &Perbill,
 	storage_percent: &Perbill,
 ) -> ParachainBlockData {
-	// Building the very first block is around ~30x slower than any subsequent one,
-	// so let's make sure it's built and imported before we benchmark anything.
 	let parent_hash = client.usage_info().chain.best_hash;
 	let parent_header = client.header(parent_hash).expect("Just fetched this hash.").unwrap();
 

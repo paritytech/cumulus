@@ -113,15 +113,12 @@ fn benchmark_block_production_compute(c: &mut Criterion) {
 	}
 }
 
-/// Initialize glutton pallet and set compute and storage limits.
 fn set_glutton_parameters(
 	client: &TestClient,
 	initialize: bool,
 	compute_percent: &Perbill,
 	storage_percent: &Perbill,
 ) -> NodeBlock {
-	// Building the very first block is around ~30x slower than any subsequent one,
-	// so let's make sure it's built and imported before we benchmark anything.
 	let parent_hash = client.usage_info().chain.best_hash;
 	let parent_header = client.header(parent_hash).expect("Just fetched this hash.").unwrap();
 
@@ -132,6 +129,7 @@ fn set_glutton_parameters(
 
 	let mut extrinsics = vec![];
 	if initialize {
+		// Initialize the pallet
 		extrinsics.push(construct_extrinsic(
 			&client,
 			SudoCall::sudo {
@@ -145,6 +143,7 @@ fn set_glutton_parameters(
 		last_nonce += 1;
 	}
 
+	// Set compute weight that should be consumed per block
 	let set_compute = construct_extrinsic(
 		&client,
 		SudoCall::sudo {
@@ -156,6 +155,7 @@ fn set_glutton_parameters(
 	last_nonce += 1;
 	extrinsics.push(set_compute);
 
+	// Set storage weight that should be consumed per block
 	let set_storage = construct_extrinsic(
 		&client,
 		SudoCall::sudo {
