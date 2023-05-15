@@ -44,6 +44,7 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 default = [ "std" ]
 runtime-benchmarks = [
 	"pallet-glutton/runtime-benchmarks",
+	"xcm-builder/runtime-benchmarks",
 ]
 std = [
 	"codec/std",
