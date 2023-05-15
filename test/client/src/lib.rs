@@ -26,7 +26,7 @@ use sc_executor::{HeapAllocStrategy, WasmExecutionMethod, WasmExecutor};
 use sc_executor_common::runtime_blob::RuntimeBlob;
 use sc_service::client;
 use sp_blockchain::HeaderBackend;
-use sp_core::storage::Storage;
+use sp_core::{sr25519, storage::Storage, Pair};
 use sp_io::TestExternalities;
 use sp_runtime::{generic::Era, BuildStorage, SaturatedConversion};
 
@@ -77,11 +77,22 @@ pub type Client = client::Client<Backend, Executor, Block, runtime::RuntimeApi>;
 
 /// Parameters of test-client builder with test-runtime.
 #[derive(Default)]
-pub struct GenesisParameters;
+pub struct GenesisParameters {
+	pub endowed_accounts: Vec<cumulus_test_runtime::AccountId>,
+}
 
 impl substrate_test_client::GenesisInit for GenesisParameters {
 	fn genesis_storage(&self) -> Storage {
-		genesis_config().build_storage().unwrap()
+		if self.endowed_accounts.is_empty() {
+			genesis_config().build_storage().unwrap()
+		} else {
+			cumulus_test_service::testnet_genesis(
+				cumulus_test_service::get_account_id_from_seed::<sr25519::Public>("Alice"),
+				self.endowed_accounts.clone(),
+			)
+			.build_storage()
+			.unwrap()
+		}
 	}
 }
 
@@ -116,6 +127,49 @@ impl DefaultTestClientBuilderExt for TestClientBuilder {
 
 fn genesis_config() -> GenesisConfig {
 	cumulus_test_service::local_testnet_genesis()
+}
+
+pub fn generate_unsigned(function: impl Into<RuntimeCall>) -> UncheckedExtrinsic {
+	UncheckedExtrinsic::new_unsigned(function.into())
+}
+pub fn generate_extrinsic_with_pair(
+	client: &Client,
+	origin: sp_core::sr25519::Pair,
+	function: impl Into<RuntimeCall>,
+	nonce: Option<u32>,
+) -> UncheckedExtrinsic {
+	let current_block_hash = client.info().best_hash;
+	let current_block = client.info().best_number.saturated_into();
+	let genesis_block = client.hash(0).unwrap().unwrap();
+	let nonce = nonce.unwrap_or_default();
+	let period =
+		BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
+	let tip = 0;
+	let extra: SignedExtra = (
+		frame_system::CheckNonZeroSender::<Runtime>::new(),
+		frame_system::CheckSpecVersion::<Runtime>::new(),
+		frame_system::CheckGenesis::<Runtime>::new(),
+		frame_system::CheckEra::<Runtime>::from(Era::mortal(period, current_block)),
+		frame_system::CheckNonce::<Runtime>::from(nonce),
+		frame_system::CheckWeight::<Runtime>::new(),
+		pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
+	);
+
+	let function = function.into();
+
+	let raw_payload = SignedPayload::from_raw(
+		function.clone(),
+		extra.clone(),
+		((), VERSION.spec_version, genesis_block, current_block_hash, (), (), ()),
+	);
+	let signature = raw_payload.using_encoded(|e| origin.sign(e));
+
+	UncheckedExtrinsic::new_signed(
+		function,
+		origin.public().into(),
+		Signature::Sr25519(signature),
+		extra,
+	)
 }
 
 /// Generate an extrinsic from the provided function call, origin and [`Client`].

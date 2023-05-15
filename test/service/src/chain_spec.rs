@@ -80,12 +80,37 @@ where
 }
 
 /// Get the chain spec for a specific parachain ID.
-pub fn get_chain_spec(id: ParaId) -> ChainSpec {
+/// The given accounts are initialized with funds.
+pub fn get_chain_spec_with_endowed(
+	id: ParaId,
+	mut extra_endowed_accounts: Vec<AccountId>,
+) -> ChainSpec {
+	let mut default_endowed = vec![
+		get_account_id_from_seed::<sr25519::Public>("Alice"),
+		get_account_id_from_seed::<sr25519::Public>("Bob"),
+		get_account_id_from_seed::<sr25519::Public>("Charlie"),
+		get_account_id_from_seed::<sr25519::Public>("Dave"),
+		get_account_id_from_seed::<sr25519::Public>("Eve"),
+		get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+		get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+	];
+	extra_endowed_accounts.append(&mut default_endowed);
 	ChainSpec::from_genesis(
 		"Local Testnet",
 		"local_testnet",
 		ChainType::Local,
-		move || GenesisExt { runtime_genesis_config: local_testnet_genesis(), para_id: id },
+		move || GenesisExt {
+			runtime_genesis_config: testnet_genesis(
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				extra_endowed_accounts.clone(),
+			),
+			para_id: id,
+		},
 		Vec::new(),
 		None,
 		None,
@@ -93,6 +118,11 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 		None,
 		Extensions { para_id: id.into() },
 	)
+}
+
+/// Get the chain spec for a specific parachain ID.
+pub fn get_chain_spec(id: ParaId) -> ChainSpec {
+	get_chain_spec_with_endowed(id, Default::default())
 }
 
 /// Local testnet genesis for testing.
@@ -116,7 +146,7 @@ pub fn local_testnet_genesis() -> cumulus_test_runtime::GenesisConfig {
 	)
 }
 
-fn testnet_genesis(
+pub fn testnet_genesis(
 	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
 ) -> cumulus_test_runtime::GenesisConfig {

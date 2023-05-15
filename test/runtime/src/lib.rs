@@ -59,6 +59,7 @@ pub use frame_support::{
 };
 use frame_system::limits::{BlockLength, BlockWeights};
 pub use pallet_balances::Call as BalancesCall;
+pub use pallet_glutton::Call as GluttonCall;
 pub use pallet_sudo::Call as SudoCall;
 pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
@@ -265,6 +266,11 @@ impl pallet_sudo::Config for Runtime {
 	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
+impl pallet_glutton::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_glutton::weights::SubstrateWeight<Runtime>;
+}
+
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type SelfParaId = ParachainId;
 	type RuntimeEvent = RuntimeEvent;
@@ -296,6 +302,7 @@ construct_runtime! {
 		Sudo: pallet_sudo,
 		TransactionPayment: pallet_transaction_payment,
 		TestPallet: test_pallet,
+		Glutton: pallet_glutton,
 	}
 }
 
