@@ -17,7 +17,7 @@
 
 use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
 
-use cumulus_test_runtime::{AccountId, GluttonCall, NodeBlock, SudoCall};
+use cumulus_test_runtime::{GluttonCall, NodeBlock, SudoCall};
 use cumulus_test_service::{construct_extrinsic, Client as TestClient};
 use sc_client_api::UsageProvider;
 use sp_arithmetic::Perbill;
