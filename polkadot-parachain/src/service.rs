@@ -210,7 +210,7 @@ impl sc_executor::NativeExecutionDispatch for ContractsRococoRuntimeExecutor {
 pub struct GluttonRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for GluttonRuntimeExecutor {
-	type ExtendHostFunctions = ();
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
 		shell_runtime::api::dispatch(method, data)
