@@ -16,7 +16,7 @@ use sp_core::Encode;
 use sp_runtime::{Digest, DigestItem};
 use xcm::{
 	latest::{MultiAsset, MultiLocation, XcmContext, XcmHash},
-	prelude::{Concrete, Fungible, Outcome, XcmError, XcmVersion},
+	prelude::*,
 };
 use xcm_executor::{traits::TransactAsset, Assets};
 
@@ -134,12 +134,12 @@ impl<
 				.unwrap();
 		}
 
-		pallet_balances::GenesisConfig::<Runtime> { balances: self.balances.into() }
+		pallet_balances::GenesisConfig::<Runtime> { balances: self.balances }
 			.assimilate_storage(&mut t)
 			.unwrap();
 
 		pallet_collator_selection::GenesisConfig::<Runtime> {
-			invulnerables: self.collators.clone().into(),
+			invulnerables: self.collators.clone(),
 			candidacy_bond: Default::default(),
 			desired_candidates: Default::default(),
 		}
@@ -252,6 +252,31 @@ impl<Runtime: pallet_xcm::Config + cumulus_pallet_parachain_system::Config> Runt
 	}
 }
 
+impl<Runtime: cumulus_pallet_dmp_queue::Config + cumulus_pallet_parachain_system::Config>
+	RuntimeHelper<Runtime>
+{
+	pub fn execute_as_governance(call: Vec<u8>, require_weight_at_most: Weight) -> Outcome {
+		// prepare xcm as governance will do
+		let xcm = Xcm(vec![
+			UnpaidExecution { weight_limit: Unlimited, check_origin: None },
+			Transact {
+				origin_kind: OriginKind::Superuser,
+				require_weight_at_most,
+				call: call.into(),
+			},
+		]);
+
+		// execute xcm as parent origin
+		let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
+		<<Runtime as cumulus_pallet_dmp_queue::Config>::XcmExecutor>::execute_xcm(
+			MultiLocation::parent(),
+			xcm,
+			hash,
+			Self::xcm_max_weight(XcmReceivedFrom::Parent),
+		)
+	}
+}
+
 pub enum XcmReceivedFrom {
 	Parent,
 	Sibling,
@@ -278,11 +303,10 @@ impl<Runtime: frame_system::Config + pallet_xcm::Config> RuntimeHelper<Runtime> 
 			.find_map(|e| match e {
 				pallet_xcm::Event::Attempted(outcome) => Some(outcome),
 				_ => None,
-			});
-		match outcome {
-			Some(outcome) => assert_outcome(outcome),
-			None => assert!(false, "No `pallet_xcm::Event::Attempted(outcome)` event found!"),
-		}
+			})
+			.expect("No `pallet_xcm::Event::Attempted(outcome)` event found!");
+
+		assert_outcome(outcome);
 	}
 }
 
@@ -337,8 +361,11 @@ pub fn mock_open_hrmp_channel<
 	recipient: ParaId,
 ) {
 	let n = 1_u32;
-	let mut sproof_builder = RelayStateSproofBuilder::default();
-	sproof_builder.para_id = sender;
+	let mut sproof_builder = RelayStateSproofBuilder {
+		para_id: sender,
+		hrmp_egress_channel_index: Some(vec![recipient]),
+		..Default::default()
+	};
 	sproof_builder.hrmp_channels.insert(
 		HrmpChannelId { sender, recipient },
 		AbridgedHrmpChannel {
@@ -350,7 +377,6 @@ pub fn mock_open_hrmp_channel<
 			mqc_head: None,
 		},
 	);
-	sproof_builder.hrmp_egress_channel_index = Some(vec![recipient]);
 
 	let (relay_parent_storage_root, relay_chain_state) = sproof_builder.into_state_root_and_proof();
 	let vfp = PersistedValidationData {
@@ -363,7 +389,7 @@ pub fn mock_open_hrmp_channel<
 	let inherent_data = {
 		let mut inherent_data = InherentData::default();
 		let system_inherent_data = ParachainInherentData {
-			validation_data: vfp.clone(),
+			validation_data: vfp,
 			relay_chain_state,
 			downward_messages: Default::default(),
 			horizontal_messages: Default::default(),
