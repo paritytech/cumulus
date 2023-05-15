@@ -676,8 +676,8 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, Si
 /// Migrations to apply on runtime upgrade.
 pub type Migrations = (
 	cumulus_pallet_parachain_system::migration::Migration<Runtime>,
+	cumulus_pallet_xcmp_queue::migration::Migration<Runtime>,
 	cumulus_pallet_dmp_queue::migration::Migration<Runtime>,
-	cumulus_pallet_xcm::migration::Migration<Runtime>,
 );
 
 /// Executive: handles dispatch to the various modules.
