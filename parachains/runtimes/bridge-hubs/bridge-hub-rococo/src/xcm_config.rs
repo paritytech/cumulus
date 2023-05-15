@@ -16,8 +16,9 @@
 
 use super::{
 	AccountId, AllPalletsWithSystem, Balances, BridgeGrandpaRococoInstance,
-	BridgeGrandpaWococoInstance, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall,
-	RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
+	BridgeGrandpaWococoInstance, DeliveryRewardInBalance, ParachainInfo, ParachainSystem,
+	PolkadotXcm, RequiredStakeForStakeAndSlash, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
+	WeightToFee, XcmpQueue,
 };
 use crate::{
 	bridge_hub_rococo_config::ToBridgeHubWococoHaulBlobExporter,
@@ -151,6 +152,20 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				return true
 			}
 		}
+
+		// Allow to change dedicated storage items (called by governance-like)
+		match call {
+			RuntimeCall::System(frame_system::Call::set_storage { items })
+				if items
+					.iter()
+					.find(|(k, _)| {
+						k.eq(&DeliveryRewardInBalance::key()) |
+							k.eq(&RequiredStakeForStakeAndSlash::key())
+					})
+					.is_some() =>
+				return true,
+			_ => (),
+		};
 
 		matches!(
 			call,
