@@ -126,7 +126,7 @@ fn benchmark_block_validation(c: &mut Criterion) {
 	// we expect.
 	verify_expected_result(&runtime, &encoded_params, parachain_block.into_block());
 
-	let mut group = c.benchmark_group("Block production");
+	let mut group = c.benchmark_group("Block validation");
 	group.sample_size(20);
 	group.measurement_time(Duration::from_secs(120));
 	group.throughput(Throughput::Elements(max_transfer_count as u64));
