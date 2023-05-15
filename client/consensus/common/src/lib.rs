@@ -308,6 +308,7 @@ pub async fn find_potential_parents<B: BlockT>(
 			let digest = entry.header.digest();
 			cumulus_primitives_core::extract_relay_parent(digest).map_or(false, is_hash_in_ancestry) ||
 				cumulus_primitives_core::rpsr_digest::extract_relay_parent_storage_root(digest)
+					.map(|(r, _n)| r)
 					.map_or(false, is_root_in_ancestry)
 		};
 
