@@ -39,12 +39,8 @@ fn benchmark_block_production_compute(c: &mut Criterion) {
 	let tokio_handle = runtime.handle();
 
 	let para_id = ParaId::from(100);
-	let endowed_accounts = vec![AccountId::from(Alice.public())];
 	let alice = runtime.block_on(
-		cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle.clone(), Alice)
-			// Preload all accounts with funds for the transfers
-			.endowed_accounts(endowed_accounts)
-			.build(),
+		cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle.clone(), Alice).build(),
 	);
 	let client = alice.client;
 

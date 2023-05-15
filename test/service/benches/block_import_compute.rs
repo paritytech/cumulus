@@ -39,12 +39,8 @@ fn benchmark_block_import(c: &mut Criterion) {
 	let para_id = ParaId::from(100);
 	let tokio_handle = runtime.handle();
 
-	let endowed_accounts = vec![AccountId::from(Alice.public())];
 	let alice = runtime.block_on(
-		cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle.clone(), Alice)
-			// Preload all accounts with funds for the transfers
-			.endowed_accounts(endowed_accounts)
-			.build(),
+		cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle.clone(), Alice).build(),
 	);
 	let client = alice.client;
 
@@ -122,7 +118,7 @@ fn set_glutton_parameters(
 				),
 			},
 			Alice.into(),
-			Some(last_nonce + 1),
+			Some(last_nonce),
 		));
 		last_nonce += 1;
 	}
@@ -133,7 +129,7 @@ fn set_glutton_parameters(
 			call: Box::new(GluttonCall::set_compute { compute: compute_percent.clone() }.into()),
 		},
 		Alice.into(),
-		Some(last_nonce + 1),
+		Some(last_nonce),
 	);
 	last_nonce += 1;
 	extrinsics.push(set_compute);
@@ -144,7 +140,7 @@ fn set_glutton_parameters(
 			call: Box::new(GluttonCall::set_storage { storage: storage_percent.clone() }.into()),
 		},
 		Alice.into(),
-		Some(last_nonce + 1),
+		Some(last_nonce),
 	);
 	extrinsics.push(set_storage);
 
