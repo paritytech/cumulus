@@ -126,8 +126,12 @@ pub type UncheckedExtrinsic =
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
-pub type Migrations =
-	(pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,);
+pub type Migrations = (
+	pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,
+	cumulus_pallet_parachain_system::migration::Migration<Runtime>,
+	cumulus_pallet_parachain_system::migration::Migration<Runtime>,
+	cumulus_pallet_xcmp_queue::migration::Migration<Runtime>,
+);
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<

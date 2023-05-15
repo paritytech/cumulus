@@ -98,13 +98,13 @@ pub type UncheckedExtrinsic =
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
 pub type Migrations = (
+	cumulus_pallet_dmp_queue::migration::Migration<Runtime>,
 	cumulus_pallet_parachain_system::migration::Migration<Runtime>,
 	cumulus_pallet_xcmp_queue::migration::Migration<Runtime>,
 	pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,
-	pallet_multisig::migrations::v1::MigrateToV1<Runtime>,
 	pallet_contracts::Migration<Runtime>,
+	pallet_multisig::migrations::v1::MigrateToV1<Runtime>,
 	pallet_xcm::migration::v1::MigrateToV1<Runtime>,
-	cumulus_pallet_dmp_queue::migration::Migration<Runtime>,
 );
 
 type EventRecord = frame_system::EventRecord<
