@@ -34,8 +34,12 @@ use polkadot_primitives::{CollatorPair, OccupiedCoreAssumption};
 use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, ProofProvider, UsageProvider,
 };
-use sc_consensus::{import_queue::ImportQueueService, BlockImport, ImportQueue};
+use sc_consensus::{
+	import_queue::{ImportQueue, ImportQueueService},
+	BlockImport,
+};
 use sc_network::{config::SyncMode, NetworkService};
+use sc_network_sync::SyncingService;
 use sc_network_transactions::TransactionsHandlerController;
 use sc_service::{Configuration, NetworkStarter, SpawnTaskHandle, TaskManager, WarpSyncParams};
 use sc_telemetry::{log, TelemetryWorkerHandle};
@@ -66,6 +70,7 @@ pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, RCInterface, Spawn
 	pub collator_key: CollatorPair,
 	pub relay_chain_slot_duration: Duration,
 	pub recovery_handle: Box<dyn RecoveryHandle>,
+	pub sync_service: Arc<SyncingService<Block>>,
 }
 
 /// Start a collator node for a parachain.
@@ -87,6 +92,7 @@ pub async fn start_collator<'a, Block, BS, Client, Backend, RCInterface, Spawner
 		collator_key,
 		relay_chain_slot_duration,
 		recovery_handle,
+		sync_service,
 	}: StartCollatorParams<'a, Block, BS, Client, RCInterface, Spawner>,
 ) -> sc_service::error::Result<()>
 where
@@ -119,7 +125,7 @@ where
 
 	task_manager
 		.spawn_essential_handle()
-		.spawn("cumulus-consensus", None, consensus);
+		.spawn_blocking("cumulus-consensus", None, consensus);
 
 	let pov_recovery = PoVRecovery::new(
 		recovery_handle,
@@ -132,6 +138,7 @@ where
 		relay_chain_interface.clone(),
 		para_id,
 		recovery_chan_rx,
+		sync_service,
 	);
 
 	task_manager
@@ -166,6 +173,7 @@ pub struct StartFullNodeParams<'a, Block: BlockT, Client, RCInterface> {
 	pub relay_chain_slot_duration: Duration,
 	pub import_queue: Box<dyn ImportQueueService<Block>>,
 	pub recovery_handle: Box<dyn RecoveryHandle>,
+	pub sync_service: Arc<SyncingService<Block>>,
 }
 
 /// Start a full node for a parachain.
@@ -182,6 +190,7 @@ pub fn start_full_node<Block, Client, Backend, RCInterface>(
 		relay_chain_slot_duration,
 		import_queue,
 		recovery_handle,
+		sync_service,
 	}: StartFullNodeParams<Block, Client, RCInterface>,
 ) -> sc_service::error::Result<()>
 where
@@ -209,7 +218,7 @@ where
 
 	task_manager
 		.spawn_essential_handle()
-		.spawn("cumulus-consensus", None, consensus);
+		.spawn_blocking("cumulus-consensus", None, consensus);
 
 	let pov_recovery = PoVRecovery::new(
 		recovery_handle,
@@ -227,6 +236,7 @@ where
 		relay_chain_interface,
 		para_id,
 		recovery_chan_rx,
+		sync_service,
 	);
 
 	task_manager
@@ -291,6 +301,7 @@ pub struct BuildNetworkParams<
 	Client::Api: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>,
 {
 	pub parachain_config: &'a Configuration,
+	pub net_config: sc_network::config::FullNetworkConfiguration,
 	pub client: Arc<Client>,
 	pub transaction_pool: Arc<sc_transaction_pool::FullPool<Block, Client>>,
 	pub para_id: ParaId,
@@ -303,6 +314,7 @@ pub struct BuildNetworkParams<
 pub async fn build_network<'a, Block, Client, RCInterface, IQ>(
 	BuildNetworkParams {
 		parachain_config,
+		net_config,
 		client,
 		transaction_pool,
 		para_id,
@@ -315,6 +327,7 @@ pub async fn build_network<'a, Block, Client, RCInterface, IQ>(
 	TracingUnboundedSender<sc_rpc::system::Request<Block>>,
 	TransactionsHandlerController<Block::Hash>,
 	NetworkStarter,
+	Arc<SyncingService<Block>>,
 )>
 where
 	Block: BlockT,
@@ -353,6 +366,7 @@ where
 
 	sc_service::build_network(sc_service::BuildNetworkParams {
 		config: parachain_config,
+		net_config,
 		client,
 		transaction_pool,
 		spawn_handle,
@@ -430,7 +444,7 @@ where
 				)
 				.await
 				.map_err(|e| format!("{e:?}"))?
-				.ok_or_else(|| "Could not find parachain head in relay chain")?;
+				.ok_or("Could not find parachain head in relay chain")?;
 
 			let target_block = B::Header::decode(&mut &validation_data.parent_head.0[..])
 				.map_err(|e| format!("Failed to decode parachain head: {e}"))?;

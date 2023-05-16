@@ -17,7 +17,6 @@
 use std::{collections::BTreeMap, pin::Pin, sync::Arc};
 
 use polkadot_overseer::prometheus::PrometheusError;
-use polkadot_service::SubstrateServiceError;
 use sc_client_api::StorageProof;
 
 use futures::Stream;
@@ -47,7 +46,9 @@ pub enum RelayChainError {
 	WaitTimeout(PHash),
 	#[error("Import listener closed while waiting for relay-chain block `{0}` to be imported.")]
 	ImportListenerClosed(PHash),
-	#[error("Blockchain returned an error while waiting for relay-chain block `{0}` to be imported: {1}")]
+	#[error(
+		"Blockchain returned an error while waiting for relay-chain block `{0}` to be imported: {1}"
+	)]
 	WaitBlockchainError(PHash, sp_blockchain::Error),
 	#[error("Blockchain returned an error: {0}")]
 	BlockchainError(#[from] sp_blockchain::Error),
@@ -61,10 +62,8 @@ pub enum RelayChainError {
 	WorkerCommunicationError(String),
 	#[error("Scale codec deserialization error: {0}")]
 	DeserializationError(CodecError),
-	#[error("Polkadot service error: {0}")]
-	ServiceError(#[from] polkadot_service::Error),
-	#[error("Substrate service error: {0}")]
-	SubServiceError(#[from] SubstrateServiceError),
+	#[error(transparent)]
+	Application(#[from] Box<dyn std::error::Error + Send + Sync + 'static>),
 	#[error("Prometheus error: {0}")]
 	PrometheusError(#[from] PrometheusError),
 	#[error("Unspecified error occured: {0}")]
@@ -86,6 +85,12 @@ impl From<CodecError> for RelayChainError {
 impl From<RelayChainError> for sp_blockchain::Error {
 	fn from(r: RelayChainError) -> Self {
 		sp_blockchain::Error::Application(Box::new(r))
+	}
+}
+
+impl<T: std::error::Error + Send + Sync + 'static> From<Box<T>> for RelayChainError {
+	fn from(r: Box<T>) -> Self {
+		RelayChainError::Application(r)
 	}
 }
 

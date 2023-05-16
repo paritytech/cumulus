@@ -1,12 +1,15 @@
 use crate::impls::AccountIdOf;
-use core::marker::PhantomData;
+use core::{marker::PhantomData, ops::ControlFlow};
 use frame_support::{
 	log,
-	traits::{fungibles::Inspect, tokens::BalanceConversion, ContainsPair},
-	weights::{Weight, WeightToFee, WeightToFeePolynomial},
+	traits::{
+		fungibles::Inspect, tokens::ConversionToAssetBalance, ContainsPair, ProcessMessageError,
+	},
+	weights::Weight,
 };
 use sp_runtime::traits::Get;
 use xcm::latest::prelude::*;
+use xcm_builder::{CreateMatcher, MatchXcm};
 use xcm_executor::traits::ShouldExecute;
 
 //TODO: move DenyThenTry to polkadot's xcm module.
@@ -27,7 +30,7 @@ where
 		message: &mut [Instruction<RuntimeCall>],
 		max_weight: Weight,
 		weight_credit: &mut Weight,
-	) -> Result<(), ()> {
+	) -> Result<(), ProcessMessageError> {
 		Deny::should_execute(origin, message, max_weight, weight_credit)?;
 		Allow::should_execute(origin, message, max_weight, weight_credit)
 	}
@@ -41,33 +44,39 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 		message: &mut [Instruction<RuntimeCall>],
 		_max_weight: Weight,
 		_weight_credit: &mut Weight,
-	) -> Result<(), ()> {
-		if message.iter().any(|inst| {
-			matches!(
-				inst,
+	) -> Result<(), ProcessMessageError> {
+		message.matcher().match_next_inst_while(
+			|_| true,
+			|inst| match inst {
 				InitiateReserveWithdraw {
 					reserve: MultiLocation { parents: 1, interior: Here },
 					..
-				} | DepositReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. } |
-					TransferReserveAsset {
-						dest: MultiLocation { parents: 1, interior: Here },
-						..
-					}
-			)
-		}) {
-			return Err(()) // Deny
-		}
+				} |
+				DepositReserveAsset {
+					dest: MultiLocation { parents: 1, interior: Here }, ..
+				} |
+				TransferReserveAsset {
+					dest: MultiLocation { parents: 1, interior: Here }, ..
+				} => {
+					Err(ProcessMessageError::Unsupported) // Deny
+				},
 
-		// An unexpected reserve transfer has arrived from the Relay Chain. Generally, `IsReserve`
-		// should not allow this, but we just log it here.
-		if matches!(origin, MultiLocation { parents: 1, interior: Here }) &&
-			message.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
-		{
-			log::warn!(
-				target: "xcm::barriers",
-				"Unexpected ReserveAssetDeposited from the Relay Chain",
-			);
-		}
+				// An unexpected reserve transfer has arrived from the Relay Chain. Generally,
+				// `IsReserve` should not allow this, but we just log it here.
+				ReserveAssetDeposited { .. }
+					if matches!(origin, MultiLocation { parents: 1, interior: Here }) =>
+				{
+					log::warn!(
+						target: "xcm::barrier",
+						"Unexpected ReserveAssetDeposited from the Relay Chain",
+					);
+					Ok(ControlFlow::Continue(()))
+				},
+
+				_ => Ok(ControlFlow::Continue(())),
+			},
+		)?;
+
 		// Permit everything else
 		Ok(())
 	}
@@ -89,8 +98,8 @@ impl<CurrencyBalance, Runtime, WeightToFee, BalanceConverter, AssetInstance>
 	> for AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceConverter, AssetInstance>
 where
 	Runtime: pallet_assets::Config<AssetInstance>,
-	WeightToFee: WeightToFeePolynomial<Balance = CurrencyBalance>,
-	BalanceConverter: BalanceConversion<
+	WeightToFee: frame_support::weights::WeightToFee<Balance = CurrencyBalance>,
+	BalanceConverter: ConversionToAssetBalance<
 		CurrencyBalance,
 		<Runtime as pallet_assets::Config<AssetInstance>>::AssetId,
 		<Runtime as pallet_assets::Config<AssetInstance>>::Balance,

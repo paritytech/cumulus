@@ -40,14 +40,14 @@
 //! 4a. After it is recovered, we restore the block and import it.
 //!
 //! 4b. Since we are trying to recover pending candidates, availability is not guaranteed. If the block
-//! 	PoV is not yet available, we retry.
+//!     PoV is not yet available, we retry.
 //!
 //! If we need to recover multiple PoV blocks (which should hopefully not happen in real life), we
 //! make sure that the blocks are imported in the correct order.
 
 use sc_client_api::{BlockBackend, BlockchainEvents, UsageProvider};
 use sc_consensus::import_queue::{ImportQueueService, IncomingBlock};
-use sp_consensus::{BlockOrigin, BlockStatus};
+use sp_consensus::{BlockOrigin, BlockStatus, SyncOracle};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, NumberFor};
 
 use polkadot_node_primitives::{AvailableData, POV_BOMB_LIMIT};
@@ -190,7 +190,7 @@ impl<Block: BlockT> RecoveryQueue<Block> {
 	/// Get the next hash for block recovery.
 	pub async fn next_recovery(&mut self) -> Block::Hash {
 		loop {
-			if let Some(_) = self.signaling_queue.next().await {
+			if self.signaling_queue.next().await.is_some() {
 				if let Some(hash) = self.recovery_queue.pop_front() {
 					return hash
 				} else {
@@ -228,6 +228,7 @@ pub struct PoVRecovery<Block: BlockT, PC, RC> {
 	recovery_chan_rx: Receiver<RecoveryRequest<Block>>,
 	/// Blocks that we are retrying currently
 	candidates_in_retry: HashSet<Block::Hash>,
+	parachain_sync_service: Arc<dyn SyncOracle + Sync + Send>,
 }
 
 impl<Block: BlockT, PC, RCInterface> PoVRecovery<Block, PC, RCInterface>
@@ -244,6 +245,7 @@ where
 		relay_chain_interface: RCInterface,
 		para_id: ParaId,
 		recovery_chan_rx: Receiver<RecoveryRequest<Block>>,
+		parachain_sync_service: Arc<dyn SyncOracle + Sync + Send>,
 	) -> Self {
 		Self {
 			candidates: HashMap::new(),
@@ -256,6 +258,7 @@ where
 			para_id,
 			candidates_in_retry: HashSet::new(),
 			recovery_chan_rx,
+			parachain_sync_service,
 		}
 	}
 
@@ -306,10 +309,10 @@ where
 
 	/// Block is no longer waiting for recovery
 	fn clear_waiting_recovery(&mut self, block_hash: &Block::Hash) {
-		self.candidates.get_mut(block_hash).map(|candidate| {
+		if let Some(candidate) = self.candidates.get_mut(block_hash) {
 			// Prevents triggering an already enqueued recovery request
 			candidate.waiting_recovery = false;
-		});
+		}
 	}
 
 	/// Handle a finalized block with the given `block_number`.
@@ -538,14 +541,19 @@ where
 	pub async fn run(mut self) {
 		let mut imported_blocks = self.parachain_client.import_notification_stream().fuse();
 		let mut finalized_blocks = self.parachain_client.finality_notification_stream().fuse();
-		let pending_candidates =
-			match pending_candidates(self.relay_chain_interface.clone(), self.para_id).await {
-				Ok(pending_candidate_stream) => pending_candidate_stream.fuse(),
-				Err(err) => {
-					tracing::error!(target: LOG_TARGET, error = ?err, "Unable to retrieve pending candidate stream.");
-					return
-				},
-			};
+		let pending_candidates = match pending_candidates(
+			self.relay_chain_interface.clone(),
+			self.para_id,
+			self.parachain_sync_service.clone(),
+		)
+		.await
+		{
+			Ok(pending_candidate_stream) => pending_candidate_stream.fuse(),
+			Err(err) => {
+				tracing::error!(target: LOG_TARGET, error = ?err, "Unable to retrieve pending candidate stream.");
+				return
+			},
+		};
 
 		futures::pin_mut!(pending_candidates);
 
@@ -600,13 +608,24 @@ where
 async fn pending_candidates(
 	relay_chain_client: impl RelayChainInterface + Clone,
 	para_id: ParaId,
+	sync_service: Arc<dyn SyncOracle + Sync + Send>,
 ) -> RelayChainResult<impl Stream<Item = (CommittedCandidateReceipt, SessionIndex)>> {
 	let import_notification_stream = relay_chain_client.import_notification_stream().await?;
 
 	let filtered_stream = import_notification_stream.filter_map(move |n| {
 		let client_for_closure = relay_chain_client.clone();
+		let sync_oracle = sync_service.clone();
 		async move {
 			let hash = n.hash();
+			if sync_oracle.is_major_syncing() {
+				tracing::debug!(
+					target: LOG_TARGET,
+					relay_hash = ?hash,
+					"Skipping candidate due to sync.",
+				);
+				return None
+			}
+
 			let pending_availability_result = client_for_closure
 				.candidate_pending_availability(hash, para_id)
 				.await

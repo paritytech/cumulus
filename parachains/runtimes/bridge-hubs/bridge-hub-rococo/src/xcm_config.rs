@@ -15,38 +15,63 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-	AccountId, AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
-	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
+	AccountId, AllPalletsWithSystem, Balances, BridgeGrandpaRococoInstance,
+	BridgeGrandpaWococoInstance, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall,
+	RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
+};
+use crate::{
+	bridge_hub_rococo_config::ToBridgeHubWococoHaulBlobExporter,
+	bridge_hub_wococo_config::ToBridgeHubRococoHaulBlobExporter,
 };
 use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing},
 };
+use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
-use parachains_common::xcm_config::{
-	ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry,
+use parachains_common::{
+	impls::ToStakingPot,
+	xcm_config::{ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry},
 };
 use polkadot_parachain::primitives::Sibling;
-use polkadot_runtime_common::impls::ToAuthor;
+use sp_core::Get;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
-	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin,
-	IsConcrete, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
-	WithComputedOrigin,
+	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
+	CurrencyAdapter, EnsureXcmOrigin, IsConcrete, ParentAsSuperuser, ParentIsPreset,
+	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+	UsingComponents, WeightInfoBounds, WithComputedOrigin,
 };
-use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
+use xcm_executor::{
+	traits::{ExportXcm, WithOriginFilter},
+	XcmExecutor,
+};
 
 parameter_types! {
 	pub const RelayLocation: MultiLocation = MultiLocation::parent();
-	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::Rococo);
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub UniversalLocation: InteriorMultiLocation =
-		X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
+		X2(GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into()));
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
+}
+
+pub struct RelayNetwork;
+impl Get<Option<NetworkId>> for RelayNetwork {
+	fn get() -> Option<NetworkId> {
+		Some(Self::get())
+	}
+}
+impl Get<NetworkId> for RelayNetwork {
+	fn get() -> NetworkId {
+		match u32::from(ParachainInfo::parachain_id()) {
+			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID => NetworkId::Rococo,
+			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID => NetworkId::Wococo,
+			para_id => unreachable!("Not supported for para_id: {}", para_id),
+		}
+	}
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -71,7 +96,7 @@ pub type CurrencyTransactor = CurrencyAdapter<
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
 	AccountId,
-	// We don't track any teleports.
+	// We don't track any teleports of `Balances`.
 	(),
 >;
 
@@ -83,7 +108,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	// using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
 	// foreign chains who want to have a local sovereign account on this chain which they control.
 	SovereignSignedViaLocation<LocationToAccountId, RuntimeOrigin>,
-	// Native converter for Relay-chain (Parent) location; will converts to a `Relay` origin when
+	// Native converter for Relay-chain (Parent) location; will convert to a `Relay` origin when
 	// recognized.
 	RelayChainAsNative<RelayChainOrigin, RuntimeOrigin>,
 	// Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
@@ -93,16 +118,16 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	// transaction from the Root origin.
 	ParentAsSuperuser<RuntimeOrigin>,
 	// Native signed account converter; this just converts an `AccountId32` origin into a normal
-	// `Origin::Signed` origin of the same 32-byte value.
+	// `RuntimeOrigin::Signed` origin of the same 32-byte value.
 	SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
 	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
 	XcmPassthrough<RuntimeOrigin>,
 );
 
 match_types! {
-	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
+	pub type ParentOrParentsPlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
-		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
+		MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
 	};
 	pub type ParentOrSiblings: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
@@ -127,28 +152,36 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			}
 		}
 
-		match call {
-			RuntimeCall::System(
-				frame_system::Call::set_heap_pages { .. } |
-				frame_system::Call::set_code { .. } |
-				frame_system::Call::set_code_without_checks { .. } |
-				frame_system::Call::kill_prefix { .. },
-			) |
-			RuntimeCall::ParachainSystem(..) |
-			RuntimeCall::Timestamp(..) |
-			RuntimeCall::Balances(..) |
-			RuntimeCall::CollatorSelection(
-				pallet_collator_selection::Call::set_desired_candidates { .. } |
-				pallet_collator_selection::Call::set_candidacy_bond { .. } |
-				pallet_collator_selection::Call::register_as_candidate { .. } |
-				pallet_collator_selection::Call::leave_intent { .. },
-			) |
-			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
-			RuntimeCall::XcmpQueue(..) |
-			RuntimeCall::DmpQueue(..) |
-			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) => true,
-			_ => false,
-		}
+		matches!(
+			call,
+			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
+				RuntimeCall::System(
+					frame_system::Call::set_heap_pages { .. } |
+						frame_system::Call::set_code { .. } |
+						frame_system::Call::set_code_without_checks { .. } |
+						frame_system::Call::kill_prefix { .. },
+				) | RuntimeCall::ParachainSystem(..) |
+				RuntimeCall::Timestamp(..) |
+				RuntimeCall::Balances(..) |
+				RuntimeCall::CollatorSelection(
+					pallet_collator_selection::Call::set_desired_candidates { .. } |
+						pallet_collator_selection::Call::set_candidacy_bond { .. } |
+						pallet_collator_selection::Call::register_as_candidate { .. } |
+						pallet_collator_selection::Call::leave_intent { .. } |
+						pallet_collator_selection::Call::set_invulnerables { .. },
+				) | RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
+				RuntimeCall::XcmpQueue(..) |
+				RuntimeCall::DmpQueue(..) |
+				RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
+				RuntimeCall::BridgeRococoGrandpa(pallet_bridge_grandpa::Call::<
+					Runtime,
+					BridgeGrandpaRococoInstance,
+				>::initialize { .. }) |
+				RuntimeCall::BridgeWococoGrandpa(pallet_bridge_grandpa::Call::<
+					Runtime,
+					BridgeGrandpaWococoInstance,
+				>::initialize { .. })
+		)
 	}
 }
 
@@ -161,16 +194,19 @@ pub type Barrier = DenyThenTry<
 		AllowKnownQueryResponses<PolkadotXcm>,
 		WithComputedOrigin<
 			(
-				// Allow anything to pay for execution.
+				// If the message is one that immediately attemps to pay for execution, then allow it.
 				AllowTopLevelPaidExecutionFrom<Everything>,
-				// Parent and its exec plurality get free execution.
-				AllowExplicitUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+				// Parent and its pluralities (i.e. governance bodies) get free execution.
+				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
 				// Subscriptions for version tracking are OK.
 				AllowSubscriptionsFrom<ParentOrSiblings>,
 			),
 			UniversalLocation,
 			ConstU32<8>,
 		>,
+		// TODO:check-parameter - (https://github.com/paritytech/parity-bridges-common/issues/2084)
+		// remove this and extend `AllowExplicitUnpaidExecutionFrom` with "or SystemParachains" once merged https://github.com/paritytech/polkadot/pull/7005
+		AllowUnpaidExecutionFrom<Everything>,
 	),
 >;
 
@@ -193,7 +229,7 @@ impl xcm_executor::Config for XcmConfig {
 		MaxInstructions,
 	>;
 	type Trader =
-		UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ToAuthor<Runtime>>;
+		UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ToStakingPot<Runtime>>;
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;
@@ -203,7 +239,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetLocker = ();
 	type AssetExchanger = ();
 	type FeeManager = ();
-	type MessageExporter = ();
+	type MessageExporter = BridgeHubRococoOrBridgeHubWococoSwitchExporter;
 	type UniversalAliases = Nothing;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
 	type SafeCallFilter = SafeCallFilter;
@@ -229,12 +265,11 @@ parameter_types! {
 
 impl pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	type XcmRouter = XcmRouter;
 	// We want to disallow users sending (arbitrary) XCMs from this chain.
 	type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, ()>;
-	type XcmRouter = XcmRouter;
 	// We support local origins dispatching XCM executions in principle...
 	type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
-	// ... but disallow generic XCM execution. As a result only teleports are allowed.
 	type XcmExecuteFilter = Nothing;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
@@ -257,9 +292,55 @@ impl pallet_xcm::Config for Runtime {
 	type WeightInfo = crate::weights::pallet_xcm::WeightInfo<Runtime>;
 	#[cfg(feature = "runtime-benchmarks")]
 	type ReachableDest = ReachableDest;
+	type AdminOrigin = EnsureRoot<AccountId>;
+	type MaxRemoteLockConsumers = ConstU32<0>;
+	type RemoteLockConsumerIdentifier = ();
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
+}
+
+/// Hacky switch implementation, because we have just one runtime for Rococo and Wococo BridgeHub, so it means we have just one XcmConfig
+pub struct BridgeHubRococoOrBridgeHubWococoSwitchExporter;
+impl ExportXcm for BridgeHubRococoOrBridgeHubWococoSwitchExporter {
+	type Ticket = (NetworkId, (sp_std::prelude::Vec<u8>, XcmHash));
+
+	fn validate(
+		network: NetworkId,
+		channel: u32,
+		universal_source: &mut Option<InteriorMultiLocation>,
+		destination: &mut Option<InteriorMultiLocation>,
+		message: &mut Option<Xcm<()>>,
+	) -> SendResult<Self::Ticket> {
+		match network {
+			Rococo => ToBridgeHubRococoHaulBlobExporter::validate(
+				network,
+				channel,
+				universal_source,
+				destination,
+				message,
+			)
+			.map(|result| ((Rococo, result.0), result.1)),
+			Wococo => ToBridgeHubWococoHaulBlobExporter::validate(
+				network,
+				channel,
+				universal_source,
+				destination,
+				message,
+			)
+			.map(|result| ((Wococo, result.0), result.1)),
+			_ => unimplemented!("Unsupported network: {:?}", network),
+		}
+	}
+
+	fn deliver(ticket: Self::Ticket) -> Result<XcmHash, SendError> {
+		let (network, ticket) = ticket;
+		match network {
+			Rococo => ToBridgeHubRococoHaulBlobExporter::deliver(ticket),
+			Wococo => ToBridgeHubWococoHaulBlobExporter::deliver(ticket),
+			_ => unimplemented!("Unsupported network: {:?}", network),
+		}
+	}
 }

@@ -241,7 +241,7 @@ where
 			self.full_client
 				.import_notification_stream()
 				.filter_map(|notification| async move {
-					notification.is_new_best.then(|| notification.header)
+					notification.is_new_best.then_some(notification.header)
 				});
 		Ok(Box::pin(notifications_stream))
 	}
@@ -367,13 +367,13 @@ pub fn build_inprocess_relay_chain(
 		parachain_config,
 		telemetry_worker_handle,
 		hwbench,
-	)?;
+	)
+	.map_err(|e| RelayChainError::Application(Box::new(e) as Box<_>))?;
 
-	let sync_oracle: Arc<dyn SyncOracle + Send + Sync> = Arc::new(full_node.network.clone());
 	let relay_chain_interface_builder = RelayChainInProcessInterfaceBuilder {
 		polkadot_client: full_node.client.clone(),
 		backend: full_node.backend.clone(),
-		sync_oracle,
+		sync_oracle: full_node.sync_service.clone(),
 		overseer_handle: full_node.overseer_handle.clone().ok_or(RelayChainError::GenericError(
 			"Overseer not running in full node.".to_string(),
 		))?,
@@ -428,7 +428,7 @@ mod tests {
 		(
 			client.clone(),
 			block,
-			RelayChainInProcessInterface::new(client, backend.clone(), dummy_network, mock_handle),
+			RelayChainInProcessInterface::new(client, backend, dummy_network, mock_handle),
 		)
 	}
 
@@ -483,7 +483,7 @@ mod tests {
 		let hash = block.hash();
 
 		let ext = construct_transfer_extrinsic(
-			&*client,
+			&client,
 			sp_keyring::Sr25519Keyring::Alice,
 			sp_keyring::Sr25519Keyring::Bob,
 			1000,
