@@ -23,6 +23,7 @@ use core::time::Duration;
 use cumulus_primitives_core::ParaId;
 
 use sc_block_builder::{BlockBuilderProvider, RecordProof};
+use sp_api::{Core, ProvideRuntimeApi};
 use sp_keyring::Sr25519Keyring::Alice;
 
 mod utils;
@@ -75,10 +76,10 @@ fn benchmark_block_import(c: &mut Criterion) {
 	group.throughput(Throughput::Elements(max_transfer_count as u64));
 
 	group.bench_function(format!("(transfers = {}) block import", max_transfer_count), |b| {
-		b.to_async(&runtime).iter_batched(
-			|| {},
-			|_| async {
-				utils::import_block(&*client, &benchmark_block.block, true).await;
+		b.iter_batched(
+			|| benchmark_block.block.clone(),
+			|block| {
+				client.runtime_api().execute_block(parent_hash, block).unwrap();
 			},
 			BatchSize::SmallInput,
 		)

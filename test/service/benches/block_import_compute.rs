@@ -20,7 +20,7 @@ use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
 use cumulus_test_runtime::{GluttonCall, NodeBlock, SudoCall};
 use cumulus_test_service::{construct_extrinsic, Client as TestClient};
 use sc_client_api::UsageProvider;
-use sp_api::ProvideRuntimeApi;
+use sp_api::{Core, ProvideRuntimeApi};
 use sp_arithmetic::Perbill;
 
 use core::time::Duration;
@@ -80,10 +80,10 @@ fn benchmark_block_import(c: &mut Criterion) {
 				compute_percent, storage_percent
 			),
 			|b| {
-				b.to_async(&runtime).iter_batched(
-					|| {},
-					|_| async {
-						utils::import_block(&*client, &benchmark_block.block, true).await;
+				b.iter_batched(
+					|| benchmark_block.block.clone(),
+					|block| {
+						client.runtime_api().execute_block(parent_hash, block).unwrap();
 					},
 					BatchSize::SmallInput,
 				)
