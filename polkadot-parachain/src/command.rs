@@ -288,16 +288,13 @@ fn extract_parachain_id(id: &str) -> (&str, &str, Option<ParaId>) {
 	} else if let Some(suffix) = id.strip_prefix(POLKADOT_TEST_PARA_PREFIX) {
 		let para_id: u32 = suffix.parse().expect("Invalid parachain-id suffix");
 		(&id[..POLKADOT_TEST_PARA_PREFIX.len() - 1], id, Some(para_id))
-	} else if id.starts_with(GLUTTON_PARA_DEV_PREFIX) {
-		let suffix = &id[GLUTTON_PARA_DEV_PREFIX.len()..];
+	} else if let Some(suffix) = id.strip_prefix(GLUTTON_PARA_DEV_PREFIX) {
 		let para_id: u32 = suffix.parse().expect("Invalid parachain-id suffix");
 		(&id[..GLUTTON_PARA_DEV_PREFIX.len() - 1], id, Some(para_id))
-	} else if id.starts_with(GLUTTON_PARA_LOCAL_PREFIX) {
-		let suffix = &id[GLUTTON_PARA_LOCAL_PREFIX.len()..];
+	} else if let Some(suffix) = id.strip_prefix(GLUTTON_PARA_LOCAL_PREFIX) {
 		let para_id: u32 = suffix.parse().expect("Invalid parachain-id suffix");
 		(&id[..GLUTTON_PARA_LOCAL_PREFIX.len() - 1], id, Some(para_id))
-	} else if id.starts_with(GLUTTON_PARA_GENESIS_PREFIX) {
-		let suffix = &id[GLUTTON_PARA_GENESIS_PREFIX.len()..];
+	} else if let Some(suffix) = id.strip_prefix(GLUTTON_PARA_GENESIS_PREFIX) {
 		let para_id: u32 = suffix.parse().expect("Invalid parachain-id suffix");
 		(&id[..GLUTTON_PARA_GENESIS_PREFIX.len() - 1], id, Some(para_id))
 	} else {
