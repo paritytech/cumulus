@@ -57,18 +57,21 @@ pub fn glutton_local_config(para_id: ParaId) -> GluttonChainSpec {
 }
 
 pub fn glutton_config(para_id: ParaId) -> GluttonChainSpec {
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 2.into());
+
 	GluttonChainSpec::from_genesis(
 		// Name
 		"Glutton",
 		// ID
-		"glutton",
+		"glutton_kusama",
 		ChainType::Live,
 		move || glutton_genesis(para_id),
 		Vec::new(),
 		None,
 		None,
 		None,
-		None,
+		Some(properties),
 		Extensions { relay_chain: "kusama".into(), para_id: para_id.into() },
 	)
 }

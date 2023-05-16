@@ -10,7 +10,7 @@ benchmarkOutput=./parachains/runtimes/$category/$runtimeName/src/weights
 benchmarkRuntimeName="$runtimeName-dev"
 
 if [ $category = "glutton" ]; then
-    benchmarkRuntimeName="$category-dev-1500"
+    benchmarkRuntimeName="$category-dev-1300"
 fi
 
 # Load all pallet names in an array.
