@@ -1,10 +1,8 @@
 {
   "name": "Glutton",
-  "id": "glutton",
+  "id": "glutton_kusama",
   "chainType": "Live",
-  "bootNodes": [
-    "/ip4/127.0.0.1/tcp/30333/p2p/12D3KooWQ7B8ptkfiX4rJSGgJqfyGFyQWzFWz92Gvk8ZBJHyFqVK"
-  ],
+  "bootNodes": [],
   "telemetryEndpoints": null,
   "protocolId": null,
   "properties": null,

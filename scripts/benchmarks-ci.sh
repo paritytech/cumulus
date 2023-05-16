@@ -9,6 +9,10 @@ repeat=${5:-20}
 benchmarkOutput=./parachains/runtimes/$category/$runtimeName/src/weights
 benchmarkRuntimeName="$runtimeName-dev"
 
+if [ $category = "glutton" ]; then
+    benchmarkRuntimeName="$category-dev-1500"
+fi
+
 # Load all pallet names in an array.
 pallets=($(
   ${artifactsDir}/polkadot-parachain benchmark pallet --list --chain="${benchmarkRuntimeName}" |\

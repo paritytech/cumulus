@@ -19,7 +19,7 @@ use crate::{
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{
 		new_partial, Block, BridgeHubKusamaRuntimeExecutor, BridgeHubPolkadotRuntimeExecutor,
-		BridgeHubRococoRuntimeExecutor, CollectivesPolkadotRuntimeExecutor,
+		BridgeHubRococoRuntimeExecutor, CollectivesPolkadotRuntimeExecutor, GluttonRuntimeExecutor,
 		StatemineRuntimeExecutor, StatemintRuntimeExecutor, WestmintRuntimeExecutor,
 	},
 };
@@ -706,7 +706,9 @@ pub fn run() -> Result<()> {
 									bridge_hub_runtime_type
 								)
 									.into()),
-							}
+							},
+							Runtime::Glutton =>
+								cmd.run::<Block, GluttonRuntimeExecutor>(config),
 							_ => Err(format!(
 								"Chain '{:?}' doesn't support benchmarking",
 								config.chain_spec.runtime()
