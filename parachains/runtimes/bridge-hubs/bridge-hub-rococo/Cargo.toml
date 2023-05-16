@@ -89,14 +89,17 @@ bridge-runtime-common = { path = "../../../../bridges/bin/runtime-common", defau
 
 [dev-dependencies]
 static_assertions = "1.1"
+asset-test-utils = { path = "../../assets/test-utils"}
 bridge-hub-test-utils = { path = "../test-utils"}
 bridge-runtime-common = { path = "../../../../bridges/bin/runtime-common", features = ["integrity-test"] }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [features]
 default = [
 	"std",
 ]
 std = [
+	"asset-test-utils/std",
 	"bp-bridge-hub-rococo/std",
 	"bp-bridge-hub-wococo/std",
 	"bp-messages/std",
@@ -119,6 +122,7 @@ std = [
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-timestamp/std",
 	"cumulus-primitives-utility/std",
+	"frame-benchmarking/std",
 	"frame-executive/std",
 	"frame-support/std",
 	"frame-system-rpc-runtime-api/std",

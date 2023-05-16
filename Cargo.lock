@@ -918,13 +918,18 @@ name = "bp-test-utils"
 version = "0.1.0"
 dependencies = [
  "bp-header-chain",
+ "bp-parachains",
+ "bp-polkadot-core",
+ "bp-runtime",
  "ed25519-dalek",
  "finality-grandpa",
  "parity-scale-codec",
  "sp-application-crypto",
  "sp-consensus-grandpa",
+ "sp-core",
  "sp-runtime",
  "sp-std",
+ "sp-trie",
 ]
 
 [[package]]
@@ -1069,6 +1074,7 @@ dependencies = [
 name = "bridge-hub-rococo-runtime"
 version = "0.1.0"
 dependencies = [
+ "asset-test-utils",
  "bp-bridge-hub-rococo",
  "bp-bridge-hub-wococo",
  "bp-messages",
@@ -1130,6 +1136,7 @@ dependencies = [
  "sp-core",
  "sp-inherents",
  "sp-io",
+ "sp-keyring",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -1148,8 +1155,11 @@ name = "bridge-hub-test-utils"
 version = "0.1.0"
 dependencies = [
  "asset-test-utils",
+ "bp-bridge-hub-rococo",
+ "bp-bridge-hub-wococo",
  "bp-header-chain",
  "bp-messages",
+ "bp-parachains",
  "bp-polkadot-core",
  "bp-runtime",
  "bp-test-utils",
@@ -1157,19 +1167,25 @@ dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
+ "cumulus-primitives-core",
+ "frame-benchmarking",
+ "frame-executive",
  "frame-support",
  "frame-system",
  "log",
  "pallet-balances",
  "pallet-bridge-grandpa",
  "pallet-bridge-messages",
+ "pallet-bridge-parachains",
  "pallet-collator-selection",
  "pallet-session",
  "pallet-xcm",
  "pallet-xcm-benchmarks",
  "parachain-info",
  "parity-scale-codec",
+ "sp-core",
  "sp-io",
+ "sp-keyring",
  "sp-runtime",
  "xcm",
  "xcm-builder",

@@ -771,32 +771,6 @@ pub(crate) mod tests {
 		hash
 	}
 
-	pub(crate) fn prepare_parachain_heads_proof(
-		heads: Vec<(u32, ParaHead)>,
-	) -> (RelayBlockHash, ParaHeadsProof, Vec<(ParaId, ParaHash)>) {
-		let mut parachains = Vec::with_capacity(heads.len());
-		let mut root = Default::default();
-		let mut mdb = MemoryDB::default();
-		{
-			let mut trie = TrieDBMutBuilderV1::<RelayBlockHasher>::new(&mut mdb, &mut root).build();
-			for (parachain, head) in heads {
-				let storage_key =
-					parachain_head_storage_key_at_source(PARAS_PALLET_NAME, ParaId(parachain));
-				trie.insert(&storage_key.0, &head.encode())
-					.map_err(|_| "TrieMut::insert has failed")
-					.expect("TrieMut::insert should not fail in tests");
-				parachains.push((ParaId(parachain), head.hash()));
-			}
-		}
-
-		// generate storage proof to be delivered to This chain
-		let storage_proof = record_all_trie_keys::<LayoutV1<RelayBlockHasher>, _>(&mdb, &root)
-			.map_err(|_| "record_all_trie_keys has failed")
-			.expect("record_all_trie_keys should not fail in benchmarks");
-
-		(root, ParaHeadsProof(storage_proof), parachains)
-	}
-
 	fn initial_best_head(parachain: u32) -> ParaInfo {
 		ParaInfo {
 			best_head_hash: BestParaHeadHash {
