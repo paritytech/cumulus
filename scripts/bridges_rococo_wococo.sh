@@ -457,10 +457,12 @@ function ping_via_bridge() {
     local url=$1
     local seed=$2
     local target_account=$3
+    local target_global_consensus=$4
     echo "  calling ping_via_bridge:"
     echo "      url: ${url}"
     echo "      seed: ${seed}"
     echo "      target_account: ${target_account}"
+    echo "      target_global_consensus: ${target_global_consensus}"
     echo "      params:"
 
     local tmp_output_file=$(mktemp)
@@ -468,6 +470,7 @@ function ping_via_bridge() {
     local hex_encoded_data=$(cat $tmp_output_file)
 
     local destination=$(jq --null-input \
+                           --arg target_global_consensus "$target_global_consensus" \
                            --argjson hex_encoded_data "$hex_encoded_data" \
         '
             {
@@ -476,7 +479,7 @@ function ping_via_bridge() {
                     "interior": {
                         "X3": [
                             {
-                                "GlobalConsensus": "Wococo"
+                                "GlobalConsensus": $target_global_consensus
                             },
                             {
                                 "Parachain": 1000
@@ -594,19 +597,19 @@ case "$1" in
           1014 \
           "Rococo" \
           1000
-      # drip SovereignAccount for `MultiLocation { parents: 2, interior: X2(GlobalConsensus(Rococo), Parachain(1000)) }` => 5DHZvp523gmJWxg9UcLVbofyu5nZkPvATeP1ciYncpFpXtiG
-      # drip SovereignAccount for `MultiLocation { parents: 2, interior: X2(GlobalConsensus(Rococo), Parachain(1015)) }` => 5FS75NFUdEYhWHuV3y3ncjSG4PFdHfC5X7V6SEzc3rnCciwb
+      # drip SovereignAccount for `MultiLocation { parents: 2, interior: X2(GlobalConsensus(Rococo), Parachain(1000)) }` => 5CfNu7eH3SJvqqPt3aJh38T8dcFvhGzEohp9tsd41ANhXDnQ
+      #
       # use sp_core::crypto::Ss58Codec;
       # println!("{}",
       #     frame_support::sp_runtime::AccountId32::new(
-      #         GlobalConsensusParachainConvert::<[u8; 32]>::convert_ref(
+      #         GlobalConsensusParachainConvertsFor::<UniversalLocation, [u8; 32]>::convert_ref(
       #             MultiLocation { parents: 2, interior: X2(GlobalConsensus(Kusama), Parachain(1000)) }).unwrap()
       #		).to_ss58check_with_version(42_u16.into())
       # );
       transfer_balance \
           "ws://127.0.0.1:9010" \
           "//Alice" \
-          "5DHZvp523gmJWxg9UcLVbofyu5nZkPvATeP1ciYncpFpXtiG" \
+          "5CfNu7eH3SJvqqPt3aJh38T8dcFvhGzEohp9tsd41ANhXDnQ" \
           $((1000000000 + 50000000000 * 20)) # ExistentialDeposit + maxTargetLocationFee * 20
       # create foreign assets for native Statemine token (yes, Kusama, because we are using Statemine runtime on rococo)
       force_create_foreign_asset \
@@ -615,7 +618,7 @@ case "$1" in
           1000 \
           "ws://127.0.0.1:9010" \
           "Kusama" \
-          "5DHZvp523gmJWxg9UcLVbofyu5nZkPvATeP1ciYncpFpXtiG"
+          "5CfNu7eH3SJvqqPt3aJh38T8dcFvhGzEohp9tsd41ANhXDnQ"
       ;;
   remove-assets-transfer-from-statemine-local)
       ensure_polkadot_js_api
@@ -662,7 +665,7 @@ case "$1" in
       transfer_balance \
           "ws://127.0.0.1:9010" \
           "//Alice" \
-          "5DHZvp523gmJWxg9UcLVbofyu5nZkPvATeP1ciYncpFpXtiG" \
+          "5CfNu7eH3SJvqqPt3aJh38T8dcFvhGzEohp9tsd41ANhXDnQ" \
           $((1000000000 + 50000000000 * 20))
       ;;
   stop)
