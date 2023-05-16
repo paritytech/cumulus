@@ -34,6 +34,8 @@ use parachains_common::{
 	xcm_config::{ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry},
 };
 use polkadot_parachain::primitives::Sibling;
+use snowbridge_outbound_queue;
+use snowbridge_router_primitives::export::EthereumBlobExporter;
 use sp_core::Get;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -305,7 +307,8 @@ impl cumulus_pallet_xcm::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
-use cumulus_primitives_core::SendError::Unroutable;
+pub type SnowbridgeExporter =
+	EthereumBlobExporter<RelayNetwork, EthereumNetwork, snowbridge_outbound_queue::Pallet<Runtime>>;
 
 /// Hacky switch implementation, because we have just one runtime for Rococo and Wococo BridgeHub, so it means we have just one XcmConfig
 pub struct BridgeHubRococoOrBridgeHubWococoSwitchExporter;
@@ -338,7 +341,14 @@ impl ExportXcm for BridgeHubRococoOrBridgeHubWococoSwitchExporter {
 			)
 			.map(|result| ((Wococo, result.0), result.1)),
 			location if location == EthereumNetwork::get() && relay == NetworkId::Rococo =>
-				Err(Unroutable),
+				SnowbridgeExporter::validate(
+					network,
+					channel,
+					universal_source,
+					destination,
+					message,
+				)
+				.map(|result| ((EthereumNetwork::get(), result.0), result.1)),
 			_ => unimplemented!("Unsupported network: {:?}", network),
 		}
 	}
@@ -350,7 +360,7 @@ impl ExportXcm for BridgeHubRococoOrBridgeHubWococoSwitchExporter {
 			Rococo => ToBridgeHubRococoHaulBlobExporter::deliver(ticket),
 			Wococo => ToBridgeHubWococoHaulBlobExporter::deliver(ticket),
 			location if location == EthereumNetwork::get() && relay == NetworkId::Rococo =>
-				Err(Unroutable),
+				SnowbridgeExporter::deliver(ticket),
 			_ => unimplemented!("Unsupported network: {:?}", network),
 		}
 	}

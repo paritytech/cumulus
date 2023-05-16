@@ -3500,20 +3500,11 @@ dependencies = [
 
 [[package]]
 name = "ethabi-decode"
-version = "1.3.3"
-source = "git+https://github.com/snowfork/ethabi-decode.git?rev=6f63405bb33ef4365a1c62b72d499fa0f448118e#6f63405bb33ef4365a1c62b72d499fa0f448118e"
-dependencies = [
- "ethereum-types",
- "tiny-keccak 1.5.0",
-]
-
-[[package]]
-name = "ethabi-decode"
 version = "1.4.0"
 source = "git+https://github.com/Snowfork/ethabi-decode.git?branch=master#7d215837b626650bd9a076821e57ad488101301f"
 dependencies = [
  "ethereum-types",
- "tiny-keccak 2.0.2",
+ "tiny-keccak",
 ]
 
 [[package]]
@@ -3528,7 +3519,7 @@ dependencies = [
  "impl-rlp",
  "impl-serde",
  "scale-info",
- "tiny-keccak 2.0.2",
+ "tiny-keccak",
 ]
 
 [[package]]
@@ -12539,6 +12530,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "parity-scale-codec",
+ "polkadot-parachain",
  "scale-info",
  "serde",
  "snowbridge-ethereum",
@@ -12551,7 +12543,7 @@ dependencies = [
 name = "snowbridge-ethereum"
 version = "0.1.0"
 dependencies = [
- "ethabi-decode 1.3.3",
+ "ethabi-decode",
  "ethbloom",
  "ethereum-types",
  "hex-literal 0.4.1",
@@ -12596,14 +12588,13 @@ dependencies = [
 name = "snowbridge-inbound-queue"
 version = "0.1.1"
 dependencies = [
- "ethabi-decode 1.4.0",
+ "ethabi-decode",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex-literal 0.4.1",
  "pallet-balances",
  "parity-scale-codec",
- "polkadot-parachain",
  "rlp",
  "scale-info",
  "serde",
@@ -12621,13 +12612,12 @@ dependencies = [
 name = "snowbridge-outbound-queue"
 version = "0.1.1"
 dependencies = [
- "ethabi-decode 1.4.0",
+ "ethabi-decode",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex-literal 0.4.1",
  "parity-scale-codec",
- "polkadot-parachain",
  "rlp",
  "scale-info",
  "serde",
@@ -12665,15 +12655,19 @@ dependencies = [
 name = "snowbridge-router-primitives"
 version = "0.1.1"
 dependencies = [
+ "ethabi-decode",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "snowbridge-core",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
  "xcm",
+ "xcm-executor",
 ]
 
 [[package]]
@@ -14147,15 +14141,6 @@ dependencies = [
  "unicode-normalization",
  "wasm-bindgen",
  "zeroize",
-]
-
-[[package]]
-name = "tiny-keccak"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d8a021c69bb74a44ccedb824a046447e2c84a01df9e5c20779750acb38e11b2"
-dependencies = [
- "crunchy",
 ]
 
 [[package]]
