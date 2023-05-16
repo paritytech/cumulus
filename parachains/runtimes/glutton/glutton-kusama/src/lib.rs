@@ -230,7 +230,7 @@ impl sp_runtime::traits::SignedExtension for DisallowSigned {
 		info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
-		Ok(self.validate(who, call, info, len).map(|_| ())?)
+		self.validate(who, call, info, len).map(|_| ())
 	}
 	fn validate(
 		&self,
