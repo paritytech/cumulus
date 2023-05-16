@@ -210,7 +210,7 @@ pub mod pallet {
 		/// that is used for this chain.
 		///
 		/// However, to maintain the same behavior as prior to asynchronous backing, provide the
-		/// [`consensus_hook::ExpectParentIncludedHook`] here. This is only necessary in the case
+		/// [`consensus_hook::ExpectParentIncluded`] here. This is only necessary in the case
 		/// that collators aren't expected to have node versions that supply the included block
 		/// in the relay-chain state proof.
 		type ConsensusHook: ConsensusHook;
