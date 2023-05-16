@@ -581,9 +581,7 @@ fn do_not_set_best_block_to_older_block() {
 
 	let blocks = (0..NUM_BLOCKS)
 		.into_iter()
-		.map(|i| {
-			build_and_import_block(client.clone(), true)
-		})
+		.map(|_| build_and_import_block(client.clone(), true))
 		.collect::<Vec<_>>();
 
 	assert_eq!(NUM_BLOCKS as u32, client.usage_info().chain.best_number);
