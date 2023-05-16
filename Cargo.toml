@@ -2,9 +2,15 @@
 resolver = "2"
 
 members = [
+	"bridges/bin/runtime-common",
+	"bridges/modules/grandpa",
+	"bridges/modules/messages",
+	"bridges/modules/parachains",
+	"bridges/modules/relayers",
 	"client/cli",
 	"client/consensus/aura",
 	"client/consensus/common",
+	"client/consensus/proposer",
 	"client/consensus/relay-chain",
 	"client/network",
 	"client/pov-recovery",
