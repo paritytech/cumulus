@@ -127,7 +127,7 @@ tests:
                       UnpaidExecution: {
                         weightLimit: { 
                           limited: {
-                            refTime: 4000000000, # 3_000_000_000
+                            refTime: 4000000000, # 4_000_000_000
                             proofSize: 2000000, # 2_000_000
                           },
                         }

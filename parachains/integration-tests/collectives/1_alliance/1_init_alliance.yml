@@ -198,8 +198,8 @@ tests:
                       Transact: {
                         originKind: Superuser,
                         requireWeightAtMost: {
-                          refTime: 3000000000, # 1_000_000_000 2_440_115_783
-                          proofSize: 200000, # 1_200_000 1,131,072 { ref_time: 2440115783, proof_size: 72_431 }
+                          refTime: 3000000000, # 3_000_000_000
+                          proofSize: 200000, # 200_000
                         },
                         call: $disband
                       }
