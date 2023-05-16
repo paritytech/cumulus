@@ -25,7 +25,8 @@ use frame_support::{
 			Unbalanced,
 		},
 		tokens::{DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence},
-		Contains, ContainsPair, Currency, Get, Imbalance, OnUnbalanced, PalletInfoAccess,
+		AccountTouch, Contains, ContainsPair, Currency, Get, Imbalance, OnUnbalanced,
+		PalletInfoAccess,
 	},
 };
 use pallet_asset_conversion::MultiAssetIdConverter;
@@ -395,6 +396,56 @@ where
 			Assets::create(asset_id, admin, is_sufficient, min_balance)
 		} else {
 			ForeignAssets::create(asset_id, admin, is_sufficient, min_balance)
+		}
+	}
+}
+
+impl<Assets, ForeignAssets, SelfParaId> AccountTouch<MultiLocation, AccountId>
+	for LocalAndForeignAssets<Assets, ForeignAssets, SelfParaId>
+where
+	SelfParaId: Get<ParaId>,
+	ForeignAssets: AccountTouch<MultiLocation, AccountId, Balance = u128>,
+	Assets: AccountTouch<u32, AccountId, Balance = u128> + PalletInfoAccess,
+{
+	type Balance = u128;
+
+	fn deposit_required(
+		asset_id: MultiLocation,
+	) -> <Self as AccountTouch<MultiLocation, AccountId>>::Balance {
+		if let Some(asset_id) = is_local::<SelfParaId, Assets>(asset_id) {
+			Assets::deposit_required(asset_id)
+		} else {
+			ForeignAssets::deposit_required(asset_id)
+		}
+	}
+
+	fn touch(
+		asset_id: MultiLocation,
+		who: AccountId,
+		depositor: AccountId,
+	) -> Result<(), sp_runtime::DispatchError> {
+		if let Some(asset_id) = is_local::<SelfParaId, Assets>(asset_id) {
+			Assets::touch(asset_id, who, depositor)
+		} else {
+			ForeignAssets::touch(asset_id, who, depositor)
+		}
+	}
+}
+
+/// Implements [`ContainsPair`] trait for a pair of asset and account IDs.
+impl<Assets, ForeignAssets, SelfParaId> ContainsPair<MultiLocation, AccountId>
+	for LocalAndForeignAssets<Assets, ForeignAssets, SelfParaId>
+where
+	SelfParaId: Get<ParaId>,
+	ForeignAssets: ContainsPair<MultiLocation, AccountId>,
+	Assets: PalletInfoAccess + ContainsPair<u32, AccountId>,
+{
+	/// Check if an account with the given asset ID and account address exists.
+	fn contains(asset_id: &MultiLocation, who: &AccountId) -> bool {
+		if let Some(asset_id) = is_local::<SelfParaId, Assets>(*asset_id) {
+			Assets::contains(&asset_id, &who)
+		} else {
+			ForeignAssets::contains(&asset_id, &who)
 		}
 	}
 }
