@@ -218,14 +218,14 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		)),
 
 		// -- Glutton
-		"glutton-dev" => Box::new(chain_spec::glutton::glutton_development_config(
+		"glutton-kusama-dev" => Box::new(chain_spec::glutton::glutton_development_config(
 			para_id.expect("Must specify parachain id"),
 		)),
-		"glutton-local" => Box::new(chain_spec::glutton::glutton_local_config(
+		"glutton-kusama-local" => Box::new(chain_spec::glutton::glutton_local_config(
 			para_id.expect("Must specify parachain id"),
 		)),
 		// the chain spec as used for generating the upgrade genesis values
-		"glutton-genesis" => Box::new(chain_spec::glutton::glutton_config(
+		"glutton-kusama-genesis" => Box::new(chain_spec::glutton::glutton_config(
 			para_id.expect("Must specify parachain id"),
 		)),
 
@@ -275,9 +275,9 @@ fn extract_parachain_id(id: &str) -> (&str, &str, Option<ParaId>) {
 	const KUSAMA_TEST_PARA_PREFIX: &str = "penpal-kusama-";
 	const POLKADOT_TEST_PARA_PREFIX: &str = "penpal-polkadot-";
 
-	const GLUTTON_PARA_DEV_PREFIX: &str = "glutton-dev-";
-	const GLUTTON_PARA_LOCAL_PREFIX: &str = "glutton-local-";
-	const GLUTTON_PARA_GENESIS_PREFIX: &str = "glutton-genesis-";
+	const GLUTTON_PARA_DEV_PREFIX: &str = "glutton-kusama-dev-";
+	const GLUTTON_PARA_LOCAL_PREFIX: &str = "glutton-kusama-local-";
+	const GLUTTON_PARA_GENESIS_PREFIX: &str = "glutton-kusama-genesis-";
 
 	let (norm_id, orig_id, para) = if let Some(suffix) = id.strip_prefix(KUSAMA_TEST_PARA_PREFIX) {
 		let para_id: u32 = suffix.parse().expect("Invalid parachain-id suffix");
