@@ -405,8 +405,6 @@ impl_runtime_apis! {
 	}
 }
 
-
-
 struct CheckInherents;
 
 impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
