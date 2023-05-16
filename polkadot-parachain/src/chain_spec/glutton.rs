@@ -62,14 +62,15 @@ pub fn glutton_config(para_id: ParaId) -> GluttonChainSpec {
 
 	GluttonChainSpec::from_genesis(
 		// Name
-		"Glutton",
+		format!("Glutton {}", para_id).as_str(),
 		// ID
-		"glutton_kusama",
+		format!("glutton_kusama_{}", para_id).as_str(),
 		ChainType::Live,
 		move || glutton_genesis(para_id),
 		Vec::new(),
 		None,
-		None,
+		// Protocol ID
+		Some(format!("glutton_kusama_{}", para_id).as_str()),
 		None,
 		Some(properties),
 		Extensions { relay_chain: "kusama".into(), para_id: para_id.into() },

@@ -228,9 +228,6 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"glutton-genesis" => Box::new(chain_spec::glutton::glutton_config(
 			para_id.expect("Must specify parachain id"),
 		)),
-		"glutton" => Box::new(chain_spec::glutton::GluttonChainSpec::from_json_bytes(
-			&include_bytes!("../../parachains/chain-specs/glutton.json")[..],
-		)?),
 
 		// -- Fallback (generic chainspec)
 		"" => {
