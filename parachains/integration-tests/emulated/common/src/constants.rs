@@ -1,11 +1,10 @@
 pub use polkadot_runtime_parachains::configuration::HostConfiguration;
 use polkadot_primitives::{AssignmentId, ValidatorId};
 pub use parachains_common::{BlockNumber, AccountId, Balance, AuraId, StatemintAuraId};
-pub use cumulus_test_service::{get_account_id_from_seed, get_from_seed};
 pub use xcm;
 use grandpa::AuthorityId as GrandpaId;
-use sp_core::{sr25519, storage::Storage};
-use sp_runtime::{Perbill, BuildStorage};
+use sp_core::{sr25519, storage::Storage, Pair, Public};
+use sp_runtime::{Perbill, BuildStorage, MultiSignature, traits::{Verify, IdentifyAccount}};
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use polkadot_service::chain_spec::get_authority_keys_from_seed_no_beefy;
@@ -15,6 +14,23 @@ pub const XCM_V2: u32 = 3;
 pub const XCM_V3: u32 = 2;
 pub const REF_TIME_THRESHOLD: u64 = 33;
 pub const PROOF_SIZE_THRESHOLD: u64 = 33;
+
+type AccountPublic = <MultiSignature as Verify>::Signer;
+
+/// Helper function to generate a crypto pair from seed
+fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
+	TPublic::Pair::from_string(&format!("//{}", seed), None)
+		.expect("static values are valid; qed")
+		.public()
+}
+
+/// Helper function to generate an account ID from seed.
+fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
+where
+	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
+{
+	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
+}
 
 pub mod accounts {
 	use super::*;

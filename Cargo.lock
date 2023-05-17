@@ -4771,7 +4771,6 @@ dependencies = [
  "bridge-hub-polkadot-runtime",
  "collectives-polkadot-runtime",
  "cumulus-primitives-core",
- "cumulus-test-service",
  "frame-support",
  "frame-system",
  "kusama-runtime",
