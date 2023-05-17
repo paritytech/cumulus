@@ -16,8 +16,9 @@
 
 use super::{
 	AccountId, AllPalletsWithSystem, Balances, BridgeGrandpaRococoInstance,
-	BridgeGrandpaWococoInstance, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall,
-	RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
+	BridgeGrandpaWococoInstance, DeliveryRewardInBalance, ParachainInfo, ParachainSystem,
+	PolkadotXcm, RequiredStakeForStakeAndSlash, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
+	WeightToFee, XcmpQueue,
 };
 use crate::{
 	bridge_hub_rococo_config::ToBridgeHubWococoHaulBlobExporter,
@@ -152,6 +153,17 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			}
 		}
 
+		// Allow to change dedicated storage items (called by governance-like)
+		match call {
+			RuntimeCall::System(frame_system::Call::set_storage { items })
+				if items.iter().any(|(k, _)| {
+					k.eq(&DeliveryRewardInBalance::key()) |
+						k.eq(&RequiredStakeForStakeAndSlash::key())
+				}) =>
+				return true,
+			_ => (),
+		};
+
 		matches!(
 			call,
 			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
@@ -167,7 +179,8 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 					pallet_collator_selection::Call::set_desired_candidates { .. } |
 						pallet_collator_selection::Call::set_candidacy_bond { .. } |
 						pallet_collator_selection::Call::register_as_candidate { .. } |
-						pallet_collator_selection::Call::leave_intent { .. },
+						pallet_collator_selection::Call::leave_intent { .. } |
+						pallet_collator_selection::Call::set_invulnerables { .. },
 				) | RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 				RuntimeCall::XcmpQueue(..) |
 				RuntimeCall::DmpQueue(..) |
@@ -231,12 +244,12 @@ impl xcm_executor::Config for XcmConfig {
 		UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ToStakingPot<Runtime>>;
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
+	type AssetLocker = ();
+	type AssetExchanger = ();
 	type AssetClaims = PolkadotXcm;
 	type SubscriptionService = PolkadotXcm;
 	type PalletInstancesInfo = AllPalletsWithSystem;
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
-	type AssetLocker = ();
-	type AssetExchanger = ();
 	type FeeManager = ();
 	type MessageExporter = BridgeHubRococoOrBridgeHubWococoSwitchExporter;
 	type UniversalAliases = Nothing;

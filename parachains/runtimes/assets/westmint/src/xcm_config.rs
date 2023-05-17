@@ -174,6 +174,7 @@ match_types! {
 		MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
 	};
 }
+
 /// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
 /// account for proof size weights.
 ///
@@ -206,7 +207,8 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 					pallet_collator_selection::Call::set_desired_candidates { .. } |
 						pallet_collator_selection::Call::set_candidacy_bond { .. } |
 						pallet_collator_selection::Call::register_as_candidate { .. } |
-						pallet_collator_selection::Call::leave_intent { .. },
+						pallet_collator_selection::Call::leave_intent { .. } |
+						pallet_collator_selection::Call::set_invulnerables { .. },
 				) | RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 				RuntimeCall::XcmpQueue(..) |
 				RuntimeCall::DmpQueue(..) |
