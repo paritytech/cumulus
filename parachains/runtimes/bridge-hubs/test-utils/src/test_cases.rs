@@ -207,35 +207,6 @@ pub fn change_storage_constant_by_governance_works<Runtime, StorageConstant, Sto
 		})
 }
 
-#[macro_export]
-macro_rules! include_change_storage_constant_by_governance_works(
-	(
-		$test_name:tt,
-		$runtime:path,
-		$collator_session_key:expr,
-		$runtime_para_id:expr,
-		$runtime_call_encode:expr,
-		($storage_constant:path, $storage_constant_type:path),
-		$storage_constant_key_value:expr,
-		$new_storage_constant_value:expr
-	) => {
-		#[test]
-		fn $test_name() {
-			$crate::test_cases::change_storage_constant_by_governance_works::<
-				$runtime,
-				$storage_constant,
-				$storage_constant_type,
-			>(
-				$collator_session_key,
-				$runtime_para_id,
-				$runtime_call_encode,
-				$storage_constant_key_value,
-				$new_storage_constant_value,
-			)
-		}
-	}
-);
-
 /// Test-case makes sure that `Runtime` can handle xcm `ExportMessage`:
 /// Checks if received XCM messages is correctly added to the message outbound queue for delivery.
 /// For SystemParachains we expect unpaid execution.

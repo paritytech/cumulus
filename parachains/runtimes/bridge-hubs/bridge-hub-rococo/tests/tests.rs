@@ -140,27 +140,40 @@ mod bridge_hub_rococo_tests {
 		)
 	}
 
-	bridge_hub_test_utils::include_change_storage_constant_by_governance_works!(
-		change_delivery_reward_by_governance_works,
-		Runtime,
-		collator_session_keys(),
-		bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
-		Box::new(|call| RuntimeCall::System(call).encode()),
-		(DeliveryRewardInBalance, u64),
-		|| (DeliveryRewardInBalance::key().to_vec(), DeliveryRewardInBalance::get()),
-		|old_value| old_value.checked_mul(2).unwrap()
-	);
+	#[test]
+	fn change_delivery_reward_by_governance_works() {
+		bridge_hub_test_utils::test_cases::change_storage_constant_by_governance_works::<
+			Runtime,
+			DeliveryRewardInBalance,
+			u64,
+		>(
+			collator_session_keys(),
+			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
+			Box::new(|call| RuntimeCall::System(call).encode()),
+			|| (DeliveryRewardInBalance::key().to_vec(), DeliveryRewardInBalance::get()),
+			|old_value| old_value.checked_mul(2).unwrap(),
+		)
+	}
 
-	bridge_hub_test_utils::include_change_storage_constant_by_governance_works!(
-		change_required_stake_by_governance_works,
-		Runtime,
-		collator_session_keys(),
-		bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
-		Box::new(|call| RuntimeCall::System(call).encode()),
-		(RequiredStakeForStakeAndSlash, Balance),
-		|| (RequiredStakeForStakeAndSlash::key().to_vec(), RequiredStakeForStakeAndSlash::get()),
-		|old_value| old_value.checked_mul(2).unwrap()
-	);
+	#[test]
+	fn change_required_stake_by_governance_works() {
+		bridge_hub_test_utils::test_cases::change_storage_constant_by_governance_works::<
+			Runtime,
+			RequiredStakeForStakeAndSlash,
+			Balance,
+		>(
+			collator_session_keys(),
+			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
+			Box::new(|call| RuntimeCall::System(call).encode()),
+			|| {
+				(
+					RequiredStakeForStakeAndSlash::key().to_vec(),
+					RequiredStakeForStakeAndSlash::get(),
+				)
+			},
+			|old_value| old_value.checked_mul(2).unwrap(),
+		)
+	}
 
 	#[test]
 	fn handle_export_message_from_system_parachain_add_to_outbound_queue_works() {
@@ -300,27 +313,40 @@ mod bridge_hub_wococo_tests {
 		)
 	}
 
-	bridge_hub_test_utils::include_change_storage_constant_by_governance_works!(
-		change_delivery_reward_by_governance_works,
-		Runtime,
-		collator_session_keys(),
-		bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
-		Box::new(|call| RuntimeCall::System(call).encode()),
-		(DeliveryRewardInBalance, u64),
-		|| (DeliveryRewardInBalance::key().to_vec(), DeliveryRewardInBalance::get()),
-		|old_value| old_value.checked_mul(2).unwrap()
-	);
+	#[test]
+	fn change_delivery_reward_by_governance_works() {
+		bridge_hub_test_utils::test_cases::change_storage_constant_by_governance_works::<
+			Runtime,
+			DeliveryRewardInBalance,
+			u64,
+		>(
+			collator_session_keys(),
+			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
+			Box::new(|call| RuntimeCall::System(call).encode()),
+			|| (DeliveryRewardInBalance::key().to_vec(), DeliveryRewardInBalance::get()),
+			|old_value| old_value.checked_mul(2).unwrap(),
+		)
+	}
 
-	bridge_hub_test_utils::include_change_storage_constant_by_governance_works!(
-		change_required_stake_by_governance_works,
-		Runtime,
-		collator_session_keys(),
-		bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
-		Box::new(|call| RuntimeCall::System(call).encode()),
-		(RequiredStakeForStakeAndSlash, Balance),
-		|| (RequiredStakeForStakeAndSlash::key().to_vec(), RequiredStakeForStakeAndSlash::get()),
-		|old_value| old_value.checked_mul(2).unwrap()
-	);
+	#[test]
+	fn change_required_stake_by_governance_works() {
+		bridge_hub_test_utils::test_cases::change_storage_constant_by_governance_works::<
+			Runtime,
+			RequiredStakeForStakeAndSlash,
+			Balance,
+		>(
+			collator_session_keys(),
+			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
+			Box::new(|call| RuntimeCall::System(call).encode()),
+			|| {
+				(
+					RequiredStakeForStakeAndSlash::key().to_vec(),
+					RequiredStakeForStakeAndSlash::get(),
+				)
+			},
+			|old_value| old_value.checked_mul(2).unwrap(),
+		)
+	}
 
 	#[test]
 	fn handle_export_message_from_system_parachain_add_to_outbound_queue_works() {
