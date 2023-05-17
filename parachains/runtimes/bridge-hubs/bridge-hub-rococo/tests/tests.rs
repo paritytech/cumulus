@@ -22,13 +22,13 @@ use bridge_hub_rococo_runtime::{
 	bridge_hub_rococo_config, bridge_hub_wococo_config,
 	constants::fee::WeightToFee,
 	xcm_config::{RelayNetwork, XcmConfig},
-	Balances, BridgeRejectObsoleteHeadersAndMessages, Executive, ExistentialDeposit,
-	ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, SessionKeys, SignedExtra,
-	UncheckedExtrinsic,
+	Balances, BridgeRejectObsoleteHeadersAndMessages, DeliveryRewardInBalance, Executive,
+	ExistentialDeposit, ParachainSystem, PolkadotXcm, RequiredStakeForStakeAndSlash, Runtime,
+	RuntimeCall, RuntimeEvent, SessionKeys, SignedExtra, UncheckedExtrinsic,
 };
 use codec::{Decode, Encode};
 use frame_support::parameter_types;
-use parachains_common::{AccountId, AuraId};
+use parachains_common::{AccountId, AuraId, Balance};
 use sp_keyring::AccountKeyring::Alice;
 use sp_runtime::{
 	generic::{Era, SignedPayload},
@@ -139,6 +139,28 @@ mod bridge_hub_rococo_tests {
 			Box::new(|call| RuntimeCall::BridgeWococoGrandpa(call).encode()),
 		)
 	}
+
+	bridge_hub_test_utils::include_change_storage_constant_by_governance_works!(
+		change_delivery_reward_by_governance_works,
+		Runtime,
+		collator_session_keys(),
+		bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
+		Box::new(|call| RuntimeCall::System(call).encode()),
+		(DeliveryRewardInBalance, u64),
+		|| (DeliveryRewardInBalance::key().to_vec(), DeliveryRewardInBalance::get()),
+		|old_value| old_value.checked_mul(2).unwrap()
+	);
+
+	bridge_hub_test_utils::include_change_storage_constant_by_governance_works!(
+		change_required_stake_by_governance_works,
+		Runtime,
+		collator_session_keys(),
+		bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
+		Box::new(|call| RuntimeCall::System(call).encode()),
+		(RequiredStakeForStakeAndSlash, Balance),
+		|| (RequiredStakeForStakeAndSlash::key().to_vec(), RequiredStakeForStakeAndSlash::get()),
+		|old_value| old_value.checked_mul(2).unwrap()
+	);
 
 	#[test]
 	fn handle_export_message_from_system_parachain_add_to_outbound_queue_works() {
@@ -277,6 +299,28 @@ mod bridge_hub_wococo_tests {
 			Box::new(|call| RuntimeCall::BridgeRococoGrandpa(call).encode()),
 		)
 	}
+
+	bridge_hub_test_utils::include_change_storage_constant_by_governance_works!(
+		change_delivery_reward_by_governance_works,
+		Runtime,
+		collator_session_keys(),
+		bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
+		Box::new(|call| RuntimeCall::System(call).encode()),
+		(DeliveryRewardInBalance, u64),
+		|| (DeliveryRewardInBalance::key().to_vec(), DeliveryRewardInBalance::get()),
+		|old_value| old_value.checked_mul(2).unwrap()
+	);
+
+	bridge_hub_test_utils::include_change_storage_constant_by_governance_works!(
+		change_required_stake_by_governance_works,
+		Runtime,
+		collator_session_keys(),
+		bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
+		Box::new(|call| RuntimeCall::System(call).encode()),
+		(RequiredStakeForStakeAndSlash, Balance),
+		|| (RequiredStakeForStakeAndSlash::key().to_vec(), RequiredStakeForStakeAndSlash::get()),
+		|old_value| old_value.checked_mul(2).unwrap()
+	);
 
 	#[test]
 	fn handle_export_message_from_system_parachain_add_to_outbound_queue_works() {

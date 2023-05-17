@@ -105,7 +105,7 @@ pub fn teleports_for_native_asset_works<
 				BuyExecution {
 					fees: MultiAsset {
 						id: Concrete(native_asset_id),
-						fun: Fungible(buy_execution_fee_amount_eta.into()),
+						fun: Fungible(buy_execution_fee_amount_eta),
 					},
 					weight_limit: Limited(Weight::from_parts(303531000, 65536)),
 				},
@@ -161,7 +161,7 @@ pub fn teleports_for_native_asset_works<
 					RuntimeHelper::<Runtime>::origin_of(target_account.clone()),
 					dest,
 					dest_beneficiary,
-					(native_asset_id, native_asset_to_teleport_away.clone().into()),
+					(native_asset_id, native_asset_to_teleport_away.into()),
 					None,
 				));
 				// check balances
@@ -206,7 +206,7 @@ pub fn teleports_for_native_asset_works<
 					RuntimeHelper::<Runtime>::origin_of(target_account.clone()),
 					dest,
 					dest_beneficiary,
-					(native_asset_id, native_asset_to_teleport_away.clone().into()),
+					(native_asset_id, native_asset_to_teleport_away.into()),
 					Some((runtime_para_id, other_para_id)),
 				));
 
@@ -337,7 +337,7 @@ pub fn teleports_for_foreign_assets_works<
 		WeightToFee::weight_to_fee(&Weight::from_parts(90_000_000_000, 0));
 	let buy_execution_fee = MultiAsset {
 		id: Concrete(MultiLocation::parent()),
-		fun: Fungible(buy_execution_fee_amount.into()),
+		fun: Fungible(buy_execution_fee_amount),
 	};
 
 	let teleported_foreign_asset_amount = 10000000000000;
@@ -347,7 +347,7 @@ pub fn teleports_for_foreign_assets_works<
 		.with_session_keys(collator_session_keys.session_keys())
 		.with_balances(vec![
 			(
-				foreign_creator_as_account_id.clone(),
+				foreign_creator_as_account_id,
 				existential_deposit + (buy_execution_fee_amount * 2).into(),
 			),
 			(target_account.clone(), existential_deposit),
@@ -412,7 +412,7 @@ pub fn teleports_for_foreign_assets_works<
 				BuyExecution {
 					fees: MultiAsset {
 						id: Concrete(MultiLocation::parent()),
-						fun: Fungible(buy_execution_fee_amount.into()),
+						fun: Fungible(buy_execution_fee_amount),
 					},
 					weight_limit: Limited(Weight::from_parts(403531000, 65536)),
 				},
@@ -507,7 +507,7 @@ pub fn teleports_for_foreign_assets_works<
 					RuntimeHelper::<Runtime>::origin_of(target_account.clone()),
 					dest,
 					dest_beneficiary,
-					(foreign_asset_id_multilocation, asset_to_teleport_away.clone().into()),
+					(foreign_asset_id_multilocation, asset_to_teleport_away),
 					Some((runtime_para_id, foreign_para_id)),
 				));
 
@@ -759,7 +759,7 @@ pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 		.execute_with(|| {
 			// create  some asset class
 			let asset_minimum_asset_balance = 3333333_u128;
-			let asset_id_as_multilocation = AssetIdConverter::reverse_ref(&asset_id).unwrap();
+			let asset_id_as_multilocation = AssetIdConverter::reverse_ref(asset_id).unwrap();
 			assert_ok!(<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::force_create(
 				RuntimeHelper::<Runtime>::root_origin(),
 				asset_id.into(),
@@ -840,7 +840,7 @@ pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 							id: charlie_account.clone().into()
 						}),
 					},
-					(asset_id_as_multilocation, 1 * asset_minimum_asset_balance),
+					(asset_id_as_multilocation, asset_minimum_asset_balance),
 				),
 				XcmError::FailedToTransactAsset(Into::<&str>::into(
 					sp_runtime::TokenError::CannotCreate
@@ -861,7 +861,7 @@ pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 						parents: 0,
 						interior: X1(AccountId32 { network: None, id: bob_account.clone().into() }),
 					},
-					(asset_id_as_multilocation, 1 * asset_minimum_asset_balance),
+					(asset_id_as_multilocation, asset_minimum_asset_balance),
 				),
 				Ok(_)
 			));
@@ -879,7 +879,7 @@ pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 					asset_id.into(),
 					&bob_account
 				),
-				(1 * asset_minimum_asset_balance).into()
+				asset_minimum_asset_balance.into()
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::balance(
@@ -1101,7 +1101,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 			// lets simulate this was triggered by relay chain from local consensus sibling parachain
 			let xcm = Xcm(vec![
 				WithdrawAsset(buy_execution_fee.clone().into()),
-				BuyExecution { fees: buy_execution_fee.clone().into(), weight_limit: Unlimited },
+				BuyExecution { fees: buy_execution_fee.clone(), weight_limit: Unlimited },
 				Transact {
 					origin_kind: OriginKind::Xcm,
 					require_weight_at_most: Weight::from_parts(40_000_000_000, 8000),
@@ -1218,7 +1218,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 			});
 			let xcm = Xcm(vec![
 				WithdrawAsset(buy_execution_fee.clone().into()),
-				BuyExecution { fees: buy_execution_fee.clone().into(), weight_limit: Unlimited },
+				BuyExecution { fees: buy_execution_fee.clone(), weight_limit: Unlimited },
 				Transact {
 					origin_kind: OriginKind::Xcm,
 					require_weight_at_most: Weight::from_parts(20_000_000_000, 8000),
