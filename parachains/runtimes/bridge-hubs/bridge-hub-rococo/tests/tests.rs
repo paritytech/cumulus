@@ -29,13 +29,12 @@ use bridge_hub_rococo_runtime::{
 use codec::{Decode, Encode};
 use frame_support::parameter_types;
 use parachains_common::{AccountId, AuraId};
+use sp_keyring::AccountKeyring::Alice;
 use sp_runtime::{
 	generic::{Era, SignedPayload},
 	AccountId32,
 };
 use xcm::latest::prelude::*;
-
-const ALICE: [u8; 32] = [1u8; 32];
 
 parameter_types! {
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
@@ -90,6 +89,14 @@ fn drip_some_balance(account: &<Runtime as frame_system::Config>::AccountId) {
 	Balances::mint_into(account, some_currency).unwrap();
 }
 
+fn collator_session_keys() -> bridge_hub_test_utils::CollatorSessionKeys<Runtime> {
+	bridge_hub_test_utils::CollatorSessionKeys::new(
+		AccountId::from(Alice),
+		AccountId::from(Alice),
+		SessionKeys { aura: AuraId::from(Alice.public()) },
+	)
+}
+
 mod bridge_hub_rococo_tests {
 	use super::*;
 	use bridge_hub_rococo_config::WithBridgeHubWococoMessageBridge;
@@ -104,11 +111,7 @@ mod bridge_hub_rococo_tests {
 		CheckingAccount,
 		WeightToFee,
 		ParachainSystem,
-		bridge_hub_test_utils::CollatorSessionKeys::new(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-		),
+		collator_session_keys(),
 		ExistentialDeposit::get(),
 		Box::new(|runtime_event_encoded: Vec<u8>| {
 			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
@@ -125,67 +128,67 @@ mod bridge_hub_rococo_tests {
 		bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID
 	);
 
-	bridge_hub_test_utils::include_initialize_bridge_by_governance_works!(
-		Runtime,
-		BridgeGrandpaWococoInstance,
-		bridge_hub_test_utils::CollatorSessionKeys::new(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-		),
-		bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
-		Box::new(|call| RuntimeCall::BridgeWococoGrandpa(call).encode())
-	);
+	#[test]
+	fn initialize_bridge_by_governance_works() {
+		bridge_hub_test_utils::test_cases::initialize_bridge_by_governance_works::<
+			Runtime,
+			BridgeGrandpaWococoInstance,
+		>(
+			collator_session_keys(),
+			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
+			Box::new(|call| RuntimeCall::BridgeWococoGrandpa(call).encode()),
+		)
+	}
 
-	bridge_hub_test_utils::include_handle_export_message_from_system_parachain_to_outbound_queue_works!(
-		Runtime,
-		XcmConfig,
-		WithBridgeHubWococoMessagesInstance,
-		bridge_hub_test_utils::CollatorSessionKeys::new(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-		),
-		bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
-		1000,
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::BridgeWococoMessages(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		|| ExportMessage { network: Wococo, destination: X1(Parachain(1234)), xcm: Xcm(vec![]) },
-		bridge_hub_rococo_config::DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO
-	);
+	#[test]
+	fn handle_export_message_from_system_parachain_add_to_outbound_queue_works() {
+		bridge_hub_test_utils::test_cases::handle_export_message_from_system_parachain_to_outbound_queue_works::<
+			Runtime,
+			XcmConfig,
+			WithBridgeHubWococoMessagesInstance,
+		>(
+			collator_session_keys(),
+			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
+			1000,
+			Box::new(|runtime_event_encoded: Vec<u8>| {
+				match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+					Ok(RuntimeEvent::BridgeWococoMessages(event)) => Some(event),
+					_ => None,
+				}
+			}),
+			|| ExportMessage { network: Wococo, destination: X1(Parachain(1234)), xcm: Xcm(vec![]) },
+			bridge_hub_rococo_config::DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO
+		)
+	}
 
-	bridge_hub_test_utils::include_message_dispatch_routing_works!(
-		Runtime,
-		XcmConfig,
-		ParachainSystem,
-		WithBridgeHubWococoMessagesInstance,
-		RelayNetwork,
-		bridge_hub_rococo_config::WococoGlobalConsensusNetwork,
-		bridge_hub_test_utils::CollatorSessionKeys::new(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-		),
-		bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
-		1000,
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::ParachainSystem(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		bridge_hub_rococo_config::DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO
-	);
+	#[test]
+	fn message_dispatch_routing_works() {
+		bridge_hub_test_utils::test_cases::message_dispatch_routing_works::<
+			Runtime,
+			XcmConfig,
+			ParachainSystem,
+			WithBridgeHubWococoMessagesInstance,
+			RelayNetwork,
+			bridge_hub_rococo_config::WococoGlobalConsensusNetwork,
+		>(
+			collator_session_keys(),
+			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
+			1000,
+			Box::new(|runtime_event_encoded: Vec<u8>| {
+				match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+					Ok(RuntimeEvent::ParachainSystem(event)) => Some(event),
+					_ => None,
+				}
+			}),
+			Box::new(|runtime_event_encoded: Vec<u8>| {
+				match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+					Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
+					_ => None,
+				}
+			}),
+			bridge_hub_rococo_config::DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO,
+		)
+	}
 
 	#[test]
 	fn relayed_incoming_message_works() {
@@ -198,11 +201,7 @@ mod bridge_hub_rococo_tests {
 			WithBridgeHubWococoMessagesInstance,
 			WithBridgeHubWococoMessageBridge,
 		>(
-			bridge_hub_test_utils::CollatorSessionKeys::new(
-				AccountId::from(ALICE),
-				AccountId::from(ALICE),
-				SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
-			),
+			collator_session_keys(),
 			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
 			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
 			1000,
@@ -222,11 +221,7 @@ mod bridge_hub_rococo_tests {
 			WithBridgeHubWococoMessagesInstance,
 			WithBridgeHubWococoMessageBridge,
 		>(
-			bridge_hub_test_utils::CollatorSessionKeys::new(
-				AccountId::from(ALICE),
-				AccountId::from(ALICE),
-				SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
-			),
+			collator_session_keys(),
 			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
 			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
 			1000,
@@ -254,11 +249,7 @@ mod bridge_hub_wococo_tests {
 		CheckingAccount,
 		WeightToFee,
 		ParachainSystem,
-		bridge_hub_test_utils::CollatorSessionKeys::new(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-		),
+		collator_session_keys(),
 		ExistentialDeposit::get(),
 		Box::new(|runtime_event_encoded: Vec<u8>| {
 			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
@@ -275,67 +266,67 @@ mod bridge_hub_wococo_tests {
 		bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID
 	);
 
-	bridge_hub_test_utils::include_initialize_bridge_by_governance_works!(
-		Runtime,
-		BridgeGrandpaRococoInstance,
-		bridge_hub_test_utils::CollatorSessionKeys::new(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-		),
-		bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
-		Box::new(|call| RuntimeCall::BridgeRococoGrandpa(call).encode())
-	);
+	#[test]
+	fn initialize_bridge_by_governance_works() {
+		bridge_hub_test_utils::test_cases::initialize_bridge_by_governance_works::<
+			Runtime,
+			BridgeGrandpaRococoInstance,
+		>(
+			collator_session_keys(),
+			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
+			Box::new(|call| RuntimeCall::BridgeRococoGrandpa(call).encode()),
+		)
+	}
 
-	bridge_hub_test_utils::include_handle_export_message_from_system_parachain_to_outbound_queue_works!(
-		Runtime,
-		XcmConfig,
-		WithBridgeHubRococoMessagesInstance,
-		bridge_hub_test_utils::CollatorSessionKeys::new(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-		),
-		bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
-		1000,
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::BridgeRococoMessages(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		|| ExportMessage { network: Rococo, destination: X1(Parachain(4321)), xcm: Xcm(vec![]) },
-		bridge_hub_wococo_config::DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO
-	);
+	#[test]
+	fn handle_export_message_from_system_parachain_add_to_outbound_queue_works() {
+		bridge_hub_test_utils::test_cases::handle_export_message_from_system_parachain_to_outbound_queue_works::<
+			Runtime,
+			XcmConfig,
+			WithBridgeHubRococoMessagesInstance,
+		>(
+			collator_session_keys(),
+			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
+			1000,
+			Box::new(|runtime_event_encoded: Vec<u8>| {
+				match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+					Ok(RuntimeEvent::BridgeRococoMessages(event)) => Some(event),
+					_ => None,
+				}
+			}),
+			|| ExportMessage { network: Rococo, destination: X1(Parachain(4321)), xcm: Xcm(vec![]) },
+			bridge_hub_wococo_config::DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO
+		)
+	}
 
-	bridge_hub_test_utils::include_message_dispatch_routing_works!(
-		Runtime,
-		XcmConfig,
-		ParachainSystem,
-		WithBridgeHubRococoMessagesInstance,
-		RelayNetwork,
-		bridge_hub_wococo_config::RococoGlobalConsensusNetwork,
-		bridge_hub_test_utils::CollatorSessionKeys::new(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-		),
-		bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
-		1000,
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::ParachainSystem(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		bridge_hub_wococo_config::DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO
-	);
+	#[test]
+	fn message_dispatch_routing_works() {
+		bridge_hub_test_utils::test_cases::message_dispatch_routing_works::<
+			Runtime,
+			XcmConfig,
+			ParachainSystem,
+			WithBridgeHubRococoMessagesInstance,
+			RelayNetwork,
+			bridge_hub_wococo_config::RococoGlobalConsensusNetwork,
+		>(
+			collator_session_keys(),
+			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
+			1000,
+			Box::new(|runtime_event_encoded: Vec<u8>| {
+				match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+					Ok(RuntimeEvent::ParachainSystem(event)) => Some(event),
+					_ => None,
+				}
+			}),
+			Box::new(|runtime_event_encoded: Vec<u8>| {
+				match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+					Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
+					_ => None,
+				}
+			}),
+			bridge_hub_wococo_config::DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO,
+		)
+	}
 
 	#[test]
 	fn relayed_incoming_message_works() {
@@ -348,11 +339,7 @@ mod bridge_hub_wococo_tests {
 			WithBridgeHubRococoMessagesInstance,
 			WithBridgeHubRococoMessageBridge,
 		>(
-			bridge_hub_test_utils::CollatorSessionKeys::new(
-				AccountId::from(ALICE),
-				AccountId::from(ALICE),
-				SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
-			),
+			collator_session_keys(),
 			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
 			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
 			1000,
@@ -372,11 +359,7 @@ mod bridge_hub_wococo_tests {
 			WithBridgeHubRococoMessagesInstance,
 			WithBridgeHubRococoMessageBridge,
 		>(
-			bridge_hub_test_utils::CollatorSessionKeys::new(
-				AccountId::from(ALICE),
-				AccountId::from(ALICE),
-				SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
-			),
+			collator_session_keys(),
 			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
 			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
 			1000,

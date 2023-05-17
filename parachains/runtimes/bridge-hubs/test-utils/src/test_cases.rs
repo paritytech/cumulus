@@ -117,29 +117,6 @@ pub fn initialize_bridge_by_governance_works<Runtime, GrandpaPalletInstance>(
 		})
 }
 
-#[macro_export]
-macro_rules! include_initialize_bridge_by_governance_works(
-	(
-		$runtime:path,
-		$pallet_bridge_grandpa_instance:path,
-		$collator_session_key:expr,
-		$runtime_para_id:expr,
-		$runtime_call_encode:expr
-	) => {
-		#[test]
-		fn initialize_bridge_by_governance_works() {
-			$crate::test_cases::initialize_bridge_by_governance_works::<
-				$runtime,
-				$pallet_bridge_grandpa_instance,
-			>(
-				$collator_session_key,
-				$runtime_para_id,
-				$runtime_call_encode
-			)
-		}
-	}
-);
-
 /// Test-case makes sure that `Runtime` can handle xcm `ExportMessage`:
 /// Checks if received XCM messages is correctly added to the message outbound queue for delivery.
 /// For SystemParachains we expect unpaid execution.
@@ -225,37 +202,6 @@ pub fn handle_export_message_from_system_parachain_to_outbound_queue_works<
 			);
 		})
 }
-
-#[macro_export]
-macro_rules! include_handle_export_message_from_system_parachain_to_outbound_queue_works(
-	(
-		$runtime:path,
-		$xcm_config:path,
-		$pallet_bridge_messages_instance:path,
-		$collator_session_key:expr,
-		$runtime_para_id:expr,
-		$sibling_parachain_id:expr,
-		$unwrap_pallet_bridge_messages_event:expr,
-		$export_message_instruction:expr,
-		$expected_lane_id:expr
-	) => {
-		#[test]
-		fn handle_export_message_from_system_parachain_add_to_outbound_queue_works() {
-			$crate::test_cases::handle_export_message_from_system_parachain_to_outbound_queue_works::<
-				$runtime,
-				$xcm_config,
-				$pallet_bridge_messages_instance
-			>(
-				$collator_session_key,
-				$runtime_para_id,
-				$sibling_parachain_id,
-				$unwrap_pallet_bridge_messages_event,
-				$export_message_instruction,
-				$expected_lane_id
-			)
-		}
-	}
-);
 
 /// Test-case makes sure that Runtime can route XCM messages received in inbound queue,
 /// We just test here `MessageDispatch` configuration.
@@ -371,45 +317,8 @@ pub fn message_dispatch_routing_works<
 		})
 }
 
-#[macro_export]
-macro_rules! include_message_dispatch_routing_works(
-	(
-		$runtime:path,
-		$xcm_config:path,
-		$hrmp_channel_opener:path,
-		$pallet_bridge_messages_instance:path,
-		$runtime_network:path,
-		$bridged_network:path,
-		$collator_session_key:expr,
-		$runtime_para_id:expr,
-		$sibling_parachain_id:expr,
-		$unwrap_cumulus_pallet_parachain_system_event:expr,
-		$unwrap_cumulus_pallet_xcmp_queue_event:expr,
-		$expected_lane_id:expr
-	) => {
-		#[test]
-		fn message_dispatch_routing_works() {
-			$crate::test_cases::message_dispatch_routing_works::<
-				$runtime,
-				$xcm_config,
-				$hrmp_channel_opener,
-				$pallet_bridge_messages_instance,
-				$runtime_network,
-				$bridged_network
-			>(
-				$collator_session_key,
-				$runtime_para_id,
-				$sibling_parachain_id,
-				$unwrap_cumulus_pallet_parachain_system_event,
-				$unwrap_cumulus_pallet_xcmp_queue_event,
-				$expected_lane_id,
-			)
-		}
-	}
-);
-
 /// Test-case makes sure that Runtime can dispatch XCM messages submitted by relayer,
-/// with proofs (finality, para heads, message) independently provided.
+/// with proofs (finality, para heads, message) independently submitted.
 pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI, MB>(
 	collator_session_key: CollatorSessionKeys<Runtime>,
 	runtime_para_id: u32,
