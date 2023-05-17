@@ -1075,7 +1075,6 @@ dependencies = [
 name = "bridge-hub-rococo-runtime"
 version = "0.1.0"
 dependencies = [
- "asset-test-utils",
  "bp-bridge-hub-rococo",
  "bp-bridge-hub-wococo",
  "bp-messages",
@@ -1123,7 +1122,6 @@ dependencies = [
  "pallet-xcm-benchmarks",
  "parachain-info",
  "parachains-common",
- "parachains-runtimes-test-utils",
  "parity-scale-codec",
  "polkadot-core-primitives",
  "polkadot-parachain",
@@ -13332,7 +13330,6 @@ dependencies = [
  "pallet-xcm-benchmarks",
  "parachain-info",
  "parachains-common",
- "parachains-runtimes-test-utils",
  "parity-scale-codec",
  "polkadot-core-primitives",
  "polkadot-parachain",
@@ -13399,7 +13396,6 @@ dependencies = [
  "pallet-xcm-benchmarks",
  "parachain-info",
  "parachains-common",
- "parachains-runtimes-test-utils",
  "parity-scale-codec",
  "polkadot-core-primitives",
  "polkadot-parachain",
@@ -15400,7 +15396,6 @@ dependencies = [
  "pallet-xcm-benchmarks",
  "parachain-info",
  "parachains-common",
- "parachains-runtimes-test-utils",
  "parity-scale-codec",
  "polkadot-core-primitives",
  "polkadot-parachain",

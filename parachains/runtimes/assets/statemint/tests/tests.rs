@@ -1,3 +1,4 @@
+use asset_test_utils::{CollatorSessionKeys, ExtBuilder, RuntimeHelper};
 use codec::Decode;
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
@@ -8,7 +9,6 @@ use frame_support::{
 use parachains_common::{
 	AccountId, AssetIdForTrustBackedAssets, Balance, StatemintAuraId as AuraId,
 };
-use parachains_runtimes_test_utils::{CollatorSessionKeys, ExtBuilder, RuntimeHelper};
 use statemint_runtime::xcm_config::{
 	AssetFeeAsExistentialDepositMultiplierFeeCharger, CheckingAccount, DotLocation,
 	TrustBackedAssetsPalletLocation,

@@ -1,3 +1,4 @@
+use asset_test_utils::{CollatorSessionKeys, ExtBuilder, RuntimeHelper, XcmReceivedFrom};
 use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
@@ -6,9 +7,6 @@ use frame_support::{
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
 use parachains_common::{AccountId, AssetIdForTrustBackedAssets, AuraId, Balance};
-use parachains_runtimes_test_utils::{
-	CollatorSessionKeys, ExtBuilder, RuntimeHelper, XcmReceivedFrom,
-};
 use std::convert::Into;
 pub use westmint_runtime::{
 	constants::fee::WeightToFee,
