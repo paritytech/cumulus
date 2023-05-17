@@ -884,3 +884,22 @@ macro_rules! bx {
         Box::new($e)
     };
 }
+
+pub mod helpers {
+	use super::Weight;
+
+	pub fn within_threshold(threshold: u64, expected_value: u64, current_value: u64) -> bool {
+		let margin = (current_value * threshold) / 100;
+		let lower_limit = expected_value - margin;
+		let upper_limit = expected_value + margin;
+
+		current_value >= lower_limit && current_value <= upper_limit
+	}
+
+	pub fn weight_within_threshold((threshold_time, threshold_size): (u64, u64), expected_weight: Weight, weight: Weight) -> bool {
+		let ref_time_within = within_threshold(threshold_time, expected_weight.ref_time(), weight.ref_time());
+		let proof_size_within = within_threshold(threshold_size, expected_weight.proof_size(), weight.proof_size());
+
+		ref_time_within && proof_size_within
+	}
+}

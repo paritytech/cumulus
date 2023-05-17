@@ -13,6 +13,8 @@ use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 
 pub const XCM_V2: u32 = 3;
 pub const XCM_V3: u32 = 2;
+pub const REF_TIME_THRESHOLD: u64 = 33;
+pub const PROOF_SIZE_THRESHOLD: u64 = 33;
 
 pub mod accounts {
 	use super::*;
