@@ -46,10 +46,6 @@ parameter_types! {
 	pub ActiveOutboundLanesToBridgeHubPolkadot: &'static [bp_messages::LaneId] = &[DEFAULT_XCM_LANE_TO_BRIDGE_HUB_POLKADOT];
 	pub PriorityBoostPerMessage: u64 = 921_900_294;
 	pub const BridgeHubPolkadotMessagesLane: bp_messages::LaneId = DEFAULT_XCM_LANE_TO_BRIDGE_HUB_POLKADOT;
-	pub const BridgeHubPolkadotParachainId: u32 = {
-		use bp_runtime::Parachain;
-		BridgeHubPolkadot::PARACHAIN_ID
-	};
 }
 
 /// Proof of messages, coming from BridgeHubPolkadot.
@@ -135,7 +131,7 @@ impl ThisChainWithMessages for ThisChain {
 /// Signed extension that refunds relayers that are delivering messages from the Polkadot BridgeHub.
 pub type BridgeRefundBridgeHubPolkadotMessages = RefundBridgedParachainMessages<
 	Runtime,
-	RefundableParachain<BridgeParachainPolkadotInstance, BridgeHubPolkadotParachainId>,
+	RefundableParachain<BridgeParachainPolkadotInstance, BridgeHubPolkadot>,
 	RefundableMessagesLane<WithBridgeHubPolkadotMessagesInstance, BridgeHubPolkadotMessagesLane>,
 	ActualFeeRefund<Runtime>,
 	PriorityBoostPerMessage,

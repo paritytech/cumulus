@@ -46,10 +46,6 @@ parameter_types! {
 	pub ActiveOutboundLanesToBridgeHubKusama: &'static [bp_messages::LaneId] = &[DEFAULT_XCM_LANE_TO_BRIDGE_HUB_KUSAMA];
 	pub PriorityBoostPerMessage: u64 = 921_900_294;
 	pub const BridgeHubKusamaMessagesLane: bp_messages::LaneId = DEFAULT_XCM_LANE_TO_BRIDGE_HUB_KUSAMA;
-	pub const BridgeHubKusamaParachainId: u32 = {
-		use bp_runtime::Parachain;
-		BridgeHubKusama::PARACHAIN_ID
-	};
 }
 
 /// Proof of messages, coming from BridgeHubKusama.
@@ -135,7 +131,7 @@ impl ThisChainWithMessages for ThisChain {
 /// Signed extension that refunds relayers that are delivering messages from the kusama BridgeHub.
 pub type BridgeRefundBridgeHubKusamaMessages = RefundBridgedParachainMessages<
 	Runtime,
-	RefundableParachain<BridgeParachainKusamaInstance, BridgeHubKusamaParachainId>,
+	RefundableParachain<BridgeParachainKusamaInstance, BridgeHubKusama>,
 	RefundableMessagesLane<WithBridgeHubKusamaMessagesInstance, BridgeHubKusamaMessagesLane>,
 	ActualFeeRefund<Runtime>,
 	PriorityBoostPerMessage,
