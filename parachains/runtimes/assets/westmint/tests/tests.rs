@@ -1,4 +1,3 @@
-use asset_test_utils::{ExtBuilder, RuntimeHelper, XcmReceivedFrom};
 use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
@@ -7,6 +6,9 @@ use frame_support::{
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
 use parachains_common::{AccountId, AssetIdForTrustBackedAssets, AuraId, Balance};
+use parachains_runtimes_test_utils::{
+	CollatorSessionKeys, ExtBuilder, RuntimeHelper, XcmReceivedFrom,
+};
 use std::convert::Into;
 pub use westmint_runtime::{
 	constants::fee::WeightToFee,
@@ -32,6 +34,14 @@ const SOME_ASSET_ADMIN: [u8; 32] = [5u8; 32];
 
 type AssetIdForTrustBackedAssetsConvert =
 	assets_common::AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>;
+
+fn collator_session_keys() -> CollatorSessionKeys<Runtime> {
+	CollatorSessionKeys::new(
+		AccountId::from(ALICE),
+		AccountId::from(ALICE),
+		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+	)
+}
 
 #[test]
 fn test_asset_xcm_trader() {
@@ -480,11 +490,7 @@ asset_test_utils::include_teleports_for_native_asset_works!(
 	CheckingAccount,
 	WeightToFee,
 	ParachainSystem,
-	asset_test_utils::CollatorSessionKeys::new(
-		AccountId::from(ALICE),
-		AccountId::from(ALICE),
-		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-	),
+	collator_session_keys(),
 	ExistentialDeposit::get(),
 	Box::new(|runtime_event_encoded: Vec<u8>| {
 		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
@@ -509,11 +515,7 @@ asset_test_utils::include_teleports_for_foreign_assets_works!(
 	ParachainSystem,
 	ForeignCreatorsSovereignAccountOf,
 	ForeignAssetsInstance,
-	asset_test_utils::CollatorSessionKeys::new(
-		AccountId::from(ALICE),
-		AccountId::from(ALICE),
-		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-	),
+	collator_session_keys(),
 	ExistentialDeposit::get(),
 	Box::new(|runtime_event_encoded: Vec<u8>| {
 		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
@@ -532,11 +534,7 @@ asset_test_utils::include_teleports_for_foreign_assets_works!(
 asset_test_utils::include_asset_transactor_transfer_with_local_consensus_currency_works!(
 	Runtime,
 	XcmConfig,
-	asset_test_utils::CollatorSessionKeys::new(
-		AccountId::from(ALICE),
-		AccountId::from(ALICE),
-		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-	),
+	collator_session_keys(),
 	ExistentialDeposit::get(),
 	Box::new(|| {
 		assert!(Assets::asset_ids().collect::<Vec<_>>().is_empty());
@@ -555,11 +553,7 @@ asset_test_utils::include_asset_transactor_transfer_with_pallet_assets_instance_
 	TrustBackedAssetsInstance,
 	AssetIdForTrustBackedAssets,
 	AssetIdForTrustBackedAssetsConvert,
-	asset_test_utils::CollatorSessionKeys::new(
-		AccountId::from(ALICE),
-		AccountId::from(ALICE),
-		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-	),
+	collator_session_keys(),
 	ExistentialDeposit::get(),
 	12345,
 	Box::new(|| {
@@ -577,11 +571,7 @@ asset_test_utils::include_asset_transactor_transfer_with_pallet_assets_instance_
 	ForeignAssetsInstance,
 	MultiLocation,
 	JustTry,
-	asset_test_utils::CollatorSessionKeys::new(
-		AccountId::from(ALICE),
-		AccountId::from(ALICE),
-		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-	),
+	collator_session_keys(),
 	ExistentialDeposit::get(),
 	MultiLocation { parents: 1, interior: X2(Parachain(1313), GeneralIndex(12345)) },
 	Box::new(|| {
@@ -600,11 +590,7 @@ asset_test_utils::include_create_and_manage_foreign_assets_for_local_consensus_p
 	ForeignAssetsInstance,
 	MultiLocation,
 	JustTry,
-	asset_test_utils::CollatorSessionKeys::new(
-		AccountId::from(ALICE),
-		AccountId::from(ALICE),
-		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-	),
+	collator_session_keys(),
 	ExistentialDeposit::get(),
 	AssetDeposit::get(),
 	MetadataDepositBase::get(),

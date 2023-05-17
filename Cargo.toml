@@ -50,6 +50,7 @@ members = [
 	"parachains/runtimes/collectives/collectives-polkadot",
 	"parachains/runtimes/contracts/contracts-rococo",
 	"parachains/runtimes/testing/penpal",
+	"parachains/runtimes/test-utils",
 	"test/client",
 	"test/relay-sproof-builder",
 	"test/relay-validation-worker-provider",

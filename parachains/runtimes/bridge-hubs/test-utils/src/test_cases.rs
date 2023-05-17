@@ -40,6 +40,10 @@ use frame_support::{
 	traits::{Get, OriginTrait},
 };
 use pallet_bridge_grandpa::BridgedHeader;
+use parachains_runtimes_test_utils::{
+	mock_open_hrmp_channel, AccountIdOf, CollatorSessionKeys, ExtBuilder, RuntimeHelper,
+	ValidatorIdOf, XcmReceivedFrom,
+};
 use sp_core::H256;
 use sp_keyring::AccountKeyring::*;
 use sp_runtime::{traits::Header as HeaderT, AccountId32};
@@ -47,14 +51,8 @@ use xcm::latest::prelude::*;
 use xcm_builder::DispatchBlobError;
 use xcm_executor::XcmExecutor;
 
-// Re-export test_cases from assets
-pub use asset_test_utils::{
-	include_teleports_for_native_asset_works, CollatorSessionKeys, XcmReceivedFrom,
-};
-// Lets re-use this stuff from assets (later we plan to move it outside of assets as `runtimes/test-utils`)
-use asset_test_utils::{
-	mock_open_hrmp_channel, AccountIdOf, ExtBuilder, RuntimeHelper, ValidatorIdOf,
-};
+// Re-export test_case from assets
+pub use asset_test_utils::include_teleports_for_native_asset_works;
 
 /// Test-case makes sure that `Runtime` can process bridging initialize via governance-like call
 pub fn initialize_bridge_by_governance_works<Runtime, GrandpaPalletInstance>(

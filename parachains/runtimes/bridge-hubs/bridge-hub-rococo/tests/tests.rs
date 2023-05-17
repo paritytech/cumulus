@@ -89,8 +89,8 @@ fn drip_some_balance(account: &<Runtime as frame_system::Config>::AccountId) {
 	Balances::mint_into(account, some_currency).unwrap();
 }
 
-fn collator_session_keys() -> bridge_hub_test_utils::CollatorSessionKeys<Runtime> {
-	bridge_hub_test_utils::CollatorSessionKeys::new(
+fn collator_session_keys() -> parachains_runtimes_test_utils::CollatorSessionKeys<Runtime> {
+	parachains_runtimes_test_utils::CollatorSessionKeys::new(
 		AccountId::from(Alice),
 		AccountId::from(Alice),
 		SessionKeys { aura: AuraId::from(Alice.public()) },
