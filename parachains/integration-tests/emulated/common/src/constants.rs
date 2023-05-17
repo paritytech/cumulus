@@ -1,14 +1,17 @@
-pub use polkadot_runtime_parachains::configuration::HostConfiguration;
-use polkadot_primitives::{AssignmentId, ValidatorId};
-pub use parachains_common::{BlockNumber, AccountId, Balance, AuraId, StatemintAuraId};
-pub use xcm;
 use grandpa::AuthorityId as GrandpaId;
-use sp_core::{sr25519, storage::Storage, Pair, Public};
-use sp_runtime::{Perbill, BuildStorage, MultiSignature, traits::{Verify, IdentifyAccount}};
-use sp_consensus_babe::AuthorityId as BabeId;
-use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
-use polkadot_service::chain_spec::get_authority_keys_from_seed_no_beefy;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
+pub use parachains_common::{AccountId, AuraId, Balance, BlockNumber, StatemintAuraId};
+use polkadot_primitives::{AssignmentId, ValidatorId};
+pub use polkadot_runtime_parachains::configuration::HostConfiguration;
+use polkadot_service::chain_spec::get_authority_keys_from_seed_no_beefy;
+use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
+use sp_consensus_babe::AuthorityId as BabeId;
+use sp_core::{sr25519, storage::Storage, Pair, Public};
+use sp_runtime::{
+	traits::{IdentifyAccount, Verify},
+	BuildStorage, MultiSignature, Perbill,
+};
+pub use xcm;
 
 pub const XCM_V2: u32 = 3;
 pub const XCM_V3: u32 = 2;
@@ -87,10 +90,7 @@ pub mod collators {
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				get_from_seed::<AuraId>("Alice"),
 			),
-			(
-				get_account_id_from_seed::<sr25519::Public>("Bob"),
-				get_from_seed::<AuraId>("Bob"),
-			),
+			(get_account_id_from_seed::<sr25519::Public>("Bob"), get_from_seed::<AuraId>("Bob")),
 		]
 	}
 }
@@ -151,9 +151,15 @@ pub mod polkadot {
 
 	pub fn genesis() -> Storage {
 		let genesis_config = polkadot_runtime::GenesisConfig {
-			system: polkadot_runtime::SystemConfig { code: polkadot_runtime::WASM_BINARY.unwrap().to_vec() },
+			system: polkadot_runtime::SystemConfig {
+				code: polkadot_runtime::WASM_BINARY.unwrap().to_vec(),
+			},
 			balances: polkadot_runtime::BalancesConfig {
-				balances: accounts::init_balances().iter().cloned().map(|k| (k, ED * 4096)).collect(),
+				balances: accounts::init_balances()
+					.iter()
+					.cloned()
+					.map(|k| (k, ED * 4096))
+					.collect(),
 			},
 			indices: polkadot_runtime::IndicesConfig { indices: vec![] },
 			session: polkadot_runtime::SessionConfig {
@@ -180,16 +186,24 @@ pub mod polkadot {
 				minimum_validator_count: 1,
 				stakers: validators::initial_authorities()
 					.iter()
-					.map(|x| (x.0.clone(), x.1.clone(), STASH, polkadot_runtime::StakerStatus::Validator))
+					.map(|x| {
+						(x.0.clone(), x.1.clone(), STASH, polkadot_runtime::StakerStatus::Validator)
+					})
 					.collect(),
-				invulnerables: validators::initial_authorities().iter().map(|x| x.0.clone()).collect(),
+				invulnerables: validators::initial_authorities()
+					.iter()
+					.map(|x| x.0.clone())
+					.collect(),
 				force_era: pallet_staking::Forcing::ForceNone,
 				slash_reward_fraction: Perbill::from_percent(10),
 				..Default::default()
 			},
 			phragmen_election: Default::default(),
 			democracy: Default::default(),
-			council: polkadot_runtime::CouncilConfig { members: vec![], phantom: Default::default() },
+			council: polkadot_runtime::CouncilConfig {
+				members: vec![],
+				phantom: Default::default(),
+			},
 			technical_committee: polkadot_runtime::TechnicalCommitteeConfig {
 				members: vec![],
 				phantom: Default::default(),
@@ -206,9 +220,7 @@ pub mod polkadot {
 			vesting: polkadot_runtime::VestingConfig { vesting: vec![] },
 			treasury: Default::default(),
 			hrmp: Default::default(),
-			configuration: polkadot_runtime::ConfigurationConfig {
-				config: get_host_config(),
-			},
+			configuration: polkadot_runtime::ConfigurationConfig { config: get_host_config() },
 			paras: Default::default(),
 			xcm_pallet: Default::default(),
 			nomination_pools: Default::default(),
@@ -255,9 +267,15 @@ pub mod kusama {
 
 	pub fn genesis() -> Storage {
 		let genesis_config = kusama_runtime::GenesisConfig {
-			system: kusama_runtime::SystemConfig { code: kusama_runtime::WASM_BINARY.unwrap().to_vec() },
+			system: kusama_runtime::SystemConfig {
+				code: kusama_runtime::WASM_BINARY.unwrap().to_vec(),
+			},
 			balances: kusama_runtime::BalancesConfig {
-				balances: accounts::init_balances().iter().cloned().map(|k| (k, ED * 4096)).collect(),
+				balances: accounts::init_balances()
+					.iter()
+					.cloned()
+					.map(|k| (k, ED * 4096))
+					.collect(),
 			},
 			indices: kusama_runtime::IndicesConfig { indices: vec![] },
 			session: kusama_runtime::SessionConfig {
@@ -284,9 +302,14 @@ pub mod kusama {
 				validator_count: validators::initial_authorities().len() as u32,
 				stakers: validators::initial_authorities()
 					.iter()
-					.map(|x| (x.0.clone(), x.1.clone(), STASH, kusama_runtime::StakerStatus::Validator))
+					.map(|x| {
+						(x.0.clone(), x.1.clone(), STASH, kusama_runtime::StakerStatus::Validator)
+					})
 					.collect(),
-				invulnerables: validators::initial_authorities().iter().map(|x| x.0.clone()).collect(),
+				invulnerables: validators::initial_authorities()
+					.iter()
+					.map(|x| x.0.clone())
+					.collect(),
 				force_era: pallet_staking::Forcing::NotForcing,
 				slash_reward_fraction: Perbill::from_percent(10),
 				..Default::default()
@@ -302,9 +325,7 @@ pub mod kusama {
 			vesting: kusama_runtime::VestingConfig { vesting: vec![] },
 			treasury: Default::default(),
 			hrmp: Default::default(),
-			configuration: kusama_runtime::ConfigurationConfig {
-				config: get_host_config(),
-			},
+			configuration: kusama_runtime::ConfigurationConfig { config: get_host_config() },
 			paras: Default::default(),
 			xcm_pallet: Default::default(),
 			nomination_pools: Default::default(),
@@ -329,11 +350,19 @@ pub mod statemint {
 					.to_vec(),
 			},
 			balances: statemint_runtime::BalancesConfig {
-				balances: accounts::init_balances().iter().cloned().map(|k| (k, ED * 4096)).collect(),
+				balances: accounts::init_balances()
+					.iter()
+					.cloned()
+					.map(|k| (k, ED * 4096))
+					.collect(),
 			},
 			parachain_info: statemint_runtime::ParachainInfoConfig { parachain_id: PARA_ID.into() },
 			collator_selection: statemint_runtime::CollatorSelectionConfig {
-				invulnerables: collators::invulnerables_statemint().iter().cloned().map(|(acc, _)| acc).collect(),
+				invulnerables: collators::invulnerables_statemint()
+					.iter()
+					.cloned()
+					.map(|(acc, _)| acc)
+					.collect(),
 				candidacy_bond: ED * 16,
 				..Default::default()
 			},
@@ -342,8 +371,8 @@ pub mod statemint {
 					.into_iter()
 					.map(|(acc, aura)| {
 						(
-							acc.clone(),                  // account id
-							acc,                          // validator id
+							acc.clone(),                             // account id
+							acc,                                     // validator id
 							statemint_runtime::SessionKeys { aura }, // session keys
 						)
 					})
@@ -375,11 +404,19 @@ pub mod statemine {
 					.to_vec(),
 			},
 			balances: statemine_runtime::BalancesConfig {
-				balances: accounts::init_balances().iter().cloned().map(|k| (k, ED * 4096)).collect(),
+				balances: accounts::init_balances()
+					.iter()
+					.cloned()
+					.map(|k| (k, ED * 4096))
+					.collect(),
 			},
 			parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: PARA_ID.into() },
 			collator_selection: statemine_runtime::CollatorSelectionConfig {
-				invulnerables: collators::invulnerables().iter().cloned().map(|(acc, _)| acc).collect(),
+				invulnerables: collators::invulnerables()
+					.iter()
+					.cloned()
+					.map(|(acc, _)| acc)
+					.collect(),
 				candidacy_bond: ED * 16,
 				..Default::default()
 			},
@@ -388,8 +425,8 @@ pub mod statemine {
 					.into_iter()
 					.map(|(acc, aura)| {
 						(
-							acc.clone(),                  // account id
-							acc,                          // validator id
+							acc.clone(),                             // account id
+							acc,                                     // validator id
 							statemine_runtime::SessionKeys { aura }, // session keys
 						)
 					})
@@ -421,11 +458,19 @@ pub mod penpal {
 					.to_vec(),
 			},
 			balances: penpal_runtime::BalancesConfig {
-				balances: accounts::init_balances().iter().cloned().map(|k| (k, ED * 4096)).collect(),
+				balances: accounts::init_balances()
+					.iter()
+					.cloned()
+					.map(|k| (k, ED * 4096))
+					.collect(),
 			},
 			parachain_info: penpal_runtime::ParachainInfoConfig { parachain_id: para_id.into() },
 			collator_selection: penpal_runtime::CollatorSelectionConfig {
-				invulnerables: collators::invulnerables().iter().cloned().map(|(acc, _)| acc).collect(),
+				invulnerables: collators::invulnerables()
+					.iter()
+					.cloned()
+					.map(|(acc, _)| acc)
+					.collect(),
 				candidacy_bond: ED * 16,
 				..Default::default()
 			},
@@ -434,8 +479,8 @@ pub mod penpal {
 					.into_iter()
 					.map(|(acc, aura)| {
 						(
-							acc.clone(),                  // account id
-							acc,                          // validator id
+							acc.clone(),                          // account id
+							acc,                                  // validator id
 							penpal_runtime::SessionKeys { aura }, // session keys
 						)
 					})
@@ -470,11 +515,21 @@ pub mod collectives {
 					.to_vec(),
 			},
 			balances: collectives_polkadot_runtime::BalancesConfig {
-				balances: accounts::init_balances().iter().cloned().map(|k| (k, ED * 4096)).collect(),
+				balances: accounts::init_balances()
+					.iter()
+					.cloned()
+					.map(|k| (k, ED * 4096))
+					.collect(),
 			},
-			parachain_info: collectives_polkadot_runtime::ParachainInfoConfig { parachain_id: PARA_ID.into() },
+			parachain_info: collectives_polkadot_runtime::ParachainInfoConfig {
+				parachain_id: PARA_ID.into(),
+			},
 			collator_selection: collectives_polkadot_runtime::CollatorSelectionConfig {
-				invulnerables: collators::invulnerables().iter().cloned().map(|(acc, _)| acc).collect(),
+				invulnerables: collators::invulnerables()
+					.iter()
+					.cloned()
+					.map(|(acc, _)| acc)
+					.collect(),
 				candidacy_bond: ED * 16,
 				..Default::default()
 			},
@@ -483,8 +538,8 @@ pub mod collectives {
 					.into_iter()
 					.map(|(acc, aura)| {
 						(
-							acc.clone(),                             // account id
-							acc,                                     // validator id
+							acc.clone(),                                        // account id
+							acc,                                                // validator id
 							collectives_polkadot_runtime::SessionKeys { aura }, // session keys
 						)
 					})
@@ -519,11 +574,21 @@ pub mod bridge_hub_kusama {
 					.to_vec(),
 			},
 			balances: bridge_hub_kusama_runtime::BalancesConfig {
-				balances: accounts::init_balances().iter().cloned().map(|k| (k, ED * 4096)).collect(),
+				balances: accounts::init_balances()
+					.iter()
+					.cloned()
+					.map(|k| (k, ED * 4096))
+					.collect(),
 			},
-			parachain_info: bridge_hub_kusama_runtime::ParachainInfoConfig { parachain_id: PARA_ID.into() },
+			parachain_info: bridge_hub_kusama_runtime::ParachainInfoConfig {
+				parachain_id: PARA_ID.into(),
+			},
 			collator_selection: bridge_hub_kusama_runtime::CollatorSelectionConfig {
-				invulnerables: collators::invulnerables().iter().cloned().map(|(acc, _)| acc).collect(),
+				invulnerables: collators::invulnerables()
+					.iter()
+					.cloned()
+					.map(|(acc, _)| acc)
+					.collect(),
 				candidacy_bond: ED * 16,
 				..Default::default()
 			},
@@ -557,18 +622,28 @@ pub mod bridge_hub_polkadot {
 	pub const ED: Balance = bridge_hub_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 	pub fn genesis() -> Storage {
-		let genesis_config = 		bridge_hub_polkadot_runtime::GenesisConfig {
+		let genesis_config = bridge_hub_polkadot_runtime::GenesisConfig {
 			system: bridge_hub_polkadot_runtime::SystemConfig {
 				code: bridge_hub_polkadot_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
 					.to_vec(),
 			},
 			balances: bridge_hub_polkadot_runtime::BalancesConfig {
-				balances: accounts::init_balances().iter().cloned().map(|k| (k, ED * 4096)).collect(),
+				balances: accounts::init_balances()
+					.iter()
+					.cloned()
+					.map(|k| (k, ED * 4096))
+					.collect(),
 			},
-			parachain_info: bridge_hub_polkadot_runtime::ParachainInfoConfig { parachain_id: PARA_ID.into() },
+			parachain_info: bridge_hub_polkadot_runtime::ParachainInfoConfig {
+				parachain_id: PARA_ID.into(),
+			},
 			collator_selection: bridge_hub_polkadot_runtime::CollatorSelectionConfig {
-				invulnerables: collators::invulnerables().iter().cloned().map(|(acc, _)| acc).collect(),
+				invulnerables: collators::invulnerables()
+					.iter()
+					.cloned()
+					.map(|(acc, _)| acc)
+					.collect(),
 				candidacy_bond: ED * 16,
 				..Default::default()
 			},

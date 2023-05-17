@@ -14,27 +14,24 @@ fn transact_sudo_from_relay_to_assets_para() {
 		is_sufficient: true,
 		min_balance: 1000,
 		owner: StatemintSender::get().into(),
-	}).encode().into();
+	})
+	.encode()
+	.into();
 
 	// XcmPallet send arguments
 	let sudo_origin = <Polkadot as Relay>::RuntimeOrigin::root();
-	let assets_para_destination: VersionedMultiLocation = Polkadot::child_location_of(Statemint::para_id()).into();
+	let assets_para_destination: VersionedMultiLocation =
+		Polkadot::child_location_of(Statemint::para_id()).into();
 
 	let weight_limit = WeightLimit::Unlimited;
 	let require_weight_at_most = Weight::from_parts(1000000000, 200000);
 	let origin_kind = OriginKind::Superuser;
 	let check_origin = None;
 
-	let xcm = VersionedXcm::from(
-		Xcm(vec![
-			UnpaidExecution { weight_limit, check_origin },
-			Transact {
-				require_weight_at_most,
-				origin_kind,
-				call,
-			},
-		])
-	);
+	let xcm = VersionedXcm::from(Xcm(vec![
+		UnpaidExecution { weight_limit, check_origin },
+		Transact { require_weight_at_most, origin_kind, call },
+	]));
 
 	// Send XCM message from Relay Chain
 	Polkadot::execute_with(|| {

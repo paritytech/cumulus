@@ -14,24 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
-pub use codec::Encode;
-pub use paste;
 pub use casey::pascal;
-pub use log;
+pub use codec::Encode;
 pub use frame_support::{
+	sp_runtime::BuildStorage,
 	traits::{Get, Hooks},
 	weights::Weight,
-	sp_runtime::BuildStorage,
 };
-pub use pallet_balances::AccountData;
 pub use frame_system::AccountInfo;
+pub use log;
+pub use pallet_balances::AccountData;
+pub use paste;
 pub use sp_arithmetic::traits::Bounded;
-pub use sp_io::TestExternalities;
-pub use sp_std::{cell::RefCell, collections::{vec_deque::VecDeque}, marker::PhantomData};
-pub use sp_trie::StorageProof;
 pub use sp_core::storage::Storage;
+pub use sp_io::TestExternalities;
+pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, marker::PhantomData};
+pub use sp_trie::StorageProof;
 
-pub use cumulus_test_service::get_account_id_from_seed;
 pub use cumulus_pallet_dmp_queue;
 pub use cumulus_pallet_parachain_system;
 pub use cumulus_pallet_xcmp_queue;
@@ -41,17 +40,18 @@ pub use cumulus_primitives_core::{
 };
 pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
+pub use cumulus_test_service::get_account_id_from_seed;
 pub use parachain_info;
-pub use parachains_common::{BlockNumber, AccountId};
+pub use parachains_common::{AccountId, BlockNumber};
 
 pub use polkadot_primitives;
 pub use polkadot_runtime_parachains::{
 	dmp,
 	ump::{MessageId, UmpSink, XcmSink},
 };
+pub use std::{collections::HashMap, thread::LocalKey};
 pub use xcm::{v3::prelude::*, VersionedXcm};
 pub use xcm_executor::XcmExecutor;
-pub use std::{thread::LocalKey, collections::HashMap};
 
 thread_local! {
 	/// Downward messages, each message is: `(to_para_id, [(relay_block_number, msg)])`
@@ -119,18 +119,37 @@ pub trait NetworkComponent<N: Network> {
 		N::_para_ids()
 	}
 
-	fn send_horizontal_messages<
-		I: Iterator<Item = (ParaId, RelayBlockNumber, Vec<u8>)>,
-	>(to_para_id: u32, iter: I) {
-		HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::network_name()).unwrap().push_back((to_para_id, iter.collect())));
+	fn send_horizontal_messages<I: Iterator<Item = (ParaId, RelayBlockNumber, Vec<u8>)>>(
+		to_para_id: u32,
+		iter: I,
+	) {
+		HORIZONTAL_MESSAGES.with(|b| {
+			b.borrow_mut()
+				.get_mut(Self::network_name())
+				.unwrap()
+				.push_back((to_para_id, iter.collect()))
+		});
 	}
 
 	fn send_upward_message(from_para_id: u32, msg: Vec<u8>) {
-		UPWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::network_name()).unwrap().push_back((from_para_id, msg)));
+		UPWARD_MESSAGES.with(|b| {
+			b.borrow_mut()
+				.get_mut(Self::network_name())
+				.unwrap()
+				.push_back((from_para_id, msg))
+		});
 	}
 
-	fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>) {
-		DOWNWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::network_name()).unwrap().push_back((to_para_id, iter.collect())));
+	fn send_downward_messages(
+		to_para_id: u32,
+		iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
+	) {
+		DOWNWARD_MESSAGES.with(|b| {
+			b.borrow_mut()
+				.get_mut(Self::network_name())
+				.unwrap()
+				.push_back((to_para_id, iter.collect()))
+		});
 	}
 
 	fn hrmp_channel_parachain_inherent_data(
@@ -145,7 +164,7 @@ pub trait NetworkComponent<N: Network> {
 	}
 }
 
-pub trait RelayChain: UmpSink  {
+pub trait RelayChain: UmpSink {
 	type Runtime;
 	type RuntimeOrigin;
 	type RuntimeCall;
@@ -241,11 +260,14 @@ macro_rules! __impl_xcm_handlers_for_relay_chain {
 				use $crate::{TestExt, UmpSink};
 
 				Self::execute_with(|| {
-					$crate::XcmSink::<$crate::XcmExecutor<<Self as RelayChain>::XcmConfig>, <Self as RelayChain>::Runtime>::process_upward_message(origin, msg, max_weight)
+					$crate::XcmSink::<
+						$crate::XcmExecutor<<Self as RelayChain>::XcmConfig>,
+						<Self as RelayChain>::Runtime,
+					>::process_upward_message(origin, msg, max_weight)
 				})
 			}
 		}
-	}
+	};
 }
 
 #[macro_export]
@@ -330,7 +352,6 @@ macro_rules! __impl_test_ext_for_relay_chain {
 #[macro_export]
 macro_rules! __impl_relay {
 	($network_name:ident, $relay_chain:ty) => {
-
 		impl $crate::NetworkComponent<$network_name> for $relay_chain {
 			fn network_name() -> &'static str {
 				stringify!($network_name)
@@ -367,10 +388,13 @@ macro_rules! __impl_relay {
 			}
 
 			pub fn events() -> Vec<<Self as RelayChain>::RuntimeEvent> {
-				<Self as RelayChain>::System::events().iter().map(|record| record.event.clone()).collect()
+				<Self as RelayChain>::System::events()
+					.iter()
+					.map(|record| record.event.clone())
+					.collect()
 			}
 		}
-	}
+	};
 }
 
 // Parachain Implementation
@@ -469,7 +493,7 @@ macro_rules! __impl_xcm_handlers_for_parachain {
 				})
 			}
 		}
-	}
+	};
 }
 
 #[macro_export]
@@ -588,7 +612,6 @@ macro_rules! __impl_test_ext_for_parachain {
 #[macro_export]
 macro_rules! __impl_parachain {
 	($network_name:ident, $parachain:ty) => {
-
 		impl $crate::NetworkComponent<$network_name> for $parachain {
 			fn network_name() -> &'static str {
 				stringify!($network_name)
@@ -629,7 +652,10 @@ macro_rules! __impl_parachain {
 			}
 
 			pub fn events() -> Vec<<Self as Parachain>::RuntimeEvent> {
-				<Self as Parachain>::System::events().iter().map(|record| record.event.clone()).collect()
+				<Self as Parachain>::System::events()
+					.iter()
+					.map(|record| record.event.clone())
+					.collect()
 			}
 
 			fn prepare_for_xcmp() {
@@ -650,7 +676,7 @@ macro_rules! __impl_parachain {
 				});
 			}
 		}
-	}
+	};
 }
 
 // Network Implementation
@@ -880,9 +906,9 @@ macro_rules! assert_expected_events {
 
 #[macro_export]
 macro_rules! bx {
-    ($e:expr) => {
-        Box::new($e)
-    };
+	($e:expr) => {
+		Box::new($e)
+	};
 }
 
 pub mod helpers {
@@ -896,9 +922,15 @@ pub mod helpers {
 		current_value >= lower_limit && current_value <= upper_limit
 	}
 
-	pub fn weight_within_threshold((threshold_time, threshold_size): (u64, u64), expected_weight: Weight, weight: Weight) -> bool {
-		let ref_time_within = within_threshold(threshold_time, expected_weight.ref_time(), weight.ref_time());
-		let proof_size_within = within_threshold(threshold_size, expected_weight.proof_size(), weight.proof_size());
+	pub fn weight_within_threshold(
+		(threshold_time, threshold_size): (u64, u64),
+		expected_weight: Weight,
+		weight: Weight,
+	) -> bool {
+		let ref_time_within =
+			within_threshold(threshold_time, expected_weight.ref_time(), weight.ref_time());
+		let proof_size_within =
+			within_threshold(threshold_size, expected_weight.proof_size(), weight.proof_size());
 
 		ref_time_within && proof_size_within
 	}

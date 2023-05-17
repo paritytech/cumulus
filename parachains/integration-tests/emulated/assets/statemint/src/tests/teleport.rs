@@ -8,8 +8,10 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 	let para_receiver_balance_before = Statemint::account_data_of(StatemintReceiver::get()).free;
 
 	let origin = <Polkadot as Relay>::RuntimeOrigin::signed(PolkadotSender::get());
-	let assets_para_destination: VersionedMultiLocation = Polkadot::child_location_of(Statemint::para_id()).into();
-	let beneficiary: VersionedMultiLocation = AccountId32 { network: None, id: StatemintReceiver::get().into() }.into();
+	let assets_para_destination: VersionedMultiLocation =
+		Polkadot::child_location_of(Statemint::para_id()).into();
+	let beneficiary: VersionedMultiLocation =
+		AccountId32 { network: None, id: StatemintReceiver::get().into() }.into();
 	let native_assets: VersionedMultiAssets = (Here, amount).into();
 	let fee_asset_item = 0;
 	let weight_limit = WeightLimit::Unlimited;
