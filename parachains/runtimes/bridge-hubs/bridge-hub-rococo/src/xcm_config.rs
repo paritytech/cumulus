@@ -186,7 +186,10 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				BridgeGrandpaWococoInstance,
 			>::initialize {
 				..
-			}) => true,
+			}) |
+			RuntimeCall::EthereumBeaconClient(
+				snowbridge_ethereum_beacon_client::Call::force_checkpoint { .. },
+			) => true,
 			_ => false,
 		}
 	}

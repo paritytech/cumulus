@@ -349,9 +349,6 @@ pub mod rococo {
 			ethereum_outbound_queue: bridge_hub_rococo_runtime::EthereumOutboundQueueConfig {
 				interval: 1,
 			},
-			ethereum_beacon_client: bridge_hub_rococo_runtime::EthereumBeaconClientConfig {
-				initial_sync: Default::default(),
-			},
 		}
 	}
 }

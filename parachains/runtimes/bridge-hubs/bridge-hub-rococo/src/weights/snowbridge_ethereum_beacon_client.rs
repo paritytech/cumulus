@@ -115,7 +115,7 @@ impl<T: frame_system::Config> snowbridge_ethereum_beacon_client::WeightInfo for 
 	}
 	/// Storage: EthereumBeaconClient Blocked (r:0 w:1)
 	/// Proof: EthereumBeaconClient Blocked (max_values: Some(1), max_size: Some(1), added: 496, mode: MaxEncodedLen)
-	fn unblock_bridge() -> Weight {
+	fn force_mode() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
@@ -123,6 +123,16 @@ impl<T: frame_system::Config> snowbridge_ethereum_beacon_client::WeightInfo for 
 		Weight::from_parts(20_720_000, 0)
 			.saturating_add(Weight::from_parts(0, 0))
 			.saturating_add(T::DbWeight::get().writes(1))
+	}
+	fn force_checkpoint() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `92678`
+		//  Estimated: `207645`
+		// Minimum execution time: 134_980_480_000 picoseconds.
+		Weight::from_parts(135_073_514_000, 0)
+			.saturating_add(Weight::from_parts(0, 207645))
+			.saturating_add(T::DbWeight::get().reads(8))
+			.saturating_add(T::DbWeight::get().writes(6))
 	}
 	fn bls_fast_aggregate_verify_pre_aggregated() -> Weight {
 		// Proof Size summary in bytes:

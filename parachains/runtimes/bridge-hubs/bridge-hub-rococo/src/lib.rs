@@ -292,7 +292,8 @@ impl pallet_transaction_payment::Config for Runtime {
 
 parameter_types! {
 	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+	// For beacon checkpoint to work require a bigger default
+	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT;
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
@@ -701,7 +702,7 @@ construct_runtime!(
 		// Ethereum Bridge
 		EthereumInboundQueue: snowbridge_inbound_queue::{Pallet, Call, Config, Storage, Event<T>} = 48,
 		EthereumOutboundQueue: snowbridge_outbound_queue::{Pallet, Config<T>, Storage, Event<T>} = 49,
-		EthereumBeaconClient: snowbridge_ethereum_beacon_client::{Pallet, Call, Config, Storage, Event<T>} = 50,
+		EthereumBeaconClient: snowbridge_ethereum_beacon_client::{Pallet, Call, Storage, Event<T>} = 50,
 	}
 );
 
