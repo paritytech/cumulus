@@ -90,7 +90,7 @@ bridge_hub_test_utils::include_handle_export_message_from_system_parachain_to_ou
 		}
 	}),
 	|| ExportMessage { network: Polkadot, destination: X1(Parachain(1234)), xcm: Xcm(vec![]) },
-	bridge_hub_config::DEFAULT_XCM_LANE_TO_BRIDGE_HUB_POLKADOT
+	bridge_hub_config::STATEMINE_TO_STATEMINT_LANE_ID
 );
 
 bridge_hub_test_utils::include_message_dispatch_routing_works!(
@@ -119,5 +119,5 @@ bridge_hub_test_utils::include_message_dispatch_routing_works!(
 			_ => None,
 		}
 	}),
-	bridge_hub_config::DEFAULT_XCM_LANE_TO_BRIDGE_HUB_POLKADOT
+	bridge_hub_config::STATEMINE_TO_STATEMINT_LANE_ID
 );

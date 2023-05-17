@@ -63,7 +63,7 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
         --kusama-headers-to-bridge-hub-polkadot-signer //Bob \
         --kusama-parachains-to-bridge-hub-polkadot-signer //Bob \
         --bridge-hub-polkadot-transactions-mortality 4 \
-        --lane 00000001
+        --lane 00000000
 }
 
 case "$1" in

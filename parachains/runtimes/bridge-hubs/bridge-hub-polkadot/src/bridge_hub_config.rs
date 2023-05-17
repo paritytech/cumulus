@@ -43,9 +43,7 @@ parameter_types! {
 		bp_bridge_hub_polkadot::MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX;
 	pub const BridgeHubKusamaChainId: bp_runtime::ChainId = bp_runtime::BRIDGE_HUB_KUSAMA_CHAIN_ID;
 	pub KusamaGlobalConsensusNetwork: NetworkId = NetworkId::Kusama;
-	pub ActiveOutboundLanesToBridgeHubKusama: &'static [bp_messages::LaneId] = &[DEFAULT_XCM_LANE_TO_BRIDGE_HUB_KUSAMA];
 	pub PriorityBoostPerMessage: u64 = 921_900_294;
-	pub const BridgeHubKusamaMessagesLane: bp_messages::LaneId = DEFAULT_XCM_LANE_TO_BRIDGE_HUB_KUSAMA;
 }
 
 /// Proof of messages, coming from BridgeHubKusama.
@@ -73,16 +71,14 @@ impl XcmBlobHauler for ToBridgeHubKusamaXcmBlobHauler {
 	type MessageSenderOrigin = super::RuntimeOrigin;
 
 	fn message_sender_origin() -> Self::MessageSenderOrigin {
-		// TODO:check-parameter - maybe Here.into() is enought?
-		pallet_xcm::Origin::from(MultiLocation::new(1, crate::xcm_config::UniversalLocation::get()))
-			.into()
+		pallet_xcm::Origin::from(MultiLocation::here()).into()
 	}
 
 	fn xcm_lane() -> LaneId {
-		DEFAULT_XCM_LANE_TO_BRIDGE_HUB_KUSAMA
+		// TODO: rework once dynamic lanes are supported (https://github.com/paritytech/parity-bridges-common/issues/1760)
+		STATEMINT_TO_STATEMINE_LANE_ID
 	}
 }
-pub const DEFAULT_XCM_LANE_TO_BRIDGE_HUB_KUSAMA: LaneId = LaneId([0, 0, 0, 1]);
 
 /// Messaging Bridge configuration for ThisChain -> BridgeHubKusama
 pub struct WithBridgeHubKusamaMessageBridge;
@@ -128,16 +124,26 @@ impl ThisChainWithMessages for ThisChain {
 	type RuntimeOrigin = crate::RuntimeOrigin;
 }
 
+// TODO: rework once dynamic lanes are supported (https://github.com/paritytech/parity-bridges-common/issues/1760)
 /// Signed extension that refunds relayers that are delivering messages from the kusama BridgeHub.
 pub type BridgeRefundBridgeHubKusamaMessages = RefundBridgedParachainMessages<
 	Runtime,
 	RefundableParachain<BridgeParachainKusamaInstance, BridgeHubKusama>,
-	RefundableMessagesLane<WithBridgeHubKusamaMessagesInstance, BridgeHubKusamaMessagesLane>,
+	RefundableMessagesLane<WithBridgeHubKusamaMessagesInstance, StatemintToStatemineMessageLane>,
 	ActualFeeRefund<Runtime>,
 	PriorityBoostPerMessage,
 	StrBridgeRefundBridgeHubKusamaMessages,
 >;
 bp_runtime::generate_static_str_provider!(BridgeRefundBridgeHubKusamaMessages);
+
+// TODO: rework once dynamic lanes are supported (https://github.com/paritytech/parity-bridges-common/issues/1760)
+//       now we support only StatemineToStatemint
+/// Lanes setup
+pub const STATEMINT_TO_STATEMINE_LANE_ID: LaneId = LaneId([0, 0, 0, 0]);
+parameter_types! {
+	pub ActiveOutboundLanesToBridgeHubKusama: &'static [bp_messages::LaneId] = &[STATEMINT_TO_STATEMINE_LANE_ID];
+	pub const StatemintToStatemineMessageLane: bp_messages::LaneId = STATEMINT_TO_STATEMINE_LANE_ID;
+}
 
 #[cfg(test)]
 mod tests {

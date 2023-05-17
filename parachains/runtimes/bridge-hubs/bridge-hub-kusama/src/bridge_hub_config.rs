@@ -43,9 +43,7 @@ parameter_types! {
 		bp_bridge_hub_kusama::MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX;
 	pub const BridgeHubPolkadotChainId: bp_runtime::ChainId = bp_runtime::BRIDGE_HUB_POLKADOT_CHAIN_ID;
 	pub PolkadotGlobalConsensusNetwork: NetworkId = NetworkId::Polkadot;
-	pub ActiveOutboundLanesToBridgeHubPolkadot: &'static [bp_messages::LaneId] = &[DEFAULT_XCM_LANE_TO_BRIDGE_HUB_POLKADOT];
 	pub PriorityBoostPerMessage: u64 = 921_900_294;
-	pub const BridgeHubPolkadotMessagesLane: bp_messages::LaneId = DEFAULT_XCM_LANE_TO_BRIDGE_HUB_POLKADOT;
 }
 
 /// Proof of messages, coming from BridgeHubPolkadot.
@@ -73,16 +71,14 @@ impl XcmBlobHauler for ToBridgeHubPolkadotXcmBlobHauler {
 	type MessageSenderOrigin = super::RuntimeOrigin;
 
 	fn message_sender_origin() -> Self::MessageSenderOrigin {
-		// TODO:check-parameter - maybe Here.into() is enought?
-		pallet_xcm::Origin::from(MultiLocation::new(1, crate::xcm_config::UniversalLocation::get()))
-			.into()
+		pallet_xcm::Origin::from(MultiLocation::here()).into()
 	}
 
 	fn xcm_lane() -> LaneId {
-		DEFAULT_XCM_LANE_TO_BRIDGE_HUB_POLKADOT
+		// TODO: rework once dynamic lanes are supported (https://github.com/paritytech/parity-bridges-common/issues/1760)
+		STATEMINE_TO_STATEMINT_LANE_ID
 	}
 }
-pub const DEFAULT_XCM_LANE_TO_BRIDGE_HUB_POLKADOT: LaneId = LaneId([0, 0, 0, 1]);
 
 /// Messaging Bridge configuration for ThisChain -> BridgeHubPolkadot
 pub struct WithBridgeHubPolkadotMessageBridge;
@@ -128,16 +124,26 @@ impl ThisChainWithMessages for ThisChain {
 	type RuntimeOrigin = crate::RuntimeOrigin;
 }
 
+// TODO: rework once dynamic lanes are supported (https://github.com/paritytech/parity-bridges-common/issues/1760)
 /// Signed extension that refunds relayers that are delivering messages from the Polkadot BridgeHub.
 pub type BridgeRefundBridgeHubPolkadotMessages = RefundBridgedParachainMessages<
 	Runtime,
 	RefundableParachain<BridgeParachainPolkadotInstance, BridgeHubPolkadot>,
-	RefundableMessagesLane<WithBridgeHubPolkadotMessagesInstance, BridgeHubPolkadotMessagesLane>,
+	RefundableMessagesLane<WithBridgeHubPolkadotMessagesInstance, StatemineToStatemintMessageLane>,
 	ActualFeeRefund<Runtime>,
 	PriorityBoostPerMessage,
 	StrBridgeRefundBridgeHubPolkadotMessages,
 >;
 bp_runtime::generate_static_str_provider!(BridgeRefundBridgeHubPolkadotMessages);
+
+// TODO: rework once dynamic lanes are supported (https://github.com/paritytech/parity-bridges-common/issues/1760)
+//       now we support only StatemineToStatemint
+/// Lanes setup
+pub const STATEMINE_TO_STATEMINT_LANE_ID: LaneId = LaneId([0, 0, 0, 0]);
+parameter_types! {
+	pub ActiveOutboundLanesToBridgeHubPolkadot: &'static [bp_messages::LaneId] = &[STATEMINE_TO_STATEMINT_LANE_ID];
+	pub const StatemineToStatemintMessageLane: bp_messages::LaneId = STATEMINE_TO_STATEMINT_LANE_ID;
+}
 
 #[cfg(test)]
 mod tests {
