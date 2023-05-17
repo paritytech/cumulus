@@ -843,7 +843,6 @@ macro_rules! decl_test_networks {
 #[macro_export]
 macro_rules! assert_expected_events {
 	( $chain:ident, vec![$( $event_pat:pat => { $($attr:ident : $condition:expr, )* }, )*] ) => {
-		// $crate::sp_tracing::enter_span!($crate::sp_tracing::Level::DEBUG, "test-span");
 		let mut message: Vec<String> = Vec::new();
 		$(
 			let mut meet_conditions = true;
