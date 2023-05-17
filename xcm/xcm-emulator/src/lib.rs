@@ -17,7 +17,7 @@
 pub use codec::Encode;
 pub use paste;
 pub use casey::pascal;
-
+pub use log;
 pub use frame_support::{
 	traits::{Get, Hooks},
 	weights::Weight,
@@ -843,12 +843,15 @@ macro_rules! decl_test_networks {
 #[macro_export]
 macro_rules! assert_expected_events {
 	( $chain:ident, vec![$( $event_pat:pat => { $($attr:ident : $condition:expr, )* }, )*] ) => {
+		// $crate::sp_tracing::enter_span!($crate::sp_tracing::Level::DEBUG, "test-span");
 		let mut message: Vec<String> = Vec::new();
 		$(
 			let mut meet_conditions = true;
 			let mut event_message: Vec<String> = Vec::new();
 
-			let event_received = <$chain>::events().iter().any(|event|
+			let event_received = <$chain>::events().iter().any(|event| {
+				$crate::log::debug!(target: format!("events::{}", stringify!($chain)).to_lowercase().as_str(), "{:?}", event);
+
 				match event {
 					$event_pat => {
 						$(
@@ -861,7 +864,7 @@ macro_rules! assert_expected_events {
 					},
 					_ => false
 				}
-			);
+			});
 
 			if event_received && !meet_conditions  {
 				message.push(format!("\n\nEvent \x1b[31m{}\x1b[0m was received but some of its attributes did not meet the conditions:\n{}", stringify!($event_pat), event_message.concat()));
@@ -872,7 +875,8 @@ macro_rules! assert_expected_events {
 		if !message.is_empty() {
 			panic!("{}", message.concat())
 		}
-    };
+	}
+
 }
 
 #[macro_export]
