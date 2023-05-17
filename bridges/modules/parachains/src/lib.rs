@@ -701,16 +701,17 @@ pub(crate) mod tests {
 	use crate::mock::{
 		run_test, test_relay_header, BigParachainHeader, RegularParachainHasher,
 		RegularParachainHeader, RuntimeEvent as TestEvent, RuntimeOrigin, TestRuntime,
-		PARAS_PALLET_NAME, UNTRACKED_PARACHAIN_ID,
+		UNTRACKED_PARACHAIN_ID,
 	};
+	use bp_test_utils::prepare_parachain_heads_proof;
 	use codec::Encode;
 
 	use bp_parachains::{
 		BestParaHeadHash, BridgeParachainCall, ImportedParaHeadsKeyProvider, ParasInfoKeyProvider,
 	};
 	use bp_runtime::{
-		record_all_trie_keys, BasicOperatingMode, OwnedBridgeModuleError,
-		StorageDoubleMapKeyProvider, StorageMapKeyProvider,
+		BasicOperatingMode, OwnedBridgeModuleError, StorageDoubleMapKeyProvider,
+		StorageMapKeyProvider,
 	};
 	use bp_test_utils::{
 		authority_list, generate_owned_bridge_module_tests, make_default_justification,
@@ -725,7 +726,6 @@ pub(crate) mod tests {
 	use frame_system::{EventRecord, Pallet as System, Phase};
 	use sp_core::Hasher;
 	use sp_runtime::{traits::Header as HeaderT, DispatchError};
-	use sp_trie::{trie_types::TrieDBMutBuilderV1, LayoutV1, MemoryDB, TrieMut};
 
 	type BridgesGrandpaPalletInstance = pallet_bridge_grandpa::Instance1;
 	type WeightInfo = <TestRuntime as Config>::WeightInfo;
@@ -849,7 +849,7 @@ pub(crate) mod tests {
 	#[test]
 	fn submit_parachain_heads_checks_operating_mode() {
 		let (state_root, proof, parachains) =
-			prepare_parachain_heads_proof(vec![(1, head_data(1, 0))]);
+			prepare_parachain_heads_proof::<RegularParachainHeader>(vec![(1, head_data(1, 0))]);
 
 		run_test(|| {
 			initialize(state_root);
@@ -880,7 +880,10 @@ pub(crate) mod tests {
 	#[test]
 	fn imports_initial_parachain_heads() {
 		let (state_root, proof, parachains) =
-			prepare_parachain_heads_proof(vec![(1, head_data(1, 0)), (3, head_data(3, 10))]);
+			prepare_parachain_heads_proof::<RegularParachainHeader>(vec![
+				(1, head_data(1, 0)),
+				(3, head_data(3, 10)),
+			]);
 		run_test(|| {
 			initialize(state_root);
 
@@ -959,9 +962,9 @@ pub(crate) mod tests {
 	#[test]
 	fn imports_parachain_heads_is_able_to_progress() {
 		let (state_root_5, proof_5, parachains_5) =
-			prepare_parachain_heads_proof(vec![(1, head_data(1, 5))]);
+			prepare_parachain_heads_proof::<RegularParachainHeader>(vec![(1, head_data(1, 5))]);
 		let (state_root_10, proof_10, parachains_10) =
-			prepare_parachain_heads_proof(vec![(1, head_data(1, 10))]);
+			prepare_parachain_heads_proof::<RegularParachainHeader>(vec![(1, head_data(1, 10))]);
 		run_test(|| {
 			// start with relay block #0 and import head#5 of parachain#1
 			initialize(state_root_5);
@@ -1057,11 +1060,12 @@ pub(crate) mod tests {
 
 	#[test]
 	fn ignores_untracked_parachain() {
-		let (state_root, proof, parachains) = prepare_parachain_heads_proof(vec![
-			(1, head_data(1, 5)),
-			(UNTRACKED_PARACHAIN_ID, head_data(1, 5)),
-			(2, head_data(1, 5)),
-		]);
+		let (state_root, proof, parachains) =
+			prepare_parachain_heads_proof::<RegularParachainHeader>(vec![
+				(1, head_data(1, 5)),
+				(UNTRACKED_PARACHAIN_ID, head_data(1, 5)),
+				(2, head_data(1, 5)),
+			]);
 		run_test(|| {
 			// start with relay block #0 and try to import head#5 of parachain#1 and untracked
 			// parachain
@@ -1134,7 +1138,7 @@ pub(crate) mod tests {
 	#[test]
 	fn does_nothing_when_already_imported_this_head_at_previous_relay_header() {
 		let (state_root, proof, parachains) =
-			prepare_parachain_heads_proof(vec![(1, head_data(1, 0))]);
+			prepare_parachain_heads_proof::<RegularParachainHeader>(vec![(1, head_data(1, 0))]);
 		run_test(|| {
 			// import head#0 of parachain#1 at relay block#0
 			initialize(state_root);
@@ -1194,9 +1198,9 @@ pub(crate) mod tests {
 	#[test]
 	fn does_nothing_when_already_imported_head_at_better_relay_header() {
 		let (state_root_5, proof_5, parachains_5) =
-			prepare_parachain_heads_proof(vec![(1, head_data(1, 5))]);
+			prepare_parachain_heads_proof::<RegularParachainHeader>(vec![(1, head_data(1, 5))]);
 		let (state_root_10, proof_10, parachains_10) =
-			prepare_parachain_heads_proof(vec![(1, head_data(1, 10))]);
+			prepare_parachain_heads_proof::<RegularParachainHeader>(vec![(1, head_data(1, 10))]);
 		run_test(|| {
 			// start with relay block #0
 			initialize(state_root_5);
@@ -1288,7 +1292,10 @@ pub(crate) mod tests {
 	#[test]
 	fn does_nothing_when_parachain_head_is_too_large() {
 		let (state_root, proof, parachains) =
-			prepare_parachain_heads_proof(vec![(1, head_data(1, 5)), (4, big_head_data(1, 5))]);
+			prepare_parachain_heads_proof::<RegularParachainHeader>(vec![
+				(1, head_data(1, 5)),
+				(4, big_head_data(1, 5)),
+			]);
 		run_test(|| {
 			// start with relay block #0 and try to import head#5 of parachain#1 and big parachain
 			initialize(state_root);
@@ -1342,8 +1349,9 @@ pub(crate) mod tests {
 
 			// import exactly `HeadsToKeep` headers
 			for i in 0..heads_to_keep {
-				let (state_root, proof, parachains) =
-					prepare_parachain_heads_proof(vec![(1, head_data(1, i))]);
+				let (state_root, proof, parachains) = prepare_parachain_heads_proof::<
+					RegularParachainHeader,
+				>(vec![(1, head_data(1, i))]);
 				if i == 0 {
 					initialize(state_root);
 				} else {
@@ -1363,8 +1371,9 @@ pub(crate) mod tests {
 			}
 
 			// import next relay chain header and next parachain head
-			let (state_root, proof, parachains) =
-				prepare_parachain_heads_proof(vec![(1, head_data(1, heads_to_keep))]);
+			let (state_root, proof, parachains) = prepare_parachain_heads_proof::<
+				RegularParachainHeader,
+			>(vec![(1, head_data(1, heads_to_keep))]);
 			proceed(heads_to_keep, state_root);
 			let expected_weight = weight_of_import_parachain_1_head(&proof, true);
 			let result = import_parachain_1_head(heads_to_keep, state_root, parachains, proof);
@@ -1385,7 +1394,7 @@ pub(crate) mod tests {
 	#[test]
 	fn fails_on_unknown_relay_chain_block() {
 		let (state_root, proof, parachains) =
-			prepare_parachain_heads_proof(vec![(1, head_data(1, 5))]);
+			prepare_parachain_heads_proof::<RegularParachainHeader>(vec![(1, head_data(1, 5))]);
 		run_test(|| {
 			// start with relay block #0
 			initialize(state_root);
@@ -1401,7 +1410,7 @@ pub(crate) mod tests {
 	#[test]
 	fn fails_on_invalid_storage_proof() {
 		let (_state_root, proof, parachains) =
-			prepare_parachain_heads_proof(vec![(1, head_data(1, 5))]);
+			prepare_parachain_heads_proof::<RegularParachainHeader>(vec![(1, head_data(1, 5))]);
 		run_test(|| {
 			// start with relay block #0
 			initialize(Default::default());
@@ -1419,11 +1428,11 @@ pub(crate) mod tests {
 	#[test]
 	fn is_not_rewriting_existing_head_if_failed_to_read_updated_head() {
 		let (state_root_5, proof_5, parachains_5) =
-			prepare_parachain_heads_proof(vec![(1, head_data(1, 5))]);
+			prepare_parachain_heads_proof::<RegularParachainHeader>(vec![(1, head_data(1, 5))]);
 		let (state_root_10_at_20, proof_10_at_20, parachains_10_at_20) =
-			prepare_parachain_heads_proof(vec![(2, head_data(2, 10))]);
+			prepare_parachain_heads_proof::<RegularParachainHeader>(vec![(2, head_data(2, 10))]);
 		let (state_root_10_at_30, proof_10_at_30, parachains_10_at_30) =
-			prepare_parachain_heads_proof(vec![(1, head_data(1, 10))]);
+			prepare_parachain_heads_proof::<RegularParachainHeader>(vec![(1, head_data(1, 10))]);
 		run_test(|| {
 			// we've already imported head#5 of parachain#1 at relay block#10
 			initialize(state_root_5);
@@ -1491,7 +1500,8 @@ pub(crate) mod tests {
 
 	#[test]
 	fn ignores_parachain_head_if_it_is_missing_from_storage_proof() {
-		let (state_root, proof, _) = prepare_parachain_heads_proof(vec![]);
+		let (state_root, proof, _) =
+			prepare_parachain_heads_proof::<RegularParachainHeader>(vec![]);
 		let parachains = vec![(ParaId(2), Default::default())];
 		run_test(|| {
 			initialize(state_root);
@@ -1516,7 +1526,8 @@ pub(crate) mod tests {
 
 	#[test]
 	fn ignores_parachain_head_if_parachain_head_hash_is_wrong() {
-		let (state_root, proof, _) = prepare_parachain_heads_proof(vec![(1, head_data(1, 0))]);
+		let (state_root, proof, _) =
+			prepare_parachain_heads_proof::<RegularParachainHeader>(vec![(1, head_data(1, 0))]);
 		let parachains = vec![(ParaId(1), head_data(1, 10).hash())];
 		run_test(|| {
 			initialize(state_root);
@@ -1543,7 +1554,8 @@ pub(crate) mod tests {
 
 	#[test]
 	fn test_bridge_parachain_call_is_correctly_defined() {
-		let (state_root, proof, _) = prepare_parachain_heads_proof(vec![(1, head_data(1, 0))]);
+		let (state_root, proof, _) =
+			prepare_parachain_heads_proof::<RegularParachainHeader>(vec![(1, head_data(1, 0))]);
 		let parachains = vec![(ParaId(2), Default::default())];
 		let relay_header_id = (0, test_relay_header(0, state_root).hash());
 

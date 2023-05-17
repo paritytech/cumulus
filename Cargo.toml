@@ -52,7 +52,6 @@ members = [
 	"parachains/runtimes/contracts/contracts-rococo",
 	"parachains/runtimes/glutton/glutton-kusama",
 	"parachains/runtimes/testing/penpal",
-	"parachains/runtimes/test-utils",
 	"test/client",
 	"test/relay-sproof-builder",
 	"test/relay-validation-worker-provider",
