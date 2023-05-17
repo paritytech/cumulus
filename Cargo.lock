@@ -2233,6 +2233,7 @@ dependencies = [
  "sc-client-api",
  "sc-consensus",
  "sc-consensus-aura",
+ "sc-consensus-babe",
  "sc-consensus-slots",
  "sc-telemetry",
  "sp-api",
