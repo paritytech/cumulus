@@ -82,8 +82,14 @@ pub struct ParachainInherentData {
 /// `extend_downward` or `extend_hrmp`, but not both methods on a single instance.
 ///
 /// [hash chain]: https://en.wikipedia.org/wiki/Hash_chain
-#[derive(Default, Clone, codec::Encode, codec::Decode, scale_info::TypeInfo)]
+#[derive(Default, Copy, Clone, PartialEq, codec::Encode, codec::Decode, scale_info::TypeInfo)]
 pub struct MessageQueueChain(RelayHash);
+
+impl From<RelayHash> for MessageQueueChain {
+	fn from(hash: RelayHash) -> Self {
+		Self(hash)
+	}
+}
 
 impl MessageQueueChain {
 	/// Extend the hash chain with an HRMP message. This method should be used only when

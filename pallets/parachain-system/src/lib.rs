@@ -829,10 +829,12 @@ pub mod pallet {
 			cumulus_primitives_parachain_inherent::INHERENT_IDENTIFIER;
 
 		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-			let data: ParachainInherentData =
+			let mut data: ParachainInherentData =
 				data.get_data(&Self::INHERENT_IDENTIFIER).ok().flatten().expect(
 					"validation function params are always injected into inherent data; qed",
 				);
+
+			Self::drop_processed_messages_from_inherent(&mut data);
 
 			Some(Call::set_validation_data { data })
 		}
@@ -946,6 +948,84 @@ impl<T: Config> GetChannelInfo for Pallet<T> {
 }
 
 impl<T: Config> Pallet<T> {
+	/// Updates inherent data to only contain messages that weren't already processed
+	/// by the runtime based on MQC heads.
+	///
+	/// # Panics
+	///
+	/// Panics if MQC heads don't match even after exhausting incoming message queue, either
+	/// downward or horizontal.
+	fn drop_processed_messages_from_inherent(para_inherent: &mut ParachainInherentData) {
+		let ParachainInherentData {
+			validation_data,
+			relay_chain_state,
+			downward_messages,
+			horizontal_messages,
+		} = para_inherent;
+
+		// Last MQC heads.
+		let last_dmq_head = <LastDmqMqcHead<T>>::get();
+		let last_hrmp_heads = <LastHrmpMqcHeads<T>>::get();
+
+		// Read MQC from relay chain state.
+		let relay_state_proof = RelayChainStateProof::new(
+			T::SelfParaId::get(),
+			validation_data.relay_parent_storage_root,
+			relay_chain_state.clone(),
+		)
+		.expect("Invalid relay chain state proof");
+		let relevant_messaging_state = relay_state_proof
+			.read_messaging_state_snapshot()
+			.expect("Invalid messaging state in relay chain state proof");
+
+		let relay_dmq_head = MessageQueueChain::from(relevant_messaging_state.dmq_mqc_head);
+		let relay_hrmp_heads =
+			relevant_messaging_state.ingress_channels.iter().map(|(para_id, channel)| {
+				let mqc_head = channel.mqc_head.unwrap_or_default();
+				(para_id, MessageQueueChain::from(mqc_head))
+			});
+
+		// DMQ.
+		let dmq_processed_num = (0..=downward_messages.len())
+			.find(|processed| {
+				let dmq_head = downward_messages.iter().skip(*processed).fold(
+					last_dmq_head,
+					|mut head, downward_message| {
+						head.extend_downward(downward_message);
+						head
+					},
+				);
+
+				dmq_head == relay_dmq_head
+			})
+			.expect("expected dmq mqc head is unreachable");
+		downward_messages.drain(..dmq_processed_num);
+
+		// HRMP.
+		for (para_id, relay_hrmp_head) in relay_hrmp_heads {
+			let last_hrmp_head = last_hrmp_heads.get(para_id).copied().unwrap_or_default();
+			let Some(hrmp_messages) = horizontal_messages.get_mut(para_id) else {
+				continue
+			};
+			let hrmp_processed_num = (0..=hrmp_messages.len())
+				.find(|processed| {
+					let hrmp_head = hrmp_messages.iter().skip(*processed).fold(
+						last_hrmp_head,
+						|mut head, hrmp_message| {
+							head.extend_hrmp(hrmp_message);
+							head
+						},
+					);
+
+					hrmp_head == relay_hrmp_head
+				})
+				.unwrap_or_else(|| {
+					panic!("expected hrmp mqc head is unreachable for para {:?}", para_id)
+				});
+			hrmp_messages.drain(..hrmp_processed_num);
+		}
+	}
+
 	/// Process all inbound downward messages relayed by the collator.
 	///
 	/// Checks if the sequence of the messages is valid, dispatches them and communicates the
