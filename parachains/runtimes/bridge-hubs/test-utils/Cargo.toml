@@ -18,8 +18,9 @@ sp-core = { git = "https://github.com/paritytech/substrate", default-features = 
 sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Cumulus
 asset-test-utils = { path = "../../assets/test-utils"}
@@ -44,11 +45,13 @@ bp-header-chain = { path = "../../../../bridges/primitives/header-chain", defaul
 bp-messages = { path = "../../../../bridges/primitives/messages", default-features = false }
 bp-parachains = { path = "../../../../bridges/primitives/parachains", default-features = false }
 bp-polkadot-core = { path = "../../../../bridges/primitives/polkadot-core", default-features = false }
+bp-relayers = { path = "../../../../bridges/primitives/relayers", default-features = false }
 bp-runtime = { path = "../../../../bridges/primitives/runtime", default-features = false }
 bp-test-utils = { path = "../../../../bridges/primitives/test-utils", default-features = false }
 pallet-bridge-grandpa = { path = "../../../../bridges/modules/grandpa", default-features = false }
 pallet-bridge-parachains = { path = "../../../../bridges/modules/parachains", default-features = false }
 pallet-bridge-messages = { path = "../../../../bridges/modules/messages", default-features = false }
+pallet-bridge-relayers = { path = "../../../../bridges/modules/relayers", default-features = false }
 bridge-runtime-common = { path = "../../../../bridges/bin/runtime-common", default-features = false }
 
 [features]
@@ -64,12 +67,14 @@ std = [
 	"bp-parachains/std",
 	"bp-polkadot-core/std",
 	"bp-header-chain/std",
+	"bp-relayers/std",
 	"bp-runtime/std",
 	"bp-test-utils/std",
 	"bridge-runtime-common/std",
 	"pallet-bridge-grandpa/std",
 	"pallet-bridge-parachains/std",
 	"pallet-bridge-messages/std",
+	"pallet-bridge-relayers/std",
 	"parachain-info/std",
 	"cumulus-pallet-parachain-system/std",
 	"cumulus-pallet-xcmp-queue/std",
@@ -85,4 +90,5 @@ std = [
 	"cumulus-pallet-dmp-queue/std",
 	"pallet-session/std",
 	"pallet-balances/std",
+	"pallet-utility/std",
 ]

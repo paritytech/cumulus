@@ -16,36 +16,14 @@
 
 //! Module contains predefined test-case scenarios for `Runtime` with bridging capabilities.
 
-use codec::{DecodeLimit, Encode};
-use frame_support::{
-	assert_ok,
-	dispatch::RawOrigin,
-	traits::{Get, OriginTrait},
-};
-use sp_core::{Pair, H256};
-use sp_keyring::AccountKeyring::*;
-use sp_runtime::traits::Header as HeaderT;
-use xcm::latest::prelude::*;
-use xcm_builder::DispatchBlobError;
-use xcm_executor::XcmExecutor;
-
-// Lets re-use this stuff from assets (later we plan to move it outside of assets as `runtimes/test-utils`)
-use asset_test_utils::{
-	mock_open_hrmp_channel, AccountIdOf, ExtBuilder, RuntimeHelper, ValidatorIdOf,
-};
-
-// Re-export test_cases from assets
-pub use asset_test_utils::{
-	include_teleports_for_native_asset_works, CollatorSessionKeys, XcmReceivedFrom,
-};
 use bp_messages::{
 	target_chain::{DispatchMessage, DispatchMessageData, MessageDispatch, SourceHeaderChain},
 	LaneId, MessageKey, OutboundLaneData, Weight,
 };
 use bp_parachains::{BestParaHeadHash, ParaInfo};
 use bp_polkadot_core::parachains::{ParaHash, ParaId};
-use bp_runtime::{HeaderOf, StorageProofSize};
-pub use bp_runtime::{Parachain, UnderlyingChainOf, UnderlyingChainProvider};
+use bp_relayers::{RewardsAccountOwner, RewardsAccountParams};
+use bp_runtime::{HeaderOf, Parachain, StorageProofSize, UnderlyingChainOf};
 use bp_test_utils::{make_default_justification, prepare_parachain_heads_proof};
 use bridge_runtime_common::{
 	messages::{
@@ -54,8 +32,29 @@ use bridge_runtime_common::{
 	messages_generation::{encode_all_messages, encode_lane_data, prepare_messages_storage_proof},
 	messages_xcm_extension::{XcmAsPlainPayload, XcmBlobMessageDispatchResult},
 };
+use codec::{DecodeLimit, Encode};
 use cumulus_primitives_core::XcmpMessageSource;
+use frame_support::{
+	assert_ok,
+	dispatch::RawOrigin,
+	traits::{Get, OriginTrait},
+};
 use pallet_bridge_grandpa::BridgedHeader;
+use sp_core::H256;
+use sp_keyring::AccountKeyring::*;
+use sp_runtime::{traits::Header as HeaderT, AccountId32};
+use xcm::latest::prelude::*;
+use xcm_builder::DispatchBlobError;
+use xcm_executor::XcmExecutor;
+
+// Re-export test_cases from assets
+pub use asset_test_utils::{
+	include_teleports_for_native_asset_works, CollatorSessionKeys, XcmReceivedFrom,
+};
+// Lets re-use this stuff from assets (later we plan to move it outside of assets as `runtimes/test-utils`)
+use asset_test_utils::{
+	mock_open_hrmp_channel, AccountIdOf, ExtBuilder, RuntimeHelper, ValidatorIdOf,
+};
 
 /// Test-case makes sure that `Runtime` can process bridging initialize via governance-like call
 pub fn initialize_bridge_by_governance_works<Runtime, GrandpaPalletInstance>(
@@ -409,8 +408,29 @@ macro_rules! include_message_dispatch_routing_works(
 	}
 );
 
+// #[macro_export]
+// macro_rules! include_relayed_incoming_message_works(
+// 	(
+// 		$runtime:path,
+// 		$xcm_config:path,
+// 		$hrmp_channel_opener:path,
+// 		$pallet_bridge_grandpa_instance:path,
+// 		$pallet_bridge_parachains_instance:path,
+// 		$pallet_bridge_messages_instance:path,
+// 		$message_bridge:path,
+// 		$collator_session_key:expr,
+// 		$runtime_para_id:expr,
+// 		$bridged_para_id:expr,
+// 		$sibling_parachain_id:expr,
+// 		$lane_id:expr,
+// 		$local_relay_chain_id:expr,
+// 	) => {
+//
+// 	}
+// );
+
 /// Test-case makes sure that Runtime can dispatch XCM messages submitted by relayer,
-/// and tx signed extensions work as intended.
+/// with proofs (finality, para heads, message) independently provided.
 pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI, MB>(
 	collator_session_key: CollatorSessionKeys<Runtime>,
 	runtime_para_id: u32,
@@ -446,7 +466,7 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 	<<Runtime as pallet_bridge_grandpa::Config<GPI>>::BridgedChain as bp_runtime::Chain>::Hash: From<ParaHash>,
 	ParaHash: From<<<Runtime as pallet_bridge_grandpa::Config<GPI>>::BridgedChain as bp_runtime::Chain>::Hash>,
 	<Runtime as frame_system::Config>::AccountId: From<sp_core::sr25519::Public>,
-	<Runtime as pallet_bridge_messages::Config<MPI>>::InboundRelayer: From<sp_runtime::AccountId32>,
+	<Runtime as pallet_bridge_messages::Config<MPI>>::InboundRelayer: From<AccountId32>,
 {
 	assert_ne!(runtime_para_id, sibling_parachain_id);
 	assert_ne!(runtime_para_id, bridged_para_id);
@@ -461,12 +481,6 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 		.execute_with(|| {
 			frame_system::Pallet::<Runtime>::set_block_number(1u32.into());
 			frame_system::Pallet::<Runtime>::reset_events();
-
-			// let genesis_hash = frame_system::Pallet::<Runtime>::block_hash(0u32);
-			// let header =
-			// 	bp_polkadot_core::Header::new(1, H256::default(), H256::default(), genesis_hash, Default::default());
-			// frame_executive::Pallet::<Runtime>::initialize_block(&header);
-			// let block_hash = header.hash();
 
 			mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(
 				runtime_para_id.into(),
@@ -490,11 +504,11 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 			let para_header_number = 5;
 			let relay_header_number = 1;
 
-			let relayer_at_target = Bob.pair();
+			let relayer_at_target = Bob;
 			let relayer_id_on_target: <Runtime as frame_system::Config>::AccountId =
 				relayer_at_target.public().into();
-			let relayer_at_source = Dave.pair();
-			let relayer_id_on_source: sp_runtime::AccountId32 = relayer_at_source.public().into();
+			let relayer_at_source = Dave;
+			let relayer_id_on_source: AccountId32 = relayer_at_source.public().into();
 
 			let xcm = vec![xcm::v3::Instruction::<()>::ClearOrigin; 42];
 			let expected_dispatch = xcm::VersionedXcm::<()>::V3(xcm.clone().into());
@@ -527,10 +541,10 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 			assert_ok!(result);
 			assert_eq!(result.unwrap().pays_fee, frame_support::dispatch::Pays::Yes);
 			assert_eq!(
-				<pallet_bridge_grandpa::BestFinalized<Runtime, GPI>>::get().unwrap().1,
+				pallet_bridge_grandpa::BestFinalized::<Runtime, GPI>::get().unwrap().1,
 				relay_chain_header.hash()
 			);
-			assert!(<pallet_bridge_grandpa::ImportedHeaders<Runtime, GPI>>::contains_key(
+			assert!(pallet_bridge_grandpa::ImportedHeaders::<Runtime, GPI>::contains_key(
 				relay_chain_header.hash()
 			));
 
@@ -588,25 +602,27 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 }
 
 /// Test-case makes sure that Runtime can dispatch XCM messages submitted by relayer,
-/// and tx signed extensions work as intended.
-pub fn relayed_batch_works<Runtime, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI, MB>(
+/// with proofs (finality, para heads, message) batched together in signed extrinsic.
+/// Also verifies relayer transaction signed extensions work as intended.
+pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI, MB>(
 	collator_session_key: CollatorSessionKeys<Runtime>,
 	runtime_para_id: u32,
 	bridged_para_id: u32,
 	sibling_parachain_id: u32,
+	bridged_chain_id: bp_runtime::ChainId,
 	lane_id: LaneId,
 	local_relay_chain_id: NetworkId,
-	batch_call: Box<dyn FnOnce(
-		<Runtime as frame_system::Config>::AccountId,
-		pallet_bridge_grandpa::Call::<Runtime, GPI>,
-		pallet_bridge_parachains::Call::<Runtime, PPI>,
-		pallet_bridge_messages::Call::<Runtime, MPI>,
-	)>,
+	executive_init_block: Box<dyn FnOnce(&<Runtime as frame_system::Config>::Header)>,
+	drip_some_balance: Box<dyn FnOnce(&<Runtime as frame_system::Config>::AccountId)>,
+	construct_and_apply_extrinsic: Box<dyn FnOnce(
+		sp_keyring::AccountKeyring,
+		pallet_utility::Call::<Runtime>
+	) -> sp_runtime::DispatchOutcome>,
 ) where
 	Runtime: frame_system::Config
 	+ pallet_balances::Config
+	+ pallet_utility::Config
 	+ pallet_session::Config
-// + pallet_utility::Config
 	+ pallet_xcm::Config
 	+ parachain_info::Config
 	+ pallet_collator_selection::Config
@@ -615,11 +631,11 @@ pub fn relayed_batch_works<Runtime, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI,
 	+ cumulus_pallet_xcmp_queue::Config
 	+ pallet_bridge_grandpa::Config<GPI>
 	+ pallet_bridge_parachains::Config<PPI>
-	+ pallet_bridge_messages::Config<MPI, InboundPayload = XcmAsPlainPayload>,
+	+ pallet_bridge_messages::Config<MPI, InboundPayload = XcmAsPlainPayload>
+	+ pallet_bridge_relayers::Config,
 	GPI: 'static,
 	PPI: 'static,
 	MPI: 'static,
-// RuntimeCall: Dispatchable,
 	MB: MessageBridge,
 	<MB as MessageBridge>::BridgedChain: Send + Sync + 'static,
 	UnderlyingChainOf<MessageBridgedChain<MB>>: bp_runtime::Chain<Hash = ParaHash> + Parachain,
@@ -632,10 +648,11 @@ pub fn relayed_batch_works<Runtime, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI,
 	<<Runtime as pallet_bridge_grandpa::Config<GPI>>::BridgedChain as bp_runtime::Chain>::Hash: From<ParaHash>,
 	ParaHash: From<<<Runtime as pallet_bridge_grandpa::Config<GPI>>::BridgedChain as bp_runtime::Chain>::Hash>,
 	<Runtime as frame_system::Config>::AccountId: From<sp_core::sr25519::Public>,
-	<Runtime as pallet_bridge_messages::Config<MPI>>::InboundRelayer: From<sp_runtime::AccountId32>,
-// <Runtime as pallet_utility::Config>::RuntimeCall: From<pallet_bridge_grandpa::Call<Runtime, GPI>>,
-// <RuntimeCall as Dispatchable>::PostInfo: std::fmt::Debug,
-// <RuntimeCall as Dispatchable>::RuntimeOrigin: From<<Runtime as frame_system::Config>::RuntimeOrigin>,
+	<Runtime as pallet_bridge_messages::Config<MPI>>::InboundRelayer: From<AccountId32>,
+	<Runtime as pallet_utility::Config>::RuntimeCall:
+	From<pallet_bridge_grandpa::Call<Runtime, GPI>>
+	+ From<pallet_bridge_parachains::Call<Runtime, PPI>>
+	+ From<pallet_bridge_messages::Call<Runtime, MPI>>
 {
 	assert_ne!(runtime_para_id, sibling_parachain_id);
 	assert_ne!(runtime_para_id, bridged_para_id);
@@ -648,8 +665,12 @@ pub fn relayed_batch_works<Runtime, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI,
 		.with_tracing()
 		.build()
 		.execute_with(|| {
-			frame_system::Pallet::<Runtime>::set_block_number(1u32.into());
-			frame_system::Pallet::<Runtime>::reset_events();
+			let zero: <Runtime as frame_system::Config>::BlockNumber = 0u32.into();
+			let genesis_hash = frame_system::Pallet::<Runtime>::block_hash(zero);
+			let mut header: <Runtime as frame_system::Config>::Header =
+				bp_test_utils::test_header(1u32.into());
+			header.set_parent_hash(genesis_hash);
+			executive_init_block(&header);
 
 			mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(
 				runtime_para_id.into(),
@@ -673,11 +694,14 @@ pub fn relayed_batch_works<Runtime, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI,
 			let para_header_number = 5;
 			let relay_header_number = 1;
 
-			let relayer_at_target = Bob.pair();
+			let relayer_at_target = Bob;
 			let relayer_id_on_target: <Runtime as frame_system::Config>::AccountId =
 				relayer_at_target.public().into();
-			let relayer_at_source = Dave.pair();
-			let relayer_id_on_source: sp_runtime::AccountId32 = relayer_at_source.public().into();
+			let relayer_at_source = Dave;
+			let relayer_id_on_source: AccountId32 = relayer_at_source.public().into();
+
+			// Drip some balance
+			drip_some_balance(&relayer_id_on_target);
 
 			let xcm = vec![xcm::v3::Instruction::<()>::ClearOrigin; 42];
 			let expected_dispatch = xcm::VersionedXcm::<()>::V3(xcm.clone().into());
@@ -700,7 +724,29 @@ pub fn relayed_batch_works<Runtime, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI,
 				bridged_para_id,
 			);
 
-			// import message sanity checks
+			let submit_grandpa =
+				pallet_bridge_grandpa::Call::<Runtime, GPI>::submit_finality_proof {
+					finality_target: Box::new(relay_chain_header.clone()),
+					justification: grandpa_justification,
+				};
+			let submit_para_head =
+				pallet_bridge_parachains::Call::<Runtime, PPI>::submit_parachain_heads {
+					at_relay_block: (relay_header_number, relay_chain_header.hash().into()),
+					parachains: parachain_heads,
+					parachain_heads_proof: para_heads_proof,
+				};
+			let submit_message =
+				pallet_bridge_messages::Call::<Runtime, MPI>::receive_messages_proof {
+					relayer_id_at_bridged_chain: relayer_id_on_source.into(),
+					proof: message_proof.into(),
+					messages_count: 1,
+					dispatch_weight: Weight::from_parts(1000000000, 0),
+				};
+			let batch = pallet_utility::Call::<Runtime>::batch_all {
+				calls: vec![submit_grandpa.into(), submit_para_head.into(), submit_message.into()],
+			};
+
+			// sanity checks - before relayer extrinsic
 			assert!(cumulus_pallet_xcmp_queue::Pallet::<Runtime>::take_outbound_messages(
 				usize::MAX
 			)
@@ -710,31 +756,27 @@ pub fn relayed_batch_works<Runtime, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI,
 					.last_delivered_nonce(),
 				0,
 			);
+			let msg_proofs_rewards_account = RewardsAccountParams::new(
+				lane_id,
+				bridged_chain_id,
+				RewardsAccountOwner::ThisChain,
+			);
+			assert_eq!(
+				pallet_bridge_relayers::RelayerRewards::<Runtime>::get(
+					relayer_id_on_target.clone(),
+					msg_proofs_rewards_account
+				),
+				None,
+			);
 
-			// submit and dispatch batch:
+			// construct and apply extrinsic containing batch calls:
 			//   bridged relay chain finality proof
 			//   + parachain heads proof
 			//   + submit message proof
-			batch_call(
-				relayer_id_on_target,
-				pallet_bridge_grandpa::Call::<Runtime, GPI>::submit_finality_proof {
-					finality_target: Box::new(relay_chain_header.clone()),
-					justification: grandpa_justification,
-				},
-				pallet_bridge_parachains::Call::<Runtime, PPI>::submit_parachain_heads {
-					at_relay_block: (relay_header_number, relay_chain_header.hash().into()),
-					parachains: parachain_heads,
-					parachain_heads_proof: para_heads_proof,
-				},
-				pallet_bridge_messages::Call::<Runtime, MPI>::receive_messages_proof {
-					relayer_id_at_bridged_chain: relayer_id_on_source.into(),
-					proof: message_proof.into(),
-					messages_count: 1,
-					dispatch_weight: Weight::MAX / 1000,
-				},
-			);
+			let dispatch_outcome = construct_and_apply_extrinsic(relayer_at_target, batch);
 
 			// verify finality proof correctly imported
+			assert_ok!(dispatch_outcome);
 			assert_eq!(
 				<pallet_bridge_grandpa::BestFinalized<Runtime, GPI>>::get().unwrap().1,
 				relay_chain_header.hash()
@@ -759,6 +801,12 @@ pub fn relayed_batch_works<Runtime, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI,
 					.last_delivered_nonce(),
 				1,
 			);
+			// verify relayer is refunded
+			assert!(pallet_bridge_relayers::RelayerRewards::<Runtime>::get(
+				relayer_id_on_target,
+				msg_proofs_rewards_account
+			)
+			.is_some());
 			// verify relayed bridged XCM message is dispatched to destination sibling para
 			let dispatched = test_data::take_outbound_message::<
 				cumulus_pallet_xcmp_queue::Pallet<Runtime>,
@@ -767,45 +815,6 @@ pub fn relayed_batch_works<Runtime, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI,
 			assert_eq!(dispatched, expected_dispatch);
 		})
 }
-
-#[macro_export]
-macro_rules! include_relayed_incoming_message_works(
-	(
-		$runtime:path,
-		$xcm_config:path,
-		$hrmp_channel_opener:path,
-		$pallet_bridge_grandpa_instance:path,
-		$pallet_bridge_parachains_instance:path,
-		$pallet_bridge_messages_instance:path,
-		$message_bridge:path,
-		$collator_session_key:expr,
-		$runtime_para_id:expr,
-		$bridged_para_id:expr,
-		$sibling_parachain_id:expr,
-		$lane_id:expr,
-		$local_relay_chain_id:expr,
-	) => {
-		#[test]
-		fn relayed_incoming_message_works() {
-			$crate::test_cases::relayed_incoming_message_works::<
-				$runtime,
-				$xcm_config,
-				$hrmp_channel_opener,
-				$pallet_bridge_grandpa_instance,
-				$pallet_bridge_parachains_instance,
-				$pallet_bridge_messages_instance,
-				$message_bridge,
-			>(
-				$collator_session_key,
-				$runtime_para_id,
-				$bridged_para_id,
-				$sibling_parachain_id,
-				$lane_id,
-				$local_relay_chain_id,
-			)
-		}
-	}
-);
 
 pub mod test_data {
 	use super::*;
@@ -818,23 +827,6 @@ pub mod test_data {
 	use xcm::MAX_XCM_DECODE_DEPTH;
 	use xcm_builder::{HaulBlob, HaulBlobError, HaulBlobExporter};
 	use xcm_executor::traits::{validate_export, ExportXcm};
-
-	/// Make a `ParaHead` for `parachain` with `head_number`.
-	pub fn make_para_head_with_state_root<H: HeaderT>(
-		head_number: H::Number,
-		state_root: H::Hash,
-	) -> ParaHead {
-		ParaHead(
-			H::new(
-				head_number as _,
-				Default::default(),
-				state_root,
-				Default::default(),
-				Default::default(),
-			)
-			.encode(),
-		)
-	}
 
 	pub fn prepare_inbound_xcm<InnerXcmRuntimeCall>(
 		xcm_message: Xcm<InnerXcmRuntimeCall>,
@@ -885,9 +877,12 @@ pub mod test_data {
 			encode_lane_data,
 		);
 
-		let bridged_para_head = make_para_head_with_state_root::<HeaderOf<MB::BridgedChain>>(
-			para_header_number.into(),
-			para_state_root.into(),
+		let bridged_para_head = ParaHead(
+			bp_test_utils::test_header_with_root::<HeaderOf<MB::BridgedChain>>(
+				para_header_number.into(),
+				para_state_root.into(),
+			)
+			.encode(),
 		);
 		let (relay_state_root, para_heads_proof, parachain_heads) =
 			prepare_parachain_heads_proof::<HeaderOf<MB::BridgedChain>>(vec![(
