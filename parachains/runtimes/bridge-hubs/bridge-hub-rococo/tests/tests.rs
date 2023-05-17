@@ -18,19 +18,13 @@
 
 use bp_messages::LaneId;
 use bp_polkadot_core::Signature;
-use bridge_hub_rococo_config::WithBridgeHubWococoMessageBridge;
 use bridge_hub_rococo_runtime::{
-	bridge_hub_rococo_config,
-	bridge_hub_rococo_config::BridgeRefundBridgeHubWococoMessages,
-	bridge_hub_wococo_config,
-	bridge_hub_wococo_config::BridgeRefundBridgeHubRococoMessages,
+	bridge_hub_rococo_config, bridge_hub_wococo_config,
 	constants::fee::WeightToFee,
 	xcm_config::{RelayNetwork, XcmConfig},
-	Balances, BridgeGrandpaRococoInstance, BridgeGrandpaWococoInstance,
-	BridgeParachainWococoInstance, BridgeRejectObsoleteHeadersAndMessages, Executive,
-	ExistentialDeposit, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent,
-	SessionKeys, SignedExtra, UncheckedExtrinsic, WithBridgeHubRococoMessagesInstance,
-	WithBridgeHubWococoMessagesInstance,
+	Balances, BridgeRejectObsoleteHeadersAndMessages, Executive, ExistentialDeposit,
+	ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, SessionKeys, SignedExtra,
+	UncheckedExtrinsic,
 };
 use codec::{Decode, Encode};
 use frame_support::parameter_types;
@@ -47,7 +41,7 @@ parameter_types! {
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
-pub fn construct_extrinsic(
+fn construct_extrinsic(
 	sender: sp_keyring::AccountKeyring,
 	call: RuntimeCall,
 ) -> UncheckedExtrinsic {
@@ -62,8 +56,8 @@ pub fn construct_extrinsic(
 		pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(0),
 		BridgeRejectObsoleteHeadersAndMessages {},
 		(
-			BridgeRefundBridgeHubRococoMessages::default(),
-			BridgeRefundBridgeHubWococoMessages::default(),
+			bridge_hub_wococo_config::BridgeRefundBridgeHubRococoMessages::default(),
+			bridge_hub_rococo_config::BridgeRefundBridgeHubWococoMessages::default(),
 		),
 	);
 	let payload = SignedPayload::new(call.clone(), extra.clone()).unwrap();
@@ -76,8 +70,33 @@ pub fn construct_extrinsic(
 	)
 }
 
+fn construct_and_apply_extrinsic(
+	relayer_at_target: sp_keyring::AccountKeyring,
+	batch: pallet_utility::Call<Runtime>,
+) -> sp_runtime::DispatchOutcome {
+	let batch_call = RuntimeCall::Utility(batch);
+	let xt = construct_extrinsic(relayer_at_target, batch_call);
+	let r = Executive::apply_extrinsic(xt);
+	r.unwrap()
+}
+
+fn executive_init_block(header: &<Runtime as frame_system::Config>::Header) {
+	Executive::initialize_block(header)
+}
+
+fn drip_some_balance(account: &<Runtime as frame_system::Config>::AccountId) {
+	use frame_support::traits::fungible::Mutate;
+	let some_currency = ExistentialDeposit::get() * 100000;
+	Balances::mint_into(account, some_currency).unwrap();
+}
+
 mod bridge_hub_rococo_tests {
 	use super::*;
+	use bridge_hub_rococo_config::WithBridgeHubWococoMessageBridge;
+	use bridge_hub_rococo_runtime::{
+		BridgeGrandpaWococoInstance, BridgeParachainWococoInstance,
+		WithBridgeHubWococoMessagesInstance,
+	};
 
 	bridge_hub_test_utils::test_cases::include_teleports_for_native_asset_works!(
 		Runtime,
@@ -187,20 +206,13 @@ mod bridge_hub_rococo_tests {
 			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
 			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
 			1000,
-			LaneId([0, 0, 0, 1]),
 			Rococo,
+			LaneId([0, 0, 0, 1]),
 		)
 	}
 
 	#[test]
-	pub fn kata_complex_relay_extrinsic_works() {
-		let lala = Box::new(|relayer_at_target, batch| {
-			let batch_call = RuntimeCall::Utility(batch);
-			let xt = construct_extrinsic(relayer_at_target, batch_call);
-			let r = Executive::apply_extrinsic(xt);
-			r.unwrap()
-		});
-
+	pub fn complex_relay_extrinsic_works() {
 		bridge_hub_test_utils::test_cases::complex_relay_extrinsic_works::<
 			Runtime,
 			XcmConfig,
@@ -219,21 +231,22 @@ mod bridge_hub_rococo_tests {
 			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
 			1000,
 			bridge_hub_rococo_config::BridgeHubWococoChainId::get(),
-			LaneId([0, 0, 0, 1]),
 			Rococo,
-			Box::new(|header| Executive::initialize_block(header)),
-			Box::new(|account| {
-				use frame_support::traits::fungible::Mutate;
-				let some_currency = ExistentialDeposit::get() * 100000;
-				Balances::mint_into(account, some_currency).unwrap();
-			}),
-			lala,
+			LaneId([0, 0, 0, 1]),
+			executive_init_block,
+			drip_some_balance,
+			construct_and_apply_extrinsic,
 		);
 	}
 }
 
 mod bridge_hub_wococo_tests {
 	use super::*;
+	use bridge_hub_rococo_runtime::{
+		BridgeGrandpaRococoInstance, BridgeParachainRococoInstance,
+		WithBridgeHubRococoMessagesInstance,
+	};
+	use bridge_hub_wococo_config::WithBridgeHubRococoMessageBridge;
 
 	bridge_hub_test_utils::test_cases::include_teleports_for_native_asset_works!(
 		Runtime,
@@ -323,4 +336,56 @@ mod bridge_hub_wococo_tests {
 		}),
 		bridge_hub_wococo_config::DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO
 	);
+
+	#[test]
+	fn relayed_incoming_message_works() {
+		bridge_hub_test_utils::test_cases::relayed_incoming_message_works::<
+			Runtime,
+			XcmConfig,
+			ParachainSystem,
+			BridgeGrandpaRococoInstance,
+			BridgeParachainRococoInstance,
+			WithBridgeHubRococoMessagesInstance,
+			WithBridgeHubRococoMessageBridge,
+		>(
+			bridge_hub_test_utils::CollatorSessionKeys::new(
+				AccountId::from(ALICE),
+				AccountId::from(ALICE),
+				SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+			),
+			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
+			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
+			1000,
+			Wococo,
+			LaneId([0, 0, 0, 1]),
+		)
+	}
+
+	#[test]
+	pub fn complex_relay_extrinsic_works() {
+		bridge_hub_test_utils::test_cases::complex_relay_extrinsic_works::<
+			Runtime,
+			XcmConfig,
+			ParachainSystem,
+			BridgeGrandpaRococoInstance,
+			BridgeParachainRococoInstance,
+			WithBridgeHubRococoMessagesInstance,
+			WithBridgeHubRococoMessageBridge,
+		>(
+			bridge_hub_test_utils::CollatorSessionKeys::new(
+				AccountId::from(ALICE),
+				AccountId::from(ALICE),
+				SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+			),
+			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
+			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
+			1000,
+			bridge_hub_wococo_config::BridgeHubRococoChainId::get(),
+			Wococo,
+			LaneId([0, 0, 0, 1]),
+			executive_init_block,
+			drip_some_balance,
+			construct_and_apply_extrinsic,
+		);
+	}
 }

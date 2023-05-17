@@ -408,27 +408,6 @@ macro_rules! include_message_dispatch_routing_works(
 	}
 );
 
-// #[macro_export]
-// macro_rules! include_relayed_incoming_message_works(
-// 	(
-// 		$runtime:path,
-// 		$xcm_config:path,
-// 		$hrmp_channel_opener:path,
-// 		$pallet_bridge_grandpa_instance:path,
-// 		$pallet_bridge_parachains_instance:path,
-// 		$pallet_bridge_messages_instance:path,
-// 		$message_bridge:path,
-// 		$collator_session_key:expr,
-// 		$runtime_para_id:expr,
-// 		$bridged_para_id:expr,
-// 		$sibling_parachain_id:expr,
-// 		$lane_id:expr,
-// 		$local_relay_chain_id:expr,
-// 	) => {
-//
-// 	}
-// );
-
 /// Test-case makes sure that Runtime can dispatch XCM messages submitted by relayer,
 /// with proofs (finality, para heads, message) independently provided.
 pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI, MB>(
@@ -436,8 +415,8 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 	runtime_para_id: u32,
 	bridged_para_id: u32,
 	sibling_parachain_id: u32,
-	lane_id: LaneId,
 	local_relay_chain_id: NetworkId,
+	lane_id: LaneId,
 ) where
 	Runtime: frame_system::Config
 	+ pallet_balances::Config
@@ -610,14 +589,14 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 	bridged_para_id: u32,
 	sibling_parachain_id: u32,
 	bridged_chain_id: bp_runtime::ChainId,
-	lane_id: LaneId,
 	local_relay_chain_id: NetworkId,
-	executive_init_block: Box<dyn FnOnce(&<Runtime as frame_system::Config>::Header)>,
-	drip_some_balance: Box<dyn FnOnce(&<Runtime as frame_system::Config>::AccountId)>,
-	construct_and_apply_extrinsic: Box<dyn FnOnce(
+	lane_id: LaneId,
+	executive_init_block: fn(&<Runtime as frame_system::Config>::Header),
+	drip_some_balance: fn(&<Runtime as frame_system::Config>::AccountId),
+	construct_and_apply_extrinsic: fn(
 		sp_keyring::AccountKeyring,
 		pallet_utility::Call::<Runtime>
-	) -> sp_runtime::DispatchOutcome>,
+	) -> sp_runtime::DispatchOutcome,
 ) where
 	Runtime: frame_system::Config
 	+ pallet_balances::Config
