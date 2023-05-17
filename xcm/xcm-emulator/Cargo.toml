@@ -1,6 +1,6 @@
 [package]
 name = "xcm-emulator"
-description = "Test kit to emulate cross-chain message passing and XCM execution"
+description = "Test kit to emulate XCM program execution."
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
