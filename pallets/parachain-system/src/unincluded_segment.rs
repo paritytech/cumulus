@@ -27,6 +27,7 @@ use scale_info::TypeInfo;
 use sp_std::{collections::btree_map::BTreeMap, marker::PhantomData};
 
 /// Constraints on outbound HRMP channel.
+#[derive(Clone)]
 pub struct HrmpOutboundLimits {
 	/// The maximum bytes that can be written to the channel.
 	pub bytes_remaining: u32,
@@ -34,8 +35,9 @@ pub struct HrmpOutboundLimits {
 	pub messages_remaining: u32,
 }
 
-/// Constraints imposed on the entire segment, i.e. based on the latest included parablock.
-pub struct TotalBandwidthLimits {
+/// Limits on outbound message bandwidth.
+#[derive(Clone)]
+pub struct OutboundBandwidthLimits {
 	/// The amount of UMP messages remaining.
 	pub ump_messages_remaining: u32,
 	/// The amount of UMP bytes remaining.
@@ -44,11 +46,23 @@ pub struct TotalBandwidthLimits {
 	pub hrmp_outgoing: BTreeMap<ParaId, HrmpOutboundLimits>,
 }
 
-impl TotalBandwidthLimits {
-	/// Creates new limits from the messaging state.
-	pub fn new(messaging_state: &MessagingStateSnapshot) -> Self {
-		let (ump_messages_remaining, ump_bytes_remaining) =
-			messaging_state.relay_dispatch_queue_size;
+impl OutboundBandwidthLimits {
+	/// Creates new limits from the messaging state and upward message queue maximums fetched
+	/// from the host configuration.
+	///
+	/// These will be the total bandwidth limits across the entire unincluded segment.
+	pub fn from_relay_chain_state(
+		messaging_state: &MessagingStateSnapshot,
+		max_upward_queue_count: u32,
+		max_upward_queue_size: u32,
+	) -> Self {
+		let (ump_messages_in_relay, ump_bytes_in_relay) = messaging_state.relay_dispatch_queue_size;
+
+		let (ump_messages_remaining, ump_bytes_remaining) = (
+			max_upward_queue_count.saturating_sub(ump_messages_in_relay),
+			max_upward_queue_size.saturating_sub(ump_bytes_in_relay),
+		);
+
 		let hrmp_outgoing = messaging_state
 			.egress_channels
 			.iter()
@@ -56,14 +70,29 @@ impl TotalBandwidthLimits {
 				(
 					*id,
 					HrmpOutboundLimits {
-						bytes_remaining: channel.max_total_size,
-						messages_remaining: channel.max_capacity,
+						bytes_remaining: channel.max_total_size.saturating_sub(channel.total_size),
+						messages_remaining: channel.max_capacity.saturating_sub(channel.msg_count),
 					},
 				)
 			})
 			.collect();
 
 		Self { ump_messages_remaining, ump_bytes_remaining, hrmp_outgoing }
+	}
+
+	/// Compute the remaining bandwidth when accounting for the used amounts provided.
+	pub fn subtract(&mut self, used: &UsedBandwidth) {
+		self.ump_messages_remaining =
+			self.ump_messages_remaining.saturating_sub(used.ump_msg_count);
+		self.ump_bytes_remaining = self.ump_bytes_remaining.saturating_sub(used.ump_total_bytes);
+		for (para_id, channel_limits) in self.hrmp_outgoing.iter_mut() {
+			if let Some(update) = used.hrmp_outgoing.get(para_id) {
+				channel_limits.bytes_remaining =
+					channel_limits.bytes_remaining.saturating_sub(update.total_bytes);
+				channel_limits.messages_remaining =
+					channel_limits.messages_remaining.saturating_sub(update.msg_count);
+			}
+		}
 	}
 }
 
@@ -131,7 +160,7 @@ impl HrmpChannelUpdate {
 		&self,
 		other: &Self,
 		recipient: ParaId,
-		limits: &TotalBandwidthLimits,
+		limits: &OutboundBandwidthLimits,
 	) -> Result<Self, BandwidthUpdateError> {
 		let limits = limits
 			.hrmp_outgoing
@@ -186,7 +215,7 @@ impl UsedBandwidth {
 	fn append(
 		&self,
 		other: &Self,
-		limits: &TotalBandwidthLimits,
+		limits: &OutboundBandwidthLimits,
 	) -> Result<Self, BandwidthUpdateError> {
 		let mut new = self.clone();
 
@@ -263,6 +292,34 @@ impl<H> Ancestor<H> {
 	}
 }
 
+/// An update to the HRMP watermark. This is always a relay-chain block number,
+/// but the two variants have different semantic meanings.
+pub enum HrmpWatermarkUpdate {
+	/// An update to the HRMP watermark where the new value is set to be equal to the
+	/// relay-parent's block number, i.e. the "head" of the relay chain.
+	/// This is always legal.
+	Head(relay_chain::BlockNumber),
+	/// An update to the HRMP watermark where the new value falls into the "trunk" of the
+	/// relay-chain. In this case, the watermark must be greater than the previous value.
+	Trunk(relay_chain::BlockNumber),
+}
+
+impl HrmpWatermarkUpdate {
+	/// Create a new update based on the desired watermark value and the current
+	/// relay-parent number.
+	pub fn new(
+		watermark: relay_chain::BlockNumber,
+		relay_parent_number: relay_chain::BlockNumber,
+	) -> Self {
+		// Hard constrain the watermark to the relay-parent number.
+		if watermark >= relay_parent_number {
+			HrmpWatermarkUpdate::Head(relay_parent_number)
+		} else {
+			HrmpWatermarkUpdate::Trunk(watermark)
+		}
+	}
+}
+
 /// Struct that keeps track of bandwidth used by the unincluded part of the chain
 /// along with the latest HRMP watermark.
 #[derive(Default, Encode, Decode, TypeInfo)]
@@ -277,23 +334,29 @@ pub struct SegmentTracker<H> {
 
 impl<H> SegmentTracker<H> {
 	/// Tries to append another block to the tracker, respecting given bandwidth limits.
+	/// In practice, the bandwidth limits supplied should be the total allowed within the
+	/// block.
 	pub fn append(
 		&mut self,
 		block: &Ancestor<H>,
-		hrmp_watermark: relay_chain::BlockNumber,
-		limits: &TotalBandwidthLimits,
+		new_watermark: HrmpWatermarkUpdate,
+		limits: &OutboundBandwidthLimits,
 	) -> Result<(), BandwidthUpdateError> {
 		if let Some(watermark) = self.hrmp_watermark.as_ref() {
-			if &hrmp_watermark <= watermark {
-				return Err(BandwidthUpdateError::InvalidHrmpWatermark {
-					submitted: hrmp_watermark,
-					latest: *watermark,
-				})
+			if let HrmpWatermarkUpdate::Trunk(new) = new_watermark {
+				if &new <= watermark {
+					return Err(BandwidthUpdateError::InvalidHrmpWatermark {
+						submitted: new,
+						latest: *watermark,
+					})
+				}
 			}
 		}
 
 		self.used_bandwidth = self.used_bandwidth.append(block.used_bandwidth(), limits)?;
-		self.hrmp_watermark.replace(hrmp_watermark);
+		self.hrmp_watermark.replace(match new_watermark {
+			HrmpWatermarkUpdate::Trunk(w) | HrmpWatermarkUpdate::Head(w) => w,
+		});
 
 		Ok(())
 	}
@@ -304,12 +367,76 @@ impl<H> SegmentTracker<H> {
 		// Watermark doesn't need to be updated since the is always dropped
 		// from the tail of the segment.
 	}
+
+	/// Return a reference to the used bandwidth across the entire segment.
+	pub fn used_bandwidth(&self) -> &UsedBandwidth {
+		&self.used_bandwidth
+	}
 }
 
 #[cfg(test)]
 mod tests {
 	use super::*;
 	use assert_matches::assert_matches;
+
+	#[test]
+	fn outbound_limits_constructed_correctly() {
+		let para_a = ParaId::from(0);
+		let para_a_channel = relay_chain::AbridgedHrmpChannel {
+			max_message_size: 15,
+
+			// Msg count capacity left is 2.
+			msg_count: 5,
+			max_capacity: 7,
+
+			// Bytes capacity left is 10.
+			total_size: 50,
+			max_total_size: 60,
+			mqc_head: None,
+		};
+
+		let para_b = ParaId::from(1);
+		let para_b_channel = relay_chain::AbridgedHrmpChannel {
+			max_message_size: 15,
+
+			// Msg count capacity left is 10.
+			msg_count: 40,
+			max_capacity: 50,
+
+			// Bytes capacity left is 0.
+			total_size: 500,
+			max_total_size: 500,
+			mqc_head: None,
+		};
+		let messaging_state = MessagingStateSnapshot {
+			dmq_mqc_head: relay_chain::Hash::zero(),
+			// (msg_count, bytes)
+			relay_dispatch_queue_size: (10, 100),
+			ingress_channels: Vec::new(),
+
+			egress_channels: vec![(para_a, para_a_channel), (para_b, para_b_channel)],
+		};
+
+		let max_upward_queue_count = 11;
+		let max_upward_queue_size = 150;
+		let limits = OutboundBandwidthLimits::from_relay_chain_state(
+			&messaging_state,
+			max_upward_queue_count,
+			max_upward_queue_size,
+		);
+
+		// UMP.
+		assert_eq!(limits.ump_messages_remaining, 1);
+		assert_eq!(limits.ump_bytes_remaining, 50);
+
+		// HRMP.
+		let para_a_limits = limits.hrmp_outgoing.get(&para_a).expect("channel must be present");
+		let para_b_limits = limits.hrmp_outgoing.get(&para_b).expect("channel must be present");
+		assert_eq!(para_a_limits.bytes_remaining, 10);
+		assert_eq!(para_a_limits.messages_remaining, 2);
+		assert_eq!(para_b_limits.bytes_remaining, 0);
+		assert_eq!(para_b_limits.messages_remaining, 10);
+	}
 
 	#[test]
 	fn hrmp_msg_count_limits() {
@@ -319,7 +446,7 @@ mod tests {
 		let para_1 = ParaId::from(1);
 		let para_1_limits = HrmpOutboundLimits { bytes_remaining: u32::MAX, messages_remaining: 3 };
 		let hrmp_outgoing = [(para_0, para_0_limits), (para_1, para_1_limits)].into();
-		let limits = TotalBandwidthLimits {
+		let limits = OutboundBandwidthLimits {
 			ump_messages_remaining: 0,
 			ump_bytes_remaining: 0,
 			hrmp_outgoing,
@@ -331,7 +458,7 @@ mod tests {
 		for _ in 0..5 {
 			hrmp_update = hrmp_update
 				.append(&HrmpChannelUpdate { msg_count: 1, total_bytes: 10 }, para_0, &limits)
-				.expect("update is withing the limits");
+				.expect("update is within the limits");
 		}
 		assert_matches!(
 			hrmp_update.append(
@@ -349,7 +476,7 @@ mod tests {
 		let mut hrmp_update = HrmpChannelUpdate::default();
 		hrmp_update = hrmp_update
 			.append(&HrmpChannelUpdate { msg_count: 2, total_bytes: 10 }, para_1, &limits)
-			.expect("update is withing the limits");
+			.expect("update is within the limits");
 		assert_matches!(
 			hrmp_update.append(
 				&HrmpChannelUpdate { msg_count: 3, total_bytes: 10 },
@@ -371,7 +498,7 @@ mod tests {
 			HrmpOutboundLimits { bytes_remaining: 25, messages_remaining: u32::MAX };
 
 		let hrmp_outgoing = [(para_0, para_0_limits)].into();
-		let limits = TotalBandwidthLimits {
+		let limits = OutboundBandwidthLimits {
 			ump_messages_remaining: 0,
 			ump_bytes_remaining: 0,
 			hrmp_outgoing,
@@ -383,7 +510,7 @@ mod tests {
 		for _ in 0..5 {
 			hrmp_update = hrmp_update
 				.append(&HrmpChannelUpdate { msg_count: 1, total_bytes: 4 }, para_0, &limits)
-				.expect("update is withing the limits");
+				.expect("update is within the limits");
 		}
 		assert_matches!(
 			hrmp_update.append(
@@ -410,7 +537,7 @@ mod tests {
 		let para_1 = ParaId::from(1);
 		let para_1_limits = HrmpOutboundLimits { bytes_remaining: 20, messages_remaining: 3 };
 		let hrmp_outgoing = [(para_0, para_0_limits), (para_1, para_1_limits)].into();
-		let limits = TotalBandwidthLimits {
+		let limits = OutboundBandwidthLimits {
 			ump_messages_remaining: 0,
 			ump_bytes_remaining: 0,
 			hrmp_outgoing,
@@ -423,7 +550,9 @@ mod tests {
 			used_bandwidth: create_used_hrmp([(para_0, para_0_update)].into()),
 			para_head_hash: None::<relay_chain::Hash>,
 		};
-		segment.append(&ancestor_0, 0, &limits).expect("update is withing the limits");
+		segment
+			.append(&ancestor_0, HrmpWatermarkUpdate::Trunk(0), &limits)
+			.expect("update is within the limits");
 
 		for watermark in 1..5 {
 			let ancestor = Ancestor {
@@ -431,8 +560,8 @@ mod tests {
 				para_head_hash: None::<relay_chain::Hash>,
 			};
 			segment
-				.append(&ancestor, watermark, &limits)
-				.expect("update is withing the limits");
+				.append(&ancestor, HrmpWatermarkUpdate::Trunk(watermark), &limits)
+				.expect("update is within the limits");
 		}
 
 		let para_0_update = HrmpChannelUpdate { msg_count: 1, total_bytes: 1 };
@@ -441,7 +570,7 @@ mod tests {
 			para_head_hash: None::<relay_chain::Hash>,
 		};
 		assert_matches!(
-			segment.append(&ancestor_5, 5, &limits),
+			segment.append(&ancestor_5, HrmpWatermarkUpdate::Trunk(5), &limits),
 			Err(BandwidthUpdateError::HrmpBytesOverflow {
 				recipient,
 				bytes_remaining,
@@ -450,17 +579,21 @@ mod tests {
 		);
 		// Remove the first ancestor from the segment to make space.
 		segment.subtract(&ancestor_0);
-		segment.append(&ancestor_5, 5, &limits).expect("update is withing the limits");
+		segment
+			.append(&ancestor_5, HrmpWatermarkUpdate::Trunk(5), &limits)
+			.expect("update is within the limits");
 
 		let para_1_update = HrmpChannelUpdate { msg_count: 3, total_bytes: 10 };
 		let ancestor = Ancestor {
 			used_bandwidth: create_used_hrmp([(para_1, para_1_update)].into()),
 			para_head_hash: None::<relay_chain::Hash>,
 		};
-		segment.append(&ancestor, 6, &limits).expect("update is withing the limits");
+		segment
+			.append(&ancestor, HrmpWatermarkUpdate::Trunk(6), &limits)
+			.expect("update is within the limits");
 
 		assert_matches!(
-			segment.append(&ancestor, 7, &limits),
+			segment.append(&ancestor, HrmpWatermarkUpdate::Trunk(7), &limits),
 			Err(BandwidthUpdateError::HrmpMessagesOverflow {
 				recipient,
 				messages_remaining,
@@ -477,7 +610,7 @@ mod tests {
 			hrmp_outgoing: BTreeMap::default(),
 		};
 
-		let limits = TotalBandwidthLimits {
+		let limits = OutboundBandwidthLimits {
 			ump_messages_remaining: 5,
 			ump_bytes_remaining: 50,
 			hrmp_outgoing: BTreeMap::default(),
@@ -489,7 +622,9 @@ mod tests {
 			used_bandwidth: create_used_ump((1, 10)),
 			para_head_hash: None::<relay_chain::Hash>,
 		};
-		segment.append(&ancestor_0, 0, &limits).expect("update is withing the limits");
+		segment
+			.append(&ancestor_0, HrmpWatermarkUpdate::Trunk(0), &limits)
+			.expect("update is within the limits");
 
 		for watermark in 1..4 {
 			let ancestor = Ancestor {
@@ -497,8 +632,8 @@ mod tests {
 				para_head_hash: None::<relay_chain::Hash>,
 			};
 			segment
-				.append(&ancestor, watermark, &limits)
-				.expect("update is withing the limits");
+				.append(&ancestor, HrmpWatermarkUpdate::Trunk(watermark), &limits)
+				.expect("update is within the limits");
 		}
 
 		let ancestor_4 = Ancestor {
@@ -506,7 +641,7 @@ mod tests {
 			para_head_hash: None::<relay_chain::Hash>,
 		};
 		assert_matches!(
-			segment.append(&ancestor_4, 4, &limits),
+			segment.append(&ancestor_4, HrmpWatermarkUpdate::Trunk(4), &limits),
 			Err(BandwidthUpdateError::UmpBytesOverflow {
 				bytes_remaining,
 				bytes_submitted,
@@ -517,9 +652,11 @@ mod tests {
 			used_bandwidth: create_used_ump((1, 5)),
 			para_head_hash: None::<relay_chain::Hash>,
 		};
-		segment.append(&ancestor, 4, &limits).expect("update is withing the limits");
+		segment
+			.append(&ancestor, HrmpWatermarkUpdate::Trunk(4), &limits)
+			.expect("update is within the limits");
 		assert_matches!(
-			segment.append(&ancestor, 5, &limits),
+			segment.append(&ancestor, HrmpWatermarkUpdate::Trunk(5), &limits),
 			Err(BandwidthUpdateError::UmpMessagesOverflow {
 				messages_remaining,
 				messages_submitted,
@@ -535,17 +672,17 @@ mod tests {
 			used_bandwidth: UsedBandwidth::default(),
 			para_head_hash: None::<relay_chain::Hash>,
 		};
-		let limits = TotalBandwidthLimits {
+		let limits = OutboundBandwidthLimits {
 			ump_messages_remaining: 0,
 			ump_bytes_remaining: 0,
 			hrmp_outgoing: BTreeMap::default(),
 		};
 
 		segment
-			.append(&ancestor, 0, &limits)
+			.append(&ancestor, HrmpWatermarkUpdate::Head(0), &limits)
 			.expect("nothing to compare the watermark with in default segment");
 		assert_matches!(
-			segment.append(&ancestor, 0, &limits),
+			segment.append(&ancestor, HrmpWatermarkUpdate::Trunk(0), &limits),
 			Err(BandwidthUpdateError::InvalidHrmpWatermark {
 				submitted,
 				latest,
@@ -553,17 +690,23 @@ mod tests {
 		);
 
 		for watermark in 1..5 {
-			segment.append(&ancestor, watermark, &limits).expect("hrmp watermark is valid");
+			segment
+				.append(&ancestor, HrmpWatermarkUpdate::Trunk(watermark), &limits)
+				.expect("hrmp watermark is valid");
 		}
 		for watermark in 0..5 {
 			assert_matches!(
-				segment.append(&ancestor, watermark, &limits),
+				segment.append(&ancestor, HrmpWatermarkUpdate::Trunk(watermark), &limits),
 				Err(BandwidthUpdateError::InvalidHrmpWatermark {
 					submitted,
 					latest,
 				}) if submitted == watermark && latest == 4
 			);
 		}
+
+		segment
+			.append(&ancestor, HrmpWatermarkUpdate::Head(4), &limits)
+			.expect("head updates always valid");
 	}
 
 	#[test]
@@ -579,7 +722,7 @@ mod tests {
 		let para_1_limits =
 			HrmpOutboundLimits { bytes_remaining: u32::MAX, messages_remaining: u32::MAX };
 		let hrmp_outgoing = [(para_0, para_0_limits), (para_1, para_1_limits)].into();
-		let limits = TotalBandwidthLimits {
+		let limits = OutboundBandwidthLimits {
 			ump_messages_remaining: 0,
 			ump_bytes_remaining: 0,
 			hrmp_outgoing,
@@ -592,13 +735,17 @@ mod tests {
 			used_bandwidth: create_used_hrmp([(para_0, para_0_update)].into()),
 			para_head_hash: None::<relay_chain::Hash>,
 		};
-		segment.append(&ancestor_0, 0, &limits).expect("update is withing the limits");
+		segment
+			.append(&ancestor_0, HrmpWatermarkUpdate::Head(0), &limits)
+			.expect("update is within the limits");
 		let para_1_update = HrmpChannelUpdate { msg_count: 3, total_bytes: 10 };
 		let ancestor_1 = Ancestor {
 			used_bandwidth: create_used_hrmp([(para_1, para_1_update)].into()),
 			para_head_hash: None::<relay_chain::Hash>,
 		};
-		segment.append(&ancestor_1, 1, &limits).expect("update is withing the limits");
+		segment
+			.append(&ancestor_1, HrmpWatermarkUpdate::Head(1), &limits)
+			.expect("update is within the limits");
 
 		assert_eq!(segment.used_bandwidth.hrmp_outgoing.len(), 2);
 

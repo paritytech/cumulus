@@ -76,6 +76,9 @@ impl_opaque_keys! {
 /// [`OnRuntimeUpgrade`] works as expected.
 pub const TEST_RUNTIME_UPGRADE_KEY: &[u8] = b"+test_runtime_upgrade_key+";
 
+/// The para-id used in this runtime.
+pub const PARACHAIN_ID: u32 = 100;
+
 // The only difference between the two declarations below is the `spec_version`. With the
 // `increment-spec-version` feature enabled `spec_version` should be greater than the one of without the
 // `increment-spec-version` feature.
@@ -274,10 +277,11 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type XcmpMessageHandler = ();
 	type ReservedXcmpWeight = ();
 	type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::AnyRelayNumber;
+	type ConsensusHook = cumulus_pallet_parachain_system::consensus_hook::RequireParentIncluded;
 }
 
 parameter_types! {
-	pub storage ParachainId: cumulus_primitives_core::ParaId = 100.into();
+	pub storage ParachainId: cumulus_primitives_core::ParaId = PARACHAIN_ID.into();
 }
 
 impl test_pallet::Config for Runtime {}

@@ -38,11 +38,12 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 	DispatchErrorWithPostInfo,
 };
-use sp_std::collections::vec_deque::VecDeque;
+use sp_std::{collections::vec_deque::VecDeque, num::NonZeroU32};
 use sp_version::RuntimeVersion;
 use std::cell::RefCell;
 
 use crate as parachain_system;
+use crate::consensus_hook::UnincludedSegmentCapacity;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -110,6 +111,7 @@ impl Config for Test {
 	type XcmpMessageHandler = SaveIntoThreadLocal;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+	type ConsensusHook = TestConsensusHook;
 }
 
 pub struct FromThreadLocal;
@@ -119,6 +121,16 @@ std::thread_local! {
 	static HANDLED_DMP_MESSAGES: RefCell<Vec<(relay_chain::BlockNumber, Vec<u8>)>> = RefCell::new(Vec::new());
 	static HANDLED_XCMP_MESSAGES: RefCell<Vec<(ParaId, relay_chain::BlockNumber, Vec<u8>)>> = RefCell::new(Vec::new());
 	static SENT_MESSAGES: RefCell<Vec<(ParaId, Vec<u8>)>> = RefCell::new(Vec::new());
+	static CONSENSUS_HOOK: RefCell<Box<dyn Fn(&RelayChainStateProof) -> (Weight, UnincludedSegmentCapacity)>>
+		= RefCell::new(Box::new(|_| (Weight::zero(), NonZeroU32::new(1).unwrap().into())));
+}
+
+pub struct TestConsensusHook;
+
+impl ConsensusHook for TestConsensusHook {
+	fn on_state_proof(s: &RelayChainStateProof) -> (Weight, UnincludedSegmentCapacity) {
+		CONSENSUS_HOOK.with(|f| f.borrow_mut()(s))
+	}
 }
 
 fn send_message(dest: ParaId, message: Vec<u8>) {
@@ -233,7 +245,6 @@ struct BlockTests {
 	inherent_data_hook:
 		Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut ParachainInherentData)>>,
 	inclusion_delay: Option<usize>,
-	max_unincluded_len: Option<u64>,
 
 	included_para_head: Option<relay_chain::HeadData>,
 	pending_blocks: VecDeque<relay_chain::HeadData>,
@@ -297,9 +308,8 @@ impl BlockTests {
 		self
 	}
 
-	fn with_unincluded_segment(mut self, inclusion_delay: usize, max_unincluded_len: u64) -> Self {
+	fn with_inclusion_delay(mut self, inclusion_delay: usize) -> Self {
 		self.inclusion_delay.replace(inclusion_delay);
-		self.max_unincluded_len.replace(max_unincluded_len);
 		self
 	}
 
@@ -311,11 +321,8 @@ impl BlockTests {
 				relay_chain::HeadData(header.encode())
 			};
 
-			if let Some(max_unincluded_len) = self.max_unincluded_len {
-				// Initialize included head if the segment is enabled.
-				self.included_para_head.replace(parent_head_data.clone());
-				<MaxUnincludedLen<Test>>::put(max_unincluded_len);
-			}
+			self.included_para_head = Some(parent_head_data.clone());
+
 			for BlockTest { n, within_block, after_block } in self.tests.iter() {
 				// clear pending updates, as applicable
 				if let Some(upgrade_block) = self.pending_upgrade {
@@ -433,8 +440,12 @@ fn block_tests_run_on_drop() {
 
 #[test]
 fn unincluded_segment_works() {
+	CONSENSUS_HOOK.with(|c| {
+		*c.borrow_mut() = Box::new(|_| (Weight::zero(), NonZeroU32::new(10).unwrap().into()))
+	});
+
 	BlockTests::new()
-		.with_unincluded_segment(1, 10)
+		.with_inclusion_delay(1)
 		.add_with_post_test(
 			123,
 			|| {},
@@ -464,10 +475,14 @@ fn unincluded_segment_works() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic = "no space left for the block in the unincluded segment"]
 fn unincluded_segment_is_limited() {
+	CONSENSUS_HOOK.with(|c| {
+		*c.borrow_mut() = Box::new(|_| (Weight::zero(), NonZeroU32::new(1).unwrap().into()))
+	});
+
 	BlockTests::new()
-		.with_unincluded_segment(10, 1)
+		.with_inclusion_delay(2)
 		.add_with_post_test(
 			123,
 			|| {},
@@ -624,7 +639,10 @@ fn send_upward_message_num_per_candidate() {
 		)
 		.add_with_post_test(
 			2,
-			|| { /* do nothing within block */ },
+			|| {
+				assert_eq!(UnincludedSegment::<Test>::get().len(), 0);
+				/* do nothing within block */
+			},
 			|| {
 				let v = UpwardMessages::<Test>::get();
 				assert_eq!(v, vec![b"message 2".to_vec()]);

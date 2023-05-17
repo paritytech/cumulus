@@ -48,7 +48,7 @@ use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{Block as BlockT, BlockNumberProvider, Hash, Zero},
+	traits::{Block as BlockT, BlockNumberProvider, Hash},
 	transaction_validity::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidity,
 		ValidTransaction,
@@ -58,17 +58,21 @@ use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
 use xcm::latest::XcmHash;
 
 mod migration;
-mod relay_state_snapshot;
-mod unincluded_segment;
-#[macro_use]
-pub mod validate_block;
 #[cfg(test)]
 mod tests;
+mod unincluded_segment;
+
+pub mod consensus_hook;
+pub mod relay_state_snapshot;
+#[macro_use]
+pub mod validate_block;
 
 use unincluded_segment::{
-	Ancestor, HrmpChannelUpdate, SegmentTracker, TotalBandwidthLimits, UsedBandwidth,
+	Ancestor, HrmpChannelUpdate, HrmpWatermarkUpdate, OutboundBandwidthLimits, SegmentTracker,
+	UsedBandwidth,
 };
 
+pub use consensus_hook::ConsensusHook;
 /// Register the `validate_block` function that is used by parachains to validate blocks on a
 /// validator.
 ///
@@ -198,6 +202,18 @@ pub mod pallet {
 
 		/// Something that can check the associated relay parent block number.
 		type CheckAssociatedRelayNumber: CheckAssociatedRelayNumber;
+
+		/// An entry-point for higher-level logic to manage the backlog of unincluded parachain blocks
+		/// and authorship rights for those blocks.
+		///
+		/// Typically, this should be a hook tailored to the collator-selection/consensus mechanism
+		/// that is used for this chain.
+		///
+		/// However, to maintain the same behavior as prior to asynchronous backing, provide the
+		/// [`consensus_hook::ExpectParentIncluded`] here. This is only necessary in the case
+		/// that collators aren't expected to have node versions that supply the included block
+		/// in the relay-chain state proof.
+		type ConsensusHook: ConsensusHook;
 	}
 
 	#[pallet::hooks]
@@ -237,14 +253,25 @@ pub mod pallet {
 				},
 			};
 
-			let (ump_msg_count, ump_total_bytes) = <PendingUpwardMessages<T>>::mutate(|up| {
-				let (count, size) = relevant_messaging_state.relay_dispatch_queue_size;
+			let total_bandwidth_out = OutboundBandwidthLimits::from_relay_chain_state(
+				&relevant_messaging_state,
+				host_config.max_upward_queue_count,
+				host_config.max_upward_queue_size,
+			);
+			let bandwidth_out = AggregatedUnincludedSegment::<T>::get().map(|segment| {
+				let mut bandwidth_out = total_bandwidth_out.clone();
+				bandwidth_out.subtract(segment.used_bandwidth());
+				bandwidth_out
+			});
 
+			let (ump_msg_count, ump_total_bytes) = <PendingUpwardMessages<T>>::mutate(|up| {
+				let bandwidth_out = bandwidth_out.as_ref().unwrap_or(&total_bandwidth_out);
 				let available_capacity = cmp::min(
-					host_config.max_upward_queue_count.saturating_sub(count),
+					bandwidth_out.ump_messages_remaining,
 					host_config.max_upward_message_num_per_candidate,
 				);
-				let available_size = host_config.max_upward_queue_size.saturating_sub(size);
+
+				let available_size = bandwidth_out.ump_bytes_remaining;
 
 				// Count the number of messages we can possibly fit in the given constraints, i.e.
 				// available_capacity and available_size.
@@ -289,23 +316,17 @@ pub mod pallet {
 				.hrmp_max_message_num_per_candidate
 				.min(<AnnouncedHrmpMessagesPerCandidate<T>>::take()) as usize;
 
+			// TODO [now]: the `ChannelInfo` implementation for this pallet is what's
+			// important here for proper limiting.
 			let outbound_messages =
 				T::OutboundXcmpMessageSource::take_outbound_messages(maximum_channels)
 					.into_iter()
 					.map(|(recipient, data)| OutboundHrmpMessage { recipient, data })
 					.collect::<Vec<_>>();
 
-			if MaxUnincludedLen::<T>::get().map_or(false, |max_len| !max_len.is_zero()) {
-				// NOTE: these limits don't account for the amount of processed messages from
-				// downward and horizontal queues.
-				//
-				// This is correct because:
-				// - inherent never contains messages that were previously processed.
-				// - current implementation always attempts to exhaust each message queue.
-				//
-				// <https://github.com/paritytech/cumulus/issues/2472>
-				let limits = TotalBandwidthLimits::new(&relevant_messaging_state);
-
+			// Update the unincluded segment length; capacity checks were done previously in
+			// `set_validation_data`, so this can be done unconditionally.
+			{
 				let hrmp_outgoing = outbound_messages
 					.iter()
 					.map(|msg| {
@@ -321,12 +342,14 @@ pub mod pallet {
 				let ancestor = Ancestor::new_unchecked(used_bandwidth);
 
 				let watermark = HrmpWatermark::<T>::get();
+				let watermark_update =
+					HrmpWatermarkUpdate::new(watermark, LastRelayChainBlockNumber::<T>::get());
 				AggregatedUnincludedSegment::<T>::mutate(|agg| {
 					let agg = agg.get_or_insert_with(SegmentTracker::default);
 					// TODO: In order of this panic to be correct, outbound message source should
 					// respect bandwidth limits as well.
 					// <https://github.com/paritytech/cumulus/issues/2471>
-					agg.append(&ancestor, watermark, &limits)
+					agg.append(&ancestor, watermark_update, &total_bandwidth_out)
 						.expect("unincluded segment limits exceeded");
 				});
 				// Check in `on_initialize` guarantees there's space for this block.
@@ -346,8 +369,8 @@ pub mod pallet {
 				weight += T::DbWeight::get().writes(1);
 			}
 
-			// New para head was unknown during block finalization, update it.
-			if MaxUnincludedLen::<T>::get().map_or(false, |max_len| !max_len.is_zero()) {
+			// The parent hash was unknown during block finalization. Update it here.
+			{
 				<UnincludedSegment<T>>::mutate(|chain| {
 					if let Some(ancestor) = chain.last_mut() {
 						let parent = frame_system::Pallet::<T>::parent_hash();
@@ -359,9 +382,8 @@ pub mod pallet {
 				weight += T::DbWeight::get().reads_writes(1, 1);
 
 				// Weight used during finalization.
-				weight += T::DbWeight::get().reads_writes(2, 2);
+				weight += T::DbWeight::get().reads_writes(3, 2);
 			}
-			weight += T::DbWeight::get().reads(1);
 
 			// Remove the validation from the old block.
 			ValidationData::<T>::kill();
@@ -461,6 +483,10 @@ pub mod pallet {
 			)
 			.expect("Invalid relay chain state proof");
 
+			// Update the desired maximum capacity according to the consensus hook.
+			let (consensus_hook_weight, capacity) =
+				T::ConsensusHook::on_state_proof(&relay_state_proof);
+
 			// initialization logic: we know that this runs exactly once every block,
 			// which means we can put the initialization logic here to remove the
 			// sequencing problem.
@@ -508,7 +534,17 @@ pub mod pallet {
 			<T::OnSystemEvent as OnSystemEvent>::on_validation_data(&vfp);
 
 			// TODO: This is more than zero, but will need benchmarking to figure out what.
-			let mut total_weight = Weight::zero();
+			// NOTE: We don't account for the amount of processed messages from
+			// downward and horizontal channels in the unincluded segment.
+			//
+			// This is correct only because the  current implementation always attempts
+			// to exhaust each message queue and panics if the DMQ head doesn't match.
+			//
+			// If one or more messages were ever "re-processed" in a parachain block before its
+			// ancestor was included, the MQC heads wouldn't match and the block would be invalid.
+			//
+			// <https://github.com/paritytech/cumulus/issues/2472>
+			let mut total_weight = consensus_hook_weight;
 			total_weight += Self::process_inbound_downward_messages(
 				relevant_messaging_state.dmq_mqc_head,
 				downward_messages,
@@ -518,7 +554,7 @@ pub mod pallet {
 				horizontal_messages,
 				vfp.relay_parent_number,
 			);
-			total_weight += Self::maybe_drop_included_ancestors(&relay_state_proof);
+			total_weight += Self::maybe_drop_included_ancestors(&relay_state_proof, capacity);
 
 			Ok(PostDispatchInfo { actual_weight: Some(total_weight), pays_fee: Pays::No })
 		}
@@ -621,18 +657,12 @@ pub mod pallet {
 		Unauthorized,
 	}
 
-	/// Maximum number of latest included block descendants the runtime is allowed to accept. In other words,
-	/// these are ancestor of the block being currently executed, not yet sent to the relay chain runtime.
-	///
-	/// This value is optional, but once set to `Some` by the governance, should never go back to `None`.
-	/// Requires latest included para head to be present in the relay chain storage proof.
-	#[pallet::storage]
-	pub(super) type MaxUnincludedLen<T: Config> = StorageValue<_, T::BlockNumber, OptionQuery>;
-
 	/// Latest included block descendants the runtime accepted. In other words, these are
-	/// ancestors of the block being currently executed, not yet sent to the relay chain runtime.
+	/// ancestors of the currently executing block which have not been included in the observed
+	/// relay-chain state.
 	///
-	/// The segment length is limited by [`MaxUnincludedLen`].
+	/// The segment length is limited by the capacity returned from the [`ConsensusHook`] configured
+	/// in the pallet.
 	#[pallet::storage]
 	pub(super) type UnincludedSegment<T: Config> =
 		StorageValue<_, Vec<Ancestor<T::Hash>>, ValueQuery>;
@@ -1061,53 +1091,57 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Drop blocks from the unincluded segment with respect to the latest parachain head.
-	///
-	/// No-op if [`MaxUnincludedLen`] is not set.
-	fn maybe_drop_included_ancestors(relay_state_proof: &RelayChainStateProof) -> Weight {
+	fn maybe_drop_included_ancestors(
+		relay_state_proof: &RelayChainStateProof,
+		capacity: consensus_hook::UnincludedSegmentCapacity,
+	) -> Weight {
 		let mut weight_used = Weight::zero();
-		// If `MaxUnincludedLen` is present in the storage, parachain head
-		// is always expected to be included into the relay storage proof.
-		let para_head_with_len = <MaxUnincludedLen<T>>::get().map(|max_len| {
-			(
-				relay_state_proof
-					.read_included_para_head()
-					.expect("Invalid para head in relay chain state proof"),
-				max_len,
-			)
-		});
+		// If the unincluded segment length is nonzero, then the parachain head must be present.
+		let para_head =
+			relay_state_proof.read_included_para_head().ok().map(|h| T::Hashing::hash(&h.0));
+
+		let unincluded_segment_len = <UnincludedSegment<T>>::decode_len().unwrap_or(0);
 		weight_used += T::DbWeight::get().reads(1);
-		let Some((para_head, max_len)) = para_head_with_len else { return weight_used };
 
-		let para_head_hash = T::Hashing::hash(&para_head.0);
-		if !max_len.is_zero() {
-			let (dropped, left_count): (Vec<Ancestor<T::Hash>>, u32) =
-				<UnincludedSegment<T>>::mutate(|chain| {
-					// Drop everything up to the block with an included para head, if present.
-					let idx = chain
-						.iter()
-						.position(|block| {
-							let head_hash = block.para_head_hash().expect(
-								"para head hash is updated during block initialization; qed",
-							);
-							head_hash == &para_head_hash
-						})
-						.map_or(0, |idx| idx + 1); // inclusive.
+		// Clean up unincluded segment if nonempty.
+		let included_head = match (para_head, capacity.is_expecting_included_parent()) {
+			(Some(h), true) => {
+				assert_eq!(
+					h,
+					frame_system::Pallet::<T>::parent_hash(),
+					"expected parent to be included"
+				);
 
-					let left_count = (idx..chain.len()).count() as u32;
-					let dropped = chain.drain(..idx).collect();
-					(dropped, left_count)
-				});
+				h
+			},
+			(Some(h), false) => h,
+			(None, true) => {
+				// All this logic is essentially a workaround to support collators which
+				// might still not provide the included block with the state proof.
+				frame_system::Pallet::<T>::parent_hash()
+			},
+			(None, false) => panic!("included head not present in relay storage proof"),
+		};
+
+		let new_len = {
+			let para_head_hash = included_head;
+			let dropped: Vec<Ancestor<T::Hash>> = <UnincludedSegment<T>>::mutate(|chain| {
+				// Drop everything up to (inclusive) the block with an included para head, if present.
+				let idx = chain
+					.iter()
+					.position(|block| {
+						let head_hash = block
+							.para_head_hash()
+							.expect("para head hash is updated during block initialization; qed");
+						head_hash == &para_head_hash
+					})
+					.map_or(0, |idx| idx + 1); // inclusive.
+
+				chain.drain(..idx).collect()
+			});
 			weight_used += T::DbWeight::get().reads_writes(1, 1);
 
-			// sanity-check there's place for the block at finalization phase.
-			//
-			// If this fails, the max segment len is reached and parachain should wait
-			// for ancestor's inclusion.
-			assert!(
-				max_len > left_count.into(),
-				"no space left for the block in the unincluded segment"
-			);
-
+			let new_len = unincluded_segment_len - dropped.len();
 			if !dropped.is_empty() {
 				<AggregatedUnincludedSegment<T>>::mutate(|agg| {
 					let agg = agg.as_mut().expect(
@@ -1119,7 +1153,15 @@ impl<T: Config> Pallet<T> {
 				});
 				weight_used += T::DbWeight::get().reads_writes(1, 1);
 			}
-		}
+
+			new_len as u32
+		};
+
+		// Current block validity check: ensure there is space in the unincluded segment.
+		//
+		// If this fails, the parachain needs to wait for ancestors to be included before
+		// a new block is allowed.
+		assert!(new_len < capacity.get(), "no space left for the block in the unincluded segment");
 		weight_used
 	}
 
