@@ -130,10 +130,16 @@ benchmarks! {
 	add_invulnerable {
 		let origin =
 			T::UpdateOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
-		// we're going to add one, so need one less than max
+		// we're going to add one, so need one less than max set as invulnerables to start
 		let b in 1 .. T::MaxInvulnerables::get() - 1;
-		let new = register_validators::<T>(b);
-		let new: T::AccountId = whitelisted_caller();
+		let mut invulnerables = register_validators::<T>(b);
+		invulnerables.sort();
+		let invulnerables: frame_support::BoundedVec<_, T::MaxInvulnerables> = frame_support::BoundedVec::try_from(invulnerables).unwrap();
+		<Invulnerables<T>>::put(invulnerables);
+
+		// now let's set up a new one to add
+		let (new, keys) = validator::<T>(b + 1);
+		<session::Pallet<T>>::set_keys(RawOrigin::Signed(new.clone()).into(), keys, Vec::new()).unwrap();
 	}: {
 		assert_ok!(
 			<CollatorSelection<T>>::add_invulnerable(origin, new.clone())
