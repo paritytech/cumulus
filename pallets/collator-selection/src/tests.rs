@@ -72,15 +72,12 @@ fn add_invulnerable_works() {
 		// function runs
 		assert_ok!(CollatorSelection::add_invulnerable(
 			RuntimeOrigin::signed(RootAccount::get()),
-			new.clone()
+			new
 		));
 
 		// same element cannot be added more than once
 		assert_noop!(
-			CollatorSelection::add_invulnerable(
-				RuntimeOrigin::signed(RootAccount::get()),
-				new.clone()
-			),
+			CollatorSelection::add_invulnerable(RuntimeOrigin::signed(RootAccount::get()), new),
 			Error::<Test>::AlreadyInvulnerable
 		);
 
@@ -88,10 +85,7 @@ fn add_invulnerable_works() {
 		assert!(CollatorSelection::invulnerables().to_vec().contains(&new));
 
 		// cannot add with non-root
-		assert_noop!(
-			CollatorSelection::add_invulnerable(RuntimeOrigin::signed(1), new.clone()),
-			BadOrigin
-		);
+		assert_noop!(CollatorSelection::add_invulnerable(RuntimeOrigin::signed(1), new), BadOrigin);
 
 		// cannot add invulnerable without associated validator keys
 		let not_validator = 7;
