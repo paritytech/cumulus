@@ -97,7 +97,10 @@ pub type UncheckedExtrinsic =
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
-pub type Migrations = (pallet_contracts::Migration<Runtime>,);
+pub type Migrations = (
+	pallet_contracts::Migration<Runtime>,
+	pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,
+);
 
 type EventRecord = frame_system::EventRecord<
 	<Runtime as frame_system::Config>::RuntimeEvent,
