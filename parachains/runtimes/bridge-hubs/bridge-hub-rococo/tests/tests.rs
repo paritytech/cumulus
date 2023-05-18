@@ -16,15 +16,14 @@
 
 #![cfg(test)]
 
-use bp_messages::LaneId;
 use bp_polkadot_core::Signature;
 use bridge_hub_rococo_runtime::{
 	bridge_hub_rococo_config, bridge_hub_wococo_config,
 	constants::fee::WeightToFee,
 	xcm_config::{RelayNetwork, XcmConfig},
-	Balances, BridgeRejectObsoleteHeadersAndMessages, DeliveryRewardInBalance, Executive,
-	ExistentialDeposit, ParachainSystem, PolkadotXcm, RequiredStakeForStakeAndSlash, Runtime,
-	RuntimeCall, RuntimeEvent, SessionKeys, SignedExtra, UncheckedExtrinsic,
+	BridgeRejectObsoleteHeadersAndMessages, DeliveryRewardInBalance, Executive, ExistentialDeposit,
+	ParachainSystem, PolkadotXcm, RequiredStakeForStakeAndSlash, Runtime, RuntimeCall,
+	RuntimeEvent, SessionKeys, SignedExtra, UncheckedExtrinsic,
 };
 use codec::{Decode, Encode};
 use frame_support::parameter_types;
@@ -35,6 +34,9 @@ use sp_runtime::{
 	AccountId32,
 };
 use xcm::latest::prelude::*;
+
+// Para id of sibling chain (Rockmine/Wockmint) used in tests.
+pub const SIBLING_PARACHAIN_ID: u32 = 1000;
 
 parameter_types! {
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
@@ -83,12 +85,6 @@ fn executive_init_block(header: &<Runtime as frame_system::Config>::Header) {
 	Executive::initialize_block(header)
 }
 
-fn drip_some_balance(account: &<Runtime as frame_system::Config>::AccountId) {
-	use frame_support::traits::fungible::Mutate;
-	let some_currency = ExistentialDeposit::get() * 100000;
-	Balances::mint_into(account, some_currency).unwrap();
-}
-
 fn collator_session_keys() -> bridge_hub_test_utils::CollatorSessionKeys<Runtime> {
 	bridge_hub_test_utils::CollatorSessionKeys::new(
 		AccountId::from(Alice),
@@ -99,7 +95,9 @@ fn collator_session_keys() -> bridge_hub_test_utils::CollatorSessionKeys<Runtime
 
 mod bridge_hub_rococo_tests {
 	use super::*;
-	use bridge_hub_rococo_config::WithBridgeHubWococoMessageBridge;
+	use bridge_hub_rococo_config::{
+		WithBridgeHubWococoMessageBridge, DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO,
+	};
 	use bridge_hub_rococo_runtime::{
 		BridgeGrandpaWococoInstance, BridgeParachainWococoInstance,
 		WithBridgeHubWococoMessagesInstance,
@@ -184,7 +182,7 @@ mod bridge_hub_rococo_tests {
 		>(
 			collator_session_keys(),
 			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
-			1000,
+			SIBLING_PARACHAIN_ID,
 			Box::new(|runtime_event_encoded: Vec<u8>| {
 				match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
 					Ok(RuntimeEvent::BridgeWococoMessages(event)) => Some(event),
@@ -208,7 +206,7 @@ mod bridge_hub_rococo_tests {
 		>(
 			collator_session_keys(),
 			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
-			1000,
+			SIBLING_PARACHAIN_ID,
 			Box::new(|runtime_event_encoded: Vec<u8>| {
 				match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
 					Ok(RuntimeEvent::ParachainSystem(event)) => Some(event),
@@ -239,9 +237,9 @@ mod bridge_hub_rococo_tests {
 			collator_session_keys(),
 			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
 			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
-			1000,
+			SIBLING_PARACHAIN_ID,
 			Rococo,
-			LaneId([0, 0, 0, 1]),
+			DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO,
 		)
 	}
 
@@ -259,12 +257,12 @@ mod bridge_hub_rococo_tests {
 			collator_session_keys(),
 			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
 			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
-			1000,
+			SIBLING_PARACHAIN_ID,
 			bridge_hub_rococo_config::BridgeHubWococoChainId::get(),
 			Rococo,
-			LaneId([0, 0, 0, 1]),
+			DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO,
+			ExistentialDeposit::get(),
 			executive_init_block,
-			drip_some_balance,
 			construct_and_apply_extrinsic,
 		);
 	}
@@ -276,7 +274,9 @@ mod bridge_hub_wococo_tests {
 		BridgeGrandpaRococoInstance, BridgeParachainRococoInstance,
 		WithBridgeHubRococoMessagesInstance,
 	};
-	use bridge_hub_wococo_config::WithBridgeHubRococoMessageBridge;
+	use bridge_hub_wococo_config::{
+		WithBridgeHubRococoMessageBridge, DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO,
+	};
 
 	bridge_hub_test_utils::test_cases::include_teleports_for_native_asset_works!(
 		Runtime,
@@ -357,7 +357,7 @@ mod bridge_hub_wococo_tests {
 		>(
 			collator_session_keys(),
 			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
-			1000,
+			SIBLING_PARACHAIN_ID,
 			Box::new(|runtime_event_encoded: Vec<u8>| {
 				match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
 					Ok(RuntimeEvent::BridgeRococoMessages(event)) => Some(event),
@@ -381,7 +381,7 @@ mod bridge_hub_wococo_tests {
 		>(
 			collator_session_keys(),
 			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
-			1000,
+			SIBLING_PARACHAIN_ID,
 			Box::new(|runtime_event_encoded: Vec<u8>| {
 				match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
 					Ok(RuntimeEvent::ParachainSystem(event)) => Some(event),
@@ -412,9 +412,9 @@ mod bridge_hub_wococo_tests {
 			collator_session_keys(),
 			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
 			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
-			1000,
+			SIBLING_PARACHAIN_ID,
 			Wococo,
-			LaneId([0, 0, 0, 1]),
+			DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO,
 		)
 	}
 
@@ -432,12 +432,12 @@ mod bridge_hub_wococo_tests {
 			collator_session_keys(),
 			bp_bridge_hub_wococo::BRIDGE_HUB_WOCOCO_PARACHAIN_ID,
 			bp_bridge_hub_rococo::BRIDGE_HUB_ROCOCO_PARACHAIN_ID,
-			1000,
+			SIBLING_PARACHAIN_ID,
 			bridge_hub_wococo_config::BridgeHubRococoChainId::get(),
 			Wococo,
-			LaneId([0, 0, 0, 1]),
+			DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO,
+			ExistentialDeposit::get(),
 			executive_init_block,
-			drip_some_balance,
 			construct_and_apply_extrinsic,
 		);
 	}

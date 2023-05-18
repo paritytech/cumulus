@@ -41,7 +41,7 @@ use frame_support::{
 };
 use pallet_bridge_grandpa::BridgedHeader;
 use parachains_runtimes_test_utils::{
-	mock_open_hrmp_channel, AccountIdOf, CollatorSessionKeys, ExtBuilder, RuntimeHelper,
+	mock_open_hrmp_channel, AccountIdOf, BalanceOf, CollatorSessionKeys, ExtBuilder, RuntimeHelper,
 	ValidatorIdOf, XcmReceivedFrom,
 };
 use sp_core::H256;
@@ -443,7 +443,7 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 	<<Runtime as pallet_bridge_messages::Config<MPI>>::SourceHeaderChain as SourceHeaderChain>::MessagesProof: From<FromBridgedChainMessagesProof<ParaHash>>,
 	<<Runtime as pallet_bridge_grandpa::Config<GPI>>::BridgedChain as bp_runtime::Chain>::Hash: From<ParaHash>,
 	ParaHash: From<<<Runtime as pallet_bridge_grandpa::Config<GPI>>::BridgedChain as bp_runtime::Chain>::Hash>,
-	<Runtime as frame_system::Config>::AccountId: From<sp_core::sr25519::Public>,
+	AccountIdOf<Runtime>: From<sp_core::sr25519::Public>,
 	<Runtime as pallet_bridge_messages::Config<MPI>>::InboundRelayer: From<AccountId32>,
 {
 	assert_ne!(runtime_para_id, sibling_parachain_id);
@@ -483,8 +483,7 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 			let relay_header_number = 1;
 
 			let relayer_at_target = Bob;
-			let relayer_id_on_target: <Runtime as frame_system::Config>::AccountId =
-				relayer_at_target.public().into();
+			let relayer_id_on_target: AccountIdOf<Runtime> = relayer_at_target.public().into();
 			let relayer_at_source = Dave;
 			let relayer_id_on_source: AccountId32 = relayer_at_source.public().into();
 
@@ -590,8 +589,8 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 	bridged_chain_id: bp_runtime::ChainId,
 	local_relay_chain_id: NetworkId,
 	lane_id: LaneId,
+	existential_deposit: BalanceOf<Runtime>,
 	executive_init_block: fn(&<Runtime as frame_system::Config>::Header),
-	drip_some_balance: fn(&<Runtime as frame_system::Config>::AccountId),
 	construct_and_apply_extrinsic: fn(
 		sp_keyring::AccountKeyring,
 		pallet_utility::Call::<Runtime>
@@ -625,7 +624,7 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 	<<Runtime as pallet_bridge_messages::Config<MPI>>::SourceHeaderChain as SourceHeaderChain>::MessagesProof: From<FromBridgedChainMessagesProof<ParaHash>>,
 	<<Runtime as pallet_bridge_grandpa::Config<GPI>>::BridgedChain as bp_runtime::Chain>::Hash: From<ParaHash>,
 	ParaHash: From<<<Runtime as pallet_bridge_grandpa::Config<GPI>>::BridgedChain as bp_runtime::Chain>::Hash>,
-	<Runtime as frame_system::Config>::AccountId: From<sp_core::sr25519::Public>,
+	AccountIdOf<Runtime>: From<sp_core::sr25519::Public>,
 	<Runtime as pallet_bridge_messages::Config<MPI>>::InboundRelayer: From<AccountId32>,
 	<Runtime as pallet_utility::Config>::RuntimeCall:
 	From<pallet_bridge_grandpa::Call<Runtime, GPI>>
@@ -635,11 +634,20 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 	assert_ne!(runtime_para_id, sibling_parachain_id);
 	assert_ne!(runtime_para_id, bridged_para_id);
 
+	// Relayer account at local/this BH.
+	let relayer_at_target = Bob;
+	let relayer_id_on_target: AccountIdOf<Runtime> = relayer_at_target.public().into();
+	let relayer_initial_balance = existential_deposit * 100000u32.into();
+	// Relayer account at remote/bridged BH.
+	let relayer_at_source = Dave;
+	let relayer_id_on_source: AccountId32 = relayer_at_source.public().into();
+
 	ExtBuilder::<Runtime>::default()
 		.with_collators(collator_session_key.collators())
 		.with_session_keys(collator_session_key.session_keys())
 		.with_safe_xcm_version(XCM_VERSION)
 		.with_para_id(runtime_para_id.into())
+		.with_balances(vec![(relayer_id_on_target.clone(), relayer_initial_balance)])
 		.with_tracing()
 		.build()
 		.execute_with(|| {
@@ -671,15 +679,6 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 			let message_nonce = 1;
 			let para_header_number = 5;
 			let relay_header_number = 1;
-
-			let relayer_at_target = Bob;
-			let relayer_id_on_target: <Runtime as frame_system::Config>::AccountId =
-				relayer_at_target.public().into();
-			let relayer_at_source = Dave;
-			let relayer_id_on_source: AccountId32 = relayer_at_source.public().into();
-
-			// Drip some balance
-			drip_some_balance(&relayer_id_on_target);
 
 			let xcm = vec![xcm::v3::Instruction::<()>::ClearOrigin; 42];
 			let expected_dispatch = xcm::VersionedXcm::<()>::V3(xcm.clone().into());
