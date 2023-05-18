@@ -113,29 +113,6 @@ pub fn initialize_bridge_by_governance_works<Runtime, GrandpaPalletInstance>(
 		})
 }
 
-#[macro_export]
-macro_rules! include_initialize_bridge_by_governance_works(
-	(
-		$runtime:path,
-		$pallet_bridge_grandpa_instance:path,
-		$collator_session_key:expr,
-		$runtime_para_id:expr,
-		$runtime_call_encode:expr
-	) => {
-		#[test]
-		fn initialize_bridge_by_governance_works() {
-			$crate::test_cases::initialize_bridge_by_governance_works::<
-				$runtime,
-				$pallet_bridge_grandpa_instance,
-			>(
-				$collator_session_key,
-				$runtime_para_id,
-				$runtime_call_encode
-			)
-		}
-	}
-);
-
 /// Test-case makes sure that `Runtime` can change storage constant via governance-like call
 pub fn change_storage_constant_by_governance_works<Runtime, StorageConstant, StorageConstantType>(
 	collator_session_key: CollatorSessionKeys<Runtime>,
