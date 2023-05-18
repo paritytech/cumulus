@@ -67,7 +67,7 @@ tests:
                   v3: [ # message
                     {
                       UnpaidExecution: {
-                        weightLimit: { 
+                        weightLimit: {
                           limited: {
                             refTime: 2200000000, # 2_200_000_000
                             proofSize: 200000, # 200_000
@@ -79,7 +79,7 @@ tests:
                       Transact: {
                         originKind: Superuser,
                         requireWeightAtMost: {
-                          refTime: 200000000, # 200_000_000 
+                          refTime: 200000000, # 200_000_000
                           proofSize: 0,
                         },
                         call: $ap_force_xcm_version

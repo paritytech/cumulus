@@ -10,10 +10,17 @@ chain = "polkadot-local"
 
     [[relaychain.nodes]]
     name = "bob"
+	ws_port = 9701
     validator = true
 
     [[relaychain.nodes]]
     name = "charlie"
+	ws_port = 9702
+    validator = true
+
+	[[relaychain.nodes]]
+    name = "dave"
+	ws_port = 9703
     validator = true
 
 [[parachains]]
@@ -29,5 +36,6 @@ cumulus_based = true
 
     [[parachains.collators]]
     name = "collator2"
+	ws_port = 9711
     command = "./bin/polkadot-parachain"
     args = ["-lxcm=trace"]

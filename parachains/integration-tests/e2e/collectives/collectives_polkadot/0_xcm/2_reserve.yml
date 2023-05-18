@@ -26,13 +26,13 @@ tests:
               args: [
                 { v3: { 0, interior: { x1: { parachain: *cp_id }}}}, # destination
                 { v3: { parents: 0, interior: { x1: { accountId32: { id: *alice_acc32 }}}}}, # beneficiary
-                { 
-                  v3: [ 
-                    { 
-                      id: { concrete: { 0, interior: { here: true }}}, 
+                {
+                  v3: [
+                    {
+                      id: { concrete: { 0, interior: { here: true }}},
                       fun: { fungible: 20000000000000 } # 20_000_000_000_000
                     }
-                  ] 
+                  ]
                 }, # assets
                 0, # feeAssetItem
               ]

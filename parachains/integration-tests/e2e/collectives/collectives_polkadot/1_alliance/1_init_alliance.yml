@@ -24,7 +24,7 @@ settings:
       ava_account32: &acc_ava_acc32 "0x348ef0b8776adbc09c862ddc29b1d193b9e24738e54eea3b0609c83856dc101c"
       mia_signer: &acc_mia_signer //Mia
       mia_account32: &acc_mia_acc32 "0xaebf15374cf7e758d10232514c569a7abf81cc1b8f1e81a73dbc608a0e335264"
-  decodedCalls: 
+  decodedCalls:
     init_alliance_members:
       chain: *collectives_parachain
       pallet: alliance
@@ -86,7 +86,7 @@ tests:
                   v3: [ # message
                     {
                       UnpaidExecution: {
-                        weightLimit: { 
+                        weightLimit: {
                           limited: {
                             refTime: 3000000000, # 3_000_000_000
                             proofSize: 2000000, # 2_000_000
@@ -98,7 +98,7 @@ tests:
                       Transact: {
                         originKind: Superuser,
                         requireWeightAtMost: {
-                          refTime: 1000000000, # 1_000_000_000 
+                          refTime: 1000000000, # 1_000_000_000
                           proofSize: 1000000, # 1_000_000
                         },
                         call: $init_alliance_members
@@ -120,7 +120,7 @@ tests:
                   attributes:
                     - type: XcmV3TraitsOutcome
                       xcmOutcome: Complete
-      
+
       - name: Alliance init call fails.
         actions:
           - extrinsics:
@@ -135,7 +135,7 @@ tests:
                   v3: [ # message
                     {
                       UnpaidExecution: {
-                        weightLimit: { 
+                        weightLimit: {
                           limited: {
                             refTime: 3000000000, # 3_000_000_000
                             proofSize: 2000000, # 2_000_000
@@ -147,7 +147,7 @@ tests:
                       Transact: {
                         originKind: Superuser,
                         requireWeightAtMost: {
-                          refTime: 1000000000, # 1_000_000_000 
+                          refTime: 1000000000, # 1_000_000_000
                           proofSize: 1000000, # 1_000_000
                         },
                         call: $init_alliance_voting_members
@@ -186,7 +186,7 @@ tests:
                   v3: [ # message
                     {
                       UnpaidExecution: {
-                        weightLimit: { 
+                        weightLimit: {
                           limited: {
                             refTime: 5000000000, # 3_000_000_000
                             proofSize: 1000000, # 1_000_000
@@ -244,7 +244,7 @@ tests:
                   v3: [ # message
                     {
                       UnpaidExecution: {
-                        weightLimit: { 
+                        weightLimit: {
                           limited: {
                             refTime: 3000000000, # 3_000_000_000
                             proofSize: 2000000, # 2_000_000
@@ -256,7 +256,7 @@ tests:
                       Transact: {
                         originKind: Superuser,
                         requireWeightAtMost: {
-                          refTime: 1000000000, # 1_000_000_000 
+                          refTime: 1000000000, # 1_000_000_000
                           proofSize: 1000000, # 1_000_000
                         },
                         call: $init_alliance_members
@@ -278,4 +278,3 @@ tests:
                   attributes:
                     - type: XcmV3TraitsOutcome
                       xcmOutcome: Complete
-

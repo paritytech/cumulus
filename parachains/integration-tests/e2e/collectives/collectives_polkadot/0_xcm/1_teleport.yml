@@ -39,19 +39,19 @@ tests:
               args: [
                 { v3: { 0, interior: { x1: { parachain: *cp_id }}}}, # destination
                 { v3: { parents: 0, interior: { x1: { accountId32: { id: *acc_alice_acc32 }}}}}, # beneficiary
-                { 
-                  v3: [ 
-                    # { 
+                {
+                  v3: [
+                    # {
                     #   # TODO use a separate Assets to pay a fee, to receive an exact amount of assets on beneficiary account.
                     #   # a call with two assets fails with an error right now.
-                    #   id: { concrete: { 0, interior: { here: true }}}, 
-                    #   fun: { fungible: 1000000000000 } # 1_000_000_000_000 
+                    #   id: { concrete: { 0, interior: { here: true }}},
+                    #   fun: { fungible: 1000000000000 } # 1_000_000_000_000
                     # },
-                    { 
-                      id: { concrete: { 0, interior: { here: true }}}, 
+                    {
+                      id: { concrete: { 0, interior: { here: true }}},
                       fun: { fungible: 20000000000000 } # 20_000_000_000_000
                     }
-                  ] 
+                  ]
                 }, # assets
                 0, # feeAssetItem
               ]
@@ -109,13 +109,13 @@ tests:
               args: [
                 { v3: { parents: 1, interior: { here: true }}}, # destination
                 { v3: { parents: 0, interior: { x1: { accountId32: { id: *acc_alice_acc32 }}}}}, # beneficiary
-                { 
-                  v3: [ 
-                    { 
-                      id: { concrete: { parents: 1, interior: { here: true }}}, 
+                {
+                  v3: [
+                    {
+                      id: { concrete: { parents: 1, interior: { here: true }}},
                       fun: { fungible: 10000000000000 } # 10_000_000_000_000
                     }
-                  ] 
+                  ]
                 }, # assets
                 0, # feeAssetItem
               ]

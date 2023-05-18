@@ -2,21 +2,21 @@
 settings:
   chains:
     relay_chain: &relay_chain
-      wsPort: 9900
+      wsPort: 9800
     assets_parachain: &assets_parachain
-      wsPort: 9910
+      wsPort: 9810
       paraId: &ap_id 1000
     penpal_parachain: &penpal_parachain
-      wsPort: 9920
+      wsPort: 9820
       paraId: &pp_id 2000
   variables:
     common:
-      xcm_verison: &xcm_version '2'
-      require_weight_at_most: &weight_at_most 1000000000
+      xcm_version: &xcm_version '3'
+      require_weight_at_most: &weight_at_most {refTime: 1000000000, proofSize: 200000}
     chains:
       relay_chain:
         signer: &rc_signer //Alice
-        assets_parachain_destination: &ap_dest { v1: { 0, interior: { x1: { parachain: *ap_id }}}}
+        assets_parachain_destination: &ap_dest { v3: { 0, interior: { x1: { parachain: *ap_id }}}}
       penpal_parachain:
         signer: &pp_signer //Alice
   decodedCalls:
@@ -37,7 +37,7 @@ tests:
     its:
       - name: XCM supported versions between chains
         actions:
-          - extrinsics: # Relay Chain sets supported version for Assset Parachain
+          - extrinsics: # Relay Chain sets supported version for Asset Parachain
             - chain: *relay_chain
               sudo: true
               signer: *rc_signer
@@ -56,13 +56,13 @@ tests:
               ]
               events:
                 - name: sudo.Sudid
-                  attribute:
-                    type: Result<Null, SpRuntimeDispatchError>
-                    value: Ok
+                  attributes:
+                    - type: Result<Null, SpRuntimeDispatchError>
+                      value: Ok
                 - name: xcmPallet.SupportedVersionChanged
-                  attribute:
-                    type: u32
-                    value: *xcm_version
+                  attributes:
+                    - type: u32
+                      value: *xcm_version
           - extrinsics: # Relay Chain sets supported version for Penpal Parachain
             - chain: *relay_chain
               sudo: true
@@ -82,14 +82,14 @@ tests:
               ]
               events:
                 - name: sudo.Sudid
-                  attribute:
-                    type: Result<Null, SpRuntimeDispatchError>
-                    value: Ok
+                  attributes:
+                    - type: Result<Null, SpRuntimeDispatchError>
+                      value: Ok
                 - name: xcmPallet.SupportedVersionChanged
-                  attribute:
-                    type: u32
-                    value: *xcm_version
-          - extrinsics: # Assset Parachain sets supported version for Relay Chain through it
+                  attributes:
+                    - type: u32
+                      value: *xcm_version
+          - extrinsics: # Asset Parachain sets supported version for Relay Chain through it
             - chain: *relay_chain
               signer: *rc_signer
               sudo: true
@@ -98,10 +98,20 @@ tests:
               args: [
                 *ap_dest, # destination
                 {
-                  v2: [ #message
+                  v3: [ #message
+                    {
+                      UnpaidExecution: {
+                        weightLimit: {
+                          limited: {
+                            refTime: 3200000000,
+                            proofSize: 200000
+                          }
+                        }
+                      }
+                    },
                     {
                       Transact: {
-                        originType: Superuser,
+                        originKind: Superuser,
                         requireWeightAtMost: *weight_at_most,
                         call: $ap_force_xcm_version
                       }
@@ -111,15 +121,15 @@ tests:
               ]
               events:
                 - name: sudo.Sudid
-                  attribute:
-                    type: Result<Null, SpRuntimeDispatchError>
-                    value: Ok
+                  attributes:
+                    - type: Result<Null, SpRuntimeDispatchError>
+                      value: Ok
                 - name: xcmPallet.Sent
                 - name: polkadotXcm.SupportedVersionChanged
                   chain: *assets_parachain
-                  attribute:
-                    type: u32
-                    value: *xcm_version
+                  attributes:
+                    - type: u32
+                      value: *xcm_version
           - extrinsics: # Penpal Parachain sets supported version for Relay Chain
             - chain: *penpal_parachain
               signer: *pp_signer
@@ -135,10 +145,10 @@ tests:
               ]
               events:
                 - name: sudo.Sudid
-                  attribute:
-                    type: Result<Null, SpRuntimeDispatchError>
-                    value: Ok
+                  attributes:
+                    - type: Result<Null, SpRuntimeDispatchError>
+                      value: Ok
                 - name: polkadotXcm.SupportedVersionChanged
-                  attribute:
-                    type: u32
-                    value: *xcm_version
+                  attributes:
+                    - type: u32
+                      value: *xcm_version
