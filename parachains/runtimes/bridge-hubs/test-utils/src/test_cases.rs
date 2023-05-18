@@ -32,8 +32,7 @@ use bridge_runtime_common::{
 	messages_generation::{encode_all_messages, encode_lane_data, prepare_messages_storage_proof},
 	messages_xcm_extension::{XcmAsPlainPayload, XcmBlobMessageDispatchResult},
 };
-use codec::{DecodeLimit, Encode};
-use cumulus_primitives_core::XcmpMessageSource;
+use codec::Encode;
 use frame_support::{
 	assert_ok,
 	traits::{Get, OriginTrait},
@@ -528,10 +527,10 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 			);
 
 			// import message
-			assert!(cumulus_pallet_xcmp_queue::Pallet::<Runtime>::take_outbound_messages(
-				usize::MAX
+			assert!(RuntimeHelper::<cumulus_pallet_xcmp_queue::Pallet<Runtime>>::take_xcm(
+				sibling_parachain_id.into()
 			)
-			.is_empty());
+			.is_none());
 			assert_eq!(
 				pallet_bridge_messages::InboundLanes::<Runtime, MPI>::get(lane_id)
 					.last_delivered_nonce(),
@@ -556,9 +555,9 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 				1,
 			);
 			// verify relayed bridged XCM message is dispatched to destination sibling para
-			let dispatched = test_data::take_outbound_message::<
-				cumulus_pallet_xcmp_queue::Pallet<Runtime>,
-			>(sibling_parachain_id.into())
+			let dispatched = RuntimeHelper::<cumulus_pallet_xcmp_queue::Pallet<Runtime>>::take_xcm(
+				sibling_parachain_id.into(),
+			)
 			.unwrap();
 			assert_eq!(dispatched, expected_dispatch);
 		})
@@ -712,10 +711,10 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 			};
 
 			// sanity checks - before relayer extrinsic
-			assert!(cumulus_pallet_xcmp_queue::Pallet::<Runtime>::take_outbound_messages(
-				usize::MAX
+			assert!(RuntimeHelper::<cumulus_pallet_xcmp_queue::Pallet<Runtime>>::take_xcm(
+				sibling_parachain_id.into()
 			)
-			.is_empty());
+			.is_none());
 			assert_eq!(
 				pallet_bridge_messages::InboundLanes::<Runtime, MPI>::get(lane_id)
 					.last_delivered_nonce(),
@@ -773,9 +772,9 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 			)
 			.is_some());
 			// verify relayed bridged XCM message is dispatched to destination sibling para
-			let dispatched = test_data::take_outbound_message::<
-				cumulus_pallet_xcmp_queue::Pallet<Runtime>,
-			>(sibling_parachain_id.into())
+			let dispatched = RuntimeHelper::<cumulus_pallet_xcmp_queue::Pallet<Runtime>>::take_xcm(
+				sibling_parachain_id.into(),
+			)
 			.unwrap();
 			assert_eq!(dispatched, expected_dispatch);
 		})
@@ -788,8 +787,6 @@ pub mod test_data {
 	use bp_polkadot_core::parachains::{ParaHash, ParaHead, ParaHeadsProof, ParaId};
 	use bp_runtime::BasicOperatingMode;
 	use bp_test_utils::authority_list;
-	use cumulus_primitives_core::XcmpMessageFormat;
-	use xcm::MAX_XCM_DECODE_DEPTH;
 	use xcm_builder::{HaulBlob, HaulBlobError, HaulBlobExporter};
 	use xcm_executor::traits::{validate_export, ExportXcm};
 
@@ -878,29 +875,6 @@ pub mod test_data {
 			para_heads_proof,
 			message_proof,
 		)
-	}
-
-	pub fn take_outbound_message<HrmpChannelSource: XcmpMessageSource>(
-		sent_to_para_id: cumulus_primitives_core::ParaId,
-	) -> Option<xcm::VersionedXcm<()>> {
-		match HrmpChannelSource::take_outbound_messages(10)[..] {
-			[(para_id, ref mut xcm_message_data)] if para_id.eq(&sent_to_para_id.into()) => {
-				let mut xcm_message_data = &xcm_message_data[..];
-				// decode
-				let _ = XcmpMessageFormat::decode_with_depth_limit(
-					MAX_XCM_DECODE_DEPTH,
-					&mut xcm_message_data,
-				)
-				.expect("valid format");
-				xcm::VersionedXcm::<()>::decode_with_depth_limit(
-					MAX_XCM_DECODE_DEPTH,
-					&mut xcm_message_data,
-				)
-				.map(|x| Some(x))
-				.expect("result with xcm")
-			},
-			_ => return None,
-		}
 	}
 
 	/// Helper that creates InitializationData mock data, that can be used to initialize bridge GRANDPA pallet

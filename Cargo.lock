@@ -1164,7 +1164,6 @@ dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
- "cumulus-primitives-core",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",

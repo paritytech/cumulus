@@ -15,6 +15,7 @@
 
 use sp_std::marker::PhantomData;
 
+use codec::DecodeLimit;
 use cumulus_primitives_core::{AbridgedHrmpChannel, ParaId, PersistedValidationData};
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
@@ -25,13 +26,14 @@ use frame_support::{
 	weights::Weight,
 };
 use parachains_common::AccountId;
-use polkadot_parachain::primitives::{HrmpChannelId, RelayChainBlockNumber};
+use polkadot_parachain::primitives::{HrmpChannelId, RelayChainBlockNumber, XcmpMessageFormat};
 use sp_consensus_aura::AURA_ENGINE_ID;
 use sp_core::Encode;
 use sp_runtime::{Digest, DigestItem};
 use xcm::{
 	latest::{MultiAsset, MultiLocation, XcmContext, XcmHash},
 	prelude::*,
+	VersionedXcm, MAX_XCM_DECODE_DEPTH,
 };
 use xcm_executor::{traits::TransactAsset, Assets};
 
@@ -449,4 +451,29 @@ pub fn mock_open_hrmp_channel<
 		.expect("got an inherent")
 		.dispatch_bypass_filter(RawOrigin::None.into())
 		.expect("dispatch succeeded");
+}
+
+impl<HrmpChannelSource: cumulus_primitives_core::XcmpMessageSource>
+	RuntimeHelper<HrmpChannelSource>
+{
+	pub fn take_xcm(sent_to_para_id: ParaId) -> Option<VersionedXcm<()>> {
+		match HrmpChannelSource::take_outbound_messages(10)[..] {
+			[(para_id, ref mut xcm_message_data)] if para_id.eq(&sent_to_para_id.into()) => {
+				let mut xcm_message_data = &xcm_message_data[..];
+				// decode
+				let _ = XcmpMessageFormat::decode_with_depth_limit(
+					MAX_XCM_DECODE_DEPTH,
+					&mut xcm_message_data,
+				)
+				.expect("valid format");
+				VersionedXcm::<()>::decode_with_depth_limit(
+					MAX_XCM_DECODE_DEPTH,
+					&mut xcm_message_data,
+				)
+				.map(|x| Some(x))
+				.expect("result with xcm")
+			},
+			_ => return None,
+		}
+	}
 }
