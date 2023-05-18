@@ -9,8 +9,9 @@ a zombienet and as all the chains are in one process debugging using Clion is ea
 
 ## Limitations
 
-As the channels are mocked, using xcm-emulator tests to test
-channel setup would not be appropriate.
+As the messages do not physically go through the same messaging infrastructure
+there is some code that is not being tested compared to using slower E2E tests.
+In future it may be possible to run these XCM emulated tests as E2E tests (without changes).
 
 ## Alternatives
 
@@ -20,7 +21,7 @@ repo) is the perfect tool for this.
 
 ## How to use
 
-1. Set up a relay chain:
+<!-- 1. Set up a relay chain:
 
 ```rust
 decl_test_relay_chain! {
@@ -77,7 +78,7 @@ Here is a test that upgrades the XCM to v3 and then sends a remark:
 				kusama_runtime::RuntimeOrigin::root(),
 				Some(3)
 			));
-			
+
     		assert_ok!(test_runtime::PolkadotXcm::send_xcm(
 				Here,
 				MultiLocation::new(1, X1(Parachain(2))),
@@ -107,4 +108,4 @@ Here is a test that upgrades the XCM to v3 and then sends a remark:
 	}
 ```
 
-Please refer to [example crate source-code](example/src/lib.rs) for usage examples.
+Please refer to [example crate source-code](example/src/lib.rs) for usage examples. -->
