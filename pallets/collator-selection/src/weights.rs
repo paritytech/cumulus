@@ -27,6 +27,8 @@ use sp_std::marker::PhantomData;
 // The weight info trait for `pallet_collator_selection`.
 pub trait WeightInfo {
 	fn set_invulnerables(_b: u32) -> Weight;
+	fn add_invulnerable(_b: u32) -> Weight;
+	fn remove_invulnerable(_b: u32) -> Weight;
 	fn set_desired_candidates() -> Weight;
 	fn set_candidacy_bond() -> Weight;
 	fn register_as_candidate(_c: u32) -> Weight;
@@ -80,6 +82,14 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().writes(2_u64.saturating_mul(r as u64)))
 			.saturating_add(T::DbWeight::get().writes(2_u64.saturating_mul(c as u64)))
 	}
+	fn add_invulnerable(b: u32) -> Weight {
+		Weight::from_parts(1_000_u64, 0)
+			.saturating_add(Weight::from_parts(1_000_u64, 0).saturating_mul(b as u64))
+	}
+	fn remove_invulnerable(b: u32) -> Weight {
+		Weight::from_parts(1_000_u64, 0)
+			.saturating_add(Weight::from_parts(1_000_u64, 0).saturating_mul(b as u64))
+	}
 }
 
 // For backwards compatibility and tests
@@ -125,5 +135,13 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(2_u64.saturating_mul(c as u64)))
 			.saturating_add(RocksDbWeight::get().writes(2_u64.saturating_mul(r as u64)))
 			.saturating_add(RocksDbWeight::get().writes(2_u64.saturating_mul(c as u64)))
+	}
+	fn add_invulnerable(b: u32) -> Weight {
+		Weight::from_parts(1_000_u64, 0)
+			.saturating_add(Weight::from_parts(1_000_u64, 0).saturating_mul(b as u64))
+	}
+	fn remove_invulnerable(b: u32) -> Weight {
+		Weight::from_parts(1_000_u64, 0)
+			.saturating_add(Weight::from_parts(1_000_u64, 0).saturating_mul(b as u64))
 	}
 }

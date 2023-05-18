@@ -29,6 +29,7 @@ fn basic_setup_works() {
 		assert_eq!(CollatorSelection::candidacy_bond(), 10);
 
 		assert!(CollatorSelection::candidates().is_empty());
+		// genesis should sort input
 		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
 	});
 }
@@ -36,11 +37,12 @@ fn basic_setup_works() {
 #[test]
 fn it_should_set_invulnerables() {
 	new_test_ext().execute_with(|| {
-		let new_set = vec![1, 2, 3, 4];
+		let mut new_set = vec![1, 4, 3, 2];
 		assert_ok!(CollatorSelection::set_invulnerables(
 			RuntimeOrigin::signed(RootAccount::get()),
 			new_set.clone()
 		));
+		new_set.sort();
 		assert_eq!(CollatorSelection::invulnerables(), new_set);
 
 		// cannot set with non-root.
@@ -57,6 +59,85 @@ fn it_should_set_invulnerables() {
 				invulnerables
 			),
 			Error::<Test>::ValidatorNotRegistered
+		);
+	});
+}
+
+#[test]
+fn add_invulnerable_works() {
+	new_test_ext().execute_with(|| {
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+		let new = 3;
+
+		// function runs
+		assert_ok!(CollatorSelection::add_invulnerable(
+			RuntimeOrigin::signed(RootAccount::get()),
+			new.clone()
+		));
+
+		// same element cannot be added more than once
+		assert_noop!(
+			CollatorSelection::add_invulnerable(
+				RuntimeOrigin::signed(RootAccount::get()),
+				new.clone()
+			),
+			Error::<Test>::AlreadyInvulnerable
+		);
+
+		// new element is now part of the invulnerables list
+		assert!(CollatorSelection::invulnerables().to_vec().contains(&new));
+
+		// cannot add with non-root
+		assert_noop!(
+			CollatorSelection::add_invulnerable(RuntimeOrigin::signed(1), new.clone()),
+			BadOrigin
+		);
+
+		// cannot add invulnerable without associated validator keys
+		let not_validator = 7;
+		assert_noop!(
+			CollatorSelection::add_invulnerable(
+				RuntimeOrigin::signed(RootAccount::get()),
+				not_validator
+			),
+			Error::<Test>::ValidatorNotRegistered
+		);
+	});
+}
+
+#[test]
+fn remove_invulnerable_works() {
+	new_test_ext().execute_with(|| {
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+
+		assert_ok!(CollatorSelection::add_invulnerable(
+			RuntimeOrigin::signed(RootAccount::get()),
+			4
+		));
+		assert_ok!(CollatorSelection::add_invulnerable(
+			RuntimeOrigin::signed(RootAccount::get()),
+			3
+		));
+
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2, 3, 4]);
+
+		assert_ok!(CollatorSelection::remove_invulnerable(
+			RuntimeOrigin::signed(RootAccount::get()),
+			2
+		));
+
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 3, 4]);
+
+		// cannot remove invulnerable not in the list
+		assert_noop!(
+			CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(RootAccount::get()), 2),
+			Error::<Test>::NotInvulnerable
+		);
+
+		// cannot remove without privilege
+		assert_noop!(
+			CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(1), 3),
+			BadOrigin
 		);
 	});
 }
