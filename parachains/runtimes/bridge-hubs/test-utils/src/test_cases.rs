@@ -36,7 +36,6 @@ use codec::{DecodeLimit, Encode};
 use cumulus_primitives_core::XcmpMessageSource;
 use frame_support::{
 	assert_ok,
-	dispatch::RawOrigin,
 	traits::{Get, OriginTrait},
 };
 use pallet_bridge_grandpa::BridgedHeader;
@@ -443,6 +442,8 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 	<<Runtime as pallet_bridge_messages::Config<MPI>>::SourceHeaderChain as SourceHeaderChain>::MessagesProof: From<FromBridgedChainMessagesProof<ParaHash>>,
 	<<Runtime as pallet_bridge_grandpa::Config<GPI>>::BridgedChain as bp_runtime::Chain>::Hash: From<ParaHash>,
 	ParaHash: From<<<Runtime as pallet_bridge_grandpa::Config<GPI>>::BridgedChain as bp_runtime::Chain>::Hash>,
+	<Runtime as frame_system::Config>::AccountId:
+	Into<<<Runtime as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId>,
 	AccountIdOf<Runtime>: From<sp_core::sr25519::Public>,
 	<Runtime as pallet_bridge_messages::Config<MPI>>::InboundRelayer: From<AccountId32>,
 {
@@ -457,9 +458,6 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 		.with_tracing()
 		.build()
 		.execute_with(|| {
-			frame_system::Pallet::<Runtime>::set_block_number(1u32.into());
-			frame_system::Pallet::<Runtime>::reset_events();
-
 			mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(
 				runtime_para_id.into(),
 				sibling_parachain_id.into(),
@@ -468,7 +466,7 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 			// start with bridged chain block#0
 			let init_data = test_data::initialization_data::<Runtime, GPI>(0);
 			pallet_bridge_grandpa::Pallet::<Runtime, GPI>::initialize(
-				<Runtime as frame_system::Config>::RuntimeOrigin::root(),
+				RuntimeHelper::<Runtime>::root_origin(),
 				init_data,
 			)
 			.unwrap();
@@ -509,14 +507,17 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 			);
 
 			// submit bridged relay chain finality proof
-			let result = pallet_bridge_grandpa::Pallet::<Runtime, GPI>::submit_finality_proof(
-				<Runtime as frame_system::Config>::RuntimeOrigin::root(),
-				Box::new(relay_chain_header.clone()),
-				grandpa_justification,
-			);
+			{
+				let result = pallet_bridge_grandpa::Pallet::<Runtime, GPI>::submit_finality_proof(
+					RuntimeHelper::<Runtime>::origin_of(relayer_id_on_target.clone()),
+					Box::new(relay_chain_header.clone()),
+					grandpa_justification,
+				);
+				assert_ok!(result);
+				assert_eq!(result.unwrap().pays_fee, frame_support::dispatch::Pays::Yes);
+			}
+
 			// verify finality proof correctly imported
-			assert_ok!(result);
-			assert_eq!(result.unwrap().pays_fee, frame_support::dispatch::Pays::Yes);
 			assert_eq!(
 				pallet_bridge_grandpa::BestFinalized::<Runtime, GPI>::get().unwrap().1,
 				relay_chain_header.hash()
@@ -526,12 +527,17 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 			));
 
 			// submit parachain heads proof
-			assert_ok!(pallet_bridge_parachains::Pallet::<Runtime, PPI>::submit_parachain_heads(
-				<Runtime as frame_system::Config>::RuntimeOrigin::root(),
-				(relay_header_number, relay_chain_header.hash().into()),
-				parachain_heads,
-				para_heads_proof
-			));
+			{
+				let result =
+					pallet_bridge_parachains::Pallet::<Runtime, PPI>::submit_parachain_heads(
+						RuntimeHelper::<Runtime>::origin_of(relayer_id_on_target.clone()),
+						(relay_header_number, relay_chain_header.hash().into()),
+						parachain_heads,
+						para_heads_proof,
+					);
+				assert_ok!(result);
+				assert_eq!(result.unwrap().pays_fee, frame_support::dispatch::Pays::Yes);
+			}
 			// verify parachain head proof correctly imported
 			assert_eq!(
 				pallet_bridge_parachains::ParasInfo::<Runtime, PPI>::get(ParaId(bridged_para_id)),
@@ -555,14 +561,17 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 				0,
 			);
 			// submit message proof
-			let result = pallet_bridge_messages::Pallet::<Runtime, MPI>::receive_messages_proof(
-				RawOrigin::Signed(relayer_id_on_target).into(),
-				relayer_id_on_source.into(),
-				message_proof.into(),
-				1,
-				Weight::MAX / 1000,
-			);
-			assert_ok!(result);
+			{
+				let result = pallet_bridge_messages::Pallet::<Runtime, MPI>::receive_messages_proof(
+					RuntimeHelper::<Runtime>::origin_of(relayer_id_on_target),
+					relayer_id_on_source.into(),
+					message_proof.into(),
+					1,
+					Weight::MAX / 1000,
+				);
+				assert_ok!(result);
+				assert_eq!(result.unwrap().pays_fee, frame_support::dispatch::Pays::Yes);
+			}
 			// verify message correctly imported and dispatched
 			assert_eq!(
 				pallet_bridge_messages::InboundLanes::<Runtime, MPI>::get(lane_id)
@@ -624,6 +633,8 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 	<<Runtime as pallet_bridge_messages::Config<MPI>>::SourceHeaderChain as SourceHeaderChain>::MessagesProof: From<FromBridgedChainMessagesProof<ParaHash>>,
 	<<Runtime as pallet_bridge_grandpa::Config<GPI>>::BridgedChain as bp_runtime::Chain>::Hash: From<ParaHash>,
 	ParaHash: From<<<Runtime as pallet_bridge_grandpa::Config<GPI>>::BridgedChain as bp_runtime::Chain>::Hash>,
+	<Runtime as frame_system::Config>::AccountId:
+	Into<<<Runtime as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId>,
 	AccountIdOf<Runtime>: From<sp_core::sr25519::Public>,
 	<Runtime as pallet_bridge_messages::Config<MPI>>::InboundRelayer: From<AccountId32>,
 	<Runtime as pallet_utility::Config>::RuntimeCall:
@@ -666,7 +677,7 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 			// start with bridged chain block#0
 			let init_data = test_data::initialization_data::<Runtime, GPI>(0);
 			pallet_bridge_grandpa::Pallet::<Runtime, GPI>::initialize(
-				<Runtime as frame_system::Config>::RuntimeOrigin::root(),
+				RuntimeHelper::<Runtime>::root_origin(),
 				init_data,
 			)
 			.unwrap();
