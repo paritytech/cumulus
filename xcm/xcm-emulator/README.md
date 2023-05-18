@@ -21,7 +21,7 @@ repo) is the perfect tool for this.
 
 ## How to use
 
-1. Set up a relay chain:
+<!-- 1. Set up a relay chain:
 
 ```rust
 decl_test_relay_chain! {
@@ -108,4 +108,4 @@ Here is a test that upgrades the XCM to v3 and then sends a remark:
 	}
 ```
 
-Please refer to [example crate source-code](example/src/lib.rs) for usage examples.
+Please refer to [example crate source-code](example/src/lib.rs) for usage examples. -->
