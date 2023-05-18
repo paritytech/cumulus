@@ -92,8 +92,6 @@ use parachains_common::{
 };
 use xcm_executor::XcmExecutor;
 
-pub const LOG_TARGET: &str = "runtime::bridge-hub";
-
 /// The address format for describing accounts.
 pub type Address = MultiAddress<AccountId, ()>;
 
@@ -147,7 +145,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("bridge-hub-rococo"),
 	impl_name: create_runtime_str!("bridge-hub-rococo"),
 	authoring_version: 1,
-	spec_version: 9400,
+	spec_version: 9420,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 3,
@@ -274,7 +272,7 @@ impl pallet_balances::Config for Runtime {
 
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
-	pub const TransactionByteFee: Balance = 1 * MILLICENTS;
+	pub const TransactionByteFee: Balance = MILLICENTS;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -888,7 +886,7 @@ impl_runtime_apis! {
 			list_benchmarks!(list, extra);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
-			return (list, storage_info)
+			(list, storage_info)
 		}
 
 		fn dispatch_benchmark(
@@ -926,7 +924,7 @@ impl_runtime_apis! {
 			parameter_types! {
 				pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = Some((
 					RelayLocation::get(),
-					MultiAsset { fun: Fungible(1 * UNITS), id: Concrete(RelayLocation::get()) },
+					MultiAsset { fun: Fungible(UNITS), id: Concrete(RelayLocation::get()) },
 				));
 				pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
 			}
@@ -940,7 +938,7 @@ impl_runtime_apis! {
 				fn get_multi_asset() -> MultiAsset {
 					MultiAsset {
 						id: Concrete(RelayLocation::get()),
-						fun: Fungible(1 * UNITS),
+						fun: Fungible(UNITS),
 					}
 				}
 			}
