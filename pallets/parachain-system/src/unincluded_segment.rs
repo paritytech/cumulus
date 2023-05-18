@@ -271,6 +271,7 @@ pub struct Ancestor<H> {
 	/// Output head data hash of this block. This may be optional in case the head data has not
 	/// yet been posted on chain, but should be updated during initialization of the next block.
 	para_head_hash: Option<H>,
+	/// Optional go-ahead signal sent by the relay-chain this ancestor has processed.
 	consumed_go_ahead_signal: Option<relay_chain::UpgradeGoAhead>,
 }
 
@@ -335,6 +336,8 @@ pub struct SegmentTracker<H> {
 	used_bandwidth: UsedBandwidth,
 	/// The mark which specifies the block number up to which all inbound HRMP messages are processed.
 	hrmp_watermark: Option<relay_chain::BlockNumber>,
+	/// Optional go-ahead signal sent by the relay-chain some ancestor from the segment has processed.
+	/// Only single block is allowed to have this set within the whole segment.
 	consumed_go_ahead_signal: Option<relay_chain::UpgradeGoAhead>,
 	/// `H` is the type of para head hash.
 	phantom_data: PhantomData<H>,
