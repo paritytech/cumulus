@@ -158,4 +158,12 @@ impl<T: frame_system::Config> snowbridge_ethereum_beacon_client::WeightInfo for 
 		Weight::from_parts(28_874_397_000, 0)
 			.saturating_add(Weight::from_parts(0, 0))
 	}
+	fn merkle_branch_verify() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 4_644_000 picoseconds.
+		Weight::from_parts(5_138_000, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+	}
 }
