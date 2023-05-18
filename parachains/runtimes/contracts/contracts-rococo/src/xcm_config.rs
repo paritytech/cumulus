@@ -165,6 +165,7 @@ impl xcm_executor::Config for XcmConfig {
 	type UniversalAliases = Nothing;
 	type CallDispatcher = RuntimeCall;
 	type SafeCallFilter = Everything;
+	type InstructionPreprocessor = ();
 }
 
 /// Converts a local signed origin into an XCM multilocation.

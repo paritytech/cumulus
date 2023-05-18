@@ -292,6 +292,7 @@ impl xcm_executor::Config for XcmConfig {
 	type UniversalAliases = Nothing;
 	type CallDispatcher = RuntimeCall;
 	type SafeCallFilter = Everything;
+	type InstructionPreprocessor = ();
 }
 
 /// No local origins on this chain are allowed to dispatch XCM sends/executions.

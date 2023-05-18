@@ -83,6 +83,7 @@ impl xcm_executor::Config for XcmConfig {
 	type UniversalAliases = Nothing;
 	type CallDispatcher = RuntimeCall;
 	type SafeCallFilter = Everything;
+	type InstructionPreprocessor = ();
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
