@@ -138,6 +138,9 @@ pub enum BandwidthUpdateError {
 		/// Latest tracked HRMP watermark.
 		latest: relay_chain::BlockNumber,
 	},
+	/// Upgrade signal sent by relay chain was already processed by
+	/// some ancestor from the segment.
+	UpgradeGoAheadAlreadyProcessed,
 }
 
 /// The number of messages and size in bytes submitted to HRMP channel.
@@ -268,12 +271,16 @@ pub struct Ancestor<H> {
 	/// Output head data hash of this block. This may be optional in case the head data has not
 	/// yet been posted on chain, but should be updated during initialization of the next block.
 	para_head_hash: Option<H>,
+	consumed_go_ahead_signal: Option<relay_chain::UpgradeGoAhead>,
 }
 
 impl<H> Ancestor<H> {
 	/// Creates new ancestor without validating the bandwidth used.
-	pub fn new_unchecked(used_bandwidth: UsedBandwidth) -> Self {
-		Self { used_bandwidth, para_head_hash: None }
+	pub fn new_unchecked(
+		used_bandwidth: UsedBandwidth,
+		consumed_go_ahead_signal: Option<relay_chain::UpgradeGoAhead>,
+	) -> Self {
+		Self { used_bandwidth, para_head_hash: None, consumed_go_ahead_signal }
 	}
 
 	/// Returns [`UsedBandwidth`] of this block.
@@ -328,6 +335,7 @@ pub struct SegmentTracker<H> {
 	used_bandwidth: UsedBandwidth,
 	/// The mark which specifies the block number up to which all inbound HRMP messages are processed.
 	hrmp_watermark: Option<relay_chain::BlockNumber>,
+	consumed_go_ahead_signal: Option<relay_chain::UpgradeGoAhead>,
 	/// `H` is the type of para head hash.
 	phantom_data: PhantomData<H>,
 }
@@ -342,6 +350,9 @@ impl<H> SegmentTracker<H> {
 		new_watermark: HrmpWatermarkUpdate,
 		limits: &OutboundBandwidthLimits,
 	) -> Result<(), BandwidthUpdateError> {
+		if self.consumed_go_ahead_signal.is_some() && block.consumed_go_ahead_signal.is_some() {
+			return Err(BandwidthUpdateError::UpgradeGoAheadAlreadyProcessed)
+		}
 		if let Some(watermark) = self.hrmp_watermark.as_ref() {
 			if let HrmpWatermarkUpdate::Trunk(new) = new_watermark {
 				if &new <= watermark {
@@ -354,6 +365,10 @@ impl<H> SegmentTracker<H> {
 		}
 
 		self.used_bandwidth = self.used_bandwidth.append(block.used_bandwidth(), limits)?;
+
+		if let Some(consumed) = block.consumed_go_ahead_signal.as_ref() {
+			self.consumed_go_ahead_signal.replace(*consumed);
+		}
 		self.hrmp_watermark.replace(match new_watermark {
 			HrmpWatermarkUpdate::Trunk(w) | HrmpWatermarkUpdate::Head(w) => w,
 		});
@@ -364,6 +379,11 @@ impl<H> SegmentTracker<H> {
 	/// Removes previously added block from the tracker.
 	pub fn subtract(&mut self, block: &Ancestor<H>) {
 		self.used_bandwidth.subtract(block.used_bandwidth());
+		if let Some(consumed) = block.consumed_go_ahead_signal.as_ref() {
+			// This is the same signal stored in the tracker.
+			let signal_in_segment = self.consumed_go_ahead_signal.take();
+			assert_eq!(signal_in_segment, Some(*consumed));
+		}
 		// Watermark doesn't need to be updated since the is always dropped
 		// from the tail of the segment.
 	}
@@ -371,6 +391,11 @@ impl<H> SegmentTracker<H> {
 	/// Return a reference to the used bandwidth across the entire segment.
 	pub fn used_bandwidth(&self) -> &UsedBandwidth {
 		&self.used_bandwidth
+	}
+
+	/// Return go ahead signal consumed by some ancestor in a segment, if any.
+	pub fn consumed_go_ahead_signal(&self) -> Option<relay_chain::UpgradeGoAhead> {
+		self.consumed_go_ahead_signal.clone()
 	}
 }
 
@@ -549,6 +574,7 @@ mod tests {
 		let ancestor_0 = Ancestor {
 			used_bandwidth: create_used_hrmp([(para_0, para_0_update)].into()),
 			para_head_hash: None::<relay_chain::Hash>,
+			consumed_go_ahead_signal: None,
 		};
 		segment
 			.append(&ancestor_0, HrmpWatermarkUpdate::Trunk(0), &limits)
@@ -558,6 +584,7 @@ mod tests {
 			let ancestor = Ancestor {
 				used_bandwidth: create_used_hrmp([(para_0, para_0_update)].into()),
 				para_head_hash: None::<relay_chain::Hash>,
+				consumed_go_ahead_signal: None,
 			};
 			segment
 				.append(&ancestor, HrmpWatermarkUpdate::Trunk(watermark), &limits)
@@ -568,6 +595,7 @@ mod tests {
 		let ancestor_5 = Ancestor {
 			used_bandwidth: create_used_hrmp([(para_0, para_0_update)].into()),
 			para_head_hash: None::<relay_chain::Hash>,
+			consumed_go_ahead_signal: None,
 		};
 		assert_matches!(
 			segment.append(&ancestor_5, HrmpWatermarkUpdate::Trunk(5), &limits),
@@ -587,6 +615,7 @@ mod tests {
 		let ancestor = Ancestor {
 			used_bandwidth: create_used_hrmp([(para_1, para_1_update)].into()),
 			para_head_hash: None::<relay_chain::Hash>,
+			consumed_go_ahead_signal: None,
 		};
 		segment
 			.append(&ancestor, HrmpWatermarkUpdate::Trunk(6), &limits)
@@ -621,6 +650,7 @@ mod tests {
 		let ancestor_0 = Ancestor {
 			used_bandwidth: create_used_ump((1, 10)),
 			para_head_hash: None::<relay_chain::Hash>,
+			consumed_go_ahead_signal: None,
 		};
 		segment
 			.append(&ancestor_0, HrmpWatermarkUpdate::Trunk(0), &limits)
@@ -630,6 +660,7 @@ mod tests {
 			let ancestor = Ancestor {
 				used_bandwidth: create_used_ump((1, 10)),
 				para_head_hash: None::<relay_chain::Hash>,
+				consumed_go_ahead_signal: None,
 			};
 			segment
 				.append(&ancestor, HrmpWatermarkUpdate::Trunk(watermark), &limits)
@@ -639,6 +670,7 @@ mod tests {
 		let ancestor_4 = Ancestor {
 			used_bandwidth: create_used_ump((1, 30)),
 			para_head_hash: None::<relay_chain::Hash>,
+			consumed_go_ahead_signal: None,
 		};
 		assert_matches!(
 			segment.append(&ancestor_4, HrmpWatermarkUpdate::Trunk(4), &limits),
@@ -651,6 +683,7 @@ mod tests {
 		let ancestor = Ancestor {
 			used_bandwidth: create_used_ump((1, 5)),
 			para_head_hash: None::<relay_chain::Hash>,
+			consumed_go_ahead_signal: None,
 		};
 		segment
 			.append(&ancestor, HrmpWatermarkUpdate::Trunk(4), &limits)
@@ -671,6 +704,7 @@ mod tests {
 		let ancestor = Ancestor {
 			used_bandwidth: UsedBandwidth::default(),
 			para_head_hash: None::<relay_chain::Hash>,
+			consumed_go_ahead_signal: None,
 		};
 		let limits = OutboundBandwidthLimits {
 			ump_messages_remaining: 0,
@@ -734,6 +768,7 @@ mod tests {
 		let ancestor_0 = Ancestor {
 			used_bandwidth: create_used_hrmp([(para_0, para_0_update)].into()),
 			para_head_hash: None::<relay_chain::Hash>,
+			consumed_go_ahead_signal: None,
 		};
 		segment
 			.append(&ancestor_0, HrmpWatermarkUpdate::Head(0), &limits)
@@ -742,6 +777,7 @@ mod tests {
 		let ancestor_1 = Ancestor {
 			used_bandwidth: create_used_hrmp([(para_1, para_1_update)].into()),
 			para_head_hash: None::<relay_chain::Hash>,
+			consumed_go_ahead_signal: None,
 		};
 		segment
 			.append(&ancestor_1, HrmpWatermarkUpdate::Head(1), &limits)
@@ -754,5 +790,49 @@ mod tests {
 
 		segment.subtract(&ancestor_1);
 		assert_eq!(segment.used_bandwidth.hrmp_outgoing.len(), 0);
+	}
+
+	#[test]
+	fn segment_go_ahead_signal_is_unique() {
+		let limits = OutboundBandwidthLimits {
+			ump_messages_remaining: 0,
+			ump_bytes_remaining: 0,
+			hrmp_outgoing: BTreeMap::default(),
+		};
+
+		let mut segment = SegmentTracker::default();
+
+		let ancestor_0 = Ancestor {
+			used_bandwidth: UsedBandwidth::default(),
+			para_head_hash: None::<relay_chain::Hash>,
+			consumed_go_ahead_signal: Some(relay_chain::UpgradeGoAhead::GoAhead),
+		};
+		segment
+			.append(&ancestor_0, HrmpWatermarkUpdate::Head(0), &limits)
+			.expect("update is within the limits");
+
+		let ancestor_1 = Ancestor {
+			used_bandwidth: UsedBandwidth::default(),
+			para_head_hash: None::<relay_chain::Hash>,
+			consumed_go_ahead_signal: None,
+		};
+		segment
+			.append(&ancestor_1, HrmpWatermarkUpdate::Head(1), &limits)
+			.expect("update is within the limits");
+
+		let ancestor_2 = Ancestor {
+			used_bandwidth: UsedBandwidth::default(),
+			para_head_hash: None::<relay_chain::Hash>,
+			consumed_go_ahead_signal: Some(relay_chain::UpgradeGoAhead::Abort),
+		};
+		assert_matches!(
+			segment.append(&ancestor_2, HrmpWatermarkUpdate::Head(2), &limits),
+			Err(BandwidthUpdateError::UpgradeGoAheadAlreadyProcessed)
+		);
+
+		segment.subtract(&ancestor_0);
+		segment
+			.append(&ancestor_2, HrmpWatermarkUpdate::Head(1), &limits)
+			.expect("update is within the limits");
 	}
 }
