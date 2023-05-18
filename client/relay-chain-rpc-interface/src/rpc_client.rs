@@ -329,6 +329,16 @@ impl RelayChainRpcClient {
 			.await
 	}
 
+	/// Returns the latest pending executor parameter set, or the current set if no configuration
+	/// changes are pending
+	pub async fn parachain_host_pending_executor_params(
+		&self,
+		at: RelayHash,
+	) -> Result<ExecutorParams, RelayChainError> {
+		self.call_remote_runtime_function("ParachainHost_pending_executor_params", at, None::<()>)
+			.await
+	}
+
 	pub async fn authority_discovery_authorities(
 		&self,
 		at: RelayHash,
