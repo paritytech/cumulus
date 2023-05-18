@@ -581,6 +581,10 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Runtime>;
 }
 
+parameter_types! {
+	pub const UseUserConfiguration: bool = false;
+}
+
 impl pallet_asset_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Fungibles = Assets;
@@ -593,6 +597,13 @@ impl pallet_asset_tx_payment::Config for Runtime {
 		>,
 		AssetsToBlockAuthor<Runtime, TrustBackedAssetsInstance>,
 	>;
+	type WeightInfo = ();
+	type ConfigurationOrigin = AssetsForceOrigin;
+	type UseUserConfiguration = UseUserConfiguration;
+	type PayableCall = Call;
+	type ConfigurationExistentialDeposit = frame_support::traits::ConstU128<EXISTENTIAL_DEPOSIT>;
+	type BalanceConverter = pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>;
+	type Lock = Assets;
 }
 
 parameter_types! {
@@ -683,7 +694,7 @@ construct_runtime!(
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
-		AssetTxPayment: pallet_asset_tx_payment::{Pallet, Event<T>} = 12,
+		AssetTxPayment: pallet_asset_tx_payment = 12,
 
 		// Collator support. the order of these 5 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Storage} = 20,
