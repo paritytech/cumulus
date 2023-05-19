@@ -1,273 +1,259 @@
-# Cumulus ☁️
+# Parity Bridges Common
 
-[![Doc](https://img.shields.io/badge/cumulus%20docs-master-brightgreen)](https://paritytech.github.io/cumulus/)
+This is a collection of components for building bridges.
 
-This repository contains both the Cumulus SDK and also specific chains implemented
-on top of this SDK.
+These components include Substrate pallets for syncing headers, passing arbitrary messages, as well
+as libraries for building relayers to provide cross-chain communication capabilities.
 
-## Cumulus SDK
+Three bridge nodes are also available. The nodes can be used to run test networks which bridge other
+Substrate chains.
 
-A set of tools for writing [Substrate](https://substrate.io/)-based
-[Polkadot](https://wiki.polkadot.network/en/)
-[parachains](https://wiki.polkadot.network/docs/en/learn-parachains). Refer to the included
-[overview](docs/overview.md) for architectural details, and the
-[Connect to relay and  parachain tutorials](https://docs.substrate.io/tutorials/connect-relay-and-parachains/) for a
-guided walk-through of using these tools.
+🚧 The bridges are currently under construction - a hardhat is recommended beyond this point 🚧
 
-It's easy to write blockchains using Substrate, and the overhead of writing parachains'
-distribution, p2p, database, and synchronization layers should be just as low. This project aims to
-make it easy to write parachains for Polkadot by leveraging the power of Substrate.
+## Contents
 
-Cumulus clouds are shaped sort of like dots; together they form a system that is intricate,
-beautiful and functional.
+- [Installation](#installation)
+- [High-Level Architecture](#high-level-architecture)
+- [Project Layout](#project-layout)
+- [Running the Bridge](#running-the-bridge)
+- [How to send a message](#how-to-send-a-message)
+- [Community](#community)
 
-### Consensus
+## Installation
 
-[`parachain-consensus`](https://github.com/paritytech/cumulus/blob/master/client/consensus/common/src/parachain_consensus.rs) is a
-[consensus engine](https://docs.substrate.io/v3/advanced/consensus) for Substrate
-that follows a Polkadot
-[relay chain](https://wiki.polkadot.network/docs/en/learn-architecture#relay-chain). This will run
-a Polkadot node internally, and dictate to the client and synchronization algorithms which chain
-to follow,
-[finalize](https://wiki.polkadot.network/docs/en/learn-consensus#probabilistic-vs-provable-finality),
-and treat as best.
-
-### Collator
-
-A Polkadot [collator](https://wiki.polkadot.network/docs/en/learn-collator) for the parachain is
-implemented by the `polkadot-parachain` binary (previously called `polkadot-collator`).
-
-### Relay Chain Interaction
-To operate a parachain node, a connection to the corresponding relay chain is necessary. This can be
-achieved in one of two ways:
-1. Run a full relay chain node within the parachain node (default)
-2. Connect to an external relay chain node via WebSocket RPC
-
-#### In-process Relay Chain Node
-If an external relay chain node is not specified (default behavior), then a full relay chain node is
-spawned within the same process.
-
-This node has all of the typical components of a regular Polkadot node and will have to fully sync
-with the relay chain to work.
-
-##### Example command
-```shell=
-polkadot-parachain \
-	--chain parachain-chainspec.json \
-	--tmp \
-	-- \
-	--chain relaychain-chainspec.json
-```
-
-#### External Relay Chain Node
-An external relay chain node is connected via WebsSocket RPC by using the  `--relay-chain-rpc-urls`
-command line argument. This option accepts one or more space-separated WebSocket URLs to a full relay
-chain node. By default, only the first URL will be used, with the rest as a backup in case the
-connection to the first node is lost.
-
-Parachain nodes using this feature won't have to fully sync with the relay chain to work, so in general
-they will use fewer system resources.
-
-**Note:** At this time, any parachain nodes using this feature will still spawn a significantly cut-down
-relay chain node in-process. Even though they lack the majority of normal Polkadot subsystems, they
-will still need to connect directly to the relay chain network.
-##### Example command
-```shell=
-polkadot-parachain \
-	--chain parachain-chainspec.json \
-	--tmp \
-	--relay-chain-rpc-urls \
-		"ws://relaychain-rpc-endpoint:9944" \
-		"ws://relaychain-rpc-endpoint-backup:9944" \
-	-- \
-	--chain relaychain-chainspec.json
-```
-
-## Installation and Setup
-Before building Cumulus SDK based nodes / runtimes prepare your environment by following Substrate
-[installation instructions](https://docs.substrate.io/main-docs/install/).
-
-To launch a local network, you can use [zombienet](https://github.com/paritytech/zombienet) for
-quick setup and experimentation or follow the [manual setup](#manual-setup).
-
-### Zombienet
-We use Zombienet to spin up networks for integration tests and local networks.
-Follow [these installation steps](https://github.com/paritytech/zombienet#requirements-by-provider)
-to set it up on your machine. A simple network specification with two relay chain nodes and one collator is
-located at [zombienet/examples/small_network.toml](zombienet/examples/small_network.toml).
-
-
-#### Which provider should I use?
-Zombienet offers multiple providers to run networks. Choose the one that best fits your needs:
-- **Podman:** Choose this if you want to spin up a network quick and easy.
-- **Native:** Choose this if you want to develop and deploy your changes. Requires compilation
-of the binaries.
-- **Kubernetes:** Choose this for advanced use-cases or running on cloud-infrastructure.
-
-#### How to run
-To run the example network, use the following commands:
+To get up and running you need both stable and nightly Rust. Rust nightly is used to build the Web
+Assembly (WASM) runtime for the node. You can configure the WASM support as so:
 
 ```bash
-# Podman provider
-zombienet --provider podman spawn ./zombienet/examples/small_network.toml
-
-# Native provider, assumes polkadot and polkadot-parachains binary in $PATH
-zombienet --provider native spawn ./zombienet/examples/small_network.toml
+rustup install nightly
+rustup target add wasm32-unknown-unknown --toolchain nightly
 ```
 
-### Manual Setup
-#### Launch the Relay Chain
+Once this is configured you can build and test the repo as follows:
 
-```bash
-# Clone
-git clone https://github.com/paritytech/polkadot
-cd polkadot
-
-# Compile Polkadot with the real overseer feature
-cargo build --release --bin polkadot
-
-# Generate a raw chain spec
-./target/release/polkadot build-spec --chain rococo-local --disable-default-bootnode --raw > rococo-local-cfde.json
-
-# Alice
-./target/release/polkadot --chain rococo-local-cfde.json --alice --tmp
-
-# Bob (In a separate terminal)
-./target/release/polkadot --chain rococo-local-cfde.json --bob --tmp --port 30334
+```
+git clone https://github.com/paritytech/parity-bridges-common.git
+cd parity-bridges-common
+cargo build --all
+cargo test --all
 ```
 
-#### Launch the Parachain
+Also you can build the repo with
+[Parity CI Docker image](https://github.com/paritytech/scripts/tree/master/dockerfiles/bridges-ci):
 
 ```bash
-# Clone
-git clone https://github.com/paritytech/cumulus
-cd cumulus
-
-# Compile
-cargo build --release --bin polkadot-parachain
-
-# Export genesis state
-./target/release/polkadot-parachain export-genesis-state > genesis-state
-
-# Export genesis wasm
-./target/release/polkadot-parachain export-genesis-wasm > genesis-wasm
-
-# Collator1
-./target/release/polkadot-parachain --collator --alice --force-authoring --tmp --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30335
-
-# Collator2
-./target/release/polkadot-parachain --collator --bob --force-authoring --tmp --port 40336 --ws-port 9947 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30336
-
-# Parachain Full Node 1
-./target/release/polkadot-parachain --tmp --port 40337 --ws-port 9948 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337
-```
-
-#### Register the parachain
-
-![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
-
-
-## Statemint 🪙
-
-This repository also contains the Statemint runtime (as well as the canary runtime Statemine and the
-test runtime Westmint).
-Statemint is a system parachain providing an asset store for the Polkadot ecosystem.
-
-### Build & Launch a Node
-
-To run a Statemine or Westmint node (Statemint is not deployed, yet) you will need to compile the
-`polkadot-parachain` binary:
-
-```bash
-cargo build --release --locked --bin polkadot-parachain
-```
-
-Once the executable is built, launch the parachain node via:
-
-```bash
-CHAIN=westmint # or statemine
-./target/release/polkadot-parachain --chain $CHAIN
-```
-
-Refer to the [setup instructions](#manual-setup) to run a local network for development.
-
-## Contracts 📝
-
-See [the `contracts-rococo` readme](parachains/runtimes/contracts/contracts-rococo/README.md) for details.
-
-## Bridge-hub 📝
-
-See [the `bridge-hubs` readme](parachains/runtimes/bridge-hubs/README.md) for details.
-
-## Rococo 👑
-
-[Rococo](https://polkadot.js.org/apps/?rpc=wss://rococo-rpc.polkadot.io) is becoming a
-[Community Parachain Testbed](https://polkadot.network/blog/rococo-revamp-becoming-a-community-parachain-testbed/)
-for parachain teams in the Polkadot ecosystem. It supports multiple parachains with the
-differentiation of long-term connections and recurring short-term connections, to see which
-parachains are currently connected and how long they will be connected for
-[see here](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-rpc.polkadot.io#/parachains).
-
-Rococo is an elaborate style of design and the name describes the painstaking effort that has gone
-into this project.
-
-### Build & Launch Rococo Collators
-
-Collators are similar to validators in the relay chain. These nodes build the blocks that will
-eventually be included by the relay chain for a parachain.
-
-To run a Rococo collator you will need to compile the following binary:
-
-```bash
-cargo build --release --locked --bin polkadot-parachain
-```
-
-Otherwise you can compile it with
-[Parity CI docker image](https://github.com/paritytech/scripts/tree/master/dockerfiles/ci-linux):
-
-```bash
-docker run --rm -it -w /shellhere/cumulus \
-                    -v $(pwd):/shellhere/cumulus \
-                    paritytech/ci-linux:production cargo build --release --locked --bin polkadot-parachain
-sudo chown -R $(id -u):$(id -g) target/
+docker pull paritytech/bridges-ci:production
+mkdir ~/cache
+chown 1000:1000 ~/cache #processes in the container runs as "nonroot" user with UID 1000
+docker run --rm -it -w /shellhere/parity-bridges-common \
+                    -v /home/$(whoami)/cache/:/cache/    \
+                    -v "$(pwd)":/shellhere/parity-bridges-common \
+                    -e CARGO_HOME=/cache/cargo/ \
+                    -e SCCACHE_DIR=/cache/sccache/ \
+                    -e CARGO_TARGET_DIR=/cache/target/  paritytech/bridges-ci:production cargo build --all
+#artifacts can be found in ~/cache/target
 ```
 
 If you want to reproduce other steps of CI process you can use the following
-[guide](https://github.com/paritytech/scripts#gitlab-ci-for-building-docker-images).
+[guide](https://github.com/paritytech/scripts#reproduce-ci-locally).
 
-Once the executable is built, launch collators for each parachain (repeat once each for chain
-`tick`, `trick`, `track`):
+If you need more information about setting up your development environment [Substrate's
+Installation page](https://docs.substrate.io/main-docs/install/) is a good
+resource.
 
-```bash
-./target/release/polkadot-parachain --chain $CHAIN --validator
+## High-Level Architecture
+
+This repo has support for bridging foreign chains together using a combination of Substrate pallets
+and external processes called relayers. A bridge chain is one that is able to follow the consensus
+of a foreign chain independently. For example, consider the case below where we want to bridge two
+Substrate based chains.
+
+```
++---------------+                 +---------------+
+|               |                 |               |
+|     Rialto    |                 |    Millau     |
+|               |                 |               |
++-------+-------+                 +-------+-------+
+        ^                                 ^
+        |       +---------------+         |
+        |       |               |         |
+        +-----> | Bridge Relay  | <-------+
+                |               |
+                +---------------+
 ```
 
-### Parachains
+The Millau chain must be able to accept Rialto headers and verify their integrity. It does this by
+using a runtime module designed to track GRANDPA finality. Since two blockchains can't interact
+directly they need an external service, called a relayer, to communicate. The relayer will subscribe
+to new Rialto headers via RPC and submit them to the Millau chain for verification.
 
-* [Statemint](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-statemint-rpc.polkadot.io#/explorer)
-* [Contracts on Rococo](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-contracts-rpc.polkadot.io#/explorer)
-* [RILT](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo.kilt.io#/explorer)
+Take a look at [Bridge High Level Documentation](./docs/high-level-overview.md) for more in-depth
+description of the bridge interaction.
 
-The network uses horizontal message passing (HRMP) to enable communication between parachains and
-the relay chain and, in turn, between parachains. This means that every message is sent to the relay
-chain, and from the relay chain to its destination parachain.
+## Project Layout
 
-### Containerize
+Here's an overview of how the project is laid out. The main bits are the `bin`, which is the actual
+"blockchain", the `modules` which are used to build the blockchain's logic (a.k.a the runtime) and
+the `relays` which are used to pass messages between chains.
 
-After building `polkadot-parachain` with cargo or with Parity CI image as documented in [this chapter](#build--launch-rococo-collators),
-the following will allow producing a new docker image where the compiled binary is injected:
-
-```bash
-./docker/scripts/build-injected-image.sh
+```
+├── bin             // Node and Runtime for the various Substrate chains
+│  └── ...
+├── deployments     // Useful tools for deploying test networks
+│  └──  ...
+├── modules         // Substrate Runtime Modules (a.k.a Pallets)
+│  ├── beefy        // On-Chain BEEFY Light Client (in progress)
+│  ├── grandpa      // On-Chain GRANDPA Light Client
+│  ├── messages     // Cross Chain Message Passing
+│  ├── parachains   // On-Chain Parachains Light Client
+│  ├── relayers     // Relayer rewards registry
+│  └──  ...
+├── primitives      // Code shared between modules, runtimes, and relays
+│  └──  ...
+├── relays          // Application for sending finality proofs and messages between chains
+│  └──  ...
+└── scripts         // Useful development and maintenance scripts
 ```
 
-Alternatively, you can build an image with a builder pattern:
+## Running the Bridge
+
+To run the Bridge you need to be able to connect the bridge relay node to the RPC interface of nodes
+on each side of the bridge (source and target chain).
+
+There are 2 ways to run the bridge, described below:
+
+- building & running from source: with this option, you'll be able to run the bridge between two standalone
+chains that are running GRANDPA finality gadget to achieve finality;
+
+- running a Docker Compose setup: this is a recommended option, where you'll see bridges with parachains,
+complex relays and more.
+
+### Using the Source
+
+First you'll need to build the bridge nodes and relay. This can be done as follows:
 
 ```bash
-docker build --tag $OWNER/$IMAGE_NAME --file ./docker/polkadot-parachain_builder.Containerfile .
-
-You may then run your new container:
-
-```bash
-docker run --rm -it $OWNER/$IMAGE_NAME --collator --tmp --execution wasm --chain /specs/westmint.json
+# In `parity-bridges-common` folder
+cargo build -p rialto-bridge-node
+cargo build -p millau-bridge-node
+cargo build -p substrate-relay
 ```
+
+### Running a Dev network
+
+We will launch a dev network to demonstrate how to relay a message between two Substrate based
+chains (named Rialto and Millau).
+
+To do this we will need two nodes, two relayers which will relay headers, and two relayers which
+will relay messages.
+
+#### Running from local scripts
+
+To run a simple dev network you can use the scripts located in the
+[`deployments/local-scripts` folder](./deployments/local-scripts).
+
+First, we must run the two Substrate nodes.
+
+```bash
+# In `parity-bridges-common` folder
+./deployments/local-scripts/run-rialto-node.sh
+./deployments/local-scripts/run-millau-node.sh
+```
+
+After the nodes are up we can run the header relayers.
+
+```bash
+./deployments/local-scripts/relay-millau-to-rialto.sh
+./deployments/local-scripts/relay-rialto-to-millau.sh
+```
+
+At this point you should see the relayer submitting headers from the Millau Substrate chain to the
+Rialto Substrate chain.
+
+```
+# Header Relayer Logs
+[Millau_to_Rialto_Sync] [date] DEBUG bridge Going to submit finality proof of Millau header #147 to Rialto
+[...] [date] INFO bridge Synced 147 of 147 headers
+[...] [date] DEBUG bridge Going to submit finality proof of Millau header #148 to Rialto
+[...] [date] INFO bridge Synced 148 of 149 headers
+```
+
+Finally, we can run the message relayers.
+
+```bash
+./deployments/local-scripts/relay-messages-millau-to-rialto.sh
+./deployments/local-scripts/relay-messages-rialto-to-millau.sh
+```
+
+You will also see the message lane relayers listening for new messages.
+
+```
+# Message Relayer Logs
+[Millau_to_Rialto_MessageLane_00000000] [date] DEBUG bridge Asking Millau::ReceivingConfirmationsDelivery about best message nonces
+[...] [date] INFO bridge Synced Some(2) of Some(3) nonces in Millau::MessagesDelivery -> Rialto::MessagesDelivery race
+[...] [date] DEBUG bridge Asking Millau::MessagesDelivery about message nonces
+[...] [date] DEBUG bridge Received best nonces from Millau::ReceivingConfirmationsDelivery: TargetClientNonces { latest_nonce: 0, nonces_data: () }
+[...] [date] DEBUG bridge Asking Millau::ReceivingConfirmationsDelivery about finalized message nonces
+[...] [date] DEBUG bridge Received finalized nonces from Millau::ReceivingConfirmationsDelivery: TargetClientNonces { latest_nonce: 0, nonces_data: () }
+[...] [date] DEBUG bridge Received nonces from Millau::MessagesDelivery: SourceClientNonces { new_nonces: {}, confirmed_nonce: Some(0) }
+[...] [date] DEBUG bridge Asking Millau node about its state
+[...] [date] DEBUG bridge Received state from Millau node: ClientState { best_self: HeaderId(1593, 0xacac***), best_finalized_self: HeaderId(1590, 0x0be81d...), best_finalized_peer_at_best_self: HeaderId(0, 0xdcdd89...) }
+```
+
+To send a message see the ["How to send a message" section](#how-to-send-a-message).
+
+### How to send a message
+
+In this section we'll show you how to quickly send a bridge message. The message is just an encoded XCM
+`Trap(43)` message.
+
+```bash
+# In `parity-bridges-common` folder
+./scripts/send-message-from-millau-rialto.sh
+```
+
+After sending a message you will see the following logs showing a message was successfully sent:
+
+```
+INFO bridge Sending message to Rialto. Size: 11.
+TRACE bridge Sent transaction to Millau node: 0x5e68...
+```
+
+And at the Rialto node logs you'll something like this:
+
+```
+... runtime::bridge-messages: Received messages: total=1, valid=1. Weight used: Weight(ref_time: 1215065371, proof_size: 48559)/Weight(ref_time: 1215065371, proof_size: 54703).
+``` 
+
+It means that the message has been delivered and dispatched. Message may be dispatched with an
+error, though - the goal of our test bridge is to ensure that messages are successfully delivered
+and all involved components are working.
+
+## Full Network Docker Compose Setup
+
+For a more sophisticated deployment which includes bidirectional header sync, message passing,
+monitoring dashboards, etc. see the [Deployments README](./deployments/README.md).
+
+You should note that you can find images for all the bridge components published on
+[Docker Hub](https://hub.docker.com/u/paritytech).
+
+To run a Rialto node for example, you can use the following command:
+
+```bash
+docker run -p 30333:30333 -p 9933:9933 -p 9944:9944 \
+  -it paritytech/rialto-bridge-node --dev --tmp \
+  --rpc-cors=all --unsafe-rpc-external
+```
+
+## Community
+
+Main hangout for the community is [Element](https://element.io/) (formerly Riot). Element is a chat
+server like, for example, Discord. Most discussions around Polkadot and Substrate happen
+in various Element "rooms" (channels). So, joining Element might be a good idea, anyway.
+
+If you are interested in information exchange and development of Polkadot related bridges please
+feel free to join the [Polkadot Bridges](https://app.element.io/#/room/#bridges:web3.foundation)
+Element channel.
+
+The [Substrate Technical](https://app.element.io/#/room/#substrate-technical:matrix.org) Element
+channel is most suited for discussions regarding Substrate itself.
