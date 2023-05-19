@@ -6,6 +6,7 @@ pub mod pallet_alliance;
 pub mod pallet_balances;
 pub mod pallet_collator_selection;
 pub mod pallet_collective;
+pub mod pallet_core_fellowship;
 pub mod pallet_multisig;
 pub mod pallet_preimage;
 pub mod pallet_proxy;

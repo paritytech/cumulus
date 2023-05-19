@@ -133,7 +133,7 @@ impl pallet_ranked_collective::Config<FellowshipCollectiveInstance> for Runtime 
 pub type FellowshipCoreInstance = pallet_core_fellowship::Instance1;
 
 impl pallet_core_fellowship::Config<FellowshipCoreInstance> for Runtime {
-	type WeightInfo = (); // TODO weights
+	type WeightInfo = weights::pallet_core_fellowship::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
 	type Members = pallet_ranked_collective::Pallet<Runtime, FellowshipCollectiveInstance>;
 	type Balance = Balance;
