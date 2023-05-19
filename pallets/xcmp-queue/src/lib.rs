@@ -290,7 +290,7 @@ pub mod pallet {
 		/// Bad XCM format used.
 		BadFormat { message_hash: XcmHash },
 		/// An HRMP message was sent to a sibling parachain.
-		XcmpMessageSent { message_hash: XcmHash, message_id: XcmHash },
+		XcmpMessageSent { message_hash: XcmHash },
 		/// An XCM exceeded the individual message weight budget.
 		OverweightEnqueued {
 			sender: ParaId,
@@ -642,11 +642,10 @@ impl<T: Config> Pallet<T> {
 					// As far as the caller is concerned, this was dispatched without error, so
 					// we just report the weight used.
 					Outcome::Incomplete(weight, error) =>
-						(Ok(w), Event::Fail { message_hash, message_id, error, weight }),
+						(Ok(weight), Event::Fail { message_hash, message_id, error, weight }),
 				}
 			},
-			Err(()) =>
-				(Err(XcmError::UnhandledXcmVersion), Event::BadVersion { message_hash: Some(hash) }),
+			Err(()) => (Err(XcmError::UnhandledXcmVersion), Event::BadVersion { message_hash }),
 		};
 		Self::deposit_event(event);
 		result
@@ -1190,7 +1189,7 @@ impl<T: Config> SendXcm for Pallet<T> {
 
 		match Self::send_fragment(id, XcmpMessageFormat::ConcatenatedVersionedXcm, xcm) {
 			Ok(_) => {
-				Self::deposit_event(Event::XcmpMessageSent { message_hash: Some(hash) });
+				Self::deposit_event(Event::XcmpMessageSent { message_hash: hash });
 				Ok(hash)
 			},
 			Err(e) => Err(SendError::Transport(<&'static str>::from(e))),

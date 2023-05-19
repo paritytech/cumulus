@@ -363,7 +363,8 @@ impl<Runtime: frame_system::Config + cumulus_pallet_xcmp_queue::Config> RuntimeH
 			.into_iter()
 			.filter_map(|e| unwrap_xcmp_queue_event(e.event.encode()))
 			.find_map(|e| match e {
-				cumulus_pallet_xcmp_queue::Event::XcmpMessageSent { message_hash } => message_hash,
+				cumulus_pallet_xcmp_queue::Event::XcmpMessageSent { message_hash } =>
+					Some(message_hash),
 				_ => None,
 			})
 	}
