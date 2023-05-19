@@ -2,9 +2,7 @@ use crate::impls::AccountIdOf;
 use core::marker::PhantomData;
 use frame_support::{
 	log,
-	traits::{
-		fungibles::Inspect, tokens::ConversionToAssetBalance, ContainsPair,
-	},
+	traits::{fungibles::Inspect, tokens::ConversionToAssetBalance, ContainsPair},
 	weights::Weight,
 };
 use sp_runtime::traits::Get;

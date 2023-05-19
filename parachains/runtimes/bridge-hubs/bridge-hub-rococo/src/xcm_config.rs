@@ -30,21 +30,18 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
-use parachains_common::{
-	impls::ToStakingPot,
-	xcm_config::ConcreteNativeAssetFrom,
-};
+use parachains_common::{impls::ToStakingPot, xcm_config::ConcreteNativeAssetFrom};
 use polkadot_parachain::primitives::Sibling;
 use sp_core::Get;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
 	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
-	CurrencyAdapter, EnsureXcmOrigin, IsConcrete, ParentAsSuperuser, ParentIsPreset,
-	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-	UsingComponents, WeightInfoBounds, WithComputedOrigin, DenyReserveTransferToRelayChain,
-	DenyThenTry,
+	CurrencyAdapter, DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin, IsConcrete,
+	ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
+	WithComputedOrigin,
 };
 use xcm_executor::{
 	traits::{ExportXcm, WithOriginFilter},
