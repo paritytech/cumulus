@@ -47,3 +47,8 @@ collectives-polkadot-runtime = { path = "../../../runtimes/collectives/collectiv
 bridge-hub-kusama-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-kusama" }
 bridge-hub-polkadot-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-polkadot" }
 xcm-emulator = { default-features = false, path = "../../../../xcm/xcm-emulator" }
+
+[features]
+runtime-benchmarks = [
+	"kusama-runtime/runtime-benchmarks",
+]

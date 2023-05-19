@@ -289,6 +289,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
 				let mut ext = sp_io::TestExternalities::new(storage);
 				ext.execute_with(|| {
+					#[allow(clippy::no_effect)]
 					$on_init;
 					sp_tracing::try_init_simple();
 					<Self as RelayChain>::System::set_block_number(1);
@@ -515,6 +516,7 @@ macro_rules! __impl_test_ext_for_parachain {
 			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
 				let mut ext = sp_io::TestExternalities::new(storage);
 				ext.execute_with(|| {
+					#[allow(clippy::no_effect)]
 					$on_init;
 					sp_tracing::try_init_simple();
 					<Self as Parachain>::System::set_block_number(1);
