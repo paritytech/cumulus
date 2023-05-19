@@ -599,6 +599,8 @@ construct_runtime!(
 		// pub type FellowshipReferendaInstance = pallet_referenda::Instance1;
 		FellowshipReferenda: pallet_referenda::<Instance1>::{Pallet, Call, Storage, Event<T>} = 61,
 		FellowshipOrigins: pallet_fellowship_origins::{Origin} = 62,
+		// pub type FellowshipCoreInstance = pallet_core_fellowship::Instance1;
+		FellowshipCore: pallet_core_fellowship::<Instance1>::{Pallet, Call, Storage, Event<T>} = 63,
 	}
 );
 
@@ -662,6 +664,7 @@ mod benches {
 		[pallet_scheduler, Scheduler]
 		[pallet_referenda, FellowshipReferenda]
 		[pallet_ranked_collective, FellowshipCollective]
+		[pallet_core_fellowship, FellowshipCore]
 	);
 }
 

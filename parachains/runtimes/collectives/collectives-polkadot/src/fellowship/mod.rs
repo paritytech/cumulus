@@ -19,6 +19,7 @@
 pub(crate) mod migration;
 mod origins;
 mod tracks;
+use frame_system::EnsureNever;
 pub use origins::{
 	pallet_origins as pallet_fellowship_origins, Fellows, FellowshipCandidates, FellowshipExperts,
 	FellowshipMasters,
@@ -108,20 +109,8 @@ morph_types! {
 impl pallet_ranked_collective::Config<FellowshipCollectiveInstance> for Runtime {
 	type WeightInfo = weights::pallet_ranked_collective::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
-	// Promotion is by any of:
-	// - Root can promote arbitrarily.
-	// - the FellowshipAdmin origin (i.e. token holder referendum);
-	// - a vote by the rank *above* the new rank.
-	type PromoteOrigin = EitherOf<
-		frame_system::EnsureRootWithSuccess<Self::AccountId, ConstU16<65535>>,
-		EitherOf<
-			MapSuccess<
-				EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
-				Replace<ConstU16<9>>,
-			>,
-			TryMapSuccess<EnsureFellowship, CheckedReduceBy<ConstU16<1>>>,
-		>,
-	>;
+	// Promotions and the induction of new members are serviced by `FellowshipCore` pallet instance.
+	type PromoteOrigin = EnsureNever<pallet_ranked_collective::Rank>;
 	// Demotion is by any of:
 	// - Root can demote arbitrarily.
 	// - the FellowshipAdmin origin (i.e. token holder referendum);
@@ -139,4 +128,47 @@ impl pallet_ranked_collective::Config<FellowshipCollectiveInstance> for Runtime 
 	type Polls = FellowshipReferenda;
 	type MinRankOfClass = sp_runtime::traits::Identity;
 	type VoteWeight = pallet_ranked_collective::Geometric;
+}
+
+pub type FellowshipCoreInstance = pallet_core_fellowship::Instance1;
+
+impl pallet_core_fellowship::Config<FellowshipCoreInstance> for Runtime {
+	type WeightInfo = (); // TODO weights
+	type RuntimeEvent = RuntimeEvent;
+	type Members = pallet_ranked_collective::Pallet<Runtime, FellowshipCollectiveInstance>;
+	type Balance = Balance;
+	// Parameters are set by any of:
+	// - Root;
+	// - a vote of the rank 3 or above.
+	type ParamsOrigin = Fellows;
+	// Induction is by any of:
+	// - Root;
+	// - a member of the rank 1 or above.
+	type InductOrigin = EnsureFellowship;
+	// Approval of a member's current rank is by any of:
+	// - Root;
+	// - the FellowshipAdmin origin (i.e. token holder referendum);
+	// - a vote by the rank above or equal to the current rank.
+	type ApproveOrigin = EitherOf<
+		MapSuccess<
+			EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
+			Replace<ConstU16<9>>,
+		>,
+		EnsureFellowship,
+	>;
+	// Promotion is by any of:
+	// - Root can promote arbitrarily.
+	// - the FellowshipAdmin origin (i.e. token holder referendum);
+	// - a vote by the rank *above* the new rank.
+	type PromoteOrigin = EitherOf<
+		frame_system::EnsureRootWithSuccess<Self::AccountId, ConstU16<65535>>,
+		EitherOf<
+			MapSuccess<
+				EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
+				Replace<ConstU16<9>>,
+			>,
+			TryMapSuccess<EnsureFellowship, CheckedReduceBy<ConstU16<1>>>,
+		>,
+	>;
+	type EvidenceSize = ConstU32<1024>;
 }
