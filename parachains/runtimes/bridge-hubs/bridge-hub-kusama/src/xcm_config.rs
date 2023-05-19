@@ -20,6 +20,7 @@ use super::{
 };
 use crate::{
 	bridge_hub_config::ToBridgeHubPolkadotHaulBlobExporter, BridgeGrandpaPolkadotInstance,
+	DeliveryRewardInBalance, RequiredStakeForStakeAndSlash,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -132,6 +133,17 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				return true
 			}
 		}
+
+		// Allow to change dedicated storage items (called by governance-like)
+		match call {
+			RuntimeCall::System(frame_system::Call::set_storage { items })
+				if items.iter().any(|(k, _)| {
+					k.eq(&DeliveryRewardInBalance::key()) |
+						k.eq(&RequiredStakeForStakeAndSlash::key())
+				}) =>
+				return true,
+			_ => (),
+		};
 
 		matches!(
 			call,

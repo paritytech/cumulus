@@ -424,7 +424,6 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 	<Runtime as pallet_bridge_messages::Config<MPI>>::InboundRelayer: From<AccountId32>,
 {
 	assert_ne!(runtime_para_id, sibling_parachain_id);
-	assert_ne!(runtime_para_id, bridged_para_id);
 
 	ExtBuilder::<Runtime>::default()
 		.with_collators(collator_session_key.collators())
@@ -619,7 +618,6 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 	+ From<pallet_bridge_messages::Call<Runtime, MPI>>
 {
 	assert_ne!(runtime_para_id, sibling_parachain_id);
-	assert_ne!(runtime_para_id, bridged_para_id);
 
 	// Relayer account at local/this BH.
 	let relayer_at_target = Bob;

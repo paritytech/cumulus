@@ -18,7 +18,10 @@ use super::{
 	AccountId, AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
 	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
-use crate::{bridge_hub_config::ToBridgeHubKusamaHaulBlobExporter, BridgeGrandpaKusamaInstance};
+use crate::{
+	bridge_hub_config::ToBridgeHubKusamaHaulBlobExporter, BridgeGrandpaKusamaInstance,
+	DeliveryRewardInBalance, RequiredStakeForStakeAndSlash,
+};
 use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing},
@@ -133,6 +136,17 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				return true
 			}
 		}
+
+		// Allow to change dedicated storage items (called by governance-like)
+		match call {
+			RuntimeCall::System(frame_system::Call::set_storage { items })
+				if items.iter().any(|(k, _)| {
+					k.eq(&DeliveryRewardInBalance::key()) |
+						k.eq(&RequiredStakeForStakeAndSlash::key())
+				}) =>
+				return true,
+			_ => (),
+		};
 
 		matches!(
 			call,

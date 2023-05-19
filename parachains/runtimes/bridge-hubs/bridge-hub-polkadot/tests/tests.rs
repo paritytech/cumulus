@@ -14,23 +14,84 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+use bp_polkadot_core::Signature;
 pub use bridge_hub_polkadot_runtime::{
 	bridge_hub_config,
 	constants::fee::WeightToFee,
 	xcm_config::{RelayNetwork, XcmConfig},
-	Balances, BridgeGrandpaKusamaInstance, ExistentialDeposit, ParachainSystem, PolkadotXcm,
-	Runtime, RuntimeCall, RuntimeEvent, SessionKeys, WithBridgeHubKusamaMessagesInstance,
+	Balances, BridgeGrandpaKusamaInstance, BridgeRejectObsoleteHeadersAndMessages,
+	ExistentialDeposit, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent,
+	SessionKeys, WithBridgeHubKusamaMessagesInstance,
+};
+use bridge_hub_polkadot_runtime::{
+	bridge_hub_config::WithBridgeHubKusamaMessageBridge, BridgeParachainKusamaInstance,
+	DeliveryRewardInBalance, Executive, RequiredStakeForStakeAndSlash, SignedExtra,
+	UncheckedExtrinsic,
 };
 use codec::{Decode, Encode};
 use frame_support::parameter_types;
-use parachains_common::{AccountId, AuraId};
+use parachains_common::{AccountId, AuraId, Balance};
+use sp_keyring::AccountKeyring::Alice;
+use sp_runtime::{
+	generic::{Era, SignedPayload},
+	AccountId32,
+};
 use xcm::latest::prelude::*;
 
-const ALICE: [u8; 32] = [1u8; 32];
+// Para id of sibling chain (e.g. Statemint) used in tests.
+pub const SIBLING_PARACHAIN_ID: u32 = 1000;
 
 parameter_types! {
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 	pub RuntimeNetwork: NetworkId = RelayNetwork::get().unwrap();
+}
+
+fn construct_extrinsic(
+	sender: sp_keyring::AccountKeyring,
+	call: RuntimeCall,
+) -> UncheckedExtrinsic {
+	let extra: SignedExtra = (
+		frame_system::CheckNonZeroSender::<Runtime>::new(),
+		frame_system::CheckSpecVersion::<Runtime>::new(),
+		frame_system::CheckTxVersion::<Runtime>::new(),
+		frame_system::CheckGenesis::<Runtime>::new(),
+		frame_system::CheckEra::<Runtime>::from(Era::immortal()),
+		frame_system::CheckNonce::<Runtime>::from(0),
+		frame_system::CheckWeight::<Runtime>::new(),
+		pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(0),
+		BridgeRejectObsoleteHeadersAndMessages {},
+		bridge_hub_config::BridgeRefundBridgeHubKusamaMessages::default(),
+	);
+	let payload = SignedPayload::new(call.clone(), extra.clone()).unwrap();
+	let signature = payload.using_encoded(|e| sender.sign(e));
+	UncheckedExtrinsic::new_signed(
+		call,
+		AccountId32::from(sender.public()).into(),
+		Signature::Sr25519(signature.clone()),
+		extra,
+	)
+}
+
+fn construct_and_apply_extrinsic(
+	relayer_at_target: sp_keyring::AccountKeyring,
+	batch: pallet_utility::Call<Runtime>,
+) -> sp_runtime::DispatchOutcome {
+	let batch_call = RuntimeCall::Utility(batch);
+	let xt = construct_extrinsic(relayer_at_target, batch_call);
+	let r = Executive::apply_extrinsic(xt);
+	r.unwrap()
+}
+
+fn executive_init_block(header: &<Runtime as frame_system::Config>::Header) {
+	Executive::initialize_block(header)
+}
+
+fn collator_session_keys() -> bridge_hub_test_utils::CollatorSessionKeys<Runtime> {
+	bridge_hub_test_utils::CollatorSessionKeys::new(
+		AccountId::from(Alice),
+		AccountId::from(Alice),
+		SessionKeys { aura: AuraId::from(Alice.public()) },
+	)
 }
 
 bridge_hub_test_utils::test_cases::include_teleports_for_native_asset_works!(
@@ -39,11 +100,7 @@ bridge_hub_test_utils::test_cases::include_teleports_for_native_asset_works!(
 	CheckingAccount,
 	WeightToFee,
 	ParachainSystem,
-	bridge_hub_test_utils::CollatorSessionKeys::new(
-		AccountId::from(ALICE),
-		AccountId::from(ALICE),
-		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-	),
+	collator_session_keys(),
 	ExistentialDeposit::get(),
 	Box::new(|runtime_event_encoded: Vec<u8>| {
 		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
@@ -60,64 +117,138 @@ bridge_hub_test_utils::test_cases::include_teleports_for_native_asset_works!(
 	1002
 );
 
-bridge_hub_test_utils::include_initialize_bridge_by_governance_works!(
-	Runtime,
-	BridgeGrandpaKusamaInstance,
-	bridge_hub_test_utils::CollatorSessionKeys::new(
-		AccountId::from(ALICE),
-		AccountId::from(ALICE),
-		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-	),
-	bp_bridge_hub_polkadot::BRIDGE_HUB_POLKADOT_PARACHAIN_ID,
-	Box::new(|call| RuntimeCall::BridgeKusamaGrandpa(call).encode())
-);
+#[test]
+fn initialize_bridge_by_governance_works() {
+	bridge_hub_test_utils::test_cases::initialize_bridge_by_governance_works::<
+		Runtime,
+		BridgeGrandpaKusamaInstance,
+	>(
+		collator_session_keys(),
+		bp_bridge_hub_polkadot::BRIDGE_HUB_POLKADOT_PARACHAIN_ID,
+		Box::new(|call| RuntimeCall::BridgeKusamaGrandpa(call).encode()),
+	)
+}
 
-bridge_hub_test_utils::include_handle_export_message_from_system_parachain_to_outbound_queue_works!(
-	Runtime,
-	XcmConfig,
-	WithBridgeHubKusamaMessagesInstance,
-	bridge_hub_test_utils::CollatorSessionKeys::new(
-		AccountId::from(ALICE),
-		AccountId::from(ALICE),
-		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-	),
-	bp_bridge_hub_polkadot::BRIDGE_HUB_POLKADOT_PARACHAIN_ID,
-	1000,
-	Box::new(|runtime_event_encoded: Vec<u8>| {
-		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-			Ok(RuntimeEvent::BridgeKusamaMessages(event)) => Some(event),
-			_ => None,
-		}
-	}),
-	|| ExportMessage { network: Kusama, destination: X1(Parachain(1234)), xcm: Xcm(vec![]) },
-	bridge_hub_config::STATEMINT_TO_STATEMINE_LANE_ID
-);
+#[test]
+fn change_delivery_reward_by_governance_works() {
+	bridge_hub_test_utils::test_cases::change_storage_constant_by_governance_works::<
+		Runtime,
+		DeliveryRewardInBalance,
+		u64,
+	>(
+		collator_session_keys(),
+		bp_bridge_hub_polkadot::BRIDGE_HUB_POLKADOT_PARACHAIN_ID,
+		Box::new(|call| RuntimeCall::System(call).encode()),
+		|| (DeliveryRewardInBalance::key().to_vec(), DeliveryRewardInBalance::get()),
+		|old_value| old_value.checked_mul(2).unwrap(),
+	)
+}
 
-bridge_hub_test_utils::include_message_dispatch_routing_works!(
-	Runtime,
-	XcmConfig,
-	ParachainSystem,
-	WithBridgeHubKusamaMessagesInstance,
-	RuntimeNetwork,
-	bridge_hub_config::KusamaGlobalConsensusNetwork,
-	bridge_hub_test_utils::CollatorSessionKeys::new(
-		AccountId::from(ALICE),
-		AccountId::from(ALICE),
-		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-	),
-	bp_bridge_hub_polkadot::BRIDGE_HUB_POLKADOT_PARACHAIN_ID,
-	1000,
-	Box::new(|runtime_event_encoded: Vec<u8>| {
-		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-			Ok(RuntimeEvent::ParachainSystem(event)) => Some(event),
-			_ => None,
-		}
-	}),
-	Box::new(|runtime_event_encoded: Vec<u8>| {
-		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-			Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
-			_ => None,
-		}
-	}),
-	bridge_hub_config::STATEMINT_TO_STATEMINE_LANE_ID
-);
+#[test]
+fn change_required_stake_by_governance_works() {
+	bridge_hub_test_utils::test_cases::change_storage_constant_by_governance_works::<
+		Runtime,
+		RequiredStakeForStakeAndSlash,
+		Balance,
+	>(
+		collator_session_keys(),
+		bp_bridge_hub_polkadot::BRIDGE_HUB_POLKADOT_PARACHAIN_ID,
+		Box::new(|call| RuntimeCall::System(call).encode()),
+		|| (RequiredStakeForStakeAndSlash::key().to_vec(), RequiredStakeForStakeAndSlash::get()),
+		|old_value| old_value.checked_mul(2).unwrap(),
+	)
+}
+
+#[test]
+fn handle_export_message_from_system_parachain_add_to_outbound_queue_works() {
+	bridge_hub_test_utils::test_cases::handle_export_message_from_system_parachain_to_outbound_queue_works::<
+		Runtime,
+		XcmConfig,
+		WithBridgeHubKusamaMessagesInstance,
+	>(
+		collator_session_keys(),
+		bp_bridge_hub_polkadot::BRIDGE_HUB_POLKADOT_PARACHAIN_ID,
+		SIBLING_PARACHAIN_ID,
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::BridgeKusamaMessages(event)) => Some(event),
+				_ => None,
+			}
+		}),
+		|| ExportMessage { network: Kusama, destination: X1(Parachain(1234)), xcm: Xcm(vec![]) },
+		bridge_hub_config::STATEMINT_TO_STATEMINE_LANE_ID
+	)
+}
+
+#[test]
+fn message_dispatch_routing_works() {
+	bridge_hub_test_utils::test_cases::message_dispatch_routing_works::<
+		Runtime,
+		XcmConfig,
+		ParachainSystem,
+		WithBridgeHubKusamaMessagesInstance,
+		RuntimeNetwork,
+		bridge_hub_config::KusamaGlobalConsensusNetwork,
+	>(
+		collator_session_keys(),
+		bp_bridge_hub_polkadot::BRIDGE_HUB_POLKADOT_PARACHAIN_ID,
+		SIBLING_PARACHAIN_ID,
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::ParachainSystem(event)) => Some(event),
+				_ => None,
+			}
+		}),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
+				_ => None,
+			}
+		}),
+		bridge_hub_config::STATEMINT_TO_STATEMINE_LANE_ID,
+	)
+}
+
+#[test]
+fn relayed_incoming_message_works() {
+	bridge_hub_test_utils::test_cases::relayed_incoming_message_works::<
+		Runtime,
+		XcmConfig,
+		ParachainSystem,
+		BridgeGrandpaKusamaInstance,
+		BridgeParachainKusamaInstance,
+		WithBridgeHubKusamaMessagesInstance,
+		WithBridgeHubKusamaMessageBridge,
+	>(
+		collator_session_keys(),
+		bp_bridge_hub_polkadot::BRIDGE_HUB_POLKADOT_PARACHAIN_ID,
+		bp_bridge_hub_kusama::BRIDGE_HUB_KUSAMA_PARACHAIN_ID,
+		SIBLING_PARACHAIN_ID,
+		RuntimeNetwork::get(),
+		bridge_hub_config::STATEMINT_TO_STATEMINE_LANE_ID,
+	)
+}
+
+#[test]
+pub fn complex_relay_extrinsic_works() {
+	bridge_hub_test_utils::test_cases::complex_relay_extrinsic_works::<
+		Runtime,
+		XcmConfig,
+		ParachainSystem,
+		BridgeGrandpaKusamaInstance,
+		BridgeParachainKusamaInstance,
+		WithBridgeHubKusamaMessagesInstance,
+		WithBridgeHubKusamaMessageBridge,
+	>(
+		collator_session_keys(),
+		bp_bridge_hub_polkadot::BRIDGE_HUB_POLKADOT_PARACHAIN_ID,
+		bp_bridge_hub_kusama::BRIDGE_HUB_KUSAMA_PARACHAIN_ID,
+		SIBLING_PARACHAIN_ID,
+		bridge_hub_config::BridgeHubKusamaChainId::get(),
+		RuntimeNetwork::get(),
+		bridge_hub_config::STATEMINT_TO_STATEMINE_LANE_ID,
+		ExistentialDeposit::get(),
+		executive_init_block,
+		construct_and_apply_extrinsic,
+	);
+}
