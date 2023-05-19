@@ -344,7 +344,7 @@ impl<Runtime: frame_system::Config + pallet_xcm::Config> RuntimeHelper<Runtime> 
 			.into_iter()
 			.filter_map(|e| unwrap_pallet_xcm_event(e.event.encode()))
 			.find_map(|e| match e {
-				pallet_xcm::Event::Attempted(outcome) => Some(outcome),
+				pallet_xcm::Event::Attempted { outcome } => Some(outcome),
 				_ => None,
 			})
 			.expect("No `pallet_xcm::Event::Attempted(outcome)` event found!");
