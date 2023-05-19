@@ -75,7 +75,7 @@ pub struct PageIndexData {
 
 /// Simple type used to identify messages for the purpose of reporting events. Secure if and only
 /// if the message content is unique.
-pub type MessageId = [u8; 32];
+pub type MessageId = XcmHash;
 
 /// Index used to identify overweight messages.
 pub type OverweightIndex = u64;
@@ -174,23 +174,29 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Downward message is invalid XCM.
-		InvalidFormat { message_id: MessageId },
+		InvalidFormat { message_hash: XcmHash },
 		/// Downward message is unsupported version of XCM.
-		UnsupportedVersion { message_id: MessageId },
+		UnsupportedVersion { message_hash: XcmHash },
 		/// Downward message executed with the given outcome.
-		ExecutedDownward { message_id: MessageId, outcome: Outcome },
+		ExecutedDownward { message_hash: XcmHash, message_id: XcmHash, outcome: Outcome },
 		/// The weight limit for handling downward messages was reached.
-		WeightExhausted { message_id: MessageId, remaining_weight: Weight, required_weight: Weight },
+		WeightExhausted {
+			message_hash: XcmHash,
+			message_id: XcmHash,
+			remaining_weight: Weight,
+			required_weight: Weight,
+		},
 		/// Downward message is overweight and was placed in the overweight queue.
 		OverweightEnqueued {
-			message_id: MessageId,
+			message_hash: XcmHash,
+			message_id: XcmHash,
 			overweight_index: OverweightIndex,
 			required_weight: Weight,
 		},
 		/// Downward message from the overweight queue was executed.
 		OverweightServiced { overweight_index: OverweightIndex, weight_used: Weight },
-		/// The maximum number of downward messages was.
-		MaxMessagesExhausted { message_id: MessageId },
+		/// The maximum number of downward messages was reached.
+		MaxMessagesExhausted { message_hash: XcmHash },
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -250,8 +256,9 @@ pub mod pallet {
 			limit: Weight,
 			_sent_at: RelayBlockNumber,
 			mut data: &[u8],
-		) -> Result<Weight, (MessageId, Weight)> {
-			let message_id = sp_io::hashing::blake2_256(data);
+		) -> Result<Weight, (XcmHash, XcmHash, Weight)> {
+			let message_hash = sp_io::hashing::blake2_256(data);
+			let mut message_id = message_hash;
 			let maybe_msg = VersionedXcm::<T::RuntimeCall>::decode_all_with_depth_limit(
 				MAX_XCM_DECODE_DEPTH,
 				&mut data,
@@ -259,21 +266,31 @@ pub mod pallet {
 			.map(Xcm::<T::RuntimeCall>::try_from);
 			match maybe_msg {
 				Err(_) => {
-					Self::deposit_event(Event::InvalidFormat { message_id });
+					Self::deposit_event(Event::InvalidFormat { message_hash });
 					Ok(Weight::zero())
 				},
 				Ok(Err(())) => {
-					Self::deposit_event(Event::UnsupportedVersion { message_id });
+					Self::deposit_event(Event::UnsupportedVersion { message_hash });
 					Ok(Weight::zero())
 				},
 				Ok(Ok(x)) => {
-					let outcome = T::XcmExecutor::execute_xcm(Parent, x, message_id, limit);
+					let outcome = T::XcmExecutor::prepare_and_execute(
+						Parent,
+						x,
+						&mut message_id,
+						limit,
+						Weight::zero(),
+					);
 					match outcome {
 						Outcome::Error(XcmError::WeightLimitReached(required)) =>
-							Err((message_id, required)),
+							Err((message_hash, message_id, required)),
 						outcome => {
 							let weight_used = outcome.weight_used();
-							Self::deposit_event(Event::ExecutedDownward { message_id, outcome });
+							Self::deposit_event(Event::ExecutedDownward {
+								message_hash,
+								message_id,
+								outcome,
+							});
 							Ok(weight_used)
 						},
 					}
@@ -314,7 +331,7 @@ pub mod pallet {
 						maybe_enqueue_page = Some(Vec::with_capacity(item_count_left));
 
 						Self::deposit_event(Event::MaxMessagesExhausted {
-							message_id: sp_io::hashing::blake2_256(&data),
+							message_hash: sp_io::hashing::blake2_256(&data),
 						});
 					} else {
 						// We're not currently enqueuing - try to execute inline.
@@ -322,7 +339,7 @@ pub mod pallet {
 						messages_processed += 1;
 						match Self::try_service_message(remaining_weight, sent_at, &data[..]) {
 							Ok(consumed) => used += consumed,
-							Err((message_id, required_weight)) =>
+							Err((message_hash, message_id, required_weight)) =>
 							// Too much weight required right now.
 							{
 								let is_under_limit =
@@ -334,6 +351,7 @@ pub mod pallet {
 									let overweight_index = page_index.overweight_count;
 									Overweight::<T>::insert(overweight_index, (sent_at, data));
 									Self::deposit_event(Event::OverweightEnqueued {
+										message_hash,
 										message_id,
 										overweight_index,
 										required_weight,
@@ -348,6 +366,7 @@ pub mod pallet {
 									let item_count_left = item_count.saturating_sub(i);
 									maybe_enqueue_page = Some(Vec::with_capacity(item_count_left));
 									Self::deposit_event(Event::WeightExhausted {
+										message_hash,
 										message_id,
 										remaining_weight,
 										required_weight,
