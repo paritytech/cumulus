@@ -649,7 +649,7 @@ impl pallet_nft_fractionalization::Config for Runtime {
 	type Currency = Balances;
 	type NewAssetSymbol = NewAssetSymbol;
 	type NewAssetName = NewAssetName;
-	type StringLimit = StringLimit;
+	type StringLimit = AssetsStringLimit;
 	type NftCollectionId = <Self as pallet_nfts::Config>::CollectionId;
 	type NftId = <Self as pallet_nfts::Config>::ItemId;
 	type AssetBalance = <Self as pallet_balances::Config>::Balance;
