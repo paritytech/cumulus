@@ -26,7 +26,7 @@ pallet-aura = { git = "https://github.com/paritytech/substrate", default-feature
 pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-multisig = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-nft-fractionalization = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "li/sft-main-branch" }
+pallet-nft-fractionalization = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-nfts = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-nfts-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-proxy = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
