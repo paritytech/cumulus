@@ -29,9 +29,7 @@ use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
-	xcm_config::{
-		AssetFeeAsExistentialDepositMultiplier, DenyReserveTransferToRelayChain, DenyThenTry,
-	},
+	xcm_config::AssetFeeAsExistentialDepositMultiplier,
 };
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::ConvertInto;
@@ -43,6 +41,7 @@ use xcm_builder::{
 	ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
 	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 	UsingComponents, WeightInfoBounds, WithComputedOrigin,
+	DenyReserveTransferToRelayChain, DenyThenTry,
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 

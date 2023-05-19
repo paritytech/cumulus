@@ -38,7 +38,6 @@ use frame_support::{
 use frame_system::EnsureRoot;
 use pallet_asset_tx_payment::HandleCredit;
 use pallet_xcm::XcmPassthrough;
-use parachains_common::xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry};
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
 use sp_runtime::traits::Zero;
@@ -50,7 +49,7 @@ use xcm_builder::{
 	IsConcrete, LocalMint, NativeAsset, ParentIsPreset, RelayChainAsNative,
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
-	WithComputedOrigin,
+	WithComputedOrigin, DenyReserveTransferToRelayChain, DenyThenTry,
 };
 use xcm_executor::{traits::JustTry, XcmExecutor};
 

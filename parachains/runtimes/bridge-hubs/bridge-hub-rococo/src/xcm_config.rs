@@ -32,7 +32,7 @@ use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
-	xcm_config::{ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry},
+	xcm_config::ConcreteNativeAssetFrom,
 };
 use polkadot_parachain::primitives::Sibling;
 use sp_core::Get;
@@ -43,7 +43,8 @@ use xcm_builder::{
 	CurrencyAdapter, EnsureXcmOrigin, IsConcrete, ParentAsSuperuser, ParentIsPreset,
 	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
 	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-	UsingComponents, WeightInfoBounds, WithComputedOrigin,
+	UsingComponents, WeightInfoBounds, WithComputedOrigin, DenyReserveTransferToRelayChain,
+	DenyThenTry,
 };
 use xcm_executor::{
 	traits::{ExportXcm, WithOriginFilter},

@@ -26,7 +26,7 @@ use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
-	xcm_config::{ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry},
+	xcm_config::ConcreteNativeAssetFrom,
 };
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
@@ -37,6 +37,7 @@ use xcm_builder::{
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
 	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
 	WithComputedOrigin,
+	DenyReserveTransferToRelayChain, DenyThenTry,
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
