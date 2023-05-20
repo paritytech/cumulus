@@ -38,7 +38,7 @@ pub struct RelayStateSproofBuilder {
 	pub host_config: AbridgedHostConfiguration,
 	pub dmq_mqc_head: Option<relay_chain::Hash>,
 	pub upgrade_go_ahead: Option<UpgradeGoAhead>,
-	pub relay_dispatch_queue_size: Option<(u32, u32)>,
+	pub relay_dispatch_queue_size: Option<(u64, u64)>,
 	pub hrmp_ingress_channel_index: Option<Vec<ParaId>>,
 	pub hrmp_egress_channel_index: Option<Vec<ParaId>>,
 	pub hrmp_channels: BTreeMap<relay_chain::HrmpChannelId, AbridgedHrmpChannel>,
@@ -126,7 +126,10 @@ impl RelayStateSproofBuilder {
 			}
 			if let Some(relay_dispatch_queue_size) = self.relay_dispatch_queue_size {
 				insert(
-					relay_chain::well_known_keys::relay_dispatch_queue_size(self.para_id),
+					relay_chain::well_known_keys::relay_dispatch_queue_remaining_capacity(
+						self.para_id,
+					)
+					.key,
 					relay_dispatch_queue_size.encode(),
 				);
 			}
