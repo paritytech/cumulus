@@ -245,9 +245,9 @@ pub mod pallet {
 				// available_capacity and available_size.
 				let num = up
 					.iter()
-					.scan((available_capacity as u64, available_size as u64), |state, msg| {
+					.scan((available_capacity as usize, available_size as usize), |state, msg| {
 						let (cap_left, size_left) = *state;
-						match (cap_left.checked_sub(1), size_left.checked_sub(msg.len() as u64)) {
+						match (cap_left.checked_sub(1), size_left.checked_sub(msg.len())) {
 							(Some(new_cap), Some(new_size)) => {
 								*state = (new_cap, new_size);
 								Some(())

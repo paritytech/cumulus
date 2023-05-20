@@ -30,9 +30,9 @@ use sp_trie::{HashDBT, MemoryDB, StorageProof, EMPTY_PREFIX};
 #[derive(Clone, Encode, Decode, TypeInfo, Default)]
 pub struct RelayDispachQueueSize {
 	/// The number of additional messages that can be enqueued.
-	pub remaining_count: u64,
+	pub remaining_count: u32,
 	/// The total size of additional messages that can be enqueued.
-	pub remaining_size: u64,
+	pub remaining_size: u32,
 }
 
 /// A snapshot of some messaging related state of relay chain pertaining to the current parachain.
@@ -210,8 +210,8 @@ impl RelayChainStateProof {
 				let remaining_count = host_config.max_upward_queue_count.saturating_sub(res.0);
 				let remaining_size = host_config.max_upward_queue_size.saturating_sub(res.1);
 				RelayDispachQueueSize {
-					remaining_count: remaining_count.into(),
-					remaining_size: remaining_size.into(),
+					remaining_count,
+					remaining_size,
 				}
 			},
 		};
