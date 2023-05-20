@@ -27,15 +27,15 @@ pub use origins::{
 
 use crate::{
 	constants, impls::ToParentTreasury, weights, AccountId, Balance, Balances, BlockNumber,
-	FellowshipReferenda, GovernanceLocation, Preimage, RelayTreasuryAccount, Runtime, RuntimeCall,
-	RuntimeEvent, Scheduler, DAYS,
+	FellowshipReferenda, GovernanceLocation, PolkadotTreasuryAccount, Preimage, Runtime,
+	RuntimeCall, RuntimeEvent, Scheduler, DAYS,
 };
 use frame_support::{
 	parameter_types,
-	traits::{EitherOf, MapSuccess, TryMapSuccess},
+	traits::{tokens::PayFromAccount, EitherOf, MapSuccess, TryMapSuccess},
 };
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
-use polkadot_runtime_constants::xcm::body::FELLOWSHIP_ADMIN_INDEX;
+use polkadot_runtime_constants::{currency::UNITS, xcm::body::FELLOWSHIP_ADMIN_INDEX};
 use sp_arithmetic::traits::CheckedSub;
 use sp_core::ConstU32;
 use sp_runtime::{
@@ -85,7 +85,7 @@ impl pallet_referenda::Config<FellowshipReferendaInstance> for Runtime {
 		pallet_ranked_collective::EnsureMember<Runtime, FellowshipCollectiveInstance, 1>;
 	type CancelOrigin = FellowshipExperts;
 	type KillOrigin = FellowshipMasters;
-	type Slash = ToParentTreasury<RelayTreasuryAccount, ReferendaPalletAccount, Runtime>;
+	type Slash = ToParentTreasury<PolkadotTreasuryAccount, ReferendaPalletAccount, Runtime>;
 	type Votes = pallet_ranked_collective::Votes;
 	type Tally = pallet_ranked_collective::TallyOf<Runtime, FellowshipCollectiveInstance>;
 	type SubmissionDeposit = SubmissionDeposit;
@@ -171,4 +171,25 @@ impl pallet_core_fellowship::Config<FellowshipCoreInstance> for Runtime {
 		>,
 	>;
 	type EvidenceSize = ConstU32<1024>;
+}
+
+parameter_types! {
+	pub const RegistrationPeriod: BlockNumber = 75 * DAYS;
+	pub const PayoutPeriod: BlockNumber = 15 * DAYS;
+	/// A total budget of a single payout cycle.
+	/// The cycle duration is a sum of `RegistrationPeriod` and `PayoutPeriod`.
+	pub const Budget: Balance = 100000 * UNITS;
+}
+
+pub type FellowshipSalaryInstance = pallet_salary::Instance1;
+
+impl pallet_salary::Config<FellowshipSalaryInstance> for Runtime {
+	type WeightInfo = (); // TODO weights
+	type RuntimeEvent = RuntimeEvent;
+	type Paymaster = PayFromAccount<Balances, PolkadotTreasuryAccount>;
+	type Members = pallet_ranked_collective::Pallet<Runtime, FellowshipCollectiveInstance>;
+	type Salary = pallet_core_fellowship::Pallet<Runtime, FellowshipCoreInstance>;
+	type RegistrationPeriod = RegistrationPeriod;
+	type PayoutPeriod = PayoutPeriod;
+	type Budget = Budget;
 }
