@@ -209,10 +209,7 @@ impl RelayChainStateProof {
 
 				let remaining_count = host_config.max_upward_queue_count.saturating_sub(res.0);
 				let remaining_size = host_config.max_upward_queue_size.saturating_sub(res.1);
-				RelayDispachQueueSize {
-					remaining_count,
-					remaining_size,
-				}
+				RelayDispachQueueSize { remaining_count, remaining_size }
 			},
 		};
 
