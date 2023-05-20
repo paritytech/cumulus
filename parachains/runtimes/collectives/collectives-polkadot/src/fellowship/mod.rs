@@ -174,6 +174,7 @@ impl pallet_core_fellowship::Config<FellowshipCoreInstance> for Runtime {
 }
 
 parameter_types! {
+	pub FellowshipAccount: AccountId = constants::account::FELLOWSHIP_PALLET_ID.into_account_truncating();
 	pub const RegistrationPeriod: BlockNumber = 75 * DAYS;
 	pub const PayoutPeriod: BlockNumber = 15 * DAYS;
 	/// A total budget of a single payout cycle.
@@ -186,7 +187,7 @@ pub type FellowshipSalaryInstance = pallet_salary::Instance1;
 impl pallet_salary::Config<FellowshipSalaryInstance> for Runtime {
 	type WeightInfo = weights::pallet_salary::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
-	type Paymaster = PayFromAccount<Balances, PolkadotTreasuryAccount>;
+	type Paymaster = PayFromAccount<Balances, FellowshipAccount>;
 	type Members = pallet_ranked_collective::Pallet<Runtime, FellowshipCollectiveInstance>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type Salary = pallet_core_fellowship::Pallet<Runtime, FellowshipCoreInstance>;
