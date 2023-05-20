@@ -184,11 +184,16 @@ parameter_types! {
 pub type FellowshipSalaryInstance = pallet_salary::Instance1;
 
 impl pallet_salary::Config<FellowshipSalaryInstance> for Runtime {
-	type WeightInfo = (); // TODO weights
+	type WeightInfo = weights::pallet_salary::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
 	type Paymaster = PayFromAccount<Balances, PolkadotTreasuryAccount>;
 	type Members = pallet_ranked_collective::Pallet<Runtime, FellowshipCollectiveInstance>;
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	type Salary = pallet_core_fellowship::Pallet<Runtime, FellowshipCoreInstance>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type Salary = frame_support::traits::tokens::ConvertRank<
+		crate::impls::benchmarks::RankToSalary<Balances>,
+	>;
 	type RegistrationPeriod = RegistrationPeriod;
 	type PayoutPeriod = PayoutPeriod;
 	type Budget = Budget;
