@@ -70,7 +70,7 @@ use parachains_common::{
 };
 use xcm_builder::{
 	AllowKnownQueryResponses, AllowSubscriptionsFrom, AsPrefixedGeneralIndex, ConvertedConcreteId,
-	FungiblesAdapter, LocalMint, WithUniqueTopic,
+	FungiblesAdapter, LocalMint,
 };
 use xcm_executor::traits::JustTry;
 
