@@ -251,6 +251,7 @@ macro_rules! decl_test_relay_chains {
 					msg: &[u8],
 					para: Self::Origin,
 					meter: &mut $crate::WeightMeter,
+					id: &mut [u8; 32],
 				) -> Result<bool, $crate::ProcessMessageError> {
 					use $crate::{Weight, AggregateMessageOrigin, UmpQueueId, ServiceQueues, EnqueueMessage};
 					use $mq as message_queue;
