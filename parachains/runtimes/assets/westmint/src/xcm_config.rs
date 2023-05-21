@@ -281,7 +281,13 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 					pallet_assets::Call::transfer_approved { .. } |
 					pallet_assets::Call::touch { .. } |
 					pallet_assets::Call::refund { .. },
-			) | RuntimeCall::Nfts(
+			) | RuntimeCall::AssetConversion(
+					pallet_asset_conversion::Call::create_pool { .. } |
+					pallet_asset_conversion::Call::add_liquidity { .. } |
+					pallet_asset_conversion::Call::remove_liquidity { .. } |
+					pallet_asset_conversion::Call::swap_tokens_for_exact_tokens { .. } |
+					pallet_asset_conversion::Call::swap_exact_tokens_for_tokens { .. }, 
+			)| RuntimeCall::Nfts(
 				pallet_nfts::Call::create { .. } |
 					pallet_nfts::Call::force_create { .. } |
 					pallet_nfts::Call::destroy { .. } |
