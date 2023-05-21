@@ -822,6 +822,7 @@ macro_rules! decl_test_networks {
 							&msg[..],
 							from_para_id.into(),
 							&mut weight_meter,
+							&mut [0; 32],
 						);
 					}
 				}
