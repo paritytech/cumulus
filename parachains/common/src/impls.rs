@@ -39,7 +39,7 @@ use xcm::{
 	opaque::lts::{
 		Junction,
 		Junction::Parachain,
-		Junctions::{Here, X3},
+		Junctions::{Here, X2, X3},
 	},
 };
 
@@ -141,26 +141,40 @@ fn is_local<SelfParaId: Get<ParaId>, Assets>(multilocation: MultiLocation) -> Op
 where
 	Assets: PalletInfoAccess,
 {
-	if let MultiLocation {
-		parents: 1,
-		interior:
-			X3(
-				Parachain(para_id),
+	match multilocation {
+		MultiLocation {
+			parents: 1,
+			interior:
+				X3(
+					Parachain(para_id),
+					Junction::PalletInstance(pallet_index),
+					Junction::GeneralIndex(asset_id),
+				),
+		} =>
+		{
+			if ParaId::from(para_id) != SelfParaId::get() {
+				None
+			} else if pallet_index != <Assets as PalletInfoAccess>::index() as u8 {
+				None
+			} else {
+				<u128 as TryInto<u32>>::try_into(asset_id).ok()
+			}
+		},
+		MultiLocation {
+			parents: 0,
+			interior: X2(
 				Junction::PalletInstance(pallet_index),
-				Junction::GeneralIndex(asset_id),
-			),
-	} = multilocation
-	{
-		if ParaId::from(para_id) != SelfParaId::get() {
-			None
-		} else if pallet_index != <Assets as PalletInfoAccess>::index() as u8 {
-			None
-		} else {
-			<u128 as TryInto<u32>>::try_into(asset_id).ok()
+				Junction::GeneralIndex(asset_id)
+			)
+		} => {
+			if pallet_index != <Assets as PalletInfoAccess>::index() as u8 {
+				None
+			} else {
+				<u128 as TryInto<u32>>::try_into(asset_id).ok()
+			}
 		}
-	} else {
-		None
-	}
+		_ => None
+	} 
 }
 
 pub struct MultiLocationConverter<Balances, SelfParaId: Get<ParaId>> {
