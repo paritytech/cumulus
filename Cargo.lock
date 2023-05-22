@@ -394,6 +394,7 @@ dependencies = [
  "pallet-xcm",
  "parachain-info",
  "parachains-common",
+ "parachains-runtimes-test-utils",
  "parity-scale-codec",
  "polkadot-parachain",
  "sp-consensus-aura",
@@ -472,7 +473,7 @@ checksum = "0e97ce7de6cf12de5d7226c73f5ba9811622f4db3a5b91b55c53e987e5f91cba"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
@@ -483,7 +484,7 @@ checksum = "b9ccdd8f2a161be9bd5c023df56f1b2a0bd1d83872ae53b71a84a12c9bf6e842"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
@@ -579,7 +580,7 @@ dependencies = [
 [[package]]
 name = "binary-merkle-tree"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "hash-db",
  "log",
@@ -612,7 +613,7 @@ dependencies = [
  "regex",
  "rustc-hash",
  "shlex",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
@@ -815,6 +816,7 @@ dependencies = [
 name = "bp-messages"
 version = "0.1.0"
 dependencies = [
+ "bp-header-chain",
  "bp-runtime",
  "frame-support",
  "hex",
@@ -913,13 +915,18 @@ name = "bp-test-utils"
 version = "0.1.0"
 dependencies = [
  "bp-header-chain",
+ "bp-parachains",
+ "bp-polkadot-core",
+ "bp-runtime",
  "ed25519-dalek",
  "finality-grandpa",
  "parity-scale-codec",
  "sp-application-crypto",
  "sp-consensus-grandpa",
+ "sp-core",
  "sp-runtime",
  "sp-std",
+ "sp-trie",
 ]
 
 [[package]]
@@ -1125,6 +1132,7 @@ dependencies = [
  "sp-core",
  "sp-inherents",
  "sp-io",
+ "sp-keyring",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -1143,28 +1151,40 @@ name = "bridge-hub-test-utils"
 version = "0.1.0"
 dependencies = [
  "asset-test-utils",
+ "bp-bridge-hub-rococo",
+ "bp-bridge-hub-wococo",
  "bp-header-chain",
  "bp-messages",
+ "bp-parachains",
  "bp-polkadot-core",
+ "bp-relayers",
  "bp-runtime",
  "bp-test-utils",
  "bridge-runtime-common",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
+ "frame-benchmarking",
+ "frame-executive",
  "frame-support",
  "frame-system",
  "log",
  "pallet-balances",
  "pallet-bridge-grandpa",
  "pallet-bridge-messages",
+ "pallet-bridge-parachains",
+ "pallet-bridge-relayers",
  "pallet-collator-selection",
  "pallet-session",
+ "pallet-utility",
  "pallet-xcm",
  "pallet-xcm-benchmarks",
  "parachain-info",
+ "parachains-runtimes-test-utils",
  "parity-scale-codec",
+ "sp-core",
  "sp-io",
+ "sp-keyring",
  "sp-runtime",
  "xcm",
  "xcm-builder",
@@ -1193,7 +1213,6 @@ dependencies = [
  "pallet-bridge-relayers",
  "pallet-transaction-payment",
  "pallet-utility",
- "pallet-xcm",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -1205,7 +1224,6 @@ dependencies = [
  "static_assertions",
  "xcm",
  "xcm-builder",
- "xcm-executor",
 ]
 
 [[package]]
@@ -1327,6 +1345,15 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "casey"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fabe85130dda9cf267715582ce6cf1ab581c8dfe3cb33f7065fee0f14e3fea14"
+dependencies = [
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -1546,7 +1573,7 @@ dependencies = [
  "heck",
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
@@ -2487,7 +2514,7 @@ dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
@@ -2804,7 +2831,7 @@ name = "cumulus-test-relay-validation-worker-provider"
 version = "0.1.0"
 dependencies = [
  "polkadot-node-core-pvf-worker",
- "toml 0.7.3",
+ "toml 0.7.4",
 ]
 
 [[package]]
@@ -3443,7 +3470,7 @@ checksum = "5e9a1f9f7d83e59740248a6e14ecf93929ade55027844dfcea78beafccc15745"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
@@ -3610,7 +3637,7 @@ dependencies = [
  "fs-err",
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
@@ -3781,7 +3808,7 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 [[package]]
 name = "fork-tree"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "parity-scale-codec",
 ]
@@ -3804,7 +3831,7 @@ checksum = "6c2141d6d6c8512188a7891b4b01590a45f6dac67afb4f255c4124dbb86d4eaa"
 [[package]]
 name = "frame-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-support",
  "frame-support-procedural",
@@ -3829,7 +3856,7 @@ dependencies = [
 [[package]]
 name = "frame-benchmarking-cli"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "Inflector",
  "array-bytes 4.2.0",
@@ -3876,18 +3903,18 @@ dependencies = [
 [[package]]
 name = "frame-election-provider-solution-type"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
 name = "frame-election-provider-support"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-election-provider-solution-type",
  "frame-support",
@@ -3904,7 +3931,7 @@ dependencies = [
 [[package]]
 name = "frame-executive"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3933,7 +3960,7 @@ dependencies = [
 [[package]]
 name = "frame-remote-externalities"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-recursion",
  "futures",
@@ -3948,12 +3975,13 @@ dependencies = [
  "spinners",
  "substrate-rpc-client",
  "tokio",
+ "tokio-retry",
 ]
 
 [[package]]
 name = "frame-support"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "bitflags",
  "environmental",
@@ -3972,6 +4000,7 @@ dependencies = [
  "sp-arithmetic",
  "sp-core",
  "sp-core-hashing-proc-macro",
+ "sp-debug-derive",
  "sp-inherents",
  "sp-io",
  "sp-runtime",
@@ -3986,7 +4015,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "Inflector",
  "cfg-expr",
@@ -3996,35 +4025,35 @@ dependencies = [
  "proc-macro-warning",
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
 name = "frame-support-procedural-tools"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-support-procedural-tools-derive",
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
 name = "frame-support-procedural-tools-derive"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
 name = "frame-system"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "cfg-if",
  "frame-support",
@@ -4043,7 +4072,7 @@ dependencies = [
 [[package]]
 name = "frame-system-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -4058,7 +4087,7 @@ dependencies = [
 [[package]]
 name = "frame-system-rpc-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -4067,7 +4096,7 @@ dependencies = [
 [[package]]
 name = "frame-try-runtime"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -4187,7 +4216,7 @@ checksum = "89ca545a94061b6365f2c7355b4b32bd20df3ff95f02da9329b34ccc3bd6ee72"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
@@ -4352,6 +4381,40 @@ dependencies = [
  "fnv",
  "log",
  "regex",
+]
+
+[[package]]
+name = "glutton-runtime"
+version = "1.0.0"
+dependencies = [
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcm",
+ "cumulus-primitives-core",
+ "frame-benchmarking",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "frame-try-runtime",
+ "pallet-glutton",
+ "parachain-info",
+ "parachains-common",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-block-builder",
+ "sp-core",
+ "sp-inherents",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-std",
+ "sp-transaction-pool",
+ "sp-version",
+ "substrate-wasm-builder",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
 ]
 
 [[package]]
@@ -4809,6 +4872,47 @@ dependencies = [
 ]
 
 [[package]]
+name = "integration-tests-common"
+version = "1.0.0"
+dependencies = [
+ "bridge-hub-kusama-runtime",
+ "bridge-hub-polkadot-runtime",
+ "collectives-polkadot-runtime",
+ "cumulus-primitives-core",
+ "frame-support",
+ "frame-system",
+ "kusama-runtime",
+ "kusama-runtime-constants",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-im-online",
+ "pallet-staking",
+ "pallet-xcm",
+ "parachain-info",
+ "parachains-common",
+ "parity-scale-codec",
+ "penpal-runtime",
+ "polkadot-core-primitives",
+ "polkadot-parachain",
+ "polkadot-primitives",
+ "polkadot-runtime",
+ "polkadot-runtime-constants",
+ "polkadot-runtime-parachains",
+ "polkadot-service",
+ "sc-consensus-grandpa",
+ "sp-authority-discovery",
+ "sp-consensus-babe",
+ "sp-core",
+ "sp-runtime",
+ "sp-weights",
+ "statemine-runtime",
+ "statemint-runtime",
+ "xcm",
+ "xcm-emulator",
+ "xcm-executor",
+]
+
+[[package]]
 name = "interceptor"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5084,7 +5188,7 @@ checksum = "67c21572b4949434e4fc1e1978b99c5f77064153c59d998bf13ecd96fb5ecba7"
 [[package]]
 name = "kusama-runtime"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "bitvec",
  "frame-benchmarking",
@@ -5117,6 +5221,7 @@ dependencies = [
  "pallet-im-online",
  "pallet-indices",
  "pallet-membership",
+ "pallet-message-queue",
  "pallet-multisig",
  "pallet-nis",
  "pallet-nomination-pools",
@@ -5182,7 +5287,7 @@ dependencies = [
 [[package]]
 name = "kusama-runtime-constants"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -6064,7 +6169,7 @@ dependencies = [
 [[package]]
 name = "mmr-gadget"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "futures",
  "log",
@@ -6083,7 +6188,7 @@ dependencies = [
 [[package]]
 name = "mmr-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "anyhow",
  "jsonrpsee",
@@ -6602,7 +6707,7 @@ dependencies = [
 [[package]]
 name = "pallet-alliance"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "array-bytes 4.2.0",
  "frame-benchmarking",
@@ -6623,7 +6728,7 @@ dependencies = [
 [[package]]
 name = "pallet-asset-tx-payment"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6641,7 +6746,7 @@ dependencies = [
 [[package]]
 name = "pallet-assets"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6656,7 +6761,7 @@ dependencies = [
 [[package]]
 name = "pallet-aura"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6672,7 +6777,7 @@ dependencies = [
 [[package]]
 name = "pallet-authority-discovery"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6688,7 +6793,7 @@ dependencies = [
 [[package]]
 name = "pallet-authorship"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6702,7 +6807,7 @@ dependencies = [
 [[package]]
 name = "pallet-babe"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6726,7 +6831,7 @@ dependencies = [
 [[package]]
 name = "pallet-bags-list"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -6746,7 +6851,7 @@ dependencies = [
 [[package]]
 name = "pallet-balances"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6761,7 +6866,7 @@ dependencies = [
 [[package]]
 name = "pallet-beefy"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6780,7 +6885,7 @@ dependencies = [
 [[package]]
 name = "pallet-beefy-mmr"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "array-bytes 4.2.0",
  "binary-merkle-tree",
@@ -6804,7 +6909,7 @@ dependencies = [
 [[package]]
 name = "pallet-bounties"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6910,7 +7015,7 @@ dependencies = [
 [[package]]
 name = "pallet-child-bounties"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6954,7 +7059,7 @@ dependencies = [
 [[package]]
 name = "pallet-collective"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6971,7 +7076,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "bitflags",
  "environmental",
@@ -7001,7 +7106,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-primitives"
 version = "7.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "bitflags",
  "parity-scale-codec",
@@ -7014,17 +7119,17 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
 name = "pallet-conviction-voting"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "assert_matches",
  "frame-benchmarking",
@@ -7041,7 +7146,7 @@ dependencies = [
 [[package]]
 name = "pallet-democracy"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7059,7 +7164,7 @@ dependencies = [
 [[package]]
 name = "pallet-election-provider-multi-phase"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -7082,7 +7187,7 @@ dependencies = [
 [[package]]
 name = "pallet-election-provider-support-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -7095,7 +7200,7 @@ dependencies = [
 [[package]]
 name = "pallet-elections-phragmen"
 version = "5.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7113,7 +7218,7 @@ dependencies = [
 [[package]]
 name = "pallet-fast-unstake"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -7129,9 +7234,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-glutton"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
+dependencies = [
+ "blake2",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-grandpa"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7154,7 +7277,7 @@ dependencies = [
 [[package]]
 name = "pallet-identity"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "enumflags2",
  "frame-benchmarking",
@@ -7170,7 +7293,7 @@ dependencies = [
 [[package]]
 name = "pallet-im-online"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7190,7 +7313,7 @@ dependencies = [
 [[package]]
 name = "pallet-indices"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7207,7 +7330,7 @@ dependencies = [
 [[package]]
 name = "pallet-insecure-randomness-collective-flip"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7221,7 +7344,7 @@ dependencies = [
 [[package]]
 name = "pallet-membership"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7236,9 +7359,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-message-queue"
+version = "7.0.0-dev"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-weights",
+]
+
+[[package]]
 name = "pallet-mmr"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7255,7 +7397,7 @@ dependencies = [
 [[package]]
 name = "pallet-multisig"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7271,7 +7413,7 @@ dependencies = [
 [[package]]
 name = "pallet-nfts"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "enumflags2",
  "frame-benchmarking",
@@ -7289,7 +7431,7 @@ dependencies = [
 [[package]]
 name = "pallet-nfts-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-support",
  "pallet-nfts",
@@ -7300,7 +7442,7 @@ dependencies = [
 [[package]]
 name = "pallet-nis"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7316,7 +7458,7 @@ dependencies = [
 [[package]]
 name = "pallet-nomination-pools"
 version = "1.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7333,7 +7475,7 @@ dependencies = [
 [[package]]
 name = "pallet-nomination-pools-benchmarking"
 version = "1.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -7353,7 +7495,7 @@ dependencies = [
 [[package]]
 name = "pallet-nomination-pools-runtime-api"
 version = "1.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "pallet-nomination-pools",
  "parity-scale-codec",
@@ -7364,7 +7506,7 @@ dependencies = [
 [[package]]
 name = "pallet-offences"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7381,7 +7523,7 @@ dependencies = [
 [[package]]
 name = "pallet-offences-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -7420,7 +7562,7 @@ dependencies = [
 [[package]]
 name = "pallet-preimage"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7437,7 +7579,7 @@ dependencies = [
 [[package]]
 name = "pallet-proxy"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7452,7 +7594,7 @@ dependencies = [
 [[package]]
 name = "pallet-ranked-collective"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7470,7 +7612,7 @@ dependencies = [
 [[package]]
 name = "pallet-recovery"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7485,7 +7627,7 @@ dependencies = [
 [[package]]
 name = "pallet-referenda"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "assert_matches",
  "frame-benchmarking",
@@ -7504,7 +7646,7 @@ dependencies = [
 [[package]]
 name = "pallet-scheduler"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7521,7 +7663,7 @@ dependencies = [
 [[package]]
 name = "pallet-session"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7542,7 +7684,7 @@ dependencies = [
 [[package]]
 name = "pallet-session-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7558,7 +7700,7 @@ dependencies = [
 [[package]]
 name = "pallet-society"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7572,7 +7714,7 @@ dependencies = [
 [[package]]
 name = "pallet-staking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -7595,18 +7737,18 @@ dependencies = [
 [[package]]
 name = "pallet-staking-reward-curve"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
 name = "pallet-staking-reward-fn"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "log",
  "sp-arithmetic",
@@ -7615,7 +7757,7 @@ dependencies = [
 [[package]]
 name = "pallet-staking-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -7624,7 +7766,7 @@ dependencies = [
 [[package]]
 name = "pallet-state-trie-migration"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7641,7 +7783,7 @@ dependencies = [
 [[package]]
 name = "pallet-sudo"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7656,7 +7798,7 @@ dependencies = [
 [[package]]
 name = "pallet-timestamp"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7674,7 +7816,7 @@ dependencies = [
 [[package]]
 name = "pallet-tips"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7693,7 +7835,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7709,7 +7851,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "jsonrpsee",
  "pallet-transaction-payment-rpc-runtime-api",
@@ -7725,7 +7867,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment-rpc-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "pallet-transaction-payment",
  "parity-scale-codec",
@@ -7737,7 +7879,7 @@ dependencies = [
 [[package]]
 name = "pallet-treasury"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7754,7 +7896,7 @@ dependencies = [
 [[package]]
 name = "pallet-uniques"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7769,7 +7911,7 @@ dependencies = [
 [[package]]
 name = "pallet-utility"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7785,7 +7927,7 @@ dependencies = [
 [[package]]
 name = "pallet-vesting"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7800,7 +7942,7 @@ dependencies = [
 [[package]]
 name = "pallet-whitelist"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7815,7 +7957,7 @@ dependencies = [
 [[package]]
 name = "pallet-xcm"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "bounded-collections",
  "frame-benchmarking",
@@ -7836,7 +7978,7 @@ dependencies = [
 [[package]]
 name = "pallet-xcm-benchmarks"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8000,10 +8142,43 @@ dependencies = [
 ]
 
 [[package]]
+name = "parachains-runtimes-test-utils"
+version = "1.0.0"
+dependencies = [
+ "assets-common",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcmp-queue",
+ "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
+ "cumulus-test-relay-sproof-builder",
+ "frame-support",
+ "frame-system",
+ "hex-literal 0.3.4",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-collator-selection",
+ "pallet-session",
+ "pallet-xcm",
+ "parachain-info",
+ "parachains-common",
+ "parity-scale-codec",
+ "polkadot-parachain",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "substrate-wasm-builder",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
 name = "parity-db"
-version = "0.4.7"
+version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd4572a52711e2ccff02b4973ec7e4a5b5c23387ebbfbd6cd42b34755714cefc"
+checksum = "4890dcb9556136a4ec2b0c51fa4a08c8b733b829506af8fff2e853f3a065985b"
 dependencies = [
  "blake2",
  "crc32fast",
@@ -8414,7 +8589,7 @@ dependencies = [
 [[package]]
 name = "polkadot-approval-distribution"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "futures",
  "polkadot-node-jaeger",
@@ -8430,7 +8605,7 @@ dependencies = [
 [[package]]
 name = "polkadot-availability-bitfield-distribution"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "futures",
  "polkadot-node-network-protocol",
@@ -8444,7 +8619,7 @@ dependencies = [
 [[package]]
 name = "polkadot-availability-distribution"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "derive_more",
  "fatality",
@@ -8467,7 +8642,7 @@ dependencies = [
 [[package]]
 name = "polkadot-availability-recovery"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "fatality",
  "futures",
@@ -8488,7 +8663,7 @@ dependencies = [
 [[package]]
 name = "polkadot-cli"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "clap 4.2.7",
  "frame-benchmarking-cli",
@@ -8517,7 +8692,7 @@ dependencies = [
 [[package]]
 name = "polkadot-client"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "async-trait",
  "frame-benchmarking",
@@ -8560,7 +8735,7 @@ dependencies = [
 [[package]]
 name = "polkadot-collator-protocol"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "always-assert",
  "bitvec",
@@ -8582,7 +8757,7 @@ dependencies = [
 [[package]]
 name = "polkadot-core-primitives"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -8594,7 +8769,7 @@ dependencies = [
 [[package]]
 name = "polkadot-dispute-distribution"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "derive_more",
  "fatality",
@@ -8619,7 +8794,7 @@ dependencies = [
 [[package]]
 name = "polkadot-erasure-coding"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "parity-scale-codec",
  "polkadot-node-primitives",
@@ -8633,7 +8808,7 @@ dependencies = [
 [[package]]
 name = "polkadot-gossip-support"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "futures",
  "futures-timer",
@@ -8653,7 +8828,7 @@ dependencies = [
 [[package]]
 name = "polkadot-network-bridge"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "always-assert",
  "async-trait",
@@ -8676,7 +8851,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-collation-generation"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "futures",
  "parity-scale-codec",
@@ -8694,7 +8869,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-approval-voting"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "bitvec",
  "derive_more",
@@ -8723,7 +8898,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-av-store"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "bitvec",
  "futures",
@@ -8744,7 +8919,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-backing"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "bitvec",
  "fatality",
@@ -8763,7 +8938,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-bitfield-signing"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "futures",
  "polkadot-node-subsystem",
@@ -8778,7 +8953,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-candidate-validation"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "async-trait",
  "futures",
@@ -8798,7 +8973,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-chain-api"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "futures",
  "polkadot-node-metrics",
@@ -8813,7 +8988,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-chain-selection"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "futures",
  "futures-timer",
@@ -8830,7 +9005,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-dispute-coordinator"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "fatality",
  "futures",
@@ -8849,7 +9024,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-parachains-inherent"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "async-trait",
  "futures",
@@ -8866,7 +9041,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-provisioner"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "bitvec",
  "fatality",
@@ -8884,7 +9059,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-pvf"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "always-assert",
  "futures",
@@ -8911,7 +9086,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-pvf-checker"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "futures",
  "polkadot-node-primitives",
@@ -8927,7 +9102,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-pvf-worker"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "assert_matches",
  "cpu-time",
@@ -8956,7 +9131,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-runtime-api"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "futures",
  "lru 0.9.0",
@@ -8971,7 +9146,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-jaeger"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "lazy_static",
  "log",
@@ -8989,7 +9164,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-metrics"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "bs58",
  "futures",
@@ -9008,7 +9183,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-network-protocol"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -9030,7 +9205,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-primitives"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "bounded-vec",
  "futures",
@@ -9052,7 +9227,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-subsystem"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "polkadot-node-jaeger",
  "polkadot-node-subsystem-types",
@@ -9062,7 +9237,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-subsystem-test-helpers"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "async-trait",
  "futures",
@@ -9080,7 +9255,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-subsystem-types"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -9103,7 +9278,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-subsystem-util"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -9136,7 +9311,7 @@ dependencies = [
 [[package]]
 name = "polkadot-overseer"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "async-trait",
  "futures",
@@ -9159,7 +9334,7 @@ dependencies = [
 [[package]]
 name = "polkadot-parachain"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "bounded-collections",
  "derive_more",
@@ -9197,6 +9372,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "futures",
+ "glutton-runtime",
  "hex-literal 0.4.1",
  "jsonrpsee",
  "log",
@@ -9257,7 +9433,7 @@ dependencies = [
 [[package]]
 name = "polkadot-performance-test"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "env_logger 0.9.0",
  "kusama-runtime",
@@ -9275,7 +9451,7 @@ dependencies = [
 [[package]]
 name = "polkadot-primitives"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "bitvec",
  "hex-literal 0.4.1",
@@ -9301,7 +9477,7 @@ dependencies = [
 [[package]]
 name = "polkadot-rpc"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "jsonrpsee",
  "mmr-rpc",
@@ -9333,7 +9509,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "bitvec",
  "frame-benchmarking",
@@ -9365,6 +9541,7 @@ dependencies = [
  "pallet-im-online",
  "pallet-indices",
  "pallet-membership",
+ "pallet-message-queue",
  "pallet-multisig",
  "pallet-nomination-pools",
  "pallet-nomination-pools-benchmarking",
@@ -9427,7 +9604,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-common"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "bitvec",
  "frame-benchmarking",
@@ -9473,7 +9650,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-constants"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -9487,7 +9664,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-metrics"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "bs58",
  "parity-scale-codec",
@@ -9499,7 +9676,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-parachains"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "bitflags",
  "bitvec",
@@ -9512,6 +9689,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-babe",
  "pallet-balances",
+ "pallet-message-queue",
  "pallet-session",
  "pallet-staking",
  "pallet-timestamp",
@@ -9543,7 +9721,7 @@ dependencies = [
 [[package]]
 name = "polkadot-service"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "async-trait",
  "frame-benchmarking-cli",
@@ -9653,7 +9831,7 @@ dependencies = [
 [[package]]
 name = "polkadot-statement-distribution"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "arrayvec 0.5.2",
  "fatality",
@@ -9674,7 +9852,7 @@ dependencies = [
 [[package]]
 name = "polkadot-statement-table"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "parity-scale-codec",
  "polkadot-primitives",
@@ -9684,7 +9862,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-client"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "parity-scale-codec",
  "polkadot-node-subsystem",
@@ -9709,7 +9887,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-runtime"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "bitvec",
  "frame-election-provider-support",
@@ -9770,7 +9948,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-service"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "frame-benchmarking",
  "frame-system",
@@ -9937,7 +10115,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ceca8aaf45b5c46ec7ed39fff75f57290368c1846d33d24a122ca81416ab058"
 dependencies = [
  "proc-macro2",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
@@ -10012,14 +10190,14 @@ checksum = "0e99670bafb56b9a106419397343bdbc8b8742c3cc449fec6345f86173f47cd4"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.56"
+version = "1.0.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b63bdb0cd06f1f4dedf69b254734f9b45af66e4a031e42a7480257d9898b435"
+checksum = "fa1fb82fc0c281dd9671101b66b771ebbe1eaf967b96ac8740dcba4b70005ca8"
 dependencies = [
  "unicode-ident",
 ]
@@ -10562,7 +10740,7 @@ dependencies = [
 [[package]]
 name = "rococo-runtime"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "binary-merkle-tree",
  "frame-benchmarking",
@@ -10590,6 +10768,7 @@ dependencies = [
  "pallet-im-online",
  "pallet-indices",
  "pallet-membership",
+ "pallet-message-queue",
  "pallet-mmr",
  "pallet-multisig",
  "pallet-nis",
@@ -10648,7 +10827,7 @@ dependencies = [
 [[package]]
 name = "rococo-runtime-constants"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -10895,7 +11074,7 @@ dependencies = [
 [[package]]
 name = "sc-allocator"
 version = "4.1.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "log",
  "sp-core",
@@ -10906,7 +11085,7 @@ dependencies = [
 [[package]]
 name = "sc-authority-discovery"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-trait",
  "futures",
@@ -10935,7 +11114,7 @@ dependencies = [
 [[package]]
 name = "sc-basic-authorship"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "futures",
  "futures-timer",
@@ -10958,7 +11137,7 @@ dependencies = [
 [[package]]
 name = "sc-block-builder"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "parity-scale-codec",
  "sc-client-api",
@@ -10973,7 +11152,7 @@ dependencies = [
 [[package]]
 name = "sc-chain-spec"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "memmap2",
  "sc-chain-spec-derive",
@@ -10992,18 +11171,18 @@ dependencies = [
 [[package]]
 name = "sc-chain-spec-derive"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
 name = "sc-cli"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "array-bytes 4.2.0",
  "chrono",
@@ -11043,7 +11222,7 @@ dependencies = [
 [[package]]
 name = "sc-client-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "fnv",
  "futures",
@@ -11070,7 +11249,7 @@ dependencies = [
 [[package]]
 name = "sc-client-db"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "hash-db",
  "kvdb",
@@ -11096,7 +11275,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-trait",
  "futures",
@@ -11121,7 +11300,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-aura"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-trait",
  "futures",
@@ -11150,7 +11329,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-babe"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-trait",
  "fork-tree",
@@ -11186,7 +11365,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-babe-rpc"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "futures",
  "jsonrpsee",
@@ -11208,7 +11387,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-beefy"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "array-bytes 4.2.0",
  "async-trait",
@@ -11243,7 +11422,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-beefy-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "futures",
  "jsonrpsee",
@@ -11262,7 +11441,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-epochs"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "fork-tree",
  "parity-scale-codec",
@@ -11275,7 +11454,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-grandpa"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "ahash 0.8.2",
  "array-bytes 4.2.0",
@@ -11315,7 +11494,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-grandpa-rpc"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "finality-grandpa",
  "futures",
@@ -11335,7 +11514,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-slots"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-trait",
  "futures",
@@ -11358,7 +11537,7 @@ dependencies = [
 [[package]]
 name = "sc-executor"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "lru 0.8.1",
  "parity-scale-codec",
@@ -11382,7 +11561,7 @@ dependencies = [
 [[package]]
 name = "sc-executor-common"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "sc-allocator",
  "sp-maybe-compressed-blob",
@@ -11395,7 +11574,7 @@ dependencies = [
 [[package]]
 name = "sc-executor-wasmi"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "log",
  "sc-allocator",
@@ -11408,7 +11587,7 @@ dependencies = [
 [[package]]
 name = "sc-executor-wasmtime"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -11426,7 +11605,7 @@ dependencies = [
 [[package]]
 name = "sc-informant"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "ansi_term",
  "futures",
@@ -11442,7 +11621,7 @@ dependencies = [
 [[package]]
 name = "sc-keystore"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "array-bytes 4.2.0",
  "parking_lot 0.12.1",
@@ -11456,7 +11635,7 @@ dependencies = [
 [[package]]
 name = "sc-network"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "array-bytes 4.2.0",
  "async-channel",
@@ -11501,7 +11680,7 @@ dependencies = [
 [[package]]
 name = "sc-network-bitswap"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "cid",
  "futures",
@@ -11521,7 +11700,7 @@ dependencies = [
 [[package]]
 name = "sc-network-common"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "array-bytes 4.2.0",
  "async-trait",
@@ -11549,7 +11728,7 @@ dependencies = [
 [[package]]
 name = "sc-network-gossip"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "ahash 0.8.2",
  "futures",
@@ -11568,7 +11747,7 @@ dependencies = [
 [[package]]
 name = "sc-network-light"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "array-bytes 4.2.0",
  "futures",
@@ -11590,7 +11769,7 @@ dependencies = [
 [[package]]
 name = "sc-network-sync"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "array-bytes 4.2.0",
  "async-trait",
@@ -11624,7 +11803,7 @@ dependencies = [
 [[package]]
 name = "sc-network-transactions"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "array-bytes 4.2.0",
  "futures",
@@ -11644,7 +11823,7 @@ dependencies = [
 [[package]]
 name = "sc-offchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "array-bytes 4.2.0",
  "bytes",
@@ -11675,7 +11854,7 @@ dependencies = [
 [[package]]
 name = "sc-peerset"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "futures",
  "libp2p-identity",
@@ -11688,7 +11867,7 @@ dependencies = [
 [[package]]
 name = "sc-proposer-metrics"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "log",
  "substrate-prometheus-endpoint",
@@ -11697,7 +11876,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "futures",
  "jsonrpsee",
@@ -11728,7 +11907,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc-api"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "jsonrpsee",
  "parity-scale-codec",
@@ -11747,7 +11926,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc-server"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "http",
  "jsonrpsee",
@@ -11762,7 +11941,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc-spec-v2"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "array-bytes 4.2.0",
  "futures",
@@ -11788,7 +11967,7 @@ dependencies = [
 [[package]]
 name = "sc-service"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-trait",
  "directories",
@@ -11854,7 +12033,7 @@ dependencies = [
 [[package]]
 name = "sc-state-db"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "log",
  "parity-scale-codec",
@@ -11865,7 +12044,7 @@ dependencies = [
 [[package]]
 name = "sc-storage-monitor"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "clap 4.2.7",
  "fs4",
@@ -11881,7 +12060,7 @@ dependencies = [
 [[package]]
 name = "sc-sync-state-rpc"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "jsonrpsee",
  "parity-scale-codec",
@@ -11900,7 +12079,7 @@ dependencies = [
 [[package]]
 name = "sc-sysinfo"
 version = "6.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "futures",
  "libc",
@@ -11919,7 +12098,7 @@ dependencies = [
 [[package]]
 name = "sc-telemetry"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "chrono",
  "futures",
@@ -11938,7 +12117,7 @@ dependencies = [
 [[package]]
 name = "sc-tracing"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "ansi_term",
  "atty",
@@ -11969,18 +12148,18 @@ dependencies = [
 [[package]]
 name = "sc-tracing-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
 name = "sc-transaction-pool"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-trait",
  "futures",
@@ -12007,7 +12186,7 @@ dependencies = [
 [[package]]
 name = "sc-transaction-pool-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-trait",
  "futures",
@@ -12021,7 +12200,7 @@ dependencies = [
 [[package]]
 name = "sc-utils"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-channel",
  "futures",
@@ -12035,9 +12214,9 @@ dependencies = [
 
 [[package]]
 name = "scale-info"
-version = "2.6.0"
+version = "2.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfdef77228a4c05dc94211441595746732131ad7f6530c6c18f045da7b7ab937"
+checksum = "b569c32c806ec3abdf3b5869fb8bf1e0d275a7c1c9b0b05603d9464632649edf"
 dependencies = [
  "bitvec",
  "cfg-if",
@@ -12299,7 +12478,7 @@ checksum = "8c805777e3930c8883389c602315a24224bcc738b63905ef87cd1420353ea93e"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
@@ -12315,9 +12494,9 @@ dependencies = [
 
 [[package]]
 name = "serde_spanned"
-version = "0.6.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0efd8caf556a6cebd3b285caf480045fcc1ac04f6bd786b09a6f11af30c4fcf4"
+checksum = "93107647184f6027e3b7dcb2e11034cf95ffa1e3a682c67951963ac69c1c007d"
 dependencies = [
  "serde",
 ]
@@ -12502,7 +12681,7 @@ checksum = "03b634d87b960ab1a38c4fe143b508576f075e7c978bfad18217645ebfdfa2ec"
 [[package]]
 name = "slot-range-helper"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "enumn",
  "parity-scale-codec",
@@ -12579,7 +12758,7 @@ dependencies = [
 [[package]]
 name = "sp-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "hash-db",
  "log",
@@ -12599,7 +12778,7 @@ dependencies = [
 [[package]]
 name = "sp-api-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "Inflector",
  "blake2",
@@ -12607,13 +12786,13 @@ dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
 name = "sp-application-crypto"
 version = "7.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -12626,7 +12805,7 @@ dependencies = [
 [[package]]
 name = "sp-arithmetic"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "integer-sqrt",
  "num-traits",
@@ -12640,7 +12819,7 @@ dependencies = [
 [[package]]
 name = "sp-authority-discovery"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -12653,7 +12832,7 @@ dependencies = [
 [[package]]
 name = "sp-block-builder"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -12665,7 +12844,7 @@ dependencies = [
 [[package]]
 name = "sp-blockchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "futures",
  "log",
@@ -12683,7 +12862,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-trait",
  "futures",
@@ -12698,7 +12877,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-aura"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-trait",
  "parity-scale-codec",
@@ -12716,7 +12895,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-babe"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-trait",
  "parity-scale-codec",
@@ -12737,7 +12916,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-beefy"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "lazy_static",
  "parity-scale-codec",
@@ -12756,7 +12935,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-grandpa"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "finality-grandpa",
  "log",
@@ -12774,7 +12953,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-slots"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -12786,7 +12965,7 @@ dependencies = [
 [[package]]
 name = "sp-core"
 version = "7.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "array-bytes 4.2.0",
  "bitflags",
@@ -12830,7 +13009,7 @@ dependencies = [
 [[package]]
 name = "sp-core-hashing"
 version = "5.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "blake2b_simd",
  "byteorder",
@@ -12844,18 +13023,18 @@ dependencies = [
 [[package]]
 name = "sp-core-hashing-proc-macro"
 version = "5.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "proc-macro2",
  "quote",
  "sp-core-hashing",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
 name = "sp-database"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "kvdb",
  "parking_lot 0.12.1",
@@ -12864,17 +13043,17 @@ dependencies = [
 [[package]]
 name = "sp-debug-derive"
 version = "5.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
 name = "sp-externalities"
 version = "0.13.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "environmental",
  "parity-scale-codec",
@@ -12885,7 +13064,7 @@ dependencies = [
 [[package]]
 name = "sp-inherents"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-trait",
  "impl-trait-for-tuples",
@@ -12900,7 +13079,7 @@ dependencies = [
 [[package]]
 name = "sp-io"
 version = "7.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "bytes",
  "ed25519",
@@ -12926,7 +13105,7 @@ dependencies = [
 [[package]]
 name = "sp-keyring"
 version = "7.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "lazy_static",
  "sp-core",
@@ -12937,7 +13116,7 @@ dependencies = [
 [[package]]
 name = "sp-keystore"
 version = "0.13.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "futures",
  "parity-scale-codec",
@@ -12951,7 +13130,7 @@ dependencies = [
 [[package]]
 name = "sp-maybe-compressed-blob"
 version = "4.1.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "thiserror",
  "zstd 0.12.3+zstd.1.5.2",
@@ -12960,7 +13139,7 @@ dependencies = [
 [[package]]
 name = "sp-metadata-ir"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-metadata",
  "parity-scale-codec",
@@ -12971,7 +13150,7 @@ dependencies = [
 [[package]]
 name = "sp-mmr-primitives"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "ckb-merkle-mountain-range",
  "log",
@@ -12989,7 +13168,7 @@ dependencies = [
 [[package]]
 name = "sp-npos-elections"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -13003,7 +13182,7 @@ dependencies = [
 [[package]]
 name = "sp-offchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "sp-api",
  "sp-core",
@@ -13013,7 +13192,7 @@ dependencies = [
 [[package]]
 name = "sp-panic-handler"
 version = "5.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "backtrace",
  "lazy_static",
@@ -13023,7 +13202,7 @@ dependencies = [
 [[package]]
 name = "sp-rpc"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "rustc-hash",
  "serde",
@@ -13033,7 +13212,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime"
 version = "7.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "either",
  "hash256-std-hasher",
@@ -13055,7 +13234,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface"
 version = "7.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "bytes",
  "impl-trait-for-tuples",
@@ -13073,19 +13252,19 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface-proc-macro"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "Inflector",
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
 name = "sp-session"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -13099,7 +13278,7 @@ dependencies = [
 [[package]]
 name = "sp-staking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -13112,7 +13291,7 @@ dependencies = [
 [[package]]
 name = "sp-state-machine"
 version = "0.13.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "hash-db",
  "log",
@@ -13132,7 +13311,7 @@ dependencies = [
 [[package]]
 name = "sp-statement-store"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "log",
  "parity-scale-codec",
@@ -13150,12 +13329,12 @@ dependencies = [
 [[package]]
 name = "sp-std"
 version = "5.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 
 [[package]]
 name = "sp-storage"
 version = "7.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "impl-serde",
  "parity-scale-codec",
@@ -13168,7 +13347,7 @@ dependencies = [
 [[package]]
 name = "sp-timestamp"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-trait",
  "futures-timer",
@@ -13183,7 +13362,7 @@ dependencies = [
 [[package]]
 name = "sp-tracing"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "parity-scale-codec",
  "sp-std",
@@ -13195,7 +13374,7 @@ dependencies = [
 [[package]]
 name = "sp-transaction-pool"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "sp-api",
  "sp-runtime",
@@ -13204,7 +13383,7 @@ dependencies = [
 [[package]]
 name = "sp-transaction-storage-proof"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-trait",
  "log",
@@ -13220,7 +13399,7 @@ dependencies = [
 [[package]]
 name = "sp-trie"
 version = "7.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "ahash 0.8.2",
  "hash-db",
@@ -13243,7 +13422,7 @@ dependencies = [
 [[package]]
 name = "sp-version"
 version = "5.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "impl-serde",
  "parity-scale-codec",
@@ -13260,18 +13439,18 @@ dependencies = [
 [[package]]
 name = "sp-version-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "parity-scale-codec",
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
 name = "sp-wasm-interface"
 version = "7.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "anyhow",
  "impl-trait-for-tuples",
@@ -13285,7 +13464,7 @@ dependencies = [
 [[package]]
 name = "sp-weights"
 version = "4.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -13428,6 +13607,32 @@ dependencies = [
  "substrate-wasm-builder",
  "xcm",
  "xcm-builder",
+ "xcm-executor",
+]
+
+[[package]]
+name = "statemint-it"
+version = "1.0.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "integration-tests-common",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-xcm",
+ "parachains-common",
+ "parity-scale-codec",
+ "penpal-runtime",
+ "polkadot-core-primitives",
+ "polkadot-parachain",
+ "polkadot-runtime",
+ "polkadot-runtime-parachains",
+ "sp-core",
+ "sp-runtime",
+ "sp-weights",
+ "statemint-runtime",
+ "xcm",
+ "xcm-emulator",
  "xcm-executor",
 ]
 
@@ -13620,7 +13825,7 @@ dependencies = [
 [[package]]
 name = "substrate-build-script-utils"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "platforms 2.0.0",
 ]
@@ -13628,7 +13833,7 @@ dependencies = [
 [[package]]
 name = "substrate-frame-rpc-system"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "frame-system-rpc-runtime-api",
  "futures",
@@ -13647,7 +13852,7 @@ dependencies = [
 [[package]]
 name = "substrate-prometheus-endpoint"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "hyper",
  "log",
@@ -13659,7 +13864,7 @@ dependencies = [
 [[package]]
 name = "substrate-rpc-client"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-trait",
  "jsonrpsee",
@@ -13672,7 +13877,7 @@ dependencies = [
 [[package]]
 name = "substrate-state-trie-migration-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "jsonrpsee",
  "log",
@@ -13691,7 +13896,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-client"
 version = "2.0.1"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "array-bytes 4.2.0",
  "async-trait",
@@ -13717,7 +13922,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-utils"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "futures",
  "substrate-test-utils-derive",
@@ -13727,18 +13932,18 @@ dependencies = [
 [[package]]
 name = "substrate-test-utils-derive"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
 name = "substrate-wasm-builder"
 version = "5.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "ansi_term",
  "build-helper",
@@ -13747,7 +13952,7 @@ dependencies = [
  "sp-maybe-compressed-blob",
  "strum",
  "tempfile",
- "toml 0.7.3",
+ "toml 0.7.4",
  "walkdir",
  "wasm-opt",
 ]
@@ -13780,9 +13985,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.15"
+version = "2.0.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a34fcf3e8b60f57e6a14301a2e916d323af98b0ea63c599441eec8558660c822"
+checksum = "a6f671d4b5ffdb8eadec19c0ae67fe2639df8684bd7bc4b83d986b8db549cf01"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -13865,7 +14070,7 @@ checksum = "13a4ec180a2de59b57434704ccfad967f789b12737738798fa08798cd5824c16"
 [[package]]
 name = "test-runtime-constants"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -13899,7 +14104,7 @@ checksum = "f9456a42c5b0d803c8cd86e73dd7cc9edd429499f37a3550d286d5e86720569f"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
@@ -14079,7 +14284,18 @@ checksum = "630bdcf245f78637c13ec01ffae6187cca34625e8c63150d424b59e55af2675e"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
+]
+
+[[package]]
+name = "tokio-retry"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f57eb36ecbe0fc510036adff84824dd3c24bb781e21bfa67b69d556aa85214f"
+dependencies = [
+ "pin-project",
+ "rand 0.8.5",
+ "tokio",
 ]
 
 [[package]]
@@ -14131,9 +14347,9 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.7.3"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b403acf6f2bb0859c93c7f0d967cb4a75a7ac552100f9322faf64dc047669b21"
+checksum = "d6135d499e69981f9ff0ef2167955a5333c35e36f6937d382974566b3d5b94ec"
 dependencies = [
  "serde",
  "serde_spanned",
@@ -14143,18 +14359,18 @@ dependencies = [
 
 [[package]]
 name = "toml_datetime"
-version = "0.6.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ab8ed2edee10b50132aed5f331333428b011c99402b5a534154ed15746f9622"
+checksum = "5a76a9312f5ba4c2dec6b9161fdf25d87ad8a09256ccea5a556fef03c706a10f"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "toml_edit"
-version = "0.19.7"
+version = "0.19.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc18466501acd8ac6a3f615dd29a3438f8ca6bb3b19537138b3106e575621274"
+checksum = "92d964908cec0d030b812013af25a0e57fddfadb1e066ecc6681d86253129d4f"
 dependencies = [
  "indexmap",
  "serde",
@@ -14176,9 +14392,9 @@ dependencies = [
 
 [[package]]
 name = "tower-http"
-version = "0.3.5"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f873044bf02dd1e8239e9c1293ea39dad76dc594ec16185d0a1bf31d8dc8d858"
+checksum = "5d1d42a9b3f3ec46ba828e8d376aec14592ea199f70a06a548587ecd1c4ab658"
 dependencies = [
  "bitflags",
  "bytes",
@@ -14251,7 +14467,7 @@ dependencies = [
 [[package]]
 name = "tracing-gum"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "polkadot-node-jaeger",
  "polkadot-primitives",
@@ -14262,13 +14478,13 @@ dependencies = [
 [[package]]
 name = "tracing-gum-proc-macro"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "expander 2.0.0",
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
@@ -14392,7 +14608,7 @@ checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 [[package]]
 name = "try-runtime-cli"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#3919ca88d1dd0b06f26bd80fd0066a1ad7187081"
+source = "git+https://github.com/paritytech/substrate?branch=master#0046337664b221ff1072fb8f872f13a170babca9"
 dependencies = [
  "async-trait",
  "clap 4.2.7",
@@ -15325,7 +15541,7 @@ dependencies = [
 [[package]]
 name = "westend-runtime"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "bitvec",
  "frame-benchmarking",
@@ -15354,6 +15570,7 @@ dependencies = [
  "pallet-im-online",
  "pallet-indices",
  "pallet-membership",
+ "pallet-message-queue",
  "pallet-multisig",
  "pallet-nomination-pools",
  "pallet-nomination-pools-benchmarking",
@@ -15417,7 +15634,7 @@ dependencies = [
 [[package]]
 name = "westend-runtime-constants"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -15832,9 +16049,9 @@ checksum = "1a515f5799fe4961cb532f983ce2b23082366b898e52ffbce459c86f67c8378a"
 
 [[package]]
 name = "winnow"
-version = "0.3.6"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23d020b441f92996c80d94ae9166e8501e59c7bb56121189dc9eab3bd8216966"
+checksum = "61de7bac303dc551fe038e2b3cef0f571087a47571ea6e79a87692ac99b99699"
 dependencies = [
  "memchr",
 ]
@@ -15919,7 +16136,7 @@ dependencies = [
 [[package]]
 name = "xcm"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "bounded-collections",
  "derivative",
@@ -15935,7 +16152,7 @@ dependencies = [
 [[package]]
 name = "xcm-builder"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -15949,6 +16166,40 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "sp-weights",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
+name = "xcm-emulator"
+version = "0.1.0"
+dependencies = [
+ "casey",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcmp-queue",
+ "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
+ "cumulus-test-relay-sproof-builder",
+ "cumulus-test-service",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "pallet-message-queue",
+ "parachain-info",
+ "parachains-common",
+ "parity-scale-codec",
+ "paste",
+ "polkadot-primitives",
+ "polkadot-runtime-parachains",
+ "quote",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-std",
+ "sp-trie",
  "xcm",
  "xcm-executor",
 ]
@@ -15956,7 +16207,7 @@ dependencies = [
 [[package]]
 name = "xcm-executor"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "environmental",
  "frame-benchmarking",
@@ -15976,12 +16227,12 @@ dependencies = [
 [[package]]
 name = "xcm-procedural"
 version = "0.9.41"
-source = "git+https://github.com/paritytech/polkadot?branch=master#57ec016a97b0e67127bcdf24965ff6bfc16d4cd7"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7c1dc9429245d705ffb188b16ad5339c6de281c1"
 dependencies = [
  "Inflector",
  "proc-macro2",
  "quote",
- "syn 2.0.15",
+ "syn 2.0.16",
 ]
 
 [[package]]
