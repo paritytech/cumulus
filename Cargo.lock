@@ -2830,7 +2830,7 @@ dependencies = [
 name = "cumulus-test-relay-validation-worker-provider"
 version = "0.1.0"
 dependencies = [
- "polkadot-node-core-pvf-worker",
+ "polkadot-node-core-pvf",
  "toml 0.7.4",
 ]
 
