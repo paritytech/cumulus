@@ -20,7 +20,7 @@ use frame_support::{
 	traits::{Currency, GenesisBuild, OnInitialize},
 };
 use pallet_balances::Error as BalancesError;
-use sp_runtime::traits::BadOrigin;
+use sp_runtime::{testing::UintAuthorityId, traits::BadOrigin};
 
 #[test]
 fn basic_setup_works() {
@@ -52,7 +52,7 @@ fn it_should_set_invulnerables() {
 		);
 
 		// cannot set invulnerables without associated validator keys
-		let invulnerables = vec![7];
+		let invulnerables = vec![42];
 		assert_noop!(
 			CollatorSelection::set_invulnerables(
 				RuntimeOrigin::signed(RootAccount::get()),
@@ -88,7 +88,7 @@ fn add_invulnerable_works() {
 		assert_noop!(CollatorSelection::add_invulnerable(RuntimeOrigin::signed(1), new), BadOrigin);
 
 		// cannot add invulnerable without associated validator keys
-		let not_validator = 7;
+		let not_validator = 42;
 		assert_noop!(
 			CollatorSelection::add_invulnerable(
 				RuntimeOrigin::signed(RootAccount::get()),
@@ -96,6 +96,51 @@ fn add_invulnerable_works() {
 			),
 			Error::<Test>::ValidatorNotRegistered
 		);
+	});
+}
+
+#[test]
+fn invulnerable_limit_works() {
+	new_test_ext().execute_with(|| {
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+
+		// MaxInvulnerables: u32 = 20
+		for ii in 3..=21 {
+			// only keys were registered in mock for 1 to 5
+			if ii > 5 {
+				Balances::make_free_balance_be(&ii, 100);
+				let key = MockSessionKeys { aura: UintAuthorityId(ii) };
+				Session::set_keys(RuntimeOrigin::signed(ii).into(), key, Vec::new()).unwrap();
+			}
+			assert_eq!(Balances::free_balance(ii), 100);
+			if ii < 21 {
+				assert_ok!(CollatorSelection::add_invulnerable(
+					RuntimeOrigin::signed(RootAccount::get()),
+					ii
+				));
+			} else {
+				assert_noop!(
+					CollatorSelection::add_invulnerable(
+						RuntimeOrigin::signed(RootAccount::get()),
+						ii
+					),
+					Error::<Test>::TooManyInvulnerables
+				);
+			}
+		}
+		let expected: Vec<u64> = (1..=20).collect();
+		assert_eq!(CollatorSelection::invulnerables(), expected);
+
+		// Cannot set too many Invulnerables
+		let too_many_invulnerables: Vec<u64> = (1..=21).collect();
+		assert_noop!(
+			CollatorSelection::set_invulnerables(
+				RuntimeOrigin::signed(RootAccount::get()),
+				too_many_invulnerables
+			),
+			Error::<Test>::TooManyInvulnerables
+		);
+		assert_eq!(CollatorSelection::invulnerables(), expected);
 	});
 }
 
@@ -232,7 +277,7 @@ fn cannot_register_as_candidate_if_keys_not_registered() {
 	new_test_ext().execute_with(|| {
 		// can't 7 because keys not registered.
 		assert_noop!(
-			CollatorSelection::register_as_candidate(RuntimeOrigin::signed(7)),
+			CollatorSelection::register_as_candidate(RuntimeOrigin::signed(42)),
 			Error::<Test>::ValidatorNotRegistered
 		);
 	})

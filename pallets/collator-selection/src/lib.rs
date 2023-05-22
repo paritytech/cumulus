@@ -435,10 +435,6 @@ pub mod pallet {
 			who: T::AccountId,
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
-			let invulnerables = Self::invulnerables().to_vec();
-
-			// ensure `who` is not already invulnerable
-			ensure!(!invulnerables.contains(&who), Error::<T>::AlreadyInvulnerable);
 
 			// ensure `who` has registered a validator key
 			let validator_key = T::ValidatorIdOf::convert(who.clone())
@@ -449,10 +445,12 @@ pub mod pallet {
 			);
 
 			<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
-				invulnerables
-					.try_push(who.clone())
-					.map_err(|_| Error::<T>::TooManyInvulnerables)?;
-				invulnerables.sort();
+				match invulnerables.binary_search(&who) {
+					Ok(_) => return Err(Error::<T>::AlreadyInvulnerable)?,
+					Err(pos) => invulnerables
+						.try_insert(pos, who.clone())
+						.map_err(|_| Error::<T>::TooManyInvulnerables)?,
+				}
 				Ok(())
 			})?;
 

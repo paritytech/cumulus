@@ -195,7 +195,7 @@ parameter_types! {
 pub struct IsRegistered;
 impl ValidatorRegistration<u64> for IsRegistered {
 	fn is_registered(id: &u64) -> bool {
-		*id != 7u64
+		*id != 42u64
 	}
 }
 
