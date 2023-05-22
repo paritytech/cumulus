@@ -511,6 +511,115 @@ fn unincluded_segment_is_limited() {
 }
 
 #[test]
+fn unincluded_code_upgrade_handles_signal() {
+	CONSENSUS_HOOK.with(|c| {
+		*c.borrow_mut() = Box::new(|_| (Weight::zero(), NonZeroU32::new(2).unwrap().into()))
+	});
+
+	BlockTests::new()
+		.with_inclusion_delay(1)
+		.with_relay_sproof_builder(|_, block_number, builder| {
+			if block_number > 123 && block_number <= 125 {
+				builder.upgrade_go_ahead = Some(relay_chain::UpgradeGoAhead::GoAhead);
+			}
+		})
+		.add(123, || {
+			assert_ok!(System::set_code(RawOrigin::Root.into(), Default::default()));
+		})
+		.add_with_post_test(
+			124,
+			|| {},
+			|| {
+				assert!(
+					!<PendingValidationCode<Test>>::exists(),
+					"validation function must have been unset"
+				);
+			},
+		)
+		.add_with_post_test(
+			125,
+			|| {
+				// The signal is present in relay state proof and ignored.
+				// Block that processed the signal is still not included.
+			},
+			|| {
+				let segment = <UnincludedSegment<Test>>::get();
+				assert_eq!(segment.len(), 2);
+				let aggregated_segment =
+					<AggregatedUnincludedSegment<Test>>::get().expect("segment is non-empty");
+				assert_eq!(
+					aggregated_segment.consumed_go_ahead_signal(),
+					Some(relay_chain::UpgradeGoAhead::GoAhead)
+				);
+			},
+		)
+		.add_with_post_test(
+			126,
+			|| {},
+			|| {
+				let aggregated_segment =
+					<AggregatedUnincludedSegment<Test>>::get().expect("segment is non-empty");
+				// Block that processed the signal is included.
+				assert!(aggregated_segment.consumed_go_ahead_signal().is_none());
+			},
+		);
+}
+
+#[test]
+fn unincluded_code_upgrade_scheduled_after_go_ahead() {
+	CONSENSUS_HOOK.with(|c| {
+		*c.borrow_mut() = Box::new(|_| (Weight::zero(), NonZeroU32::new(2).unwrap().into()))
+	});
+
+	BlockTests::new()
+		.with_inclusion_delay(1)
+		.with_relay_sproof_builder(|_, block_number, builder| {
+			if block_number > 123 && block_number <= 125 {
+				builder.upgrade_go_ahead = Some(relay_chain::UpgradeGoAhead::GoAhead);
+			}
+		})
+		.add(123, || {
+			assert_ok!(System::set_code(RawOrigin::Root.into(), Default::default()));
+		})
+		.add_with_post_test(
+			124,
+			|| {},
+			|| {
+				assert!(
+					!<PendingValidationCode<Test>>::exists(),
+					"validation function must have been unset"
+				);
+				// The previous go-ahead signal was processed, schedule another upgrade.
+				assert_ok!(System::set_code(RawOrigin::Root.into(), Default::default()));
+			},
+		)
+		.add_with_post_test(
+			125,
+			|| {
+				// The signal is present in relay state proof and ignored.
+				// Block that processed the signal is still not included.
+			},
+			|| {
+				let segment = <UnincludedSegment<Test>>::get();
+				assert_eq!(segment.len(), 2);
+				let aggregated_segment =
+					<AggregatedUnincludedSegment<Test>>::get().expect("segment is non-empty");
+				assert_eq!(
+					aggregated_segment.consumed_go_ahead_signal(),
+					Some(relay_chain::UpgradeGoAhead::GoAhead)
+				);
+			},
+		)
+		.add_with_post_test(
+			126,
+			|| {},
+			|| {
+				assert!(<PendingValidationCode<Test>>::exists(), "upgrade is pending");
+			},
+		);
+}
+
+#[test]
 fn inherent_processed_messages_are_ignored() {
 	CONSENSUS_HOOK.with(|c| {
 		*c.borrow_mut() = Box::new(|_| (Weight::zero(), NonZeroU32::new(2).unwrap().into()))

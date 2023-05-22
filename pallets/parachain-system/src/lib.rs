@@ -225,6 +225,7 @@ pub mod pallet {
 		fn on_finalize(_: T::BlockNumber) {
 			<DidSetValidationCode<T>>::kill();
 			<UpgradeRestrictionSignal<T>>::kill();
+			let relay_upgrade_go_ahead = <UpgradeGoAhead<T>>::take();
 
 			assert!(
 				<ValidationData<T>>::exists(),
@@ -338,20 +339,30 @@ pub mod pallet {
 					.collect();
 				let used_bandwidth =
 					UsedBandwidth { ump_msg_count, ump_total_bytes, hrmp_outgoing };
+
+				let mut aggregated_segment =
+					AggregatedUnincludedSegment::<T>::get().unwrap_or_default();
+				let consumed_go_ahead_signal =
+					if aggregated_segment.consumed_go_ahead_signal().is_some() {
+						// Some ancestor within the segment already processed this signal -- validated during
+						// inherent creation.
+						None
+					} else {
+						relay_upgrade_go_ahead
+					};
 				// The bandwidth constructed was ensured to satisfy relay chain constraints.
-				let ancestor = Ancestor::new_unchecked(used_bandwidth);
+				let ancestor = Ancestor::new_unchecked(used_bandwidth, consumed_go_ahead_signal);
 
 				let watermark = HrmpWatermark::<T>::get();
 				let watermark_update =
 					HrmpWatermarkUpdate::new(watermark, LastRelayChainBlockNumber::<T>::get());
-				AggregatedUnincludedSegment::<T>::mutate(|agg| {
-					let agg = agg.get_or_insert_with(SegmentTracker::default);
-					// TODO: In order of this panic to be correct, outbound message source should
-					// respect bandwidth limits as well.
-					// <https://github.com/paritytech/cumulus/issues/2471>
-					agg.append(&ancestor, watermark_update, &total_bandwidth_out)
-						.expect("unincluded segment limits exceeded");
-				});
+				// TODO: In order of this panic to be correct, outbound message source should
+				// respect bandwidth limits as well.
+				// <https://github.com/paritytech/cumulus/issues/2471>
+				aggregated_segment
+					.append(&ancestor, watermark_update, &total_bandwidth_out)
+					.expect("unincluded segment limits exceeded");
+				AggregatedUnincludedSegment::<T>::put(aggregated_segment);
 				// Check in `on_initialize` guarantees there's space for this block.
 				UnincludedSegment::<T>::append(ancestor);
 			}
@@ -425,7 +436,7 @@ pub mod pallet {
 				4 + hrmp_max_message_num_per_candidate as u64,
 			);
 
-			// Always try to read `MaxUnincludedLen` in `on_finalize`.
+			// Always try to read `UpgradeGoAhead` in `on_finalize`.
 			weight += T::DbWeight::get().reads(1);
 
 			weight
@@ -455,6 +466,9 @@ pub mod pallet {
 				!<ValidationData<T>>::exists(),
 				"ValidationData must be updated only once in a block",
 			);
+
+			// TODO: This is more than zero, but will need benchmarking to figure out what.
+			let mut total_weight = Weight::zero();
 
 			// NOTE: the inherent data is expected to be unique, even if this block is built
 			// in the context of the same relay parent as the previous one. In particular,
@@ -486,6 +500,8 @@ pub mod pallet {
 			// Update the desired maximum capacity according to the consensus hook.
 			let (consensus_hook_weight, capacity) =
 				T::ConsensusHook::on_state_proof(&relay_state_proof);
+			total_weight += consensus_hook_weight;
+			total_weight += Self::maybe_drop_included_ancestors(&relay_state_proof, capacity);
 
 			// initialization logic: we know that this runs exactly once every block,
 			// which means we can put the initialization logic here to remove the
@@ -493,7 +509,19 @@ pub mod pallet {
 			let upgrade_go_ahead_signal = relay_state_proof
 				.read_upgrade_go_ahead_signal()
 				.expect("Invalid upgrade go ahead signal");
+
+			let upgrade_signal_in_segment = AggregatedUnincludedSegment::<T>::get()
+				.as_ref()
+				.and_then(SegmentTracker::consumed_go_ahead_signal);
+			if let Some(signal_in_segment) = upgrade_signal_in_segment.as_ref() {
+				// Unincluded ancestor consuming upgrade signal is still within the segment,
+				// sanity check that it matches with the signal from relay chain.
+				assert_eq!(upgrade_go_ahead_signal, Some(*signal_in_segment));
+			}
 			match upgrade_go_ahead_signal {
+				Some(_signal) if upgrade_signal_in_segment.is_some() => {
+					// Do nothing, processing logic was executed by unincluded ancestor.
+				},
 				Some(relay_chain::UpgradeGoAhead::GoAhead) => {
 					assert!(
 						<PendingValidationCode<T>>::exists(),
@@ -518,6 +546,7 @@ pub mod pallet {
 					.read_upgrade_restriction_signal()
 					.expect("Invalid upgrade restriction signal"),
 			);
+			<UpgradeGoAhead<T>>::put(upgrade_go_ahead_signal);
 
 			let host_config = relay_state_proof
 				.read_abridged_host_configuration()
@@ -533,18 +562,6 @@ pub mod pallet {
 
 			<T::OnSystemEvent as OnSystemEvent>::on_validation_data(&vfp);
 
-			// TODO: This is more than zero, but will need benchmarking to figure out what.
-			// NOTE: We don't account for the amount of processed messages from
-			// downward and horizontal channels in the unincluded segment.
-			//
-			// This is correct only because the  current implementation always attempts
-			// to exhaust each message queue and panics if the DMQ head doesn't match.
-			//
-			// If one or more messages were ever "re-processed" in a parachain block before its
-			// ancestor was included, the MQC heads wouldn't match and the block would be invalid.
-			//
-			// <https://github.com/paritytech/cumulus/issues/2472>
-			let mut total_weight = consensus_hook_weight;
 			total_weight += Self::process_inbound_downward_messages(
 				relevant_messaging_state.dmq_mqc_head,
 				downward_messages,
@@ -554,7 +571,6 @@ pub mod pallet {
 				horizontal_messages,
 				vfp.relay_parent_number,
 			);
-			total_weight += Self::maybe_drop_included_ancestors(&relay_state_proof, capacity);
 
 			Ok(PostDispatchInfo { actual_weight: Some(total_weight), pays_fee: Pays::No })
 		}
@@ -718,6 +734,15 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type UpgradeRestrictionSignal<T: Config> =
 		StorageValue<_, Option<relay_chain::UpgradeRestriction>, ValueQuery>;
+
+	/// Optional upgrade go-ahead signal from the relay-chain.
+	///
+	/// This storage item is a mirror of the corresponding value for the current parachain from the
+	/// relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
+	/// set after the inherent.
+	#[pallet::storage]
+	pub(super) type UpgradeGoAhead<T: Config> =
+		StorageValue<_, Option<relay_chain::UpgradeGoAhead>, ValueQuery>;
 
 	/// The state proof for the last relay parent block.
 	///
