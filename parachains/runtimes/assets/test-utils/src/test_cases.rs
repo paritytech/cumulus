@@ -15,56 +15,27 @@
 
 //! Module contains predefined test-case scenarios for `Runtime` with various assets.
 
-use crate::{
-	assert_metadata, assert_total, mock_open_hrmp_channel, AccountIdOf, BalanceOf, ExtBuilder,
-	RuntimeHelper, SessionKeysOf, ValidatorIdOf, XcmReceivedFrom,
-};
 use codec::Encode;
 use cumulus_primitives_core::XcmpMessageSource;
 use frame_support::{
 	assert_noop, assert_ok,
-	traits::{fungibles::InspectEnumerable, Contains, Currency, Get, OriginTrait},
+	traits::{
+		fungibles::InspectEnumerable, Contains, Currency, Get, OriginTrait, ProcessMessageError,
+	},
 	weights::Weight,
 };
 use parachains_common::Balance;
+use parachains_runtimes_test_utils::{
+	assert_metadata, assert_total, mock_open_hrmp_channel, AccountIdOf, BalanceOf,
+	CollatorSessionKeys, ExtBuilder, RuntimeHelper, ValidatorIdOf, XcmReceivedFrom,
+};
 use sp_runtime::{
 	traits::{StaticLookup, Zero},
 	DispatchError, Saturating,
 };
-use xcm::{
-	latest::prelude::*, CreateMatcher, MatchXcm, VersionedMultiAsset, VersionedMultiAssets,
-	VersionedMultiLocation,
-};
+use xcm::{latest::prelude::*, VersionedMultiAsset, VersionedMultiAssets, VersionedMultiLocation};
+use xcm_builder::{CreateMatcher, MatchXcm};
 use xcm_executor::{traits::Convert, XcmExecutor};
-
-pub struct CollatorSessionKeys<
-	Runtime: frame_system::Config + pallet_balances::Config + pallet_session::Config,
-> {
-	collator: AccountIdOf<Runtime>,
-	validator: ValidatorIdOf<Runtime>,
-	key: SessionKeysOf<Runtime>,
-}
-
-impl<Runtime: frame_system::Config + pallet_balances::Config + pallet_session::Config>
-	CollatorSessionKeys<Runtime>
-{
-	pub fn new(
-		collator: AccountIdOf<Runtime>,
-		validator: ValidatorIdOf<Runtime>,
-		key: SessionKeysOf<Runtime>,
-	) -> Self {
-		Self { collator, validator, key }
-	}
-	pub fn collators(&self) -> Vec<AccountIdOf<Runtime>> {
-		vec![self.collator.clone()]
-	}
-
-	pub fn session_keys(
-		&self,
-	) -> Vec<(AccountIdOf<Runtime>, ValidatorIdOf<Runtime>, SessionKeysOf<Runtime>)> {
-		vec![(self.collator.clone(), self.validator.clone(), self.key.clone())]
-	}
-}
 
 /// Test-case makes sure that `Runtime` can receive native asset from relay chain
 /// and can teleport it back and to the other parachains
@@ -138,7 +109,7 @@ pub fn teleports_for_native_asset_works<
 				BuyExecution {
 					fees: MultiAsset {
 						id: Concrete(native_asset_id),
-						fun: Fungible(buy_execution_fee_amount_eta.into()),
+						fun: Fungible(buy_execution_fee_amount_eta),
 					},
 					weight_limit: Limited(Weight::from_parts(303531000, 65536)),
 				},
@@ -194,7 +165,7 @@ pub fn teleports_for_native_asset_works<
 					RuntimeHelper::<Runtime>::origin_of(target_account.clone()),
 					dest,
 					dest_beneficiary,
-					(native_asset_id, native_asset_to_teleport_away.clone().into()),
+					(native_asset_id, native_asset_to_teleport_away.into()),
 					None,
 				));
 				// check balances
@@ -239,7 +210,7 @@ pub fn teleports_for_native_asset_works<
 					RuntimeHelper::<Runtime>::origin_of(target_account.clone()),
 					dest,
 					dest_beneficiary,
-					(native_asset_id, native_asset_to_teleport_away.clone().into()),
+					(native_asset_id, native_asset_to_teleport_away.into()),
 					Some((runtime_para_id, other_para_id)),
 				));
 
@@ -370,7 +341,7 @@ pub fn teleports_for_foreign_assets_works<
 		WeightToFee::weight_to_fee(&Weight::from_parts(90_000_000_000, 0));
 	let buy_execution_fee = MultiAsset {
 		id: Concrete(MultiLocation::parent()),
-		fun: Fungible(buy_execution_fee_amount.into()),
+		fun: Fungible(buy_execution_fee_amount),
 	};
 
 	let teleported_foreign_asset_amount = 10000000000000;
@@ -380,7 +351,7 @@ pub fn teleports_for_foreign_assets_works<
 		.with_session_keys(collator_session_keys.session_keys())
 		.with_balances(vec![
 			(
-				foreign_creator_as_account_id.clone(),
+				foreign_creator_as_account_id,
 				existential_deposit + (buy_execution_fee_amount * 2).into(),
 			),
 			(target_account.clone(), existential_deposit),
@@ -445,7 +416,7 @@ pub fn teleports_for_foreign_assets_works<
 				BuyExecution {
 					fees: MultiAsset {
 						id: Concrete(MultiLocation::parent()),
-						fun: Fungible(buy_execution_fee_amount.into()),
+						fun: Fungible(buy_execution_fee_amount),
 					},
 					weight_limit: Limited(Weight::from_parts(403531000, 65536)),
 				},
@@ -540,7 +511,7 @@ pub fn teleports_for_foreign_assets_works<
 					RuntimeHelper::<Runtime>::origin_of(target_account.clone()),
 					dest,
 					dest_beneficiary,
-					(foreign_asset_id_multilocation, asset_to_teleport_away.clone().into()),
+					(foreign_asset_id_multilocation, asset_to_teleport_away),
 					Some((runtime_para_id, foreign_para_id)),
 				));
 
@@ -792,7 +763,7 @@ pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 		.execute_with(|| {
 			// create  some asset class
 			let asset_minimum_asset_balance = 3333333_u128;
-			let asset_id_as_multilocation = AssetIdConverter::reverse_ref(&asset_id).unwrap();
+			let asset_id_as_multilocation = AssetIdConverter::reverse_ref(asset_id).unwrap();
 			assert_ok!(<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::force_create(
 				RuntimeHelper::<Runtime>::root_origin(),
 				asset_id.into(),
@@ -873,7 +844,7 @@ pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 							id: charlie_account.clone().into()
 						}),
 					},
-					(asset_id_as_multilocation, 1 * asset_minimum_asset_balance),
+					(asset_id_as_multilocation, asset_minimum_asset_balance),
 				),
 				XcmError::FailedToTransactAsset(Into::<&str>::into(
 					sp_runtime::TokenError::CannotCreate
@@ -894,7 +865,7 @@ pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 						parents: 0,
 						interior: X1(AccountId32 { network: None, id: bob_account.clone().into() }),
 					},
-					(asset_id_as_multilocation, 1 * asset_minimum_asset_balance),
+					(asset_id_as_multilocation, asset_minimum_asset_balance),
 				),
 				Ok(_)
 			));
@@ -912,7 +883,7 @@ pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 					asset_id.into(),
 					&bob_account
 				),
-				(1 * asset_minimum_asset_balance).into()
+				asset_minimum_asset_balance.into()
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, AssetsPalletInstance>>::balance(
@@ -1135,7 +1106,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 			// lets simulate this was triggered by relay chain from local consensus sibling parachain
 			let xcm = Xcm(vec![
 				WithdrawAsset(buy_execution_fee.clone().into()),
-				BuyExecution { fees: buy_execution_fee.clone().into(), weight_limit: Unlimited },
+				BuyExecution { fees: buy_execution_fee.clone(), weight_limit: Unlimited },
 				Transact {
 					origin_kind: OriginKind::Xcm,
 					require_weight_at_most: Weight::from_parts(40_000_000_000, 8000),
@@ -1252,7 +1223,7 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 			});
 			let xcm = Xcm(vec![
 				WithdrawAsset(buy_execution_fee.clone().into()),
-				BuyExecution { fees: buy_execution_fee.clone().into(), weight_limit: Unlimited },
+				BuyExecution { fees: buy_execution_fee.clone(), weight_limit: Unlimited },
 				Transact {
 					origin_kind: OriginKind::Xcm,
 					require_weight_at_most: Weight::from_parts(20_000_000_000, 8000),
@@ -1751,7 +1722,7 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 					UnpaidExecution { weight_limit, check_origin }
 						if weight_limit == &Unlimited && check_origin.is_none() =>
 						Ok(()),
-					_ => Err(()),
+					_ => Err(ProcessMessageError::BadFormat),
 				})
 				.expect("contains UnpaidExecution")
 				.match_next_inst(|instr| match instr {
@@ -1792,7 +1763,7 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 								WithdrawAsset(fees)
 									if fees == &MultiAssets::from(target_location_fee.clone()) =>
 									Ok(()),
-								_ => Err(()),
+								_ => Err(ProcessMessageError::BadFormat),
 							})
 							.expect("contains WithdrawAsset")
 							.match_next_inst(|next_instr| match next_instr {
@@ -1800,19 +1771,19 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 									if fees == &target_location_fee &&
 										weight_limit == &Unlimited =>
 									Ok(()),
-								_ => Err(()),
+								_ => Err(ProcessMessageError::BadFormat),
 							})
 							.expect("contains BuyExecution")
 							.match_next_inst(|inner_xcm_instr| match inner_xcm_instr {
 								ReserveAssetDeposited(ref deposited)
 									if deposited.eq(&reanchored_assets) =>
 									Ok(()),
-								_ => Err(()),
+								_ => Err(ProcessMessageError::BadFormat),
 							})
 							.expect("contains ReserveAssetDeposited")
 							.match_next_inst(|inner_xcm_instr| match inner_xcm_instr {
 								ClearOrigin => Ok(()),
-								_ => Err(()),
+								_ => Err(ProcessMessageError::BadFormat),
 							})
 							.expect("contains ClearOrigin")
 							.match_next_inst(|inner_xcm_instr| match inner_xcm_instr {
@@ -1821,14 +1792,14 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 										&MultiAssetFilter::from(reanchored_assets.clone()) &&
 										beneficiary.eq(&reanchored_destination_account) =>
 									Ok(()),
-								_ => Err(()),
+								_ => Err(ProcessMessageError::BadFormat),
 							})
 							.expect("contains DepositAsset")
 							.assert_remaining_insts(0)
 							.is_ok());
 						Ok(())
 					},
-					_ => Err(()),
+					_ => Err(ProcessMessageError::BadFormat),
 				})
 				.is_ok());
 		})
