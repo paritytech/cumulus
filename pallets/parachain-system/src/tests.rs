@@ -906,7 +906,7 @@ fn receive_hrmp() {
 		};
 
 		static ref MSG_2: InboundHrmpMessage = InboundHrmpMessage {
-			sent_at: 1,
+			sent_at: 2,
 			data: b"2".to_vec(),
 		};
 
@@ -983,8 +983,8 @@ fn receive_hrmp() {
 				assert_eq!(
 					&*m,
 					&[
-						(ParaId::from(300), 1, b"2".to_vec()),
 						(ParaId::from(200), 2, b"4".to_vec()),
+						(ParaId::from(300), 2, b"2".to_vec()),
 						(ParaId::from(300), 2, b"3".to_vec()),
 					]
 				);
