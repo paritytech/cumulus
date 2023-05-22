@@ -1883,9 +1883,6 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 		parents: 2,
 		interior: X2(GlobalConsensus(remote_network_id), Parachain(1000)),
 	};
-	let remote_parachain_sovereign_account =
-		LocationToAccountId::convert_ref(remote_parachain_as_origin)
-			.expect("Sovereign account works");
 	let foreign_asset_id_multilocation =
 		MultiLocation { parents: 2, interior: X1(GlobalConsensus(remote_network_id)) };
 	let buy_execution_fee_amount = 50000000000;
@@ -1897,18 +1894,21 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 	ExtBuilder::<Runtime>::default()
 		.with_collators(collator_session_keys.collators())
 		.with_session_keys(collator_session_keys.session_keys())
-		.with_balances(vec![
-			(
-				remote_parachain_sovereign_account.clone(),
-				existential_deposit + buy_execution_fee_amount.into(),
-			),
-			(target_account.clone(), existential_deposit),
-		])
+		.with_balances(vec![(target_account.clone(), existential_deposit)])
 		.with_tracing()
 		.build()
 		.execute_with(|| {
-			// setup bridge transfer configuration
+			// drip SA for remote global parachain origin
+			let remote_parachain_sovereign_account =
+				LocationToAccountId::convert_ref(remote_parachain_as_origin)
+					.expect("Sovereign account works");
+			assert_ok!(<pallet_balances::Pallet<Runtime>>::force_set_balance(
+				RuntimeHelper::<Runtime>::root_origin(),
+				remote_parachain_sovereign_account.clone().into(),
+				existential_deposit + buy_execution_fee_amount.into(),
+			));
 
+			// setup bridge transfer configuration
 			// add allowed univeral alias for remote network
 			assert_ok!(<pallet_bridge_transfer::Pallet<Runtime>>::add_universal_alias(
 				RuntimeHelper::<Runtime>::root_origin(),
