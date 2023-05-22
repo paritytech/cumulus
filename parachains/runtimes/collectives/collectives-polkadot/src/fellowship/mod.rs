@@ -175,7 +175,7 @@ impl pallet_core_fellowship::Config<FellowshipCoreInstance> for Runtime {
 
 parameter_types! {
 	pub FellowshipAccount: AccountId = constants::account::FELLOWSHIP_PALLET_ID.into_account_truncating();
-	pub const RegistrationPeriod: BlockNumber = 75 * DAYS;
+	pub const RegistrationPeriod: BlockNumber = 15 * DAYS;
 	pub const PayoutPeriod: BlockNumber = 15 * DAYS;
 	/// A total budget of a single payout cycle.
 	/// The cycle duration is a sum of `RegistrationPeriod` and `PayoutPeriod`.
