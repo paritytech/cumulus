@@ -174,7 +174,7 @@ pub mod pallet {
 	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
-	/// The invulnerable, fixed collators. This list must be sorted.
+	/// The invulnerable, permissioned collators. This list must be sorted.
 	#[pallet::storage]
 	#[pallet::getter(fn invulnerables)]
 	pub type Invulnerables<T: Config> =
@@ -260,7 +260,7 @@ pub mod pallet {
 		NewInvulnerables { invulnerables: Vec<T::AccountId> },
 		/// A new Invulnerable was added.
 		InvulnerableAdded { account_id: T::AccountId },
-		/// An Invulnverable was removed.
+		/// An Invulnerable was removed.
 		InvulnerableRemoved { account_id: T::AccountId },
 		/// The number of desired candidates was set.
 		NewDesiredCandidates { desired_candidates: u32 },
@@ -440,7 +440,7 @@ pub mod pallet {
 			// ensure `who` is not already invulnerable
 			ensure!(!invulnerables.contains(&who), Error::<T>::AlreadyInvulnerable);
 
-			// ensure `who` has registred a validator key
+			// ensure `who` has registered a validator key
 			let validator_key = T::ValidatorIdOf::convert(who.clone())
 				.ok_or(Error::<T>::NoAssociatedValidatorId)?;
 			ensure!(
