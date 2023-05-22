@@ -24,7 +24,9 @@
 
 use codec::{Decode, Encode};
 use cumulus_client_collator::service::ServiceInterface as CollatorServiceInterface;
-use cumulus_client_consensus_common::{ParachainBlockImportMarker, ParachainCandidate, ParentSearchParams};
+use cumulus_client_consensus_common::{
+	ParachainBlockImportMarker, ParachainCandidate, ParentSearchParams,
+};
 use cumulus_client_consensus_proposer::ProposerInterface;
 use cumulus_primitives_core::{
 	relay_chain::Hash as PHash, CollectCollationInfo, PersistedValidationData,
@@ -133,13 +135,14 @@ pub async fn run_async_backing_driven<Block, P, BI, CIDP, Client, RClient, SO, P
 		};
 
 		// TODO [now]: remove this in favor of one passed in as a parameter.
-		let fake_hack: sc_client_api::in_mem::Blockchain::<Block> = unimplemented!();
+		let fake_hack: sc_client_api::in_mem::Blockchain<Block> = unimplemented!();
 
 		let potential_parents = cumulus_client_consensus_common::find_potential_parents::<Block>(
 			parent_search_params,
 			&fake_hack, // sp_blockchain::Backend
 			&params.relay_client,
-		).await;
+		)
+		.await;
 
 		let mut potential_parents = match potential_parents {
 			Err(e) => {
@@ -150,8 +153,8 @@ pub async fn run_async_backing_driven<Block, P, BI, CIDP, Client, RClient, SO, P
 					"Could not fetch potential parents to build upon"
 				);
 
-				continue;
-			}
+				continue
+			},
 			Ok(x) => x,
 		};
 
@@ -170,11 +173,9 @@ pub async fn run_async_backing_driven<Block, P, BI, CIDP, Client, RClient, SO, P
 	}
 }
 
-fn can_build_upon<Block: BlockT, Client>(
-	block_hash: Block::Hash,
-	client: &Client,
-) -> bool where
-	Client: ProvideRuntimeApi<Block>
+fn can_build_upon<Block: BlockT, Client>(block_hash: Block::Hash, client: &Client) -> bool
+where
+	Client: ProvideRuntimeApi<Block>,
 {
 	// TODO [now]: claim slot, maybe with an authorities cache to avoid
 	// all validators doing this every new relay-chain block.
@@ -284,7 +285,8 @@ pub async fn run_bare_relay_driven<Block, P, BI, CIDP, Client, RClient, SO, Prop
 		);
 
 		let proposal = try_request!(
-			params.proposer
+			params
+				.proposer
 				.propose(
 					&parent_header,
 					&parachain_inherent_data,
