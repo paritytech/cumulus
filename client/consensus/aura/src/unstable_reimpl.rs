@@ -24,7 +24,7 @@
 
 use codec::{Decode, Encode};
 use cumulus_client_collator::service::ServiceInterface as CollatorServiceInterface;
-use cumulus_client_consensus_common::{ParachainBlockImportMarker, ParachainCandidate};
+use cumulus_client_consensus_common::{ParachainBlockImportMarker, ParachainCandidate, ParentSearchParams};
 use cumulus_client_consensus_proposer::ProposerInterface;
 use cumulus_primitives_core::{
 	relay_chain::Hash as PHash, CollectCollationInfo, PersistedValidationData,
@@ -103,8 +103,7 @@ pub async fn run_async_backing_driven<Block, P, BI, CIDP, Client, RClient, SO, P
 	P::Public: AppPublic + Hash + Member + Encode + Decode,
 	P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
 {
-	let mut proposer = params.proposer;
-	let mut block_import = params.block_import;
+	let mut params = params;
 
 	let mut import_notifications = match params.relay_client.import_notification_stream().await {
 		Ok(s) => s,
@@ -121,7 +120,70 @@ pub async fn run_async_backing_driven<Block, P, BI, CIDP, Client, RClient, SO, P
 
 	while let Some(relay_parent_header) = import_notifications.next().await {
 		let relay_parent = relay_parent_header.hash();
+
+		// TODO [now]: get asynchronous backing parameters from the relay-chain
+		// runtime.
+
+		let parent_search_params = ParentSearchParams {
+			relay_parent,
+			para_id: params.para_id,
+			ancestry_lookback: unimplemented!(),
+			max_depth: unimplemented!(), // max unincluded segment len
+			ignore_alternative_branches: true,
+		};
+
+		// TODO [now]: remove this in favor of one passed in as a parameter.
+		let fake_hack: sc_client_api::in_mem::Blockchain::<Block> = unimplemented!();
+
+		let potential_parents = cumulus_client_consensus_common::find_potential_parents::<Block>(
+			parent_search_params,
+			&fake_hack, // sp_blockchain::Backend
+			&params.relay_client,
+		).await;
+
+		let mut potential_parents = match potential_parents {
+			Err(e) => {
+				tracing::error!(
+					target: crate::LOG_TARGET,
+					?relay_parent,
+					err = ?e,
+					"Could not fetch potential parents to build upon"
+				);
+
+				continue;
+			}
+			Ok(x) => x,
+		};
+
+		// Sort by depth, descending, to choose the longest chain, and lazily filter
+		// by those with space.
+		potential_parents.sort_by(|a, b| b.depth.cmp(&a.depth));
+		let potential_parents = potential_parents
+			.into_iter()
+			.filter(|p| can_build_upon(p.hash, &*params.para_client));
+
+		if let Some(parent) = potential_parents.next() {
+			// TODO [now]: build and announce collations recursively until
+			// `can_build_upon` fails.
+			unimplemented!()
+		}
 	}
+}
+
+fn can_build_upon<Block: BlockT, Client>(
+	block_hash: Block::Hash,
+	client: &Client,
+) -> bool where
+	Client: ProvideRuntimeApi<Block>
+{
+	// TODO [now]: claim slot, maybe with an authorities cache to avoid
+	// all validators doing this every new relay-chain block.
+	// Actually, as long as sessions are based on slot number then they should
+	// be the same for all...
+	//
+	// TODO [now]: new runtime API,
+	// AuraUnincludedSegmentApi::has_space(slot) or something like it.
+	unimplemented!()
 }
 
 /// Run bare Aura consensus as a relay-chain-driven collator.
@@ -149,8 +211,7 @@ pub async fn run_bare_relay_driven<Block, P, BI, CIDP, Client, RClient, SO, Prop
 	P::Public: AppPublic + Hash + Member + Encode + Decode,
 	P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
 {
-	let mut proposer = params.proposer;
-	let mut block_import = params.block_import;
+	let mut params = params;
 
 	let mut collation_requests = cumulus_client_collator::relay_chain_driven::init(
 		params.key,
@@ -223,7 +284,7 @@ pub async fn run_bare_relay_driven<Block, P, BI, CIDP, Client, RClient, SO, Prop
 		);
 
 		let proposal = try_request!(
-			proposer
+			params.proposer
 				.propose(
 					&parent_header,
 					&parachain_inherent_data,
@@ -259,7 +320,7 @@ pub async fn run_bare_relay_driven<Block, P, BI, CIDP, Client, RClient, SO, Prop
 				.clone(),
 		);
 
-		try_request!(block_import.import_block(sealed_importable).await);
+		try_request!(params.block_import.import_block(sealed_importable).await);
 
 		let response = if let Some((collation, b)) = params.collator_service.build_collation(
 			&parent_header,

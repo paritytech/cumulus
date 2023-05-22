@@ -206,7 +206,8 @@ pub struct PotentialParent<B: BlockT> {
 	pub depth: usize,
 	/// Whether the block descends from the block pending availability.
 	///
-	/// This is false for the last inclued block as well as the block pending availability itself.
+	/// This is false for the last included block as well as the block pending availability itself.
+	// TODO [now]: change this to be true for the pending blocks themselves.
 	pub descends_from_pending: bool,
 }
 
