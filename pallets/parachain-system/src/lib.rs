@@ -974,12 +974,9 @@ impl<T: Config> GetChannelInfo for Pallet<T> {
 
 impl<T: Config> Pallet<T> {
 	/// Updates inherent data to only contain messages that weren't already processed
-	/// by the runtime based on MQC heads.
+	/// by the runtime based on last relay chain block number.
 	///
-	/// # Panics
-	///
-	/// Panics if MQC heads don't match even after exhausting incoming message queue, either
-	/// downward or horizontal.
+	/// This method doesn't check for mqc heads mismatch.
 	fn drop_processed_messages_from_inherent(para_inherent: &mut ParachainInherentData) {
 		let ParachainInherentData { downward_messages, horizontal_messages, .. } = para_inherent;
 
