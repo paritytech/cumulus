@@ -116,7 +116,7 @@ pub type ForeignAssetsConvertedConcreteId = assets_common::ForeignAssetsConverte
 		// Ignore `TrustBackedAssets` explicitly
 		StartsWith<TrustBackedAssetsPalletLocation>,
 		// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
-		// - foreign assets from our consensus should be: `MultiLocation {parent: 1, X*(Parachain(xyz))}
+		// - foreign assets from our consensus should be: `MultiLocation {parents: 1, X*(Parachain(xyz), ..)}
 		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` wont be accepted here
 		StartsWithExplicitGlobalConsensus<UniversalLocationNetworkId>,
 	),
@@ -275,6 +275,9 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 					pallet_assets::Call::transfer_approved { .. } |
 					pallet_assets::Call::touch { .. } |
 					pallet_assets::Call::refund { .. },
+			) | RuntimeCall::NftFractionalization(
+				pallet_nft_fractionalization::Call::fractionalize { .. } |
+					pallet_nft_fractionalization::Call::unify { .. },
 			) | RuntimeCall::Nfts(
 				pallet_nfts::Call::create { .. } |
 					pallet_nfts::Call::force_create { .. } |
@@ -490,9 +493,7 @@ pub type ForeignCreatorsSovereignAccountOf = (
 /// Simple conversion of `u32` into an `AssetId` for use in benchmarking.
 pub struct XcmBenchmarkHelper;
 #[cfg(feature = "runtime-benchmarks")]
-use pallet_assets::BenchmarkHelper;
-#[cfg(feature = "runtime-benchmarks")]
-impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
+impl pallet_assets::BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 	fn create_asset_id_parameter(id: u32) -> MultiLocation {
 		MultiLocation { parents: 1, interior: X1(Parachain(id)) }
 	}
