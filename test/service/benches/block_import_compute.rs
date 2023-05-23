@@ -30,7 +30,7 @@ use frame_system_rpc_runtime_api::AccountNonceApi;
 use sc_block_builder::{BlockBuilderProvider, RecordProof};
 use sp_keyring::Sr25519Keyring::Alice;
 
-mod utils;
+use cumulus_test_service::bench_utils as utils;
 
 fn benchmark_block_import(c: &mut Criterion) {
 	sp_tracing::try_init_simple();

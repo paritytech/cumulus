@@ -25,6 +25,7 @@ use cumulus_test_client::{
 };
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use cumulus_test_runtime::{BalancesCall, Block, Header, UncheckedExtrinsic};
+use cumulus_test_service::bench_utils as utils;
 use polkadot_primitives::HeadData;
 use sc_block_builder::BlockBuilderProvider;
 use sc_client_api::UsageProvider;
@@ -38,8 +39,6 @@ use sp_runtime::{
 	traits::Header as HeaderT,
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
 };
-
-mod utils;
 
 fn create_extrinsics(
 	client: &cumulus_test_client::Client,

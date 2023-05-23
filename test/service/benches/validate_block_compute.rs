@@ -37,7 +37,7 @@ use sp_consensus::BlockOrigin;
 use sp_keyring::Sr25519Keyring::Alice;
 use sp_runtime::traits::Header as HeaderT;
 
-mod utils;
+use cumulus_test_service::bench_utils as utils;
 
 async fn import_block(
 	mut client: &cumulus_test_client::Client,

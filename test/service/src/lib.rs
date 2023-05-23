@@ -18,6 +18,9 @@
 
 #![warn(missing_docs)]
 
+/// Utilities used for benchmarking
+pub mod bench_utils;
+
 pub mod chain_spec;
 mod genesis;
 

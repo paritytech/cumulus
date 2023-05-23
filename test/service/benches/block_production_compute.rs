@@ -30,7 +30,7 @@ use sp_api::ProvideRuntimeApi;
 
 use sp_keyring::Sr25519Keyring::Alice;
 
-mod utils;
+use cumulus_test_service::bench_utils as utils;
 
 fn benchmark_block_production_compute(c: &mut Criterion) {
 	sp_tracing::try_init_simple();

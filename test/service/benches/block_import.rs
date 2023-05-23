@@ -26,7 +26,7 @@ use sc_block_builder::{BlockBuilderProvider, RecordProof};
 use sp_api::{Core, ProvideRuntimeApi};
 use sp_keyring::Sr25519Keyring::Alice;
 
-mod utils;
+use cumulus_test_service::bench_utils as utils;
 
 fn benchmark_block_import(c: &mut Criterion) {
 	sp_tracing::try_init_simple();
@@ -56,7 +56,7 @@ fn benchmark_block_import(c: &mut Criterion) {
 	runtime.block_on(utils::import_block(&client, &built_block.block, false));
 
 	let (max_transfer_count, extrinsics) =
-		utils::create_extrinsics(&client, &src_accounts, &dst_accounts);
+		utils::create_benchmarking_transfer_extrinsics(&client, &src_accounts, &dst_accounts);
 
 	// Build the block we will use for benchmarking
 	let parent_hash = client.usage_info().chain.best_hash;

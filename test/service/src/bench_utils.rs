@@ -17,10 +17,10 @@
 
 use codec::Encode;
 
+use crate::{construct_extrinsic, Client as TestClient};
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use cumulus_test_runtime::{BalancesCall, NodeBlock, UncheckedExtrinsic, WASM_BINARY};
-use cumulus_test_service::{construct_extrinsic, Client as TestClient};
 use polkadot_primitives::HeadData;
 use sc_client_api::UsageProvider;
 
@@ -41,11 +41,12 @@ use sp_runtime::{
 	AccountId32, OpaqueExtrinsic,
 };
 
-// Accounts to use for transfer transactions. Enough for 5000 transactions.
+
+/// Accounts to use for transfer transactions. Enough for 5000 transactions.
 const NUM_ACCOUNTS: usize = 10000;
 
-pub(crate) fn create_benchmark_accounts(
-) -> (Vec<sr25519::Pair>, Vec<sr25519::Pair>, Vec<AccountId32>) {
+/// Create accounts by deriving from Alice
+pub fn create_benchmark_accounts() -> (Vec<sr25519::Pair>, Vec<sr25519::Pair>, Vec<AccountId32>) {
 	let accounts: Vec<sr25519::Pair> = (0..NUM_ACCOUNTS)
 		.map(|idx| {
 			Pair::from_string(&format!("{}/{}", Alice.to_seed(), idx), None)
@@ -60,7 +61,8 @@ pub(crate) fn create_benchmark_accounts(
 	(src_accounts.to_vec(), dst_accounts.to_vec(), account_ids)
 }
 
-pub(crate) fn extrinsic_set_time(client: &TestClient) -> OpaqueExtrinsic {
+/// Create a timestamp extrinsic ahead by `MinimumPeriod` of the last known timestamp
+pub fn extrinsic_set_time(client: &TestClient) -> OpaqueExtrinsic {
 	let best_number = client.usage_info().chain.best_number;
 
 	let timestamp = best_number as u64 * cumulus_test_runtime::MinimumPeriod::get();
@@ -73,7 +75,8 @@ pub(crate) fn extrinsic_set_time(client: &TestClient) -> OpaqueExtrinsic {
 	.into()
 }
 
-pub(crate) fn extrinsic_set_validation_data(
+/// Create a set validation data extrinsic
+pub fn extrinsic_set_validation_data(
 	parent_header: cumulus_test_runtime::Header,
 ) -> OpaqueExtrinsic {
 	let sproof_builder = RelayStateSproofBuilder { para_id: 100.into(), ..Default::default() };
@@ -100,11 +103,8 @@ pub(crate) fn extrinsic_set_validation_data(
 	.into()
 }
 
-pub(crate) async fn import_block(
-	mut client: &TestClient,
-	block: &NodeBlock,
-	import_existing: bool,
-) {
+/// Import block into the given client and make sure the import was successful
+pub async fn import_block(mut client: &TestClient, block: &NodeBlock, import_existing: bool) {
 	let mut params = BlockImportParams::new(BlockOrigin::File, block.header.clone());
 	params.body = Some(block.extrinsics.clone());
 	params.state_action = StateAction::Execute;
@@ -118,7 +118,8 @@ pub(crate) async fn import_block(
 	);
 }
 
-pub(crate) fn create_extrinsics(
+/// Creates transfer extrinsics pair-wise from elements of `src_accounts` to `dst_accounts`.
+pub fn create_benchmarking_transfer_extrinsics(
 	client: &TestClient,
 	src_accounts: &[sr25519::Pair],
 	dst_accounts: &[sr25519::Pair],
@@ -158,7 +159,8 @@ pub(crate) fn create_extrinsics(
 	(max_transfer_count, extrinsics)
 }
 
-pub(crate) fn get_wasm_module() -> Box<dyn sc_executor_common::wasm_runtime::WasmModule> {
+/// Prepare cumulus test runtime for execution
+pub fn get_wasm_module() -> Box<dyn sc_executor_common::wasm_runtime::WasmModule> {
 	let blob = RuntimeBlob::uncompress_if_needed(
 		WASM_BINARY.expect("You need to build the WASM binaries to run the benchmark!"),
 	)

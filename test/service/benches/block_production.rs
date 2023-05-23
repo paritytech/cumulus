@@ -25,7 +25,7 @@ use sc_block_builder::{BlockBuilderProvider, RecordProof};
 
 use sp_keyring::Sr25519Keyring::Alice;
 
-mod utils;
+use cumulus_test_service::bench_utils as utils;
 
 fn benchmark_block_production(c: &mut Criterion) {
 	sp_tracing::try_init_simple();
@@ -58,7 +58,7 @@ fn benchmark_block_production(c: &mut Criterion) {
 	runtime.block_on(utils::import_block(&client, &built_block.block, false));
 
 	let (max_transfer_count, mut extrinsics) =
-		utils::create_extrinsics(&client, &src_accounts, &dst_accounts);
+		utils::create_benchmarking_transfer_extrinsics(&client, &src_accounts, &dst_accounts);
 	let parent_hash = client.usage_info().chain.best_hash;
 	let parent_header = client.header(parent_hash).expect("Just fetched this hash.").unwrap();
 	let set_validation_data_extrinsic = utils::extrinsic_set_validation_data(parent_header);
