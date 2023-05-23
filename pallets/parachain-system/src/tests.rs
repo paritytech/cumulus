@@ -241,7 +241,6 @@ struct BlockTests {
 	ran: bool,
 	relay_sproof_builder_hook:
 		Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut RelayStateSproofBuilder)>>,
-	persisted_validation_data_hook: Option<Box<dyn Fn(&BlockTests, &mut PersistedValidationData)>>,
 	inherent_data_hook:
 		Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut ParachainInherentData)>>,
 	inclusion_delay: Option<usize>,
@@ -302,14 +301,6 @@ impl BlockTests {
 		self
 	}
 
-	fn with_validation_data<F>(mut self, f: F) -> Self
-	where
-		F: 'static + Fn(&BlockTests, &mut PersistedValidationData),
-	{
-		self.persisted_validation_data_hook = Some(Box::new(f));
-		self
-	}
-
 	fn with_inherent_data<F>(mut self, f: F) -> Self
 	where
 		F: 'static + Fn(&BlockTests, RelayChainBlockNumber, &mut ParachainInherentData),
@@ -363,14 +354,11 @@ impl BlockTests {
 				}
 				let (relay_parent_storage_root, relay_chain_state) =
 					sproof_builder.into_state_root_and_proof();
-				let mut vfp = PersistedValidationData {
+				let vfp = PersistedValidationData {
 					relay_parent_number,
 					relay_parent_storage_root,
 					..Default::default()
 				};
-				if let Some(ref hook) = self.persisted_validation_data_hook {
-					hook(self, &mut vfp);
-				}
 
 				<ValidationData<Test>>::put(&vfp);
 				NewValidationCode::<Test>::kill();
