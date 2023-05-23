@@ -55,14 +55,11 @@ fn create_extrinsics(
 		let extrinsic: UncheckedExtrinsic = generate_extrinsic_with_pair(
 			client,
 			src.clone(),
-			BalancesCall::transfer_keep_alive {
-				dest: AccountId::from(dst.public()).into(),
-				value: 10000,
-			},
+			BalancesCall::transfer_keep_alive { dest: AccountId::from(dst.public()), value: 10000 },
 			None,
 		);
 
-		match block_builder.push(extrinsic.clone().into()) {
+		match block_builder.push(extrinsic.clone()) {
 			Ok(_) => {},
 			Err(ApplyExtrinsicFailed(Validity(TransactionValidityError::Invalid(
 				InvalidTransaction::ExhaustsResources,
@@ -70,7 +67,7 @@ fn create_extrinsics(
 			Err(error) => panic!("{}", error),
 		}
 
-		extrinsics.push(extrinsic.into());
+		extrinsics.push(extrinsic);
 		max_transfer_count += 1;
 	}
 
@@ -100,9 +97,8 @@ fn benchmark_block_validation(c: &mut Criterion) {
 		..Default::default()
 	};
 
-	let mut block_builder =
-		client.init_block_builder(Some(validation_data.clone()), Default::default());
-	for extrinsic in extrinsics.clone() {
+	let mut block_builder = client.init_block_builder(Some(validation_data), Default::default());
+	for extrinsic in extrinsics {
 		block_builder.push(extrinsic).unwrap();
 	}
 
@@ -112,12 +108,12 @@ fn benchmark_block_validation(c: &mut Criterion) {
 	let runtime = utils::get_wasm_module();
 
 	let sproof_builder: RelayStateSproofBuilder = Default::default();
-	let (relay_parent_storage_root, _) = sproof_builder.clone().into_state_root_and_proof();
+	let (relay_parent_storage_root, _) = sproof_builder.into_state_root_and_proof();
 	let encoded_params = ValidationParams {
-		block_data: cumulus_test_client::BlockData(parachain_block.clone().encode()),
+		block_data: cumulus_test_client::BlockData(parachain_block.encode()),
 		parent_head: HeadData(parent_header.encode()),
 		relay_parent_number: 1,
-		relay_parent_storage_root: relay_parent_storage_root.clone(),
+		relay_parent_storage_root,
 	}
 	.encode();
 
@@ -150,7 +146,7 @@ fn benchmark_block_validation(c: &mut Criterion) {
 
 fn verify_expected_result(
 	runtime: &Box<dyn WasmModule>,
-	encoded_params: &Vec<u8>,
+	encoded_params: &[u8],
 	parachain_block: Block,
 ) {
 	let res = runtime

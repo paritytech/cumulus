@@ -52,7 +52,7 @@ fn benchmark_block_production(c: &mut Criterion) {
 
 	let mut block_builder = client.new_block(Default::default()).unwrap();
 	block_builder.push(utils::extrinsic_set_time(&client)).unwrap();
-	block_builder.push(set_validation_data_extrinsic.clone()).unwrap();
+	block_builder.push(set_validation_data_extrinsic).unwrap();
 	let built_block = block_builder.build().unwrap();
 
 	runtime.block_on(utils::import_block(&client, &built_block.block, false));

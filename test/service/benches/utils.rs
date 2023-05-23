@@ -47,7 +47,6 @@ const NUM_ACCOUNTS: usize = 10000;
 pub(crate) fn create_benchmark_accounts(
 ) -> (Vec<sr25519::Pair>, Vec<sr25519::Pair>, Vec<AccountId32>) {
 	let accounts: Vec<sr25519::Pair> = (0..NUM_ACCOUNTS)
-		.into_iter()
 		.map(|idx| {
 			Pair::from_string(&format!("{}/{}", Alice.to_seed(), idx), None)
 				.expect("Creates account pair")
@@ -77,8 +76,7 @@ pub(crate) fn extrinsic_set_time(client: &TestClient) -> OpaqueExtrinsic {
 pub(crate) fn extrinsic_set_validation_data(
 	parent_header: cumulus_test_runtime::Header,
 ) -> OpaqueExtrinsic {
-	let mut sproof_builder = RelayStateSproofBuilder::default();
-	sproof_builder.para_id = 100.into();
+	let sproof_builder = RelayStateSproofBuilder { para_id: 100.into(), ..Default::default() };
 	let parent_head = HeadData(parent_header.encode());
 	let (relay_parent_storage_root, relay_chain_state) = sproof_builder.into_state_root_and_proof();
 	let data = ParachainInherentData {
@@ -113,8 +111,7 @@ pub(crate) async fn import_block(
 	params.fork_choice = Some(ForkChoiceStrategy::LongestChain);
 	params.import_existing = import_existing;
 	let import_result = client.import_block(params).await;
-	assert_eq!(
-		true,
+	assert!(
 		matches!(import_result, Ok(ImportResult::Imported(_))),
 		"Unexpected block import result: {:?}!",
 		import_result
@@ -137,10 +134,7 @@ pub(crate) fn create_extrinsics(
 	for (src, dst) in src_accounts.iter().zip(dst_accounts.iter()) {
 		let extrinsic: UncheckedExtrinsic = construct_extrinsic(
 			client,
-			BalancesCall::transfer_keep_alive {
-				dest: AccountId::from(dst.public()).into(),
-				value: 10000,
-			},
+			BalancesCall::transfer_keep_alive { dest: AccountId::from(dst.public()), value: 10000 },
 			src.clone(),
 			Some(0),
 		);
@@ -192,7 +186,7 @@ pub(crate) fn get_wasm_module() -> Box<dyn sc_executor_common::wasm_runtime::Was
 
 	let tmpdir = tempfile::tempdir().expect("Should be able to create temp dir.");
 	let path = tmpdir.path().join("module.bin");
-	std::fs::write(&path, &prepared_blob).unwrap();
+	std::fs::write(&path, prepared_blob).unwrap();
 	unsafe {
 		Box::new(
 			sc_executor_wasmtime::create_runtime_from_artifact::<sp_io::SubstrateHostFunctions>(

@@ -50,7 +50,7 @@ async fn import_block(
 	params.fork_choice = Some(ForkChoiceStrategy::LongestChain);
 	params.import_existing = import_existing;
 	let import_result = client.import_block(params).await;
-	assert_eq!(true, matches!(import_result, Ok(ImportResult::Imported(_))));
+	assert!(matches!(import_result, Ok(ImportResult::Imported(_))));
 }
 
 fn benchmark_block_validation(c: &mut Criterion) {
@@ -71,12 +71,12 @@ fn benchmark_block_validation(c: &mut Criterion) {
 
 	// In the first iteration we want to initialie the glutton pallet
 	let mut is_first = true;
-	for (compute_percent, storage_percent) in vec![
+	for (compute_percent, storage_percent) in &[
 		(Perbill::from_percent(100), Perbill::from_percent(0)),
 		(Perbill::from_percent(100), Perbill::from_percent(100)),
 	] {
 		let parachain_block =
-			set_glutton_parameters(&client, is_first, &compute_percent, &storage_percent);
+			set_glutton_parameters(&client, is_first, compute_percent, storage_percent);
 		is_first = false;
 
 		runtime.block_on(import_block(&client, parachain_block.clone().into_block(), false));
@@ -89,8 +89,7 @@ fn benchmark_block_validation(c: &mut Criterion) {
 			parent_head: parent_header.encode().into(),
 			..Default::default()
 		};
-		let block_builder =
-			client.init_block_builder(Some(validation_data.clone()), Default::default());
+		let block_builder = client.init_block_builder(Some(validation_data), Default::default());
 		let parachain_block = block_builder.build_parachain_block(*parent_header.state_root());
 
 		let proof_size_in_kb = parachain_block.storage_proof().encode().len() as f64 / 1024f64;
@@ -103,7 +102,7 @@ fn benchmark_block_validation(c: &mut Criterion) {
 			block_data: cumulus_test_client::BlockData(parachain_block.clone().encode()),
 			parent_head: HeadData(parent_header.encode()),
 			relay_parent_number: 1,
-			relay_parent_storage_root: relay_parent_storage_root.clone(),
+			relay_parent_storage_root: relay_parent_storage_root,
 		}
 		.encode();
 
@@ -130,7 +129,7 @@ fn benchmark_block_validation(c: &mut Criterion) {
 	}
 }
 
-fn verify_expected_result(runtime: &Box<dyn WasmModule>, encoded_params: &Vec<u8>, block: Block) {
+fn verify_expected_result(runtime: &Box<dyn WasmModule>, encoded_params: &[u8], block: Block) {
 	let res = runtime
 		.new_instance()
 		.unwrap()
@@ -166,7 +165,7 @@ fn set_glutton_parameters(
 	let mut extrinsics = vec![];
 	if initialize {
 		extrinsics.push(generate_extrinsic_with_pair(
-			&client,
+			client,
 			Alice.into(),
 			SudoCall::sudo {
 				call: Box::new(
@@ -179,10 +178,10 @@ fn set_glutton_parameters(
 	}
 
 	let set_compute = generate_extrinsic_with_pair(
-		&client,
+		client,
 		Alice.into(),
 		SudoCall::sudo {
-			call: Box::new(GluttonCall::set_compute { compute: compute_percent.clone() }.into()),
+			call: Box::new(GluttonCall::set_compute { compute: *compute_percent }.into()),
 		},
 		Some(last_nonce),
 	);
@@ -190,20 +189,19 @@ fn set_glutton_parameters(
 	extrinsics.push(set_compute);
 
 	let set_storage = generate_extrinsic_with_pair(
-		&client,
+		client,
 		Alice.into(),
 		SudoCall::sudo {
-			call: Box::new(GluttonCall::set_storage { storage: storage_percent.clone() }.into()),
+			call: Box::new(GluttonCall::set_storage { storage: *storage_percent }.into()),
 		},
 		Some(last_nonce),
 	);
 	extrinsics.push(set_storage);
 
-	let mut block_builder =
-		client.init_block_builder(Some(validation_data.clone()), Default::default());
+	let mut block_builder = client.init_block_builder(Some(validation_data), Default::default());
 
 	for extrinsic in extrinsics {
-		block_builder.push(extrinsic.into()).unwrap();
+		block_builder.push(extrinsic).unwrap();
 	}
 
 	block_builder.build_parachain_block(*parent_header.state_root())

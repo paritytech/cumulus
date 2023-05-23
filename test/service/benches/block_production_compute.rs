@@ -50,15 +50,15 @@ fn benchmark_block_production_compute(c: &mut Criterion) {
 	group.measurement_time(Duration::from_secs(120));
 
 	let mut initialize_glutton_pallet = true;
-	for (compute_level, storage_level) in vec![
+	for (compute_level, storage_level) in &[
 		(Perbill::from_percent(100), Perbill::from_percent(0)),
 		(Perbill::from_percent(100), Perbill::from_percent(100)),
 	] {
 		let block = set_glutton_parameters(
 			&client,
 			initialize_glutton_pallet,
-			&compute_level,
-			&storage_level,
+			compute_level,
+			storage_level,
 		);
 		runtime.block_on(utils::import_block(&client, &block, false));
 		initialize_glutton_pallet = false;
@@ -131,7 +131,7 @@ fn set_glutton_parameters(
 	if initialize {
 		// Initialize the pallet
 		extrinsics.push(construct_extrinsic(
-			&client,
+			client,
 			SudoCall::sudo {
 				call: Box::new(
 					GluttonCall::initialize_pallet { new_count: 5000, witness_count: None }.into(),
@@ -145,9 +145,9 @@ fn set_glutton_parameters(
 
 	// Set compute weight that should be consumed per block
 	let set_compute = construct_extrinsic(
-		&client,
+		client,
 		SudoCall::sudo {
-			call: Box::new(GluttonCall::set_compute { compute: compute_percent.clone() }.into()),
+			call: Box::new(GluttonCall::set_compute { compute: *compute_percent }.into()),
 		},
 		Alice.into(),
 		Some(last_nonce),
@@ -157,9 +157,9 @@ fn set_glutton_parameters(
 
 	// Set storage weight that should be consumed per block
 	let set_storage = construct_extrinsic(
-		&client,
+		client,
 		SudoCall::sudo {
-			call: Box::new(GluttonCall::set_storage { storage: storage_percent.clone() }.into()),
+			call: Box::new(GluttonCall::set_storage { storage: *storage_percent }.into()),
 		},
 		Alice.into(),
 		Some(last_nonce),
@@ -167,7 +167,7 @@ fn set_glutton_parameters(
 	extrinsics.push(set_storage);
 
 	let mut block_builder = client.new_block(Default::default()).unwrap();
-	block_builder.push(utils::extrinsic_set_time(&client)).unwrap();
+	block_builder.push(utils::extrinsic_set_time(client)).unwrap();
 	block_builder.push(utils::extrinsic_set_validation_data(parent_header)).unwrap();
 	for extrinsic in extrinsics {
 		block_builder.push(extrinsic.into()).unwrap();

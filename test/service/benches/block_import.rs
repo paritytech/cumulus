@@ -61,11 +61,11 @@ fn benchmark_block_import(c: &mut Criterion) {
 	// Build the block we will use for benchmarking
 	let parent_hash = client.usage_info().chain.best_hash;
 	let parent_header = client.header(parent_hash).expect("Just fetched this hash.").unwrap();
-	let set_validate_extrinsic = utils::extrinsic_set_validation_data(parent_header.clone());
+	let set_validate_extrinsic = utils::extrinsic_set_validation_data(parent_header);
 	let mut block_builder =
 		client.new_block_at(parent_hash, Default::default(), RecordProof::No).unwrap();
-	block_builder.push(set_validate_extrinsic.clone()).unwrap();
-	for extrinsic in extrinsics.clone() {
+	block_builder.push(set_validate_extrinsic).unwrap();
+	for extrinsic in extrinsics {
 		block_builder.push(extrinsic).unwrap();
 	}
 	let benchmark_block = block_builder.build().unwrap();
