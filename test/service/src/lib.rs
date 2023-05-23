@@ -25,9 +25,7 @@ pub mod chain_spec;
 mod genesis;
 
 use runtime::AccountId;
-use sc_executor::{
-	HeapAllocStrategy, WasmExecutor, WasmtimeInstantiationStrategy, DEFAULT_HEAP_ALLOC_STRATEGY,
-};
+use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use std::{
 	future::Future,
 	net::{IpAddr, Ipv4Addr, SocketAddr},
