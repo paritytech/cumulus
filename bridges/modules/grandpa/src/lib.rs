@@ -44,7 +44,7 @@ use bp_header_chain::{
 };
 use bp_runtime::{BlockNumberOf, HashOf, HasherOf, HeaderId, HeaderOf, OwnedBridgeModule};
 use finality_grandpa::voter_set::VoterSet;
-use frame_support::{DefaultNoBound,dispatch::PostDispatchInfo, ensure};
+use frame_support::{dispatch::PostDispatchInfo, ensure, DefaultNoBound};
 use sp_consensus_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::{
 	traits::{Header as HeaderT, Zero},

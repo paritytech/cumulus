@@ -77,7 +77,6 @@ pub mod pallet {
 	pub use crate::weights::WeightInfo;
 	use core::ops::Div;
 	use frame_support::{
-		DefaultNoBound,
 		dispatch::{DispatchClass, DispatchResultWithPostInfo},
 		inherent::Vec,
 		pallet_prelude::*,
@@ -89,7 +88,7 @@ pub mod pallet {
 			Currency, EnsureOrigin, ExistenceRequirement::KeepAlive, ReservableCurrency,
 			ValidatorRegistration,
 		},
-		BoundedVec, PalletId,
+		BoundedVec, DefaultNoBound, PalletId,
 	};
 	use frame_system::{pallet_prelude::*, Config as SystemConfig};
 	use pallet_session::SessionManager;
@@ -214,8 +213,10 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
-			let duplicate_invulnerables =
-				self.invulnerables.iter().collect::<sp_std::collections::btree_set::BTreeSet<_>>();
+			let duplicate_invulnerables = self
+				.invulnerables
+				.iter()
+				.collect::<sp_std::collections::btree_set::BTreeSet<_>>();
 			assert!(
 				duplicate_invulnerables.len() == self.invulnerables.len(),
 				"duplicate invulnerables in genesis."

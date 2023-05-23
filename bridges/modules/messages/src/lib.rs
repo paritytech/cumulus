@@ -65,7 +65,7 @@ use bp_messages::{
 };
 use bp_runtime::{BasicOperatingMode, ChainId, OwnedBridgeModule, PreComputedSize, Size};
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{DefaultNoBound, dispatch::PostDispatchInfo, ensure, fail, traits::Get};
+use frame_support::{dispatch::PostDispatchInfo, ensure, fail, traits::Get, DefaultNoBound};
 use sp_runtime::traits::UniqueSaturatedFrom;
 use sp_std::{marker::PhantomData, prelude::*};
 
