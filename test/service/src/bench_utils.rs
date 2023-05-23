@@ -41,7 +41,6 @@ use sp_runtime::{
 	AccountId32, OpaqueExtrinsic,
 };
 
-
 /// Accounts to use for transfer transactions. Enough for 5000 transactions.
 const NUM_ACCOUNTS: usize = 10000;
 

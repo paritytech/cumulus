@@ -31,6 +31,7 @@ cumulus-primitives-core = { path = "../../../../primitives/core", default-featur
 cumulus-primitives-parachain-inherent = { path = "../../../../primitives/parachain-inherent", default-features = false }
 cumulus-test-relay-sproof-builder = { path = "../../../../test/relay-sproof-builder", default-features = false }
 parachain-info = { path = "../../../../parachains/pallets/parachain-info", default-features = false }
+parachains-runtimes-test-utils = { path = "../../test-utils", default-features = false }
 
 # Polkadot
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -61,6 +62,7 @@ std = [
     "assets-common/std",
     "parachains-common/std",
 	"parachain-info/std",
+	"parachains-runtimes-test-utils/std",
 	"polkadot-parachain/std",
     "sp-consensus-aura/std",
     "sp-io/std",
