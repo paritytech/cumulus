@@ -76,7 +76,7 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
-use frame_system::limits::{BlockLength, BlockWeights};
+use frame_system::{EnsureRoot, limits::{BlockLength, BlockWeights}};
 use parachains_common::{AccountId, Signature};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -187,6 +187,7 @@ impl parachain_info::Config for Runtime {}
 impl pallet_glutton::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_glutton::WeightInfo<Runtime>;
+	type AdminOrigin = EnsureRoot<AccountId>;
 }
 
 impl pallet_sudo::Config for Runtime {
