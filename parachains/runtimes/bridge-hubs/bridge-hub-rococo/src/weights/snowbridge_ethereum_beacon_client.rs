@@ -35,6 +35,16 @@ use core::marker::PhantomData;
 /// Weight functions for `snowbridge_ethereum_beacon_client`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> snowbridge_ethereum_beacon_client::WeightInfo for WeightInfo<T> {
+	fn force_checkpoint() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `92678`
+		//  Estimated: `207645`
+		// Minimum execution time: 134_980_480_000 picoseconds.
+		Weight::from_parts(135_073_514_000, 0)
+			.saturating_add(Weight::from_parts(0, 207645))
+			.saturating_add(T::DbWeight::get().reads(8))
+			.saturating_add(T::DbWeight::get().writes(6))
+	}
 	/// Storage: EthereumBeaconClient Blocked (r:1 w:0)
 	/// Proof: EthereumBeaconClient Blocked (max_values: Some(1), max_size: Some(1), added: 496, mode: MaxEncodedLen)
 	/// Storage: EthereumBeaconClient LatestSyncCommitteePeriod (r:1 w:1)
@@ -53,7 +63,7 @@ impl<T: frame_system::Config> snowbridge_ethereum_beacon_client::WeightInfo for 
 	/// Proof: EthereumBeaconClient FinalizedBeaconHeaders (max_values: None, max_size: Some(144), added: 2619, mode: MaxEncodedLen)
 	/// Storage: EthereumBeaconClient FinalizedBeaconHeadersBlockRoot (r:0 w:1)
 	/// Proof: EthereumBeaconClient FinalizedBeaconHeadersBlockRoot (max_values: None, max_size: Some(64), added: 2539, mode: MaxEncodedLen)
-	fn sync_committee_period_update() -> Weight {
+	fn submit_with_sync_committee() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `92678`
 		//  Estimated: `207645`
@@ -79,7 +89,7 @@ impl<T: frame_system::Config> snowbridge_ethereum_beacon_client::WeightInfo for 
 	/// Proof: EthereumBeaconClient FinalizedBeaconHeaders (max_values: None, max_size: Some(144), added: 2619, mode: MaxEncodedLen)
 	/// Storage: EthereumBeaconClient FinalizedBeaconHeadersBlockRoot (r:0 w:1)
 	/// Proof: EthereumBeaconClient FinalizedBeaconHeadersBlockRoot (max_values: None, max_size: Some(64), added: 2539, mode: MaxEncodedLen)
-	fn import_finalized_header() -> Weight {
+	fn submit() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `92678`
 		//  Estimated: `111329`
@@ -103,7 +113,7 @@ impl<T: frame_system::Config> snowbridge_ethereum_beacon_client::WeightInfo for 
 	/// Proof: EthereumBeaconClient ValidatorsRoot (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
 	/// Storage: EthereumBeaconClient ExecutionHeaders (r:0 w:1)
 	/// Proof: EthereumBeaconClient ExecutionHeaders (max_values: None, max_size: Some(136), added: 2611, mode: MaxEncodedLen)
-	fn import_execution_header() -> Weight {
+	fn submit_execution_header() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `92722`
 		//  Estimated: `105443`
@@ -112,58 +122,5 @@ impl<T: frame_system::Config> snowbridge_ethereum_beacon_client::WeightInfo for 
 			.saturating_add(Weight::from_parts(0, 105443))
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(2))
-	}
-	/// Storage: EthereumBeaconClient Blocked (r:0 w:1)
-	/// Proof: EthereumBeaconClient Blocked (max_values: Some(1), max_size: Some(1), added: 496, mode: MaxEncodedLen)
-	fn force_mode() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 20_465_000 picoseconds.
-		Weight::from_parts(20_720_000, 0)
-			.saturating_add(Weight::from_parts(0, 0))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn force_checkpoint() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `92678`
-		//  Estimated: `207645`
-		// Minimum execution time: 134_980_480_000 picoseconds.
-		Weight::from_parts(135_073_514_000, 0)
-			.saturating_add(Weight::from_parts(0, 207645))
-			.saturating_add(T::DbWeight::get().reads(8))
-			.saturating_add(T::DbWeight::get().writes(6))
-	}
-	fn bls_fast_aggregate_verify_pre_aggregated() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 27_741_612_000 picoseconds.
-		Weight::from_parts(27_755_115_000, 0)
-			.saturating_add(Weight::from_parts(0, 0))
-	}
-	fn bls_fast_aggregate_verify_legacy() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 31_220_692_000 picoseconds.
-		Weight::from_parts(31_251_978_000, 0)
-			.saturating_add(Weight::from_parts(0, 0))
-	}
-	fn bls_fast_aggregate_verify() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 28_852_169_000 picoseconds.
-		Weight::from_parts(28_874_397_000, 0)
-			.saturating_add(Weight::from_parts(0, 0))
-	}
-	fn merkle_branch_verify() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 4_644_000 picoseconds.
-		Weight::from_parts(5_138_000, 0)
-			.saturating_add(Weight::from_parts(0, 0))
 	}
 }

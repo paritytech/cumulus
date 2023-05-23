@@ -582,10 +582,9 @@ impl snowbridge_outbound_queue::Config for Runtime {
 	type WeightInfo = ();
 }
 
-#[cfg(feature = "minimal")]
+#[cfg(not(feature = "beacon-spec-mainnet"))]
 parameter_types! {
-	pub const WeakSubjectivityPeriodSeconds: u32 = 97200;
-	pub const ChainForkVersions: ForkVersions = ForkVersions{
+	pub const ChainForkVersions: ForkVersions = ForkVersions {
 		genesis: Fork {
 			version: [0, 0, 0, 1], // 0x00000001
 			epoch: 0,
@@ -603,17 +602,12 @@ parameter_types! {
 			epoch: 0,
 		},
 	};
-	pub const MaxFinalizedHeadersToKeep:u32 = 200;
 	pub const MaxExecutionHeadersToKeep:u32 = 1000;
-	pub const MaxSyncCommitteesToKeep:u32 = 4;
 }
 
-#[cfg(not(feature = "minimal"))]
+#[cfg(feature = "beacon-spec-mainnet")]
 parameter_types! {
-	// accordingly to https://notes.ethereum.org/@adiasg/weak-subjectvity-eth2
-	// Epochs required is 3277 as 1258368 seconds about 2 weeks
-	pub const WeakSubjectivityPeriodSeconds: u32 = 1258368;
-	pub const ChainForkVersions: ForkVersions = ForkVersions{
+	pub const ChainForkVersions: ForkVersions = ForkVersions {
 		genesis: Fork {
 			version: [0, 0, 16, 32], // 0x00001020
 			epoch: 0,
@@ -631,19 +625,13 @@ parameter_types! {
 			epoch: 162304,
 		},
 	};
-	pub const MaxFinalizedHeadersToKeep:u32 = 200;
 	pub const MaxExecutionHeadersToKeep:u32 = 1000;
-	pub const MaxSyncCommitteesToKeep:u32 = 4;
 }
 
 impl snowbridge_ethereum_beacon_client::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
 	type ForkVersions = ChainForkVersions;
-	type WeakSubjectivityPeriodSeconds = WeakSubjectivityPeriodSeconds;
-	type MaxFinalizedHeadersToKeep = MaxFinalizedHeadersToKeep;
 	type MaxExecutionHeadersToKeep = MaxExecutionHeadersToKeep;
-	type MaxSyncCommitteesToKeep = MaxSyncCommitteesToKeep;
 	type WeightInfo = weights::snowbridge_ethereum_beacon_client::WeightInfo<Runtime>;
 }
 

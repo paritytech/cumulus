@@ -229,6 +229,6 @@ try-runtime = [
 	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",
 ]
-minimal = [
-	"snowbridge-ethereum-beacon-client/minimal",
+beacon-spec-mainnet = [
+	"snowbridge-ethereum-beacon-client/beacon-spec-mainnet",
 ]
