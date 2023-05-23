@@ -110,7 +110,7 @@ impl Config for Test {
 	type ReservedDmpWeight = ReservedDmpWeight;
 	type XcmpMessageHandler = SaveIntoThreadLocal;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
-	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+	type CheckAssociatedRelayNumber = AnyRelayNumber;
 	type ConsensusHook = TestConsensusHook;
 }
 
@@ -241,10 +241,11 @@ struct BlockTests {
 	ran: bool,
 	relay_sproof_builder_hook:
 		Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut RelayStateSproofBuilder)>>,
-	persisted_validation_data_hook: Option<Box<dyn Fn(&BlockTests, &mut PersistedValidationData)>>,
 	inherent_data_hook:
 		Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut ParachainInherentData)>>,
 	inclusion_delay: Option<usize>,
+	relay_block_number:
+		Option<Box<dyn Fn(&<Test as frame_system::Config>::BlockNumber) -> RelayChainBlockNumber>>,
 
 	included_para_head: Option<relay_chain::HeadData>,
 	pending_blocks: VecDeque<relay_chain::HeadData>,
@@ -292,11 +293,11 @@ impl BlockTests {
 		self
 	}
 
-	fn with_validation_data<F>(mut self, f: F) -> Self
+	fn with_relay_block_number<F>(mut self, f: F) -> Self
 	where
-		F: 'static + Fn(&BlockTests, &mut PersistedValidationData),
+		F: 'static + Fn(&<Test as frame_system::Config>::BlockNumber) -> RelayChainBlockNumber,
 	{
-		self.persisted_validation_data_hook = Some(Box::new(f));
+		self.relay_block_number = Some(Box::new(f));
 		self
 	}
 
@@ -324,6 +325,11 @@ impl BlockTests {
 			self.included_para_head = Some(parent_head_data.clone());
 
 			for BlockTest { n, within_block, after_block } in self.tests.iter() {
+				let relay_parent_number = self
+					.relay_block_number
+					.as_ref()
+					.map(|f| f(n))
+					.unwrap_or(*n as RelayChainBlockNumber);
 				// clear pending updates, as applicable
 				if let Some(upgrade_block) = self.pending_upgrade {
 					if n >= &upgrade_block.into() {
@@ -344,18 +350,15 @@ impl BlockTests {
 					.unwrap_or_else(|| parent_head_data.clone())
 					.into();
 				if let Some(ref hook) = self.relay_sproof_builder_hook {
-					hook(self, *n as RelayChainBlockNumber, &mut sproof_builder);
+					hook(self, relay_parent_number, &mut sproof_builder);
 				}
 				let (relay_parent_storage_root, relay_chain_state) =
 					sproof_builder.into_state_root_and_proof();
-				let mut vfp = PersistedValidationData {
-					relay_parent_number: *n as RelayChainBlockNumber,
+				let vfp = PersistedValidationData {
+					relay_parent_number,
 					relay_parent_storage_root,
 					..Default::default()
 				};
-				if let Some(ref hook) = self.persisted_validation_data_hook {
-					hook(self, &mut vfp);
-				}
 
 				<ValidationData<Test>>::put(&vfp);
 				NewValidationCode::<Test>::kill();
@@ -371,7 +374,7 @@ impl BlockTests {
 						horizontal_messages: Default::default(),
 					};
 					if let Some(ref hook) = self.inherent_data_hook {
-						hook(self, *n as RelayChainBlockNumber, &mut system_inherent_data);
+						hook(self, relay_parent_number, &mut system_inherent_data);
 					}
 					inherent_data
 						.put_data(
@@ -602,6 +605,84 @@ fn unincluded_code_upgrade_scheduled_after_go_ahead() {
 				assert!(<PendingValidationCode<Test>>::exists(), "upgrade is pending");
 			},
 		);
+}
+
+#[test]
+fn inherent_processed_messages_are_ignored() {
+	CONSENSUS_HOOK.with(|c| {
+		*c.borrow_mut() = Box::new(|_| (Weight::zero(), NonZeroU32::new(2).unwrap().into()))
+	});
+	lazy_static::lazy_static! {
+		static ref DMQ_MSG: InboundDownwardMessage = InboundDownwardMessage {
+			sent_at: 3,
+			msg: b"down".to_vec(),
+		};
+
+		static ref XCMP_MSG_1: InboundHrmpMessage = InboundHrmpMessage {
+			sent_at: 2,
+			data: b"h1".to_vec(),
+		};
+
+		static ref XCMP_MSG_2: InboundHrmpMessage = InboundHrmpMessage {
+			sent_at: 3,
+			data: b"h2".to_vec(),
+		};
+
+		static ref EXPECTED_PROCESSED_DMQ: Vec<(RelayChainBlockNumber, Vec<u8>)> = vec![
+			(DMQ_MSG.sent_at, DMQ_MSG.msg.clone())
+		];
+		static ref EXPECTED_PROCESSED_XCMP: Vec<(ParaId, RelayChainBlockNumber, Vec<u8>)> = vec![
+			(ParaId::from(200), XCMP_MSG_1.sent_at, XCMP_MSG_1.data.clone()),
+			(ParaId::from(200), XCMP_MSG_2.sent_at, XCMP_MSG_2.data.clone()),
+		];
+	}
+
+	BlockTests::new()
+		.with_inclusion_delay(1)
+		.with_relay_block_number(|block_number| 3.max(*block_number as RelayChainBlockNumber))
+		.with_relay_sproof_builder(|_, relay_block_num, sproof| match relay_block_num {
+			3 => {
+				sproof.dmq_mqc_head =
+					Some(MessageQueueChain::default().extend_downward(&DMQ_MSG).head());
+				sproof.upsert_inbound_channel(ParaId::from(200)).mqc_head = Some(
+					MessageQueueChain::default()
+						.extend_hrmp(&XCMP_MSG_1)
+						.extend_hrmp(&XCMP_MSG_2)
+						.head(),
+				);
+			},
+			_ => unreachable!(),
+		})
+		.with_inherent_data(|_, relay_block_num, data| match relay_block_num {
+			3 => {
+				data.downward_messages.push(DMQ_MSG.clone());
+				data.horizontal_messages
+					.insert(ParaId::from(200), vec![XCMP_MSG_1.clone(), XCMP_MSG_2.clone()]);
+			},
+			_ => unreachable!(),
+		})
+		.add(1, || {
+			// Don't drop processed messages for this test.
+			HANDLED_DMP_MESSAGES.with(|m| {
+				let m = m.borrow();
+				assert_eq!(&*m, EXPECTED_PROCESSED_DMQ.as_slice());
+			});
+			HANDLED_XCMP_MESSAGES.with(|m| {
+				let m = m.borrow_mut();
+				assert_eq!(&*m, EXPECTED_PROCESSED_XCMP.as_slice());
+			});
+		})
+		.add(2, || {})
+		.add(3, || {
+			HANDLED_DMP_MESSAGES.with(|m| {
+				let m = m.borrow();
+				assert_eq!(&*m, EXPECTED_PROCESSED_DMQ.as_slice());
+			});
+			HANDLED_XCMP_MESSAGES.with(|m| {
+				let m = m.borrow_mut();
+				assert_eq!(&*m, EXPECTED_PROCESSED_XCMP.as_slice());
+			});
+		});
 }
 
 #[test]
@@ -1015,7 +1096,7 @@ fn receive_hrmp() {
 		};
 
 		static ref MSG_2: InboundHrmpMessage = InboundHrmpMessage {
-			sent_at: 1,
+			sent_at: 2,
 			data: b"2".to_vec(),
 		};
 
@@ -1092,8 +1173,8 @@ fn receive_hrmp() {
 				assert_eq!(
 					&*m,
 					&[
-						(ParaId::from(300), 1, b"2".to_vec()),
 						(ParaId::from(200), 2, b"4".to_vec()),
+						(ParaId::from(300), 2, b"2".to_vec()),
 						(ParaId::from(300), 2, b"3".to_vec()),
 					]
 				);
@@ -1183,17 +1264,6 @@ fn receive_hrmp_after_pause() {
 				m.clear();
 			});
 		});
-}
-
-#[test]
-#[should_panic = "Relay chain block number needs to strictly increase between Parachain blocks!"]
-fn test() {
-	BlockTests::new()
-		.with_validation_data(|_, data| {
-			data.relay_parent_number = 1;
-		})
-		.add(1, || {})
-		.add(2, || {});
 }
 
 #[test]

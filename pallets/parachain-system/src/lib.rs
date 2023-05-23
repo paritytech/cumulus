@@ -854,10 +854,12 @@ pub mod pallet {
 			cumulus_primitives_parachain_inherent::INHERENT_IDENTIFIER;
 
 		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-			let data: ParachainInherentData =
+			let mut data: ParachainInherentData =
 				data.get_data(&Self::INHERENT_IDENTIFIER).ok().flatten().expect(
 					"validation function params are always injected into inherent data; qed",
 				);
+
+			Self::drop_processed_messages_from_inherent(&mut data);
 
 			Some(Call::set_validation_data { data })
 		}
@@ -971,6 +973,37 @@ impl<T: Config> GetChannelInfo for Pallet<T> {
 }
 
 impl<T: Config> Pallet<T> {
+	/// Updates inherent data to only contain messages that weren't already processed
+	/// by the runtime based on last relay chain block number.
+	///
+	/// This method doesn't check for mqc heads mismatch.
+	fn drop_processed_messages_from_inherent(para_inherent: &mut ParachainInherentData) {
+		let ParachainInherentData { downward_messages, horizontal_messages, .. } = para_inherent;
+
+		// Last relay chain block number. Any message with sent-at block number less
+		// than or equal to this value is assumed to be processed previously.
+		let last_relay_block_number = LastRelayChainBlockNumber::<T>::get();
+
+		// DMQ.
+		let dmq_processed_num = downward_messages
+			.iter()
+			.take_while(|message| message.sent_at <= last_relay_block_number)
+			.count();
+		downward_messages.drain(..dmq_processed_num);
+
+		// HRMP.
+		for horizontal in horizontal_messages.values_mut() {
+			let horizontal_processed_num = horizontal
+				.iter()
+				.take_while(|message| message.sent_at <= last_relay_block_number)
+				.count();
+			horizontal.drain(..horizontal_processed_num);
+		}
+
+		// If MQC doesn't match after dropping messages, the runtime will panic when creating
+		// inherent.
+	}
+
 	/// Process all inbound downward messages relayed by the collator.
 	///
 	/// Checks if the sequence of the messages is valid, dispatches them and communicates the
