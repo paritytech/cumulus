@@ -129,10 +129,13 @@ fn genesis_config() -> GenesisConfig {
 	cumulus_test_service::local_testnet_genesis()
 }
 
+/// Create an unsigned extrinsic from a runtime call.
 pub fn generate_unsigned(function: impl Into<RuntimeCall>) -> UncheckedExtrinsic {
 	UncheckedExtrinsic::new_unsigned(function.into())
 }
 
+/// Create a signed extrinsic from a runtime call and sign
+/// with the given key pair.
 pub fn generate_extrinsic_with_pair(
 	client: &Client,
 	origin: sp_core::sr25519::Pair,

@@ -146,6 +146,7 @@ pub fn local_testnet_genesis() -> cumulus_test_runtime::GenesisConfig {
 	)
 }
 
+/// Creates a local testnet genesis with endowed accounts.
 pub fn testnet_genesis(
 	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
