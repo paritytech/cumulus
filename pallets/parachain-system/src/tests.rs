@@ -1279,18 +1279,6 @@ fn receive_hrmp_after_pause() {
 }
 
 #[test]
-#[ignore]
-#[should_panic = "Relay chain block number needs to strictly increase between Parachain blocks!"]
-fn test() {
-	BlockTests::new()
-		.with_validation_data(|_, data| {
-			data.relay_parent_number = 1;
-		})
-		.add(1, || {})
-		.add(2, || {});
-}
-
-#[test]
 fn upgrade_version_checks_should_work() {
 	let test_data = vec![
 		("test", 0, 1, Err(frame_system::Error::<Test>::SpecVersionNeedsToIncrease)),
