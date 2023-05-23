@@ -163,25 +163,26 @@ impl<
 
 		// Get the local asset id in which we can pay for fees
 		let (local_asset_id, _) =
-			Matcher::matches_fungibles(&first).map_err(|_| XcmError::AssetNotFound)?;
+			Matcher::matches_fungibles(first).map_err(|_| XcmError::AssetNotFound)?;
 
 		// Calculate how much we should charge in the asset_id for such amount of weight
 		// Require at least a payment of minimum_balance
 		// Necessary for fully collateral-backed assets
-		let asset_balance: u128 = FeeCharger::charge_weight_in_fungibles(local_asset_id, weight)
-			.map(|amount| {
-				let minimum_balance = ConcreteAssets::minimum_balance(local_asset_id);
-				if amount < minimum_balance {
-					minimum_balance
-				} else {
-					amount
-				}
-			})?
-			.try_into()
-			.map_err(|_| XcmError::Overflow)?;
+		let asset_balance: u128 =
+			FeeCharger::charge_weight_in_fungibles(local_asset_id.clone(), weight)
+				.map(|amount| {
+					let minimum_balance = ConcreteAssets::minimum_balance(local_asset_id);
+					if amount < minimum_balance {
+						minimum_balance
+					} else {
+						amount
+					}
+				})?
+				.try_into()
+				.map_err(|_| XcmError::Overflow)?;
 
 		// Convert to the same kind of multiasset, with the required fungible balance
-		let required = first.id.clone().into_multiasset(asset_balance.into());
+		let required = first.id.into_multiasset(asset_balance.into());
 
 		// Substract payment
 		let unused = payment.checked_sub(required.clone()).map_err(|_| XcmError::TooExpensive)?;
@@ -204,9 +205,9 @@ impl<
 		{
 			// Get the local asset id in which we can refund fees
 			let (local_asset_id, outstanding_balance) =
-				Matcher::matches_fungibles(&(id.clone(), fun).into()).ok()?;
+				Matcher::matches_fungibles(&(id, fun).into()).ok()?;
 
-			let minimum_balance = ConcreteAssets::minimum_balance(local_asset_id);
+			let minimum_balance = ConcreteAssets::minimum_balance(local_asset_id.clone());
 
 			// Calculate asset_balance
 			// This read should have already be cached in buy_weight
@@ -233,8 +234,7 @@ impl<
 			let asset_balance: u128 = asset_balance.saturated_into();
 
 			// Construct outstanding_concrete_asset with the same location id and substracted balance
-			let outstanding_concrete_asset: MultiAsset =
-				(id.clone(), outstanding_minus_substracted).into();
+			let outstanding_concrete_asset: MultiAsset = (id, outstanding_minus_substracted).into();
 
 			// Substract from existing weight and balance
 			weight_outstanding = weight_outstanding.saturating_sub(weight);
@@ -365,7 +365,7 @@ mod tests {
 
 		// ParentAsUmp - check dest is really not applicable
 		let dest = (Parent, Parent, Parent);
-		let mut dest_wrapper = Some(dest.clone().into());
+		let mut dest_wrapper = Some(dest.into());
 		let mut msg_wrapper = Some(message.clone());
 		assert_eq!(
 			Err(SendError::NotApplicable),
@@ -373,7 +373,7 @@ mod tests {
 		);
 
 		// check wrapper were not consumed
-		assert_eq!(Some(dest.clone().into()), dest_wrapper.take());
+		assert_eq!(Some(dest.into()), dest_wrapper.take());
 		assert_eq!(Some(message.clone()), msg_wrapper.take());
 
 		// another try with router chain with asserting sender
@@ -393,7 +393,7 @@ mod tests {
 
 		// ParentAsUmp - check dest/msg is valid
 		let dest = (Parent, Here);
-		let mut dest_wrapper = Some(dest.clone().into());
+		let mut dest_wrapper = Some(dest.into());
 		let mut msg_wrapper = Some(message.clone());
 		assert!(<ParentAsUmp<(), (), ()> as SendXcm>::validate(
 			&mut dest_wrapper,
@@ -529,16 +529,13 @@ mod tests {
 
 		// prepare test data
 		let asset: MultiAsset = (Here, AMOUNT).into();
-		let payment = Assets::from(asset.clone());
+		let payment = Assets::from(asset);
 		let weight_to_buy = Weight::from_parts(1_000, 1_000);
 
 		// lets do first call (success)
 		assert_ok!(trader.buy_weight(weight_to_buy, payment.clone()));
 
 		// lets do second call (error)
-		assert_eq!(
-			trader.buy_weight(weight_to_buy, payment.clone()),
-			Err(XcmError::NotWithdrawable)
-		);
+		assert_eq!(trader.buy_weight(weight_to_buy, payment), Err(XcmError::NotWithdrawable));
 	}
 }
