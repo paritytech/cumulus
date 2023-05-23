@@ -132,6 +132,7 @@ fn genesis_config() -> GenesisConfig {
 pub fn generate_unsigned(function: impl Into<RuntimeCall>) -> UncheckedExtrinsic {
 	UncheckedExtrinsic::new_unsigned(function.into())
 }
+
 pub fn generate_extrinsic_with_pair(
 	client: &Client,
 	origin: sp_core::sr25519::Pair,
