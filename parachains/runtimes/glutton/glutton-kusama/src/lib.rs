@@ -76,7 +76,10 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
-use frame_system::{EnsureRoot, limits::{BlockLength, BlockWeights}};
+use frame_system::{
+	limits::{BlockLength, BlockWeights},
+	EnsureRoot,
+};
 use parachains_common::{AccountId, Signature};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
