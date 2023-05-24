@@ -21,7 +21,7 @@ pub use xcm::{
 	prelude::*,
 	v3::{
 		Error,
-		NetworkId::{Kusama as KusamaId},//, Polkadot as PolkadotId},
+		NetworkId::Kusama as KusamaId,
 	},
 };
 pub use xcm_emulator::{
