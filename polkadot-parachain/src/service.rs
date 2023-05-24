@@ -86,7 +86,7 @@ impl sc_executor::NativeExecutionDispatch for ShellRuntimeExecutor {
 	}
 }
 
-// Native Statemint executor instance.
+// Native Asset Hub Polkadot (Statemint) executor instance.
 pub struct StatemintRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for StatemintRuntimeExecutor {
@@ -101,7 +101,7 @@ impl sc_executor::NativeExecutionDispatch for StatemintRuntimeExecutor {
 	}
 }
 
-/// Native Statemine executor instance.
+/// Native Asset Hub Kusama (Statemine) executor instance.
 pub struct StatemineRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for StatemineRuntimeExecutor {
@@ -116,7 +116,7 @@ impl sc_executor::NativeExecutionDispatch for StatemineRuntimeExecutor {
 	}
 }
 
-/// Native Westmint executor instance.
+/// Native Asset Hub Westend (Westmint) executor instance.
 pub struct WestmintRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for WestmintRuntimeExecutor {
@@ -1068,7 +1068,7 @@ where
 	}
 }
 
-/// Build the import queue for Statemint and other Aura-based runtimes.
+/// Build the import queue for Aura-based runtimes.
 pub fn aura_build_import_queue<RuntimeApi, AuraId: AppCrypto>(
 	client: Arc<ParachainClient<RuntimeApi>>,
 	block_import: ParachainBlockImport<RuntimeApi>,

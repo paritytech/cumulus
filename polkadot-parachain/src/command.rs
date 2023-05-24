@@ -93,11 +93,11 @@ fn runtime(id: &str) -> Runtime {
 		Runtime::Shell
 	} else if id.starts_with("seedling") {
 		Runtime::Seedling
-	} else if id.starts_with("statemint") {
+	} else if id.starts_with("asset-hub-polkadot") | id.starts_with("statemint") {
 		Runtime::Statemint
-	} else if id.starts_with("statemine") {
+	} else if id.starts_with("asset-hub-kusama") | id.starts_with("statemine") {
 		Runtime::Statemine
-	} else if id.starts_with("westmint") {
+	} else if id.starts_with("asset-hub-westend") | id.starts_with("westmint") {
 		Runtime::Westmint
 	} else if id.starts_with("penpal") {
 		Runtime::Penpal(para_id.unwrap_or(ParaId::new(0)))
@@ -143,35 +143,47 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"shell" => Box::new(chain_spec::shell::get_shell_chain_spec()),
 		"seedling" => Box::new(chain_spec::seedling::get_seedling_chain_spec()),
 
-		// -- Statemint
-		"statemint-dev" => Box::new(chain_spec::statemint::statemint_development_config()),
-		"statemint-local" => Box::new(chain_spec::statemint::statemint_local_config()),
+		// -- Asset Hub Polkadot
+		"asset-hub-polkadot-dev" | "statemint-dev" =>
+			Box::new(chain_spec::statemint::statemint_development_config()),
+		"asset-hub-polkadot-local" | "statemint-local" =>
+			Box::new(chain_spec::statemint::statemint_local_config()),
 		// the chain spec as used for generating the upgrade genesis values
-		"statemint-genesis" => Box::new(chain_spec::statemint::statemint_config()),
+		"asset-hub-polkadot-genesis" | "statemint-genesis" =>
+			Box::new(chain_spec::statemint::statemint_config()),
 		// the shell-based chain spec as used for syncing
-		"statemint" => Box::new(chain_spec::statemint::StatemintChainSpec::from_json_bytes(
-			&include_bytes!("../../parachains/chain-specs/statemint.json")[..],
-		)?),
+		"asset-hub-polkadot" | "statemint" =>
+			Box::new(chain_spec::statemint::StatemintChainSpec::from_json_bytes(
+				&include_bytes!("../../parachains/chain-specs/statemint.json")[..],
+			)?),
 
-		// -- Statemine
-		"statemine-dev" => Box::new(chain_spec::statemint::statemine_development_config()),
-		"statemine-local" => Box::new(chain_spec::statemint::statemine_local_config()),
+		// -- Asset Hub Kusama
+		"asset-hub-kusama-dev" | "statemine-dev" =>
+			Box::new(chain_spec::statemint::statemine_development_config()),
+		"asset-hub-kusama-local" | "statemine-local" =>
+			Box::new(chain_spec::statemint::statemine_local_config()),
 		// the chain spec as used for generating the upgrade genesis values
-		"statemine-genesis" => Box::new(chain_spec::statemint::statemine_config()),
+		"asset-hub-kusama-genesis" | "statemine-genesis" =>
+			Box::new(chain_spec::statemint::statemine_config()),
 		// the shell-based chain spec as used for syncing
-		"statemine" => Box::new(chain_spec::statemint::StatemineChainSpec::from_json_bytes(
-			&include_bytes!("../../parachains/chain-specs/statemine.json")[..],
-		)?),
+		"asset-hub-kusama" | "statemine" =>
+			Box::new(chain_spec::statemint::StatemineChainSpec::from_json_bytes(
+				&include_bytes!("../../parachains/chain-specs/statemine.json")[..],
+			)?),
 
-		// -- Westmint
-		"westmint-dev" => Box::new(chain_spec::statemint::westmint_development_config()),
-		"westmint-local" => Box::new(chain_spec::statemint::westmint_local_config()),
+		// -- Asset Hub Westend
+		"asset-hub-westend-dev" | "westmint-dev" =>
+			Box::new(chain_spec::statemint::westmint_development_config()),
+		"asset-hub-westend-local" | "westmint-local" =>
+			Box::new(chain_spec::statemint::westmint_local_config()),
 		// the chain spec as used for generating the upgrade genesis values
-		"westmint-genesis" => Box::new(chain_spec::statemint::westmint_config()),
+		"asset-hub-westend-genesis" | "westmint-genesis" =>
+			Box::new(chain_spec::statemint::westmint_config()),
 		// the shell-based chain spec as used for syncing
-		"westmint" => Box::new(chain_spec::statemint::WestmintChainSpec::from_json_bytes(
-			&include_bytes!("../../parachains/chain-specs/westmint.json")[..],
-		)?),
+		"asset-hub-westend" | "westmint" =>
+			Box::new(chain_spec::statemint::WestmintChainSpec::from_json_bytes(
+				&include_bytes!("../../parachains/chain-specs/westmint.json")[..],
+			)?),
 
 		// -- Polkadot Collectives
 		"collectives-polkadot-dev" =>
