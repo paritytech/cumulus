@@ -126,7 +126,7 @@ impl DefaultTestClientBuilderExt for TestClientBuilder {
 }
 
 fn genesis_config() -> GenesisConfig {
-	cumulus_test_service::local_testnet_genesis()
+	cumulus_test_service::testnet_genesis_with_default_endowed(Default::default())
 }
 
 /// Create an unsigned extrinsic from a runtime call.

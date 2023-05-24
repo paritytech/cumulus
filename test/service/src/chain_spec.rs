@@ -80,33 +80,18 @@ where
 }
 
 /// Get the chain spec for a specific parachain ID.
-/// The given accounts are initialized with funds.
-pub fn get_chain_spec_with_endowed(
+/// The given accounts are initialized with funds in addition
+/// to the default known accounts.
+pub fn get_chain_spec_with_extra_endowed(
 	id: ParaId,
-	mut extra_endowed_accounts: Vec<AccountId>,
+	extra_endowed_accounts: Vec<AccountId>,
 ) -> ChainSpec {
-	let mut default_endowed = vec![
-		get_account_id_from_seed::<sr25519::Public>("Alice"),
-		get_account_id_from_seed::<sr25519::Public>("Bob"),
-		get_account_id_from_seed::<sr25519::Public>("Charlie"),
-		get_account_id_from_seed::<sr25519::Public>("Dave"),
-		get_account_id_from_seed::<sr25519::Public>("Eve"),
-		get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-		get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-		get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-		get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-		get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-		get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-		get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-	];
-	extra_endowed_accounts.append(&mut default_endowed);
 	ChainSpec::from_genesis(
 		"Local Testnet",
 		"local_testnet",
 		ChainType::Local,
 		move || GenesisExt {
-			runtime_genesis_config: testnet_genesis(
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
+			runtime_genesis_config: testnet_genesis_with_default_endowed(
 				extra_endowed_accounts.clone(),
 			),
 			para_id: id,
@@ -122,28 +107,30 @@ pub fn get_chain_spec_with_endowed(
 
 /// Get the chain spec for a specific parachain ID.
 pub fn get_chain_spec(id: ParaId) -> ChainSpec {
-	get_chain_spec_with_endowed(id, Default::default())
+	get_chain_spec_with_extra_endowed(id, Default::default())
 }
 
 /// Local testnet genesis for testing.
-pub fn local_testnet_genesis() -> cumulus_test_runtime::GenesisConfig {
-	testnet_genesis(
+pub fn testnet_genesis_with_default_endowed(
+	mut extra_endowed_accounts: Vec<AccountId>,
+) -> cumulus_test_runtime::GenesisConfig {
+	let mut endowed = vec![
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
-		vec![
-			get_account_id_from_seed::<sr25519::Public>("Alice"),
-			get_account_id_from_seed::<sr25519::Public>("Bob"),
-			get_account_id_from_seed::<sr25519::Public>("Charlie"),
-			get_account_id_from_seed::<sr25519::Public>("Dave"),
-			get_account_id_from_seed::<sr25519::Public>("Eve"),
-			get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-			get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-			get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-			get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-			get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-			get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-			get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-		],
-	)
+		get_account_id_from_seed::<sr25519::Public>("Bob"),
+		get_account_id_from_seed::<sr25519::Public>("Charlie"),
+		get_account_id_from_seed::<sr25519::Public>("Dave"),
+		get_account_id_from_seed::<sr25519::Public>("Eve"),
+		get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+		get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+	];
+	endowed.append(&mut extra_endowed_accounts);
+
+	testnet_genesis(get_account_id_from_seed::<sr25519::Public>("Alice"), endowed)
 }
 
 /// Creates a local testnet genesis with endowed accounts.
