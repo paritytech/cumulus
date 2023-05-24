@@ -30,20 +30,18 @@ pub mod v1 {
 	pub struct MigrateToV1<T>(sp_std::marker::PhantomData<T>);
 	impl<T: Config> OnRuntimeUpgrade for MigrateToV1<T> {
 		fn on_runtime_upgrade() -> Weight {
-			let current_version = Pallet::<T>::current_storage_version();
 			let onchain_version = Pallet::<T>::on_chain_storage_version();
-			if onchain_version == 0 && current_version == 1 {
+			if onchain_version == 0 {
 				let invulnerables_len = Invulnerables::<T>::get().to_vec().len();
 				<Invulnerables<T>>::mutate(|invulnerables| {
 					invulnerables.sort();
 				});
 
-				current_version.put::<Pallet<T>>();
+				StorageVersion::new(1).put::<Pallet<T>>();
 				log::info!(
 					target: LOG_TARGET,
-					"Sorted {} Invulnerables, upgraded storage to version {:?}",
+					"Sorted {} Invulnerables, upgraded storage to version 1",
 					invulnerables_len,
-					current_version
 				);
 				// Similar complexity to `set_invulnerables` (put storage value)
 				// Plus 1 read for length, 1 read for `onchain_version`, 1 write to put version
@@ -60,10 +58,6 @@ pub mod v1 {
 
 		#[cfg(feature = "try-runtime")]
 		fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::DispatchError> {
-			frame_support::ensure!(
-				Pallet::<T>::on_chain_storage_version() == 0,
-				"must upgrade linearly"
-			);
 			let number_of_invulnerables = Invulnerables::<T>::get().to_vec().len();
 			Ok((number_of_invulnerables as u32).encode())
 		}
@@ -88,14 +82,9 @@ pub mod v1 {
 				"after migration, there should be the same number of invulnerables"
 			);
 
-			let current_version = Pallet::<T>::current_storage_version();
 			let onchain_version = Pallet::<T>::on_chain_storage_version();
 
-			frame_support::ensure!(current_version == 1, "must_upgrade");
-			assert_eq!(
-				current_version, onchain_version,
-				"after migration, the current_version and onchain_version should be the same"
-			);
+			frame_support::ensure!(current_version >= 1, "must_upgrade");
 
 			Ok(())
 		}
