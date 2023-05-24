@@ -1,12 +1,3 @@
-use asset_test_utils::{CollatorSessionKeys, ExtBuilder, RuntimeHelper};
-use codec::{Decode, Encode};
-use cumulus_primitives_utility::ChargeWeightInFungibles;
-use frame_support::{
-	assert_noop, assert_ok,
-	traits::fungibles::InspectEnumerable,
-	weights::{Weight, WeightToFee as WeightToFeeT},
-};
-use parachains_common::{AccountId, AssetIdForTrustBackedAssets, AuraId, Balance};
 use asset_hub_kusama_runtime::xcm_config::{
 	AssetFeeAsExistentialDepositMultiplierFeeCharger, KsmLocation, TrustBackedAssetsPalletLocation,
 };
@@ -17,6 +8,15 @@ pub use asset_hub_kusama_runtime::{
 	MetadataDepositBase, MetadataDepositPerByte, ParachainSystem, Runtime, RuntimeCall,
 	RuntimeEvent, SessionKeys, System, TrustBackedAssetsInstance,
 };
+use asset_test_utils::{CollatorSessionKeys, ExtBuilder, RuntimeHelper};
+use codec::{Decode, Encode};
+use cumulus_primitives_utility::ChargeWeightInFungibles;
+use frame_support::{
+	assert_noop, assert_ok,
+	traits::fungibles::InspectEnumerable,
+	weights::{Weight, WeightToFee as WeightToFeeT},
+};
+use parachains_common::{AccountId, AssetIdForTrustBackedAssets, AuraId, Balance};
 use xcm::latest::prelude::*;
 use xcm_executor::traits::{Convert, Identity, JustTry, WeightTrader};
 

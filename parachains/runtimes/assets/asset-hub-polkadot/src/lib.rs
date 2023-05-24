@@ -13,10 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Statemint Runtime
+//! # Asset Hub Polkadot Runtime
 //!
-//! Statemint is a parachain that provides an interface to create, manage, and use assets. Assets
-//! may be fungible or non-fungible.
+//! Asset Hub Polkadot is a parachain that provides an interface to create, manage, and use assets.
+//! Assets may be fungible or non-fungible.
+//!
+//! ## Renaming
+//!
+//! This chain was originally known as "Statemint". You may see references to Statemint, Statemine,
+//! and Westmint throughout the codebase. These are synonymous with "Asset Hub Polkadot, Kusama, and
+//! Westend", respectively.
 //!
 //! ## Assets
 //!
@@ -27,22 +33,22 @@
 //!
 //! ### Native Balances
 //!
-//! Statemint uses its parent DOT token as its native asset.
+//! Asset Hub Polkadot uses its parent DOT token as its native asset.
 //!
 //! ### Governance
 //!
-//! As a common good parachain, Statemint defers its governance (namely, its `Root` origin), to its
+//! As a system parachain, Asset Hub defers its governance (namely, its `Root` origin), to its
 //! Relay Chain parent, Polkadot.
 //!
 //! ### Collator Selection
 //!
-//! Statemint uses `pallet-collator-selection`, a simple first-come-first-served registration
+//! Asset Hub uses `pallet-collator-selection`, a simple first-come-first-served registration
 //! system where collators can reserve a small bond to join the block producer set. There is no
 //! slashing.
 //!
 //! ### XCM
 //!
-//! Because Statemint is fully under the control of the Relay Chain, it is meant to be a
+//! Because Asset Hub is fully under the control of the Relay Chain, it is meant to be a
 //! `TrustedTeleporter`. It can also serve as a reserve location to other parachains for DOT as well
 //! as other local assets.
 
@@ -122,8 +128,8 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("statemint"),
-	impl_name: create_runtime_str!("statemint"),
+	spec_name: create_runtime_str!("asset-hub-polkadot"),
+	impl_name: create_runtime_str!("asset-hub-polkadot"),
 	authoring_version: 1,
 	spec_version: 9420,
 	impl_version: 0,

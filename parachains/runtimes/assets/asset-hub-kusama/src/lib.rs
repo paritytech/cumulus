@@ -13,9 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Statemine Runtime
+//! # Asset Hub Kusama Runtime
 //!
-//! Statemine is the canary network for its Polkadot cousin, Statemint.
+//! Asset Hub Kusama, formerly known as "Statemine", is the canary network for its Polkadot cousin.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]
@@ -94,8 +94,8 @@ impl_opaque_keys! {
 #[cfg(feature = "state-trie-version-1")]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("statemine"),
-	impl_name: create_runtime_str!("statemine"),
+	spec_name: create_runtime_str!("asset-hub-kusama"),
+	impl_name: create_runtime_str!("asset-hub-kusama"),
 	authoring_version: 1,
 	spec_version: 9420,
 	impl_version: 0,
@@ -107,8 +107,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 #[cfg(not(feature = "state-trie-version-1"))]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("statemine"),
-	impl_name: create_runtime_str!("statemine"),
+	spec_name: create_runtime_str!("asset-hub-kusama"),
+	impl_name: create_runtime_str!("asset-hub-kusama"),
 	authoring_version: 1,
 	spec_version: 9420,
 	impl_version: 0,

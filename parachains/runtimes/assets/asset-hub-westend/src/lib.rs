@@ -13,9 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Westmint Runtime
+//! # Asset Hub Westend Runtime
 //!
-//! Westmint is the testnet for Statemint.
+//! Testnet for Asset Hub Polkadot.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]
@@ -94,8 +94,8 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("westmint"),
-	impl_name: create_runtime_str!("westmint"),
+	spec_name: create_runtime_str!("asset-hub-westend"),
+	impl_name: create_runtime_str!("asset-hub-westend"),
 	authoring_version: 1,
 	spec_version: 9420,
 	impl_version: 0,

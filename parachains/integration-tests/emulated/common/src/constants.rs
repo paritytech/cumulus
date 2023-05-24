@@ -326,7 +326,9 @@ pub mod statemint {
 					.map(|k| (k, ED * 4096))
 					.collect(),
 			},
-			parachain_info: asset_hub_polkadot_runtime::ParachainInfoConfig { parachain_id: PARA_ID.into() },
+			parachain_info: asset_hub_polkadot_runtime::ParachainInfoConfig {
+				parachain_id: PARA_ID.into(),
+			},
 			collator_selection: asset_hub_polkadot_runtime::CollatorSelectionConfig {
 				invulnerables: collators::invulnerables_statemint()
 					.iter()
@@ -341,8 +343,8 @@ pub mod statemint {
 					.into_iter()
 					.map(|(acc, aura)| {
 						(
-							acc.clone(),                             // account id
-							acc,                                     // validator id
+							acc.clone(),                                      // account id
+							acc,                                              // validator id
 							asset_hub_polkadot_runtime::SessionKeys { aura }, // session keys
 						)
 					})
@@ -380,7 +382,9 @@ pub mod statemine {
 					.map(|k| (k, ED * 4096))
 					.collect(),
 			},
-			parachain_info: asset_hub_kusama_runtime::ParachainInfoConfig { parachain_id: PARA_ID.into() },
+			parachain_info: asset_hub_kusama_runtime::ParachainInfoConfig {
+				parachain_id: PARA_ID.into(),
+			},
 			collator_selection: asset_hub_kusama_runtime::CollatorSelectionConfig {
 				invulnerables: collators::invulnerables()
 					.iter()
@@ -395,8 +399,8 @@ pub mod statemine {
 					.into_iter()
 					.map(|(acc, aura)| {
 						(
-							acc.clone(),                             // account id
-							acc,                                     // validator id
+							acc.clone(),                                    // account id
+							acc,                                            // validator id
 							asset_hub_kusama_runtime::SessionKeys { aura }, // session keys
 						)
 					})

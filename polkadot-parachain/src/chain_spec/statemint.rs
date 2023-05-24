@@ -31,9 +31,12 @@ pub type StatemineChainSpec =
 pub type WestmintChainSpec =
 	sc_service::GenericChainSpec<asset_hub_westend_runtime::GenesisConfig, Extensions>;
 
-const STATEMINT_ED: StatemintBalance = asset_hub_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
-const STATEMINE_ED: StatemintBalance = asset_hub_kusama_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
-const WESTMINT_ED: StatemintBalance = asset_hub_westend_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const STATEMINT_ED: StatemintBalance =
+	asset_hub_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const STATEMINE_ED: StatemintBalance =
+	asset_hub_kusama_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const WESTMINT_ED: StatemintBalance =
+	asset_hub_westend_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 /// Generate the session keys from individual elements.
 ///
