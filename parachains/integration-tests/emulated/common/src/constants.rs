@@ -71,7 +71,7 @@ pub mod accounts {
 pub mod collators {
 	use super::*;
 
-	pub fn invulnerables_statemint() -> Vec<(AccountId, StatemintAuraId)> {
+	pub fn invulnerables_asset_hub_polkadot() -> Vec<(AccountId, StatemintAuraId)> {
 		vec![
 			(
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -305,8 +305,8 @@ pub mod kusama {
 	}
 }
 
-// Statemint
-pub mod statemint {
+// Asset Hub Polkadot
+pub mod asset_hub_polkadot {
 	use super::*;
 	pub const PARA_ID: u32 = 1000;
 	pub const ED: Balance = asset_hub_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
@@ -329,7 +329,7 @@ pub mod statemint {
 				parachain_id: PARA_ID.into(),
 			},
 			collator_selection: asset_hub_polkadot_runtime::CollatorSelectionConfig {
-				invulnerables: collators::invulnerables_statemint()
+				invulnerables: collators::invulnerables_asset_hub_polkadot()
 					.iter()
 					.cloned()
 					.map(|(acc, _)| acc)
@@ -338,7 +338,7 @@ pub mod statemint {
 				..Default::default()
 			},
 			session: asset_hub_polkadot_runtime::SessionConfig {
-				keys: collators::invulnerables_statemint()
+				keys: collators::invulnerables_asset_hub_polkadot()
 					.into_iter()
 					.map(|(acc, aura)| {
 						(
@@ -361,8 +361,8 @@ pub mod statemint {
 	}
 }
 
-// Statemint
-pub mod statemine {
+// Asset Hub Kusama
+pub mod asset_hub_kusama {
 	use super::*;
 	pub const PARA_ID: u32 = 1000;
 	pub const ED: Balance = asset_hub_kusama_runtime::constants::currency::EXISTENTIAL_DEPOSIT;

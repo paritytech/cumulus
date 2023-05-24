@@ -5,13 +5,14 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 	// Init tests variables
 	let amount = POLKADOT_ED * 1000;
 	let relay_sender_balance_before = Polkadot::account_data_of(PolkadotSender::get()).free;
-	let para_receiver_balance_before = Statemint::account_data_of(StatemintReceiver::get()).free;
+	let para_receiver_balance_before =
+		AssetHubPolkadot::account_data_of(AssetHubPolkadotReceiver::get()).free;
 
 	let origin = <Polkadot as Relay>::RuntimeOrigin::signed(PolkadotSender::get());
 	let assets_para_destination: VersionedMultiLocation =
-		Polkadot::child_location_of(Statemint::para_id()).into();
+		Polkadot::child_location_of(AssetHubPolkadot::para_id()).into();
 	let beneficiary: VersionedMultiLocation =
-		AccountId32 { network: None, id: StatemintReceiver::get().into() }.into();
+		AccountId32 { network: None, id: AssetHubPolkadotReceiver::get().into() }.into();
 	let native_assets: VersionedMultiAssets = (Here, amount).into();
 	let fee_asset_item = 0;
 	let weight_limit = WeightLimit::Unlimited;
@@ -38,14 +39,14 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 	});
 
 	// Receive XCM message in Assets Parachain
-	Statemint::execute_with(|| {
-		type RuntimeEvent = <Statemint as Para>::RuntimeEvent;
+	AssetHubPolkadot::execute_with(|| {
+		type RuntimeEvent = <AssetHubPolkadot as Para>::RuntimeEvent;
 
 		assert_expected_events!(
-			Statemint,
+			AssetHubPolkadot,
 			vec![
 				RuntimeEvent::Balances(pallet_balances::Event::Deposit { who, .. }) => {
-					who: *who == StatemineReceiver::get().into(),
+					who: *who == AssetHubPolkadotReceiver::get().into(),
 				},
 			]
 		);
@@ -53,7 +54,8 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 
 	// Check if balances are updated accordingly in Relay Chain and Assets Parachain
 	let relay_sender_balance_after = Polkadot::account_data_of(PolkadotSender::get()).free;
-	let para_sender_balance_after = Statemint::account_data_of(StatemintReceiver::get()).free;
+	let para_sender_balance_after =
+		AssetHubPolkadot::account_data_of(AssetHubPolkadotReceiver::get()).free;
 
 	assert_eq!(relay_sender_balance_before - amount, relay_sender_balance_after);
 	assert!(para_sender_balance_after > para_receiver_balance_before);

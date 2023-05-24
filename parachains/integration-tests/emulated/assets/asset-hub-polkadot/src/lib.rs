@@ -8,13 +8,14 @@ pub use integration_tests_common::{
 		polkadot::ED as POLKADOT_ED,
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
-	AccountId, BHKusama, BHKusamaPallet, BHKusamaReceiver, BHKusamaSender, BHPolkadot,
-	BHPolkadotPallet, BHPolkadotReceiver, BHPolkadotSender, Collectives, CollectivesPallet,
-	CollectivesReceiver, CollectivesSender, Kusama, KusamaMockNet, KusamaPallet, KusamaReceiver,
-	KusamaSender, PenpalKusama, PenpalKusamaReceiver, PenpalKusamaSender, PenpalPolkadot,
-	PenpalPolkadotReceiver, PenpalPolkadotSender, Polkadot, PolkadotMockNet, PolkadotPallet,
-	PolkadotReceiver, PolkadotSender, Statemine, StateminePallet, StatemineReceiver,
-	StatemineSender, Statemint, StatemintPallet, StatemintReceiver, StatemintSender,
+	AccountId, AssetHubKusama, AssetHubKusamaPallet, AssetHubKusamaReceiver, AssetHubKusamaSender,
+	AssetHubPolkadot, AssetHubPolkadotPallet, AssetHubPolkadotReceiver, AssetHubPolkadotSender,
+	BHKusama, BHKusamaPallet, BHKusamaReceiver, BHKusamaSender, BHPolkadot, BHPolkadotPallet,
+	BHPolkadotReceiver, BHPolkadotSender, Collectives, CollectivesPallet, CollectivesReceiver,
+	CollectivesSender, Kusama, KusamaMockNet, KusamaPallet, KusamaReceiver, KusamaSender,
+	PenpalKusama, PenpalKusamaReceiver, PenpalKusamaSender, PenpalPolkadot, PenpalPolkadotReceiver,
+	PenpalPolkadotSender, Polkadot, PolkadotMockNet, PolkadotPallet, PolkadotReceiver,
+	PolkadotSender,
 };
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use xcm::{

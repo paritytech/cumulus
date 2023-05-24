@@ -25,7 +25,7 @@ chain = "polkadot-local"
 
 [[parachains]]
 id = 1000
-chain = "statemint-local"
+chain = "asset-hub-polkadot-local"
 cumulus_based = true
 
     [[parachains.collators]]

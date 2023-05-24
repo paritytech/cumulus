@@ -2,8 +2,8 @@ pub mod constants;
 
 pub use constants::{
 	accounts::{ALICE, BOB},
-	bridge_hub_kusama, bridge_hub_polkadot, collectives, kusama, penpal, polkadot, statemine,
-	statemint,
+	asset_hub_kusama, asset_hub_polkadot, bridge_hub_kusama, bridge_hub_polkadot, collectives,
+	kusama, penpal, polkadot,
 };
 use frame_support::{parameter_types, sp_io, sp_tracing};
 pub use parachains_common::{AccountId, AuraId, Balance, BlockNumber, StatemintAuraId};
@@ -56,8 +56,8 @@ decl_test_relay_chains! {
 
 decl_test_parachains! {
 	// Polkadot
-	pub struct Statemint {
-		genesis = statemint::genesis(),
+	pub struct AssetHubPolkadot {
+		genesis = asset_hub_polkadot::genesis(),
 		on_init = (),
 		runtime = {
 			Runtime: asset_hub_polkadot_runtime::Runtime,
@@ -99,8 +99,8 @@ decl_test_parachains! {
 		}
 	},
 	// Kusama
-	pub struct Statemine {
-		genesis = statemine::genesis(),
+	pub struct AssetHubKusama {
+		genesis = asset_hub_kusama::genesis(),
 		on_init = (),
 		runtime = {
 			Runtime: asset_hub_kusama_runtime::Runtime,
@@ -208,7 +208,7 @@ decl_test_networks! {
 	pub struct PolkadotMockNet {
 		relay_chain = Polkadot,
 		parachains = vec![
-			Statemint,
+			AssetHubPolkadot,
 			PenpalPolkadot,
 			Collectives,
 			BHPolkadot,
@@ -217,7 +217,7 @@ decl_test_networks! {
 	pub struct KusamaMockNet {
 		relay_chain = Kusama,
 		parachains = vec![
-			Statemine,
+			AssetHubKusama,
 			PenpalKusama,
 			BHKusama,
 		],
@@ -231,12 +231,12 @@ parameter_types! {
 	// Kusama
 	pub KusamaSender: AccountId = Kusama::account_id_of(ALICE);
 	pub KusamaReceiver: AccountId = Kusama::account_id_of(BOB);
-	// Statemint
-	pub StatemintSender: AccountId = Statemint::account_id_of(ALICE);
-	pub StatemintReceiver: AccountId = Statemint::account_id_of(BOB);
-	// Statemine
-	pub StatemineSender: AccountId = Statemine::account_id_of(ALICE);
-	pub StatemineReceiver: AccountId = Statemine::account_id_of(BOB);
+	// Asset Hub Polkadot
+	pub AssetHubPolkadotSender: AccountId = AssetHubPolkadot::account_id_of(ALICE);
+	pub AssetHubPolkadotReceiver: AccountId = AssetHubPolkadot::account_id_of(BOB);
+	// Asset Hub Kusama
+	pub AssetHubKusamaSender: AccountId = AssetHubKusama::account_id_of(ALICE);
+	pub AssetHubKusamaReceiver: AccountId = AssetHubKusama::account_id_of(BOB);
 	// Penpal Polkadot
 	pub PenpalPolkadotSender: AccountId = PenpalPolkadot::account_id_of(ALICE);
 	pub PenpalPolkadotReceiver: AccountId = PenpalPolkadot::account_id_of(BOB);
