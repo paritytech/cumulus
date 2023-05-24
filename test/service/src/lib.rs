@@ -754,7 +754,9 @@ pub fn node_config(
 		state_pruning: Some(PruningMode::ArchiveAll),
 		blocks_pruning: BlocksPruning::KeepAll,
 		chain_spec: spec,
-		wasm_method: WasmExecutionMethod::default(),
+		wasm_method: WasmExecutionMethod::Compiled {
+			instantiation_strategy: sc_executor_wasmtime::InstantiationStrategy::PoolingCopyOnWrite,
+		},
 		execution_strategies: ExecutionStrategies {
 			syncing: sc_client_api::ExecutionStrategy::AlwaysWasm,
 			importing: sc_client_api::ExecutionStrategy::AlwaysWasm,
