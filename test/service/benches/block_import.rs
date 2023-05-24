@@ -45,15 +45,8 @@ fn benchmark_block_import(c: &mut Criterion) {
 			.endowed_accounts(account_ids)
 			.build(),
 	);
-	let client = alice.client;
 
-	let mut block_builder = client.new_block(Default::default()).unwrap();
-	block_builder.push(utils::extrinsic_set_time(&client)).unwrap();
-	let parent_hash = client.usage_info().chain.best_hash;
-	let parent_header = client.header(parent_hash).expect("Just fetched this hash.").unwrap();
-	block_builder.push(utils::extrinsic_set_validation_data(parent_header)).unwrap();
-	let built_block = block_builder.build().unwrap();
-	runtime.block_on(utils::import_block(&client, &built_block.block, false));
+	let client = alice.client;
 
 	let (max_transfer_count, extrinsics) =
 		utils::create_benchmarking_transfer_extrinsics(&client, &src_accounts, &dst_accounts);

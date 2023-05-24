@@ -57,7 +57,7 @@ fn benchmark_block_import(c: &mut Criterion) {
 			&client,
 			initialize_glutton_pallet,
 			compute_percent,
-			compute_percent,
+			storage_percent,
 		);
 		initialize_glutton_pallet = false;
 
