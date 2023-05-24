@@ -53,6 +53,7 @@ members = [
 	"parachains/runtimes/glutton/glutton-kusama",
 	"parachains/runtimes/testing/penpal",
 	"parachains/integration-tests/emulated/common",
+	"parachains/integration-tests/emulated/assets/asset-hub-kusama",
 	"parachains/integration-tests/emulated/assets/asset-hub-polkadot",
 	"test/client",
 	"test/relay-sproof-builder",
