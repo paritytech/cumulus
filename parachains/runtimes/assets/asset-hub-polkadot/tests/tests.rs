@@ -16,7 +16,7 @@ use frame_support::{
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
 use parachains_common::{
-	AccountId, AssetIdForTrustBackedAssets, Balance, StatemintAuraId as AuraId,
+	AccountId, AssetHubPolkadotAuraId as AuraId, AssetIdForTrustBackedAssets, Balance,
 };
 use xcm::latest::prelude::*;
 use xcm_executor::traits::{Convert, Identity, JustTry, WeightTrader};

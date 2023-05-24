@@ -28,7 +28,7 @@ use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::{info, warn};
-use parachains_common::{AuraId, StatemintAuraId};
+use parachains_common::{AssetHubPolkadotAuraId, AuraId};
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
@@ -428,7 +428,7 @@ macro_rules! construct_benchmark_partials {
 			Runtime::Statemint => {
 				let $partials = new_partial::<asset_hub_polkadot_runtime::RuntimeApi, _>(
 					&$config,
-					crate::service::aura_build_import_queue::<_, StatemintAuraId>,
+					crate::service::aura_build_import_queue::<_, AssetHubPolkadotAuraId>,
 				)?;
 				$code
 			},
@@ -472,7 +472,7 @@ macro_rules! construct_async_run {
 				runner.async_run(|$config| {
 					let $components = new_partial::<asset_hub_polkadot_runtime::RuntimeApi, _>(
 						&$config,
-						crate::service::aura_build_import_queue::<_, StatemintAuraId>,
+						crate::service::aura_build_import_queue::<_, AssetHubPolkadotAuraId>,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -914,7 +914,7 @@ pub fn run() -> Result<()> {
 				match config.chain_spec.runtime() {
 					Runtime::Statemint => crate::service::start_generic_aura_node::<
 						asset_hub_polkadot_runtime::RuntimeApi,
-						StatemintAuraId,
+						AssetHubPolkadotAuraId,
 					>(config, polkadot_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)

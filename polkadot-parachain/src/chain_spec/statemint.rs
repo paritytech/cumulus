@@ -19,7 +19,7 @@ use crate::chain_spec::{
 };
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use parachains_common::{AccountId, AuraId, Balance as StatemintBalance, StatemintAuraId};
+use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance as StatemintBalance};
 use sc_service::ChainType;
 use sp_core::{crypto::UncheckedInto, sr25519};
 
@@ -41,7 +41,9 @@ const WESTMINT_ED: StatemintBalance =
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn statemint_session_keys(keys: StatemintAuraId) -> asset_hub_polkadot_runtime::SessionKeys {
+pub fn statemint_session_keys(
+	keys: AssetHubPolkadotAuraId,
+) -> asset_hub_polkadot_runtime::SessionKeys {
 	asset_hub_polkadot_runtime::SessionKeys { aura: keys }
 }
 
@@ -76,7 +78,7 @@ pub fn statemint_development_config() -> StatemintChainSpec {
 				// initial collators.
 				vec![(
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_collator_keys_from_seed::<StatemintAuraId>("Alice"),
+					get_collator_keys_from_seed::<AssetHubPolkadotAuraId>("Alice"),
 				)],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -114,11 +116,11 @@ pub fn statemint_local_config() -> StatemintChainSpec {
 				vec![
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed::<StatemintAuraId>("Alice"),
+						get_collator_keys_from_seed::<AssetHubPolkadotAuraId>("Alice"),
 					),
 					(
 						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed::<StatemintAuraId>("Bob"),
+						get_collator_keys_from_seed::<AssetHubPolkadotAuraId>("Bob"),
 					),
 				],
 				vec![
@@ -208,7 +210,7 @@ pub fn statemint_config() -> StatemintChainSpec {
 }
 
 fn statemint_genesis(
-	invulnerables: Vec<(AccountId, StatemintAuraId)>,
+	invulnerables: Vec<(AccountId, AssetHubPolkadotAuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> asset_hub_polkadot_runtime::GenesisConfig {
