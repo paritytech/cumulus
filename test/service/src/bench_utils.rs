@@ -183,15 +183,11 @@ pub fn get_wasm_module() -> Box<dyn sc_executor_common::wasm_runtime::WasmModule
 	let prepared_blob =
 		sc_executor_wasmtime::prepare_runtime_artifact(blob, &config.semantics).unwrap();
 
-	let tmpdir = tempfile::tempdir().expect("Should be able to create temp dir.");
-	let path = tmpdir.path().join("module.bin");
-	std::fs::write(&path, prepared_blob).unwrap();
 	unsafe {
-		Box::new(
-			sc_executor_wasmtime::create_runtime_from_artifact::<sp_io::SubstrateHostFunctions>(
-				&path, config,
-			)
-			.expect("works"),
-		)
+		let wasm_module = sc_executor_wasmtime::create_runtime_from_artifact_bytes::<
+			sp_io::SubstrateHostFunctions,
+		>(&prepared_blob, config)
+		.expect("Unable to create wasm module.");
+		Box::new(wasm_module)
 	}
 }
