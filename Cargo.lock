@@ -444,6 +444,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "asset-hub-polkadot-integration-tests"
+version = "1.0.0"
+dependencies = [
+ "asset-hub-polkadot-runtime",
+ "frame-support",
+ "frame-system",
+ "integration-tests-common",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-xcm",
+ "parachains-common",
+ "parity-scale-codec",
+ "penpal-runtime",
+ "polkadot-core-primitives",
+ "polkadot-parachain",
+ "polkadot-runtime",
+ "polkadot-runtime-parachains",
+ "sp-core",
+ "sp-runtime",
+ "sp-weights",
+ "xcm",
+ "xcm-emulator",
+ "xcm-executor",
+]
+
+[[package]]
 name = "asset-hub-polkadot-runtime"
 version = "0.9.420"
 dependencies = [
@@ -13774,32 +13800,6 @@ name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
-
-[[package]]
-name = "statemint-it"
-version = "1.0.0"
-dependencies = [
- "asset-hub-polkadot-runtime",
- "frame-support",
- "frame-system",
- "integration-tests-common",
- "pallet-assets",
- "pallet-balances",
- "pallet-xcm",
- "parachains-common",
- "parity-scale-codec",
- "penpal-runtime",
- "polkadot-core-primitives",
- "polkadot-parachain",
- "polkadot-runtime",
- "polkadot-runtime-parachains",
- "sp-core",
- "sp-runtime",
- "sp-weights",
- "xcm",
- "xcm-emulator",
- "xcm-executor",
-]
 
 [[package]]
 name = "static_assertions"

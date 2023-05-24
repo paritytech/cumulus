@@ -257,7 +257,7 @@ impl ContainsPair<MultiAsset, MultiLocation> for MultiNativeAsset {
 parameter_types! {
 	pub CommonGoodAssetsLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
 	// ALWAYS ensure that the index in PalletInstance stays up-to-date with
-	// Statemint's Assets pallet index
+	// Asset Hub Polkadot's Assets pallet index
 	pub CommonGoodAssetsPalletLocation: MultiLocation =
 		MultiLocation::new(1, X2(Parachain(1000), PalletInstance(50)));
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();

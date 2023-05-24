@@ -20,13 +20,13 @@
 //! DATE: 2023-05-05, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
 //! HOSTNAME: `bm6`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
-//! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("westmint-dev"), DB CACHE: 1024
+//! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("asset-hub-westend-dev"), DB CACHE: 1024
 
 // Executed Command:
 // ./artifacts/polkadot-parachain
 // benchmark
 // pallet
-// --chain=westmint-dev
+// --chain=asset-hub-westend-dev
 // --execution=wasm
 // --wasm-execution=compiled
 // --pallet=pallet_multisig

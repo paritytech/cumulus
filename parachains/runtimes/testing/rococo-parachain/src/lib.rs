@@ -395,7 +395,7 @@ parameter_types! {
 	pub MaxAssetsIntoHolding: u32 = 64;
 	pub StatemintLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
 	// ALWAYS ensure that the index in PalletInstance stays up-to-date with
-	// Statemint's Assets pallet index
+	// Asset Hub Polkadot's Assets pallet index
 	pub StatemintAssetsPalletLocation: MultiLocation =
 		MultiLocation::new(1, X2(Parachain(1000), PalletInstance(50)));
 }
