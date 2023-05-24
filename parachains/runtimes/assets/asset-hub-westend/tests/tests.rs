@@ -8,13 +8,13 @@ use frame_support::{
 };
 use parachains_common::{AccountId, AssetIdForTrustBackedAssets, AuraId, Balance};
 use std::convert::Into;
-pub use westmint_runtime::{
+pub use asset_hub_westend_runtime::{
 	constants::fee::WeightToFee,
 	xcm_config::{CheckingAccount, TrustBackedAssetsPalletLocation, XcmConfig},
 	AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets, ForeignAssetsInstance,
 	ParachainSystem, Runtime, SessionKeys, System, TrustBackedAssetsInstance,
 };
-use westmint_runtime::{
+use asset_hub_westend_runtime::{
 	xcm_config::{
 		AssetFeeAsExistentialDepositMultiplierFeeCharger, ForeignCreatorsSovereignAccountOf,
 		WestendLocation,

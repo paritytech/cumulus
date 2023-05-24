@@ -25,35 +25,35 @@ use sp_core::{crypto::UncheckedInto, sr25519};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type StatemintChainSpec =
-	sc_service::GenericChainSpec<statemint_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<asset_hub_polkadot_runtime::GenesisConfig, Extensions>;
 pub type StatemineChainSpec =
-	sc_service::GenericChainSpec<statemine_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<asset_hub_kusama_runtime::GenesisConfig, Extensions>;
 pub type WestmintChainSpec =
-	sc_service::GenericChainSpec<westmint_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<asset_hub_westend_runtime::GenesisConfig, Extensions>;
 
-const STATEMINT_ED: StatemintBalance = statemint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
-const STATEMINE_ED: StatemintBalance = statemine_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
-const WESTMINT_ED: StatemintBalance = westmint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const STATEMINT_ED: StatemintBalance = asset_hub_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const STATEMINE_ED: StatemintBalance = asset_hub_kusama_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const WESTMINT_ED: StatemintBalance = asset_hub_westend_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn statemint_session_keys(keys: StatemintAuraId) -> statemint_runtime::SessionKeys {
-	statemint_runtime::SessionKeys { aura: keys }
+pub fn statemint_session_keys(keys: StatemintAuraId) -> asset_hub_polkadot_runtime::SessionKeys {
+	asset_hub_polkadot_runtime::SessionKeys { aura: keys }
 }
 
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn statemine_session_keys(keys: AuraId) -> statemine_runtime::SessionKeys {
-	statemine_runtime::SessionKeys { aura: keys }
+pub fn statemine_session_keys(keys: AuraId) -> asset_hub_kusama_runtime::SessionKeys {
+	asset_hub_kusama_runtime::SessionKeys { aura: keys }
 }
 
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn westmint_session_keys(keys: AuraId) -> westmint_runtime::SessionKeys {
-	westmint_runtime::SessionKeys { aura: keys }
+pub fn westmint_session_keys(keys: AuraId) -> asset_hub_westend_runtime::SessionKeys {
+	asset_hub_westend_runtime::SessionKeys { aura: keys }
 }
 
 pub fn statemint_development_config() -> StatemintChainSpec {
@@ -208,23 +208,23 @@ fn statemint_genesis(
 	invulnerables: Vec<(AccountId, StatemintAuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> statemint_runtime::GenesisConfig {
-	statemint_runtime::GenesisConfig {
-		system: statemint_runtime::SystemConfig {
-			code: statemint_runtime::WASM_BINARY
+) -> asset_hub_polkadot_runtime::GenesisConfig {
+	asset_hub_polkadot_runtime::GenesisConfig {
+		system: asset_hub_polkadot_runtime::SystemConfig {
+			code: asset_hub_polkadot_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 		},
-		balances: statemint_runtime::BalancesConfig {
+		balances: asset_hub_polkadot_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, STATEMINT_ED * 4096)).collect(),
 		},
-		parachain_info: statemint_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: statemint_runtime::CollatorSelectionConfig {
+		parachain_info: asset_hub_polkadot_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: asset_hub_polkadot_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: STATEMINT_ED * 16,
 			..Default::default()
 		},
-		session: statemint_runtime::SessionConfig {
+		session: asset_hub_polkadot_runtime::SessionConfig {
 			keys: invulnerables
 				.into_iter()
 				.map(|(acc, aura)| {
@@ -241,7 +241,7 @@ fn statemint_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
-		polkadot_xcm: statemint_runtime::PolkadotXcmConfig {
+		polkadot_xcm: asset_hub_polkadot_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 	}
@@ -393,27 +393,27 @@ fn statemine_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> statemine_runtime::GenesisConfig {
-	statemine_runtime::GenesisConfig {
-		system: statemine_runtime::SystemConfig {
-			code: statemine_runtime::WASM_BINARY
+) -> asset_hub_kusama_runtime::GenesisConfig {
+	asset_hub_kusama_runtime::GenesisConfig {
+		system: asset_hub_kusama_runtime::SystemConfig {
+			code: asset_hub_kusama_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 		},
-		balances: statemine_runtime::BalancesConfig {
+		balances: asset_hub_kusama_runtime::BalancesConfig {
 			balances: endowed_accounts
 				.iter()
 				.cloned()
 				.map(|k| (k, STATEMINE_ED * 524_288))
 				.collect(),
 		},
-		parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: statemine_runtime::CollatorSelectionConfig {
+		parachain_info: asset_hub_kusama_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: asset_hub_kusama_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: STATEMINE_ED * 16,
 			..Default::default()
 		},
-		session: statemine_runtime::SessionConfig {
+		session: asset_hub_kusama_runtime::SessionConfig {
 			keys: invulnerables
 				.into_iter()
 				.map(|(acc, aura)| {
@@ -428,7 +428,7 @@ fn statemine_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
-		polkadot_xcm: statemine_runtime::PolkadotXcmConfig {
+		polkadot_xcm: asset_hub_kusama_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 	}
@@ -577,23 +577,23 @@ fn westmint_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> westmint_runtime::GenesisConfig {
-	westmint_runtime::GenesisConfig {
-		system: westmint_runtime::SystemConfig {
-			code: westmint_runtime::WASM_BINARY
+) -> asset_hub_westend_runtime::GenesisConfig {
+	asset_hub_westend_runtime::GenesisConfig {
+		system: asset_hub_westend_runtime::SystemConfig {
+			code: asset_hub_westend_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 		},
-		balances: westmint_runtime::BalancesConfig {
+		balances: asset_hub_westend_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, WESTMINT_ED * 4096)).collect(),
 		},
-		parachain_info: westmint_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: westmint_runtime::CollatorSelectionConfig {
+		parachain_info: asset_hub_westend_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: asset_hub_westend_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: WESTMINT_ED * 16,
 			..Default::default()
 		},
-		session: westmint_runtime::SessionConfig {
+		session: asset_hub_westend_runtime::SessionConfig {
 			keys: invulnerables
 				.into_iter()
 				.map(|(acc, aura)| {
@@ -610,7 +610,7 @@ fn westmint_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
-		polkadot_xcm: westmint_runtime::PolkadotXcmConfig {
+		polkadot_xcm: asset_hub_westend_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 	}

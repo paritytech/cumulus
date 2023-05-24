@@ -9,11 +9,11 @@ use frame_support::{
 use parachains_common::{
 	AccountId, AssetIdForTrustBackedAssets, Balance, StatemintAuraId as AuraId,
 };
-use statemint_runtime::xcm_config::{
+use asset_hub_polkadot_runtime::xcm_config::{
 	AssetFeeAsExistentialDepositMultiplierFeeCharger, CheckingAccount, DotLocation,
 	ForeignCreatorsSovereignAccountOf, TrustBackedAssetsPalletLocation, XcmConfig,
 };
-pub use statemint_runtime::{
+pub use asset_hub_polkadot_runtime::{
 	constants::fee::WeightToFee, AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets,
 	ForeignAssetsInstance, MetadataDepositBase, MetadataDepositPerByte, ParachainSystem, Runtime,
 	RuntimeCall, RuntimeEvent, SessionKeys, System, TrustBackedAssetsInstance,

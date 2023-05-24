@@ -93,11 +93,11 @@ impl sc_executor::NativeExecutionDispatch for StatemintRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		statemint_runtime::api::dispatch(method, data)
+		asset_hub_polkadot_runtime::api::dispatch(method, data)
 	}
 
 	fn native_version() -> sc_executor::NativeVersion {
-		statemint_runtime::native_version()
+		asset_hub_polkadot_runtime::native_version()
 	}
 }
 
@@ -108,11 +108,11 @@ impl sc_executor::NativeExecutionDispatch for StatemineRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		statemine_runtime::api::dispatch(method, data)
+		asset_hub_kusama_runtime::api::dispatch(method, data)
 	}
 
 	fn native_version() -> sc_executor::NativeVersion {
-		statemine_runtime::native_version()
+		asset_hub_kusama_runtime::native_version()
 	}
 }
 
@@ -123,11 +123,11 @@ impl sc_executor::NativeExecutionDispatch for WestmintRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		westmint_runtime::api::dispatch(method, data)
+		asset_hub_westend_runtime::api::dispatch(method, data)
 	}
 
 	fn native_version() -> sc_executor::NativeVersion {
-		westmint_runtime::native_version()
+		asset_hub_westend_runtime::native_version()
 	}
 }
 

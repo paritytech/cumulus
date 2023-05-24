@@ -338,9 +338,9 @@ impl SubstrateCli for Cli {
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
 		match chain_spec.runtime() {
-			Runtime::Statemint => &statemint_runtime::VERSION,
-			Runtime::Statemine => &statemine_runtime::VERSION,
-			Runtime::Westmint => &westmint_runtime::VERSION,
+			Runtime::Statemint => &asset_hub_polkadot_runtime::VERSION,
+			Runtime::Statemine => &asset_hub_kusama_runtime::VERSION,
+			Runtime::Westmint => &asset_hub_westend_runtime::VERSION,
 			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
 				&collectives_polkadot_runtime::VERSION,
 			Runtime::Shell => &shell_runtime::VERSION,
@@ -400,21 +400,21 @@ macro_rules! construct_benchmark_partials {
 	($config:expr, |$partials:ident| $code:expr) => {
 		match $config.chain_spec.runtime() {
 			Runtime::Statemine => {
-				let $partials = new_partial::<statemine_runtime::RuntimeApi, _>(
+				let $partials = new_partial::<asset_hub_kusama_runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::aura_build_import_queue::<_, AuraId>,
 				)?;
 				$code
 			},
 			Runtime::Westmint => {
-				let $partials = new_partial::<westmint_runtime::RuntimeApi, _>(
+				let $partials = new_partial::<asset_hub_westend_runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::aura_build_import_queue::<_, AuraId>,
 				)?;
 				$code
 			},
 			Runtime::Statemint => {
-				let $partials = new_partial::<statemint_runtime::RuntimeApi, _>(
+				let $partials = new_partial::<asset_hub_polkadot_runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::aura_build_import_queue::<_, StatemintAuraId>,
 				)?;
@@ -438,7 +438,7 @@ macro_rules! construct_async_run {
 		match runner.config().chain_spec.runtime() {
 			Runtime::Westmint => {
 				runner.async_run(|$config| {
-					let $components = new_partial::<westmint_runtime::RuntimeApi, _>(
+					let $components = new_partial::<asset_hub_westend_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
 					)?;
@@ -448,7 +448,7 @@ macro_rules! construct_async_run {
 			},
 			Runtime::Statemine => {
 				runner.async_run(|$config| {
-					let $components = new_partial::<statemine_runtime::RuntimeApi, _>(
+					let $components = new_partial::<asset_hub_kusama_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
 					)?;
@@ -458,7 +458,7 @@ macro_rules! construct_async_run {
 			},
 			Runtime::Statemint => {
 				runner.async_run(|$config| {
-					let $components = new_partial::<statemint_runtime::RuntimeApi, _>(
+					let $components = new_partial::<asset_hub_polkadot_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, StatemintAuraId>,
 					)?;
@@ -901,21 +901,21 @@ pub fn run() -> Result<()> {
 
 				match config.chain_spec.runtime() {
 					Runtime::Statemint => crate::service::start_generic_aura_node::<
-						statemint_runtime::RuntimeApi,
+						asset_hub_polkadot_runtime::RuntimeApi,
 						StatemintAuraId,
 					>(config, polkadot_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
 					Runtime::Statemine => crate::service::start_generic_aura_node::<
-						statemine_runtime::RuntimeApi,
+						asset_hub_kusama_runtime::RuntimeApi,
 						AuraId,
 					>(config, polkadot_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
 					Runtime::Westmint => crate::service::start_generic_aura_node::<
-						westmint_runtime::RuntimeApi,
+						asset_hub_westend_runtime::RuntimeApi,
 						AuraId,
 					>(config, polkadot_config, collator_options, id, hwbench)
 					.await

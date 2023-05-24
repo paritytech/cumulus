@@ -7,10 +7,10 @@ use frame_support::{
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
 use parachains_common::{AccountId, AssetIdForTrustBackedAssets, AuraId, Balance};
-use statemine_runtime::xcm_config::{
+use asset_hub_kusama_runtime::xcm_config::{
 	AssetFeeAsExistentialDepositMultiplierFeeCharger, KsmLocation, TrustBackedAssetsPalletLocation,
 };
-pub use statemine_runtime::{
+pub use asset_hub_kusama_runtime::{
 	constants::fee::WeightToFee,
 	xcm_config::{CheckingAccount, ForeignCreatorsSovereignAccountOf, XcmConfig},
 	AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets, ForeignAssetsInstance,
