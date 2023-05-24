@@ -83,8 +83,7 @@ pub mod v1 {
 			);
 
 			let onchain_version = Pallet::<T>::on_chain_storage_version();
-
-			frame_support::ensure!(current_version >= 1, "must_upgrade");
+			frame_support::ensure!(onchain_version >= 1, "must_upgrade");
 
 			Ok(())
 		}
