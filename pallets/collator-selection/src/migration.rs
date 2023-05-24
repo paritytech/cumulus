@@ -59,7 +59,7 @@ pub mod v1 {
 		}
 
 		#[cfg(feature = "try-runtime")]
-		fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+		fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::DispatchError> {
 			frame_support::ensure!(
 				Pallet::<T>::on_chain_storage_version() == 0,
 				"must upgrade linearly"
@@ -69,7 +69,7 @@ pub mod v1 {
 		}
 
 		#[cfg(feature = "try-runtime")]
-		fn post_upgrade(number_of_invulnerables: Vec<u8>) -> Result<(), &'static str> {
+		fn post_upgrade(number_of_invulnerables: Vec<u8>) -> Result<(), sp_runtime::DispatchError> {
 			let stored_invulnerables = Invulnerables::<T>::get().to_vec();
 			let mut sorted_invulnerables = stored_invulnerables.clone();
 			sorted_invulnerables.sort();
