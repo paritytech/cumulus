@@ -1,6 +1,6 @@
 use grandpa::AuthorityId as GrandpaId;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-pub use parachains_common::{AccountId, AuraId, Balance, BlockNumber, StatemintAuraId};
+pub use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, BlockNumber};
 use polkadot_primitives::{AssignmentId, ValidatorId};
 pub use polkadot_runtime_parachains::configuration::HostConfiguration;
 use polkadot_service::chain_spec::get_authority_keys_from_seed_no_beefy;
@@ -71,15 +71,15 @@ pub mod accounts {
 pub mod collators {
 	use super::*;
 
-	pub fn invulnerables_asset_hub_polkadot() -> Vec<(AccountId, StatemintAuraId)> {
+	pub fn invulnerables_asset_hub_polkadot() -> Vec<(AccountId, AssetHubPolkadotAuraId)> {
 		vec![
 			(
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				get_from_seed::<StatemintAuraId>("Alice"),
+				get_from_seed::<AssetHubPolkadotAuraId>("Alice"),
 			),
 			(
 				get_account_id_from_seed::<sr25519::Public>("Bob"),
-				get_from_seed::<StatemintAuraId>("Bob"),
+				get_from_seed::<AssetHubPolkadotAuraId>("Bob"),
 			),
 		]
 	}
