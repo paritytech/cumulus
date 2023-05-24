@@ -161,7 +161,6 @@ pub mod polkadot {
 					.map(|k| (k, ED * 4096))
 					.collect(),
 			},
-			indices: polkadot_runtime::IndicesConfig { indices: vec![] },
 			session: polkadot_runtime::SessionConfig {
 				keys: validators::initial_authorities()
 					.iter()
@@ -198,32 +197,12 @@ pub mod polkadot {
 				slash_reward_fraction: Perbill::from_percent(10),
 				..Default::default()
 			},
-			phragmen_election: Default::default(),
-			democracy: Default::default(),
-			council: polkadot_runtime::CouncilConfig {
-				members: vec![],
-				phantom: Default::default(),
-			},
-			technical_committee: polkadot_runtime::TechnicalCommitteeConfig {
-				members: vec![],
-				phantom: Default::default(),
-			},
-			technical_membership: Default::default(),
 			babe: polkadot_runtime::BabeConfig {
 				authorities: Default::default(),
 				epoch_config: Some(polkadot_runtime::BABE_GENESIS_EPOCH_CONFIG),
 			},
-			grandpa: Default::default(),
-			im_online: Default::default(),
-			authority_discovery: polkadot_runtime::AuthorityDiscoveryConfig { keys: vec![] },
-			claims: polkadot_runtime::ClaimsConfig { claims: vec![], vesting: vec![] },
-			vesting: polkadot_runtime::VestingConfig { vesting: vec![] },
-			treasury: Default::default(),
-			hrmp: Default::default(),
 			configuration: polkadot_runtime::ConfigurationConfig { config: get_host_config() },
-			paras: Default::default(),
-			xcm_pallet: Default::default(),
-			nomination_pools: Default::default(),
+			..Default::default()
 		};
 
 		genesis_config.build_storage().unwrap()
@@ -234,7 +213,9 @@ pub mod polkadot {
 pub mod kusama {
 	use super::*;
 	pub const ED: Balance = kusama_runtime_constants::currency::EXISTENTIAL_DEPOSIT;
-	const STASH: u128 = 100 * kusama_runtime_constants::currency::UNITS;
+	use kusama_runtime_constants::currency::UNITS as KSM;
+	const ENDOWMENT: u128 = 1_000_000 * KSM;
+	const STASH: u128 = 100 * KSM;
 
 	pub fn get_host_config() -> HostConfiguration<BlockNumber> {
 		HostConfiguration {
@@ -273,11 +254,9 @@ pub mod kusama {
 			balances: kusama_runtime::BalancesConfig {
 				balances: accounts::init_balances()
 					.iter()
-					.cloned()
-					.map(|k| (k, ED * 4096))
+					.map(|k: &AccountId| (k.clone(), ENDOWMENT))
 					.collect(),
 			},
-			indices: kusama_runtime::IndicesConfig { indices: vec![] },
 			session: kusama_runtime::SessionConfig {
 				keys: validators::initial_authorities()
 					.iter()
@@ -298,8 +277,8 @@ pub mod kusama {
 					.collect::<Vec<_>>(),
 			},
 			staking: kusama_runtime::StakingConfig {
-				minimum_validator_count: 1,
 				validator_count: validators::initial_authorities().len() as u32,
+				minimum_validator_count: 1,
 				stakers: validators::initial_authorities()
 					.iter()
 					.map(|x| {
@@ -318,18 +297,8 @@ pub mod kusama {
 				authorities: Default::default(),
 				epoch_config: Some(kusama_runtime::BABE_GENESIS_EPOCH_CONFIG),
 			},
-			grandpa: Default::default(),
-			im_online: Default::default(),
-			authority_discovery: kusama_runtime::AuthorityDiscoveryConfig { keys: vec![] },
-			claims: kusama_runtime::ClaimsConfig { claims: vec![], vesting: vec![] },
-			vesting: kusama_runtime::VestingConfig { vesting: vec![] },
-			treasury: Default::default(),
-			hrmp: Default::default(),
 			configuration: kusama_runtime::ConfigurationConfig { config: get_host_config() },
-			paras: Default::default(),
-			xcm_pallet: Default::default(),
-			nomination_pools: Default::default(),
-			nis_counterpart_balances: Default::default(),
+			..Default::default()
 		};
 
 		genesis_config.build_storage().unwrap()
