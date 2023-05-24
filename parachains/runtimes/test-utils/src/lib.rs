@@ -258,7 +258,7 @@ impl<XcmConfig: xcm_executor::Config> RuntimeHelper<XcmConfig> {
 			&to,
 			// We aren't able to track the XCM that initiated the fee deposit, so we create a
 			// fake message hash here
-			&XcmContext::with_message_hash([0; 32]),
+			&XcmContext::with_message_id([0; 32]),
 		)
 	}
 }
