@@ -1,9 +1,9 @@
 [package]
-name = "statemint-runtime"
-version = "1.0.0"
+name = "asset-hub-polkadot-runtime"
+version = "0.9.420"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
-description = "Statemint parachain runtime"
+description = "Asset Hub parachain runtime"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }

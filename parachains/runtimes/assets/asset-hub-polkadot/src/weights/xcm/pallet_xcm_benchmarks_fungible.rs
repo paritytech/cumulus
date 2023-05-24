@@ -36,7 +36,7 @@
 // --repeat=20
 // --json
 // --header=./file_header.txt
-// --output=./parachains/runtimes/assets/statemint/src/weights/xcm/pallet_xcm_benchmarks_fungible.rs
+// --output=./parachains/runtimes/assets/asset-hub-polkadot/src/weights/xcm/pallet_xcm_benchmarks_fungible.rs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]

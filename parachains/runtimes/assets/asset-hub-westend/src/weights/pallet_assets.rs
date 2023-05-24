@@ -35,7 +35,7 @@
 // --repeat=20
 // --json
 // --header=./file_header.txt
-// --output=./parachains/runtimes/assets/westmint/src/weights/pallet_assets.rs
+// --output=./parachains/runtimes/assets/asset-hub-westend/src/weights/pallet_assets.rs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]

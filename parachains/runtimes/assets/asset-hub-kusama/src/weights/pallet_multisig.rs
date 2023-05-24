@@ -35,7 +35,7 @@
 // --repeat=20
 // --json
 // --header=./file_header.txt
-// --output=./parachains/runtimes/assets/statemine/src/weights/pallet_multisig.rs
+// --output=./parachains/runtimes/assets/asset-hub-kusama/src/weights/pallet_multisig.rs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]

@@ -35,7 +35,7 @@
 // --repeat=20
 // --json
 // --header=./file_header.txt
-// --output=./parachains/runtimes/assets/statemint/src/weights/frame_system.rs
+// --output=./parachains/runtimes/assets/asset-hub-polkadot/src/weights/frame_system.rs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
