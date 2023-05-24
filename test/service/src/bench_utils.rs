@@ -165,10 +165,8 @@ pub fn get_wasm_module() -> Box<dyn sc_executor_common::wasm_runtime::WasmModule
 	)
 	.unwrap();
 
-	let allow_missing_func_imports = true;
-
 	let config = sc_executor_wasmtime::Config {
-		allow_missing_func_imports,
+		allow_missing_func_imports: true,
 		cache_path: None,
 		semantics: sc_executor_wasmtime::Semantics {
 			heap_alloc_strategy: DEFAULT_HEAP_ALLOC_STRATEGY,
