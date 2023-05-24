@@ -68,7 +68,6 @@ use parachains_common::{
 	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
-use scale_info::TypeInfo;
 use xcm_config::{
 	ForeignAssetsConvertedConcreteId, TrustBackedAssetsConvertedConcreteId, WestendLocation,
 	XcmConfig, XcmOriginToTransactDispatchOrigin,
