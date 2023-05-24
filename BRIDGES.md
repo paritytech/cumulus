@@ -19,7 +19,7 @@ it easier to import that change back to upstream repo.
 # 2. How to pull latest Bridges code to the `bridges` subtree
 (in practice)
 
-Actually `bridges` repo has stabilized branch `polkadot-staging` dedicated for releasing.
+The `bridges` repo has a stabilized branch `polkadot-staging` dedicated for releasing.
 
 ```
 cd <cumulus-git-repo-dir>
