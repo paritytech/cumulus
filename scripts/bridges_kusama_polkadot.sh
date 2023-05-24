@@ -10,6 +10,17 @@ STATEMINE_ACCOUNT_SEED_FOR_LOCAL="//Alice"
 # AccountId: [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]
 WESTMINT_ACCOUNT_ADDRESS_FOR_LOCAL="5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
 
+# SovereignAccount for `MultiLocation { parents: 2, interior: X2(GlobalConsensus(Rococo), Parachain(1000)) }` => 5DLdHR78ujzS93zCVeyZB1qRFjBCdMnJwnpSBSRZ6jMX8R5y
+#
+# use sp_core::crypto::Ss58Codec;
+# println!("{}",
+#     frame_support::sp_runtime::AccountId32::new(
+#         GlobalConsensusParachainConvertsFor::<UniversalLocation, [u8; 32]>::convert_ref(
+#             MultiLocation { parents: 2, interior: X2(GlobalConsensus(Kusama), Parachain(1000)) }).unwrap()
+#		).to_ss58check_with_version(42_u16.into())
+# );
+KUSAMA_STATEMINE_1000_SOVEREIGN_ACCOUNT="5DLdHR78ujzS93zCVeyZB1qRFjBCdMnJwnpSBSRZ6jMX8R5y"
+
 function init_ksm_dot() {
     ensure_relayer
 
@@ -98,18 +109,10 @@ case "$1" in
           1002 \
           "Kusama" \
           1000
-      # drip SovereignAccount for `MultiLocation { parents: 2, interior: X2(GlobalConsensus(Kusama), Parachain(1000)) }` => 5HnhuKCrvrJ9EqnV5mmkJ9kZPiBEH1aWXA8w4maTkXp86g4T
-      # use sp_core::crypto::Ss58Codec;
-      # println!("{}",
-      #     frame_support::sp_runtime::AccountId32::new(
-      #         GlobalConsensusParachainConvert::<[u8; 32]>::convert_ref(
-      #             MultiLocation { parents: 2, interior: X2(GlobalConsensus(Kusama), Parachain(1000)) }).unwrap()
-      #		).to_ss58check_with_version(42_u16.into())
-      # );
       transfer_balance \
           "ws://127.0.0.1:9010" \
           "//Alice" \
-          "5HnhuKCrvrJ9EqnV5mmkJ9kZPiBEH1aWXA8w4maTkXp86g4T" \
+          "$KUSAMA_STATEMINE_1000_SOVEREIGN_ACCOUNT" \
           $((1000000000 + 50000000000 * 20)) # ExistentialDeposit + maxTargetLocationFee * 20
       # create foreign assets for native Statemine token
       force_create_foreign_asset \
@@ -118,7 +121,7 @@ case "$1" in
           1000 \
           "ws://127.0.0.1:9010" \
           "Kusama" \
-          "5HnhuKCrvrJ9EqnV5mmkJ9kZPiBEH1aWXA8w4maTkXp86g4T"
+          "$KUSAMA_STATEMINE_1000_SOVEREIGN_ACCOUNT"
       ;;
   remove-assets-transfer-from-statemine-local)
       ensure_polkadot_js_api
@@ -149,7 +152,7 @@ case "$1" in
       transfer_balance \
           "ws://127.0.0.1:9010" \
           "//Alice" \
-          "5HnhuKCrvrJ9EqnV5mmkJ9kZPiBEH1aWXA8w4maTkXp86g4T" \
+          "$KUSAMA_STATEMINE_1000_SOVEREIGN_ACCOUNT" \
           $((1000000000 + 50000000000 * 20))
       ;;
   stop)

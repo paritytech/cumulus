@@ -426,11 +426,13 @@ parameter_types! {
 	pub const RelayerStakeLease: u32 = 8;
 	pub const KusamaBridgeParachainPalletName: &'static str = "Paras";
 	pub const MaxKusamaParaHeadDataSize: u32 = bp_kusama::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
-	// TODO:check-parameter - setup final constants for initial deployment
+
+	// Both are just initial values, and concrete values will be set up by governance call (`set_storage`) with `initialize` bridge call as a part of onboarding/cutover plan (https://github.com/paritytech/parity-bridges-common/issues/1730)
 	pub storage DeliveryRewardInBalance: u64 = 1_000_000;
 	pub storage RequiredStakeForStakeAndSlash: Balance = 1_000_000;
 	pub const RelayerStakeReserveId: [u8; 8] = *b"brdgrlrs";
 }
+
 /// Add parachain bridge pallet to track Kusama bridge hub parachain
 pub type BridgeParachainKusamaInstance = pallet_bridge_parachains::Instance1;
 impl pallet_bridge_parachains::Config<BridgeParachainKusamaInstance> for Runtime {

@@ -118,6 +118,14 @@ match_types! {
 	pub type FellowsPlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: X2(Parachain(1001), Plurality { id: BodyId::Technical, ..}) }
 	};
+	// TODO:check-parameter - (https://github.com/paritytech/parity-bridges-common/issues/2084)
+	// remove this and extend `AllowExplicitUnpaidExecutionFrom` with "or SystemParachains" once merged https://github.com/paritytech/polkadot/pull/7005
+	pub type SystemParachains: impl Contains<MultiLocation> = {
+		// Statemint
+		MultiLocation { parents: 1, interior: X1(Parachain(1000)) } |
+		// Collectives
+		MultiLocation { parents: 1, interior: X1(Parachain(1001)) }
+	};
 }
 
 /// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
@@ -188,17 +196,18 @@ pub type Barrier = DenyThenTry<
 			(
 				// If the message is one that immediately attemps to pay for execution, then allow it.
 				AllowTopLevelPaidExecutionFrom<Everything>,
-				// Parent, its pluralities (i.e. governance bodies), and the Fellows plurality get free execution.
-				AllowExplicitUnpaidExecutionFrom<(ParentOrParentsPlurality, FellowsPlurality)>,
+				// Parent, its pluralities (i.e. governance bodies), system parachains and the Fellows plurality get free execution.
+				AllowExplicitUnpaidExecutionFrom<(
+					ParentOrParentsPlurality,
+					FellowsPlurality,
+					SystemParachains,
+				)>,
 				// Subscriptions for version tracking are OK.
 				AllowSubscriptionsFrom<ParentOrSiblings>,
 			),
 			UniversalLocation,
 			ConstU32<8>,
 		>,
-		// TODO:check-parameter - (https://github.com/paritytech/parity-bridges-common/issues/2084)
-		// remove this and extend `AllowExplicitUnpaidExecutionFrom` with "or SystemParachains" once merged https://github.com/paritytech/polkadot/pull/7005
-		xcm_builder::AllowUnpaidExecutionFrom<Everything>,
 	),
 >;
 

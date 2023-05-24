@@ -580,6 +580,14 @@ pub mod bridge_hub_kusama {
 			polkadot_xcm: bridge_hub_kusama_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
 			},
+			bridge_polkadot_grandpa: bridge_hub_kusama_runtime::BridgePolkadotGrandpaConfig {
+				owner: Some(get_account_id_from_seed::<sr25519::Public>(accounts::BOB)),
+				..Default::default()
+			},
+			bridge_polkadot_messages: bridge_hub_kusama_runtime::BridgePolkadotMessagesConfig {
+				owner: Some(get_account_id_from_seed::<sr25519::Public>(accounts::BOB)),
+				..Default::default()
+			},
 		};
 
 		genesis_config.build_storage().unwrap()
@@ -634,6 +642,14 @@ pub mod bridge_hub_polkadot {
 			parachain_system: Default::default(),
 			polkadot_xcm: bridge_hub_polkadot_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
+			},
+			bridge_kusama_grandpa: bridge_hub_polkadot_runtime::BridgeKusamaGrandpaConfig {
+				owner: Some(get_account_id_from_seed::<sr25519::Public>(accounts::BOB)),
+				..Default::default()
+			},
+			bridge_kusama_messages: bridge_hub_polkadot_runtime::BridgeKusamaMessagesConfig {
+				owner: Some(get_account_id_from_seed::<sr25519::Public>(accounts::BOB)),
+				..Default::default()
 			},
 		};
 
