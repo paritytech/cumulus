@@ -31,11 +31,11 @@ jobs:
           - runtime: statemine
             local: statemine-local
             relay: polkadot-local
-          - runtime: statemint
-            local: statemint-local
+          - runtime: asset-hub-polkadot
+            local: asset-hub-polkadot-local
             relay: polkadot-local
-          - runtime: westmint
-            local: westmint-local
+          - runtime: asset-hub-westend
+            local: asset-hub-westend-local
             relay: polkadot-local
           - runtime: contracts-rococo
             local: contracts-rococo-local
