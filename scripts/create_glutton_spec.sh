@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Example for `compute` and `storage` at 50% and 5120 `trash_data_count`
+# Example for `compute`, `storage`, and `trash_data_count` set to 50%, 50%, and 5,120, respectively.
 # ./scripts/create_glutton_spec.sh ./target/release/polkadot-parachain rococo 1300 1305 G7Z5mTmTQsjEGBVqVGDZyR9m7RoHNZJk6JeykyfKQ3vmBiR 500000000 500000000 5120 output-dir
 usage() {
     echo Usage:
