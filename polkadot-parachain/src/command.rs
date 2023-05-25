@@ -155,7 +155,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		// the shell-based chain spec as used for syncing
 		"asset-hub-polkadot" | "statemint" =>
 			Box::new(chain_spec::asset_hubs::AssetHubPolkadotChainSpec::from_json_bytes(
-				&include_bytes!("../../parachains/chain-specs/statemint.json")[..],
+				&include_bytes!("../../parachains/chain-specs/asset-hub-polkadot.json")[..],
 			)?),
 
 		// -- Asset Hub Kusama
@@ -169,7 +169,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		// the shell-based chain spec as used for syncing
 		"asset-hub-kusama" | "statemine" =>
 			Box::new(chain_spec::asset_hubs::AssetHubKusamaChainSpec::from_json_bytes(
-				&include_bytes!("../../parachains/chain-specs/statemine.json")[..],
+				&include_bytes!("../../parachains/chain-specs/asset-hub-kusama.json")[..],
 			)?),
 
 		// -- Asset Hub Westend
@@ -183,7 +183,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		// the shell-based chain spec as used for syncing
 		"asset-hub-westend" | "westmint" =>
 			Box::new(chain_spec::asset_hubs::AssetHubWestendChainSpec::from_json_bytes(
-				&include_bytes!("../../parachains/chain-specs/westmint.json")[..],
+				&include_bytes!("../../parachains/chain-specs/asset-hub-westend.json")[..],
 			)?),
 
 		// -- Polkadot Collectives

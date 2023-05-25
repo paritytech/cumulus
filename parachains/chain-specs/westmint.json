@@ -1,6 +1,6 @@
 {
-  "name": "Westmint",
-  "id": "westmint",
+  "name": "Westend Asset Hub",
+  "id": "asset-hub-westend",
   "chainType": "Live",
   "bootNodes": [
     "/dns/westend-westmint-collator-node-0.parity-testnet.parity.io/tcp/30333/p2p/12D3KooWJaAfPyiye7ZQBuHengTJJoMrcaz7Jj1UzHiKdNxA1Nkd",

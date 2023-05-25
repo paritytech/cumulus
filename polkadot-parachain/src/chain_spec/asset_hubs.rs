@@ -69,9 +69,9 @@ pub fn asset_hub_polkadot_development_config() -> AssetHubPolkadotChainSpec {
 
 	AssetHubPolkadotChainSpec::from_genesis(
 		// Name
-		"Statemint Development",
+		"Polkadot Asset Hub Development",
 		// ID
-		"statemint_dev",
+		"asset-hub-polkadot-dev",
 		ChainType::Local,
 		move || {
 			asset_hub_polkadot_genesis(
@@ -106,9 +106,9 @@ pub fn asset_hub_polkadot_local_config() -> AssetHubPolkadotChainSpec {
 
 	AssetHubPolkadotChainSpec::from_genesis(
 		// Name
-		"Statemint Local",
+		"Polkadot Asset Hub Local",
 		// ID
-		"statemint_local",
+		"asset-hub-polkadot-local",
 		ChainType::Local,
 		move || {
 			asset_hub_polkadot_genesis(
@@ -158,9 +158,9 @@ pub fn asset_hub_polkadot_config() -> AssetHubPolkadotChainSpec {
 
 	AssetHubPolkadotChainSpec::from_genesis(
 		// Name
-		"Statemint",
+		"Polkadot Asset Hub",
 		// ID
-		"statemint",
+		"asset-hub-polkadot",
 		ChainType::Live,
 		move || {
 			asset_hub_polkadot_genesis(
@@ -264,9 +264,9 @@ pub fn asset_hub_kusama_development_config() -> AssetHubKusamaChainSpec {
 
 	AssetHubKusamaChainSpec::from_genesis(
 		// Name
-		"Statemine Development",
+		"Kusama Asset Hub Development",
 		// ID
-		"statemine_dev",
+		"asset-hub-kusama-dev",
 		ChainType::Local,
 		move || {
 			asset_hub_kusama_genesis(
@@ -301,9 +301,9 @@ pub fn asset_hub_kusama_local_config() -> AssetHubKusamaChainSpec {
 
 	AssetHubKusamaChainSpec::from_genesis(
 		// Name
-		"Statemine Local",
+		"Kusama Asset Hub Local",
 		// ID
-		"statemine_local",
+		"asset-hub-kusama-local",
 		ChainType::Local,
 		move || {
 			asset_hub_kusama_genesis(
@@ -352,9 +352,9 @@ pub fn asset_hub_kusama_config() -> AssetHubKusamaChainSpec {
 
 	AssetHubKusamaChainSpec::from_genesis(
 		// Name
-		"Statemine",
+		"Kusama Asset Hub",
 		// ID
-		"statemine",
+		"asset-hub-kusama",
 		ChainType::Live,
 		move || {
 			asset_hub_kusama_genesis(
@@ -450,9 +450,9 @@ pub fn asset_hub_westend_development_config() -> AssetHubWestendChainSpec {
 
 	AssetHubWestendChainSpec::from_genesis(
 		// Name
-		"Westmint Development",
+		"Westend Asset Hub Development",
 		// ID
-		"westmint_dev",
+		"asset-hub-westend-dev",
 		ChainType::Local,
 		move || {
 			asset_hub_westend_genesis(
@@ -486,9 +486,9 @@ pub fn asset_hub_westend_local_config() -> AssetHubWestendChainSpec {
 
 	AssetHubWestendChainSpec::from_genesis(
 		// Name
-		"Westmint Local",
+		"Westend Asset Hub Local",
 		// ID
-		"westmint_local",
+		"asset-hub-westend-local",
 		ChainType::Local,
 		move || {
 			asset_hub_westend_genesis(
@@ -536,9 +536,9 @@ pub fn asset_hub_westend_config() -> AssetHubWestendChainSpec {
 
 	AssetHubWestendChainSpec::from_genesis(
 		// Name
-		"Westmint",
+		"Westend Asset Hub",
 		// ID
-		"westmint",
+		"asset-hub-westend",
 		ChainType::Live,
 		move || {
 			asset_hub_westend_genesis(
