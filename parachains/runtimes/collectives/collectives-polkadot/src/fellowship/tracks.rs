@@ -52,7 +52,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					max_deciding: 10,
 					decision_deposit: 100 * DOLLARS,
 					prepare_period: 30 * MINUTES,
-					decision_period: 7 * DAYS,
+					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
 					min_enactment_period: MINUTES,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
@@ -74,7 +74,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					max_deciding: 10,
 					decision_deposit: 10 * DOLLARS,
 					prepare_period: 30 * MINUTES,
-					decision_period: 7 * DAYS,
+					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
 					min_enactment_period: MINUTES,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
@@ -96,7 +96,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					max_deciding: 10,
 					decision_deposit: 10 * DOLLARS,
 					prepare_period: 30 * MINUTES,
-					decision_period: 7 * DAYS,
+					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
 					min_enactment_period: MINUTES,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
@@ -118,7 +118,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					max_deciding: 10,
 					decision_deposit: 10 * DOLLARS,
 					prepare_period: 30 * MINUTES,
-					decision_period: 7 * DAYS,
+					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
 					min_enactment_period: MINUTES,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
@@ -140,7 +140,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					max_deciding: 10,
 					decision_deposit: 10 * DOLLARS,
 					prepare_period: 30 * MINUTES,
-					decision_period: 7 * DAYS,
+					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
 					min_enactment_period: MINUTES,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
@@ -162,7 +162,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					max_deciding: 10,
 					decision_deposit: DOLLARS,
 					prepare_period: 30 * MINUTES,
-					decision_period: 7 * DAYS,
+					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
 					min_enactment_period: MINUTES,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
@@ -184,7 +184,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					max_deciding: 10,
 					decision_deposit: DOLLARS,
 					prepare_period: 30 * MINUTES,
-					decision_period: 7 * DAYS,
+					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
 					min_enactment_period: MINUTES,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
@@ -206,7 +206,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					max_deciding: 10,
 					decision_deposit: DOLLARS,
 					prepare_period: 30 * MINUTES,
-					decision_period: 7 * DAYS,
+					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
 					min_enactment_period: MINUTES,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
@@ -228,7 +228,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					max_deciding: 10,
 					decision_deposit: DOLLARS,
 					prepare_period: 30 * MINUTES,
-					decision_period: 7 * DAYS,
+					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
 					min_enactment_period: MINUTES,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
@@ -250,7 +250,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					max_deciding: 10,
 					decision_deposit: DOLLARS,
 					prepare_period: 30 * MINUTES,
-					decision_period: 7 * DAYS,
+					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
 					min_enactment_period: MINUTES,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
