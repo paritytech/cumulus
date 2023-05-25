@@ -179,6 +179,7 @@ impl pallet_core_fellowship::Config<FellowshipCoreInstance> for Runtime {
 				EnsureFellowship,
 				MorphWithUpperLimit<ConstU16<{ ranks::DAN_6 }>, CheckedReduceBy<ConstU16<2>>>,
 			>,
+			// TODO Fellows should vote only for ranks <= 1, or ranks >= 7
 			MapSuccess<Fellows, Replace<ConstU16<{ ranks::DAN_9 }>>>,
 		>,
 	>;
