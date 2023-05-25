@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 # Example for `compute` and `storage` at 50% and 5120 `trash_data_count`
-# ./scripts/create_glutton_spec.sh ./target/release/polkadot-parachain rococo 1300 G7Z5mTmTQsjEGBVqVGDZyR9m7RoHNZJk6JeykyfKQ3vmBiR 500000000 5500000000 5120
+# ./scripts/create_glutton_spec.sh ./target/release/polkadot-parachain rococo 1300 1305 G7Z5mTmTQsjEGBVqVGDZyR9m7RoHNZJk6JeykyfKQ3vmBiR 500000000 5500000000 5120 output-dir
 usage() {
     echo Usage:
-    echo "$0 <binary path> <relay chain> <parachain id> <sudo key> <compute> <storage> <trash_data_count>"
+    echo "$0 <binary path> <relay chain> <from parachain id> <to parachain id> <sudo key> <compute> <storage> <trash_data_count> <output dir>"
     exit 1
 }
 
@@ -12,47 +12,61 @@ set -e
 
 binary_path=$1
 relay_chain=$2
-id="glutton_$2_$3"
-protocol_id="glutton_$2_$3"
-para_id=$3
-sudo=$4
-compute=$5
-storage=$6
-trash_data_count=$7
+from_para_id=$3
+to_para_id=$4
+sudo=$5
+compute=$6
+storage=$7
+trash_data_count=$8
+output_dir=$9
 
 [ -z "$binary_path" ] && usage
 [ -z "$relay_chain" ] && usage
-[ -z "$id" ] && usage
-[ -z "$protocol_id" ] && usage
-[ -z "$para_id" ] && usage
+[ -z "$from_para_id" ] && usage
+[ -z "$to_para_id" ] && usage
 [ -z "$sudo" ] && usage
 [ -z "$compute" ] && usage
 [ -z "$storage" ] && usage
 [ -z "$trash_data_count" ] && usage
+[ -z "$output_dir" ] && usage
 
-# build the chain spec we'll manipulate
-$binary_path build-spec --disable-default-bootnode --chain "glutton-kusama-genesis-$para_id" > "plain-glutton-$para_id-$relay_chain-spec.json"
 
-# replace the runtime in the spec with the given runtime and set some values to production
-cat "plain-glutton-$para_id-$relay_chain-spec.json" \
-    | jq --arg id $id '.id = $id' \
-    | jq --arg id $id '.protocolId = $id' \
-    | jq --arg relay_chain $relay_chain '.relay_chain = $relay_chain' \
-    | jq --argjson para_id $para_id '.para_id = $para_id' \
-    | jq --arg sudo $sudo '.genesis.runtime.sudo.key = $sudo' \
-    | jq --argjson para_id $para_id '.genesis.runtime.parachainInfo.parachainId = $para_id' \
-    | jq --argjson compute $compute '.genesis.runtime.glutton.compute = $compute' \
-    | jq --argjson storage $storage '.genesis.runtime.glutton.storage = $storage' \
-    | jq --argjson trash_data_count $trash_data_count '.genesis.runtime.glutton.trashDataCount = $trash_data_count' \
-    > glutton-$para_id-$relay_chain-spec.json
+for (( para_id=$from_para_id; para_id<=$to_para_id; para_id++ )); do
+    echo "Building chain specs for parachain $para_id"
 
-# build a raw spec
-$binary_path build-spec --disable-default-bootnode --chain "glutton-$para_id-$relay_chain-spec.json" --raw > "glutton-$para_id-$relay_chain-raw-spec.json"
+    # create dir to store parachain generated files
+    output_para_dir="$output_dir/glutton-$relay_chain-$para_id"
+    if [ ! -d "$output_para_dir" ]; then
+        mkdir $output_para_dir
+    fi
 
-# build genesis data
-$binary_path export-genesis-state --chain "glutton-$para_id-$relay_chain-raw-spec.json" > "glutton-$para_id-$relay_chain-head-data"
+    # build the chain spec we'll manipulate
+    $binary_path build-spec --disable-default-bootnode --chain "glutton-kusama-genesis-$para_id" > "$output_para_dir/plain-glutton-$relay_chain-$para_id-spec.json"
 
-# build genesis wasm
-$binary_path export-genesis-wasm --chain "glutton-$para_id-$relay_chain-raw-spec.json" > "glutton-$para_id-$relay_chain-validation-code"
+    id="glutton-$relay_chain-$para_id"
+    protocol_id="glutton-$relay_chain-$para_id"
 
-rm "plain-glutton-$para_id-$relay_chain-spec.json"
+    # replace the runtime in the spec with the given runtime and set some values to production
+    cat "$output_para_dir/plain-glutton-$relay_chain-$para_id-spec.json" \
+        | jq --arg id $id '.id = $id' \
+        | jq --arg protocol_id $protocol_id '.protocolId = $protocol_id' \
+        | jq --arg relay_chain $relay_chain '.relay_chain = $relay_chain' \
+        | jq --argjson para_id $para_id '.para_id = $para_id' \
+        | jq --arg sudo $sudo '.genesis.runtime.sudo.key = $sudo' \
+        | jq --argjson para_id $para_id '.genesis.runtime.parachainInfo.parachainId = $para_id' \
+        | jq --argjson compute $compute '.genesis.runtime.glutton.compute = $compute' \
+        | jq --argjson storage $storage '.genesis.runtime.glutton.storage = $storage' \
+        | jq --argjson trash_data_count $trash_data_count '.genesis.runtime.glutton.trashDataCount = $trash_data_count' \
+        > $output_para_dir/glutton-$relay_chain-$para_id-spec.json
+
+    # build a raw spec
+    $binary_path build-spec --disable-default-bootnode --chain "$output_para_dir/glutton-$relay_chain-$para_id-spec.json" --raw > "$output_para_dir/glutton-$relay_chain-$para_id-raw-spec.json"
+
+    # build genesis data
+    $binary_path export-genesis-state --chain "$output_para_dir/glutton-$relay_chain-$para_id-raw-spec.json" > "$output_para_dir/glutton-$relay_chain-$para_id-head-data"
+
+    # build genesis wasm
+    $binary_path export-genesis-wasm --chain "$output_para_dir/glutton-$relay_chain-$para_id-raw-spec.json" > "$output_para_dir/glutton-$relay_chain-$para_id-validation-code"
+
+    rm "$output_para_dir/plain-glutton-$relay_chain-$para_id-spec.json"
+done
