@@ -66,7 +66,7 @@ pub mod impls;
 pub mod weights;
 
 /// The log target of this pallet.
-pub const LOG_TARGET: &str = "runtime::bridge-assets-transfer";
+pub const LOG_TARGET: &str = "runtime::bridge-transfer";
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct BridgeConfig {
