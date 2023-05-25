@@ -87,9 +87,9 @@ impl sc_executor::NativeExecutionDispatch for ShellRuntimeExecutor {
 }
 
 // Native Asset Hub Polkadot (Statemint) executor instance.
-pub struct StatemintRuntimeExecutor;
+pub struct AssetHubPolkadotRuntimeExecutor;
 
-impl sc_executor::NativeExecutionDispatch for StatemintRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for AssetHubPolkadotRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -102,9 +102,9 @@ impl sc_executor::NativeExecutionDispatch for StatemintRuntimeExecutor {
 }
 
 /// Native Asset Hub Kusama (Statemine) executor instance.
-pub struct StatemineRuntimeExecutor;
+pub struct AssetHubPolkadotKusamaExecutor;
 
-impl sc_executor::NativeExecutionDispatch for StatemineRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for AssetHubPolkadotKusamaExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -117,9 +117,9 @@ impl sc_executor::NativeExecutionDispatch for StatemineRuntimeExecutor {
 }
 
 /// Native Asset Hub Westend (Westmint) executor instance.
-pub struct WestmintRuntimeExecutor;
+pub struct AssetHubPolkadotWestendExecutor;
 
-impl sc_executor::NativeExecutionDispatch for WestmintRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for AssetHubPolkadotWestendExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {

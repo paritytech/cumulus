@@ -18,9 +18,10 @@ use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{
-		new_partial, Block, BridgeHubKusamaRuntimeExecutor, BridgeHubPolkadotRuntimeExecutor,
-		BridgeHubRococoRuntimeExecutor, CollectivesPolkadotRuntimeExecutor, GluttonRuntimeExecutor,
-		StatemineRuntimeExecutor, StatemintRuntimeExecutor, WestmintRuntimeExecutor,
+		new_partial, AssetHubPolkadotKusamaExecutor, AssetHubPolkadotRuntimeExecutor,
+		AssetHubPolkadotWestendExecutor, Block, BridgeHubKusamaRuntimeExecutor,
+		BridgeHubPolkadotRuntimeExecutor, BridgeHubRococoRuntimeExecutor,
+		CollectivesPolkadotRuntimeExecutor, GluttonRuntimeExecutor,
 	},
 };
 use codec::Encode;
@@ -47,9 +48,9 @@ enum Runtime {
 	Default,
 	Shell,
 	Seedling,
-	Statemint,
-	Statemine,
-	Westmint,
+	AssetHubPolkadot,
+	AssetHubKusama,
+	AssetHubWestend,
 	Penpal(ParaId),
 	ContractsRococo,
 	CollectivesPolkadot,
@@ -94,11 +95,11 @@ fn runtime(id: &str) -> Runtime {
 	} else if id.starts_with("seedling") {
 		Runtime::Seedling
 	} else if id.starts_with("asset-hub-polkadot") | id.starts_with("statemint") {
-		Runtime::Statemint
+		Runtime::AssetHubPolkadot
 	} else if id.starts_with("asset-hub-kusama") | id.starts_with("statemine") {
-		Runtime::Statemine
+		Runtime::AssetHubKusama
 	} else if id.starts_with("asset-hub-westend") | id.starts_with("westmint") {
-		Runtime::Westmint
+		Runtime::AssetHubWestend
 	} else if id.starts_with("penpal") {
 		Runtime::Penpal(para_id.unwrap_or(ParaId::new(0)))
 	} else if id.starts_with("contracts-rococo") {
@@ -145,43 +146,43 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 
 		// -- Asset Hub Polkadot
 		"asset-hub-polkadot-dev" | "statemint-dev" =>
-			Box::new(chain_spec::statemint::statemint_development_config()),
+			Box::new(chain_spec::asset_hubs::asset_hub_polkadot_development_config()),
 		"asset-hub-polkadot-local" | "statemint-local" =>
-			Box::new(chain_spec::statemint::statemint_local_config()),
+			Box::new(chain_spec::asset_hubs::asset_hub_polkadot_local_config()),
 		// the chain spec as used for generating the upgrade genesis values
 		"asset-hub-polkadot-genesis" | "statemint-genesis" =>
-			Box::new(chain_spec::statemint::statemint_config()),
+			Box::new(chain_spec::asset_hubs::asset_hub_polkadot_config()),
 		// the shell-based chain spec as used for syncing
 		"asset-hub-polkadot" | "statemint" =>
-			Box::new(chain_spec::statemint::StatemintChainSpec::from_json_bytes(
+			Box::new(chain_spec::asset_hubs::AssetHubPolkadotChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/statemint.json")[..],
 			)?),
 
 		// -- Asset Hub Kusama
 		"asset-hub-kusama-dev" | "statemine-dev" =>
-			Box::new(chain_spec::statemint::statemine_development_config()),
+			Box::new(chain_spec::asset_hubs::asset_hub_kusama_development_config()),
 		"asset-hub-kusama-local" | "statemine-local" =>
-			Box::new(chain_spec::statemint::statemine_local_config()),
+			Box::new(chain_spec::asset_hubs::asset_hub_kusama_local_config()),
 		// the chain spec as used for generating the upgrade genesis values
 		"asset-hub-kusama-genesis" | "statemine-genesis" =>
-			Box::new(chain_spec::statemint::statemine_config()),
+			Box::new(chain_spec::asset_hubs::asset_hub_kusama_config()),
 		// the shell-based chain spec as used for syncing
 		"asset-hub-kusama" | "statemine" =>
-			Box::new(chain_spec::statemint::StatemineChainSpec::from_json_bytes(
+			Box::new(chain_spec::asset_hubs::AssetHubKusamaChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/statemine.json")[..],
 			)?),
 
 		// -- Asset Hub Westend
 		"asset-hub-westend-dev" | "westmint-dev" =>
-			Box::new(chain_spec::statemint::westmint_development_config()),
+			Box::new(chain_spec::asset_hubs::asset_hub_westend_development_config()),
 		"asset-hub-westend-local" | "westmint-local" =>
-			Box::new(chain_spec::statemint::westmint_local_config()),
+			Box::new(chain_spec::asset_hubs::asset_hub_westend_local_config()),
 		// the chain spec as used for generating the upgrade genesis values
 		"asset-hub-westend-genesis" | "westmint-genesis" =>
-			Box::new(chain_spec::statemint::westmint_config()),
+			Box::new(chain_spec::asset_hubs::asset_hub_westend_config()),
 		// the shell-based chain spec as used for syncing
 		"asset-hub-westend" | "westmint" =>
-			Box::new(chain_spec::statemint::WestmintChainSpec::from_json_bytes(
+			Box::new(chain_spec::asset_hubs::AssetHubWestendChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/westmint.json")[..],
 			)?),
 
@@ -251,12 +252,14 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		path => {
 			let path: PathBuf = path.into();
 			match path.runtime() {
-				Runtime::Statemint =>
-					Box::new(chain_spec::statemint::StatemintChainSpec::from_json_file(path)?),
-				Runtime::Statemine =>
-					Box::new(chain_spec::statemint::StatemineChainSpec::from_json_file(path)?),
-				Runtime::Westmint =>
-					Box::new(chain_spec::statemint::WestmintChainSpec::from_json_file(path)?),
+				Runtime::AssetHubPolkadot => Box::new(
+					chain_spec::asset_hubs::AssetHubPolkadotChainSpec::from_json_file(path)?,
+				),
+				Runtime::AssetHubKusama =>
+					Box::new(chain_spec::asset_hubs::AssetHubKusamaChainSpec::from_json_file(path)?),
+				Runtime::AssetHubWestend => Box::new(
+					chain_spec::asset_hubs::AssetHubWestendChainSpec::from_json_file(path)?,
+				),
 				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => Box::new(
 					chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_file(path)?,
 				),
@@ -350,9 +353,9 @@ impl SubstrateCli for Cli {
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
 		match chain_spec.runtime() {
-			Runtime::Statemint => &asset_hub_polkadot_runtime::VERSION,
-			Runtime::Statemine => &asset_hub_kusama_runtime::VERSION,
-			Runtime::Westmint => &asset_hub_westend_runtime::VERSION,
+			Runtime::AssetHubPolkadot => &asset_hub_polkadot_runtime::VERSION,
+			Runtime::AssetHubKusama => &asset_hub_kusama_runtime::VERSION,
+			Runtime::AssetHubWestend => &asset_hub_westend_runtime::VERSION,
 			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
 				&collectives_polkadot_runtime::VERSION,
 			Runtime::Shell => &shell_runtime::VERSION,
@@ -411,21 +414,21 @@ impl SubstrateCli for RelayChainCli {
 macro_rules! construct_benchmark_partials {
 	($config:expr, |$partials:ident| $code:expr) => {
 		match $config.chain_spec.runtime() {
-			Runtime::Statemine => {
+			Runtime::AssetHubKusama => {
 				let $partials = new_partial::<asset_hub_kusama_runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::aura_build_import_queue::<_, AuraId>,
 				)?;
 				$code
 			},
-			Runtime::Westmint => {
+			Runtime::AssetHubWestend => {
 				let $partials = new_partial::<asset_hub_westend_runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::aura_build_import_queue::<_, AuraId>,
 				)?;
 				$code
 			},
-			Runtime::Statemint => {
+			Runtime::AssetHubPolkadot => {
 				let $partials = new_partial::<asset_hub_polkadot_runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::aura_build_import_queue::<_, AssetHubPolkadotAuraId>,
@@ -448,7 +451,7 @@ macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
 		match runner.config().chain_spec.runtime() {
-			Runtime::Westmint => {
+			Runtime::AssetHubWestend => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<asset_hub_westend_runtime::RuntimeApi, _>(
 						&$config,
@@ -458,7 +461,7 @@ macro_rules! construct_async_run {
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
 			},
-			Runtime::Statemine => {
+			Runtime::AssetHubKusama => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<asset_hub_kusama_runtime::RuntimeApi, _>(
 						&$config,
@@ -468,7 +471,7 @@ macro_rules! construct_async_run {
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
 			},
-			Runtime::Statemint => {
+			Runtime::AssetHubPolkadot => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<asset_hub_polkadot_runtime::RuntimeApi, _>(
 						&$config,
@@ -686,11 +689,11 @@ pub fn run() -> Result<()> {
 					if cfg!(feature = "runtime-benchmarks") {
 						runner.sync_run(|config| {
 							match config.chain_spec.runtime() {
-							Runtime::Statemine =>
-								cmd.run::<Block, StatemineRuntimeExecutor>(config),
-							Runtime::Westmint => cmd.run::<Block, WestmintRuntimeExecutor>(config),
-							Runtime::Statemint =>
-								cmd.run::<Block, StatemintRuntimeExecutor>(config),
+							Runtime::AssetHubKusama =>
+								cmd.run::<Block, AssetHubPolkadotKusamaExecutor>(config),
+							Runtime::AssetHubWestend => cmd.run::<Block, AssetHubPolkadotWestendExecutor>(config),
+							Runtime::AssetHubPolkadot =>
+								cmd.run::<Block, AssetHubPolkadotRuntimeExecutor>(config),
 							Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
 								cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
 							Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
@@ -774,25 +777,25 @@ pub fn run() -> Result<()> {
 			let info_provider = timestamp_with_aura_info(6000);
 
 			match runner.config().chain_spec.runtime() {
-				Runtime::Statemine => runner.async_run(|_| {
+				Runtime::AssetHubKusama => runner.async_run(|_| {
 					Ok((
-						cmd.run::<Block, HostFunctionsOf<StatemineRuntimeExecutor>, _>(Some(
+						cmd.run::<Block, HostFunctionsOf<AssetHubPolkadotKusamaExecutor>, _>(Some(
 							info_provider,
 						)),
 						task_manager,
 					))
 				}),
-				Runtime::Westmint => runner.async_run(|_| {
+				Runtime::AssetHubWestend => runner.async_run(|_| {
 					Ok((
-						cmd.run::<Block, HostFunctionsOf<WestmintRuntimeExecutor>, _>(Some(
+						cmd.run::<Block, HostFunctionsOf<AssetHubPolkadotWestendExecutor>, _>(Some(
 							info_provider,
 						)),
 						task_manager,
 					))
 				}),
-				Runtime::Statemint => runner.async_run(|_| {
+				Runtime::AssetHubPolkadot => runner.async_run(|_| {
 					Ok((
-						cmd.run::<Block, HostFunctionsOf<StatemintRuntimeExecutor>, _>(Some(
+						cmd.run::<Block, HostFunctionsOf<AssetHubPolkadotRuntimeExecutor>, _>(Some(
 							info_provider,
 						)),
 						task_manager,
@@ -912,21 +915,21 @@ pub fn run() -> Result<()> {
 				}
 
 				match config.chain_spec.runtime() {
-					Runtime::Statemint => crate::service::start_generic_aura_node::<
+					Runtime::AssetHubPolkadot => crate::service::start_generic_aura_node::<
 						asset_hub_polkadot_runtime::RuntimeApi,
 						AssetHubPolkadotAuraId,
 					>(config, polkadot_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
-					Runtime::Statemine => crate::service::start_generic_aura_node::<
+					Runtime::AssetHubKusama => crate::service::start_generic_aura_node::<
 						asset_hub_kusama_runtime::RuntimeApi,
 						AuraId,
 					>(config, polkadot_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
-					Runtime::Westmint => crate::service::start_generic_aura_node::<
+					Runtime::AssetHubWestend => crate::service::start_generic_aura_node::<
 						asset_hub_westend_runtime::RuntimeApi,
 						AuraId,
 					>(config, polkadot_config, collator_options, id, hwbench)
@@ -1269,7 +1272,7 @@ mod tests {
 
 		let path = store_configuration(
 			&temp_dir,
-			Box::new(crate::chain_spec::statemint::statemine_local_config()),
+			Box::new(crate::chain_spec::asset_hubs::asset_hub_kusama_local_config()),
 		);
 		assert_eq!(Runtime::Statemine, path.runtime());
 

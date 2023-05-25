@@ -19,29 +19,29 @@ use crate::chain_spec::{
 };
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance as StatemintBalance};
+use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance as AssetHubBalance};
 use sc_service::ChainType;
 use sp_core::{crypto::UncheckedInto, sr25519};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type StatemintChainSpec =
+pub type AssetHubPolkadotChainSpec =
 	sc_service::GenericChainSpec<asset_hub_polkadot_runtime::GenesisConfig, Extensions>;
-pub type StatemineChainSpec =
+pub type AssetHubKusamaChainSpec =
 	sc_service::GenericChainSpec<asset_hub_kusama_runtime::GenesisConfig, Extensions>;
-pub type WestmintChainSpec =
+pub type AssetHubWestendChainSpec =
 	sc_service::GenericChainSpec<asset_hub_westend_runtime::GenesisConfig, Extensions>;
 
-const STATEMINT_ED: StatemintBalance =
+const ASSET_HUB_POLKADOT_ED: AssetHubBalance =
 	asset_hub_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
-const STATEMINE_ED: StatemintBalance =
+const ASSET_HUB_KUSAMA_ED: AssetHubBalance =
 	asset_hub_kusama_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
-const WESTMINT_ED: StatemintBalance =
+const ASSET_HUB_WESTEND_ED: AssetHubBalance =
 	asset_hub_westend_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn statemint_session_keys(
+pub fn asset_hub_polkadot_session_keys(
 	keys: AssetHubPolkadotAuraId,
 ) -> asset_hub_polkadot_runtime::SessionKeys {
 	asset_hub_polkadot_runtime::SessionKeys { aura: keys }
@@ -50,31 +50,31 @@ pub fn statemint_session_keys(
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn statemine_session_keys(keys: AuraId) -> asset_hub_kusama_runtime::SessionKeys {
+pub fn asset_hub_kusama_session_keys(keys: AuraId) -> asset_hub_kusama_runtime::SessionKeys {
 	asset_hub_kusama_runtime::SessionKeys { aura: keys }
 }
 
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn westmint_session_keys(keys: AuraId) -> asset_hub_westend_runtime::SessionKeys {
+pub fn asset_hub_westend_session_keys(keys: AuraId) -> asset_hub_westend_runtime::SessionKeys {
 	asset_hub_westend_runtime::SessionKeys { aura: keys }
 }
 
-pub fn statemint_development_config() -> StatemintChainSpec {
+pub fn asset_hub_polkadot_development_config() -> AssetHubPolkadotChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 0.into());
 	properties.insert("tokenSymbol".into(), "DOT".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
-	StatemintChainSpec::from_genesis(
+	AssetHubPolkadotChainSpec::from_genesis(
 		// Name
 		"Statemint Development",
 		// ID
 		"statemint_dev",
 		ChainType::Local,
 		move || {
-			statemint_genesis(
+			asset_hub_polkadot_genesis(
 				// initial collators.
 				vec![(
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -98,20 +98,20 @@ pub fn statemint_development_config() -> StatemintChainSpec {
 	)
 }
 
-pub fn statemint_local_config() -> StatemintChainSpec {
+pub fn asset_hub_polkadot_local_config() -> AssetHubPolkadotChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 0.into());
 	properties.insert("tokenSymbol".into(), "DOT".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
-	StatemintChainSpec::from_genesis(
+	AssetHubPolkadotChainSpec::from_genesis(
 		// Name
 		"Statemint Local",
 		// ID
 		"statemint_local",
 		ChainType::Local,
 		move || {
-			statemint_genesis(
+			asset_hub_polkadot_genesis(
 				// initial collators.
 				vec![
 					(
@@ -150,20 +150,20 @@ pub fn statemint_local_config() -> StatemintChainSpec {
 }
 
 // Not used for syncing, but just to determine the genesis values set for the upgrade from shell.
-pub fn statemint_config() -> StatemintChainSpec {
+pub fn asset_hub_polkadot_config() -> AssetHubPolkadotChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 0.into());
 	properties.insert("tokenSymbol".into(), "DOT".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
-	StatemintChainSpec::from_genesis(
+	AssetHubPolkadotChainSpec::from_genesis(
 		// Name
 		"Statemint",
 		// ID
 		"statemint",
 		ChainType::Live,
 		move || {
-			statemint_genesis(
+			asset_hub_polkadot_genesis(
 				// initial collators.
 				vec![
 					(
@@ -209,7 +209,7 @@ pub fn statemint_config() -> StatemintChainSpec {
 	)
 }
 
-fn statemint_genesis(
+fn asset_hub_polkadot_genesis(
 	invulnerables: Vec<(AccountId, AssetHubPolkadotAuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
@@ -221,12 +221,16 @@ fn statemint_genesis(
 				.to_vec(),
 		},
 		balances: asset_hub_polkadot_runtime::BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|k| (k, STATEMINT_ED * 4096)).collect(),
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, ASSET_HUB_POLKADOT_ED * 4096))
+				.collect(),
 		},
 		parachain_info: asset_hub_polkadot_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: asset_hub_polkadot_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: STATEMINT_ED * 16,
+			candidacy_bond: ASSET_HUB_POLKADOT_ED * 16,
 			..Default::default()
 		},
 		session: asset_hub_polkadot_runtime::SessionConfig {
@@ -234,9 +238,9 @@ fn statemint_genesis(
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                  // account id
-						acc,                          // validator id
-						statemint_session_keys(aura), // session keys
+						acc.clone(),                           // account id
+						acc,                                   // validator id
+						asset_hub_polkadot_session_keys(aura), // session keys
 					)
 				})
 				.collect(),
@@ -252,20 +256,20 @@ fn statemint_genesis(
 	}
 }
 
-pub fn statemine_development_config() -> StatemineChainSpec {
+pub fn asset_hub_kusama_development_config() -> AssetHubKusamaChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 2.into());
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
-	StatemineChainSpec::from_genesis(
+	AssetHubKusamaChainSpec::from_genesis(
 		// Name
 		"Statemine Development",
 		// ID
 		"statemine_dev",
 		ChainType::Local,
 		move || {
-			statemine_genesis(
+			asset_hub_kusama_genesis(
 				// initial collators.
 				vec![(
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -289,20 +293,20 @@ pub fn statemine_development_config() -> StatemineChainSpec {
 	)
 }
 
-pub fn statemine_local_config() -> StatemineChainSpec {
+pub fn asset_hub_kusama_local_config() -> AssetHubKusamaChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 2.into());
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
-	StatemineChainSpec::from_genesis(
+	AssetHubKusamaChainSpec::from_genesis(
 		// Name
 		"Statemine Local",
 		// ID
 		"statemine_local",
 		ChainType::Local,
 		move || {
-			statemine_genesis(
+			asset_hub_kusama_genesis(
 				// initial collators.
 				vec![
 					(
@@ -340,20 +344,20 @@ pub fn statemine_local_config() -> StatemineChainSpec {
 	)
 }
 
-pub fn statemine_config() -> StatemineChainSpec {
+pub fn asset_hub_kusama_config() -> AssetHubKusamaChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 2.into());
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
-	StatemineChainSpec::from_genesis(
+	AssetHubKusamaChainSpec::from_genesis(
 		// Name
 		"Statemine",
 		// ID
 		"statemine",
 		ChainType::Live,
 		move || {
-			statemine_genesis(
+			asset_hub_kusama_genesis(
 				// initial collators.
 				vec![
 					(
@@ -394,7 +398,7 @@ pub fn statemine_config() -> StatemineChainSpec {
 	)
 }
 
-fn statemine_genesis(
+fn asset_hub_kusama_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
@@ -409,13 +413,13 @@ fn statemine_genesis(
 			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, STATEMINE_ED * 524_288))
+				.map(|k| (k, ASSET_HUB_KUSAMA_ED * 524_288))
 				.collect(),
 		},
 		parachain_info: asset_hub_kusama_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: asset_hub_kusama_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: STATEMINE_ED * 16,
+			candidacy_bond: ASSET_HUB_KUSAMA_ED * 16,
 			..Default::default()
 		},
 		session: asset_hub_kusama_runtime::SessionConfig {
@@ -423,9 +427,9 @@ fn statemine_genesis(
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                  // account id
-						acc,                          // validator id
-						statemine_session_keys(aura), // session keys
+						acc.clone(),                         // account id
+						acc,                                 // validator id
+						asset_hub_kusama_session_keys(aura), // session keys
 					)
 				})
 				.collect(),
@@ -439,19 +443,19 @@ fn statemine_genesis(
 	}
 }
 
-pub fn westmint_development_config() -> WestmintChainSpec {
+pub fn asset_hub_westend_development_config() -> AssetHubWestendChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "WND".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
-	WestmintChainSpec::from_genesis(
+	AssetHubWestendChainSpec::from_genesis(
 		// Name
 		"Westmint Development",
 		// ID
 		"westmint_dev",
 		ChainType::Local,
 		move || {
-			westmint_genesis(
+			asset_hub_westend_genesis(
 				// initial collators.
 				vec![(
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -475,19 +479,19 @@ pub fn westmint_development_config() -> WestmintChainSpec {
 	)
 }
 
-pub fn westmint_local_config() -> WestmintChainSpec {
+pub fn asset_hub_westend_local_config() -> AssetHubWestendChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "WND".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
-	WestmintChainSpec::from_genesis(
+	AssetHubWestendChainSpec::from_genesis(
 		// Name
 		"Westmint Local",
 		// ID
 		"westmint_local",
 		ChainType::Local,
 		move || {
-			westmint_genesis(
+			asset_hub_westend_genesis(
 				// initial collators.
 				vec![
 					(
@@ -525,19 +529,19 @@ pub fn westmint_local_config() -> WestmintChainSpec {
 	)
 }
 
-pub fn westmint_config() -> WestmintChainSpec {
+pub fn asset_hub_westend_config() -> AssetHubWestendChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "WND".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
-	WestmintChainSpec::from_genesis(
+	AssetHubWestendChainSpec::from_genesis(
 		// Name
 		"Westmint",
 		// ID
 		"westmint",
 		ChainType::Live,
 		move || {
-			westmint_genesis(
+			asset_hub_westend_genesis(
 				// initial collators.
 				vec![
 					(
@@ -578,7 +582,7 @@ pub fn westmint_config() -> WestmintChainSpec {
 	)
 }
 
-fn westmint_genesis(
+fn asset_hub_westend_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
@@ -590,12 +594,16 @@ fn westmint_genesis(
 				.to_vec(),
 		},
 		balances: asset_hub_westend_runtime::BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|k| (k, WESTMINT_ED * 4096)).collect(),
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, ASSET_HUB_WESTEND_ED * 4096))
+				.collect(),
 		},
 		parachain_info: asset_hub_westend_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: asset_hub_westend_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: WESTMINT_ED * 16,
+			candidacy_bond: ASSET_HUB_WESTEND_ED * 16,
 			..Default::default()
 		},
 		session: asset_hub_westend_runtime::SessionConfig {
@@ -603,9 +611,9 @@ fn westmint_genesis(
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                 // account id
-						acc,                         // validator id
-						westmint_session_keys(aura), // session keys
+						acc.clone(),                          // account id
+						acc,                                  // validator id
+						asset_hub_westend_session_keys(aura), // session keys
 					)
 				})
 				.collect(),
