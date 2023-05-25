@@ -1754,6 +1754,10 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 								XcmConfig::UniversalLocation::get(),
 							)
 							.expect("reanchored destination account");
+						let universal_location_as_sovereign_account_on_target =
+							<Runtime as pallet_bridge_transfer::Config>::UniversalLocation::get()
+								.invert_target(&target_location_from_different_consensus)
+								.expect("invert_target Universal Location");
 
 						// match inner xcm
 						assert!(inner_xcm
@@ -1782,17 +1786,31 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 							})
 							.expect("contains ReserveAssetDeposited")
 							.match_next_inst(|inner_xcm_instr| match inner_xcm_instr {
-								ClearOrigin => Ok(()),
-								_ => Err(ProcessMessageError::BadFormat),
-							})
-							.expect("contains ClearOrigin")
-							.match_next_inst(|inner_xcm_instr| match inner_xcm_instr {
 								DepositAsset { assets: filter, ref beneficiary }
 									if filter ==
 										&MultiAssetFilter::from(reanchored_assets.clone()) &&
 										beneficiary.eq(&reanchored_destination_account) =>
 									Ok(()),
 								_ => Err(ProcessMessageError::BadFormat),
+							})
+							.expect("contains DepositAsset")
+							.match_next_inst(|inner_xcm_instr| match inner_xcm_instr {
+								RefundSurplus => Ok(()),
+								_ => Err(ProcessMessageError::BadFormat),
+							})
+							.expect("contains RefundSurplus")
+							.match_next_inst(|inner_xcm_instr| {
+								match inner_xcm_instr {
+									DepositAsset { assets: filter, ref beneficiary }
+										if filter ==
+											&MultiAssetFilter::from(
+												target_location_fee.clone(),
+											) && beneficiary.eq(
+											&universal_location_as_sovereign_account_on_target,
+										) =>
+										Ok(()),
+									_ => Err(ProcessMessageError::BadFormat),
+								}
 							})
 							.expect("contains DepositAsset")
 							.assert_remaining_insts(0)
@@ -1933,16 +1951,34 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 				)
 			);
 
+			// we assume here that BuyExecution fee goes to staking pot
+			let staking_pot_account_id = <pallet_collator_selection::Pallet<Runtime>>::account_id();
+			let local_bridge_hub_multilocation_as_account_id =
+				LocationToAccountId::convert_ref(&local_bridge_hub_multilocation)
+					.expect("Correct AccountId");
+
 			// check before
-			assert_eq!(
+			let remote_parachain_sovereign_account_balance_before =
 				<pallet_balances::Pallet<Runtime>>::free_balance(
-					&remote_parachain_sovereign_account
-				),
+					&remote_parachain_sovereign_account,
+				);
+			assert_eq!(
+				remote_parachain_sovereign_account_balance_before,
 				existential_deposit + buy_execution_fee_amount.into()
 			);
 			assert_eq!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(&target_account),
 				existential_deposit
+			);
+			assert_eq!(
+				<pallet_balances::Pallet<Runtime>>::free_balance(
+					&local_bridge_hub_multilocation_as_account_id
+				),
+				0.into()
+			);
+			assert_eq!(
+				<pallet_balances::Pallet<Runtime>>::free_balance(&staking_pot_account_id),
+				0.into()
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::balance(
@@ -1976,7 +2012,6 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 					}),
 					fun: Fungible(reserve_asset_deposisted),
 				}])),
-				ClearOrigin,
 				DepositAsset {
 					assets: Definite(MultiAssets::from(vec![MultiAsset {
 						id: Concrete(MultiLocation {
@@ -1992,6 +2027,15 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 							id: target_account.clone().into(),
 						}),
 					},
+				},
+				// return unspent weight back to SA of caller
+				RefundSurplus,
+				DepositAsset {
+					assets: Definite(MultiAssets::from(vec![MultiAsset {
+						id: Concrete(MultiLocation { parents: 1, interior: Here }),
+						fun: Fungible(buy_execution_fee_amount),
+					}])),
+					beneficiary: remote_parachain_as_origin,
 				},
 			]);
 
@@ -2010,14 +2054,27 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 			assert_eq!(outcome.ensure_complete(), Ok(()));
 
 			// check after
-			assert!(
+			let staking_pot_balance =
+				<pallet_balances::Pallet<Runtime>>::free_balance(&staking_pot_account_id);
+			assert_eq!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(
 					&remote_parachain_sovereign_account
-				) < existential_deposit + buy_execution_fee_amount.into()
+				),
+				remote_parachain_sovereign_account_balance_before - staking_pot_balance
 			);
 			assert_eq!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(&target_account),
 				existential_deposit
+			);
+			assert_eq!(
+				<pallet_balances::Pallet<Runtime>>::free_balance(
+					&local_bridge_hub_multilocation_as_account_id
+				),
+				0.into()
+			);
+			assert_ne!(
+				<pallet_balances::Pallet<Runtime>>::free_balance(&staking_pot_account_id),
+				0.into()
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::balance(
@@ -2027,21 +2084,14 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 				reserve_asset_deposisted.into()
 			);
 
-			// check asset trap (because big buy fee)
+			// check NO asset trap occurred
 			let mut pallet_xcm_events = <frame_system::Pallet<Runtime>>::events()
 				.into_iter()
 				.filter_map(|e| unwrap_pallet_xcm_event(e.event.encode()));
-			assert!(pallet_xcm_events.any(|e| match e {
-				pallet_xcm::Event::AssetsTrapped(_, trapped_for, _) => {
-					assert_eq!(
-						trapped_for, origin,
-						"We expect trapped assets for origin: {:?}, but it is trapped for: {:?}",
-						origin, trapped_for
-					);
-					true
-				},
-				_ => false,
-			}));
+			assert_eq!(
+				false,
+				pallet_xcm_events.any(|e| matches!(e, pallet_xcm::Event::AssetsTrapped(..)))
+			);
 		})
 }
 

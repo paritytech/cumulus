@@ -617,6 +617,12 @@ pub mod pallet {
 
 			let allowed_target_location = bridge_config.allowed_target_location;
 
+			// UniversalLocation as sovereign account location on target_location (as target_location sees UniversalLocation)
+			let universal_location_as_sovereign_account_on_target_location =
+				T::UniversalLocation::get()
+					.invert_target(&allowed_target_location)
+					.map_err(|_| Error::<T>::InvalidConfiguration)?;
+
 			// lets try to do a reserve for all assets
 			let mut reserved_assets = xcm_executor::Assets::new();
 			for asset in assets.into_inner() {
@@ -674,23 +680,41 @@ pub mod pallet {
 				Error::<T>::InvalidRemoteDestination
 			})?;
 
-			// prepare xcm message (maybe_paid + ReserveAssetDeposited stuff)
-			let mut xcm_instructions = match bridge_config.max_target_location_fee {
-				Some(target_location_fee) => sp_std::vec![
-					WithdrawAsset(target_location_fee.clone().into()),
-					BuyExecution { fees: target_location_fee, weight_limit: Unlimited },
-				],
-				None =>
+			// prepare xcm message
+			// 1. buy execution (if needed) -> (we expect UniversalLocation's sovereign account should pay)
+			let (mut xcm_instructions, maybe_buy_execution) = match bridge_config
+				.max_target_location_fee
+			{
+				Some(target_location_fee) => (
+					sp_std::vec![
+						WithdrawAsset(target_location_fee.clone().into()),
+						BuyExecution { fees: target_location_fee.clone(), weight_limit: Unlimited },
+					],
+					Some(target_location_fee),
+				),
+				None => (
 					sp_std::vec![UnpaidExecution { check_origin: None, weight_limit: Unlimited }],
+					None,
+				),
 			};
+			// 2. add deposit reserved asset to destination account
 			xcm_instructions.extend(sp_std::vec![
 				ReserveAssetDeposited(reserved_assets.clone().into()),
-				ClearOrigin,
 				DepositAsset {
 					assets: MultiAssetFilter::from(MultiAssets::from(reserved_assets)),
 					beneficiary: remote_destination
-				}
+				},
 			]);
+			// 3. add return unspent weight/asset back to the UniversalLocation's sovereign account on target
+			if let Some(target_location_fee) = maybe_buy_execution {
+				xcm_instructions.extend(sp_std::vec![
+					RefundSurplus,
+					DepositAsset {
+						assets: MultiAssetFilter::from(MultiAssets::from(target_location_fee)),
+						beneficiary: universal_location_as_sovereign_account_on_target_location
+					},
+				]);
+			}
 
 			Self::initiate_bridge_transfer(allowed_target_location, xcm_instructions.into())
 				.map_err(Into::into)
