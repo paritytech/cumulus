@@ -20,10 +20,10 @@ sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", br
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
-polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core" }
@@ -31,7 +31,7 @@ cumulus-relay-chain-interface = {path = "../relay-chain-interface"}
 async-trait = "0.1.68"
 
 [dev-dependencies]
-tokio = { version = "1.27.0", features = ["macros"] }
+tokio = { version = "1.28.1", features = ["macros"] }
 portpicker = "0.1.1"
 
 # Cumulus

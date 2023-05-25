@@ -27,7 +27,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
 
 # Cumulus
 cumulus-client-cli = { path = "../cli" }

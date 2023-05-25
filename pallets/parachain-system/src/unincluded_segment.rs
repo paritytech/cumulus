@@ -20,7 +20,7 @@
 //! Unincluded segment describes a chain of latest included block descendants, which are not yet
 //! sent to relay chain.
 
-use super::relay_state_snapshot::MessagingStateSnapshot;
+use super::relay_state_snapshot::{MessagingStateSnapshot, RelayDispachQueueSize};
 use codec::{Decode, Encode};
 use cumulus_primitives_core::{relay_chain, ParaId};
 use scale_info::TypeInfo;
@@ -51,17 +51,9 @@ impl OutboundBandwidthLimits {
 	/// from the host configuration.
 	///
 	/// These will be the total bandwidth limits across the entire unincluded segment.
-	pub fn from_relay_chain_state(
-		messaging_state: &MessagingStateSnapshot,
-		max_upward_queue_count: u32,
-		max_upward_queue_size: u32,
-	) -> Self {
-		let (ump_messages_in_relay, ump_bytes_in_relay) = messaging_state.relay_dispatch_queue_size;
-
-		let (ump_messages_remaining, ump_bytes_remaining) = (
-			max_upward_queue_count.saturating_sub(ump_messages_in_relay),
-			max_upward_queue_size.saturating_sub(ump_bytes_in_relay),
-		);
+	pub fn from_relay_chain_state(messaging_state: &MessagingStateSnapshot) -> Self {
+		let RelayDispachQueueSize { remaining_count, remaining_size } =
+			messaging_state.relay_dispatch_queue_size;
 
 		let hrmp_outgoing = messaging_state
 			.egress_channels
@@ -77,7 +69,11 @@ impl OutboundBandwidthLimits {
 			})
 			.collect();
 
-		Self { ump_messages_remaining, ump_bytes_remaining, hrmp_outgoing }
+		Self {
+			ump_messages_remaining: remaining_count,
+			ump_bytes_remaining: remaining_size,
+			hrmp_outgoing,
+		}
 	}
 
 	/// Compute the remaining bandwidth when accounting for the used amounts provided.
@@ -436,22 +432,16 @@ mod tests {
 			max_total_size: 500,
 			mqc_head: None,
 		};
+		let relay_dispatch_queue_size =
+			RelayDispachQueueSize { remaining_count: 1, remaining_size: 50 };
 		let messaging_state = MessagingStateSnapshot {
 			dmq_mqc_head: relay_chain::Hash::zero(),
-			// (msg_count, bytes)
-			relay_dispatch_queue_size: (10, 100),
+			relay_dispatch_queue_size,
 			ingress_channels: Vec::new(),
-
 			egress_channels: vec![(para_a, para_a_channel), (para_b, para_b_channel)],
 		};
 
-		let max_upward_queue_count = 11;
-		let max_upward_queue_size = 150;
-		let limits = OutboundBandwidthLimits::from_relay_chain_state(
-			&messaging_state,
-			max_upward_queue_count,
-			max_upward_queue_size,
-		);
+		let limits = OutboundBandwidthLimits::from_relay_chain_state(&messaging_state);
 
 		// UMP.
 		assert_eq!(limits.ump_messages_remaining, 1);

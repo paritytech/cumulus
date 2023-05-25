@@ -23,6 +23,7 @@ sp-core = { git = "https://github.com/paritytech/substrate", default-features = 
 # Cumulus
 cumulus-pallet-parachain-system = { path = "../../../../pallets/parachain-system", default-features = false }
 cumulus-pallet-xcmp-queue = { path = "../../../../pallets/xcmp-queue", default-features = false }
+cumulus-pallet-dmp-queue = { path = "../../../../pallets/dmp-queue", default-features = false }
 pallet-collator-selection = { path = "../../../../pallets/collator-selection", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
 assets-common = { path = "../common", default-features = false }
@@ -30,12 +31,13 @@ cumulus-primitives-core = { path = "../../../../primitives/core", default-featur
 cumulus-primitives-parachain-inherent = { path = "../../../../primitives/parachain-inherent", default-features = false }
 cumulus-test-relay-sproof-builder = { path = "../../../../test/relay-sproof-builder", default-features = false }
 parachain-info = { path = "../../../../parachains/pallets/parachain-info", default-features = false }
+parachains-runtimes-test-utils = { path = "../../test-utils", default-features = false }
 
 # Polkadot
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
 
 [dev-dependencies]
 hex-literal = "0.3.4"
@@ -60,6 +62,7 @@ std = [
     "assets-common/std",
     "parachains-common/std",
 	"parachain-info/std",
+	"parachains-runtimes-test-utils/std",
 	"polkadot-parachain/std",
     "sp-consensus-aura/std",
     "sp-io/std",
@@ -69,4 +72,5 @@ std = [
     "xcm-executor/std",
     "pallet-xcm/std",
     "cumulus-pallet-xcmp-queue/std",
+    "cumulus-pallet-dmp-queue/std",
 ]

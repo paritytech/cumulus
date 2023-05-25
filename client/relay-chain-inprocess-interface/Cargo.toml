@@ -22,9 +22,9 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", default-features = false, features = ["cli"] , branch = "rh-async-backing-feature" }
-polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", default-features = false, features = ["cli"] , branch = "rh-async-backing-feature-while-frozen" }
+polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core" }
@@ -36,8 +36,8 @@ cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
-polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
+polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
 metered = { package = "prioritized-metered-channel", version = "0.2.0" }
 
 # Cumulus
