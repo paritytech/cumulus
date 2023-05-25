@@ -298,10 +298,8 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		)>,
 		ApiError,
 	> {
-		Ok(self.rpc_client.parachain_host_staging_get_disputes(at).await?)
+		Ok(self.rpc_client.parachain_host_disputes(at).await?)
 	}
-
-	// The methods below are only supposed to be called by relay chain validators.
 
 	async fn unapplied_slashes(
 		&self,
@@ -314,7 +312,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		)>,
 		ApiError,
 	> {
-		Ok(Vec::new())
+		Ok(self.rpc_client.parachain_host_unapplied_slashes(at).await?)
 	}
 
 	async fn key_ownership_proof(
@@ -322,7 +320,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		at: Hash,
 		validator_id: polkadot_primitives::ValidatorId,
 	) -> Result<Option<vstaging::slashing::OpaqueKeyOwnershipProof>, ApiError> {
-		Ok(None)
+		Ok(self.rpc_client.parachain_host_key_ownership_proof(at, validator_id).await?)
 	}
 
 	async fn submit_report_dispute_lost(
@@ -331,7 +329,10 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		dispute_proof: vstaging::slashing::DisputeProof,
 		key_ownership_proof: vstaging::slashing::OpaqueKeyOwnershipProof,
 	) -> Result<Option<()>, ApiError> {
-		Ok(None)
+		Ok(self
+			.rpc_client
+			.parachain_host_submit_report_dispute_lost(at, dispute_proof, key_ownership_proof)
+			.await?)
 	}
 }
 
