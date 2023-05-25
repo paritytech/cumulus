@@ -199,6 +199,16 @@ pub mod pallet {
 		MaxMessagesExhausted { message_hash: XcmHash },
 	}
 
+	/// Error type when a message was failed to be serviced.
+	pub(crate) struct ServiceMessageError {
+		/// The message's hash.
+		message_hash: XcmHash,
+		/// The message's ID (which could also be its hash if nothing overrides it).
+		message_id: XcmHash,
+		/// Weight required for the message to be executed.
+		required_weight: Weight,
+	}
+
 	impl<T: Config> Pallet<T> {
 		/// Service the message queue up to some given weight `limit`.
 		///
@@ -256,7 +266,7 @@ pub mod pallet {
 			limit: Weight,
 			_sent_at: RelayBlockNumber,
 			mut data: &[u8],
-		) -> Result<Weight, (XcmHash, XcmHash, Weight)> {
+		) -> Result<Weight, ServiceMessageError> {
 			let message_hash = sp_io::hashing::blake2_256(data);
 			let mut message_id = message_hash;
 			let maybe_msg = VersionedXcm::<T::RuntimeCall>::decode_all_with_depth_limit(
@@ -282,8 +292,8 @@ pub mod pallet {
 						Weight::zero(),
 					);
 					match outcome {
-						Outcome::Error(XcmError::WeightLimitReached(required)) =>
-							Err((message_hash, message_id, required)),
+						Outcome::Error(XcmError::WeightLimitReached(required_weight)) =>
+							Err(ServiceMessageError { message_hash, message_id, required_weight }),
 						outcome => {
 							let weight_used = outcome.weight_used();
 							Self::deposit_event(Event::ExecutedDownward {
@@ -339,7 +349,11 @@ pub mod pallet {
 						messages_processed += 1;
 						match Self::try_service_message(remaining_weight, sent_at, &data[..]) {
 							Ok(consumed) => used += consumed,
-							Err((message_hash, message_id, required_weight)) =>
+							Err(ServiceMessageError {
+								message_hash,
+								message_id,
+								required_weight,
+							}) =>
 							// Too much weight required right now.
 							{
 								let is_under_limit =
