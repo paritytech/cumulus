@@ -1274,7 +1274,7 @@ mod tests {
 			&temp_dir,
 			Box::new(crate::chain_spec::asset_hubs::asset_hub_kusama_local_config()),
 		);
-		assert_eq!(Runtime::Statemine, path.runtime());
+		assert_eq!(Runtime::AssetHubKusama, path.runtime());
 
 		let path = store_configuration(
 			&temp_dir,
