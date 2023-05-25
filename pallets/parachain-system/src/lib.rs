@@ -29,10 +29,10 @@
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use cumulus_primitives_core::{
-	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
-	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError,
-	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
-	XcmpMessageHandler, XcmpMessageSource,
+	message_id, relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo,
+	DmpMessageHandler, GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage,
+	MessageSendError, OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage,
+	UpwardMessageSender, XcmpMessageHandler, XcmpMessageSource,
 };
 use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
 use frame_support::{
@@ -1112,13 +1112,16 @@ impl<T: Config> Pallet<T> {
 			//
 			// Thus fall through here.
 		};
-		<PendingUpwardMessages<T>>::append(message.clone());
 
 		// The relay ump does not use using_encoded
 		// We apply the same this to use the same hash
-		let hash = sp_io::hashing::blake2_256(&message);
-		Self::deposit_event(Event::UpwardMessageSent { message_hash: Some(hash) });
-		Ok((0, hash))
+		let id = message_id(&message);
+
+		// Store message
+		<PendingUpwardMessages<T>>::append(message);
+
+		Self::deposit_event(Event::UpwardMessageSent { message_hash: Some(id) });
+		Ok((0, id))
 	}
 }
 

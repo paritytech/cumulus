@@ -22,7 +22,7 @@
 
 use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_core::{
-	relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler, ParaId,
+	message_id, relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler, ParaId,
 };
 use frame_support::dispatch::Weight;
 pub use pallet::*;
@@ -37,6 +37,7 @@ use xcm::{
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use cumulus_primitives_core::MessageId;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -66,13 +67,13 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Downward message is invalid XCM.
 		/// \[ id \]
-		InvalidFormat([u8; 32]),
+		InvalidFormat(MessageId),
 		/// Downward message is unsupported version of XCM.
 		/// \[ id \]
-		UnsupportedVersion([u8; 32]),
+		UnsupportedVersion(MessageId),
 		/// Downward message executed with the given outcome.
 		/// \[ id, outcome \]
-		ExecutedDownward([u8; 32], Outcome),
+		ExecutedDownward(MessageId, Outcome),
 	}
 
 	/// Origin for the parachains module.
@@ -112,7 +113,7 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 	) -> Weight {
 		let mut used = Weight::zero();
 		for (_sent_at, data) in iter {
-			let id = sp_io::hashing::blake2_256(&data[..]);
+			let id = message_id(&data[..]);
 			let msg = VersionedXcm::<T::RuntimeCall>::decode_all_with_depth_limit(
 				MAX_XCM_DECODE_DEPTH,
 				&mut data.as_slice(),
@@ -145,7 +146,7 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 	) -> Weight {
 		let mut used = Weight::zero();
 		for (_sent_at, data) in iter {
-			let id = sp_io::hashing::blake2_256(&data[..]);
+			let id = message_id(&data[..]);
 			let msg = VersionedXcm::<T::RuntimeCall>::decode_all_with_depth_limit(
 				MAX_XCM_DECODE_DEPTH,
 				&mut data.as_slice(),

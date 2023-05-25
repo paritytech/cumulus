@@ -30,7 +30,7 @@ pub use polkadot_parachain::primitives::{
 	XcmpMessageHandler,
 };
 pub use polkadot_primitives::{
-	AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData,
+	message_id, AbridgedHostConfiguration, AbridgedHrmpChannel, MessageId, PersistedValidationData,
 };
 
 pub use sp_runtime::{
@@ -38,8 +38,6 @@ pub use sp_runtime::{
 	traits::Block as BlockT,
 	ConsensusEngineId,
 };
-
-pub use xcm::latest::prelude::*;
 
 /// A module that re-exports relevant relay chain definitions.
 pub mod relay_chain {
@@ -104,10 +102,10 @@ pub trait UpwardMessageSender {
 	/// Send the given UMP message; return the expected number of blocks before the message will
 	/// be dispatched or an error if the message cannot be sent.
 	/// return the hash of the message sent
-	fn send_upward_message(msg: UpwardMessage) -> Result<(u32, XcmHash), MessageSendError>;
+	fn send_upward_message(msg: UpwardMessage) -> Result<(u32, MessageId), MessageSendError>;
 }
 impl UpwardMessageSender for () {
-	fn send_upward_message(_msg: UpwardMessage) -> Result<(u32, XcmHash), MessageSendError> {
+	fn send_upward_message(_msg: UpwardMessage) -> Result<(u32, MessageId), MessageSendError> {
 		Err(MessageSendError::NoChannel)
 	}
 }
