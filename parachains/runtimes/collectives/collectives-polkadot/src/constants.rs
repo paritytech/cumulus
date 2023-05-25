@@ -26,9 +26,6 @@ pub mod account {
 	/// It is used as a temporarily place to deposit a slashed imbalance
 	/// before the teleport to the Treasury.
 	pub const REFERENDA_PALLET_ID: PalletId = PalletId(*b"py/refer");
-	/// The Polkadot Fellowship pallet ID
-	/// The identifier determines an account address of the collective.
-	pub const FELLOWSHIP_PALLET_ID: PalletId = PalletId(*b"py/fella");
 }
 
 pub mod currency {

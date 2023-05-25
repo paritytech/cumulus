@@ -25,6 +25,7 @@ pub use origins::{
 	FellowshipMasters,
 };
 
+use self::origins::EnsureFellowship;
 use crate::{
 	constants, impls::ToParentTreasury, weights, AccountId, Balance, Balances, BlockNumber,
 	FellowshipReferenda, GovernanceLocation, PolkadotTreasuryAccount, Preimage, Runtime,
@@ -32,7 +33,7 @@ use crate::{
 };
 use frame_support::{
 	parameter_types,
-	traits::{tokens::PayFromAccount, EitherOf, MapSuccess, TryMapSuccess},
+	traits::{tokens::PayFromAccount, EitherOf, EitherOfDiverse, MapSuccess, TryMapSuccess},
 };
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use polkadot_runtime_constants::{currency::UNITS, xcm::body::FELLOWSHIP_ADMIN_INDEX};
@@ -40,11 +41,9 @@ use sp_arithmetic::traits::CheckedSub;
 use sp_core::ConstU32;
 use sp_runtime::{
 	morph_types,
-	traits::{AccountIdConversion, ConstU16, Replace, TypedGet},
+	traits::{AccountIdConversion, ConstU16, Replace, TryMorph, TypedGet},
 };
 use xcm::latest::BodyId;
-
-use self::origins::EnsureFellowship;
 
 /// The Fellowship members' ranks.
 pub mod ranks {
@@ -104,6 +103,11 @@ morph_types! {
 	pub type CheckedReduceBy<N: TypedGet>: TryMorph = |r: N::Type| -> Result<N::Type, ()> {
 		r.checked_sub(&N::get()).ok_or(())
 	} where N::Type: CheckedSub;
+
+	/// A `TryMorph` implementation to set an upper limit for a result of other morphed value.
+	pub type MorphWithUpperLimit<L: TypedGet, M>: TryMorph = |r: L::Type| -> Result<L::Type, ()> {
+		M::try_morph(r).map(|m| m.min(L::get()))
+	} where L::Type: Ord, M: TryMorph<L::Type, Outcome = L::Type>;
 }
 
 impl pallet_ranked_collective::Config<FellowshipCollectiveInstance> for Runtime {
@@ -114,15 +118,11 @@ impl pallet_ranked_collective::Config<FellowshipCollectiveInstance> for Runtime 
 	// Demotion is by any of:
 	// - Root can demote arbitrarily.
 	// - the FellowshipAdmin origin (i.e. token holder referendum);
-	// - a vote by the rank two above the current rank.
 	type DemoteOrigin = EitherOf<
-		frame_system::EnsureRootWithSuccess<Self::AccountId, ConstU16<65535>>,
-		EitherOf<
-			MapSuccess<
-				EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
-				Replace<ConstU16<9>>,
-			>,
-			TryMapSuccess<EnsureFellowship, CheckedReduceBy<ConstU16<2>>>,
+		frame_system::EnsureRootWithSuccess<Self::AccountId, ConstU16<{ ranks::DAN_9 }>>,
+		MapSuccess<
+			EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
+			Replace<ConstU16<{ ranks::DAN_9 }>>,
 		>,
 	>;
 	type Polls = FellowshipReferenda;
@@ -139,42 +139,53 @@ impl pallet_core_fellowship::Config<FellowshipCoreInstance> for Runtime {
 	type Balance = Balance;
 	// Parameters are set by any of:
 	// - Root;
+	// - the FellowshipAdmin origin (i.e. token holder referendum);
 	// - a vote of the rank 3 or above.
-	type ParamsOrigin = Fellows;
+	type ParamsOrigin = EitherOfDiverse<
+		EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
+		Fellows,
+	>;
 	// Induction is by any of:
 	// - Root;
+	// - the FellowshipAdmin origin (i.e. token holder referendum);
 	// - a member of the rank 1 or above.
-	type InductOrigin = EnsureFellowship;
+	type InductOrigin = EitherOfDiverse<
+		EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
+		EnsureFellowship,
+	>;
 	// Approval of a member's current rank is by any of:
 	// - Root;
 	// - the FellowshipAdmin origin (i.e. token holder referendum);
-	// - a vote by the rank above or equal to the current rank.
+	// - a vote by the rank two above the current rank.
 	type ApproveOrigin = EitherOf<
 		MapSuccess<
 			EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
-			Replace<ConstU16<9>>,
+			Replace<ConstU16<{ ranks::DAN_9 }>>,
 		>,
-		EnsureFellowship,
+		TryMapSuccess<EnsureFellowship, CheckedReduceBy<ConstU16<2>>>,
 	>;
 	// Promotion is by any of:
 	// - Root can promote arbitrarily.
 	// - the FellowshipAdmin origin (i.e. token holder referendum);
-	// - a vote by the rank *above* the new rank.
+	// - a vote by the rank two above the new rank for all promotions up to the Master rank.
+	// - a vote by the Fellow rank or above for a promotion to the Master rank or greater.
 	type PromoteOrigin = EitherOf<
-		frame_system::EnsureRootWithSuccess<Self::AccountId, ConstU16<65535>>,
+		MapSuccess<
+			EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
+			Replace<ConstU16<{ ranks::DAN_9 }>>,
+		>,
 		EitherOf<
-			MapSuccess<
-				EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
-				Replace<ConstU16<9>>,
+			TryMapSuccess<
+				EnsureFellowship,
+				MorphWithUpperLimit<ConstU16<{ ranks::DAN_6 }>, CheckedReduceBy<ConstU16<2>>>,
 			>,
-			TryMapSuccess<EnsureFellowship, CheckedReduceBy<ConstU16<1>>>,
+			MapSuccess<Fellows, Replace<ConstU16<{ ranks::DAN_9 }>>>,
 		>,
 	>;
 	type EvidenceSize = ConstU32<1024>;
 }
 
 parameter_types! {
-	pub FellowshipAccount: AccountId = constants::account::FELLOWSHIP_PALLET_ID.into_account_truncating();
 	pub const RegistrationPeriod: BlockNumber = 15 * DAYS;
 	pub const PayoutPeriod: BlockNumber = 15 * DAYS;
 	/// A total budget of a single payout cycle.
@@ -187,7 +198,7 @@ pub type FellowshipSalaryInstance = pallet_salary::Instance1;
 impl pallet_salary::Config<FellowshipSalaryInstance> for Runtime {
 	type WeightInfo = weights::pallet_salary::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
-	type Paymaster = PayFromAccount<Balances, FellowshipAccount>;
+	type Paymaster = PayFromAccount<Balances, PolkadotTreasuryAccount>;
 	type Members = pallet_ranked_collective::Pallet<Runtime, FellowshipCollectiveInstance>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type Salary = pallet_core_fellowship::Pallet<Runtime, FellowshipCoreInstance>;
