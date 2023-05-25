@@ -73,7 +73,7 @@ fn test_asset_xcm_trader() {
 			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
 
 			// We are going to buy 400e9 weight
-			// Because of the ED being higher in statemine
+			// Because of the ED being higher in kusama asset hub
 			// and not to complicate things, we use a little
 			// bit more of weight
 			let bought = Weight::from_parts(400_000_000_000u64, 0);
@@ -152,7 +152,7 @@ fn test_asset_xcm_trader_with_refund() {
 			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
 
 			// We are going to buy 400e9 weight
-			// Because of the ED being higher in statemine
+			// Because of the ED being higher in kusama asset hub
 			// and not to complicate things, we use a little
 			// bit more of weight
 			let bought = Weight::from_parts(400_000_000_000u64, 0);
@@ -225,7 +225,7 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
 
 			// We are going to buy 50e9 weight
-			// Because of the ED being higher in statemine
+			// Because of the ED being higher in kusama asset hub
 			// and not to complicate things, we use a little
 			// bit more of weight
 			let bought = Weight::from_parts(50_000_000_000u64, 0);
@@ -351,7 +351,7 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
 
 			// We are going to buy 400e9 weight
-			// Because of the ED being higher in statemine
+			// Because of the ED being higher in kusama asset hub
 			// and not to complicate things, we use a little
 			// bit more of weight
 			let bought = Weight::from_parts(400_000_000_000u64, 0);

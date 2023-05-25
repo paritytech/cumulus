@@ -18,7 +18,7 @@
 //! (and as such multiple parachains can be on the same relay node - though make sure you have enough relay
 //! nodes running to support this or you will get the not scheduled on a core error message.)
 //!
-//! The penpal runtime's primary use is as a partner when testing statemine/t with reserve asset transfers.
+//! The penpal runtime's primary use is as a partner when testing Asset Hub with reserve asset transfers.
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]

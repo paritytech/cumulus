@@ -1134,8 +1134,7 @@ where
 	Ok(BasicQueue::new(verifier, Box::new(block_import), None, &spawner, registry))
 }
 
-/// Start an aura powered parachain node.
-/// (collective-polkadot and statemine/t use this)
+/// Start an aura powered parachain node. Asset Hub and Collectives use this.
 pub async fn start_generic_aura_node<RuntimeApi, AuraId: AppCrypto>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,

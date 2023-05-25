@@ -93,13 +93,13 @@ Obviously, there should be someone who is paying relayer rewards. We want bridge
 can't use fees for rewards. Instead, the parachains using the bridge, use sovereign accounts on both sides
 of the bridge to cover relayer rewards.
 
-Bridged Parachains will have sovereign accounts at bridge hubs. For example, the Statemine (Kusama Parachain) will
-have an account at the Polkadot Bridge Hub. The Asset Hub Polkadot will have an account at the Kusama
+Bridged Parachains will have sovereign accounts at bridge hubs. For example, the Kusama Asset Hub will
+have an account at the Polkadot Bridge Hub. The Polkadot Asset Hub will have an account at the Kusama
 Bridge Hub. The sovereign accounts are used as a source of funds when the relayer is calling the
 `pallet_bridge_relayers::claim_rewards`.
 
 Since messages lane is only used by the pair of parachains, there's no collision between different bridges. E.g.
-Statemine will only reward relayers that are delivering messages from Statemine. The Statemine sovereign account
+Kusama Asset Hub will only reward relayers that are delivering messages from Kusama Asset Hub. The Kusama Asset Hub sovereign account
 is not used to cover rewards of bridging with some other Polkadot Parachain.
 
 ### Multiple Relayers and Rewards

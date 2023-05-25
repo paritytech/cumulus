@@ -37,8 +37,8 @@ performed during the release process.
 
 ### <a name="burnin"></a>Burn In
 
-Ensure that Parity DevOps has run the new release on Westmint and Statemine collators for 12h prior to publishing the
-release.
+Ensure that Parity DevOps has run the new release on Westend and Kusama Asset Hub collators for 12h
+prior to publishing the release.
 
 ### Build Artifacts
 

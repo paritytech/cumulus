@@ -377,8 +377,8 @@ impl xcm_executor::Config for XcmConfig {
 	type XcmSender = XcmRouter;
 	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	// Westmint does not recognize a reserve location for any asset. This does not prevent
-	// Westmint acting _as_ a reserve location for WND and assets created under `pallet-assets`.
+	// Asset Hub Westend does not recognize a reserve location for any asset. This does not prevent
+	// Asset Hub acting _as_ a reserve location for WND and assets created under `pallet-assets`.
 	// For WND, users must use teleport where allowed (e.g. with the Relay Chain).
 	type IsReserve = ();
 	// We allow:

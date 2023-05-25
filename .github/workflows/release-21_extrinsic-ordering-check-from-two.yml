@@ -28,9 +28,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runtime: statemine
-            local: statemine-local
-            relay: polkadot-local
+          - runtime: asset-hub-kusama
+            local: asset-hub-kusama-local
+            relay: kusama-local
           - runtime: asset-hub-polkadot
             local: asset-hub-polkadot-local
             relay: polkadot-local
