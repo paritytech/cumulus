@@ -25,11 +25,11 @@ use sp_core::{crypto::UncheckedInto, sr25519};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type StatemintChainSpec =
-	sc_service::GenericChainSpec<statemint_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<statemint_runtime::RuntimeGenesisConfig, Extensions>;
 pub type StatemineChainSpec =
-	sc_service::GenericChainSpec<statemine_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<statemine_runtime::RuntimeGenesisConfig, Extensions>;
 pub type WestmintChainSpec =
-	sc_service::GenericChainSpec<westmint_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<westmint_runtime::RuntimeGenesisConfig, Extensions>;
 
 const STATEMINT_ED: StatemintBalance = statemint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 const STATEMINE_ED: StatemintBalance = statemine_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
@@ -208,8 +208,8 @@ fn statemint_genesis(
 	invulnerables: Vec<(AccountId, StatemintAuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> statemint_runtime::GenesisConfig {
-	statemint_runtime::GenesisConfig {
+) -> statemint_runtime::RuntimeGenesisConfig {
+	statemint_runtime::RuntimeGenesisConfig {
 		system: statemint_runtime::SystemConfig {
 			code: statemint_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
@@ -393,8 +393,8 @@ fn statemine_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> statemine_runtime::GenesisConfig {
-	statemine_runtime::GenesisConfig {
+) -> statemine_runtime::RuntimeGenesisConfig {
+	statemine_runtime::RuntimeGenesisConfig {
 		system: statemine_runtime::SystemConfig {
 			code: statemine_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
@@ -577,8 +577,8 @@ fn westmint_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> westmint_runtime::GenesisConfig {
-	westmint_runtime::GenesisConfig {
+) -> westmint_runtime::RuntimeGenesisConfig {
+	westmint_runtime::RuntimeGenesisConfig {
 		system: westmint_runtime::SystemConfig {
 			code: westmint_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")

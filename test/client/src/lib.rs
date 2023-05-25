@@ -19,8 +19,8 @@
 mod block_builder;
 use codec::{Decode, Encode};
 use runtime::{
-	Balance, Block, BlockHashCount, GenesisConfig, Runtime, RuntimeCall, Signature, SignedExtra,
-	SignedPayload, UncheckedExtrinsic, VERSION,
+	Balance, Block, BlockHashCount, Runtime, RuntimeCall, RuntimeGenesisConfig, Signature,
+	SignedExtra, SignedPayload, UncheckedExtrinsic, VERSION,
 };
 use sc_executor::{HeapAllocStrategy, WasmExecutionMethod, WasmExecutor};
 use sc_executor_common::runtime_blob::RuntimeBlob;
@@ -114,7 +114,7 @@ impl DefaultTestClientBuilderExt for TestClientBuilder {
 	}
 }
 
-fn genesis_config() -> GenesisConfig {
+fn genesis_config() -> RuntimeGenesisConfig {
 	cumulus_test_service::local_testnet_genesis()
 }
 

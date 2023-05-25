@@ -150,7 +150,7 @@ pub mod polkadot {
 	}
 
 	pub fn genesis() -> Storage {
-		let genesis_config = polkadot_runtime::GenesisConfig {
+		let genesis_config = polkadot_runtime::RuntimeGenesisConfig {
 			system: polkadot_runtime::SystemConfig {
 				code: polkadot_runtime::WASM_BINARY.unwrap().to_vec(),
 			},
@@ -247,7 +247,7 @@ pub mod kusama {
 	}
 
 	pub fn genesis() -> Storage {
-		let genesis_config = kusama_runtime::GenesisConfig {
+		let genesis_config = kusama_runtime::RuntimeGenesisConfig {
 			system: kusama_runtime::SystemConfig {
 				code: kusama_runtime::WASM_BINARY.unwrap().to_vec(),
 			},
@@ -312,7 +312,7 @@ pub mod statemint {
 	pub const ED: Balance = statemint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 	pub fn genesis() -> Storage {
-		let genesis_config = statemint_runtime::GenesisConfig {
+		let genesis_config = statemint_runtime::RuntimeGenesisConfig {
 			system: statemint_runtime::SystemConfig {
 				code: statemint_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
@@ -366,7 +366,7 @@ pub mod statemine {
 	pub const ED: Balance = statemine_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 	pub fn genesis() -> Storage {
-		let genesis_config = statemine_runtime::GenesisConfig {
+		let genesis_config = statemine_runtime::RuntimeGenesisConfig {
 			system: statemine_runtime::SystemConfig {
 				code: statemine_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
@@ -420,7 +420,7 @@ pub mod penpal {
 	pub const ED: Balance = penpal_runtime::EXISTENTIAL_DEPOSIT;
 
 	pub fn genesis(para_id: u32) -> Storage {
-		let genesis_config = penpal_runtime::GenesisConfig {
+		let genesis_config = penpal_runtime::RuntimeGenesisConfig {
 			system: penpal_runtime::SystemConfig {
 				code: penpal_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
@@ -477,7 +477,7 @@ pub mod collectives {
 	pub const ED: Balance = collectives_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 	pub fn genesis() -> Storage {
-		let genesis_config = collectives_polkadot_runtime::GenesisConfig {
+		let genesis_config = collectives_polkadot_runtime::RuntimeGenesisConfig {
 			system: collectives_polkadot_runtime::SystemConfig {
 				code: collectives_polkadot_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
@@ -536,7 +536,7 @@ pub mod bridge_hub_kusama {
 	pub const ED: Balance = bridge_hub_kusama_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 	pub fn genesis() -> Storage {
-		let genesis_config = bridge_hub_kusama_runtime::GenesisConfig {
+		let genesis_config = bridge_hub_kusama_runtime::RuntimeGenesisConfig {
 			system: bridge_hub_kusama_runtime::SystemConfig {
 				code: bridge_hub_kusama_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
@@ -591,7 +591,7 @@ pub mod bridge_hub_polkadot {
 	pub const ED: Balance = bridge_hub_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 	pub fn genesis() -> Storage {
-		let genesis_config = bridge_hub_polkadot_runtime::GenesisConfig {
+		let genesis_config = bridge_hub_polkadot_runtime::RuntimeGenesisConfig {
 			system: bridge_hub_polkadot_runtime::SystemConfig {
 				code: bridge_hub_polkadot_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
