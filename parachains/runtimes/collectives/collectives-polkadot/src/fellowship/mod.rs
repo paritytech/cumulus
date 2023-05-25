@@ -104,7 +104,7 @@ morph_types! {
 		r.checked_sub(&N::get()).ok_or(())
 	} where N::Type: CheckedSub;
 
-	/// A `TryMorph` implementation to set an upper limit for a result of other morphed value.
+	/// A `TryMorph` implementation to enforce an upper limit for a result of the outer morphed type.
 	pub type MorphWithUpperLimit<L: TypedGet, M>: TryMorph = |r: L::Type| -> Result<L::Type, ()> {
 		M::try_morph(r).map(|m| m.min(L::get()))
 	} where L::Type: Ord, M: TryMorph<L::Type, Outcome = L::Type>;
