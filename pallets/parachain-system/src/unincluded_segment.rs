@@ -394,7 +394,7 @@ impl<H> SegmentTracker<H> {
 
 	/// Return go ahead signal consumed by some ancestor in a segment, if any.
 	pub fn consumed_go_ahead_signal(&self) -> Option<relay_chain::UpgradeGoAhead> {
-		self.consumed_go_ahead_signal.clone()
+		self.consumed_go_ahead_signal
 	}
 }
 
