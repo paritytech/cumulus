@@ -484,7 +484,7 @@ mod tests {
 		fn execute(
 			_origin: impl Into<MultiLocation>,
 			_pre: Weightless,
-			_hash: XcmHash,
+			_hash: &mut XcmHash,
 			_weight_credit: Weight,
 		) -> Outcome {
 			unreachable!()
