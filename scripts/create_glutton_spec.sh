@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Example for `compute` and `storage` at 50% and 5120 `trash_data_count`
-# ./scripts/create_glutton_spec.sh ./target/release/polkadot-parachain rococo 1300 1305 G7Z5mTmTQsjEGBVqVGDZyR9m7RoHNZJk6JeykyfKQ3vmBiR 500000000 5500000000 5120 output-dir
+# ./scripts/create_glutton_spec.sh ./target/release/polkadot-parachain rococo 1300 1305 G7Z5mTmTQsjEGBVqVGDZyR9m7RoHNZJk6JeykyfKQ3vmBiR 500000000 500000000 5120 output-dir
 usage() {
     echo Usage:
     echo "$0 <binary path> <relay chain> <from parachain id> <to parachain id> <sudo key> <compute> <storage> <trash_data_count> <output dir>"
