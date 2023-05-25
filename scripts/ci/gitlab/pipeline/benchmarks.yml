@@ -24,7 +24,7 @@ benchmarks-assets:
   script:
     - ./scripts/benchmarks-ci.sh assets asset-hub-kusama ./artifacts
     - ./scripts/benchmarks-ci.sh assets asset-hub-polkadot ./artifacts
-    - ./scripts/benchmarks-ci.sh assets westmint ./artifacts
+    - ./scripts/benchmarks-ci.sh assets asset-hub-westend ./artifacts
     - export CURRENT_TIME=$(date '+%s')
     - export BRANCHNAME="weights-asset-hub-polkadot-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
     - !reference [.git-commit-push, script]
