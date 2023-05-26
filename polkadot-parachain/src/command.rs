@@ -880,8 +880,10 @@ pub fn run() -> Result<()> {
 							if let Some(db_root) = grand_parent.parent() {
 								let old_name =
 									match grand_parent.file_name().and_then(|s| s.to_str()) {
-									 Some("asset-hub-kusama") => Some("statemine"),
 									 Some("asset-hub-polkadot") => Some("statemint"),
+									 Some("asset-hub-kusama") => Some("statemine"),
+									 Some("asset-hub-westend") => Some("westmint"),
+									 Some("asset-hub-rococo") => Some("rockmine"),
 									 _ => None
 								};
 								if let Some(old_name)= old_name {
@@ -890,11 +892,7 @@ pub fn run() -> Result<()> {
 										.join(database_path.file_name().expect("failed to get database file name"));
 
 									if old_path.exists() && !database_path.exists() {
-										info!("renaming old db dir from {:?} to {:?}", old_path, database_path);
-										std::fs::create_dir_all(database_path)
-											.expect("failed to create new db dir");
-										std::fs::rename(old_path, database_path)
-											.expect("failed to rename db to new name. Please do this manually.");
+										panic!("Please rename the old db dir from {:?} to be at {:?}", old_path, database_path);
 									}
 								}
 							}
