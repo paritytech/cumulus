@@ -102,9 +102,9 @@ impl sc_executor::NativeExecutionDispatch for AssetHubPolkadotRuntimeExecutor {
 }
 
 /// Native Asset Hub Kusama (Statemine) executor instance.
-pub struct AssetHubPolkadotKusamaExecutor;
+pub struct AssetHubKusamaExecutor;
 
-impl sc_executor::NativeExecutionDispatch for AssetHubPolkadotKusamaExecutor {
+impl sc_executor::NativeExecutionDispatch for AssetHubKusamaExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -117,9 +117,9 @@ impl sc_executor::NativeExecutionDispatch for AssetHubPolkadotKusamaExecutor {
 }
 
 /// Native Asset Hub Westend (Westmint) executor instance.
-pub struct AssetHubPolkadotWestendExecutor;
+pub struct AssetHubWestendExecutor;
 
-impl sc_executor::NativeExecutionDispatch for AssetHubPolkadotWestendExecutor {
+impl sc_executor::NativeExecutionDispatch for AssetHubWestendExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {

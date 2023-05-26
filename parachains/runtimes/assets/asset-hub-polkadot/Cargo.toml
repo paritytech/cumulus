@@ -3,7 +3,7 @@ name = "asset-hub-polkadot-runtime"
 version = "0.9.420"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
-description = "Asset Hub parachain runtime"
+description = "Asset Hub Polkadot parachain runtime"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }

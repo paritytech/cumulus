@@ -18,8 +18,8 @@ use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{
-		new_partial, AssetHubPolkadotKusamaExecutor, AssetHubPolkadotRuntimeExecutor,
-		AssetHubPolkadotWestendExecutor, Block, BridgeHubKusamaRuntimeExecutor,
+		new_partial, AssetHubKusamaExecutor, AssetHubPolkadotRuntimeExecutor,
+		AssetHubWestendExecutor, Block, BridgeHubKusamaRuntimeExecutor,
 		BridgeHubPolkadotRuntimeExecutor, BridgeHubRococoRuntimeExecutor,
 		CollectivesPolkadotRuntimeExecutor, GluttonRuntimeExecutor,
 	},
@@ -690,8 +690,8 @@ pub fn run() -> Result<()> {
 						runner.sync_run(|config| {
 							match config.chain_spec.runtime() {
 							Runtime::AssetHubKusama =>
-								cmd.run::<Block, AssetHubPolkadotKusamaExecutor>(config),
-							Runtime::AssetHubWestend => cmd.run::<Block, AssetHubPolkadotWestendExecutor>(config),
+								cmd.run::<Block, AssetHubKusamaExecutor>(config),
+							Runtime::AssetHubWestend => cmd.run::<Block, AssetHubWestendExecutor>(config),
 							Runtime::AssetHubPolkadot =>
 								cmd.run::<Block, AssetHubPolkadotRuntimeExecutor>(config),
 							Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
@@ -779,7 +779,7 @@ pub fn run() -> Result<()> {
 			match runner.config().chain_spec.runtime() {
 				Runtime::AssetHubKusama => runner.async_run(|_| {
 					Ok((
-						cmd.run::<Block, HostFunctionsOf<AssetHubPolkadotKusamaExecutor>, _>(Some(
+						cmd.run::<Block, HostFunctionsOf<AssetHubKusamaExecutor>, _>(Some(
 							info_provider,
 						)),
 						task_manager,
@@ -787,7 +787,7 @@ pub fn run() -> Result<()> {
 				}),
 				Runtime::AssetHubWestend => runner.async_run(|_| {
 					Ok((
-						cmd.run::<Block, HostFunctionsOf<AssetHubPolkadotWestendExecutor>, _>(Some(
+						cmd.run::<Block, HostFunctionsOf<AssetHubWestendExecutor>, _>(Some(
 							info_provider,
 						)),
 						task_manager,

@@ -321,7 +321,11 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	ConvertedConcreteId<
 		AssetIdForTrustBackedAssets,
 		u64,
-		AsPrefixedGeneralIndex<StatemintAssetsPalletLocation, AssetIdForTrustBackedAssets, JustTry>,
+		AsPrefixedGeneralIndex<
+			SystemAssetHubAssetsPalletLocation,
+			AssetIdForTrustBackedAssets,
+			JustTry,
+		>,
 		JustTry,
 	>,
 	// Convert an XCM MultiLocation into a local account id:
@@ -393,14 +397,14 @@ pub type Barrier = (
 
 parameter_types! {
 	pub MaxAssetsIntoHolding: u32 = 64;
-	pub StatemintLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
+	pub SystemAssetHubLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
 	// ALWAYS ensure that the index in PalletInstance stays up-to-date with
-	// Asset Hub Polkadot's Assets pallet index
-	pub StatemintAssetsPalletLocation: MultiLocation =
+	// the Relay Chain's Asset Hub's Assets pallet index
+	pub SystemAssetHubAssetsPalletLocation: MultiLocation =
 		MultiLocation::new(1, X2(Parachain(1000), PalletInstance(50)));
 }
 
-pub type Reserves = (NativeAsset, AssetsFrom<StatemintLocation>);
+pub type Reserves = (NativeAsset, AssetsFrom<SystemAssetHubLocation>);
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {

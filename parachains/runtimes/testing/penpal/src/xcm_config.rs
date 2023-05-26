@@ -94,7 +94,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	ConvertedConcreteId<
 		AssetIdPalletAssets,
 		Balance,
-		AsPrefixedGeneralIndex<CommonGoodAssetsPalletLocation, AssetIdPalletAssets, JustTry>,
+		AsPrefixedGeneralIndex<SystemAssetHubAssetsPalletLocation, AssetIdPalletAssets, JustTry>,
 		JustTry,
 	>,
 	// Convert an XCM MultiLocation into a local account id:
@@ -256,15 +256,15 @@ impl ContainsPair<MultiAsset, MultiLocation> for MultiNativeAsset {
 }
 
 parameter_types! {
-	pub CommonGoodAssetsLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
+	pub SystemAssetHubLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
 	// ALWAYS ensure that the index in PalletInstance stays up-to-date with
-	// Asset Hub Polkadot's Assets pallet index
-	pub CommonGoodAssetsPalletLocation: MultiLocation =
+	// the Relay Chain's Asset Hub's Assets pallet index
+	pub SystemAssetHubAssetsPalletLocation: MultiLocation =
 		MultiLocation::new(1, X2(Parachain(1000), PalletInstance(50)));
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
-pub type Reserves = (NativeAsset, AssetsFrom<CommonGoodAssetsLocation>);
+pub type Reserves = (NativeAsset, AssetsFrom<SystemAssetHubLocation>);
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
