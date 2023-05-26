@@ -93,8 +93,8 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("asset-hub-westend"),
-	impl_name: create_runtime_str!("asset-hub-westend"),
+	spec_name: create_runtime_str!("westmint"),
+	impl_name: create_runtime_str!("westmint"),
 	authoring_version: 1,
 	spec_version: 9420,
 	impl_version: 0,

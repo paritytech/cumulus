@@ -94,8 +94,8 @@ impl_opaque_keys! {
 #[cfg(feature = "state-trie-version-1")]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("asset-hub-kusama"),
-	impl_name: create_runtime_str!("asset-hub-kusama"),
+	spec_name: create_runtime_str!("statemine"),
+	impl_name: create_runtime_str!("statemine"),
 	authoring_version: 1,
 	spec_version: 9420,
 	impl_version: 0,
@@ -107,8 +107,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 #[cfg(not(feature = "state-trie-version-1"))]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("asset-hub-kusama"),
-	impl_name: create_runtime_str!("asset-hub-kusama"),
+	spec_name: create_runtime_str!("statemine"),
+	impl_name: create_runtime_str!("statemine"),
 	authoring_version: 1,
 	spec_version: 9420,
 	impl_version: 0,

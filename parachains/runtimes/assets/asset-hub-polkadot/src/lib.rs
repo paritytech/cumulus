@@ -128,8 +128,8 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("asset-hub-polkadot"),
-	impl_name: create_runtime_str!("asset-hub-polkadot"),
+	spec_name: create_runtime_str!("statemint"),
+	impl_name: create_runtime_str!("statemint"),
 	authoring_version: 1,
 	spec_version: 9420,
 	impl_version: 0,
