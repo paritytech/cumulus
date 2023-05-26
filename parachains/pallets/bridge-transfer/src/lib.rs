@@ -620,15 +620,17 @@ pub mod pallet {
 			assets: MultiAssets,
 			bridge_config: BridgeConfig,
 		) -> Result<(), DispatchError> {
-			// Resolve reserve account as sovereign account of bridge
-			let reserve_account = bridge_config.bridge_location;
+			// Resolve reserve account
+			let reserve_account =
+				Self::resolve_reserve_account(&bridge_config, &remote_destination);
 
-			let allowed_target_location = bridge_config.allowed_target_location;
+			// Resolve target destination
+			let target_destination = bridge_config.allowed_target_location;
 
 			// UniversalLocation as sovereign account location on target_location (as target_location sees UniversalLocation)
 			let universal_location_as_sovereign_account_on_target_location =
 				T::UniversalLocation::get()
-					.invert_target(&allowed_target_location)
+					.invert_target(&target_destination)
 					.map_err(|_| Error::<T>::InvalidConfiguration)?;
 
 			// Prepare some XcmContext
@@ -674,16 +676,17 @@ pub mod pallet {
 			}
 
 			// Prepare `ReserveAssetDeposited` msg to bridge to the other side.
+
 			// Reanchor stuff - we need to convert local asset id/MultiLocation to format that could be understood by different consensus and from their point-of-view
-			reserved_assets.reanchor(&allowed_target_location, T::UniversalLocation::get(), None);
+			reserved_assets.reanchor(&target_destination, T::UniversalLocation::get(), None);
 			let remote_destination = remote_destination
-				.reanchored(&allowed_target_location, T::UniversalLocation::get())
+				.reanchored(&target_destination, T::UniversalLocation::get())
 				.map_err(|errored_dest| {
 				log::error!(
 					target: LOG_TARGET,
-					"Failed to reanchor remote_destination: {:?} for allowed_target_location: {:?} and universal_location: {:?}",
+					"Failed to reanchor remote_destination: {:?} for target_destination: {:?} and universal_location: {:?}",
 					errored_dest,
-					allowed_target_location,
+					target_destination,
 					T::UniversalLocation::get()
 				);
 				Error::<T>::InvalidRemoteDestination
@@ -726,7 +729,7 @@ pub mod pallet {
 			}
 
 			Self::initiate_bridge_transfer(
-				allowed_target_location,
+				target_destination,
 				xcm_context.message_id,
 				xcm_instructions.into(),
 			)
@@ -768,6 +771,15 @@ pub mod pallet {
 				sender_cost,
 			});
 			Ok(())
+		}
+
+		/// Resolve (sovereign) account which will be used as reserve account
+		fn resolve_reserve_account(
+			bridge_conig: &BridgeConfig,
+			_remote_destination: &MultiLocation,
+		) -> MultiLocation {
+			// lets start with target_location
+			bridge_conig.allowed_target_location.clone()
 		}
 	}
 }

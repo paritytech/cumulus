@@ -1589,8 +1589,6 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 			let bridged_network = ByGenesis([6; 32]);
 			let bridge_hub_para_id = 1013;
 			let bridge_hub_location = (Parent, Parachain(bridge_hub_para_id)).into();
-			let bridge_hub_account = LocationToAccountId::convert_ref(&bridge_hub_location)
-				.expect("BridgeHub's Sovereign account");
 			let target_location_from_different_consensus =
 				MultiLocation::new(2, X2(GlobalConsensus(bridged_network), Parachain(1000)));
 			let target_location_fee: MultiAsset = (MultiLocation::parent(), 1_000_000).into();
@@ -1600,6 +1598,9 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 				allowed_target_location: target_location_from_different_consensus,
 				max_target_location_fee: Some(target_location_fee.clone()),
 			};
+			let reserve_account =
+				LocationToAccountId::convert_ref(&target_location_from_different_consensus)
+					.expect("Sovereign account for reserves");
 			let balance_to_transfer = 1000_u128;
 			let native_asset = MultiLocation::parent();
 
@@ -1615,9 +1616,9 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 				&alice_account,
 				alice_account_init_balance.clone(),
 			);
-			// SA needs to have at least ED, anyway making reserve fails
+			// SA of target location needs to have at least ED, anyway making reserve fails
 			let _ = <pallet_balances::Pallet<Runtime>>::deposit_creating(
-				&bridge_hub_account,
+				&reserve_account,
 				existential_deposit,
 			);
 
@@ -1630,7 +1631,7 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 			);
 			// SA has just ED
 			assert_eq!(
-				<pallet_balances::Pallet<Runtime>>::free_balance(&bridge_hub_account),
+				<pallet_balances::Pallet<Runtime>>::free_balance(&reserve_account),
 				existential_deposit
 			);
 
@@ -1670,7 +1671,7 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 			);
 			// check reserve account increased
 			assert_eq!(
-				<pallet_balances::Pallet<Runtime>>::free_balance(&bridge_hub_account),
+				<pallet_balances::Pallet<Runtime>>::free_balance(&reserve_account),
 				existential_deposit + balance_to_transfer.into()
 			);
 
