@@ -1683,35 +1683,37 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 				pallet_bridge_transfer::Event::ReserveAssetsDeposited { .. }
 			)));
 			let transfer_initiated_event = bridge_transfer_events.find_map(|e| match e {
-				pallet_bridge_transfer::Event::TransferInitiated { message_hash, sender_cost } =>
-					Some((message_hash, sender_cost)),
+				pallet_bridge_transfer::Event::TransferInitiated {
+					message_id,
+					forwarded_message_id,
+					sender_cost,
+				} => Some((message_id, forwarded_message_id, sender_cost)),
 				_ => None,
 			});
-			let xcm_hash = match transfer_initiated_event {
-				Some((message_hash, sender_cost)) => {
-					assert!(sender_cost.is_none());
-					Some(message_hash)
-				},
-				_ => {
-					assert!(false, "No `TransferInitiated` was fired");
-					None
-				},
-			};
+			assert!(transfer_initiated_event.is_some());
+			let (message_id, forwarded_message_id, sender_cost) = transfer_initiated_event.unwrap();
+			// we expect UnpaidRemoteExporter
+			assert!(sender_cost.is_none());
 
-			let mut xcmp_queue_events = <frame_system::Pallet<Runtime>>::events()
+			// check that xcm was sent
+			let xcm_sent_message_hash = <frame_system::Pallet<Runtime>>::events()
 				.into_iter()
-				.filter_map(|e| unwrap_xcmp_queue_event(e.event.encode()));
-			let xcm_hash_sent = xcmp_queue_events.find_map(|e| match e {
-				cumulus_pallet_xcmp_queue::Event::XcmpMessageSent { message_hash } => message_hash,
-				_ => None,
-			});
-			assert_eq!(xcm_hash, xcm_hash_sent);
+				.filter_map(|e| unwrap_xcmp_queue_event(e.event.encode()))
+				.find_map(|e| match e {
+					cumulus_pallet_xcmp_queue::Event::XcmpMessageSent { message_hash } =>
+						Some(message_hash),
+					_ => None,
+				});
 
 			// read xcm
-			let xcm_sent = RuntimeHelper::<HrmpChannelSource>::take_xcm(bridge_hub_para_id.into());
-			assert!(xcm_sent.is_some());
-			let mut xcm_sent: Xcm<()> = xcm_sent.unwrap().try_into().expect("versioned xcm");
-			println!("{:?}", xcm_sent);
+			let xcm_sent =
+				RuntimeHelper::<HrmpChannelSource>::take_xcm(bridge_hub_para_id.into()).unwrap();
+			println!("xcm_sent: {:?}", xcm_sent);
+			assert_eq!(
+				xcm_sent_message_hash,
+				Some(xcm_sent.using_encoded(sp_io::hashing::blake2_256))
+			);
+			let mut xcm_sent: Xcm<()> = xcm_sent.try_into().expect("versioned xcm");
 
 			// check sent XCM ExportMessage to bridge-hub
 			assert!(xcm_sent
@@ -1813,12 +1815,24 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 								}
 							})
 							.expect("contains DepositAsset")
+							.match_next_inst(|instr| match instr {
+								SetTopic(ref topic) if topic.eq(&message_id) => Ok(()),
+								_ => Err(ProcessMessageError::BadFormat),
+							})
+							.expect("contains SetTopic")
 							.assert_remaining_insts(0)
 							.is_ok());
 						Ok(())
 					},
 					_ => Err(ProcessMessageError::BadFormat),
 				})
+				.expect("contains ExportMessage")
+				.match_next_inst(|instr| match instr {
+					SetTopic(ref topic) if topic.eq(&forwarded_message_id) => Ok(()),
+					_ => Err(ProcessMessageError::BadFormat),
+				})
+				.expect("contains SetTopic")
+				.assert_remaining_insts(0)
 				.is_ok());
 		})
 }
@@ -2085,12 +2099,12 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 			);
 
 			// check NO asset trap occurred
-			let mut pallet_xcm_events = <frame_system::Pallet<Runtime>>::events()
-				.into_iter()
-				.filter_map(|e| unwrap_pallet_xcm_event(e.event.encode()));
 			assert_eq!(
 				false,
-				pallet_xcm_events.any(|e| matches!(e, pallet_xcm::Event::AssetsTrapped(..)))
+				<frame_system::Pallet<Runtime>>::events()
+					.into_iter()
+					.filter_map(|e| unwrap_pallet_xcm_event(e.event.encode()))
+					.any(|e| matches!(e, pallet_xcm::Event::AssetsTrapped { .. }))
 			);
 		})
 }

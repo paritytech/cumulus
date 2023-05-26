@@ -117,7 +117,7 @@ pub mod pallet {
 
 	use super::*;
 	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::*;
+	use frame_system::{pallet_prelude::*, unique};
 	use xcm_executor::traits::TransactAsset;
 
 	#[pallet::pallet]
@@ -268,7 +268,14 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Transfer was successfully entered to the system (does not mean already delivered)
-		TransferInitiated { message_hash: XcmHash, sender_cost: MultiAssets },
+		TransferInitiated {
+			/// `XcmHash` from `XcmContext` which is used for `AssetTransactor` processing and is related to the original message constructed here
+			message_id: XcmHash,
+			/// `XcmHash` from `SendXcm` (which is used for `ExportMessage` envelope)
+			forwarded_message_id: XcmHash,
+			/// `SendXcm` cost
+			sender_cost: MultiAssets,
+		},
 
 		/// Reserve asset passed
 		ReserveAssetsDeposited { from: MultiLocation, to: MultiLocation, assets: MultiAssets },
@@ -358,7 +365,8 @@ pub mod pallet {
 					.ok_or(Error::<T>::UnsupportedPing)?;
 
 			// Initiate bridge transfer
-			Self::initiate_bridge_transfer(allowed_target_location, xcm).map_err(Into::into)
+			Self::initiate_bridge_transfer(allowed_target_location, unique(&xcm), xcm)
+				.map_err(Into::into)
 		}
 
 		/// Adds new bridge configuration, which allows transfer to this `bridged_network`.
@@ -623,6 +631,9 @@ pub mod pallet {
 					.invert_target(&allowed_target_location)
 					.map_err(|_| Error::<T>::InvalidConfiguration)?;
 
+			// Prepare some XcmContext
+			let xcm_context = XcmContext::with_message_id(unique(reserve_account));
+
 			// lets try to do a reserve for all assets
 			let mut reserved_assets = xcm_executor::Assets::new();
 			for asset in assets.into_inner() {
@@ -638,9 +649,7 @@ pub mod pallet {
 					&asset,
 					&origin_location,
 					&reserve_account,
-					// We aren't able to track the XCM that initiated the fee deposit, so we create a
-					// fake message hash here
-					&XcmContext::with_message_hash([0; 32]),
+					&xcm_context,
 				)
 					.and_then(|reserved_asset| {
 						Self::deposit_event(Event::ReserveAssetsDeposited {
@@ -716,21 +725,34 @@ pub mod pallet {
 				]);
 			}
 
-			Self::initiate_bridge_transfer(allowed_target_location, xcm_instructions.into())
-				.map_err(Into::into)
+			Self::initiate_bridge_transfer(
+				allowed_target_location,
+				xcm_context.message_id,
+				xcm_instructions.into(),
+			)
+			.map_err(Into::into)
 		}
 
-		fn initiate_bridge_transfer(dest: MultiLocation, xcm: Xcm<()>) -> Result<(), Error<T>> {
+		fn initiate_bridge_transfer(
+			dest: MultiLocation,
+			message_id: XcmHash,
+			mut xcm: Xcm<()>,
+		) -> Result<(), Error<T>> {
+			// append message_id
+			xcm.0.extend(sp_std::vec![SetTopic(message_id.clone())]);
+
 			log::info!(
 				target: LOG_TARGET,
-				"[T::BridgeXcmSender] send to bridge, dest: {:?}, xcm: {:?}",
+				"[T::BridgeXcmSender] send to bridge, dest: {:?}, xcm: {:?}, message_id: {:?}",
 				dest,
 				xcm,
+				message_id,
 			);
+
 			// call bridge
 			// TODO: check-parameter - should we handle `sender_cost` somehow ?
-			let (message_hash, sender_cost) =
-				send_xcm::<T::BridgeXcmSender>(dest, xcm).map_err(|e| {
+			let (forwarded_message_id, sender_cost) = send_xcm::<T::BridgeXcmSender>(dest, xcm)
+				.map_err(|e| {
 					log::error!(
 						target: LOG_TARGET,
 						"[T::BridgeXcmSender] SendError occurred, error: {:?}",
@@ -740,7 +762,11 @@ pub mod pallet {
 				})?;
 
 			// just fire event
-			Self::deposit_event(Event::TransferInitiated { message_hash, sender_cost });
+			Self::deposit_event(Event::TransferInitiated {
+				message_id,
+				forwarded_message_id,
+				sender_cost,
+			});
 			Ok(())
 		}
 	}
