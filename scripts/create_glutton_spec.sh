@@ -1,7 +1,16 @@
 #!/usr/bin/env bash
 
-# Example for `compute` and `storage` at 50% and 5120 `trash_data_count`
-# ./scripts/create_glutton_spec.sh ./target/release/polkadot-parachain rococo 1300 1305 G7Z5mTmTQsjEGBVqVGDZyR9m7RoHNZJk6JeykyfKQ3vmBiR 500000000 500000000 5120 output-dir
+# Example usage to:
+#
+# - Use the `polkadot-parachain` binary;
+# - Use `rococo` as the parent Relay Chain;
+# - Generate `ParaId`s from 1,300 to 1,370, inclusive;
+# - Set the Sudo key to `G7Z5mTmTQsjEGBVqVGDZyR9m7RoHNZJk6JeykyfKQ3vmBiR`;
+# - Set `compute`, `storage`, and `trash_data_count` set to 50%, 50%, and 5,120, respectively;
+# - And save the results in `output-dir`.
+#
+# ./scripts/create_glutton_spec.sh ./target/release/polkadot-parachain rococo 1300 1370 G7Z5mTmTQsjEGBVqVGDZyR9m7RoHNZJk6JeykyfKQ3vmBiR 500000000 500000000 5120 output-dir
+
 usage() {
     echo Usage:
     echo "$0 <binary path> <relay chain> <from parachain id> <to parachain id> <sudo key> <compute> <storage> <trash_data_count> <output dir>"
