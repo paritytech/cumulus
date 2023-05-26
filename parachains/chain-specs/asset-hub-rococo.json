@@ -1,6 +1,6 @@
 {
   "name": "Rococo Asset Hub",
-  "id": "asset-hub-rococo",
+  "id": "statemine-rococo",
   "chainType": "Live",
   "bootNodes": [
     "/dns/rococo-rockmine-collator-node-0.parity-testnet.parity.io/tcp/30333/p2p/12D3KooWRrZMndHAopzao34uGsN7srjS3gh9nAjTGKLSyJeU31Lg",

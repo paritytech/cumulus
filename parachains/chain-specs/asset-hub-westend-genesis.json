@@ -1,6 +1,6 @@
 {
   "name": "Westend Asset Hub",
-  "id": "asset-hub-westend",
+  "id": "westmint",
   "chainType": "Live",
   "bootNodes": [
     "/ip4/127.0.0.1/tcp/30333/p2p/12D3KooWQWfQ6EBNgik1sW5by9vYagzrdsohc6NafeGPU4upnLRp"

@@ -1,6 +1,6 @@
 {
   "name": "Polkadot Asset Hub",
-  "id": "asset-hub-polkadot",
+  "id": "statemint",
   "chainType": "Live",
   "bootNodes": [
     "/ip4/34.65.251.121/tcp/30334/p2p/12D3KooWG3GrM6XKMM4gp3cvemdwUvu96ziYoJmqmetLZBXE8bSa",

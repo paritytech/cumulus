@@ -1,6 +1,6 @@
 {
   "name": "Kusama Asset Hub",
-  "id": "asset-hub-kusama",
+  "id": "statemine",
   "chainType": "Live",
   "bootNodes": [
     "/ip4/34.77.217.152/tcp/30334/p2p/12D3KooWF63ZxKtZMYs5247WQA8fcTiGJb2osXykc31cmjwNLwem",
