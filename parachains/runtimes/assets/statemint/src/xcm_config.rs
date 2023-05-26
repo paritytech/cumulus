@@ -38,7 +38,7 @@ use xcm_builder::{
 	LocalMint, NativeAsset, NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
-	WeightInfoBounds, WithComputedOrigin,
+	WeightInfoBounds, WithComputedOrigin, WithUniqueTopic, TrailingSetTopicAsId,
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
@@ -341,7 +341,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 	}
 }
 
-pub type Barrier = DenyThenTry<
+pub type Barrier = TrailingSetTopicAsId<DenyThenTry<
 	DenyReserveTransferToRelayChain,
 	(
 		TakeWeightCredit,
@@ -361,7 +361,7 @@ pub type Barrier = DenyThenTry<
 			ConstU32<8>,
 		>,
 	),
->;
+>>;
 
 pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<
 	Runtime,
@@ -429,12 +429,12 @@ pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, R
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
-pub type XcmRouter = (
+pub type XcmRouter = WithUniqueTopic<(
 	// Two routers - use UMP to communicate with the relay chain:
 	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, ()>,
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
-);
+)>;
 
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
