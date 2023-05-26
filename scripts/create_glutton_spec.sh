@@ -19,6 +19,11 @@ usage() {
 
 set -e
 
+if ! command -v jq >/dev/null 2>&1; then
+    echo "'jq' is not installed, please install. Exiting..."
+    exit 1
+fi
+
 binary_path=$1
 relay_chain=$2
 from_para_id=$3
