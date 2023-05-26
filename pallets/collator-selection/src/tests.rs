@@ -66,6 +66,7 @@ fn it_should_set_invulnerables() {
 #[test]
 fn add_invulnerable_works() {
 	new_test_ext().execute_with(|| {
+		initialize_to_block(1);
 		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
 		let new = 3;
 
@@ -73,6 +74,10 @@ fn add_invulnerable_works() {
 		assert_ok!(CollatorSelection::add_invulnerable(
 			RuntimeOrigin::signed(RootAccount::get()),
 			new
+		));
+
+		System::assert_last_event(RuntimeEvent::CollatorSelection(
+			crate::Event::InvulnerableAdded { account_id: new },
 		));
 
 		// same element cannot be added more than once
@@ -147,6 +152,7 @@ fn invulnerable_limit_works() {
 #[test]
 fn remove_invulnerable_works() {
 	new_test_ext().execute_with(|| {
+		initialize_to_block(1);
 		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
 
 		assert_ok!(CollatorSelection::add_invulnerable(
@@ -165,6 +171,9 @@ fn remove_invulnerable_works() {
 			2
 		));
 
+		System::assert_last_event(RuntimeEvent::CollatorSelection(
+			crate::Event::InvulnerableRemoved { account_id: 2 },
+		));
 		assert_eq!(CollatorSelection::invulnerables(), vec![1, 3, 4]);
 
 		// cannot remove invulnerable not in the list
