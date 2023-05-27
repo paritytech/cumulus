@@ -209,6 +209,100 @@ pub mod polkadot {
 	}
 }
 
+pub mod westend {
+	use super::*;
+	pub const ED: Balance = westend_runtime_constants::currency::EXISTENTIAL_DEPOSIT;
+	const STASH: u128 = 100 * westend_runtime_constants::currency::UNITS;
+
+	pub fn get_host_config() -> HostConfiguration<BlockNumber> {
+		HostConfiguration {
+			max_upward_queue_count: 10,
+			max_upward_queue_size: 51200,
+			max_upward_message_size: 51200,
+			max_upward_message_num_per_candidate: 10,
+			max_downward_message_size: 51200,
+			..Default::default()
+		}
+	}
+
+	fn session_keys(
+		babe: BabeId,
+		grandpa: GrandpaId,
+		im_online: ImOnlineId,
+		para_validator: ValidatorId,
+		para_assignment: AssignmentId,
+		authority_discovery: AuthorityDiscoveryId,
+	) -> westend_runtime::SessionKeys {
+		westend_runtime::SessionKeys {
+			babe,
+			grandpa,
+			im_online,
+			para_validator,
+			para_assignment,
+			authority_discovery,
+		}
+	}
+
+	pub fn genesis() -> Storage {
+		let genesis_config = westend_runtime::GenesisConfig {
+			system: westend_runtime::SystemConfig {
+				code: westend_runtime::WASM_BINARY.unwrap().to_vec(),
+			},
+			balances: westend_runtime::BalancesConfig {
+				balances: accounts::init_balances()
+					.iter()
+					.cloned()
+					.map(|k| (k, ED * 4096))
+					.collect(),
+			},
+			session: westend_runtime::SessionConfig {
+				keys: validators::initial_authorities()
+					.iter()
+					.map(|x| {
+						(
+							x.0.clone(),
+							x.0.clone(),
+							westend::session_keys(
+								x.2.clone(),
+								x.3.clone(),
+								x.4.clone(),
+								x.5.clone(),
+								x.6.clone(),
+								x.7.clone(),
+							),
+						)
+					})
+					.collect::<Vec<_>>(),
+			},
+			staking: westend_runtime::StakingConfig {
+				validator_count: validators::initial_authorities().len() as u32,
+				minimum_validator_count: 1,
+				stakers: validators::initial_authorities()
+					.iter()
+					.map(|x| {
+						(x.0.clone(), x.1.clone(), STASH, westend_runtime::StakerStatus::Validator)
+					})
+					.collect(),
+				invulnerables: validators::initial_authorities()
+					.iter()
+					.map(|x| x.0.clone())
+					.collect(),
+				force_era: pallet_staking::Forcing::ForceNone,
+				slash_reward_fraction: Perbill::from_percent(10),
+				..Default::default()
+			},
+			babe: westend_runtime::BabeConfig {
+				authorities: Default::default(),
+				epoch_config: Some(westend_runtime::BABE_GENESIS_EPOCH_CONFIG),
+			},
+			configuration: westend_runtime::ConfigurationConfig { config: get_host_config() },
+			..Default::default()
+		};
+
+		genesis_config.build_storage().unwrap()
+	}
+}
+
 // Kusama
 pub mod kusama {
 	use super::*;
@@ -359,7 +453,60 @@ pub mod statemint {
 	}
 }
 
-// Statemint
+// Westmint
+pub mod westmint {
+	use super::*;
+	pub const PARA_ID: u32 = 1000;
+	pub const ED: Balance = westmint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+
+	pub fn genesis() -> Storage {
+		let genesis_config = westmint_runtime::GenesisConfig {
+			system: westmint_runtime::SystemConfig {
+				code: westmint_runtime::WASM_BINARY
+					.expect("WASM binary was not build, please build it!")
+					.to_vec(),
+			},
+			balances: westmint_runtime::BalancesConfig {
+				balances: accounts::init_balances()
+					.iter()
+					.cloned()
+					.map(|k| (k, ED * 4096))
+					.collect(),
+			},
+			parachain_info: westmint_runtime::ParachainInfoConfig { parachain_id: PARA_ID.into() },
+			collator_selection: westmint_runtime::CollatorSelectionConfig {
+				invulnerables: collators::invulnerables_statemint()
+					.iter()
+					.cloned()
+					.map(|(acc, _)| acc)
+					.collect(),
+				candidacy_bond: ED * 16,
+				..Default::default()
+			},
+			session: westmint_runtime::SessionConfig {
+				keys: collators::invulnerables()
+					.into_iter()
+					.map(|(acc, aura)| {
+						(
+							acc.clone(),                            // account id
+							acc,                                    // validator id
+							westmint_runtime::SessionKeys { aura }, // session keys
+						)
+					})
+					.collect(),
+			},
+			aura: Default::default(),
+			aura_ext: Default::default(),
+			parachain_system: Default::default(),
+			polkadot_xcm: westmint_runtime::PolkadotXcmConfig {
+				safe_xcm_version: Some(SAFE_XCM_VERSION),
+			},
+		};
+
+		genesis_config.build_storage().unwrap()
+	}
+}
+// Statemine
 pub mod statemine {
 	use super::*;
 	pub const PARA_ID: u32 = 1000;

@@ -4878,6 +4878,9 @@ dependencies = [
  "sp-weights",
  "statemine-runtime",
  "statemint-runtime",
+ "westend-runtime",
+ "westend-runtime-constants",
+ "westmint-runtime",
  "xcm",
  "xcm-emulator",
  "xcm-executor",
@@ -15685,6 +15688,33 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-weights",
+]
+
+[[package]]
+name = "westmint-it"
+version = "1.0.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "integration-tests-common",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-xcm",
+ "parachains-common",
+ "parity-scale-codec",
+ "penpal-runtime",
+ "polkadot-core-primitives",
+ "polkadot-parachain",
+ "polkadot-runtime",
+ "polkadot-runtime-parachains",
+ "sp-core",
+ "sp-runtime",
+ "sp-weights",
+ "westend-runtime",
+ "westmint-runtime",
+ "xcm",
+ "xcm-emulator",
+ "xcm-executor",
 ]
 
 [[package]]

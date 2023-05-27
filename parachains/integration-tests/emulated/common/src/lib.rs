@@ -3,7 +3,7 @@ pub mod constants;
 pub use constants::{
 	accounts::{ALICE, BOB},
 	bridge_hub_kusama, bridge_hub_polkadot, collectives, kusama, penpal, polkadot, statemine,
-	statemint,
+	statemint, westend, westmint,
 };
 use frame_support::{parameter_types, sp_io, sp_tracing};
 pub use parachains_common::{AccountId, AuraId, Balance, BlockNumber, StatemintAuraId};
@@ -16,6 +16,25 @@ use xcm_emulator::{
 use xcm_executor::traits::Convert;
 
 decl_test_relay_chains! {
+	pub struct Westend {
+		genesis = westend::genesis(),
+		on_init = (),
+		runtime = {
+			Runtime: westend_runtime::Runtime,
+			RuntimeOrigin: westend_runtime::RuntimeOrigin,
+			RuntimeCall: westend_runtime::RuntimeCall,
+			RuntimeEvent: westend_runtime::RuntimeEvent,
+			MessageQueue: westend_runtime::MessageQueue,
+			XcmConfig: westend_runtime::xcm_config::XcmConfig,
+			SovereignAccountOf: westend_runtime::xcm_config::LocationConverter, //TODO: rename to SovereignAccountOf,
+			System: westend_runtime::System,
+			Balances: westend_runtime::Balances,
+		},
+		pallets_extra = {
+			XcmPallet: westend_runtime::XcmPallet,
+			Sudo: westend_runtime::Sudo,
+		}
+	},
 	pub struct Polkadot {
 		genesis = polkadot::genesis(),
 		on_init = (),
@@ -55,6 +74,28 @@ decl_test_relay_chains! {
 }
 
 decl_test_parachains! {
+	// Westend
+	pub struct Westmint {
+		genesis = westmint::genesis(),
+		on_init = (),
+		runtime = {
+			Runtime: westmint_runtime::Runtime,
+			RuntimeOrigin: westmint_runtime::RuntimeOrigin,
+			RuntimeCall: westmint_runtime::RuntimeCall,
+			RuntimeEvent: westmint_runtime::RuntimeEvent,
+			XcmpMessageHandler: westmint_runtime::XcmpQueue,
+			DmpMessageHandler: westmint_runtime::DmpQueue,
+			LocationToAccountId: westmint_runtime::xcm_config::LocationToAccountId,
+			System: westmint_runtime::System,
+			Balances: westmint_runtime::Balances,
+			ParachainSystem: westmint_runtime::ParachainSystem,
+			ParachainInfo: westmint_runtime::ParachainInfo,
+		},
+		pallets_extra = {
+			PolkadotXcm: westmint_runtime::PolkadotXcm,
+			Assets: westmint_runtime::Assets,
+		}
+	},
 	// Polkadot
 	pub struct Statemint {
 		genesis = statemint::genesis(),
@@ -98,6 +139,7 @@ decl_test_parachains! {
 			Assets: penpal_runtime::Assets,
 		}
 	},
+	
 	// Kusama
 	pub struct Statemine {
 		genesis = statemine::genesis(),
