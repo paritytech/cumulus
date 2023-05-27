@@ -39,7 +39,7 @@ use xcm::{
 	opaque::lts::{
 		Junction,
 		Junction::Parachain,
-		Junctions::{Here, X2, X3},
+		Junctions::{Here, X1, X2, X3},
 	},
 };
 
@@ -151,30 +151,24 @@ where
 					Junction::GeneralIndex(asset_id),
 				),
 		} =>
-		{
 			if ParaId::from(para_id) != SelfParaId::get() {
 				None
 			} else if pallet_index != <Assets as PalletInfoAccess>::index() as u8 {
 				None
 			} else {
 				<u128 as TryInto<u32>>::try_into(asset_id).ok()
-			}
-		},
+			},
 		MultiLocation {
 			parents: 0,
-			interior: X2(
-				Junction::PalletInstance(pallet_index),
-				Junction::GeneralIndex(asset_id)
-			)
-		} => {
+			interior: X2(Junction::PalletInstance(pallet_index), Junction::GeneralIndex(asset_id)),
+		} =>
 			if pallet_index != <Assets as PalletInfoAccess>::index() as u8 {
 				None
 			} else {
 				<u128 as TryInto<u32>>::try_into(asset_id).ok()
-			}
-		}
-		_ => None
-	} 
+			},
+		_ => None,
+	}
 }
 
 pub struct MultiLocationConverter<Balances, SelfParaId: Get<ParaId>> {
@@ -191,16 +185,31 @@ where
 		MultiLocation { parents: 0, interior: Here }
 	}
 
-	fn is_native(asset_id: MultiLocation) -> bool {
-		asset_id == Self::get_native()
+	fn is_native(asset_id: &MultiLocation) -> bool {
+		if *asset_id == Self::get_native() {
+			return true
+		}
+		if *asset_id ==
+			(MultiLocation {
+				parents: 1,
+				interior: X1(Parachain(SelfParaId::get().into())).into(),
+			}) {
+			return true
+		}
+
+		return false
 	}
 
-	fn try_convert(asset: MultiLocation) -> Result<MultiLocation, ()> {
-		Ok(asset)
+	fn try_convert(asset: &MultiLocation) -> Result<MultiLocation, ()> {
+		if Self::is_native(asset) {
+			// Otherwise it will try and touch the asset to create an account.
+			return Err(())
+		}
+		Ok(asset.clone())
 	}
 
-	fn into_multiasset_id(asset: MultiLocation) -> MultiLocation {
-		asset
+	fn into_multiasset_id(asset: &MultiLocation) -> MultiLocation {
+		asset.clone()
 	}
 }
 
@@ -280,7 +289,7 @@ where
 	/// The minimum balance any single account may have.
 	fn minimum_balance(asset: Self::AssetId) -> Self::Balance {
 		if let Some(asset) = is_local::<SelfParaId, Assets>(asset) {
-			Assets::total_issuance(asset)
+			Assets::minimum_balance(asset)
 		} else {
 			ForeignAssets::minimum_balance(asset)
 		}
