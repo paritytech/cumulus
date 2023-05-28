@@ -16,6 +16,7 @@ use xcm_emulator::{
 use xcm_executor::traits::Convert;
 
 decl_test_relay_chains! {
+	#[api_version(5)]
 	pub struct Westend {
 		genesis = westend::genesis(),
 		on_init = (),
@@ -35,6 +36,7 @@ decl_test_relay_chains! {
 			Sudo: westend_runtime::Sudo,
 		}
 	},
+	#[api_version(4)]
 	pub struct Polkadot {
 		genesis = polkadot::genesis(),
 		on_init = (),
@@ -53,6 +55,7 @@ decl_test_relay_chains! {
 			XcmPallet: polkadot_runtime::XcmPallet,
 		}
 	},
+	#[api_version(4)]
 	pub struct Kusama {
 		genesis = kusama::genesis(),
 		on_init = (),
@@ -119,6 +122,27 @@ decl_test_parachains! {
 		}
 	},
 	pub struct PenpalPolkadot {
+		genesis = penpal::genesis(penpal::PARA_ID),
+		on_init = (),
+		runtime = {
+			Runtime: penpal_runtime::Runtime,
+			RuntimeOrigin: penpal_runtime::RuntimeOrigin,
+			RuntimeCall: penpal_runtime::RuntimeCall,
+			RuntimeEvent: penpal_runtime::RuntimeEvent,
+			XcmpMessageHandler: penpal_runtime::XcmpQueue,
+			DmpMessageHandler: penpal_runtime::DmpQueue,
+			LocationToAccountId: penpal_runtime::xcm_config::LocationToAccountId,
+			System: penpal_runtime::System,
+			Balances: penpal_runtime::Balances,
+			ParachainSystem: penpal_runtime::ParachainSystem,
+			ParachainInfo: penpal_runtime::ParachainInfo,
+		},
+		pallets_extra = {
+			PolkadotXcm: penpal_runtime::PolkadotXcm,
+			Assets: penpal_runtime::Assets,
+		}
+	},
+	pub struct PenpalWestend {
 		genesis = penpal::genesis(penpal::PARA_ID),
 		on_init = (),
 		runtime = {
@@ -268,6 +292,7 @@ decl_test_networks! {
 		relay_chain = Westend,
 		parachains = vec![
 			Westmint,
+			PenpalWestend,
 		],
 	}
 }
@@ -297,6 +322,9 @@ parameter_types! {
 	// Penpal Kusama
 	pub PenpalKusamaSender: AccountId = PenpalKusama::account_id_of(ALICE);
 	pub PenpalKusamaReceiver: AccountId = PenpalKusama::account_id_of(BOB);
+	// Penpal Westend
+	pub PenpalWestendSender: AccountId = PenpalWestend::account_id_of(ALICE);
+	pub PenpalWestendReceiver: AccountId = PenpalWestend::account_id_of(BOB);
 	// Collectives
 	pub CollectivesSender: AccountId = Collectives::account_id_of(ALICE);
 	pub CollectivesReceiver: AccountId = Collectives::account_id_of(BOB);
