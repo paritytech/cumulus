@@ -291,11 +291,11 @@ macro_rules! __impl_test_ext_for_relay_chain {
 	// entry point: generate ext name
 	($name:ident, $genesis:expr, $on_init:expr, $api_version:tt) => {
 		$crate::paste::paste! {
-			$crate::__impl_test_ext_for_relay_chain!(@impl $name, $genesis, $on_init, $api_version, [<EXT_ $name:upper>]);
+			$crate::__impl_test_ext_for_relay_chain!(@impl $name, $genesis, $on_init, [<ParachainHostV $api_version>], [<EXT_ $name:upper>]);
 		}
 	};
 	// impl
-	(@impl $name:ident, $genesis:expr, $on_init:expr, 4, $ext_name:ident) => {
+	(@impl $name:ident, $genesis:expr, $on_init:expr, $api_version:ident, $ext_name:ident) => {
 		thread_local! {
 			pub static $ext_name: $crate::RefCell<$crate::sp_io::TestExternalities>
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
@@ -331,76 +331,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				// send messages if needed
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
-						use $crate::polkadot_primitives::runtime_api::runtime_decl_for_parachain_host::ParachainHostV4;
-
-						//TODO: mark sent count & filter out sent msg
-						for para_id in <$name>::para_ids() {
-							// downward messages
-							let downward_messages = <Self as RelayChain>::Runtime::dmq_contents(para_id.into())
-								.into_iter()
-								.map(|inbound| (inbound.sent_at, inbound.msg));
-							if downward_messages.len() == 0 {
-								continue;
-							}
-							<$name>::send_downward_messages(para_id, downward_messages.into_iter());
-
-							// Note: no need to handle horizontal messages, as the
-							// simulator directly sends them to dest (not relayed).
-						}
-					})
-				});
-
-				<$name>::process_messages();
-
-				r
-			}
-
-			fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R {
-				$ext_name.with(|v| {
-					v.borrow_mut().execute_with(|| {
-						func()
-					})
-				})
-			}
-		}
-	};
-	(@impl $name:ident, $genesis:expr, $on_init:expr, 5, $ext_name:ident) => {
-		thread_local! {
-			pub static $ext_name: $crate::RefCell<$crate::sp_io::TestExternalities>
-				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
-		}
-
-		impl TestExt for $name {
-			fn build_new_ext(storage: $crate::Storage) -> $crate::sp_io::TestExternalities {
-				let mut ext = sp_io::TestExternalities::new(storage);
-				ext.execute_with(|| {
-					#[allow(clippy::no_effect)]
-					$on_init;
-					sp_tracing::try_init_simple();
-					<Self as RelayChain>::System::set_block_number(1);
-				});
-				ext
-			}
-
-			fn new_ext() -> $crate::sp_io::TestExternalities {
-				<$name>::build_new_ext($genesis)
-			}
-
-			fn reset_ext() {
-				$ext_name.with(|v| *v.borrow_mut() = <$name>::build_new_ext($genesis));
-			}
-
-			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
-				use $crate::{NetworkComponent};
-				// Make sure the Network is initialized
-				<$name>::init();
-
-				let r = $ext_name.with(|v| v.borrow_mut().execute_with(execute));
-
-				// send messages if needed
-				$ext_name.with(|v| {
-					v.borrow_mut().execute_with(|| {
-						use $crate::polkadot_primitives::runtime_api::runtime_decl_for_parachain_host::ParachainHostV5;
+						use $crate::polkadot_primitives::runtime_api::runtime_decl_for_parachain_host::$api_version;
 
 						//TODO: mark sent count & filter out sent msg
 						for para_id in <$name>::para_ids() {
