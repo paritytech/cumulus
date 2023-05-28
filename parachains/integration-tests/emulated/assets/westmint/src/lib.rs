@@ -8,11 +8,9 @@ pub use integration_tests_common::{
 		polkadot::ED as POLKADOT_ED,
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
-	AccountId,Collectives, CollectivesPallet,
-	CollectivesReceiver, CollectivesSender, 
-	
-	 Westmint,
-	WestmintPallet, WestmintReceiver, WestmintSender,PenpalWestend,
+	AccountId, Collectives, CollectivesPallet, CollectivesReceiver, CollectivesSender,
+	PenpalWestend, Westend, WestendPallet, WestendReceiver, WestendSender, Westmint,
+	WestmintPallet, WestmintReceiver, WestmintSender,
 };
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use xcm::{

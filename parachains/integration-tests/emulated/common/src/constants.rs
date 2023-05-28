@@ -211,8 +211,10 @@ pub mod polkadot {
 
 pub mod westend {
 	use super::*;
+	use westend_runtime_constants::currency::UNITS as WND;
 	pub const ED: Balance = westend_runtime_constants::currency::EXISTENTIAL_DEPOSIT;
-	const STASH: u128 = 100 * westend_runtime_constants::currency::UNITS;
+	const ENDOWMENT: u128 = 1_000_000 * WND;
+	const STASH: u128 = 100 * WND;
 
 	pub fn get_host_config() -> HostConfiguration<BlockNumber> {
 		HostConfiguration {
@@ -252,7 +254,7 @@ pub mod westend {
 				balances: accounts::init_balances()
 					.iter()
 					.cloned()
-					.map(|k| (k, ED * 4096))
+					.map(|k| (k, ENDOWMENT))
 					.collect(),
 			},
 			session: westend_runtime::SessionConfig {
