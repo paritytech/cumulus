@@ -39,13 +39,13 @@ frame_support::construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
-		Aura: pallet_aura::{Pallet, Storage, Config<T>},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		CollatorSelection: collator_selection::{Pallet, Call, Storage, Event<T>},
-		Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent},
+		System: frame_system,
+		Timestamp: pallet_timestamp,
+		Session: pallet_session,
+		Aura: pallet_aura,
+		Balances: pallet_balances,
+		CollatorSelection: collator_selection,
+		Authorship: pallet_authorship,
 	}
 );
 
@@ -96,6 +96,10 @@ impl pallet_balances::Config for Test {
 	type MaxLocks = ();
 	type MaxReserves = MaxReserves;
 	type ReserveIdentifier = [u8; 8];
+	type RuntimeHoldReason = RuntimeHoldReason;
+	type FreezeIdentifier = ();
+	type MaxHolds = ConstU32<0>;
+	type MaxFreezes = ConstU32<0>;
 }
 
 pub struct Author4;
@@ -110,8 +114,6 @@ impl FindAuthor<u64> for Author4 {
 
 impl pallet_authorship::Config for Test {
 	type FindAuthor = Author4;
-	type UncleGenerations = ();
-	type FilterUncle = ();
 	type EventHandler = CollatorSelection;
 }
 
@@ -150,12 +152,12 @@ pub struct TestSessionHandler;
 impl pallet_session::SessionHandler<u64> for TestSessionHandler {
 	const KEY_TYPE_IDS: &'static [sp_runtime::KeyTypeId] = &[UintAuthorityId::ID];
 	fn on_genesis_session<Ks: OpaqueKeys>(keys: &[(u64, Ks)]) {
-		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+		SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
 	}
 	fn on_new_session<Ks: OpaqueKeys>(_: bool, keys: &[(u64, Ks)], _: &[(u64, Ks)]) {
 		SessionChangeBlock::set(System::block_number());
 		dbg!(keys.len());
-		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+		SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
 	}
 	fn on_before_session_ending() {}
 	fn on_disabled(_: u32) {}
@@ -193,11 +195,7 @@ parameter_types! {
 pub struct IsRegistered;
 impl ValidatorRegistration<u64> for IsRegistered {
 	fn is_registered(id: &u64) -> bool {
-		if *id == 7u64 {
-			false
-		} else {
-			true
-		}
+		*id != 7u64
 	}
 }
 

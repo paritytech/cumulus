@@ -88,7 +88,7 @@ pub mod pallet {
 			Currency, EnsureOrigin, ExistenceRequirement::KeepAlive, ReservableCurrency,
 			ValidatorRegistration,
 		},
-		BoundedVec, PalletId,
+		BoundedVec, DefaultNoBound, PalletId,
 	};
 	use frame_system::{pallet_prelude::*, Config as SystemConfig};
 	use pallet_session::SessionManager;
@@ -165,7 +165,6 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	/// The invulnerable, fixed collators.
@@ -204,28 +203,20 @@ pub mod pallet {
 	pub type CandidacyBond<T> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
 	#[pallet::genesis_config]
+	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
 		pub invulnerables: Vec<T::AccountId>,
 		pub candidacy_bond: BalanceOf<T>,
 		pub desired_candidates: u32,
 	}
 
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> Self {
-			Self {
-				invulnerables: Default::default(),
-				candidacy_bond: Default::default(),
-				desired_candidates: Default::default(),
-			}
-		}
-	}
-
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
-			let duplicate_invulnerables =
-				self.invulnerables.iter().collect::<std::collections::BTreeSet<_>>();
+			let duplicate_invulnerables = self
+				.invulnerables
+				.iter()
+				.collect::<sp_std::collections::btree_set::BTreeSet<_>>();
 			assert!(
 				duplicate_invulnerables.len() == self.invulnerables.len(),
 				"duplicate invulnerables in genesis."
@@ -239,8 +230,8 @@ pub mod pallet {
 				"genesis desired_candidates are more than T::MaxCandidates",
 			);
 
-			<DesiredCandidates<T>>::put(&self.desired_candidates);
-			<CandidacyBond<T>>::put(&self.candidacy_bond);
+			<DesiredCandidates<T>>::put(self.desired_candidates);
+			<CandidacyBond<T>>::put(self.candidacy_bond);
 			<Invulnerables<T>>::put(bounded_invulnerables);
 		}
 	}
@@ -327,7 +318,7 @@ pub mod pallet {
 			if max > T::MaxCandidates::get() {
 				log::warn!("max > T::MaxCandidates; you might need to run benchmarks again");
 			}
-			<DesiredCandidates<T>>::put(&max);
+			<DesiredCandidates<T>>::put(max);
 			Self::deposit_event(Event::NewDesiredCandidates { desired_candidates: max });
 			Ok(().into())
 		}
@@ -340,7 +331,7 @@ pub mod pallet {
 			bond: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
-			<CandidacyBond<T>>::put(&bond);
+			<CandidacyBond<T>>::put(bond);
 			Self::deposit_event(Event::NewCandidacyBond { bond_amount: bond });
 			Ok(().into())
 		}
@@ -495,10 +486,6 @@ pub mod pallet {
 				T::WeightInfo::note_author(),
 				DispatchClass::Mandatory,
 			);
-		}
-
-		fn note_uncle(_author: T::AccountId, _age: T::BlockNumber) {
-			//TODO can we ignore this?
 		}
 	}
 

@@ -25,7 +25,8 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use futures::{FutureExt, Stream, StreamExt};
-use polkadot_service::Handle;
+use polkadot_overseer::Handle;
+
 use sc_client_api::StorageProof;
 use sp_core::sp_std::collections::btree_map::BTreeMap;
 use sp_state_machine::StorageValue;
@@ -121,6 +122,10 @@ impl RelayChainInterface for RelayChainRpcInterface {
 
 	async fn best_block_hash(&self) -> RelayChainResult<RelayHash> {
 		self.rpc_client.chain_get_head(None).await
+	}
+
+	async fn finalized_block_hash(&self) -> RelayChainResult<RelayHash> {
+		self.rpc_client.chain_get_finalized_head().await
 	}
 
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {

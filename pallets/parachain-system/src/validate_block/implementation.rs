@@ -22,18 +22,16 @@ use cumulus_primitives_core::{
 };
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 
-use polkadot_parachain::primitives::{
-	HeadData, RelayChainBlockNumber, ValidationParams, ValidationResult,
-};
+use polkadot_parachain::primitives::{HeadData, RelayChainBlockNumber, ValidationResult};
 
-use codec::{Decode, Encode};
+use codec::Encode;
 
 use frame_support::traits::{ExecuteBlock, ExtrinsicCall, Get, IsSubType};
 use sp_core::storage::{ChildInfo, StateVersion};
 use sp_externalities::{set_and_run_with_externalities, Externalities};
 use sp_io::KillStorageResult;
 use sp_runtime::traits::{Block as BlockT, Extrinsic, HashFor, Header as HeaderT};
-use sp_std::{mem, prelude::*};
+use sp_std::prelude::*;
 use sp_trie::MemoryDB;
 
 type TrieBackend<B> = sp_state_machine::TrieBackend<MemoryDB<HashFor<B>>, HashFor<B>>;
@@ -187,9 +185,13 @@ where
 		E::execute_block(block);
 
 		let new_validation_code = crate::NewValidationCode::<PSC>::get();
-		let upward_messages = crate::UpwardMessages::<PSC>::get();
+		let upward_messages = crate::UpwardMessages::<PSC>::get().try_into().expect(
+			"Number of upward messages should not be greater than `MAX_UPWARD_MESSAGE_NUM`",
+		);
 		let processed_downward_messages = crate::ProcessedDownwardMessages::<PSC>::get();
-		let horizontal_messages = crate::HrmpOutboundMessages::<PSC>::get();
+		let horizontal_messages = crate::HrmpOutboundMessages::<PSC>::get().try_into().expect(
+			"Number of horizontal messages should not be greater than `MAX_HORIZONTAL_MESSAGE_NUM`",
+		);
 		let hrmp_watermark = crate::HrmpWatermark::<PSC>::get();
 
 		let head_data =
@@ -234,7 +236,7 @@ where
 		.expect("Could not find `set_validation_data` inherent")
 }
 
-/// Validate the given [`PersistedValidationData`] against the [`ValidationParams`].
+/// Validate the given [`PersistedValidationData`] against the [`MemoryOptimizedValidationParams`].
 fn validate_validation_data(
 	validation_data: &PersistedValidationData,
 	relay_parent_number: RelayChainBlockNumber,

@@ -40,7 +40,6 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	/// The module configuration trait.
@@ -142,7 +141,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
-		#[pallet::weight(0)]
+		#[pallet::weight({0})]
 		pub fn start(origin: OriginFor<T>, para: ParaId, payload: Vec<u8>) -> DispatchResult {
 			ensure_root(origin)?;
 			let payload = BoundedVec::<u8, MaxPayloadSize>::try_from(payload)
@@ -154,7 +153,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
-		#[pallet::weight(0)]
+		#[pallet::weight({0})]
 		pub fn start_many(
 			origin: OriginFor<T>,
 			para: ParaId,
@@ -174,7 +173,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(2)]
-		#[pallet::weight(0)]
+		#[pallet::weight({0})]
 		pub fn stop(origin: OriginFor<T>, para: ParaId) -> DispatchResult {
 			ensure_root(origin)?;
 			Targets::<T>::mutate(|t| {
@@ -186,7 +185,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(3)]
-		#[pallet::weight(0)]
+		#[pallet::weight({0})]
 		pub fn stop_all(origin: OriginFor<T>, maybe_para: Option<ParaId>) -> DispatchResult {
 			ensure_root(origin)?;
 			if let Some(para) = maybe_para {
@@ -198,7 +197,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(4)]
-		#[pallet::weight(0)]
+		#[pallet::weight({0})]
 		pub fn ping(origin: OriginFor<T>, seq: u32, payload: Vec<u8>) -> DispatchResult {
 			// Only accept pings from other chains.
 			let para = ensure_sibling_para(<T as Config>::RuntimeOrigin::from(origin))?;
@@ -225,7 +224,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(5)]
-		#[pallet::weight(0)]
+		#[pallet::weight({0})]
 		pub fn pong(origin: OriginFor<T>, seq: u32, payload: Vec<u8>) -> DispatchResult {
 			// Only accept pings from other chains.
 			let para = ensure_sibling_para(<T as Config>::RuntimeOrigin::from(origin))?;

@@ -6,10 +6,10 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 
 [dependencies]
-async-trait = "0.1.60"
+async-trait = "0.1.68"
 codec = { package = "parity-scale-codec", version = "3.0.0", features = [ "derive" ] }
-dyn-clone = "1.0.10"
-futures = "0.3.25"
+dyn-clone = "1.0.11"
+futures = "0.3.28"
 log = "0.4.17"
 tracing = "0.1.37"
 
@@ -18,8 +18,10 @@ sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "mas
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -28,6 +30,7 @@ polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch =
 cumulus-primitives-core = { path = "../../../primitives/core" }
 cumulus-relay-chain-interface = { path = "../../relay-chain-interface" }
 cumulus-client-pov-recovery = { path = "../../pov-recovery" }
+schnellru = "0.2.1"
 
 [dev-dependencies]
 futures-timer = "3.0.2"
