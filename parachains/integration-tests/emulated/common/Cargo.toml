@@ -54,4 +54,6 @@ xcm-emulator = { default-features = false, path = "../../../../xcm/xcm-emulator"
 [features]
 runtime-benchmarks = [
 	"kusama-runtime/runtime-benchmarks",
+	"polkadot-runtime/runtime-benchmarks",
+	"westend-runtime/runtime-benchmarks",
 ]
