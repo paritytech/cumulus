@@ -97,6 +97,7 @@ decl_test_parachains! {
 		pallets_extra = {
 			PolkadotXcm: westmint_runtime::PolkadotXcm,
 			Assets: westmint_runtime::Assets,
+			ForeignAssets: westmint_runtime::ForeignAssets,
 		}
 	},
 	// Polkadot
@@ -184,7 +185,7 @@ decl_test_parachains! {
 		pallets_extra = {
 			PolkadotXcm: statemine_runtime::PolkadotXcm,
 			Assets: statemine_runtime::Assets,
-			ForeignAssets: statemine_runtime::Assets,
+			ForeignAssets: statemine_runtime::ForeignAssets,
 		}
 	},
 	pub struct PenpalKusama {
