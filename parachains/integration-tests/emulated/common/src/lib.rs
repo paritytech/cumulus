@@ -139,7 +139,7 @@ decl_test_parachains! {
 			Assets: penpal_runtime::Assets,
 		}
 	},
-	
+
 	// Kusama
 	pub struct Statemine {
 		genesis = statemine::genesis(),
@@ -263,6 +263,12 @@ decl_test_networks! {
 			PenpalKusama,
 			BHKusama,
 		],
+	},
+	pub struct WestendMockNet {
+		relay_chain = Westend,
+		parachains = vec![
+			Westmint,
+		],
 	}
 }
 
@@ -273,6 +279,12 @@ parameter_types! {
 	// Kusama
 	pub KusamaSender: AccountId = Kusama::account_id_of(ALICE);
 	pub KusamaReceiver: AccountId = Kusama::account_id_of(BOB);
+	// Westend
+	pub WestendSender: AccountId = Westend::account_id_of(ALICE);
+	pub WestendReceiver: AccountId = Westend::account_id_of(BOB);
+	// Westmint
+	pub WestmintSender: AccountId = Westmint::account_id_of(ALICE);
+	pub WestmintReceiver: AccountId = Westmint::account_id_of(BOB);
 	// Statemint
 	pub StatemintSender: AccountId = Statemint::account_id_of(ALICE);
 	pub StatemintReceiver: AccountId = Statemint::account_id_of(BOB);
