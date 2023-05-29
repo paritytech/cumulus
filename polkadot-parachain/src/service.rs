@@ -86,7 +86,7 @@ impl sc_executor::NativeExecutionDispatch for ShellRuntimeExecutor {
 	}
 }
 
-// Native Asset Hub Polkadot (Statemint) executor instance.
+/// Native Asset Hub Polkadot (Statemint) executor instance.
 pub struct AssetHubPolkadotRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for AssetHubPolkadotRuntimeExecutor {
@@ -131,7 +131,7 @@ impl sc_executor::NativeExecutionDispatch for AssetHubWestendExecutor {
 	}
 }
 
-// Native Polkadot Collectives executor instance.
+/// Native Polkadot Collectives executor instance.
 pub struct CollectivesPolkadotRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for CollectivesPolkadotRuntimeExecutor {
@@ -146,7 +146,7 @@ impl sc_executor::NativeExecutionDispatch for CollectivesPolkadotRuntimeExecutor
 	}
 }
 
-// Native BridgeHubPolkadot executor instance.
+/// Native BridgeHubPolkadot executor instance.
 pub struct BridgeHubPolkadotRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for BridgeHubPolkadotRuntimeExecutor {
@@ -161,7 +161,7 @@ impl sc_executor::NativeExecutionDispatch for BridgeHubPolkadotRuntimeExecutor {
 	}
 }
 
-// Native BridgeHubKusama executor instance.
+/// Native BridgeHubKusama executor instance.
 pub struct BridgeHubKusamaRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for BridgeHubKusamaRuntimeExecutor {
@@ -176,7 +176,7 @@ impl sc_executor::NativeExecutionDispatch for BridgeHubKusamaRuntimeExecutor {
 	}
 }
 
-// Native BridgeHubRococo executor instance.
+/// Native BridgeHubRococo executor instance.
 pub struct BridgeHubRococoRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for BridgeHubRococoRuntimeExecutor {
@@ -191,7 +191,7 @@ impl sc_executor::NativeExecutionDispatch for BridgeHubRococoRuntimeExecutor {
 	}
 }
 
-// Native contracts executor instance.
+/// Native contracts executor instance.
 pub struct ContractsRococoRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for ContractsRococoRuntimeExecutor {

@@ -56,8 +56,8 @@ impl WeighMultiAssets for MultiAssets {
 	}
 }
 
-pub struct StatemineXcmWeight<Call>(core::marker::PhantomData<Call>);
-impl<Call> XcmWeightInfo<Call> for StatemineXcmWeight<Call> {
+pub struct AssetHubKusamaXcmWeight<Call>(core::marker::PhantomData<Call>);
+impl<Call> XcmWeightInfo<Call> for AssetHubKusamaXcmWeight<Call> {
 	fn withdraw_asset(assets: &MultiAssets) -> Weight {
 		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::withdraw_asset())
 	}
