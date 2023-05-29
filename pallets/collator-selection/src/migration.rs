@@ -23,9 +23,8 @@ use frame_support::{log, traits::OnRuntimeUpgrade};
 /// This migration ensures that any existing `Invulnerables` storage lists are sorted.
 pub mod v1 {
 	use super::*;
-	#[cfg(feature = "try-runtime")]
-	use frame_support::inherent::Vec;
-	use frame_support::{pallet_prelude::*, weights::Weight};
+	use sp_std::prelude::*;
+	use frame_support::pallet_prelude::*;
 
 	pub struct MigrateToV1<T>(sp_std::marker::PhantomData<T>);
 	impl<T: Config> OnRuntimeUpgrade for MigrateToV1<T> {
