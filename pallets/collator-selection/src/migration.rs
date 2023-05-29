@@ -24,6 +24,7 @@ use frame_support::{log, traits::OnRuntimeUpgrade};
 pub mod v1 {
 	use super::*;
 	use frame_support::pallet_prelude::*;
+	#[cfg(feature = "try-runtime")]
 	use sp_std::prelude::*;
 
 	pub struct MigrateToV1<T>(sp_std::marker::PhantomData<T>);
