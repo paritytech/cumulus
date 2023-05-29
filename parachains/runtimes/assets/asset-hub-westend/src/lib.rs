@@ -93,8 +93,11 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("asset-hub-westend"),
-	impl_name: create_runtime_str!("asset-hub-westend"),
+	// Note: "westmint" is the legacy name for this chain. It has been renamed to
+	// "asset-hub-westend". Many wallets/tools depend on the `spec_name`, so it remains "westmint"
+	// for the time being. Wallets/tools should update to treat "asset-hub-westend" equally.
+	spec_name: create_runtime_str!("westmint"),
+	impl_name: create_runtime_str!("westmint"),
 	authoring_version: 1,
 	spec_version: 9420,
 	impl_version: 0,

@@ -128,8 +128,11 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("asset-hub-polkadot"),
-	impl_name: create_runtime_str!("asset-hub-polkadot"),
+	// Note: "statemint" is the legacy name for this chain. It has been renamed to
+	// "asset-hub-polkadot". Many wallets/tools depend on the `spec_name`, so it remains "statemint"
+	// for the time being. Wallets/tools should update to treat "asset-hub-polkadot" equally.
+	spec_name: create_runtime_str!("statemint"),
+	impl_name: create_runtime_str!("statemint"),
 	authoring_version: 1,
 	spec_version: 9420,
 	impl_version: 0,

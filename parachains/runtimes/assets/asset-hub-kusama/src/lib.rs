@@ -94,8 +94,11 @@ impl_opaque_keys! {
 #[cfg(feature = "state-trie-version-1")]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("asset-hub-kusama"),
-	impl_name: create_runtime_str!("asset-hub-kusama"),
+	// Note: "statemine" is the legacy name for this chain. It has been renamed to
+	// "asset-hub-kusama". Many wallets/tools depend on the `spec_name`, so it remains "statemine"
+	// for the time being. Wallets/tools should update to treat "asset-hub-kusama" equally.
+	spec_name: create_runtime_str!("statemine"),
+	impl_name: create_runtime_str!("statemine"),
 	authoring_version: 1,
 	spec_version: 9420,
 	impl_version: 0,
@@ -107,8 +110,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 #[cfg(not(feature = "state-trie-version-1"))]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("asset-hub-kusama"),
-	impl_name: create_runtime_str!("asset-hub-kusama"),
+	// Note: "statemine" is the legacy name for this change. It has been renamed to
+	// "asset-hub-kusama". Many wallets/tools depend on the `spec_name`, so it remains "statemine"
+	// for the time being. Wallets/tools should update to treat "asset-hub-kusama" equally.
+	spec_name: create_runtime_str!("statemine"),
+	impl_name: create_runtime_str!("statemine"),
 	authoring_version: 1,
 	spec_version: 9420,
 	impl_version: 0,
