@@ -422,10 +422,7 @@ pub mod pallet {
 		/// The origin for this call must be the `UpdateOrigin`.
 		#[pallet::call_index(5)]
 		#[pallet::weight(T::WeightInfo::add_invulnerable(T::MaxInvulnerables::get() - 1))]
-		pub fn add_invulnerable(
-			origin: OriginFor<T>,
-			who: T::AccountId,
-		) -> DispatchResultWithPostInfo {
+		pub fn add_invulnerable(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
 			T::UpdateOrigin::ensure_origin(origin)?;
 
 			// ensure `who` has registered a validator key
@@ -447,7 +444,7 @@ pub mod pallet {
 			})?;
 
 			Self::deposit_event(Event::InvulnerableAdded { account_id: who });
-			Ok(().into())
+			Ok(())
 		}
 
 		/// Remove an account `who` from the list of `Invulnerables` collators. `Invulnerables` must
@@ -456,10 +453,7 @@ pub mod pallet {
 		/// The origin for this call must be the `UpdateOrigin`.
 		#[pallet::call_index(6)]
 		#[pallet::weight(T::WeightInfo::remove_invulnerable(T::MaxInvulnerables::get()))]
-		pub fn remove_invulnerable(
-			origin: OriginFor<T>,
-			who: T::AccountId,
-		) -> DispatchResultWithPostInfo {
+		pub fn remove_invulnerable(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
 			T::UpdateOrigin::ensure_origin(origin)?;
 
 			<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
@@ -470,7 +464,7 @@ pub mod pallet {
 			})?;
 
 			Self::deposit_event(Event::InvulnerableRemoved { account_id: who });
-			Ok(().into())
+			Ok(())
 		}
 	}
 
