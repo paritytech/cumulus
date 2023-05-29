@@ -57,12 +57,8 @@ fn benchmark_block_production(c: &mut Criterion) {
 
 	runtime.block_on(utils::import_block(&client, &built_block.block, false));
 
-	let (max_transfer_count, mut extrinsics) =
+	let (max_transfer_count, extrinsics) =
 		utils::create_benchmarking_transfer_extrinsics(&client, &src_accounts, &dst_accounts);
-	let parent_hash = client.usage_info().chain.best_hash;
-	let parent_header = client.header(parent_hash).expect("Just fetched this hash.").unwrap();
-	let set_validation_data_extrinsic = utils::extrinsic_set_validation_data(parent_header);
-	extrinsics.push(set_validation_data_extrinsic);
 
 	let mut group = c.benchmark_group("Block production");
 

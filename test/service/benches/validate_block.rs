@@ -89,7 +89,6 @@ fn benchmark_block_validation(c: &mut Criterion) {
 
 	let parent_hash = client.usage_info().chain.best_hash;
 	let parent_header = client.header(parent_hash).expect("Just fetched this hash.").unwrap();
-
 	let validation_data = PersistedValidationData {
 		relay_parent_number: 1,
 		parent_head: parent_header.encode().into(),

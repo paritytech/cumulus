@@ -18,20 +18,24 @@
 use codec::Encode;
 
 use crate::{construct_extrinsic, Client as TestClient};
+use cumulus_primitives_core::{relay_chain::AccountId, PersistedValidationData};
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
-use cumulus_test_runtime::{BalancesCall, NodeBlock, UncheckedExtrinsic, WASM_BINARY};
+use cumulus_test_runtime::{
+	BalancesCall, GluttonCall, NodeBlock, SudoCall, UncheckedExtrinsic, WASM_BINARY,
+};
+use frame_system_rpc_runtime_api::AccountNonceApi;
 use polkadot_primitives::HeadData;
-use sc_client_api::UsageProvider;
-
-use cumulus_primitives_core::{relay_chain::AccountId, PersistedValidationData};
 use sc_block_builder::BlockBuilderProvider;
+use sc_client_api::UsageProvider;
 use sc_consensus::{
 	block_import::{BlockImportParams, ForkChoiceStrategy},
 	BlockImport, ImportResult, StateAction,
 };
 use sc_executor::DEFAULT_HEAP_ALLOC_STRATEGY;
 use sc_executor_common::runtime_blob::RuntimeBlob;
+use sp_api::ProvideRuntimeApi;
+use sp_arithmetic::Perbill;
 use sp_blockchain::{ApplyExtrinsicFailed::Validity, Error::ApplyExtrinsicFailed};
 use sp_consensus::BlockOrigin;
 use sp_core::{sr25519, Pair};
@@ -131,6 +135,12 @@ pub fn create_benchmarking_transfer_extrinsics(
 	let time_ext = extrinsic_set_time(client);
 	extrinsics.push(time_ext);
 
+	// Every block needs tone set_validation_data extrinsic.
+	let parent_hash = client.usage_info().chain.best_hash;
+	let parent_header = client.header(parent_hash).expect("Just fetched this hash.").unwrap();
+	let set_validation_data_extrinsic = extrinsic_set_validation_data(parent_header);
+	extrinsics.push(set_validation_data_extrinsic);
+
 	for (src, dst) in src_accounts.iter().zip(dst_accounts.iter()) {
 		let extrinsic: UncheckedExtrinsic = construct_extrinsic(
 			client,
@@ -180,14 +190,73 @@ pub fn get_wasm_module() -> Box<dyn sc_executor_common::wasm_runtime::WasmModule
 			wasm_simd: false,
 		},
 	};
-	let prepared_blob =
-		sc_executor_wasmtime::prepare_runtime_artifact(blob, &config.semantics).unwrap();
+	Box::new(
+		sc_executor_wasmtime::create_runtime::<sp_io::SubstrateHostFunctions>(blob, config)
+			.expect("Unable to create wasm module."),
+	)
+}
 
-	unsafe {
-		let wasm_module = sc_executor_wasmtime::create_runtime_from_artifact_bytes::<
-			sp_io::SubstrateHostFunctions,
-		>(&prepared_blob, config)
-		.expect("Unable to create wasm module.");
-		Box::new(wasm_module)
+/// Create a block containing setup extrinsics for the glutton pallet.
+pub fn set_glutton_parameters(
+	client: &TestClient,
+	initialize: bool,
+	compute_percent: &Perbill,
+	storage_percent: &Perbill,
+) -> NodeBlock {
+	let parent_hash = client.usage_info().chain.best_hash;
+	let parent_header = client.header(parent_hash).expect("Just fetched this hash.").unwrap();
+
+	let mut last_nonce = client
+		.runtime_api()
+		.account_nonce(parent_hash, Alice.into())
+		.expect("Fetching account nonce works; qed");
+
+	let mut extrinsics = vec![];
+	if initialize {
+		// Initialize the pallet
+		extrinsics.push(construct_extrinsic(
+			client,
+			SudoCall::sudo {
+				call: Box::new(
+					GluttonCall::initialize_pallet { new_count: 5000, witness_count: None }.into(),
+				),
+			},
+			Alice.into(),
+			Some(last_nonce),
+		));
+		last_nonce += 1;
 	}
+
+	// Set compute weight that should be consumed per block
+	let set_compute = construct_extrinsic(
+		client,
+		SudoCall::sudo {
+			call: Box::new(GluttonCall::set_compute { compute: *compute_percent }.into()),
+		},
+		Alice.into(),
+		Some(last_nonce),
+	);
+	last_nonce += 1;
+	extrinsics.push(set_compute);
+
+	// Set storage weight that should be consumed per block
+	let set_storage = construct_extrinsic(
+		client,
+		SudoCall::sudo {
+			call: Box::new(GluttonCall::set_storage { storage: *storage_percent }.into()),
+		},
+		Alice.into(),
+		Some(last_nonce),
+	);
+	extrinsics.push(set_storage);
+
+	let mut block_builder = client.new_block(Default::default()).unwrap();
+	block_builder.push(extrinsic_set_time(client)).unwrap();
+	block_builder.push(extrinsic_set_validation_data(parent_header)).unwrap();
+	for extrinsic in extrinsics {
+		block_builder.push(extrinsic.into()).unwrap();
+	}
+
+	let built_block = block_builder.build().unwrap();
+	built_block.block
 }

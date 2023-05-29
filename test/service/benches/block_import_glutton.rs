@@ -17,8 +17,8 @@
 
 use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
 
-use cumulus_test_runtime::{GluttonCall, NodeBlock, SudoCall};
-use cumulus_test_service::{construct_extrinsic, Client as TestClient};
+
+
 use sc_client_api::UsageProvider;
 use sp_api::{Core, ProvideRuntimeApi};
 use sp_arithmetic::Perbill;
@@ -26,7 +26,7 @@ use sp_arithmetic::Perbill;
 use core::time::Duration;
 use cumulus_primitives_core::ParaId;
 
-use frame_system_rpc_runtime_api::AccountNonceApi;
+
 use sc_block_builder::{BlockBuilderProvider, RecordProof};
 use sp_keyring::Sr25519Keyring::Alice;
 
@@ -53,7 +53,7 @@ fn benchmark_block_import(c: &mut Criterion) {
 		(Perbill::from_percent(100), Perbill::from_percent(0)),
 		(Perbill::from_percent(100), Perbill::from_percent(100)),
 	] {
-		let block = set_glutton_parameters(
+		let block = utils::set_glutton_parameters(
 			&client,
 			initialize_glutton_pallet,
 			compute_percent,
@@ -90,70 +90,6 @@ fn benchmark_block_import(c: &mut Criterion) {
 			},
 		);
 	}
-}
-
-fn set_glutton_parameters(
-	client: &TestClient,
-	initialize: bool,
-	compute_percent: &Perbill,
-	storage_percent: &Perbill,
-) -> NodeBlock {
-	let parent_hash = client.usage_info().chain.best_hash;
-	let parent_header = client.header(parent_hash).expect("Just fetched this hash.").unwrap();
-
-	let mut last_nonce = client
-		.runtime_api()
-		.account_nonce(parent_hash, Alice.into())
-		.expect("Fetching account nonce works; qed");
-
-	let mut extrinsics = vec![];
-	if initialize {
-		// Initialize the pallet
-		extrinsics.push(construct_extrinsic(
-			client,
-			SudoCall::sudo {
-				call: Box::new(
-					GluttonCall::initialize_pallet { new_count: 5000, witness_count: None }.into(),
-				),
-			},
-			Alice.into(),
-			Some(last_nonce),
-		));
-		last_nonce += 1;
-	}
-
-	// Set compute weight that should be consumed per block
-	let set_compute = construct_extrinsic(
-		client,
-		SudoCall::sudo {
-			call: Box::new(GluttonCall::set_compute { compute: *compute_percent }.into()),
-		},
-		Alice.into(),
-		Some(last_nonce),
-	);
-	last_nonce += 1;
-	extrinsics.push(set_compute);
-
-	// Set storage weight that should be consumed per block
-	let set_storage = construct_extrinsic(
-		client,
-		SudoCall::sudo {
-			call: Box::new(GluttonCall::set_storage { storage: *storage_percent }.into()),
-		},
-		Alice.into(),
-		Some(last_nonce),
-	);
-	extrinsics.push(set_storage);
-
-	let mut block_builder = client.new_block(Default::default()).unwrap();
-	block_builder.push(utils::extrinsic_set_time(client)).unwrap();
-	block_builder.push(utils::extrinsic_set_validation_data(parent_header)).unwrap();
-	for extrinsic in extrinsics {
-		block_builder.push(extrinsic.into()).unwrap();
-	}
-
-	let built_block = block_builder.build().unwrap();
-	built_block.block
 }
 
 criterion_group!(benches, benchmark_block_import);

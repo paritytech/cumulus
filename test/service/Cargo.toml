@@ -40,6 +40,7 @@ sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "mas
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -87,7 +88,6 @@ rococo-parachain-runtime = { path = "../../parachains/runtimes/testing/rococo-pa
 node-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-im-online = { git = "https://github.com/paritytech/substrate", branch = "master" }
 node-primitives = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus-grandpa = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "master" }
 cumulus-test-client = { path = "../client" }
@@ -115,11 +115,11 @@ name = "block_production"
 harness = false
 
 [[bench]]
-name = "block_production_compute"
+name = "block_production_glutton"
 harness = false
 
 [[bench]]
-name = "block_import_compute"
+name = "block_import_glutton"
 harness = false
 
 [[bench]]
@@ -127,5 +127,5 @@ name = "validate_block"
 harness = false
 
 [[bench]]
-name = "validate_block_compute"
+name = "validate_block_glutton"
 harness = false

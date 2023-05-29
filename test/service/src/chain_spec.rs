@@ -144,6 +144,7 @@ pub fn testnet_genesis(
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 		},
+		glutton: Default::default(),
 		parachain_system: Default::default(),
 		balances: cumulus_test_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),

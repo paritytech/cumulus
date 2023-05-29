@@ -102,7 +102,7 @@ fn benchmark_block_validation(c: &mut Criterion) {
 			block_data: cumulus_test_client::BlockData(parachain_block.clone().encode()),
 			parent_head: HeadData(parent_header.encode()),
 			relay_parent_number: 1,
-			relay_parent_storage_root: relay_parent_storage_root,
+			relay_parent_storage_root,
 		}
 		.encode();
 
