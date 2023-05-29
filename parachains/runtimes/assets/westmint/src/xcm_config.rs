@@ -28,22 +28,18 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
-use parachains_common::{
-	impls::ToStakingPot,
-	xcm_config::{
-		AssetFeeAsExistentialDepositMultiplier, DenyReserveTransferToRelayChain, DenyThenTry,
-	},
-};
+use parachains_common::{impls::ToStakingPot, xcm_config::AssetFeeAsExistentialDepositMultiplier};
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
-	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin,
-	FungiblesAdapter, IsConcrete, LocalMint, NativeAsset, NoChecking, ParentAsSuperuser,
-	ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-	UsingComponents, WeightInfoBounds, WithComputedOrigin,
+	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, CurrencyAdapter,
+	DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin, FungiblesAdapter, IsConcrete,
+	LocalMint, NativeAsset, NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId,
+	UsingComponents, WeightInfoBounds, WithComputedOrigin, WithUniqueTopic,
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
@@ -112,7 +108,7 @@ pub type ForeignAssetsConvertedConcreteId = assets_common::ForeignAssetsConverte
 		// Ignore `TrustBackedAssets` explicitly
 		StartsWith<TrustBackedAssetsPalletLocation>,
 		// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
-		// - foreign assets from our consensus should be: `MultiLocation {parent: 1, X*(Parachain(xyz))}
+		// - foreign assets from our consensus should be: `MultiLocation {parents: 1, X*(Parachain(xyz), ..)}
 		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` wont be accepted here
 		StartsWithExplicitGlobalConsensus<UniversalLocationNetworkId>,
 	),
@@ -271,6 +267,9 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 					pallet_assets::Call::transfer_approved { .. } |
 					pallet_assets::Call::touch { .. } |
 					pallet_assets::Call::refund { .. },
+			) | RuntimeCall::NftFractionalization(
+				pallet_nft_fractionalization::Call::fractionalize { .. } |
+					pallet_nft_fractionalization::Call::unify { .. },
 			) | RuntimeCall::Nfts(
 				pallet_nfts::Call::create { .. } |
 					pallet_nfts::Call::force_create { .. } |
@@ -339,26 +338,28 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 	}
 }
 
-pub type Barrier = DenyThenTry<
-	DenyReserveTransferToRelayChain,
-	(
-		TakeWeightCredit,
-		// Expected responses are OK.
-		AllowKnownQueryResponses<PolkadotXcm>,
-		// Allow XCMs with some computed origins to pass through.
-		WithComputedOrigin<
-			(
-				// If the message is one that immediately attemps to pay for execution, then allow it.
-				AllowTopLevelPaidExecutionFrom<Everything>,
-				// Parent and its pluralities (i.e. governance bodies) get free execution.
-				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
-				// Subscriptions for version tracking are OK.
-				AllowSubscriptionsFrom<Everything>,
-			),
-			UniversalLocation,
-			ConstU32<8>,
-		>,
-	),
+pub type Barrier = TrailingSetTopicAsId<
+	DenyThenTry<
+		DenyReserveTransferToRelayChain,
+		(
+			TakeWeightCredit,
+			// Expected responses are OK.
+			AllowKnownQueryResponses<PolkadotXcm>,
+			// Allow XCMs with some computed origins to pass through.
+			WithComputedOrigin<
+				(
+					// If the message is one that immediately attemps to pay for execution, then allow it.
+					AllowTopLevelPaidExecutionFrom<Everything>,
+					// Parent and its pluralities (i.e. governance bodies) get free execution.
+					AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
+					// Subscriptions for version tracking are OK.
+					AllowSubscriptionsFrom<Everything>,
+				),
+				UniversalLocation,
+				ConstU32<8>,
+			>,
+		),
+	>,
 >;
 
 pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<
@@ -426,12 +427,12 @@ pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, R
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
-pub type XcmRouter = (
+pub type XcmRouter = WithUniqueTopic<(
 	// Two routers - use UMP to communicate with the relay chain:
 	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, ()>,
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
-);
+)>;
 
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
@@ -484,9 +485,7 @@ pub type ForeignCreatorsSovereignAccountOf = (
 /// Simple conversion of `u32` into an `AssetId` for use in benchmarking.
 pub struct XcmBenchmarkHelper;
 #[cfg(feature = "runtime-benchmarks")]
-use pallet_assets::BenchmarkHelper;
-#[cfg(feature = "runtime-benchmarks")]
-impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
+impl pallet_assets::BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 	fn create_asset_id_parameter(id: u32) -> MultiLocation {
 		MultiLocation { parents: 1, interior: X1(Parachain(id)) }
 	}
