@@ -874,30 +874,26 @@ pub fn run() -> Result<()> {
 
 			runner.run_node_until_exit(|config| async move {
 				//if db exists and we're asset-hub and the old name is statemine, rename it to asset-hub
-				if let Some(database_path) = config.database.path()	{
-					if let Some(parent) = database_path.parent() {
-						if let Some(grand_parent) = parent.parent() {
-							if let Some(db_root) = grand_parent.parent() {
-								let old_name =
-									match grand_parent.file_name().and_then(|s| s.to_str()) {
-									 Some("asset-hub-polkadot") => Some("statemint"),
-									 Some("asset-hub-kusama") => Some("statemine"),
-									 Some("asset-hub-westend") => Some("westmint"),
-									 Some("asset-hub-rococo") => Some("rockmine"),
-									 _ => None
-								};
-								if let Some(old_name)= old_name {
-									let old_path = db_root.join(old_name)
-										.join(parent.file_name().expect("failed to get parent file name"))
-										.join(database_path.file_name().expect("failed to get database file name"));
-
-									if old_path.exists() && !database_path.exists() {
-										panic!("Please rename the old db dir from {:?} to be at {:?}", old_path, database_path);
-									}
-								}
-							}
-						}
-					}
+				let old_name = match config.chain_spec().id() {
+				     "asset-hub-polkadot" => Some("statemint"),
+				     "asset-hub-kusama" => Some("statemine"),
+				     "asset-hub-westend" => Some("westmint"),
+				     "asset-hub-rococo" => Some("rockmine"),
+				     _ => None;
+				};
+				
+				if let Some(old_name) = old_name {
+				    let new_path = config.base_path.config_dir(config.chain_spec.id());
+				    let old_path = config.base_path.config_dir(old_name);
+				    
+				    if old_path.exists() && new_path.exists() {
+				         // Please write a better error :P
+				         return Err(format!("Found old {} and new {}", old_path.display(), new_path.display()).into())
+				    }
+				    
+				    if old_path.exists() {
+				        std::fs::rename(old_path, new_path)?;
+				    } 
 				}
 
 				let hwbench = (!cli.no_hardware_benchmarks).then_some(
