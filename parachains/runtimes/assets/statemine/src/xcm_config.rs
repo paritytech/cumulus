@@ -23,12 +23,16 @@ use assets_common::matching::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
+	traits::{
+		ConstU32, Contains, EnsureOrigin, EnsureOriginWithArg, Everything, Nothing,
+		PalletInfoAccess,
+	},
 };
 use frame_system::EnsureRoot;
-use pallet_xcm::XcmPassthrough;
+use pallet_xcm::{EnsureXcm, XcmPassthrough};
 use parachains_common::{impls::ToStakingPot, xcm_config::AssetFeeAsExistentialDepositMultiplier};
-use polkadot_parachain::primitives::Sibling;
+
+use polkadot_parachain::primitives::{Id as ParaId, Sibling};
 use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -40,7 +44,13 @@ use xcm_builder::{
 	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId,
 	UsingComponents, WeightInfoBounds, WithComputedOrigin, WithUniqueTopic,
 };
-use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
+use xcm_executor::{
+	traits::{Convert, WithOriginFilter},
+	XcmExecutor,
+};
+
+#[cfg(feature = "runtime-benchmarks")]
+use {pallet_assets::BenchmarkHelper, sp_core::Get};
 
 parameter_types! {
 	pub const KsmLocation: MultiLocation = MultiLocation::parent();
@@ -54,6 +64,8 @@ parameter_types! {
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 	pub const GovernanceLocation: MultiLocation = MultiLocation::parent();
 	pub const FellowshipLocation: MultiLocation = MultiLocation::parent();
+	pub ForeignAssetsPalletLocation: MultiLocation =
+		PalletInstance(<ForeignAssets as PalletInfoAccess>::index() as u8).into();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -269,6 +281,12 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 					pallet_assets::Call::transfer_approved { .. } |
 					pallet_assets::Call::touch { .. } |
 					pallet_assets::Call::refund { .. },
+			) | RuntimeCall::AssetConversion(
+				pallet_asset_conversion::Call::create_pool { .. } |
+					pallet_asset_conversion::Call::add_liquidity { .. } |
+					pallet_asset_conversion::Call::remove_liquidity { .. } |
+					pallet_asset_conversion::Call::swap_tokens_for_exact_tokens { .. } |
+					pallet_asset_conversion::Call::swap_exact_tokens_for_tokens { .. },
 			) | RuntimeCall::Nfts(
 				pallet_nfts::Call::create { .. } |
 					pallet_nfts::Call::force_create { .. } |
@@ -480,11 +498,37 @@ impl cumulus_pallet_xcm::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
+pub type MultiLocationForAssetId = MultiLocation;
+
+//TODO: SovereignAccountOf might be wrong on westmint?
 pub type ForeignCreatorsSovereignAccountOf = (
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	AccountId32Aliases<RelayNetwork, AccountId>,
 	ParentIsPreset<AccountId>,
 );
+
+// `EnsureOriginWithArg` impl for `CreateOrigin` which allows only XCM origins that are locations
+// containing the class location.
+// pub struct ForeignCreators;
+// impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
+// 	type Success = AccountId;
+
+// 	fn try_origin(
+// 		o: RuntimeOrigin,
+// 		a: &MultiLocation,
+// 	) -> sp_std::result::Result<Self::Success, RuntimeOrigin> {
+// 		let origin_location = EnsureXcm::<Everything>::try_origin(o.clone())?;
+// 		if !a.starts_with(&origin_location) {
+// 			return Err(o)
+// 		}
+// 		SovereignAccountOf::convert(origin_location).map_err(|_| o)
+// 	}
+
+// 	#[cfg(feature = "runtime-benchmarks")]
+// 	fn try_successful_origin(a: &MultiLocation) -> Result<RuntimeOrigin, ()> {
+// 		Ok(pallet_xcm::Origin::Xcm(a.clone()).into())
+// 	}
+// }
 
 /// Simple conversion of `u32` into an `AssetId` for use in benchmarking.
 pub struct XcmBenchmarkHelper;
@@ -492,5 +536,28 @@ pub struct XcmBenchmarkHelper;
 impl pallet_assets::BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 	fn create_asset_id_parameter(id: u32) -> MultiLocation {
 		MultiLocation { parents: 1, interior: X1(Parachain(id)) }
+	}
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct BenchmarkMultiLocationConverter<SelfParaId> {
+	_phantom: sp_std::marker::PhantomData<SelfParaId>,
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl<SelfParaId> pallet_asset_conversion::BenchmarkHelper<MultiLocation>
+	for BenchmarkMultiLocationConverter<SelfParaId>
+where
+	SelfParaId: Get<ParaId>,
+{
+	fn asset_id(asset_id: u32) -> MultiLocation {
+		MultiLocation {
+			parents: 1,
+			interior: X3(
+				Parachain(SelfParaId::get().into()),
+				PalletInstance(<Assets as PalletInfoAccess>::index() as u8),
+				GeneralIndex(asset_id.into()),
+			),
+		}
 	}
 }

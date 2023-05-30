@@ -118,7 +118,9 @@ decl_test_parachains! {
 		pallets_extra = {
 			PolkadotXcm: statemine_runtime::PolkadotXcm,
 			Assets: statemine_runtime::Assets,
-			ForeignAssets: statemine_runtime::Assets,
+			ForeignAssets: statemine_runtime::ForeignAssets,
+			PoolAssets: statemine_runtime::PoolAssets,
+			AssetConversion: statemine_runtime::AssetConversion,
 		}
 	},
 	pub struct PenpalKusama {

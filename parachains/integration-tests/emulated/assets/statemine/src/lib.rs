@@ -14,7 +14,7 @@ pub use integration_tests_common::{
 	KusamaSender, PenpalKusama, PenpalKusamaReceiver, PenpalKusamaSender, PenpalPolkadot,
 	PenpalPolkadotReceiver, PenpalPolkadotSender, Polkadot, PolkadotMockNet, PolkadotPallet,
 	PolkadotReceiver, PolkadotSender, Statemine, StateminePallet, StatemineReceiver,
-	StatemineSender,
+	StatemineSender, PenpalKusamaPallet
 };
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use xcm::{
