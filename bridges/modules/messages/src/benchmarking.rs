@@ -17,8 +17,8 @@
 //! Messages pallet benchmarking.
 
 use crate::{
-	inbound_lane::InboundLaneStorage, inbound_lane_storage, outbound_lane,
-	weights_ext::EXPECTED_DEFAULT_MESSAGE_LENGTH, Call, OutboundLanes,
+	inbound_lane::InboundLaneStorage, outbound_lane, weights_ext::EXPECTED_DEFAULT_MESSAGE_LENGTH,
+	Call, OutboundLanes, RuntimeInboundLaneStorage,
 };
 
 use bp_messages::{
@@ -139,7 +139,7 @@ benchmarks_instance_pallet! {
 	}: receive_messages_proof(RawOrigin::Signed(relayer_id_on_target), relayer_id_on_source, proof, 1, dispatch_weight)
 	verify {
 		assert_eq!(
-			crate::InboundLanes::<T, I>::get(T::bench_lane_id()).last_delivered_nonce(),
+			crate::InboundLanes::<T, I>::get(&T::bench_lane_id()).last_delivered_nonce(),
 			21,
 		);
 	}
@@ -172,7 +172,7 @@ benchmarks_instance_pallet! {
 	}: receive_messages_proof(RawOrigin::Signed(relayer_id_on_target), relayer_id_on_source, proof, 2, dispatch_weight)
 	verify {
 		assert_eq!(
-			crate::InboundLanes::<T, I>::get(T::bench_lane_id()).last_delivered_nonce(),
+			crate::InboundLanes::<T, I>::get(&T::bench_lane_id()).last_delivered_nonce(),
 			22,
 		);
 	}
@@ -208,7 +208,7 @@ benchmarks_instance_pallet! {
 		});
 	}: receive_messages_proof(RawOrigin::Signed(relayer_id_on_target), relayer_id_on_source, proof, 1, dispatch_weight)
 	verify {
-		let lane_state = crate::InboundLanes::<T, I>::get(T::bench_lane_id());
+		let lane_state = crate::InboundLanes::<T, I>::get(&T::bench_lane_id());
 		assert_eq!(lane_state.last_delivered_nonce(), 21);
 		assert_eq!(lane_state.last_confirmed_nonce, 20);
 	}
@@ -240,7 +240,7 @@ benchmarks_instance_pallet! {
 	}: receive_messages_proof(RawOrigin::Signed(relayer_id_on_target), relayer_id_on_source, proof, 1, dispatch_weight)
 	verify {
 		assert_eq!(
-			crate::InboundLanes::<T, I>::get(T::bench_lane_id()).last_delivered_nonce(),
+			crate::InboundLanes::<T, I>::get(&T::bench_lane_id()).last_delivered_nonce(),
 			21,
 		);
 	}
@@ -274,7 +274,7 @@ benchmarks_instance_pallet! {
 	}: receive_messages_proof(RawOrigin::Signed(relayer_id_on_target), relayer_id_on_source, proof, 1, dispatch_weight)
 	verify {
 		assert_eq!(
-			crate::InboundLanes::<T, I>::get(T::bench_lane_id()).last_delivered_nonce(),
+			crate::InboundLanes::<T, I>::get(&T::bench_lane_id()).last_delivered_nonce(),
 			21,
 		);
 	}
@@ -432,7 +432,7 @@ benchmarks_instance_pallet! {
 	}: receive_messages_proof(RawOrigin::Signed(relayer_id_on_target), relayer_id_on_source, proof, 1, dispatch_weight)
 	verify {
 		assert_eq!(
-			crate::InboundLanes::<T, I>::get(T::bench_lane_id()).last_delivered_nonce(),
+			crate::InboundLanes::<T, I>::get(&T::bench_lane_id()).last_delivered_nonce(),
 			21,
 		);
 		assert!(T::is_message_successfully_dispatched(21));
@@ -443,11 +443,12 @@ benchmarks_instance_pallet! {
 
 fn send_regular_message<T: Config<I>, I: 'static>() {
 	let mut outbound_lane = outbound_lane::<T, I>(T::bench_lane_id());
-	outbound_lane.send_message(vec![]);
+	outbound_lane.send_message(vec![]).expect("We craft valid messages");
 }
 
 fn receive_messages<T: Config<I>, I: 'static>(nonce: MessageNonce) {
-	let mut inbound_lane_storage = inbound_lane_storage::<T, I>(T::bench_lane_id());
+	let mut inbound_lane_storage =
+		RuntimeInboundLaneStorage::<T, I>::from_lane_id(T::bench_lane_id());
 	inbound_lane_storage.set_data(InboundLaneData {
 		relayers: vec![UnrewardedRelayer {
 			relayer: T::bridged_relayer_id(),
