@@ -897,7 +897,11 @@ pub fn run() -> Result<()> {
 				    }
 
 				    if old_path.exists() {
-				        std::fs::rename(old_path, new_path)?;
+				        std::fs::rename(old_path.clone(), new_path.clone())?;
+						info!(
+							"Statemint renamed to Asset Hub. The filepath with associated data on disk has been renamed from {} to {}.",
+							old_path.display(), new_path.display()
+						);
 				    }
 				}
 
