@@ -122,7 +122,7 @@ where
 		relay_parent: PHash,
 		validation_data: &PersistedValidationData,
 		parent_hash: Block::Hash,
-		timestamp: Option<Timestamp>,
+		timestamp: impl Into<Option<Timestamp>>,
 	) -> Result<(ParachainInherentData, InherentData), Box<dyn Error>> {
 		let paras_inherent_data = ParachainInherentData::create_at(
 			relay_parent,
@@ -149,7 +149,7 @@ where
 			.await
 			.map_err(Box::new)?;
 
-		if let Some(timestamp) = timestamp {
+		if let Some(timestamp) = timestamp.into() {
 			other_inherent_data.replace_data(sp_timestamp::INHERENT_IDENTIFIER, &timestamp);
 		}
 
@@ -168,12 +168,12 @@ where
 		&mut self,
 		parent_header: &Block::Header,
 		slot_claim: &SlotClaim<P::Public>,
-		pre_digest: impl Into<Option<Vec<DigestItem>>>,
+		additional_pre_digest: impl Into<Option<Vec<DigestItem>>>,
 		inherent_data: (ParachainInherentData, InherentData),
 		proposal_duration: Duration,
 		max_pov_size: usize,
 	) -> Result<(Collation, ParachainBlockData<Block>, Block::Hash), Box<dyn Error>> {
-		let mut digest = pre_digest.into().unwrap_or_default();
+		let mut digest = additional_pre_digest.into().unwrap_or_default();
 		digest.push(slot_claim.pre_digest.clone());
 
 		let proposal = self
