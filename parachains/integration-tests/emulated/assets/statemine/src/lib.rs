@@ -11,10 +11,10 @@ pub use integration_tests_common::{
 	AccountId, BHKusama, BHKusamaPallet, BHKusamaReceiver, BHKusamaSender, BHPolkadot,
 	BHPolkadotPallet, BHPolkadotReceiver, BHPolkadotSender, Collectives, CollectivesPallet,
 	CollectivesReceiver, CollectivesSender, Kusama, KusamaMockNet, KusamaPallet, KusamaReceiver,
-	KusamaSender, PenpalKusama, PenpalKusamaReceiver, PenpalKusamaSender, PenpalPolkadot,
-	PenpalPolkadotReceiver, PenpalPolkadotSender, Polkadot, PolkadotMockNet, PolkadotPallet,
-	PolkadotReceiver, PolkadotSender, Statemine, StateminePallet, StatemineReceiver,
-	StatemineSender, PenpalKusamaPallet
+	KusamaSender, PenpalKusama, PenpalKusamaPallet, PenpalKusamaReceiver, PenpalKusamaSender,
+	PenpalPolkadot, PenpalPolkadotReceiver, PenpalPolkadotSender, Polkadot, PolkadotMockNet,
+	PolkadotPallet, PolkadotReceiver, PolkadotSender, Statemine, StateminePallet,
+	StatemineReceiver, StatemineSender,
 };
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use xcm::{
