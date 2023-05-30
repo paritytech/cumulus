@@ -1,0 +1,18 @@
+[workspace]
+[package]
+name = "glutton-update-bin"
+version = "1.0.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2021"
+description = "Script to update Glutton parachains storage values"
+
+
+[[bin]]
+name = "glutton-update"
+path = "src/main.rs"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false }
+subxt = { path = "../../../../subxt/subxt", default-features = true }
+sp-keyring = "23.0.0"
+tokio = { version = "1.28", features = ["macros", "time", "rt-multi-thread"] }
