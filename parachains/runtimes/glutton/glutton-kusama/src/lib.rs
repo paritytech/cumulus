@@ -46,15 +46,12 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod weights;
 pub mod xcm_config;
 
-use codec::{Decode, Encode};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-use frame_support::unsigned::TransactionValidityError;
-use scale_info::TypeInfo;
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
 	create_runtime_str, generic,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, DispatchInfoOf},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
