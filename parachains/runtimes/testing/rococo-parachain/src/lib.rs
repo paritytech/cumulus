@@ -374,11 +374,13 @@ parameter_types! {
 }
 
 match_types! {
+	// The parent or the parent's unit plurality.
 	pub type ParentOrParentsUnitPlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Unit, .. }) }
 	};
-	pub type Statemint: impl Contains<MultiLocation> = {
+	// The location recognized as the Relay network's Asset Hub.
+	pub type AssetHub: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: X1(Parachain(1000)) }
 	};
 }
@@ -386,9 +388,10 @@ match_types! {
 pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<Everything>,
+	// Parent & its unit plurality gets free execution.
 	AllowExplicitUnpaidExecutionFrom<ParentOrParentsUnitPlurality>,
-	// ^^^ Parent & its unit plurality gets free execution
-	AllowExplicitUnpaidExecutionFrom<Statemint>,
+	// The network's Asset Hub gets free execution.
+	AllowExplicitUnpaidExecutionFrom<AssetHub>,
 	// Expected responses are OK.
 	AllowKnownQueryResponses<PolkadotXcm>,
 	// Subscriptions for version tracking are OK.

@@ -94,6 +94,9 @@ impl_opaque_keys! {
 #[cfg(feature = "state-trie-version-1")]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
+	// Note: "statemine" is the legacy name for this chain. It has been renamed to
+	// "asset-hub-kusama". Many wallets/tools depend on the `spec_name`, so it remains "statemine"
+	// for the time being. Wallets/tools should update to treat "asset-hub-kusama" equally.
 	spec_name: create_runtime_str!("statemine"),
 	impl_name: create_runtime_str!("statemine"),
 	authoring_version: 1,
@@ -107,6 +110,9 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 #[cfg(not(feature = "state-trie-version-1"))]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
+	// Note: "statemine" is the legacy name for this change. It has been renamed to
+	// "asset-hub-kusama". Many wallets/tools depend on the `spec_name`, so it remains "statemine"
+	// for the time being. Wallets/tools should update to treat "asset-hub-kusama" equally.
 	spec_name: create_runtime_str!("statemine"),
 	impl_name: create_runtime_str!("statemine"),
 	authoring_version: 1,
@@ -768,7 +774,7 @@ pub type UncheckedExtrinsic =
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 /// Migrations to apply on runtime upgrade.
-pub type Migrations = ();
+pub type Migrations = (pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,);
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<

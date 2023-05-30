@@ -256,6 +256,7 @@ impl ContainsPair<MultiAsset, MultiLocation> for MultiNativeAsset {
 }
 
 parameter_types! {
+	/// The location that this chain recognizes as the Relay network's Asset Hub.
 	pub SystemAssetHubLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
 	// ALWAYS ensure that the index in PalletInstance stays up-to-date with
 	// the Relay Chain's Asset Hub's Assets pallet index

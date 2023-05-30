@@ -93,6 +93,9 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
+	// Note: "westmint" is the legacy name for this chain. It has been renamed to
+	// "asset-hub-westend". Many wallets/tools depend on the `spec_name`, so it remains "westmint"
+	// for the time being. Wallets/tools should update to treat "asset-hub-westend" equally.
 	spec_name: create_runtime_str!("westmint"),
 	impl_name: create_runtime_str!("westmint"),
 	authoring_version: 1,
@@ -764,7 +767,12 @@ pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 
 /// Migrations to apply on runtime upgrade.
-pub type Migrations = ();
+pub type Migrations = (
+	// v9420
+	pallet_nfts::migration::v1::MigrateToV1<Runtime>,
+	// unreleased
+	pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,
+);
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
