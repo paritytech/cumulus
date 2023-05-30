@@ -80,9 +80,13 @@ use assets_common::{
 	foreign_creators::ForeignCreators, matching::FromSiblingParachain, MultiLocationForAssetId,
 };
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
+use xcm_builder::EnsureXcmOrigin;
 use xcm_executor::XcmExecutor;
 
-use crate::xcm_config::{ForeignCreatorsSovereignAccountOf, UniversalLocation};
+use crate::xcm_config::{
+	AssetTransactors, BridgeXcmSender, ForeignCreatorsSovereignAccountOf, LocalOriginToLocation,
+	UniversalLocation,
+};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 impl_opaque_keys! {
@@ -699,20 +703,12 @@ impl pallet_bridge_transfer::Config for Runtime {
 	type AdminOrigin = AssetsForceOrigin;
 	type UniversalAliasesLimit = ConstU32<24>;
 	type ReserveLocationsLimit = ConstU32<8>;
-	// no transfer allowed out (now)
-	type AssetTransactor = ();
-	// no transfer allowed out (now)
-	type BridgeXcmSender = ();
-	// no transfer allowed out (now)
-	type TransferAssetOrigin =
-		frame_support::traits::NeverEnsureOrigin<xcm::latest::prelude::MultiLocation>;
-	// no transfer allowed out (now)
-	type MaxAssetsLimit = ConstU8<0>;
-	// no transfer allowed out (now)
-	type TransferPingOrigin =
-		frame_support::traits::NeverEnsureOrigin<xcm::latest::prelude::MultiLocation>;
-	// no transfer allowed out (now)
-	type PingMessageBuilder = ();
+	type AssetTransactor = AssetTransactors;
+	type BridgeXcmSender = BridgeXcmSender;
+	type TransferAssetOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+	type MaxAssetsLimit = ConstU8<1>;
+	type TransferPingOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+	type PingMessageBuilder = pallet_bridge_transfer::UnpaidTrapMessageBuilder<ConstU64<12345>>;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = xcm_config::BridgeTransferBenchmarksHelper;
 }

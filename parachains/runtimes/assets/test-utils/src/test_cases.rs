@@ -1424,29 +1424,6 @@ pub fn can_governance_change_bridge_transfer_out_configuration<Runtime, XcmConfi
 		})
 }
 
-#[macro_export]
-macro_rules! include_can_governance_change_bridge_transfer_out_configuration(
-	(
-		$runtime:path,
-		$xcm_config:path,
-		$collator_session_key:expr,
-		$runtime_call_encode:expr,
-		$unwrap_pallet_bridge_transfer_event:expr
-	) => {
-		#[test]
-		fn can_governance_change_bridge_transfer_out_configuration() {
-			$crate::test_cases::can_governance_change_bridge_transfer_out_configuration::<
-				$runtime,
-				$xcm_config,
-			>(
-				$collator_session_key,
-				$runtime_call_encode,
-				$unwrap_pallet_bridge_transfer_event,
-			)
-		}
-	}
-);
-
 /// Test-case makes sure that `Runtime` can manage `bridge_transfer in` configuration by governance
 pub fn can_governance_change_bridge_transfer_in_configuration<Runtime, XcmConfig>(
 	collator_session_keys: CollatorSessionKeys<Runtime>,
@@ -1510,29 +1487,6 @@ pub fn can_governance_change_bridge_transfer_in_configuration<Runtime, XcmConfig
 			));
 		})
 }
-
-#[macro_export]
-macro_rules! include_can_governance_change_bridge_transfer_in_configuration(
-	(
-		$runtime:path,
-		$xcm_config:path,
-		$collator_session_key:expr,
-		$runtime_call_encode:expr,
-		$unwrap_pallet_bridge_transfer_event:expr
-	) => {
-		#[test]
-		fn can_governance_change_bridge_transfer_in_configuration() {
-			$crate::test_cases::can_governance_change_bridge_transfer_in_configuration::<
-				$runtime,
-				$xcm_config,
-			>(
-				$collator_session_key,
-				$runtime_call_encode,
-				$unwrap_pallet_bridge_transfer_event,
-			)
-		}
-	}
-);
 
 /// Test-case makes sure that `Runtime` can initiate transfer of assets via bridge
 pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
@@ -1838,41 +1792,7 @@ pub fn initiate_transfer_asset_via_bridge_for_native_asset_works<
 		})
 }
 
-#[macro_export]
-macro_rules! include_initiate_transfer_asset_via_bridge_for_native_asset_works(
-	(
-		$runtime:path,
-		$xcm_config:path,
-		$hrmp_channel_opener:path,
-		$hrmp_channel_source:path,
-		$location_to_account_id:path,
-		$collator_session_key:expr,
-		$existential_deposit:expr,
-		$unwrap_pallet_bridge_transfer_event:expr,
-		$unwrap_xcmp_queue_event:expr
-	) => {
-		#[test]
-		fn initiate_transfer_asset_via_bridge_for_native_asset_works() {
-			const ALICE: [u8; 32] = [1u8; 32];
-			let alice_account = parachains_common::AccountId::from(ALICE);
-
-			$crate::test_cases::initiate_transfer_asset_via_bridge_for_native_asset_works::<
-				$runtime,
-				$xcm_config,
-				$hrmp_channel_opener,
-				$hrmp_channel_source,
-				$location_to_account_id
-			>(
-				$collator_session_key,
-				$existential_deposit,
-				alice_account,
-				$unwrap_pallet_bridge_transfer_event,
-				$unwrap_xcmp_queue_event
-			)
-		}
-	}
-);
-
+/// Test-case makes sure that `Runtime` can process `ReserveAssetDeposited`.
 pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 	Runtime,
 	XcmConfig,
@@ -2109,34 +2029,3 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 			);
 		})
 }
-
-#[macro_export]
-macro_rules! include_receive_reserve_asset_deposited_from_different_consensus_works(
-	(
-		$runtime:path,
-		$xcm_config:path,
-		$location_to_account_id:path,
-		$assets_pallet_instance:path,
-		$collator_session_key:expr,
-		$existential_deposit:expr,
-		$unwrap_pallet_xcm_event:expr
-	) => {
-		#[test]
-		fn receive_reserve_asset_deposited_from_different_consensus_works() {
-			const BOB: [u8; 32] = [2u8; 32];
-			let target_account = parachains_common::AccountId::from(BOB);
-
-			$crate::test_cases::receive_reserve_asset_deposited_from_different_consensus_works::<
-				$runtime,
-				$xcm_config,
-				$location_to_account_id,
-				$assets_pallet_instance
-			>(
-				$collator_session_key,
-				$existential_deposit,
-				target_account,
-				$unwrap_pallet_xcm_event
-			)
-		}
-	}
-);

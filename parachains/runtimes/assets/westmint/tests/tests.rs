@@ -14,7 +14,7 @@ pub use westmint_runtime::{
 		CheckingAccount, LocationToAccountId, TrustBackedAssetsPalletLocation, XcmConfig,
 	},
 	AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets, ForeignAssetsInstance,
-	ParachainSystem, Runtime, SessionKeys, System, TrustBackedAssetsInstance,
+	ParachainSystem, Runtime, SessionKeys, System, TrustBackedAssetsInstance, XcmpQueue,
 };
 use westmint_runtime::{
 	xcm_config::{
@@ -30,6 +30,7 @@ use xcm_executor::{
 };
 
 const ALICE: [u8; 32] = [1u8; 32];
+const BOB: [u8; 32] = [0u8; 32];
 const SOME_ASSET_ADMIN: [u8; 32] = [5u8; 32];
 
 type AssetIdForTrustBackedAssetsConvert =
@@ -609,41 +610,86 @@ asset_test_utils::include_create_and_manage_foreign_assets_for_local_consensus_p
 	})
 );
 
-asset_test_utils::include_can_governance_change_bridge_transfer_in_configuration!(
-	Runtime,
-	XcmConfig,
-	asset_test_utils::CollatorSessionKeys::new(
-		AccountId::from(ALICE),
-		AccountId::from(ALICE),
-		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-	),
-	Box::new(|call| RuntimeCall::BridgeTransfer(call).encode()),
-	Box::new(|runtime_event_encoded: Vec<u8>| {
-		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-			Ok(RuntimeEvent::BridgeTransfer(event)) => Some(event),
-			_ => None,
-		}
-	})
-);
+#[test]
+fn can_governance_change_bridge_transfer_out_configuration() {
+	asset_test_utils::test_cases::can_governance_change_bridge_transfer_out_configuration::<
+		Runtime,
+		XcmConfig,
+	>(
+		collator_session_keys(),
+		Box::new(|call| RuntimeCall::BridgeTransfer(call).encode()),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::BridgeTransfer(event)) => Some(event),
+				_ => None,
+			}
+		}),
+	)
+}
 
-asset_test_utils::include_receive_reserve_asset_deposited_from_different_consensus_works!(
-	Runtime,
-	XcmConfig,
-	LocationToAccountId,
-	ForeignAssetsInstance,
-	asset_test_utils::CollatorSessionKeys::new(
+#[test]
+fn initiate_transfer_asset_via_bridge_for_native_asset_works() {
+	asset_test_utils::test_cases::initiate_transfer_asset_via_bridge_for_native_asset_works::<
+		Runtime,
+		XcmConfig,
+		ParachainSystem,
+		XcmpQueue,
+		LocationToAccountId,
+	>(
+		collator_session_keys(),
+		ExistentialDeposit::get(),
 		AccountId::from(ALICE),
-		AccountId::from(ALICE),
-		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) }
-	),
-	ExistentialDeposit::get(),
-	Box::new(|runtime_event_encoded: Vec<u8>| {
-		match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-			Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
-			_ => None,
-		}
-	})
-);
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::BridgeTransfer(event)) => Some(event),
+				_ => None,
+			}
+		}),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
+				_ => None,
+			}
+		}),
+	)
+}
+
+#[test]
+fn can_governance_change_bridge_transfer_in_configuration() {
+	asset_test_utils::test_cases::can_governance_change_bridge_transfer_in_configuration::<
+		Runtime,
+		XcmConfig,
+	>(
+		collator_session_keys(),
+		Box::new(|call| RuntimeCall::BridgeTransfer(call).encode()),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::BridgeTransfer(event)) => Some(event),
+				_ => None,
+			}
+		}),
+	)
+}
+
+#[test]
+fn receive_reserve_asset_deposited_from_different_consensus_works() {
+	asset_test_utils::test_cases::receive_reserve_asset_deposited_from_different_consensus_works::<
+		Runtime,
+		XcmConfig,
+		LocationToAccountId,
+		ForeignAssetsInstance,
+	>(
+		collator_session_keys(),
+		ExistentialDeposit::get(),
+		AccountId::from(BOB),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
+				_ => None,
+			}
+		}),
+	)
+}
 
 #[test]
 fn plain_receive_teleported_asset_works() {

@@ -700,10 +700,8 @@ impl pallet_bridge_transfer::Config for Runtime {
 	type UniversalLocation = UniversalLocation;
 	type WeightInfo = weights::pallet_bridge_transfer::WeightInfo<Runtime>;
 	type AdminOrigin = AssetsForceOrigin;
-	// no transfer allowed in (now)
-	type UniversalAliasesLimit = ConstU32<0>;
-	// no transfer allowed in (now)
-	type ReserveLocationsLimit = ConstU32<0>;
+	type UniversalAliasesLimit = ConstU32<24>;
+	type ReserveLocationsLimit = ConstU32<8>;
 	type AssetTransactor = AssetTransactors;
 	type BridgeXcmSender = BridgeXcmSender;
 	type TransferAssetOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
@@ -1136,7 +1134,15 @@ impl_runtime_apis! {
 				}
 
 				fn universal_alias() -> Result<(MultiLocation, Junction), BenchmarkError> {
-					Err(BenchmarkError::Skip)
+					match <<Runtime as pallet_bridge_transfer::Config>::BenchmarkHelper as pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin>>::universal_alias() {
+						Some((location, junction)) => {
+							<pallet_bridge_transfer::Pallet<Runtime>>::insert_universal_alias_for_benchmarks(
+								(location.clone().try_into().unwrap(), junction)
+							);
+							Ok((location.clone().try_into().unwrap(), junction))
+						},
+						None => Err(BenchmarkError::Skip)
+					}
 				}
 
 				fn transact_origin_and_runtime_call() -> Result<(MultiLocation, RuntimeCall), BenchmarkError> {

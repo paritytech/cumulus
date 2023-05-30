@@ -19,13 +19,15 @@ use super::{
 	RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
 use assets_common::matching::{
-	FromSiblingParachain, IsForeignConcreteAsset, StartsWith, StartsWithExplicitGlobalConsensus,
+	FromSiblingParachain, IsDifferentGlobalConsensusConcreteAsset, IsForeignConcreteAsset,
+	StartsWith, StartsWithExplicitGlobalConsensus,
 };
 use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
 };
 use frame_system::EnsureRoot;
+use pallet_bridge_transfer::impls::{AllowedUniversalAliasesOf, IsAllowedReserveOf};
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{impls::ToStakingPot, xcm_config::AssetFeeAsExistentialDepositMultiplier};
 use polkadot_parachain::primitives::Sibling;
@@ -378,10 +380,12 @@ impl xcm_executor::Config for XcmConfig {
 	type XcmSender = XcmRouter;
 	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	// Statemine does not recognize a reserve location for any asset. This does not prevent
 	// Statemine acting _as_ a reserve location for KSM and assets created under `pallet-assets`.
 	// For KSM, users must use teleport where allowed (e.g. with the Relay Chain).
-	type IsReserve = ();
+	type IsReserve = IsAllowedReserveOf<
+		Runtime,
+		IsDifferentGlobalConsensusConcreteAsset<UniversalLocationNetworkId>,
+	>;
 	// We allow:
 	// - teleportation of KSM
 	// - teleportation of sibling parachain's assets (as ForeignCreators)
@@ -420,7 +424,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetExchanger = ();
 	type FeeManager = ();
 	type MessageExporter = ();
-	type UniversalAliases = Nothing;
+	type UniversalAliases = AllowedUniversalAliasesOf<Runtime>;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
 	type SafeCallFilter = SafeCallFilter;
 }
@@ -513,6 +517,11 @@ impl BridgeTransferBenchmarksHelper {
 		MultiLocation::new(2, X2(GlobalConsensus(Polkadot), Parachain(1000)))
 	}
 
+	/// Max fee we are willing to pay on the bridged side
+	fn allowed_target_location_max_fee() -> Option<MultiAsset> {
+		Some((MultiLocation::parent(), 50_000_000_000_u128).into())
+	}
+
 	/// Identifier of the sibling bridge-hub parachain.
 	fn bridge_hub_para_id() -> u32 {
 		1002
@@ -531,9 +540,26 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 				// this `None` with `Some(Self::make_asset(crate::ExistentialDeposit::get()))`
 				bridge_location_fee: None,
 				allowed_target_location: Self::allowed_target_location(),
-				max_target_location_fee: None,
+				max_target_location_fee: Self::allowed_target_location_max_fee(),
 			},
 		))
+	}
+
+	fn universal_alias() -> Option<(xcm::VersionedMultiLocation, Junction)> {
+		Some((
+			xcm::VersionedMultiLocation::V3(MultiLocation {
+				parents: 1,
+				interior: X1(Parachain(Self::bridge_hub_para_id())),
+			}),
+			GlobalConsensus(Polkadot),
+		))
+	}
+
+	fn reserve_location() -> Option<xcm::VersionedMultiLocation> {
+		Some(xcm::VersionedMultiLocation::V3(MultiLocation {
+			parents: 2,
+			interior: X2(GlobalConsensus(Polkadot), Parachain(1000)),
+		}))
 	}
 
 	fn prepare_asset_transfer(

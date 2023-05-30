@@ -803,8 +803,9 @@ pub(crate) mod tests {
 	};
 	use sp_version::RuntimeVersion;
 	use xcm_builder::{
-		AccountId32Aliases, CurrencyAdapter, EnsureXcmOrigin, ExporterFor, IsConcrete,
-		SiblingParachainConvertsVia, SignedToAccountId32, UnpaidRemoteExporter,
+		AccountId32Aliases, CurrencyAdapter, EnsureXcmOrigin, ExporterFor,
+		GlobalConsensusParachainConvertsFor, IsConcrete, SiblingParachainConvertsVia,
+		SignedToAccountId32, UnpaidRemoteExporter,
 	};
 	use xcm_executor::traits::Convert;
 
@@ -881,7 +882,7 @@ pub(crate) mod tests {
 		type MaxLocks = ();
 		type MaxReserves = MaxReserves;
 		type ReserveIdentifier = [u8; 8];
-		type HoldIdentifier = ();
+		type RuntimeHoldReason = RuntimeHoldReason;
 		type FreezeIdentifier = ();
 		type MaxHolds = ConstU32<0>;
 		type MaxFreezes = ConstU32<0>;
@@ -975,6 +976,9 @@ pub(crate) mod tests {
 		SiblingParachainConvertsVia<Sibling, AccountId>,
 		// Straight up local `AccountId32` origins just alias directly to `AccountId`.
 		AccountId32Aliases<RelayNetwork, AccountId>,
+		// Different global consensus parachain sovereign account.
+		// (Used for over-bridge transfers and reserve processing)
+		GlobalConsensusParachainConvertsFor<UniversalLocation, AccountId>,
 	);
 
 	/// Means for transacting the native currency on this chain.
@@ -1180,17 +1184,16 @@ pub(crate) mod tests {
 				bridged_network,
 				Box::new(test_bridge_config().1),
 			));
-			let bridge_location = AllowedExporters::<TestRuntime>::get(bridged_network)
+			let target_location = AllowedExporters::<TestRuntime>::get(bridged_network)
 				.expect("stored BridgeConfig for bridged_network")
-				.bridge_location;
+				.allowed_target_location;
 
 			// checks before
 			assert!(ROUTED_MESSAGE.with(|r| r.borrow().is_none()));
 			assert_eq!(Balances::free_balance(&user_account), user_account_init_balance);
-			let bridge_location_as_sovereign_account =
-				LocationToAccountId::convert_ref(bridge_location)
-					.expect("converted bridge location as accountId");
-			assert_eq!(Balances::free_balance(&bridge_location_as_sovereign_account), 0);
+			let reserve_account = LocationToAccountId::convert_ref(target_location)
+				.expect("converted target_location as accountId");
+			assert_eq!(Balances::free_balance(&reserve_account), 0);
 
 			// trigger transfer_asset_via_bridge - should trigger new ROUTED_MESSAGE
 			let asset = MultiAsset {
@@ -1218,7 +1221,7 @@ pub(crate) mod tests {
 				user_account_init_balance - balance_to_transfer
 			);
 			// check reserve account increased
-			assert_eq!(Balances::free_balance(&bridge_location_as_sovereign_account), 15);
+			assert_eq!(Balances::free_balance(&reserve_account), 15);
 
 			// check events
 			let events = System::events();
@@ -1246,8 +1249,8 @@ pub(crate) mod tests {
 			}) {
 				assert!(xcm.0.iter().any(|instr| matches!(instr, UnpaidExecution { .. })));
 				assert!(xcm.0.iter().any(|instr| matches!(instr, ReserveAssetDeposited(..))));
-				assert!(xcm.0.iter().any(|instr| matches!(instr, ClearOrigin)));
 				assert!(xcm.0.iter().any(|instr| matches!(instr, DepositAsset { .. })));
+				assert!(xcm.0.iter().any(|instr| matches!(instr, SetTopic { .. })));
 			} else {
 				assert!(false, "Does not contains [`ExportMessage`], fired_xcm: {:?}", fired_xcm);
 			}
@@ -1283,19 +1286,17 @@ pub(crate) mod tests {
 				}),
 			));
 
-			let bridge_location = AllowedExporters::<TestRuntime>::get(bridged_network)
+			let target_location = AllowedExporters::<TestRuntime>::get(bridged_network)
 				.expect("stored BridgeConfig for bridged_network")
-				.bridge_location;
+				.allowed_target_location;
 
 			// checks before
 			assert!(ROUTED_MESSAGE.with(|r| r.borrow().is_none()));
 			let user_balance_before = Balances::free_balance(&user_account);
 			assert_eq!(user_balance_before, user_account_init_balance);
-			let bridge_location_as_sovereign_account =
-				LocationToAccountId::convert_ref(bridge_location)
-					.expect("converted bridge location as accountId");
-			let reserve_account_before =
-				Balances::free_balance(&bridge_location_as_sovereign_account);
+			let reserve_account = LocationToAccountId::convert_ref(target_location)
+				.expect("converted target_location as accountId");
+			let reserve_account_before = Balances::free_balance(&reserve_account);
 			assert_eq!(reserve_account_before, 0);
 
 			// trigger transfer_asset_via_bridge - should trigger new ROUTED_MESSAGE
@@ -1331,10 +1332,7 @@ pub(crate) mod tests {
 			// checks after
 			// balances are untouched
 			assert_eq!(Balances::free_balance(&user_account), user_balance_before);
-			assert_eq!(
-				Balances::free_balance(&bridge_location_as_sovereign_account),
-				reserve_account_before
-			);
+			assert_eq!(Balances::free_balance(&reserve_account), reserve_account_before);
 			// no xcm messages fired
 			assert!(ROUTED_MESSAGE.with(|r| r.borrow().is_none()));
 			// check events (no events because of rollback)
