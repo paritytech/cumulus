@@ -1,6 +1,6 @@
 use crate::*;
-use frame_support::{pallet_prelude::ConstU32, BoundedVec, instances::Instance2};
-use pallet_asset_conversion::Call;
+use frame_support::{instances::Instance2, BoundedVec};
+// use pallet_asset_conversion::Call;
 use xcm_emulator::Parachain;
 
 #[test]
@@ -92,19 +92,27 @@ fn swap_locally_on_chain_using_local_assets() {
 
 #[test]
 fn swap_locally_on_chain_using_foreign_assets() {
-	use frame_support::traits::OriginTrait;
-	use frame_support::weights::WeightToFee;
+	use frame_support::{ weights::WeightToFee};
 	// Init tests variables
 	// Call to be executed in Assets Parachain
 	const ASSET_ID: u32 = 1;
 
-	let asset_native_at_statemine: MultiLocation = MultiLocation { parents: 0, interior: Here };
+	// let asset_native_at_statemine: MultiLocation = MultiLocation { parents: 0, interior: Here };
 
-	let foreign_asset1_at_statemine: MultiLocation =
-		MultiLocation { parents: 1, interior: X3(Parachain(PenpalKusama::para_id().into()), PalletInstance(50), GeneralIndex(1)) };
+	let foreign_asset1_at_statemine: MultiLocation = MultiLocation {
+		parents: 1,
+		interior: X3(
+			Parachain(PenpalKusama::para_id().into()),
+			PalletInstance(50),
+			GeneralIndex(1),
+		),
+	};
 
 	let assets_para_destination: VersionedMultiLocation =
 		MultiLocation { parents: 1, interior: X1(Parachain(Statemine::para_id().into())) }.into();
+
+	let penpal_location =
+		MultiLocation { parents: 1, interior: X1(Parachain(PenpalKusama::para_id().into())) };
 
 	PenpalKusama::execute_with(|| {
 		assert_ok!(<PenpalKusama as PenpalKusamaPallet>::Assets::create(
@@ -120,12 +128,17 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 	// XcmPallet send arguments
 	let sudo_origin = <PenpalKusama as Parachain>::RuntimeOrigin::root();
-	let soverign_origin = <PenpalKusama as Parachain>::RuntimeOrigin::root();
+	// let soverign_origin = <PenpalKusama as Parachain>::RuntimeOrigin::root();
 
-	let weight_limit = WeightLimit::Unlimited;
-	let require_weight_at_most = Weight::from_parts(1000000000, 200000);
-	let origin_kind = OriginKind::Superuser;
+	// let weight_limit = WeightLimit::Unlimited;
+	let require_weight_at_most = Weight::from_parts(1_100_000_000_000, 30_000);
+	let origin_kind = OriginKind::SovereignAccount;//Superuser;
 	// let check_origin = None;
+
+	let sov_penpal_on_statemine = Statemine::sovereign_account_id_of(penpal_location);
+	let sov_penpal_on_penpal = PenpalKusama::sovereign_account_id_of(penpal_location);
+	Statemine::fund_accounts(vec![(sov_penpal_on_statemine.clone(), 1_000_000_000_000_000)]);
+	PenpalKusama::fund_accounts(vec![(sov_penpal_on_penpal, 1_000_000_000_000_000)]);
 
 	let call = <Statemine as Para>::RuntimeCall::ForeignAssets(pallet_assets::Call::<
 		<Statemine as Para>::Runtime,
@@ -133,10 +146,10 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	>::create {
 		id: foreign_asset1_at_statemine,
 		min_balance: 1000,
-		admin: PenpalKusamaSender::get().into(),
+		admin: sov_penpal_on_statemine.into(),
 	})
-		.encode()
-		.into();
+	.encode()
+	.into();
 
 	// let call = <Statemine as Para>::RuntimeCall::AssetConversion(pallet_asset_conversion::Call::<
 	// 	<Statemine as Para>::Runtime
@@ -148,16 +161,14 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	// 	.into();
 
 	let buy_execution_fee_amount =
-		penpal_runtime::WeightToFee::weight_to_fee(&Weight::from_parts(90_000_000_000, 0));
+		penpal_runtime::WeightToFee::weight_to_fee(&require_weight_at_most.clone());
 	let buy_execution_fee = MultiAsset {
-		id: Concrete(MultiLocation::parent()),
+		id: Concrete(MultiLocation{ parents:1, interior: Here }),
 		fun: Fungible(buy_execution_fee_amount),
 	};
 
 	let xcm = VersionedXcm::from(Xcm(vec![
-		WithdrawAsset {
-			0: vec![buy_execution_fee.clone()].into()
-		},
+		WithdrawAsset { 0: vec![buy_execution_fee.clone()].into() },
 		BuyExecution { fees: buy_execution_fee, weight_limit: Unlimited },
 		Transact { require_weight_at_most, origin_kind, call },
 	]));
@@ -179,13 +190,14 @@ fn swap_locally_on_chain_using_foreign_assets() {
 			]
 		);
 	});
-	//
-	// Statemine::events().iter().for_each(|event| {
-	// 	println!("{:?}", event);
-	// });
-	//
+
 	// // Receive XCM message in Assets Parachain
 	Statemine::execute_with(|| {
-		assert!(<Statemine as StateminePallet>::ForeignAssets::asset_exists(foreign_asset1_at_statemine));
+		Statemine::events().iter().for_each(|event| {
+			println!("{:?}", event);
+		});
+		assert!(<Statemine as StateminePallet>::ForeignAssets::asset_exists(
+			foreign_asset1_at_statemine
+		));
 	});
 }
