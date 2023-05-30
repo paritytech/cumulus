@@ -34,13 +34,15 @@ impl<T: pallet::Config, const V: u32, const C: u32> ConsensusHook
 	for FixedVelocityConsensusHook<T, V, C>
 {
 	// Validates the number of authored blocks within the slot with respect to the `V + 1` limit.
-	fn on_state_proof(_state_proof: &RelayChainStateProof) -> (Weight, UnincludedSegmentCapacity) {
+	fn on_state_proof(state_proof: &RelayChainStateProof) -> (Weight, UnincludedSegmentCapacity) {
 		// Ensure velocity is non-zero.
 		let velocity = V.max(1);
+		let relay_chain_slot = state_proof.read_slot().expect("failed to read relay chain slot");
 
-		let authored = pallet::Pallet::<T>::slot_info()
-			.map(|(_slot, authored)| authored)
+		let (slot, authored) = pallet::Pallet::<T>::slot_info()
 			.expect("slot info is inserted on block initialization");
+		// Perform checks.
+		assert_eq!(slot, relay_chain_slot, "slot number mismatch");
 		if authored > velocity + 1 {
 			panic!("authored blocks limit is reached for the slot")
 		}
