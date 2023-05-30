@@ -14,7 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! This provides the option to run a basic relay-chain driven Aura implementation
+//! This provides the option to run a basic relay-chain driven Aura implementation.
+//!
+//! This collator only builds on top of the most recently included block, limiting the
+//! block time to a maximum of two times the relay-chain block time, and requiring the
+//! block to be built and distributed to validators between two relay-chain blocks.
 //!
 //! For more information about AuRa, the Substrate crate should be checked.
 
@@ -58,6 +62,8 @@ use sp_runtime::{
 use sp_state_machine::StorageChanges;
 use sp_timestamp::Timestamp;
 use std::{convert::TryFrom, error::Error, fmt::Debug, hash::Hash, sync::Arc, time::Duration};
+
+use crate::collator as collator_util;
 
 /// Parameters for [`run`].
 pub struct Params<BI, CIDP, Client, RClient, SO, Proposer, CS> {
@@ -110,6 +116,20 @@ pub async fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
 	)
 	.await;
 
+	let mut collator = {
+		let params = collator_util::Params {
+			create_inherent_data_providers: params.create_inherent_data_providers,
+			block_import: params.block_import,
+			relay_client: params.relay_client.clone(),
+			keystore: params.keystore.clone(),
+			para_id: params.para_id,
+			proposer: params.proposer,
+			collator_service: params.collator_service,
+		};
+
+		collator_util::Collator::<Block, P, _, _, _, _, _>::new(params)
+	};
+
 	while let Some(request) = collation_requests.next().await {
 		macro_rules! reject_with_error {
 			($err:expr) => {{
@@ -135,7 +155,7 @@ pub async fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
 
 		let parent_hash = parent_header.hash();
 
-		if !params.collator_service.check_block_status(parent_hash, &parent_header) {
+		if !collator.collator_service().check_block_status(parent_hash, &parent_header) {
 			continue
 		}
 
@@ -145,7 +165,7 @@ pub async fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
 			Ok(Some(h)) => h,
 		};
 
-		let claim = match claim_slot::<_, _, P>(
+		let claim = match collator_util::claim_slot::<_, _, P>(
 			&*params.para_client,
 			parent_hash,
 			&relay_parent_header,
@@ -161,217 +181,33 @@ pub async fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
 		};
 
 		let (parachain_inherent_data, other_inherent_data) = try_request!(
-			create_inherent_data(
+			collator.create_inherent_data(
 				*request.relay_parent(),
 				&validation_data,
 				parent_hash,
-				params.para_id,
-				claim.timestamp,
-				&params.relay_client,
-				&params.create_inherent_data_providers,
-			)
-			.await
+				claim.timestamp(),
+			).await
 		);
 
-		let proposal = try_request!(
-			params
-				.proposer
-				.propose(
-					&parent_header,
-					&parachain_inherent_data,
-					other_inherent_data,
-					Digest { logs: vec![claim.pre_digest] },
-					// TODO [https://github.com/paritytech/cumulus/issues/2439]
-					// We should call out to a pluggable interface that provides
-					// the proposal duration.
-					Duration::from_millis(500),
-					// Set the block limit to 50% of the maximum PoV size.
-					//
-					// TODO: If we got benchmarking that includes the proof size,
-					// we should be able to use the maximum pov size.
-					Some((validation_data.max_pov_size / 2) as usize),
-				)
-				.await
+		let (collation, _, post_hash) = try_request!(
+			collator.collate(
+				&parent_header,
+				&claim,
+				None,
+				(parachain_inherent_data, other_inherent_data),
+				// TODO [https://github.com/paritytech/cumulus/issues/2439]
+				// We should call out to a pluggable interface that provides
+				// the proposal duration.
+				Duration::from_millis(500),
+				// Set the block limit to 50% of the maximum PoV size.
+				//
+				// TODO: If we got benchmarking that includes the proof size,
+				// we should be able to use the maximum pov size.
+				(validation_data.max_pov_size / 2) as usize,
+			).await
 		);
 
-		let sealed_importable = try_request!(seal::<_, _, P>(
-			proposal.block,
-			proposal.storage_changes,
-			&claim.author_pub,
-			&params.keystore,
-		));
-
-		let post_hash = sealed_importable.post_hash();
-		let block = Block::new(
-			sealed_importable.post_header(),
-			sealed_importable
-				.body
-				.as_ref()
-				.expect("body always created with this `propose` fn; qed")
-				.clone(),
-		);
-
-		try_request!(params.block_import.import_block(sealed_importable).await);
-
-		let response = if let Some((collation, b)) = params.collator_service.build_collation(
-			&parent_header,
-			post_hash,
-			ParachainCandidate { block, proof: proposal.proof },
-		) {
-			tracing::info!(
-				target: crate::LOG_TARGET,
-				"PoV size {{ header: {}kb, extrinsics: {}kb, storage_proof: {}kb }}",
-				b.header().encode().len() as f64 / 1024f64,
-				b.extrinsics().encode().len() as f64 / 1024f64,
-				b.storage_proof().encode().len() as f64 / 1024f64,
-			);
-
-			if let MaybeCompressedPoV::Compressed(ref pov) = collation.proof_of_validity {
-				tracing::info!(
-					target: crate::LOG_TARGET,
-					"Compressed PoV size: {}kb",
-					pov.block_data.0.len() as f64 / 1024f64,
-				);
-			}
-
-			let result_sender = params.collator_service.announce_with_barrier(post_hash);
-			Some(CollationResult { collation, result_sender: Some(result_sender) })
-		} else {
-			None
-		};
-
-		request.complete(response);
+		let result_sender = Some(collator.collator_service().announce_with_barrier(post_hash));
+		request.complete(Some(CollationResult { collation, result_sender }));
 	}
-}
-
-/// A claim on an Aura slot.
-struct SlotClaim<Pub> {
-	author_pub: Pub,
-	pre_digest: sp_runtime::DigestItem,
-	timestamp: Timestamp,
-}
-
-async fn claim_slot<B, C, P>(
-	client: &C,
-	parent_hash: B::Hash,
-	relay_parent_header: &PHeader,
-	slot_duration: SlotDuration,
-	relay_chain_slot_duration: SlotDuration,
-	keystore: &KeystorePtr,
-) -> Result<Option<SlotClaim<P::Public>>, Box<dyn Error>>
-where
-	B: BlockT,
-	C: ProvideRuntimeApi<B> + Send + Sync + 'static,
-	C::Api: AuraApi<B, P::Public>,
-	P: Pair,
-	P::Public: Encode + Decode,
-	P::Signature: Encode + Decode,
-{
-	// load authorities
-	let authorities = client.runtime_api().authorities(parent_hash).map_err(Box::new)?;
-
-	// Determine the current slot and timestamp based on the relay-parent's.
-	let (slot_now, timestamp) =
-		match sc_consensus_babe::find_pre_digest::<PBlock>(relay_parent_header) {
-			Ok(babe_pre_digest) => {
-				let t =
-					Timestamp::new(relay_chain_slot_duration.as_millis() * *babe_pre_digest.slot());
-				let slot = Slot::from_timestamp(t, slot_duration);
-
-				(slot, t)
-			},
-			Err(_) => return Ok(None),
-		};
-
-	// Try to claim the slot locally.
-	let author_pub = {
-		let res = aura_internal::claim_slot::<P>(slot_now, &authorities, keystore).await;
-		match res {
-			Some(p) => p,
-			None => return Ok(None),
-		}
-	};
-
-	// Produce the pre-digest.
-	let pre_digest = aura_internal::pre_digest::<P>(slot_now);
-
-	Ok(Some(SlotClaim { author_pub, pre_digest, timestamp }))
-}
-
-// This explicitly creates the inherent data for parachains, as well as overriding the
-// timestamp based on the slot number.
-async fn create_inherent_data<B: BlockT>(
-	relay_parent: PHash,
-	validation_data: &PersistedValidationData,
-	parent_hash: B::Hash,
-	para_id: ParaId,
-	timestamp: Timestamp,
-	relay_chain_interface: &impl RelayChainInterface,
-	create_inherent_data_providers: &impl CreateInherentDataProviders<B, ()>,
-) -> Result<(ParachainInherentData, InherentData), Box<dyn Error>> {
-	let paras_inherent_data = ParachainInherentData::create_at(
-		relay_parent,
-		relay_chain_interface,
-		validation_data,
-		para_id,
-	)
-	.await;
-
-	let paras_inherent_data = match paras_inherent_data {
-		Some(p) => p,
-		None =>
-			return Err(format!("Could not create paras inherent data at {:?}", relay_parent).into()),
-	};
-
-	let mut other_inherent_data = create_inherent_data_providers
-		.create_inherent_data_providers(parent_hash, ())
-		.map_err(|e| e as Box<dyn Error>)
-		.await?
-		.create_inherent_data()
-		.await
-		.map_err(Box::new)?;
-
-	other_inherent_data.replace_data(sp_timestamp::INHERENT_IDENTIFIER, &timestamp);
-
-	Ok((paras_inherent_data, other_inherent_data))
-}
-
-fn seal<B: BlockT, T, P>(
-	pre_sealed: B,
-	storage_changes: StorageChanges<T, HashFor<B>>,
-	author_pub: &P::Public,
-	keystore: &KeystorePtr,
-) -> Result<BlockImportParams<B, T>, Box<dyn Error>>
-where
-	P: Pair,
-	P::Signature: Encode + Decode + TryFrom<Vec<u8>>,
-	P::Public: AppPublic,
-{
-	let (pre_header, body) = pre_sealed.deconstruct();
-	let pre_hash = pre_header.hash();
-	let block_number = *pre_header.number();
-
-	// seal the block.
-	let block_import_params = {
-		let seal_digest =
-			aura_internal::seal::<_, P>(&pre_hash, &author_pub, keystore).map_err(Box::new)?;
-		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, pre_header);
-		block_import_params.post_digests.push(seal_digest);
-		block_import_params.body = Some(body.clone());
-		block_import_params.state_action =
-			StateAction::ApplyChanges(sc_consensus::StorageChanges::Changes(storage_changes));
-		block_import_params.fork_choice = Some(ForkChoiceStrategy::LongestChain);
-		block_import_params
-	};
-	let post_hash = block_import_params.post_hash();
-
-	tracing::info!(
-		target: crate::LOG_TARGET,
-		"🔖 Pre-sealed block for proposal at {}. Hash now {:?}, previously {:?}.",
-		block_number,
-		post_hash,
-		pre_hash,
-	);
-
-	Ok(block_import_params)
 }
