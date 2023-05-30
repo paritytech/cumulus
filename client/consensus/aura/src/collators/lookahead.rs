@@ -14,7 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-// TODO [now]: docs
+//! A collator for Aura that looks ahead of the most recently included parachain block
+//! when determining what to build upon.
+//!
+//! This collator also builds additional blocks when the maximum backlog is not saturated.
+//! The size of the backlog is determined by invoking a runtime API. If that runtime API
+//! is not supported, this assumes a maximum backlog size of 1.
+//!
+//! This takes more advantage of asynchronous backing, though not complete advantage.
+//! When the backlog is not saturated, this approach lets the backlog temporarily 'catch up'
+//! with periods of higher throughput. When the backlog is saturated, we typically
+//! fall back to the limited cadence of a single parachain block per relay-chain block.
+//!
+//! Despite this, the fact that there is a backlog at all allows us to spend more time
+//! building the block, as there is some buffer before it can get posted to the relay-chain.
+//! The main limitation is block propagation time - i.e. the new blocks created by an author
+//! must be propagated to the next author before their turn.
 
 use codec::{Decode, Encode};
 use cumulus_client_collator::service::ServiceInterface as CollatorServiceInterface;
@@ -118,7 +133,9 @@ pub async fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
 		let relay_parent = relay_parent_header.hash();
 
 		// TODO [now]: get asynchronous backing parameters from the relay-chain
-		// runtime.
+		// runtime. why?
+
+		// TOOD [now]: get slot from relay parent header
 
 		let parent_search_params = ParentSearchParams {
 			relay_parent,
@@ -175,6 +192,7 @@ where
 	// all validators doing this every new relay-chain block.
 	// Actually, as long as sessions are based on slot number then they should
 	// be the same for all...
+	// That is, blocks with the same relay-parent should have the same session.
 	//
 	// TODO [now]: new runtime API,
 	// AuraUnincludedSegmentApi::has_space(slot) or something like it.
