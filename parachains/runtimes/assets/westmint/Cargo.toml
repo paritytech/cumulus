@@ -7,9 +7,9 @@ description = "Westend variant of Statemint parachain runtime"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
-hex-literal = { version = "0.3.4", optional = true }
+hex-literal = { version = "0.4.1", optional = true }
 log = { version = "0.4.17", default-features = false }
-scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
+scale-info = { version = "2.7.0", default-features = false, features = ["derive"] }
 smallvec = "1.10.0"
 
 # Substrate
@@ -26,6 +26,7 @@ pallet-aura = { git = "https://github.com/paritytech/substrate", default-feature
 pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-multisig = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-nft-fractionalization = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-nfts = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-nfts-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-proxy = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -74,11 +75,11 @@ parachains-common = { path = "../../../common", default-features = false }
 assets-common = { path = "../common", default-features = false }
 
 [dev-dependencies]
-hex-literal = "0.3.4"
+hex-literal = "0.4.1"
 asset-test-utils = { path = "../test-utils"}
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
 [features]
 default = [ "std" ]
@@ -91,6 +92,7 @@ runtime-benchmarks = [
 	"pallet-assets/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
+	"pallet-nft-fractionalization/runtime-benchmarks",
 	"pallet-nfts/runtime-benchmarks",
 	"pallet-proxy/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
@@ -103,6 +105,7 @@ runtime-benchmarks = [
 	"pallet-collator-selection/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
+	"assets-common/runtime-benchmarks",
 ]
 try-runtime = [
 	"cumulus-pallet-aura-ext/try-runtime",
@@ -120,6 +123,7 @@ try-runtime = [
 	"pallet-balances/try-runtime",
 	"pallet-collator-selection/try-runtime",
 	"pallet-multisig/try-runtime",
+	"pallet-nft-fractionalization/try-runtime",
 	"pallet-nfts/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-session/try-runtime",
@@ -144,6 +148,7 @@ std = [
 	"pallet-authorship/std",
 	"pallet-balances/std",
 	"pallet-multisig/std",
+	"pallet-nft-fractionalization/std",
 	"pallet-nfts/std",
 	"pallet-nfts-runtime-api/std",
 	"pallet-proxy/std",
@@ -184,4 +189,5 @@ std = [
 	"parachain-info/std",
 	"parachains-common/std",
 	"assets-common/std",
+	"substrate-wasm-builder",
 ]

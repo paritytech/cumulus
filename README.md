@@ -11,7 +11,7 @@ A set of tools for writing [Substrate](https://substrate.io/)-based
 [Polkadot](https://wiki.polkadot.network/en/)
 [parachains](https://wiki.polkadot.network/docs/en/learn-parachains). Refer to the included
 [overview](docs/overview.md) for architectural details, and the
-[Connect to relay and  parachain tutorials](https://docs.substrate.io/tutorials/connect-relay-and-parachains/) for a
+[Connect to a relay chain how-to guide](https://docs.substrate.io/reference/how-to-guides/parachains/connect-to-a-relay-chain/) for a
 guided walk-through of using these tools.
 
 It's easy to write blockchains using Substrate, and the overhead of writing parachains'
@@ -179,7 +179,7 @@ To run a Statemine or Westmint node (Statemint is not deployed, yet) you will ne
 `polkadot-parachain` binary:
 
 ```bash
-cargo build --release --locked -p polkadot-parachain
+cargo build --release --locked --bin polkadot-parachain
 ```
 
 Once the executable is built, launch the parachain node via:
@@ -189,7 +189,7 @@ CHAIN=westmint # or statemine
 ./target/release/polkadot-parachain --chain $CHAIN
 ```
 
-Refer to the [setup instructions](#local-setup) to run a local network for development.
+Refer to the [setup instructions](#manual-setup) to run a local network for development.
 
 ## Contracts 📝
 
@@ -219,7 +219,7 @@ eventually be included by the relay chain for a parachain.
 To run a Rococo collator you will need to compile the following binary:
 
 ```bash
-cargo build --release --locked -p polkadot-parachain
+cargo build --release --locked --bin polkadot-parachain
 ```
 
 Otherwise you can compile it with
@@ -228,7 +228,7 @@ Otherwise you can compile it with
 ```bash
 docker run --rm -it -w /shellhere/cumulus \
                     -v $(pwd):/shellhere/cumulus \
-                    paritytech/ci-linux:production cargo build --release --locked -p polkadot-parachain
+                    paritytech/ci-linux:production cargo build --release --locked --bin polkadot-parachain
 sudo chown -R $(id -u):$(id -g) target/
 ```
 

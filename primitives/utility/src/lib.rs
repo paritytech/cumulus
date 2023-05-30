@@ -121,7 +121,7 @@ pub struct TakeFirstAssetTrader<
 	AccountId,
 	FeeCharger: ChargeWeightInFungibles<AccountId, ConcreteAssets>,
 	Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-	ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId> + fungibles::Balanced<AccountId>,
+	ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
 	HandleRefund: TakeRevenue,
 >(
 	Option<AssetTraderRefunder>,
@@ -131,9 +131,7 @@ impl<
 		AccountId,
 		FeeCharger: ChargeWeightInFungibles<AccountId, ConcreteAssets>,
 		Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-		ConcreteAssets: fungibles::Mutate<AccountId>
-			+ fungibles::Transfer<AccountId>
-			+ fungibles::Balanced<AccountId>,
+		ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
 		HandleRefund: TakeRevenue,
 	> WeightTrader
 	for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, ConcreteAssets, HandleRefund>
@@ -165,25 +163,26 @@ impl<
 
 		// Get the local asset id in which we can pay for fees
 		let (local_asset_id, _) =
-			Matcher::matches_fungibles(&first).map_err(|_| XcmError::AssetNotFound)?;
+			Matcher::matches_fungibles(first).map_err(|_| XcmError::AssetNotFound)?;
 
 		// Calculate how much we should charge in the asset_id for such amount of weight
 		// Require at least a payment of minimum_balance
 		// Necessary for fully collateral-backed assets
-		let asset_balance: u128 = FeeCharger::charge_weight_in_fungibles(local_asset_id, weight)
-			.map(|amount| {
-				let minimum_balance = ConcreteAssets::minimum_balance(local_asset_id);
-				if amount < minimum_balance {
-					minimum_balance
-				} else {
-					amount
-				}
-			})?
-			.try_into()
-			.map_err(|_| XcmError::Overflow)?;
+		let asset_balance: u128 =
+			FeeCharger::charge_weight_in_fungibles(local_asset_id.clone(), weight)
+				.map(|amount| {
+					let minimum_balance = ConcreteAssets::minimum_balance(local_asset_id);
+					if amount < minimum_balance {
+						minimum_balance
+					} else {
+						amount
+					}
+				})?
+				.try_into()
+				.map_err(|_| XcmError::Overflow)?;
 
 		// Convert to the same kind of multiasset, with the required fungible balance
-		let required = first.id.clone().into_multiasset(asset_balance.into());
+		let required = first.id.into_multiasset(asset_balance.into());
 
 		// Substract payment
 		let unused = payment.checked_sub(required.clone()).map_err(|_| XcmError::TooExpensive)?;
@@ -206,9 +205,9 @@ impl<
 		{
 			// Get the local asset id in which we can refund fees
 			let (local_asset_id, outstanding_balance) =
-				Matcher::matches_fungibles(&(id.clone(), fun).into()).ok()?;
+				Matcher::matches_fungibles(&(id, fun).into()).ok()?;
 
-			let minimum_balance = ConcreteAssets::minimum_balance(local_asset_id);
+			let minimum_balance = ConcreteAssets::minimum_balance(local_asset_id.clone());
 
 			// Calculate asset_balance
 			// This read should have already be cached in buy_weight
@@ -235,8 +234,7 @@ impl<
 			let asset_balance: u128 = asset_balance.saturated_into();
 
 			// Construct outstanding_concrete_asset with the same location id and substracted balance
-			let outstanding_concrete_asset: MultiAsset =
-				(id.clone(), outstanding_minus_substracted).into();
+			let outstanding_concrete_asset: MultiAsset = (id, outstanding_minus_substracted).into();
 
 			// Substract from existing weight and balance
 			weight_outstanding = weight_outstanding.saturating_sub(weight);
@@ -260,9 +258,7 @@ impl<
 		AccountId,
 		FeeCharger: ChargeWeightInFungibles<AccountId, ConcreteAssets>,
 		Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-		ConcreteAssets: fungibles::Mutate<AccountId>
-			+ fungibles::Transfer<AccountId>
-			+ fungibles::Balanced<AccountId>,
+		ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
 		HandleRefund: TakeRevenue,
 	> Drop for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, ConcreteAssets, HandleRefund>
 {
@@ -292,7 +288,7 @@ impl<
 				&(X1(AccountId32 { network: None, id: receiver.into() }).into()),
 				// We aren't able to track the XCM that initiated the fee deposit, so we create a
 				// fake message hash here
-				&XcmContext::with_message_hash([0; 32]),
+				&XcmContext::with_message_id([0; 32]),
 			)
 			.is_ok();
 
@@ -317,10 +313,11 @@ mod tests {
 	use cumulus_primitives_core::UpwardMessage;
 	use frame_support::{
 		assert_ok,
-		dispatch::DispatchResult,
-		traits::tokens::{DepositConsequence, WithdrawConsequence},
+		dispatch::DispatchError,
+		traits::tokens::{
+			DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence,
+		},
 	};
-	use sp_runtime::DispatchError;
 	use xcm_executor::{traits::Error, Assets};
 
 	/// Validates [`validate`] for required Some(destination) and Some(message)
@@ -368,7 +365,7 @@ mod tests {
 
 		// ParentAsUmp - check dest is really not applicable
 		let dest = (Parent, Parent, Parent);
-		let mut dest_wrapper = Some(dest.clone().into());
+		let mut dest_wrapper = Some(dest.into());
 		let mut msg_wrapper = Some(message.clone());
 		assert_eq!(
 			Err(SendError::NotApplicable),
@@ -376,7 +373,7 @@ mod tests {
 		);
 
 		// check wrapper were not consumed
-		assert_eq!(Some(dest.clone().into()), dest_wrapper.take());
+		assert_eq!(Some(dest.into()), dest_wrapper.take());
 		assert_eq!(Some(message.clone()), msg_wrapper.take());
 
 		// another try with router chain with asserting sender
@@ -396,7 +393,7 @@ mod tests {
 
 		// ParentAsUmp - check dest/msg is valid
 		let dest = (Parent, Here);
-		let mut dest_wrapper = Some(dest.clone().into());
+		let mut dest_wrapper = Some(dest.into());
 		let mut msg_wrapper = Some(message.clone());
 		assert!(<ParentAsUmp<(), (), ()> as SendXcm>::validate(
 			&mut dest_wrapper,
@@ -451,7 +448,16 @@ mod tests {
 				todo!()
 			}
 
-			fn reducible_balance(_: Self::AssetId, _: &TestAccountId, _: bool) -> Self::Balance {
+			fn total_balance(_: Self::AssetId, _: &TestAccountId) -> Self::Balance {
+				todo!()
+			}
+
+			fn reducible_balance(
+				_: Self::AssetId,
+				_: &TestAccountId,
+				_: Preservation,
+				_: Fortitude,
+			) -> Self::Balance {
 				todo!()
 			}
 
@@ -459,7 +465,7 @@ mod tests {
 				_: Self::AssetId,
 				_: &TestAccountId,
 				_: Self::Balance,
-				_: bool,
+				_: Provenance,
 			) -> DepositConsequence {
 				todo!()
 			}
@@ -476,36 +482,20 @@ mod tests {
 				todo!()
 			}
 		}
-		impl fungibles::Mutate<TestAccountId> for TestAssets {
-			fn mint_into(_: Self::AssetId, _: &TestAccountId, _: Self::Balance) -> DispatchResult {
-				todo!()
-			}
-
-			fn burn_from(
-				_: Self::AssetId,
-				_: &TestAccountId,
-				_: Self::Balance,
-			) -> Result<Self::Balance, DispatchError> {
-				todo!()
-			}
-		}
-		impl fungibles::Transfer<TestAccountId> for TestAssets {
-			fn transfer(
-				_: Self::AssetId,
-				_: &TestAccountId,
-				_: &TestAccountId,
-				_: Self::Balance,
-				_: bool,
-			) -> Result<Self::Balance, DispatchError> {
-				todo!()
-			}
+		impl fungibles::Mutate<TestAccountId> for TestAssets {}
+		impl fungibles::Balanced<TestAccountId> for TestAssets {
+			type OnDropCredit = fungibles::DecreaseIssuance<TestAccountId, Self>;
+			type OnDropDebt = fungibles::IncreaseIssuance<TestAccountId, Self>;
 		}
 		impl fungibles::Unbalanced<TestAccountId> for TestAssets {
-			fn set_balance(
+			fn handle_dust(_: fungibles::Dust<TestAccountId, Self>) {
+				todo!()
+			}
+			fn write_balance(
 				_: Self::AssetId,
 				_: &TestAccountId,
 				_: Self::Balance,
-			) -> DispatchResult {
+			) -> Result<Option<Self::Balance>, DispatchError> {
 				todo!()
 			}
 
@@ -539,16 +529,13 @@ mod tests {
 
 		// prepare test data
 		let asset: MultiAsset = (Here, AMOUNT).into();
-		let payment = Assets::from(asset.clone());
+		let payment = Assets::from(asset);
 		let weight_to_buy = Weight::from_parts(1_000, 1_000);
 
 		// lets do first call (success)
 		assert_ok!(trader.buy_weight(weight_to_buy, payment.clone()));
 
 		// lets do second call (error)
-		assert_eq!(
-			trader.buy_weight(weight_to_buy, payment.clone()),
-			Err(XcmError::NotWithdrawable)
-		);
+		assert_eq!(trader.buy_weight(weight_to_buy, payment), Err(XcmError::NotWithdrawable));
 	}
 }

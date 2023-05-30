@@ -21,7 +21,7 @@ use sp_std::vec::Vec;
 use xcm::latest::MultiAsset;
 
 /// The possible errors that can happen querying the storage of assets.
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, scale_info::TypeInfo)]
 pub enum FungiblesAccessError {
 	/// `MultiLocation` to `AssetId`/`ClassId` conversion failed.
 	AssetIdConversionFailed,
@@ -31,11 +31,16 @@ pub enum FungiblesAccessError {
 
 sp_api::decl_runtime_apis! {
 	/// The API for querying account's balances from runtime.
+	#[api_version(2)]
 	pub trait FungiblesApi<AccountId>
 	where
 		AccountId: Codec,
 	{
 		/// Returns the list of all [`MultiAsset`] that an `AccountId` has.
+		#[changed_in(2)]
 		fn query_account_balances(account: AccountId) -> Result<Vec<MultiAsset>, FungiblesAccessError>;
+
+		/// Returns the list of all [`MultiAsset`] that an `AccountId` has.
+		fn query_account_balances(account: AccountId) -> Result<xcm::VersionedMultiAssets, FungiblesAccessError>;
 	}
 }
