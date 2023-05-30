@@ -12,4 +12,4 @@ All bugs, suggestions, and feature requests should be made upstream to [Cumulus]
 👉 Learn more about parachains [here](https://wiki.polkadot.network/docs/learn-parachains).
 
 🧙 Learn about how to use this template and run your own parachain testnet for it in the
-[Devhub Cumulus Tutorial](https://docs.substrate.io/tutorials/connect-relay-and-parachains/).
+[Build a Parachain tutorials](https://docs.substrate.io/tutorials/build-a-parachain/).
