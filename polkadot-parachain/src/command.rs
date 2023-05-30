@@ -873,34 +873,6 @@ pub fn run() -> Result<()> {
 			let collator_options = cli.run.collator_options();
 
 			runner.run_node_until_exit(|config| async move {
-				// If Statemint (Statemine, Westmint, Rockmine) DB exists and we're using the
-				// asset-hub chain spec, then rename the base path to the new chain ID. In the case
-				// that both file paths exist, the node will exit, as the user must decide (by
-				// deleting one path) the information that they want to use as their DB.
-				let old_name = match config.chain_spec.id() {
-				     "asset-hub-polkadot" => Some("statemint"),
-				     "asset-hub-kusama" => Some("statemine"),
-				     "asset-hub-westend" => Some("westmint"),
-				     "asset-hub-rococo" => Some("rockmine"),
-				     _ => None,
-				};
-
-				if let Some(old_name) = old_name {
-				    let new_path = config.base_path.config_dir(config.chain_spec.id());
-				    let old_path = config.base_path.config_dir(old_name);
-
-				    if old_path.exists() && new_path.exists() {
-				         return Err(format!(
-							"Found legacy {} path {} and new asset-hub path {}. Delete one path such that only one exists.",
-							old_name, old_path.display(), new_path.display()
-						).into())
-				    }
-
-				    if old_path.exists() {
-				        std::fs::rename(old_path, new_path)?;
-				    }
-				}
-
 				let hwbench = (!cli.no_hardware_benchmarks).then_some(
 					config.database.path().map(|database_path| {
 						let _ = std::fs::create_dir_all(database_path);
