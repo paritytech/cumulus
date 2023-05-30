@@ -700,10 +700,10 @@ impl pallet_bridge_transfer::Config for Runtime {
 	type UniversalLocation = UniversalLocation;
 	type WeightInfo = weights::pallet_bridge_transfer::WeightInfo<Runtime>;
 	type AdminOrigin = AssetsForceOrigin;
-	// no transfer allowed in (now)
-	type UniversalAliasesLimit = ConstU32<0>;
-	// no transfer allowed in (now)
-	type ReserveLocationsLimit = ConstU32<0>;
+	// one for ethereum
+	type UniversalAliasesLimit = ConstU32<1>;
+	// one for ethereum native tokens.
+	type ReserveLocationsLimit = ConstU32<1>;
 	type AssetTransactor = AssetTransactors;
 	type BridgeXcmSender = BridgeXcmSender;
 	type TransferAssetOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
