@@ -125,13 +125,6 @@ pub type UncheckedExtrinsic =
 /// Migrations to apply on runtime upgrade.
 pub type Migrations = (pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,);
 
-/// Migrations to apply on runtime upgrade.
-pub type Migrations = (
-	cumulus_pallet_parachain_system::migration::Migration<Runtime>,
-	cumulus_pallet_xcmp_queue::migration::Migration<Runtime>,
-	cumulus_pallet_dmp_queue::migration::Migration<Runtime>,
-);
-
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
 	Runtime,
