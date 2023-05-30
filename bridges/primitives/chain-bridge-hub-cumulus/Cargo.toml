@@ -15,13 +15,13 @@ bp-runtime = { path = "../../primitives/runtime", default-features = false }
 
 # Substrate Based Dependencies
 
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-frame-support = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.43" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.43" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.43" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.43" }
 
 # Polkadot Dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.43" }
 
 [features]
 default = ["std"]
