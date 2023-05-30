@@ -42,7 +42,7 @@ impl<T: Config> OnRuntimeUpgrade for Migration<T> {
 			weight = weight
 				.saturating_add(v2::migrate::<T>())
 				.saturating_add(T::DbWeight::get().writes(1));
-			STORAGE_VERSION.put::<Pallet<T>>();
+			StorageVersion::new(2).put::<Pallet<T>>();
 		}
 
 		weight
