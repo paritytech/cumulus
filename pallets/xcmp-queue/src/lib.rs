@@ -21,7 +21,7 @@
 //!
 //! Also provides an implementation of `SendXcm` which can be placed in a router tuple for relaying
 //! XCM over XCMP if the destination is `Parent/Parachain`. It requires an implementation of
-//! `XcmExecutor` for dispatching incoming XCM messages.
+//! `XcmExecutor` for dispatching incoming XCM messages. // TODO: update this.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -217,15 +217,15 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Some XCM was executed ok.
-		Success { message_hash: Option<XcmHash>, weight: Weight },
+		Success { message_hash: XcmHash, message_id: XcmHash, weight: Weight },
 		/// Some XCM failed.
-		Fail { message_hash: Option<XcmHash>, error: XcmError, weight: Weight },
+		Fail { message_hash: XcmHash, message_id: XcmHash, error: XcmError, weight: Weight },
 		/// Bad XCM version used.
-		BadVersion { message_hash: Option<XcmHash> },
+		BadVersion { message_hash: XcmHash },
 		/// Bad XCM format used.
-		BadFormat { message_hash: Option<XcmHash> },
+		BadFormat { message_hash: XcmHash },
 		/// An HRMP message was sent to a sibling parachain.
-		XcmpMessageSent { message_hash: Option<XcmHash> },
+		XcmpMessageSent { message_hash: XcmHash },
 	}
 
 	#[pallet::error]
@@ -457,7 +457,7 @@ impl<T: Config> Pallet<T> {
 					return false
 				}
 				s.extend_from_slice(&data[..]);
-				return true
+				true
 			});
 		if appended {
 			Ok((details.last_index - details.first_index - 1) as u32)
@@ -620,6 +620,7 @@ impl<T: Config> ProcessMessage for Pallet<T> {
 		message: &[u8],
 		origin: Self::Origin,
 		meter: &mut WeightMeter,
+		id: &mut [u8; 32],
 	) -> Result<bool, ProcessMessageError> {
 		if !meter.check_accrue(T::WeightInfo::process_message()) {
 			return Err(ProcessMessageError::Overweight(T::WeightInfo::process_message()))
@@ -638,7 +639,7 @@ impl<T: Config> ProcessMessage for Pallet<T> {
 			return Err(ProcessMessageError::Yield)
 		}
 
-		T::XcmpProcessor::process_message(message, origin, meter)
+		T::XcmpProcessor::process_message(message, origin, meter, id)
 	}
 }
 
@@ -861,7 +862,7 @@ impl<T: Config> SendXcm for Pallet<T> {
 
 		match Self::send_fragment(id, XcmpMessageFormat::ConcatenatedVersionedXcm, xcm) {
 			Ok(_) => {
-				Self::deposit_event(Event::XcmpMessageSent { message_hash: Some(hash) });
+				Self::deposit_event(Event::XcmpMessageSent { message_hash: hash });
 				Ok(hash)
 			},
 			Err(e) => Err(SendError::Transport(<&'static str>::from(e))),

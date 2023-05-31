@@ -48,9 +48,7 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot, EnsureSigned,
 };
-use parachains_common::process_xcm_message::{
-	ParaIdToSibling, ProcessFromSibling, ProcessXcmMessage,
-};
+use parachains_common::process_xcm_message::{ParaIdToSibling, ProcessFromSibling};
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -126,11 +124,10 @@ pub type SignedExtra = (
 pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 
-/// Extrinsic type that has already been checked.
-pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
-
-pub type Migrations =
-	(pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,);
+pub type Migrations = (
+	pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,
+	pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,
+);
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -227,7 +224,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("penpal-parachain"),
 	impl_name: create_runtime_str!("penpal-parachain"),
 	authoring_version: 1,
-	spec_version: 9400,
+	spec_version: 9420,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -390,7 +387,7 @@ impl pallet_balances::Config for Runtime {
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = [u8; 8];
-	type HoldIdentifier = ();
+	type RuntimeHoldReason = RuntimeHoldReason;
 	type FreezeIdentifier = ();
 	type MaxHolds = ConstU32<0>;
 	type MaxFreezes = ConstU32<0>;
@@ -480,7 +477,7 @@ impl pallet_message_queue::Config for Runtime {
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type MessageProcessor = parachains_common::process_xcm_message::SplitMessages<
-		ProcessXcmMessage<
+		xcm_builder::ProcessXcmMessage<
 			AggregateMessageOrigin,
 			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
 			RuntimeCall,
@@ -507,7 +504,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type XcmpProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<ParaId>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type XcmpProcessor = ProcessFromSibling<
-		ProcessXcmMessage<
+		xcm_builder::ProcessXcmMessage<
 			AggregateMessageOrigin,
 			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
 			RuntimeCall,
@@ -585,6 +582,7 @@ impl pallet_asset_tx_payment::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
+	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -634,6 +632,7 @@ mod benches {
 		[pallet_balances, Balances]
 		[pallet_message_queue, MessageQueue]
 		[pallet_session, SessionBench::<Runtime>]
+		[pallet_sudo, Sudo]
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
 		[cumulus_pallet_parachain_system, ParachainSystem]
@@ -819,7 +818,7 @@ impl_runtime_apis! {
 			list_benchmarks!(list, extra);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
-			return (list, storage_info)
+			(list, storage_info)
 		}
 
 		fn dispatch_benchmark(

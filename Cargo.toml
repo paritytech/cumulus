@@ -2,9 +2,15 @@
 resolver = "2"
 
 members = [
+	"bridges/bin/runtime-common",
+	"bridges/modules/grandpa",
+	"bridges/modules/messages",
+	"bridges/modules/parachains",
+	"bridges/modules/relayers",
 	"client/cli",
 	"client/consensus/aura",
 	"client/consensus/common",
+	"client/consensus/proposer",
 	"client/consensus/relay-chain",
 	"client/network",
 	"client/pov-recovery",
@@ -43,12 +49,17 @@ members = [
 	"parachains/runtimes/bridge-hubs/bridge-hub-polkadot",
 	"parachains/runtimes/collectives/collectives-polkadot",
 	"parachains/runtimes/contracts/contracts-rococo",
+	"parachains/runtimes/glutton/glutton-kusama",
 	"parachains/runtimes/testing/penpal",
+	"parachains/integration-tests/emulated/common",
+	"parachains/integration-tests/emulated/assets/statemine",
+	"parachains/integration-tests/emulated/assets/statemint",
 	"test/client",
 	"test/relay-sproof-builder",
 	"test/relay-validation-worker-provider",
 	"test/runtime",
 	"test/service",
+	"xcm/xcm-emulator",
 ]
 
 [profile.release]

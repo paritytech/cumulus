@@ -53,7 +53,7 @@ fn events() {
 				let events = System::events();
 				assert_eq!(
 					events[0].event,
-					RuntimeEvent::ParachainSystem(crate::Event::ValidationFunctionStored.into())
+					RuntimeEvent::ParachainSystem(crate::Event::ValidationFunctionStored)
 				);
 			},
 		)
@@ -64,10 +64,9 @@ fn events() {
 				let events = System::events();
 				assert_eq!(
 					events[0].event,
-					RuntimeEvent::ParachainSystem(
-						crate::Event::ValidationFunctionApplied { relay_chain_block_num: 1234 }
-							.into()
-					)
+					RuntimeEvent::ParachainSystem(crate::Event::ValidationFunctionApplied {
+						relay_chain_block_num: 1234
+					})
 				);
 			},
 		);
@@ -140,7 +139,7 @@ fn aborted_upgrade() {
 				let events = System::events();
 				assert_eq!(
 					events[0].event,
-					RuntimeEvent::ParachainSystem(crate::Event::ValidationFunctionDiscarded.into())
+					RuntimeEvent::ParachainSystem(crate::Event::ValidationFunctionDiscarded)
 				);
 			},
 		);
@@ -165,7 +164,7 @@ fn send_upward_message_num_per_candidate() {
 	BlockTests::new()
 		.with_relay_sproof_builder(|_, _, sproof| {
 			sproof.host_config.max_upward_message_num_per_candidate = 1;
-			sproof.relay_dispatch_queue_size = None;
+			sproof.relay_dispatch_queue_remaining_capacity = None;
 		})
 		.add_with_post_test(
 			1,
@@ -196,8 +195,8 @@ fn send_upward_message_relay_bottleneck() {
 			sproof.host_config.max_upward_queue_count = 5;
 
 			match relay_block_num {
-				1 => sproof.relay_dispatch_queue_size = Some((5, 0)),
-				2 => sproof.relay_dispatch_queue_size = Some((4, 0)),
+				1 => sproof.relay_dispatch_queue_remaining_capacity = Some((0, 2048)),
+				2 => sproof.relay_dispatch_queue_remaining_capacity = Some((1, 2048)),
 				_ => unreachable!(),
 			}
 		})
@@ -730,4 +729,19 @@ fn upgrade_version_checks_should_work() {
 			assert_eq!(expected.map_err(DispatchErrorWithPostInfo::from), res);
 		});
 	}
+}
+
+#[test]
+fn deposits_relay_parent_storage_root() {
+	BlockTests::new().add_with_post_test(
+		123,
+		|| {},
+		|| {
+			let digest = System::digest();
+			assert!(cumulus_primitives_core::rpsr_digest::extract_relay_parent_storage_root(
+				&digest
+			)
+			.is_some());
+		},
+	);
 }

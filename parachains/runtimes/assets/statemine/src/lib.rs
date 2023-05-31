@@ -103,7 +103,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("statemine"),
 	impl_name: create_runtime_str!("statemine"),
 	authoring_version: 1,
-	spec_version: 9400,
+	spec_version: 9420,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 13,
@@ -116,7 +116,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("statemine"),
 	impl_name: create_runtime_str!("statemine"),
 	authoring_version: 1,
-	spec_version: 9400,
+	spec_version: 9420,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 13,
@@ -211,7 +211,7 @@ impl pallet_balances::Config for Runtime {
 	type WeightInfo = weights::pallet_balances::WeightInfo<Runtime>;
 	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = [u8; 8];
-	type HoldIdentifier = ();
+	type RuntimeHoldReason = RuntimeHoldReason;
 	type FreezeIdentifier = ();
 	type MaxHolds = ConstU32<0>;
 	type MaxFreezes = ConstU32<0>;
@@ -219,7 +219,7 @@ impl pallet_balances::Config for Runtime {
 
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
-	pub const TransactionByteFee: Balance = 1 * MILLICENTS;
+	pub const TransactionByteFee: Balance = MILLICENTS;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -546,7 +546,7 @@ impl pallet_message_queue::Config for Runtime {
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type MessageProcessor = parachains_common::process_xcm_message::SplitMessages<
-		ProcessXcmMessage<
+		xcm_builder::ProcessXcmMessage<
 			AggregateMessageOrigin,
 			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
 			RuntimeCall,
@@ -577,7 +577,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type XcmpProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<ParaId>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type XcmpProcessor = ProcessFromSibling<
-		ProcessXcmMessage<
+		xcm_builder::ProcessXcmMessage<
 			AggregateMessageOrigin,
 			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
 			RuntimeCall,
@@ -808,7 +808,7 @@ pub type UncheckedExtrinsic =
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 /// Migrations to apply on runtime upgrade.
-pub type Migrations = ();
+pub type Migrations = (pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,);
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -1064,7 +1064,7 @@ impl_runtime_apis! {
 			list_benchmarks!(list, extra);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
-			return (list, storage_info)
+			(list, storage_info)
 		}
 
 		fn dispatch_benchmark(
@@ -1100,7 +1100,6 @@ impl_runtime_apis! {
 								id: Concrete(GeneralIndex(i as u128).into()),
 								fun: Fungible(fungibles_amount * i as u128),
 							}
-							.into()
 						})
 						.chain(core::iter::once(MultiAsset { id: Concrete(Here.into()), fun: Fungible(u128::MAX) }))
 						.chain((0..holding_non_fungibles).map(|i| MultiAsset {
@@ -1120,7 +1119,7 @@ impl_runtime_apis! {
 			parameter_types! {
 				pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = Some((
 					KsmLocation::get(),
-					MultiAsset { fun: Fungible(1 * UNITS), id: Concrete(KsmLocation::get()) },
+					MultiAsset { fun: Fungible(UNITS), id: Concrete(KsmLocation::get()) },
 				));
 				pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
 
@@ -1135,7 +1134,7 @@ impl_runtime_apis! {
 				fn get_multi_asset() -> MultiAsset {
 					MultiAsset {
 						id: Concrete(KsmLocation::get()),
-						fun: Fungible(1 * UNITS),
+						fun: Fungible(UNITS),
 					}
 				}
 			}
@@ -1239,7 +1238,7 @@ cumulus_pallet_parachain_system::register_validate_block! {
 #[cfg(feature = "state-trie-version-1")]
 parameter_types! {
 	// The deposit configuration for the singed migration. Specially if you want to allow any signed account to do the migration (see `SignedFilter`, these deposits should be high)
-	pub const MigrationSignedDepositPerItem: Balance = 1 * CENTS;
+	pub const MigrationSignedDepositPerItem: Balance = CENTS;
 	pub const MigrationSignedDepositBase: Balance = 2_000 * CENTS;
 	pub const MigrationMaxKeyLen: u32 = 512;
 }
