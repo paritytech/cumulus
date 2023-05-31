@@ -2436,6 +2436,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-aura",
+ "pallet-timestamp",
  "parity-scale-codec 3.5.0",
  "scale-info",
  "sp-application-crypto",

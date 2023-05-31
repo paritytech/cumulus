@@ -19,19 +19,24 @@
 //!
 //! The velocity `V` refers to the rate of block processing by the relay chain.
 
-use super::pallet;
+use super::{pallet, Aura};
 use cumulus_pallet_parachain_system::{
 	consensus_hook::{ConsensusHook, UnincludedSegmentCapacity},
 	relay_state_snapshot::RelayChainStateProof,
 };
 use frame_support::pallet_prelude::*;
+use sp_consensus_aura::{Slot, SlotDuration};
 use sp_std::{marker::PhantomData, num::NonZeroU32};
+
+const RELAY_CHAIN_MILLIS_PER_BLOCK: u64 = 6000;
 
 /// A consensus hook for a fixed block processing velocity and unincluded segment capacity.
 pub struct FixedVelocityConsensusHook<T, const V: u32, const C: u32>(PhantomData<T>);
 
 impl<T: pallet::Config, const V: u32, const C: u32> ConsensusHook
 	for FixedVelocityConsensusHook<T, V, C>
+where
+	<T as pallet_timestamp::Config>::Moment: Into<u64>,
 {
 	// Validates the number of authored blocks within the slot with respect to the `V + 1` limit.
 	fn on_state_proof(state_proof: &RelayChainStateProof) -> (Weight, UnincludedSegmentCapacity) {
@@ -41,8 +46,15 @@ impl<T: pallet::Config, const V: u32, const C: u32> ConsensusHook
 
 		let (slot, authored) = pallet::Pallet::<T>::slot_info()
 			.expect("slot info is inserted on block initialization");
+
+		// Convert relay chain timestamp.
+		let relay_chain_timestamp = *relay_chain_slot * RELAY_CHAIN_MILLIS_PER_BLOCK;
+		let para_slot_duration = SlotDuration::from_millis(Aura::<T>::slot_duration().into());
+		let para_slot_from_relay =
+			Slot::from_timestamp(relay_chain_timestamp.into(), para_slot_duration);
+
 		// Perform checks.
-		assert_eq!(slot, relay_chain_slot, "slot number mismatch");
+		assert_eq!(slot, para_slot_from_relay, "slot number mismatch");
 		if authored > velocity + 1 {
 			panic!("authored blocks limit is reached for the slot")
 		}
