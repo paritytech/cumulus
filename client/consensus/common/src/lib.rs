@@ -15,13 +15,15 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::Decode;
-use polkadot_primitives::{Hash as PHash, PersistedValidationData};
+use polkadot_primitives::{Block as PBlock, Hash as PHash, Header as PHeader, PersistedValidationData};
 
 use cumulus_primitives_core::{relay_chain::OccupiedCoreAssumption, ParaId};
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
 
 use sc_client_api::Backend;
 use sc_consensus::{shared_data::SharedData, BlockImport, ImportResult};
+use sp_consensus_slots::{Slot, SlotDuration};
+use sp_timestamp::Timestamp;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
 use std::sync::Arc;
@@ -349,4 +351,17 @@ pub async fn find_potential_parents<B: BlockT>(
 	}
 
 	Ok(potential_parents)
+}
+
+/// Get the relay-parent slot and timestamp from a header.
+pub fn relay_slot_and_timestamp(
+	relay_parent_header: &PHeader,
+	relay_chain_slot_duration: SlotDuration,
+) -> Option<(Slot, Timestamp)> {
+	sc_consensus_babe::find_pre_digest::<PBlock>(relay_parent_header).map(|babe_pre_digest| {
+		let slot = babe_pre_digest.slot();
+		let t = Timestamp::new(relay_chain_slot_duration.as_millis() * *slot);
+
+		(slot, t)
+	}).ok()
 }

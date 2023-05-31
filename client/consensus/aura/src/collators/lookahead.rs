@@ -72,6 +72,8 @@ use sp_state_machine::StorageChanges;
 use sp_timestamp::Timestamp;
 use std::{convert::TryFrom, error::Error, fmt::Debug, hash::Hash, sync::Arc, time::Duration};
 
+use crate::collator as collator_util;
+
 /// Parameters for [`run`].
 pub struct Params<BI, CIDP, Client, RClient, SO, Proposer, CS> {
 	pub create_inherent_data_providers: CIDP,
@@ -129,13 +131,25 @@ pub async fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
 		},
 	};
 
+	let mut collator = {
+		let params = collator_util::Params {
+			create_inherent_data_providers: params.create_inherent_data_providers,
+			block_import: params.block_import,
+			relay_client: params.relay_client.clone(),
+			keystore: params.keystore.clone(),
+			para_id: params.para_id,
+			proposer: params.proposer,
+			collator_service: params.collator_service,
+		};
+
+		collator_util::Collator::<Block, P, _, _, _, _, _>::new(params)
+	};
+
 	while let Some(relay_parent_header) = import_notifications.next().await {
 		let relay_parent = relay_parent_header.hash();
 
 		// TODO [now]: get asynchronous backing parameters from the relay-chain
 		// runtime. why?
-
-		// TOOD [now]: get slot from relay parent header
 
 		let parent_search_params = ParentSearchParams {
 			relay_parent,

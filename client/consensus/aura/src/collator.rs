@@ -26,7 +26,7 @@
 
 use codec::{Decode, Encode};
 use cumulus_client_collator::service::ServiceInterface as CollatorServiceInterface;
-use cumulus_client_consensus_common::{ParachainBlockImportMarker, ParachainCandidate};
+use cumulus_client_consensus_common::{self as consensus_common, ParachainBlockImportMarker, ParachainCandidate};
 use cumulus_client_consensus_proposer::ProposerInterface;
 use cumulus_primitives_core::{
 	relay_chain::Hash as PHash, DigestItem, ParachainBlockData, PersistedValidationData,
@@ -249,6 +249,22 @@ pub struct SlotClaim<Pub> {
 }
 
 impl<Pub> SlotClaim<Pub> {
+	/// Create a slot-claim from the given author public key, slot, and timestamp.
+	///
+	/// This does not check whether the author actually owns the slot or the timestamp
+	/// falls within the slot.
+	pub fn unchecked<P>(author_pub: Pub, slot: Slot, timestamp: Timestamp) -> Self where
+		P: Pair<Public = Pub>,
+		P::Public: Encode + Decode,
+		P::Signature: Encode + Decode
+	{
+		SlotClaim {
+			author_pub,
+			timestamp,
+			pre_digest: aura_internal::pre_digest::<P>(slot),
+		}
+	}
+
 	/// Get the author's public key.
 	pub fn author_pub(&self) -> &Pub {
 		&self.author_pub
@@ -287,17 +303,13 @@ where
 	let authorities = client.runtime_api().authorities(parent_hash).map_err(Box::new)?;
 
 	// Determine the current slot and timestamp based on the relay-parent's.
-	let (slot_now, timestamp) =
-		match sc_consensus_babe::find_pre_digest::<PBlock>(relay_parent_header) {
-			Ok(babe_pre_digest) => {
-				let t =
-					Timestamp::new(relay_chain_slot_duration.as_millis() * *babe_pre_digest.slot());
-				let slot = Slot::from_timestamp(t, slot_duration);
-
-				(slot, t)
-			},
-			Err(_) => return Ok(None),
-		};
+	let (slot_now, timestamp) = match consensus_common::relay_slot_and_timestamp(
+		relay_parent_header,
+		relay_chain_slot_duration,
+	) {
+		Some((_, t)) => (Slot::from_timestamp(t, slot_duration), t),
+		None => return Ok(None),
+	};
 
 	// Try to claim the slot locally.
 	let author_pub = {
@@ -308,10 +320,7 @@ where
 		}
 	};
 
-	// Produce the pre-digest.
-	let pre_digest = aura_internal::pre_digest::<P>(slot_now);
-
-	Ok(Some(SlotClaim { author_pub, pre_digest, timestamp }))
+	Ok(Some(SlotClaim::unchecked::<P>(author_pub, slot_now, timestamp)))
 }
 
 /// Seal a block with a signature in the header.
