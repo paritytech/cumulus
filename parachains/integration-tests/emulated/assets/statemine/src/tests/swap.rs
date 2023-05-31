@@ -92,7 +92,7 @@ fn swap_locally_on_chain_using_local_assets() {
 
 #[test]
 fn swap_locally_on_chain_using_foreign_assets() {
-	use frame_support::{ weights::WeightToFee};
+	use frame_support::weights::WeightToFee;
 	// Init tests variables
 	// Call to be executed in Assets Parachain
 	const ASSET_ID: u32 = 1;
@@ -132,13 +132,17 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 	// let weight_limit = WeightLimit::Unlimited;
 	let require_weight_at_most = Weight::from_parts(1_100_000_000_000, 30_000);
-	let origin_kind = OriginKind::SovereignAccount;//Superuser;
-	// let check_origin = None;
+	let origin_kind = OriginKind::Xcm; //OriginKind::SovereignAccount;//Superuser;
+								   // let check_origin = None;
 
 	let sov_penpal_on_statemine = Statemine::sovereign_account_id_of(penpal_location);
 	let sov_penpal_on_penpal = PenpalKusama::sovereign_account_id_of(penpal_location);
 	Statemine::fund_accounts(vec![(sov_penpal_on_statemine.clone(), 1_000_000_000_000_000)]);
 	PenpalKusama::fund_accounts(vec![(sov_penpal_on_penpal, 1_000_000_000_000_000)]);
+	let sov_penpal_on_statemine_as_location: MultiLocation = MultiLocation {
+		parents: 0,
+		interior: X1(AccountId32 { network: None, id: sov_penpal_on_statemine.clone().into() }),
+	};
 
 	let call = <Statemine as Para>::RuntimeCall::ForeignAssets(pallet_assets::Call::<
 		<Statemine as Para>::Runtime,
@@ -160,10 +164,12 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	// 	.encode()
 	// 	.into();
 
-	let buy_execution_fee_amount =
-		penpal_runtime::WeightToFee::weight_to_fee(&Weight::from_parts(10_100_000_000_000, 300_000));
+	let buy_execution_fee_amount = penpal_runtime::WeightToFee::weight_to_fee(&Weight::from_parts(
+		10_100_000_000_000,
+		300_000,
+	));
 	let buy_execution_fee = MultiAsset {
-		id: Concrete(MultiLocation{ parents:1, interior: Here }),
+		id: Concrete(MultiLocation { parents: 1, interior: Here }),
 		fun: Fungible(buy_execution_fee_amount),
 	};
 
@@ -171,6 +177,8 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		WithdrawAsset { 0: vec![buy_execution_fee.clone()].into() },
 		BuyExecution { fees: buy_execution_fee, weight_limit: Unlimited },
 		Transact { require_weight_at_most, origin_kind, call },
+		RefundSurplus,
+		DepositAsset { assets: All.into(), beneficiary: sov_penpal_on_statemine_as_location },
 	]));
 
 	// Send XCM message from penpal => statemine
@@ -183,6 +191,9 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 		type RuntimeEvent = <PenpalKusama as Parachain>::RuntimeEvent;
 
+		PenpalKusama::events().iter().for_each(|event| {
+			println!("penpal {:?}", event);
+		});
 		assert_expected_events!(
 			PenpalKusama,
 			vec![
@@ -194,7 +205,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	// Receive XCM message in Assets Parachain
 	Statemine::execute_with(|| {
 		Statemine::events().iter().for_each(|event| {
-			println!("{:?}", event);
+			println!("statemine {:?}", event);
 		});
 		assert!(<Statemine as StateminePallet>::ForeignAssets::asset_exists(
 			foreign_asset1_at_statemine
