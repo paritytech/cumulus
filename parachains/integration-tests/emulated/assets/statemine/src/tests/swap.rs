@@ -161,7 +161,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	// 	.into();
 
 	let buy_execution_fee_amount =
-		penpal_runtime::WeightToFee::weight_to_fee(&require_weight_at_most.clone());
+		penpal_runtime::WeightToFee::weight_to_fee(&Weight::from_parts(10_100_000_000_000, 300_000));
 	let buy_execution_fee = MultiAsset {
 		id: Concrete(MultiLocation{ parents:1, interior: Here }),
 		fun: Fungible(buy_execution_fee_amount),
@@ -191,7 +191,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		);
 	});
 
-	// // Receive XCM message in Assets Parachain
+	// Receive XCM message in Assets Parachain
 	Statemine::execute_with(|| {
 		Statemine::events().iter().for_each(|event| {
 			println!("{:?}", event);
