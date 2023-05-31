@@ -93,11 +93,8 @@ fn swap_locally_on_chain_using_local_assets() {
 #[test]
 fn swap_locally_on_chain_using_foreign_assets() {
 	use frame_support::weights::WeightToFee;
-	// Init tests variables
-	// Call to be executed in Assets Parachain
-	const ASSET_ID: u32 = 1;
 
-	// let asset_native_at_statemine: MultiLocation = MultiLocation { parents: 0, interior: Here };
+	const ASSET_ID: u32 = 1;
 
 	let foreign_asset1_at_statemine: MultiLocation = MultiLocation {
 		parents: 1,
@@ -114,6 +111,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	let penpal_location =
 		MultiLocation { parents: 1, interior: X1(Parachain(PenpalKusama::para_id().into())) };
 
+	// 1. Create asset on penpal:
 	PenpalKusama::execute_with(|| {
 		assert_ok!(<PenpalKusama as PenpalKusamaPallet>::Assets::create(
 			<PenpalKusama as Parachain>::RuntimeOrigin::signed(PenpalKusamaSender::get()),
@@ -121,15 +119,13 @@ fn swap_locally_on_chain_using_foreign_assets() {
 			PenpalKusamaSender::get().into(),
 			1000,
 		));
-		// assert!(<Statemine as StateminePallet>::Assets::asset_exists(ASSET_ID));
 
 		assert!(<PenpalKusama as PenpalKusamaPallet>::Assets::asset_exists(ASSET_ID));
 	});
 
-	// XcmPallet send arguments
-	let sudo_origin = <PenpalKusama as Parachain>::RuntimeOrigin::root();
-	// let soverign_origin = <PenpalKusama as Parachain>::RuntimeOrigin::root();
+	// 2. Create foreign asset on statemine:
 
+	// let soverign_origin = <PenpalKusama as Parachain>::RuntimeOrigin::root();
 	// let weight_limit = WeightLimit::Unlimited;
 	let require_weight_at_most = Weight::from_parts(1_100_000_000_000, 30_000);
 	let origin_kind = OriginKind::Xcm; //OriginKind::SovereignAccount;//Superuser;
@@ -137,20 +133,20 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 	let sov_penpal_on_statemine = Statemine::sovereign_account_id_of(penpal_location);
 	let sov_penpal_on_penpal = PenpalKusama::sovereign_account_id_of(penpal_location);
-	Statemine::fund_accounts(vec![(sov_penpal_on_statemine.clone(), 1_000_000_000_000_000)]);
-	PenpalKusama::fund_accounts(vec![(sov_penpal_on_penpal, 1_000_000_000_000_000)]);
+	Statemine::fund_accounts(vec![(sov_penpal_on_statemine.clone(), 10_000_000_000_000_000)]);
+	PenpalKusama::fund_accounts(vec![(sov_penpal_on_penpal, 10_000_000_000_000_000)]);
 	let sov_penpal_on_statemine_as_location: MultiLocation = MultiLocation {
 		parents: 0,
 		interior: X1(AccountId32 { network: None, id: sov_penpal_on_statemine.clone().into() }),
 	};
 
-	let call = <Statemine as Para>::RuntimeCall::ForeignAssets(pallet_assets::Call::<
+	let call_foreign_assets_create = <Statemine as Para>::RuntimeCall::ForeignAssets(pallet_assets::Call::<
 		<Statemine as Para>::Runtime,
 		Instance2,
 	>::create {
 		id: foreign_asset1_at_statemine,
 		min_balance: 1000,
-		admin: sov_penpal_on_statemine.into(),
+		admin: sov_penpal_on_statemine.clone().into(),
 	})
 	.encode()
 	.into();
@@ -173,19 +169,31 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		fun: Fungible(buy_execution_fee_amount),
 	};
 
+	// let call_foreign_assets_mint = <Statemine as Para>::RuntimeCall::ForeignAssets(pallet_assets::Call::<
+	// 	<Statemine as Para>::Runtime,
+	// 	Instance2,
+	// >::mint {
+	// 	id: foreign_asset1_at_statemine,
+	// 	amount: 42_000_000_000_000,
+	// 	beneficiary: sov_penpal_on_statemine.into(),
+	// })
+	// 	.encode()
+	// 	.into();
+
 	let xcm = VersionedXcm::from(Xcm(vec![
 		WithdrawAsset { 0: vec![buy_execution_fee.clone()].into() },
-		BuyExecution { fees: buy_execution_fee, weight_limit: Unlimited },
-		Transact { require_weight_at_most, origin_kind, call },
+		BuyExecution { fees: buy_execution_fee.clone(), weight_limit: Unlimited },
+		Transact { require_weight_at_most, origin_kind, call:call_foreign_assets_create },
 		RefundSurplus,
 		DepositAsset { assets: All.into(), beneficiary: sov_penpal_on_statemine_as_location },
 	]));
 
 	// Send XCM message from penpal => statemine
+	let sudo_penpal_origin = <PenpalKusama as Parachain>::RuntimeOrigin::root();
 	PenpalKusama::execute_with(|| {
 		assert_ok!(<PenpalKusama as PenpalKusamaPallet>::PolkadotXcm::send(
-			sudo_origin,
-			bx!(assets_para_destination),
+			sudo_penpal_origin.clone(),
+			bx!(assets_para_destination.clone()),
 			bx!(xcm),
 		));
 
@@ -204,11 +212,66 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 	// Receive XCM message in Assets Parachain
 	Statemine::execute_with(|| {
-		Statemine::events().iter().for_each(|event| {
-			println!("statemine {:?}", event);
-		});
+		// Statemine::events().iter().for_each(|event| {
+		// 	println!("statemine {:?}", event);
+		// });
 		assert!(<Statemine as StateminePallet>::ForeignAssets::asset_exists(
 			foreign_asset1_at_statemine
 		));
+	});
+
+	// 3: Mint foreign asset on statemine:
+	//
+ 	// (While it might be nice to use batch,
+	// currently that's disabled due to safe call filters.)
+
+	// let xcm = VersionedXcm::from(Xcm(vec![
+	// 	WithdrawAsset { 0: vec![buy_execution_fee.clone()].into() },
+	// 	BuyExecution { fees: buy_execution_fee, weight_limit: Unlimited },
+	// 	Transact { require_weight_at_most, origin_kind, call: call_foreign_assets_mint },
+	//
+	// 	RefundSurplus,
+	// 	DepositAsset { assets: All.into(), beneficiary: sov_penpal_on_statemine_as_location },
+	// ]));
+
+	// PenpalKusama::execute_with(|| {
+	// 	assert_ok!(<PenpalKusama as PenpalKusamaPallet>::PolkadotXcm::send(
+	// 		sudo_penpal_origin,
+	// 		bx!(assets_para_destination),
+	// 		bx!(xcm),
+	// 	));
+	//
+	// 	type RuntimeEvent = <PenpalKusama as Parachain>::RuntimeEvent;
+	//
+	// 	PenpalKusama::events().iter().for_each(|event| {
+	// 		println!("penpal {:?}", event);
+	// 	});
+	// 	assert_expected_events!(
+	// 		PenpalKusama,
+	// 		vec![
+	// 			RuntimeEvent::PolkadotXcm(pallet_xcm::Event::Sent { .. }) => {},
+	// 		]
+	// 	);
+	// });
+
+	Statemine::execute_with(|| {
+
+		assert_ok!(<Statemine as StateminePallet>::ForeignAssets::mint(
+			<Statemine as Parachain>::RuntimeOrigin::signed(sov_penpal_on_statemine.clone().into()),
+			foreign_asset1_at_statemine,
+			sov_penpal_on_statemine.into(),
+			42_000_000_000_000,
+
+		));
+
+		Statemine::events().iter().for_each(|event| {
+			println!("statemine {:?}", event);
+		});
+		assert_expected_events!(
+			Statemine,
+			vec![
+				statemine_runtime::RuntimeEvent::ForeignAssets(pallet_assets::Event::Issued { .. }) => {},
+			]
+		);
 	});
 }
