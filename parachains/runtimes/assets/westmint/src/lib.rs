@@ -40,7 +40,7 @@ use sp_runtime::{
 		AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult,
+	ApplyExtrinsicResult, Permill,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -261,6 +261,7 @@ impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 parameter_types! {
 	pub const AssetConversionPalletId: PalletId = PalletId(*b"py/ascon");
 	pub storage AllowMultiAssetPools: bool = false;
+	pub storage LiquidityWithdrawalFee: Permill = Permill::from_percent(0); // should be non-zero if AllowMultiAssetPools is true, otherwise can be zero
 }
 
 ord_parameter_types! {
@@ -306,7 +307,7 @@ impl pallet_asset_conversion::Config for Runtime {
 	type PoolAssetId = u32;
 	type PoolSetupFee = ConstU128<0>; // Asset class deposit fees are sufficient to prevent spam
 	type PoolSetupFeeReceiver = AssetConversionOrigin;
-	type LiquidityProvisionFee = ConstU128<0>; // should be non-zero if AllowMultiAssetPools is true, otherwise can be zero.
+	type LiquidityWithdrawalFee = LiquidityWithdrawalFee; // should be non-zero if AllowMultiAssetPools is true, otherwise can be zero.
 	type LPFee = ConstU32<3>;
 	type PalletId = AssetConversionPalletId;
 	type AllowMultiAssetPools = AllowMultiAssetPools;
@@ -807,7 +808,7 @@ construct_runtime!(
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		Nfts: pallet_nfts::{Pallet, Call, Storage, Event<T>} = 52,
 		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 53,
-		NftFractionalization: pallet_nft_fractionalization::{Pallet, Call, Storage, Event<T>} = 54,
+		NftFractionalization: pallet_nft_fractionalization::{Pallet, Call, Storage, Event<T>, HoldReason} = 54,
 		PoolAssets: pallet_assets::<Instance3>::{Pallet, Call, Storage, Event<T>} = 55,
 		AssetConversion: pallet_asset_conversion::{Pallet, Call, Storage, Event<T>} = 56,
 	}
@@ -837,7 +838,12 @@ pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 
 /// Migrations to apply on runtime upgrade.
-pub type Migrations = ();
+pub type Migrations = (
+	// v9420
+	pallet_nfts::migration::v1::MigrateToV1<Runtime>,
+	// unreleased
+	pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,
+);
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -1034,7 +1040,7 @@ impl_runtime_apis! {
 		}
 
 		fn get_reserves(asset1: MultiLocation, asset2: MultiLocation) -> Option<(Balance, Balance)> {
-			AssetConversion::get_reserves(asset1, asset2).ok()
+			AssetConversion::get_reserves(&asset1, &asset2).ok()
 		}
 	}
 

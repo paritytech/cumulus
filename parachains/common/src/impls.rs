@@ -205,7 +205,7 @@ where
 			// Otherwise it will try and touch the asset to create an account.
 			return Err(())
 		}
-		Ok(asset.clone())
+		Ok(&asset)
 	}
 
 	fn into_multiasset_id(asset: &MultiLocation) -> MultiLocation {
