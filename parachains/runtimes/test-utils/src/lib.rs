@@ -295,7 +295,7 @@ impl<Runtime: pallet_xcm::Config + cumulus_pallet_parachain_system::Config> Runt
 	}
 }
 
-impl<Runtime: cumulus_pallet_parachain_system::Config> RuntimeHelper<Runtime> {
+impl<Runtime: cumulus_pallet_parachain_system::Config + pallet_xcm::Config> RuntimeHelper<Runtime> {
 	pub fn execute_as_governance(call: Vec<u8>, require_weight_at_most: Weight) -> Outcome {
 		// prepare xcm as governance will do
 		let xcm = Xcm::<<Runtime as frame_system::Config>::RuntimeCall>(vec![
@@ -309,14 +309,13 @@ impl<Runtime: cumulus_pallet_parachain_system::Config> RuntimeHelper<Runtime> {
 
 		// execute xcm as parent origin
 		let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-		// CI-FAIL: we need some sort of a way to `execute_xcm` here.
-		todo!();
-		// <<Runtime as cumulus_pallet_dmp_queue::Config>::XcmExecutor>::execute_xcm(
-		// 	MultiLocation::parent(),
-		// 	xcm,
-		// 	hash,
-		// 	Self::xcm_max_weight(XcmReceivedFrom::Parent),
-		// )
+		// CI-FAIL: is this correct, or should I have enqueued the message for later processing?
+		<<Runtime as pallet_xcm::Config>::XcmExecutor>::execute_xcm(
+			MultiLocation::parent(),
+			xcm,
+			hash,
+			Self::xcm_max_weight(XcmReceivedFrom::Parent),
+		)
 	}
 }
 
