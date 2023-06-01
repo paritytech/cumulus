@@ -40,7 +40,7 @@ use sp_runtime::{
 		AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult,
+	ApplyExtrinsicResult, Permill,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -261,6 +261,7 @@ impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 parameter_types! {
 	pub const AssetConversionPalletId: PalletId = PalletId(*b"py/ascon");
 	pub storage AllowMultiAssetPools: bool = false;
+	pub storage LiquidityWithdrawalFee: Permill = Permill::from_percent(0); // should be non-zero if AllowMultiAssetPools is true, otherwise can be zero
 }
 
 ord_parameter_types! {
@@ -306,7 +307,7 @@ impl pallet_asset_conversion::Config for Runtime {
 	type PoolAssetId = u32;
 	type PoolSetupFee = ConstU128<0>; // Asset class deposit fees are sufficient to prevent spam
 	type PoolSetupFeeReceiver = AssetConversionOrigin;
-	type LiquidityProvisionFee = ConstU128<0>; // should be non-zero if AllowMultiAssetPools is true, otherwise can be zero.
+	type LiquidityWithdrawalFee = LiquidityWithdrawalFee; // should be non-zero if AllowMultiAssetPools is true, otherwise can be zero.
 	type LPFee = ConstU32<3>;
 	type PalletId = AssetConversionPalletId;
 	type AllowMultiAssetPools = AllowMultiAssetPools;
@@ -1039,7 +1040,7 @@ impl_runtime_apis! {
 		}
 
 		fn get_reserves(asset1: MultiLocation, asset2: MultiLocation) -> Option<(Balance, Balance)> {
-			AssetConversion::get_reserves(asset1, asset2).ok()
+			AssetConversion::get_reserves(&asset1, &asset2).ok()
 		}
 	}
 
