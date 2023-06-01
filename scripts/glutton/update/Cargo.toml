@@ -16,3 +16,6 @@ codec = { package = "parity-scale-codec", version = "3.4.0", default-features = 
 subxt = { path = "../../../../subxt/subxt", default-features = true }
 sp-keyring = "23.0.0"
 tokio = { version = "1.28", features = ["macros", "time", "rt-multi-thread"] }
+hex = "0.4.3"
+# glutton-runtime = { path = "../../../parachains/runtimes/glutton/glutton-kusama" }
+# pallet-glutton = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
