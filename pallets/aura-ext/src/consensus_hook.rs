@@ -28,13 +28,20 @@ use frame_support::pallet_prelude::*;
 use sp_consensus_aura::{Slot, SlotDuration};
 use sp_std::{marker::PhantomData, num::NonZeroU32};
 
-const RELAY_CHAIN_MILLIS_PER_BLOCK: u64 = 6000;
+const MILLIS_PER_SECOND: u64 = 1000;
 
 /// A consensus hook for a fixed block processing velocity and unincluded segment capacity.
-pub struct FixedVelocityConsensusHook<T, const V: u32, const C: u32>(PhantomData<T>);
+///
+/// Relay chain slot duration must be provided in seconds.
+pub struct FixedVelocityConsensusHook<
+	T,
+	const RELAY_CHAIN_SLOT_DURATION: u32,
+	const V: u32,
+	const C: u32,
+>(PhantomData<T>);
 
-impl<T: pallet::Config, const V: u32, const C: u32> ConsensusHook
-	for FixedVelocityConsensusHook<T, V, C>
+impl<T: pallet::Config, const RELAY_CHAIN_SLOT_DURATION: u32, const V: u32, const C: u32>
+	ConsensusHook for FixedVelocityConsensusHook<T, RELAY_CHAIN_SLOT_DURATION, V, C>
 where
 	<T as pallet_timestamp::Config>::Moment: Into<u64>,
 {
@@ -48,7 +55,8 @@ where
 			.expect("slot info is inserted on block initialization");
 
 		// Convert relay chain timestamp.
-		let relay_chain_timestamp = *relay_chain_slot * RELAY_CHAIN_MILLIS_PER_BLOCK;
+		let relay_chain_timestamp =
+			*relay_chain_slot * u64::from(RELAY_CHAIN_SLOT_DURATION) * MILLIS_PER_SECOND;
 		let para_slot_duration = SlotDuration::from_millis(Aura::<T>::slot_duration().into());
 		let para_slot_from_relay =
 			Slot::from_timestamp(relay_chain_timestamp.into(), para_slot_duration);
