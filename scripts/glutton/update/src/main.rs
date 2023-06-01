@@ -1,5 +1,4 @@
-use sp_keyring::{sr25519::sr25519::Pair as Sr25519Pair};
-use subxt::{dynamic::{At, Value}, tx::{PairSigner}, utils::AccountId32, ext::sp_core::Pair, OnlineClient};
+use subxt::{dynamic::{At, Value}, tx::{PairSigner}, utils::AccountId32, ext::sp_core::{Pair, sr25519::Pair as Sr25519Pair}, OnlineClient};
 use crate::glutton_para::runtime_types::{sp_arithmetic::per_things::Perbill};
 
 mod config;
@@ -81,6 +80,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let new_storage = 100_000_000;
 	let new_compute = 200_000_000;
 	let seed = "0xe5be9a5092b81bca64be81d212e7f2f9eba183bb7a90954f7b76361f6edb5c0a"; // Alice
+
 	// Get account and signer from secre seed
     let seed_bytes = hex::decode(&seed[2..]).expect("Invalid seed hex value");
 	let account_pair: Sr25519Pair = Pair::from_seed_slice(&seed_bytes).expect("Failed to create key pair");
