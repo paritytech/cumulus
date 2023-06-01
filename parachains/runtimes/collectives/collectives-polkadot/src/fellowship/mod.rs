@@ -42,7 +42,10 @@ use sp_arithmetic::traits::CheckedSub;
 use sp_core::{ConstU128, ConstU32};
 use sp_runtime::{
 	morph_types,
-	traits::{AccountIdConversion, ConstU16, ConvertToValue, Replace, TryMorph, TypedGet},
+	traits::{
+		AccountIdConversion, CheckedReduceBy, ConstU16, ConvertToValue, MorphWithUpperLimit,
+		Replace, TryMorph, TypedGet,
+	},
 };
 use xcm::latest::BodyId;
 
@@ -95,20 +98,6 @@ impl pallet_referenda::Config<FellowshipReferendaInstance> for Runtime {
 }
 
 pub type FellowshipCollectiveInstance = pallet_ranked_collective::Instance1;
-
-// TODO: Use versions in `sp_runtime`.
-morph_types! {
-	/// A `TryMorph` implementation to reduce a scalar by a particular amount, checking for
-	/// underflow.
-	pub type CheckedReduceBy<N: TypedGet>: TryMorph = |r: N::Type| -> Result<N::Type, ()> {
-		r.checked_sub(&N::get()).ok_or(())
-	} where N::Type: CheckedSub;
-
-	/// A `TryMorph` implementation to enforce an upper limit for a result of the outer morphed type.
-	pub type MorphWithUpperLimit<L: TypedGet, M>: TryMorph = |r: L::Type| -> Result<L::Type, ()> {
-		M::try_morph(r).map(|m| m.min(L::get()))
-	} where L::Type: Ord, M: TryMorph<L::Type, Outcome = L::Type>;
-}
 
 impl pallet_ranked_collective::Config<FellowshipCollectiveInstance> for Runtime {
 	type WeightInfo = weights::pallet_ranked_collective::WeightInfo<Runtime>;
@@ -201,7 +190,7 @@ parameter_types! {
 	pub Interior: InteriorMultiLocation = PalletInstance(64).into();
 }
 
-// TODO: Move into location_conversion.rs
+// TODO https://github.com/paritytech/polkadot/pull/7321: Move into location_conversion.rs
 /// Conversion implementation which converts from a `[u8; 32]`-based `AccountId` into a
 /// `MultiLocation` consisting solely of a `AccountId32` junction with a fixed value for its
 /// network (provided by `Network`) and the `AccountId`'s `[u8; 32]` datum for the `id`.
