@@ -1,6 +1,9 @@
 use sp_keyring::AccountKeyring;
-use subxt::{tx::PairSigner, OnlineClient, PolkadotConfig};
-use crate::glutton_para::runtime_types::sp_arithmetic::per_things::Perbill;
+use subxt::{dynamic::{At, Value}, tx::{PairSigner}, OnlineClient};
+use crate::glutton_para::runtime_types::{sp_arithmetic::per_things::Perbill};
+
+mod config;
+use crate::config::GluttonConfig;
 
 // wss://versi-glutton-collator-1300-node-1.parity-versi.parity.io
 
@@ -8,39 +11,70 @@ use crate::glutton_para::runtime_types::sp_arithmetic::per_things::Perbill;
 #[subxt::subxt(runtime_metadata_path = "./artifacts/glutton_metadata.scale")]
 pub mod glutton_para {}
 
+type RuntimeCall = glutton_para::runtime_types::glutton_runtime::RuntimeCall;
+type GluttonCall = glutton_para::runtime_types::pallet_glutton::pallet::Call;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a new API client, configured to talk to Glutton nodes.
-    let api = OnlineClient::<PolkadotConfig>::from_url("ws://127.0.0.1:9810").await?;
+    let client = OnlineClient::<GluttonConfig>::from_url("ws://127.0.0.1:9810").await?;
 
-    // let dest = AccountKeyring::Bob.to_account_id().into();
-	let storage = Perbill(100_000_000); // 10%
-    let set_compute_tx = glutton_para::tx().glutton().set_compute(storage);
+	// Get the nonce of sudo account
+	let sudo_account = AccountKeyring::Alice.to_account_id();
 
-    // Submit the balance transfer extrinsic from Alice, and wait for it to be successful
-    // and in a finalized block. We get back the extrinsic events if all is well.
-    let from = PairSigner::new(AccountKeyring::Alice.pair());
-    let events = api
-        .tx()
-        .sign_and_submit_then_watch_default(&set_compute_tx, &from)
-        .await?
-        .wait_for_finalized_success()
-        .await?;
+	let storage_query =
+		subxt::dynamic::storage("System", "Account", vec![Value::from_bytes(sudo_account)]);
 
-	// A query to obtain some contant:
-	// let constant_query = glutton_para::constants().system().block_length();
+	let value = client
+		.storage()
+		.at_latest()
+		.await?
+		.fetch(&storage_query)
+		.await?;
 
-	// // Obtain the value:
-	// let value = api.constants().at(&constant_query)?;
+	let nonce = if let Some(decoded_value) = value {
+		decoded_value
+			.to_value()?
+			.at("nonce")
+			.unwrap()
+			.as_u128()
+			.unwrap() as u32
+	} else {
+		0
+	};
 
-	// println!("Block length: {value:?}");
-	// Ok(())
+	// Build de pallet_glutton call
+	let new_storage = Perbill(55555);
 
-    // Find a Transfer event and print it.
-    // let set_compute_event = events.find_first::<glutton_para::glutton::events::ComputationLimitSet>()?;
-    // if let Some(event) = set_compute_event {
-    //     println!("Balance transfer success: {event:?}");
-    // }
+	let set_storage_call = RuntimeCall::Glutton(GluttonCall::set_storage {
+		storage: new_storage
+    });
+
+	// Build the tx to sign
+    let sudo_set_storage_tx = glutton_para::tx().sudo().sudo(set_storage_call);
+
+	// Get the sudo signer
+	let signer = PairSigner::new(AccountKeyring::Alice.pair());
+
+	// Build the signed tx
+	let signed_extrinsic = client
+		.tx()
+		.create_signed_with_nonce(
+			&sudo_set_storage_tx,
+			&signer,
+			nonce,
+			Default::default()
+		)
+		.unwrap();
+
+	// Submit and Watch the extrinsic
+    let in_block = signed_extrinsic
+        .submit_and_watch()
+        .await
+        .unwrap()
+        .wait_for_in_block()
+        .await
+        .unwrap();
 
     Ok(())
 }

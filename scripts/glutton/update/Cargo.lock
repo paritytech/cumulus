@@ -912,6 +912,7 @@ checksum = "ad0a93d233ebf96623465aad4046a8d3aa4da22d4f4beba5388838c8a434bbb4"
 name = "glutton-update-bin"
 version = "1.0.0"
 dependencies = [
+ "hex",
  "parity-scale-codec",
  "sp-keyring",
  "subxt",
