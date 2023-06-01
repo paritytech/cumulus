@@ -88,6 +88,7 @@ pub mod pallet_origins {
 	}
 	decl_unit_ensures!(
 		Candidates: Rank = ranks::CANDIDATES,
+		Members: Rank = ranks::DAN_1,
 		Fellows: Rank = ranks::DAN_3,
 		Architects: Rank = ranks::DAN_4,
 		Masters: Rank = ranks::DAN_7,

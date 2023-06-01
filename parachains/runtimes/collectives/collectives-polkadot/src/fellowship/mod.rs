@@ -19,28 +19,30 @@
 pub(crate) mod migration;
 mod origins;
 mod tracks;
+use cumulus_primitives_core::Junction::GeneralIndex;
 use frame_system::EnsureNever;
 pub use origins::{
-	pallet_origins as pallet_fellowship_origins, Architects, Candidates, Fellows, Masters,
+	pallet_origins as pallet_fellowship_origins, Architects, Candidates, Fellows, Masters, Members,
 };
+use xcm_builder::{LocatableAssetId, PayOverXcm};
 
 use self::origins::EnsureFellowship;
 use crate::{
-	constants, impls::ToParentTreasury, weights, AccountId, Balance, Balances, BlockNumber,
-	FellowshipReferenda, GovernanceLocation, PolkadotTreasuryAccount, Preimage, Runtime,
-	RuntimeCall, RuntimeEvent, Scheduler, DAYS,
+	constants, impls::ToParentTreasury, weights, AccountId, Balance, Balances, FellowshipReferenda,
+	GovernanceLocation, PolkadotTreasuryAccount, Preimage, Runtime, RuntimeCall, RuntimeEvent,
+	Scheduler, DAYS,
 };
 use frame_support::{
 	parameter_types,
-	traits::{tokens::PayFromAccount, EitherOf, EitherOfDiverse, MapSuccess, TryMapSuccess},
+	traits::{EitherOf, EitherOfDiverse, MapSuccess, TryMapSuccess},
 };
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
-use polkadot_runtime_constants::{currency::UNITS, xcm::body::FELLOWSHIP_ADMIN_INDEX};
+use polkadot_runtime_constants::{currency::UNITS, time::HOURS, xcm::body::FELLOWSHIP_ADMIN_INDEX};
 use sp_arithmetic::traits::CheckedSub;
 use sp_core::{ConstU128, ConstU32};
 use sp_runtime::{
 	morph_types,
-	traits::{AccountIdConversion, ConstU16, Replace, TryMorph, TypedGet},
+	traits::{AccountIdConversion, ConstU16, ConvertToValue, Replace, TryMorph, TypedGet},
 };
 use xcm::latest::BodyId;
 
@@ -138,7 +140,7 @@ impl pallet_core_fellowship::Config<FellowshipCoreInstance> for Runtime {
 	// Parameters are set by any of:
 	// - Root;
 	// - the FellowshipAdmin origin (i.e. token holder referendum);
-	// - a vote of the rank 3 or above.
+	// - a vote among all Fellows.
 	type ParamsOrigin = EitherOfDiverse<
 		EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
 		Fellows,
@@ -146,21 +148,25 @@ impl pallet_core_fellowship::Config<FellowshipCoreInstance> for Runtime {
 	// Induction (creating a candidate) is by any of:
 	// - Root;
 	// - the FellowshipAdmin origin (i.e. token holder referendum);
-	// - a member of rank 1 or above.
+	// - a single Fellow;
+	// - a vote among all Members.
 	type InductOrigin = EitherOfDiverse<
 		EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
-		pallet_ranked_collective::EnsureMember<Runtime, FellowshipCollectiveInstance, 1>,
+		EitherOfDiverse<
+			pallet_ranked_collective::EnsureMember<Runtime, FellowshipCollectiveInstance, 2>,
+			Members,
+		>,
 	>;
-	// Approval of a member's current rank is by any of:
+	// Approval (rank-retention) of a Member's current rank is by any of:
 	// - Root;
 	// - the FellowshipAdmin origin (i.e. token holder referendum);
-	// - a vote by the rank two above the current rank.
+	// - a vote by the rank one above the current rank.
 	type ApproveOrigin = EitherOf<
 		MapSuccess<
 			EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
 			Replace<ConstU16<{ ranks::DAN_9 }>>,
 		>,
-		TryMapSuccess<EnsureFellowship, CheckedReduceBy<ConstU16<2>>>,
+		TryMapSuccess<EnsureFellowship, CheckedReduceBy<ConstU16<1>>>,
 	>;
 	// Promotion is by any of:
 	// - Root can promote arbitrarily.
@@ -181,10 +187,52 @@ impl pallet_core_fellowship::Config<FellowshipCoreInstance> for Runtime {
 
 pub type FellowshipSalaryInstance = pallet_salary::Instance1;
 
+use xcm::prelude::*;
+
+parameter_types! {
+	pub Statemint: MultiLocation = (Parent, Parachain(1000)).into();
+	pub StatemintUsdtId: AssetId = GeneralIndex(1984).into();
+	pub UsdtAsset: LocatableAssetId = LocatableAssetId {
+		location: Statemint::get(),
+		asset_id: StatemintUsdtId::get(),
+	};
+	// The interior location on Statemint for the paying account. This is the Fellowship Salary
+	// pallet instance (which sits at index 64). This sovereign account will need funding.
+	pub Interior: InteriorMultiLocation = PalletInstance(64).into();
+}
+
+// TODO: Move into location_conversion.rs
+/// Conversion implementation which converts from a `[u8; 32]`-based `AccountId` into a
+/// `MultiLocation` consisting solely of a `AccountId32` junction with a fixed value for its
+/// network (provided by `Network`) and the `AccountId`'s `[u8; 32]` datum for the `id`.
+pub struct AliasesIntoAccountId32<Network, AccountId>(
+	sp_std::marker::PhantomData<(Network, AccountId)>,
+);
+impl<
+		'a,
+		Network: sp_runtime::traits::Get<Option<NetworkId>>,
+		AccountId: Clone + Into<[u8; 32]> + Clone,
+	> sp_runtime::traits::Convert<&'a AccountId, MultiLocation>
+	for AliasesIntoAccountId32<Network, AccountId>
+{
+	fn convert(who: &AccountId) -> MultiLocation {
+		AccountId32 { network: Network::get(), id: who.clone().into() }.into()
+	}
+}
+
 impl pallet_salary::Config<FellowshipSalaryInstance> for Runtime {
 	type WeightInfo = weights::pallet_salary::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
-	type Paymaster = PayFromAccount<Balances, PolkadotTreasuryAccount>;
+	type Paymaster = PayOverXcm<
+		Interior,
+		crate::xcm_config::XcmRouter,
+		crate::PolkadotXcm,
+		ConstU32<{ 6 * HOURS }>,
+		AccountId,
+		(),
+		ConvertToValue<UsdtAsset>,
+		AliasesIntoAccountId32<(), AccountId>,
+	>;
 	type Members = pallet_ranked_collective::Pallet<Runtime, FellowshipCollectiveInstance>;
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
