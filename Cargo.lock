@@ -962,7 +962,6 @@ dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "frame-benchmarking",
  "frame-executive",
@@ -1025,7 +1024,6 @@ dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "frame-benchmarking",
  "frame-executive",
@@ -1098,7 +1096,6 @@ dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "frame-benchmarking",
  "frame-executive",
@@ -1613,7 +1610,6 @@ dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "frame-benchmarking",
  "frame-executive",
@@ -1768,7 +1764,6 @@ dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "frame-benchmarking",
  "frame-executive",
@@ -2630,23 +2625,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-primitives-timestamp"
-version = "0.1.0"
-dependencies = [
- "cumulus-primitives-core",
- "cumulus-test-client",
- "cumulus-test-relay-sproof-builder",
- "futures",
- "parity-scale-codec 3.5.0",
- "sp-consensus",
- "sp-inherents",
- "sp-runtime",
- "sp-std",
- "sp-timestamp",
- "sp-tracing",
-]
-
-[[package]]
 name = "cumulus-primitives-utility"
 version = "0.1.0"
 dependencies = [
@@ -2832,7 +2810,6 @@ version = "0.1.0"
 dependencies = [
  "cumulus-pallet-parachain-system",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "frame-executive",
  "frame-support",
  "frame-system",
@@ -8074,7 +8051,6 @@ dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "frame-benchmarking",
  "frame-executive",
@@ -8398,7 +8374,6 @@ dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "frame-benchmarking",
  "frame-executive",
@@ -10740,7 +10715,6 @@ dependencies = [
  "cumulus-pallet-xcmp-queue",
  "cumulus-ping",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "frame-benchmarking",
  "frame-executive",
@@ -13610,7 +13584,6 @@ dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "frame-benchmarking",
  "frame-executive",
@@ -13706,7 +13679,6 @@ dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "frame-benchmarking",
  "frame-executive",
@@ -15726,7 +15698,6 @@ dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "frame-benchmarking",
  "frame-executive",

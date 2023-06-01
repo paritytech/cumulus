@@ -85,12 +85,10 @@ pub use consensus_hook::ConsensusHook;
 /// ```
 ///     struct BlockExecutor;
 ///     struct Runtime;
-///     struct CheckInherents;
 ///
 ///     cumulus_pallet_parachain_system::register_validate_block! {
 ///         Runtime = Runtime,
 ///         BlockExecutor = Executive,
-///         CheckInherents = CheckInherents,
 ///     }
 ///
 /// # fn main() {}
@@ -1385,18 +1383,6 @@ impl<T: Config> UpwardMessageSender for Pallet<T> {
 	fn send_upward_message(message: UpwardMessage) -> Result<(u32, XcmHash), MessageSendError> {
 		Self::send_upward_message(message)
 	}
-}
-
-/// Something that can check the inherents of a block.
-pub trait CheckInherents<Block: BlockT> {
-	/// Check all inherents of the block.
-	///
-	/// This function gets passed all the extrinsics of the block, so it is up to the callee to
-	/// identify the inherents. The `validation_data` can be used to access the
-	fn check_inherents(
-		block: &Block,
-		validation_data: &RelayChainStateProof,
-	) -> frame_support::inherent::CheckInherentsResult;
 }
 
 /// Something that should be informed about system related events.

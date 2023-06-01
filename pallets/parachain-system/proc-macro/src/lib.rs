@@ -25,20 +25,17 @@ use syn::{
 mod keywords {
 	syn::custom_keyword!(Runtime);
 	syn::custom_keyword!(BlockExecutor);
-	syn::custom_keyword!(CheckInherents);
 }
 
 struct Input {
 	runtime: Path,
 	block_executor: Path,
-	check_inherents: Path,
 }
 
 impl Parse for Input {
 	fn parse(input: ParseStream) -> Result<Self, Error> {
 		let mut runtime = None;
 		let mut block_executor = None;
-		let mut check_inherents = None;
 
 		fn parse_inner<KW: Parse + Spanned>(
 			input: ParseStream,
@@ -59,15 +56,13 @@ impl Parse for Input {
 			}
 		}
 
-		while runtime.is_none() || block_executor.is_none() || check_inherents.is_none() {
+		while runtime.is_none() || block_executor.is_none() {
 			let lookahead = input.lookahead1();
 
 			if lookahead.peek(keywords::Runtime) {
 				parse_inner::<keywords::Runtime>(input, &mut runtime)?;
 			} else if lookahead.peek(keywords::BlockExecutor) {
 				parse_inner::<keywords::BlockExecutor>(input, &mut block_executor)?;
-			} else if lookahead.peek(keywords::CheckInherents) {
-				parse_inner::<keywords::CheckInherents>(input, &mut check_inherents)?;
 			} else {
 				return Err(lookahead.error())
 			}
@@ -81,7 +76,6 @@ impl Parse for Input {
 		Ok(Self {
 			runtime: runtime.expect("Everything is parsed before; qed"),
 			block_executor: block_executor.expect("Everything is parsed before; qed"),
-			check_inherents: check_inherents.expect("Everything is parsed before; qed"),
 		})
 	}
 }
@@ -97,7 +91,7 @@ fn crate_() -> Result<Ident, Error> {
 
 #[proc_macro]
 pub fn register_validate_block(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-	let Input { runtime, check_inherents, block_executor } = match syn::parse(input) {
+	let Input { runtime, block_executor } = match syn::parse(input) {
 		Ok(t) => t,
 		Err(e) => return e.into_compile_error().into(),
 	};
@@ -133,7 +127,6 @@ pub fn register_validate_block(input: proc_macro::TokenStream) -> proc_macro::To
 						<#runtime as #crate_::validate_block::GetRuntimeBlockType>::RuntimeBlock,
 						#block_executor,
 						#runtime,
-						#check_inherents,
 					>(params);
 
 					#crate_::validate_block::polkadot_parachain::write_result(&res)

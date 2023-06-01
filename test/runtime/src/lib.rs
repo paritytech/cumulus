@@ -468,36 +468,7 @@ impl_runtime_apis! {
 	}
 }
 
-struct CheckInherents;
-
-impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
-	fn check_inherents(
-		block: &Block,
-		relay_state_proof: &cumulus_pallet_parachain_system::RelayChainStateProof,
-	) -> sp_inherents::CheckInherentsResult {
-		if relay_state_proof.read_slot().expect("Reads slot") == 1337u64 {
-			let mut res = sp_inherents::CheckInherentsResult::new();
-			res.put_error([1u8; 8], &sp_inherents::MakeFatalError::from("You are wrong"))
-				.expect("Puts error");
-			res
-		} else {
-			let relay_chain_slot = relay_state_proof
-				.read_slot()
-				.expect("Could not read the relay chain slot from the proof");
-
-			let inherent_data =
-				cumulus_primitives_timestamp::InherentDataProvider::from_relay_chain_slot_and_duration(
-					relay_chain_slot,
-					sp_std::time::Duration::from_secs(6),
-				).create_inherent_data().expect("Could not create the timestamp inherent data");
-
-			inherent_data.check_extrinsics(block)
-		}
-	}
-}
-
 cumulus_pallet_parachain_system::register_validate_block! {
 	Runtime = Runtime,
 	BlockExecutor = Executive,
-	CheckInherents = CheckInherents,
 }
