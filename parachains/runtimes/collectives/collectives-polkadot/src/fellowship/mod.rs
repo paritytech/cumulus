@@ -21,8 +21,7 @@ mod origins;
 mod tracks;
 use frame_system::EnsureNever;
 pub use origins::{
-	pallet_origins as pallet_fellowship_origins, Fellows, FellowshipCandidates, FellowshipExperts,
-	FellowshipMasters,
+	pallet_origins as pallet_fellowship_origins, Architects, Candidates, Fellows, Masters,
 };
 
 use self::origins::EnsureFellowship;
@@ -38,7 +37,7 @@ use frame_support::{
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use polkadot_runtime_constants::{currency::UNITS, xcm::body::FELLOWSHIP_ADMIN_INDEX};
 use sp_arithmetic::traits::CheckedSub;
-use sp_core::ConstU32;
+use sp_core::{ConstU128, ConstU32};
 use sp_runtime::{
 	morph_types,
 	traits::{AccountIdConversion, ConstU16, Replace, TryMorph, TypedGet},
@@ -62,9 +61,6 @@ pub mod ranks {
 }
 
 parameter_types! {
-	pub const AlarmInterval: BlockNumber = 1;
-	pub const SubmissionDeposit: Balance = 0;
-	pub const UndecidingTimeout: BlockNumber = 7 * DAYS;
 	// Referenda pallet account, used to temporarily deposit slashed imbalance before teleporting.
 	pub ReferendaPalletAccount: AccountId = constants::account::REFERENDA_PALLET_ID.into_account_truncating();
 	pub const FellowshipAdminBodyId: BodyId = BodyId::Index(FELLOWSHIP_ADMIN_INDEX);
@@ -80,23 +76,25 @@ impl pallet_referenda::Config<FellowshipReferendaInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Scheduler = Scheduler;
 	type Currency = Balances;
+	// Fellows can submit proposals.
 	type SubmitOrigin =
-		pallet_ranked_collective::EnsureMember<Runtime, FellowshipCollectiveInstance, 1>;
-	type CancelOrigin = FellowshipExperts;
-	type KillOrigin = FellowshipMasters;
+		pallet_ranked_collective::EnsureMember<Runtime, FellowshipCollectiveInstance, 3>;
+	type CancelOrigin = Architects;
+	type KillOrigin = Masters;
 	type Slash = ToParentTreasury<PolkadotTreasuryAccount, ReferendaPalletAccount, Runtime>;
 	type Votes = pallet_ranked_collective::Votes;
 	type Tally = pallet_ranked_collective::TallyOf<Runtime, FellowshipCollectiveInstance>;
-	type SubmissionDeposit = SubmissionDeposit;
+	type SubmissionDeposit = ConstU128<0>;
 	type MaxQueued = ConstU32<100>;
-	type UndecidingTimeout = UndecidingTimeout;
-	type AlarmInterval = AlarmInterval;
+	type UndecidingTimeout = ConstU32<{ 7 * DAYS }>;
+	type AlarmInterval = ConstU32<1>;
 	type Tracks = tracks::TracksInfo;
 	type Preimages = Preimage;
 }
 
 pub type FellowshipCollectiveInstance = pallet_ranked_collective::Instance1;
 
+// TODO: Use versions in `sp_runtime`.
 morph_types! {
 	/// A `TryMorph` implementation to reduce a scalar by a particular amount, checking for
 	/// underflow.
@@ -145,13 +143,13 @@ impl pallet_core_fellowship::Config<FellowshipCoreInstance> for Runtime {
 		EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
 		Fellows,
 	>;
-	// Induction is by any of:
+	// Induction (creating a candidate) is by any of:
 	// - Root;
 	// - the FellowshipAdmin origin (i.e. token holder referendum);
-	// - a member of the rank 1 or above.
+	// - a member of rank 1 or above.
 	type InductOrigin = EitherOfDiverse<
 		EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
-		EnsureFellowship,
+		pallet_ranked_collective::EnsureMember<Runtime, FellowshipCollectiveInstance, 1>,
 	>;
 	// Approval of a member's current rank is by any of:
 	// - Root;
@@ -168,30 +166,17 @@ impl pallet_core_fellowship::Config<FellowshipCoreInstance> for Runtime {
 	// - Root can promote arbitrarily.
 	// - the FellowshipAdmin origin (i.e. token holder referendum);
 	// - a vote by the rank two above the new rank for all promotions up to the Master rank.
-	// - a vote by the Fellow rank or above for a promotion to the Master rank or greater.
 	type PromoteOrigin = EitherOf<
 		MapSuccess<
 			EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
 			Replace<ConstU16<{ ranks::DAN_9 }>>,
 		>,
-		EitherOf<
-			TryMapSuccess<
-				EnsureFellowship,
-				MorphWithUpperLimit<ConstU16<{ ranks::DAN_6 }>, CheckedReduceBy<ConstU16<2>>>,
-			>,
-			// TODO Fellows should vote only for ranks <= 1, or ranks >= 7
-			MapSuccess<Fellows, Replace<ConstU16<{ ranks::DAN_9 }>>>,
+		TryMapSuccess<
+			EnsureFellowship,
+			MorphWithUpperLimit<ConstU16<{ ranks::DAN_6 }>, CheckedReduceBy<ConstU16<2>>>,
 		>,
 	>;
-	type EvidenceSize = ConstU32<1024>;
-}
-
-parameter_types! {
-	pub const RegistrationPeriod: BlockNumber = 15 * DAYS;
-	pub const PayoutPeriod: BlockNumber = 15 * DAYS;
-	/// A total budget of a single payout cycle.
-	/// The cycle duration is a sum of `RegistrationPeriod` and `PayoutPeriod`.
-	pub const Budget: Balance = 100000 * UNITS;
+	type EvidenceSize = ConstU32<65536>;
 }
 
 pub type FellowshipSalaryInstance = pallet_salary::Instance1;
@@ -201,13 +186,17 @@ impl pallet_salary::Config<FellowshipSalaryInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Paymaster = PayFromAccount<Balances, PolkadotTreasuryAccount>;
 	type Members = pallet_ranked_collective::Pallet<Runtime, FellowshipCollectiveInstance>;
+
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type Salary = pallet_core_fellowship::Pallet<Runtime, FellowshipCoreInstance>;
 	#[cfg(feature = "runtime-benchmarks")]
 	type Salary = frame_support::traits::tokens::ConvertRank<
 		crate::impls::benchmarks::RankToSalary<Balances>,
 	>;
-	type RegistrationPeriod = RegistrationPeriod;
-	type PayoutPeriod = PayoutPeriod;
-	type Budget = Budget;
+	// 15 days to register for a salary payment.
+	type RegistrationPeriod = ConstU32<{ 15 * DAYS }>;
+	// 15 days to claim the salary payment.
+	type PayoutPeriod = ConstU32<{ 15 * DAYS }>;
+	// Total monthly salary budget.
+	type Budget = ConstU128<{ 100000 * UNITS }>;
 }

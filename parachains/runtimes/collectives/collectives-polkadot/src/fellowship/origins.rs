@@ -34,28 +34,22 @@ pub mod pallet_origins {
 	#[derive(PartialEq, Eq, Clone, MaxEncodedLen, Encode, Decode, TypeInfo, RuntimeDebug)]
 	#[pallet::origin]
 	pub enum Origin {
-		/// Origin commanded by any members of the Polkadot Fellowship (no Dan grade needed).
-		FellowshipCandidates,
-		/// Origin commanded by Polkadot Fellows (3rd Dan fellows or greater).
-		Fellows,
-		/// Origin commanded by Polkadot Experts (5th Dan fellows or greater).
-		FellowshipExperts,
-		/// Origin commanded by Polkadot Masters (7th Dan fellows of greater).
-		FellowshipMasters,
+		/// Origin commanded by anyone invlved with the Polkadot Fellowship (no Dan grade needed).
+		Candidates,
 		/// Origin commanded by rank 1 of the Polkadot Fellowship and with a success of 1.
-		Fellowship1Dan,
+		Members,
 		/// Origin commanded by rank 2 of the Polkadot Fellowship and with a success of 2.
 		Fellowship2Dan,
-		/// Origin commanded by rank 3 of the Polkadot Fellowship and with a success of 3.
-		Fellowship3Dan,
-		/// Origin commanded by rank 4 of the Polkadot Fellowship and with a success of 4.
-		Fellowship4Dan,
+		/// Origin commanded by Polkadot Fellows (3rd Dan fellows or greater).
+		Fellows,
+		/// Origin commanded by Polkadot Architects (4th Dan fellows or greater).
+		Architects,
 		/// Origin commanded by rank 5 of the Polkadot Fellowship and with a success of 5.
 		Fellowship5Dan,
 		/// Origin commanded by rank 6 of the Polkadot Fellowship and with a success of 6.
 		Fellowship6Dan,
-		/// Origin commanded by rank 7 of the Polkadot Fellowship and with a success of 7.
-		Fellowship7Dan,
+		/// Origin commanded by Polkadot Masters (7th Dan fellows of greater).
+		Masters,
 		/// Origin commanded by rank 8 of the Polkadot Fellowship and with a success of 8.
 		Fellowship8Dan,
 		/// Origin commanded by rank 9 of the Polkadot Fellowship and with a success of 9.
@@ -93,10 +87,10 @@ pub mod pallet_origins {
 		() => {}
 	}
 	decl_unit_ensures!(
-		FellowshipCandidates: Rank = ranks::CANDIDATES,
+		Candidates: Rank = ranks::CANDIDATES,
 		Fellows: Rank = ranks::DAN_3,
-		FellowshipExperts: Rank = ranks::DAN_5,
-		FellowshipMasters: Rank = ranks::DAN_7,
+		Architects: Rank = ranks::DAN_4,
+		Masters: Rank = ranks::DAN_7,
 	);
 
 	macro_rules! decl_ensure {
@@ -134,13 +128,13 @@ pub mod pallet_origins {
 
 	decl_ensure! {
 		pub type EnsureFellowship: EnsureOrigin<Success = Rank> {
-			Fellowship1Dan = ranks::DAN_1,
+			Members = ranks::DAN_1,
 			Fellowship2Dan = ranks::DAN_2,
-			Fellowship3Dan = ranks::DAN_3,
-			Fellowship4Dan = ranks::DAN_4,
+			Fellows = ranks::DAN_3,
+			Architects = ranks::DAN_4,
 			Fellowship5Dan = ranks::DAN_5,
 			Fellowship6Dan = ranks::DAN_6,
-			Fellowship7Dan = ranks::DAN_7,
+			Masters = ranks::DAN_7,
 			Fellowship8Dan = ranks::DAN_8,
 			Fellowship9Dan = ranks::DAN_9,
 		}

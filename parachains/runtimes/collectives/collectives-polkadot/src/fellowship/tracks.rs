@@ -30,11 +30,11 @@ pub mod constants {
 	pub const MEMBERS: TrackId = 1;
 	pub const PROFICIENTS: TrackId = 2;
 	pub const FELLOWS: TrackId = 3;
-	pub const SENIOR_FELLOWS: TrackId = 4;
-	pub const EXPERTS: TrackId = 5;
-	pub const SENIOR_EXPERTS: TrackId = 6;
+	pub const ARCHITECTS: TrackId = 4;
+	pub const ARCHITECTS_ADEPT: TrackId = 5;
+	pub const GRAND_ARCHITECTS: TrackId = 6;
 	pub const MASTERS: TrackId = 7;
-	pub const SENIOR_MASTERS: TrackId = 8;
+	pub const MASTERS_CONSTANT: TrackId = 8;
 	pub const GRAND_MASTERS: TrackId = 9;
 }
 
@@ -50,7 +50,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				pallet_referenda::TrackInfo {
 					name: "candidates",
 					max_deciding: 10,
-					decision_deposit: 100 * DOLLARS,
+					decision_deposit: 5 * DOLLARS,
 					prepare_period: 30 * MINUTES,
 					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
@@ -72,7 +72,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				pallet_referenda::TrackInfo {
 					name: "members",
 					max_deciding: 10,
-					decision_deposit: 10 * DOLLARS,
+					decision_deposit: 5 * DOLLARS,
 					prepare_period: 30 * MINUTES,
 					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
@@ -94,7 +94,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				pallet_referenda::TrackInfo {
 					name: "proficients",
 					max_deciding: 10,
-					decision_deposit: 10 * DOLLARS,
+					decision_deposit: 5 * DOLLARS,
 					prepare_period: 30 * MINUTES,
 					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
@@ -116,7 +116,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				pallet_referenda::TrackInfo {
 					name: "fellows",
 					max_deciding: 10,
-					decision_deposit: 10 * DOLLARS,
+					decision_deposit: 5 * DOLLARS,
 					prepare_period: 30 * MINUTES,
 					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
@@ -134,11 +134,11 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				},
 			),
 			(
-				tracks::SENIOR_FELLOWS,
+				tracks::ARCHITECTS,
 				pallet_referenda::TrackInfo {
-					name: "senior fellows",
+					name: "architects",
 					max_deciding: 10,
-					decision_deposit: 10 * DOLLARS,
+					decision_deposit: 5 * DOLLARS,
 					prepare_period: 30 * MINUTES,
 					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
@@ -156,11 +156,11 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				},
 			),
 			(
-				tracks::EXPERTS,
+				tracks::ARCHITECTS_ADEPT,
 				pallet_referenda::TrackInfo {
-					name: "experts",
+					name: "architects adept",
 					max_deciding: 10,
-					decision_deposit: DOLLARS,
+					decision_deposit: 5 * DOLLARS,
 					prepare_period: 30 * MINUTES,
 					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
@@ -178,11 +178,11 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				},
 			),
 			(
-				tracks::SENIOR_EXPERTS,
+				tracks::GRAND_ARCHITECTS,
 				pallet_referenda::TrackInfo {
-					name: "senior experts",
+					name: "grand architects",
 					max_deciding: 10,
-					decision_deposit: DOLLARS,
+					decision_deposit: 5 * DOLLARS,
 					prepare_period: 30 * MINUTES,
 					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
@@ -204,7 +204,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				pallet_referenda::TrackInfo {
 					name: "masters",
 					max_deciding: 10,
-					decision_deposit: DOLLARS,
+					decision_deposit: 5 * DOLLARS,
 					prepare_period: 30 * MINUTES,
 					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
@@ -222,11 +222,11 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				},
 			),
 			(
-				tracks::SENIOR_MASTERS,
+				tracks::MASTERS_CONSTANT,
 				pallet_referenda::TrackInfo {
-					name: "senior masters",
+					name: "masters constant",
 					max_deciding: 10,
-					decision_deposit: DOLLARS,
+					decision_deposit: 5 * DOLLARS,
 					prepare_period: 30 * MINUTES,
 					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
@@ -248,7 +248,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 				pallet_referenda::TrackInfo {
 					name: "grand masters",
 					max_deciding: 10,
-					decision_deposit: DOLLARS,
+					decision_deposit: 5 * DOLLARS,
 					prepare_period: 30 * MINUTES,
 					decision_period: 30 * DAYS,
 					confirm_period: 30 * MINUTES,
@@ -283,15 +283,15 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 		}
 
 		match Origin::try_from(id.clone()) {
-			Ok(Origin::FellowshipCandidates) => Ok(tracks::CANDIDATES),
-			Ok(Origin::Fellowship1Dan) => Ok(tracks::MEMBERS),
+			Ok(Origin::Candidates) => Ok(tracks::CANDIDATES),
+			Ok(Origin::Members) => Ok(tracks::MEMBERS),
 			Ok(Origin::Fellowship2Dan) => Ok(tracks::PROFICIENTS),
-			Ok(Origin::Fellowship3Dan) | Ok(Origin::Fellows) => Ok(tracks::FELLOWS),
-			Ok(Origin::Fellowship4Dan) => Ok(tracks::SENIOR_FELLOWS),
-			Ok(Origin::Fellowship5Dan) | Ok(Origin::FellowshipExperts) => Ok(tracks::EXPERTS),
-			Ok(Origin::Fellowship6Dan) => Ok(tracks::SENIOR_EXPERTS),
-			Ok(Origin::Fellowship7Dan | Origin::FellowshipMasters) => Ok(tracks::MASTERS),
-			Ok(Origin::Fellowship8Dan) => Ok(tracks::SENIOR_MASTERS),
+			Ok(Origin::Fellows) => Ok(tracks::FELLOWS),
+			Ok(Origin::Architects) => Ok(tracks::ARCHITECTS),
+			Ok(Origin::Fellowship5Dan) => Ok(tracks::ARCHITECTS_ADEPT),
+			Ok(Origin::Fellowship6Dan) => Ok(tracks::GRAND_ARCHITECTS),
+			Ok(Origin::Masters) => Ok(tracks::MASTERS),
+			Ok(Origin::Fellowship8Dan) => Ok(tracks::MASTERS_CONSTANT),
 			Ok(Origin::Fellowship9Dan) => Ok(tracks::GRAND_MASTERS),
 			_ => Err(()),
 		}
