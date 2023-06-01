@@ -34,7 +34,8 @@ pub use sp_trie::StorageProof;
 pub use cumulus_pallet_parachain_system;
 pub use cumulus_pallet_xcmp_queue;
 pub use cumulus_primitives_core::{
-	self, relay_chain::BlockNumber as RelayBlockNumber, ParaId, PersistedValidationData,
+	self, relay_chain::BlockNumber as RelayBlockNumber,
+	AggregateMessageOrigin as CumulusAggregateMessageOrigin, ParaId, PersistedValidationData,
 	XcmpMessageHandler,
 };
 pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
@@ -772,11 +773,21 @@ macro_rules! decl_test_networks {
 								}).collect::<Vec<(RelayChainBlockNumber, Vec<u8>)>>();
 								if msgs.len() != 0 {
 
-									#[doc = stringify!($parachain)]
-									fn todo() {} // CI-FAIL
-									// <$parachain>::handle_dmp_messages(msgs.clone().into_iter(), $crate::Weight::max_value());
+									// #[doc = stringify!($parachain)]
+									// fn todo() {} // CI-FAIL
+									// CI-FAIL: based on the PR, it seems like the right entry point for handling dmp messages is now <parachain_system::DmpQueue> type.
+									use $crate::{EnqueueMessage, CumulusAggregateMessageOrigin};
+									let msgs = todo!();
+									<
+										<<$parachain as Parachain>::Runtime as $crate::cumulus_pallet_parachain_system::Config>::DmpQueue
+										as
+										EnqueueMessage<CumulusAggregateMessageOrigin>
+									>::enqueue_message(
+										msgs,
+										CumulusAggregateMessageOrigin::Parent,
+									);
 									for m in msgs {
-										$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().push_back((to_para_id, m.0, m.1)));
+										// $crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().push_back((to_para_id, m.0, m.1)));
 									}
 								}
 							} else {

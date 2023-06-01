@@ -43,6 +43,7 @@ fn reserve_transfer_native_asset_from_relay_to_assets() {
 	Statemint::execute_with(|| {
 		type RuntimeEvent = <Statemint as Para>::RuntimeEvent;
 
+		// TODO: fill this from the failing tests later.
 		assert_expected_events!(Statemint, vec![]);
 	});
 
