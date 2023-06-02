@@ -96,7 +96,7 @@ impl pallet_balances::Config for Test {
 	type MaxLocks = ();
 	type MaxReserves = MaxReserves;
 	type ReserveIdentifier = [u8; 8];
-	type HoldIdentifier = ();
+	type RuntimeHoldReason = RuntimeHoldReason;
 	type FreezeIdentifier = ();
 	type MaxHolds = ConstU32<0>;
 	type MaxFreezes = ConstU32<0>;
@@ -195,7 +195,7 @@ parameter_types! {
 pub struct IsRegistered;
 impl ValidatorRegistration<u64> for IsRegistered {
 	fn is_registered(id: &u64) -> bool {
-		*id != 7u64
+		*id != 42u64
 	}
 }
 
@@ -217,7 +217,7 @@ impl Config for Test {
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	sp_tracing::try_init_simple();
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	let invulnerables = vec![1, 2];
+	let invulnerables = vec![2, 1]; // unsorted
 
 	let balances = vec![(1, 100), (2, 100), (3, 100), (4, 100), (5, 100)];
 	let keys = balances
