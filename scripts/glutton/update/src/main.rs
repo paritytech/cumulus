@@ -1,8 +1,33 @@
 use subxt::{dynamic::Value, tx::{PairSigner}, utils::AccountId32, ext::sp_core::{Pair, sr25519::Pair as Sr25519Pair}, OnlineClient};
 use crate::glutton_para::runtime_types::{sp_arithmetic::per_things::Perbill};
+use clap::Parser;
 
 mod config;
 use crate::config::GluttonConfig;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// Update Glutton Parachains from 'para_id = from' (inclusive)
+    #[arg(short, long)]
+    from: u32,
+
+    /// Update Glutton Parachains to 'para_id = to' (inclusive)
+    #[arg(short, long)]
+    to: u32,
+
+	/// Optional new 'storage' value to update
+	#[arg(short, long)]
+	storage: Option<u32>,
+
+	/// Optional new 'compute' value to update
+	#[arg(short, long)]
+	compute: Option<u32>,
+
+	/// Sudo account secret seed in hex format
+	#[arg(short, long)]
+	private_key: String,
+}
 
 // Generate an interface that we can use from the node's metadata.
 #[subxt::subxt(runtime_metadata_path = "./artifacts/glutton_metadata.scale")]
@@ -68,50 +93,54 @@ async fn update_glutton(
 
 	let block_hash = in_block.block_hash();
 
-	println!("Tx included in block {:?}", block_hash);
+	println!("\tTx included in block {:?}", block_hash);
 
 	Ok(())
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-	let from = 1300;
-	let to = 1300;
+	let args = Cli::parse();
+	let from = args.from;
+	let to = args.to;
 	let para_ids = from..to+1;
-	let new_storage = 100_000_000;
-	let new_compute = 200_000_000;
-	let seed = "0xe5be9a5092b81bca64be81d212e7f2f9eba183bb7a90954f7b76361f6edb5c0a"; // Alice
+	let seed = args.private_key;
 
 	// Get account and signer from secre seed
-	let account_pair: Sr25519Pair = Pair::from_string(seed, None).expect("Failed to create key pair");
+	let account_pair: Sr25519Pair = Pair::from_string(seed.as_str(), None).expect("Failed to create key pair");
 	let sudo_signer = PairSigner::new(account_pair.clone());
 	let sudo_account = AccountId32::from(account_pair.public());
 
 	for id in para_ids {
 		println!("\nUpdating Glutton {}", id);
+
 		// Create a new API client, configured to talk to Glutton nodes.
-		// let client = OnlineClient::<GluttonConfig>::from_url(format!("wss://versi-glutton-collator-{}-node-1.parity-versi.parity.io:443", id)).await?;
+		println!("\tConnecting to client...");
+		let client = OnlineClient::<GluttonConfig>::from_url(format!("wss://versi-glutton-collator-{}-node-1.parity-versi.parity.io:443", id)).await?;
 
-		println!("Connecting to client...");
-		let client = OnlineClient::<GluttonConfig>::from_url("ws://127.0.0.1:9810").await?;
+		// Set storage
+		if let Some(new_storage) = args.storage {
+			// Build `set_storage` call
+			let set_storage_call = RuntimeCall::Glutton(GluttonCall::set_storage {
+				storage: Perbill(new_storage)
+			});
 
-		// Build `set_storage` call
-		let set_storage_call = RuntimeCall::Glutton(GluttonCall::set_storage {
-			storage: Perbill(new_storage)
-		});
+			// Sumbit `set_storage` call
+			println!("\tSubmitting 'set_storage {{ storage: {} }}'...", new_storage);
+			update_glutton(&client, set_storage_call, &sudo_account, &sudo_signer).await?;
+		}
 
-		println!("Submitting 'set_storage {{ storage: {} }}'...", new_storage);
-		// Sumbit `set_storage` call
-		update_glutton(&client, set_storage_call, &sudo_account, &sudo_signer).await?;
+		// Set compute
+		if let Some(new_compute) = args.compute {
+			// Build `set_compute` call
+			let set_compute_call = RuntimeCall::Glutton(GluttonCall::set_compute {
+				compute: Perbill(new_compute)
+			});
 
-		// Build `set_compute` call
-		let set_compute_call = RuntimeCall::Glutton(GluttonCall::set_compute {
-			compute: Perbill(new_compute)
-		});
-
-		println!("Submitting 'set_compute {{ compute: {} }}'...", new_compute);
-		// Sumbit `set_compute` call
-		update_glutton(&client, set_compute_call, &sudo_account, &sudo_signer).await?;
+			// Sumbit `set_compute` call
+			println!("\tSubmitting 'set_compute {{ compute: {} }}'...", new_compute);
+			update_glutton(&client, set_compute_call, &sudo_account, &sudo_signer).await?;
+		}
 	}
 
     Ok(())
