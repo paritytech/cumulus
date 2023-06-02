@@ -1,5 +1,5 @@
 use crate::glutton_para::runtime_types::sp_arithmetic::per_things::Perbill;
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use subxt::{
 	dynamic::Value,
 	ext::sp_core::{sr25519::Pair as Sr25519Pair, Pair},
@@ -11,9 +11,21 @@ use subxt::{
 mod config;
 use crate::config::GluttonConfig;
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum RelayChain {
+	Local,
+    Kusama,
+    Versi,
+}
+
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
+	/// Relay chain context selection: kusama, versi or local
+	#[clap(value_enum)]
+	#[arg(short, long)]
+	relay: RelayChain,
+
 	/// Update Glutton Parachains from 'para_id = from' (inclusive)
 	#[arg(short, long)]
 	from: u32,
@@ -88,7 +100,7 @@ async fn update_glutton(
 
 	let block_hash = in_block.block_hash();
 
-	println!("\tTx included in block {:?}", block_hash);
+	println!("- Tx included in block {:?}", block_hash);
 
 	Ok(())
 }
@@ -108,15 +120,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let sudo_account = AccountId32::from(account_pair.public());
 
 	for id in para_ids {
-		println!("\nUpdating Glutton {}", id);
+		println!("\nUpdating {:?} Glutton {}", args.relay, id);
 
 		// Create a new API client, configured to talk to Glutton nodes.
-		println!("\tConnecting to client...");
-		let client = OnlineClient::<GluttonConfig>::from_url(format!(
-			"wss://versi-glutton-collator-{}-node-1.parity-versi.parity.io:443",
-			id
-		))
-		.await?;
+		println!("- Connecting to client...");
+		let client: OnlineClient::<GluttonConfig>;
+
+		match args.relay {
+			RelayChain::Local => {
+				client = OnlineClient::<GluttonConfig>::from_url(
+					"ws://127.0.0.1:9810"
+				)
+				.await?;
+			},
+			RelayChain::Versi => {
+				client = OnlineClient::<GluttonConfig>::from_url(format!(
+					"wss://versi-glutton-collator-{}-node-1.parity-versi.parity.io:443",
+					id
+				))
+				.await?;
+			}
+			RelayChain::Kusama => {
+				client = OnlineClient::<GluttonConfig>::from_url(format!(
+					"wss://versi-glutton-collator-{}-node-1.parity-versi.parity.io:443", // TODO: change when we know Kusama endpoints
+					id
+				))
+				.await?;
+			}
+		}
 
 		// Set storage
 		if let Some(new_storage) = args.storage {
@@ -125,7 +156,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 				RuntimeCall::Glutton(GluttonCall::set_storage { storage: Perbill(new_storage) });
 
 			// Sumbit `set_storage` call
-			println!("\tSubmitting 'set_storage {{ storage: {} }}'...", new_storage);
+			println!("- Submitting 'set_storage {{ storage: {} }}'...", new_storage);
 			update_glutton(&client, set_storage_call, &sudo_account, &sudo_signer).await?;
 		}
 
@@ -136,7 +167,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 				RuntimeCall::Glutton(GluttonCall::set_compute { compute: Perbill(new_compute) });
 
 			// Sumbit `set_compute` call
-			println!("\tSubmitting 'set_compute {{ compute: {} }}'...", new_compute);
+			println!("- Submitting 'set_compute {{ compute: {} }}'...", new_compute);
 			update_glutton(&client, set_compute_call, &sudo_account, &sudo_signer).await?;
 		}
 	}
