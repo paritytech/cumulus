@@ -50,6 +50,7 @@ default = ["std"]
 std = [
 	"frame-support/std",
 	"frame-system/std",
+	"pallet-asset-conversion/std",
 	"pallet-asset-tx-payment/std",
 	"pallet-assets/std",
 	"pallet-authorship/std",
