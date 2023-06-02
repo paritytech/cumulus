@@ -33,7 +33,7 @@ use pallet_asset_conversion::MultiAssetIdConverter;
 use pallet_asset_tx_payment::HandleCredit;
 use polkadot_primitives::AccountId;
 use sp_runtime::{traits::Zero, DispatchResult};
-use sp_std::marker::PhantomData;
+use sp_std::{boxed::Box, marker::PhantomData};
 use xcm::{
 	latest::{AssetId, Fungibility::Fungible, MultiAsset, MultiLocation},
 	opaque::lts::{
@@ -42,7 +42,6 @@ use xcm::{
 		Junctions::{Here, X1, X2, X3},
 	},
 };
-use sp_std::boxed::Box;
 
 /// Type alias to conveniently refer to the `Currency::NegativeImbalance` associated type.
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
