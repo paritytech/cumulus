@@ -42,6 +42,7 @@ use xcm::{
 		Junctions::{Here, X1, X2, X3},
 	},
 };
+use sp_std::boxed::Box;
 
 /// Type alias to conveniently refer to the `Currency::NegativeImbalance` associated type.
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
@@ -175,21 +176,21 @@ pub struct MultiLocationConverter<Balances, SelfParaId: Get<ParaId>> {
 	_phantom: PhantomData<(Balances, SelfParaId)>,
 }
 
-impl<Balances, SelfParaId> MultiAssetIdConverter<MultiLocation, MultiLocation>
+impl<Balances, SelfParaId> MultiAssetIdConverter<Box<MultiLocation>, MultiLocation>
 	for MultiLocationConverter<Balances, SelfParaId>
 where
 	Balances: PalletInfoAccess,
 	SelfParaId: Get<ParaId>,
 {
-	fn get_native() -> MultiLocation {
-		MultiLocation { parents: 0, interior: Here }
+	fn get_native() -> Box<MultiLocation> {
+		Box::new(MultiLocation { parents: 0, interior: Here })
 	}
 
-	fn is_native(asset_id: &MultiLocation) -> bool {
+	fn is_native(asset_id: &Box<MultiLocation>) -> bool {
 		if *asset_id == Self::get_native() {
 			return true
 		}
-		if *asset_id ==
+		if **asset_id ==
 			(MultiLocation {
 				parents: 1,
 				interior: X1(Parachain(SelfParaId::get().into())).into(),
@@ -200,16 +201,16 @@ where
 		return false
 	}
 
-	fn try_convert(asset: &MultiLocation) -> Result<MultiLocation, ()> {
+	fn try_convert(asset: &Box<MultiLocation>) -> Result<MultiLocation, ()> {
 		if Self::is_native(asset) {
 			// Otherwise it will try and touch the asset to create an account.
 			return Err(())
 		}
-		Ok(asset.clone())
+		Ok(**asset)
 	}
 
-	fn into_multiasset_id(asset: &MultiLocation) -> MultiLocation {
-		asset.clone()
+	fn into_multiasset_id(asset: &MultiLocation) -> Box<MultiLocation> {
+		Box::new(*asset)
 	}
 }
 
