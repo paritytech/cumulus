@@ -145,7 +145,7 @@ impl pallet_core_fellowship::Config<FellowshipCoreInstance> for Runtime {
 	// Approval (rank-retention) of a Member's current rank is by any of:
 	// - Root;
 	// - the FellowshipAdmin origin (i.e. token holder referendum);
-	// - a vote by the rank one above the current rank.
+	// - a vote by the rank two above the current rank for all retention up to the Master rank.
 	type ApproveOrigin = EitherOf<
 		MapSuccess<
 			EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
