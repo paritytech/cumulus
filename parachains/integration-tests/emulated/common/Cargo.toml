@@ -43,9 +43,9 @@ parachains-common = { path = "../../../common" }
 parachain-info = { path = "../../../pallets/parachain-info" }
 cumulus-primitives-core = { path = "../../../../primitives/core" }
 penpal-runtime = { path = "../../../runtimes/testing/penpal" }
-statemint-runtime = { path = "../../../runtimes/assets/statemint" }
-statemine-runtime = { path = "../../../runtimes/assets/statemine" }
-westmint-runtime = { path = "../../../runtimes/assets/westmint" }
+asset-hub-polkadot-runtime = { path = "../../../runtimes/assets/asset-hub-polkadot" }
+asset-hub-kusama-runtime = { path = "../../../runtimes/assets/asset-hub-kusama" }
+asset-hub-westend-runtime = { path = "../../../runtimes/assets/asset-hub-westend" }
 collectives-polkadot-runtime = { path = "../../../runtimes/collectives/collectives-polkadot" }
 bridge-hub-kusama-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-kusama" }
 bridge-hub-polkadot-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-polkadot" }
