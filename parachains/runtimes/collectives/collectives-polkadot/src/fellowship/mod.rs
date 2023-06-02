@@ -134,7 +134,11 @@ impl pallet_core_fellowship::Config<FellowshipCoreInstance> for Runtime {
 	type InductOrigin = EitherOfDiverse<
 		EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
 		EitherOfDiverse<
-			pallet_ranked_collective::EnsureMember<Runtime, FellowshipCollectiveInstance, 2>,
+			pallet_ranked_collective::EnsureMember<
+				Runtime,
+				FellowshipCollectiveInstance,
+				{ ranks::DAN_3 },
+			>,
 			Members,
 		>,
 	>;
