@@ -14,8 +14,8 @@ use crate::config::GluttonConfig;
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 enum RelayChain {
 	Local,
-    Kusama,
-    Versi,
+	Kusama,
+	Versi,
 }
 
 #[derive(Parser, Debug)]
@@ -124,14 +124,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 		// Create a new API client, configured to talk to Glutton nodes.
 		println!("- Connecting to client...");
-		let client: OnlineClient::<GluttonConfig>;
+		let client: OnlineClient<GluttonConfig>;
 
 		match args.relay {
 			RelayChain::Local => {
-				client = OnlineClient::<GluttonConfig>::from_url(
-					"ws://127.0.0.1:9810"
-				)
-				.await?;
+				client = OnlineClient::<GluttonConfig>::from_url("ws://127.0.0.1:9810").await?;
 			},
 			RelayChain::Versi => {
 				client = OnlineClient::<GluttonConfig>::from_url(format!(
@@ -139,14 +136,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 					id
 				))
 				.await?;
-			}
+			},
 			RelayChain::Kusama => {
 				client = OnlineClient::<GluttonConfig>::from_url(format!(
 					"wss://versi-glutton-collator-{}-node-1.parity-versi.parity.io:443", // TODO: change when we know Kusama endpoints
 					id
 				))
 				.await?;
-			}
+			},
 		}
 
 		// Set storage
