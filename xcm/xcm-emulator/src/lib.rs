@@ -16,21 +16,6 @@
 
 pub use casey::pascal;
 pub use codec::Encode;
-pub use frame_support::{
-	sp_runtime::BuildStorage,
-	traits::{EnqueueMessage, Get, Hooks, ProcessMessage, ProcessMessageError, ServiceQueues},
-	weights::{Weight, WeightMeter},
-};
-pub use frame_system::AccountInfo;
-pub use log;
-pub use pallet_balances::AccountData;
-pub use paste;
-pub use sp_arithmetic::traits::Bounded;
-pub use sp_core::storage::Storage;
-pub use sp_io;
-pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, marker::PhantomData};
-pub use sp_trie::StorageProof;
-
 pub use cumulus_pallet_parachain_system;
 pub use cumulus_pallet_xcmp_queue;
 pub use cumulus_primitives_core::{
@@ -41,9 +26,24 @@ pub use cumulus_primitives_core::{
 pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 pub use cumulus_test_service::get_account_id_from_seed;
+pub use frame_support::{
+	sp_runtime::BuildStorage,
+	traits::{EnqueueMessage, Get, Hooks, ProcessMessage, ProcessMessageError, ServiceQueues},
+	weights::{Weight, WeightMeter},
+	BoundedSlice,
+};
+pub use frame_system::AccountInfo;
+pub use log;
+pub use pallet_balances::AccountData;
 pub use pallet_message_queue;
 pub use parachain_info;
 pub use parachains_common::{AccountId, BlockNumber};
+pub use paste;
+pub use sp_arithmetic::traits::Bounded;
+pub use sp_core::storage::Storage;
+pub use sp_io;
+pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, marker::PhantomData};
+pub use sp_trie::StorageProof;
 
 pub use polkadot_primitives;
 pub use polkadot_runtime_parachains::{
@@ -769,26 +769,27 @@ macro_rules! decl_test_networks {
 								msg_dedup.dedup();
 
 								let msgs = msg_dedup.clone().into_iter().filter(|m| {
-									!$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap_or(&mut $crate::VecDeque::new()).contains(&(to_para_id, m.0, m.1.clone())))
+									!$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name))
+										.unwrap_or(&mut $crate::VecDeque::new())
+										.contains(&(to_para_id, m.0, m.1.clone()))
+									)
 								}).collect::<Vec<(RelayChainBlockNumber, Vec<u8>)>>();
-								if msgs.len() != 0 {
 
-									// #[doc = stringify!($parachain)]
-									// fn todo() {} // CI-FAIL
-									// CI-FAIL: based on the PR, it seems like the right entry point for handling dmp messages is now <parachain_system::DmpQueue> type.
-									use $crate::{EnqueueMessage, CumulusAggregateMessageOrigin};
-									let msgs = todo!();
-									<
-										<<$parachain as Parachain>::Runtime as $crate::cumulus_pallet_parachain_system::Config>::DmpQueue
-										as
-										EnqueueMessage<CumulusAggregateMessageOrigin>
-									>::enqueue_message(
-										msgs,
-										CumulusAggregateMessageOrigin::Parent,
-									);
-									for m in msgs {
-										// $crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().push_back((to_para_id, m.0, m.1)));
-									}
+								use $crate::{EnqueueMessage, CumulusAggregateMessageOrigin, BoundedSlice, ServiceQueues, TestExt};
+								type ParachainDmpQueue = <
+									<$parachain as Parachain>::Runtime
+									as
+									$crate::cumulus_pallet_parachain_system::Config
+								>::DmpQueue;
+								for m in msgs {
+									<$parachain>::execute_with(|| {
+										<ParachainDmpQueue as EnqueueMessage<CumulusAggregateMessageOrigin>>::enqueue_message(
+											BoundedSlice::<_, _>::try_from(&m.1[..]).unwrap(),
+											CumulusAggregateMessageOrigin::Parent,
+										);
+										<ParachainDmpQueue as ServiceQueues>::service_queues(Weight::MAX);
+									});
+									$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().push_back((to_para_id, m.0, m.1)));
 								}
 							} else {
 								unreachable!();

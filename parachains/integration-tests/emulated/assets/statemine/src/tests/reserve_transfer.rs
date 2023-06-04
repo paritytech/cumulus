@@ -42,8 +42,7 @@ fn reserve_transfer_native_asset_from_relay_to_assets() {
 	// Receive XCM message in Assets Parachain
 	Statemine::execute_with(|| {
 		type RuntimeEvent = <Statemine as Para>::RuntimeEvent;
-
-		// TODO: fill this from the failing tests later.
+		// TODO: This used to emit an event at the DmpQueue pallet which is not gone.. does it have a replacement?
 		assert_expected_events!(Statemine, vec![]);
 	});
 
