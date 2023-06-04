@@ -309,7 +309,7 @@ impl<Runtime: cumulus_pallet_parachain_system::Config + pallet_xcm::Config> Runt
 
 		// execute xcm as parent origin
 		let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-		// CI-FAIL: is this correct, or should I have enqueued the message for later processing?
+		// TODO: is this correct, or should I have enqueued the message for later processing?
 		<<Runtime as pallet_xcm::Config>::XcmExecutor>::execute_xcm(
 			MultiLocation::parent(),
 			xcm,

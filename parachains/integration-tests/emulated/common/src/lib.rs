@@ -2,11 +2,11 @@ pub mod constants;
 
 pub use constants::{
 	accounts::{ALICE, BOB},
-	bridge_hub_kusama, bridge_hub_polkadot, collectives, kusama, penpal, polkadot, statemine,
-	statemint,
+	asset_hub_kusama, asset_hub_polkadot, asset_hub_westend, bridge_hub_kusama,
+	bridge_hub_polkadot, collectives, kusama, penpal, polkadot, westend,
 };
 use frame_support::{parameter_types, sp_io, sp_tracing};
-pub use parachains_common::{AccountId, AuraId, Balance, BlockNumber, StatemintAuraId};
+pub use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, BlockNumber};
 pub use sp_core::{sr25519, storage::Storage, Get};
 use xcm::prelude::*;
 use xcm_emulator::{
@@ -16,6 +16,27 @@ use xcm_emulator::{
 use xcm_executor::traits::Convert;
 
 decl_test_relay_chains! {
+	#[api_version(5)]
+	pub struct Westend {
+		genesis = westend::genesis(),
+		on_init = (),
+		runtime = {
+			Runtime: westend_runtime::Runtime,
+			RuntimeOrigin: westend_runtime::RuntimeOrigin,
+			RuntimeCall: westend_runtime::RuntimeCall,
+			RuntimeEvent: westend_runtime::RuntimeEvent,
+			MessageQueue: westend_runtime::MessageQueue,
+			XcmConfig: westend_runtime::xcm_config::XcmConfig,
+			SovereignAccountOf: westend_runtime::xcm_config::LocationConverter, //TODO: rename to SovereignAccountOf,
+			System: westend_runtime::System,
+			Balances: westend_runtime::Balances,
+		},
+		pallets_extra = {
+			XcmPallet: westend_runtime::XcmPallet,
+			Sudo: westend_runtime::Sudo,
+		}
+	},
+	#[api_version(4)]
 	pub struct Polkadot {
 		genesis = polkadot::genesis(),
 		on_init = (),
@@ -34,6 +55,7 @@ decl_test_relay_chains! {
 			XcmPallet: polkadot_runtime::XcmPallet,
 		}
 	},
+	#[api_version(4)]
 	pub struct Kusama {
 		genesis = kusama::genesis(),
 		on_init = (),
@@ -55,25 +77,47 @@ decl_test_relay_chains! {
 }
 
 decl_test_parachains! {
-	// Polkadot
-	pub struct Statemint {
-		genesis = statemint::genesis(),
+	// Westend
+	pub struct AssetHubWestend {
+		genesis = asset_hub_westend::genesis(),
 		on_init = (),
 		runtime = {
-			Runtime: statemint_runtime::Runtime,
-			RuntimeOrigin: statemint_runtime::RuntimeOrigin,
-			RuntimeCall: statemint_runtime::RuntimeCall,
-			RuntimeEvent: statemint_runtime::RuntimeEvent,
-			XcmpMessageHandler: statemint_runtime::XcmpQueue,
-			LocationToAccountId: statemint_runtime::xcm_config::LocationToAccountId,
-			System: statemint_runtime::System,
-			Balances: statemint_runtime::Balances,
-			ParachainSystem: statemint_runtime::ParachainSystem,
-			ParachainInfo: statemint_runtime::ParachainInfo,
+			Runtime: asset_hub_westend_runtime::Runtime,
+			RuntimeOrigin: asset_hub_westend_runtime::RuntimeOrigin,
+			RuntimeCall: asset_hub_westend_runtime::RuntimeCall,
+			RuntimeEvent: asset_hub_westend_runtime::RuntimeEvent,
+			XcmpMessageHandler: asset_hub_westend_runtime::XcmpQueue,
+			LocationToAccountId: asset_hub_westend_runtime::xcm_config::LocationToAccountId,
+			System: asset_hub_westend_runtime::System,
+			Balances: asset_hub_westend_runtime::Balances,
+			ParachainSystem: asset_hub_westend_runtime::ParachainSystem,
+			ParachainInfo: asset_hub_westend_runtime::ParachainInfo,
 		},
 		pallets_extra = {
-			PolkadotXcm: statemint_runtime::PolkadotXcm,
-			Assets: statemint_runtime::Assets,
+			PolkadotXcm: asset_hub_westend_runtime::PolkadotXcm,
+			Assets: asset_hub_westend_runtime::Assets,
+			ForeignAssets: asset_hub_westend_runtime::ForeignAssets,
+		}
+	},
+	// Polkadot
+	pub struct AssetHubPolkadot {
+		genesis = asset_hub_polkadot::genesis(),
+		on_init = (),
+		runtime = {
+			Runtime: asset_hub_polkadot_runtime::Runtime,
+			RuntimeOrigin: asset_hub_polkadot_runtime::RuntimeOrigin,
+			RuntimeCall: asset_hub_polkadot_runtime::RuntimeCall,
+			RuntimeEvent: asset_hub_polkadot_runtime::RuntimeEvent,
+			XcmpMessageHandler: asset_hub_polkadot_runtime::XcmpQueue,
+			LocationToAccountId: asset_hub_polkadot_runtime::xcm_config::LocationToAccountId,
+			System: asset_hub_polkadot_runtime::System,
+			Balances: asset_hub_polkadot_runtime::Balances,
+			ParachainSystem: asset_hub_polkadot_runtime::ParachainSystem,
+			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
+		},
+		pallets_extra = {
+			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
+			Assets: asset_hub_polkadot_runtime::Assets,
 		}
 	},
 	pub struct PenpalPolkadot {
@@ -96,26 +140,47 @@ decl_test_parachains! {
 			Assets: penpal_runtime::Assets,
 		}
 	},
-	// Kusama
-	pub struct Statemine {
-		genesis = statemine::genesis(),
+	pub struct PenpalWestend {
+		genesis = penpal::genesis(penpal::PARA_ID),
 		on_init = (),
 		runtime = {
-			Runtime: statemine_runtime::Runtime,
-			RuntimeOrigin: statemine_runtime::RuntimeOrigin,
-			RuntimeCall: statemine_runtime::RuntimeCall,
-			RuntimeEvent: statemine_runtime::RuntimeEvent,
-			XcmpMessageHandler: statemine_runtime::XcmpQueue,
-			LocationToAccountId: statemine_runtime::xcm_config::LocationToAccountId,
-			System: statemine_runtime::System,
-			Balances: statemine_runtime::Balances,
-			ParachainSystem: statemine_runtime::ParachainSystem,
-			ParachainInfo: statemine_runtime::ParachainInfo,
+			Runtime: asset_hub_westend_runtime::Runtime,
+			RuntimeOrigin: asset_hub_westend_runtime::RuntimeOrigin,
+			RuntimeCall: asset_hub_westend_runtime::RuntimeCall,
+			RuntimeEvent: asset_hub_westend_runtime::RuntimeEvent,
+			XcmpMessageHandler: asset_hub_westend_runtime::XcmpQueue,
+			LocationToAccountId: asset_hub_westend_runtime::xcm_config::LocationToAccountId,
+			System: asset_hub_westend_runtime::System,
+			Balances: asset_hub_westend_runtime::Balances,
+			ParachainSystem: asset_hub_westend_runtime::ParachainSystem,
+			ParachainInfo: asset_hub_westend_runtime::ParachainInfo,
 		},
 		pallets_extra = {
-			PolkadotXcm: statemine_runtime::PolkadotXcm,
-			Assets: statemine_runtime::Assets,
-			ForeignAssets: statemine_runtime::Assets,
+			PolkadotXcm: penpal_runtime::PolkadotXcm,
+			Assets: penpal_runtime::Assets,
+		}
+	},
+
+	// Kusama
+	pub struct AssetHubKusama {
+		genesis = asset_hub_kusama::genesis(),
+		on_init = (),
+		runtime = {
+			Runtime: asset_hub_kusama_runtime::Runtime,
+			RuntimeOrigin: asset_hub_kusama_runtime::RuntimeOrigin,
+			RuntimeCall: asset_hub_kusama_runtime::RuntimeCall,
+			RuntimeEvent: asset_hub_kusama_runtime::RuntimeEvent,
+			XcmpMessageHandler: asset_hub_kusama_runtime::XcmpQueue,
+			LocationToAccountId: asset_hub_kusama_runtime::xcm_config::LocationToAccountId,
+			System: asset_hub_kusama_runtime::System,
+			Balances: asset_hub_kusama_runtime::Balances,
+			ParachainSystem: asset_hub_kusama_runtime::ParachainSystem,
+			ParachainInfo: asset_hub_kusama_runtime::ParachainInfo,
+		},
+		pallets_extra = {
+			PolkadotXcm: asset_hub_kusama_runtime::PolkadotXcm,
+			Assets: asset_hub_kusama_runtime::Assets,
+			ForeignAssets: asset_hub_kusama_runtime::Assets,
 		}
 	},
 	pub struct PenpalKusama {
@@ -201,7 +266,7 @@ decl_test_networks! {
 	pub struct PolkadotMockNet {
 		relay_chain = Polkadot,
 		parachains = vec![
-			Statemint,
+			AssetHubPolkadot,
 			PenpalPolkadot,
 			Collectives,
 			BHPolkadot,
@@ -210,9 +275,16 @@ decl_test_networks! {
 	pub struct KusamaMockNet {
 		relay_chain = Kusama,
 		parachains = vec![
-			Statemine,
+			AssetHubKusama,
 			PenpalKusama,
 			BHKusama,
+		],
+	},
+	pub struct WestendMockNet {
+		relay_chain = Westend,
+		parachains = vec![
+			AssetHubWestend,
+			PenpalWestend,
 		],
 	}
 }
@@ -224,18 +296,27 @@ parameter_types! {
 	// Kusama
 	pub KusamaSender: AccountId = Kusama::account_id_of(ALICE);
 	pub KusamaReceiver: AccountId = Kusama::account_id_of(BOB);
-	// Statemint
-	pub StatemintSender: AccountId = Statemint::account_id_of(ALICE);
-	pub StatemintReceiver: AccountId = Statemint::account_id_of(BOB);
-	// Statemine
-	pub StatemineSender: AccountId = Statemine::account_id_of(ALICE);
-	pub StatemineReceiver: AccountId = Statemine::account_id_of(BOB);
+	// Westend
+	pub WestendSender: AccountId = Westend::account_id_of(ALICE);
+	pub WestendReceiver: AccountId = Westend::account_id_of(BOB);
+	// Asset Hub Westend
+	pub AssetHubWestendSender: AccountId = AssetHubWestend::account_id_of(ALICE);
+	pub AssetHubWestendReceiver: AccountId = AssetHubWestend::account_id_of(BOB);
+	// Asset Hub Polkadot
+	pub AssetHubPolkadotSender: AccountId = AssetHubPolkadot::account_id_of(ALICE);
+	pub AssetHubPolkadotReceiver: AccountId = AssetHubPolkadot::account_id_of(BOB);
+	// Asset Hub Kusama
+	pub AssetHubKusamaSender: AccountId = AssetHubKusama::account_id_of(ALICE);
+	pub AssetHubKusamaReceiver: AccountId = AssetHubKusama::account_id_of(BOB);
 	// Penpal Polkadot
 	pub PenpalPolkadotSender: AccountId = PenpalPolkadot::account_id_of(ALICE);
 	pub PenpalPolkadotReceiver: AccountId = PenpalPolkadot::account_id_of(BOB);
 	// Penpal Kusama
 	pub PenpalKusamaSender: AccountId = PenpalKusama::account_id_of(ALICE);
 	pub PenpalKusamaReceiver: AccountId = PenpalKusama::account_id_of(BOB);
+	// Penpal Westend
+	pub PenpalWestendSender: AccountId = PenpalWestend::account_id_of(ALICE);
+	pub PenpalWestendReceiver: AccountId = PenpalWestend::account_id_of(BOB);
 	// Collectives
 	pub CollectivesSender: AccountId = Collectives::account_id_of(ALICE);
 	pub CollectivesReceiver: AccountId = Collectives::account_id_of(BOB);
