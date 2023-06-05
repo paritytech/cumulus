@@ -613,6 +613,7 @@ impl<T: Config> ProcessMessage for Pallet<T> {
 		message: &[u8],
 		origin: Self::Origin,
 		meter: &mut WeightMeter,
+		id: &mut [u8; 32],
 	) -> Result<bool, ProcessMessageError> {
 		if !meter.check_accrue(T::WeightInfo::process_message()) {
 			return Err(ProcessMessageError::Overweight(T::WeightInfo::process_message()))
@@ -631,7 +632,7 @@ impl<T: Config> ProcessMessage for Pallet<T> {
 			return Err(ProcessMessageError::Yield)
 		}
 
-		T::XcmpProcessor::process_message(message, origin, meter)
+		T::XcmpProcessor::process_message(message, origin, meter, id)
 	}
 }
 

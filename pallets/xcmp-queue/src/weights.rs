@@ -90,12 +90,6 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 
-	// Storage: XcmpQueue QueueConfig (r:1 w:1)
-	fn set_config_with_weight() -> Weight {
-		Weight::from_parts(2_717_000_u64, 0)
-			.saturating_add(T::DbWeight::get().reads(1_u64))
-			.saturating_add(T::DbWeight::get().writes(1_u64))
-	}
 }
 
 // For backwards compatibility and tests
@@ -138,13 +132,6 @@ impl WeightInfo for () {
 		//  Measured:  `76`
 		//  Estimated: `1561`
 		// Minimum execution time: 2_718_000 picoseconds.
-		Weight::from_parts(2_717_000_u64, 0)
-			.saturating_add(RocksDbWeight::get().reads(1_u64))
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
-	}
-
-	// Storage: XcmpQueue QueueConfig (r:1 w:1)
-	fn set_config_with_weight() -> Weight {
 		Weight::from_parts(2_717_000_u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))

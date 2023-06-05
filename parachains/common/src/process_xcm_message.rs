@@ -39,8 +39,9 @@ impl<P: ProcessMessage<Origin = AggregateMessageOrigin>> ProcessMessage for Proc
 		message: &[u8],
 		origin: Self::Origin,
 		meter: &mut WeightMeter,
+		id: &mut [u8; 32],
 	) -> Result<bool, ProcessMessageError> {
-		P::process_message(message, AggregateMessageOrigin::Sibling(origin), meter)
+		P::process_message(message, AggregateMessageOrigin::Sibling(origin), meter, id)
 	}
 }
 
@@ -57,13 +58,14 @@ where
 		message: &[u8],
 		origin: Self::Origin,
 		meter: &mut WeightMeter,
+		id: &mut [u8; 32],
 	) -> Result<bool, ProcessMessageError> {
 		use AggregateMessageOrigin::*;
 		match origin {
 			// DMP and local messages can be directly forwarded to the XCM executor since there is no flow control.
-			o @ Parent | o @ Loopback => XcmProcessor::process_message(message, o, meter),
+			o @ Parent | o @ Loopback => XcmProcessor::process_message(message, o, meter, id),
 			// XCMoHRMP need to be tunneled back through the XCMP queue pallet to respect the suspension logic.
-			Sibling(para) => XcmpQueue::process_message(message, para, meter),
+			Sibling(para) => XcmpQueue::process_message(message, para, meter, id),
 		}
 	}
 }
@@ -95,8 +97,10 @@ impl<
 		message: &[u8],
 		origin: Self::Origin,
 		meter: &mut WeightMeter,
+		id: &mut [u8; 32],
 	) -> Result<bool, ProcessMessageError> {
-		let hash = blake2_256(message);
+		// XCM specifically needs Blake2-256
+		*id = blake2_256(message);
 		let versioned_message = VersionedXcm::<Call>::decode(&mut &message[..])
 			.map_err(|_| ProcessMessageError::Corrupt)?;
 		let message = Xcm::<Call>::try_from(versioned_message)
@@ -106,7 +110,7 @@ impl<
 		ensure!(meter.can_accrue(required), ProcessMessageError::Overweight(required));
 
 		let (consumed, result) =
-			match XcmExecutor::execute(origin.into(), pre, hash, Weight::zero()) {
+			match XcmExecutor::execute(origin.into(), pre, id, Weight::zero()) {
 				Outcome::Complete(w) => (w, Ok(true)),
 				Outcome::Incomplete(w, _) => (w, Ok(false)),
 				// In the error-case we assume the worst case and consume all possible weight.
