@@ -697,6 +697,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "sp-api",
+ "sp-runtime",
  "sp-std",
  "substrate-wasm-builder",
  "xcm",
