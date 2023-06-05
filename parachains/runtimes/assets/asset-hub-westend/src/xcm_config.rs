@@ -24,15 +24,12 @@ use assets_common::matching::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{
-		ConstU32, Contains, EnsureOrigin, EnsureOriginWithArg, Everything, Nothing,
-		PalletInfoAccess,
-	},
+	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
 };
 use frame_system::EnsureRoot;
-use pallet_xcm::{EnsureXcm, XcmPassthrough};
+use pallet_xcm::XcmPassthrough;
 use parachains_common::{impls::ToStakingPot, xcm_config::AssetFeeAsExistentialDepositMultiplier};
-use polkadot_parachain::primitives::{Id as ParaId, Sibling};
+use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -44,10 +41,7 @@ use xcm_builder::{
 	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId,
 	UsingComponents, WeightInfoBounds, WithComputedOrigin, WithUniqueTopic,
 };
-use xcm_executor::{
-	traits::{Convert, WithOriginFilter},
-	XcmExecutor,
-};
+use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
 #[cfg(feature = "runtime-benchmarks")]
 use {pallet_assets::BenchmarkHelper, sp_core::Get};
@@ -493,36 +487,6 @@ impl pallet_xcm::Config for Runtime {
 impl cumulus_pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
-}
-pub type MultiLocationForAssetId = MultiLocation;
-
-pub type SovereignAccountOf = (
-	SiblingParachainConvertsVia<ParaId, AccountId>,
-	AccountId32Aliases<RelayNetwork, AccountId>,
-	ParentIsPreset<AccountId>,
-);
-
-// `EnsureOriginWithArg` impl for `CreateOrigin` which allows only XCM origins that are locations
-// containing the class location.
-pub struct ForeignCreators;
-impl EnsureOriginWithArg<RuntimeOrigin, MultiLocation> for ForeignCreators {
-	type Success = AccountId;
-
-	fn try_origin(
-		o: RuntimeOrigin,
-		a: &MultiLocation,
-	) -> sp_std::result::Result<Self::Success, RuntimeOrigin> {
-		let origin_location = EnsureXcm::<Everything>::try_origin(o.clone())?;
-		if !a.starts_with(&origin_location) {
-			return Err(o)
-		}
-		SovereignAccountOf::convert(origin_location).map_err(|_| o)
-	}
-
-	#[cfg(feature = "runtime-benchmarks")]
-	fn try_successful_origin(a: &MultiLocation) -> Result<RuntimeOrigin, ()> {
-		Ok(pallet_xcm::Origin::Xcm(a.clone()).into())
-	}
 }
 
 /// Simple conversion of `u32` into an `AssetId` for use in benchmarking.
