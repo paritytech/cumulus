@@ -105,13 +105,8 @@ impl<T: frame_system::Config> cumulus_pallet_xcmp_queue::WeightInfo for WeightIn
 		// Proof Size summary in bytes:
 		//  Measured:  `76`
 		//  Estimated: `1561`
-<<<<<<< HEAD:parachains/runtimes/assets/westmint/src/weights/cumulus_pallet_xcmp_queue.rs
-		// Minimum execution time: 1_197_000 picoseconds.
-		Weight::from_parts(1_259_000, 0)
-=======
 		// Minimum execution time: 5_747_000 picoseconds.
 		Weight::from_parts(5_911_000, 0)
->>>>>>> origin/master:parachains/runtimes/assets/asset-hub-polkadot/src/weights/cumulus_pallet_xcmp_queue.rs
 			.saturating_add(Weight::from_parts(0, 1561))
 			.saturating_add(T::DbWeight::get().reads(1))
 	}

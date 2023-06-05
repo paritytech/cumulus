@@ -881,13 +881,8 @@ impl<T: Config> Pallet<T> {
 
 	/// Process all inbound horizontal messages relayed by the collator.
 	///
-<<<<<<< HEAD
 	/// This is similar to [`enqueue_inbound_downward_messages`], but works on multiple inbound
 	/// channels. It immediately dispatches signals and queues all other XCM. Blob messages are ignored.
-=======
-	/// This is similar to `Pallet::process_inbound_downward_messages`, but works on multiple inbound
-	/// channels.
->>>>>>> origin/master
 	///
 	/// **Panics** if either any of horizontal messages submitted by the collator was sent from
 	///            a para which has no open channel to this parachain or if after processing
