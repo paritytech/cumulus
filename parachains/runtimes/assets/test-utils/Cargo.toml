@@ -3,7 +3,7 @@ name = "asset-test-utils"
 version = "1.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
-description = "Statemint parachain runtime"
+description = "Test utils for Asset Hub runtimes."
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
@@ -23,6 +23,7 @@ sp-core = { git = "https://github.com/paritytech/substrate", default-features = 
 # Cumulus
 cumulus-pallet-parachain-system = { path = "../../../../pallets/parachain-system", default-features = false }
 cumulus-pallet-xcmp-queue = { path = "../../../../pallets/xcmp-queue", default-features = false }
+cumulus-pallet-dmp-queue = { path = "../../../../pallets/dmp-queue", default-features = false }
 pallet-collator-selection = { path = "../../../../pallets/collator-selection", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
 assets-common = { path = "../common", default-features = false }
@@ -30,6 +31,7 @@ cumulus-primitives-core = { path = "../../../../primitives/core", default-featur
 cumulus-primitives-parachain-inherent = { path = "../../../../primitives/parachain-inherent", default-features = false }
 cumulus-test-relay-sproof-builder = { path = "../../../../test/relay-sproof-builder", default-features = false }
 parachain-info = { path = "../../../../parachains/pallets/parachain-info", default-features = false }
+parachains-runtimes-test-utils = { path = "../../test-utils", default-features = false }
 
 # Polkadot
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -60,6 +62,7 @@ std = [
     "assets-common/std",
     "parachains-common/std",
 	"parachain-info/std",
+	"parachains-runtimes-test-utils/std",
 	"polkadot-parachain/std",
     "sp-consensus-aura/std",
     "sp-io/std",
@@ -69,4 +72,5 @@ std = [
     "xcm-executor/std",
     "pallet-xcm/std",
     "cumulus-pallet-xcmp-queue/std",
+    "cumulus-pallet-dmp-queue/std",
 ]

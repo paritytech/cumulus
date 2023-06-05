@@ -100,7 +100,7 @@ impl pallet_balances::Config for Test {
 	type MaxLocks = ();
 	type MaxReserves = MaxReserves;
 	type ReserveIdentifier = [u8; 8];
-	type HoldIdentifier = ();
+	type RuntimeHoldReason = RuntimeHoldReason;
 	type FreezeIdentifier = ();
 	type MaxHolds = ConstU32<0>;
 	type MaxFreezes = ConstU32<0>;
@@ -121,7 +121,7 @@ impl cumulus_pallet_parachain_system::Config for Test {
 
 parameter_types! {
 	pub const RelayChain: MultiLocation = MultiLocation::parent();
-	pub UniversalLocation: InteriorMultiLocation = X1(Parachain(1u32.into())).into();
+	pub UniversalLocation: InteriorMultiLocation = X1(Parachain(1u32));
 	pub UnitWeightCost: Weight = Weight::from_parts(1_000_000, 1024);
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
@@ -169,6 +169,7 @@ impl xcm_executor::Config for XcmConfig {
 	type UniversalAliases = Nothing;
 	type CallDispatcher = RuntimeCall;
 	type SafeCallFilter = Everything;
+	type Aliasers = Nothing;
 }
 
 pub type XcmRouter = (

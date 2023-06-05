@@ -17,12 +17,12 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 hex-literal = { version = "0.4.1", optional = true }
-log = { version = "0.4.17", default-features = false }
-scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
+log = { version = "0.4.18", default-features = false }
+scale-info = { version = "2.7.0", default-features = false, features = ["derive"] }
 smallvec = "1.10.0"
 
 # Local
-pallet-template = { path = "../pallets/template", default-features = false }
+pallet-parachain-template = { path = "../pallets/template", default-features = false }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "master" }
@@ -100,7 +100,7 @@ std = [
 	"pallet-message-queue/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
-	"pallet-template/std",
+	"pallet-parachain-template/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
@@ -136,6 +136,7 @@ runtime-benchmarks = [
 	"pallet-collator-selection/runtime-benchmarks",
 	"pallet-message-queue/runtime-benchmarks",
 	"pallet-template/runtime-benchmarks",
+	"pallet-parachain-template/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
@@ -160,7 +161,7 @@ try-runtime = [
 	"pallet-message-queue/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-sudo/try-runtime",
-	"pallet-template/try-runtime",
+	"pallet-parachain-template/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"pallet-xcm/try-runtime",

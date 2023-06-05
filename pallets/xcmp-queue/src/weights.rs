@@ -87,6 +87,16 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Minimum execution time: 2_718_000 picoseconds.
 		Weight::from_parts(2_804_000, 1561)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
+		Weight::from_parts(2_717_000_u64, 0)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+
+	// Storage: XcmpQueue QueueConfig (r:1 w:1)
+	fn set_config_with_weight() -> Weight {
+		Weight::from_parts(2_717_000_u64, 0)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
 
@@ -132,5 +142,15 @@ impl WeightInfo for () {
 		// Minimum execution time: 2_718_000 picoseconds.
 		Weight::from_parts(2_804_000, 1561)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
+		Weight::from_parts(2_717_000_u64, 0)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+
+	// Storage: XcmpQueue QueueConfig (r:1 w:1)
+	fn set_config_with_weight() -> Weight {
+		Weight::from_parts(2_717_000_u64, 0)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

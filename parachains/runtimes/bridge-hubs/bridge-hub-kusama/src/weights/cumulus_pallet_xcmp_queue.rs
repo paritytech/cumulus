@@ -21,6 +21,10 @@
 //! WORST CASE MAP SIZE: `1000000`
 //! HOSTNAME: `i9`, CPU: `13th Gen Intel(R) Core(TM) i9-13900K`
 //! EXECUTION: Some(Native), WASM-EXECUTION: Compiled, CHAIN: Some("bridge-hub-kusama-dev"), DB CACHE: 1024
+//! DATE: 2023-05-05, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
+//! WORST CASE MAP SIZE: `1000000`
+//! HOSTNAME: `bm4`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
+//! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("bridge-hub-kusama-dev"), DB CACHE: 1024
 
 // Executed Command:
 // ./target/release/polkadot-parachain
@@ -44,9 +48,10 @@
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
 #![allow(unused_imports)]
+#![allow(missing_docs)]
 
 use frame_support::{traits::Get, weights::Weight};
-use sp_std::marker::PhantomData;
+use core::marker::PhantomData;
 
 /// Weight functions for `cumulus_pallet_xcmp_queue`.
 pub struct WeightInfo<T>(PhantomData<T>);
@@ -57,8 +62,8 @@ impl<T: frame_system::Config> cumulus_pallet_xcmp_queue::WeightInfo for WeightIn
 		// Proof Size summary in bytes:
 		//  Measured:  `76`
 		//  Estimated: `1561`
-		// Minimum execution time: 1_878_000 picoseconds.
-		Weight::from_parts(1_953_000, 0)
+		// Minimum execution time: 5_497_000 picoseconds.
+		Weight::from_parts(5_680_000, 0)
 			.saturating_add(Weight::from_parts(0, 1561))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -90,8 +95,8 @@ impl<T: frame_system::Config> cumulus_pallet_xcmp_queue::WeightInfo for WeightIn
 		// Proof Size summary in bytes:
 		//  Measured:  `76`
 		//  Estimated: `1561`
-		// Minimum execution time: 1_235_000 picoseconds.
-		Weight::from_parts(1_319_000, 0)
+		// Minimum execution time: 5_600_000 picoseconds.
+		Weight::from_parts(5_855_000, 0)
 			.saturating_add(Weight::from_parts(0, 1561))
 			.saturating_add(T::DbWeight::get().reads(1))
 	}
