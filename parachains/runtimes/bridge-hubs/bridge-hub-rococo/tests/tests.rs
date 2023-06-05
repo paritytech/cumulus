@@ -21,9 +21,9 @@ use bridge_hub_rococo_runtime::{
 	bridge_hub_rococo_config, bridge_hub_wococo_config,
 	constants::fee::WeightToFee,
 	xcm_config::{RelayNetwork, XcmConfig},
-	BridgeRejectObsoleteHeadersAndMessages, DeliveryRewardInBalance, Executive, ExistentialDeposit,
-	ParachainSystem, PolkadotXcm, RequiredStakeForStakeAndSlash, Runtime, RuntimeCall,
-	RuntimeEvent, SessionKeys, SignedExtra, UncheckedExtrinsic,
+	AllPalletsWithoutSystem, BridgeRejectObsoleteHeadersAndMessages, DeliveryRewardInBalance,
+	Executive, ExistentialDeposit, ParachainSystem, PolkadotXcm, RequiredStakeForStakeAndSlash,
+	Runtime, RuntimeCall, RuntimeEvent, SessionKeys, SignedExtra, UncheckedExtrinsic,
 };
 use codec::{Decode, Encode};
 use frame_support::parameter_types;
@@ -105,6 +105,7 @@ mod bridge_hub_rococo_tests {
 
 	bridge_hub_test_utils::test_cases::include_teleports_for_native_asset_works!(
 		Runtime,
+		AllPalletsWithoutSystem,
 		XcmConfig,
 		CheckingAccount,
 		WeightToFee,
@@ -198,6 +199,7 @@ mod bridge_hub_rococo_tests {
 	fn message_dispatch_routing_works() {
 		bridge_hub_test_utils::test_cases::message_dispatch_routing_works::<
 			Runtime,
+			AllPalletsWithoutSystem,
 			XcmConfig,
 			ParachainSystem,
 			WithBridgeHubWococoMessagesInstance,
@@ -227,6 +229,7 @@ mod bridge_hub_rococo_tests {
 	fn relayed_incoming_message_works() {
 		bridge_hub_test_utils::test_cases::relayed_incoming_message_works::<
 			Runtime,
+			AllPalletsWithoutSystem,
 			XcmConfig,
 			ParachainSystem,
 			BridgeGrandpaWococoInstance,
@@ -247,6 +250,7 @@ mod bridge_hub_rococo_tests {
 	pub fn complex_relay_extrinsic_works() {
 		bridge_hub_test_utils::test_cases::complex_relay_extrinsic_works::<
 			Runtime,
+			AllPalletsWithoutSystem,
 			XcmConfig,
 			ParachainSystem,
 			BridgeGrandpaWococoInstance,
@@ -280,6 +284,7 @@ mod bridge_hub_wococo_tests {
 
 	bridge_hub_test_utils::test_cases::include_teleports_for_native_asset_works!(
 		Runtime,
+		AllPalletsWithoutSystem,
 		XcmConfig,
 		CheckingAccount,
 		WeightToFee,
@@ -373,6 +378,7 @@ mod bridge_hub_wococo_tests {
 	fn message_dispatch_routing_works() {
 		bridge_hub_test_utils::test_cases::message_dispatch_routing_works::<
 			Runtime,
+			AllPalletsWithoutSystem,
 			XcmConfig,
 			ParachainSystem,
 			WithBridgeHubRococoMessagesInstance,
@@ -402,6 +408,7 @@ mod bridge_hub_wococo_tests {
 	fn relayed_incoming_message_works() {
 		bridge_hub_test_utils::test_cases::relayed_incoming_message_works::<
 			Runtime,
+			AllPalletsWithoutSystem,
 			XcmConfig,
 			ParachainSystem,
 			BridgeGrandpaRococoInstance,
@@ -422,6 +429,7 @@ mod bridge_hub_wococo_tests {
 	pub fn complex_relay_extrinsic_works() {
 		bridge_hub_test_utils::test_cases::complex_relay_extrinsic_works::<
 			Runtime,
+			AllPalletsWithoutSystem,
 			XcmConfig,
 			ParachainSystem,
 			BridgeGrandpaRococoInstance,

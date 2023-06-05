@@ -1187,6 +1187,7 @@ dependencies = [
  "pallet-xcm",
  "pallet-xcm-benchmarks",
  "parachain-info",
+ "parachains-common",
  "parachains-runtimes-test-utils",
  "parity-scale-codec 3.5.0",
  "sp-core",
