@@ -222,7 +222,7 @@ impl<T: OnQueueChanged<ParaId>> EnqueueMessage<ParaId> for EnqueueToLocalStorage
 
 	fn enqueue_message(message: BoundedSlice<u8, Self::MaxMessageLen>, origin: ParaId) {
 		let mut msgs = EnqueuedMessages::get();
-		msgs.push((origin.clone(), message.to_vec()));
+		msgs.push((origin, message.to_vec()));
 		EnqueuedMessages::set(&msgs);
 		T::on_queue_changed(origin, msgs.len() as u64, 0);
 	}
@@ -235,7 +235,7 @@ impl<T: OnQueueChanged<ParaId>> EnqueueMessage<ParaId> for EnqueueToLocalStorage
 		let mut l = 0;
 		for message in iter {
 			l += message.len();
-			msgs.push((origin.clone(), message.to_vec()));
+			msgs.push((origin, message.to_vec()));
 		}
 		EnqueuedMessages::set(&msgs);
 		T::on_queue_changed(origin, msgs.len() as u64, l as u64);

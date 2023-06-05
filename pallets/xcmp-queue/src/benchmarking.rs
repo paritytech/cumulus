@@ -57,11 +57,17 @@ mod benchmarks {
 	#[benchmark]
 	fn process_message() {
 		let msg = vec![0u8; 1024];
+		let mut id = [0u8; 32];
 
 		#[block]
 		{
-			Pallet::<T>::process_message(msg.as_slice(), 0.into(), &mut WeightMeter::max_limit())
-				.unwrap();
+			Pallet::<T>::process_message(
+				msg.as_slice(),
+				0.into(),
+				&mut WeightMeter::max_limit(),
+				&mut id,
+			)
+			.unwrap();
 		}
 	}
 
