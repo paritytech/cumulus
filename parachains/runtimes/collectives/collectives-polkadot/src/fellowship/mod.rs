@@ -185,19 +185,22 @@ parameter_types! {
 
 const USDT_UNITS: u128 = 1_000_000;
 
+/// [`PayOverXcm`] setup to pay the Fellowship salary on the AssetHub in USDT.
+pub type FellowshipSalaryPaymaster = PayOverXcm<
+	Interior,
+	crate::xcm_config::XcmRouter,
+	crate::PolkadotXcm,
+	ConstU32<{ 6 * HOURS }>,
+	AccountId,
+	(),
+	ConvertToValue<UsdtAsset>,
+	AliasesIntoAccountId32<(), AccountId>,
+>;
+
 impl pallet_salary::Config<FellowshipSalaryInstance> for Runtime {
 	type WeightInfo = weights::pallet_salary::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
-	type Paymaster = PayOverXcm<
-		Interior,
-		crate::xcm_config::XcmRouter,
-		crate::PolkadotXcm,
-		ConstU32<{ 6 * HOURS }>,
-		AccountId,
-		(),
-		ConvertToValue<UsdtAsset>,
-		AliasesIntoAccountId32<(), AccountId>,
-	>;
+	type Paymaster = FellowshipSalaryPaymaster;
 	type Members = pallet_ranked_collective::Pallet<Runtime, FellowshipCollectiveInstance>;
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
