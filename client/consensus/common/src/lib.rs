@@ -147,6 +147,11 @@ where
 		let hash = params.post_hash();
 		let number = *params.header.number();
 
+		if params.with_state() {
+			// Force imported state finality
+			params.finalized = true;
+		}
+
 		// Best block is determined by the relay chain, or if we are doing the initial sync
 		// we import all blocks as new best.
 		params.fork_choice = Some(sc_consensus::ForkChoiceStrategy::Custom(
