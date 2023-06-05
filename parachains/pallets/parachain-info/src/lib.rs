@@ -43,7 +43,6 @@ pub mod pallet {
 		pub parachain_id: ParaId,
 	}
 
-	#[cfg(feature = "std")]
 	impl Default for GenesisConfig {
 		fn default() -> Self {
 			Self { parachain_id: 100.into() }
@@ -53,7 +52,7 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
-			<ParachainId<T>>::put(&self.parachain_id);
+			<ParachainId<T>>::put(self.parachain_id);
 		}
 	}
 

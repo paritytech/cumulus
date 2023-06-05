@@ -58,6 +58,7 @@ use frame_system::{
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
+use xcm_builder::ProcessXcmMessage;
 use xcm_config::{FellowshipLocation, GovernanceLocation, XcmOriginToTransactDispatchOrigin};
 
 #[cfg(any(feature = "std", test))]
@@ -70,7 +71,7 @@ use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 use parachains_common::{
 	impls::DealWithFees,
 	opaque,
-	process_xcm_message::{ParaIdToSibling, ProcessFromSibling, ProcessXcmMessage},
+	process_xcm_message::{ParaIdToSibling, ProcessFromSibling},
 	AccountId, Balance, BlockNumber, Hash, Header, Index, Signature, AVERAGE_ON_INITIALIZE_RATIO,
 	HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
@@ -109,6 +110,9 @@ pub type UncheckedExtrinsic =
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
+/// Migrations to apply on runtime upgrade.
+pub type Migrations = (pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,);
+
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
 	Runtime,
@@ -116,6 +120,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
+	Migrations,
 >;
 
 impl_opaque_keys! {
@@ -129,7 +134,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("bridge-hub-kusama"),
 	impl_name: create_runtime_str!("bridge-hub-kusama"),
 	authoring_version: 1,
-	spec_version: 9400,
+	spec_version: 9420,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 3,
@@ -247,7 +252,7 @@ impl pallet_balances::Config for Runtime {
 	type MaxLocks = ConstU32<50>;
 	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = [u8; 8];
-	type HoldIdentifier = ();
+	type RuntimeHoldReason = RuntimeHoldReason;
 	type FreezeIdentifier = ();
 	type MaxHolds = ConstU32<0>;
 	type MaxFreezes = ConstU32<0>;
@@ -255,7 +260,7 @@ impl pallet_balances::Config for Runtime {
 
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
-	pub const TransactionByteFee: Balance = 1 * MILLICENTS;
+	pub const TransactionByteFee: Balance = MILLICENTS;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -648,7 +653,7 @@ impl_runtime_apis! {
 			list_benchmarks!(list, extra);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
-			return (list, storage_info)
+			(list, storage_info)
 		}
 
 		fn dispatch_benchmark(
@@ -686,7 +691,7 @@ impl_runtime_apis! {
 			parameter_types! {
 				pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = Some((
 					KsmRelayLocation::get(),
-					MultiAsset { fun: Fungible(1 * UNITS), id: Concrete(KsmRelayLocation::get()) },
+					MultiAsset { fun: Fungible(UNITS), id: Concrete(KsmRelayLocation::get()) },
 				));
 				pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
 			}
@@ -700,7 +705,7 @@ impl_runtime_apis! {
 				fn get_multi_asset() -> MultiAsset {
 					MultiAsset {
 						id: Concrete(KsmRelayLocation::get()),
-						fun: Fungible(1 * UNITS),
+						fun: Fungible(UNITS),
 					}
 				}
 			}
