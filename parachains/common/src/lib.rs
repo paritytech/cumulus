@@ -24,7 +24,6 @@ pub use types::*;
 /// Common types of parachains.
 mod types {
 	use sp_runtime::traits::{IdentifyAccount, Verify};
-	use xcm::v2::MultiLocation;
 
 	/// An index to a block.
 	pub type BlockNumber = u32;
