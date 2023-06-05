@@ -295,9 +295,7 @@ impl<Runtime: pallet_xcm::Config + cumulus_pallet_parachain_system::Config> Runt
 	}
 }
 
-impl<Runtime: cumulus_pallet_dmp_queue::Config + cumulus_pallet_parachain_system::Config>
-	RuntimeHelper<Runtime>
-{
+impl<Runtime: pallet_xcm::Config + cumulus_pallet_parachain_system::Config> RuntimeHelper<Runtime> {
 	pub fn execute_as_governance(call: Vec<u8>, require_weight_at_most: Weight) -> Outcome {
 		// prepare xcm as governance will do
 		let xcm = Xcm(vec![
@@ -311,7 +309,7 @@ impl<Runtime: cumulus_pallet_dmp_queue::Config + cumulus_pallet_parachain_system
 
 		// execute xcm as parent origin
 		let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-		<<Runtime as cumulus_pallet_dmp_queue::Config>::XcmExecutor>::execute_xcm(
+		<<Runtime as pallet_xcm::Config>::XcmExecutor>::execute_xcm(
 			MultiLocation::parent(),
 			xcm,
 			hash,
