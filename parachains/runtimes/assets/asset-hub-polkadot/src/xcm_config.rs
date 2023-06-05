@@ -511,11 +511,15 @@ impl pallet_assets::BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 
 #[test]
 fn foreign_pallet_has_correct_local_account() {
-	use hex_literal::hex;
+	use sp_core::crypto::{Ss58AddressFormat, Ss58Codec};
 	use xcm_executor::traits::ConvertLocation;
 
-	let fellowship_salary = (Parent, Parachain(1001), PalletInstance(64));
+	const COLLECTIVES_PARAID: u32 = 1001;
+	const FELLOWSHIP_SALARY_PALLET_ID: u8 = 64;
+	let fellowship_salary =
+		(Parent, Parachain(COLLECTIVES_PARAID), PalletInstance(FELLOWSHIP_SALARY_PALLET_ID));
 	let account = LocationToAccountId::convert_location(&fellowship_salary.into()).unwrap();
-	let expected = hex!["81bd2c1d40052682633fb3e67eff151b535284d1d1a9633613af14006656f42b"].into();
-	assert_eq!(account, expected);
+	let polkadot = Ss58AddressFormat::try_from("polkadot").unwrap();
+	let address = Ss58Codec::to_ss58check_with_version(&account, polkadot);
+	assert_eq!(address, "13w7NdvSR1Af8xsQTArDtZmVvjE8XhWNdL4yed3iFHrUNCnS");
 }
