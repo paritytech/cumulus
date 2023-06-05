@@ -37,7 +37,7 @@ use frame_support::{
 	traits::{EitherOf, EitherOfDiverse, MapSuccess},
 };
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
-use polkadot_runtime_constants::{currency::UNITS, time::HOURS, xcm::body::FELLOWSHIP_ADMIN_INDEX};
+use polkadot_runtime_constants::{time::HOURS, xcm::body::FELLOWSHIP_ADMIN_INDEX};
 use sp_core::{ConstU128, ConstU32};
 use sp_runtime::traits::{AccountIdConversion, ConstU16, ConvertToValue, Replace};
 use xcm::latest::BodyId;
