@@ -337,7 +337,7 @@ fn follow_new_best_with_dummy_recovery_works() {
 		Some(recovery_chan_tx),
 	);
 
-	let block = build_block(&*client, None, None);
+	let block = build_block(&*client.clone(), None, None);
 	let block_clone = block.clone();
 	let client_clone = client.clone();
 
@@ -547,6 +547,7 @@ fn do_not_set_best_block_to_older_block() {
 	let client = Arc::new(TestClientBuilder::with_backend(backend).build());
 
 	let blocks = (0..NUM_BLOCKS)
+		.into_iter()
 		.map(|_| build_and_import_block(client.clone(), true))
 		.collect::<Vec<_>>();
 
@@ -558,6 +559,7 @@ fn do_not_set_best_block_to_older_block() {
 	let consensus =
 		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}), None);
 
+	let client2 = client.clone();
 	let work = async move {
 		new_best_heads_sender
 			.unbounded_send(blocks[NUM_BLOCKS - 2].header().clone())
@@ -577,7 +579,7 @@ fn do_not_set_best_block_to_older_block() {
 	});
 
 	// Build and import a new best block.
-	build_and_import_block(client, true);
+	build_and_import_block(client2.clone(), true);
 }
 
 #[test]
@@ -605,6 +607,7 @@ fn prune_blocks_on_level_overflow() {
 	let id0 = block0.header.hash();
 
 	let blocks1 = (0..LEVEL_LIMIT)
+		.into_iter()
 		.map(|i| {
 			build_and_import_block_ext(
 				&*client,
@@ -619,6 +622,7 @@ fn prune_blocks_on_level_overflow() {
 	let id10 = blocks1[0].header.hash();
 
 	let blocks2 = (0..2)
+		.into_iter()
 		.map(|i| {
 			build_and_import_block_ext(
 				&*client,
@@ -716,6 +720,7 @@ fn restore_limit_monitor() {
 	let id00 = block00.header.hash();
 
 	let blocks1 = (0..LEVEL_LIMIT + 1)
+		.into_iter()
 		.map(|i| {
 			build_and_import_block_ext(
 				&*client,
@@ -730,6 +735,7 @@ fn restore_limit_monitor() {
 	let id10 = blocks1[0].header.hash();
 
 	let _ = (0..LEVEL_LIMIT)
+		.into_iter()
 		.map(|i| {
 			build_and_import_block_ext(
 				&*client,

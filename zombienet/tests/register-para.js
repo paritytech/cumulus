@@ -3,18 +3,7 @@ async function run(nodeName, networkInfo, args) {
     const para = networkInfo.paras[paraIdStr];
     const relayNode = networkInfo.relay[0];
 
-    const registerParachainOptions = {
-        id: parseInt(paraIdStr,10),
-        wasmPath: para.wasmPath,
-        statePath: para.statePath,
-        apiUrl: relayNode.wsUri,
-        onboardAsParachain: true,
-        seed: "//Alice",
-        finalization: true
-    };
-
-
-    await zombie.registerParachain(registerParachainOptions);
+    await zombie.registerParachain(parseInt(paraIdStr,10),para.wasmPath, para.statePath, relayNode.wsUri, "//Alice", true);
 }
 
 module.exports = { run }

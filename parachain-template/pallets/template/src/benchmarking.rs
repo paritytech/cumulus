@@ -1,4 +1,4 @@
-//! Benchmarking setup for pallet-parachain-template
+//! Benchmarking setup for pallet-template
 
 use super::*;
 

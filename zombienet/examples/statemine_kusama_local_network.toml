@@ -21,7 +21,7 @@ chain = "kusama-local"
 
 [[parachains]]
 id = 1000
-chain = "asset-hub-kusama-local"
+chain = "statemine-local"
 cumulus_based = true
 
 	# run alice as parachain collator

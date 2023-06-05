@@ -281,7 +281,7 @@ fn xcmp_queue_does_not_consume_dest_or_msg_on_not_applicable() {
 
 	// XcmpQueue - check dest is really not applicable
 	let dest = (Parent, Parent, Parent);
-	let mut dest_wrapper = Some(dest.into());
+	let mut dest_wrapper = Some(dest.clone().into());
 	let mut msg_wrapper = Some(message.clone());
 	assert_eq!(
 		Err(SendError::NotApplicable),
@@ -289,7 +289,7 @@ fn xcmp_queue_does_not_consume_dest_or_msg_on_not_applicable() {
 	);
 
 	// check wrapper were not consumed
-	assert_eq!(Some(dest.into()), dest_wrapper.take());
+	assert_eq!(Some(dest.clone().into()), dest_wrapper.take());
 	assert_eq!(Some(message.clone()), msg_wrapper.take());
 
 	// another try with router chain with asserting sender
@@ -309,7 +309,7 @@ fn xcmp_queue_consumes_dest_and_msg_on_ok_validate() {
 
 	// XcmpQueue - check dest/msg is valid
 	let dest = (Parent, X1(Parachain(5555)));
-	let mut dest_wrapper = Some(dest.into());
+	let mut dest_wrapper = Some(dest.clone().into());
 	let mut msg_wrapper = Some(message.clone());
 	assert!(<XcmpQueue as SendXcm>::validate(&mut dest_wrapper, &mut msg_wrapper).is_ok());
 

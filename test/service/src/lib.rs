@@ -54,8 +54,7 @@ use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_consensus::ImportQueue;
 use sc_network::{
-	config::{FullNetworkConfiguration, TransportConfig},
-	multiaddr, NetworkBlock, NetworkService, NetworkStateInfo,
+	config::TransportConfig, multiaddr, NetworkBlock, NetworkService, NetworkStateInfo,
 };
 use sc_service::{
 	config::{
@@ -324,12 +323,9 @@ where
 	.map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
 	let import_queue_service = params.import_queue.service();
-	let net_config = FullNetworkConfiguration::new(&parachain_config.network);
-
 	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
 		build_network(BuildNetworkParams {
 			parachain_config: &parachain_config,
-			net_config,
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
 			para_id,
@@ -634,7 +630,7 @@ impl TestNodeBuilder {
 		let parachain_config = node_config(
 			self.storage_update_func_parachain.unwrap_or_else(|| Box::new(|| ())),
 			self.tokio_handle.clone(),
-			self.key,
+			self.key.clone(),
 			self.parachain_nodes,
 			self.parachain_nodes_exclusive,
 			self.para_id,
@@ -671,7 +667,7 @@ impl TestNodeBuilder {
 		.await
 		.expect("could not create Cumulus test service");
 
-		let peer_id = network.local_peer_id();
+		let peer_id = network.local_peer_id().clone();
 		let addr = MultiaddrWithPeerId { multiaddr, peer_id };
 
 		TestNode { task_manager, client, network, addr, rpc_handlers, transaction_pool }
@@ -694,7 +690,7 @@ pub fn node_config(
 	is_collator: bool,
 ) -> Result<Configuration, ServiceError> {
 	let base_path = BasePath::new_temp_dir()?;
-	let root = base_path.path().join(format!("cumulus_test_service_{}", key));
+	let root = base_path.path().join(format!("cumulus_test_service_{}", key.to_string()));
 	let role = if is_collator { Role::Authority } else { Role::Full };
 	let key_seed = key.to_seed();
 	let mut spec = Box::new(chain_spec::get_chain_spec(para_id));
@@ -740,7 +736,7 @@ pub fn node_config(
 		state_pruning: Some(PruningMode::ArchiveAll),
 		blocks_pruning: BlocksPruning::KeepAll,
 		chain_spec: spec,
-		wasm_method: WasmExecutionMethod::default(),
+		wasm_method: WasmExecutionMethod::Interpreted,
 		// NOTE: we enforce the use of the native runtime to make the errors more debuggable
 		execution_strategies: ExecutionStrategies {
 			syncing: sc_client_api::ExecutionStrategy::NativeWhenPossible,
@@ -749,15 +745,18 @@ pub fn node_config(
 			offchain_worker: sc_client_api::ExecutionStrategy::NativeWhenPossible,
 			other: sc_client_api::ExecutionStrategy::NativeWhenPossible,
 		},
-		rpc_addr: None,
-		rpc_max_connections: Default::default(),
+		rpc_http: None,
+		rpc_ws: None,
+		rpc_ipc: None,
+		rpc_ws_max_connections: None,
 		rpc_cors: None,
 		rpc_methods: Default::default(),
-		rpc_max_request_size: Default::default(),
-		rpc_max_response_size: Default::default(),
+		rpc_max_payload: None,
+		rpc_max_request_size: None,
+		rpc_max_response_size: None,
 		rpc_id_provider: None,
-		rpc_max_subs_per_conn: Default::default(),
-		rpc_port: 9945,
+		rpc_max_subs_per_conn: None,
+		ws_max_out_buffer_capacity: None,
 		prometheus_config: None,
 		telemetry_endpoints: None,
 		default_heap_pages: None,
@@ -769,8 +768,7 @@ pub fn node_config(
 		tracing_receiver: Default::default(),
 		max_runtime_instances: 8,
 		announce_block: true,
-		data_path: root,
-		base_path,
+		base_path: Some(base_path),
 		informant_output_format: Default::default(),
 		wasm_runtime_overrides: None,
 		runtime_cache_size: 2,
@@ -791,7 +789,7 @@ impl TestNode {
 		function: impl Into<runtime::RuntimeCall>,
 		caller: Sr25519Keyring,
 	) -> Result<RpcTransactionOutput, RpcTransactionError> {
-		let extrinsic = construct_extrinsic(&self.client, function, caller.pair(), Some(0));
+		let extrinsic = construct_extrinsic(&*self.client, function, caller.pair(), Some(0));
 
 		self.rpc_handlers.send_transaction(extrinsic.into()).await
 	}
@@ -873,7 +871,7 @@ pub fn run_relay_chain_validator_node(
 	key: Sr25519Keyring,
 	storage_update_func: impl Fn(),
 	boot_nodes: Vec<MultiaddrWithPeerId>,
-	port: Option<u16>,
+	websocket_port: Option<u16>,
 ) -> polkadot_test_service::PolkadotTestNode {
 	let mut config = polkadot_test_service::node_config(
 		storage_update_func,
@@ -883,8 +881,8 @@ pub fn run_relay_chain_validator_node(
 		true,
 	);
 
-	if let Some(port) = port {
-		config.rpc_addr = Some(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), port));
+	if let Some(port) = websocket_port {
+		config.rpc_ws = Some(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), port));
 	}
 
 	polkadot_test_service::run_validator_node(

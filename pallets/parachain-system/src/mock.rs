@@ -178,7 +178,6 @@ impl ProcessMessage for SaveIntoThreadLocal {
 		message: &[u8],
 		origin: Self::Origin,
 		_meter: &mut WeightMeter,
-		_id: &mut [u8; 32],
 	) -> Result<bool, ProcessMessageError> {
 		assert_eq!(origin, Self::Origin::Parent); // FAIL-CI use transformed origin
 

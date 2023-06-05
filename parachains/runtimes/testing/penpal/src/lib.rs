@@ -1,4 +1,4 @@
-// Copyright 2019-2023 Parity Technologies (UK) Ltd.
+// Copyright 2019-2022 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -14,13 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! The PenPal runtime is designed as a test runtime that can be created with an arbitrary `ParaId`,
-//! such that multiple instances of the parachain can be on the same parent relay. Ensure that you
-//! have enough nodes running to support this or you will get scheduling errors.
+//! The Penpal runtime is designed as a test runtime that can be created using an arbitrary parachain id.
+//! (and as such multiple parachains can be on the same relay node - though make sure you have enough relay
+//! nodes running to support this or you will get the not scheduled on a core error message.)
 //!
-//! The PenPal runtime's primary use is for testing interactions between System parachains and
-//! other chains that are not trusted teleporters.
-
+//! The penpal runtime's primary use is as a partner when testing statemine/t with reserve asset transfers.
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
@@ -50,7 +48,9 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot, EnsureSigned,
 };
-use parachains_common::process_xcm_message::{ParaIdToSibling, ProcessFromSibling};
+use parachains_common::process_xcm_message::{
+	ParaIdToSibling, ProcessFromSibling, ProcessXcmMessage,
+};
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -126,10 +126,11 @@ pub type SignedExtra = (
 pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 
-pub type Migrations = (
-	pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,
-	pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,
-);
+/// Extrinsic type that has already been checked.
+pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
+
+pub type Migrations =
+	(pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,);
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -226,7 +227,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("penpal-parachain"),
 	impl_name: create_runtime_str!("penpal-parachain"),
 	authoring_version: 1,
-	spec_version: 9420,
+	spec_version: 9400,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -389,7 +390,7 @@ impl pallet_balances::Config for Runtime {
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = [u8; 8];
-	type RuntimeHoldReason = RuntimeHoldReason;
+	type HoldIdentifier = ();
 	type FreezeIdentifier = ();
 	type MaxHolds = ConstU32<0>;
 	type MaxFreezes = ConstU32<0>;
@@ -479,7 +480,7 @@ impl pallet_message_queue::Config for Runtime {
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type MessageProcessor = parachains_common::process_xcm_message::SplitMessages<
-		xcm_builder::ProcessXcmMessage<
+		ProcessXcmMessage<
 			AggregateMessageOrigin,
 			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
 			RuntimeCall,
@@ -506,7 +507,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type XcmpProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<ParaId>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type XcmpProcessor = ProcessFromSibling<
-		xcm_builder::ProcessXcmMessage<
+		ProcessXcmMessage<
 			AggregateMessageOrigin,
 			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
 			RuntimeCall,
@@ -584,7 +585,6 @@ impl pallet_asset_tx_payment::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
-	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -634,7 +634,6 @@ mod benches {
 		[pallet_balances, Balances]
 		[pallet_message_queue, MessageQueue]
 		[pallet_session, SessionBench::<Runtime>]
-		[pallet_sudo, Sudo]
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
 		[cumulus_pallet_parachain_system, ParachainSystem]
@@ -820,7 +819,7 @@ impl_runtime_apis! {
 			list_benchmarks!(list, extra);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
-			(list, storage_info)
+			return (list, storage_info)
 		}
 
 		fn dispatch_benchmark(

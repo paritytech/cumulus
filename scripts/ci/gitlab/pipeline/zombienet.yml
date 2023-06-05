@@ -35,7 +35,7 @@
     expire_in: 2 days
     paths:
       - ./zombienet-logs
-  allow_failure: false
+  allow_failure: true
   retry: 2
   tags:
     - zombienet-polkadot-integration-test

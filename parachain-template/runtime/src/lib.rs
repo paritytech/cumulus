@@ -42,10 +42,11 @@ use frame_system::{
 	EnsureRoot,
 };
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
-use parachains_common::process_xcm_message::{ParaIdToSibling, ProcessFromSibling};
+use parachains_common::process_xcm_message::{
+	ParaIdToSibling, ProcessFromSibling, ProcessXcmMessage,
+};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
-use xcm_builder::ProcessXcmMessage;
 use xcm_config::{RelayLocation, XcmOriginToTransactDispatchOrigin};
 
 #[cfg(any(feature = "std", test))]
@@ -60,7 +61,7 @@ use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 use xcm::latest::prelude::BodyId;
 
 /// Import the template pallet.
-pub use pallet_parachain_template;
+pub use pallet_template;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = MultiSignature;
@@ -342,7 +343,7 @@ impl pallet_balances::Config for Runtime {
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = [u8; 8];
-	type RuntimeHoldReason = RuntimeHoldReason;
+	type HoldIdentifier = ();
 	type FreezeIdentifier = ();
 	type MaxHolds = ConstU32<0>;
 	type MaxFreezes = ConstU32<0>;
@@ -494,7 +495,7 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 /// Configure the pallet template in pallets/template.
-impl pallet_parachain_template::Config for Runtime {
+impl pallet_template::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 }
 
@@ -530,7 +531,7 @@ construct_runtime!(
 		MessageQueue: pallet_message_queue = 34,
 
 		// Template
-		TemplatePallet: pallet_parachain_template = 40,
+		TemplatePallet: pallet_template = 40,
 	}
 );
 
@@ -726,13 +727,13 @@ impl_runtime_apis! {
 			list_benchmarks!(list, extra);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
-			(list, storage_info)
+			return (list, storage_info)
 		}
 
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{Benchmarking, BenchmarkBatch};
+			use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey};
 
 			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {}

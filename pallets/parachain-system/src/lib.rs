@@ -248,13 +248,13 @@ pub mod pallet {
 			};
 
 			<PendingUpwardMessages<T>>::mutate(|up| {
-				let queue_size = relevant_messaging_state.relay_dispatch_queue_size;
+				let (count, size) = relevant_messaging_state.relay_dispatch_queue_size;
 
 				let available_capacity = cmp::min(
-					queue_size.remaining_count,
-					host_config.max_upward_message_num_per_candidate.into(),
+					host_config.max_upward_queue_count.saturating_sub(count),
+					host_config.max_upward_message_num_per_candidate,
 				);
-				let available_size = queue_size.remaining_size;
+				let available_size = host_config.max_upward_queue_size.saturating_sub(size);
 
 				// Count the number of messages we can possibly fit in the given constraints, i.e.
 				// available_capacity and available_size.
@@ -400,16 +400,6 @@ pub mod pallet {
 			)
 			.expect("Invalid relay chain state proof");
 
-			// Deposit a log indicating the relay-parent storage root.
-			// TODO: remove this in favor of the relay-parent's hash after
-			// https://github.com/paritytech/cumulus/issues/303
-			frame_system::Pallet::<T>::deposit_log(
-				cumulus_primitives_core::rpsr_digest::relay_parent_storage_root_item(
-					vfp.relay_parent_storage_root,
-					vfp.relay_parent_number,
-				),
-			);
-
 			// initialization logic: we know that this runs exactly once every block,
 			// which means we can put the initialization logic here to remove the
 			// sequencing problem.
@@ -446,7 +436,7 @@ pub mod pallet {
 				.read_abridged_host_configuration()
 				.expect("Invalid host configuration in relay chain state proof");
 			let relevant_messaging_state = relay_state_proof
-				.read_messaging_state_snapshot(&host_config)
+				.read_messaging_state_snapshot()
 				.expect("Invalid messaging state in relay chain state proof");
 
 			<ValidationData<T>>::put(&vfp);
@@ -498,7 +488,10 @@ pub mod pallet {
 			check_version: bool,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-			AuthorizedUpgrade::<T>::put(CodeUpgradeAuthorization { code_hash, check_version });
+			AuthorizedUpgrade::<T>::put(CodeUpgradeAuthorization {
+				code_hash: code_hash.clone(),
+				check_version,
+			});
 
 			Self::deposit_event(Event::UpgradeAuthorized { code_hash });
 			Ok(())
@@ -568,8 +561,10 @@ pub mod pallet {
 
 	/// In case of a scheduled upgrade, this storage field contains the validation code to be applied.
 	///
-	/// As soon as the relay chain gives us the go-ahead signal, we will overwrite the [`:code`][sp_core::storage::well_known_keys::CODE]
+	/// As soon as the relay chain gives us the go-ahead signal, we will overwrite the [`:code`][well_known_keys::CODE]
 	/// which will result the next block process with the new validation code. This concludes the upgrade process.
+	///
+	/// [well_known_keys::CODE]: sp_core::storage::well_known_keys::CODE
 	#[pallet::storage]
 	#[pallet::getter(fn new_validation_function)]
 	pub(super) type PendingValidationCode<T: Config> = StorageValue<_, Vec<u8>, ValueQuery>;
@@ -707,7 +702,7 @@ pub mod pallet {
 
 	/// A custom head data that should be returned as result of `validate_block`.
 	///
-	/// See `Pallet::set_custom_validation_head_data` for more information.
+	/// See [`Pallet::set_custom_validation_head_data`] for more information.
 	#[pallet::storage]
 	pub(super) type CustomValidationHeadData<T: Config> = StorageValue<_, Vec<u8>, OptionQuery>;
 
@@ -773,7 +768,7 @@ impl<T: Config> Pallet<T> {
 		let authorization = AuthorizedUpgrade::<T>::get().ok_or(Error::<T>::NothingAuthorized)?;
 
 		// ensure that the actual hash matches the authorized hash
-		let actual_hash = T::Hashing::hash(code);
+		let actual_hash = T::Hashing::hash(&code[..]);
 		ensure!(actual_hash == authorization.code_hash, Error::<T>::Unauthorized);
 
 		// check versions if required as part of the authorization
@@ -886,13 +881,12 @@ impl<T: Config> Pallet<T> {
 	/// Process all inbound horizontal messages relayed by the collator.
 	///
 	/// This is similar to [`enqueue_inbound_downward_messages`], but works on multiple inbound
-	/// channels. It immediately dispatches signals and queues all other XCM. Blob messages are
-	/// ignored.
+	/// channels. It immediately dispatches signals and queues all other XCM. Blob messages are ignored.
 	///
-	/// **Panics** if either any of horizontal messages submitted by the collator was sent from a
-	///            para which has no open channel to this parachain or if after processing messages
-	///            across all inbound channels MQCs were obtained which do not correspond to the
-	///            ones found on the relay-chain.
+	/// **Panics** if either any of horizontal messages submitted by the collator was sent from
+	///            a para which has no open channel to this parachain or if after processing
+	///            messages across all inbound channels MQCs were obtained which do not
+	///            correspond to the ones found on the relay-chain.
 	fn enqueue_inbound_horizontal_messages(
 		ingress_channels: &[(ParaId, cumulus_primitives_core::AbridgedHrmpChannel)],
 		horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
@@ -960,10 +954,10 @@ impl<T: Config> Pallet<T> {
 		// `running_mqc_heads`. Otherwise, in a block where no messages were sent in a channel
 		// it won't get into next block's `last_mqc_heads` and thus will be all zeros, which
 		// would corrupt the message queue chain.
-		for (sender, channel) in ingress_channels {
+		for &(ref sender, ref channel) in ingress_channels {
 			let cur_head = running_mqc_heads
 				.entry(sender)
-				.or_insert_with(|| last_mqc_heads.get(sender).cloned().unwrap_or_default())
+				.or_insert_with(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default())
 				.head();
 			let target_head = channel.mqc_head.unwrap_or_default();
 
@@ -1061,30 +1055,6 @@ impl<T: Config> Pallet<T> {
 	pub fn set_custom_validation_head_data(head_data: Vec<u8>) {
 		CustomValidationHeadData::<T>::put(head_data);
 	}
-
-	/// Open HRMP channel for using it in benchmarks.
-	///
-	/// The caller assumes that the pallet will accept regular outbound message to the sibling
-	/// `target_parachain` after this call. No other assumptions are made.
-	#[cfg(feature = "runtime-benchmarks")]
-	pub fn open_outbound_hrmp_channel_for_benchmarks(target_parachain: ParaId) {
-		RelevantMessagingState::<T>::put(MessagingStateSnapshot {
-			dmq_mqc_head: Default::default(),
-			relay_dispatch_queue_size: Default::default(),
-			ingress_channels: Default::default(),
-			egress_channels: vec![(
-				target_parachain,
-				cumulus_primitives_core::AbridgedHrmpChannel {
-					max_capacity: 10,
-					max_total_size: 10_000_000_u32,
-					max_message_size: 10_000_000_u32,
-					msg_count: 5,
-					total_size: 5_000_000_u32,
-					mqc_head: None,
-				},
-			)],
-		})
-	}
 }
 
 pub struct ParachainSetCode<T>(sp_std::marker::PhantomData<T>);
@@ -1109,20 +1079,22 @@ impl<T: Config> Pallet<T> {
 		// may change so that the message is no longer valid.
 		//
 		// However, changing this setting is expected to be rare.
-		if let Some(cfg) = Self::host_configuration() {
-			if message.len() > cfg.max_upward_message_size as usize {
-				return Err(MessageSendError::TooBig)
-			}
-		} else {
-			// This storage field should carry over from the previous block. So if it's None
-			// then it must be that this is an edge-case where a message is attempted to be
-			// sent at the first block.
-			//
-			// Let's pass this message through. I think it's not unreasonable to expect that
-			// the message is not huge and it comes through, but if it doesn't it can be
-			// returned back to the sender.
-			//
-			// Thus fall through here.
+		match Self::host_configuration() {
+			Some(cfg) =>
+				if message.len() > cfg.max_upward_message_size as usize {
+					return Err(MessageSendError::TooBig)
+				},
+			None => {
+				// This storage field should carry over from the previous block. So if it's None
+				// then it must be that this is an edge-case where a message is attempted to be
+				// sent at the first block.
+				//
+				// Let's pass this message through. I think it's not unreasonable to expect that
+				// the message is not huge and it comes through, but if it doesn't it can be
+				// returned back to the sender.
+				//
+				// Thus fall through here.
+			},
 		};
 		<PendingUpwardMessages<T>>::append(message.clone());
 

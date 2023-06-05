@@ -91,7 +91,7 @@ where
 	Assets: fungibles::Inspect<AccountId>,
 {
 	fn contains(id: &<Assets as fungibles::Inspect<AccountId>>::AssetId) -> bool {
-		!Assets::total_issuance(id.clone()).is_zero()
+		!Assets::total_issuance(*id).is_zero()
 	}
 }
 
@@ -103,7 +103,7 @@ where
 	Assets: fungibles::Inspect<AccountId>,
 {
 	fn contains(id: &<Assets as fungibles::Inspect<AccountId>>::AssetId) -> bool {
-		Assets::asset_exists(id.clone())
+		Assets::asset_exists(*id)
 	}
 }
 
@@ -197,7 +197,7 @@ mod tests {
 		type WeightInfo = ();
 		type MaxReserves = MaxReserves;
 		type ReserveIdentifier = [u8; 8];
-		type RuntimeHoldReason = RuntimeHoldReason;
+		type HoldIdentifier = ();
 		type FreezeIdentifier = ();
 		type MaxHolds = ConstU32<1>;
 		type MaxFreezes = ConstU32<1>;
@@ -278,6 +278,7 @@ mod tests {
 		}
 
 		let asset_location = SomeSiblingParachain::get()
+			.clone()
 			.pushed_with_interior(GeneralIndex(42))
 			.expect("multilocation will only have 2 junctions; qed");
 		let asset = MultiAsset { id: Concrete(asset_location), fun: 1_000_000u128.into() };

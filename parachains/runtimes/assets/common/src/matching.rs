@@ -42,7 +42,10 @@ impl<Network: Get<NetworkId>> Contains<MultiLocation>
 	for StartsWithExplicitGlobalConsensus<Network>
 {
 	fn contains(t: &MultiLocation) -> bool {
-		matches!(t.interior.global_consensus(), Ok(requested_network) if requested_network.eq(&Network::get()))
+		match t.interior.global_consensus() {
+			Ok(requested_network) if requested_network.eq(&Network::get()) => true,
+			_ => false,
+		}
 	}
 }
 
@@ -58,7 +61,7 @@ impl<IsForeign: ContainsPair<MultiLocation, MultiLocation>> ContainsPair<MultiAs
 {
 	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
 		log::trace!(target: "xcm::contains", "IsForeignConcreteAsset asset: {:?}, origin: {:?}", asset, origin);
-		matches!(asset.id, Concrete(ref id) if IsForeign::contains(id, origin))
+		matches!(asset.id, Concrete(ref id) if IsForeign::contains(id, &origin))
 	}
 }
 
@@ -70,14 +73,18 @@ impl<SelfParaId: Get<ParaId>> ContainsPair<MultiLocation, MultiLocation>
 {
 	fn contains(&a: &MultiLocation, b: &MultiLocation) -> bool {
 		// `a` needs to be from `b` at least
-		if !a.starts_with(b) {
+		if !a.starts_with(&b) {
 			return false
 		}
 
 		// here we check if sibling
 		match a {
-			MultiLocation { parents: 1, interior } =>
-				matches!(interior.first(), Some(Parachain(sibling_para_id)) if sibling_para_id.ne(&u32::from(SelfParaId::get()))),
+			MultiLocation { parents: 1, interior } => match interior.first() {
+				Some(Parachain(sibling_para_id))
+					if sibling_para_id.ne(&u32::from(SelfParaId::get())) =>
+					true,
+				_ => false,
+			},
 			_ => false,
 		}
 	}

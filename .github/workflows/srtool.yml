@@ -32,11 +32,11 @@ jobs:
       matrix:
         include:
           - category: assets
-            runtime: asset-hub-kusama
+            runtime: statemine
           - category: assets
-            runtime: asset-hub-polkadot
+            runtime: statemint
           - category: assets
-            runtime: asset-hub-westend
+            runtime: westmint
           - category: bridge-hubs
             runtime: bridge-hub-polkadot
           - category: bridge-hubs

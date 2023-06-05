@@ -11,7 +11,7 @@ A set of tools for writing [Substrate](https://substrate.io/)-based
 [Polkadot](https://wiki.polkadot.network/en/)
 [parachains](https://wiki.polkadot.network/docs/en/learn-parachains). Refer to the included
 [overview](docs/overview.md) for architectural details, and the
-[Connect to a relay chain how-to guide](https://docs.substrate.io/reference/how-to-guides/parachains/connect-to-a-relay-chain/) for a
+[Connect to relay and  parachain tutorials](https://docs.substrate.io/tutorials/connect-relay-and-parachains/) for a
 guided walk-through of using these tools.
 
 It's easy to write blockchains using Substrate, and the overhead of writing parachains'
@@ -167,27 +167,29 @@ cargo build --release --bin polkadot-parachain
 ![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
 
 
-## Asset Hub 🪙
+## Statemint 🪙
 
-This repository also contains the Asset Hub runtimes. Asset Hub is a system parachain providing an
-asset store for the Polkadot ecosystem.
+This repository also contains the Statemint runtime (as well as the canary runtime Statemine and the
+test runtime Westmint).
+Statemint is a system parachain providing an asset store for the Polkadot ecosystem.
 
 ### Build & Launch a Node
 
-To run an Asset Hub node, you will need to compile the `polkadot-parachain` binary:
+To run a Statemine or Westmint node (Statemint is not deployed, yet) you will need to compile the
+`polkadot-parachain` binary:
 
 ```bash
-cargo build --release --locked --bin polkadot-parachain
+cargo build --release --locked -p polkadot-parachain
 ```
 
 Once the executable is built, launch the parachain node via:
 
 ```bash
-CHAIN=asset-hub-westend # or asset-hub-kusama
+CHAIN=westmint # or statemine
 ./target/release/polkadot-parachain --chain $CHAIN
 ```
 
-Refer to the [setup instructions](#manual-setup) to run a local network for development.
+Refer to the [setup instructions](#local-setup) to run a local network for development.
 
 ## Contracts 📝
 
@@ -217,7 +219,7 @@ eventually be included by the relay chain for a parachain.
 To run a Rococo collator you will need to compile the following binary:
 
 ```bash
-cargo build --release --locked --bin polkadot-parachain
+cargo build --release --locked -p polkadot-parachain
 ```
 
 Otherwise you can compile it with
@@ -226,7 +228,7 @@ Otherwise you can compile it with
 ```bash
 docker run --rm -it -w /shellhere/cumulus \
                     -v $(pwd):/shellhere/cumulus \
-                    paritytech/ci-linux:production cargo build --release --locked --bin polkadot-parachain
+                    paritytech/ci-linux:production cargo build --release --locked -p polkadot-parachain
 sudo chown -R $(id -u):$(id -g) target/
 ```
 
@@ -242,7 +244,7 @@ Once the executable is built, launch collators for each parachain (repeat once e
 
 ### Parachains
 
-* [Asset Hub](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-statemint-rpc.polkadot.io#/explorer)
+* [Statemint](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-statemint-rpc.polkadot.io#/explorer)
 * [Contracts on Rococo](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-contracts-rpc.polkadot.io#/explorer)
 * [RILT](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo.kilt.io#/explorer)
 

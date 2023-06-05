@@ -31,7 +31,7 @@
 // --pallet
 // cumulus_pallet_xcmp_queue
 // --extrinsic
-//
+// 
 // --execution
 // native
 // --output
@@ -44,10 +44,9 @@
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
 #![allow(unused_imports)]
-#![allow(missing_docs)]
 
 use frame_support::{traits::Get, weights::Weight};
-use core::marker::PhantomData;
+use sp_std::marker::PhantomData;
 
 /// Weight functions for `cumulus_pallet_xcmp_queue`.
 pub struct WeightInfo<T>(PhantomData<T>);

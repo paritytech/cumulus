@@ -25,17 +25,19 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
-use parachains_common::process_xcm_message::{ParaIdToSibling, ProcessFromSibling};
+use parachains_common::{
+	process_xcm_message::{ParaIdToSibling, ProcessFromSibling, ProcessXcmMessage},
+	xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry},
+};
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
-	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, CurrencyAdapter,
-	DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin, FixedWeightBounds, IsConcrete,
-	NativeAsset, ParentAsSuperuser, ParentIsPreset, ProcessXcmMessage, RelayChainAsNative,
-	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId,
-	UsingComponents, WithComputedOrigin, WithUniqueTopic,
+	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin,
+	FixedWeightBounds, IsConcrete, NativeAsset, ParentAsSuperuser, ParentIsPreset,
+	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+	UsingComponents, WithComputedOrigin,
 };
 use xcm_executor::XcmExecutor;
 
@@ -120,28 +122,26 @@ match_types! {
 	};
 }
 
-pub type Barrier = TrailingSetTopicAsId<
-	DenyThenTry<
-		DenyReserveTransferToRelayChain,
-		(
-			TakeWeightCredit,
-			// Expected responses are OK.
-			AllowKnownQueryResponses<PolkadotXcm>,
-			// Allow XCMs with some computed origins to pass through.
-			WithComputedOrigin<
-				(
-					// If the message is one that immediately attemps to pay for execution, then allow it.
-					AllowTopLevelPaidExecutionFrom<Everything>,
-					// Parent and its pluralities (i.e. governance bodies) get free execution.
-					AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
-					// Subscriptions for version tracking are OK.
-					AllowSubscriptionsFrom<ParentOrSiblings>,
-				),
-				UniversalLocation,
-				ConstU32<8>,
-			>,
-		),
-	>,
+pub type Barrier = DenyThenTry<
+	DenyReserveTransferToRelayChain,
+	(
+		TakeWeightCredit,
+		// Expected responses are OK.
+		AllowKnownQueryResponses<PolkadotXcm>,
+		// Allow XCMs with some computed origins to pass through.
+		WithComputedOrigin<
+			(
+				// If the message is one that immediately attemps to pay for execution, then allow it.
+				AllowTopLevelPaidExecutionFrom<Everything>,
+				// Parent and its pluralities (i.e. governance bodies) get free execution.
+				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
+				// Subscriptions for version tracking are OK.
+				AllowSubscriptionsFrom<ParentOrSiblings>,
+			),
+			UniversalLocation,
+			ConstU32<8>,
+		>,
+	),
 >;
 
 pub struct XcmConfig;
@@ -177,12 +177,12 @@ pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, R
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
-pub type XcmRouter = WithUniqueTopic<(
+pub type XcmRouter = (
 	// Two routers - use UMP to communicate with the relay chain:
 	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, ()>,
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
-)>;
+);
 
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
@@ -217,8 +217,6 @@ impl pallet_xcm::Config for Runtime {
 	#[cfg(feature = "runtime-benchmarks")]
 	type ReachableDest = ReachableDest;
 	type AdminOrigin = EnsureRoot<AccountId>;
-	type MaxRemoteLockConsumers = ConstU32<0>;
-	type RemoteLockConsumerIdentifier = ();
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {

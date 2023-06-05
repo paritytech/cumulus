@@ -1,3 +1,4 @@
+use crate as pallet_template;
 use frame_support::{parameter_types, traits::Everything};
 use frame_system as system;
 use sp_core::H256;
@@ -17,7 +18,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		TemplateModule: crate::{Pallet, Call, Storage, Event<T>},
+		TemplateModule: pallet_template::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -53,7 +54,7 @@ impl system::Config for Test {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
-impl crate::Config for Test {
+impl pallet_template::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 }
 

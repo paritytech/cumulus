@@ -76,7 +76,7 @@ pub(crate) struct CollatorOverseerGenArgs<'a> {
 	pub peer_set_protocol_names: PeerSetProtocolNames,
 }
 
-fn build_overseer(
+fn build_overseer<'a>(
 	connector: OverseerConnector,
 	CollatorOverseerGenArgs {
 		runtime_client,
@@ -90,7 +90,7 @@ fn build_overseer(
 		collator_pair,
 		req_protocol_names,
 		peer_set_protocol_names,
-	}: CollatorOverseerGenArgs<'_>,
+	}: CollatorOverseerGenArgs<'a>,
 ) -> Result<
 	(Overseer<SpawnGlue<sc_service::SpawnTaskHandle>, Arc<BlockChainRpcClient>>, OverseerHandle),
 	RelayChainError,
@@ -99,7 +99,7 @@ fn build_overseer(
 	let network_bridge_metrics: NetworkBridgeMetrics = Metrics::register(registry)?;
 	let builder = Overseer::builder()
 		.availability_distribution(DummySubsystem)
-		.availability_recovery(AvailabilityRecoverySubsystem::with_availability_store_skip(
+		.availability_recovery(AvailabilityRecoverySubsystem::with_chunks_only(
 			available_data_req_receiver,
 			Metrics::register(registry)?,
 		))
