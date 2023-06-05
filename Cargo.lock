@@ -4718,6 +4718,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-try-runtime",
  "pallet-glutton",
+ "pallet-message-queue",
  "pallet-sudo",
  "parachain-info",
  "parachains-common",

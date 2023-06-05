@@ -25,9 +25,8 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
-use parachains_common::{
-	process_xcm_message::{ParaIdToSibling, ProcessFromSibling, ProcessXcmMessage},
-	xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry},
+use parachains_common::process_xcm_message::{
+	ParaIdToSibling, ProcessFromSibling, ProcessXcmMessage,
 };
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;

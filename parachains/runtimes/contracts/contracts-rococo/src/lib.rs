@@ -97,7 +97,6 @@ pub type UncheckedExtrinsic =
 
 /// Migrations to apply on runtime upgrade.
 pub type Migrations = (
-	cumulus_pallet_dmp_queue::migration::Migration<Runtime>,
 	cumulus_pallet_parachain_system::migration::Migration<Runtime>,
 	cumulus_pallet_xcmp_queue::migration::Migration<Runtime>,
 	pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,

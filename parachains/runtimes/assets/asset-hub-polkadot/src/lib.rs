@@ -102,15 +102,16 @@ use frame_system::{
 use pallet_nfts::PalletFeatures;
 pub use parachains_common as common;
 use parachains_common::{
-	process_xcm_message::*,
 	impls::{AssetsToBlockAuthor, DealWithFees},
-	opaque, AccountId, AssetHubPolkadotAuraId as AuraId, AssetIdForTrustBackedAssets, Balance,
-	BlockNumber, Hash, Header, Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS,
-	MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
+	opaque,
+	process_xcm_message::*,
+	AccountId, AssetHubPolkadotAuraId as AuraId, AssetIdForTrustBackedAssets, Balance, BlockNumber,
+	Hash, Header, Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
+	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{
-	DotLocation, FellowshipLocation, GovernanceLocation, TrustBackedAssetsConvertedConcreteId, ForeignAssetsConvertedConcreteId,
-	XcmOriginToTransactDispatchOrigin,
+	DotLocation, FellowshipLocation, ForeignAssetsConvertedConcreteId, GovernanceLocation,
+	TrustBackedAssetsConvertedConcreteId, XcmOriginToTransactDispatchOrigin,
 };
 
 #[cfg(any(feature = "std", test))]

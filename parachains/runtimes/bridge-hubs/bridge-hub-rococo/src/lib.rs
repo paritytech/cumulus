@@ -44,17 +44,13 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use constants::currency::*;
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
 	traits::{ConstU32, ConstU64, ConstU8, Everything, TransformOrigin},
-	weights::{
-		ConstantMultiplier, FeePolynomial, WeightToFeeCoefficient, WeightToFeeCoefficients,
-		WeightToFeePolynomial,
-	},
+	weights::{ConstantMultiplier, Weight},
 	PalletId,
 };
 use frame_system::{

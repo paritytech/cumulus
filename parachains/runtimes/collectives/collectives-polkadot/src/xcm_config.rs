@@ -159,7 +159,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				) | RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 				RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
 				RuntimeCall::XcmpQueue(..) |
-				RuntimeCall::DmpQueue(..) |
 				RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
 				RuntimeCall::Alliance(
 					// `init_members` accepts unbounded vecs as arguments,

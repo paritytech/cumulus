@@ -60,6 +60,7 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+use cumulus_primitives_core::AggregateMessageOrigin;
 pub use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
@@ -77,7 +78,7 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
-use parachains_common::{AccountId, Signature};
+use parachains_common::{process_xcm_message::ProcessXcmMessage, AccountId, Signature};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -174,12 +175,41 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
+	type DmpQueue = MessageQueue;
 	type OutboundXcmpMessageSource = ();
-	type DmpMessageHandler = cumulus_pallet_xcm::UnlimitedDmpExecution<Runtime>;
 	type ReservedDmpWeight = ReservedDmpWeight;
 	type XcmpMessageHandler = ();
 	type ReservedXcmpWeight = ();
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+	type WeightInfo = weights::cumulus_pallet_parachain_system::WeightInfo<Runtime>;
+}
+
+parameter_types! {
+	pub MessageQueueServiceWeight: Weight = Perbill::from_percent(80) *
+		RuntimeBlockWeights::get().max_block;
+}
+
+impl pallet_message_queue::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = weights::pallet_message_queue::WeightInfo<Runtime>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
+		cumulus_primitives_core::AggregateMessageOrigin,
+	>;
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	type MessageProcessor = parachains_common::process_xcm_message::SplitMessages<
+		ProcessXcmMessage<
+			AggregateMessageOrigin,
+			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
+			RuntimeCall,
+		>,
+		pallet_message_queue::mock_helpers::NoopMessageProcessor<cumulus_primitives_core::ParaId>,
+	>;
+	type Size = u32;
+	type QueueChangeHandler = ();
+	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
+	type MaxStale = sp_core::ConstU32<8>;
+	type ServiceWeight = MessageQueueServiceWeight;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -210,6 +240,7 @@ construct_runtime! {
 
 		// DMP handler.
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 10,
+		MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>} = 11,
 
 		// The main stage.
 		Glutton: pallet_glutton::{Pallet, Call, Storage, Event, Config} = 20,
