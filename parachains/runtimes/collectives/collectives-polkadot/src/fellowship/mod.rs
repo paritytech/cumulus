@@ -183,6 +183,8 @@ parameter_types! {
 	pub Interior: InteriorMultiLocation = PalletInstance(64).into();
 }
 
+const USDT_UNITS: u128 = 1_000_000;
+
 impl pallet_salary::Config<FellowshipSalaryInstance> for Runtime {
 	type WeightInfo = weights::pallet_salary::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
@@ -209,5 +211,8 @@ impl pallet_salary::Config<FellowshipSalaryInstance> for Runtime {
 	// 15 days to claim the salary payment.
 	type PayoutPeriod = ConstU32<{ 15 * DAYS }>;
 	// Total monthly salary budget.
-	type Budget = ConstU128<{ 100000 * UNITS }>;
+	type Budget = ConstU128<{ 100_000 * USDT_UNITS }>;
 }
+
+#[test]
+fn it_builds() {}
