@@ -154,7 +154,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		.encode()
 		.into();
 
-	let buy_execution_fee_amount = penpal_runtime::WeightToFee::weight_to_fee(&Weight::from_parts(
+	let buy_execution_fee_amount = asset_hub_westend_runtime::constants::fee::WeightToFee::weight_to_fee(&Weight::from_parts(
 		10_100_000_000_000,
 		300_000,
 	));
@@ -203,98 +203,98 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		));
 	});
 
-	// // 3: Mint foreign asset on asset_hub_westend:
-	// //
-	// // (While it might be nice to use batch,
-	// // currently that's disabled due to safe call filters.)
+	// 3: Mint foreign asset on asset_hub_westend:
+	//
+	// (While it might be nice to use batch,
+	// currently that's disabled due to safe call filters.)
 
-	// AssetHubWestend::execute_with(|| {
-	// 	use asset_hub_westend_runtime::RuntimeEvent;
-	// 	// 3. Mint foreign asset (in reality this should be a teleport or some such)
-	// 	assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::ForeignAssets::mint(
-	// 		<AssetHubWestend as Parachain>::RuntimeOrigin::signed(sov_penpal_on_asset_hub_westend.clone().into()),
-	// 		*foreign_asset1_at_asset_hub_westend,
-	// 		sov_penpal_on_asset_hub_westend.clone().into(),
-	// 		42_000_000_000_000,
-	// 	));
+	AssetHubWestend::execute_with(|| {
+		use asset_hub_westend_runtime::RuntimeEvent;
+		// 3. Mint foreign asset (in reality this should be a teleport or some such)
+		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::ForeignAssets::mint(
+			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(sov_penpal_on_asset_hub_westend.clone().into()),
+			*foreign_asset1_at_asset_hub_westend,
+			sov_penpal_on_asset_hub_westend.clone().into(),
+			42_000_000_000_000,
+		));
 
-	// 	assert_expected_events!(
-	// 		AssetHubWestend,
-	// 		vec![
-	// 			RuntimeEvent::ForeignAssets(pallet_assets::Event::Issued { .. }) => {},
-	// 		]
-	// 	);
+		assert_expected_events!(
+			AssetHubWestend,
+			vec![
+				RuntimeEvent::ForeignAssets(pallet_assets::Event::Issued { .. }) => {},
+			]
+		);
 
-	// 	// 4. Create pool:
-	// 	assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::create_pool(
-	// 		<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
-	// 		asset_native.clone(),
-	// 		foreign_asset1_at_asset_hub_westend.clone(),
-	// 	));
+		// 4. Create pool:
+		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::create_pool(
+			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
+			asset_native.clone(),
+			foreign_asset1_at_asset_hub_westend.clone(),
+		));
 
-	// 	assert_expected_events!(
-	// 		AssetHubWestend,
-	// 		vec![
-	// 			RuntimeEvent::AssetConversion(pallet_asset_conversion::Event::PoolCreated { .. }) => {},
-	// 		]
-	// 	);
+		assert_expected_events!(
+			AssetHubWestend,
+			vec![
+				RuntimeEvent::AssetConversion(pallet_asset_conversion::Event::PoolCreated { .. }) => {},
+			]
+		);
 
-	// 	// 5. Add liquidity:
-	// 	assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::add_liquidity(
-	// 		<AssetHubWestend as Parachain>::RuntimeOrigin::signed(sov_penpal_on_asset_hub_westend.clone()),
-	// 		asset_native.clone(),
-	// 		foreign_asset1_at_asset_hub_westend.clone(),
-	// 		1_000_000_000, // 33_333_333 min ksm
-	// 		2_000_000_000, // 1_000_000_000 min
-	// 		33_333_333,
-	// 		1_000,
-	// 		sov_penpal_on_asset_hub_westend.clone().into()
-	// 	));
+		// 5. Add liquidity:
+		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::add_liquidity(
+			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(sov_penpal_on_asset_hub_westend.clone()),
+			asset_native.clone(),
+			foreign_asset1_at_asset_hub_westend.clone(),
+			1_000_000_000, // 33_333_333 min ksm
+			2_000_000_000, // 1_000_000_000 min
+			33_333_333,
+			1_000,
+			sov_penpal_on_asset_hub_westend.clone().into()
+		));
 
-	// 	assert_expected_events!(
-	// 		AssetHubWestend,
-	// 		vec![
-	// 			RuntimeEvent::AssetConversion(pallet_asset_conversion::Event::LiquidityAdded {lp_token_minted: 1414213462, .. }) => {},
-	// 		]
-	// 	);
+		assert_expected_events!(
+			AssetHubWestend,
+			vec![
+				RuntimeEvent::AssetConversion(pallet_asset_conversion::Event::LiquidityAdded {lp_token_minted: 1414213462, .. }) => {},
+			]
+		);
 
-	// 	// 6. Swap!
-	// 	let path =
-	// 		BoundedVec::<_, _>::truncate_from(vec![asset_native.clone(), foreign_asset1_at_asset_hub_westend.clone()]);
-	// 	//TODO: this should be done by some other account!
-	// 	assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::swap_exact_tokens_for_tokens(
-	// 		// <AssetHubWestend as Parachain>::RuntimeOrigin::signed(sov_penpal_on_asset_hub_westend.clone()),
-	// 		<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
-	// 		path,
-	// 		100000,
-	// 		1000,
-	// 		AssetHubWestendSender::get().into(),
-	// 		true
-	// 	));
+		// 6. Swap!
+		let path =
+			BoundedVec::<_, _>::truncate_from(vec![asset_native.clone(), foreign_asset1_at_asset_hub_westend.clone()]);
+		//TODO: this should be done by some other account!
+		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::swap_exact_tokens_for_tokens(
+			// <AssetHubWestend as Parachain>::RuntimeOrigin::signed(sov_penpal_on_asset_hub_westend.clone()),
+			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
+			path,
+			100000,
+			1000,
+			AssetHubWestendSender::get().into(),
+			true
+		));
 
-	// 	assert_expected_events!(
-	// 		AssetHubWestend,
-	// 		vec![
-	// 			RuntimeEvent::AssetConversion(pallet_asset_conversion::Event::SwapExecuted { amount_in, amount_out, .. },) => {
-	// 				amount_in: *amount_in == 100000,
-	// 				amount_out: *amount_out == 199380,
-	// 			},
-	// 		]
-	// 	);
+		assert_expected_events!(
+			AssetHubWestend,
+			vec![
+				RuntimeEvent::AssetConversion(pallet_asset_conversion::Event::SwapExecuted { amount_in, amount_out, .. },) => {
+					amount_in: *amount_in == 100000,
+					amount_out: *amount_out == 199380,
+				},
+			]
+		);
 
-	// 	// 7. Remove liquidity
-	// 	assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::remove_liquidity(
-	// 		<AssetHubWestend as Parachain>::RuntimeOrigin::signed(sov_penpal_on_asset_hub_westend.clone()),
-	// 		asset_native,
-	// 		foreign_asset1_at_asset_hub_westend,
-	// 		(1_414_213_462 as f32 * 0.966/* all but exit fee */) as u128,
-	// 		33_333_333,
-	// 		1_000,
-	// 		sov_penpal_on_asset_hub_westend.clone().into(),
-	// 	));
+		// 7. Remove liquidity
+		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::remove_liquidity(
+			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(sov_penpal_on_asset_hub_westend.clone()),
+			asset_native,
+			foreign_asset1_at_asset_hub_westend,
+			10, //(1_414_213_462 as f32 * 0.966/* all but exit fee */) as u128,
+			0,//33_333_333,
+			0, //1_000,
+			sov_penpal_on_asset_hub_westend.clone().into(),
+		));
 
-	// 	// AssetHubWestend::events().iter().for_each(|event| {
-	// 	// 	println!("asset_hub_westend {:?}", event);
-	// 	// });
-	// });
+		// AssetHubWestend::events().iter().for_each(|event| {
+		// 	println!("asset_hub_westend {:?}", event);
+		// });
+	});
 }
