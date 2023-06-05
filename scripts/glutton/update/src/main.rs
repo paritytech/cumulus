@@ -35,10 +35,12 @@ struct Cli {
 	to: u32,
 
 	/// Optional new 'storage' value to update
+	/// Value in parts per billion. E.g: 500000000 equals 50% of a block `ref_time` consumed
 	#[arg(short, long)]
 	storage: Option<u32>,
 
 	/// Optional new 'compute' value to update
+	/// Value in parts per billion. E.g: 500000000 equals 50% of a block `proof_size` consumed
 	#[arg(short, long)]
 	compute: Option<u32>,
 
