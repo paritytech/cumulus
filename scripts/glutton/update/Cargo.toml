@@ -1,4 +1,3 @@
-[workspace]
 [package]
 name = "glutton-update-bin"
 version = "1.0.0"

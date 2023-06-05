@@ -55,6 +55,7 @@ members = [
 	"parachains/integration-tests/emulated/common",
 	"parachains/integration-tests/emulated/assets/statemine",
 	"parachains/integration-tests/emulated/assets/statemint",
+	"scripts/glutton/update",
 	"test/client",
 	"test/relay-sproof-builder",
 	"test/relay-validation-worker-provider",

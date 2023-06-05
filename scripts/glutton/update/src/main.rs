@@ -130,7 +130,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 		match args.relay {
 			RelayChain::Local => {
-				client = OnlineClient::<GluttonConfig>::from_url("ws://127.0.0.1:9810").await?;
+				client = OnlineClient::<GluttonConfig>::from_url(format!("ws://127.0.0.1:{}", id))
+					.await?;
 			},
 			RelayChain::Versi => {
 				client = OnlineClient::<GluttonConfig>::from_url(format!(
