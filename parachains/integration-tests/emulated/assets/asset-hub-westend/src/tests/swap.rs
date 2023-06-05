@@ -25,7 +25,7 @@ fn swap_locally_on_chain_using_local_assets() {
 			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
 			ASSET_ID.into(),
 			AssetHubWestendSender::get().into(),
-			100_000_000_000,
+			3_000_000_000_000,
 		));
 
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::create_pool(
@@ -45,22 +45,22 @@ fn swap_locally_on_chain_using_local_assets() {
 			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
 			asset_native.clone(),
 			asset_one.clone(),
-			1_000_000_000, // 33_333_333 min ksm
-			2_000_000_000, // 1_000_000_000 min
-			33_333_333,
-			1_000,
+			1_000_000_000_000,
+			2_000_000_000_000,
+			0,
+			0,
 			AssetHubWestendSender::get().into()
 		));
 
 		assert_expected_events!(
 			AssetHubWestend,
 			vec![
-				RuntimeEvent::AssetConversion(pallet_asset_conversion::Event::LiquidityAdded {lp_token_minted: 1414213462, .. }) => {},
+				RuntimeEvent::AssetConversion(pallet_asset_conversion::Event::LiquidityAdded {lp_token_minted, .. }) => { lp_token_minted: *lp_token_minted == 1414213562273, },
 			]
 		);
 
 		let path = BoundedVec::<_, _>::truncate_from(vec![asset_native.clone(), asset_one.clone()]);
-		//TODO: this should be done by some other account!
+
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::swap_exact_tokens_for_tokens(
 			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
 			path,
@@ -73,17 +73,23 @@ fn swap_locally_on_chain_using_local_assets() {
 		assert_expected_events!(
 			AssetHubWestend,
 			vec![
-				RuntimeEvent::AssetConversion(pallet_asset_conversion::Event::SwapExecuted { amount_in: 100, amount_out: 199, .. }) => {},
+				RuntimeEvent::AssetConversion(pallet_asset_conversion::Event::SwapExecuted { amount_in, amount_out, .. }) => {
+					amount_in: *amount_in == 100,
+					amount_out: *amount_out == 199,
+				},
 			]
 		);
+		// AssetHubWestend::events().iter().for_each(|event| {
+		// 	println!("asset_hub_westend {:?}", event);
+		// });
 
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::remove_liquidity(
 			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
 			asset_native,
 			asset_one,
-			(10/* 0.96 all but exit fee */) as u128, //was 1_414_213_462 * 0.966
-			0,                                       //33m
-			0,                                       //1000
+			1414213562273 - 2_000_000_000, // all but the 2 EDs can't be retrieved.
+			0,
+			0,
 			AssetHubWestendSender::get().into(),
 		));
 	});
@@ -131,12 +137,12 @@ fn swap_locally_on_chain_using_foreign_assets() {
 								   // let check_origin = None;
 
 	let sov_penpal_on_asset_hub_westend = AssetHubWestend::sovereign_account_id_of(penpal_location);
-	let sov_penpal_on_penpal = PenpalWestend::sovereign_account_id_of(penpal_location);
+	// let sov_penpal_on_penpal = PenpalWestend::sovereign_account_id_of(penpal_location);
 	AssetHubWestend::fund_accounts(vec![
 		(AssetHubWestendSender::get(), 5_000_000), // An account to swap dot for something else.
 		(sov_penpal_on_asset_hub_westend.clone(), 1000_000_000_000_000_000),
 	]);
-	PenpalWestend::fund_accounts(vec![(sov_penpal_on_penpal, 10_000_000_000_000_000)]);
+	// PenpalWestend::fund_accounts(vec![(sov_penpal_on_penpal, 10_000_000_000_000_000)]);
 
 	let sov_penpal_on_asset_hub_westend_as_location: MultiLocation = MultiLocation {
 		parents: 0,
@@ -209,14 +215,12 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		assert!(<AssetHubWestend as AssetHubWestendPallet>::ForeignAssets::asset_exists(
 			*foreign_asset1_at_asset_hub_westend
 		));
-	});
 
-	// 3: Mint foreign asset on asset_hub_westend:
-	//
-	// (While it might be nice to use batch,
-	// currently that's disabled due to safe call filters.)
+		// 3: Mint foreign asset on asset_hub_westend:
+		//
+		// (While it might be nice to use batch,
+		// currently that's disabled due to safe call filters.)
 
-	AssetHubWestend::execute_with(|| {
 		use asset_hub_westend_runtime::RuntimeEvent;
 		// 3. Mint foreign asset (in reality this should be a teleport or some such)
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::ForeignAssets::mint(
@@ -225,7 +229,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 			),
 			*foreign_asset1_at_asset_hub_westend,
 			sov_penpal_on_asset_hub_westend.clone().into(),
-			42_000_000_000_000,
+			3_000_000_000_000,
 		));
 
 		assert_expected_events!(
@@ -256,17 +260,19 @@ fn swap_locally_on_chain_using_foreign_assets() {
 			),
 			asset_native.clone(),
 			foreign_asset1_at_asset_hub_westend.clone(),
-			1_000_000_000, // 33_333_333 min ksm
-			2_000_000_000, // 1_000_000_000 min
-			33_333_333,
-			1_000,
+			1_000_000_000_000,
+			2_000_000_000_000,
+			0,
+			0,
 			sov_penpal_on_asset_hub_westend.clone().into()
 		));
 
 		assert_expected_events!(
 			AssetHubWestend,
 			vec![
-				RuntimeEvent::AssetConversion(pallet_asset_conversion::Event::LiquidityAdded {lp_token_minted: 1414213462, .. }) => {},
+				RuntimeEvent::AssetConversion(pallet_asset_conversion::Event::LiquidityAdded {lp_token_minted, .. }) => {
+					lp_token_minted: *lp_token_minted == 1414213562273,
+				},
 			]
 		);
 
@@ -275,9 +281,8 @@ fn swap_locally_on_chain_using_foreign_assets() {
 			asset_native.clone(),
 			foreign_asset1_at_asset_hub_westend.clone(),
 		]);
-		//TODO: this should be done by some other account!
+
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::swap_exact_tokens_for_tokens(
-			// <AssetHubWestend as Parachain>::RuntimeOrigin::signed(sov_penpal_on_asset_hub_westend.clone()),
 			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
 			path,
 			100000,
@@ -291,7 +296,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 			vec![
 				RuntimeEvent::AssetConversion(pallet_asset_conversion::Event::SwapExecuted { amount_in, amount_out, .. },) => {
 					amount_in: *amount_in == 100000,
-					amount_out: *amount_out == 199380,
+					amount_out: *amount_out == 199399,
 				},
 			]
 		);
@@ -303,9 +308,9 @@ fn swap_locally_on_chain_using_foreign_assets() {
 			),
 			asset_native,
 			foreign_asset1_at_asset_hub_westend,
-			10, //(1_414_213_462 as f32 * 0.966/* all but exit fee */) as u128,
-			0,  //33_333_333,
-			0,  //1_000,
+			1414213562273 - 2_000_000_000, // all but the 2 EDs can't be retrieved.
+			0,
+			0,
 			sov_penpal_on_asset_hub_westend.clone().into(),
 		));
 
