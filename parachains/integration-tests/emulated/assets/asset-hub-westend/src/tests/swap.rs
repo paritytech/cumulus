@@ -81,9 +81,9 @@ fn swap_locally_on_chain_using_local_assets() {
 			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
 			asset_native,
 			asset_one,
-			(10 /* 0.96 all but exit fee */) as u128,//was 1_414_213_462 * 0.966
-			0,//33m
-			0,//1000
+			(10/* 0.96 all but exit fee */) as u128, //was 1_414_213_462 * 0.966
+			0,                                       //33m
+			0,                                       //1000
 			AssetHubWestendSender::get().into(),
 		));
 	});
@@ -106,7 +106,8 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	});
 
 	let assets_para_destination: VersionedMultiLocation =
-		MultiLocation { parents: 1, interior: X1(Parachain(AssetHubWestend::para_id().into())) }.into();
+		MultiLocation { parents: 1, interior: X1(Parachain(AssetHubWestend::para_id().into())) }
+			.into();
 
 	let penpal_location =
 		MultiLocation { parents: 1, interior: X1(Parachain(PenpalWestend::para_id().into())) };
@@ -139,7 +140,10 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 	let sov_penpal_on_asset_hub_westend_as_location: MultiLocation = MultiLocation {
 		parents: 0,
-		interior: X1(AccountId32 { network: None, id: sov_penpal_on_asset_hub_westend.clone().into() }),
+		interior: X1(AccountId32 {
+			network: None,
+			id: sov_penpal_on_asset_hub_westend.clone().into(),
+		}),
 	};
 
 	let call_foreign_assets_create =
@@ -154,10 +158,11 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		.encode()
 		.into();
 
-	let buy_execution_fee_amount = asset_hub_westend_runtime::constants::fee::WeightToFee::weight_to_fee(&Weight::from_parts(
-		10_100_000_000_000,
-		300_000,
-	));
+	let buy_execution_fee_amount =
+		asset_hub_westend_runtime::constants::fee::WeightToFee::weight_to_fee(&Weight::from_parts(
+			10_100_000_000_000,
+			300_000,
+		));
 	let buy_execution_fee = MultiAsset {
 		id: Concrete(MultiLocation { parents: 1, interior: Here }),
 		fun: Fungible(buy_execution_fee_amount),
@@ -168,7 +173,10 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		BuyExecution { fees: buy_execution_fee.clone(), weight_limit: Unlimited },
 		Transact { require_weight_at_most, origin_kind, call: call_foreign_assets_create },
 		RefundSurplus,
-		DepositAsset { assets: All.into(), beneficiary: sov_penpal_on_asset_hub_westend_as_location },
+		DepositAsset {
+			assets: All.into(),
+			beneficiary: sov_penpal_on_asset_hub_westend_as_location,
+		},
 	]));
 
 	// Send XCM message from penpal => asset_hub_westend
@@ -212,7 +220,9 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		use asset_hub_westend_runtime::RuntimeEvent;
 		// 3. Mint foreign asset (in reality this should be a teleport or some such)
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::ForeignAssets::mint(
-			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(sov_penpal_on_asset_hub_westend.clone().into()),
+			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(
+				sov_penpal_on_asset_hub_westend.clone().into()
+			),
 			*foreign_asset1_at_asset_hub_westend,
 			sov_penpal_on_asset_hub_westend.clone().into(),
 			42_000_000_000_000,
@@ -241,7 +251,9 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 		// 5. Add liquidity:
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::add_liquidity(
-			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(sov_penpal_on_asset_hub_westend.clone()),
+			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(
+				sov_penpal_on_asset_hub_westend.clone()
+			),
 			asset_native.clone(),
 			foreign_asset1_at_asset_hub_westend.clone(),
 			1_000_000_000, // 33_333_333 min ksm
@@ -259,8 +271,10 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		);
 
 		// 6. Swap!
-		let path =
-			BoundedVec::<_, _>::truncate_from(vec![asset_native.clone(), foreign_asset1_at_asset_hub_westend.clone()]);
+		let path = BoundedVec::<_, _>::truncate_from(vec![
+			asset_native.clone(),
+			foreign_asset1_at_asset_hub_westend.clone(),
+		]);
 		//TODO: this should be done by some other account!
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::swap_exact_tokens_for_tokens(
 			// <AssetHubWestend as Parachain>::RuntimeOrigin::signed(sov_penpal_on_asset_hub_westend.clone()),
@@ -284,12 +298,14 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 		// 7. Remove liquidity
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::remove_liquidity(
-			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(sov_penpal_on_asset_hub_westend.clone()),
+			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(
+				sov_penpal_on_asset_hub_westend.clone()
+			),
 			asset_native,
 			foreign_asset1_at_asset_hub_westend,
 			10, //(1_414_213_462 as f32 * 0.966/* all but exit fee */) as u128,
-			0,//33_333_333,
-			0, //1_000,
+			0,  //33_333_333,
+			0,  //1_000,
 			sov_penpal_on_asset_hub_westend.clone().into(),
 		));
 
