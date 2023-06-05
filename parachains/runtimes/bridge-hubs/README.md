@@ -1,8 +1,8 @@
 - [Bridge-hub Parachains](#bridge-hub-parachains)
-	* [How to test locally Rococo <-> Wococo](#how-to-test-locally-rococo-----wococo)
-		+ [Prepare/Build/Deploy](#prepare-build-deploy)
+	* [Requirements for local run/testing](#requirements-for-local-run-testing)
+	* [How to test locally Rococo <-> Wococo bridge](#how-to-test-locally-rococo-----wococo-bridge)
 		+ [Run chains (Rococo + BridgeHub, Wococo + BridgeHub) with zombienet](#run-chains--rococo---bridgehub--wococo---bridgehub--with-zombienet)
-		+ [Run relayers (Rococo, Wococo)](#run-relayers--rococo--wococo-)
+		+ [Run relayer (BridgeHubRococo, BridgeHubWococo)](#run-relayer--bridgehubrococo--bridgehubwococo-)
 			- [Run with script (alternative 1)](#run-with-script--alternative-1-)
 			- [Run with binary (alternative 2)](#run-with-binary--alternative-2-)
 		+ [Send messages](#send-messages)
@@ -29,45 +29,64 @@ The current trustless bridges planned for the BridgeHub(s) are:
 
 ![](./docs/bridge-hub-parachain-design.jpg "Basic deployment setup")
 
-## How to test locally Rococo <-> Wococo
+## Requirements for local run/testing
 
-### Prepare/Build/Deploy
 ```
 # Prepare empty directory for testing
 mkdir -p ~/local_bridge_testing/bin
 mkdir -p ~/local_bridge_testing/logs
 
+---
 # 1. Install zombienet
 Go to: https://github.com/paritytech/zombienet/releases
 Copy the apropriate binary (zombienet-linux) from the latest release to ~/local_bridge_testing/bin
 
+---
 # 2. Build polkadot binary
 git clone https://github.com/paritytech/polkadot.git
 cd polkadot
-cargo build --release
+
+# if you want to test Kusama/Polkadot bridge, we need "sudo pallet + fast-runtime",
+# so please, find the latest polkadot's repository branch `it/release-vX.Y.Z-fast-sudo`
+# e.g:
+# git checkout -b it/release-v0.9.42-fast-sudo --track origin/it/release-v0.9.42-fast-sudo
+
+cargo build --release --features fast-runtime
 cp target/release/polkadot ~/local_bridge_testing/bin/polkadot
 
+---
 # 3. Build cumulus polkadot-parachain binary
 cd <cumulus-git-repo-dir>
+
 # checkout desired branch or use master:
-# git checkout -b bridge-hub-rococo-wococo --track origin/bridge-hub-rococo-wococo
-git checkout -b master --track origin/master
+# git checkout -b master --track origin/master
+
 cargo build --release --locked -p polkadot-parachain-bin
 cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain
 cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain-mint
 
+---
 # 4. Build substrate-relay binary
 git clone https://github.com/paritytech/parity-bridges-common.git
 cd parity-bridges-common
+
+# checkout desired branch or use master:
+# git checkout -b master --track origin/master
+git checkout -b polkadot-staging --track origin/polkadot-staging
+
 cargo build --release -p substrate-relay
 cp target/release/substrate-relay ~/local_bridge_testing/bin/substrate-relay
 
-# (Optional) 5. Build polkadot-parachain-mint binary with statemine/westmint for moving assets
+---
+# 5. Build polkadot-parachain-mint binary with statemine/westmint for moving assets
 cd <cumulus-git-repo-dir>
+# TODO:check-parameter - change this when merged to master
 git checkout -b bko-transfer-asset-via-bridge --track origin/bko-transfer-asset-via-bridge
 cargo build --release --locked -p polkadot-parachain-bin
 cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain-mint
 ```
+
+## How to test locally Rococo <-> Wococo bridge
 
 ### Run chains (Rococo + BridgeHub, Wococo + BridgeHub) with zombienet
 
@@ -87,7 +106,7 @@ POLKADOT_PARACHAIN_BINARY_PATH_FOR_WOCKMINT=~/local_bridge_testing/bin/polkadot-
 	~/local_bridge_testing/bin/zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_wococo_local_network.toml
 ```
 
-### Run relayers (Rococo, Wococo)
+### Run relayer (BridgeHubRococo, BridgeHubWococo)
 
 **Accounts of BridgeHub parachains:**
 - `Bob` is pallet owner of all bridge pallets

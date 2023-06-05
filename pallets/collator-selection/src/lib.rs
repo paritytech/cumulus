@@ -70,7 +70,10 @@ mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+pub mod migration;
 pub mod weights;
+
+const LOG_TARGET: &str = "runtime::collator-selection";
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -88,12 +91,15 @@ pub mod pallet {
 			Currency, EnsureOrigin, ExistenceRequirement::KeepAlive, ReservableCurrency,
 			ValidatorRegistration,
 		},
-		BoundedVec, PalletId,
+		BoundedVec, DefaultNoBound, PalletId,
 	};
 	use frame_system::{pallet_prelude::*, Config as SystemConfig};
 	use pallet_session::SessionManager;
 	use sp_runtime::traits::Convert;
 	use sp_staking::SessionIndex;
+
+	/// The current storage version.
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
 	type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
@@ -165,9 +171,10 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
-	/// The invulnerable, fixed collators.
+	/// The invulnerable, permissioned collators. This list must be sorted.
 	#[pallet::storage]
 	#[pallet::getter(fn invulnerables)]
 	pub type Invulnerables<T: Config> =
@@ -203,34 +210,26 @@ pub mod pallet {
 	pub type CandidacyBond<T> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
 	#[pallet::genesis_config]
+	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
 		pub invulnerables: Vec<T::AccountId>,
 		pub candidacy_bond: BalanceOf<T>,
 		pub desired_candidates: u32,
 	}
 
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> Self {
-			Self {
-				invulnerables: Default::default(),
-				candidacy_bond: Default::default(),
-				desired_candidates: Default::default(),
-			}
-		}
-	}
-
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
-			let duplicate_invulnerables =
-				self.invulnerables.iter().collect::<std::collections::BTreeSet<_>>();
+			let duplicate_invulnerables = self
+				.invulnerables
+				.iter()
+				.collect::<sp_std::collections::btree_set::BTreeSet<_>>();
 			assert!(
 				duplicate_invulnerables.len() == self.invulnerables.len(),
 				"duplicate invulnerables in genesis."
 			);
 
-			let bounded_invulnerables =
+			let mut bounded_invulnerables =
 				BoundedVec::<_, T::MaxInvulnerables>::try_from(self.invulnerables.clone())
 					.expect("genesis invulnerables are more than T::MaxInvulnerables");
 			assert!(
@@ -238,8 +237,10 @@ pub mod pallet {
 				"genesis desired_candidates are more than T::MaxCandidates",
 			);
 
-			<DesiredCandidates<T>>::put(&self.desired_candidates);
-			<CandidacyBond<T>>::put(&self.candidacy_bond);
+			bounded_invulnerables.sort();
+
+			<DesiredCandidates<T>>::put(self.desired_candidates);
+			<CandidacyBond<T>>::put(self.candidacy_bond);
 			<Invulnerables<T>>::put(bounded_invulnerables);
 		}
 	}
@@ -247,35 +248,41 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
+		/// New Invulnerables were set.
 		NewInvulnerables { invulnerables: Vec<T::AccountId> },
+		/// A new Invulnerable was added.
+		InvulnerableAdded { account_id: T::AccountId },
+		/// An Invulnerable was removed.
+		InvulnerableRemoved { account_id: T::AccountId },
+		/// The number of desired candidates was set.
 		NewDesiredCandidates { desired_candidates: u32 },
+		/// The candidacy bond was set.
 		NewCandidacyBond { bond_amount: BalanceOf<T> },
+		/// A new candidate joined.
 		CandidateAdded { account_id: T::AccountId, deposit: BalanceOf<T> },
+		/// A candidate was removed.
 		CandidateRemoved { account_id: T::AccountId },
 	}
 
-	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Too many candidates
+		/// The pallet has too many candidates.
 		TooManyCandidates,
-		/// Too few candidates
+		/// Leaving would result in too few candidates.
 		TooFewCandidates,
-		/// Unknown error
-		Unknown,
-		/// Permission issue
-		Permission,
-		/// User is already a candidate
+		/// Account is already a candidate.
 		AlreadyCandidate,
-		/// User is not a candidate
+		/// Account is not a candidate.
 		NotCandidate,
-		/// Too many invulnerables
+		/// There are too many Invulnerables.
 		TooManyInvulnerables,
-		/// User is already an Invulnerable
+		/// Account is already an Invulnerable.
 		AlreadyInvulnerable,
-		/// Account has no associated validator ID
+		/// Account is not an Invulnerable.
+		NotInvulnerable,
+		/// Account has no associated validator ID.
 		NoAssociatedValidatorId,
-		/// Validator ID is not yet registered
+		/// Validator ID is not yet registered.
 		ValidatorNotRegistered,
 	}
 
@@ -292,7 +299,7 @@ pub mod pallet {
 			new: Vec<T::AccountId>,
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
-			let bounded_invulnerables = BoundedVec::<_, T::MaxInvulnerables>::try_from(new)
+			let mut bounded_invulnerables = BoundedVec::<_, T::MaxInvulnerables>::try_from(new)
 				.map_err(|_| Error::<T>::TooManyInvulnerables)?;
 
 			// check if the invulnerables have associated validator keys before they are set
@@ -304,6 +311,9 @@ pub mod pallet {
 					Error::<T>::ValidatorNotRegistered
 				);
 			}
+
+			// Invulnerables must be sorted for removal.
+			bounded_invulnerables.sort();
 
 			<Invulnerables<T>>::put(&bounded_invulnerables);
 			Self::deposit_event(Event::NewInvulnerables {
@@ -326,7 +336,7 @@ pub mod pallet {
 			if max > T::MaxCandidates::get() {
 				log::warn!("max > T::MaxCandidates; you might need to run benchmarks again");
 			}
-			<DesiredCandidates<T>>::put(&max);
+			<DesiredCandidates<T>>::put(max);
 			Self::deposit_event(Event::NewDesiredCandidates { desired_candidates: max });
 			Ok(().into())
 		}
@@ -339,7 +349,7 @@ pub mod pallet {
 			bond: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
-			<CandidacyBond<T>>::put(&bond);
+			<CandidacyBond<T>>::put(bond);
 			Self::deposit_event(Event::NewCandidacyBond { bond_amount: bond });
 			Ok(().into())
 		}
@@ -405,6 +415,56 @@ pub mod pallet {
 			let current_count = Self::try_remove_candidate(&who)?;
 
 			Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
+		}
+
+		/// Add a new account `who` to the list of `Invulnerables` collators.
+		///
+		/// The origin for this call must be the `UpdateOrigin`.
+		#[pallet::call_index(5)]
+		#[pallet::weight(T::WeightInfo::add_invulnerable(T::MaxInvulnerables::get() - 1))]
+		pub fn add_invulnerable(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
+			T::UpdateOrigin::ensure_origin(origin)?;
+
+			// ensure `who` has registered a validator key
+			let validator_key = T::ValidatorIdOf::convert(who.clone())
+				.ok_or(Error::<T>::NoAssociatedValidatorId)?;
+			ensure!(
+				T::ValidatorRegistration::is_registered(&validator_key),
+				Error::<T>::ValidatorNotRegistered
+			);
+
+			<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
+				match invulnerables.binary_search(&who) {
+					Ok(_) => return Err(Error::<T>::AlreadyInvulnerable)?,
+					Err(pos) => invulnerables
+						.try_insert(pos, who.clone())
+						.map_err(|_| Error::<T>::TooManyInvulnerables)?,
+				}
+				Ok(())
+			})?;
+
+			Self::deposit_event(Event::InvulnerableAdded { account_id: who });
+			Ok(())
+		}
+
+		/// Remove an account `who` from the list of `Invulnerables` collators. `Invulnerables` must
+		/// be sorted.
+		///
+		/// The origin for this call must be the `UpdateOrigin`.
+		#[pallet::call_index(6)]
+		#[pallet::weight(T::WeightInfo::remove_invulnerable(T::MaxInvulnerables::get()))]
+		pub fn remove_invulnerable(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
+			T::UpdateOrigin::ensure_origin(origin)?;
+
+			<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
+				let pos =
+					invulnerables.binary_search(&who).map_err(|_| Error::<T>::NotInvulnerable)?;
+				invulnerables.remove(pos);
+				Ok(())
+			})?;
+
+			Self::deposit_event(Event::InvulnerableRemoved { account_id: who });
+			Ok(())
 		}
 	}
 

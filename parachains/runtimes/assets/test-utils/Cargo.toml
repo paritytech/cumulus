@@ -32,9 +32,11 @@ cumulus-primitives-parachain-inherent = { path = "../../../../primitives/paracha
 cumulus-test-relay-sproof-builder = { path = "../../../../test/relay-sproof-builder", default-features = false }
 parachain-info = { path = "../../../../parachains/pallets/parachain-info", default-features = false }
 pallet-bridge-transfer = { path = "../../../pallets/bridge-transfer", default-features = false }
+parachains-runtimes-test-utils = { path = "../../test-utils", default-features = false }
 
 # Polkadot
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -63,12 +65,14 @@ std = [
     "assets-common/std",
     "parachains-common/std",
     "parachain-info/std",
+    "parachains-runtimes-test-utils/std",
     "polkadot-parachain/std",
     "sp-consensus-aura/std",
     "sp-io/std",
     "sp-runtime/std",
     "sp-std/std",
     "xcm/std",
+    "xcm-builder/std",
     "xcm-executor/std",
     "pallet-bridge-transfer/std",
     "cumulus-pallet-xcmp-queue/std",

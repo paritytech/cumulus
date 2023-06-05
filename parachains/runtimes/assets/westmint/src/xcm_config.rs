@@ -14,16 +14,13 @@
 // limitations under the License.
 
 use super::{
-	AccountId, AllPalletsWithSystem, Assets, Authorship, Balance, Balances, ForeignAssets,
-	ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
-	TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
+	AccountId, AllPalletsWithSystem, Assets, Authorship, Balance, Balances, BridgeTransfer,
+	ForeignAssets, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent,
+	RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
-use assets_common::{
-	location_conversion::GlobalConsensusParachainConvert,
-	matching::{
-		FromSiblingParachain, IsDifferentGlobalConsensusConcreteAsset, IsForeignConcreteAsset,
-		StartsWith, StartsWithExplicitGlobalConsensus,
-	},
+use assets_common::matching::{
+	FromSiblingParachain, IsDifferentGlobalConsensusConcreteAsset, IsForeignConcreteAsset,
+	StartsWith, StartsWithExplicitGlobalConsensus,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -32,22 +29,19 @@ use frame_support::{
 use frame_system::EnsureRoot;
 use pallet_bridge_transfer::impls::{AllowedUniversalAliasesOf, IsAllowedReserveOf};
 use pallet_xcm::XcmPassthrough;
-use parachains_common::{
-	impls::ToStakingPot,
-	xcm_config::{
-		AssetFeeAsExistentialDepositMultiplier, DenyReserveTransferToRelayChain, DenyThenTry,
-	},
-};
+use parachains_common::{impls::ToStakingPot, xcm_config::AssetFeeAsExistentialDepositMultiplier};
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
-	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin,
-	FungiblesAdapter, IsConcrete, LocalMint, NativeAsset, NoChecking, ParentAsSuperuser,
-	ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-	UsingComponents, WeightInfoBounds, WithComputedOrigin,
+	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, CurrencyAdapter,
+	DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin, FungiblesAdapter,
+	GlobalConsensusParachainConvertsFor, IsConcrete, LocalMint, NativeAsset, NoChecking,
+	ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+	SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId, UnpaidRemoteExporter,
+	UsingComponents, WeightInfoBounds, WithComputedOrigin, WithUniqueTopic,
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
@@ -73,8 +67,9 @@ pub type LocationToAccountId = (
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
 	AccountId32Aliases<RelayNetwork, AccountId>,
-	// Different global consensus parachain sovereign account
-	GlobalConsensusParachainConvert<AccountId>,
+	// Different global consensus parachain sovereign account.
+	// (Used for over-bridge transfers and reserve processing)
+	GlobalConsensusParachainConvertsFor<UniversalLocation, AccountId>,
 );
 
 /// Means for transacting the native currency on this chain.
@@ -118,7 +113,7 @@ pub type ForeignAssetsConvertedConcreteId = assets_common::ForeignAssetsConverte
 		// Ignore `TrustBackedAssets` explicitly
 		StartsWith<TrustBackedAssetsPalletLocation>,
 		// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
-		// - foreign assets from our consensus should be: `MultiLocation {parent: 1, X*(Parachain(xyz))}
+		// - foreign assets from our consensus should be: `MultiLocation {parents: 1, X*(Parachain(xyz), ..)}
 		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` wont be accepted here
 		StartsWithExplicitGlobalConsensus<UniversalLocationNetworkId>,
 	),
@@ -180,6 +175,7 @@ match_types! {
 		MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
 	};
 }
+
 /// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
 /// account for proof size weights.
 ///
@@ -197,179 +193,180 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			}
 		}
 
-		match call {
+		matches!(
+			call,
 			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
-			RuntimeCall::System(
-				frame_system::Call::set_heap_pages { .. } |
-				frame_system::Call::set_code { .. } |
-				frame_system::Call::set_code_without_checks { .. } |
-				frame_system::Call::kill_prefix { .. },
-			) |
-			RuntimeCall::ParachainSystem(..) |
-			RuntimeCall::Timestamp(..) |
-			RuntimeCall::Balances(..) |
-			RuntimeCall::CollatorSelection(
-				pallet_collator_selection::Call::set_desired_candidates { .. } |
-				pallet_collator_selection::Call::set_candidacy_bond { .. } |
-				pallet_collator_selection::Call::register_as_candidate { .. } |
-				pallet_collator_selection::Call::leave_intent { .. },
-			) |
-			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
-			RuntimeCall::XcmpQueue(..) |
-			RuntimeCall::DmpQueue(..) |
-			RuntimeCall::Utility(
-				pallet_utility::Call::as_derivative { .. } |
-				pallet_utility::Call::batch { .. } |
-				pallet_utility::Call::batch_all { .. },
-			) |
-			RuntimeCall::BridgeTransfer(..) |
-			RuntimeCall::Assets(
+				RuntimeCall::System(
+					frame_system::Call::set_heap_pages { .. } |
+						frame_system::Call::set_code { .. } |
+						frame_system::Call::set_code_without_checks { .. } |
+						frame_system::Call::kill_prefix { .. },
+				) | RuntimeCall::ParachainSystem(..) |
+				RuntimeCall::Timestamp(..) |
+				RuntimeCall::Balances(..) |
+				RuntimeCall::CollatorSelection(
+					pallet_collator_selection::Call::set_desired_candidates { .. } |
+						pallet_collator_selection::Call::set_candidacy_bond { .. } |
+						pallet_collator_selection::Call::register_as_candidate { .. } |
+						pallet_collator_selection::Call::leave_intent { .. } |
+						pallet_collator_selection::Call::set_invulnerables { .. } |
+						pallet_collator_selection::Call::add_invulnerable { .. } |
+						pallet_collator_selection::Call::remove_invulnerable { .. },
+				) | RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
+				RuntimeCall::XcmpQueue(..) |
+				RuntimeCall::DmpQueue(..) |
+				RuntimeCall::Utility(
+					pallet_utility::Call::as_derivative { .. } |
+						pallet_utility::Call::batch { .. } |
+						pallet_utility::Call::batch_all { .. },
+				) | RuntimeCall::Assets(
 				pallet_assets::Call::create { .. } |
-				pallet_assets::Call::force_create { .. } |
-				pallet_assets::Call::start_destroy { .. } |
-				pallet_assets::Call::destroy_accounts { .. } |
-				pallet_assets::Call::destroy_approvals { .. } |
-				pallet_assets::Call::finish_destroy { .. } |
-				pallet_assets::Call::mint { .. } |
-				pallet_assets::Call::burn { .. } |
-				pallet_assets::Call::transfer { .. } |
-				pallet_assets::Call::transfer_keep_alive { .. } |
-				pallet_assets::Call::force_transfer { .. } |
-				pallet_assets::Call::freeze { .. } |
-				pallet_assets::Call::thaw { .. } |
-				pallet_assets::Call::freeze_asset { .. } |
-				pallet_assets::Call::thaw_asset { .. } |
-				pallet_assets::Call::transfer_ownership { .. } |
-				pallet_assets::Call::set_team { .. } |
-				pallet_assets::Call::clear_metadata { .. } |
-				pallet_assets::Call::force_clear_metadata { .. } |
-				pallet_assets::Call::force_asset_status { .. } |
-				pallet_assets::Call::approve_transfer { .. } |
-				pallet_assets::Call::cancel_approval { .. } |
-				pallet_assets::Call::force_cancel_approval { .. } |
-				pallet_assets::Call::transfer_approved { .. } |
-				pallet_assets::Call::touch { .. } |
-				pallet_assets::Call::refund { .. },
-			) |
-			RuntimeCall::ForeignAssets(
+					pallet_assets::Call::force_create { .. } |
+					pallet_assets::Call::start_destroy { .. } |
+					pallet_assets::Call::destroy_accounts { .. } |
+					pallet_assets::Call::destroy_approvals { .. } |
+					pallet_assets::Call::finish_destroy { .. } |
+					pallet_assets::Call::mint { .. } |
+					pallet_assets::Call::burn { .. } |
+					pallet_assets::Call::transfer { .. } |
+					pallet_assets::Call::transfer_keep_alive { .. } |
+					pallet_assets::Call::force_transfer { .. } |
+					pallet_assets::Call::freeze { .. } |
+					pallet_assets::Call::thaw { .. } |
+					pallet_assets::Call::freeze_asset { .. } |
+					pallet_assets::Call::thaw_asset { .. } |
+					pallet_assets::Call::transfer_ownership { .. } |
+					pallet_assets::Call::set_team { .. } |
+					pallet_assets::Call::clear_metadata { .. } |
+					pallet_assets::Call::force_clear_metadata { .. } |
+					pallet_assets::Call::force_asset_status { .. } |
+					pallet_assets::Call::approve_transfer { .. } |
+					pallet_assets::Call::cancel_approval { .. } |
+					pallet_assets::Call::force_cancel_approval { .. } |
+					pallet_assets::Call::transfer_approved { .. } |
+					pallet_assets::Call::touch { .. } |
+					pallet_assets::Call::refund { .. },
+			) | RuntimeCall::ForeignAssets(
 				pallet_assets::Call::create { .. } |
-				pallet_assets::Call::force_create { .. } |
-				pallet_assets::Call::start_destroy { .. } |
-				pallet_assets::Call::destroy_accounts { .. } |
-				pallet_assets::Call::destroy_approvals { .. } |
-				pallet_assets::Call::finish_destroy { .. } |
-				pallet_assets::Call::mint { .. } |
-				pallet_assets::Call::burn { .. } |
-				pallet_assets::Call::transfer { .. } |
-				pallet_assets::Call::transfer_keep_alive { .. } |
-				pallet_assets::Call::force_transfer { .. } |
-				pallet_assets::Call::freeze { .. } |
-				pallet_assets::Call::thaw { .. } |
-				pallet_assets::Call::freeze_asset { .. } |
-				pallet_assets::Call::thaw_asset { .. } |
-				pallet_assets::Call::transfer_ownership { .. } |
-				pallet_assets::Call::set_team { .. } |
-				pallet_assets::Call::set_metadata { .. } |
-				pallet_assets::Call::clear_metadata { .. } |
-				pallet_assets::Call::force_clear_metadata { .. } |
-				pallet_assets::Call::force_asset_status { .. } |
-				pallet_assets::Call::approve_transfer { .. } |
-				pallet_assets::Call::cancel_approval { .. } |
-				pallet_assets::Call::force_cancel_approval { .. } |
-				pallet_assets::Call::transfer_approved { .. } |
-				pallet_assets::Call::touch { .. } |
-				pallet_assets::Call::refund { .. },
-			) |
-			RuntimeCall::Nfts(
+					pallet_assets::Call::force_create { .. } |
+					pallet_assets::Call::start_destroy { .. } |
+					pallet_assets::Call::destroy_accounts { .. } |
+					pallet_assets::Call::destroy_approvals { .. } |
+					pallet_assets::Call::finish_destroy { .. } |
+					pallet_assets::Call::mint { .. } |
+					pallet_assets::Call::burn { .. } |
+					pallet_assets::Call::transfer { .. } |
+					pallet_assets::Call::transfer_keep_alive { .. } |
+					pallet_assets::Call::force_transfer { .. } |
+					pallet_assets::Call::freeze { .. } |
+					pallet_assets::Call::thaw { .. } |
+					pallet_assets::Call::freeze_asset { .. } |
+					pallet_assets::Call::thaw_asset { .. } |
+					pallet_assets::Call::transfer_ownership { .. } |
+					pallet_assets::Call::set_team { .. } |
+					pallet_assets::Call::set_metadata { .. } |
+					pallet_assets::Call::clear_metadata { .. } |
+					pallet_assets::Call::force_clear_metadata { .. } |
+					pallet_assets::Call::force_asset_status { .. } |
+					pallet_assets::Call::approve_transfer { .. } |
+					pallet_assets::Call::cancel_approval { .. } |
+					pallet_assets::Call::force_cancel_approval { .. } |
+					pallet_assets::Call::transfer_approved { .. } |
+					pallet_assets::Call::touch { .. } |
+					pallet_assets::Call::refund { .. },
+			) | RuntimeCall::NftFractionalization(
+				pallet_nft_fractionalization::Call::fractionalize { .. } |
+					pallet_nft_fractionalization::Call::unify { .. },
+			) | RuntimeCall::Nfts(
 				pallet_nfts::Call::create { .. } |
-				pallet_nfts::Call::force_create { .. } |
-				pallet_nfts::Call::destroy { .. } |
-				pallet_nfts::Call::mint { .. } |
-				pallet_nfts::Call::force_mint { .. } |
-				pallet_nfts::Call::burn { .. } |
-				pallet_nfts::Call::transfer { .. } |
-				pallet_nfts::Call::lock_item_transfer { .. } |
-				pallet_nfts::Call::unlock_item_transfer { .. } |
-				pallet_nfts::Call::lock_collection { .. } |
-				pallet_nfts::Call::transfer_ownership { .. } |
-				pallet_nfts::Call::set_team { .. } |
-				pallet_nfts::Call::force_collection_owner { .. } |
-				pallet_nfts::Call::force_collection_config { .. } |
-				pallet_nfts::Call::approve_transfer { .. } |
-				pallet_nfts::Call::cancel_approval { .. } |
-				pallet_nfts::Call::clear_all_transfer_approvals { .. } |
-				pallet_nfts::Call::lock_item_properties { .. } |
-				pallet_nfts::Call::set_attribute { .. } |
-				pallet_nfts::Call::force_set_attribute { .. } |
-				pallet_nfts::Call::clear_attribute { .. } |
-				pallet_nfts::Call::approve_item_attributes { .. } |
-				pallet_nfts::Call::cancel_item_attributes_approval { .. } |
-				pallet_nfts::Call::set_metadata { .. } |
-				pallet_nfts::Call::clear_metadata { .. } |
-				pallet_nfts::Call::set_collection_metadata { .. } |
-				pallet_nfts::Call::clear_collection_metadata { .. } |
-				pallet_nfts::Call::set_accept_ownership { .. } |
-				pallet_nfts::Call::set_collection_max_supply { .. } |
-				pallet_nfts::Call::update_mint_settings { .. } |
-				pallet_nfts::Call::set_price { .. } |
-				pallet_nfts::Call::buy_item { .. } |
-				pallet_nfts::Call::pay_tips { .. } |
-				pallet_nfts::Call::create_swap { .. } |
-				pallet_nfts::Call::cancel_swap { .. } |
-				pallet_nfts::Call::claim_swap { .. },
-			) |
-			RuntimeCall::Uniques(
+					pallet_nfts::Call::force_create { .. } |
+					pallet_nfts::Call::destroy { .. } |
+					pallet_nfts::Call::mint { .. } |
+					pallet_nfts::Call::force_mint { .. } |
+					pallet_nfts::Call::burn { .. } |
+					pallet_nfts::Call::transfer { .. } |
+					pallet_nfts::Call::lock_item_transfer { .. } |
+					pallet_nfts::Call::unlock_item_transfer { .. } |
+					pallet_nfts::Call::lock_collection { .. } |
+					pallet_nfts::Call::transfer_ownership { .. } |
+					pallet_nfts::Call::set_team { .. } |
+					pallet_nfts::Call::force_collection_owner { .. } |
+					pallet_nfts::Call::force_collection_config { .. } |
+					pallet_nfts::Call::approve_transfer { .. } |
+					pallet_nfts::Call::cancel_approval { .. } |
+					pallet_nfts::Call::clear_all_transfer_approvals { .. } |
+					pallet_nfts::Call::lock_item_properties { .. } |
+					pallet_nfts::Call::set_attribute { .. } |
+					pallet_nfts::Call::force_set_attribute { .. } |
+					pallet_nfts::Call::clear_attribute { .. } |
+					pallet_nfts::Call::approve_item_attributes { .. } |
+					pallet_nfts::Call::cancel_item_attributes_approval { .. } |
+					pallet_nfts::Call::set_metadata { .. } |
+					pallet_nfts::Call::clear_metadata { .. } |
+					pallet_nfts::Call::set_collection_metadata { .. } |
+					pallet_nfts::Call::clear_collection_metadata { .. } |
+					pallet_nfts::Call::set_accept_ownership { .. } |
+					pallet_nfts::Call::set_collection_max_supply { .. } |
+					pallet_nfts::Call::update_mint_settings { .. } |
+					pallet_nfts::Call::set_price { .. } |
+					pallet_nfts::Call::buy_item { .. } |
+					pallet_nfts::Call::pay_tips { .. } |
+					pallet_nfts::Call::create_swap { .. } |
+					pallet_nfts::Call::cancel_swap { .. } |
+					pallet_nfts::Call::claim_swap { .. },
+			) | RuntimeCall::Uniques(
 				pallet_uniques::Call::create { .. } |
-				pallet_uniques::Call::force_create { .. } |
-				pallet_uniques::Call::destroy { .. } |
-				pallet_uniques::Call::mint { .. } |
-				pallet_uniques::Call::burn { .. } |
-				pallet_uniques::Call::transfer { .. } |
-				pallet_uniques::Call::freeze { .. } |
-				pallet_uniques::Call::thaw { .. } |
-				pallet_uniques::Call::freeze_collection { .. } |
-				pallet_uniques::Call::thaw_collection { .. } |
-				pallet_uniques::Call::transfer_ownership { .. } |
-				pallet_uniques::Call::set_team { .. } |
-				pallet_uniques::Call::approve_transfer { .. } |
-				pallet_uniques::Call::cancel_approval { .. } |
-				pallet_uniques::Call::force_item_status { .. } |
-				pallet_uniques::Call::set_attribute { .. } |
-				pallet_uniques::Call::clear_attribute { .. } |
-				pallet_uniques::Call::set_metadata { .. } |
-				pallet_uniques::Call::clear_metadata { .. } |
-				pallet_uniques::Call::set_collection_metadata { .. } |
-				pallet_uniques::Call::clear_collection_metadata { .. } |
-				pallet_uniques::Call::set_accept_ownership { .. } |
-				pallet_uniques::Call::set_collection_max_supply { .. } |
-				pallet_uniques::Call::set_price { .. } |
-				pallet_uniques::Call::buy_item { .. },
-			) => true,
-			_ => false,
-		}
+					pallet_uniques::Call::force_create { .. } |
+					pallet_uniques::Call::destroy { .. } |
+					pallet_uniques::Call::mint { .. } |
+					pallet_uniques::Call::burn { .. } |
+					pallet_uniques::Call::transfer { .. } |
+					pallet_uniques::Call::freeze { .. } |
+					pallet_uniques::Call::thaw { .. } |
+					pallet_uniques::Call::freeze_collection { .. } |
+					pallet_uniques::Call::thaw_collection { .. } |
+					pallet_uniques::Call::transfer_ownership { .. } |
+					pallet_uniques::Call::set_team { .. } |
+					pallet_uniques::Call::approve_transfer { .. } |
+					pallet_uniques::Call::cancel_approval { .. } |
+					pallet_uniques::Call::force_item_status { .. } |
+					pallet_uniques::Call::set_attribute { .. } |
+					pallet_uniques::Call::clear_attribute { .. } |
+					pallet_uniques::Call::set_metadata { .. } |
+					pallet_uniques::Call::clear_metadata { .. } |
+					pallet_uniques::Call::set_collection_metadata { .. } |
+					pallet_uniques::Call::clear_collection_metadata { .. } |
+					pallet_uniques::Call::set_accept_ownership { .. } |
+					pallet_uniques::Call::set_collection_max_supply { .. } |
+					pallet_uniques::Call::set_price { .. } |
+					pallet_uniques::Call::buy_item { .. },
+			) | RuntimeCall::BridgeTransfer(..)
+		)
 	}
 }
 
-pub type Barrier = DenyThenTry<
-	DenyReserveTransferToRelayChain,
-	(
-		TakeWeightCredit,
-		// Expected responses are OK.
-		AllowKnownQueryResponses<PolkadotXcm>,
-		// Allow XCMs with some computed origins to pass through.
-		WithComputedOrigin<
-			(
-				// If the message is one that immediately attemps to pay for execution, then allow it.
-				AllowTopLevelPaidExecutionFrom<Everything>,
-				// Parent and its pluralities (i.e. governance bodies) get free execution.
-				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
-				// Subscriptions for version tracking are OK.
-				AllowSubscriptionsFrom<Everything>,
-			),
-			UniversalLocation,
-			ConstU32<8>,
-		>,
-	),
+pub type Barrier = TrailingSetTopicAsId<
+	DenyThenTry<
+		DenyReserveTransferToRelayChain,
+		(
+			TakeWeightCredit,
+			// Expected responses are OK.
+			AllowKnownQueryResponses<PolkadotXcm>,
+			// Allow XCMs with some computed origins to pass through.
+			WithComputedOrigin<
+				(
+					// If the message is one that immediately attemps to pay for execution, then allow it.
+					AllowTopLevelPaidExecutionFrom<Everything>,
+					// Parent and its pluralities (i.e. governance bodies) get free execution.
+					AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
+					// Subscriptions for version tracking are OK.
+					AllowSubscriptionsFrom<Everything>,
+				),
+				UniversalLocation,
+				ConstU32<8>,
+			>,
+		),
+	>,
 >;
 
 pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<
@@ -439,12 +436,12 @@ pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, R
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
-pub type XcmRouter = (
+pub type XcmRouter = WithUniqueTopic<(
 	// Two routers - use UMP to communicate with the relay chain:
 	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, ()>,
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
-);
+)>;
 
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
@@ -479,6 +476,8 @@ impl pallet_xcm::Config for Runtime {
 	#[cfg(feature = "runtime-benchmarks")]
 	type ReachableDest = ReachableDest;
 	type AdminOrigin = EnsureRoot<AccountId>;
+	type MaxRemoteLockConsumers = ConstU32<0>;
+	type RemoteLockConsumerIdentifier = ();
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
@@ -495,13 +494,14 @@ pub type ForeignCreatorsSovereignAccountOf = (
 /// Simple conversion of `u32` into an `AssetId` for use in benchmarking.
 pub struct XcmBenchmarkHelper;
 #[cfg(feature = "runtime-benchmarks")]
-use pallet_assets::BenchmarkHelper;
-#[cfg(feature = "runtime-benchmarks")]
-impl BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
+impl pallet_assets::BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 	fn create_asset_id_parameter(id: u32) -> MultiLocation {
 		MultiLocation { parents: 1, interior: X1(Parachain(id)) }
 	}
 }
+
+/// Bridge router, which wraps and sends xcm to BridgeHub to be delivered to the different GlobalConsensus
+pub type BridgeXcmSender = UnpaidRemoteExporter<BridgeTransfer, XcmRouter, UniversalLocation>;
 
 /// Benchmarks helper for over-bridge transfer pallet.
 #[cfg(feature = "runtime-benchmarks")]
@@ -512,6 +512,11 @@ impl BridgeTransferBenchmarksHelper {
 	/// Parachain at the other side of the bridge that we're connected to.
 	fn allowed_target_location() -> MultiLocation {
 		MultiLocation::new(2, X2(GlobalConsensus(Kusama), Parachain(1000)))
+	}
+
+	/// Max fee we are willing to pay on the bridged side
+	fn allowed_target_location_max_fee() -> Option<MultiAsset> {
+		Some((MultiLocation::parent(), 50_000_000_000_u128).into())
 	}
 
 	/// Identifier of the sibling bridge-hub parachain.
@@ -527,12 +532,12 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 			Kusama,
 			pallet_bridge_transfer::BridgeConfig {
 				bridge_location: (Parent, Parachain(Self::bridge_hub_para_id())).into(),
-				// TODO: right now `UnpaidRemoteExporter` is used to send XCM messages and it requires
+				// Right now `UnpaidRemoteExporter` is used to send XCM messages and it requires
 				// fee to be `None`. If we're going to change that (are we?), then we should replace
 				// this `None` with `Some(Self::make_asset(crate::ExistentialDeposit::get()))`
 				bridge_location_fee: None,
 				allowed_target_location: Self::allowed_target_location(),
-				max_target_location_fee: None,
+				max_target_location_fee: Self::allowed_target_location_max_fee(),
 			},
 		))
 	}
@@ -552,5 +557,71 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 			parents: 2,
 			interior: X2(GlobalConsensus(Kusama), Parachain(1000)),
 		}))
+	}
+
+	fn prepare_asset_transfer(
+	) -> Option<(RuntimeOrigin, xcm::VersionedMultiAssets, xcm::VersionedMultiLocation)> {
+		use frame_support::traits::Currency;
+
+		// our `BridgeXcmSender` assumes that the HRMP channel is opened between this
+		// parachain and the sibling bridge-hub parachain
+		cumulus_pallet_parachain_system::Pallet::<Runtime>::open_outbound_hrmp_channel_for_benchmarks(
+			Self::bridge_hub_para_id().into(),
+		);
+
+		// sender account
+		let sender_account = AccountId::from([42u8; 32]);
+
+		// We need root origin to create asset
+		let minimum_asset_balance = 3333333_u128;
+		let local_asset_id = 1;
+		frame_support::assert_ok!(Assets::force_create(
+			RuntimeOrigin::root(),
+			local_asset_id.into(),
+			sender_account.clone().into(),
+			true,
+			minimum_asset_balance
+		));
+
+		// We mint enough asset for the account to exist for assets
+		frame_support::assert_ok!(Assets::mint(
+			RuntimeOrigin::signed(sender_account.clone()),
+			local_asset_id.into(),
+			sender_account.clone().into(),
+			minimum_asset_balance * 4
+		));
+
+		// deposit enough funds to the sender account
+		let existential_deposit = crate::ExistentialDeposit::get();
+		let _ = Balances::deposit_creating(&sender_account, existential_deposit * 10);
+
+		// finally - prepare assets and destination (pallet_assets is worse than pallet_balances)
+		use xcm_executor::traits::Convert;
+		let asset_id_location = assets_common::AssetIdForTrustBackedAssetsConvert::<
+			TrustBackedAssetsPalletLocation,
+		>::reverse_ref(local_asset_id)
+		.unwrap();
+		let asset: MultiAsset = (Concrete(asset_id_location), minimum_asset_balance * 2).into();
+
+		let assets = xcm::VersionedMultiAssets::V3(asset.into());
+		let destination = xcm::VersionedMultiLocation::V3(Self::allowed_target_location());
+
+		Some((RuntimeOrigin::signed(sender_account), assets, destination))
+	}
+
+	fn prepare_ping_transfer() -> Option<(RuntimeOrigin, xcm::VersionedMultiLocation)> {
+		// our `BridgeXcmSender` assumes that the HRMP channel is opened between this
+		// parachain and the sibling bridge-hub parachain
+		cumulus_pallet_parachain_system::Pallet::<Runtime>::open_outbound_hrmp_channel_for_benchmarks(
+			Self::bridge_hub_para_id().into(),
+		);
+
+		// sender account
+		let sender_account = AccountId::from([42u8; 32]);
+
+		// finally - prepare destination
+		let destination = xcm::VersionedMultiLocation::V3(Self::allowed_target_location());
+
+		Some((RuntimeOrigin::signed(sender_account), destination))
 	}
 }

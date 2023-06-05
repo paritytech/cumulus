@@ -71,7 +71,7 @@ where
 
 	module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
-	module.merge(StateMigration::new(client.clone(), backend.clone(), deny_unsafe).into_rpc())?;
+	module.merge(StateMigration::new(client, backend.clone(), deny_unsafe).into_rpc())?;
 
 	if let Some(outbound_queue_rpc) = backend
 		.offchain_storage()

@@ -64,7 +64,8 @@ benchmarks! {
 		// we don't care about message hash or sender cost here, just check that the transfer has been initiated
 		let actual_event = frame_system::Pallet::<T>::events().pop().map(|r| r.event);
 		let expected_event: <T as Config>::RuntimeEvent = Event::TransferInitiated {
-			message_hash: Default::default(),
+			message_id: Default::default(),
+			forwarded_message_id: Default::default(),
 			sender_cost: Default::default(),
 		}.into();
 		assert!(matches!(actual_event, Some(expected_event)));
@@ -93,7 +94,8 @@ benchmarks! {
 		// we don't care about message hash or sender cost here, just check that the transfer has been initiated
 		let actual_event = frame_system::Pallet::<T>::events().pop().map(|r| r.event);
 		let expected_event: <T as Config>::RuntimeEvent = Event::TransferInitiated {
-			message_hash: Default::default(),
+			message_id: Default::default(),
+			forwarded_message_id: Default::default(),
 			sender_cost: Default::default(),
 		}.into();
 		assert!(matches!(actual_event, Some(expected_event)));
