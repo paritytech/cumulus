@@ -391,9 +391,9 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-runtime",
  "polkadot-runtime-parachains",
- "sp-core",
- "sp-runtime",
- "sp-weights",
+ "sp-core 21.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-runtime 24.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-weights 20.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "xcm",
  "xcm-emulator",
  "xcm-executor",
@@ -454,15 +454,15 @@ dependencies = [
  "sp-api",
  "sp-block-builder",
  "sp-consensus-aura",
- "sp-core",
+ "sp-core 21.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-inherents",
  "sp-offchain",
- "sp-runtime",
+ "sp-runtime 24.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-session",
- "sp-std",
+ "sp-std 8.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-transaction-pool",
  "sp-version",
- "sp-weights",
+ "sp-weights 20.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "substrate-wasm-builder",
  "xcm",
  "xcm-builder",
@@ -487,9 +487,9 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-runtime",
  "polkadot-runtime-parachains",
- "sp-core",
- "sp-runtime",
- "sp-weights",
+ "sp-core 21.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-runtime 24.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-weights 20.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "xcm",
  "xcm-emulator",
  "xcm-executor",
@@ -549,15 +549,15 @@ dependencies = [
  "sp-api",
  "sp-block-builder",
  "sp-consensus-aura",
- "sp-core",
+ "sp-core 21.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-inherents",
  "sp-offchain",
- "sp-runtime",
+ "sp-runtime 24.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-session",
- "sp-std",
+ "sp-std 8.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-transaction-pool",
  "sp-version",
- "sp-weights",
+ "sp-weights 20.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "substrate-wasm-builder",
  "xcm",
  "xcm-builder",
@@ -582,9 +582,9 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-runtime",
  "polkadot-runtime-parachains",
- "sp-core",
- "sp-runtime",
- "sp-weights",
+ "sp-core 21.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-runtime 24.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-weights 20.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "westend-runtime",
  "xcm",
  "xcm-emulator",
@@ -645,12 +645,12 @@ dependencies = [
  "sp-api",
  "sp-block-builder",
  "sp-consensus-aura",
- "sp-core",
+ "sp-core 21.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-inherents",
  "sp-offchain",
- "sp-runtime",
+ "sp-runtime 24.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-session",
- "sp-std",
+ "sp-std 8.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
@@ -5282,9 +5282,9 @@ dependencies = [
  "sc-consensus-grandpa",
  "sp-authority-discovery",
  "sp-consensus-babe",
- "sp-core",
- "sp-runtime",
- "sp-weights",
+ "sp-core 21.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-runtime 24.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-weights 20.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "westend-runtime",
  "westend-runtime-constants",
  "xcm",
@@ -9567,10 +9567,10 @@ dependencies = [
  "sc-executor",
  "sc-executor-common",
  "sc-executor-wasmtime",
- "sp-core",
- "sp-externalities",
- "sp-io",
- "sp-tracing",
+ "sp-core 21.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-externalities 0.19.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-io 23.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-tracing 10.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "substrate-build-script-utils",
  "tokio",
  "tracing-gum",
@@ -9588,7 +9588,7 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "rayon",
- "sp-core",
+ "sp-core 21.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-maybe-compressed-blob",
  "sp-tracing 10.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "tikv-jemalloc-ctl",
@@ -13559,8 +13559,9 @@ dependencies = [
 
 [[package]]
 name = "sp-core"
-version = "21.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#689da495a0c0c0c2466fe90a9ea187ce56760f2d"
+version = "20.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7789372146f8ad40d0b40fad0596cb1db5771187a258eabe19b06f00767fcbd6"
 dependencies = [
  "array-bytes 4.2.0",
  "bitflags",
@@ -13601,9 +13602,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-core-hashing"
-version = "9.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#689da495a0c0c0c2466fe90a9ea187ce56760f2d"
+name = "sp-core"
+version = "21.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f18d9e2f67d8661f9729f35347069ac29d92758b59135176799db966947a7336"
 dependencies = [
  "array-bytes 4.2.0",
  "bitflags",
@@ -13645,13 +13647,101 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp-core"
+version = "21.0.0"
+source = "git+https://github.com/paritytech/substrate?branch=master#689da495a0c0c0c2466fe90a9ea187ce56760f2d"
+dependencies = [
+ "array-bytes 4.2.0",
+ "bitflags",
+ "blake2",
+ "bounded-collections",
+ "bs58",
+ "dyn-clonable",
+ "ed25519-zebra",
+ "futures",
+ "hash-db",
+ "hash256-std-hasher",
+ "impl-serde",
+ "lazy_static",
+ "libsecp256k1",
+ "log",
+ "merlin",
+ "parity-scale-codec",
+ "parking_lot 0.12.1",
+ "paste",
+ "primitive-types",
+ "rand 0.8.5",
+ "regex",
+ "scale-info",
+ "schnorrkel",
+ "secp256k1",
+ "secrecy",
+ "serde",
+ "sp-core-hashing 9.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-debug-derive 8.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-externalities 0.19.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-runtime-interface 17.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-std 8.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-storage 13.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "ss58-registry",
+ "substrate-bip39",
+ "thiserror",
+ "tiny-bip39",
+ "zeroize",
+]
+
+[[package]]
+name = "sp-core-hashing"
+version = "8.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "27449abdfbe41b473e625bce8113745e81d65777dd1d5a8462cf24137930dad8"
+dependencies = [
+ "blake2b_simd",
+ "byteorder",
+ "digest 0.10.6",
+ "sha2 0.10.2",
+ "sha3",
+ "sp-std 7.0.0",
+ "twox-hash",
+]
+
+[[package]]
+name = "sp-core-hashing"
+version = "9.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2ee599a8399448e65197f9a6cee338ad192e9023e35e31f22382964c3c174c68"
+dependencies = [
+ "blake2b_simd",
+ "byteorder",
+ "digest 0.10.6",
+ "sha2 0.10.2",
+ "sha3",
+ "sp-std 8.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "twox-hash",
+]
+
+[[package]]
+name = "sp-core-hashing"
+version = "9.0.0"
+source = "git+https://github.com/paritytech/substrate?branch=master#689da495a0c0c0c2466fe90a9ea187ce56760f2d"
+dependencies = [
+ "blake2b_simd",
+ "byteorder",
+ "digest 0.10.6",
+ "sha2 0.10.2",
+ "sha3",
+ "sp-std 8.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
+ "twox-hash",
+]
+
+[[package]]
 name = "sp-core-hashing-proc-macro"
 version = "9.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#689da495a0c0c0c2466fe90a9ea187ce56760f2d"
 dependencies = [
  "proc-macro2",
  "quote",
- "sp-core-hashing",
+ "sp-core-hashing 9.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "syn 2.0.18",
 ]
 
@@ -14389,7 +14479,7 @@ dependencies = [
 [[package]]
 name = "sp-transaction-storage-proof"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#f50c501411d2e453eb5d10d5e8ee73194d7f7340"
+source = "git+https://github.com/paritytech/substrate?branch=master#689da495a0c0c0c2466fe90a9ea187ce56760f2d"
 dependencies = [
  "async-trait",
  "log",
@@ -14427,9 +14517,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-transaction-storage-proof"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#689da495a0c0c0c2466fe90a9ea187ce56760f2d"
+name = "sp-trie"
+version = "22.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48e4eeb7ef23f79eba8609db79ef9cef242f994f1f87a3c0387b4b5f177fda74"
 dependencies = [
  "ahash 0.8.2",
  "hash-db",
