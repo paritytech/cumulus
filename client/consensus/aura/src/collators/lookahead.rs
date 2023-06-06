@@ -34,6 +34,7 @@
 use codec::{Decode, Encode};
 use cumulus_client_collator::service::ServiceInterface as CollatorServiceInterface;
 use cumulus_client_consensus_common::{
+	self as consensus_common,
 	ParachainBlockImportMarker, ParachainCandidate, ParentSearchParams,
 };
 use cumulus_client_consensus_proposer::ProposerInterface;
@@ -89,6 +90,7 @@ pub struct Params<BI, CIDP, Client, RClient, SO, Proposer, CS> {
 	pub relay_chain_slot_duration: SlotDuration,
 	pub proposer: Proposer,
 	pub collator_service: CS,
+	pub authoring_duration: Duration,
 }
 
 /// Run async-backing-friendly Aura.
@@ -149,7 +151,28 @@ pub async fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
 		let relay_parent = relay_parent_header.hash();
 
 		// TODO [now]: get asynchronous backing parameters from the relay-chain
-		// runtime. why?
+		// runtime. why? for the parent search parameters.
+
+		let max_pov_size  = match params.relay_client.persisted_validation_data(
+			relay_parent,
+			params.para_id,
+			OccupiedCoreAssumption::Included,
+		).await {
+			Ok(None) => continue,
+			Ok(Some(pvd)) => pvd.max_pov_size,
+			Err(err) => {
+				tracing::error!(target: crate::LOG_TARGET, ?err, "Failed to gather information from relay-client");
+				continue;
+			}
+		};
+
+		let (slot_now, timestamp) = match consensus_common::relay_slot_and_timestamp(
+			&relay_parent_header,
+			params.relay_chain_slot_duration,
+		) {
+			None => continue,
+			Some((s, t)) => (Slot::from_timestamp(t, params.slot_duration), t),
+		};
 
 		let parent_search_params = ParentSearchParams {
 			relay_parent,
@@ -183,32 +206,117 @@ pub async fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
 			Ok(x) => x,
 		};
 
-		// Sort by depth, descending, to choose the longest chain, and lazily filter
-		// by those with space.
-		potential_parents.sort_by(|a, b| b.depth.cmp(&a.depth));
-		let potential_parents = potential_parents
-			.into_iter()
-			.filter(|p| can_build_upon(p.hash, &*params.para_client));
+		let included_block = match potential_parents.iter().find(|x| x.depth == 0) {
+			None => continue, // also serves as an `is_empty` check.
+			Some(b) => b.hash,
+		};
 
-		if let Some(parent) = potential_parents.next() {
-			// TODO [now]: build and announce collations recursively until
-			// `can_build_upon` fails.
-			unimplemented!()
+		let para_client = &*params.para_client;
+		let keystore = &params.keystore;
+		let can_build_upon = |block_hash| can_build_upon(
+			slot_now,
+			timestamp,
+			block_hash,
+			included_block,
+			&para_client,
+			&keystore,
+		);
+
+		// Sort by depth, ascending, to choose the longest chain.
+		//
+		// If the longest chain has space, build upon that. Otherwise, don't
+		// build at all.
+		potential_parents.sort_by_key(|a| &a.depth);
+		let initial_parent = match potential_parents.pop() {
+			None => continue,
+			Some(p) => p,
+		};
+
+		// Build in a loop until not allowed. Note that the authorities can change
+		// at any block, so we need to re-claim our slot every time.
+		let mut parent_hash = initial_parent.hash;
+		let mut parent_header = initial_parent.header;
+		loop {
+			let slot_claim = match can_build_upon(parent_hash).await {
+				None => break,
+				Some(c) => c,
+			};
+
+			let persisted_validation_data = PersistedValidationData {
+				parent_head: parent_header.encode(),
+				relay_parent_number: *relay_parent_header.number(),
+				relay_parent_storage_root: *relay_parent_header.state_root(),
+				max_pov_size,
+			};
+
+			// Build and announce collations recursively until
+			// `can_build_upon` fails or building a collation fails.
+			let (parachain_inherent_data, other_inherent_data) = match collator.create_inherent_data(
+				relay_parent,
+				&persisted_validation_data,
+				parent_hash,
+				slot_claim.timestamp(),
+			).await {
+				Err(err) => {
+					tracing::error!(target: crate::LOG_TARGET, ?err);
+					break;
+				},
+				Ok(x) => x,
+			};
+
+			let (new_block_hash, new_block_header) = match collator.collate(
+				&parent_header,
+				&slot_claim,
+				None,
+				(parachain_inherent_data, other_inherent_data),
+				params.authoring_duration,
+				// Set the block limit to 50% of the maximum PoV size.
+				//
+				// TODO: If we got benchmarking that includes the proof size,
+				// we should be able to use the maximum pov size.
+				(validation_data.max_pov_size / 2) as usize,
+			).await {
+				Ok((collation, block_data, new_block_hash)) => {
+					parent_hash = new_block_hash;
+					parent_header = block_data.header;
+
+					// TODO [now]: announce to parachain sub-network
+
+					// TODO [link to github issue when i have internet]:
+					// announce collation to relay-chain validators.
+				}
+				Err(err) => {
+					tracing::error!(target: crate::LOG_TARGET, ?err);
+					break;
+				}
+			};
 		}
 	}
 }
 
-fn can_build_upon<Block: BlockT, Client>(block_hash: Block::Hash, client: &Client) -> bool
+// Checks if we own the slot at the given block and whether there
+// is space in the unincluded segment.
+async fn can_build_upon<Block: BlockT, Client, P>(
+	slot: Slot,
+	timestamp: Timestamp,
+	block_hash: Block::Hash,
+	included_block: Block::Hash,
+	client: &Client,
+	keystore: &KeystorePtr,
+) -> Option<SlotClaim<P::Public>>
 where
 	Client: ProvideRuntimeApi<Block>,
+	Client::Api: AuraApi<Block, P::Public>,
+	P: Pair,
+	P::Public: Encode + Decode,
+	P::Signature: Encode + Decode,
 {
-	// TODO [now]: claim slot, maybe with an authorities cache to avoid
-	// all validators doing this every new relay-chain block.
-	// Actually, as long as sessions are based on slot number then they should
-	// be the same for all...
-	// That is, blocks with the same relay-parent should have the same session.
-	//
+	let authorities = client.runtime_api().authorities(block_hash).ok()?;
+	let author_pub = aura_internal::claim_slot::<P>(slot, &authorities, keystore).await?;
+
 	// TODO [now]: new runtime API,
-	// AuraUnincludedSegmentApi::has_space(slot) or something like it.
+	// AuraUnincludedSegmentApi::has_space(included_block, slot) or something like it.
 	unimplemented!()
+
+	Some(SlotClaim::unchecked(author_pub, slot, timestamp))
 }
