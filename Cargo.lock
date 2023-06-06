@@ -397,6 +397,7 @@ dependencies = [
  "asset-test-utils",
  "assets-common",
  "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
@@ -420,7 +421,6 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
- "pallet-message-queue",
  "pallet-multisig",
  "pallet-nfts",
  "pallet-nfts-runtime-api",
@@ -493,6 +493,7 @@ dependencies = [
  "asset-test-utils",
  "assets-common",
  "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
@@ -515,7 +516,6 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
- "pallet-message-queue",
  "pallet-multisig",
  "pallet-nfts",
  "pallet-nfts-runtime-api",
@@ -589,6 +589,7 @@ dependencies = [
  "asset-test-utils",
  "assets-common",
  "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
@@ -611,7 +612,6 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
- "pallet-message-queue",
  "pallet-multisig",
  "pallet-nft-fractionalization",
  "pallet-nfts",
@@ -656,6 +656,7 @@ name = "asset-test-utils"
 version = "1.0.0"
 dependencies = [
  "assets-common",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
@@ -1231,6 +1232,7 @@ version = "0.1.0"
 dependencies = [
  "bridge-hub-test-utils",
  "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
@@ -1252,7 +1254,6 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
- "pallet-message-queue",
  "pallet-multisig",
  "pallet-session",
  "pallet-timestamp",
@@ -1294,6 +1295,7 @@ version = "0.1.0"
 dependencies = [
  "bridge-hub-test-utils",
  "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
@@ -1314,7 +1316,6 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
- "pallet-message-queue",
  "pallet-multisig",
  "pallet-session",
  "pallet-timestamp",
@@ -1367,6 +1368,7 @@ dependencies = [
  "bridge-hub-test-utils",
  "bridge-runtime-common",
  "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
@@ -1391,7 +1393,6 @@ dependencies = [
  "pallet-bridge-parachains",
  "pallet-bridge-relayers",
  "pallet-collator-selection",
- "pallet-message-queue",
  "pallet-multisig",
  "pallet-session",
  "pallet-timestamp",
@@ -1446,6 +1447,7 @@ dependencies = [
  "bp-runtime",
  "bp-test-utils",
  "bridge-runtime-common",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
  "frame-benchmarking",
@@ -1814,9 +1816,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.3.1"
+version = "4.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4ed2379f8603fa2b7509891660e802b88c70a79a6427a70abb5968054de2c28"
+checksum = "401a4694d2bf92537b6867d94de48c4842089645fdcdf6c71865b175d836e9c2"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -1847,9 +1849,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "4.3.1"
+version = "4.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59e9ef9a08ee1c0e1f2e162121665ac45ac3783b0f897db7244ae75ad9a8f65b"
+checksum = "b8cd2b2a819ad6eec39e8f1d6b53001af1e5469f8c177579cdaeb313115b825f"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -1886,10 +1888,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "collectives-polkadot-it"
+version = "0.1.0"
+dependencies = [
+ "asset-hub-polkadot-runtime",
+ "collectives-polkadot-runtime",
+ "cumulus-pallet-xcmp-queue",
+ "frame-support",
+ "frame-system",
+ "integration-tests-common",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-core-fellowship",
+ "pallet-salary",
+ "pallet-xcm",
+ "parachains-common",
+ "parity-scale-codec",
+ "polkadot-core-primitives",
+ "polkadot-parachain",
+ "polkadot-runtime",
+ "polkadot-runtime-parachains",
+ "sp-core",
+ "sp-runtime",
+ "sp-weights",
+ "xcm",
+ "xcm-emulator",
+ "xcm-executor",
+]
+
+[[package]]
 name = "collectives-polkadot-runtime"
 version = "1.0.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
@@ -1912,12 +1944,13 @@ dependencies = [
  "pallet-balances",
  "pallet-collator-selection",
  "pallet-collective",
- "pallet-message-queue",
+ "pallet-core-fellowship",
  "pallet-multisig",
  "pallet-preimage",
  "pallet-proxy",
  "pallet-ranked-collective",
  "pallet-referenda",
+ "pallet-salary",
  "pallet-scheduler",
  "pallet-session",
  "pallet-timestamp",
@@ -2051,6 +2084,7 @@ name = "contracts-rococo-runtime"
 version = "0.2.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
@@ -2075,7 +2109,6 @@ dependencies = [
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-insecure-randomness-collective-flip",
- "pallet-message-queue",
  "pallet-multisig",
  "pallet-session",
  "pallet-sudo",
@@ -2732,6 +2765,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-pallet-dmp-queue"
+version = "0.1.0"
+dependencies = [
+ "cumulus-primitives-core",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-version",
+ "xcm",
+]
+
+[[package]]
 name = "cumulus-pallet-parachain-system"
 version = "0.1.0"
 dependencies = [
@@ -2742,17 +2793,14 @@ dependencies = [
  "cumulus-test-client",
  "cumulus-test-relay-sproof-builder",
  "environmental",
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex-literal 0.4.1",
  "impl-trait-for-tuples",
  "lazy_static",
  "log",
- "pallet-message-queue",
  "parity-scale-codec",
  "polkadot-parachain",
- "rand 0.8.5",
  "sc-client-api",
  "scale-info",
  "sp-core",
@@ -2826,7 +2874,6 @@ dependencies = [
 name = "cumulus-pallet-xcmp-queue"
 version = "0.1.0"
 dependencies = [
- "bounded-collections",
  "cumulus-pallet-parachain-system",
  "cumulus-primitives-core",
  "frame-benchmarking",
@@ -2834,7 +2881,6 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-balances",
- "pallet-message-queue",
  "parity-scale-codec",
  "polkadot-runtime-common",
  "rand_chacha 0.3.1",
@@ -3111,7 +3157,6 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "pallet-balances",
  "pallet-glutton",
- "pallet-message-queue",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -4125,9 +4170,9 @@ dependencies = [
 
 [[package]]
 name = "form_urlencoded"
-version = "1.1.0"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9c384f161156f5260c24a097c56119f9be8c798586aecc13afbcbe7b7e26bf8"
+checksum = "a62bc1cf6f830c2ec14a513a9fb124d0a213a629668a4186f329db21fe045652"
 dependencies = [
  "percent-encoding",
 ]
@@ -4718,7 +4763,6 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-try-runtime",
  "pallet-glutton",
- "pallet-message-queue",
  "pallet-sudo",
  "parachain-info",
  "parachains-common",
@@ -5066,9 +5110,9 @@ dependencies = [
 
 [[package]]
 name = "idna"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e14ddfc70884202db2244c223200c204c2bda1bc6e0998d11b5e024d657209e6"
+checksum = "7d20d6b07bfbc108882d88ed8e37d39636dcc260e15e30c45e6ba089610b917c"
 dependencies = [
  "unicode-bidi",
  "unicode-normalization",
@@ -8863,6 +8907,7 @@ name = "parachain-template-runtime"
 version = "0.1.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
@@ -8883,7 +8928,6 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
- "pallet-message-queue",
  "pallet-parachain-template",
  "pallet-session",
  "pallet-sudo",
@@ -8892,7 +8936,6 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-xcm",
  "parachain-info",
- "parachains-common",
  "parity-scale-codec",
  "polkadot-parachain",
  "polkadot-runtime-common",
@@ -8919,7 +8962,6 @@ dependencies = [
 name = "parachains-common"
 version = "1.0.0"
 dependencies = [
- "cumulus-primitives-core",
  "cumulus-primitives-utility",
  "frame-support",
  "frame-system",
@@ -8936,7 +8978,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "sp-weights",
  "substrate-wasm-builder",
  "xcm",
  "xcm-builder",
@@ -8948,6 +8989,7 @@ name = "parachains-runtimes-test-utils"
 version = "1.0.0"
 dependencies = [
  "assets-common",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
@@ -9176,6 +9218,7 @@ name = "penpal-runtime"
 version = "0.9.27"
 dependencies = [
  "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
@@ -9198,7 +9241,6 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
- "pallet-message-queue",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -9232,9 +9274,9 @@ dependencies = [
 
 [[package]]
 name = "percent-encoding"
-version = "2.2.0"
+version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "478c572c3d73181ff3c2539045f6eb99e5491218eae919370993b890cdbdd98e"
+checksum = "9b2a4787296e9989611394c33f193f676704af1686e70b8f8033ab5ba9a35a94"
 
 [[package]]
 name = "pest"
@@ -11527,6 +11569,7 @@ name = "rococo-parachain-runtime"
 version = "0.1.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
@@ -11542,7 +11585,6 @@ dependencies = [
  "pallet-assets",
  "pallet-aura",
  "pallet-balances",
- "pallet-message-queue",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -15395,9 +15437,9 @@ dependencies = [
 
 [[package]]
 name = "unicode-bidi"
-version = "0.3.7"
+version = "0.3.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a01404663e3db436ed2746d9fefef640d868edae3cceb81c3b8d5732fda678f"
+checksum = "92888ba5573ff080736b3648696b70cafad7d250551175acbaa4e0385b3e1460"
 
 [[package]]
 name = "unicode-ident"
@@ -15407,9 +15449,9 @@ checksum = "d22af068fba1eb5edcb4aea19d382b2a3deb4c8f9d475c589b6ada9e0fd493ee"
 
 [[package]]
 name = "unicode-normalization"
-version = "0.1.19"
+version = "0.1.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d54590932941a9e9266f0832deed84ebe1bf2e4c9e4a3554d393d18f5e854bf9"
+checksum = "5c5713f0fc4b5db668a2ac63cdb7bb4469d8c9fed047b1d0292cc7b0ce2ba921"
 dependencies = [
  "tinyvec",
 ]
@@ -15456,12 +15498,12 @@ checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
 
 [[package]]
 name = "url"
-version = "2.3.1"
+version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d68c799ae75762b8c3fe375feb6600ef5602c883c5d21eb51c09f22b83c4643"
+checksum = "50bff7831e19200a85b17131d085c25d7811bc4e186efdaf54bbd132994a88cb"
 dependencies = [
  "form_urlencoded",
- "idna 0.3.0",
+ "idna 0.4.0",
  "percent-encoding",
 ]
 
@@ -16780,6 +16822,7 @@ name = "xcm-emulator"
 version = "0.1.0"
 dependencies = [
  "casey",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
