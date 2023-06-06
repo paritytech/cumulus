@@ -32,8 +32,8 @@ use jsonrpsee::{
 	ws_client::WsClientBuilder,
 };
 use lru::LruCache;
-use polkadot_service::generic::SignedBlock;
 use sc_rpc_api::chain::ChainApiClient;
+use sp_runtime::generic::SignedBlock;
 use std::{num::NonZeroUsize, sync::Arc};
 use tokio::sync::mpsc::{
 	channel as tokio_channel, Receiver as TokioReceiver, Sender as TokioSender,

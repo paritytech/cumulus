@@ -35,7 +35,7 @@ use cumulus_primitives_core::relay_chain::{
 };
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 
-use polkadot_service::generic::SignedBlock;
+use sp_runtime::generic::SignedBlock;
 
 use sc_rpc_api::chain::ChainApiClient;
 use sc_service::SpawnTaskHandle;
