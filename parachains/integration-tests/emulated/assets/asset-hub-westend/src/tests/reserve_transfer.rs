@@ -44,8 +44,14 @@ fn reserve_transfer_native_asset_from_relay_to_assets() {
 	AssetHubWestend::execute_with(|| {
 		type RuntimeEvent = <AssetHubWestend as Para>::RuntimeEvent;
 
-		// TODO: This used to emit an event at the DmpQueue pallet which is not gone.. does it have a replacement?
-		assert_expected_events!(AssetHubWestend, vec![]);
+		assert_expected_events!(
+			AssetHubWestend,
+			vec![
+				RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed {
+					..
+				}) => {},
+			]
+		);
 	});
 
 	// Check if balances are updated accordingly in Relay Chain and Assets Parachain
