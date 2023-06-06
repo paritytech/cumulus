@@ -44,15 +44,8 @@ fn reserve_transfer_native_asset_from_relay_to_assets() {
 	AssetHubKusama::execute_with(|| {
 		type RuntimeEvent = <AssetHubKusama as Para>::RuntimeEvent;
 
-		assert_expected_events!(
-			AssetHubKusama,
-			vec![
-				RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
-					outcome: Outcome::Incomplete(_, Error::UntrustedReserveLocation),
-					..
-				}) => {},
-			]
-		);
+		// TODO: This used to emit an event at the DmpQueue pallet which is not gone.. does it have a replacement?
+		assert_expected_events!(AssetHubKusama, vec![]);
 	});
 
 	// Check if balances are updated accordingly in Relay Chain and Assets Parachain

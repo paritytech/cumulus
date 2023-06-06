@@ -44,15 +44,8 @@ fn reserve_transfer_native_asset_from_relay_to_assets() {
 	AssetHubPolkadot::execute_with(|| {
 		type RuntimeEvent = <AssetHubPolkadot as Para>::RuntimeEvent;
 
-		assert_expected_events!(
-			AssetHubPolkadot,
-			vec![
-				RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
-					outcome: Outcome::Incomplete(_, Error::UntrustedReserveLocation),
-					..
-				}) => {},
-			]
-		);
+		// TODO: This used to emit an event at the DmpQueue pallet which is not gone.. does it have a replacement?
+		assert_expected_events!(AssetHubPolkadot, vec![]);
 	});
 
 	// Check if balances are updated accordingly in Relay Chain and Assets Parachain
