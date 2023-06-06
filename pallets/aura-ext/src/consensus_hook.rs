@@ -55,8 +55,9 @@ where
 			.expect("slot info is inserted on block initialization");
 
 		// Convert relay chain timestamp.
-		let relay_chain_timestamp =
-			*relay_chain_slot * u64::from(RELAY_CHAIN_SLOT_DURATION) * MILLIS_PER_SECOND;
+		let relay_chain_timestamp = u64::from(RELAY_CHAIN_SLOT_DURATION)
+			.saturating_mul(*relay_chain_slot)
+			.saturating_mul(MILLIS_PER_SECOND);
 		let para_slot_duration = SlotDuration::from_millis(Aura::<T>::slot_duration().into());
 		let para_slot_from_relay =
 			Slot::from_timestamp(relay_chain_timestamp.into(), para_slot_duration);

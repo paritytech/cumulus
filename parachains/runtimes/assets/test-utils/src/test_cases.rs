@@ -87,10 +87,12 @@ pub fn teleports_for_native_asset_works<
 		.with_para_id(runtime_para_id.into())
 		.build()
 		.execute_with(|| {
-			const ALICE: [u8; 32] = [1u8; 32];
+			let mut alice = [0u8; 32];
+			alice[0] = 1;
+
 			let included_head = RuntimeHelper::<Runtime, AllPalletsWithoutSystem>::run_to_block(
 				2,
-				AccountId::from(ALICE),
+				AccountId::from(alice),
 			);
 			// check Balances before
 			assert_eq!(<pallet_balances::Pallet<Runtime>>::free_balance(&target_account), 0.into());
@@ -175,6 +177,7 @@ pub fn teleports_for_native_asset_works<
 					(native_asset_id, native_asset_to_teleport_away.into()),
 					None,
 					included_head.clone(),
+					&alice,
 				));
 				// check balances
 				assert_eq!(
@@ -220,7 +223,8 @@ pub fn teleports_for_native_asset_works<
 					dest_beneficiary,
 					(native_asset_id, native_asset_to_teleport_away.into()),
 					Some((runtime_para_id, other_para_id)),
-					included_head
+					included_head,
+					&alice,
 				));
 
 				// check balances
@@ -376,10 +380,12 @@ pub fn teleports_for_foreign_assets_works<
 		.with_tracing()
 		.build()
 		.execute_with(|| {
-			const ALICE: [u8; 32] = [1u8; 32];
+			let mut alice = [0u8; 32];
+			alice[0] = 1;
+
 			let included_head = RuntimeHelper::<Runtime, AllPalletsWithoutSystem>::run_to_block(
 				2,
-				AccountId::from(ALICE),
+				AccountId::from(alice),
 			);
 			// checks target_account before
 			assert_eq!(
@@ -532,7 +538,8 @@ pub fn teleports_for_foreign_assets_works<
 					dest_beneficiary,
 					(foreign_asset_id_multilocation, asset_to_teleport_away),
 					Some((runtime_para_id, foreign_para_id)),
-					included_head
+					included_head,
+					&alice,
 				));
 
 				// check balances

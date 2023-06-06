@@ -15,8 +15,10 @@
 
 use sp_std::marker::PhantomData;
 
-use codec::DecodeLimit;
-use cumulus_primitives_core::{AbridgedHrmpChannel, ParaId, PersistedValidationData};
+use codec::{Decode, DecodeLimit};
+use cumulus_primitives_core::{
+	relay_chain::Slot, AbridgedHrmpChannel, ParaId, PersistedValidationData,
+};
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use frame_support::{
@@ -25,11 +27,11 @@ use frame_support::{
 	traits::{GenesisBuild, OnFinalize, OnInitialize, OriginTrait},
 	weights::Weight,
 };
-use parachains_common::AccountId;
+use parachains_common::{AccountId, SLOT_DURATION};
 use polkadot_parachain::primitives::{
 	HeadData, HrmpChannelId, RelayChainBlockNumber, XcmpMessageFormat,
 };
-use sp_consensus_aura::AURA_ENGINE_ID;
+use sp_consensus_aura::{SlotDuration, AURA_ENGINE_ID};
 use sp_core::Encode;
 use sp_runtime::{traits::Header, Digest, DigestItem};
 use xcm::{
@@ -289,6 +291,7 @@ impl<
 		(asset, amount): (MultiLocation, u128),
 		open_hrmp_channel: Option<(u32, u32)>,
 		included_head: <Runtime as frame_system::Config>::Header,
+		slot_digest: &[u8],
 	) -> DispatchResult
 	where
 		HrmpChannelOpener: frame_support::inherent::ProvideInherent<
@@ -301,6 +304,7 @@ impl<
 				source_para_id.into(),
 				target_para_id.into(),
 				included_head,
+				slot_digest,
 			);
 		}
 
@@ -426,7 +430,14 @@ pub fn assert_total<Fungibles, AccountId>(
 	assert_eq!(Fungibles::active_issuance(asset_id.into()), expected_active_issuance.into());
 }
 
-/// Helper function which emulates opening HRMP channel which is needed for `XcmpQueue` to pass
+/// Helper function which emulates opening HRMP channel which is needed for `XcmpQueue` to pass.
+///
+/// Calls parachain-system's `create_inherent` in case the channel hasn't been opened before, and
+/// thus requires additional parameters for validating it: latest included parachain head and parachain
+/// AuRa-slot.
+///
+/// AuRa consensus hook expects pallets to be initialized, before calling this function make sure to `run_to_block`
+/// at least once.
 pub fn mock_open_hrmp_channel<
 	C: cumulus_pallet_parachain_system::Config,
 	T: ProvideInherent<Call = cumulus_pallet_parachain_system::Call<C>>,
@@ -434,12 +445,20 @@ pub fn mock_open_hrmp_channel<
 	sender: ParaId,
 	recipient: ParaId,
 	included_head: C::Header,
+	mut slot_digest: &[u8],
 ) {
+	const RELAY_CHAIN_SLOT_DURATION: SlotDuration = SlotDuration::from_millis(6000);
+	let slot = Slot::decode(&mut slot_digest).expect("failed to decode digest");
+	// Convert para slot to relay chain.
+	let timestamp = slot.saturating_mul(SLOT_DURATION);
+	let relay_slot = Slot::from_timestamp(timestamp.into(), RELAY_CHAIN_SLOT_DURATION);
+
 	let n = 1_u32;
 	let mut sproof_builder = RelayStateSproofBuilder {
 		para_id: sender,
 		included_para_head: Some(HeadData(included_head.encode())),
 		hrmp_egress_channel_index: Some(vec![recipient]),
+		current_slot: relay_slot,
 		..Default::default()
 	};
 	sproof_builder.hrmp_channels.insert(

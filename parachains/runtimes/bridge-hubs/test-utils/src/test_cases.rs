@@ -332,10 +332,12 @@ pub fn message_dispatch_routing_works<
 		.with_tracing()
 		.build()
 		.execute_with(|| {
-			const ALICE: [u8; 32] = [1u8; 32];
+			let mut alice = [0u8; 32];
+			alice[0] = 1;
+
 			let included_head = RuntimeHelper::<Runtime, AllPalletsWithoutSystem>::run_to_block(
 				2,
-				AccountId::from(ALICE),
+				AccountId::from(alice),
 			);
 			// 1. this message is sent from other global consensus with destination of this Runtime relay chain (UMP)
 			let bridging_message =
@@ -378,7 +380,7 @@ pub fn message_dispatch_routing_works<
 						   .count(), 0);
 
 			// 2.1. WITH hrmp channel -> Ok
-			mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(runtime_para_id.into(), sibling_parachain_id.into(), included_head);
+			mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(runtime_para_id.into(), sibling_parachain_id.into(), included_head, &alice);
 			let result = <<Runtime as pallet_bridge_messages::Config<MessagesPalletInstance>>::MessageDispatch>::dispatch(
 				DispatchMessage {
 					key: MessageKey { lane_id: expected_lane_id, nonce: 1 },
@@ -451,15 +453,18 @@ pub fn relayed_incoming_message_works<Runtime, AllPalletsWithoutSystem, XcmConfi
 		.with_tracing()
 		.build()
 		.execute_with(|| {
-			const ALICE: [u8; 32] = [1u8; 32];
+			let mut alice = [0u8; 32];
+			alice[0] = 1;
+
 			let included_head = RuntimeHelper::<Runtime, AllPalletsWithoutSystem>::run_to_block(
 				2,
-				AccountId::from(ALICE),
+				AccountId::from(alice),
 			);
 			mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(
 				runtime_para_id.into(),
 				sibling_parachain_id.into(),
 				included_head,
+				&alice,
 			);
 
 			// start with bridged chain block#0
@@ -666,10 +671,12 @@ pub fn complex_relay_extrinsic_works<Runtime, AllPalletsWithoutSystem, XcmConfig
 		.with_tracing()
 		.build()
 		.execute_with(|| {
-			const ALICE: [u8; 32] = [1u8; 32];
+			let mut alice = [0u8; 32];
+			alice[0] = 1;
+
 			let included_head = RuntimeHelper::<Runtime, AllPalletsWithoutSystem>::run_to_block(
 				2,
-				AccountId::from(ALICE),
+				AccountId::from(alice),
 			);
 			let zero: <Runtime as frame_system::Config>::BlockNumber = 0u32.into();
 			let genesis_hash = frame_system::Pallet::<Runtime>::block_hash(zero);
@@ -682,6 +689,7 @@ pub fn complex_relay_extrinsic_works<Runtime, AllPalletsWithoutSystem, XcmConfig
 				runtime_para_id.into(),
 				sibling_parachain_id.into(),
 				included_head,
+				&alice,
 			);
 
 			// start with bridged chain block#0
