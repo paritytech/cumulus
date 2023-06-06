@@ -76,8 +76,8 @@ pub const KUSAMA_CHAIN_ID: ChainId = *b"ksma";
 /// Westend chain id.
 pub const WESTEND_CHAIN_ID: ChainId = *b"wend";
 
-/// Westend chain id.
-pub const WESTMINT_CHAIN_ID: ChainId = *b"wmnt";
+/// AssetHubWestend chain id.
+pub const ASSET_HUB_WESTEND_CHAIN_ID: ChainId = *b"ahwe";
 
 /// Rococo chain id.
 pub const ROCOCO_CHAIN_ID: ChainId = *b"roco";
@@ -373,8 +373,19 @@ pub trait OperatingMode: Send + Copy + Debug + FullCodec {
 }
 
 /// Basic operating modes for a bridges module (Normal/Halted).
-#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+#[derive(
+	Encode,
+	Decode,
+	Clone,
+	Copy,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
+	serde::Serialize,
+	serde::Deserialize,
+)]
 pub enum BasicOperatingMode {
 	/// Normal mode, when all operations are allowed.
 	Normal,
