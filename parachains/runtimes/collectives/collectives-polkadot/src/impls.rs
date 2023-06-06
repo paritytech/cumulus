@@ -59,7 +59,7 @@ where
 		let pallet_acc: AccountIdOf<T> = PalletAccount::get();
 		let treasury_acc: AccountIdOf<T> = TreasuryAccount::get();
 
-		<pallet_balances::Pallet<T>>::resolve_creating(&pallet_acc.clone(), amount);
+		<pallet_balances::Pallet<T>>::resolve_creating(&pallet_acc, amount);
 
 		let result = <pallet_xcm::Pallet<T>>::teleport_assets(
 			<<T as frame_system::Config>::RuntimeOrigin>::signed(pallet_acc.into()),
@@ -73,10 +73,9 @@ where
 			0,
 		);
 
-		match result {
-			Err(err) => log::warn!("Failed to teleport slashed assets: {:?}", err),
-			_ => (),
-		};
+		if let Err(err) = result {
+			log::warn!("Failed to teleport slashed assets: {:?}", err);
+		}
 	}
 }
 
@@ -144,6 +143,26 @@ impl PrivilegeCmp<OriginCaller> for EqualOrGreatestRootCmp {
 			// Root is greater than anything.
 			(OriginCaller::system(frame_system::RawOrigin::Root), _) => Some(Ordering::Greater),
 			_ => None,
+		}
+	}
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub mod benchmarks {
+	use super::*;
+	use frame_support::traits::fungible;
+	use pallet_ranked_collective::Rank;
+	use parachains_common::{AccountId, Balance};
+	use sp_runtime::traits::Convert;
+
+	/// Rank to salary conversion helper type.`
+	pub struct RankToSalary<Fungible>(PhantomData<Fungible>);
+	impl<Fungible> Convert<Rank, Balance> for RankToSalary<Fungible>
+	where
+		Fungible: fungible::Inspect<AccountId, Balance = Balance>,
+	{
+		fn convert(r: Rank) -> Balance {
+			Balance::from(r).saturating_mul(Fungible::minimum_balance())
 		}
 	}
 }

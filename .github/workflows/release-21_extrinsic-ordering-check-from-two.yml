@@ -28,21 +28,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runtime: statemine
-            local: statemine-local
+          - runtime: asset-hub-kusama
+            local: asset-hub-kusama-local
+            relay: kusama-local
+          - runtime: asset-hub-polkadot
+            local: asset-hub-polkadot-local
             relay: polkadot-local
-          - runtime: statemint
-            local: statemint-local
-            relay: polkadot-local
-          - runtime: westmint
-            local: westmint-local
+          - runtime: asset-hub-westend
+            local: asset-hub-westend-local
             relay: polkadot-local
           - runtime: contracts-rococo
             local: contracts-rococo-local
             relay: polkadot-local
 
     steps:
-      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
 
       - name: Create tmp dir
         run: |
@@ -108,7 +108,7 @@ jobs:
           cat output.txt
 
       - name: Save output as artifact
-        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: ${{ matrix.runtime }}
           path: |

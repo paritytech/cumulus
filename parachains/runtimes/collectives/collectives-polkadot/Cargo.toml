@@ -7,9 +7,9 @@ description = "Polkadot Collectives Parachain Runtime"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
-hex-literal = { version = "0.3.4", optional = true }
-log = { version = "0.4.17", default-features = false }
-scale-info = { version = "2.4.0", default-features = false, features = ["derive"] }
+hex-literal = { version = "0.4.1" }
+log = { version = "0.4.18", default-features = false }
+scale-info = { version = "2.7.0", default-features = false, features = ["derive"] }
 smallvec = "1.10.0"
 
 # Substrate
@@ -36,6 +36,8 @@ pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/parityt
 pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-referenda = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-ranked-collective = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-core-fellowship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-salary = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-arithmetic = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -73,16 +75,15 @@ pallet-collator-selection = { path = "../../../../pallets/collator-selection", d
 parachain-info = { path = "../../../pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
 
-[dev-dependencies]
-hex-literal = "0.3.4"
-
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
+
+[dev-dependencies]
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 [features]
 default = [ "std" ]
 runtime-benchmarks = [
-	"hex-literal",
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
@@ -104,6 +105,8 @@ runtime-benchmarks = [
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-referenda/runtime-benchmarks",
 	"pallet-ranked-collective/runtime-benchmarks",
+	"pallet-core-fellowship/runtime-benchmarks",
+	"pallet-salary/runtime-benchmarks",
 ]
 try-runtime = [
 	"cumulus-pallet-aura-ext/try-runtime",
@@ -132,6 +135,8 @@ try-runtime = [
 	"pallet-preimage/try-runtime",
 	"pallet-referenda/try-runtime",
 	"pallet-ranked-collective/try-runtime",
+	"pallet-core-fellowship/try-runtime",
+	"pallet-salary/try-runtime",
 ]
 std = [
 	"codec/std",
@@ -188,4 +193,6 @@ std = [
 	"pallet-referenda/std",
 	"pallet-ranked-collective/std",
 	"substrate-wasm-builder",
+	"pallet-core-fellowship/std",
+	"pallet-salary/std",
 ]

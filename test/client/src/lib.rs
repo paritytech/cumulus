@@ -22,11 +22,11 @@ use runtime::{
 	Balance, Block, BlockHashCount, GenesisConfig, Runtime, RuntimeCall, Signature, SignedExtra,
 	SignedPayload, UncheckedExtrinsic, VERSION,
 };
-use sc_executor::{WasmExecutionMethod, WasmExecutor};
+use sc_executor::{HeapAllocStrategy, WasmExecutionMethod, WasmExecutor};
 use sc_executor_common::runtime_blob::RuntimeBlob;
 use sc_service::client;
 use sp_blockchain::HeaderBackend;
-use sp_core::storage::Storage;
+use sp_core::{sr25519, storage::Storage, Pair};
 use sp_io::TestExternalities;
 use sp_runtime::{generic::Era, BuildStorage, SaturatedConversion};
 
@@ -77,11 +77,22 @@ pub type Client = client::Client<Backend, Executor, Block, runtime::RuntimeApi>;
 
 /// Parameters of test-client builder with test-runtime.
 #[derive(Default)]
-pub struct GenesisParameters;
+pub struct GenesisParameters {
+	pub endowed_accounts: Vec<cumulus_test_runtime::AccountId>,
+}
 
 impl substrate_test_client::GenesisInit for GenesisParameters {
 	fn genesis_storage(&self) -> Storage {
-		genesis_config().build_storage().unwrap()
+		if self.endowed_accounts.is_empty() {
+			genesis_config().build_storage().unwrap()
+		} else {
+			cumulus_test_service::testnet_genesis(
+				cumulus_test_service::get_account_id_from_seed::<sr25519::Public>("Alice"),
+				self.endowed_accounts.clone(),
+			)
+			.build_storage()
+			.unwrap()
+		}
 	}
 }
 
@@ -115,19 +126,26 @@ impl DefaultTestClientBuilderExt for TestClientBuilder {
 }
 
 fn genesis_config() -> GenesisConfig {
-	cumulus_test_service::local_testnet_genesis()
+	cumulus_test_service::testnet_genesis_with_default_endowed(Default::default())
 }
 
-/// Generate an extrinsic from the provided function call, origin and [`Client`].
-pub fn generate_extrinsic(
+/// Create an unsigned extrinsic from a runtime call.
+pub fn generate_unsigned(function: impl Into<RuntimeCall>) -> UncheckedExtrinsic {
+	UncheckedExtrinsic::new_unsigned(function.into())
+}
+
+/// Create a signed extrinsic from a runtime call and sign
+/// with the given key pair.
+pub fn generate_extrinsic_with_pair(
 	client: &Client,
-	origin: sp_keyring::AccountKeyring,
+	origin: sp_core::sr25519::Pair,
 	function: impl Into<RuntimeCall>,
+	nonce: Option<u32>,
 ) -> UncheckedExtrinsic {
 	let current_block_hash = client.info().best_hash;
 	let current_block = client.info().best_number.saturated_into();
 	let genesis_block = client.hash(0).unwrap().unwrap();
-	let nonce = 0;
+	let nonce = nonce.unwrap_or_default();
 	let period =
 		BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
 	let tip = 0;
@@ -158,6 +176,15 @@ pub fn generate_extrinsic(
 	)
 }
 
+/// Generate an extrinsic from the provided function call, origin and [`Client`].
+pub fn generate_extrinsic(
+	client: &Client,
+	origin: sp_keyring::AccountKeyring,
+	function: impl Into<RuntimeCall>,
+) -> UncheckedExtrinsic {
+	generate_extrinsic_with_pair(client, origin.into(), function, None)
+}
+
 /// Transfer some token from one account to another using a provided test [`Client`].
 pub fn transfer(
 	client: &Client,
@@ -181,13 +208,14 @@ pub fn validate_block(
 	let mut ext = TestExternalities::default();
 	let mut ext_ext = ext.ext();
 
-	let executor = WasmExecutor::<sp_io::SubstrateHostFunctions>::new(
-		WasmExecutionMethod::Interpreted,
-		Some(1024),
-		1,
-		None,
-		2,
-	);
+	let heap_pages = HeapAllocStrategy::Static { extra_pages: 1024 };
+	let executor = WasmExecutor::<sp_io::SubstrateHostFunctions>::builder()
+		.with_execution_method(WasmExecutionMethod::default())
+		.with_max_runtime_instances(1)
+		.with_runtime_cache_size(2)
+		.with_onchain_heap_alloc_strategy(heap_pages)
+		.with_offchain_heap_alloc_strategy(heap_pages)
+		.build();
 
 	executor
 		.uncached_call(
@@ -198,5 +226,4 @@ pub fn validate_block(
 			&validation_params.encode(),
 		)
 		.map(|v| ValidationResult::decode(&mut &v[..]).expect("Decode `ValidationResult`."))
-		.map_err(|err| err.into())
 }

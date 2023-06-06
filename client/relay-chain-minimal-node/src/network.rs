@@ -24,14 +24,17 @@ use sc_network::{
 	NetworkService,
 };
 
+use sc_network::config::FullNetworkConfiguration;
 use sc_network_common::{role::Roles, sync::message::BlockAnnouncesHandshake};
 use sc_service::{error::Error, Configuration, NetworkStarter, SpawnTaskHandle};
+use sc_utils::mpsc::tracing_unbounded;
 
 use std::{iter, sync::Arc};
 
 /// Build the network service, the network status sinks and an RPC sender.
 pub(crate) fn build_collator_network(
 	config: &Configuration,
+	network_config: FullNetworkConfiguration,
 	spawn_handle: SpawnTaskHandle,
 	genesis_hash: Hash,
 	best_header: Header,
@@ -49,6 +52,8 @@ pub(crate) fn build_collator_network(
 		genesis_hash,
 	);
 
+	// RX is not used for anything because syncing is not started for the minimal node
+	let (tx, _rx) = tracing_unbounded("mpsc_syncing_engine_protocol", 100_000);
 	let network_params = sc_network::config::Params::<Block> {
 		role: config.role.clone(),
 		executor: {
@@ -58,12 +63,12 @@ pub(crate) fn build_collator_network(
 			})
 		},
 		fork_id: None,
-		network_config: config.network.clone(),
+		network_config,
 		genesis_hash,
 		protocol_id,
 		metrics_registry: config.prometheus_config.as_ref().map(|config| config.registry.clone()),
 		block_announce_config,
-		request_response_protocol_configs: Vec::new(),
+		tx,
 	};
 
 	let network_worker = sc_network::NetworkWorker::new(network_params)?;
