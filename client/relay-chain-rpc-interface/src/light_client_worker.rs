@@ -26,8 +26,8 @@ use jsonrpsee::core::{
 	},
 	Error,
 };
-use smoldot_light::{ChainId, Client as SmoldotClient, ClientConfig, JsonRpcResponses};
-use std::sync::Arc;
+use smoldot_light::{ChainId, Client as SmoldotClient, JsonRpcResponses};
+use std::{num::NonZeroU32, sync::Arc};
 use tokio::sync::mpsc::{channel as tokio_channel, Receiver, Sender as TokioSender};
 
 use cumulus_primitives_core::relay_chain::{
@@ -54,7 +54,7 @@ enum LightClientError {
 
 /// Sending adapter allowing JsonRpsee to send messages to smoldot
 struct SimpleStringSender {
-	inner: smoldot_light::Client<TokioPlatform, ()>,
+	inner: SmoldotClient<TokioPlatform, ()>,
 	chain_id: ChainId,
 }
 
@@ -92,21 +92,17 @@ pub async fn build_smoldot_client(
 	spawner: SpawnTaskHandle,
 	chain_spec: &str,
 ) -> RelayChainResult<(SmoldotClient<TokioPlatform, ()>, ChainId, JsonRpcResponses)> {
-	let config = ClientConfig {
-		tasks_spawner: Box::new(move |_, task| {
-			spawner.spawn("cumulus-relay-chain-light-client-task", None, task);
-		}),
-		system_name: "cumulus-relay-chain-light-client".to_string(),
-		system_version: env!("CARGO_PKG_VERSION").to_string(),
-	};
-
-	let mut client: SmoldotClient<TokioPlatform, ()> = SmoldotClient::new(config);
+	let platform = TokioPlatform::new(spawner);
+	let mut client: SmoldotClient<TokioPlatform, ()> = SmoldotClient::new(platform);
 
 	// Ask the client to connect to a chain.
 	let smoldot_light::AddChainSuccess { chain_id, json_rpc_responses } = client
 		.add_chain(smoldot_light::AddChainConfig {
 			specification: chain_spec,
-			disable_json_rpc: false,
+			json_rpc: smoldot_light::AddChainConfigJsonRpc::Enabled {
+				max_pending_requests: NonZeroU32::new(128).expect("128 > 0; qed"),
+				max_subscriptions: 64,
+			},
 			potential_relay_chains: core::iter::empty(),
 			database_content: "",
 			user_data: (),
