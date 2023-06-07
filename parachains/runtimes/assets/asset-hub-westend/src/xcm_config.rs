@@ -44,7 +44,7 @@ use xcm_builder::{
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
 #[cfg(feature = "runtime-benchmarks")]
-use {pallet_assets::BenchmarkHelper, sp_core::Get};
+use {cumulus_primitives_core::ParaId, pallet_assets::BenchmarkHelper, sp_core::Get};
 
 parameter_types! {
 	pub const WestendLocation: MultiLocation = MultiLocation::parent();
