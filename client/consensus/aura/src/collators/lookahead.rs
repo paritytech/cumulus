@@ -120,6 +120,14 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 	P::Public: AppPublic + Hash + Member + Encode + Decode,
 	P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
 {
+	// This is an arbitrary value which is likely guaranteed to exceed any reasonable
+	// limit, as it would correspond to 10 non-included blocks.
+	//
+	// Since we only search for parent blocks which have already been included,
+	// we can guarantee that all imported blocks respect the unincluded segment
+	// rules specified by the parachain's runtime and thus will never be too deep.
+	const PARENT_SEARCH_DEPTH: usize = 10;
+
 	let mut params = params;
 
 	let mut import_notifications = match params.relay_client.import_notification_stream().await {
@@ -179,8 +187,8 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 		let parent_search_params = ParentSearchParams {
 			relay_parent,
 			para_id: params.para_id,
-			ancestry_lookback: unimplemented!(),
-			max_depth: unimplemented!(), // max unincluded segment len
+			ancestry_lookback: max_ancestry_lookback(relay_parent, &params.relay_client).await,
+			max_depth: PARENT_SEARCH_DEPTH,
 			ignore_alternative_branches: true,
 		};
 
@@ -281,7 +289,7 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 
 					// TODO [now]: announce to parachain sub-network
 
-					// TODO [link to github issue when i have internet]:
+					// TODO [https://github.com/paritytech/polkadot/issues/5056]:
 					// announce collation to relay-chain validators.
 				}
 				Err(err) => {
@@ -318,4 +326,18 @@ where
 	unimplemented!();
 
 	Some(SlotClaim::unchecked::<P>(author_pub, slot, timestamp))
+}
+
+async fn max_ancestry_lookback(
+	_relay_parent: PHash,
+	_relay_client: &impl RelayChainInterface,
+) -> usize {
+	// TODO [https://github.com/paritytech/polkadot/pull/5022]
+	// We need to read the relay-chain state to know what the maximum
+	// age truly is, but that depends on those pallets existing.
+	//
+	// For now, just provide the conservative value of '2'.
+	// Overestimating can cause problems, as we'd be building on forks of the
+	// chain that never get included. Underestimating is less of an issue.
+	2
 }
