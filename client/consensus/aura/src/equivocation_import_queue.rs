@@ -21,6 +21,7 @@
 /// should be thrown out and which ones should be kept.
 
 use codec::{Decode, Encode};
+use lru::LruCache;
 use cumulus_client_consensus_common::ParachainBlockImportMarker;
 
 use sc_consensus::{
@@ -36,12 +37,41 @@ use sp_consensus_aura::{AuraApi, Slot, SlotDuration};
 use sp_core::crypto::Pair;
 use sp_inherents::{CreateInherentDataProviders, InherentDataProvider};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
-use std::{fmt::Debug, sync::Arc};
+use std::{fmt::Debug, num::NonZeroUsize, sync::Arc};
+
+const LRU_WINDOW: usize = 256;
+const EQUIVOCATION_LIMIT: usize = 16;
+
+struct NaiveEquivocationDefender {
+	cache: LruCache<u64, usize>,
+}
+
+impl Default for NaiveEquivocationDefender {
+	fn default() -> Self {
+		NaiveEquivocationDefender {
+			cache: LruCache::new(NonZeroUsize::new(LRU_WINDOW).expect("window > 0; qed")),
+		}
+	}
+}
+
+impl NaiveEquivocationDefender {
+	// return `true` if equivocation is beyond the limit.
+	fn insert_and_check(&mut self, slot: Slot) -> bool {
+		let val = self.cache.get_or_insert_mut(*slot, || 0);
+		if *val == EQUIVOCATION_LIMIT {
+			true
+		} else {
+			*val += 1;
+			false
+		}
+	}
+}
 
 struct Verifier<P, Client, Block, CIDP> {
 	client: Arc<Client>,
 	create_inherent_data_providers: CIDP,
 	slot_duration: SlotDuration,
+	defender: NaiveEquivocationDefender,
 	telemetry: Option<TelemetryHandle>,
 	_marker: std::marker::PhantomData<(Block, P)>,
 }
@@ -88,7 +118,7 @@ where
 			);
 
 			match res {
-				Ok((pre_header, _slot, seal_digest)) => {
+				Ok((pre_header, slot, seal_digest)) => {
 					telemetry!(
 						self.telemetry;
 						CONSENSUS_TRACE;
@@ -100,6 +130,14 @@ where
 					block_params.post_digests.push(seal_digest);
 					block_params.fork_choice = Some(ForkChoiceStrategy::LongestChain);
 					block_params.post_hash = Some(post_hash);
+
+					// Check for and reject egregious amounts of equivocations.
+					if self.defender.insert_and_check(slot) {
+						return Err(format!(
+							"Rejecting block {:?} due to excessive equivocations at slot",
+							post_hash,
+						));
+					}
 				},
 				Err(aura_internal::SealVerificationError::Deferred(hdr, slot)) => {
 					telemetry!(
@@ -207,6 +245,7 @@ where
 	let verifier = Verifier::<P, _, _, _> {
 		client,
 		create_inherent_data_providers,
+		defender: NaiveEquivocationDefender::default(),
 		slot_duration,
 		telemetry,
 		_marker: std::marker::PhantomData,

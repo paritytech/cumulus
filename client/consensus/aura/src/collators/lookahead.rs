@@ -112,7 +112,7 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 	// This is an arbitrary value which is likely guaranteed to exceed any reasonable
 	// limit, as it would correspond to 10 non-included blocks.
 	//
-	// Since we only search for parent blocks which have already been included,
+	// Since we only search for parent blocks which have already been imported,
 	// we can guarantee that all imported blocks respect the unincluded segment
 	// rules specified by the parachain's runtime and thus will never be too deep.
 	const PARENT_SEARCH_DEPTH: usize = 10;
@@ -344,6 +344,6 @@ async fn max_ancestry_lookback(
 	//
 	// For now, just provide the conservative value of '2'.
 	// Overestimating can cause problems, as we'd be building on forks of the
-	// chain that never get included. Underestimating is less of an issue.
+	// chain that can never get included. Underestimating is less of an issue.
 	2
 }

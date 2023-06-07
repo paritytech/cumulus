@@ -2227,6 +2227,7 @@ dependencies = [
  "cumulus-primitives-parachain-inherent",
  "cumulus-relay-chain-interface",
  "futures",
+ "lru 0.10.0",
  "parity-scale-codec",
  "polkadot-node-primitives",
  "polkadot-overseer",
