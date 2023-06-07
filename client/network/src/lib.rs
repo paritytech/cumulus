@@ -461,3 +461,51 @@ async fn wait_to_announce<Block: BlockT>(
 		);
 	}
 }
+
+/// A [`BlockAnnounceValidator`] which accepts all block announcements, as it assumes
+/// sybil resistance is handled elsewhere.
+#[derive(Debug, Clone)]
+pub struct AssumeSybilResistance(bool);
+
+impl AssumeSybilResistance {
+	/// Instantiate this block announcement validator while permissively allowing (but ignoring)
+	/// announcements which come tagged with seconded messages.
+	///
+	/// This is useful for backwards compatibility when upgrading nodes: old nodes will continue
+	/// to broadcast announcements with seconded messages, so these announcements shouldn't be ignored
+	/// and the peers not punished.
+	pub fn allow_seconded_messages() -> Self {
+		AssumeSybilResistance(true)
+	}
+
+	/// Instantiate this block announcement validator while rejecting announcements that come with
+	/// data.
+	pub fn reject_seconded_messages() -> Self {
+		AssumeSybilResistance(false)
+	}
+}
+
+impl<Block: BlockT> BlockAnnounceValidatorT<Block> for AssumeSybilResistance {
+	fn validate(
+		&mut self,
+		_header: &Block::Header,
+		data: &[u8],
+	) -> Pin<Box<dyn Future<Output = Result<Validation, BoxedError>> + Send>> {
+		let allow_seconded_messages = self.0;
+		let data = data.to_vec();
+
+		async move {
+			Ok(if data.is_empty() {
+				Validation::Success { is_new_best: false }
+			} else if !allow_seconded_messages {
+				Validation::Failure { disconnect: false }
+			} else {
+				match BlockAnnounceData::decode_all(&mut data.as_slice()) {
+					Ok(_) => Validation::Success { is_new_best: false },
+					Err(_) => Validation::Failure { disconnect: true },
+				}
+			})
+		}
+		.boxed()
+	}
+}
