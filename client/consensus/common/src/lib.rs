@@ -208,11 +208,9 @@ pub struct PotentialParent<B: BlockT> {
 	pub header: B::Header,
 	/// The depth of the block.
 	pub depth: usize,
-	/// Whether the block descends from the block pending availability.
-	///
-	/// This is false for the last included block as well as the block pending availability itself.
-	// TODO [now]: change this to be true for the pending blocks themselves.
-	pub descends_from_pending: bool,
+	/// Whether the block is the included block, is itself pending on-chain, or descends
+	/// from the block pending availability.
+	pub aligned_with_pending: bool,
 }
 
 /// Perform a recursive search through blocks to find potential
@@ -295,7 +293,7 @@ pub async fn find_potential_parents<B: BlockT>(
 		hash: included_hash,
 		header: included_header,
 		depth: 0,
-		descends_from_pending: false,
+		aligned_with_pending: true,
 	}];
 
 	// Recursive search through descendants of the included block which have acceptable
@@ -317,7 +315,7 @@ pub async fn find_potential_parents<B: BlockT>(
 					.map_or(false, is_root_in_ancestry)
 		};
 
-		let descends_from_pending = entry.descends_from_pending;
+		let parent_aligned_with_pending = entry.aligned_with_pending;
 		let child_depth = entry.depth + 1;
 		let hash = entry.hash;
 
@@ -331,9 +329,13 @@ pub async fn find_potential_parents<B: BlockT>(
 
 		// push children onto search frontier.
 		for child in client.children(hash).ok().into_iter().flat_map(|c| c) {
-			if params.ignore_alternative_branches &&
-				is_included && pending_hash.map_or(false, |h| child != h)
-			{
+			let aligned_with_pending = parent_aligned_with_pending && if child_depth == 1 {
+				pending_hash.as_ref().map_or(true, |h| &child == h)
+			} else {
+				true
+			};
+
+			if params.ignore_alternative_branches && !aligned_with_pending {
 				continue
 			}
 
@@ -347,7 +349,7 @@ pub async fn find_potential_parents<B: BlockT>(
 				hash: child,
 				header,
 				depth: child_depth,
-				descends_from_pending: is_pending || descends_from_pending,
+				aligned_with_pending,
 			});
 		}
 	}

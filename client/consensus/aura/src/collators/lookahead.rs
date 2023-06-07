@@ -148,9 +148,6 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 	while let Some(relay_parent_header) = import_notifications.next().await {
 		let relay_parent = relay_parent_header.hash();
 
-		// TODO [now]: get asynchronous backing parameters from the relay-chain
-		// runtime. why? for the parent search parameters.
-
 		let max_pov_size = match params
 			.relay_client
 			.persisted_validation_data(
@@ -287,10 +284,9 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 					parent_hash = new_block_hash;
 					parent_header = block_data.into_header();
 
-					// TODO [now]: we should be able to directly announce, as long as
-					// we have full nodes do some equivocation checks locally.
-					// The equivocation checks should allow up to `v + 1` equivocations.
-					let _sender = collator.collator_service().announce_with_barrier(new_block_hash);
+					// Here we are assuming that the import logic protects against equivocations
+					// and provides sybil-resistance, as it should.
+					collator.collator_service().announce_block(new_block_hash, None);
 
 					// TODO [https://github.com/paritytech/polkadot/issues/5056]:
 					// announce collation to relay-chain validators.
@@ -339,7 +335,7 @@ async fn max_ancestry_lookback(
 	_relay_parent: PHash,
 	_relay_client: &impl RelayChainInterface,
 ) -> usize {
-	// TODO [https://github.com/paritytech/polkadot/pull/5022]
+	// TODO [https://github.com/paritytech/cumulus/issues/2706]
 	// We need to read the relay-chain state to know what the maximum
 	// age truly is, but that depends on those pallets existing.
 	//
