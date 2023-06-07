@@ -287,7 +287,9 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 					parent_hash = new_block_hash;
 					parent_header = block_data.into_header();
 
-					// TODO [now]: announce to parachain sub-network
+					// TODO [now]: we should be able to directly announce, as long as
+					// we have full nodes do some equivocation checks locally.
+					let _sender = params.collator_service.announce_with_barrier(new_block_hash);
 
 					// TODO [https://github.com/paritytech/polkadot/issues/5056]:
 					// announce collation to relay-chain validators.
