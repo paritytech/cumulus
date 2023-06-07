@@ -28,10 +28,33 @@ pub mod constants;
 mod weights;
 pub mod xcm_config;
 
+use crate::xcm_config::UniversalLocation;
+use codec::{Decode, Encode, MaxEncodedLen};
+use constants::{currency::*, fee::WeightToFee};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-use frame_support::traits::ConstU128;
-use frame_system::EnsureSignedBy;
-use parachains_common::impls::{LocalAndForeignAssets, MultiLocationConverter};
+use frame_support::{
+	construct_runtime,
+	dispatch::DispatchClass,
+	ord_parameter_types, parameter_types,
+	traits::{
+		tokens::nonfungibles_v2::Inspect, AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64,
+		ConstU8, InstanceFilter,
+	},
+	weights::{ConstantMultiplier, Weight},
+	BoundedVec, PalletId, RuntimeDebug,
+};
+use frame_system::{
+	limits::{BlockLength, BlockWeights},
+	EnsureRoot, EnsureSigned, EnsureSignedBy,
+};
+use pallet_nfts::PalletFeatures;
+pub use parachains_common as common;
+use parachains_common::{
+	impls::{AssetsToBlockAuthor, DealWithFees, LocalAndForeignAssets, MultiLocationConverter},
+	opaque, AccountId, AssetIdForTrustBackedAssets, AuraId, Balance, BlockNumber, Hash, Header,
+	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
+	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
+};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -47,32 +70,6 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use xcm::opaque::v3::MultiLocation;
-
-use codec::{Decode, Encode, MaxEncodedLen};
-use constants::{currency::*, fee::WeightToFee};
-use frame_support::{
-	construct_runtime,
-	dispatch::DispatchClass,
-	ord_parameter_types, parameter_types,
-	traits::{
-		tokens::nonfungibles_v2::Inspect, AsEnsureOriginWithArg, ConstU32, ConstU64, ConstU8,
-		InstanceFilter,
-	},
-	weights::{ConstantMultiplier, Weight},
-	BoundedVec, PalletId, RuntimeDebug,
-};
-use frame_system::{
-	limits::{BlockLength, BlockWeights},
-	EnsureRoot, EnsureSigned,
-};
-use pallet_nfts::PalletFeatures;
-pub use parachains_common as common;
-use parachains_common::{
-	impls::{AssetsToBlockAuthor, DealWithFees},
-	opaque, AccountId, AssetIdForTrustBackedAssets, AuraId, Balance, BlockNumber, Hash, Header,
-	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
-	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
-};
 use xcm_config::{
 	ForeignAssetsConvertedConcreteId, TrustBackedAssetsConvertedConcreteId, WestendLocation,
 	XcmConfig, XcmOriginToTransactDispatchOrigin,
@@ -317,15 +314,14 @@ impl pallet_asset_conversion::Config for Runtime {
 	type MaxSwapPathLength = ConstU32<MAX_SWAP_PATH_LEN>;
 
 	type MultiAssetId = Box<MultiLocation>;
-	type MultiAssetIdConverter = MultiLocationConverter<Balances, parachain_info::Pallet<Runtime>>;
+	type MultiAssetIdConverter = MultiLocationConverter<Balances, UniversalLocation>;
 
 	type MintMinLiquidity = ConstU128<100>;
 
 	type WeightInfo = ();
 
 	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper =
-		crate::xcm_config::BenchmarkMultiLocationConverter<parachain_info::Pallet<Runtime>>;
+	type BenchmarkHelper = crate::xcm_config::BenchmarkMultiLocationConverter<UniversalLocation>;
 }
 
 parameter_types! {

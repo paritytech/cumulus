@@ -16,7 +16,7 @@
 //! Auxiliary struct/enums for parachain runtimes.
 //! Taken from polkadot/runtime/common (at a21cd64) and adapted for parachains.
 use crate::impls::fungibles::Inspect;
-use cumulus_primitives_core::ParaId;
+use cumulus_primitives_core::{InteriorMultiLocation, ParaId};
 use frame_support::{
 	pallet_prelude::DispatchError,
 	traits::{
@@ -39,7 +39,7 @@ use xcm::{
 	opaque::lts::{
 		Junction,
 		Junction::Parachain,
-		Junctions::{Here, X1, X2, X3},
+		Junctions::{Here, X2, X3},
 	},
 };
 
@@ -171,31 +171,33 @@ where
 	}
 }
 
-pub struct MultiLocationConverter<Balances, SelfParaId: Get<ParaId>> {
-	_phantom: PhantomData<(Balances, SelfParaId)>,
+pub struct MultiLocationConverter<Balances, ParachainLocation: Get<InteriorMultiLocation>> {
+	_phantom: PhantomData<(Balances, ParachainLocation)>,
 }
 
-impl<Balances, SelfParaId> MultiAssetIdConverter<Box<MultiLocation>, MultiLocation>
-	for MultiLocationConverter<Balances, SelfParaId>
+impl<Balances, ParachainLocation> MultiAssetIdConverter<Box<MultiLocation>, MultiLocation>
+	for MultiLocationConverter<Balances, ParachainLocation>
 where
 	Balances: PalletInfoAccess,
-	SelfParaId: Get<ParaId>,
+	ParachainLocation: Get<InteriorMultiLocation>,
 {
 	fn get_native() -> Box<MultiLocation> {
 		Box::new(MultiLocation { parents: 0, interior: Here })
 	}
 
 	fn is_native(asset_id: &Box<MultiLocation>) -> bool {
-		if *asset_id == Self::get_native() {
+		let mut asset_id = asset_id.clone();
+		asset_id.simplify(&ParachainLocation::get());
+		if *asset_id == *Self::get_native() {
 			return true
 		}
-		if **asset_id ==
-			(MultiLocation {
-				parents: 1,
-				interior: X1(Parachain(SelfParaId::get().into())).into(),
-			}) {
-			return true
-		}
+		// if *asset_id ==
+		// 	(MultiLocation {
+		// 		parents: 1,
+		// 		interior: X1(Parachain(SelfParaId::get().into())).into(),
+		// 	}) {
+		// 	return true
+		// }
 
 		return false
 	}
