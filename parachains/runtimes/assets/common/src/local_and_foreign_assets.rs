@@ -43,40 +43,6 @@ fn is_local<TrustBackedAssetsPalletLocation: Get<MultiLocation>>(
 	multilocation: MultiLocation,
 ) -> Option<u32> {
 	AsPrefixedGeneralIndex::<TrustBackedAssetsPalletLocation, AssetIdForTrustBackedAssets, JustTry>::convert(&multilocation)
-	// StartsWith<> TrustBackedAssetsPalletLocation
-	// let context : Local::get();
-	// let mut multilocation = multilocation.clone();
-	// multilocation.simplify(&context);
-	// context.contains(multilocation)
-
-	// match multilocation {
-	// 	MultiLocation {
-	// 		parents: 1,
-	// 		interior:
-	// 			X3(
-	// 				Parachain(para_id),
-	// 				Junction::PalletInstance(pallet_index),
-	// 				Junction::GeneralIndex(asset_id),
-	// 			),
-	// 	} =>
-	// 		if ParaId::from(para_id) != SelfParaId::get() {
-	// 			None
-	// 		} else if pallet_index != <Assets as PalletInfoAccess>::index() as u8 {
-	// 			None
-	// 		} else {
-	// 			<u128 as TryInto<u32>>::try_into(asset_id).ok()
-	// 		},
-	// 	MultiLocation {
-	// 		parents: 0,
-	// 		interior: X2(Junction::PalletInstance(pallet_index), Junction::GeneralIndex(asset_id)),
-	// 	} =>
-	// 		if pallet_index != <Assets as PalletInfoAccess>::index() as u8 {
-	// 			None
-	// 		} else {
-	// 			<u128 as TryInto<u32>>::try_into(asset_id).ok()
-	// 		},
-	// 	_ => None,
-	// }
 }
 
 pub struct MultiLocationConverter<Balances, ParachainLocation: Get<InteriorMultiLocation>> {
@@ -96,26 +62,18 @@ where
 	fn is_native(asset_id: &Box<MultiLocation>) -> bool {
 		let mut asset_id = asset_id.clone();
 		asset_id.simplify(&ParachainLocation::get());
-		if *asset_id == *Self::get_native() {
-			return true
-		}
-		// if *asset_id ==
-		// 	(MultiLocation {
-		// 		parents: 1,
-		// 		interior: X1(Parachain(SelfParaId::get().into())).into(),
-		// 	}) {
-		// 	return true
-		// }
-
-		return false
+		*asset_id == *Self::get_native()
 	}
 
-	fn try_convert(asset: &Box<MultiLocation>) -> Result<MultiLocation, ()> {
-		if Self::is_native(asset) {
+	fn try_convert(asset_id: &Box<MultiLocation>) -> Result<MultiLocation, ()> {
+		let mut asset_id = asset_id.clone();
+		asset_id.simplify(&ParachainLocation::get());
+		if Self::is_native(&asset_id) {
 			// Otherwise it will try and touch the asset to create an account.
 			return Err(())
 		}
-		Ok(**asset)
+		// Return simplified MultiLocation:
+		Ok(*asset_id)
 	}
 
 	fn into_multiasset_id(asset: &MultiLocation) -> Box<MultiLocation> {
