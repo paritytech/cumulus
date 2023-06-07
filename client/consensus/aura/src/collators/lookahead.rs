@@ -76,10 +76,11 @@ use std::{convert::TryFrom, error::Error, fmt::Debug, hash::Hash, sync::Arc, tim
 use crate::collator as collator_util;
 
 /// Parameters for [`run`].
-pub struct Params<BI, CIDP, Client, RClient, SO, Proposer, CS> {
+pub struct Params<BI, CIDP, Client, Backend, RClient, SO, Proposer, CS> {
 	pub create_inherent_data_providers: CIDP,
 	pub block_import: BI,
 	pub para_client: Arc<Client>,
+	pub para_backend: Arc<Backend>,
 	pub relay_client: Arc<RClient>,
 	pub sync_oracle: SO,
 	pub keystore: KeystorePtr,
@@ -94,8 +95,8 @@ pub struct Params<BI, CIDP, Client, RClient, SO, Proposer, CS> {
 }
 
 /// Run async-backing-friendly Aura.
-pub async fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
-	params: Params<BI, CIDP, Client, RClient, SO, Proposer, CS>,
+pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>(
+	params: Params<BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>,
 ) where
 	Block: BlockT,
 	Client: ProvideRuntimeApi<Block>
@@ -107,6 +108,7 @@ pub async fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
 		+ Sync
 		+ 'static,
 	Client::Api: AuraApi<Block, P::Public> + CollectCollationInfo<Block>,
+	Backend: sp_blockchain::Backend<Block>,
 	RClient: RelayChainInterface,
 	CIDP: CreateInherentDataProviders<Block, ()> + 'static,
 	BI: BlockImport<Block> + ParachainBlockImportMarker + Send + Sync + 'static,
@@ -182,12 +184,9 @@ pub async fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
 			ignore_alternative_branches: true,
 		};
 
-		// TODO [now]: remove this in favor of one passed in as a parameter.
-		let fake_hack: sc_client_api::in_mem::Blockchain<Block> = unimplemented!();
-
 		let potential_parents = cumulus_client_consensus_common::find_potential_parents::<Block>(
 			parent_search_params,
-			&fake_hack, // sp_blockchain::Backend
+			&params.para_backend,
 			&params.relay_client,
 		)
 		.await;
