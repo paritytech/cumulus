@@ -17,7 +17,7 @@
 //! Parachain specific networking
 //!
 //! Provides a custom block announcement implementation for parachains
-//! that use the relay chain provided consensus. See [`BlockAnnounceValidator`]
+//! that use the relay chain provided consensus. See [`RequireSecondedInBlockAnnounce`]
 //! and [`WaitToAnnounce`] for more information about this implementation.
 
 use sp_consensus::block_validation::{
