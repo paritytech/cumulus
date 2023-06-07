@@ -43,6 +43,8 @@ use sc_service::SpawnTaskHandle;
 use crate::{rpc_client::RpcDispatcherMessage, tokio_platform::TokioPlatform};
 
 const LOG_TARGET: &str = "rpc-light-client-worker";
+const MAX_PENDING_REQUESTS: u32 = 128;
+const MAX_SUBSCRIPTIONS: u32 = 64;
 
 #[derive(thiserror::Error, Debug)]
 enum LightClientError {
@@ -100,8 +102,9 @@ pub async fn build_smoldot_client(
 		.add_chain(smoldot_light::AddChainConfig {
 			specification: chain_spec,
 			json_rpc: smoldot_light::AddChainConfigJsonRpc::Enabled {
-				max_pending_requests: NonZeroU32::new(128).expect("128 > 0; qed"),
-				max_subscriptions: 64,
+				max_pending_requests: NonZeroU32::new(MAX_PENDING_REQUESTS)
+					.expect("Constant larger than 0; qed"),
+				max_subscriptions: MAX_SUBSCRIPTIONS,
 			},
 			potential_relay_chains: core::iter::empty(),
 			database_content: "",
