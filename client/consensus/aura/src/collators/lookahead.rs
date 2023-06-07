@@ -40,6 +40,7 @@ use cumulus_client_consensus_proposer::ProposerInterface;
 use cumulus_primitives_core::{
 	relay_chain::Hash as PHash, CollectCollationInfo, PersistedValidationData,
 };
+use cumulus_primitives_aura::AuraUnincludedSegmentApi;
 use cumulus_relay_chain_interface::RelayChainInterface;
 
 use polkadot_overseer::Handle as OverseerHandle;
@@ -95,7 +96,7 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 		+ Send
 		+ Sync
 		+ 'static,
-	Client::Api: AuraApi<Block, P::Public> + CollectCollationInfo<Block>,
+	Client::Api: AuraApi<Block, P::Public> + CollectCollationInfo<Block> + AuraUnincludedSegmentApi<Block>,
 	Backend: sp_blockchain::Backend<Block>,
 	RClient: RelayChainInterface,
 	CIDP: CreateInherentDataProviders<Block, ()> + 'static,
@@ -307,24 +308,28 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 async fn can_build_upon<Block: BlockT, Client, P>(
 	slot: Slot,
 	timestamp: Timestamp,
-	block_hash: Block::Hash,
+	parent_hash: Block::Hash,
 	included_block: Block::Hash,
 	client: &Client,
 	keystore: &KeystorePtr,
 ) -> Option<SlotClaim<P::Public>>
 where
 	Client: ProvideRuntimeApi<Block>,
-	Client::Api: AuraApi<Block, P::Public>,
+	Client::Api: AuraApi<Block, P::Public> + AuraUnincludedSegmentApi<Block>,
 	P: Pair,
 	P::Public: Encode + Decode,
 	P::Signature: Encode + Decode,
 {
-	let authorities = client.runtime_api().authorities(block_hash).ok()?;
+	let runtime_api = client.runtime_api();
+	let authorities = runtime_api.authorities(parent_hash).ok()?;
 	let author_pub = aura_internal::claim_slot::<P>(slot, &authorities, keystore).await?;
 
-	// TODO [now]: new runtime API,
-	// AuraUnincludedSegmentApi::has_space(included_block, slot) or something like it.
-	unimplemented!();
+	// Here we lean on the property that building on an empty unincluded segment must always
+	// be legal. Skipping the runtime API query here allows us to seamlessly run this
+	// collator against chains which have not yet upgraded their runtime.
+	if parent_hash != included_block {
+		runtime_api.can_build_upon(parent_hash, included_block, slot).ok()?;
+	}
 
 	Some(SlotClaim::unchecked::<P>(author_pub, slot, timestamp))
 }

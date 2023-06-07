@@ -52,7 +52,7 @@ pub use sc_consensus_slots::InherentDataProviderExt;
 
 pub mod collator;
 pub mod collators;
-pub mod unstable_reimpl;
+pub mod equivocation_import_queue;
 
 const LOG_TARGET: &str = "aura::cumulus";
 
