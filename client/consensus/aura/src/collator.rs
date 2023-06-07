@@ -37,8 +37,7 @@ use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_relay_chain_interface::RelayChainInterface;
 
 use polkadot_node_primitives::{Collation, MaybeCompressedPoV};
-use polkadot_overseer::Handle as OverseerHandle;
-use polkadot_primitives::{Block as PBlock, Header as PHeader, Id as ParaId};
+use polkadot_primitives::{Header as PHeader, Id as ParaId};
 
 use futures::prelude::*;
 use sc_consensus::{BlockImport, BlockImportParams, ForkChoiceStrategy, StateAction};
@@ -56,7 +55,7 @@ use sp_runtime::{
 };
 use sp_state_machine::StorageChanges;
 use sp_timestamp::Timestamp;
-use std::{convert::TryFrom, error::Error, fmt::Debug, hash::Hash, sync::Arc, time::Duration};
+use std::{convert::TryFrom, error::Error, hash::Hash, sync::Arc, time::Duration};
 
 /// Parameters for instantiating a [`Collator`].
 pub struct Params<BI, CIDP, RClient, Proposer, CS> {

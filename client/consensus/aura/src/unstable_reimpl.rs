@@ -17,45 +17,22 @@
 // TODO [now]: docs + rename file here
 
 use codec::{Decode, Encode};
-use cumulus_client_collator::service::ServiceInterface as CollatorServiceInterface;
-use cumulus_client_consensus_common::{
-	ParachainBlockImportMarker, ParachainCandidate, ParentSearchParams,
-};
-use cumulus_client_consensus_proposer::ProposerInterface;
-use cumulus_primitives_core::{
-	relay_chain::Hash as PHash, CollectCollationInfo, PersistedValidationData,
-};
-use cumulus_primitives_parachain_inherent::ParachainInherentData;
-use cumulus_relay_chain_interface::RelayChainInterface;
+use cumulus_client_consensus_common::ParachainBlockImportMarker;
 
-use polkadot_node_primitives::{CollationResult, MaybeCompressedPoV};
-use polkadot_overseer::Handle as OverseerHandle;
-use polkadot_primitives::{Block as PBlock, CollatorPair, Header as PHeader, Id as ParaId};
-
-use futures::prelude::*;
-use sc_client_api::{backend::AuxStore, BlockBackend, BlockOf};
 use sc_consensus::{
 	import_queue::{BasicQueue, Verifier as VerifierT},
-	BlockImport, BlockImportParams, ForkChoiceStrategy, StateAction,
+	BlockImport, BlockImportParams, ForkChoiceStrategy,
 };
 use sc_consensus_aura::standalone as aura_internal;
 use sc_telemetry::{telemetry, TelemetryHandle, CONSENSUS_DEBUG, CONSENSUS_TRACE};
 use sp_api::ProvideRuntimeApi;
-use sp_application_crypto::AppPublic;
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
-use sp_blockchain::HeaderBackend;
-use sp_consensus::{error::Error as ConsensusError, BlockOrigin, SyncOracle};
+use sp_consensus::error::Error as ConsensusError;
 use sp_consensus_aura::{AuraApi, Slot, SlotDuration};
 use sp_core::crypto::Pair;
-use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvider};
-use sp_keystore::KeystorePtr;
-use sp_runtime::{
-	generic::Digest,
-	traits::{Block as BlockT, HashFor, Header as HeaderT, Member},
-};
-use sp_state_machine::StorageChanges;
-use sp_timestamp::Timestamp;
-use std::{convert::TryFrom, error::Error, fmt::Debug, hash::Hash, sync::Arc, time::Duration};
+use sp_inherents::{CreateInherentDataProviders, InherentDataProvider};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
+use std::{fmt::Debug, sync::Arc};
 
 struct Verifier<P, Client, Block, CIDP> {
 	client: Arc<Client>,

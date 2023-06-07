@@ -34,45 +34,32 @@
 use codec::{Decode, Encode};
 use cumulus_client_collator::service::ServiceInterface as CollatorServiceInterface;
 use cumulus_client_consensus_common::{
-	self as consensus_common, ParachainBlockImportMarker, ParachainCandidate, ParentSearchParams,
+	self as consensus_common, ParachainBlockImportMarker, ParentSearchParams,
 };
 use cumulus_client_consensus_proposer::ProposerInterface;
 use cumulus_primitives_core::{
 	relay_chain::Hash as PHash, CollectCollationInfo, PersistedValidationData,
 };
-use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_relay_chain_interface::RelayChainInterface;
 
-use polkadot_node_primitives::{CollationResult, MaybeCompressedPoV};
 use polkadot_overseer::Handle as OverseerHandle;
-use polkadot_primitives::{
-	Block as PBlock, CollatorPair, Header as PHeader, Id as ParaId, OccupiedCoreAssumption,
-};
+use polkadot_primitives::{CollatorPair, Id as ParaId, OccupiedCoreAssumption};
 
 use futures::prelude::*;
 use sc_client_api::{backend::AuxStore, BlockBackend, BlockOf};
-use sc_consensus::{
-	import_queue::{BasicQueue, Verifier as VerifierT},
-	BlockImport, BlockImportParams, ForkChoiceStrategy, StateAction,
-};
+use sc_consensus::BlockImport;
 use sc_consensus_aura::standalone as aura_internal;
-use sc_telemetry::{telemetry, TelemetryHandle, CONSENSUS_DEBUG, CONSENSUS_TRACE};
 use sp_api::ProvideRuntimeApi;
 use sp_application_crypto::AppPublic;
-use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
-use sp_consensus::{error::Error as ConsensusError, BlockOrigin, SyncOracle};
+use sp_consensus::SyncOracle;
 use sp_consensus_aura::{AuraApi, Slot, SlotDuration};
 use sp_core::crypto::Pair;
-use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvider};
+use sp_inherents::CreateInherentDataProviders;
 use sp_keystore::KeystorePtr;
-use sp_runtime::{
-	generic::Digest,
-	traits::{Block as BlockT, HashFor, Header as HeaderT, Member},
-};
-use sp_state_machine::StorageChanges;
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT, Member};
 use sp_timestamp::Timestamp;
-use std::{convert::TryFrom, error::Error, fmt::Debug, hash::Hash, sync::Arc, time::Duration};
+use std::{convert::TryFrom, hash::Hash, sync::Arc, time::Duration};
 
 use crate::collator::{self as collator_util, SlotClaim};
 
@@ -129,8 +116,6 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 	// rules specified by the parachain's runtime and thus will never be too deep.
 	const PARENT_SEARCH_DEPTH: usize = 10;
 
-	let mut params = params;
-
 	let mut import_notifications = match params.relay_client.import_notification_stream().await {
 		Ok(s) => s,
 		Err(err) => {
@@ -186,7 +171,7 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 			params.relay_chain_slot_duration,
 		) {
 			None => continue,
-			Some((s, t)) => (Slot::from_timestamp(t, params.slot_duration), t),
+			Some((_, t)) => (Slot::from_timestamp(t, params.slot_duration), t),
 		};
 
 		let parent_search_params = ParentSearchParams {
@@ -296,13 +281,14 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 				)
 				.await
 			{
-				Ok((collation, block_data, new_block_hash)) => {
+				Ok((_collation, block_data, new_block_hash)) => {
 					parent_hash = new_block_hash;
 					parent_header = block_data.into_header();
 
 					// TODO [now]: we should be able to directly announce, as long as
 					// we have full nodes do some equivocation checks locally.
-					let _sender = params.collator_service.announce_with_barrier(new_block_hash);
+					// The equivocation checks should allow up to `v + 1` equivocations.
+					let _sender = collator.collator_service().announce_with_barrier(new_block_hash);
 
 					// TODO [https://github.com/paritytech/polkadot/issues/5056]:
 					// announce collation to relay-chain validators.
