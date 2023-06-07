@@ -46,7 +46,7 @@ use cumulus_relay_chain_interface::RelayChainInterface;
 
 use polkadot_node_primitives::{CollationResult, MaybeCompressedPoV};
 use polkadot_overseer::Handle as OverseerHandle;
-use polkadot_primitives::{Block as PBlock, CollatorPair, Header as PHeader, Id as ParaId};
+use polkadot_primitives::{Block as PBlock, CollatorPair, Header as PHeader, Id as ParaId, OccupiedCoreAssumption};
 
 use futures::prelude::*;
 use sc_client_api::{backend::AuxStore, BlockBackend, BlockOf};
@@ -73,7 +73,7 @@ use sp_state_machine::StorageChanges;
 use sp_timestamp::Timestamp;
 use std::{convert::TryFrom, error::Error, fmt::Debug, hash::Hash, sync::Arc, time::Duration};
 
-use crate::collator as collator_util;
+use crate::collator::{self as collator_util, SlotClaim};
 
 /// Parameters for [`run`].
 pub struct Params<BI, CIDP, Client, Backend, RClient, SO, Proposer, CS> {
@@ -186,7 +186,7 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 
 		let potential_parents = cumulus_client_consensus_common::find_potential_parents::<Block>(
 			parent_search_params,
-			&params.para_backend,
+			&*params.para_backend,
 			&params.relay_client,
 		)
 		.await;
@@ -212,12 +212,12 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 
 		let para_client = &*params.para_client;
 		let keystore = &params.keystore;
-		let can_build_upon = |block_hash| can_build_upon(
+		let can_build_upon = |block_hash| can_build_upon::<_, _, P>(
 			slot_now,
 			timestamp,
 			block_hash,
 			included_block,
-			&para_client,
+			para_client,
 			&keystore,
 		);
 
@@ -225,7 +225,7 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 		//
 		// If the longest chain has space, build upon that. Otherwise, don't
 		// build at all.
-		potential_parents.sort_by_key(|a| &a.depth);
+		potential_parents.sort_by_key(|a| a.depth);
 		let initial_parent = match potential_parents.pop() {
 			None => continue,
 			Some(p) => p,
@@ -241,8 +241,8 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 				Some(c) => c,
 			};
 
-			let persisted_validation_data = PersistedValidationData {
-				parent_head: parent_header.encode(),
+			let validation_data = PersistedValidationData {
+				parent_head: parent_header.encode().into(),
 				relay_parent_number: *relay_parent_header.number(),
 				relay_parent_storage_root: *relay_parent_header.state_root(),
 				max_pov_size,
@@ -252,7 +252,7 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 			// `can_build_upon` fails or building a collation fails.
 			let (parachain_inherent_data, other_inherent_data) = match collator.create_inherent_data(
 				relay_parent,
-				&persisted_validation_data,
+				&validation_data,
 				parent_hash,
 				slot_claim.timestamp(),
 			).await {
@@ -263,7 +263,7 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 				Ok(x) => x,
 			};
 
-			let (new_block_hash, new_block_header) = match collator.collate(
+			match collator.collate(
 				&parent_header,
 				&slot_claim,
 				None,
@@ -277,7 +277,7 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 			).await {
 				Ok((collation, block_data, new_block_hash)) => {
 					parent_hash = new_block_hash;
-					parent_header = block_data.header;
+					parent_header = block_data.into_header();
 
 					// TODO [now]: announce to parachain sub-network
 
@@ -288,7 +288,7 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 					tracing::error!(target: crate::LOG_TARGET, ?err);
 					break;
 				}
-			};
+			}
 		}
 	}
 }
@@ -315,7 +315,7 @@ where
 
 	// TODO [now]: new runtime API,
 	// AuraUnincludedSegmentApi::has_space(included_block, slot) or something like it.
-	unimplemented!()
+	unimplemented!();
 
-	Some(SlotClaim::unchecked(author_pub, slot, timestamp))
+	Some(SlotClaim::unchecked::<P>(author_pub, slot, timestamp))
 }
