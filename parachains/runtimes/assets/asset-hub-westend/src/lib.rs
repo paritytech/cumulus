@@ -28,7 +28,8 @@ pub mod constants;
 mod weights;
 pub mod xcm_config;
 
-use crate::xcm_config::UniversalLocation;
+use crate::xcm_config::{TrustBackedAssetsPalletLocation, UniversalLocation};
+use assets_common::local_and_foreign_assets::{LocalAndForeignAssets, MultiLocationConverter};
 use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
@@ -50,7 +51,7 @@ use frame_system::{
 use pallet_nfts::PalletFeatures;
 pub use parachains_common as common;
 use parachains_common::{
-	impls::{AssetsToBlockAuthor, DealWithFees, LocalAndForeignAssets, MultiLocationConverter},
+	impls::{AssetsToBlockAuthor, DealWithFees},
 	opaque, AccountId, AssetIdForTrustBackedAssets, AuraId, Balance, BlockNumber, Hash, Header,
 	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
@@ -302,7 +303,7 @@ impl pallet_asset_conversion::Config for Runtime {
 	type Currency = Balances;
 	type AssetBalance = <Self as pallet_balances::Config>::Balance;
 	type AssetId = MultiLocation;
-	type Assets = LocalAndForeignAssets<Assets, ForeignAssets, parachain_info::Pallet<Runtime>>;
+	type Assets = LocalAndForeignAssets<Assets, ForeignAssets, TrustBackedAssetsPalletLocation>;
 	type PoolAssets = PoolAssets;
 	type PoolAssetId = u32;
 	type PoolSetupFee = ConstU128<0>; // Asset class deposit fees are sufficient to prevent spam
@@ -321,7 +322,8 @@ impl pallet_asset_conversion::Config for Runtime {
 	type WeightInfo = ();
 
 	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = crate::xcm_config::BenchmarkMultiLocationConverter<UniversalLocation>;
+	type BenchmarkHelper =
+		crate::xcm_config::BenchmarkMultiLocationConverter<parachain_info::Pallet<Runtime>>;
 }
 
 parameter_types! {

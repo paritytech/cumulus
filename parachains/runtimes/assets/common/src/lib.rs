@@ -17,6 +17,7 @@
 
 pub mod foreign_creators;
 pub mod fungible_conversion;
+pub mod local_and_foreign_assets;
 pub mod matching;
 pub mod runtime_api;
 
