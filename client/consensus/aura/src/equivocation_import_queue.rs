@@ -14,7 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-// TODO [now]: docs + rename file here
+/// An import queue which provides some equivocation resistance with lenient trait bounds.
+///
+/// Equivocation resistance in general is a hard problem, as different nodes in the network
+/// may see equivocations in a different order, and therefore may not agree on which blocks
+/// should be thrown out and which ones should be kept.
 
 use codec::{Decode, Encode};
 use cumulus_client_consensus_common::ParachainBlockImportMarker;
