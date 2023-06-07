@@ -75,3 +75,10 @@ add_to_genesis = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
   args = ["-lsync=debug","--sync warp","--relay-chain-rpc-urls {{'dave'|zombie('wsUri')}}"]
+
+  [[parachains.collators]]
+  name = "four"
+  validator = false
+  image = "{{COL_IMAGE}}"
+  command = "test-parachain"
+  args = ["-lsync=debug","--sync warp","--relay-chain-light-client"]
