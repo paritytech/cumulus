@@ -26,7 +26,9 @@
 
 use codec::{Decode, Encode};
 use cumulus_client_collator::service::ServiceInterface as CollatorServiceInterface;
-use cumulus_client_consensus_common::{self as consensus_common, ParachainBlockImportMarker, ParachainCandidate};
+use cumulus_client_consensus_common::{
+	self as consensus_common, ParachainBlockImportMarker, ParachainCandidate,
+};
 use cumulus_client_consensus_proposer::ProposerInterface;
 use cumulus_primitives_core::{
 	relay_chain::Hash as PHash, DigestItem, ParachainBlockData, PersistedValidationData,
@@ -253,16 +255,13 @@ impl<Pub> SlotClaim<Pub> {
 	///
 	/// This does not check whether the author actually owns the slot or the timestamp
 	/// falls within the slot.
-	pub fn unchecked<P>(author_pub: Pub, slot: Slot, timestamp: Timestamp) -> Self where
+	pub fn unchecked<P>(author_pub: Pub, slot: Slot, timestamp: Timestamp) -> Self
+	where
 		P: Pair<Public = Pub>,
 		P::Public: Encode + Decode,
-		P::Signature: Encode + Decode
+		P::Signature: Encode + Decode,
 	{
-		SlotClaim {
-			author_pub,
-			timestamp,
-			pre_digest: aura_internal::pre_digest::<P>(slot),
-		}
+		SlotClaim { author_pub, timestamp, pre_digest: aura_internal::pre_digest::<P>(slot) }
 	}
 
 	/// Get the author's public key.

@@ -34,8 +34,7 @@
 use codec::{Decode, Encode};
 use cumulus_client_collator::service::ServiceInterface as CollatorServiceInterface;
 use cumulus_client_consensus_common::{
-	self as consensus_common,
-	ParachainBlockImportMarker, ParachainCandidate, ParentSearchParams,
+	self as consensus_common, ParachainBlockImportMarker, ParachainCandidate, ParentSearchParams,
 };
 use cumulus_client_consensus_proposer::ProposerInterface;
 use cumulus_primitives_core::{
@@ -46,7 +45,9 @@ use cumulus_relay_chain_interface::RelayChainInterface;
 
 use polkadot_node_primitives::{CollationResult, MaybeCompressedPoV};
 use polkadot_overseer::Handle as OverseerHandle;
-use polkadot_primitives::{Block as PBlock, CollatorPair, Header as PHeader, Id as ParaId, OccupiedCoreAssumption};
+use polkadot_primitives::{
+	Block as PBlock, CollatorPair, Header as PHeader, Id as ParaId, OccupiedCoreAssumption,
+};
 
 use futures::prelude::*;
 use sc_client_api::{backend::AuxStore, BlockBackend, BlockOf};
@@ -163,17 +164,21 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 		// TODO [now]: get asynchronous backing parameters from the relay-chain
 		// runtime. why? for the parent search parameters.
 
-		let max_pov_size  = match params.relay_client.persisted_validation_data(
-			relay_parent,
-			params.para_id,
-			OccupiedCoreAssumption::Included,
-		).await {
+		let max_pov_size = match params
+			.relay_client
+			.persisted_validation_data(
+				relay_parent,
+				params.para_id,
+				OccupiedCoreAssumption::Included,
+			)
+			.await
+		{
 			Ok(None) => continue,
 			Ok(Some(pvd)) => pvd.max_pov_size,
 			Err(err) => {
 				tracing::error!(target: crate::LOG_TARGET, ?err, "Failed to gather information from relay-client");
-				continue;
-			}
+				continue
+			},
 		};
 
 		let (slot_now, timestamp) = match consensus_common::relay_slot_and_timestamp(
@@ -220,14 +225,16 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 
 		let para_client = &*params.para_client;
 		let keystore = &params.keystore;
-		let can_build_upon = |block_hash| can_build_upon::<_, _, P>(
-			slot_now,
-			timestamp,
-			block_hash,
-			included_block,
-			para_client,
-			&keystore,
-		);
+		let can_build_upon = |block_hash| {
+			can_build_upon::<_, _, P>(
+				slot_now,
+				timestamp,
+				block_hash,
+				included_block,
+				para_client,
+				&keystore,
+			)
+		};
 
 		// Sort by depth, ascending, to choose the longest chain.
 		//
@@ -258,31 +265,37 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 
 			// Build and announce collations recursively until
 			// `can_build_upon` fails or building a collation fails.
-			let (parachain_inherent_data, other_inherent_data) = match collator.create_inherent_data(
-				relay_parent,
-				&validation_data,
-				parent_hash,
-				slot_claim.timestamp(),
-			).await {
+			let (parachain_inherent_data, other_inherent_data) = match collator
+				.create_inherent_data(
+					relay_parent,
+					&validation_data,
+					parent_hash,
+					slot_claim.timestamp(),
+				)
+				.await
+			{
 				Err(err) => {
 					tracing::error!(target: crate::LOG_TARGET, ?err);
-					break;
+					break
 				},
 				Ok(x) => x,
 			};
 
-			match collator.collate(
-				&parent_header,
-				&slot_claim,
-				None,
-				(parachain_inherent_data, other_inherent_data),
-				params.authoring_duration,
-				// Set the block limit to 50% of the maximum PoV size.
-				//
-				// TODO: If we got benchmarking that includes the proof size,
-				// we should be able to use the maximum pov size.
-				(validation_data.max_pov_size / 2) as usize,
-			).await {
+			match collator
+				.collate(
+					&parent_header,
+					&slot_claim,
+					None,
+					(parachain_inherent_data, other_inherent_data),
+					params.authoring_duration,
+					// Set the block limit to 50% of the maximum PoV size.
+					//
+					// TODO: If we got benchmarking that includes the proof size,
+					// we should be able to use the maximum pov size.
+					(validation_data.max_pov_size / 2) as usize,
+				)
+				.await
+			{
 				Ok((collation, block_data, new_block_hash)) => {
 					parent_hash = new_block_hash;
 					parent_header = block_data.into_header();
@@ -293,11 +306,11 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 
 					// TODO [https://github.com/paritytech/polkadot/issues/5056]:
 					// announce collation to relay-chain validators.
-				}
+				},
 				Err(err) => {
 					tracing::error!(target: crate::LOG_TARGET, ?err);
-					break;
-				}
+					break
+				},
 			}
 		}
 	}

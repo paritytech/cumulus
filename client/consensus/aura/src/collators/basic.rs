@@ -181,30 +181,34 @@ pub async fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
 		};
 
 		let (parachain_inherent_data, other_inherent_data) = try_request!(
-			collator.create_inherent_data(
-				*request.relay_parent(),
-				&validation_data,
-				parent_hash,
-				claim.timestamp(),
-			).await
+			collator
+				.create_inherent_data(
+					*request.relay_parent(),
+					&validation_data,
+					parent_hash,
+					claim.timestamp(),
+				)
+				.await
 		);
 
 		let (collation, _, post_hash) = try_request!(
-			collator.collate(
-				&parent_header,
-				&claim,
-				None,
-				(parachain_inherent_data, other_inherent_data),
-				// TODO [https://github.com/paritytech/cumulus/issues/2439]
-				// We should call out to a pluggable interface that provides
-				// the proposal duration.
-				Duration::from_millis(500),
-				// Set the block limit to 50% of the maximum PoV size.
-				//
-				// TODO: If we got benchmarking that includes the proof size,
-				// we should be able to use the maximum pov size.
-				(validation_data.max_pov_size / 2) as usize,
-			).await
+			collator
+				.collate(
+					&parent_header,
+					&claim,
+					None,
+					(parachain_inherent_data, other_inherent_data),
+					// TODO [https://github.com/paritytech/cumulus/issues/2439]
+					// We should call out to a pluggable interface that provides
+					// the proposal duration.
+					Duration::from_millis(500),
+					// Set the block limit to 50% of the maximum PoV size.
+					//
+					// TODO: If we got benchmarking that includes the proof size,
+					// we should be able to use the maximum pov size.
+					(validation_data.max_pov_size / 2) as usize,
+				)
+				.await
 		);
 
 		let result_sender = Some(collator.collator_service().announce_with_barrier(post_hash));

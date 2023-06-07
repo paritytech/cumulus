@@ -69,11 +69,7 @@ pub trait ServiceInterface<Block: BlockT> {
 	) -> oneshot::Sender<CollationSecondedSignal>;
 
 	/// Directly announce a block on the network.
-	fn announce_block(
-		&self,
-		block_hash: Block::Hash,
-		data: Option<Vec<u8>>,
-	);
+	fn announce_block(&self, block_hash: Block::Hash, data: Option<Vec<u8>>);
 }
 
 /// The [`CollatorService`] provides common utilities for parachain consensus and authoring.
@@ -113,7 +109,8 @@ where
 		announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 		runtime_api: Arc<RA>,
 	) -> Self {
-		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(spawner, announce_block.clone())));
+		let wait_to_announce =
+			Arc::new(Mutex::new(WaitToAnnounce::new(spawner, announce_block.clone())));
 
 		Self { block_status, wait_to_announce, announce_block, runtime_api }
 	}
@@ -328,11 +325,7 @@ where
 		CollatorService::announce_with_barrier(self, block_hash)
 	}
 
-	fn announce_block(
-		&self,
-		block_hash: Block::Hash,
-		data: Option<Vec<u8>>,
-	) {
+	fn announce_block(&self, block_hash: Block::Hash, data: Option<Vec<u8>>) {
 		(self.announce_block)(block_hash, data)
 	}
 }
