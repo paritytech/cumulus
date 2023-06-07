@@ -3,6 +3,7 @@
 tests=(
     asset-hub-kusama
     asset-hub-polkadot
+    collectives/collectives-polkadot
 )
 
 rm -R logs &> /dev/null
@@ -15,12 +16,12 @@ do
 
     parachains-integration-tests \
         -m zombienet \
-        -c ./parachains/integration-tests/$t/config.toml \
+        -c ./parachains/integration-tests/e2e/$t/config.toml \
         -cl ./logs/$t/chains.log 2> /dev/null &
 
     parachains-integration-tests \
         -m test \
-        -t ./parachains/integration-tests/$t \
+        -t ./parachains/integration-tests/e2e/$t \
         -tl ./logs/$t/tests.log & tests=$!
 
     wait $tests
