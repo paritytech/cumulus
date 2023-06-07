@@ -186,7 +186,15 @@ impl TryFrom<&'_ CollationSecondedSignal> for BlockAnnounceData {
 	}
 }
 
+/// A type alias for the [`RequireSecondedInBlockAnnounce`] validator.
+#[deprecated = "This has been renamed to RequireSecondedInBlockAnnounce"]
+pub type BlockAnnounceValidator<Block, RCInterface> = RequireSecondedInBlockAnnounce<Block, RCInterface>;
+
 /// Parachain specific block announce validator.
+///
+/// This is not required when the collation mechanism itself is sybil-resistant, as it is a spam protection
+/// mechanism used to prevent nodes from dealing with unbounded numbers of blocks. For sybil-resistant
+/// collation mechanisms, this will only slow things down.
 ///
 /// This block announce validator is required if the parachain is running
 /// with the relay chain provided consensus to make sure each node only
@@ -214,23 +222,23 @@ impl TryFrom<&'_ CollationSecondedSignal> for BlockAnnounceData {
 /// it. However, if the announcement is for a block below the tip the announcement is accepted
 /// as it probably comes from a node that is currently syncing the chain.
 #[derive(Clone)]
-pub struct BlockAnnounceValidator<Block, RCInterface> {
+pub struct RequireSecondedInBlockAnnounce<Block, RCInterface> {
 	phantom: PhantomData<Block>,
 	relay_chain_interface: RCInterface,
 	para_id: ParaId,
 }
 
-impl<Block, RCInterface> BlockAnnounceValidator<Block, RCInterface>
+impl<Block, RCInterface> RequireSecondedInBlockAnnounce<Block, RCInterface>
 where
 	RCInterface: Clone,
 {
-	/// Create a new [`BlockAnnounceValidator`].
+	/// Create a new [`RequireSecondedInBlockAnnounce`].
 	pub fn new(relay_chain_interface: RCInterface, para_id: ParaId) -> Self {
 		Self { phantom: Default::default(), relay_chain_interface, para_id }
 	}
 }
 
-impl<Block: BlockT, RCInterface> BlockAnnounceValidator<Block, RCInterface>
+impl<Block: BlockT, RCInterface> RequireSecondedInBlockAnnounce<Block, RCInterface>
 where
 	RCInterface: RelayChainInterface + Clone,
 {
@@ -315,7 +323,7 @@ where
 }
 
 impl<Block: BlockT, RCInterface> BlockAnnounceValidatorT<Block>
-	for BlockAnnounceValidator<Block, RCInterface>
+	for RequireSecondedInBlockAnnounce<Block, RCInterface>
 where
 	RCInterface: RelayChainInterface + Clone + 'static,
 {
