@@ -41,6 +41,10 @@ sp_api::decl_runtime_apis! {
 		///
 		/// This should be consistent with the logic the runtime uses when validating blocks to
 		/// avoid issues.
+		///
+		/// When the unincluded segment is empty, i.e. `included_hash == at`, where at is the block
+		/// whose state we are querying against, this must always return `true` as long as the slot
+		/// is more recent than the included block itself.
 		fn can_build_upon(included_hash: Block::Hash, slot: Slot) -> bool;
 	}
 }
