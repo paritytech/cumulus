@@ -81,7 +81,7 @@ fn build_authority_discovery_service<Block: BlockT>(
 	service
 }
 
-pub async fn build_minimal_relay_chain_node(
+pub async fn build_minimal_relay_chain_node_with_rpc(
 	polkadot_config: Configuration,
 	task_manager: &mut TaskManager,
 	relay_chain_url: Vec<Url>,
