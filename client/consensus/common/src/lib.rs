@@ -148,7 +148,9 @@ where
 		let number = *params.header.number();
 
 		if params.with_state() {
-			// Force imported state finality
+			// Force imported state finality.
+			// Required for warp sync. We assume that preconditions have been
+			// checked properly and we are importing a finalized block with state.
 			params.finalized = true;
 		}
 
