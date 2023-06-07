@@ -19,10 +19,9 @@
 /// Equivocation resistance in general is a hard problem, as different nodes in the network
 /// may see equivocations in a different order, and therefore may not agree on which blocks
 /// should be thrown out and which ones should be kept.
-
 use codec::{Decode, Encode};
-use lru::LruCache;
 use cumulus_client_consensus_common::ParachainBlockImportMarker;
+use lru::LruCache;
 
 use sc_consensus::{
 	import_queue::{BasicQueue, Verifier as VerifierT},
@@ -136,7 +135,7 @@ where
 						return Err(format!(
 							"Rejecting block {:?} due to excessive equivocations at slot",
 							post_hash,
-						));
+						))
 					}
 				},
 				Err(aura_internal::SealVerificationError::Deferred(hdr, slot)) => {

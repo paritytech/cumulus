@@ -37,10 +37,10 @@ use cumulus_client_consensus_common::{
 	self as consensus_common, ParachainBlockImportMarker, ParentSearchParams,
 };
 use cumulus_client_consensus_proposer::ProposerInterface;
+use cumulus_primitives_aura::AuraUnincludedSegmentApi;
 use cumulus_primitives_core::{
 	relay_chain::Hash as PHash, CollectCollationInfo, PersistedValidationData,
 };
-use cumulus_primitives_aura::AuraUnincludedSegmentApi;
 use cumulus_relay_chain_interface::RelayChainInterface;
 
 use polkadot_overseer::Handle as OverseerHandle;
@@ -96,7 +96,8 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 		+ Send
 		+ Sync
 		+ 'static,
-	Client::Api: AuraApi<Block, P::Public> + CollectCollationInfo<Block> + AuraUnincludedSegmentApi<Block>,
+	Client::Api:
+		AuraApi<Block, P::Public> + CollectCollationInfo<Block> + AuraUnincludedSegmentApi<Block>,
 	Backend: sp_blockchain::Backend<Block>,
 	RClient: RelayChainInterface,
 	CIDP: CreateInherentDataProviders<Block, ()> + 'static,

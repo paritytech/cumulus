@@ -361,7 +361,8 @@ where
 		_ => None,
 	};
 
-	let block_announce_validator = RequireSecondedInBlockAnnounce::new(relay_chain_interface, para_id);
+	let block_announce_validator =
+		RequireSecondedInBlockAnnounce::new(relay_chain_interface, para_id);
 	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
 
 	sc_service::build_network(sc_service::BuildNetworkParams {

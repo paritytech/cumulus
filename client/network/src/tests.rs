@@ -243,8 +243,10 @@ impl RelayChainInterface for DummyRelayChainInterface {
 	}
 }
 
-fn make_validator_and_api(
-) -> (RequireSecondedInBlockAnnounce<Block, Arc<DummyRelayChainInterface>>, Arc<DummyRelayChainInterface>) {
+fn make_validator_and_api() -> (
+	RequireSecondedInBlockAnnounce<Block, Arc<DummyRelayChainInterface>>,
+	Arc<DummyRelayChainInterface>,
+) {
 	let relay_chain_interface = Arc::new(DummyRelayChainInterface::new());
 	(
 		RequireSecondedInBlockAnnounce::new(relay_chain_interface.clone(), ParaId::from(56)),
