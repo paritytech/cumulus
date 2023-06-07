@@ -2577,6 +2577,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-primitives-aura"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "polkadot-core-primitives",
+ "polkadot-primitives",
+ "sp-api",
+ "sp-consensus-aura",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "cumulus-primitives-core"
 version = "0.1.0"
 dependencies = [
