@@ -77,7 +77,7 @@ where
 	}
 
 	fn into_multiasset_id(asset_id: &MultiLocation) -> Box<MultiLocation> {
-		let mut asset_id = asset_id.clone();
+		let mut asset_id = *asset_id;
 		asset_id.simplify(&ParachainLocation::get());
 		Box::new(asset_id)
 	}
