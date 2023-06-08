@@ -214,7 +214,7 @@ pub fn can_governance_change_bridge_transfer_in_configuration<Runtime, XcmConfig
 
 			// check before
 			assert!(
-				!pallet_bridge_transfer::impls::AllowedUniversalAliasesOf::<Runtime>::contains(&(
+				!pallet_bridge_transfer::features::AllowedUniversalAliasesOf::<Runtime>::contains(&(
 					bridge_location,
 					alias_junction
 				))
@@ -237,7 +237,7 @@ pub fn can_governance_change_bridge_transfer_in_configuration<Runtime, XcmConfig
 				.any(|e| matches!(e, pallet_bridge_transfer::Event::UniversalAliasAdded)));
 
 			// check after
-			assert!(pallet_bridge_transfer::impls::AllowedUniversalAliasesOf::<Runtime>::contains(
+			assert!(pallet_bridge_transfer::features::AllowedUniversalAliasesOf::<Runtime>::contains(
 				&(bridge_location, alias_junction)
 			));
 		})

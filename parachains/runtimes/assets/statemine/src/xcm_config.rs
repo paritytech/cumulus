@@ -26,7 +26,7 @@ use frame_support::{
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
 };
 use frame_system::EnsureRoot;
-use pallet_bridge_transfer::impls::{
+use pallet_bridge_transfer::features::{
 	AllowedUniversalAliasesOf, IsTrustedBridgedReserveForConcreteAsset,
 };
 use pallet_xcm::XcmPassthrough;

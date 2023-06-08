@@ -706,7 +706,7 @@ impl pallet_bridge_transfer::Config for Runtime {
 	type AssetsPerReserveLocationLimit = ConstU32<128>;
 	type AssetTransactor = AssetTransactors;
 	type AssetTransferKindResolver =
-		pallet_bridge_transfer::impls::ConfiguredConcreteAssetTransferKindResolver<Runtime>;
+		pallet_bridge_transfer::features::ConfiguredConcreteAssetTransferKindResolver<Runtime>;
 	type BridgeXcmSender = BridgeXcmSender;
 	type AssetTransferOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 	type MaxAssetsLimit = ConstU8<1>;

@@ -14,162 +14,257 @@
 // limitations under the License.
 
 use crate::{
-	types::{AssetFilterT, LatestVersionedMultiLocation},
-	AssetTransferKind, BridgeConfig, Config, Pallet, ResolveAssetTransferKind, UsingVersioned,
-	LOG_TARGET,
+	pallet::AllowedExporters, AssetFilterOf, AssetTransferKind, Config, Error, Event, Pallet,
+	ReachableDestination, ResolveAssetTransferKind, UsingVersioned, LOG_TARGET,
 };
-use frame_support::traits::{Contains, ContainsPair};
+use frame_support::{pallet_prelude::Get, transactional};
+use frame_system::unique;
+use sp_runtime::DispatchError;
 use xcm::prelude::*;
-use xcm_builder::ExporterFor;
+use xcm_builder::ensure_is_remote;
+use xcm_executor::traits::TransactAsset;
 
-/// `ExporterFor` implementation to check if we can transfer anything to `NetworkId`
-impl<T: Config> ExporterFor for Pallet<T> {
-	fn exporter_for(
-		network: &NetworkId,
-		_remote_location: &InteriorMultiLocation,
-		_message: &Xcm<()>,
-	) -> Option<(MultiLocation, Option<MultiAsset>)> {
-		match Self::allowed_exporters(network) {
-			Some(BridgeConfig { bridge_location, bridge_location_fee, .. }) => {
-				let bridge_location = match bridge_location.to_versioned() {
-					Ok(versioned) => versioned,
-					Err(e) => {
-						log::warn!(
-							target: LOG_TARGET,
-							"Exporter for network: {:?} - bridge_location has error: {:?}!",
-							network, e
-						);
-						return None
-					},
-				};
-				let bridge_location_fee = match bridge_location_fee {
-					Some(fee) => match fee.to_versioned() {
-						Ok(versioned) => Some(versioned),
-						Err(e) => {
-							log::warn!(
-								target: LOG_TARGET,
-								"ExporterFor network: {:?} - bridge_location_fee has error: {:?}!",
-								network, e
-							);
-							return None
-						},
-					},
-					None => None,
-				};
-				Some((bridge_location, bridge_location_fee))
-			},
-			None => None,
-		}
-	}
-}
+impl<T: Config> Pallet<T> {
+	/// Validates destination and check if we support bridging to this remote global consensus
+	///
+	/// Returns: correct remote location, where we should be able to bridge
+	pub(crate) fn ensure_reachable_remote_destination(
+		remote_destination: VersionedMultiLocation,
+	) -> Result<ReachableDestination<AssetFilterOf<T>>, Error<T>> {
+		let remote_destination: MultiLocation = remote_destination
+			.to_versioned()
+			.map_err(|_| Error::<T>::UnsupportedXcmVersion)?;
 
-/// Verifies if we have `(MultiLocation, Junction)` in allowed universal aliases.
-pub struct AllowedUniversalAliasesOf<T>(sp_std::marker::PhantomData<T>);
-impl<T: Config> Contains<(MultiLocation, Junction)> for AllowedUniversalAliasesOf<T> {
-	fn contains((location, junction): &(MultiLocation, Junction)) -> bool {
-		log::trace!(
-			target: "xcm::contains",
-			"AllowedUniversalAliasesOf location: {:?}, junction: {:?}", location, junction
-		);
+		let devolved = ensure_is_remote(T::UniversalLocation::get(), remote_destination)
+			.map_err(|_| Error::<T>::UnsupportedDestination)?;
+		let (remote_network, _) = devolved;
 
-		Pallet::<T>::allowed_universal_aliases(LatestVersionedMultiLocation(location))
-			.contains(junction)
-	}
-}
-
-/// Verifies if we can allow `(MultiAsset, MultiLocation)` as trusted reserve received from "bridge".
-pub struct IsTrustedBridgedReserveForConcreteAsset<T>(sp_std::marker::PhantomData<T>);
-impl<T: Config> ContainsPair<MultiAsset, MultiLocation>
-	for IsTrustedBridgedReserveForConcreteAsset<T>
-{
-	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
-		log::trace!(
-			target: "xcm::contains",
-			"IsTrustedBridgedReserve asset: {:?}, origin: {:?}",
-			asset, origin
-		);
-
-		let asset_location = match &asset.id {
-			Concrete(location) => location,
-			_ => return false,
-		};
-
-		let versioned_origin = LatestVersionedMultiLocation(origin);
-		Pallet::<T>::allowed_reserve_locations(versioned_origin)
-			.map_or(false, |filter| match filter.matches(asset_location) {
-				Ok(result) => result,
-				Err(e) => {
-					log::error!(
-						target: "xcm::contains",
-						"IsTrustedBridgedReserveForConcreteAsset has error: {:?} for asset_location: {:?} and origin: {:?}!",
-						e, asset_location, origin
-					);
-					false
-				},
-			})
-	}
-}
-
-/// Implementation of `ResolveTransferKind` which tries to resolve all kinds of transfer according to on-chain configuration.
-pub struct ConfiguredConcreteAssetTransferKindResolver<T>(sp_std::marker::PhantomData<T>);
-
-impl<T: Config> ResolveAssetTransferKind for ConfiguredConcreteAssetTransferKindResolver<T> {
-	fn resolve(asset: &MultiAsset, target_location: &MultiLocation) -> AssetTransferKind {
-		log::trace!(
-			target: LOG_TARGET,
-			"ConfiguredConcreteAssetTransferKindResolver resolve asset: {:?}, target_location: {:?}",
-			asset, target_location
-		);
-
-		let asset_location = match &asset.id {
-			Concrete(location) => location,
-			_ => return AssetTransferKind::Unsupported,
-		};
-
-		// first, we check, if we are trying to transfer back reserve-deposited assets
-		// other words: if target_location is a known reserve location for asset
-		if IsTrustedBridgedReserveForConcreteAsset::<T>::contains(asset, target_location) {
-			return AssetTransferKind::WithdrawReserve
-		}
-
-		// second, we check, if target_location is allowed for requested asset to be transferred there
-		match target_location.interior.global_consensus() {
-			Ok(target_consensus) => {
-				if let Some(bridge_config) = Pallet::<T>::allowed_exporters(target_consensus) {
-					match bridge_config.allowed_target_location_for(target_location) {
-						Ok(Some((_, Some(asset_filter)))) => {
-							match asset_filter.matches(asset_location) {
-								Ok(true) => return AssetTransferKind::ReserveBased,
-								Ok(false) => (),
-								Err(e) => {
-									log::error!(
-										target: LOG_TARGET,
-										"ConfiguredConcreteAssetTransferKindResolver `asset_filter.matches` has error: {:?} for asset_location: {:?} and target_location: {:?}!",
-										e, asset_location, target_location
-									);
-								},
-							}
-						},
-						Ok(_) => (),
-						Err(e) => {
-							log::warn!(
-								target: LOG_TARGET,
-								"ConfiguredBridgeTransferKindResolver allowed_target_location_for has error: {:?} for target_location: {:?}!",
-								e, target_location
-							);
-						},
-					}
+		match AllowedExporters::<T>::get(remote_network) {
+			Some(bridge_config) => {
+				match bridge_config.allowed_target_location_for(&remote_destination) {
+					Ok(Some((target_location, target_location_asset_filter))) =>
+						Ok(ReachableDestination {
+							bridge: bridge_config.to_bridge_location()?,
+							target: target_location,
+							target_asset_filter: target_location_asset_filter,
+							target_destination: remote_destination,
+						}),
+					Ok(None) => Err(Error::<T>::UnsupportedDestination),
+					Err(_) => Err(Error::<T>::UnsupportedXcmVersion),
 				}
 			},
-			Err(_) => {
-				log::warn!(
-					target: LOG_TARGET,
-					"ConfiguredBridgeTransferKindResolver target_location: {:?} does not contain global consensus!",
-					target_location
-				);
-			},
+			None => Err(Error::<T>::UnsupportedDestination),
+		}
+	}
+
+	#[transactional]
+	pub(crate) fn do_transfer_asset_via_bridge_in_transaction(
+		origin_location: MultiLocation,
+		destination: ReachableDestination<AssetFilterOf<T>>,
+		assets: MultiAssets,
+	) -> Result<(), DispatchError> {
+		// Resolve reserve account
+		let reserve_account = Self::resolve_reserve_account(&destination);
+
+		// Target destination
+		let target_location = destination.target.location;
+
+		// UniversalLocation as sovereign account location on target_location (as target_location sees UniversalLocation)
+		let universal_location_as_sovereign_account_on_target_location =
+			T::UniversalLocation::get()
+				.invert_target(&target_location)
+				.map_err(|_| Error::<T>::InvalidConfiguration)?;
+
+		// Prepare some XcmContext
+		let xcm_context = XcmContext::with_message_id(unique(reserve_account));
+
+		// Resolve/iterate all assets and how to transfer them
+		let mut reserve_assets_deposited = xcm_executor::Assets::new();
+		let mut reserved_assets_for_withdrawal = xcm_executor::Assets::new();
+		for asset in assets.into_inner() {
+			// first we need to know what kind of transfer it is
+			match T::AssetTransferKindResolver::resolve(&asset, &target_location) {
+				AssetTransferKind::ReserveBased =>
+				// Move asset to reserve account
+					T::AssetTransactor::transfer_asset(
+						&asset,
+						&origin_location,
+						&reserve_account,
+						&xcm_context,
+					)
+						.and_then(|reserved_asset| {
+							Self::deposit_event(Event::ReserveAssetsDeposited {
+								from: origin_location,
+								to: reserve_account,
+								assets: reserved_asset.clone().into(),
+							});
+							reserve_assets_deposited.subsume_assets(reserved_asset);
+							Ok(())
+						})
+						.map_err(|e| {
+							log::error!(
+									target: LOG_TARGET,
+									"AssetTransactor failed to reserve assets from origin_location: {:?} to reserve_account: {:?} for assets: {:?}, error: {:?}",
+									origin_location,
+									reserve_account,
+									asset,
+									e
+								);
+							Error::<T>::FailedToReserve
+						})?,
+				AssetTransferKind::WithdrawReserve => {
+					// Just withdraw/burn asset here
+					T::AssetTransactor::withdraw_asset(
+						&asset,
+						&origin_location,
+						Some(&xcm_context),
+					)
+						.and_then(|withdrawn_asset| {
+							Self::deposit_event(Event::AssetsWithdrawn {
+								from: origin_location,
+								assets: withdrawn_asset.clone().into(),
+							});
+							reserved_assets_for_withdrawal.subsume_assets(withdrawn_asset);
+							Ok(())
+						})
+						.map_err(|e| {
+							log::error!(
+									target: LOG_TARGET,
+									"AssetTransactor failed to withdraw assets from origin_location: {:?} for assets: {:?}, error: {:?}",
+									origin_location,
+									asset,
+									e
+								);
+							Error::<T>::FailedToWithdraw
+						})?
+				}
+				AssetTransferKind::Unsupported => return Err(Error::<T>::UnsupportedAssetTransferKind.into()),
+			}
 		}
 
-		AssetTransferKind::Unsupported
+		// Prepare xcm msg for the other side.
+
+		// Reanchor stuff - we need to convert local asset id/MultiLocation to format that could be understood by different consensus and from their point-of-view
+		reserve_assets_deposited.reanchor(&target_location, T::UniversalLocation::get(), None);
+		reserved_assets_for_withdrawal.reanchor(
+			&target_location,
+			T::UniversalLocation::get(),
+			None,
+		);
+		let remote_destination_reanchored = destination.target_destination
+			.reanchored(&target_location, T::UniversalLocation::get())
+			.map_err(|errored_dest| {
+				log::error!(
+					target: LOG_TARGET,
+					"Failed to reanchor remote_destination: {:?} for target_destination: {:?} and universal_location: {:?}",
+					errored_dest,
+					target_location,
+					T::UniversalLocation::get()
+				);
+				Error::<T>::InvalidRemoteDestination
+			})?;
+
+		// prepare xcm message
+		// 1. buy execution (if needed) -> (we expect UniversalLocation's sovereign account should pay)
+		let (mut xcm_instructions, maybe_buy_execution) = match destination.target.maybe_fee {
+			Some(target_location_fee) => (
+				sp_std::vec![
+					WithdrawAsset(target_location_fee.clone().into()),
+					BuyExecution { fees: target_location_fee.clone(), weight_limit: Unlimited },
+				],
+				Some(target_location_fee),
+			),
+			None => (
+				sp_std::vec![UnpaidExecution { check_origin: None, weight_limit: Unlimited }],
+				None,
+			),
+		};
+
+		// 2. add deposit reserved asset to destination account (if any)
+		if !reserve_assets_deposited.is_empty() {
+			xcm_instructions.extend(sp_std::vec![
+				ReserveAssetDeposited(reserve_assets_deposited.clone().into()),
+				DepositAsset {
+					assets: MultiAssetFilter::from(MultiAssets::from(reserve_assets_deposited)),
+					beneficiary: remote_destination_reanchored
+				},
+			]);
+		}
+
+		// 3. add withdraw/move reserve from sovereign account to destination (if any)
+		if !reserved_assets_for_withdrawal.is_empty() {
+			xcm_instructions.extend(sp_std::vec![
+				// we expect here, that origin is a sovereign account which was used as **reserve account**
+				WithdrawAsset(reserved_assets_for_withdrawal.clone().into()),
+				DepositAsset {
+					assets: MultiAssetFilter::from(MultiAssets::from(
+						reserved_assets_for_withdrawal
+					)),
+					beneficiary: remote_destination_reanchored
+				},
+			]);
+		}
+
+		// 4. add return unspent weight/asset back to the UniversalLocation's sovereign account on target
+		if let Some(target_location_fee) = maybe_buy_execution {
+			xcm_instructions.extend(sp_std::vec![
+				RefundSurplus,
+				DepositAsset {
+					assets: MultiAssetFilter::from(MultiAssets::from(target_location_fee)),
+					beneficiary: universal_location_as_sovereign_account_on_target_location
+				},
+			]);
+		}
+
+		Self::initiate_bridge_transfer(
+			target_location,
+			xcm_context.message_id,
+			xcm_instructions.into(),
+		)
+		.map_err(Into::into)
+	}
+
+	fn initiate_bridge_transfer(
+		dest: MultiLocation,
+		message_id: XcmHash,
+		mut xcm: Xcm<()>,
+	) -> Result<(), Error<T>> {
+		// append message_id
+		xcm.0.extend(sp_std::vec![SetTopic(message_id)]);
+
+		log::info!(
+			target: LOG_TARGET,
+			"[T::BridgeXcmSender] send to bridge, dest: {:?}, xcm: {:?}, message_id: {:?}",
+			dest,
+			xcm,
+			message_id,
+		);
+
+		// call bridge
+		// TODO: check-parameter - should we handle `sender_cost` somehow ?
+		let (forwarded_message_id, sender_cost) = send_xcm::<T::BridgeXcmSender>(dest, xcm)
+			.map_err(|e| {
+				log::error!(
+					target: LOG_TARGET,
+					"[T::BridgeXcmSender] SendError occurred, error: {:?}",
+					e
+				);
+				Error::<T>::BridgeCallError
+			})?;
+
+		// just fire event
+		Self::deposit_event(Event::TransferInitiated {
+			message_id,
+			forwarded_message_id,
+			sender_cost,
+		});
+		Ok(())
+	}
+
+	/// Resolve (sovereign) account which will be used as reserve account
+	fn resolve_reserve_account(
+		destination: &ReachableDestination<AssetFilterOf<T>>,
+	) -> MultiLocation {
+		destination.target.location
 	}
 }
