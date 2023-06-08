@@ -44,7 +44,7 @@ use xcm_builder::{
 	GlobalConsensusParachainConvertsFor, IsConcrete, SiblingParachainConvertsVia,
 	SignedToAccountId32, UnpaidRemoteExporter,
 };
-use xcm_executor::traits::Convert;
+use xcm_executor::traits::ConvertLocation;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
@@ -448,7 +448,7 @@ fn test_transfer_asset_via_bridge_for_currency_works() {
 		// checks before
 		assert!(ROUTED_MESSAGE.with(|r| r.borrow().is_none()));
 		assert_eq!(Balances::free_balance(&user_account), user_account_init_balance);
-		let reserve_account = LocationToAccountId::convert_ref(target_location)
+		let reserve_account = LocationToAccountId::convert_location(&target_location)
 			.expect("converted target_location as accountId");
 		assert_eq!(Balances::free_balance(&reserve_account), 0);
 
@@ -568,7 +568,7 @@ fn test_transfer_asset_via_bridge_in_case_of_error_transactional_works() {
 		assert!(ROUTED_MESSAGE.with(|r| r.borrow().is_none()));
 		let user_balance_before = Balances::free_balance(&user_account);
 		assert_eq!(user_balance_before, user_account_init_balance);
-		let reserve_account = LocationToAccountId::convert_ref(target_location)
+		let reserve_account = LocationToAccountId::convert_location(&target_location)
 			.expect("converted target_location as accountId");
 		let reserve_account_before = Balances::free_balance(&reserve_account);
 		assert_eq!(reserve_account_before, 0);
