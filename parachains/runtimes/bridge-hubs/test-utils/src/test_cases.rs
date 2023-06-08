@@ -933,7 +933,7 @@ pub mod test_data {
 	);
 
 	/// Simulates `HaulBlobExporter` and all its wrapping and captures generated plain bytes,
-	/// which are transfered over bridge.
+	/// which are transferred over bridge.
 	pub(crate) fn simulate_message_exporter_on_bridged_chain<
 		SourceNetwork: Get<NetworkId>,
 		DestinationNetwork: Get<NetworkId>,

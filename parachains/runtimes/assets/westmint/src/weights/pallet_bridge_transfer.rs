@@ -102,6 +102,51 @@ impl<T: frame_system::Config> pallet_bridge_transfer::WeightInfo for WeightInfo<
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
+
+	fn update_bridged_target_location() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `109`
+		//  Estimated: `5884`
+		// Minimum execution time: 12_859_000 picoseconds.
+		Weight::from_parts(19_737_000, 0)
+			.saturating_add(Weight::from_parts(0, 5884))
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
+
+	fn remove_bridged_target_location() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `109`
+		//  Estimated: `5884`
+		// Minimum execution time: 12_859_000 picoseconds.
+		Weight::from_parts(19_737_000, 0)
+			.saturating_add(Weight::from_parts(0, 5884))
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
+
+	fn allow_reserve_asset_transfer_for() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `109`
+		//  Estimated: `5884`
+		// Minimum execution time: 12_859_000 picoseconds.
+		Weight::from_parts(19_737_000, 0)
+			.saturating_add(Weight::from_parts(0, 5884))
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
+
+	fn disallow_reserve_asset_transfer_for() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `109`
+		//  Estimated: `5884`
+		// Minimum execution time: 12_859_000 picoseconds.
+		Weight::from_parts(19_737_000, 0)
+			.saturating_add(Weight::from_parts(0, 5884))
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
+
 	/// Storage: BridgeTransfer AllowedUniversalAliases (r:1 w:1)
 	/// Proof: BridgeTransfer AllowedUniversalAliases (max_values: None, max_size: Some(2419), added: 4894, mode: MaxEncodedLen)
 	fn add_universal_alias() -> Weight {

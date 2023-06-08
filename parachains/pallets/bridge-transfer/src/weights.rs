@@ -36,6 +36,16 @@ pub trait WeightInfo {
 	/// Weight of the `update_exporter_config` call.
 	fn update_exporter_config() -> Weight;
 
+	/// Weight of the `update_bridged_target_location` call.
+	fn update_bridged_target_location() -> Weight;
+	/// Weight of the `remove_bridged_target_location` call.
+	fn remove_bridged_target_location() -> Weight;
+
+	/// Weight of the `allow_reserve_asset_transfer` call.
+	fn allow_reserve_asset_transfer_for() -> Weight;
+	/// Weight of the `disallow_reserve_asset_transfer_for` call.
+	fn disallow_reserve_asset_transfer_for() -> Weight;
+
 	/// Weight of the `add_universal_alias` call.
 	fn add_universal_alias() -> Weight;
 	/// Weight of the `remove_universal_alias` call.
@@ -66,6 +76,22 @@ impl WeightInfo for () {
 	}
 
 	fn update_exporter_config() -> Weight {
+		Weight::zero()
+	}
+
+	fn update_bridged_target_location() -> Weight {
+		Weight::zero()
+	}
+
+	fn remove_bridged_target_location() -> Weight {
+		Weight::zero()
+	}
+
+	fn allow_reserve_asset_transfer_for() -> Weight {
+		Weight::zero()
+	}
+
+	fn disallow_reserve_asset_transfer_for() -> Weight {
 		Weight::zero()
 	}
 

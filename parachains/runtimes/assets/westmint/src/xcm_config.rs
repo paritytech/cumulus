@@ -19,15 +19,16 @@ use super::{
 	RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
 use assets_common::matching::{
-	FromSiblingParachain, IsDifferentGlobalConsensusConcreteAsset, IsForeignConcreteAsset,
-	StartsWith, StartsWithExplicitGlobalConsensus,
+	FromSiblingParachain, IsForeignConcreteAsset, StartsWith, StartsWithExplicitGlobalConsensus,
 };
 use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, PalletInfoAccess},
 };
 use frame_system::EnsureRoot;
-use pallet_bridge_transfer::impls::{AllowedUniversalAliasesOf, IsAllowedReserveOf};
+use pallet_bridge_transfer::impls::{
+	AllowedUniversalAliasesOf, IsTrustedBridgedReserveForConcreteAsset,
+};
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{impls::ToStakingPot, xcm_config::AssetFeeAsExistentialDepositMultiplier};
 use polkadot_parachain::primitives::Sibling;
@@ -384,10 +385,7 @@ impl xcm_executor::Config for XcmConfig {
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	// Westmint is acting _as_ a reserve location for WND and assets created under `pallet-assets`.
 	// For WND, users must use teleport where allowed (e.g. with the Relay Chain).
-	type IsReserve = IsAllowedReserveOf<
-		Runtime,
-		IsDifferentGlobalConsensusConcreteAsset<UniversalLocationNetworkId>,
-	>;
+	type IsReserve = IsTrustedBridgedReserveForConcreteAsset<Runtime>;
 	// We allow:
 	// - teleportation of WND
 	// - teleportation of sibling parachain's assets (as ForeignCreators)

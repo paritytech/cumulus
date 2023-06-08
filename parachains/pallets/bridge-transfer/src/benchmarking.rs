@@ -171,7 +171,7 @@ benchmarks! {
 		let origin = T::AdminOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
 		let location = match T::BenchmarkHelper::reserve_location() {
 			Some(location) => location,
-			None => match T::ReserveLocationsLimit::get() > 0_u32 {
+			None => match T::ReserveAssetLocationsLimit::get() > 0_u32 {
 				true => return Err(BenchmarkError::Stop("missing `reserve_location` data")),
 				false => return Err(BenchmarkError::Weightless),
 			}
@@ -185,7 +185,7 @@ benchmarks! {
 		let origin = T::AdminOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
 		let location = match T::BenchmarkHelper::reserve_location() {
 			Some(location) => location,
-			None => match T::ReserveLocationsLimit::get() > 0_u32 {
+			None => match T::ReserveAssetLocationsLimit::get() > 0_u32 {
 				true => return Err(BenchmarkError::Stop("missing `reserve_location` data")),
 				false => return Err(BenchmarkError::Weightless),
 			}

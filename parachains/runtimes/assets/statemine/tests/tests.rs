@@ -607,8 +607,8 @@ asset_test_utils::include_create_and_manage_foreign_assets_for_local_consensus_p
 );
 
 #[test]
-fn can_governance_change_bridge_transfer_out_configuration() {
-	asset_test_utils::test_cases::can_governance_change_bridge_transfer_out_configuration::<
+fn can_governance_change_bridge_transfer_in_configuration() {
+	asset_test_utils::test_cases_over_bridge::can_governance_change_bridge_transfer_in_configuration::<
 		Runtime,
 		XcmConfig,
 	>(
@@ -624,8 +624,25 @@ fn can_governance_change_bridge_transfer_out_configuration() {
 }
 
 #[test]
-fn initiate_transfer_asset_via_bridge_for_native_asset_works() {
-	asset_test_utils::test_cases::initiate_transfer_asset_via_bridge_for_native_asset_works::<
+fn can_governance_change_bridge_transfer_out_configuration() {
+	asset_test_utils::test_cases_over_bridge::can_governance_change_bridge_transfer_out_configuration::<
+		Runtime,
+		XcmConfig,
+	>(
+		collator_session_keys(),
+		Box::new(|call| RuntimeCall::BridgeTransfer(call).encode()),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::BridgeTransfer(event)) => Some(event),
+				_ => None,
+			}
+		}),
+	)
+}
+
+#[test]
+fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works() {
+	asset_test_utils::test_cases_over_bridge::transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works::<
 		Runtime,
 		XcmConfig,
 		ParachainSystem,
@@ -651,16 +668,27 @@ fn initiate_transfer_asset_via_bridge_for_native_asset_works() {
 }
 
 #[test]
-fn can_governance_change_bridge_transfer_in_configuration() {
-	asset_test_utils::test_cases::can_governance_change_bridge_transfer_in_configuration::<
+fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_works() {
+	asset_test_utils::test_cases_over_bridge::transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_works::<
 		Runtime,
 		XcmConfig,
+		ParachainSystem,
+		XcmpQueue,
+		LocationToAccountId,
+		ForeignAssetsInstance,
 	>(
 		collator_session_keys(),
-		Box::new(|call| RuntimeCall::BridgeTransfer(call).encode()),
+		ExistentialDeposit::get(),
+		AccountId::from(ALICE),
 		Box::new(|runtime_event_encoded: Vec<u8>| {
 			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
 				Ok(RuntimeEvent::BridgeTransfer(event)) => Some(event),
+				_ => None,
+			}
+		}),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
 				_ => None,
 			}
 		}),
@@ -668,12 +696,31 @@ fn can_governance_change_bridge_transfer_in_configuration() {
 }
 
 #[test]
-fn receive_reserve_asset_deposited_from_different_consensus_works() {
-	asset_test_utils::test_cases::receive_reserve_asset_deposited_from_different_consensus_works::<
+fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_works() {
+	asset_test_utils::test_cases_over_bridge::receive_reserve_asset_deposited_from_different_consensus_over_bridge_works::<
 		Runtime,
 		XcmConfig,
 		LocationToAccountId,
 		ForeignAssetsInstance,
+	>(
+		collator_session_keys(),
+		ExistentialDeposit::get(),
+		AccountId::from(BOB),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
+				_ => None,
+			}
+		}),
+	)
+}
+
+#[test]
+fn withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_works() {
+	asset_test_utils::test_cases_over_bridge::withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_works::<
+		Runtime,
+		XcmConfig,
+		LocationToAccountId,
 	>(
 		collator_session_keys(),
 		ExistentialDeposit::get(),

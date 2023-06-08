@@ -13,7 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{Config, Pallet};
+use crate::{
+	types::{AssetFilterT, LatestVersionedMultiLocation},
+	AssetTransferKind, BridgeConfig, Config, Pallet, ResolveAssetTransferKind, UsingVersioned,
+	LOG_TARGET,
+};
 use frame_support::traits::{Contains, ContainsPair};
 use xcm::prelude::*;
 use xcm_builder::ExporterFor;
@@ -25,8 +29,37 @@ impl<T: Config> ExporterFor for Pallet<T> {
 		_remote_location: &InteriorMultiLocation,
 		_message: &Xcm<()>,
 	) -> Option<(MultiLocation, Option<MultiAsset>)> {
-		Self::allowed_exporters(network)
-			.map(|bridge_config| (bridge_config.bridge_location, bridge_config.bridge_location_fee))
+		match Self::allowed_exporters(network) {
+			Some(BridgeConfig { bridge_location, bridge_location_fee, .. }) => {
+				let bridge_location = match bridge_location.to_versioned() {
+					Ok(versioned) => versioned,
+					Err(e) => {
+						log::warn!(
+							target: LOG_TARGET,
+							"Exporter for network: {:?} - bridge_location has error: {:?}!",
+							network, e
+						);
+						return None
+					},
+				};
+				let bridge_location_fee = match bridge_location_fee {
+					Some(fee) => match fee.to_versioned() {
+						Ok(versioned) => Some(versioned),
+						Err(e) => {
+							log::warn!(
+								target: LOG_TARGET,
+								"ExporterFor network: {:?} - bridge_location_fee has error: {:?}!",
+								network, e
+							);
+							return None
+						},
+					},
+					None => None,
+				};
+				Some((bridge_location, bridge_location_fee))
+			},
+			None => None,
+		}
 	}
 }
 
@@ -34,23 +67,109 @@ impl<T: Config> ExporterFor for Pallet<T> {
 pub struct AllowedUniversalAliasesOf<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> Contains<(MultiLocation, Junction)> for AllowedUniversalAliasesOf<T> {
 	fn contains((location, junction): &(MultiLocation, Junction)) -> bool {
-		log::trace!(target: "xcm::contains", "AllowedUniversalAliasesOf location: {:?}, junction: {:?}", location, junction);
-		Pallet::<T>::allowed_universal_aliases(location).contains(junction)
+		log::trace!(
+			target: "xcm::contains",
+			"AllowedUniversalAliasesOf location: {:?}, junction: {:?}", location, junction
+		);
+
+		Pallet::<T>::allowed_universal_aliases(LatestVersionedMultiLocation(location))
+			.contains(junction)
 	}
 }
 
-/// Verifies if we can allow `(MultiAsset, MultiLocation)` as trusted reserve.
-pub struct IsAllowedReserveOf<T, F>(sp_std::marker::PhantomData<(T, F)>);
-impl<T: Config, F: ContainsPair<MultiAsset, MultiLocation>> ContainsPair<MultiAsset, MultiLocation>
-	for IsAllowedReserveOf<T, F>
+/// Verifies if we can allow `(MultiAsset, MultiLocation)` as trusted reserve received from "bridge".
+pub struct IsTrustedBridgedReserveForConcreteAsset<T>(sp_std::marker::PhantomData<T>);
+impl<T: Config> ContainsPair<MultiAsset, MultiLocation>
+	for IsTrustedBridgedReserveForConcreteAsset<T>
 {
 	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
-		log::trace!(target: "xcm::contains", "IsAllowedReserveOf asset: {:?}, origin: {:?}", asset, origin);
-		// first check - if we have configured origin as trusted reserve location
-		if !Pallet::<T>::allowed_reserve_locations().contains(origin) {
-			return false
+		log::trace!(
+			target: "xcm::contains",
+			"IsTrustedBridgedReserve asset: {:?}, origin: {:?}",
+			asset, origin
+		);
+
+		let asset_location = match &asset.id {
+			Concrete(location) => location,
+			_ => return false,
+		};
+
+		let versioned_origin = LatestVersionedMultiLocation(origin);
+		Pallet::<T>::allowed_reserve_locations(versioned_origin)
+			.map_or(false, |filter| match filter.matches(asset_location) {
+				Ok(result) => result,
+				Err(e) => {
+					log::error!(
+						target: "xcm::contains",
+						"IsTrustedBridgedReserveForConcreteAsset has error: {:?} for asset_location: {:?} and origin: {:?}!",
+						e, asset_location, origin
+					);
+					false
+				},
+			})
+	}
+}
+
+/// Implementation of `ResolveTransferKind` which tries to resolve all kinds of transfer according to on-chain configuration.
+pub struct ConfiguredConcreteAssetTransferKindResolver<T>(sp_std::marker::PhantomData<T>);
+
+impl<T: Config> ResolveAssetTransferKind for ConfiguredConcreteAssetTransferKindResolver<T> {
+	fn resolve(asset: &MultiAsset, target_location: &MultiLocation) -> AssetTransferKind {
+		log::trace!(
+			target: LOG_TARGET,
+			"ConfiguredConcreteAssetTransferKindResolver resolve asset: {:?}, target_location: {:?}",
+			asset, target_location
+		);
+
+		let asset_location = match &asset.id {
+			Concrete(location) => location,
+			_ => return AssetTransferKind::Unsupported,
+		};
+
+		// first, we check, if we are trying to transfer back reserve-deposited assets
+		// other words: if target_location is a known reserve location for asset
+		if IsTrustedBridgedReserveForConcreteAsset::<T>::contains(asset, target_location) {
+			return AssetTransferKind::WithdrawReserve
 		}
-		// second check - we need to pass additional `(asset, origin)` filter
-		F::contains(asset, origin)
+
+		// second, we check, if target_location is allowed for requested asset to be transferred there
+		match target_location.interior.global_consensus() {
+			Ok(target_consensus) => {
+				if let Some(bridge_config) = Pallet::<T>::allowed_exporters(target_consensus) {
+					match bridge_config.allowed_target_location_for(target_location) {
+						Ok(Some((_, Some(asset_filter)))) => {
+							match asset_filter.matches(asset_location) {
+								Ok(true) => return AssetTransferKind::ReserveBased,
+								Ok(false) => (),
+								Err(e) => {
+									log::error!(
+										target: LOG_TARGET,
+										"ConfiguredConcreteAssetTransferKindResolver `asset_filter.matches` has error: {:?} for asset_location: {:?} and target_location: {:?}!",
+										e, asset_location, target_location
+									);
+								},
+							}
+						},
+						Ok(_) => (),
+						Err(e) => {
+							log::warn!(
+								target: LOG_TARGET,
+								"ConfiguredBridgeTransferKindResolver allowed_target_location_for has error: {:?} for target_location: {:?}!",
+								e, target_location
+							);
+						},
+					}
+				}
+			},
+			Err(_) => {
+				log::warn!(
+					target: LOG_TARGET,
+					"ConfiguredBridgeTransferKindResolver target_location: {:?} does not contain global consensus!",
+					target_location
+				);
+			},
+		}
+
+		AssetTransferKind::Unsupported
 	}
 }

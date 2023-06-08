@@ -701,14 +701,16 @@ impl pallet_bridge_transfer::Config for Runtime {
 	type UniversalLocation = UniversalLocation;
 	type WeightInfo = weights::pallet_bridge_transfer::WeightInfo<Runtime>;
 	type AdminOrigin = AssetsForceOrigin;
+	type AllowReserveAssetTransferOrigin = AsEnsureOriginWithArg<AssetsForceOrigin>;
 	type UniversalAliasesLimit = ConstU32<24>;
-	type ReserveLocationsLimit = ConstU32<8>;
+	type ReserveLocationsLimit = ConstU32<4>;
+	type AssetsPerReserveLocationLimit = ConstU32<128>;
 	type AssetTransactor = AssetTransactors;
+	type AssetTransferKindResolver =
+		pallet_bridge_transfer::impls::ConfiguredConcreteAssetTransferKindResolver<Runtime>;
 	type BridgeXcmSender = BridgeXcmSender;
-	type TransferAssetOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+	type AssetTransferOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 	type MaxAssetsLimit = ConstU8<1>;
-	type TransferPingOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
-	type PingMessageBuilder = pallet_bridge_transfer::UnpaidTrapMessageBuilder<ConstU64<12345>>;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = xcm_config::BridgeTransferBenchmarksHelper;
 }
