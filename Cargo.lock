@@ -241,12 +241,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "arbitrary"
-version = "1.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2d098ff73c1ca148721f37baad5ea6a465a13f9573aba8641fbbbae8164a54e"
-
-[[package]]
 name = "arc-swap"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -726,7 +720,7 @@ version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf46fee83e5ccffc220104713af3292ff9bc7c64c7de289f66dae8e38d826833"
 dependencies = [
- "concurrent-queue 2.1.0",
+ "concurrent-queue",
  "event-listener",
  "futures-core",
 ]
@@ -739,44 +733,42 @@ checksum = "6fa3dc5f2a8564f07759c008b9109dc0d39de92a88d5588b8a5036d286383afb"
 dependencies = [
  "async-lock",
  "async-task",
- "concurrent-queue 2.1.0",
+ "concurrent-queue",
  "fastrand",
  "futures-lite",
  "slab",
 ]
 
 [[package]]
-name = "async-global-executor"
-version = "2.3.1"
+name = "async-fs"
+version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1b6f5d7df27bd294849f8eec66ecfc63d11814df7a4f5d74168a2394467b776"
+checksum = "279cf904654eeebfa37ac9bb1598880884924aab82e290aa65c9e77a0e142e06"
 dependencies = [
- "async-channel",
- "async-executor",
- "async-io",
  "async-lock",
+ "autocfg",
  "blocking",
  "futures-lite",
- "once_cell",
 ]
 
 [[package]]
 name = "async-io"
-version = "1.6.0"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a811e6a479f2439f0c04038796b5cfb3d2ad56c230e0f2d3f7b04d68cfee607b"
+checksum = "0fc5b45d93ef0529756f812ca52e44c221b35341892d3dcc34132ac02f3dd2af"
 dependencies = [
- "concurrent-queue 1.2.2",
+ "async-lock",
+ "autocfg",
+ "cfg-if",
+ "concurrent-queue",
  "futures-lite",
- "libc",
  "log",
- "once_cell",
  "parking",
  "polling",
+ "rustix 0.37.19",
  "slab",
  "socket2",
  "waker-fn",
- "winapi",
 ]
 
 [[package]]
@@ -789,6 +781,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-net"
+version = "1.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4051e67316bc7eff608fe723df5d32ed639946adcd69e07df41fd42a7b411f1f"
+dependencies = [
+ "async-io",
+ "autocfg",
+ "blocking",
+ "futures-lite",
+]
+
+[[package]]
+name = "async-process"
+version = "1.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a9d28b1d97e08915212e2e45310d47854eafa69600756fc735fb788f75199c9"
+dependencies = [
+ "async-io",
+ "async-lock",
+ "autocfg",
+ "blocking",
+ "cfg-if",
+ "event-listener",
+ "futures-lite",
+ "rustix 0.37.19",
+ "signal-hook",
+ "windows-sys 0.48.0",
+]
+
+[[package]]
 name = "async-recursion"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -797,32 +819,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.18",
-]
-
-[[package]]
-name = "async-std"
-version = "1.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62565bb4402e926b29953c785397c6dc0391b7b446e45008b0049eb43cec6f5d"
-dependencies = [
- "async-channel",
- "async-global-executor",
- "async-io",
- "async-lock",
- "crossbeam-utils",
- "futures-channel",
- "futures-core",
- "futures-io",
- "futures-lite",
- "gloo-timers",
- "kv-log-macro",
- "log",
- "memchr",
- "once_cell",
- "pin-project-lite 0.2.9",
- "pin-utils",
- "slab",
- "wasm-bindgen-futures",
 ]
 
 [[package]]
@@ -947,7 +943,7 @@ dependencies = [
 [[package]]
 name = "binary-merkle-tree"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "hash-db",
  "log",
@@ -968,7 +964,7 @@ version = "0.65.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cfdf7b466f9a4903edc73f95d6d2bcd5baf8ae620638762244d3f60143643cc5"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags",
  "cexpr",
  "clang-sys",
  "lazy_static",
@@ -1003,12 +999,6 @@ name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
-
-[[package]]
-name = "bitflags"
-version = "2.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6776fc96284a0bb647b615056fc496d1fe1644a7ab01829818a6d91cae888b84"
 
 [[package]]
 name = "bitvec"
@@ -1733,12 +1723,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cache-padded"
-version = "1.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "631ae5198c9be5e753e5cc215e1bd73c2b466a3565173db433f52bb9d3e66dba"
-
-[[package]]
 name = "camino"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1970,7 +1954,7 @@ checksum = "72394f3339a76daf211e57d4bcb374410f3965dcc606dd0e03738c7888766980"
 dependencies = [
  "anstream",
  "anstyle 1.0.0",
- "bitflags 1.3.2",
+ "bitflags",
  "clap_lex",
  "strsim",
 ]
@@ -2160,15 +2144,6 @@ checksum = "2382f75942f4b3be3690fe4f86365e9c853c1587d6ee58212cebf6e2a9ccd101"
 
 [[package]]
 name = "concurrent-queue"
-version = "1.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30ed07550be01594c6026cff2a1d7fe9c8f683caa798e12b68694ac9e88286a3"
-dependencies = [
- "cache-padded",
-]
-
-[[package]]
-name = "concurrent-queue"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c278839b831783b70278b14df4d45e1beb1aad306c07bb796637de9a0e323e8e"
@@ -2337,24 +2312,23 @@ checksum = "dcb25d077389e53838a8158c8e99174c5a9d902dee4904320db714f3c653ffba"
 
 [[package]]
 name = "cranelift-bforest"
-version = "0.96.3"
+version = "0.95.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c064a534a914eb6709d198525321a386dad50627aecfaf64053f369993a3e5a"
+checksum = "1277fbfa94bc82c8ec4af2ded3e639d49ca5f7f3c7eeab2c66accd135ece4e70"
 dependencies = [
  "cranelift-entity",
 ]
 
 [[package]]
 name = "cranelift-codegen"
-version = "0.96.3"
+version = "0.95.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "619ed4d24acef0bd58b16a1be39077c0b36c65782e6c933892439af5e799110e"
+checksum = "c6e8c31ad3b2270e9aeec38723888fe1b0ace3bea2b06b3f749ccf46661d3220"
 dependencies = [
  "bumpalo",
  "cranelift-bforest",
  "cranelift-codegen-meta",
  "cranelift-codegen-shared",
- "cranelift-control",
  "cranelift-entity",
  "cranelift-isle",
  "gimli",
@@ -2367,42 +2341,33 @@ dependencies = [
 
 [[package]]
 name = "cranelift-codegen-meta"
-version = "0.96.3"
+version = "0.95.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c777ce22678ae1869f990b2f31e0cd7ca109049213bfc0baf3e2205a18b21ebb"
+checksum = "c8ac5ac30d62b2d66f12651f6b606dbdfd9c2cfd0908de6b387560a277c5c9da"
 dependencies = [
  "cranelift-codegen-shared",
 ]
 
 [[package]]
 name = "cranelift-codegen-shared"
-version = "0.96.3"
+version = "0.95.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb65884d17a1fa55990dd851c43c140afb4c06c3312cf42cfa1222c3b23f9561"
-
-[[package]]
-name = "cranelift-control"
-version = "0.96.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a0cea8abc90934d0a7ee189a29fd35fecd5c40f59ae7e6aab1805e8ab1a535e"
-dependencies = [
- "arbitrary",
-]
+checksum = "dd82b8b376247834b59ed9bdc0ddeb50f517452827d4a11bccf5937b213748b8"
 
 [[package]]
 name = "cranelift-entity"
-version = "0.96.3"
+version = "0.95.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2e50bebc05f2401a1320169314b62f91ad811ef20163cac00151d78e0684d4c"
+checksum = "40099d38061b37e505e63f89bab52199037a72b931ad4868d9089ff7268660b0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "cranelift-frontend"
-version = "0.96.3"
+version = "0.95.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b82ccfe704d53f669791399d417928410785132d809ec46f5e2ce069e9d17c8"
+checksum = "64a25d9d0a0ae3079c463c34115ec59507b4707175454f0eee0891e83e30e82d"
 dependencies = [
  "cranelift-codegen",
  "log",
@@ -2412,15 +2377,15 @@ dependencies = [
 
 [[package]]
 name = "cranelift-isle"
-version = "0.96.3"
+version = "0.95.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2515d8e7836f9198b160b2c80aaa1f586d7749d57d6065af86223fb65b7e2c3"
+checksum = "80de6a7d0486e4acbd5f9f87ec49912bf4c8fb6aea00087b989685460d4469ba"
 
 [[package]]
 name = "cranelift-native"
-version = "0.96.3"
+version = "0.95.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bcb47ffdcdac7e9fed6e4a618939773a4dc4a412fa7da9e701ae667431a10af3"
+checksum = "bb6b03e0e03801c4b3fd8ce0758a94750c07a44e7944cc0ffbf0d3f2e7c79b00"
 dependencies = [
  "cranelift-codegen",
  "libc",
@@ -2429,9 +2394,9 @@ dependencies = [
 
 [[package]]
 name = "cranelift-wasm"
-version = "0.96.3"
+version = "0.95.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "852390f92c3eaa457e42be44d174ff5abbbcd10062d5963bda8ffb2505e73a71"
+checksum = "ff3220489a3d928ad91e59dd7aeaa8b3de18afb554a6211213673a71c90737ac"
 dependencies = [
  "cranelift-codegen",
  "cranelift-entity",
@@ -3560,15 +3525,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "debugid"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bef552e6f588e446098f6ba40d89ac146c8c7b64aade83c051ee00bb5d2bc18d"
-dependencies = [
- "uuid",
-]
-
-[[package]]
 name = "der"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4174,12 +4130,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4443176a9f2c162692bd3d352d745ef9413eec5782a80d8fd6f8a1ac692a07f7"
 
 [[package]]
-name = "fallible-streaming-iterator"
-version = "0.1.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7360491ce676a36bf9bb3c56c1aa791658183a54d2744120f27285738d90465a"
-
-[[package]]
 name = "fastrand"
 version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4335,7 +4285,7 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 [[package]]
 name = "fork-tree"
 version = "3.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "parity-scale-codec",
 ]
@@ -4358,7 +4308,7 @@ checksum = "6c2141d6d6c8512188a7891b4b01590a45f6dac67afb4f255c4124dbb86d4eaa"
 [[package]]
 name = "frame-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-support",
  "frame-support-procedural",
@@ -4383,7 +4333,7 @@ dependencies = [
 [[package]]
 name = "frame-benchmarking-cli"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "Inflector",
  "array-bytes 4.2.0",
@@ -4430,7 +4380,7 @@ dependencies = [
 [[package]]
 name = "frame-election-provider-solution-type"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -4441,7 +4391,7 @@ dependencies = [
 [[package]]
 name = "frame-election-provider-support"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-election-provider-solution-type",
  "frame-support",
@@ -4458,7 +4408,7 @@ dependencies = [
 [[package]]
 name = "frame-executive"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4487,7 +4437,7 @@ dependencies = [
 [[package]]
 name = "frame-remote-externalities"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-recursion",
  "futures",
@@ -4508,9 +4458,9 @@ dependencies = [
 [[package]]
 name = "frame-support"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags",
  "environmental",
  "frame-metadata",
  "frame-support-procedural",
@@ -4543,7 +4493,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "Inflector",
  "cfg-expr",
@@ -4560,7 +4510,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-support-procedural-tools-derive",
  "proc-macro-crate",
@@ -4572,7 +4522,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools-derive"
 version = "3.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4582,7 +4532,7 @@ dependencies = [
 [[package]]
 name = "frame-system"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "cfg-if",
  "frame-support",
@@ -4601,7 +4551,7 @@ dependencies = [
 [[package]]
 name = "frame-system-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -4616,7 +4566,7 @@ dependencies = [
 [[package]]
 name = "frame-system-rpc-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -4625,7 +4575,7 @@ dependencies = [
 [[package]]
 name = "frame-try-runtime"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -4805,19 +4755,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fxprof-processed-profile"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27d12c0aed7f1e24276a241aadc4cb8ea9f83000f34bc062b7cc2d51e3b0fabd"
-dependencies = [
- "bitflags 2.3.1",
- "debugid",
- "fxhash",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "generic-array"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4917,18 +4854,6 @@ dependencies = [
  "fnv",
  "log",
  "regex",
-]
-
-[[package]]
-name = "gloo-timers"
-version = "0.2.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b995a66bb87bebce9a0f4a95aed01daca4872c050bfcb21653361c03bc35e5c"
-dependencies = [
- "futures-channel",
- "futures-core",
- "js-sys",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -5058,16 +4983,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
 dependencies = [
  "ahash 0.8.2",
- "serde",
 ]
 
 [[package]]
-name = "hashlink"
-version = "0.8.2"
+name = "hashbrown"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0761a1b9491c4f2e3d66aa0f62d0fba0af9a0e2852e4d48ea506632a4b56e6aa"
+checksum = "2c6201b9ff9fd90a5a3bac2e56a830d0caa509576f0e503818ee82c181b3437a"
 dependencies = [
- "hashbrown 0.13.2",
+ "serde",
 ]
 
 [[package]]
@@ -5282,12 +5206,6 @@ dependencies = [
  "tokio-rustls",
  "webpki-roots",
 ]
-
-[[package]]
-name = "id-arena"
-version = "2.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25a2bc672d1148e28034f176e01fffebb08b35768468cc954630da77a1449005"
 
 [[package]]
 name = "ident_case"
@@ -5874,15 +5792,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "kv-log-macro"
-version = "1.0.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0de8b303297635ad57c9f5059fd9cee7a47f8e8daa09df0fcd07dd39fb22977f"
-dependencies = [
- "log",
-]
-
-[[package]]
 name = "kvdb"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6444,17 +6353,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "libsqlite3-sys"
-version = "0.26.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "afc22eff61b133b115c6e8c74e818c628d6d5e7a502afea6f64dee076dd94326"
-dependencies = [
- "cc",
- "pkg-config",
- "vcpkg",
-]
-
-[[package]]
 name = "libz-sys"
 version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6530,9 +6428,6 @@ name = "log"
 version = "0.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "518ef76f2f87365916b142844c16d8fefd85039bc5699050210a7778ee1cd1de"
-dependencies = [
- "value-bag",
-]
 
 [[package]]
 name = "lru"
@@ -6826,7 +6721,7 @@ dependencies = [
 [[package]]
 name = "mmr-gadget"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "futures",
  "log",
@@ -6845,7 +6740,7 @@ dependencies = [
 [[package]]
 name = "mmr-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "anyhow",
  "jsonrpsee",
@@ -7040,7 +6935,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9ea4302b9759a7a88242299225ea3688e63c85ea136371bb6cf94fd674efaab"
 dependencies = [
  "anyhow",
- "bitflags 1.3.2",
+ "bitflags",
  "byteorder",
  "libc",
  "netlink-packet-core",
@@ -7093,7 +6988,7 @@ version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "195cdbc1741b8134346d515b3a56a1c94b0912758009cfd53f99ea0f57b065fc"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags",
  "cfg-if",
  "libc",
  "memoffset 0.6.5",
@@ -7105,7 +7000,7 @@ version = "0.26.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bfdda3d196821d6af13126e40375cdf7da646a96114af134d5f417a9a1dc8e1a"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags",
  "cfg-if",
  "libc",
  "memoffset 0.7.1",
@@ -7360,7 +7255,7 @@ dependencies = [
 [[package]]
 name = "pallet-alliance"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "array-bytes 4.2.0",
  "frame-benchmarking",
@@ -7381,7 +7276,7 @@ dependencies = [
 [[package]]
 name = "pallet-asset-tx-payment"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7399,7 +7294,7 @@ dependencies = [
 [[package]]
 name = "pallet-assets"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7414,7 +7309,7 @@ dependencies = [
 [[package]]
 name = "pallet-aura"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7430,7 +7325,7 @@ dependencies = [
 [[package]]
 name = "pallet-authority-discovery"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7446,7 +7341,7 @@ dependencies = [
 [[package]]
 name = "pallet-authorship"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7460,7 +7355,7 @@ dependencies = [
 [[package]]
 name = "pallet-babe"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7484,7 +7379,7 @@ dependencies = [
 [[package]]
 name = "pallet-bags-list"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -7504,7 +7399,7 @@ dependencies = [
 [[package]]
 name = "pallet-balances"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7519,7 +7414,7 @@ dependencies = [
 [[package]]
 name = "pallet-beefy"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7538,7 +7433,7 @@ dependencies = [
 [[package]]
 name = "pallet-beefy-mmr"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "array-bytes 4.2.0",
  "binary-merkle-tree",
@@ -7562,7 +7457,7 @@ dependencies = [
 [[package]]
 name = "pallet-bounties"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7668,7 +7563,7 @@ dependencies = [
 [[package]]
 name = "pallet-child-bounties"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7712,7 +7607,7 @@ dependencies = [
 [[package]]
 name = "pallet-collective"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7729,9 +7624,9 @@ dependencies = [
 [[package]]
 name = "pallet-contracts"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags",
  "environmental",
  "frame-benchmarking",
  "frame-support",
@@ -7759,9 +7654,9 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-primitives"
 version = "24.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags",
  "parity-scale-codec",
  "scale-info",
  "sp-runtime",
@@ -7772,7 +7667,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -7782,7 +7677,7 @@ dependencies = [
 [[package]]
 name = "pallet-conviction-voting"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "assert_matches",
  "frame-benchmarking",
@@ -7799,7 +7694,7 @@ dependencies = [
 [[package]]
 name = "pallet-core-fellowship"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7817,7 +7712,7 @@ dependencies = [
 [[package]]
 name = "pallet-democracy"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7835,7 +7730,7 @@ dependencies = [
 [[package]]
 name = "pallet-election-provider-multi-phase"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -7858,7 +7753,7 @@ dependencies = [
 [[package]]
 name = "pallet-election-provider-support-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -7871,7 +7766,7 @@ dependencies = [
 [[package]]
 name = "pallet-elections-phragmen"
 version = "5.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7889,7 +7784,7 @@ dependencies = [
 [[package]]
 name = "pallet-fast-unstake"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "docify",
  "frame-benchmarking",
@@ -7908,7 +7803,7 @@ dependencies = [
 [[package]]
 name = "pallet-glutton"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "blake2",
  "frame-benchmarking",
@@ -7926,7 +7821,7 @@ dependencies = [
 [[package]]
 name = "pallet-grandpa"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7949,7 +7844,7 @@ dependencies = [
 [[package]]
 name = "pallet-identity"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "enumflags2",
  "frame-benchmarking",
@@ -7965,7 +7860,7 @@ dependencies = [
 [[package]]
 name = "pallet-im-online"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7985,7 +7880,7 @@ dependencies = [
 [[package]]
 name = "pallet-indices"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8002,7 +7897,7 @@ dependencies = [
 [[package]]
 name = "pallet-insecure-randomness-collective-flip"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -8016,7 +7911,7 @@ dependencies = [
 [[package]]
 name = "pallet-membership"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8033,7 +7928,7 @@ dependencies = [
 [[package]]
 name = "pallet-message-queue"
 version = "7.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8052,7 +7947,7 @@ dependencies = [
 [[package]]
 name = "pallet-mmr"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8069,7 +7964,7 @@ dependencies = [
 [[package]]
 name = "pallet-multisig"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8085,7 +7980,7 @@ dependencies = [
 [[package]]
 name = "pallet-nft-fractionalization"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8102,7 +7997,7 @@ dependencies = [
 [[package]]
 name = "pallet-nfts"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "enumflags2",
  "frame-benchmarking",
@@ -8120,7 +8015,7 @@ dependencies = [
 [[package]]
 name = "pallet-nfts-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-support",
  "pallet-nfts",
@@ -8131,7 +8026,7 @@ dependencies = [
 [[package]]
 name = "pallet-nis"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8147,7 +8042,7 @@ dependencies = [
 [[package]]
 name = "pallet-nomination-pools"
 version = "1.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -8164,7 +8059,7 @@ dependencies = [
 [[package]]
 name = "pallet-nomination-pools-benchmarking"
 version = "1.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -8184,7 +8079,7 @@ dependencies = [
 [[package]]
 name = "pallet-nomination-pools-runtime-api"
 version = "1.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "pallet-nomination-pools",
  "parity-scale-codec",
@@ -8195,7 +8090,7 @@ dependencies = [
 [[package]]
 name = "pallet-offences"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -8212,7 +8107,7 @@ dependencies = [
 [[package]]
 name = "pallet-offences-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -8251,7 +8146,7 @@ dependencies = [
 [[package]]
 name = "pallet-preimage"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8268,7 +8163,7 @@ dependencies = [
 [[package]]
 name = "pallet-proxy"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8283,7 +8178,7 @@ dependencies = [
 [[package]]
 name = "pallet-ranked-collective"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8301,7 +8196,7 @@ dependencies = [
 [[package]]
 name = "pallet-recovery"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8316,7 +8211,7 @@ dependencies = [
 [[package]]
 name = "pallet-referenda"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "assert_matches",
  "frame-benchmarking",
@@ -8335,7 +8230,7 @@ dependencies = [
 [[package]]
 name = "pallet-salary"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8353,7 +8248,7 @@ dependencies = [
 [[package]]
 name = "pallet-scheduler"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8370,7 +8265,7 @@ dependencies = [
 [[package]]
 name = "pallet-session"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -8391,7 +8286,7 @@ dependencies = [
 [[package]]
 name = "pallet-session-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8407,7 +8302,7 @@ dependencies = [
 [[package]]
 name = "pallet-society"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -8421,7 +8316,7 @@ dependencies = [
 [[package]]
 name = "pallet-staking"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -8444,7 +8339,7 @@ dependencies = [
 [[package]]
 name = "pallet-staking-reward-curve"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -8455,7 +8350,7 @@ dependencies = [
 [[package]]
 name = "pallet-staking-reward-fn"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "log",
  "sp-arithmetic",
@@ -8464,7 +8359,7 @@ dependencies = [
 [[package]]
 name = "pallet-staking-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -8473,7 +8368,7 @@ dependencies = [
 [[package]]
 name = "pallet-state-trie-migration"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8490,7 +8385,7 @@ dependencies = [
 [[package]]
 name = "pallet-sudo"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8505,7 +8400,7 @@ dependencies = [
 [[package]]
 name = "pallet-timestamp"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8523,7 +8418,7 @@ dependencies = [
 [[package]]
 name = "pallet-tips"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8542,7 +8437,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -8558,7 +8453,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "jsonrpsee",
  "pallet-transaction-payment-rpc-runtime-api",
@@ -8574,7 +8469,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment-rpc-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "pallet-transaction-payment",
  "parity-scale-codec",
@@ -8586,7 +8481,7 @@ dependencies = [
 [[package]]
 name = "pallet-treasury"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8603,7 +8498,7 @@ dependencies = [
 [[package]]
 name = "pallet-uniques"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8618,7 +8513,7 @@ dependencies = [
 [[package]]
 name = "pallet-utility"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8634,7 +8529,7 @@ dependencies = [
 [[package]]
 name = "pallet-vesting"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8649,7 +8544,7 @@ dependencies = [
 [[package]]
 name = "pallet-whitelist"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -10437,7 +10332,7 @@ name = "polkadot-runtime-parachains"
 version = "0.9.41"
 source = "git+https://github.com/paritytech/polkadot?branch=master#bfb9e87a6d9964a8769c01b2019c30db48f5349d"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags",
  "bitvec",
  "derive_more",
  "frame-benchmarking",
@@ -11061,17 +10956,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pulldown-cmark"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ffade02495f22453cd593159ea2f59827aae7f53fa8323f756799b670881dcf8"
-dependencies = [
- "bitflags 1.3.2",
- "memchr",
- "unicase",
-]
-
-[[package]]
 name = "quick-error"
 version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11288,7 +11172,7 @@ version = "0.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8383f39639269cde97d255a32bdb68c047337295414940c68bdd30c2e13203ff"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags",
 ]
 
 [[package]]
@@ -11297,7 +11181,7 @@ version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "567664f262709473930a4bf9e51bf2ebf3348f2e748ccc50dea20646858f8f29"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags",
 ]
 
 [[package]]
@@ -11345,13 +11229,12 @@ dependencies = [
 
 [[package]]
 name = "regalloc2"
-version = "0.8.1"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4a52e724646c6c0800fc456ec43b4165d2f91fba88ceaca06d9e0b400023478"
+checksum = "80535183cae11b149d618fbd3c37e38d7cda589d82d7769e196ca9a9042d7621"
 dependencies = [
- "hashbrown 0.13.2",
+ "fxhash",
  "log",
- "rustc-hash",
  "slice-group-by",
  "smallvec",
 ]
@@ -11648,20 +11531,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rusqlite"
-version = "0.29.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "549b9d036d571d42e6e85d1c1425e2ac83491075078ca9a15be021c56b1641f2"
-dependencies = [
- "bitflags 2.3.1",
- "fallible-iterator",
- "fallible-streaming-iterator",
- "hashlink",
- "libsqlite3-sys",
- "smallvec",
-]
-
-[[package]]
 name = "rustc-demangle"
 version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11712,7 +11581,7 @@ version = "0.35.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "727a1a6d65f786ec22df8a81ca3121107f235970dc1705ed681d3e6e8b9cd5f9"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags",
  "errno 0.2.8",
  "io-lifetimes 0.7.5",
  "libc",
@@ -11726,7 +11595,7 @@ version = "0.36.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4fdebc4b395b7fbb9ab11e462e20ed9051e7b16e42d24042c776eca0ac81b03"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags",
  "errno 0.2.8",
  "io-lifetimes 1.0.11",
  "libc",
@@ -11740,7 +11609,7 @@ version = "0.37.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "acf8729d8542766f1b2cf77eb034d52f40d375bb8b615d0b147089946e16613d"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags",
  "errno 0.3.1",
  "io-lifetimes 1.0.11",
  "libc",
@@ -11858,7 +11727,7 @@ dependencies = [
 [[package]]
 name = "sc-allocator"
 version = "4.1.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "log",
  "sp-core",
@@ -11869,7 +11738,7 @@ dependencies = [
 [[package]]
 name = "sc-authority-discovery"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-trait",
  "futures",
@@ -11898,7 +11767,7 @@ dependencies = [
 [[package]]
 name = "sc-basic-authorship"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "futures",
  "futures-timer",
@@ -11921,7 +11790,7 @@ dependencies = [
 [[package]]
 name = "sc-block-builder"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "parity-scale-codec",
  "sc-client-api",
@@ -11936,7 +11805,7 @@ dependencies = [
 [[package]]
 name = "sc-chain-spec"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "memmap2",
  "sc-chain-spec-derive",
@@ -11955,7 +11824,7 @@ dependencies = [
 [[package]]
 name = "sc-chain-spec-derive"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -11966,7 +11835,7 @@ dependencies = [
 [[package]]
 name = "sc-cli"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "array-bytes 4.2.0",
  "chrono",
@@ -12006,7 +11875,7 @@ dependencies = [
 [[package]]
 name = "sc-client-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "fnv",
  "futures",
@@ -12033,7 +11902,7 @@ dependencies = [
 [[package]]
 name = "sc-client-db"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "hash-db",
  "kvdb",
@@ -12059,7 +11928,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-trait",
  "futures",
@@ -12084,7 +11953,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-aura"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-trait",
  "futures",
@@ -12113,7 +11982,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-babe"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-trait",
  "fork-tree",
@@ -12149,7 +12018,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-babe-rpc"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "futures",
  "jsonrpsee",
@@ -12171,7 +12040,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-beefy"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "array-bytes 4.2.0",
  "async-channel",
@@ -12207,7 +12076,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-beefy-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "futures",
  "jsonrpsee",
@@ -12226,7 +12095,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-epochs"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "fork-tree",
  "parity-scale-codec",
@@ -12239,7 +12108,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-grandpa"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "ahash 0.8.2",
  "array-bytes 4.2.0",
@@ -12279,7 +12148,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-grandpa-rpc"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "finality-grandpa",
  "futures",
@@ -12299,7 +12168,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-slots"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-trait",
  "futures",
@@ -12322,7 +12191,7 @@ dependencies = [
 [[package]]
 name = "sc-executor"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "lru 0.10.0",
  "parity-scale-codec",
@@ -12344,7 +12213,7 @@ dependencies = [
 [[package]]
 name = "sc-executor-common"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "sc-allocator",
  "sp-maybe-compressed-blob",
@@ -12356,7 +12225,7 @@ dependencies = [
 [[package]]
 name = "sc-executor-wasmtime"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -12374,7 +12243,7 @@ dependencies = [
 [[package]]
 name = "sc-informant"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "ansi_term",
  "futures",
@@ -12390,7 +12259,7 @@ dependencies = [
 [[package]]
 name = "sc-keystore"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "array-bytes 4.2.0",
  "parking_lot 0.12.1",
@@ -12404,7 +12273,7 @@ dependencies = [
 [[package]]
 name = "sc-network"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "array-bytes 4.2.0",
  "async-channel",
@@ -12450,7 +12319,7 @@ dependencies = [
 [[package]]
 name = "sc-network-bitswap"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-channel",
  "cid",
@@ -12471,11 +12340,11 @@ dependencies = [
 [[package]]
 name = "sc-network-common"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "array-bytes 4.2.0",
  "async-trait",
- "bitflags 1.3.2",
+ "bitflags",
  "bytes",
  "futures",
  "futures-timer",
@@ -12498,7 +12367,7 @@ dependencies = [
 [[package]]
 name = "sc-network-gossip"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "ahash 0.8.2",
  "futures",
@@ -12516,7 +12385,7 @@ dependencies = [
 [[package]]
 name = "sc-network-light"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "array-bytes 4.2.0",
  "async-channel",
@@ -12538,7 +12407,7 @@ dependencies = [
 [[package]]
 name = "sc-network-sync"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "array-bytes 4.2.0",
  "async-channel",
@@ -12572,7 +12441,7 @@ dependencies = [
 [[package]]
 name = "sc-network-transactions"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "array-bytes 4.2.0",
  "futures",
@@ -12590,7 +12459,7 @@ dependencies = [
 [[package]]
 name = "sc-offchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "array-bytes 4.2.0",
  "bytes",
@@ -12620,7 +12489,7 @@ dependencies = [
 [[package]]
 name = "sc-proposer-metrics"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "log",
  "substrate-prometheus-endpoint",
@@ -12629,7 +12498,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "futures",
  "jsonrpsee",
@@ -12660,7 +12529,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc-api"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "jsonrpsee",
  "parity-scale-codec",
@@ -12679,7 +12548,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc-server"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "http",
  "jsonrpsee",
@@ -12694,7 +12563,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc-spec-v2"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "array-bytes 4.2.0",
  "futures",
@@ -12720,7 +12589,7 @@ dependencies = [
 [[package]]
 name = "sc-service"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-trait",
  "directories",
@@ -12786,7 +12655,7 @@ dependencies = [
 [[package]]
 name = "sc-state-db"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "log",
  "parity-scale-codec",
@@ -12797,7 +12666,7 @@ dependencies = [
 [[package]]
 name = "sc-storage-monitor"
 version = "0.1.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "clap",
  "fs4",
@@ -12813,7 +12682,7 @@ dependencies = [
 [[package]]
 name = "sc-sync-state-rpc"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "jsonrpsee",
  "parity-scale-codec",
@@ -12832,7 +12701,7 @@ dependencies = [
 [[package]]
 name = "sc-sysinfo"
 version = "6.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "futures",
  "libc",
@@ -12851,7 +12720,7 @@ dependencies = [
 [[package]]
 name = "sc-telemetry"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "chrono",
  "futures",
@@ -12870,7 +12739,7 @@ dependencies = [
 [[package]]
 name = "sc-tracing"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "ansi_term",
  "atty",
@@ -12901,7 +12770,7 @@ dependencies = [
 [[package]]
 name = "sc-tracing-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -12912,7 +12781,7 @@ dependencies = [
 [[package]]
 name = "sc-transaction-pool"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-trait",
  "futures",
@@ -12938,7 +12807,7 @@ dependencies = [
 [[package]]
 name = "sc-transaction-pool-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-trait",
  "futures",
@@ -12954,7 +12823,7 @@ dependencies = [
 [[package]]
 name = "sc-utils"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-channel",
  "futures",
@@ -13152,7 +13021,7 @@ version = "2.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "525bc1abfda2e1998d152c45cf13e696f76d0a4972310b22fac1658b05df7c87"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags",
  "core-foundation",
  "core-foundation-sys",
  "libc",
@@ -13389,6 +13258,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43b2853a4d09f215c24cc5489c992ce46052d359b5109343cbafbf26bc62f8a3"
 
 [[package]]
+name = "signal-hook"
+version = "0.3.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "732768f1176d21d09e076c23a93123d40bba92d50c4058da34d45c8de8e682b9"
+dependencies = [
+ "libc",
+ "signal-hook-registry",
+]
+
+[[package]]
 name = "signal-hook-registry"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -13479,13 +13358,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 
 [[package]]
+name = "smol"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "13f2b548cd8447f8de0fdf1c592929f70f4fc7039a05e47404b0d096ec6987a1"
+dependencies = [
+ "async-channel",
+ "async-executor",
+ "async-fs",
+ "async-io",
+ "async-lock",
+ "async-net",
+ "async-process",
+ "blocking",
+ "futures-lite",
+]
+
+[[package]]
 name = "smoldot"
 version = "0.7.0"
-source = "git+https://github.com/smol-dot/smoldot?rev=b8a4d432#b8a4d432b4ac15ad829a05561dd6a10004e8b7aa"
+source = "git+https://github.com/smol-dot/smoldot?rev=cf211107#cf21110789140f42f9f21880c1517ef086cc3e2e"
 dependencies = [
  "arrayvec 0.7.2",
  "async-lock",
- "async-std",
  "atomic",
  "base64 0.21.2",
  "bip39",
@@ -13499,7 +13394,7 @@ dependencies = [
  "fnv",
  "futures-channel",
  "futures-util",
- "hashbrown 0.13.2",
+ "hashbrown 0.14.0",
  "hex",
  "hmac 0.12.1",
  "itertools",
@@ -13510,12 +13405,10 @@ dependencies = [
  "num-bigint",
  "num-rational",
  "num-traits",
- "parking_lot 0.12.1",
  "pbkdf2 0.12.1",
  "pin-project",
  "rand 0.8.5",
  "rand_chacha 0.3.1",
- "rusqlite",
  "ruzstd",
  "schnorrkel 0.10.2",
  "serde",
@@ -13524,18 +13417,18 @@ dependencies = [
  "siphasher",
  "slab",
  "smallvec",
+ "smol",
  "snow",
  "soketto",
  "tiny-keccak",
  "twox-hash",
  "wasmi 0.30.0",
- "wasmtime",
 ]
 
 [[package]]
 name = "smoldot-light"
 version = "0.5.0"
-source = "git+https://github.com/smol-dot/smoldot?rev=b8a4d432#b8a4d432b4ac15ad829a05561dd6a10004e8b7aa"
+source = "git+https://github.com/smol-dot/smoldot?rev=cf211107#cf21110789140f42f9f21880c1517ef086cc3e2e"
 dependencies = [
  "async-lock",
  "blake2-rfc",
@@ -13545,16 +13438,18 @@ dependencies = [
  "fnv",
  "futures-channel",
  "futures-util",
- "hashbrown 0.13.2",
+ "hashbrown 0.14.0",
  "hex",
  "itertools",
  "log",
  "lru 0.10.0",
+ "parking_lot 0.12.1",
  "rand 0.8.5",
  "serde",
  "serde_json",
  "siphasher",
  "slab",
+ "smol",
  "smoldot",
 ]
 
@@ -13611,7 +13506,7 @@ dependencies = [
 [[package]]
 name = "sp-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "hash-db",
  "log",
@@ -13631,7 +13526,7 @@ dependencies = [
 [[package]]
 name = "sp-api-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "Inflector",
  "blake2",
@@ -13645,7 +13540,7 @@ dependencies = [
 [[package]]
 name = "sp-application-crypto"
 version = "23.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -13658,7 +13553,7 @@ dependencies = [
 [[package]]
 name = "sp-arithmetic"
 version = "16.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "integer-sqrt",
  "num-traits",
@@ -13672,7 +13567,7 @@ dependencies = [
 [[package]]
 name = "sp-authority-discovery"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -13685,7 +13580,7 @@ dependencies = [
 [[package]]
 name = "sp-block-builder"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -13697,7 +13592,7 @@ dependencies = [
 [[package]]
 name = "sp-blockchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "futures",
  "log",
@@ -13715,7 +13610,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-trait",
  "futures",
@@ -13730,7 +13625,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-aura"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-trait",
  "parity-scale-codec",
@@ -13748,7 +13643,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-babe"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-trait",
  "parity-scale-codec",
@@ -13769,7 +13664,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-beefy"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "lazy_static",
  "parity-scale-codec",
@@ -13788,7 +13683,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-grandpa"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "finality-grandpa",
  "log",
@@ -13806,7 +13701,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-slots"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -13818,10 +13713,10 @@ dependencies = [
 [[package]]
 name = "sp-core"
 version = "21.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "array-bytes 4.2.0",
- "bitflags 1.3.2",
+ "bitflags",
  "blake2",
  "bounded-collections",
  "bs58 0.4.0",
@@ -13862,7 +13757,7 @@ dependencies = [
 [[package]]
 name = "sp-core-hashing"
 version = "9.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "blake2b_simd",
  "byteorder",
@@ -13876,7 +13771,7 @@ dependencies = [
 [[package]]
 name = "sp-core-hashing-proc-macro"
 version = "9.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -13887,7 +13782,7 @@ dependencies = [
 [[package]]
 name = "sp-database"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "kvdb",
  "parking_lot 0.12.1",
@@ -13896,7 +13791,7 @@ dependencies = [
 [[package]]
 name = "sp-debug-derive"
 version = "8.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -13906,7 +13801,7 @@ dependencies = [
 [[package]]
 name = "sp-externalities"
 version = "0.19.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "environmental",
  "parity-scale-codec",
@@ -13917,7 +13812,7 @@ dependencies = [
 [[package]]
 name = "sp-inherents"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-trait",
  "impl-trait-for-tuples",
@@ -13932,7 +13827,7 @@ dependencies = [
 [[package]]
 name = "sp-io"
 version = "23.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "bytes",
  "ed25519",
@@ -13958,7 +13853,7 @@ dependencies = [
 [[package]]
 name = "sp-keyring"
 version = "24.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "lazy_static",
  "sp-core",
@@ -13969,7 +13864,7 @@ dependencies = [
 [[package]]
 name = "sp-keystore"
 version = "0.27.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "futures",
  "parity-scale-codec",
@@ -13983,7 +13878,7 @@ dependencies = [
 [[package]]
 name = "sp-maybe-compressed-blob"
 version = "4.1.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "thiserror",
  "zstd 0.12.3+zstd.1.5.2",
@@ -13992,7 +13887,7 @@ dependencies = [
 [[package]]
 name = "sp-metadata-ir"
 version = "0.1.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-metadata",
  "parity-scale-codec",
@@ -14003,7 +13898,7 @@ dependencies = [
 [[package]]
 name = "sp-mmr-primitives"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "ckb-merkle-mountain-range",
  "log",
@@ -14021,7 +13916,7 @@ dependencies = [
 [[package]]
 name = "sp-npos-elections"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -14035,7 +13930,7 @@ dependencies = [
 [[package]]
 name = "sp-offchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "sp-api",
  "sp-core",
@@ -14045,7 +13940,7 @@ dependencies = [
 [[package]]
 name = "sp-panic-handler"
 version = "8.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "backtrace",
  "lazy_static",
@@ -14055,7 +13950,7 @@ dependencies = [
 [[package]]
 name = "sp-rpc"
 version = "6.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "rustc-hash",
  "serde",
@@ -14065,7 +13960,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime"
 version = "24.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "either",
  "hash256-std-hasher",
@@ -14087,7 +13982,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface"
 version = "17.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "bytes",
  "impl-trait-for-tuples",
@@ -14105,7 +14000,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface-proc-macro"
 version = "11.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "Inflector",
  "proc-macro-crate",
@@ -14117,7 +14012,7 @@ dependencies = [
 [[package]]
 name = "sp-session"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -14131,7 +14026,7 @@ dependencies = [
 [[package]]
 name = "sp-staking"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -14144,7 +14039,7 @@ dependencies = [
 [[package]]
 name = "sp-state-machine"
 version = "0.28.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "hash-db",
  "log",
@@ -14164,7 +14059,7 @@ dependencies = [
 [[package]]
 name = "sp-statement-store"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "log",
  "parity-scale-codec",
@@ -14182,12 +14077,12 @@ dependencies = [
 [[package]]
 name = "sp-std"
 version = "8.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 
 [[package]]
 name = "sp-storage"
 version = "13.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "impl-serde",
  "parity-scale-codec",
@@ -14200,7 +14095,7 @@ dependencies = [
 [[package]]
 name = "sp-timestamp"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-trait",
  "futures-timer",
@@ -14215,7 +14110,7 @@ dependencies = [
 [[package]]
 name = "sp-tracing"
 version = "10.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "parity-scale-codec",
  "sp-std",
@@ -14227,7 +14122,7 @@ dependencies = [
 [[package]]
 name = "sp-transaction-pool"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "sp-api",
  "sp-runtime",
@@ -14236,7 +14131,7 @@ dependencies = [
 [[package]]
 name = "sp-transaction-storage-proof"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-trait",
  "log",
@@ -14252,7 +14147,7 @@ dependencies = [
 [[package]]
 name = "sp-trie"
 version = "22.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "ahash 0.8.2",
  "hash-db",
@@ -14275,7 +14170,7 @@ dependencies = [
 [[package]]
 name = "sp-version"
 version = "22.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "impl-serde",
  "parity-scale-codec",
@@ -14292,7 +14187,7 @@ dependencies = [
 [[package]]
 name = "sp-version-proc-macro"
 version = "8.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "parity-scale-codec",
  "proc-macro2",
@@ -14303,7 +14198,7 @@ dependencies = [
 [[package]]
 name = "sp-wasm-interface"
 version = "14.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "anyhow",
  "impl-trait-for-tuples",
@@ -14316,7 +14211,7 @@ dependencies = [
 [[package]]
 name = "sp-weights"
 version = "20.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -14416,7 +14311,7 @@ version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a2a1c578e98c1c16fc3b8ec1328f7659a500737d7a0c6d625e73e830ff9c1f6"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags",
  "cfg_aliases",
  "libc",
  "parking_lot 0.11.2",
@@ -14514,7 +14409,7 @@ dependencies = [
 [[package]]
 name = "substrate-build-script-utils"
 version = "3.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "platforms",
 ]
@@ -14522,7 +14417,7 @@ dependencies = [
 [[package]]
 name = "substrate-frame-rpc-system"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "frame-system-rpc-runtime-api",
  "futures",
@@ -14541,7 +14436,7 @@ dependencies = [
 [[package]]
 name = "substrate-prometheus-endpoint"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "hyper",
  "log",
@@ -14553,7 +14448,7 @@ dependencies = [
 [[package]]
 name = "substrate-rpc-client"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-trait",
  "jsonrpsee",
@@ -14566,7 +14461,7 @@ dependencies = [
 [[package]]
 name = "substrate-state-trie-migration-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "jsonrpsee",
  "log",
@@ -14585,7 +14480,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-client"
 version = "2.0.1"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "array-bytes 4.2.0",
  "async-trait",
@@ -14611,7 +14506,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-utils"
 version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "futures",
  "substrate-test-utils-derive",
@@ -14621,7 +14516,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-utils-derive"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -14632,7 +14527,7 @@ dependencies = [
 [[package]]
 name = "substrate-wasm-builder"
 version = "5.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "ansi_term",
  "build-helper",
@@ -14708,7 +14603,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d75182f12f490e953596550b65ee31bda7c8e043d9386174b353bda50838c3fd"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags",
  "core-foundation",
  "system-configuration-sys",
 ]
@@ -15107,7 +15002,7 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d1d42a9b3f3ec46ba828e8d376aec14592ea199f70a06a548587ecd1c4ab658"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags",
  "bytes",
  "futures-core",
  "futures-util",
@@ -15319,7 +15214,7 @@ checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 [[package]]
 name = "try-runtime-cli"
 version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
+source = "git+https://github.com/paritytech/substrate?branch=master#85b0807f62f210063feaa7c24b37174af09870cb"
 dependencies = [
  "async-trait",
  "clap",
@@ -15415,15 +15310,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "unicase"
-version = "2.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50f37be617794602aabbeee0be4f259dc1778fabe05e2d67ee8f79326d5cb4f6"
-dependencies = [
- "version_check",
-]
-
-[[package]]
 name = "unicode-bidi"
 version = "0.3.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -15515,12 +15401,6 @@ name = "valuable"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
-
-[[package]]
-name = "value-bag"
-version = "1.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4d330786735ea358f3bc09eea4caa098569c1c93f342d9aca0514915022fe7e"
 
 [[package]]
 name = "vcpkg"
@@ -15788,9 +15668,9 @@ dependencies = [
 
 [[package]]
 name = "wasmparser"
-version = "0.103.0"
+version = "0.102.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c437373cac5ea84f1113d648d51f71751ffbe3d90c00ae67618cf20d0b5ee7b"
+checksum = "48134de3d7598219ab9eaf6b91b15d8e50d31da76b8519fe4ecfcec2cf35104b"
 dependencies = [
  "indexmap",
  "url",
@@ -15807,16 +15687,13 @@ dependencies = [
 
 [[package]]
 name = "wasmtime"
-version = "9.0.3"
+version = "8.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa0f72886c3264eb639f50188d1eb98b975564130292fea8deb4facf91ca7258"
+checksum = "f907fdead3153cb9bfb7a93bbd5b62629472dc06dee83605358c64c52ed3dda9"
 dependencies = [
  "anyhow",
- "async-trait",
  "bincode",
- "bumpalo",
  "cfg-if",
- "fxprof-processed-profile",
  "indexmap",
  "libc",
  "log",
@@ -15826,33 +15703,30 @@ dependencies = [
  "psm",
  "rayon",
  "serde",
- "serde_json",
  "target-lexicon",
  "wasmparser",
  "wasmtime-cache",
- "wasmtime-component-macro",
  "wasmtime-cranelift",
  "wasmtime-environ",
- "wasmtime-fiber",
  "wasmtime-jit",
  "wasmtime-runtime",
- "windows-sys 0.48.0",
+ "windows-sys 0.45.0",
 ]
 
 [[package]]
 name = "wasmtime-asm-macros"
-version = "9.0.3"
+version = "8.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a18391ed41ca957eecdbe64c51879b75419cbc52e2d8663fe82945b28b4f19da"
+checksum = "d3b9daa7c14cd4fa3edbf69de994408d5f4b7b0959ac13fa69d465f6597f810d"
 dependencies = [
  "cfg-if",
 ]
 
 [[package]]
 name = "wasmtime-cache"
-version = "9.0.3"
+version = "8.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfd5ef82889a6a35b3790025b3fd33e6ee4902a5408c09f716c771a38c47cd10"
+checksum = "c86437fa68626fe896e5afc69234bb2b5894949083586535f200385adfd71213"
 dependencies = [
  "anyhow",
  "base64 0.21.2",
@@ -15860,44 +15734,22 @@ dependencies = [
  "directories-next",
  "file-per-thread-logger",
  "log",
- "rustix 0.37.19",
+ "rustix 0.36.7",
  "serde",
  "sha2 0.10.6",
  "toml 0.5.10",
- "windows-sys 0.48.0",
+ "windows-sys 0.45.0",
  "zstd 0.11.2+zstd.1.5.2",
 ]
 
 [[package]]
-name = "wasmtime-component-macro"
-version = "9.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b31baf908d484e93b18fd31f47af5072aa812d3af5ee4d8323295b48240a9ada"
-dependencies = [
- "anyhow",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
- "wasmtime-component-util",
- "wasmtime-wit-bindgen",
- "wit-parser",
-]
-
-[[package]]
-name = "wasmtime-component-util"
-version = "9.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "daff76cac73c9a1bd0bc201d5304e20dc0724b2c34c029b0c91e10e44c1f47a1"
-
-[[package]]
 name = "wasmtime-cranelift"
-version = "9.0.3"
+version = "8.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2495036d05eb1e79ecf22e092eeacd279dcf24b4fcab77fb4cf8ef9bd42c3ea"
+checksum = "b1cefde0cce8cb700b1b21b6298a3837dba46521affd7b8c38a9ee2c869eee04"
 dependencies = [
  "anyhow",
  "cranelift-codegen",
- "cranelift-control",
  "cranelift-entity",
  "cranelift-frontend",
  "cranelift-native",
@@ -15914,13 +15766,12 @@ dependencies = [
 
 [[package]]
 name = "wasmtime-cranelift-shared"
-version = "9.0.3"
+version = "8.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef677f7b0d3f3b73275675486d791f1e85e7c24afe8dd367c6b9950028906330"
+checksum = "cd041e382ef5aea1b9fc78442394f1a4f6d676ce457e7076ca4cb3f397882f8b"
 dependencies = [
  "anyhow",
  "cranelift-codegen",
- "cranelift-control",
  "cranelift-native",
  "gimli",
  "object",
@@ -15930,9 +15781,9 @@ dependencies = [
 
 [[package]]
 name = "wasmtime-environ"
-version = "9.0.3"
+version = "8.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d03356374ffafa881c5f972529d2bb11ce48fe2736285e2b0ad72c6d554257b"
+checksum = "a990198cee4197423045235bf89d3359e69bd2ea031005f4c2d901125955c949"
 dependencies = [
  "anyhow",
  "cranelift-entity",
@@ -15948,23 +15799,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasmtime-fiber"
-version = "9.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ecb992732d5fc99c14e3752f6b9110ec5ace88da15d843f2b80f2b789b182ea"
-dependencies = [
- "cc",
- "cfg-if",
- "rustix 0.37.19",
- "wasmtime-asm-macros",
- "windows-sys 0.48.0",
-]
-
-[[package]]
 name = "wasmtime-jit"
-version = "9.0.3"
+version = "8.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5374f0d2ee0069391dd9348f148802846b2b3e0af650385f9c56b3012d3c5d1"
+checksum = "0de48df552cfca1c9b750002d3e07b45772dd033b0b206d5c0968496abf31244"
 dependencies = [
  "addr2line",
  "anyhow",
@@ -15981,36 +15819,36 @@ dependencies = [
  "wasmtime-jit-debug",
  "wasmtime-jit-icache-coherence",
  "wasmtime-runtime",
- "windows-sys 0.48.0",
+ "windows-sys 0.45.0",
 ]
 
 [[package]]
 name = "wasmtime-jit-debug"
-version = "9.0.3"
+version = "8.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "102653b177225bfdd2da41cc385965d4bf6bc10cf14ec7b306bc9b015fb01c22"
+checksum = "6e0554b84c15a27d76281d06838aed94e13a77d7bf604bbbaf548aa20eb93846"
 dependencies = [
  "object",
  "once_cell",
- "rustix 0.37.19",
+ "rustix 0.36.7",
 ]
 
 [[package]]
 name = "wasmtime-jit-icache-coherence"
-version = "9.0.3"
+version = "8.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "374ff63b3eb41db57c56682a9ef7737d2c9efa801f5dbf9da93941c9dd436a06"
+checksum = "aecae978b13f7f67efb23bd827373ace4578f2137ec110bbf6a4a7cde4121bbd"
 dependencies = [
  "cfg-if",
  "libc",
- "windows-sys 0.48.0",
+ "windows-sys 0.45.0",
 ]
 
 [[package]]
 name = "wasmtime-runtime"
-version = "9.0.3"
+version = "8.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b1b832f19099066ebd26e683121d331f12cf98f158eac0f889972854413b46f"
+checksum = "658cf6f325232b6760e202e5255d823da5e348fdea827eff0a2a22319000b441"
 dependencies = [
  "anyhow",
  "cc",
@@ -16023,35 +15861,23 @@ dependencies = [
  "memoffset 0.8.0",
  "paste",
  "rand 0.8.5",
- "rustix 0.37.19",
+ "rustix 0.36.7",
  "wasmtime-asm-macros",
  "wasmtime-environ",
- "wasmtime-fiber",
  "wasmtime-jit-debug",
- "windows-sys 0.48.0",
+ "windows-sys 0.45.0",
 ]
 
 [[package]]
 name = "wasmtime-types"
-version = "9.0.3"
+version = "8.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c574221440e05bbb04efa09786d049401be2eb10081ecf43eb72fbd637bd12f"
+checksum = "a4f6fffd2a1011887d57f07654dd112791e872e3ff4a2e626aee8059ee17f06f"
 dependencies = [
  "cranelift-entity",
  "serde",
  "thiserror",
  "wasmparser",
-]
-
-[[package]]
-name = "wasmtime-wit-bindgen"
-version = "9.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5afee5e7c290e9b32280160226dadbb5e1a4d6ba7c9b79f440b70cc790aabc1e"
-dependencies = [
- "anyhow",
- "heck",
- "wit-parser",
 ]
 
 [[package]]
@@ -16291,7 +16117,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "93f1db1727772c05cf7a2cfece52c3aca8045ca1e176cd517d323489aa3c6d87"
 dependencies = [
  "async-trait",
- "bitflags 1.3.2",
+ "bitflags",
  "bytes",
  "cc",
  "ipnet",
@@ -16535,11 +16361,35 @@ dependencies = [
 
 [[package]]
 name = "windows-sys"
+version = "0.45.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "75283be5efb2831d37ea142365f009c02ec203cd29a3ebecbc093d52315b66d0"
+dependencies = [
+ "windows-targets 0.42.2",
+]
+
+[[package]]
+name = "windows-sys"
 version = "0.48.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "677d2418bec65e3338edb076e806bc1ec15693c5d0104683f2efe857f61056a9"
 dependencies = [
- "windows-targets",
+ "windows-targets 0.48.0",
+]
+
+[[package]]
+name = "windows-targets"
+version = "0.42.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e5180c00cd44c9b1c88adb3693291f1cd93605ded80c250a75d472756b4d071"
+dependencies = [
+ "windows_aarch64_gnullvm 0.42.2",
+ "windows_aarch64_msvc 0.42.2",
+ "windows_i686_gnu 0.42.2",
+ "windows_i686_msvc 0.42.2",
+ "windows_x86_64_gnu 0.42.2",
+ "windows_x86_64_gnullvm 0.42.2",
+ "windows_x86_64_msvc 0.42.2",
 ]
 
 [[package]]
@@ -16747,21 +16597,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0120db82e8a1e0b9fb3345a539c478767c0048d842860994d96113d5b667bd69"
 dependencies = [
  "winapi",
-]
-
-[[package]]
-name = "wit-parser"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ca2581061573ef6d1754983d7a9b3ed5871ef859d52708ea9a0f5af32919172"
-dependencies = [
- "anyhow",
- "id-arena",
- "indexmap",
- "log",
- "pulldown-cmark",
- "unicode-xid",
- "url",
 ]
 
 [[package]]
@@ -17026,343 +16861,3 @@ dependencies = [
  "libc",
  "pkg-config",
 ]
-
-[[patch.unused]]
-name = "chain-spec-builder"
-version = "2.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "frame-benchmarking-pallet-pov"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "frame-election-solution-type-fuzzer"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "frame-support-test"
-version = "3.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "frame-support-test-compile-pass"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "frame-support-test-pallet"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "generate-bags"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "kitchensink-runtime"
-version = "3.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "node-bench"
-version = "0.9.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "node-cli"
-version = "3.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "node-executor"
-version = "3.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "node-inspect"
-version = "0.9.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "node-primitives"
-version = "2.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "node-rpc"
-version = "3.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "node-runtime-generate-bags"
-version = "3.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "node-template"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "node-template-release"
-version = "3.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "node-template-runtime"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "node-testing"
-version = "3.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-asset-conversion"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-asset-rate"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-atomic-swap"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-bags-list-fuzzer"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-bags-list-remote-tests"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-default-config-example"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-dev-mode"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-election-provider-e2e-test"
-version = "1.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-example-basic"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-example-kitchensink"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-example-offchain-worker"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-examples"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-lottery"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-nicks"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-node-authorization"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-nomination-pools-fuzzer"
-version = "2.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-nomination-pools-test-staking"
-version = "1.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-remark"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-root-offences"
-version = "1.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-root-testing"
-version = "1.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-scored-pool"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-statement"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-template"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "pallet-transaction-storage"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "sc-consensus-manual-seal"
-version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "sc-consensus-pow"
-version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "sc-network-statement"
-version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "sc-network-test"
-version = "0.8.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "sc-runtime-test"
-version = "2.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "sc-service-test"
-version = "2.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "sc-statement-store"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "sp-api-test"
-version = "2.0.1"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "sp-application-crypto-test"
-version = "2.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "sp-arithmetic-fuzzer"
-version = "2.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "sp-consensus-pow"
-version = "0.10.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "sp-crypto-ec-utils"
-version = "0.4.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "sp-npos-elections-fuzzer"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "sp-runtime-interface-test"
-version = "2.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "sp-runtime-interface-test-wasm"
-version = "2.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "sp-runtime-interface-test-wasm-deprecated"
-version = "2.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "sp-test-primitives"
-version = "2.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "subkey"
-version = "3.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "substrate-cli-test-utils"
-version = "0.1.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "substrate-frame-cli"
-version = "4.0.0-dev"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "substrate-frame-rpc-support"
-version = "3.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "substrate-test-runtime"
-version = "2.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "substrate-test-runtime-client"
-version = "2.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "substrate-test-runtime-transaction-pool"
-version = "2.0.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"
-
-[[patch.unused]]
-name = "substrate-test-utils-test-crate"
-version = "0.1.0"
-source = "git+https://github.com/skunert/substrate.git?branch=skunert/wasmtime-9#49c782ceb474b2631c62461c99508a1943bb4005"

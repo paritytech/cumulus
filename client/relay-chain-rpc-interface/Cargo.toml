@@ -34,8 +34,8 @@ url = "2.4.0"
 serde_json = "1.0.96"
 serde = "1.0.163"
 lru = "0.9.0"
-smoldot = { git = "https://github.com/smol-dot/smoldot", rev = "b8a4d432" }
-smoldot-light = { git = "https://github.com/smol-dot/smoldot",  rev = "b8a4d432", default_features = false }
+smoldot = { git = "https://github.com/smol-dot/smoldot", rev = "cf211107" , default_features = false, features = ["std"]}
+smoldot-light = { git = "https://github.com/smol-dot/smoldot",  rev = "cf211107", default_features = false, features = ["std"] }
 parking_lot = "0.12.1"
 either = "1.8.1"
 event-listener = "2.5.3"
