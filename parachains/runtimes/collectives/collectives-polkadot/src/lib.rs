@@ -411,10 +411,15 @@ impl pallet_session::Config for Runtime {
 	type WeightInfo = weights::pallet_session::WeightInfo<Runtime>;
 }
 
+parameter_types! {
+	pub const AllowMultipleBlocksPerSlot: bool = false;
+}
+
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
 	type MaxAuthorities = ConstU32<100_000>;
+	type AllowMultipleBlocksPerSlot = AllowMultipleBlocksPerSlot;
 }
 
 parameter_types! {
