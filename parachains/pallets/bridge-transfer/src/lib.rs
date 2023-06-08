@@ -307,7 +307,6 @@ pub mod pallet {
 				Error::<T>::MaxAssetsLimitReached
 			);
 
-
 			// Do this in transaction (explicitly), the rollback should occur in case of any error and no assets will be trapped or lost
 			Self::do_transfer_asset_via_bridge_in_transaction(origin_location, destination, assets)
 		}
@@ -616,4 +615,3 @@ pub mod pallet {
 		}
 	}
 }
-

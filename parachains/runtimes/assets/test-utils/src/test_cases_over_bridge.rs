@@ -31,7 +31,7 @@ use parachains_runtimes_test_utils::{
 use sp_runtime::traits::StaticLookup;
 use xcm::{latest::prelude::*, VersionedMultiAssets, VersionedMultiLocation};
 use xcm_builder::{CreateMatcher, MatchXcm};
-use xcm_executor::{traits::Convert, XcmExecutor};
+use xcm_executor::{traits::ConvertLocation, XcmExecutor};
 
 /// Test-case makes sure that `Runtime` can manage `bridge_transfer out`  configuration by governance
 pub fn can_governance_change_bridge_transfer_out_configuration<Runtime, XcmConfig>(
@@ -275,7 +275,7 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 	BalanceOf<Runtime>: From<Balance>,
 	<Runtime as pallet_balances::Config>::Balance: From<Balance> + Into<u128>,
 	XcmConfig: xcm_executor::Config,
-	LocationToAccountId: Convert<MultiLocation, AccountIdOf<Runtime>>,
+	LocationToAccountId: ConvertLocation<AccountIdOf<Runtime>>,
 	<Runtime as frame_system::Config>::AccountId:
 		Into<<<Runtime as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId>,
 	<<Runtime as frame_system::Config>::Lookup as StaticLookup>::Source:
@@ -303,7 +303,7 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 			let target_location_fee: MultiAsset = (MultiLocation::parent(), 1_000_000).into();
 
 			let reserve_account =
-				LocationToAccountId::convert_ref(&target_location_from_different_consensus)
+				LocationToAccountId::convert_location(&target_location_from_different_consensus)
 					.expect("Sovereign account for reserves");
 			let balance_to_transfer = 1000_u128;
 			let native_asset = MultiLocation::parent();
@@ -594,7 +594,7 @@ pub fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_work
 	BalanceOf<Runtime>: From<Balance>,
 	<Runtime as pallet_balances::Config>::Balance: From<Balance> + Into<u128>,
 	XcmConfig: xcm_executor::Config,
-	LocationToAccountId: Convert<MultiLocation, AccountIdOf<Runtime>>,
+	LocationToAccountId: ConvertLocation<AccountIdOf<Runtime>>,
 	<Runtime as frame_system::Config>::AccountId:
 		Into<<<Runtime as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId>,
 	<<Runtime as frame_system::Config>::Lookup as StaticLookup>::Source:
@@ -631,7 +631,7 @@ pub fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_work
 				MultiLocation::new(2, X1(GlobalConsensus(bridged_network)));
 
 			let reserve_account =
-				LocationToAccountId::convert_ref(&target_location_from_different_consensus)
+				LocationToAccountId::convert_location(&target_location_from_different_consensus)
 					.expect("Sovereign account for reserves");
 			let balance_to_transfer = 1000_u128;
 			let asset_minimum_asset_balance = 1_000_000_u128;
@@ -948,7 +948,7 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_work
 		From<MultiLocation> + Into<MultiLocation>,
 	<Runtime as pallet_assets::Config<ForeignAssetsPalletInstance>>::Balance:
 		From<Balance> + Into<u128>,
-	LocationToAccountId: Convert<MultiLocation, AccountIdOf<Runtime>>,
+	LocationToAccountId: ConvertLocation<AccountIdOf<Runtime>>,
 	ForeignAssetsPalletInstance: 'static,
 {
 	let remote_network_id = ByGenesis([7; 32]);
@@ -973,7 +973,7 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_work
 		.execute_with(|| {
 			// drip SA for remote global parachain origin
 			let remote_parachain_sovereign_account =
-				LocationToAccountId::convert_ref(remote_parachain_as_origin)
+				LocationToAccountId::convert_location(&remote_parachain_as_origin)
 					.expect("Sovereign account works");
 			assert_ok!(<pallet_balances::Pallet<Runtime>>::force_set_balance(
 				RuntimeHelper::<Runtime>::root_origin(),
@@ -1015,7 +1015,7 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_work
 			// we assume here that BuyExecution fee goes to staking pot
 			let staking_pot_account_id = <pallet_collator_selection::Pallet<Runtime>>::account_id();
 			let local_bridge_hub_multilocation_as_account_id =
-				LocationToAccountId::convert_ref(&local_bridge_hub_multilocation)
+				LocationToAccountId::convert_location(&local_bridge_hub_multilocation)
 					.expect("Correct AccountId");
 
 			// check before
@@ -1184,7 +1184,7 @@ pub fn withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_wor
 	<<Runtime as frame_system::Config>::Lookup as StaticLookup>::Source:
 		From<<Runtime as frame_system::Config>::AccountId>,
 	XcmConfig: xcm_executor::Config,
-	LocationToAccountId: Convert<MultiLocation, AccountIdOf<Runtime>>,
+	LocationToAccountId: ConvertLocation<AccountIdOf<Runtime>>,
 {
 	let remote_network_id = ByGenesis([7; 32]);
 	let remote_parachain_as_origin = MultiLocation {
@@ -1207,7 +1207,7 @@ pub fn withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_wor
 		.execute_with(|| {
 			// add reserved assets to SA for remote global parachain origin (this is how reserve was done, when reserve_asset_deposisted was transferred out)
 			let remote_parachain_sovereign_account =
-				LocationToAccountId::convert_ref(remote_parachain_as_origin)
+				LocationToAccountId::convert_location(&remote_parachain_as_origin)
 					.expect("Sovereign account works");
 			assert_ok!(<pallet_balances::Pallet<Runtime>>::force_set_balance(
 				RuntimeHelper::<Runtime>::root_origin(),
@@ -1228,7 +1228,7 @@ pub fn withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_wor
 			// we assume here that BuyExecution fee goes to staking pot
 			let staking_pot_account_id = <pallet_collator_selection::Pallet<Runtime>>::account_id();
 			let local_bridge_hub_multilocation_as_account_id =
-				LocationToAccountId::convert_ref(&local_bridge_hub_multilocation)
+				LocationToAccountId::convert_location(&local_bridge_hub_multilocation)
 					.expect("Correct AccountId");
 
 			// check before
