@@ -50,7 +50,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{ConstU128, ConstU16, ConstU32, ConstU64, ConstU8, Everything},
+	traits::{ConstBool, ConstU128, ConstU16, ConstU32, ConstU64, ConstU8, Everything},
 	weights::{ConstantMultiplier, Weight},
 	PalletId,
 };
@@ -306,15 +306,11 @@ impl pallet_session::Config for Runtime {
 	type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-	pub const AllowMultipleBlocksPerSlot: bool = false;
-}
-
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
 	type MaxAuthorities = ConstU32<100_000>;
-	type AllowMultipleBlocksPerSlot = AllowMultipleBlocksPerSlot;
+	type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 parameter_types! {
