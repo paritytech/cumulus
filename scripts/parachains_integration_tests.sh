@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 tests=(
-    asset-hub-kusama
-    asset-hub-polkadot
+    assets/asset-hub-kusama
+    assets/asset-hub-polkadot
     collectives/collectives-polkadot
 )
 
