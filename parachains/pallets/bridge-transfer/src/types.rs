@@ -54,13 +54,11 @@ pub struct MaybePaidLocation {
 }
 
 #[cfg_attr(feature = "std", derive(Debug, PartialEq))]
-pub struct ReachableDestination<AssetFilter> {
+pub struct ReachableDestination {
 	/// Bridge location
 	pub bridge: MaybePaidLocation,
 	/// Target location (e.g. remote parachain in different consensus)
 	pub target: MaybePaidLocation,
-	/// Optional asset filter, which we can send to target location
-	pub target_asset_filter: Option<AssetFilter>,
 	/// Destination on target location (e.g. account on remote parachain in different consensus)
 	pub target_destination: MultiLocation,
 }

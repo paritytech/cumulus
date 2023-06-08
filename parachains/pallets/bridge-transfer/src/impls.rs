@@ -14,7 +14,7 @@
 // limitations under the License.
 
 use crate::{
-	pallet::AllowedExporters, AssetFilterOf, AssetTransferKind, Config, Error, Event, Pallet,
+	pallet::AllowedExporters, AssetTransferKind, Config, Error, Event, Pallet,
 	ReachableDestination, ResolveAssetTransferKind, UsingVersioned, LOG_TARGET,
 };
 use frame_support::{pallet_prelude::Get, transactional};
@@ -30,7 +30,7 @@ impl<T: Config> Pallet<T> {
 	/// Returns: correct remote location, where we should be able to bridge
 	pub(crate) fn ensure_reachable_remote_destination(
 		remote_destination: VersionedMultiLocation,
-	) -> Result<ReachableDestination<AssetFilterOf<T>>, Error<T>> {
+	) -> Result<ReachableDestination, Error<T>> {
 		let remote_destination: MultiLocation = remote_destination
 			.to_versioned()
 			.map_err(|_| Error::<T>::UnsupportedXcmVersion)?;
@@ -42,13 +42,11 @@ impl<T: Config> Pallet<T> {
 		match AllowedExporters::<T>::get(remote_network) {
 			Some(bridge_config) => {
 				match bridge_config.allowed_target_location_for(&remote_destination) {
-					Ok(Some((target_location, target_location_asset_filter))) =>
-						Ok(ReachableDestination {
-							bridge: bridge_config.to_bridge_location()?,
-							target: target_location,
-							target_asset_filter: target_location_asset_filter,
-							target_destination: remote_destination,
-						}),
+					Ok(Some((target_location, _))) => Ok(ReachableDestination {
+						bridge: bridge_config.to_bridge_location()?,
+						target: target_location,
+						target_destination: remote_destination,
+					}),
 					Ok(None) => Err(Error::<T>::UnsupportedDestination),
 					Err(_) => Err(Error::<T>::UnsupportedXcmVersion),
 				}
@@ -57,10 +55,11 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
+	/// Tries to initiate transfer assets over bridge.
 	#[transactional]
-	pub(crate) fn do_transfer_asset_via_bridge_in_transaction(
+	pub(crate) fn initiate_transfer_asset_via_bridge_in_transaction(
 		origin_location: MultiLocation,
-		destination: ReachableDestination<AssetFilterOf<T>>,
+		destination: ReachableDestination,
 		assets: MultiAssets,
 	) -> Result<(), DispatchError> {
 		// Resolve reserve account
@@ -224,6 +223,7 @@ impl<T: Config> Pallet<T> {
 		.map_err(Into::into)
 	}
 
+	/// Tries to send xcm message over bridge
 	fn initiate_bridge_transfer(
 		dest: MultiLocation,
 		message_id: XcmHash,
@@ -262,9 +262,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Resolve (sovereign) account which will be used as reserve account
-	fn resolve_reserve_account(
-		destination: &ReachableDestination<AssetFilterOf<T>>,
-	) -> MultiLocation {
+	fn resolve_reserve_account(destination: &ReachableDestination) -> MultiLocation {
 		destination.target.location
 	}
 }

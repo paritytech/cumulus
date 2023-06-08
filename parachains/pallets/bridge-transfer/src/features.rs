@@ -68,7 +68,7 @@ pub struct AllowedUniversalAliasesOf<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> Contains<(MultiLocation, Junction)> for AllowedUniversalAliasesOf<T> {
 	fn contains((location, junction): &(MultiLocation, Junction)) -> bool {
 		log::trace!(
-			target: "xcm::contains",
+			target: LOG_TARGET,
 			"AllowedUniversalAliasesOf location: {:?}, junction: {:?}", location, junction
 		);
 
@@ -84,8 +84,8 @@ impl<T: Config> ContainsPair<MultiAsset, MultiLocation>
 {
 	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
 		log::trace!(
-			target: "xcm::contains",
-			"IsTrustedBridgedReserve asset: {:?}, origin: {:?}",
+			target: LOG_TARGET,
+			"IsTrustedBridgedReserveForConcreteAsset asset: {:?}, origin: {:?}",
 			asset, origin
 		);
 
@@ -100,7 +100,7 @@ impl<T: Config> ContainsPair<MultiAsset, MultiLocation>
 				Ok(result) => result,
 				Err(e) => {
 					log::error!(
-						target: "xcm::contains",
+						target: LOG_TARGET,
 						"IsTrustedBridgedReserveForConcreteAsset has error: {:?} for asset_location: {:?} and origin: {:?}!",
 						e, asset_location, origin
 					);
@@ -110,64 +110,108 @@ impl<T: Config> ContainsPair<MultiAsset, MultiLocation>
 	}
 }
 
-/// Implementation of `ResolveTransferKind` which tries to resolve all kinds of transfer according to on-chain configuration.
-pub struct ConfiguredConcreteAssetTransferKindResolver<T>(sp_std::marker::PhantomData<T>);
-
-impl<T: Config> ResolveAssetTransferKind for ConfiguredConcreteAssetTransferKindResolver<T> {
-	fn resolve(asset: &MultiAsset, target_location: &MultiLocation) -> AssetTransferKind {
+/// Verifies if it is allowed for `(MultiAsset, MultiLocation)` to be transferred out as reserve based transfer over "bridge".
+pub struct IsAllowedReserveBasedAssetTransferForConcreteAsset<T>(sp_std::marker::PhantomData<T>);
+impl<T: Config> ContainsPair<MultiAsset, MultiLocation>
+	for IsAllowedReserveBasedAssetTransferForConcreteAsset<T>
+{
+	fn contains(asset: &MultiAsset, target_location: &MultiLocation) -> bool {
 		log::trace!(
 			target: LOG_TARGET,
-			"ConfiguredConcreteAssetTransferKindResolver resolve asset: {:?}, target_location: {:?}",
+			"IsAllowedReserveBasedAssetTransferForConcreteAsset asset: {:?}, target_location: {:?}",
 			asset, target_location
 		);
 
 		let asset_location = match &asset.id {
 			Concrete(location) => location,
-			_ => return AssetTransferKind::Unsupported,
+			_ => return false,
 		};
 
-		// first, we check, if we are trying to transfer back reserve-deposited assets
-		// other words: if target_location is a known reserve location for asset
-		if IsTrustedBridgedReserveForConcreteAsset::<T>::contains(asset, target_location) {
-			return AssetTransferKind::WithdrawReserve
-		}
-
-		// second, we check, if target_location is allowed for requested asset to be transferred there
 		match target_location.interior.global_consensus() {
 			Ok(target_consensus) => {
 				if let Some(bridge_config) = Pallet::<T>::allowed_exporters(target_consensus) {
 					match bridge_config.allowed_target_location_for(target_location) {
 						Ok(Some((_, Some(asset_filter)))) => {
 							match asset_filter.matches(asset_location) {
-								Ok(true) => return AssetTransferKind::ReserveBased,
-								Ok(false) => (),
+								Ok(matches) => matches,
 								Err(e) => {
 									log::error!(
 										target: LOG_TARGET,
-										"ConfiguredConcreteAssetTransferKindResolver `asset_filter.matches` has error: {:?} for asset_location: {:?} and target_location: {:?}!",
+										"IsAllowedReserveBasedAssetTransferForConcreteAsset `asset_filter.matches` has error: {:?} for asset_location: {:?} and target_location: {:?}!",
 										e, asset_location, target_location
 									);
+									false
 								},
 							}
 						},
-						Ok(_) => (),
+						Ok(_) => false,
 						Err(e) => {
 							log::warn!(
 								target: LOG_TARGET,
-								"ConfiguredBridgeTransferKindResolver allowed_target_location_for has error: {:?} for target_location: {:?}!",
+								"IsAllowedReserveBasedAssetTransferForConcreteAsset allowed_target_location_for has error: {:?} for target_location: {:?}!",
 								e, target_location
 							);
+							false
 						},
 					}
+				} else {
+					log::warn!(
+						target: LOG_TARGET,
+						"IsAllowedReserveBasedAssetTransferForConcreteAsset missing configuration for target_consensus: {:?} of target_location: {:?}!",
+						target_consensus, target_location
+					);
+					false
 				}
 			},
 			Err(_) => {
 				log::warn!(
 					target: LOG_TARGET,
-					"ConfiguredBridgeTransferKindResolver target_location: {:?} does not contain global consensus!",
+					"IsAllowedReserveBasedAssetTransferForConcreteAsset target_location: {:?} does not contain global consensus!",
 					target_location
 				);
+				false
 			},
+		}
+	}
+}
+
+/// Implementation of `ResolveTransferKind` which tries to resolve all kinds of transfer.
+pub struct ConcreteAssetTransferKindResolver<
+	IsReserveLocationForAsset,
+	IsAllowedReserveBasedTransferForAsset,
+>(sp_std::marker::PhantomData<(IsReserveLocationForAsset, IsAllowedReserveBasedTransferForAsset)>);
+
+impl<
+		IsReserveLocationForAsset: ContainsPair<MultiAsset, MultiLocation>,
+		IsAllowedReserveBasedTransferForAsset: ContainsPair<MultiAsset, MultiLocation>,
+	> ResolveAssetTransferKind
+	for ConcreteAssetTransferKindResolver<
+		IsReserveLocationForAsset,
+		IsAllowedReserveBasedTransferForAsset,
+	>
+{
+	fn resolve(asset: &MultiAsset, target_location: &MultiLocation) -> AssetTransferKind {
+		log::trace!(
+			target: LOG_TARGET,
+			"ConcreteAssetTransferKindResolver resolve asset: {:?}, target_location: {:?}",
+			asset, target_location
+		);
+
+		// accepts only Concrete
+		match &asset.id {
+			Concrete(_) => (),
+			_ => return AssetTransferKind::Unsupported,
+		};
+
+		// first, we check, if we are trying to transfer back reserve-deposited assets
+		// other words: if target_location is a known reserve location for asset
+		if IsReserveLocationForAsset::contains(asset, target_location) {
+			return AssetTransferKind::WithdrawReserve
+		}
+
+		// second, we check, if target_location is allowed for requested asset to be transferred there
+		if IsAllowedReserveBasedTransferForAsset::contains(asset, target_location) {
+			return AssetTransferKind::ReserveBased
 		}
 
 		AssetTransferKind::Unsupported

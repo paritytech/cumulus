@@ -18,7 +18,8 @@ use frame_support::traits::{AsEnsureOriginWithArg, ConstU32, Contains, ContainsP
 
 use crate::{
 	features::{
-		AllowedUniversalAliasesOf, ConfiguredConcreteAssetTransferKindResolver,
+		AllowedUniversalAliasesOf, ConcreteAssetTransferKindResolver,
+		IsAllowedReserveBasedAssetTransferForConcreteAsset,
 		IsTrustedBridgedReserveForConcreteAsset,
 	},
 	filter::{AssetFilter, MultiLocationFilter},
@@ -282,7 +283,10 @@ impl Config for TestRuntime {
 	type ReserveLocationsLimit = ConstU32<2>;
 	type AssetsPerReserveLocationLimit = ConstU32<2>;
 	type AssetTransactor = CurrencyTransactor;
-	type AssetTransferKindResolver = ConfiguredConcreteAssetTransferKindResolver<Self>;
+	type AssetTransferKindResolver = ConcreteAssetTransferKindResolver<
+		IsTrustedBridgedReserveForConcreteAsset<TestRuntime>,
+		IsAllowedReserveBasedAssetTransferForConcreteAsset<TestRuntime>,
+	>;
 	type BridgeXcmSender = TestBridgeXcmSender;
 	type AssetTransferOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 	type MaxAssetsLimit = MaxAssetsLimit;
@@ -393,7 +397,6 @@ fn test_ensure_reachable_remote_destination() {
 					),
 					maybe_fee: Some(target_location_fee),
 				},
-				target_asset_filter: None,
 				target_destination: MultiLocation::new(
 					2,
 					X3(
@@ -820,6 +823,11 @@ fn allowed_reserve_locations_management_works() {
 		let asset_filter_for_other =
 			AssetFilter::ByMultiLocation(asset_filter_for_other_by_multilocation.clone());
 
+		type AssetTransferKindResolver = ConcreteAssetTransferKindResolver<
+			IsTrustedBridgedReserveForConcreteAsset<TestRuntime>,
+			(),
+		>;
+
 		// should fail - just root is allowed
 		assert_noop!(
 			BridgeTransfer::add_reserve_location(
@@ -838,11 +846,11 @@ fn allowed_reserve_locations_management_works() {
 			&asset, &location2
 		));
 		assert_eq!(
-			ConfiguredConcreteAssetTransferKindResolver::<TestRuntime>::resolve(&asset, &location1),
+			AssetTransferKindResolver::resolve(&asset, &location1),
 			AssetTransferKind::Unsupported
 		);
 		assert_eq!(
-			ConfiguredConcreteAssetTransferKindResolver::<TestRuntime>::resolve(&asset, &location2),
+			AssetTransferKindResolver::resolve(&asset, &location2),
 			AssetTransferKind::Unsupported
 		);
 
@@ -865,11 +873,11 @@ fn allowed_reserve_locations_management_works() {
 			&asset, &location2
 		));
 		assert_eq!(
-			ConfiguredConcreteAssetTransferKindResolver::<TestRuntime>::resolve(&asset, &location1),
+			AssetTransferKindResolver::resolve(&asset, &location1),
 			AssetTransferKind::WithdrawReserve
 		);
 		assert_eq!(
-			ConfiguredConcreteAssetTransferKindResolver::<TestRuntime>::resolve(&asset, &location2),
+			AssetTransferKindResolver::resolve(&asset, &location2),
 			AssetTransferKind::Unsupported
 		);
 
@@ -882,7 +890,7 @@ fn allowed_reserve_locations_management_works() {
 			&asset, &location2
 		));
 		assert_eq!(
-			ConfiguredConcreteAssetTransferKindResolver::<TestRuntime>::resolve(&asset, &location2),
+			AssetTransferKindResolver::resolve(&asset, &location2),
 			AssetTransferKind::WithdrawReserve
 		);
 
@@ -913,11 +921,11 @@ fn allowed_reserve_locations_management_works() {
 			&asset, &location2
 		));
 		assert_eq!(
-			ConfiguredConcreteAssetTransferKindResolver::<TestRuntime>::resolve(&asset, &location1),
+			AssetTransferKindResolver::resolve(&asset, &location1),
 			AssetTransferKind::Unsupported
 		);
 		assert_eq!(
-			ConfiguredConcreteAssetTransferKindResolver::<TestRuntime>::resolve(&asset, &location2),
+			AssetTransferKindResolver::resolve(&asset, &location2),
 			AssetTransferKind::WithdrawReserve
 		);
 
@@ -933,11 +941,11 @@ fn allowed_reserve_locations_management_works() {
 			&asset, &location2
 		));
 		assert_eq!(
-			ConfiguredConcreteAssetTransferKindResolver::<TestRuntime>::resolve(&asset, &location1),
+			AssetTransferKindResolver::resolve(&asset, &location1),
 			AssetTransferKind::Unsupported
 		);
 		assert_eq!(
-			ConfiguredConcreteAssetTransferKindResolver::<TestRuntime>::resolve(&asset, &location2),
+			AssetTransferKindResolver::resolve(&asset, &location2),
 			AssetTransferKind::WithdrawReserve
 		);
 
@@ -953,11 +961,11 @@ fn allowed_reserve_locations_management_works() {
 			&asset, &location2
 		));
 		assert_eq!(
-			ConfiguredConcreteAssetTransferKindResolver::<TestRuntime>::resolve(&asset, &location1),
+			AssetTransferKindResolver::resolve(&asset, &location1),
 			AssetTransferKind::Unsupported
 		);
 		assert_eq!(
-			ConfiguredConcreteAssetTransferKindResolver::<TestRuntime>::resolve(&asset, &location2),
+			AssetTransferKindResolver::resolve(&asset, &location2),
 			AssetTransferKind::Unsupported
 		);
 	})
@@ -972,6 +980,11 @@ fn allowed_bridged_target_location_management_works() {
 		let bridge_location: MultiLocation = (Parent, Parachain(1013)).into();
 		let target_location: MultiLocation =
 			MultiLocation::new(2, X2(GlobalConsensus(bridged_network), Parachain(1000)));
+
+		type AssetTransferKindResolver = ConcreteAssetTransferKindResolver<
+			(),
+			IsAllowedReserveBasedAssetTransferForConcreteAsset<TestRuntime>,
+		>;
 
 		// should fail - we need BridgeConfig first
 		assert_noop!(
@@ -1022,10 +1035,7 @@ fn allowed_bridged_target_location_management_works() {
 		let asset1_location = MultiLocation::new(2, X2(Parachain(1235), Parachain(5678)));
 		let asset1 = MultiAsset::from((asset1_location, 1000));
 		assert_eq!(
-			ConfiguredConcreteAssetTransferKindResolver::<TestRuntime>::resolve(
-				&asset1,
-				&target_location
-			),
+			AssetTransferKindResolver::resolve(&asset1, &target_location),
 			AssetTransferKind::Unsupported
 		);
 
@@ -1046,10 +1056,7 @@ fn allowed_bridged_target_location_management_works() {
 
 		// not allowed yet
 		assert_eq!(
-			ConfiguredConcreteAssetTransferKindResolver::<TestRuntime>::resolve(
-				&asset1,
-				&target_location
-			),
+			AssetTransferKindResolver::resolve(&asset1, &target_location),
 			AssetTransferKind::Unsupported
 		);
 
@@ -1070,10 +1077,7 @@ fn allowed_bridged_target_location_management_works() {
 
 		// ok
 		assert_eq!(
-			ConfiguredConcreteAssetTransferKindResolver::<TestRuntime>::resolve(
-				&asset1,
-				&target_location
-			),
+			AssetTransferKindResolver::resolve(&asset1, &target_location),
 			AssetTransferKind::ReserveBased
 		);
 	})

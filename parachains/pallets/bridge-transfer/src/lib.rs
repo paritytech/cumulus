@@ -176,7 +176,7 @@ pub mod pallet {
 		/// How to withdraw and deposit an asset for reserve.
 		/// (Config for transfer out)
 		type AssetTransactor: TransactAsset;
-		/// Transfer type resolver for `asset` to `target_location`.
+		/// Transfer kind resolver for `asset` to `target_location`.
 		type AssetTransferKindResolver: ResolveAssetTransferKind;
 		/// XCM sender which sends messages to the BridgeHub
 		/// (Config for transfer out)
@@ -308,7 +308,11 @@ pub mod pallet {
 			);
 
 			// Do this in transaction (explicitly), the rollback should occur in case of any error and no assets will be trapped or lost
-			Self::do_transfer_asset_via_bridge_in_transaction(origin_location, destination, assets)
+			Self::initiate_transfer_asset_via_bridge_in_transaction(
+				origin_location,
+				destination,
+				assets,
+			)
 		}
 
 		/// Adds new bridge exporter, which allows transfer to this `bridged_network`.
