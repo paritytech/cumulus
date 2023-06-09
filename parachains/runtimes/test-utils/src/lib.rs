@@ -22,7 +22,7 @@ use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use frame_support::{
 	dispatch::{DispatchResult, RawOrigin, UnfilteredDispatchable},
 	inherent::{InherentData, ProvideInherent},
-	traits::{GenesisBuild, OriginTrait},
+	traits::{GenesisBuildStorage, OriginTrait},
 	weights::Weight,
 };
 use parachains_common::AccountId;
@@ -163,18 +163,18 @@ impl<
 	{
 		let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
 
-		<pallet_xcm::GenesisConfig as GenesisBuild<Runtime>>::assimilate_storage(
+		<pallet_xcm::GenesisConfig as GenesisBuildStorage<Runtime>>::assimilate_storage(
 			&pallet_xcm::GenesisConfig { safe_xcm_version: self.safe_xcm_version },
 			&mut t,
 		)
 		.unwrap();
 
 		if let Some(para_id) = self.para_id {
-			<parachain_info::GenesisConfig as frame_support::traits::GenesisBuild<Runtime>>::assimilate_storage(
+			<parachain_info::GenesisConfig as GenesisBuildStorage<Runtime>>::assimilate_storage(
 				&parachain_info::GenesisConfig { parachain_id: para_id },
 				&mut t,
 			)
-				.unwrap();
+			.unwrap();
 		}
 
 		pallet_balances::GenesisConfig::<Runtime> { balances: self.balances }
