@@ -247,7 +247,7 @@ pub mod pallet {
 		UnavailableConfiguration,
 		ConfigurationAlreadyExists,
 		InvalidAssets,
-		MaxAssetsLimitReached,
+		AssetsLimitReached,
 		UnsupportedDestination,
 		UnsupportedXcmVersion,
 		InvalidRemoteDestination,
@@ -321,7 +321,7 @@ pub mod pallet {
 				(*assets).try_into().map_err(|()| Error::<T>::InvalidAssets)?;
 			ensure!(
 				assets.len() <= T::AssetsLimit::get() as usize,
-				Error::<T>::MaxAssetsLimitReached
+				Error::<T>::AssetsLimitReached
 			);
 
 			// Do this in transaction (explicitly), the rollback should occur in case of any error and no assets will be trapped or lost
