@@ -132,7 +132,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	let require_weight_at_most = Weight::from_parts(1_100_000_000_000, 30_000);
 	let origin_kind = OriginKind::Xcm;
 	let sov_penpal_on_asset_hub_westend = AssetHubWestend::sovereign_account_id_of(penpal_location);
-	
+
 	AssetHubWestend::fund_accounts(vec![
 		(AssetHubWestendSender::get(), 5_000_000), // An account to swap dot for something else.
 		(sov_penpal_on_asset_hub_westend.clone(), 1000_000_000_000_000_000),
