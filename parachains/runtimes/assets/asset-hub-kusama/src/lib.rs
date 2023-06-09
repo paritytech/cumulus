@@ -710,6 +710,7 @@ impl pallet_bridge_transfer::Config for Runtime {
 	type UniversalAliasesLimit = ConstU32<24>;
 	type ReserveLocationsLimit = ConstU32<4>;
 	type AssetsPerReserveLocationLimit = ConstU32<128>;
+	type TargetLocationsPerExporterLimit = ConstU32<4>;
 	type AssetTransactor = AssetTransactors;
 	type AssetTransferKindResolver =
 		pallet_bridge_transfer::features::ConcreteAssetTransferKindResolver<

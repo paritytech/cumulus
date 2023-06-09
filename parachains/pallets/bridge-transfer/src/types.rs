@@ -47,7 +47,7 @@ impl ResolveAssetTransferKind for () {
 	}
 }
 
-#[cfg_attr(feature = "std", derive(Debug, PartialEq))]
+#[derive(Debug, PartialEq)]
 pub struct MaybePaidLocation {
 	pub location: MultiLocation,
 	pub maybe_fee: Option<MultiAsset>,
@@ -77,20 +77,31 @@ pub mod config {
 	#[scale_info(skip_type_params(T))]
 	pub struct BridgeConfig<T: Config> {
 		/// Contains location, which is able to bridge XCM messages to bridged network
-		pub bridge_location: VersionedMultiLocation,
+		bridge_location: VersionedMultiLocation,
 		/// Fee which could be needed to pay in `bridge_location`
 		/// `MultiAsset` is here from the point of view of `bridge_location`, e.g.: `MultiLocation::parent()` means relay chain token of `bridge_location`
-		pub bridge_location_fee: Option<VersionedMultiAsset>,
+		pub(crate) bridge_location_fee: Option<VersionedMultiAsset>,
 
 		/// Contains target destination on bridged network. E.g.: MultiLocation of Statemine/t on different consensus + its configuration
 		pub(crate) allowed_target_locations: BoundedBTreeMap<
 			VersionedMultiLocation,
 			TargetLocationConfig<T>,
-			T::ReserveLocationsLimit,
+			T::TargetLocationsPerExporterLimit,
 		>,
 	}
 
 	impl<T: Config> BridgeConfig<T> {
+		pub fn new(
+			bridge_location: VersionedMultiLocation,
+			bridge_location_fee: Option<VersionedMultiAsset>,
+		) -> Self {
+			Self {
+				bridge_location,
+				bridge_location_fee,
+				allowed_target_locations: Default::default(),
+			}
+		}
+
 		/// Tries to find target destination configuration for destination.
 		pub fn allowed_target_location_for(
 			&self,
@@ -185,6 +196,7 @@ pub mod config {
 		pub allowed_reserve_assets: Option<AssetFilterOf<T>>,
 	}
 
+	#[derive(Debug)]
 	pub enum BridgeConfigError {
 		AssetFilterError(AssetFilterError),
 		MissingTargetLocation,
@@ -219,6 +231,7 @@ pub mod filter {
 		fn matches(&self, location: &MultiLocation) -> Result<bool, UnsupportedXcmVersionError>;
 	}
 
+	#[derive(Debug)]
 	pub enum AssetFilterError {
 		UnsupportedXcmVersionError,
 		LimitReached,
@@ -390,6 +403,12 @@ pub mod filter {
 				}
 			}
 			Ok(false)
+		}
+	}
+
+	impl<AssetsLimit: Get<u32>> From<MultiLocationFilter<AssetsLimit>> for AssetFilter<AssetsLimit> {
+		fn from(value: MultiLocationFilter<AssetsLimit>) -> Self {
+			AssetFilter::ByMultiLocation(value)
 		}
 	}
 }

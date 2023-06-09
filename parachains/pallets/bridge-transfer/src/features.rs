@@ -15,8 +15,7 @@
 
 use crate::{
 	types::{AssetFilterT, LatestVersionedMultiLocation},
-	AssetTransferKind, BridgeConfig, Config, Pallet, ResolveAssetTransferKind, UsingVersioned,
-	LOG_TARGET,
+	AssetTransferKind, Config, MaybePaidLocation, Pallet, ResolveAssetTransferKind, LOG_TARGET,
 };
 use frame_support::traits::{Contains, ContainsPair};
 use xcm::prelude::*;
@@ -30,33 +29,16 @@ impl<T: Config> ExporterFor for Pallet<T> {
 		_message: &Xcm<()>,
 	) -> Option<(MultiLocation, Option<MultiAsset>)> {
 		match Self::allowed_exporters(network) {
-			Some(BridgeConfig { bridge_location, bridge_location_fee, .. }) => {
-				let bridge_location = match bridge_location.to_versioned() {
-					Ok(versioned) => versioned,
-					Err(e) => {
-						log::warn!(
-							target: LOG_TARGET,
-							"Exporter for network: {:?} - bridge_location has error: {:?}!",
-							network, e
-						);
-						return None
-					},
-				};
-				let bridge_location_fee = match bridge_location_fee {
-					Some(fee) => match fee.to_versioned() {
-						Ok(versioned) => Some(versioned),
-						Err(e) => {
-							log::warn!(
-								target: LOG_TARGET,
-								"ExporterFor network: {:?} - bridge_location_fee has error: {:?}!",
-								network, e
-							);
-							return None
-						},
-					},
-					None => None,
-				};
-				Some((bridge_location, bridge_location_fee))
+			Some(bridge_config) => match bridge_config.to_bridge_location() {
+				Ok(MaybePaidLocation { location, maybe_fee }) => Some((location, maybe_fee)),
+				Err(e) => {
+					log::warn!(
+						target: LOG_TARGET,
+						"Exporter for network: {:?} has error: {:?}!",
+						network, e
+					);
+					None
+				},
 			},
 			None => None,
 		}

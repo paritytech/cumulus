@@ -108,11 +108,19 @@ pub mod pallet {
 	/// Everything we need to run benchmarks.
 	#[cfg(feature = "runtime-benchmarks")]
 	pub trait BenchmarkHelper<RuntimeOrigin> {
-		/// Returns proper bridge configuration, supported by the runtime.
+		/// Returns proper bridge location+fee  for NetworkId, supported by the runtime.
 		///
 		/// We expect that the XCM environment (`BridgeXcmSender`) has everything enabled
 		/// to support transfer to this destination **after** `prepare_asset_transfer` call.
-		fn bridge_config() -> Option<(NetworkId, BridgeConfig)> {
+		fn bridge_location() -> Option<(NetworkId, MaybePaidLocation)> {
+			None
+		}
+
+		/// Returns proper target_location location+fee supported by the runtime.
+		///
+		/// We expect that the XCM environment (`BridgeXcmSender`) has everything enabled
+		/// to support transfer to this destination **after** `prepare_asset_transfer` call.
+		fn allowed_bridged_target_location() -> Option<MaybePaidLocation> {
 			None
 		}
 
@@ -172,6 +180,10 @@ pub mod pallet {
 		/// (Config for transfer in/out)
 		#[pallet::constant]
 		type AssetsPerReserveLocationLimit: Get<u32>;
+		/// Max allowed target locations per exporter (bridged network)
+		/// (Config for transfer out)
+		#[pallet::constant]
+		type TargetLocationsPerExporterLimit: Get<u32>;
 
 		/// How to withdraw and deposit an asset for reserve.
 		/// (Config for transfer out)
@@ -349,11 +361,7 @@ pub mod pallet {
 			// insert
 			AllowedExporters::<T>::insert(
 				bridged_network,
-				BridgeConfig {
-					bridge_location: *bridge_location,
-					bridge_location_fee: bridge_location_fee.map(|fee| *fee),
-					allowed_target_locations: Default::default(),
-				},
+				BridgeConfig::new(*bridge_location, bridge_location_fee.map(|fee| *fee)),
 			);
 
 			Self::deposit_event(Event::BridgeAdded);
@@ -422,6 +430,10 @@ pub mod pallet {
 			max_target_location_fee: Option<Box<VersionedMultiAsset>>,
 		) -> DispatchResult {
 			let _ = T::AdminOrigin::ensure_origin(origin)?;
+			ensure!(
+				T::TargetLocationsPerExporterLimit::get() > 0,
+				Error::<T>::UnavailableConfiguration
+			);
 
 			AllowedExporters::<T>::try_mutate_exists(bridged_network, |maybe_bridge_config| {
 				let bridge_config =
@@ -453,6 +465,10 @@ pub mod pallet {
 			asset_filter: AssetFilterOf<T>,
 		) -> DispatchResult {
 			let _ = T::AllowReserveAssetTransferOrigin::ensure_origin(origin, &asset_filter)?;
+			ensure!(
+				T::TargetLocationsPerExporterLimit::get() > 0,
+				Error::<T>::UnavailableConfiguration
+			);
 
 			AllowedExporters::<T>::try_mutate_exists(bridged_network, |maybe_bridge_config| {
 				let bridge_config =
@@ -541,6 +557,11 @@ pub mod pallet {
 			asset_filter_to_add: AssetFilterOf<T>,
 		) -> DispatchResult {
 			let _ = T::AdminOrigin::ensure_origin(origin)?;
+			ensure!(T::ReserveLocationsLimit::get() > 0, Error::<T>::UnavailableConfiguration);
+			ensure!(
+				T::AssetsPerReserveLocationLimit::get() > 0,
+				Error::<T>::UnavailableConfiguration
+			);
 
 			let versioned_location = LatestVersionedMultiLocation::try_from(location.as_ref())
 				.map_err(|_| Error::<T>::UnsupportedXcmVersion)?;

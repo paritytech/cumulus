@@ -91,9 +91,9 @@ pub fn can_governance_change_bridge_transfer_out_configuration<Runtime, XcmConfi
 				let cfg =
 					pallet_bridge_transfer::Pallet::<Runtime>::allowed_exporters(&bridged_network);
 				assert!(cfg.is_some());
-				let cfg = cfg.unwrap();
-				assert_eq!(cfg.bridge_location, bridge_location.into_versioned());
-				assert_eq!(cfg.bridge_location_fee, None);
+				let cfg = cfg.unwrap().to_bridge_location().expect("ok");
+				assert_eq!(cfg.location, bridge_location);
+				assert_eq!(cfg.maybe_fee, None);
 			}
 
 			// governance can update bridge fee
@@ -117,8 +117,8 @@ pub fn can_governance_change_bridge_transfer_out_configuration<Runtime, XcmConfi
 				let cfg =
 					pallet_bridge_transfer::Pallet::<Runtime>::allowed_exporters(&bridged_network);
 				assert!(cfg.is_some());
-				let cfg = cfg.unwrap();
-				assert_eq!(cfg.bridge_location_fee, Some(new_bridge_location_fee.into()));
+				let cfg = cfg.unwrap().to_bridge_location().expect("ok");
+				assert_eq!(cfg.maybe_fee, Some(new_bridge_location_fee));
 			}
 
 			let allowed_target_location = MultiLocation::new(

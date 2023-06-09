@@ -282,6 +282,7 @@ impl Config for TestRuntime {
 	type UniversalAliasesLimit = ConstU32<2>;
 	type ReserveLocationsLimit = ConstU32<2>;
 	type AssetsPerReserveLocationLimit = ConstU32<2>;
+	type TargetLocationsPerExporterLimit = ConstU32<2>;
 	type AssetTransactor = CurrencyTransactor;
 	type AssetTransferKindResolver = ConcreteAssetTransferKindResolver<
 		IsTrustedBridgedReserveForConcreteAsset<TestRuntime>,
@@ -676,11 +677,7 @@ fn allowed_exporters_management_works() {
 		assert_eq!(AllowedExporters::<TestRuntime>::iter().count(), 1);
 		assert_eq!(
 			AllowedExporters::<TestRuntime>::get(bridged_network),
-			Some(BridgeConfig {
-				bridge_location: VersionedMultiLocation::from(bridge_location),
-				bridge_location_fee: None,
-				allowed_target_locations: Default::default(),
-			})
+			Some(BridgeConfig::new(VersionedMultiLocation::from(bridge_location), None))
 		);
 		assert_eq!(AllowedExporters::<TestRuntime>::get(&RelayNetwork::get()), None);
 		assert_eq!(
@@ -710,11 +707,10 @@ fn allowed_exporters_management_works() {
 		assert_eq!(AllowedExporters::<TestRuntime>::iter().count(), 1);
 		assert_eq!(
 			AllowedExporters::<TestRuntime>::get(bridged_network),
-			Some(BridgeConfig {
-				bridge_location: VersionedMultiLocation::from(bridge_location),
-				bridge_location_fee: Some((Parent, 200u128).into()),
-				allowed_target_locations: Default::default(),
-			})
+			Some(BridgeConfig::new(
+				VersionedMultiLocation::from(bridge_location),
+				Some((Parent, 200u128).into())
+			))
 		);
 		assert_eq!(
 			BridgeTransfer::exporter_for(

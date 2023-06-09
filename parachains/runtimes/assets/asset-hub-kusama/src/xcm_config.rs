@@ -534,36 +534,24 @@ impl BridgeTransferBenchmarksHelper {
 
 #[cfg(feature = "runtime-benchmarks")]
 impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBenchmarksHelper {
-	fn bridge_config() -> Option<(NetworkId, pallet_bridge_transfer::BridgeConfig)> {
+	fn bridge_location() -> Option<(NetworkId, pallet_bridge_transfer::MaybePaidLocation)> {
 		Some((
 			Polkadot,
-			pallet_bridge_transfer::BridgeConfig {
-				bridge_location: (Parent, Parachain(Self::bridge_hub_para_id())).into(),
+			pallet_bridge_transfer::MaybePaidLocation {
+				location: (Parent, Parachain(Self::bridge_hub_para_id())).into(),
 				// Right now `UnpaidRemoteExporter` is used to send XCM messages and it requires
 				// fee to be `None`. If we're going to change that (are we?), then we should replace
 				// this `None` with `Some(Self::make_asset(crate::ExistentialDeposit::get()))`
-				bridge_location_fee: None,
-				allowed_target_location: Self::allowed_target_location(),
-				max_target_location_fee: Self::allowed_target_location_max_fee(),
+				maybe_fee: None,
 			},
 		))
 	}
 
-	fn universal_alias() -> Option<(xcm::VersionedMultiLocation, Junction)> {
-		Some((
-			xcm::VersionedMultiLocation::V3(MultiLocation {
-				parents: 1,
-				interior: X1(Parachain(Self::bridge_hub_para_id())),
-			}),
-			GlobalConsensus(Polkadot),
-		))
-	}
-
-	fn reserve_location() -> Option<xcm::VersionedMultiLocation> {
-		Some(xcm::VersionedMultiLocation::V3(MultiLocation {
-			parents: 2,
-			interior: X2(GlobalConsensus(Polkadot), Parachain(1000)),
-		}))
+	fn allowed_bridged_target_location() -> Option<pallet_bridge_transfer::MaybePaidLocation> {
+		Some(pallet_bridge_transfer::MaybePaidLocation {
+			location: Self::allowed_target_location(),
+			maybe_fee: Self::allowed_target_location_max_fee(),
+		})
 	}
 
 	fn prepare_asset_transfer(
@@ -603,10 +591,10 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 		let _ = Balances::deposit_creating(&sender_account, existential_deposit * 10);
 
 		// finally - prepare assets and destination (pallet_assets is worse than pallet_balances)
-		use xcm_executor::traits::Convert;
+		use sp_runtime::traits::MaybeEquivalence;
 		let asset_id_location = assets_common::AssetIdForTrustBackedAssetsConvert::<
 			TrustBackedAssetsPalletLocation,
-		>::reverse_ref(local_asset_id)
+		>::convert_back(&local_asset_id)
 		.unwrap();
 		let asset: MultiAsset = (Concrete(asset_id_location), minimum_asset_balance * 2).into();
 
@@ -616,19 +604,18 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 		Some((RuntimeOrigin::signed(sender_account), assets, destination))
 	}
 
-	fn prepare_ping_transfer() -> Option<(RuntimeOrigin, xcm::VersionedMultiLocation)> {
-		// our `BridgeXcmSender` assumes that the HRMP channel is opened between this
-		// parachain and the sibling bridge-hub parachain
-		cumulus_pallet_parachain_system::Pallet::<Runtime>::open_outbound_hrmp_channel_for_benchmarks(
-			Self::bridge_hub_para_id().into(),
-		);
+	fn universal_alias() -> Option<(xcm::VersionedMultiLocation, Junction)> {
+		Some((
+			MultiLocation { parents: 1, interior: X1(Parachain(Self::bridge_hub_para_id())) }
+				.into_versioned(),
+			GlobalConsensus(Polkadot),
+		))
+	}
 
-		// sender account
-		let sender_account = AccountId::from([42u8; 32]);
-
-		// finally - prepare destination
-		let destination = xcm::VersionedMultiLocation::V3(Self::allowed_target_location());
-
-		Some((RuntimeOrigin::signed(sender_account), destination))
+	fn reserve_location() -> Option<xcm::VersionedMultiLocation> {
+		Some(
+			MultiLocation { parents: 2, interior: X2(GlobalConsensus(Polkadot), Parachain(1000)) }
+				.into_versioned(),
+		)
 	}
 }
