@@ -14,15 +14,27 @@
 // limitations under the License.
 
 use crate::{
-	pallet::AllowedExporters, AssetTransferKind, Config, Error, Event, Pallet,
-	ReachableDestination, ResolveAssetTransferKind, UsingVersioned, LOG_TARGET,
+	types::{AssetTransferKind, ResolveAssetTransferKind, UsingVersioned},
+	Config, Error, Event, Pallet, LOG_TARGET,
 };
 use frame_support::{pallet_prelude::Get, transactional};
 use frame_system::unique;
+use pallet_bridge_transfer_primitives::{
+	EnsureReachableDestination, ReachableDestination, ReachableDestinationError,
+};
 use sp_runtime::DispatchError;
 use xcm::prelude::*;
 use xcm_builder::ensure_is_remote;
 use xcm_executor::traits::TransactAsset;
+
+impl<T: Config> From<ReachableDestinationError> for Error<T> {
+	fn from(value: ReachableDestinationError) -> Self {
+		match value {
+			ReachableDestinationError::UnsupportedDestination => Error::<T>::UnsupportedDestination,
+			ReachableDestinationError::UnsupportedXcmVersion => Error::<T>::UnsupportedXcmVersion,
+		}
+	}
+}
 
 impl<T: Config> Pallet<T> {
 	/// Validates destination and check if we support bridging to this remote global consensus
@@ -39,20 +51,8 @@ impl<T: Config> Pallet<T> {
 			.map_err(|_| Error::<T>::UnsupportedDestination)?;
 		let (remote_network, _) = devolved;
 
-		match AllowedExporters::<T>::get(remote_network) {
-			Some(bridge_config) => {
-				match bridge_config.allowed_target_location_for(&remote_destination) {
-					Ok(Some((target_location, _))) => Ok(ReachableDestination {
-						bridge: bridge_config.to_bridge_location()?,
-						target: target_location,
-						target_destination: remote_destination,
-					}),
-					Ok(None) => Err(Error::<T>::UnsupportedDestination),
-					Err(_) => Err(Error::<T>::UnsupportedXcmVersion),
-				}
-			},
-			None => Err(Error::<T>::UnsupportedDestination),
-		}
+		T::BridgedDestinationValidator::ensure_destination(remote_network, remote_destination)
+			.map_err(Into::into)
 	}
 
 	/// Tries to initiate transfer assets over bridge.

@@ -14,12 +14,40 @@
 // limitations under the License.
 
 use crate::{
-	types::{AssetFilterT, LatestVersionedMultiLocation},
-	AssetTransferKind, Config, MaybePaidLocation, Pallet, ResolveAssetTransferKind, LOG_TARGET,
+	types::{
+		AssetFilterT, AssetTransferKind, LatestVersionedMultiLocation, ResolveAssetTransferKind,
+	},
+	AllowedExporters, Config, Pallet, LOG_TARGET,
 };
 use frame_support::traits::{Contains, ContainsPair};
+use pallet_bridge_transfer_primitives::{
+	EnsureReachableDestination, MaybePaidLocation, ReachableDestination, ReachableDestinationError,
+};
 use xcm::prelude::*;
 use xcm_builder::ExporterFor;
+
+/// Implementation of `EnsureReachableDestination` which checks on-chain configuration with `AllowedExporters`
+impl<T: Config> EnsureReachableDestination for Pallet<T> {
+	fn ensure_destination(
+		remote_network: NetworkId,
+		remote_destination: MultiLocation,
+	) -> Result<ReachableDestination, ReachableDestinationError> {
+		match AllowedExporters::<T>::get(&remote_network) {
+			Some(bridge_config) => {
+				match bridge_config.allowed_target_location_for(&remote_destination) {
+					Ok(Some((target_location, _))) => Ok(ReachableDestination {
+						bridge: bridge_config.to_bridge_location()?,
+						target: target_location,
+						target_destination: remote_destination,
+					}),
+					Ok(None) => Err(ReachableDestinationError::UnsupportedDestination),
+					Err(_) => Err(ReachableDestinationError::UnsupportedXcmVersion),
+				}
+			},
+			None => Err(ReachableDestinationError::UnsupportedDestination),
+		}
+	}
+}
 
 /// `ExporterFor` implementation to check if we can transfer anything to `NetworkId`
 impl<T: Config> ExporterFor for Pallet<T> {

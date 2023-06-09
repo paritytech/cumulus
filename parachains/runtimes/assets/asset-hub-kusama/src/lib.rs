@@ -719,9 +719,10 @@ impl pallet_bridge_transfer::Config for Runtime {
 				Runtime,
 			>,
 		>;
-	type BridgeXcmSender = BridgeXcmSender;
 	type AssetTransferOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
-	type MaxAssetsLimit = ConstU8<1>;
+	type AssetsLimit = ConstU8<1>;
+	type BridgedDestinationValidator = BridgeTransfer;
+	type BridgeXcmSender = BridgeXcmSender;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = xcm_config::BridgeTransferBenchmarksHelper;
 }

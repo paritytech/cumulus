@@ -53,7 +53,7 @@ benchmarks! {
 		let _ = T::AssetTransferOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
 		// every asset has its own configuration and ledger, so there's a performance dependency
 		// (be sure to use "worst" of assets)
-		let max_assets_limit = T::MaxAssetsLimit::get();
+		let max_assets_limit = T::AssetsLimit::get();
 		ensure!(max_assets_limit > 0, "MaxAssetsLimit not set up correctly.");
 
 		let (bridged_network, maybe_paid_bridge) = T::BenchmarkHelper::bridge_location()

@@ -16,10 +16,11 @@
 use crate::Config;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::pallet_prelude::{CloneNoBound, PartialEqNoBound, RuntimeDebugNoBound};
+use pallet_bridge_transfer_primitives::MaybePaidLocation;
 use scale_info::TypeInfo;
 use xcm::prelude::*;
 
-pub use crate::{
+pub use crate::types::{
 	config::BridgeConfig,
 	filter::{AssetFilterOf, AssetFilterT, MultiLocationFilterOf},
 	xcm_version::{LatestVersionedMultiLocation, UnsupportedXcmVersionError, UsingVersioned},
@@ -47,25 +48,9 @@ impl ResolveAssetTransferKind for () {
 	}
 }
 
-#[derive(Debug, PartialEq)]
-pub struct MaybePaidLocation {
-	pub location: MultiLocation,
-	pub maybe_fee: Option<MultiAsset>,
-}
-
-#[cfg_attr(feature = "std", derive(Debug, PartialEq))]
-pub struct ReachableDestination {
-	/// Bridge location
-	pub bridge: MaybePaidLocation,
-	/// Target location (e.g. remote parachain in different consensus)
-	pub target: MaybePaidLocation,
-	/// Destination on target location (e.g. account on remote parachain in different consensus)
-	pub target_destination: MultiLocation,
-}
-
 pub mod config {
 	use super::*;
-	use crate::{
+	use crate::types::{
 		filter::{AssetFilterError, AssetFilterOf},
 		UnsupportedXcmVersionError,
 	};
@@ -220,7 +205,7 @@ pub mod config {
 pub mod filter {
 	use super::*;
 
-	use crate::UnsupportedXcmVersionError;
+	use crate::types::UnsupportedXcmVersionError;
 	use frame_support::{pallet_prelude::Get, BoundedVec};
 
 	pub type AssetFilterOf<T> = AssetFilter<<T as Config>::AssetsPerReserveLocationLimit>;
@@ -417,6 +402,7 @@ pub mod xcm_version {
 	use super::*;
 	use crate::Config;
 	use codec::EncodeLike;
+	use pallet_bridge_transfer_primitives::ReachableDestinationError;
 	use xcm::TryAs;
 
 	/// For simplified version mismatch handling
@@ -424,6 +410,12 @@ pub mod xcm_version {
 	pub struct UnsupportedXcmVersionError;
 
 	impl<T: Config> From<UnsupportedXcmVersionError> for crate::Error<T> {
+		fn from(_: UnsupportedXcmVersionError) -> Self {
+			Self::UnsupportedXcmVersion
+		}
+	}
+
+	impl From<UnsupportedXcmVersionError> for ReachableDestinationError {
 		fn from(_: UnsupportedXcmVersionError) -> Self {
 			Self::UnsupportedXcmVersion
 		}

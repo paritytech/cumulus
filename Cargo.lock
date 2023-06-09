@@ -7405,6 +7405,7 @@ dependencies = [
  "frame-system-benchmarking",
  "log",
  "pallet-balances",
+ "pallet-bridge-transfer-primitives",
  "parity-scale-codec",
  "polkadot-parachain",
  "scale-info",
@@ -7414,6 +7415,13 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+]
+
+[[package]]
+name = "pallet-bridge-transfer-primitives"
+version = "0.1.0"
+dependencies = [
+ "xcm",
 ]
 
 [[package]]

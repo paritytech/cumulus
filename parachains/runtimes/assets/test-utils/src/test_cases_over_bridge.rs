@@ -22,7 +22,7 @@ use frame_support::{
 	traits::{Contains, Currency, Get, OriginTrait, ProcessMessageError},
 	BoundedVec,
 };
-use pallet_bridge_transfer::{filter::MultiLocationFilter, AssetFilterOf};
+use pallet_bridge_transfer::{AssetFilterOf, MultiLocationFilterOf};
 use parachains_common::Balance;
 use parachains_runtimes_test_utils::{
 	mock_open_hrmp_channel, AccountIdOf, BalanceOf, CollatorSessionKeys, ExtBuilder, RuntimeHelper,
@@ -357,10 +357,11 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 					RuntimeHelper::<Runtime>::root_origin(),
 					bridged_network,
 					Box::new(target_location_from_different_consensus.into_versioned()),
-					AssetFilterOf::<Runtime>::ByMultiLocation(MultiLocationFilter {
+					MultiLocationFilterOf::<Runtime> {
 						equals_any: BoundedVec::truncate_from(vec![native_asset.into_versioned()]),
 						starts_with_any: Default::default(),
-					}),
+					}
+					.into(),
 				)
 			);
 
@@ -992,12 +993,13 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_work
 			assert_ok!(<pallet_bridge_transfer::Pallet<Runtime>>::add_reserve_location(
 				RuntimeHelper::<Runtime>::root_origin(),
 				Box::new(remote_parachain_as_origin.into_versioned()),
-				AssetFilterOf::<Runtime>::ByMultiLocation(MultiLocationFilter {
+				MultiLocationFilterOf::<Runtime> {
 					equals_any: BoundedVec::truncate_from(vec![
 						foreign_asset_id_multilocation.into_versioned()
 					]),
 					starts_with_any: Default::default(),
-				})
+				}
+				.into()
 			));
 
 			// create foreign asset

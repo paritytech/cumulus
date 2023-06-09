@@ -22,16 +22,18 @@ use crate::{
 		IsAllowedReserveBasedAssetTransferForConcreteAsset,
 		IsTrustedBridgedReserveForConcreteAsset,
 	},
-	filter::{AssetFilter, MultiLocationFilter},
 	pallet::{AllowedReserveLocations, AllowedUniversalAliases},
-	AllowedExporters, AssetTransferKind, BridgeConfig, Config, Error, Event,
-	LatestVersionedMultiLocation, MaybePaidLocation, ReachableDestination,
-	ResolveAssetTransferKind,
+	types::{
+		filter::{AssetFilter, MultiLocationFilter},
+		AssetTransferKind, BridgeConfig, LatestVersionedMultiLocation, ResolveAssetTransferKind,
+	},
+	AllowedExporters, Config, Error, Event,
 };
 use frame_support::{
 	assert_noop, assert_ok, dispatch::DispatchError, parameter_types, sp_io, sp_tracing, BoundedVec,
 };
 use frame_system::EnsureRoot;
+use pallet_bridge_transfer_primitives::{MaybePaidLocation, ReachableDestination};
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::{
 	testing::{Header, H256},
@@ -270,7 +272,7 @@ impl BenchmarkHelper<RuntimeOrigin> for TestBenchmarkHelper {
 
 parameter_types! {
 	pub const TrapCode: u64 = 12345;
-	pub const MaxAssetsLimit: u8 = 1;
+	pub const AssetsLimit: u8 = 1;
 }
 
 impl Config for TestRuntime {
@@ -288,9 +290,10 @@ impl Config for TestRuntime {
 		IsTrustedBridgedReserveForConcreteAsset<TestRuntime>,
 		IsAllowedReserveBasedAssetTransferForConcreteAsset<TestRuntime>,
 	>;
-	type BridgeXcmSender = TestBridgeXcmSender;
 	type AssetTransferOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
-	type MaxAssetsLimit = MaxAssetsLimit;
+	type AssetsLimit = AssetsLimit;
+	type BridgedDestinationValidator = BridgeTransfer;
+	type BridgeXcmSender = TestBridgeXcmSender;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = TestBenchmarkHelper;
 }

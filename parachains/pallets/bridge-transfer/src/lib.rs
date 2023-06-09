@@ -71,15 +71,13 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::boxed::Box;
-
-mod types;
-pub use types::*;
-
 pub use pallet::*;
+pub use pallet_bridge_transfer_primitives::MaybePaidLocation;
+pub use types::{AssetFilterOf, MultiLocationFilterOf};
 
 pub mod features;
 mod impls;
+mod types;
 pub mod weights;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -95,10 +93,14 @@ pub const LOG_TARGET: &str = "runtime::bridge-transfer";
 pub mod pallet {
 	pub use crate::weights::WeightInfo;
 
-	use super::*;
-	use crate::filter::{AssetFilter, AssetFilterOf, MultiLocationFilterOf};
+	use crate::types::{
+		filter::{AssetFilter, AssetFilterOf, MultiLocationFilterOf},
+		BridgeConfig, LatestVersionedMultiLocation, ResolveAssetTransferKind, UsingVersioned,
+	};
 	use frame_support::{pallet_prelude::*, traits::EnsureOriginWithArg, BoundedBTreeSet};
 	use frame_system::pallet_prelude::*;
+	use pallet_bridge_transfer_primitives::EnsureReachableDestination;
+	use sp_std::boxed::Box;
 	use xcm::prelude::*;
 	use xcm_executor::traits::TransactAsset;
 
@@ -190,15 +192,18 @@ pub mod pallet {
 		type AssetTransactor: TransactAsset;
 		/// Transfer kind resolver for `asset` to `target_location`.
 		type AssetTransferKindResolver: ResolveAssetTransferKind;
-		/// XCM sender which sends messages to the BridgeHub
-		/// (Config for transfer out)
-		type BridgeXcmSender: SendXcm;
 		/// Required origin for asset transfer. If successful, it resolves to `MultiLocation`.
 		/// (Config for transfer out)
 		type AssetTransferOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = MultiLocation>;
 		/// Max count of assets in one call
 		/// (Config for transfer out)
-		type MaxAssetsLimit: Get<u8>;
+		type AssetsLimit: Get<u8>;
+
+		/// Validates remote_destination if it is reachable from the point of configuration
+		type BridgedDestinationValidator: EnsureReachableDestination;
+		/// XCM sender which sends messages to the BridgeHub
+		/// (Config for transfer out)
+		type BridgeXcmSender: SendXcm;
 
 		/// Benchmarks helper.
 		#[cfg(feature = "runtime-benchmarks")]
@@ -315,7 +320,7 @@ pub mod pallet {
 			let assets: MultiAssets =
 				(*assets).try_into().map_err(|()| Error::<T>::InvalidAssets)?;
 			ensure!(
-				assets.len() <= T::MaxAssetsLimit::get() as usize,
+				assets.len() <= T::AssetsLimit::get() as usize,
 				Error::<T>::MaxAssetsLimitReached
 			);
 
