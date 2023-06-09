@@ -18,7 +18,7 @@ pub use casey::pascal;
 pub use codec::Encode;
 pub use frame_support::{
 	sp_runtime::BuildStorage,
-	traits::{EnqueueMessage, Get, Hooks, ProcessMessage, ProcessMessageError, ServiceQueues},
+	traits::{EnqueueMessage, Get, Hooks, OnInitialize, ProcessMessage, ProcessMessageError, ServiceQueues},
 	weights::{Weight, WeightMeter},
 };
 pub use frame_system::AccountInfo;
@@ -206,6 +206,7 @@ macro_rules! decl_test_relay_chains {
 					MessageQueue: $mq:path,
 					XcmConfig: $xcm_config:path,
 					SovereignAccountOf: $sovereign_acc_of:path,
+					AllPallets: $all_pallets:path,
 					System: $system:path,
 					Balances: $balances:path,
 				},
@@ -280,7 +281,7 @@ macro_rules! decl_test_relay_chains {
 				}
 			}
 
-			$crate::__impl_test_ext_for_relay_chain!($name, $genesis, $on_init);
+			$crate::__impl_test_ext_for_relay_chain!($name, $genesis, $on_init, $all_pallets);
 		)+
 	};
 }
@@ -288,13 +289,13 @@ macro_rules! decl_test_relay_chains {
 #[macro_export]
 macro_rules! __impl_test_ext_for_relay_chain {
 	// entry point: generate ext name
-	($name:ident, $genesis:expr, $on_init:expr) => {
+	($name:ident, $genesis:expr, $on_init:expr, $all_pallets:path) => {
 		$crate::paste::paste! {
-			$crate::__impl_test_ext_for_relay_chain!(@impl $name, $genesis, $on_init, [<EXT_ $name:upper>]);
+			$crate::__impl_test_ext_for_relay_chain!(@impl $name, $genesis, $on_init, $all_pallets, [<EXT_ $name:upper>]);
 		}
 	};
 	// impl
-	(@impl $name:ident, $genesis:expr, $on_init:expr, $ext_name:ident) => {
+	(@impl $name:ident, $genesis:expr, $on_init:expr, $all_pallets:path, $ext_name:ident) => {
 		thread_local! {
 			pub static $ext_name: $crate::RefCell<$crate::sp_io::TestExternalities>
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
@@ -324,6 +325,14 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				use $crate::{NetworkComponent};
 				// Make sure the Network is initialized
 				<$name>::init();
+
+				// Make sure pallets hooks are executed
+				$ext_name.with(|v| {
+					v.borrow_mut().execute_with(|| {
+						let relay_block_number = <$name>::relay_block_number();
+						<$all_pallets as $crate::OnInitialize<u32>>::on_initialize(relay_block_number);
+					})
+				});
 
 				let r = $ext_name.with(|v| v.borrow_mut().execute_with(execute));
 
@@ -429,6 +438,7 @@ macro_rules! decl_test_parachains {
 					XcmpMessageHandler: $xcmp_message_handler:path,
 					DmpMessageHandler: $dmp_message_handler:path,
 					LocationToAccountId: $location_to_account:path,
+					AllPallets: $all_pallets:path,
 					System: $system:path,
 					Balances: $balances_pallet:path,
 					ParachainSystem: $parachain_system:path,
@@ -473,7 +483,7 @@ macro_rules! decl_test_parachains {
 			}
 
 			$crate::__impl_xcm_handlers_for_parachain!($name);
-			$crate::__impl_test_ext_for_parachain!($name, $genesis, $on_init);
+			$crate::__impl_test_ext_for_parachain!($name, $genesis, $on_init, $all_pallets);
 		)+
 	};
 }
@@ -515,13 +525,13 @@ macro_rules! __impl_xcm_handlers_for_parachain {
 #[macro_export]
 macro_rules! __impl_test_ext_for_parachain {
 	// entry point: generate ext name
-	($name:ident, $genesis:expr, $on_init:expr) => {
+	($name:ident, $genesis:expr, $on_init:expr, $all_pallets:path) => {
 		$crate::paste::paste! {
-			$crate::__impl_test_ext_for_parachain!(@impl $name, $genesis, $on_init, [<EXT_ $name:upper>]);
+			$crate::__impl_test_ext_for_parachain!(@impl $name, $genesis, $on_init, $all_pallets, [<EXT_ $name:upper>]);
 		}
 	};
 	// impl
-	(@impl $name:ident, $genesis:expr, $on_init:expr, $ext_name:ident) => {
+	(@impl $name:ident, $genesis:expr, $on_init:expr, $all_pallets:path, $ext_name:ident) => {
 		thread_local! {
 			pub static $ext_name: $crate::RefCell<$crate::sp_io::TestExternalities>
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
@@ -553,16 +563,26 @@ macro_rules! __impl_test_ext_for_parachain {
 				// Make sure the Network is initialized
 				<$name>::init();
 
+				// Set new relay block number
 				let mut relay_block_number = <$name>::relay_block_number();
 				relay_block_number += 1;
 				<$name>::set_relay_block_number(relay_block_number);
+				relay_block_number = <$name>::relay_block_number();
+
+				// Make sure pallets hooks are executed
+				$ext_name.with(|v| {
+					v.borrow_mut().execute_with(|| {
+						let relay_block_number = <$name>::relay_block_number();
+						<$all_pallets as $crate::OnInitialize<u32>>::on_initialize(relay_block_number);
+					})
+				});
 
 				let para_id = <$name>::para_id().into();
 
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
 						// Make sure it has been recorded properly
-						let relay_block_number = <$name>::relay_block_number();
+						// let relay_block_number = <$name>::relay_block_number();
 						let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
 							<Self as Parachain>::RuntimeOrigin::none(),
 							<$name>::hrmp_channel_parachain_inherent_data(para_id, relay_block_number),
