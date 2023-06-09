@@ -624,7 +624,7 @@ parameter_types! {
 			epoch: 162304,
 		},
 	};
-	pub const MaxExecutionHeadersToKeep:u32 = 1000;
+	pub const MaxExecutionHeadersToKeep:u32 = 8192 * 2;
 }
 
 impl snowbridge_ethereum_beacon_client::Config for Runtime {
