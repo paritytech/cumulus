@@ -79,9 +79,6 @@ fn swap_locally_on_chain_using_local_assets() {
 				},
 			]
 		);
-		// AssetHubWestend::events().iter().for_each(|event| {
-		// 	println!("asset_hub_westend {:?}", event);
-		// });
 
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::remove_liquidity(
 			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
@@ -133,16 +130,13 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	// 2. Create foreign asset on asset_hub_westend:
 
 	let require_weight_at_most = Weight::from_parts(1_100_000_000_000, 30_000);
-	let origin_kind = OriginKind::Xcm; //OriginKind::SovereignAccount;//Superuser;
-								   // let check_origin = None;
-
+	let origin_kind = OriginKind::Xcm;
 	let sov_penpal_on_asset_hub_westend = AssetHubWestend::sovereign_account_id_of(penpal_location);
-	// let sov_penpal_on_penpal = PenpalWestend::sovereign_account_id_of(penpal_location);
+	
 	AssetHubWestend::fund_accounts(vec![
 		(AssetHubWestendSender::get(), 5_000_000), // An account to swap dot for something else.
 		(sov_penpal_on_asset_hub_westend.clone(), 1000_000_000_000_000_000),
 	]);
-	// PenpalWestend::fund_accounts(vec![(sov_penpal_on_penpal, 10_000_000_000_000_000)]);
 
 	let sov_penpal_on_asset_hub_westend_as_location: MultiLocation = MultiLocation {
 		parents: 0,
@@ -313,9 +307,5 @@ fn swap_locally_on_chain_using_foreign_assets() {
 			0,
 			sov_penpal_on_asset_hub_westend.clone().into(),
 		));
-
-		// AssetHubWestend::events().iter().for_each(|event| {
-		// 	println!("asset_hub_westend {:?}", event);
-		// });
 	});
 }
