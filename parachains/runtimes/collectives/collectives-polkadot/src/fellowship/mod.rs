@@ -23,23 +23,23 @@ use cumulus_primitives_core::Junction::GeneralIndex;
 use frame_system::EnsureNever;
 pub use origins::{
 	pallet_origins as pallet_fellowship_origins, Architects, EnsureCanPromoteTo, EnsureCanRetainAt,
-	EnsureFellowship, Fellows, Masters, Members,
+	EnsureFellowship, Fellows, Masters, Members, ToVoice,
 };
+use pallet_ranked_collective::EnsureOfRank;
 use xcm_builder::{AliasesIntoAccountId32, LocatableAssetId, PayOverXcm};
-
 use crate::{
 	constants, impls::ToParentTreasury, weights, AccountId, Balance, Balances, FellowshipReferenda,
 	GovernanceLocation, PolkadotTreasuryAccount, Preimage, Runtime, RuntimeCall, RuntimeEvent,
-	Scheduler, DAYS,
+	Scheduler, DAYS, RuntimeOrigin,
 };
 use frame_support::{
 	parameter_types,
-	traits::{EitherOf, EitherOfDiverse, MapSuccess},
+	traits::{EitherOf, EitherOfDiverse, MapSuccess, OriginTrait, TryWithMorphedArg},
 };
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use polkadot_runtime_constants::{time::HOURS, xcm::body::FELLOWSHIP_ADMIN_INDEX};
 use sp_core::{ConstU128, ConstU32};
-use sp_runtime::traits::{AccountIdConversion, ConstU16, ConvertToValue, Replace};
+use sp_runtime::traits::{AccountIdConversion, ConstU16, ConvertToValue, Replace, TakeFirst};
 use xcm::latest::BodyId;
 
 /// The Fellowship members' ranks.
@@ -74,8 +74,19 @@ impl pallet_referenda::Config<FellowshipReferendaInstance> for Runtime {
 	type Scheduler = Scheduler;
 	type Currency = Balances;
 	// Fellows can submit proposals.
-	type SubmitOrigin =
-		pallet_ranked_collective::EnsureMember<Runtime, FellowshipCollectiveInstance, 3>;
+	type SubmitOrigin = EitherOf<
+		pallet_ranked_collective::EnsureMember<Runtime, FellowshipCollectiveInstance, 3>,
+		MapSuccess<
+			TryWithMorphedArg<
+				RuntimeOrigin,
+				<RuntimeOrigin as OriginTrait>::PalletsOrigin,
+				ToVoice,
+				EnsureOfRank<Runtime, FellowshipCollectiveInstance>,
+				(AccountId, u16)
+			>,
+			TakeFirst
+		>,
+	>;
 	type CancelOrigin = Architects;
 	type KillOrigin = Masters;
 	type Slash = ToParentTreasury<PolkadotTreasuryAccount, ReferendaPalletAccount, Runtime>;
@@ -216,3 +227,6 @@ impl pallet_salary::Config<FellowshipSalaryInstance> for Runtime {
 	// Total monthly salary budget.
 	type Budget = ConstU128<{ 100_000 * USDT_UNITS }>;
 }
+
+#[test]
+fn it_builds() {}
