@@ -55,6 +55,8 @@ members = [
 	"parachains/integration-tests/emulated/common",
 	"parachains/integration-tests/emulated/assets/asset-hub-kusama",
 	"parachains/integration-tests/emulated/assets/asset-hub-polkadot",
+	"parachains/integration-tests/emulated/assets/asset-hub-westend",
+	"parachains/integration-tests/emulated/collectives/collectives-polkadot",
 	"test/client",
 	"test/relay-sproof-builder",
 	"test/relay-validation-worker-provider",
@@ -71,4 +73,3 @@ opt-level = 3
 inherits = "release"
 lto = true
 codegen-units = 1
-

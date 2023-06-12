@@ -50,7 +50,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{ConstU128, ConstU16, ConstU32, ConstU64, ConstU8, Everything},
+	traits::{ConstBool, ConstU128, ConstU16, ConstU32, ConstU64, ConstU8, Everything},
 	weights::{ConstantMultiplier, Weight},
 	PalletId,
 };
@@ -95,9 +95,16 @@ pub type SignedExtra = (
 pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 
+/// Migrations to apply on runtime upgrade.
 pub type Migrations = (
+	cumulus_pallet_dmp_queue::migration::Migration<Runtime>,
+	cumulus_pallet_parachain_system::migration::Migration<Runtime>,
+	cumulus_pallet_xcmp_queue::migration::Migration<Runtime>,
+	pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,
 	pallet_contracts::Migration<Runtime>,
+	pallet_multisig::migrations::v1::MigrateToV1<Runtime>,
 	pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,
+	pallet_xcm::migration::v1::MigrateToV1<Runtime>,
 );
 
 type EventRecord = frame_system::EventRecord<
@@ -303,6 +310,7 @@ impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
 	type MaxAuthorities = ConstU32<100_000>;
+	type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 parameter_types! {
