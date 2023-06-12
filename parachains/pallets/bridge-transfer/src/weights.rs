@@ -24,7 +24,6 @@ use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_bridge_assets_transfer.
 pub trait WeightInfo {
-	// TODO: add assets count?
 	/// Weight of the `transfer_asset_via_bridge` call.
 	fn transfer_asset_via_bridge() -> Weight;
 }
