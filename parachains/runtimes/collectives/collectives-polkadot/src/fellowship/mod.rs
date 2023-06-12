@@ -19,28 +19,28 @@
 pub(crate) mod migration;
 mod origins;
 mod tracks;
+use crate::{
+	constants, impls::ToParentTreasury, weights, AccountId, Balance, Balances, FellowshipReferenda,
+	GovernanceLocation, PolkadotTreasuryAccount, Preimage, Runtime, RuntimeCall, RuntimeEvent,
+	RuntimeOrigin, Scheduler, DAYS,
+};
 use cumulus_primitives_core::Junction::GeneralIndex;
+use frame_support::{
+	parameter_types,
+	traits::{EitherOf, EitherOfDiverse, MapSuccess, OriginTrait, TryWithMorphedArg},
+};
 use frame_system::EnsureNever;
 pub use origins::{
 	pallet_origins as pallet_fellowship_origins, Architects, EnsureCanPromoteTo, EnsureCanRetainAt,
 	EnsureFellowship, Fellows, Masters, Members, ToVoice,
 };
 use pallet_ranked_collective::EnsureOfRank;
-use xcm_builder::{AliasesIntoAccountId32, LocatableAssetId, PayOverXcm};
-use crate::{
-	constants, impls::ToParentTreasury, weights, AccountId, Balance, Balances, FellowshipReferenda,
-	GovernanceLocation, PolkadotTreasuryAccount, Preimage, Runtime, RuntimeCall, RuntimeEvent,
-	Scheduler, DAYS, RuntimeOrigin,
-};
-use frame_support::{
-	parameter_types,
-	traits::{EitherOf, EitherOfDiverse, MapSuccess, OriginTrait, TryWithMorphedArg},
-};
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use polkadot_runtime_constants::{time::HOURS, xcm::body::FELLOWSHIP_ADMIN_INDEX};
 use sp_core::{ConstU128, ConstU32};
 use sp_runtime::traits::{AccountIdConversion, ConstU16, ConvertToValue, Replace, TakeFirst};
 use xcm::latest::BodyId;
+use xcm_builder::{AliasesIntoAccountId32, LocatableAssetId, PayOverXcm};
 
 /// The Fellowship members' ranks.
 pub mod ranks {
@@ -82,9 +82,9 @@ impl pallet_referenda::Config<FellowshipReferendaInstance> for Runtime {
 				<RuntimeOrigin as OriginTrait>::PalletsOrigin,
 				ToVoice,
 				EnsureOfRank<Runtime, FellowshipCollectiveInstance>,
-				(AccountId, u16)
+				(AccountId, u16),
 			>,
-			TakeFirst
+			TakeFirst,
 		>,
 	>;
 	type CancelOrigin = Architects;
