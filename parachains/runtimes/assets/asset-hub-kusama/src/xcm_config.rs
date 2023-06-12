@@ -199,6 +199,14 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			}
 		}
 
+		// Allow to change dedicated storage items (called by governance-like)
+		match call {
+			RuntimeCall::System(frame_system::Call::set_storage { items })
+				if items.iter().any(|(k, _)| k.eq(&bridging::AssetHubPolkadotMaxFee::key())) =>
+				return true,
+			_ => (),
+		};
+
 		matches!(
 			call,
 			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |

@@ -761,3 +761,23 @@ fn withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_works()
 		bridging_to_asset_hub_kusama
 	)
 }
+
+#[test]
+fn change_asset_hub_kusama_max_fee_by_governance_works() {
+	asset_test_utils::test_cases::change_storage_constant_by_governance_works::<
+		Runtime,
+		bridging::AssetHubKusamaMaxFee,
+		Option<MultiAsset>,
+	>(
+		collator_session_keys(),
+		1000,
+		Box::new(|call| RuntimeCall::System(call).encode()),
+		|| (bridging::AssetHubKusamaMaxFee::key().to_vec(), bridging::AssetHubKusamaMaxFee::get()),
+		|old_value| match old_value {
+			Some(MultiAsset { id, fun: Fungible(old_amount) }) =>
+				Some(MultiAsset { id: id.clone(), fun: Fungible(old_amount * 2) }),
+			Some(_) => None,
+			None => Some(MultiAsset::from((Here, 123456))),
+		},
+	)
+}

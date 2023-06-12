@@ -20,8 +20,10 @@ use cumulus_primitives_core::{AbridgedHrmpChannel, ParaId, PersistedValidationDa
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use frame_support::{
+	assert_ok,
 	dispatch::{DispatchResult, RawOrigin, UnfilteredDispatchable},
 	inherent::{InherentData, ProvideInherent},
+	pallet_prelude::Get,
 	traits::{GenesisBuild, OriginTrait},
 	weights::Weight,
 };
@@ -327,7 +329,6 @@ pub enum XcmReceivedFrom {
 
 impl<ParachainSystem: cumulus_pallet_parachain_system::Config> RuntimeHelper<ParachainSystem> {
 	pub fn xcm_max_weight(from: XcmReceivedFrom) -> Weight {
-		use frame_support::traits::Get;
 		match from {
 			XcmReceivedFrom::Parent => ParachainSystem::ReservedDmpWeight::get(),
 			XcmReceivedFrom::Sibling => ParachainSystem::ReservedXcmpWeight::get(),
@@ -477,4 +478,74 @@ impl<HrmpChannelSource: cumulus_primitives_core::XcmpMessageSource>
 			_ => return None,
 		}
 	}
+}
+
+/// Test-case makes sure that `Runtime` can change storage constant via governance-like call
+pub fn change_storage_constant_by_governance_works<Runtime, StorageConstant, StorageConstantType>(
+	collator_session_key: CollatorSessionKeys<Runtime>,
+	runtime_para_id: u32,
+	runtime_call_encode: Box<dyn Fn(frame_system::Call<Runtime>) -> Vec<u8>>,
+	storage_constant_key_value: fn() -> (Vec<u8>, StorageConstantType),
+	new_storage_constant_value: fn(&StorageConstantType) -> StorageConstantType,
+) where
+	Runtime: frame_system::Config
+		+ pallet_balances::Config
+		+ pallet_session::Config
+		+ pallet_xcm::Config
+		+ parachain_info::Config
+		+ pallet_collator_selection::Config
+		+ cumulus_pallet_dmp_queue::Config
+		+ cumulus_pallet_parachain_system::Config,
+	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
+	StorageConstant: Get<StorageConstantType>,
+	StorageConstantType: Encode + PartialEq + std::fmt::Debug,
+{
+	ExtBuilder::<Runtime>::default()
+		.with_collators(collator_session_key.collators())
+		.with_session_keys(collator_session_key.session_keys())
+		.with_para_id(runtime_para_id.into())
+		.with_tracing()
+		.build()
+		.execute_with(|| {
+			let (storage_constant_key, storage_constant_init_value): (
+				Vec<u8>,
+				StorageConstantType,
+			) = storage_constant_key_value();
+
+			// check constant before (not stored yet, just as default value is used)
+			assert_eq!(StorageConstant::get(), storage_constant_init_value);
+			assert_eq!(sp_io::storage::get(&storage_constant_key), None);
+
+			let new_storage_constant_value =
+				new_storage_constant_value(&storage_constant_init_value);
+			assert_ne!(new_storage_constant_value, storage_constant_init_value);
+
+			// encode `set_storage` call
+			let set_storage_call =
+				runtime_call_encode(frame_system::Call::<Runtime>::set_storage {
+					items: vec![(
+						storage_constant_key.clone(),
+						new_storage_constant_value.encode(),
+					)],
+				});
+
+			// estimate - storing just 1 value
+			use frame_system::WeightInfo;
+			let require_weight_at_most =
+				<Runtime as frame_system::Config>::SystemWeightInfo::set_storage(1);
+
+			// execute XCM with Transact to `set_storage` as governance does
+			assert_ok!(RuntimeHelper::<Runtime>::execute_as_governance(
+				set_storage_call,
+				require_weight_at_most
+			)
+			.ensure_complete());
+
+			// check constant after (stored)
+			assert_eq!(StorageConstant::get(), new_storage_constant_value);
+			assert_eq!(
+				sp_io::storage::get(&storage_constant_key),
+				Some(new_storage_constant_value.encode().into())
+			);
+		})
 }
