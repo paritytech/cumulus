@@ -57,3 +57,6 @@ pub enum ReachableDestinationError {
 	UnsupportedDestination,
 	UnsupportedXcmVersion,
 }
+
+/// Reserve location as `MultiLocation` with `AssetFilter`
+pub type ReserveLocation = (MultiLocation, AssetFilter);

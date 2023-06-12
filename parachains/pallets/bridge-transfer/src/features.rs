@@ -18,35 +18,59 @@ use crate::{
 	LOG_TARGET,
 };
 use frame_support::traits::{ContainsPair, Get};
-use pallet_bridge_transfer_primitives::{BridgesConfig, MatchAssetLocation};
+use pallet_bridge_transfer_primitives::{BridgesConfig, MatchAssetLocation, ReserveLocation};
 use xcm::prelude::*;
 use xcm_builder::ensure_is_remote;
+
+/// Adapter verifies if it is allowed to receive `MultiAsset` from `MultiLocation`.
+///
+/// Note: `MultiLocation` has to be from different global consensus.
+pub struct IsTrustedBridgedReserveLocationForConcreteAsset<UniversalLocation, Reserves>(
+	sp_std::marker::PhantomData<(UniversalLocation, Reserves)>,
+);
+impl<
+		UniversalLocation: Get<InteriorMultiLocation>,
+		Reserves: Get<sp_std::vec::Vec<ReserveLocation>>,
+	> ContainsPair<MultiAsset, MultiLocation>
+	for IsTrustedBridgedReserveLocationForConcreteAsset<UniversalLocation, Reserves>
 {
 	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+		let universal_source = UniversalLocation::get();
 		log::trace!(
-			target: LOG_TARGET,
-			"IsTrustedBridgedReserveForConcreteAsset asset: {:?}, origin: {:?}",
-			asset, origin
+			target: "xcm::contains",
+			"IsTrustedBridgedReserveLocationForConcreteAsset asset: {:?}, origin: {:?}, universal_source: {:?}",
+			asset, origin, universal_source
 		);
 
+		// check remote origin
+		let _ = match ensure_is_remote(universal_source, *origin) {
+			Ok(devolved) => devolved,
+			Err(_) => {
+				log::trace!(
+					target: "xcm::contains",
+					"IsTrustedBridgedReserveLocationForConcreteAsset origin: {:?} is not remote to the universal_source: {:?}",
+					origin, universal_source
+				);
+				return false
+			},
+		};
+
+		// check asset location
 		let asset_location = match &asset.id {
 			Concrete(location) => location,
 			_ => return false,
 		};
 
-		let versioned_origin = LatestVersionedMultiLocation(origin);
-		Pallet::<T>::allowed_reserve_locations(versioned_origin)
-			.map_or(false, |filter| match filter.matches(asset_location) {
-				Ok(result) => result,
-				Err(e) => {
-					log::error!(
-						target: LOG_TARGET,
-						"IsTrustedBridgedReserveForConcreteAsset has error: {:?} for asset_location: {:?} and origin: {:?}!",
-						e, asset_location, origin
-					);
-					false
-				},
-			})
+		// check asset according to the configured reserve locations
+		for (reserve_location, asset_filter) in Reserves::get() {
+			if origin.eq(&reserve_location) {
+				if asset_filter.matches(asset_location) {
+					return true
+				}
+			}
+		}
+
+		false
 	}
 }
 
@@ -128,17 +152,34 @@ impl<
 			_ => return AssetTransferKind::Unsupported,
 		};
 
-		// first, we check, if we are trying to transfer back reserve-deposited assets
+		// check if target_location is allowed for requested asset to be transferred there
+		let is_reserve_based_candidate =
+			IsAllowedReserveBasedTransferForAsset::contains(asset, target_location);
+
+		// check if we are trying to transfer back reserve-deposited assets
 		// other words: if target_location is a known reserve location for asset
-		if IsReserveLocationForAsset::contains(asset, target_location) {
-			return AssetTransferKind::WithdrawReserve
-		}
+		let is_withdraw_reserve_candidate =
+			IsReserveLocationForAsset::contains(asset, target_location);
 
-		// second, we check, if target_location is allowed for requested asset to be transferred there
-		if IsAllowedReserveBasedTransferForAsset::contains(asset, target_location) {
-			return AssetTransferKind::ReserveBased
+		match (is_reserve_based_candidate, is_withdraw_reserve_candidate) {
+			(true, false) => AssetTransferKind::ReserveBased,
+			(false, true) => AssetTransferKind::WithdrawReserve,
+			(true, true) => {
+				log::warn!(
+					target: LOG_TARGET,
+					"ConcreteAssetTransferKindResolver invalid configuration of transfer kind resolve for asset: {:?} and target_location: {:?} - is_reserve_based_candidate/is_withdraw_reserve_candidate: {:?}/{:?}",
+					asset, target_location, is_reserve_based_candidate, is_withdraw_reserve_candidate
+				);
+				AssetTransferKind::Unsupported
+			},
+			(false, false) => {
+				log::trace!(
+					target: LOG_TARGET,
+					"ConcreteAssetTransferKindResolver unsupported transfer kind for asset: {:?} and target_location: {:?} - is_reserve_based_candidate/is_withdraw_reserve_candidate: {:?}/{:?}",
+					asset, target_location, is_reserve_based_candidate, is_withdraw_reserve_candidate
+				);
+				AssetTransferKind::Unsupported
+			},
 		}
-
-		AssetTransferKind::Unsupported
 	}
 }

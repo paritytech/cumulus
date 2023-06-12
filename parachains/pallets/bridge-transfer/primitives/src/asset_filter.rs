@@ -26,24 +26,33 @@ pub trait MatchAssetLocation {
 #[derive(Debug)]
 pub enum AssetFilter {
 	ByMultiLocation(MultiLocationFilter),
-	All,
 }
 
 impl MatchAssetLocation for AssetFilter {
 	fn matches(&self, asset_location: &MultiLocation) -> bool {
 		match self {
 			AssetFilter::ByMultiLocation(by_location) => by_location.matches(asset_location),
-			AssetFilter::All => true,
 		}
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct MultiLocationFilter {
 	/// Requested location equals to `MultiLocation`
 	pub equals_any: sp_std::vec::Vec<MultiLocation>,
 	/// Requested location starts with `MultiLocation`
 	pub starts_with_any: sp_std::vec::Vec<MultiLocation>,
+}
+
+impl MultiLocationFilter {
+	pub fn add_equals(mut self, filter: MultiLocation) -> Self {
+		self.equals_any.push(filter);
+		self
+	}
+	pub fn add_starts_with(mut self, filter: MultiLocation) -> Self {
+		self.starts_with_any.push(filter);
+		self
+	}
 }
 
 impl MatchAssetLocation for MultiLocationFilter {

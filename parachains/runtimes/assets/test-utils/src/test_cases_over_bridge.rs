@@ -19,10 +19,9 @@ use codec::Encode;
 use cumulus_primitives_core::XcmpMessageSource;
 use frame_support::{
 	assert_ok,
-	traits::{Contains, Currency, Get, OriginTrait, ProcessMessageError},
-	BoundedVec,
+	traits::{Currency, Get, OriginTrait, ProcessMessageError},
 };
-use pallet_bridge_transfer::{AssetFilterOf, MultiLocationFilterOf};
+use pallet_bridge_transfer_primitives::MaybePaidLocation;
 use parachains_common::Balance;
 use parachains_runtimes_test_utils::{
 	mock_open_hrmp_channel, AccountIdOf, BalanceOf, CollatorSessionKeys, ExtBuilder, RuntimeHelper,
@@ -33,214 +32,11 @@ use xcm::{latest::prelude::*, VersionedMultiAssets, VersionedMultiLocation};
 use xcm_builder::{CreateMatcher, MatchXcm};
 use xcm_executor::{traits::ConvertLocation, XcmExecutor};
 
-/// Test-case makes sure that `Runtime` can manage `bridge_transfer out`  configuration by governance
-pub fn can_governance_change_bridge_transfer_out_configuration<Runtime, XcmConfig>(
-	collator_session_keys: CollatorSessionKeys<Runtime>,
-	runtime_call_encode: Box<dyn Fn(pallet_bridge_transfer::Call<Runtime>) -> Vec<u8>>,
-	unwrap_pallet_bridge_transfer_event: Box<
-		dyn Fn(Vec<u8>) -> Option<pallet_bridge_transfer::Event<Runtime>>,
-	>,
-) where
-	Runtime: frame_system::Config
-		+ pallet_balances::Config
-		+ pallet_session::Config
-		+ pallet_xcm::Config
-		+ parachain_info::Config
-		+ pallet_collator_selection::Config
-		+ cumulus_pallet_parachain_system::Config
-		+ cumulus_pallet_dmp_queue::Config
-		+ pallet_bridge_transfer::Config,
-	AccountIdOf<Runtime>: Into<[u8; 32]>,
-	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
-	BalanceOf<Runtime>: From<Balance>,
-	XcmConfig: xcm_executor::Config,
-{
-	ExtBuilder::<Runtime>::default()
-		.with_collators(collator_session_keys.collators())
-		.with_session_keys(collator_session_keys.session_keys())
-		.with_tracing()
-		.with_safe_xcm_version(3)
-		.build()
-		.execute_with(|| {
-			// bridge cfg data
-			let bridged_network = ByGenesis([9; 32]);
-			let bridge_location: MultiLocation = (Parent, Parachain(1013)).into();
-			let bridge_location_fee = None;
-
-			// check no cfg
-			assert!(pallet_bridge_transfer::Pallet::<Runtime>::allowed_exporters(&bridged_network)
-				.is_none());
-
-			// governance can add exporter config
-			assert_ok!(RuntimeHelper::<Runtime>::execute_as_governance(
-				runtime_call_encode(
-					pallet_bridge_transfer::Call::<Runtime>::add_exporter_config {
-						bridged_network,
-						bridge_location: Box::new(bridge_location.into_versioned()),
-						bridge_location_fee,
-					}
-				),
-				<<Runtime as pallet_bridge_transfer::Config>::WeightInfo as pallet_bridge_transfer::weights::WeightInfo>::add_exporter_config()
-			)
-			.ensure_complete());
-			assert!(<frame_system::Pallet<Runtime>>::events()
-				.into_iter()
-				.filter_map(|e| unwrap_pallet_bridge_transfer_event(e.event.encode()))
-				.any(|e| matches!(e, pallet_bridge_transfer::Event::BridgeAdded)));
-			{
-				let cfg =
-					pallet_bridge_transfer::Pallet::<Runtime>::allowed_exporters(&bridged_network);
-				assert!(cfg.is_some());
-				let cfg = cfg.unwrap().to_bridge_location().expect("ok");
-				assert_eq!(cfg.location, bridge_location);
-				assert_eq!(cfg.maybe_fee, None);
-			}
-
-			// governance can update bridge fee
-			let new_bridge_location_fee: MultiAsset =
-				(Concrete(MultiLocation::parent()), 1_000).into();
-			assert_ok!(RuntimeHelper::<Runtime>::execute_as_governance(
-				runtime_call_encode(
-					pallet_bridge_transfer::Call::<Runtime>::update_exporter_config {
-						bridged_network,
-						bridge_location_fee: Some(Box::new(new_bridge_location_fee.clone().into())),
-					}
-				),
-				<<Runtime as pallet_bridge_transfer::Config>::WeightInfo as pallet_bridge_transfer::weights::WeightInfo>::update_exporter_config()
-			)
-			.ensure_complete());
-			assert!(<frame_system::Pallet<Runtime>>::events()
-				.into_iter()
-				.filter_map(|e| unwrap_pallet_bridge_transfer_event(e.event.encode()))
-				.any(|e| matches!(e, pallet_bridge_transfer::Event::BridgeFeeUpdated)));
-			{
-				let cfg =
-					pallet_bridge_transfer::Pallet::<Runtime>::allowed_exporters(&bridged_network);
-				assert!(cfg.is_some());
-				let cfg = cfg.unwrap().to_bridge_location().expect("ok");
-				assert_eq!(cfg.maybe_fee, Some(new_bridge_location_fee));
-			}
-
-			let allowed_target_location = MultiLocation::new(
-				2,
-				X2(GlobalConsensus(bridged_network), Parachain(1000)),
-			);
-			let new_target_location_fee: MultiAsset =
-				(Concrete(MultiLocation::parent()), 1_000_000).into();
-
-			// governance can update target location
-			assert_ok!(RuntimeHelper::<Runtime>::execute_as_governance(
-				runtime_call_encode(
-					pallet_bridge_transfer::Call::<Runtime>::update_bridged_target_location {
-						bridged_network,
-						target_location: Box::new(allowed_target_location.into_versioned()),
-						max_target_location_fee: Some(Box::new(new_target_location_fee.into()))
-					}
-				),
-				<<Runtime as pallet_bridge_transfer::Config>::WeightInfo as pallet_bridge_transfer::weights::WeightInfo>::update_bridged_target_location()
-			)
-			.ensure_complete());
-			assert!(<frame_system::Pallet<Runtime>>::events()
-				.into_iter()
-				.filter_map(|e| unwrap_pallet_bridge_transfer_event(e.event.encode()))
-				.any(|e| matches!(e, pallet_bridge_transfer::Event::BridgeTargetLocationUpdated)));
-
-			// governance can allow reserve based assets to transfer out
-			assert_ok!(RuntimeHelper::<Runtime>::execute_as_governance(
-				runtime_call_encode(
-					pallet_bridge_transfer::Call::<Runtime>::allow_reserve_asset_transfer_for {
-						bridged_network,
-						target_location: Box::new(allowed_target_location.into_versioned()),
-						asset_filter: AssetFilterOf::<Runtime>::All,
-					}
-				),
-				<<Runtime as pallet_bridge_transfer::Config>::WeightInfo as pallet_bridge_transfer::weights::WeightInfo>::allow_reserve_asset_transfer_for()
-			)
-			.ensure_complete());
-			assert!(<frame_system::Pallet<Runtime>>::events()
-				.into_iter()
-				.filter_map(|e| unwrap_pallet_bridge_transfer_event(e.event.encode()))
-				.any(|e| matches!(e, pallet_bridge_transfer::Event::ReserveLocationAdded)));
-
-			// governance can remove bridge config
-			assert_ok!(RuntimeHelper::<Runtime>::execute_as_governance(
-				runtime_call_encode(
-					pallet_bridge_transfer::Call::<Runtime>::remove_exporter_config { bridged_network }
-				),
-				<<Runtime as pallet_bridge_transfer::Config>::WeightInfo as pallet_bridge_transfer::weights::WeightInfo>::remove_exporter_config()
-			)
-			.ensure_complete());
-			assert!(pallet_bridge_transfer::Pallet::<Runtime>::allowed_exporters(&bridged_network)
-				.is_none());
-			assert!(<frame_system::Pallet<Runtime>>::events()
-				.into_iter()
-				.filter_map(|e| unwrap_pallet_bridge_transfer_event(e.event.encode()))
-				.any(|e| matches!(e, pallet_bridge_transfer::Event::BridgeRemoved)));
-		})
-}
-
-/// Test-case makes sure that `Runtime` can manage `bridge_transfer in` configuration by governance
-pub fn can_governance_change_bridge_transfer_in_configuration<Runtime, XcmConfig>(
-	collator_session_keys: CollatorSessionKeys<Runtime>,
-	runtime_call_encode: Box<dyn Fn(pallet_bridge_transfer::Call<Runtime>) -> Vec<u8>>,
-	unwrap_pallet_bridge_transfer_event: Box<
-		dyn Fn(Vec<u8>) -> Option<pallet_bridge_transfer::Event<Runtime>>,
-	>,
-) where
-	Runtime: frame_system::Config
-		+ pallet_balances::Config
-		+ pallet_session::Config
-		+ pallet_xcm::Config
-		+ parachain_info::Config
-		+ pallet_collator_selection::Config
-		+ cumulus_pallet_parachain_system::Config
-		+ cumulus_pallet_dmp_queue::Config
-		+ pallet_bridge_transfer::Config,
-	AccountIdOf<Runtime>: Into<[u8; 32]>,
-	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
-	BalanceOf<Runtime>: From<Balance>,
-	XcmConfig: xcm_executor::Config,
-{
-	ExtBuilder::<Runtime>::default()
-		.with_collators(collator_session_keys.collators())
-		.with_session_keys(collator_session_keys.session_keys())
-		.with_tracing()
-		.with_safe_xcm_version(3)
-		.build()
-		.execute_with(|| {
-			// bridge cfg data
-			let bridge_location = (Parent, Parachain(1013)).into();
-			let alias_junction = GlobalConsensus(ByGenesis([9; 32]));
-
-			// check before
-			assert!(
-				!pallet_bridge_transfer::features::AllowedUniversalAliasesOf::<Runtime>::contains(&(
-					bridge_location,
-					alias_junction
-				))
-			);
-
-			// governance can add bridge config
-			assert_ok!(RuntimeHelper::<Runtime>::execute_as_governance(
-				runtime_call_encode(
-					pallet_bridge_transfer::Call::<Runtime>::add_universal_alias {
-						location: Box::new(bridge_location.clone().into_versioned()),
-						junction: alias_junction,
-					}
-				),
-				<<Runtime as pallet_bridge_transfer::Config>::WeightInfo as pallet_bridge_transfer::weights::WeightInfo>::add_universal_alias()
-			)
-			.ensure_complete());
-			assert!(<frame_system::Pallet<Runtime>>::events()
-				.into_iter()
-				.filter_map(|e| unwrap_pallet_bridge_transfer_event(e.event.encode()))
-				.any(|e| matches!(e, pallet_bridge_transfer::Event::UniversalAliasAdded)));
-
-			// check after
-			assert!(pallet_bridge_transfer::features::AllowedUniversalAliasesOf::<Runtime>::contains(
-				&(bridge_location, alias_junction)
-			));
-		})
+pub struct TestBridgingConfig {
+	pub bridged_network: NetworkId,
+	pub local_bridge_hub_para_id: u32,
+	pub local_bridge_hub_location: MaybePaidLocation,
+	pub bridged_target_location: MaybePaidLocation,
 }
 
 /// Test-case makes sure that `Runtime` can initiate transfer of assets via bridge - `TransferKind::ReserveBased`
@@ -260,6 +56,7 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 	unwrap_xcmp_queue_event: Box<
 		dyn Fn(Vec<u8>) -> Option<cumulus_pallet_xcmp_queue::Event<Runtime>>,
 	>,
+	ensure_configuration: fn() -> TestBridgingConfig,
 ) where
 	Runtime: frame_system::Config
 		+ pallet_balances::Config
@@ -295,12 +92,19 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 		.build()
 		.execute_with(|| {
 			// prepare bridge config
-			let bridged_network = ByGenesis([6; 32]);
-			let bridge_hub_para_id = 1013;
-			let bridge_hub_location: MultiLocation = (Parent, Parachain(bridge_hub_para_id)).into();
-			let target_location_from_different_consensus =
-				MultiLocation::new(2, X2(GlobalConsensus(bridged_network), Parachain(1000)));
-			let target_location_fee: MultiAsset = (MultiLocation::parent(), 1_000_000).into();
+			let TestBridgingConfig {
+				bridged_network,
+				local_bridge_hub_para_id,
+				bridged_target_location:
+					MaybePaidLocation {
+						location: target_location_from_different_consensus,
+						maybe_fee: target_location_fee,
+					},
+				..
+			} = ensure_configuration();
+
+			// we expect paid target execution
+			let target_location_fee = target_location_fee.unwrap();
 
 			let reserve_account =
 				LocationToAccountId::convert_location(&target_location_from_different_consensus)
@@ -311,7 +115,7 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 			// open HRMP to bridge hub
 			mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(
 				runtime_para_id.into(),
-				bridge_hub_para_id.into(),
+				local_bridge_hub_para_id.into(),
 			);
 
 			// drip ED to account
@@ -337,32 +141,6 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 			assert_eq!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(&reserve_account),
 				existential_deposit
-			);
-
-			// insert bridge config and target location
-			assert_ok!(<pallet_bridge_transfer::Pallet<Runtime>>::add_exporter_config(
-				RuntimeHelper::<Runtime>::root_origin(),
-				bridged_network,
-				Box::new(bridge_hub_location.into_versioned()),
-				None,
-			));
-			assert_ok!(<pallet_bridge_transfer::Pallet<Runtime>>::update_bridged_target_location(
-				RuntimeHelper::<Runtime>::root_origin(),
-				bridged_network,
-				Box::new(target_location_from_different_consensus.into_versioned()),
-				Some(Box::new(target_location_fee.clone().into())),
-			));
-			assert_ok!(
-				<pallet_bridge_transfer::Pallet<Runtime>>::allow_reserve_asset_transfer_for(
-					RuntimeHelper::<Runtime>::root_origin(),
-					bridged_network,
-					Box::new(target_location_from_different_consensus.into_versioned()),
-					MultiLocationFilterOf::<Runtime> {
-						equals_any: BoundedVec::truncate_from(vec![native_asset.into_versioned()]),
-						starts_with_any: Default::default(),
-					}
-					.into(),
-				)
 			);
 
 			// local native asset (pallet_balances)
@@ -431,7 +209,8 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 
 			// read xcm
 			let xcm_sent =
-				RuntimeHelper::<HrmpChannelSource>::take_xcm(bridge_hub_para_id.into()).unwrap();
+				RuntimeHelper::<HrmpChannelSource>::take_xcm(local_bridge_hub_para_id.into())
+					.unwrap();
 			println!("xcm_sent: {:?}", xcm_sent);
 			assert_eq!(
 				xcm_sent_message_hash,
@@ -579,6 +358,7 @@ pub fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_work
 	unwrap_xcmp_queue_event: Box<
 		dyn Fn(Vec<u8>) -> Option<cumulus_pallet_xcmp_queue::Event<Runtime>>,
 	>,
+	ensure_configuration: fn() -> TestBridgingConfig,
 ) where
 	Runtime: frame_system::Config
 		+ pallet_balances::Config
@@ -622,12 +402,20 @@ pub fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_work
 		.build()
 		.execute_with(|| {
 			// prepare bridge config
-			let bridged_network = ByGenesis([6; 32]);
-			let bridge_hub_para_id = 1013;
-			let bridge_hub_location: MultiLocation = (Parent, Parachain(bridge_hub_para_id)).into();
-			let target_location_from_different_consensus =
-				MultiLocation::new(2, X2(GlobalConsensus(bridged_network), Parachain(1000)));
-			let target_location_fee: MultiAsset = (MultiLocation::parent(), 1_000_000).into();
+			let TestBridgingConfig {
+				bridged_network,
+				local_bridge_hub_para_id,
+				bridged_target_location:
+					MaybePaidLocation {
+						location: target_location_from_different_consensus,
+						maybe_fee: target_location_fee,
+					},
+				..
+			} = ensure_configuration();
+
+			// we expect paid target execution
+			let target_location_fee = target_location_fee.unwrap();
+
 			let foreign_asset_id_multilocation =
 				MultiLocation::new(2, X1(GlobalConsensus(bridged_network)));
 
@@ -640,7 +428,7 @@ pub fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_work
 			// open HRMP to bridge hub
 			mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(
 				runtime_para_id.into(),
-				bridge_hub_para_id.into(),
+				local_bridge_hub_para_id.into(),
 			);
 
 			// drip ED to account
@@ -691,25 +479,6 @@ pub fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_work
 				),
 				(asset_minimum_asset_balance + balance_to_transfer).into()
 			);
-
-			// insert bridge config
-			assert_ok!(<pallet_bridge_transfer::Pallet<Runtime>>::add_exporter_config(
-				RuntimeHelper::<Runtime>::root_origin(),
-				bridged_network,
-				Box::new(bridge_hub_location.into_versioned()),
-				None,
-			));
-			assert_ok!(<pallet_bridge_transfer::Pallet<Runtime>>::update_bridged_target_location(
-				RuntimeHelper::<Runtime>::root_origin(),
-				bridged_network,
-				Box::new(target_location_from_different_consensus.into_versioned()),
-				Some(Box::new(target_location_fee.clone().into()))
-			));
-			assert_ok!(<pallet_bridge_transfer::Pallet<Runtime>>::add_reserve_location(
-				RuntimeHelper::<Runtime>::root_origin(),
-				Box::new(target_location_from_different_consensus.into_versioned()),
-				AssetFilterOf::<Runtime>::All,
-			));
 
 			// lets withdraw previously reserve asset deposited from `ForeignAssets`
 			let assets = MultiAssets::from(MultiAsset {
@@ -783,7 +552,8 @@ pub fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_work
 
 			// read xcm
 			let xcm_sent =
-				RuntimeHelper::<HrmpChannelSource>::take_xcm(bridge_hub_para_id.into()).unwrap();
+				RuntimeHelper::<HrmpChannelSource>::take_xcm(local_bridge_hub_para_id.into())
+					.unwrap();
 			println!("xcm_sent: {:?}", xcm_sent);
 			assert_eq!(
 				xcm_sent_message_hash,
@@ -924,6 +694,7 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_work
 	existential_deposit: BalanceOf<Runtime>,
 	target_account: AccountIdOf<Runtime>,
 	unwrap_pallet_xcm_event: Box<dyn Fn(Vec<u8>) -> Option<pallet_xcm::Event<Runtime>>>,
+	ensure_configuration: fn() -> TestBridgingConfig,
 ) where
 	Runtime: frame_system::Config
 		+ pallet_balances::Config
@@ -952,19 +723,6 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_work
 	LocationToAccountId: ConvertLocation<AccountIdOf<Runtime>>,
 	ForeignAssetsPalletInstance: 'static,
 {
-	let remote_network_id = ByGenesis([7; 32]);
-	let remote_parachain_as_origin = MultiLocation {
-		parents: 2,
-		interior: X2(GlobalConsensus(remote_network_id), Parachain(1000)),
-	};
-	let foreign_asset_id_multilocation =
-		MultiLocation { parents: 2, interior: X1(GlobalConsensus(remote_network_id)) };
-	let buy_execution_fee_amount = 50000000000;
-	let reserve_asset_deposisted = 100_000_000;
-
-	let local_bridge_hub_multilocation =
-		MultiLocation { parents: 1, interior: X1(Parachain(1014)) };
-
 	ExtBuilder::<Runtime>::default()
 		.with_collators(collator_session_keys.collators())
 		.with_session_keys(collator_session_keys.session_keys())
@@ -972,6 +730,22 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_work
 		.with_tracing()
 		.build()
 		.execute_with(|| {
+			// prepare bridge config
+			let TestBridgingConfig {
+				bridged_network: remote_network_id,
+				local_bridge_hub_location:
+					MaybePaidLocation { location: local_bridge_hub_location, .. },
+				bridged_target_location:
+					MaybePaidLocation { location: remote_parachain_as_origin, .. },
+				..
+			} = ensure_configuration();
+
+			let foreign_asset_id_multilocation =
+				MultiLocation { parents: 2, interior: X1(GlobalConsensus(remote_network_id)) };
+
+			let buy_execution_fee_amount = 50000000000;
+			let reserve_asset_deposisted = 100_000_000;
+
 			// drip SA for remote global parachain origin
 			let remote_parachain_sovereign_account =
 				LocationToAccountId::convert_location(&remote_parachain_as_origin)
@@ -980,26 +754,6 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_work
 				RuntimeHelper::<Runtime>::root_origin(),
 				remote_parachain_sovereign_account.clone().into(),
 				existential_deposit + buy_execution_fee_amount.into(),
-			));
-
-			// setup bridge transfer configuration
-			// add allowed univeral alias for remote network
-			assert_ok!(<pallet_bridge_transfer::Pallet<Runtime>>::add_universal_alias(
-				RuntimeHelper::<Runtime>::root_origin(),
-				Box::new(local_bridge_hub_multilocation.into_versioned()),
-				GlobalConsensus(remote_network_id)
-			));
-			// add allowed reserve location
-			assert_ok!(<pallet_bridge_transfer::Pallet<Runtime>>::add_reserve_location(
-				RuntimeHelper::<Runtime>::root_origin(),
-				Box::new(remote_parachain_as_origin.into_versioned()),
-				MultiLocationFilterOf::<Runtime> {
-					equals_any: BoundedVec::truncate_from(vec![
-						foreign_asset_id_multilocation.into_versioned()
-					]),
-					starts_with_any: Default::default(),
-				}
-				.into()
 			));
 
 			// create foreign asset
@@ -1017,7 +771,7 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_work
 			// we assume here that BuyExecution fee goes to staking pot
 			let staking_pot_account_id = <pallet_collator_selection::Pallet<Runtime>>::account_id();
 			let local_bridge_hub_multilocation_as_account_id =
-				LocationToAccountId::convert_location(&local_bridge_hub_multilocation)
+				LocationToAccountId::convert_location(&local_bridge_hub_location)
 					.expect("Correct AccountId");
 
 			// check before
@@ -1103,7 +857,7 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_work
 			]);
 
 			// origin as BridgeHub
-			let origin = local_bridge_hub_multilocation;
+			let origin = local_bridge_hub_location;
 
 			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
 
@@ -1168,6 +922,7 @@ pub fn withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_wor
 	existential_deposit: BalanceOf<Runtime>,
 	target_account: AccountIdOf<Runtime>,
 	unwrap_pallet_xcm_event: Box<dyn Fn(Vec<u8>) -> Option<pallet_xcm::Event<Runtime>>>,
+	ensure_configuration: fn() -> TestBridgingConfig,
 ) where
 	Runtime: frame_system::Config
 		+ pallet_balances::Config
@@ -1188,18 +943,6 @@ pub fn withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_wor
 	XcmConfig: xcm_executor::Config,
 	LocationToAccountId: ConvertLocation<AccountIdOf<Runtime>>,
 {
-	let remote_network_id = ByGenesis([7; 32]);
-	let remote_parachain_as_origin = MultiLocation {
-		parents: 2,
-		interior: X2(GlobalConsensus(remote_network_id), Parachain(1000)),
-	};
-
-	let buy_execution_fee_amount = 50000000000;
-	let reserve_asset_deposisted = 100_000_000;
-
-	let local_bridge_hub_multilocation =
-		MultiLocation { parents: 1, interior: X1(Parachain(1014)) };
-
 	ExtBuilder::<Runtime>::default()
 		.with_collators(collator_session_keys.collators())
 		.with_session_keys(collator_session_keys.session_keys())
@@ -1207,6 +950,19 @@ pub fn withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_wor
 		.with_tracing()
 		.build()
 		.execute_with(|| {
+			// prepare bridge config
+			let TestBridgingConfig {
+				bridged_network: remote_network_id,
+				local_bridge_hub_location:
+					MaybePaidLocation { location: local_bridge_hub_location, .. },
+				bridged_target_location:
+					MaybePaidLocation { location: remote_parachain_as_origin, .. },
+				..
+			} = ensure_configuration();
+
+			let buy_execution_fee_amount = 50000000000;
+			let reserve_asset_deposisted = 100_000_000;
+
 			// add reserved assets to SA for remote global parachain origin (this is how reserve was done, when reserve_asset_deposisted was transferred out)
 			let remote_parachain_sovereign_account =
 				LocationToAccountId::convert_location(&remote_parachain_as_origin)
@@ -1219,18 +975,10 @@ pub fn withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_wor
 					reserve_asset_deposisted.into(),
 			));
 
-			// setup bridge transfer configuration
-			// add allowed univeral alias for remote network
-			assert_ok!(<pallet_bridge_transfer::Pallet<Runtime>>::add_universal_alias(
-				RuntimeHelper::<Runtime>::root_origin(),
-				Box::new(local_bridge_hub_multilocation.into_versioned()),
-				GlobalConsensus(remote_network_id)
-			));
-
 			// we assume here that BuyExecution fee goes to staking pot
 			let staking_pot_account_id = <pallet_collator_selection::Pallet<Runtime>>::account_id();
 			let local_bridge_hub_multilocation_as_account_id =
-				LocationToAccountId::convert_location(&local_bridge_hub_multilocation)
+				LocationToAccountId::convert_location(&local_bridge_hub_location)
 					.expect("Correct AccountId");
 
 			// check before
@@ -1305,7 +1053,7 @@ pub fn withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_wor
 			]);
 
 			// origin as BridgeHub
-			let origin = local_bridge_hub_multilocation;
+			let origin = local_bridge_hub_location;
 
 			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
 

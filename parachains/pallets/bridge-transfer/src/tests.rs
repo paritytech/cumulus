@@ -30,7 +30,7 @@ use frame_support::{
 };
 use pallet_bridge_transfer_primitives::{
 	AssetFilter, BridgeConfig, BridgesConfig, BridgesConfigAdapter, BridgesConfigBuilder,
-	MaybePaidLocation, ReachableDestination,
+	MaybePaidLocation, MultiLocationFilter, ReachableDestination,
 };
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::{
@@ -150,7 +150,11 @@ parameter_types! {
 					location: TargetLocation::get(),
 					maybe_fee: TargetLocationFee::get(),
 				},
-				Some(AssetFilter::All)
+				Some(AssetFilter::ByMultiLocation(
+					MultiLocationFilter::default()
+						// allow transfer parent/relay native token
+						.add_equals(MultiLocation::parent())
+				))
 			)
 		)
 		.build();
@@ -263,7 +267,7 @@ impl Config for TestRuntime {
 	type WeightInfo = ();
 	type AssetTransactor = CurrencyTransactor;
 	type AssetTransferKindResolver = ConcreteAssetTransferKindResolver<
-		frame_support::traits::Nothing,
+		(),
 		IsAllowedReserveBasedTransferForConcreteAssetToBridgedLocation<UniversalLocation, Bridges>,
 	>;
 	type AssetTransferOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;

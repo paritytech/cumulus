@@ -23,7 +23,8 @@ use asset_hub_kusama_runtime::xcm_config::{
 pub use asset_hub_kusama_runtime::{
 	constants::fee::WeightToFee,
 	xcm_config::{
-		CheckingAccount, ForeignCreatorsSovereignAccountOf, LocationToAccountId, XcmConfig,
+		bridging, CheckingAccount, ForeignCreatorsSovereignAccountOf, LocationToAccountId,
+		XcmConfig,
 	},
 	AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets, ForeignAssetsInstance,
 	MetadataDepositBase, MetadataDepositPerByte, ParachainSystem, Runtime, RuntimeCall,
@@ -625,38 +626,20 @@ asset_test_utils::include_create_and_manage_foreign_assets_for_local_consensus_p
 	})
 );
 
-#[test]
-fn can_governance_change_bridge_transfer_in_configuration() {
-	asset_test_utils::test_cases_over_bridge::can_governance_change_bridge_transfer_in_configuration::<
-		Runtime,
-		XcmConfig,
-	>(
-		collator_session_keys(),
-		Box::new(|call| RuntimeCall::BridgeTransfer(call).encode()),
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::BridgeTransfer(event)) => Some(event),
-				_ => None,
-			}
-		}),
-	)
-}
-
-#[test]
-fn can_governance_change_bridge_transfer_out_configuration() {
-	asset_test_utils::test_cases_over_bridge::can_governance_change_bridge_transfer_out_configuration::<
-		Runtime,
-		XcmConfig,
-	>(
-		collator_session_keys(),
-		Box::new(|call| RuntimeCall::BridgeTransfer(call).encode()),
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::BridgeTransfer(event)) => Some(event),
-				_ => None,
-			}
-		}),
-	)
+fn bridging_to_asset_hub_polkadot() -> asset_test_utils::test_cases_over_bridge::TestBridgingConfig
+{
+	asset_test_utils::test_cases_over_bridge::TestBridgingConfig {
+		bridged_network: bridging::PolkadotNetwork::get(),
+		local_bridge_hub_para_id: bridging::BridgeHubKusamaParaId::get(),
+		local_bridge_hub_location: pallet_bridge_transfer_primitives::MaybePaidLocation {
+			location: bridging::BridgeHubKusama::get(),
+			maybe_fee: None,
+		},
+		bridged_target_location: pallet_bridge_transfer_primitives::MaybePaidLocation {
+			location: bridging::AssetHubPolkadot::get(),
+			maybe_fee: bridging::AssetHubPolkadotMaxFee::get(),
+		},
+	}
 }
 
 #[test]
@@ -683,6 +666,7 @@ fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works() {
 				_ => None,
 			}
 		}),
+		bridging_to_asset_hub_polkadot
 	)
 }
 
@@ -711,6 +695,7 @@ fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_works() 
 				_ => None,
 			}
 		}),
+		bridging_to_asset_hub_polkadot
 	)
 }
 
@@ -731,6 +716,7 @@ fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_works() 
 				_ => None,
 			}
 		}),
+		bridging_to_asset_hub_polkadot
 	)
 }
 
@@ -750,5 +736,6 @@ fn withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_works()
 				_ => None,
 			}
 		}),
+		bridging_to_asset_hub_polkadot
 	)
 }

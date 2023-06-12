@@ -74,6 +74,7 @@ parachain-info = { path = "../../../pallets/parachain-info", default-features = 
 parachains-common = { path = "../../../common", default-features = false }
 assets-common = { path = "../common", default-features = false }
 pallet-bridge-transfer = { path = "../../../pallets/bridge-transfer", default-features = false }
+pallet-bridge-transfer-primitives = { path = "../../../pallets/bridge-transfer/primitives", default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.4.1"
@@ -194,5 +195,6 @@ std = [
 	"parachains-common/std",
 	"assets-common/std",
 	"pallet-bridge-transfer/std",
+	"pallet-bridge-transfer-primitives/std",
 	"substrate-wasm-builder",
 ]

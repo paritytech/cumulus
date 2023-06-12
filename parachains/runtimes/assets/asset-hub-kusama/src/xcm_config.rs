@@ -14,9 +14,9 @@
 // limitations under the License.
 
 use super::{
-	AccountId, AllPalletsWithSystem, Assets, Authorship, Balance, Balances, BridgeTransfer,
-	ForeignAssets, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent,
-	RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
+	AccountId, AllPalletsWithSystem, Assets, Authorship, Balance, Balances, ForeignAssets,
+	ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
+	TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
 use assets_common::matching::{
 	FromSiblingParachain, IsForeignConcreteAsset, StartsWith, StartsWithExplicitGlobalConsensus,
@@ -26,9 +26,6 @@ use frame_support::{
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
 };
 use frame_system::EnsureRoot;
-use pallet_bridge_transfer::features::{
-	AllowedUniversalAliasesOf, IsTrustedBridgedReserveForConcreteAsset,
-};
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{impls::ToStakingPot, xcm_config::AssetFeeAsExistentialDepositMultiplier};
 use polkadot_parachain::primitives::Sibling;
@@ -42,8 +39,7 @@ use xcm_builder::{
 	IsConcrete, LocalMint, NativeAsset, NoChecking, ParentAsSuperuser, ParentIsPreset,
 	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
 	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-	TrailingSetTopicAsId, UnpaidRemoteExporter, UsingComponents, WeightInfoBounds,
-	WithComputedOrigin, WithUniqueTopic,
+	TrailingSetTopicAsId, UsingComponents, WeightInfoBounds, WithComputedOrigin, WithUniqueTopic,
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
@@ -388,7 +384,7 @@ impl xcm_executor::Config for XcmConfig {
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	// Asset Hub acting _as_ a reserve location for KSM and assets created under `pallet-assets`.
 	// For KSM, users must use teleport where allowed (e.g. with the Relay Chain).
-	type IsReserve = IsTrustedBridgedReserveForConcreteAsset<Runtime>;
+	type IsReserve = bridging::IsTrustedBridgedReserveLocationForConcreteAsset;
 	// We allow:
 	// - teleportation of KSM
 	// - teleportation of sibling parachain's assets (as ForeignCreators)
@@ -427,7 +423,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetExchanger = ();
 	type FeeManager = ();
 	type MessageExporter = ();
-	type UniversalAliases = AllowedUniversalAliasesOf<Runtime>;
+	type UniversalAliases = bridging::BridgedUniversalAliases;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
 	type SafeCallFilter = SafeCallFilter;
 	type Aliasers = Nothing;
@@ -507,8 +503,90 @@ impl pallet_assets::BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 	}
 }
 
-/// Bridge router, which wraps and sends xcm to BridgeHub to be delivered to the different GlobalConsensus
-pub type BridgeXcmSender = UnpaidRemoteExporter<BridgeTransfer, XcmRouter, UniversalLocation>;
+/// All configuration related to bridging
+pub mod bridging {
+	use super::*;
+	use pallet_bridge_transfer_primitives::{
+		AssetFilter, BridgeConfig, BridgesConfig, BridgesConfigAdapter, BridgesConfigBuilder,
+		MaybePaidLocation, MultiLocationFilter, ReserveLocation,
+	};
+	use sp_std::collections::btree_set::BTreeSet;
+	use xcm_builder::UnpaidRemoteExporter;
+
+	parameter_types! {
+		pub BridgeHubKusamaParaId: u32 = 1002;
+		pub BridgeHubKusama: MultiLocation = MultiLocation::new(1, X1(Parachain(BridgeHubKusamaParaId::get())));
+		pub const PolkadotNetwork: NetworkId = NetworkId::Polkadot;
+		pub AssetHubPolkadot: MultiLocation =  MultiLocation::new(2, X2(GlobalConsensus(PolkadotNetwork::get()), Parachain(1000)));
+		// Initial value, this will be adjusted by governance motion on deployment with some more accurate value
+		pub storage AssetHubPolkadotMaxFee: Option<MultiAsset> = Some((MultiLocation::parent(), 1_000_000).into());
+		pub DotLocation: MultiLocation =  MultiLocation::new(2, X1(GlobalConsensus(PolkadotNetwork::get())));
+
+		// Setup bridges configuration
+		// (hard-coded version - on-chain configuration will come later as separate feature)
+		pub Bridges: BridgesConfig = BridgesConfigBuilder::default()
+			// add exporter for Polkadot
+			.add_or_panic(
+				PolkadotNetwork::get(),
+				BridgeConfig::new(
+					MaybePaidLocation {
+						location: BridgeHubKusama::get(),
+						// Noe fees needed because we use `UnpaidRemoteExporter` and BridgeHubKusama allows unpaid execution for local system parachains
+						maybe_fee: None,
+					}
+				).add_target_location(
+					// add target location as AssetHubPolkadot
+					MaybePaidLocation {
+						location: AssetHubPolkadot::get(),
+						maybe_fee: AssetHubPolkadotMaxFee::get(),
+					},
+					Some(AssetFilter::ByMultiLocation(
+						MultiLocationFilter::default()
+							// allow transfer KSM
+							.add_equals(KsmLocation::get())
+					))
+				)
+			)
+			.build();
+
+		// Setup trusted bridged reserve locations
+		pub BridgedReserves: sp_std::vec::Vec<ReserveLocation> = sp_std::vec![
+			// trust assets from AssetHubPolkadot
+			(
+				AssetHubPolkadot::get(),
+				AssetFilter::ByMultiLocation(
+					MultiLocationFilter::default()
+						// allow receive DOT
+						.add_equals(DotLocation::get())
+				)
+			)
+		];
+
+		/// Universal aliases
+		pub BridgedUniversalAliases: BTreeSet<(MultiLocation, Junction)> = BTreeSet::from_iter(
+			sp_std::vec![
+				(BridgeHubKusama::get(), GlobalConsensus(PolkadotNetwork::get()))
+			]
+		);
+	}
+
+	impl Contains<(MultiLocation, Junction)> for BridgedUniversalAliases {
+		fn contains(alias: &(MultiLocation, Junction)) -> bool {
+			BridgedUniversalAliases::get().contains(alias)
+		}
+	}
+
+	/// Bridge router, which wraps and sends xcm to BridgeHub to be delivered to the different GlobalConsensus
+	pub type BridgeXcmSender =
+		UnpaidRemoteExporter<BridgesConfigAdapter<Bridges>, XcmRouter, UniversalLocation>;
+
+	/// Reserve locations filter for `xcm_executor::Config::IsReserve`.
+	pub type IsTrustedBridgedReserveLocationForConcreteAsset =
+		pallet_bridge_transfer::features::IsTrustedBridgedReserveLocationForConcreteAsset<
+			UniversalLocation,
+			BridgedReserves,
+		>;
+}
 
 /// Benchmarks helper for over-bridge transfer pallet.
 #[cfg(feature = "runtime-benchmarks")]

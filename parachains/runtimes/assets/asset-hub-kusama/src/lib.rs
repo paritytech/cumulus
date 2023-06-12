@@ -69,7 +69,7 @@ use parachains_common::{
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{
-	AssetTransactors, BridgeXcmSender, FellowshipLocation, ForeignAssetsConvertedConcreteId,
+	bridging, AssetTransactors, FellowshipLocation, ForeignAssetsConvertedConcreteId,
 	GovernanceLocation, KsmLocation, LocalOriginToLocation, TrustBackedAssetsConvertedConcreteId,
 	UniversalLocation, XcmConfig,
 };
@@ -705,24 +705,17 @@ impl pallet_bridge_transfer::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type UniversalLocation = UniversalLocation;
 	type WeightInfo = weights::pallet_bridge_transfer::WeightInfo<Runtime>;
-	type AdminOrigin = AssetsForceOrigin;
-	type AllowReserveAssetTransferOrigin = AsEnsureOriginWithArg<AssetsForceOrigin>;
-	type UniversalAliasesLimit = ConstU32<24>;
-	type ReserveLocationsLimit = ConstU32<4>;
-	type AssetsPerReserveLocationLimit = ConstU32<128>;
-	type TargetLocationsPerExporterLimit = ConstU32<4>;
 	type AssetTransactor = AssetTransactors;
 	type AssetTransferKindResolver =
 		pallet_bridge_transfer::features::ConcreteAssetTransferKindResolver<
-			pallet_bridge_transfer::features::IsTrustedBridgedReserveForConcreteAsset<Runtime>,
-			pallet_bridge_transfer::features::IsAllowedReserveBasedAssetTransferForConcreteAsset<
-				Runtime,
-			>,
+			bridging::IsTrustedBridgedReserveLocationForConcreteAsset,
+			pallet_bridge_transfer::features::IsAllowedReserveBasedTransferForConcreteAssetToBridgedLocation<UniversalLocation, bridging::Bridges>,
 		>;
 	type AssetTransferOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 	type AssetsLimit = ConstU8<1>;
-	type BridgedDestinationValidator = BridgeTransfer;
-	type BridgeXcmSender = BridgeXcmSender;
+	type BridgedDestinationValidator =
+		pallet_bridge_transfer_primitives::BridgesConfigAdapter<bridging::Bridges>;
+	type BridgeXcmSender = bridging::BridgeXcmSender;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = xcm_config::BridgeTransferBenchmarksHelper;
 }
