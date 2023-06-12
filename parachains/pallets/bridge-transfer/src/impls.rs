@@ -14,7 +14,7 @@
 // limitations under the License.
 
 use crate::{
-	types::{AssetTransferKind, ResolveAssetTransferKind, UsingVersioned},
+	types::{AssetTransferKind, ResolveAssetTransferKind},
 	Config, Error, Event, Pallet, LOG_TARGET,
 };
 use frame_support::{pallet_prelude::Get, transactional};
@@ -41,12 +41,8 @@ impl<T: Config> Pallet<T> {
 	///
 	/// Returns: correct remote location, where we should be able to bridge
 	pub(crate) fn ensure_reachable_remote_destination(
-		remote_destination: VersionedMultiLocation,
+		remote_destination: MultiLocation,
 	) -> Result<ReachableDestination, Error<T>> {
-		let remote_destination: MultiLocation = remote_destination
-			.to_versioned()
-			.map_err(|_| Error::<T>::UnsupportedXcmVersion)?;
-
 		let devolved = ensure_is_remote(T::UniversalLocation::get(), remote_destination)
 			.map_err(|_| Error::<T>::UnsupportedDestination)?;
 		let (remote_network, _) = devolved;
@@ -72,7 +68,7 @@ impl<T: Config> Pallet<T> {
 		let universal_location_as_sovereign_account_on_target_location =
 			T::UniversalLocation::get()
 				.invert_target(&target_location)
-				.map_err(|_| Error::<T>::InvalidConfiguration)?;
+				.map_err(|_| Error::<T>::InvalidTargetLocation)?;
 
 		// Prepare some XcmContext
 		let xcm_context = XcmContext::with_message_id(unique(reserve_account));

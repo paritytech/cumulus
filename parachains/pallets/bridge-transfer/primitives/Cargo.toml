@@ -10,11 +10,19 @@ description = "Pallet with primitives for message transfer through bridges"
 
 [dependencies]
 
+# Substrate
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+
 # Polkadot
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 [features]
 default = ["std"]
 std = [
+	"sp-std/std",
+	"frame-support/std",
 	"xcm/std",
+	"xcm-builder/std",
 ]

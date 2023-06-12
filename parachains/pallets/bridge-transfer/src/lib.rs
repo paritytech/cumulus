@@ -73,7 +73,7 @@
 
 pub use pallet::*;
 pub use pallet_bridge_transfer_primitives::MaybePaidLocation;
-pub use types::{AssetFilterOf, MultiLocationFilterOf};
+// pub use types::{AssetFilterOf, MultiLocationFilterOf};
 
 pub mod features;
 mod impls;
@@ -93,11 +93,8 @@ pub const LOG_TARGET: &str = "runtime::bridge-transfer";
 pub mod pallet {
 	pub use crate::weights::WeightInfo;
 
-	use crate::types::{
-		filter::{AssetFilter, AssetFilterOf, MultiLocationFilterOf},
-		BridgeConfig, LatestVersionedMultiLocation, ResolveAssetTransferKind, UsingVersioned,
-	};
-	use frame_support::{pallet_prelude::*, traits::EnsureOriginWithArg, BoundedBTreeSet};
+	use crate::types::ResolveAssetTransferKind;
+	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use pallet_bridge_transfer_primitives::EnsureReachableDestination;
 	use sp_std::boxed::Box;
@@ -151,6 +148,30 @@ pub mod pallet {
 		}
 	}
 
+	#[cfg(feature = "runtime-benchmarks")]
+	impl<RuntimeOrigin> BenchmarkHelper<RuntimeOrigin> for () {
+		fn bridge_location() -> Option<(NetworkId, MaybePaidLocation)> {
+			None
+		}
+
+		fn allowed_bridged_target_location() -> Option<MaybePaidLocation> {
+			None
+		}
+
+		fn prepare_asset_transfer(
+		) -> Option<(RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation)> {
+			None
+		}
+
+		fn universal_alias() -> Option<(VersionedMultiLocation, Junction)> {
+			None
+		}
+
+		fn reserve_location() -> Option<VersionedMultiLocation> {
+			None
+		}
+	}
+
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
@@ -161,31 +182,6 @@ pub mod pallet {
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
-
-		/// The configurable origin to allow bridges configuration management.
-		type AdminOrigin: EnsureOrigin<Self::RuntimeOrigin>;
-		/// The configurable origin to allow transfer out asset filters management.
-		type AllowReserveAssetTransferOrigin: EnsureOriginWithArg<
-			Self::RuntimeOrigin,
-			AssetFilterOf<Self>,
-		>;
-
-		/// Max allowed universal aliases per one `MultiLocation`
-		/// (Config for transfer in)
-		#[pallet::constant]
-		type UniversalAliasesLimit: Get<u32>;
-		/// Max allowed reserve locations
-		/// (Config for transfer out)
-		#[pallet::constant]
-		type ReserveLocationsLimit: Get<u32>;
-		/// Max allowed assets for one reserve location
-		/// (Config for transfer in/out)
-		#[pallet::constant]
-		type AssetsPerReserveLocationLimit: Get<u32>;
-		/// Max allowed target locations per exporter (bridged network)
-		/// (Config for transfer out)
-		#[pallet::constant]
-		type TargetLocationsPerExporterLimit: Get<u32>;
 
 		/// How to withdraw and deposit an asset for reserve.
 		/// (Config for transfer out)
@@ -210,46 +206,14 @@ pub mod pallet {
 		type BenchmarkHelper: BenchmarkHelper<Self::RuntimeOrigin>;
 	}
 
-	/// Details of configured bridges which are allowed for **transfer out**.
-	/// (Config for transfer out)
-	#[pallet::storage]
-	#[pallet::getter(fn allowed_exporters)]
-	pub(super) type AllowedExporters<T: Config> =
-		StorageMap<_, Blake2_128Concat, NetworkId, BridgeConfig<T>>;
-
-	/// Holds allowed mappings `MultiLocation->Junction` for `UniversalAliases`
-	/// E.g:
-	/// 	BridgeHubMultiLocation1 -> NetworkId::Kusama
-	/// 	BridgeHubMultiLocation1 -> NetworkId::Polkadot
-	/// (Config for transfer in)
-	#[pallet::storage]
-	#[pallet::getter(fn allowed_universal_aliases)]
-	pub(super) type AllowedUniversalAliases<T: Config> = StorageMap<
-		_,
-		Blake2_128Concat,
-		VersionedMultiLocation,
-		BoundedBTreeSet<Junction, T::UniversalAliasesLimit>,
-		ValueQuery,
-	>;
-
-	/// Holds allowed mappings `MultiLocation` as trusted reserve locations for allowed assets
-	/// (Config for transfer in)
-	#[pallet::storage]
-	#[pallet::getter(fn allowed_reserve_locations)]
-	pub(super) type AllowedReserveLocations<T: Config> =
-		StorageMap<_, Blake2_128Concat, VersionedMultiLocation, AssetFilterOf<T>, OptionQuery>;
-
 	#[pallet::error]
 	#[cfg_attr(test, derive(PartialEq))]
 	pub enum Error<T> {
-		InvalidConfiguration,
-		InvalidBridgeConfiguration,
-		UnavailableConfiguration,
-		ConfigurationAlreadyExists,
 		InvalidAssets,
 		AssetsLimitReached,
 		UnsupportedDestination,
 		UnsupportedXcmVersion,
+		InvalidTargetLocation,
 		InvalidRemoteDestination,
 		BridgeCallError,
 		FailedToReserve,
@@ -274,25 +238,6 @@ pub mod pallet {
 		ReserveAssetsDeposited { from: MultiLocation, to: MultiLocation, assets: MultiAssets },
 		/// Assets were withdrawn
 		AssetsWithdrawn { from: MultiLocation, assets: MultiAssets },
-
-		/// New bridge configuration was added
-		BridgeAdded,
-		/// Bridge configuration was removed
-		BridgeRemoved,
-		/// Bridge fee configuration was updated
-		BridgeFeeUpdated,
-		/// Target location for bridge was updated
-		BridgeTargetLocationUpdated,
-
-		/// New universal alias was added
-		UniversalAliasAdded,
-		/// New universal alias was removed
-		UniversalAliasRemoved { junction: Junction },
-
-		/// New reserve location was added
-		ReserveLocationAdded,
-		/// New reserve location was removed
-		ReserveLocationRemoved,
 	}
 
 	#[pallet::call]
@@ -314,15 +259,14 @@ pub mod pallet {
 			let origin_location = T::AssetTransferOrigin::ensure_origin(origin)?;
 
 			// Check if remote destination is reachable
-			let destination = Self::ensure_reachable_remote_destination(*destination)?;
+			let destination = Self::ensure_reachable_remote_destination(
+				(*destination).try_into().map_err(|()| Error::<T>::InvalidRemoteDestination)?,
+			)?;
 
 			// Check assets (lets leave others checks on `AssetTransactor`)
 			let assets: MultiAssets =
 				(*assets).try_into().map_err(|()| Error::<T>::InvalidAssets)?;
-			ensure!(
-				assets.len() <= T::AssetsLimit::get() as usize,
-				Error::<T>::AssetsLimitReached
-			);
+			ensure!(assets.len() <= T::AssetsLimit::get() as usize, Error::<T>::AssetsLimitReached);
 
 			// Do this in transaction (explicitly), the rollback should occur in case of any error and no assets will be trapped or lost
 			Self::initiate_transfer_asset_via_bridge_in_transaction(
@@ -330,318 +274,6 @@ pub mod pallet {
 				destination,
 				assets,
 			)
-		}
-
-		/// Adds new bridge exporter, which allows transfer to this `bridged_network`.
-		///
-		/// Parameters:
-		///
-		/// * `bridged_network`: Network where we want to allow transfer funds
-		/// * `bridge_config`: contains location for BridgeHub in our network + fee
-		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::add_exporter_config())]
-		pub fn add_exporter_config(
-			origin: OriginFor<T>,
-			bridged_network: NetworkId,
-			bridge_location: Box<VersionedMultiLocation>,
-			bridge_location_fee: Option<Box<VersionedMultiAsset>>,
-		) -> DispatchResult {
-			let _ = T::AdminOrigin::ensure_origin(origin)?;
-
-			// allow just one exporter for one network (can be changed in future)
-			ensure!(
-				!AllowedExporters::<T>::contains_key(bridged_network),
-				Error::<T>::ConfigurationAlreadyExists
-			);
-
-			// check bridge is from local consensus
-			ensure!(
-				bridge_location
-					.using_versioned_ref(|versioned| versioned.parents)
-					.map_err(|_| Error::<T>::UnsupportedXcmVersion)? <=
-					1,
-				Error::<T>::InvalidConfiguration
-			);
-
-			// insert
-			AllowedExporters::<T>::insert(
-				bridged_network,
-				BridgeConfig::new(*bridge_location, bridge_location_fee.map(|fee| *fee)),
-			);
-
-			Self::deposit_event(Event::BridgeAdded);
-			Ok(())
-		}
-
-		/// Remove bridge configuration for specified `bridged_network`.
-		///
-		/// Parameters:
-		///
-		/// * `bridged_network`: Network where we want to remove
-		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::remove_exporter_config())]
-		pub fn remove_exporter_config(
-			origin: OriginFor<T>,
-			bridged_network: NetworkId,
-		) -> DispatchResult {
-			let _ = T::AdminOrigin::ensure_origin(origin)?;
-			ensure!(
-				AllowedExporters::<T>::contains_key(bridged_network),
-				Error::<T>::UnavailableConfiguration
-			);
-
-			AllowedExporters::<T>::remove(bridged_network);
-			Self::deposit_event(Event::BridgeRemoved);
-			Ok(())
-		}
-
-		/// Updates bridge configuration for specified `bridged_network`.
-		///
-		/// Parameters:
-		///
-		/// * `bridged_network`: Network where we want to remove
-		/// * `bridge_location_fee`: New fee to update
-		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::update_exporter_config())]
-		pub fn update_exporter_config(
-			origin: OriginFor<T>,
-			bridged_network: NetworkId,
-			bridge_location_fee: Option<Box<VersionedMultiAsset>>,
-		) -> DispatchResult {
-			let _ = T::AdminOrigin::ensure_origin(origin)?;
-
-			AllowedExporters::<T>::try_mutate_exists(bridged_network, |maybe_bridge_config| {
-				let bridge_config =
-					maybe_bridge_config.as_mut().ok_or(Error::<T>::UnavailableConfiguration)?;
-				bridge_config.bridge_location_fee = bridge_location_fee.map(|fee| *fee);
-				Self::deposit_event(Event::BridgeFeeUpdated);
-				Ok(())
-			})
-		}
-
-		/// Alters bridge configuration with asset filter, which allows to send out matched assets to the `target_location`
-		///
-		/// Parameters:
-		///
-		/// * `bridged_network`: bridge identifier
-		/// * `target_location`: target location where we want to allow send assets
-		/// * `asset_filter`: asset filter to add
-		#[pallet::call_index(4)]
-		#[pallet::weight(T::WeightInfo::update_bridged_target_location())]
-		pub fn update_bridged_target_location(
-			origin: OriginFor<T>,
-			bridged_network: NetworkId,
-			target_location: Box<VersionedMultiLocation>,
-			max_target_location_fee: Option<Box<VersionedMultiAsset>>,
-		) -> DispatchResult {
-			let _ = T::AdminOrigin::ensure_origin(origin)?;
-			ensure!(
-				T::TargetLocationsPerExporterLimit::get() > 0,
-				Error::<T>::UnavailableConfiguration
-			);
-
-			AllowedExporters::<T>::try_mutate_exists(bridged_network, |maybe_bridge_config| {
-				let bridge_config =
-					maybe_bridge_config.as_mut().ok_or(Error::<T>::UnavailableConfiguration)?;
-				bridge_config
-					.update_allowed_target_location(
-						*target_location,
-						max_target_location_fee.map(|fee| *fee),
-					)
-					.map_err(|_| Error::<T>::InvalidBridgeConfiguration)?;
-				Self::deposit_event(Event::BridgeTargetLocationUpdated);
-				Ok(())
-			})
-		}
-
-		/// Alters bridge configuration with asset filter, which allows to send out matched assets to the `target_location`
-		///
-		/// Parameters:
-		///
-		/// * `bridged_network`: bridge identifier
-		/// * `target_location`: target location where we want to allow send assets
-		/// * `asset_filter`: asset filter to add
-		#[pallet::call_index(6)]
-		#[pallet::weight(T::WeightInfo::allow_reserve_asset_transfer_for())]
-		pub fn allow_reserve_asset_transfer_for(
-			origin: OriginFor<T>,
-			bridged_network: NetworkId,
-			target_location: Box<VersionedMultiLocation>,
-			asset_filter: AssetFilterOf<T>,
-		) -> DispatchResult {
-			let _ = T::AllowReserveAssetTransferOrigin::ensure_origin(origin, &asset_filter)?;
-			ensure!(
-				T::TargetLocationsPerExporterLimit::get() > 0,
-				Error::<T>::UnavailableConfiguration
-			);
-
-			AllowedExporters::<T>::try_mutate_exists(bridged_network, |maybe_bridge_config| {
-				let bridge_config =
-					maybe_bridge_config.as_mut().ok_or(Error::<T>::UnavailableConfiguration)?;
-				let was_added = bridge_config
-					.add_allowed_target_location_filter_for(*target_location, asset_filter)
-					.map_err(|_| Error::<T>::InvalidBridgeConfiguration)?;
-				if was_added {
-					Self::deposit_event(Event::ReserveLocationAdded);
-				}
-				Ok(())
-			})
-		}
-
-		/// Add `(MultiLocation, Junction)` mapping to `AllowedUniversalAliases`
-		///
-		/// Parameters:
-		///
-		/// * `location`: key
-		/// * `junction`: value
-		#[pallet::call_index(8)]
-		#[pallet::weight(T::WeightInfo::add_universal_alias())]
-		pub fn add_universal_alias(
-			origin: OriginFor<T>,
-			location: Box<VersionedMultiLocation>,
-			junction: Junction,
-		) -> DispatchResult {
-			let _ = T::AdminOrigin::ensure_origin(origin)?;
-
-			let versioned_location = LatestVersionedMultiLocation::try_from(location.as_ref())
-				.map_err(|_| Error::<T>::UnsupportedXcmVersion)?;
-			AllowedUniversalAliases::<T>::try_mutate(versioned_location, |junctions| {
-				if junctions.try_insert(junction).map_err(|_| Error::<T>::InvalidConfiguration)? {
-					Self::deposit_event(Event::UniversalAliasAdded);
-				}
-				Ok(())
-			})
-		}
-
-		/// Remove `(MultiLocation, Junction)` mapping from `AllowedUniversalAliases`
-		///
-		/// Parameters:
-		///
-		/// * `location`: key
-		/// * `junction`: value
-		#[pallet::call_index(9)]
-		#[pallet::weight(T::WeightInfo::remove_universal_alias())]
-		pub fn remove_universal_alias(
-			origin: OriginFor<T>,
-			location: Box<VersionedMultiLocation>,
-			junctions_to_remove: sp_std::prelude::Vec<Junction>,
-		) -> DispatchResult {
-			let _ = T::AdminOrigin::ensure_origin(origin)?;
-
-			let versioned_location = LatestVersionedMultiLocation::try_from(location.as_ref())
-				.map_err(|_| Error::<T>::UnsupportedXcmVersion)?;
-			AllowedUniversalAliases::<T>::try_mutate_exists(versioned_location, |maybe_junctions| {
-				let junctions =
-					maybe_junctions.as_mut().ok_or(Error::<T>::UnavailableConfiguration)?;
-				for jtr in junctions_to_remove {
-					if junctions.remove(&jtr) {
-						Self::deposit_event(Event::UniversalAliasRemoved { junction: jtr });
-					}
-				}
-
-				if junctions.is_empty() {
-					// no junctions, so remove entry from storage
-					*maybe_junctions = None;
-				}
-
-				Ok(())
-			})
-		}
-
-		/// Add `MultiLocation` + `AssetFilter` mapping to `AllowedReserveLocations`
-		///
-		/// Parameters:
-		///
-		/// * `location`: as reserve `MultiLocation`
-		/// * `asset_filter_to_add`: filter we want to add for that location
-		#[pallet::call_index(10)]
-		#[pallet::weight(T::WeightInfo::add_reserve_location())]
-		pub fn add_reserve_location(
-			origin: OriginFor<T>,
-			location: Box<VersionedMultiLocation>,
-			asset_filter_to_add: AssetFilterOf<T>,
-		) -> DispatchResult {
-			let _ = T::AdminOrigin::ensure_origin(origin)?;
-			ensure!(T::ReserveLocationsLimit::get() > 0, Error::<T>::UnavailableConfiguration);
-			ensure!(
-				T::AssetsPerReserveLocationLimit::get() > 0,
-				Error::<T>::UnavailableConfiguration
-			);
-
-			let versioned_location = LatestVersionedMultiLocation::try_from(location.as_ref())
-				.map_err(|_| Error::<T>::UnsupportedXcmVersion)?;
-			AllowedReserveLocations::<T>::try_mutate(versioned_location, |filter| {
-				let was_added = match filter {
-					Some(old_filter) => old_filter
-						.add(asset_filter_to_add)
-						.map_err(|_| Error::<T>::InvalidConfiguration)?,
-					None => {
-						*filter = Some(asset_filter_to_add);
-						true
-					},
-				};
-				if was_added {
-					Self::deposit_event(Event::ReserveLocationAdded);
-				}
-				Ok(())
-			})
-		}
-
-		/// Remove `MultiLocation` mapping from `AllowedReserveLocations`.
-		///
-		/// Parameters:
-		///
-		/// * `location`: as reserve `MultiLocation`
-		/// * `asset_filter_to_remove`: if `None` the whole `location` entry will be removed, otherwise only selected filters
-		#[pallet::call_index(11)]
-		#[pallet::weight(T::WeightInfo::remove_reserve_location())]
-		pub fn remove_reserve_location(
-			origin: OriginFor<T>,
-			location: Box<VersionedMultiLocation>,
-			asset_filter_to_remove: Option<MultiLocationFilterOf<T>>,
-		) -> DispatchResult {
-			let _ = T::AdminOrigin::ensure_origin(origin)?;
-
-			let versioned_location = LatestVersionedMultiLocation::try_from(location.as_ref())
-				.map_err(|_| Error::<T>::UnsupportedXcmVersion)?;
-			let (mut was_removed, remove_location) = if let Some(asset_filter_to_remove) =
-				asset_filter_to_remove
-			{
-				AllowedReserveLocations::<T>::try_mutate_exists(
-					versioned_location,
-					|maybe_filter| {
-						let filter =
-							maybe_filter.as_mut().ok_or(Error::<T>::UnavailableConfiguration)?;
-						match filter {
-							AssetFilter::ByMultiLocation(old) => {
-								let was_removed = old.remove(asset_filter_to_remove);
-								was_removed.map(|wr| (wr, old.is_empty())).map_err(Into::into)
-							},
-							AssetFilter::All => Err(Error::<T>::UnavailableConfiguration),
-						}
-					},
-				)?
-			} else {
-				(false, true)
-			};
-
-			if remove_location {
-				was_removed |= AllowedReserveLocations::<T>::try_mutate_exists(location, |value| {
-					let exists = value.is_some();
-					if exists {
-						*value = None;
-					}
-					Ok::<_, Error<T>>(exists)
-				})
-				.map_err(|_| Error::<T>::InvalidConfiguration)?;
-			}
-
-			if was_removed {
-				Self::deposit_event(Event::ReserveLocationRemoved);
-				Ok(())
-			} else {
-				Err(Error::<T>::InvalidConfiguration.into())
-			}
 		}
 	}
 }

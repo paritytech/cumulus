@@ -24,90 +24,14 @@ use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_bridge_assets_transfer.
 pub trait WeightInfo {
+	// TODO: add assets count?
 	/// Weight of the `transfer_asset_via_bridge` call.
 	fn transfer_asset_via_bridge() -> Weight;
-	/// Weight of the `ping_via_bridge` call.
-	fn ping_via_bridge() -> Weight;
-
-	/// Weight of the `add_exporter_config` call.
-	fn add_exporter_config() -> Weight;
-	/// Weight of the `remove_exporter_config` call.
-	fn remove_exporter_config() -> Weight;
-	/// Weight of the `update_exporter_config` call.
-	fn update_exporter_config() -> Weight;
-
-	/// Weight of the `update_bridged_target_location` call.
-	fn update_bridged_target_location() -> Weight;
-	/// Weight of the `remove_bridged_target_location` call.
-	fn remove_bridged_target_location() -> Weight;
-
-	/// Weight of the `allow_reserve_asset_transfer` call.
-	fn allow_reserve_asset_transfer_for() -> Weight;
-	/// Weight of the `disallow_reserve_asset_transfer_for` call.
-	fn disallow_reserve_asset_transfer_for() -> Weight;
-
-	/// Weight of the `add_universal_alias` call.
-	fn add_universal_alias() -> Weight;
-	/// Weight of the `remove_universal_alias` call.
-	fn remove_universal_alias() -> Weight;
-
-	/// Weight of the `add_reserve_location` call.
-	fn add_reserve_location() -> Weight;
-	/// Weight of the `remove_reserve_location` call.
-	fn remove_reserve_location() -> Weight;
 }
 
 // Zero weights to use in tests
 impl WeightInfo for () {
 	fn transfer_asset_via_bridge() -> Weight {
-		Weight::zero()
-	}
-
-	fn ping_via_bridge() -> Weight {
-		Weight::zero()
-	}
-
-	fn add_exporter_config() -> Weight {
-		Weight::zero()
-	}
-
-	fn remove_exporter_config() -> Weight {
-		Weight::zero()
-	}
-
-	fn update_exporter_config() -> Weight {
-		Weight::zero()
-	}
-
-	fn update_bridged_target_location() -> Weight {
-		Weight::zero()
-	}
-
-	fn remove_bridged_target_location() -> Weight {
-		Weight::zero()
-	}
-
-	fn allow_reserve_asset_transfer_for() -> Weight {
-		Weight::zero()
-	}
-
-	fn disallow_reserve_asset_transfer_for() -> Weight {
-		Weight::zero()
-	}
-
-	fn add_universal_alias() -> Weight {
-		Weight::zero()
-	}
-
-	fn remove_universal_alias() -> Weight {
-		Weight::zero()
-	}
-
-	fn add_reserve_location() -> Weight {
-		Weight::zero()
-	}
-
-	fn remove_reserve_location() -> Weight {
 		Weight::zero()
 	}
 }

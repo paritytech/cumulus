@@ -20,8 +20,14 @@
 
 use xcm::prelude::*;
 
+mod asset_filter;
+pub use asset_filter::*;
+
+mod config;
+pub use config::*;
+
 /// Represents some `MultiLocation` with information if we need to pay fees or not.
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct MaybePaidLocation {
 	pub location: MultiLocation,
 	pub maybe_fee: Option<MultiAsset>,
