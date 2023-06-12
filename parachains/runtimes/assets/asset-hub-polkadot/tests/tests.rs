@@ -720,3 +720,44 @@ fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_works() 
 		bridging_to_asset_hub_kusama
 	)
 }
+
+#[test]
+fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_works() {
+	asset_test_utils::test_cases_over_bridge::receive_reserve_asset_deposited_from_different_consensus_over_bridge_works::<
+		Runtime,
+		XcmConfig,
+		LocationToAccountId,
+		ForeignAssetsInstance,
+	>(
+		collator_session_keys(),
+		ExistentialDeposit::get(),
+		AccountId::from(BOB),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
+				_ => None,
+			}
+		}),
+		bridging_to_asset_hub_kusama
+	)
+}
+
+#[test]
+fn withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_works() {
+	asset_test_utils::test_cases_over_bridge::withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_works::<
+		Runtime,
+		XcmConfig,
+		LocationToAccountId,
+	>(
+		collator_session_keys(),
+		ExistentialDeposit::get(),
+		AccountId::from(BOB),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
+				_ => None,
+			}
+		}),
+		bridging_to_asset_hub_kusama
+	)
+}

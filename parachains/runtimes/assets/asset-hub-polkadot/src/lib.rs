@@ -561,7 +561,6 @@ parameter_types! {
 }
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
-	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
@@ -573,6 +572,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 	type PriceForSiblingDelivery = ();
+	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -728,10 +728,10 @@ impl pallet_bridge_transfer::Config for Runtime {
 	type WeightInfo = weights::pallet_bridge_transfer::WeightInfo<Runtime>;
 	type AssetTransactor = AssetTransactors;
 	type AssetTransferKindResolver =
-	pallet_bridge_transfer::features::ConcreteAssetTransferKindResolver<
-		bridging::IsTrustedBridgedReserveLocationForConcreteAsset,
-		pallet_bridge_transfer::features::IsAllowedReserveBasedTransferForConcreteAssetToBridgedLocation<UniversalLocation, bridging::Bridges>,
-	>;
+		pallet_bridge_transfer::features::ConcreteAssetTransferKindResolver<
+			bridging::IsTrustedBridgedReserveLocationForConcreteAsset,
+			pallet_bridge_transfer::features::IsAllowedReserveBasedTransferForConcreteAssetToBridgedLocation<UniversalLocation, bridging::Bridges>,
+		>;
 	type AssetTransferOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 	type AssetsLimit = ConstU8<1>;
 	type BridgedDestinationValidator =

@@ -770,6 +770,12 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_work
 
 			// we assume here that BuyExecution fee goes to staking pot
 			let staking_pot_account_id = <pallet_collator_selection::Pallet<Runtime>>::account_id();
+			assert_ok!(<pallet_balances::Pallet<Runtime>>::force_set_balance(
+				RuntimeHelper::<Runtime>::root_origin(),
+				staking_pot_account_id.clone().into(),
+				existential_deposit,
+			));
+
 			let local_bridge_hub_multilocation_as_account_id =
 				LocationToAccountId::convert_location(&local_bridge_hub_location)
 					.expect("Correct AccountId");
@@ -795,7 +801,7 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_work
 			);
 			assert_eq!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(&staking_pot_account_id),
-				0.into()
+				existential_deposit
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::balance(
@@ -871,13 +877,14 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_work
 			assert_eq!(outcome.ensure_complete(), Ok(()));
 
 			// check after
-			let staking_pot_balance =
-				<pallet_balances::Pallet<Runtime>>::free_balance(&staking_pot_account_id);
+			let expected_buy_execution_fee =
+				<pallet_balances::Pallet<Runtime>>::free_balance(&staking_pot_account_id) -
+					existential_deposit;
 			assert_eq!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(
 					&remote_parachain_sovereign_account
 				),
-				remote_parachain_sovereign_account_balance_before - staking_pot_balance
+				remote_parachain_sovereign_account_balance_before - expected_buy_execution_fee
 			);
 			assert_eq!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(&target_account),
@@ -977,6 +984,12 @@ pub fn withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_wor
 
 			// we assume here that BuyExecution fee goes to staking pot
 			let staking_pot_account_id = <pallet_collator_selection::Pallet<Runtime>>::account_id();
+			assert_ok!(<pallet_balances::Pallet<Runtime>>::force_set_balance(
+				RuntimeHelper::<Runtime>::root_origin(),
+				staking_pot_account_id.clone().into(),
+				existential_deposit,
+			));
+
 			let local_bridge_hub_multilocation_as_account_id =
 				LocationToAccountId::convert_location(&local_bridge_hub_location)
 					.expect("Correct AccountId");
@@ -1004,7 +1017,7 @@ pub fn withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_wor
 			);
 			assert_eq!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(&staking_pot_account_id),
-				0.into()
+				existential_deposit
 			);
 
 			// xcm
@@ -1067,15 +1080,17 @@ pub fn withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_wor
 			assert_eq!(outcome.ensure_complete(), Ok(()));
 
 			// check after
-			let staking_pot_balance =
-				<pallet_balances::Pallet<Runtime>>::free_balance(&staking_pot_account_id);
-			// here SA reserve was withdrawn
+			let expected_buy_execution_fee =
+				<pallet_balances::Pallet<Runtime>>::free_balance(&staking_pot_account_id) -
+					existential_deposit;
+			// check if SA reserve was withdrawn
 			assert_eq!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(
 					&remote_parachain_sovereign_account
 				),
 				remote_parachain_sovereign_account_balance_before -
-					staking_pot_balance - reserve_asset_deposisted.into()
+					expected_buy_execution_fee -
+					reserve_asset_deposisted.into()
 			);
 			// here target_account received reserve
 			assert_eq!(
