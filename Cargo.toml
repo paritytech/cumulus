@@ -37,7 +37,6 @@ members = [
 	"polkadot-parachain",
 	"parachains/common",
 	"parachains/pallets/bridge-transfer",
-	"parachains/pallets/bridge-transfer/onchain-config",
 	"parachains/pallets/parachain-info",
 	"parachains/pallets/ping",
 	"parachains/runtimes/testing/rococo-parachain",

@@ -7421,25 +7421,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-bridge-transfer-onchain-config"
-version = "0.1.0"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "frame-system-benchmarking",
- "log",
- "pallet-bridge-transfer-primitives",
- "parity-scale-codec",
- "scale-info",
- "sp-runtime",
- "sp-std",
- "sp-version",
- "xcm",
- "xcm-builder",
-]
-
-[[package]]
 name = "pallet-bridge-transfer-primitives"
 version = "0.1.0"
 dependencies = [
