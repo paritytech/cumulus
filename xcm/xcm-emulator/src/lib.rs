@@ -20,6 +20,7 @@ pub use frame_support::{
 	sp_runtime::BuildStorage,
 	traits::{EnqueueMessage, Get, Hooks, OnInitialize, ProcessMessage, ProcessMessageError, ServiceQueues},
 	weights::{Weight, WeightMeter},
+	StorageHasher,
 };
 pub use frame_system::AccountInfo;
 pub use log;
@@ -35,7 +36,7 @@ pub use cumulus_pallet_dmp_queue;
 pub use cumulus_pallet_parachain_system;
 pub use cumulus_pallet_xcmp_queue;
 pub use cumulus_primitives_core::{
-	self, relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler, ParaId,
+	self, relay_chain::{BlockNumber as RelayBlockNumber, HeadData}, DmpMessageHandler, ParaId,
 	PersistedValidationData, XcmpMessageHandler,
 };
 pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
@@ -98,6 +99,7 @@ pub trait Network {
 	fn _hrmp_channel_parachain_inherent_data(
 		para_id: u32,
 		relay_parent_number: u32,
+		parent_head_data: HeadData,
 	) -> ParachainInherentData;
 }
 
@@ -156,8 +158,9 @@ pub trait NetworkComponent<N: Network> {
 	fn hrmp_channel_parachain_inherent_data(
 		para_id: u32,
 		relay_parent_number: u32,
+		parent_head_data: HeadData,
 	) -> ParachainInherentData {
-		N::_hrmp_channel_parachain_inherent_data(para_id, relay_parent_number)
+		N::_hrmp_channel_parachain_inherent_data(para_id, relay_parent_number, parent_head_data)
 	}
 
 	fn process_messages() {
@@ -559,6 +562,9 @@ macro_rules! __impl_test_ext_for_parachain {
 
 			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
 				use $crate::{Get, Hooks, NetworkComponent};
+				use sp_core::Encode;
+				use sp_runtime::traits::BlakeTwo256;
+				use polkadot_primitives::HashT;
 
 				// Make sure the Network is initialized
 				<$name>::init();
@@ -569,23 +575,26 @@ macro_rules! __impl_test_ext_for_parachain {
 				<$name>::set_relay_block_number(relay_block_number);
 				relay_block_number = <$name>::relay_block_number();
 
+				let para_id = <$name>::para_id().into();
+
 				// Make sure pallets hooks are executed
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
-						let relay_block_number = <$name>::relay_block_number();
-						<$all_pallets as $crate::OnInitialize<u32>>::on_initialize(relay_block_number);
-					})
-				});
+						let header = <Self as Parachain>::System::finalize();
 
-				let para_id = <$name>::para_id().into();
+						let parent_head_data = $crate::HeadData(header.encode());
+						let parent_hash = BlakeTwo256::hash(&parent_head_data.0);
 
-				$ext_name.with(|v| {
-					v.borrow_mut().execute_with(|| {
-						// Make sure it has been recorded properly
-						// let relay_block_number = <$name>::relay_block_number();
+						<Self as Parachain>::System::initialize(&relay_block_number, &parent_hash, &Default::default());
+
+						<Self as Parachain>::ParachainSystem::on_initialize(relay_block_number);
+
+
+						// <$all_pallets as $crate::OnInitialize<u32>>::on_initialize(relay_block_number);
+
 						let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
 							<Self as Parachain>::RuntimeOrigin::none(),
-							<$name>::hrmp_channel_parachain_inherent_data(para_id, relay_block_number),
+							<$name>::hrmp_channel_parachain_inherent_data(para_id, relay_block_number, parent_head_data),
 						);
 					})
 				});
@@ -697,19 +706,43 @@ macro_rules! __impl_parachain {
 
 			fn prepare_for_xcmp() {
 				use $crate::NetworkComponent;
+				use sp_core::Encode;
+				use sp_runtime::testing::Header;
+
 				let para_id = Self::para_id();
 
 				<Self as TestExt>::ext_wrapper(|| {
 					use $crate::{Get, Hooks};
+					use sp_runtime::traits::BlakeTwo256;
+					use polkadot_primitives::HashT;
 
-					let block_number = <Self as Parachain>::System::block_number();
+					let genesis_block_number: u32 = 0;
+
+					statemint_runtime::Aura::on_initialize(genesis_block_number);
+					statemint_runtime::AuraExt::on_initialize(genesis_block_number);
+
+					// Get parent head data
+					let mut parent_head_data = {
+						let header = Header::new_from_number(genesis_block_number as u64);
+						$crate::HeadData(header.encode())
+					};
+
+					let parent_hash = BlakeTwo256::hash(&parent_head_data.0);
+
+					<Self as Parachain>::System::reset_events();
+					<Self as Parachain>::System::initialize(&1, &parent_hash, &Default::default());
+
+					let next_block: u32 = genesis_block_number + 1;
+
+					// set `AnnouncedHrmpMessagesPerCandidate`
+					<Self as Parachain>::ParachainSystem::on_initialize(1);
 
 					let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
 						<Self as Parachain>::RuntimeOrigin::none(),
-						Self::hrmp_channel_parachain_inherent_data(para_id.into(), 1),
+						Self::hrmp_channel_parachain_inherent_data(para_id.into(), 1, parent_head_data),
 					);
-					// set `AnnouncedHrmpMessagesPerCandidate`
-					<Self as Parachain>::ParachainSystem::on_initialize(block_number);
+
+					<Self as Parachain>::ParachainSystem::on_finalize(1);
 				});
 			}
 		}
@@ -759,6 +792,7 @@ macro_rules! decl_test_networks {
 						$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
 						$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), 1));
 						$crate::PARA_IDS.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), Self::_para_ids()));
+						$( <$parachain>::prepare_for_xcmp(); )*
 					}
 				}
 
@@ -851,8 +885,9 @@ macro_rules! decl_test_networks {
 				fn _hrmp_channel_parachain_inherent_data(
 					para_id: u32,
 					relay_parent_number: u32,
+					parent_head_data: $crate::HeadData,
 				) -> $crate::ParachainInherentData {
-					use $crate::cumulus_primitives_core::{relay_chain::HrmpChannelId, AbridgedHrmpChannel};
+					use $crate::cumulus_primitives_core::{relay_chain::{HeadData, HrmpChannelId}, AbridgedHrmpChannel};
 
 					let mut sproof = $crate::RelayStateSproofBuilder::default();
 					sproof.para_id = para_id.into();
@@ -864,6 +899,8 @@ macro_rules! decl_test_networks {
 						if let Err(idx) = e_index.binary_search(&recipient_para_id) {
 							e_index.insert(idx, recipient_para_id);
 						}
+
+						sproof.included_para_head = parent_head_data.clone().into();
 
 						sproof
 							.hrmp_channels
