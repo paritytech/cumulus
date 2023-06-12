@@ -496,7 +496,6 @@ impl pallet_assets::BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 	}
 }
 
-
 /// All configuration related to bridging
 pub mod bridging {
 	use super::*;
