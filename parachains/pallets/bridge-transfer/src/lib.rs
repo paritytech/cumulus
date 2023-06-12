@@ -15,65 +15,15 @@
 
 //! # Bridge Transfer Pallet
 //!
-//! Module helps with different transfers through bridges between different consensus chain.
-//!
-//! One of possible scenarios which supports directly is "transfer asset over bridge (back and forth)".
+//! Module supports transfer assets over bridges between different consensus chain.
 //! With fine-grained configuration you can control transferred assets (out/in) between different consensus chain.
-//! E.g. you can allow just some assets to go out/in based on their `MultiLocation` patterns.
-//! "Transfer asset over bridge" recognize two kinds of transfer see [AssetTransferKind].
-//!
-//! ## Overview
-//!
-//! Pallet supports configuration for several independent scenarios:
-//!
-//! ### 1. Support to store on-chain bridge locations
-//!
-//! * Bridge locations/fees can be stored on-chain in [AllowedExporters]
-//! * Managing bridge locations can be done with dedicated extrinsics: `add_exporter_config / remove_exporter_config / update_exporter_config`
-//! * Pallet implements `xcm_builder::ExporterFor` which can be used with `xcm_builder::UnpaidRemoteExporter/SovereignPaidRemoteExporter`
-//!
-//! ### 2. Support to store on-chain allowed bridged target locations with asset filters
-//!
-//! * (Used for transfer assets out)
-//! * If we want to use `transfer_asset_via_bridge` we should setup the target location with asset filter to allow reserve asset transfer to this location over bridge.
-//! * Managing target location and asset filer can be done with dedicated extrinsics:
-//! * - `update_bridged_target_location / remove_bridged_target_location` - managing target location behind bridge
-//! * - `allow_reserve_asset_transfer_for / disallow_reserve_asset_transfer_for` - managing asset filters
-//!
-//! ### 3. Support to store on-chain allowed universal aliases/origins
-//!
-//! * (Used for transfer assets in)
-//! * Aliases can be stored on-chain in [AllowedUniversalAliases]
-//! * Managing bridge locations can be done with dedicated extrinsics: `add_universal_alias / remove_universal_alias`
-//! * Stored aliases can be accessed by [features::AllowedUniversalAliasesOf] and configured for e.g. `xcm_executor::Config`:
-//!   ```nocompile
-//!   impl xcm_executor::Config for XcmConfig {
-//! 	...
-//!   	type UniversalAliases = AllowedUniversalAliasesOf<Runtime>;
-//! 	...
-//!   }
-//!   ```
-//!
-//! ### 4. Support to store on-chain allowed reserve locations with allowed asset filters
-//!
-//! * (Used for transfer assets in)
-//! * Reserve locations with asset filters can be stored on-chain in [AllowedReserveLocations]
-//! * Managing bridge locations can be done with dedicated extrinsics: `add_reserve_location / remove_reserve_location`
-//! * Stored reserve locations can be accessed by [features::IsTrustedBridgedReserveForConcreteAsset] and configured for e.g. `xcm_executor::Config`:
-//!   ```nocompile
-//!   impl xcm_executor::Config for XcmConfig {
-//! 	...
-//!   	type IsReserve = IsTrustedBridgedReserveForConcreteAsset<Runtime>;
-//! 	...
-//!   }
-//!   ```
+//! "Transfer asset over bridge" recognize two kinds of transfer see [types::AssetTransferKind].
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*;
 pub use pallet_bridge_transfer_primitives::MaybePaidLocation;
-// pub use types::{AssetFilterOf, MultiLocationFilterOf};
 
 pub mod features;
 mod impls;

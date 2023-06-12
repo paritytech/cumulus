@@ -204,5 +204,6 @@ std = [
 	"parachains-common/std",
 	"assets-common/std",
 	"pallet-bridge-transfer/std",
+	"pallet-bridge-transfer-primitives/std",
 	"substrate-wasm-builder",
 ]

@@ -342,6 +342,18 @@ impl<T: frame_system::Config> WeightInfo<T> {
 		// Minimum execution time: 2_597_000 picoseconds.
 		Weight::from_parts(2_675_000, 0)
 	}
+	// Storage: ParachainInfo ParachainId (r:1 w:0)
+	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
+	// Storage: BridgeTransfer AllowedUniversalAliases (r:1 w:0)
+	// Proof: BridgeTransfer AllowedUniversalAliases (max_values: None, max_size: Some(2419), added: 4894, mode: MaxEncodedLen)
+	pub fn universal_origin() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `159`
+		//  Estimated: `5884`
+		// Minimum execution time: 9_590_000 picoseconds.
+		Weight::from_parts(9_886_000, 5884)
+			.saturating_add(T::DbWeight::get().reads(2))
+	}
 	pub fn set_fees_mode() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
