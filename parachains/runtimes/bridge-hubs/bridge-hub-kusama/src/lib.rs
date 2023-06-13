@@ -427,7 +427,10 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaPolkadotInstance> for Runtime {
 parameter_types! {
 	pub const RelayChainHeadersToKeep: u32 = 1024;
 	pub const ParachainHeadsToKeep: u32 = 64;
-	pub const RelayerStakeLease: u32 = 8;
+	/// Delay (in blocks) before registered relayer could get its stake back. It guarantees
+	/// that all pending delivery transactions are either dropped or mined and relayer is
+	/// slashed in case of misbehavior. So this value should be large enough (e.g. 24 hours).
+	pub const RelayerStakeLease: u32 = 7_200;
 	pub const PolkadotBridgeParachainPalletName: &'static str = bp_polkadot::PARAS_PALLET_NAME;
 	pub const MaxPolkadotParaHeadDataSize: u32 = bp_polkadot::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
 
