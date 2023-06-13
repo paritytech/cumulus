@@ -426,8 +426,8 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaKusamaInstance> for Runtime {
 }
 
 parameter_types! {
-	pub const RelayChainHeadersToKeep: u32 = 1024;
-	pub const ParachainHeadsToKeep: u32 = 64;
+	pub const RelayChainHeadersToKeep: u32 = 600;
+	pub const ParachainHeadsToKeep: u32 = 300;
 	/// Delay (in blocks) before registered relayer could get its stake back. It guarantees
 	/// that all pending delivery transactions are either dropped or mined and relayer is
 	/// slashed in case of misbehavior. So this value should be large enough (e.g. 24 hours).
