@@ -429,7 +429,7 @@ parameter_types! {
 	pub const RelayChainHeadersToKeep: u32 = 1024;
 	pub const ParachainHeadsToKeep: u32 = 64;
 	pub const RelayerStakeLease: u32 = 8;
-	pub const KusamaBridgeParachainPalletName: &'static str = "Paras";
+	pub const KusamaBridgeParachainPalletName: &'static str = bp_kusama::PARAS_PALLET_NAME;
 	pub const MaxKusamaParaHeadDataSize: u32 = bp_kusama::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
 
 	// Both are just initial values, and concrete values will be set up by governance call (`set_storage`) with `initialize` bridge call as a part of onboarding/cutover plan (https://github.com/paritytech/parity-bridges-common/issues/1730)

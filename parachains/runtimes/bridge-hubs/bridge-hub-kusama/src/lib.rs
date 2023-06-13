@@ -428,7 +428,7 @@ parameter_types! {
 	pub const RelayChainHeadersToKeep: u32 = 1024;
 	pub const ParachainHeadsToKeep: u32 = 64;
 	pub const RelayerStakeLease: u32 = 8;
-	pub const PolkadotBridgeParachainPalletName: &'static str = "Paras";
+	pub const PolkadotBridgeParachainPalletName: &'static str = bp_polkadot::PARAS_PALLET_NAME;
 	pub const MaxPolkadotParaHeadDataSize: u32 = bp_polkadot::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
 
 	// Both are just initial values, and concrete values will be set up by governance call (`set_storage`) with `initialize` bridge call as a part of cutover plan (https://github.com/paritytech/parity-bridges-common/issues/1730)
