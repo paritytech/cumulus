@@ -787,7 +787,7 @@ fn change_asset_hub_kusama_local_max_fee_by_governance_works() {
 		},
 		|old_value| match old_value {
 			Some(MultiAsset { id, fun: Fungible(old_amount) }) =>
-				Some(MultiAsset { id: id.clone(), fun: Fungible(old_amount * 2) }),
+				Some(MultiAsset { id: *id, fun: Fungible(old_amount * 2) }),
 			Some(_) => None,
 			None => Some(MultiAsset::from((Here, 123456))),
 		},
