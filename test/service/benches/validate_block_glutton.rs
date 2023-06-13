@@ -32,7 +32,7 @@ use sc_executor_common::wasm_runtime::WasmModule;
 use sp_api::ProvideRuntimeApi;
 
 use frame_system_rpc_runtime_api::AccountNonceApi;
-use sp_arithmetic::Perbill;
+use sp_arithmetic::FixedU64;
 use sp_consensus::BlockOrigin;
 use sp_keyring::Sr25519Keyring::Alice;
 use sp_runtime::traits::Header as HeaderT;
@@ -142,8 +142,8 @@ fn verify_expected_result(runtime: &Box<dyn WasmModule>, encoded_params: &[u8], 
 fn set_glutton_parameters(
 	client: &Client,
 	initialize: bool,
-	compute_ratio: &Perbill,
-	storage_ratio: &Perbill,
+	compute_ratio: &FixedU64,
+	storage_ratio: &FixedU64,
 ) -> ParachainBlockData {
 	let parent_hash = client.usage_info().chain.best_hash;
 	let parent_header = client.header(parent_hash).expect("Just fetched this hash.").unwrap();
