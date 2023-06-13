@@ -14,7 +14,7 @@ do
 
     mkdir -p logs/$t
 
-    parachains-integration-tests \
+    DEBUG=zombie::metrics parachains-integration-tests \
         -m zombienet \
         -c ./parachains/integration-tests/e2e/$t/config.toml \
         -cl ./logs/$t/chains.log 2> /dev/null &
