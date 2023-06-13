@@ -51,6 +51,9 @@ pub mod pallet {
 	use xcm::prelude::*;
 	use xcm_executor::traits::TransactAsset;
 
+	#[cfg(feature = "runtime-benchmarks")]
+	use pallet_bridge_transfer_primitives::MaybePaidLocation;
+
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
@@ -100,26 +103,6 @@ pub mod pallet {
 
 	#[cfg(feature = "runtime-benchmarks")]
 	impl<RuntimeOrigin> BenchmarkHelper<RuntimeOrigin> for () {
-		fn bridge_location() -> Option<(NetworkId, MaybePaidLocation)> {
-			None
-		}
-
-		fn allowed_bridged_target_location() -> Option<MaybePaidLocation> {
-			None
-		}
-
-		fn prepare_asset_transfer(
-		) -> Option<(RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation)> {
-			None
-		}
-
-		fn universal_alias() -> Option<(VersionedMultiLocation, Junction)> {
-			None
-		}
-
-		fn reserve_location() -> Option<VersionedMultiLocation> {
-			None
-		}
 	}
 
 	#[pallet::config]
