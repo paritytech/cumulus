@@ -43,7 +43,8 @@ parameter_types! {
 		bp_bridge_hub_polkadot::MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX;
 	pub const BridgeHubKusamaChainId: bp_runtime::ChainId = bp_runtime::BRIDGE_HUB_KUSAMA_CHAIN_ID;
 	pub KusamaGlobalConsensusNetwork: NetworkId = NetworkId::Kusama;
-	pub PriorityBoostPerMessage: u64 = 921_900_294;
+	// see the `FEE_BOOST_PER_MESSAGE` constant to get the meaning of this value
+	pub PriorityBoostPerMessage: u64 = 17_554_285_714_285;
 }
 
 /// Proof of messages, coming from BridgeHubKusama.
@@ -148,7 +149,7 @@ parameter_types! {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::BridgeGrandpaKusamaInstance;
+	use crate::{constants, BridgeGrandpaKusamaInstance};
 	use bridge_runtime_common::{
 		assert_complete_bridge_types,
 		integrity::{
@@ -157,6 +158,18 @@ mod tests {
 			AssertCompleteBridgeConstants,
 		},
 	};
+	use parachains_common::Balance;
+
+	/// Every additional message in the message delivery transaction boosts its priority.
+	/// So the priority of transaction with `N+1` messages is larger than priority of
+	/// transaction with `N` messages by the `PriorityBoostPerMessage`.
+	///
+	/// Economically, it is an equivalent of adding tip to the transaction with `N` messages.
+	/// The `FEE_BOOST_PER_MESSAGE` constant is the value of this tip.
+	///
+	/// We want this tip to be large enough (delivery transcations with more messages = less
+	/// operational costs and faster bridge), so this value should be significant.
+	const FEE_BOOST_PER_MESSAGE: Balance = 5 * constants::currency::UNITS;
 
 	#[test]
 	fn ensure_lane_weights_are_correct() {
@@ -208,5 +221,11 @@ mod tests {
 					bp_bridge_hub_kusama::WITH_BRIDGE_HUB_KUSAMA_MESSAGES_PALLET_NAME,
 			},
 		});
+
+		bridge_runtime_common::priority_calculator::ensure_priority_boost_is_sane::<
+			Runtime,
+			WithBridgeHubKusamaMessagesInstance,
+			PriorityBoostPerMessage,
+		>(FEE_BOOST_PER_MESSAGE);
 	}
 }
