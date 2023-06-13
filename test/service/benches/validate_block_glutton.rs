@@ -32,7 +32,10 @@ use sc_executor_common::wasm_runtime::WasmModule;
 use sp_api::ProvideRuntimeApi;
 
 use frame_system_rpc_runtime_api::AccountNonceApi;
-use sp_arithmetic::FixedU64;
+use sp_arithmetic::{
+	traits::{One, Zero},
+	FixedU64,
+};
 use sp_consensus::BlockOrigin;
 use sp_keyring::Sr25519Keyring::Alice;
 use sp_runtime::traits::Header as HeaderT;
