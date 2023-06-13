@@ -596,62 +596,76 @@ pub mod bridging {
 		>;
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+use pallet_bridge_transfer_primitives::{MaybePaidLocation, ReachableDestination};
+
 /// Benchmarks helper for over-bridge transfer pallet.
 #[cfg(feature = "runtime-benchmarks")]
 pub struct BridgeTransferBenchmarksHelper;
-
-#[cfg(feature = "runtime-benchmarks")]
-impl BridgeTransferBenchmarksHelper {
-	/// Parachain at the other side of the bridge that we're connected to.
-	fn allowed_target_location() -> MultiLocation {
-		MultiLocation::new(2, X2(GlobalConsensus(Polkadot), Parachain(1000)))
-	}
-
-	/// Max fee we are willing to pay on the bridged side
-	fn allowed_target_location_max_fee() -> Option<MultiAsset> {
-		Some((MultiLocation::parent(), 50_000_000_000_u128).into())
-	}
-
-	/// Identifier of the sibling bridge-hub parachain.
-	fn bridge_hub_para_id() -> u32 {
-		1002
-	}
-}
-
 #[cfg(feature = "runtime-benchmarks")]
 impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBenchmarksHelper {
-	fn bridge_location() -> Option<(NetworkId, pallet_bridge_transfer::MaybePaidLocation)> {
+	fn desired_bridged_location() -> Option<(NetworkId, ReachableDestination)> {
+		let bridged_network = bridging::PolkadotNetwork::get();
+		let target_location = bridging::AssetHubPolkadot::get();
+		let target_location_fee = bridging::AssetHubPolkadotMaxFee::get();
+		let target_location_account = target_location
+			.clone()
+			.appended_with(AccountId32 {
+				network: Some(bridged_network),
+				id: AccountId::from([42u8; 32]).into(),
+			})
+			.expect("Correct target_location_account");
+
 		Some((
-			Polkadot,
-			pallet_bridge_transfer::MaybePaidLocation {
-				location: (Parent, Parachain(Self::bridge_hub_para_id())).into(),
-				// Right now `UnpaidRemoteExporter` is used to send XCM messages and it requires
-				// fee to be `None`. If we're going to change that (are we?), then we should replace
-				// this `None` with `Some(Self::make_asset(crate::ExistentialDeposit::get()))`
-				maybe_fee: None,
+			bridging::PolkadotNetwork::get(),
+			ReachableDestination {
+				bridge: MaybePaidLocation {
+					location: bridging::BridgeHubKusama::get(),
+					// Right now `UnpaidRemoteExporter` is used to send XCM messages and it requires
+					// fee to be `None`. If we're going to change that (are we?), then we should replace
+					// this `None` with `Some(Self::make_asset(crate::ExistentialDeposit::get()))`
+					maybe_fee: None,
+				},
+				target: MaybePaidLocation {
+					location: target_location,
+					maybe_fee: target_location_fee,
+				},
+				target_destination: target_location_account,
 			},
 		))
 	}
 
-	fn allowed_bridged_target_location() -> Option<pallet_bridge_transfer::MaybePaidLocation> {
-		Some(pallet_bridge_transfer::MaybePaidLocation {
-			location: Self::allowed_target_location(),
-			maybe_fee: Self::allowed_target_location_max_fee(),
-		})
-	}
-
-	fn prepare_asset_transfer(
+	fn prepare_asset_transfer_for(
+		desired_bridged_location: (NetworkId, ReachableDestination),
+		assumed_reserve_account: MultiLocation,
 	) -> Option<(RuntimeOrigin, xcm::VersionedMultiAssets, xcm::VersionedMultiLocation)> {
 		use frame_support::traits::Currency;
+		let (_, desired_bridged_location) = desired_bridged_location;
 
 		// our `BridgeXcmSender` assumes that the HRMP channel is opened between this
-		// parachain and the sibling bridge-hub parachain
+		// parachain and the sibling bridge-hub parachain.
+		// we expect local bridge-hub
+		let bridge_hub_para_id = match desired_bridged_location.bridge.location {
+			MultiLocation { parents: 1, interior: X1(Parachain(bridge_hub_para_id)) } =>
+				bridge_hub_para_id,
+			_ => panic!("Cannot resolve bridge_hub_para_id"),
+		};
 		cumulus_pallet_parachain_system::Pallet::<Runtime>::open_outbound_hrmp_channel_for_benchmarks(
-			Self::bridge_hub_para_id().into(),
+			bridge_hub_para_id.into(),
 		);
 
 		// sender account
 		let sender_account = AccountId::from([42u8; 32]);
+		// reserve account
+		use xcm_executor::traits::ConvertLocation;
+		let assumed_reserve_account =
+			LocationToAccountId::convert_location(&assumed_reserve_account)
+				.expect("Correct AccountId");
+
+		// deposit enough funds to the sender account
+		let existential_deposit = crate::ExistentialDeposit::get();
+		let _ = Balances::deposit_creating(&sender_account, existential_deposit * 10);
+		let _ = Balances::deposit_creating(&assumed_reserve_account, existential_deposit * 10);
 
 		// We need root origin to create asset
 		let minimum_asset_balance = 3333333_u128;
@@ -672,10 +686,6 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 			minimum_asset_balance * 4
 		));
 
-		// deposit enough funds to the sender account
-		let existential_deposit = crate::ExistentialDeposit::get();
-		let _ = Balances::deposit_creating(&sender_account, existential_deposit * 10);
-
 		// finally - prepare assets and destination (pallet_assets is worse than pallet_balances)
 		use sp_runtime::traits::MaybeEquivalence;
 		let asset_id_location = assets_common::AssetIdForTrustBackedAssetsConvert::<
@@ -685,23 +695,23 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 		let asset: MultiAsset = (Concrete(asset_id_location), minimum_asset_balance * 2).into();
 
 		let assets = xcm::VersionedMultiAssets::V3(asset.into());
-		let destination = xcm::VersionedMultiLocation::V3(Self::allowed_target_location());
+		let destination =
+			xcm::VersionedMultiLocation::V3(desired_bridged_location.target_destination);
 
 		Some((RuntimeOrigin::signed(sender_account), assets, destination))
 	}
+}
 
-	fn universal_alias() -> Option<(xcm::VersionedMultiLocation, Junction)> {
-		Some((
-			MultiLocation { parents: 1, interior: X1(Parachain(Self::bridge_hub_para_id())) }
-				.into_versioned(),
-			GlobalConsensus(Polkadot),
-		))
-	}
-
-	fn reserve_location() -> Option<xcm::VersionedMultiLocation> {
-		Some(
-			MultiLocation { parents: 2, interior: X2(GlobalConsensus(Polkadot), Parachain(1000)) }
-				.into_versioned(),
-		)
+#[cfg(feature = "runtime-benchmarks")]
+impl BridgeTransferBenchmarksHelper {
+	pub fn prepare_universal_alias() -> Option<(MultiLocation, Junction)> {
+		let alias = bridging::BridgedUniversalAliases::get().into_iter().find_map(
+			|(location, junction)| match bridging::BridgeHubKusama::get().eq(&location) {
+				true => Some((location, junction)),
+				false => None,
+			},
+		);
+		assert!(alias.is_some(), "we expect here BridgeHubKusama to Polkadot mapping at least");
+		Some(alias.unwrap())
 	}
 }

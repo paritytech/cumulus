@@ -17,36 +17,15 @@
 
 //! `BridgeTransfer` pallet benchmarks.
 
-use crate::{
-	types::{
-		filter::MultiLocationFilter, AssetFilterOf, BridgeConfig, LatestVersionedMultiLocation,
-	},
-	AllowedExporters, AllowedReserveLocations, AllowedUniversalAliases, BenchmarkHelper, Call,
-	Config, Event, Pallet,
-};
+use crate::{BenchmarkHelper, Call, Config, Event, Pallet};
 
 use frame_benchmarking::{benchmarks, BenchmarkError};
 use frame_support::{
 	assert_ok, ensure,
 	traits::{EnsureOrigin, Get},
-	BoundedVec,
 };
 use sp_std::prelude::*;
 use xcm::prelude::*;
-
-#[cfg(feature = "runtime-benchmarks")]
-impl<T: Config> Pallet<T> {
-	#[cfg(feature = "runtime-benchmarks")]
-	pub fn insert_universal_alias_for_benchmarks((location, junction): (MultiLocation, Junction)) {
-		assert!(matches!(
-			AllowedUniversalAliases::<T>::try_mutate(
-				LatestVersionedMultiLocation(&location),
-				|junctions| junctions.try_insert(junction)
-			),
-			Ok(true)
-		));
-	}
-}
 
 benchmarks! {
 	transfer_asset_via_bridge {
@@ -56,32 +35,30 @@ benchmarks! {
 		let max_assets_limit = T::AssetsLimit::get();
 		ensure!(max_assets_limit > 0, "MaxAssetsLimit not set up correctly.");
 
-		let (bridged_network, maybe_paid_bridge) = T::BenchmarkHelper::bridge_location()
-			.ok_or(BenchmarkError::Stop("missing `bridge_location` data"))?;
-		let mut bridge_config = BridgeConfig::new(
-			maybe_paid_bridge.location.into_versioned(),
-			maybe_paid_bridge.maybe_fee.map(|fee| fee.into())
-		);
+		// get desired remote destination
+		let desired_bridged_location = T::BenchmarkHelper::desired_bridged_location()
+			.ok_or(BenchmarkError::Stop("missing `desired_bridged_location` data"))?;
 
-		let allowed_bridged_target_location = T::BenchmarkHelper::allowed_bridged_target_location()
-			.ok_or(BenchmarkError::Stop("missing `allowed_bridged_target_location` data"))?;
-		assert_ok!(bridge_config.update_allowed_target_location(
-			allowed_bridged_target_location.location.into_versioned(),
-			allowed_bridged_target_location.maybe_fee.map(|fee| VersionedMultiAsset::V3(fee))
-		));
-		assert_ok!(bridge_config.add_allowed_target_location_filter_for(
-			allowed_bridged_target_location.location.into_versioned(),
-			AssetFilterOf::<T>::All,
-		));
-		AllowedExporters::<T>::insert(bridged_network, bridge_config);
+		// resolve expected reserve account
+		let assumed_reserve_account = Pallet::<T>::resolve_reserve_account(&desired_bridged_location.1);
 
-		let (origin, assets, destination) = T::BenchmarkHelper::prepare_asset_transfer()
-			.ok_or(BenchmarkError::Stop("missing `prepare_asset_transfer` data"))?;
+		// prepare all requirements
+		let (origin, assets, destination) = T::BenchmarkHelper::prepare_asset_transfer_for(
+			desired_bridged_location.clone(),
+			assumed_reserve_account,
+		).ok_or(BenchmarkError::Stop("missing `prepare_asset_transfer` data"))?;
+
+		// check assets
 		let assets_count = match &assets {
 			VersionedMultiAssets::V2(assets) => assets.len(),
 			VersionedMultiAssets::V3(assets) => assets.len(),
 		};
 		ensure!(assets_count == max_assets_limit as usize, "`assets` not set up correctly for worst case.");
+
+		// check destination if configuration is ok
+		assert_ok!(<T::BridgedDestinationValidator as pallet_bridge_transfer_primitives::EnsureReachableDestination>::ensure_destination(
+			desired_bridged_location.0,
+			destination.clone().try_into().map_err(|_|BenchmarkError::Stop("invalid configuration or data"))?));
 
 	}: _<T::RuntimeOrigin>(origin, Box::new(assets), Box::new(destination))
 	verify {

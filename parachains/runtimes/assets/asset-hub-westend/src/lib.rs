@@ -1186,13 +1186,8 @@ impl_runtime_apis! {
 				}
 
 				fn universal_alias() -> Result<(MultiLocation, Junction), BenchmarkError> {
-					match <<Runtime as pallet_bridge_transfer::Config>::BenchmarkHelper as pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin>>::universal_alias() {
-						Some((location, junction)) => {
-							<pallet_bridge_transfer::Pallet<Runtime>>::insert_universal_alias_for_benchmarks(
-								(location.clone().try_into().unwrap(), junction)
-							);
-							Ok((location.clone().try_into().unwrap(), junction))
-						},
+					match xcm_config::BridgeTransferBenchmarksHelper::prepare_universal_alias() {
+						Some(alias) => Ok(alias),
 						None => Err(BenchmarkError::Skip)
 					}
 				}

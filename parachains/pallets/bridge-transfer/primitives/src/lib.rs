@@ -34,7 +34,8 @@ pub struct MaybePaidLocation {
 }
 
 /// Represents ensured/verified reachable destination.
-#[cfg_attr(feature = "std", derive(Debug, PartialEq))]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "std", derive(PartialEq))]
 pub struct ReachableDestination {
 	/// Bridge location
 	pub bridge: MaybePaidLocation,
@@ -53,6 +54,7 @@ pub trait EnsureReachableDestination {
 }
 
 /// Error type for [EnsureReachableDestination]
+#[derive(Debug)]
 pub enum ReachableDestinationError {
 	UnsupportedDestination,
 	UnsupportedXcmVersion,

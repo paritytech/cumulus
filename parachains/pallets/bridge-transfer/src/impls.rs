@@ -258,7 +258,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Resolve (sovereign) account which will be used as reserve account
-	fn resolve_reserve_account(destination: &ReachableDestination) -> MultiLocation {
+	pub(crate) fn resolve_reserve_account(destination: &ReachableDestination) -> MultiLocation {
 		destination.target.location
 	}
 }

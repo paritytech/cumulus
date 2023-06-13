@@ -46,7 +46,7 @@ pub mod pallet {
 	use crate::types::ResolveAssetTransferKind;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use pallet_bridge_transfer_primitives::EnsureReachableDestination;
+	use pallet_bridge_transfer_primitives::{EnsureReachableDestination, ReachableDestination};
 	use sp_std::boxed::Box;
 	use xcm::prelude::*;
 	use xcm_executor::traits::TransactAsset;
@@ -57,21 +57,20 @@ pub mod pallet {
 	/// Everything we need to run benchmarks.
 	#[cfg(feature = "runtime-benchmarks")]
 	pub trait BenchmarkHelper<RuntimeOrigin> {
-		/// Returns proper bridge location+fee  for NetworkId, supported by the runtime.
+		/// Returns proper destination for NetworkId, supported by the runtime.
 		///
 		/// We expect that the XCM environment (`BridgeXcmSender`) has everything enabled
 		/// to support transfer to this destination **after** `prepare_asset_transfer` call.
-		fn bridge_location() -> Option<(NetworkId, MaybePaidLocation)> {
-			None
-		}
+		fn desired_bridged_location() -> Option<(NetworkId, ReachableDestination)>;
 
-		/// Returns proper target_location location+fee supported by the runtime.
-		///
-		/// We expect that the XCM environment (`BridgeXcmSender`) has everything enabled
-		/// to support transfer to this destination **after** `prepare_asset_transfer` call.
-		fn allowed_bridged_target_location() -> Option<MaybePaidLocation> {
-			None
-		}
+		//
+		// /// Returns proper target_location location+fee supported by the runtime.
+		// ///
+		// /// We expect that the XCM environment (`BridgeXcmSender`) has everything enabled
+		// /// to support transfer to this destination **after** `prepare_asset_transfer` call.
+		// fn allowed_bridged_target_location() -> Option<MaybePaidLocation> {
+		// 	None
+		// }
 
 		/// Prepare environment for assets transfer and return transfer origin and assets
 		/// to transfer. After this function is called, we expect `transfer_asset_via_bridge`
@@ -84,40 +83,22 @@ pub mod pallet {
 		/// - be close to the worst possible scenario - i.e. if some account may need to be created during
 		///   the assets transfer, it should be created. If there are multiple bridges, the "worst possible"
 		///   (in terms of performance) bridge must be selected for the transfer.
-		fn prepare_asset_transfer(
-		) -> Option<(RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation)> {
-			None
-		}
-
-		fn universal_alias() -> Option<(VersionedMultiLocation, Junction)> {
-			None
-		}
-
-		fn reserve_location() -> Option<VersionedMultiLocation> {
-			None
-		}
+		fn prepare_asset_transfer_for(
+			desired_bridged_location: (NetworkId, ReachableDestination),
+			assumed_reserve_account: MultiLocation,
+		) -> Option<(RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation)>;
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
 	impl<RuntimeOrigin> BenchmarkHelper<RuntimeOrigin> for () {
-		fn bridge_location() -> Option<(NetworkId, MaybePaidLocation)> {
+		fn desired_bridged_location() -> Option<(NetworkId, ReachableDestination)> {
 			None
 		}
 
-		fn allowed_bridged_target_location() -> Option<MaybePaidLocation> {
-			None
-		}
-
-		fn prepare_asset_transfer(
+		fn prepare_asset_transfer_for(
+			_desired_bridged_location: (NetworkId, ReachableDestination),
+			_assumed_reserve_account: MultiLocation,
 		) -> Option<(RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation)> {
-			None
-		}
-
-		fn universal_alias() -> Option<(VersionedMultiLocation, Junction)> {
-			None
-		}
-
-		fn reserve_location() -> Option<VersionedMultiLocation> {
 			None
 		}
 	}
