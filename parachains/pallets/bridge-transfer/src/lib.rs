@@ -17,7 +17,7 @@
 //!
 //! Module supports transfer assets over bridges between different consensus chain.
 //! With fine-grained configuration you can control transferred assets (out/in) between different consensus chain.
-//! "Transfer asset over bridge" recognize two kinds of transfer see [types::AssetTransferKind].
+//! "Transfer asset over bridge" recognize two kinds of transfer see `types::AssetTransferKind`.
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -46,7 +46,7 @@ pub mod pallet {
 	use crate::types::ResolveAssetTransferKind;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use pallet_bridge_transfer_primitives::{EnsureReachableDestination, ReachableDestination};
+	use pallet_bridge_transfer_primitives::EnsureReachableDestination;
 	use sp_std::boxed::Box;
 	use xcm::prelude::*;
 	use xcm_executor::traits::TransactAsset;
@@ -61,7 +61,8 @@ pub mod pallet {
 		///
 		/// We expect that the XCM environment (`BridgeXcmSender`) has everything enabled
 		/// to support transfer to this destination **after** `prepare_asset_transfer` call.
-		fn desired_bridged_location() -> Option<(NetworkId, ReachableDestination)>;
+		fn desired_bridged_location(
+		) -> Option<(NetworkId, pallet_bridge_transfer_primitives::ReachableDestination)>;
 
 		/// Prepare environment for assets transfer and return transfer origin and assets
 		/// to transfer. After this function is called, we expect `transfer_asset_via_bridge`
@@ -75,19 +76,26 @@ pub mod pallet {
 		///   the assets transfer, it should be created. If there are multiple bridges, the "worst possible"
 		///   (in terms of performance) bridge must be selected for the transfer.
 		fn prepare_asset_transfer_for(
-			desired_bridged_location: (NetworkId, ReachableDestination),
+			desired_bridged_location: (
+				NetworkId,
+				pallet_bridge_transfer_primitives::ReachableDestination,
+			),
 			assumed_reserve_account: MultiLocation,
 		) -> Option<(RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation)>;
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
 	impl<RuntimeOrigin> BenchmarkHelper<RuntimeOrigin> for () {
-		fn desired_bridged_location() -> Option<(NetworkId, ReachableDestination)> {
+		fn desired_bridged_location(
+		) -> Option<(NetworkId, pallet_bridge_transfer_primitives::ReachableDestination)> {
 			None
 		}
 
 		fn prepare_asset_transfer_for(
-			_desired_bridged_location: (NetworkId, ReachableDestination),
+			_desired_bridged_location: (
+				NetworkId,
+				pallet_bridge_transfer_primitives::ReachableDestination,
+			),
 			_assumed_reserve_account: MultiLocation,
 		) -> Option<(RuntimeOrigin, VersionedMultiAssets, VersionedMultiLocation)> {
 			None
