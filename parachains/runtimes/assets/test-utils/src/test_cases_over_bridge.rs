@@ -122,7 +122,7 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 			let alice_account_init_balance = existential_deposit + balance_to_transfer.into();
 			let _ = <pallet_balances::Pallet<Runtime>>::deposit_creating(
 				&alice_account,
-				alice_account_init_balance.clone(),
+				alice_account_init_balance,
 			);
 			// SA of target location needs to have at least ED, anyway making reserve fails
 			let _ = <pallet_balances::Pallet<Runtime>>::deposit_creating(
@@ -151,7 +151,6 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 
 			// destination is (some) account from different consensus
 			let target_destination_account = target_location_from_different_consensus
-				.clone()
 				.appended_with(AccountId32 {
 					network: Some(bridged_network),
 					id: sp_runtime::AccountId32::new([3; 32]).into(),
@@ -162,7 +161,7 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 			assert_ok!(<pallet_bridge_transfer::Pallet<Runtime>>::transfer_asset_via_bridge(
 				RuntimeHelper::<Runtime>::origin_of(alice_account.clone()),
 				Box::new(VersionedMultiAssets::from(assets.clone())),
-				Box::new(VersionedMultiLocation::from(target_destination_account.clone())),
+				Box::new(VersionedMultiLocation::from(target_destination_account)),
 			));
 
 			// check alice account decreased
@@ -237,7 +236,6 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 						let (_, target_location_junctions_without_global_consensus) =
 							target_location_from_different_consensus
 								.interior
-								.clone()
 								.split_global()
 								.expect("split works");
 						assert_eq!(
@@ -252,7 +250,7 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 								XcmConfig::UniversalLocation::get(),
 							)
 							.expect("reanchored assets");
-						let mut reanchored_destination_account = target_destination_account.clone();
+						let mut reanchored_destination_account = target_destination_account;
 						reanchored_destination_account
 							.reanchor(
 								&target_location_from_different_consensus,
@@ -448,7 +446,7 @@ pub fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_work
 				assert_ok!(
 					<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::force_create(
 						RuntimeHelper::<Runtime>::root_origin(),
-						foreign_asset_id_multilocation.clone().into(),
+						foreign_asset_id_multilocation.into(),
 						reserve_account.clone().into(),
 						false,
 						asset_minimum_asset_balance.into()
@@ -458,7 +456,7 @@ pub fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_work
 				// 2. drip asset to alice
 				assert_ok!(<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::mint(
 					RuntimeHelper::<Runtime>::origin_of(reserve_account.clone()),
-					foreign_asset_id_multilocation.clone().into(),
+					foreign_asset_id_multilocation.into(),
 					alice_account.clone().into(),
 					(asset_minimum_asset_balance + balance_to_transfer).into()
 				));
@@ -474,7 +472,7 @@ pub fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_work
 			);
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::balance(
-					foreign_asset_id_multilocation.clone().into(),
+					foreign_asset_id_multilocation.into(),
 					alice_account.clone()
 				),
 				(asset_minimum_asset_balance + balance_to_transfer).into()
@@ -488,7 +486,6 @@ pub fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_work
 
 			// destination is (some) account from different consensus
 			let target_destination_account = target_location_from_different_consensus
-				.clone()
 				.appended_with(AccountId32 {
 					network: Some(bridged_network),
 					id: sp_runtime::AccountId32::new([3; 32]).into(),
@@ -499,7 +496,7 @@ pub fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_work
 			assert_ok!(<pallet_bridge_transfer::Pallet<Runtime>>::transfer_asset_via_bridge(
 				RuntimeHelper::<Runtime>::origin_of(alice_account.clone()),
 				Box::new(VersionedMultiAssets::from(assets.clone())),
-				Box::new(VersionedMultiLocation::from(target_destination_account.clone())),
+				Box::new(VersionedMultiLocation::from(target_destination_account)),
 			));
 
 			// check alice account (balances not changed)
@@ -515,7 +512,7 @@ pub fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_work
 			// `ForeignAssets` for alice account is decressed
 			assert_eq!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::balance(
-					foreign_asset_id_multilocation.clone().into(),
+					foreign_asset_id_multilocation.into(),
 					alice_account.clone()
 				),
 				asset_minimum_asset_balance.into()
@@ -580,7 +577,6 @@ pub fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_work
 						let (_, target_location_junctions_without_global_consensus) =
 							target_location_from_different_consensus
 								.interior
-								.clone()
 								.split_global()
 								.expect("split works");
 						assert_eq!(
@@ -595,7 +591,7 @@ pub fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_work
 								XcmConfig::UniversalLocation::get(),
 							)
 							.expect("reanchored assets");
-						let mut reanchored_destination_account = target_destination_account.clone();
+						let mut reanchored_destination_account = target_destination_account;
 						reanchored_destination_account
 							.reanchor(
 								&target_location_from_different_consensus,
@@ -761,7 +757,7 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_work
 			assert_ok!(
 				<pallet_assets::Pallet<Runtime, ForeignAssetsPalletInstance>>::force_create(
 					RuntimeHelper::<Runtime>::root_origin(),
-					foreign_asset_id_multilocation.clone().into(),
+					foreign_asset_id_multilocation.into(),
 					remote_parachain_sovereign_account.clone().into(),
 					false,
 					asset_minimum_asset_balance.into()
