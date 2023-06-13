@@ -35,14 +35,13 @@ use sc_consensus::{
 use sc_executor::DEFAULT_HEAP_ALLOC_STRATEGY;
 use sc_executor_common::runtime_blob::RuntimeBlob;
 use sp_api::ProvideRuntimeApi;
-use sp_runtime::FixedU64;
 use sp_blockchain::{ApplyExtrinsicFailed::Validity, Error::ApplyExtrinsicFailed};
 use sp_consensus::BlockOrigin;
 use sp_core::{sr25519, Pair};
 use sp_keyring::Sr25519Keyring::Alice;
 use sp_runtime::{
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
-	AccountId32, OpaqueExtrinsic,
+	AccountId32, FixedU64, OpaqueExtrinsic,
 };
 
 /// Accounts to use for transfer transactions. Enough for 5000 transactions.
