@@ -50,7 +50,7 @@ parameter_types! {
 /// Proof of messages, coming from BridgeHubKusama.
 pub type FromBridgeHubKusamaMessagesProof =
 	FromBridgedChainMessagesProof<bp_bridge_hub_kusama::Hash>;
-/// Messages delivery proof for BridgeHubKusama for BridgeHubKusama messages.
+/// Messages delivery proof for BridgeHubKusama messages.
 pub type ToBridgeHubKusamaMessagesDeliveryProof =
 	FromBridgedChainMessagesDeliveryProof<bp_bridge_hub_kusama::Hash>;
 
