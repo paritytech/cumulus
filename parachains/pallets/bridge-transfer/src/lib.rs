@@ -63,15 +63,6 @@ pub mod pallet {
 		/// to support transfer to this destination **after** `prepare_asset_transfer` call.
 		fn desired_bridged_location() -> Option<(NetworkId, ReachableDestination)>;
 
-		//
-		// /// Returns proper target_location location+fee supported by the runtime.
-		// ///
-		// /// We expect that the XCM environment (`BridgeXcmSender`) has everything enabled
-		// /// to support transfer to this destination **after** `prepare_asset_transfer` call.
-		// fn allowed_bridged_target_location() -> Option<MaybePaidLocation> {
-		// 	None
-		// }
-
 		/// Prepare environment for assets transfer and return transfer origin and assets
 		/// to transfer. After this function is called, we expect `transfer_asset_via_bridge`
 		/// to succeed, so in proper environment, it should:
