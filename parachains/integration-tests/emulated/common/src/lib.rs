@@ -5,7 +5,7 @@ pub use constants::{
 	bridge_hub_kusama, bridge_hub_polkadot, collectives, kusama, penpal, polkadot, statemine,
 	statemint,
 };
-use frame_support::{parameter_types, sp_io, sp_tracing};
+use frame_support::{traits::Hooks, parameter_types, sp_io, sp_tracing};
 pub use parachains_common::{AccountId, AuraId, Balance, BlockNumber, StatemintAuraId};
 pub use sp_core::{sr25519, storage::Storage, Get};
 use xcm::prelude::*;
@@ -27,7 +27,6 @@ decl_test_relay_chains! {
 			MessageQueue: polkadot_runtime::MessageQueue,
 			XcmConfig: polkadot_runtime::xcm_config::XcmConfig,
 			SovereignAccountOf: polkadot_runtime::xcm_config::SovereignAccountOf,
-			AllPallets: polkadot_runtime::AllPalletsWithSystem,
 			System: polkadot_runtime::System,
 			Balances: polkadot_runtime::Balances,
 		},
@@ -46,7 +45,6 @@ decl_test_relay_chains! {
 			MessageQueue: kusama_runtime::MessageQueue,
 			XcmConfig: kusama_runtime::xcm_config::XcmConfig,
 			SovereignAccountOf: kusama_runtime::xcm_config::SovereignAccountOf,
-			AllPallets: kusama_runtime::AllPalletsWithSystem,
 			System: kusama_runtime::System,
 			Balances: kusama_runtime::Balances,
 		},
@@ -60,7 +58,9 @@ decl_test_parachains! {
 	// Polkadot
 	pub struct Statemint {
 		genesis = statemint::genesis(),
-		on_init = (),
+		on_init = {
+			statemint_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = {
 			Runtime: statemint_runtime::Runtime,
 			RuntimeOrigin: statemint_runtime::RuntimeOrigin,
@@ -69,7 +69,6 @@ decl_test_parachains! {
 			XcmpMessageHandler: statemint_runtime::XcmpQueue,
 			DmpMessageHandler: statemint_runtime::DmpQueue,
 			LocationToAccountId: statemint_runtime::xcm_config::LocationToAccountId,
-			AllPallets: statemint_runtime::AllPalletsWithSystem,
 			System: statemint_runtime::System,
 			Balances: statemint_runtime::Balances,
 			ParachainSystem: statemint_runtime::ParachainSystem,
@@ -82,7 +81,9 @@ decl_test_parachains! {
 	},
 	pub struct PenpalPolkadot {
 		genesis = penpal::genesis(penpal::PARA_ID),
-		on_init = (),
+		on_init = {
+			penpal_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = {
 			Runtime: penpal_runtime::Runtime,
 			RuntimeOrigin: penpal_runtime::RuntimeOrigin,
@@ -91,7 +92,6 @@ decl_test_parachains! {
 			XcmpMessageHandler: penpal_runtime::XcmpQueue,
 			DmpMessageHandler: penpal_runtime::DmpQueue,
 			LocationToAccountId: penpal_runtime::xcm_config::LocationToAccountId,
-			AllPallets: penpal_runtime::AllPalletsWithSystem,
 			System: penpal_runtime::System,
 			Balances: penpal_runtime::Balances,
 			ParachainSystem: penpal_runtime::ParachainSystem,
@@ -105,7 +105,9 @@ decl_test_parachains! {
 	// Kusama
 	pub struct Statemine {
 		genesis = statemine::genesis(),
-		on_init = (),
+		on_init = {
+			statemine_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = {
 			Runtime: statemine_runtime::Runtime,
 			RuntimeOrigin: statemine_runtime::RuntimeOrigin,
@@ -114,7 +116,6 @@ decl_test_parachains! {
 			XcmpMessageHandler: statemine_runtime::XcmpQueue,
 			DmpMessageHandler: statemine_runtime::DmpQueue,
 			LocationToAccountId: statemine_runtime::xcm_config::LocationToAccountId,
-			AllPallets: statemine_runtime::AllPalletsWithSystem,
 			System: statemine_runtime::System,
 			Balances: statemine_runtime::Balances,
 			ParachainSystem: statemine_runtime::ParachainSystem,
@@ -128,7 +129,9 @@ decl_test_parachains! {
 	},
 	pub struct PenpalKusama {
 		genesis = penpal::genesis(penpal::PARA_ID),
-		on_init = (),
+		on_init = {
+			penpal_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = {
 			Runtime: penpal_runtime::Runtime,
 			RuntimeOrigin: penpal_runtime::RuntimeOrigin,
@@ -137,7 +140,6 @@ decl_test_parachains! {
 			XcmpMessageHandler: penpal_runtime::XcmpQueue,
 			DmpMessageHandler: penpal_runtime::DmpQueue,
 			LocationToAccountId: penpal_runtime::xcm_config::LocationToAccountId,
-			AllPallets: penpal_runtime::AllPalletsWithSystem,
 			System: penpal_runtime::System,
 			Balances: penpal_runtime::Balances,
 			ParachainSystem: penpal_runtime::ParachainSystem,
@@ -150,7 +152,9 @@ decl_test_parachains! {
 	},
 	pub struct Collectives {
 		genesis = collectives::genesis(),
-		on_init = (),
+		on_init = {
+			collectives_polkadot_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = {
 			Runtime: collectives_polkadot_runtime::Runtime,
 			RuntimeOrigin: collectives_polkadot_runtime::RuntimeOrigin,
@@ -159,7 +163,6 @@ decl_test_parachains! {
 			XcmpMessageHandler: collectives_polkadot_runtime::XcmpQueue,
 			DmpMessageHandler: collectives_polkadot_runtime::DmpQueue,
 			LocationToAccountId: collectives_polkadot_runtime::xcm_config::LocationToAccountId,
-			AllPallets: collectives_polkadot_runtime::AllPalletsWithSystem,
 			System: collectives_polkadot_runtime::System,
 			Balances: collectives_polkadot_runtime::Balances,
 			ParachainSystem: collectives_polkadot_runtime::ParachainSystem,
@@ -171,7 +174,9 @@ decl_test_parachains! {
 	},
 	pub struct BHKusama {
 		genesis = bridge_hub_kusama::genesis(),
-		on_init = (),
+		on_init = {
+			bridge_hub_kusama_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = {
 			Runtime: bridge_hub_kusama_runtime::Runtime,
 			RuntimeOrigin: bridge_hub_kusama_runtime::RuntimeOrigin,
@@ -180,7 +185,6 @@ decl_test_parachains! {
 			XcmpMessageHandler: bridge_hub_kusama_runtime::XcmpQueue,
 			DmpMessageHandler: bridge_hub_kusama_runtime::DmpQueue,
 			LocationToAccountId: bridge_hub_kusama_runtime::xcm_config::LocationToAccountId,
-			AllPallets: bridge_hub_kusama_runtime::AllPalletsWithSystem,
 			System: bridge_hub_kusama_runtime::System,
 			Balances: bridge_hub_kusama_runtime::Balances,
 			ParachainSystem: bridge_hub_kusama_runtime::ParachainSystem,
@@ -192,7 +196,9 @@ decl_test_parachains! {
 	},
 	pub struct BHPolkadot {
 		genesis = bridge_hub_polkadot::genesis(),
-		on_init = (),
+		on_init = {
+			bridge_hub_polkadot_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = {
 			Runtime: bridge_hub_polkadot_runtime::Runtime,
 			RuntimeOrigin: bridge_hub_polkadot_runtime::RuntimeOrigin,
@@ -201,7 +207,6 @@ decl_test_parachains! {
 			XcmpMessageHandler: bridge_hub_polkadot_runtime::XcmpQueue,
 			DmpMessageHandler: bridge_hub_polkadot_runtime::DmpQueue,
 			LocationToAccountId: bridge_hub_polkadot_runtime::xcm_config::LocationToAccountId,
-			AllPallets: bridge_hub_polkadot_runtime::AllPalletsWithSystem,
 			System: bridge_hub_polkadot_runtime::System,
 			Balances: bridge_hub_polkadot_runtime::Balances,
 			ParachainSystem: bridge_hub_polkadot_runtime::ParachainSystem,
