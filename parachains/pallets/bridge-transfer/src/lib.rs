@@ -68,7 +68,7 @@ pub mod pallet {
 		/// to transfer. After this function is called, we expect `transfer_asset_via_bridge`
 		/// to succeed, so in proper environment, it should:
 		///
-		/// - deposit enough funds (fee from `bridge_config()` and transferred assets) to the sender account;
+		/// - deposit enough funds (fee from `desired_bridged_location()` and transferred assets) to the sender account;
 		///
 		/// - ensure that the `BridgeXcmSender` is properly configured for the transfer;
 		///

@@ -662,41 +662,18 @@ impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBe
 			LocationToAccountId::convert_location(&assumed_reserve_account)
 				.expect("Correct AccountId");
 
-		// deposit enough funds to the sender account
+		// deposit enough (ED) funds to the sender and reserve account
 		let existential_deposit = crate::ExistentialDeposit::get();
 		let _ = Balances::deposit_creating(&sender_account, existential_deposit * 10);
 		let _ = Balances::deposit_creating(&assumed_reserve_account, existential_deposit * 10);
 
-		// We need root origin to create asset
-		let minimum_asset_balance = 3333333_u128;
-		let local_asset_id = 1;
-		frame_support::assert_ok!(Assets::force_create(
-			RuntimeOrigin::root(),
-			local_asset_id.into(),
-			sender_account.clone().into(),
-			true,
-			minimum_asset_balance
-		));
+		// finally - prepare assets
+		// lets consider our worst case scenario - reserve based transfer with relay chain tokens
+		let asset: MultiAsset = (Concrete(KsmLocation::get()), existential_deposit * 2).into();
 
-		// We mint enough asset for the account to exist for assets
-		frame_support::assert_ok!(Assets::mint(
-			RuntimeOrigin::signed(sender_account.clone()),
-			local_asset_id.into(),
-			sender_account.clone().into(),
-			minimum_asset_balance * 4
-		));
-
-		// finally - prepare assets and destination (pallet_assets is worse than pallet_balances)
-		use sp_runtime::traits::MaybeEquivalence;
-		let asset_id_location = assets_common::AssetIdForTrustBackedAssetsConvert::<
-			TrustBackedAssetsPalletLocation,
-		>::convert_back(&local_asset_id)
-		.unwrap();
-		let asset: MultiAsset = (Concrete(asset_id_location), minimum_asset_balance * 2).into();
-
-		let assets = xcm::VersionedMultiAssets::V3(asset.into());
+		let assets = xcm::VersionedMultiAssets::from(MultiAssets::from(asset));
 		let destination =
-			xcm::VersionedMultiLocation::V3(desired_bridged_location.target_destination);
+			xcm::VersionedMultiLocation::from(desired_bridged_location.target_destination);
 
 		Some((RuntimeOrigin::signed(sender_account), assets, destination))
 	}
