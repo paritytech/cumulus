@@ -42,8 +42,8 @@ pub use frame_support::{
 	dispatch::DispatchClass,
 	match_types, parameter_types,
 	traits::{
-		AsEnsureOriginWithArg, ConstU32, ConstU64, ConstU8, EitherOfDiverse, Everything, IsInVec,
-		Nothing, Randomness,
+		AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse, Everything,
+		IsInVec, Nothing, Randomness,
 	},
 	weights::{
 		constants::{
@@ -321,7 +321,11 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	ConvertedConcreteId<
 		AssetIdForTrustBackedAssets,
 		u64,
-		AsPrefixedGeneralIndex<StatemintAssetsPalletLocation, AssetIdForTrustBackedAssets, JustTry>,
+		AsPrefixedGeneralIndex<
+			SystemAssetHubAssetsPalletLocation,
+			AssetIdForTrustBackedAssets,
+			JustTry,
+		>,
 		JustTry,
 	>,
 	// Convert an XCM MultiLocation into a local account id:
@@ -370,11 +374,13 @@ parameter_types! {
 }
 
 match_types! {
+	// The parent or the parent's unit plurality.
 	pub type ParentOrParentsUnitPlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Unit, .. }) }
 	};
-	pub type Statemint: impl Contains<MultiLocation> = {
+	// The location recognized as the Relay network's Asset Hub.
+	pub type AssetHub: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: X1(Parachain(1000)) }
 	};
 }
@@ -382,9 +388,10 @@ match_types! {
 pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<Everything>,
+	// Parent & its unit plurality gets free execution.
 	AllowExplicitUnpaidExecutionFrom<ParentOrParentsUnitPlurality>,
-	// ^^^ Parent & its unit plurality gets free execution
-	AllowExplicitUnpaidExecutionFrom<Statemint>,
+	// The network's Asset Hub gets free execution.
+	AllowExplicitUnpaidExecutionFrom<AssetHub>,
 	// Expected responses are OK.
 	AllowKnownQueryResponses<PolkadotXcm>,
 	// Subscriptions for version tracking are OK.
@@ -393,14 +400,14 @@ pub type Barrier = (
 
 parameter_types! {
 	pub MaxAssetsIntoHolding: u32 = 64;
-	pub StatemintLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
+	pub SystemAssetHubLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
 	// ALWAYS ensure that the index in PalletInstance stays up-to-date with
-	// Statemint's Assets pallet index
-	pub StatemintAssetsPalletLocation: MultiLocation =
+	// the Relay Chain's Asset Hub's Assets pallet index
+	pub SystemAssetHubAssetsPalletLocation: MultiLocation =
 		MultiLocation::new(1, X2(Parachain(1000), PalletInstance(50)));
 }
 
-pub type Reserves = (NativeAsset, AssetsFrom<StatemintLocation>);
+pub type Reserves = (NativeAsset, AssetsFrom<SystemAssetHubLocation>);
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
@@ -428,6 +435,7 @@ impl xcm_executor::Config for XcmConfig {
 	type UniversalAliases = Nothing;
 	type CallDispatcher = RuntimeCall;
 	type SafeCallFilter = Everything;
+	type Aliasers = Nothing;
 }
 
 /// Local origins on this chain are allowed to dispatch XCM sends/executions.
@@ -546,6 +554,7 @@ impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
 	type MaxAuthorities = ConstU32<100_000>;
+	type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 construct_runtime! {

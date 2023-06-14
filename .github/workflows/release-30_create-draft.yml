@@ -34,8 +34,8 @@ jobs:
     steps:
       - id: get-rust-versions
         run: |
-          echo "::set-output name=stable::$(rustc +stable --version)"
-          echo "::set-output name=nightly::$(rustc +nightly --version)"
+          echo "stable=$(rustc +stable --version)" >> $GITHUB_OUTPUT
+          echo "nightly=$(rustc +nightly --version)" >> $GITHUB_OUTPUT
 
   # We do not skip the entire job for client builds (although we don't need it)
   # because it is a dep of the next job. However we skip the time consuming steps.
@@ -45,11 +45,11 @@ jobs:
        matrix:
         include:
           - category: assets
-            runtime: statemine
+            runtime: asset-hub-kusama
           - category: assets
-            runtime: statemint
+            runtime: asset-hub-polkadot
           - category: assets
-            runtime: westmint
+            runtime: asset-hub-westend
           - category: bridge-hubs
             runtime: bridge-hub-polkadot
           - category: bridge-hubs
@@ -68,7 +68,7 @@ jobs:
             runtime: rococo-parachain
     steps:
       - name: Checkout sources
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
         with:
           ref: ${{ github.event.inputs.ref2 }}
 
@@ -120,13 +120,13 @@ jobs:
       asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
       - name: Checkout sources
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
         with:
           fetch-depth: 0
           path: cumulus
           ref: ${{ github.event.inputs.ref2 }}
 
-      - uses: ruby/setup-ruby@8a45918450651f5e4784b6031db26f4b9f76b251 # v1.150.0
+      - uses: ruby/setup-ruby@bc1dd263b68cb5626dbb55d5c89777d79372c484 # v1.151.0
         with:
           ruby-version: 3.0.0
 
@@ -223,11 +223,11 @@ jobs:
        matrix:
         include:
           - category: assets
-            runtime: statemine
+            runtime: asset-hub-kusama
           - category: assets
-            runtime: statemint
+            runtime: asset-hub-polkadot
           - category: assets
-            runtime: westmint
+            runtime: asset-hub-westend
           - category: bridge-hubs
             runtime: bridge-hub-polkadot
           - category: bridge-hubs
@@ -246,14 +246,14 @@ jobs:
             runtime: rococo-parachain
     steps:
       - name: Checkout sources
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
         with:
           ref: ${{ github.event.inputs.ref2 }}
 
       - name: Download artifacts
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
 
-      - uses: ruby/setup-ruby@8a45918450651f5e4784b6031db26f4b9f76b251 # v1.150.0
+      - uses: ruby/setup-ruby@bc1dd263b68cb5626dbb55d5c89777d79372c484 # v1.151.0
         with:
           ruby-version: 3.0.0
 
@@ -267,7 +267,7 @@ jobs:
           ls "$RUNTIME_DIR/${{ matrix.category }}/${{ matrix.runtime }}"
           runtime_ver=$(ruby script.rb)
           echo "Found version: >$runtime_ver<"
-          echo "::set-output name=runtime_ver::$runtime_ver"
+          echo "runtime_ver=$runtime_ver" >> $GITHUB_OUTPUT
 
       - name: Fix runtime name
         id: fix-runtime-path

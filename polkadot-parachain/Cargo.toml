@@ -12,12 +12,12 @@ path = "src/main.rs"
 
 [dependencies]
 async-trait = "0.1.68"
-clap = { version = "4.3.0", features = ["derive"] }
+clap = { version = "4.3.3", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 futures = "0.3.28"
 hex-literal = "0.4.1"
-log = "0.4.17"
-serde = { version = "1.0.163", features = ["derive"] }
+log = "0.4.19"
+serde = { version = "1.0.164", features = ["derive"] }
 serde_json = "1.0.96"
 
 # Local
@@ -25,9 +25,9 @@ rococo-parachain-runtime = { path = "../parachains/runtimes/testing/rococo-parac
 shell-runtime = { path = "../parachains/runtimes/starters/shell" }
 glutton-runtime = { path = "../parachains/runtimes/glutton/glutton-kusama" }
 seedling-runtime = { path = "../parachains/runtimes/starters/seedling" }
-statemint-runtime = { path = "../parachains/runtimes/assets/statemint" }
-statemine-runtime = { path = "../parachains/runtimes/assets/statemine" }
-westmint-runtime = { path = "../parachains/runtimes/assets/westmint" }
+asset-hub-polkadot-runtime = { path = "../parachains/runtimes/assets/asset-hub-polkadot" }
+asset-hub-kusama-runtime = { path = "../parachains/runtimes/assets/asset-hub-kusama" }
+asset-hub-westend-runtime = { path = "../parachains/runtimes/assets/asset-hub-westend" }
 collectives-polkadot-runtime = { path = "../parachains/runtimes/collectives/collectives-polkadot" }
 contracts-rococo-runtime = { path = "../parachains/runtimes/contracts/contracts-rococo" }
 bridge-hub-rococo-runtime = { path = "../parachains/runtimes/bridge-hubs/bridge-hub-rococo" }
@@ -99,8 +99,8 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 [dev-dependencies]
 assert_cmd = "2.0"
 nix = { version = "0.26.1", features = ["signal"] }
-tempfile = "3.5.0"
-tokio = { version = "1.28.1", features = ["macros", "time", "parking_lot"] }
+tempfile = "3.6.0"
+tokio = { version = "1.28.2", features = ["macros", "time", "parking_lot"] }
 wait-timeout = "0.2"
 # purge_chain_works works with rococo-local and needs to allow this
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", features = ["rococo-native"] }
@@ -109,9 +109,9 @@ polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "maste
 default = []
 runtime-benchmarks = [
 	"polkadot-service/runtime-benchmarks",
-	"statemint-runtime/runtime-benchmarks",
-	"statemine-runtime/runtime-benchmarks",
-	"westmint-runtime/runtime-benchmarks",
+	"asset-hub-polkadot-runtime/runtime-benchmarks",
+	"asset-hub-kusama-runtime/runtime-benchmarks",
+	"asset-hub-westend-runtime/runtime-benchmarks",
 	"bridge-hub-rococo-runtime/runtime-benchmarks",
 	"bridge-hub-kusama-runtime/runtime-benchmarks",
 	"bridge-hub-polkadot-runtime/runtime-benchmarks",
@@ -122,9 +122,9 @@ runtime-benchmarks = [
 	"penpal-runtime/runtime-benchmarks",
 ]
 try-runtime = [
-	"statemint-runtime/try-runtime",
-	"statemine-runtime/try-runtime",
-	"westmint-runtime/try-runtime",
+	"asset-hub-polkadot-runtime/try-runtime",
+	"asset-hub-kusama-runtime/try-runtime",
+	"asset-hub-westend-runtime/try-runtime",
 	"shell-runtime/try-runtime",
 	"try-runtime-cli/try-runtime",
 ]

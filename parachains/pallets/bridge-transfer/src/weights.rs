@@ -26,62 +26,11 @@ use sp_std::marker::PhantomData;
 pub trait WeightInfo {
 	/// Weight of the `transfer_asset_via_bridge` call.
 	fn transfer_asset_via_bridge() -> Weight;
-	/// Weight of the `ping_via_bridge` call.
-	fn ping_via_bridge() -> Weight;
-
-	/// Weight of the `add_exporter_config` call.
-	fn add_exporter_config() -> Weight;
-	/// Weight of the `remove_exporter_config` call.
-	fn remove_exporter_config() -> Weight;
-	/// Weight of the `update_exporter_config` call.
-	fn update_exporter_config() -> Weight;
-
-	/// Weight of the `add_universal_alias` call.
-	fn add_universal_alias() -> Weight;
-	/// Weight of the `remove_universal_alias` call.
-	fn remove_universal_alias() -> Weight;
-
-	/// Weight of the `add_reserve_location` call.
-	fn add_reserve_location() -> Weight;
-	/// Weight of the `remove_reserve_location` call.
-	fn remove_reserve_location() -> Weight;
 }
 
 // Zero weights to use in tests
 impl WeightInfo for () {
 	fn transfer_asset_via_bridge() -> Weight {
-		Weight::zero()
-	}
-
-	fn ping_via_bridge() -> Weight {
-		Weight::zero()
-	}
-
-	fn add_exporter_config() -> Weight {
-		Weight::zero()
-	}
-
-	fn remove_exporter_config() -> Weight {
-		Weight::zero()
-	}
-
-	fn update_exporter_config() -> Weight {
-		Weight::zero()
-	}
-
-	fn add_universal_alias() -> Weight {
-		Weight::zero()
-	}
-
-	fn remove_universal_alias() -> Weight {
-		Weight::zero()
-	}
-
-	fn add_reserve_location() -> Weight {
-		Weight::zero()
-	}
-
-	fn remove_reserve_location() -> Weight {
 		Weight::zero()
 	}
 }
