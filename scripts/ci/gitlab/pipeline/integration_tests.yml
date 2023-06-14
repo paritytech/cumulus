@@ -11,9 +11,9 @@ integration-tests-build-polkadot:
     GIT_STRATEGY: none
   script:
     # -------------for tests-----------------
-    - export CI_COMMIT_REF_NAME="release-parachains-v9380"
+    - export CI_COMMIT_REF_NAME="release-parachains-v9430"
     # ---------------------------------------
-    # transform v9380 to v0.9.380
+    # transform v9430 to v0.9.43
     - export VERSION=$(echo ${CI_COMMIT_REF_NAME} | cut -d "-" -f 3 | sed -e "s/\(.\)\(.\)\(...\)/\10.\2.\3/")
     - export BRANCH="it/release-${VERSION:0:-1}-fast-sudo"
     - echo $VERSION $BRANCH
