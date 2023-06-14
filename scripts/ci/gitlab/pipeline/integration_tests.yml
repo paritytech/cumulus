@@ -52,13 +52,13 @@ integration-tests-run:
     - mv artifacts/polkadot-parachain ./bin/
     - yarn global add @parity/parachains-integration-tests
     # - sleep 3600
-    # - ./scripts/parachains_integration_tests.sh
+    - ./scripts/parachains_integration_tests.sh
     # ---------- DEBUG -------------------
-    - export TEST_NAME="assets/asset-hub-kusama"
-    - mkdir -p logs/$TEST_NAME
-    - |
-      DEBUG=zombie::metrics parachains-integration-tests \
-        -m zombienet \
-        -c ./parachains/integration-tests/e2e/$TEST_NAME/config.toml \
-        -cl ./logs/$TEST_NAME/chains.log || sleep 7200
-    - sleep 7200
+    # - export TEST_NAME="assets/asset-hub-kusama"
+    # - mkdir -p logs/$TEST_NAME
+    # - |
+    #   DEBUG=zombie::metrics parachains-integration-tests \
+    #     -m zombienet \
+    #     -c ./parachains/integration-tests/e2e/$TEST_NAME/config.toml \
+    #     -cl ./logs/$TEST_NAME/chains.log || sleep 7200
+    # - sleep 7200
