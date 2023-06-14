@@ -2,7 +2,7 @@
 # Here are all jobs that are executed during "integration_stage" stage
 
 integration-tests-build-polkadot:
-  stage: integration-tests
+  stage: build
   extends:
     - .docker-env
     - .integration-tests-refs
@@ -61,3 +61,4 @@ integration-tests-run:
         -m zombienet \
         -c ./parachains/integration-tests/e2e/$TEST_NAME/config.toml \
         -cl ./logs/$TEST_NAME/chains.log || sleep 7200
+    - sleep 7200
