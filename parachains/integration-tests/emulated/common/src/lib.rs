@@ -5,7 +5,7 @@ pub use constants::{
 	bridge_hub_kusama, bridge_hub_polkadot, collectives, kusama, penpal, polkadot, statemine,
 	statemint,
 };
-use frame_support::{traits::Hooks, parameter_types, sp_io, sp_tracing};
+use frame_support::{parameter_types, sp_io, sp_tracing, traits::Hooks};
 pub use parachains_common::{AccountId, AuraId, Balance, BlockNumber, StatemintAuraId};
 pub use sp_core::{sr25519, storage::Storage, Get};
 use xcm::prelude::*;

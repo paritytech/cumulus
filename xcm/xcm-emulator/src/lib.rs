@@ -36,8 +36,9 @@ pub use cumulus_pallet_dmp_queue;
 pub use cumulus_pallet_parachain_system;
 pub use cumulus_pallet_xcmp_queue;
 pub use cumulus_primitives_core::{
-	self, relay_chain::{BlockNumber as RelayBlockNumber, HeadData}, DmpMessageHandler, ParaId,
-	PersistedValidationData, XcmpMessageHandler,
+	self,
+	relay_chain::{BlockNumber as RelayBlockNumber, HeadData},
+	DmpMessageHandler, ParaId, PersistedValidationData, XcmpMessageHandler,
 };
 pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
@@ -688,16 +689,16 @@ macro_rules! __impl_parachain {
 			}
 
 			fn prepare_for_xcmp() {
-				use $crate::NetworkComponent;
 				use sp_core::Encode;
 				use sp_runtime::testing::Header;
+				use $crate::NetworkComponent;
 
 				let para_id = Self::para_id();
 
 				<Self as TestExt>::ext_wrapper(|| {
-					use $crate::{Get, Hooks};
-					use sp_runtime::traits::BlakeTwo256;
 					use polkadot_primitives::HashT;
+					use sp_runtime::traits::BlakeTwo256;
+					use $crate::{Get, Hooks};
 
 					// Get parent head data
 					let mut parent_head_data = {
@@ -708,14 +709,22 @@ macro_rules! __impl_parachain {
 
 					let block_number: u32 = 1;
 
-					<Self as Parachain>::System::initialize(&block_number, &parent_hash, &Default::default());
+					<Self as Parachain>::System::initialize(
+						&block_number,
+						&parent_hash,
+						&Default::default(),
+					);
 
 					// set `AnnouncedHrmpMessagesPerCandidate`
 					<Self as Parachain>::ParachainSystem::on_initialize(block_number);
 
 					let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
 						<Self as Parachain>::RuntimeOrigin::none(),
-						Self::hrmp_channel_parachain_inherent_data(para_id.into(), block_number, parent_head_data),
+						Self::hrmp_channel_parachain_inherent_data(
+							para_id.into(),
+							block_number,
+							parent_head_data,
+						),
 					);
 
 					<Self as Parachain>::ParachainSystem::on_finalize(block_number);
