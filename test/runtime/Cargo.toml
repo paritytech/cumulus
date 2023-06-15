@@ -52,6 +52,7 @@ std = [
 	"pallet-glutton/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment/std",
+	"pallet-glutton/std",
 	"sp-api/std",
 	"sp-block-builder/std",
 	"sp-core/std",
