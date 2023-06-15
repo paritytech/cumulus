@@ -168,7 +168,7 @@ mod tests {
 	/// The `FEE_BOOST_PER_MESSAGE` constant is the value of this tip.
 	///
 	/// We want this tip to be large enough (delivery transactions with more messages = less
-	/// operational costs and faster bridge), so this value should be significant.
+	/// operational costs and a faster bridge), so this value should be significant.
 	const FEE_BOOST_PER_MESSAGE: Balance = constants::currency::UNITS;
 
 	#[test]
