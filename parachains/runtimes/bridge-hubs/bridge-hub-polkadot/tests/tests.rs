@@ -59,7 +59,7 @@ fn construct_extrinsic(
 		frame_system::CheckNonce::<Runtime>::from(0),
 		frame_system::CheckWeight::<Runtime>::new(),
 		pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(0),
-		BridgeRejectObsoleteHeadersAndMessages {},
+		BridgeRejectObsoleteHeadersAndMessages::default(),
 		bridge_hub_config::BridgeRefundBridgeHubKusamaMessages::default(),
 	);
 	let payload = SignedPayload::new(call.clone(), extra.clone()).unwrap();
@@ -176,7 +176,7 @@ fn handle_export_message_from_system_parachain_add_to_outbound_queue_works() {
 			}
 		}),
 		|| ExportMessage { network: Kusama, destination: X1(Parachain(1234)), xcm: Xcm(vec![]) },
-		bridge_hub_config::STATEMINT_TO_STATEMINE_LANE_ID
+		bridge_hub_config::ASSET_HUB_POLKADOT_TO_ASSET_HUB_KUSAMA_LANE_ID
 	)
 }
 
@@ -205,7 +205,7 @@ fn message_dispatch_routing_works() {
 				_ => None,
 			}
 		}),
-		bridge_hub_config::STATEMINT_TO_STATEMINE_LANE_ID,
+		bridge_hub_config::ASSET_HUB_POLKADOT_TO_ASSET_HUB_KUSAMA_LANE_ID,
 	)
 }
 
@@ -225,7 +225,7 @@ fn relayed_incoming_message_works() {
 		bp_bridge_hub_kusama::BRIDGE_HUB_KUSAMA_PARACHAIN_ID,
 		SIBLING_PARACHAIN_ID,
 		RuntimeNetwork::get(),
-		bridge_hub_config::STATEMINT_TO_STATEMINE_LANE_ID,
+		bridge_hub_config::ASSET_HUB_POLKADOT_TO_ASSET_HUB_KUSAMA_LANE_ID,
 	)
 }
 
@@ -246,7 +246,7 @@ pub fn complex_relay_extrinsic_works() {
 		SIBLING_PARACHAIN_ID,
 		bridge_hub_config::BridgeHubKusamaChainId::get(),
 		RuntimeNetwork::get(),
-		bridge_hub_config::STATEMINT_TO_STATEMINE_LANE_ID,
+		bridge_hub_config::ASSET_HUB_POLKADOT_TO_ASSET_HUB_KUSAMA_LANE_ID,
 		ExistentialDeposit::get(),
 		executive_init_block,
 		construct_and_apply_extrinsic,

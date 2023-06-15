@@ -63,7 +63,7 @@ pub type ToRococoBridgeHubMessagesDeliveryProof =
 pub type OnBridgeHubWococoBlobDispatcher =
 	BridgeBlobDispatcher<XcmRouter, BridgeHubWococoUniversalLocation>;
 
-/// Export XCM messages to be relayed to the otherside
+/// Export XCM messages to be relayed to the other side.
 pub type ToBridgeHubRococoHaulBlobExporter = HaulBlobExporter<
 	XcmBlobHaulerAdapter<ToBridgeHubRococoXcmBlobHauler>,
 	RococoGlobalConsensusNetwork,

@@ -44,13 +44,13 @@ parameter_types! {
 	pub const BridgeHubKusamaChainId: bp_runtime::ChainId = bp_runtime::BRIDGE_HUB_KUSAMA_CHAIN_ID;
 	pub KusamaGlobalConsensusNetwork: NetworkId = NetworkId::Kusama;
 	// see the `FEE_BOOST_PER_MESSAGE` constant to get the meaning of this value
-	pub PriorityBoostPerMessage: u64 = 17_554_285_714_285;
+	pub PriorityBoostPerMessage: u64 = 4_551_111_111_111;
 }
 
 /// Proof of messages, coming from BridgeHubKusama.
 pub type FromBridgeHubKusamaMessagesProof =
 	FromBridgedChainMessagesProof<bp_bridge_hub_kusama::Hash>;
-/// Messages delivery proof for BridgeHubKusama messages.
+/// Message delivery proof for `BridgeHubKusama` messages.
 pub type ToBridgeHubKusamaMessagesDeliveryProof =
 	FromBridgedChainMessagesDeliveryProof<bp_bridge_hub_kusama::Hash>;
 
@@ -58,7 +58,7 @@ pub type ToBridgeHubKusamaMessagesDeliveryProof =
 pub type OnThisChainBlobDispatcher<UniversalLocation> =
 	BridgeBlobDispatcher<XcmRouter, UniversalLocation>;
 
-/// Export XCM messages to be relayed to the otherside
+/// Export XCM messages to be relayed to the other side.
 pub type ToBridgeHubKusamaHaulBlobExporter = HaulBlobExporter<
 	XcmBlobHaulerAdapter<ToBridgeHubKusamaXcmBlobHauler>,
 	KusamaGlobalConsensusNetwork,
@@ -77,7 +77,7 @@ impl XcmBlobHauler for ToBridgeHubKusamaXcmBlobHauler {
 
 	fn xcm_lane() -> LaneId {
 		// TODO: rework once dynamic lanes are supported (https://github.com/paritytech/parity-bridges-common/issues/1760)
-		STATEMINT_TO_STATEMINE_LANE_ID
+		ASSET_HUB_POLKADOT_TO_ASSET_HUB_KUSAMA_LANE_ID
 	}
 }
 
@@ -140,10 +140,10 @@ bp_runtime::generate_static_str_provider!(BridgeRefundBridgeHubKusamaMessages);
 // TODO: rework once dynamic lanes are supported (https://github.com/paritytech/parity-bridges-common/issues/1760)
 //       now we support only StatemineToStatemint
 /// Lanes setup
-pub const STATEMINT_TO_STATEMINE_LANE_ID: LaneId = LaneId([0, 0, 0, 0]);
+pub const ASSET_HUB_POLKADOT_TO_ASSET_HUB_KUSAMA_LANE_ID: LaneId = LaneId([0, 0, 0, 0]);
 parameter_types! {
-	pub ActiveOutboundLanesToBridgeHubKusama: &'static [bp_messages::LaneId] = &[STATEMINT_TO_STATEMINE_LANE_ID];
-	pub const StatemintToStatemineMessageLane: bp_messages::LaneId = STATEMINT_TO_STATEMINE_LANE_ID;
+	pub ActiveOutboundLanesToBridgeHubKusama: &'static [bp_messages::LaneId] = &[ASSET_HUB_POLKADOT_TO_ASSET_HUB_KUSAMA_LANE_ID];
+	pub const StatemintToStatemineMessageLane: bp_messages::LaneId = ASSET_HUB_POLKADOT_TO_ASSET_HUB_KUSAMA_LANE_ID;
 }
 
 #[cfg(test)]
@@ -167,8 +167,8 @@ mod tests {
 	/// Economically, it is an equivalent of adding tip to the transaction with `N` messages.
 	/// The `FEE_BOOST_PER_MESSAGE` constant is the value of this tip.
 	///
-	/// We want this tip to be large enough (delivery transcations with more messages = less
-	/// operational costs and faster bridge), so this value should be significant.
+	/// We want this tip to be large enough (delivery transactions with more messages = less
+	/// operational costs and a faster bridge), so this value should be significant.
 	const FEE_BOOST_PER_MESSAGE: Balance = 5 * constants::currency::UNITS;
 
 	#[test]

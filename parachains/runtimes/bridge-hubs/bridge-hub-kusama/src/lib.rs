@@ -535,7 +535,7 @@ construct_runtime!(
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
 
-		// Bridging pallets
+		// Kusama<>Polkadot bridge pallets// Bridging pallets
 		BridgePolkadotGrandpa: pallet_bridge_grandpa::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 51,
 		BridgePolkadotParachain: pallet_bridge_parachains::<Instance1>::{Pallet, Call, Storage, Event<T>} = 52,
 		BridgePolkadotMessages: pallet_bridge_messages::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 53,
@@ -1081,7 +1081,7 @@ mod tests {
 			frame_system::CheckNonce::from(10),
 			frame_system::CheckWeight::new(),
 			pallet_transaction_payment::ChargeTransactionPayment::from(10),
-			BridgeRejectObsoleteHeadersAndMessages {},
+			BridgeRejectObsoleteHeadersAndMessages::default(),
 			BridgeRefundBridgeHubPolkadotMessages::default(),
 		);
 		use bp_bridge_hub_kusama::BridgeHubSignedExtension;
