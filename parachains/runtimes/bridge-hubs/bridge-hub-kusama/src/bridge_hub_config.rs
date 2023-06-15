@@ -58,7 +58,7 @@ pub type ToBridgeHubPolkadotMessagesDeliveryProof =
 pub type OnThisChainBlobDispatcher<UniversalLocation> =
 	BridgeBlobDispatcher<XcmRouter, UniversalLocation>;
 
-/// Export XCM messages to be relayed to the otherside
+/// Export XCM messages to be relayed to the other side.
 pub type ToBridgeHubPolkadotHaulBlobExporter = HaulBlobExporter<
 	XcmBlobHaulerAdapter<ToBridgeHubPolkadotXcmBlobHauler>,
 	PolkadotGlobalConsensusNetwork,
