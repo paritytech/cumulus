@@ -536,7 +536,7 @@ construct_runtime!(
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
 
-		// Bridging pallets
+		// Polkadot<>Kusama bridge pallets
 		BridgeKusamaGrandpa: pallet_bridge_grandpa::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 51,
 		BridgeKusamaParachain: pallet_bridge_parachains::<Instance1>::{Pallet, Call, Storage, Event<T>} = 52,
 		BridgeKusamaMessages: pallet_bridge_messages::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 53,
