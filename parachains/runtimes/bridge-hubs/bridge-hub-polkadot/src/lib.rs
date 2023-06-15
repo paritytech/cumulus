@@ -1082,7 +1082,7 @@ mod tests {
 			frame_system::CheckNonce::from(10),
 			frame_system::CheckWeight::new(),
 			pallet_transaction_payment::ChargeTransactionPayment::from(10),
-			BridgeRejectObsoleteHeadersAndMessages {},
+			BridgeRejectObsoleteHeadersAndMessages::default(),
 			BridgeRefundBridgeHubKusamaMessages::default(),
 		);
 		use bp_bridge_hub_polkadot::BridgeHubSignedExtension;
