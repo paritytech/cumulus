@@ -188,6 +188,7 @@ pub trait Parachain: XcmpMessageHandler + DmpMessageHandler {
 	type Balances;
 	type ParachainSystem;
 	type ParachainInfo;
+	type BridgeMessages;
 }
 
 // Relay Chain Implementation
@@ -434,6 +435,7 @@ macro_rules! decl_test_parachains {
 					Balances: $balances_pallet:path,
 					ParachainSystem: $parachain_system:path,
 					ParachainInfo: $parachain_info:path,
+					BridgeMessages: $bridge_messages:tt,
 				},
 				pallets_extra = {
 					$($pallet_name:ident: $pallet_path:path,)*
@@ -457,6 +459,7 @@ macro_rules! decl_test_parachains {
 				type Balances = $balances_pallet;
 				type ParachainSystem = $parachain_system;
 				type ParachainInfo = $parachain_info;
+				type BridgeMessages = $bridge_messages;
 			}
 
 			$crate::paste::paste! {

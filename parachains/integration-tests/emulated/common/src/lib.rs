@@ -93,6 +93,7 @@ decl_test_parachains! {
 			Balances: asset_hub_westend_runtime::Balances,
 			ParachainSystem: asset_hub_westend_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_westend_runtime::ParachainInfo,
+			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: asset_hub_westend_runtime::PolkadotXcm,
@@ -116,6 +117,7 @@ decl_test_parachains! {
 			Balances: asset_hub_polkadot_runtime::Balances,
 			ParachainSystem: asset_hub_polkadot_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
+			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
@@ -137,6 +139,7 @@ decl_test_parachains! {
 			Balances: penpal_runtime::Balances,
 			ParachainSystem: penpal_runtime::ParachainSystem,
 			ParachainInfo: penpal_runtime::ParachainInfo,
+			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
@@ -158,6 +161,7 @@ decl_test_parachains! {
 			Balances: penpal_runtime::Balances,
 			ParachainSystem: penpal_runtime::ParachainSystem,
 			ParachainInfo: penpal_runtime::ParachainInfo,
+			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
@@ -181,6 +185,7 @@ decl_test_parachains! {
 			Balances: asset_hub_kusama_runtime::Balances,
 			ParachainSystem: asset_hub_kusama_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_kusama_runtime::ParachainInfo,
+			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: asset_hub_kusama_runtime::PolkadotXcm,
@@ -203,6 +208,7 @@ decl_test_parachains! {
 			Balances: penpal_runtime::Balances,
 			ParachainSystem: penpal_runtime::ParachainSystem,
 			ParachainInfo: penpal_runtime::ParachainInfo,
+			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
@@ -224,12 +230,13 @@ decl_test_parachains! {
 			Balances: collectives_polkadot_runtime::Balances,
 			ParachainSystem: collectives_polkadot_runtime::ParachainSystem,
 			ParachainInfo: collectives_polkadot_runtime::ParachainInfo,
+			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: collectives_polkadot_runtime::PolkadotXcm,
 		}
 	},
-	pub struct BHKusama {
+	pub struct BridgeHubKusama {
 		genesis = bridge_hub_kusama::genesis(),
 		on_init = (),
 		runtime = {
@@ -244,12 +251,13 @@ decl_test_parachains! {
 			Balances: bridge_hub_kusama_runtime::Balances,
 			ParachainSystem: bridge_hub_kusama_runtime::ParachainSystem,
 			ParachainInfo:bridge_hub_kusama_runtime::ParachainInfo,
+			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: bridge_hub_kusama_runtime::PolkadotXcm,
 		}
 	},
-	pub struct BHPolkadot {
+	pub struct BridgeHubPolkadot {
 		genesis = bridge_hub_polkadot::genesis(),
 		on_init = (),
 		runtime = {
@@ -264,6 +272,7 @@ decl_test_parachains! {
 			Balances: bridge_hub_polkadot_runtime::Balances,
 			ParachainSystem: bridge_hub_polkadot_runtime::ParachainSystem,
 			ParachainInfo:bridge_hub_polkadot_runtime::ParachainInfo,
+			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: bridge_hub_polkadot_runtime::PolkadotXcm,
@@ -278,7 +287,7 @@ decl_test_networks! {
 			AssetHubPolkadot,
 			PenpalPolkadot,
 			Collectives,
-			BHPolkadot,
+			BridgeHubPolkadot,
 		],
 	},
 	pub struct KusamaMockNet {
@@ -286,7 +295,7 @@ decl_test_networks! {
 		parachains = vec![
 			AssetHubKusama,
 			PenpalKusama,
-			BHKusama,
+			BridgeHubKusama,
 		],
 	},
 	pub struct WestendMockNet {
@@ -330,9 +339,9 @@ parameter_types! {
 	pub CollectivesSender: AccountId = Collectives::account_id_of(ALICE);
 	pub CollectivesReceiver: AccountId = Collectives::account_id_of(BOB);
 	// Bridge Hub Polkadot
-	pub BHPolkadotSender: AccountId = BHPolkadot::account_id_of(ALICE);
-	pub BHPolkadotReceiver: AccountId = BHPolkadot::account_id_of(BOB);
+	pub BridgeHubPolkadotSender: AccountId = BridgeHubPolkadot::account_id_of(ALICE);
+	pub BridgeHubPolkadotReceiver: AccountId = BridgeHubPolkadot::account_id_of(BOB);
 	// Bridge Hub Kusama
-	pub BHKusamaSender: AccountId = BHKusama::account_id_of(ALICE);
-	pub BHKusamaReceiver: AccountId = BHKusama::account_id_of(BOB);
+	pub BridgeHubKusamaSender: AccountId = BridgeHubKusama::account_id_of(ALICE);
+	pub BridgeHubKusamaReceiver: AccountId = BridgeHubKusama::account_id_of(BOB);
 }
