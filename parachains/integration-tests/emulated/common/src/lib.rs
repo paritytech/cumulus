@@ -5,7 +5,7 @@ pub use constants::{
 	bridge_hub_kusama, bridge_hub_polkadot, collectives, kusama, penpal, polkadot, statemine,
 	statemint,
 };
-use frame_support::{parameter_types, sp_io, sp_tracing};
+use frame_support::{parameter_types, sp_io, sp_tracing, traits::Hooks};
 pub use parachains_common::{AccountId, AuraId, Balance, BlockNumber, StatemintAuraId};
 pub use sp_core::{sr25519, storage::Storage, Get};
 use xcm::prelude::*;
@@ -58,7 +58,9 @@ decl_test_parachains! {
 	// Polkadot
 	pub struct Statemint {
 		genesis = statemint::genesis(),
-		on_init = (),
+		on_init = {
+			statemint_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = {
 			Runtime: statemint_runtime::Runtime,
 			RuntimeOrigin: statemint_runtime::RuntimeOrigin,
@@ -79,7 +81,9 @@ decl_test_parachains! {
 	},
 	pub struct PenpalPolkadot {
 		genesis = penpal::genesis(penpal::PARA_ID),
-		on_init = (),
+		on_init = {
+			penpal_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = {
 			Runtime: penpal_runtime::Runtime,
 			RuntimeOrigin: penpal_runtime::RuntimeOrigin,
@@ -101,7 +105,9 @@ decl_test_parachains! {
 	// Kusama
 	pub struct Statemine {
 		genesis = statemine::genesis(),
-		on_init = (),
+		on_init = {
+			statemine_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = {
 			Runtime: statemine_runtime::Runtime,
 			RuntimeOrigin: statemine_runtime::RuntimeOrigin,
@@ -123,7 +129,9 @@ decl_test_parachains! {
 	},
 	pub struct PenpalKusama {
 		genesis = penpal::genesis(penpal::PARA_ID),
-		on_init = (),
+		on_init = {
+			penpal_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = {
 			Runtime: penpal_runtime::Runtime,
 			RuntimeOrigin: penpal_runtime::RuntimeOrigin,
@@ -144,7 +152,9 @@ decl_test_parachains! {
 	},
 	pub struct Collectives {
 		genesis = collectives::genesis(),
-		on_init = (),
+		on_init = {
+			collectives_polkadot_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = {
 			Runtime: collectives_polkadot_runtime::Runtime,
 			RuntimeOrigin: collectives_polkadot_runtime::RuntimeOrigin,
@@ -164,7 +174,9 @@ decl_test_parachains! {
 	},
 	pub struct BHKusama {
 		genesis = bridge_hub_kusama::genesis(),
-		on_init = (),
+		on_init = {
+			bridge_hub_kusama_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = {
 			Runtime: bridge_hub_kusama_runtime::Runtime,
 			RuntimeOrigin: bridge_hub_kusama_runtime::RuntimeOrigin,
@@ -184,7 +196,9 @@ decl_test_parachains! {
 	},
 	pub struct BHPolkadot {
 		genesis = bridge_hub_polkadot::genesis(),
-		on_init = (),
+		on_init = {
+			bridge_hub_polkadot_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = {
 			Runtime: bridge_hub_polkadot_runtime::Runtime,
 			RuntimeOrigin: bridge_hub_polkadot_runtime::RuntimeOrigin,
