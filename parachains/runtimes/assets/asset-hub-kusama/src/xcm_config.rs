@@ -530,6 +530,9 @@ pub mod bridging {
 		pub storage AssetHubPolkadotMaxFee: Option<MultiAsset> = Some((MultiLocation::parent(), 1_000_000).into());
 		pub DotLocation: MultiLocation =  MultiLocation::new(2, X1(GlobalConsensus(PolkadotNetwork::get())));
 
+		pub EthereumNetwork: NetworkId = NetworkId::Ethereum { chain_id: 15 };
+		pub EthereumLocation: MultiLocation = MultiLocation::new(2, X1(GlobalConsensus(EthereumNetwork::get()))); // TODO: Maybe registry address belongs here
+
 		// Setup bridges configuration
 		// (hard-coded version - on-chain configuration will come later as separate feature)
 		pub Bridges: BridgesConfig = BridgesConfigBuilder::default()
@@ -555,6 +558,23 @@ pub mod bridging {
 					))
 				)
 			)
+			.add_or_panic(
+				EthereumNetwork::get(),
+				BridgeConfig::new(
+					MaybePaidLocation {
+						location: BridgeHubKusama::get(),
+						maybe_fee: None,
+					}
+				).add_target_location(
+					MaybePaidLocation {
+						location: EthereumLocation::get(),
+						maybe_fee: None, // No fees supported for ethereum
+					},
+					Some(AssetFilter::ByMultiLocation({
+						MultiLocationFilter::default()
+							.add_starts_with(EthereumLocation::get())
+					})),
+				))
 			.build();
 
 		// Setup trusted bridged reserve locations
@@ -567,13 +587,21 @@ pub mod bridging {
 						// allow receive DOT
 						.add_equals(DotLocation::get())
 				)
+			),
+			(
+				EthereumLocation::get(),
+				AssetFilter::ByMultiLocation(
+					MultiLocationFilter::default()
+						.add_starts_with(EthereumLocation::get())
+				) // TODO: Change to registry contract address. For now accept any ethereum address.
 			)
 		];
 
 		/// Universal aliases
 		pub BridgedUniversalAliases: BTreeSet<(MultiLocation, Junction)> = BTreeSet::from_iter(
 			sp_std::vec![
-				(BridgeHubKusama::get(), GlobalConsensus(PolkadotNetwork::get()))
+				(BridgeHubKusama::get(), GlobalConsensus(PolkadotNetwork::get())),
+				(BridgeHubKusama::get(), GlobalConsensus(EthereumNetwork::get())),
 			]
 		);
 	}
