@@ -55,7 +55,7 @@ impl Chain for Parachain1 {
 	type Header = RegularParachainHeader;
 	type AccountId = u64;
 	type Balance = u64;
-	type Index = u64;
+	type Nonce = u64;
 	type Signature = MultiSignature;
 
 	fn max_extrinsic_size() -> u32 {
@@ -79,7 +79,7 @@ impl Chain for Parachain2 {
 	type Header = RegularParachainHeader;
 	type AccountId = u64;
 	type Balance = u64;
-	type Index = u64;
+	type Nonce = u64;
 	type Signature = MultiSignature;
 
 	fn max_extrinsic_size() -> u32 {
@@ -103,7 +103,7 @@ impl Chain for Parachain3 {
 	type Header = RegularParachainHeader;
 	type AccountId = u64;
 	type Balance = u64;
-	type Index = u64;
+	type Nonce = u64;
 	type Signature = MultiSignature;
 
 	fn max_extrinsic_size() -> u32 {
@@ -128,7 +128,7 @@ impl Chain for BigParachain {
 	type Header = BigParachainHeader;
 	type AccountId = u64;
 	type Balance = u64;
-	type Index = u64;
+	type Nonce = u64;
 	type Signature = MultiSignature;
 
 	fn max_extrinsic_size() -> u32 {
@@ -165,7 +165,7 @@ parameter_types! {
 
 impl frame_system::Config for TestRuntime {
 	type RuntimeOrigin = RuntimeOrigin;
-	type Index = u64;
+	type Nonce = u64;
 	type RuntimeCall = RuntimeCall;
 	type BlockNumber = TestNumber;
 	type Hash = H256;
@@ -270,7 +270,7 @@ impl Chain for TestBridgedChain {
 
 	type AccountId = AccountId;
 	type Balance = u32;
-	type Index = u32;
+	type Nonce = u32;
 	type Signature = sp_runtime::testing::TestSignature;
 
 	fn max_extrinsic_size() -> u32 {
@@ -301,7 +301,7 @@ impl Chain for OtherBridgedChain {
 
 	type AccountId = AccountId;
 	type Balance = u32;
-	type Index = u32;
+	type Nonce = u32;
 	type Signature = sp_runtime::testing::TestSignature;
 
 	fn max_extrinsic_size() -> u32 {

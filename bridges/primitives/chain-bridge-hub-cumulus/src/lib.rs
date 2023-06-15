@@ -18,7 +18,7 @@
 
 pub use bp_polkadot_core::{
 	AccountId, AccountInfoStorageMapKeyProvider, AccountPublic, Balance, BlockNumber, Hash, Hasher,
-	Hashing, Header, Index, Nonce, Perbill, Signature, SignedBlock, UncheckedExtrinsic,
+	Hashing, Header, Nonce, Perbill, Signature, SignedBlock, UncheckedExtrinsic,
 	EXTRA_STORAGE_PROOF_SIZE, TX_EXTRA_BYTES,
 };
 
@@ -136,7 +136,7 @@ pub type SignedExtra = (
 	CheckTxVersion,
 	CheckGenesis<Hash>,
 	CheckEra<Hash>,
-	CheckNonce<Index>,
+	CheckNonce<Nonce>,
 	CheckWeight,
 	ChargeTransactionPayment<Balance>,
 	BridgeRejectObsoleteHeadersAndMessages,
@@ -155,12 +155,12 @@ pub trait BridgeHubSignedExtension {
 		transaction_version: u32,
 		era: bp_runtime::TransactionEra<BlockNumber, Hash>,
 		genesis_hash: Hash,
-		nonce: Index,
+		nonce: Nonce,
 		tip: Balance,
 	) -> Self;
 
 	/// Return transaction nonce.
-	fn nonce(&self) -> Index;
+	fn nonce(&self) -> Nonce;
 
 	/// Return transaction tip.
 	fn tip(&self) -> Balance;
@@ -173,7 +173,7 @@ impl BridgeHubSignedExtension for SignedExtension {
 		transaction_version: u32,
 		era: bp_runtime::TransactionEra<BlockNumber, Hash>,
 		genesis_hash: Hash,
-		nonce: Index,
+		nonce: Nonce,
 		tip: Balance,
 	) -> Self {
 		GenericSignedExtension::new(
@@ -205,7 +205,7 @@ impl BridgeHubSignedExtension for SignedExtension {
 	}
 
 	/// Return transaction nonce.
-	fn nonce(&self) -> Index {
+	fn nonce(&self) -> Nonce {
 		self.payload.5 .0
 	}
 
