@@ -50,7 +50,7 @@ parameter_types! {
 /// Proof of messages, coming from BridgeHubPolkadot.
 pub type FromBridgeHubPolkadotMessagesProof =
 	FromBridgedChainMessagesProof<bp_bridge_hub_polkadot::Hash>;
-/// Messages delivery proof for BridgeHubPolkadot messages.
+/// Message delivery proof for `BridgeHubPolkadot` messages.
 pub type ToBridgeHubPolkadotMessagesDeliveryProof =
 	FromBridgedChainMessagesDeliveryProof<bp_bridge_hub_polkadot::Hash>;
 
