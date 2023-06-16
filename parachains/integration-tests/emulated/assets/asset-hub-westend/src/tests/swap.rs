@@ -7,8 +7,10 @@ fn swap_locally_on_chain_using_local_assets() {
 	const ASSET_ID: u32 = 1;
 
 	let asset_native = Box::new(MultiLocation { parents: 0, interior: Here });
-	let asset_one =
-		Box::new(MultiLocation { parents: 0, interior: X2(PalletInstance(50), GeneralIndex(ASSET_ID.into())) });
+	let asset_one = Box::new(MultiLocation {
+		parents: 0,
+		interior: X2(PalletInstance(50), GeneralIndex(ASSET_ID.into())),
+	});
 
 	AssetHubWestend::execute_with(|| {
 		type RuntimeEvent = <AssetHubWestend as Parachain>::RuntimeEvent;

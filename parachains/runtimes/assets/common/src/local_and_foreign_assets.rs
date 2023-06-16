@@ -26,8 +26,7 @@ use frame_support::{
 	},
 };
 use pallet_asset_conversion::MultiAssetIdConverter;
-use parachains_common::AssetIdForTrustBackedAssets;
-use parachains_common::AccountId;
+use parachains_common::{AccountId, AssetIdForTrustBackedAssets};
 use sp_runtime::{traits::MaybeEquivalence, DispatchResult};
 use sp_std::{boxed::Box, marker::PhantomData};
 use xcm::{latest::MultiLocation, opaque::lts::Junctions::Here};
