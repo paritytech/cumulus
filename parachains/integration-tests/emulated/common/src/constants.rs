@@ -246,7 +246,7 @@ pub mod westend {
 	}
 
 	pub fn genesis() -> Storage {
-		let genesis_config = westend_runtime::GenesisConfig {
+		let genesis_config = westend_runtime::RuntimeGenesisConfig {
 			system: westend_runtime::SystemConfig {
 				code: westend_runtime::WASM_BINARY.unwrap().to_vec(),
 			},
@@ -464,7 +464,7 @@ pub mod asset_hub_westend {
 	pub const ED: Balance = asset_hub_westend_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 	pub fn genesis() -> Storage {
-		let genesis_config = asset_hub_westend_runtime::GenesisConfig {
+		let genesis_config = asset_hub_westend_runtime::RuntimeGenesisConfig {
 			system: asset_hub_westend_runtime::SystemConfig {
 				code: asset_hub_westend_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
