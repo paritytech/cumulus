@@ -10,10 +10,10 @@ edition = "2021"
 build = "build.rs"
 
 [dependencies]
-clap = { version = "4.3.0", features = ["derive"] }
-log = "0.4.18"
+clap = { version = "4.3.4", features = ["derive"] }
+log = "0.4.19"
 codec = { package = "parity-scale-codec", version = "3.0.0" }
-serde = { version = "1.0.163", features = ["derive"] }
+serde = { version = "1.0.164", features = ["derive"] }
 jsonrpsee = { version = "0.16.2", features = ["server"] }
 
 # Local
@@ -72,7 +72,6 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 [features]
 default = []
 runtime-benchmarks = [
-	"try-runtime-cli/try-runtime",
 	"parachain-template-runtime/runtime-benchmarks",
 	"polkadot-cli/runtime-benchmarks",
 ]
