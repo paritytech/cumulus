@@ -400,6 +400,24 @@ impl pallet_utility::Config for Runtime {
 	type WeightInfo = weights::pallet_utility::WeightInfo<Runtime>;
 }
 
+parameter_types! {
+	/// Amount of weight that can be spent per block to service messages.
+	pub MessageQueueServiceWeight: Weight = Weight::from_parts(1_000_000_000, 1_000_000);
+	pub const MessageQueueHeapSize: u32 = 65_536;
+	pub const MessageQueueMaxStale: u32 = 16;
+}
+
+impl pallet_message_queue::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Size = u32;
+	type HeapSize = MessageQueueHeapSize;
+	type MaxStale = MessageQueueMaxStale;
+	type ServiceWeight = MessageQueueServiceWeight;
+	type MessageProcessor = EthereumOutboundQueue;
+	type QueueChangeHandler = ();
+	type WeightInfo = ();
+}
+
 // Add bridge pallets (GPA)
 
 /// Add GRANDPA bridge pallet to track Wococo relay chain on Rococo BridgeHub
@@ -549,8 +567,6 @@ impl pallet_bridge_relayers::Config for Runtime {
 
 // Ethereum Bridge
 
-use snowbridge_router_primitives::InboundMessageConverter;
-
 parameter_types! {
 	pub const EthereumNetwork: xcm::v3::NetworkId = xcm::v3::NetworkId::Ethereum { chain_id: 1 };
 }
@@ -564,21 +580,21 @@ impl snowbridge_inbound_queue::Config for Runtime {
 	type Token = Balances;
 	type Reward = Reward;
 	type Verifier = snowbridge_ethereum_beacon_client::Pallet<Runtime>;
-	type MessageConversion = InboundMessageConverter<EthereumNetwork>;
 	type XcmSender = XcmRouter;
 	type WeightInfo = ();
 }
 
 parameter_types! {
 	pub const MaxMessagePayloadSize: u32 = 256;
-	pub const MaxMessagesPerCommit: u32 = 20;
+	pub const MaxMessagesPerBlock: u32 = 32;
 }
 
 impl snowbridge_outbound_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Hashing = Keccak256;
+	type MessageQueue = MessageQueue;
 	type MaxMessagePayloadSize = MaxMessagePayloadSize;
-	type MaxMessagesPerCommit = MaxMessagesPerCommit;
+	type MaxMessagesPerBlock = MaxMessagesPerBlock;
 	type WeightInfo = ();
 }
 
@@ -635,6 +651,19 @@ impl snowbridge_ethereum_beacon_client::Config for Runtime {
 	type WeightInfo = weights::snowbridge_ethereum_beacon_client::WeightInfo<Runtime>;
 }
 
+parameter_types! {
+	pub const GovernanceProxyContract: snowbridge_core::ContractId = snowbridge_core::ContractId::new(hex_literal::hex!("44bef07c29162ad04096f5cbe78ca2df62dffe97cea85825f08d13319e13f34a"));
+}
+
+impl snowbridge_control::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type OwnParaId = ParachainInfo;
+	type OutboundQueue = EthereumOutboundQueue;
+	type GovernanceProxyContract = GovernanceProxyContract;
+	type MessageHasher = BlakeTwo256;
+	type WeightInfo = ();
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -689,8 +718,13 @@ construct_runtime!(
 
 		// Ethereum Bridge
 		EthereumInboundQueue: snowbridge_inbound_queue::{Pallet, Call, Config, Storage, Event<T>} = 48,
-		EthereumOutboundQueue: snowbridge_outbound_queue::{Pallet, Config<T>, Storage, Event<T>} = 49,
+		EthereumOutboundQueue: snowbridge_outbound_queue::{Pallet, Storage, Event<T>} = 49,
 		EthereumBeaconClient: snowbridge_ethereum_beacon_client::{Pallet, Call, Storage, Event<T>} = 50,
+		EthereumControl: snowbridge_control::{Pallet, Call, Storage, Event<T>} = 51,
+
+		// Message Queue. Registered after EthereumOutboundQueue so that their `on_initialize` handlers
+		// run in the desired order.
+		MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>} = 60,
 	}
 );
 
@@ -714,6 +748,7 @@ mod benches {
 		[frame_system, SystemBench::<Runtime>]
 		[pallet_balances, Balances]
 		[pallet_multisig, Multisig]
+		[pallet_message_queue, MessageQueue]
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_utility, Utility]
 		[pallet_timestamp, Timestamp]
@@ -966,6 +1001,12 @@ impl_runtime_apis! {
 				Runtime,
 				WithBridgeHubRococoMessagesInstance,
 			>(lane, begin, end)
+		}
+	}
+
+	impl snowbridge_outbound_queue_runtime_api::OutboundQueueApi<Block> for Runtime {
+		fn prove_message(leaf_index: u64) -> Option<snowbridge_outbound_queue::MerkleProof> {
+			snowbridge_outbound_queue::api::prove_message::<Runtime>(leaf_index)
 		}
 	}
 

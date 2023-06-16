@@ -28,6 +28,7 @@ pallet-aura = { git = "https://github.com/paritytech/substrate", default-feature
 pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-message-queue = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-multisig = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -89,11 +90,14 @@ bridge-runtime-common = { path = "../../../../bridges/bin/runtime-common", defau
 
 # Ethereum Bridge (Snowbridge)
 snowbridge-core = { path = "../../../../../parachain/primitives/core", default-features = false }
-snowbridge-beacon-primitives = { path = "../../../../../parachain/primitives/beacon", default-features = false }
 snowbridge-router-primitives = { path = "../../../../../parachain/primitives/router", default-features = false }
+snowbridge-beacon-primitives = { path = "../../../../../parachain/primitives/beacon", default-features = false }
 snowbridge-inbound-queue = { path = "../../../../../parachain/pallets/inbound-queue", default-features = false }
 snowbridge-outbound-queue = { path = "../../../../../parachain/pallets/outbound-queue", default-features = false }
+snowbridge-outbound-queue-runtime-api = { path = "../../../../../parachain/pallets/outbound-queue/runtime-api", default-features = false }
 snowbridge-ethereum-beacon-client = { path = "../../../../../parachain/pallets/ethereum-beacon-client", default-features = false }
+snowbridge-control = { path = "../../../../../parachain/pallets/control", default-features = false }
+
 
 [dev-dependencies]
 static_assertions = "1.1"
@@ -141,6 +145,7 @@ std = [
 	"pallet-bridge-parachains/std",
 	"pallet-bridge-relayers/std",
 	"pallet-collator-selection/std",
+	"pallet-message-queue/std",
 	"pallet-multisig/std",
 	"pallet-session/std",
 	"pallet-timestamp/std",
@@ -170,11 +175,13 @@ std = [
 	"xcm-executor/std",
 	"xcm/std",
 	"snowbridge-core/std",
-	"snowbridge-beacon-primitives/std",
 	"snowbridge-router-primitives/std",
+	"snowbridge-beacon-primitives/std",
 	"snowbridge-inbound-queue/std",
 	"snowbridge-outbound-queue/std",
+	"snowbridge-outbound-queue-runtime-api/std",
 	"snowbridge-ethereum-beacon-client/std",
+	"snowbridge-control/std",
 	"substrate-wasm-builder",
 ]
 
@@ -190,6 +197,7 @@ runtime-benchmarks = [
 	"pallet-bridge-parachains/runtime-benchmarks",
 	"pallet-bridge-relayers/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
+	"pallet-message-queue/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
 	"cumulus-pallet-parachain-system/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
@@ -223,6 +231,7 @@ try-runtime = [
 	"pallet-authorship/try-runtime",
 	"pallet-balances/try-runtime",
 	"pallet-collator-selection/try-runtime",
+	"pallet-message-queue/try-runtime",
 	"pallet-multisig/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-timestamp/try-runtime",

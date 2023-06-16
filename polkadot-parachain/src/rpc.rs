@@ -63,7 +63,6 @@ where
 {
 	use frame_rpc_system::{System, SystemApiServer};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
-	use snowbridge_outbound_queue_rpc::{OutboundQueue, OutboundQueueApiServer};
 	use substrate_state_trie_migration_rpc::{StateMigration, StateMigrationApiServer};
 
 	let mut module = RpcExtension::new(());
@@ -72,13 +71,6 @@ where
 	module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 	module.merge(StateMigration::new(client, backend.clone(), deny_unsafe).into_rpc())?;
-
-	if let Some(outbound_queue_rpc) = backend
-		.offchain_storage()
-		.map(|storage| OutboundQueue::<B::OffchainStorage>::new(storage).into_rpc())
-	{
-		module.merge(outbound_queue_rpc)?;
-	}
 
 	Ok(module)
 }

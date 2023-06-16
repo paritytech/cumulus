@@ -22,8 +22,7 @@ use super::{
 };
 use crate::{
 	bridge_hub_rococo_config::ToBridgeHubWococoHaulBlobExporter,
-	bridge_hub_wococo_config::ToBridgeHubRococoHaulBlobExporter,
-	EthereumNetwork,
+	bridge_hub_wococo_config::ToBridgeHubRococoHaulBlobExporter, EthereumNetwork,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -34,7 +33,7 @@ use pallet_xcm::XcmPassthrough;
 use parachains_common::{impls::ToStakingPot, xcm_config::ConcreteNativeAssetFrom};
 use polkadot_parachain::primitives::Sibling;
 use snowbridge_outbound_queue;
-use snowbridge_router_primitives::export::EthereumBlobExporter;
+use snowbridge_router_primitives::outbound::EthereumBlobExporter;
 use sp_core::Get;
 use xcm::latest::prelude::*;
 use xcm_builder::{

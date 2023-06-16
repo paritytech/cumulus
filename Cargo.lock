@@ -1412,6 +1412,7 @@ dependencies = [
  "pallet-bridge-parachains",
  "pallet-bridge-relayers",
  "pallet-collator-selection",
+ "pallet-message-queue",
  "pallet-multisig",
  "pallet-session",
  "pallet-timestamp",
@@ -1431,10 +1432,12 @@ dependencies = [
  "serde",
  "smallvec",
  "snowbridge-beacon-primitives",
+ "snowbridge-control",
  "snowbridge-core",
  "snowbridge-ethereum-beacon-client",
  "snowbridge-inbound-queue",
  "snowbridge-outbound-queue",
+ "snowbridge-outbound-queue-runtime-api",
  "snowbridge-router-primitives",
  "sp-api",
  "sp-block-builder",
@@ -9974,7 +9977,6 @@ dependencies = [
  "serde",
  "serde_json",
  "shell-runtime",
- "snowbridge-outbound-queue-rpc",
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
@@ -13309,6 +13311,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "snowbridge-control"
+version = "4.0.0-dev"
+dependencies = [
+ "ethabi-decode",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "snowbridge-core",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+]
+
+[[package]]
 name = "snowbridge-core"
 version = "0.1.1"
 dependencies = [
@@ -13322,6 +13342,7 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std",
+ "xcm",
 ]
 
 [[package]]
@@ -13407,33 +13428,33 @@ dependencies = [
  "scale-info",
  "serde",
  "snowbridge-core",
- "snowbridge-outbound-queue-merkle-proof",
+ "snowbridge-outbound-queue-merkle-tree",
  "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "xcm",
 ]
 
 [[package]]
-name = "snowbridge-outbound-queue-merkle-proof"
+name = "snowbridge-outbound-queue-merkle-tree"
 version = "0.1.1"
 dependencies = [
  "parity-scale-codec",
+ "scale-info",
  "sp-core",
  "sp-runtime",
 ]
 
 [[package]]
-name = "snowbridge-outbound-queue-rpc"
+name = "snowbridge-outbound-queue-runtime-api"
 version = "0.1.0"
 dependencies = [
- "jsonrpsee",
  "parity-scale-codec",
- "parking_lot 0.11.2",
- "snowbridge-outbound-queue-merkle-proof",
+ "snowbridge-outbound-queue-merkle-tree",
+ "sp-api",
  "sp-core",
- "sp-offchain",
- "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -13443,6 +13464,7 @@ dependencies = [
  "ethabi-decode",
  "frame-support",
  "frame-system",
+ "hex-literal 0.4.1",
  "parity-scale-codec",
  "scale-info",
  "serde",
