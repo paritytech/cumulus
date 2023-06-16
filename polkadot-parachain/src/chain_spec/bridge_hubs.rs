@@ -221,7 +221,7 @@ pub mod rococo {
 
 	/// Specialized `ChainSpec` for the normal parachain runtime.
 	pub type BridgeHubChainSpec =
-		sc_service::GenericChainSpec<bridge_hub_rococo_runtime::GenesisConfig, Extensions>;
+		sc_service::GenericChainSpec<bridge_hub_rococo_runtime::RuntimeGenesisConfig, Extensions>;
 
 	pub type RuntimeApi = bridge_hub_rococo_runtime::RuntimeApi;
 
@@ -293,8 +293,8 @@ pub mod rococo {
 		endowed_accounts: Vec<AccountId>,
 		id: ParaId,
 		bridges_pallet_owner: Option<AccountId>,
-	) -> bridge_hub_rococo_runtime::GenesisConfig {
-		bridge_hub_rococo_runtime::GenesisConfig {
+	) -> bridge_hub_rococo_runtime::RuntimeGenesisConfig {
+		bridge_hub_rococo_runtime::RuntimeGenesisConfig {
 			system: bridge_hub_rococo_runtime::SystemConfig {
 				code: bridge_hub_rococo_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
@@ -396,7 +396,7 @@ pub mod kusama {
 
 	/// Specialized `ChainSpec` for the normal parachain runtime.
 	pub type BridgeHubChainSpec =
-		sc_service::GenericChainSpec<bridge_hub_kusama_runtime::GenesisConfig, Extensions>;
+		sc_service::GenericChainSpec<bridge_hub_kusama_runtime::RuntimeGenesisConfig, Extensions>;
 	pub type RuntimeApi = bridge_hub_kusama_runtime::RuntimeApi;
 
 	pub fn local_config(
@@ -464,8 +464,8 @@ pub mod kusama {
 		endowed_accounts: Vec<AccountId>,
 		id: ParaId,
 		bridges_pallet_owner: Option<AccountId>,
-	) -> bridge_hub_kusama_runtime::GenesisConfig {
-		bridge_hub_kusama_runtime::GenesisConfig {
+	) -> bridge_hub_kusama_runtime::RuntimeGenesisConfig {
+		bridge_hub_kusama_runtime::RuntimeGenesisConfig {
 			system: bridge_hub_kusama_runtime::SystemConfig {
 				code: bridge_hub_kusama_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
@@ -541,7 +541,7 @@ pub mod polkadot {
 
 	/// Specialized `ChainSpec` for the normal parachain runtime.
 	pub type BridgeHubChainSpec =
-		sc_service::GenericChainSpec<bridge_hub_polkadot_runtime::GenesisConfig, Extensions>;
+		sc_service::GenericChainSpec<bridge_hub_polkadot_runtime::RuntimeGenesisConfig, Extensions>;
 	pub type RuntimeApi = bridge_hub_polkadot_runtime::RuntimeApi;
 
 	pub fn local_config(
@@ -609,8 +609,8 @@ pub mod polkadot {
 		endowed_accounts: Vec<AccountId>,
 		id: ParaId,
 		bridges_pallet_owner: Option<AccountId>,
-	) -> bridge_hub_polkadot_runtime::GenesisConfig {
-		bridge_hub_polkadot_runtime::GenesisConfig {
+	) -> bridge_hub_kusama_runtime::RuntimeGenesisConfig {
+		bridge_hub_kusama_runtime::RuntimeGenesisConfig {
 			system: bridge_hub_polkadot_runtime::SystemConfig {
 				code: bridge_hub_polkadot_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
