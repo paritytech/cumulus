@@ -221,6 +221,6 @@ fn testnet_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 		transaction_payment: Default::default(),
-		sudo: parachain_template_runtime::SudoConfig { key: root },
+		sudo: parachain_template_runtime::SudoConfig { key: Some(root) },
 	}
 }
