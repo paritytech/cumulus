@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Auxiliary struct/enums for parachain runtimes.
-//! Taken from polkadot/runtime/common (at a21cd64) and adapted for parachains.
 use crate::local_and_foreign_assets::fungibles::Inspect;
 use cumulus_primitives_core::InteriorMultiLocation;
 use frame_support::{
@@ -29,7 +27,6 @@ use frame_support::{
 };
 use pallet_asset_conversion::MultiAssetIdConverter;
 use parachains_common::AssetIdForTrustBackedAssets;
-// use polkadot_primitives::AccountId;
 use parachains_common::AccountId;
 use sp_runtime::{traits::MaybeEquivalence, DispatchResult};
 use sp_std::{boxed::Box, marker::PhantomData};

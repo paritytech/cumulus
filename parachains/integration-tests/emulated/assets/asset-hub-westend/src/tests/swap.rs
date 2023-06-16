@@ -8,10 +8,10 @@ fn swap_locally_on_chain_using_local_assets() {
 
 	let asset_native = Box::new(MultiLocation { parents: 0, interior: Here });
 	let asset_one =
-		Box::new(MultiLocation { parents: 0, interior: X2(PalletInstance(50), GeneralIndex(1)) });
+		Box::new(MultiLocation { parents: 0, interior: X2(PalletInstance(50), GeneralIndex(ASSET_ID.into())) });
 
 	AssetHubWestend::execute_with(|| {
-		use asset_hub_westend_runtime::RuntimeEvent;
+		type RuntimeEvent = <AssetHubWestend as Parachain>::RuntimeEvent;
 
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::Assets::create(
 			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
@@ -104,7 +104,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		interior: X3(
 			Parachain(PenpalWestend::para_id().into()),
 			PalletInstance(50),
-			GeneralIndex(1),
+			GeneralIndex(ASSET_ID.into()),
 		),
 	});
 
@@ -190,9 +190,6 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 		type RuntimeEvent = <PenpalWestend as Parachain>::RuntimeEvent;
 
-		PenpalWestend::events().iter().for_each(|event| {
-			println!("penpal {:?}", event);
-		});
 		assert_expected_events!(
 			PenpalWestend,
 			vec![
@@ -203,9 +200,6 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 	// Receive XCM message in Assets Parachain
 	AssetHubWestend::execute_with(|| {
-		AssetHubWestend::events().iter().for_each(|event| {
-			println!("asset_hub_westend {:?}", event);
-		});
 		assert!(<AssetHubWestend as AssetHubWestendPallet>::ForeignAssets::asset_exists(
 			*foreign_asset1_at_asset_hub_westend
 		));
@@ -215,7 +209,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		// (While it might be nice to use batch,
 		// currently that's disabled due to safe call filters.)
 
-		use asset_hub_westend_runtime::RuntimeEvent;
+		type RuntimeEvent = <AssetHubWestend as Parachain>::RuntimeEvent;
 		// 3. Mint foreign asset (in reality this should be a teleport or some such)
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::ForeignAssets::mint(
 			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(

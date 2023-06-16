@@ -267,8 +267,6 @@ ord_parameter_types! {
 	pub const AssetConversionOrigin: sp_runtime::AccountId32 = AccountIdConversion::<sp_runtime::AccountId32>::into_account_truncating(&AssetConversionPalletId::get());
 }
 
-const MAX_SWAP_PATH_LEN: u32 = 4;
-
 pub type PoolAssetsInstance = pallet_assets::Instance3;
 impl pallet_assets::Config<PoolAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -310,7 +308,7 @@ impl pallet_asset_conversion::Config for Runtime {
 	type LPFee = ConstU32<3>;
 	type PalletId = AssetConversionPalletId;
 	type AllowMultiAssetPools = AllowMultiAssetPools;
-	type MaxSwapPathLength = ConstU32<MAX_SWAP_PATH_LEN>;
+	type MaxSwapPathLength = ConstU32<4>;
 
 	type MultiAssetId = Box<MultiLocation>;
 	type MultiAssetIdConverter = MultiLocationConverter<Balances, UniversalLocation>;
