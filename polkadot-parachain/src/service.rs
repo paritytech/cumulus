@@ -198,6 +198,7 @@ impl sc_executor::NativeExecutionDispatch for BridgeHubRococoRuntimeExecutor {
 /// Native contracts executor instance.
 pub struct ContractsRococoRuntimeExecutor;
 
+#[cfg(feature = "contracts-runtime")]
 impl sc_executor::NativeExecutionDispatch for ContractsRococoRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -1503,6 +1504,7 @@ where
 	Ok((task_manager, client))
 }
 
+#[cfg(feature = "contracts-runtime")]
 #[allow(clippy::type_complexity)]
 pub fn contracts_rococo_build_import_queue(
 	client: Arc<ParachainClient<contracts_rococo_runtime::RuntimeApi>>,
@@ -1545,6 +1547,7 @@ pub fn contracts_rococo_build_import_queue(
 }
 
 /// Start a parachain node.
+#[cfg(feature = "contracts-runtime")]
 pub async fn start_contracts_rococo_node(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,

@@ -237,15 +237,24 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		),
 
 		// -- Contracts on Rococo
-		"contracts-rococo-dev" =>
-			Box::new(chain_spec::contracts::contracts_rococo_development_config()),
-		"contracts-rococo-local" =>
-			Box::new(chain_spec::contracts::contracts_rococo_local_config()),
-		"contracts-rococo-genesis" => Box::new(chain_spec::contracts::contracts_rococo_config()),
-		"contracts-rococo" =>
+		"contracts-rococo-dev" => ensure_feature!(
+			"contracts-runtime",
+			Box::new(chain_spec::contracts::contracts_rococo_development_config())
+		),
+		"contracts-rococo-local" => ensure_feature!(
+			"contracts-runtime",
+			Box::new(chain_spec::contracts::contracts_rococo_local_config())
+		),
+		"contracts-rococo-genesis" => ensure_feature!(
+			"contracts-runtime",
+			Box::new(chain_spec::contracts::contracts_rococo_config())
+		),
+		"contracts-rococo" => ensure_feature!(
+			"contracts-runtime",
 			Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/contracts-rococo.json")[..],
-			)?),
+			)?)
+		),
 
 		// -- BridgeHub
 		bridge_like_id
@@ -334,8 +343,12 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 					"seedling-runtime",
 					Box::new(chain_spec::seedling::SeedlingChainSpec::from_json_file(path)?)
 				),
-				Runtime::ContractsRococo =>
-					Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_file(path)?),
+				Runtime::ContractsRococo => ensure_feature!(
+					"contracts-runtime",
+					Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_file(
+						path
+					)?)
+				),
 				Runtime::BridgeHub(bridge_hub_runtime_type) =>
 					bridge_hub_runtime_type.chain_spec_from_json_file(path)?,
 				Runtime::Penpal(_para_id) => ensure_feature!(
@@ -434,7 +447,8 @@ impl SubstrateCli for Cli {
 				ensure_feature!("collectives-runtime", &collectives_polkadot_runtime::VERSION),
 			Runtime::Shell => ensure_feature!("shell-runtime", &shell_runtime::VERSION),
 			Runtime::Seedling => ensure_feature!("seedling-runtime", &seedling_runtime::VERSION),
-			Runtime::ContractsRococo => &contracts_rococo_runtime::VERSION,
+			Runtime::ContractsRococo =>
+				ensure_feature!("contracts-runtime", &contracts_rococo_runtime::VERSION),
 			Runtime::BridgeHub(bridge_hub_runtime_type) =>
 				bridge_hub_runtime_type.runtime_version(),
 			Runtime::Penpal(_) => ensure_feature!("penpal_runtime", &penpal_runtime::VERSION),
@@ -594,14 +608,14 @@ macro_rules! construct_async_run {
 				}))
 			},
 			Runtime::ContractsRococo => {
-				runner.async_run(|$config| {
+				::cumulus_client_cli::ensure_feature!("contracts-runtime", runner.async_run(|$config| {
 					let $components = new_partial::<contracts_rococo_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::contracts_rococo_build_import_queue,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
-				})
+				}))
 			},
 			Runtime::BridgeHub(bridge_hub_runtime_type) => {
 				 match bridge_hub_runtime_type {
@@ -860,37 +874,48 @@ pub fn run() -> Result<()> {
 			let info_provider = timestamp_with_aura_info(6000);
 
 			match runner.config().chain_spec.runtime() {
-				Runtime::AssetHubKusama => ensure_feature!("asset-hub-kusama-runtime", runner.async_run(|_| {
-					Ok((
-						cmd.run::<Block, HostFunctionsOf<AssetHubKusamaExecutor>, _>(Some(
-							info_provider,
-						)),
-						task_manager,
-					))
-				})),
-				Runtime::AssetHubWestend => ensure_feature!("asset-hub-westend-runtime", runner.async_run(|_| {
-					Ok((
-						cmd.run::<Block, HostFunctionsOf<AssetHubWestendExecutor>, _>(Some(
-							info_provider,
-						)),
-						task_manager,
-					))
-				})),
-				Runtime::AssetHubPolkadot => ensure_feature!("asset-hub-polkadot-runtime", runner.async_run(|_| {
-					Ok((
-						cmd.run::<Block, HostFunctionsOf<AssetHubPolkadotRuntimeExecutor>, _>(Some(
-							info_provider,
-						)),
-						task_manager,
-					))
-				})),
-				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
-					ensure_feature!("collectives-runtime", runner.async_run(|_| {
+				Runtime::AssetHubKusama => ensure_feature!(
+					"asset-hub-kusama-runtime",
+					runner.async_run(|_| {
+						Ok((
+							cmd.run::<Block, HostFunctionsOf<AssetHubKusamaExecutor>, _>(Some(
+								info_provider,
+							)),
+							task_manager,
+						))
+					})
+				),
+				Runtime::AssetHubWestend => ensure_feature!(
+					"asset-hub-westend-runtime",
+					runner.async_run(|_| {
+						Ok((
+							cmd.run::<Block, HostFunctionsOf<AssetHubWestendExecutor>, _>(Some(
+								info_provider,
+							)),
+							task_manager,
+						))
+					})
+				),
+				Runtime::AssetHubPolkadot => ensure_feature!(
+					"asset-hub-polkadot-runtime",
+					runner.async_run(|_| {
+						Ok((
+							cmd.run::<Block, HostFunctionsOf<AssetHubPolkadotRuntimeExecutor>, _>(
+								Some(info_provider),
+							),
+							task_manager,
+						))
+					})
+				),
+				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => ensure_feature!(
+					"collectives-runtime",
+					runner.async_run(|_| {
 						Ok((
 							cmd.run::<Block, HostFunctionsOf<CollectivesPolkadotRuntimeExecutor>, _>(Some(info_provider)),
 							task_manager,
 						))
-					})),
+					})
+				),
 				Runtime::BridgeHub(bridge_hub_runtime_type) =>
 					match bridge_hub_runtime_type {
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
@@ -925,24 +950,38 @@ pub fn run() -> Result<()> {
 					)
 						.into()),
 					},
-				Runtime::Shell => ensure_feature!("shell-runtime", runner.async_run(|_| {
-					Ok((
+				Runtime::Shell => ensure_feature!(
+					"shell-runtime",
+					runner.async_run(|_| {
+						Ok((
 						cmd.run::<Block, HostFunctionsOf<crate::service::ShellRuntimeExecutor>, _>(Some(info_provider)),
 						task_manager,
 					))
-				})),
-				Runtime::ContractsRococo => runner.async_run(|_| {
-					Ok((
-						cmd.run::<Block, HostFunctionsOf<crate::service::ContractsRococoRuntimeExecutor>, _>(Some(info_provider)),
-						task_manager,
-					))
-				}),
-				Runtime::Glutton => ensure_feature!("gluton-runtime", runner.async_run(|_| {
-					Ok((
+					})
+				),
+				Runtime::ContractsRococo =>
+					ensure_feature!(
+						"contracts-runtime",
+						runner.async_run(|_| {
+							Ok(
+								(
+									cmd.run::<Block, HostFunctionsOf<
+										crate::service::ContractsRococoRuntimeExecutor,
+									>, _>(Some(info_provider)),
+									task_manager,
+								),
+							)
+						})
+					),
+				Runtime::Glutton => ensure_feature!(
+					"gluton-runtime",
+					runner.async_run(|_| {
+						Ok((
 						cmd.run::<Block, HostFunctionsOf<crate::service::GluttonRuntimeExecutor>, _>(Some(info_provider)),
 						task_manager,
 					))
-				})),
+					})
+				),
 				_ => Err("Chain doesn't support try-runtime".into()),
 			}
 		},
@@ -1076,7 +1115,7 @@ pub fn run() -> Result<()> {
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)),
-					Runtime::ContractsRococo => crate::service::start_contracts_rococo_node(
+					Runtime::ContractsRococo => ::cumulus_client_cli::ensure_feature!("contracts-runtime", crate::service::start_contracts_rococo_node(
 						config,
 						polkadot_config,
 						collator_options,
@@ -1085,7 +1124,7 @@ pub fn run() -> Result<()> {
 					)
 					.await
 					.map(|r| r.0)
-					.map_err(Into::into),
+					.map_err(Into::into)),
 					Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotLocal |
