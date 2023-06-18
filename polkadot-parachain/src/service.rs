@@ -89,6 +89,7 @@ impl sc_executor::NativeExecutionDispatch for ShellRuntimeExecutor {
 /// Native Asset Hub Polkadot (Statemint) executor instance.
 pub struct AssetHubPolkadotRuntimeExecutor;
 
+#[cfg(feature = "asset-hub-westend-runtime")]
 impl sc_executor::NativeExecutionDispatch for AssetHubPolkadotRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -104,6 +105,7 @@ impl sc_executor::NativeExecutionDispatch for AssetHubPolkadotRuntimeExecutor {
 /// Native Asset Hub Kusama (Statemine) executor instance.
 pub struct AssetHubKusamaExecutor;
 
+#[cfg(feature = "asset-hub-kusama-runtime")]
 impl sc_executor::NativeExecutionDispatch for AssetHubKusamaExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -119,6 +121,7 @@ impl sc_executor::NativeExecutionDispatch for AssetHubKusamaExecutor {
 /// Native Asset Hub Westend (Westmint) executor instance.
 pub struct AssetHubWestendExecutor;
 
+#[cfg(feature = "asset-hub-westend-runtime")]
 impl sc_executor::NativeExecutionDispatch for AssetHubWestendExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 

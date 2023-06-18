@@ -20,7 +20,12 @@ use serde::{Deserialize, Serialize};
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
-pub mod asset_hubs;
+#[cfg(feature = "asset-hub-kusama-runtime")]
+pub mod asset_hub_kusama;
+#[cfg(feature = "asset-hub-polkadot-runtime")]
+pub mod asset_hub_polkadot;
+#[cfg(feature = "asset-hub-westend-runtime")]
+pub mod asset_hub_westend;
 pub mod bridge_hubs;
 pub mod collectives;
 pub mod contracts;
