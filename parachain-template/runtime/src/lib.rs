@@ -485,7 +485,7 @@ construct_runtime!(
 		Balances: pallet_balances = 10,
 		TransactionPayment: pallet_transaction_payment = 11,
 
-		// Utility
+		// Governance
 		Sudo: pallet_sudo = 15,
 
 		// Collator support. The order of these 4 are important and shall not change.
