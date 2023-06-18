@@ -784,8 +784,8 @@ pub fn run() -> Result<()> {
 								)
 									.into()),
 							},
-							Runtime::Glutton =>
-								cmd.run::<Block, GluttonRuntimeExecutor>(config),
+							Runtime::Glutton => ensure_feature!("glutton-runtime",
+								cmd.run::<Block, GluttonRuntimeExecutor>(config)),
 							_ => Err(format!(
 								"Chain '{:?}' doesn't support benchmarking",
 								config.chain_spec.runtime()
@@ -845,30 +845,30 @@ pub fn run() -> Result<()> {
 			let info_provider = timestamp_with_aura_info(6000);
 
 			match runner.config().chain_spec.runtime() {
-				Runtime::AssetHubKusama => runner.async_run(|_| {
+				Runtime::AssetHubKusama => ensure_feature!("asset-hub-kusama-runtime", runner.async_run(|_| {
 					Ok((
 						cmd.run::<Block, HostFunctionsOf<AssetHubKusamaExecutor>, _>(Some(
 							info_provider,
 						)),
 						task_manager,
 					))
-				}),
-				Runtime::AssetHubWestend => runner.async_run(|_| {
+				})),
+				Runtime::AssetHubWestend => ensure_feature!("asset-hub-westend-runtime", runner.async_run(|_| {
 					Ok((
 						cmd.run::<Block, HostFunctionsOf<AssetHubWestendExecutor>, _>(Some(
 							info_provider,
 						)),
 						task_manager,
 					))
-				}),
-				Runtime::AssetHubPolkadot => runner.async_run(|_| {
+				})),
+				Runtime::AssetHubPolkadot => ensure_feature!("asset-hub-polkadot-runtime", runner.async_run(|_| {
 					Ok((
 						cmd.run::<Block, HostFunctionsOf<AssetHubPolkadotRuntimeExecutor>, _>(Some(
 							info_provider,
 						)),
 						task_manager,
 					))
-				}),
+				})),
 				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
 					runner.async_run(|_| {
 						Ok((
@@ -910,24 +910,24 @@ pub fn run() -> Result<()> {
 					)
 						.into()),
 					},
-				Runtime::Shell => runner.async_run(|_| {
+				Runtime::Shell => ensure_feature!("shell-runtime", runner.async_run(|_| {
 					Ok((
 						cmd.run::<Block, HostFunctionsOf<crate::service::ShellRuntimeExecutor>, _>(Some(info_provider)),
 						task_manager,
 					))
-				}),
+				})),
 				Runtime::ContractsRococo => runner.async_run(|_| {
 					Ok((
 						cmd.run::<Block, HostFunctionsOf<crate::service::ContractsRococoRuntimeExecutor>, _>(Some(info_provider)),
 						task_manager,
 					))
 				}),
-				Runtime::Glutton => runner.async_run(|_| {
+				Runtime::Glutton => ensure_feature!("gluton-runtime", runner.async_run(|_| {
 					Ok((
 						cmd.run::<Block, HostFunctionsOf<crate::service::GluttonRuntimeExecutor>, _>(Some(info_provider)),
 						task_manager,
 					))
-				}),
+				})),
 				_ => Err("Chain doesn't support try-runtime".into()),
 			}
 		},
