@@ -250,8 +250,8 @@ decl_test_parachains! {
 			System: bridge_hub_kusama_runtime::System,
 			Balances: bridge_hub_kusama_runtime::Balances,
 			ParachainSystem: bridge_hub_kusama_runtime::ParachainSystem,
-			ParachainInfo:bridge_hub_kusama_runtime::ParachainInfo,
-			BridgeMessages: (),
+			ParachainInfo: bridge_hub_kusama_runtime::ParachainInfo,
+			BridgeMessages: bridge_hub_kusama_runtime::BridgePolkadotMessages,
 		},
 		pallets_extra = {
 			PolkadotXcm: bridge_hub_kusama_runtime::PolkadotXcm,
@@ -271,8 +271,8 @@ decl_test_parachains! {
 			System: bridge_hub_polkadot_runtime::System,
 			Balances: bridge_hub_polkadot_runtime::Balances,
 			ParachainSystem: bridge_hub_polkadot_runtime::ParachainSystem,
-			ParachainInfo:bridge_hub_polkadot_runtime::ParachainInfo,
-			BridgeMessages: (),
+			ParachainInfo: bridge_hub_polkadot_runtime::ParachainInfo,
+			BridgeMessages: bridge_hub_polkadot_runtime::BridgeKusamaMessages,
 		},
 		pallets_extra = {
 			PolkadotXcm: bridge_hub_polkadot_runtime::PolkadotXcm,
@@ -289,6 +289,7 @@ decl_test_networks! {
 			Collectives,
 			BridgeHubPolkadot,
 		],
+		bridge = (BridgeHubPolkadot, BridgeHubKusama)
 	},
 	pub struct KusamaMockNet {
 		relay_chain = Kusama,
@@ -297,6 +298,7 @@ decl_test_networks! {
 			PenpalKusama,
 			BridgeHubKusama,
 		],
+		bridge = (BridgeHubKusama, BridgeHubPolkadot)
 	},
 	pub struct WestendMockNet {
 		relay_chain = Westend,

@@ -32,7 +32,7 @@ polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "m
 polkadot-runtime-constants = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 kusama-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 kusama-runtime-constants = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-westend-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" } 
+westend-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 westend-runtime-constants = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 xcm = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 xcm-executor = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }

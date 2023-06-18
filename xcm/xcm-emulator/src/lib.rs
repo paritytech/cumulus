@@ -69,6 +69,8 @@ thread_local! {
 		= RefCell::new(HashMap::new());
 	/// Upward messages, each message is: `(from_para_id, msg)
 	pub static UPWARD_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<u8>)>>> = RefCell::new(HashMap::new());
+	/// Bridged messages, each message is: `(LaneId, msg)
+	pub static BRIDGED_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<u8>)>>> = RefCell::new(HashMap::new());
 	/// Global incremental relay chain block number
 	pub static RELAY_BLOCK_NUMBER: RefCell<HashMap<String, u32>> = RefCell::new(HashMap::new());
 	/// Parachains Ids a the Network
@@ -88,6 +90,7 @@ pub trait TestExt {
 pub trait Network {
 	fn _init();
 	fn _para_ids() -> Vec<u32>;
+	fn _bridge() -> Option<Bridge> { None }
 	fn _relay_block_number() -> u32;
 	fn _set_relay_block_number(block_number: u32);
 	fn _process_messages();
@@ -95,6 +98,7 @@ pub trait Network {
 	fn _process_downward_messages();
 	fn _process_horizontal_messages();
 	fn _process_upward_messages();
+	fn _process_bridged_messages();
 	fn _hrmp_channel_parachain_inherent_data(
 		para_id: u32,
 		relay_parent_number: u32,
@@ -118,6 +122,18 @@ pub trait NetworkComponent<N: Network> {
 
 	fn para_ids() -> Vec<u32> {
 		N::_para_ids()
+	}
+
+	fn bridge() -> Option<Bridge> {
+		N::_bridge()
+	}
+
+	fn is_bridge_source(para_name: &'static str) -> bool {
+		Self::bridge().map_or(false, |b| para_name == b.source)
+	}
+
+	fn is_bridge_target(para_name: &'static str) -> bool {
+		Self::bridge().map_or(false, |b| para_name == b.target)
 	}
 
 	fn send_horizontal_messages<I: Iterator<Item = (ParaId, RelayBlockNumber, Vec<u8>)>>(
@@ -150,6 +166,15 @@ pub trait NetworkComponent<N: Network> {
 				.get_mut(Self::network_name())
 				.unwrap()
 				.push_back((to_para_id, iter.collect()))
+		});
+	}
+
+	fn send_bridged_messages(lane_id: u32, msg: Vec<u8>) {
+		BRIDGED_MESSAGES.with(|b| {
+			b.borrow_mut()
+				.get_mut(Self::network_name())
+				.unwrap()
+				.push_back((lane_id, msg))
 		});
 	}
 
@@ -189,6 +214,11 @@ pub trait Parachain: XcmpMessageHandler + DmpMessageHandler {
 	type ParachainSystem;
 	type ParachainInfo;
 	type BridgeMessages;
+}
+
+pub struct Bridge {
+	pub source: &'static str,
+	pub target: &'static str,
 }
 
 // Relay Chain Implementation
@@ -435,7 +465,7 @@ macro_rules! decl_test_parachains {
 					Balances: $balances_pallet:path,
 					ParachainSystem: $parachain_system:path,
 					ParachainInfo: $parachain_info:path,
-					BridgeMessages: $bridge_messages:tt,
+					BridgeMessages: $bridge_messages:ty,
 				},
 				pallets_extra = {
 					$($pallet_name:ident: $pallet_path:path,)*
@@ -609,6 +639,21 @@ macro_rules! __impl_test_ext_for_parachain {
 							);
 						}
 
+						// bridge
+						if <$name>::is_bridge_source(stringify!($name)) {
+							// get messages
+							$crate::log::debug!(target: "nacho", "Only for {:?}", stringify!($name));
+							// send messages
+							<$name>::send_bridged_messages(0, vec![]);
+						}
+						// send bridged messages
+						// if <$name>::bridge_name().is_some_and(|n| n == stringify!($name)) {
+						// 	// type OutboundMessages = <Self as Parachain>::BridgeMessages::OutboundMessages;
+						// 	// let messages = <Self as Parachain>::BridgeMessages::OutboundMessages::<<Self as Parachain>::Runtime>::drain();
+						// 	// <Self as Parachain>::BridgeMessages::Pallet;
+						// 	<$name>::send_bridged_messages(0, vec![]);
+						// }
+
 						// clean messages
 						<Self as Parachain>::ParachainSystem::on_initialize(block_number);
 					})
@@ -637,6 +682,12 @@ macro_rules! __impl_parachain {
 			fn network_name() -> &'static str {
 				stringify!($network_name)
 			}
+
+			// $(
+			// 	fn bridge_name() -> Option<&'static str> {
+			// 		Some(stringify!($bridge_source))
+			// 	}
+			// )?
 		}
 
 		impl $parachain {
@@ -708,6 +759,7 @@ macro_rules! decl_test_networks {
 			pub struct $name:ident {
 				relay_chain = $relay_chain:ty,
 				parachains = vec![ $( $parachain:ty, )* ],
+				$( bridge = ($bridge_source:ty, $bridge_target:ty) )?
 			}
 		),
 		+
@@ -724,11 +776,12 @@ macro_rules! decl_test_networks {
 					$crate::DMP_DONE.with(|b| b.borrow_mut().remove(stringify!($name)));
 					$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().remove(stringify!($name)));
 					$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().remove(stringify!($name)));
+					$crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().remove(stringify!($name)));
 					$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().remove(stringify!($name)));
 
 					<$relay_chain>::reset_ext();
 					$( <$parachain>::reset_ext(); )*
-					$( <$parachain>::prepare_for_xcmp(); )*
+					// $( <$parachain>::prepare_for_xcmp(); )*
 				}
 			}
 
@@ -741,6 +794,7 @@ macro_rules! decl_test_networks {
 						$crate::DMP_DONE.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
 						$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
 						$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
+						$crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
 						$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), 1));
 						$crate::PARA_IDS.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), Self::_para_ids()));
 
@@ -753,6 +807,17 @@ macro_rules! decl_test_networks {
 						<$parachain>::para_id().into(),
 					)*]
 				}
+
+				$(
+					fn _bridge() -> Option<$crate::Bridge> {
+						let bridge = $crate::Bridge {
+							source: stringify!($bridge_source),
+							target: stringify!($bridge_target),
+						};
+
+						Some(bridge)
+					}
+				)?
 
 				fn _relay_block_number() -> u32 {
 					$crate::RELAY_BLOCK_NUMBER.with(|v| *v.clone().borrow().get(stringify!($name)).unwrap())
@@ -767,6 +832,7 @@ macro_rules! decl_test_networks {
 						Self::_process_upward_messages();
 						Self::_process_horizontal_messages();
 						Self::_process_downward_messages();
+						Self::_process_bridged_messages();
 					}
 				}
 
@@ -774,6 +840,7 @@ macro_rules! decl_test_networks {
 					$crate::DOWNWARD_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
 					|| $crate::HORIZONTAL_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
 					|| $crate::UPWARD_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
+					// || $crate::BRIDGED_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
 				}
 
 				fn _process_downward_messages() {
@@ -834,6 +901,11 @@ macro_rules! decl_test_networks {
 					}
 				}
 
+				fn _process_bridged_messages() {
+
+					// $crate::log::debug!(target: "nacho", "Entra en _process_bridged_messages {:?}", stringify!($bridge_source_parachain));
+				}
+
 				fn _hrmp_channel_parachain_inherent_data(
 					para_id: u32,
 					relay_parent_number: u32,
@@ -888,6 +960,10 @@ macro_rules! decl_test_networks {
 			$(
 				$crate::__impl_parachain!($name, $parachain);
 			)*
+
+			// $(
+			// 	$crate::__impl_parachain!($name, $parachain);
+			// )?
 		)+
 	};
 }
