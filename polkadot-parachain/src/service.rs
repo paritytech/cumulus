@@ -89,7 +89,7 @@ impl sc_executor::NativeExecutionDispatch for ShellRuntimeExecutor {
 /// Native Asset Hub Polkadot (Statemint) executor instance.
 pub struct AssetHubPolkadotRuntimeExecutor;
 
-#[cfg(feature = "asset-hub-westend-runtime")]
+#[cfg(feature = "asset-hub-polkadot-runtime")]
 impl sc_executor::NativeExecutionDispatch for AssetHubPolkadotRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -153,6 +153,7 @@ impl sc_executor::NativeExecutionDispatch for CollectivesPolkadotRuntimeExecutor
 /// Native BridgeHubPolkadot executor instance.
 pub struct BridgeHubPolkadotRuntimeExecutor;
 
+#[cfg(feature = "bridge-hub-runtimes")]
 impl sc_executor::NativeExecutionDispatch for BridgeHubPolkadotRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -168,6 +169,7 @@ impl sc_executor::NativeExecutionDispatch for BridgeHubPolkadotRuntimeExecutor {
 /// Native BridgeHubKusama executor instance.
 pub struct BridgeHubKusamaRuntimeExecutor;
 
+#[cfg(feature = "bridge-hub-runtimes")]
 impl sc_executor::NativeExecutionDispatch for BridgeHubKusamaRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -183,6 +185,7 @@ impl sc_executor::NativeExecutionDispatch for BridgeHubKusamaRuntimeExecutor {
 /// Native BridgeHubRococo executor instance.
 pub struct BridgeHubRococoRuntimeExecutor;
 
+#[cfg(feature = "bridge-hub-runtimes")]
 impl sc_executor::NativeExecutionDispatch for BridgeHubRococoRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -732,6 +735,7 @@ where
 }
 
 /// Build the import queue for the rococo parachain runtime.
+#[cfg(feature = "rococo-parachain-runtime")]
 pub fn rococo_parachain_build_import_queue(
 	client: Arc<ParachainClient<rococo_parachain_runtime::RuntimeApi>>,
 	block_import: ParachainBlockImport<rococo_parachain_runtime::RuntimeApi>,
@@ -773,6 +777,7 @@ pub fn rococo_parachain_build_import_queue(
 }
 
 /// Start a rococo parachain node.
+#[cfg(feature = "rococo-parachain-runtime")]
 pub async fn start_rococo_parachain_node(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,

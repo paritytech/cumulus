@@ -26,6 +26,7 @@ pub mod asset_hub_kusama;
 pub mod asset_hub_polkadot;
 #[cfg(feature = "asset-hub-westend-runtime")]
 pub mod asset_hub_westend;
+#[cfg(feature = "bridge-hub-runtimes")]
 pub mod bridge_hubs;
 #[cfg(feature = "collectives-runtime")]
 pub mod collectives;
@@ -35,6 +36,7 @@ pub mod contracts;
 pub mod glutton;
 #[cfg(feature = "penpal-runtime")]
 pub mod penpal;
+#[cfg(feature = "rococo-parachain-runtime")]
 pub mod rococo_parachain;
 #[cfg(feature = "seedling-runtime")]
 pub mod seedling;
