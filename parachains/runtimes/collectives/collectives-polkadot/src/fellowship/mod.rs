@@ -227,6 +227,3 @@ impl pallet_salary::Config<FellowshipSalaryInstance> for Runtime {
 	// Total monthly salary budget.
 	type Budget = ConstU128<{ 100_000 * USDT_UNITS }>;
 }
-
-#[test]
-fn it_builds() {}
