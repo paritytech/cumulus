@@ -122,7 +122,7 @@ pub mod pallet_origins {
 		}
 	}
 
-	/// A [TryMorph] implementation which is designed to convert an aggregate `RuntimeOrigin`
+	/// A `TryMorph` implementation which is designed to convert an aggregate `RuntimeOrigin`
 	/// value into the Fellowship voice it represents if it is a Fellowship pallet origin an
 	/// appropriate variant. See also [Origin::as_voice].
 	pub struct ToVoice;
