@@ -215,18 +215,26 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		),
 
 		// -- Polkadot Collectives
-		"collectives-polkadot-dev" =>
-			Box::new(chain_spec::collectives::collectives_polkadot_development_config()),
-		"collectives-polkadot-local" =>
-			Box::new(chain_spec::collectives::collectives_polkadot_local_config()),
-		"collectives-polkadot" =>
+		"collectives-polkadot-dev" => ensure_feature!(
+			"collectives-runtime",
+			Box::new(chain_spec::collectives::collectives_polkadot_development_config())
+		),
+		"collectives-polkadot-local" => ensure_feature!(
+			"collectives-runtime",
+			Box::new(chain_spec::collectives::collectives_polkadot_local_config())
+		),
+		"collectives-polkadot" => ensure_feature!(
+			"collectives-runtime",
 			Box::new(chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/collectives-polkadot.json")[..],
-			)?),
-		"collectives-westend" =>
+			)?)
+		),
+		"collectives-westend" => ensure_feature!(
+			"collectives-runtime",
 			Box::new(chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/collectives-westend.json")[..],
-			)?),
+			)?)
+		),
 
 		// -- Contracts on Rococo
 		"contracts-rococo-dev" =>
@@ -310,8 +318,13 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 					ensure_feature!("asset-hub-westend-runtime", Box::new(
 					chain_spec::asset_hub_westend::AssetHubWestendChainSpec::from_json_file(path)?,
 				)),
-				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => Box::new(
-					chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_file(path)?,
+				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => ensure_feature!(
+					"collectives-runtime",
+					Box::new(
+						chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_file(
+							path
+						)?,
+					)
 				),
 				Runtime::Shell => ensure_feature!(
 					"shell-runtime",
@@ -418,7 +431,7 @@ impl SubstrateCli for Cli {
 			Runtime::AssetHubWestend =>
 				ensure_feature!("asset-hub-westend-runtime", &asset_hub_westend_runtime::VERSION),
 			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
-				&collectives_polkadot_runtime::VERSION,
+				ensure_feature!("collectives-runtime", &collectives_polkadot_runtime::VERSION),
 			Runtime::Shell => ensure_feature!("shell-runtime", &shell_runtime::VERSION),
 			Runtime::Seedling => ensure_feature!("seedling-runtime", &seedling_runtime::VERSION),
 			Runtime::ContractsRococo => &contracts_rococo_runtime::VERSION,
@@ -503,11 +516,13 @@ macro_rules! construct_benchmark_partials {
 				})
 			},
 			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => {
-				let $partials = new_partial::<collectives_polkadot_runtime::RuntimeApi, _>(
-					&$config,
-					crate::service::aura_build_import_queue::<_, AuraId>,
-				)?;
-				$code
+				ensure_feature!("collectives-runtime", {
+					let $partials = new_partial::<collectives_polkadot_runtime::RuntimeApi, _>(
+						&$config,
+						crate::service::aura_build_import_queue::<_, AuraId>,
+					)?;
+					$code
+				})
 			},
 			_ => Err("The chain is not supported".into()),
 		}
@@ -549,14 +564,14 @@ macro_rules! construct_async_run {
 				}))
 			},
 			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => {
-				runner.async_run(|$config| {
+				::cumulus_client_cli::ensure_feature!("collectives-runtime", runner.async_run(|$config| {
 					let $components = new_partial::<collectives_polkadot_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
-				})
+				}))
 			},
 			Runtime::Shell => {
 				::cumulus_client_cli::ensure_feature!("shell-runtime", runner.async_run(|$config| {
@@ -763,7 +778,7 @@ pub fn run() -> Result<()> {
 							Runtime::AssetHubPolkadot =>
 								ensure_feature!("asset-hub-polkadot-runtime", cmd.run::<Block, AssetHubPolkadotRuntimeExecutor>(config)),
 							Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
-								cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
+								ensure_feature!("collectives-runtime", cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config)),
 							Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
 								chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
 								chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotLocal |
@@ -870,12 +885,12 @@ pub fn run() -> Result<()> {
 					))
 				})),
 				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
-					runner.async_run(|_| {
+					ensure_feature!("collectives-runtime", runner.async_run(|_| {
 						Ok((
 							cmd.run::<Block, HostFunctionsOf<CollectivesPolkadotRuntimeExecutor>, _>(Some(info_provider)),
 							task_manager,
 						))
-					}),
+					})),
 				Runtime::BridgeHub(bridge_hub_runtime_type) =>
 					match bridge_hub_runtime_type {
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
@@ -1037,13 +1052,13 @@ pub fn run() -> Result<()> {
 					.map(|r| r.0)
 					.map_err(Into::into)),
 					Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
-						crate::service::start_generic_aura_node::<
+						::cumulus_client_cli::ensure_feature!("collectives-runtime", crate::service::start_generic_aura_node::<
 							collectives_polkadot_runtime::RuntimeApi,
 							AuraId,
 						>(config, polkadot_config, collator_options, id, hwbench)
 						.await
 						.map(|r| r.0)
-						.map_err(Into::into),
+						.map_err(Into::into)),
 					Runtime::Shell =>
 						::cumulus_client_cli::ensure_feature!("shell-runtime", crate::service::start_shell_node::<shell_runtime::RuntimeApi>(
 							config,

@@ -137,6 +137,7 @@ impl sc_executor::NativeExecutionDispatch for AssetHubWestendExecutor {
 /// Native Polkadot Collectives executor instance.
 pub struct CollectivesPolkadotRuntimeExecutor;
 
+#[cfg(feature = "collectives-runtime")]
 impl sc_executor::NativeExecutionDispatch for CollectivesPolkadotRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 

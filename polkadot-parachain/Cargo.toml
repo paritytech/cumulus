@@ -28,7 +28,7 @@ seedling-runtime = { path = "../parachains/runtimes/starters/seedling", optional
 asset-hub-polkadot-runtime = { path = "../parachains/runtimes/assets/asset-hub-polkadot", optional = true }
 asset-hub-kusama-runtime = { path = "../parachains/runtimes/assets/asset-hub-kusama", optional = true }
 asset-hub-westend-runtime = { path = "../parachains/runtimes/assets/asset-hub-westend", optional = true }
-collectives-polkadot-runtime = { path = "../parachains/runtimes/collectives/collectives-polkadot" }
+collectives-polkadot-runtime = { path = "../parachains/runtimes/collectives/collectives-polkadot", optional = true }
 contracts-rococo-runtime = { path = "../parachains/runtimes/contracts/contracts-rococo" }
 bridge-hub-rococo-runtime = { path = "../parachains/runtimes/bridge-hubs/bridge-hub-rococo" }
 bridge-hub-kusama-runtime = { path = "../parachains/runtimes/bridge-hubs/bridge-hub-kusama" }
@@ -107,6 +107,7 @@ default = [
 	"asset-hub-kusama-runtime",
 	"asset-hub-polkadot-runtime",
 	"asset-hub-westend-runtime",
+	"collectives-runtime",
 	"glutton-runtime",
 	"penpal-runtime",
 	"seedling-runtime",
@@ -115,6 +116,7 @@ default = [
 asset-hub-kusama-runtime = [ "dep:asset-hub-kusama-runtime"]
 asset-hub-polkadot-runtime = [ "dep:asset-hub-polkadot-runtime"]
 asset-hub-westend-runtime = [ "dep:asset-hub-westend-runtime"]
+collectives-runtime = [ "dep:collectives-polkadot-runtime" ]
 glutton-runtime = [ "dep:glutton-runtime", "shell-runtime" ]
 penpal-runtime = [ "dep:penpal-runtime" ]
 seedling-runtime = [ "dep:seedling-runtime" ]
@@ -127,7 +129,7 @@ runtime-benchmarks = [
 	"bridge-hub-rococo-runtime/runtime-benchmarks",
 	"bridge-hub-kusama-runtime/runtime-benchmarks",
 	"bridge-hub-polkadot-runtime/runtime-benchmarks",
-	"collectives-polkadot-runtime/runtime-benchmarks",
+	"collectives-polkadot-runtime?/runtime-benchmarks",
 	"rococo-parachain-runtime/runtime-benchmarks",
 	"contracts-rococo-runtime/runtime-benchmarks",
 	"contracts-rococo-runtime/runtime-benchmarks",

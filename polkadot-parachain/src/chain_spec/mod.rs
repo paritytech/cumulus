@@ -27,6 +27,7 @@ pub mod asset_hub_polkadot;
 #[cfg(feature = "asset-hub-westend-runtime")]
 pub mod asset_hub_westend;
 pub mod bridge_hubs;
+#[cfg(feature = "collectives-runtime")]
 pub mod collectives;
 pub mod contracts;
 #[cfg(feature = "glutton-runtime")]
