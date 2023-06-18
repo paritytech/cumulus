@@ -24,10 +24,14 @@ pub mod asset_hubs;
 pub mod bridge_hubs;
 pub mod collectives;
 pub mod contracts;
+#[cfg(feature = "glutton-runtime")]
 pub mod glutton;
+#[cfg(feature = "penpal-runtime")]
 pub mod penpal;
 pub mod rococo_parachain;
+#[cfg(feature = "seedling-runtime")]
 pub mod seedling;
+#[cfg(feature = "shell-runtime")]
 pub mod shell;
 
 /// The default XCM version to set in genesis config.

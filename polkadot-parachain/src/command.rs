@@ -25,7 +25,7 @@ use crate::{
 	},
 };
 use codec::Encode;
-use cumulus_client_cli::generate_genesis_block;
+use cumulus_client_cli::{ensure_feature, generate_genesis_block};
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::{info, warn};
@@ -141,8 +141,12 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			)?),
 
 		// -- Starters
-		"shell" => Box::new(chain_spec::shell::get_shell_chain_spec()),
-		"seedling" => Box::new(chain_spec::seedling::get_seedling_chain_spec()),
+		"shell" =>
+			ensure_feature!("shell-runtime", Box::new(chain_spec::shell::get_shell_chain_spec())),
+		"seedling" => ensure_feature!(
+			"seedling-runtime",
+			Box::new(chain_spec::seedling::get_seedling_chain_spec())
+		),
 
 		// -- Asset Hub Polkadot
 		"asset-hub-polkadot-dev" | "statemint-dev" =>
@@ -220,27 +224,41 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				.expect("invalid value")
 				.load_config()?,
 
-		// -- Penpall
-		"penpal-kusama" => Box::new(chain_spec::penpal::get_penpal_chain_spec(
-			para_id.expect("Must specify parachain id"),
-			"kusama-local",
-		)),
-		"penpal-polkadot" => Box::new(chain_spec::penpal::get_penpal_chain_spec(
-			para_id.expect("Must specify parachain id"),
-			"polkadot-local",
-		)),
-
+		// -- Penpal
+		"penpal-kusama" => ensure_feature!(
+			"penpal-runtime",
+			Box::new(chain_spec::penpal::get_penpal_chain_spec(
+				para_id.expect("Must specify parachain id"),
+				"kusama-local",
+			))
+		),
+		"penpal-polkadot" => ensure_feature!(
+			"penpal-runtime",
+			Box::new(chain_spec::penpal::get_penpal_chain_spec(
+				para_id.expect("Must specify parachain id"),
+				"polkadot-local",
+			))
+		),
 		// -- Glutton
-		"glutton-kusama-dev" => Box::new(chain_spec::glutton::glutton_development_config(
-			para_id.expect("Must specify parachain id"),
-		)),
-		"glutton-kusama-local" => Box::new(chain_spec::glutton::glutton_local_config(
-			para_id.expect("Must specify parachain id"),
-		)),
+		"glutton-kusama-dev" => ensure_feature!(
+			"glutton-runtime",
+			Box::new(chain_spec::glutton::glutton_development_config(
+				para_id.expect("Must specify parachain id"),
+			))
+		),
+		"glutton-kusama-local" => ensure_feature!(
+			"glutton-runtime",
+			Box::new(chain_spec::glutton::glutton_local_config(
+				para_id.expect("Must specify parachain id"),
+			))
+		),
 		// the chain spec as used for generating the upgrade genesis values
-		"glutton-kusama-genesis" => Box::new(chain_spec::glutton::glutton_config(
-			para_id.expect("Must specify parachain id"),
-		)),
+		"glutton-kusama-genesis" => ensure_feature!(
+			"glutton-runtime",
+			Box::new(chain_spec::glutton::glutton_config(
+				para_id.expect("Must specify parachain id"),
+			))
+		),
 
 		// -- Fallback (generic chainspec)
 		"" => {
@@ -263,18 +281,26 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => Box::new(
 					chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_file(path)?,
 				),
-				Runtime::Shell =>
-					Box::new(chain_spec::shell::ShellChainSpec::from_json_file(path)?),
-				Runtime::Seedling =>
-					Box::new(chain_spec::seedling::SeedlingChainSpec::from_json_file(path)?),
+				Runtime::Shell => ensure_feature!(
+					"shell-runtime",
+					Box::new(chain_spec::shell::ShellChainSpec::from_json_file(path)?)
+				),
+				Runtime::Seedling => ensure_feature!(
+					"seedling-runtime",
+					Box::new(chain_spec::seedling::SeedlingChainSpec::from_json_file(path)?)
+				),
 				Runtime::ContractsRococo =>
 					Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_file(path)?),
 				Runtime::BridgeHub(bridge_hub_runtime_type) =>
 					bridge_hub_runtime_type.chain_spec_from_json_file(path)?,
-				Runtime::Penpal(_para_id) =>
-					Box::new(chain_spec::penpal::PenpalChainSpec::from_json_file(path)?),
-				Runtime::Glutton =>
-					Box::new(chain_spec::glutton::GluttonChainSpec::from_json_file(path)?),
+				Runtime::Penpal(_para_id) => ensure_feature!(
+					"penpal-runtime",
+					Box::new(chain_spec::penpal::PenpalChainSpec::from_json_file(path)?)
+				),
+				Runtime::Glutton => ensure_feature!(
+					"glutton-runtime",
+					Box::new(chain_spec::glutton::GluttonChainSpec::from_json_file(path)?)
+				),
 				Runtime::Default => Box::new(
 					chain_spec::rococo_parachain::RococoParachainChainSpec::from_json_file(path)?,
 				),
@@ -358,13 +384,13 @@ impl SubstrateCli for Cli {
 			Runtime::AssetHubWestend => &asset_hub_westend_runtime::VERSION,
 			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
 				&collectives_polkadot_runtime::VERSION,
-			Runtime::Shell => &shell_runtime::VERSION,
-			Runtime::Seedling => &seedling_runtime::VERSION,
+			Runtime::Shell => ensure_feature!("shell-runtime", &shell_runtime::VERSION),
+			Runtime::Seedling => ensure_feature!("seedling-runtime", &seedling_runtime::VERSION),
 			Runtime::ContractsRococo => &contracts_rococo_runtime::VERSION,
 			Runtime::BridgeHub(bridge_hub_runtime_type) =>
 				bridge_hub_runtime_type.runtime_version(),
-			Runtime::Penpal(_) => &penpal_runtime::VERSION,
-			Runtime::Glutton => &glutton_runtime::VERSION,
+			Runtime::Penpal(_) => ensure_feature!("penpal_runtime", &penpal_runtime::VERSION),
+			Runtime::Glutton => ensure_feature!("glutton_runtime", &glutton_runtime::VERSION),
 			Runtime::Default => &rococo_parachain_runtime::VERSION,
 		}
 	}
@@ -492,24 +518,24 @@ macro_rules! construct_async_run {
 				})
 			},
 			Runtime::Shell => {
-				runner.async_run(|$config| {
+				::cumulus_client_cli::ensure_feature!("shell-runtime", runner.async_run(|$config| {
 					let $components = new_partial::<shell_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::shell_build_import_queue,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
-				})
+				}))
 			},
 			Runtime::Seedling => {
-				runner.async_run(|$config| {
+				::cumulus_client_cli::ensure_feature!("seedling-runtime", runner.async_run(|$config| {
 					let $components = new_partial::<seedling_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::shell_build_import_queue,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
-				})
+				}))
 			},
 			Runtime::ContractsRococo => {
 				runner.async_run(|$config| {
@@ -588,7 +614,7 @@ macro_rules! construct_async_run {
 				}
 			},
 			Runtime::Penpal(_) | Runtime::Default => {
-				runner.async_run(|$config| {
+				::cumulus_client_cli::ensure_feature!("penpal-runtime", runner.async_run(|$config| {
 					let $components = new_partial::<
 						rococo_parachain_runtime::RuntimeApi,
 						_
@@ -598,17 +624,17 @@ macro_rules! construct_async_run {
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
-				})
+				}))
 			},
 			Runtime::Glutton => {
-				runner.async_run(|$config| {
+				::cumulus_client_cli::ensure_feature!("glutton-runtime", runner.async_run(|$config| {
 					let $components = new_partial::<glutton_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::shell_build_import_queue,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
-				})
+				}))
 			}
 		}
 	}}
@@ -977,7 +1003,7 @@ pub fn run() -> Result<()> {
 						.map(|r| r.0)
 						.map_err(Into::into),
 					Runtime::Shell =>
-						crate::service::start_shell_node::<shell_runtime::RuntimeApi>(
+						::cumulus_client_cli::ensure_feature!("shell-runtime", crate::service::start_shell_node::<shell_runtime::RuntimeApi>(
 							config,
 							polkadot_config,
 							collator_options,
@@ -986,13 +1012,13 @@ pub fn run() -> Result<()> {
 						)
 						.await
 						.map(|r| r.0)
-						.map_err(Into::into),
-					Runtime::Seedling => crate::service::start_shell_node::<
+						.map_err(Into::into)),
+					Runtime::Seedling => ::cumulus_client_cli::ensure_feature!("seedling-runtime", crate::service::start_shell_node::<
 						seedling_runtime::RuntimeApi,
 					>(config, polkadot_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)
-					.map_err(Into::into),
+					.map_err(Into::into)),
 					Runtime::ContractsRococo => crate::service::start_contracts_rococo_node(
 						config,
 						polkadot_config,
@@ -1049,7 +1075,7 @@ pub fn run() -> Result<()> {
 					}
 					.map_err(Into::into),
 					Runtime::Penpal(_) | Runtime::Default =>
-						crate::service::start_rococo_parachain_node(
+						::cumulus_client_cli::ensure_feature!("glutton-runtime", crate::service::start_rococo_parachain_node(
 							config,
 							polkadot_config,
 							collator_options,
@@ -1058,9 +1084,9 @@ pub fn run() -> Result<()> {
 						)
 						.await
 						.map(|r| r.0)
-						.map_err(Into::into),
+						.map_err(Into::into)),
 					Runtime::Glutton =>
-						crate::service::start_shell_node::<glutton_runtime::RuntimeApi>(
+						::cumulus_client_cli::ensure_feature!("glutton-runtime", crate::service::start_shell_node::<glutton_runtime::RuntimeApi>(
 							config,
 							polkadot_config,
 							collator_options,
@@ -1069,7 +1095,7 @@ pub fn run() -> Result<()> {
 						)
 						.await
 						.map(|r| r.0)
-						.map_err(Into::into),
+						.map_err(Into::into)),
 				}
 			})
 		},

@@ -38,6 +38,19 @@ use sp_runtime::{
 };
 use url::Url;
 
+/// panic if a feature is not enabled.
+#[macro_export]
+macro_rules! ensure_feature {
+	($runtime:literal, $($body:tt)+) => {
+		{
+			#[cfg(not(feature=$runtime))]
+			unimplemented!("Please turn feature `{}` on to use this runtime.", $runtime);
+			#[cfg(feature = $runtime)]
+			$($body)+
+		}
+	};
+}
+
 /// The `purge-chain` command used to remove the whole chain: the parachain and the relay chain.
 #[derive(Debug, clap::Parser)]
 #[group(skip)]

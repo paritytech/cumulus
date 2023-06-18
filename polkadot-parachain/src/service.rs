@@ -73,7 +73,7 @@ type ParachainBlockImport<RuntimeApi> =
 
 /// Native executor instance.
 pub struct ShellRuntimeExecutor;
-
+#[cfg(feature = "shell-runtime")]
 impl sc_executor::NativeExecutionDispatch for ShellRuntimeExecutor {
 	type ExtendHostFunctions = ();
 
@@ -209,6 +209,7 @@ impl sc_executor::NativeExecutionDispatch for ContractsRococoRuntimeExecutor {
 /// Native Glutton executor instance.
 pub struct GluttonRuntimeExecutor;
 
+#[cfg(feature = "glutton-runtime")]
 impl sc_executor::NativeExecutionDispatch for GluttonRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
