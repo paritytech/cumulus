@@ -11,7 +11,7 @@ pub use sp_core::{sr25519, storage::Storage, Get};
 use xcm::prelude::*;
 use xcm_emulator::{
 	decl_test_networks, decl_test_parachains, decl_test_relay_chains, Parachain, RelayChain,
-	TestExt,
+	TestExt, BridgeMessageHandler,
 };
 use xcm_executor::traits::ConvertLocation;
 
