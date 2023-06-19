@@ -2,26 +2,37 @@
 
 # Address: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
 # AccountId: [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]
-STATEMINE_ACCOUNT_SEED_FOR_LOCAL="//Alice"
+ASSET_HUB_KUSAMA_ACCOUNT_SEED_FOR_LOCAL="//Alice"
 # Address: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
 # AccountId: [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]
-WOCKMINT_ACCOUNT_ADDRESS_FOR_LOCAL="5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+ASSET_HUB_WOCOCO_ACCOUNT_SEED_FOR_LOCAL="5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+
+# SovereignAccount for `MultiLocation { parents: 2, interior: X2(GlobalConsensus(Rococo), Parachain(1000)) }` => 5CfNu7eH3SJvqqPt3aJh38T8dcFvhGzEohp9tsd41ANhXDnQ
+#
+# use sp_core::crypto::Ss58Codec;
+# println!("{}",
+#     frame_support::sp_runtime::AccountId32::new(
+#         GlobalConsensusParachainConvertsFor::<UniversalLocation, [u8; 32]>::convert_ref(
+#             MultiLocation { parents: 2, interior: X2(GlobalConsensus(Kusama), Parachain(1000)) }).unwrap()
+#		).to_ss58check_with_version(42_u16.into())
+# );
+ASSET_HUB_ROCOCO_1000_SOVEREIGN_ACCOUNT="5CfNu7eH3SJvqqPt3aJh38T8dcFvhGzEohp9tsd41ANhXDnQ"
 
 # Address: GegTpZJMyzkntLN7NJhRfHDk4GWukLbGSsag6PHrLSrCK4h
-ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO="scatter feed race company oxygen trip extra elbow slot bundle auto canoe"
+ASSET_HUB2_ROCOCO_1000_SOVEREIGN_ACCOUNT="scatter feed race company oxygen trip extra elbow slot bundle auto canoe"
 
 # Adress: 5Ge7YcbctWCP1CccugzxWDn9hFnTxvTh3bL6PNy4ubNJmp7Y / H9jCvwVWsDJkrS4gPp1QB99qr4hmbGsVyAqn3F2PPaoWyU3
 # AccountId: [202, 107, 198, 135, 15, 25, 193, 165, 172, 73, 137, 218, 115, 177, 204, 0, 5, 155, 215, 86, 208, 51, 50, 130, 190, 110, 184, 143, 124, 50, 160, 20]
-WOCKMINT_ACCOUNT_ADDRESS_FOR_ROCOCO="5Ge7YcbctWCP1CccugzxWDn9hFnTxvTh3bL6PNy4ubNJmp7Y"
-WOCKMINT_ACCOUNT_SEED_FOR_WOCOCO="tone spirit magnet sunset cannon poverty forget lock river east blouse random"
+ASSET_HUB_WOCOCO_ACCOUNT_ADDRESS_FOR_ROCOCO="5Ge7YcbctWCP1CccugzxWDn9hFnTxvTh3bL6PNy4ubNJmp7Y"
+ASSET_HUB_WOCOCO_ACCOUNT_SEED_FOR_WOCOCO="tone spirit magnet sunset cannon poverty forget lock river east blouse random"
 
 function address_to_account_id_bytes() {
     local address=$1
     local output=$2
     echo "address_to_account_id_bytes - address: $address, output: $output"
-    if [ $address == "$WOCKMINT_ACCOUNT_ADDRESS_FOR_LOCAL" ]; then
+    if [ $address == "$ASSET_HUB_WOCOCO_ACCOUNT_SEED_FOR_LOCAL" ]; then
         jq --null-input '[212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]' > $output
-    elif [ $address == "$WOCKMINT_ACCOUNT_ADDRESS_FOR_ROCOCO" ]; then
+    elif [ $address == "$ASSET_HUB_WOCOCO_ACCOUNT_ADDRESS_FOR_ROCOCO" ]; then
         jq --null-input '[202, 107, 198, 135, 15, 25, 193, 165, 172, 73, 137, 218, 115, 177, 204, 0, 5, 155, 215, 86, 208, 51, 50, 130, 190, 110, 184, 143, 124, 50, 160, 20]' > $output
     else
         echo -n "Sorry, unknown address: $address - please, add bytes here or function for that!"
@@ -371,16 +382,18 @@ function remove_assets_transfer_send() {
 }
 
 # TODO: we need to fill sovereign account for bridge-hub, because, small ammouts does not match ExistentialDeposit, so no reserve pass
-# SA for BH: MultiLocation { parents: 1, interior: X1(Parachain(1013)) } - 5Eg2fntRRwLinojmk3sh5xscp7F3S6Zzm5oDVtoLTALKiypR on Statemine
+# SA for BH: MultiLocation { parents: 1, interior: X1(Parachain(1013)) } - 5Eg2fntRRwLinojmk3sh5xscp7F3S6Zzm5oDVtoLTALKiypR on Kusama Asset Hub
 
 function transfer_asset_via_bridge() {
     local url=$1
     local seed=$2
     local target_account=$3
+    local target_global_consensus=$4
     echo "  calling transfer_asset_via_bridge:"
     echo "      url: ${url}"
     echo "      seed: ${seed}"
     echo "      target_account: ${target_account}"
+    echo "      target_global_consensus: ${target_global_consensus}"
     echo "      params:"
 
     local assets=$(jq --null-input \
@@ -408,6 +421,7 @@ function transfer_asset_via_bridge() {
     local hex_encoded_data=$(cat $tmp_output_file)
 
     local destination=$(jq --null-input \
+                           --arg target_global_consensus "$target_global_consensus" \
                            --argjson hex_encoded_data "$hex_encoded_data" \
         '
             {
@@ -416,7 +430,7 @@ function transfer_asset_via_bridge() {
                     "interior": {
                         "X3": [
                             {
-                                "GlobalConsensus": "Wococo"
+                                "GlobalConsensus": $target_global_consensus
                             },
                             {
                                 "Parachain": 1000
@@ -454,10 +468,12 @@ function ping_via_bridge() {
     local url=$1
     local seed=$2
     local target_account=$3
+    local target_global_consensus=$4
     echo "  calling ping_via_bridge:"
     echo "      url: ${url}"
     echo "      seed: ${seed}"
     echo "      target_account: ${target_account}"
+    echo "      target_global_consensus: ${target_global_consensus}"
     echo "      params:"
 
     local tmp_output_file=$(mktemp)
@@ -465,6 +481,7 @@ function ping_via_bridge() {
     local hex_encoded_data=$(cat $tmp_output_file)
 
     local destination=$(jq --null-input \
+                           --arg target_global_consensus "$target_global_consensus" \
                            --argjson hex_encoded_data "$hex_encoded_data" \
         '
             {
@@ -473,7 +490,7 @@ function ping_via_bridge() {
                     "interior": {
                         "X3": [
                             {
-                                "GlobalConsensus": "Wococo"
+                                "GlobalConsensus": $target_global_consensus
                             },
                             {
                                 "Parachain": 1000
@@ -566,12 +583,12 @@ case "$1" in
     run_relay
     ;;
   allow-transfers-local)
-      # this allows send transfers on statemine (by governance-like)
-      ./$0 "allow-transfer-on-statemine-local"
-      # this allows receive transfers on westmint (by governance-like)
-      ./$0 "allow-transfer-on-westmint-local"
+      # this allows send transfers on asset hub kusama local (by governance-like)
+      ./$0 "allow-transfer-on-asset-hub-kusama-local"
+      # this allows receive transfers on asset hub westend local (by governance-like)
+      ./$0 "allow-transfer-on-asset-hub-westend-local"
       ;;
-  allow-transfer-on-statemine-local)
+  allow-transfer-on-asset-hub-kusama-local)
       ensure_polkadot_js_api
       allow_assets_transfer_send \
           "ws://127.0.0.1:9942" \
@@ -581,7 +598,7 @@ case "$1" in
           1013 \
           "Wococo" 1000
       ;;
-  allow-transfer-on-westmint-local)
+  allow-transfer-on-asset-hub-westend-local)
       ensure_polkadot_js_api
       allow_assets_transfer_receive \
           "ws://127.0.0.1:9945" \
@@ -591,23 +608,21 @@ case "$1" in
           1014 \
           "Rococo" \
           1000
-      # drip SovereignAccount for `MultiLocation { parents: 2, interior: X2(GlobalConsensus(Rococo), Parachain(1000)) }` => 5DHZvp523gmJWxg9UcLVbofyu5nZkPvATeP1ciYncpFpXtiG
-      # drip SovereignAccount for `MultiLocation { parents: 2, interior: X2(GlobalConsensus(Rococo), Parachain(1015)) }` => 5FS75NFUdEYhWHuV3y3ncjSG4PFdHfC5X7V6SEzc3rnCciwb
       transfer_balance \
           "ws://127.0.0.1:9010" \
           "//Alice" \
-          "5DHZvp523gmJWxg9UcLVbofyu5nZkPvATeP1ciYncpFpXtiG" \
+          "$ASSET_HUB_ROCOCO_1000_SOVEREIGN_ACCOUNT" \
           $((1000000000 + 50000000000 * 20)) # ExistentialDeposit + maxTargetLocationFee * 20
-      # create foreign assets for native Statemine token (yes, Kusama, because we are using Statemine runtime on rococo)
+      # create foreign assets for native Kusama token (yes, Kusama, because we are using Kusama Asset Hub runtime on rococo)
       force_create_foreign_asset \
           "ws://127.0.0.1:9945" \
           "//Alice" \
           1000 \
           "ws://127.0.0.1:9010" \
           "Kusama" \
-          "5DHZvp523gmJWxg9UcLVbofyu5nZkPvATeP1ciYncpFpXtiG"
+          "$ASSET_HUB_ROCOCO_1000_SOVEREIGN_ACCOUNT"
       ;;
-  remove-assets-transfer-from-statemine-local)
+  remove-assets-transfer-from-asset-hub-kusama-local)
       ensure_polkadot_js_api
       remove_assets_transfer_send \
           "ws://127.0.0.1:9942" \
@@ -616,58 +631,65 @@ case "$1" in
           "ws://127.0.0.1:9910" \
           "Wococo"
       ;;
-  transfer-asset-from-statemine-local)
+  transfer-asset-from-asset-hub-kusama-local)
       ensure_polkadot_js_api
       transfer_asset_via_bridge \
           "ws://127.0.0.1:9910" \
-          "$STATEMINE_ACCOUNT_SEED_FOR_LOCAL" \
-          "$WOCKMINT_ACCOUNT_ADDRESS_FOR_LOCAL"
+          "$ASSET_HUB_KUSAMA_ACCOUNT_SEED_FOR_LOCAL" \
+          "$ASSET_HUB_WOCOCO_ACCOUNT_SEED_FOR_LOCAL" \
+          "Wococo"
       ;;
-  transfer-asset-from-statemine-rococo)
-      ensure_polkadot_js_api
-      transfer_asset_via_bridge \
-          "wss://ws-rococo-rockmine2-collator-node-0.parity-testnet.parity.io" \
-          "$ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO" \
-          "$WOCKMINT_ACCOUNT_ADDRESS_FOR_ROCOCO"
-      ;;
-  ping-via-bridge-from-statemine-local)
+  ping-via-bridge-from-asset-hub-kusama-local)
       ensure_polkadot_js_api
       ping_via_bridge \
           "ws://127.0.0.1:9910" \
-          "$STATEMINE_ACCOUNT_SEED_FOR_LOCAL" \
-          "$WOCKMINT_ACCOUNT_ADDRESS_FOR_LOCAL"
+          "$ASSET_HUB_KUSAMA_ACCOUNT_SEED_FOR_LOCAL" \
+          "$ASSET_HUB_WOCOCO_ACCOUNT_SEED_FOR_LOCAL" \
+          "Wococo"
       ;;
-  ping-via-bridge-from-statemine-rococo)
+  transfer-asset-from-asset-hub-rococo)
+      ensure_polkadot_js_api
+      transfer_asset_via_bridge \
+          "wss://ws-rococo-rockmine2-collator-node-0.parity-testnet.parity.io" \
+          "$ASSET_HUB2_ROCOCO_1000_SOVEREIGN_ACCOUNT" \
+          "$ASSET_HUB_WOCOCO_ACCOUNT_ADDRESS_FOR_ROCOCO" \
+          "Wococo"
+      ;;
+  ping-via-bridge-from-asset-hub-rococo)
       ensure_polkadot_js_api
       ping_via_bridge \
           "wss://ws-rococo-rockmine2-collator-node-0.parity-testnet.parity.io" \
-          "${ROCKMINE2_ACCOUNT_SEED_FOR_ROCOCO}" \
-          "$WOCKMINT_ACCOUNT_ADDRESS_FOR_ROCOCO"
+          "${ASSET_HUB2_ROCOCO_1000_SOVEREIGN_ACCOUNT}" \
+          "$ASSET_HUB_WOCOCO_ACCOUNT_ADDRESS_FOR_ROCOCO" \
+          "Wococo"
       ;;
   drip)
       transfer_balance \
           "ws://127.0.0.1:9010" \
           "//Alice" \
-          "5DHZvp523gmJWxg9UcLVbofyu5nZkPvATeP1ciYncpFpXtiG" \
+          "$ASSET_HUB_ROCOCO_1000_SOVEREIGN_ACCOUNT" \
           $((1000000000 + 50000000000 * 20))
       ;;
   stop)
     pkill -f polkadot
     pkill -f parachain
     ;;
+  import)
+    # to avoid trigger anything here
+    ;;
   *)
     echo "A command is require. Supported commands for:
     Local (zombienet) run:
           - run-relay
           - allow-transfers-local
-              - allow-transfer-on-statemine-local
-              - allow-transfer-on-westmint-local
-              - remove-assets-transfer-from-statemine-local
-          - transfer-asset-from-statemine-local
-          - ping-via-bridge-from-statemine-local
+              - allow-transfer-on-asset-hub-kusama-local
+              - allow-transfer-on-asset-hub-westend-local
+              - remove-assets-transfer-from-asset-hub-kusama-local
+          - transfer-asset-from-asset-hub-kusama-local
+          - ping-via-bridge-from-asset-hub-kusama-local
     Live Rococo/Wococo run:
-          - transfer-asset-from-statemine-rococo
-          - ping-via-bridge-from-statemine-rococo";
+          - transfer-asset-from-asset-hub-rococo
+          - ping-via-bridge-from-asset-hub-rococo";
     exit 1
     ;;
 esac

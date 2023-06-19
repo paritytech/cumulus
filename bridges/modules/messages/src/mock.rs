@@ -27,7 +27,7 @@ use bp_messages::{
 		ProvedLaneMessages, ProvedMessages, SourceHeaderChain,
 	},
 	DeliveredMessages, InboundLaneData, LaneId, Message, MessageKey, MessageNonce, MessagePayload,
-	OutboundLaneData, UnrewardedRelayer, UnrewardedRelayersState,
+	OutboundLaneData, UnrewardedRelayer, UnrewardedRelayersState, VerificationError,
 };
 use bp_runtime::{messages::MessageDispatchResult, Size};
 use codec::{Decode, Encode};
@@ -133,7 +133,7 @@ impl pallet_balances::Config for TestRuntime {
 	type WeightInfo = ();
 	type MaxReserves = ();
 	type ReserveIdentifier = ();
-	type HoldIdentifier = ();
+	type RuntimeHoldReason = RuntimeHoldReason;
 	type FreezeIdentifier = ();
 	type MaxHolds = ConstU32<0>;
 	type MaxFreezes = ConstU32<0>;
@@ -185,7 +185,7 @@ impl crate::benchmarking::Config<()> for TestRuntime {
 		// in mock run we only care about benchmarks correctness, not the benchmark results
 		// => ignore size related arguments
 		let (messages, total_dispatch_weight) =
-			params.message_nonces.map(|n| message(n, REGULAR_PAYLOAD)).fold(
+			params.message_nonces.into_iter().map(|n| message(n, REGULAR_PAYLOAD)).fold(
 				(Vec::new(), Weight::zero()),
 				|(mut messages, total_dispatch_weight), message| {
 					let weight = REGULAR_PAYLOAD.declared_weight;
@@ -295,13 +295,11 @@ impl Size for TestMessagesDeliveryProof {
 pub struct TestTargetHeaderChain;
 
 impl TargetHeaderChain<TestPayload, TestRelayer> for TestTargetHeaderChain {
-	type Error = &'static str;
-
 	type MessagesDeliveryProof = TestMessagesDeliveryProof;
 
-	fn verify_message(payload: &TestPayload) -> Result<(), Self::Error> {
+	fn verify_message(payload: &TestPayload) -> Result<(), VerificationError> {
 		if *payload == PAYLOAD_REJECTED_BY_TARGET_CHAIN {
-			Err(TEST_ERROR)
+			Err(VerificationError::Other(TEST_ERROR))
 		} else {
 			Ok(())
 		}
@@ -309,8 +307,8 @@ impl TargetHeaderChain<TestPayload, TestRelayer> for TestTargetHeaderChain {
 
 	fn verify_messages_delivery_proof(
 		proof: Self::MessagesDeliveryProof,
-	) -> Result<(LaneId, InboundLaneData<TestRelayer>), Self::Error> {
-		proof.0.map_err(|_| TEST_ERROR)
+	) -> Result<(LaneId, InboundLaneData<TestRelayer>), VerificationError> {
+		proof.0.map_err(|_| VerificationError::Other(TEST_ERROR))
 	}
 }
 
@@ -319,18 +317,16 @@ impl TargetHeaderChain<TestPayload, TestRelayer> for TestTargetHeaderChain {
 pub struct TestLaneMessageVerifier;
 
 impl LaneMessageVerifier<RuntimeOrigin, TestPayload> for TestLaneMessageVerifier {
-	type Error = &'static str;
-
 	fn verify_message(
 		_submitter: &RuntimeOrigin,
 		_lane: &LaneId,
 		_lane_outbound_data: &OutboundLaneData,
 		payload: &TestPayload,
-	) -> Result<(), Self::Error> {
+	) -> Result<(), VerificationError> {
 		if !payload.reject_by_lane_verifier {
 			Ok(())
 		} else {
-			Err(TEST_ERROR)
+			Err(VerificationError::Other(TEST_ERROR))
 		}
 	}
 }
@@ -400,15 +396,16 @@ impl DeliveryConfirmationPayments<AccountId> for TestDeliveryConfirmationPayment
 pub struct TestSourceHeaderChain;
 
 impl SourceHeaderChain for TestSourceHeaderChain {
-	type Error = &'static str;
-
 	type MessagesProof = TestMessagesProof;
 
 	fn verify_messages_proof(
 		proof: Self::MessagesProof,
 		_messages_count: u32,
-	) -> Result<ProvedMessages<Message>, Self::Error> {
-		proof.result.map(|proof| proof.into_iter().collect()).map_err(|_| TEST_ERROR)
+	) -> Result<ProvedMessages<Message>, VerificationError> {
+		proof
+			.result
+			.map(|proof| proof.into_iter().collect())
+			.map_err(|_| VerificationError::Other(TEST_ERROR))
 	}
 }
 

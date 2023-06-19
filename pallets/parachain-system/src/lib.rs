@@ -57,7 +57,7 @@ use sp_runtime::{
 use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
 use xcm::latest::XcmHash;
 
-mod migration;
+pub mod migration;
 mod relay_state_snapshot;
 #[macro_use]
 pub mod validate_block;
@@ -197,10 +197,6 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_runtime_upgrade() -> Weight {
-			migration::on_runtime_upgrade::<T>()
-		}
-
 		fn on_finalize(_: T::BlockNumber) {
 			<DidSetValidationCode<T>>::kill();
 			<UpgradeRestrictionSignal<T>>::kill();
@@ -233,13 +229,13 @@ pub mod pallet {
 			};
 
 			<PendingUpwardMessages<T>>::mutate(|up| {
-				let (count, size) = relevant_messaging_state.relay_dispatch_queue_size;
+				let queue_size = relevant_messaging_state.relay_dispatch_queue_size;
 
 				let available_capacity = cmp::min(
-					host_config.max_upward_queue_count.saturating_sub(count),
-					host_config.max_upward_message_num_per_candidate,
+					queue_size.remaining_count,
+					host_config.max_upward_message_num_per_candidate.into(),
 				);
-				let available_size = host_config.max_upward_queue_size.saturating_sub(size);
+				let available_size = queue_size.remaining_size;
 
 				// Count the number of messages we can possibly fit in the given constraints, i.e.
 				// available_capacity and available_size.
@@ -431,7 +427,7 @@ pub mod pallet {
 				.read_abridged_host_configuration()
 				.expect("Invalid host configuration in relay chain state proof");
 			let relevant_messaging_state = relay_state_proof
-				.read_messaging_state_snapshot()
+				.read_messaging_state_snapshot(&host_config)
 				.expect("Invalid messaging state in relay chain state proof");
 
 			<ValidationData<T>>::put(&vfp);
@@ -553,10 +549,8 @@ pub mod pallet {
 
 	/// In case of a scheduled upgrade, this storage field contains the validation code to be applied.
 	///
-	/// As soon as the relay chain gives us the go-ahead signal, we will overwrite the [`:code`][well_known_keys::CODE]
+	/// As soon as the relay chain gives us the go-ahead signal, we will overwrite the [`:code`][sp_core::storage::well_known_keys::CODE]
 	/// which will result the next block process with the new validation code. This concludes the upgrade process.
-	///
-	/// [well_known_keys::CODE]: sp_core::storage::well_known_keys::CODE
 	#[pallet::storage]
 	#[pallet::getter(fn new_validation_function)]
 	pub(super) type PendingValidationCode<T: Config> = StorageValue<_, Vec<u8>, ValueQuery>;
@@ -694,7 +688,7 @@ pub mod pallet {
 
 	/// A custom head data that should be returned as result of `validate_block`.
 	///
-	/// See [`Pallet::set_custom_validation_head_data`] for more information.
+	/// See `Pallet::set_custom_validation_head_data` for more information.
 	#[pallet::storage]
 	pub(super) type CustomValidationHeadData<T: Config> = StorageValue<_, Vec<u8>, OptionQuery>;
 
@@ -874,7 +868,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Process all inbound horizontal messages relayed by the collator.
 	///
-	/// This is similar to [`process_inbound_downward_messages`], but works on multiple inbound
+	/// This is similar to `Pallet::process_inbound_downward_messages`, but works on multiple inbound
 	/// channels.
 	///
 	/// **Panics** if either any of horizontal messages submitted by the collator was sent from
