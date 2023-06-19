@@ -1455,19 +1455,34 @@ mod tests {
 			Box::new(create_default_with_extensions("seedling", Extensions2::default())),
 		);
 		assert_eq!(Runtime::Seedling, path.runtime());
+	}
 
+	#[cfg(feature = "rococo-parachain-runtime")]
+	#[test]
+	fn test_resolve_runtime_for_rococo_parachain_configuration_files() {
+		let temp_dir = tempfile::tempdir().expect("Failed to access tempdir");
 		let path = store_configuration(
 			&temp_dir,
 			Box::new(crate::chain_spec::rococo_parachain::rococo_parachain_local_config()),
 		);
 		assert_eq!(Runtime::Default, path.runtime());
+	}
 
+	#[cfg(feature = "asset-hub-kusama-runtime")]
+	#[test]
+	fn test_resolve_runtime_for_asset_hub_kusama_configuration_files() {
+		let temp_dir = tempfile::tempdir().expect("Failed to access tempdir");
 		let path = store_configuration(
 			&temp_dir,
-			Box::new(crate::chain_spec::asset_hubs::asset_hub_kusama_local_config()),
+			Box::new(crate::chain_spec::asset_hub_kusama::asset_hub_kusama_local_config()),
 		);
 		assert_eq!(Runtime::AssetHubKusama, path.runtime());
+	}
 
+	#[cfg(feature = "contracts-runtime")]
+	#[test]
+	fn test_resolve_runtime_for_contracts_configuration_files() {
+		let temp_dir = tempfile::tempdir().expect("Failed to access tempdir");
 		let path = store_configuration(
 			&temp_dir,
 			Box::new(crate::chain_spec::contracts::contracts_rococo_local_config()),
