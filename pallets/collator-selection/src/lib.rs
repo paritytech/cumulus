@@ -193,7 +193,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn last_authored_block)]
 	pub type LastAuthoredBlock<T: Config> =
-		StorageMap<_, Twox64Concat, T::AccountId, T::BlockNumber, ValueQuery>;
+		StorageMap<_, Twox64Concat, T::AccountId, frame_system::BlockNumberOf<T>, ValueQuery>;
 
 	/// Desired number of candidates.
 	///
@@ -536,7 +536,7 @@ pub mod pallet {
 	/// Keep track of number of authored blocks per authority, uncles are counted as well since
 	/// they're a valid proof of being online.
 	impl<T: Config + pallet_authorship::Config>
-		pallet_authorship::EventHandler<T::AccountId, T::BlockNumber> for Pallet<T>
+		pallet_authorship::EventHandler<T::AccountId, frame_system::BlockNumberOf<T>> for Pallet<T>
 	{
 		fn note_author(author: T::AccountId) {
 			let pot = Self::account_id();

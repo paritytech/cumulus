@@ -197,7 +197,7 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_finalize(_: T::BlockNumber) {
+		fn on_finalize(_: frame_system::BlockNumberOf<T>) {
 			<DidSetValidationCode<T>>::kill();
 			<UpgradeRestrictionSignal<T>>::kill();
 
@@ -281,7 +281,7 @@ pub mod pallet {
 			HrmpOutboundMessages::<T>::put(outbound_messages);
 		}
 
-		fn on_initialize(_n: T::BlockNumber) -> Weight {
+		fn on_initialize(_n: frame_system::BlockNumberOf<T>) -> Weight {
 			let mut weight = Weight::zero();
 
 			// To prevent removing `NewValidationCode` that was set by another `on_initialize`

@@ -185,8 +185,8 @@ impl frame_system::Config for Runtime {
 	type Hash = Hash;
 	/// The hashing algorithm used.
 	type Hashing = BlakeTwo256;
-	/// The header type.
-	type Header = generic::Header<BlockNumber, BlakeTwo256>;
+	/// The block type.
+	type Block = Block;
 	/// The ubiquitous event type.
 	type RuntimeEvent = RuntimeEvent;
 	/// The ubiquitous origin type.
@@ -558,10 +558,7 @@ impl pallet_aura::Config for Runtime {
 }
 
 construct_runtime! {
-	pub enum Runtime where
-		Block = Block,
-		NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum Runtime
 	{
 		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},

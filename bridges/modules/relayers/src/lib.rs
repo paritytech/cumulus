@@ -117,7 +117,7 @@ pub mod pallet {
 		/// Registration allows relayer to get priority boost for its message delivery transactions.
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::register())]
-		pub fn register(origin: OriginFor<T>, valid_till: T::BlockNumber) -> DispatchResult {
+		pub fn register(origin: OriginFor<T>, valid_till: frame_system::BlockNumberOf<T>) -> DispatchResult {
 			let relayer = ensure_signed(origin)?;
 
 			// valid till must be larger than the current block number and the lease must be larger
@@ -330,10 +330,10 @@ pub mod pallet {
 		}
 
 		/// Return required registration lease.
-		pub(crate) fn required_registration_lease() -> T::BlockNumber {
+		pub(crate) fn required_registration_lease() -> frame_system::BlockNumberOf<T> {
 			<T::StakeAndSlash as StakeAndSlash<
 				T::AccountId,
-				T::BlockNumber,
+				frame_system::BlockNumberOf<T>,
 				T::Reward,
 			>>::RequiredRegistrationLease::get()
 		}
@@ -342,7 +342,7 @@ pub mod pallet {
 		pub(crate) fn required_stake() -> T::Reward {
 			<T::StakeAndSlash as StakeAndSlash<
 				T::AccountId,
-				T::BlockNumber,
+				frame_system::BlockNumberOf<T>,
 				T::Reward,
 			>>::RequiredStake::get()
 		}
@@ -383,7 +383,7 @@ pub mod pallet {
 			/// Relayer account that has been registered.
 			relayer: T::AccountId,
 			/// Relayer registration.
-			registration: Registration<T::BlockNumber, T::Reward>,
+			registration: Registration<frame_system::BlockNumberOf<T>, T::Reward>,
 		},
 		/// Relayer has been `deregistered`.
 		Deregistered {
@@ -395,7 +395,7 @@ pub mod pallet {
 			/// Relayer account that has been `deregistered`.
 			relayer: T::AccountId,
 			/// Registration that was removed.
-			registration: Registration<T::BlockNumber, T::Reward>,
+			registration: Registration<frame_system::BlockNumberOf<T>, T::Reward>,
 		},
 	}
 
@@ -445,7 +445,7 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		T::AccountId,
-		Registration<T::BlockNumber, T::Reward>,
+		Registration<frame_system::BlockNumberOf<T>, T::Reward>,
 		OptionQuery,
 	>;
 }

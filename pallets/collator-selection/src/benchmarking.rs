@@ -243,7 +243,7 @@ benchmarks! {
 			T::Currency::minimum_balance() * 4u32.into(),
 		);
 		let author = account("author", 0, SEED);
-		let new_block: T::BlockNumber = 10u32.into();
+		let new_block: frame_system::BlockNumberOf<T> = 10u32.into();
 
 		frame_system::Pallet::<T>::set_block_number(new_block);
 		assert!(T::Currency::free_balance(&author) == 0u32.into());
@@ -266,8 +266,8 @@ benchmarks! {
 		register_validators::<T>(c);
 		register_candidates::<T>(c);
 
-		let new_block: T::BlockNumber = 1800u32.into();
-		let zero_block: T::BlockNumber = 0u32.into();
+		let new_block: frame_system::BlockNumberOf<T> = 1800u32.into();
+		let zero_block: frame_system::BlockNumberOf<T> = 0u32.into();
 		let candidates = <Candidates<T>>::get();
 
 		let non_removals = c.saturating_sub(r);

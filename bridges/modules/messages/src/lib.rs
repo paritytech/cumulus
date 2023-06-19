@@ -190,7 +190,7 @@ pub mod pallet {
 	where
 		u32: TryFrom<<T as frame_system::Config>::BlockNumber>,
 	{
-		fn on_idle(_block: T::BlockNumber, remaining_weight: Weight) -> Weight {
+		fn on_idle(_block: frame_system::BlockNumberOf<T>, remaining_weight: Weight) -> Weight {
 			// we'll need at least to read outbound lane state, kill a message and update lane state
 			let db_weight = T::DbWeight::get();
 			if !remaining_weight.all_gte(db_weight.reads_writes(1, 2)) {
