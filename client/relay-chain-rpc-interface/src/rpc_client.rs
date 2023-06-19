@@ -95,7 +95,7 @@ pub async fn create_client_and_start_light_client_worker(
 
 	task_manager
 		.spawn_essential_handle()
-		.spawn("relay-chain-rpc-worker", None, worker.run());
+		.spawn("relay-light-client-worker", None, worker.run());
 
 	let rpc_frontend = RpcFrontend::new(sender);
 
