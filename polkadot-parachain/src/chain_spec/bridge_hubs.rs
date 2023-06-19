@@ -609,8 +609,8 @@ pub mod polkadot {
 		endowed_accounts: Vec<AccountId>,
 		id: ParaId,
 		bridges_pallet_owner: Option<AccountId>,
-	) -> bridge_hub_kusama_runtime::RuntimeGenesisConfig {
-		bridge_hub_kusama_runtime::RuntimeGenesisConfig {
+	) -> bridge_hub_polkadot_runtime::RuntimeGenesisConfig {
+		bridge_hub_polkadot_runtime::RuntimeGenesisConfig {
 			system: bridge_hub_polkadot_runtime::SystemConfig {
 				code: bridge_hub_polkadot_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
