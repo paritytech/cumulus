@@ -31,8 +31,8 @@ jsonrpsee = { version = "0.16.2", features = ["ws-client"] }
 tracing = "0.1.37"
 async-trait = "0.1.68"
 url = "2.4.0"
-serde_json = "1.0.96"
-serde = "1.0.163"
+serde_json = "1.0.97"
+serde = "1.0.164"
 lru = "0.9.0"
 smoldot = { git = "https://github.com/smol-dot/smoldot", rev = "cf211107" , default_features = false, features = ["std"]}
 smoldot-light = { git = "https://github.com/smol-dot/smoldot",  rev = "cf211107", default_features = false, features = ["std"] }

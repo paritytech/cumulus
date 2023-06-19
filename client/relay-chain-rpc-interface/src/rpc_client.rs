@@ -30,7 +30,7 @@ use parity_scale_codec::{Decode, Encode};
 
 use cumulus_primitives_core::{
 	relay_chain::{
-		vstaging, BlockNumber, CandidateCommitments, CandidateEvent, CandidateHash,
+		slashing, BlockNumber, CandidateCommitments, CandidateEvent, CandidateHash,
 		CommittedCandidateReceipt, CoreState, DisputeState, ExecutorParams, GroupRotationInfo,
 		Hash as RelayHash, Header as RelayHeader, InboundHrmpMessage, OccupiedCoreAssumption,
 		PvfCheckStatement, ScrapedOnChainVotes, SessionIndex, SessionInfo, ValidationCode,
@@ -460,10 +460,7 @@ impl RelayChainRpcClient {
 	pub async fn parachain_host_unapplied_slashes(
 		&self,
 		at: RelayHash,
-	) -> Result<
-		Vec<(SessionIndex, CandidateHash, vstaging::slashing::PendingSlashes)>,
-		RelayChainError,
-	> {
+	) -> Result<Vec<(SessionIndex, CandidateHash, slashing::PendingSlashes)>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_unapplied_slashes", at, None::<()>)
 			.await
 	}
@@ -475,7 +472,7 @@ impl RelayChainRpcClient {
 		&self,
 		at: RelayHash,
 		validator_id: ValidatorId,
-	) -> Result<Option<vstaging::slashing::OpaqueKeyOwnershipProof>, RelayChainError> {
+	) -> Result<Option<slashing::OpaqueKeyOwnershipProof>, RelayChainError> {
 		self.call_remote_runtime_function(
 			"ParachainHost_key_ownership_proof",
 			at,
@@ -491,8 +488,8 @@ impl RelayChainRpcClient {
 	pub async fn parachain_host_submit_report_dispute_lost(
 		&self,
 		at: RelayHash,
-		dispute_proof: vstaging::slashing::DisputeProof,
-		key_ownership_proof: vstaging::slashing::OpaqueKeyOwnershipProof,
+		dispute_proof: slashing::DisputeProof,
+		key_ownership_proof: slashing::OpaqueKeyOwnershipProof,
 	) -> Result<Option<()>, RelayChainError> {
 		self.call_remote_runtime_function(
 			"ParachainHost_submit_report_dispute_lost",
