@@ -31,6 +31,7 @@ parachain-info = { path = "../../parachains/pallets/parachain-info" }
 cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent" }
 cumulus-test-relay-sproof-builder = { path = "../../test/relay-sproof-builder" }
 parachains-common = { path = "../../parachains/common" }
+bp-messages = { path = "../../bridges/primitives/messages"}
 
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "master" }
