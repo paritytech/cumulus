@@ -50,11 +50,11 @@ impl PlatformRef for TokioPlatform {
 	type Delay = future::BoxFuture<'static, ()>;
 	type Yield = future::Ready<()>;
 	type Instant = std::time::Instant;
-	type Connection = std::convert::Infallible;
+	type MultiStream = std::convert::Infallible;
 	type Stream = Stream;
 	type ConnectFuture = future::BoxFuture<
 		'static,
-		Result<PlatformConnection<Self::Stream, Self::Connection>, ConnectError>,
+		Result<PlatformConnection<Self::Stream, Self::MultiStream>, ConnectError>,
 	>;
 	type StreamUpdateFuture<'a> = future::BoxFuture<'a, ()>;
 	type NextSubstreamFuture<'a> =
@@ -193,13 +193,13 @@ impl PlatformRef for TokioPlatform {
 		})
 	}
 
-	fn open_out_substream(&self, c: &mut Self::Connection) {
+	fn open_out_substream(&self, c: &mut Self::MultiStream) {
 		// This function can only be called with so-called "multi-stream" connections. We never
 		// open such connection.
 		match *c {}
 	}
 
-	fn next_substream<'a>(&self, c: &'a mut Self::Connection) -> Self::NextSubstreamFuture<'a> {
+	fn next_substream<'a>(&self, c: &'a mut Self::MultiStream) -> Self::NextSubstreamFuture<'a> {
 		// This function can only be called with so-called "multi-stream" connections. We never
 		// open such connection.
 		match *c {}
@@ -364,7 +364,11 @@ impl PlatformRef for TokioPlatform {
 		}
 	}
 
-	fn spawn_task(&self, _: std::borrow::Cow<str>, task: future::BoxFuture<'static, ()>) {
+	fn spawn_task(
+		&self,
+		_: std::borrow::Cow<str>,
+		task: impl Future<Output = ()> + Send + 'static,
+	) {
 		self.spawner.spawn("cumulus-internal-light-client-task", None, task)
 	}
 
