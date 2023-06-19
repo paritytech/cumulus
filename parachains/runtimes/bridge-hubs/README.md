@@ -5,13 +5,11 @@
 		+ [Run relayer (BridgeHubRococo, BridgeHubWococo)](#run-relayer--bridgehubrococo--bridgehubwococo-)
 			- [Run with script (alternative 1)](#run-with-script--alternative-1-)
 			- [Run with binary (alternative 2)](#run-with-binary--alternative-2-)
-		+ [Send messages](#send-messages)
-			- [Local zombienet run](#local-zombienet-run)
-			- [Live Rockmine2 to Wockmint](#live-rockmine2-to-wockmint)
+		+ [Send messages - transfer asset over bridge](#send-messages---transfer-asset-over-bridge)
 	* [How to test locally Kusama <-> Polkadot bridge](#how-to-test-locally-kusama-----polkadot-bridge)
-		+ [1. Run chains (Kusama + BridgeHub, Polkadot + BridgeHub) with zombienet](#1-run-chains--kusama---bridgehub--polkadot---bridgehub--with-zombienet)
+		+ [1. Run chains (Kusama + BridgeHub + AssetHub, Polkadot + BridgeHub + AssetHub) with zombienet](#1-run-chains--kusama---bridgehub---assethub--polkadot---bridgehub---assethub--with-zombienet)
 		+ [2. Init bridge and run relayer (BridgeHubKusama, BridgeHubPolkadot)](#2-init-bridge-and-run-relayer--bridgehubkusama--bridgehubpolkadot-)
-		+ [3. Test bridge transfer](#3-test-bridge-transfer)
+		+ [Send messages - transfer asset over bridge](#send-messages---transfer-asset-over-bridge-1)
 
 # Bridge-hub Parachains
 
@@ -51,41 +49,45 @@ cd polkadot
 # if you want to test Kusama/Polkadot bridge, we need "sudo pallet + fast-runtime",
 # so please, find the latest polkadot's repository branch `it/release-vX.Y.Z-fast-sudo`
 # e.g:
-# git checkout -b it/release-v0.9.42-fast-sudo --track origin/it/release-v0.9.42-fast-sudo
+# git checkout -b it/release-v0.9.43-fast-sudo --track origin/it/release-v0.9.43-fast-sudo
 
 cargo build --release --features fast-runtime
 cp target/release/polkadot ~/local_bridge_testing/bin/polkadot
 
 ---
-# 3. Build cumulus polkadot-parachain binary
-cd <cumulus-git-repo-dir>
-
-# checkout desired branch or use master:
-# git checkout -b master --track origin/master
-
-cargo build --release --locked -p polkadot-parachain-bin
-cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain
-cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain-mint
-
----
-# 4. Build substrate-relay binary
+# 3. Build substrate-relay binary
 git clone https://github.com/paritytech/parity-bridges-common.git
 cd parity-bridges-common
 
 # checkout desired branch or use master:
 # git checkout -b master --track origin/master
+# `polkadot-staging` (recommended) is stabilized and compatible for Cumulus releases
+# `master` is latest development
 git checkout -b polkadot-staging --track origin/polkadot-staging
 
 cargo build --release -p substrate-relay
 cp target/release/substrate-relay ~/local_bridge_testing/bin/substrate-relay
 
 ---
-# 5. Build polkadot-parachain-mint binary with `asset-hub-kusama`/`asset-hub-westend` for moving assets
+# 4. Build cumulus polkadot-parachain binary
 cd <cumulus-git-repo-dir>
-# TODO:check-parameter - change this when merged to master
-git checkout -b bko-transfer-asset-via-bridge --track origin/bko-transfer-asset-via-bridge
-cargo build --release --locked -p polkadot-parachain-bin
-cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain-mint
+
+# checkout desired branch or use master:
+# git checkout -b master --track origin/master
+
+# !!! READ HERE (TODO remove once merged)
+# The use case "moving assets over bridge" is not merged yet and is implemented in separate branches.
+# So, if you want to try it, you need to checkout different branch and continue with these instructions there.
+#
+# For Kusama/Polkadot local bridge testing:
+# git checkout -b bko-transfer-asset-via-bridge --track origin/bko-transfer-asset-via-bridge
+#
+# For Rococo/Wococo local/onchain bridge testing:
+# git checkout -b bko-transfer-asset-via-bridge-ro-wo --track origin/bko-transfer-asset-via-bridge-ro-wo
+
+cargo build --release --locked --bin polkadot-parachain
+cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain
+cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain-asset-hub
 ```
 
 ## How to test locally Rococo <-> Wococo bridge
@@ -93,18 +95,18 @@ cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-paracha
 ### Run chains (Rococo + BridgeHub, Wococo + BridgeHub) with zombienet
 
 ```
-# Rococo + BridgeHubRococo + Rockmine (mirroring Kusama)
+# Rococo + BridgeHubRococo + AssetHub for Rococo (mirroring Kusama)
 POLKADOT_BINARY_PATH=~/local_bridge_testing/bin/polkadot \
 POLKADOT_PARACHAIN_BINARY_PATH=~/local_bridge_testing/bin/polkadot-parachain \
-POLKADOT_PARACHAIN_BINARY_PATH_FOR_ROCKMINE=~/local_bridge_testing/bin/polkadot-parachain-mint \
+POLKADOT_PARACHAIN_BINARY_PATH_FOR_ASSET_HUB_ROCOCO=~/local_bridge_testing/bin/polkadot-parachain-asset-hub \
 	~/local_bridge_testing/bin/zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_rococo_local_network.toml
 ```
 
 ```
-# Wococo + BridgeHubWococo + Wockmint (mirroring Polkadot)
+# Wococo + BridgeHubWococo + AssetHub for Wococo (mirroring Polkadot)
 POLKADOT_BINARY_PATH=~/local_bridge_testing/bin/polkadot \
 POLKADOT_PARACHAIN_BINARY_PATH=~/local_bridge_testing/bin/polkadot-parachain \
-POLKADOT_PARACHAIN_BINARY_PATH_FOR_WOCKMINT=~/local_bridge_testing/bin/polkadot-parachain-mint \
+POLKADOT_PARACHAIN_BINARY_PATH_FOR_ASSET_HUB_WOCOCO=~/local_bridge_testing/bin/polkadot-parachain-asset-hub \
 	~/local_bridge_testing/bin/zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_wococo_local_network.toml
 ```
 
@@ -193,70 +195,29 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 	- Pallet: **bridgeRococoParachain**
 	- Keys: **bestParaHeads()**
 
-### Send messages
+### Send messages - transfer asset over bridge
 
-#### Local zombienet run
-
-1. allow bridge transfer on kusama/westend asset hubs (governance-like):
-   ```
-   ./scripts/bridges_rococo_wococo.sh allow-transfers-local
-   ```
-
-2. do (asset) transfer from kusama's asset hub to westend's asset hub:
-   ```
-   ./scripts/bridges_rococo_wococo.sh transfer-asset-from-asset-hub-kusama-local
-   ```
-
-3. do (ping) transfer from kusama's asset hub to westend's asset hub
-   ```
-   ./scripts/bridges_rococo_wococo.sh ping-via-bridge-from-asset-hub-kusama-local
-   ```
-
-- open explorers: (see zombienets)
-	- Kusama Asset Hub (see events `xcmpQueue.XcmpMessageSent`, `bridgeTransfer.ReserveAssetsDeposited`, `bridgeTransfer.TransferInitiated`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9910#/explorer
-	- BridgeHubRococo (see `bridgeWococoMessages.MessageAccepted`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8943#/explorer
-	- BridgeHubWococo (see `bridgeRococoMessages.MessagesReceived`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8945#/explorer
-	- Westend Asset Hub (see `xcmpQueue.Success` for `transfer-asset` and `xcmpQueue.Fail` for `ping-via-bridge`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9010#/explorer
-    - BridgeHubRococo (see `bridgeWococoMessages.MessagesDelivered`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8943#/explorer
-
-#### Live Rockmine2 to Wockmint
-- uses account seed on Live Rococo:Rockmine2
-  ```
-  cd <cumulus-git-repo-dir>
-
-  ./scripts/bridges_rococo_wococo.sh transfer-asset-from-asset-hub-rococo
-  or
-  ./scripts/bridges_rococo_wococo.sh ping-via-bridge-from-asset-hub-rococo
-  ```
-
-- open explorers:
-	- Rockmine2 (see events `xcmpQueue.XcmpMessageSent`, `bridgeTransfer.ReserveAssetsDeposited`, `bridgeTransfer.TransferInitiated`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fws-rococo-rockmine2-collator-node-0.parity-testnet.parity.io#/explorer
-	- BridgeHubRococo (see `bridgeWococoMessages.MessageAccepted`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-bridge-hub-rpc.polkadot.io#/explorer
-	- BridgeHubWococo (see `bridgeRococoMessages.MessagesReceived`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fwococo-bridge-hub-rpc.polkadot.io#/explorer
-	- Wockmint (see `xcmpQueue.Success` for `transfer-asset` and `xcmpQueue.Fail` for `ping-via-bridge`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fws-wococo-wockmint-collator-node-0.parity-testnet.parity.io#/explorer
-	- BridgeHubRococo (see `bridgeWococoMessages.MessagesDelivered`)
+TODO: see `# !!! READ HERE` above
 
 ## How to test locally Kusama <-> Polkadot bridge
 
 Check [requirements](#requirements-for-local-runtesting) for "sudo pallet + fast-runtime".
 
-### 1. Run chains (Kusama + BridgeHub, Polkadot + BridgeHub) with zombienet
+### 1. Run chains (Kusama + BridgeHub + AssetHub, Polkadot + BridgeHub + AssetHub) with zombienet
 
 ```
-# Kusama + BridgeHubKusama + Statemine
+# Kusama + BridgeHubKusama + AssetHubKusama
 POLKADOT_BINARY_PATH=~/local_bridge_testing/bin/polkadot \
 POLKADOT_PARACHAIN_BINARY_PATH=~/local_bridge_testing/bin/polkadot-parachain \
-POLKADOT_PARACHAIN_BINARY_PATH_FOR_STATEMINE=~/local_bridge_testing/bin/polkadot-parachain-mint \
+POLKADOT_PARACHAIN_BINARY_PATH_FOR_ASSET_HUB_KUSAMA=~/local_bridge_testing/bin/polkadot-parachain-asset-hub \
 	~/local_bridge_testing/bin/zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_kusama_local_network.toml
 ```
 
 ```
-# TODO:check-parameter - once Statemint is ready, switch it here instead of Westmint
-# Polkadot + BridgeHubPolkadot + Westmint
+# Polkadot + BridgeHubPolkadot + AssetHubPolkadot
 POLKADOT_BINARY_PATH=~/local_bridge_testing/bin/polkadot \
 POLKADOT_PARACHAIN_BINARY_PATH=~/local_bridge_testing/bin/polkadot-parachain \
-POLKADOT_PARACHAIN_BINARY_PATH_FOR_STATEMINT=~/local_bridge_testing/bin/polkadot-parachain-mint \
-STATEMINT_CHAIN=westmint-local \
+POLKADOT_PARACHAIN_BINARY_PATH_FOR_ASSET_HUB_POLKADOT=~/local_bridge_testing/bin/polkadot-parachain-asset-hub \
 	~/local_bridge_testing/bin/zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_polkadot_local_network.toml
 ```
 
@@ -267,26 +228,6 @@ cd <cumulus-git-repo-dir>
 ./scripts/bridges_kusama_polkadot.sh run-relay
 ```
 
-### 3. Test bridge transfer
+### Send messages - transfer asset over bridge
 
-Allow bridge transfer on statemine/statemint (governance-like):
-```
-./scripts/bridges_kusama_polkadot.sh allow-transfers-local
-```
-
-Do (asset) transfer from statemine to statemint
-```
-./scripts/bridges_kusama_polkadot.sh transfer-asset-from-statemine-local
-```
-
-Do (ping) transfer from statemine to statemint
-```
-./scripts/bridges_kusama_polkadot.sh ping-via-bridge-from-statemine-local
-```
-
-- open explorers: (see zombienets)
-	- Statemine (see events `xcmpQueue.XcmpMessageSent`, `bridgeTransfer.ReserveAssetsDeposited`, `bridgeTransfer.TransferInitiated`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9910#/explorer
-	- BridgeHubKusama (see `bridgePolkadotMessages.MessageAccepted`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8943#/explorer
-	- BridgeHubPolkadot (see `bridgeKusamaMessages.MessagesReceived`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8945#/explorer
-	- Westmint (see `xcmpQueue.Success` for `transfer-asset` and `xcmpQueue.Fail` for `ping-via-bridge`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9010#/explorer
-	- BridgeHubKusama (see `bridgePolkadotMessages.MessagesDelivered`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8943#/explorer
+TODO: see `# !!! READ HERE` above

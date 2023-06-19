@@ -5,10 +5,10 @@ source "$(dirname "$0")"/bridges_rococo_wococo.sh "import"
 
 # Address: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
 # AccountId: [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]
-STATEMINE_ACCOUNT_SEED_FOR_LOCAL="//Alice"
+ASSET_HUB_KUSAMA_ACCOUNT_SEED_FOR_LOCAL="//Alice"
 # Address: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
 # AccountId: [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]
-WESTMINT_ACCOUNT_ADDRESS_FOR_LOCAL="5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+ASSET_HUB_POLKADOT_ACCOUNT_ADDRESS_FOR_LOCAL="5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
 
 # SovereignAccount for `MultiLocation { parents: 2, interior: X2(GlobalConsensus(Rococo), Parachain(1000)) }` => 5DLdHR78ujzS93zCVeyZB1qRFjBCdMnJwnpSBSRZ6jMX8R5y
 #
@@ -19,7 +19,7 @@ WESTMINT_ACCOUNT_ADDRESS_FOR_LOCAL="5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGK
 #             MultiLocation { parents: 2, interior: X2(GlobalConsensus(Kusama), Parachain(1000)) }).unwrap()
 #		).to_ss58check_with_version(42_u16.into())
 # );
-KUSAMA_STATEMINE_1000_SOVEREIGN_ACCOUNT="5DLdHR78ujzS93zCVeyZB1qRFjBCdMnJwnpSBSRZ6jMX8R5y"
+KUSAMA_ASSET_HUB_KUSAMA_1000_SOVEREIGN_ACCOUNT="5DLdHR78ujzS93zCVeyZB1qRFjBCdMnJwnpSBSRZ6jMX8R5y"
 
 function init_ksm_dot() {
     ensure_relayer
@@ -83,76 +83,19 @@ case "$1" in
     init_dot_ksm
     run_relay
     ;;
-  allow-transfers-local)
-      # this allows send transfers on statemine (by governance-like)
-      ./$0 "allow-transfer-on-statemine-local"
-      # this allows receive transfers on westmint (by governance-like)
-      ./$0 "allow-transfer-on-westmint-local"
-      ;;
-  allow-transfer-on-statemine-local)
-      ensure_polkadot_js_api
-      allow_assets_transfer_send \
-          "ws://127.0.0.1:9942" \
-          "//Alice" \
-          1000 \
-          "ws://127.0.0.1:9910" \
-          1002 \
-          "Polkadot" 1000
-      ;;
-  allow-transfer-on-westmint-local)
-      ensure_polkadot_js_api
-      allow_assets_transfer_receive \
-          "ws://127.0.0.1:9945" \
-          "//Alice" \
-          1000 \
-          "ws://127.0.0.1:9010" \
-          1002 \
-          "Kusama" \
-          1000
-      transfer_balance \
-          "ws://127.0.0.1:9010" \
-          "//Alice" \
-          "$KUSAMA_STATEMINE_1000_SOVEREIGN_ACCOUNT" \
-          $((1000000000 + 50000000000 * 20)) # ExistentialDeposit + maxTargetLocationFee * 20
-      # create foreign assets for native Statemine token
-      force_create_foreign_asset \
-          "ws://127.0.0.1:9945" \
-          "//Alice" \
-          1000 \
-          "ws://127.0.0.1:9010" \
-          "Kusama" \
-          "$KUSAMA_STATEMINE_1000_SOVEREIGN_ACCOUNT"
-      ;;
-  remove-assets-transfer-from-statemine-local)
-      ensure_polkadot_js_api
-      remove_assets_transfer_send \
-          "ws://127.0.0.1:9942" \
-          "//Alice" \
-          1000 \
-          "ws://127.0.0.1:9910" \
-          "Polkadot"
-      ;;
-  transfer-asset-from-statemine-local)
+  transfer-asset-from-asset-hub-kusama-local)
       ensure_polkadot_js_api
       transfer_asset_via_bridge \
           "ws://127.0.0.1:9910" \
-          "$STATEMINE_ACCOUNT_SEED_FOR_LOCAL" \
-          "$WESTMINT_ACCOUNT_ADDRESS_FOR_LOCAL" \
-          "Polkadot"
-      ;;
-  ping-via-bridge-from-statemine-local)
-      ensure_polkadot_js_api
-      ping_via_bridge \
-          "ws://127.0.0.1:9910" \
-          "$STATEMINE_ACCOUNT_SEED_FOR_LOCAL" \
-          "$WESTMINT_ACCOUNT_ADDRESS_FOR_LOCAL" \
+          "$ASSET_HUB_KUSAMA_ACCOUNT_SEED_FOR_LOCAL" \
+          "$ASSET_HUB_POLKADOT_ACCOUNT_ADDRESS_FOR_LOCAL" \
           "Polkadot"
       ;;
   drip)
       transfer_balance \
           "ws://127.0.0.1:9010" \
           "//Alice" \
-          "$KUSAMA_STATEMINE_1000_SOVEREIGN_ACCOUNT" \
+          "$KUSAMA_ASSET_HUB_KUSAMA_1000_SOVEREIGN_ACCOUNT" \
           $((1000000000 + 50000000000 * 20))
       ;;
   stop)
@@ -163,12 +106,7 @@ case "$1" in
     echo "A command is require. Supported commands for:
     Local (zombienet) run:
           - run-relay
-          - allow-transfers-local
-              - allow-transfer-on-statemine-local
-              - allow-transfer-on-westmint-local
-              - remove-assets-transfer-from-statemine-local
-          - transfer-asset-from-statemine-local
-          - ping-via-bridge-from-statemine-local";
+          - transfer-asset-from-asset-hub-kusama-local";
     exit 1
     ;;
 esac

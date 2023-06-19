@@ -67,30 +67,30 @@ cumulus_based = true
 
 [[parachains]]
 id = 1000
-chain = "{{STATEMINT_CHAIN}}"
+chain = "asset-hub-polkadot-local"
 cumulus_based = true
 
 	[[parachains.collators]]
-	name = "statemint-collator1"
+	name = "asset-hub-polkadot-collator1"
 	rpc_port = 9011
 	ws_port = 9010
-	command = "{{POLKADOT_PARACHAIN_BINARY_PATH_FOR_STATEMINT}}"
+	command = "{{POLKADOT_PARACHAIN_BINARY_PATH_FOR_ASSET_HUB_POLKADOT}}"
 	args = [
 		"-lparachain=debug,xcm=trace,runtime::bridge-transfer=trace",
 	]
 	extra_args = [
-		"--no-mdns", "--bootnodes {{'statemint-collator2'|zombie('multiAddress')}}",
+		"--no-mdns", "--bootnodes {{'asset-hub-polkadot-collator2'|zombie('multiAddress')}}",
 		"-- --port 31333 --rpc-port 38933 --ws-port 38943 --no-mdns", "--bootnodes {{'alice-validator-dot'|zombie('multiAddress')}}"
 	]
 
 	[[parachains.collators]]
-	name = "statemint-collator2"
-	command = "{{POLKADOT_PARACHAIN_BINARY_PATH_FOR_STATEMINT}}"
+	name = "asset-hub-polkadot-collator2"
+	command = "{{POLKADOT_PARACHAIN_BINARY_PATH_FOR_ASSET_HUB_POLKADOT}}"
 	args = [
 		"-lparachain=debug,xcm=trace,runtime::bridge-transfer=trace",
 	]
 	extra_args = [
-		"--no-mdns", "--bootnodes {{'statemint-collator1'|zombie('multiAddress')}}",
+		"--no-mdns", "--bootnodes {{'asset-hub-polkadot-collator1'|zombie('multiAddress')}}",
 		"-- --port 31433 --rpc-port 38833 --ws-port 38843 --no-mdns", "--bootnodes {{'alice-validator-dot'|zombie('multiAddress')}}"
 	]
 

@@ -67,30 +67,30 @@ cumulus_based = true
 
 [[parachains]]
 id = 1000
-chain = "statemine-local"
+chain = "asset-hub-kusama-local"
 cumulus_based = true
 
 	[[parachains.collators]]
-	name = "statemine-collator1"
+	name = "asset-hub-kusama-collator1"
 	rpc_port = 9911
 	ws_port = 9910
-	command = "{{POLKADOT_PARACHAIN_BINARY_PATH_FOR_STATEMINE}}"
+	command = "{{POLKADOT_PARACHAIN_BINARY_PATH_FOR_ASSET_HUB_KUSAMA}}"
 	args = [
 		"-lparachain=debug,xcm=trace,runtime::bridge-transfer=trace",
 	]
 	extra_args = [
-		"--no-mdns", "--bootnodes {{'statemine-collator2'|zombie('multiAddress')}}",
+		"--no-mdns", "--bootnodes {{'asset-hub-kusama-collator2'|zombie('multiAddress')}}",
 		"-- --port 51333 --rpc-port 58933 --ws-port 58943 --no-mdns", "--bootnodes {{'alice-validator'|zombie('multiAddress')}}"
 	]
 
 	[[parachains.collators]]
-	name = "statemine-collator2"
-	command = "{{POLKADOT_PARACHAIN_BINARY_PATH_FOR_STATEMINE}}"
+	name = "asset-hub-kusama-collator2"
+	command = "{{POLKADOT_PARACHAIN_BINARY_PATH_FOR_ASSET_HUB_KUSAMA}}"
 	args = [
 		"-lparachain=debug,xcm=trace,runtime::bridge-transfer=trace",
 	]
 	extra_args = [
-		"--no-mdns", "--bootnodes {{'statemine-collator1'|zombie('multiAddress')}}",
+		"--no-mdns", "--bootnodes {{'asset-hub-kusama-collator1'|zombie('multiAddress')}}",
 		"-- --port 51433 --rpc-port 58833 --ws-port 58843 --no-mdns", "--bootnodes {{'alice-validator'|zombie('multiAddress')}}"
 	]
 
