@@ -329,11 +329,12 @@ pub async fn find_potential_parents<B: BlockT>(
 
 		// push children onto search frontier.
 		for child in client.children(hash).ok().into_iter().flat_map(|c| c) {
-			let aligned_with_pending = parent_aligned_with_pending && if child_depth == 1 {
-				pending_hash.as_ref().map_or(true, |h| &child == h)
-			} else {
-				true
-			};
+			let aligned_with_pending = parent_aligned_with_pending &&
+				if child_depth == 1 {
+					pending_hash.as_ref().map_or(true, |h| &child == h)
+				} else {
+					true
+				};
 
 			if params.ignore_alternative_branches && !aligned_with_pending {
 				continue
