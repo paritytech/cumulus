@@ -295,11 +295,12 @@ pub mod rococo {
 				code: bridge_hub_rococo_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
 					.to_vec(),
+			..Default::default()
 			},
 			balances: bridge_hub_rococo_runtime::BalancesConfig {
 				balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 			},
-			parachain_info: bridge_hub_rococo_runtime::ParachainInfoConfig { parachain_id: id },
+			parachain_info: bridge_hub_rococo_runtime::ParachainInfoConfig { parachain_id: id , ..Default::default()},
 			collator_selection: bridge_hub_rococo_runtime::CollatorSelectionConfig {
 				invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 				candidacy_bond: BRIDGE_HUB_ROCOCO_ED * 16,
@@ -322,6 +323,7 @@ pub mod rococo {
 			parachain_system: Default::default(),
 			polkadot_xcm: bridge_hub_rococo_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
+			..Default::default()
 			},
 			bridge_wococo_grandpa: bridge_hub_rococo_runtime::BridgeWococoGrandpaConfig {
 				owner: bridges_pallet_owner.clone(),
@@ -461,6 +463,7 @@ pub mod kusama {
 				code: bridge_hub_kusama_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
 					.to_vec(),
+			..Default::default()
 			},
 			balances: bridge_hub_kusama_runtime::BalancesConfig {
 				balances: endowed_accounts
@@ -469,7 +472,7 @@ pub mod kusama {
 					.map(|k| (k, BRIDGE_HUB_KUSAMA_ED * 524_288))
 					.collect(),
 			},
-			parachain_info: bridge_hub_kusama_runtime::ParachainInfoConfig { parachain_id: id },
+			parachain_info: bridge_hub_kusama_runtime::ParachainInfoConfig { parachain_id: id, ..Default::default() },
 			collator_selection: bridge_hub_kusama_runtime::CollatorSelectionConfig {
 				invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 				candidacy_bond: BRIDGE_HUB_KUSAMA_ED * 16,
@@ -492,6 +495,7 @@ pub mod kusama {
 			parachain_system: Default::default(),
 			polkadot_xcm: bridge_hub_kusama_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
+			..Default::default()
 			},
 		}
 	}
@@ -593,6 +597,7 @@ pub mod polkadot {
 				code: bridge_hub_polkadot_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
 					.to_vec(),
+			..Default::default()
 			},
 			balances: bridge_hub_polkadot_runtime::BalancesConfig {
 				balances: endowed_accounts
@@ -601,7 +606,7 @@ pub mod polkadot {
 					.map(|k| (k, BRIDGE_HUB_POLKADOT_ED * 4096))
 					.collect(),
 			},
-			parachain_info: bridge_hub_polkadot_runtime::ParachainInfoConfig { parachain_id: id },
+			parachain_info: bridge_hub_polkadot_runtime::ParachainInfoConfig { parachain_id: id , ..Default::default()},
 			collator_selection: bridge_hub_polkadot_runtime::CollatorSelectionConfig {
 				invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 				candidacy_bond: BRIDGE_HUB_POLKADOT_ED * 16,
@@ -624,6 +629,7 @@ pub mod polkadot {
 			parachain_system: Default::default(),
 			polkadot_xcm: bridge_hub_polkadot_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
+			..Default::default()
 			},
 		}
 	}
