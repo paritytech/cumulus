@@ -90,7 +90,7 @@ cd <cumulus-git-repo-dir>
 
 cargo build --release --locked --bin polkadot-parachain
 cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain
-cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain-mint
+cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain-asset-hub
 ```
 
 ## How to test locally Rococo <-> Wococo bridge
@@ -98,18 +98,18 @@ cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-paracha
 ### Run chains (Rococo + BridgeHub, Wococo + BridgeHub) with zombienet
 
 ```
-# Rococo + BridgeHubRococo + Rockmine (mirroring Kusama)
+# Rococo + BridgeHubRococo + AssetHub for Rococo (mirroring Kusama)
 POLKADOT_BINARY_PATH=~/local_bridge_testing/bin/polkadot \
 POLKADOT_PARACHAIN_BINARY_PATH=~/local_bridge_testing/bin/polkadot-parachain \
-POLKADOT_PARACHAIN_BINARY_PATH_FOR_ROCKMINE=~/local_bridge_testing/bin/polkadot-parachain-mint \
+POLKADOT_PARACHAIN_BINARY_PATH_FOR_ASSET_HUB_ROCOCO=~/local_bridge_testing/bin/polkadot-parachain-asset-hub \
 	~/local_bridge_testing/bin/zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_rococo_local_network.toml
 ```
 
 ```
-# Wococo + BridgeHubWococo + Wockmint (mirroring Polkadot)
+# Wococo + BridgeHubWococo + AssetHub for Wococo (mirroring Polkadot)
 POLKADOT_BINARY_PATH=~/local_bridge_testing/bin/polkadot \
 POLKADOT_PARACHAIN_BINARY_PATH=~/local_bridge_testing/bin/polkadot-parachain \
-POLKADOT_PARACHAIN_BINARY_PATH_FOR_WOCKMINT=~/local_bridge_testing/bin/polkadot-parachain-mint \
+POLKADOT_PARACHAIN_BINARY_PATH_FOR_ASSET_HUB_WOCOCO=~/local_bridge_testing/bin/polkadot-parachain-asset-hub \
 	~/local_bridge_testing/bin/zombienet-linux --provider native spawn ./zombienet/bridge-hubs/bridge_hub_wococo_local_network.toml
 ```
 
