@@ -17,7 +17,7 @@
 use collator_overseer::{CollatorOverseerGenArgs, NewMinimalNode};
 
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_rpc_interface::{RelayChainRpcInterface, Url};
+use cumulus_relay_chain_rpc_interface::{RelayChainRpcClient, RelayChainRpcInterface, Url};
 use network::build_collator_network;
 use polkadot_network_bridge::{peer_sets_info, IsAuthority};
 use polkadot_node_network_protocol::{
@@ -81,16 +81,11 @@ fn build_authority_discovery_service<Block: BlockT>(
 	service
 }
 
-pub async fn build_minimal_relay_chain_node_with_rpc(
+async fn build_interface(
 	polkadot_config: Configuration,
 	task_manager: &mut TaskManager,
-	relay_chain_url: Vec<Url>,
+	client: RelayChainRpcClient,
 ) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
-	let client = cumulus_relay_chain_rpc_interface::create_client_and_start_worker(
-		relay_chain_url,
-		task_manager,
-	)
-	.await?;
 	let collator_pair = CollatorPair::generate().0;
 	let collator_node = new_minimal_relay_chain(
 		polkadot_config,
@@ -103,6 +98,20 @@ pub async fn build_minimal_relay_chain_node_with_rpc(
 		Arc::new(RelayChainRpcInterface::new(client, collator_node.overseer_handle)),
 		Some(collator_pair),
 	))
+}
+
+pub async fn build_minimal_relay_chain_node_with_rpc(
+	polkadot_config: Configuration,
+	task_manager: &mut TaskManager,
+	relay_chain_url: Vec<Url>,
+) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
+	let client = cumulus_relay_chain_rpc_interface::create_client_and_start_worker(
+		relay_chain_url,
+		task_manager,
+	)
+	.await?;
+
+	build_interface(polkadot_config, task_manager, client).await
 }
 
 pub async fn build_minimal_relay_chain_node_light_client(
@@ -126,18 +135,8 @@ pub async fn build_minimal_relay_chain_node_light_client(
 		task_manager,
 	)
 	.await?;
-	let collator_pair = CollatorPair::generate().0;
-	let collator_node = new_minimal_relay_chain(
-		polkadot_config,
-		collator_pair.clone(),
-		Arc::new(BlockChainRpcClient::new(client.clone())),
-	)
-	.await?;
-	task_manager.add_child(collator_node.task_manager);
-	Ok((
-		Arc::new(RelayChainRpcInterface::new(client, collator_node.overseer_handle)),
-		Some(collator_pair),
-	))
+
+	build_interface(polkadot_config, task_manager, client).await
 }
 /// Builds a minimal relay chain node. Chain data is fetched
 /// via [`BlockChainRpcClient`] and fed into the overseer and its subsystems.

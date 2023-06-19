@@ -104,7 +104,7 @@ pub async fn create_client_and_start_light_client_worker(
 	Ok(client)
 }
 
-/// Messages for communication between [`ReconnectingWsClient`] and [`ReconnectingWebsocketWorker`].
+/// Messages for communication between [`RpcFrontend`] and the RPC workers.
 #[derive(Debug)]
 pub enum RpcDispatcherMessage {
 	RegisterBestHeadListener(Sender<RelayHeader>),
