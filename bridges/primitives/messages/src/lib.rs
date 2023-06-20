@@ -102,6 +102,12 @@ impl TypeId for LaneId {
 	const TYPE_ID: [u8; 4] = *b"blan";
 }
 
+impl From<LaneId> for u32 {
+	fn from(lane_id: LaneId) -> u32 {
+		u32::from_be_bytes(lane_id.0)
+	}
+}
+
 /// Message nonce. Valid messages will never have 0 nonce.
 pub type MessageNonce = u64;
 
