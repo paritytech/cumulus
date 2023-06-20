@@ -4,7 +4,6 @@ pub mod extrinsic_weights;
 pub mod frame_system;
 pub mod pallet_assets;
 pub mod pallet_balances;
-pub mod pallet_bridge_transfer;
 pub mod pallet_collator_selection;
 pub mod pallet_multisig;
 pub mod pallet_nft_fractionalization;

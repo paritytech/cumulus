@@ -69,8 +69,9 @@ use parachains_common::{
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{
-	bridging, ForeignAssetsConvertedConcreteId, TrustBackedAssetsConvertedConcreteId,
-	WestendLocation, XcmConfig, XcmOriginToTransactDispatchOrigin,
+	ForeignAssetsConvertedConcreteId, ForeignCreatorsSovereignAccountOf,
+	TrustBackedAssetsConvertedConcreteId, WestendLocation, XcmConfig,
+	XcmOriginToTransactDispatchOrigin,
 };
 
 #[cfg(any(feature = "std", test))]
@@ -80,12 +81,8 @@ use assets_common::{
 	foreign_creators::ForeignCreators, matching::FromSiblingParachain, MultiLocationForAssetId,
 };
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
-use xcm_builder::EnsureXcmOrigin;
 use xcm_executor::XcmExecutor;
 
-use crate::xcm_config::{
-	AssetTransactors, ForeignCreatorsSovereignAccountOf, LocalOriginToLocation, UniversalLocation,
-};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 impl_opaque_keys! {
@@ -699,25 +696,6 @@ impl pallet_nfts::Config for Runtime {
 	type Helper = ();
 }
 
-impl pallet_bridge_transfer::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type UniversalLocation = UniversalLocation;
-	type WeightInfo = weights::pallet_bridge_transfer::WeightInfo<Runtime>;
-	type AssetTransactor = AssetTransactors;
-	type AssetTransferKindResolver =
-		pallet_bridge_transfer::features::ConcreteAssetTransferKindResolver<
-			bridging::IsTrustedBridgedReserveLocationForConcreteAsset,
-			pallet_bridge_transfer::features::IsAllowedReserveBasedTransferForConcreteAssetToBridgedLocation<UniversalLocation, bridging::Bridges>,
-		>;
-	type AssetTransferOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
-	type AssetsLimit = ConstU8<1>;
-	type BridgedDestinationValidator =
-		pallet_bridge_transfer_primitives::BridgesConfigAdapter<bridging::Bridges>;
-	type BridgeXcmSender = bridging::BridgeXcmSender;
-	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = xcm_config::BridgeTransferBenchmarksHelper;
-}
-
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -763,7 +741,6 @@ construct_runtime!(
 		Nfts: pallet_nfts::{Pallet, Call, Storage, Event<T>} = 52,
 		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 53,
 		NftFractionalization: pallet_nft_fractionalization::{Pallet, Call, Storage, Event<T>, HoldReason} = 54,
-		BridgeTransfer: pallet_bridge_transfer::{Pallet, Call, Storage, Event<T>} = 55,
 	}
 );
 
@@ -829,7 +806,6 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
-		[pallet_bridge_transfer, BridgeTransfer]
 		// XCM
 		[pallet_xcm, PolkadotXcm]
 		// NOTE: Make sure you point to the individual modules below.
@@ -1186,7 +1162,7 @@ impl_runtime_apis! {
 				}
 
 				fn universal_alias() -> Result<(MultiLocation, Junction), BenchmarkError> {
-					match xcm_config::BridgeTransferBenchmarksHelper::prepare_universal_alias() {
+					match xcm_config::bridging::BridgingBenchmarksHelper::prepare_universal_alias() {
 						Some(alias) => Ok(alias),
 						None => Err(BenchmarkError::Skip)
 					}

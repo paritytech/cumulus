@@ -191,14 +191,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			}
 		}
 
-		// Allow to change dedicated storage items (called by governance-like)
-		match call {
-			RuntimeCall::System(frame_system::Call::set_storage { items })
-				if items.iter().any(|(k, _)| k.eq(&bridging::AssetHubKusamaLocalMaxFee::key())) =>
-				return true,
-			_ => (),
-		};
-
 		matches!(
 			call,
 			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
@@ -429,7 +421,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetExchanger = ();
 	type FeeManager = ();
 	type MessageExporter = ();
-	type UniversalAliases = bridging::BridgedUniversalAliases;
+	type UniversalAliases = bridging::UniversalAliases;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
 	type SafeCallFilter = SafeCallFilter;
 	type Aliasers = Nothing;
@@ -438,14 +430,17 @@ impl xcm_executor::Config for XcmConfig {
 /// Local origins on this chain are allowed to dispatch XCM sends/executions.
 pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, RelayNetwork>;
 
-/// The means for routing XCM messages which are not for local execution into the right message
-/// queues.
-pub type XcmRouter = WithUniqueTopic<(
+/// For routing XCM messages which do not cross local consensus boundary.
+type LocalXcmRouter = (
 	// Two routers - use UMP to communicate with the relay chain:
 	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, ()>,
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
-)>;
+);
+
+/// The means for routing XCM messages which are not for local execution into the right message
+/// queues.
+pub type XcmRouter = WithUniqueTopic<(LocalXcmRouter, bridging::BridgingXcmRouter)>;
 
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
@@ -507,12 +502,9 @@ impl pallet_assets::BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 /// All configuration related to bridging
 pub mod bridging {
 	use super::*;
-	use pallet_bridge_transfer_primitives::{
-		AssetFilter, BridgeConfig, BridgesConfig, BridgesConfigAdapter, BridgesConfigBuilder,
-		MaybePaidLocation, MultiLocationFilter, ReserveLocation,
-	};
+	use assets_common::{matching, matching::*};
 	use sp_std::collections::btree_set::BTreeSet;
-	use xcm_builder::UnpaidRemoteExporter;
+	use xcm_builder::{NetworkExportTable, UnpaidRemoteExporter};
 
 	parameter_types! {
 		// used for local testing
@@ -520,40 +512,15 @@ pub mod bridging {
 		pub BridgeHub: MultiLocation = MultiLocation::new(1, X1(Parachain(BridgeHubParaId::get())));
 		pub const KusamaLocalNetwork: NetworkId = NetworkId::Kusama;
 		pub AssetHubKusamaLocal: MultiLocation =  MultiLocation::new(2, X2(GlobalConsensus(KusamaLocalNetwork::get()), Parachain(1000)));
-		// Initial value, this will be adjusted by governance motion on deployment with some more accurate value
-		pub storage AssetHubKusamaLocalMaxFee: Option<MultiAsset> = Some((MultiLocation::parent(), 1_000_000).into());
 		pub KsmLocation: MultiLocation =  MultiLocation::new(2, X1(GlobalConsensus(KusamaLocalNetwork::get())));
 
-		// Setup bridges configuration
-		// Allows to transfer only WND to AssetHubKusama
-		// (hard-coded version - on-chain configuration will come later as separate feature)
-		pub Bridges: BridgesConfig = BridgesConfigBuilder::default()
-			// add exporter for Kusama
-			.add_or_panic(
-				KusamaLocalNetwork::get(),
-				BridgeConfig::new(
-					MaybePaidLocation {
-						location: BridgeHub::get(),
-						// Noe fees needed because we use `UnpaidRemoteExporter` and BridgeHubKusama allows unpaid execution for local system parachains
-						maybe_fee: None,
-					}
-				).add_target_location(
-					// add target location as AssetHubKusamaLocal
-					MaybePaidLocation {
-						location: AssetHubKusamaLocal::get(),
-						maybe_fee: AssetHubKusamaLocalMaxFee::get(),
-					},
-					Some(AssetFilter::ByMultiLocation(
-						MultiLocationFilter::default()
-							// allow transfer WND
-							.add_equals(WestendLocation::get())
-					))
-				)
-			)
-			.build();
+		/// Setup exporters configuration
+		pub BridgeTable: sp_std::vec::Vec<(NetworkId, MultiLocation, Option<MultiAsset>)> = sp_std::vec![
+			(KusamaLocalNetwork::get(), BridgeHub::get(), None)
+		];
 
-		// Setup trusted bridged reserve locations
-		pub BridgedReserves: sp_std::vec::Vec<ReserveLocation> = sp_std::vec![
+		/// Setup trusted bridged reserve locations
+		pub BridgedReserves: sp_std::vec::Vec<FilteredReserveLocation> = sp_std::vec![
 			// trust assets from AssetHubKusamaLocal
 			(
 				AssetHubKusamaLocal::get(),
@@ -566,124 +533,45 @@ pub mod bridging {
 		];
 
 		/// Universal aliases
-		pub BridgedUniversalAliases: BTreeSet<(MultiLocation, Junction)> = BTreeSet::from_iter(
+		pub UniversalAliases: BTreeSet<(MultiLocation, Junction)> = BTreeSet::from_iter(
 			sp_std::vec![
 				(BridgeHub::get(), GlobalConsensus(KusamaLocalNetwork::get()))
 			]
 		);
 	}
 
-	impl Contains<(MultiLocation, Junction)> for BridgedUniversalAliases {
+	impl Contains<(MultiLocation, Junction)> for UniversalAliases {
 		fn contains(alias: &(MultiLocation, Junction)) -> bool {
-			BridgedUniversalAliases::get().contains(alias)
+			UniversalAliases::get().contains(alias)
 		}
 	}
 
 	/// Bridge router, which wraps and sends xcm to BridgeHub to be delivered to the different GlobalConsensus
-	pub type BridgeXcmSender =
-		UnpaidRemoteExporter<BridgesConfigAdapter<Bridges>, XcmRouter, UniversalLocation>;
+	pub type BridgingXcmRouter =
+		UnpaidRemoteExporter<NetworkExportTable<BridgeTable>, LocalXcmRouter, UniversalLocation>;
 
 	/// Reserve locations filter for `xcm_executor::Config::IsReserve`.
 	pub type IsTrustedBridgedReserveLocationForConcreteAsset =
-		pallet_bridge_transfer::features::IsTrustedBridgedReserveLocationForConcreteAsset<
+		matching::IsTrustedBridgedReserveLocationForConcreteAsset<
 			UniversalLocation,
 			BridgedReserves,
 		>;
-}
 
-#[cfg(feature = "runtime-benchmarks")]
-use pallet_bridge_transfer_primitives::{MaybePaidLocation, ReachableDestination};
+	/// Benchmarks helper for over-bridge transfer pallet.
+	#[cfg(feature = "runtime-benchmarks")]
+	pub struct BridgingBenchmarksHelper;
 
-/// Benchmarks helper for over-bridge transfer pallet.
-#[cfg(feature = "runtime-benchmarks")]
-pub struct BridgeTransferBenchmarksHelper;
-#[cfg(feature = "runtime-benchmarks")]
-impl pallet_bridge_transfer::BenchmarkHelper<RuntimeOrigin> for BridgeTransferBenchmarksHelper {
-	fn desired_bridged_location() -> Option<(NetworkId, ReachableDestination)> {
-		let bridged_network = bridging::KusamaLocalNetwork::get();
-		let target_location = bridging::AssetHubKusamaLocal::get();
-		let target_location_fee = bridging::AssetHubKusamaLocalMaxFee::get();
-		let target_location_account = target_location
-			.clone()
-			.appended_with(AccountId32 {
-				network: Some(bridged_network),
-				id: AccountId::from([42u8; 32]).into(),
-			})
-			.expect("Correct target_location_account");
-
-		Some((
-			bridging::KusamaLocalNetwork::get(),
-			ReachableDestination {
-				bridge: MaybePaidLocation {
-					location: bridging::BridgeHub::get(),
-					// Right now `UnpaidRemoteExporter` is used to send XCM messages and it requires
-					// fee to be `None`. If we're going to change that (are we?), then we should replace
-					// this `None` with `Some(Self::make_asset(crate::ExistentialDeposit::get()))`
-					maybe_fee: None,
-				},
-				target: MaybePaidLocation {
-					location: target_location,
-					maybe_fee: target_location_fee,
-				},
-				target_destination: target_location_account,
-			},
-		))
-	}
-
-	fn prepare_asset_transfer_for(
-		desired_bridged_location: (NetworkId, ReachableDestination),
-		assumed_reserve_account: MultiLocation,
-	) -> Option<(RuntimeOrigin, xcm::VersionedMultiAssets, xcm::VersionedMultiLocation)> {
-		use frame_support::traits::Currency;
-		let (_, desired_bridged_location) = desired_bridged_location;
-
-		// our `BridgeXcmSender` assumes that the HRMP channel is opened between this
-		// parachain and the sibling bridge-hub parachain.
-		// we expect local bridge-hub
-		let bridge_hub_para_id = match desired_bridged_location.bridge.location {
-			MultiLocation { parents: 1, interior: X1(Parachain(bridge_hub_para_id)) } =>
-				bridge_hub_para_id,
-			_ => panic!("Cannot resolve bridge_hub_para_id"),
-		};
-		cumulus_pallet_parachain_system::Pallet::<Runtime>::open_outbound_hrmp_channel_for_benchmarks(
-			bridge_hub_para_id.into(),
-		);
-
-		// sender account
-		let sender_account = AccountId::from([42u8; 32]);
-		// reserve account
-		use xcm_executor::traits::ConvertLocation;
-		let assumed_reserve_account =
-			LocationToAccountId::convert_location(&assumed_reserve_account)
-				.expect("Correct AccountId");
-
-		// deposit enough (ED) funds to the sender and reserve account
-		let existential_deposit = crate::ExistentialDeposit::get();
-		let _ = Balances::deposit_creating(&sender_account, existential_deposit * 10);
-		let _ = Balances::deposit_creating(&assumed_reserve_account, existential_deposit * 10);
-
-		// finally - prepare assets
-		// lets consider our worst case scenario - reserve based transfer with relay chain tokens
-		let asset: MultiAsset = (Concrete(WestendLocation::get()), existential_deposit * 2).into();
-
-		let assets = xcm::VersionedMultiAssets::from(MultiAssets::from(asset));
-		let destination =
-			xcm::VersionedMultiLocation::from(desired_bridged_location.target_destination);
-
-		Some((RuntimeOrigin::signed(sender_account), assets, destination))
-	}
-}
-
-#[cfg(feature = "runtime-benchmarks")]
-impl BridgeTransferBenchmarksHelper {
-	pub fn prepare_universal_alias() -> Option<(MultiLocation, Junction)> {
-		let alias = bridging::BridgedUniversalAliases::get().into_iter().find_map(
-			|(location, junction)| match bridging::BridgeHub::get().eq(&location) {
-				true => Some((location, junction)),
-				false => None,
-			},
-		);
-		assert!(alias.is_some(), "we expect here BridgeHub to KusamaLocal mapping at least");
-		Some(alias.unwrap())
+	#[cfg(feature = "runtime-benchmarks")]
+	impl BridgingBenchmarksHelper {
+		pub fn prepare_universal_alias() -> Option<(MultiLocation, Junction)> {
+			let alias = UniversalAliases::get().into_iter().find_map(|(location, junction)| {
+				match bridging::BridgeHub::get().eq(&location) {
+					true => Some((location, junction)),
+					false => None,
+				}
+			});
+			assert!(alias.is_some(), "we expect here BridgeHub to KusamaLocal mapping at least");
+			Some(alias.unwrap())
+		}
 	}
 }

@@ -420,8 +420,6 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-bridge-transfer",
- "pallet-bridge-transfer-primitives",
  "pallet-collator-selection",
  "pallet-multisig",
  "pallet-nfts",
@@ -518,8 +516,6 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-bridge-transfer",
- "pallet-bridge-transfer-primitives",
  "pallet-collator-selection",
  "pallet-multisig",
  "pallet-nfts",
@@ -616,8 +612,6 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-bridge-transfer",
- "pallet-bridge-transfer-primitives",
  "pallet-collator-selection",
  "pallet-multisig",
  "pallet-nft-fractionalization",
@@ -674,8 +668,6 @@ dependencies = [
  "hex-literal 0.3.4",
  "pallet-assets",
  "pallet-balances",
- "pallet-bridge-transfer",
- "pallet-bridge-transfer-primitives",
  "pallet-collator-selection",
  "pallet-session",
  "pallet-xcm",
@@ -7400,39 +7392,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
-]
-
-[[package]]
-name = "pallet-bridge-transfer"
-version = "0.1.0"
-dependencies = [
- "cumulus-pallet-xcmp-queue",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "frame-system-benchmarking",
- "log",
- "pallet-balances",
- "pallet-bridge-transfer-primitives",
- "parity-scale-codec",
- "polkadot-parachain",
- "scale-info",
- "sp-runtime",
- "sp-std",
- "sp-version",
- "xcm",
- "xcm-builder",
- "xcm-executor",
-]
-
-[[package]]
-name = "pallet-bridge-transfer-primitives"
-version = "0.1.0"
-dependencies = [
- "frame-support",
- "sp-std",
- "xcm",
- "xcm-builder",
 ]
 
 [[package]]
