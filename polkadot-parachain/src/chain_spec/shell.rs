@@ -45,7 +45,7 @@ fn shell_testnet_genesis(parachain_id: ParaId) -> shell_runtime::RuntimeGenesisC
 				.to_vec(),
 			..Default::default()
 		},
-		parachain_info: shell_runtime::ParachainInfoConfig { parachain_id , ..Default::default()},
+		parachain_info: shell_runtime::ParachainInfoConfig { parachain_id, ..Default::default() },
 		parachain_system: Default::default(),
 	}
 }

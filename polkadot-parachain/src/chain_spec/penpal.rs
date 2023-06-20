@@ -99,7 +99,10 @@ fn penpal_testnet_genesis(
 				.map(|k| (k, penpal_runtime::EXISTENTIAL_DEPOSIT * 4096))
 				.collect(),
 		},
-		parachain_info: penpal_runtime::ParachainInfoConfig { parachain_id: id , ..Default::default()},
+		parachain_info: penpal_runtime::ParachainInfoConfig {
+			parachain_id: id,
+			..Default::default()
+		},
 		collator_selection: penpal_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: penpal_runtime::EXISTENTIAL_DEPOSIT * 16,

@@ -86,7 +86,7 @@ fn glutton_genesis(parachain_id: ParaId) -> glutton_runtime::RuntimeGenesisConfi
 				.to_vec(),
 			..Default::default()
 		},
-		parachain_info: glutton_runtime::ParachainInfoConfig { parachain_id , ..Default::default()},
+		parachain_info: glutton_runtime::ParachainInfoConfig { parachain_id, ..Default::default() },
 		parachain_system: Default::default(),
 		glutton: glutton_runtime::GluttonConfig {
 			compute: Default::default(),

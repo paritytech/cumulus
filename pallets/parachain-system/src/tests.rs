@@ -36,8 +36,7 @@ use sp_core::{blake2_256, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
-	DispatchErrorWithPostInfo,
-	BuildStorage,
+	BuildStorage, DispatchErrorWithPostInfo,
 };
 use sp_version::RuntimeVersion;
 use std::cell::RefCell;

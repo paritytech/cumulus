@@ -245,7 +245,10 @@ fn contracts_rococo_genesis(
 		balances: contracts_rococo_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
-		parachain_info: contracts_rococo_runtime::ParachainInfoConfig { parachain_id: id , ..Default::default()},
+		parachain_info: contracts_rococo_runtime::ParachainInfoConfig {
+			parachain_id: id,
+			..Default::default()
+		},
 		collator_selection: contracts_rococo_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: CONTRACTS_ROCOCO_ED * 16,

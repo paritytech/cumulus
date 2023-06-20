@@ -147,7 +147,10 @@ fn collectives_polkadot_genesis(
 				.map(|k| (k, COLLECTIVES_POLKADOT_ED * 4096))
 				.collect(),
 		},
-		parachain_info: collectives_polkadot_runtime::ParachainInfoConfig { parachain_id: id , ..Default::default()},
+		parachain_info: collectives_polkadot_runtime::ParachainInfoConfig {
+			parachain_id: id,
+			..Default::default()
+		},
 		collator_selection: collectives_polkadot_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: COLLECTIVES_POLKADOT_ED * 16,
