@@ -172,7 +172,7 @@ where
 	}
 
 	async fn header(&self, block_id: PHash) -> RelayChainResult<Option<PHeader>> {
-		Ok(self.backend.header(block_id)?)
+		Ok(self.backend.blockchain().header(block_id)?)
 	}
 
 	fn overseer_handle(&self) -> RelayChainResult<Handle> {
