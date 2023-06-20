@@ -17,7 +17,9 @@ use crate::OriginCaller;
 use frame_support::{
 	dispatch::{DispatchError, DispatchResultWithPostInfo},
 	log,
-	traits::{Currency, Get, Imbalance, OnUnbalanced, OriginTrait, PrivilegeCmp},
+	traits::{
+		Bounded, Currency, Get, Imbalance, OnUnbalanced, OriginTrait, PrivilegeCmp, StorePreimage,
+	},
 	weights::Weight,
 };
 use pallet_alliance::{ProposalIndex, ProposalProvider};
@@ -28,8 +30,6 @@ use xcm::latest::{Fungibility, Junction, Parent};
 type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 
 type ProposalOf<T, I> = <T as pallet_collective::Config<I>>::Proposal;
-
-type HashOf<T> = <T as frame_system::Config>::Hash;
 
 /// Type alias to conveniently refer to the `Currency::Balance` associated type.
 pub type BalanceOf<T> =
@@ -83,8 +83,7 @@ where
 /// Adapter from collective pallet to alliance proposal provider trait.
 pub struct AllianceProposalProvider<T, I = ()>(PhantomData<(T, I)>);
 
-impl<T, I> ProposalProvider<AccountIdOf<T>, HashOf<T>, ProposalOf<T, I>>
-	for AllianceProposalProvider<T, I>
+impl<T, I> ProposalProvider<AccountIdOf<T>, ProposalOf<T, I>> for AllianceProposalProvider<T, I>
 where
 	T: pallet_collective::Config<I> + frame_system::Config,
 	I: 'static,
@@ -105,29 +104,35 @@ where
 
 	fn vote_proposal(
 		who: AccountIdOf<T>,
-		proposal: HashOf<T>,
+		proposal_bounded: Bounded<ProposalOf<T, I>>,
 		index: ProposalIndex,
 		approve: bool,
 	) -> Result<bool, DispatchError> {
-		pallet_collective::Pallet::<T, I>::do_vote(who, proposal, index, approve)
+		pallet_collective::Pallet::<T, I>::do_vote(who, proposal_bounded, index, approve)
 	}
 
 	fn close_proposal(
-		proposal_hash: HashOf<T>,
+		proposal_bounded: Bounded<ProposalOf<T, I>>,
 		proposal_index: ProposalIndex,
 		proposal_weight_bound: Weight,
 		length_bound: u32,
 	) -> DispatchResultWithPostInfo {
 		pallet_collective::Pallet::<T, I>::do_close(
-			proposal_hash,
+			proposal_bounded,
 			proposal_index,
 			proposal_weight_bound,
 			length_bound,
 		)
 	}
 
-	fn proposal_of(proposal_hash: HashOf<T>) -> Option<ProposalOf<T, I>> {
-		pallet_collective::Pallet::<T, I>::proposal_of(proposal_hash)
+	fn proposal_of(proposal_bounded: Bounded<ProposalOf<T, I>>) -> Option<ProposalOf<T, I>> {
+		pallet_collective::Pallet::<T, I>::proposal_of(proposal_bounded)
+	}
+
+	fn bound_proposal(
+		proposal: ProposalOf<T, I>,
+	) -> Result<Bounded<ProposalOf<T, I>>, DispatchError> {
+		<T as pallet_collective::Config<I>>::Preimages::bound(proposal)
 	}
 }
 
