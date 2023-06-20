@@ -29,4 +29,8 @@ fn example() {
 	AssetHubKusama::execute_with(|| {
 		// panic!("{:?}", <BridgeHubKusama as Para>::BridgeMessages::module_owner());
 	});
+
+	AssetHubWestend::execute_with(|| {
+		// panic!("{:?}", <BridgeHubKusama as Para>::BridgeMessages::module_owner());
+	});
 }

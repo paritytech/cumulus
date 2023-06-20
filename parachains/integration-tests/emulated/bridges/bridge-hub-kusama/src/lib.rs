@@ -24,7 +24,7 @@ pub use integration_tests_common::{
 		kusama::ED as KUSAMA_ED,
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
-	AccountId, AssetHubKusama, AssetHubKusamaPallet, AssetHubKusamaReceiver, AssetHubKusamaSender,
+	AccountId, AssetHubKusama, AssetHubKusamaPallet, AssetHubKusamaReceiver, AssetHubKusamaSender, AssetHubWestend,
 	BridgeHubKusama, BridgeHubKusamaPallet, BridgeHubKusamaReceiver, BridgeHubKusamaSender, BridgeHubPolkadot, BridgeHubPolkadotPallet,
 	BridgeHubPolkadotReceiver, BridgeHubPolkadotSender, Collectives, CollectivesPallet, CollectivesReceiver,
 	CollectivesSender, Kusama, KusamaMockNet, KusamaPallet, KusamaReceiver, KusamaSender,

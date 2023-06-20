@@ -16503,6 +16503,7 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-balances",
+ "pallet-bridge-messages",
  "pallet-message-queue",
  "parachain-info",
  "parachains-common",
