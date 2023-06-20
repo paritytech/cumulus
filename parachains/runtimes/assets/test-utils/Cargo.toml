@@ -31,8 +31,6 @@ cumulus-primitives-core = { path = "../../../../primitives/core", default-featur
 cumulus-primitives-parachain-inherent = { path = "../../../../primitives/parachain-inherent", default-features = false }
 cumulus-test-relay-sproof-builder = { path = "../../../../test/relay-sproof-builder", default-features = false }
 parachain-info = { path = "../../../../parachains/pallets/parachain-info", default-features = false }
-pallet-bridge-transfer = { path = "../../../pallets/bridge-transfer", default-features = false }
-pallet-bridge-transfer-primitives = { path = "../../../pallets/bridge-transfer/primitives", default-features = false }
 parachains-runtimes-test-utils = { path = "../../test-utils", default-features = false }
 
 # Polkadot
@@ -75,8 +73,6 @@ std = [
     "xcm/std",
     "xcm-builder/std",
     "xcm-executor/std",
-    "pallet-bridge-transfer/std",
-    "pallet-bridge-transfer-primitives/std",
     "cumulus-pallet-xcmp-queue/std",
     "cumulus-pallet-dmp-queue/std",
 ]
