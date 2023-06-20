@@ -431,7 +431,7 @@ parameter_types! {
 	/// Delay (in blocks) before registered relayer could get its stake back. It guarantees
 	/// that all pending delivery transactions are either dropped or mined and relayer is
 	/// slashed in case of misbehavior. So this value should be large enough (e.g. 24 hours).
-	pub const RelayerStakeLease: u32 = 7_200;
+	pub const RelayerStakeLease: u32 = parachains_common::DAYS;
 	pub const KusamaBridgeParachainPalletName: &'static str = bp_kusama::PARAS_PALLET_NAME;
 	pub const MaxKusamaParaHeadDataSize: u32 = bp_kusama::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
 
