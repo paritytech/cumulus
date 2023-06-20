@@ -329,7 +329,7 @@ impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type StringLimit = ForeignAssetsAssetsStringLimit;
 	type Freezer = ();
 	type Extra = ();
-	type WeightInfo = weights::pallet_assets_remote::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_assets_foreign::WeightInfo<Runtime>;
 	type CallbackHandle = ();
 	type AssetAccountDeposit = ForeignAssetsAssetAccountDeposit;
 	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
@@ -813,7 +813,7 @@ mod benches {
 	define_benchmarks!(
 		[frame_system, SystemBench::<Runtime>]
 		[pallet_assets, Local]
-		[pallet_assets, Remote]
+		[pallet_assets, Foreign]
 		[pallet_balances, Balances]
 		[pallet_multisig, Multisig]
 		[pallet_nfts, Nfts]
@@ -1050,9 +1050,9 @@ impl_runtime_apis! {
 			// Benchmark files generated for `Assets/ForeignAssets` instances are by default
 			// `pallet_assets_assets.rs / pallet_assets_foreign_assets`, which is not really nice,
 			// so with this redefinition we can change names to nicer:
-			// `pallet_assets_local.rs / pallet_assets_remote.rs`.
+			// `pallet_assets_local.rs / pallet_assets_foreign.rs`.
 			type Local = pallet_assets::Pallet::<Runtime, TrustBackedAssetsInstance>;
-			type Remote = pallet_assets::Pallet::<Runtime, ForeignAssetsInstance>;
+			type Foreign = pallet_assets::Pallet::<Runtime, ForeignAssetsInstance>;
 
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
@@ -1179,7 +1179,7 @@ impl_runtime_apis! {
 			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
 			type Local = pallet_assets::Pallet::<Runtime, TrustBackedAssetsInstance>;
-			type Remote = pallet_assets::Pallet::<Runtime, ForeignAssetsInstance>;
+			type Foreign = pallet_assets::Pallet::<Runtime, ForeignAssetsInstance>;
 
 			let whitelist: Vec<TrackedStorageKey> = vec![
 				// Block Number
