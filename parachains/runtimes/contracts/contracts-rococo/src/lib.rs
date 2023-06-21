@@ -656,11 +656,14 @@ impl_runtime_apis! {
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey};
+			use frame_benchmarking::{Benchmarking, BenchmarkBatch, BenchmarkError, TrackedStorageKey};
 
 			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {
-				type BenchmarkHelper = ();
+				fn prepare_set_code_requirements() -> Result<(), BenchmarkError> {
+					ParachainSystem::initialize_for_schedule_code_upgrade_benchmark();
+					Ok(())
+				}
 			}
 
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;

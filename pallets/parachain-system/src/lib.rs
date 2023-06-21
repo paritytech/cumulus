@@ -1067,6 +1067,10 @@ impl<T: Config> Pallet<T> {
 			)],
 		})
 	}
+
+	/// Prepare/insert relevant data for `schedule_code_upgrade` for benchmarks.
+	#[cfg(feature = "runtime-benchmarks")]
+	pub fn initialize_for_schedule_code_upgrade_benchmark() {}
 }
 
 pub struct ParachainSetCode<T>(sp_std::marker::PhantomData<T>);
