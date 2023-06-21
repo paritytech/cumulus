@@ -17,13 +17,13 @@ jobs:
           protoc --version
 
       - name: Checkout repository
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
       - name: Rust versions
         run:  rustup show
 
       - name: Rust cache
-        uses: Swatinem/rust-cache@6fd3edff6979b79f87531400ad694fb7f2c84b1f # v2.2.1
+        uses: Swatinem/rust-cache@2656b87321093db1cb55fbd73183d195214fdfd1 # v2.5.0
 
       - name: Build rustdocs
         run:  SKIP_WASM_BUILD=1 cargo doc --all --no-deps
@@ -32,7 +32,7 @@ jobs:
         run:  echo "<meta http-equiv=refresh content=0;url=cumulus_client_collator/index.html>" > ./target/doc/index.html
 
       - name: Deploy documentation
-        uses: peaceiris/actions-gh-pages@de7ea6f8efb354206b205ef54722213d99067935 # v3.9.0
+        uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847 # v3.9.3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages

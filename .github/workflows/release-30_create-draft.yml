@@ -34,8 +34,8 @@ jobs:
     steps:
       - id: get-rust-versions
         run: |
-          echo "::set-output name=stable::$(rustc +stable --version)"
-          echo "::set-output name=nightly::$(rustc +nightly --version)"
+          echo "stable=$(rustc +stable --version)" >> $GITHUB_OUTPUT
+          echo "nightly=$(rustc +nightly --version)" >> $GITHUB_OUTPUT
 
   # We do not skip the entire job for client builds (although we don't need it)
   # because it is a dep of the next job. However we skip the time consuming steps.
@@ -45,11 +45,11 @@ jobs:
        matrix:
         include:
           - category: assets
-            runtime: statemine
+            runtime: asset-hub-kusama
           - category: assets
-            runtime: statemint
+            runtime: asset-hub-polkadot
           - category: assets
-            runtime: westmint
+            runtime: asset-hub-westend
           - category: bridge-hubs
             runtime: bridge-hub-polkadot
           - category: bridge-hubs
@@ -68,7 +68,7 @@ jobs:
             runtime: rococo-parachain
     steps:
       - name: Checkout sources
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
         with:
           ref: ${{ github.event.inputs.ref2 }}
 
@@ -120,13 +120,13 @@ jobs:
       asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
       - name: Checkout sources
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
         with:
           fetch-depth: 0
           path: cumulus
           ref: ${{ github.event.inputs.ref2 }}
 
-      - uses: ruby/setup-ruby@d2b39ad0b52eca07d23f3aa14fdf2a3fcc1f411c # v1.148.0
+      - uses: ruby/setup-ruby@250fcd6a742febb1123a77a841497ccaa8b9e939 # v1.152.0
         with:
           ruby-version: 3.0.0
 
@@ -153,9 +153,9 @@ jobs:
           NO_CACHE: 1
           DEBUG: 1
           SHELL_DIGEST: ${{ github.workspace}}/shell-srtool-json/shell-srtool-digest.json
-          WESTMINT_DIGEST: ${{ github.workspace}}/westmint-srtool-json/westmint-srtool-digest.json
-          STATEMINE_DIGEST: ${{ github.workspace}}/statemine-srtool-json/statemine-srtool-digest.json
-          STATEMINT_DIGEST: ${{ github.workspace}}/statemint-srtool-json/statemint-srtool-digest.json
+          ASSET_HUB_WESTEND_DIGEST: ${{ github.workspace}}/asset-hub-westend-srtool-json/asset-hub-westend-srtool-digest.json
+          ASSET_HUB_KUSAMA_DIGEST: ${{ github.workspace}}/asset-hub-kusama-srtool-json/asset-hub-kusama-srtool-digest.json
+          ASSET_HUB_POLKADOT_DIGEST: ${{ github.workspace}}/asset-hub-polkadot-srtool-json/asset-hub-polkadot-srtool-digest.json
           BRIDGE_HUB_ROCOCO_DIGEST: ${{ github.workspace}}/bridge-hub-rococo-srtool-json/bridge-hub-rococo-srtool-digest.json
           BRIDGE_HUB_KUSAMA_DIGEST: ${{ github.workspace}}/bridge-hub-kusama-srtool-json/bridge-hub-kusama-srtool-digest.json
           BRIDGE_HUB_POLKADOT_DIGEST: ${{ github.workspace}}/bridge-hub-polkadot-srtool-json/bridge-hub-polkadot-srtool-digest.json
@@ -171,9 +171,9 @@ jobs:
 
           if [ "$RELEASE_TYPE" != "client" ]; then
             ls -al $SHELL_DIGEST || true
-            ls -al $WESTMINT_DIGEST || true
-            ls -al $STATEMINE_DIGEST || true
-            ls -al $STATEMINT_DIGEST || true
+            ls -al $ASSET_HUB_WESTEND_DIGEST || true
+            ls -al $ASSET_HUB_KUSAMA_DIGEST || true
+            ls -al $ASSET_HUB_POLKADOT_DIGEST || true
             ls -al $BRIDGE_HUB_ROCOCO_DIGEST || true
             ls -al $BRIDGE_HUB_KUSAMA_DIGEST || true
             ls -al $BRIDGE_HUB_POLKADOT_DIGEST || true
@@ -223,11 +223,11 @@ jobs:
        matrix:
         include:
           - category: assets
-            runtime: statemine
+            runtime: asset-hub-kusama
           - category: assets
-            runtime: statemint
+            runtime: asset-hub-polkadot
           - category: assets
-            runtime: westmint
+            runtime: asset-hub-westend
           - category: bridge-hubs
             runtime: bridge-hub-polkadot
           - category: bridge-hubs
@@ -246,14 +246,14 @@ jobs:
             runtime: rococo-parachain
     steps:
       - name: Checkout sources
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
         with:
           ref: ${{ github.event.inputs.ref2 }}
 
       - name: Download artifacts
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
 
-      - uses: ruby/setup-ruby@d2b39ad0b52eca07d23f3aa14fdf2a3fcc1f411c # v1.148.0
+      - uses: ruby/setup-ruby@250fcd6a742febb1123a77a841497ccaa8b9e939 # v1.152.0
         with:
           ruby-version: 3.0.0
 
@@ -267,7 +267,7 @@ jobs:
           ls "$RUNTIME_DIR/${{ matrix.category }}/${{ matrix.runtime }}"
           runtime_ver=$(ruby script.rb)
           echo "Found version: >$runtime_ver<"
-          echo "::set-output name=runtime_ver::$runtime_ver"
+          echo "runtime_ver=$runtime_ver" >> $GITHUB_OUTPUT
 
       - name: Fix runtime name
         id: fix-runtime-path

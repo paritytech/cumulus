@@ -27,7 +27,7 @@ pub use pallet_balances::AccountData;
 pub use paste;
 pub use sp_arithmetic::traits::Bounded;
 pub use sp_core::storage::Storage;
-pub use sp_io::TestExternalities;
+pub use sp_io;
 pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, marker::PhantomData};
 pub use sp_trie::StorageProof;
 
@@ -195,6 +195,7 @@ pub trait Parachain: XcmpMessageHandler + DmpMessageHandler {
 macro_rules! decl_test_relay_chains {
 	(
 		$(
+			#[api_version($api_version:tt)]
 			pub struct $name:ident {
 				genesis = $genesis:expr,
 				on_init = $on_init:expr,
@@ -251,6 +252,7 @@ macro_rules! decl_test_relay_chains {
 					msg: &[u8],
 					para: Self::Origin,
 					meter: &mut $crate::WeightMeter,
+					_id: &mut XcmHash
 				) -> Result<bool, $crate::ProcessMessageError> {
 					use $crate::{Weight, AggregateMessageOrigin, UmpQueueId, ServiceQueues, EnqueueMessage};
 					use $mq as message_queue;
@@ -279,7 +281,7 @@ macro_rules! decl_test_relay_chains {
 				}
 			}
 
-			$crate::__impl_test_ext_for_relay_chain!($name, $genesis, $on_init);
+			$crate::__impl_test_ext_for_relay_chain!($name, $genesis, $on_init, $api_version);
 		)+
 	};
 }
@@ -287,20 +289,20 @@ macro_rules! decl_test_relay_chains {
 #[macro_export]
 macro_rules! __impl_test_ext_for_relay_chain {
 	// entry point: generate ext name
-	($name:ident, $genesis:expr, $on_init:expr) => {
+	($name:ident, $genesis:expr, $on_init:expr, $api_version:tt) => {
 		$crate::paste::paste! {
-			$crate::__impl_test_ext_for_relay_chain!(@impl $name, $genesis, $on_init, [<EXT_ $name:upper>]);
+			$crate::__impl_test_ext_for_relay_chain!(@impl $name, $genesis, $on_init, [<ParachainHostV $api_version>], [<EXT_ $name:upper>]);
 		}
 	};
 	// impl
-	(@impl $name:ident, $genesis:expr, $on_init:expr, $ext_name:ident) => {
+	(@impl $name:ident, $genesis:expr, $on_init:expr, $api_version:ident, $ext_name:ident) => {
 		thread_local! {
-			pub static $ext_name: $crate::RefCell<$crate::TestExternalities>
+			pub static $ext_name: $crate::RefCell<$crate::sp_io::TestExternalities>
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
 		}
 
 		impl TestExt for $name {
-			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
+			fn build_new_ext(storage: $crate::Storage) -> $crate::sp_io::TestExternalities {
 				let mut ext = sp_io::TestExternalities::new(storage);
 				ext.execute_with(|| {
 					#[allow(clippy::no_effect)]
@@ -311,7 +313,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				ext
 			}
 
-			fn new_ext() -> $crate::TestExternalities {
+			fn new_ext() -> $crate::sp_io::TestExternalities {
 				<$name>::build_new_ext($genesis)
 			}
 
@@ -329,7 +331,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				// send messages if needed
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
-						use $crate::polkadot_primitives::runtime_api::runtime_decl_for_parachain_host::ParachainHostV4;
+						use $crate::polkadot_primitives::runtime_api::runtime_decl_for_parachain_host::$api_version;
 
 						//TODO: mark sent count & filter out sent msg
 						for para_id in <$name>::para_ids() {
@@ -387,7 +389,7 @@ macro_rules! __impl_relay {
 			}
 
 			pub fn sovereign_account_id_of(location: $crate::MultiLocation) -> $crate::AccountId {
-				<Self as RelayChain>::SovereignAccountOf::convert(location.into()).unwrap()
+				<Self as RelayChain>::SovereignAccountOf::convert_location(&location).unwrap()
 			}
 
 			pub fn fund_accounts(accounts: Vec<(AccountId, Balance)>) {
@@ -522,12 +524,12 @@ macro_rules! __impl_test_ext_for_parachain {
 	// impl
 	(@impl $name:ident, $genesis:expr, $on_init:expr, $ext_name:ident) => {
 		thread_local! {
-			pub static $ext_name: $crate::RefCell<$crate::TestExternalities>
+			pub static $ext_name: $crate::RefCell<$crate::sp_io::TestExternalities>
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
 		}
 
 		impl TestExt for $name {
-			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
+			fn build_new_ext(storage: $crate::Storage) -> $crate::sp_io::TestExternalities {
 				let mut ext = sp_io::TestExternalities::new(storage);
 				ext.execute_with(|| {
 					#[allow(clippy::no_effect)]
@@ -538,7 +540,7 @@ macro_rules! __impl_test_ext_for_parachain {
 				ext
 			}
 
-			fn new_ext() -> $crate::TestExternalities {
+			fn new_ext() -> $crate::sp_io::TestExternalities {
 				<$name>::build_new_ext($genesis)
 			}
 
@@ -652,7 +654,7 @@ macro_rules! __impl_parachain {
 			}
 
 			pub fn sovereign_account_id_of(location: $crate::MultiLocation) -> $crate::AccountId {
-				<Self as Parachain>::LocationToAccountId::convert(location.into()).unwrap()
+				<Self as Parachain>::LocationToAccountId::convert_location(&location).unwrap()
 			}
 
 			pub fn fund_accounts(accounts: Vec<(AccountId, Balance)>) {
@@ -738,6 +740,8 @@ macro_rules! decl_test_networks {
 						$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
 						$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), 1));
 						$crate::PARA_IDS.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), Self::_para_ids()));
+
+						$( <$parachain>::prepare_for_xcmp(); )*
 					}
 				}
 
@@ -815,12 +819,14 @@ macro_rules! decl_test_networks {
 
 				fn _process_upward_messages() {
 					use $crate::{Bounded, ProcessMessage, WeightMeter};
+					use sp_core::Encode;
 					while let Some((from_para_id, msg)) = $crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 						let mut weight_meter = WeightMeter::max_limit();
 						let _ =  <$relay_chain>::process_message(
 							&msg[..],
 							from_para_id.into(),
 							&mut weight_meter,
+							&mut msg.using_encoded(sp_core::blake2_256),
 						);
 					}
 				}

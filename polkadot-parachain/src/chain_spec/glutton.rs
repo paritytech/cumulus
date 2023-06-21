@@ -14,13 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::chain_spec::Extensions;
+use crate::chain_spec::{get_account_id_from_seed, Extensions};
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
+use sp_core::sr25519;
 
 /// Specialized `ChainSpec` for the Glutton parachain runtime.
 pub type GluttonChainSpec =
-	sc_service::GenericChainSpec<glutton_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<glutton_runtime::RuntimeGenesisConfig, Extensions>;
 
 pub fn glutton_development_config(para_id: ParaId) -> GluttonChainSpec {
 	GluttonChainSpec::from_genesis(
@@ -64,21 +65,21 @@ pub fn glutton_config(para_id: ParaId) -> GluttonChainSpec {
 		// Name
 		format!("Glutton {}", para_id).as_str(),
 		// ID
-		format!("glutton_kusama_{}", para_id).as_str(),
+		format!("glutton-kusama-{}", para_id).as_str(),
 		ChainType::Live,
 		move || glutton_genesis(para_id),
 		Vec::new(),
 		None,
 		// Protocol ID
-		Some(format!("glutton_kusama_{}", para_id).as_str()),
+		Some(format!("glutton-kusama-{}", para_id).as_str()),
 		None,
 		Some(properties),
 		Extensions { relay_chain: "kusama".into(), para_id: para_id.into() },
 	)
 }
 
-fn glutton_genesis(parachain_id: ParaId) -> glutton_runtime::GenesisConfig {
-	glutton_runtime::GenesisConfig {
+fn glutton_genesis(parachain_id: ParaId) -> glutton_runtime::RuntimeGenesisConfig {
+	glutton_runtime::RuntimeGenesisConfig {
 		system: glutton_runtime::SystemConfig {
 			code: glutton_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
@@ -86,5 +87,13 @@ fn glutton_genesis(parachain_id: ParaId) -> glutton_runtime::GenesisConfig {
 		},
 		parachain_info: glutton_runtime::ParachainInfoConfig { parachain_id },
 		parachain_system: Default::default(),
+		glutton: glutton_runtime::GluttonConfig {
+			compute: Default::default(),
+			storage: Default::default(),
+			trash_data_count: Default::default(),
+		},
+		sudo: glutton_runtime::SudoConfig {
+			key: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
+		},
 	}
 }

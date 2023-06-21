@@ -1,6 +1,6 @@
 use grandpa::AuthorityId as GrandpaId;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-pub use parachains_common::{AccountId, AuraId, Balance, BlockNumber, StatemintAuraId};
+pub use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, BlockNumber};
 use polkadot_primitives::{AssignmentId, ValidatorId};
 pub use polkadot_runtime_parachains::configuration::HostConfiguration;
 use polkadot_service::chain_spec::get_authority_keys_from_seed_no_beefy;
@@ -71,15 +71,15 @@ pub mod accounts {
 pub mod collators {
 	use super::*;
 
-	pub fn invulnerables_statemint() -> Vec<(AccountId, StatemintAuraId)> {
+	pub fn invulnerables_asset_hub_polkadot() -> Vec<(AccountId, AssetHubPolkadotAuraId)> {
 		vec![
 			(
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				get_from_seed::<StatemintAuraId>("Alice"),
+				get_from_seed::<AssetHubPolkadotAuraId>("Alice"),
 			),
 			(
 				get_account_id_from_seed::<sr25519::Public>("Bob"),
-				get_from_seed::<StatemintAuraId>("Bob"),
+				get_from_seed::<AssetHubPolkadotAuraId>("Bob"),
 			),
 		]
 	}
@@ -150,7 +150,7 @@ pub mod polkadot {
 	}
 
 	pub fn genesis() -> Storage {
-		let genesis_config = polkadot_runtime::GenesisConfig {
+		let genesis_config = polkadot_runtime::RuntimeGenesisConfig {
 			system: polkadot_runtime::SystemConfig {
 				code: polkadot_runtime::WASM_BINARY.unwrap().to_vec(),
 			},
@@ -161,7 +161,6 @@ pub mod polkadot {
 					.map(|k| (k, ED * 4096))
 					.collect(),
 			},
-			indices: polkadot_runtime::IndicesConfig { indices: vec![] },
 			session: polkadot_runtime::SessionConfig {
 				keys: validators::initial_authorities()
 					.iter()
@@ -198,32 +197,108 @@ pub mod polkadot {
 				slash_reward_fraction: Perbill::from_percent(10),
 				..Default::default()
 			},
-			phragmen_election: Default::default(),
-			democracy: Default::default(),
-			council: polkadot_runtime::CouncilConfig {
-				members: vec![],
-				phantom: Default::default(),
-			},
-			technical_committee: polkadot_runtime::TechnicalCommitteeConfig {
-				members: vec![],
-				phantom: Default::default(),
-			},
-			technical_membership: Default::default(),
 			babe: polkadot_runtime::BabeConfig {
 				authorities: Default::default(),
 				epoch_config: Some(polkadot_runtime::BABE_GENESIS_EPOCH_CONFIG),
 			},
-			grandpa: Default::default(),
-			im_online: Default::default(),
-			authority_discovery: polkadot_runtime::AuthorityDiscoveryConfig { keys: vec![] },
-			claims: polkadot_runtime::ClaimsConfig { claims: vec![], vesting: vec![] },
-			vesting: polkadot_runtime::VestingConfig { vesting: vec![] },
-			treasury: Default::default(),
-			hrmp: Default::default(),
 			configuration: polkadot_runtime::ConfigurationConfig { config: get_host_config() },
-			paras: Default::default(),
-			xcm_pallet: Default::default(),
-			nomination_pools: Default::default(),
+			..Default::default()
+		};
+
+		genesis_config.build_storage().unwrap()
+	}
+}
+
+pub mod westend {
+	use super::*;
+	use westend_runtime_constants::currency::UNITS as WND;
+	pub const ED: Balance = westend_runtime_constants::currency::EXISTENTIAL_DEPOSIT;
+	const ENDOWMENT: u128 = 1_000_000 * WND;
+	const STASH: u128 = 100 * WND;
+
+	pub fn get_host_config() -> HostConfiguration<BlockNumber> {
+		HostConfiguration {
+			max_upward_queue_count: 10,
+			max_upward_queue_size: 51200,
+			max_upward_message_size: 51200,
+			max_upward_message_num_per_candidate: 10,
+			max_downward_message_size: 51200,
+			..Default::default()
+		}
+	}
+
+	fn session_keys(
+		babe: BabeId,
+		grandpa: GrandpaId,
+		im_online: ImOnlineId,
+		para_validator: ValidatorId,
+		para_assignment: AssignmentId,
+		authority_discovery: AuthorityDiscoveryId,
+	) -> westend_runtime::SessionKeys {
+		westend_runtime::SessionKeys {
+			babe,
+			grandpa,
+			im_online,
+			para_validator,
+			para_assignment,
+			authority_discovery,
+		}
+	}
+
+	pub fn genesis() -> Storage {
+		let genesis_config = westend_runtime::RuntimeGenesisConfig {
+			system: westend_runtime::SystemConfig {
+				code: westend_runtime::WASM_BINARY.unwrap().to_vec(),
+			},
+			balances: westend_runtime::BalancesConfig {
+				balances: accounts::init_balances()
+					.iter()
+					.cloned()
+					.map(|k| (k, ENDOWMENT))
+					.collect(),
+			},
+			session: westend_runtime::SessionConfig {
+				keys: validators::initial_authorities()
+					.iter()
+					.map(|x| {
+						(
+							x.0.clone(),
+							x.0.clone(),
+							westend::session_keys(
+								x.2.clone(),
+								x.3.clone(),
+								x.4.clone(),
+								x.5.clone(),
+								x.6.clone(),
+								x.7.clone(),
+							),
+						)
+					})
+					.collect::<Vec<_>>(),
+			},
+			staking: westend_runtime::StakingConfig {
+				validator_count: validators::initial_authorities().len() as u32,
+				minimum_validator_count: 1,
+				stakers: validators::initial_authorities()
+					.iter()
+					.map(|x| {
+						(x.0.clone(), x.1.clone(), STASH, westend_runtime::StakerStatus::Validator)
+					})
+					.collect(),
+				invulnerables: validators::initial_authorities()
+					.iter()
+					.map(|x| x.0.clone())
+					.collect(),
+				force_era: pallet_staking::Forcing::ForceNone,
+				slash_reward_fraction: Perbill::from_percent(10),
+				..Default::default()
+			},
+			babe: westend_runtime::BabeConfig {
+				authorities: Default::default(),
+				epoch_config: Some(westend_runtime::BABE_GENESIS_EPOCH_CONFIG),
+			},
+			configuration: westend_runtime::ConfigurationConfig { config: get_host_config() },
+			..Default::default()
 		};
 
 		genesis_config.build_storage().unwrap()
@@ -234,7 +309,9 @@ pub mod polkadot {
 pub mod kusama {
 	use super::*;
 	pub const ED: Balance = kusama_runtime_constants::currency::EXISTENTIAL_DEPOSIT;
-	const STASH: u128 = 100 * kusama_runtime_constants::currency::UNITS;
+	use kusama_runtime_constants::currency::UNITS as KSM;
+	const ENDOWMENT: u128 = 1_000_000 * KSM;
+	const STASH: u128 = 100 * KSM;
 
 	pub fn get_host_config() -> HostConfiguration<BlockNumber> {
 		HostConfiguration {
@@ -266,18 +343,16 @@ pub mod kusama {
 	}
 
 	pub fn genesis() -> Storage {
-		let genesis_config = kusama_runtime::GenesisConfig {
+		let genesis_config = kusama_runtime::RuntimeGenesisConfig {
 			system: kusama_runtime::SystemConfig {
 				code: kusama_runtime::WASM_BINARY.unwrap().to_vec(),
 			},
 			balances: kusama_runtime::BalancesConfig {
 				balances: accounts::init_balances()
 					.iter()
-					.cloned()
-					.map(|k| (k, ED * 4096))
+					.map(|k: &AccountId| (k.clone(), ENDOWMENT))
 					.collect(),
 			},
-			indices: kusama_runtime::IndicesConfig { indices: vec![] },
 			session: kusama_runtime::SessionConfig {
 				keys: validators::initial_authorities()
 					.iter()
@@ -298,8 +373,8 @@ pub mod kusama {
 					.collect::<Vec<_>>(),
 			},
 			staking: kusama_runtime::StakingConfig {
-				minimum_validator_count: 1,
 				validator_count: validators::initial_authorities().len() as u32,
+				minimum_validator_count: 1,
 				stakers: validators::initial_authorities()
 					.iter()
 					.map(|x| {
@@ -318,47 +393,39 @@ pub mod kusama {
 				authorities: Default::default(),
 				epoch_config: Some(kusama_runtime::BABE_GENESIS_EPOCH_CONFIG),
 			},
-			grandpa: Default::default(),
-			im_online: Default::default(),
-			authority_discovery: kusama_runtime::AuthorityDiscoveryConfig { keys: vec![] },
-			claims: kusama_runtime::ClaimsConfig { claims: vec![], vesting: vec![] },
-			vesting: kusama_runtime::VestingConfig { vesting: vec![] },
-			treasury: Default::default(),
-			hrmp: Default::default(),
 			configuration: kusama_runtime::ConfigurationConfig { config: get_host_config() },
-			paras: Default::default(),
-			xcm_pallet: Default::default(),
-			nomination_pools: Default::default(),
-			nis_counterpart_balances: Default::default(),
+			..Default::default()
 		};
 
 		genesis_config.build_storage().unwrap()
 	}
 }
 
-// Statemint
-pub mod statemint {
+// Asset Hub Polkadot
+pub mod asset_hub_polkadot {
 	use super::*;
 	pub const PARA_ID: u32 = 1000;
-	pub const ED: Balance = statemint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+	pub const ED: Balance = asset_hub_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 	pub fn genesis() -> Storage {
-		let genesis_config = statemint_runtime::GenesisConfig {
-			system: statemint_runtime::SystemConfig {
-				code: statemint_runtime::WASM_BINARY
+		let genesis_config = asset_hub_polkadot_runtime::RuntimeGenesisConfig {
+			system: asset_hub_polkadot_runtime::SystemConfig {
+				code: asset_hub_polkadot_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
 					.to_vec(),
 			},
-			balances: statemint_runtime::BalancesConfig {
+			balances: asset_hub_polkadot_runtime::BalancesConfig {
 				balances: accounts::init_balances()
 					.iter()
 					.cloned()
 					.map(|k| (k, ED * 4096))
 					.collect(),
 			},
-			parachain_info: statemint_runtime::ParachainInfoConfig { parachain_id: PARA_ID.into() },
-			collator_selection: statemint_runtime::CollatorSelectionConfig {
-				invulnerables: collators::invulnerables_statemint()
+			parachain_info: asset_hub_polkadot_runtime::ParachainInfoConfig {
+				parachain_id: PARA_ID.into(),
+			},
+			collator_selection: asset_hub_polkadot_runtime::CollatorSelectionConfig {
+				invulnerables: collators::invulnerables_asset_hub_polkadot()
 					.iter()
 					.cloned()
 					.map(|(acc, _)| acc)
@@ -366,14 +433,14 @@ pub mod statemint {
 				candidacy_bond: ED * 16,
 				..Default::default()
 			},
-			session: statemint_runtime::SessionConfig {
-				keys: collators::invulnerables_statemint()
+			session: asset_hub_polkadot_runtime::SessionConfig {
+				keys: collators::invulnerables_asset_hub_polkadot()
 					.into_iter()
 					.map(|(acc, aura)| {
 						(
-							acc.clone(),                             // account id
-							acc,                                     // validator id
-							statemint_runtime::SessionKeys { aura }, // session keys
+							acc.clone(),                                      // account id
+							acc,                                              // validator id
+							asset_hub_polkadot_runtime::SessionKeys { aura }, // session keys
 						)
 					})
 					.collect(),
@@ -381,7 +448,7 @@ pub mod statemint {
 			aura: Default::default(),
 			aura_ext: Default::default(),
 			parachain_system: Default::default(),
-			polkadot_xcm: statemint_runtime::PolkadotXcmConfig {
+			polkadot_xcm: asset_hub_polkadot_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
 			},
 		};
@@ -390,28 +457,30 @@ pub mod statemint {
 	}
 }
 
-// Statemint
-pub mod statemine {
+// Asset Hub Westend
+pub mod asset_hub_westend {
 	use super::*;
 	pub const PARA_ID: u32 = 1000;
-	pub const ED: Balance = statemine_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+	pub const ED: Balance = asset_hub_westend_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 	pub fn genesis() -> Storage {
-		let genesis_config = statemine_runtime::GenesisConfig {
-			system: statemine_runtime::SystemConfig {
-				code: statemine_runtime::WASM_BINARY
+		let genesis_config = asset_hub_westend_runtime::RuntimeGenesisConfig {
+			system: asset_hub_westend_runtime::SystemConfig {
+				code: asset_hub_westend_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
 					.to_vec(),
 			},
-			balances: statemine_runtime::BalancesConfig {
+			balances: asset_hub_westend_runtime::BalancesConfig {
 				balances: accounts::init_balances()
 					.iter()
 					.cloned()
 					.map(|k| (k, ED * 4096))
 					.collect(),
 			},
-			parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: PARA_ID.into() },
-			collator_selection: statemine_runtime::CollatorSelectionConfig {
+			parachain_info: asset_hub_westend_runtime::ParachainInfoConfig {
+				parachain_id: PARA_ID.into(),
+			},
+			collator_selection: asset_hub_westend_runtime::CollatorSelectionConfig {
 				invulnerables: collators::invulnerables()
 					.iter()
 					.cloned()
@@ -420,14 +489,14 @@ pub mod statemine {
 				candidacy_bond: ED * 16,
 				..Default::default()
 			},
-			session: statemine_runtime::SessionConfig {
+			session: asset_hub_westend_runtime::SessionConfig {
 				keys: collators::invulnerables()
 					.into_iter()
 					.map(|(acc, aura)| {
 						(
-							acc.clone(),                             // account id
-							acc,                                     // validator id
-							statemine_runtime::SessionKeys { aura }, // session keys
+							acc.clone(),                                     // account id
+							acc,                                             // validator id
+							asset_hub_westend_runtime::SessionKeys { aura }, // session keys
 						)
 					})
 					.collect(),
@@ -435,7 +504,63 @@ pub mod statemine {
 			aura: Default::default(),
 			aura_ext: Default::default(),
 			parachain_system: Default::default(),
-			polkadot_xcm: statemine_runtime::PolkadotXcmConfig {
+			polkadot_xcm: asset_hub_westend_runtime::PolkadotXcmConfig {
+				safe_xcm_version: Some(SAFE_XCM_VERSION),
+			},
+		};
+
+		genesis_config.build_storage().unwrap()
+	}
+}
+
+// Asset Hub Kusama
+pub mod asset_hub_kusama {
+	use super::*;
+	pub const PARA_ID: u32 = 1000;
+	pub const ED: Balance = asset_hub_kusama_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+
+	pub fn genesis() -> Storage {
+		let genesis_config = asset_hub_kusama_runtime::RuntimeGenesisConfig {
+			system: asset_hub_kusama_runtime::SystemConfig {
+				code: asset_hub_kusama_runtime::WASM_BINARY
+					.expect("WASM binary was not build, please build it!")
+					.to_vec(),
+			},
+			balances: asset_hub_kusama_runtime::BalancesConfig {
+				balances: accounts::init_balances()
+					.iter()
+					.cloned()
+					.map(|k| (k, ED * 4096))
+					.collect(),
+			},
+			parachain_info: asset_hub_kusama_runtime::ParachainInfoConfig {
+				parachain_id: PARA_ID.into(),
+			},
+			collator_selection: asset_hub_kusama_runtime::CollatorSelectionConfig {
+				invulnerables: collators::invulnerables()
+					.iter()
+					.cloned()
+					.map(|(acc, _)| acc)
+					.collect(),
+				candidacy_bond: ED * 16,
+				..Default::default()
+			},
+			session: asset_hub_kusama_runtime::SessionConfig {
+				keys: collators::invulnerables()
+					.into_iter()
+					.map(|(acc, aura)| {
+						(
+							acc.clone(),                                    // account id
+							acc,                                            // validator id
+							asset_hub_kusama_runtime::SessionKeys { aura }, // session keys
+						)
+					})
+					.collect(),
+			},
+			aura: Default::default(),
+			aura_ext: Default::default(),
+			parachain_system: Default::default(),
+			polkadot_xcm: asset_hub_kusama_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
 			},
 		};
@@ -451,7 +576,7 @@ pub mod penpal {
 	pub const ED: Balance = penpal_runtime::EXISTENTIAL_DEPOSIT;
 
 	pub fn genesis(para_id: u32) -> Storage {
-		let genesis_config = penpal_runtime::GenesisConfig {
+		let genesis_config = penpal_runtime::RuntimeGenesisConfig {
 			system: penpal_runtime::SystemConfig {
 				code: penpal_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
@@ -508,7 +633,7 @@ pub mod collectives {
 	pub const ED: Balance = collectives_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 	pub fn genesis() -> Storage {
-		let genesis_config = collectives_polkadot_runtime::GenesisConfig {
+		let genesis_config = collectives_polkadot_runtime::RuntimeGenesisConfig {
 			system: collectives_polkadot_runtime::SystemConfig {
 				code: collectives_polkadot_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
@@ -567,7 +692,7 @@ pub mod bridge_hub_kusama {
 	pub const ED: Balance = bridge_hub_kusama_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 	pub fn genesis() -> Storage {
-		let genesis_config = bridge_hub_kusama_runtime::GenesisConfig {
+		let genesis_config = bridge_hub_kusama_runtime::RuntimeGenesisConfig {
 			system: bridge_hub_kusama_runtime::SystemConfig {
 				code: bridge_hub_kusama_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
@@ -622,7 +747,7 @@ pub mod bridge_hub_polkadot {
 	pub const ED: Balance = bridge_hub_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 	pub fn genesis() -> Storage {
-		let genesis_config = bridge_hub_polkadot_runtime::GenesisConfig {
+		let genesis_config = bridge_hub_polkadot_runtime::RuntimeGenesisConfig {
 			system: bridge_hub_polkadot_runtime::SystemConfig {
 				code: bridge_hub_polkadot_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
