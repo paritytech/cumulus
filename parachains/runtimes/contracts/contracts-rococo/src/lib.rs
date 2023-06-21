@@ -100,11 +100,6 @@ pub type Migrations = (
 	cumulus_pallet_dmp_queue::migration::Migration<Runtime>,
 	cumulus_pallet_parachain_system::migration::Migration<Runtime>,
 	cumulus_pallet_xcmp_queue::migration::Migration<Runtime>,
-	pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,
-	pallet_contracts::Migration<Runtime>,
-	pallet_multisig::migrations::v1::MigrateToV1<Runtime>,
-	pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,
-	pallet_xcm::migration::v1::MigrateToV1<Runtime>,
 );
 
 type EventRecord = frame_system::EventRecord<
@@ -133,7 +128,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("contracts-rococo"),
 	impl_name: create_runtime_str!("contracts-rococo"),
 	authoring_version: 1,
-	spec_version: 9420,
+	spec_version: 9430,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 6,
