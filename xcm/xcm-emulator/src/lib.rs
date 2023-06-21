@@ -17,6 +17,7 @@
 pub use casey::pascal;
 pub use codec::Encode;
 pub use frame_support::{
+	assert_ok,
 	sp_runtime::BuildStorage,
 	traits::{EnqueueMessage, Get, Hooks, ProcessMessage, ProcessMessageError, ServiceQueues},
 	weights::{Weight, WeightMeter},
@@ -256,7 +257,7 @@ impl Bridge for () {
         None
     }
 }
-#[derive(Default)]
+#[derive(Clone, Default, Debug)]
 pub struct BridgeMessage {
 	pub id: u32,
 	pub nonce: u64,
@@ -283,12 +284,12 @@ impl BridgeMessageHandler for () {
 	fn get_source_outbound_messages(&self) -> Vec<BridgeMessage> { Default::default() }
 
 	fn dispatch_target_inbound_message(&self, _message: BridgeMessage) -> Result<(), BridgeMessageDispatchError> {
-		Err(BridgeMessageDispatchError(&"Not a brige"))
+		Err(BridgeMessageDispatchError(Box::new("Not a brige")))
 	}
 }
 
 #[derive(Debug)]
-pub struct BridgeMessageDispatchError(pub &'static dyn Debug);
+pub struct BridgeMessageDispatchError(pub Box<dyn Debug>);
 
 impl Error for BridgeMessageDispatchError {}
 
@@ -994,6 +995,7 @@ macro_rules! decl_test_networks {
 								}).collect::<Vec<(RelayChainBlockNumber, Vec<u8>)>>();
 								if msgs.len() != 0 {
 									<$parachain>::handle_dmp_messages(msgs.clone().into_iter(), $crate::Weight::max_value());
+									$crate::log::debug!(target: concat!(stringify!($name), ":dmp") , "DMP messages processed {:?} to para_id {:?}", msgs.clone(), &to_para_id);
 									for m in msgs {
 										$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().push_back((to_para_id, m.0, m.1)));
 									}
@@ -1014,6 +1016,7 @@ macro_rules! decl_test_networks {
 						$(
 							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) {
 								<$parachain>::handle_xcmp_messages(iter.clone(), $crate::Weight::max_value());
+								$crate::log::debug!(target: concat!(stringify!($name), ":hrmp") , "HRMP messages processed {:?} to para_id {:?}", &messages, &to_para_id);
 							}
 						)*
 					}
@@ -1030,13 +1033,17 @@ macro_rules! decl_test_networks {
 							&mut weight_meter,
 							&mut msg.using_encoded(sp_core::blake2_256),
 						);
+						$crate::log::debug!(target: concat!(stringify!($name), ":upward") , "Upward message processed {:?} from para_id {:?}", &msg, &from_para_id);
 					}
 				}
 
 				fn _process_bridged_messages() {
 					if let Some(bridge) = Self::_bridge() {
 						while let Some(msg) = $crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
-							let _ = bridge.dispatch_target_inbound_message(msg);
+							match bridge.dispatch_target_inbound_message(msg.clone()) {
+								Err(e) => panic!("Error processing bridged message: {:?}", msg.clone()),
+								_ => $crate::log::debug!(target: concat!(stringify!($name), ":bridge") , "Bridged message processed {:?}", msg.clone()),
+							}
 						}
 					}
 				}
@@ -1184,18 +1191,12 @@ macro_rules! decl_test_bridges {
 							Ok(())
 						},
 						XcmBlobMessageDispatchResult::InvalidPayload => {
-							// let error = format!("{:?}", XcmBlobMessageDispatchResult::InvalidPayload);
-							// let error_str: &'static str = error.as_str();
-							Err(BridgeMessageDispatchError(&XcmBlobMessageDispatchResult::InvalidPayload))
+							Err(BridgeMessageDispatchError(Box::new(XcmBlobMessageDispatchResult::InvalidPayload)))
 						},
-						// XcmBlobMessageDispatchResult::NotDispatched(e) => {
-						// 	// let error = format!("{:?} - {:?}", XcmBlobMessageDispatchResult::InvalidPayload, e);
-						// 	// let error_str: &'static str = error.as_str();
-						// 	let error_ref = &e;
-						// 	let error = *error_ref.clone();
-						// 	Err(BridgeMessageDispatchError(&XcmBlobMessageDispatchResult::NotDispatched(error)))
-						// },
-						_ => Err(BridgeMessageDispatchError(&"Unknown Error")),
+						XcmBlobMessageDispatchResult::NotDispatched(e) => {
+							Err(BridgeMessageDispatchError(Box::new(XcmBlobMessageDispatchResult::NotDispatched(e))))
+						},
+						_ => Err(BridgeMessageDispatchError(Box::new("Unknown Error"))),
 					};
 
 					result
