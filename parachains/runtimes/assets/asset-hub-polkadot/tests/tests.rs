@@ -27,11 +27,11 @@ pub use asset_hub_polkadot_runtime::{
 	ForeignAssetsInstance, MetadataDepositBase, MetadataDepositPerByte, ParachainSystem, Runtime,
 	RuntimeCall, RuntimeEvent, SessionKeys, System, TrustBackedAssetsInstance, XcmpQueue,
 };
-use asset_test_utils::{CollatorSessionKeys, ExtBuilder, RuntimeHelper};
+use asset_test_utils::{CollatorSessionKeys, ExtBuilder, RuntimeHelper, XcmReceivedFrom};
 use codec::{Decode, Encode};
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
-	assert_noop, assert_ok,
+	assert_noop, assert_ok, sp_io,
 	traits::fungibles::InspectEnumerable,
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
@@ -40,10 +40,12 @@ use parachains_common::{
 };
 use sp_runtime::traits::MaybeEquivalence;
 use xcm::latest::prelude::*;
-use xcm_executor::traits::{Identity, JustTry, WeightTrader};
+use xcm_executor::{
+	traits::{Identity, JustTry, WeightTrader},
+	XcmExecutor,
+};
 
 const ALICE: [u8; 32] = [1u8; 32];
-const BOB: [u8; 32] = [0u8; 32];
 const SOME_ASSET_ADMIN: [u8; 32] = [5u8; 32];
 
 type AssetIdForTrustBackedAssetsConvert =
@@ -653,14 +655,8 @@ fn bridging_to_asset_hub_kusama() -> asset_test_utils::test_cases_over_bridge::T
 	asset_test_utils::test_cases_over_bridge::TestBridgingConfig {
 		bridged_network: bridging::KusamaNetwork::get(),
 		local_bridge_hub_para_id: bridging::BridgeHubPolkadotParaId::get(),
-		local_bridge_hub_location: pallet_bridge_transfer_primitives::MaybePaidLocation {
-			location: bridging::BridgeHubPolkadot::get(),
-			maybe_fee: None,
-		},
-		bridged_target_location: pallet_bridge_transfer_primitives::MaybePaidLocation {
-			location: bridging::AssetHubKusama::get(),
-			maybe_fee: bridging::AssetHubKusamaMaxFee::get(),
-		},
+		local_bridge_hub_location: bridging::BridgeHubPolkadot::get(),
+		bridged_target_location: bridging::AssetHubKusama::get(),
 	}
 }
 
@@ -678,7 +674,7 @@ fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works() {
 		AccountId::from(ALICE),
 		Box::new(|runtime_event_encoded: Vec<u8>| {
 			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::BridgeTransfer(event)) => Some(event),
+				Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
 				_ => None,
 			}
 		}),
@@ -693,91 +689,65 @@ fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works() {
 }
 
 #[test]
-fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_works() {
-	asset_test_utils::test_cases_over_bridge::transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_works::<
-		Runtime,
-		XcmConfig,
-		ParachainSystem,
-		XcmpQueue,
-		LocationToAccountId,
-		ForeignAssetsInstance,
-	>(
-		collator_session_keys(),
-		ExistentialDeposit::get(),
-		AccountId::from(ALICE),
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::BridgeTransfer(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		bridging_to_asset_hub_kusama
-	)
-}
+fn receive_reserve_asset_deposited_works() {
+	ExtBuilder::<Runtime>::default()
+		.with_collators(vec![AccountId::from(ALICE)])
+		.with_session_keys(vec![(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::ed25519::Public::from_raw(ALICE)) },
+		)])
+		.build()
+		.execute_with(|| {
+			let xcm = Xcm(vec![
+				UniversalOrigin(GlobalConsensus(Kusama)),
+				DescendOrigin(X1(Parachain(1000))),
+				ReserveAssetDeposited(MultiAssets::from(vec![MultiAsset {
+					id: Concrete(MultiLocation {
+						parents: 2,
+						interior: X1(GlobalConsensus(Kusama)),
+					}),
+					fun: Fungible(1000),
+				}])),
+				ClearOrigin,
+				BuyExecution {
+					fees: MultiAsset {
+						id: Concrete(MultiLocation {
+							parents: 2,
+							interior: X1(GlobalConsensus(Kusama)),
+						}),
+						fun: Fungible(1000),
+					},
+					weight_limit: Limited(Weight::from_parts(1194767000, 10000)),
+				},
+				DepositAsset {
+					assets: Wild(AllCounted(1)),
+					beneficiary: MultiLocation {
+						parents: 0,
+						interior: X1(AccountId32 {
+							network: Some(Polkadot),
+							id: [
+								3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+								3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+							],
+						}),
+					},
+				},
+				SetTopic([
+					70, 225, 199, 10, 167, 26, 9, 175, 162, 56, 121, 134, 223, 111, 89, 101, 191,
+					62, 98, 136, 57, 123, 96, 150, 113, 224, 157, 114, 205, 236, 148, 190,
+				]),
+			]);
 
-#[test]
-fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_works() {
-	asset_test_utils::test_cases_over_bridge::receive_reserve_asset_deposited_from_different_consensus_over_bridge_works::<
-		Runtime,
-		XcmConfig,
-		LocationToAccountId,
-		ForeignAssetsInstance,
-	>(
-		collator_session_keys(),
-		ExistentialDeposit::get(),
-		AccountId::from(BOB),
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		bridging_to_asset_hub_kusama
-	)
-}
+			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
 
-#[test]
-fn withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_works() {
-	asset_test_utils::test_cases_over_bridge::withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_works::<
-		Runtime,
-		XcmConfig,
-		LocationToAccountId,
-	>(
-		collator_session_keys(),
-		ExistentialDeposit::get(),
-		AccountId::from(BOB),
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		bridging_to_asset_hub_kusama
-	)
-}
-
-#[test]
-fn change_asset_hub_kusama_max_fee_by_governance_works() {
-	asset_test_utils::test_cases::change_storage_constant_by_governance_works::<
-		Runtime,
-		bridging::AssetHubKusamaMaxFee,
-		Option<MultiAsset>,
-	>(
-		collator_session_keys(),
-		1000,
-		Box::new(|call| RuntimeCall::System(call).encode()),
-		|| (bridging::AssetHubKusamaMaxFee::key().to_vec(), bridging::AssetHubKusamaMaxFee::get()),
-		|old_value| match old_value {
-			Some(MultiAsset { id, fun: Fungible(old_amount) }) =>
-				Some(MultiAsset { id: *id, fun: Fungible(old_amount * 2) }),
-			Some(_) => None,
-			None => Some(MultiAsset::from((Here, 123456))),
-		},
-	)
+			// execute xcm as XcmpQueue would do
+			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(
+				MultiLocation { parents: 1, interior: X1(Parachain(1002)) }, // local bridge hub
+				xcm,
+				hash,
+				RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Sibling),
+			);
+			assert_eq!(outcome.ensure_complete(), Ok(()));
+		})
 }

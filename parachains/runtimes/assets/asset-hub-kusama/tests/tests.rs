@@ -44,7 +44,6 @@ use xcm::latest::prelude::*;
 use xcm_executor::traits::{Identity, JustTry, WeightTrader};
 
 const ALICE: [u8; 32] = [1u8; 32];
-const BOB: [u8; 32] = [0u8; 32];
 const SOME_ASSET_ADMIN: [u8; 32] = [5u8; 32];
 
 type AssetIdForTrustBackedAssetsConvert =
@@ -631,14 +630,8 @@ fn bridging_to_asset_hub_polkadot() -> asset_test_utils::test_cases_over_bridge:
 	asset_test_utils::test_cases_over_bridge::TestBridgingConfig {
 		bridged_network: bridging::PolkadotNetwork::get(),
 		local_bridge_hub_para_id: bridging::BridgeHubKusamaParaId::get(),
-		local_bridge_hub_location: pallet_bridge_transfer_primitives::MaybePaidLocation {
-			location: bridging::BridgeHubKusama::get(),
-			maybe_fee: None,
-		},
-		bridged_target_location: pallet_bridge_transfer_primitives::MaybePaidLocation {
-			location: bridging::AssetHubPolkadot::get(),
-			maybe_fee: bridging::AssetHubPolkadotMaxFee::get(),
-		},
+		local_bridge_hub_location: bridging::BridgeHubKusama::get(),
+		bridged_target_location: bridging::AssetHubPolkadot::get(),
 	}
 }
 
@@ -656,7 +649,7 @@ fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works() {
 		AccountId::from(ALICE),
 		Box::new(|runtime_event_encoded: Vec<u8>| {
 			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::BridgeTransfer(event)) => Some(event),
+				Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
 				_ => None,
 			}
 		}),
@@ -667,100 +660,5 @@ fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works() {
 			}
 		}),
 		bridging_to_asset_hub_polkadot
-	)
-}
-
-#[test]
-fn transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_works() {
-	asset_test_utils::test_cases_over_bridge::transfer_asset_via_bridge_initiate_withdraw_reserve_for_native_asset_works::<
-		Runtime,
-		XcmConfig,
-		ParachainSystem,
-		XcmpQueue,
-		LocationToAccountId,
-		ForeignAssetsInstance,
-	>(
-		collator_session_keys(),
-		ExistentialDeposit::get(),
-		AccountId::from(ALICE),
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::BridgeTransfer(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		bridging_to_asset_hub_polkadot
-	)
-}
-
-#[test]
-fn receive_reserve_asset_deposited_from_different_consensus_over_bridge_works() {
-	asset_test_utils::test_cases_over_bridge::receive_reserve_asset_deposited_from_different_consensus_over_bridge_works::<
-		Runtime,
-		XcmConfig,
-		LocationToAccountId,
-		ForeignAssetsInstance,
-	>(
-		collator_session_keys(),
-		ExistentialDeposit::get(),
-		AccountId::from(BOB),
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		bridging_to_asset_hub_polkadot
-	)
-}
-
-#[test]
-fn withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_works() {
-	asset_test_utils::test_cases_over_bridge::withdraw_reserve_asset_deposited_from_different_consensus_over_bridge_works::<
-		Runtime,
-		XcmConfig,
-		LocationToAccountId,
-	>(
-		collator_session_keys(),
-		ExistentialDeposit::get(),
-		AccountId::from(BOB),
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		bridging_to_asset_hub_polkadot
-	)
-}
-
-#[test]
-fn change_asset_hub_polkadot_max_fee_by_governance_works() {
-	asset_test_utils::test_cases::change_storage_constant_by_governance_works::<
-		Runtime,
-		bridging::AssetHubPolkadotMaxFee,
-		Option<MultiAsset>,
-	>(
-		collator_session_keys(),
-		1000,
-		Box::new(|call| RuntimeCall::System(call).encode()),
-		|| {
-			(
-				bridging::AssetHubPolkadotMaxFee::key().to_vec(),
-				bridging::AssetHubPolkadotMaxFee::get(),
-			)
-		},
-		|old_value| match old_value {
-			Some(MultiAsset { id, fun: Fungible(old_amount) }) =>
-				Some(MultiAsset { id: *id, fun: Fungible(old_amount * 2) }),
-			Some(_) => None,
-			None => Some(MultiAsset::from((Here, 123456))),
-		},
 	)
 }
