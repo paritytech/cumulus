@@ -1072,8 +1072,15 @@ impl<T: Config> Pallet<T> {
 pub struct ParachainSetCode<T>(sp_std::marker::PhantomData<T>);
 
 impl<T: Config> frame_system::SetCode<T> for ParachainSetCode<T> {
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	fn set_code(code: Vec<u8>) -> DispatchResult {
 		Pallet::<T>::schedule_code_upgrade(code)
+	}
+
+	// TODO: remove when fixed (https://github.com/paritytech/cumulus/issues/2765)
+	#[cfg(feature = "runtime-benchmarks")]
+	fn set_code(_code: Vec<u8>) -> DispatchResult {
+		Ok(())
 	}
 }
 
