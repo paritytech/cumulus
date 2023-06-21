@@ -30,3 +30,5 @@ std = [
 	"frame-system/std",
 	"xcm/std",
 ]
+
+try-runtime = ["frame-support/try-runtime"] 
