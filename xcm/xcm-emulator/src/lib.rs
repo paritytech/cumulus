@@ -29,7 +29,7 @@ pub use paste;
 pub use sp_arithmetic::traits::Bounded;
 pub use sp_core::storage::Storage;
 pub use sp_io;
-pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, marker::PhantomData};
+pub use sp_std::{fmt::Debug, cell::RefCell, collections::vec_deque::VecDeque, marker::PhantomData};
 pub use sp_trie::StorageProof;
 
 pub use cumulus_pallet_dmp_queue;
@@ -51,11 +51,12 @@ pub use polkadot_runtime_parachains::{
 	dmp,
 	inclusion::{AggregateMessageOrigin, UmpQueueId},
 };
-pub use std::{any::TypeId, collections::HashMap, thread::LocalKey};
+pub use std::{fmt, error::Error, any::TypeId, collections::HashMap, thread::LocalKey};
 pub use xcm::{v3::prelude::*, VersionedXcm};
 pub use xcm_executor::XcmExecutor;
-pub use bp_messages::LaneId;
+pub use bp_messages;
 pub use pallet_bridge_messages;
+pub use bridge_runtime_common;
 
 thread_local! {
 	/// Downward messages, each message is: `(to_para_id, [(relay_block_number, msg)])`
@@ -72,10 +73,8 @@ thread_local! {
 		= RefCell::new(HashMap::new());
 	/// Upward messages, each message is: `(from_para_id, msg)`
 	pub static UPWARD_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<u8>)>>> = RefCell::new(HashMap::new());
-	/// Bridged messages, each message is: `(LaneId, msg)`
-	pub static BRIDGED_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<u8>)>>> = RefCell::new(HashMap::new());
-	/// Bridge messages nonce, each message is: `u32`
-	pub static BRIDGE_NONCE: RefCell<HashMap<String, VecDeque<(u32, Vec<u8>)>>> = RefCell::new(HashMap::new());
+	/// Bridged messages, each message is: `BridgeMessage`
+	pub static BRIDGED_MESSAGES: RefCell<HashMap<String, VecDeque<BridgeMessage>>> = RefCell::new(HashMap::new());
 	/// Global incremental relay chain block number
 	pub static RELAY_BLOCK_NUMBER: RefCell<HashMap<String, u32>> = RefCell::new(HashMap::new());
 	/// Parachains Ids a the Network
@@ -195,12 +194,12 @@ pub trait NetworkComponent<N: Network> {
 		});
 	}
 
-	fn send_bridged_messages(lane_id: u32, msg: Vec<u8>) {
+	fn send_bridged_messages(msg: BridgeMessage) {
 		BRIDGED_MESSAGES.with(|b| {
 			b.borrow_mut()
 				.get_mut(Self::network_name())
 				.unwrap()
-				.push_back((lane_id, msg))
+				.push_back(msg)
 		});
 	}
 
@@ -257,10 +256,11 @@ impl Bridge for () {
         None
     }
 }
-
+#[derive(Default)]
 pub struct BridgeMessage {
-	id: u32,
-	payload: Vec<u8>,
+	pub id: u32,
+	pub nonce: u64,
+	pub payload: Vec<u8>,
 }
 
 // pub struct Bridge {
@@ -274,15 +274,28 @@ pub struct BridgeMessage {
 // }
 
 pub trait BridgeMessageHandler {
-	fn get_source_outbound_messages(&self);
+	fn get_source_outbound_messages(&self) -> Vec<BridgeMessage>;
 
-	fn dispatch_target_inbound_messages(&self);
+	fn dispatch_target_inbound_message(&self, message: BridgeMessage) -> Result<(), BridgeMessageDispatchError>;
 }
 
 impl BridgeMessageHandler for () {
-	fn get_source_outbound_messages(&self) {}
+	fn get_source_outbound_messages(&self) -> Vec<BridgeMessage> { Default::default() }
 
-	fn dispatch_target_inbound_messages(&self) {}
+	fn dispatch_target_inbound_message(&self, _message: BridgeMessage) -> Result<(), BridgeMessageDispatchError> {
+		Err(BridgeMessageDispatchError(&"Not a brige"))
+	}
+}
+
+#[derive(Debug)]
+pub struct BridgeMessageDispatchError(pub &'static dyn Debug);
+
+impl Error for BridgeMessageDispatchError {}
+
+impl fmt::Display for BridgeMessageDispatchError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self.0)
+    }
 }
 
 // pub trait BridgeMessages {
@@ -294,7 +307,6 @@ impl BridgeMessageHandler for () {
 // impl BridgeMessages for () {
 // 	fn outbound_message_data(_lane_id: LaneId, _nonce: u32) -> Option<Vec<u8>> { None }
 // }
-
 
 // Relay Chain Implementation
 #[macro_export]
@@ -724,7 +736,7 @@ macro_rules! __impl_test_ext_for_parachain {
 							Default::default(),
 						);
 
-						// get messages
+						// get xcmp messages
 						<Self as Parachain>::ParachainSystem::on_finalize(block_number);
 						let collation_info = <Self as Parachain>::ParachainSystem::collect_collation_info(&mock_header);
 
@@ -743,36 +755,17 @@ macro_rules! __impl_test_ext_for_parachain {
 						}
 
 						// bridge
-						$crate::log::debug!(target: "nacho", "Only for {:?}", <$name>::bridge());
-
 						if let Some(bridge) = <$name>::bridge() {
-							// get messages
-							// let messages = bridge.get_source_outbound_messages();
-							bridge.get_source_outbound_messages();
+							$crate::log::debug!(target: "nacho", "Only for {:?}", <$name>::bridge());
+							// get bridge messages
+							let bridge_messages = bridge.get_source_outbound_messages();
 
 							// send bridged messages
-							// for msg in messages {
-							// 	<$name>::send_bridged_messages(msg.0.into(), msg.1);
-							// }
+							for msg in bridge_messages {
+								<$name>::send_bridged_messages(msg);
+							}
 
 						}
-						// if <$name>::is_bridge_source() {
-						// 	let source = <$name>::bridge().expect("Bridge exist; qed").source;
-						// 	// get messages
-						// 	$crate::log::debug!(target: "nacho", "Only for {:?}", stringify!($name));
-						// 	// $crate::paste::paste! {
-						// 	// 	[<source>]::get_source_outbound_messages();
-						// 	// }
-						// 	// send messages
-						// 	<$name>::send_bridged_messages(0, vec![]);
-						// }
-						// send bridged messages
-						// if <$name>::bridge_name().is_some_and(|n| n == stringify!($name)) {
-						// 	// type OutboundMessages = <Self as Parachain>::BridgeMessages::OutboundMessages;
-						// 	// let messages = <Self as Parachain>::BridgeMessages::OutboundMessages::<<Self as Parachain>::Runtime>::drain();
-						// 	// <Self as Parachain>::BridgeMessages::Pallet;
-						// 	<$name>::send_bridged_messages(0, vec![]);
-						// }
 
 						// clean messages
 						<Self as Parachain>::ParachainSystem::on_initialize(block_number);
@@ -979,7 +972,7 @@ macro_rules! decl_test_networks {
 					$crate::DOWNWARD_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
 					|| $crate::HORIZONTAL_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
 					|| $crate::UPWARD_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
-					// || $crate::BRIDGED_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
+					|| $crate::BRIDGED_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
 				}
 
 				fn _process_downward_messages() {
@@ -1041,8 +1034,11 @@ macro_rules! decl_test_networks {
 				}
 
 				fn _process_bridged_messages() {
-
-					// $crate::log::debug!(target: "nacho", "Entra en _process_bridged_messages {:?}", stringify!($bridge_source_parachain));
+					if let Some(bridge) = Self::_bridge() {
+						while let Some(msg) = $crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
+							let _ = bridge.dispatch_target_inbound_message(msg);
+						}
+					}
 				}
 
 				fn _hrmp_channel_parachain_inherent_data(
@@ -1138,29 +1134,71 @@ macro_rules! decl_test_bridges {
 			}
 
 			impl $crate::BridgeMessageHandler for $name {
-				fn get_source_outbound_messages(&self) {
-					use $crate::{NetworkComponent, pallet_bridge_messages::{Config, Instance1, OutboundLanes}, LaneId};
+				fn get_source_outbound_messages(&self) -> Vec<$crate::BridgeMessage> {
+					use $crate::{NetworkComponent, BridgeMessage, pallet_bridge_messages::{Config, Instance1, OutboundLanes}, bp_messages::LaneId};
 					type Runtime = <$source as Parachain>::Runtime;
+
+					// get the source active outbound lanes
 					let active_lanes = <Runtime as Config<Instance1>>::ActiveOutboundLanes::get();
+
+					// collect messages from `OutboundMessages` for each active outbound lane in the source
+					let mut messages: Vec<BridgeMessage> = Default::default();
 
 					for lane in active_lanes {
 						let latest_generated_nonce = OutboundLanes::<Runtime, Instance1>::get(lane).latest_generated_nonce;
 						let latest_received_nonce = OutboundLanes::<Runtime, Instance1>::get(lane).latest_received_nonce;
-						$crate::log::debug!(target: "nacho", "{:?}", lane);
-						(latest_received_nonce + 1..=latest_generated_nonce).for_each(move |nonce| {
-							// let lane_a: u32 = (*lane).into();
-							// let lane_b = u32::from(*lane);
 
-							// $crate::log::debug!(target: "nacho", "{:?}", lane_b);
-							let message = <$source as Parachain>::BridgeMessages::outbound_message_data(*lane, nonce).expect("Bridge message does not exist");
+						(latest_received_nonce + 1..=latest_generated_nonce).for_each(|nonce| {
+							let payload: Vec<u8> = <$source as Parachain>::BridgeMessages::outbound_message_data(*lane, nonce).expect("Bridge message does not exist").into();
+							let id: u32 = (*lane).into();
+							let message = BridgeMessage { id, nonce, payload };
 
+							messages.push(message);
 						});
 					}
-					// $crate::log::debug!(target: "nacho", "{:?}", &active_lanes);
+					messages
 				}
 
-				fn dispatch_target_inbound_messages(&self) {
+				fn dispatch_target_inbound_message(&self, message: $crate::BridgeMessage) -> Result<(), $crate::BridgeMessageDispatchError> {
+					use $crate::{
+						NetworkComponent, BridgeMessage, BridgeMessageDispatchError,
+						pallet_bridge_messages::{Config, Instance1, OutboundLanes},
+						bp_messages::{ReceivalResult, LaneId, MessageKey, target_chain::{DispatchMessage, MessageDispatch, DispatchMessageData,}},
+						bridge_runtime_common::messages_xcm_extension::XcmBlobMessageDispatchResult,
+					};
 
+					type Runtime = <$target as Parachain>::Runtime;
+					type TargetMessageDispatch = <Runtime as Config<Instance1>>::MessageDispatch;
+					type InboundPayload = <Runtime as Config<Instance1>>::InboundPayload;
+
+					// Directly dispatch outbound messages assuming everything is correct
+					// and bypassing the Inboundline logic
+					let dispatch_result = TargetMessageDispatch::dispatch(DispatchMessage {
+						key: MessageKey { lane_id: message.id.into(), nonce: message.nonce },
+						data: DispatchMessageData::<InboundPayload> { payload: Ok(message.payload) },
+					});
+
+					let result = match dispatch_result.dispatch_level_result {
+						XcmBlobMessageDispatchResult::Dispatched => {
+							// TODO: Update source `OutboundLanes` nonce values
+							Ok(())
+						},
+						XcmBlobMessageDispatchResult::InvalidPayload => {
+							// let error = format!("{:?}", XcmBlobMessageDispatchResult::InvalidPayload);
+							// let error_str: &'static str = error.as_str();
+							Err(BridgeMessageDispatchError(&XcmBlobMessageDispatchResult::InvalidPayload))
+						},
+						// XcmBlobMessageDispatchResult::NotDispatched(e) => {
+						// 	// let error = format!("{:?} - {:?}", XcmBlobMessageDispatchResult::InvalidPayload, e);
+						// 	// let error_str: &'static str = error.as_str();
+						// 	let error_ref = &e;
+						// 	let error = *error_ref.clone();
+						// 	Err(BridgeMessageDispatchError(&XcmBlobMessageDispatchResult::NotDispatched(error)))
+						// },
+						_ => Err(BridgeMessageDispatchError(&"Unknown Error")),
+					};
+
+					result
 				}
 			}
 		)+

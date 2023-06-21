@@ -33,6 +33,7 @@ cumulus-test-relay-sproof-builder = { path = "../../test/relay-sproof-builder" }
 parachains-common = { path = "../../parachains/common" }
 bp-messages = { path = "../../bridges/primitives/messages"}
 pallet-bridge-messages = { path = "../../bridges/modules/messages" }
+bridge-runtime-common = { path = "../../bridges/bin/runtime-common"}
 
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "master" }
