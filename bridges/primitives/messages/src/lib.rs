@@ -108,6 +108,12 @@ impl From<LaneId> for u32 {
 	}
 }
 
+impl From<u32> for LaneId {
+	fn from(id: u32) -> LaneId {
+		LaneId(id.to_be_bytes())
+	}
+}
+
 /// Message nonce. Valid messages will never have 0 nonce.
 pub type MessageNonce = u64;
 

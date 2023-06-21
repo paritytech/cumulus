@@ -16491,6 +16491,7 @@ name = "xcm-emulator"
 version = "0.1.0"
 dependencies = [
  "bp-messages",
+ "bridge-runtime-common",
  "casey",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
