@@ -137,31 +137,6 @@ pub trait NetworkComponent<N: Network> {
 		N::_bridge()
 	}
 
-	// fn is_bridge_source(para_name: &'static str) -> bool {
-	// 	Self::bridge().map_or(false, |b| para_name == b.source)
-	// }
-
-	// fn is_bridge_target(para_name: &'static str) -> bool {
-	// 	Self::bridge().map_or(false, |b| para_name == b.target)
-	// }
-
-	// fn is_bridge_source() -> bool {
-	// 	let a = Self;
-	// 	Self::bridge().map_or(false, |b| TypeId::of::<Self>() == TypeId::of::<b.source>())
-	// }
-
-	// fn is_bridge_target(para_name: &'static str) -> bool {
-	// 	Self::bridge().map_or(false, |b| para_name == b.target)
-	// }
-
-	// fn is_bridge_source() -> bool {
-	// 	N::_is_bridge_source()
-	// }
-
-	// fn is_bridge_target() -> bool {
-	// 	N::_is_bridge_target()
-	// }
-
 	fn send_horizontal_messages<I: Iterator<Item = (ParaId, RelayBlockNumber, Vec<u8>)>>(
 		to_para_id: u32,
 		iter: I,
@@ -264,16 +239,6 @@ pub struct BridgeMessage {
 	pub payload: Vec<u8>,
 }
 
-// pub struct Bridge {
-// 	pub source: &'static str,
-// 	pub target: &'static str,
-// }
-
-// pub struct Bridge {
-//     pub source: Box<dyn Bridged>,
-//     pub target: Box<dyn Bridged>,
-// }
-
 pub trait BridgeMessageHandler {
 	fn get_source_outbound_messages(&self) -> Vec<BridgeMessage>;
 
@@ -298,16 +263,6 @@ impl fmt::Display for BridgeMessageDispatchError {
         write!(f, "{:?}", self.0)
     }
 }
-
-// pub trait BridgeMessages {
-// 	fn outbound_message_data(lane_id: LaneId, nonce: u32) -> Option<Vec<u8>>;
-
-// 	// fn dispatch_target_inbound_messages();
-// }
-
-// impl BridgeMessages for () {
-// 	fn outbound_message_data(_lane_id: LaneId, _nonce: u32) -> Option<Vec<u8>> { None }
-// }
 
 // Relay Chain Implementation
 #[macro_export]
@@ -580,8 +535,6 @@ macro_rules! decl_test_parachains {
 				type BridgeMessages = $bridge_messages;
 			}
 
-			// impl $crate::Bridged for $name {}
-
 			$crate::paste::paste! {
 				pub trait [<$name Pallet>] {
 					$(
@@ -597,7 +550,6 @@ macro_rules! decl_test_parachains {
 			}
 
 			$crate::__impl_xcm_handlers_for_parachain!($name);
-			// $crate::__impl_bridge_handler_for_parachain!($name);
 			$crate::__impl_test_ext_for_parachain!($name, $genesis, $on_init);
 		)+
 	};
@@ -636,31 +588,6 @@ macro_rules! __impl_xcm_handlers_for_parachain {
 		}
 	};
 }
-
-// #[macro_export]
-// macro_rules! __impl_bridge_handler_for_parachain {
-// 	($name:ident) => {
-// 		impl $crate::BridgeMessageHandler for $name {
-// 			fn get_source_outbound_messages() {
-// 				use $crate::{TestExt, BridgeMessages, LaneId};
-
-// 				// $name::execute_with(|| {
-// 					// <Self as Parachain>::XcmpMessageHandler::handle_xcmp_messages(iter, max_weight)
-// 				// let active_lanes = <<Self as Parachain>::BridgeMessages as Config<$crate::Instance1>>::ActiveOutboundLanes::get();
-// 				let message = <Self as Parachain>::BridgeMessages::outbound_message_data(LaneId([0,0,0,0]), 0);
-// 				// })
-// 			}
-
-// 			fn dispatch_target_inbound_messages() {
-// 				use $crate::{TestExt};
-
-// 				$name::execute_with(|| {
-// 					// <Self as Parachain>::XcmpMessageHandler::handle_xcmp_messages(iter, max_weight)
-// 				})
-// 			}
-// 		}
-// 	};
-// }
 
 #[macro_export]
 macro_rules! __impl_test_ext_for_parachain {
@@ -796,12 +723,6 @@ macro_rules! __impl_parachain {
 			fn network_name() -> &'static str {
 				stringify!($network_name)
 			}
-
-			// $(
-			// 	fn bridge_name() -> Option<&'static str> {
-			// 		Some(stringify!($bridge_source))
-			// 	}
-			// )?
 		}
 
 		impl $parachain {
@@ -929,28 +850,6 @@ macro_rules! decl_test_networks {
 
 					<Self::Bridge as Bridge>::get()
 				}
-
-					// fn _bridge() -> Option<$crate::Bridge> {
-					// 	let bridge = $crate::Bridge {
-					// 		source: stringify!($bridge_source),
-					// 		target: stringify!($bridge_target),
-					// 	};
-
-					// 	Some(bridge)
-					// }
-				// $(
-				// 	fn _bridge() -> Option<$crate::Bridge> where Self: Sized {
-				// 		Some($crate::Bridge { source: Box::new($bridge_source), target: Box::new($bridge_target) })
-				// 	}
-
-				// 	fn _is_bridge_source() -> bool {
-				// 		$crate::TypeId::of::<Self>() == $crate::TypeId::of::<$bridge_source>()
-				// 	}
-
-				// 	fn _is_bridge_target() -> bool {
-				// 		$crate::TypeId::of::<Self>() == $crate::TypeId::of::<$bridge_target>()
-				// 	}
-				// )?
 
 				fn _relay_block_number() -> u32 {
 					$crate::RELAY_BLOCK_NUMBER.with(|v| *v.clone().borrow().get(stringify!($name)).unwrap())
@@ -1102,16 +1001,6 @@ macro_rules! decl_test_networks {
 			$(
 				$crate::__impl_parachain!($name, $parachain);
 			)*
-
-			// $(
-			// 	$crate::__impl_bridge_handler_for_parachain!($bridge_source);
-			// 	$crate::__impl_bridge_handler_for_parachain!($bridge_target);
-			// )?
-
-
-			// $(
-			// 	$crate::__impl_parachain!($name, $parachain);
-			// )?
 		)+
 	};
 }
