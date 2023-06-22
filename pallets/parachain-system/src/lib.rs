@@ -1070,7 +1070,30 @@ impl<T: Config> Pallet<T> {
 
 	/// Prepare/insert relevant data for `schedule_code_upgrade` for benchmarks.
 	#[cfg(feature = "runtime-benchmarks")]
-	pub fn initialize_for_schedule_code_upgrade_benchmark() {}
+	pub fn initialize_for_set_code_benchmark(max_code_size: u32) {
+		// insert dummy ValidationData
+		let vfp = PersistedValidationData {
+			parent_head: polkadot_parachain::primitives::HeadData(Default::default()),
+			relay_parent_number: 1,
+			relay_parent_storage_root: Default::default(),
+			max_pov_size: 1_000,
+		};
+		<ValidationData<T>>::put(&vfp);
+
+		// insert dummy HostConfiguration with
+		let host_config = AbridgedHostConfiguration {
+			max_code_size,
+			max_head_data_size: 0,
+			max_upward_queue_count: 0,
+			max_upward_queue_size: 0,
+			max_upward_message_size: 0,
+			max_upward_message_num_per_candidate: 0,
+			hrmp_max_message_num_per_candidate: 0,
+			validation_upgrade_cooldown: 0,
+			validation_upgrade_delay: 0,
+		};
+		<HostConfiguration<T>>::put(host_config);
+	}
 }
 
 pub struct ParachainSetCode<T>(sp_std::marker::PhantomData<T>);
