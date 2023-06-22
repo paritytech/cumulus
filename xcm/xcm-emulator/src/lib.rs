@@ -1037,9 +1037,9 @@ macro_rules! decl_test_bridges {
 					// get the source active outbound lanes
 					let active_lanes = <Runtime as Config<Instance1>>::ActiveOutboundLanes::get();
 
-					// collect messages from `OutboundMessages` for each active outbound lane in the source
 					let mut messages: Vec<BridgeMessage> = Default::default();
 
+					// collect messages from `OutboundMessages` for each active outbound lane in the source
 					for lane in active_lanes {
 						let latest_generated_nonce = OutboundLanes::<Runtime, Instance1>::get(lane).latest_generated_nonce;
 						let latest_received_nonce = OutboundLanes::<Runtime, Instance1>::get(lane).latest_received_nonce;
@@ -1059,7 +1059,7 @@ macro_rules! decl_test_bridges {
 					use $crate::{
 						NetworkComponent, BridgeMessage, BridgeMessageDispatchError,
 						pallet_bridge_messages::{Config, Instance1, OutboundLanes},
-						bp_messages::{ReceivalResult, LaneId, MessageKey, target_chain::{DispatchMessage, MessageDispatch, DispatchMessageData,}},
+						bp_messages::{ReceivalResult, LaneId, MessageKey, OutboundLaneData, target_chain::{DispatchMessage, MessageDispatch, DispatchMessageData,}},
 						bridge_runtime_common::messages_xcm_extension::XcmBlobMessageDispatchResult,
 					};
 
@@ -1067,16 +1067,29 @@ macro_rules! decl_test_bridges {
 					type TargetMessageDispatch = <Runtime as Config<Instance1>>::MessageDispatch;
 					type InboundPayload = <Runtime as Config<Instance1>>::InboundPayload;
 
+					let lane_id = message.id.into();
+					let nonce = message.nonce;
+					let payload = Ok(message.payload);
+
 					// Directly dispatch outbound messages assuming everything is correct
-					// and bypassing the Inboundline logic
+					// and bypassing the `InboundLane` logic
 					let dispatch_result = TargetMessageDispatch::dispatch(DispatchMessage {
-						key: MessageKey { lane_id: message.id.into(), nonce: message.nonce },
-						data: DispatchMessageData::<InboundPayload> { payload: Ok(message.payload) },
+						key: MessageKey { lane_id, nonce },
+						data: DispatchMessageData::<InboundPayload> { payload },
 					});
 
 					let result = match dispatch_result.dispatch_level_result {
 						XcmBlobMessageDispatchResult::Dispatched => {
-							// TODO: Update source `OutboundLanes` nonce values
+							// update source `OutboundLanes` nonce values
+							type SourceRuntime = <$source as Parachain>::Runtime;
+
+							let data = OutboundLanes::<SourceRuntime, Instance1>::get(lane_id);
+							let new_data = OutboundLaneData {
+								oldest_unpruned_nonce: data.oldest_unpruned_nonce + 1,
+								latest_received_nonce: data.latest_received_nonce + 1,
+								..data
+							};
+							OutboundLanes::<SourceRuntime, Instance1>::insert(lane_id, new_data);
 							Ok(())
 						},
 						XcmBlobMessageDispatchResult::InvalidPayload => {
