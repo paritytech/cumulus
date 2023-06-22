@@ -197,6 +197,10 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				>::initialize { .. }) |
 				RuntimeCall::EthereumBeaconClient(
 					snowbridge_ethereum_beacon_client::Call::force_checkpoint { .. },
+				) |
+				RuntimeCall::EthereumInboundQueue(
+					snowbridge_inbound_queue::Call::add_allow_list { .. } |
+					snowbridge_inbound_queue::Call::remove_allow_list { .. },
 				)
 		)
 	}

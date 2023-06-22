@@ -582,6 +582,7 @@ impl snowbridge_inbound_queue::Config for Runtime {
 	type Verifier = snowbridge_ethereum_beacon_client::Pallet<Runtime>;
 	type XcmSender = XcmRouter;
 	type WeightInfo = ();
+	type AllowListLength = ConstU32<8>;
 }
 
 parameter_types! {
