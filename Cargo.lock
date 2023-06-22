@@ -1227,31 +1227,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bridge-hub-kusama-integration-tests"
-version = "1.0.0"
-dependencies = [
- "bridge-hub-kusama-runtime",
- "frame-support",
- "frame-system",
- "integration-tests-common",
- "pallet-assets",
- "pallet-balances",
- "pallet-xcm",
- "parachains-common",
- "parity-scale-codec",
- "polkadot-core-primitives",
- "polkadot-parachain",
- "polkadot-runtime",
- "polkadot-runtime-parachains",
- "sp-core",
- "sp-runtime",
- "sp-weights",
- "xcm",
- "xcm-emulator",
- "xcm-executor",
-]
-
-[[package]]
 name = "bridge-hub-kusama-runtime"
 version = "0.1.0"
 dependencies = [
@@ -1374,6 +1349,31 @@ dependencies = [
  "substrate-wasm-builder",
  "xcm",
  "xcm-builder",
+ "xcm-executor",
+]
+
+[[package]]
+name = "bridge-hub-rococo-integration-tests"
+version = "1.0.0"
+dependencies = [
+ "bridge-hub-rococo-runtime",
+ "frame-support",
+ "frame-system",
+ "integration-tests-common",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-xcm",
+ "parachains-common",
+ "parity-scale-codec",
+ "polkadot-core-primitives",
+ "polkadot-parachain",
+ "polkadot-runtime",
+ "polkadot-runtime-parachains",
+ "sp-core",
+ "sp-runtime",
+ "sp-weights",
+ "xcm",
+ "xcm-emulator",
  "xcm-executor",
 ]
 
@@ -5249,6 +5249,7 @@ dependencies = [
  "asset-hub-westend-runtime",
  "bridge-hub-kusama-runtime",
  "bridge-hub-polkadot-runtime",
+ "bridge-hub-rococo-runtime",
  "collectives-polkadot-runtime",
  "cumulus-primitives-core",
  "frame-support",
@@ -5271,9 +5272,12 @@ dependencies = [
  "polkadot-runtime-constants",
  "polkadot-runtime-parachains",
  "polkadot-service",
+ "rococo-runtime",
+ "rococo-runtime-constants",
  "sc-consensus-grandpa",
  "sp-authority-discovery",
  "sp-consensus-babe",
+ "sp-consensus-beefy",
  "sp-core",
  "sp-runtime",
  "sp-weights",

@@ -18,19 +18,19 @@ use crate::*;
 
 #[test]
 fn example() {
-	BridgeHubKusama::execute_with(|| {
+	BridgeHubRococo::execute_with(|| {
 		// panic!("{:?}", <BridgeHubKusama as Para>::BridgeMessages::module_owner());
 	});
 
-	BridgeHubPolkadot::execute_with(|| {
+	BridgeHubWococo::execute_with(|| {
 		// panic!("{:?}", <BridgeHubKusama as Para>::BridgeMessages::module_owner());
 	});
 
-	AssetHubKusama::execute_with(|| {
+	AssetHubRococo::execute_with(|| {
 		// panic!("{:?}", <BridgeHubKusama as Para>::BridgeMessages::module_owner());
 	});
 
-	AssetHubWestend::execute_with(|| {
+	AssetHubWococo::execute_with(|| {
 		// panic!("{:?}", <BridgeHubKusama as Para>::BridgeMessages::module_owner());
 	});
 }

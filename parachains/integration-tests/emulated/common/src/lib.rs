@@ -3,7 +3,7 @@ pub mod constants;
 pub use constants::{
 	accounts::{ALICE, BOB},
 	asset_hub_kusama, asset_hub_polkadot, asset_hub_westend, bridge_hub_kusama,
-	bridge_hub_polkadot, collectives, kusama, penpal, polkadot, westend,
+	bridge_hub_polkadot, bridge_hub_rococo, collectives, kusama, rococo, penpal, polkadot, westend,
 };
 use frame_support::{parameter_types, sp_io, sp_tracing};
 pub use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, BlockNumber};
@@ -73,6 +73,46 @@ decl_test_relay_chains! {
 			XcmPallet: westend_runtime::XcmPallet,
 			Sudo: westend_runtime::Sudo,
 		}
+	},
+	#[api_version(5)]
+	pub struct Rococo {
+		genesis = rococo::genesis(),
+		on_init = (),
+		runtime = {
+			Runtime: rococo_runtime::Runtime,
+			RuntimeOrigin: rococo_runtime::RuntimeOrigin,
+			RuntimeCall: rococo_runtime::RuntimeCall,
+			RuntimeEvent: rococo_runtime::RuntimeEvent,
+			MessageQueue: rococo_runtime::MessageQueue,
+			XcmConfig: rococo_runtime::xcm_config::XcmConfig,
+			SovereignAccountOf: rococo_runtime::xcm_config::LocationConverter, //TODO: rename to SovereignAccountOf,
+			System: rococo_runtime::System,
+			Balances: rococo_runtime::Balances,
+		},
+		pallets_extra = {
+			XcmPallet: rococo_runtime::XcmPallet,
+			Sudo: rococo_runtime::Sudo,
+		}
+	},
+	#[api_version(5)]
+	pub struct Wococo {
+		genesis = rococo::genesis(),
+		on_init = (),
+		runtime = {
+			Runtime: rococo_runtime::Runtime,
+			RuntimeOrigin: rococo_runtime::RuntimeOrigin,
+			RuntimeCall: rococo_runtime::RuntimeCall,
+			RuntimeEvent: rococo_runtime::RuntimeEvent,
+			MessageQueue: rococo_runtime::MessageQueue,
+			XcmConfig: rococo_runtime::xcm_config::XcmConfig,
+			SovereignAccountOf: rococo_runtime::xcm_config::LocationConverter, //TODO: rename to SovereignAccountOf,
+			System: rococo_runtime::System,
+			Balances: rococo_runtime::Balances,
+		},
+		pallets_extra = {
+			XcmPallet: rococo_runtime::XcmPallet,
+			Sudo: rococo_runtime::Sudo,
+		}
 	}
 }
 
@@ -136,7 +176,7 @@ decl_test_parachains! {
 			Balances: bridge_hub_polkadot_runtime::Balances,
 			ParachainSystem: bridge_hub_polkadot_runtime::ParachainSystem,
 			ParachainInfo: bridge_hub_polkadot_runtime::ParachainInfo,
-			BridgeMessages: bridge_hub_polkadot_runtime::BridgeKusamaMessages,
+			BridgeMessages: (), // TODO: bridge_hub_polkadot_runtime::BridgeKusamaMessages,
 		},
 		pallets_extra = {
 			PolkadotXcm: bridge_hub_polkadot_runtime::PolkadotXcm,
@@ -203,7 +243,7 @@ decl_test_parachains! {
 			Balances: bridge_hub_kusama_runtime::Balances,
 			ParachainSystem: bridge_hub_kusama_runtime::ParachainSystem,
 			ParachainInfo: bridge_hub_kusama_runtime::ParachainInfo,
-			BridgeMessages: bridge_hub_kusama_runtime::BridgePolkadotMessages,
+			BridgeMessages: (), // TODO: bridge_hub_kusama_runtime::BridgePolkadotMessages,
 		},
 		pallets_extra = {
 			PolkadotXcm: bridge_hub_kusama_runtime::PolkadotXcm,
@@ -276,6 +316,94 @@ decl_test_parachains! {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
 			Assets: penpal_runtime::Assets,
 		}
+	},
+	// Rococo
+	pub struct BridgeHubRococo {
+		genesis = bridge_hub_rococo::genesis(),
+		on_init = (),
+		runtime = {
+			Runtime: bridge_hub_rococo_runtime::Runtime,
+			RuntimeOrigin: bridge_hub_rococo_runtime::RuntimeOrigin,
+			RuntimeCall: bridge_hub_rococo_runtime::RuntimeCall,
+			RuntimeEvent: bridge_hub_rococo_runtime::RuntimeEvent,
+			XcmpMessageHandler: bridge_hub_rococo_runtime::XcmpQueue,
+			DmpMessageHandler: bridge_hub_rococo_runtime::DmpQueue,
+			LocationToAccountId: bridge_hub_rococo_runtime::xcm_config::LocationToAccountId,
+			System: bridge_hub_rococo_runtime::System,
+			Balances: bridge_hub_rococo_runtime::Balances,
+			ParachainSystem: bridge_hub_rococo_runtime::ParachainSystem,
+			ParachainInfo: bridge_hub_rococo_runtime::ParachainInfo,
+			BridgeMessages: bridge_hub_rococo_runtime::BridgeWococoMessages,
+		},
+		pallets_extra = {
+			PolkadotXcm: bridge_hub_rococo_runtime::PolkadotXcm,
+		}
+	},
+	pub struct AssetHubRococo {
+		genesis = asset_hub_polkadot::genesis(),
+		on_init = (),
+		runtime = {
+			Runtime: asset_hub_polkadot_runtime::Runtime,
+			RuntimeOrigin: asset_hub_polkadot_runtime::RuntimeOrigin,
+			RuntimeCall: asset_hub_polkadot_runtime::RuntimeCall,
+			RuntimeEvent: asset_hub_polkadot_runtime::RuntimeEvent,
+			XcmpMessageHandler: asset_hub_polkadot_runtime::XcmpQueue,
+			DmpMessageHandler: asset_hub_polkadot_runtime::DmpQueue,
+			LocationToAccountId: asset_hub_polkadot_runtime::xcm_config::LocationToAccountId,
+			System: asset_hub_polkadot_runtime::System,
+			Balances: asset_hub_polkadot_runtime::Balances,
+			ParachainSystem: asset_hub_polkadot_runtime::ParachainSystem,
+			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
+			BridgeMessages: (),
+		},
+		pallets_extra = {
+			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
+			Assets: asset_hub_polkadot_runtime::Assets,
+		}
+	},
+	// Wococo
+	pub struct BridgeHubWococo {
+		genesis = bridge_hub_rococo::genesis(),
+		on_init = (),
+		runtime = {
+			Runtime: bridge_hub_rococo_runtime::Runtime,
+			RuntimeOrigin: bridge_hub_rococo_runtime::RuntimeOrigin,
+			RuntimeCall: bridge_hub_rococo_runtime::RuntimeCall,
+			RuntimeEvent: bridge_hub_rococo_runtime::RuntimeEvent,
+			XcmpMessageHandler: bridge_hub_rococo_runtime::XcmpQueue,
+			DmpMessageHandler: bridge_hub_rococo_runtime::DmpQueue,
+			LocationToAccountId: bridge_hub_rococo_runtime::xcm_config::LocationToAccountId,
+			System: bridge_hub_rococo_runtime::System,
+			Balances: bridge_hub_rococo_runtime::Balances,
+			ParachainSystem: bridge_hub_rococo_runtime::ParachainSystem,
+			ParachainInfo: bridge_hub_rococo_runtime::ParachainInfo,
+			BridgeMessages: bridge_hub_rococo_runtime::BridgeRococoMessages,
+		},
+		pallets_extra = {
+			PolkadotXcm: bridge_hub_rococo_runtime::PolkadotXcm,
+		}
+	},
+	pub struct AssetHubWococo {
+		genesis = asset_hub_polkadot::genesis(),
+		on_init = (),
+		runtime = {
+			Runtime: asset_hub_polkadot_runtime::Runtime,
+			RuntimeOrigin: asset_hub_polkadot_runtime::RuntimeOrigin,
+			RuntimeCall: asset_hub_polkadot_runtime::RuntimeCall,
+			RuntimeEvent: asset_hub_polkadot_runtime::RuntimeEvent,
+			XcmpMessageHandler: asset_hub_polkadot_runtime::XcmpQueue,
+			DmpMessageHandler: asset_hub_polkadot_runtime::DmpQueue,
+			LocationToAccountId: asset_hub_polkadot_runtime::xcm_config::LocationToAccountId,
+			System: asset_hub_polkadot_runtime::System,
+			Balances: asset_hub_polkadot_runtime::Balances,
+			ParachainSystem: asset_hub_polkadot_runtime::ParachainSystem,
+			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
+			BridgeMessages: (),
+		},
+		pallets_extra = {
+			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
+			Assets: asset_hub_polkadot_runtime::Assets,
+		}
 	}
 }
 
@@ -288,7 +416,7 @@ decl_test_networks! {
 			Collectives,
 			BridgeHubPolkadot,
 		],
-		bridge = PolkadotKusamaMockBridge
+		bridge = ()
 	},
 	pub struct KusamaMockNet {
 		relay_chain = Kusama,
@@ -297,7 +425,7 @@ decl_test_networks! {
 			PenpalKusama,
 			BridgeHubKusama,
 		],
-		bridge = KusamaPolkadotMockBridge
+		bridge = ()
 	},
 	pub struct WestendMockNet {
 		relay_chain = Westend,
@@ -306,18 +434,42 @@ decl_test_networks! {
 			PenpalWestend,
 		],
 		bridge = ()
+	},
+	pub struct RococoMockNet {
+		relay_chain = Rococo,
+		parachains = vec![
+			AssetHubRococo,
+			BridgeHubRococo,
+		],
+		bridge = RococoWococoMockBridge
+	},
+	pub struct WococoMockNet {
+		relay_chain = Wococo,
+		parachains = vec![
+			AssetHubWococo,
+			BridgeHubWococo,
+		],
+		bridge = WococoRococoMockBridge
 	}
 }
 
 decl_test_bridges! {
-	pub struct PolkadotKusamaMockBridge {
-		source = BridgeHubPolkadot,
-		target = BridgeHubKusama
+	pub struct RococoWococoMockBridge {
+		source = BridgeHubRococo,
+		target = BridgeHubWococo
 	},
-	pub struct KusamaPolkadotMockBridge {
-		source = BridgeHubKusama,
-		target = BridgeHubPolkadot
+	pub struct WococoRococoMockBridge {
+		source = BridgeHubWococo,
+		target = BridgeHubRococo
 	}
+	// pub struct PolkadotKusamaMockBridge {
+	// 	source = BridgeHubPolkadot,
+	// 	target = BridgeHubKusama
+	// },
+	// pub struct KusamaPolkadotMockBridge {
+	// 	source = BridgeHubKusama,
+	// 	target = BridgeHubPolkadot
+	// }
 }
 
 

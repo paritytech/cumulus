@@ -1,9 +1,9 @@
 [package]
-name = "bridge-hub-kusama-integration-tests"
+name = "bridge-hub-rococo-integration-tests"
 version = "1.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
-description = "Asset Hub Kusama runtime integration tests with xcm-emulator"
+description = "Bridge Hub Rococo runtime integration tests with xcm-emulator"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false }
@@ -28,7 +28,7 @@ pallet-xcm = { default-features = false, git = "https://github.com/paritytech/po
 
 # Cumulus
 parachains-common = { path = "../../../../common" }
-bridge-hub-kusama-runtime = { path = "../../../../runtimes/bridge-hubs/bridge-hub-kusama" }
+bridge-hub-rococo-runtime = { path = "../../../../runtimes/bridge-hubs/bridge-hub-rococo" }
 
 # Local
 xcm-emulator = { default-features = false, path = "../../../../../xcm/xcm-emulator" }
