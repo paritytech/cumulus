@@ -200,7 +200,7 @@ pub mod relay_chain_driven {
 		let config = CollationGenerationConfig {
 			key,
 			para_id,
-			collator: Box::new(move |relay_parent, validation_data| {
+			collator: Some(Box::new(move |relay_parent, validation_data| {
 				// Cloning the channel on each usage effectively makes the channel
 				// unbounded. The channel is actually bounded by the block production
 				// and consensus systems of Polkadot, which limits the amount of possible
@@ -218,7 +218,7 @@ pub mod relay_chain_driven {
 
 					this_rx.await.ok().flatten()
 				})
-			}),
+			})),
 		};
 
 		overseer_handle
