@@ -70,8 +70,9 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use xcm::opaque::v3::MultiLocation;
 use xcm_config::{
-	ForeignAssetsConvertedConcreteId, TrustBackedAssetsConvertedConcreteId, WestendLocation,
-	XcmConfig, XcmOriginToTransactDispatchOrigin,
+	ForeignAssetsConvertedConcreteId, PoolAssetsConvertedConcreteId,
+	TrustBackedAssetsConvertedConcreteId, WestendLocation, XcmConfig,
+	XcmOriginToTransactDispatchOrigin,
 };
 
 #[cfg(any(feature = "std", test))]
@@ -1105,12 +1106,12 @@ impl_runtime_apis! {
 				)?,
 				// collect pallet_assets (ForeignAssets)
 				convert::<_, _, _, _, ForeignAssetsConvertedConcreteId>(
-					ForeignAssets::account_balances(account)
+					ForeignAssets::account_balances(account.clone())
 						.iter()
 						.filter(|(_, balance)| balance > &0)
 				)?,
 				// collect pallet_assets (PoolAssets)
-				convert::<_, _, _, _, ForeignAssetsConvertedConcreteId>(
+				convert::<_, _, _, _, PoolAssetsConvertedConcreteId>(
 					PoolAssets::account_balances(account)
 						.iter()
 						.filter(|(_, balance)| balance > &0)
