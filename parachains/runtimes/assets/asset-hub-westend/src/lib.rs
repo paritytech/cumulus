@@ -260,7 +260,8 @@ impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 parameter_types! {
 	pub const AssetConversionPalletId: PalletId = PalletId(*b"py/ascon");
 	pub storage AllowMultiAssetPools: bool = false;
-	pub storage LiquidityWithdrawalFee: Permill = Permill::from_percent(0); // should be non-zero if AllowMultiAssetPools is true, otherwise can be zero
+	// should be non-zero if AllowMultiAssetPools is true, otherwise can be zero
+	pub storage LiquidityWithdrawalFee: Permill = Permill::from_percent(0);
 }
 
 ord_parameter_types! {
@@ -286,7 +287,7 @@ impl pallet_assets::Config<PoolAssetsInstance> for Runtime {
 	type StringLimit = ConstU32<50>;
 	type Freezer = ();
 	type Extra = ();
-	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_assets_pool::WeightInfo<Runtime>;
 	type CallbackHandle = ();
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
@@ -1108,6 +1109,12 @@ impl_runtime_apis! {
 						.iter()
 						.filter(|(_, balance)| balance > &0)
 				)?,
+				// collect pallet_assets (PoolAssets)
+				convert::<_, _, _, _, ForeignAssetsConvertedConcreteId>(
+					PoolAssets::account_balances(account)
+						.iter()
+						.filter(|(_, balance)| balance > &0)
+				)?,
 				// collect ... e.g. other tokens
 			].concat().into())
 		}
@@ -1161,6 +1168,7 @@ impl_runtime_apis! {
 			// `pallet_assets_local.rs / pallet_assets_foreign.rs`.
 			type Local = pallet_assets::Pallet::<Runtime, TrustBackedAssetsInstance>;
 			type Foreign = pallet_assets::Pallet::<Runtime, ForeignAssetsInstance>;
+			type Pool = pallet_assets::Pallet::<Runtime, PoolAssetsInstance>;
 
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
@@ -1289,6 +1297,7 @@ impl_runtime_apis! {
 
 			type Local = pallet_assets::Pallet::<Runtime, TrustBackedAssetsInstance>;
 			type Foreign = pallet_assets::Pallet::<Runtime, ForeignAssetsInstance>;
+			type Pool = pallet_assets::Pallet::<Runtime, PoolAssetsInstance>;
 
 			let whitelist: Vec<TrackedStorageKey> = vec![
 				// Block Number
