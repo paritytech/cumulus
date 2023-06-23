@@ -629,6 +629,7 @@ asset_test_utils::include_create_and_manage_foreign_assets_for_local_consensus_p
 	})
 );
 
+#[allow(unused)]
 fn bridging_to_asset_hub_kusama() -> asset_test_utils::test_cases_over_bridge::TestBridgingConfig {
 	asset_test_utils::test_cases_over_bridge::TestBridgingConfig {
 		bridged_network: bridging::KusamaLocalNetwork::get(),
@@ -636,34 +637,6 @@ fn bridging_to_asset_hub_kusama() -> asset_test_utils::test_cases_over_bridge::T
 		local_bridge_hub_location: bridging::BridgeHub::get(),
 		bridged_target_location: bridging::AssetHubKusamaLocal::get(),
 	}
-}
-
-#[test]
-fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works() {
-	asset_test_utils::test_cases_over_bridge::transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works::<
-		Runtime,
-		XcmConfig,
-		ParachainSystem,
-		XcmpQueue,
-		LocationToAccountId,
-	>(
-		collator_session_keys(),
-		ExistentialDeposit::get(),
-		AccountId::from(ALICE),
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		bridging_to_asset_hub_kusama
-	)
 }
 
 #[test]

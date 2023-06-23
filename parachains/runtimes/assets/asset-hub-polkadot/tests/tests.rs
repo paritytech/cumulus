@@ -19,8 +19,7 @@
 
 use asset_hub_polkadot_runtime::xcm_config::{
 	bridging, AssetFeeAsExistentialDepositMultiplierFeeCharger, CheckingAccount, DotLocation,
-	ForeignCreatorsSovereignAccountOf, LocationToAccountId, TrustBackedAssetsPalletLocation,
-	XcmConfig,
+	ForeignCreatorsSovereignAccountOf, TrustBackedAssetsPalletLocation, XcmConfig,
 };
 pub use asset_hub_polkadot_runtime::{
 	constants::fee::WeightToFee, AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets,
@@ -651,6 +650,7 @@ asset_test_utils::include_create_and_manage_foreign_assets_for_local_consensus_p
 	})
 );
 
+#[allow(unused)]
 fn bridging_to_asset_hub_kusama() -> asset_test_utils::test_cases_over_bridge::TestBridgingConfig {
 	asset_test_utils::test_cases_over_bridge::TestBridgingConfig {
 		bridged_network: bridging::KusamaNetwork::get(),
@@ -660,34 +660,10 @@ fn bridging_to_asset_hub_kusama() -> asset_test_utils::test_cases_over_bridge::T
 	}
 }
 
-#[test]
-fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works() {
-	asset_test_utils::test_cases_over_bridge::transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works::<
-		Runtime,
-		XcmConfig,
-		ParachainSystem,
-		XcmpQueue,
-		LocationToAccountId,
-	>(
-		collator_session_keys(),
-		ExistentialDeposit::get(),
-		AccountId::from(ALICE),
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		Box::new(|runtime_event_encoded: Vec<u8>| {
-			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
-				Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
-				_ => None,
-			}
-		}),
-		bridging_to_asset_hub_kusama
-	)
-}
-
+// TODO: uses actual XCM logged from asset-hub-kusama test transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works
+// 		 but only this is added manually (because we dont go through bridge-hub in test, bridge-hub adds these):
+// 			UniversalOrigin(GlobalConsensus(Kusama)),
+//			DescendOrigin(X1(Parachain(1000))),
 #[test]
 fn receive_reserve_asset_deposited_works() {
 	ExtBuilder::<Runtime>::default()
@@ -697,6 +673,7 @@ fn receive_reserve_asset_deposited_works() {
 			AccountId::from(ALICE),
 			SessionKeys { aura: AuraId::from(sp_core::ed25519::Public::from_raw(ALICE)) },
 		)])
+		.with_tracing()
 		.build()
 		.execute_with(|| {
 			let xcm = Xcm(vec![
@@ -707,18 +684,30 @@ fn receive_reserve_asset_deposited_works() {
 						parents: 2,
 						interior: X1(GlobalConsensus(Kusama)),
 					}),
-					fun: Fungible(1000),
+					fun: Fungible(999788266667),
 				}])),
 				ClearOrigin,
+				WithdrawAsset(MultiAssets::from(vec![MultiAsset {
+					id: Concrete(MultiLocation { parents: 1, interior: Here }),
+					fun: Fungible(21173333300),
+				}])),
 				BuyExecution {
 					fees: MultiAsset {
-						id: Concrete(MultiLocation {
-							parents: 2,
-							interior: X1(GlobalConsensus(Kusama)),
-						}),
-						fun: Fungible(1000),
+						id: Concrete(MultiLocation { parents: 1, interior: Here }),
+						fun: Fungible(21173333300),
 					},
-					weight_limit: Limited(Weight::from_parts(1194767000, 10000)),
+					weight_limit: Limited(Weight::from_parts(1503804000, 5082)),
+				},
+				RefundSurplus,
+				DepositAsset {
+					assets: Definite(MultiAssets::from(vec![MultiAsset {
+						id: Concrete(MultiLocation { parents: 1, interior: Here }),
+						fun: Fungible(21173333300),
+					}])),
+					beneficiary: MultiLocation {
+						parents: 2,
+						interior: X2(GlobalConsensus(Kusama), Parachain(1000)),
+					},
 				},
 				DepositAsset {
 					assets: Wild(AllCounted(1)),
@@ -734,8 +723,8 @@ fn receive_reserve_asset_deposited_works() {
 					},
 				},
 				SetTopic([
-					70, 225, 199, 10, 167, 26, 9, 175, 162, 56, 121, 134, 223, 111, 89, 101, 191,
-					62, 98, 136, 57, 123, 96, 150, 113, 224, 157, 114, 205, 236, 148, 190,
+					51, 233, 81, 206, 55, 52, 190, 159, 131, 248, 239, 11, 158, 210, 117, 22, 201,
+					83, 130, 81, 187, 50, 197, 60, 49, 74, 91, 49, 186, 35, 58, 16,
 				]),
 			]);
 

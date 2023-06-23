@@ -22,14 +22,16 @@ use assets_common::matching::{
 	FromSiblingParachain, IsForeignConcreteAsset, StartsWith, StartsWithExplicitGlobalConsensus,
 };
 use frame_support::{
-	match_types, parameter_types,
+	match_types,
+	pallet_prelude::Get,
+	parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
 };
 use frame_system::EnsureRoot;
-use pallet_xcm::XcmPassthrough;
+use pallet_xcm::{BuyExecutionSetup, DecideBuyExecutionSetup, FeeForBuyExecution, XcmPassthrough};
 use parachains_common::{impls::ToStakingPot, xcm_config::AssetFeeAsExistentialDepositMultiplier};
 use polkadot_parachain::primitives::Sibling;
-use sp_runtime::traits::ConvertInto;
+use sp_runtime::{traits::ConvertInto, Perbill};
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
@@ -484,6 +486,7 @@ impl pallet_xcm::Config for Runtime {
 	type AdminOrigin = EnsureRoot<AccountId>;
 	type MaxRemoteLockConsumers = ConstU32<0>;
 	type RemoteLockConsumerIdentifier = ();
+	type BuyExecutionSetupResolver = SwapBuyExecutionSetupResolver<UniversalLocation, WeightToFee>;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
@@ -579,5 +582,82 @@ pub mod bridging {
 			assert!(alias.is_some(), "we expect here BridgeHubKusama to Polkadot mapping at least");
 			Some(alias.unwrap())
 		}
+	}
+}
+
+// TODO: sample implementation of DecideBuyExecutionSetup
+pub struct SwapBuyExecutionSetupResolver<LocalUniversal, WeightToFee>(
+	sp_std::marker::PhantomData<(LocalUniversal, WeightToFee)>,
+);
+impl<
+		LocalUniversal: Get<InteriorMultiLocation>,
+		WeightToFee: frame_support::weights::WeightToFee<Balance = Balance>,
+	> DecideBuyExecutionSetup for SwapBuyExecutionSetupResolver<LocalUniversal, WeightToFee>
+{
+	fn decide_for(
+		destination: &MultiLocation,
+		desired_fee_asset_id: &AssetId,
+	) -> BuyExecutionSetup {
+		// if somebody wants to pay with KSM on AssetHubPolkadot, we handle fees
+		if destination.eq(&bridging::AssetHubPolkadot::get()) {
+			if matches!(desired_fee_asset_id, Concrete(asset_location) if asset_location.eq(&KsmLocation::get()))
+			{
+				let sovereign_account_on_asset_hub_polkadot = LocalUniversal::get()
+					.invert_target(&bridging::AssetHubPolkadot::get())
+					.expect("TODO: add some error handling");
+				return BuyExecutionSetup::UniversalLocation {
+					// additional fee in KSM goes to this local account (we can set it as treasury maybe?)
+					local_account: bridging::BridgeHubKusama::get(),
+					// unspent DOTs goes here
+					account_on_destination: sovereign_account_on_asset_hub_polkadot,
+				}
+			}
+		}
+		// else, just do nothing, e.g. maybe user choose to pay with some sufficient fee on AssetHubPolkadot and so on
+		BuyExecutionSetup::Origin
+	}
+
+	fn estimate_fee_for(
+		destination: &MultiLocation,
+		desired_fee_asset_id: &AssetId,
+		weight: &WeightLimit,
+	) -> Option<FeeForBuyExecution> {
+		// if somebody wants to pay KSM on AssetHubPolkadot
+		if destination.eq(&bridging::AssetHubPolkadot::get()) {
+			if matches!(desired_fee_asset_id, Concrete(asset_location) if asset_location.eq(&KsmLocation::get()))
+			{
+				//
+				let proportional_amount_to_withdraw = match weight {
+					Unlimited => {
+						// TODO: handle with some limit?
+						return None
+					},
+					Limited(weight) => {
+						// TODO: add here some additional transport fee?
+						let weight = *weight + (*weight * Perbill::from_percent(25));
+						WeightToFee::weight_to_fee(&weight)
+					},
+				};
+
+				// TODO: later with DEX
+				// conversion ration: 1KSM to 100 DOTs
+				let proportional_amount_to_buy_execution =
+					proportional_amount_to_withdraw.clone() * 100;
+
+				return Some(FeeForBuyExecution {
+					proportional_amount_to_withdraw: (
+						KsmLocation::get(),
+						proportional_amount_to_withdraw,
+					)
+						.into(),
+					proportional_amount_to_buy_execution: (
+						bridging::DotLocation::get(),
+						proportional_amount_to_buy_execution,
+					)
+						.into(),
+				})
+			}
+		}
+		None
 	}
 }

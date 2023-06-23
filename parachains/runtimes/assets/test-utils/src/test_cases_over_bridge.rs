@@ -21,6 +21,7 @@ use frame_support::{
 	assert_ok,
 	traits::{Currency, OriginTrait, ProcessMessageError},
 };
+use pallet_xcm::{BuyExecutionSetup, DecideBuyExecutionSetup};
 use parachains_common::Balance;
 use parachains_runtimes_test_utils::{
 	mock_open_hrmp_channel, AccountIdOf, BalanceOf, CollatorSessionKeys, ExtBuilder, RuntimeHelper,
@@ -98,7 +99,7 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 			let reserve_account =
 				LocationToAccountId::convert_location(&target_location_from_different_consensus)
 					.expect("Sovereign account for reserves");
-			let balance_to_transfer = 1000_u128;
+			let balance_to_transfer = 1_000_000_000_000_u128;
 			let native_asset = MultiLocation::parent();
 
 			// open HRMP to bridge hub
@@ -133,10 +134,30 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 			);
 
 			// local native asset (pallet_balances)
-			let assets = MultiAssets::from(MultiAsset {
+			let asset_to_transfer = MultiAsset {
 				fun: Fungible(balance_to_transfer.into()),
 				id: Concrete(native_asset),
-			});
+			};
+
+			// check other accounts
+			let buy_execution_setup =
+				<Runtime as pallet_xcm::Config>::BuyExecutionSetupResolver::decide_for(
+					&target_location_from_different_consensus,
+					&asset_to_transfer.id,
+				);
+			if let BuyExecutionSetup::UniversalLocation { local_account, .. } = buy_execution_setup
+			{
+				let local_account = LocationToAccountId::convert_location(&local_account)
+					.expect("Sovereign account for fee");
+				let _ = <pallet_balances::Pallet<Runtime>>::deposit_creating(
+					&local_account,
+					existential_deposit,
+				);
+				assert_eq!(
+					<pallet_balances::Pallet<Runtime>>::free_balance(&local_account),
+					existential_deposit
+				);
+			}
 
 			// destination is (some) account relative to the destination different consensus
 			let target_destination_account = MultiLocation {
@@ -147,47 +168,49 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 				}),
 			};
 
-			// TODO: buy_execution_fees?
-
-			// -> AssetNotFound
-			// assets.push(
-			// 	(MultiLocation {
-			// 		parents: 2,
-			// 		interior: X1(GlobalConsensus(Polkadot))
-			// 	},
-			// 	500).into()
-			// );
-			// assets.push(
-			// 	(MultiLocation {
-			// 		parents: 0,
-			// 		interior: X1(GlobalConsensus(Polkadot))
-			// 	},
-			// 	 0).into()
-			// );
-
-			// do pallet_xcm call reserver transfer
+			// do pallet_xcm call reserve transfer
 			assert_ok!(<pallet_xcm::Pallet<Runtime>>::reserve_transfer_assets(
 				RuntimeHelper::<Runtime>::origin_of(alice_account.clone()),
 				Box::new(target_location_from_different_consensus.clone().into_versioned()),
 				Box::new(target_destination_account.clone().into_versioned()),
-				Box::new(VersionedMultiAssets::from(assets.clone())),
+				Box::new(VersionedMultiAssets::from(MultiAssets::from(asset_to_transfer))),
 				0,
 			));
 
-			// TODO: turn on checks
-			// check alice account decreased
-			// assert_eq!(
-			// 	<pallet_balances::Pallet<Runtime>>::free_balance(&alice_account),
-			// 	alice_account_init_balance - balance_to_transfer.into()
-			// );
-			// // check reserve account increased
-			// assert_eq!(
-			// 	<pallet_balances::Pallet<Runtime>>::free_balance(&reserve_account),
-			// 	existential_deposit + balance_to_transfer.into()
-			// );
+			// check alice account decreased about all balance_to_transfer
+			assert_eq!(
+				<pallet_balances::Pallet<Runtime>>::free_balance(&alice_account),
+				alice_account_init_balance - balance_to_transfer.into()
+			);
+
+			// check reserve account
+			if let BuyExecutionSetup::UniversalLocation { local_account, .. } = buy_execution_setup
+			{
+				// partial fees goes here
+				let local_account = LocationToAccountId::convert_location(&local_account)
+					.expect("Sovereign account for fee");
+				let local_account_balance =
+					<pallet_balances::Pallet<Runtime>>::free_balance(&local_account);
+				assert_ne!(
+					<pallet_balances::Pallet<Runtime>>::free_balance(&local_account),
+					existential_deposit
+				);
+				let additional_fee = local_account_balance - existential_deposit;
+
+				// check reserve account increased about all balance_to_transfer
+				assert_eq!(
+					<pallet_balances::Pallet<Runtime>>::free_balance(&reserve_account),
+					existential_deposit + balance_to_transfer.into() - additional_fee
+				);
+			} else {
+				// check reserve account increased about all balance_to_transfer
+				assert_eq!(
+					<pallet_balances::Pallet<Runtime>>::free_balance(&reserve_account),
+					existential_deposit + balance_to_transfer.into()
+				);
+			}
 
 			// check events
-
 			// check pallet_xcm attempted
 			RuntimeHelper::<Runtime>::assert_pallet_xcm_event_outcome(
 				&unwrap_pallet_xcm_event,
