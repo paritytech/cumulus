@@ -301,7 +301,12 @@ impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type AssetIdParameter = MultiLocationForAssetId;
 	type Currency = Balances;
 	type CreateOrigin = ForeignCreators<
-		(FromSiblingParachain<parachain_info::Pallet<Runtime>>,),
+		(
+			FromSiblingParachain<parachain_info::Pallet<Runtime>>,
+			snowbridge_router_primitives::inbound::FromEthereumGlobalConsensus<
+				crate::bridging::EthereumRegistryLocation,
+			>,
+		),
 		ForeignCreatorsSovereignAccountOf,
 		AccountId,
 	>;

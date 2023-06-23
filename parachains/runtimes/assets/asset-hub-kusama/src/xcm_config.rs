@@ -29,6 +29,7 @@ use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{impls::ToStakingPot, xcm_config::AssetFeeAsExistentialDepositMultiplier};
 use polkadot_parachain::primitives::Sibling;
+use snowbridge_router_primitives::inbound::GlobalConsensusEthereumAccountConvertsFor;
 use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -72,6 +73,9 @@ pub type LocationToAccountId = (
 	// Different global consensus parachain sovereign account.
 	// (Used for over-bridge transfers and reserve processing)
 	GlobalConsensusParachainConvertsFor<UniversalLocation, AccountId>,
+	// Ethereum contract sovereign account.
+	// (Used to get convert ethereum contract locations to sovereign account)
+	GlobalConsensusEthereumAccountConvertsFor<AccountId>,
 );
 
 /// Means for transacting the native currency on this chain.
@@ -500,6 +504,7 @@ pub type ForeignCreatorsSovereignAccountOf = (
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	AccountId32Aliases<RelayNetwork, AccountId>,
 	ParentIsPreset<AccountId>,
+	GlobalConsensusEthereumAccountConvertsFor<AccountId>,
 );
 
 /// Simple conversion of `u32` into an `AssetId` for use in benchmarking.
@@ -522,7 +527,7 @@ pub mod bridging {
 	use xcm_builder::UnpaidRemoteExporter;
 
 	parameter_types! {
-		pub BridgeHubKusamaParaId: u32 = 1002;
+		pub BridgeHubKusamaParaId: u32 = 1013;
 		pub BridgeHubKusama: MultiLocation = MultiLocation::new(1, X1(Parachain(BridgeHubKusamaParaId::get())));
 		pub const PolkadotNetwork: NetworkId = NetworkId::Polkadot;
 		pub AssetHubPolkadot: MultiLocation =  MultiLocation::new(2, X2(GlobalConsensus(PolkadotNetwork::get()), Parachain(1000)));
@@ -530,8 +535,18 @@ pub mod bridging {
 		pub storage AssetHubPolkadotMaxFee: Option<MultiAsset> = Some((MultiLocation::parent(), 1_000_000).into());
 		pub DotLocation: MultiLocation =  MultiLocation::new(2, X1(GlobalConsensus(PolkadotNetwork::get())));
 
+		// Network and location for the local Ethereum testnet.
 		pub EthereumNetwork: NetworkId = NetworkId::Ethereum { chain_id: 15 };
-		pub EthereumLocation: MultiLocation = MultiLocation::new(2, X1(GlobalConsensus(EthereumNetwork::get()))); // TODO: Maybe registry address belongs here
+		pub EthereumLocation: MultiLocation = MultiLocation::new(2, X1(GlobalConsensus(EthereumNetwork::get())));
+
+		// The Registry contract for the bridge which is also the origin for reserves and the prefix of all assets.
+		pub EthereumRegistryLocation: MultiLocation = EthereumLocation::get()
+			.pushed_with_interior(
+				AccountKey20 { 
+					network: None, 
+					key: hex_literal::hex!("D184c103F7acc340847eEE82a0B909E3358bc28d"),
+				}
+			).unwrap();
 
 		// Setup bridges configuration
 		// (hard-coded version - on-chain configuration will come later as separate feature)
@@ -570,10 +585,7 @@ pub mod bridging {
 						location: EthereumLocation::get(),
 						maybe_fee: None, // No fees supported for ethereum
 					},
-					Some(AssetFilter::ByMultiLocation({
-						MultiLocationFilter::default()
-							.add_starts_with(EthereumLocation::get())
-					})),
+					None,
 				))
 			.build();
 
@@ -592,9 +604,16 @@ pub mod bridging {
 				EthereumLocation::get(),
 				AssetFilter::ByMultiLocation(
 					MultiLocationFilter::default()
-						.add_starts_with(EthereumLocation::get())
-				) // TODO: Change to registry contract address. For now accept any ethereum address.
-			)
+						.add_starts_with(EthereumRegistryLocation::get())
+				)
+			),
+			(
+				EthereumRegistryLocation::get(),
+				AssetFilter::ByMultiLocation(
+					MultiLocationFilter::default()
+						.add_starts_with(EthereumRegistryLocation::get())
+				)
+			),
 		];
 
 		/// Universal aliases

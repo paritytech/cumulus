@@ -76,6 +76,8 @@ assets-common = { path = "../common", default-features = false }
 pallet-bridge-transfer = { path = "../../../pallets/bridge-transfer", default-features = false }
 pallet-bridge-transfer-primitives = { path = "../../../pallets/bridge-transfer/primitives", default-features = false }
 
+snowbridge-router-primitives = { path = "../../../../../parachain/primitives/router", default-features = false }
+
 [dev-dependencies]
 hex-literal = "0.4.1"
 asset-test-utils = { path = "../test-utils"}
@@ -167,6 +169,7 @@ std = [
 	"polkadot-core-primitives/std",
 	"polkadot-parachain/std",
 	"polkadot-runtime-common/std",
+    "snowbridge-router-primitives/std",
 	"sp-api/std",
 	"sp-block-builder/std",
 	"sp-consensus-aura/std",

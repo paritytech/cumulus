@@ -77,8 +77,11 @@ assets-common = { path = "../common", default-features = false }
 pallet-bridge-transfer = { path = "../../../pallets/bridge-transfer", default-features = false }
 pallet-bridge-transfer-primitives = { path = "../../../pallets/bridge-transfer/primitives", default-features = false }
 
+snowbridge-router-primitives = { path = "../../../../../parachain/primitives/router", default-features = false }
+
 [dev-dependencies]
 asset-test-utils = { path = "../test-utils"}
+hex-literal = { version = "0.4.1" }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [build-dependencies]
@@ -177,6 +180,7 @@ std = [
 	"polkadot-core-primitives/std",
 	"polkadot-parachain/std",
 	"polkadot-runtime-common/std",
+	"snowbridge-router-primitives/std",
 	"sp-api/std",
 	"sp-block-builder/std",
 	"sp-consensus-aura/std",

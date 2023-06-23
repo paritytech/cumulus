@@ -515,8 +515,8 @@ pub mod bridging {
 	use xcm_builder::UnpaidRemoteExporter;
 
 	parameter_types! {
-		// used for local testing
-		pub BridgeHubParaId: u32 = 1002;
+		// used for local testing with rococo-local
+		pub BridgeHubParaId: u32 = 1013;
 		pub BridgeHub: MultiLocation = MultiLocation::new(1, X1(Parachain(BridgeHubParaId::get())));
 		pub const KusamaLocalNetwork: NetworkId = NetworkId::Kusama;
 		pub AssetHubKusamaLocal: MultiLocation =  MultiLocation::new(2, X2(GlobalConsensus(KusamaLocalNetwork::get()), Parachain(1000)));

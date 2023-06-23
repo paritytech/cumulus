@@ -568,10 +568,8 @@ impl pallet_bridge_relayers::Config for Runtime {
 // Ethereum Bridge
 
 parameter_types! {
-	pub const EthereumNetwork: xcm::v3::NetworkId = xcm::v3::NetworkId::Ethereum { chain_id: 1 };
-}
-
-parameter_types! {
+	// The network for the local ethereum testnet.
+	pub const EthereumNetwork: xcm::v3::NetworkId = xcm::v3::NetworkId::Ethereum { chain_id: 15 };
 	pub const Reward: u128 = 10;
 }
 
