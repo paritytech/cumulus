@@ -1154,6 +1154,20 @@ macro_rules! bx {
 	};
 }
 
+#[macro_export]
+macro_rules! decl_test_sender_receiver_accounts_parameter_types {
+	( $( $chain:ident { sender: $sender:expr, receiver: $receiver:expr }),+ ) => {
+		$crate::paste::paste! {
+			parameter_types! {
+				$(
+					pub [<$chain Sender>]: $crate::AccountId = <$chain>::account_id_of($sender);
+					pub [<$chain Receiver>]: $crate::AccountId = <$chain>::account_id_of($receiver);
+				)+
+			}
+		}
+	};
+}
+
 pub mod helpers {
 	use super::Weight;
 
