@@ -33,6 +33,7 @@ use core::{
 	sync::atomic::{AtomicU32, Ordering},
 };
 use frame_support::traits::{ExecuteBlock, ExtrinsicCall, Get, IsSubType};
+use hashbrown::hash_map::HashMap;
 use sp_core::storage::{ChildInfo, StateVersion};
 use sp_externalities::{set_and_run_with_externalities, Externalities};
 use sp_io::KillStorageResult;
@@ -61,8 +62,8 @@ use hash_db::Hasher;
 use sp_trie::NodeCodec;
 
 struct SimpleCache<'a, H: Hasher> {
-	node_cache: spin::MutexGuard<'a, BTreeMap<H::Out, NodeOwned<H::Out>>>,
-	value_cache: spin::MutexGuard<'a, BTreeMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
+	node_cache: spin::MutexGuard<'a, HashMap<H::Out, NodeOwned<H::Out>>>,
+	value_cache: spin::MutexGuard<'a, HashMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
 }
 
 impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleCache<'a, H> {
@@ -101,8 +102,8 @@ impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleCache<'a, H> {
 struct CacheProvider<H: Hasher> {
 	_phantom: PhantomData<H>,
 	initialized: AtomicU32,
-	node_cache: spin::Mutex<BTreeMap<H::Out, NodeOwned<H::Out>>>,
-	value_cache: spin::Mutex<BTreeMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
+	node_cache: spin::Mutex<HashMap<H::Out, NodeOwned<H::Out>>>,
+	value_cache: spin::Mutex<HashMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
 }
 
 impl<H: Hasher> CacheProvider<H> {
@@ -110,8 +111,8 @@ impl<H: Hasher> CacheProvider<H> {
 		CacheProvider {
 			_phantom: PhantomData,
 			initialized: Default::default(),
-			node_cache: spin::Mutex::new(BTreeMap::new()),
-			value_cache: spin::Mutex::new(BTreeMap::new()),
+			node_cache: spin::Mutex::new(HashMap::new()),
+			value_cache: spin::Mutex::new(HashMap::new()),
 		}
 	}
 }
