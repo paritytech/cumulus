@@ -77,6 +77,20 @@ pub type ForeignAssetsConvertedConcreteId<AdditionalMultiLocationExclusionFilter
 		Balance,
 	>;
 
+type AssetIdForPoolAssets = u32;
+/// `MultiLocation` vs `AssetIdForPoolAssets` converter for `PoolAssets`.
+pub type AssetIdForPoolAssetsConvert<PoolAssetsPalletLocation> =
+	AsPrefixedGeneralIndex<PoolAssetsPalletLocation, AssetIdForPoolAssets, JustTry>;
+/// [`MatchedConvertedConcreteId`] converter dedicated for `PoolAssets`
+pub type PoolAssetsConvertedConcreteId<PoolAssetsPalletLocation, Balance> =
+	MatchedConvertedConcreteId<
+		AssetIdForPoolAssets,
+		Balance,
+		StartsWith<PoolAssetsPalletLocation>,
+		AssetIdForPoolAssetsConvert<PoolAssetsPalletLocation>,
+		JustTry,
+	>;
+
 #[cfg(test)]
 mod tests {
 	use super::*;

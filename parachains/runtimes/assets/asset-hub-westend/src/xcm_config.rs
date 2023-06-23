@@ -15,7 +15,7 @@
 
 use super::{
 	AccountId, AllPalletsWithSystem, Assets, Authorship, Balance, Balances, ParachainInfo,
-	ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
+	ParachainSystem, PolkadotXcm, PoolAssets, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
 	TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
 use crate::ForeignAssets;
@@ -57,6 +57,8 @@ parameter_types! {
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
 	pub ForeignAssetsPalletLocation: MultiLocation =
 		PalletInstance(<ForeignAssets as PalletInfoAccess>::index() as u8).into();
+	pub PoolAssetsPalletLocation: MultiLocation =
+		PalletInstance(<PoolAssets as PalletInfoAccess>::index() as u8).into();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
