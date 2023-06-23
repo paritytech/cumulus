@@ -1356,12 +1356,14 @@ dependencies = [
 name = "bridge-hub-rococo-integration-tests"
 version = "1.0.0"
 dependencies = [
+ "bp-messages",
  "bridge-hub-rococo-runtime",
  "frame-support",
  "frame-system",
  "integration-tests-common",
  "pallet-assets",
  "pallet-balances",
+ "pallet-bridge-messages",
  "pallet-xcm",
  "parachains-common",
  "parity-scale-codec",

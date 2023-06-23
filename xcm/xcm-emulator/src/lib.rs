@@ -734,6 +734,10 @@ macro_rules! __impl_parachain {
 				(Parent).into()
 			}
 
+			pub fn sibling_location_of(para_id: $crate::ParaId) -> $crate::MultiLocation {
+				(Parent, X1(Parachain(para_id.into()))).into()
+			}
+
 			pub fn account_id_of(seed: &str) -> $crate::AccountId {
 				$crate::get_account_id_from_seed::<sr25519::Public>(seed)
 			}
@@ -882,7 +886,9 @@ macro_rules! decl_test_networks {
 					while let Some((to_para_id, messages))
 						= $crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 						$(
-							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) {
+							let para_id: u32 = <$parachain>::para_id().into();
+
+							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) && para_id == to_para_id {
 								let mut msg_dedup: Vec<(RelayChainBlockNumber, Vec<u8>)> = Vec::new();
 								for m in &messages {
 									msg_dedup.push((m.0, m.1.clone()));
@@ -894,13 +900,11 @@ macro_rules! decl_test_networks {
 								}).collect::<Vec<(RelayChainBlockNumber, Vec<u8>)>>();
 								if msgs.len() != 0 {
 									<$parachain>::handle_dmp_messages(msgs.clone().into_iter(), $crate::Weight::max_value());
-									$crate::log::debug!(target: concat!(stringify!($name), ":dmp") , "DMP messages processed {:?} to para_id {:?}", msgs.clone(), &to_para_id);
+									$crate::log::debug!(target: concat!("dmp::", stringify!($name)) , "DMP messages processed {:?} to para_id {:?}", msgs.clone(), &to_para_id);
 									for m in msgs {
 										$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().push_back((to_para_id, m.0, m.1)));
 									}
 								}
-							} else {
-								unreachable!();
 							}
 						)*
 					}
@@ -913,9 +917,11 @@ macro_rules! decl_test_networks {
 						= $crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 						let iter = messages.iter().map(|(p, b, m)| (*p, *b, &m[..])).collect::<Vec<_>>().into_iter();
 						$(
-							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) {
+							let para_id: u32 = <$parachain>::para_id().into();
+
+							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) && para_id == to_para_id {
 								<$parachain>::handle_xcmp_messages(iter.clone(), $crate::Weight::max_value());
-								$crate::log::debug!(target: concat!(stringify!($name), ":hrmp") , "HRMP messages processed {:?} to para_id {:?}", &messages, &to_para_id);
+								$crate::log::debug!(target: concat!("hrmp::", stringify!($name)) , "HRMP messages processed {:?} to para_id {:?}", &messages, &to_para_id);
 							}
 						)*
 					}
@@ -932,7 +938,7 @@ macro_rules! decl_test_networks {
 							&mut weight_meter,
 							&mut msg.using_encoded(sp_core::blake2_256),
 						);
-						$crate::log::debug!(target: concat!(stringify!($name), ":upward") , "Upward message processed {:?} from para_id {:?}", &msg, &from_para_id);
+						$crate::log::debug!(target: concat!("ump::", stringify!($name)) , "Upward message processed {:?} from para_id {:?}", &msg, &from_para_id);
 					}
 				}
 
@@ -941,7 +947,7 @@ macro_rules! decl_test_networks {
 						while let Some(msg) = $crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 							match bridge.dispatch_target_inbound_message(msg.clone()) {
 								Err(e) => panic!("Error processing bridged message: {:?}", msg.clone()),
-								_ => $crate::log::debug!(target: concat!(stringify!($name), ":bridge") , "Bridged message processed {:?}", msg.clone()),
+								_ => $crate::log::debug!(target: concat!("bridge::", stringify!($name)) , "Bridged message processed {:?}", msg.clone()),
 							}
 						}
 					}
@@ -1118,7 +1124,7 @@ macro_rules! assert_expected_events {
 			let mut event_message: Vec<String> = Vec::new();
 
 			let event_received = <$chain>::events().iter().any(|event| {
-				$crate::log::debug!(target: format!("events::{}", stringify!($chain)).to_lowercase().as_str(), "{:?}", event);
+				$crate::log::debug!(target: concat!("events::", stringify!($chain)), "{:?}", event);
 
 				match event {
 					$event_pat => {

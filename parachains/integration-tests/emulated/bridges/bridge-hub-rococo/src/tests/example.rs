@@ -18,24 +18,65 @@ use crate::*;
 
 #[test]
 fn example() {
+	// Init tests variables
+	// XcmPallet send arguments
+	let sudo_origin = <Rococo as Relay>::RuntimeOrigin::root();
+	let destination = Rococo::child_location_of(BridgeHubRococo::para_id()).into();
+	let weight_limit = WeightLimit::Unlimited;
+	let check_origin = None;
+
+	let remote_xcm = Xcm(vec![
+		ClearOrigin
+	]);
+
+	let xcm = VersionedXcm::from(Xcm(vec![
+		UnpaidExecution { weight_limit, check_origin },
+		ExportMessage {
+			network: WococoId,
+			destination: X1(Parachain(AssetHubWococo::para_id().into())),
+			xcm: remote_xcm,
+		}
+	]));
+
+	// Send XCM message from Relay Chain
 	Rococo::execute_with(|| {
-		// Init tests variables
-		let origin = <Rococo as Relay>::RuntimeOrigin::signed(RococoSender::get());
-		// assert_ok!(<Rococo as RococoPallet>::XcmPallet::send(
-		// 	origin,
-		// 	bx!(assets_para_destination),
-		// 	bx!(beneficiary),
-		// 	bx!(native_assets),
-		// 	fee_asset_item,
-		// 	weight_limit,
-		// ));
+		assert_ok!(<Rococo as RococoPallet>::XcmPallet::send(
+			sudo_origin,
+			bx!(destination),
+			bx!(xcm),
+		));
+
+		type RuntimeEvent = <Rococo as Relay>::RuntimeEvent;
+
+		assert_expected_events!(
+			Rococo,
+			vec![
+				RuntimeEvent::XcmPallet(pallet_xcm::Event::Sent { .. }) => {},
+			]
+		);
 	});
 
-	BridgeHubWococo::execute_with(|| {
-		// panic!("{:?}", <BridgeHubKusama as Para>::BridgeMessages::module_owner());
+	// Receive XCM message in Bridge Hub Parachain
+	BridgeHubRococo::execute_with(|| {
+
+		type RuntimeEvent = <BridgeHubRococo as Para>::RuntimeEvent;
+
+		assert_expected_events!(
+			BridgeHubRococo,
+			vec![
+				RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
+					outcome: Outcome::Complete(_),
+					..
+				}) => {},
+				RuntimeEvent::BridgeWococoMessages(pallet_bridge_messages::Event::MessageAccepted {
+					lane_id: LaneId([0, 0, 0, 1]),
+					nonce: 1,
+				}) => {},
+			]
+		);
 	});
 
-	AssetHubRococo::execute_with(|| {
+	BridgeHubRococo::execute_with(|| {
 		// panic!("{:?}", <BridgeHubKusama as Para>::BridgeMessages::module_owner());
 	});
 

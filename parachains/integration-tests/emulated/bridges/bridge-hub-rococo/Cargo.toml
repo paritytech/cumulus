@@ -29,6 +29,8 @@ pallet-xcm = { default-features = false, git = "https://github.com/paritytech/po
 # Cumulus
 parachains-common = { path = "../../../../common" }
 bridge-hub-rococo-runtime = { path = "../../../../runtimes/bridge-hubs/bridge-hub-rococo" }
+pallet-bridge-messages = { path = "../../../../../bridges/modules/messages" }
+bp-messages = { path = "../../../../../bridges/primitives/messages" }
 
 # Local
 xcm-emulator = { default-features = false, path = "../../../../../xcm/xcm-emulator" }

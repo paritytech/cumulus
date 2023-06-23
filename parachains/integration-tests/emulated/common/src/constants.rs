@@ -474,7 +474,9 @@ pub mod rococo {
 				authorities: Default::default(),
 				epoch_config: Some(rococo_runtime::BABE_GENESIS_EPOCH_CONFIG),
 			},
-			sudo: rococo_runtime::SudoConfig { key: Some(accounts::init_balances()[0].clone()) },
+			sudo: rococo_runtime::SudoConfig {
+				key: Some(get_account_id_from_seed::<sr25519::Public>("Alice"))
+			},
 			configuration: rococo_runtime::ConfigurationConfig {
 				config: get_host_config(),
 			},

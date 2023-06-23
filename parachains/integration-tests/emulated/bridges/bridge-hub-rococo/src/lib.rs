@@ -21,26 +21,27 @@ pub use frame_support::{
 pub use integration_tests_common::{
 	constants::{
 		accounts::{ALICE, BOB},
-		kusama::ED as KUSAMA_ED,
+		rococo::ED as ROCOCO_ED,
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
-	AccountId, AssetHubRococo, AssetHubWococo, AssetHubRococoPallet, AssetHubRococoReceiver, AssetHubRococoSender, AssetHubWestend,
+	AccountId, AssetHubWococo, AssetHubWestend,
 	BridgeHubRococo, BridgeHubWococo, BridgeHubRococoPallet, BridgeHubRococoReceiver, BridgeHubRococoSender, BridgeHubPolkadot, BridgeHubPolkadotPallet,
 	BridgeHubPolkadotReceiver, BridgeHubPolkadotSender, Collectives, CollectivesPallet, CollectivesReceiver,
 	CollectivesSender, Rococo, RococoMockNet, RococoPallet, RococoReceiver, RococoSender,
 	PenpalPolkadot, PenpalPolkadotReceiver,
 	PenpalPolkadotSender, Polkadot, PolkadotMockNet, PolkadotPallet, PolkadotReceiver,
-	PolkadotSender,
+	PolkadotSender, Kusama, KusamaPallet
 };
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use xcm::{
 	prelude::*,
-	v3::{Error, NetworkId::Rococo as RococoId},
+	v3::{Error, NetworkId::Wococo as WococoId},
 };
 pub use xcm_emulator::{
 	assert_expected_events, bx, cumulus_pallet_dmp_queue, helpers::weight_within_threshold,
 	Parachain as Para, RelayChain as Relay, TestExt,
 };
+pub use bp_messages::LaneId;
 
 #[cfg(test)]
 mod tests;
