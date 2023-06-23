@@ -22,7 +22,7 @@ use super::{
 };
 use crate::{
 	bridge_hub_rococo_config::ToBridgeHubWococoHaulBlobExporter,
-	bridge_hub_wococo_config::ToBridgeHubRococoHaulBlobExporter, EthereumNetwork,
+	bridge_hub_wococo_config::ToBridgeHubRococoHaulBlobExporter,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -57,6 +57,19 @@ parameter_types! {
 		X2(GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into()));
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
+		
+	// Network and location for the local Ethereum testnet.
+	pub const EthereumNetwork: NetworkId = NetworkId::Ethereum { chain_id: 15 };
+	pub EthereumLocation: MultiLocation = MultiLocation::new(2, X1(GlobalConsensus(EthereumNetwork::get())));
+
+	// The Registry contract for the bridge which is also the origin for reserves and the prefix of all assets.
+	pub EthereumRegistryLocation: MultiLocation = EthereumLocation::get()
+		.pushed_with_interior(
+			AccountKey20 { 
+				network: None, 
+				key: hex_literal::hex!("D184c103F7acc340847eEE82a0B909E3358bc28d"),
+			}
+		).unwrap();
 }
 
 pub struct RelayNetwork;
@@ -327,7 +340,7 @@ impl cumulus_pallet_xcm::Config for Runtime {
 }
 
 pub type SnowbridgeExporter =
-	EthereumBlobExporter<RelayNetwork, EthereumNetwork, snowbridge_outbound_queue::Pallet<Runtime>>;
+	EthereumBlobExporter<UniversalLocation, EthereumRegistryLocation, snowbridge_outbound_queue::Pallet<Runtime>>;
 
 /// Hacky switch implementation, because we have just one runtime for Rococo and Wococo BridgeHub, so it means we have just one XcmConfig
 pub struct BridgeHubRococoOrBridgeHubWococoSwitchExporter;
