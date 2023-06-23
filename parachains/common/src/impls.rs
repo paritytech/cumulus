@@ -15,6 +15,7 @@
 
 //! Auxiliary struct/enums for parachain runtimes.
 //! Taken from polkadot/runtime/common (at a21cd64) and adapted for parachains.
+
 use frame_support::traits::{
 	fungibles::{self, Balanced, Credit},
 	Contains, ContainsPair, Currency, Get, Imbalance, OnUnbalanced,

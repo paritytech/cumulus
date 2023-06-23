@@ -42,7 +42,7 @@ mod types {
 	/// Balance of an account.
 	pub type Balance = u128;
 
-	/// Index of a transaction in a block.
+	/// Index of a transaction in the chain.
 	pub type Index = u32;
 
 	/// A hash of some data used by the chain.
