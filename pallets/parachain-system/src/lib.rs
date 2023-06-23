@@ -1083,14 +1083,14 @@ impl<T: Config> Pallet<T> {
 		// insert dummy HostConfiguration with
 		let host_config = AbridgedHostConfiguration {
 			max_code_size,
-			max_head_data_size: 0,
-			max_upward_queue_count: 0,
-			max_upward_queue_size: 0,
-			max_upward_message_size: 0,
-			max_upward_message_num_per_candidate: 0,
-			hrmp_max_message_num_per_candidate: 0,
-			validation_upgrade_cooldown: 0,
-			validation_upgrade_delay: 0,
+			max_head_data_size: 32 * 1024,
+			max_upward_queue_count: 8,
+			max_upward_queue_size: 1024 * 1024,
+			max_upward_message_size: 4 * 1024,
+			max_upward_message_num_per_candidate: 2,
+			hrmp_max_message_num_per_candidate: 2,
+			validation_upgrade_cooldown: 2,
+			validation_upgrade_delay: 2,
 		};
 		<HostConfiguration<T>>::put(host_config);
 	}
