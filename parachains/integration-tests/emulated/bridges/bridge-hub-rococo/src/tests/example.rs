@@ -18,8 +18,17 @@ use crate::*;
 
 #[test]
 fn example() {
-	BridgeHubRococo::execute_with(|| {
-		// panic!("{:?}", <BridgeHubKusama as Para>::BridgeMessages::module_owner());
+	Rococo::execute_with(|| {
+		// Init tests variables
+		let origin = <Rococo as Relay>::RuntimeOrigin::signed(RococoSender::get());
+		// assert_ok!(<Rococo as RococoPallet>::XcmPallet::send(
+		// 	origin,
+		// 	bx!(assets_para_destination),
+		// 	bx!(beneficiary),
+		// 	bx!(native_assets),
+		// 	fee_asset_item,
+		// 	weight_limit,
+		// ));
 	});
 
 	BridgeHubWococo::execute_with(|| {

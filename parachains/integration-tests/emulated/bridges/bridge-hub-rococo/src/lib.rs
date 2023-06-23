@@ -24,18 +24,18 @@ pub use integration_tests_common::{
 		kusama::ED as KUSAMA_ED,
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
-	AccountId, AssetHubRococo, AssetHubWococo, AssetHubKusamaPallet, AssetHubKusamaReceiver, AssetHubKusamaSender, AssetHubWestend,
-	BridgeHubRococo, BridgeHubWococo, BridgeHubKusamaPallet, BridgeHubKusamaReceiver, BridgeHubKusamaSender, BridgeHubPolkadot, BridgeHubPolkadotPallet,
+	AccountId, AssetHubRococo, AssetHubWococo, AssetHubRococoPallet, AssetHubRococoReceiver, AssetHubRococoSender, AssetHubWestend,
+	BridgeHubRococo, BridgeHubWococo, BridgeHubRococoPallet, BridgeHubRococoReceiver, BridgeHubRococoSender, BridgeHubPolkadot, BridgeHubPolkadotPallet,
 	BridgeHubPolkadotReceiver, BridgeHubPolkadotSender, Collectives, CollectivesPallet, CollectivesReceiver,
-	CollectivesSender, Kusama, KusamaMockNet, KusamaPallet, KusamaReceiver, KusamaSender,
-	PenpalKusama, PenpalKusamaReceiver, PenpalKusamaSender, PenpalPolkadot, PenpalPolkadotReceiver,
+	CollectivesSender, Rococo, RococoMockNet, RococoPallet, RococoReceiver, RococoSender,
+	PenpalPolkadot, PenpalPolkadotReceiver,
 	PenpalPolkadotSender, Polkadot, PolkadotMockNet, PolkadotPallet, PolkadotReceiver,
 	PolkadotSender,
 };
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use xcm::{
 	prelude::*,
-	v3::{Error, NetworkId::Kusama as KusamaId},
+	v3::{Error, NetworkId::Rococo as RococoId},
 };
 pub use xcm_emulator::{
 	assert_expected_events, bx, cumulus_pallet_dmp_queue, helpers::weight_within_threshold,

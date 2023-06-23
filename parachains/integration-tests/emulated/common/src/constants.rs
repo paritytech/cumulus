@@ -410,7 +410,6 @@ pub mod rococo {
 	pub const ED: Balance = rococo_runtime_constants::currency::EXISTENTIAL_DEPOSIT;
 	use rococo_runtime_constants::currency::UNITS as ROC;
 	const ENDOWMENT: u128 = 1_000_000 * ROC;
-	const STASH: u128 = 100 * ROC;
 
 	pub fn get_host_config() -> HostConfiguration<BlockNumber> {
 		HostConfiguration {
@@ -448,11 +447,7 @@ pub mod rococo {
 				code: rococo_runtime::WASM_BINARY.unwrap().to_vec(),
 			},
 			balances: rococo_runtime::BalancesConfig {
-				balances: accounts::init_balances()
-					.iter()
-					.map(|k: &AccountId| (k.clone(), ENDOWMENT))
-					.chain(validators::initial_authorities().iter().map(|x| (x.0.clone(), STASH)))
-					.collect(),
+				balances: accounts::init_balances().iter().map(|k| (k.clone(), ENDOWMENT)).collect(),
 			},
 			// indices: rococo_runtime::IndicesConfig { indices: vec![] },
 			session: rococo_runtime::SessionConfig {
