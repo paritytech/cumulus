@@ -24,7 +24,7 @@ sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../../primitives/core" }

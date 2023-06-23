@@ -6,17 +6,17 @@ edition = "2021"
 
 [dependencies]
 # polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-node-subsystem-util = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-node-network-protocol = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
+polkadot-node-subsystem-util = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
+polkadot-node-network-protocol = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
 
-polkadot-availability-recovery = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-collator-protocol = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-network-bridge = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-node-collation-generation = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-node-core-runtime-api = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-availability-recovery = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
+polkadot-collator-protocol = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
+polkadot-network-bridge = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
+polkadot-node-collation-generation = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
+polkadot-node-core-runtime-api = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
 
 # substrate deps
 sc-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "master" }
