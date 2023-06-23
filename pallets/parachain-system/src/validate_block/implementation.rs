@@ -26,6 +26,8 @@ use polkadot_parachain::primitives::{HeadData, RelayChainBlockNumber, Validation
 
 use codec::Encode;
 
+pub extern crate alloc;
+use alloc::string::ToString;
 use core::{
 	cell::RefCell,
 	sync::atomic::{AtomicU32, Ordering},
@@ -36,7 +38,12 @@ use sp_externalities::{set_and_run_with_externalities, Externalities};
 use sp_io::KillStorageResult;
 use sp_runtime::traits::{Block as BlockT, Extrinsic, HashFor, Header as HeaderT};
 use sp_state_machine::TrieCacheProvider;
-use sp_std::{collections::btree_map::BTreeMap, prelude::*, vec::Vec};
+use sp_std::{
+	collections::btree_map::{BTreeMap, Entry},
+	prelude::*,
+	sync::Arc,
+	vec::Vec,
+};
 use sp_trie::MemoryDB;
 use trie_db::{node::NodeOwned, TrieError};
 
@@ -53,18 +60,12 @@ use core::marker::PhantomData;
 use hash_db::Hasher;
 use sp_trie::NodeCodec;
 
-struct SimpleCache<H: Hasher> {
-	node_cache: BTreeMap<H::Out, NodeOwned<H::Out>>,
-	value_cache: BTreeMap<Box<[u8]>, trie_db::CachedValue<H::Out>>,
+struct SimpleCache<'a, H: Hasher> {
+	node_cache: spin::MutexGuard<'a, BTreeMap<H::Out, NodeOwned<H::Out>>>,
+	value_cache: spin::MutexGuard<'a, BTreeMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
 }
 
-impl<H: Hasher> SimpleCache<H> {
-	pub fn new() -> Self {
-		SimpleCache { node_cache: Default::default(), value_cache: Default::default() }
-	}
-}
-
-impl<H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleCache<H> {
+impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleCache<'a, H> {
 	fn lookup_value_for_key(&mut self, key: &[u8]) -> Option<&trie_db::CachedValue<H::Out>> {
 		self.value_cache.get(key)
 	}
@@ -82,17 +83,11 @@ impl<H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleCache<H> {
 			<NodeCodec<H> as trie_db::NodeCodec>::Error,
 		>,
 	) -> trie_db::Result<&NodeOwned<H::Out>, H::Out, <NodeCodec<H> as trie_db::NodeCodec>::Error> {
-		let node = match fetch_node() {
-			Ok(node) => node,
-			_ => panic!("whaat"),
-		};
-		self.node_cache.insert(hash, node);
-
-		let return_value = match self.node_cache.get(&hash) {
-			Some(node) => node,
-			_ => panic!("should not happen"),
-		};
-		Ok(return_value)
+		let result = self.node_cache.entry(hash).or_insert_with(|| match fetch_node() {
+			Ok(new_node) => new_node,
+			_ => panic!(),
+		});
+		Ok(result)
 	}
 
 	fn get_node(
@@ -103,43 +98,11 @@ impl<H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleCache<H> {
 	}
 }
 
-impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for &'a mut SimpleCache<H> {
-	fn lookup_value_for_key(&mut self, key: &[u8]) -> Option<&trie_db::CachedValue<H::Out>> {
-		sp_runtime::print("lookup_value_for_key");
-		(**self).lookup_value_for_key(key)
-	}
-
-	fn cache_value_for_key(&mut self, key: &[u8], value: trie_db::CachedValue<H::Out>) {
-		sp_runtime::print("cache_value_for_key");
-		(**self).cache_value_for_key(key, value)
-	}
-
-	fn get_or_insert_node(
-		&mut self,
-		hash: <NodeCodec<H> as trie_db::NodeCodec>::HashOut,
-		fetch_node: &mut dyn FnMut() -> trie_db::Result<
-			NodeOwned<H::Out>,
-			H::Out,
-			<NodeCodec<H> as trie_db::NodeCodec>::Error,
-		>,
-	) -> trie_db::Result<&NodeOwned<H::Out>, H::Out, <NodeCodec<H> as trie_db::NodeCodec>::Error> {
-		sp_runtime::print("get_or_insert_node");
-		(**self).get_or_insert_node(hash, fetch_node)
-	}
-
-	fn get_node(
-		&mut self,
-		hash: &H::Out,
-	) -> Option<&NodeOwned<<NodeCodec<H> as trie_db::NodeCodec>::HashOut>> {
-		sp_runtime::print("get_node");
-		(**self).get_node(hash)
-	}
-}
-
 struct CacheProvider<H: Hasher> {
 	_phantom: PhantomData<H>,
 	initialized: AtomicU32,
-	cache: RefCell<SimpleCache<H>>,
+	node_cache: spin::Mutex<BTreeMap<H::Out, NodeOwned<H::Out>>>,
+	value_cache: spin::Mutex<BTreeMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
 }
 
 impl<H: Hasher> CacheProvider<H> {
@@ -147,22 +110,21 @@ impl<H: Hasher> CacheProvider<H> {
 		CacheProvider {
 			_phantom: PhantomData,
 			initialized: Default::default(),
-			cache: RefCell::new(SimpleCache::new()),
+			node_cache: spin::Mutex::new(BTreeMap::new()),
+			value_cache: spin::Mutex::new(BTreeMap::new()),
 		}
 	}
 }
 
 impl<H: Hasher> TrieCacheProvider<H> for CacheProvider<H> {
-	type Cache<'a> = &'a mut SimpleCache<H> where H: 'a;
+	type Cache<'a> = SimpleCache<'a, H> where H: 'a;
 
 	fn as_trie_db_cache(&self, _storage_root: <H as Hasher>::Out) -> Self::Cache<'_> {
-		sp_runtime::print("Instantiating");
-		&mut self.cache.borrow_mut()
+		SimpleCache { value_cache: self.value_cache.lock(), node_cache: self.node_cache.lock() }
 	}
 
 	fn as_trie_db_mut_cache(&self) -> Self::Cache<'_> {
-		sp_runtime::print("Instantiating mut");
-		&mut self.cache.borrow_mut()
+		SimpleCache { value_cache: self.value_cache.lock(), node_cache: self.node_cache.lock() }
 	}
 
 	fn merge<'a>(&'a self, _other: Self::Cache<'a>, _new_root: <H as Hasher>::Out) {}
