@@ -30,7 +30,7 @@ pub use asset_hub_kusama_runtime::{
 	MetadataDepositBase, MetadataDepositPerByte, ParachainSystem, Runtime, RuntimeCall,
 	RuntimeEvent, SessionKeys, System, TrustBackedAssetsInstance, XcmpQueue,
 };
-use asset_test_utils::{CollatorSessionKeys, ExtBuilder, RuntimeHelper};
+use asset_test_utils::{CollatorSessionKeys, ExtBuilder, RuntimeHelper, XcmReceivedFrom};
 use codec::{Decode, Encode};
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
@@ -41,7 +41,10 @@ use frame_support::{
 use parachains_common::{AccountId, AssetIdForTrustBackedAssets, AuraId, Balance};
 use sp_runtime::traits::MaybeEquivalence;
 use xcm::latest::prelude::*;
-use xcm_executor::traits::{Identity, JustTry, WeightTrader};
+use xcm_executor::{
+	traits::{Identity, JustTry, WeightTrader},
+	XcmExecutor,
+};
 
 const ALICE: [u8; 32] = [1u8; 32];
 const SOME_ASSET_ADMIN: [u8; 32] = [5u8; 32];
@@ -661,4 +664,85 @@ fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works() {
 		}),
 		bridging_to_asset_hub_polkadot
 	)
+}
+
+// TODO: uses actual XCM logged from asset-hub-polkadot test transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works
+// 		 but only this is added manually (because we dont go through bridge-hub in test, bridge-hub adds these):
+// 			UniversalOrigin(GlobalConsensus(Polkadot)),
+//			DescendOrigin(X1(Parachain(1000))),
+#[test]
+fn receive_reserve_asset_deposited_works() {
+	ExtBuilder::<Runtime>::default()
+		.with_collators(vec![AccountId::from(ALICE)])
+		.with_session_keys(vec![(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+		)])
+		.with_tracing()
+		.build()
+		.execute_with(|| {
+			let xcm = Xcm(vec![
+				UniversalOrigin(GlobalConsensus(Polkadot)),
+				DescendOrigin(X1(Parachain(1000))),
+				ReserveAssetDeposited(MultiAssets::from(vec![MultiAsset {
+					id: Concrete(MultiLocation {
+						parents: 2,
+						interior: X1(GlobalConsensus(Polkadot)),
+					}),
+					fun: Fungible(999936480000),
+				}])),
+				ClearOrigin,
+				WithdrawAsset(MultiAssets::from(vec![MultiAsset {
+					id: Concrete(MultiLocation { parents: 1, interior: Here }),
+					fun: Fungible(6352000000),
+				}])),
+				BuyExecution {
+					fees: MultiAsset {
+						id: Concrete(MultiLocation { parents: 1, interior: Here }),
+						fun: Fungible(6352000000),
+					},
+					weight_limit: Limited(Weight::from_parts(1503804000, 5082)),
+				},
+				RefundSurplus,
+				DepositAsset {
+					assets: Definite(MultiAssets::from(vec![MultiAsset {
+						id: Concrete(MultiLocation { parents: 1, interior: Here }),
+						fun: Fungible(6352000000),
+					}])),
+					beneficiary: MultiLocation {
+						parents: 2,
+						interior: X2(GlobalConsensus(Polkadot), Parachain(1000)),
+					},
+				},
+				DepositAsset {
+					assets: Wild(AllCounted(1)),
+					beneficiary: MultiLocation {
+						parents: 0,
+						interior: X1(AccountId32 {
+							network: Some(Kusama),
+							id: [
+								3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+								3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+							],
+						}),
+					},
+				},
+				SetTopic([
+					159, 75, 52, 79, 6, 31, 152, 75, 43, 174, 254, 102, 217, 132, 128, 246, 153,
+					105, 65, 218, 53, 33, 219, 33, 224, 160, 123, 138, 193, 193, 213, 252,
+				]),
+			]);
+
+			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
+
+			// execute xcm as XcmpQueue would do
+			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(
+				MultiLocation { parents: 1, interior: X1(Parachain(1002)) }, // local bridge hub
+				xcm,
+				hash,
+				RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Sibling),
+			);
+			assert_eq!(outcome.ensure_complete(), Ok(()));
+		})
 }

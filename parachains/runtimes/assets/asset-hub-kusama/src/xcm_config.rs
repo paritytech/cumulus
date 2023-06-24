@@ -622,7 +622,7 @@ impl<
 		desired_fee_asset_id: &AssetId,
 		weight: &WeightLimit,
 	) -> Option<FeeForBuyExecution> {
-		// if somebody wants to pay KSM on AssetHubPolkadot
+		// if somebody wants to pay with KSM on AssetHubPolkadot
 		if destination.eq(&bridging::AssetHubPolkadot::get()) {
 			if matches!(desired_fee_asset_id, Concrete(asset_location) if asset_location.eq(&KsmLocation::get()))
 			{

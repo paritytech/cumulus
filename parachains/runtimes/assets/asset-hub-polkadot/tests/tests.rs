@@ -19,7 +19,8 @@
 
 use asset_hub_polkadot_runtime::xcm_config::{
 	bridging, AssetFeeAsExistentialDepositMultiplierFeeCharger, CheckingAccount, DotLocation,
-	ForeignCreatorsSovereignAccountOf, TrustBackedAssetsPalletLocation, XcmConfig,
+	ForeignCreatorsSovereignAccountOf, LocationToAccountId, TrustBackedAssetsPalletLocation,
+	XcmConfig,
 };
 pub use asset_hub_polkadot_runtime::{
 	constants::fee::WeightToFee, AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets,
@@ -739,4 +740,32 @@ fn receive_reserve_asset_deposited_works() {
 			);
 			assert_eq!(outcome.ensure_complete(), Ok(()));
 		})
+}
+
+#[test]
+fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works() {
+	asset_test_utils::test_cases_over_bridge::transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works::<
+		Runtime,
+		XcmConfig,
+		ParachainSystem,
+		XcmpQueue,
+		LocationToAccountId,
+	>(
+		collator_session_keys(),
+		ExistentialDeposit::get(),
+		AccountId::from(ALICE),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
+				_ => None,
+			}
+		}),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
+				_ => None,
+			}
+		}),
+		bridging_to_asset_hub_kusama
+	)
 }
