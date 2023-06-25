@@ -22,8 +22,8 @@ fn transact_sudo_from_relay_to_assets_para() {
 	// Call to be executed in Assets Parachain
 	const ASSET_ID: u32 = 1;
 
-	let call = <AssetHubKusama as Para>::RuntimeCall::Assets(pallet_assets::Call::<
-		<AssetHubKusama as Para>::Runtime,
+	let call = <AssetHubKusama as Chain>::RuntimeCall::Assets(pallet_assets::Call::<
+		<AssetHubKusama as Chain>::Runtime,
 		Instance1,
 	>::force_create {
 		id: ASSET_ID.into(),
@@ -35,7 +35,7 @@ fn transact_sudo_from_relay_to_assets_para() {
 	.into();
 
 	// XcmPallet send arguments
-	let sudo_origin = <Kusama as Relay>::RuntimeOrigin::root();
+	let sudo_origin = <Kusama as Chain>::RuntimeOrigin::root();
 	let assets_para_destination: VersionedMultiLocation =
 		Kusama::child_location_of(AssetHubKusama::para_id()).into();
 
@@ -57,7 +57,7 @@ fn transact_sudo_from_relay_to_assets_para() {
 			bx!(xcm),
 		));
 
-		type RuntimeEvent = <Kusama as Relay>::RuntimeEvent;
+		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			Kusama,

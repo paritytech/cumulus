@@ -24,7 +24,7 @@ fn reserve_transfer_native_asset_from_relay_to_assets() {
 	let para_receiver_balance_before =
 		AssetHubPolkadot::account_data_of(AssetHubPolkadotReceiver::get()).free;
 
-	let origin = <Polkadot as Relay>::RuntimeOrigin::signed(PolkadotSender::get());
+	let origin = <Polkadot as Chain>::RuntimeOrigin::signed(PolkadotSender::get());
 	let assets_para_destination: VersionedMultiLocation =
 		Polkadot::child_location_of(AssetHubPolkadot::para_id()).into();
 	let beneficiary: VersionedMultiLocation =
@@ -44,7 +44,7 @@ fn reserve_transfer_native_asset_from_relay_to_assets() {
 			weight_limit,
 		));
 
-		type RuntimeEvent = <Polkadot as Relay>::RuntimeEvent;
+		type RuntimeEvent = <Polkadot as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			Polkadot,
@@ -58,7 +58,7 @@ fn reserve_transfer_native_asset_from_relay_to_assets() {
 
 	// Receive XCM message in Assets Parachain
 	AssetHubPolkadot::execute_with(|| {
-		type RuntimeEvent = <AssetHubPolkadot as Para>::RuntimeEvent;
+		type RuntimeEvent = <AssetHubPolkadot as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			AssetHubPolkadot,
