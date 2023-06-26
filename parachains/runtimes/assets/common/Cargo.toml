@@ -11,25 +11,25 @@ scale-info = { version = "2.8.0", default-features = false, features = ["derive"
 log = { version = "0.4.19", default-features = false }
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-asset-conversion = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
+pallet-asset-conversion = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "asset-hub-westend-9435" }
+pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "asset-hub-westend-9435" }
 
 # Polkadot
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "asset-hub-westend-9435" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "asset-hub-westend-9435" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "asset-hub-westend-9435" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "asset-hub-westend-9435" }
 
 # Cumulus
 parachains-common = { path = "../../../common", default-features = false }
 cumulus-primitives-core = { path = "../../../../primitives/core", default-features = false }
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "asset-hub-westend-9435" }
 
 [features]
 default = [ "std" ]

@@ -11,17 +11,17 @@ log = { version = "0.4.17", default-features = false }
 assert_matches = "1.4.0"
 
 # Substrate
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false, optional = true }
-frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , branch = "asset-hub-westend-9435" }
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "asset-hub-westend-9435" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
+pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
+pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
 
 # Cumulus
 asset-test-utils = { path = "../../assets/test-utils"}
@@ -33,11 +33,11 @@ parachain-info = { path = "../../../../parachains/pallets/parachain-info", defau
 parachains-runtimes-test-utils = { path = "../../test-utils", default-features = false }
 
 # Polkadot
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false, optional = true }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "asset-hub-westend-9435" }
+pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", default-features = false, optional = true , branch = "asset-hub-westend-9435" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "asset-hub-westend-9435" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "asset-hub-westend-9435" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "asset-hub-westend-9435" }
 
 # Bridges
 bp-bridge-hub-rococo = { path = "../../../../bridges/primitives/chain-bridge-hub-rococo", default-features = false }

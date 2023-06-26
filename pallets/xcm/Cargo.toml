@@ -8,13 +8,13 @@ version = "0.1.0"
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.8.0", default-features = false, features = ["derive"] }
 
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "asset-hub-westend-9435" }
 
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "asset-hub-westend-9435" }
 
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 
