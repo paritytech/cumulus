@@ -106,12 +106,15 @@ impl pallet_ranked_collective::Config<FellowshipCollectiveInstance> for Runtime 
 	type WeightInfo = weights::pallet_ranked_collective::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
 	// Promotions and the induction of new members are serviced by `FellowshipCore` pallet instance.
-	type PromoteOrigin = EnsureRootWithSuccess<Self::AccountId, ConstU16<{ ranks::DAN_9 }>>;
+	// The maximum value of `u16` set as a success value for the root to ensure the benchmarks will pass.
+	type PromoteOrigin = EnsureRootWithSuccess<Self::AccountId, ConstU16<65535>>;
 	// Demotion is by any of:
 	// - Root can demote arbitrarily.
 	// - the FellowshipAdmin origin (i.e. token holder referendum);
+	//
+	// The maximum value of `u16` set as a success value for the root to ensure the benchmarks will pass.
 	type DemoteOrigin = EitherOf<
-		EnsureRootWithSuccess<Self::AccountId, ConstU16<{ ranks::DAN_9 }>>,
+		EnsureRootWithSuccess<Self::AccountId, ConstU16<65535>>,
 		MapSuccess<
 			EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
 			Replace<ConstU16<{ ranks::DAN_9 }>>,
@@ -182,8 +185,18 @@ pub type FellowshipSalaryInstance = pallet_salary::Instance1;
 
 use xcm::prelude::*;
 
+#[cfg(not(feature = "runtime-benchmarks"))]
 parameter_types! {
 	pub AssetHub: MultiLocation = (Parent, Parachain(1000)).into();
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+parameter_types! {
+	// The reachable location within the benchmark environment.
+	pub AssetHub: MultiLocation = Parent.into();
+}
+
+parameter_types! {
 	pub AssetHubUsdtId: AssetId = (PalletInstance(50), GeneralIndex(1984)).into();
 	pub UsdtAsset: LocatableAssetId = LocatableAssetId {
 		location: AssetHub::get(),
