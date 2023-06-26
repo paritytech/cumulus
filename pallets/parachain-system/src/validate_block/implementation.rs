@@ -100,7 +100,6 @@ impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleCache<'a, H> {
 }
 
 struct CacheProvider<H: Hasher> {
-	_phantom: PhantomData<H>,
 	initialized: AtomicU32,
 	node_cache: spin::Mutex<HashMap<H::Out, NodeOwned<H::Out>>>,
 	value_cache: spin::Mutex<HashMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
@@ -109,7 +108,6 @@ struct CacheProvider<H: Hasher> {
 impl<H: Hasher> CacheProvider<H> {
 	pub fn new() -> Self {
 		CacheProvider {
-			_phantom: PhantomData,
 			initialized: Default::default(),
 			node_cache: spin::Mutex::new(HashMap::new()),
 			value_cache: spin::Mutex::new(HashMap::new()),
