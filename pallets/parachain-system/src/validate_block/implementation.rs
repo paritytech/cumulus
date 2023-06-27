@@ -84,11 +84,21 @@ impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleCache<'a, H> {
 			<NodeCodec<H> as trie_db::NodeCodec>::Error,
 		>,
 	) -> trie_db::Result<&NodeOwned<H::Out>, H::Out, <NodeCodec<H> as trie_db::NodeCodec>::Error> {
-		let result = self.node_cache.entry(hash).or_insert_with(|| match fetch_node() {
+		if self.node_cache.contains_key(&hash) {
+			if let Some(value) = self.node_cache.get(&hash) {
+				return Ok(value)
+			} else {
+				panic!("This can not happen");
+			}
+		}
+
+		let fetched = match fetch_node() {
 			Ok(new_node) => new_node,
-			_ => panic!(),
-		});
-		Ok(result)
+			Err(e) => return Err(e),
+		};
+
+		let (_key, value) = self.node_cache.insert_unique_unchecked(hash, fetched);
+		Ok(value)
 	}
 
 	fn get_node(

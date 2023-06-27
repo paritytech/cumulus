@@ -7,7 +7,6 @@ pub use constants::{
 };
 use frame_support::{parameter_types, sp_io, sp_tracing};
 pub use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, BlockNumber};
-use polkadot_primitives::runtime_api::runtime_decl_for_parachain_host::ParachainHostV4;
 pub use sp_core::{sr25519, storage::Storage, Get};
 use xcm::prelude::*;
 use xcm_emulator::{
