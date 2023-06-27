@@ -493,7 +493,7 @@ decl_test_sender_receiver_accounts_parameter_types! {
 	AssetHubPolkadot { sender: ALICE, receiver: BOB },
 	AssetHubKusama { sender: ALICE, receiver: BOB },
 	AssetHubWestend { sender: ALICE, receiver: BOB },
-	// AssetHubRococo { sender: ALICE, receiver: BOB },
+	AssetHubRococo { sender: ALICE, receiver: BOB },
 	AssetHubWococo { sender: ALICE, receiver: BOB },
 	// Collectives
 	Collectives { sender: ALICE, receiver: BOB },

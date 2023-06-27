@@ -17,7 +17,7 @@
 use crate::*;
 
 #[test]
-fn example() {
+fn multiple_messages_works() {
 	// Init tests variables
 	// XcmPallet send arguments
 	let sudo_origin = <Rococo as Relay>::RuntimeOrigin::root();
@@ -58,7 +58,6 @@ fn example() {
 
 	// Receive XCM message in Bridge Hub Parachain
 	BridgeHubRococo::execute_with(|| {
-
 		type RuntimeEvent = <BridgeHubRococo as Para>::RuntimeEvent;
 
 		assert_expected_events!(
@@ -76,11 +75,26 @@ fn example() {
 		);
 	});
 
-	// BridgeHubWococo::execute_with(|| {
-	// 	// panic!("{:?}", <BridgeHubKusama as Para>::BridgeMessages::module_owner());
-	// });
+	BridgeHubWococo::execute_with(|| {
+		type RuntimeEvent = <BridgeHubWococo as Para>::RuntimeEvent;
+
+		assert_expected_events!(
+			BridgeHubWococo,
+			vec![
+				RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::XcmpMessageSent { .. }) => {},
+			]
+		);
+	});
 
 	AssetHubWococo::execute_with(|| {
-		// panic!("{:?}", <BridgeHubKusama as Para>::BridgeMessages::module_owner());
+		type RuntimeEvent = <AssetHubWococo as Para>::RuntimeEvent;
+
+		assert_expected_events!(
+			AssetHubWococo,
+			vec![
+				RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail { .. }) => {},
+			]
+		);
+
 	});
 }

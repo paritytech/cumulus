@@ -238,12 +238,16 @@ pub trait Bridge {
 	type Source: TestExt;
 	type Target: TestExt;
 
+	fn init(&self);
+
 	fn get() -> Option<Self> where Self: Sized;
 }
 
 impl Bridge for () {
     type Source = ();
     type Target = ();
+
+	fn init(&self) {}
 
     fn get() -> Option<Self> {
         None
@@ -705,10 +709,8 @@ macro_rules! __impl_test_ext_for_parachain {
 
 						// bridge
 						if let Some(bridge) = <$name>::bridge() {
-							$crate::log::debug!(target: "nacho", "Only for {:?}", <$name>::bridge());
 							// get bridge messages
 							let bridge_messages = bridge.get_source_outbound_messages();
-
 							// send bridged messages
 							for msg in bridge_messages {
 								<$name>::send_bridged_messages(msg);
@@ -964,7 +966,12 @@ macro_rules! decl_test_networks {
 				}
 
 				fn _process_bridged_messages() {
+					// Try to process only for the case where `Netwrok` has a `Bridge`
 					if let Some(bridge) = Self::_bridge() {
+						use $crate::Bridge;
+						// Make sure both, including the target `Network` are initialized
+						bridge.init();
+
 						while let Some(msg) = $crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 							let dispatch_result = <<Self::Bridge as $crate::Bridge>::Target as TestExt>::ext_wrapper(|| {
 								bridge.dispatch_target_inbound_message(msg.clone())
@@ -972,7 +979,6 @@ macro_rules! decl_test_networks {
 
 							match dispatch_result {
 								Err(e) => panic!("Error {:?} processing bridged message: {:?}", e, msg.clone()),
-								// Err(e) => $crate::log::debug!(target: "bridge", "Error {:?} processing bridged message: {:?}", e, msg.clone()),
 								Ok(()) => {
 									<<Self::Bridge as $crate::Bridge>::Source as TestExt>::ext_wrapper(|| {
 										bridge.notify_source_message_delivery(msg.id);
@@ -1060,6 +1066,12 @@ macro_rules! decl_test_bridges {
 			impl $crate::Bridge for $name {
 				type Source = $source;
 				type Target = $target;
+
+				fn init(&self) {
+					use $crate::{NetworkComponent};
+					<$source>::init();
+					<$target>::init();
+				}
 
 				fn get() -> Option<Self> {
 					Some(Self)
