@@ -458,7 +458,7 @@ decl_test_networks! {
 			AssetHubWococo,
 			BridgeHubWococo,
 		],
-		bridge = RococoWococoMockBridge
+		bridge = WococoRococoMockBridge
 	}
 }
 

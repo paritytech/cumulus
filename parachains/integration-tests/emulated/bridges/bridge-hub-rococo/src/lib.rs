@@ -35,7 +35,7 @@ pub use integration_tests_common::{
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use xcm::{
 	prelude::*,
-	v3::{Error, NetworkId::Wococo as WococoId},
+	v3::{Error, NetworkId::Wococo as WococoId,  NetworkId::Rococo as RococoId},
 };
 pub use xcm_emulator::{
 	assert_expected_events, bx, cumulus_pallet_dmp_queue, helpers::weight_within_threshold,

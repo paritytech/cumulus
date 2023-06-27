@@ -15,7 +15,7 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 pub use casey::pascal;
-pub use codec::Encode;
+pub use codec::{Encode, Decode};
 pub use frame_support::{
 	assert_ok,
 	sp_runtime::BuildStorage,
@@ -32,6 +32,7 @@ pub use sp_core::storage::Storage;
 pub use sp_io;
 pub use sp_std::{fmt::Debug, cell::RefCell, collections::vec_deque::VecDeque, marker::PhantomData};
 pub use sp_trie::StorageProof;
+pub use xcm_builder;
 
 pub use cumulus_pallet_dmp_queue;
 pub use cumulus_pallet_parachain_system;
@@ -90,6 +91,22 @@ pub trait TestExt {
 	fn reset_ext();
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R;
 	fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R;
+}
+
+impl TestExt for () {
+	fn build_new_ext(_storage: Storage) -> sp_io::TestExternalities {
+		sp_io::TestExternalities::default()
+	}
+	fn new_ext() -> sp_io::TestExternalities {
+		sp_io::TestExternalities::default()
+	}
+	fn reset_ext() {}
+	fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
+		execute()
+	}
+	fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R {
+		func()
+	}
 }
 
 pub trait Network {
@@ -218,8 +235,8 @@ pub trait Parachain: XcmpMessageHandler + DmpMessageHandler {
 }
 
 pub trait Bridge {
-	type Source;
-	type Target;
+	type Source: TestExt;
+	type Target: TestExt;
 
 	fn get() -> Option<Self> where Self: Sized;
 }
@@ -243,6 +260,8 @@ pub trait BridgeMessageHandler {
 	fn get_source_outbound_messages(&self) -> Vec<BridgeMessage>;
 
 	fn dispatch_target_inbound_message(&self, message: BridgeMessage) -> Result<(), BridgeMessageDispatchError>;
+
+	fn notify_source_message_delivery(&self, lane_id: u32);
 }
 
 impl BridgeMessageHandler for () {
@@ -251,6 +270,8 @@ impl BridgeMessageHandler for () {
 	fn dispatch_target_inbound_message(&self, _message: BridgeMessage) -> Result<(), BridgeMessageDispatchError> {
 		Err(BridgeMessageDispatchError(Box::new("Not a brige")))
 	}
+
+	fn notify_source_message_delivery(&self, _lane_id: u32) {}
 }
 
 #[derive(Debug)]
@@ -945,9 +966,19 @@ macro_rules! decl_test_networks {
 				fn _process_bridged_messages() {
 					if let Some(bridge) = Self::_bridge() {
 						while let Some(msg) = $crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
-							match bridge.dispatch_target_inbound_message(msg.clone()) {
-								Err(e) => panic!("Error processing bridged message: {:?}", msg.clone()),
-								_ => $crate::log::debug!(target: concat!("bridge::", stringify!($name)) , "Bridged message processed {:?}", msg.clone()),
+							let dispatch_result = <<Self::Bridge as $crate::Bridge>::Target as TestExt>::ext_wrapper(|| {
+								bridge.dispatch_target_inbound_message(msg.clone())
+							});
+
+							match dispatch_result {
+								Err(e) => panic!("Error {:?} processing bridged message: {:?}", e, msg.clone()),
+								// Err(e) => $crate::log::debug!(target: "bridge", "Error {:?} processing bridged message: {:?}", e, msg.clone()),
+								Ok(()) => {
+									<<Self::Bridge as $crate::Bridge>::Source as TestExt>::ext_wrapper(|| {
+										bridge.notify_source_message_delivery(msg.id);
+									});
+									$crate::log::debug!(target: concat!("bridge::", stringify!($name)) , "Bridged message processed {:?}", msg.clone());
+								}
 							}
 						}
 					}
@@ -1038,7 +1069,10 @@ macro_rules! decl_test_bridges {
 			impl $crate::BridgeMessageHandler for $name {
 				fn get_source_outbound_messages(&self) -> Vec<$crate::BridgeMessage> {
 					use $crate::{NetworkComponent, BridgeMessage, pallet_bridge_messages::{Config, Instance1, OutboundLanes}, bp_messages::LaneId};
+					use $crate::Decode;
+
 					type Runtime = <$source as Parachain>::Runtime;
+					type OutboundPayload = <Runtime as Config<Instance1>>::OutboundPayload;
 
 					// get the source active outbound lanes
 					let active_lanes = <Runtime as Config<Instance1>>::ActiveOutboundLanes::get();
@@ -1051,7 +1085,8 @@ macro_rules! decl_test_bridges {
 						let latest_received_nonce = OutboundLanes::<Runtime, Instance1>::get(lane).latest_received_nonce;
 
 						(latest_received_nonce + 1..=latest_generated_nonce).for_each(|nonce| {
-							let payload: Vec<u8> = <$source as Parachain>::BridgeMessages::outbound_message_data(*lane, nonce).expect("Bridge message does not exist").into();
+							let mut encoded_payload: Vec<u8> = <$source as Parachain>::BridgeMessages::outbound_message_data(*lane, nonce).expect("Bridge message does not exist").into();
+							let payload = Vec::<u8>::decode(&mut &encoded_payload[..]).expect("Decodign XCM message failed");
 							let id: u32 = (*lane).into();
 							let message = BridgeMessage { id, nonce, payload };
 
@@ -1064,14 +1099,14 @@ macro_rules! decl_test_bridges {
 				fn dispatch_target_inbound_message(&self, message: $crate::BridgeMessage) -> Result<(), $crate::BridgeMessageDispatchError> {
 					use $crate::{
 						NetworkComponent, BridgeMessage, BridgeMessageDispatchError,
-						pallet_bridge_messages::{Config, Instance1, OutboundLanes},
+						pallet_bridge_messages::{Config, Instance2, OutboundLanes},
 						bp_messages::{ReceivalResult, LaneId, MessageKey, OutboundLaneData, target_chain::{DispatchMessage, MessageDispatch, DispatchMessageData,}},
 						bridge_runtime_common::messages_xcm_extension::XcmBlobMessageDispatchResult,
 					};
 
 					type Runtime = <$target as Parachain>::Runtime;
-					type TargetMessageDispatch = <Runtime as Config<Instance1>>::MessageDispatch;
-					type InboundPayload = <Runtime as Config<Instance1>>::InboundPayload;
+					type TargetMessageDispatch = <Runtime as Config<Instance2>>::MessageDispatch;
+					type InboundPayload = <Runtime as Config<Instance2>>::InboundPayload;
 
 					let lane_id = message.id.into();
 					let nonce = message.nonce;
@@ -1086,16 +1121,6 @@ macro_rules! decl_test_bridges {
 
 					let result = match dispatch_result.dispatch_level_result {
 						XcmBlobMessageDispatchResult::Dispatched => {
-							// update source `OutboundLanes` nonce values
-							type SourceRuntime = <$source as Parachain>::Runtime;
-
-							let data = OutboundLanes::<SourceRuntime, Instance1>::get(lane_id);
-							let new_data = OutboundLaneData {
-								oldest_unpruned_nonce: data.oldest_unpruned_nonce + 1,
-								latest_received_nonce: data.latest_received_nonce + 1,
-								..data
-							};
-							OutboundLanes::<SourceRuntime, Instance1>::insert(lane_id, new_data);
 							Ok(())
 						},
 						XcmBlobMessageDispatchResult::InvalidPayload => {
@@ -1108,6 +1133,20 @@ macro_rules! decl_test_bridges {
 					};
 
 					result
+				}
+
+				fn notify_source_message_delivery(&self, lane_id: u32) {
+					use $crate::{pallet_bridge_messages::{Instance1, OutboundLanes}, bp_messages::{OutboundLaneData, LaneId}};
+					type SourceRuntime = <$source as Parachain>::Runtime;
+
+					let data = OutboundLanes::<SourceRuntime, Instance1>::get(LaneId::from(lane_id));
+					let new_data = OutboundLaneData {
+						oldest_unpruned_nonce: data.oldest_unpruned_nonce + 1,
+						latest_received_nonce: data.latest_received_nonce + 1,
+						..data
+					};
+
+					OutboundLanes::<SourceRuntime, Instance1>::insert(LaneId::from(lane_id), new_data);
 				}
 			}
 		)+

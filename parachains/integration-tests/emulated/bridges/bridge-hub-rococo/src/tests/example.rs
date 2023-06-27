@@ -76,9 +76,9 @@ fn example() {
 		);
 	});
 
-	BridgeHubRococo::execute_with(|| {
-		// panic!("{:?}", <BridgeHubKusama as Para>::BridgeMessages::module_owner());
-	});
+	// BridgeHubWococo::execute_with(|| {
+	// 	// panic!("{:?}", <BridgeHubKusama as Para>::BridgeMessages::module_owner());
+	// });
 
 	AssetHubWococo::execute_with(|| {
 		// panic!("{:?}", <BridgeHubKusama as Para>::BridgeMessages::module_owner());
