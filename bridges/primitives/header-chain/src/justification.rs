@@ -75,7 +75,7 @@ impl<H: HeaderT> GrandpaJustification<H> {
 	/// any precise calculations - that's just an estimation.
 	pub fn max_reasonable_size<C>(required_precommits: u32) -> u32
 	where
-		C: Chain<Header = H> + ChainWithGrandpa,
+		C: Chain + ChainWithGrandpa,
 	{
 		// we don't need precise results here - just estimations, so some details
 		// are removed from computations (e.g. bytes required to encode vector length)

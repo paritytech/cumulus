@@ -33,7 +33,6 @@ pub type RelayBlockHeader =
 	sp_runtime::generic::Header<crate::RelayBlockNumber, crate::RelayBlockHasher>;
 
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 
 pub const PARAS_PALLET_NAME: &str = "Paras";
 pub const UNTRACKED_PARACHAIN_ID: u32 = 10;
@@ -144,10 +143,7 @@ impl Parachain for BigParachain {
 }
 
 construct_runtime! {
-	pub enum TestRuntime where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum TestRuntime
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Grandpa1: pallet_bridge_grandpa::<Instance1>::{Pallet, Event<T>},
@@ -172,7 +168,7 @@ impl frame_system::Config for TestRuntime {
 	type Hashing = RegularParachainHasher;
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
+	type Block = Block;
 	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = BlockHashCount;
 	type Version = ();

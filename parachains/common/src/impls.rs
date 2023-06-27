@@ -137,15 +137,11 @@ mod tests {
 	};
 	use xcm::prelude::*;
 
-	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 	type Block = frame_system::mocking::MockBlock<Test>;
 	const TEST_ACCOUNT: AccountId = AccountId::new([1; 32]);
 
 	frame_support::construct_runtime!(
-		pub enum Test where
-			Block = Block,
-			NodeBlock = Block,
-			UncheckedExtrinsic = UncheckedExtrinsic,
+		pub enum Test
 		{
 			System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 			Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
@@ -170,7 +166,7 @@ mod tests {
 		type Hashing = BlakeTwo256;
 		type AccountId = AccountId;
 		type Lookup = IdentityLookup<Self::AccountId>;
-		type Header = Header;
+		type Block = Block;
 		type RuntimeEvent = RuntimeEvent;
 		type BlockHashCount = BlockHashCount;
 		type BlockLength = BlockLength;
