@@ -14,21 +14,33 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+#[cfg(feature = "asset-hub-kusama-runtime")]
+use crate::service::AssetHubKusamaExecutor;
+#[cfg(feature = "asset-hub-polkadot-runtime")]
+use crate::service::AssetHubPolkadotRuntimeExecutor;
+#[cfg(feature = "asset-hub-westend-runtime")]
+use crate::service::AssetHubWestendExecutor;
+#[cfg(feature = "collectives-runtime")]
+use crate::service::CollectivesPolkadotRuntimeExecutor;
+#[cfg(feature = "glutton-runtime")]
+use crate::service::GluttonRuntimeExecutor;
+#[cfg(feature = "bridge-hub-runtimes")]
+use crate::service::{
+	BridgeHubKusamaRuntimeExecutor, BridgeHubPolkadotRuntimeExecutor,
+	BridgeHubRococoRuntimeExecutor,
+};
+
 use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
-	service::{
-		new_partial, AssetHubKusamaExecutor, AssetHubPolkadotRuntimeExecutor,
-		AssetHubWestendExecutor, Block, BridgeHubKusamaRuntimeExecutor,
-		BridgeHubPolkadotRuntimeExecutor, BridgeHubRococoRuntimeExecutor,
-		CollectivesPolkadotRuntimeExecutor, GluttonRuntimeExecutor,
-	},
+	service::{new_partial, Block},
 };
 use codec::Encode;
 use cumulus_client_cli::{ensure_feature, generate_genesis_block};
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::{info, warn};
+#[cfg(feature = "asset-hub-polkadot-runtime")]
 use parachains_common::{AssetHubPolkadotAuraId, AuraId};
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,

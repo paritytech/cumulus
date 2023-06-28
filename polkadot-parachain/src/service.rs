@@ -72,6 +72,7 @@ type ParachainBlockImport<RuntimeApi> =
 	TParachainBlockImport<Block, Arc<ParachainClient<RuntimeApi>>, ParachainBackend>;
 
 /// Native executor instance.
+#[cfg(feature = "shell-runtime")]
 pub struct ShellRuntimeExecutor;
 #[cfg(feature = "shell-runtime")]
 impl sc_executor::NativeExecutionDispatch for ShellRuntimeExecutor {
@@ -87,6 +88,7 @@ impl sc_executor::NativeExecutionDispatch for ShellRuntimeExecutor {
 }
 
 /// Native Asset Hub Polkadot (Statemint) executor instance.
+#[cfg(feature = "asset-hub-polkadot-runtime")]
 pub struct AssetHubPolkadotRuntimeExecutor;
 
 #[cfg(feature = "asset-hub-polkadot-runtime")]
@@ -103,6 +105,7 @@ impl sc_executor::NativeExecutionDispatch for AssetHubPolkadotRuntimeExecutor {
 }
 
 /// Native Asset Hub Kusama (Statemine) executor instance.
+#[cfg(feature = "asset-hub-kusama-runtime")]
 pub struct AssetHubKusamaExecutor;
 
 #[cfg(feature = "asset-hub-kusama-runtime")]
@@ -119,6 +122,7 @@ impl sc_executor::NativeExecutionDispatch for AssetHubKusamaExecutor {
 }
 
 /// Native Asset Hub Westend (Westmint) executor instance.
+#[cfg(feature = "asset-hub-westend-runtime")]
 pub struct AssetHubWestendExecutor;
 
 #[cfg(feature = "asset-hub-westend-runtime")]
@@ -135,6 +139,7 @@ impl sc_executor::NativeExecutionDispatch for AssetHubWestendExecutor {
 }
 
 /// Native Polkadot Collectives executor instance.
+#[cfg(feature = "collectives-runtime")]
 pub struct CollectivesPolkadotRuntimeExecutor;
 
 #[cfg(feature = "collectives-runtime")]
@@ -151,6 +156,7 @@ impl sc_executor::NativeExecutionDispatch for CollectivesPolkadotRuntimeExecutor
 }
 
 /// Native BridgeHubPolkadot executor instance.
+#[cfg(feature = "bridge-hub-runtimes")]
 pub struct BridgeHubPolkadotRuntimeExecutor;
 
 #[cfg(feature = "bridge-hub-runtimes")]
@@ -167,6 +173,7 @@ impl sc_executor::NativeExecutionDispatch for BridgeHubPolkadotRuntimeExecutor {
 }
 
 /// Native BridgeHubKusama executor instance.
+#[cfg(feature = "bridge-hub-runtimes")]
 pub struct BridgeHubKusamaRuntimeExecutor;
 
 #[cfg(feature = "bridge-hub-runtimes")]
@@ -183,6 +190,7 @@ impl sc_executor::NativeExecutionDispatch for BridgeHubKusamaRuntimeExecutor {
 }
 
 /// Native BridgeHubRococo executor instance.
+#[cfg(feature = "bridge-hub-runtimes")]
 pub struct BridgeHubRococoRuntimeExecutor;
 
 #[cfg(feature = "bridge-hub-runtimes")]
@@ -199,6 +207,7 @@ impl sc_executor::NativeExecutionDispatch for BridgeHubRococoRuntimeExecutor {
 }
 
 /// Native contracts executor instance.
+#[cfg(feature = "contracts-runtime")]
 pub struct ContractsRococoRuntimeExecutor;
 
 #[cfg(feature = "contracts-runtime")]
@@ -215,6 +224,7 @@ impl sc_executor::NativeExecutionDispatch for ContractsRococoRuntimeExecutor {
 }
 
 /// Native Glutton executor instance.
+#[cfg(feature = "glutton-runtime")]
 pub struct GluttonRuntimeExecutor;
 
 #[cfg(feature = "glutton-runtime")]
@@ -868,6 +878,7 @@ pub async fn start_rococo_parachain_node(
 }
 
 /// Build the import queue for the shell runtime.
+#[cfg(feature = "shell-runtime")]
 pub fn shell_build_import_queue<RuntimeApi>(
 	client: Arc<ParachainClient<RuntimeApi>>,
 	block_import: ParachainBlockImport<RuntimeApi>,
@@ -898,6 +909,7 @@ where
 }
 
 /// Start a polkadot-shell parachain node.
+#[cfg(feature = "shell-runtime")]
 pub async fn start_shell_node<RuntimeApi>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
@@ -1310,6 +1322,7 @@ where
 	.await
 }
 
+#[cfg(feature = "contracts-runtime")]
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
 async fn start_contracts_rococo_node_impl<RuntimeApi, RB, BIQ, BIC>(
 	parachain_config: Configuration,
