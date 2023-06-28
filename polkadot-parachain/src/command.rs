@@ -687,44 +687,7 @@ pub fn run() -> Result<()> {
 			match cmd {
 				BenchmarkCmd::Pallet(cmd) =>
 					if cfg!(feature = "runtime-benchmarks") {
-						runner.sync_run(|config| {
-							match config.chain_spec.runtime() {
-							Runtime::AssetHubKusama =>
-								cmd.run::<Block, AssetHubKusamaExecutor>(config),
-							Runtime::AssetHubWestend => cmd.run::<Block, AssetHubWestendExecutor>(config),
-							Runtime::AssetHubPolkadot =>
-								cmd.run::<Block, AssetHubPolkadotRuntimeExecutor>(config),
-							Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
-								cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
-							Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotLocal |
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotDevelopment =>
-									cmd.run::<Block, BridgeHubPolkadotRuntimeExecutor>(config),
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal |
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment =>
-									cmd.run::<Block, BridgeHubKusamaRuntimeExecutor>(config),
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal |
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoDevelopment =>
-									cmd.run::<Block, BridgeHubRococoRuntimeExecutor>(config),
-								_ => Err(format!(
-									"Chain '{:?}' doesn't support benchmarking for bridge_hub_runtime_type: {:?}",
-									config.chain_spec.runtime(),
-									bridge_hub_runtime_type
-								)
-									.into()),
-							},
-							Runtime::Glutton =>
-								cmd.run::<Block, GluttonRuntimeExecutor>(config),
-							_ => Err(format!(
-								"Chain '{:?}' doesn't support benchmarking",
-								config.chain_spec.runtime()
-							)
-							.into()),
-						}
-						})
+						runner.sync_run(|config| cmd.run::<Block>(config))
 					} else {
 						Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
