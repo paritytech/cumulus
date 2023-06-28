@@ -64,7 +64,7 @@ pub type ThisChainRuntimeCall = RuntimeCall;
 /// Runtime call origin at `ThisChain`.
 pub type ThisChainCallOrigin = RuntimeOrigin;
 // Block of `ThisChain`.
-pub type ThisChainBlock = frame_system::mocking::MockBlock<TestRuntime>;
+pub type ThisChainBlock = frame_system::mocking::MockBlockU32<TestRuntime>;
 
 /// Account identifier at the `BridgedChain`.
 pub type BridgedChainAccountId = u128;
@@ -76,8 +76,11 @@ pub type BridgedChainBlockNumber = u32;
 pub type BridgedChainHash = H256;
 /// Hasher at the `BridgedChain`.
 pub type BridgedChainHasher = BlakeTwo256;
+/// Header of the `BridgedChain`.
+pub type BridgedChainHeader =
+	sp_runtime::generic::Header<BridgedChainBlockNumber, BridgedChainHasher>;
 /// Block of the `BridgedChain`.
-pub type BridgedChainBlock = frame_system::mocking::MockBlock<TestRuntime>;
+pub type BridgedChainBlock = frame_system::mocking::MockBlockU32<TestRuntime>;
 
 /// Rewards payment procedure.
 pub type TestPaymentProcedure = PayRewardFromAccount<Balances, ThisChainAccountId>;
@@ -142,7 +145,6 @@ impl frame_system::Config for TestRuntime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type Index = u64;
 	type RuntimeCall = RuntimeCall;
-	type BlockNumber = ThisChainBlockNumber;
 	type Hash = ThisChainHash;
 	type Hashing = ThisChainHasher;
 	type AccountId = ThisChainAccountId;
