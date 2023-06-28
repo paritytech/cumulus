@@ -305,3 +305,184 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		));
 	});
 }
+
+#[test]
+fn test_remark_charged_fee() {
+	type RuntimeCall = <AssetHubWestend as Chain>::RuntimeCall;
+	AssetHubWestend::execute_call(RuntimeCall::System(frame_system::pallet::Call::<_>::remark {
+		remark: vec![12u8; 1_000_000_000],
+	}));
+	AssetHubWestend::execute_with(|| {
+		type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
+
+		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::System::remark(
+			<AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestend::account_id_of(
+				"random"
+			)),
+			vec![12u8; 1_000_000_000]
+		));
+	});
+}
+
+#[test]
+fn transact_while_not_having_any_dot() {
+	// Create sufficient asset (xcm sudo request from relay chain to asset hub as no governance on chain)
+	const ASSET_ID: u32 = 1;
+
+	let asset_native = Box::new(MultiLocation { parents: 0, interior: Here });
+	let asset_one = Box::new(MultiLocation {
+		parents: 0,
+		interior: X2(PalletInstance(50), GeneralIndex(ASSET_ID.into())),
+	});
+	//
+	// let require_weight_at_most = Weight::from_parts(1_100_000_000_000, 30_000);
+	// let origin_kind = OriginKind::Xcm;
+	// // let sov_penpal_on_asset_hub_westend = AssetHubWestend::sovereign_account_id_of(penpal_location);
+	//
+	// Westend::fund_accounts(vec![
+	// 	(WestendSender::get(), 5_000_000), // An account to swap dot for something else.
+	// 	// (sov_penpal_on_asset_hub_westend.clone(), 1000_000_000_000_000_000),
+	// ]);
+	//
+	// // let sov_penpal_on_asset_hub_westend_as_location: MultiLocation = MultiLocation {
+	// // 	parents: 0,
+	// // 	interior: X1(AccountId32 {
+	// // 		network: None,
+	// // 		id: sov_penpal_on_asset_hub_westend.clone().into(),
+	// // 	}),
+	// // };
+	//
+	// let call_foreign_assets_create =
+	// 	<AssetHubWestend as Para>::RuntimeCall::Assets(pallet_assets::Call::<
+	// 		<AssetHubWestend as Para>::Runtime,
+	// 		Instance2,
+	// 	>::force_create {
+	// 		id: *foreign_asset1_at_asset_hub_westend,
+	// 		min_balance: 1000,
+	// 		sufficient: true,
+	// 		admin: AssetHubWestendSender::get().into(),
+	// 	})
+	// 		.encode()
+	// 		.into();
+	//
+	// let buy_execution_fee_amount =
+	// 	asset_hub_westend_runtime::constants::fee::WeightToFee::weight_to_fee(&Weight::from_parts(
+	// 		10_100_000_000_000,
+	// 		300_000,
+	// 	));
+	// let buy_execution_fee = MultiAsset {
+	// 	id: Concrete(MultiLocation { parents: 1, interior: Here }),
+	// 	fun: Fungible(buy_execution_fee_amount),
+	// };
+	//
+	// let xcm = VersionedXcm::from(Xcm(vec![
+	// 	WithdrawAsset { 0: vec![buy_execution_fee.clone()].into() },
+	// 	BuyExecution { fees: buy_execution_fee.clone(), weight_limit: Unlimited },
+	// 	Transact { require_weight_at_most, origin_kind, call: call_foreign_assets_create },
+	// 	// RefundSurplus,
+	// 	// DepositAsset {
+	// 	// 	assets: All.into(),
+	// 	// 	beneficiary: sov_penpal_on_asset_hub_westend_as_location,
+	// 	// },
+	// ]));
+	//
+	// // Send XCM message from relay => asset_hub_westend
+	// let sudo_penpal_origin = <PenpalWestend as Parachain>::RuntimeOrigin::root();
+	// PenpalWestend::execute_with(|| {
+	// 	assert_ok!(<PenpalWestend as PenpalWestendPallet>::PolkadotXcm::send(
+	// 		sudo_penpal_origin.clone(),
+	// 		bx!(assets_para_destination.clone()),
+	// 		bx!(xcm),
+	// 	));
+	//
+	// 	type RuntimeEvent = <PenpalWestend as Parachain>::RuntimeEvent;
+	//
+	// 	assert_expected_events!(
+	// 		PenpalWestend,
+	// 		vec![
+	// 			RuntimeEvent::PolkadotXcm(pallet_xcm::Event::Sent { .. }) => {},
+	// 		]
+	// 	);
+	// });
+
+	AssetHubWestend::execute_with(|| {
+		type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
+
+		// 1. Set up a local sufficient asset
+		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::Assets::force_create(
+			<AssetHubWestend as Chain>::RuntimeOrigin::root(),
+			ASSET_ID.into(),
+			AssetHubWestendSender::get().into(),
+			true,
+			1000,
+		));
+		assert!(<AssetHubWestend as AssetHubWestendPallet>::Assets::asset_exists(ASSET_ID));
+
+		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::Assets::mint(
+			<AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
+			ASSET_ID.into(),
+			AssetHubWestendSender::get().into(),
+			3_000_000_000_000,
+		));
+
+		// 2. Set up a pool for that asset
+		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::create_pool(
+			<AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
+			asset_native.clone(),
+			asset_one.clone(),
+		));
+
+		assert_expected_events!(
+			AssetHubWestend,
+			vec![
+				RuntimeEvent::AssetConversion(pallet_asset_conversion::Event::PoolCreated { .. }) => {},
+			]
+		);
+
+		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::add_liquidity(
+			<AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
+			asset_native.clone(),
+			asset_one.clone(),
+			1_000_000_000_000,
+			2_000_000_000_000,
+			0,
+			0,
+			AssetHubWestendSender::get().into()
+		));
+
+		assert_expected_events!(
+			AssetHubWestend,
+			vec![
+				RuntimeEvent::AssetConversion(pallet_asset_conversion::Event::LiquidityAdded {lp_token_minted, .. }) => { lp_token_minted: *lp_token_minted == 1414213562273, },
+			]
+		);
+
+		// Fund the user's account with the asset:
+		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::Assets::mint(
+			<AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
+			ASSET_ID.into(),
+			AssetHubWestend::account_id_of("other").into(),
+			3_000_000_000_000,
+		));
+
+		// 3. Try and transact having no dot to pay with but only that sufficient asset
+		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::Assets::transfer(
+			<AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestend::account_id_of(
+				"other"
+			)),
+			ASSET_ID.into(),
+			AssetHubWestendReceiver::get().into(),
+			1000,
+		));
+		// assert!(<AssetHubWestend as AssetHubWestendPallet>::Assets::asset_exists(2));
+		// assert_expected_events!(
+		// 	AssetHubWestend,
+		// 	vec![
+		// 		RuntimeEvent::AssetConversion(pallet_asset_conversion::Event::SwapExecuted { amount_in, amount_out, .. }) => {
+		// 			amount_in: *amount_in == 100,
+		// 			amount_out: *amount_out == 199,
+		// 		},
+		// 	]
+		// );
+	});
+}

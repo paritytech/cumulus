@@ -82,6 +82,9 @@ pub trait TestExt {
 	fn new_ext() -> sp_io::TestExternalities;
 	fn reset_ext();
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R;
+	fn execute_call(call: <Self as Chain>::RuntimeCall) -> ()
+	where
+		Self: Chain;
 	fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R;
 }
 
@@ -171,6 +174,8 @@ pub trait Chain {
 	type RuntimeOrigin;
 	type RuntimeEvent;
 	type System;
+	type UncheckedExtrinsic;
+	type Block;
 }
 
 pub trait RelayChain: Chain + ProcessMessage {
@@ -207,6 +212,8 @@ macro_rules! decl_test_relay_chains {
 					SovereignAccountOf: $sovereign_acc_of:path,
 					System: $system:path,
 					Balances: $balances:path,
+					UncheckedExtrinsic: $unchecked_extrinsic:path,
+					Block: $block:path,
 				},
 				pallets_extra = {
 					$($pallet_name:ident: $pallet_path:path,)*
@@ -224,6 +231,8 @@ macro_rules! decl_test_relay_chains {
 				type RuntimeOrigin = $runtime_origin;
 				type RuntimeEvent = $runtime_event;
 				type System = $system;
+				type UncheckedExtrinsic = $unchecked_extrinsic;
+				type Block = $block;
 			}
 
 			impl RelayChain for $name {
@@ -320,6 +329,94 @@ macro_rules! __impl_test_ext_for_relay_chain {
 
 			fn reset_ext() {
 				$ext_name.with(|v| *v.borrow_mut() = <$name>::build_new_ext($genesis));
+			}
+
+			fn execute_call(call: <Self as Chain>::RuntimeCall) -> ()
+			where Self: Chain
+			{
+				use $crate::{NetworkComponent};
+				// Make sure the Network is initialized
+				<$name>::init();
+
+				let extrinsic = <Self as Chain>::UncheckedExtrinsic::new_unsigned(call);
+				// let r = $ext_name.with(|v| v.borrow_mut().execute_calls());
+					use cumulus_test_client::{
+		Client, ClientBlockImportExt, DefaultTestClientBuilderExt, InitBlockBuilder,
+		TestClientBuilder, TestClientBuilderExt,
+	};
+	
+				use sp_runtime::traits::Header as HeaderT;
+				use sp_core::Encode;
+				use polkadot_primitives::PersistedValidationData;
+				use polkadot_service::ExecutionStrategy;
+
+
+				// type Block = <Self as Chain>::Runtime::Block;
+				/// Test client database backend.
+				// type Backend = substrate_test_client::Backend<<Self as Chain>::Runtime::Block>;
+
+				// /// Test client executor.
+				// type Executor =
+				// 	client::LocalCallExecutor<Block, Backend, sc_executor::NativeElseWasmExecutor<LocalExecutor>>;
+
+				// /// Test client builder for Cumulus
+				// type TestClientBuilder =
+				// 	substrate_test_client::TestClientBuilder<Block, Executor, Backend, GenesisParameters>;
+
+
+				// let client = TestClientBuilder::new()
+				// 	// NOTE: this allows easier debugging
+				// 	.set_execution_strategy(sc_client_api::ExecutionStrategy::NativeWhenPossible)
+				// 	.build();
+
+				// let parent_head = client
+				// 	.header(client.chain_info().genesis_hash)
+				// 	.ok()
+				// 	.flatten()
+				// 	.expect("Genesis header exists; qed");
+
+
+				// let mut validation_data = PersistedValidationData {
+				// 	relay_parent_number: 1,
+				// 	parent_head: parent_head.encode().into(),
+				// 	..Default::default()
+				// };
+
+
+
+				// let mut builder = client.init_block_builder(Some(validation_data.clone()), Default::default());
+
+				// // validation_data.relay_parent_storage_root = relay_parent_storage_root;
+
+				// builder.push(extrinsic).unwrap();
+
+				// let block = builder.build_parachain_block(*parent_head.state_root());
+
+				
+
+				// send messages if needed
+				$ext_name.with(|v| {
+					v.borrow_mut().execute_with(|| {
+						use $crate::polkadot_primitives::runtime_api::runtime_decl_for_parachain_host::$api_version;
+
+						//TODO: mark sent count & filter out sent msg
+						for para_id in <$name>::para_ids() {
+							// downward messages
+							let downward_messages = <Self as Chain>::Runtime::dmq_contents(para_id.into())
+								.into_iter()
+								.map(|inbound| (inbound.sent_at, inbound.msg));
+							if downward_messages.len() == 0 {
+								continue;
+							}
+							<$name>::send_downward_messages(para_id, downward_messages.into_iter());
+
+							// Note: no need to handle horizontal messages, as the
+							// simulator directly sends them to dest (not relayed).
+						}
+					})
+				});
+
+				<$name>::process_messages();
 			}
 
 			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
@@ -435,6 +532,8 @@ macro_rules! decl_test_parachains {
 					Balances: $balances_pallet:path,
 					ParachainSystem: $parachain_system:path,
 					ParachainInfo: $parachain_info:path,
+					UncheckedExtrinsic: $unchecked_extrinsic:path,
+					Block: $block:path,
 				},
 				pallets_extra = {
 					$($pallet_name:ident: $pallet_path:path,)*
@@ -452,6 +551,8 @@ macro_rules! decl_test_parachains {
 				type RuntimeOrigin = $runtime_origin;
 				type RuntimeEvent = $runtime_event;
 				type System = $system;
+				type UncheckedExtrinsic = $unchecked_extrinsic;
+				type Block = $block;
 			}
 
 			impl Parachain for $name {
@@ -550,6 +651,12 @@ macro_rules! __impl_test_ext_for_parachain {
 
 			fn reset_ext() {
 				$ext_name.with(|v| *v.borrow_mut() = <$name>::build_new_ext($genesis));
+			}
+
+			fn execute_call(call: <Self as Chain>::RuntimeCall) -> ()
+				where Self: Chain
+			{
+
 			}
 
 			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {

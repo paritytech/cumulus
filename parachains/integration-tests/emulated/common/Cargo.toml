@@ -21,7 +21,8 @@ pallet-balances = { default-features = false, git = "https://github.com/parityte
 pallet-assets = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-staking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-im-online = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-
+sc-client-api = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-test-client = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 # Polkadot
 polkadot-core-primitives = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-parachain = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -50,6 +51,7 @@ collectives-polkadot-runtime = { path = "../../../runtimes/collectives/collectiv
 bridge-hub-kusama-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-kusama" }
 bridge-hub-polkadot-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-polkadot" }
 xcm-emulator = { default-features = false, path = "../../../../xcm/xcm-emulator" }
+cumulus-test-client = { path = "../../../../test/client" }
 
 [features]
 runtime-benchmarks = [

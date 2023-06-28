@@ -14,7 +14,7 @@ use xcm_emulator::{
 	TestExt,
 };
 use xcm_executor::traits::ConvertLocation;
-
+use cumulus_test_client::BuildParachainBlockData;
 decl_test_relay_chains! {
 	#[api_version(5)]
 	pub struct Westend {
@@ -30,6 +30,8 @@ decl_test_relay_chains! {
 			SovereignAccountOf: westend_runtime::xcm_config::LocationConverter, //TODO: rename to SovereignAccountOf,
 			System: westend_runtime::System,
 			Balances: westend_runtime::Balances,
+			UncheckedExtrinsic: westend_runtime::UncheckedExtrinsic,
+			Block: westend_runtime::Block,
 		},
 		pallets_extra = {
 			XcmPallet: westend_runtime::XcmPallet,
@@ -50,6 +52,8 @@ decl_test_relay_chains! {
 			SovereignAccountOf: polkadot_runtime::xcm_config::SovereignAccountOf,
 			System: polkadot_runtime::System,
 			Balances: polkadot_runtime::Balances,
+			UncheckedExtrinsic: polkadot_runtime::UncheckedExtrinsic,
+			Block: polkadot_runtime::Block,
 		},
 		pallets_extra = {
 			XcmPallet: polkadot_runtime::XcmPallet,
@@ -69,6 +73,8 @@ decl_test_relay_chains! {
 			SovereignAccountOf: kusama_runtime::xcm_config::SovereignAccountOf,
 			System: kusama_runtime::System,
 			Balances: kusama_runtime::Balances,
+			UncheckedExtrinsic: kusama_runtime::UncheckedExtrinsic,
+			Block: kusama_runtime::Block,
 		},
 		pallets_extra = {
 			XcmPallet: kusama_runtime::XcmPallet,
@@ -93,11 +99,21 @@ decl_test_parachains! {
 			Balances: asset_hub_westend_runtime::Balances,
 			ParachainSystem: asset_hub_westend_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_westend_runtime::ParachainInfo,
+			UncheckedExtrinsic: asset_hub_westend_runtime::UncheckedExtrinsic,
+			Block: asset_hub_westend_runtime::Block,
 		},
 		pallets_extra = {
+			System: asset_hub_westend_runtime::System,
+
+			TransactionPayment: asset_hub_westend_runtime::TransactionPayment,
+			AssetTxPayment: asset_hub_westend_runtime::AssetTxPayment,
+
 			PolkadotXcm: asset_hub_westend_runtime::PolkadotXcm,
 			Assets: asset_hub_westend_runtime::Assets,
+
+
 			ForeignAssets: asset_hub_westend_runtime::ForeignAssets,
+			PoolAssets: asset_hub_westend_runtime::PoolAssets,
 			AssetConversion: asset_hub_westend_runtime::AssetConversion,
 		}
 	},
@@ -117,6 +133,8 @@ decl_test_parachains! {
 			Balances: asset_hub_polkadot_runtime::Balances,
 			ParachainSystem: asset_hub_polkadot_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
+			UncheckedExtrinsic: asset_hub_polkadot_runtime::UncheckedExtrinsic,
+			Block: asset_hub_polkadot_runtime::Block,
 		},
 		pallets_extra = {
 			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
@@ -138,6 +156,8 @@ decl_test_parachains! {
 			Balances: penpal_runtime::Balances,
 			ParachainSystem: penpal_runtime::ParachainSystem,
 			ParachainInfo: penpal_runtime::ParachainInfo,
+			UncheckedExtrinsic: penpal_runtime::UncheckedExtrinsic,
+			Block: penpal_runtime::Block,
 		},
 		pallets_extra = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
@@ -159,6 +179,8 @@ decl_test_parachains! {
 			Balances: penpal_runtime::Balances,
 			ParachainSystem: penpal_runtime::ParachainSystem,
 			ParachainInfo: penpal_runtime::ParachainInfo,
+			UncheckedExtrinsic: penpal_runtime::UncheckedExtrinsic,
+			Block: penpal_runtime::Block,
 		},
 		pallets_extra = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
@@ -182,6 +204,8 @@ decl_test_parachains! {
 			Balances: asset_hub_kusama_runtime::Balances,
 			ParachainSystem: asset_hub_kusama_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_kusama_runtime::ParachainInfo,
+			UncheckedExtrinsic: asset_hub_kusama_runtime::UncheckedExtrinsic,
+			Block: asset_hub_kusama_runtime::Block,
 		},
 		pallets_extra = {
 			PolkadotXcm: asset_hub_kusama_runtime::PolkadotXcm,
@@ -204,6 +228,8 @@ decl_test_parachains! {
 			Balances: penpal_runtime::Balances,
 			ParachainSystem: penpal_runtime::ParachainSystem,
 			ParachainInfo: penpal_runtime::ParachainInfo,
+			UncheckedExtrinsic: penpal_runtime::UncheckedExtrinsic,
+			Block: penpal_runtime::Block,
 		},
 		pallets_extra = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
@@ -225,6 +251,8 @@ decl_test_parachains! {
 			Balances: collectives_polkadot_runtime::Balances,
 			ParachainSystem: collectives_polkadot_runtime::ParachainSystem,
 			ParachainInfo: collectives_polkadot_runtime::ParachainInfo,
+			UncheckedExtrinsic: collectives_polkadot_runtime::UncheckedExtrinsic,
+			Block: collectives_polkadot_runtime::Block,
 		},
 		pallets_extra = {
 			PolkadotXcm: collectives_polkadot_runtime::PolkadotXcm,
@@ -245,6 +273,8 @@ decl_test_parachains! {
 			Balances: bridge_hub_kusama_runtime::Balances,
 			ParachainSystem: bridge_hub_kusama_runtime::ParachainSystem,
 			ParachainInfo:bridge_hub_kusama_runtime::ParachainInfo,
+			UncheckedExtrinsic: bridge_hub_kusama_runtime::UncheckedExtrinsic,
+			Block: bridge_hub_kusama_runtime::Block,
 		},
 		pallets_extra = {
 			PolkadotXcm: bridge_hub_kusama_runtime::PolkadotXcm,
@@ -265,6 +295,8 @@ decl_test_parachains! {
 			Balances: bridge_hub_polkadot_runtime::Balances,
 			ParachainSystem: bridge_hub_polkadot_runtime::ParachainSystem,
 			ParachainInfo:bridge_hub_polkadot_runtime::ParachainInfo,
+			UncheckedExtrinsic: bridge_hub_polkadot_runtime::UncheckedExtrinsic,
+			Block: bridge_hub_polkadot_runtime::Block,
 		},
 		pallets_extra = {
 			PolkadotXcm: bridge_hub_polkadot_runtime::PolkadotXcm,
