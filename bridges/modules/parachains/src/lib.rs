@@ -32,6 +32,7 @@ use bp_polkadot_core::parachains::{ParaHash, ParaHead, ParaHeadsProof, ParaId};
 use bp_runtime::{Chain, HashOf, HeaderId, HeaderIdOf, Parachain, StorageProofError};
 use frame_support::{dispatch::PostDispatchInfo, DefaultNoBound};
 use sp_std::{marker::PhantomData, vec::Vec};
+use sp_runtime::generic;
 
 #[cfg(feature = "runtime-benchmarks")]
 use bp_parachains::ParaStoredHeaderDataBuilder;
@@ -64,7 +65,15 @@ pub type RelayBlockNumber = bp_polkadot_core::BlockNumber;
 /// Hasher of the bridged relay chain.
 pub type RelayBlockHasher = bp_polkadot_core::Hasher;
 /// Block type of the bridged relay chain.
-pub type RelayBlock<T> = frame_system::mocking::MockBlockU32<T>;
+pub type RelayBlock<T> = generic::Block<
+	generic::Header<RelayBlockNumber, sp_runtime::traits::BlakeTwo256>,
+	generic::UncheckedExtrinsic<
+		<T as frame_system::Config>::AccountId,
+		<T as frame_system::Config>::RuntimeCall,
+		(),
+		(),
+	>
+>;
 
 /// Artifacts of the parachains head update.
 struct UpdateParachainHeadArtifacts {
