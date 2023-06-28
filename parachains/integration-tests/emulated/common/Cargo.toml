@@ -23,6 +23,8 @@ pallet-staking = { default-features = false, git = "https://github.com/paritytec
 pallet-im-online = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-client = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
 # Polkadot
 polkadot-core-primitives = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-parachain = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }

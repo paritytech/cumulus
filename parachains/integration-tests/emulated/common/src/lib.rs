@@ -32,6 +32,7 @@ decl_test_relay_chains! {
 			Balances: westend_runtime::Balances,
 			UncheckedExtrinsic: westend_runtime::UncheckedExtrinsic,
 			Block: westend_runtime::Block,
+			RuntimeApi: westend_runtime::RuntimeApi,
 		},
 		pallets_extra = {
 			XcmPallet: westend_runtime::XcmPallet,
@@ -54,6 +55,7 @@ decl_test_relay_chains! {
 			Balances: polkadot_runtime::Balances,
 			UncheckedExtrinsic: polkadot_runtime::UncheckedExtrinsic,
 			Block: polkadot_runtime::Block,
+			RuntimeApi: polkadot_runtime::RuntimeApi,
 		},
 		pallets_extra = {
 			XcmPallet: polkadot_runtime::XcmPallet,
@@ -75,6 +77,7 @@ decl_test_relay_chains! {
 			Balances: kusama_runtime::Balances,
 			UncheckedExtrinsic: kusama_runtime::UncheckedExtrinsic,
 			Block: kusama_runtime::Block,
+			RuntimeApi: kusama_runtime::RuntimeApi,
 		},
 		pallets_extra = {
 			XcmPallet: kusama_runtime::XcmPallet,
@@ -101,6 +104,7 @@ decl_test_parachains! {
 			ParachainInfo: asset_hub_westend_runtime::ParachainInfo,
 			UncheckedExtrinsic: asset_hub_westend_runtime::UncheckedExtrinsic,
 			Block: asset_hub_westend_runtime::Block,
+			RuntimeApi: asset_hub_westend_runtime::RuntimeApi,
 		},
 		pallets_extra = {
 			System: asset_hub_westend_runtime::System,
@@ -135,6 +139,7 @@ decl_test_parachains! {
 			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
 			UncheckedExtrinsic: asset_hub_polkadot_runtime::UncheckedExtrinsic,
 			Block: asset_hub_polkadot_runtime::Block,
+			RuntimeApi: asset_hub_polkadot_runtime::RuntimeApi,
 		},
 		pallets_extra = {
 			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
@@ -158,6 +163,7 @@ decl_test_parachains! {
 			ParachainInfo: penpal_runtime::ParachainInfo,
 			UncheckedExtrinsic: penpal_runtime::UncheckedExtrinsic,
 			Block: penpal_runtime::Block,
+			RuntimeApi: penpal_runtime::RuntimeApi,
 		},
 		pallets_extra = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
@@ -181,6 +187,7 @@ decl_test_parachains! {
 			ParachainInfo: penpal_runtime::ParachainInfo,
 			UncheckedExtrinsic: penpal_runtime::UncheckedExtrinsic,
 			Block: penpal_runtime::Block,
+			RuntimeApi: penpal_runtime::RuntimeApi,
 		},
 		pallets_extra = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
@@ -206,6 +213,7 @@ decl_test_parachains! {
 			ParachainInfo: asset_hub_kusama_runtime::ParachainInfo,
 			UncheckedExtrinsic: asset_hub_kusama_runtime::UncheckedExtrinsic,
 			Block: asset_hub_kusama_runtime::Block,
+			RuntimeApi: asset_hub_kusama_runtime::RuntimeApi,
 		},
 		pallets_extra = {
 			PolkadotXcm: asset_hub_kusama_runtime::PolkadotXcm,
@@ -230,6 +238,7 @@ decl_test_parachains! {
 			ParachainInfo: penpal_runtime::ParachainInfo,
 			UncheckedExtrinsic: penpal_runtime::UncheckedExtrinsic,
 			Block: penpal_runtime::Block,
+			RuntimeApi: penpal_runtime::RuntimeApi,
 		},
 		pallets_extra = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
@@ -253,6 +262,7 @@ decl_test_parachains! {
 			ParachainInfo: collectives_polkadot_runtime::ParachainInfo,
 			UncheckedExtrinsic: collectives_polkadot_runtime::UncheckedExtrinsic,
 			Block: collectives_polkadot_runtime::Block,
+			RuntimeApi: collectives_polkadot_runtime::RuntimeApi,
 		},
 		pallets_extra = {
 			PolkadotXcm: collectives_polkadot_runtime::PolkadotXcm,
@@ -275,6 +285,7 @@ decl_test_parachains! {
 			ParachainInfo:bridge_hub_kusama_runtime::ParachainInfo,
 			UncheckedExtrinsic: bridge_hub_kusama_runtime::UncheckedExtrinsic,
 			Block: bridge_hub_kusama_runtime::Block,
+			RuntimeApi: bridge_hub_kusama_runtime::RuntimeApi,
 		},
 		pallets_extra = {
 			PolkadotXcm: bridge_hub_kusama_runtime::PolkadotXcm,
@@ -297,6 +308,7 @@ decl_test_parachains! {
 			ParachainInfo:bridge_hub_polkadot_runtime::ParachainInfo,
 			UncheckedExtrinsic: bridge_hub_polkadot_runtime::UncheckedExtrinsic,
 			Block: bridge_hub_polkadot_runtime::Block,
+			RuntimeApi: bridge_hub_polkadot_runtime::RuntimeApi,
 		},
 		pallets_extra = {
 			PolkadotXcm: bridge_hub_polkadot_runtime::PolkadotXcm,

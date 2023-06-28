@@ -176,6 +176,7 @@ pub trait Chain {
 	type System;
 	type UncheckedExtrinsic;
 	type Block;
+	type RuntimeApi;
 }
 
 pub trait RelayChain: Chain + ProcessMessage {
@@ -214,6 +215,7 @@ macro_rules! decl_test_relay_chains {
 					Balances: $balances:path,
 					UncheckedExtrinsic: $unchecked_extrinsic:path,
 					Block: $block:path,
+					RuntimeApi: $runtime_api:path,
 				},
 				pallets_extra = {
 					$($pallet_name:ident: $pallet_path:path,)*
@@ -233,6 +235,7 @@ macro_rules! decl_test_relay_chains {
 				type System = $system;
 				type UncheckedExtrinsic = $unchecked_extrinsic;
 				type Block = $block;
+				type RuntimeApi = $runtime_api;
 			}
 
 			impl RelayChain for $name {
@@ -242,6 +245,23 @@ macro_rules! decl_test_relay_chains {
 			}
 
 			$crate::paste::paste! {
+				type [<$name Backend>] = substrate_test_client::Backend<$block>;
+				
+				/// Test client executor.
+				type [<$name Executor>] =
+					cumulus_test_client::client::LocalCallExecutor<$block, [<$name Backend>], sc_executor::NativeElseWasmExecutor<cumulus_test_client::LocalExecutor>>;
+
+				type [<$name ClientBuilder>] =
+					substrate_test_client::TestClientBuilder<
+						$block, 
+						[<$name Executor>], 
+						[<$name Backend>], 
+						cumulus_test_client::GenesisParameters
+					>;
+
+				/// Test client type with `LocalExecutor` and generic Backend.
+				pub type [<$name Client>] = cumulus_test_client::client::Client<[<$name Backend>], [<$name Executor>], $block, $runtime_api>;
+
 				pub trait [<$name Pallet>] {
 					$(
 						type $pallet_name;
@@ -311,6 +331,8 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
 		}
 
+
+
 		impl TestExt for $name {
 			fn build_new_ext(storage: $crate::Storage) -> $crate::sp_io::TestExternalities {
 				let mut ext = sp_io::TestExternalities::new(storage);
@@ -332,7 +354,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 			}
 
 			fn execute_call(call: <Self as Chain>::RuntimeCall) -> ()
-			where Self: Chain
+				where Self: Chain
 			{
 				use $crate::{NetworkComponent};
 				// Make sure the Network is initialized
@@ -340,40 +362,29 @@ macro_rules! __impl_test_ext_for_relay_chain {
 
 				let extrinsic = <Self as Chain>::UncheckedExtrinsic::new_unsigned(call);
 				// let r = $ext_name.with(|v| v.borrow_mut().execute_calls());
-					use cumulus_test_client::{
-		Client, ClientBlockImportExt, DefaultTestClientBuilderExt, InitBlockBuilder,
-		TestClientBuilder, TestClientBuilderExt,
-	};
-	
+				use cumulus_test_client::{
+					ClientBlockImportExt, DefaultTestClientBuilderExt, InitBlockBuilder,
+					// TestClientBuilder, 
+					TestClientBuilderExt,
+				};
 				use sp_runtime::traits::Header as HeaderT;
 				use sp_core::Encode;
 				use polkadot_primitives::PersistedValidationData;
 				use polkadot_service::ExecutionStrategy;
 
+				$crate::paste::paste! {
+					let client: ([<$name Client>], _) = [<$name ClientBuilder>]::with_default_backend()
+						// NOTE: this allows easier debugging
+						.set_execution_strategy(sc_client_api::ExecutionStrategy::NativeWhenPossible)
+					.build_with_native_executor(None);
+					let client = client.0;
+				}
 
-				// type Block = <Self as Chain>::Runtime::Block;
-				/// Test client database backend.
-				// type Backend = substrate_test_client::Backend<<Self as Chain>::Runtime::Block>;
-
-				// /// Test client executor.
-				// type Executor =
-				// 	client::LocalCallExecutor<Block, Backend, sc_executor::NativeElseWasmExecutor<LocalExecutor>>;
-
-				// /// Test client builder for Cumulus
-				// type TestClientBuilder =
-				// 	substrate_test_client::TestClientBuilder<Block, Executor, Backend, GenesisParameters>;
-
-
-				// let client = TestClientBuilder::new()
-				// 	// NOTE: this allows easier debugging
-				// 	.set_execution_strategy(sc_client_api::ExecutionStrategy::NativeWhenPossible)
-				// 	.build();
-
-				// let parent_head = client
-				// 	.header(client.chain_info().genesis_hash)
-				// 	.ok()
-				// 	.flatten()
-				// 	.expect("Genesis header exists; qed");
+				let parent_head = client
+					.header(client.chain_info().genesis_hash)
+					.ok()
+					.flatten()
+					.expect("Genesis header exists; qed");
 
 
 				// let mut validation_data = PersistedValidationData {
@@ -385,6 +396,8 @@ macro_rules! __impl_test_ext_for_relay_chain {
 
 
 				// let mut builder = client.init_block_builder(Some(validation_data.clone()), Default::default());
+				// let chain_info = client.chain_info();
+				// let mut builder = InitBlockBuilder::init_block_builder_at(&client, chain_info.best_hash, Some(validation_data), Default::default());
 
 				// // validation_data.relay_parent_storage_root = relay_parent_storage_root;
 
@@ -534,6 +547,7 @@ macro_rules! decl_test_parachains {
 					ParachainInfo: $parachain_info:path,
 					UncheckedExtrinsic: $unchecked_extrinsic:path,
 					Block: $block:path,
+					RuntimeApi: $runtime_api:path,
 				},
 				pallets_extra = {
 					$($pallet_name:ident: $pallet_path:path,)*
@@ -553,6 +567,7 @@ macro_rules! decl_test_parachains {
 				type System = $system;
 				type UncheckedExtrinsic = $unchecked_extrinsic;
 				type Block = $block;
+				type RuntimeApi = $runtime_api;
 			}
 
 			impl Parachain for $name {
