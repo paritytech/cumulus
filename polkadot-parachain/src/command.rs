@@ -40,8 +40,12 @@ use cumulus_client_cli::{ensure_feature, generate_genesis_block};
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::{info, warn};
+
 #[cfg(feature = "asset-hub-polkadot-runtime")]
-use parachains_common::{AssetHubPolkadotAuraId, AuraId};
+use parachains_common::AssetHubPolkadotAuraId;
+#[cfg(any(feature = "asset-hub-polkadot-runtime", feature = "asset-hub-westend-runtime"))]
+use parachains_common::AuraId;
+
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
@@ -71,6 +75,7 @@ enum Runtime {
 	#[cfg(feature = "bridge-hub-runtimes")]
 	BridgeHub(chain_spec::bridge_hubs::BridgeHubRuntimeType),
 	#[cfg(not(feature = "bridge-hub-runtimes"))]
+	#[allow(dead_code)]
 	BridgeHub(()),
 }
 
@@ -123,10 +128,7 @@ fn runtime(id: &str) -> Runtime {
 		Runtime::CollectivesPolkadot
 	} else if id.starts_with("collectives-westend") {
 		Runtime::CollectivesWestend
-	} else if ensure_feature!(
-		"bridge-hub-runtimes",
-		id.starts_with(chain_spec::bridge_hubs::BridgeHubRuntimeType::ID_PREFIX)
-	) {
+	} else if id.starts_with("bridge-hub") {
 		ensure_feature!(
 			"bridge-hub-runtimes",
 			Runtime::BridgeHub(
@@ -143,6 +145,7 @@ fn runtime(id: &str) -> Runtime {
 }
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
+	#[allow(unused_variables)]
 	let (id, _, para_id) = extract_parachain_id(id);
 	Ok(match id {
 		// - Defaul-like
@@ -382,9 +385,9 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 						path
 					)?)
 				),
-				Runtime::BridgeHub(bridge_hub_runtime_type) => ensure_feature!(
+				Runtime::BridgeHub(_bridge_hub_runtime_type) => ensure_feature!(
 					"bridge-hub-runtimes",
-					bridge_hub_runtime_type.chain_spec_from_json_file(path)?
+					_bridge_hub_runtime_type.chain_spec_from_json_file(path)?
 				),
 				Runtime::Penpal(_para_id) => ensure_feature!(
 					"penpal-runtime",
@@ -489,8 +492,8 @@ impl SubstrateCli for Cli {
 			Runtime::Seedling => ensure_feature!("seedling-runtime", &seedling_runtime::VERSION),
 			Runtime::ContractsRococo =>
 				ensure_feature!("contracts-runtime", &contracts_rococo_runtime::VERSION),
-			Runtime::BridgeHub(bridge_hub_runtime_type) =>
-				ensure_feature!("bridge-hub-runtimes", bridge_hub_runtime_type.runtime_version()),
+			Runtime::BridgeHub(_bridge_hub_runtime_type) =>
+				ensure_feature!("bridge-hub-runtimes", _bridge_hub_runtime_type.runtime_version()),
 			Runtime::Penpal(_) => ensure_feature!("penpal-runtime", &penpal_runtime::VERSION),
 			Runtime::Glutton => ensure_feature!("glutton-runtime", &glutton_runtime::VERSION),
 			Runtime::Default =>
@@ -589,7 +592,7 @@ macro_rules! construct_async_run {
 		let runner = $cli.create_runner($cmd)?;
 		match runner.config().chain_spec.runtime() {
 			Runtime::AssetHubWestend => {
-				::cumulus_client_cli::ensure_feature!("asset-hub-westend-runtime", runner.async_run(|$config| {
+				ensure_feature!("asset-hub-westend-runtime", runner.async_run(|$config| {
 					let $components = new_partial::<asset_hub_westend_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
@@ -599,7 +602,7 @@ macro_rules! construct_async_run {
 				}))
 			},
 			Runtime::AssetHubKusama => {
-				::cumulus_client_cli::ensure_feature!("asset-hub-kusama-runtime",runner.async_run(|$config| {
+				ensure_feature!("asset-hub-kusama-runtime",runner.async_run(|$config| {
 					let $components = new_partial::<asset_hub_kusama_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
@@ -609,7 +612,7 @@ macro_rules! construct_async_run {
 				}))
 			},
 			Runtime::AssetHubPolkadot => {
-				::cumulus_client_cli::ensure_feature!("asset-hub-polkadot-runtime",runner.async_run(|$config| {
+				ensure_feature!("asset-hub-polkadot-runtime",runner.async_run(|$config| {
 					let $components = new_partial::<asset_hub_polkadot_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AssetHubPolkadotAuraId>,
@@ -619,7 +622,7 @@ macro_rules! construct_async_run {
 				}))
 			},
 			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => {
-				::cumulus_client_cli::ensure_feature!("collectives-runtime", runner.async_run(|$config| {
+				ensure_feature!("collectives-runtime", runner.async_run(|$config| {
 					let $components = new_partial::<collectives_polkadot_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
@@ -629,7 +632,7 @@ macro_rules! construct_async_run {
 				}))
 			},
 			Runtime::Shell => {
-				::cumulus_client_cli::ensure_feature!("shell-runtime", runner.async_run(|$config| {
+				ensure_feature!("shell-runtime", runner.async_run(|$config| {
 					let $components = new_partial::<shell_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::shell_build_import_queue,
@@ -639,7 +642,7 @@ macro_rules! construct_async_run {
 				}))
 			},
 			Runtime::Seedling => {
-				::cumulus_client_cli::ensure_feature!("seedling-runtime", runner.async_run(|$config| {
+				ensure_feature!("seedling-runtime", runner.async_run(|$config| {
 					let $components = new_partial::<seedling_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::shell_build_import_queue,
@@ -649,7 +652,7 @@ macro_rules! construct_async_run {
 				}))
 			},
 			Runtime::ContractsRococo => {
-				::cumulus_client_cli::ensure_feature!("contracts-runtime", runner.async_run(|$config| {
+				ensure_feature!("contracts-runtime", runner.async_run(|$config| {
 					let $components = new_partial::<contracts_rococo_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::contracts_rococo_build_import_queue,
@@ -658,8 +661,8 @@ macro_rules! construct_async_run {
 					{ $( $code )* }.map(|v| (v, task_manager))
 				}))
 			},
-			Runtime::BridgeHub(bridge_hub_runtime_type) => {
-				 ensure_feature!("bridge-hub-runtimes", match bridge_hub_runtime_type {
+			Runtime::BridgeHub(_bridge_hub_runtime_type) => {
+				 ensure_feature!("bridge-hub-runtimes", match _bridge_hub_runtime_type {
 					chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
 					chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotLocal |
 					chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotDevelopment => {
@@ -725,7 +728,7 @@ macro_rules! construct_async_run {
 				})
 			},
 			Runtime::Penpal(_) | Runtime::Default => {
-				::cumulus_client_cli::ensure_feature!("penpal-runtime", runner.async_run(|$config| {
+				ensure_feature!("penpal-runtime", runner.async_run(|$config| {
 					let $components = new_partial::<
 						rococo_parachain_runtime::RuntimeApi,
 						_
@@ -738,7 +741,7 @@ macro_rules! construct_async_run {
 				}))
 			},
 			Runtime::Glutton => {
-				::cumulus_client_cli::ensure_feature!("glutton-runtime", runner.async_run(|$config| {
+				ensure_feature!("glutton-runtime", runner.async_run(|$config| {
 					let $components = new_partial::<glutton_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::shell_build_import_queue,
@@ -834,7 +837,7 @@ pub fn run() -> Result<()> {
 								ensure_feature!("asset-hub-polkadot-runtime", cmd.run::<Block, AssetHubPolkadotRuntimeExecutor>(config)),
 							Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
 								ensure_feature!("collectives-runtime", cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config)),
-							Runtime::BridgeHub(bridge_hub_runtime_type) => ensure_feature!("bridge-hub-runtimes", match bridge_hub_runtime_type {
+							Runtime::BridgeHub(_bridge_hub_runtime_type) => ensure_feature!("bridge-hub-runtimes", match _bridge_hub_runtime_type {
 								chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
 								chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotLocal |
 								chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotDevelopment =>
@@ -962,37 +965,29 @@ pub fn run() -> Result<()> {
 					match bridge_hub_runtime_type {
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotLocal |
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotDevelopment => ensure_feature!(
-							"bridge-hub-runtimes",
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotDevelopment =>
 							runner.async_run(|_| {
 								Ok((
 							cmd.run::<Block, HostFunctionsOf<BridgeHubPolkadotRuntimeExecutor>, _>(Some(info_provider)),
 							task_manager,
 						))
-							})
-						),
+							}),
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal |
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment => ensure_feature!(
-							"bridge-hub-runtimes",
-							runner.async_run(|_| {
-								Ok((
-							cmd.run::<Block, HostFunctionsOf<BridgeHubKusamaRuntimeExecutor>, _>(Some(info_provider)),
-							task_manager,
-						))
-							})
-						),
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment => runner.async_run(|_| {
+							Ok((
+									cmd.run::<Block, HostFunctionsOf<BridgeHubKusamaRuntimeExecutor>, _>(Some(info_provider)),
+									task_manager,
+								))
+						}),
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal |
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoDevelopment => ensure_feature!(
-							"bridge-hub-runtimes",
-							runner.async_run(|_| {
-								Ok((
-							cmd.run::<Block, HostFunctionsOf<BridgeHubRococoRuntimeExecutor>, _>(Some(info_provider)),
-							task_manager,
-						))
-							})
-						),
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoDevelopment => runner.async_run(|_| {
+							Ok((
+									cmd.run::<Block, HostFunctionsOf<BridgeHubRococoRuntimeExecutor>, _>(Some(info_provider)),
+									task_manager,
+								))
+						}),
 						_ => Err(format!(
 						"Chain '{:?}' doesn't support try-runtime for bridge_hub_runtime_type: {:?}",
 						runner.config().chain_spec.runtime(),
@@ -1119,21 +1114,21 @@ pub fn run() -> Result<()> {
 				}
 
 				match config.chain_spec.runtime() {
-					Runtime::AssetHubPolkadot => ::cumulus_client_cli::ensure_feature!("asset-hub-polkadot-runtime", crate::service::start_generic_aura_node::<
+					Runtime::AssetHubPolkadot => ensure_feature!("asset-hub-polkadot-runtime", crate::service::start_generic_aura_node::<
 						asset_hub_polkadot_runtime::RuntimeApi,
 						AssetHubPolkadotAuraId,
 					>(config, polkadot_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)),
-					Runtime::AssetHubKusama => ::cumulus_client_cli::ensure_feature!("asset-hub-kusama-runtime", crate::service::start_generic_aura_node::<
+					Runtime::AssetHubKusama => ensure_feature!("asset-hub-kusama-runtime", crate::service::start_generic_aura_node::<
 						asset_hub_kusama_runtime::RuntimeApi,
 						AuraId,
 					>(config, polkadot_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)),
-					Runtime::AssetHubWestend => ::cumulus_client_cli::ensure_feature!("asset-hub-westend-runtime", crate::service::start_generic_aura_node::<
+					Runtime::AssetHubWestend => ensure_feature!("asset-hub-westend-runtime", crate::service::start_generic_aura_node::<
 						asset_hub_westend_runtime::RuntimeApi,
 						AuraId,
 					>(config, polkadot_config, collator_options, id, hwbench)
@@ -1141,7 +1136,7 @@ pub fn run() -> Result<()> {
 					.map(|r| r.0)
 					.map_err(Into::into)),
 					Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
-						::cumulus_client_cli::ensure_feature!("collectives-runtime", crate::service::start_generic_aura_node::<
+						ensure_feature!("collectives-runtime", crate::service::start_generic_aura_node::<
 							collectives_polkadot_runtime::RuntimeApi,
 							AuraId,
 						>(config, polkadot_config, collator_options, id, hwbench)
@@ -1149,7 +1144,7 @@ pub fn run() -> Result<()> {
 						.map(|r| r.0)
 						.map_err(Into::into)),
 					Runtime::Shell =>
-						::cumulus_client_cli::ensure_feature!("shell-runtime", crate::service::start_shell_node::<shell_runtime::RuntimeApi>(
+						ensure_feature!("shell-runtime", crate::service::start_shell_node::<shell_runtime::RuntimeApi>(
 							config,
 							polkadot_config,
 							collator_options,
@@ -1159,13 +1154,13 @@ pub fn run() -> Result<()> {
 						.await
 						.map(|r| r.0)
 						.map_err(Into::into)),
-					Runtime::Seedling => ::cumulus_client_cli::ensure_feature!("seedling-runtime", crate::service::start_shell_node::<
+					Runtime::Seedling => ensure_feature!("seedling-runtime", crate::service::start_shell_node::<
 						seedling_runtime::RuntimeApi,
 					>(config, polkadot_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)),
-					Runtime::ContractsRococo => ::cumulus_client_cli::ensure_feature!("contracts-runtime", crate::service::start_contracts_rococo_node(
+					Runtime::ContractsRococo => ensure_feature!("contracts-runtime", crate::service::start_contracts_rococo_node(
 						config,
 						polkadot_config,
 						collator_options,
@@ -1175,7 +1170,7 @@ pub fn run() -> Result<()> {
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)),
-					Runtime::BridgeHub(bridge_hub_runtime_type) => ensure_feature!("bridge-hub-runtimes", match bridge_hub_runtime_type {
+					Runtime::BridgeHub(_bridge_hub_runtime_type) => ensure_feature!("bridge-hub-runtimes", match _bridge_hub_runtime_type {
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotLocal |
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotDevelopment =>
@@ -1221,7 +1216,7 @@ pub fn run() -> Result<()> {
 					}
 					.map_err(Into::into)),
 					Runtime::Penpal(_) | Runtime::Default =>
-						::cumulus_client_cli::ensure_feature!("glutton-runtime", crate::service::start_rococo_parachain_node(
+						ensure_feature!("glutton-runtime", crate::service::start_rococo_parachain_node(
 							config,
 							polkadot_config,
 							collator_options,
@@ -1232,7 +1227,7 @@ pub fn run() -> Result<()> {
 						.map(|r| r.0)
 						.map_err(Into::into)),
 					Runtime::Glutton =>
-						::cumulus_client_cli::ensure_feature!("glutton-runtime", crate::service::start_shell_node::<glutton_runtime::RuntimeApi>(
+						ensure_feature!("glutton-runtime", crate::service::start_shell_node::<glutton_runtime::RuntimeApi>(
 							config,
 							polkadot_config,
 							collator_options,
