@@ -63,6 +63,8 @@ pub type RelayBlockHash = bp_polkadot_core::Hash;
 pub type RelayBlockNumber = bp_polkadot_core::BlockNumber;
 /// Hasher of the bridged relay chain.
 pub type RelayBlockHasher = bp_polkadot_core::Hasher;
+/// Block type of the bridged relay chain.
+pub type RelayBlock = bp_polkadot_core::Block;
 
 /// Artifacts of the parachains head update.
 struct UpdateParachainHeadArtifacts {
@@ -138,7 +140,7 @@ pub mod pallet {
 		pallet_bridge_grandpa::Config<I, BridgedChain = Self::BridgedRelayChain>
 	{
 		type BridgedRelayChain: Chain<
-			BlockNumber = RelayBlockNumber,
+			Block = RelayBlock,
 			Hash = RelayBlockHash,
 			Hasher = RelayBlockHasher,
 		>;
@@ -148,7 +150,7 @@ pub mod pallet {
 	where
 		T: pallet_bridge_grandpa::Config<I>,
 		T::BridgedChain:
-			Chain<BlockNumber = RelayBlockNumber, Hash = RelayBlockHash, Hasher = RelayBlockHasher>,
+			Chain<Block = RelayBlock, Hash = RelayBlockHash, Hasher = RelayBlockHasher>,
 	{
 		type BridgedRelayChain = T::BridgedChain;
 	}

@@ -34,7 +34,6 @@ use hex_literal::hex;
 use relay_chain::HrmpChannelId;
 use sp_core::{blake2_256, H256};
 use sp_runtime::{
-	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 	DispatchErrorWithPostInfo,
 };

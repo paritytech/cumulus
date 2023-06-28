@@ -24,9 +24,7 @@ use bp_relayers::{
 };
 use frame_support::{parameter_types, traits::fungible::Mutate, weights::RuntimeDbWeight};
 use sp_core::H256;
-use sp_runtime::{
-	traits::{BlakeTwo256, ConstU32, IdentityLookup},
-};
+use sp_runtime::traits::{BlakeTwo256, ConstU32, IdentityLookup};
 
 pub type AccountId = u64;
 pub type Balance = u64;

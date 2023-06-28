@@ -414,7 +414,6 @@ mod tests {
 	use frame_support::{assert_noop, parameter_types, traits::OnIdle};
 	use sp_core::H256;
 	use sp_runtime::{
-		testing::Header,
 		traits::{BlakeTwo256, IdentityLookup},
 		DispatchError::BadOrigin,
 	};

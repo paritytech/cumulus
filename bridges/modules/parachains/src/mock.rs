@@ -20,7 +20,7 @@ use bp_runtime::{Chain, Parachain};
 use frame_support::{construct_runtime, parameter_types, traits::ConstU32, weights::Weight};
 use sp_runtime::{
 	testing::H256,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, Header, IdentityLookup},
 	MultiSignature, Perbill,
 };
 
@@ -161,7 +161,6 @@ impl frame_system::Config for TestRuntime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type Index = u64;
 	type RuntimeCall = RuntimeCall;
-	type BlockNumber = TestNumber;
 	type Hash = H256;
 	type Hashing = RegularParachainHasher;
 	type AccountId = AccountId;
@@ -257,7 +256,7 @@ impl pallet_bridge_parachains::benchmarking::Config<()> for TestRuntime {
 pub struct TestBridgedChain;
 
 impl Chain for TestBridgedChain {
-	type BlockNumber = crate::RelayBlockNumber;
+	type Block = crate::RelayBlock;
 	type Hash = crate::RelayBlockHash;
 	type Hasher = crate::RelayBlockHasher;
 
