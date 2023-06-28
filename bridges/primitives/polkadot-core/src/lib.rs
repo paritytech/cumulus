@@ -232,7 +232,6 @@ impl Chain for PolkadotLike {
 	type Hash = Hash;
 	type Hasher = Hasher;
 	type Block = Block;
-
 	type AccountId = AccountId;
 	type Balance = Balance;
 	type Index = Index;

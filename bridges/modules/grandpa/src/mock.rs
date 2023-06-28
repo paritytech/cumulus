@@ -100,10 +100,9 @@ impl grandpa::Config for TestRuntime {
 pub struct TestBridgedChain;
 
 impl Chain for TestBridgedChain {
-	type BlockNumber = <TestRuntime as frame_system::Config>::BlockNumber;
+	type Block = Block;
 	type Hash = <TestRuntime as frame_system::Config>::Hash;
 	type Hasher = <TestRuntime as frame_system::Config>::Hashing;
-	type Header = <TestRuntime as frame_system::Config>::Header;
 
 	type AccountId = AccountId;
 	type Balance = u64;
