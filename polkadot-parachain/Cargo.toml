@@ -148,6 +148,13 @@ try-runtime = [
 	"asset-hub-polkadot-runtime?/try-runtime",
 	"asset-hub-kusama-runtime?/try-runtime",
 	"asset-hub-westend-runtime?/try-runtime",
+	"bridge-hub-rococo-runtime?/try-runtime",
+	"bridge-hub-kusama-runtime?/try-runtime",
+	"bridge-hub-polkadot-runtime?/try-runtime",
+	"collectives-polkadot-runtime?/try-runtime",
+	"contracts-rococo-runtime?/try-runtime",
+	"penpal-runtime?/try-runtime",
+	"glutton-runtime?/try-runtime",
 	"shell-runtime?/try-runtime",
 	"try-runtime-cli/try-runtime",
 ]
