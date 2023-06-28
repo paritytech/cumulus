@@ -129,6 +129,7 @@ impl pallet_message_queue::Config for Test {
 	type MessageProcessor = SaveIntoThreadLocal;
 	type Size = u32;
 	type QueueChangeHandler = ();
+	type QueuePausedQuery = ();
 	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
 	type MaxStale = sp_core::ConstU32<8>;
 	type ServiceWeight = MaxWeight;

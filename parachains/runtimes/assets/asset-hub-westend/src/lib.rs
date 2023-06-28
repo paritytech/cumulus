@@ -33,13 +33,14 @@ use assets_common::local_and_foreign_assets::{LocalAndForeignAssets, MultiLocati
 use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	ord_parameter_types, parameter_types,
 	traits::{
 		tokens::nonfungibles_v2::Inspect, AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32,
-		ConstU64, ConstU8, InstanceFilter,
+		ConstU64, ConstU8, InstanceFilter, TransformOrigin,
 	},
 	weights::{ConstantMultiplier, Weight},
 	BoundedVec, PalletId, RuntimeDebug,
@@ -52,9 +53,9 @@ use pallet_asset_conversion_tx_payment::AssetConversionAdapter;
 use pallet_nfts::PalletFeatures;
 pub use parachains_common as common;
 use parachains_common::{
-	impls::DealWithFees, opaque, AccountId, AssetIdForTrustBackedAssets, AuraId, Balance,
-	BlockNumber, Hash, Header, Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS,
-	MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
+	impls::DealWithFees, opaque, process_xcm_message::*, AccountId, AssetIdForTrustBackedAssets,
+	AuraId, Balance, BlockNumber, Hash, Header, Index, Signature, AVERAGE_ON_INITIALIZE_RATIO,
+	DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -62,7 +63,7 @@ use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, Verify},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, Permill,
+	ApplyExtrinsicResult, Perbill, Permill,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -71,8 +72,7 @@ use sp_version::RuntimeVersion;
 use xcm::opaque::v3::MultiLocation;
 use xcm_config::{
 	ForeignAssetsConvertedConcreteId, PoolAssetsConvertedConcreteId,
-	TrustBackedAssetsConvertedConcreteId, WestendLocation, XcmConfig,
-	XcmOriginToTransactDispatchOrigin,
+	TrustBackedAssetsConvertedConcreteId, WestendLocation, XcmOriginToTransactDispatchOrigin,
 };
 
 #[cfg(any(feature = "std", test))]
@@ -596,16 +596,14 @@ impl pallet_message_queue::Config for Runtime {
 		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	type MessageProcessor = parachains_common::process_xcm_message::SplitMessages<
-		ProcessXcmMessage<
-			AggregateMessageOrigin,
-			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
-			RuntimeCall,
-		>,
-		XcmpQueue,
+	type MessageProcessor = ProcessXcmMessage<
+		AggregateMessageOrigin,
+		xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
+		RuntimeCall,
 	>;
 	type Size = u32;
 	type QueueChangeHandler = ();
+	type QueuePausedQuery = queue_paused_query::NarrowToSiblings<XcmpQueue>;
 	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
 	type MaxStale = sp_core::ConstU32<8>;
 	type ServiceWeight = MessageQueueServiceWeight;
@@ -619,17 +617,6 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type VersionWrapper = PolkadotXcm;
 	// Enqueue XCMP messages from siblings for later processing.
 	type XcmpQueue = TransformOrigin<MessageQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling>;
-	// Process XCMP messages from siblings. This is type-safe to only accept `ParaId`s.
-	#[cfg(feature = "runtime-benchmarks")]
-	type XcmpProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<ParaId>;
-	#[cfg(not(feature = "runtime-benchmarks"))]
-	type XcmpProcessor = ProcessFromSibling<
-		ProcessXcmMessage<
-			AggregateMessageOrigin,
-			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
-			RuntimeCall,
-		>,
-	>;
 	type MaxInboundSuspended = sp_core::ConstU32<1_000>;
 	type ControllerOrigin = EnsureRoot<AccountId>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;

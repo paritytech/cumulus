@@ -78,7 +78,10 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
-use parachains_common::{process_xcm_message::ProcessXcmMessage, AccountId, Signature};
+use parachains_common::{
+	process_xcm_message::{queue_paused_query, ProcessXcmMessage},
+	AccountId, Signature,
+};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -197,16 +200,14 @@ impl pallet_message_queue::Config for Runtime {
 		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	type MessageProcessor = parachains_common::process_xcm_message::SplitMessages<
-		ProcessXcmMessage<
-			AggregateMessageOrigin,
-			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
-			RuntimeCall,
-		>,
-		pallet_message_queue::mock_helpers::NoopMessageProcessor<cumulus_primitives_core::ParaId>,
+	type MessageProcessor = ProcessXcmMessage<
+		AggregateMessageOrigin,
+		xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
+		RuntimeCall,
 	>;
 	type Size = u32;
 	type QueueChangeHandler = ();
+	type QueuePausedQuery = (); // No XCMP queue pallet deployed.
 	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
 	type MaxStale = sp_core::ConstU32<8>;
 	type ServiceWeight = MessageQueueServiceWeight;

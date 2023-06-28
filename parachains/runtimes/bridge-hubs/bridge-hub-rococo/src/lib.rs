@@ -49,7 +49,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{ConstBool, ConstU32, ConstU64, ConstU8, Everything},
+	traits::{ConstBool, ConstU32, ConstU64, ConstU8, Everything, TransformOrigin},
 	weights::{ConstantMultiplier, Weight},
 	PalletId,
 };
@@ -58,7 +58,7 @@ use frame_system::{
 	EnsureRoot,
 };
 use parachains_common::process_xcm_message::{
-	ParaIdToSibling, ProcessFromSibling, ProcessXcmMessage,
+	queue_paused_query, ParaIdToSibling, ProcessXcmMessage,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
@@ -322,16 +322,14 @@ impl pallet_message_queue::Config for Runtime {
 		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	type MessageProcessor = parachains_common::process_xcm_message::SplitMessages<
-		ProcessXcmMessage<
-			AggregateMessageOrigin,
-			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
-			RuntimeCall,
-		>,
-		XcmpQueue,
+	type MessageProcessor = ProcessXcmMessage<
+		AggregateMessageOrigin,
+		xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
+		RuntimeCall,
 	>;
 	type Size = u32;
 	type QueueChangeHandler = ();
+	type QueuePausedQuery = queue_paused_query::NarrowToSiblings<XcmpQueue>;
 	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
 	type MaxStale = sp_core::ConstU32<8>;
 	type ServiceWeight = MessageQueueServiceWeight;
@@ -345,17 +343,6 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type VersionWrapper = PolkadotXcm;
 	// Enqueue XCMP messages from siblings for later processing.
 	type XcmpQueue = TransformOrigin<MessageQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling>;
-	// Process XCMP messages from siblings. This is type-safe to only accept `ParaId`s.
-	#[cfg(feature = "runtime-benchmarks")]
-	type XcmpProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<ParaId>;
-	#[cfg(not(feature = "runtime-benchmarks"))]
-	type XcmpProcessor = ProcessFromSibling<
-		ProcessXcmMessage<
-			AggregateMessageOrigin,
-			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
-			RuntimeCall,
-		>,
-	>;
 	type MaxInboundSuspended = sp_core::ConstU32<1_000>;
 	type ControllerOrigin = EnsureRoot<AccountId>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;

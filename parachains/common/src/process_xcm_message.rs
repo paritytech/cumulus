@@ -28,44 +28,23 @@ use sp_std::{fmt::Debug, marker::PhantomData};
 use sp_weights::{Weight, WeightMeter};
 use xcm::prelude::*;
 
-/// Transform a `ProcessMessage` implementation to assume that the origin is a sibling chain.
-///
-/// TODO move this to Substrate into a `TransformProcessMessageOrigin` adapter.
-pub struct ProcessFromSibling<P>(core::marker::PhantomData<P>);
-impl<P: ProcessMessage<Origin = AggregateMessageOrigin>> ProcessMessage for ProcessFromSibling<P> {
-	type Origin = ParaId;
+pub mod queue_paused_query {
+	use super::*;
+	use frame_support::traits::QueuePausedQuery;
 
-	fn process_message(
-		message: &[u8],
-		origin: Self::Origin,
-		meter: &mut WeightMeter,
-		id: &mut [u8; 32],
-	) -> Result<bool, ProcessMessageError> {
-		P::process_message(message, AggregateMessageOrigin::Sibling(origin), meter, id)
-	}
-}
+	/// Narrow the scope of the `Inner` query from `AggregateMessageOrigin` to `ParaId`.
+	///
+	/// All non-paraIds will be treated as unpaused.
+	pub struct NarrowToSiblings<Inner>(PhantomData<Inner>);
 
-/// Splits queued messages up between DMP and XCMoHRMP dispatch.
-pub struct SplitMessages<XcmProcessor, XcmpQueue>(PhantomData<(XcmProcessor, XcmpQueue)>);
-impl<XcmProcessor, XcmpQueue> ProcessMessage for SplitMessages<XcmProcessor, XcmpQueue>
-where
-	XcmProcessor: ProcessMessage<Origin = AggregateMessageOrigin>,
-	XcmpQueue: ProcessMessage<Origin = ParaId>,
-{
-	type Origin = AggregateMessageOrigin;
-
-	fn process_message(
-		message: &[u8],
-		origin: Self::Origin,
-		meter: &mut WeightMeter,
-		id: &mut [u8; 32],
-	) -> Result<bool, ProcessMessageError> {
-		use AggregateMessageOrigin::*;
-		match origin {
-			// DMP and local messages can be directly forwarded to the XCM executor since there is no flow control.
-			o @ Parent | o @ Loopback => XcmProcessor::process_message(message, o, meter, id),
-			// XCMoHRMP need to be tunneled back through the XCMP queue pallet to respect the suspension logic.
-			Sibling(para) => XcmpQueue::process_message(message, para, meter, id),
+	impl<Inner: QueuePausedQuery<ParaId>> QueuePausedQuery<AggregateMessageOrigin>
+		for NarrowToSiblings<Inner>
+	{
+		fn is_paused(origin: &AggregateMessageOrigin) -> bool {
+			match origin {
+				AggregateMessageOrigin::Sibling(id) => Inner::is_paused(id),
+				_ => false,
+			}
 		}
 	}
 }

@@ -46,7 +46,7 @@ use cumulus_primitives_core::{
 };
 use frame_support::{
 	defensive, defensive_assert,
-	traits::{EnqueueMessage, EnsureOrigin, Get, ProcessMessage, ProcessMessageError},
+	traits::{EnqueueMessage, EnsureOrigin, Get, QueuePausedQuery},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight, WeightMeter},
 	BoundedVec,
 };
@@ -91,9 +91,6 @@ pub mod pallet {
 
 		/// Enqueue an inbound horizontal message for later processing.
 		type XcmpQueue: EnqueueMessage<ParaId>;
-
-		/// The message processor that this pallet uses after checking the suspension logic.
-		type XcmpProcessor: ProcessMessage<Origin = ParaId>;
 
 		/// The maximum number of inbound XCMP channels that can be suspended simultaneously.
 		///
@@ -606,33 +603,20 @@ impl<T: Config> OnQueueChanged<ParaId> for Pallet<T> {
 	}
 }
 
-impl<T: Config> ProcessMessage for Pallet<T> {
-	type Origin = ParaId;
-
-	fn process_message(
-		message: &[u8],
-		origin: Self::Origin,
-		meter: &mut WeightMeter,
-		id: &mut [u8; 32],
-	) -> Result<bool, ProcessMessageError> {
-		if !meter.check_accrue(T::WeightInfo::process_message()) {
-			return Err(ProcessMessageError::Overweight(T::WeightInfo::process_message()))
+impl<T: Config> QueuePausedQuery<ParaId> for Pallet<T> {
+	fn is_paused(para: &ParaId) -> bool {
+		if !QueueSuspended::<T>::get() {
+			return false
 		}
 
 		let sender_origin = T::ControllerOriginConverter::convert_origin(
-			(Parent, Parachain(origin.into())),
+			(Parent, Parachain((*para).into())),
 			OriginKind::Superuser,
 		);
 		let is_controller =
 			sender_origin.map_or(false, |origin| T::ControllerOrigin::try_origin(origin).is_ok());
 
-		let pallet_suspended = QueueSuspended::<T>::get();
-		if pallet_suspended && !is_controller {
-			// Nothing to do for this queue; go to the next one.
-			return Err(ProcessMessageError::Yield)
-		}
-
-		T::XcmpProcessor::process_message(message, origin, meter, id)
+		!is_controller
 	}
 }
 

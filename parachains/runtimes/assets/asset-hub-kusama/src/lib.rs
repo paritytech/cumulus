@@ -55,7 +55,7 @@ use frame_support::{
 	parameter_types,
 	traits::{
 		AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse,
-		InstanceFilter,
+		InstanceFilter, TransformOrigin,
 	},
 	weights::{ConstantMultiplier, Weight},
 	PalletId, RuntimeDebug,
@@ -551,16 +551,14 @@ impl pallet_message_queue::Config for Runtime {
 		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	type MessageProcessor = parachains_common::process_xcm_message::SplitMessages<
-		ProcessXcmMessage<
-			AggregateMessageOrigin,
-			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
-			RuntimeCall,
-		>,
-		XcmpQueue,
+	type MessageProcessor = ProcessXcmMessage<
+		AggregateMessageOrigin,
+		xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
+		RuntimeCall,
 	>;
 	type Size = u32;
 	type QueueChangeHandler = ();
+	type QueuePausedQuery = queue_paused_query::NarrowToSiblings<XcmpQueue>;
 	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
 	type MaxStale = sp_core::ConstU32<8>;
 	type ServiceWeight = MessageQueueServiceWeight;
@@ -578,17 +576,6 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type VersionWrapper = PolkadotXcm;
 	// Enqueue XCMP messages from siblings for later processing.
 	type XcmpQueue = TransformOrigin<MessageQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling>;
-	// Process XCMP messages from siblings. This is type-safe to only accept `ParaId`s.
-	#[cfg(feature = "runtime-benchmarks")]
-	type XcmpProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<ParaId>;
-	#[cfg(not(feature = "runtime-benchmarks"))]
-	type XcmpProcessor = ProcessFromSibling<
-		ProcessXcmMessage<
-			AggregateMessageOrigin,
-			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
-			RuntimeCall,
-		>,
-	>;
 	type MaxInboundSuspended = sp_core::ConstU32<1_000>;
 	type ControllerOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,

@@ -25,9 +25,7 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
-use parachains_common::process_xcm_message::{
-	ParaIdToSibling, ProcessFromSibling, ProcessXcmMessage,
-};
+use parachains_common::process_xcm_message::{ParaIdToSibling, ProcessXcmMessage};
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -240,17 +238,6 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type XcmpQueue =
 		TransformOrigin<crate::MessageQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling>;
-	// Process XCMP messages from siblings. This is type-safe to only accept `ParaId`s.
-	#[cfg(feature = "runtime-benchmarks")]
-	type XcmpProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<ParaId>;
-	#[cfg(not(feature = "runtime-benchmarks"))]
-	type XcmpProcessor = ProcessFromSibling<
-		ProcessXcmMessage<
-			AggregateMessageOrigin,
-			xcm_executor::XcmExecutor<XcmConfig>,
-			RuntimeCall,
-		>,
-	>;
 	type MaxInboundSuspended = sp_core::ConstU32<1_000>;
 	type ControllerOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,

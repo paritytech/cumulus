@@ -31,6 +31,7 @@ mod weights;
 mod xcm_config;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+use cumulus_primitives_core::AggregateMessageOrigin;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -57,9 +58,9 @@ use frame_support::{
 use frame_system::limits::{BlockLength, BlockWeights};
 pub use parachains_common as common;
 use parachains_common::{
-	impls::DealWithFees, opaque, AccountId, BlockNumber, Hash, Header, Index, Signature,
-	AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT, MINUTES, NORMAL_DISPATCH_RATIO,
-	SLOT_DURATION,
+	impls::DealWithFees, opaque, process_xcm_message::*, AccountId, BlockNumber, Hash, Header,
+	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT, MINUTES,
+	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 pub use parachains_common::{AuraId, Balance};
 use xcm_config::CollatorSelectionUpdateOrigin;
@@ -293,16 +294,14 @@ impl pallet_message_queue::Config for Runtime {
 		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	type MessageProcessor = parachains_common::process_xcm_message::SplitMessages<
-		parachains_common::process_xcm_message::ProcessXcmMessage<
-			cumulus_primitives_core::AggregateMessageOrigin,
-			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
-			RuntimeCall,
-		>,
-		XcmpQueue,
+	type MessageProcessor = ProcessXcmMessage<
+		AggregateMessageOrigin,
+		xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
+		RuntimeCall,
 	>;
 	type Size = u32;
 	type QueueChangeHandler = ();
+	type QueuePausedQuery = queue_paused_query::NarrowToSiblings<XcmpQueue>;
 	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
 	type MaxStale = sp_core::ConstU32<8>;
 	type ServiceWeight = MessageQueueServiceWeight;
