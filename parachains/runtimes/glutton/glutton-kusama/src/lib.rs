@@ -78,10 +78,7 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
-use parachains_common::{
-	process_xcm_message::{queue_paused_query, ProcessXcmMessage},
-	AccountId, Signature,
-};
+use parachains_common::{process_xcm_message::ProcessXcmMessage, AccountId, Signature};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
