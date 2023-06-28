@@ -42,6 +42,9 @@ use sp_runtime::traits::{AccountIdConversion, ConstU16, ConvertToValue, Replace,
 use xcm::latest::BodyId;
 use xcm_builder::{AliasesIntoAccountId32, LocatableAssetId, PayOverXcm};
 
+#[cfg(feature = "runtime-benchmarks")]
+use crate::impls::benchmarks::{OpenHrmpChannel, PayWithEnsure};
+
 /// The Fellowship members' ranks.
 pub mod ranks {
 	use pallet_ranked_collective::Rank;
@@ -190,18 +193,8 @@ pub type FellowshipSalaryInstance = pallet_salary::Instance1;
 
 use xcm::prelude::*;
 
-#[cfg(not(feature = "runtime-benchmarks"))]
 parameter_types! {
 	pub AssetHub: MultiLocation = (Parent, Parachain(1000)).into();
-}
-
-#[cfg(feature = "runtime-benchmarks")]
-parameter_types! {
-	// The reachable location within the benchmark environment.
-	pub AssetHub: MultiLocation = Parent.into();
-}
-
-parameter_types! {
 	pub AssetHubUsdtId: AssetId = (PalletInstance(50), GeneralIndex(1984)).into();
 	pub UsdtAsset: LocatableAssetId = LocatableAssetId {
 		location: AssetHub::get(),
@@ -229,7 +222,11 @@ pub type FellowshipSalaryPaymaster = PayOverXcm<
 impl pallet_salary::Config<FellowshipSalaryInstance> for Runtime {
 	type WeightInfo = weights::pallet_salary::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
+
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	type Paymaster = FellowshipSalaryPaymaster;
+	#[cfg(feature = "runtime-benchmarks")]
+	type Paymaster = PayWithEnsure<FellowshipSalaryPaymaster, OpenHrmpChannel<ConstU32<1000>>>;
 	type Members = pallet_ranked_collective::Pallet<Runtime, FellowshipCollectiveInstance>;
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
