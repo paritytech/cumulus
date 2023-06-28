@@ -25,7 +25,6 @@ use bp_relayers::{
 use frame_support::{parameter_types, traits::fungible::Mutate, weights::RuntimeDbWeight};
 use sp_core::H256;
 use sp_runtime::{
-	testing::Header as SubstrateHeader,
 	traits::{BlakeTwo256, ConstU32, IdentityLookup},
 };
 

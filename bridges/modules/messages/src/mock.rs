@@ -39,7 +39,6 @@ use frame_support::{
 use scale_info::TypeInfo;
 use sp_core::H256;
 use sp_runtime::{
-	testing::Header as SubstrateHeader,
 	traits::{BlakeTwo256, ConstU32, IdentityLookup},
 	Perbill,
 };
