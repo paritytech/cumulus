@@ -9,7 +9,7 @@ use frame_support::{
 use pallet_contracts::{
 	weights::SubstrateWeight, Config, DebugInfo, DefaultAddressGenerator, Frame, Schedule,
 };
-use pallet_contracts::migration::v12;
+use pallet_contracts::migration::{v9, v10, v11, v12};
 
 pub use parachains_common::AVERAGE_ON_INITIALIZE_RATIO;
 
