@@ -6,13 +6,14 @@ edition = "2021"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
-scale-info = { version = "2.7.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.8.0", default-features = false, features = ["derive"] }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", optional = true, default-features = false, branch = "master" }
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", optional = true, default-features = false, branch = "master" }
 frame-try-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "master" }
 pallet-message-queue = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -54,6 +55,7 @@ runtime-benchmarks = [
 	"pallet-glutton/runtime-benchmarks",
 	"pallet-message-queue/runtime-benchmarks",
 	"pallet-sudo/runtime-benchmarks",
+	"cumulus-pallet-parachain-system/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
 ]
 std = [
@@ -62,6 +64,7 @@ std = [
 	"frame-executive/std",
 	"frame-support/std",
 	"frame-system/std",
+	"frame-system-rpc-runtime-api/std",
 	"pallet-glutton/std",
 	"pallet-sudo/std",
 	"pallet-message-queue/std",

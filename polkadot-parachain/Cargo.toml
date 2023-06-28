@@ -1,6 +1,6 @@
 [package]
 name = "polkadot-parachain-bin"
-version = "0.9.420"
+version = "0.9.430"
 authors = ["Parity Technologies <admin@parity.io>"]
 build = "build.rs"
 edition = "2021"
@@ -12,13 +12,13 @@ path = "src/main.rs"
 
 [dependencies]
 async-trait = "0.1.68"
-clap = { version = "4.3.2", features = ["derive"] }
+clap = { version = "4.3.8", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 futures = "0.3.28"
 hex-literal = "0.4.1"
-log = "0.4.18"
-serde = { version = "1.0.163", features = ["derive"] }
-serde_json = "1.0.96"
+log = "0.4.19"
+serde = { version = "1.0.164", features = ["derive"] }
+serde_json = "1.0.97"
 
 # Local
 rococo-parachain-runtime = { path = "../parachains/runtimes/testing/rococo-parachain" }
