@@ -14,10 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::HeaderIdProvider;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{weights::Weight, Parameter};
-use num_traits::{AsPrimitive, Bounded, CheckedSub, Saturating, SaturatingAdd, Zero};
+use num_traits::{Bounded, CheckedSub, SaturatingAdd, Zero};
 use sp_runtime::{
 	traits::{
 		AtLeast32Bit, AtLeast32BitUnsigned, Block as BlockT, Hash as HashT, Header as HeaderT,
@@ -26,7 +25,7 @@ use sp_runtime::{
 	},
 	FixedPointOperand,
 };
-use sp_std::{convert::TryFrom, fmt::Debug, hash::Hash, str::FromStr, vec, vec::Vec};
+use sp_std::{convert::TryFrom, fmt::Debug, hash::Hash, vec, vec::Vec};
 
 /// Chain call, that is either SCALE-encoded, or decoded.
 #[derive(Debug, Clone, PartialEq)]
