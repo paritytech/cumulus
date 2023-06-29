@@ -46,7 +46,7 @@ use sp_std::{
 use sp_trie::MemoryDB;
 
 type TrieBackend<B> = sp_state_machine::TrieBackend<
-	MemoryDB<HashFor<B>>,
+	trie_cache::ReadOnceBackend<HashFor<B>>,
 	HashFor<B>,
 	trie_cache::CacheProvider<HashFor<B>>,
 >;
@@ -133,11 +133,12 @@ where
 
 	sp_std::mem::drop(storage_proof);
 
+	let wrapped = trie_cache::ReadOnceBackend::new(db);
 	let cache = trie_cache::CacheProvider::new();
 	// We use the storage root of the `parent_head` to ensure that it is the correct root.
 	// This is already being done above while creating the in-memory db, but let's be paranoid!!
 	let backend = sp_state_machine::TrieBackendBuilder::new_with_cache(
-		db,
+		wrapped,
 		*parent_header.state_root(),
 		cache,
 	)

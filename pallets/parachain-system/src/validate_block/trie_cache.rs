@@ -54,7 +54,7 @@ impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleCache<'a, H> {
 			if let Some(value) = self.node_cache.get(&hash) {
 				return Ok(value)
 			} else {
-				panic!("This can not happen");
+				panic!("We just checked that the value is contained; qed");
 			}
 		}
 
@@ -105,13 +105,13 @@ impl<H: Hasher> TrieCacheProvider<H> for CacheProvider<H> {
 	fn merge<'a>(&'a self, _other: Self::Cache<'a>, _new_root: <H as Hasher>::Out) {}
 }
 
-struct ReadOnceBackend<H: Hasher> {
-	inner: sp_trie::MemoryDB<H>,
+pub struct ReadOnceBackend<H: Hasher> {
+	inner: spin::Mutex<sp_trie::MemoryDB<H>>,
 }
 
 impl<H: Hasher> ReadOnceBackend<H> {
 	pub fn new(inner: sp_trie::MemoryDB<H>) -> Self {
-		Self { inner }
+		Self { inner: spin::Mutex::new(inner) }
 	}
 }
 
@@ -123,8 +123,10 @@ impl<H: Hasher> TrieBackendStorage<H> for ReadOnceBackend<H> {
 		key: &H::Out,
 		prefix: hash_db::Prefix,
 	) -> Result<Option<trie_db::DBValue>, sp_state_machine::DefaultError> {
-		todo!();
-		let maybe_value = self.inner.remove_and_purge(key, prefix);
-		Ok(maybe_value)
+		let mut guard = self.inner.lock();
+		if let value @ Some(_) = guard.remove_and_purge(key, prefix) {
+			return Ok(value)
+		}
+		TrieBackendStorage::get(&&*guard, key, prefix)
 	}
 }
