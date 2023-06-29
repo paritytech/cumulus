@@ -224,7 +224,7 @@ mod tests {
 		pub const PotId: PalletId = PalletId(*b"PotStake");
 		pub const MaxCandidates: u32 = 20;
 		pub const MaxInvulnerables: u32 = 20;
-		pub const MinCandidates: u32 = 1;
+		pub const MinEligibleCollators: u32 = 1;
 	}
 
 	impl pallet_collator_selection::Config for Test {
@@ -233,7 +233,7 @@ mod tests {
 		type UpdateOrigin = EnsureRoot<AccountId>;
 		type PotId = PotId;
 		type MaxCandidates = MaxCandidates;
-		type MinCandidates = MinCandidates;
+		type MinEligibleCollators = MinEligibleCollators;
 		type MaxInvulnerables = MaxInvulnerables;
 		type ValidatorId = <Self as frame_system::Config>::AccountId;
 		type ValidatorIdOf = IdentityCollator;

@@ -194,7 +194,7 @@ fn remove_invulnerable_works() {
 fn candidate_to_invulnerable_works() {
 	new_test_ext().execute_with(|| {
 		initialize_to_block(1);
-		assert_eq!(<crate::tests::MinCandidates>::get(), 1);
+		assert_eq!(<crate::tests::MinEligibleCollators>::get(), 1);
 		assert_eq!(CollatorSelection::desired_candidates(), 2);
 		assert_eq!(CollatorSelection::candidacy_bond(), 10);
 		assert_eq!(CollatorSelection::candidates(), Vec::new());
@@ -296,14 +296,25 @@ fn cannot_register_candidate_if_too_many() {
 #[test]
 fn cannot_unregister_candidate_if_too_few() {
 	new_test_ext().execute_with(|| {
+		assert_eq!(CollatorSelection::candidates(), Vec::new());
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+		assert_ok!(CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(RootAccount::get()), 1));
+		assert_noop!(
+			CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(RootAccount::get()), 2),
+			Error::<Test>::TooFewEligibleCollators,
+		);
+
 		// reset desired candidates:
 		<crate::DesiredCandidates<Test>>::put(1);
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(4)));
 
+		// now we can remove `2`
+		assert_ok!(CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(RootAccount::get()), 2));
+
 		// can not remove too few
 		assert_noop!(
 			CollatorSelection::leave_intent(RuntimeOrigin::signed(4)),
-			Error::<Test>::TooFewCandidates,
+			Error::<Test>::TooFewEligibleCollators,
 		);
 	})
 }
@@ -527,23 +538,30 @@ fn kick_mechanism() {
 #[test]
 fn should_not_kick_mechanism_too_few() {
 	new_test_ext().execute_with(|| {
-		// add a new collator
+		// remove the invulnerables and add new collators 3 and 5
+		assert_eq!(CollatorSelection::candidates(), Vec::new());
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+		assert_ok!(CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(RootAccount::get()), 1));
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)));
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(5)));
+		assert_ok!(CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(RootAccount::get()), 2));
+
 		initialize_to_block(10);
 		assert_eq!(CollatorSelection::candidates().len(), 2);
+
 		initialize_to_block(20);
 		assert_eq!(SessionChangeBlock::get(), 20);
-		// 4 authored this block, 5 gets to stay too few 3 was kicked
+		// 4 authored this block, 3 is kicked, 5 stays because of too few collators
 		assert_eq!(CollatorSelection::candidates().len(), 1);
 		// 3 will be kicked after 1 session delay
-		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 3, 5]);
+		assert_eq!(SessionHandlerCollators::get(), vec![3, 5]);
 		let collator = CandidateInfo { who: 5, deposit: 10 };
 		assert_eq!(CollatorSelection::candidates(), vec![collator]);
 		assert_eq!(CollatorSelection::last_authored_block(4), 20);
+
 		initialize_to_block(30);
 		// 3 gets kicked after 1 session delay
-		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 5]);
+		assert_eq!(SessionHandlerCollators::get(), vec![5]);
 		// kicked collator gets funds back
 		assert_eq!(Balances::free_balance(3), 100);
 	});

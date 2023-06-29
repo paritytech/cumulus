@@ -42,7 +42,7 @@
 //! manner.
 //!
 //! Candidates will not be allowed to get kicked or leave_intent if the total number of candidates
-//! fall below MinCandidates. This is for potential disaster recovery scenarios.
+//! fall below `MinEligibleCollators`. This is to ensure that some collators will always exist.
 //!
 //! ### Rewards
 //!
@@ -128,17 +128,17 @@ pub mod pallet {
 		/// Account Identifier from which the internal Pot is generated.
 		type PotId: Get<PalletId>;
 
-		/// Maximum number of candidates that we should have. This is enforced in code.
+		/// Maximum number of candidates that we should have.
 		///
 		/// This does not take into account the invulnerables.
 		type MaxCandidates: Get<u32>;
 
-		/// Minimum number of candidates that we should have. This is used for disaster recovery.
-		///
-		/// This does not take into account the invulnerables.
-		type MinCandidates: Get<u32>;
+		/// Minimum number eligible collators. Should always be greater than zero. This includes
+		/// Invulnerable collators. This ensures that there will always be one collator who can
+		/// produce a block.
+		type MinEligibleCollators: Get<u32>;
 
-		/// Maximum number of invulnerables. This is enforced in code.
+		/// Maximum number of invulnerables.
 		type MaxInvulnerables: Get<u32>;
 
 		// Will be kicked if block is not produced in threshold.
@@ -181,8 +181,7 @@ pub mod pallet {
 		StorageValue<_, BoundedVec<T::AccountId, T::MaxInvulnerables>, ValueQuery>;
 
 	/// The (community, limited) collation candidates. `Candidates` and `Invulnerables` should be
-	/// mutually exclusive, but it is possible to have an `AccountId` in both if transition from
-	/// candidate to invulnerable would reduce the number of candidates below `MinCandidates`.
+	/// mutually exclusive.
 	#[pallet::storage]
 	#[pallet::getter(fn candidates)]
 	pub type Candidates<T: Config> = StorageValue<
@@ -271,7 +270,7 @@ pub mod pallet {
 		/// The pallet has too many candidates.
 		TooManyCandidates,
 		/// Leaving would result in too few candidates.
-		TooFewCandidates,
+		TooFewEligibleCollators,
 		/// Account is already a candidate.
 		AlreadyCandidate,
 		/// Account is not a candidate.
@@ -301,6 +300,15 @@ pub mod pallet {
 			new: Vec<T::AccountId>,
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
+
+			// don't wipe out the collator set
+			if new.is_empty() {
+				ensure!(
+					Self::candidates().len() as u32 >= T::MinEligibleCollators::get(),
+					Error::<T>::TooFewEligibleCollators
+				);
+			}
+
 			let mut bounded_invulnerables = BoundedVec::<_, T::MaxInvulnerables>::try_from(new)
 				.map_err(|_| Error::<T>::TooManyInvulnerables)?;
 
@@ -313,14 +321,10 @@ pub mod pallet {
 					Error::<T>::ValidatorNotRegistered
 				);
 
-				// We don't allow Invulnerables to `register_as_candidate`. If someone is chosen as
-				// an Invulnerable, we should try to remove them from `Candidates` such that
-				// `Invulnerables` and `Candidates` are mutually exclusive sets.
-				if Self::candidates().len() as u32 > T::MinCandidates::get() {
-					// We don't really care about the outcome. If it succeeds, it just tells us how
-					//  manycandidates are left. If it fails, it's because `who` wasn't a candidate.
-					let _outcome = Self::try_remove_candidate(&account_id, false);
-				}
+				// We don't really care about the outcome. If it succeeds, it just tells us how
+				// many candidates are left. If it fails, it's because `who` wasn't a candidate,
+				// which is the state we want anyway.
+				let _outcome = Self::try_remove_candidate(&account_id, false);
 			}
 
 			// Invulnerables must be sorted for removal.
@@ -412,14 +416,15 @@ pub mod pallet {
 		/// Deregister `origin` as a collator candidate. Note that the collator can only leave on
 		/// session change. The `CandidacyBond` will be unreserved immediately.
 		///
-		/// This call will fail if the total number of candidates would drop below `MinCandidates`.
+		/// This call will fail if the total number of candidates would drop below
+		/// `MinEligibleCollators`.
 		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::leave_intent(T::MaxCandidates::get()))]
 		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(
-				Self::candidates().len() as u32 > T::MinCandidates::get(),
-				Error::<T>::TooFewCandidates
+				Self::eligible_collators() as u32 > T::MinEligibleCollators::get(),
+				Error::<T>::TooFewEligibleCollators
 			);
 			let current_count = Self::try_remove_candidate(&who, true)?;
 
@@ -472,6 +477,11 @@ pub mod pallet {
 		pub fn remove_invulnerable(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
 			T::UpdateOrigin::ensure_origin(origin)?;
 
+			ensure!(
+				Self::eligible_collators() as u32 > T::MinEligibleCollators::get(),
+				Error::<T>::TooFewEligibleCollators
+			);
+
 			<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
 				let pos =
 					invulnerables.binary_search(&who).map_err(|_| Error::<T>::NotInvulnerable)?;
@@ -488,6 +498,10 @@ pub mod pallet {
 		/// Get a unique, inaccessible account id from the `PotId`.
 		pub fn account_id() -> T::AccountId {
 			T::PotId::get().into_account_truncating()
+		}
+
+		fn eligible_collators() -> u32 {
+			Self::candidates().len().saturating_add(Self::invulnerables().len()).try_into().unwrap()
 		}
 
 		/// Removes a candidate if they exist and sends them back their deposit
@@ -536,7 +550,7 @@ pub mod pallet {
 					let last_block = <LastAuthoredBlock<T>>::get(c.who.clone());
 					let since_last = now.saturating_sub(last_block);
 					if since_last < kick_threshold ||
-						Self::candidates().len() as u32 <= T::MinCandidates::get()
+						Self::eligible_collators() <= T::MinEligibleCollators::get()
 					{
 						Some(c.who)
 					} else {
