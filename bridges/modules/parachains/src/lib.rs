@@ -32,7 +32,6 @@ use bp_polkadot_core::parachains::{ParaHash, ParaHead, ParaHeadsProof, ParaId};
 use bp_runtime::{Chain, HashOf, HeaderId, HeaderIdOf, Parachain, StorageProofError};
 use frame_support::{dispatch::PostDispatchInfo, DefaultNoBound};
 use sp_std::{marker::PhantomData, vec::Vec};
-use sp_runtime::generic;
 
 #[cfg(feature = "runtime-benchmarks")]
 use bp_parachains::ParaStoredHeaderDataBuilder;
@@ -65,15 +64,7 @@ pub type RelayBlockNumber = bp_polkadot_core::BlockNumber;
 /// Hasher of the bridged relay chain.
 pub type RelayBlockHasher = bp_polkadot_core::Hasher;
 /// Block type of the bridged relay chain.
-pub type RelayBlock<T> = generic::Block<
-	generic::Header<RelayBlockNumber, sp_runtime::traits::BlakeTwo256>,
-	generic::UncheckedExtrinsic<
-		<T as frame_system::Config>::AccountId,
-		<T as frame_system::Config>::RuntimeCall,
-		(),
-		(),
-	>
->;
+pub type RelayBlock = bp_polkadot_core::Block;
 
 /// Artifacts of the parachains head update.
 struct UpdateParachainHeadArtifacts {
@@ -149,7 +140,6 @@ pub mod pallet {
 		pallet_bridge_grandpa::Config<I, BridgedChain = Self::BridgedRelayChain>
 	{
 		type BridgedRelayChain: Chain<
-			Block = RelayBlock<Self>,
 			Hash = RelayBlockHash,
 			Hasher = RelayBlockHasher,
 		>;
@@ -159,7 +149,8 @@ pub mod pallet {
 	where
 		T: pallet_bridge_grandpa::Config<I>,
 		T::BridgedChain:
-			Chain<Block = RelayBlock<T>, Hash = RelayBlockHash, Hasher = RelayBlockHasher>,
+			Chain<Hash = RelayBlockHash, Hasher = RelayBlockHasher>,
+		<<T::BridgedChain as Chain>::Block as sp_runtime::traits::Block>::Header: sp_runtime::traits::Header<Number = RelayBlockNumber>
 	{
 		type BridgedRelayChain = T::BridgedChain;
 	}
@@ -333,7 +324,7 @@ pub mod pallet {
 			>::get(relay_block_hash)
 			.ok_or(Error::<T, I>::UnknownRelayChainBlock)?;
 			ensure!(
-				relay_block.number == relay_block_number,
+				relay_block.number == relay_block_number.into(),
 				Error::<T, I>::InvalidRelayChainBlockNumber,
 			);
 

@@ -24,7 +24,7 @@ use crate::messages_call_ext::{
 };
 use bp_messages::{LaneId, MessageNonce};
 use bp_relayers::{RewardsAccountOwner, RewardsAccountParams};
-use bp_runtime::{Parachain, ParachainIdOf, RangeInclusiveExt, StaticStrProvider};
+use bp_runtime::{Chain, Parachain, ParachainIdOf, RangeInclusiveExt, StaticStrProvider};
 use codec::{Decode, Encode};
 use frame_support::{
 	dispatch::{CallableCallFor, DispatchInfo, Dispatchable, PostDispatchInfo},
@@ -278,6 +278,8 @@ where
 		+ GrandpaCallSubType<Runtime, Runtime::BridgesGrandpaPalletInstance>
 		+ ParachainsCallSubType<Runtime, Para::Instance>
 		+ MessagesCallSubType<Runtime, Msgs::Instance>,
+	<<<Runtime as BoundedBridgeGrandpaConfig<Runtime::BridgesGrandpaPalletInstance>>::BridgedRelayChain as Chain>::Block as sp_runtime::traits::Block>::Header: 
+	sp_runtime::traits::Header<Number = RelayBlockNumber>
 {
 	fn expand_call<'a>(&self, call: &'a CallOf<Runtime>) -> Vec<&'a CallOf<Runtime>> {
 		match call.is_sub_type() {
@@ -525,6 +527,8 @@ where
 		+ GrandpaCallSubType<Runtime, Runtime::BridgesGrandpaPalletInstance>
 		+ ParachainsCallSubType<Runtime, Para::Instance>
 		+ MessagesCallSubType<Runtime, Msgs::Instance>,
+	<<<Runtime as BoundedBridgeGrandpaConfig<Runtime::BridgesGrandpaPalletInstance>>::BridgedRelayChain as Chain>::Block as sp_runtime::traits::Block>::Header: 
+		sp_runtime::traits::Header<Number = RelayBlockNumber>
 {
 	const IDENTIFIER: &'static str = Id::STR;
 	type AccountId = Runtime::AccountId;

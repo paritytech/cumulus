@@ -256,7 +256,7 @@ impl pallet_bridge_parachains::benchmarking::Config<()> for TestRuntime {
 pub struct TestBridgedChain;
 
 impl Chain for TestBridgedChain {
-	type Block = crate::RelayBlock<TestRuntime>;
+	type Block = crate::RelayBlock;
 	type Hash = crate::RelayBlockHash;
 	type Hasher = crate::RelayBlockHasher;
 
