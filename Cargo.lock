@@ -3086,6 +3086,7 @@ dependencies = [
  "cumulus-primitives-core",
  "frame-support",
  "log",
+ "pallet-asset-conversion-tx-payment",
  "parity-scale-codec",
  "polkadot-runtime-common",
  "sp-io",
