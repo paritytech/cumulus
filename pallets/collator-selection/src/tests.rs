@@ -223,10 +223,10 @@ fn candidate_to_invulnerable_works() {
 			RuntimeOrigin::signed(RootAccount::get()),
 			4
 		));
-		// but not remove `4` as a candidate, due to `min_candidates`
+		// and remove 4 from candidates, even with `min_candidates`.
 		assert!(CollatorSelection::invulnerables().to_vec().contains(&4));
-		assert_eq!(Balances::free_balance(4), 90); // sorry 4
-		assert_eq!(CollatorSelection::candidates().len(), 1);
+		assert_eq!(Balances::free_balance(4), 100); // sorry 4
+		assert_eq!(CollatorSelection::candidates().len(), 0);
 	});
 }
 

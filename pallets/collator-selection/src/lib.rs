@@ -295,7 +295,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Set the list of invulnerable (fixed) collators.
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::set_invulnerables(new.len() as u32, T::MaxCandidates::get()))]
+		#[pallet::weight(T::WeightInfo::set_invulnerables(new.len() as u32))]
 		pub fn set_invulnerables(
 			origin: OriginFor<T>,
 			new: Vec<T::AccountId>,
@@ -430,7 +430,7 @@ pub mod pallet {
 		///
 		/// The origin for this call must be the `UpdateOrigin`.
 		#[pallet::call_index(5)]
-		#[pallet::weight(T::WeightInfo::add_invulnerable(T::MaxInvulnerables::get() - 1, T::MaxCandidates::get()))]
+		#[pallet::weight(T::WeightInfo::add_invulnerable(T::MaxInvulnerables::get() - 1))]
 		pub fn add_invulnerable(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
 			T::UpdateOrigin::ensure_origin(origin)?;
 
