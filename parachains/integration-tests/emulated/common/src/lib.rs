@@ -1,10 +1,12 @@
 pub mod constants;
+pub mod impls;
 
 pub use constants::{
 	accounts::{ALICE, BOB},
 	asset_hub_kusama, asset_hub_polkadot, asset_hub_westend, bridge_hub_kusama,
 	bridge_hub_polkadot, bridge_hub_rococo, collectives, kusama, rococo, penpal, polkadot, westend,
 };
+pub use impls::{RococoWococoMessageHandler, WococoRococoMessageHandler};
 use frame_support::{parameter_types, sp_io, sp_tracing};
 pub use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, BlockNumber};
 pub use sp_core::{sr25519, storage::Storage, Get};
@@ -465,11 +467,13 @@ decl_test_networks! {
 decl_test_bridges! {
 	pub struct RococoWococoMockBridge {
 		source = BridgeHubRococo,
-		target = BridgeHubWococo
+		target = BridgeHubWococo,
+		handler = RococoWococoMessageHandler
 	},
 	pub struct WococoRococoMockBridge {
 		source = BridgeHubWococo,
-		target = BridgeHubRococo
+		target = BridgeHubRococo,
+		handler = WococoRococoMessageHandler
 	}
 	// TODO: uncomment when https://github.com/paritytech/cumulus/pull/2528 is merged
 	// pub struct PolkadotKusamaMockBridge {

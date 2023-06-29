@@ -54,6 +54,9 @@ bridge-hub-kusama-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-k
 bridge-hub-polkadot-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-polkadot" }
 bridge-hub-rococo-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-rococo" }
 xcm-emulator = { default-features = false, path = "../../../../xcm/xcm-emulator" }
+bp-messages = { path = "../../../../bridges/primitives/messages"}
+pallet-bridge-messages = { path = "../../../../bridges/modules/messages" }
+bridge-runtime-common = { path = "../../../../bridges/bin/runtime-common"}
 
 [features]
 runtime-benchmarks = [
