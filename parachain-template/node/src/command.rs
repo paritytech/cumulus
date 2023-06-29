@@ -230,15 +230,12 @@ pub fn run() -> Result<()> {
 		#[cfg(feature = "try-runtime")]
 		Some(Subcommand::TryRuntime(cmd)) => {
 			use parachain_template_runtime::MILLISECS_PER_BLOCK;
-			use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
 			use try_runtime_cli::block_building_info::timestamp_with_aura_info;
 
 			let runner = cli.create_runner(cmd)?;
 
-			type HostFunctionsOf<E> = ExtendedHostFunctions<
-				sp_io::SubstrateHostFunctions,
-				<E as NativeExecutionDispatch>::ExtendHostFunctions,
-			>;
+			type HostFunctions =
+				(sp_io::SubstrateHostFunctions, frame_benchmarking::benchmarking::HostFunctions);
 
 			// grab the task manager.
 			let registry = &runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
@@ -249,12 +246,7 @@ pub fn run() -> Result<()> {
 			let info_provider = timestamp_with_aura_info(MILLISECS_PER_BLOCK);
 
 			runner.async_run(|_| {
-				Ok((
-					cmd.run::<Block, HostFunctionsOf<ParachainNativeExecutor>, _>(Some(
-						info_provider,
-					)),
-					task_manager,
-				))
+				Ok((cmd.run::<Block, HostFunctions, _>(Some(info_provider)), task_manager))
 			})
 		},
 		#[cfg(not(feature = "try-runtime"))]
