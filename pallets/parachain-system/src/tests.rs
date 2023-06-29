@@ -30,6 +30,7 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::RawOrigin;
+use frame_system::pallet_prelude::BlockNumberFor;
 use hex_literal::hex;
 use relay_chain::HrmpChannelId;
 use sp_core::{blake2_256, H256};
@@ -206,7 +207,7 @@ fn wasm_ext() -> sp_io::TestExternalities {
 }
 
 struct BlockTest {
-	n: <Test as frame_system::Config>::BlockNumber,
+	n: BlockNumberFor<Test>,
 	within_block: Box<dyn Fn()>,
 	after_block: Option<Box<dyn Fn()>>,
 }
@@ -237,7 +238,7 @@ impl BlockTests {
 		self
 	}
 
-	fn add<F>(self, n: <Test as frame_system::Config>::BlockNumber, within_block: F) -> Self
+	fn add<F>(self, n: BlockNumberFor<Test>, within_block: F) -> Self
 	where
 		F: 'static + Fn(),
 	{
@@ -246,7 +247,7 @@ impl BlockTests {
 
 	fn add_with_post_test<F1, F2>(
 		self,
-		n: <Test as frame_system::Config>::BlockNumber,
+		n: BlockNumberFor<Test>,
 		within_block: F1,
 		after_block: F2,
 	) -> Self
