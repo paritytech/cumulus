@@ -16,7 +16,7 @@
 
 //! The actual implementation of the validate block functionality.
 
-use super::MemoryOptimizedValidationParams;
+use super::{trie_cache, MemoryOptimizedValidationParams};
 use cumulus_primitives_core::{
 	relay_chain::Hash as RHash, ParachainBlockData, PersistedValidationData,
 };
@@ -33,12 +33,10 @@ use core::{
 	sync::atomic::{AtomicU32, Ordering},
 };
 use frame_support::traits::{ExecuteBlock, ExtrinsicCall, Get, IsSubType};
-use hashbrown::hash_map::HashMap;
 use sp_core::storage::{ChildInfo, StateVersion};
 use sp_externalities::{set_and_run_with_externalities, Externalities};
 use sp_io::KillStorageResult;
 use sp_runtime::traits::{Block as BlockT, Extrinsic, HashFor, Header as HeaderT};
-use sp_state_machine::TrieCacheProvider;
 use sp_std::{
 	collections::btree_map::{BTreeMap, Entry},
 	prelude::*,
@@ -46,10 +44,12 @@ use sp_std::{
 	vec::Vec,
 };
 use sp_trie::MemoryDB;
-use trie_db::{node::NodeOwned, TrieError};
 
-type TrieBackend<B> =
-	sp_state_machine::TrieBackend<MemoryDB<HashFor<B>>, HashFor<B>, CacheProvider<HashFor<B>>>;
+type TrieBackend<B> = sp_state_machine::TrieBackend<
+	MemoryDB<HashFor<B>>,
+	HashFor<B>,
+	trie_cache::CacheProvider<HashFor<B>>,
+>;
 
 type Ext<'a, B> = sp_state_machine::Ext<'a, HashFor<B>, TrieBackend<B>>;
 
@@ -61,83 +61,6 @@ use core::marker::PhantomData;
 use hash_db::Hasher;
 use sp_trie::NodeCodec;
 
-struct SimpleCache<'a, H: Hasher> {
-	node_cache: spin::MutexGuard<'a, HashMap<H::Out, NodeOwned<H::Out>>>,
-	value_cache: spin::MutexGuard<'a, HashMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
-}
-
-impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleCache<'a, H> {
-	fn lookup_value_for_key(&mut self, key: &[u8]) -> Option<&trie_db::CachedValue<H::Out>> {
-		self.value_cache.get(key)
-	}
-
-	fn cache_value_for_key(&mut self, key: &[u8], value: trie_db::CachedValue<H::Out>) {
-		self.value_cache.insert(key.into(), value);
-	}
-
-	fn get_or_insert_node(
-		&mut self,
-		hash: <NodeCodec<H> as trie_db::NodeCodec>::HashOut,
-		fetch_node: &mut dyn FnMut() -> trie_db::Result<
-			NodeOwned<H::Out>,
-			H::Out,
-			<NodeCodec<H> as trie_db::NodeCodec>::Error,
-		>,
-	) -> trie_db::Result<&NodeOwned<H::Out>, H::Out, <NodeCodec<H> as trie_db::NodeCodec>::Error> {
-		if self.node_cache.contains_key(&hash) {
-			if let Some(value) = self.node_cache.get(&hash) {
-				return Ok(value)
-			} else {
-				panic!("This can not happen");
-			}
-		}
-
-		let fetched = match fetch_node() {
-			Ok(new_node) => new_node,
-			Err(e) => return Err(e),
-		};
-
-		let (_key, value) = self.node_cache.insert_unique_unchecked(hash, fetched);
-		Ok(value)
-	}
-
-	fn get_node(
-		&mut self,
-		hash: &H::Out,
-	) -> Option<&NodeOwned<<NodeCodec<H> as trie_db::NodeCodec>::HashOut>> {
-		self.node_cache.get(hash)
-	}
-}
-
-struct CacheProvider<H: Hasher> {
-	initialized: AtomicU32,
-	node_cache: spin::Mutex<HashMap<H::Out, NodeOwned<H::Out>>>,
-	value_cache: spin::Mutex<HashMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
-}
-
-impl<H: Hasher> CacheProvider<H> {
-	pub fn new() -> Self {
-		CacheProvider {
-			initialized: Default::default(),
-			node_cache: spin::Mutex::new(HashMap::new()),
-			value_cache: spin::Mutex::new(HashMap::new()),
-		}
-	}
-}
-
-impl<H: Hasher> TrieCacheProvider<H> for CacheProvider<H> {
-	type Cache<'a> = SimpleCache<'a, H> where H: 'a;
-
-	fn as_trie_db_cache(&self, _storage_root: <H as Hasher>::Out) -> Self::Cache<'_> {
-		SimpleCache { value_cache: self.value_cache.lock(), node_cache: self.node_cache.lock() }
-	}
-
-	fn as_trie_db_mut_cache(&self) -> Self::Cache<'_> {
-		SimpleCache { value_cache: self.value_cache.lock(), node_cache: self.node_cache.lock() }
-	}
-
-	fn merge<'a>(&'a self, _other: Self::Cache<'a>, _new_root: <H as Hasher>::Out) {}
-}
 /// Validate the given parachain block.
 ///
 /// This function is doing roughly the following:
@@ -210,7 +133,7 @@ where
 
 	sp_std::mem::drop(storage_proof);
 
-	let cache = CacheProvider::new();
+	let cache = trie_cache::CacheProvider::new();
 	// We use the storage root of the `parent_head` to ensure that it is the correct root.
 	// This is already being done above while creating the in-memory db, but let's be paranoid!!
 	let backend = sp_state_machine::TrieBackendBuilder::new_with_cache(
