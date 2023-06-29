@@ -87,7 +87,7 @@ use bridge_runtime_common::{
 	messages_xcm_extension::{XcmAsPlainPayload, XcmBlobMessageDispatch},
 };
 use parachains_common::{
-	impls::DealWithFees, opaque, AccountId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	impls::DealWithFees, AccountId, Balance, BlockNumber, Hash, Header, Index, Signature,
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_executor::XcmExecutor;

@@ -47,7 +47,7 @@ use pallet_transaction_payment::{Config as TransactionPaymentConfig, OnChargeTra
 use pallet_utility::{Call as UtilityCall, Config as UtilityConfig, Pallet as UtilityPallet};
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{DispatchInfoOf, Get, PostDispatchInfoOf, SignedExtension, Zero},
+	traits::{Block as BlockT, Header as HeaderT, DispatchInfoOf, Get, PostDispatchInfoOf, SignedExtension, Zero},
 	transaction_validity::{
 		TransactionPriority, TransactionValidity, TransactionValidityError, ValidTransactionBuilder,
 	},
@@ -278,8 +278,8 @@ where
 		+ GrandpaCallSubType<Runtime, Runtime::BridgesGrandpaPalletInstance>
 		+ ParachainsCallSubType<Runtime, Para::Instance>
 		+ MessagesCallSubType<Runtime, Msgs::Instance>,
-	<<<Runtime as BoundedBridgeGrandpaConfig<Runtime::BridgesGrandpaPalletInstance>>::BridgedRelayChain as Chain>::Block as sp_runtime::traits::Block>::Header: 
-	sp_runtime::traits::Header<Number = RelayBlockNumber>
+	<<<Runtime as BoundedBridgeGrandpaConfig<Runtime::BridgesGrandpaPalletInstance>>::BridgedRelayChain as Chain>::Block as BlockT>::Header: 
+		HeaderT<Number = RelayBlockNumber>
 {
 	fn expand_call<'a>(&self, call: &'a CallOf<Runtime>) -> Vec<&'a CallOf<Runtime>> {
 		match call.is_sub_type() {
@@ -527,8 +527,8 @@ where
 		+ GrandpaCallSubType<Runtime, Runtime::BridgesGrandpaPalletInstance>
 		+ ParachainsCallSubType<Runtime, Para::Instance>
 		+ MessagesCallSubType<Runtime, Msgs::Instance>,
-	<<<Runtime as BoundedBridgeGrandpaConfig<Runtime::BridgesGrandpaPalletInstance>>::BridgedRelayChain as Chain>::Block as sp_runtime::traits::Block>::Header: 
-		sp_runtime::traits::Header<Number = RelayBlockNumber>
+	<<<Runtime as BoundedBridgeGrandpaConfig<Runtime::BridgesGrandpaPalletInstance>>::BridgedRelayChain as Chain>::Block as BlockT>::Header: 
+		HeaderT<Number = RelayBlockNumber>
 {
 	const IDENTIFIER: &'static str = Id::STR;
 	type AccountId = Runtime::AccountId;
