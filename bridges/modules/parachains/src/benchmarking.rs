@@ -39,7 +39,7 @@ pub trait Config<I: 'static>: crate::Config<I> {
 		parachains: &[ParaId],
 		parachain_head_size: u32,
 		proof_size: StorageProofSize,
-	) -> (RelayBlock, RelayBlockHash, ParaHeadsProof, Vec<(ParaId, ParaHash)>);
+	) -> (RelayBlockNumber, RelayBlockHash, ParaHeadsProof, Vec<(ParaId, ParaHash)>);
 }
 
 benchmarks_instance_pallet! {
@@ -47,7 +47,7 @@ benchmarks_instance_pallet! {
 		where
 			<T as pallet_bridge_grandpa::Config<T::BridgesGrandpaPalletInstance>>::BridgedChain:
 				bp_runtime::Chain<
-					Block = RelayBlock<T>,
+					Block = crate::RelayBlock<T>,
 					Hash = RelayBlockHash,
 					Hasher = RelayBlockHasher,
 				>,

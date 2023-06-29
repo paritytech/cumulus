@@ -40,13 +40,13 @@ pub fn prepare_parachain_heads_proof<R, PI>(
 	parachains: &[ParaId],
 	parachain_head_size: u32,
 	size: StorageProofSize,
-) -> (RelayBlock, RelayBlockHash, ParaHeadsProof, Vec<(ParaId, ParaHash)>)
+) -> (RelayBlockNumber, RelayBlockHash, ParaHeadsProof, Vec<(ParaId, ParaHash)>)
 where
 	R: pallet_bridge_parachains::Config<PI>
 		+ pallet_bridge_grandpa::Config<R::BridgesGrandpaPalletInstance>,
 	PI: 'static,
 	<R as pallet_bridge_grandpa::Config<R::BridgesGrandpaPalletInstance>>::BridgedChain:
-		bp_runtime::Chain<Block = RelayBlock<T>, Hash = RelayBlockHash>,
+		bp_runtime::Chain<Block = crate::RelayBlock<T>, Hash = RelayBlockHash>,
 {
 	let parachain_head = ParaHead(vec![0u8; parachain_head_size as usize]);
 
