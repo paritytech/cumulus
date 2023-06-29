@@ -17,12 +17,7 @@
 use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
-	service::{
-		new_partial, AssetHubKusamaExecutor, AssetHubPolkadotRuntimeExecutor,
-		AssetHubWestendExecutor, Block, BridgeHubKusamaRuntimeExecutor,
-		BridgeHubPolkadotRuntimeExecutor, BridgeHubRococoRuntimeExecutor,
-		CollectivesPolkadotRuntimeExecutor, GluttonRuntimeExecutor,
-	},
+	service::{new_partial, Block},
 };
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
