@@ -180,7 +180,9 @@ pub mod pallet {
 	pub type Invulnerables<T: Config> =
 		StorageValue<_, BoundedVec<T::AccountId, T::MaxInvulnerables>, ValueQuery>;
 
-	/// The (community, limited) collation candidates.
+	/// The (community, limited) collation candidates. `Candidates` and `Invulnerables` should be
+	/// mutually exclusive, but it is possible to have an `AccountId` in both if transition from
+	/// candidate to invulnerable would reduce the number of candidates below `MinCandidates`.
 	#[pallet::storage]
 	#[pallet::getter(fn candidates)]
 	pub type Candidates<T: Config> = StorageValue<
@@ -293,7 +295,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Set the list of invulnerable (fixed) collators.
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::set_invulnerables(new.len() as u32))]
+		#[pallet::weight(T::WeightInfo::set_invulnerables(new.len() as u32, T::MaxCandidates::get()))]
 		pub fn set_invulnerables(
 			origin: OriginFor<T>,
 			new: Vec<T::AccountId>,
@@ -310,6 +312,15 @@ pub mod pallet {
 					T::ValidatorRegistration::is_registered(&validator_key),
 					Error::<T>::ValidatorNotRegistered
 				);
+
+				// We don't allow Invulnerables to `register_as_candidate`. If someone is chosen as
+				// an Invulnerable, we should try to remove them from `Candidates` such that
+				// `Invulnerables` and `Candidates` are mutually exclusive sets.
+				if Self::candidates().len() as u32 > T::MinCandidates::get() {
+					// We don't really care about the outcome. If it succeeds, it just tells us how
+					//  manycandidates are left. If it fails, it's because `who` wasn't a candidate.
+					let _outcome = Self::try_remove_candidate(&account_id, false);
+				}
 			}
 
 			// Invulnerables must be sorted for removal.
@@ -402,8 +413,6 @@ pub mod pallet {
 		/// session change. The `CandidacyBond` will be unreserved immediately.
 		///
 		/// This call will fail if the total number of candidates would drop below `MinCandidates`.
-		///
-		/// This call is not available to `Invulnerable` collators.
 		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::leave_intent(T::MaxCandidates::get()))]
 		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
@@ -412,7 +421,7 @@ pub mod pallet {
 				Self::candidates().len() as u32 > T::MinCandidates::get(),
 				Error::<T>::TooFewCandidates
 			);
-			let current_count = Self::try_remove_candidate(&who)?;
+			let current_count = Self::try_remove_candidate(&who, true)?;
 
 			Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
 		}
@@ -421,7 +430,7 @@ pub mod pallet {
 		///
 		/// The origin for this call must be the `UpdateOrigin`.
 		#[pallet::call_index(5)]
-		#[pallet::weight(T::WeightInfo::add_invulnerable(T::MaxInvulnerables::get() - 1))]
+		#[pallet::weight(T::WeightInfo::add_invulnerable(T::MaxInvulnerables::get() - 1, T::MaxCandidates::get()))]
 		pub fn add_invulnerable(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
 			T::UpdateOrigin::ensure_origin(origin)?;
 
@@ -432,6 +441,13 @@ pub mod pallet {
 				T::ValidatorRegistration::is_registered(&validator_key),
 				Error::<T>::ValidatorNotRegistered
 			);
+
+			// We don't allow Invulnerables to `register_as_candidate`. If someone is chosen as
+			// an Invulnerable, we should try to remove them from `Candidates` such that
+			// `Invulnerables` and `Candidates` are mutually exclusive sets. We don't really care
+			// about the outcome - the only error is that they are not a candidate, which is the
+			// state we want.
+			let _outcome = Self::try_remove_candidate(&who, false);
 
 			<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
 				match invulnerables.binary_search(&who) {
@@ -475,7 +491,10 @@ pub mod pallet {
 		}
 
 		/// Removes a candidate if they exist and sends them back their deposit
-		fn try_remove_candidate(who: &T::AccountId) -> Result<usize, DispatchError> {
+		fn try_remove_candidate(
+			who: &T::AccountId,
+			remove_last_authored: bool,
+		) -> Result<usize, DispatchError> {
 			let current_count =
 				<Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
 					let index = candidates
@@ -484,7 +503,9 @@ pub mod pallet {
 						.ok_or(Error::<T>::NotCandidate)?;
 					let candidate = candidates.remove(index);
 					T::Currency::unreserve(who, candidate.deposit);
-					<LastAuthoredBlock<T>>::remove(who.clone());
+					if remove_last_authored {
+						<LastAuthoredBlock<T>>::remove(who.clone())
+					};
 					Ok(candidates.len())
 				})?;
 			Self::deposit_event(Event::CandidateRemoved { account_id: who.clone() });
@@ -519,7 +540,7 @@ pub mod pallet {
 					{
 						Some(c.who)
 					} else {
-						let outcome = Self::try_remove_candidate(&c.who);
+						let outcome = Self::try_remove_candidate(&c.who, true);
 						if let Err(why) = outcome {
 							log::warn!("Failed to remove candidate {:?}", why);
 							debug_assert!(false, "failed to remove candidate {:?}", why);

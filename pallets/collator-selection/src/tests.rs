@@ -191,6 +191,46 @@ fn remove_invulnerable_works() {
 }
 
 #[test]
+fn candidate_to_invulnerable_works() {
+	new_test_ext().execute_with(|| {
+		initialize_to_block(1);
+		assert_eq!(<crate::tests::MinCandidates>::get(), 1);
+		assert_eq!(CollatorSelection::desired_candidates(), 2);
+		assert_eq!(CollatorSelection::candidacy_bond(), 10);
+		assert_eq!(CollatorSelection::candidates(), Vec::new());
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+
+		assert_eq!(Balances::free_balance(3), 100);
+		assert_eq!(Balances::free_balance(4), 100);
+
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)));
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(4)));
+
+		assert_eq!(Balances::free_balance(3), 90);
+		assert_eq!(Balances::free_balance(4), 90);
+
+		assert_ok!(CollatorSelection::add_invulnerable(
+			RuntimeOrigin::signed(RootAccount::get()),
+			3
+		));
+
+		assert!(CollatorSelection::invulnerables().to_vec().contains(&3));
+		assert_eq!(Balances::free_balance(3), 100);
+		assert_eq!(CollatorSelection::candidates().len(), 1);
+
+		// it should work
+		assert_ok!(CollatorSelection::add_invulnerable(
+			RuntimeOrigin::signed(RootAccount::get()),
+			4
+		));
+		// but not remove `4` as a candidate, due to `min_candidates`
+		assert!(CollatorSelection::invulnerables().to_vec().contains(&4));
+		assert_eq!(Balances::free_balance(4), 90); // sorry 4
+		assert_eq!(CollatorSelection::candidates().len(), 1);
+	});
+}
+
+#[test]
 fn set_desired_candidates_works() {
 	new_test_ext().execute_with(|| {
 		// given
