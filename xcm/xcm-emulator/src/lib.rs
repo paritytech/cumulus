@@ -112,47 +112,49 @@ impl TestExt for () {
 pub trait Network {
 	type Bridge: Bridge;
 
-	fn _init();
-	fn _para_ids() -> Vec<u32>;
-	fn _bridge() -> Option<Self::Bridge>;
+	fn init();
+	fn para_ids() -> Vec<u32>;
+	fn bridge() -> Option<Self::Bridge>;
 	// fn _is_bridge_source() -> bool { false }
 	// fn _is_bridge_target() -> bool { false }
-	fn _relay_block_number() -> u32;
-	fn _set_relay_block_number(block_number: u32);
-	fn _process_messages();
-	fn _has_unprocessed_messages() -> bool;
-	fn _process_downward_messages();
-	fn _process_horizontal_messages();
-	fn _process_upward_messages();
-	fn _process_bridged_messages();
-	fn _hrmp_channel_parachain_inherent_data(
+	fn relay_block_number() -> u32;
+	fn set_relay_block_number(block_number: u32);
+	fn process_messages();
+	fn has_unprocessed_messages() -> bool;
+	fn process_downward_messages();
+	fn process_horizontal_messages();
+	fn process_upward_messages();
+	fn process_bridged_messages();
+	fn hrmp_channel_parachain_inherent_data(
 		para_id: u32,
 		relay_parent_number: u32,
 	) -> ParachainInherentData;
 }
 
-pub trait NetworkComponent<N: Network> {
+pub trait NetworkComponent {
+	type Network: Network;
+
 	fn network_name() -> &'static str;
 
-	fn init() {
-		N::_init();
-	}
+	// fn init() {
+	// 	N::_init();
+	// }
 
-	fn relay_block_number() -> u32 {
-		N::_relay_block_number()
-	}
+	// fn relay_block_number() -> u32 {
+	// 	N::_relay_block_number()
+	// }
 
-	fn set_relay_block_number(block_number: u32) {
-		N::_set_relay_block_number(block_number);
-	}
+	// fn set_relay_block_number(block_number: u32) {
+	// 	N::_set_relay_block_number(block_number);
+	// }
 
-	fn para_ids() -> Vec<u32> {
-		N::_para_ids()
-	}
+	// fn para_ids() -> Vec<u32> {
+	// 	N::_para_ids()
+	// }
 
-	fn bridge() -> Option<N::Bridge> {
-		N::_bridge()
-	}
+	// fn bridge() -> Option<N::Bridge> {
+	// 	N::_bridge()
+	// }
 
 	fn send_horizontal_messages<I: Iterator<Item = (ParaId, RelayBlockNumber, Vec<u8>)>>(
 		to_para_id: u32,
@@ -196,16 +198,16 @@ pub trait NetworkComponent<N: Network> {
 		});
 	}
 
-	fn hrmp_channel_parachain_inherent_data(
-		para_id: u32,
-		relay_parent_number: u32,
-	) -> ParachainInherentData {
-		N::_hrmp_channel_parachain_inherent_data(para_id, relay_parent_number)
-	}
+	// fn hrmp_channel_parachain_inherent_data(
+	// 	para_id: u32,
+	// 	relay_parent_number: u32,
+	// ) -> ParachainInherentData {
+	// 	<Self::Network as Network>::_hrmp_channel_parachain_inherent_data(para_id, relay_parent_number)
+	// }
 
-	fn process_messages() {
-		N::_process_messages();
-	}
+	// fn process_messages() {
+	// 	<Self::Network as Network>::_process_messages();
+	// }
 }
 
 pub trait RelayChain: ProcessMessage {
@@ -421,9 +423,9 @@ macro_rules! __impl_test_ext_for_relay_chain {
 			}
 
 			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
-				use $crate::{NetworkComponent};
+				use $crate::{NetworkComponent, Network};
 				// Make sure the Network is initialized
-				<$name>::init();
+				<$name as NetworkComponent>::Network::init();
 
 				let r = $ext_name.with(|v| v.borrow_mut().execute_with(execute));
 
@@ -433,7 +435,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 						use $crate::polkadot_primitives::runtime_api::runtime_decl_for_parachain_host::$api_version;
 
 						//TODO: mark sent count & filter out sent msg
-						for para_id in <$name>::para_ids() {
+						for para_id in<$name as NetworkComponent>::Network::para_ids() {
 							// downward messages
 							let downward_messages = <Self as RelayChain>::Runtime::dmq_contents(para_id.into())
 								.into_iter()
@@ -449,7 +451,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 					})
 				});
 
-				<$name>::process_messages();
+				<$name as NetworkComponent>::Network::process_messages();
 
 				r
 			}
@@ -467,10 +469,12 @@ macro_rules! __impl_test_ext_for_relay_chain {
 
 #[macro_export]
 macro_rules! __impl_relay {
-	($network_name:ident, $relay_chain:ty) => {
-		impl $crate::NetworkComponent<$network_name> for $relay_chain {
+	($network:ident, $relay_chain:ty) => {
+		impl $crate::NetworkComponent for $relay_chain {
+			type Network = $network;
+
 			fn network_name() -> &'static str {
-				stringify!($network_name)
+				stringify!($network)
 			}
 		}
 
@@ -650,24 +654,24 @@ macro_rules! __impl_test_ext_for_parachain {
 			}
 
 			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
-				use $crate::{Get, Hooks, NetworkComponent};
+				use $crate::{Get, Hooks, NetworkComponent, Network};
 
 				// Make sure the Network is initialized
-				<$name>::init();
+				<$name as NetworkComponent>::Network::init();
 
-				let mut relay_block_number = <$name>::relay_block_number();
+				let mut relay_block_number = <$name as NetworkComponent>::Network::relay_block_number();
 				relay_block_number += 1;
-				<$name>::set_relay_block_number(relay_block_number);
+				<$name as NetworkComponent>::Network::set_relay_block_number(relay_block_number);
 
 				let para_id = <$name>::para_id().into();
 
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
 						// Make sure it has been recorded properly
-						let relay_block_number = <$name>::relay_block_number();
+						let relay_block_number = <$name as NetworkComponent>::Network::relay_block_number();
 						let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
 							<Self as Parachain>::RuntimeOrigin::none(),
-							<$name>::hrmp_channel_parachain_inherent_data(para_id, relay_block_number),
+							<$name as NetworkComponent>::Network::hrmp_channel_parachain_inherent_data(para_id, relay_block_number),
 						);
 					})
 				});
@@ -694,7 +698,7 @@ macro_rules! __impl_test_ext_for_parachain {
 						let collation_info = <Self as Parachain>::ParachainSystem::collect_collation_info(&mock_header);
 
 						// send upward messages
-						let relay_block_number = <$name>::relay_block_number();
+						let relay_block_number = <$name as NetworkComponent>::Network::relay_block_number();
 						for msg in collation_info.upward_messages.clone() {
 							<$name>::send_upward_message(para_id, msg);
 						}
@@ -708,7 +712,7 @@ macro_rules! __impl_test_ext_for_parachain {
 						}
 
 						// bridge
-						if let Some(bridge) = <$name>::bridge() {
+						if let Some(bridge) = <$name as NetworkComponent>::Network::bridge() {
 							// get bridge messages
 							let bridge_messages = bridge.get_source_outbound_messages();
 							// send bridged messages
@@ -723,7 +727,7 @@ macro_rules! __impl_test_ext_for_parachain {
 					})
 				});
 
-				<$name>::process_messages();
+				<$name as NetworkComponent>::Network::process_messages();
 
 				r
 			}
@@ -741,10 +745,12 @@ macro_rules! __impl_test_ext_for_parachain {
 
 #[macro_export]
 macro_rules! __impl_parachain {
-	($network_name:ident, $parachain:ty) => {
-		impl $crate::NetworkComponent<$network_name> for $parachain {
+	($network:ident, $parachain:ty) => {
+		impl $crate::NetworkComponent for $parachain {
+			type Network = $network;
+
 			fn network_name() -> &'static str {
-				stringify!($network_name)
+				stringify!($network)
 			}
 		}
 
@@ -793,7 +799,7 @@ macro_rules! __impl_parachain {
 			}
 
 			fn prepare_for_xcmp() {
-				use $crate::NetworkComponent;
+				use $crate::{Network, NetworkComponent};
 				let para_id = Self::para_id();
 
 				<Self as TestExt>::ext_wrapper(|| {
@@ -803,7 +809,7 @@ macro_rules! __impl_parachain {
 
 					let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
 						<Self as Parachain>::RuntimeOrigin::none(),
-						Self::hrmp_channel_parachain_inherent_data(para_id.into(), 1),
+						<Self as NetworkComponent>::Network::hrmp_channel_parachain_inherent_data(para_id.into(), 1),
 					);
 					// set `AnnouncedHrmpMessagesPerCandidate`
 					<Self as Parachain>::ParachainSystem::on_initialize(block_number);
@@ -850,7 +856,7 @@ macro_rules! decl_test_networks {
 			impl $crate::Network for $name {
 				type Bridge = $bridge;
 
-				fn _init() {
+				fn init() {
 					// If Network has not been itialized yet, it gets initialized
 					if $crate::INITIALIZED.with(|b| b.borrow_mut().get(stringify!($name)).is_none()) {
 						$crate::INITIALIZED.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), true));
@@ -860,49 +866,49 @@ macro_rules! decl_test_networks {
 						$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
 						$crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
 						$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), 1));
-						$crate::PARA_IDS.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), Self::_para_ids()));
+						$crate::PARA_IDS.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), Self::para_ids()));
 
 						$( <$parachain>::prepare_for_xcmp(); )*
 					}
 				}
 
-				fn _para_ids() -> Vec<u32> {
+				fn para_ids() -> Vec<u32> {
 					vec![$(
 						<$parachain>::para_id().into(),
 					)*]
 				}
 
-				fn _bridge() -> Option<Self::Bridge> {
+				fn bridge() -> Option<Self::Bridge> {
 					use $crate::Bridge;
 
 					<Self::Bridge as Bridge>::get()
 				}
 
-				fn _relay_block_number() -> u32 {
+				fn relay_block_number() -> u32 {
 					$crate::RELAY_BLOCK_NUMBER.with(|v| *v.clone().borrow().get(stringify!($name)).unwrap())
 				}
 
-				fn _set_relay_block_number(block_number: u32) {
+				fn set_relay_block_number(block_number: u32) {
 					$crate::RELAY_BLOCK_NUMBER.with(|v| v.borrow_mut().insert(stringify!($name).to_string(), block_number));
 				}
 
-				fn _process_messages() {
-					while Self::_has_unprocessed_messages() {
-						Self::_process_upward_messages();
-						Self::_process_horizontal_messages();
-						Self::_process_downward_messages();
-						Self::_process_bridged_messages();
+				fn process_messages() {
+					while Self::has_unprocessed_messages() {
+						Self::process_upward_messages();
+						Self::process_horizontal_messages();
+						Self::process_downward_messages();
+						Self::process_bridged_messages();
 					}
 				}
 
-				fn _has_unprocessed_messages() -> bool {
+				fn has_unprocessed_messages() -> bool {
 					$crate::DOWNWARD_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
 					|| $crate::HORIZONTAL_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
 					|| $crate::UPWARD_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
 					|| $crate::BRIDGED_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
 				}
 
-				fn _process_downward_messages() {
+				fn process_downward_messages() {
 					use $crate::{DmpMessageHandler, Bounded};
 					use polkadot_parachain::primitives::RelayChainBlockNumber;
 
@@ -933,7 +939,7 @@ macro_rules! decl_test_networks {
 					}
 				}
 
-				fn _process_horizontal_messages() {
+				fn process_horizontal_messages() {
 					use $crate::{XcmpMessageHandler, Bounded};
 
 					while let Some((to_para_id, messages))
@@ -950,7 +956,7 @@ macro_rules! decl_test_networks {
 					}
 				}
 
-				fn _process_upward_messages() {
+				fn process_upward_messages() {
 					use $crate::{Bounded, ProcessMessage, WeightMeter};
 					use sp_core::Encode;
 					while let Some((from_para_id, msg)) = $crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
@@ -965,9 +971,9 @@ macro_rules! decl_test_networks {
 					}
 				}
 
-				fn _process_bridged_messages() {
+				fn process_bridged_messages() {
 					// Try to process only for the case where `Netwrok` has a `Bridge`
-					if let Some(bridge) = Self::_bridge() {
+					if let Some(bridge) = Self::bridge() {
 						use $crate::Bridge;
 						// Make sure both, including the target `Network` are initialized
 						bridge.init();
@@ -990,7 +996,7 @@ macro_rules! decl_test_networks {
 					}
 				}
 
-				fn _hrmp_channel_parachain_inherent_data(
+				fn hrmp_channel_parachain_inherent_data(
 					para_id: u32,
 					relay_parent_number: u32,
 				) -> $crate::ParachainInherentData {
@@ -1068,9 +1074,9 @@ macro_rules! decl_test_bridges {
 				type Target = $target;
 
 				fn init(&self) {
-					use $crate::{NetworkComponent};
-					<$source>::init();
-					<$target>::init();
+					use $crate::{NetworkComponent, Network};
+					// Make sure the target `Network` has been initialized
+					<$target as NetworkComponent>::Network::init();
 				}
 
 				fn get() -> Option<Self> {
