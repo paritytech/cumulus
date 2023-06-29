@@ -20,9 +20,9 @@ use core::{
 	sync::atomic::{AtomicU32, Ordering},
 };
 use environmental::PhantomData;
-use hash_db::Hasher;
+use hash_db::{HashDB, Hasher};
 use hashbrown::hash_map::HashMap;
-use sp_state_machine::TrieCacheProvider;
+use sp_state_machine::{TrieBackendStorage, TrieCacheProvider};
 use sp_std::boxed::Box;
 use sp_trie::NodeCodec;
 use trie_db::{node::NodeOwned, TrieCache, TrieError};
@@ -103,4 +103,28 @@ impl<H: Hasher> TrieCacheProvider<H> for CacheProvider<H> {
 	}
 
 	fn merge<'a>(&'a self, _other: Self::Cache<'a>, _new_root: <H as Hasher>::Out) {}
+}
+
+struct ReadOnceBackend<H: Hasher> {
+	inner: sp_trie::MemoryDB<H>,
+}
+
+impl<H: Hasher> ReadOnceBackend<H> {
+	pub fn new(inner: sp_trie::MemoryDB<H>) -> Self {
+		Self { inner }
+	}
+}
+
+impl<H: Hasher> TrieBackendStorage<H> for ReadOnceBackend<H> {
+	type Overlay = sp_trie::MemoryDB<H>;
+
+	fn get(
+		&self,
+		key: &H::Out,
+		prefix: hash_db::Prefix,
+	) -> Result<Option<trie_db::DBValue>, sp_state_machine::DefaultError> {
+		todo!();
+		let maybe_value = self.inner.remove_and_purge(key, prefix);
+		Ok(maybe_value)
+	}
 }
