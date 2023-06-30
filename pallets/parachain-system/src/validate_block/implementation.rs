@@ -133,14 +133,14 @@ where
 
 	sp_std::mem::drop(storage_proof);
 
-	let wrapped = trie_cache::ReadOnceBackend::new(db);
-	let cache = trie_cache::CacheProvider::new();
+	let read_once_backend = trie_cache::ReadOnceBackend::new(db);
+	let cache_provider = trie_cache::CacheProvider::new();
 	// We use the storage root of the `parent_head` to ensure that it is the correct root.
 	// This is already being done above while creating the in-memory db, but let's be paranoid!!
 	let backend = sp_state_machine::TrieBackendBuilder::new_with_cache(
-		wrapped,
+		read_once_backend,
 		*parent_header.state_root(),
-		cache,
+		cache_provider,
 	)
 	.build();
 

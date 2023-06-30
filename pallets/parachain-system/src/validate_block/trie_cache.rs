@@ -80,8 +80,8 @@ impl<H: Hasher> CacheProvider<H> {
 	pub fn new() -> Self {
 		CacheProvider {
 			initialized: Default::default(),
-			node_cache: spin::Mutex::new(HashMap::new()),
-			value_cache: spin::Mutex::new(HashMap::new()),
+			node_cache: Default::default(),
+			value_cache: Default::default(),
 		}
 	}
 }
