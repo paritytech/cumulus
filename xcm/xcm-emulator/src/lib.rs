@@ -798,8 +798,6 @@ macro_rules! decl_test_networks {
 										$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().push_back((to_para_id, m.0, m.1)));
 									}
 								}
-							} else {
-								unreachable!();
 							}
 						)*
 					}
