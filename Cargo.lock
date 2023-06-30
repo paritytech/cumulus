@@ -5251,6 +5251,7 @@ dependencies = [
  "asset-hub-polkadot-runtime",
  "asset-hub-westend-runtime",
  "bp-messages",
+ "bp-runtime",
  "bridge-hub-kusama-runtime",
  "bridge-hub-polkadot-runtime",
  "bridge-hub-rococo-runtime",

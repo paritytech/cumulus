@@ -3,6 +3,7 @@ use codec::{Encode, Decode};
 use xcm_emulator::{BridgeMessage, BridgeMessageDispatchError, BridgeMessageHandler, NetworkComponent, Parachain};
 use pallet_bridge_messages::{Config, Instance1, Instance2, OutboundLanes, Pallet};
 use bp_messages::{LaneId, MessageKey, OutboundLaneData, target_chain::{DispatchMessage, MessageDispatch, DispatchMessageData}};
+use bp_runtime::messages::MessageDispatchResult;
 use bridge_runtime_common::messages_xcm_extension::XcmBlobMessageDispatchResult;
 pub use cumulus_primitives_core::{DmpMessageHandler, XcmpMessageHandler};
 use sp_core::Get;
@@ -37,6 +38,10 @@ where
 	S: Config<Instance1>,
 	T: Config<I>,
 	I: 'static,
+	<T as Config<I>>::InboundPayload: From<Vec<u8>>,
+	// <<T as Config<I>>::MessageDispatch as MessageDispatch>::DispatchLevelResult: PartialEq<XcmBlobMessageDispatchResult>,
+	<T as Config<I>>::MessageDispatch: MessageDispatch<DispatchLevelResult = XcmBlobMessageDispatchResult>,
+	// <<T as Config<I>>::MessageDispatch as MessageDispatch>::DispatchLevelResult: XcmBlobMessageDispatchResult,
 {
 	fn get_source_outbound_messages() -> Vec<BridgeMessage> {
 		// get the source active outbound lanes
@@ -67,7 +72,7 @@ where
 
 		let lane_id = message.id.into();
 		let nonce = message.nonce;
-		let payload = Ok(message.payload);
+		let payload = Ok(From::from(message.payload));
 
 		// Directly dispatch outbound messages assuming everything is correct
 		// and bypassing the `InboundLane` logic
@@ -90,8 +95,24 @@ where
 			_ => Err(BridgeMessageDispatchError(Box::new("Unknown Error"))),
 		};
 
-		// result
-		Ok(())
+		// let MessageDispatchResult { unspent_weight: Weight::zero(), dispatch_level_result } = dispatch_result;
+
+		// let result = match dispatch_result {
+		// 	MessageDispatchResult { unspent_weight: Weight::zero(), dispatch_level_result } => {
+		// 		if dispatch_level_result == XcmBlobMessageDispatchResult::Dispatched {
+		// 			Ok(XcmBlobMessageDispatchResult::Dispatched)
+		// 		} else {
+		// 			Err(BridgeMessageDispatchError(Box::new("Unknown Error")))
+		// 		}
+		// 	},
+		// 	_ => Err(BridgeMessageDispatchError(Box::new("Unknown Error"))),
+		// };
+
+
+
+
+		result
+		// Ok(())
 	}
 
 	fn notify_source_message_delivery(lane_id: u32) {

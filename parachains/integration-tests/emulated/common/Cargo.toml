@@ -55,6 +55,7 @@ bridge-hub-polkadot-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub
 bridge-hub-rococo-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-rococo" }
 xcm-emulator = { default-features = false, path = "../../../../xcm/xcm-emulator" }
 bp-messages = { path = "../../../../bridges/primitives/messages"}
+bp-runtime = { path = "../../../../bridges/primitives/runtime"}
 pallet-bridge-messages = { path = "../../../../bridges/modules/messages" }
 bridge-runtime-common = { path = "../../../../bridges/bin/runtime-common"}
 
