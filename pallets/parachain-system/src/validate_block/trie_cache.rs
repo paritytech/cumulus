@@ -21,7 +21,7 @@ use core::{
 };
 use environmental::PhantomData;
 use hash_db::{HashDB, Hasher};
-use hashbrown::hash_map::HashMap;
+use hashbrown::hash_map::{Entry, HashMap};
 use sp_state_machine::{TrieBackendStorage, TrieCacheProvider};
 use sp_std::boxed::Box;
 use sp_trie::NodeCodec;
@@ -50,21 +50,16 @@ impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleCache<'a, H> {
 			<NodeCodec<H> as trie_db::NodeCodec>::Error,
 		>,
 	) -> trie_db::Result<&NodeOwned<H::Out>, H::Out, <NodeCodec<H> as trie_db::NodeCodec>::Error> {
-		if self.node_cache.contains_key(&hash) {
-			if let Some(value) = self.node_cache.get(&hash) {
-				return Ok(value)
-			} else {
-				panic!("We just checked that the value is contained; qed");
-			}
+		match self.node_cache.entry(hash) {
+			Entry::Occupied(entry) => Ok(entry.into_mut()),
+			Entry::Vacant(entry) => {
+				let fetched = match fetch_node() {
+					Ok(new_node) => new_node,
+					Err(e) => return Err(e),
+				};
+				Ok(entry.insert(fetched))
+			},
 		}
-
-		let fetched = match fetch_node() {
-			Ok(new_node) => new_node,
-			Err(e) => return Err(e),
-		};
-
-		let (_key, value) = self.node_cache.insert_unique_unchecked(hash, fetched);
-		Ok(value)
 	}
 
 	fn get_node(
@@ -106,12 +101,12 @@ impl<H: Hasher> TrieCacheProvider<H> for CacheProvider<H> {
 }
 
 pub struct ReadOnceBackend<H: Hasher> {
-	inner: spin::Mutex<sp_trie::MemoryDB<H>>,
+	memory_db: spin::Mutex<sp_trie::MemoryDB<H>>,
 }
 
 impl<H: Hasher> ReadOnceBackend<H> {
-	pub fn new(inner: sp_trie::MemoryDB<H>) -> Self {
-		Self { inner: spin::Mutex::new(inner) }
+	pub fn new(memory_db: sp_trie::MemoryDB<H>) -> Self {
+		Self { memory_db: spin::Mutex::new(memory_db) }
 	}
 }
 
@@ -123,7 +118,7 @@ impl<H: Hasher> TrieBackendStorage<H> for ReadOnceBackend<H> {
 		key: &H::Out,
 		prefix: hash_db::Prefix,
 	) -> Result<Option<trie_db::DBValue>, sp_state_machine::DefaultError> {
-		let mut guard = self.inner.lock();
+		let mut guard = self.memory_db.lock();
 		if let value @ Some(_) = guard.remove_and_purge(key, prefix) {
 			return Ok(value)
 		}
