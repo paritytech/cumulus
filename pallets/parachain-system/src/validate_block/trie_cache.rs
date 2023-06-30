@@ -27,12 +27,15 @@ use sp_std::boxed::Box;
 use sp_trie::NodeCodec;
 use trie_db::{node::NodeOwned, TrieCache, TrieError};
 
-pub(crate) struct SimpleCache<'a, H: Hasher> {
+/// Special purpose trie cache implementation that is able to cache an unlimited number
+/// of values. To be used in `validate_block` to serve values and nodes that
+/// have already been loaded and decoded from the storage proof.
+pub(crate) struct SimpleTrieCache<'a, H: Hasher> {
 	node_cache: spin::MutexGuard<'a, HashMap<H::Out, NodeOwned<H::Out>>>,
 	value_cache: spin::MutexGuard<'a, HashMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
 }
 
-impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleCache<'a, H> {
+impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleTrieCache<'a, H> {
 	fn lookup_value_for_key(&mut self, key: &[u8]) -> Option<&trie_db::CachedValue<H::Out>> {
 		self.value_cache.get(key)
 	}
@@ -70,36 +73,37 @@ impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleCache<'a, H> {
 	}
 }
 
+/// Provider for [`SimpleTrieCache`] instances.
 pub(crate) struct CacheProvider<H: Hasher> {
-	initialized: AtomicU32,
 	node_cache: spin::Mutex<HashMap<H::Out, NodeOwned<H::Out>>>,
 	value_cache: spin::Mutex<HashMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
 }
 
 impl<H: Hasher> CacheProvider<H> {
+	/// Constructs a new instance of CacheProvider with an uninitialized state
+	/// and empty node and value caches.
 	pub fn new() -> Self {
-		CacheProvider {
-			initialized: Default::default(),
-			node_cache: Default::default(),
-			value_cache: Default::default(),
-		}
+		CacheProvider { node_cache: Default::default(), value_cache: Default::default() }
 	}
 }
 
 impl<H: Hasher> TrieCacheProvider<H> for CacheProvider<H> {
-	type Cache<'a> = SimpleCache<'a, H> where H: 'a;
+	type Cache<'a> = SimpleTrieCache<'a, H> where H: 'a;
 
 	fn as_trie_db_cache(&self, _storage_root: <H as Hasher>::Out) -> Self::Cache<'_> {
-		SimpleCache { value_cache: self.value_cache.lock(), node_cache: self.node_cache.lock() }
+		SimpleTrieCache { value_cache: self.value_cache.lock(), node_cache: self.node_cache.lock() }
 	}
 
 	fn as_trie_db_mut_cache(&self) -> Self::Cache<'_> {
-		SimpleCache { value_cache: self.value_cache.lock(), node_cache: self.node_cache.lock() }
+		SimpleTrieCache { value_cache: self.value_cache.lock(), node_cache: self.node_cache.lock() }
 	}
 
 	fn merge<'a>(&'a self, _other: Self::Cache<'a>, _new_root: <H as Hasher>::Out) {}
 }
 
+/// Wrapper for a [`sp_trie::MemoryDB`] which allows reading of values exactly once.
+///
+/// After each read, the read value is removed from the underlying [`sp_trie::MemoryDB`].
 pub struct ReadOnceBackend<H: Hasher> {
 	memory_db: spin::Mutex<sp_trie::MemoryDB<H>>,
 }
