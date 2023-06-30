@@ -195,6 +195,7 @@ pub trait Parachain: XcmpMessageHandler + DmpMessageHandler {
 macro_rules! decl_test_relay_chains {
 	(
 		$(
+			#[cfg(feature = $feature:expr)]
 			#[api_version($api_version:tt)]
 			pub struct $name:ident {
 				genesis = $genesis:expr,
@@ -218,8 +219,10 @@ macro_rules! decl_test_relay_chains {
 		+
 	) => {
 		$(
+			#[cfg(feature = $feature)]
 			pub struct $name;
 
+			#[cfg(feature = $feature)]
 			impl RelayChain for $name {
 				type Runtime = $runtime;
 				type RuntimeOrigin = $runtime_origin;
@@ -232,12 +235,14 @@ macro_rules! decl_test_relay_chains {
 			}
 
 			$crate::paste::paste! {
+				#[cfg(feature = $feature)]
 				pub trait [<$name Pallet>] {
 					$(
 						type $pallet_name;
 					)?
 				}
 
+				#[cfg(feature = $feature)]
 				impl [<$name Pallet>] for $name {
 					$(
 						type $pallet_name = $pallet_path;
@@ -245,6 +250,7 @@ macro_rules! decl_test_relay_chains {
 				}
 			}
 
+			#[cfg(feature = $feature)]
 			impl $crate::ProcessMessage for $name {
 				type Origin = $crate::ParaId;
 
@@ -281,7 +287,7 @@ macro_rules! decl_test_relay_chains {
 				}
 			}
 
-			$crate::__impl_test_ext_for_relay_chain!($name, $genesis, $on_init, $api_version);
+			$crate::__impl_test_ext_for_relay_chain!($name, $genesis, $on_init, $feature, $api_version);
 		)+
 	};
 }
@@ -289,18 +295,20 @@ macro_rules! decl_test_relay_chains {
 #[macro_export]
 macro_rules! __impl_test_ext_for_relay_chain {
 	// entry point: generate ext name
-	($name:ident, $genesis:expr, $on_init:expr, $api_version:tt) => {
+	($name:ident, $genesis:expr, $on_init:expr, $feature:expr, $api_version:tt) => {
 		$crate::paste::paste! {
-			$crate::__impl_test_ext_for_relay_chain!(@impl $name, $genesis, $on_init, [<ParachainHostV $api_version>], [<EXT_ $name:upper>]);
+			$crate::__impl_test_ext_for_relay_chain!(@impl $name, $genesis, $on_init, $feature, [<ParachainHostV $api_version>], [<EXT_ $name:upper>]);
 		}
 	};
 	// impl
-	(@impl $name:ident, $genesis:expr, $on_init:expr, $api_version:ident, $ext_name:ident) => {
+	(@impl $name:ident, $genesis:expr, $on_init:expr, $feature:expr, $api_version:ident, $ext_name:ident) => {
+		#[cfg(feature = $feature)]
 		thread_local! {
 			pub static $ext_name: $crate::RefCell<$crate::sp_io::TestExternalities>
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
 		}
 
+		#[cfg(feature = $feature)]
 		impl TestExt for $name {
 			fn build_new_ext(storage: $crate::Storage) -> $crate::sp_io::TestExternalities {
 				let mut ext = sp_io::TestExternalities::new(storage);
@@ -322,7 +330,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 			}
 
 			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
-				use $crate::{NetworkComponent};
+				use $crate::NetworkComponent;
 				// Make sure the Network is initialized
 				<$name>::init();
 
@@ -368,13 +376,15 @@ macro_rules! __impl_test_ext_for_relay_chain {
 
 #[macro_export]
 macro_rules! __impl_relay {
-	($network_name:ident, $relay_chain:ty) => {
+	($network_name:ident, $relay_chain:ty, $feature: expr) => {
+		#[cfg(feature = $feature)]
 		impl $crate::NetworkComponent<$network_name> for $relay_chain {
 			fn network_name() -> &'static str {
 				stringify!($network_name)
 			}
 		}
 
+		#[cfg(feature = $feature)]
 		impl $relay_chain {
 			pub fn child_location_of(id: $crate::ParaId) -> MultiLocation {
 				(Ancestor(0), Parachain(id.into())).into()
@@ -419,6 +429,7 @@ macro_rules! __impl_relay {
 macro_rules! decl_test_parachains {
 	(
 		$(
+			#[cfg(feature = $feature:expr)]
 			pub struct $name:ident {
 				genesis = $genesis:expr,
 				on_init = $on_init:expr,
@@ -443,8 +454,10 @@ macro_rules! decl_test_parachains {
 		+
 	) => {
 		$(
+			#[cfg(feature = $feature)]
 			pub struct $name;
 
+			#[cfg(feature = $feature)]
 			impl Parachain for $name {
 				type Runtime = $runtime;
 				type RuntimeOrigin = $runtime_origin;
@@ -460,12 +473,14 @@ macro_rules! decl_test_parachains {
 			}
 
 			$crate::paste::paste! {
+				#[cfg(feature = $feature)]
 				pub trait [<$name Pallet>] {
 					$(
 						type $pallet_name;
 					)*
 				}
 
+				#[cfg(feature = $feature)]
 				impl [<$name Pallet>] for $name {
 					$(
 						type $pallet_name = $pallet_path;
@@ -473,15 +488,16 @@ macro_rules! decl_test_parachains {
 				}
 			}
 
-			$crate::__impl_xcm_handlers_for_parachain!($name);
-			$crate::__impl_test_ext_for_parachain!($name, $genesis, $on_init);
+			$crate::__impl_xcm_handlers_for_parachain!($name, $feature);
+			$crate::__impl_test_ext_for_parachain!($name, $genesis, $on_init, $feature);
 		)+
 	};
 }
 
 #[macro_export]
 macro_rules! __impl_xcm_handlers_for_parachain {
-	($name:ident) => {
+	($name:ident, $feature:expr) => {
+		#[cfg(feature = $feature)]
 		impl $crate::XcmpMessageHandler for $name {
 			fn handle_xcmp_messages<
 				'a,
@@ -498,6 +514,7 @@ macro_rules! __impl_xcm_handlers_for_parachain {
 			}
 		}
 
+		#[cfg(feature = $feature)]
 		impl $crate::DmpMessageHandler for $name {
 			fn handle_dmp_messages(
 				iter: impl Iterator<Item = ($crate::RelayBlockNumber, Vec<u8>)>,
@@ -516,18 +533,20 @@ macro_rules! __impl_xcm_handlers_for_parachain {
 #[macro_export]
 macro_rules! __impl_test_ext_for_parachain {
 	// entry point: generate ext name
-	($name:ident, $genesis:expr, $on_init:expr) => {
+	($name:ident, $genesis:expr, $on_init:expr, $feature:expr) => {
 		$crate::paste::paste! {
-			$crate::__impl_test_ext_for_parachain!(@impl $name, $genesis, $on_init, [<EXT_ $name:upper>]);
+			$crate::__impl_test_ext_for_parachain!(@impl $name, $genesis, $on_init, $feature, [<EXT_ $name:upper>]);
 		}
 	};
 	// impl
-	(@impl $name:ident, $genesis:expr, $on_init:expr, $ext_name:ident) => {
+	(@impl $name:ident, $genesis:expr, $on_init:expr, $feature:expr, $ext_name:ident) => {
+		#[cfg(feature = $feature)]
 		thread_local! {
 			pub static $ext_name: $crate::RefCell<$crate::sp_io::TestExternalities>
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
 		}
 
+		#[cfg(feature = $feature)]
 		impl TestExt for $name {
 			fn build_new_ext(storage: $crate::Storage) -> $crate::sp_io::TestExternalities {
 				let mut ext = sp_io::TestExternalities::new(storage);
@@ -629,13 +648,15 @@ macro_rules! __impl_test_ext_for_parachain {
 
 #[macro_export]
 macro_rules! __impl_parachain {
-	($network_name:ident, $parachain:ty) => {
+	($network_name:ident, $parachain:ty, $feature:expr) => {
+		#[cfg(feature = $feature)]
 		impl $crate::NetworkComponent<$network_name> for $parachain {
 			fn network_name() -> &'static str {
 				stringify!($network_name)
 			}
 		}
 
+		#[cfg(feature = $feature)]
 		impl $parachain {
 			pub fn para_id() -> $crate::ParaId {
 				Self::ext_wrapper(|| <Self as Parachain>::ParachainInfo::get())
@@ -702,16 +723,22 @@ macro_rules! __impl_parachain {
 macro_rules! decl_test_networks {
 	(
 		$(
+			#[cfg(feature = $feature:expr)]
 			pub struct $name:ident {
 				relay_chain = $relay_chain:ty,
-				parachains = vec![ $( $parachain:ty, )* ],
+				parachains = vec![ $(
+					#[cfg(feature = $parachain_feature:expr)]
+					$parachain:ty,
+				)* ],
 			}
 		),
 		+
 	) => {
 		$(
+			#[cfg(feature = $feature)]
 			pub struct $name;
 
+			#[cfg(feature = $feature)]
 			impl $name {
 				pub fn reset() {
 					use $crate::{TestExt, VecDeque};
@@ -724,11 +751,18 @@ macro_rules! decl_test_networks {
 					$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().remove(stringify!($name)));
 
 					<$relay_chain>::reset_ext();
-					$( <$parachain>::reset_ext(); )*
-					$( <$parachain>::prepare_for_xcmp(); )*
+					$(
+						#[cfg(feature = $parachain_feature)] 
+						<$parachain>::reset_ext(); 
+					)*
+					$( 
+						#[cfg(feature = $parachain_feature)] 
+						<$parachain>::prepare_for_xcmp(); 
+					)*
 				}
 			}
 
+			#[cfg(feature = $feature)]
 			impl $crate::Network for $name {
 				fn _init() {
 					// If Network has not been itialized yet, it gets initialized
@@ -741,12 +775,16 @@ macro_rules! decl_test_networks {
 						$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), 1));
 						$crate::PARA_IDS.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), Self::_para_ids()));
 
-						$( <$parachain>::prepare_for_xcmp(); )*
+						$(
+							#[cfg(feature = $parachain_feature)] 
+							<$parachain>::prepare_for_xcmp(); 
+						)*
 					}
 				}
 
 				fn _para_ids() -> Vec<u32> {
 					vec![$(
+						#[cfg(feature = $parachain_feature)] 
 						<$parachain>::para_id().into(),
 					)*]
 				}
@@ -780,6 +818,7 @@ macro_rules! decl_test_networks {
 					while let Some((to_para_id, messages))
 						= $crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 						$(
+							#[cfg(feature = $parachain_feature)] 
 							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) {
 								let mut msg_dedup: Vec<(RelayChainBlockNumber, Vec<u8>)> = Vec::new();
 								for m in &messages {
@@ -810,6 +849,7 @@ macro_rules! decl_test_networks {
 						= $crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 						let iter = messages.iter().map(|(p, b, m)| (*p, *b, &m[..])).collect::<Vec<_>>().into_iter();
 						$(
+							#[cfg(feature = $parachain_feature)] 
 							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) {
 								<$parachain>::handle_xcmp_messages(iter.clone(), $crate::Weight::max_value());
 							}
@@ -880,10 +920,10 @@ macro_rules! decl_test_networks {
 				}
 			}
 
-			$crate::__impl_relay!($name, $relay_chain);
+			$crate::__impl_relay!($name, $relay_chain, $feature);
 
 			$(
-				$crate::__impl_parachain!($name, $parachain);
+				$crate::__impl_parachain!($name, $parachain, $parachain_feature);
 			)*
 		)+
 	};

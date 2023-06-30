@@ -115,6 +115,7 @@ pub mod validators {
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 // Polkadot
+#[cfg(feature = "polkadot-runtime")]
 pub mod polkadot {
 	use super::*;
 	pub const ED: Balance = polkadot_runtime_constants::currency::EXISTENTIAL_DEPOSIT;
@@ -209,6 +210,7 @@ pub mod polkadot {
 	}
 }
 
+#[cfg(feature = "westend-runtime")]
 pub mod westend {
 	use super::*;
 	use westend_runtime_constants::currency::UNITS as WND;
@@ -306,6 +308,8 @@ pub mod westend {
 }
 
 // Kusama
+
+#[cfg(feature = "kusama-runtime")]
 pub mod kusama {
 	use super::*;
 	pub const ED: Balance = kusama_runtime_constants::currency::EXISTENTIAL_DEPOSIT;
@@ -401,7 +405,7 @@ pub mod kusama {
 	}
 }
 
-// Asset Hub Polkadot
+#[cfg(feature = "asset-hub-polkadot-runtime")]
 pub mod asset_hub_polkadot {
 	use super::*;
 	pub const PARA_ID: u32 = 1000;
@@ -457,7 +461,7 @@ pub mod asset_hub_polkadot {
 	}
 }
 
-// Asset Hub Westend
+#[cfg(feature = "asset-hub-westend-runtime")]
 pub mod asset_hub_westend {
 	use super::*;
 	pub const PARA_ID: u32 = 1000;
@@ -514,6 +518,7 @@ pub mod asset_hub_westend {
 }
 
 // Asset Hub Kusama
+#[cfg(feature = "asset-hub-kusama-runtime")]
 pub mod asset_hub_kusama {
 	use super::*;
 	pub const PARA_ID: u32 = 1000;
@@ -569,7 +574,7 @@ pub mod asset_hub_kusama {
 	}
 }
 
-// Penpal
+#[cfg(feature = "penpal-runtime")]
 pub mod penpal {
 	use super::*;
 	pub const PARA_ID: u32 = 2000;
@@ -626,7 +631,8 @@ pub mod penpal {
 	}
 }
 
-// Collectives
+
+#[cfg(feature = "collectives-runtime")]
 pub mod collectives {
 	use super::*;
 	pub const PARA_ID: u32 = 1001;
@@ -686,6 +692,7 @@ pub mod collectives {
 	}
 }
 
+#[cfg(feature = "bridge-hub-runtimes")]
 pub mod bridge_hub_kusama {
 	use super::*;
 	pub const PARA_ID: u32 = 1002;
@@ -741,6 +748,7 @@ pub mod bridge_hub_kusama {
 	}
 }
 
+#[cfg(feature = "bridge-hub-runtimes")]
 pub mod bridge_hub_polkadot {
 	use super::*;
 	pub const PARA_ID: u32 = 1002;

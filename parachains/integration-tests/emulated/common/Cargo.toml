@@ -28,11 +28,11 @@ polkadot-parachain = { default-features = false, git = "https://github.com/parit
 polkadot-service = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-primitives = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master", optional = true }
 polkadot-runtime-constants = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-kusama-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+kusama-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master", optional = true }
 kusama-runtime-constants = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-westend-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" } 
+westend-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master", optional = true } 
 westend-runtime-constants = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 xcm = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 xcm-executor = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -42,18 +42,30 @@ pallet-xcm = { default-features = false, git = "https://github.com/paritytech/po
 parachains-common = { path = "../../../common" }
 parachain-info = { path = "../../../pallets/parachain-info" }
 cumulus-primitives-core = { path = "../../../../primitives/core" }
-penpal-runtime = { path = "../../../runtimes/testing/penpal" }
-asset-hub-polkadot-runtime = { path = "../../../runtimes/assets/asset-hub-polkadot" }
-asset-hub-kusama-runtime = { path = "../../../runtimes/assets/asset-hub-kusama" }
-asset-hub-westend-runtime = { path = "../../../runtimes/assets/asset-hub-westend" }
-collectives-polkadot-runtime = { path = "../../../runtimes/collectives/collectives-polkadot" }
-bridge-hub-kusama-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-kusama" }
-bridge-hub-polkadot-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-polkadot" }
+penpal-runtime = { path = "../../../runtimes/testing/penpal", optional = true }
+asset-hub-polkadot-runtime = { path = "../../../runtimes/assets/asset-hub-polkadot", optional = true }
+asset-hub-kusama-runtime = { path = "../../../runtimes/assets/asset-hub-kusama", optional = true }
+asset-hub-westend-runtime = { path = "../../../runtimes/assets/asset-hub-westend", optional = true }
+collectives-polkadot-runtime = { path = "../../../runtimes/collectives/collectives-polkadot", optional = true }
+bridge-hub-kusama-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-kusama", optional = true }
+bridge-hub-polkadot-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-polkadot", optional = true }
 xcm-emulator = { default-features = false, path = "../../../../xcm/xcm-emulator" }
 
 [features]
+default = []
+asset-hub-kusama-runtime = [ "kusama-runtime", "dep:asset-hub-kusama-runtime"]
+asset-hub-polkadot-runtime = [ "polkadot-runtime", "dep:asset-hub-polkadot-runtime"]
+asset-hub-westend-runtime = [ "westend-runtime", "dep:asset-hub-westend-runtime"]
+bridge-hub-runtimes = [
+	"dep:bridge-hub-kusama-runtime", 
+	"dep:bridge-hub-polkadot-runtime",
+	"kusama-runtime",
+	"polkadot-runtime",
+]
+collectives-runtime = [ "polkadot-runtime", "dep:collectives-polkadot-runtime" ]
+penpal-runtime = [ "dep:penpal-runtime" ]
 runtime-benchmarks = [
-	"kusama-runtime/runtime-benchmarks",
-	"polkadot-runtime/runtime-benchmarks",
-	"westend-runtime/runtime-benchmarks",
+	"kusama-runtime?/runtime-benchmarks",
+	"polkadot-runtime?/runtime-benchmarks",
+	"westend-runtime?/runtime-benchmarks",
 ]
