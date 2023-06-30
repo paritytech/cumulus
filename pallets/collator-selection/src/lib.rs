@@ -41,8 +41,8 @@
 //! The current implementation resolves congestion of [`Candidates`] in a first-come-first-serve
 //! manner.
 //!
-//! Candidates will not be allowed to get kicked or leave_intent if the total number of candidates
-//! fall below `MinEligibleCollators`. This is to ensure that some collators will always exist.
+//! Candidates will not be allowed to get kicked or `leave_intent` if the total number of candidates
+//! would fall below `MinEligibleCollators`. This is to ensure that some collators will always exist.
 //!
 //! ### Rewards
 //!
@@ -309,6 +309,8 @@ pub mod pallet {
 				);
 			}
 
+			let weight_used = T::WeightInfo::set_invulnerables(new.len() as u32);
+
 			let mut bounded_invulnerables = BoundedVec::<_, T::MaxInvulnerables>::try_from(new)
 				.map_err(|_| Error::<T>::TooManyInvulnerables)?;
 
@@ -321,11 +323,17 @@ pub mod pallet {
 					Error::<T>::ValidatorNotRegistered
 				);
 
-				// We don't really care about the outcome. If it succeeds, it just tells us how
-				// many candidates are left. If it fails, it's because `who` wasn't a candidate,
-				// which is the state we want anyway.
-				// Don't remove their last authored block.
-				let _outcome = Self::try_remove_candidate(&account_id, false);
+				// Error just means `who` wasn't a candidate, which is the state we want anyway.
+				// Account for the weight if we do need to remove `who`. Don't remove their last
+				// authored block, as they are still a collator.
+				match Self::try_remove_candidate(&account_id, false) {
+					Ok(candidates) => weight_used.saturating_add(
+						T::WeightInfo::remove_invulnerable_candidate(candidates as u32),
+					),
+					// The only error is that `who` is not a candidate, but we still need to read
+					// `Candidates`.
+					Err(_) => weight_used.saturating_add(T::DbWeight::get().reads(1)),
+				};
 			}
 
 			// Invulnerables must be sorted for removal.
@@ -335,7 +343,8 @@ pub mod pallet {
 			Self::deposit_event(Event::NewInvulnerables {
 				invulnerables: bounded_invulnerables.to_vec(),
 			});
-			Ok(().into())
+
+			Ok(Some(weight_used).into())
 		}
 
 		/// Set the ideal number of collators (not including the invulnerables).
@@ -438,7 +447,10 @@ pub mod pallet {
 		/// The origin for this call must be the `UpdateOrigin`.
 		#[pallet::call_index(5)]
 		#[pallet::weight(T::WeightInfo::add_invulnerable(T::MaxInvulnerables::get() - 1))]
-		pub fn add_invulnerable(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
+		pub fn add_invulnerable(
+			origin: OriginFor<T>,
+			who: T::AccountId,
+		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
 
 			// ensure `who` has registered a validator key
@@ -449,13 +461,15 @@ pub mod pallet {
 				Error::<T>::ValidatorNotRegistered
 			);
 
-			// We don't allow Invulnerables to `register_as_candidate`. If someone is chosen as
-			// an Invulnerable, we should try to remove them from `Candidates` such that
-			// `Invulnerables` and `Candidates` are mutually exclusive sets. We don't really care
-			// about the outcome - the only error is that they are not a candidate, which is the
-			// state we want.
-			// Don't remove their last authored block, as they are still a collator.
-			let _outcome = Self::try_remove_candidate(&who, false);
+			// Error just means `who` wasn't a candidate, which is the state we want anyway.
+			// Account for the weight if we do need to remove `who`. Don't remove their last
+			// authored block, as they are still a collator.
+			let removal_weight = match Self::try_remove_candidate(&who, false) {
+				Ok(candidates) => T::WeightInfo::remove_invulnerable_candidate(candidates as u32),
+				// The only error is that `who` is not a candidate, but we still need to read
+				// `Candidates`.
+				Err(_) => T::DbWeight::get().reads(1),
+			};
 
 			<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
 				match invulnerables.binary_search(&who) {
@@ -468,7 +482,10 @@ pub mod pallet {
 			})?;
 
 			Self::deposit_event(Event::InvulnerableAdded { account_id: who });
-			Ok(())
+			let weight_used = removal_weight.saturating_add(T::WeightInfo::add_invulnerable(
+				Self::invulnerables().len().try_into().unwrap(),
+			));
+			Ok(Some(weight_used).into())
 		}
 
 		/// Remove an account `who` from the list of `Invulnerables` collators. `Invulnerables` must
