@@ -120,7 +120,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	// 1. Create asset on penpal:
 	PenpalWestend::execute_with(|| {
 		assert_ok!(<PenpalWestend as PenpalWestendPallet>::Assets::create(
-			<PenpalWestend as Parachain>::RuntimeOrigin::signed(PenpalWestendSender::get()),
+			penpal_runtime::RuntimeOrigin::signed(PenpalWestendSender::get()),
 			ASSET_ID.into(),
 			PenpalWestendSender::get().into(),
 			1000,
@@ -182,7 +182,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	]));
 
 	// Send XCM message from penpal => asset_hub_westend
-	let sudo_penpal_origin = <PenpalWestend as Parachain>::RuntimeOrigin::root();
+	let sudo_penpal_origin = penpal_runtime::RuntimeOrigin::root();
 	PenpalWestend::execute_with(|| {
 		assert_ok!(<PenpalWestend as PenpalWestendPallet>::PolkadotXcm::send(
 			sudo_penpal_origin.clone(),
