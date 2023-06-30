@@ -1,15 +1,12 @@
-// use std::marker::PhantomData;
-use codec::{Encode, Decode};
-use xcm_emulator::{BridgeMessage, BridgeMessageDispatchError, BridgeMessageHandler, NetworkComponent, Parachain};
+use super::{BridgeHubRococo, BridgeHubWococo,};
+use codec::Decode;
+use sp_core::Get;
 use pallet_bridge_messages::{Config, Instance1, Instance2, OutboundLanes, Pallet};
 use bp_messages::{LaneId, MessageKey, OutboundLaneData, target_chain::{DispatchMessage, MessageDispatch, DispatchMessageData}};
-use bp_runtime::messages::MessageDispatchResult;
 use bridge_runtime_common::messages_xcm_extension::XcmBlobMessageDispatchResult;
 pub use cumulus_primitives_core::{DmpMessageHandler, XcmpMessageHandler};
-use sp_core::Get;
-use super::{BridgeHubRococo, BridgeHubWococo, BridgeHubPolkadot, BridgeHubKusama};
+use xcm_emulator::{BridgeMessage, BridgeMessageDispatchError, BridgeMessageHandler, Parachain};
 
-// pub struct AssetHubMessageHandler<S, T, I>(PhantomData<S>, PhantomData<T>, PhantomData<I>);
 pub struct AssetHubMessageHandler<S, T, I> {
 	_marker: std::marker::PhantomData<(S, T, I)>
 }
@@ -18,8 +15,8 @@ type BridgeHubRococoRuntime = <BridgeHubRococo as Parachain>::Runtime;
 type BridgeHubWococoRuntime = <BridgeHubWococo as Parachain>::Runtime;
 
 // TODO: uncomment when https://github.com/paritytech/cumulus/pull/2528 is merged
-type BridgeHubPolkadotRuntime = <BridgeHubPolkadot as Parachain>::Runtime;
-type BridgeHubKusamaRuntime = <BridgeHubKusama as Parachain>::Runtime;
+// type BridgeHubPolkadotRuntime = <BridgeHubPolkadot as Parachain>::Runtime;
+// type BridgeHubKusamaRuntime = <BridgeHubKusama as Parachain>::Runtime;
 
 pub type RococoWococoMessageHandler
 	= AssetHubMessageHandler<BridgeHubRococoRuntime, BridgeHubWococoRuntime, Instance2>;
@@ -39,9 +36,7 @@ where
 	T: Config<I>,
 	I: 'static,
 	<T as Config<I>>::InboundPayload: From<Vec<u8>>,
-	// <<T as Config<I>>::MessageDispatch as MessageDispatch>::DispatchLevelResult: PartialEq<XcmBlobMessageDispatchResult>,
 	<T as Config<I>>::MessageDispatch: MessageDispatch<DispatchLevelResult = XcmBlobMessageDispatchResult>,
-	// <<T as Config<I>>::MessageDispatch as MessageDispatch>::DispatchLevelResult: XcmBlobMessageDispatchResult,
 {
 	fn get_source_outbound_messages() -> Vec<BridgeMessage> {
 		// get the source active outbound lanes
@@ -55,7 +50,7 @@ where
 			let latest_received_nonce = OutboundLanes::<S, Instance1>::get(lane).latest_received_nonce;
 
 			(latest_received_nonce + 1..=latest_generated_nonce).for_each(|nonce| {
-				let mut encoded_payload: Vec<u8> = Pallet::<S, Instance1>::outbound_message_data(*lane, nonce).expect("Bridge message does not exist").into();
+				let encoded_payload: Vec<u8> = Pallet::<S, Instance1>::outbound_message_data(*lane, nonce).expect("Bridge message does not exist").into();
 				let payload = Vec::<u8>::decode(&mut &encoded_payload[..]).expect("Decodign XCM message failed");
 				let id: u32 = (*lane).into();
 				let message = BridgeMessage { id, nonce, payload };
@@ -75,10 +70,9 @@ where
 		let payload = Ok(From::from(message.payload));
 
 		// Directly dispatch outbound messages assuming everything is correct
-		// and bypassing the `InboundLane` logic
+		// and bypassing the `Relayers`  and `InboundLane` logic
 		let dispatch_result = TargetMessageDispatch::<T, I>::dispatch(DispatchMessage {
 			key: MessageKey { lane_id, nonce },
-			// data: DispatchMessageData::<InboundPayload<T, I>> { payload },
 			data: DispatchMessageData::<InboundPayload<T, I>> { payload },
 		});
 
@@ -92,27 +86,8 @@ where
 			XcmBlobMessageDispatchResult::NotDispatched(e) => {
 				Err(BridgeMessageDispatchError(Box::new(XcmBlobMessageDispatchResult::NotDispatched(e))))
 			},
-			_ => Err(BridgeMessageDispatchError(Box::new("Unknown Error"))),
 		};
-
-		// let MessageDispatchResult { unspent_weight: Weight::zero(), dispatch_level_result } = dispatch_result;
-
-		// let result = match dispatch_result {
-		// 	MessageDispatchResult { unspent_weight: Weight::zero(), dispatch_level_result } => {
-		// 		if dispatch_level_result == XcmBlobMessageDispatchResult::Dispatched {
-		// 			Ok(XcmBlobMessageDispatchResult::Dispatched)
-		// 		} else {
-		// 			Err(BridgeMessageDispatchError(Box::new("Unknown Error")))
-		// 		}
-		// 	},
-		// 	_ => Err(BridgeMessageDispatchError(Box::new("Unknown Error"))),
-		// };
-
-
-
-
 		result
-		// Ok(())
 	}
 
 	fn notify_source_message_delivery(lane_id: u32) {

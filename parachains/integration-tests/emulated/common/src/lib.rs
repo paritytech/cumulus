@@ -7,16 +7,17 @@ pub use constants::{
 	bridge_hub_polkadot, bridge_hub_rococo, collectives, kusama, rococo, penpal, polkadot, westend,
 };
 pub use impls::{RococoWococoMessageHandler, WococoRococoMessageHandler};
+
+pub use sp_core::{sr25519, storage::Storage, Get};
 use frame_support::{parameter_types, sp_io, sp_tracing};
 pub use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, BlockNumber};
-pub use sp_core::{sr25519, storage::Storage, Get};
+use xcm_executor::traits::ConvertLocation;
 use xcm::prelude::*;
 use xcm_emulator::{
 	decl_test_networks, decl_test_parachains, decl_test_relay_chains, decl_test_bridges,
 	decl_test_sender_receiver_accounts_parameter_types, Parachain, RelayChain,
 	TestExt, BridgeMessageHandler,
 };
-use xcm_executor::traits::ConvertLocation;
 
 decl_test_relay_chains! {
 	#[api_version(5)]
@@ -136,7 +137,6 @@ decl_test_parachains! {
 			Balances: asset_hub_polkadot_runtime::Balances,
 			ParachainSystem: asset_hub_polkadot_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
-			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
@@ -158,7 +158,6 @@ decl_test_parachains! {
 			Balances: collectives_polkadot_runtime::Balances,
 			ParachainSystem: collectives_polkadot_runtime::ParachainSystem,
 			ParachainInfo: collectives_polkadot_runtime::ParachainInfo,
-			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: collectives_polkadot_runtime::PolkadotXcm,
@@ -179,9 +178,6 @@ decl_test_parachains! {
 			Balances: bridge_hub_polkadot_runtime::Balances,
 			ParachainSystem: bridge_hub_polkadot_runtime::ParachainSystem,
 			ParachainInfo: bridge_hub_polkadot_runtime::ParachainInfo,
-			// TODO: uncomment when https://github.com/paritytech/cumulus/pull/2528 is merged
-			// BridgeMessages: bridge_hub_kusama_runtime::BridgePolkadotMessages,
-			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: bridge_hub_polkadot_runtime::PolkadotXcm,
@@ -202,7 +198,6 @@ decl_test_parachains! {
 			Balances: penpal_runtime::Balances,
 			ParachainSystem: penpal_runtime::ParachainSystem,
 			ParachainInfo: penpal_runtime::ParachainInfo,
-			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
@@ -225,7 +220,6 @@ decl_test_parachains! {
 			Balances: asset_hub_kusama_runtime::Balances,
 			ParachainSystem: asset_hub_kusama_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_kusama_runtime::ParachainInfo,
-			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: asset_hub_kusama_runtime::PolkadotXcm,
@@ -248,9 +242,6 @@ decl_test_parachains! {
 			Balances: bridge_hub_kusama_runtime::Balances,
 			ParachainSystem: bridge_hub_kusama_runtime::ParachainSystem,
 			ParachainInfo: bridge_hub_kusama_runtime::ParachainInfo,
-			// TODO: uncomment when https://github.com/paritytech/cumulus/pull/2528 is merged
-			// BridgeMessages: bridge_hub_kusama_runtime::BridgePolkadotMessages,
-			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: bridge_hub_kusama_runtime::PolkadotXcm,
@@ -271,7 +262,6 @@ decl_test_parachains! {
 			Balances: penpal_runtime::Balances,
 			ParachainSystem: penpal_runtime::ParachainSystem,
 			ParachainInfo: penpal_runtime::ParachainInfo,
-			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
@@ -294,7 +284,6 @@ decl_test_parachains! {
 			Balances: asset_hub_westend_runtime::Balances,
 			ParachainSystem: asset_hub_westend_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_westend_runtime::ParachainInfo,
-			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: asset_hub_westend_runtime::PolkadotXcm,
@@ -317,7 +306,6 @@ decl_test_parachains! {
 			Balances: penpal_runtime::Balances,
 			ParachainSystem: penpal_runtime::ParachainSystem,
 			ParachainInfo: penpal_runtime::ParachainInfo,
-			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
@@ -340,7 +328,6 @@ decl_test_parachains! {
 			Balances: bridge_hub_rococo_runtime::Balances,
 			ParachainSystem: bridge_hub_rococo_runtime::ParachainSystem,
 			ParachainInfo: bridge_hub_rococo_runtime::ParachainInfo,
-			BridgeMessages: bridge_hub_rococo_runtime::BridgeWococoMessages,
 		},
 		pallets_extra = {
 			PolkadotXcm: bridge_hub_rococo_runtime::PolkadotXcm,
@@ -361,7 +348,6 @@ decl_test_parachains! {
 			Balances: asset_hub_polkadot_runtime::Balances,
 			ParachainSystem: asset_hub_polkadot_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
-			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
@@ -384,7 +370,6 @@ decl_test_parachains! {
 			Balances: bridge_hub_rococo_runtime::Balances,
 			ParachainSystem: bridge_hub_rococo_runtime::ParachainSystem,
 			ParachainInfo: bridge_hub_rococo_runtime::ParachainInfo,
-			BridgeMessages: bridge_hub_rococo_runtime::BridgeRococoMessages,
 		},
 		pallets_extra = {
 			PolkadotXcm: bridge_hub_rococo_runtime::PolkadotXcm,
@@ -405,7 +390,6 @@ decl_test_parachains! {
 			Balances: asset_hub_polkadot_runtime::Balances,
 			ParachainSystem: asset_hub_polkadot_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
-			BridgeMessages: (),
 		},
 		pallets_extra = {
 			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
@@ -424,7 +408,7 @@ decl_test_networks! {
 			BridgeHubPolkadot,
 		],
 		// TODO: uncomment when https://github.com/paritytech/cumulus/pull/2528 is merged
-		// birdge = PolkadotKusamaMockBridge
+		// bridge = PolkadotKusamaMockBridge
 		bridge = ()
 	},
 	pub struct KusamaMockNet {
@@ -435,7 +419,7 @@ decl_test_networks! {
 			BridgeHubKusama,
 		],
 		// TODO: uncomment when https://github.com/paritytech/cumulus/pull/2528 is merged
-		// birdge = KusamaPolkadotMockBridge
+		// bridge = KusamaPolkadotMockBridge
 		bridge = ()
 	},
 	pub struct WestendMockNet {
@@ -478,11 +462,13 @@ decl_test_bridges! {
 	// TODO: uncomment when https://github.com/paritytech/cumulus/pull/2528 is merged
 	// pub struct PolkadotKusamaMockBridge {
 	// 	source = BridgeHubPolkadot,
-	// 	target = BridgeHubKusama
+	// 	target = BridgeHubKusama,
+	//  handler = PolkadotKusamaMessageHandler
 	// },
 	// pub struct KusamaPolkadotMockBridge {
 	// 	source = BridgeHubKusama,
-	// 	target = BridgeHubPolkadot
+	// 	target = BridgeHubPolkadot,
+	// 	handler = KusamaPolkadotMessageHandler
 	// }
 }
 

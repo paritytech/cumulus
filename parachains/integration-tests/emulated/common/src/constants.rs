@@ -1,9 +1,3 @@
-use grandpa::AuthorityId as GrandpaId;
-use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-pub use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, BlockNumber};
-use polkadot_primitives::{AssignmentId, ValidatorId};
-pub use polkadot_runtime_parachains::configuration::HostConfiguration;
-use polkadot_service::chain_spec::get_authority_keys_from_seed_no_beefy;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_core::{sr25519, storage::Storage, Pair, Public};
@@ -11,8 +5,14 @@ use sp_runtime::{
 	traits::{IdentifyAccount, Verify},
 	BuildStorage, MultiSignature, Perbill,
 };
+use grandpa::AuthorityId as GrandpaId;
+use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use beefy_primitives::crypto::AuthorityId as BeefyId;
-pub use xcm;
+use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, BlockNumber};
+use polkadot_primitives::{AssignmentId, ValidatorId};
+use polkadot_runtime_parachains::configuration::HostConfiguration;
+use polkadot_service::chain_spec::get_authority_keys_from_seed_no_beefy;
+use xcm;
 
 pub const XCM_V2: u32 = 3;
 pub const XCM_V3: u32 = 2;
@@ -917,19 +917,19 @@ pub mod bridge_hub_rococo {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
 			},
 			bridge_wococo_grandpa: bridge_hub_rococo_runtime::BridgeWococoGrandpaConfig {
-				owner: Some(accounts::init_balances()[0].clone()),
+				owner: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 				..Default::default()
 			},
 			bridge_rococo_grandpa: bridge_hub_rococo_runtime::BridgeRococoGrandpaConfig {
-				owner: Some(accounts::init_balances()[0].clone()),
+				owner: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 				..Default::default()
 			},
 			bridge_rococo_messages: bridge_hub_rococo_runtime::BridgeRococoMessagesConfig {
-				owner: Some(accounts::init_balances()[0].clone()),
+				owner: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 				..Default::default()
 			},
 			bridge_wococo_messages: bridge_hub_rococo_runtime::BridgeWococoMessagesConfig {
-				owner: Some(accounts::init_balances()[0].clone()),
+				owner: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 				..Default::default()
 			},
 			..Default::default()

@@ -17,7 +17,7 @@
 use crate::*;
 
 #[test]
-fn multiple_messages_works() {
+fn example() {
 	// Init tests variables
 	// XcmPallet send arguments
 	let sudo_origin = <Rococo as Relay>::RuntimeOrigin::root();
@@ -38,7 +38,8 @@ fn multiple_messages_works() {
 		}
 	]));
 
-	// Send XCM message from Relay Chain
+	//Rococo Global Consensus
+	// Send XCM message from Relay Chain to Brid Hub source Parachain
 	Rococo::execute_with(|| {
 		assert_ok!(<Rococo as RococoPallet>::XcmPallet::send(
 			sudo_origin,
@@ -55,8 +56,7 @@ fn multiple_messages_works() {
 			]
 		);
 	});
-
-	// Receive XCM message in Bridge Hub Parachain
+	// Receive XCM message in Bridge Hub source Parachain
 	BridgeHubRococo::execute_with(|| {
 		type RuntimeEvent = <BridgeHubRococo as Para>::RuntimeEvent;
 
@@ -75,6 +75,8 @@ fn multiple_messages_works() {
 		);
 	});
 
+	// Wococo GLobal Consensus
+	// Receive XCM message in Bridge Hub target Parachain
 	BridgeHubWococo::execute_with(|| {
 		type RuntimeEvent = <BridgeHubWococo as Para>::RuntimeEvent;
 
@@ -85,7 +87,7 @@ fn multiple_messages_works() {
 			]
 		);
 	});
-
+	// Receive embeded XCM message within `ExportMessage` in Parachain destination
 	AssetHubWococo::execute_with(|| {
 		type RuntimeEvent = <AssetHubWococo as Para>::RuntimeEvent;
 

@@ -1907,7 +1907,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "collectives-polkadot-it"
+name = "collectives-polkadot-integration-tests"
 version = "0.1.0"
 dependencies = [
  "asset-hub-polkadot-runtime",
@@ -16424,8 +16424,6 @@ dependencies = [
 name = "xcm-emulator"
 version = "0.1.0"
 dependencies = [
- "bp-messages",
- "bridge-runtime-common",
  "casey",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -16438,7 +16436,6 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-balances",
- "pallet-bridge-messages",
  "pallet-message-queue",
  "parachain-info",
  "parachains-common",
@@ -16453,8 +16450,6 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "xcm",
- "xcm-builder",
- "xcm-executor",
 ]
 
 [[package]]
