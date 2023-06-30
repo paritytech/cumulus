@@ -208,4 +208,23 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 			.saturating_add(Weight::from_parts(0, 2519).saturating_mul(c.into()))
 			.saturating_add(Weight::from_parts(0, 2602).saturating_mul(r.into()))
 	}
+	/// Storage: CollatorSelection Invulnerables (r:1 w:0)
+	/// Proof: CollatorSelection Invulnerables (max_values: Some(1), max_size: Some(641), added: 1136, mode: MaxEncodedLen)
+	/// Storage: CollatorSelection Candidates (r:1 w:1)
+	/// Proof: CollatorSelection Candidates (max_values: Some(1), max_size: Some(4802), added: 5297, mode: MaxEncodedLen)
+	/// Storage: System Account (r:1 w:1)
+	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	/// The range of component `c` is `[5, 100]`.
+	fn remove_invulnerable_candidate(c: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `364 + c * (49 ±0)`
+		//  Estimated: `6287`
+		// Minimum execution time: 35_081_000 picoseconds.
+		Weight::from_parts(38_468_787, 0)
+			.saturating_add(Weight::from_parts(0, 6287))
+			// Standard Error: 2_002
+			.saturating_add(Weight::from_parts(108_616, 0).saturating_mul(c.into()))
+			.saturating_add(T::DbWeight::get().reads(3))
+			.saturating_add(T::DbWeight::get().writes(2))
+	}
 }

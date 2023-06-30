@@ -324,6 +324,7 @@ pub mod pallet {
 				// We don't really care about the outcome. If it succeeds, it just tells us how
 				// many candidates are left. If it fails, it's because `who` wasn't a candidate,
 				// which is the state we want anyway.
+				// Don't remove their last authored block.
 				let _outcome = Self::try_remove_candidate(&account_id, false);
 			}
 
@@ -423,9 +424,10 @@ pub mod pallet {
 		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(
-				Self::eligible_collators() as u32 > T::MinEligibleCollators::get(),
+				Self::eligible_collators() > T::MinEligibleCollators::get(),
 				Error::<T>::TooFewEligibleCollators
 			);
+			// Do remove their last authored block.
 			let current_count = Self::try_remove_candidate(&who, true)?;
 
 			Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
@@ -452,6 +454,7 @@ pub mod pallet {
 			// `Invulnerables` and `Candidates` are mutually exclusive sets. We don't really care
 			// about the outcome - the only error is that they are not a candidate, which is the
 			// state we want.
+			// Don't remove their last authored block, as they are still a collator.
 			let _outcome = Self::try_remove_candidate(&who, false);
 
 			<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
@@ -478,7 +481,7 @@ pub mod pallet {
 			T::UpdateOrigin::ensure_origin(origin)?;
 
 			ensure!(
-				Self::eligible_collators() as u32 > T::MinEligibleCollators::get(),
+				Self::eligible_collators() > T::MinEligibleCollators::get(),
 				Error::<T>::TooFewEligibleCollators
 			);
 
@@ -492,6 +495,22 @@ pub mod pallet {
 			Self::deposit_event(Event::InvulnerableRemoved { account_id: who });
 			Ok(())
 		}
+
+		/// Remove a `Candidate` who is `Invulnerable`, as these sets should be mutually exclusive.
+		///
+		/// Any signed origin can call this.
+		#[pallet::call_index(7)]
+		#[pallet::weight(T::WeightInfo::remove_invulnerable_candidate(T::MaxCandidates::get()))]
+		pub fn remove_invulnerable_candidate(
+			origin: OriginFor<T>,
+			who: T::AccountId,
+		) -> DispatchResultWithPostInfo {
+			let _ = ensure_signed(origin)?;
+			ensure!(Self::invulnerables().contains(&who), Error::<T>::NotInvulnerable);
+			// We don't want to remove the last authored block because they are still a collator.
+			let current_count = Self::try_remove_candidate(&who, false)?;
+			Ok(Some(T::WeightInfo::remove_invulnerable_candidate(current_count as u32)).into())
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -501,7 +520,11 @@ pub mod pallet {
 		}
 
 		fn eligible_collators() -> u32 {
-			Self::candidates().len().saturating_add(Self::invulnerables().len()).try_into().unwrap()
+			Self::candidates()
+				.len()
+				.saturating_add(Self::invulnerables().len())
+				.try_into()
+				.unwrap()
 		}
 
 		/// Removes a candidate if they exist and sends them back their deposit

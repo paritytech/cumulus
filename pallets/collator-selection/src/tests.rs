@@ -17,7 +17,8 @@ use crate as collator_selection;
 use crate::{mock::*, CandidateInfo, Error};
 use frame_support::{
 	assert_noop, assert_ok,
-	traits::{Currency, GenesisBuild, OnInitialize},
+	traits::{ConstU32, Currency, GenesisBuild, OnInitialize},
+	BoundedVec,
 };
 use pallet_balances::Error as BalancesError;
 use sp_runtime::{testing::UintAuthorityId, traits::BadOrigin};
@@ -194,7 +195,6 @@ fn remove_invulnerable_works() {
 fn candidate_to_invulnerable_works() {
 	new_test_ext().execute_with(|| {
 		initialize_to_block(1);
-		assert_eq!(<crate::tests::MinEligibleCollators>::get(), 1);
 		assert_eq!(CollatorSelection::desired_candidates(), 2);
 		assert_eq!(CollatorSelection::candidacy_bond(), 10);
 		assert_eq!(CollatorSelection::candidates(), Vec::new());
@@ -298,7 +298,10 @@ fn cannot_unregister_candidate_if_too_few() {
 	new_test_ext().execute_with(|| {
 		assert_eq!(CollatorSelection::candidates(), Vec::new());
 		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
-		assert_ok!(CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(RootAccount::get()), 1));
+		assert_ok!(CollatorSelection::remove_invulnerable(
+			RuntimeOrigin::signed(RootAccount::get()),
+			1
+		));
 		assert_noop!(
 			CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(RootAccount::get()), 2),
 			Error::<Test>::TooFewEligibleCollators,
@@ -309,7 +312,10 @@ fn cannot_unregister_candidate_if_too_few() {
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(4)));
 
 		// now we can remove `2`
-		assert_ok!(CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(RootAccount::get()), 2));
+		assert_ok!(CollatorSelection::remove_invulnerable(
+			RuntimeOrigin::signed(RootAccount::get()),
+			2
+		));
 
 		// can not remove too few
 		assert_noop!(
@@ -541,10 +547,16 @@ fn should_not_kick_mechanism_too_few() {
 		// remove the invulnerables and add new collators 3 and 5
 		assert_eq!(CollatorSelection::candidates(), Vec::new());
 		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
-		assert_ok!(CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(RootAccount::get()), 1));
+		assert_ok!(CollatorSelection::remove_invulnerable(
+			RuntimeOrigin::signed(RootAccount::get()),
+			1
+		));
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)));
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(5)));
-		assert_ok!(CollatorSelection::remove_invulnerable(RuntimeOrigin::signed(RootAccount::get()), 2));
+		assert_ok!(CollatorSelection::remove_invulnerable(
+			RuntimeOrigin::signed(RootAccount::get()),
+			2
+		));
 
 		initialize_to_block(10);
 		assert_eq!(CollatorSelection::candidates().len(), 2);
@@ -564,6 +576,41 @@ fn should_not_kick_mechanism_too_few() {
 		assert_eq!(SessionHandlerCollators::get(), vec![5]);
 		// kicked collator gets funds back
 		assert_eq!(Balances::free_balance(3), 100);
+	});
+}
+
+#[test]
+fn kick_invulnerable_candidate_works() {
+	new_test_ext().execute_with(|| {
+		// remove the invulnerables and add new collators 3 and 4
+		assert_eq!(CollatorSelection::candidates(), Vec::new());
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)));
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(4)));
+		assert_eq!(Balances::free_balance(3), 90);
+		assert_eq!(Balances::free_balance(4), 90);
+		// force set 3 as invulnerable. we have to force this because the pallet's logic should
+		// prevent it from happening.
+		let force_invulnerables =
+			BoundedVec::<_, ConstU32<20>>::try_from(vec![1_u64, 2_u64, 3_u64])
+				.expect("it's shorter");
+		<crate::Invulnerables<Test>>::put(force_invulnerables);
+
+		let collator_3 = CandidateInfo { who: 3, deposit: 10 };
+		let collator_4 = CandidateInfo { who: 4, deposit: 10 };
+
+		// remove 3 from candidates
+		assert_eq!(CollatorSelection::candidates(), vec![collator_3, collator_4.clone()]);
+		assert_ok!(CollatorSelection::remove_invulnerable_candidate(RuntimeOrigin::signed(1), 3));
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2, 3]);
+		assert_eq!(CollatorSelection::candidates(), vec![collator_4]);
+		assert_eq!(Balances::free_balance(3), 100);
+
+		// should not be able to remove 4
+		assert_noop!(
+			CollatorSelection::remove_invulnerable_candidate(RuntimeOrigin::signed(1), 4),
+			Error::<Test>::NotInvulnerable
+		);
+		assert_eq!(Balances::free_balance(4), 90);
 	});
 }
 
