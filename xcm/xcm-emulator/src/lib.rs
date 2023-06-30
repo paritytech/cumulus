@@ -780,6 +780,8 @@ macro_rules! decl_test_networks {
 					while let Some((to_para_id, messages))
 						= $crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 						$(
+							let para_id: u32 = <$parachain>::para_id().into();
+
 							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) && para_id == to_para_id {
 								let mut msg_dedup: Vec<(RelayChainBlockNumber, Vec<u8>)> = Vec::new();
 								for m in &messages {
@@ -810,6 +812,8 @@ macro_rules! decl_test_networks {
 						= $crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 						let iter = messages.iter().map(|(p, b, m)| (*p, *b, &m[..])).collect::<Vec<_>>().into_iter();
 						$(
+							let para_id: u32 = <$parachain>::para_id().into();
+
 							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) && para_id == to_para_id {
 								<$parachain>::handle_xcmp_messages(iter.clone(), $crate::Weight::max_value());
 							}
