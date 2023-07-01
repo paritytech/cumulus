@@ -309,7 +309,7 @@ pub mod pallet {
 				);
 			}
 
-			let weight_used = T::WeightInfo::set_invulnerables(new.len() as u32);
+			let mut weight_used = T::WeightInfo::set_invulnerables(new.len() as u32);
 
 			let mut bounded_invulnerables = BoundedVec::<_, T::MaxInvulnerables>::try_from(new)
 				.map_err(|_| Error::<T>::TooManyInvulnerables)?;
@@ -327,12 +327,12 @@ pub mod pallet {
 				// Account for the weight if we do need to remove `who`. Don't remove their last
 				// authored block, as they are still a collator.
 				match Self::try_remove_candidate(&account_id, false) {
-					Ok(candidates) => weight_used.saturating_add(
+					Ok(candidates) => weight_used.saturating_accrue(
 						T::WeightInfo::remove_invulnerable_candidate(candidates as u32),
 					),
 					// The only error is that `who` is not a candidate, but we still need to read
 					// `Candidates`.
-					Err(_) => weight_used.saturating_add(T::DbWeight::get().reads(1)),
+					Err(_) => weight_used.saturating_accrue(T::DbWeight::get().reads(1)),
 				};
 			}
 
