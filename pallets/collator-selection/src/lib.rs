@@ -292,7 +292,14 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Set the list of invulnerable (fixed) collators.
+		/// Set the list of invulnerable (fixed) collators. These collators must do some
+		/// preparation, namely to have registered session keys.
+		///
+		/// The call will remove any accounts that have not registered keys from the set. That is,
+		/// it is non-atomic; the caller accepts all `AccountId`s passed in `new` _individually_ as
+		/// acceptable Invulnerables, and is not proposing a _set_ of new Invulnerables.
+		///
+		/// Must be called by the `UpdateOrigin`.
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::set_invulnerables(new.len() as u32))]
 		pub fn set_invulnerables(
@@ -309,19 +316,31 @@ pub mod pallet {
 				);
 			}
 
-			let mut weight_used = T::WeightInfo::set_invulnerables(new.len() as u32);
+			// Will need to check the length again when putting into a bounded vec, but this
+			// prevents the iterator from having too many elements.
+			ensure!(
+				new.len() as u32 <= T::MaxInvulnerables::get(),
+				Error::<T>::TooManyInvulnerables
+			);
 
-			let mut bounded_invulnerables = BoundedVec::<_, T::MaxInvulnerables>::try_from(new)
-				.map_err(|_| Error::<T>::TooManyInvulnerables)?;
+			let mut weight_used = T::WeightInfo::set_invulnerables(new.len() as u32);
+			let mut with_passed_checks = Vec::new();
 
 			// check if the invulnerables have associated validator keys before they are set
-			for account_id in bounded_invulnerables.iter() {
-				let validator_key = T::ValidatorIdOf::convert(account_id.clone())
-					.ok_or(Error::<T>::NoAssociatedValidatorId)?;
-				ensure!(
-					T::ValidatorRegistration::is_registered(&validator_key),
-					Error::<T>::ValidatorNotRegistered
-				);
+			for account_id in new.iter() {
+				// don't let one unprepared collator ruin things for everyone.
+				let validator_key = T::ValidatorIdOf::convert(account_id.clone());
+				match validator_key {
+					Some(key) => {
+						// key is not registered
+						if !T::ValidatorRegistration::is_registered(&key) {
+							continue
+						}
+						// else condition passes; key is registered
+					},
+					// key does not exist
+					None => continue,
+				}
 
 				// Error just means `who` wasn't a candidate, which is the state we want anyway.
 				// Account for the weight if we do need to remove `who`. Don't remove their last
@@ -330,11 +349,16 @@ pub mod pallet {
 					Ok(candidates) => weight_used.saturating_accrue(
 						T::WeightInfo::remove_invulnerable_candidate(candidates as u32),
 					),
-					// The only error is that `who` is not a candidate, but we still need to read
-					// `Candidates`.
+					// Even though `who` is not a candidate, we still need to read `Candidates`.
 					Err(_) => weight_used.saturating_accrue(T::DbWeight::get().reads(1)),
 				};
+
+				with_passed_checks.push(account_id.clone());
 			}
+			// should never fail since `with_passed_checks` must be equal to or shorter than `new`
+			let mut bounded_invulnerables =
+				BoundedVec::<_, T::MaxInvulnerables>::try_from(with_passed_checks)
+					.map_err(|_| Error::<T>::TooManyInvulnerables)?;
 
 			// Invulnerables must be sorted for removal.
 			bounded_invulnerables.sort();

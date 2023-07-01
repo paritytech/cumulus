@@ -51,16 +51,22 @@ fn it_should_set_invulnerables() {
 			CollatorSelection::set_invulnerables(RuntimeOrigin::signed(1), new_set),
 			BadOrigin
 		);
+	});
+}
 
-		// cannot set invulnerables without associated validator keys
-		let invulnerables = vec![42];
-		assert_noop!(
-			CollatorSelection::set_invulnerables(
-				RuntimeOrigin::signed(RootAccount::get()),
-				invulnerables
-			),
-			Error::<Test>::ValidatorNotRegistered
-		);
+#[test]
+fn it_should_set_invulnerables_even_with_some_invalid() {
+	new_test_ext().execute_with(|| {
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+		let new_with_invalid = vec![1, 4, 3, 42, 2];
+
+		assert_ok!(CollatorSelection::set_invulnerables(
+			RuntimeOrigin::signed(RootAccount::get()),
+			new_with_invalid
+		));
+
+		// should succeed and order them, but not include 42
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2, 3, 4]);
 	});
 }
 
