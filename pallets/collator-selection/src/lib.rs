@@ -299,13 +299,15 @@ pub mod pallet {
 		/// it is non-atomic; the caller accepts all `AccountId`s passed in `new` _individually_ as
 		/// acceptable Invulnerables, and is not proposing a _set_ of new Invulnerables.
 		///
+		/// This call does not maintain mutual exclusivity of `Invulnerables` and `Candidates`. It
+		/// is recommended to use a batch of `add_invulnerable` and `remove_invulnerable` instead.
+		/// A `batch_all` can also be used to enforce atomicity. If any candidates are included in
+		/// `new`, they should be removed with `remove_invulnerable_candidate` after execution.
+		///
 		/// Must be called by the `UpdateOrigin`.
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::set_invulnerables(new.len() as u32))]
-		pub fn set_invulnerables(
-			origin: OriginFor<T>,
-			new: Vec<T::AccountId>,
-		) -> DispatchResultWithPostInfo {
+		pub fn set_invulnerables(origin: OriginFor<T>, new: Vec<T::AccountId>) -> DispatchResult {
 			T::UpdateOrigin::ensure_origin(origin)?;
 
 			// don't wipe out the collator set
@@ -323,8 +325,7 @@ pub mod pallet {
 				Error::<T>::TooManyInvulnerables
 			);
 
-			let mut weight_used = T::WeightInfo::set_invulnerables(new.len() as u32);
-			let mut with_passed_checks = Vec::new();
+			let mut new_with_keys = Vec::new();
 
 			// check if the invulnerables have associated validator keys before they are set
 			for account_id in new.iter() {
@@ -342,22 +343,12 @@ pub mod pallet {
 					None => continue,
 				}
 
-				// Error just means `who` wasn't a candidate, which is the state we want anyway.
-				// Account for the weight if we do need to remove `who`. Don't remove their last
-				// authored block, as they are still a collator.
-				match Self::try_remove_candidate(&account_id, false) {
-					Ok(candidates) => weight_used.saturating_accrue(
-						T::WeightInfo::remove_invulnerable_candidate(candidates as u32),
-					),
-					// Even though `who` is not a candidate, we still need to read `Candidates`.
-					Err(_) => weight_used.saturating_accrue(T::DbWeight::get().reads(1)),
-				};
-
-				with_passed_checks.push(account_id.clone());
+				new_with_keys.push(account_id.clone());
 			}
-			// should never fail since `with_passed_checks` must be equal to or shorter than `new`
+
+			// should never fail since `new_with_keys` must be equal to or shorter than `new`
 			let mut bounded_invulnerables =
-				BoundedVec::<_, T::MaxInvulnerables>::try_from(with_passed_checks)
+				BoundedVec::<_, T::MaxInvulnerables>::try_from(new_with_keys)
 					.map_err(|_| Error::<T>::TooManyInvulnerables)?;
 
 			// Invulnerables must be sorted for removal.
@@ -368,7 +359,7 @@ pub mod pallet {
 				invulnerables: bounded_invulnerables.to_vec(),
 			});
 
-			Ok(Some(weight_used).into())
+			Ok(())
 		}
 
 		/// Set the ideal number of collators (not including the invulnerables).

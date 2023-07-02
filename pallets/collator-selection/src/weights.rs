@@ -93,7 +93,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	/// The range of component `b` is `[1, 19]`.
 	/// The range of component `c` is `[1, 99]`.
-	fn add_invulnerable(b: u32, c: u32, ) -> Weight {
+	fn add_invulnerable(b: u32, c: u32) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `757 + b * (32 ±0) + c * (53 ±0)`
 		//  Estimated: `6287 + b * (37 ±0) + c * (53 ±0)`
@@ -199,7 +199,7 @@ impl WeightInfo for () {
 	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	/// The range of component `b` is `[1, 19]`.
 	/// The range of component `c` is `[1, 99]`.
-	fn add_invulnerable(b: u32, c: u32, ) -> Weight {
+	fn add_invulnerable(b: u32, c: u32) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `757 + b * (32 ±0) + c * (53 ±0)`
 		//  Estimated: `6287 + b * (37 ±0) + c * (53 ±0)`

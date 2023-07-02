@@ -224,14 +224,12 @@ fn candidate_to_invulnerable_works() {
 		assert_eq!(Balances::free_balance(3), 100);
 		assert_eq!(CollatorSelection::candidates().len(), 1);
 
-		// it should work
 		assert_ok!(CollatorSelection::add_invulnerable(
 			RuntimeOrigin::signed(RootAccount::get()),
 			4
 		));
-		// and remove 4 from candidates, even with `min_candidates`.
 		assert!(CollatorSelection::invulnerables().to_vec().contains(&4));
-		assert_eq!(Balances::free_balance(4), 100); // sorry 4
+		assert_eq!(Balances::free_balance(4), 100);
 		assert_eq!(CollatorSelection::candidates().len(), 0);
 	});
 }
