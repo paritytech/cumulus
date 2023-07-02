@@ -36,6 +36,7 @@ use cumulus_primitives_core::{
 };
 use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
 use frame_support::{
+	defensive,
 	dispatch::{DispatchError, DispatchResult, Pays, PostDispatchInfo},
 	ensure,
 	inherent::{InherentData, InherentIdentifier, ProvideInherent},
@@ -852,12 +853,21 @@ impl<T: Config> Pallet<T> {
 		if dm_count != 0 {
 			Self::deposit_event(Event::DownwardMessagesReceived { count: dm_count });
 
+			// Eagerly update the MQC head hash:
 			for m in &downward_messages {
 				dmq_head.extend_downward(m);
 			}
+			// Note: we are not using `.defensive()` here since that prints the whole value to console. In case that the message is too long, this clogs up the log quite badly.
 			let bounded =
-				downward_messages.iter().filter_map(|m| BoundedSlice::try_from(&m.msg[..]).ok());
-			// Put all messages into the MQ pallet.
+				downward_messages
+					.iter()
+					.filter_map(|m| match BoundedSlice::try_from(&m.msg[..]) {
+						Ok(bounded) => Some(bounded),
+						Err(_) => {
+							defensive!("Inbound Downward message was too long; dropping");
+							None
+						},
+					});
 			T::DmpQueue::enqueue_messages(bounded, AggregateMessageOrigin::Parent);
 			<LastDmqMqcHead<T>>::put(&dmq_head);
 

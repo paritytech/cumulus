@@ -33,8 +33,8 @@ mod benchmarks {
 	fn enqueue_inbound_downward_messages(n: Linear<0, 1000>) {
 		// FAIL-CI use correct maximum
 		let msg = InboundDownwardMessage {
-			sent_at: n,           // Should not matter.
-			msg: vec![0u8; 1024], // FAIL-CI use correct maximum
+			sent_at: n, // Should not matter.
+			msg: vec![0u8; MaxDmpMessageLenOf::<T>::get() as usize],
 		};
 		let msgs = vec![msg; n as usize];
 		let head = mqp_head(&msgs);

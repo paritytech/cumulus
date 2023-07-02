@@ -19,16 +19,13 @@
 use super::*;
 use crate::mock::*;
 
-use codec::Encode;
 use cumulus_primitives_core::{AbridgedHrmpChannel, InboundDownwardMessage, InboundHrmpMessage};
 use frame_support::{assert_ok, parameter_types};
 use frame_system::RawOrigin;
 use hex_literal::hex;
 use rand::Rng;
 use relay_chain::HrmpChannelId;
-use sp_core::{blake2_256, H256};
-use sp_runtime::DispatchErrorWithPostInfo;
-use sp_version::RuntimeVersion;
+use sp_core::H256;
 
 #[test]
 #[should_panic]
@@ -676,7 +673,7 @@ fn receive_hrmp_many() {
 					let mut m = m.borrow_mut();
 					let msgs = SentInBlock::get()[block as usize]
 						.iter()
-						.map(|m| (ALICE.clone(), m.sent_at, m.data.clone()))
+						.map(|m| (ALICE, m.sent_at, m.data.clone()))
 						.collect::<Vec<_>>();
 					assert_eq!(&*m, &msgs);
 					m.clear();
@@ -698,7 +695,13 @@ fn test() {
 }
 
 #[test]
+// NOTE: frame-system disables the upgrade version check for benchmarks:
+#[cfg(not(feature = "runtime-benchmarks"))]
 fn upgrade_version_checks_should_work() {
+	use codec::Encode;
+	use sp_runtime::DispatchErrorWithPostInfo;
+	use sp_version::RuntimeVersion;
+
 	let test_data = vec![
 		("test", 0, 1, Err(frame_system::Error::<Test>::SpecVersionNeedsToIncrease)),
 		("test", 1, 0, Err(frame_system::Error::<Test>::SpecVersionNeedsToIncrease)),
@@ -720,7 +723,7 @@ fn upgrade_version_checks_should_work() {
 		ext.register_extension(sp_core::traits::ReadRuntimeVersionExt::new(read_runtime_version));
 		ext.execute_with(|| {
 			let new_code = vec![1, 2, 3, 4];
-			let new_code_hash = sp_core::H256(blake2_256(&new_code));
+			let new_code_hash = H256(sp_core::blake2_256(&new_code));
 
 			let _authorize =
 				ParachainSystem::authorize_upgrade(RawOrigin::Root.into(), new_code_hash, true);
