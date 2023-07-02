@@ -466,11 +466,15 @@ pub mod pallet {
 			Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
 		}
 
-		/// Add a new account `who` to the list of `Invulnerables` collators.
+		/// Add a new account `who` to the list of `Invulnerables` collators. `who` must have
+		/// registered session keys. If `who` is a candidate, they will be removed.
 		///
 		/// The origin for this call must be the `UpdateOrigin`.
 		#[pallet::call_index(5)]
-		#[pallet::weight(T::WeightInfo::add_invulnerable(T::MaxInvulnerables::get() - 1))]
+		#[pallet::weight(T::WeightInfo::add_invulnerable(
+			T::MaxInvulnerables::get() - 1,
+			T::MaxCandidates::get()
+		))]
 		pub fn add_invulnerable(
 			origin: OriginFor<T>,
 			who: T::AccountId,
@@ -485,16 +489,6 @@ pub mod pallet {
 				Error::<T>::ValidatorNotRegistered
 			);
 
-			// Error just means `who` wasn't a candidate, which is the state we want anyway.
-			// Account for the weight if we do need to remove `who`. Don't remove their last
-			// authored block, as they are still a collator.
-			let removal_weight = match Self::try_remove_candidate(&who, false) {
-				Ok(candidates) => T::WeightInfo::remove_invulnerable_candidate(candidates as u32),
-				// The only error is that `who` is not a candidate, but we still need to read
-				// `Candidates`.
-				Err(_) => T::DbWeight::get().reads(1),
-			};
-
 			<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
 				match invulnerables.binary_search(&who) {
 					Ok(_) => return Err(Error::<T>::AlreadyInvulnerable)?,
@@ -505,10 +499,17 @@ pub mod pallet {
 				Ok(())
 			})?;
 
+			// Error just means `who` wasn't a candidate, which is the state we want anyway. Don't
+			// remove their last authored block, as they are still a collator.
+			let _ = Self::try_remove_candidate(&who, false);
+
 			Self::deposit_event(Event::InvulnerableAdded { account_id: who });
-			let weight_used = removal_weight.saturating_add(T::WeightInfo::add_invulnerable(
-				Self::invulnerables().len().try_into().unwrap(),
-			));
+
+			let weight_used = T::WeightInfo::add_invulnerable(
+				Self::invulnerables().len().try_into().unwrap_or(T::MaxInvulnerables::get() - 1),
+				Self::candidates().len().try_into().unwrap_or(T::MaxCandidates::get()),
+			);
+
 			Ok(Some(weight_used).into())
 		}
 
