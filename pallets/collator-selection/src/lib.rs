@@ -41,8 +41,9 @@
 //! The current implementation resolves congestion of [`Candidates`] in a first-come-first-serve
 //! manner.
 //!
-//! Candidates will not be allowed to get kicked or `leave_intent` if the total number of candidates
-//! would fall below `MinEligibleCollators`. This is to ensure that some collators will always exist.
+//! Candidates will not be allowed to get kicked or `leave_intent` if the total number of collators
+//! would fall below `MinEligibleCollators`. This is to ensure that some collators will always
+//! exist, i.e. someone is eligible to produce a block.
 //!
 //! ### Rewards
 //!
@@ -53,7 +54,7 @@
 //! - Half the value of the transaction fees within the block. The other half of the transaction
 //!   fees are deposited into the Pot.
 //!
-//! To initiate rewards an ED needs to be transferred to the pot address.
+//! To initiate rewards, an ED needs to be transferred to the pot address.
 //!
 //! Note: Eventually the Pot distribution may be modified as discussed in
 //! [this issue](https://github.com/paritytech/statemint/issues/21#issuecomment-810481073).
@@ -362,9 +363,11 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Set the ideal number of collators (not including the invulnerables).
-		/// If lowering this number, then the number of running collators could be higher than this figure.
-		/// Aside from that edge case, there should be no other way to have more collators than the desired number.
+		/// Set the ideal number of non-invulnerable collators. If lowering this number, then the
+		/// number of running collators could be higher than this figure. Aside from that edge case,
+		/// there should be no other way to have more candidates than the desired number.
+		///
+		/// The origin for this call must be the `UpdateOrigin`.
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::set_desired_candidates())]
 		pub fn set_desired_candidates(
@@ -382,6 +385,8 @@ pub mod pallet {
 		}
 
 		/// Set the candidacy bond amount.
+		///
+		/// The origin for this call must be the `UpdateOrigin`.
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::set_candidacy_bond())]
 		pub fn set_candidacy_bond(
@@ -547,20 +552,25 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		/// Get a unique, inaccessible account id from the `PotId`.
+		/// Get a unique, inaccessible account ID from the `PotId`.
 		pub fn account_id() -> T::AccountId {
 			T::PotId::get().into_account_truncating()
 		}
 
+		/// Return the total number of accounts that are eligible collators (candidates and
+		/// invulnerables).
 		fn eligible_collators() -> u32 {
 			Self::candidates()
 				.len()
 				.saturating_add(Self::invulnerables().len())
 				.try_into()
-				.unwrap()
+				// More-or-less guaranteed not to Err since it's hard to imagine candidates +
+				// invulnerables being greater than (or for `usize` to be smaller than) `u32::MAX`,
+				// but return something "reasonable" instead of panicking.
+				.unwrap_or(T::MaxCandidates::get())
 		}
 
-		/// Removes a candidate if they exist and sends them back their deposit
+		/// Removes a candidate if they exist and sends them back their deposit.
 		fn try_remove_candidate(
 			who: &T::AccountId,
 			remove_last_authored: bool,
@@ -593,8 +603,8 @@ pub mod pallet {
 			collators
 		}
 
-		/// Kicks out candidates that did not produce a block in the kick threshold
-		/// and refund their deposits.
+		/// Kicks out candidates that did not produce a block in the kick threshold and refunds
+		/// their deposits.
 		pub fn kick_stale_candidates(
 			candidates: BoundedVec<CandidateInfo<T::AccountId, BalanceOf<T>>, T::MaxCandidates>,
 		) -> BoundedVec<T::AccountId, T::MaxCandidates> {

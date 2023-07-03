@@ -107,6 +107,18 @@ fn register_candidates<T: Config>(count: u32) {
 	}
 }
 
+fn min_candidates<T: Config>() -> u32 {
+	let min_collators = T::MinEligibleCollators::get();
+	let invulnerable_length = <Invulnerables<T>>::get().len();
+	min_collators.saturating_sub(invulnerable_length.try_into().unwrap())
+}
+
+fn min_invulnerables<T: Config>() -> u32 {
+	let min_collators = T::MinEligibleCollators::get();
+	let candidates_length = <Candidates<T>>::get().len();
+	min_collators.saturating_sub(candidates_length.try_into().unwrap())
+}
+
 benchmarks! {
 	where_clause { where T: pallet_authorship::Config + session::Config }
 
@@ -185,10 +197,11 @@ benchmarks! {
 	remove_invulnerable {
 		let origin =
 			T::UpdateOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
-		let b in 1 .. T::MaxInvulnerables::get();
+		let b in (min_invulnerables::<T>() + 1) .. T::MaxInvulnerables::get();
 		let mut invulnerables = register_validators::<T>(b);
 		invulnerables.sort();
-		let invulnerables: frame_support::BoundedVec<_, T::MaxInvulnerables> = frame_support::BoundedVec::try_from(invulnerables).unwrap();
+		let invulnerables: frame_support::BoundedVec<_, T::MaxInvulnerables> =
+			frame_support::BoundedVec::try_from(invulnerables).unwrap();
 		<Invulnerables<T>>::put(invulnerables);
 		let to_remove = <Invulnerables<T>>::get().first().unwrap().clone();
 	}: {
@@ -254,7 +267,7 @@ benchmarks! {
 
 	// worse case is the last candidate leaving.
 	leave_intent {
-		let c in (T::MinEligibleCollators::get() + 1) .. T::MaxCandidates::get();
+		let c in (min_candidates::<T>() + 1) .. T::MaxCandidates::get();
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c);
 
@@ -269,7 +282,7 @@ benchmarks! {
 	}
 
 	remove_invulnerable_candidate {
-		let c in (T::MinEligibleCollators::get() + 1) .. T::MaxCandidates::get();
+		let c in 1 .. T::MaxCandidates::get();
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c);
 
@@ -350,6 +363,7 @@ benchmarks! {
 			}
 		}
 
+		let min_candidates = min_candidates::<T>();
 		let pre_length = <Candidates<T>>::get().len();
 
 		frame_system::Pallet::<T>::set_block_number(new_block);
@@ -358,11 +372,19 @@ benchmarks! {
 	}: {
 		<CollatorSelection<T> as SessionManager<_>>::new_session(0)
 	} verify {
-		if c > r && non_removals >= T::MinEligibleCollators::get() {
+		if c > r && non_removals >= min_candidates {
+			// candidates > removals and remaining candidates > min candidates
+			// => remaining candidates should be shorter than before removal, i.e. some were
+			//    actually removed.
 			assert!(<Candidates<T>>::get().len() < pre_length);
-		} else if c > r && non_removals < T::MinEligibleCollators::get() {
-			assert!(<Candidates<T>>::get().len() == T::MinEligibleCollators::get() as usize);
+		} else if c > r && non_removals < min_candidates {
+			// candidates > removals and remaining candidates would be less than min candidates
+			// => remaining candidates should equal min candidates, i.e. some were removed up to
+			//    the minimum, but then any more were "forced" to stay in candidates.
+			assert!(<Candidates<T>>::get().len() == min_candidates as usize);
 		} else {
+			// removals >= candidates, non removals must == 0
+			// can't remove more than exist
 			assert!(<Candidates<T>>::get().len() == pre_length);
 		}
 	}
