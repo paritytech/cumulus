@@ -1821,9 +1821,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.3.9"
+version = "4.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bba77a07e4489fb41bd90e8d4201c3eb246b3c2c9ea2ba0bddd6c1d1df87db7d"
+checksum = "384e169cc618c613d5e3ca6404dda77a8685a63e08660dcc64abaf7da7cb0c7a"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -1832,13 +1832,12 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.3.9"
+version = "4.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c9b4a88bb4bc35d3d6f65a21b0f0bafe9c894fa00978de242c555ec28bea1c0"
+checksum = "ef137bbe35aab78bdb468ccfba75a5f4d8321ae011d34063770780545176af2d"
 dependencies = [
  "anstream",
  "anstyle 1.0.0",
- "bitflags",
  "clap_lex",
  "strsim",
 ]
@@ -8626,9 +8625,9 @@ dependencies = [
 
 [[package]]
 name = "parity-scale-codec"
-version = "3.6.1"
+version = "3.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2287753623c76f953acd29d15d8100bcab84d29db78fb6f352adb3c53e83b967"
+checksum = "d7467bc45fea3d77e829a4df331b9e969e2ec6a4dcd4e126e660f8509b40a475"
 dependencies = [
  "arrayvec 0.7.2",
  "bitvec",
@@ -8641,9 +8640,9 @@ dependencies = [
 
 [[package]]
 name = "parity-scale-codec-derive"
-version = "3.6.1"
+version = "3.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b6937b5e67bfba3351b87b040d48352a2fcb6ad72f81855412ce97b45c8f110"
+checksum = "2c9de611934c78014c455793552d0bf7d65a58211179c49996fde925aa667c38"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -14451,9 +14450,9 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.29.0"
+version = "1.29.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "374442f06ee49c3a28a8fc9f01a2596fed7559c6b99b31279c3261778e77d84f"
+checksum = "532826ff75199d5833b9d2c5fe410f29235e25704ee5f0ef599fb51c21f4a4da"
 dependencies = [
  "autocfg",
  "backtrace",
