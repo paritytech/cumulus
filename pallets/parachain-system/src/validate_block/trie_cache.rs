@@ -68,7 +68,7 @@ impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleTrieCache<'a, H> 
 	}
 }
 
-/// Provider for [`SimpleTrieCache`] instances.
+/// Provider of [`SimpleTrieCache`] instances.
 pub(crate) struct CacheProvider<H: Hasher> {
 	node_cache: spin::Mutex<HashMap<H::Out, NodeOwned<H::Out>>>,
 	value_cache: spin::Mutex<HashMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
@@ -99,6 +99,8 @@ impl<H: Hasher> TrieCacheProvider<H> for CacheProvider<H> {
 /// Wrapper for a [`sp_trie::MemoryDB`] which allows reading of values exactly once.
 ///
 /// After each read, the read value is removed from the underlying [`sp_trie::MemoryDB`].
+/// This is done because we expect that the requested item is delivered by the [`SimpleTrieCache`]
+/// next time.
 pub struct ReadOnceBackend<H: Hasher> {
 	memory_db: spin::Mutex<sp_trie::MemoryDB<H>>,
 }
