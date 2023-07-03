@@ -36,9 +36,10 @@ use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
 	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, CurrencyAdapter,
 	DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin, FungiblesAdapter, IsConcrete,
-	LocalMint, NativeAsset, NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
-	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId,
+	LocalMint, NativeAsset, NoChecking, ParentAsSuperuser, ParentIsPreset,
+	ProvideWeighableInstructions, RelayChainAsNative, SiblingParachainAsNative,
+	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+	SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId, UniversalWeigherAdapter,
 	UsingComponents, WeightInfoBounds, WithComputedOrigin, WithUniqueTopic,
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
@@ -482,6 +483,20 @@ parameter_types! {
 	pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
 }
 
+/// Helper for adding more instructions to the weight estimation on destination side.
+pub struct DestinationWeigherAddons;
+impl ProvideWeighableInstructions<()> for DestinationWeigherAddons {
+	fn provide_for(
+		_dest: impl Into<MultiLocation>,
+		_message: &Xcm<()>,
+	) -> sp_std::vec::Vec<Instruction<()>> {
+		sp_std::vec![
+			// runtime uses `WithUniqueTopic` which (possibly) adds `SetTopic` instruction
+			SetTopic([3; 32])
+		]
+	}
+}
+
 impl pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
@@ -495,6 +510,11 @@ impl pallet_xcm::Config for Runtime {
 		crate::weights::xcm::AssetHubWestendXcmWeight<RuntimeCall>,
 		RuntimeCall,
 		MaxInstructions,
+	>;
+	type DestinationWeigher = UniversalWeigherAdapter<
+		// use local weight for remote message and hope for the best.
+		WeightInfoBounds<crate::weights::xcm::AssetHubWestendXcmWeight<()>, (), MaxInstructions>,
+		DestinationWeigherAddons,
 	>;
 	type UniversalLocation = UniversalLocation;
 	type RuntimeOrigin = RuntimeOrigin;

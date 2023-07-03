@@ -70,7 +70,7 @@ use parachains_common::{
 };
 use xcm_builder::{
 	AllowKnownQueryResponses, AllowSubscriptionsFrom, AsPrefixedGeneralIndex, ConvertedConcreteId,
-	FungiblesAdapter, LocalMint,
+	FungiblesAdapter, LocalMint, UniversalWeigherAdapter,
 };
 use xcm_executor::traits::JustTry;
 
@@ -465,6 +465,11 @@ impl pallet_xcm::Config for Runtime {
 	type XcmTeleportFilter = Everything;
 	type XcmReserveTransferFilter = Nothing;
 	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
+	type DestinationWeigher = UniversalWeigherAdapter<
+		// use local weight for remote message and hope for the best.
+		FixedWeightBounds<UnitWeightCost, (), MaxInstructions>,
+		(),
+	>;
 	type UniversalLocation = UniversalLocation;
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
