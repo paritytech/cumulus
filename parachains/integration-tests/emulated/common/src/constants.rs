@@ -1,3 +1,10 @@
+use beefy_primitives::crypto::AuthorityId as BeefyId;
+use grandpa::AuthorityId as GrandpaId;
+use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
+use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, BlockNumber};
+use polkadot_primitives::{AssignmentId, ValidatorId};
+use polkadot_runtime_parachains::configuration::HostConfiguration;
+use polkadot_service::chain_spec::get_authority_keys_from_seed_no_beefy;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_core::{sr25519, storage::Storage, Pair, Public};
@@ -5,13 +12,6 @@ use sp_runtime::{
 	traits::{IdentifyAccount, Verify},
 	BuildStorage, MultiSignature, Perbill,
 };
-use grandpa::AuthorityId as GrandpaId;
-use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-use beefy_primitives::crypto::AuthorityId as BeefyId;
-use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, BlockNumber};
-use polkadot_primitives::{AssignmentId, ValidatorId};
-use polkadot_runtime_parachains::configuration::HostConfiguration;
-use polkadot_service::chain_spec::get_authority_keys_from_seed_no_beefy;
 use xcm;
 
 pub const XCM_V2: u32 = 3;
@@ -447,7 +447,10 @@ pub mod rococo {
 				code: rococo_runtime::WASM_BINARY.unwrap().to_vec(),
 			},
 			balances: rococo_runtime::BalancesConfig {
-				balances: accounts::init_balances().iter().map(|k| (k.clone(), ENDOWMENT)).collect(),
+				balances: accounts::init_balances()
+					.iter()
+					.map(|k| (k.clone(), ENDOWMENT))
+					.collect(),
 			},
 			// indices: rococo_runtime::IndicesConfig { indices: vec![] },
 			session: rococo_runtime::SessionConfig {
@@ -468,18 +471,16 @@ pub mod rococo {
 							),
 						)
 					})
-				.collect::<Vec<_>>(),
+					.collect::<Vec<_>>(),
 			},
 			babe: rococo_runtime::BabeConfig {
 				authorities: Default::default(),
 				epoch_config: Some(rococo_runtime::BABE_GENESIS_EPOCH_CONFIG),
 			},
 			sudo: rococo_runtime::SudoConfig {
-				key: Some(get_account_id_from_seed::<sr25519::Public>("Alice"))
+				key: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 			},
-			configuration: rococo_runtime::ConfigurationConfig {
-				config: get_host_config(),
-			},
+			configuration: rococo_runtime::ConfigurationConfig { config: get_host_config() },
 			registrar: rococo_runtime::RegistrarConfig {
 				next_free_para_id: polkadot_primitives::LOWEST_PUBLIC_ID,
 			},
@@ -906,8 +907,8 @@ pub mod bridge_hub_rococo {
 					.into_iter()
 					.map(|(acc, aura)| {
 						(
-							acc.clone(),                                       // account id
-							acc,                                               // validator id
+							acc.clone(),                                     // account id
+							acc,                                             // validator id
 							bridge_hub_rococo_runtime::SessionKeys { aura }, // session keys
 						)
 					})
