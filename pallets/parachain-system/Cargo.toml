@@ -12,6 +12,10 @@ environmental = { version = "1.1.4", default-features = false }
 impl-trait-for-tuples = "0.2.1"
 log = { version = "0.4.19", default-features = false }
 scale-info = { version = "2.8.0", default-features = false, features = ["derive"] }
+trie-db = { version = "0.27.1", default-features = false }
+hash-db = { version = "0.16.0", default-features = false }
+spin = "0.9.8"
+hashbrown = "0.14.0"
 
 # Substrate
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -34,10 +38,6 @@ xcm = { git = "https://github.com/paritytech/polkadot", default-features = false
 cumulus-pallet-parachain-system-proc-macro = { path = "proc-macro", default-features = false }
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent", default-features = false }
-trie-db = { version = "0.27.1", default-features = false }
-hash-db = { version = "0.16.0", default-features = false }
-spin = "0.9.8"
-hashbrown = "0.14.0"
 
 [dev-dependencies]
 hex-literal = "0.4.1"
@@ -54,9 +54,31 @@ cumulus-test-client = { path = "../../test/client" }
 cumulus-test-relay-sproof-builder = { path = "../../test/relay-sproof-builder" }
 
 [features]
-default = []
-std = ["codec/std", "environmental/std", "log/std", "scale-info/std", "cumulus-pallet-parachain-system-proc-macro/std", "cumulus-primitives-core/std", "cumulus-primitives-parachain-inherent/std", "frame-support/std", "frame-system/std", "sp-core/std", "sp-externalities/std", "sp-io/std", "sp-runtime/std", "sp-state-machine/std", "sp-std/std", "sp-trie/std", "xcm/std", "trie-db/std", "hash-db/std"]
+default = [ "std" ]
+std = [
+	"codec/std",
+	"environmental/std",
+	"log/std",
+	"scale-info/std",
+	"cumulus-pallet-parachain-system-proc-macro/std",
+	"cumulus-primitives-core/std",
+	"cumulus-primitives-parachain-inherent/std",
+	"frame-support/std",
+	"frame-system/std",
+	"sp-core/std",
+	"sp-externalities/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-state-machine/std",
+	"sp-std/std",
+	"sp-trie/std",
+	"xcm/std",
+	"trie-db/std",
+	"hash-db/std"
+]
 
-runtime-benchmarks = ["sp-runtime/runtime-benchmarks"]
+runtime-benchmarks = [
+	"sp-runtime/runtime-benchmarks"
+]
 
 try-runtime = ["frame-support/try-runtime"]
