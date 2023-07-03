@@ -472,7 +472,7 @@ impl AssumeSybilResistance {
 	/// announcements which come tagged with seconded messages.
 	///
 	/// This is useful for backwards compatibility when upgrading nodes: old nodes will continue
-	/// to broadcast announcements with seconded messages, so these announcements shouldn't be ignored
+	/// to broadcast announcements with seconded messages, so these announcements shouldn't be rejected
 	/// and the peers not punished.
 	pub fn allow_seconded_messages() -> Self {
 		AssumeSybilResistance(true)
