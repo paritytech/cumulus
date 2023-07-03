@@ -112,7 +112,7 @@ pub trait RelayChainInterface: Send + Sync {
 	async fn best_block_hash(&self) -> RelayChainResult<PHash>;
 
 	/// Fetch the block header of a given height
-	async fn header(&self, block_id: BlockId) -> RelayChainResult<PHeader>;
+	async fn header(&self, block_id: BlockId) -> RelayChainResult<Option<PHeader>>;
 
 	/// Get the hash of the finalized block.
 	async fn finalized_block_hash(&self) -> RelayChainResult<PHash>;
@@ -298,7 +298,7 @@ where
 		(**self).new_best_notification_stream().await
 	}
 
-	async fn header(&self, block_id: BlockId) -> RelayChainResult<PHeader> {
+	async fn header(&self, block_id: BlockId) -> RelayChainResult<Option<PHeader>> {
 		(**self).header(block_id).await
 	}
 }

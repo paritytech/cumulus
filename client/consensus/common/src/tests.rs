@@ -208,7 +208,7 @@ impl RelayChainInterface for Relaychain {
 			.boxed())
 	}
 
-	async fn header(&self, _block_id: BlockId) -> RelayChainResult<PHeader> {
+	async fn header(&self, _block_id: BlockId) -> RelayChainResult<Option<PHeader>> {
 		unimplemented!("Not needed for test")
 	}
 }

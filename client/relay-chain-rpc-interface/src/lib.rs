@@ -78,7 +78,7 @@ impl RelayChainInterface for RelayChainRpcInterface {
 			.await
 	}
 
-	async fn header(&self, block_id: BlockId) -> RelayChainResult<PHeader> {
+	async fn header(&self, block_id: BlockId) -> RelayChainResult<Option<PHeader>> {
 		let hash = match block_id {
 			BlockId::Hash(hash) => hash,
 			BlockId::Number(num) =>
@@ -86,9 +86,7 @@ impl RelayChainInterface for RelayChainRpcInterface {
 					RelayChainError::GenericError(format!("block with number {num} not found"))
 				})?,
 		};
-		let header = self.rpc_client.chain_get_header(Some(hash)).await?.ok_or_else(|| {
-			RelayChainError::GenericError(format!("block with hash {hash} not found"))
-		})?;
+		let header = self.rpc_client.chain_get_header(Some(hash)).await?;
 
 		Ok(header)
 	}
