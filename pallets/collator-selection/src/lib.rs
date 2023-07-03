@@ -468,7 +468,7 @@ pub mod pallet {
 		/// The origin for this call must be the `UpdateOrigin`.
 		#[pallet::call_index(5)]
 		#[pallet::weight(T::WeightInfo::add_invulnerable(
-			T::MaxInvulnerables::get() - 1,
+			T::MaxInvulnerables::get().saturating_sub(1),
 			T::MaxCandidates::get()
 		))]
 		pub fn add_invulnerable(
@@ -502,7 +502,10 @@ pub mod pallet {
 			Self::deposit_event(Event::InvulnerableAdded { account_id: who });
 
 			let weight_used = T::WeightInfo::add_invulnerable(
-				Self::invulnerables().len().try_into().unwrap_or(T::MaxInvulnerables::get() - 1),
+				Self::invulnerables()
+					.len()
+					.try_into()
+					.unwrap_or(T::MaxInvulnerables::get().saturating_sub(1)),
 				Self::candidates().len().try_into().unwrap_or(T::MaxCandidates::get()),
 			);
 
