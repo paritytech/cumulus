@@ -26,23 +26,12 @@ use polkadot_parachain::primitives::{HeadData, RelayChainBlockNumber, Validation
 
 use codec::Encode;
 
-pub extern crate alloc;
-use alloc::string::ToString;
-use core::{
-	cell::RefCell,
-	sync::atomic::{AtomicU32, Ordering},
-};
 use frame_support::traits::{ExecuteBlock, ExtrinsicCall, Get, IsSubType};
 use sp_core::storage::{ChildInfo, StateVersion};
 use sp_externalities::{set_and_run_with_externalities, Externalities};
 use sp_io::KillStorageResult;
 use sp_runtime::traits::{Block as BlockT, Extrinsic, HashFor, Header as HeaderT};
-use sp_std::{
-	collections::btree_map::{BTreeMap, Entry},
-	prelude::*,
-	sync::Arc,
-	vec::Vec,
-};
+use sp_std::prelude::*;
 use sp_trie::MemoryDB;
 
 type TrieBackend<B> = sp_state_machine::TrieBackend<

@@ -15,11 +15,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core::{
-	cell::RefCell,
-	sync::atomic::{AtomicU32, Ordering},
-};
-use environmental::PhantomData;
 use hash_db::{HashDB, Hasher};
 use hashbrown::hash_map::{Entry, HashMap};
 use sp_state_machine::{TrieBackendStorage, TrieCacheProvider};
