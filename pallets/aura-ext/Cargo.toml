@@ -13,6 +13,7 @@ scale-info = { version = "2.7.0", default-features = false, features = ["derive"
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-timestamp= { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-application-crypto = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }

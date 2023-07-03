@@ -36,12 +36,13 @@ use bridge_runtime_common::{
 use codec::Encode;
 use frame_support::{
 	assert_ok,
-	traits::{Get, OriginTrait},
+	traits::{Get, OnFinalize, OnInitialize, OriginTrait},
 };
 use pallet_bridge_grandpa::BridgedHeader;
+use parachains_common::AccountId;
 use parachains_runtimes_test_utils::{
-	mock_open_hrmp_channel, AccountIdOf, BalanceOf, CollatorSessionKeys, ExtBuilder, RuntimeHelper,
-	ValidatorIdOf, XcmReceivedFrom,
+	mock_open_hrmp_channel, AccountIdOf, BalanceOf, CollatorSessionKeys, ExtBuilder, ValidatorIdOf,
+	XcmReceivedFrom,
 };
 use sp_core::H256;
 use sp_keyring::AccountKeyring::*;
@@ -52,6 +53,9 @@ use xcm_executor::XcmExecutor;
 
 // Re-export test_case from assets
 pub use asset_test_utils::include_teleports_for_native_asset_works;
+
+type RuntimeHelper<Runtime, AllPalletsWithoutSystem = ()> =
+	parachains_runtimes_test_utils::RuntimeHelper<Runtime, AllPalletsWithoutSystem>;
 
 /// Test-case makes sure that `Runtime` can process bridging initialize via governance-like call
 pub fn initialize_bridge_by_governance_works<Runtime, GrandpaPalletInstance>(
@@ -276,6 +280,7 @@ pub fn handle_export_message_from_system_parachain_to_outbound_queue_works<
 ///     2. to Sibling parachain
 pub fn message_dispatch_routing_works<
 	Runtime,
+	AllPalletsWithoutSystem,
 	XcmConfig,
 	HrmpChannelOpener,
 	MessagesPalletInstance,
@@ -303,6 +308,10 @@ pub fn message_dispatch_routing_works<
 		+ cumulus_pallet_parachain_system::Config
 		+ cumulus_pallet_xcmp_queue::Config
 		+ pallet_bridge_messages::Config<MessagesPalletInstance, InboundPayload = XcmAsPlainPayload>,
+	AllPalletsWithoutSystem: OnInitialize<<Runtime as frame_system::Config>::BlockNumber>
+		+ OnFinalize<<Runtime as frame_system::Config>::BlockNumber>,
+	<Runtime as frame_system::Config>::AccountId:
+		Into<<<Runtime as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId>,
 	XcmConfig: xcm_executor::Config,
 	MessagesPalletInstance: 'static,
 	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
@@ -323,6 +332,13 @@ pub fn message_dispatch_routing_works<
 		.with_tracing()
 		.build()
 		.execute_with(|| {
+			let mut alice = [0u8; 32];
+			alice[0] = 1;
+
+			let included_head = RuntimeHelper::<Runtime, AllPalletsWithoutSystem>::run_to_block(
+				2,
+				AccountId::from(alice),
+			);
 			// 1. this message is sent from other global consensus with destination of this Runtime relay chain (UMP)
 			let bridging_message =
 				test_data::simulate_message_exporter_on_bridged_chain::<BridgedNetwork, RuntimeNetwork>(
@@ -364,7 +380,7 @@ pub fn message_dispatch_routing_works<
 						   .count(), 0);
 
 			// 2.1. WITH hrmp channel -> Ok
-			mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(runtime_para_id.into(), sibling_parachain_id.into());
+			mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(runtime_para_id.into(), sibling_parachain_id.into(), included_head, &alice);
 			let result = <<Runtime as pallet_bridge_messages::Config<MessagesPalletInstance>>::MessageDispatch>::dispatch(
 				DispatchMessage {
 					key: MessageKey { lane_id: expected_lane_id, nonce: 1 },
@@ -385,7 +401,7 @@ pub fn message_dispatch_routing_works<
 
 /// Test-case makes sure that Runtime can dispatch XCM messages submitted by relayer,
 /// with proofs (finality, para heads, message) independently submitted.
-pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI, MB>(
+pub fn relayed_incoming_message_works<Runtime, AllPalletsWithoutSystem, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI, MB>(
 	collator_session_key: CollatorSessionKeys<Runtime>,
 	runtime_para_id: u32,
 	bridged_para_id: u32,
@@ -405,6 +421,8 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 	+ pallet_bridge_grandpa::Config<GPI>
 	+ pallet_bridge_parachains::Config<PPI>
 	+ pallet_bridge_messages::Config<MPI, InboundPayload = XcmAsPlainPayload>,
+	AllPalletsWithoutSystem: OnInitialize<<Runtime as frame_system::Config>::BlockNumber>
+		+ OnFinalize<<Runtime as frame_system::Config>::BlockNumber>,
 	GPI: 'static,
 	PPI: 'static,
 	MPI: 'static,
@@ -435,9 +453,18 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 		.with_tracing()
 		.build()
 		.execute_with(|| {
+			let mut alice = [0u8; 32];
+			alice[0] = 1;
+
+			let included_head = RuntimeHelper::<Runtime, AllPalletsWithoutSystem>::run_to_block(
+				2,
+				AccountId::from(alice),
+			);
 			mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(
 				runtime_para_id.into(),
 				sibling_parachain_id.into(),
+				included_head,
+				&alice,
 			);
 
 			// start with bridged chain block#0
@@ -570,7 +597,7 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 /// Test-case makes sure that Runtime can dispatch XCM messages submitted by relayer,
 /// with proofs (finality, para heads, message) batched together in signed extrinsic.
 /// Also verifies relayer transaction signed extensions work as intended.
-pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI, MB>(
+pub fn complex_relay_extrinsic_works<Runtime, AllPalletsWithoutSystem, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI, MB>(
 	collator_session_key: CollatorSessionKeys<Runtime>,
 	runtime_para_id: u32,
 	bridged_para_id: u32,
@@ -599,6 +626,8 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 	+ pallet_bridge_parachains::Config<PPI>
 	+ pallet_bridge_messages::Config<MPI, InboundPayload = XcmAsPlainPayload>
 	+ pallet_bridge_relayers::Config,
+	AllPalletsWithoutSystem: OnInitialize<<Runtime as frame_system::Config>::BlockNumber>
+		+ OnFinalize<<Runtime as frame_system::Config>::BlockNumber>,
 	GPI: 'static,
 	PPI: 'static,
 	MPI: 'static,
@@ -642,6 +671,13 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 		.with_tracing()
 		.build()
 		.execute_with(|| {
+			let mut alice = [0u8; 32];
+			alice[0] = 1;
+
+			let included_head = RuntimeHelper::<Runtime, AllPalletsWithoutSystem>::run_to_block(
+				2,
+				AccountId::from(alice),
+			);
 			let zero: <Runtime as frame_system::Config>::BlockNumber = 0u32.into();
 			let genesis_hash = frame_system::Pallet::<Runtime>::block_hash(zero);
 			let mut header: <Runtime as frame_system::Config>::Header =
@@ -652,6 +688,8 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 			mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(
 				runtime_para_id.into(),
 				sibling_parachain_id.into(),
+				included_head,
+				&alice,
 			);
 
 			// start with bridged chain block#0

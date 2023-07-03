@@ -229,36 +229,6 @@ fn validate_block_fails_on_invalid_validation_data() {
 }
 
 #[test]
-fn check_inherent_fails_on_validate_block_as_expected() {
-	sp_tracing::try_init_simple();
-
-	if env::var("RUN_TEST").is_ok() {
-		let (client, parent_head) = create_test_client();
-
-		let TestBlockData { block, validation_data } = build_block_with_witness(
-			&client,
-			Vec::new(),
-			parent_head.clone(),
-			RelayStateSproofBuilder { current_slot: 1337.into(), ..Default::default() },
-		);
-
-		call_validate_block(parent_head, block, validation_data.relay_parent_storage_root)
-			.unwrap_err();
-	} else {
-		let output = Command::new(env::current_exe().unwrap())
-			.args(["check_inherent_fails_on_validate_block_as_expected", "--", "--nocapture"])
-			.env("RUN_TEST", "1")
-			.output()
-			.expect("Runs the test");
-		assert!(output.status.success());
-
-		assert!(
-			dbg!(String::from_utf8(output.stderr).unwrap()).contains("Checking inherents failed")
-		);
-	}
-}
-
-#[test]
 fn check_inherents_are_unsigned_and_before_all_other_extrinsics() {
 	sp_tracing::try_init_simple();
 

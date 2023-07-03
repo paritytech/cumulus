@@ -32,7 +32,6 @@ members = [
 	"parachain-template/runtime",
 	"primitives/core",
 	"primitives/parachain-inherent",
-	"primitives/timestamp",
 	"primitives/utility",
 	"polkadot-parachain",
 	"parachains/common",
