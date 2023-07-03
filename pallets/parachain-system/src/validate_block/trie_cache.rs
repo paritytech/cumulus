@@ -15,6 +15,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+extern crate alloc;
+
+use core::cell::RefCell;
 use hash_db::{HashDB, Hasher};
 use hashbrown::hash_map::{Entry, HashMap};
 use sp_state_machine::{TrieBackendStorage, TrieCacheProvider};
@@ -26,8 +29,8 @@ use trie_db::{node::NodeOwned, TrieCache, TrieError};
 /// of values. To be used in `validate_block` to serve values and nodes that
 /// have already been loaded and decoded from the storage proof.
 pub(crate) struct SimpleTrieCache<'a, H: Hasher> {
-	node_cache: spin::MutexGuard<'a, HashMap<H::Out, NodeOwned<H::Out>>>,
-	value_cache: spin::MutexGuard<'a, HashMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
+	node_cache: core::cell::RefMut<'a, HashMap<H::Out, NodeOwned<H::Out>>>,
+	value_cache: core::cell::RefMut<'a, HashMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
 }
 
 impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleTrieCache<'a, H> {
@@ -70,8 +73,8 @@ impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleTrieCache<'a, H> 
 
 /// Provider of [`SimpleTrieCache`] instances.
 pub(crate) struct CacheProvider<H: Hasher> {
-	node_cache: spin::Mutex<HashMap<H::Out, NodeOwned<H::Out>>>,
-	value_cache: spin::Mutex<HashMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
+	node_cache: RefCell<HashMap<H::Out, NodeOwned<H::Out>>>,
+	value_cache: RefCell<HashMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
 }
 
 impl<H: Hasher> CacheProvider<H> {
@@ -86,15 +89,25 @@ impl<H: Hasher> TrieCacheProvider<H> for CacheProvider<H> {
 	type Cache<'a> = SimpleTrieCache<'a, H> where H: 'a;
 
 	fn as_trie_db_cache(&self, _storage_root: <H as Hasher>::Out) -> Self::Cache<'_> {
-		SimpleTrieCache { value_cache: self.value_cache.lock(), node_cache: self.node_cache.lock() }
+		SimpleTrieCache {
+			value_cache: self.value_cache.borrow_mut(),
+			node_cache: self.node_cache.borrow_mut(),
+		}
 	}
 
 	fn as_trie_db_mut_cache(&self) -> Self::Cache<'_> {
-		SimpleTrieCache { value_cache: self.value_cache.lock(), node_cache: self.node_cache.lock() }
+		SimpleTrieCache {
+			value_cache: self.value_cache.borrow_mut(),
+			node_cache: self.node_cache.borrow_mut(),
+		}
 	}
 
 	fn merge<'a>(&'a self, _other: Self::Cache<'a>, _new_root: <H as Hasher>::Out) {}
 }
+
+// This is safe here since we are single-threaded in WASM
+unsafe impl<H: Hasher> Send for CacheProvider<H> {}
+unsafe impl<H: Hasher> Sync for CacheProvider<H> {}
 
 /// Wrapper for a [`sp_trie::MemoryDB`] which allows reading of values exactly once.
 ///
@@ -102,14 +115,18 @@ impl<H: Hasher> TrieCacheProvider<H> for CacheProvider<H> {
 /// This is done because we expect that the requested item is delivered by the [`SimpleTrieCache`]
 /// next time.
 pub struct ReadOnceBackend<H: Hasher> {
-	memory_db: spin::Mutex<sp_trie::MemoryDB<H>>,
+	memory_db: RefCell<sp_trie::MemoryDB<H>>,
 }
 
 impl<H: Hasher> ReadOnceBackend<H> {
 	pub fn new(memory_db: sp_trie::MemoryDB<H>) -> Self {
-		Self { memory_db: spin::Mutex::new(memory_db) }
+		Self { memory_db: RefCell::new(memory_db) }
 	}
 }
+
+// This is safe here since since we are single-threaded in WASM
+unsafe impl<H: Hasher> Send for ReadOnceBackend<H> {}
+unsafe impl<H: Hasher> Sync for ReadOnceBackend<H> {}
 
 impl<H: Hasher> TrieBackendStorage<H> for ReadOnceBackend<H> {
 	type Overlay = sp_trie::MemoryDB<H>;
@@ -119,7 +136,7 @@ impl<H: Hasher> TrieBackendStorage<H> for ReadOnceBackend<H> {
 		key: &H::Out,
 		prefix: hash_db::Prefix,
 	) -> Result<Option<trie_db::DBValue>, sp_state_machine::DefaultError> {
-		let mut guard = self.memory_db.lock();
+		let mut guard = self.memory_db.borrow_mut();
 		if let value @ Some(_) = guard.remove_and_purge(key, prefix) {
 			return Ok(value)
 		}
