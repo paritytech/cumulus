@@ -1021,7 +1021,8 @@ macro_rules! decl_test_bridges {
 
 				fn init() {
 					use $crate::{NetworkComponent, Network};
-					// Make sure the target `Network` has been initialized
+					// Make sure source and target `Network` has been initialized
+					<$source as NetworkComponent>::Network::init();
 					<$target as NetworkComponent>::Network::init();
 				}
 			}
