@@ -7,7 +7,7 @@ use bridge_runtime_common::messages_xcm_extension::XcmBlobMessageDispatchResult;
 pub use cumulus_primitives_core::{DmpMessageHandler, XcmpMessageHandler};
 use xcm_emulator::{BridgeMessage, BridgeMessageDispatchError, BridgeMessageHandler, Parachain};
 
-pub struct AssetHubMessageHandler<S, T, I> {
+pub struct BridgeHubMessageHandler<S, T, I> {
 	_marker: std::marker::PhantomData<(S, T, I)>
 }
 
@@ -19,18 +19,18 @@ type BridgeHubWococoRuntime = <BridgeHubWococo as Parachain>::Runtime;
 // type BridgeHubKusamaRuntime = <BridgeHubKusama as Parachain>::Runtime;
 
 pub type RococoWococoMessageHandler
-	= AssetHubMessageHandler<BridgeHubRococoRuntime, BridgeHubWococoRuntime, Instance2>;
+	= BridgeHubMessageHandler<BridgeHubRococoRuntime, BridgeHubWococoRuntime, Instance2>;
 pub type WococoRococoMessageHandler
-	= AssetHubMessageHandler<BridgeHubWococoRuntime, BridgeHubRococoRuntime, Instance2>;
+	= BridgeHubMessageHandler<BridgeHubWococoRuntime, BridgeHubRococoRuntime, Instance2>;
 
 // TODO: uncomment when https://github.com/paritytech/cumulus/pull/2528 is merged
 // pub type PolkadotKusamaMessageHandler
-//	= AssetHubMessageHandler<BridgeHubPolkadotRuntime, BridgeHubKusamaRuntime, Instance1>;
+//	= BridgeHubMessageHandler<BridgeHubPolkadotRuntime, BridgeHubKusamaRuntime, Instance1>;
 // pub type KusamaPolkadotMessageHandler
-//	= AssetHubMessageHandler<BridgeHubKusamaRuntime, BridgeHubPolkadoRuntime, Instance1>;
+//	= BridgeHubMessageHandler<BridgeHubKusamaRuntime, BridgeHubPolkadoRuntime, Instance1>;
 
 
-impl <S, T, I> BridgeMessageHandler for AssetHubMessageHandler<S, T, I>
+impl <S, T, I> BridgeMessageHandler for BridgeHubMessageHandler<S, T, I>
 where
 	S: Config<Instance1>,
 	T: Config<I>,
