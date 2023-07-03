@@ -436,7 +436,7 @@ parameter_types! {
 
 	// Both are just initial values, and concrete values will be set up by governance call (`set_storage`) with `initialize` bridge call as a part of cutover plan (https://github.com/paritytech/parity-bridges-common/issues/1730)
 	pub storage DeliveryRewardInBalance: u64 = 1_000_000;
-	pub storage RequiredStakeForStakeAndSlash: Balance = 1_000_000;
+	pub storage RequiredStakeForStakeAndSlash: Balance = Balance::MAX;
 	pub const RelayerStakeReserveId: [u8; 8] = *b"brdgrlrs";
 }
 
