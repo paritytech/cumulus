@@ -25,9 +25,7 @@ fn example() {
 	let weight_limit = WeightLimit::Unlimited;
 	let check_origin = None;
 
-	let remote_xcm = Xcm(vec![
-		ClearOrigin
-	]);
+	let remote_xcm = Xcm(vec![ClearOrigin]);
 
 	let xcm = VersionedXcm::from(Xcm(vec![
 		UnpaidExecution { weight_limit, check_origin },
@@ -35,7 +33,7 @@ fn example() {
 			network: WococoId,
 			destination: X1(Parachain(AssetHubWococo::para_id().into())),
 			xcm: remote_xcm,
-		}
+		},
 	]));
 
 	//Rococo Global Consensus
@@ -97,6 +95,5 @@ fn example() {
 				RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail { .. }) => {},
 			]
 		);
-
 	});
 }

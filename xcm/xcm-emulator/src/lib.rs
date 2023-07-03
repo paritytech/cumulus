@@ -14,17 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
+pub use codec::{Decode, Encode};
 pub use log;
 pub use paste;
-pub use codec::{Encode, Decode};
-pub use std::{fmt, error::Error, collections::HashMap, thread::LocalKey};
+pub use std::{collections::HashMap, error::Error, fmt, thread::LocalKey};
 
 // Substrate
-pub use sp_std::{fmt::Debug, cell::RefCell, collections::vec_deque::VecDeque};
-pub use sp_arithmetic::traits::Bounded;
-pub use sp_core::storage::Storage;
-pub use sp_io;
-pub use sp_trie::StorageProof;
 pub use frame_support::{
 	assert_ok,
 	traits::{EnqueueMessage, Get, Hooks, ProcessMessage, ProcessMessageError, ServiceQueues},
@@ -32,11 +27,13 @@ pub use frame_support::{
 };
 pub use frame_system::AccountInfo;
 pub use pallet_balances::AccountData;
+pub use sp_arithmetic::traits::Bounded;
+pub use sp_core::storage::Storage;
+pub use sp_io;
+pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, fmt::Debug};
+pub use sp_trie::StorageProof;
 
 //Cumulus
-pub use pallet_message_queue;
-pub use parachain_info;
-pub use parachains_common::{AccountId, BlockNumber};
 pub use cumulus_pallet_dmp_queue;
 pub use cumulus_pallet_parachain_system;
 pub use cumulus_pallet_xcmp_queue;
@@ -47,6 +44,9 @@ pub use cumulus_primitives_core::{
 pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 pub use cumulus_test_service::get_account_id_from_seed;
+pub use pallet_message_queue;
+pub use parachain_info;
+pub use parachains_common::{AccountId, BlockNumber};
 pub use polkadot_primitives;
 pub use polkadot_runtime_parachains::{
 	dmp,
@@ -54,7 +54,7 @@ pub use polkadot_runtime_parachains::{
 };
 
 // Polkadot
-pub use xcm::{v3::prelude::*};
+pub use xcm::v3::prelude::*;
 
 thread_local! {
 	/// Downward messages, each message is: `(to_para_id, [(relay_block_number, msg)])`
@@ -163,12 +163,8 @@ pub trait NetworkComponent {
 	}
 
 	fn send_bridged_messages(msg: BridgeMessage) {
-		BRIDGED_MESSAGES.with(|b| {
-			b.borrow_mut()
-				.get_mut(Self::network_name())
-				.unwrap()
-				.push_back(msg)
-		});
+		BRIDGED_MESSAGES
+			.with(|b| b.borrow_mut().get_mut(Self::network_name()).unwrap().push_back(msg));
 	}
 }
 
@@ -206,8 +202,8 @@ pub trait Bridge {
 }
 
 impl Bridge for () {
-    type Source = ();
-    type Target = ();
+	type Source = ();
+	type Target = ();
 	type Handler = ();
 
 	fn init() {}
@@ -222,15 +218,21 @@ pub struct BridgeMessage {
 pub trait BridgeMessageHandler {
 	fn get_source_outbound_messages() -> Vec<BridgeMessage>;
 
-	fn dispatch_target_inbound_message(message: BridgeMessage) -> Result<(), BridgeMessageDispatchError>;
+	fn dispatch_target_inbound_message(
+		message: BridgeMessage,
+	) -> Result<(), BridgeMessageDispatchError>;
 
 	fn notify_source_message_delivery(lane_id: u32);
 }
 
 impl BridgeMessageHandler for () {
-	fn get_source_outbound_messages() -> Vec<BridgeMessage> { Default::default() }
+	fn get_source_outbound_messages() -> Vec<BridgeMessage> {
+		Default::default()
+	}
 
-	fn dispatch_target_inbound_message(_message: BridgeMessage) -> Result<(), BridgeMessageDispatchError> {
+	fn dispatch_target_inbound_message(
+		_message: BridgeMessage,
+	) -> Result<(), BridgeMessageDispatchError> {
 		Err(BridgeMessageDispatchError(Box::new("Not a brige")))
 	}
 
@@ -243,9 +245,9 @@ pub struct BridgeMessageDispatchError(pub Box<dyn Debug>);
 impl Error for BridgeMessageDispatchError {}
 
 impl fmt::Display for BridgeMessageDispatchError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self.0)
-    }
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "{:?}", self.0)
+	}
 }
 
 // Relay Chain Implementation
@@ -763,7 +765,10 @@ macro_rules! __impl_parachain {
 
 					let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
 						<Self as Parachain>::RuntimeOrigin::none(),
-						<Self as NetworkComponent>::Network::hrmp_channel_parachain_inherent_data(para_id.into(), 1),
+						<Self as NetworkComponent>::Network::hrmp_channel_parachain_inherent_data(
+							para_id.into(),
+							1,
+						),
 					);
 					// set `AnnouncedHrmpMessagesPerCandidate`
 					<Self as Parachain>::ParachainSystem::on_initialize(block_number);
@@ -1029,7 +1034,6 @@ macro_rules! decl_test_bridges {
 		)+
 	};
 }
-
 
 #[macro_export]
 macro_rules! assert_expected_events {
