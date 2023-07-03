@@ -739,6 +739,8 @@ macro_rules! decl_test_networks {
 						$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
 						$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), 1));
 						$crate::PARA_IDS.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), Self::_para_ids()));
+
+						$( <$parachain>::prepare_for_xcmp(); )*
 					}
 				}
 
@@ -777,7 +779,9 @@ macro_rules! decl_test_networks {
 					while let Some((to_para_id, messages))
 						= $crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 						$(
-							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) {
+							let para_id: u32 = <$parachain>::para_id().into();
+
+							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) && para_id == to_para_id {
 								let mut msg_dedup: Vec<(RelayChainBlockNumber, Vec<u8>)> = Vec::new();
 								for m in &messages {
 									msg_dedup.push((m.0, m.1.clone()));
@@ -793,8 +797,6 @@ macro_rules! decl_test_networks {
 										$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().push_back((to_para_id, m.0, m.1)));
 									}
 								}
-							} else {
-								unreachable!();
 							}
 						)*
 					}
@@ -807,7 +809,9 @@ macro_rules! decl_test_networks {
 						= $crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 						let iter = messages.iter().map(|(p, b, m)| (*p, *b, &m[..])).collect::<Vec<_>>().into_iter();
 						$(
-							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) {
+							let para_id: u32 = <$parachain>::para_id().into();
+
+							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) && para_id == to_para_id {
 								<$parachain>::handle_xcmp_messages(iter.clone(), $crate::Weight::max_value());
 							}
 						)*
