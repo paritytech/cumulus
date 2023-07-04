@@ -601,6 +601,20 @@ pub mod bridging {
 			assert!(alias.is_some(), "we expect here BridgeHubKusama to Polkadot mapping at least");
 			Some(alias.unwrap())
 		}
+
+		pub fn prepare_alias_origin() -> Option<(MultiLocation, MultiLocation)> {
+			let alias = AcceptableAliases::get().into_iter().find_map(|(origin, target)| {
+				match BridgeHubKusama::get().eq(&origin) {
+					true => Some((origin, target)),
+					false => None,
+				}
+			});
+			assert!(
+				alias.is_some(),
+				"we expect here BridgeHubKusama and AssetHubPolkadot mapping at least"
+			);
+			Some(alias.unwrap())
+		}
 	}
 }
 
