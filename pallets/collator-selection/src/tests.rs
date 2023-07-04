@@ -219,7 +219,12 @@ fn candidate_to_invulnerable_works() {
 			RuntimeOrigin::signed(RootAccount::get()),
 			3
 		));
-
+		System::assert_has_event(RuntimeEvent::CollatorSelection(crate::Event::CandidateRemoved {
+			account_id: 3,
+		}));
+		System::assert_has_event(RuntimeEvent::CollatorSelection(
+			crate::Event::InvulnerableAdded { account_id: 3 },
+		));
 		assert!(CollatorSelection::invulnerables().to_vec().contains(&3));
 		assert_eq!(Balances::free_balance(3), 100);
 		assert_eq!(CollatorSelection::candidates().len(), 1);
@@ -227,6 +232,12 @@ fn candidate_to_invulnerable_works() {
 		assert_ok!(CollatorSelection::add_invulnerable(
 			RuntimeOrigin::signed(RootAccount::get()),
 			4
+		));
+		System::assert_has_event(RuntimeEvent::CollatorSelection(crate::Event::CandidateRemoved {
+			account_id: 4,
+		}));
+		System::assert_has_event(RuntimeEvent::CollatorSelection(
+			crate::Event::InvulnerableAdded { account_id: 4 },
 		));
 		assert!(CollatorSelection::invulnerables().to_vec().contains(&4));
 		assert_eq!(Balances::free_balance(4), 100);

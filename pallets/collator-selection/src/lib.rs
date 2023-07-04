@@ -264,6 +264,9 @@ pub mod pallet {
 		CandidateAdded { account_id: T::AccountId, deposit: BalanceOf<T> },
 		/// A candidate was removed.
 		CandidateRemoved { account_id: T::AccountId },
+		/// An account was unable to be added to the Invulnerables because they did not have keys
+		/// registered. Other Invulnerables may have been set.
+		InvalidInvulnerableSkipped { account_id: T::AccountId },
 	}
 
 	#[pallet::error]
@@ -336,12 +339,20 @@ pub mod pallet {
 					Some(key) => {
 						// key is not registered
 						if !T::ValidatorRegistration::is_registered(&key) {
+							Self::deposit_event(Event::InvalidInvulnerableSkipped {
+								account_id: account_id.clone(),
+							});
 							continue
 						}
 						// else condition passes; key is registered
 					},
 					// key does not exist
-					None => continue,
+					None => {
+						Self::deposit_event(Event::InvalidInvulnerableSkipped {
+							account_id: account_id.clone(),
+						});
+						continue
+					},
 				}
 
 				new_with_keys.push(account_id.clone());
