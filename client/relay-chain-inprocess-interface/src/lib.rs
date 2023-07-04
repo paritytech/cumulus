@@ -347,8 +347,7 @@ mod tests {
 		}
 	}
 
-	fn build_client_backend_and_block(
-	) -> (Arc<Client>, PBlock, RelayChainInProcessInterface) {
+	fn build_client_backend_and_block() -> (Arc<Client>, PBlock, RelayChainInProcessInterface) {
 		let builder =
 			TestClientBuilder::new().set_execution_strategy(ExecutionStrategy::NativeWhenPossible);
 		let backend = builder.backend();
