@@ -24,10 +24,7 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
-use parachains_common::{
-	xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry, RelayOrOtherSystemParachains},
-	TREASURY_PALLET_ID,
-};
+use parachains_common::{xcm_config::RelayOrOtherSystemParachains, TREASURY_PALLET_ID};
 use polkadot_parachain::primitives::Sibling;
 use rococo_runtime_constants::system_parachain::SystemParachains;
 use sp_runtime::traits::AccountIdConversion;
