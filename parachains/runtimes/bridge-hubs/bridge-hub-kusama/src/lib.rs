@@ -440,7 +440,7 @@ parameter_types! {
 	pub const RelayerStakeReserveId: [u8; 8] = *b"brdgrlrs";
 }
 
-/// Add parachain bridge pallet to track Polkadot bridge hub parachain
+/// Add parachain bridge pallet to track Polkadot BridgeHub parachain
 pub type BridgeParachainPolkadotInstance = pallet_bridge_parachains::Instance1;
 impl pallet_bridge_parachains::Config<BridgeParachainPolkadotInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;

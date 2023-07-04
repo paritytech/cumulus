@@ -441,7 +441,7 @@ parameter_types! {
 	pub const RelayerStakeReserveId: [u8; 8] = *b"brdgrlrs";
 }
 
-/// Add parachain bridge pallet to track Kusama bridge hub parachain
+/// Add parachain bridge pallet to track Kusama BridgeHub parachain
 pub type BridgeParachainKusamaInstance = pallet_bridge_parachains::Instance1;
 impl pallet_bridge_parachains::Config<BridgeParachainKusamaInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
