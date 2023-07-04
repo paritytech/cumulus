@@ -108,38 +108,3 @@ impl<H: Hasher> TrieCacheProvider<H> for CacheProvider<H> {
 // This is safe here since we are single-threaded in WASM
 unsafe impl<H: Hasher> Send for CacheProvider<H> {}
 unsafe impl<H: Hasher> Sync for CacheProvider<H> {}
-
-/// Wrapper for a [`sp_trie::MemoryDB`] which allows reading of values exactly once.
-///
-/// After each read, the read value is removed from the underlying [`sp_trie::MemoryDB`].
-/// This is done because we expect that the requested item is delivered by the [`SimpleTrieCache`]
-/// next time.
-pub struct ReadOnceBackend<H: Hasher> {
-	memory_db: RefCell<sp_trie::MemoryDB<H>>,
-}
-
-impl<H: Hasher> ReadOnceBackend<H> {
-	pub fn new(memory_db: sp_trie::MemoryDB<H>) -> Self {
-		Self { memory_db: RefCell::new(memory_db) }
-	}
-}
-
-// This is safe here since since we are single-threaded in WASM
-unsafe impl<H: Hasher> Send for ReadOnceBackend<H> {}
-unsafe impl<H: Hasher> Sync for ReadOnceBackend<H> {}
-
-impl<H: Hasher> TrieBackendStorage<H> for ReadOnceBackend<H> {
-	type Overlay = sp_trie::MemoryDB<H>;
-
-	fn get(
-		&self,
-		key: &H::Out,
-		prefix: hash_db::Prefix,
-	) -> Result<Option<trie_db::DBValue>, sp_state_machine::DefaultError> {
-		let mut guard = self.memory_db.borrow_mut();
-		if let value @ Some(_) = guard.remove_and_purge(key, prefix) {
-			return Ok(value)
-		}
-		TrieBackendStorage::get(&&*guard, key, prefix)
-	}
-}
