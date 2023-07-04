@@ -24,6 +24,10 @@ pallet-im-online = { default-features = false, git = "https://github.com/parityt
 sc-client-api = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-client = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
+cumulus-test-relay-sproof-builder = { path = "../../../../test/relay-sproof-builder", default-features = false }
 
 # Polkadot
 polkadot-core-primitives = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -54,6 +58,7 @@ bridge-hub-kusama-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-k
 bridge-hub-polkadot-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-polkadot" }
 xcm-emulator = { default-features = false, path = "../../../../xcm/xcm-emulator" }
 cumulus-test-client = { path = "../../../../test/client" }
+cumulus-primitives-parachain-inherent = { path = "../../../../primitives/parachain-inherent" }
 
 [features]
 runtime-benchmarks = [
