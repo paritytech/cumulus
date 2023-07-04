@@ -17,7 +17,8 @@
 //! Bridge definitions.
 
 use crate::{
-	BridgeParachainPolkadotInstance, Runtime, WithBridgeHubPolkadotMessagesInstance, XcmRouter,
+	BridgeParachainPolkadotInstance, BridgePolkadotMessages, Runtime,
+	WithBridgeHubPolkadotMessagesInstance, XcmRouter,
 };
 use bp_messages::LaneId;
 use bridge_runtime_common::{
@@ -32,7 +33,7 @@ use bridge_runtime_common::{
 		RefundableParachain,
 	},
 };
-use frame_support::{parameter_types, RuntimeDebug};
+use frame_support::{parameter_types, traits::PalletInfoAccess, RuntimeDebug};
 use xcm::{latest::prelude::*, prelude::NetworkId};
 use xcm_builder::{BridgeBlobDispatcher, HaulBlobExporter};
 
@@ -42,6 +43,7 @@ parameter_types! {
 	pub const MaxUnconfirmedMessagesAtInboundLane: bp_messages::MessageNonce =
 		bp_bridge_hub_kusama::MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX;
 	pub const BridgeHubPolkadotChainId: bp_runtime::ChainId = bp_runtime::BRIDGE_HUB_POLKADOT_CHAIN_ID;
+	pub BridgePolkadotMessagesPalletInstance: InteriorMultiLocation = X1(PalletInstance(<BridgePolkadotMessages as PalletInfoAccess>::index() as u8));
 	pub PolkadotGlobalConsensusNetwork: NetworkId = NetworkId::Polkadot;
 	// see the `FEE_BOOST_PER_MESSAGE` constant to get the meaning of this value
 	pub PriorityBoostPerMessage: u64 = 91_022_222_222_222;
@@ -56,7 +58,7 @@ pub type ToBridgeHubPolkadotMessagesDeliveryProof =
 
 /// Dispatches received XCM messages from other bridge
 pub type OnThisChainBlobDispatcher<UniversalLocation> =
-	BridgeBlobDispatcher<XcmRouter, UniversalLocation>;
+	BridgeBlobDispatcher<XcmRouter, UniversalLocation, BridgePolkadotMessagesPalletInstance>;
 
 /// Export XCM messages to be relayed to the other side.
 pub type ToBridgeHubPolkadotHaulBlobExporter = HaulBlobExporter<
