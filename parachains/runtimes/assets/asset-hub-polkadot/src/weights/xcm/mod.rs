@@ -241,8 +241,8 @@ impl<Call> XcmWeightInfo<Call> for AssetHubPolkadotXcmWeight<Call> {
 		XcmGeneric::<Runtime>::clear_topic()
 	}
 	fn alias_origin(_: &MultiLocation) -> Weight {
-		// XCM Executor does not currently support alias origin operations
-		Weight::MAX
+		// TODO:check-parameter - setup correct benchmarks
+		XcmGeneric::<Runtime>::unpaid_execution()
 	}
 	fn unpaid_execution(_: &WeightLimit, _: &Option<MultiLocation>) -> Weight {
 		XcmGeneric::<Runtime>::unpaid_execution()

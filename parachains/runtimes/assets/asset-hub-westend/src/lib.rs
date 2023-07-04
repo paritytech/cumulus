@@ -71,9 +71,8 @@ use sp_version::RuntimeVersion;
 use xcm::opaque::v3::MultiLocation;
 use xcm_config::{
 	ForeignAssetsConvertedConcreteId, ForeignCreatorsSovereignAccountOf,
-	PoolAssetsConvertedConcreteId,
-	TrustBackedAssetsConvertedConcreteId, WestendLocation, XcmConfig,
-	XcmOriginToTransactDispatchOrigin,
+	PoolAssetsConvertedConcreteId, TrustBackedAssetsConvertedConcreteId, WestendLocation,
+	XcmConfig, XcmOriginToTransactDispatchOrigin,
 };
 
 #[cfg(any(feature = "std", test))]

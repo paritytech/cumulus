@@ -21,7 +21,7 @@ use frame_support::{
 	assert_ok,
 	traits::{Currency, OriginTrait, ProcessMessageError},
 };
-use pallet_xcm::{BuyExecutionSetup, DecideBuyExecutionSetup};
+use pallet_xcm::destination_fees::{DestinationFeesManager, DestinationFeesSetup};
 use parachains_common::Balance;
 use parachains_runtimes_test_utils::{
 	mock_open_hrmp_channel, AccountIdOf, BalanceOf, CollatorSessionKeys, ExtBuilder, RuntimeHelper,
@@ -140,12 +140,13 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 			};
 
 			// check other accounts
-			let buy_execution_setup =
-				<Runtime as pallet_xcm::Config>::BuyExecutionSetupResolver::decide_for(
+			let destination_fees_setup =
+				<Runtime as pallet_xcm::Config>::DestinationFeesManager::decide_for(
 					&target_location_from_different_consensus,
 					&asset_to_transfer.id,
 				);
-			if let BuyExecutionSetup::UniversalLocation { local_account, .. } = buy_execution_setup
+			if let DestinationFeesSetup::ByUniversalLocation { local_account } =
+				destination_fees_setup
 			{
 				let local_account = LocationToAccountId::convert_location(&local_account)
 					.expect("Sovereign account for fee");
@@ -184,7 +185,8 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 			);
 
 			// check reserve account
-			if let BuyExecutionSetup::UniversalLocation { local_account, .. } = buy_execution_setup
+			if let DestinationFeesSetup::ByUniversalLocation { local_account } =
+				destination_fees_setup
 			{
 				// partial fees goes here
 				let local_account = LocationToAccountId::convert_location(&local_account)

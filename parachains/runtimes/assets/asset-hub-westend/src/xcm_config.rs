@@ -15,8 +15,8 @@
 
 use super::{
 	AccountId, AllPalletsWithSystem, Assets, Authorship, Balance, Balances, ForeignAssets,
-	ParachainInfo, ParachainSystem, PolkadotXcm, PoolAssets, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
-	TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
+	ParachainInfo, ParachainSystem, PolkadotXcm, PoolAssets, Runtime, RuntimeCall, RuntimeEvent,
+	RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
 use assets_common::matching::{
 	FromSiblingParachain, IsForeignConcreteAsset, StartsWith, StartsWithExplicitGlobalConsensus,
@@ -517,7 +517,7 @@ impl pallet_xcm::Config for Runtime {
 	type AdminOrigin = EnsureRoot<AccountId>;
 	type MaxRemoteLockConsumers = ConstU32<0>;
 	type RemoteLockConsumerIdentifier = ();
-	type BuyExecutionSetupResolver = ();
+	type DestinationFeesManager = ();
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
@@ -547,9 +547,9 @@ pub struct BenchmarkMultiLocationConverter<SelfParaId> {
 
 #[cfg(feature = "runtime-benchmarks")]
 impl<SelfParaId> pallet_asset_conversion::BenchmarkHelper<MultiLocation>
-for BenchmarkMultiLocationConverter<SelfParaId>
-	where
-		SelfParaId: Get<ParaId>,
+	for BenchmarkMultiLocationConverter<SelfParaId>
+where
+	SelfParaId: Get<ParaId>,
 {
 	fn asset_id(asset_id: u32) -> MultiLocation {
 		MultiLocation {
