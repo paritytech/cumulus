@@ -4,14 +4,29 @@ use bp_messages::{
 	LaneId, MessageKey, OutboundLaneData,
 };
 use bridge_runtime_common::messages_xcm_extension::XcmBlobMessageDispatchResult;
-use codec::Decode;
+use codec::{Decode, Encode};
 pub use cumulus_primitives_core::{DmpMessageHandler, XcmpMessageHandler};
 use pallet_bridge_messages::{Config, Instance1, Instance2, OutboundLanes, Pallet};
-use sp_core::Get;
+use sp_core::{Get, H256};
+use sp_io::hashing::blake2_256;
 use xcm_emulator::{BridgeMessage, BridgeMessageDispatchError, BridgeMessageHandler, Parachain};
 
 pub struct BridgeHubMessageHandler<S, T, I> {
 	_marker: std::marker::PhantomData<(S, T, I)>,
+}
+
+struct LaneIdWrapper(LaneId);
+
+impl From<LaneIdWrapper> for u32 {
+	fn from(lane_id: LaneIdWrapper) -> u32 {
+		u32::from_be_bytes(lane_id.0.0)
+	}
+}
+
+impl From<u32> for LaneIdWrapper {
+	fn from(id: u32) -> LaneId {
+		LaneIdWrapper(LaneId(id))
+	}
 }
 
 type BridgeHubRococoRuntime = <BridgeHubRococo as Parachain>::Runtime;
@@ -100,13 +115,13 @@ where
 	}
 
 	fn notify_source_message_delivery(lane_id: u32) {
-		let data = OutboundLanes::<S, Instance1>::get(LaneId::from(lane_id));
+		let data = OutboundLanes::<S, Instance1>::get(LaneIdWrapper::from(lane_id).0);
 		let new_data = OutboundLaneData {
 			oldest_unpruned_nonce: data.oldest_unpruned_nonce + 1,
 			latest_received_nonce: data.latest_received_nonce + 1,
 			..data
 		};
 
-		OutboundLanes::<S, Instance1>::insert(LaneId::from(lane_id), new_data);
+		OutboundLanes::<S, Instance1>::insert(LaneIdWrapper::from(lane_id).0, new_data);
 	}
 }

@@ -37,7 +37,7 @@ fn example() {
 	]));
 
 	//Rococo Global Consensus
-	// Send XCM message from Relay Chain to Brid Hub source Parachain
+	// Send XCM message from Relay Chain to Bridge Hub source Parachain
 	Rococo::execute_with(|| {
 		assert_ok!(<Rococo as RococoPallet>::XcmPallet::send(
 			sudo_origin,
