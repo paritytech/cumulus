@@ -551,6 +551,7 @@ pub mod bridging {
 	parameter_types! {
 		pub BridgeHubPolkadotParaId: u32 = 1002;
 		pub BridgeHubPolkadot: MultiLocation = MultiLocation::new(1, X1(Parachain(BridgeHubPolkadotParaId::get())));
+		pub BridgeHubPolkadotWithBridgeHubKusamaInstance: MultiLocation = MultiLocation::new(1, X2(Parachain(BridgeHubPolkadotParaId::get()), PalletInstance(53)));
 		pub const KusamaNetwork: NetworkId = NetworkId::Kusama;
 		pub AssetHubKusama: MultiLocation =  MultiLocation::new(2, X2(GlobalConsensus(KusamaNetwork::get()), Parachain(1000)));
 		pub KsmLocation: MultiLocation =  MultiLocation::new(2, X1(GlobalConsensus(KusamaNetwork::get())));
@@ -576,7 +577,7 @@ pub mod bridging {
 		/// Universal aliases
 		pub UniversalAliases: BTreeSet<(MultiLocation, Junction)> = BTreeSet::from_iter(
 			sp_std::vec![
-				(BridgeHubPolkadot::get(), GlobalConsensus(KusamaNetwork::get()))
+				(BridgeHubPolkadotWithBridgeHubKusamaInstance::get(), GlobalConsensus(KusamaNetwork::get()))
 			]
 		);
 

@@ -731,6 +731,7 @@ fn receive_reserve_asset_deposited_from_different_consensus_works() {
 
 			// trigger XCM execution as hrmp from BridgeHub would do
 			let xcm = Xcm(vec![
+				DescendOrigin(X1(PalletInstance(53))),
 				UniversalOrigin(GlobalConsensus(Kusama)),
 				DescendOrigin(X1(Parachain(1000))),
 				ReserveAssetDeposited(MultiAssets::from(vec![MultiAsset {

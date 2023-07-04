@@ -735,6 +735,7 @@ fn receive_reserve_asset_deposited_from_different_consensus_works() {
 			));
 
 			let xcm = Xcm(vec![
+				DescendOrigin(X1(PalletInstance(53))),
 				UniversalOrigin(GlobalConsensus(Polkadot)),
 				DescendOrigin(X1(Parachain(1000))),
 				ReserveAssetDeposited(MultiAssets::from(vec![MultiAsset {
