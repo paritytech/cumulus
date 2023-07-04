@@ -28,7 +28,7 @@ pub use frame_support::{
 pub use frame_system::AccountInfo;
 pub use pallet_balances::AccountData;
 pub use sp_arithmetic::traits::Bounded;
-pub use sp_core::{H256, storage::Storage};
+pub use sp_core::{storage::Storage, H256};
 pub use sp_io;
 pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, fmt::Debug};
 pub use sp_trie::StorageProof;

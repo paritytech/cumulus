@@ -18,7 +18,7 @@ struct LaneIdWrapper(LaneId);
 
 impl From<LaneIdWrapper> for u32 {
 	fn from(lane_id: LaneIdWrapper) -> u32 {
-		u32::from_be_bytes(lane_id.0.0)
+		u32::from_be_bytes(lane_id.0 .0)
 	}
 }
 
