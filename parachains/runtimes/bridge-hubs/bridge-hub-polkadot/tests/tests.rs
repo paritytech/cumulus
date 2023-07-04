@@ -155,7 +155,13 @@ fn change_required_stake_by_governance_works() {
 		bp_bridge_hub_polkadot::BRIDGE_HUB_POLKADOT_PARACHAIN_ID,
 		Box::new(|call| RuntimeCall::System(call).encode()),
 		|| (RequiredStakeForStakeAndSlash::key().to_vec(), RequiredStakeForStakeAndSlash::get()),
-		|old_value| old_value.checked_mul(2).unwrap(),
+		|old_value| {
+			if let Some(new_value) = old_value.checked_add(1) {
+				new_value
+			} else {
+				old_value.checked_sub(1).unwrap()
+			}
+		},
 	)
 }
 
