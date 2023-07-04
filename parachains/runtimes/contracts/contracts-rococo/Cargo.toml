@@ -13,8 +13,8 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 hex-literal = { version = "0.4.1", optional = true }
-log = { version = "0.4.17", default-features = false }
-scale-info = { version = "2.6.0", default-features = false, features = ["derive"] }
+log = { version = "0.4.19", default-features = false }
+scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 smallvec = "1.10.0"
 
 # Substrate
@@ -87,6 +87,7 @@ std = [
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
 	"rococo-runtime-constants/std",
+    "frame-try-runtime/std",
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
@@ -142,11 +143,13 @@ runtime-benchmarks = [
 	"pallet-collator-selection/runtime-benchmarks",
 	"pallet-contracts/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
+	"pallet-sudo/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
+	"cumulus-pallet-parachain-system/runtime-benchmarks",
 	"cumulus-pallet-session-benchmarking/runtime-benchmarks",
 ]
 

@@ -18,9 +18,13 @@
 
 #![warn(missing_docs)]
 
+/// Utilities used for benchmarking
+pub mod bench_utils;
+
 pub mod chain_spec;
 mod genesis;
 
+use runtime::AccountId;
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use std::{
 	future::Future,
@@ -54,15 +58,16 @@ use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_consensus::ImportQueue;
 use sc_network::{
-	config::TransportConfig, multiaddr, NetworkBlock, NetworkService, NetworkStateInfo,
+	config::{FullNetworkConfiguration, TransportConfig},
+	multiaddr, NetworkBlock, NetworkService, NetworkStateInfo,
 };
 use sc_service::{
 	config::{
 		BlocksPruning, DatabaseSource, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
 		OffchainWorkerConfig, PruningMode, WasmExecutionMethod,
 	},
-	BasePath, ChainSpec, Configuration, Error as ServiceError, PartialComponents, Role,
-	RpcHandlers, TFullBackend, TFullClient, TaskManager,
+	BasePath, ChainSpec as ChainSpecService, Configuration, Error as ServiceError,
+	PartialComponents, Role, RpcHandlers, TFullBackend, TFullClient, TaskManager,
 };
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_blockchain::HeaderBackend;
@@ -323,9 +328,12 @@ where
 	.map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
 	let import_queue_service = params.import_queue.service();
+	let net_config = FullNetworkConfiguration::new(&parachain_config.network);
+
 	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
 		build_network(BuildNetworkParams {
 			parachain_config: &parachain_config,
+			net_config,
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
 			para_id,
@@ -497,6 +505,7 @@ pub struct TestNodeBuilder {
 	storage_update_func_relay_chain: Option<Box<dyn Fn()>>,
 	consensus: Consensus,
 	relay_chain_full_node_url: Vec<Url>,
+	endowed_accounts: Vec<AccountId>,
 }
 
 impl TestNodeBuilder {
@@ -519,6 +528,7 @@ impl TestNodeBuilder {
 			storage_update_func_relay_chain: None,
 			consensus: Consensus::RelayChain,
 			relay_chain_full_node_url: vec![],
+			endowed_accounts: Default::default(),
 		}
 	}
 
@@ -625,16 +635,23 @@ impl TestNodeBuilder {
 		self
 	}
 
+	/// Accounts which will have an initial balance.
+	pub fn endowed_accounts(mut self, accounts: Vec<AccountId>) -> TestNodeBuilder {
+		self.endowed_accounts = accounts;
+		self
+	}
+
 	/// Build the [`TestNode`].
 	pub async fn build(self) -> TestNode {
 		let parachain_config = node_config(
 			self.storage_update_func_parachain.unwrap_or_else(|| Box::new(|| ())),
 			self.tokio_handle.clone(),
-			self.key.clone(),
+			self.key,
 			self.parachain_nodes,
 			self.parachain_nodes_exclusive,
 			self.para_id,
 			self.collator_key.is_some(),
+			self.endowed_accounts,
 		)
 		.expect("could not generate Configuration");
 
@@ -667,7 +684,7 @@ impl TestNodeBuilder {
 		.await
 		.expect("could not create Cumulus test service");
 
-		let peer_id = network.local_peer_id().clone();
+		let peer_id = network.local_peer_id();
 		let addr = MultiaddrWithPeerId { multiaddr, peer_id };
 
 		TestNode { task_manager, client, network, addr, rpc_handlers, transaction_pool }
@@ -688,12 +705,14 @@ pub fn node_config(
 	nodes_exlusive: bool,
 	para_id: ParaId,
 	is_collator: bool,
+	endowed_accounts: Vec<AccountId>,
 ) -> Result<Configuration, ServiceError> {
 	let base_path = BasePath::new_temp_dir()?;
-	let root = base_path.path().join(format!("cumulus_test_service_{}", key.to_string()));
+	let root = base_path.path().join(format!("cumulus_test_service_{}", key));
 	let role = if is_collator { Role::Authority } else { Role::Full };
 	let key_seed = key.to_seed();
-	let mut spec = Box::new(chain_spec::get_chain_spec(para_id));
+	let mut spec =
+		Box::new(chain_spec::get_chain_spec_with_extra_endowed(para_id, endowed_accounts));
 
 	let mut storage = spec.as_storage_builder().build_storage().expect("could not build storage");
 
@@ -736,14 +755,15 @@ pub fn node_config(
 		state_pruning: Some(PruningMode::ArchiveAll),
 		blocks_pruning: BlocksPruning::KeepAll,
 		chain_spec: spec,
-		wasm_method: WasmExecutionMethod::Interpreted,
-		// NOTE: we enforce the use of the native runtime to make the errors more debuggable
+		wasm_method: WasmExecutionMethod::Compiled {
+			instantiation_strategy: sc_executor_wasmtime::InstantiationStrategy::PoolingCopyOnWrite,
+		},
 		execution_strategies: ExecutionStrategies {
-			syncing: sc_client_api::ExecutionStrategy::NativeWhenPossible,
-			importing: sc_client_api::ExecutionStrategy::NativeWhenPossible,
-			block_construction: sc_client_api::ExecutionStrategy::NativeWhenPossible,
-			offchain_worker: sc_client_api::ExecutionStrategy::NativeWhenPossible,
-			other: sc_client_api::ExecutionStrategy::NativeWhenPossible,
+			syncing: sc_client_api::ExecutionStrategy::AlwaysWasm,
+			importing: sc_client_api::ExecutionStrategy::AlwaysWasm,
+			block_construction: sc_client_api::ExecutionStrategy::AlwaysWasm,
+			offchain_worker: sc_client_api::ExecutionStrategy::AlwaysWasm,
+			other: sc_client_api::ExecutionStrategy::AlwaysWasm,
 		},
 		rpc_addr: None,
 		rpc_max_connections: Default::default(),
@@ -753,6 +773,7 @@ pub fn node_config(
 		rpc_max_response_size: Default::default(),
 		rpc_id_provider: None,
 		rpc_max_subs_per_conn: Default::default(),
+		rpc_port: 9945,
 		prometheus_config: None,
 		telemetry_endpoints: None,
 		default_heap_pages: None,
@@ -786,7 +807,7 @@ impl TestNode {
 		function: impl Into<runtime::RuntimeCall>,
 		caller: Sr25519Keyring,
 	) -> Result<RpcTransactionOutput, RpcTransactionError> {
-		let extrinsic = construct_extrinsic(&*self.client, function, caller.pair(), Some(0));
+		let extrinsic = construct_extrinsic(&self.client, function, caller.pair(), Some(0));
 
 		self.rpc_handlers.send_transaction(extrinsic.into()).await
 	}

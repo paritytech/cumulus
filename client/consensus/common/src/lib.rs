@@ -32,6 +32,8 @@ pub use parachain_consensus::run_parachain_consensus;
 use level_monitor::LevelMonitor;
 pub use level_monitor::{LevelLimit, MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT};
 
+pub mod import_queue;
+
 /// The result of [`ParachainConsensus::produce_candidate`].
 pub struct ParachainCandidate<B> {
 	/// The block that was built for this candidate.
@@ -144,6 +146,13 @@ where
 		// Blocks are stored within the backend by using POST hash.
 		let hash = params.post_hash();
 		let number = *params.header.number();
+
+		if params.with_state() {
+			// Force imported state finality.
+			// Required for warp sync. We assume that preconditions have been
+			// checked properly and we are importing a finalized block with state.
+			params.finalized = true;
+		}
 
 		// Best block is determined by the relay chain, or if we are doing the initial sync
 		// we import all blocks as new best.

@@ -38,11 +38,11 @@ use sp_runtime::traits::AccountIdConversion;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
-	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin,
-	IsConcrete, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
-	WithComputedOrigin, XcmFeesToAccount,
+	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, CurrencyAdapter,
+	DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin, IsConcrete, ParentAsSuperuser,
+	ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+	UsingComponents, WeightInfoBounds, WithComputedOrigin, XcmFeesToAccount,
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
@@ -139,29 +139,30 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			}
 		}
 
-		match call {
+		matches!(
+			call,
 			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
-			RuntimeCall::System(
-				frame_system::Call::set_heap_pages { .. } |
-				frame_system::Call::set_code { .. } |
-				frame_system::Call::set_code_without_checks { .. } |
-				frame_system::Call::kill_prefix { .. },
-			) |
-			RuntimeCall::ParachainSystem(..) |
-			RuntimeCall::Timestamp(..) |
-			RuntimeCall::Balances(..) |
-			RuntimeCall::CollatorSelection(
-				pallet_collator_selection::Call::set_desired_candidates { .. } |
-				pallet_collator_selection::Call::set_candidacy_bond { .. } |
-				pallet_collator_selection::Call::register_as_candidate { .. } |
-				pallet_collator_selection::Call::leave_intent { .. },
-			) |
-			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
-			RuntimeCall::XcmpQueue(..) |
-			RuntimeCall::DmpQueue(..) |
-			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) => true,
-			_ => false,
-		}
+				RuntimeCall::System(
+					frame_system::Call::set_heap_pages { .. } |
+						frame_system::Call::set_code { .. } |
+						frame_system::Call::set_code_without_checks { .. } |
+						frame_system::Call::kill_prefix { .. },
+				) | RuntimeCall::ParachainSystem(..) |
+				RuntimeCall::Timestamp(..) |
+				RuntimeCall::Balances(..) |
+				RuntimeCall::CollatorSelection(
+					pallet_collator_selection::Call::set_desired_candidates { .. } |
+						pallet_collator_selection::Call::set_candidacy_bond { .. } |
+						pallet_collator_selection::Call::register_as_candidate { .. } |
+						pallet_collator_selection::Call::leave_intent { .. } |
+						pallet_collator_selection::Call::set_invulnerables { .. } |
+						pallet_collator_selection::Call::add_invulnerable { .. } |
+						pallet_collator_selection::Call::remove_invulnerable { .. },
+				) | RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
+				RuntimeCall::XcmpQueue(..) |
+				RuntimeCall::DmpQueue(..) |
+				RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. })
+		)
 	}
 }
 
@@ -225,6 +226,7 @@ impl xcm_executor::Config for XcmConfig {
 	type UniversalAliases = Nothing;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
 	type SafeCallFilter = SafeCallFilter;
+	type Aliasers = Nothing;
 }
 
 /// Converts a local signed origin into an XCM multilocation.
@@ -276,6 +278,8 @@ impl pallet_xcm::Config for Runtime {
 	#[cfg(feature = "runtime-benchmarks")]
 	type ReachableDest = ReachableDest;
 	type AdminOrigin = EnsureRoot<AccountId>;
+	type MaxRemoteLockConsumers = ConstU32<0>;
+	type RemoteLockConsumerIdentifier = ();
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {

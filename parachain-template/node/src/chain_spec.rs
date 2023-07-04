@@ -8,7 +8,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
-	sc_service::GenericChainSpec<parachain_template_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<parachain_template_runtime::RuntimeGenesisConfig, Extensions>;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
@@ -101,6 +101,7 @@ pub fn development_config() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				1000.into(),
 			)
 		},
@@ -156,6 +157,7 @@ pub fn local_testnet_config() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				1000.into(),
 			)
 		},
@@ -180,9 +182,10 @@ pub fn local_testnet_config() -> ChainSpec {
 fn testnet_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
+	root: AccountId,
 	id: ParaId,
-) -> parachain_template_runtime::GenesisConfig {
-	parachain_template_runtime::GenesisConfig {
+) -> parachain_template_runtime::RuntimeGenesisConfig {
+	parachain_template_runtime::RuntimeGenesisConfig {
 		system: parachain_template_runtime::SystemConfig {
 			code: parachain_template_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
@@ -218,5 +221,6 @@ fn testnet_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 		transaction_payment: Default::default(),
+		sudo: parachain_template_runtime::SudoConfig { key: Some(root) },
 	}
 }

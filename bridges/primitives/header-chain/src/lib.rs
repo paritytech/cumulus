@@ -27,7 +27,6 @@ use codec::{Codec, Decode, Encode, EncodeLike, MaxEncodedLen};
 use core::{clone::Clone, cmp::Eq, default::Default, fmt::Debug};
 use frame_support::PalletError;
 use scale_info::TypeInfo;
-#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_consensus_grandpa::{AuthorityList, ConsensusLog, SetId, GRANDPA_ENGINE_ID};
 use sp_runtime::{traits::Header as HeaderT, Digest, RuntimeDebug};
@@ -73,18 +72,14 @@ impl<H: HeaderT> StoredHeaderDataBuilder<H::Number, H::Hash> for H {
 pub trait HeaderChain<C: Chain> {
 	/// Returns state (storage) root of given finalized header.
 	fn finalized_header_state_root(header_hash: HashOf<C>) -> Option<HashOf<C>>;
-	/// Parse storage proof using finalized header.
-	fn parse_finalized_storage_proof<R>(
+	/// Get storage proof checker using finalized header.
+	fn storage_proof_checker(
 		header_hash: HashOf<C>,
 		storage_proof: RawStorageProof,
-		parse: impl FnOnce(StorageProofChecker<HasherOf<C>>) -> R,
-	) -> Result<R, HeaderChainError> {
+	) -> Result<StorageProofChecker<HasherOf<C>>, HeaderChainError> {
 		let state_root = Self::finalized_header_state_root(header_hash)
 			.ok_or(HeaderChainError::UnknownHeader)?;
-		let storage_proof_checker = bp_runtime::StorageProofChecker::new(state_root, storage_proof)
-			.map_err(HeaderChainError::StorageProof)?;
-
-		Ok(parse(storage_proof_checker))
+		StorageProofChecker::new(state_root, storage_proof).map_err(HeaderChainError::StorageProof)
 	}
 }
 
@@ -114,8 +109,9 @@ impl AuthoritySet {
 /// Data required for initializing the GRANDPA bridge pallet.
 ///
 /// The bridge needs to know where to start its sync from, and this provides that initial context.
-#[derive(Default, Encode, Decode, RuntimeDebug, PartialEq, Eq, Clone, TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(
+	Default, Encode, Decode, RuntimeDebug, PartialEq, Eq, Clone, TypeInfo, Serialize, Deserialize,
+)]
 pub struct InitializationData<H: HeaderT> {
 	/// The header from which we should start syncing.
 	pub header: Box<H>,

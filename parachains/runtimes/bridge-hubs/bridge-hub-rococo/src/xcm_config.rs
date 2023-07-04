@@ -16,8 +16,9 @@
 
 use super::{
 	AccountId, AllPalletsWithSystem, Balances, BridgeGrandpaRococoInstance,
-	BridgeGrandpaWococoInstance, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall,
-	RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
+	BridgeGrandpaWococoInstance, DeliveryRewardInBalance, ParachainInfo, ParachainSystem,
+	PolkadotXcm, RequiredStakeForStakeAndSlash, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
+	WeightToFee, XcmpQueue,
 };
 use crate::{
 	bridge_hub_rococo_config::ToBridgeHubWococoHaulBlobExporter,
@@ -45,10 +46,11 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
 	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
-	CurrencyAdapter, EnsureXcmOrigin, IsConcrete, ParentAsSuperuser, ParentIsPreset,
-	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-	UsingComponents, WeightInfoBounds, WithComputedOrigin, XcmFeesToAccount,
+	CurrencyAdapter, DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin, IsConcrete,
+	ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+	SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId, UsingComponents,
+	WeightInfoBounds, WithComputedOrigin, WithUniqueTopic, XcmFeesToAccount,
 };
 use xcm_executor::{
 	traits::{ExportXcm, WithOriginFilter},
@@ -159,67 +161,77 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			}
 		}
 
+		// Allow to change dedicated storage items (called by governance-like)
 		match call {
+			RuntimeCall::System(frame_system::Call::set_storage { items })
+				if items.iter().any(|(k, _)| {
+					k.eq(&DeliveryRewardInBalance::key()) |
+						k.eq(&RequiredStakeForStakeAndSlash::key())
+				}) =>
+				return true,
+			_ => (),
+		};
+
+		matches!(
+			call,
 			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
-			RuntimeCall::System(
-				frame_system::Call::set_heap_pages { .. } |
-				frame_system::Call::set_code { .. } |
-				frame_system::Call::set_code_without_checks { .. } |
-				frame_system::Call::kill_prefix { .. },
-			) |
-			RuntimeCall::ParachainSystem(..) |
-			RuntimeCall::Timestamp(..) |
-			RuntimeCall::Balances(..) |
-			RuntimeCall::CollatorSelection(
-				pallet_collator_selection::Call::set_desired_candidates { .. } |
-				pallet_collator_selection::Call::set_candidacy_bond { .. } |
-				pallet_collator_selection::Call::register_as_candidate { .. } |
-				pallet_collator_selection::Call::leave_intent { .. },
-			) |
-			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
-			RuntimeCall::XcmpQueue(..) |
-			RuntimeCall::DmpQueue(..) |
-			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
-			RuntimeCall::BridgeRococoGrandpa(pallet_bridge_grandpa::Call::<
-				Runtime,
-				BridgeGrandpaRococoInstance,
-			>::initialize {
-				..
-			}) |
-			RuntimeCall::BridgeWococoGrandpa(pallet_bridge_grandpa::Call::<
-				Runtime,
-				BridgeGrandpaWococoInstance,
-			>::initialize {
-				..
-			}) => true,
-			_ => false,
-		}
+				RuntimeCall::System(
+					frame_system::Call::set_heap_pages { .. } |
+						frame_system::Call::set_code { .. } |
+						frame_system::Call::set_code_without_checks { .. } |
+						frame_system::Call::kill_prefix { .. },
+				) | RuntimeCall::ParachainSystem(..) |
+				RuntimeCall::Timestamp(..) |
+				RuntimeCall::Balances(..) |
+				RuntimeCall::CollatorSelection(
+					pallet_collator_selection::Call::set_desired_candidates { .. } |
+						pallet_collator_selection::Call::set_candidacy_bond { .. } |
+						pallet_collator_selection::Call::register_as_candidate { .. } |
+						pallet_collator_selection::Call::leave_intent { .. } |
+						pallet_collator_selection::Call::set_invulnerables { .. } |
+						pallet_collator_selection::Call::add_invulnerable { .. } |
+						pallet_collator_selection::Call::remove_invulnerable { .. },
+				) | RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
+				RuntimeCall::XcmpQueue(..) |
+				RuntimeCall::DmpQueue(..) |
+				RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
+				RuntimeCall::BridgeRococoGrandpa(pallet_bridge_grandpa::Call::<
+					Runtime,
+					BridgeGrandpaRococoInstance,
+				>::initialize { .. }) |
+				RuntimeCall::BridgeWococoGrandpa(pallet_bridge_grandpa::Call::<
+					Runtime,
+					BridgeGrandpaWococoInstance,
+				>::initialize { .. })
+		)
 	}
 }
 
-pub type Barrier = DenyThenTry<
-	DenyReserveTransferToRelayChain,
-	(
-		// Allow local users to buy weight credit.
-		TakeWeightCredit,
-		// Expected responses are OK.
-		AllowKnownQueryResponses<PolkadotXcm>,
-		WithComputedOrigin<
-			(
-				// If the message is one that immediately attemps to pay for execution, then allow it.
-				AllowTopLevelPaidExecutionFrom<Everything>,
-				// Parent and its pluralities (i.e. governance bodies) get free execution.
-				AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
-				// Subscriptions for version tracking are OK.
-				AllowSubscriptionsFrom<ParentOrSiblings>,
-			),
-			UniversalLocation,
-			ConstU32<8>,
-		>,
-		// TODO:check-parameter - (https://github.com/paritytech/parity-bridges-common/issues/2084)
-		// remove this and extend `AllowExplicitUnpaidExecutionFrom` with "or SystemParachains" once merged https://github.com/paritytech/polkadot/pull/7005
-		AllowUnpaidExecutionFrom<Everything>,
-	),
+pub type Barrier = TrailingSetTopicAsId<
+	DenyThenTry<
+		DenyReserveTransferToRelayChain,
+		(
+			// Allow local users to buy weight credit.
+			TakeWeightCredit,
+			// Expected responses are OK.
+			AllowKnownQueryResponses<PolkadotXcm>,
+			WithComputedOrigin<
+				(
+					// If the message is one that immediately attemps to pay for execution, then allow it.
+					AllowTopLevelPaidExecutionFrom<Everything>,
+					// Parent and its pluralities (i.e. governance bodies) get free execution.
+					AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
+					// Subscriptions for version tracking are OK.
+					AllowSubscriptionsFrom<ParentOrSiblings>,
+				),
+				UniversalLocation,
+				ConstU32<8>,
+			>,
+			// TODO:check-parameter - (https://github.com/paritytech/parity-bridges-common/issues/2084)
+			// remove this and extend `AllowExplicitUnpaidExecutionFrom` with "or SystemParachains" once merged https://github.com/paritytech/polkadot/pull/7005
+			AllowUnpaidExecutionFrom<Everything>,
+		),
+	>,
 >;
 
 pub struct XcmConfig;
@@ -244,6 +256,8 @@ impl xcm_executor::Config for XcmConfig {
 		UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ToStakingPot<Runtime>>;
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
+	type AssetLocker = ();
+	type AssetExchanger = ();
 	type AssetClaims = PolkadotXcm;
 	type SubscriptionService = PolkadotXcm;
 	type PalletInstancesInfo = AllPalletsWithSystem;
@@ -260,6 +274,7 @@ impl xcm_executor::Config for XcmConfig {
 	type UniversalAliases = Nothing;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
 	type SafeCallFilter = SafeCallFilter;
+	type Aliasers = Nothing;
 }
 
 /// Converts a local signed origin into an XCM multilocation.
@@ -268,12 +283,12 @@ pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, R
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
-pub type XcmRouter = (
+pub type XcmRouter = WithUniqueTopic<(
 	// Two routers - use UMP to communicate with the relay chain:
 	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, ()>,
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
-);
+)>;
 
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
@@ -310,6 +325,8 @@ impl pallet_xcm::Config for Runtime {
 	#[cfg(feature = "runtime-benchmarks")]
 	type ReachableDest = ReachableDest;
 	type AdminOrigin = EnsureRoot<AccountId>;
+	type MaxRemoteLockConsumers = ConstU32<0>;
+	type RemoteLockConsumerIdentifier = ();
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {

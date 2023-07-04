@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
-scale-info = { version = "2.6.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 
 # Substrate
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -16,6 +16,7 @@ frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate"
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-glutton = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -48,8 +49,10 @@ std = [
 	"frame-system/std",
 	"pallet-balances/std",
 	"pallet-sudo/std",
+	"pallet-glutton/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment/std",
+	"pallet-glutton/std",
 	"sp-api/std",
 	"sp-block-builder/std",
 	"sp-core/std",
