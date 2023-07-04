@@ -233,7 +233,7 @@ impl BridgeMessageHandler for () {
 	fn dispatch_target_inbound_message(
 		_message: BridgeMessage,
 	) -> Result<(), BridgeMessageDispatchError> {
-		Err(BridgeMessageDispatchError(Box::new("Not a brige")))
+		Err(BridgeMessageDispatchError(Box::new("Not a bridge")))
 	}
 
 	fn notify_source_message_delivery(_lane_id: u32) {}
