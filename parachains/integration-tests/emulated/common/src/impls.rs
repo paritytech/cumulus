@@ -4,11 +4,10 @@ use bp_messages::{
 	LaneId, MessageKey, OutboundLaneData,
 };
 use bridge_runtime_common::messages_xcm_extension::XcmBlobMessageDispatchResult;
-use codec::{Decode, Encode};
+use codec::Decode;
 pub use cumulus_primitives_core::{DmpMessageHandler, XcmpMessageHandler};
 use pallet_bridge_messages::{Config, Instance1, Instance2, OutboundLanes, Pallet};
-use sp_core::{Get, H256};
-use sp_io::hashing::blake2_256;
+use sp_core::Get;
 use xcm_emulator::{BridgeMessage, BridgeMessageDispatchError, BridgeMessageHandler, Parachain};
 
 pub struct BridgeHubMessageHandler<S, T, I> {
@@ -24,8 +23,8 @@ impl From<LaneIdWrapper> for u32 {
 }
 
 impl From<u32> for LaneIdWrapper {
-	fn from(id: u32) -> LaneId {
-		LaneIdWrapper(LaneId(id))
+	fn from(id: u32) -> LaneIdWrapper {
+		LaneIdWrapper(LaneId(id.to_be_bytes()))
 	}
 }
 
@@ -76,7 +75,7 @@ where
 						.into();
 				let payload = Vec::<u8>::decode(&mut &encoded_payload[..])
 					.expect("Decodign XCM message failed");
-				let id: u32 = (*lane).into();
+				let id: u32 = LaneIdWrapper(*lane).into();
 				let message = BridgeMessage { id, nonce, payload };
 
 				messages.push(message);
@@ -91,7 +90,7 @@ where
 		type TargetMessageDispatch<T, I> = <T as Config<I>>::MessageDispatch;
 		type InboundPayload<T, I> = <T as Config<I>>::InboundPayload;
 
-		let lane_id = message.id.into();
+		let lane_id = LaneIdWrapper::from(message.id).0;
 		let nonce = message.nonce;
 		let payload = Ok(From::from(message.payload));
 
