@@ -10295,6 +10295,7 @@ dependencies = [
  "polkadot-rpc",
  "polkadot-runtime",
  "polkadot-runtime-common",
+ "polkadot-runtime-constants",
  "polkadot-runtime-parachains",
  "polkadot-statement-distribution",
  "rococo-runtime",
