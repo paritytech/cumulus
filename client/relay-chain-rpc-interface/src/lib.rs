@@ -81,10 +81,10 @@ impl RelayChainInterface for RelayChainRpcInterface {
 	async fn header(&self, block_id: BlockId) -> RelayChainResult<Option<PHeader>> {
 		let hash = match block_id {
 			BlockId::Hash(hash) => hash,
-			BlockId::Number(num) =>
-				self.rpc_client.chain_get_block_hash(Some(num)).await?.ok_or_else(|| {
-					RelayChainError::GenericError(format!("block with number {num} not found"))
-				})?,
+			BlockId::Number(num) => match self.rpc_client.chain_get_block_hash(Some(num)).await? {
+				None => return Ok(None),
+				Some(h) => h,
+			},
 		};
 		let header = self.rpc_client.chain_get_header(Some(hash)).await?;
 
@@ -146,10 +146,6 @@ impl RelayChainInterface for RelayChainRpcInterface {
 
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {
 		self.rpc_client.system_health().await.map(|h| h.is_syncing)
-	}
-
-	async fn header(&self, block_id: RelayHash) -> RelayChainResult<Option<RelayHeader>> {
-		self.rpc_client.chain_get_header(Some(block_id)).await
 	}
 
 	fn overseer_handle(&self) -> RelayChainResult<Handle> {

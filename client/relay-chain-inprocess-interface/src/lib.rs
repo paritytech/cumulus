@@ -94,9 +94,10 @@ impl RelayChainInterface for RelayChainInProcessInterface {
 	async fn header(&self, block_id: BlockId) -> RelayChainResult<Option<PHeader>> {
 		let hash = match block_id {
 			BlockId::Hash(hash) => hash,
-			BlockId::Number(num) => self.full_client.hash(num)?.ok_or_else(|| {
-				RelayChainError::GenericError(format!("block with number {num} not found"))
-			})?,
+			BlockId::Number(num) => match self.full_client.hash(num)? {
+				None => return Ok(None),
+				Some(h) => h,
+			}
 		};
 		let header = self.full_client.header(hash)?;
 
@@ -162,10 +163,6 @@ impl RelayChainInterface for RelayChainInProcessInterface {
 
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {
 		Ok(self.sync_oracle.is_major_syncing())
-	}
-
-	async fn header(&self, block_id: PHash) -> RelayChainResult<Option<PHeader>> {
-		Ok(self.backend.blockchain().header(block_id)?)
 	}
 
 	fn overseer_handle(&self) -> RelayChainResult<Handle> {

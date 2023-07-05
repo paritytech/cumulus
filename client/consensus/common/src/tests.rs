@@ -185,7 +185,7 @@ impl RelayChainInterface for Relaychain {
 		unimplemented!("Not needed for test")
 	}
 
-	async fn wait_for_block(&self, _: PHash) -> RelayChainResult<()> {}
+	async fn wait_for_block(&self, _: PHash) -> RelayChainResult<()> { Ok(()) }
 
 	async fn new_best_notification_stream(
 		&self,
