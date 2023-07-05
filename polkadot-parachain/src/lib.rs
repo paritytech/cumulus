@@ -26,6 +26,7 @@ mod cli;
 mod command;
 mod rpc;
 
-fn main() -> sc_cli::Result<()> {
+/// Process command line arguments and execute them.
+pub fn run() -> sc_cli::Result<()> {
 	command::run()
 }

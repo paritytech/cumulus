@@ -9904,7 +9904,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "polkadot-parachain-bin"
+name = "polkadot-parachain-node"
 version = "0.9.430"
 dependencies = [
  "assert_cmd",
