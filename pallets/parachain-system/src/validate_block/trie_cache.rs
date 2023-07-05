@@ -15,9 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern crate alloc;
-
-use core::cell::RefCell;
+use sp_std::cell::{RefCell, RefMut};
 use hash_db::{HashDB, Hasher};
 use hashbrown::hash_map::{Entry, HashMap};
 use sp_state_machine::{TrieBackendStorage, TrieCacheProvider};
@@ -54,11 +52,7 @@ impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleTrieCache<'a, H> 
 		match self.node_cache.entry(hash) {
 			Entry::Occupied(entry) => Ok(entry.into_mut()),
 			Entry::Vacant(entry) => {
-				let fetched = match fetch_node() {
-					Ok(new_node) => new_node,
-					Err(e) => return Err(e),
-				};
-				Ok(entry.insert(fetched))
+				Ok(entry.insert(fetch_node()?))
 			},
 		}
 	}
