@@ -47,7 +47,7 @@ fn pay_salary() {
 	});
 
 	Collectives::execute_with(|| {
-		type RuntimeEvent = <Collectives as Parachain>::RuntimeEvent;
+		type RuntimeEvent = <Collectives as Chain>::RuntimeEvent;
 
 		assert_ok!(FellowshipSalaryPaymaster::pay(&pay_to, (), pay_amount));
 		assert_expected_events!(
@@ -59,7 +59,7 @@ fn pay_salary() {
 	});
 
 	AssetHub::execute_with(|| {
-		type RuntimeEvent = <AssetHub as Parachain>::RuntimeEvent;
+		type RuntimeEvent = <AssetHub as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			AssetHub,

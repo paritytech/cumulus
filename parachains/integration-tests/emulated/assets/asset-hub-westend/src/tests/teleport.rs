@@ -24,7 +24,7 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 	let para_receiver_balance_before =
 		AssetHubWestend::account_data_of(AssetHubWestendReceiver::get()).free;
 
-	let origin = <Westend as Relay>::RuntimeOrigin::signed(WestendSender::get());
+	let origin = <Westend as Chain>::RuntimeOrigin::signed(WestendSender::get());
 	let assets_para_destination: VersionedMultiLocation =
 		Westend::child_location_of(AssetHubWestend::para_id()).into();
 	let beneficiary: VersionedMultiLocation =
@@ -44,7 +44,7 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 			weight_limit,
 		));
 
-		type RuntimeEvent = <Westend as Relay>::RuntimeEvent;
+		type RuntimeEvent = <Westend as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			Westend,
@@ -56,7 +56,7 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 
 	// Receive XCM message in Assets Parachain
 	AssetHubWestend::execute_with(|| {
-		type RuntimeEvent = <AssetHubWestend as Para>::RuntimeEvent;
+		type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			AssetHubWestend,

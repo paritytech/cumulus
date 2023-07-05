@@ -10,7 +10,7 @@ pub use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, 
 pub use sp_core::{sr25519, storage::Storage, Get};
 use xcm::prelude::*;
 use xcm_emulator::{
-	decl_test_networks, decl_test_parachains, decl_test_relay_chains, Parachain, RelayChain,
+	decl_test_networks, decl_test_parachains, decl_test_relay_chains, Chain, Parachain, RelayChain,
 	TestExt,
 };
 use xcm_executor::traits::ConvertLocation;
