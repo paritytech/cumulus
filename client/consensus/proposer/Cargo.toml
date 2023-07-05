@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0"
 async-trait = "0.1.70"
-thiserror = "1.0.40"
+thiserror = "1.0.41"
 
 # Substrate
 sp-consensus = { git = "https://github.com/paritytech/substrate", rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
