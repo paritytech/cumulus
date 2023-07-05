@@ -46,10 +46,6 @@ fn with_externalities<F: FnOnce(&mut dyn Externalities) -> R, R>(f: F) -> R {
 	sp_externalities::with_externalities(f).expect("Environmental externalities not set.")
 }
 
-use core::marker::PhantomData;
-use hash_db::Hasher;
-use sp_trie::NodeCodec;
-
 /// Validate the given parachain block.
 ///
 /// This function is doing roughly the following:

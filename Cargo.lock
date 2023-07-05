@@ -150,12 +150,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "allocator-api2"
-version = "0.2.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56fc6cf8dc8c4158eed8649f9b8b0ea1518eb62b544fe9490d66fa0b349eafe9"
-
-[[package]]
 name = "always-assert"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2779,7 +2773,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hash-db",
- "hashbrown 0.14.0",
  "hex-literal 0.4.1",
  "impl-trait-for-tuples",
  "lazy_static",
@@ -4783,10 +4776,6 @@ name = "hashbrown"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c6201b9ff9fd90a5a3bac2e56a830d0caa509576f0e503818ee82c181b3437a"
-dependencies = [
- "ahash 0.8.2",
- "allocator-api2",
-]
 
 [[package]]
 name = "heck"

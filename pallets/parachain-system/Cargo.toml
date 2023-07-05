@@ -13,7 +13,6 @@ impl-trait-for-tuples = "0.2.1"
 log = { version = "0.4.19", default-features = false }
 trie-db = { version = "0.27.1", default-features = false }
 hash-db = { version = "0.16.0", default-features = false }
-hashbrown = "0.14.0"
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 
 # Substrate

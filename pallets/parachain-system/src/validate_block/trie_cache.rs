@@ -15,23 +15,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use sp_std::cell::{RefCell, RefMut};
 use hash_db::{HashDB, Hasher};
-use hashbrown::hash_map::{Entry, HashMap};
 use sp_state_machine::{TrieBackendStorage, TrieCacheProvider};
-use sp_std::boxed::Box;
+use sp_std::{
+	boxed::Box,
+	cell::{RefCell, RefMut},
+	collections::btree_map::{BTreeMap, Entry},
+};
 use sp_trie::NodeCodec;
-use trie_db::{node::NodeOwned, TrieCache, TrieError};
+use trie_db::{node::NodeOwned, TrieError};
 
 /// Special purpose trie cache implementation that is able to cache an unlimited number
 /// of values. To be used in `validate_block` to serve values and nodes that
 /// have already been loaded and decoded from the storage proof.
-pub(crate) struct SimpleTrieCache<'a, H: Hasher> {
-	node_cache: core::cell::RefMut<'a, HashMap<H::Out, NodeOwned<H::Out>>>,
-	value_cache: core::cell::RefMut<'a, HashMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
+pub(crate) struct TrieCache<'a, H: Hasher> {
+	node_cache: RefMut<'a, BTreeMap<H::Out, NodeOwned<H::Out>>>,
+	value_cache: RefMut<'a, BTreeMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
 }
 
-impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleTrieCache<'a, H> {
+impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for TrieCache<'a, H> {
 	fn lookup_value_for_key(&mut self, key: &[u8]) -> Option<&trie_db::CachedValue<H::Out>> {
 		self.value_cache.get(key)
 	}
@@ -51,9 +53,7 @@ impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleTrieCache<'a, H> 
 	) -> trie_db::Result<&NodeOwned<H::Out>, H::Out, <NodeCodec<H> as trie_db::NodeCodec>::Error> {
 		match self.node_cache.entry(hash) {
 			Entry::Occupied(entry) => Ok(entry.into_mut()),
-			Entry::Vacant(entry) => {
-				Ok(entry.insert(fetch_node()?))
-			},
+			Entry::Vacant(entry) => Ok(entry.insert(fetch_node()?)),
 		}
 	}
 
@@ -65,10 +65,10 @@ impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for SimpleTrieCache<'a, H> 
 	}
 }
 
-/// Provider of [`SimpleTrieCache`] instances.
+/// Provider of [`TrieCache`] instances.
 pub(crate) struct CacheProvider<H: Hasher> {
-	node_cache: RefCell<HashMap<H::Out, NodeOwned<H::Out>>>,
-	value_cache: RefCell<HashMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
+	node_cache: RefCell<BTreeMap<H::Out, NodeOwned<H::Out>>>,
+	value_cache: RefCell<BTreeMap<Box<[u8]>, trie_db::CachedValue<H::Out>>>,
 }
 
 impl<H: Hasher> CacheProvider<H> {
@@ -80,17 +80,17 @@ impl<H: Hasher> CacheProvider<H> {
 }
 
 impl<H: Hasher> TrieCacheProvider<H> for CacheProvider<H> {
-	type Cache<'a> = SimpleTrieCache<'a, H> where H: 'a;
+	type Cache<'a> = TrieCache<'a, H> where H: 'a;
 
 	fn as_trie_db_cache(&self, _storage_root: <H as Hasher>::Out) -> Self::Cache<'_> {
-		SimpleTrieCache {
+		TrieCache {
 			value_cache: self.value_cache.borrow_mut(),
 			node_cache: self.node_cache.borrow_mut(),
 		}
 	}
 
 	fn as_trie_db_mut_cache(&self) -> Self::Cache<'_> {
-		SimpleTrieCache {
+		TrieCache {
 			value_cache: self.value_cache.borrow_mut(),
 			node_cache: self.node_cache.borrow_mut(),
 		}
