@@ -46,15 +46,12 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod weights;
 pub mod xcm_config;
 
-use codec::{Decode, Encode};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-use frame_support::unsigned::TransactionValidityError;
-use scale_info::TypeInfo;
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
 	create_runtime_str, generic,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, DispatchInfoOf},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -223,41 +220,6 @@ construct_runtime! {
 	}
 }
 
-/// Simple implementation which fails any transaction which is signed.
-#[derive(Eq, PartialEq, Clone, Default, sp_core::RuntimeDebug, Encode, Decode, TypeInfo)]
-pub struct DisallowSigned;
-impl sp_runtime::traits::SignedExtension for DisallowSigned {
-	const IDENTIFIER: &'static str = "DisallowSigned";
-	type AccountId = AccountId;
-	type Call = RuntimeCall;
-	type AdditionalSigned = ();
-	type Pre = ();
-	fn additional_signed(
-		&self,
-	) -> sp_std::result::Result<(), sp_runtime::transaction_validity::TransactionValidityError> {
-		Ok(())
-	}
-	fn pre_dispatch(
-		self,
-		who: &Self::AccountId,
-		call: &Self::Call,
-		info: &DispatchInfoOf<Self::Call>,
-		len: usize,
-	) -> Result<Self::Pre, TransactionValidityError> {
-		self.validate(who, call, info, len).map(|_| ())
-	}
-	fn validate(
-		&self,
-		_who: &Self::AccountId,
-		_call: &Self::Call,
-		_info: &sp_runtime::traits::DispatchInfoOf<Self::Call>,
-		_len: usize,
-	) -> TransactionValidity {
-		let i = sp_runtime::transaction_validity::InvalidTransaction::BadProof;
-		Err(sp_runtime::transaction_validity::TransactionValidityError::Invalid(i))
-	}
-}
-
 /// Index of a transaction in the chain.
 pub type Index = u32;
 /// A hash of some data used by the chain.
@@ -275,7 +237,15 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
-pub type SignedExtra = DisallowSigned;
+pub type SignedExtra = (
+	pallet_sudo::CheckOnlySudoAccount<Runtime>,
+	frame_system::CheckNonZeroSender<Runtime>,
+	frame_system::CheckSpecVersion<Runtime>,
+	frame_system::CheckTxVersion<Runtime>,
+	frame_system::CheckGenesis<Runtime>,
+	frame_system::CheckEra<Runtime>,
+	frame_system::CheckNonce<Runtime>,
+);
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
@@ -383,6 +353,12 @@ impl_runtime_apis! {
 		}
 	}
 
+  impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
+		fn account_nonce(account: AccountId) -> Index {
+			System::account_nonce(account)
+		}
+	}
+
 	#[cfg(feature = "runtime-benchmarks")]
 	impl frame_benchmarking::Benchmark<Block> for Runtime {
 		fn benchmark_metadata(extra: bool) -> (
@@ -404,9 +380,18 @@ impl_runtime_apis! {
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{Benchmarking, BenchmarkBatch,  TrackedStorageKey};
+			use frame_benchmarking::{Benchmarking, BenchmarkBatch,  BenchmarkError, TrackedStorageKey};
 			use frame_system_benchmarking::Pallet as SystemBench;
-			impl frame_system_benchmarking::Config for Runtime {}
+			impl frame_system_benchmarking::Config for Runtime {
+				fn setup_set_code_requirements(code: &sp_std::vec::Vec<u8>) -> Result<(), BenchmarkError> {
+					ParachainSystem::initialize_for_set_code_benchmark(code.len() as u32);
+					Ok(())
+				}
+
+				fn verify_set_code() {
+					System::assert_last_event(cumulus_pallet_parachain_system::Event::<Runtime>::ValidationFunctionStored.into());
+				}
+			}
 
 			use frame_support::traits::WhitelistedStorageKeys;
 			let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();

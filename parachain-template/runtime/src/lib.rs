@@ -29,7 +29,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{ConstU32, ConstU64, ConstU8, EitherOfDiverse, Everything},
+	traits::{ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse, Everything},
 	weights::{
 		constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, Weight, WeightToFeeCoefficient,
 		WeightToFeeCoefficients, WeightToFeePolynomial,
@@ -369,6 +369,12 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OperationalFeeMultiplier = ConstU8<5>;
 }
 
+impl pallet_sudo::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type WeightInfo = ();
+}
+
 parameter_types! {
 	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
 	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
@@ -437,6 +443,7 @@ impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
 	type MaxAuthorities = ConstU32<100_000>;
+	type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 parameter_types! {
@@ -493,6 +500,9 @@ construct_runtime!(
 		Balances: pallet_balances = 10,
 		TransactionPayment: pallet_transaction_payment = 11,
 
+		// Governance
+		Sudo: pallet_sudo = 15,
+
 		// Collator support. The order of these 4 are important and shall not change.
 		Authorship: pallet_authorship = 20,
 		CollatorSelection: pallet_collator_selection = 21,
@@ -507,7 +517,7 @@ construct_runtime!(
 		DmpQueue: cumulus_pallet_dmp_queue = 33,
 
 		// Template
-		TemplatePallet: pallet_parachain_template = 40,
+		TemplatePallet: pallet_parachain_template = 50,
 	}
 );
 
@@ -518,6 +528,7 @@ mod benches {
 		[pallet_balances, Balances]
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_timestamp, Timestamp]
+		[pallet_sudo, Sudo]
 		[pallet_collator_selection, CollatorSelection]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 	);
@@ -707,10 +718,19 @@ impl_runtime_apis! {
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{Benchmarking, BenchmarkBatch};
+			use frame_benchmarking::{BenchmarkError, Benchmarking, BenchmarkBatch};
 
 			use frame_system_benchmarking::Pallet as SystemBench;
-			impl frame_system_benchmarking::Config for Runtime {}
+			impl frame_system_benchmarking::Config for Runtime {
+				fn setup_set_code_requirements(code: &sp_std::vec::Vec<u8>) -> Result<(), BenchmarkError> {
+					ParachainSystem::initialize_for_set_code_benchmark(code.len() as u32);
+					Ok(())
+				}
+
+				fn verify_set_code() {
+					System::assert_last_event(cumulus_pallet_parachain_system::Event::<Runtime>::ValidationFunctionStored.into());
+				}
+			}
 
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}

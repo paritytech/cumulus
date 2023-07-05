@@ -70,7 +70,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64, ConstU8, EitherOfDiverse, InstanceFilter},
+	traits::{ConstBool, ConstU16, ConstU32, ConstU64, ConstU8, EitherOfDiverse, InstanceFilter},
 	weights::{ConstantMultiplier, Weight},
 	PalletId, RuntimeDebug,
 };
@@ -108,7 +108,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("collectives"),
 	impl_name: create_runtime_str!("collectives"),
 	authoring_version: 1,
-	spec_version: 9420,
+	spec_version: 9430,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 5,
@@ -421,6 +421,7 @@ impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
 	type MaxAuthorities = ConstU32<100_000>;
+	type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 parameter_types! {
@@ -483,7 +484,7 @@ parameter_types! {
 	// The Alliance pallet account, used as a temporary place to deposit a slashed imbalance
 	// before the teleport to the Treasury.
 	pub AlliancePalletAccount: AccountId = constants::account::ALLIANCE_PALLET_ID.into_account_truncating();
-	pub RelayTreasuryAccount: AccountId = constants::account::RELAY_TREASURY_PALLET_ID.into_account_truncating();
+	pub PolkadotTreasuryAccount: AccountId = constants::account::POLKADOT_TREASURY_PALLET_ID.into_account_truncating();
 	// The number of blocks a member must wait between giving a retirement notice and retiring.
 	// Supposed to be greater than time required to `kick_member` with alliance motion.
 	pub const AllianceRetirementPeriod: BlockNumber = (90 * DAYS) + ALLIANCE_MOTION_DURATION;
@@ -496,7 +497,7 @@ impl pallet_alliance::Config for Runtime {
 	type MembershipManager = RootOrAllianceTwoThirdsMajority;
 	type AnnouncementOrigin = RootOrAllianceTwoThirdsMajority;
 	type Currency = Balances;
-	type Slashed = ToParentTreasury<RelayTreasuryAccount, AlliancePalletAccount, Runtime>;
+	type Slashed = ToParentTreasury<PolkadotTreasuryAccount, AlliancePalletAccount, Runtime>;
 	type InitializeMembers = AllianceMotion;
 	type MembershipChanged = AllianceMotion;
 	type RetirementPeriod = AllianceRetirementPeriod;
@@ -605,6 +606,10 @@ construct_runtime!(
 		// pub type FellowshipReferendaInstance = pallet_referenda::Instance1;
 		FellowshipReferenda: pallet_referenda::<Instance1>::{Pallet, Call, Storage, Event<T>} = 61,
 		FellowshipOrigins: pallet_fellowship_origins::{Origin} = 62,
+		// pub type FellowshipCoreInstance = pallet_core_fellowship::Instance1;
+		FellowshipCore: pallet_core_fellowship::<Instance1>::{Pallet, Call, Storage, Event<T>} = 63,
+		// pub type FellowshipSalaryInstance = pallet_salary::Instance1;
+		FellowshipSalary: pallet_salary::<Instance1>::{Pallet, Call, Storage, Event<T>} = 64,
 	}
 );
 
@@ -633,7 +638,12 @@ pub type UncheckedExtrinsic =
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 // All migrations executed on runtime upgrade as a nested tuple of types implementing
 // `OnRuntimeUpgrade`. Included migrations must be idempotent.
-type Migrations = import_kusama_fellowship::Migration<Runtime, FellowshipCollectiveInstance>;
+type Migrations = (
+	// v9420
+	import_kusama_fellowship::Migration<Runtime, FellowshipCollectiveInstance>,
+	// unreleased
+	pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,
+);
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -668,6 +678,8 @@ mod benches {
 		[pallet_scheduler, Scheduler]
 		[pallet_referenda, FellowshipReferenda]
 		[pallet_ranked_collective, FellowshipCollective]
+		[pallet_core_fellowship, FellowshipCore]
+		[pallet_salary, FellowshipSalary]
 	);
 }
 
@@ -855,10 +867,19 @@ impl_runtime_apis! {
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey};
+			use frame_benchmarking::{Benchmarking, BenchmarkBatch, BenchmarkError, TrackedStorageKey};
 
 			use frame_system_benchmarking::Pallet as SystemBench;
-			impl frame_system_benchmarking::Config for Runtime {}
+			impl frame_system_benchmarking::Config for Runtime {
+				fn setup_set_code_requirements(code: &sp_std::vec::Vec<u8>) -> Result<(), BenchmarkError> {
+					ParachainSystem::initialize_for_set_code_benchmark(code.len() as u32);
+					Ok(())
+				}
+
+				fn verify_set_code() {
+					System::assert_last_event(cumulus_pallet_parachain_system::Event::<Runtime>::ValidationFunctionStored.into());
+				}
+			}
 
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}

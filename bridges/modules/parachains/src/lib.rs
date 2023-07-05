@@ -30,7 +30,7 @@ use bp_header_chain::{HeaderChain, HeaderChainError};
 use bp_parachains::{parachain_head_storage_key_at_source, ParaInfo, ParaStoredHeaderData};
 use bp_polkadot_core::parachains::{ParaHash, ParaHead, ParaHeadsProof, ParaId};
 use bp_runtime::{Chain, HashOf, HeaderId, HeaderIdOf, Parachain, StorageProofError};
-use frame_support::dispatch::PostDispatchInfo;
+use frame_support::{dispatch::PostDispatchInfo, DefaultNoBound};
 use sp_std::{marker::PhantomData, vec::Vec};
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -307,12 +307,13 @@ pub mod pallet {
 			parachains.len() as _,
 		))]
 		pub fn submit_parachain_heads(
-			_origin: OriginFor<T>,
+			origin: OriginFor<T>,
 			at_relay_block: (RelayBlockNumber, RelayBlockHash),
 			parachains: Vec<(ParaId, ParaHash)>,
 			parachain_heads_proof: ParaHeadsProof,
 		) -> DispatchResultWithPostInfo {
 			Self::ensure_not_halted().map_err(Error::<T, I>::BridgeModule)?;
+			ensure_signed(origin)?;
 
 			// we'll need relay chain header to verify that parachains heads are always increasing.
 			let (relay_block_number, relay_block_hash) = at_relay_block;
@@ -417,7 +418,7 @@ pub mod pallet {
 					});
 
 				// we're refunding weight if update has not happened and if pruning has not happened
-				let is_update_happened = matches!(update_result, Ok(_));
+				let is_update_happened = update_result.is_ok();
 				if !is_update_happened {
 					actual_weight = actual_weight.saturating_sub(
 						WeightInfoOf::<T, I>::parachain_head_storage_write_weight(
@@ -611,6 +612,7 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_config]
+	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
 		/// Initial pallet operating mode.
 		pub operating_mode: BasicOperatingMode,
@@ -618,17 +620,6 @@ pub mod pallet {
 		pub owner: Option<T::AccountId>,
 		/// Dummy marker.
 		pub phantom: sp_std::marker::PhantomData<I>,
-	}
-
-	#[cfg(feature = "std")]
-	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
-		fn default() -> Self {
-			Self {
-				operating_mode: Default::default(),
-				owner: Default::default(),
-				phantom: Default::default(),
-			}
-		}
 	}
 
 	#[pallet::genesis_build]
@@ -1588,5 +1579,26 @@ pub(crate) mod tests {
 			MaybeMaxTotalParachainHashes::<TestRuntime, ()>::get(),
 			Some(mock::TOTAL_PARACHAINS * mock::HeadsToKeep::get()),
 		);
+	}
+
+	#[test]
+	fn submit_finality_proof_requires_signed_origin() {
+		run_test(|| {
+			let (state_root, proof, parachains) =
+				prepare_parachain_heads_proof::<RegularParachainHeader>(vec![(1, head_data(1, 0))]);
+
+			initialize(state_root);
+
+			// `submit_parachain_heads()` should fail when the pallet is halted.
+			assert_noop!(
+				Pallet::<TestRuntime>::submit_parachain_heads(
+					RuntimeOrigin::root(),
+					(0, test_relay_header(0, state_root).hash()),
+					parachains,
+					proof,
+				),
+				DispatchError::BadOrigin
+			);
+		})
 	}
 }

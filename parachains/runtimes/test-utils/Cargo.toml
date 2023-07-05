@@ -33,10 +33,10 @@ cumulus-test-relay-sproof-builder = { path = "../../../test/relay-sproof-builder
 parachain-info = { path = "../../../parachains/pallets/parachain-info", default-features = false }
 
 # Polkadot
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
 
 [dev-dependencies]
 hex-literal = "0.3.4"

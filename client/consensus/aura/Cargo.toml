@@ -6,7 +6,7 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 
 [dependencies]
-async-trait = "0.1.68"
+async-trait = "0.1.70"
 codec = { package = "parity-scale-codec", version = "3.0.0", features = [ "derive" ] }
 futures = "0.3.28"
 tracing = "0.1.37"
@@ -40,6 +40,6 @@ cumulus-primitives-parachain-inherent = { path = "../../../primitives/parachain-
 cumulus-client-collator = { path = "../../collator" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }

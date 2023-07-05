@@ -44,7 +44,7 @@ use bp_header_chain::{
 };
 use bp_runtime::{BlockNumberOf, HashOf, HasherOf, HeaderId, HeaderOf, OwnedBridgeModule};
 use finality_grandpa::voter_set::VoterSet;
-use frame_support::{dispatch::PostDispatchInfo, ensure};
+use frame_support::{dispatch::PostDispatchInfo, ensure, DefaultNoBound};
 use sp_consensus_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::{
 	traits::{Header as HeaderT, Zero},
@@ -176,11 +176,12 @@ pub mod pallet {
 			justification.votes_ancestries.len().saturated_into(),
 		))]
 		pub fn submit_finality_proof(
-			_origin: OriginFor<T>,
+			origin: OriginFor<T>,
 			finality_target: Box<BridgedHeader<T, I>>,
 			justification: GrandpaJustification<BridgedHeader<T, I>>,
 		) -> DispatchResultWithPostInfo {
 			Self::ensure_not_halted().map_err(Error::<T, I>::BridgeModule)?;
+			ensure_signed(origin)?;
 
 			let (hash, number) = (finality_target.hash(), *finality_target.number());
 			log::trace!(
@@ -370,18 +371,12 @@ pub mod pallet {
 		StorageValue<_, BasicOperatingMode, ValueQuery>;
 
 	#[pallet::genesis_config]
+	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
 		/// Optional module owner account.
 		pub owner: Option<T::AccountId>,
 		/// Optional module initialization data.
 		pub init_data: Option<super::InitializationData<BridgedHeader<T, I>>>,
-	}
-
-	#[cfg(feature = "std")]
-	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
-		fn default() -> Self {
-			Self { owner: None, init_data: None }
-		}
 	}
 
 	#[pallet::genesis_build]
@@ -1419,5 +1414,24 @@ mod tests {
 	#[test]
 	fn maybe_headers_to_keep_returns_correct_value() {
 		assert_eq!(MaybeHeadersToKeep::<TestRuntime, ()>::get(), Some(mock::HeadersToKeep::get()));
+	}
+
+	#[test]
+	fn submit_finality_proof_requires_signed_origin() {
+		run_test(|| {
+			initialize_substrate_bridge();
+
+			let header = test_header(1);
+			let justification = make_default_justification(&header);
+
+			assert_noop!(
+				Pallet::<TestRuntime>::submit_finality_proof(
+					RuntimeOrigin::root(),
+					Box::new(header),
+					justification,
+				),
+				DispatchError::BadOrigin,
+			);
+		})
 	}
 }

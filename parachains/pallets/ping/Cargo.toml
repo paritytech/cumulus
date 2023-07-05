@@ -6,14 +6,14 @@ version = "0.1.0"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
-scale-info = { version = "2.7.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
 
 cumulus-primitives-core = { path = "../../../primitives/core", default-features = false }
 cumulus-pallet-xcm = { path = "../../../pallets/xcm", default-features = false }
@@ -29,4 +29,11 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"xcm/std",
+]
+
+try-runtime = [
+	"frame-system/try-runtime",
+	"frame-support/try-runtime",
+	"cumulus-pallet-xcm/try-runtime",
+	"sp-runtime/try-runtime"
 ]

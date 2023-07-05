@@ -46,7 +46,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{ConstU32, ConstU64, ConstU8, EitherOfDiverse, Everything},
+	traits::{ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse, Everything},
 	weights::{ConstantMultiplier, Weight},
 	PalletId,
 };
@@ -108,6 +108,9 @@ pub type UncheckedExtrinsic =
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
+/// Migrations to apply on runtime upgrade.
+pub type Migrations = (pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,);
+
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
 	Runtime,
@@ -115,6 +118,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
+	Migrations,
 >;
 
 impl_opaque_keys! {
@@ -128,7 +132,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("bridge-hub-polkadot"),
 	impl_name: create_runtime_str!("bridge-hub-polkadot"),
 	authoring_version: 1,
-	spec_version: 9420,
+	spec_version: 9430,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 2,
@@ -344,6 +348,7 @@ impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
 	type MaxAuthorities = ConstU32<100_000>;
+	type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 parameter_types! {
@@ -575,6 +580,29 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
+		for Runtime
+	{
+		fn query_call_info(
+			call: RuntimeCall,
+			len: u32,
+		) -> pallet_transaction_payment::RuntimeDispatchInfo<Balance> {
+			TransactionPayment::query_call_info(call, len)
+		}
+		fn query_call_fee_details(
+			call: RuntimeCall,
+			len: u32,
+		) -> pallet_transaction_payment::FeeDetails<Balance> {
+			TransactionPayment::query_call_fee_details(call, len)
+		}
+		fn query_weight_to_fee(weight: Weight) -> Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+		fn query_length_to_fee(length: u32) -> Balance {
+			TransactionPayment::length_to_fee(length)
+		}
+	}
+
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
 			ParachainSystem::collect_collation_info(header)
@@ -630,7 +658,16 @@ impl_runtime_apis! {
 			use frame_benchmarking::{Benchmarking, BenchmarkBatch, BenchmarkError, TrackedStorageKey};
 
 			use frame_system_benchmarking::Pallet as SystemBench;
-			impl frame_system_benchmarking::Config for Runtime {}
+			impl frame_system_benchmarking::Config for Runtime {
+				fn setup_set_code_requirements(code: &sp_std::vec::Vec<u8>) -> Result<(), BenchmarkError> {
+					ParachainSystem::initialize_for_set_code_benchmark(code.len() as u32);
+					Ok(())
+				}
+
+				fn verify_set_code() {
+					System::assert_last_event(cumulus_pallet_parachain_system::Event::<Runtime>::ValidationFunctionStored.into());
+				}
+			}
 
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
@@ -714,6 +751,10 @@ impl_runtime_apis! {
 
 				fn export_message_origin_and_destination(
 				) -> Result<(MultiLocation, NetworkId, InteriorMultiLocation), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+
+				fn alias_origin() -> Result<(MultiLocation, MultiLocation), BenchmarkError> {
 					Err(BenchmarkError::Skip)
 				}
 			}

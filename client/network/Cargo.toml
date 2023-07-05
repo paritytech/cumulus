@@ -6,7 +6,7 @@ description = "Cumulus-specific networking protocol"
 edition = "2021"
 
 [dependencies]
-async-trait = "0.1.68"
+async-trait = "0.1.70"
 codec = { package = "parity-scale-codec", version = "3.0.0", features = [ "derive" ] }
 futures = "0.3.28"
 futures-timer = "3.0.2"
@@ -22,17 +22,17 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
 
 # Cumulus
 cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 
 [dev-dependencies]
 portpicker = "0.1.1"
-tokio = { version = "1.28.1", features = ["macros"] }
-url = "2.3.1"
+tokio = { version = "1.29.1", features = ["macros"] }
+url = "2.4.0"
 
 # Substrate
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -44,8 +44,7 @@ sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "maste
 substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
-polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
+polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core" }

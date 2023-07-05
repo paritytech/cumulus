@@ -5,7 +5,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 
@@ -15,7 +15,7 @@ sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 futures = "0.3.28"
-async-trait = "0.1.68"
-thiserror = "1.0.40"
+async-trait = "0.1.70"
+thiserror = "1.0.41"
 jsonrpsee-core = "0.16.2"
-parity-scale-codec = "3.5.0"
+parity-scale-codec = "3.6.3"

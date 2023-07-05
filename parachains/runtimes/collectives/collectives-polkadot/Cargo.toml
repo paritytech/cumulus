@@ -8,8 +8,8 @@ description = "Polkadot Collectives Parachain Runtime"
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
 hex-literal = { version = "0.4.1" }
-log = { version = "0.4.17", default-features = false }
-scale-info = { version = "2.7.0", default-features = false, features = ["derive"] }
+log = { version = "0.4.19", default-features = false }
+scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 smallvec = "1.10.0"
 
 # Substrate
@@ -36,6 +36,8 @@ pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/parityt
 pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-referenda = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-ranked-collective = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-core-fellowship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-salary = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-arithmetic = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -50,14 +52,14 @@ sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default
 sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
-polkadot-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+polkadot-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
 
 # Cumulus
 cumulus-pallet-aura-ext = { path = "../../../../pallets/aura-ext", default-features = false }
@@ -95,6 +97,7 @@ runtime-benchmarks = [
 	"pallet-xcm/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
+	"cumulus-pallet-parachain-system/runtime-benchmarks",
 	"cumulus-pallet-session-benchmarking/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
@@ -102,6 +105,8 @@ runtime-benchmarks = [
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-referenda/runtime-benchmarks",
 	"pallet-ranked-collective/runtime-benchmarks",
+	"pallet-core-fellowship/runtime-benchmarks",
+	"pallet-salary/runtime-benchmarks",
 ]
 try-runtime = [
 	"cumulus-pallet-aura-ext/try-runtime",
@@ -130,6 +135,8 @@ try-runtime = [
 	"pallet-preimage/try-runtime",
 	"pallet-referenda/try-runtime",
 	"pallet-ranked-collective/try-runtime",
+	"pallet-core-fellowship/try-runtime",
+	"pallet-salary/try-runtime",
 ]
 std = [
 	"codec/std",
@@ -185,4 +192,6 @@ std = [
 	"pallet-referenda/std",
 	"pallet-ranked-collective/std",
 	"substrate-wasm-builder",
+	"pallet-core-fellowship/std",
+	"pallet-salary/std",
 ]

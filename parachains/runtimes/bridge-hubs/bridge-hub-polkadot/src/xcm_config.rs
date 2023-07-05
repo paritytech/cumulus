@@ -145,7 +145,9 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 						pallet_collator_selection::Call::set_candidacy_bond { .. } |
 						pallet_collator_selection::Call::register_as_candidate { .. } |
 						pallet_collator_selection::Call::leave_intent { .. } |
-						pallet_collator_selection::Call::set_invulnerables { .. },
+						pallet_collator_selection::Call::set_invulnerables { .. } |
+						pallet_collator_selection::Call::add_invulnerable { .. } |
+						pallet_collator_selection::Call::remove_invulnerable { .. },
 				) | RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 				RuntimeCall::XcmpQueue(..) |
 				RuntimeCall::DmpQueue(..) |
@@ -209,6 +211,7 @@ impl xcm_executor::Config for XcmConfig {
 	type UniversalAliases = Nothing;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
 	type SafeCallFilter = SafeCallFilter;
+	type Aliasers = Nothing;
 }
 
 /// Converts a local signed origin into an XCM multilocation.

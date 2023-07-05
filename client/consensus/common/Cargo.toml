@@ -6,11 +6,11 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 
 [dependencies]
-async-trait = "0.1.68"
+async-trait = "0.1.70"
 codec = { package = "parity-scale-codec", version = "3.0.0", features = [ "derive" ] }
 dyn-clone = "1.0.11"
 futures = "0.3.28"
-log = "0.4.17"
+log = "0.4.19"
 tracing = "0.1.37"
 
 # Substrate
@@ -24,7 +24,7 @@ sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature-while-frozen" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../../primitives/core" }

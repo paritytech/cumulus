@@ -1,7 +1,7 @@
 name: Srtool build
 
 env:
-  SUBWASM_VERSION: 0.17.0
+  SUBWASM_VERSION: 0.20.0
 
 on:
   push:
@@ -32,11 +32,11 @@ jobs:
       matrix:
         include:
           - category: assets
-            runtime: statemine
+            runtime: asset-hub-kusama
           - category: assets
-            runtime: statemint
+            runtime: asset-hub-polkadot
           - category: assets
-            runtime: westmint
+            runtime: asset-hub-westend
           - category: bridge-hubs
             runtime: bridge-hub-polkadot
           - category: bridge-hubs
@@ -54,7 +54,7 @@ jobs:
           - category: testing
             runtime: rococo-parachain
     steps:
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
         with:
           fetch-depth: 0
 

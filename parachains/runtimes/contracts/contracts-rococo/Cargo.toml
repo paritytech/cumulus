@@ -13,8 +13,8 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 hex-literal = { version = "0.4.1", optional = true }
-log = { version = "0.4.17", default-features = false }
-scale-info = { version = "2.7.0", default-features = false, features = ["derive"] }
+log = { version = "0.4.19", default-features = false }
+scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 smallvec = "1.10.0"
 
 # Substrate
@@ -51,14 +51,14 @@ pallet-contracts = { git = "https://github.com/paritytech/substrate", default-fe
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot
-kusama-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature-while-frozen" }
+kusama-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
 
 # Cumulus
 cumulus-pallet-aura-ext = { path = "../../../../pallets/aura-ext", default-features = false }
@@ -85,6 +85,7 @@ std = [
 	"frame-support/std",
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
+    "frame-try-runtime/std",
 	"kusama-runtime-constants/std",
 	"pallet-aura/std",
 	"pallet-authorship/std",
@@ -146,6 +147,7 @@ runtime-benchmarks = [
 	"pallet-xcm/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
+	"cumulus-pallet-parachain-system/runtime-benchmarks",
 	"cumulus-pallet-session-benchmarking/runtime-benchmarks",
 ]
 

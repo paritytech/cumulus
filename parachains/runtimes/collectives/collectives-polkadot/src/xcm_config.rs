@@ -153,7 +153,9 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 						pallet_collator_selection::Call::set_candidacy_bond { .. } |
 						pallet_collator_selection::Call::register_as_candidate { .. } |
 						pallet_collator_selection::Call::leave_intent { .. } |
-						pallet_collator_selection::Call::set_invulnerables { .. },
+						pallet_collator_selection::Call::set_invulnerables { .. } |
+						pallet_collator_selection::Call::add_invulnerable { .. } |
+						pallet_collator_selection::Call::remove_invulnerable { .. },
 				) | RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 				RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
 				RuntimeCall::XcmpQueue(..) |
@@ -185,6 +187,16 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 					pallet_ranked_collective::Call::promote_member { .. } |
 					pallet_ranked_collective::Call::demote_member { .. } |
 					pallet_ranked_collective::Call::remove_member { .. },
+			) | RuntimeCall::FellowshipCore(
+				pallet_core_fellowship::Call::bump { .. } |
+					pallet_core_fellowship::Call::set_params { .. } |
+					pallet_core_fellowship::Call::set_active { .. } |
+					pallet_core_fellowship::Call::approve { .. } |
+					pallet_core_fellowship::Call::induct { .. } |
+					pallet_core_fellowship::Call::promote { .. } |
+					pallet_core_fellowship::Call::offboard { .. } |
+					pallet_core_fellowship::Call::submit_evidence { .. } |
+					pallet_core_fellowship::Call::import { .. },
 			)
 		)
 	}
@@ -242,6 +254,7 @@ impl xcm_executor::Config for XcmConfig {
 	type UniversalAliases = Nothing;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
 	type SafeCallFilter = SafeCallFilter;
+	type Aliasers = Nothing;
 }
 
 /// Converts a local signed origin into an XCM multilocation.
