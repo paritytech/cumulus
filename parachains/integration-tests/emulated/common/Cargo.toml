@@ -26,6 +26,7 @@ pallet-im-online = { default-features = false, git = "https://github.com/parityt
 sc-client-api = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-client = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-offchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
