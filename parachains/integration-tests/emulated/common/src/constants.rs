@@ -451,6 +451,7 @@ pub mod rococo {
 		let genesis_config = rococo_runtime::RuntimeGenesisConfig {
 			system: rococo_runtime::SystemConfig {
 				code: rococo_runtime::WASM_BINARY.unwrap().to_vec(),
+				..Default::default()
 			},
 			balances: rococo_runtime::BalancesConfig {
 				balances: accounts::init_balances()
@@ -482,6 +483,7 @@ pub mod rococo {
 			babe: rococo_runtime::BabeConfig {
 				authorities: Default::default(),
 				epoch_config: Some(rococo_runtime::BABE_GENESIS_EPOCH_CONFIG),
+				..Default::default()
 			},
 			sudo: rococo_runtime::SudoConfig {
 				key: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
@@ -489,6 +491,7 @@ pub mod rococo {
 			configuration: rococo_runtime::ConfigurationConfig { config: get_host_config() },
 			registrar: rococo_runtime::RegistrarConfig {
 				next_free_para_id: polkadot_primitives::LOWEST_PUBLIC_ID,
+				..Default::default()
 			},
 			..Default::default()
 		};
@@ -911,6 +914,7 @@ pub mod bridge_hub_rococo {
 				code: bridge_hub_rococo_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
 					.to_vec(),
+				..Default::default()
 			},
 			balances: bridge_hub_rococo_runtime::BalancesConfig {
 				balances: accounts::init_balances()
@@ -918,9 +922,11 @@ pub mod bridge_hub_rococo {
 					.cloned()
 					.map(|k| (k, ED * 4096))
 					.collect(),
+				..Default::default()
 			},
 			parachain_info: bridge_hub_rococo_runtime::ParachainInfoConfig {
 				parachain_id: PARA_ID.into(),
+				..Default::default()
 			},
 			collator_selection: bridge_hub_rococo_runtime::CollatorSelectionConfig {
 				invulnerables: collators::invulnerables()
@@ -942,9 +948,11 @@ pub mod bridge_hub_rococo {
 						)
 					})
 					.collect(),
+				..Default::default()
 			},
 			polkadot_xcm: bridge_hub_rococo_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
+				..Default::default()
 			},
 			bridge_wococo_grandpa: bridge_hub_rococo_runtime::BridgeWococoGrandpaConfig {
 				owner: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
