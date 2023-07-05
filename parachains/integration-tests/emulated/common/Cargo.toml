@@ -30,6 +30,7 @@ sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
 cumulus-test-relay-sproof-builder = { path = "../../../../test/relay-sproof-builder", default-features = false }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
 polkadot-core-primitives = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -48,6 +49,7 @@ xcm-executor = { default-features = false, git = "https://github.com/paritytech/
 pallet-xcm = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus
+polkadot-parachain-node = { path = "../../../../polkadot-parachain" }
 parachains-common = { path = "../../../common" }
 parachain-info = { path = "../../../pallets/parachain-info" }
 cumulus-primitives-core = { path = "../../../../primitives/core" }

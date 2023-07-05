@@ -19,6 +19,15 @@
 #![warn(missing_docs)]
 #![warn(unused_extern_crates)]
 
-fn main() -> sc_cli::Result<()> {
-	polkadot_parachain_node::run()
+mod chain_spec;
+#[macro_use]
+/// Expose Executors for each chain.
+pub mod service;
+mod cli;
+mod command;
+mod rpc;
+
+/// Process command line args and execute the command.
+pub fn run() -> sc_cli::Result<()> {
+	command::run()
 }

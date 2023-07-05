@@ -25,7 +25,7 @@ pub use integration_tests_common::{
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
 	AccountId, AssetHubWestend, AssetHubWestendPallet, AssetHubWestendReceiver,
-	AssetHubWestendSender, Collectives, CollectivesPallet, CollectivesReceiver, CollectivesSender,
+	AssetHubWestendSender, CollectivesPolkadot, CollectivesPolkadotPallet, CollectivesReceiver, CollectivesSender,
 	PenpalWestend, PenpalWestendPallet, PenpalWestendReceiver, PenpalWestendSender, Westend,
 	WestendPallet, WestendReceiver, WestendSender,
 };

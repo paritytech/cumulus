@@ -13,8 +13,9 @@ use xcm_emulator::{
 	decl_test_networks, decl_test_parachains, decl_test_relay_chains, Chain, Parachain, RelayChain,
 	TestExt,
 };
+use polkadot_parachain_node::service::*;
 use xcm_executor::traits::ConvertLocation;
-use cumulus_test_client::BuildParachainBlockData;
+
 decl_test_relay_chains! {
 	#[api_version(5)]
 	pub struct Westend {
@@ -245,7 +246,7 @@ decl_test_parachains! {
 			Assets: penpal_runtime::Assets,
 		}
 	},
-	pub struct Collectives {
+	pub struct CollectivesPolkadot {
 		genesis = collectives::genesis(),
 		on_init = (),
 		runtime = {
@@ -322,7 +323,7 @@ decl_test_networks! {
 		parachains = vec![
 			AssetHubPolkadot,
 			PenpalPolkadot,
-			Collectives,
+			CollectivesPolkadot,
 			BHPolkadot,
 		],
 	},
@@ -372,8 +373,8 @@ parameter_types! {
 	pub PenpalWestendSender: AccountId = PenpalWestend::account_id_of(ALICE);
 	pub PenpalWestendReceiver: AccountId = PenpalWestend::account_id_of(BOB);
 	// Collectives
-	pub CollectivesSender: AccountId = Collectives::account_id_of(ALICE);
-	pub CollectivesReceiver: AccountId = Collectives::account_id_of(BOB);
+	pub CollectivesSender: AccountId = CollectivesPolkadot::account_id_of(ALICE);
+	pub CollectivesReceiver: AccountId = CollectivesPolkadot::account_id_of(BOB);
 	// Bridge Hub Polkadot
 	pub BHPolkadotSender: AccountId = BHPolkadot::account_id_of(ALICE);
 	pub BHPolkadotReceiver: AccountId = BHPolkadot::account_id_of(BOB);
@@ -385,31 +386,33 @@ parameter_types! {
 
 
 
-macro_rules! generate {
-	($runtime_name:ident, $runtime_namespace:path) => {
-		paste::paste! {
-			pub struct [<$runtime_name Executor>];
+// macro_rules! generate {
+// 	($runtime_name:ident, $runtime_namespace:path) => {
+// 		paste::paste! {
+// 			#[derive(Clone)]
+// 			pub struct [<$runtime_name Executor>];
 
-			impl sc_executor::NativeExecutionDispatch for [<$runtime_name Executor>] {
-				type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+// 			impl sc_executor::NativeExecutionDispatch for [<$runtime_name Executor>] {
+// 				type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
-				fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-					$runtime_namespace::api::dispatch(method, data)
-				}
+// 				fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+// 					$runtime_namespace::api::dispatch(method, data)
+// 				}
 
-				fn native_version() -> sc_executor::NativeVersion {
-					$runtime_namespace::native_version()
-				}
-			}
-		}
-	};
-}
+// 				fn native_version() -> sc_executor::NativeVersion {
+// 					$runtime_namespace::native_version()
+// 				}
+// 			}
+// 		}
+// 	};
+// }
 
-generate!(BHPolkadot, bridge_hub_polkadot_runtime);
-generate!(BHKusama, bridge_hub_kusama_runtime);
-generate!(Collectives, collectives_polkadot_runtime);
-generate!(PenpalKusama, penpal_runtime);
-generate!(PenpalPolkadot, penpal_runtime);
-generate!(AssetHubPolkadot, asset_hub_polkadot_runtime);
-generate!(AssetHubKusama, asset_hub_kusama_runtime);
-generate!(AssetHubWestend, asset_hub_westend_runtime);
+// generate!(BHPolkadot, bridge_hub_polkadot_runtime);
+// generate!(BHKusama, bridge_hub_kusama_runtime);
+// generate!(Collectives, collectives_polkadot_runtime);
+// generate!(PenpalKusama, penpal_runtime);
+// generate!(PenpalPolkadot, penpal_runtime);
+// generate!(PenpalWestend, penpal_runtime);
+// generate!(AssetHubPolkadot, asset_hub_polkadot_runtime);
+// generate!(AssetHubKusama, asset_hub_kusama_runtime);
+// generate!(AssetHubWestend, asset_hub_westend_runtime);

@@ -72,6 +72,7 @@ type ParachainBlockImport<RuntimeApi> =
 	TParachainBlockImport<Block, Arc<ParachainClient<RuntimeApi>>, ParachainBackend>;
 
 /// Native executor instance.
+#[derive(Clone)]
 pub struct ShellRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for ShellRuntimeExecutor {
@@ -87,9 +88,10 @@ impl sc_executor::NativeExecutionDispatch for ShellRuntimeExecutor {
 }
 
 /// Native Asset Hub Polkadot (Statemint) executor instance.
-pub struct AssetHubPolkadotRuntimeExecutor;
+#[derive(Clone)]
+pub struct AssetHubPolkadotExecutor;
 
-impl sc_executor::NativeExecutionDispatch for AssetHubPolkadotRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for AssetHubPolkadotExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -102,6 +104,7 @@ impl sc_executor::NativeExecutionDispatch for AssetHubPolkadotRuntimeExecutor {
 }
 
 /// Native Asset Hub Kusama (Statemine) executor instance.
+#[derive(Clone)]
 pub struct AssetHubKusamaExecutor;
 
 impl sc_executor::NativeExecutionDispatch for AssetHubKusamaExecutor {
@@ -117,6 +120,7 @@ impl sc_executor::NativeExecutionDispatch for AssetHubKusamaExecutor {
 }
 
 /// Native Asset Hub Westend (Westmint) executor instance.
+#[derive(Clone)]
 pub struct AssetHubWestendExecutor;
 
 impl sc_executor::NativeExecutionDispatch for AssetHubWestendExecutor {
@@ -132,9 +136,10 @@ impl sc_executor::NativeExecutionDispatch for AssetHubWestendExecutor {
 }
 
 /// Native Polkadot Collectives executor instance.
-pub struct CollectivesPolkadotRuntimeExecutor;
+#[derive(Clone)]
+pub struct CollectivesPolkadotExecutor;
 
-impl sc_executor::NativeExecutionDispatch for CollectivesPolkadotRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for CollectivesPolkadotExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -146,10 +151,60 @@ impl sc_executor::NativeExecutionDispatch for CollectivesPolkadotRuntimeExecutor
 	}
 }
 
-/// Native BridgeHubPolkadot executor instance.
-pub struct BridgeHubPolkadotRuntimeExecutor;
+/// Native Polkadot Penpal executor instance.
+#[derive(Clone)]
+pub struct PenpalPolkadotExecutor;
 
-impl sc_executor::NativeExecutionDispatch for BridgeHubPolkadotRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for PenpalPolkadotExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		penpal_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		penpal_runtime::native_version()
+	}
+}
+
+/// Native Kusama Penpal executor instance.
+#[derive(Clone)]
+pub struct PenpalKusamaExecutor;
+
+impl sc_executor::NativeExecutionDispatch for PenpalKusamaExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		penpal_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		penpal_runtime::native_version()
+	}
+}
+
+/// Native Westend Penpal executor instance.
+#[derive(Clone)]
+pub struct PenpalWestendExecutor;
+
+impl sc_executor::NativeExecutionDispatch for PenpalWestendExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		penpal_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		penpal_runtime::native_version()
+	}
+}
+
+
+/// Native BridgeHubPolkadot executor instance.
+#[derive(Clone)]
+pub struct BHPolkadotExecutor;
+
+impl sc_executor::NativeExecutionDispatch for BHPolkadotExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -162,9 +217,10 @@ impl sc_executor::NativeExecutionDispatch for BridgeHubPolkadotRuntimeExecutor {
 }
 
 /// Native BridgeHubKusama executor instance.
-pub struct BridgeHubKusamaRuntimeExecutor;
+#[derive(Clone)]
+pub struct BHKusamaExecutor;
 
-impl sc_executor::NativeExecutionDispatch for BridgeHubKusamaRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for BHKusamaExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -177,9 +233,10 @@ impl sc_executor::NativeExecutionDispatch for BridgeHubKusamaRuntimeExecutor {
 }
 
 /// Native BridgeHubRococo executor instance.
-pub struct BridgeHubRococoRuntimeExecutor;
+#[derive(Clone)]
+pub struct BHRococoExecutor;
 
-impl sc_executor::NativeExecutionDispatch for BridgeHubRococoRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for BHRococoExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -192,9 +249,10 @@ impl sc_executor::NativeExecutionDispatch for BridgeHubRococoRuntimeExecutor {
 }
 
 /// Native contracts executor instance.
-pub struct ContractsRococoRuntimeExecutor;
+#[derive(Clone)]
+pub struct ContractsRococoExecutor;
 
-impl sc_executor::NativeExecutionDispatch for ContractsRococoRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for ContractsRococoExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -207,9 +265,10 @@ impl sc_executor::NativeExecutionDispatch for ContractsRococoRuntimeExecutor {
 }
 
 /// Native Glutton executor instance.
-pub struct GluttonRuntimeExecutor;
+#[derive(Clone)]
+pub struct GluttonExecutor;
 
-impl sc_executor::NativeExecutionDispatch for GluttonRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for GluttonExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {

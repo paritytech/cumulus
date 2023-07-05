@@ -5262,6 +5262,7 @@ dependencies = [
  "penpal-runtime",
  "polkadot-core-primitives",
  "polkadot-parachain",
+ "polkadot-parachain-node",
  "polkadot-primitives",
  "polkadot-runtime",
  "polkadot-runtime-constants",
@@ -5271,6 +5272,7 @@ dependencies = [
  "sc-client-api",
  "sc-consensus-grandpa",
  "sc-executor",
+ "sc-service",
  "sp-authority-discovery",
  "sp-consensus-babe",
  "sp-core",
@@ -9895,7 +9897,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "polkadot-parachain-bin"
+name = "polkadot-parachain-node"
 version = "0.9.430"
 dependencies = [
  "assert_cmd",
