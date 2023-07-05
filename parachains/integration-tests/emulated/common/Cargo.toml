@@ -7,6 +7,7 @@ description = "Common resources for integration testing with xcm-emulator"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false }
+paste = "1.0.5"
 
 # Substrate
 grandpa = { package = "sc-consensus-grandpa", git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -14,6 +15,7 @@ sp-authority-discovery = { default-features = false, git = "https://github.com/p
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-weights = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }

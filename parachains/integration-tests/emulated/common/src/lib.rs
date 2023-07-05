@@ -381,3 +381,35 @@ parameter_types! {
 	pub BHKusamaSender: AccountId = BHKusama::account_id_of(ALICE);
 	pub BHKusamaReceiver: AccountId = BHKusama::account_id_of(BOB);
 }
+
+
+
+
+macro_rules! generate {
+	($runtime_name:ident, $runtime_namespace:path) => {
+		paste::paste! {
+			pub struct [<$runtime_name Executor>];
+
+			impl sc_executor::NativeExecutionDispatch for [<$runtime_name Executor>] {
+				type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+				fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+					$runtime_namespace::api::dispatch(method, data)
+				}
+
+				fn native_version() -> sc_executor::NativeVersion {
+					$runtime_namespace::native_version()
+				}
+			}
+		}
+	};
+}
+
+generate!(BHPolkadot, bridge_hub_polkadot_runtime);
+generate!(BHKusama, bridge_hub_kusama_runtime);
+generate!(Collectives, collectives_polkadot_runtime);
+generate!(PenpalKusama, penpal_runtime);
+generate!(PenpalPolkadot, penpal_runtime);
+generate!(AssetHubPolkadot, asset_hub_polkadot_runtime);
+generate!(AssetHubKusama, asset_hub_kusama_runtime);
+generate!(AssetHubWestend, asset_hub_westend_runtime);

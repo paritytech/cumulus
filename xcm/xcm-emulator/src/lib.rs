@@ -311,7 +311,7 @@ macro_rules! decl_test_relay_chains {
 				}
 			}
 
-			$crate::__impl_test_ext_for_relay_chain!($name, $genesis, $on_init, $api_version);
+			$crate::__impl_test_ext_for_relay_chain!($name, $block, $genesis, $on_init, $api_version);
 		)+
 	};
 }
@@ -319,13 +319,13 @@ macro_rules! decl_test_relay_chains {
 #[macro_export]
 macro_rules! __impl_test_ext_for_relay_chain {
 	// entry point: generate ext name
-	($name:ident, $genesis:expr, $on_init:expr, $api_version:tt) => {
+	($name:ident, $block:path, $genesis:expr, $on_init:expr, $api_version:tt) => {
 		$crate::paste::paste! {
-			$crate::__impl_test_ext_for_relay_chain!(@impl $name, $genesis, $on_init, [<ParachainHostV $api_version>], [<EXT_ $name:upper>]);
+			$crate::__impl_test_ext_for_relay_chain!(@impl $name, $block, $genesis, $on_init, [<ParachainHostV $api_version>], [<EXT_ $name:upper>]);
 		}
 	};
 	// impl
-	(@impl $name:ident, $genesis:expr, $on_init:expr, $api_version:ident, $ext_name:ident) => {
+	(@impl $name:ident, $block:path, $genesis:expr, $on_init:expr, $api_version:ident, $ext_name:ident) => {
 		thread_local! {
 			pub static $ext_name: $crate::RefCell<$crate::sp_io::TestExternalities>
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
@@ -360,118 +360,153 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				// Make sure the Network is initialized
 				<$name>::init();
 
-				let extrinsic = <Self as Chain>::UncheckedExtrinsic::new_unsigned(call);
-				// let r = $ext_name.with(|v| v.borrow_mut().execute_calls());
-				use cumulus_test_client::{
-					ClientBlockImportExt, DefaultTestClientBuilderExt, InitBlockBuilder,
-					// TestClientBuilder, 
-					TestClientBuilderExt,
-				};
-				use sp_runtime::traits::Header as HeaderT;
-				use sp_core::Encode;
-				use polkadot_primitives::PersistedValidationData;
-				use polkadot_service::ExecutionStrategy;
+// 				let extrinsic = <Self as Chain>::UncheckedExtrinsic::new_unsigned(call);
+// 				// let r = $ext_name.with(|v| v.borrow_mut().execute_calls());
+// 				use cumulus_test_client::{
+// 					ClientBlockImportExt, DefaultTestClientBuilderExt, InitBlockBuilder,
+// 					// TestClientBuilder, 
+// 					TestClientBuilderExt,
+// 				};
+// 				use sp_runtime::traits::Header as HeaderT;
+// 				use sp_core::Encode;
+// 				use polkadot_primitives::PersistedValidationData;
+// 				use polkadot_service::ExecutionStrategy;
 
-				$crate::paste::paste! {
-					let client: ([<$name Client>], _) = [<$name ClientBuilder>]::with_default_backend()
-						// NOTE: this allows easier debugging
-						.set_execution_strategy(sc_client_api::ExecutionStrategy::NativeWhenPossible)
-					.build_with_native_executor(None);
-					let client = client.0;
-				}
+// 				$crate::paste::paste! {
+// 					let client: ([<$name Client>], _) = [<$name ClientBuilder>]::with_default_backend()
+// 						// NOTE: this allows easier debugging
+// 						.set_execution_strategy(sc_client_api::ExecutionStrategy::NativeWhenPossible)
+// 					.build_with_native_executor(None);
+// 					let client = client.0;
+// 				}
 
-				let parent_head = client
-					.header(client.chain_info().genesis_hash)
-					.ok()
-					.flatten()
-					.expect("Genesis header exists; qed");
+// 				let parent_head = client
+// 					.header(client.chain_info().genesis_hash)
+// 					.ok()
+// 					.flatten()
+// 					.expect("Genesis header exists; qed");
 
-				let mut validation_data: Option<PersistedValidationData> = Some(PersistedValidationData {
-					relay_parent_number: 1,
-					parent_head: parent_head.encode().into(),
-					..Default::default()
-				});
+// 				let mut validation_data: Option<PersistedValidationData> = Some(PersistedValidationData {
+// 					relay_parent_number: 1,
+// 					parent_head: parent_head.encode().into(),
+// 					..Default::default()
+// 				});
 
-use polkadot_runtime::MinimumPeriod; // TODO
-// use polkadot_runtime::GetLastTimestamp; //TODO
-use bridge_hub_kusama_runtime::Timestamp;
-				// let mut builder = client.init_block_builder(Some(validation_data.clone()), Default::default());
-				let chain_info = client.chain_info();
- use polkadot_service::ProvideRuntimeApi;
-				let last_timestamp = Timestamp::now(); //client.runtime_api().get_last_timestamp(chain_info.best_hash).expect("Get last timestamp");
+// use polkadot_runtime::MinimumPeriod; // TODO
+// // use polkadot_runtime::GetLastTimestamp; //TODO
+// use bridge_hub_kusama_runtime::Timestamp;
+// 				// let mut builder = client.init_block_builder(Some(validation_data.clone()), Default::default());
+// 				let chain_info = client.chain_info();
+//  use polkadot_service::ProvideRuntimeApi;
+// 				let last_timestamp = Timestamp::now(); //client.runtime_api().get_last_timestamp(chain_info.best_hash).expect("Get last timestamp");
 
-				let timestamp = last_timestamp + polkadot_runtime::MinimumPeriod::get();//TODO
+// 				let timestamp = last_timestamp + polkadot_runtime::MinimumPeriod::get();//TODO
 			
-				// cumulus_test_client::init_block_builder(
-				// 	client, last_timestamp, Some(validation_data), Default::default(), timestamp);
-				let at = client.chain_info().genesis_hash;
+// 				// cumulus_test_client::init_block_builder(
+// 				// 	client, last_timestamp, Some(validation_data), Default::default(), timestamp);
+// 				let at = client.chain_info().genesis_hash;
 
-					// init block builder
-					use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
-use sc_block_builder::BlockBuilderProvider;
-// use xcm_emulator::ParachainInherentData;
-// use sp_consensus_babe::inherents::INHERENT_IDENTIFIER;
-				$crate::paste::paste! {
-					// let init_block_builder = |
-					// 	client: &'a[<$name Client>] ,
-					// 	at: Hash,
-					// 	// validation_data: Option<PersistedValidationData<PHash, PBlockNumber>>,
-					let relay_sproof_builder: RelayStateSproofBuilder = Default::default();
-					// 	timestamp: u64,
-					// | -> BlockBuilder<'a, $block, [<$name Client>], Backend> {
-						let mut block_builder = client
-							.new_block_at(at, Default::default(), true)
-							.expect("Creates new block builder for test runtime");
+// 					// init block builder
+// 					use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
+// use sc_block_builder::BlockBuilderProvider;
+// // use xcm_emulator::ParachainInherentData;
+// // use sp_consensus_babe::inherents::INHERENT_IDENTIFIER;
+// 				$crate::paste::paste! {
+// 					// let init_block_builder = |
+// 					// 	client: &'a[<$name Client>] ,
+// 					// 	at: Hash,
+// 					// 	// validation_data: Option<PersistedValidationData<PHash, PBlockNumber>>,
+// 					let relay_sproof_builder: RelayStateSproofBuilder = Default::default();
+// 					// 	timestamp: u64,
+// 					// | -> BlockBuilder<'a, $block, [<$name Client>], Backend> {
+// 						let mut block_builder = client
+// 							.new_block_at(at, Default::default(), true)
+// 							.expect("Creates new block builder for test runtime");
 
-						let mut inherent_data = sp_inherents::InherentData::new();
+// 						let mut inherent_data = sp_inherents::InherentData::new();
 
-						inherent_data
-							.put_data(sp_timestamp::INHERENT_IDENTIFIER, &timestamp)
-							.expect("Put timestamp failed");
+// 						inherent_data
+// 							.put_data(sp_timestamp::INHERENT_IDENTIFIER, &timestamp)
+// 							.expect("Put timestamp failed");
 
-						let (relay_parent_storage_root, relay_chain_state) =
-							relay_sproof_builder.into_state_root_and_proof();
+// 						let (relay_parent_storage_root, relay_chain_state) =
+// 							relay_sproof_builder.into_state_root_and_proof();
 
-						let mut validation_data = validation_data.unwrap_or_default();
-						assert_eq!(
-							validation_data.relay_parent_storage_root,
-							Default::default(),
-							"Overriding the relay storage root is not implemented",
-						);
-						validation_data.relay_parent_storage_root = relay_parent_storage_root;
+// 						let mut validation_data = validation_data.unwrap_or_default();
+// 						assert_eq!(
+// 							validation_data.relay_parent_storage_root,
+// 							Default::default(),
+// 							"Overriding the relay storage root is not implemented",
+// 						);
+// 						validation_data.relay_parent_storage_root = relay_parent_storage_root;
 
-						inherent_data
-							.put_data(
-								cumulus_primitives_parachain_inherent::INHERENT_IDENTIFIER,
-								&cumulus_primitives_parachain_inherent::ParachainInherentData {
-									validation_data,
-									relay_chain_state,
-									downward_messages: Default::default(),
-									horizontal_messages: Default::default(),
-								},
-							)
-							.expect("Put validation function params failed");
+// 						inherent_data
+// 							.put_data(
+// 								cumulus_primitives_parachain_inherent::INHERENT_IDENTIFIER,
+// 								&cumulus_primitives_parachain_inherent::ParachainInherentData {
+// 									validation_data,
+// 									relay_chain_state,
+// 									downward_messages: Default::default(),
+// 									horizontal_messages: Default::default(),
+// 								},
+// 							)
+// 							.expect("Put validation function params failed");
 
-						let inherents = block_builder.create_inherents(inherent_data).expect("Creates inherents");
+// 						let inherents = block_builder.create_inherents(inherent_data).expect("Creates inherents");
 
-						inherents
-							.into_iter()
-							.for_each(|ext| block_builder.push(ext).expect("Pushes inherent"));
+// 						inherents
+// 							.into_iter()
+// 							.for_each(|ext| block_builder.push(ext).expect("Pushes inherent"));
 
-						// block_builder
-					// };
-				}
+// 						// block_builder
+// 					// };
+
+// 									// let mut builder = InitBlockBuilder::init_block_builder_at(&client, chain_info.best_hash, Some(validation_data), Default::default());
+
+// 				// // validation_data.relay_parent_storage_root = relay_parent_storage_root;
+
+// 				block_builder.push(extrinsic).unwrap();
+
+// 				// let block = block_builder.build_parachain_block(*parent_head.state_root());
+
+
+// 				let built_block = block_builder.build().expect("Builds the block");
+// 				// let (header, extrinsics) = built_block.block.deconstruct();
+// 				// ParachainBlockData::new(header, extrinsics, storage_proof)
+			
+			
+// 				// let parent_stateroot : sp_core::H256 =  *parent_head.state_root();
+// 				// // let storage_proof = 
+// 				// let s : sc_client_api::StorageProof = built_block
+// 				// 	.proof
+// 				// 	.expect("We enabled proof recording before.")
+// 				// 	// .into_compact_proof::<<$block::Header as HeaderT>::Hashing>(parent_stateroot)
+// 				// 	// .expect("Creates the compact proof")
+// 				// 	;
+
+// 				// let executor: sc_executor::NativeElseWasmExecutor<[<$name Executor>]>;
 
 
 
-				// let mut builder = InitBlockBuilder::init_block_builder_at(&client, chain_info.best_hash, Some(validation_data), Default::default());
 
-				// // validation_data.relay_parent_storage_root = relay_parent_storage_root;
 
-				// builder.push(extrinsic).unwrap();
 
-				// let block = builder.build_parachain_block(*parent_head.state_root());
 
+
+
+
+
+
+
+
+
+// 				}
+
+
+
+
+// 		let (header, extrinsics) = built_block.block.deconstruct();
+// 		ParachainBlockData::new(header, extrinsics, storage_proof)
 				
 
 				// send messages if needed
@@ -646,7 +681,25 @@ macro_rules! decl_test_parachains {
 				type ParachainInfo = $parachain_info;
 			}
 
+
 			$crate::paste::paste! {
+				type [<$name Backend>] = substrate_test_client::Backend<$block>;
+				
+				/// Test client executor.
+				// type [<$name Executor>] =
+				// 	cumulus_test_client::client::LocalCallExecutor<$block, [<$name Backend>], sc_executor::NativeElseWasmExecutor<cumulus_test_client::LocalExecutor>>;
+
+				type [<$name ClientBuilder>] =
+					substrate_test_client::TestClientBuilder<
+						$block, 
+						[<$name Executor>], 
+						[<$name Backend>], 
+						cumulus_test_client::GenesisParameters
+					>;
+
+				/// Test client type with `LocalExecutor` and generic Backend.
+				pub type [<$name Client>] = cumulus_test_client::client::Client<[<$name Backend>], [<$name Executor>], $block, $runtime_api>;
+
 				pub trait [<$name Pallet>] {
 					$(
 						type $pallet_name;
@@ -738,6 +791,152 @@ macro_rules! __impl_test_ext_for_parachain {
 			fn execute_call(call: <Self as Chain>::RuntimeCall) -> ()
 				where Self: Chain
 			{
+
+					use $crate::{NetworkComponent};
+				// Make sure the Network is initialized
+				<$name>::init();
+
+				let extrinsic = <Self as Chain>::UncheckedExtrinsic::new_unsigned(call);
+				// let r = $ext_name.with(|v| v.borrow_mut().execute_calls());
+				use cumulus_test_client::{
+					ClientBlockImportExt, DefaultTestClientBuilderExt, InitBlockBuilder,
+					// TestClientBuilder, 
+					TestClientBuilderExt,
+				};
+				use sp_runtime::traits::Header as HeaderT;
+				use sp_core::Encode;
+				use polkadot_primitives::PersistedValidationData;
+				use polkadot_service::ExecutionStrategy;
+
+				$crate::paste::paste! {
+					let client: ([<$name Client>], _) = [<$name ClientBuilder>]::with_default_backend()
+						// NOTE: this allows easier debugging
+						.set_execution_strategy(sc_client_api::ExecutionStrategy::NativeWhenPossible)
+					.build_with_native_executor(None);
+					let client = client.0;
+				}
+
+				let parent_head = client
+					.header(client.chain_info().genesis_hash)
+					.ok()
+					.flatten()
+					.expect("Genesis header exists; qed");
+
+				let mut validation_data: Option<PersistedValidationData> = Some(PersistedValidationData {
+					relay_parent_number: 1,
+					parent_head: parent_head.encode().into(),
+					..Default::default()
+				});
+
+use polkadot_runtime::MinimumPeriod; // TODO
+// use polkadot_runtime::GetLastTimestamp; //TODO
+use bridge_hub_kusama_runtime::Timestamp;
+				// let mut builder = client.init_block_builder(Some(validation_data.clone()), Default::default());
+				let chain_info = client.chain_info();
+ use polkadot_service::ProvideRuntimeApi;
+				let last_timestamp = Timestamp::now(); //client.runtime_api().get_last_timestamp(chain_info.best_hash).expect("Get last timestamp");
+
+				let timestamp = last_timestamp + polkadot_runtime::MinimumPeriod::get();//TODO
+			
+				// cumulus_test_client::init_block_builder(
+				// 	client, last_timestamp, Some(validation_data), Default::default(), timestamp);
+				let at = client.chain_info().genesis_hash;
+
+					// init block builder
+					use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
+use sc_block_builder::BlockBuilderProvider;
+// use xcm_emulator::ParachainInherentData;
+// use sp_consensus_babe::inherents::INHERENT_IDENTIFIER;
+				$crate::paste::paste! {
+					// let init_block_builder = |
+					// 	client: &'a[<$name Client>] ,
+					// 	at: Hash,
+					// 	// validation_data: Option<PersistedValidationData<PHash, PBlockNumber>>,
+					let relay_sproof_builder: RelayStateSproofBuilder = Default::default();
+					// 	timestamp: u64,
+					// | -> BlockBuilder<'a, $block, [<$name Client>], Backend> {
+						let mut block_builder = client
+							.new_block_at(at, Default::default(), true)
+							.expect("Creates new block builder for test runtime");
+
+						let mut inherent_data = sp_inherents::InherentData::new();
+
+						inherent_data
+							.put_data(sp_timestamp::INHERENT_IDENTIFIER, &timestamp)
+							.expect("Put timestamp failed");
+
+						let (relay_parent_storage_root, relay_chain_state) =
+							relay_sproof_builder.into_state_root_and_proof();
+
+						let mut validation_data = validation_data.unwrap_or_default();
+						assert_eq!(
+							validation_data.relay_parent_storage_root,
+							Default::default(),
+							"Overriding the relay storage root is not implemented",
+						);
+						validation_data.relay_parent_storage_root = relay_parent_storage_root;
+
+						inherent_data
+							.put_data(
+								cumulus_primitives_parachain_inherent::INHERENT_IDENTIFIER,
+								&cumulus_primitives_parachain_inherent::ParachainInherentData {
+									validation_data,
+									relay_chain_state,
+									downward_messages: Default::default(),
+									horizontal_messages: Default::default(),
+								},
+							)
+							.expect("Put validation function params failed");
+
+						let inherents = block_builder.create_inherents(inherent_data).expect("Creates inherents");
+
+						inherents
+							.into_iter()
+							.for_each(|ext| block_builder.push(ext).expect("Pushes inherent"));
+
+						// block_builder
+					// };
+
+									// let mut builder = InitBlockBuilder::init_block_builder_at(&client, chain_info.best_hash, Some(validation_data), Default::default());
+
+				// // validation_data.relay_parent_storage_root = relay_parent_storage_root;
+
+				block_builder.push(extrinsic).unwrap();
+
+				// let block = block_builder.build_parachain_block(*parent_head.state_root());
+
+
+				let built_block = block_builder.build().expect("Builds the block");
+				// let (header, extrinsics) = built_block.block.deconstruct();
+				// ParachainBlockData::new(header, extrinsics, storage_proof)
+			
+			
+				// let parent_stateroot : sp_core::H256 =  *parent_head.state_root();
+				// // let storage_proof = 
+				// let s : sc_client_api::StorageProof = built_block
+				// 	.proof
+				// 	.expect("We enabled proof recording before.")
+				// 	// .into_compact_proof::<<$block::Header as HeaderT>::Hashing>(parent_stateroot)
+				// 	// .expect("Creates the compact proof")
+				// 	;
+
+				// let executor: sc_executor::NativeElseWasmExecutor<[<$name Executor>]>;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+				}
 
 			}
 
