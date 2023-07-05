@@ -196,7 +196,9 @@ impl pallet_balances::Config for Runtime {
 	type ReserveIdentifier = [u8; 8];
 	type RuntimeHoldReason = RuntimeHoldReason;
 	type FreezeIdentifier = ();
-	type MaxHolds = ConstU32<1>;
+	// We allow each account to have holds on it from:
+	//   - `NftFractionalization`: 10
+	type MaxHolds = ConstU32<10>;
 	type MaxFreezes = ConstU32<0>;
 }
 
