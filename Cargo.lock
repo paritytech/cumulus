@@ -5243,7 +5243,6 @@ dependencies = [
  "collectives-polkadot-runtime",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
- "cumulus-test-client",
  "cumulus-test-relay-sproof-builder",
  "frame-benchmarking",
  "frame-support",

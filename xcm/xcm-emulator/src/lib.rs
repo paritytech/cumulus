@@ -248,19 +248,19 @@ macro_rules! decl_test_relay_chains {
 				type [<$name Backend>] = substrate_test_client::Backend<$block>;
 				
 				/// Test client executor.
-				type [<$name Executor>] =
-					cumulus_test_client::client::LocalCallExecutor<$block, [<$name Backend>], sc_executor::NativeElseWasmExecutor<cumulus_test_client::LocalExecutor>>;
+				// type [<$name Executor>] =
+				// 	cumulus_test_client::client::LocalCallExecutor<$block, [<$name Backend>], sc_executor::NativeElseWasmExecutor<cumulus_test_client::LocalExecutor>>;
 
-				type [<$name ClientBuilder>] =
-					substrate_test_client::TestClientBuilder<
-						$block, 
-						[<$name Executor>], 
-						[<$name Backend>], 
-						cumulus_test_client::GenesisParameters
-					>;
+				// type [<$name ClientBuilder>] =
+				// 	substrate_test_client::TestClientBuilder<
+				// 		$block, 
+				// 		[<$name Executor>], 
+				// 		[<$name Backend>], 
+				// 		cumulus_test_client::GenesisParameters
+				// 	>;
 
 				/// Test client type with `LocalExecutor` and generic Backend.
-				pub type [<$name Client>] = cumulus_test_client::client::Client<[<$name Backend>], [<$name Executor>], $block, $runtime_api>;
+				// pub type [<$name Client>] = cumulus_test_client::client::Client<[<$name Backend>], [<$name Executor>], $block, $runtime_api>;
 
 				pub trait [<$name Pallet>] {
 					$(
@@ -681,7 +681,6 @@ macro_rules! decl_test_parachains {
 				type ParachainInfo = $parachain_info;
 			}
 
-
 			$crate::paste::paste! {
 				type [<$name Backend>] = substrate_test_client::Backend<$block>;
 				
@@ -689,16 +688,24 @@ macro_rules! decl_test_parachains {
 				type [<$name LocalExecutor>] =
 					sc_service::client::LocalCallExecutor<$block, [<$name Backend>], sc_executor::NativeElseWasmExecutor<[<$name Executor>]>>;
 
+				#[derive(Default)]
+				struct [<$name GenesisInit>];
+				impl substrate_test_client::GenesisInit for [<$name GenesisInit>] {
+					fn genesis_storage(&self) -> Storage {
+						$genesis
+					}
+				}
+
 				type [<$name ClientBuilder>] =
 					substrate_test_client::TestClientBuilder<
-						$block, 
-						[<$name Executor>], 
-						[<$name Backend>], 
-						cumulus_test_client::GenesisParameters
+						$block,
+						[<$name Executor>],
+						[<$name Backend>],
+						[<$name GenesisInit>]
 					>;
 
 				/// Test client type with `LocalExecutor` and generic Backend.
-				pub type [<$name Client>] = cumulus_test_client::client::Client<[<$name Backend>], [<$name Executor>], $block, $runtime_api>;
+				// pub type [<$name Client>] = cumulus_test_client::client::Client<[<$name Backend>], [<$name Executor>], $block, $runtime_api>;
 
 				pub trait [<$name Pallet>] {
 					$(
@@ -815,7 +822,7 @@ macro_rules! __impl_test_ext_for_parachain {
 					
 				$crate::paste::paste! {
 					// let executor = substrate_test_runtime_client::new_native_or_wasm_executor();
-					let client_config = sc_service::ClientConfig::<$block>::default();
+					// let client_config = sc_service::ClientConfig::<$block>::default();
 					// let genesis_block_builder = sc_service::GenesisBlockBuilder::new(
 					// 	&substrate_test_runtime_client::GenesisParameters::default().genesis_storage(),
 					// 	!client_config.no_genesis,
@@ -846,7 +853,7 @@ macro_rules! __impl_test_ext_for_parachain {
 					// let client: ([<$name Client>], _) = [<$name ClientBuilder>]::with_default_backend()
 					// 	// NOTE: this allows easier debugging
 					// 	.set_execution_strategy(sc_client_api::ExecutionStrategy::NativeWhenPossible)
-					// .build_with_executor();
+					// .build_with_executor([<$name LocalExecutor>]);
 					// let client = client.0;
 				}
 

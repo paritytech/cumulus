@@ -61,7 +61,7 @@ collectives-polkadot-runtime = { path = "../../../runtimes/collectives/collectiv
 bridge-hub-kusama-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-kusama" }
 bridge-hub-polkadot-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-polkadot" }
 xcm-emulator = { default-features = false, path = "../../../../xcm/xcm-emulator" }
-cumulus-test-client = { path = "../../../../test/client" }
+# cumulus-test-client = { path = "../../../../test/client" }
 cumulus-primitives-parachain-inherent = { path = "../../../../primitives/parachain-inherent" }
 
 [features]
