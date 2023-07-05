@@ -97,7 +97,7 @@ impl RelayChainInterface for RelayChainInProcessInterface {
 			BlockId::Number(num) => match self.full_client.hash(num)? {
 				None => return Ok(None),
 				Some(h) => h,
-			}
+			},
 		};
 		let header = self.full_client.header(hash)?;
 
