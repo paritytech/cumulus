@@ -40,8 +40,8 @@ sp-std = { git = "https://github.com/paritytech/substrate", default-features = f
 sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
 
 # Polkadot dependencies
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
 
 [dev-dependencies]
 bp-test-utils = { path = "../../primitives/test-utils" }

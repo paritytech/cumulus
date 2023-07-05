@@ -75,10 +75,10 @@ substrate-state-trie-migration-rpc = { git = "https://github.com/paritytech/subs
 
 # Polkadot
 # Use rococo-native as this is currently the default "local" relay chain
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", features = ["rococo-native"] , rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
-xcm = { git = "https://github.com/paritytech/polkadot", rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", features = ["rococo-native"] , rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
+xcm = { git = "https://github.com/paritytech/polkadot", rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
 
 # Cumulus
 cumulus-client-cli = { path = "../client/cli" }

@@ -40,6 +40,6 @@ cumulus-primitives-parachain-inherent = { path = "../../../primitives/parachain-
 cumulus-client-collator = { path = "../../collator" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }

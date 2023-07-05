@@ -18,10 +18,10 @@ sp-core = { git = "https://github.com/paritytech/substrate", rev = "8664399dc284
 sp-runtime = { git = "https://github.com/paritytech/substrate", rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
 
 # Polkadot
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
-polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
 
 # Cumulus
 cumulus-client-consensus-common = { path = "../consensus/common" }
@@ -37,7 +37,7 @@ sp-state-machine = { git = "https://github.com/paritytech/substrate", rev = "866
 sp-tracing = { git = "https://github.com/paritytech/substrate", rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
 
 # Polkadot
-polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
+polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
 
 # Cumulus
 cumulus-test-client = { path = "../../test/client" }

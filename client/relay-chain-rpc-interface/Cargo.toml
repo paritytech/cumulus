@@ -6,7 +6,7 @@ edition = "2021"
 
 
 [dependencies]
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-relay-chain-interface = { path = "../relay-chain-interface" }

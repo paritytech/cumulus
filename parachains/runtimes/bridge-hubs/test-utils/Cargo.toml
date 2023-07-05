@@ -33,11 +33,11 @@ parachain-info = { path = "../../../../parachains/pallets/parachain-info", defau
 parachains-runtimes-test-utils = { path = "../../test-utils", default-features = false }
 
 # Polkadot
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
-pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", default-features = false, optional = true , rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
+pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", default-features = false, optional = true , rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "acc3b301e3ec738edcdb611d1233e11be02c01d1" }
 
 # Bridges
 bp-bridge-hub-rococo = { path = "../../../../bridges/primitives/chain-bridge-hub-rococo", default-features = false }
