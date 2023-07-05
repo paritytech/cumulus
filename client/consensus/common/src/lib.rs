@@ -19,7 +19,10 @@ use polkadot_primitives::{
 	Block as PBlock, Hash as PHash, Header as PHeader, PersistedValidationData,
 };
 
-use cumulus_primitives_core::{relay_chain::OccupiedCoreAssumption, ParaId};
+use cumulus_primitives_core::{
+	relay_chain::{BlockId as RBlockId, OccupiedCoreAssumption},
+	ParaId,
+};
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
 
 use sc_client_api::Backend;
@@ -244,7 +247,7 @@ pub async fn find_potential_parents<B: BlockT>(
 		let mut ancestry = Vec::with_capacity(params.ancestry_lookback + 1);
 		let mut current_rp = params.relay_parent;
 		while ancestry.len() <= params.ancestry_lookback {
-			let header = match relay_client.header(current_rp).await? {
+			let header = match relay_client.header(RBlockId::hash(current_rp)).await? {
 				None => break,
 				Some(h) => h,
 			};

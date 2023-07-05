@@ -26,6 +26,7 @@ use jsonrpsee_core::Error as JsonRpcError;
 use parity_scale_codec::Error as CodecError;
 use sp_api::ApiError;
 
+use cumulus_primitives_core::relay_chain::BlockId;
 pub use cumulus_primitives_core::{
 	relay_chain::{
 		CommittedCandidateReceipt, Hash as PHash, Header as PHeader, InboundHrmpMessage,
@@ -110,11 +111,11 @@ pub trait RelayChainInterface: Send + Sync {
 	/// Get the hash of the current best block.
 	async fn best_block_hash(&self) -> RelayChainResult<PHash>;
 
+	/// Fetch the block header of a given hash or height, if it exists.
+	async fn header(&self, block_id: BlockId) -> RelayChainResult<Option<PHeader>>;
+
 	/// Get the hash of the finalized block.
 	async fn finalized_block_hash(&self) -> RelayChainResult<PHash>;
-
-	/// Get a header by hash, if it exists.
-	async fn header(&self, block_id: PHash) -> RelayChainResult<Option<PHeader>>;
 
 	/// Returns the whole contents of the downward message queue for the parachain we are collating
 	/// for.
@@ -263,10 +264,6 @@ where
 		(**self).finalized_block_hash().await
 	}
 
-	async fn header(&self, block_id: PHash) -> RelayChainResult<Option<PHeader>> {
-		(**self).header(block_id).await
-	}
-
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {
 		(**self).is_major_syncing().await
 	}
@@ -299,5 +296,9 @@ where
 		&self,
 	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
 		(**self).new_best_notification_stream().await
+	}
+
+	async fn header(&self, block_id: BlockId) -> RelayChainResult<Option<PHeader>> {
+		(**self).header(block_id).await
 	}
 }

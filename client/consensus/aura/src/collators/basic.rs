@@ -26,7 +26,7 @@ use codec::{Decode, Encode};
 use cumulus_client_collator::service::ServiceInterface as CollatorServiceInterface;
 use cumulus_client_consensus_common::ParachainBlockImportMarker;
 use cumulus_client_consensus_proposer::ProposerInterface;
-use cumulus_primitives_core::CollectCollationInfo;
+use cumulus_primitives_core::{relay_chain::BlockId as RBlockId, CollectCollationInfo};
 use cumulus_relay_chain_interface::RelayChainInterface;
 
 use polkadot_node_primitives::CollationResult;
@@ -141,11 +141,12 @@ pub async fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
 			continue
 		}
 
-		let relay_parent_header = match params.relay_client.header(*request.relay_parent()).await {
-			Err(e) => reject_with_error!(e),
-			Ok(None) => continue, // sanity: would be inconsistent to get `None` here
-			Ok(Some(h)) => h,
-		};
+		let relay_parent_header =
+			match params.relay_client.header(RBlockId::hash(*request.relay_parent())).await {
+				Err(e) => reject_with_error!(e),
+				Ok(None) => continue, // sanity: would be inconsistent to get `None` here
+				Ok(Some(h)) => h,
+			};
 
 		let claim = match collator_util::claim_slot::<_, _, P>(
 			&*params.para_client,
