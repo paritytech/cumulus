@@ -14,23 +14,23 @@ scale-info = { version = "2.9.0", default-features = false, features = ["derive"
 num-traits = { version = "0.2", default-features = false}
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
 
 # Cumulus
 pallet-collator-selection = { path = "../../pallets/collator-selection", default-features = false }
@@ -38,11 +38,11 @@ cumulus-primitives-core = { path = "../../primitives/core", default-features = f
 cumulus-primitives-utility = { path = "../../primitives/utility", default-features = false }
 
 [dev-dependencies]
-pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
 
 [features]
 default = ["std"]

@@ -14,21 +14,21 @@ log = { version = "0.4.19", default-features = false }
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-externalities = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-externalities = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
 
 # Polkadot
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, features = [ "wasm-api" ], branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, features = [ "wasm-api" ], rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
 
 # Cumulus
 cumulus-pallet-parachain-system-proc-macro = { path = "proc-macro", default-features = false }
@@ -40,10 +40,10 @@ hex-literal = "0.4.1"
 lazy_static = "1.4"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-version = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-version = { git = "https://github.com/paritytech/substrate", rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
 
 # Cumulus
 cumulus-test-client = { path = "../../test/client" }

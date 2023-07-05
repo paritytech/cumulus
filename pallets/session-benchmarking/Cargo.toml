@@ -14,12 +14,12 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 parity-scale-codec = { version = "3.6.3", default-features = false }
-sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-session = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+pallet-session = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
 
 [features]
 default = ["std"]

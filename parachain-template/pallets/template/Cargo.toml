@@ -16,17 +16,17 @@ codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive
 scale-info = { version = "2.2.0", default-features = false, features = ["derive"] }
 
 # Substrate
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "master" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
 
 [dev-dependencies]
 serde = { version = "1.0.163" }
 
 # Substrate
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
 
 [features]
 default = ["std"]

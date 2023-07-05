@@ -16,14 +16,14 @@ serde = { version = "1.0", default-features = false, features = ["alloc", "deriv
 
 # Substrate Dependencies
 
-frame-support = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false, features = ["serde"] }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, features = ["serde"] , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
 trie-db = { version = "0.27.1", default-features = false }
 
 [dev-dependencies]

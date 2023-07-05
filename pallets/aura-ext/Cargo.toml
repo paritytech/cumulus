@@ -10,13 +10,13 @@ codec = { package = "parity-scale-codec", version = "3.0.0", default-features = 
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-application-crypto = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-application-crypto = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
 
 [dev-dependencies]
 

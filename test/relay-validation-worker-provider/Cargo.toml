@@ -8,7 +8,7 @@ build = "build.rs"
 [dependencies]
 
 # Polkadot
-polkadot-node-core-pvf = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-core-pvf = { git = "https://github.com/paritytech/polkadot", rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
 
 [build-dependencies]
 toml = "0.7.5"

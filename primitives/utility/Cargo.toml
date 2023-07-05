@@ -9,16 +9,16 @@ codec = { package = "parity-scale-codec", version = "3.0.0", default-features = 
 log = { version = "0.4.19", default-features = false }
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
 
 # Polkadot
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "d124d9932302fd003668ce02feff75e1de7768d9" }
 
 
 # Cumulus

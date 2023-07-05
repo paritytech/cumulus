@@ -20,18 +20,18 @@ pallet-bridge-grandpa = { path = "../grandpa", default-features = false }
 
 # Substrate Dependencies
 
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false, optional = true }
-frame-support = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false , rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
 
 [dev-dependencies]
 bp-header-chain = { path = "../../primitives/header-chain" }
 bp-test-utils = { path = "../../primitives/test-utils" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
+sp-io = { git = "https://github.com/paritytech/substrate", rev = "8664399dc284f4b0db5c7e4415ca6ebeed8d6578" }
 
 [features]
 default = ["std"]
