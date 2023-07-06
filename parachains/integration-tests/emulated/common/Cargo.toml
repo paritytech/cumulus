@@ -32,6 +32,7 @@ sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "mast
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
 cumulus-test-relay-sproof-builder = { path = "../../../../test/relay-sproof-builder", default-features = false }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot
 polkadot-core-primitives = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }

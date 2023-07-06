@@ -5253,6 +5253,7 @@ dependencies = [
  "pallet-balances",
  "pallet-im-online",
  "pallet-staking",
+ "pallet-transaction-payment",
  "pallet-xcm",
  "parachain-info",
  "parachains-common",

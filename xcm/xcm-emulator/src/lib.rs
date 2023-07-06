@@ -82,7 +82,7 @@ pub trait TestExt {
 	fn new_ext() -> sp_io::TestExternalities;
 	fn reset_ext();
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R;
-	fn execute_call(call: <Self as Chain>::RuntimeCall) -> ()
+	fn execute_call(sender: sp_core::sr25519::Pair, call: <Self as Chain>::RuntimeCall) -> ()
 	where
 		Self: Chain;
 	fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R;
@@ -177,6 +177,7 @@ pub trait Chain {
 	type UncheckedExtrinsic;
 	type Block;
 	type RuntimeApi;
+	type SignedExtra;
 }
 
 pub trait RelayChain: Chain + ProcessMessage {
@@ -216,6 +217,7 @@ macro_rules! decl_test_relay_chains {
 					UncheckedExtrinsic: $unchecked_extrinsic:path,
 					Block: $block:path,
 					RuntimeApi: $runtime_api:path,
+					SignedExtra: $signed_extra:path,
 				},
 				pallets_extra = {
 					$($pallet_name:ident: $pallet_path:path,)*
@@ -236,6 +238,7 @@ macro_rules! decl_test_relay_chains {
 				type UncheckedExtrinsic = $unchecked_extrinsic;
 				type Block = $block;
 				type RuntimeApi = $runtime_api;
+				type SignedExtra = $signed_extra;
 			}
 
 			impl RelayChain for $name {
@@ -353,7 +356,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				$ext_name.with(|v| *v.borrow_mut() = <$name>::build_new_ext($genesis));
 			}
 
-			fn execute_call(call: <Self as Chain>::RuntimeCall) -> ()
+			fn execute_call(sender: sp_core::sr25519::Pair, call: <Self as Chain>::RuntimeCall) -> ()
 				where Self: Chain
 			{
 				use $crate::{NetworkComponent};
@@ -650,6 +653,7 @@ macro_rules! decl_test_parachains {
 					UncheckedExtrinsic: $unchecked_extrinsic:path,
 					Block: $block:path,
 					RuntimeApi: $runtime_api:path,
+					SignedExtra: $signed_extra:path,
 				},
 				pallets_extra = {
 					$($pallet_name:ident: $pallet_path:path,)*
@@ -670,6 +674,7 @@ macro_rules! decl_test_parachains {
 				type UncheckedExtrinsic = $unchecked_extrinsic;
 				type Block = $block;
 				type RuntimeApi = $runtime_api;
+				type SignedExtra = $signed_extra;
 			}
 
 			impl Parachain for $name {
@@ -733,7 +738,7 @@ macro_rules! decl_test_parachains {
 			}
 
 			$crate::__impl_xcm_handlers_for_parachain!($name);
-			$crate::__impl_test_ext_for_parachain!($name, $block, $runtime_api, $genesis, $on_init);
+			$crate::__impl_test_ext_for_parachain!($name, $block, $runtime, $runtime_api, $signed_extra, $genesis, $on_init);
 		)+
 	};
 }
@@ -775,13 +780,13 @@ macro_rules! __impl_xcm_handlers_for_parachain {
 #[macro_export]
 macro_rules! __impl_test_ext_for_parachain {
 	// entry point: generate ext name
-	($name:ident, $block:path, $runtime_api:path, $genesis:expr, $on_init:expr) => {
+	($name:ident, $block:path, $runtime:path, $runtime_api:path, $signed_extra:path, $genesis:expr, $on_init:expr) => {
 		$crate::paste::paste! {
-			$crate::__impl_test_ext_for_parachain!(@impl $name, $block, $runtime_api, $genesis, $on_init, [<EXT_ $name:upper>]);
+			$crate::__impl_test_ext_for_parachain!(@impl $name, $block, $runtime, $runtime_api, $signed_extra, $genesis, $on_init, [<EXT_ $name:upper>]);
 		}
 	};
 	// impl
-	(@impl $name:ident, $block:path, $runtime_api:path, $genesis:expr, $on_init:expr, $ext_name:ident) => {
+	(@impl $name:ident, $block:path, $runtime:path, $runtime_api:path, $signed_extra:path, $genesis:expr, $on_init:expr, $ext_name:ident) => {
 		thread_local! {
 			pub static $ext_name: $crate::RefCell<$crate::sp_io::TestExternalities>
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
@@ -807,7 +812,7 @@ macro_rules! __impl_test_ext_for_parachain {
 				$ext_name.with(|v| *v.borrow_mut() = <$name>::build_new_ext($genesis));
 			}
 
-			fn execute_call(call: <Self as Chain>::RuntimeCall) -> ()
+			fn execute_call(sender: sp_core::sr25519::Pair, call: <Self as Chain>::RuntimeCall) -> ()
 				where Self: Chain
 			{
 
@@ -815,26 +820,18 @@ macro_rules! __impl_test_ext_for_parachain {
 				// Make sure the Network is initialized
 				<$name>::init();
 
-				let extrinsic = <Self as Chain>::UncheckedExtrinsic::new_unsigned(call);
-				
+				use sp_core::Pair;
 				use sp_runtime::traits::Header as HeaderT;
 				use sp_core::Encode;
 				use polkadot_primitives::PersistedValidationData;
 				use polkadot_service::ExecutionStrategy;
 				use std::sync::Arc;
 				use sp_core::testing::TaskExecutor;
-				use sc_service::client::new_in_mem;
 				
 				$crate::paste::paste! {
 					let backend : //[<$name Backend>]::new((), 0); //
-					Arc<sc_client_api::in_mem::Backend<$block>> = Arc::new(sc_client_api::in_mem::Backend::new());
+						Arc<sc_client_api::in_mem::Backend<$block>> = Arc::new(sc_client_api::in_mem::Backend::new());
 					
-
-
-
-
-
-
 					let builder = [<$name ClientBuilder>]::with_backend(backend.clone());
 					let builder = builder.set_execution_strategy(sc_client_api::ExecutionStrategy::NativeWhenPossible);
 				
@@ -856,7 +853,48 @@ macro_rules! __impl_test_ext_for_parachain {
 							)
 							.expect("Creates LocalCallExecutor");
 
-					let client : [<$name Client>]<[<$name Backend>]> = builder.build_with_executor(executor).0;
+					let client: [<$name Client>]<[<$name Backend>]> = builder.build_with_executor(executor).0;
+				}
+
+				//
+				// create transaction
+				//
+				$crate::paste::paste! {
+					// let extrinsic = <Self as Chain>::UncheckedExtrinsic::new_unsigned(call);
+					let nonce = 1;
+					let extra: $signed_extra = (
+						frame_system::CheckNonZeroSender::<$runtime>::new(),
+						frame_system::CheckSpecVersion::<$runtime>::new(),
+						frame_system::CheckTxVersion::<$runtime>::new(),
+						frame_system::CheckGenesis::<$runtime>::new(),
+						frame_system::CheckEra::<$runtime>::from(sp_runtime::generic::Era::mortal(
+							256,
+							0, //best_block.saturated_into(),
+						)),
+						frame_system::CheckNonce::<$runtime>::from(nonce),
+						frame_system::CheckWeight::<$runtime>::new(),
+						// pallet_transaction_payment::ChargeTransactionPayment::<$runtime>::from(0),
+					);
+					let raw_payload = polkadot_service::generic::SignedPayload::from_raw(
+							call.clone(),
+							extra.clone(),
+							(
+								(),
+								bridge_hub_kusama_runtime::VERSION.spec_version,//TODO
+								bridge_hub_kusama_runtime::VERSION.transaction_version,//TODO
+								client.chain_info().genesis_hash,
+								client.chain_info().genesis_hash, //TODO: best_hash,
+								(),
+								(),
+								// (),
+							),
+						);
+					let signature = raw_payload.using_encoded(|e| sender.sign(e));
+					let extrinsic = <Self as Chain>::UncheckedExtrinsic::new_signed(call, 
+						sp_runtime::AccountId32::from(sender.public()).into(),
+						sp_runtime::MultiSignature::Sr25519(signature), 
+						extra
+					);
 				}
 
 				let parent_head = client
@@ -937,7 +975,8 @@ macro_rules! __impl_test_ext_for_parachain {
 				use sc_client_api::CallExecutor;
 				use sp_core::traits::RuntimeCode;
 				use sp_core::traits::CallContext;
-			
+				use sc_client_api::ExecutorProvider;
+
 				let runtime_code = RuntimeCode {
 					code_fetcher: &sp_core::traits::WrappedRuntimeCode(
 						bridge_hub_kusama_runtime::WASM_BINARY.expect(
@@ -947,19 +986,14 @@ macro_rules! __impl_test_ext_for_parachain {
 					hash: vec![1, 2, 3],
 					heap_pages: None,
 				};
-				use sc_client_api::ExecutorProvider;
+				
 				client.executor().call(
-								// &mut test_ext.ext(),
-								at, //
+								at,
 								"Core_execute_block",
-								//&runtime_code, 
 								&built_block.block.encode(),
 								sc_client_api::ExecutionStrategy::NativeWhenPossible,
 								CallContext::Offchain,
-							).unwrap()
-							// .0
-							// .unwrap()
-							;
+							).unwrap();
 			
 				// let parent_stateroot : sp_core::H256 =  *parent_head.state_root();
 				// // let storage_proof = 
