@@ -309,7 +309,9 @@ fn swap_locally_on_chain_using_foreign_assets() {
 #[test]
 fn test_remark_charged_fee() {
 	type RuntimeCall = <AssetHubWestend as Chain>::RuntimeCall;
-	AssetHubWestend::execute_call(RuntimeCall::System(frame_system::pallet::Call::<_>::remark {
+	AssetHubWestend::execute_call(sp_keyring::Sr25519Keyring::Alice.into(),
+		RuntimeCall::System(frame_system::pallet::Call::<_>::remark {
+		
 		remark: vec![12u8; 1_000_000_000],
 	}));
 	AssetHubWestend::execute_with(|| {
@@ -323,6 +325,22 @@ fn test_remark_charged_fee() {
 		));
 	});
 }
+
+// #[test]
+// fn test_remark_charged_fee_should_work_as_have_lots_of_money() {
+// 	type RuntimeCall = <AssetHubWestend as Chain>::RuntimeCall;
+// 	AssetHubWestend::execute_call(RuntimeCall::System(frame_system::pallet::Call::<_>::remark {
+// 		remark: vec![12u8; 1_000_000_000],
+// 	}));
+// 	AssetHubWestend::execute_with(|| {
+// 		type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
+//
+// 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::System::remark(
+// 			<AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestendSender),
+// 			vec![12u8; 1_000_000_000]
+// 		));
+// 	});
+// }
 
 #[test]
 fn transact_while_not_having_any_dot() {

@@ -787,6 +787,124 @@ macro_rules! __impl_test_ext_for_parachain {
 	};
 	// impl
 	(@impl $name:ident, $block:path, $runtime:path, $runtime_api:path, $signed_extra:path, $genesis:expr, $on_init:expr, $ext_name:ident) => {
+		$crate::paste::paste! {
+			struct [<$name MultiTx>] {
+
+			}
+
+			impl Into<(
+				(), u32, u32, sp_core::H256, sp_core::H256, (), ()
+			)> for [<$name MultiTx>] {
+				fn into(self) -> (
+				(), u32, u32, sp_core::H256, sp_core::H256, (), ()
+			) 
+			{
+					todo!() }
+			}
+
+			impl Into<(
+				(), u32, u32, sp_core::H256, sp_core::H256, (), (), ()
+			)> for [<$name MultiTx>] {
+				fn into(self) -> (
+				(), u32, u32, sp_core::H256, sp_core::H256, (), (), ()
+			) 
+			{
+					todo!() }
+			}
+
+			struct [<$name MultiTxType>] {
+
+			}
+
+			impl Into<(
+				frame_system::CheckNonZeroSender::<$runtime>,
+					frame_system::CheckSpecVersion::<$runtime>,
+					frame_system::CheckTxVersion::<$runtime>,
+					frame_system::CheckGenesis::<$runtime>,
+					frame_system::CheckEra::<$runtime>,
+					frame_system::CheckNonce::<$runtime>,
+					frame_system::CheckWeight::<$runtime>
+			)> for [<$name MultiTxType>] {
+				fn into(self) -> (frame_system::CheckNonZeroSender::<$runtime>,
+					frame_system::CheckSpecVersion::<$runtime>,
+					frame_system::CheckTxVersion::<$runtime>,
+					frame_system::CheckGenesis::<$runtime>,
+					frame_system::CheckEra::<$runtime>,
+					frame_system::CheckNonce::<$runtime>,
+					frame_system::CheckWeight::<$runtime>) 
+			{
+					todo!() }
+			}
+			impl Into<(
+				frame_system::CheckNonZeroSender::<$runtime>,
+					frame_system::CheckSpecVersion::<$runtime>,
+					frame_system::CheckTxVersion::<$runtime>,
+					frame_system::CheckGenesis::<$runtime>,
+					frame_system::CheckEra::<$runtime>,
+					frame_system::CheckNonce::<$runtime>,
+					frame_system::CheckWeight::<$runtime>,
+					pallet_transaction_payment::ChargeTransactionPayment::<$runtime>
+			)> for [<$name MultiTxType>] {
+				fn into(self) -> (frame_system::CheckNonZeroSender::<$runtime>,
+					frame_system::CheckSpecVersion::<$runtime>,
+					frame_system::CheckTxVersion::<$runtime>,
+					frame_system::CheckGenesis::<$runtime>,
+					frame_system::CheckEra::<$runtime>,
+					frame_system::CheckNonce::<$runtime>,
+					frame_system::CheckWeight::<$runtime>,
+					pallet_transaction_payment::ChargeTransactionPayment::<$runtime>) 
+			{
+					todo!() }
+			}
+			impl Into<(
+				frame_system::CheckNonZeroSender::<$runtime>,
+					frame_system::CheckSpecVersion::<$runtime>,
+					frame_system::CheckTxVersion::<$runtime>,
+					frame_system::CheckGenesis::<$runtime>,
+					frame_system::CheckEra::<$runtime>,
+					frame_system::CheckNonce::<$runtime>,
+					frame_system::CheckWeight::<$runtime>,
+					pallet_asset_conversion_tx_payment::ChargeAssetTxPayment::<$runtime>
+			)> for [<$name MultiTxType>] 
+				where $runtime: pallet_asset_conversion_tx_payment::Config
+			{
+				fn into(self) -> (frame_system::CheckNonZeroSender::<$runtime>,
+					frame_system::CheckSpecVersion::<$runtime>,
+					frame_system::CheckTxVersion::<$runtime>,
+					frame_system::CheckGenesis::<$runtime>,
+					frame_system::CheckEra::<$runtime>,
+					frame_system::CheckNonce::<$runtime>,
+					frame_system::CheckWeight::<$runtime>,
+					pallet_asset_conversion_tx_payment::ChargeAssetTxPayment::<$runtime>) 
+			{
+					todo!() }
+			}
+			impl Into<(
+				frame_system::CheckNonZeroSender::<$runtime>,
+					frame_system::CheckSpecVersion::<$runtime>,
+					frame_system::CheckTxVersion::<$runtime>,
+					frame_system::CheckGenesis::<$runtime>,
+					frame_system::CheckEra::<$runtime>,
+					frame_system::CheckNonce::<$runtime>,
+					frame_system::CheckWeight::<$runtime>,
+					pallet_asset_tx_payment::ChargeAssetTxPayment::<$runtime>
+			)> for [<$name MultiTxType>] 
+				where $runtime: pallet_asset_tx_payment::Config
+			{
+				fn into(self) -> (frame_system::CheckNonZeroSender::<$runtime>,
+					frame_system::CheckSpecVersion::<$runtime>,
+					frame_system::CheckTxVersion::<$runtime>,
+					frame_system::CheckGenesis::<$runtime>,
+					frame_system::CheckEra::<$runtime>,
+					frame_system::CheckNonce::<$runtime>,
+					frame_system::CheckWeight::<$runtime>,
+					pallet_asset_tx_payment::ChargeAssetTxPayment::<$runtime>) 
+			{
+					todo!() }
+			}
+		}
+		
+		
 		thread_local! {
 			pub static $ext_name: $crate::RefCell<$crate::sp_io::TestExternalities>
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
@@ -862,32 +980,34 @@ macro_rules! __impl_test_ext_for_parachain {
 				$crate::paste::paste! {
 					// let extrinsic = <Self as Chain>::UncheckedExtrinsic::new_unsigned(call);
 					let nonce = 1;
-					let extra: $signed_extra = (
-						frame_system::CheckNonZeroSender::<$runtime>::new(),
-						frame_system::CheckSpecVersion::<$runtime>::new(),
-						frame_system::CheckTxVersion::<$runtime>::new(),
-						frame_system::CheckGenesis::<$runtime>::new(),
-						frame_system::CheckEra::<$runtime>::from(sp_runtime::generic::Era::mortal(
-							256,
-							0, //best_block.saturated_into(),
-						)),
-						frame_system::CheckNonce::<$runtime>::from(nonce),
-						frame_system::CheckWeight::<$runtime>::new(),
-						// pallet_transaction_payment::ChargeTransactionPayment::<$runtime>::from(0),
-					);
+					let extra: $signed_extra = [<$name MultiTxType>]{}.into();
+					// (
+					// 	frame_system::CheckNonZeroSender::<$runtime>::new(),
+					// 	frame_system::CheckSpecVersion::<$runtime>::new(),
+					// 	frame_system::CheckTxVersion::<$runtime>::new(),
+					// 	frame_system::CheckGenesis::<$runtime>::new(),
+					// 	frame_system::CheckEra::<$runtime>::from(sp_runtime::generic::Era::mortal(
+					// 		256,
+					// 		0, //best_block.saturated_into(),
+					// 	)),
+					// 	frame_system::CheckNonce::<$runtime>::from(nonce),
+					// 	frame_system::CheckWeight::<$runtime>::new(),
+					// 	// pallet_transaction_payment::ChargeTransactionPayment::<$runtime>::from(0),
+					// );
 					let raw_payload = polkadot_service::generic::SignedPayload::from_raw(
 							call.clone(),
 							extra.clone(),
-							(
-								(),
-								bridge_hub_kusama_runtime::VERSION.spec_version,//TODO
-								bridge_hub_kusama_runtime::VERSION.transaction_version,//TODO
-								client.chain_info().genesis_hash,
-								client.chain_info().genesis_hash, //TODO: best_hash,
-								(),
-								(),
-								// (),
-							),
+							[<$name MultiTx>]{}.into()
+							// (
+							// 	(),
+							// 	bridge_hub_kusama_runtime::VERSION.spec_version,//TODO
+							// 	bridge_hub_kusama_runtime::VERSION.transaction_version,//TODO
+							// 	client.chain_info().genesis_hash,
+							// 	client.chain_info().genesis_hash, //TODO: best_hash,
+							// 	(),
+							// 	(),
+							// 	// (),
+							// ),
 						);
 					let signature = raw_payload.using_encoded(|e| sender.sign(e));
 					let extrinsic = <Self as Chain>::UncheckedExtrinsic::new_signed(call, 

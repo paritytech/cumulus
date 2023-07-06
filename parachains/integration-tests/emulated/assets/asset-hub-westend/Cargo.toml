@@ -9,6 +9,7 @@ description = "Asset Hub Westend runtime integration tests with xcm-emulator"
 codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false }
 
 # Substrate
+sp-keyring = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
