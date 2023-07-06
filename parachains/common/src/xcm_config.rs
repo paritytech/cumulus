@@ -57,9 +57,23 @@ impl<Location: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation>
 	for ConcreteNativeAssetFrom<Location>
 {
 	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
-		log::trace!(target: "xcm::filter_asset_location",
+		log::trace!(target: "xcm::contains",
 			"ConcreteNativeAsset asset: {:?}, origin: {:?}, location: {:?}",
 			asset, origin, Location::get());
 		matches!(asset.id, Concrete(ref id) if id == origin && origin == &Location::get())
+	}
+}
+
+/// Accepts an asset if it is a native asset from a System Parachain.
+pub struct NativeAssetFromSystemParachain;
+impl ContainsPair<MultiAsset, MultiLocation> for NativeAssetFromSystemParachain {
+	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+		log::trace!(target: "xcm::contains", "NativeAssetFromSystemParachain asset: {:?}, origin: {:?}", asset, origin);
+		let is_system_para = match origin.interior() {
+			X1(Parachain(id)) if *id < 2000 => true,
+			_ => false,
+		};
+		let parent = MultiLocation::parent();
+		matches!(asset.id, Concrete(id) if id == parent && is_system_para)
 	}
 }
