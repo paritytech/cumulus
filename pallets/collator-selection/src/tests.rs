@@ -17,8 +17,7 @@ use crate as collator_selection;
 use crate::{mock::*, CandidateInfo, Error};
 use frame_support::{
 	assert_noop, assert_ok,
-	traits::{ConstU32, Currency, GenesisBuild, OnInitialize},
-	BoundedVec,
+	traits::{Currency, GenesisBuild, OnInitialize},
 };
 use pallet_balances::Error as BalancesError;
 use sp_runtime::{testing::UintAuthorityId, traits::BadOrigin};
