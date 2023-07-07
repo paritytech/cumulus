@@ -331,9 +331,6 @@ pub fn asset_hub_kusama_local_config() -> AssetHubKusamaChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-					// The sovereign account of the Registry contract. Endowed with funds here to pay
-					// fees for xcm execution.
-					hex!("5d6987649e0dac78ddf852eb0f1b1d1bf2be9623d81cb16c17cfa145948bb6dc").into(),
 				],
 				1000.into(),
 			)

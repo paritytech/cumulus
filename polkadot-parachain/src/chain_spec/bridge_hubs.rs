@@ -206,7 +206,6 @@ pub mod rococo {
 	use crate::chain_spec::{Extensions, SAFE_XCM_VERSION};
 	use parachains_common::{AccountId, AuraId};
 	use sc_chain_spec::ChainType;
-	use sp_runtime::traits::AccountIdConversion;
 
 	use super::BridgeHubBalance;
 
@@ -269,12 +268,6 @@ pub mod rococo {
 						get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
 						get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 						get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-						// Ethereum Bridge Relayer Accounts
-						get_account_id_from_seed::<sr25519::Public>("BeaconRelay"),
-						get_account_id_from_seed::<sr25519::Public>("ExecutionRelay"),
-						// The sovereign account for Asset Hub Kusama. Endowed with funds to
-						// pay relayer fees.
-						ParaId::from(1000).into_account_truncating(),
 					],
 					para_id,
 					bridges_pallet_owner_seed
