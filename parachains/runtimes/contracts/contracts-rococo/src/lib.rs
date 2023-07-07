@@ -369,7 +369,7 @@ construct_runtime!(
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
 		// Smart Contracts.
-		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>} = 40,
+		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>, HoldReason} = 40,
 
 		// Handy utilities.
 		Utility: pallet_utility::{Pallet, Call, Event} = 50,

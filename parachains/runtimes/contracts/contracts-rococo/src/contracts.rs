@@ -1,6 +1,6 @@
 use crate::{
 	constants::currency::deposit, Balance, Balances, RandomnessCollectiveFlip, Runtime,
-	RuntimeCall, RuntimeEvent, Timestamp,
+	RuntimeCall, RuntimeEvent, RuntimeHoldReason, Timestamp,
 };
 use frame_support::{
 	parameter_types,
@@ -50,5 +50,6 @@ impl Config for Runtime {
 	type MaxStorageKeyLen = ConstU32<128>;
 	type UnsafeUnstableInterface = ConstBool<true>;
 	type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
-	type Migrations = (v12::Migration<Runtime>,);
+	type Migrations = (v12::Migration<Runtime, Balances, DepositPerByte, DepositPerItem>,);
+	type RuntimeHoldReason = RuntimeHoldReason;
 }
