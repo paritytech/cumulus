@@ -82,11 +82,12 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 #[test]
 fn teleport_to_other_system_parachains() {
 	let amount = ASSET_HUB_KUSAMA_ED * 100;
-	let native_assets: VersionedMultiAssets = (Parent, amount).into();
+	let expected_asset: VersionedMultiAssets = (Parent, amount).into();
 
+	// Works for the right origin and asset
 	test_parachain_is_trusted_teleporter!(
-		AssetHubKusama,
-		(native_assets, amount),
-		vec![BridgeHubKusama]
+		AssetHubKusama, // Origin
+		vec![BridgeHubKusama], // Destinations
+		(expected_asset, amount)
 	);
 }

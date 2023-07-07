@@ -76,3 +76,15 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 	assert_eq!(relay_sender_balance_before - amount, relay_sender_balance_after);
 	assert!(para_sender_balance_after > para_receiver_balance_before);
 }
+
+#[test]
+fn teleport_to_other_system_parachains() {
+	let amount = ASSET_HUB_POLKADOT_ED * 100;
+	let native_asset: VersionedMultiAssets = (Parent, amount).into();
+
+	test_parachain_is_trusted_teleporter!(
+		AssetHubPolkadot, // Origin
+		vec![CollectivesPolkadot, BridgeHubPolkadot], // Destinations
+		(native_asset, amount)
+	);
+}

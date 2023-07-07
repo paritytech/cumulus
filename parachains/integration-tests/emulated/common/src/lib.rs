@@ -19,6 +19,9 @@ pub use xcm_emulator::{
 	RelayChain, TestExt, paste,
 };
 use xcm_executor::traits::ConvertLocation;
+pub use pallet_xcm;
+pub use cumulus_pallet_xcmp_queue;
+pub use pallet_balances;
 
 decl_test_relay_chains! {
 	#[api_version(5)]
@@ -144,7 +147,7 @@ decl_test_parachains! {
 			Assets: asset_hub_polkadot_runtime::Assets,
 		}
 	},
-	pub struct Collectives {
+	pub struct CollectivesPolkadot {
 		genesis = collectives::genesis(),
 		on_init = (),
 		runtime = {
@@ -293,6 +296,26 @@ decl_test_parachains! {
 			AssetConversion: asset_hub_westend_runtime::AssetConversion,
 		}
 	},
+	pub struct CollectivesWestend {
+		genesis = collectives::genesis(),
+		on_init = (),
+		runtime = {
+			Runtime: collectives_polkadot_runtime::Runtime,
+			RuntimeOrigin: collectives_polkadot_runtime::RuntimeOrigin,
+			RuntimeCall: collectives_polkadot_runtime::RuntimeCall,
+			RuntimeEvent: collectives_polkadot_runtime::RuntimeEvent,
+			XcmpMessageHandler: collectives_polkadot_runtime::XcmpQueue,
+			DmpMessageHandler: collectives_polkadot_runtime::DmpQueue,
+			LocationToAccountId: collectives_polkadot_runtime::xcm_config::LocationToAccountId,
+			System: collectives_polkadot_runtime::System,
+			Balances: collectives_polkadot_runtime::Balances,
+			ParachainSystem: collectives_polkadot_runtime::ParachainSystem,
+			ParachainInfo: collectives_polkadot_runtime::ParachainInfo,
+		},
+		pallets_extra = {
+			PolkadotXcm: collectives_polkadot_runtime::PolkadotXcm,
+		}
+	},
 	pub struct PenpalWestend {
 		genesis = penpal::genesis(penpal::PARA_ID),
 		on_init = (),
@@ -356,6 +379,27 @@ decl_test_parachains! {
 			Assets: asset_hub_polkadot_runtime::Assets,
 		}
 	},
+	pub struct PenpalRococo {
+		genesis = penpal::genesis(penpal::PARA_ID),
+		on_init = (),
+		runtime = {
+			Runtime: penpal_runtime::Runtime,
+			RuntimeOrigin: penpal_runtime::RuntimeOrigin,
+			RuntimeCall: penpal_runtime::RuntimeCall,
+			RuntimeEvent: penpal_runtime::RuntimeEvent,
+			XcmpMessageHandler: penpal_runtime::XcmpQueue,
+			DmpMessageHandler: penpal_runtime::DmpQueue,
+			LocationToAccountId: penpal_runtime::xcm_config::LocationToAccountId,
+			System: penpal_runtime::System,
+			Balances: penpal_runtime::Balances,
+			ParachainSystem: penpal_runtime::ParachainSystem,
+			ParachainInfo: penpal_runtime::ParachainInfo,
+		},
+		pallets_extra = {
+			PolkadotXcm: penpal_runtime::PolkadotXcm,
+			Assets: penpal_runtime::Assets,
+		}
+	},
 	// Wococo Parachains
 	pub struct BridgeHubWococo {
 		genesis = bridge_hub_rococo::genesis(),
@@ -406,7 +450,7 @@ decl_test_networks! {
 		parachains = vec![
 			AssetHubPolkadot,
 			PenpalPolkadot,
-			Collectives,
+			CollectivesPolkadot,
 			BridgeHubPolkadot,
 		],
 		// TODO: uncomment when https://github.com/paritytech/cumulus/pull/2528 is merged
@@ -428,6 +472,7 @@ decl_test_networks! {
 		relay_chain = Westend,
 		parachains = vec![
 			AssetHubWestend,
+			CollectivesWestend,
 			PenpalWestend,
 		],
 		bridge = ()
@@ -437,6 +482,7 @@ decl_test_networks! {
 		parachains = vec![
 			AssetHubRococo,
 			BridgeHubRococo,
+			PenpalRococo,
 		],
 		bridge = RococoWococoMockBridge
 	},
@@ -488,7 +534,8 @@ decl_test_sender_receiver_accounts_parameter_types! {
 	AssetHubRococo { sender: ALICE, receiver: BOB },
 	AssetHubWococo { sender: ALICE, receiver: BOB },
 	// Collectives
-	Collectives { sender: ALICE, receiver: BOB },
+	CollectivesPolkadot { sender: ALICE, receiver: BOB },
+	CollectivesWestend { sender: ALICE, receiver: BOB },
 	// Bridged Hubs
 	BridgeHubPolkadot { sender: ALICE, receiver: BOB },
 	BridgeHubKusama { sender: ALICE, receiver: BOB },

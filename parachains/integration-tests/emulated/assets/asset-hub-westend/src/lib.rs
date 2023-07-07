@@ -22,10 +22,12 @@ pub use integration_tests_common::{
 	constants::{
 		accounts::{ALICE, BOB},
 		polkadot::ED as POLKADOT_ED,
+		asset_hub_westend::ED as ASSET_HUB_WESTEND_ED,
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
+	test_parachain_is_trusted_teleporter,
 	AccountId, AssetHubWestend, AssetHubWestendPallet, AssetHubWestendReceiver,
-	AssetHubWestendSender, Collectives, CollectivesPallet, CollectivesReceiver, CollectivesSender,
+	AssetHubWestendSender, CollectivesWestend, CollectivesWestendPallet, CollectivesWestendReceiver, CollectivesWestendSender,
 	PenpalWestend, PenpalWestendPallet, PenpalWestendReceiver, PenpalWestendSender, Westend,
 	WestendPallet, WestendReceiver, WestendSender,
 };

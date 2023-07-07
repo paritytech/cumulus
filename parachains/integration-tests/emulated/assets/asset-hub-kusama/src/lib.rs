@@ -29,8 +29,8 @@ pub use integration_tests_common::{
 	AccountId, AssetHubKusama, AssetHubKusamaPallet, AssetHubKusamaReceiver, AssetHubKusamaSender,
 	BridgeHubKusama, BridgeHubKusamaPallet, BridgeHubKusamaReceiver, BridgeHubKusamaSender,
 	BridgeHubPolkadot, BridgeHubPolkadotPallet, BridgeHubPolkadotReceiver, BridgeHubPolkadotSender,
-	Collectives, CollectivesPallet, CollectivesReceiver, CollectivesSender, Kusama, KusamaMockNet,
-	KusamaPallet, KusamaReceiver, KusamaSender, PenpalKusama, PenpalKusamaReceiver,
+	Kusama, KusamaMockNet,
+	KusamaPallet, KusamaReceiver, KusamaSender, PenpalKusama, PenpalKusamaPallet, PenpalKusamaReceiver,
 	PenpalKusamaSender, PenpalPolkadot, PenpalPolkadotReceiver, PenpalPolkadotSender, Polkadot,
 	PolkadotMockNet, PolkadotPallet, PolkadotReceiver, PolkadotSender,
 };

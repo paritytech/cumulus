@@ -45,6 +45,7 @@ pallet-xcm = { default-features = false, git = "https://github.com/paritytech/po
 parachains-common = { path = "../../../common" }
 parachain-info = { path = "../../../pallets/parachain-info" }
 cumulus-primitives-core = { path = "../../../../primitives/core" }
+cumulus-pallet-xcmp-queue = { default-features = false, path = "../../../../pallets/xcmp-queue" }
 penpal-runtime = { path = "../../../runtimes/testing/penpal" }
 asset-hub-polkadot-runtime = { path = "../../../runtimes/assets/asset-hub-polkadot" }
 asset-hub-kusama-runtime = { path = "../../../runtimes/assets/asset-hub-kusama" }

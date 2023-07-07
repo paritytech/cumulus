@@ -16,15 +16,20 @@
 
 //! Collectives Parachain integration tests based on xcm-emulator.
 
-#![cfg(test)]
-
 pub use frame_support::assert_ok;
 pub use integration_tests_common::{
-	constants::accounts::ALICE, AccountId, AssetHubPolkadot as AssetHub,
-	AssetHubPolkadotPallet as AssetHubPallet, Collectives, CollectivesPallet, Polkadot,
+	constants::{
+		accounts::ALICE,
+		collectives::ED as COLLECTIVES_POLKADOT_ED,
+	},
+	test_parachain_is_trusted_teleporter,
+	AccountId, AssetHubPolkadot, AssetHubPolkadotReceiver,
+	BridgeHubPolkadot,	BridgeHubPolkadotReceiver,
+	AssetHubPolkadotPallet, CollectivesPolkadot, CollectivesPolkadotSender, CollectivesPolkadotPallet, Polkadot,
 	PolkadotMockNet,
 };
 pub use xcm::prelude::*;
-pub use xcm_emulator::{assert_expected_events, Parachain};
+pub use xcm_emulator::{TestExt, bx, assert_expected_events, Parachain};
 
+#[cfg(test)]
 mod tests;

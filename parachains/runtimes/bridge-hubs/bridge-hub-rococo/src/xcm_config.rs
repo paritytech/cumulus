@@ -30,7 +30,7 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
-use parachains_common::{impls::ToStakingPot, xcm_config::{ConcreteNativeAssetFrom, NativeAssetFromSystemParachain}};
+use parachains_common::{impls::ToStakingPot, xcm_config::{ConcreteNativeAssetFrom, NativeAssetFromSiblingSystemParachain}};
 use polkadot_parachain::primitives::Sibling;
 use sp_core::Get;
 use xcm::latest::prelude::*;
@@ -225,7 +225,7 @@ pub type Barrier = TrailingSetTopicAsId<
 >;
 
 pub type TrustedTeleporters =
-	(ConcreteNativeAssetFrom<RelayLocation>, NativeAssetFromSystemParachain);
+	(ConcreteNativeAssetFrom<RelayLocation>, NativeAssetFromSiblingSystemParachain);
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {

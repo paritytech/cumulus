@@ -14,5 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-mod fellowship;
-mod teleport;
+//! Collectives Parachain integration tests based on xcm-emulator.
+
+pub use frame_support::assert_ok;
+pub use integration_tests_common::{
+	constants::{
+		collectives::ED as COLLECTIVES_WESTEND_ED,
+	},
+	test_parachain_is_trusted_teleporter,
+	AccountId, AssetHubWestend, AssetHubWestendReceiver,
+	AssetHubWestendPallet, CollectivesWestend, CollectivesWestendSender, CollectivesWestendPallet,
+};
+pub use xcm::prelude::*;
+pub use xcm_emulator::{TestExt, bx, assert_expected_events, Parachain};
+
+#[cfg(test)]
+mod tests;

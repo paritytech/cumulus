@@ -1,9 +1,9 @@
 [package]
-name = "collectives-polkadot-integration-tests"
+name = "collectives-westend-integration-tests"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
-description = "Polkadot Collectives parachain runtime integration tests based on xcm-emulator"
+description = "Westend Collectives parachain runtime integration tests based on xcm-emulator"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false }
