@@ -78,10 +78,12 @@ impl ContainsPair<MultiAsset, MultiLocation> for NativeAssetFromSiblingSystemPar
 	}
 }
 
-
 #[cfg(test)]
 mod tests {
-	use super::{MultiAsset, Parent, NativeAssetFromSiblingSystemParachain, MultiLocation, Parachain, ContainsPair, Here};
+	use super::{
+		ContainsPair, Here, MultiAsset, MultiLocation, NativeAssetFromSiblingSystemParachain,
+		Parachain, Parent,
+	};
 
 	#[test]
 	fn native_asset_from_sibling_system_para_works() {
@@ -96,7 +98,10 @@ mod tests {
 		let unexpected_asset: MultiAsset = (Here, 1000000).into();
 		let expected_origin: MultiLocation = (Parent, Parachain(1000)).into();
 
-		assert!(!NativeAssetFromSiblingSystemParachain::contains(&unexpected_asset, &expected_origin));
+		assert!(!NativeAssetFromSiblingSystemParachain::contains(
+			&unexpected_asset,
+			&expected_origin
+		));
 	}
 
 	#[test]
@@ -104,6 +109,9 @@ mod tests {
 		let expected_asset: MultiAsset = (Parent, 1000000).into();
 		let unexpected_origin: MultiLocation = (Parent, Parachain(2000)).into();
 
-		assert!(!NativeAssetFromSiblingSystemParachain::contains(&expected_asset, &unexpected_origin));
+		assert!(!NativeAssetFromSiblingSystemParachain::contains(
+			&expected_asset,
+			&unexpected_origin
+		));
 	}
 }

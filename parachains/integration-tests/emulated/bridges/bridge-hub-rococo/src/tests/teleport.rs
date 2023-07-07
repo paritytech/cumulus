@@ -22,7 +22,7 @@ fn teleport_to_other_system_parachains() {
 	let native_asset: VersionedMultiAssets = (Parent, amount).into();
 
 	test_parachain_is_trusted_teleporter!(
-		BridgeHubRococo, // Origin
+		BridgeHubRococo,      // Origin
 		vec![AssetHubRococo], // Destinations
 		(native_asset, amount)
 	);

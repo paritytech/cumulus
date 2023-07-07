@@ -26,9 +26,11 @@ use frame_support::{
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
 };
 use frame_system::EnsureRoot;
-use parachains_common::xcm_config::NativeAssetFromSiblingSystemParachain;
 use pallet_xcm::XcmPassthrough;
-use parachains_common::{impls::ToStakingPot, xcm_config::AssetFeeAsExistentialDepositMultiplier};
+use parachains_common::{
+	impls::ToStakingPot,
+	xcm_config::{AssetFeeAsExistentialDepositMultiplier, NativeAssetFromSiblingSystemParachain},
+};
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;

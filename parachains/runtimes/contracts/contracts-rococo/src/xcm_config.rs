@@ -144,8 +144,7 @@ pub type Barrier = TrailingSetTopicAsId<
 	>,
 >;
 
-pub type TrustedTeleporter =
-	(NativeAsset, NativeAssetFromSiblingSystemParachain);
+pub type TrustedTeleporter = (NativeAsset, NativeAssetFromSiblingSystemParachain);
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {

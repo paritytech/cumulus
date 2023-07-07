@@ -83,7 +83,7 @@ fn teleport_to_other_system_parachains() {
 	let native_asset: VersionedMultiAssets = (Parent, amount).into();
 
 	test_parachain_is_trusted_teleporter!(
-		AssetHubPolkadot, // Origin
+		AssetHubPolkadot,                             // Origin
 		vec![CollectivesPolkadot, BridgeHubPolkadot], // Destinations
 		(native_asset, amount)
 	);

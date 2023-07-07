@@ -18,15 +18,12 @@
 
 pub use frame_support::assert_ok;
 pub use integration_tests_common::{
-	constants::{
-		asset_hub_polkadot::ED as ASSET_HUB_ROCOCO_ED,
-	},
-	test_parachain_is_trusted_teleporter,
-	AccountId, AssetHubRococo, AssetHubRococoSender,
-	AssetHubRococoPallet, BridgeHubRococo, BridgeHubRococoReceiver
+	constants::asset_hub_polkadot::ED as ASSET_HUB_ROCOCO_ED, test_parachain_is_trusted_teleporter,
+	AccountId, AssetHubRococo, AssetHubRococoPallet, AssetHubRococoSender, BridgeHubRococo,
+	BridgeHubRococoReceiver,
 };
 pub use xcm::prelude::*;
-pub use xcm_emulator::{TestExt, bx, assert_expected_events, Parachain};
+pub use xcm_emulator::{assert_expected_events, bx, Parachain, TestExt};
 
 #[cfg(test)]
 mod tests;

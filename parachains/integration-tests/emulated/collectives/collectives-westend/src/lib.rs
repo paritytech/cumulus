@@ -18,15 +18,12 @@
 
 pub use frame_support::assert_ok;
 pub use integration_tests_common::{
-	constants::{
-		collectives::ED as COLLECTIVES_WESTEND_ED,
-	},
-	test_parachain_is_trusted_teleporter,
-	AccountId, AssetHubWestend, AssetHubWestendReceiver,
-	AssetHubWestendPallet, CollectivesWestend, CollectivesWestendSender, CollectivesWestendPallet,
+	constants::collectives::ED as COLLECTIVES_WESTEND_ED, test_parachain_is_trusted_teleporter,
+	AccountId, AssetHubWestend, AssetHubWestendPallet, AssetHubWestendReceiver, CollectivesWestend,
+	CollectivesWestendPallet, CollectivesWestendSender,
 };
 pub use xcm::prelude::*;
-pub use xcm_emulator::{TestExt, bx, assert_expected_events, Parachain};
+pub use xcm_emulator::{assert_expected_events, bx, Parachain, TestExt};
 
 #[cfg(test)]
 mod tests;

@@ -18,18 +18,13 @@
 
 pub use frame_support::assert_ok;
 pub use integration_tests_common::{
-	constants::{
-		accounts::ALICE,
-		collectives::ED as COLLECTIVES_POLKADOT_ED,
-	},
-	test_parachain_is_trusted_teleporter,
-	AccountId, AssetHubPolkadot, AssetHubPolkadotReceiver,
-	BridgeHubPolkadot,	BridgeHubPolkadotReceiver,
-	AssetHubPolkadotPallet, CollectivesPolkadot, CollectivesPolkadotSender, CollectivesPolkadotPallet, Polkadot,
-	PolkadotMockNet,
+	constants::{accounts::ALICE, collectives::ED as COLLECTIVES_POLKADOT_ED},
+	test_parachain_is_trusted_teleporter, AccountId, AssetHubPolkadot, AssetHubPolkadotPallet,
+	AssetHubPolkadotReceiver, BridgeHubPolkadot, BridgeHubPolkadotReceiver, CollectivesPolkadot,
+	CollectivesPolkadotPallet, CollectivesPolkadotSender, Polkadot, PolkadotMockNet,
 };
 pub use xcm::prelude::*;
-pub use xcm_emulator::{TestExt, bx, assert_expected_events, Parachain};
+pub use xcm_emulator::{assert_expected_events, bx, Parachain, TestExt};
 
 #[cfg(test)]
 mod tests;

@@ -86,7 +86,7 @@ fn teleport_to_other_system_parachains() {
 
 	// Works for the right origin and asset
 	test_parachain_is_trusted_teleporter!(
-		AssetHubKusama, // Origin
+		AssetHubKusama,        // Origin
 		vec![BridgeHubKusama], // Destinations
 		(expected_asset, amount)
 	);
