@@ -35,7 +35,7 @@ use sp_runtime::{traits::Saturating, SaturatedConversion};
 use sp_std::{marker::PhantomData, prelude::*};
 use xcm::{latest::prelude::*, WrapVersion};
 use xcm_builder::TakeRevenue;
-use xcm_executor::traits::{MatchesFungibles, TransactAsset, WeightTrader};
+use xcm_executor::traits::{ConvertLocation, MatchesFungibles, TransactAsset, WeightTrader};
 
 pub trait PriceForParentDelivery {
 	fn price_for_parent_delivery(message: &Xcm<()>) -> MultiAssets;
@@ -275,32 +275,36 @@ impl<
 /// Contains information to handle refund/payment for xcm-execution
 #[derive(Clone, Eq, PartialEq, Debug)]
 struct SwapAssetTraderRefunder {
-	// The amount of weight bought minus the weight already refunded
-	weight_outstanding: Weight,
 	// The concrete asset containing the asset location and outstanding balance
 	outstanding_concrete_asset: MultiAsset,
 }
 
 pub struct SwapFirstAssetTrader<
 	AccountId,
+	AccountIdConverter: ConvertLocation<AccountId>,
+	Balance,
     Runtime: pallet_asset_conversion_tx_payment::Config,
+	WeightToFee: frame_support::weights::WeightToFee<Balance = Balance>,
 	ChargeAssetTransaction: OnChargeAssetTransaction<Runtime>,
 	Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
 	ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
 	HandleRefund: TakeRevenue,
 >(
 	Option<SwapAssetTraderRefunder>,
-	PhantomData<(AccountId, Runtime, ChargeAssetTransaction, Matcher, ConcreteAssets, HandleRefund)>,
+	PhantomData<(AccountId, AccountIdConverter, Balance, Runtime, WeightToFee, ChargeAssetTransaction, Matcher, ConcreteAssets, HandleRefund)>,
 );
 impl<
 	AccountId,
+	AccountIdConverter: ConvertLocation<AccountId>,
+	Balance,
 	Runtime: pallet_asset_conversion_tx_payment::Config,
+	WeightToFee: frame_support::weights::WeightToFee<Balance = Balance>,
 	ChargeAssetTransaction: OnChargeAssetTransaction<Runtime>,
 	Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
 	ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
 	HandleRefund: TakeRevenue,
 > WeightTrader
-for SwapFirstAssetTrader<AccountId, Runtime, ChargeAssetTransaction, Matcher, ConcreteAssets, HandleRefund>
+for SwapFirstAssetTrader<AccountId, AccountIdConverter, Balance, Runtime, WeightToFee, ChargeAssetTransaction, Matcher, ConcreteAssets, HandleRefund>
 {
 	fn new() -> Self {
 		Self(None, PhantomData)
@@ -334,10 +338,24 @@ for SwapFirstAssetTrader<AccountId, Runtime, ChargeAssetTransaction, Matcher, Co
 		let (local_asset_id, _) =
 			Matcher::matches_fungibles(first).map_err(|_| XcmError::AssetNotFound)?;
 
+		let fee = WeightToFee::weight_to_fee(&weight);
+
+		let acc = AccountIdConverter::convert_location(&ctx.origin.unwrap()).unwrap();
+
 		// Call ChargeAssetTransaction::withdraw_fee
 		// ...
 		// TODO
 		//
+		let (_, native_asset_acquired, asset_consumed) = ChargeAssetTransaction::withdraw_fee(
+			acc,
+			// Downstream functions IGNORE this runtime call argument, what is a proper value?
+			<MockRuntimeCall>,
+			// Downstream functions IGNORE this runtime dispatch info argument, what is a proper value?
+			<MockDispatchInfo>,
+			local_asset_id,
+			fee,
+			0
+		).unwrap();
 
 		// Convert to the same kind of multiasset, with the required fungible balance
 		let required = first.id.into_multiasset(asset_balance.into());
@@ -347,7 +365,6 @@ for SwapFirstAssetTrader<AccountId, Runtime, ChargeAssetTransaction, Matcher, Co
 
 		// record weight and multiasset
 		self.0 = Some(SwapAssetTraderRefunder {
-			weight_outstanding: weight,
 			outstanding_concrete_asset: required,
 		});
 
@@ -358,7 +375,6 @@ for SwapFirstAssetTrader<AccountId, Runtime, ChargeAssetTransaction, Matcher, Co
 		log::trace!(target: "xcm::weight", "SwapFirstAssetTrader::refund_weight weight: {:?}", weight);
 
 		if let Some(SwapAssetTraderRefunder {
-						mut weight_outstanding,
 						outstanding_concrete_asset: MultiAsset { id, fun },
 					}) = self.0.clone()
 		{
@@ -367,7 +383,8 @@ for SwapFirstAssetTrader<AccountId, Runtime, ChargeAssetTransaction, Matcher, Co
 				Matcher::matches_fungibles(&(id, fun).into()).ok()?;
 
 			// Re-calculate asset swap from native to MultiAsset provided
-			//
+			// ...
+			// TODO
 
 			// Convert balances into u128
 			let outstanding_minus_substracted: u128 =
@@ -377,11 +394,8 @@ for SwapFirstAssetTrader<AccountId, Runtime, ChargeAssetTransaction, Matcher, Co
 			// Construct outstanding_concrete_asset with the same location id and substracted balance
 			let outstanding_concrete_asset: MultiAsset = (id, outstanding_minus_substracted).into();
 
-			// Substract from existing weight and balance
-			weight_outstanding = weight_outstanding.saturating_sub(weight);
-
 			// Override SwapAssetTraderRefunder
-			self.0 = Some(SwapAssetTraderRefunder { weight_outstanding, outstanding_concrete_asset });
+			self.0 = Some(SwapAssetTraderRefunder { outstanding_concrete_asset });
 
 			// Only refund if positive
 			if asset_balance > 0 {
@@ -395,12 +409,15 @@ for SwapFirstAssetTrader<AccountId, Runtime, ChargeAssetTransaction, Matcher, Co
 
 impl<
 	AccountId,
+	AccountIdConverter: ConvertLocation<AccountId>,
+	Balance,
 	Runtime: pallet_asset_conversion_tx_payment::Config,
+	WeightToFee: frame_support::weights::WeightToFee<Balance = Balance>,
 	ChargeAssetTransaction: OnChargeAssetTransaction<Runtime>,
 	Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
 	ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
 	HandleRefund: TakeRevenue,
-> Drop for SwapFirstAssetTrader<AccountId, Runtime, ChargeAssetTransaction, Matcher, ConcreteAssets, HandleRefund>
+> Drop for SwapFirstAssetTrader<AccountId, AccountIdConverter, Balance, Runtime, WeightToFee, ChargeAssetTransaction, Matcher, ConcreteAssets, HandleRefund>
 {
 	fn drop(&mut self) {
 		if let Some(asset_trader) = self.0.clone() {

@@ -477,7 +477,10 @@ impl xcm_executor::Config for XcmConfig {
 		UsingComponents<WeightToFee, WestendLocation, AccountId, Balances, ToStakingPot<Runtime>>,
 		cumulus_primitives_utility::SwapFirstAssetTrader<
 			AccountId,
+			LocationToAccountId,
+			Balance,
 			Runtime,
+			WeightToFee,
 			AssetConversionAdapter<Balance, AssetConversion>,
 			MultiAssetsConvertedConcreteId,
 			LocalAndForeignAssets<Assets, ForeignAssets, TrustBackedAssetsPalletLocation>,
