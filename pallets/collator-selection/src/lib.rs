@@ -292,7 +292,11 @@ pub mod pallet {
 	}
 
 	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn integrity_test() {
+			assert!(T::MinEligibleCollators::get() > 0, "chain must require at least one collator");
+		}
+	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
