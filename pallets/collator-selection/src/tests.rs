@@ -595,37 +595,32 @@ fn should_not_kick_mechanism_too_few() {
 }
 
 #[test]
-fn kick_invulnerable_candidate_works() {
+fn should_kick_invulnerables_from_candidates_on_session_change() {
 	new_test_ext().execute_with(|| {
-		// remove the invulnerables and add new collators 3 and 4
 		assert_eq!(CollatorSelection::candidates(), Vec::new());
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)));
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(4)));
 		assert_eq!(Balances::free_balance(3), 90);
 		assert_eq!(Balances::free_balance(4), 90);
-		// force set 3 as invulnerable. we have to force this because the pallet's logic should
-		// prevent it from happening.
-		let force_invulnerables =
-			BoundedVec::<_, ConstU32<20>>::try_from(vec![1_u64, 2_u64, 3_u64])
-				.expect("it's shorter");
-		<crate::Invulnerables<Test>>::put(force_invulnerables);
+		assert_ok!(CollatorSelection::set_invulnerables(
+			RuntimeOrigin::signed(RootAccount::get()),
+			vec![1, 2, 3]
+		));
 
 		let collator_3 = CandidateInfo { who: 3, deposit: 10 };
 		let collator_4 = CandidateInfo { who: 4, deposit: 10 };
 
-		// remove 3 from candidates
 		assert_eq!(CollatorSelection::candidates(), vec![collator_3, collator_4.clone()]);
-		assert_ok!(CollatorSelection::remove_invulnerable_candidate(RuntimeOrigin::signed(1), 3));
 		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2, 3]);
-		assert_eq!(CollatorSelection::candidates(), vec![collator_4]);
-		assert_eq!(Balances::free_balance(3), 100);
 
-		// should not be able to remove 4
-		assert_noop!(
-			CollatorSelection::remove_invulnerable_candidate(RuntimeOrigin::signed(1), 4),
-			Error::<Test>::NotInvulnerable
-		);
-		assert_eq!(Balances::free_balance(4), 90);
+		// session change
+		initialize_to_block(10);
+		// 3 is removed from candidates
+		assert_eq!(CollatorSelection::candidates(), vec![collator_4]);
+		// but not from invulnerables
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2, 3]);
+		// and it got its deposit back
+		assert_eq!(Balances::free_balance(3), 100);
 	});
 }
 

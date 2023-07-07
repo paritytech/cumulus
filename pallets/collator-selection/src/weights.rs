@@ -35,7 +35,6 @@ pub trait WeightInfo {
 	fn leave_intent(_c: u32) -> Weight;
 	fn note_author() -> Weight;
 	fn new_session(_c: u32, _r: u32) -> Weight;
-	fn remove_invulnerable_candidate(_c: u32) -> Weight;
 }
 
 /// Weights for pallet_collator_selection using the Substrate node and recommended hardware.
@@ -124,25 +123,6 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: CollatorSelection Invulnerables (r:1 w:0)
-	/// Proof: CollatorSelection Invulnerables (max_values: Some(1), max_size: Some(641), added: 1136, mode: MaxEncodedLen)
-	/// Storage: CollatorSelection Candidates (r:1 w:1)
-	/// Proof: CollatorSelection Candidates (max_values: Some(1), max_size: Some(4802), added: 5297, mode: MaxEncodedLen)
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	/// The range of component `c` is `[5, 100]`.
-	fn remove_invulnerable_candidate(c: u32) -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `364 + c * (49 ±0)`
-		//  Estimated: `6287`
-		// Minimum execution time: 35_081_000 picoseconds.
-		Weight::from_parts(38_468_787, 0)
-			.saturating_add(Weight::from_parts(0, 6287))
-			// Standard Error: 2_002
-			.saturating_add(Weight::from_parts(108_616, 0).saturating_mul(c.into()))
-			.saturating_add(T::DbWeight::get().reads(3))
-			.saturating_add(T::DbWeight::get().writes(2))
-	}
 }
 
 // For backwards compatibility and tests
@@ -229,24 +209,5 @@ impl WeightInfo for () {
 			.saturating_add(Weight::from_parts(376_231, 0).saturating_mul(b.into()))
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
-	}
-	/// Storage: CollatorSelection Invulnerables (r:1 w:0)
-	/// Proof: CollatorSelection Invulnerables (max_values: Some(1), max_size: Some(641), added: 1136, mode: MaxEncodedLen)
-	/// Storage: CollatorSelection Candidates (r:1 w:1)
-	/// Proof: CollatorSelection Candidates (max_values: Some(1), max_size: Some(4802), added: 5297, mode: MaxEncodedLen)
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	/// The range of component `c` is `[5, 100]`.
-	fn remove_invulnerable_candidate(c: u32) -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `364 + c * (49 ±0)`
-		//  Estimated: `6287`
-		// Minimum execution time: 35_081_000 picoseconds.
-		Weight::from_parts(38_468_787, 0)
-			.saturating_add(Weight::from_parts(0, 6287))
-			// Standard Error: 2_002
-			.saturating_add(Weight::from_parts(108_616, 0).saturating_mul(c.into()))
-			.saturating_add(RocksDbWeight::get().reads(3))
-			.saturating_add(RocksDbWeight::get().writes(2))
 	}
 }

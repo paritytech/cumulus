@@ -332,7 +332,7 @@ pub mod pallet {
 			let mut new_with_keys = Vec::new();
 
 			// check if the invulnerables have associated validator keys before they are set
-			for account_id in new.iter() {
+			for account_id in &new {
 				// don't let one unprepared collator ruin things for everyone.
 				let validator_key = T::ValidatorIdOf::convert(account_id.clone());
 				match validator_key {
@@ -547,22 +547,6 @@ pub mod pallet {
 			Self::deposit_event(Event::InvulnerableRemoved { account_id: who });
 			Ok(())
 		}
-
-		/// Remove a `Candidate` who is `Invulnerable`, as these sets should be mutually exclusive.
-		///
-		/// Any signed origin can call this.
-		#[pallet::call_index(7)]
-		#[pallet::weight(T::WeightInfo::remove_invulnerable_candidate(T::MaxCandidates::get()))]
-		pub fn remove_invulnerable_candidate(
-			origin: OriginFor<T>,
-			who: T::AccountId,
-		) -> DispatchResultWithPostInfo {
-			let _ = ensure_signed(origin)?;
-			ensure!(Self::invulnerables().contains(&who), Error::<T>::NotInvulnerable);
-			// We don't want to remove the last authored block because they are still a collator.
-			let current_count = Self::try_remove_candidate(&who, false)?;
-			Ok(Some(T::WeightInfo::remove_invulnerable_candidate(current_count as u32)).into())
-		}
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -624,22 +608,32 @@ pub mod pallet {
 		) -> BoundedVec<T::AccountId, T::MaxCandidates> {
 			let now = frame_system::Pallet::<T>::block_number();
 			let kick_threshold = T::KickThreshold::get();
+			let min_collators = T::MinEligibleCollators::get();
 			candidates
 				.into_iter()
 				.filter_map(|c| {
 					let last_block = <LastAuthoredBlock<T>>::get(c.who.clone());
 					let since_last = now.saturating_sub(last_block);
-					if since_last < kick_threshold ||
-						Self::eligible_collators() <= T::MinEligibleCollators::get()
-					{
-						Some(c.who)
-					} else {
-						let outcome = Self::try_remove_candidate(&c.who, true);
-						if let Err(why) = outcome {
-							log::warn!("Failed to remove candidate {:?}", why);
-							debug_assert!(false, "failed to remove candidate {:?}", why);
-						}
+
+					let is_invulnerable = Self::invulnerables().contains(&c.who);
+					let is_lazy = since_last >= kick_threshold;
+
+					if is_invulnerable {
+						// They are invulnerable. No reason for them to be in Candidates also.
+						// We don't even care about the min collators here, because an Account
+						// should not be a collator twice.
+						let _ = Self::try_remove_candidate(&c.who, false);
 						None
+					} else {
+						if Self::eligible_collators() <= min_collators || !is_lazy {
+							// Either this is a good collator (not lazy) or we are at the minimum
+							// that the system needs. They get to stay.
+							Some(c.who)
+						} else {
+							// This collator has not produced a block recently enough. Bye bye.
+							let _ = Self::try_remove_candidate(&c.who, true);
+							None
+						}
 					}
 				})
 				.collect::<Vec<_>>()

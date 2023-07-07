@@ -281,37 +281,6 @@ benchmarks! {
 		assert_last_event::<T>(Event::CandidateRemoved{account_id: leaving}.into());
 	}
 
-	remove_invulnerable_candidate {
-		let c in 1 .. T::MaxCandidates::get();
-		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
-		<DesiredCandidates<T>>::put(c);
-
-		register_validators::<T>(c);
-		register_candidates::<T>(c);
-
-		let leaving = <Candidates<T>>::get().last().unwrap().who.clone();
-		let caller: T::AccountId = whitelisted_caller();
-
-		<Invulnerables<T>>::try_mutate(|invulnerables| -> DispatchResult {
-			match invulnerables.binary_search(&leaving) {
-				Ok(_) => return Ok(()),
-				Err(pos) => invulnerables
-					.try_insert(pos, leaving.clone())
-					.expect("it is short enough"),
-			}
-			Ok(())
-		}).expect("only returns Ok()");
-	}: {
-		assert_ok!(
-			<CollatorSelection<T>>::remove_invulnerable_candidate(
-				RawOrigin::Signed(caller).into(),
-				leaving.clone()
-			)
-		);
-	} verify {
-		assert_last_event::<T>(Event::CandidateRemoved{account_id: leaving}.into());
-	}
-
 	// worse case is paying a non-existing candidate account.
 	note_author {
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
