@@ -309,11 +309,57 @@ fn swap_locally_on_chain_using_foreign_assets() {
 #[test]
 fn test_remark_charged_fee() {
 	type RuntimeCall = <AssetHubWestend as Chain>::RuntimeCall;
-	AssetHubWestend::execute_call(sp_keyring::Sr25519Keyring::Alice.into(),
-		RuntimeCall::System(frame_system::pallet::Call::<_>::remark {
-		
+	let genesis_hash = AssetHubWestend::execute_with(|| {
+		let genesis_hash = <frame_system::Pallet<asset_hub_westend_runtime::Runtime>>::block_hash(<asset_hub_westend_runtime::Runtime as frame_system::Config>::BlockNumber::from(0u32));
+		genesis_hash
+	});
+
+	let call = RuntimeCall::System(frame_system::pallet::Call::<_>::remark {
 		remark: vec![12u8; 1_000_000_000],
-	}));
+	});
+	let sender : sp_keyring::Sr25519Keyring = sp_keyring::Sr25519Keyring::Alice;
+
+	let nonce = 1;
+	let extra = //[<$name MultiTxType>]{nonce}.into();
+	(
+		frame_system::CheckNonZeroSender::<asset_hub_westend_runtime::Runtime>::new(),
+		frame_system::CheckSpecVersion::<asset_hub_westend_runtime::Runtime>::new(),
+		frame_system::CheckTxVersion::<asset_hub_westend_runtime::Runtime>::new(),
+		frame_system::CheckGenesis::<asset_hub_westend_runtime::Runtime>::new(),
+		frame_system::CheckEra::<asset_hub_westend_runtime::Runtime>::from(sp_runtime::generic::Era::mortal(
+			256,
+			0, //best_block.saturated_into(),
+		)),
+		frame_system::CheckNonce::<asset_hub_westend_runtime::Runtime>::from(nonce),
+		frame_system::CheckWeight::<asset_hub_westend_runtime::Runtime>::new(),
+		pallet_asset_conversion_tx_payment::ChargeAssetTxPayment::<asset_hub_westend_runtime::Runtime>::from(
+			0, None
+		)
+	);
+	// Is the signed payload from the realy chain???
+	let raw_payload = sp_runtime::generic::SignedPayload::<asset_hub_westend_runtime::RuntimeCall, asset_hub_westend_runtime::SignedExtra>::from_raw(
+			call.clone(),
+			extra.clone(),
+			(
+				(),
+				asset_hub_westend_runtime::VERSION.spec_version,
+				asset_hub_westend_runtime::VERSION.transaction_version,
+				genesis_hash,
+				genesis_hash, //TODO: best_hash,
+				(),
+				(),
+				(),
+			),
+		);
+	let signature = raw_payload.using_encoded(|e| sender.sign(e));
+	let extrinsic = asset_hub_westend_runtime::UncheckedExtrinsic::new_signed(call, 
+		sp_runtime::AccountId32::from(sender.public()).into(),
+		sp_runtime::MultiSignature::Sr25519(signature), 
+		extra
+	);
+
+	AssetHubWestend::execute_call(extrinsic);
+
 	AssetHubWestend::execute_with(|| {
 		type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 

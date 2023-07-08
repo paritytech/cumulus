@@ -18,7 +18,7 @@ sp-weights = { default-features = false, git = "https://github.com/paritytech/su
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-assets = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-asset-conversion = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-
+pallet-asset-conversion-tx-payment = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 # Polkadot
 polkadot-core-primitives = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-parachain = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }

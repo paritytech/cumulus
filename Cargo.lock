@@ -564,6 +564,7 @@ dependencies = [
  "frame-system",
  "integration-tests-common",
  "pallet-asset-conversion",
+ "pallet-asset-conversion-tx-payment",
  "pallet-assets",
  "pallet-balances",
  "pallet-xcm",
