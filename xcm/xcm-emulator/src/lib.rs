@@ -789,7 +789,9 @@ macro_rules! __impl_test_ext_for_parachain {
 	(@impl $name:ident, $block:path, $runtime:path, $runtime_api:path, $signed_extra:path, $genesis:expr, $on_init:expr, $ext_name:ident) => {
 		$crate::paste::paste! {
 			struct [<$name MultiTx>] {
-
+				specific_version: u32,
+				transaction_version: u32,
+				genesis_hash: sp_core::H256
 			}
 
 			impl Into<(
@@ -798,8 +800,10 @@ macro_rules! __impl_test_ext_for_parachain {
 				fn into(self) -> (
 				(), u32, u32, sp_core::H256, sp_core::H256, (), ()
 			) 
-			{
-					todo!() }
+				{
+					((), self.specific_version, self.transaction_version, 
+					self.genesis_hash, self.genesis_hash, (), ())
+				}
 			}
 
 			impl Into<(
@@ -808,12 +812,14 @@ macro_rules! __impl_test_ext_for_parachain {
 				fn into(self) -> (
 				(), u32, u32, sp_core::H256, sp_core::H256, (), (), ()
 			) 
-			{
-					todo!() }
+				{
+					((), self.specific_version, self.transaction_version, 
+					self.genesis_hash, self.genesis_hash, (), (), ())
+				}
 			}
 
 			struct [<$name MultiTxType>] {
-
+				nonce: u32
 			}
 
 			impl Into<(
@@ -832,8 +838,20 @@ macro_rules! __impl_test_ext_for_parachain {
 					frame_system::CheckEra::<$runtime>,
 					frame_system::CheckNonce::<$runtime>,
 					frame_system::CheckWeight::<$runtime>) 
-			{
-					todo!() }
+				{
+					(
+						frame_system::CheckNonZeroSender::<$runtime>::new(),
+						frame_system::CheckSpecVersion::<$runtime>::new(),
+						frame_system::CheckTxVersion::<$runtime>::new(),
+						frame_system::CheckGenesis::<$runtime>::new(),
+						frame_system::CheckEra::<$runtime>::from(sp_runtime::generic::Era::mortal(
+							256,
+							0, //best_block.saturated_into(),
+						)),
+						frame_system::CheckNonce::<$runtime>::from(self.nonce),
+						frame_system::CheckWeight::<$runtime>::new(),
+					)
+				}
 			}
 			impl Into<(
 				frame_system::CheckNonZeroSender::<$runtime>,
@@ -853,8 +871,21 @@ macro_rules! __impl_test_ext_for_parachain {
 					frame_system::CheckNonce::<$runtime>,
 					frame_system::CheckWeight::<$runtime>,
 					pallet_transaction_payment::ChargeTransactionPayment::<$runtime>) 
-			{
-					todo!() }
+				{
+					(
+						frame_system::CheckNonZeroSender::<$runtime>::new(),
+						frame_system::CheckSpecVersion::<$runtime>::new(),
+						frame_system::CheckTxVersion::<$runtime>::new(),
+						frame_system::CheckGenesis::<$runtime>::new(),
+						frame_system::CheckEra::<$runtime>::from(sp_runtime::generic::Era::mortal(
+							256,
+							0, //best_block.saturated_into(),
+						)),
+						frame_system::CheckNonce::<$runtime>::from(self.nonce),
+						frame_system::CheckWeight::<$runtime>::new(),
+						pallet_transaction_payment::ChargeTransactionPayment::<$runtime>::from(0)
+					)
+				}
 			}
 			impl Into<(
 				frame_system::CheckNonZeroSender::<$runtime>,
@@ -876,8 +907,24 @@ macro_rules! __impl_test_ext_for_parachain {
 					frame_system::CheckNonce::<$runtime>,
 					frame_system::CheckWeight::<$runtime>,
 					pallet_asset_conversion_tx_payment::ChargeAssetTxPayment::<$runtime>) 
-			{
-					todo!() }
+				{
+					(
+						frame_system::CheckNonZeroSender::<$runtime>::new(),
+						frame_system::CheckSpecVersion::<$runtime>::new(),
+						frame_system::CheckTxVersion::<$runtime>::new(),
+						frame_system::CheckGenesis::<$runtime>::new(),
+						frame_system::CheckEra::<$runtime>::from(sp_runtime::generic::Era::mortal(
+							256,
+							0, //best_block.saturated_into(),
+						)),
+						frame_system::CheckNonce::<$runtime>::from(self.nonce),
+						frame_system::CheckWeight::<$runtime>::new(),
+						todo!("how to instanciate?")
+						// pallet_asset_conversion_tx_payment::ChargeAssetTxPayment::<$runtime>::from(
+						// 	0, None
+						// )
+					)
+				}
 			}
 			impl Into<(
 				frame_system::CheckNonZeroSender::<$runtime>,
@@ -899,8 +946,27 @@ macro_rules! __impl_test_ext_for_parachain {
 					frame_system::CheckNonce::<$runtime>,
 					frame_system::CheckWeight::<$runtime>,
 					pallet_asset_tx_payment::ChargeAssetTxPayment::<$runtime>) 
-			{
-					todo!() }
+				{
+					(
+						frame_system::CheckNonZeroSender::<$runtime>::new(),
+						frame_system::CheckSpecVersion::<$runtime>::new(),
+						frame_system::CheckTxVersion::<$runtime>::new(),
+						frame_system::CheckGenesis::<$runtime>::new(),
+						frame_system::CheckEra::<$runtime>::from(sp_runtime::generic::Era::mortal(
+							256,
+							0, //best_block.saturated_into(),
+						)),
+						frame_system::CheckNonce::<$runtime>::from(self.nonce),
+						frame_system::CheckWeight::<$runtime>::new(),
+						todo!("how do i construct this?")
+						// pallet_asset_tx_payment::ChargeAssetTxPayment::<$runtime>::
+						// from(
+						// 	pallet_asset_tx_payment::ChargeAssetTxPayment::<$runtime>{}
+						// 	// ,
+						// 	// None
+						// )
+					) 
+				}
 			}
 		}
 		
@@ -980,7 +1046,7 @@ macro_rules! __impl_test_ext_for_parachain {
 				$crate::paste::paste! {
 					// let extrinsic = <Self as Chain>::UncheckedExtrinsic::new_unsigned(call);
 					let nonce = 1;
-					let extra: $signed_extra = [<$name MultiTxType>]{}.into();
+					let extra: $signed_extra = [<$name MultiTxType>]{nonce}.into();
 					// (
 					// 	frame_system::CheckNonZeroSender::<$runtime>::new(),
 					// 	frame_system::CheckSpecVersion::<$runtime>::new(),
@@ -997,7 +1063,11 @@ macro_rules! __impl_test_ext_for_parachain {
 					let raw_payload = polkadot_service::generic::SignedPayload::from_raw(
 							call.clone(),
 							extra.clone(),
-							[<$name MultiTx>]{}.into()
+							[<$name MultiTx>]{
+								specific_version: bridge_hub_kusama_runtime::VERSION.spec_version,
+								transaction_version: bridge_hub_kusama_runtime::VERSION.transaction_version,
+								genesis_hash: client.chain_info().genesis_hash
+							}.into()
 							// (
 							// 	(),
 							// 	bridge_hub_kusama_runtime::VERSION.spec_version,//TODO
