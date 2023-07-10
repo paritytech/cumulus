@@ -129,7 +129,9 @@ impl RelayStateSproofBuilder {
 			if let Some(para_head) = self.included_para_head {
 				insert(relay_chain::well_known_keys::para_head(self.para_id), para_head.encode());
 			}
-			if let Some(relay_dispatch_queue_remaining_capacity) = self.relay_dispatch_queue_remaining_capacity {
+			if let Some(relay_dispatch_queue_remaining_capacity) =
+				self.relay_dispatch_queue_remaining_capacity
+			{
 				insert(
 					relay_chain::well_known_keys::relay_dispatch_queue_remaining_capacity(
 						self.para_id,
