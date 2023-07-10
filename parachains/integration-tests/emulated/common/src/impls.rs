@@ -7,6 +7,7 @@ use bridge_runtime_common::messages_xcm_extension::XcmBlobMessageDispatchResult;
 use codec::Decode;
 pub use cumulus_primitives_core::{DmpMessageHandler, XcmpMessageHandler};
 use pallet_bridge_messages::{Config, Instance1, Instance2, OutboundLanes, Pallet};
+use parachains_common::AccountId;
 use sp_core::Get;
 use xcm_emulator::{BridgeMessage, BridgeMessageDispatchError, BridgeMessageHandler, Chain};
 
@@ -124,3 +125,26 @@ where
 		OutboundLanes::<S, Instance1>::insert(LaneIdWrapper::from(lane_id).0, new_data);
 	}
 }
+
+// struct TestInit<S: Chain> {
+// 	sender_balance_before: u128,
+// 	receiver_balance_before: u128,
+// 	signed_origin: S::RuntimeOrigin,
+// 	root_origin: S::RuntimeOrigin,
+// 	beneficiary: VersionedMultiLocation,
+// }
+
+// impl<S: Chain> TestInit<S> {
+// 	fn new(sender: AccountId, receiver: AccountId) -> Self {
+// 		TestInit {
+// 			sender_balance_before: S::account_data_of(KusamaSender::get()).free,
+// 			para_receiver_balance_before: AssetHubKusama::account_data_of(AssetHubKusamaReceiver::get()).free,
+// 			origin: <Kusama as Relay>::RuntimeOrigin::signed(KusamaSender::get()),
+// 			assets_para_destination: Kusama::child_location_of(AssetHubKusama::para_id()).into(),
+// 			beneficiary: AccountId32 { network: None, id: AssetHubKusamaReceiver::get().into() }.into(),
+// 			native_assets: (Here, amount).into(),
+// 			fee_asset_item: 0,
+// 			weight_limit: WeightLimit::Unlimited,
+// 		}
+// 	}
+// }

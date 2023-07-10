@@ -15,6 +15,7 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 pub use codec::{Decode, Encode};
+use cumulus_pallet_xcmp_queue::Config;
 pub use log;
 pub use paste;
 pub use std::{collections::HashMap, error::Error, fmt, thread::LocalKey};
@@ -22,13 +23,15 @@ pub use std::{collections::HashMap, error::Error, fmt, thread::LocalKey};
 // Substrate
 pub use frame_support::{
 	assert_ok,
-	traits::{EnqueueMessage, Get, Hooks, ProcessMessage, ProcessMessageError, ServiceQueues},
+	dispatch::EncodeLike,
+	traits::{tokens::currency::Currency, EnqueueMessage, Get, Hooks, ProcessMessage, ProcessMessageError, ServiceQueues},
+	sp_runtime::AccountId32,
 	weights::{Weight, WeightMeter},
 };
-pub use frame_system::AccountInfo;
+pub use frame_system::{AccountInfo, Config as SystemConfig, Pallet as SystemPallet};
 pub use pallet_balances::AccountData;
 pub use sp_arithmetic::traits::Bounded;
-pub use sp_core::{storage::Storage, H256};
+pub use sp_core::{sr25519, storage::Storage, H256};
 pub use sp_io;
 pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, fmt::Debug};
 pub use sp_trie::StorageProof;
@@ -46,7 +49,7 @@ pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 pub use cumulus_test_service::get_account_id_from_seed;
 pub use pallet_message_queue;
 pub use parachain_info;
-pub use parachains_common::{AccountId, BlockNumber};
+pub use parachains_common::{AccountId, Balance, BlockNumber};
 pub use polkadot_primitives;
 pub use polkadot_runtime_parachains::{
 	dmp,
@@ -55,6 +58,9 @@ pub use polkadot_runtime_parachains::{
 
 // Polkadot
 pub use xcm::v3::prelude::*;
+pub use xcm_executor::traits::ConvertLocation;
+
+// type CurrencyOf<T> = Currency<<<Self as Chain>::T as SystemConfig>::AccountId>
 
 thread_local! {
 	/// Downward messages, each message is: `(to_para_id, [(relay_block_number, msg)])`
@@ -168,27 +174,86 @@ pub trait NetworkComponent {
 	}
 }
 
-pub trait Chain {
-	type Runtime;
+pub trait Chain: TestExt {
+	type Runtime: SystemConfig;
 	type RuntimeCall;
 	type RuntimeOrigin;
 	type RuntimeEvent;
 	type System;
+	// type Balances: Currency<<Self::Runtime as SystemConfig>::AccountId>;
+
+	fn account_id_of(seed: &str) -> AccountId {
+		get_account_id_from_seed::<sr25519::Public>(seed)
+	}
+
+	fn account_data_of(account: AccountId) -> AccountData<Balance>
+	where
+		AccountId32: EncodeLike<<Self::Runtime as SystemConfig>::AccountId>,
+		AccountData<Balance>: From<<Self::Runtime as SystemConfig>::AccountData>
+	{
+		Self::ext_wrapper(|| SystemPallet::<Self::Runtime>::account(account).data.into())
+	}
+
+	fn events() -> Vec<<Self as Chain>::RuntimeEvent>;
+
+	// fn fund_accounts(accounts: Vec<(AccountId, Balance)>)
+	// where
+	// 	Self::Balances: Currency<<Self as Chain>::Runtime>,
+	// 	Self::Runtime: From<AccountId32>,
+	// 	<Self::Balances as Currency<Self::Runtime>>::Balance: From<u128>
+	// {
+	// 	Self::ext_wrapper(|| {
+	// 		for account in accounts {
+	// 			let _ = <<Self as Chain>::Balances as Currency<<Self as Chain>::Runtime>>::make_free_balance_be(
+	// 				&account.0.into(),
+	// 				account.1.into(),
+	// 			);
+	// 		}
+	// 	});
+	// }
+
+
 }
 
 pub trait RelayChain: Chain + ProcessMessage {
-	type XcmConfig;
-	type SovereignAccountOf;
-	type Balances;
+	type SovereignAccountOf: ConvertLocation<AccountId>;
+
+	fn child_location_of(id: ParaId) -> MultiLocation {
+		(Ancestor(0), Parachain(id.into())).into()
+	}
+
+	fn sovereign_account_id_of(location: MultiLocation) -> AccountId {
+		Self::SovereignAccountOf::convert_location(&location).unwrap()
+	}
 }
 
-pub trait Parachain: Chain + XcmpMessageHandler + DmpMessageHandler {
+pub trait Parachain: Chain + XcmpMessageHandler + DmpMessageHandler + TestExt {
 	type XcmpMessageHandler;
 	type DmpMessageHandler;
-	type LocationToAccountId;
-	type Balances;
+	type LocationToAccountId: ConvertLocation<AccountId>;
+
 	type ParachainSystem;
-	type ParachainInfo;
+	type ParachainInfo: Get<ParaId>;
+
+	fn para_id() -> ParaId {
+		Self::ext_wrapper(|| Self::ParachainInfo::get())
+	}
+
+	fn parent_location() -> MultiLocation {
+		(Parent).into()
+	}
+
+	fn sibling_location_of(para_id: ParaId) -> MultiLocation {
+		(Parent, X1(Parachain(para_id.into()))).into()
+	}
+
+	fn sovereign_account_id_of(location: MultiLocation) -> AccountId {
+		Self::LocationToAccountId::convert_location(&location).unwrap()
+	}
+
+	// fn events() -> Vec<Self::RuntimeEvent>;
+
+	fn prepare_for_xcmp();
 }
 
 pub trait Bridge {
@@ -264,10 +329,9 @@ macro_rules! decl_test_relay_chains {
 					RuntimeCall: $runtime_call:path,
 					RuntimeEvent: $runtime_event:path,
 					MessageQueue: $mq:path,
-					XcmConfig: $xcm_config:path,
 					SovereignAccountOf: $sovereign_acc_of:path,
-					System: $system:path,
-					Balances: $balances:path,
+					// System: $system:path,
+					// Balances: $balances:path,
 				},
 				pallets_extra = {
 					$($pallet_name:ident: $pallet_path:path,)*
@@ -284,13 +348,19 @@ macro_rules! decl_test_relay_chains {
 				type RuntimeCall = $runtime_call;
 				type RuntimeOrigin = $runtime_origin;
 				type RuntimeEvent = $runtime_event;
-				type System = $system;
+				type System = $crate::SystemPallet::<Self::Runtime>;
+				// type Balances = $balances;
+
+				fn events() -> Vec<<Self as Chain>::RuntimeEvent> {
+					Self::System::events()
+						.iter()
+						.map(|record| record.event.clone())
+						.collect()
+				}
 			}
 
 			impl RelayChain for $name {
-				type XcmConfig = $xcm_config;
 				type SovereignAccountOf = $sovereign_acc_of;
-				type Balances = $balances;
 			}
 
 			$crate::paste::paste! {
@@ -326,9 +396,9 @@ macro_rules! decl_test_relay_chains {
 							AggregateMessageOrigin::Ump(UmpQueueId::Para(para.clone()))
 						);
 
-						<$system>::reset_events();
+						<Self as Chain>::System::reset_events();
 						<$mq as ServiceQueues>::service_queues(Weight::MAX);
-						let events = <$system>::events();
+						let events = <Self as Chain>::System::events();
 						let event = events.last().expect("There must be at least one event");
 
 						match &event.event {
@@ -440,40 +510,32 @@ macro_rules! __impl_relay {
 		}
 
 		impl $relay_chain {
-			pub fn child_location_of(id: $crate::ParaId) -> MultiLocation {
-				(Ancestor(0), Parachain(id.into())).into()
-			}
+			// pub fn child_location_of(id: $crate::ParaId) -> MultiLocation {
+			// 	(Ancestor(0), Parachain(id.into())).into()
+			// }
 
-			pub fn account_id_of(seed: &str) -> $crate::AccountId {
-				$crate::get_account_id_from_seed::<sr25519::Public>(seed)
-			}
+			// pub fn sovereign_account_id_of(location: $crate::MultiLocation) -> $crate::AccountId {
+			// 	<Self as RelayChain>::SovereignAccountOf::convert_location(&location).unwrap()
+			// }
 
-			pub fn account_data_of(account: AccountId) -> $crate::AccountData<Balance> {
-				Self::ext_wrapper(|| <Self as Chain>::System::account(account).data)
-			}
+			// pub fn fund_accounts(accounts: Vec<(AccountId, Balance)>) {
+			// 	Self::ext_wrapper(|| {
+			// 		for account in accounts {
+			// 			let _ = <Self as RelayChain>::Balances::force_set_balance(
+			// 				<Self as Chain>::RuntimeOrigin::root(),
+			// 				account.0.into(),
+			// 				account.1.into(),
+			// 			);
+			// 		}
+			// 	});
+			// }
 
-			pub fn sovereign_account_id_of(location: $crate::MultiLocation) -> $crate::AccountId {
-				<Self as RelayChain>::SovereignAccountOf::convert_location(&location).unwrap()
-			}
-
-			pub fn fund_accounts(accounts: Vec<(AccountId, Balance)>) {
-				Self::ext_wrapper(|| {
-					for account in accounts {
-						let _ = <Self as RelayChain>::Balances::force_set_balance(
-							<Self as Chain>::RuntimeOrigin::root(),
-							account.0.into(),
-							account.1.into(),
-						);
-					}
-				});
-			}
-
-			pub fn events() -> Vec<<Self as Chain>::RuntimeEvent> {
-				<Self as Chain>::System::events()
-					.iter()
-					.map(|record| record.event.clone())
-					.collect()
-			}
+			// pub fn events() -> Vec<<Self as Chain>::RuntimeEvent> {
+			// 	<Self as Chain>::System::events()
+			// 		.iter()
+			// 		.map(|record| record.event.clone())
+			// 		.collect()
+			// }
 		}
 	};
 }
@@ -494,8 +556,8 @@ macro_rules! decl_test_parachains {
 					XcmpMessageHandler: $xcmp_message_handler:path,
 					DmpMessageHandler: $dmp_message_handler:path,
 					LocationToAccountId: $location_to_account:path,
-					System: $system:path,
-					Balances: $balances_pallet:path,
+					// System: $system:path,
+					// Balances: $balances_pallet:path,
 					ParachainSystem: $parachain_system:path,
 					ParachainInfo: $parachain_info:path,
 				},
@@ -514,16 +576,52 @@ macro_rules! decl_test_parachains {
 				type RuntimeCall = $runtime_call;
 				type RuntimeOrigin = $runtime_origin;
 				type RuntimeEvent = $runtime_event;
-				type System = $system;
+				type System = $crate::SystemPallet::<Self::Runtime>;
+				// type Balances = $balances_pallet;
+
+				fn events() -> Vec<<Self as Chain>::RuntimeEvent> {
+					Self::System::events()
+						.iter()
+						.map(|record| record.event.clone())
+						.collect()
+				}
 			}
 
 			impl Parachain for $name {
 				type XcmpMessageHandler = $xcmp_message_handler;
 				type DmpMessageHandler = $dmp_message_handler;
 				type LocationToAccountId = $location_to_account;
-				type Balances = $balances_pallet;
 				type ParachainSystem = $parachain_system;
 				type ParachainInfo = $parachain_info;
+
+				// fn events() -> Vec<<Self as Chain>::RuntimeEvent> {
+				// 	<Self as Chain>::System::events()
+				// 		.iter()
+				// 		.map(|record| record.event.clone())
+				// 		.collect()
+				// }
+
+				fn prepare_for_xcmp() {
+					use $crate::{Network, NetworkComponent, Hooks};
+					// use $crate::frame_support::traits::OnInitialize;
+					let para_id = Self::para_id();
+
+					<Self as TestExt>::ext_wrapper(|| {
+						// use $crate::{Get, Hooks};
+
+						let block_number = <Self as Chain>::System::block_number();
+
+						let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
+							<Self as Chain>::RuntimeOrigin::none(),
+							<Self as NetworkComponent>::Network::hrmp_channel_parachain_inherent_data(
+								para_id.into(),
+								1,
+							),
+						);
+						// set `AnnouncedHrmpMessagesPerCandidate`
+						<Self as Parachain>::ParachainSystem::on_initialize(block_number);
+					});
+				}
 			}
 
 			$crate::paste::paste! {
@@ -716,69 +814,69 @@ macro_rules! __impl_parachain {
 		}
 
 		impl $parachain {
-			pub fn para_id() -> $crate::ParaId {
-				Self::ext_wrapper(|| <Self as Parachain>::ParachainInfo::get())
-			}
+			// pub fn para_id() -> $crate::ParaId {
+			// 	Self::ext_wrapper(|| <Self as Parachain>::ParachainInfo::get())
+			// }
 
-			pub fn parent_location() -> $crate::MultiLocation {
-				(Parent).into()
-			}
+			// pub fn parent_location() -> $crate::MultiLocation {
+			// 	(Parent).into()
+			// }
 
-			pub fn sibling_location_of(para_id: $crate::ParaId) -> $crate::MultiLocation {
-				(Parent, X1(Parachain(para_id.into()))).into()
-			}
+			// pub fn sibling_location_of(para_id: $crate::ParaId) -> $crate::MultiLocation {
+			// 	(Parent, X1(Parachain(para_id.into()))).into()
+			// }
 
-			pub fn account_id_of(seed: &str) -> $crate::AccountId {
-				$crate::get_account_id_from_seed::<sr25519::Public>(seed)
-			}
+			// pub fn account_id_of(seed: &str) -> $crate::AccountId {
+			// 	$crate::get_account_id_from_seed::<sr25519::Public>(seed)
+			// }
 
-			pub fn account_data_of(account: AccountId) -> $crate::AccountData<Balance> {
-				Self::ext_wrapper(|| <Self as Chain>::System::account(account).data)
-			}
+			// pub fn account_data_of(account: AccountId) -> $crate::AccountData<Balance> {
+			// 	Self::ext_wrapper(|| <Self as Chain>::System::account(account).data)
+			// }
 
-			pub fn sovereign_account_id_of(location: $crate::MultiLocation) -> $crate::AccountId {
-				<Self as Parachain>::LocationToAccountId::convert_location(&location).unwrap()
-			}
+			// pub fn sovereign_account_id_of(location: $crate::MultiLocation) -> $crate::AccountId {
+			// 	<Self as Parachain>::LocationToAccountId::convert_location(&location).unwrap()
+			// }
 
-			pub fn fund_accounts(accounts: Vec<(AccountId, Balance)>) {
-				Self::ext_wrapper(|| {
-					for account in accounts {
-						let _ = <Self as Parachain>::Balances::force_set_balance(
-							<Self as Chain>::RuntimeOrigin::root(),
-							account.0.into(),
-							account.1.into(),
-						);
-					}
-				});
-			}
+			// pub fn fund_accounts(accounts: Vec<(AccountId, Balance)>) {
+			// 	Self::ext_wrapper(|| {
+			// 		for account in accounts {
+			// 			let _ = <Self as Parachain>::Balances::force_set_balance(
+			// 				<Self as Chain>::RuntimeOrigin::root(),
+			// 				account.0.into(),
+			// 				account.1.into(),
+			// 			);
+			// 		}
+			// 	});
+			// }
 
-			pub fn events() -> Vec<<Self as Chain>::RuntimeEvent> {
-				<Self as Chain>::System::events()
-					.iter()
-					.map(|record| record.event.clone())
-					.collect()
-			}
+			// pub fn events() -> Vec<<Self as Chain>::RuntimeEvent> {
+			// 	<Self as Chain>::System::events()
+			// 		.iter()
+			// 		.map(|record| record.event.clone())
+			// 		.collect()
+			// }
 
-			fn prepare_for_xcmp() {
-				use $crate::{Network, NetworkComponent};
-				let para_id = Self::para_id();
+			// fn prepare_for_xcmp() {
+			// 	use $crate::{Network, NetworkComponent};
+			// 	let para_id = Self::para_id();
 
-				<Self as TestExt>::ext_wrapper(|| {
-					use $crate::{Get, Hooks};
+			// 	<Self as TestExt>::ext_wrapper(|| {
+			// 		use $crate::{Get, Hooks};
 
-					let block_number = <Self as Chain>::System::block_number();
+			// 		let block_number = <Self as Chain>::System::block_number();
 
-					let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
-						<Self as Chain>::RuntimeOrigin::none(),
-						<Self as NetworkComponent>::Network::hrmp_channel_parachain_inherent_data(
-							para_id.into(),
-							1,
-						),
-					);
-					// set `AnnouncedHrmpMessagesPerCandidate`
-					<Self as Parachain>::ParachainSystem::on_initialize(block_number);
-				});
-			}
+			// 		let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
+			// 			<Self as Chain>::RuntimeOrigin::none(),
+			// 			<Self as NetworkComponent>::Network::hrmp_channel_parachain_inherent_data(
+			// 				para_id.into(),
+			// 				1,
+			// 			),
+			// 		);
+			// 		// set `AnnouncedHrmpMessagesPerCandidate`
+			// 		<Self as Parachain>::ParachainSystem::on_initialize(block_number);
+			// 	});
+			// }
 		}
 	};
 }

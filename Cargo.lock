@@ -16414,6 +16414,7 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "xcm",
+ "xcm-executor",
 ]
 
 [[package]]
