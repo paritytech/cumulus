@@ -81,10 +81,12 @@ impl RelayChainInterface for RelayChainRpcInterface {
 	async fn header(&self, block_id: BlockId) -> RelayChainResult<Option<PHeader>> {
 		let hash = match block_id {
 			BlockId::Hash(hash) => hash,
-			BlockId::Number(num) => match self.rpc_client.chain_get_block_hash(Some(num)).await? {
-				None => return Ok(None),
-				Some(h) => h,
-			},
+			BlockId::Number(num) =>
+				if let Some(hash) = self.rpc_client.chain_get_block_hash(Some(num)).await? {
+					hash
+				} else {
+					return Ok(None)
+				},
 		};
 		let header = self.rpc_client.chain_get_header(Some(hash)).await?;
 
