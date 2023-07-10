@@ -24,7 +24,7 @@ fn reserve_transfer_native_asset_from_relay_to_assets() {
 	let para_receiver_balance_before =
 		AssetHubKusama::account_data_of(AssetHubKusamaReceiver::get()).free;
 
-	let origin = <Kusama as Relay>::RuntimeOrigin::signed(KusamaSender::get());
+	let origin = <Kusama as Chain>::RuntimeOrigin::signed(KusamaSender::get());
 	let assets_para_destination: VersionedMultiLocation =
 		Kusama::child_location_of(AssetHubKusama::para_id()).into();
 	let beneficiary: VersionedMultiLocation =
@@ -44,7 +44,7 @@ fn reserve_transfer_native_asset_from_relay_to_assets() {
 			weight_limit,
 		));
 
-		type RuntimeEvent = <Kusama as Relay>::RuntimeEvent;
+		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			Kusama,
@@ -58,7 +58,7 @@ fn reserve_transfer_native_asset_from_relay_to_assets() {
 
 	// Receive XCM message in Assets Parachain
 	AssetHubKusama::execute_with(|| {
-		type RuntimeEvent = <AssetHubKusama as Para>::RuntimeEvent;
+		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			AssetHubKusama,

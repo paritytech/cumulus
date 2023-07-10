@@ -19,7 +19,7 @@ use crate::*;
 #[test]
 fn relay_sets_system_para_xcm_supported_version() {
 	// Init tests variables
-	let sudo_origin = <Kusama as Relay>::RuntimeOrigin::root();
+	let sudo_origin = <Kusama as Chain>::RuntimeOrigin::root();
 	let system_para_destination: MultiLocation =
 		Kusama::child_location_of(AssetHubKusama::para_id());
 
@@ -31,7 +31,7 @@ fn relay_sets_system_para_xcm_supported_version() {
 			XCM_V3
 		));
 
-		type RuntimeEvent = <Kusama as Relay>::RuntimeEvent;
+		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			Kusama,
@@ -48,7 +48,7 @@ fn relay_sets_system_para_xcm_supported_version() {
 #[test]
 fn system_para_sets_relay_xcm_supported_version() {
 	// Init test variables
-	let sudo_origin = <Kusama as Relay>::RuntimeOrigin::root();
+	let sudo_origin = <Kusama as Chain>::RuntimeOrigin::root();
 	let parent_location = AssetHubKusama::parent_location();
 	let system_para_destination: VersionedMultiLocation =
 		Kusama::child_location_of(AssetHubKusama::para_id()).into();
@@ -58,8 +58,8 @@ fn system_para_sets_relay_xcm_supported_version() {
 	let require_weight_at_most = Weight::from_parts(1000000000, 200000);
 	let origin_kind = OriginKind::Superuser;
 
-	let call = <AssetHubKusama as Para>::RuntimeCall::PolkadotXcm(pallet_xcm::Call::<
-		<AssetHubKusama as Para>::Runtime
+	let call = <AssetHubKusama as Chain>::RuntimeCall::PolkadotXcm(pallet_xcm::Call::<
+		<AssetHubKusama as Chain>::Runtime
 	>::force_xcm_version {
 		location: bx!(parent_location),
 		version: XCM_V3
@@ -80,7 +80,7 @@ fn system_para_sets_relay_xcm_supported_version() {
 			bx!(xcm),
 		));
 
-		type RuntimeEvent = <Kusama as Relay>::RuntimeEvent;
+		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			Kusama,
@@ -92,7 +92,7 @@ fn system_para_sets_relay_xcm_supported_version() {
 
 	// System Parachain receive the XCM message
 	AssetHubKusama::execute_with(|| {
-		type RuntimeEvent = <AssetHubKusama as Para>::RuntimeEvent;
+		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			AssetHubKusama,

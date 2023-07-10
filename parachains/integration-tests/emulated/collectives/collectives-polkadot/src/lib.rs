@@ -25,6 +25,6 @@ pub use integration_tests_common::{
 	PolkadotMockNet,
 };
 pub use xcm::prelude::*;
-pub use xcm_emulator::{assert_expected_events, Parachain};
+pub use xcm_emulator::{assert_expected_events, Chain, Parachain};
 
 mod tests;

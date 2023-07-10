@@ -38,7 +38,7 @@ pub use xcm::{
 	v3::{Error, NetworkId::Kusama as KusamaId},
 };
 pub use xcm_emulator::{
-	assert_expected_events, bx, cumulus_pallet_dmp_queue, helpers::weight_within_threshold,
+	assert_expected_events, bx, cumulus_pallet_dmp_queue, helpers::weight_within_threshold, Chain,
 	Parachain as Para, RelayChain as Relay, TestExt,
 };
 

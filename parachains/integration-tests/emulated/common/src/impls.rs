@@ -8,7 +8,7 @@ use codec::Decode;
 pub use cumulus_primitives_core::{DmpMessageHandler, XcmpMessageHandler};
 use pallet_bridge_messages::{Config, Instance1, Instance2, OutboundLanes, Pallet};
 use sp_core::Get;
-use xcm_emulator::{BridgeMessage, BridgeMessageDispatchError, BridgeMessageHandler, Parachain};
+use xcm_emulator::{BridgeMessage, BridgeMessageDispatchError, BridgeMessageHandler, Chain};
 
 pub struct BridgeHubMessageHandler<S, T, I> {
 	_marker: std::marker::PhantomData<(S, T, I)>,
@@ -28,12 +28,12 @@ impl From<u32> for LaneIdWrapper {
 	}
 }
 
-type BridgeHubRococoRuntime = <BridgeHubRococo as Parachain>::Runtime;
-type BridgeHubWococoRuntime = <BridgeHubWococo as Parachain>::Runtime;
+type BridgeHubRococoRuntime = <BridgeHubRococo as Chain>::Runtime;
+type BridgeHubWococoRuntime = <BridgeHubWococo as Chain>::Runtime;
 
 // TODO: uncomment when https://github.com/paritytech/cumulus/pull/2528 is merged
-// type BridgeHubPolkadotRuntime = <BridgeHubPolkadot as Parachain>::Runtime;
-// type BridgeHubKusamaRuntime = <BridgeHubKusama as Parachain>::Runtime;
+// type BridgeHubPolkadotRuntime = <BridgeHubPolkadot as Chain>::Runtime;
+// type BridgeHubKusamaRuntime = <BridgeHubKusama as Chain>::Runtime;
 
 pub type RococoWococoMessageHandler =
 	BridgeHubMessageHandler<BridgeHubRococoRuntime, BridgeHubWococoRuntime, Instance2>;

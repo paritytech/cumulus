@@ -22,8 +22,8 @@ fn transact_sudo_from_relay_to_assets_para() {
 	// Call to be executed in Assets Parachain
 	const ASSET_ID: u32 = 1;
 
-	let call = <AssetHubWestend as Para>::RuntimeCall::Assets(pallet_assets::Call::<
-		<AssetHubWestend as Para>::Runtime,
+	let call = <AssetHubWestend as Chain>::RuntimeCall::Assets(pallet_assets::Call::<
+		<AssetHubWestend as Chain>::Runtime,
 		Instance1,
 	>::force_create {
 		id: ASSET_ID.into(),
@@ -35,7 +35,7 @@ fn transact_sudo_from_relay_to_assets_para() {
 	.into();
 
 	// XcmPallet send arguments
-	let sudo_origin = <Westend as Relay>::RuntimeOrigin::root();
+	let sudo_origin = <Westend as Chain>::RuntimeOrigin::root();
 	let assets_para_destination: VersionedMultiLocation =
 		Westend::child_location_of(AssetHubWestend::para_id()).into();
 
@@ -57,7 +57,7 @@ fn transact_sudo_from_relay_to_assets_para() {
 			bx!(xcm),
 		));
 
-		type RuntimeEvent = <Westend as Relay>::RuntimeEvent;
+		type RuntimeEvent = <Westend as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			Westend,

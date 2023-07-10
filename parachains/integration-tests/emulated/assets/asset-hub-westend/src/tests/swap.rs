@@ -1,6 +1,6 @@
 use crate::*;
 use frame_support::{instances::Instance2, BoundedVec};
-use xcm_emulator::Parachain;
+use xcm_emulator::{Chain, Parachain};
 
 #[test]
 fn swap_locally_on_chain_using_local_assets() {
@@ -13,10 +13,10 @@ fn swap_locally_on_chain_using_local_assets() {
 	});
 
 	AssetHubWestend::execute_with(|| {
-		type RuntimeEvent = <AssetHubWestend as Parachain>::RuntimeEvent;
+		type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::Assets::create(
-			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
+			<AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
 			ASSET_ID.into(),
 			AssetHubWestendSender::get().into(),
 			1000,
@@ -24,14 +24,14 @@ fn swap_locally_on_chain_using_local_assets() {
 		assert!(<AssetHubWestend as AssetHubWestendPallet>::Assets::asset_exists(ASSET_ID));
 
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::Assets::mint(
-			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
+			<AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
 			ASSET_ID.into(),
 			AssetHubWestendSender::get().into(),
 			3_000_000_000_000,
 		));
 
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::create_pool(
-			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
+			<AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
 			asset_native.clone(),
 			asset_one.clone(),
 		));
@@ -44,7 +44,7 @@ fn swap_locally_on_chain_using_local_assets() {
 		);
 
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::add_liquidity(
-			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
+			<AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
 			asset_native.clone(),
 			asset_one.clone(),
 			1_000_000_000_000,
@@ -64,7 +64,7 @@ fn swap_locally_on_chain_using_local_assets() {
 		let path = BoundedVec::<_, _>::truncate_from(vec![asset_native.clone(), asset_one.clone()]);
 
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::swap_exact_tokens_for_tokens(
-			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
+			<AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
 			path,
 			100,
 			1,
@@ -83,7 +83,7 @@ fn swap_locally_on_chain_using_local_assets() {
 		);
 
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::remove_liquidity(
-			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
+			<AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
 			asset_native,
 			asset_one,
 			1414213562273 - 2_000_000_000, // all but the 2 EDs can't be retrieved.
@@ -120,7 +120,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	// 1. Create asset on penpal:
 	PenpalWestend::execute_with(|| {
 		assert_ok!(<PenpalWestend as PenpalWestendPallet>::Assets::create(
-			<PenpalWestend as Parachain>::RuntimeOrigin::signed(PenpalWestendSender::get()),
+			<PenpalWestend as Chain>::RuntimeOrigin::signed(PenpalWestendSender::get()),
 			ASSET_ID.into(),
 			PenpalWestendSender::get().into(),
 			1000,
@@ -149,8 +149,8 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	};
 
 	let call_foreign_assets_create =
-		<AssetHubWestend as Para>::RuntimeCall::ForeignAssets(pallet_assets::Call::<
-			<AssetHubWestend as Para>::Runtime,
+		<AssetHubWestend as Chain>::RuntimeCall::ForeignAssets(pallet_assets::Call::<
+			<AssetHubWestend as Chain>::Runtime,
 			Instance2,
 		>::create {
 			id: *foreign_asset1_at_asset_hub_westend,
@@ -182,7 +182,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	]));
 
 	// Send XCM message from penpal => asset_hub_westend
-	let sudo_penpal_origin = <PenpalWestend as Parachain>::RuntimeOrigin::root();
+	let sudo_penpal_origin = <PenpalWestend as Chain>::RuntimeOrigin::root();
 	PenpalWestend::execute_with(|| {
 		assert_ok!(<PenpalWestend as PenpalWestendPallet>::PolkadotXcm::send(
 			sudo_penpal_origin.clone(),
@@ -190,7 +190,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 			bx!(xcm),
 		));
 
-		type RuntimeEvent = <PenpalWestend as Parachain>::RuntimeEvent;
+		type RuntimeEvent = <PenpalWestend as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			PenpalWestend,
@@ -211,10 +211,10 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		// (While it might be nice to use batch,
 		// currently that's disabled due to safe call filters.)
 
-		type RuntimeEvent = <AssetHubWestend as Parachain>::RuntimeEvent;
+		type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 		// 3. Mint foreign asset (in reality this should be a teleport or some such)
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::ForeignAssets::mint(
-			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(
+			<AssetHubWestend as Chain>::RuntimeOrigin::signed(
 				sov_penpal_on_asset_hub_westend.clone().into()
 			),
 			*foreign_asset1_at_asset_hub_westend,
@@ -231,7 +231,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 		// 4. Create pool:
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::create_pool(
-			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
+			<AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
 			asset_native.clone(),
 			foreign_asset1_at_asset_hub_westend.clone(),
 		));
@@ -245,7 +245,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 		// 5. Add liquidity:
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::add_liquidity(
-			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(
+			<AssetHubWestend as Chain>::RuntimeOrigin::signed(
 				sov_penpal_on_asset_hub_westend.clone()
 			),
 			asset_native.clone(),
@@ -273,7 +273,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		]);
 
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::swap_exact_tokens_for_tokens(
-			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
+			<AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestendSender::get()),
 			path,
 			100000,
 			1000,
@@ -293,7 +293,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 		// 7. Remove liquidity
 		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::AssetConversion::remove_liquidity(
-			<AssetHubWestend as Parachain>::RuntimeOrigin::signed(
+			<AssetHubWestend as Chain>::RuntimeOrigin::signed(
 				sov_penpal_on_asset_hub_westend.clone()
 			),
 			asset_native,
