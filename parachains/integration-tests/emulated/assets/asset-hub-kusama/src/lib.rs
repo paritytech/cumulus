@@ -21,7 +21,6 @@ pub use integration_tests_common::{
 	constants::{
 		accounts::{ALICE, BOB},
 		asset_hub_kusama::ED as ASSET_HUB_KUSAMA_ED,
-		bridge_hub_kusama::ED as BRIDGE_HUB_KUSAMA_ED,
 		kusama::ED as KUSAMA_ED,
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},

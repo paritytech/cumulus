@@ -729,7 +729,6 @@ dependencies = [
  "pallet-xcm",
  "parachains-common",
  "parity-scale-codec",
- "paste",
  "scale-info",
  "sp-api",
  "sp-runtime",

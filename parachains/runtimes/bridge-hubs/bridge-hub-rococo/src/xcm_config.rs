@@ -227,6 +227,8 @@ pub type Barrier = TrailingSetTopicAsId<
 	>,
 >;
 
+/// Cases where a remote origin is accepted as trusted Teleporter:
+/// - teleportation of NativeToken from the parent Relay Chain and sibling parachains.
 pub type TrustedTeleporters =
 	(ConcreteNativeAssetFrom<RelayLocation>, NativeAssetFromSiblingSystemParachain);
 
@@ -239,7 +241,6 @@ impl xcm_executor::Config for XcmConfig {
 	// BridgeHub does not recognize a reserve location for any asset. Users must teleport Native token
 	// where allowed (e.g. with the Relay Chain).
 	type IsReserve = ();
-	/// Only allow teleportation of NativeToken of relay chain.
 	type IsTeleporter = TrustedTeleporters;
 	type UniversalLocation = UniversalLocation;
 	type Barrier = Barrier;

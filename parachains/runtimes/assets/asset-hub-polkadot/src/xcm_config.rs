@@ -386,6 +386,9 @@ pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentia
 	TrustBackedAssetsInstance,
 >;
 
+/// Cases where a remote origin is accepted as trusted Teleporter:
+/// - teleportation of DOT from the parent Relay Chain and sibling parachains.
+/// - teleportation of sibling parachain's assets (as ForeignCreators)
 pub type TrustedTeleporters = (
 	NativeAsset,
 	IsForeignConcreteAsset<FromSiblingParachain<parachain_info::Pallet<Runtime>>>,
@@ -402,9 +405,6 @@ impl xcm_executor::Config for XcmConfig {
 	// Asset Hub acting _as_ a reserve location for DOT and assets created under `pallet-assets`.
 	// For DOT, users must use teleport where allowed (e.g. with the Relay Chain).
 	type IsReserve = ();
-	// We allow:
-	// - teleportation of DOT
-	// - teleportation of sibling parachain's assets (as ForeignCreators)
 	type IsTeleporter = TrustedTeleporters;
 	type UniversalLocation = UniversalLocation;
 	type Barrier = Barrier;

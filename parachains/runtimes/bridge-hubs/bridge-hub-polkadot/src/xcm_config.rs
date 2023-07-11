@@ -181,6 +181,8 @@ pub type Barrier = DenyThenTry<
 	),
 >;
 
+/// Cases where a remote origin is accepted as trusted Teleporter:
+/// - teleportation of DOT from the parent Relay Chain and sibling parachains.
 pub type TrustedTeleporters =
 	(ConcreteNativeAssetFrom<DotRelayLocation>, NativeAssetFromSiblingSystemParachain);
 
@@ -193,7 +195,6 @@ impl xcm_executor::Config for XcmConfig {
 	// BridgeHub does not recognize a reserve location for any asset. Users must teleport DOT
 	// where allowed (e.g. with the Relay Chain).
 	type IsReserve = ();
-	/// Only allow teleportation of DOT.
 	type IsTeleporter = TrustedTeleporters;
 	type UniversalLocation = UniversalLocation;
 	type Barrier = Barrier;
