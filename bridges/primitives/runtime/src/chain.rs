@@ -118,7 +118,8 @@ pub trait Chain: Send + Sync + 'static {
 	/// A type that fulfills the abstract idea of what a Substrate block is.
 	// See here for more info:
 	// https://crates.parity.io/sp_runtime/traits/trait.Block.html
-	type Block: Parameter + BlockT<Hash = Self::Hash> + MaybeSerialize;
+	type Block: Parameter + BlockT<Hash = Self::Hash> + MaybeSerialize
+		where Block::Header::Number: AsPrimitive<usize>;
 
 	/// The user account identifier type for the runtime.
 	type AccountId: Parameter
