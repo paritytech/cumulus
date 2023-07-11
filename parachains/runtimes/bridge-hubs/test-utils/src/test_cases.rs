@@ -656,7 +656,8 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 		.execute_with(|| {
 			let zero: BlockNumberFor<Runtime> = 0u32.into();
 			let genesis_hash = frame_system::Pallet::<Runtime>::block_hash(zero);
-			let mut header: HeaderFor<Runtime> = bp_test_utils::test_header(1u32.into());
+			let mut header: HeaderFor<Runtime> =
+				bp_test_utils::test_header(1u32.into());
 			header.set_parent_hash(genesis_hash);
 			executive_init_block(&header);
 

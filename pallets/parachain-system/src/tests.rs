@@ -29,7 +29,8 @@ use frame_support::{
 	traits::{OnFinalize, OnInitialize},
 	weights::Weight,
 };
-use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
+use frame_system::RawOrigin;
+use frame_system::pallet_prelude::BlockNumberFor;
 use hex_literal::hex;
 use relay_chain::HrmpChannelId;
 use sp_core::{blake2_256, H256};

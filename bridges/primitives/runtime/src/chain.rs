@@ -16,7 +16,7 @@
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{weights::Weight, Parameter};
-use num_traits::{AsPrimitive, Bounded, CheckedSub, SaturatingAdd, Zero};
+use num_traits::{Bounded, CheckedSub, SaturatingAdd, Zero};
 use sp_runtime::{
 	traits::{
 		AtLeast32Bit, AtLeast32BitUnsigned, Block as BlockT, Hash as HashT, Header as HeaderT,
@@ -90,10 +90,7 @@ impl<ChainCall: Encode> Encode for EncodedOrDecodedCall<ChainCall> {
 }
 
 /// Minimal Substrate-based chain representation that may be used from no_std environment.
-pub trait Chain: Send + Sync + 'static
-where
-	<<Self::Block as BlockT>::Header as HeaderT>::Number: AsPrimitive<usize>,
-{
+pub trait Chain: Send + Sync + 'static {
 	/// A type that fulfills the abstract idea of what a Substrate hash is.
 	// Constraits come from the associated Hash type of `sp_runtime::traits::Header`
 	// See here for more info:
@@ -121,7 +118,8 @@ where
 	/// A type that fulfills the abstract idea of what a Substrate block is.
 	// See here for more info:
 	// https://crates.parity.io/sp_runtime/traits/trait.Block.html
-	type Block: Parameter + BlockT<Hash = Self::Hash> + MaybeSerialize;
+	type Block: Parameter + BlockT<Hash = Self::Hash> + MaybeSerialize
+		where Block::Header::Number: AsPrimitive<usize>;
 
 	/// The user account identifier type for the runtime.
 	type AccountId: Parameter
@@ -170,10 +168,7 @@ where
 }
 
 /// A trait that provides the type of the underlying chain.
-pub trait UnderlyingChainProvider
-where
-	<<<Self::Chain as Chain>::Block as BlockT>::Header as HeaderT>::Number: AsPrimitive<usize>,
-{
+pub trait UnderlyingChainProvider {
 	/// Underlying chain type.
 	type Chain: Chain;
 }
@@ -181,7 +176,6 @@ where
 impl<T> Chain for T
 where
 	T: Send + Sync + 'static + UnderlyingChainProvider,
-	<<<T::Chain as Chain>::Block as BlockT>::Header as HeaderT>::Number: AsPrimitive<usize>,
 {
 	type Hash = <T::Chain as Chain>::Hash;
 	type Hasher = <T::Chain as Chain>::Hasher;
@@ -201,10 +195,7 @@ where
 }
 
 /// Minimal parachain representation that may be used from no_std environment.
-pub trait Parachain: Chain
-where
-	<<<Self as Chain>::Block as BlockT>::Header as HeaderT>::Number: AsPrimitive<usize>,
-{
+pub trait Parachain: Chain {
 	/// Parachain identifier.
 	const PARACHAIN_ID: u32;
 }
@@ -213,18 +204,13 @@ impl<T> Parachain for T
 where
 	T: Chain + UnderlyingChainProvider,
 	<T as UnderlyingChainProvider>::Chain: Parachain,
-	<<<T as Chain>::Block as BlockT>::Header as HeaderT>::Number: AsPrimitive<usize>,
-	<<<T::Chain as Chain>::Block as BlockT>::Header as HeaderT>::Number: AsPrimitive<usize>,
 {
 	const PARACHAIN_ID: u32 = <<T as UnderlyingChainProvider>::Chain as Parachain>::PARACHAIN_ID;
 }
 
 /// Adapter for `Get<u32>` to access `PARACHAIN_ID` from `trait Parachain`
 pub struct ParachainIdOf<Para>(sp_std::marker::PhantomData<Para>);
-impl<Para: Parachain> frame_support::traits::Get<u32> for ParachainIdOf<Para>
-where
-	<<<Para as Chain>::Block as BlockT>::Header as HeaderT>::Number: AsPrimitive<usize>,
-{
+impl<Para: Parachain> frame_support::traits::Get<u32> for ParachainIdOf<Para> {
 	fn get() -> u32 {
 		Para::PARACHAIN_ID
 	}

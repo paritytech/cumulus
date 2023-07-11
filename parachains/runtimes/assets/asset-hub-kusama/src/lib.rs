@@ -67,8 +67,8 @@ use pallet_nfts::PalletFeatures;
 pub use parachains_common as common;
 use parachains_common::{
 	impls::{AssetsToBlockAuthor, DealWithFees},
-	AccountId, AssetIdForTrustBackedAssets, AuraId, Balance, BlockNumber, Hash, Header, Index,
-	Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
+	AccountId, AssetIdForTrustBackedAssets, AuraId, Balance, BlockNumber, Hash, Header,
+	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{

@@ -47,10 +47,7 @@ use pallet_transaction_payment::{Config as TransactionPaymentConfig, OnChargeTra
 use pallet_utility::{Call as UtilityCall, Config as UtilityConfig, Pallet as UtilityPallet};
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{
-		Block as BlockT, DispatchInfoOf, Get, Header as HeaderT, PostDispatchInfoOf,
-		SignedExtension, Zero,
-	},
+	traits::{Block as BlockT, Header as HeaderT, DispatchInfoOf, Get, PostDispatchInfoOf, SignedExtension, Zero},
 	transaction_validity::{
 		TransactionPriority, TransactionValidity, TransactionValidityError, ValidTransactionBuilder,
 	},
