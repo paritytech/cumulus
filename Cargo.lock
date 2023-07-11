@@ -248,12 +248,6 @@ checksum = "bddcadddf5e9015d310179a59bb28c4d4b9920ad0f11e8e14dbadf654890c9a6"
 
 [[package]]
 name = "array-bytes"
-version = "4.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f52f63c5c1316a16a4b35eaac8b76a98248961a533f061684cb2a7cb0eafb6c6"
-
-[[package]]
-name = "array-bytes"
 version = "6.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9b1c5a481ec30a5abd8dfbd94ab5cf1bb4e9a66be7f1b3b322f2f1170c200fd"
@@ -1799,13 +1793,13 @@ dependencies = [
 
 [[package]]
 name = "cid"
-version = "0.8.6"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6ed9c8b2d17acb8110c46f1da5bf4a696d745e1474a16db0cd2b49cd0249bf2"
+checksum = "b9b68e3193982cd54187d71afdb2a271ad4cf8af157858e9cb911b91321de143"
 dependencies = [
  "core2",
  "multibase",
- "multihash 0.16.2",
+ "multihash",
  "serde",
  "unsigned-varint",
 ]
@@ -3073,7 +3067,7 @@ dependencies = [
 name = "cumulus-relay-chain-minimal-node"
 version = "0.1.0"
 dependencies = [
- "array-bytes 6.1.0",
+ "array-bytes",
  "async-trait",
  "cumulus-primitives-core",
  "cumulus-relay-chain-interface",
@@ -4249,7 +4243,7 @@ version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab0c50f13e5b7f656512c101cacdeb"
 dependencies = [
  "Inflector",
- "array-bytes 4.2.0",
+ "array-bytes",
  "chrono",
  "clap",
  "comfy-table",
@@ -5893,7 +5887,7 @@ dependencies = [
  "libp2p-identity",
  "log",
  "multiaddr",
- "multihash 0.17.0",
+ "multihash",
  "multistream-select",
  "once_cell",
  "parking_lot 0.12.1",
@@ -5953,7 +5947,7 @@ dependencies = [
  "ed25519-dalek",
  "log",
  "multiaddr",
- "multihash 0.17.0",
+ "multihash",
  "quick-protobuf",
  "rand 0.8.5",
  "sha2 0.10.2",
@@ -6200,7 +6194,7 @@ dependencies = [
  "libp2p-identity",
  "libp2p-noise",
  "log",
- "multihash 0.17.0",
+ "multihash",
  "quick-protobuf",
  "quick-protobuf-codec",
  "rand 0.8.5",
@@ -6735,7 +6729,7 @@ dependencies = [
  "data-encoding",
  "log",
  "multibase",
- "multihash 0.17.0",
+ "multihash",
  "percent-encoding",
  "serde",
  "static_assertions",
@@ -6756,9 +6750,9 @@ dependencies = [
 
 [[package]]
 name = "multihash"
-version = "0.16.2"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3db354f401db558759dfc1e568d010a5d4146f4d3f637be1275ec4a3cf09689"
+checksum = "835d6ff01d610179fbce3de1694d007e500bf33a7f29689838941d6bf783ae40"
 dependencies = [
  "blake2b_simd",
  "blake2s_simd",
@@ -6768,19 +6762,6 @@ dependencies = [
  "multihash-derive",
  "sha2 0.10.2",
  "sha3",
- "unsigned-varint",
-]
-
-[[package]]
-name = "multihash"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "835d6ff01d610179fbce3de1694d007e500bf33a7f29689838941d6bf783ae40"
-dependencies = [
- "core2",
- "digest 0.10.6",
- "multihash-derive",
- "sha2 0.10.2",
  "unsigned-varint",
 ]
 
@@ -7190,7 +7171,7 @@ name = "pallet-alliance"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab0c50f13e5b7f656512c101cacdeb"
 dependencies = [
- "array-bytes 4.2.0",
+ "array-bytes",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -7400,7 +7381,7 @@ name = "pallet-beefy-mmr"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab0c50f13e5b7f656512c101cacdeb"
 dependencies = [
- "array-bytes 4.2.0",
+ "array-bytes",
  "binary-merkle-tree",
  "frame-support",
  "frame-system",
@@ -7742,6 +7723,7 @@ dependencies = [
  "sp-io",
  "sp-npos-elections",
  "sp-runtime",
+ "sp-staking",
  "sp-std",
 ]
 
@@ -11688,7 +11670,7 @@ dependencies = [
  "ip_network",
  "libp2p",
  "log",
- "multihash 0.17.0",
+ "multihash",
  "parity-scale-codec",
  "prost",
  "prost-build",
@@ -11778,7 +11760,7 @@ name = "sc-cli"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab0c50f13e5b7f656512c101cacdeb"
 dependencies = [
- "array-bytes 4.2.0",
+ "array-bytes",
  "chrono",
  "clap",
  "fdlimit",
@@ -11981,7 +11963,7 @@ name = "sc-consensus-beefy"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab0c50f13e5b7f656512c101cacdeb"
 dependencies = [
- "array-bytes 4.2.0",
+ "array-bytes",
  "async-channel",
  "async-trait",
  "fnv",
@@ -12048,7 +12030,7 @@ version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab0c50f13e5b7f656512c101cacdeb"
 dependencies = [
  "ahash 0.8.2",
- "array-bytes 4.2.0",
+ "array-bytes",
  "async-trait",
  "dyn-clone",
  "finality-grandpa",
@@ -12130,11 +12112,11 @@ name = "sc-executor"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab0c50f13e5b7f656512c101cacdeb"
 dependencies = [
- "lru 0.10.0",
  "parity-scale-codec",
  "parking_lot 0.12.1",
  "sc-executor-common",
  "sc-executor-wasmtime",
+ "schnellru",
  "sp-api",
  "sp-core",
  "sp-externalities",
@@ -12197,7 +12179,7 @@ name = "sc-keystore"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab0c50f13e5b7f656512c101cacdeb"
 dependencies = [
- "array-bytes 4.2.0",
+ "array-bytes",
  "parking_lot 0.12.1",
  "serde_json",
  "sp-application-crypto",
@@ -12211,7 +12193,7 @@ name = "sc-network"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab0c50f13e5b7f656512c101cacdeb"
 dependencies = [
- "array-bytes 4.2.0",
+ "array-bytes",
  "async-channel",
  "async-trait",
  "asynchronous-codec",
@@ -12294,9 +12276,9 @@ dependencies = [
  "futures-timer",
  "libp2p",
  "log",
- "lru 0.10.0",
  "sc-network",
  "sc-network-common",
+ "schnellru",
  "sp-runtime",
  "substrate-prometheus-endpoint",
  "tracing",
@@ -12307,7 +12289,7 @@ name = "sc-network-light"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab0c50f13e5b7f656512c101cacdeb"
 dependencies = [
- "array-bytes 4.2.0",
+ "array-bytes",
  "async-channel",
  "futures",
  "libp2p-identity",
@@ -12328,7 +12310,7 @@ name = "sc-network-sync"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab0c50f13e5b7f656512c101cacdeb"
 dependencies = [
- "array-bytes 4.2.0",
+ "array-bytes",
  "async-channel",
  "async-trait",
  "fork-tree",
@@ -12336,7 +12318,6 @@ dependencies = [
  "futures-timer",
  "libp2p",
  "log",
- "lru 0.10.0",
  "mockall",
  "parity-scale-codec",
  "prost",
@@ -12346,6 +12327,7 @@ dependencies = [
  "sc-network",
  "sc-network-common",
  "sc-utils",
+ "schnellru",
  "smallvec",
  "sp-arithmetic",
  "sp-blockchain",
@@ -12362,7 +12344,7 @@ name = "sc-network-transactions"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab0c50f13e5b7f656512c101cacdeb"
 dependencies = [
- "array-bytes 4.2.0",
+ "array-bytes",
  "futures",
  "libp2p",
  "log",
@@ -12380,7 +12362,7 @@ name = "sc-offchain"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab0c50f13e5b7f656512c101cacdeb"
 dependencies = [
- "array-bytes 4.2.0",
+ "array-bytes",
  "bytes",
  "fnv",
  "futures",
@@ -12483,7 +12465,7 @@ name = "sc-rpc-spec-v2"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab0c50f13e5b7f656512c101cacdeb"
 dependencies = [
- "array-bytes 4.2.0",
+ "array-bytes",
  "futures",
  "futures-util",
  "hex",
@@ -13383,9 +13365,9 @@ source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab
 dependencies = [
  "futures",
  "log",
- "lru 0.10.0",
  "parity-scale-codec",
  "parking_lot 0.12.1",
+ "schnellru",
  "sp-api",
  "sp-consensus",
  "sp-database",
@@ -13499,7 +13481,7 @@ name = "sp-core"
 version = "21.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab0c50f13e5b7f656512c101cacdeb"
 dependencies = [
- "array-bytes 4.2.0",
+ "array-bytes",
  "bitflags",
  "blake2",
  "bounded-collections",
@@ -13806,6 +13788,7 @@ name = "sp-staking"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab0c50f13e5b7f656512c101cacdeb"
 dependencies = [
+ "impl-trait-for-tuples",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -14252,7 +14235,7 @@ name = "substrate-test-client"
 version = "2.0.1"
 source = "git+https://github.com/paritytech/substrate?branch=master#4b6e735f0fab0c50f13e5b7f656512c101cacdeb"
 dependencies = [
- "array-bytes 4.2.0",
+ "array-bytes",
  "async-trait",
  "futures",
  "parity-scale-codec",
