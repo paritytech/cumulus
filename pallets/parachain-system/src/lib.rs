@@ -229,7 +229,7 @@ pub mod pallet {
 			};
 
 			<PendingUpwardMessages<T>>::mutate(|up| {
-				let queue_size = relevant_messaging_state.relay_dispatch_queue_size;
+				let queue_size = relevant_messaging_state.relay_dispatch_queue_remaining_capacity;
 
 				let available_capacity = cmp::min(
 					queue_size.remaining_count,
