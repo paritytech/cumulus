@@ -47,6 +47,7 @@ pub use cumulus_primitives_core::{
 pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 pub use cumulus_test_service::get_account_id_from_seed;
+pub use cumulus_pallet_parachain_system::Pallet as ParachainSystemPallet;
 pub use pallet_message_queue;
 pub use parachain_info;
 pub use parachains_common::{AccountId, Balance, BlockNumber};
@@ -180,7 +181,6 @@ pub trait Chain: TestExt {
 	type RuntimeOrigin;
 	type RuntimeEvent;
 	type System;
-	// type Balances: Currency<<Self::Runtime as SystemConfig>::AccountId>;
 
 	fn account_id_of(seed: &str) -> AccountId {
 		get_account_id_from_seed::<sr25519::Public>(seed)
@@ -195,24 +195,6 @@ pub trait Chain: TestExt {
 	}
 
 	fn events() -> Vec<<Self as Chain>::RuntimeEvent>;
-
-	// fn fund_accounts(accounts: Vec<(AccountId, Balance)>)
-	// where
-	// 	Self::Balances: Currency<<Self as Chain>::Runtime>,
-	// 	Self::Runtime: From<AccountId32>,
-	// 	<Self::Balances as Currency<Self::Runtime>>::Balance: From<u128>
-	// {
-	// 	Self::ext_wrapper(|| {
-	// 		for account in accounts {
-	// 			let _ = <<Self as Chain>::Balances as Currency<<Self as Chain>::Runtime>>::make_free_balance_be(
-	// 				&account.0.into(),
-	// 				account.1.into(),
-	// 			);
-	// 		}
-	// 	});
-	// }
-
-
 }
 
 pub trait RelayChain: Chain + ProcessMessage {
@@ -250,8 +232,6 @@ pub trait Parachain: Chain + XcmpMessageHandler + DmpMessageHandler + TestExt {
 	fn sovereign_account_id_of(location: MultiLocation) -> AccountId {
 		Self::LocationToAccountId::convert_location(&location).unwrap()
 	}
-
-	// fn events() -> Vec<Self::RuntimeEvent>;
 
 	fn prepare_for_xcmp();
 }
@@ -323,17 +303,13 @@ macro_rules! decl_test_relay_chains {
 			pub struct $name:ident {
 				genesis = $genesis:expr,
 				on_init = $on_init:expr,
-				runtime = {
-					Runtime: $runtime:path,
-					RuntimeOrigin: $runtime_origin:path,
-					RuntimeCall: $runtime_call:path,
-					RuntimeEvent: $runtime_event:path,
+				runtime = $runtime:ident,
+				core = {
 					MessageQueue: $mq:path,
 					SovereignAccountOf: $sovereign_acc_of:path,
-					// System: $system:path,
-					// Balances: $balances:path,
+
 				},
-				pallets_extra = {
+				pallets = {
 					$($pallet_name:ident: $pallet_path:path,)*
 				}
 			}
@@ -344,10 +320,10 @@ macro_rules! decl_test_relay_chains {
 			pub struct $name;
 
 			impl Chain for $name {
-				type Runtime = $runtime;
-				type RuntimeCall = $runtime_call;
-				type RuntimeOrigin = $runtime_origin;
-				type RuntimeEvent = $runtime_event;
+				type Runtime = $runtime::Runtime;
+				type RuntimeCall = $runtime::RuntimeCall;
+				type RuntimeOrigin = $runtime::RuntimeOrigin;
+				type RuntimeEvent = $runtime::RuntimeEvent;
 				type System = $crate::SystemPallet::<Self::Runtime>;
 				// type Balances = $balances;
 
@@ -388,7 +364,8 @@ macro_rules! decl_test_relay_chains {
 				) -> Result<bool, $crate::ProcessMessageError> {
 					use $crate::{Weight, AggregateMessageOrigin, UmpQueueId, ServiceQueues, EnqueueMessage};
 					use $mq as message_queue;
-					use $runtime_event as runtime_event;
+					// type RuntimeEvent = <Self as Chain>::RuntimeEvent;
+					// use $runtime_event as runtime_event;
 
 					Self::execute_with(|| {
 						<$mq as EnqueueMessage<AggregateMessageOrigin>>::enqueue_message(
@@ -402,10 +379,10 @@ macro_rules! decl_test_relay_chains {
 						let event = events.last().expect("There must be at least one event");
 
 						match &event.event {
-							runtime_event::MessageQueue(
-								$crate::pallet_message_queue::Event::Processed {origin, ..}) => {
-								assert_eq!(origin, &AggregateMessageOrigin::Ump(UmpQueueId::Para(para)));
-							},
+							// RuntimeEvent::MessageQueue(
+							// 	$crate::pallet_message_queue::Event::Processed {origin, ..}) => {
+							// 	assert_eq!(origin, &AggregateMessageOrigin::Ump(UmpQueueId::Para(para)));
+							// },
 							event => panic!("Unexpected event: {:#?}", event),
 						}
 						Ok(true)
@@ -548,20 +525,14 @@ macro_rules! decl_test_parachains {
 			pub struct $name:ident {
 				genesis = $genesis:expr,
 				on_init = $on_init:expr,
-				runtime = {
-					Runtime: $runtime:path,
-					RuntimeOrigin: $runtime_origin:path,
-					RuntimeCall: $runtime_call:path,
-					RuntimeEvent: $runtime_event:path,
+				runtime = $runtime:ident,
+				core = {
 					XcmpMessageHandler: $xcmp_message_handler:path,
 					DmpMessageHandler: $dmp_message_handler:path,
 					LocationToAccountId: $location_to_account:path,
-					// System: $system:path,
-					// Balances: $balances_pallet:path,
-					ParachainSystem: $parachain_system:path,
 					ParachainInfo: $parachain_info:path,
 				},
-				pallets_extra = {
+				pallets = {
 					$($pallet_name:ident: $pallet_path:path,)*
 				}
 			}
@@ -572,12 +543,11 @@ macro_rules! decl_test_parachains {
 			pub struct $name;
 
 			impl Chain for $name {
-				type Runtime = $runtime;
-				type RuntimeCall = $runtime_call;
-				type RuntimeOrigin = $runtime_origin;
-				type RuntimeEvent = $runtime_event;
+				type Runtime = $runtime::Runtime;
+				type RuntimeCall = $runtime::RuntimeCall;
+				type RuntimeOrigin = $runtime::RuntimeOrigin;
+				type RuntimeEvent = $runtime::RuntimeEvent;
 				type System = $crate::SystemPallet::<Self::Runtime>;
-				// type Balances = $balances_pallet;
 
 				fn events() -> Vec<<Self as Chain>::RuntimeEvent> {
 					Self::System::events()
@@ -591,15 +561,8 @@ macro_rules! decl_test_parachains {
 				type XcmpMessageHandler = $xcmp_message_handler;
 				type DmpMessageHandler = $dmp_message_handler;
 				type LocationToAccountId = $location_to_account;
-				type ParachainSystem = $parachain_system;
+				type ParachainSystem = $crate::ParachainSystemPallet<<Self as Chain>::Runtime>;
 				type ParachainInfo = $parachain_info;
-
-				// fn events() -> Vec<<Self as Chain>::RuntimeEvent> {
-				// 	<Self as Chain>::System::events()
-				// 		.iter()
-				// 		.map(|record| record.event.clone())
-				// 		.collect()
-				// }
 
 				fn prepare_for_xcmp() {
 					use $crate::{Network, NetworkComponent, Hooks};

@@ -24,15 +24,12 @@ decl_test_relay_chains! {
 	pub struct Polkadot {
 		genesis = polkadot::genesis(),
 		on_init = (),
-		runtime = {
-			Runtime: polkadot_runtime::Runtime,
-			RuntimeOrigin: polkadot_runtime::RuntimeOrigin,
-			RuntimeCall: polkadot_runtime::RuntimeCall,
-			RuntimeEvent: polkadot_runtime::RuntimeEvent,
+		runtime = polkadot_runtime,
+		core = {
 			MessageQueue: polkadot_runtime::MessageQueue,
 			SovereignAccountOf: polkadot_runtime::xcm_config::SovereignAccountOf,
 		},
-		pallets_extra = {
+		pallets = {
 			XcmPallet: polkadot_runtime::XcmPallet,
 		}
 	},
@@ -40,15 +37,12 @@ decl_test_relay_chains! {
 	pub struct Kusama {
 		genesis = kusama::genesis(),
 		on_init = (),
-		runtime = {
-			Runtime: kusama_runtime::Runtime,
-			RuntimeOrigin: kusama_runtime::RuntimeOrigin,
-			RuntimeCall: kusama_runtime::RuntimeCall,
-			RuntimeEvent: kusama_runtime::RuntimeEvent,
+		runtime = kusama_runtime,
+		core = {
 			MessageQueue: kusama_runtime::MessageQueue,
 			SovereignAccountOf: kusama_runtime::xcm_config::SovereignAccountOf,
 		},
-		pallets_extra = {
+		pallets = {
 			XcmPallet: kusama_runtime::XcmPallet,
 		}
 	},
@@ -56,15 +50,12 @@ decl_test_relay_chains! {
 	pub struct Westend {
 		genesis = westend::genesis(),
 		on_init = (),
-		runtime = {
-			Runtime: westend_runtime::Runtime,
-			RuntimeOrigin: westend_runtime::RuntimeOrigin,
-			RuntimeCall: westend_runtime::RuntimeCall,
-			RuntimeEvent: westend_runtime::RuntimeEvent,
+		runtime = westend_runtime,
+		core = {
 			MessageQueue: westend_runtime::MessageQueue,
 			SovereignAccountOf: westend_runtime::xcm_config::LocationConverter, //TODO: rename to SovereignAccountOf,
 		},
-		pallets_extra = {
+		pallets = {
 			XcmPallet: westend_runtime::XcmPallet,
 			Sudo: westend_runtime::Sudo,
 		}
@@ -73,15 +64,12 @@ decl_test_relay_chains! {
 	pub struct Rococo {
 		genesis = rococo::genesis(),
 		on_init = (),
-		runtime = {
-			Runtime: rococo_runtime::Runtime,
-			RuntimeOrigin: rococo_runtime::RuntimeOrigin,
-			RuntimeCall: rococo_runtime::RuntimeCall,
-			RuntimeEvent: rococo_runtime::RuntimeEvent,
+		runtime = rococo_runtime,
+		core = {
 			MessageQueue: rococo_runtime::MessageQueue,
 			SovereignAccountOf: rococo_runtime::xcm_config::LocationConverter, //TODO: rename to SovereignAccountOf,
 		},
-		pallets_extra = {
+		pallets = {
 			XcmPallet: rococo_runtime::XcmPallet,
 			Sudo: rococo_runtime::Sudo,
 		}
@@ -90,15 +78,12 @@ decl_test_relay_chains! {
 	pub struct Wococo {
 		genesis = rococo::genesis(),
 		on_init = (),
-		runtime = {
-			Runtime: rococo_runtime::Runtime,
-			RuntimeOrigin: rococo_runtime::RuntimeOrigin,
-			RuntimeCall: rococo_runtime::RuntimeCall,
-			RuntimeEvent: rococo_runtime::RuntimeEvent,
+		runtime = rococo_runtime,
+		core = {
 			MessageQueue: rococo_runtime::MessageQueue,
 			SovereignAccountOf: rococo_runtime::xcm_config::LocationConverter, //TODO: rename to SovereignAccountOf,
 		},
-		pallets_extra = {
+		pallets = {
 			XcmPallet: rococo_runtime::XcmPallet,
 			Sudo: rococo_runtime::Sudo,
 		}
@@ -110,18 +95,14 @@ decl_test_parachains! {
 	pub struct AssetHubPolkadot {
 		genesis = asset_hub_polkadot::genesis(),
 		on_init = (),
-		runtime = {
-			Runtime: asset_hub_polkadot_runtime::Runtime,
-			RuntimeOrigin: asset_hub_polkadot_runtime::RuntimeOrigin,
-			RuntimeCall: asset_hub_polkadot_runtime::RuntimeCall,
-			RuntimeEvent: asset_hub_polkadot_runtime::RuntimeEvent,
+		runtime = asset_hub_polkadot_runtime,
+		core = {
 			XcmpMessageHandler: asset_hub_polkadot_runtime::XcmpQueue,
 			DmpMessageHandler: asset_hub_polkadot_runtime::DmpQueue,
 			LocationToAccountId: asset_hub_polkadot_runtime::xcm_config::LocationToAccountId,
-			ParachainSystem: asset_hub_polkadot_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
 		},
-		pallets_extra = {
+		pallets = {
 			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
 			Assets: asset_hub_polkadot_runtime::Assets,
 		}
@@ -129,54 +110,42 @@ decl_test_parachains! {
 	pub struct Collectives {
 		genesis = collectives::genesis(),
 		on_init = (),
-		runtime = {
-			Runtime: collectives_polkadot_runtime::Runtime,
-			RuntimeOrigin: collectives_polkadot_runtime::RuntimeOrigin,
-			RuntimeCall: collectives_polkadot_runtime::RuntimeCall,
-			RuntimeEvent: collectives_polkadot_runtime::RuntimeEvent,
+		runtime = collectives_polkadot_runtime,
+		core = {
 			XcmpMessageHandler: collectives_polkadot_runtime::XcmpQueue,
 			DmpMessageHandler: collectives_polkadot_runtime::DmpQueue,
 			LocationToAccountId: collectives_polkadot_runtime::xcm_config::LocationToAccountId,
-			ParachainSystem: collectives_polkadot_runtime::ParachainSystem,
 			ParachainInfo: collectives_polkadot_runtime::ParachainInfo,
 		},
-		pallets_extra = {
+		pallets = {
 			PolkadotXcm: collectives_polkadot_runtime::PolkadotXcm,
 		}
 	},
 	pub struct BridgeHubPolkadot {
 		genesis = bridge_hub_polkadot::genesis(),
 		on_init = (),
-		runtime = {
-			Runtime: bridge_hub_polkadot_runtime::Runtime,
-			RuntimeOrigin: bridge_hub_polkadot_runtime::RuntimeOrigin,
-			RuntimeCall: bridge_hub_polkadot_runtime::RuntimeCall,
-			RuntimeEvent: bridge_hub_polkadot_runtime::RuntimeEvent,
+		runtime = bridge_hub_polkadot_runtime,
+		core = {
 			XcmpMessageHandler: bridge_hub_polkadot_runtime::XcmpQueue,
 			DmpMessageHandler: bridge_hub_polkadot_runtime::DmpQueue,
 			LocationToAccountId: bridge_hub_polkadot_runtime::xcm_config::LocationToAccountId,
-			ParachainSystem: bridge_hub_polkadot_runtime::ParachainSystem,
 			ParachainInfo: bridge_hub_polkadot_runtime::ParachainInfo,
 		},
-		pallets_extra = {
+		pallets = {
 			PolkadotXcm: bridge_hub_polkadot_runtime::PolkadotXcm,
 		}
 	},
 	pub struct PenpalPolkadot {
 		genesis = penpal::genesis(penpal::PARA_ID),
 		on_init = (),
-		runtime = {
-			Runtime: penpal_runtime::Runtime,
-			RuntimeOrigin: penpal_runtime::RuntimeOrigin,
-			RuntimeCall: penpal_runtime::RuntimeCall,
-			RuntimeEvent: penpal_runtime::RuntimeEvent,
+		runtime = penpal_runtime,
+		core = {
 			XcmpMessageHandler: penpal_runtime::XcmpQueue,
 			DmpMessageHandler: penpal_runtime::DmpQueue,
 			LocationToAccountId: penpal_runtime::xcm_config::LocationToAccountId,
-			ParachainSystem: penpal_runtime::ParachainSystem,
 			ParachainInfo: penpal_runtime::ParachainInfo,
 		},
-		pallets_extra = {
+		pallets = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
 			Assets: penpal_runtime::Assets,
 		}
@@ -185,18 +154,14 @@ decl_test_parachains! {
 	pub struct AssetHubKusama {
 		genesis = asset_hub_kusama::genesis(),
 		on_init = (),
-		runtime = {
-			Runtime: asset_hub_kusama_runtime::Runtime,
-			RuntimeOrigin: asset_hub_kusama_runtime::RuntimeOrigin,
-			RuntimeCall: asset_hub_kusama_runtime::RuntimeCall,
-			RuntimeEvent: asset_hub_kusama_runtime::RuntimeEvent,
+		runtime = asset_hub_kusama_runtime,
+		core = {
 			XcmpMessageHandler: asset_hub_kusama_runtime::XcmpQueue,
 			DmpMessageHandler: asset_hub_kusama_runtime::DmpQueue,
 			LocationToAccountId: asset_hub_kusama_runtime::xcm_config::LocationToAccountId,
-			ParachainSystem: asset_hub_kusama_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_kusama_runtime::ParachainInfo,
 		},
-		pallets_extra = {
+		pallets = {
 			PolkadotXcm: asset_hub_kusama_runtime::PolkadotXcm,
 			Assets: asset_hub_kusama_runtime::Assets,
 			ForeignAssets: asset_hub_kusama_runtime::Assets,
@@ -205,36 +170,28 @@ decl_test_parachains! {
 	pub struct BridgeHubKusama {
 		genesis = bridge_hub_kusama::genesis(),
 		on_init = (),
-		runtime = {
-			Runtime: bridge_hub_kusama_runtime::Runtime,
-			RuntimeOrigin: bridge_hub_kusama_runtime::RuntimeOrigin,
-			RuntimeCall: bridge_hub_kusama_runtime::RuntimeCall,
-			RuntimeEvent: bridge_hub_kusama_runtime::RuntimeEvent,
+		runtime = bridge_hub_kusama_runtime,
+		core = {
 			XcmpMessageHandler: bridge_hub_kusama_runtime::XcmpQueue,
 			DmpMessageHandler: bridge_hub_kusama_runtime::DmpQueue,
 			LocationToAccountId: bridge_hub_kusama_runtime::xcm_config::LocationToAccountId,
-			ParachainSystem: bridge_hub_kusama_runtime::ParachainSystem,
 			ParachainInfo: bridge_hub_kusama_runtime::ParachainInfo,
 		},
-		pallets_extra = {
+		pallets = {
 			PolkadotXcm: bridge_hub_kusama_runtime::PolkadotXcm,
 		}
 	},
 	pub struct PenpalKusama {
 		genesis = penpal::genesis(penpal::PARA_ID),
 		on_init = (),
-		runtime = {
-			Runtime: penpal_runtime::Runtime,
-			RuntimeOrigin: penpal_runtime::RuntimeOrigin,
-			RuntimeCall: penpal_runtime::RuntimeCall,
-			RuntimeEvent: penpal_runtime::RuntimeEvent,
+		runtime = penpal_runtime,
+		core = {
 			XcmpMessageHandler: penpal_runtime::XcmpQueue,
 			DmpMessageHandler: penpal_runtime::DmpQueue,
 			LocationToAccountId: penpal_runtime::xcm_config::LocationToAccountId,
-			ParachainSystem: penpal_runtime::ParachainSystem,
 			ParachainInfo: penpal_runtime::ParachainInfo,
 		},
-		pallets_extra = {
+		pallets = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
 			Assets: penpal_runtime::Assets,
 		}
@@ -243,18 +200,14 @@ decl_test_parachains! {
 	pub struct AssetHubWestend {
 		genesis = asset_hub_westend::genesis(),
 		on_init = (),
-		runtime = {
-			Runtime: asset_hub_westend_runtime::Runtime,
-			RuntimeOrigin: asset_hub_westend_runtime::RuntimeOrigin,
-			RuntimeCall: asset_hub_westend_runtime::RuntimeCall,
-			RuntimeEvent: asset_hub_westend_runtime::RuntimeEvent,
+		runtime = asset_hub_westend_runtime,
+		core = {
 			XcmpMessageHandler: asset_hub_westend_runtime::XcmpQueue,
 			DmpMessageHandler: asset_hub_westend_runtime::DmpQueue,
 			LocationToAccountId: asset_hub_westend_runtime::xcm_config::LocationToAccountId,
-			ParachainSystem: asset_hub_westend_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_westend_runtime::ParachainInfo,
 		},
-		pallets_extra = {
+		pallets = {
 			PolkadotXcm: asset_hub_westend_runtime::PolkadotXcm,
 			Assets: asset_hub_westend_runtime::Assets,
 			ForeignAssets: asset_hub_westend_runtime::ForeignAssets,
@@ -264,18 +217,14 @@ decl_test_parachains! {
 	pub struct PenpalWestend {
 		genesis = penpal::genesis(penpal::PARA_ID),
 		on_init = (),
-		runtime = {
-			Runtime: penpal_runtime::Runtime,
-			RuntimeOrigin: penpal_runtime::RuntimeOrigin,
-			RuntimeCall: penpal_runtime::RuntimeCall,
-			RuntimeEvent: penpal_runtime::RuntimeEvent,
+		runtime = penpal_runtime,
+		core = {
 			XcmpMessageHandler: penpal_runtime::XcmpQueue,
 			DmpMessageHandler: penpal_runtime::DmpQueue,
 			LocationToAccountId: penpal_runtime::xcm_config::LocationToAccountId,
-			ParachainSystem: penpal_runtime::ParachainSystem,
 			ParachainInfo: penpal_runtime::ParachainInfo,
 		},
-		pallets_extra = {
+		pallets = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
 			Assets: penpal_runtime::Assets,
 		}
@@ -284,36 +233,28 @@ decl_test_parachains! {
 	pub struct BridgeHubRococo {
 		genesis = bridge_hub_rococo::genesis(),
 		on_init = (),
-		runtime = {
-			Runtime: bridge_hub_rococo_runtime::Runtime,
-			RuntimeOrigin: bridge_hub_rococo_runtime::RuntimeOrigin,
-			RuntimeCall: bridge_hub_rococo_runtime::RuntimeCall,
-			RuntimeEvent: bridge_hub_rococo_runtime::RuntimeEvent,
+		runtime = bridge_hub_rococo_runtime,
+		core = {
 			XcmpMessageHandler: bridge_hub_rococo_runtime::XcmpQueue,
 			DmpMessageHandler: bridge_hub_rococo_runtime::DmpQueue,
 			LocationToAccountId: bridge_hub_rococo_runtime::xcm_config::LocationToAccountId,
-			ParachainSystem: bridge_hub_rococo_runtime::ParachainSystem,
 			ParachainInfo: bridge_hub_rococo_runtime::ParachainInfo,
 		},
-		pallets_extra = {
+		pallets = {
 			PolkadotXcm: bridge_hub_rococo_runtime::PolkadotXcm,
 		}
 	},
 	pub struct AssetHubRococo {
 		genesis = asset_hub_polkadot::genesis(),
 		on_init = (),
-		runtime = {
-			Runtime: asset_hub_polkadot_runtime::Runtime,
-			RuntimeOrigin: asset_hub_polkadot_runtime::RuntimeOrigin,
-			RuntimeCall: asset_hub_polkadot_runtime::RuntimeCall,
-			RuntimeEvent: asset_hub_polkadot_runtime::RuntimeEvent,
+		runtime = asset_hub_polkadot_runtime,
+		core = {
 			XcmpMessageHandler: asset_hub_polkadot_runtime::XcmpQueue,
 			DmpMessageHandler: asset_hub_polkadot_runtime::DmpQueue,
 			LocationToAccountId: asset_hub_polkadot_runtime::xcm_config::LocationToAccountId,
-			ParachainSystem: asset_hub_polkadot_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
 		},
-		pallets_extra = {
+		pallets = {
 			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
 			Assets: asset_hub_polkadot_runtime::Assets,
 		}
@@ -322,36 +263,28 @@ decl_test_parachains! {
 	pub struct BridgeHubWococo {
 		genesis = bridge_hub_rococo::genesis(),
 		on_init = (),
-		runtime = {
-			Runtime: bridge_hub_rococo_runtime::Runtime,
-			RuntimeOrigin: bridge_hub_rococo_runtime::RuntimeOrigin,
-			RuntimeCall: bridge_hub_rococo_runtime::RuntimeCall,
-			RuntimeEvent: bridge_hub_rococo_runtime::RuntimeEvent,
+		runtime = bridge_hub_rococo_runtime,
+		core = {
 			XcmpMessageHandler: bridge_hub_rococo_runtime::XcmpQueue,
 			DmpMessageHandler: bridge_hub_rococo_runtime::DmpQueue,
 			LocationToAccountId: bridge_hub_rococo_runtime::xcm_config::LocationToAccountId,
-			ParachainSystem: bridge_hub_rococo_runtime::ParachainSystem,
 			ParachainInfo: bridge_hub_rococo_runtime::ParachainInfo,
 		},
-		pallets_extra = {
+		pallets = {
 			PolkadotXcm: bridge_hub_rococo_runtime::PolkadotXcm,
 		}
 	},
 	pub struct AssetHubWococo {
 		genesis = asset_hub_polkadot::genesis(),
 		on_init = (),
-		runtime = {
-			Runtime: asset_hub_polkadot_runtime::Runtime,
-			RuntimeOrigin: asset_hub_polkadot_runtime::RuntimeOrigin,
-			RuntimeCall: asset_hub_polkadot_runtime::RuntimeCall,
-			RuntimeEvent: asset_hub_polkadot_runtime::RuntimeEvent,
+		runtime = asset_hub_polkadot_runtime,
+		core = {
 			XcmpMessageHandler: asset_hub_polkadot_runtime::XcmpQueue,
 			DmpMessageHandler: asset_hub_polkadot_runtime::DmpQueue,
 			LocationToAccountId: asset_hub_polkadot_runtime::xcm_config::LocationToAccountId,
-			ParachainSystem: asset_hub_polkadot_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
 		},
-		pallets_extra = {
+		pallets = {
 			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
 			Assets: asset_hub_polkadot_runtime::Assets,
 		}
