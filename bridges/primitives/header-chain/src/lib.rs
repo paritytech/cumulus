@@ -29,9 +29,8 @@ use frame_support::PalletError;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_consensus_grandpa::{AuthorityList, ConsensusLog, SetId, GRANDPA_ENGINE_ID};
-use sp_runtime::{traits::{Block as BlockT, Header as HeaderT}, Digest, RuntimeDebug};
+use sp_runtime::{traits::Header as HeaderT, Digest, RuntimeDebug};
 use sp_std::boxed::Box;
-use num_traits::AsPrimitive;
 
 pub mod justification;
 pub mod storage_keys;
@@ -70,7 +69,7 @@ impl<H: HeaderT> StoredHeaderDataBuilder<H::Number, H::Hash> for H {
 }
 
 /// Substrate header chain, abstracted from the way it is stored.
-pub trait HeaderChain<C: Chain> where <<<C as Chain>::Block as BlockT>::Header as HeaderT>::Number: AsPrimitive<usize> {
+pub trait HeaderChain<C: Chain> {
 	/// Returns state (storage) root of given finalized header.
 	fn finalized_header_state_root(header_hash: HashOf<C>) -> Option<HashOf<C>>;
 	/// Get storage proof checker using finalized header.
@@ -182,7 +181,7 @@ pub type BridgeGrandpaCallOf<C> = BridgeGrandpaCall<HeaderOf<C>>;
 ///
 /// Keep in mind that parachains are relying on relay chain GRANDPA, so they should not implement
 /// this trait.
-pub trait ChainWithGrandpa: Chain where <<<Self as Chain>::Block as BlockT>::Header as HeaderT>::Number: AsPrimitive<usize> {
+pub trait ChainWithGrandpa: Chain {
 	/// Name of the bridge GRANDPA pallet (used in `construct_runtime` macro call) that is deployed
 	/// at some other chain to bridge with this `ChainWithGrandpa`.
 	///
