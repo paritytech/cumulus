@@ -48,7 +48,7 @@ pub struct MessagingStateSnapshot {
 	pub dmq_mqc_head: relay_chain::Hash,
 
 	/// The current capacity of the upward message queue of the current parachain on the relay chain.
-	pub relay_dispatch_queue_remaining_capacity: RelayDispachQueueRemainingCapacity,
+	pub relay_dispatch_queue_remaining_capacity: RelayDispatchQueueRemainingCapacity,
 
 	/// Information about all the inbound HRMP channels.
 	///
@@ -215,7 +215,7 @@ impl RelayChainStateProof {
 
 				let remaining_count = host_config.max_upward_queue_count.saturating_sub(res.0);
 				let remaining_size = host_config.max_upward_queue_size.saturating_sub(res.1);
-				RelayDispachQueueRemainingCapacity { remaining_count, remaining_size }
+				RelayDispatchQueueRemainingCapacity { remaining_count, remaining_size }
 			},
 			Err(e) => return Err(Error::RelayDispatchQueueRemainingCapacity(e)),
 		};
