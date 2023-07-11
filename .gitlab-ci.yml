@@ -7,9 +7,9 @@
 stages:
   - test
   - build
-  # TODO: can we remove this?
+  # used for manual job run for regenerate weights for release-* branches (not needed anymore, just leave it here for a while as PlanB)
   - benchmarks-build
-  # TODO: can we remove this?
+  # used for manual job run for regenerate weights for release-* branches (not needed anymore, just leave it here for a while as PlanB)
   - benchmarks-run
   - publish
   - integration-tests
@@ -148,7 +148,7 @@ include:
   # short-benchmarks jobs
   - scripts/ci/gitlab/pipeline/short-benchmarks.yml
   # # benchmarks jobs
-  # # TODO: can we remove this?-
+  # # used for manual job run for regenerate weights for release-* branches (not needed anymore, just leave it here for a while as PlanB)
   - scripts/ci/gitlab/pipeline/benchmarks.yml
   # # publish jobs
   - scripts/ci/gitlab/pipeline/publish.yml
