@@ -25,9 +25,10 @@ use bp_runtime::{BlockNumberOf, Chain, HashOf};
 use codec::{Decode, Encode, MaxEncodedLen};
 use finality_grandpa::voter_set::VoterSet;
 use frame_support::RuntimeDebug;
+use num_traits::AsPrimitive;
 use scale_info::TypeInfo;
 use sp_consensus_grandpa::{AuthorityId, AuthoritySignature, SetId};
-use sp_runtime::{traits::Header as HeaderT, SaturatedConversion};
+use sp_runtime::{traits::{Block as BlockT, Header as HeaderT}, SaturatedConversion};
 use sp_std::{
 	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
 	prelude::*,
@@ -76,6 +77,7 @@ impl<H: HeaderT> GrandpaJustification<H> {
 	pub fn max_reasonable_size<C>(required_precommits: u32) -> u32
 	where
 		C: Chain + ChainWithGrandpa,
+		<<<C as Chain>::Block as BlockT>::Header as HeaderT>::Number: AsPrimitive<usize>
 	{
 		// we don't need precise results here - just estimations, so some details
 		// are removed from computations (e.g. bytes required to encode vector length)
