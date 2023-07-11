@@ -252,8 +252,8 @@ pub async fn find_potential_parents<B: BlockT>(
 				Some(h) => h,
 			};
 
-			ancestry.push((current_rp, header.state_root().clone()));
-			current_rp = header.parent_hash().clone();
+			ancestry.push((current_rp, *header.state_root()));
+			current_rp = *header.parent_hash();
 
 			// don't iterate back into the genesis block.
 			if header.number == 1 {
@@ -295,7 +295,7 @@ pub async fn find_potential_parents<B: BlockT>(
 		Some(x) => x,
 	};
 	// Silently swallow if pending block can't decode.
-	let pending_header = pending_header.map(|p| B::Header::decode(&mut &p.0[..]).ok()).flatten();
+	let pending_header = pending_header.and_then(|p| B::Header::decode(&mut &p.0[..]).ok());
 	let included_hash = included_header.hash();
 	let pending_hash = pending_header.as_ref().map(|hdr| hdr.hash());
 
@@ -338,7 +338,7 @@ pub async fn find_potential_parents<B: BlockT>(
 		}
 
 		// push children onto search frontier.
-		for child in client.children(hash).ok().into_iter().flat_map(|c| c) {
+		for child in client.children(hash).ok().into_iter().flatten() {
 			let aligned_with_pending = parent_aligned_with_pending &&
 				if child_depth == 1 {
 					pending_hash.as_ref().map_or(true, |h| &child == h)

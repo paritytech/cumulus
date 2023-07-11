@@ -232,7 +232,7 @@ where
 
 			Ok((collation, block_data, post_hash))
 		} else {
-			Err(format!("Unable to produce collation").into())
+			Err("Unable to produce collation".to_string().into())
 		}
 	}
 
