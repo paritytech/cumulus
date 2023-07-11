@@ -16,10 +16,13 @@ tracing = "0.1.37"
 # Substrate
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+sc-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+sp-consensus-slots = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 sp-trie = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 
