@@ -100,6 +100,7 @@ pub type Migrations = (
 	cumulus_pallet_dmp_queue::migration::Migration<Runtime>,
 	cumulus_pallet_parachain_system::migration::Migration<Runtime>,
 	cumulus_pallet_xcmp_queue::migration::Migration<Runtime>,
+	pallet_contracts::Migration<Runtime>,
 );
 
 type EventRecord = frame_system::EventRecord<
@@ -317,9 +318,9 @@ impl pallet_collator_selection::Config for Runtime {
 	type Currency = Balances;
 	type UpdateOrigin = CollatorSelectionUpdateOrigin;
 	type PotId = PotId;
-	type MaxCandidates = ConstU32<1000>;
-	type MinCandidates = ConstU32<0>;
-	type MaxInvulnerables = ConstU32<100>;
+	type MaxCandidates = ConstU32<100>;
+	type MinEligibleCollators = ConstU32<1>;
+	type MaxInvulnerables = ConstU32<20>;
 	// should be a multiple of session or things will get inconsistent
 	type KickThreshold = Period;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
