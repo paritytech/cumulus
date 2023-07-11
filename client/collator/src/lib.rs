@@ -200,7 +200,7 @@ pub mod relay_chain_driven {
 		let config = CollationGenerationConfig {
 			key,
 			para_id,
-			collator: Box::new(move |relay_parent, validation_data| {
+			collator: Some(Box::new(move |relay_parent, validation_data| {
 				// Cloning the channel on each usage effectively makes the channel
 				// unbounded. The channel is actually bounded by the block production
 				// and consensus systems of Polkadot, which limits the amount of possible
@@ -218,7 +218,7 @@ pub mod relay_chain_driven {
 
 					this_rx.await.ok().flatten()
 				})
-			}),
+			})),
 		};
 
 		overseer_handle
@@ -301,6 +301,7 @@ mod tests {
 	use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 	use cumulus_test_runtime::{Block, Header};
 	use futures::{channel::mpsc, executor::block_on, StreamExt};
+	use polkadot_node_primitives::CollationGenerationConfig;
 	use polkadot_node_subsystem::messages::CollationGenerationMessage;
 	use polkadot_node_subsystem_test_helpers::ForwardSubsystem;
 	use polkadot_overseer::{dummy::dummy_overseer_builder, HeadSupportsParachains};
@@ -390,13 +391,19 @@ mod tests {
 			.0
 			.expect("message should be send by `start_collator` above.");
 
-		let CollationGenerationMessage::Initialize(config) = msg;
+		let collator_fn = match msg {
+			CollationGenerationMessage::Initialize(CollationGenerationConfig {
+				collator: Some(c),
+				..
+			}) => c,
+			_ => panic!("unexpected message or no collator fn"),
+		};
 
 		let validation_data =
 			PersistedValidationData { parent_head: header.encode().into(), ..Default::default() };
 		let relay_parent = Default::default();
 
-		let collation = block_on((config.collator)(relay_parent, &validation_data))
+		let collation = block_on(collator_fn(relay_parent, &validation_data))
 			.expect("Collation is build")
 			.collation;
 
