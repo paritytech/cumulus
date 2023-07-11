@@ -15,9 +15,9 @@ use xcm::prelude::*;
 use xcm_emulator::{
 	decl_test_bridges, decl_test_networks, decl_test_parachains, decl_test_relay_chains,
 	decl_test_sender_receiver_accounts_parameter_types, BridgeMessageHandler, Chain, Parachain,
-	RelayChain, TestExt,
+	RelayChain, TestExt, DefaultMessageProcessor,
 };
-use xcm_executor::traits::ConvertLocation;
+// use xcm_executor::traits::ConvertLocation;
 
 decl_test_relay_chains! {
 	#[api_version(5)]
@@ -27,6 +27,7 @@ decl_test_relay_chains! {
 		runtime = polkadot_runtime,
 		core = {
 			MessageQueue: polkadot_runtime::MessageQueue,
+			MessageProcessor: DefaultMessageProcessor<Polkadot>,
 			SovereignAccountOf: polkadot_runtime::xcm_config::SovereignAccountOf,
 		},
 		pallets = {
@@ -40,6 +41,7 @@ decl_test_relay_chains! {
 		runtime = kusama_runtime,
 		core = {
 			MessageQueue: kusama_runtime::MessageQueue,
+			MessageProcessor: DefaultMessageProcessor<Kusama>,
 			SovereignAccountOf: kusama_runtime::xcm_config::SovereignAccountOf,
 		},
 		pallets = {
@@ -53,6 +55,7 @@ decl_test_relay_chains! {
 		runtime = westend_runtime,
 		core = {
 			MessageQueue: westend_runtime::MessageQueue,
+			MessageProcessor: DefaultMessageProcessor<Westend>,
 			SovereignAccountOf: westend_runtime::xcm_config::LocationConverter, //TODO: rename to SovereignAccountOf,
 		},
 		pallets = {
@@ -67,6 +70,7 @@ decl_test_relay_chains! {
 		runtime = rococo_runtime,
 		core = {
 			MessageQueue: rococo_runtime::MessageQueue,
+			MessageProcessor: DefaultMessageProcessor<Rococo>,
 			SovereignAccountOf: rococo_runtime::xcm_config::LocationConverter, //TODO: rename to SovereignAccountOf,
 		},
 		pallets = {
@@ -81,6 +85,7 @@ decl_test_relay_chains! {
 		runtime = rococo_runtime,
 		core = {
 			MessageQueue: rococo_runtime::MessageQueue,
+			MessageProcessor: DefaultMessageProcessor<Wococo>,
 			SovereignAccountOf: rococo_runtime::xcm_config::LocationConverter, //TODO: rename to SovereignAccountOf,
 		},
 		pallets = {

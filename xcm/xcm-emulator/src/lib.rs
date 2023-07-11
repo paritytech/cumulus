@@ -18,6 +18,7 @@ pub use codec::{Decode, Encode};
 use cumulus_pallet_xcmp_queue::Config;
 pub use log;
 pub use paste;
+use std::marker::PhantomData;
 pub use std::{collections::HashMap, error::Error, fmt, thread::LocalKey};
 
 // Substrate
@@ -48,7 +49,7 @@ pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 pub use cumulus_test_service::get_account_id_from_seed;
 pub use cumulus_pallet_parachain_system::Pallet as ParachainSystemPallet;
-pub use pallet_message_queue;
+pub use pallet_message_queue::{Pallet as  MessageQueuePallet, Event as MessageQueueEvent, Config as MessageQueueConfig};
 pub use parachain_info;
 pub use parachains_common::{AccountId, Balance, BlockNumber};
 pub use polkadot_primitives;
@@ -197,7 +198,9 @@ pub trait Chain: TestExt {
 	fn events() -> Vec<<Self as Chain>::RuntimeEvent>;
 }
 
-pub trait RelayChain: Chain + ProcessMessage {
+pub trait RelayChain: Chain {
+	type MessageQueue: EnqueueMessage<AggregateMessageOrigin> + ServiceQueues;
+	type MessageProcessor: ProcessMessage;
 	type SovereignAccountOf: ConvertLocation<AccountId>;
 
 	fn child_location_of(id: ParaId) -> MultiLocation {
@@ -209,7 +212,7 @@ pub trait RelayChain: Chain + ProcessMessage {
 	}
 }
 
-pub trait Parachain: Chain + XcmpMessageHandler + DmpMessageHandler + TestExt {
+pub trait Parachain: Chain + XcmpMessageHandler + DmpMessageHandler {
 	type XcmpMessageHandler;
 	type DmpMessageHandler;
 	type LocationToAccountId: ConvertLocation<AccountId>;
@@ -306,6 +309,7 @@ macro_rules! decl_test_relay_chains {
 				runtime = $runtime:ident,
 				core = {
 					MessageQueue: $mq:path,
+					MessageProcessor: $mp:path,
 					SovereignAccountOf: $sovereign_acc_of:path,
 
 				},
@@ -337,6 +341,8 @@ macro_rules! decl_test_relay_chains {
 
 			impl RelayChain for $name {
 				type SovereignAccountOf = $sovereign_acc_of;
+				type MessageQueue = $mq;
+				type MessageProcessor = $mp;
 			}
 
 			$crate::paste::paste! {
@@ -353,42 +359,42 @@ macro_rules! decl_test_relay_chains {
 				}
 			}
 
-			impl $crate::ProcessMessage for $name {
-				type Origin = $crate::ParaId;
+			// impl $crate::ProcessMessage for $name {
+			// 	type Origin = $crate::ParaId;
 
-				fn process_message(
-					msg: &[u8],
-					para: Self::Origin,
-					meter: &mut $crate::WeightMeter,
-					_id: &mut XcmHash
-				) -> Result<bool, $crate::ProcessMessageError> {
-					use $crate::{Weight, AggregateMessageOrigin, UmpQueueId, ServiceQueues, EnqueueMessage};
-					use $mq as message_queue;
-					// type RuntimeEvent = <Self as Chain>::RuntimeEvent;
-					// use $runtime_event as runtime_event;
+			// 	fn process_message(
+			// 		msg: &[u8],
+			// 		para: Self::Origin,
+			// 		meter: &mut $crate::WeightMeter,
+			// 		_id: &mut XcmHash
+			// 	) -> Result<bool, $crate::ProcessMessageError> {
+			// 		use $crate::{Weight, AggregateMessageOrigin, UmpQueueId, ServiceQueues, EnqueueMessage};
+			// 		use $mq as message_queue;
+			// 		// type RuntimeEvent = <Self as Chain>::RuntimeEvent;
+			// 		// use $runtime_event as runtime_event;
 
-					Self::execute_with(|| {
-						<$mq as EnqueueMessage<AggregateMessageOrigin>>::enqueue_message(
-							msg.try_into().expect("Message too long"),
-							AggregateMessageOrigin::Ump(UmpQueueId::Para(para.clone()))
-						);
+			// 		Self::execute_with(|| {
+			// 			<$mq as EnqueueMessage<AggregateMessageOrigin>>::enqueue_message(
+			// 				msg.try_into().expect("Message too long"),
+			// 				AggregateMessageOrigin::Ump(UmpQueueId::Para(para.clone()))
+			// 			);
 
-						<Self as Chain>::System::reset_events();
-						<$mq as ServiceQueues>::service_queues(Weight::MAX);
-						let events = <Self as Chain>::System::events();
-						let event = events.last().expect("There must be at least one event");
+			// 			<Self as Chain>::System::reset_events();
+			// 			<$mq as ServiceQueues>::service_queues(Weight::MAX);
+			// 			let events = <Self as Chain>::System::events();
+			// 			let event = events.last().expect("There must be at least one event");
 
-						match &event.event {
-							// RuntimeEvent::MessageQueue(
-							// 	$crate::pallet_message_queue::Event::Processed {origin, ..}) => {
-							// 	assert_eq!(origin, &AggregateMessageOrigin::Ump(UmpQueueId::Para(para)));
-							// },
-							event => panic!("Unexpected event: {:#?}", event),
-						}
-						Ok(true)
-					})
-				}
-			}
+			// 			// match &event.event {
+			// 			// 	// RuntimeEvent::MessageQueue(
+			// 			// 	// 	$crate::pallet_message_queue::Event::Processed {origin, ..}) => {
+			// 			// 	// 	assert_eq!(origin, &AggregateMessageOrigin::Ump(UmpQueueId::Para(para)));
+			// 			// 	// },
+			// 			// 	event => panic!("Unexpected event: {:#?}", event),
+			// 			// }
+			// 			Ok(true)
+			// 		})
+			// 	}
+			// }
 
 			$crate::__impl_test_ext_for_relay_chain!($name, $genesis, $on_init, $api_version);
 		)+
@@ -979,7 +985,7 @@ macro_rules! decl_test_networks {
 					use sp_core::Encode;
 					while let Some((from_para_id, msg)) = $crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 						let mut weight_meter = WeightMeter::max_limit();
-						let _ =  <$relay_chain>::process_message(
+						let _ =  <$relay_chain as RelayChain>::MessageProcessor::process_message(
 							&msg[..],
 							from_para_id.into(),
 							&mut weight_meter,
@@ -1158,6 +1164,46 @@ macro_rules! decl_test_sender_receiver_accounts_parameter_types {
 			}
 		}
 	};
+}
+
+pub struct DefaultMessageProcessor<T>(PhantomData<T>);
+
+impl<T> ProcessMessage for DefaultMessageProcessor<T>
+where
+	T: Chain + RelayChain,
+	<T as Chain>::Runtime: MessageQueueConfig,
+	<T as RelayChain>::MessageQueue: EnqueueMessage<AggregateMessageOrigin> + ServiceQueues,
+	<<<T as Chain>::Runtime as MessageQueueConfig>::MessageProcessor as ProcessMessage>::Origin: PartialEq<AggregateMessageOrigin>,
+{
+	type Origin = ParaId;
+
+	fn process_message(
+		msg: &[u8],
+		para: Self::Origin,
+		_meter: &mut WeightMeter,
+		_id: &mut XcmHash
+	) -> Result<bool, ProcessMessageError> {
+		T::execute_with(|| {
+			T::MessageQueue::enqueue_message(
+				msg.try_into().expect("Message too long"),
+				AggregateMessageOrigin::Ump(UmpQueueId::Para(para.clone()))
+			);
+			// SystemPallet::<T::Runtime>::reset_events();
+			T::MessageQueue::service_queues(Weight::MAX);
+
+			// let events = SystemPallet::<T::Runtime>::events();
+			// let event = events.last().expect("There must be at least one event");
+
+			// match &event.event {
+			// 	T::RuntimeEvent::MessageQueue(
+			// 		MessageQueueEvent::<T::Runtime>::Processed {origin, ..}) => {
+			// 		assert_eq!(origin, &AggregateMessageOrigin::Ump(UmpQueueId::Para(para)));
+			// 	},
+			// 	event => panic!("Unexpected event: {:#?}", event),
+			// }
+			Ok(true)
+		})
+	}
 }
 
 pub mod helpers {
