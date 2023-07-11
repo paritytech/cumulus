@@ -26,7 +26,6 @@ decl_test_relay_chains! {
 		on_init = (),
 		runtime = polkadot_runtime,
 		core = {
-			MessageQueue: polkadot_runtime::MessageQueue,
 			MessageProcessor: DefaultMessageProcessor<Polkadot>,
 			SovereignAccountOf: polkadot_runtime::xcm_config::SovereignAccountOf,
 		},
@@ -40,7 +39,6 @@ decl_test_relay_chains! {
 		on_init = (),
 		runtime = kusama_runtime,
 		core = {
-			MessageQueue: kusama_runtime::MessageQueue,
 			MessageProcessor: DefaultMessageProcessor<Kusama>,
 			SovereignAccountOf: kusama_runtime::xcm_config::SovereignAccountOf,
 		},
@@ -54,7 +52,6 @@ decl_test_relay_chains! {
 		on_init = (),
 		runtime = westend_runtime,
 		core = {
-			MessageQueue: westend_runtime::MessageQueue,
 			MessageProcessor: DefaultMessageProcessor<Westend>,
 			SovereignAccountOf: westend_runtime::xcm_config::LocationConverter, //TODO: rename to SovereignAccountOf,
 		},
@@ -69,7 +66,6 @@ decl_test_relay_chains! {
 		on_init = (),
 		runtime = rococo_runtime,
 		core = {
-			MessageQueue: rococo_runtime::MessageQueue,
 			MessageProcessor: DefaultMessageProcessor<Rococo>,
 			SovereignAccountOf: rococo_runtime::xcm_config::LocationConverter, //TODO: rename to SovereignAccountOf,
 		},
@@ -84,7 +80,6 @@ decl_test_relay_chains! {
 		on_init = (),
 		runtime = rococo_runtime,
 		core = {
-			MessageQueue: rococo_runtime::MessageQueue,
 			MessageProcessor: DefaultMessageProcessor<Wococo>,
 			SovereignAccountOf: rococo_runtime::xcm_config::LocationConverter, //TODO: rename to SovereignAccountOf,
 		},
