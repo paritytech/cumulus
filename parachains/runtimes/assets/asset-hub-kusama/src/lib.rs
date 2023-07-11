@@ -57,7 +57,7 @@ use frame_support::{
 		InstanceFilter,
 	},
 	weights::{ConstantMultiplier, Weight},
-	PalletId, RuntimeDebug,
+	BoundedVec, PalletId, RuntimeDebug,
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -215,7 +215,9 @@ impl pallet_balances::Config for Runtime {
 	type ReserveIdentifier = [u8; 8];
 	type RuntimeHoldReason = RuntimeHoldReason;
 	type FreezeIdentifier = ();
-	type MaxHolds = ConstU32<0>;
+	// We allow each account to have holds on it from:
+	//   - `NftFractionalization`: 1
+	type MaxHolds = ConstU32<1>;
 	type MaxFreezes = ConstU32<0>;
 }
 
@@ -399,6 +401,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 				c,
 				RuntimeCall::Balances { .. } |
 					RuntimeCall::Assets { .. } |
+					RuntimeCall::NftFractionalization { .. } |
 					RuntimeCall::Nfts { .. } |
 					RuntimeCall::Uniques { .. }
 			),
@@ -414,6 +417,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 					RuntimeCall::Assets { .. } |
 						RuntimeCall::Utility { .. } |
 						RuntimeCall::Multisig { .. } |
+						RuntimeCall::NftFractionalization { .. } |
 						RuntimeCall::Nfts { .. } | RuntimeCall::Uniques { .. }
 				)
 			},
@@ -428,6 +432,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 					RuntimeCall::Assets(TrustBackedAssetsCall::set_team { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::set_metadata { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::clear_metadata { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::set_min_balance { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::create { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::destroy { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::redeposit { .. }) |
@@ -454,9 +459,12 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 				RuntimeCall::Assets(TrustBackedAssetsCall::mint { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::burn { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::freeze { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::block { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::thaw { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::freeze_asset { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::thaw_asset { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::touch_other { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::refund_other { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::force_mint { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::update_mint_settings { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::mint_pre_signed { .. }) |
@@ -589,10 +597,7 @@ impl pallet_aura::Config for Runtime {
 
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
-	pub const MaxCandidates: u32 = 1000;
-	pub const MinCandidates: u32 = 5;
 	pub const SessionLength: BlockNumber = 6 * HOURS;
-	pub const MaxInvulnerables: u32 = 100;
 	// StakingAdmin pluralistic body.
 	pub const StakingAdminBodyId: BodyId = BodyId::Defense;
 }
@@ -608,9 +613,9 @@ impl pallet_collator_selection::Config for Runtime {
 	type Currency = Balances;
 	type UpdateOrigin = CollatorSelectionUpdateOrigin;
 	type PotId = PotId;
-	type MaxCandidates = MaxCandidates;
-	type MinCandidates = MinCandidates;
-	type MaxInvulnerables = MaxInvulnerables;
+	type MaxCandidates = ConstU32<100>;
+	type MinEligibleCollators = ConstU32<4>;
+	type MaxInvulnerables = ConstU32<20>;
 	// should be a multiple of session or things will get inconsistent
 	type KickThreshold = Period;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
@@ -660,6 +665,32 @@ impl pallet_uniques::Config for Runtime {
 	type Helper = ();
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 	type Locker = ();
+}
+
+parameter_types! {
+	pub const NftFractionalizationPalletId: PalletId = PalletId(*b"fraction");
+	pub NewAssetSymbol: BoundedVec<u8, AssetsStringLimit> = (*b"FRAC").to_vec().try_into().unwrap();
+	pub NewAssetName: BoundedVec<u8, AssetsStringLimit> = (*b"Frac").to_vec().try_into().unwrap();
+}
+
+impl pallet_nft_fractionalization::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Deposit = AssetDeposit;
+	type Currency = Balances;
+	type NewAssetSymbol = NewAssetSymbol;
+	type NewAssetName = NewAssetName;
+	type StringLimit = AssetsStringLimit;
+	type NftCollectionId = <Self as pallet_nfts::Config>::CollectionId;
+	type NftId = <Self as pallet_nfts::Config>::ItemId;
+	type AssetBalance = <Self as pallet_balances::Config>::Balance;
+	type AssetId = <Self as pallet_assets::Config<TrustBackedAssetsInstance>>::AssetId;
+	type Assets = Assets;
+	type Nfts = Nfts;
+	type PalletId = NftFractionalizationPalletId;
+	type WeightInfo = pallet_nft_fractionalization::weights::SubstrateWeight<Runtime>;
+	type RuntimeHoldReason = RuntimeHoldReason;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 parameter_types! {
@@ -743,6 +774,7 @@ construct_runtime!(
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		Nfts: pallet_nfts::{Pallet, Call, Storage, Event<T>} = 52,
 		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 53,
+		NftFractionalization: pallet_nft_fractionalization::{Pallet, Call, Storage, Event<T>, HoldReason} = 54,
 
 		#[cfg(feature = "state-trie-version-1")]
 		StateTrieMigration: pallet_state_trie_migration = 70,
@@ -798,6 +830,7 @@ mod benches {
 		[pallet_assets, Foreign]
 		[pallet_balances, Balances]
 		[pallet_multisig, Multisig]
+		[pallet_nft_fractionalization, NftFractionalization]
 		[pallet_nfts, Nfts]
 		[pallet_proxy, Proxy]
 		[pallet_session, SessionBench::<Runtime>]

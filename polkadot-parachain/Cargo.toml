@@ -11,14 +11,14 @@ name = "polkadot-parachain"
 path = "src/main.rs"
 
 [dependencies]
-async-trait = "0.1.68"
-clap = { version = "4.3.8", features = ["derive"] }
+async-trait = "0.1.71"
+clap = { version = "4.3.11", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 futures = "0.3.28"
 hex-literal = "0.4.1"
 log = "0.4.19"
-serde = { version = "1.0.164", features = ["derive"] }
-serde_json = "1.0.97"
+serde = { version = "1.0.168", features = ["derive"] }
+serde_json = "1.0.100"
 
 # Local
 rococo-parachain-runtime = { path = "../parachains/runtimes/testing/rococo-parachain" }
@@ -74,7 +74,8 @@ pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrat
 substrate-state-trie-migration-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+# Use rococo-native as this is currently the default "local" relay chain
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", features = ["rococo-native"] }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -97,10 +98,8 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 assert_cmd = "2.0"
 nix = { version = "0.26.1", features = ["signal"] }
 tempfile = "3.6.0"
-tokio = { version = "1.28.2", features = ["macros", "time", "parking_lot"] }
+tokio = { version = "1.29.1", features = ["macros", "time", "parking_lot"] }
 wait-timeout = "0.2"
-# purge_chain_works works with rococo-local and needs to allow this
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", features = ["rococo-native"] }
 
 [features]
 default = []
