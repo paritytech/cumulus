@@ -1052,7 +1052,7 @@ impl<T: Config> Pallet<T> {
 	pub fn open_outbound_hrmp_channel_for_benchmarks(target_parachain: ParaId) {
 		RelevantMessagingState::<T>::put(MessagingStateSnapshot {
 			dmq_mqc_head: Default::default(),
-			relay_dispatch_queue_size: Default::default(),
+			relay_dispatch_queue_remaining_capacity: Default::default(),
 			ingress_channels: Default::default(),
 			egress_channels: vec![(
 				target_parachain,
