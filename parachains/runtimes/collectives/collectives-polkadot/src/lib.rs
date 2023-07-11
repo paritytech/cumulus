@@ -80,9 +80,9 @@ use frame_system::{
 };
 pub use parachains_common as common;
 use parachains_common::{
-	impls::DealWithFees, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index,
-	Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT, MINUTES,
-	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
+	impls::DealWithFees, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT, MINUTES, NORMAL_DISPATCH_RATIO,
+	SLOT_DURATION,
 };
 use xcm_config::{GovernanceLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
 
