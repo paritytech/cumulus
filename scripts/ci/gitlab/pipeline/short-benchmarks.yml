@@ -7,7 +7,6 @@
   extends:
     - .common-refs
     - .docker-env
-  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
   needs:
     - job: build-short-benchmark
       artifacts: true
