@@ -1796,6 +1796,7 @@ name = "cid"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b9b68e3193982cd54187d71afdb2a271ad4cf8af157858e9cb911b91321de143"
+checksum = "b9b68e3193982cd54187d71afdb2a271ad4cf8af157858e9cb911b91321de143"
 dependencies = [
  "core2",
  "multibase",
@@ -9431,6 +9432,7 @@ dependencies = [
  "kvdb",
  "parity-scale-codec",
  "polkadot-erasure-coding",
+ "polkadot-node-jaeger",
  "polkadot-node-jaeger",
  "polkadot-node-primitives",
  "polkadot-node-subsystem",
