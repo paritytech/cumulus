@@ -178,9 +178,8 @@ where
 			let inherent_res = self
 				.client
 				.runtime_api()
-				.check_inherents_with_context(
+				.check_inherents(
 					parent_hash,
-					block_params.origin.into(),
 					block,
 					inherent_data,
 				)
