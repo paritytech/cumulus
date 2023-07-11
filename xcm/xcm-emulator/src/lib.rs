@@ -15,7 +15,6 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 pub use codec::{Decode, Encode};
-use cumulus_pallet_xcmp_queue::Config;
 pub use log;
 pub use paste;
 use std::marker::PhantomData;
@@ -40,7 +39,7 @@ pub use sp_trie::StorageProof;
 //Cumulus
 pub use cumulus_pallet_dmp_queue;
 pub use cumulus_pallet_parachain_system;
-pub use cumulus_pallet_xcmp_queue;
+pub use cumulus_pallet_xcmp_queue::{Pallet as XcmpQueuePallet, Config as XcmpQueueConfig};
 pub use cumulus_primitives_core::{
 	self, relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler, ParaId,
 	PersistedValidationData, XcmpMessageHandler,
@@ -61,8 +60,6 @@ pub use polkadot_runtime_parachains::{
 // Polkadot
 pub use xcm::v3::prelude::*;
 pub use xcm_executor::traits::ConvertLocation;
-
-// type CurrencyOf<T> = Currency<<<Self as Chain>::T as SystemConfig>::AccountId>
 
 thread_local! {
 	/// Downward messages, each message is: `(to_para_id, [(relay_block_number, msg)])`
@@ -211,9 +208,9 @@ pub trait RelayChain: Chain {
 	}
 }
 
-pub trait Parachain: Chain + XcmpMessageHandler + DmpMessageHandler {
-	type XcmpMessageHandler;
-	type DmpMessageHandler;
+pub trait Parachain: Chain {
+	type XcmpMessageHandler: XcmpMessageHandler;
+	type DmpMessageHandler: DmpMessageHandler;
 	type LocationToAccountId: ConvertLocation<AccountId>;
 
 	type ParachainSystem;
@@ -538,43 +535,8 @@ macro_rules! decl_test_parachains {
 				}
 			}
 
-			$crate::__impl_xcm_handlers_for_parachain!($name);
 			$crate::__impl_test_ext_for_parachain!($name, $genesis, $on_init);
 		)+
-	};
-}
-
-#[macro_export]
-macro_rules! __impl_xcm_handlers_for_parachain {
-	($name:ident) => {
-		impl $crate::XcmpMessageHandler for $name {
-			fn handle_xcmp_messages<
-				'a,
-				I: Iterator<Item = ($crate::ParaId, $crate::RelayBlockNumber, &'a [u8])>,
-			>(
-				iter: I,
-				max_weight: $crate::Weight,
-			) -> $crate::Weight {
-				use $crate::{TestExt, XcmpMessageHandler};
-
-				$name::execute_with(|| {
-					<Self as Parachain>::XcmpMessageHandler::handle_xcmp_messages(iter, max_weight)
-				})
-			}
-		}
-
-		impl $crate::DmpMessageHandler for $name {
-			fn handle_dmp_messages(
-				iter: impl Iterator<Item = ($crate::RelayBlockNumber, Vec<u8>)>,
-				max_weight: $crate::Weight,
-			) -> $crate::Weight {
-				use $crate::{DmpMessageHandler, TestExt};
-
-				$name::execute_with(|| {
-					<Self as Parachain>::DmpMessageHandler::handle_dmp_messages(iter, max_weight)
-				})
-			}
-		}
 	};
 }
 
@@ -817,7 +779,9 @@ macro_rules! decl_test_networks {
 									!$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap_or(&mut $crate::VecDeque::new()).contains(&(to_para_id, m.0, m.1.clone())))
 								}).collect::<Vec<(RelayChainBlockNumber, Vec<u8>)>>();
 								if msgs.len() != 0 {
-									<$parachain>::handle_dmp_messages(msgs.clone().into_iter(), $crate::Weight::max_value());
+									<$parachain>::ext_wrapper(|| {
+										<$parachain as Parachain>::DmpMessageHandler::handle_dmp_messages(msgs.clone().into_iter(), $crate::Weight::max_value());
+									});
 									$crate::log::debug!(target: concat!("dmp::", stringify!($name)) , "DMP messages processed {:?} to para_id {:?}", msgs.clone(), &to_para_id);
 									for m in msgs {
 										$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().push_back((to_para_id, m.0, m.1)));
@@ -838,7 +802,9 @@ macro_rules! decl_test_networks {
 							let para_id: u32 = <$parachain>::para_id().into();
 
 							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) && para_id == to_para_id {
-								<$parachain>::handle_xcmp_messages(iter.clone(), $crate::Weight::max_value());
+								<$parachain>::ext_wrapper(|| {
+									<$parachain as Parachain>::XcmpMessageHandler::handle_xcmp_messages(iter.clone(), $crate::Weight::max_value());
+								});
 								$crate::log::debug!(target: concat!("hrmp::", stringify!($name)) , "HRMP messages processed {:?} to para_id {:?}", &messages, &to_para_id);
 							}
 						)*
@@ -850,12 +816,14 @@ macro_rules! decl_test_networks {
 					use sp_core::Encode;
 					while let Some((from_para_id, msg)) = $crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 						let mut weight_meter = WeightMeter::max_limit();
-						let _ =  <$relay_chain as RelayChain>::MessageProcessor::process_message(
-							&msg[..],
-							from_para_id.into(),
-							&mut weight_meter,
-							&mut msg.using_encoded(sp_core::blake2_256),
-						);
+						<$relay_chain>::ext_wrapper(|| {
+							let _ =  <$relay_chain as RelayChain>::MessageProcessor::process_message(
+								&msg[..],
+								from_para_id.into(),
+								&mut weight_meter,
+								&mut msg.using_encoded(sp_core::blake2_256),
+							);
+						});
 						$crate::log::debug!(target: concat!("ump::", stringify!($name)) , "Upward message processed {:?} from para_id {:?}", &msg, &from_para_id);
 					}
 				}
@@ -1032,13 +1000,12 @@ macro_rules! decl_test_sender_receiver_accounts_parameter_types {
 }
 
 pub struct DefaultMessageProcessor<T>(PhantomData<T>);
-
 impl<T> ProcessMessage for DefaultMessageProcessor<T>
 where
 	T: Chain + RelayChain,
-	<T as Chain>::Runtime: MessageQueueConfig,
+	T::Runtime: MessageQueueConfig,
 	// <T as RelayChain>::MessageQueue: EnqueueMessage<AggregateMessageOrigin> + ServiceQueues,
-	<<<T as Chain>::Runtime as MessageQueueConfig>::MessageProcessor as ProcessMessage>::Origin: PartialEq<AggregateMessageOrigin>,
+	<<T::Runtime as MessageQueueConfig>::MessageProcessor as ProcessMessage>::Origin: PartialEq<AggregateMessageOrigin>,
 	MessageQueuePallet::<T::Runtime>: EnqueueMessage<AggregateMessageOrigin> + ServiceQueues,
 {
 	type Origin = ParaId;
@@ -1049,7 +1016,7 @@ where
 		_meter: &mut WeightMeter,
 		_id: &mut XcmHash
 	) -> Result<bool, ProcessMessageError> {
-		T::execute_with(|| {
+		// T::execute_with(|| {
 			MessageQueuePallet::<T::Runtime>::enqueue_message(
 				msg.try_into().expect("Message too long"),
 				AggregateMessageOrigin::Ump(UmpQueueId::Para(para.clone()))
@@ -1068,7 +1035,7 @@ where
 			// 	event => panic!("Unexpected event: {:#?}", event),
 			// }
 			Ok(true)
-		})
+		// })
 	}
 }
 
