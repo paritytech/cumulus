@@ -38,7 +38,7 @@ pub mod fee {
 		weights::{
 			constants::ExtrinsicBaseWeight, FeePolynomial, WeightToFeeCoefficient,
 			WeightToFeeCoefficients, WeightToFeePolynomial,
-		}
+		},
 	};
 	use polkadot_core_primitives::Balance;
 	use smallvec::smallvec;
