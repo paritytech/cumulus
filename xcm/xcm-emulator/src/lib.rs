@@ -194,13 +194,13 @@ pub trait Chain: TestExt + NetworkComponent {
 		get_account_id_from_seed::<sr25519::Public>(seed)
 	}
 
-	fn account_data_of(account: AccountId) -> AccountData<Balance>
-	where
-		AccountId32: EncodeLike<<Self::Runtime as SystemConfig>::AccountId>,
-		AccountData<Balance>: From<<Self::Runtime as SystemConfig>::AccountData>
-	{
-		Self::ext_wrapper(|| SystemPallet::<Self::Runtime>::account(account).data.into())
-	}
+	fn account_data_of(account: AccountId) -> AccountData<Balance>;
+	// where
+	// 	AccountId32: EncodeLike<<Self::Runtime as SystemConfig>::AccountId>,
+	// 	AccountData<Balance>: From<<Self::Runtime as SystemConfig>::AccountData>
+	// {
+	// 	Self::ext_wrapper(|| SystemPallet::<Self::Runtime>::account(account).data.into())
+	// }
 
 	fn events() -> Vec<<Self as Chain>::RuntimeEvent>;
 }
@@ -326,6 +326,7 @@ macro_rules! decl_test_relay_chains {
 		+
 	) => {
 		$(
+			#[derive(Clone)]
 			pub struct $name;
 
 			impl Chain for $name {
@@ -334,6 +335,10 @@ macro_rules! decl_test_relay_chains {
 				type RuntimeOrigin = $runtime::RuntimeOrigin;
 				type RuntimeEvent = $runtime::RuntimeEvent;
 				type System = $crate::SystemPallet::<Self::Runtime>;
+
+				fn account_data_of(account: AccountId) -> $crate::AccountData<Balance> {
+					Self::ext_wrapper(|| $crate::SystemPallet::<Self::Runtime>::account(account).data.into())
+				}
 
 				fn events() -> Vec<<Self as Chain>::RuntimeEvent> {
 					Self::System::events()
@@ -470,6 +475,7 @@ macro_rules! decl_test_parachains {
 		+
 	) => {
 		$(
+			#[derive(Clone)]
 			pub struct $name;
 
 			impl Chain for $name {
@@ -478,6 +484,10 @@ macro_rules! decl_test_parachains {
 				type RuntimeOrigin = $runtime::RuntimeOrigin;
 				type RuntimeEvent = $runtime::RuntimeEvent;
 				type System = $crate::SystemPallet::<Self::Runtime>;
+
+				fn account_data_of(account: AccountId) -> $crate::AccountData<Balance> {
+					Self::ext_wrapper(|| $crate::SystemPallet::<Self::Runtime>::account(account).data.into())
+				}
 
 				fn events() -> Vec<<Self as Chain>::RuntimeEvent> {
 					Self::System::events()

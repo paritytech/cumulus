@@ -15,94 +15,112 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::*;
-// struct InitValues {
-// 	amount: u128,
-// 	relay_sender_balance_before: u128,
-// 	para_receiver_balance_before: u128,
-// 	origin: <Kusama as Relay>::RuntimeOrigin,
-// 	assets_para_destination: VersionedMultiLocation,
-// 	beneficiary: VersionedMultiLocation,
-// 	native_assets: VersionedMultiAssets,
-// 	fee_asset_item: u32,
-// 	weight_limit: WeightLimit,
+
+fn get_relay_dispatch_args(amount: u128) -> DispatchArgs {
+	DispatchArgs {
+		dest: Kusama::child_location_of(AssetHubKusama::para_id()).into(),
+		beneficiary: AccountId32Junction {
+			network: None,
+			id: AssetHubKusamaReceiver::get().into()
+		}.into(),
+		assets: (Here, amount).into(),
+		fee_asset_item: 0,
+		weight_limit: WeightLimit::Unlimited,
+	}
+}
+
+// fn get_init_values<Kusama, AssetHubKusama>(sender: AccountId, receiver: AccountId) -> TestInit<Kusama, R>
+// // where
+// // 	S: Chain,
+// // 	R: Chain,
+// // 	S::RuntimeOrigin: OriginTrait<AccountId = AccountId32>,
+// // 	R::RuntimeOrigin: OriginTrait<AccountId = AccountId32>,
+// {
+// 	let amount = ed * 1000;
+// 	let 
+// 	TestInit::<S, R>::new(
+// 		sender,
+// 		receiver,
+// 		assets: VersionedMultiAssets,
+// 		fee_asset: u32,
+// 		weight_limit: WeightLimit,
+// 		destination: VersionedMultiLocation,
+// 		beneficiary: VersionedMultiLocation
+// 	)
 // }
 
-// fn get_init_values() -> InitValues {
-// 	InitValues {
-// 		amount: KUSAMA_ED * 1000,
-// 		relay_sender_balance_before: Kusama::account_data_of(KusamaSender::get()).free,
-// 		para_receiver_balance_before: AssetHubKusama::account_data_of(AssetHubKusamaReceiver::get()).free,
-// 		origin: <Kusama as Relay>::RuntimeOrigin::signed(KusamaSender::get()),
-// 		assets_para_destination: Kusama::child_location_of(AssetHubKusama::para_id()).into(),
-// 		beneficiary: AccountId32 { network: None, id: AssetHubKusamaReceiver::get().into() }.into(),
-// 		native_assets: (Here, amount).into(),
-// 		fee_asset_item: 0,
-// 		weight_limit: WeightLimit::Unlimited,
-// 	}
-// }
+#[test]
+fn teleport_native_assets_from_relay_to_assets_para() {
+	// Get init values for Relay Chain
+	let amount_to_send = KUSAMA_ED * 1000;
 
-// #[test]
-// fn teleport_native_assets_from_relay_to_assets_para() {
-// 	// Init tests variables
-// 	// let amount = KUSAMA_ED * 1000;
-// 	// let relay_sender_balance_before = Kusama::account_data_of(KusamaSender::get()).free;
-// 	// let para_receiver_balance_before =
-// 	// 	AssetHubKusama::account_data_of(AssetHubKusamaReceiver::get()).free;
+	let mut init = TestInit::<Kusama, AssetHubKusama>::new(
+		KusamaSender::get(),
+		AssetHubKusamaReceiver::get(),
+		get_relay_dispatch_args(amount_to_send)
+	);
 
-// 	let origin = <Kusama as Chain>::RuntimeOrigin::signed(KusamaSender::get());
-// 	let assets_para_destination: VersionedMultiLocation =
-// 		Kusama::child_location_of(AssetHubKusama::para_id()).into();
-// 	let beneficiary: VersionedMultiLocation =
-// 		AccountId32 { network: None, id: AssetHubKusamaReceiver::get().into() }.into();
-// 	let native_assets: VersionedMultiAssets = (Here, amount).into();
-// 	let fee_asset_item = 0;
-// 	let weight_limit = WeightLimit::Unlimited;
+	let sender_balance_before = init.sender.balance;
+	let receiver_balance_before = init.receiver.balance;
 
-// 	// -- LIMITED --
-// 	// Send XCM message from Relay Chain
-// 	Kusama::execute_with(|| {
-// 		assert_ok!(<Kusama as KusamaPallet>::XcmPallet::limited_teleport_assets(
-// 			init.origin,
-// 			bx!(init.assets_para_destination),
-// 			bx!(init.beneficiary),
-// 			bx!(init.native_assets),
-// 			init.fee_asset_item,
-// 			init.weight_limit,
-// 		));
+	let TestInit {
+		signed_origin,
+		args: DispatchArgs {
+			dest,
+			beneficiary,
+			assets,
+			fee_asset_item,
+			weight_limit,
+		},
+		..
+	} = init.clone();
 
-// 		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
+	// -- LIMITED --
+	// Send XCM message from Relay Chain
+	Kusama::execute_with(|| {
+		assert_ok!(<Kusama as KusamaPallet>::XcmPallet::limited_teleport_assets(
+			signed_origin,
+			bx!(dest),
+			bx!(beneficiary),
+			bx!(assets),
+			fee_asset_item,
+			weight_limit,
+		));
 
-// 		assert_expected_events!(
-// 			Kusama,
-// 			vec![
-// 				RuntimeEvent::XcmPallet(
-// 					pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
-// 				) => {
-// 					weight: weight_within_threshold((REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD), Weight::from_parts(763_770_000, 0), *weight),
-// 				},
-// 			]
-// 		);
-// 	});
+		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
-// 	// Receive XCM message in Assets Parachain
-// 	AssetHubKusama::execute_with(|| {
-// 		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
+		assert_expected_events!(
+			Kusama,
+			vec![
+				RuntimeEvent::XcmPallet(
+					pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
+				) => {
+					weight: weight_within_threshold((REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD), Weight::from_parts(763_770_000, 0), *weight),
+				},
+			]
+		);
+	});
 
-// 		assert_expected_events!(
-// 			AssetHubKusama,
-// 			vec![
-// 				RuntimeEvent::Balances(pallet_balances::Event::Deposit { who, .. }) => {
-// 					who: *who == AssetHubKusamaReceiver::get().into(),
-// 				},
-// 			]
-// 		);
-// 	});
+	// Receive XCM message in Assets Parachain
+	AssetHubKusama::execute_with(|| {
+		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
-// 	// Check if balances are updated accordingly in Relay Chain and Assets Parachain
-// 	let relay_sender_balance_after = Kusama::account_data_of(KusamaSender::get()).free;
-// 	let para_sender_balance_after =
-// 		AssetHubKusama::account_data_of(AssetHubKusamaReceiver::get()).free;
+		assert_expected_events!(
+			AssetHubKusama,
+			vec![
+				RuntimeEvent::Balances(pallet_balances::Event::Deposit { who, .. }) => {
+					who: *who == AssetHubKusamaReceiver::get().into(),
+				},
+			]
+		);
+	});
 
-// 	assert_eq!(init.relay_sender_balance_before - init.amount, relay_sender_balance_after);
-// 	assert!(para_sender_balance_after > init.para_receiver_balance_before);
-// }
+	// Check if balances are updated accordingly in Relay Chain and Assets Parafter
+	init.update_balances();
+
+	let sender_balance_after = init.sender.balance;
+	let receiver_balance_after = init.receiver.balance;
+
+	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
+	assert!(receiver_balance_after > receiver_balance_before);
+}

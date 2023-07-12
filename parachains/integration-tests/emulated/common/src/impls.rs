@@ -1,4 +1,5 @@
 use super::{BridgeHubRococo, BridgeHubWococo};
+pub use frame_support::{sp_runtime::AccountId32, traits::OriginTrait};
 use bp_messages::{
 	target_chain::{DispatchMessage, DispatchMessageData, MessageDispatch},
 	LaneId, MessageKey, OutboundLaneData,
@@ -9,7 +10,9 @@ pub use cumulus_primitives_core::{DmpMessageHandler, XcmpMessageHandler};
 use pallet_bridge_messages::{Config, Instance1, Instance2, OutboundLanes, Pallet};
 use parachains_common::AccountId;
 use sp_core::Get;
-use xcm_emulator::{BridgeMessage, BridgeMessageDispatchError, BridgeMessageHandler, Chain};
+use xcm_emulator::{BridgeMessage, BridgeMessageDispatchError, BridgeMessageHandler, Chain, PhantomData};
+use xcm::{prelude::*, VersionedMultiLocation};
+pub use xcm::prelude::AccountId32 as AccountId32Junction;
 
 pub struct BridgeHubMessageHandler<S, T, I> {
 	_marker: std::marker::PhantomData<(S, T, I)>,
@@ -126,25 +129,61 @@ where
 	}
 }
 
-// struct TestInit<S: Chain> {
-// 	sender_balance_before: u128,
-// 	receiver_balance_before: u128,
-// 	signed_origin: S::RuntimeOrigin,
-// 	root_origin: S::RuntimeOrigin,
-// 	beneficiary: VersionedMultiLocation,
-// }
+#[derive(Clone)]
+pub struct Account {
+	pub account_id: AccountId,
+	pub balance: u128,
+}
 
-// impl<S: Chain> TestInit<S> {
-// 	fn new(sender: AccountId, receiver: AccountId) -> Self {
-// 		TestInit {
-// 			sender_balance_before: S::account_data_of(KusamaSender::get()).free,
-// 			para_receiver_balance_before: AssetHubKusama::account_data_of(AssetHubKusamaReceiver::get()).free,
-// 			origin: <Kusama as Relay>::RuntimeOrigin::signed(KusamaSender::get()),
-// 			assets_para_destination: Kusama::child_location_of(AssetHubKusama::para_id()).into(),
-// 			beneficiary: AccountId32 { network: None, id: AssetHubKusamaReceiver::get().into() }.into(),
-// 			native_assets: (Here, amount).into(),
-// 			fee_asset_item: 0,
-// 			weight_limit: WeightLimit::Unlimited,
-// 		}
-// 	}
-// }
+#[derive(Clone)]
+pub struct DispatchArgs {
+	pub dest: VersionedMultiLocation,
+	pub beneficiary: VersionedMultiLocation,
+	pub assets: VersionedMultiAssets,
+	pub fee_asset_item: u32,
+	pub weight_limit: WeightLimit,
+}
+
+#[derive(Clone)]
+pub struct TestInit<S: Chain, R: Chain> {
+	pub sender: Account,
+	pub receiver: Account,
+	pub signed_origin: S::RuntimeOrigin,
+	pub root_origin: S::RuntimeOrigin,
+	pub args: DispatchArgs,
+	_marker: PhantomData<R>,
+}
+
+impl<S, R> TestInit<S, R>
+where
+	S: Chain,
+	R: Chain,
+	S::RuntimeOrigin: OriginTrait<AccountId = AccountId32>,
+	R::RuntimeOrigin: OriginTrait<AccountId = AccountId32>,
+{
+	pub fn new(
+		sender: AccountId,
+		receiver: AccountId,
+		dispatch_args: DispatchArgs
+	) -> Self {
+		TestInit {
+			sender: Account {
+				account_id: sender.clone(),
+				balance: S::account_data_of(sender.clone()).free
+			},
+			receiver: Account {
+				account_id: receiver.clone(),
+				balance: R::account_data_of(receiver).free
+			},
+			signed_origin: <S as Chain>::RuntimeOrigin::signed(sender),
+			root_origin: <S as Chain>::RuntimeOrigin::root(),
+			args: dispatch_args,
+			_marker: Default::default(),
+		}
+	}
+
+	pub fn update_balances(&mut self) {
+		self.sender.balance = S::account_data_of(self.sender.account_id.clone()).free;
+		self.receiver.balance = R::account_data_of(self.receiver.account_id.clone()).free;
+	}
+}

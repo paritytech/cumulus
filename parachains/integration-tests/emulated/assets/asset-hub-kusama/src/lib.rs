@@ -18,12 +18,14 @@ pub use codec::Encode;
 pub use frame_support::{
 	assert_ok, instances::Instance1, pallet_prelude::Weight, traits::fungibles::Inspect,
 };
+pub use sp_runtime::AccountId32;
 pub use integration_tests_common::{
 	constants::{
 		accounts::{ALICE, BOB},
 		kusama::ED as KUSAMA_ED,
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
+	impls::{TestInit, OriginTrait, AccountId32Junction, DispatchArgs},
 	AccountId, AssetHubKusama, AssetHubKusamaPallet, AssetHubKusamaReceiver, AssetHubKusamaSender,
 	BridgeHubKusama, BridgeHubKusamaPallet, BridgeHubKusamaReceiver, BridgeHubKusamaSender,
 	BridgeHubPolkadot, BridgeHubPolkadotPallet, BridgeHubPolkadotReceiver, BridgeHubPolkadotSender,

@@ -28,7 +28,7 @@ fn reserve_transfer_native_asset_from_relay_to_assets() {
 	let assets_para_destination: VersionedMultiLocation =
 		Kusama::child_location_of(AssetHubKusama::para_id()).into();
 	let beneficiary: VersionedMultiLocation =
-		AccountId32 { network: None, id: AssetHubKusamaReceiver::get().into() }.into();
+		AccountId32Junction { network: None, id: AssetHubKusamaReceiver::get().into() }.into();
 	let native_assets: VersionedMultiAssets = (Here, amount).into();
 	let fee_asset_item = 0;
 	let weight_limit = WeightLimit::Unlimited;

@@ -11,7 +11,6 @@ pub use impls::{RococoWococoMessageHandler, WococoRococoMessageHandler};
 use frame_support::{parameter_types, sp_io, sp_tracing};
 pub use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, BlockNumber};
 pub use sp_core::{sr25519, storage::Storage, Get};
-use xcm::prelude::*;
 use xcm_emulator::{
 	decl_test_bridges, decl_test_networks, decl_test_parachains, decl_test_relay_chains,
 	decl_test_sender_receiver_accounts_parameter_types, BridgeMessageHandler, Chain, Parachain,
