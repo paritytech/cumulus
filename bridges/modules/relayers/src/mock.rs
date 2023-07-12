@@ -24,7 +24,10 @@ use bp_relayers::{
 };
 use frame_support::{parameter_types, traits::fungible::Mutate, weights::RuntimeDbWeight};
 use sp_core::H256;
-use sp_runtime::traits::{BlakeTwo256, ConstU32, IdentityLookup};
+use sp_runtime::{
+	traits::{BlakeTwo256, ConstU32, IdentityLookup},
+	BuildStorage,
+};
 
 pub type AccountId = u64;
 pub type Balance = u64;
@@ -44,7 +47,7 @@ type Block = frame_system::mocking::MockBlock<TestRuntime>;
 frame_support::construct_runtime! {
 	pub enum TestRuntime
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Event<T>},
 		Relayers: pallet_bridge_relayers::{Pallet, Call, Event<T>},
 	}
@@ -162,7 +165,7 @@ impl PaymentProcedure<AccountId, Balance> for TestPaymentProcedure {
 
 /// Return test externalities to use in tests.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+	let t = frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
 	sp_io::TestExternalities::new(t)
 }
 

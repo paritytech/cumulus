@@ -44,7 +44,7 @@ use crate as grandpa;
 construct_runtime! {
 	pub enum TestRuntime
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Grandpa: grandpa::{Pallet, Call, Event<T>},
 	}
 }

@@ -415,6 +415,7 @@ mod tests {
 	use sp_core::H256;
 	use sp_runtime::{
 		traits::{BlakeTwo256, IdentityLookup},
+		BuildStorage,
 		DispatchError::BadOrigin,
 	};
 	use sp_version::RuntimeVersion;
@@ -427,7 +428,7 @@ mod tests {
 	frame_support::construct_runtime!(
 		pub enum Test
 		{
-			System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+			System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 			DmpQueue: dmp_queue::{Pallet, Call, Storage, Event<T>},
 		}
 	);
@@ -536,7 +537,7 @@ mod tests {
 	}
 
 	pub(crate) fn new_test_ext() -> sp_io::TestExternalities {
-		frame_system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
+		frame_system::GenesisConfig::<Test>::default().build_storage().unwrap().into()
 	}
 
 	fn enqueue(enqueued: &[Xcm]) {

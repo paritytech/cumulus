@@ -108,7 +108,7 @@ pub const BRIDGED_CHAIN_MAX_EXTRINSIC_SIZE: u32 = 1024;
 frame_support::construct_runtime! {
 	pub enum TestRuntime
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Utility: pallet_utility,
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},

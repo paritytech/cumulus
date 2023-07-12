@@ -143,7 +143,7 @@ impl Parachain for BigParachain {
 construct_runtime! {
 	pub enum TestRuntime
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Grandpa1: pallet_bridge_grandpa::<Instance1>::{Pallet, Event<T>},
 		Grandpa2: pallet_bridge_grandpa::<Instance2>::{Pallet, Event<T>},
 		Parachains: pallet_bridge_parachains::{Call, Pallet, Event<T>},
