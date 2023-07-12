@@ -17,8 +17,14 @@
 pub use codec::{Decode, Encode};
 pub use log;
 pub use paste;
-use std::marker::PhantomData;
-pub use std::{collections::HashMap, error::Error, fmt, thread::LocalKey};
+pub use std::{
+	any::type_name,
+	collections::HashMap,
+	error::Error,
+	fmt,
+	marker::PhantomData,
+	thread::LocalKey,
+};
 
 // Substrate
 pub use frame_support::{
@@ -113,6 +119,7 @@ impl TestExt for () {
 pub trait Network {
 	type Bridge: Bridge;
 
+	fn name() -> &'static str;
 	fn init();
 	fn reset();
 	fn para_ids() -> Vec<u32>;
@@ -133,44 +140,46 @@ pub trait Network {
 pub trait NetworkComponent {
 	type Network: Network;
 
-	fn network_name() -> &'static str;
-
 	fn send_horizontal_messages<I: Iterator<Item = (ParaId, RelayBlockNumber, Vec<u8>)>>(
 		to_para_id: u32,
 		iter: I,
 	) {
-		HORIZONTAL_MESSAGES.with(|b| {
+		HORIZONTAL_MESSAGES.with(|b|
 			b.borrow_mut()
-				.get_mut(Self::network_name())
+				.get_mut(Self::Network::name())
 				.unwrap()
 				.push_back((to_para_id, iter.collect()))
-		});
+		);
 	}
 
 	fn send_upward_message(from_para_id: u32, msg: Vec<u8>) {
-		UPWARD_MESSAGES.with(|b| {
+		UPWARD_MESSAGES.with(|b|
 			b.borrow_mut()
-				.get_mut(Self::network_name())
+				.get_mut(Self::Network::name())
 				.unwrap()
 				.push_back((from_para_id, msg))
-		});
+		);
 	}
 
 	fn send_downward_messages(
 		to_para_id: u32,
 		iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
 	) {
-		DOWNWARD_MESSAGES.with(|b| {
+		DOWNWARD_MESSAGES.with(|b|
 			b.borrow_mut()
-				.get_mut(Self::network_name())
+				.get_mut(Self::Network::name())
 				.unwrap()
 				.push_back((to_para_id, iter.collect()))
-		});
+		);
 	}
 
 	fn send_bridged_messages(msg: BridgeMessage) {
-		BRIDGED_MESSAGES
-			.with(|b| b.borrow_mut().get_mut(Self::network_name()).unwrap().push_back(msg));
+		BRIDGED_MESSAGES.with(|b|
+			b.borrow_mut()
+				.get_mut(Self::Network::name())
+				.unwrap()
+				.push_back(msg)
+		);
 	}
 }
 
@@ -213,9 +222,9 @@ pub trait Parachain: Chain {
 	type XcmpMessageHandler: XcmpMessageHandler;
 	type DmpMessageHandler: DmpMessageHandler;
 	type LocationToAccountId: ConvertLocation<AccountId>;
-
-	type ParachainSystem;
 	type ParachainInfo: Get<ParaId>;
+	type ParachainSystem;
+
 
 	fn para_id() -> ParaId {
 		Self::ext_wrapper(|| Self::ParachainInfo::get())
@@ -438,19 +447,6 @@ macro_rules! __impl_test_ext_for_relay_chain {
 	};
 }
 
-#[macro_export]
-macro_rules! __impl_relay {
-	($network:ident, $relay_chain:ty) => {
-		impl $crate::NetworkComponent for $relay_chain {
-			type Network = $network;
-
-			fn network_name() -> &'static str {
-				stringify!($network)
-			}
-		}
-	};
-}
-
 // Parachain Implementation
 #[macro_export]
 macro_rules! decl_test_parachains {
@@ -662,19 +658,6 @@ macro_rules! __impl_test_ext_for_parachain {
 	};
 }
 
-#[macro_export]
-macro_rules! __impl_parachain {
-	($network:ident, $parachain:ty) => {
-		impl $crate::NetworkComponent for $parachain {
-			type Network = $network;
-
-			fn network_name() -> &'static str {
-				stringify!($network)
-			}
-		}
-	};
-}
-
 // Network Implementation
 #[macro_export]
 macro_rules! decl_test_networks {
@@ -694,16 +677,20 @@ macro_rules! decl_test_networks {
 			impl $crate::Network for $name {
 				type Bridge = $bridge;
 
+				fn name() -> &'static str {
+					$crate::type_name::<Self>()
+				}
+
 				fn reset() {
 					use $crate::{TestExt, VecDeque};
 
-					$crate::INITIALIZED.with(|b| b.borrow_mut().remove(stringify!($name)));
-					$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().remove(stringify!($name)));
-					$crate::DMP_DONE.with(|b| b.borrow_mut().remove(stringify!($name)));
-					$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().remove(stringify!($name)));
-					$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().remove(stringify!($name)));
-					$crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().remove(stringify!($name)));
-					$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().remove(stringify!($name)));
+					$crate::INITIALIZED.with(|b| b.borrow_mut().remove(Self::name()));
+					$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().remove(Self::name()));
+					$crate::DMP_DONE.with(|b| b.borrow_mut().remove(Self::name()));
+					$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().remove(Self::name()));
+					$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().remove(Self::name()));
+					$crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().remove(Self::name()));
+					$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().remove(Self::name()));
 
 					<$relay_chain>::reset_ext();
 					$( <$parachain>::reset_ext(); )*
@@ -711,15 +698,15 @@ macro_rules! decl_test_networks {
 
 				fn init() {
 					// If Network has not been itialized yet, it gets initialized
-					if $crate::INITIALIZED.with(|b| b.borrow_mut().get(stringify!($name)).is_none()) {
-						$crate::INITIALIZED.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), true));
-						$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
-						$crate::DMP_DONE.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
-						$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
-						$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
-						$crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), $crate::VecDeque::new()));
-						$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), 1));
-						$crate::PARA_IDS.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), Self::para_ids()));
+					if $crate::INITIALIZED.with(|b| b.borrow_mut().get(Self::name()).is_none()) {
+						$crate::INITIALIZED.with(|b| b.borrow_mut().insert(Self::name().to_string(), true));
+						$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().insert(Self::name().to_string(), $crate::VecDeque::new()));
+						$crate::DMP_DONE.with(|b| b.borrow_mut().insert(Self::name().to_string(), $crate::VecDeque::new()));
+						$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().insert(Self::name().to_string(), $crate::VecDeque::new()));
+						$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().insert(Self::name().to_string(), $crate::VecDeque::new()));
+						$crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().insert(Self::name().to_string(), $crate::VecDeque::new()));
+						$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().insert(Self::name().to_string(), 1));
+						$crate::PARA_IDS.with(|b| b.borrow_mut().insert(Self::name().to_string(), Self::para_ids()));
 
 						$( <$parachain>::prepare_for_xcmp(); )*
 					}
@@ -732,11 +719,11 @@ macro_rules! decl_test_networks {
 				}
 
 				fn relay_block_number() -> u32 {
-					$crate::RELAY_BLOCK_NUMBER.with(|v| *v.clone().borrow().get(stringify!($name)).unwrap())
+					$crate::RELAY_BLOCK_NUMBER.with(|v| *v.clone().borrow().get(Self::name()).unwrap())
 				}
 
 				fn set_relay_block_number(block_number: u32) {
-					$crate::RELAY_BLOCK_NUMBER.with(|v| v.borrow_mut().insert(stringify!($name).to_string(), block_number));
+					$crate::RELAY_BLOCK_NUMBER.with(|v| v.borrow_mut().insert(Self::name().to_string(), block_number));
 				}
 
 				fn process_messages() {
@@ -749,10 +736,10 @@ macro_rules! decl_test_networks {
 				}
 
 				fn has_unprocessed_messages() -> bool {
-					$crate::DOWNWARD_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
-					|| $crate::HORIZONTAL_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
-					|| $crate::UPWARD_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
-					|| $crate::BRIDGED_MESSAGES.with(|b| !b.borrow_mut().get_mut(stringify!($name)).unwrap().is_empty())
+					$crate::DOWNWARD_MESSAGES.with(|b| !b.borrow_mut().get_mut(Self::name()).unwrap().is_empty())
+					|| $crate::HORIZONTAL_MESSAGES.with(|b| !b.borrow_mut().get_mut(Self::name()).unwrap().is_empty())
+					|| $crate::UPWARD_MESSAGES.with(|b| !b.borrow_mut().get_mut(Self::name()).unwrap().is_empty())
+					|| $crate::BRIDGED_MESSAGES.with(|b| !b.borrow_mut().get_mut(Self::name()).unwrap().is_empty())
 				}
 
 				fn process_downward_messages() {
@@ -760,11 +747,11 @@ macro_rules! decl_test_networks {
 					use polkadot_parachain::primitives::RelayChainBlockNumber;
 
 					while let Some((to_para_id, messages))
-						= $crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
+						= $crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::name()).unwrap().pop_front()) {
 						$(
 							let para_id: u32 = <$parachain>::para_id().into();
 
-							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) && para_id == to_para_id {
+							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(Self::name()).unwrap().contains(&to_para_id)) && para_id == to_para_id {
 								let mut msg_dedup: Vec<(RelayChainBlockNumber, Vec<u8>)> = Vec::new();
 								for m in &messages {
 									msg_dedup.push((m.0, m.1.clone()));
@@ -772,7 +759,7 @@ macro_rules! decl_test_networks {
 								msg_dedup.dedup();
 
 								let msgs = msg_dedup.clone().into_iter().filter(|m| {
-									!$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap_or(&mut $crate::VecDeque::new()).contains(&(to_para_id, m.0, m.1.clone())))
+									!$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(Self::name()).unwrap_or(&mut $crate::VecDeque::new()).contains(&(to_para_id, m.0, m.1.clone())))
 								}).collect::<Vec<(RelayChainBlockNumber, Vec<u8>)>>();
 								if msgs.len() != 0 {
 									<$parachain>::ext_wrapper(|| {
@@ -780,7 +767,7 @@ macro_rules! decl_test_networks {
 									});
 									$crate::log::debug!(target: concat!("dmp::", stringify!($name)) , "DMP messages processed {:?} to para_id {:?}", msgs.clone(), &to_para_id);
 									for m in msgs {
-										$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().push_back((to_para_id, m.0, m.1)));
+										$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(Self::name()).unwrap().push_back((to_para_id, m.0, m.1)));
 									}
 								}
 							}
@@ -792,12 +779,12 @@ macro_rules! decl_test_networks {
 					use $crate::{XcmpMessageHandler, Bounded};
 
 					while let Some((to_para_id, messages))
-						= $crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
+						= $crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::name()).unwrap().pop_front()) {
 						let iter = messages.iter().map(|(p, b, m)| (*p, *b, &m[..])).collect::<Vec<_>>().into_iter();
 						$(
 							let para_id: u32 = <$parachain>::para_id().into();
 
-							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().contains(&to_para_id)) && para_id == to_para_id {
+							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(Self::name()).unwrap().contains(&to_para_id)) && para_id == to_para_id {
 								<$parachain>::ext_wrapper(|| {
 									<$parachain as Parachain>::XcmpMessageHandler::handle_xcmp_messages(iter.clone(), $crate::Weight::max_value());
 								});
@@ -810,7 +797,7 @@ macro_rules! decl_test_networks {
 				fn process_upward_messages() {
 					use $crate::{Bounded, ProcessMessage, WeightMeter};
 					use sp_core::Encode;
-					while let Some((from_para_id, msg)) = $crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
+					while let Some((from_para_id, msg)) = $crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::name()).unwrap().pop_front()) {
 						let mut weight_meter = WeightMeter::max_limit();
 						<$relay_chain>::ext_wrapper(|| {
 							let _ =  <$relay_chain as RelayChain>::MessageProcessor::process_message(
@@ -829,7 +816,7 @@ macro_rules! decl_test_networks {
 					// Make sure both, including the target `Network` are initialized
 					<Self::Bridge as Bridge>::init();
 
-					while let Some(msg) = $crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
+					while let Some(msg) = $crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::name()).unwrap().pop_front()) {
 						let dispatch_result = <<Self::Bridge as $crate::Bridge>::Target as TestExt>::ext_wrapper(|| {
 							<<Self::Bridge as Bridge>::Handler as BridgeMessageHandler>::dispatch_target_inbound_message(msg.clone())
 						});
@@ -857,7 +844,7 @@ macro_rules! decl_test_networks {
 
 					// egress channel
 					let e_index = sproof.hrmp_egress_channel_index.get_or_insert_with(Vec::new);
-					for recipient_para_id in $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().clone()) {
+					for recipient_para_id in $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(Self::name()).unwrap().clone()) {
 						let recipient_para_id = $crate::ParaId::from(recipient_para_id);
 						if let Err(idx) = e_index.binary_search(&recipient_para_id) {
 							e_index.insert(idx, recipient_para_id);
@@ -895,10 +882,14 @@ macro_rules! decl_test_networks {
 				}
 			}
 
-			$crate::__impl_relay!($name, $relay_chain);
+			impl $crate::NetworkComponent for $relay_chain {
+				type Network = $name;
+			}
 
 			$(
-				$crate::__impl_parachain!($name, $parachain);
+				impl $crate::NetworkComponent for $parachain {
+					type Network = $name;
+				}
 			)*
 		)+
 	};
