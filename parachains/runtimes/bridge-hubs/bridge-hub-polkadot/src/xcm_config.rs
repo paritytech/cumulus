@@ -26,7 +26,7 @@ use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
-	xcm_config::{ConcreteNativeAssetFrom, NativeAssetFromSiblingSystemParachain},
+	xcm_config::{ConcreteNativeAssetFrom, ConcreteNativeAssetFromSiblingSystemParachain},
 };
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
@@ -184,7 +184,7 @@ pub type Barrier = DenyThenTry<
 /// Cases where a remote origin is accepted as trusted Teleporter:
 /// - teleportation of DOT from the parent Relay Chain and sibling parachains.
 pub type TrustedTeleporters =
-	(ConcreteNativeAssetFrom<DotRelayLocation>, NativeAssetFromSiblingSystemParachain);
+	(ConcreteNativeAssetFrom<DotRelayLocation>, ConcreteNativeAssetFromSiblingSystemParachain);
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {

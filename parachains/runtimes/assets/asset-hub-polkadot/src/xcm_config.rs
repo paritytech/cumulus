@@ -29,7 +29,7 @@ use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
-	xcm_config::{AssetFeeAsExistentialDepositMultiplier, NativeAssetFromSiblingSystemParachain},
+	xcm_config::{AssetFeeAsExistentialDepositMultiplier, ConcreteNativeAssetFromSiblingSystemParachain},
 };
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::ConvertInto;
@@ -392,7 +392,7 @@ pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentia
 pub type TrustedTeleporters = (
 	NativeAsset,
 	IsForeignConcreteAsset<FromSiblingParachain<parachain_info::Pallet<Runtime>>>,
-	NativeAssetFromSiblingSystemParachain,
+	ConcreteNativeAssetFromSiblingSystemParachain,
 );
 
 pub struct XcmConfig;
