@@ -114,6 +114,7 @@ pub trait Network {
 	type Bridge: Bridge;
 
 	fn init();
+	fn reset();
 	fn para_ids() -> Vec<u32>;
 	fn relay_block_number() -> u32;
 	fn set_relay_block_number(block_number: u32);
@@ -173,7 +174,7 @@ pub trait NetworkComponent {
 	}
 }
 
-pub trait Chain: TestExt {
+pub trait Chain: TestExt + NetworkComponent {
 	type Runtime: SystemConfig;
 	type RuntimeCall;
 	type RuntimeOrigin;
@@ -324,7 +325,6 @@ macro_rules! decl_test_relay_chains {
 				type RuntimeOrigin = $runtime::RuntimeOrigin;
 				type RuntimeEvent = $runtime::RuntimeEvent;
 				type System = $crate::SystemPallet::<Self::Runtime>;
-				// type Balances = $balances;
 
 				fn events() -> Vec<<Self as Chain>::RuntimeEvent> {
 					Self::System::events()
@@ -500,12 +500,10 @@ macro_rules! decl_test_parachains {
 
 				fn prepare_for_xcmp() {
 					use $crate::{Network, NetworkComponent, Hooks};
-					// use $crate::frame_support::traits::OnInitialize;
+
 					let para_id = Self::para_id();
 
 					<Self as TestExt>::ext_wrapper(|| {
-						// use $crate::{Get, Hooks};
-
 						let block_number = <Self as Chain>::System::block_number();
 
 						let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
@@ -693,8 +691,10 @@ macro_rules! decl_test_networks {
 		$(
 			pub struct $name;
 
-			impl $name {
-				pub fn reset() {
+			impl $crate::Network for $name {
+				type Bridge = $bridge;
+
+				fn reset() {
 					use $crate::{TestExt, VecDeque};
 
 					$crate::INITIALIZED.with(|b| b.borrow_mut().remove(stringify!($name)));
@@ -708,10 +708,6 @@ macro_rules! decl_test_networks {
 					<$relay_chain>::reset_ext();
 					$( <$parachain>::reset_ext(); )*
 				}
-			}
-
-			impl $crate::Network for $name {
-				type Bridge = $bridge;
 
 				fn init() {
 					// If Network has not been itialized yet, it gets initialized
@@ -1004,7 +1000,6 @@ impl<T> ProcessMessage for DefaultMessageProcessor<T>
 where
 	T: Chain + RelayChain,
 	T::Runtime: MessageQueueConfig,
-	// <T as RelayChain>::MessageQueue: EnqueueMessage<AggregateMessageOrigin> + ServiceQueues,
 	<<T::Runtime as MessageQueueConfig>::MessageProcessor as ProcessMessage>::Origin: PartialEq<AggregateMessageOrigin>,
 	MessageQueuePallet::<T::Runtime>: EnqueueMessage<AggregateMessageOrigin> + ServiceQueues,
 {
@@ -1016,26 +1011,13 @@ where
 		_meter: &mut WeightMeter,
 		_id: &mut XcmHash
 	) -> Result<bool, ProcessMessageError> {
-		// T::execute_with(|| {
-			MessageQueuePallet::<T::Runtime>::enqueue_message(
-				msg.try_into().expect("Message too long"),
-				AggregateMessageOrigin::Ump(UmpQueueId::Para(para.clone()))
-			);
-			// SystemPallet::<T::Runtime>::reset_events();
-			MessageQueuePallet::<T::Runtime>::service_queues(Weight::MAX);
+		MessageQueuePallet::<T::Runtime>::enqueue_message(
+			msg.try_into().expect("Message too long"),
+			AggregateMessageOrigin::Ump(UmpQueueId::Para(para.clone()))
+		);
+		MessageQueuePallet::<T::Runtime>::service_queues(Weight::MAX);
 
-			// let events = SystemPallet::<T::Runtime>::events();
-			// let event = events.last().expect("There must be at least one event");
-
-			// match &event.event {
-			// 	T::RuntimeEvent::MessageQueue(
-			// 		MessageQueueEvent::<T::Runtime>::Processed {origin, ..}) => {
-			// 		assert_eq!(origin, &AggregateMessageOrigin::Ump(UmpQueueId::Para(para)));
-			// 	},
-			// 	event => panic!("Unexpected event: {:#?}", event),
-			// }
-			Ok(true)
-		// })
+		Ok(true)
 	}
 }
 
