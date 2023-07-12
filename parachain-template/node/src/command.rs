@@ -3,15 +3,18 @@ use std::net::SocketAddr;
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::{info, warn};
-use parachain_template_runtime::Block;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, SharedParams, SubstrateCli,
 };
-use sc_service::config::{BasePath, PrometheusConfig};
+use sc_service::{
+	config::{BasePath, PrometheusConfig},
+	PartialComponents,
+};
 use sp_runtime::traits::AccountIdConversion;
 
 use crate::{
+	benchmarking::{inherent_benchmark_data, RemarkBuilder},
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::new_partial,
@@ -181,25 +184,20 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(cmd)?;
 			// Switch on the concrete benchmark sub-command-
 			match cmd {
-				BenchmarkCmd::Pallet(cmd) =>
-					if cfg!(feature = "runtime-benchmarks") {
-						runner.sync_run(|config| cmd.run::<Block, ()>(config))
-					} else {
-						Err("Benchmarking wasn't enabled when building the node. \
+				#[cfg(not(feature = "runtime-benchmarks"))]
+				BenchmarkCmd::Pallet(_) => Err("Benchmarking wasn't enabled when building the node. \
 					You can enable it with `--features runtime-benchmarks`."
-							.into())
-					},
+					.into()),
+				#[cfg(feature = "runtime-benchmarks")]
+				BenchmarkCmd::Pallet(cmd) => runner
+					.sync_run(|config| cmd.run::<parachain_template_runtime::Block, ()>(config)),
 				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
 					let partials = new_partial(&config)?;
 					cmd.run(partials.client)
 				}),
 				#[cfg(not(feature = "runtime-benchmarks"))]
-				BenchmarkCmd::Storage(_) =>
-					return Err(sc_cli::Error::Input(
-						"Compile with --features=runtime-benchmarks \
+				BenchmarkCmd::Storage(_) => Err("Compile with --features=runtime-benchmarks \
 						to enable storage benchmarks."
-							.into(),
-					)
 					.into()),
 				#[cfg(feature = "runtime-benchmarks")]
 				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
@@ -207,6 +205,11 @@ pub fn run() -> Result<()> {
 					let db = partials.backend.expose_db();
 					let storage = partials.backend.expose_storage();
 					cmd.run(config, partials.client.clone(), db, storage)
+				}),
+				BenchmarkCmd::Overhead(cmd) => runner.sync_run(|config| {
+					let PartialComponents { client, .. } = new_partial(&config)?;
+					let ext_builder = RemarkBuilder::new(client.clone());
+					cmd.run(config, client, inherent_benchmark_data()?, Vec::new(), &ext_builder)
 				}),
 				BenchmarkCmd::Machine(cmd) =>
 					runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
@@ -218,24 +221,16 @@ pub fn run() -> Result<()> {
 		},
 		#[cfg(feature = "try-runtime")]
 		Some(Subcommand::TryRuntime(cmd)) => {
-			use parachain_template_runtime::MILLISECS_PER_BLOCK;
+			use parachain_template_runtime::{Block, MILLISECS_PER_BLOCK};
 			use try_runtime_cli::block_building_info::timestamp_with_aura_info;
-
-			let runner = cli.create_runner(cmd)?;
 
 			type HostFunctions =
 				(sp_io::SubstrateHostFunctions, frame_benchmarking::benchmarking::HostFunctions);
 
-			// grab the task manager.
-			let registry = &runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
-			let task_manager =
-				sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
-					.map_err(|e| format!("Error: {:?}", e))?;
-
 			let info_provider = timestamp_with_aura_info(MILLISECS_PER_BLOCK);
 
-			runner.async_run(|_| {
-				Ok((cmd.run::<Block, HostFunctions, _>(Some(info_provider)), task_manager))
+			construct_async_run!(|components, cli, cmd, config| {
+				Ok(cmd.run::<Block, HostFunctions, _>(Some(info_provider)))
 			})
 		},
 		#[cfg(not(feature = "try-runtime"))]
