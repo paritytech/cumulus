@@ -11,4 +11,4 @@ build = "build.rs"
 polkadot-node-core-pvf = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
 
 [build-dependencies]
-toml = "0.7.5"
+toml = "0.7.6"

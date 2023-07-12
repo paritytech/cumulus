@@ -20,7 +20,7 @@
 //! Unincluded segment describes a chain of latest included block descendants, which are not yet
 //! sent to relay chain.
 
-use super::relay_state_snapshot::{MessagingStateSnapshot, RelayDispachQueueSize};
+use super::relay_state_snapshot::{MessagingStateSnapshot, RelayDispatchQueueRemainingCapacity};
 use codec::{Decode, Encode};
 use cumulus_primitives_core::{relay_chain, ParaId};
 use scale_info::TypeInfo;
@@ -52,8 +52,8 @@ impl OutboundBandwidthLimits {
 	///
 	/// These will be the total bandwidth limits across the entire unincluded segment.
 	pub fn from_relay_chain_state(messaging_state: &MessagingStateSnapshot) -> Self {
-		let RelayDispachQueueSize { remaining_count, remaining_size } =
-			messaging_state.relay_dispatch_queue_size;
+		let RelayDispatchQueueRemainingCapacity { remaining_count, remaining_size } =
+			messaging_state.relay_dispatch_queue_remaining_capacity;
 
 		let hrmp_outgoing = messaging_state
 			.egress_channels
@@ -432,11 +432,11 @@ mod tests {
 			max_total_size: 500,
 			mqc_head: None,
 		};
-		let relay_dispatch_queue_size =
-			RelayDispachQueueSize { remaining_count: 1, remaining_size: 50 };
+		let relay_dispatch_queue_remaining_capacity =
+			RelayDispatchQueueRemainingCapacity { remaining_count: 1, remaining_size: 50 };
 		let messaging_state = MessagingStateSnapshot {
 			dmq_mqc_head: relay_chain::Hash::zero(),
-			relay_dispatch_queue_size,
+			relay_dispatch_queue_remaining_capacity,
 			ingress_channels: Vec::new(),
 			egress_channels: vec![(para_a, para_a_channel), (para_b, para_b_channel)],
 		};
