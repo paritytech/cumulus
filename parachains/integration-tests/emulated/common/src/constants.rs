@@ -922,7 +922,6 @@ pub mod bridge_hub_rococo {
 					.cloned()
 					.map(|k| (k, ED * 4096))
 					.collect(),
-				..Default::default()
 			},
 			parachain_info: bridge_hub_rococo_runtime::ParachainInfoConfig {
 				parachain_id: PARA_ID.into(),
@@ -960,7 +959,6 @@ pub mod bridge_hub_rococo {
 			},
 			bridge_rococo_grandpa: bridge_hub_rococo_runtime::BridgeRococoGrandpaConfig {
 				owner: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
-				..Default::default()
 			},
 			bridge_rococo_messages: bridge_hub_rococo_runtime::BridgeRococoMessagesConfig {
 				owner: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
