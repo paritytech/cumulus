@@ -160,8 +160,6 @@ pub fn verify_and_optimize_justification<Header: HeaderT>(
 	authorities_set: &VoterSet<AuthorityId>,
 	justification: GrandpaJustification<Header>,
 ) -> Result<GrandpaJustification<Header>, Error>
-where
-	Header::Number: finality_grandpa::BlockNumberOps,
 {
 	let mut optimizer = OptimizationCallbacks(Vec::new());
 	verify_justification_with_callbacks(
@@ -181,8 +179,6 @@ pub fn verify_justification<Header: HeaderT>(
 	authorities_set: &VoterSet<AuthorityId>,
 	justification: &GrandpaJustification<Header>,
 ) -> Result<(), Error>
-where
-	Header::Number: finality_grandpa::BlockNumberOps,
 {
 	verify_justification_with_callbacks(
 		finalized_target,
@@ -260,8 +256,6 @@ fn verify_justification_with_callbacks<Header: HeaderT, C: VerificationCallbacks
 	justification: &GrandpaJustification<Header>,
 	callbacks: &mut C,
 ) -> Result<(), Error>
-where
-	Header::Number: finality_grandpa::BlockNumberOps,
 {
 	// ensure that it is justification for the expected header
 	if (justification.commit.target_hash, justification.commit.target_number) != finalized_target {
