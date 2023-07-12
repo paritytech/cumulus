@@ -30,7 +30,9 @@ use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
-	xcm_config::{AssetFeeAsExistentialDepositMultiplier, ConcreteNativeAssetFromSiblingSystemParachain},
+	xcm_config::{
+		AssetFeeAsExistentialDepositMultiplier, ConcreteNativeAssetFromSiblingSystemParachain,
+	},
 };
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::ConvertInto;
