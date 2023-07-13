@@ -6,7 +6,7 @@ use xcm_emulator::Parachain;
 fn swap_locally_on_chain_using_local_assets() {
 	const ASSET_ID: u32 = 1;
 
-	let asset_native = Box::new(MultiLocation { parents: 0, interior: Here });
+	let asset_native = Box::new(asset_hub_westend_runtime::xcm_config::WestendLocation::get());
 	let asset_one = Box::new(MultiLocation {
 		parents: 0,
 		interior: X2(PalletInstance(50), GeneralIndex(ASSET_ID.into())),
@@ -99,7 +99,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	use frame_support::weights::WeightToFee;
 
 	const ASSET_ID: u32 = 1;
-	let asset_native = Box::new(MultiLocation { parents: 0, interior: Here });
+	let asset_native = Box::new(asset_hub_westend_runtime::xcm_config::WestendLocation::get());
 
 	let foreign_asset1_at_asset_hub_westend = Box::new(MultiLocation {
 		parents: 1,

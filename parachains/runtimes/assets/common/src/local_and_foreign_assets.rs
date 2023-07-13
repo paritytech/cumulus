@@ -29,7 +29,7 @@ use pallet_asset_conversion::MultiAssetIdConverter;
 use parachains_common::{AccountId, AssetIdForTrustBackedAssets};
 use sp_runtime::{traits::MaybeEquivalence, DispatchResult};
 use sp_std::{boxed::Box, marker::PhantomData};
-use xcm::{latest::MultiLocation, opaque::lts::Junctions::Here};
+use xcm::latest::MultiLocation;
 use xcm_builder::AsPrefixedGeneralIndex;
 use xcm_executor::traits::JustTry;
 
@@ -41,17 +41,18 @@ fn is_local<TrustBackedAssetsPalletLocation: Get<MultiLocation>>(
 	AsPrefixedGeneralIndex::<TrustBackedAssetsPalletLocation, AssetIdForTrustBackedAssets, JustTry>::convert(&multilocation)
 }
 
-pub struct MultiLocationConverter<ParachainLocation: Get<InteriorMultiLocation>> {
-	_phantom: PhantomData<ParachainLocation>,
+pub struct MultiLocationConverter<ParachainLocation: Get<InteriorMultiLocation>, NativeAssetLocation: Get<MultiLocation>> {
+	_phantom: PhantomData<(ParachainLocation, NativeAssetLocation)>,
 }
 
-impl<ParachainLocation> MultiAssetIdConverter<Box<MultiLocation>, MultiLocation>
-	for MultiLocationConverter<ParachainLocation>
+impl<ParachainLocation, NativeAssetLocation> MultiAssetIdConverter<Box<MultiLocation>, MultiLocation>
+	for MultiLocationConverter<ParachainLocation, NativeAssetLocation>
 where
 	ParachainLocation: Get<InteriorMultiLocation>,
+	NativeAssetLocation: Get<MultiLocation>,
 {
 	fn get_native() -> Box<MultiLocation> {
-		Box::new(MultiLocation { parents: 0, interior: Here })
+		Box::new(NativeAssetLocation::get())
 	}
 
 	fn is_native(asset_id: &Box<MultiLocation>) -> bool {
