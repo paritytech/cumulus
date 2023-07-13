@@ -21,9 +21,11 @@ use cumulus_client_consensus_common::{
 	ParachainBlockImport as TParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
 use cumulus_client_service::{
-	build_network, build_relay_chain_interface, prepare_node_config, start_collator,
-	start_full_node, BuildNetworkParams, StartCollatorParams, StartFullNodeParams,
+	build_network, build_relay_chain_interface, prepare_node_config, start_relay_chain_tasks,
+	DARecoveryProfile, StartRelayChainTasksParams, BuildNetworkParams,
 };
+#[allow(deprecated)]
+use cumulus_client_service::old_consensus;
 use cumulus_primitives_core::{
 	relay_chain::{Hash as PHash, PersistedValidationData},
 	ParaId,
@@ -466,6 +468,23 @@ where
 		.overseer_handle()
 		.map_err(|e| sc_service::Error::Application(Box::new(e)))?;
 
+	start_relay_chain_tasks(StartRelayChainTasksParams {
+		client: client.clone(),
+		announce_block: announce_block.clone(),
+		para_id,
+		relay_chain_interface: relay_chain_interface.clone(),
+		task_manager: &mut task_manager,
+		da_recovery_profile: if validator {
+			DARecoveryProfile::Collator
+		} else {
+			DARecoveryProfile::FullNode
+		},
+		import_queue: import_queue_service,
+		relay_chain_slot_duration,
+		recovery_handle: Box::new(overseer_handle.clone()),
+		sync_service: sync_service.clone(),
+	}).await?;
+
 	if validator {
 		let parachain_consensus = build_consensus(
 			client.clone(),
@@ -482,37 +501,17 @@ where
 
 		let spawner = task_manager.spawn_handle();
 
-		let params = StartCollatorParams {
+		#[allow(deprecated)]
+		old_consensus::start_collator(old_consensus::StartCollatorParams {
 			para_id,
+			runtime_api: client.clone(),
 			block_status: client.clone(),
 			announce_block,
-			client: client.clone(),
-			task_manager: &mut task_manager,
-			relay_chain_interface,
+			overseer_handle,
 			spawner,
+			key: collator_key.expect("Command line arguments do not allow this. qed"),
 			parachain_consensus,
-			import_queue: import_queue_service,
-			collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
-			relay_chain_slot_duration,
-			recovery_handle: Box::new(overseer_handle),
-			sync_service,
-		};
-
-		start_collator(params).await?;
-	} else {
-		let params = StartFullNodeParams {
-			client: client.clone(),
-			announce_block,
-			task_manager: &mut task_manager,
-			para_id,
-			relay_chain_interface,
-			relay_chain_slot_duration,
-			import_queue: import_queue_service,
-			recovery_handle: Box::new(overseer_handle),
-			sync_service,
-		};
-
-		start_full_node(params)?;
+		}).await;
 	}
 
 	start_network.start_network();
@@ -669,6 +668,24 @@ where
 	let overseer_handle = relay_chain_interface
 		.overseer_handle()
 		.map_err(|e| sc_service::Error::Application(Box::new(e)))?;
+
+	start_relay_chain_tasks(StartRelayChainTasksParams {
+		client: client.clone(),
+		announce_block: announce_block.clone(),
+		para_id,
+		relay_chain_interface: relay_chain_interface.clone(),
+		task_manager: &mut task_manager,
+		da_recovery_profile: if validator {
+			DARecoveryProfile::Collator
+		} else {
+			DARecoveryProfile::FullNode
+		},
+		import_queue: import_queue_service,
+		relay_chain_slot_duration,
+		recovery_handle: Box::new(overseer_handle.clone()),
+		sync_service: sync_service.clone(),
+	}).await?;
+
 	if validator {
 		let parachain_consensus = build_consensus(
 			client.clone(),
@@ -685,37 +702,17 @@ where
 
 		let spawner = task_manager.spawn_handle();
 
-		let params = StartCollatorParams {
+		#[allow(deprecated)]
+		old_consensus::start_collator(old_consensus::StartCollatorParams {
 			para_id,
+			runtime_api: client.clone(),
 			block_status: client.clone(),
 			announce_block,
-			client: client.clone(),
-			task_manager: &mut task_manager,
-			relay_chain_interface: relay_chain_interface.clone(),
+			overseer_handle,
 			spawner,
+			key: collator_key.expect("Command line arguments do not allow this. qed"),
 			parachain_consensus,
-			import_queue: import_queue_service,
-			collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
-			relay_chain_slot_duration,
-			recovery_handle: Box::new(overseer_handle),
-			sync_service,
-		};
-
-		start_collator(params).await?;
-	} else {
-		let params = StartFullNodeParams {
-			client: client.clone(),
-			announce_block,
-			task_manager: &mut task_manager,
-			para_id,
-			relay_chain_interface,
-			relay_chain_slot_duration,
-			import_queue: import_queue_service,
-			recovery_handle: Box::new(overseer_handle),
-			sync_service,
-		};
-
-		start_full_node(params)?;
+		}).await;
 	}
 
 	start_network.start_network();
@@ -1442,6 +1439,24 @@ where
 	let overseer_handle = relay_chain_interface
 		.overseer_handle()
 		.map_err(|e| sc_service::Error::Application(Box::new(e)))?;
+
+	start_relay_chain_tasks(StartRelayChainTasksParams {
+		client: client.clone(),
+		announce_block: announce_block.clone(),
+		para_id,
+		relay_chain_interface: relay_chain_interface.clone(),
+		task_manager: &mut task_manager,
+		da_recovery_profile: if validator {
+			DARecoveryProfile::Collator
+		} else {
+			DARecoveryProfile::FullNode
+		},
+		import_queue: import_queue_service,
+		relay_chain_slot_duration,
+		recovery_handle: Box::new(overseer_handle.clone()),
+		sync_service: sync_service.clone(),
+	}).await?;
+
 	if validator {
 		let parachain_consensus = build_consensus(
 			client.clone(),
@@ -1458,37 +1473,17 @@ where
 
 		let spawner = task_manager.spawn_handle();
 
-		let params = StartCollatorParams {
+		#[allow(deprecated)]
+		old_consensus::start_collator(old_consensus::StartCollatorParams {
 			para_id,
+			runtime_api: client.clone(),
 			block_status: client.clone(),
 			announce_block,
-			client: client.clone(),
-			task_manager: &mut task_manager,
-			relay_chain_interface,
+			overseer_handle,
 			spawner,
+			key: collator_key.expect("Command line arguments do not allow this. qed"),
 			parachain_consensus,
-			import_queue: import_queue_service,
-			collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
-			relay_chain_slot_duration,
-			recovery_handle: Box::new(overseer_handle),
-			sync_service,
-		};
-
-		start_collator(params).await?;
-	} else {
-		let params = StartFullNodeParams {
-			client: client.clone(),
-			announce_block,
-			task_manager: &mut task_manager,
-			para_id,
-			relay_chain_interface,
-			relay_chain_slot_duration,
-			import_queue: import_queue_service,
-			recovery_handle: Box::new(overseer_handle),
-			sync_service,
-		};
-
-		start_full_node(params)?;
+		}).await;
 	}
 
 	start_network.start_network();

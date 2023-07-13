@@ -376,6 +376,7 @@ mod tests {
 
 		spawner.spawn("overseer", None, overseer.run().then(|_| async {}).boxed());
 
+		#[allow(deprecated)]
 		let collator_start = start_collator(StartCollatorParams {
 			runtime_api: client.clone(),
 			block_status: client.clone(),
