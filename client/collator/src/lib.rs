@@ -246,6 +246,7 @@ pub struct StartCollatorParams<Block: BlockT, RA, BS, Spawner> {
 }
 
 /// Start the collator.
+#[deprecated = "Collators should run consensus futures which handle this logic internally"]
 pub async fn start_collator<Block, RA, BS, Spawner>(
 	StartCollatorParams {
 		para_id,
