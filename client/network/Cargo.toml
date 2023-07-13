@@ -6,7 +6,7 @@ description = "Cumulus-specific networking protocol"
 edition = "2021"
 
 [dependencies]
-async-trait = "0.1.68"
+async-trait = "0.1.71"
 codec = { package = "parity-scale-codec", version = "3.0.0", features = [ "derive" ] }
 futures = "0.3.28"
 futures-timer = "3.0.2"
@@ -31,7 +31,7 @@ cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 
 [dev-dependencies]
 portpicker = "0.1.1"
-tokio = { version = "1.28.2", features = ["macros"] }
+tokio = { version = "1.29.1", features = ["macros"] }
 url = "2.4.0"
 
 # Substrate
@@ -44,7 +44,6 @@ sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "maste
 substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus

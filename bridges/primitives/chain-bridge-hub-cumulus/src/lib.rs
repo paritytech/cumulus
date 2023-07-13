@@ -17,8 +17,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use bp_polkadot_core::{
-	AccountId, AccountInfoStorageMapKeyProvider, AccountPublic, Balance, BlockNumber, Hash, Hasher,
-	Hashing, Header, Nonce, Perbill, Signature, SignedBlock, UncheckedExtrinsic,
+	AccountId, AccountInfoStorageMapKeyProvider, AccountPublic, Balance, Block, BlockNumber, Hash,
+	Hasher, Hashing, Header, Nonce, Perbill, Signature, SignedBlock, UncheckedExtrinsic,
 	EXTRA_STORAGE_PROOF_SIZE, TX_EXTRA_BYTES,
 };
 
@@ -124,9 +124,13 @@ pub type Address = MultiAddress<AccountId, ()>;
 // `ensure_able_to_receive_confirmation` test.
 
 /// Maximal number of unrewarded relayer entries at inbound lane for Cumulus-based parachains.
+/// Note: this value is security-relevant, decreasing it should not be done without careful
+/// analysis (like the one above).
 pub const MAX_UNREWARDED_RELAYERS_IN_CONFIRMATION_TX: MessageNonce = 1024;
 
 /// Maximal number of unconfirmed messages at inbound lane for Cumulus-based parachains.
+/// Note: this value is security-relevant, decreasing it should not be done without careful
+/// analysis (like the one above).
 pub const MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX: MessageNonce = 4096;
 
 /// Extra signed extension data that is used by all bridge hubs.
