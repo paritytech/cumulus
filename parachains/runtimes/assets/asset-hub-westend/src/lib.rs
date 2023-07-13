@@ -315,7 +315,7 @@ impl pallet_asset_conversion::Config for Runtime {
 	type MaxSwapPathLength = ConstU32<4>;
 
 	type MultiAssetId = Box<MultiLocation>;
-	type MultiAssetIdConverter = MultiLocationConverter<UniversalLocation>;
+	type MultiAssetIdConverter = MultiLocationConverter<UniversalLocation, WestendLocation>;
 
 	type MintMinLiquidity = ConstU128<100>;
 
