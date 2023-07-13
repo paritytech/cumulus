@@ -19,7 +19,6 @@
 //! Provides functions for starting a collator node or a normal full node.
 
 use cumulus_client_cli::CollatorOptions;
-use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_client_network::RequireSecondedInBlockAnnounce;
 use cumulus_client_pov_recovery::{PoVRecovery, RecoveryDelayRange, RecoveryHandle};
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
@@ -46,7 +45,7 @@ use sc_telemetry::{log, TelemetryWorkerHandle};
 use sc_utils::mpsc::TracingUnboundedSender;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{HeaderBackend, HeaderMetadata};
-use sp_core::{traits::SpawnNamed, Decode};
+use sp_core::Decode;
 use sp_runtime::traits::{Block as BlockT, BlockIdTo};
 use std::{sync::Arc, time::Duration};
 
@@ -56,48 +55,55 @@ use std::{sync::Arc, time::Duration};
 const RECOVERY_CHAN_SIZE: usize = 8;
 const LOG_TARGET_SYNC: &str = "sync::cumulus";
 
-/// Parameters given to [`start_collator`].
-pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, RCInterface, Spawner> {
-	pub block_status: Arc<BS>,
+/// A hint about how long the node should wait before attempting to recover missing block data
+/// from the data availability layer.
+pub enum DARecoveryProfile {
+	/// Collators use an aggressive recovery profile by default.
+	Collator,
+	/// Full nodes use a passive recovery profile by default, as they are not direct
+	/// victims of withholding attacks.
+	FullNode,
+	/// Provide an explicit recovery profile.
+	Other(RecoveryDelayRange),
+}
+
+/// Parameters given to [`start_relay_chain_tasks`].
+pub struct StartRelayChainTasksParams<'a, Block: BlockT, Client, RCInterface> {
 	pub client: Arc<Client>,
 	pub announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
-	pub spawner: Spawner,
 	pub para_id: ParaId,
 	pub relay_chain_interface: RCInterface,
 	pub task_manager: &'a mut TaskManager,
-	pub parachain_consensus: Box<dyn ParachainConsensus<Block>>,
+	pub da_recovery_profile: DARecoveryProfile,
 	pub import_queue: Box<dyn ImportQueueService<Block>>,
-	pub collator_key: CollatorPair,
 	pub relay_chain_slot_duration: Duration,
 	pub recovery_handle: Box<dyn RecoveryHandle>,
 	pub sync_service: Arc<SyncingService<Block>>,
 }
 
-/// Start a collator node for a parachain.
+/// Start necessary consensus tasks related to the relay chain.
 ///
-/// A collator is similar to a validator in a normal blockchain.
-/// It is responsible for producing blocks and sending the blocks to a
-/// parachain validator for validation and inclusion into the relay chain.
-pub async fn start_collator<'a, Block, BS, Client, Backend, RCInterface, Spawner>(
-	StartCollatorParams {
-		block_status,
+/// Parachain nodes need to track the state of the relay chain and use the
+/// relay chain's data availability service to fetch blocks if they don't
+/// arrive via the normal p2p layer (i.e. when authors withhold their blocks deliberately).
+///
+/// This function spawns work for those side tasks.
+pub async fn start_relay_chain_tasks<'a, Block, Client, Backend, RCInterface>(
+	StartRelayChainTasksParams {
 		client,
 		announce_block,
-		spawner,
 		para_id,
 		task_manager,
+		da_recovery_profile,
 		relay_chain_interface,
-		parachain_consensus,
 		import_queue,
-		collator_key,
 		relay_chain_slot_duration,
 		recovery_handle,
 		sync_service,
-	}: StartCollatorParams<'a, Block, BS, Client, RCInterface, Spawner>,
+	}: StartRelayChainTasksParams<'a, Block, Client, RCInterface>,
 ) -> sc_service::error::Result<()>
 where
 	Block: BlockT,
-	BS: BlockBackend<Block> + Send + Sync + 'static,
 	Client: Finalizer<Block, Backend>
 		+ UsageProvider<Block>
 		+ HeaderBackend<Block>
@@ -109,7 +115,6 @@ where
 		+ 'static,
 	Client::Api: CollectCollationInfo<Block>,
 	for<'b> &'b Client: BlockImport<Block>,
-	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
 	RCInterface: RelayChainInterface + Clone + 'static,
 	Backend: BackendT<Block> + 'static,
 {
@@ -127,113 +132,33 @@ where
 		.spawn_essential_handle()
 		.spawn_blocking("cumulus-consensus", None, consensus);
 
-	let pov_recovery = PoVRecovery::new(
-		recovery_handle,
-		// We want that collators wait at maximum the relay chain slot duration before starting
-		// to recover blocks. Additionally, we wait at least half the slot time to give the
-		// relay chain the chance to increase availability.
-		RecoveryDelayRange { min: relay_chain_slot_duration / 2, max: relay_chain_slot_duration },
-		client.clone(),
-		import_queue,
-		relay_chain_interface.clone(),
-		para_id,
-		recovery_chan_rx,
-		sync_service,
-	);
-
-	task_manager
-		.spawn_essential_handle()
-		.spawn("cumulus-pov-recovery", None, pov_recovery.run());
-
-	let overseer_handle = relay_chain_interface
-		.overseer_handle()
-		.map_err(|e| sc_service::Error::Application(Box::new(e)))?;
-	cumulus_client_collator::start_collator(cumulus_client_collator::StartCollatorParams {
-		runtime_api: client,
-		block_status,
-		announce_block,
-		overseer_handle,
-		spawner,
-		para_id,
-		key: collator_key,
-		parachain_consensus,
-	})
-	.await;
-
-	Ok(())
-}
-
-/// Parameters given to [`start_full_node`].
-pub struct StartFullNodeParams<'a, Block: BlockT, Client, RCInterface> {
-	pub para_id: ParaId,
-	pub client: Arc<Client>,
-	pub relay_chain_interface: RCInterface,
-	pub task_manager: &'a mut TaskManager,
-	pub announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
-	pub relay_chain_slot_duration: Duration,
-	pub import_queue: Box<dyn ImportQueueService<Block>>,
-	pub recovery_handle: Box<dyn RecoveryHandle>,
-	pub sync_service: Arc<SyncingService<Block>>,
-}
-
-/// Start a full node for a parachain.
-///
-/// A full node will only sync the given parachain and will follow the
-/// tip of the chain.
-pub fn start_full_node<Block, Client, Backend, RCInterface>(
-	StartFullNodeParams {
-		client,
-		announce_block,
-		task_manager,
-		relay_chain_interface,
-		para_id,
-		relay_chain_slot_duration,
-		import_queue,
-		recovery_handle,
-		sync_service,
-	}: StartFullNodeParams<Block, Client, RCInterface>,
-) -> sc_service::error::Result<()>
-where
-	Block: BlockT,
-	Client: Finalizer<Block, Backend>
-		+ UsageProvider<Block>
-		+ Send
-		+ Sync
-		+ BlockBackend<Block>
-		+ BlockchainEvents<Block>
-		+ 'static,
-	for<'a> &'a Client: BlockImport<Block>,
-	Backend: BackendT<Block> + 'static,
-	RCInterface: RelayChainInterface + Clone + 'static,
-{
-	let (recovery_chan_tx, recovery_chan_rx) = mpsc::channel(RECOVERY_CHAN_SIZE);
-
-	let consensus = cumulus_client_consensus_common::run_parachain_consensus(
-		para_id,
-		client.clone(),
-		relay_chain_interface.clone(),
-		announce_block,
-		Some(recovery_chan_tx),
-	);
-
-	task_manager
-		.spawn_essential_handle()
-		.spawn_blocking("cumulus-consensus", None, consensus);
-
-	let pov_recovery = PoVRecovery::new(
-		recovery_handle,
-		// Full nodes should at least wait 2.5 minutes (assuming 6 seconds slot duration) and
-		// in maximum 5 minutes before starting to recover blocks. Collators should already start
-		// the recovery way before full nodes try to recover a certain block and then share the
-		// block with the network using "the normal way". Full nodes are just the "last resort"
-		// for block recovery.
-		RecoveryDelayRange {
-			min: relay_chain_slot_duration * 25,
-			max: relay_chain_slot_duration * 50,
+	let da_recovery_profile = match da_recovery_profile {
+		DARecoveryProfile::Collator => {
+			// We want that collators wait at maximum the relay chain slot duration before starting
+			// to recover blocks. Additionally, we wait at least half the slot time to give the
+			// relay chain the chance to increase availability.
+			RecoveryDelayRange { min: relay_chain_slot_duration / 2, max: relay_chain_slot_duration }
 		},
-		client,
+		DARecoveryProfile::FullNode => {
+			// Full nodes should at least wait 2.5 minutes (assuming 6 seconds slot duration) and
+			// in maximum 5 minutes before starting to recover blocks. Collators should already start
+			// the recovery way before full nodes try to recover a certain block and then share the
+			// block with the network using "the normal way". Full nodes are just the "last resort"
+			// for block recovery.
+			RecoveryDelayRange {
+				min: relay_chain_slot_duration * 25,
+				max: relay_chain_slot_duration * 50,
+			}
+		},
+		DARecoveryProfile::Other(profile) => profile,
+	};
+
+	let pov_recovery = PoVRecovery::new(
+		recovery_handle,
+		da_recovery_profile,
+		client.clone(),
 		import_queue,
-		relay_chain_interface,
+		relay_chain_interface.clone(),
 		para_id,
 		recovery_chan_rx,
 		sync_service,
@@ -244,6 +169,14 @@ where
 		.spawn("cumulus-pov-recovery", None, pov_recovery.run());
 
 	Ok(())
+}
+
+/// Re-exports of old parachain consensus loop start logic.
+#[deprecated = "This is old consensus architecture only for backwards compatibility \
+	and will be removed in the future"]
+pub mod old_consensus {
+	#[allow(deprecated)]
+	pub use cumulus_client_collator::{start_collator, StartCollatorParams};
 }
 
 /// Prepare the parachain's node configuration
