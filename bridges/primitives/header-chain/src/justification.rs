@@ -159,8 +159,7 @@ pub fn verify_and_optimize_justification<Header: HeaderT>(
 	authorities_set_id: SetId,
 	authorities_set: &VoterSet<AuthorityId>,
 	justification: GrandpaJustification<Header>,
-) -> Result<GrandpaJustification<Header>, Error>
-{
+) -> Result<GrandpaJustification<Header>, Error> {
 	let mut optimizer = OptimizationCallbacks(Vec::new());
 	verify_justification_with_callbacks(
 		finalized_target,
@@ -178,8 +177,7 @@ pub fn verify_justification<Header: HeaderT>(
 	authorities_set_id: SetId,
 	authorities_set: &VoterSet<AuthorityId>,
 	justification: &GrandpaJustification<Header>,
-) -> Result<(), Error>
-{
+) -> Result<(), Error> {
 	verify_justification_with_callbacks(
 		finalized_target,
 		authorities_set_id,
@@ -255,8 +253,7 @@ fn verify_justification_with_callbacks<Header: HeaderT, C: VerificationCallbacks
 	authorities_set: &VoterSet<AuthorityId>,
 	justification: &GrandpaJustification<Header>,
 	callbacks: &mut C,
-) -> Result<(), Error>
-{
+) -> Result<(), Error> {
 	// ensure that it is justification for the expected header
 	if (justification.commit.target_hash, justification.commit.target_number) != finalized_target {
 		return Err(Error::InvalidJustificationTarget)

@@ -139,18 +139,15 @@ pub mod pallet {
 	pub trait BoundedBridgeGrandpaConfig<I: 'static>:
 		pallet_bridge_grandpa::Config<I, BridgedChain = Self::BridgedRelayChain>
 	{
-		type BridgedRelayChain: Chain<
-			Hash = RelayBlockHash,
-			Hasher = RelayBlockHasher,
-		>;
+		type BridgedRelayChain: Chain<Hash = RelayBlockHash, Hasher = RelayBlockHasher>;
 	}
 
 	impl<T, I: 'static> BoundedBridgeGrandpaConfig<I> for T
 	where
 		T: pallet_bridge_grandpa::Config<I>,
-		T::BridgedChain:
-			Chain<Hash = RelayBlockHash, Hasher = RelayBlockHasher>,
-		<<T::BridgedChain as Chain>::Block as sp_runtime::traits::Block>::Header: sp_runtime::traits::Header<Number = RelayBlockNumber>
+		T::BridgedChain: Chain<Hash = RelayBlockHash, Hasher = RelayBlockHasher>,
+		<<T::BridgedChain as Chain>::Block as sp_runtime::traits::Block>::Header:
+			sp_runtime::traits::Header<Number = RelayBlockNumber>,
 	{
 		type BridgedRelayChain = T::BridgedChain;
 	}
