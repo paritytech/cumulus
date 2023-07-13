@@ -41,14 +41,13 @@ fn is_local<TrustBackedAssetsPalletLocation: Get<MultiLocation>>(
 	AsPrefixedGeneralIndex::<TrustBackedAssetsPalletLocation, AssetIdForTrustBackedAssets, JustTry>::convert(&multilocation)
 }
 
-pub struct MultiLocationConverter<Balances, ParachainLocation: Get<InteriorMultiLocation>> {
-	_phantom: PhantomData<(Balances, ParachainLocation)>,
+pub struct MultiLocationConverter<ParachainLocation: Get<InteriorMultiLocation>> {
+	_phantom: PhantomData<ParachainLocation>,
 }
 
-impl<Balances, ParachainLocation> MultiAssetIdConverter<Box<MultiLocation>, MultiLocation>
-	for MultiLocationConverter<Balances, ParachainLocation>
+impl<ParachainLocation> MultiAssetIdConverter<Box<MultiLocation>, MultiLocation>
+	for MultiLocationConverter<ParachainLocation>
 where
-	Balances: PalletInfoAccess,
 	ParachainLocation: Get<InteriorMultiLocation>,
 {
 	fn get_native() -> Box<MultiLocation> {
