@@ -24,16 +24,17 @@ use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use frame_support::{
 	dispatch::{DispatchResult, RawOrigin, UnfilteredDispatchable},
 	inherent::{InherentData, ProvideInherent},
-	traits::{GenesisBuild, OnFinalize, OnInitialize, OriginTrait},
+	traits::{OnFinalize, OnInitialize, OriginTrait},
 	weights::Weight,
 };
+use frame_system::pallet_prelude::{BlockNumberFor, HeaderFor};
 use parachains_common::{AccountId, SLOT_DURATION};
 use polkadot_parachain::primitives::{
 	HeadData, HrmpChannelId, RelayChainBlockNumber, XcmpMessageFormat,
 };
 use sp_consensus_aura::{SlotDuration, AURA_ENGINE_ID};
 use sp_core::Encode;
-use sp_runtime::{traits::Header, Digest, DigestItem};
+use sp_runtime::{traits::Header, BuildStorage, Digest, DigestItem};
 use xcm::{
 	latest::{MultiAsset, MultiLocation, XcmContext, XcmHash},
 	prelude::*,
@@ -165,20 +166,22 @@ impl<
 			pallet_collator_selection::Config + pallet_balances::Config + pallet_session::Config,
 		ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
 	{
-		let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
+		let mut t = frame_system::GenesisConfig::<Runtime>::default().build_storage().unwrap();
 
-		<pallet_xcm::GenesisConfig as GenesisBuild<Runtime>>::assimilate_storage(
-			&pallet_xcm::GenesisConfig { safe_xcm_version: self.safe_xcm_version },
-			&mut t,
-		)
+		pallet_xcm::GenesisConfig::<Runtime> {
+			safe_xcm_version: self.safe_xcm_version,
+			..Default::default()
+		}
+		.assimilate_storage(&mut t)
 		.unwrap();
 
 		if let Some(para_id) = self.para_id {
-			<parachain_info::GenesisConfig as frame_support::traits::GenesisBuild<Runtime>>::assimilate_storage(
-				&parachain_info::GenesisConfig { parachain_id: para_id },
-				&mut t,
-			)
-				.unwrap();
+			parachain_info::GenesisConfig::<Runtime> {
+				parachain_id: para_id,
+				..Default::default()
+			}
+			.assimilate_storage(&mut t)
+			.unwrap();
 		}
 
 		pallet_balances::GenesisConfig::<Runtime> { balances: self.balances }
@@ -217,10 +220,10 @@ impl<Runtime: frame_system::Config, AllPalletsWithoutSystem>
 where
 	AccountIdOf<Runtime>:
 		Into<<<Runtime as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId>,
-	AllPalletsWithoutSystem: OnInitialize<<Runtime as frame_system::Config>::BlockNumber>
-		+ OnFinalize<<Runtime as frame_system::Config>::BlockNumber>,
+	AllPalletsWithoutSystem:
+		OnInitialize<BlockNumberFor<Runtime>> + OnFinalize<BlockNumberFor<Runtime>>,
 {
-	pub fn run_to_block(n: u32, author: AccountId) -> <Runtime as frame_system::Config>::Header {
+	pub fn run_to_block(n: u32, author: AccountId) -> HeaderFor<Runtime> {
 		let mut last_header = None;
 		loop {
 			let block_number = frame_system::Pallet::<Runtime>::block_number();
@@ -290,7 +293,7 @@ impl<
 		beneficiary: MultiLocation,
 		(asset, amount): (MultiLocation, u128),
 		open_hrmp_channel: Option<(u32, u32)>,
-		included_head: <Runtime as frame_system::Config>::Header,
+		included_head: HeaderFor<Runtime>,
 		slot_digest: &[u8],
 	) -> DispatchResult
 	where
@@ -444,7 +447,7 @@ pub fn mock_open_hrmp_channel<
 >(
 	sender: ParaId,
 	recipient: ParaId,
-	included_head: C::Header,
+	included_head: HeaderFor<C>,
 	mut slot_digest: &[u8],
 ) {
 	const RELAY_CHAIN_SLOT_DURATION: SlotDuration = SlotDuration::from_millis(6000);

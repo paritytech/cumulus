@@ -21,6 +21,7 @@ use frame_support::{
 	traits::{fungibles::InspectEnumerable, Get, OnFinalize, OnInitialize, OriginTrait},
 	weights::Weight,
 };
+use frame_system::pallet_prelude::BlockNumberFor;
 use parachains_common::{AccountId, Balance};
 use parachains_runtimes_test_utils::{
 	assert_metadata, assert_total, AccountIdOf, BalanceOf, CollatorSessionKeys, ExtBuilder,
@@ -63,8 +64,8 @@ pub fn teleports_for_native_asset_works<
 		+ pallet_collator_selection::Config
 		+ cumulus_pallet_parachain_system::Config
 		+ cumulus_pallet_xcmp_queue::Config,
-	AllPalletsWithoutSystem: OnInitialize<<Runtime as frame_system::Config>::BlockNumber>
-		+ OnFinalize<<Runtime as frame_system::Config>::BlockNumber>,
+	AllPalletsWithoutSystem:
+		OnInitialize<BlockNumberFor<Runtime>> + OnFinalize<BlockNumberFor<Runtime>>,
 	AccountIdOf<Runtime>: Into<[u8; 32]>,
 	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
 	BalanceOf<Runtime>: From<Balance> + Into<u128>,
@@ -318,8 +319,8 @@ pub fn teleports_for_foreign_assets_works<
 		+ cumulus_pallet_parachain_system::Config
 		+ cumulus_pallet_xcmp_queue::Config
 		+ pallet_assets::Config<ForeignAssetsPalletInstance>,
-	AllPalletsWithoutSystem: OnInitialize<<Runtime as frame_system::Config>::BlockNumber>
-		+ OnFinalize<<Runtime as frame_system::Config>::BlockNumber>,
+	AllPalletsWithoutSystem:
+		OnInitialize<BlockNumberFor<Runtime>> + OnFinalize<BlockNumberFor<Runtime>>,
 	AccountIdOf<Runtime>: Into<[u8; 32]>,
 	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
 	BalanceOf<Runtime>: From<Balance>,

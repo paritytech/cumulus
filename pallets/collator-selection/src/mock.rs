@@ -17,27 +17,23 @@ use super::*;
 use crate as collator_selection;
 use frame_support::{
 	ord_parameter_types, parameter_types,
-	traits::{ConstBool, ConstU32, ConstU64, FindAuthor, GenesisBuild, ValidatorRegistration},
+	traits::{ConstBool, ConstU32, ConstU64, FindAuthor, ValidatorRegistration},
 	PalletId,
 };
 use frame_system as system;
 use frame_system::EnsureSignedBy;
 use sp_core::H256;
 use sp_runtime::{
-	testing::{Header, UintAuthorityId},
+	testing::UintAuthorityId,
 	traits::{BlakeTwo256, IdentityLookup, OpaqueKeys},
-	RuntimeAppPublic,
+	BuildStorage, RuntimeAppPublic,
 };
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum Test
 	{
 		System: frame_system,
 		Timestamp: pallet_timestamp,
@@ -62,12 +58,11 @@ impl system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
 	type Index = u64;
-	type BlockNumber = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
+	type Block = Block;
 	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
@@ -214,7 +209,7 @@ impl Config for Test {
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	sp_tracing::try_init_simple();
-	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	let invulnerables = vec![2, 1]; // unsorted
 
 	let balances = vec![(1, 100), (2, 100), (3, 100), (4, 100), (5, 100)];

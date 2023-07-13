@@ -38,6 +38,7 @@ use frame_support::{
 	assert_ok,
 	traits::{Get, OnFinalize, OnInitialize, OriginTrait, PalletInfoAccess},
 };
+use frame_system::pallet_prelude::{BlockNumberFor, HeaderFor};
 use pallet_bridge_grandpa::BridgedHeader;
 use parachains_common::AccountId;
 use parachains_runtimes_test_utils::{
@@ -308,8 +309,8 @@ pub fn message_dispatch_routing_works<
 		+ cumulus_pallet_parachain_system::Config
 		+ cumulus_pallet_xcmp_queue::Config
 		+ pallet_bridge_messages::Config<MessagesPalletInstance, InboundPayload = XcmAsPlainPayload>,
-	AllPalletsWithoutSystem: OnInitialize<<Runtime as frame_system::Config>::BlockNumber>
-		+ OnFinalize<<Runtime as frame_system::Config>::BlockNumber>,
+	AllPalletsWithoutSystem:
+		OnInitialize<BlockNumberFor<Runtime>> + OnFinalize<BlockNumberFor<Runtime>>,
 	<Runtime as frame_system::Config>::AccountId:
 		Into<<<Runtime as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId>,
 	XcmConfig: xcm_executor::Config,
@@ -421,8 +422,8 @@ pub fn relayed_incoming_message_works<Runtime, AllPalletsWithoutSystem, XcmConfi
 	+ pallet_bridge_grandpa::Config<GPI>
 	+ pallet_bridge_parachains::Config<PPI>
 	+ pallet_bridge_messages::Config<MPI, InboundPayload = XcmAsPlainPayload>,
-	AllPalletsWithoutSystem: OnInitialize<<Runtime as frame_system::Config>::BlockNumber>
-		+ OnFinalize<<Runtime as frame_system::Config>::BlockNumber>,
+	AllPalletsWithoutSystem: OnInitialize<BlockNumberFor<Runtime>>
+		+ OnFinalize<BlockNumberFor<Runtime>>,
 	GPI: 'static,
 	PPI: 'static,
 	MPI: 'static,
@@ -617,7 +618,7 @@ pub fn complex_relay_extrinsic_works<Runtime, AllPalletsWithoutSystem, XcmConfig
 	local_relay_chain_id: NetworkId,
 	lane_id: LaneId,
 	existential_deposit: BalanceOf<Runtime>,
-	executive_init_block: fn(&<Runtime as frame_system::Config>::Header),
+	executive_init_block: fn(&HeaderFor<Runtime>),
 	construct_and_apply_extrinsic: fn(
 		sp_keyring::AccountKeyring,
 		pallet_utility::Call::<Runtime>
@@ -637,8 +638,8 @@ pub fn complex_relay_extrinsic_works<Runtime, AllPalletsWithoutSystem, XcmConfig
 	+ pallet_bridge_parachains::Config<PPI>
 	+ pallet_bridge_messages::Config<MPI, InboundPayload = XcmAsPlainPayload>
 	+ pallet_bridge_relayers::Config,
-	AllPalletsWithoutSystem: OnInitialize<<Runtime as frame_system::Config>::BlockNumber>
-		+ OnFinalize<<Runtime as frame_system::Config>::BlockNumber>,
+	AllPalletsWithoutSystem: OnInitialize<BlockNumberFor<Runtime>>
+		+ OnFinalize<BlockNumberFor<Runtime>>,
 	GPI: 'static,
 	PPI: 'static,
 	MPI: 'static,
@@ -689,10 +690,9 @@ pub fn complex_relay_extrinsic_works<Runtime, AllPalletsWithoutSystem, XcmConfig
 				2,
 				AccountId::from(alice),
 			);
-			let zero: <Runtime as frame_system::Config>::BlockNumber = 0u32.into();
+			let zero: BlockNumberFor<Runtime> = 0u32.into();
 			let genesis_hash = frame_system::Pallet::<Runtime>::block_hash(zero);
-			let mut header: <Runtime as frame_system::Config>::Header =
-				bp_test_utils::test_header(1u32.into());
+			let mut header: HeaderFor<Runtime> = bp_test_utils::test_header(1u32.into());
 			header.set_parent_hash(genesis_hash);
 			executive_init_block(&header);
 
