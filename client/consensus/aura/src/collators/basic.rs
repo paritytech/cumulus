@@ -51,6 +51,8 @@ use crate::collator as collator_util;
 
 /// Parameters for [`run`].
 pub struct Params<BI, CIDP, Client, RClient, SO, Proposer, CS> {
+	/// Inherent data providers. Only non-consensus inherent data should be provided, i.e.
+	/// nothing to do with parachain consensus or Aura.
 	pub create_inherent_data_providers: CIDP,
 	pub block_import: BI,
 	pub para_client: Arc<Client>,
