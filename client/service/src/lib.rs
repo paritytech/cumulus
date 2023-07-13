@@ -137,7 +137,10 @@ where
 			// We want that collators wait at maximum the relay chain slot duration before starting
 			// to recover blocks. Additionally, we wait at least half the slot time to give the
 			// relay chain the chance to increase availability.
-			RecoveryDelayRange { min: relay_chain_slot_duration / 2, max: relay_chain_slot_duration }
+			RecoveryDelayRange {
+				min: relay_chain_slot_duration / 2,
+				max: relay_chain_slot_duration,
+			}
 		},
 		DARecoveryProfile::FullNode => {
 			// Full nodes should at least wait 2.5 minutes (assuming 6 seconds slot duration) and

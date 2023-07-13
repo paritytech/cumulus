@@ -39,11 +39,12 @@ use cumulus_client_consensus_common::{
 	ParachainBlockImport as TParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
 use cumulus_client_pov_recovery::RecoveryHandle;
-use cumulus_client_service::{
-	build_network, prepare_node_config, start_relay_chain_tasks, DARecoveryProfile, StartRelayChainTasksParams, BuildNetworkParams,
-};
 #[allow(deprecated)]
 use cumulus_client_service::old_consensus;
+use cumulus_client_service::{
+	build_network, prepare_node_config, start_relay_chain_tasks, BuildNetworkParams,
+	DARecoveryProfile, StartRelayChainTasksParams,
+};
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::RelayChainInProcessInterface;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
@@ -403,7 +404,8 @@ where
 		relay_chain_slot_duration: relay_chain_slot_duration.clone(),
 		recovery_handle,
 		sync_service: sync_service.clone(),
-	}).await?;
+	})
+	.await?;
 
 	if let Some(collator_key) = collator_key {
 		let parachain_consensus: Box<dyn ParachainConsensus<Block>> = match consensus {
@@ -457,7 +459,8 @@ where
 			parachain_consensus,
 			key: collator_key,
 			overseer_handle,
-		}).await;
+		})
+		.await;
 	}
 
 	start_network.start_network();

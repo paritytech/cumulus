@@ -12,12 +12,12 @@ use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, Slo
 use cumulus_client_consensus_common::{
 	ParachainBlockImport as TParachainBlockImport, ParachainConsensus,
 };
-use cumulus_client_service::{
-	DARecoveryProfile,
-	build_network, build_relay_chain_interface, prepare_node_config, start_relay_chain_tasks, BuildNetworkParams, StartRelayChainTasksParams,
-};
 #[allow(deprecated)]
 use cumulus_client_service::old_consensus;
+use cumulus_client_service::{
+	build_network, build_relay_chain_interface, prepare_node_config, start_relay_chain_tasks,
+	BuildNetworkParams, DARecoveryProfile, StartRelayChainTasksParams,
+};
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_interface::RelayChainInterface;
 
@@ -297,7 +297,8 @@ async fn start_node_impl(
 		relay_chain_slot_duration,
 		recovery_handle: Box::new(overseer_handle.clone()),
 		sync_service: sync_service.clone(),
-	}).await?;
+	})
+	.await?;
 
 	if validator {
 		let parachain_consensus = build_consensus(
