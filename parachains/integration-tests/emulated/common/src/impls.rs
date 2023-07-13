@@ -1,5 +1,7 @@
-use super::{BridgeHubRococo, BridgeHubWococo};
-pub use frame_support::{sp_runtime::AccountId32, traits::OriginTrait};
+use super::{
+	BridgeHubRococo, BridgeHubWococo,
+};
+use frame_support::{sp_runtime::AccountId32, traits::OriginTrait};
 use bp_messages::{
 	target_chain::{DispatchMessage, DispatchMessageData, MessageDispatch},
 	LaneId, MessageKey, OutboundLaneData,
@@ -8,7 +10,7 @@ use bridge_runtime_common::messages_xcm_extension::XcmBlobMessageDispatchResult;
 use codec::Decode;
 pub use cumulus_primitives_core::{DmpMessageHandler, XcmpMessageHandler};
 use pallet_bridge_messages::{Config, Instance1, Instance2, OutboundLanes, Pallet};
-use parachains_common::AccountId;
+use parachains_common::{Balance, AccountId};
 use sp_core::Get;
 use xcm_emulator::{BridgeMessage, BridgeMessageDispatchError, BridgeMessageHandler, Chain, PhantomData};
 use xcm::{prelude::*, VersionedMultiLocation};
@@ -132,7 +134,7 @@ where
 #[derive(Clone)]
 pub struct Account {
 	pub account_id: AccountId,
-	pub balance: u128,
+	pub balance: Balance,
 }
 
 #[derive(Clone)]

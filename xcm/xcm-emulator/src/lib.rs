@@ -17,6 +17,7 @@
 pub use codec::{Decode, Encode};
 pub use log;
 pub use paste;
+pub use lazy_static::lazy_static;
 pub use std::{
 	any::type_name,
 	collections::HashMap,
@@ -24,6 +25,8 @@ pub use std::{
 	fmt,
 	marker::PhantomData,
 	thread::LocalKey,
+	sync::{Mutex, Condvar},
+	ops::Deref,
 };
 
 // Substrate
@@ -38,7 +41,7 @@ pub use frame_system::{AccountInfo, Config as SystemConfig, Pallet as SystemPall
 pub use pallet_balances::AccountData;
 pub use sp_arithmetic::traits::Bounded;
 pub use sp_core::{sr25519, storage::Storage, H256};
-pub use sp_io;
+pub use sp_io::TestExternalities;
 pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, fmt::Debug};
 pub use sp_trie::StorageProof;
 
@@ -93,20 +96,24 @@ thread_local! {
 }
 
 pub trait TestExt {
-	fn build_new_ext(storage: Storage) -> sp_io::TestExternalities;
-	fn new_ext() -> sp_io::TestExternalities;
+	fn build_new_ext(storage: Storage) -> TestExternalities;
+	fn new_ext() -> TestExternalities;
+	fn send_ext_to_global();
+	fn set_ext_from_global();
 	fn reset_ext();
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R;
 	fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R;
 }
 
 impl TestExt for () {
-	fn build_new_ext(_storage: Storage) -> sp_io::TestExternalities {
-		sp_io::TestExternalities::default()
+	fn build_new_ext(_storage: Storage) -> TestExternalities {
+		TestExternalities::default()
 	}
-	fn new_ext() -> sp_io::TestExternalities {
-		sp_io::TestExternalities::default()
+	fn new_ext() -> TestExternalities {
+		TestExternalities::default()
 	}
+	fn send_ext_to_global() {}
+	fn set_ext_from_global() {}
 	fn reset_ext() {}
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
 		execute()
@@ -377,19 +384,36 @@ macro_rules! __impl_test_ext_for_relay_chain {
 	// entry point: generate ext name
 	($name:ident, $genesis:expr, $on_init:expr, $api_version:tt) => {
 		$crate::paste::paste! {
-			$crate::__impl_test_ext_for_relay_chain!(@impl $name, $genesis, $on_init, [<ParachainHostV $api_version>], [<EXT_ $name:upper>]);
+			$crate::__impl_test_ext_for_relay_chain!(
+				@impl $name,
+				$genesis,
+				$on_init,
+				[<ParachainHostV $api_version>],
+				[<LOCAL_EXT_ $name:upper>],
+				[<GLOBAL_EXT_ $name:upper>],
+				[<CONDVAR_ $name:upper>]
+			);
 		}
 	};
 	// impl
-	(@impl $name:ident, $genesis:expr, $on_init:expr, $api_version:ident, $ext_name:ident) => {
+	(@impl $name:ident, $genesis:expr, $on_init:expr, $api_version:ident, $local_ext:ident, $global_ext:ident, $condvar:ident) => {
 		thread_local! {
-			pub static $ext_name: $crate::RefCell<$crate::sp_io::TestExternalities>
+			pub static $local_ext: $crate::RefCell<$crate::TestExternalities>
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
 		}
 
+		$crate::lazy_static! {
+			pub static ref $global_ext: $crate::Mutex<$crate::RefCell<$crate::TestExternalities>>
+				= $crate::Mutex::new($crate::RefCell::new($crate::TestExternalities::new_empty()));
+				// = $crate::Mutex::new($crate::RefCell::new($crate::TestExternalities::new_empty()));
+			pub static ref $condvar: $crate::Mutex<$crate::RefCell<$crate::Condvar>>
+				= $crate::Mutex::new($crate::RefCell::new($crate::Condvar::new()));
+		}
+
 		impl TestExt for $name {
-			fn build_new_ext(storage: $crate::Storage) -> $crate::sp_io::TestExternalities {
-				let mut ext = sp_io::TestExternalities::new(storage);
+			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
+				$crate::log::debug!(target: "nacho", "New Ext -> {:?}", stringify!($local_ext));
+				let mut ext = $crate::TestExternalities::new(storage);
 				ext.execute_with(|| {
 					#[allow(clippy::no_effect)]
 					$on_init;
@@ -399,12 +423,40 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				ext
 			}
 
-			fn new_ext() -> $crate::sp_io::TestExternalities {
+			fn new_ext() -> $crate::TestExternalities {
 				<$name>::build_new_ext($genesis)
 			}
 
+			fn send_ext_to_global() {
+				use $crate::Deref;
+
+				let local_ext = $local_ext.with(|v| {
+					v.take()
+				});
+
+				let global_ext_result = $global_ext.lock().unwrap();
+
+				global_ext_result.deref().replace(local_ext);
+			}
+
+			fn set_ext_from_global() {
+				use $crate::Deref;
+
+				let global_ext_result = $global_ext.lock().unwrap();
+
+				let global_ext = global_ext_result.deref();
+
+				$local_ext.with(|v| {
+					v.replace(global_ext.take());
+				});
+			}
+
+			// fn set_from_global_ext(new_ext: $crate::TestExternalities) {
+			// 	$local_ext.with(|v| { v.replace(new_ext) });
+			// }
+
 			fn reset_ext() {
-				$ext_name.with(|v| *v.borrow_mut() = <$name>::build_new_ext($genesis));
+				$local_ext.with(|v| *v.borrow_mut() = <$name>::build_new_ext($genesis));
 			}
 
 			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
@@ -412,10 +464,10 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				// Make sure the Network is initialized
 				<$name as NetworkComponent>::Network::init();
 
-				let r = $ext_name.with(|v| v.borrow_mut().execute_with(execute));
+				let r = $local_ext.with(|v| v.borrow_mut().execute_with(execute));
 
 				// send messages if needed
-				$ext_name.with(|v| {
+				$local_ext.with(|v| {
 					v.borrow_mut().execute_with(|| {
 						use $crate::polkadot_primitives::runtime_api::runtime_decl_for_parachain_host::$api_version;
 
@@ -442,7 +494,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 			}
 
 			fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R {
-				$ext_name.with(|v| {
+				$local_ext.with(|v| {
 					v.borrow_mut().execute_with(|| {
 						func()
 					})
@@ -549,19 +601,25 @@ macro_rules! __impl_test_ext_for_parachain {
 	// entry point: generate ext name
 	($name:ident, $genesis:expr, $on_init:expr) => {
 		$crate::paste::paste! {
-			$crate::__impl_test_ext_for_parachain!(@impl $name, $genesis, $on_init, [<EXT_ $name:upper>]);
+			$crate::__impl_test_ext_for_parachain!(@impl $name, $genesis, $on_init, [<LOCAL_EXT_ $name:upper>], [<GLOBAL_EXT_ $name:upper>]);
 		}
 	};
 	// impl
-	(@impl $name:ident, $genesis:expr, $on_init:expr, $ext_name:ident) => {
+	(@impl $name:ident, $genesis:expr, $on_init:expr, $local_ext:ident, $global_ext:ident) => {
 		thread_local! {
-			pub static $ext_name: $crate::RefCell<$crate::sp_io::TestExternalities>
+			pub static $local_ext: $crate::RefCell<$crate::TestExternalities>
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
 		}
 
+		$crate::lazy_static! {
+			pub static ref $global_ext: $crate::Mutex<$crate::RefCell<$crate::TestExternalities>>
+				= $crate::Mutex::new($crate::RefCell::new($crate::TestExternalities::new_empty()));
+		}
+
 		impl TestExt for $name {
-			fn build_new_ext(storage: $crate::Storage) -> $crate::sp_io::TestExternalities {
-				let mut ext = sp_io::TestExternalities::new(storage);
+			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
+				$crate::log::debug!(target: "nacho", "New Ext -> {:?}", stringify!($local_ext));
+				let mut ext = $crate::TestExternalities::new(storage);
 				ext.execute_with(|| {
 					#[allow(clippy::no_effect)]
 					$on_init;
@@ -571,12 +629,36 @@ macro_rules! __impl_test_ext_for_parachain {
 				ext
 			}
 
-			fn new_ext() -> $crate::sp_io::TestExternalities {
+			fn new_ext() -> $crate::TestExternalities {
 				<$name>::build_new_ext($genesis)
 			}
 
+			fn send_ext_to_global() {
+				use lazy_static::__Deref;
+
+				let local_ext = $local_ext.with(|v| {
+					v.take()
+				});
+
+				let global_ext_result = $global_ext.lock().unwrap();
+
+				global_ext_result.deref().replace(local_ext);
+			}
+
+			fn set_ext_from_global() {
+				use $crate::Deref;
+
+				let global_ext_result = $global_ext.lock().unwrap();
+
+				let global_ext = global_ext_result.deref();
+
+				$local_ext.with(|v| {
+					v.replace(global_ext.take());
+				});
+			}
+
 			fn reset_ext() {
-				$ext_name.with(|v| *v.borrow_mut() = <$name>::build_new_ext($genesis));
+				$local_ext.with(|v| *v.borrow_mut() = <$name>::build_new_ext($genesis));
 			}
 
 			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
@@ -591,7 +673,7 @@ macro_rules! __impl_test_ext_for_parachain {
 
 				let para_id = <$name>::para_id().into();
 
-				$ext_name.with(|v| {
+				$local_ext.with(|v| {
 					v.borrow_mut().execute_with(|| {
 						// Make sure it has been recorded properly
 						let relay_block_number = <$name as NetworkComponent>::Network::relay_block_number();
@@ -603,10 +685,10 @@ macro_rules! __impl_test_ext_for_parachain {
 				});
 
 
-				let r = $ext_name.with(|v| v.borrow_mut().execute_with(execute));
+				let r = $local_ext.with(|v| v.borrow_mut().execute_with(execute));
 
 				// send messages if needed
-				$ext_name.with(|v| {
+				$local_ext.with(|v| {
 					v.borrow_mut().execute_with(|| {
 						use sp_runtime::traits::Header as HeaderT;
 
@@ -658,7 +740,7 @@ macro_rules! __impl_test_ext_for_parachain {
 			}
 
 			fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R {
-				$ext_name.with(|v| {
+				$local_ext.with(|v| {
 					v.borrow_mut().execute_with(|| {
 						func()
 					})

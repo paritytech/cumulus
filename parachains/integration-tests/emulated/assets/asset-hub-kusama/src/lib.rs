@@ -15,25 +15,13 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 pub use codec::Encode;
+use std::ops::Deref;
 pub use frame_support::{
-	assert_ok, instances::Instance1, pallet_prelude::Weight, traits::fungibles::Inspect,
+	assert_ok, instances::Instance1, pallet_prelude::Weight,
+	traits::{fungibles::Inspect, OriginTrait},
+	sp_runtime::AccountId32
 };
-pub use sp_runtime::AccountId32;
-pub use integration_tests_common::{
-	constants::{
-		accounts::{ALICE, BOB},
-		kusama::ED as KUSAMA_ED,
-		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
-	},
-	impls::{TestInit, OriginTrait, AccountId32Junction, DispatchArgs},
-	AccountId, AssetHubKusama, AssetHubKusamaPallet, AssetHubKusamaReceiver, AssetHubKusamaSender,
-	BridgeHubKusama, BridgeHubKusamaPallet, BridgeHubKusamaReceiver, BridgeHubKusamaSender,
-	BridgeHubPolkadot, BridgeHubPolkadotPallet, BridgeHubPolkadotReceiver, BridgeHubPolkadotSender,
-	Collectives, CollectivesPallet, CollectivesReceiver, CollectivesSender, Kusama, KusamaMockNet,
-	KusamaPallet, KusamaReceiver, KusamaSender, PenpalKusama, PenpalKusamaReceiver,
-	PenpalKusamaSender, PenpalPolkadot, PenpalPolkadotReceiver, PenpalPolkadotSender, Polkadot,
-	PolkadotMockNet, PolkadotPallet, PolkadotReceiver, PolkadotSender,
-};
+pub use parachains_common::{AccountId, Balance};
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use xcm::{
 	prelude::*,
@@ -41,8 +29,25 @@ pub use xcm::{
 };
 pub use xcm_emulator::{
 	assert_expected_events, bx, cumulus_pallet_dmp_queue, helpers::weight_within_threshold, Chain,
-	Parachain as Para, RelayChain as Relay, TestExt,
+	Parachain as Para, RelayChain as Relay, TestExt, TestExternalities
 };
+pub use integration_tests_common::{
+	constants::{
+		accounts::{ALICE, BOB},
+		kusama::ED as KUSAMA_ED,
+		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
+	},
+	impls::{TestInit, AccountId32Junction, DispatchArgs},
+	lazy_static::lazy_static,
+	AssetHubKusama, AssetHubKusamaPallet, AssetHubKusamaReceiver, AssetHubKusamaSender,
+	BridgeHubKusama, BridgeHubKusamaPallet, BridgeHubKusamaReceiver, BridgeHubKusamaSender,
+	BridgeHubPolkadot, BridgeHubPolkadotPallet, BridgeHubPolkadotReceiver, BridgeHubPolkadotSender,
+	Collectives, CollectivesPallet, CollectivesReceiver, CollectivesSender, Kusama, KusamaMockNet,
+	KusamaPallet, KusamaReceiver, KusamaSender, PenpalKusama, PenpalKusamaReceiver,
+	PenpalKusamaSender, PenpalPolkadot, PenpalPolkadotReceiver, PenpalPolkadotSender, Polkadot,
+	PolkadotMockNet, PolkadotPallet, PolkadotReceiver, PolkadotSender, GLOBAL_EXT_KUSAMA
+};
+
 
 #[cfg(test)]
 mod tests;

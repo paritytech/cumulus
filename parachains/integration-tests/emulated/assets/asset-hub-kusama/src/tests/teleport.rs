@@ -16,7 +16,14 @@
 
 use crate::*;
 
-fn get_relay_dispatch_args(amount: u128) -> DispatchArgs {
+// use std::{mem, sync::Mutex, ops::Deref};
+
+// lazy_static! {
+// 	static ref RELAY_EXT: Mutex<Box<TestExternalities>> = Mutex::new(Box::new(TestExternalities::new_empty()));
+// 	static ref PARA_EXT: Mutex<Box<TestExternalities>> = Mutex::new(Box::new(TestExternalities::new_empty()));
+// }
+
+fn get_relay_dispatch_args(amount: Balance) -> DispatchArgs {
 	DispatchArgs {
 		dest: Kusama::child_location_of(AssetHubKusama::para_id()).into(),
 		beneficiary: AccountId32Junction {
@@ -29,30 +36,10 @@ fn get_relay_dispatch_args(amount: u128) -> DispatchArgs {
 	}
 }
 
-// fn get_init_values<Kusama, AssetHubKusama>(sender: AccountId, receiver: AccountId) -> TestInit<Kusama, R>
-// // where
-// // 	S: Chain,
-// // 	R: Chain,
-// // 	S::RuntimeOrigin: OriginTrait<AccountId = AccountId32>,
-// // 	R::RuntimeOrigin: OriginTrait<AccountId = AccountId32>,
-// {
-// 	let amount = ed * 1000;
-// 	let 
-// 	TestInit::<S, R>::new(
-// 		sender,
-// 		receiver,
-// 		assets: VersionedMultiAssets,
-// 		fee_asset: u32,
-// 		weight_limit: WeightLimit,
-// 		destination: VersionedMultiLocation,
-// 		beneficiary: VersionedMultiLocation
-// 	)
-// }
-
 #[test]
-fn teleport_native_assets_from_relay_to_assets_para() {
+fn limited_teleport_native_assets_from_relay_to_assets_para() {
 	// Get init values for Relay Chain
-	let amount_to_send = KUSAMA_ED * 1000;
+	let amount_to_send: Balance = KUSAMA_ED * 1000;
 
 	let mut init = TestInit::<Kusama, AssetHubKusama>::new(
 		KusamaSender::get(),
@@ -75,7 +62,6 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 		..
 	} = init.clone();
 
-	// -- LIMITED --
 	// Send XCM message from Relay Chain
 	Kusama::execute_with(|| {
 		assert_ok!(<Kusama as KusamaPallet>::XcmPallet::limited_teleport_assets(
@@ -121,6 +107,114 @@ fn teleport_native_assets_from_relay_to_assets_para() {
 	let sender_balance_after = init.sender.balance;
 	let receiver_balance_after = init.receiver.balance;
 
+	println!("1 - {:?}", sender_balance_after);
+
 	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
 	assert!(receiver_balance_after > receiver_balance_before);
+
+	// let new_relay_ext = Box::new(Kusama::get_ext());
+
+	// let relay_ext = RELAY_EXT.lock().unwrap();
+	// let _ = mem::replace(&mut relay_ext.deref(), &new_relay_ext);
+
+
+	Kusama::send_ext_to_global();
+
+}
+
+#[test]
+fn teleport_native_assets_from_relay_to_assets_para() {
+	Kusama::set_ext_from_global();
+
+	// Get init values for Relay Chain
+	let amount_to_send: Balance = KUSAMA_ED * 1000;
+
+	let mut init = TestInit::<Kusama, AssetHubKusama>::new(
+		KusamaSender::get(),
+		AssetHubKusamaReceiver::get(),
+		get_relay_dispatch_args(amount_to_send)
+	);
+
+	let sender_balance_before = init.sender.balance;
+
+	println!("2 - {:?}", sender_balance_before);
+	// let receiver_balance_before = init.receiver.balance;
+
+	// let relay_ext = RELAY_EXT.lock().unwrap().deref();
+
+	// Kusama::set_ext(**relay_ext.clone())
+
+	// // Get init values for Relay Chain
+	// let amount_to_send: Balance = KUSAMA_ED * 1000;
+
+	// let mut init = TestInit::<Kusama, AssetHubKusama>::new(
+	// 	KusamaSender::get(),
+	// 	AssetHubKusamaReceiver::get(),
+	// 	get_relay_dispatch_args(amount_to_send)
+	// );
+
+	// let sender_balance_before = init.sender.balance;
+	// let receiver_balance_before = init.receiver.balance;
+
+	// let TestInit {
+	// 	signed_origin,
+	// 	args: DispatchArgs {
+	// 		dest,
+	// 		beneficiary,
+	// 		assets,
+	// 		fee_asset_item,
+	// 		weight_limit,
+	// 	},
+	// 	..
+	// } = init.clone();
+
+	// // Send XCM message from Relay Chain
+	// Kusama::execute_with(|| {
+	// 	assert_ok!(<Kusama as KusamaPallet>::XcmPallet::limited_teleport_assets(
+	// 		signed_origin,
+	// 		bx!(dest),
+	// 		bx!(beneficiary),
+	// 		bx!(assets),
+	// 		fee_asset_item,
+	// 		weight_limit,
+	// 	));
+
+	// 	type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
+
+	// 	assert_expected_events!(
+	// 		Kusama,
+	// 		vec![
+	// 			RuntimeEvent::XcmPallet(
+	// 				pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
+	// 			) => {
+	// 				weight: weight_within_threshold((REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD), Weight::from_parts(763_770_000, 0), *weight),
+	// 			},
+	// 		]
+	// 	);
+	// });
+
+	// // Receive XCM message in Assets Parachain
+	// AssetHubKusama::execute_with(|| {
+	// 	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
+
+	// 	assert_expected_events!(
+	// 		AssetHubKusama,
+	// 		vec![
+	// 			RuntimeEvent::Balances(pallet_balances::Event::Deposit { who, .. }) => {
+	// 				who: *who == AssetHubKusamaReceiver::get().into(),
+	// 			},
+	// 		]
+	// 	);
+	// });
+
+	// // Check if balances are updated accordingly in Relay Chain and Assets Parafter
+	// init.update_balances();
+
+	// let sender_balance_after = init.sender.balance;
+	// let receiver_balance_after = init.receiver.balance;
+
+	// println!("1 - {:?}", sender_balance_after);
+
+	// assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
+	// assert!(receiver_balance_after > receiver_balance_before);
 }
