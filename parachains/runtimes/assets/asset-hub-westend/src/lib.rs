@@ -28,10 +28,12 @@ pub mod constants;
 mod weights;
 pub mod xcm_config;
 
-use crate::xcm_config::{TrustBackedAssetsPalletLocation, UniversalLocation};
+use crate::xcm_config::{
+	LocalAndForeignAssetsMultiLocationMatcher, TrustBackedAssetsPalletLocation, UniversalLocation,
+};
 use assets_common::{
 	local_and_foreign_assets::{LocalAndForeignAssets, MultiLocationConverter},
-	AssetBalance,
+	AssetBalance, AssetIdForTrustBackedAssetsConvert,
 };
 use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
@@ -305,7 +307,11 @@ impl pallet_asset_conversion::Config for Runtime {
 	type Currency = Balances;
 	type AssetBalance = AssetBalance; // Balance type used for Assets/ForeignAssets (lets hope this wont ever change)
 	type AssetId = MultiLocation;
-	type Assets = LocalAndForeignAssets<Assets, ForeignAssets, TrustBackedAssetsPalletLocation>;
+	type Assets = LocalAndForeignAssets<
+		Assets,
+		AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>,
+		ForeignAssets,
+	>;
 	type PoolAssets = PoolAssets;
 	type PoolAssetId = u32;
 	type PoolSetupFee = ConstU128<0>; // Asset class deposit fees are sufficient to prevent spam
@@ -317,7 +323,11 @@ impl pallet_asset_conversion::Config for Runtime {
 	type MaxSwapPathLength = ConstU32<4>;
 
 	type MultiAssetId = Box<MultiLocation>;
-	type MultiAssetIdConverter = MultiLocationConverter<UniversalLocation, WestendLocation>;
+	type MultiAssetIdConverter = MultiLocationConverter<
+		UniversalLocation,
+		WestendLocation,
+		LocalAndForeignAssetsMultiLocationMatcher,
+	>;
 
 	type MintMinLiquidity = ConstU128<100>;
 
@@ -662,7 +672,11 @@ impl pallet_collator_selection::Config for Runtime {
 
 impl pallet_asset_conversion_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type Fungibles = LocalAndForeignAssets<Assets, ForeignAssets, TrustBackedAssetsPalletLocation>;
+	type Fungibles = LocalAndForeignAssets<
+		Assets,
+		AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>,
+		ForeignAssets,
+	>;
 	type OnChargeAssetTransaction = AssetConversionAdapter<Balances, AssetConversion>;
 }
 
