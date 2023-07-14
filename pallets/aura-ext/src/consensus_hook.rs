@@ -21,6 +21,7 @@
 
 use super::{pallet, Aura};
 use cumulus_pallet_parachain_system::{
+	self as parachain_system,
 	consensus_hook::{ConsensusHook, UnincludedSegmentCapacity},
 	relay_state_snapshot::RelayChainStateProof,
 };
@@ -90,7 +91,7 @@ impl<T: pallet::Config + parachain_system::Config, const RELAY_CHAIN_SLOT_DURATI
 	/// When the unincluded segment is empty, i.e. `included_hash == at`, where at is the block
 	/// whose state we are querying against, this must always return `true` as long as the slot
 	/// is more recent than the included block itself.
-	pub fn can_build_upon(included_hash: Block::Hash, new_slot: Slot) -> bool {
+	pub fn can_build_upon(included_hash: T::Hash, new_slot: Slot) -> bool {
 		let velocity = V.max(1);
 		let (last_slot, authored_so_far) = match pallet::Pallet::<T>::slot_info() {
 			None => return true,
@@ -105,7 +106,7 @@ impl<T: pallet::Config + parachain_system::Config, const RELAY_CHAIN_SLOT_DURATI
 		}
 
 		if last_slot == new_slot {
-			authored_so_far < V + 1
+			authored_so_far < velocity + 1
 		} else if last_slot < new_slot {
 			true
 		} else {
