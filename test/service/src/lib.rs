@@ -43,7 +43,7 @@ use cumulus_client_pov_recovery::RecoveryHandle;
 use cumulus_client_service::old_consensus;
 use cumulus_client_service::{
 	build_network, prepare_node_config, start_relay_chain_tasks, BuildNetworkParams,
-	DARecoveryProfile, StartRelayChainTasksParams, CollatorSybilResistance,
+	CollatorSybilResistance, DARecoveryProfile, StartRelayChainTasksParams,
 };
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::RelayChainInProcessInterface;

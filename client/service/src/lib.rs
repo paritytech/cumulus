@@ -317,13 +317,13 @@ where
 		CollatorSybilResistance::Resistant => {
 			let block_announce_validator = AssumeSybilResistance::allow_seconded_messages();
 			Box::new(block_announce_validator) as Box<_>
-		}
+		},
 		CollatorSybilResistance::Unresistant => {
-			let block_announce_validator = RequireSecondedInBlockAnnounce::new(relay_chain_interface, para_id);
+			let block_announce_validator =
+				RequireSecondedInBlockAnnounce::new(relay_chain_interface, para_id);
 			Box::new(block_announce_validator) as Box<_>
-		}
+		},
 	};
-
 
 	sc_service::build_network(sc_service::BuildNetworkParams {
 		config: parachain_config,

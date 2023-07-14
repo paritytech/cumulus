@@ -398,10 +398,7 @@ impl<H> SegmentTracker<H> {
 	}
 }
 
-pub(crate) fn size_after_included<H: PartialEq>(
-	included_hash: H,
-	segment: &[Ancestor<H>],
-) -> u32 {
+pub(crate) fn size_after_included<H: PartialEq>(included_hash: H, segment: &[Ancestor<H>]) -> u32 {
 	let pivot = segment
 		.iter()
 		.position(|ancestor| ancestor.para_head_hash() == Some(&included_hash))
@@ -862,26 +859,11 @@ mod tests {
 			},
 		];
 
-		assert_eq!(
-			size_after_included("a", &segment),
-			2,
-		);
-		assert_eq!(
-			size_after_included("b", &segment),
-			1,
-		);
-		assert_eq!(
-			size_after_included("c", &segment),
-			0,
-		);
-		assert_eq!(
-			size_after_included("d", &segment),
-			3,
-		);
+		assert_eq!(size_after_included("a", &segment), 2,);
+		assert_eq!(size_after_included("b", &segment), 1,);
+		assert_eq!(size_after_included("c", &segment), 0,);
+		assert_eq!(size_after_included("d", &segment), 3,);
 
-		assert_eq!(
-			size_after_included("x", &[]),
-			0,
-		);
+		assert_eq!(size_after_included("x", &[]), 0,);
 	}
 }

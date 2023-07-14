@@ -39,8 +39,12 @@ pub struct FixedVelocityConsensusHook<
 	const C: u32,
 >(PhantomData<T>);
 
-impl<T: pallet::Config, const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32, const V: u32, const C: u32>
-	ConsensusHook for FixedVelocityConsensusHook<T, RELAY_CHAIN_SLOT_DURATION_MILLIS, V, C>
+impl<
+		T: pallet::Config,
+		const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32,
+		const V: u32,
+		const C: u32,
+	> ConsensusHook for FixedVelocityConsensusHook<T, RELAY_CHAIN_SLOT_DURATION_MILLIS, V, C>
 where
 	<T as pallet_timestamp::Config>::Moment: Into<u64>,
 {
@@ -54,8 +58,8 @@ where
 			.expect("slot info is inserted on block initialization");
 
 		// Convert relay chain timestamp.
-		let relay_chain_timestamp = u64::from(RELAY_CHAIN_SLOT_DURATION_MILLIS)
-			.saturating_mul(*relay_chain_slot);
+		let relay_chain_timestamp =
+			u64::from(RELAY_CHAIN_SLOT_DURATION_MILLIS).saturating_mul(*relay_chain_slot);
 
 		let para_slot_duration = SlotDuration::from_millis(Aura::<T>::slot_duration().into());
 		let para_slot_from_relay =
@@ -77,9 +81,12 @@ where
 	}
 }
 
-
-impl<T: pallet::Config + parachain_system::Config, const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32, const V: u32, const C: u32>
-	FixedVelocityConsensusHook<T, RELAY_CHAIN_SLOT_DURATION_MILLIS, V, C>
+impl<
+		T: pallet::Config + parachain_system::Config,
+		const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32,
+		const V: u32,
+		const C: u32,
+	> FixedVelocityConsensusHook<T, RELAY_CHAIN_SLOT_DURATION_MILLIS, V, C>
 {
 	/// Whether it is legal to extend the chain, assuming the given block is the most
 	/// recently included one as-of the relay parent that will be built against, and
@@ -98,11 +105,12 @@ impl<T: pallet::Config + parachain_system::Config, const RELAY_CHAIN_SLOT_DURATI
 			Some(x) => x,
 		};
 
-		let size_after_included = parachain_system::Pallet::<T>::unincluded_segment_size_after(included_hash);
+		let size_after_included =
+			parachain_system::Pallet::<T>::unincluded_segment_size_after(included_hash);
 
 		// can never author when the unincluded segment is full.
 		if size_after_included >= C {
-			return false;
+			return false
 		}
 
 		if last_slot == new_slot {

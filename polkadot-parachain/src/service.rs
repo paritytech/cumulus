@@ -24,7 +24,7 @@ use cumulus_client_consensus_common::{
 use cumulus_client_service::old_consensus;
 use cumulus_client_service::{
 	build_network, build_relay_chain_interface, prepare_node_config, start_relay_chain_tasks,
-	BuildNetworkParams, DARecoveryProfile, StartRelayChainTasksParams, CollatorSybilResistance,
+	BuildNetworkParams, CollatorSybilResistance, DARecoveryProfile, StartRelayChainTasksParams,
 };
 use cumulus_primitives_core::{
 	relay_chain::{Hash as PHash, PersistedValidationData},
@@ -1184,8 +1184,7 @@ where
 		 keystore,
 		 force_authoring| {
 			let spawn_handle = task_manager.spawn_handle();
-			let slot_duration =
-				cumulus_client_consensus_aura::slot_duration(&*client).unwrap();
+			let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client).unwrap();
 
 			let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
 				spawn_handle,
@@ -1198,11 +1197,10 @@ where
 			Ok(AuraConsensus::build::<<AuraId as AppCrypto>::Pair, _, _, _, _, _, _>(
 				BuildAuraConsensusParams {
 					proposer_factory,
-					create_inherent_data_providers:
-						move |_, (relay_parent, validation_data)| {
-							let relay_chain_interface = relay_chain_interface.clone();
-							async move {
-								let parachain_inherent =
+					create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
+						let relay_chain_interface = relay_chain_interface.clone();
+						async move {
+							let parachain_inherent =
 									cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 										relay_parent,
 										&relay_chain_interface,
@@ -1210,26 +1208,24 @@ where
 										para_id,
 									).await;
 
-								let timestamp =
-									sp_timestamp::InherentDataProvider::from_system_time();
+							let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
-								let slot =
+							let slot =
 									sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
 										*timestamp,
 										slot_duration,
 									);
 
-								let parachain_inherent =
-									parachain_inherent.ok_or_else(|| {
-										Box::<dyn std::error::Error + Send + Sync>::from(
-											"Failed to create parachain inherent",
-										)
-									})?;
+							let parachain_inherent = parachain_inherent.ok_or_else(|| {
+								Box::<dyn std::error::Error + Send + Sync>::from(
+									"Failed to create parachain inherent",
+								)
+							})?;
 
-								Ok((slot, timestamp, parachain_inherent))
-							}
-						},
-					block_import: block_import,
+							Ok((slot, timestamp, parachain_inherent))
+						}
+					},
+					block_import,
 					para_client: client,
 					backoff_authoring_blocks: Option::<()>::None,
 					sync_oracle,
@@ -1240,7 +1236,7 @@ where
 					block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
 					// And a maximum of 750ms if slots are skipped
 					max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
-					telemetry: telemetry,
+					telemetry,
 				},
 			))
 		},
