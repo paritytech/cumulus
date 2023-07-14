@@ -390,13 +390,12 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				$on_init,
 				[<ParachainHostV $api_version>],
 				[<LOCAL_EXT_ $name:upper>],
-				[<GLOBAL_EXT_ $name:upper>],
-				[<CONDVAR_ $name:upper>]
+				[<GLOBAL_EXT_ $name:upper>]
 			);
 		}
 	};
 	// impl
-	(@impl $name:ident, $genesis:expr, $on_init:expr, $api_version:ident, $local_ext:ident, $global_ext:ident, $condvar:ident) => {
+	(@impl $name:ident, $genesis:expr, $on_init:expr, $api_version:ident, $local_ext:ident, $global_ext:ident) => {
 		thread_local! {
 			pub static $local_ext: $crate::RefCell<$crate::TestExternalities>
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
@@ -405,8 +404,6 @@ macro_rules! __impl_test_ext_for_relay_chain {
 		$crate::lazy_static! {
 			pub static ref $global_ext: $crate::Mutex<$crate::RefCell<(bool, $crate::TestExternalities)>>
 				= $crate::Mutex::new($crate::RefCell::new((false, $crate::TestExternalities::new_empty())));
-			pub static ref $condvar: $crate::Mutex<$crate::Condvar>
-				= $crate::Mutex::new($crate::Condvar::new());
 		}
 
 		impl TestExt for $name {
@@ -438,66 +435,43 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				let global_ext_guard = $global_ext.lock().unwrap();
 
 				// Replace TestExternality in lazy_static by TestExternality from thread_local
-				global_ext_guard.deref().replace((true, local_ext));
-
-				$crate::log::debug!(target: "nacho", "--- Condition in SEND {:?}", global_ext_guard.deref().borrow().0);
-				drop(global_ext_guard);
-
-
-				// global_ext_result.deref().borrow_mut().0 = true;
-				// global_ext_result.deref().borrow_mut().1 = local_ext;
-
-				// Notify all threads that are waiting on the condition value to be changed
-				$crate::log::debug!(target: "nacho", "--- Before CVAR lock in SEND");
-				let cvar = $condvar.lock().unwrap();
-				$crate::log::debug!(target: "nacho", "--- After CVAR lock in SEND");
-				cvar.deref().notify_all();
-				$crate::log::debug!(target: "nacho", "--- Notified in SEND");
+				global_ext_guard.deref().borrow_mut().1 = local_ext;
+				// Set condition to true
+				global_ext_guard.deref().borrow_mut().0 = true;
 			}
 
 			fn set_ext_from_global() {
 				use $crate::Deref;
 
-				let mut cvar_unlocked = false;
-				$crate::log::debug!(target: "nacho", "Before condvar.lock() in SET");
-				// Get Condvar and TesExternality from lazy_static
+				let mut global_ext_unlocked = false;
 
-				while !cvar_unlocked {
-					let cvar = $condvar.try_lock();
+				// Keep the mutex unlocked until TesExternality from lazy_static
+				// has been updated
+				while !global_ext_unlocked {
+					// Get TesExternality from lazy_static
+					let global_ext_result = $global_ext.try_lock();
 
-					if let Ok(cvar_guard) = cvar {
-						$crate::log::debug!(target: "nacho", "CVAR was Unlocked in SET");
-						let global_ext_result = $global_ext.lock();
-						let global_ext_guard = global_ext_result.unwrap();
+					if let Ok(global_ext_guard) = global_ext_result {
+						// Unlock the mutex as long as the condition is not met
 						if !global_ext_guard.deref().borrow().0 {
-							// global_ext_result = cvar.wait(global_ext_result).unwrap();
 							drop(global_ext_guard);
-							drop(cvar_guard);
 						} else {
-							cvar_unlocked = true;
+							global_ext_unlocked = true;
 						}
 					}
 				}
-				let cvar_guard = $condvar.lock().unwrap();
-				$crate::log::debug!(target: "nacho", "After condvar.lock() in SET");
-				$crate::log::debug!(target: "nacho", "Before global_ext.lock() in SET");
+
+				// Now that we know that lazy_static TestExt has been updated, we lock its mutex
 				let mut global_ext_guard = $global_ext.lock().unwrap();
-				$crate::log::debug!(target: "nacho",  "After global_ext.lock() in SET");
 
-				$crate::log::debug!(target: "nacho", "Condition in SET {:?}", global_ext_guard.deref().borrow().0);
-				// Wait until the Condvar condition is met
-				while !global_ext_guard.deref().borrow().0 {
-					global_ext_guard = cvar_guard.wait(global_ext_guard).unwrap();
-				}
-
-				// Set TesExternality from lazy_static into TesExternality for local_thread
+				// and set TesExternality from lazy_static into TesExternality for local_thread
 				let global_ext = global_ext_guard.deref();
 				$local_ext.with(|v| {
 					v.replace(global_ext.take().1);
 				});
 
-				// Set condition back to its default value
-				global_ext_guard.deref().replace((false, global_ext.take().1));
+				// Set condition back to false
+				global_ext_guard.deref().borrow_mut().0 = true;
 			}
 
 			// fn set_from_global_ext(new_ext: $crate::TestExternalities) {
