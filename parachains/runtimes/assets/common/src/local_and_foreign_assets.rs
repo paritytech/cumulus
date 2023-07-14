@@ -14,7 +14,6 @@
 // limitations under the License.
 
 use crate::local_and_foreign_assets::fungibles::Inspect;
-use cumulus_primitives_core::InteriorMultiLocation;
 use frame_support::{
 	pallet_prelude::DispatchError,
 	traits::{
@@ -31,19 +30,14 @@ use sp_runtime::{traits::MaybeEquivalence, DispatchResult};
 use sp_std::{boxed::Box, marker::PhantomData};
 use xcm::latest::MultiLocation;
 
-pub struct MultiLocationConverter<
-	ParachainLocation: Get<InteriorMultiLocation>,
-	NativeAssetLocation: Get<MultiLocation>,
-	MultiLocationMatcher,
-> {
-	_phantom: PhantomData<(ParachainLocation, NativeAssetLocation, MultiLocationMatcher)>,
+pub struct MultiLocationConverter<NativeAssetLocation: Get<MultiLocation>, MultiLocationMatcher> {
+	_phantom: PhantomData<(NativeAssetLocation, MultiLocationMatcher)>,
 }
 
-impl<ParachainLocation, NativeAssetLocation, MultiLocationMatcher>
+impl<NativeAssetLocation, MultiLocationMatcher>
 	MultiAssetIdConverter<Box<MultiLocation>, MultiLocation>
-	for MultiLocationConverter<ParachainLocation, NativeAssetLocation, MultiLocationMatcher>
+	for MultiLocationConverter<NativeAssetLocation, MultiLocationMatcher>
 where
-	ParachainLocation: Get<InteriorMultiLocation>,
 	NativeAssetLocation: Get<MultiLocation>,
 	MultiLocationMatcher: Contains<MultiLocation>,
 {
@@ -68,12 +62,6 @@ where
 		} else {
 			MultiAssetIdConversionResult::Unsupported(asset_id.clone())
 		}
-	}
-
-	fn into_multiasset_id(asset_id: &MultiLocation) -> Box<MultiLocation> {
-		let mut asset_id = *asset_id;
-		asset_id.simplify(&ParachainLocation::get());
-		Box::new(asset_id)
 	}
 }
 

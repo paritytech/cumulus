@@ -29,7 +29,7 @@ mod weights;
 pub mod xcm_config;
 
 use crate::xcm_config::{
-	LocalAndForeignAssetsMultiLocationMatcher, TrustBackedAssetsPalletLocation, UniversalLocation,
+	LocalAndForeignAssetsMultiLocationMatcher, TrustBackedAssetsPalletLocation,
 };
 use assets_common::{
 	local_and_foreign_assets::{LocalAndForeignAssets, MultiLocationConverter},
@@ -323,11 +323,8 @@ impl pallet_asset_conversion::Config for Runtime {
 	type MaxSwapPathLength = ConstU32<4>;
 
 	type MultiAssetId = Box<MultiLocation>;
-	type MultiAssetIdConverter = MultiLocationConverter<
-		UniversalLocation,
-		WestendLocation,
-		LocalAndForeignAssetsMultiLocationMatcher,
-	>;
+	type MultiAssetIdConverter =
+		MultiLocationConverter<WestendLocation, LocalAndForeignAssetsMultiLocationMatcher>;
 
 	type MintMinLiquidity = ConstU128<100>;
 
