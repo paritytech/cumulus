@@ -43,7 +43,7 @@ use cumulus_client_pov_recovery::RecoveryHandle;
 use cumulus_client_service::old_consensus;
 use cumulus_client_service::{
 	build_network, prepare_node_config, start_relay_chain_tasks, BuildNetworkParams,
-	DARecoveryProfile, StartRelayChainTasksParams,
+	DARecoveryProfile, StartRelayChainTasksParams, CollatorSybilResistance,
 };
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::RelayChainInProcessInterface;
@@ -341,6 +341,7 @@ where
 			spawn_handle: task_manager.spawn_handle(),
 			relay_chain_interface: relay_chain_interface.clone(),
 			import_queue: params.import_queue,
+			sybil_resistance_level: CollatorSybilResistance::Unresistant, // no consensus
 		})
 		.await?;
 

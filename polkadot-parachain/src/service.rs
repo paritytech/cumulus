@@ -24,7 +24,7 @@ use cumulus_client_consensus_common::{
 use cumulus_client_service::old_consensus;
 use cumulus_client_service::{
 	build_network, build_relay_chain_interface, prepare_node_config, start_relay_chain_tasks,
-	BuildNetworkParams, DARecoveryProfile, StartRelayChainTasksParams,
+	BuildNetworkParams, DARecoveryProfile, StartRelayChainTasksParams, CollatorSybilResistance,
 };
 use cumulus_primitives_core::{
 	relay_chain::{Hash as PHash, PersistedValidationData},
@@ -339,6 +339,7 @@ async fn start_shell_node_impl<RuntimeApi, RB, BIQ, BIC>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,
+	sybil_resistance_level: CollatorSybilResistance,
 	para_id: ParaId,
 	rpc_ext_builder: RB,
 	build_import_queue: BIQ,
@@ -420,6 +421,7 @@ where
 			spawn_handle: task_manager.spawn_handle(),
 			relay_chain_interface: relay_chain_interface.clone(),
 			import_queue: params.import_queue,
+			sybil_resistance_level,
 		})
 		.await?;
 
@@ -529,6 +531,7 @@ async fn start_node_impl<RuntimeApi, RB, BIQ, BIC>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,
+	sybil_resistance_level: CollatorSybilResistance,
 	para_id: ParaId,
 	_rpc_ext_builder: RB,
 	build_import_queue: BIQ,
@@ -610,6 +613,7 @@ where
 			spawn_handle: task_manager.spawn_handle(),
 			relay_chain_interface: relay_chain_interface.clone(),
 			import_queue: params.import_queue,
+			sybil_resistance_level,
 		})
 		.await?;
 
@@ -780,6 +784,7 @@ pub async fn start_rococo_parachain_node(
 		parachain_config,
 		polkadot_config,
 		collator_options,
+		CollatorSybilResistance::Resistant, // Aura
 		para_id,
 		|_| Ok(RpcModule::new(())),
 		rococo_parachain_build_import_queue,
@@ -910,6 +915,7 @@ where
 		parachain_config,
 		polkadot_config,
 		collator_options,
+		CollatorSybilResistance::Unresistant, // free-for-all consensus
 		para_id,
 		|_| Ok(RpcModule::new(())),
 		shell_build_import_queue,
@@ -1163,6 +1169,7 @@ where
 		parachain_config,
 		polkadot_config,
 		collator_options,
+		CollatorSybilResistance::Resistant, // Aura
 		para_id,
 		|_| Ok(RpcModule::new(())),
 		aura_build_import_queue::<_, AuraId>,
@@ -1177,121 +1184,65 @@ where
 		 keystore,
 		 force_authoring| {
 			let spawn_handle = task_manager.spawn_handle();
-			let client2 = client.clone();
-			let block_import2 = block_import.clone();
-			let transaction_pool2 = transaction_pool.clone();
-			let telemetry2 = telemetry.clone();
-			let prometheus_registry2 = prometheus_registry.map(|r| (*r).clone());
-			let relay_chain_for_aura = relay_chain_interface.clone();
-
-			let aura_consensus = BuildOnAccess::Uninitialized(Some(Box::new(move || {
-				let slot_duration =
-					cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
-
-				let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
-					spawn_handle,
-					client2.clone(),
-					transaction_pool2,
-					prometheus_registry2.as_ref(),
-					telemetry2.clone(),
-				);
-
-				AuraConsensus::build::<<AuraId as AppCrypto>::Pair, _, _, _, _, _, _>(
-					BuildAuraConsensusParams {
-						proposer_factory,
-						create_inherent_data_providers:
-							move |_, (relay_parent, validation_data)| {
-								let relay_chain_for_aura = relay_chain_for_aura.clone();
-								async move {
-									let parachain_inherent =
-										cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
-											relay_parent,
-											&relay_chain_for_aura,
-											&validation_data,
-											para_id,
-										).await;
-
-									let timestamp =
-										sp_timestamp::InherentDataProvider::from_system_time();
-
-									let slot =
-										sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-											*timestamp,
-											slot_duration,
-										);
-
-									let parachain_inherent =
-										parachain_inherent.ok_or_else(|| {
-											Box::<dyn std::error::Error + Send + Sync>::from(
-												"Failed to create parachain inherent",
-											)
-										})?;
-
-									Ok((slot, timestamp, parachain_inherent))
-								}
-							},
-						block_import: block_import2,
-						para_client: client2,
-						backoff_authoring_blocks: Option::<()>::None,
-						sync_oracle,
-						keystore,
-						force_authoring,
-						slot_duration,
-						// We got around 500ms for proposing
-						block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
-						// And a maximum of 750ms if slots are skipped
-						max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
-						telemetry: telemetry2,
-					},
-				)
-			})));
+			let slot_duration =
+				cumulus_client_consensus_aura::slot_duration(&*client).unwrap();
 
 			let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
-				task_manager.spawn_handle(),
+				spawn_handle,
 				client.clone(),
 				transaction_pool,
 				prometheus_registry,
-				telemetry,
+				telemetry.clone(),
 			);
 
-			let relay_chain_consensus =
-				cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
-					cumulus_client_consensus_relay_chain::BuildRelayChainConsensusParams {
-						para_id,
-						proposer_factory,
-						block_import,
-						relay_chain_interface: relay_chain_interface.clone(),
-						create_inherent_data_providers:
-							move |_, (relay_parent, validation_data)| {
-								let relay_chain_interface = relay_chain_interface.clone();
-								async move {
-									let parachain_inherent =
+			Ok(AuraConsensus::build::<<AuraId as AppCrypto>::Pair, _, _, _, _, _, _>(
+				BuildAuraConsensusParams {
+					proposer_factory,
+					create_inherent_data_providers:
+						move |_, (relay_parent, validation_data)| {
+							let relay_chain_interface = relay_chain_interface.clone();
+							async move {
+								let parachain_inherent =
 									cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 										relay_parent,
 										&relay_chain_interface,
 										&validation_data,
 										para_id,
 									).await;
-									let parachain_inherent =
-										parachain_inherent.ok_or_else(|| {
-											Box::<dyn std::error::Error + Send + Sync>::from(
-												"Failed to create parachain inherent",
-											)
-										})?;
-									Ok(parachain_inherent)
-								}
-							},
-					},
-				);
 
-			let parachain_consensus = Box::new(WaitForAuraConsensus {
-				client,
-				aura_consensus: Arc::new(Mutex::new(aura_consensus)),
-				relay_chain_consensus: Arc::new(Mutex::new(relay_chain_consensus)),
-				_phantom: PhantomData,
-			});
+								let timestamp =
+									sp_timestamp::InherentDataProvider::from_system_time();
 
-			Ok(parachain_consensus)
+								let slot =
+									sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+										*timestamp,
+										slot_duration,
+									);
+
+								let parachain_inherent =
+									parachain_inherent.ok_or_else(|| {
+										Box::<dyn std::error::Error + Send + Sync>::from(
+											"Failed to create parachain inherent",
+										)
+									})?;
+
+								Ok((slot, timestamp, parachain_inherent))
+							}
+						},
+					block_import: block_import,
+					para_client: client,
+					backoff_authoring_blocks: Option::<()>::None,
+					sync_oracle,
+					keystore,
+					force_authoring,
+					slot_duration,
+					// We got around 500ms for proposing
+					block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
+					// And a maximum of 750ms if slots are skipped
+					max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
+					telemetry: telemetry,
+				},
+			))
 		},
 		hwbench,
 	)
@@ -1303,6 +1254,7 @@ async fn start_contracts_rococo_node_impl<RuntimeApi, RB, BIQ, BIC>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,
+	sybil_resistance_level: CollatorSybilResistance,
 	para_id: ParaId,
 	_rpc_ext_builder: RB,
 	build_import_queue: BIQ,
@@ -1384,6 +1336,7 @@ where
 			spawn_handle: task_manager.spawn_handle(),
 			relay_chain_interface: relay_chain_interface.clone(),
 			import_queue: params.import_queue,
+			sybil_resistance_level,
 		})
 		.await?;
 
@@ -1553,6 +1506,7 @@ pub async fn start_contracts_rococo_node(
 		parachain_config,
 		polkadot_config,
 		collator_options,
+		CollatorSybilResistance::Resistant, // Aura
 		para_id,
 		|_| Ok(RpcModule::new(())),
 		contracts_rococo_build_import_queue,
