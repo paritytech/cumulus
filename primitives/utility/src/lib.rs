@@ -28,10 +28,10 @@ use frame_support::{
 	},
 	weights::Weight,
 };
-use pallet_asset_conversion_tx_payment::OnChargeAssetTransaction;
-use frame_support::traits::fungibles::SwapNative;
+use pallet_asset_conversion::{Swap, Config, MultiAssetIdConverter};
 use polkadot_runtime_common::xcm_sender::ConstantPrice;
 use sp_runtime::{traits::Saturating, SaturatedConversion};
+use sp_runtime::traits::CheckedSub;
 use sp_std::{marker::PhantomData, prelude::*};
 use xcm::{latest::prelude::*, WrapVersion};
 use xcm_builder::TakeRevenue;
@@ -275,36 +275,33 @@ impl<
 /// Contains information to handle refund/payment for xcm-execution
 #[derive(Clone, Eq, PartialEq, Debug)]
 struct SwapAssetTraderRefunder {
-	// The concrete asset containing the asset location and outstanding balance
+	// The concrete asset containing the asset location and any leftover balance
 	outstanding_concrete_asset: MultiAsset,
 }
 
 pub struct SwapFirstAssetTrader<
-	AccountId,
-	AccountIdConverter: ConvertLocation<AccountId>,
-	Balance,
-    Runtime: pallet_asset_conversion_tx_payment::Config,
-	WeightToFee: frame_support::weights::WeightToFee<Balance = Balance>,
-	ChargeAssetTransaction: OnChargeAssetTransaction<Runtime>,
+	T: Config,
+	AccountIdConverter: ConvertLocation<T::AccountId>,
+	SWP: Swap<T::AccountId, T::HigherPrecisionBalance, T::MultiAssetId>,
+	WeightToFee: frame_support::weights::WeightToFee<Balance = T::Balance>,
 	Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-	ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
+	ConcreteAssets: fungibles::Mutate<T::AccountId> + fungibles::Balanced<T::AccountId>,
 	HandleRefund: TakeRevenue,
 >(
 	Option<SwapAssetTraderRefunder>,
-	PhantomData<(AccountId, AccountIdConverter, Balance, Runtime, WeightToFee, ChargeAssetTransaction, Matcher, ConcreteAssets, HandleRefund)>,
+	PhantomData<(T, AccountIdConverter, SWP, WeightToFee, Matcher, ConcreteAssets, HandleRefund)>,
 );
+
 impl<
-	AccountId,
-	AccountIdConverter: ConvertLocation<AccountId>,
-	Balance,
-	Runtime: pallet_asset_conversion_tx_payment::Config,
-	WeightToFee: frame_support::weights::WeightToFee<Balance = Balance>,
-	ChargeAssetTransaction: OnChargeAssetTransaction<Runtime>,
+	T: Config,
+	AccountIdConverter: ConvertLocation<T::AccountId>,
+	SWP: Swap<T::AccountId, T::HigherPrecisionBalance, T::MultiAssetId>,
+	WeightToFee: frame_support::weights::WeightToFee<Balance = T::Balance>,
 	Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-	ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
+	ConcreteAssets: fungibles::Mutate<T::AccountId> + fungibles::Balanced<T::AccountId>,
 	HandleRefund: TakeRevenue,
 > WeightTrader
-for SwapFirstAssetTrader<AccountId, AccountIdConverter, Balance, Runtime, WeightToFee, ChargeAssetTransaction, Matcher, ConcreteAssets, HandleRefund>
+for SwapFirstAssetTrader<T, AccountIdConverter, SWP, WeightToFee, Matcher, ConcreteAssets, HandleRefund>
 {
 	fn new() -> Self {
 		Self(None, PhantomData)
@@ -334,90 +331,57 @@ for SwapFirstAssetTrader<AccountId, AccountIdConverter, Balance, Runtime, Weight
 		// Take the first multiasset from the selected MultiAssets
 		let first = multiassets.get(0).ok_or(XcmError::AssetNotFound)?;
 
-		// Get the local asset id in which we can pay for fees
-		let (local_asset_id, _) =
+		// Get the multi asset id in which we can pay for fees
+		let (multi_id, local_asset_balance) =
 			Matcher::matches_fungibles(first).map_err(|_| XcmError::AssetNotFound)?;
 
 		let fee = WeightToFee::weight_to_fee(&weight);
 
 		let acc = AccountIdConverter::convert_location(&ctx.origin.unwrap()).unwrap();
 
-		// Call ChargeAssetTransaction::withdraw_fee
-		// ...
-		// TODO
-		//
-		let (_, native_asset_acquired, asset_consumed) = ChargeAssetTransaction::withdraw_fee(
-			acc,
-			// Downstream functions IGNORE this runtime call argument, what is a proper value?
-			<MockRuntimeCall>,
-			// Downstream functions IGNORE this runtime dispatch info argument, what is a proper value?
-			<MockDispatchInfo>,
-			local_asset_id,
-			fee,
-			0
-		).unwrap();
+		let amount_taken = SWP::swap_tokens_for_exact_tokens(
+			acc.clone(),
+			vec![multi_id, T::MultiAssetIdConverter::get_native()],
+			T::HigherPrecisionBalance::from(fee),
+			None,
+			acc.clone(),
+			true
+		).map_err(|_| XcmError::AssetNotFound)?;
 
-		// Convert to the same kind of multiasset, with the required fungible balance
-		let required = first.id.into_multiasset(asset_balance.into());
+		// Convert payment to hpb
+		let payment_balance = T::HigherPrecisionBalance::from(local_asset_balance);
 
-		// Substract payment
-		let unused = payment.checked_sub(required.clone()).map_err(|_| XcmError::TooExpensive)?;
+		// Substract amount_taken from payment_balance
+		let unused = payment_balance.checked_sub(&amount_taken).ok_or(XcmError::TooExpensive)?;
 
-		// record weight and multiasset
+		let unused_asset: T::Balance = unused.try_into().map_err(|_| XcmError::AssetNotFound)?;
+
+		// Record outstanding asset
 		self.0 = Some(SwapAssetTraderRefunder {
-			outstanding_concrete_asset: required,
+			outstanding_concrete_asset: first.clone(),
 		});
 
-		Ok(unused)
+		Ok(unused_asset)
 	}
 
 	fn refund_weight(&mut self, ctx: &XcmContext, weight: Weight) -> Option<MultiAsset> {
 		log::trace!(target: "xcm::weight", "SwapFirstAssetTrader::refund_weight weight: {:?}", weight);
 
-		if let Some(SwapAssetTraderRefunder {
-						outstanding_concrete_asset: MultiAsset { id, fun },
-					}) = self.0.clone()
-		{
-			// Get the local asset id in which we can refund fees
-			let (local_asset_id, outstanding_balance) =
-				Matcher::matches_fungibles(&(id, fun).into()).ok()?;
-
-			// Re-calculate asset swap from native to MultiAsset provided
-			// ...
-			// TODO
-
-			// Convert balances into u128
-			let outstanding_minus_substracted: u128 =
-				outstanding_minus_substracted.saturated_into();
-			let asset_balance: u128 = asset_balance.saturated_into();
-
-			// Construct outstanding_concrete_asset with the same location id and substracted balance
-			let outstanding_concrete_asset: MultiAsset = (id, outstanding_minus_substracted).into();
-
-			// Override SwapAssetTraderRefunder
-			self.0 = Some(SwapAssetTraderRefunder { outstanding_concrete_asset });
-
-			// Only refund if positive
-			if asset_balance > 0 {
-				return Some((id, asset_balance).into())
-			}
-		}
+		// TODO: swap back the weight with swap_exact_tokens_for_tokens
 
 		None
 	}
 }
 
 impl<
-	AccountId,
-	AccountIdConverter: ConvertLocation<AccountId>,
-	Balance,
-	Runtime: pallet_asset_conversion_tx_payment::Config,
-	WeightToFee: frame_support::weights::WeightToFee<Balance = Balance>,
-	ChargeAssetTransaction: OnChargeAssetTransaction<Runtime>,
+	T: Config,
+	AccountIdConverter: ConvertLocation<T::AccountId>,
+	SWP: Swap<T::AccountId, T::HigherPrecisionBalance, T::MultiAssetId>,
+	WeightToFee: frame_support::weights::WeightToFee<Balance = T::Balance>,
 	Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-	ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Balanced<AccountId>,
+	ConcreteAssets: fungibles::Mutate<T::AccountId> + fungibles::Balanced<T::AccountId>,
 	HandleRefund: TakeRevenue,
-> Drop for SwapFirstAssetTrader<AccountId, AccountIdConverter, Balance, Runtime, WeightToFee, ChargeAssetTransaction, Matcher, ConcreteAssets, HandleRefund>
+> Drop for SwapFirstAssetTrader<T, AccountIdConverter, SWP, WeightToFee, Matcher, ConcreteAssets, HandleRefund>
 {
 	fn drop(&mut self) {
 		if let Some(asset_trader) = self.0.clone() {
@@ -692,9 +656,9 @@ mod tests {
 		let weight_to_buy = Weight::from_parts(1_000, 1_000);
 
 		// lets do first call (success)
-		assert_ok!(trader.buy_weight(weight_to_buy, payment.clone()));
+		assert_ok!(trader.buy_weight(&XcmContext::with_message_id([0; 32]), weight_to_buy, payment.clone()));
 
 		// lets do second call (error)
-		assert_eq!(trader.buy_weight(weight_to_buy, payment), Err(XcmError::NotWithdrawable));
+		assert_eq!(trader.buy_weight(&XcmContext::with_message_id([0; 32]), weight_to_buy, payment), Err(XcmError::NotWithdrawable));
 	}
 }

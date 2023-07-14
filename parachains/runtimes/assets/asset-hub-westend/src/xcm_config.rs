@@ -30,7 +30,6 @@ use frame_support::{
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
 };
 use frame_system::EnsureRoot;
-use pallet_asset_conversion_tx_payment::AssetConversionAdapter;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{impls::ToStakingPot, xcm_config::AssetFeeAsExistentialDepositMultiplier};
 use polkadot_parachain::primitives::Sibling;
@@ -476,12 +475,10 @@ impl xcm_executor::Config for XcmConfig {
 	type Trader = (
 		UsingComponents<WeightToFee, WestendLocation, AccountId, Balances, ToStakingPot<Runtime>>,
 		cumulus_primitives_utility::SwapFirstAssetTrader<
-			AccountId,
-			LocationToAccountId,
-			Balance,
 			Runtime,
+			LocationToAccountId,
+			pallet_asset_conversion::Pallet<Runtime>,
 			WeightToFee,
-			AssetConversionAdapter<Balance, AssetConversion>,
 			MultiAssetsConvertedConcreteId,
 			LocalAndForeignAssets<Assets, ForeignAssets, TrustBackedAssetsPalletLocation>,
 			cumulus_primitives_utility::XcmFeesTo32ByteAccount<

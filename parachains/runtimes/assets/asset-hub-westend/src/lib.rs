@@ -38,20 +38,21 @@ use assets_common::{
 use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-use frame_support::{construct_runtime, dispatch::DispatchClass, ord_parameter_types, parameter_types, traits::{
-	tokens::nonfungibles_v2::Inspect, AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32,
-	ConstU64, ConstU8, InstanceFilter,
-}, weights::{ConstantMultiplier, Weight}, BoundedVec, PalletId, RuntimeDebug, ensure};
-use frame_support::traits::fungible;
-use frame_support::traits::tokens::ConversionToAssetBalance;
+use frame_support::{
+	construct_runtime,
+	dispatch::DispatchClass,
+	ord_parameter_types, parameter_types,
+	traits::{
+		tokens::nonfungibles_v2::Inspect, AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32,
+		ConstU64, ConstU8, InstanceFilter,
+	},
+	weights::{ConstantMultiplier, Weight},
+	BoundedVec, PalletId, RuntimeDebug,
+};
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot, EnsureSigned, EnsureSignedBy,
 };
-use pallet_asset_conversion::MultiAssetIdConverter;
-use pallet_asset_conversion_tx_payment::AssetConversionAdapter;
-use pallet_asset_conversion_tx_payment::InitialPayment::Asset;
-use pallet_assets::ConversionError;
 use pallet_nfts::PalletFeatures;
 pub use parachains_common as common;
 use parachains_common::{
@@ -61,7 +62,12 @@ use parachains_common::{
 };
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, Verify}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, Permill, FixedPointOperand, FixedU128, FixedPointNumber};
+use sp_runtime::{
+	create_runtime_str, generic, impl_opaque_keys,
+	traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, Verify},
+	transaction_validity::{TransactionSource, TransactionValidity},
+	ApplyExtrinsicResult, Permill,
+};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -80,7 +86,6 @@ use assets_common::{
 	foreign_creators::ForeignCreators, matching::FromSiblingParachain, MultiLocationForAssetId,
 };
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
-use sp_runtime::traits::Zero;
 use xcm_executor::XcmExecutor;
 
 use crate::xcm_config::ForeignCreatorsSovereignAccountOf;
