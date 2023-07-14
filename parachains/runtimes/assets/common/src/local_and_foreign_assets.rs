@@ -399,14 +399,11 @@ mod tests {
 	fn test_multi_location_converter_works() {
 		frame_support::parameter_types! {
 			pub const WestendLocation: MultiLocation = MultiLocation::parent();
-			pub UniversalLocation: InteriorMultiLocation =
-				X2(GlobalConsensus(NetworkId::Westend), Parachain(1000_u32));
 			pub TrustBackedAssetsPalletLocation: MultiLocation = PalletInstance(50_u8).into();
 			pub PoolAssetsPalletLocation: MultiLocation = PalletInstance(55_u8).into();
 		}
 
 		type C = MultiLocationConverter<
-			UniversalLocation,
 			WestendLocation,
 			EverythingBut<StartsWith<PoolAssetsPalletLocation>>,
 		>;
