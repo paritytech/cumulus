@@ -924,6 +924,18 @@ impl<T: Config> Pallet<T> {
 
 		Ok(actual_hash)
 	}
+
+	/// Get the unincluded segment size after the given hash.
+	///
+	/// If the unincluded segment doesn't contain the given hash, this returns the
+	/// length of the entire unincluded segment.
+	///
+	/// This is intended to be used for determining how long the unincluded segment _would be_
+	/// in runtime APIs related to authoring.
+	pub fn unincluded_segment_size_after(included_hash: T::Hash) -> u32 {
+		let segment = UnincludedSegment::<T>::get();
+		crate::unincluded_segment::size_after_included(included_hash, &segment)
+	}
 }
 
 impl<T: Config> GetChannelInfo for Pallet<T> {

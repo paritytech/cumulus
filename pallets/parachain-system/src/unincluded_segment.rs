@@ -398,6 +398,19 @@ impl<H> SegmentTracker<H> {
 	}
 }
 
+pub(crate) fn size_after_included<H: PartialEq>(
+	included_hash: H,
+	segment: &[Ancestor<H>],
+) -> u32 {
+	let pivot = segment
+		.iter()
+		.position(|ancestor| ancestor.para_head_hash() == Some(&included_hash))
+		.map(|p| p + 1)
+		.unwrap_or(0);
+
+	(segment.len() - pivot) as u32
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -827,5 +840,48 @@ mod tests {
 		segment
 			.append(&ancestor_2, HrmpWatermarkUpdate::Head(1), &limits)
 			.expect("update is within the limits");
+	}
+
+	#[test]
+	fn size_after_included_works() {
+		let segment = vec![
+			Ancestor {
+				used_bandwidth: Default::default(),
+				para_head_hash: Some("a"),
+				consumed_go_ahead_signal: None,
+			},
+			Ancestor {
+				used_bandwidth: Default::default(),
+				para_head_hash: Some("b"),
+				consumed_go_ahead_signal: None,
+			},
+			Ancestor {
+				used_bandwidth: Default::default(),
+				para_head_hash: Some("c"),
+				consumed_go_ahead_signal: None,
+			},
+		];
+
+		assert_eq!(
+			size_after_included("a", &segment),
+			2,
+		);
+		assert_eq!(
+			size_after_included("b", &segment),
+			1,
+		);
+		assert_eq!(
+			size_after_included("c", &segment),
+			0,
+		);
+		assert_eq!(
+			size_after_included("d", &segment),
+			3,
+		);
+
+		assert_eq!(
+			size_after_included("x", &[]),
+			0,
+		);
 	}
 }

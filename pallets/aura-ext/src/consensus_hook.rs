@@ -28,20 +28,18 @@ use frame_support::pallet_prelude::*;
 use sp_consensus_aura::{Slot, SlotDuration};
 use sp_std::{marker::PhantomData, num::NonZeroU32};
 
-const MILLIS_PER_SECOND: u64 = 1000;
-
 /// A consensus hook for a fixed block processing velocity and unincluded segment capacity.
 ///
-/// Relay chain slot duration must be provided in seconds.
+/// Relay chain slot duration must be provided in milliseconds.
 pub struct FixedVelocityConsensusHook<
 	T,
-	const RELAY_CHAIN_SLOT_DURATION: u32,
+	const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32,
 	const V: u32,
 	const C: u32,
 >(PhantomData<T>);
 
-impl<T: pallet::Config, const RELAY_CHAIN_SLOT_DURATION: u32, const V: u32, const C: u32>
-	ConsensusHook for FixedVelocityConsensusHook<T, RELAY_CHAIN_SLOT_DURATION, V, C>
+impl<T: pallet::Config, const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32, const V: u32, const C: u32>
+	ConsensusHook for FixedVelocityConsensusHook<T, RELAY_CHAIN_SLOT_DURATION_MILLIS, V, C>
 where
 	<T as pallet_timestamp::Config>::Moment: Into<u64>,
 {
@@ -55,9 +53,9 @@ where
 			.expect("slot info is inserted on block initialization");
 
 		// Convert relay chain timestamp.
-		let relay_chain_timestamp = u64::from(RELAY_CHAIN_SLOT_DURATION)
-			.saturating_mul(*relay_chain_slot)
-			.saturating_mul(MILLIS_PER_SECOND);
+		let relay_chain_timestamp = u64::from(RELAY_CHAIN_SLOT_DURATION_MILLIS)
+			.saturating_mul(*relay_chain_slot);
+
 		let para_slot_duration = SlotDuration::from_millis(Aura::<T>::slot_duration().into());
 		let para_slot_from_relay =
 			Slot::from_timestamp(relay_chain_timestamp.into(), para_slot_duration);
@@ -75,5 +73,44 @@ where
 				.expect("1 is the minimum value and non-zero; qed")
 				.into(),
 		)
+	}
+}
+
+
+impl<T: pallet::Config + parachain_system::Config, const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32, const V: u32, const C: u32>
+	FixedVelocityConsensusHook<T, RELAY_CHAIN_SLOT_DURATION_MILLIS, V, C>
+{
+	/// Whether it is legal to extend the chain, assuming the given block is the most
+	/// recently included one as-of the relay parent that will be built against, and
+	/// the given slot.
+	///
+	/// This should be consistent with the logic the runtime uses when validating blocks to
+	/// avoid issues.
+	///
+	/// When the unincluded segment is empty, i.e. `included_hash == at`, where at is the block
+	/// whose state we are querying against, this must always return `true` as long as the slot
+	/// is more recent than the included block itself.
+	pub fn can_build_upon(included_hash: Block::Hash, new_slot: Slot) -> bool {
+		let velocity = V.max(1);
+		let (last_slot, authored_so_far) = match pallet::Pallet::<T>::slot_info() {
+			None => return true,
+			Some(x) => x,
+		};
+
+		let size_after_included = parachain_system::Pallet::<T>::unincluded_segment_size_after(included_hash);
+
+		// can never author when the unincluded segment is full.
+		if size_after_included >= C {
+			return false;
+		}
+
+		if last_slot == new_slot {
+			authored_so_far < V + 1
+		} else if last_slot < new_slot {
+			true
+		} else {
+			// slot moved backwards
+			false
+		}
 	}
 }
