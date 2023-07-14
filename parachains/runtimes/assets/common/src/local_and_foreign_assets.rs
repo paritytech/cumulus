@@ -13,14 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::local_and_foreign_assets::fungibles::Inspect;
 use frame_support::{
 	pallet_prelude::DispatchError,
 	traits::{
-		fungibles::{
-			self, Balanced, Create, HandleImbalanceDrop, Mutate as MutateFungible, Unbalanced,
+		fungibles::{Balanced, Create, HandleImbalanceDrop, Inspect, Mutate, Unbalanced},
+		tokens::{
+			DepositConsequence, Fortitude, Precision, Preservation, Provenance, WithdrawConsequence,
 		},
-		tokens::{DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence},
 		AccountTouch, Contains, ContainsPair, Get, PalletInfoAccess,
 	},
 };
@@ -70,14 +69,14 @@ pub trait MatchesLocalAndForeignAssetsMultiLocation {
 	fn is_foreign(location: &MultiLocation) -> bool;
 }
 
-pub struct LocalAndForeignAssets<LocalAssets, LocalAssetIdConverter, ForeignAssets> {
-	_phantom: PhantomData<(LocalAssets, LocalAssetIdConverter, ForeignAssets)>,
+pub struct LocalAndForeignAssets<Assets, LocalAssetIdConverter, ForeignAssets> {
+	_phantom: PhantomData<(Assets, LocalAssetIdConverter, ForeignAssets)>,
 }
 
-impl<LocalAssets, LocalAssetIdConverter, ForeignAssets> Unbalanced<AccountId>
-	for LocalAndForeignAssets<LocalAssets, LocalAssetIdConverter, ForeignAssets>
+impl<Assets, LocalAssetIdConverter, ForeignAssets> Unbalanced<AccountId>
+	for LocalAndForeignAssets<Assets, LocalAssetIdConverter, ForeignAssets>
 where
-	LocalAssets: Inspect<AccountId, Balance = u128, AssetId = u32>
+	Assets: Inspect<AccountId, Balance = u128, AssetId = u32>
 		+ Unbalanced<AccountId>
 		+ Balanced<AccountId>
 		+ PalletInfoAccess,
@@ -90,7 +89,7 @@ where
 		let credit = dust.into_credit();
 
 		if let Some(asset) = LocalAssetIdConverter::convert(&credit.asset()) {
-			LocalAssets::handle_raw_dust(asset, credit.peek());
+			Assets::handle_raw_dust(asset, credit.peek());
 		} else {
 			ForeignAssets::handle_raw_dust(credit.asset(), credit.peek());
 		}
@@ -100,15 +99,12 @@ where
 	}
 
 	fn write_balance(
-		asset: <Self as frame_support::traits::fungibles::Inspect<AccountId>>::AssetId,
+		asset: <Self as Inspect<AccountId>>::AssetId,
 		who: &AccountId,
-		amount: <Self as frame_support::traits::fungibles::Inspect<AccountId>>::Balance,
-	) -> Result<
-		Option<<Self as frame_support::traits::fungibles::Inspect<AccountId>>::Balance>,
-		sp_runtime::DispatchError,
-	> {
+		amount: <Self as Inspect<AccountId>>::Balance,
+	) -> Result<Option<<Self as Inspect<AccountId>>::Balance>, DispatchError> {
 		if let Some(asset) = LocalAssetIdConverter::convert(&asset) {
-			LocalAssets::write_balance(asset, who, amount)
+			Assets::write_balance(asset, who, amount)
 		} else {
 			ForeignAssets::write_balance(asset, who, amount)
 		}
@@ -117,17 +113,17 @@ where
 	/// Set the total issuance of `asset` to `amount`.
 	fn set_total_issuance(asset: Self::AssetId, amount: Self::Balance) {
 		if let Some(asset) = LocalAssetIdConverter::convert(&asset) {
-			LocalAssets::set_total_issuance(asset, amount)
+			Assets::set_total_issuance(asset, amount)
 		} else {
 			ForeignAssets::set_total_issuance(asset, amount)
 		}
 	}
 }
 
-impl<LocalAssets, LocalAssetIdConverter, ForeignAssets> Inspect<AccountId>
-	for LocalAndForeignAssets<LocalAssets, LocalAssetIdConverter, ForeignAssets>
+impl<Assets, LocalAssetIdConverter, ForeignAssets> Inspect<AccountId>
+	for LocalAndForeignAssets<Assets, LocalAssetIdConverter, ForeignAssets>
 where
-	LocalAssets: Inspect<AccountId, Balance = u128, AssetId = u32>,
+	Assets: Inspect<AccountId, Balance = u128, AssetId = u32>,
 	LocalAssetIdConverter: MaybeEquivalence<MultiLocation, u32>,
 	ForeignAssets: Inspect<AccountId, Balance = u128, AssetId = MultiLocation>,
 {
@@ -137,7 +133,7 @@ where
 	/// The total amount of issuance in the system.
 	fn total_issuance(asset: Self::AssetId) -> Self::Balance {
 		if let Some(asset) = LocalAssetIdConverter::convert(&asset) {
-			LocalAssets::total_issuance(asset)
+			Assets::total_issuance(asset)
 		} else {
 			ForeignAssets::total_issuance(asset)
 		}
@@ -146,16 +142,27 @@ where
 	/// The minimum balance any single account may have.
 	fn minimum_balance(asset: Self::AssetId) -> Self::Balance {
 		if let Some(asset) = LocalAssetIdConverter::convert(&asset) {
-			LocalAssets::minimum_balance(asset)
+			Assets::minimum_balance(asset)
 		} else {
 			ForeignAssets::minimum_balance(asset)
+		}
+	}
+
+	fn total_balance(
+		asset: <Self as Inspect<AccountId>>::AssetId,
+		account: &AccountId,
+	) -> <Self as Inspect<AccountId>>::Balance {
+		if let Some(asset) = LocalAssetIdConverter::convert(&asset) {
+			Assets::total_balance(asset, account)
+		} else {
+			ForeignAssets::total_balance(asset, account)
 		}
 	}
 
 	/// Get the `asset` balance of `who`.
 	fn balance(asset: Self::AssetId, who: &AccountId) -> Self::Balance {
 		if let Some(asset) = LocalAssetIdConverter::convert(&asset) {
-			LocalAssets::balance(asset, who)
+			Assets::balance(asset, who)
 		} else {
 			ForeignAssets::balance(asset, who)
 		}
@@ -169,7 +176,7 @@ where
 		fortitude: Fortitude,
 	) -> Self::Balance {
 		if let Some(asset) = LocalAssetIdConverter::convert(&asset) {
-			LocalAssets::reducible_balance(asset, who, presevation, fortitude)
+			Assets::reducible_balance(asset, who, presevation, fortitude)
 		} else {
 			ForeignAssets::reducible_balance(asset, who, presevation, fortitude)
 		}
@@ -188,7 +195,7 @@ where
 		mint: Provenance,
 	) -> DepositConsequence {
 		if let Some(asset) = LocalAssetIdConverter::convert(&asset) {
-			LocalAssets::can_deposit(asset, who, amount, mint)
+			Assets::can_deposit(asset, who, amount, mint)
 		} else {
 			ForeignAssets::can_deposit(asset, who, amount, mint)
 		}
@@ -202,7 +209,7 @@ where
 		amount: Self::Balance,
 	) -> WithdrawConsequence<Self::Balance> {
 		if let Some(asset) = LocalAssetIdConverter::convert(&asset) {
-			LocalAssets::can_withdraw(asset, who, amount)
+			Assets::can_withdraw(asset, who, amount)
 		} else {
 			ForeignAssets::can_withdraw(asset, who, amount)
 		}
@@ -211,33 +218,22 @@ where
 	/// Returns `true` if an `asset` exists.
 	fn asset_exists(asset: Self::AssetId) -> bool {
 		if let Some(asset) = LocalAssetIdConverter::convert(&asset) {
-			LocalAssets::asset_exists(asset)
+			Assets::asset_exists(asset)
 		} else {
 			ForeignAssets::asset_exists(asset)
 		}
 	}
-
-	fn total_balance(
-		asset: <Self as frame_support::traits::fungibles::Inspect<AccountId>>::AssetId,
-		account: &AccountId,
-	) -> <Self as frame_support::traits::fungibles::Inspect<AccountId>>::Balance {
-		if let Some(asset) = LocalAssetIdConverter::convert(&asset) {
-			LocalAssets::total_balance(asset, account)
-		} else {
-			ForeignAssets::total_balance(asset, account)
-		}
-	}
 }
 
-impl<LocalAssets, LocalAssetIdConverter, ForeignAssets> MutateFungible<AccountId>
-	for LocalAndForeignAssets<LocalAssets, LocalAssetIdConverter, ForeignAssets>
+impl<Assets, LocalAssetIdConverter, ForeignAssets> Mutate<AccountId>
+	for LocalAndForeignAssets<Assets, LocalAssetIdConverter, ForeignAssets>
 where
-	LocalAssets: MutateFungible<AccountId>
+	Assets: Mutate<AccountId>
 		+ Inspect<AccountId, Balance = u128, AssetId = u32>
 		+ Balanced<AccountId>
 		+ PalletInfoAccess,
 	LocalAssetIdConverter: MaybeEquivalence<MultiLocation, u32>,
-	ForeignAssets: MutateFungible<AccountId, Balance = u128>
+	ForeignAssets: Mutate<AccountId, Balance = u128>
 		+ Inspect<AccountId, Balance = u128, AssetId = MultiLocation>
 		+ Balanced<AccountId>,
 {
@@ -250,17 +246,17 @@ where
 		keep_alive: Preservation,
 	) -> Result<Self::Balance, DispatchError> {
 		if let Some(asset_id) = LocalAssetIdConverter::convert(&asset) {
-			LocalAssets::transfer(asset_id, source, dest, amount, keep_alive)
+			Assets::transfer(asset_id, source, dest, amount, keep_alive)
 		} else {
 			ForeignAssets::transfer(asset, source, dest, amount, keep_alive)
 		}
 	}
 }
 
-impl<LocalAssets, LocalAssetIdConverter, ForeignAssets> Create<AccountId>
-	for LocalAndForeignAssets<LocalAssets, LocalAssetIdConverter, ForeignAssets>
+impl<Assets, LocalAssetIdConverter, ForeignAssets> Create<AccountId>
+	for LocalAndForeignAssets<Assets, LocalAssetIdConverter, ForeignAssets>
 where
-	LocalAssets: Create<AccountId> + Inspect<AccountId, Balance = u128, AssetId = u32>,
+	Assets: Create<AccountId> + Inspect<AccountId, Balance = u128, AssetId = u32>,
 	LocalAssetIdConverter: MaybeEquivalence<MultiLocation, u32>,
 	ForeignAssets: Create<AccountId> + Inspect<AccountId, Balance = u128, AssetId = MultiLocation>,
 {
@@ -272,17 +268,17 @@ where
 		min_balance: Self::Balance,
 	) -> DispatchResult {
 		if let Some(asset_id) = LocalAssetIdConverter::convert(&asset_id) {
-			LocalAssets::create(asset_id, admin, is_sufficient, min_balance)
+			Assets::create(asset_id, admin, is_sufficient, min_balance)
 		} else {
 			ForeignAssets::create(asset_id, admin, is_sufficient, min_balance)
 		}
 	}
 }
 
-impl<LocalAssets, LocalAssetIdConverter, ForeignAssets> AccountTouch<MultiLocation, AccountId>
-	for LocalAndForeignAssets<LocalAssets, LocalAssetIdConverter, ForeignAssets>
+impl<Assets, LocalAssetIdConverter, ForeignAssets> AccountTouch<MultiLocation, AccountId>
+	for LocalAndForeignAssets<Assets, LocalAssetIdConverter, ForeignAssets>
 where
-	LocalAssets: AccountTouch<u32, AccountId, Balance = u128>,
+	Assets: AccountTouch<u32, AccountId, Balance = u128>,
 	LocalAssetIdConverter: MaybeEquivalence<MultiLocation, u32>,
 	ForeignAssets: AccountTouch<MultiLocation, AccountId, Balance = u128>,
 {
@@ -292,7 +288,7 @@ where
 		asset_id: MultiLocation,
 	) -> <Self as AccountTouch<MultiLocation, AccountId>>::Balance {
 		if let Some(asset_id) = LocalAssetIdConverter::convert(&asset_id) {
-			LocalAssets::deposit_required(asset_id)
+			Assets::deposit_required(asset_id)
 		} else {
 			ForeignAssets::deposit_required(asset_id)
 		}
@@ -302,9 +298,10 @@ where
 		asset_id: MultiLocation,
 		who: AccountId,
 		depositor: AccountId,
-	) -> Result<(), sp_runtime::DispatchError> {
+	) -> Result<(), DispatchError> {
+
 		if let Some(asset_id) = LocalAssetIdConverter::convert(&asset_id) {
-			LocalAssets::touch(asset_id, who, depositor)
+			Assets::touch(asset_id, who, depositor)
 		} else {
 			ForeignAssets::touch(asset_id, who, depositor)
 		}
@@ -312,72 +309,72 @@ where
 }
 
 /// Implements [`ContainsPair`] trait for a pair of asset and account IDs.
-impl<LocalAssets, LocalAssetIdConverter, ForeignAssets> ContainsPair<MultiLocation, AccountId>
-	for LocalAndForeignAssets<LocalAssets, LocalAssetIdConverter, ForeignAssets>
+impl<Assets, LocalAssetIdConverter, ForeignAssets> ContainsPair<MultiLocation, AccountId>
+	for LocalAndForeignAssets<Assets, LocalAssetIdConverter, ForeignAssets>
 where
-	LocalAssets: PalletInfoAccess + ContainsPair<u32, AccountId>,
+	Assets: PalletInfoAccess + ContainsPair<u32, AccountId>,
 	LocalAssetIdConverter: MaybeEquivalence<MultiLocation, u32>,
 	ForeignAssets: ContainsPair<MultiLocation, AccountId>,
 {
 	/// Check if an account with the given asset ID and account address exists.
 	fn contains(asset_id: &MultiLocation, who: &AccountId) -> bool {
 		if let Some(asset_id) = LocalAssetIdConverter::convert(asset_id) {
-			LocalAssets::contains(&asset_id, &who)
+			Assets::contains(&asset_id, &who)
 		} else {
 			ForeignAssets::contains(&asset_id, &who)
 		}
 	}
 }
 
-impl<LocalAssets, LocalAssetIdConverter, ForeignAssets> Balanced<AccountId>
-	for LocalAndForeignAssets<LocalAssets, LocalAssetIdConverter, ForeignAssets>
+impl<Assets, LocalAssetIdConverter, ForeignAssets> Balanced<AccountId>
+	for LocalAndForeignAssets<Assets, LocalAssetIdConverter, ForeignAssets>
 where
-	LocalAssets:
+	Assets:
 		Balanced<AccountId> + Inspect<AccountId, Balance = u128, AssetId = u32> + PalletInfoAccess,
 	LocalAssetIdConverter: MaybeEquivalence<MultiLocation, u32>,
 	ForeignAssets:
 		Balanced<AccountId> + Inspect<AccountId, Balance = u128, AssetId = MultiLocation>,
 {
-	type OnDropDebt = DebtDropIndirection<LocalAssets, LocalAssetIdConverter, ForeignAssets>;
-	type OnDropCredit = CreditDropIndirection<LocalAssets, LocalAssetIdConverter, ForeignAssets>;
+	type OnDropDebt = DebtDropIndirection<Assets, LocalAssetIdConverter, ForeignAssets>;
+	type OnDropCredit = CreditDropIndirection<Assets, LocalAssetIdConverter, ForeignAssets>;
 }
 
-pub struct DebtDropIndirection<LocalAssets, LocalAssetIdConverter, ForeignAssets> {
-	_phantom: PhantomData<LocalAndForeignAssets<LocalAssets, LocalAssetIdConverter, ForeignAssets>>,
+pub struct DebtDropIndirection<Assets, LocalAssetIdConverter, ForeignAssets> {
+	_phantom: PhantomData<LocalAndForeignAssets<Assets, LocalAssetIdConverter, ForeignAssets>>,
 }
 
-impl<LocalAssets, LocalAssetIdConverter, ForeignAssets> HandleImbalanceDrop<MultiLocation, u128>
-	for DebtDropIndirection<LocalAssets, LocalAssetIdConverter, ForeignAssets>
+impl<Assets, LocalAssetIdConverter, ForeignAssets> HandleImbalanceDrop<MultiLocation, u128>
+	for DebtDropIndirection<Assets, LocalAssetIdConverter, ForeignAssets>
 where
-	LocalAssets: Balanced<AccountId> + Inspect<AccountId, Balance = u128, AssetId = u32>,
+	Assets: Balanced<AccountId> + Inspect<AccountId, Balance = u128, AssetId = u32>,
 	LocalAssetIdConverter: MaybeEquivalence<MultiLocation, u32>,
 	ForeignAssets:
 		Balanced<AccountId> + Inspect<AccountId, Balance = u128, AssetId = MultiLocation>,
 {
 	fn handle(asset: MultiLocation, amount: u128) {
 		if let Some(asset_id) = LocalAssetIdConverter::convert(&asset) {
-			LocalAssets::OnDropDebt::handle(asset_id, amount);
+			Assets::OnDropDebt::handle(asset_id, amount);
 		} else {
 			ForeignAssets::OnDropDebt::handle(asset, amount);
 		}
 	}
 }
 
-pub struct CreditDropIndirection<LocalAssets, LocalAssetIdConverter, ForeignAssets> {
-	_phantom: PhantomData<LocalAndForeignAssets<LocalAssets, LocalAssetIdConverter, ForeignAssets>>,
+pub struct CreditDropIndirection<Assets, LocalAssetIdConverter, ForeignAssets> {
+	_phantom: PhantomData<LocalAndForeignAssets<Assets, LocalAssetIdConverter, ForeignAssets>>,
 }
 
-impl<LocalAssets, LocalAssetIdConverter, ForeignAssets> HandleImbalanceDrop<MultiLocation, u128>
-	for CreditDropIndirection<LocalAssets, LocalAssetIdConverter, ForeignAssets>
+impl<Assets, LocalAssetIdConverter, ForeignAssets> HandleImbalanceDrop<MultiLocation, u128>
+	for CreditDropIndirection<Assets, LocalAssetIdConverter, ForeignAssets>
 where
-	LocalAssets: Balanced<AccountId> + Inspect<AccountId, Balance = u128, AssetId = u32>,
+	Assets: Balanced<AccountId> + Inspect<AccountId, Balance = u128, AssetId = u32>,
 	LocalAssetIdConverter: MaybeEquivalence<MultiLocation, u32>,
 	ForeignAssets:
 		Balanced<AccountId> + Inspect<AccountId, Balance = u128, AssetId = MultiLocation>,
 {
 	fn handle(asset: MultiLocation, amount: u128) {
 		if let Some(asset_id) = LocalAssetIdConverter::convert(&asset) {
-			LocalAssets::OnDropCredit::handle(asset_id, amount);
+			Assets::OnDropCredit::handle(asset_id, amount);
 		} else {
 			ForeignAssets::OnDropCredit::handle(asset, amount);
 		}
@@ -419,7 +416,7 @@ mod tests {
 		let foreign_asset1 = MultiLocation { parents: 1, interior: X1(Parachain(2222)) };
 		let foreign_asset2 = MultiLocation {
 			parents: 2,
-			interior: X2(GlobalConsensus(NetworkId::ByGenesis([1; 32])), Parachain(2222)),
+			interior: X2(GlobalConsensus(ByGenesis([1; 32])), Parachain(2222)),
 		};
 
 		assert!(C::is_native(&Box::new(native_asset)));

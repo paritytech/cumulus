@@ -564,7 +564,8 @@ pub struct BenchmarkMultiLocationConverter<SelfParaId> {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-impl<SelfParaId> pallet_asset_conversion::BenchmarkHelper<MultiLocation>
+impl<SelfParaId>
+	pallet_asset_conversion::BenchmarkHelper<MultiLocation, sp_std::boxed::Box<MultiLocation>>
 	for BenchmarkMultiLocationConverter<SelfParaId>
 where
 	SelfParaId: Get<ParaId>,
@@ -578,5 +579,9 @@ where
 				GeneralIndex(asset_id.into()),
 			),
 		}
+	}
+
+	fn mutliasset_id(asset_id: u32) -> sp_std::boxed::Box<MultiLocation> {
+		sp_std::boxed::Box::new(Self::asset_id(asset_id))
 	}
 }
