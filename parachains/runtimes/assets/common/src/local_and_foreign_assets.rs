@@ -118,6 +118,34 @@ where
 			ForeignAssets::set_total_issuance(asset, amount)
 		}
 	}
+
+	fn decrease_balance(
+		asset: Self::AssetId,
+		who: &AccountId,
+		amount: Self::Balance,
+		precision: Precision,
+		preservation: Preservation,
+		force: Fortitude,
+	) -> Result<Self::Balance, DispatchError> {
+		if let Some(asset) = LocalAssetIdConverter::convert(&asset) {
+			Assets::decrease_balance(asset, who, amount, precision, preservation, force)
+		} else {
+			ForeignAssets::decrease_balance(asset, who, amount, precision, preservation, force)
+		}
+	}
+
+	fn increase_balance(
+		asset: Self::AssetId,
+		who: &AccountId,
+		amount: Self::Balance,
+		precision: Precision,
+	) -> Result<Self::Balance, DispatchError> {
+		if let Some(asset) = LocalAssetIdConverter::convert(&asset) {
+			Assets::increase_balance(asset, who, amount, precision)
+		} else {
+			ForeignAssets::increase_balance(asset, who, amount, precision)
+		}
+	}
 }
 
 impl<Assets, LocalAssetIdConverter, ForeignAssets> Inspect<AccountId>
