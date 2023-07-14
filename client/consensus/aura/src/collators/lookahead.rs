@@ -43,6 +43,8 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_interface::RelayChainInterface;
 
+use polkadot_node_primitives::SubmitCollationParams;
+use polkadot_node_subsystem::messages::CollationGenerationMessage;
 use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::{CollatorPair, Id as ParaId, OccupiedCoreAssumption};
 
@@ -65,12 +67,13 @@ use std::{convert::TryFrom, hash::Hash, sync::Arc, time::Duration};
 use crate::collator::{self as collator_util, SlotClaim};
 
 /// Parameters for [`run`].
-pub struct Params<BI, CIDP, Client, Backend, RClient, SO, Proposer, CS> {
+pub struct Params<BI, CIDP, Client, Backend, RClient, CHP, SO, Proposer, CS> {
 	pub create_inherent_data_providers: CIDP,
 	pub block_import: BI,
 	pub para_client: Arc<Client>,
 	pub para_backend: Arc<Backend>,
 	pub relay_client: Arc<RClient>,
+	pub code_hash_provider: CHP,
 	pub sync_oracle: SO,
 	pub keystore: KeystorePtr,
 	pub key: CollatorPair,
@@ -84,8 +87,8 @@ pub struct Params<BI, CIDP, Client, Backend, RClient, SO, Proposer, CS> {
 }
 
 /// Run async-backing-friendly Aura.
-pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>(
-	params: Params<BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>,
+pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, CHP, SO, Proposer, CS>(
+	mut params: Params<BI, CIDP, Client, Backend, RClient, CHP, SO, Proposer, CS>,
 ) where
 	Block: BlockT,
 	Client: ProvideRuntimeApi<Block>
@@ -106,6 +109,7 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 	Proposer: ProposerInterface<Block, Transaction = BI::Transaction>,
 	Proposer::Transaction: Sync,
 	CS: CollatorServiceInterface<Block>,
+	CHP: consensus_common::ValidationCodeHashProvider<Block::Hash>,
 	P: Pair + Send + Sync,
 	P::Public: AppPublic + Hash + Member + Encode + Decode,
 	P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
@@ -234,6 +238,7 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 		// at any block, so we need to re-claim our slot every time.
 		let mut parent_hash = initial_parent.hash;
 		let mut parent_header = initial_parent.header;
+		let overseer_handle = &mut params.overseer_handle;
 		loop {
 			let slot_claim = match can_build_upon(parent_hash).await {
 				None => break,
@@ -265,6 +270,14 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 				Ok(x) => x,
 			};
 
+			let validation_code_hash = match params.code_hash_provider.code_hash_at(parent_hash) {
+				None => {
+					tracing::error!(target: crate::LOG_TARGET, ?parent_hash, "Could not fetch validation code hash");
+					break
+				},
+				Some(v) => v,
+			};
+
 			match collator
 				.collate(
 					&parent_header,
@@ -280,16 +293,31 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 				)
 				.await
 			{
-				Ok((_collation, block_data, new_block_hash)) => {
-					parent_hash = new_block_hash;
-					parent_header = block_data.into_header();
-
+				Ok((collation, block_data, new_block_hash)) => {
 					// Here we are assuming that the import logic protects against equivocations
 					// and provides sybil-resistance, as it should.
 					collator.collator_service().announce_block(new_block_hash, None);
 
-					// TODO [https://github.com/paritytech/polkadot/issues/5056]:
-					// announce collation to relay-chain validators.
+					// Send a submit-collation message to the collation generation subsystem,
+					// which then distributes this to validators.
+					//
+					// Here we are assuming that the leaf is imported, as we've gotten an
+					// import notification.
+					overseer_handle
+						.send_msg(
+							CollationGenerationMessage::SubmitCollation(SubmitCollationParams {
+								relay_parent,
+								collation,
+								parent_head: parent_header.encode().into(),
+								validation_code_hash,
+								result_sender: None,
+							}),
+							"SubmitCollation",
+						)
+						.await;
+
+					parent_hash = new_block_hash;
+					parent_header = block_data.into_header();
 				},
 				Err(err) => {
 					tracing::error!(target: crate::LOG_TARGET, ?err);

@@ -16,7 +16,7 @@
 
 use codec::Decode;
 use polkadot_primitives::{
-	Block as PBlock, Hash as PHash, Header as PHeader, PersistedValidationData,
+	Block as PBlock, Hash as PHash, Header as PHeader, PersistedValidationData, ValidationCodeHash,
 };
 
 use cumulus_primitives_core::{
@@ -44,6 +44,12 @@ use level_monitor::LevelMonitor;
 pub use level_monitor::{LevelLimit, MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT};
 
 pub mod import_queue;
+
+/// Provides the hash of validation code used for authoring/execution blocks at a given
+/// hash.
+pub trait ValidationCodeHashProvider<Hash> {
+	fn code_hash_at(&self, at: Hash) -> Option<ValidationCodeHash>;
+}
 
 /// The result of [`ParachainConsensus::produce_candidate`].
 pub struct ParachainCandidate<B> {
