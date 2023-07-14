@@ -43,6 +43,9 @@ use xcm_builder::{
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
+use assets_common::{
+	local_and_foreign_assets::MatchesLocalAndForeignAssetsMultiLocation, AssetBalance,
+};
 #[cfg(feature = "runtime-benchmarks")]
 use {cumulus_primitives_core::ParaId, sp_core::Get};
 
@@ -89,8 +92,10 @@ pub type CurrencyTransactor = CurrencyAdapter<
 >;
 
 /// `AssetId/Balance` converter for `TrustBackedAssets`
-pub type TrustBackedAssetsConvertedConcreteId =
-	assets_common::TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance>;
+pub type TrustBackedAssetsConvertedConcreteId = assets_common::TrustBackedAssetsConvertedConcreteId<
+	TrustBackedAssetsPalletLocation,
+	AssetBalance,
+>;
 
 /// Means for transacting assets besides the native currency on this chain.
 pub type FungiblesTransactor = FungiblesAdapter<
@@ -119,7 +124,7 @@ pub type ForeignAssetsConvertedConcreteId = assets_common::ForeignAssetsConverte
 		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` wont be accepted here
 		StartsWithExplicitGlobalConsensus<UniversalLocationNetworkId>,
 	),
-	Balance,
+	AssetBalance,
 >;
 
 /// Means for transacting foreign assets from different global consensus.
@@ -162,6 +167,25 @@ pub type PoolFungiblesTransactor = FungiblesAdapter<
 /// Means for transacting assets on this chain.
 pub type AssetTransactors =
 	(CurrencyTransactor, FungiblesTransactor, ForeignFungiblesTransactor, PoolFungiblesTransactor);
+
+/// Simple `MultiLocation` matcher for Local and Foreign asset `MultiLocation`.
+pub struct LocalAndForeignAssetsMultiLocationMatcher;
+impl MatchesLocalAndForeignAssetsMultiLocation for LocalAndForeignAssetsMultiLocationMatcher {
+	fn is_local(location: &MultiLocation) -> bool {
+		use assets_common::fungible_conversion::MatchesMultiLocation;
+		TrustBackedAssetsConvertedConcreteId::contains(location)
+	}
+
+	fn is_foreign(location: &MultiLocation) -> bool {
+		use assets_common::fungible_conversion::MatchesMultiLocation;
+		ForeignAssetsConvertedConcreteId::contains(location)
+	}
+}
+impl Contains<MultiLocation> for LocalAndForeignAssetsMultiLocationMatcher {
+	fn contains(location: &MultiLocation) -> bool {
+		Self::is_local(location) || Self::is_foreign(location)
+	}
+}
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
