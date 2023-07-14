@@ -7223,6 +7223,7 @@ source = "git+https://github.com/paritytech/substrate?branch=polkadot-v1.0.0#b8d
 dependencies = [
  "frame-support",
  "frame-system",
+ "pallet-asset-conversion",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",
