@@ -17,6 +17,7 @@
 use crate::*;
 
 const LIMITED_TELEPORT_ID: &'static str = "limited_teleport";
+const TELEPORT_ID: &'static str = "teleport";
 
 fn get_relay_dispatch_args(amount: Balance) -> DispatchArgs {
 	DispatchArgs {
@@ -31,8 +32,45 @@ fn get_relay_dispatch_args(amount: Balance) -> DispatchArgs {
 	}
 }
 
+fn send_xcm_message(dispatchable: impl FnOnce() -> DispatchResult) {
+		// Send XCM message from Relay Chain
+		Kusama::execute_with(|| {
+			assert_ok!(dispatchable());
+
+			type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
+
+			assert_expected_events!(
+				Kusama,
+				vec![
+					RuntimeEvent::XcmPallet(
+						pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
+					) => {
+						weight: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							Weight::from_parts(763_770_000, 0), *weight
+						),
+					},
+				]
+			);
+		});
+
+		// Receive XCM message in Assets Parachain
+		AssetHubKusama::execute_with(|| {
+			type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
+
+			assert_expected_events!(
+				AssetHubKusama,
+				vec![
+					RuntimeEvent::Balances(pallet_balances::Event::Deposit { who, .. }) => {
+						who: *who == AssetHubKusamaReceiver::get().into(),
+					},
+				]
+			);
+		});
+}
+
 #[test]
-fn limited_teleport_native_assets_from_relay_to_assets_para() {
+fn limited_teleport_native_assets_from_relay_to_system_para() {
 	// Get init values for Relay Chain
 	let amount_to_send: Balance = KUSAMA_ED * 1000;
 
@@ -45,56 +83,20 @@ fn limited_teleport_native_assets_from_relay_to_assets_para() {
 	let sender_balance_before = init.sender.balance;
 	let receiver_balance_before = init.receiver.balance;
 
-	let TestInit {
-		signed_origin,
-		args: DispatchArgs {
-			dest,
-			beneficiary,
-			assets,
-			fee_asset_item,
-			weight_limit,
-		},
-		..
-	} = init.clone();
+	let init_clone = init.clone();
 
-	// Send XCM message from Relay Chain
-	Kusama::execute_with(|| {
-		assert_ok!(<Kusama as KusamaPallet>::XcmPallet::limited_teleport_assets(
-			signed_origin,
-			bx!(dest),
-			bx!(beneficiary),
-			bx!(assets),
-			fee_asset_item,
-			weight_limit,
-		));
+	let dispatchable = || {
+		<Kusama as KusamaPallet>::XcmPallet::limited_teleport_assets(
+			init_clone.signed_origin,
+			bx!(init_clone.args.dest),
+			bx!(init_clone.args.beneficiary),
+			bx!(init_clone.args.assets),
+			init_clone.args.fee_asset_item,
+			init_clone.args.weight_limit,
+		)
+	};
 
-		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
-
-		assert_expected_events!(
-			Kusama,
-			vec![
-				RuntimeEvent::XcmPallet(
-					pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
-				) => {
-					weight: weight_within_threshold((REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD), Weight::from_parts(763_770_000, 0), *weight),
-				},
-			]
-		);
-	});
-
-	// Receive XCM message in Assets Parachain
-	AssetHubKusama::execute_with(|| {
-		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
-
-		assert_expected_events!(
-			AssetHubKusama,
-			vec![
-				RuntimeEvent::Balances(pallet_balances::Event::Deposit { who, .. }) => {
-					who: *who == AssetHubKusamaReceiver::get().into(),
-				},
-			]
-		);
-	});
+	send_xcm_message(dispatchable);
 
 	// Check if balances are updated accordingly in Relay Chain and Assets Parafter
 	init.update_balances();
@@ -102,21 +104,18 @@ fn limited_teleport_native_assets_from_relay_to_assets_para() {
 	let sender_balance_after = init.sender.balance;
 	let receiver_balance_after = init.receiver.balance;
 
-	println!("1 - {:?}", sender_balance_after);
+	println!("Limited 1 - {:?}", sender_balance_after);
 
 	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
 	assert!(receiver_balance_after > receiver_balance_before);
 
-	Kusama::move_out_ext(LIMITED_TELEPORT_ID);
-	AssetHubKusama::move_out_ext(LIMITED_TELEPORT_ID);
+	Kusama::move_ext_out(LIMITED_TELEPORT_ID);
+	AssetHubKusama::move_ext_out(LIMITED_TELEPORT_ID);
 
 }
 
 #[test]
-fn teleport_2_native_assets_from_relay_to_assets_para() {
-	Kusama::move_in_ext(LIMITED_TELEPORT_ID);
-	AssetHubKusama::move_out_ext(LIMITED_TELEPORT_ID);
-
+fn teleport_native_assets_from_relay_to_system_para() {
 	// Get init values for Relay Chain
 	let amount_to_send: Balance = KUSAMA_ED * 1000;
 
@@ -127,6 +126,82 @@ fn teleport_2_native_assets_from_relay_to_assets_para() {
 	);
 
 	let sender_balance_before = init.sender.balance;
+	let receiver_balance_before = init.receiver.balance;
 
-	println!("2 - {:?}", sender_balance_before);
+	let init_clone = init.clone();
+
+	let dispatchable = || {
+		<Kusama as KusamaPallet>::XcmPallet::teleport_assets(
+			init_clone.signed_origin,
+			bx!(init_clone.args.dest),
+			bx!(init_clone.args.beneficiary),
+			bx!(init_clone.args.assets),
+			init_clone.args.fee_asset_item
+		)
+	};
+
+	send_xcm_message(dispatchable);
+
+	// Check if balances are updated accordingly in Relay Chain and Assets Parafter
+	init.update_balances();
+
+	let sender_balance_after = init.sender.balance;
+	let receiver_balance_after = init.receiver.balance;
+
+	println!("No limited 1 - {:?}", sender_balance_after);
+
+	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
+	assert!(receiver_balance_after > receiver_balance_before);
+
+	Kusama::move_ext_out(TELEPORT_ID);
+	AssetHubKusama::move_ext_out(TELEPORT_ID);
+
+}
+
+#[test]
+fn limited_teleport_native_assets_back_from_relay_to_system_para() {
+	Kusama::move_ext_in(LIMITED_TELEPORT_ID);
+	AssetHubKusama::move_ext_in(LIMITED_TELEPORT_ID);
+
+	// Get init values for Relay Chain
+	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
+
+	let mut init = TestInit::<AssetHubKusama, Kusama>::new(
+		AssetHubKusamaSender::get(),
+		KusamaReceiver::get(),
+		get_relay_dispatch_args(amount_to_send)
+	);
+
+	let sender_balance_before = init.sender.balance;
+	let receiver_balance_before = init.receiver.balance;
+
+	let init_clone = init.clone();
+
+	let dispatchable = || {
+		<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::limited_teleport_assets(
+			init_clone.signed_origin,
+			bx!(init_clone.args.dest),
+			bx!(init_clone.args.beneficiary),
+			bx!(init_clone.args.assets),
+			init_clone.args.fee_asset_item,
+			init_clone.args.weight_limit,
+		)
+	};
+
+	send_xcm_message(dispatchable);
+
+	// Check if balances are updated accordingly in Relay Chain and Assets Parafter
+	init.update_balances();
+
+	let sender_balance_after = init.sender.balance;
+	let receiver_balance_after = init.receiver.balance;
+
+	println!("Limited 2 - {:?}", sender_balance_after);
+
+	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
+	assert!(receiver_balance_after > receiver_balance_before);
+
+	Kusama::move_ext_out(LIMITED_TELEPORT_ID);
+	AssetHubKusama::move_ext_out(LIMITED_TELEPORT_ID);
+
 }

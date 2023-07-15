@@ -98,8 +98,8 @@ thread_local! {
 pub trait TestExt {
 	fn build_new_ext(storage: Storage) -> TestExternalities;
 	fn new_ext() -> TestExternalities;
-	fn move_out_ext(id: &'static str);
-	fn move_in_ext(id: &'static str);
+	fn move_ext_out(id: &'static str);
+	fn move_ext_in(id: &'static str);
 	fn reset_ext();
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R;
 	fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R;
@@ -112,8 +112,8 @@ impl TestExt for () {
 	fn new_ext() -> TestExternalities {
 		TestExternalities::default()
 	}
-	fn move_out_ext(_id: &'static str) {}
-	fn move_in_ext(_id: &'static str) {}
+	fn move_ext_out(_id: &'static str) {}
+	fn move_ext_in(_id: &'static str) {}
 	fn reset_ext() {}
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
 		execute()
@@ -423,7 +423,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				<$name>::build_new_ext($genesis)
 			}
 
-			fn move_out_ext(id: &'static str) {
+			fn move_ext_out(id: &'static str) {
 				use $crate::Deref;
 
 				// Take TestExternality from thread_local
@@ -438,7 +438,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				global_ext_guard.deref().borrow_mut().insert(id.to_string(), local_ext);
 			}
 
-			fn move_in_ext(id: &'static str) {
+			fn move_ext_in(id: &'static str) {
 				use $crate::Deref;
 
 				let mut global_ext_unlocked = false;
@@ -648,7 +648,7 @@ macro_rules! __impl_test_ext_for_parachain {
 				<$name>::build_new_ext($genesis)
 			}
 
-			fn move_out_ext(id: &'static str) {
+			fn move_ext_out(id: &'static str) {
 				use $crate::Deref;
 
 				// Take TestExternality from thread_local
@@ -663,7 +663,7 @@ macro_rules! __impl_test_ext_for_parachain {
 				global_ext_guard.deref().borrow_mut().insert(id.to_string(), local_ext);
 			}
 
-			fn move_in_ext(id: &'static str) {
+			fn move_ext_in(id: &'static str) {
 				use $crate::Deref;
 
 				let mut global_ext_unlocked = false;
