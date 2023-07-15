@@ -327,7 +327,6 @@ where
 		who: AccountId,
 		depositor: AccountId,
 	) -> Result<(), DispatchError> {
-
 		if let Some(asset_id) = LocalAssetIdConverter::convert(&asset_id) {
 			Assets::touch(asset_id, who, depositor)
 		} else {
