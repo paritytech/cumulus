@@ -29,7 +29,7 @@ cumulus-pallet-xcmp-queue = { path = "../../pallets/xcmp-queue" }
 cumulus-pallet-dmp-queue = { path = "../../pallets/dmp-queue" }
 cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system" }
 cumulus-test-service = { path = "../../test/service" }
-parachain-info = { path = "../../parachains/pallets/parachain-info" }
+parachain-info = { package = "staging-parachain-info", path = "../../parachains/pallets/parachain-info" }
 cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent" }
 cumulus-test-relay-sproof-builder = { path = "../../test/relay-sproof-builder" }
 parachains-common = { path = "../../parachains/common" }
