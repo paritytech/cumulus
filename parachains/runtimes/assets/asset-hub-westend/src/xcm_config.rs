@@ -43,9 +43,7 @@ use xcm_builder::{
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
-use assets_common::{
-	local_and_foreign_assets::MatchesLocalAndForeignAssetsMultiLocation, AssetBalance,
-};
+use assets_common::local_and_foreign_assets::MatchesLocalAndForeignAssetsMultiLocation;
 #[cfg(feature = "runtime-benchmarks")]
 use {cumulus_primitives_core::ParaId, sp_core::Get};
 
@@ -92,10 +90,8 @@ pub type CurrencyTransactor = CurrencyAdapter<
 >;
 
 /// `AssetId/Balance` converter for `TrustBackedAssets`
-pub type TrustBackedAssetsConvertedConcreteId = assets_common::TrustBackedAssetsConvertedConcreteId<
-	TrustBackedAssetsPalletLocation,
-	AssetBalance,
->;
+pub type TrustBackedAssetsConvertedConcreteId =
+	assets_common::TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance>;
 
 /// Means for transacting assets besides the native currency on this chain.
 pub type FungiblesTransactor = FungiblesAdapter<
@@ -124,7 +120,7 @@ pub type ForeignAssetsConvertedConcreteId = assets_common::ForeignAssetsConverte
 		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` wont be accepted here
 		StartsWithExplicitGlobalConsensus<UniversalLocationNetworkId>,
 	),
-	AssetBalance,
+	Balance,
 >;
 
 /// Means for transacting foreign assets from different global consensus.

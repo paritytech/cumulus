@@ -33,7 +33,7 @@ use crate::xcm_config::{
 };
 use assets_common::{
 	local_and_foreign_assets::{LocalAndForeignAssets, MultiLocationConverter},
-	AssetBalance, AssetIdForTrustBackedAssetsConvert,
+	AssetIdForTrustBackedAssetsConvert,
 };
 use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
@@ -243,7 +243,7 @@ pub type TrustBackedAssetsInstance = pallet_assets::Instance1;
 type TrustBackedAssetsCall = pallet_assets::Call<Runtime, TrustBackedAssetsInstance>;
 impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type Balance = AssetBalance;
+	type Balance = Balance;
 	type AssetId = AssetIdForTrustBackedAssets;
 	type AssetIdParameter = codec::Compact<AssetIdForTrustBackedAssets>;
 	type Currency = Balances;
@@ -278,7 +278,7 @@ ord_parameter_types! {
 pub type PoolAssetsInstance = pallet_assets::Instance3;
 impl pallet_assets::Config<PoolAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type Balance = AssetBalance;
+	type Balance = Balance;
 	type RemoveItemsLimit = ConstU32<1000>;
 	type AssetId = u32;
 	type AssetIdParameter = u32;
@@ -305,7 +305,7 @@ impl pallet_asset_conversion::Config for Runtime {
 	type Balance = Balance;
 	type HigherPrecisionBalance = sp_core::U256;
 	type Currency = Balances;
-	type AssetBalance = AssetBalance; // Balance type used for Assets/ForeignAssets (lets hope this wont ever change)
+	type AssetBalance = Balance;
 	type AssetId = MultiLocation;
 	type Assets = LocalAndForeignAssets<
 		Assets,
@@ -352,7 +352,7 @@ parameter_types! {
 pub type ForeignAssetsInstance = pallet_assets::Instance2;
 impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type Balance = AssetBalance;
+	type Balance = Balance;
 	type AssetId = MultiLocationForAssetId;
 	type AssetIdParameter = MultiLocationForAssetId;
 	type Currency = Balances;

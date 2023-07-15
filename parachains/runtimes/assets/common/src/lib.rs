@@ -23,13 +23,10 @@ pub mod runtime_api;
 
 use crate::matching::{Equals, LocalMultiLocationPattern, ParentLocation, StartsWith};
 use frame_support::traits::EverythingBut;
-use parachains_common::{AssetIdForTrustBackedAssets, Balance};
+use parachains_common::AssetIdForTrustBackedAssets;
 use xcm::prelude::MultiLocation;
 use xcm_builder::{AsPrefixedGeneralIndex, MatchedConvertedConcreteId};
 use xcm_executor::traits::{Identity, JustTry};
-
-/// Balance type dedicated for pallet_assets.
-pub type AssetBalance = Balance;
 
 /// `MultiLocation` vs `AssetIdForTrustBackedAssets` converter for `TrustBackedAssets`
 pub type AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation> =
