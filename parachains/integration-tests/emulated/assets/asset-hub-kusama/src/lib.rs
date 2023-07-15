@@ -15,7 +15,6 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 pub use codec::Encode;
-use std::ops::Deref;
 pub use frame_support::{
 	assert_ok, instances::Instance1, pallet_prelude::Weight,
 	traits::{fungibles::Inspect, OriginTrait},

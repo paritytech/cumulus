@@ -98,8 +98,8 @@ thread_local! {
 pub trait TestExt {
 	fn build_new_ext(storage: Storage) -> TestExternalities;
 	fn new_ext() -> TestExternalities;
-	fn send_ext_to_global();
-	fn set_ext_from_global();
+	fn move_out_ext(id: &'static str);
+	fn move_in_ext(id: &'static str);
 	fn reset_ext();
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R;
 	fn ext_wrapper<R>(func: impl FnOnce() -> R) -> R;
@@ -112,8 +112,8 @@ impl TestExt for () {
 	fn new_ext() -> TestExternalities {
 		TestExternalities::default()
 	}
-	fn send_ext_to_global() {}
-	fn set_ext_from_global() {}
+	fn move_out_ext(_id: &'static str) {}
+	fn move_in_ext(_id: &'static str) {}
 	fn reset_ext() {}
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
 		execute()
@@ -402,8 +402,8 @@ macro_rules! __impl_test_ext_for_relay_chain {
 		}
 
 		$crate::lazy_static! {
-			pub static ref $global_ext: $crate::Mutex<$crate::RefCell<(bool, $crate::TestExternalities)>>
-				= $crate::Mutex::new($crate::RefCell::new((false, $crate::TestExternalities::new_empty())));
+			pub static ref $global_ext: $crate::Mutex<$crate::RefCell<$crate::HashMap<String, $crate::TestExternalities>>>
+				= $crate::Mutex::new($crate::RefCell::new($crate::HashMap::new()));
 		}
 
 		impl TestExt for $name {
@@ -423,7 +423,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				<$name>::build_new_ext($genesis)
 			}
 
-			fn send_ext_to_global() {
+			fn move_out_ext(id: &'static str) {
 				use $crate::Deref;
 
 				// Take TestExternality from thread_local
@@ -435,12 +435,10 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				let global_ext_guard = $global_ext.lock().unwrap();
 
 				// Replace TestExternality in lazy_static by TestExternality from thread_local
-				global_ext_guard.deref().borrow_mut().1 = local_ext;
-				// Set condition to true
-				global_ext_guard.deref().borrow_mut().0 = true;
+				global_ext_guard.deref().borrow_mut().insert(id.to_string(), local_ext);
 			}
 
-			fn set_ext_from_global() {
+			fn move_in_ext(id: &'static str) {
 				use $crate::Deref;
 
 				let mut global_ext_unlocked = false;
@@ -453,7 +451,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 
 					if let Ok(global_ext_guard) = global_ext_result {
 						// Unlock the mutex as long as the condition is not met
-						if !global_ext_guard.deref().borrow().0 {
+						if !global_ext_guard.deref().borrow().contains_key(id) {
 							drop(global_ext_guard);
 						} else {
 							global_ext_unlocked = true;
@@ -466,17 +464,11 @@ macro_rules! __impl_test_ext_for_relay_chain {
 
 				// and set TesExternality from lazy_static into TesExternality for local_thread
 				let global_ext = global_ext_guard.deref();
+
 				$local_ext.with(|v| {
-					v.replace(global_ext.take().1);
+					v.replace(global_ext.take().remove(id).unwrap());
 				});
-
-				// Set condition back to false
-				global_ext_guard.deref().borrow_mut().0 = true;
 			}
-
-			// fn set_from_global_ext(new_ext: $crate::TestExternalities) {
-			// 	$local_ext.with(|v| { v.replace(new_ext) });
-			// }
 
 			fn reset_ext() {
 				$local_ext.with(|v| *v.borrow_mut() = <$name>::build_new_ext($genesis));
@@ -635,8 +627,8 @@ macro_rules! __impl_test_ext_for_parachain {
 		}
 
 		$crate::lazy_static! {
-			pub static ref $global_ext: $crate::Mutex<$crate::RefCell<$crate::TestExternalities>>
-				= $crate::Mutex::new($crate::RefCell::new($crate::TestExternalities::new_empty()));
+			pub static ref $global_ext: $crate::Mutex<$crate::RefCell<$crate::HashMap<String, $crate::TestExternalities>>>
+				= $crate::Mutex::new($crate::RefCell::new($crate::HashMap::new()));
 		}
 
 		impl TestExt for $name {
@@ -656,27 +648,50 @@ macro_rules! __impl_test_ext_for_parachain {
 				<$name>::build_new_ext($genesis)
 			}
 
-			fn send_ext_to_global() {
-				use lazy_static::__Deref;
+			fn move_out_ext(id: &'static str) {
+				use $crate::Deref;
 
+				// Take TestExternality from thread_local
 				let local_ext = $local_ext.with(|v| {
 					v.take()
 				});
 
-				let global_ext_result = $global_ext.lock().unwrap();
+				// Get TestExternality from lazy_static
+				let global_ext_guard = $global_ext.lock().unwrap();
 
-				global_ext_result.deref().replace(local_ext);
+				// Replace TestExternality in lazy_static by TestExternality from thread_local
+				global_ext_guard.deref().borrow_mut().insert(id.to_string(), local_ext);
 			}
 
-			fn set_ext_from_global() {
+			fn move_in_ext(id: &'static str) {
 				use $crate::Deref;
 
-				let global_ext_result = $global_ext.lock().unwrap();
+				let mut global_ext_unlocked = false;
 
-				let global_ext = global_ext_result.deref();
+				// Keep the mutex unlocked until TesExternality from lazy_static
+				// has been updated
+				while !global_ext_unlocked {
+					// Get TesExternality from lazy_static
+					let global_ext_result = $global_ext.try_lock();
+
+					if let Ok(global_ext_guard) = global_ext_result {
+						// Unlock the mutex as long as the condition is not met
+						if !global_ext_guard.deref().borrow().contains_key(id) {
+							drop(global_ext_guard);
+						} else {
+							global_ext_unlocked = true;
+						}
+					}
+				}
+
+				// Now that we know that lazy_static TestExt has been updated, we lock its mutex
+				let mut global_ext_guard = $global_ext.lock().unwrap();
+
+				// and set TesExternality from lazy_static into TesExternality for local_thread
+				let global_ext = global_ext_guard.deref();
 
 				$local_ext.with(|v| {
-					v.replace(global_ext.take());
+					v.replace(global_ext.take().remove(id).unwrap());
 				});
 			}
 
