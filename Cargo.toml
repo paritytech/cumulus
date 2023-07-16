@@ -69,6 +69,7 @@ members = [
 [profile.release]
 panic = "unwind"
 opt-level = 3
+debug = true
 
 [profile.production]
 inherits = "release"
