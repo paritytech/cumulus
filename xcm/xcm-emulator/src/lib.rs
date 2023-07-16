@@ -87,8 +87,6 @@ thread_local! {
 	pub static UPWARD_MESSAGES: RefCell<HashMap<String, VecDeque<(u32, Vec<u8>)>>> = RefCell::new(HashMap::new());
 	/// Bridged messages, each message is: `BridgeMessage`
 	pub static BRIDGED_MESSAGES: RefCell<HashMap<String, VecDeque<BridgeMessage>>> = RefCell::new(HashMap::new());
-	/// Global incremental relay chain block number
-	pub static RELAY_BLOCK_NUMBER: RefCell<HashMap<String, u32>> = RefCell::new(HashMap::new());
 	/// Parachains Ids a the Network
 	pub static PARA_IDS: RefCell<HashMap<String, Vec<u32>>> = RefCell::new(HashMap::new());
 	/// Flag indicating if global variables have been initialized for a certain Network
@@ -124,6 +122,7 @@ impl TestExt for () {
 }
 
 pub trait Network {
+	type Relay: RelayChain;
 	type Bridge: Bridge;
 
 	fn name() -> &'static str;
@@ -131,7 +130,7 @@ pub trait Network {
 	fn reset();
 	fn para_ids() -> Vec<u32>;
 	fn relay_block_number() -> u32;
-	fn set_relay_block_number(block_number: u32);
+	fn set_relay_block_number(number: u32);
 	fn process_messages();
 	fn has_unprocessed_messages() -> bool;
 	fn process_downward_messages();
@@ -202,12 +201,6 @@ pub trait Chain: TestExt + NetworkComponent {
 	}
 
 	fn account_data_of(account: AccountId) -> AccountData<Balance>;
-	// where
-	// 	AccountId32: EncodeLike<<Self::Runtime as SystemConfig>::AccountId>,
-	// 	AccountData<Balance>: From<<Self::Runtime as SystemConfig>::AccountData>
-	// {
-	// 	Self::ext_wrapper(|| SystemPallet::<Self::Runtime>::account(account).data.into())
-	// }
 
 	fn events() -> Vec<<Self as Chain>::RuntimeEvent>;
 }
@@ -408,13 +401,19 @@ macro_rules! __impl_test_ext_for_relay_chain {
 
 		impl TestExt for $name {
 			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
-				$crate::log::debug!(target: "nacho", "New Ext -> {:?}", stringify!($local_ext));
+				use $crate::{NetworkComponent, Network, Chain};
+
 				let mut ext = $crate::TestExternalities::new(storage);
+
 				ext.execute_with(|| {
 					#[allow(clippy::no_effect)]
 					$on_init;
 					sp_tracing::try_init_simple();
-					<Self as Chain>::System::set_block_number(1);
+
+					let mut block_number = <Self as Chain>::System::block_number();
+					block_number = std::cmp::max(1, block_number);
+
+					<Self as Chain>::System::set_block_number(block_number);
 				});
 				ext
 			}
@@ -578,12 +577,15 @@ macro_rules! decl_test_parachains {
 
 					<Self as TestExt>::ext_wrapper(|| {
 						let block_number = <Self as Chain>::System::block_number();
+						let mut relay_block_number = <Self as NetworkComponent>::Network::relay_block_number();
+						relay_block_number += 1;
+						<$name as NetworkComponent>::Network::set_relay_block_number(relay_block_number);
 
 						let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
 							<Self as Chain>::RuntimeOrigin::none(),
 							<Self as NetworkComponent>::Network::hrmp_channel_parachain_inherent_data(
 								para_id.into(),
-								1,
+								relay_block_number,
 							),
 						);
 						// set `AnnouncedHrmpMessagesPerCandidate`
@@ -633,13 +635,17 @@ macro_rules! __impl_test_ext_for_parachain {
 
 		impl TestExt for $name {
 			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
+				use $crate::{NetworkComponent, Network, Chain};
 				$crate::log::debug!(target: "nacho", "New Ext -> {:?}", stringify!($local_ext));
 				let mut ext = $crate::TestExternalities::new(storage);
 				ext.execute_with(|| {
 					#[allow(clippy::no_effect)]
 					$on_init;
 					sp_tracing::try_init_simple();
-					<Self as Chain>::System::set_block_number(1);
+
+					let mut block_number = <Self as Chain>::System::block_number();
+					block_number = std::cmp::max(1, block_number);
+					<Self as Chain>::System::set_block_number(block_number);
 				});
 				ext
 			}
@@ -705,16 +711,15 @@ macro_rules! __impl_test_ext_for_parachain {
 				// Make sure the Network is initialized
 				<$name as NetworkComponent>::Network::init();
 
-				let mut relay_block_number = <$name as NetworkComponent>::Network::relay_block_number();
-				relay_block_number += 1;
-				<$name as NetworkComponent>::Network::set_relay_block_number(relay_block_number);
-
 				let para_id = <$name>::para_id().into();
 
 				$local_ext.with(|v| {
 					v.borrow_mut().execute_with(|| {
-						// Make sure it has been recorded properly
-						let relay_block_number = <$name as NetworkComponent>::Network::relay_block_number();
+						// Increase block number
+						let mut relay_block_number = <$name as NetworkComponent>::Network::relay_block_number();
+						relay_block_number += 1;
+						<$name as NetworkComponent>::Network::set_relay_block_number(relay_block_number);
+
 						let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
 							<Self as Chain>::RuntimeOrigin::none(),
 							<$name as NetworkComponent>::Network::hrmp_channel_parachain_inherent_data(para_id, relay_block_number),
@@ -805,6 +810,7 @@ macro_rules! decl_test_networks {
 			pub struct $name;
 
 			impl $crate::Network for $name {
+				type Relay = $relay_chain;
 				type Bridge = $bridge;
 
 				fn name() -> &'static str {
@@ -820,7 +826,7 @@ macro_rules! decl_test_networks {
 					$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().remove(Self::name()));
 					$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().remove(Self::name()));
 					$crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().remove(Self::name()));
-					$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().remove(Self::name()));
+					// $crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().remove(Self::name()));
 
 					<$relay_chain>::reset_ext();
 					$( <$parachain>::reset_ext(); )*
@@ -835,7 +841,6 @@ macro_rules! decl_test_networks {
 						$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().insert(Self::name().to_string(), $crate::VecDeque::new()));
 						$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().insert(Self::name().to_string(), $crate::VecDeque::new()));
 						$crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().insert(Self::name().to_string(), $crate::VecDeque::new()));
-						$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().insert(Self::name().to_string(), 1));
 						$crate::PARA_IDS.with(|b| b.borrow_mut().insert(Self::name().to_string(), Self::para_ids()));
 
 						$( <$parachain>::prepare_for_xcmp(); )*
@@ -849,11 +854,15 @@ macro_rules! decl_test_networks {
 				}
 
 				fn relay_block_number() -> u32 {
-					$crate::RELAY_BLOCK_NUMBER.with(|v| *v.clone().borrow().get(Self::name()).unwrap())
+					Self::Relay::ext_wrapper(|| {
+						<Self::Relay as Chain>::System::block_number()
+					})
 				}
 
-				fn set_relay_block_number(block_number: u32) {
-					$crate::RELAY_BLOCK_NUMBER.with(|v| v.borrow_mut().insert(Self::name().to_string(), block_number));
+				fn set_relay_block_number(number: u32) {
+					Self::Relay::ext_wrapper(|| {
+						<Self::Relay as Chain>::System::set_block_number(number);
+					})
 				}
 
 				fn process_messages() {

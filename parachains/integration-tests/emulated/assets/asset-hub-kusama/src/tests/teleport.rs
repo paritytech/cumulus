@@ -14,6 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+use xcm_emulator::NetworkComponent;
+use xcm_emulator::Network;
+
 use crate::*;
 
 const LIMITED_TELEPORT_ID: &'static str = "limited_teleport";
@@ -153,6 +156,8 @@ fn teleport_native_assets_from_relay_to_system_para() {
 	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
 	assert!(receiver_balance_after > receiver_balance_before);
 
+	println!("BLOCK NUMBER 1 - {:?}", <Kusama as NetworkComponent>::Network::relay_block_number());
+
 	Kusama::move_ext_out(TELEPORT_ID);
 	AssetHubKusama::move_ext_out(TELEPORT_ID);
 
@@ -162,6 +167,9 @@ fn teleport_native_assets_from_relay_to_system_para() {
 fn limited_teleport_native_assets_back_from_relay_to_system_para() {
 	Kusama::move_ext_in(LIMITED_TELEPORT_ID);
 	AssetHubKusama::move_ext_in(LIMITED_TELEPORT_ID);
+
+	println!("BLOCK NUMBER 2 - {:?}", <Kusama as NetworkComponent>::Network::relay_block_number());
+
 
 	// Get init values for Relay Chain
 	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
@@ -200,8 +208,4 @@ fn limited_teleport_native_assets_back_from_relay_to_system_para() {
 
 	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
 	assert!(receiver_balance_after > receiver_balance_before);
-
-	Kusama::move_ext_out(LIMITED_TELEPORT_ID);
-	AssetHubKusama::move_ext_out(LIMITED_TELEPORT_ID);
-
 }
