@@ -849,6 +849,8 @@ pub type Migrations = (
 	pallet_nfts::migration::v1::MigrateToV1<Runtime>,
 	// unreleased
 	pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,
+	// unreleased
+	migrations::NativeAssetParents0ToParents1Migration<Runtime>,
 );
 
 /// Executive: handles dispatch to the various modules.
@@ -1373,4 +1375,114 @@ cumulus_pallet_parachain_system::register_validate_block! {
 	Runtime = Runtime,
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
 	CheckInherents = CheckInherents,
+}
+
+pub mod migrations {
+	use super::*;
+	use frame_support::{
+		pallet_prelude::Get,
+		traits::{
+			fungible::{Inspect as InspectFungible, Mutate as MutateFungible},
+			fungibles::{Inspect, Mutate},
+			tokens::Preservation,
+			OnRuntimeUpgrade, OriginTrait,
+		},
+	};
+	use parachains_common::impls::AccountIdOf;
+	use sp_runtime::traits::StaticLookup;
+	use xcm::latest::prelude::*;
+
+	/// Temporary migration because of bug with native asset, it can be removed once applied on `AssetHubWestend`.
+	/// Migrates pools with `MultiLocation { parents: 0, interior: Here }` to `MultiLocation { parents: 1, interior: Here }`
+	pub struct NativeAssetParents0ToParents1Migration<T>(sp_std::marker::PhantomData<T>);
+	impl<
+			T: pallet_asset_conversion::Config<
+				MultiAssetId = Box<MultiLocation>,
+				AssetId = MultiLocation,
+			>,
+		> OnRuntimeUpgrade for NativeAssetParents0ToParents1Migration<T>
+	where
+		<T as pallet_asset_conversion::Config>::PoolAssetId: Into<u32>,
+		AccountIdOf<Runtime>: Into<[u8; 32]>,
+		<T as frame_system::Config>::AccountId:
+			Into<<<T as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId>,
+		<<T as frame_system::Config>::Lookup as StaticLookup>::Source:
+			From<<T as frame_system::Config>::AccountId>,
+		sp_runtime::AccountId32: From<<T as frame_system::Config>::AccountId>,
+	{
+		fn on_runtime_upgrade() -> Weight {
+			let invalid_native_asset = MultiLocation { parents: 0, interior: Here };
+			let valid_native_asset = WestendLocation::get();
+
+			let mut reads = 1;
+			let mut writes = 0;
+
+			// migrate pools with invalid native asset
+			let pools = pallet_asset_conversion::Pools::<T>::iter().collect::<Vec<_>>();
+			for (old_pool_id, pool_info) in pools {
+				let old_pool_account =
+					pallet_asset_conversion::Pallet::<T>::get_pool_account(&old_pool_id);
+				reads += 1;
+				let pool_asset_id = pool_info.lp_token;
+				if old_pool_id.0.as_ref() != &invalid_native_asset {
+					// skip, if ok
+					continue
+				}
+
+				// fix new account
+				let new_pool_id = pallet_asset_conversion::Pallet::<T>::get_pool_id(
+					Box::new(valid_native_asset.clone()),
+					old_pool_id.1.clone(),
+				);
+				let new_pool_account =
+					pallet_asset_conversion::Pallet::<T>::get_pool_account(&new_pool_id);
+				frame_system::Pallet::<T>::inc_providers(&new_pool_account);
+				reads += 2;
+				writes += 1;
+
+				// move currency
+				let _ = T::Currency::transfer(
+					&old_pool_account,
+					&new_pool_account,
+					T::Currency::balance(&old_pool_account),
+					Preservation::Expendable,
+				);
+				writes += 2;
+
+				// move LP token
+				let _ = T::PoolAssets::transfer(
+					pool_asset_id.clone(),
+					&old_pool_account,
+					&new_pool_account,
+					T::PoolAssets::balance(pool_asset_id.clone(), &old_pool_account),
+					Preservation::Expendable,
+				);
+				writes += 2;
+
+				// change owner ship of LP token
+				let _ = pallet_assets::Pallet::<Runtime, PoolAssetsInstance>::transfer_ownership(
+					RuntimeOrigin::signed(sp_runtime::AccountId32::from(old_pool_account.clone())),
+					pool_asset_id.into(),
+					sp_runtime::AccountId32::from(new_pool_account.clone()).into(),
+				);
+				writes += 2;
+
+				// move LocalOrForeignAssets
+				let _ = T::Assets::transfer(
+					old_pool_id.1.as_ref().clone(),
+					&old_pool_account,
+					&new_pool_account,
+					T::Assets::balance(old_pool_id.1.as_ref().clone(), &old_pool_account),
+					Preservation::Expendable,
+				);
+				writes += 2;
+
+				// dec providers for old account
+				let _ = frame_system::Pallet::<T>::dec_providers(&old_pool_account);
+				writes += 1;
+			}
+
+			T::DbWeight::get().reads_writes(reads, writes)
+		}
+	}
 }
