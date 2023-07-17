@@ -78,7 +78,7 @@ substrate-state-trie-migration-rpc = { git = "https://github.com/paritytech/subs
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", features = ["rococo-native"] }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+xcm = { package = "staging-xcm", git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus
 cumulus-client-cli = { path = "../client/cli" }

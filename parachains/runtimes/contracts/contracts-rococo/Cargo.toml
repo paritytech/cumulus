@@ -56,9 +56,9 @@ pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features 
 polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm = { package = "staging-xcm", git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-builder = { package = "staging-xcm-builder", git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-executor = { package = "staging-xcm-executor", git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 # Cumulus
 cumulus-pallet-aura-ext = { path = "../../../../pallets/aura-ext", default-features = false }

@@ -35,9 +35,9 @@ parachains-runtimes-test-utils = { path = "../../test-utils", default-features =
 # Polkadot
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false, optional = true }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm = { package = "staging-xcm", git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-builder = { package = "staging-xcm-builder", git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-executor = { package = "staging-xcm-executor", git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 # Bridges
 bp-bridge-hub-rococo = { path = "../../../../bridges/primitives/chain-bridge-hub-rococo", default-features = false }

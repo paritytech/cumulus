@@ -56,7 +56,7 @@ try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "m
 # Polkadot
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", features = ["rococo-native"] }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm = { package = "staging-xcm", git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 # Cumulus
 cumulus-client-cli = { path = "../../client/cli" }
