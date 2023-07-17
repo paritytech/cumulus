@@ -7,8 +7,9 @@ use frame_support::{
 	traits::{ConstBool, ConstU32, Nothing},
 };
 use pallet_contracts::{
-	migration::v12, weights::SubstrateWeight, Config, DebugInfo, DefaultAddressGenerator, Frame,
-	Schedule,
+	migration::{v12, v13},
+	weights::SubstrateWeight,
+	Config, DebugInfo, DefaultAddressGenerator, Frame, Schedule,
 };
 
 pub use parachains_common::AVERAGE_ON_INITIALIZE_RATIO;
@@ -50,6 +51,9 @@ impl Config for Runtime {
 	type MaxStorageKeyLen = ConstU32<128>;
 	type UnsafeUnstableInterface = ConstBool<true>;
 	type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
-	type Migrations = (v12::Migration<Runtime, Balances, DepositPerByte, DepositPerItem>,);
+	type Migrations = (
+		v12::Migration<Runtime, Balances, DepositPerByte, DepositPerItem>,
+		v13::Migration<Runtime>,
+	);
 	type RuntimeHoldReason = RuntimeHoldReason;
 }
