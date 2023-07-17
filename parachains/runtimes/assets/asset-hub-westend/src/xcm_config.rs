@@ -18,7 +18,7 @@ use super::{
 	ParachainSystem, PolkadotXcm, PoolAssets, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
 	TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
-use crate::ForeignAssets;
+use crate::{AllowMultiAssetPools, ForeignAssets, LiquidityWithdrawalFee};
 use assets_common::{
 	local_and_foreign_assets::MatchesLocalAndForeignAssetsMultiLocation,
 	matching::{
@@ -238,6 +238,16 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				return true
 			}
 		}
+
+		// Allow to change dedicated storage items (called by governance-like)
+		match call {
+			RuntimeCall::System(frame_system::Call::set_storage { items })
+				if items.iter().any(|(k, _)| {
+					k.eq(&AllowMultiAssetPools::key()) | k.eq(&LiquidityWithdrawalFee::key())
+				}) =>
+				return true,
+			_ => (),
+		};
 
 		matches!(
 			call,
