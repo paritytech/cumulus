@@ -13307,8 +13307,8 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "ssz-rs",
- "ssz-rs-derive",
+ "ssz_rs",
+ "ssz_rs_derive",
  "static_assertions",
 ]
 
@@ -13388,8 +13388,8 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std",
- "ssz-rs",
- "ssz-rs-derive",
+ "ssz_rs",
+ "ssz_rs_derive",
  "static_assertions",
 ]
 
@@ -14287,21 +14287,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "ssz-rs"
-version = "0.8.0"
-source = "git+https://github.com/ralexstokes/ssz-rs?rev=d18af912abacbf84219be37ab3b42a9abcf10d2a#d18af912abacbf84219be37ab3b42a9abcf10d2a"
+name = "ssz_rs"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "057291e5631f280978fa9c8009390663ca4613359fc1318e36a8c24c392f6d1f"
 dependencies = [
  "bitvec",
  "num-bigint",
  "sha2 0.9.8",
- "ssz-rs-derive",
- "thiserror",
+ "ssz_rs_derive",
 ]
 
 [[package]]
-name = "ssz-rs-derive"
-version = "0.8.0"
-source = "git+https://github.com/ralexstokes/ssz-rs?rev=d18af912abacbf84219be37ab3b42a9abcf10d2a#d18af912abacbf84219be37ab3b42a9abcf10d2a"
+name = "ssz_rs_derive"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f07d54c4d01a1713eb363b55ba51595da15f6f1211435b71466460da022aa140"
 dependencies = [
  "proc-macro2",
  "quote",
