@@ -38,7 +38,7 @@ pub use integration_tests_common::{
 		asset_hub_kusama::ED as ASSET_HUB_KUSAMA_ED,
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
-	impls::{TestInit, AccountId32Junction, DispatchArgs},
+	impls::{Test, TestArgs, AccountId32Junction, DispatchArgs},
 	lazy_static::lazy_static,
 	AssetHubKusama, AssetHubKusamaPallet, AssetHubKusamaReceiver, AssetHubKusamaSender,
 	BridgeHubKusama, BridgeHubKusamaPallet, BridgeHubKusamaReceiver, BridgeHubKusamaSender,

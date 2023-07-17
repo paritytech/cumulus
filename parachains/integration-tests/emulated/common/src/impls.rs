@@ -1,7 +1,7 @@
 use super::{
 	BridgeHubRococo, BridgeHubWococo,
 };
-use frame_support::{sp_runtime::AccountId32, traits::OriginTrait};
+use frame_support::{assert_ok, sp_runtime::AccountId32, traits::OriginTrait};
 use bp_messages::{
 	target_chain::{DispatchMessage, DispatchMessageData, MessageDispatch},
 	LaneId, MessageKey, OutboundLaneData,
@@ -136,6 +136,23 @@ pub struct Account {
 	pub account_id: AccountId,
 	pub balance: Balance,
 }
+#[derive(Clone)]
+pub struct TestOrigin<S>
+where
+	S: Chain,
+	S::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+{
+	pub sender: Account,
+	pub signed_origin: S::RuntimeOrigin,
+	pub root_origin: S::RuntimeOrigin,
+	pub assertions: Box<dyn Fn()>,
+}
+
+#[derive(Clone)]
+pub struct TestDestination {
+	pub receiver: Account,
+	pub assertions: Box<dyn Fn()>
+}
 
 #[derive(Clone)]
 pub struct DispatchArgs {
@@ -146,46 +163,75 @@ pub struct DispatchArgs {
 	pub weight_limit: WeightLimit,
 }
 
-#[derive(Clone)]
-pub struct TestInit<S: Chain, R: Chain> {
-	pub sender: Account,
-	pub receiver: Account,
-	pub signed_origin: S::RuntimeOrigin,
-	pub root_origin: S::RuntimeOrigin,
+pub struct TestArgs {
+	pub sender: AccountId,
+	pub receiver: AccountId,
 	pub args: DispatchArgs,
+}
+
+#[derive(Clone)]
+pub struct Test<S: Chain, R: Chain>
+where
+	S: Chain,
+	S::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+{
+	pub origin: TestOrigin<S>,
+	pub destination: TestDestination,
+	pub args: DispatchArgs,
+	// pub dispatchable: impl Fn() -> Result<(), DispatchError>,
 	_marker: PhantomData<R>,
 }
 
-impl<S, R> TestInit<S, R>
+impl<S, R> Test<S, R>
 where
-	S: Chain,
-	R: Chain,
-	S::RuntimeOrigin: OriginTrait<AccountId = AccountId32>,
-	R::RuntimeOrigin: OriginTrait<AccountId = AccountId32>,
+	S: Chain + Clone,
+	R: Chain + Clone,
+	S::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+	R::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
 {
-	pub fn new(
-		sender: AccountId,
-		receiver: AccountId,
-		dispatch_args: DispatchArgs
-	) -> Self {
-		TestInit {
+	pub fn new(test_args: TestArgs) -> Self {
+		let origin = TestOrigin {
 			sender: Account {
-				account_id: sender.clone(),
-				balance: S::account_data_of(sender.clone()).free
+				account_id: test_args.sender.clone(),
+				balance: S::account_data_of(test_args.sender.clone()).free,
 			},
-			receiver: Account {
-				account_id: receiver.clone(),
-				balance: R::account_data_of(receiver).free
-			},
-			signed_origin: <S as Chain>::RuntimeOrigin::signed(sender),
+			signed_origin: <S as Chain>::RuntimeOrigin::signed(test_args.sender),
 			root_origin: <S as Chain>::RuntimeOrigin::root(),
-			args: dispatch_args,
+			assertions: Box::<dyn Fn()>::new(Default::default()),
+		};
+
+		let destination = TestDestination {
+			receiver: Account {
+				account_id: test_args.receiver.clone(),
+				balance: R::account_data_of(test_args.receiver).free
+			},
+			assertions: Box::new(Default::default()),
+		};
+
+		Test {
+			origin,
+			destination,
+			args: test_args.args,
 			_marker: Default::default(),
 		}
 	}
 
+	// pub fn set_assertions(origin: impl Fn(), destination: impl Fn()) {
+	// 	Sel
+	// }
+
+	pub fn dispatch_from_origin(&self, dispatchable: impl FnOnce(Self) -> sp_runtime::DispatchResult) {
+		S::execute_with(|| {
+			assert_ok!(dispatchable(self.clone()));
+
+			self.
+		});
+
+		let _ = dispatchable(self.clone());
+	}
+
 	pub fn update_balances(&mut self) {
-		self.sender.balance = S::account_data_of(self.sender.account_id.clone()).free;
-		self.receiver.balance = R::account_data_of(self.receiver.account_id.clone()).free;
+		self.origin.sender.balance = S::account_data_of(self.origin.sender.account_id.clone()).free;
+		self.destination.receiver.balance = R::account_data_of(self.destination.receiver.account_id.clone()).free;
 	}
 }

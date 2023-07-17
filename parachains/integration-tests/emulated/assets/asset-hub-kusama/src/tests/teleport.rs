@@ -122,34 +122,36 @@ fn teleport_native_assets_from_relay_to_system_para() {
 	// Get init values for Relay Chain
 	let amount_to_send: Balance = KUSAMA_ED * 1000;
 
-	let mut init = TestInit::<Kusama, AssetHubKusama>::new(
-		KusamaSender::get(),
-		AssetHubKusamaReceiver::get(),
-		get_relay_dispatch_args(amount_to_send)
-	);
+	let test_args = TestArgs {
+		sender: KusamaSender::get(),
+		receiver: AssetHubKusamaReceiver::get(),
+		args: get_relay_dispatch_args(amount_to_send),
+	};
 
-	let sender_balance_before = init.sender.balance;
-	let receiver_balance_before = init.receiver.balance;
+	let mut test = Test::<Kusama, AssetHubKusama>::new(test_args);
 
-	let init_clone = init.clone();
+	let sender_balance_before = test.origin.sender.balance;
+	let receiver_balance_before = test.destination.receiver.balance;
 
-	let dispatchable = || {
+	let dispatchable = |t: Test<Kusama, AssetHubKusama>| {
 		<Kusama as KusamaPallet>::XcmPallet::teleport_assets(
-			init_clone.signed_origin,
-			bx!(init_clone.args.dest),
-			bx!(init_clone.args.beneficiary),
-			bx!(init_clone.args.assets),
-			init_clone.args.fee_asset_item
+			t.origin.signed_origin,
+			bx!(t.args.dest),
+			bx!(t.args.beneficiary),
+			bx!(t.args.assets),
+			t.args.fee_asset_item
 		)
 	};
 
-	send_xcm_message(dispatchable);
+	// send_xcm_message(dispatchable);
+
+	test.dispatch_from_origin(dispatchable);
 
 	// Check if balances are updated accordingly in Relay Chain and Assets Parafter
-	init.update_balances();
+	test.update_balances();
 
-	let sender_balance_after = init.sender.balance;
-	let receiver_balance_after = init.receiver.balance;
+	let sender_balance_after = test.origin.sender.balance;
+	let receiver_balance_after = test.destination.receiver.balance;
 
 	println!("No limited 1 - {:?}", sender_balance_after);
 
