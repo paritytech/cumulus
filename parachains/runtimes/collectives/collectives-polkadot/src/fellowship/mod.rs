@@ -34,7 +34,7 @@ use crate::{
 };
 use frame_support::{
 	parameter_types,
-	traits::{EitherOf, EitherOfDiverse, MapSuccess},
+	traits::{EitherOf, EitherOfDiverse, Ignore, MapSuccess},
 };
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use polkadot_runtime_constants::{time::HOURS, xcm::body::FELLOWSHIP_ADMIN_INDEX};
@@ -95,10 +95,12 @@ impl pallet_ranked_collective::Config<FellowshipCollectiveInstance> for Runtime 
 	type WeightInfo = weights::pallet_ranked_collective::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
 	// Promotions and the induction of new members are serviced by `FellowshipCore` pallet instance.
+	type AddOrigin = EnsureNever<()>;
 	type PromoteOrigin = EnsureNever<pallet_ranked_collective::Rank>;
 	// Demotion is by any of:
 	// - Root can demote arbitrarily.
 	// - the FellowshipAdmin origin (i.e. token holder referendum);
+	type RemoveOrigin = MapSuccess<Self::DemoteOrigin, Ignore>;
 	type DemoteOrigin = EitherOf<
 		frame_system::EnsureRootWithSuccess<Self::AccountId, ConstU16<{ ranks::DAN_9 }>>,
 		MapSuccess<
