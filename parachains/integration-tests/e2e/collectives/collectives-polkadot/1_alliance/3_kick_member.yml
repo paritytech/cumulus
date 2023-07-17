@@ -43,7 +43,7 @@ tests:
               events:
                 - name: xcmPallet.Attempted
                   threshold: *weight_threshold
-                  result: [{ Complete: { refTime: '3,000,000,000', proofSize: 0 }}]
+                  result: { outcome: { Complete: { refTime: '3,000,000,000', proofSize: 0 }}}
                 - name: balances.Deposit
                   chain: *collectives_parachain
                   result: { who:  *acc_alice_ss58 }
