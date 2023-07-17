@@ -44,6 +44,16 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+#[cfg(feature = "runtime-benchmarks")]
+pub use snowbridge_ethereum_beacon_client::ExecutionHeaderBuffer;
+#[cfg(feature = "runtime-benchmarks")]
+use snowbridge_core::RingBufferMap;
+#[cfg(feature = "runtime-benchmarks")]
+use snowbridge_inbound_queue::BenchmarkHelper;
+#[cfg(feature = "runtime-benchmarks")]
+use snowbridge_beacon_primitives::CompactExecutionHeader;
+#[cfg(feature = "runtime-benchmarks")]
+use sp_core::H256;
 
 use frame_support::{
 	construct_runtime,
@@ -70,7 +80,6 @@ pub use sp_runtime::BuildStorage;
 pub use snowbridge_core::MessageId;
 
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
-
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 use crate::{
@@ -571,6 +580,13 @@ parameter_types! {
 	pub const Reward: u128 = 10;
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+impl<T: snowbridge_ethereum_beacon_client::Config> BenchmarkHelper<T> for Runtime {
+	fn initialize_storage(block_hash: H256, header: CompactExecutionHeader) {
+		<ExecutionHeaderBuffer<T>>::insert(block_hash, header);
+	}
+}
+
 impl snowbridge_inbound_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Token = Balances;
@@ -579,6 +595,8 @@ impl snowbridge_inbound_queue::Config for Runtime {
 	type XcmSender = XcmRouter;
 	type WeightInfo = ();
 	type AllowListLength = ConstU32<8>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type Helper = Runtime;
 }
 
 parameter_types! {
@@ -767,7 +785,7 @@ mod benches {
 		// Bridge relayer pallets
 		[pallet_bridge_relayers, BridgeRelayersBench::<Runtime>]
 		// Ethereum Bridge
-		//[snowbridge_basic_channel::inbound, BasicInboundChannel]
+		[snowbridge_inbound_queue, EthereumInboundQueue]
 		// [snowbridge_outbound_queue, EthereumOutboundChannel]
 		//[snowbridge_dispatch, Dispatch]
 		[snowbridge_ethereum_beacon_client, EthereumBeaconClient]
