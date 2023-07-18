@@ -12,7 +12,6 @@ environmental = { version = "1.1.4", default-features = false }
 impl-trait-for-tuples = "0.2.1"
 log = { version = "0.4.19", default-features = false }
 trie-db = { version = "0.27.1", default-features = false }
-hash-db = { version = "0.16.0", default-features = false }
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 
 # Substrate
@@ -72,7 +71,6 @@ std = [
 	"sp-trie/std",
 	"xcm/std",
 	"trie-db/std",
-	"hash-db/std"
 ]
 
 runtime-benchmarks = [

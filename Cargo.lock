@@ -2772,7 +2772,6 @@ dependencies = [
  "environmental",
  "frame-support",
  "frame-system",
- "hash-db",
  "hex-literal 0.4.1",
  "impl-trait-for-tuples",
  "lazy_static",
