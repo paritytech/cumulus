@@ -328,7 +328,7 @@ impl pallet_asset_conversion::Config for Runtime {
 
 	type MintMinLiquidity = ConstU128<100>;
 
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_asset_conversion::WeightInfo<Runtime>;
 
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper =

@@ -589,7 +589,7 @@ where
 		}
 	}
 
-	fn mutliasset_id(asset_id: u32) -> sp_std::boxed::Box<MultiLocation> {
+	fn multiasset_id(asset_id: u32) -> sp_std::boxed::Box<MultiLocation> {
 		sp_std::boxed::Box::new(Self::asset_id(asset_id))
 	}
 }
