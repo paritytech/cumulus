@@ -113,6 +113,6 @@ pub mod consensus {
 	/// How many parachain blocks are processed by the relay chain per parent. Limits the
 	/// number of blocks authored per slot.
 	pub const BLOCK_PROCESSING_VELOCITY: u32 = 1;
-	/// Relay chain slot duration, in seconds.
-	pub const RELAY_CHAIN_SLOT_DURATION: u32 = 6;
+	/// Relay chain slot duration, in milliseconds.
+	pub const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6000;
 }
