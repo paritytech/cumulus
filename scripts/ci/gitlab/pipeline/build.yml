@@ -77,19 +77,19 @@ build-runtime-assets:
   variables:
     RUNTIME_PATH: "parachains/runtimes/assets"
 
-build-runtime-collectives:
-  <<: *build-runtime-template
-  variables:
-    RUNTIME_PATH: "parachains/runtimes/collectives"
-  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
-  needs:
-    - job: build-runtime-assets
-      artifacts: false
-
 build-runtime-bridge-hubs:
   <<: *build-runtime-template
   variables:
     RUNTIME_PATH: "parachains/runtimes/bridge-hubs"
+  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
+  needs:
+    - job: build-runtime-bridge-hubs
+      artifacts: false
+
+build-runtime-collectives:
+  <<: *build-runtime-template
+  variables:
+    RUNTIME_PATH: "parachains/runtimes/collectives"
   # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
   needs:
     - job: build-runtime-collectives
@@ -101,7 +101,16 @@ build-runtime-contracts:
     RUNTIME_PATH: "parachains/runtimes/contracts"
   # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
   needs:
-    - job: build-runtime-collectives
+    - job: build-runtime-contracts
+      artifacts: false
+
+build-runtime-coretime:
+  <<: *build-runtime-template
+  variables:
+    RUNTIME_PATH: "parachains/runtimes/coretime"
+  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
+  needs:
+    - job: build-runtime-coretime
       artifacts: false
 
 build-runtime-starters:
@@ -110,7 +119,7 @@ build-runtime-starters:
     RUNTIME_PATH: "parachains/runtimes/starters"
   # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
   needs:
-    - job: build-runtime-assets
+    - job: build-runtime-starters
       artifacts: false
 
 build-runtime-testing:
@@ -119,5 +128,5 @@ build-runtime-testing:
     RUNTIME_PATH: "parachains/runtimes/testing"
   # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
   needs:
-    - job: build-runtime-starters
+    - job: build-runtime-testing
       artifacts: false
