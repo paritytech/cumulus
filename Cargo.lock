@@ -13334,6 +13334,7 @@ dependencies = [
 name = "snowbridge-core"
 version = "0.1.1"
 dependencies = [
+ "ethabi-decode",
  "frame-support",
  "frame-system",
  "parity-scale-codec",

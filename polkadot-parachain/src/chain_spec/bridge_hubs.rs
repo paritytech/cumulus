@@ -341,7 +341,7 @@ pub mod rococo {
 			},
 			// Ethereum Bridge
 			ethereum_inbound_queue: bridge_hub_rococo_runtime::EthereumInboundQueueConfig {
-				allowlist: Default::default(),
+				gateway: Default::default(),
 			},
 		}
 	}

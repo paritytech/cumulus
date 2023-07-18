@@ -69,6 +69,7 @@ use frame_system::{
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
+use xcm::v2::NetworkId::{self, Polkadot};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 use bp_parachains::SingleParaStoredHeaderDataBuilder;
@@ -102,6 +103,7 @@ use parachains_common::{
 	impls::DealWithFees, opaque, AccountId, Balance, BlockNumber, Hash, Header, Index, Signature,
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
+use xcm_builder::{EnsureXcmOrigin, SignedToAccountId32};
 use xcm_executor::XcmExecutor;
 
 /// The address format for describing accounts.
@@ -594,7 +596,6 @@ impl snowbridge_inbound_queue::Config for Runtime {
 	type Verifier = snowbridge_ethereum_beacon_client::Pallet<Runtime>;
 	type XcmSender = XcmRouter;
 	type WeightInfo = weights::snowbridge_inbound_queue::WeightInfo<Runtime>;
-	type AllowListLength = ConstU32<8>;
 	#[cfg(feature = "runtime-benchmarks")]
 	type Helper = Runtime;
 }
@@ -667,16 +668,20 @@ impl snowbridge_ethereum_beacon_client::Config for Runtime {
 }
 
 parameter_types! {
-	pub const GovernanceProxyContract: snowbridge_core::ContractId = snowbridge_core::ContractId::new(hex_literal::hex!("44bef07c29162ad04096f5cbe78ca2df62dffe97cea85825f08d13319e13f34a"));
+	// TODO: placeholder value - choose a real one
+	pub const MaxUpgradeDataSize: u32 = 1024;
+	pub const RelayNetwork: NetworkId = Polkadot;
 }
 
+pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, RelayNetwork>;
 impl snowbridge_control::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OwnParaId = ParachainInfo;
 	type OutboundQueue = EthereumOutboundQueue;
-	type GovernanceProxyContract = GovernanceProxyContract;
 	type MessageHasher = BlakeTwo256;
 	type WeightInfo = ();
+	type MaxUpgradeDataSize = MaxUpgradeDataSize;
+	type EnsureCreateAgentOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

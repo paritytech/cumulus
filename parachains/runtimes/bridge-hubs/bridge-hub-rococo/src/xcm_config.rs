@@ -57,7 +57,7 @@ parameter_types! {
 		X2(GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into()));
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
-		
+
 	// Network and location for the local Ethereum testnet.
 	pub const EthereumNetwork: NetworkId = NetworkId::Ethereum { chain_id: 15 };
 	pub EthereumLocation: MultiLocation = MultiLocation::new(2, X1(GlobalConsensus(EthereumNetwork::get())));
@@ -65,8 +65,8 @@ parameter_types! {
 	// The Registry contract for the bridge which is also the origin for reserves and the prefix of all assets.
 	pub EthereumRegistryLocation: MultiLocation = EthereumLocation::get()
 		.pushed_with_interior(
-			AccountKey20 { 
-				network: None, 
+			AccountKey20 {
+				network: None,
 				key: hex_literal::hex!("D184c103F7acc340847eEE82a0B909E3358bc28d"),
 			}
 		).unwrap();
@@ -210,10 +210,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				>::initialize { .. }) |
 				RuntimeCall::EthereumBeaconClient(
 					snowbridge_ethereum_beacon_client::Call::force_checkpoint { .. },
-				) |
-				RuntimeCall::EthereumInboundQueue(
-					snowbridge_inbound_queue::Call::add_allow_list { .. } |
-					snowbridge_inbound_queue::Call::remove_allow_list { .. },
 				)
 		)
 	}
