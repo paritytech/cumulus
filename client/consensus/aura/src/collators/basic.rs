@@ -161,6 +161,18 @@ where
 				continue
 			}
 
+			match params.relay_client.candidate_pending_availability(
+				*request.relay_parent(),
+				params.para_id,
+			).await {
+				Err(e) => reject_with_error!(e),
+				Ok(Some(_)) => {
+					tracing::info!(target: crate::LOG_TARGET, "Basic mode - don't author when pending availability");
+					continue
+				}
+				Ok(None) => {}
+			}
+
 			let relay_parent_header =
 				match params.relay_client.header(RBlockId::hash(*request.relay_parent())).await {
 					Err(e) => reject_with_error!(e),
