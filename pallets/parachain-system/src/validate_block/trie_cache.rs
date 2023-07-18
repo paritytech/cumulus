@@ -15,15 +15,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use hash_db::{HashDB, Hasher};
-use sp_state_machine::{TrieBackendStorage, TrieCacheProvider};
+use sp_state_machine::TrieCacheProvider;
 use sp_std::{
 	boxed::Box,
 	cell::{RefCell, RefMut},
 	collections::btree_map::{BTreeMap, Entry},
 };
 use sp_trie::NodeCodec;
-use trie_db::{node::NodeOwned, TrieError};
+use trie_db::{node::NodeOwned, Hasher};
 
 /// Special purpose trie cache implementation that is able to cache an unlimited number
 /// of values. To be used in `validate_block` to serve values and nodes that
@@ -39,9 +38,7 @@ impl<'a, H: Hasher> trie_db::TrieCache<NodeCodec<H>> for TrieCache<'a, H> {
 	}
 
 	fn cache_value_for_key(&mut self, key: &[u8], value: trie_db::CachedValue<H::Out>) {
-		if let Some(ref mut value_cache) = self.value_cache {
-			value_cache.insert(key.into(), value);
-		}
+		self.value_cache.as_mut().and_then(|cache| cache.insert(key.into(), value));
 	}
 
 	fn get_or_insert_node(
