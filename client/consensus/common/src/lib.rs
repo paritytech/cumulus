@@ -27,11 +27,11 @@ use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
 
 use sc_client_api::Backend;
 use sc_consensus::{shared_data::SharedData, BlockImport, ImportResult};
-use sp_consensus_slots::{Slot, SlotDuration};
+use sp_consensus_slots::Slot;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use sp_timestamp::Timestamp;
 
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 mod level_monitor;
 mod parachain_consensus;
@@ -377,12 +377,12 @@ pub async fn find_potential_parents<B: BlockT>(
 /// Get the relay-parent slot and timestamp from a header.
 pub fn relay_slot_and_timestamp(
 	relay_parent_header: &PHeader,
-	relay_chain_slot_duration: SlotDuration,
+	relay_chain_slot_duration: Duration,
 ) -> Option<(Slot, Timestamp)> {
 	sc_consensus_babe::find_pre_digest::<PBlock>(relay_parent_header)
 		.map(|babe_pre_digest| {
 			let slot = babe_pre_digest.slot();
-			let t = Timestamp::new(relay_chain_slot_duration.as_millis() * *slot);
+			let t = Timestamp::new(relay_chain_slot_duration.as_millis() as u64 * *slot);
 
 			(slot, t)
 		})
