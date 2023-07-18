@@ -593,7 +593,7 @@ impl snowbridge_inbound_queue::Config for Runtime {
 	type Reward = Reward;
 	type Verifier = snowbridge_ethereum_beacon_client::Pallet<Runtime>;
 	type XcmSender = XcmRouter;
-	type WeightInfo = ();
+	type WeightInfo = weights::snowbridge_inbound_queue::WeightInfo<Runtime>;
 	type AllowListLength = ConstU32<8>;
 	#[cfg(feature = "runtime-benchmarks")]
 	type Helper = Runtime;
