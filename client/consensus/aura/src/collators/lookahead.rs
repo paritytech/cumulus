@@ -68,21 +68,39 @@ use crate::collator::{self as collator_util, SlotClaim};
 
 /// Parameters for [`run`].
 pub struct Params<BI, CIDP, Client, Backend, RClient, CHP, SO, Proposer, CS> {
+	/// Inherent data providers. Only non-consensus inherent data should be provided, i.e.
+	/// the timestamp, slot, and paras inherents should be omitted, as they are set by this
+	/// collator.
 	pub create_inherent_data_providers: CIDP,
+	/// Used to actually import blocks.
 	pub block_import: BI,
+	/// The underlying para client.
 	pub para_client: Arc<Client>,
+	/// The para client's backend, used to access the database.
 	pub para_backend: Arc<Backend>,
+	/// A handle to the relay-chain client.
 	pub relay_client: Arc<RClient>,
+	/// A validation code hash provider, used to get the current validation code hash.
 	pub code_hash_provider: CHP,
+	/// A chain synchronization oracle.
 	pub sync_oracle: SO,
+	/// The underlying keystore, which should contain Aura consensus keys.
 	pub keystore: KeystorePtr,
-	pub key: CollatorPair,
+	/// The collator key used to sign collations before submitting to validators.
+	pub collator_key: CollatorPair,
+	/// The para's ID.
 	pub para_id: ParaId,
+	/// A handle to the relay-chain client's "Overseer" or task orchestrator.
 	pub overseer_handle: OverseerHandle,
+	/// The length of slots in this chain.
 	pub slot_duration: SlotDuration,
+	/// The length of slots in the relay chain.
 	pub relay_chain_slot_duration: Duration,
+	/// The underlying block proposer this should call into.
 	pub proposer: Proposer,
+	/// The generic collator service used to plug into this consensus engine.
 	pub collator_service: CS,
+	/// The amount of time to spend authoring each block.
 	pub authoring_duration: Duration,
 }
 
@@ -125,6 +143,8 @@ where
 	const PARENT_SEARCH_DEPTH: usize = 10;
 
 	async move {
+		// TODO [now]: this needs to send the CollationGenerationMessage::Initialize
+
 		let mut import_notifications = match params.relay_client.import_notification_stream().await
 		{
 			Ok(s) => s,
