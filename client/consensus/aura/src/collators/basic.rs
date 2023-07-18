@@ -83,8 +83,6 @@ pub struct Params<BI, CIDP, Client, RClient, SO, Proposer, CS> {
 	pub authoring_duration: Duration,
 }
 
-fn assert_send<T: Send>(_x: &T) {}
-
 /// Run bare Aura consensus as a relay-chain-driven collator.
 pub fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
 	params: Params<BI, CIDP, Client, RClient, SO, Proposer, CS>,
@@ -120,8 +118,6 @@ where
 		)
 		.await;
 
-		assert_send(&collation_requests);
-
 		let mut collator = {
 			let params = collator_util::Params {
 				create_inherent_data_providers: params.create_inherent_data_providers,
@@ -135,8 +131,6 @@ where
 
 			collator_util::Collator::<Block, P, _, _, _, _, _>::new(params)
 		};
-
-		assert_send(&collator);
 
 		while let Some(request) = collation_requests.next().await {
 			macro_rules! reject_with_error {
