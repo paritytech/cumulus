@@ -148,7 +148,7 @@ pub mod kusama {
 	pub(crate) const CORETIME_KUSAMA_LOCAL: &str = "coretime-kusama-local";
 	pub(crate) const CORETIME_KUSAMA_DEVELOPMENT: &str = "coretime-kusama-dev";
 	const CORETIME_KUSAMA_ED: CoretimeBalance =
-		coretime_kusama_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+		coretime_kusama_runtime::constants::kusama_currency::EXISTENTIAL_DEPOSIT;
 
 	/// Specialized `ChainSpec` for the normal parachain runtime.
 	pub type CoretimeChainSpec =
@@ -271,7 +271,7 @@ pub mod polkadot {
 	pub(crate) const CORETIME_POLKADOT_LOCAL: &str = "coretime-polkadot-local";
 	pub(crate) const CORETIME_POLKADOT_DEVELOPMENT: &str = "coretime-polkadot-dev";
 	const CORETIME_POLKADOT_ED: CoretimeBalance =
-		coretime_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+		coretime_polkadot_runtime::constants::polkadot_currency::EXISTENTIAL_DEPOSIT;
 
 	/// Specialized `ChainSpec` for the normal parachain runtime.
 	pub type CoretimeChainSpec =
