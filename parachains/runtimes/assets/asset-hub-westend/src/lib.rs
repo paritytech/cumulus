@@ -1460,7 +1460,7 @@ pub mod migrations {
 				reads.saturating_accrue(1);
 				writes.saturating_accrue(2);
 
-				// change owner ship of LP token
+				// change the ownership of LP token
 				let _ = pallet_assets::Pallet::<Runtime, PoolAssetsInstance>::transfer_ownership(
 					RuntimeOrigin::signed(sp_runtime::AccountId32::from(old_pool_account.clone())),
 					pool_asset_id.into(),
