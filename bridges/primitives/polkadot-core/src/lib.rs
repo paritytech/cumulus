@@ -226,9 +226,11 @@ pub type Address = MultiAddress<AccountId, ()>;
 pub struct PolkadotLike;
 
 impl Chain for PolkadotLike {
+	type BlockNumber = BlockNumber;
 	type Hash = Hash;
 	type Hasher = Hasher;
-	type Block = Block;
+	type Header = Header;
+
 	type AccountId = AccountId;
 	type Balance = Balance;
 	type Nonce = Nonce;
