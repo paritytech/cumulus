@@ -81,3 +81,7 @@ try-runtime = [
 	"try-runtime-cli/try-runtime",
 	"parachain-template-runtime/try-runtime"
 ]
+network-protocol-staging = [
+	"polkadot-cli/network-protocol-staging",
+	"cumulus-client-service/network-protocol-staging"
+]
