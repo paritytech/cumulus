@@ -19,10 +19,10 @@ pallet-asset-conversion = { git = "https://github.com/paritytech/substrate", def
 pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 
 # Polkadot
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bko-poc-pallet-xcm" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bko-poc-pallet-xcm" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bko-poc-pallet-xcm" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bko-poc-pallet-xcm" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 # Cumulus
 parachains-common = { path = "../../../common", default-features = false }

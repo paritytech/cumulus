@@ -27,10 +27,10 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", default-features
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bko-poc-pallet-xcm" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bko-poc-pallet-xcm" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bko-poc-pallet-xcm" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bko-poc-pallet-xcm" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 # Cumulus
 pallet-collator-selection = { path = "../../pallets/collator-selection", default-features = false }

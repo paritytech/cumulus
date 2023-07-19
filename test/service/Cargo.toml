@@ -55,12 +55,12 @@ sc-executor-wasmtime = { git = "https://github.com/paritytech/substrate", branch
 sc-executor-common = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
-polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus
 cumulus-client-cli = { path = "../../client/cli" }
@@ -90,7 +90,7 @@ sp-authority-discovery = { git = "https://github.com/paritytech/substrate", bran
 cumulus-test-client = { path = "../client" }
 
 # Polkadot dependencies
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "bko-poc-pallet-xcm" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Substrate dependencies
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }

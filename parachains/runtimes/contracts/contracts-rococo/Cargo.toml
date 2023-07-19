@@ -51,14 +51,14 @@ pallet-contracts = { git = "https://github.com/paritytech/substrate", default-fe
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot
-kusama-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bko-poc-pallet-xcm" }
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bko-poc-pallet-xcm" }
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bko-poc-pallet-xcm" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bko-poc-pallet-xcm" }
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bko-poc-pallet-xcm" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bko-poc-pallet-xcm" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bko-poc-pallet-xcm" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bko-poc-pallet-xcm" }
+kusama-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 # Cumulus
 cumulus-pallet-aura-ext = { path = "../../../../pallets/aura-ext", default-features = false }
