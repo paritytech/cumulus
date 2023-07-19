@@ -48,7 +48,6 @@ impl TokioPlatform {
 
 impl PlatformRef for TokioPlatform {
 	type Delay = future::BoxFuture<'static, ()>;
-	type Yield = future::Ready<()>;
 	type Instant = std::time::Instant;
 	type MultiStream = std::convert::Infallible;
 	type Stream = Stream;
@@ -76,11 +75,6 @@ impl PlatformRef for TokioPlatform {
 	fn sleep_until(&self, when: Self::Instant) -> Self::Delay {
 		let duration = when.saturating_duration_since(std::time::Instant::now());
 		self.sleep(duration)
-	}
-
-	fn yield_after_cpu_intensive(&self) -> Self::Yield {
-		// No-op.
-		future::ready(())
 	}
 
 	fn connect(&self, multiaddr: &str) -> Self::ConnectFuture {
