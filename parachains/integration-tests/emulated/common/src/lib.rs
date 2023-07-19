@@ -37,6 +37,8 @@ decl_test_relay_chains! {
 		},
 		pallets_extra = {
 			XcmPallet: polkadot_runtime::XcmPallet,
+			Treasury: polkadot_runtime::Treasury,
+			AssetRate: polkadot_runtime::AssetRate,
 		}
 	},
 	#[api_version(5)]
@@ -56,6 +58,8 @@ decl_test_relay_chains! {
 		},
 		pallets_extra = {
 			XcmPallet: kusama_runtime::XcmPallet,
+			Treasury: kusama_runtime::Treasury,
+			AssetRate: kusama_runtime::AssetRate,
 		}
 	},
 	#[api_version(5)]
