@@ -146,7 +146,7 @@ pub trait Chain: Send + Sync + 'static {
 		+ Zero
 		+ TryFrom<sp_core::U256>
 		+ MaxEncodedLen;
-	/// Index of a transaction used by the chain.
+	/// Nonce of a transaction used by the chain.
 	type Nonce: Parameter
 		+ Member
 		+ MaybeSerialize
@@ -236,7 +236,7 @@ pub type AccountIdOf<C> = <C as Chain>::AccountId;
 /// Balance type used by the chain.
 pub type BalanceOf<C> = <C as Chain>::Balance;
 
-/// Transaction index type used by the chain.
+/// Transaction nonce type used by the chain.
 pub type NonceOf<C> = <C as Chain>::Nonce;
 
 /// Signature type used by the chain.

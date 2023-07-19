@@ -20,7 +20,7 @@ use bp_runtime::{Chain, Parachain};
 use frame_support::{construct_runtime, parameter_types, traits::ConstU32, weights::Weight};
 use sp_runtime::{
 	testing::H256,
-	traits::{BlakeTwo256, Header, IdentityLookup},
+	traits::{BlakeTwo256, Header as HeaderT, IdentityLookup},
 	MultiSignature, Perbill,
 };
 
@@ -161,11 +161,11 @@ impl frame_system::Config for TestRuntime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type Nonce = u64;
 	type RuntimeCall = RuntimeCall;
+	type Block = Block;
 	type Hash = H256;
 	type Hashing = RegularParachainHasher;
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Block = Block;
 	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = BlockHashCount;
 	type Version = ();

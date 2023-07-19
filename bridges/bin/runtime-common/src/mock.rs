@@ -63,7 +63,9 @@ pub type ThisChainHasher = BlakeTwo256;
 pub type ThisChainRuntimeCall = RuntimeCall;
 /// Runtime call origin at `ThisChain`.
 pub type ThisChainCallOrigin = RuntimeOrigin;
-// Block of `ThisChain`.
+/// Header of `ThisChain`.
+pub type ThisChainHeader = sp_runtime::generic::Header<ThisChainBlockNumber, ThisChainHasher>;
+/// Block of `ThisChain`.
 pub type ThisChainBlock = frame_system::mocking::MockBlockU32<TestRuntime>;
 
 /// Account identifier at the `BridgedChain`.

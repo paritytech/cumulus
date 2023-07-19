@@ -202,7 +202,7 @@ pub type AccountId = <AccountPublic as IdentifyAccount>::AccountId;
 /// Address of account on Polkadot-like chains.
 pub type AccountAddress = MultiAddress<AccountId, ()>;
 
-/// Index of a transaction on the Polkadot-like chains.
+/// Nonce of a transaction on the Polkadot-like chains.
 pub type Nonce = u32;
 
 /// Block type of Polkadot-like chains.
