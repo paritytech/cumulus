@@ -30,6 +30,7 @@ pallet-xcm = { default-features = false, git = "https://github.com/paritytech/po
 parachains-common = { path = "../../../../common" }
 penpal-runtime = { path = "../../../../runtimes/testing/penpal" }
 asset-hub-kusama-runtime = { path = "../../../../runtimes/assets/asset-hub-kusama" }
+cumulus-pallet-dmp-queue = { path = "../../../../../pallets/dmp-queue" }
 
 # Local
 xcm-emulator = { default-features = false, path = "../../../../../xcm/xcm-emulator" }

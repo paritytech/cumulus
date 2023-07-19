@@ -412,7 +412,6 @@ macro_rules! __impl_test_ext_for_relay_chain {
 
 					let mut block_number = <Self as Chain>::System::block_number();
 					block_number = std::cmp::max(1, block_number);
-
 					<Self as Chain>::System::set_block_number(block_number);
 				});
 				ext
@@ -478,9 +477,10 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				// Make sure the Network is initialized
 				<$name as NetworkComponent>::Network::init();
 
+				// Execute
 				let r = $local_ext.with(|v| v.borrow_mut().execute_with(execute));
 
-				// send messages if needed
+				// Send messages if needed
 				$local_ext.with(|v| {
 					v.borrow_mut().execute_with(|| {
 						use $crate::polkadot_primitives::runtime_api::runtime_decl_for_parachain_host::$api_version;
@@ -499,6 +499,10 @@ macro_rules! __impl_test_ext_for_relay_chain {
 							// Note: no need to handle horizontal messages, as the
 							// simulator directly sends them to dest (not relayed).
 						}
+
+
+						// clean events
+						<Self as Chain>::System::reset_events();
 					})
 				});
 
@@ -636,8 +640,9 @@ macro_rules! __impl_test_ext_for_parachain {
 		impl TestExt for $name {
 			fn build_new_ext(storage: $crate::Storage) -> $crate::TestExternalities {
 				use $crate::{NetworkComponent, Network, Chain};
-				$crate::log::debug!(target: "nacho", "New Ext -> {:?}", stringify!($local_ext));
+
 				let mut ext = $crate::TestExternalities::new(storage);
+
 				ext.execute_with(|| {
 					#[allow(clippy::no_effect)]
 					$on_init;
@@ -713,6 +718,7 @@ macro_rules! __impl_test_ext_for_parachain {
 
 				let para_id = <$name>::para_id().into();
 
+				// Initialize block
 				$local_ext.with(|v| {
 					v.borrow_mut().execute_with(|| {
 						// Increase block number
@@ -727,10 +733,10 @@ macro_rules! __impl_test_ext_for_parachain {
 					})
 				});
 
-
+				// Execute
 				let r = $local_ext.with(|v| v.borrow_mut().execute_with(execute));
 
-				// send messages if needed
+				// Finalize block and send messages if needed
 				$local_ext.with(|v| {
 					v.borrow_mut().execute_with(|| {
 						use sp_runtime::traits::Header as HeaderT;
@@ -774,6 +780,9 @@ macro_rules! __impl_test_ext_for_parachain {
 
 						// clean messages
 						<Self as Parachain>::ParachainSystem::on_initialize(block_number);
+
+						// clean events
+						<Self as Chain>::System::reset_events();
 					})
 				});
 

@@ -369,6 +369,7 @@ name = "asset-hub-kusama-integration-tests"
 version = "1.0.0"
 dependencies = [
  "asset-hub-kusama-runtime",
+ "cumulus-pallet-dmp-queue",
  "frame-support",
  "frame-system",
  "integration-tests-common",

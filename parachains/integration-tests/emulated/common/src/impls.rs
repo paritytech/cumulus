@@ -136,6 +136,18 @@ pub struct Account {
 	pub account_id: AccountId,
 	pub balance: Balance,
 }
+
+#[derive(Clone)]
+pub struct TestAssertions(fn());
+
+fn default_fn() {}
+
+impl Default for TestAssertions {
+    fn default() -> Self {
+        TestAssertions(default_fn)
+    }
+}
+
 #[derive(Clone)]
 pub struct TestOrigin<S>
 where
@@ -145,15 +157,14 @@ where
 	pub sender: Account,
 	pub signed_origin: S::RuntimeOrigin,
 	pub root_origin: S::RuntimeOrigin,
-	pub assertions: Box<dyn Fn()>,
+	pub assertions: TestAssertions,
 }
 
 #[derive(Clone)]
 pub struct TestDestination {
 	pub receiver: Account,
-	pub assertions: Box<dyn Fn()>
+	pub assertions: TestAssertions,
 }
-
 #[derive(Clone)]
 pub struct DispatchArgs {
 	pub dest: VersionedMultiLocation,
@@ -178,7 +189,6 @@ where
 	pub origin: TestOrigin<S>,
 	pub destination: TestDestination,
 	pub args: DispatchArgs,
-	// pub dispatchable: impl Fn() -> Result<(), DispatchError>,
 	_marker: PhantomData<R>,
 }
 
@@ -197,7 +207,7 @@ where
 			},
 			signed_origin: <S as Chain>::RuntimeOrigin::signed(test_args.sender),
 			root_origin: <S as Chain>::RuntimeOrigin::root(),
-			assertions: Box::<dyn Fn()>::new(Default::default()),
+			assertions: Default::default(),
 		};
 
 		let destination = TestDestination {
@@ -205,7 +215,7 @@ where
 				account_id: test_args.receiver.clone(),
 				balance: R::account_data_of(test_args.receiver).free
 			},
-			assertions: Box::new(Default::default()),
+			assertions: Default::default(),
 		};
 
 		Test {
@@ -216,21 +226,25 @@ where
 		}
 	}
 
-	// pub fn set_assertions(origin: impl Fn(), destination: impl Fn()) {
-	// 	Sel
-	// }
-
-	pub fn dispatch_from_origin(&self, dispatchable: impl FnOnce(Self) -> sp_runtime::DispatchResult) {
-		S::execute_with(|| {
-			assert_ok!(dispatchable(self.clone()));
-
-			self.
-		});
-
-		let _ = dispatchable(self.clone());
+	pub fn set_assertions(&mut self,origin: fn(), destination: fn()) {
+		self.origin.assertions = TestAssertions(origin);
+		self.destination.assertions = TestAssertions(destination);
 	}
 
-	pub fn update_balances(&mut self) {
+	pub fn dispatch(&mut self, dispatchable: impl FnOnce(Self) -> sp_runtime::DispatchResult) {
+		S::execute_with(|| {
+			assert_ok!(dispatchable(self.clone()));
+			self.origin.assertions.0();
+		});
+
+		R::execute_with(|| {
+			self.destination.assertions.0();
+		});
+
+		Self::update_balances(self);
+	}
+
+	fn update_balances(&mut self) {
 		self.origin.sender.balance = S::account_data_of(self.origin.sender.account_id.clone()).free;
 		self.destination.receiver.balance = R::account_data_of(self.destination.receiver.account_id.clone()).free;
 	}
