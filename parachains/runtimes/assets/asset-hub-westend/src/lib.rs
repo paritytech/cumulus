@@ -1423,7 +1423,7 @@ pub mod migrations {
 				let old_pool_account =
 					pallet_asset_conversion::Pallet::<T>::get_pool_account(&old_pool_id);
 				reads.saturating_accrue(1);
-				let pool_asset_id = pool_info.lp_token;
+				let pool_asset_id = pool_info.lp_token.clone();
 				if old_pool_id.0.as_ref() != &invalid_native_asset {
 					// skip, if ok
 					continue
@@ -1483,6 +1483,10 @@ pub mod migrations {
 				// dec providers for old account
 				let _ = frame_system::Pallet::<T>::dec_providers(&old_pool_account);
 				writes.saturating_accrue(1);
+
+				// change pool key
+				pallet_asset_conversion::Pools::<T>::insert(new_pool_id, pool_info);
+				pallet_asset_conversion::Pools::<T>::remove(old_pool_id);
 			}
 
 			T::DbWeight::get().reads_writes(reads, writes)
