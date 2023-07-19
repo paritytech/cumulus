@@ -19,34 +19,27 @@ use super::{
 	TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
 use assets_common::matching::{
-	Equals, FromSiblingParachain, IsForeignConcreteAsset, StartsWith,
-	StartsWithExplicitGlobalConsensus,
+	FromSiblingParachain, IsForeignConcreteAsset, StartsWith, StartsWithExplicitGlobalConsensus,
 };
 use frame_support::{
-	match_types,
-	pallet_prelude::Get,
-	parameter_types,
+	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
 };
 use frame_system::EnsureRoot;
-use pallet_xcm::{
-	destination_fees::{DestinationFees, DestinationFeesManager, DestinationFeesSetup},
-	XcmPassthrough,
-};
+use pallet_xcm::XcmPassthrough;
 use parachains_common::{impls::ToStakingPot, xcm_config::AssetFeeAsExistentialDepositMultiplier};
 use polkadot_parachain::primitives::Sibling;
-use sp_runtime::{traits::ConvertInto, Perbill};
+use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AccountId32Aliases, AllowAliasOriginWithdrawPaidExecutionFrom,
-	AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-	AllowTopLevelPaidExecutionFrom, CurrencyAdapter, DenyReserveTransferToRelayChain, DenyThenTry,
-	DescribeFamily, DescribePalletTerminal, EnsureXcmOrigin, FungiblesAdapter,
-	GlobalConsensusParachainConvertsFor, HashedDescription, IsConcrete, LocalMint, NativeAsset,
-	NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
-	WithComputedOrigin, WithUniqueTopic,
+	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
+	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, CurrencyAdapter,
+	DenyReserveTransferToRelayChain, DenyThenTry, DescribeFamily, DescribePalletTerminal,
+	EnsureXcmOrigin, FungiblesAdapter, GlobalConsensusParachainConvertsFor, HashedDescription,
+	IsConcrete, LocalMint, NativeAsset, NoChecking, ParentAsSuperuser, ParentIsPreset,
+	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+	UsingComponents, WeightInfoBounds, WithComputedOrigin, WithUniqueTopic,
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
@@ -371,8 +364,6 @@ pub type Barrier = DenyThenTry<
 			(
 				// If the message is one that immediately attemps to pay for execution, then allow it.
 				AllowTopLevelPaidExecutionFrom<Everything>,
-				// if we have `AliasOrigin` which attempts to withdraw assets, then allow it.
-				AllowAliasOriginWithdrawPaidExecutionFrom<Equals<bridging::AssetHubKusama>>,
 				// Parent, its pluralities (i.e. governance bodies), and the Fellows plurality get free execution.
 				AllowExplicitUnpaidExecutionFrom<(
 					ParentOrParentsPlurality,
@@ -445,7 +436,7 @@ impl xcm_executor::Config for XcmConfig {
 	type UniversalAliases = bridging::UniversalAliases;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
 	type SafeCallFilter = SafeCallFilter;
-	type Aliasers = bridging::AcceptableAliases;
+	type Aliasers = ();
 }
 
 /// Converts a local signed origin into an XCM multilocation.
@@ -502,7 +493,6 @@ impl pallet_xcm::Config for Runtime {
 	type AdminOrigin = EnsureRoot<AccountId>;
 	type MaxRemoteLockConsumers = ConstU32<0>;
 	type RemoteLockConsumerIdentifier = ();
-	type DestinationFeesManager = SwapBuyExecutionSetupResolver<UniversalLocation, WeightToFee>;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
@@ -544,7 +534,6 @@ fn foreign_pallet_has_correct_local_account() {
 pub mod bridging {
 	use super::*;
 	use assets_common::{matching, matching::*};
-	use frame_support::traits::ContainsPair;
 	use sp_std::collections::btree_set::BTreeSet;
 	use xcm_builder::{NetworkExportTable, UnpaidRemoteExporter};
 
@@ -580,22 +569,11 @@ pub mod bridging {
 				(BridgeHubPolkadotWithBridgeHubKusamaInstance::get(), GlobalConsensus(KusamaNetwork::get()))
 			]
 		);
-
-		/// Acceptable aliases
-		pub AcceptableAliases: sp_std::vec::Vec<(MultiLocation, MultiLocation)> = sp_std::vec![
-			(BridgeHubPolkadot::get(), AssetHubKusama::get())
-		];
 	}
 
 	impl Contains<(MultiLocation, Junction)> for UniversalAliases {
 		fn contains(alias: &(MultiLocation, Junction)) -> bool {
 			UniversalAliases::get().contains(alias)
-		}
-	}
-
-	impl ContainsPair<MultiLocation, MultiLocation> for AcceptableAliases {
-		fn contains(origin: &MultiLocation, target: &MultiLocation) -> bool {
-			AcceptableAliases::get().iter().any(|(ao, at)| ao == origin && at == target)
 		}
 	}
 
@@ -626,91 +604,5 @@ pub mod bridging {
 			assert!(alias.is_some(), "we expect here BridgeHubPolkadot to Kusama mapping at least");
 			Some(alias.unwrap())
 		}
-
-		pub fn prepare_alias_origin() -> Option<(MultiLocation, MultiLocation)> {
-			let alias = AcceptableAliases::get().into_iter().find_map(|(origin, target)| {
-				match BridgeHubPolkadot::get().eq(&origin) {
-					true => Some((origin, target)),
-					false => None,
-				}
-			});
-			assert!(
-				alias.is_some(),
-				"we expect here BridgeHubPolkadot and AssetHubKusama mapping at least"
-			);
-			Some(alias.unwrap())
-		}
-	}
-}
-
-// TODO: sample implementation of DecideBuyExecutionSetup
-pub struct SwapBuyExecutionSetupResolver<LocalUniversal, WeightToFee>(
-	sp_std::marker::PhantomData<(LocalUniversal, WeightToFee)>,
-);
-impl<
-		LocalUniversal: Get<InteriorMultiLocation>,
-		WeightToFee: frame_support::weights::WeightToFee<Balance = Balance>,
-	> DestinationFeesManager for SwapBuyExecutionSetupResolver<LocalUniversal, WeightToFee>
-{
-	fn decide_for(
-		destination: &MultiLocation,
-		desired_fee_asset_id: &AssetId,
-	) -> DestinationFeesSetup {
-		// if somebody wants to pay with DOTs on AssetHubKusama, we handle fees
-		if destination.eq(&bridging::AssetHubKusama::get()) {
-			if matches!(desired_fee_asset_id, Concrete(asset_location) if asset_location.eq(&DotLocation::get()))
-			{
-				return DestinationFeesSetup::ByUniversalLocation {
-					// additional fee in DOT goes to this local account (we can set it as treasury maybe?)
-					local_account: bridging::BridgeHubPolkadot::get(),
-				}
-			}
-		}
-		// else, just do nothing, e.g. maybe user choose to pay with some sufficient fee on AssetHubKusama and so on
-		DestinationFeesSetup::ByOrigin
-	}
-
-	fn estimate_fee_for(
-		destination: &MultiLocation,
-		desired_fee_asset_id: &AssetId,
-		weight: &WeightLimit,
-	) -> Option<DestinationFees> {
-		// if somebody wants to pay with DOT on AssetHubKusama
-		if destination.eq(&bridging::AssetHubKusama::get()) {
-			if matches!(desired_fee_asset_id, Concrete(asset_location) if asset_location.eq(&DotLocation::get()))
-			{
-				//
-				let proportional_amount_to_withdraw = match weight {
-					Unlimited => {
-						// TODO: handle with some limit?
-						return None
-					},
-					Limited(weight) => {
-						// TODO: add here some additional transport fee?
-						let weight = *weight + (*weight * Perbill::from_percent(25));
-						WeightToFee::weight_to_fee(&weight)
-					},
-				};
-
-				// TODO: later with DEX
-				// conversion ration: 1DOT to 100 KSMs
-				let proportional_amount_to_buy_execution =
-					proportional_amount_to_withdraw.clone() * 100;
-
-				return Some(DestinationFees {
-					proportional_amount_to_withdraw: (
-						DotLocation::get(),
-						proportional_amount_to_withdraw,
-					)
-						.into(),
-					proportional_amount_to_buy_execution: (
-						bridging::KsmLocation::get(),
-						proportional_amount_to_buy_execution,
-					)
-						.into(),
-				})
-			}
-		}
-		None
 	}
 }

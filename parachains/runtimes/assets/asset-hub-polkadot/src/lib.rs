@@ -1180,10 +1180,7 @@ impl_runtime_apis! {
 				}
 
 				fn alias_origin() -> Result<(MultiLocation, MultiLocation), BenchmarkError> {
-					match xcm_config::bridging::BridgingBenchmarksHelper::prepare_alias_origin() {
-						Some(alias_origin) => Ok(alias_origin),
-						None => Err(BenchmarkError::Skip)
-					}
+					Err(BenchmarkError::Skip)
 				}
 			}
 

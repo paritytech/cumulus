@@ -24,7 +24,7 @@ use frame_support::{
 	dispatch::{DispatchResult, RawOrigin, UnfilteredDispatchable},
 	inherent::{InherentData, ProvideInherent},
 	pallet_prelude::Get,
-	traits::{GenesisBuild, OriginTrait},
+	traits::OriginTrait,
 	weights::Weight,
 };
 use parachains_common::AccountId;

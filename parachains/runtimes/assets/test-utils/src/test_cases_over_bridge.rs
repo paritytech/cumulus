@@ -21,7 +21,6 @@ use frame_support::{
 	assert_ok,
 	traits::{Currency, OriginTrait, ProcessMessageError},
 };
-use pallet_xcm::destination_fees::{DestinationFeesManager, DestinationFeesSetup};
 use parachains_common::Balance;
 use parachains_runtimes_test_utils::{
 	mock_open_hrmp_channel, AccountIdOf, BalanceOf, CollatorSessionKeys, ExtBuilder, RuntimeHelper,
@@ -139,27 +138,6 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 				id: Concrete(native_asset),
 			};
 
-			// check other accounts
-			let destination_fees_setup =
-				<Runtime as pallet_xcm::Config>::DestinationFeesManager::decide_for(
-					&target_location_from_different_consensus,
-					&asset_to_transfer.id,
-				);
-			if let DestinationFeesSetup::ByUniversalLocation { local_account } =
-				destination_fees_setup
-			{
-				let local_account = LocationToAccountId::convert_location(&local_account)
-					.expect("Sovereign account for fee");
-				let _ = <pallet_balances::Pallet<Runtime>>::deposit_creating(
-					&local_account,
-					existential_deposit,
-				);
-				assert_eq!(
-					<pallet_balances::Pallet<Runtime>>::free_balance(&local_account),
-					existential_deposit
-				);
-			}
-
 			// destination is (some) account relative to the destination different consensus
 			let target_destination_account = MultiLocation {
 				parents: 0,
@@ -185,32 +163,11 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 			);
 
 			// check reserve account
-			if let DestinationFeesSetup::ByUniversalLocation { local_account } =
-				destination_fees_setup
-			{
-				// partial fees goes here
-				let local_account = LocationToAccountId::convert_location(&local_account)
-					.expect("Sovereign account for fee");
-				let local_account_balance =
-					<pallet_balances::Pallet<Runtime>>::free_balance(&local_account);
-				assert_ne!(
-					<pallet_balances::Pallet<Runtime>>::free_balance(&local_account),
-					existential_deposit
-				);
-				let additional_fee = local_account_balance - existential_deposit;
-
-				// check reserve account increased about all balance_to_transfer
-				assert_eq!(
-					<pallet_balances::Pallet<Runtime>>::free_balance(&reserve_account),
-					existential_deposit + balance_to_transfer.into() - additional_fee
-				);
-			} else {
-				// check reserve account increased about all balance_to_transfer
-				assert_eq!(
-					<pallet_balances::Pallet<Runtime>>::free_balance(&reserve_account),
-					existential_deposit + balance_to_transfer.into()
-				);
-			}
+			// check reserve account increased about all balance_to_transfer
+			assert_eq!(
+				<pallet_balances::Pallet<Runtime>>::free_balance(&reserve_account),
+				existential_deposit + balance_to_transfer.into()
+			);
 
 			// check events
 			// check pallet_xcm attempted

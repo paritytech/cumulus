@@ -214,7 +214,6 @@ impl pallet_xcm::Config for Runtime {
 	type MaxLockers = ConstU32<8>;
 	// FIXME: Replace with benchmarked weight info
 	type WeightInfo = pallet_xcm::TestWeightInfo;
-	type DestinationFeesManager = ();
 	#[cfg(feature = "runtime-benchmarks")]
 	type ReachableDest = ReachableDest;
 	type AdminOrigin = EnsureRoot<AccountId>;
