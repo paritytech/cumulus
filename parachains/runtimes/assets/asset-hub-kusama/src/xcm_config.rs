@@ -429,7 +429,7 @@ impl xcm_executor::Config for XcmConfig {
 	type UniversalAliases = bridging::UniversalAliases;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
 	type SafeCallFilter = SafeCallFilter;
-	type Aliasers = ();
+	type Aliasers = Nothing;
 }
 
 /// Converts a local signed origin into an XCM multilocation.
