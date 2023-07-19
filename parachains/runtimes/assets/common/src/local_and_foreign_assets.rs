@@ -52,7 +52,6 @@ where
 		asset_id: &Box<MultiLocation>,
 	) -> MultiAssetIdConversionResult<Box<MultiLocation>, MultiLocation> {
 		if Self::is_native(&asset_id) {
-			// Otherwise it will try and touch the asset to create an account.
 			return MultiAssetIdConversionResult::Native
 		}
 

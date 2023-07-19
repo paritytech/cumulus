@@ -1389,7 +1389,7 @@ pub mod migrations {
 		},
 	};
 	use parachains_common::impls::AccountIdOf;
-	use sp_runtime::traits::StaticLookup;
+	use sp_runtime::{traits::StaticLookup, Saturating};
 	use xcm::latest::prelude::*;
 
 	/// Temporary migration because of bug with native asset, it can be removed once applied on `AssetHubWestend`.
@@ -1414,15 +1414,16 @@ pub mod migrations {
 			let invalid_native_asset = MultiLocation { parents: 0, interior: Here };
 			let valid_native_asset = WestendLocation::get();
 
-			let mut reads = 1;
-			let mut writes = 0;
+			let mut reads: u64 = 1;
+			let mut writes: u64 = 0;
 
 			// migrate pools with invalid native asset
 			let pools = pallet_asset_conversion::Pools::<T>::iter().collect::<Vec<_>>();
+			reads.saturating_accrue(1);
 			for (old_pool_id, pool_info) in pools {
 				let old_pool_account =
 					pallet_asset_conversion::Pallet::<T>::get_pool_account(&old_pool_id);
-				reads += 1;
+				reads.saturating_accrue(1);
 				let pool_asset_id = pool_info.lp_token;
 				if old_pool_id.0.as_ref() != &invalid_native_asset {
 					// skip, if ok
@@ -1437,8 +1438,8 @@ pub mod migrations {
 				let new_pool_account =
 					pallet_asset_conversion::Pallet::<T>::get_pool_account(&new_pool_id);
 				frame_system::Pallet::<T>::inc_providers(&new_pool_account);
-				reads += 2;
-				writes += 1;
+				reads.saturating_accrue(2);
+				writes.saturating_accrue(1);
 
 				// move currency
 				let _ = T::Currency::transfer(
@@ -1447,7 +1448,8 @@ pub mod migrations {
 					T::Currency::balance(&old_pool_account),
 					Preservation::Expendable,
 				);
-				writes += 2;
+				reads.saturating_accrue(1);
+				writes.saturating_accrue(2);
 
 				// move LP token
 				let _ = T::PoolAssets::transfer(
@@ -1457,7 +1459,8 @@ pub mod migrations {
 					T::PoolAssets::balance(pool_asset_id.clone(), &old_pool_account),
 					Preservation::Expendable,
 				);
-				writes += 2;
+				reads.saturating_accrue(1);
+				writes.saturating_accrue(2);
 
 				// change owner ship of LP token
 				let _ = pallet_assets::Pallet::<Runtime, PoolAssetsInstance>::transfer_ownership(
@@ -1465,7 +1468,8 @@ pub mod migrations {
 					pool_asset_id.into(),
 					sp_runtime::AccountId32::from(new_pool_account.clone()).into(),
 				);
-				writes += 2;
+				reads.saturating_accrue(1);
+				writes.saturating_accrue(2);
 
 				// move LocalOrForeignAssets
 				let _ = T::Assets::transfer(
@@ -1475,11 +1479,12 @@ pub mod migrations {
 					T::Assets::balance(old_pool_id.1.as_ref().clone(), &old_pool_account),
 					Preservation::Expendable,
 				);
-				writes += 2;
+				reads.saturating_accrue(1);
+				writes.saturating_accrue(2);
 
 				// dec providers for old account
 				let _ = frame_system::Pallet::<T>::dec_providers(&old_pool_account);
-				writes += 1;
+				writes.saturating_accrue(1);
 			}
 
 			T::DbWeight::get().reads_writes(reads, writes)
