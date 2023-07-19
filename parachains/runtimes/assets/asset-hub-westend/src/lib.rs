@@ -1382,7 +1382,6 @@ pub mod migrations {
 	use frame_support::{
 		pallet_prelude::Get,
 		traits::{
-			fungible::{Inspect as InspectFungible, Mutate as MutateFungible},
 			fungibles::{Inspect, Mutate},
 			tokens::Preservation,
 			OnRuntimeUpgrade, OriginTrait,
@@ -1442,13 +1441,12 @@ pub mod migrations {
 				writes.saturating_accrue(1);
 
 				// move currency
-				let _ = T::Currency::transfer(
-					&old_pool_account,
-					&new_pool_account,
-					T::Currency::balance(&old_pool_account),
-					Preservation::Expendable,
+				let _ = Balances::transfer_all(
+					RuntimeOrigin::signed(sp_runtime::AccountId32::from(old_pool_account.clone())),
+					sp_runtime::AccountId32::from(new_pool_account.clone()).into(),
+					false,
 				);
-				reads.saturating_accrue(1);
+				reads.saturating_accrue(2);
 				writes.saturating_accrue(2);
 
 				// move LP token
