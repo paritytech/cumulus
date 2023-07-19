@@ -179,7 +179,7 @@ where
 	and will be removed in the future"]
 pub mod old_consensus {
 	#[allow(deprecated)]
-	pub use cumulus_client_collator::{start_collator, StartCollatorParams};
+	pub use cumulus_client_collator::{start_collator, start_collator_sync, StartCollatorParams};
 }
 
 /// Prepare the parachain's node configuration

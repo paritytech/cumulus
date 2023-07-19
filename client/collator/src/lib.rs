@@ -248,6 +248,22 @@ pub struct StartCollatorParams<Block: BlockT, RA, BS, Spawner> {
 /// Start the collator.
 #[deprecated = "Collators should run consensus futures which handle this logic internally"]
 pub async fn start_collator<Block, RA, BS, Spawner>(
+	params: StartCollatorParams<Block, RA, BS, Spawner>,
+) where
+	Block: BlockT,
+	BS: BlockBackend<Block> + Send + Sync + 'static,
+	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
+	RA: ProvideRuntimeApi<Block> + Send + Sync + 'static,
+	RA::Api: CollectCollationInfo<Block>,
+{
+	// This never needed to be asynchronous, but shouldn't be changed due to backcompat.
+	#[allow(deprecated)]
+	start_collator_sync(params);
+}
+
+/// Start the collator in a synchronous function.
+#[deprecated = "Collators should run consensus futures which handle this logic internally"]
+pub fn start_collator_sync<Block, RA, BS, Spawner>(
 	StartCollatorParams {
 		para_id,
 		block_status,
@@ -270,9 +286,8 @@ pub async fn start_collator<Block, RA, BS, Spawner>(
 
 	let collator = Collator::new(collator_service, parachain_consensus);
 
-	let mut request_stream = relay_chain_driven::init(key, para_id, overseer_handle).await;
-
 	let collation_future = Box::pin(async move {
+		let mut request_stream = relay_chain_driven::init(key, para_id, overseer_handle).await;
 		while let Some(request) = request_stream.next().await {
 			let collation = collator
 				.clone()
