@@ -5298,6 +5298,7 @@ dependencies = [
  "bridge-runtime-common",
  "collectives-polkadot-runtime",
  "cumulus-primitives-core",
+ "dyn-clone",
  "frame-support",
  "frame-system",
  "kusama-runtime",
