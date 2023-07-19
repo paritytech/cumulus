@@ -71,7 +71,7 @@ pub(crate) struct CacheProvider<H: Hasher> {
 }
 
 impl<H: Hasher> CacheProvider<H> {
-	/// Constructs a new instance of CacheProvider with an uninitialized state
+	/// Constructs a new instance of [`CacheProvider`] with an uninitialized state
 	/// and empty node and value caches.
 	pub fn new() -> Self {
 		CacheProvider { node_cache: Default::default(), value_cache: Default::default() }
