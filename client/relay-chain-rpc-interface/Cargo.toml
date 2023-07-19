@@ -27,13 +27,13 @@ tokio-util = { version = "0.7.8", features = ["compat"] }
 
 futures = "0.3.28"
 futures-timer = "3.0.2"
-parity-scale-codec = "3.6.2"
+parity-scale-codec = "3.6.3"
 jsonrpsee = { version = "0.16.2", features = ["ws-client"] }
 tracing = "0.1.37"
-async-trait = "0.1.68"
+async-trait = "0.1.71"
 url = "2.4.0"
-serde_json = "1.0.99"
-serde = "1.0.164"
+serde_json = "1.0.103"
+serde = "1.0.171"
 lru = "0.9.0"
 smoldot = { git = "https://github.com/smol-dot/smoldot", rev = "10ca49209f475076a4c6190631699618e7380935" , default_features = false, features = ["std"]}
 smoldot-light = { git = "https://github.com/smol-dot/smoldot",  rev = "10ca49209f475076a4c6190631699618e7380935", default_features = false, features = ["std"] }
