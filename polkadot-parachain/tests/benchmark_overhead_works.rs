@@ -4,8 +4,15 @@ use assert_cmd::cargo::cargo_bin;
 use tempfile::tempdir;
 
 /// The runtimes that this command supports.
-static RUNTIMES: [&str; 4] =
-	["asset-hub-westend", "asset-hub-kusama", "asset-hub-polkadot", "collectives-polkadot"];
+static RUNTIMES: [&str; 7] = [
+	"asset-hub-westend",
+	"asset-hub-kusama",
+	"asset-hub-polkadot",
+	"collectives-polkadot",
+	"bridge-hub-polkadot",
+	"bridge-hub-kusama",
+	"bridge-hub-rococo",
+];
 
 /// The `benchmark overhead` command works for the dev runtimes.
 #[test]

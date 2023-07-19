@@ -10066,6 +10066,7 @@ dependencies = [
  "nix 0.26.2",
  "pallet-asset-conversion-tx-payment",
  "pallet-asset-tx-payment",
+ "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
  "parachains-common",
  "parity-scale-codec",
