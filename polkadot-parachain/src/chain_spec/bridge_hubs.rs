@@ -18,7 +18,6 @@ use crate::chain_spec::{get_account_id_from_seed, get_collator_keys_from_seed};
 use cumulus_primitives_core::ParaId;
 use parachains_common::Balance as BridgeHubBalance;
 use sc_chain_spec::ChainSpec;
-use sc_cli::RuntimeVersion;
 use sp_core::sr25519;
 use std::{path::PathBuf, str::FromStr};
 
@@ -169,26 +168,6 @@ impl BridgeHubRuntimeType {
 			))),
 		}
 	}
-
-	pub fn runtime_version(&self) -> &'static RuntimeVersion {
-		match self {
-			BridgeHubRuntimeType::Polkadot |
-			BridgeHubRuntimeType::PolkadotLocal |
-			BridgeHubRuntimeType::PolkadotDevelopment => &bridge_hub_polkadot_runtime::VERSION,
-			BridgeHubRuntimeType::Kusama |
-			BridgeHubRuntimeType::KusamaLocal |
-			BridgeHubRuntimeType::KusamaDevelopment => &bridge_hub_kusama_runtime::VERSION,
-			BridgeHubRuntimeType::Westend => &bridge_hub_kusama_runtime::VERSION,
-			BridgeHubRuntimeType::Rococo |
-			BridgeHubRuntimeType::RococoLocal |
-			BridgeHubRuntimeType::RococoDevelopment |
-			BridgeHubRuntimeType::Wococo |
-			BridgeHubRuntimeType::WococoLocal => {
-				// this is intentional, for Rococo/Wococo we just want to have one runtime, which is configured for both sides
-				&bridge_hub_rococo_runtime::VERSION
-			},
-		}
-	}
 }
 
 /// Check if 'id' satisfy BridgeHub-like format
@@ -299,11 +278,15 @@ pub mod rococo {
 				code: bridge_hub_rococo_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
 					.to_vec(),
+				..Default::default()
 			},
 			balances: bridge_hub_rococo_runtime::BalancesConfig {
 				balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 			},
-			parachain_info: bridge_hub_rococo_runtime::ParachainInfoConfig { parachain_id: id },
+			parachain_info: bridge_hub_rococo_runtime::ParachainInfoConfig {
+				parachain_id: id,
+				..Default::default()
+			},
 			collator_selection: bridge_hub_rococo_runtime::CollatorSelectionConfig {
 				invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 				candidacy_bond: BRIDGE_HUB_ROCOCO_ED * 16,
@@ -326,6 +309,7 @@ pub mod rococo {
 			parachain_system: Default::default(),
 			polkadot_xcm: bridge_hub_rococo_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
+				..Default::default()
 			},
 			bridge_wococo_grandpa: bridge_hub_rococo_runtime::BridgeWococoGrandpaConfig {
 				owner: bridges_pallet_owner.clone(),
@@ -470,6 +454,7 @@ pub mod kusama {
 				code: bridge_hub_kusama_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
 					.to_vec(),
+				..Default::default()
 			},
 			balances: bridge_hub_kusama_runtime::BalancesConfig {
 				balances: endowed_accounts
@@ -478,7 +463,10 @@ pub mod kusama {
 					.map(|k| (k, BRIDGE_HUB_KUSAMA_ED * 524_288))
 					.collect(),
 			},
-			parachain_info: bridge_hub_kusama_runtime::ParachainInfoConfig { parachain_id: id },
+			parachain_info: bridge_hub_kusama_runtime::ParachainInfoConfig {
+				parachain_id: id,
+				..Default::default()
+			},
 			collator_selection: bridge_hub_kusama_runtime::CollatorSelectionConfig {
 				invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 				candidacy_bond: BRIDGE_HUB_KUSAMA_ED * 16,
@@ -501,6 +489,7 @@ pub mod kusama {
 			parachain_system: Default::default(),
 			polkadot_xcm: bridge_hub_kusama_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
+				..Default::default()
 			},
 			bridge_polkadot_grandpa: bridge_hub_kusama_runtime::BridgePolkadotGrandpaConfig {
 				owner: bridges_pallet_owner.clone(),
@@ -615,6 +604,7 @@ pub mod polkadot {
 				code: bridge_hub_polkadot_runtime::WASM_BINARY
 					.expect("WASM binary was not build, please build it!")
 					.to_vec(),
+				..Default::default()
 			},
 			balances: bridge_hub_polkadot_runtime::BalancesConfig {
 				balances: endowed_accounts
@@ -623,7 +613,10 @@ pub mod polkadot {
 					.map(|k| (k, BRIDGE_HUB_POLKADOT_ED * 4096))
 					.collect(),
 			},
-			parachain_info: bridge_hub_polkadot_runtime::ParachainInfoConfig { parachain_id: id },
+			parachain_info: bridge_hub_polkadot_runtime::ParachainInfoConfig {
+				parachain_id: id,
+				..Default::default()
+			},
 			collator_selection: bridge_hub_polkadot_runtime::CollatorSelectionConfig {
 				invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 				candidacy_bond: BRIDGE_HUB_POLKADOT_ED * 16,
@@ -646,6 +639,7 @@ pub mod polkadot {
 			parachain_system: Default::default(),
 			polkadot_xcm: bridge_hub_polkadot_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
+				..Default::default()
 			},
 			bridge_kusama_grandpa: bridge_hub_polkadot_runtime::BridgeKusamaGrandpaConfig {
 				owner: bridges_pallet_owner.clone(),

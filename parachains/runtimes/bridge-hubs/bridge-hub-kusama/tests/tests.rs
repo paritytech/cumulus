@@ -34,6 +34,7 @@ use parachains_common::{AccountId, AuraId, Balance};
 use sp_keyring::AccountKeyring::Alice;
 use sp_runtime::{
 	generic::{Era, SignedPayload},
+	traits::Block as BlockT,
 	AccountId32,
 };
 use xcm::latest::prelude::*;
@@ -82,7 +83,7 @@ fn construct_and_apply_extrinsic(
 	r.unwrap()
 }
 
-fn executive_init_block(header: &<Runtime as frame_system::Config>::Header) {
+fn executive_init_block(header: &<<Runtime as frame_system::Config>::Block as BlockT>::Header) {
 	Executive::initialize_block(header)
 }
 
