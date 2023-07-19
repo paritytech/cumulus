@@ -31,7 +31,9 @@ pub mod xcm_config;
 use crate::xcm_config::{TrustBackedAssetsPalletLocation, UniversalLocation};
 use assets_common::local_and_foreign_assets::{LocalAndForeignAssets, MultiLocationConverter};
 use codec::{Decode, Encode, MaxEncodedLen};
-use constants::{consensus::*, currency::*, fee::WeightToFee};
+#[cfg(feature = "parameterized-consensus-hook")]
+use constants::consensus::*;
+use constants::{currency::*, fee::WeightToFee};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
 	construct_runtime,
@@ -584,6 +586,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+	#[cfg(feature = "parameterized-consensus-hook")]
 	type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
 		Runtime,
 		RELAY_CHAIN_SLOT_DURATION,

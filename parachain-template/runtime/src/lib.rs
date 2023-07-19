@@ -225,11 +225,14 @@ const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
 
 /// Maximum number of blocks simultaneously accepted by the Runtime, not yet included
 /// into the relay chain.
+#[cfg(feature = "parameterized-consensus-hook")]
 const UNINCLUDED_SEGMENT_CAPACITY: u32 = 1;
 /// How many parachain blocks are processed by the relay chain per parent. Limits the
 /// number of blocks authored per slot.
+#[cfg(feature = "parameterized-consensus-hook")]
 const BLOCK_PROCESSING_VELOCITY: u32 = 1;
 /// Relay chain slot duration, in seconds.
+#[cfg(feature = "parameterized-consensus-hook")]
 const RELAY_CHAIN_SLOT_DURATION: u32 = 6;
 
 /// The version information used to identify this runtime when compiled natively.
@@ -388,6 +391,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+	#[cfg(feature = "parameterized-consensus-hook")]
 	type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
 		Runtime,
 		RELAY_CHAIN_SLOT_DURATION,

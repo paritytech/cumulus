@@ -28,7 +28,9 @@ pub mod constants;
 mod weights;
 pub mod xcm_config;
 
-use constants::{consensus::*, currency::*};
+#[cfg(feature = "parameterized-consensus-hook")]
+use constants::consensus::*;
+use constants::currency::*;
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -299,6 +301,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+	#[cfg(feature = "parameterized-consensus-hook")]
 	type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
 		Runtime,
 		RELAY_CHAIN_SLOT_DURATION,
