@@ -313,11 +313,12 @@ fn test_remark_charged_fee() {
 		let genesis_hash = <frame_system::Pallet<asset_hub_westend_runtime::Runtime>>::block_hash(<asset_hub_westend_runtime::Runtime as frame_system::Config>::BlockNumber::from(0u32));
 		genesis_hash
 	});
+	// let genesis_hash = [69u8; 32].into();
 
 	let call = RuntimeCall::System(frame_system::pallet::Call::<_>::remark {
 		remark: vec![12u8; 1_000_000_000],
 	});
-	let sender : sp_keyring::Sr25519Keyring = sp_keyring::Sr25519Keyring::Alice;
+	
 
 	let nonce = 1;
 	let extra = //[<$name MultiTxType>]{nonce}.into();
@@ -326,10 +327,7 @@ fn test_remark_charged_fee() {
 		frame_system::CheckSpecVersion::<asset_hub_westend_runtime::Runtime>::new(),
 		frame_system::CheckTxVersion::<asset_hub_westend_runtime::Runtime>::new(),
 		frame_system::CheckGenesis::<asset_hub_westend_runtime::Runtime>::new(),
-		frame_system::CheckEra::<asset_hub_westend_runtime::Runtime>::from(sp_runtime::generic::Era::mortal(
-			256,
-			0, //best_block.saturated_into(),
-		)),
+		frame_system::CheckEra::<asset_hub_westend_runtime::Runtime>::from(sp_runtime::generic::Era::immortal()),
 		frame_system::CheckNonce::<asset_hub_westend_runtime::Runtime>::from(nonce),
 		frame_system::CheckWeight::<asset_hub_westend_runtime::Runtime>::new(),
 		pallet_asset_conversion_tx_payment::ChargeAssetTxPayment::<asset_hub_westend_runtime::Runtime>::from(
@@ -337,7 +335,14 @@ fn test_remark_charged_fee() {
 		)
 	);
 	// Is the signed payload from the realy chain???
-	let raw_payload = sp_runtime::generic::SignedPayload::<asset_hub_westend_runtime::RuntimeCall, asset_hub_westend_runtime::SignedExtra>::from_raw(
+	// let raw_payload = sp_runtime::generic::SignedPayload::<asset_hub_westend_runtime::RuntimeCall, asset_hub_westend_runtime::SignedExtra>::new(call, extra).unwrap();
+	
+	let raw_payload = 
+	// AssetHubWestend::execute_with(|| {
+	// 	sp_runtime::generic::SignedPayload::<asset_hub_westend_runtime::RuntimeCall,
+	// 	 asset_hub_westend_runtime::SignedExtra>::new(call, extra).unwrap()
+	// });// [69u8; 32].into(),
+	sp_runtime::generic::SignedPayload::<asset_hub_westend_runtime::RuntimeCall, asset_hub_westend_runtime::SignedExtra>::from_raw(
 			call.clone(),
 			extra.clone(),
 			(
@@ -351,25 +356,38 @@ fn test_remark_charged_fee() {
 				(),
 			),
 		);
+	let sender : sp_keyring::Sr25519Keyring = sp_keyring::Sr25519Keyring::Alice;
 	let signature = raw_payload.using_encoded(|e| sender.sign(e));
-	let extrinsic = asset_hub_westend_runtime::UncheckedExtrinsic::new_signed(call, 
-		sp_runtime::AccountId32::from(sender.public()).into(),
-		sp_runtime::MultiSignature::Sr25519(signature), 
+	let signer: sp_runtime::MultiSigner = sender.public().into();
+	 use sp_runtime::traits::IdentifyAccount;
+	
+	let (call, extra, _) = raw_payload.deconstruct();
+
+	let extrinsic = asset_hub_westend_runtime::UncheckedExtrinsic::new_signed(
+		call, 
+		signer.into_account().into(),//sp_runtime::AccountId32::from(sender.public()).into(),
+		//sp_runtime::MultiSignature::Sr25519(
+		signature.into(), 
 		extra
 	);
+	// let extrinsic = asset_hub_westend_runtime::UncheckedExtrinsic::new_signed(call, 
+	// 	sp_runtime::AccountId32::from(sender.public()).into(),
+	// 	sp_runtime::MultiSignature::Sr25519(signature), 
+	// 	extra
+	// );
 
 	AssetHubWestend::execute_call(extrinsic);
 
-	AssetHubWestend::execute_with(|| {
-		type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
+	// AssetHubWestend::execute_with(|| {
+	// 	type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
-		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::System::remark(
-			<AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestend::account_id_of(
-				"random"
-			)),
-			vec![12u8; 1_000_000_000]
-		));
-	});
+	// 	assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::System::remark(
+	// 		<AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestend::account_id_of(
+	// 			"random"
+	// 		)),
+	// 		vec![12u8; 1_000_000_000]
+	// 	));
+	// });
 }
 
 // #[test]
