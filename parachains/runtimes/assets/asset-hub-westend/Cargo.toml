@@ -53,7 +53,7 @@ primitive-types = { version = "0.12.1", default-features = false, features = ["c
 
 # Polkadot
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", default-features = false, optional = true , branch = "master" }
+pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false, optional = true }
 polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
