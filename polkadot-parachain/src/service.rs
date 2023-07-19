@@ -17,7 +17,9 @@
 use codec::Codec;
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_collator::service::CollatorService;
-use cumulus_client_consensus_aura::collators::basic::{self as basic_aura, Params as BasicAuraParams};
+use cumulus_client_consensus_aura::collators::basic::{
+	self as basic_aura, Params as BasicAuraParams,
+};
 use cumulus_client_consensus_common::{
 	ParachainBlockImport as TParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
@@ -826,10 +828,17 @@ pub async fn start_rococo_parachain_node(
 				authoring_duration: Duration::from_millis(500),
 			};
 
-			let fut =
-				basic_aura::run::<Block, sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _, _>(
-					params,
-				);
+			let fut = basic_aura::run::<
+				Block,
+				sp_consensus_aura::sr25519::AuthorityPair,
+				_,
+				_,
+				_,
+				_,
+				_,
+				_,
+				_,
+			>(params);
 			task_manager.spawn_essential_handle().spawn("aura", None, fut);
 
 			Ok(())
@@ -1224,9 +1233,7 @@ where
 			};
 
 			let fut =
-				basic_aura::run::<Block, <AuraId as AppCrypto>::Pair, _, _, _, _, _, _, _>(
-					params,
-				);
+				basic_aura::run::<Block, <AuraId as AppCrypto>::Pair, _, _, _, _, _, _, _>(params);
 			task_manager.spawn_essential_handle().spawn("aura", None, fut);
 
 			Ok(())
@@ -1539,10 +1546,17 @@ pub async fn start_contracts_rococo_node(
 				authoring_duration: Duration::from_millis(500),
 			};
 
-			let fut =
-				basic_aura::run::<Block, sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _, _>(
-					params,
-				);
+			let fut = basic_aura::run::<
+				Block,
+				sp_consensus_aura::sr25519::AuthorityPair,
+				_,
+				_,
+				_,
+				_,
+				_,
+				_,
+				_,
+			>(params);
 			task_manager.spawn_essential_handle().spawn("aura", None, fut);
 
 			Ok(())
