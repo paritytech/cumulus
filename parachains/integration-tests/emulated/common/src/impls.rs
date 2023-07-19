@@ -1,7 +1,6 @@
 use super::{
 	BridgeHubRococo, BridgeHubWococo,
 };
-use dyn_clone::{clone_trait_object, DynClone};
 use frame_support::{assert_ok, sp_runtime::AccountId32, traits::OriginTrait};
 use bp_messages::{
 	target_chain::{DispatchMessage, DispatchMessageData, MessageDispatch},
@@ -133,25 +132,19 @@ where
 }
 
 #[derive(Clone)]
-pub struct Account {
+pub struct TestAccount {
 	pub account_id: AccountId,
 	pub balance: Balance,
 }
 
 #[derive(Clone)]
-pub struct TestAssertions<S, R>(fn(Test<S, R>))
+pub struct TestAssertions<T, S, R>(fn(Test<S, R, T>))
 where
 	S: Chain + Clone,
 	R: Chain + Clone,
 	S::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
 	R::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
 ;
-
-
-
-pub trait DispatchableArgs: DynClone {}
-
-clone_trait_object!(DispatchableArgs);
 
 #[derive(Clone)]
 pub struct DispatchArgs {
@@ -161,49 +154,46 @@ pub struct DispatchArgs {
 	pub fee_asset_item: u32,
 	pub weight_limit: WeightLimit,
 }
-
-impl DispatchableArgs for DispatchArgs {}
-
-
-pub struct TestArgs {
+pub struct TestArgs<T> {
 	pub sender: AccountId,
 	pub receiver: AccountId,
-	pub args: DispatchArgs,
+	pub args: T,
 }
 
 #[derive(Clone)]
-pub struct Test<S: Chain, R: Chain>
+pub struct Test<S, R, T = DispatchArgs>
 where
 	S: Chain + Clone,
 	R: Chain + Clone,
 	S::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
 	R::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
 {
-	pub sender: Account,
-	pub receiver: Account,
+	pub sender: TestAccount,
+	pub receiver: TestAccount,
 	pub signed_origin: S::RuntimeOrigin,
 	pub root_origin: S::RuntimeOrigin,
-	pub assertions_origin: Option<TestAssertions<S, R>>,
-	pub assertions_dest: Option<TestAssertions<S, R>>,
+	pub assertions_origin: Option<TestAssertions<T, S, R>>,
+	pub assertions_dest: Option<TestAssertions<T, S, R>>,
 	// pub assertion: Box<dyn Fn(Self)>,
-	pub args: DispatchArgs,
+	pub args: T,
 	_marker: PhantomData<R>,
 }
 
-impl<S, R> Test<S, R>
+impl<S, R, T> Test<S, R, T>
 where
+	T: Clone,
 	S: Chain + Clone,
 	R: Chain + Clone,
 	S::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
 	R::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
 {
-	pub fn new(test_args: TestArgs) -> Self {
+	pub fn new(test_args: TestArgs<T>) -> Self {
 		Test {
-			sender: Account {
+			sender: TestAccount {
 				account_id: test_args.sender.clone(),
 				balance: S::account_data_of(test_args.sender.clone()).free,
 			},
-			receiver: Account {
+			receiver: TestAccount {
 				account_id: test_args.receiver.clone(),
 				balance: R::account_data_of(test_args.receiver.clone()).free,
 			},

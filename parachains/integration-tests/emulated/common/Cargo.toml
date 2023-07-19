@@ -8,7 +8,6 @@ description = "Common resources for integration testing with xcm-emulator"
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false }
 lazy_static = "1.4.0"
-dyn-clone = "1.0.11"
 
 # Substrate
 grandpa = { package = "sc-consensus-grandpa", git = "https://github.com/paritytech/substrate", branch = "master" }
