@@ -19,7 +19,6 @@ use bp_header_chain::{justification::GrandpaJustification, ChainWithGrandpa};
 use bp_runtime::BlockNumberOf;
 use codec::Encode;
 use frame_support::{dispatch::CallableCallFor, traits::IsSubType, weights::Weight, RuntimeDebug};
-use frame_system::pallet_prelude::HeaderFor;
 use sp_runtime::{
 	traits::{Header, Zero},
 	transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction},
