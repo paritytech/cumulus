@@ -38,8 +38,8 @@ pub struct TestBridgingConfig {
 	pub bridged_target_location: MultiLocation,
 }
 
-/// Test-case makes sure that `Runtime` can initiate transfer of assets via bridge - `TransferKind::ReserveBased`
-pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
+/// Test-case makes sure that `Runtime` can initiate **reserve transfer assets** over bridge.
+pub fn limited_reserve_transfer_assets_for_native_asset_works<
 	Runtime,
 	XcmConfig,
 	HrmpChannelOpener,
@@ -54,6 +54,7 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 		dyn Fn(Vec<u8>) -> Option<cumulus_pallet_xcmp_queue::Event<Runtime>>,
 	>,
 	ensure_configuration: fn() -> TestBridgingConfig,
+	weight_limit: WeightLimit,
 ) where
 	Runtime: frame_system::Config
 		+ pallet_balances::Config
@@ -148,12 +149,13 @@ pub fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works<
 			};
 
 			// do pallet_xcm call reserve transfer
-			assert_ok!(<pallet_xcm::Pallet<Runtime>>::reserve_transfer_assets(
+			assert_ok!(<pallet_xcm::Pallet<Runtime>>::limited_reserve_transfer_assets(
 				RuntimeHelper::<Runtime>::origin_of(alice_account.clone()),
 				Box::new(target_location_from_different_consensus.clone().into_versioned()),
 				Box::new(target_destination_account.clone().into_versioned()),
 				Box::new(VersionedMultiAssets::from(MultiAssets::from(asset_to_transfer))),
 				0,
+				weight_limit,
 			));
 
 			// check alice account decreased about all balance_to_transfer

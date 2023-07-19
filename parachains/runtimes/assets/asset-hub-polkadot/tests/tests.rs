@@ -832,8 +832,8 @@ fn receive_reserve_asset_deposited_from_different_consensus_works() {
 }
 
 #[test]
-fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works() {
-	asset_test_utils::test_cases_over_bridge::transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works::<
+fn limited_reserve_transfer_assets_for_native_asset_over_bridge_works() {
+	asset_test_utils::test_cases_over_bridge::limited_reserve_transfer_assets_for_native_asset_works::<
 		Runtime,
 		XcmConfig,
 		ParachainSystem,
@@ -855,6 +855,7 @@ fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works() {
 				_ => None,
 			}
 		}),
-		bridging_to_asset_hub_kusama
+		bridging_to_asset_hub_kusama,
+		WeightLimit::Unlimited
 	)
 }

@@ -639,8 +639,8 @@ fn bridging_to_asset_hub_polkadot() -> asset_test_utils::test_cases_over_bridge:
 }
 
 #[test]
-fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works() {
-	asset_test_utils::test_cases_over_bridge::transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works::<
+fn limited_reserve_transfer_assets_for_native_asset_over_bridge_works() {
+	asset_test_utils::test_cases_over_bridge::limited_reserve_transfer_assets_for_native_asset_works::<
 		Runtime,
 		XcmConfig,
 		ParachainSystem,
@@ -662,7 +662,8 @@ fn transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works() {
 				_ => None,
 			}
 		}),
-		bridging_to_asset_hub_polkadot
+		bridging_to_asset_hub_polkadot,
+		WeightLimit::Unlimited
 	)
 }
 
