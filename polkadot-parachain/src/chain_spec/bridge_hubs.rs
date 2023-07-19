@@ -336,12 +336,14 @@ pub mod rococo {
 				..Default::default()
 			},
 			bridge_wococo_messages: bridge_hub_rococo_runtime::BridgeWococoMessagesConfig {
-				owner: bridges_pallet_owner,
+				owner: bridges_pallet_owner.clone(),
 				..Default::default()
 			},
 			// Ethereum Bridge
 			ethereum_inbound_queue: bridge_hub_rococo_runtime::EthereumInboundQueueConfig {
 				allowlist: Default::default(),
+				owner: bridges_pallet_owner,
+				..Default::default()
 			},
 		}
 	}

@@ -1067,7 +1067,7 @@ version = "0.1.0"
 dependencies = [
  "bp-messages",
  "bp-polkadot-core",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "frame-support",
  "frame-system",
  "polkadot-primitives",
@@ -1081,7 +1081,7 @@ version = "0.1.0"
 dependencies = [
  "bp-bridge-hub-cumulus",
  "bp-messages",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "frame-support",
  "sp-api",
  "sp-std",
@@ -1093,7 +1093,7 @@ version = "0.1.0"
 dependencies = [
  "bp-bridge-hub-cumulus",
  "bp-messages",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "frame-support",
  "sp-api",
  "sp-std",
@@ -1103,7 +1103,7 @@ dependencies = [
 name = "bp-header-chain"
 version = "0.1.0"
 dependencies = [
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "bp-test-utils",
  "finality-grandpa",
  "frame-support",
@@ -1123,7 +1123,7 @@ name = "bp-messages"
 version = "0.1.0"
 dependencies = [
  "bp-header-chain",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "frame-support",
  "hex",
  "hex-literal 0.4.1",
@@ -1140,7 +1140,7 @@ version = "0.1.0"
 dependencies = [
  "bp-header-chain",
  "bp-polkadot-core",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "frame-support",
  "impl-trait-for-tuples",
  "parity-scale-codec",
@@ -1155,7 +1155,7 @@ name = "bp-polkadot-core"
 version = "0.1.0"
 dependencies = [
  "bp-messages",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "frame-support",
  "frame-system",
  "hex",
@@ -1173,7 +1173,7 @@ name = "bp-relayers"
 version = "0.1.0"
 dependencies = [
  "bp-messages",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "frame-support",
  "hex",
  "hex-literal 0.4.1",
@@ -1189,7 +1189,7 @@ version = "0.1.0"
 dependencies = [
  "bp-header-chain",
  "bp-polkadot-core",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "frame-support",
  "sp-api",
 ]
@@ -1217,13 +1217,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "bp-runtime"
+version = "0.1.0"
+source = "git+https://github.com/Snowfork/cumulus.git?branch=snowbridge#1a8a815c224fa51a5df00a92eb28235b42defda6"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "hash-db",
+ "impl-trait-for-tuples",
+ "num-traits",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-trie",
+ "trie-db",
+]
+
+[[package]]
 name = "bp-test-utils"
 version = "0.1.0"
 dependencies = [
  "bp-header-chain",
  "bp-parachains",
  "bp-polkadot-core",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "ed25519-dalek",
  "finality-grandpa",
  "parity-scale-codec",
@@ -1242,7 +1264,7 @@ dependencies = [
  "bp-header-chain",
  "bp-polkadot-core",
  "bp-rococo",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "frame-support",
  "sp-api",
 ]
@@ -1384,7 +1406,7 @@ dependencies = [
  "bp-polkadot-core",
  "bp-relayers",
  "bp-rococo",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "bp-wococo",
  "bridge-hub-test-utils",
  "bridge-runtime-common",
@@ -1474,7 +1496,7 @@ dependencies = [
  "bp-parachains",
  "bp-polkadot-core",
  "bp-relayers",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "bp-test-utils",
  "bridge-runtime-common",
  "cumulus-pallet-dmp-queue",
@@ -1516,7 +1538,7 @@ dependencies = [
  "bp-parachains",
  "bp-polkadot-core",
  "bp-relayers",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "bp-test-utils",
  "frame-support",
  "frame-system",
@@ -7365,7 +7387,7 @@ name = "pallet-bridge-grandpa"
 version = "0.1.0"
 dependencies = [
  "bp-header-chain",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "bp-test-utils",
  "finality-grandpa",
  "frame-benchmarking",
@@ -7387,7 +7409,7 @@ name = "pallet-bridge-messages"
 version = "0.1.0"
 dependencies = [
  "bp-messages",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "bp-test-utils",
  "frame-benchmarking",
  "frame-support",
@@ -7410,7 +7432,7 @@ dependencies = [
  "bp-header-chain",
  "bp-parachains",
  "bp-polkadot-core",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "bp-test-utils",
  "frame-benchmarking",
  "frame-support",
@@ -7432,7 +7454,7 @@ version = "0.1.0"
 dependencies = [
  "bp-messages",
  "bp-relayers",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -13373,6 +13395,7 @@ dependencies = [
 name = "snowbridge-ethereum-beacon-client"
 version = "0.0.1"
 dependencies = [
+ "bp-runtime 0.1.0 (git+https://github.com/Snowfork/cumulus.git?branch=snowbridge)",
  "byte-slice-cast",
  "frame-benchmarking",
  "frame-support",
@@ -13397,6 +13420,7 @@ dependencies = [
 name = "snowbridge-inbound-queue"
 version = "0.1.1"
 dependencies = [
+ "bp-runtime 0.1.0 (git+https://github.com/Snowfork/cumulus.git?branch=snowbridge)",
  "ethabi-decode",
  "frame-benchmarking",
  "frame-support",
@@ -13422,6 +13446,7 @@ dependencies = [
 name = "snowbridge-outbound-queue"
 version = "0.1.1"
 dependencies = [
+ "bp-runtime 0.1.0 (git+https://github.com/Snowfork/cumulus.git?branch=snowbridge)",
  "ethabi-decode",
  "frame-benchmarking",
  "frame-support",

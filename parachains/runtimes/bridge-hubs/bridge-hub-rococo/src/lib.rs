@@ -732,8 +732,8 @@ construct_runtime!(
 		BridgeRelayers: pallet_bridge_relayers::{Pallet, Call, Storage, Event<T>} = 47,
 
 		// Ethereum Bridge
-		EthereumInboundQueue: snowbridge_inbound_queue::{Pallet, Call, Config, Storage, Event<T>} = 48,
-		EthereumOutboundQueue: snowbridge_outbound_queue::{Pallet, Storage, Event<T>} = 49,
+		EthereumInboundQueue: snowbridge_inbound_queue::{Pallet, Call, Config<T>, Storage, Event<T>} = 48,
+		EthereumOutboundQueue: snowbridge_outbound_queue::{Pallet, Call, Storage, Event<T>} = 49,
 		EthereumBeaconClient: snowbridge_ethereum_beacon_client::{Pallet, Call, Storage, Event<T>} = 50,
 		EthereumControl: snowbridge_control::{Pallet, Call, Storage, Event<T>} = 51,
 
