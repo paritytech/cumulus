@@ -27,7 +27,6 @@ use frame_support::{
 	traits::OriginTrait,
 	weights::Weight,
 };
-use parachains_common::AccountId;
 use polkadot_parachain::primitives::{HrmpChannelId, RelayChainBlockNumber, XcmpMessageFormat};
 use sp_consensus_aura::AURA_ENGINE_ID;
 use sp_core::Encode;
@@ -44,12 +43,38 @@ pub type AccountIdOf<Runtime> = <Runtime as frame_system::Config>::AccountId;
 pub type ValidatorIdOf<Runtime> = <Runtime as pallet_session::Config>::ValidatorId;
 pub type SessionKeysOf<Runtime> = <Runtime as pallet_session::Config>::Keys;
 
-pub struct CollatorSessionKeys<
+pub struct CollatorSessionKey<
 	Runtime: frame_system::Config + pallet_balances::Config + pallet_session::Config,
 > {
 	collator: AccountIdOf<Runtime>,
 	validator: ValidatorIdOf<Runtime>,
 	key: SessionKeysOf<Runtime>,
+}
+
+pub struct CollatorSessionKeys<
+	Runtime: frame_system::Config + pallet_balances::Config + pallet_session::Config,
+> {
+	items: Vec<CollatorSessionKey<Runtime>>,
+}
+
+impl<Runtime: frame_system::Config + pallet_balances::Config + pallet_session::Config>
+	CollatorSessionKey<Runtime>
+{
+	pub fn new(
+		collator: AccountIdOf<Runtime>,
+		validator: ValidatorIdOf<Runtime>,
+		key: SessionKeysOf<Runtime>,
+	) -> Self {
+		Self { collator, validator, key }
+	}
+}
+
+impl<Runtime: frame_system::Config + pallet_balances::Config + pallet_session::Config> Default
+	for CollatorSessionKeys<Runtime>
+{
+	fn default() -> Self {
+		Self { items: vec![] }
+	}
 }
 
 impl<Runtime: frame_system::Config + pallet_balances::Config + pallet_session::Config>
@@ -60,16 +85,25 @@ impl<Runtime: frame_system::Config + pallet_balances::Config + pallet_session::C
 		validator: ValidatorIdOf<Runtime>,
 		key: SessionKeysOf<Runtime>,
 	) -> Self {
-		Self { collator, validator, key }
+		Self { items: vec![CollatorSessionKey::new(collator, validator, key)] }
 	}
+
+	pub fn add(mut self, item: CollatorSessionKey<Runtime>) -> Self {
+		self.items.push(item);
+		self
+	}
+
 	pub fn collators(&self) -> Vec<AccountIdOf<Runtime>> {
-		vec![self.collator.clone()]
+		self.items.iter().map(|item| item.collator.clone()).collect::<Vec<_>>()
 	}
 
 	pub fn session_keys(
 		&self,
 	) -> Vec<(AccountIdOf<Runtime>, ValidatorIdOf<Runtime>, SessionKeysOf<Runtime>)> {
-		vec![(self.collator.clone(), self.validator.clone(), self.key.clone())]
+		self.items
+			.iter()
+			.map(|item| (item.collator.clone(), item.validator.clone(), item.key.clone()))
+			.collect::<Vec<_>>()
 	}
 }
 
@@ -215,7 +249,7 @@ where
 	AccountIdOf<Runtime>:
 		Into<<<Runtime as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId>,
 {
-	pub fn run_to_block(n: u32, author: Option<AccountId>) {
+	pub fn run_to_block(n: u32, author: Option<AccountIdOf<Runtime>>) {
 		while frame_system::Pallet::<Runtime>::block_number() < n.into() {
 			// Set the new block number and author
 			match author {
