@@ -127,13 +127,8 @@ mod benchmarks {
 		let mut sorted_new_invulnerables = new_invulnerables.clone();
 		sorted_new_invulnerables.sort();
 
-		#[block]
-		{
-			assert_ok!(
-				// call the function with the unsorted list
-				<CollatorSelection<T>>::set_invulnerables(origin, new_invulnerables.clone())
-			);
-		}
+		#[extrinsic_call]
+		_(origin as T::RuntimeOrigin, new_invulnerables.clone());
 
 		// assert that it comes out sorted
 		assert_last_event::<T>(
