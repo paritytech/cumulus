@@ -207,10 +207,18 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				RuntimeCall::BridgeWococoGrandpa(pallet_bridge_grandpa::Call::<
 					Runtime,
 					BridgeGrandpaWococoInstance,
-				>::initialize { .. }) |
-				RuntimeCall::EthereumBeaconClient(
-					snowbridge_ethereum_beacon_client::Call::force_checkpoint { .. },
-				)
+				>::initialize { .. })
+				| RuntimeCall::EthereumBeaconClient(
+					snowbridge_ethereum_beacon_client::Call::force_checkpoint { .. }
+						| snowbridge_ethereum_beacon_client::Call::set_owner { .. }
+						| snowbridge_ethereum_beacon_client::Call::set_operating_mode { .. },
+				) | RuntimeCall::EthereumInboundQueue(
+				snowbridge_inbound_queue::Call::set_owner { .. }
+					| snowbridge_inbound_queue::Call::set_operating_mode { .. },
+			) | RuntimeCall::EthereumOutboundQueue(
+				snowbridge_outbound_queue::Call::set_owner { .. }
+					| snowbridge_outbound_queue::Call::set_operating_mode { .. },
+			) | RuntimeCall::EthereumControl(snowbridge_control::Call::upgrade { .. },)
 		)
 	}
 }

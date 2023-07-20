@@ -69,7 +69,7 @@ use frame_system::{
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
-use xcm::v2::NetworkId::{self, Polkadot};
+use xcm::v3::NetworkId::{self, Rococo};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 use bp_parachains::SingleParaStoredHeaderDataBuilder;
@@ -670,7 +670,7 @@ impl snowbridge_ethereum_beacon_client::Config for Runtime {
 parameter_types! {
 	// TODO: placeholder value - choose a real one
 	pub const MaxUpgradeDataSize: u32 = 1024;
-	pub const RelayNetwork: NetworkId = Polkadot;
+	pub const RelayNetwork: NetworkId = Rococo;
 }
 
 pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, RelayNetwork>;
@@ -738,7 +738,7 @@ construct_runtime!(
 
 		// Ethereum Bridge
 		EthereumInboundQueue: snowbridge_inbound_queue::{Pallet, Call, Config, Storage, Event<T>} = 48,
-		EthereumOutboundQueue: snowbridge_outbound_queue::{Pallet, Storage, Event<T>} = 49,
+		EthereumOutboundQueue: snowbridge_outbound_queue::{Pallet, Call, Storage, Event<T>} = 49,
 		EthereumBeaconClient: snowbridge_ethereum_beacon_client::{Pallet, Call, Storage, Event<T>} = 50,
 		EthereumControl: snowbridge_control::{Pallet, Call, Storage, Event<T>} = 51,
 
