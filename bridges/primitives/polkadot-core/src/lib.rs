@@ -181,9 +181,6 @@ pub type BlockNumber = u32;
 /// Hash type used in Polkadot-like chains.
 pub type Hash = <BlakeTwo256 as HasherT>::Out;
 
-/// Account Index (a.k.a. nonce).
-pub type Index = u32;
-
 /// Hashing type.
 pub type Hashing = BlakeTwo256;
 
@@ -229,14 +226,12 @@ pub type Address = MultiAddress<AccountId, ()>;
 pub struct PolkadotLike;
 
 impl Chain for PolkadotLike {
-	type BlockNumber = BlockNumber;
 	type Hash = Hash;
 	type Hasher = Hasher;
-	type Header = Header;
-
+	type Block = Block;
 	type AccountId = AccountId;
 	type Balance = Balance;
-	type Index = Index;
+	type Nonce = Nonce;
 	type Signature = Signature;
 
 	fn max_extrinsic_size() -> u32 {
