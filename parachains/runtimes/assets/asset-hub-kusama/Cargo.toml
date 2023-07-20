@@ -64,7 +64,7 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", default-feature
 # Cumulus
 cumulus-pallet-aura-ext = { path = "../../../../pallets/aura-ext", default-features = false }
 cumulus-pallet-dmp-queue = { path = "../../../../pallets/dmp-queue", default-features = false }
-cumulus-pallet-parachain-system = { path = "../../../../pallets/parachain-system", default-features = false }
+cumulus-pallet-parachain-system = { path = "../../../../pallets/parachain-system", default-features = false, features = ["parameterized-consensus-hook",] }
 cumulus-pallet-session-benchmarking = {path = "../../../../pallets/session-benchmarking", default-features = false, version = "3.0.0"}
 cumulus-pallet-xcm = { path = "../../../../pallets/xcm", default-features = false }
 cumulus-pallet-xcmp-queue = { path = "../../../../pallets/xcmp-queue", default-features = false }
@@ -82,7 +82,9 @@ asset-test-utils = { path = "../test-utils"}
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
 [features]
-default = [ "std" ]
+default = [ 
+	"std",
+]
 # When enabled the `state_version` is set to `1`.
 # This means that the chain will start using the new state format. The migration is lazy, so
 # it requires to write a storage value to use the new state format. To migrate all the other

@@ -305,7 +305,7 @@ fn build_and_import_block_ext<I: BlockImport<Block>>(
 
 fn build_and_import_block(mut client: Arc<Client>, import_as_best: bool) -> Block {
 	build_and_import_block_ext(
-		&*client.clone(),
+		&client.clone(),
 		BlockOrigin::Own,
 		import_as_best,
 		&mut client,
@@ -458,7 +458,7 @@ fn follow_finalized_does_not_stop_on_unknown_block() {
 	let block = build_and_import_block(client.clone(), false);
 
 	let unknown_block = {
-		let sproof = sproof_with_parent_by_hash(&*client, block.hash());
+		let sproof = sproof_with_parent_by_hash(&client, block.hash());
 		let block_builder = client.init_block_builder_at(block.hash(), None, sproof);
 		block_builder.build().unwrap().block
 	};
@@ -508,7 +508,7 @@ fn follow_new_best_sets_best_after_it_is_imported() {
 	let block = build_and_import_block(client.clone(), false);
 
 	let unknown_block = {
-		let sproof = sproof_with_parent_by_hash(&*client, block.hash());
+		let sproof = sproof_with_parent_by_hash(&client, block.hash());
 		let block_builder = client.init_block_builder_at(block.hash(), None, sproof);
 		block_builder.build().unwrap().block
 	};
@@ -632,7 +632,7 @@ fn prune_blocks_on_level_overflow() {
 	);
 
 	let block0 = build_and_import_block_ext(
-		&*client,
+		&client,
 		BlockOrigin::NetworkInitialSync,
 		true,
 		&mut para_import,
@@ -644,7 +644,7 @@ fn prune_blocks_on_level_overflow() {
 	let blocks1 = (0..LEVEL_LIMIT)
 		.map(|i| {
 			build_and_import_block_ext(
-				&*client,
+				&client,
 				if i == 1 { BlockOrigin::NetworkInitialSync } else { BlockOrigin::Own },
 				i == 1,
 				&mut para_import,
@@ -658,7 +658,7 @@ fn prune_blocks_on_level_overflow() {
 	let blocks2 = (0..2)
 		.map(|i| {
 			build_and_import_block_ext(
-				&*client,
+				&client,
 				BlockOrigin::Own,
 				false,
 				&mut para_import,
@@ -686,7 +686,7 @@ fn prune_blocks_on_level_overflow() {
 	assert_eq!(best, blocks1[1].header.hash());
 
 	let block13 = build_and_import_block_ext(
-		&*client,
+		&client,
 		BlockOrigin::Own,
 		false,
 		&mut para_import,
@@ -705,7 +705,7 @@ fn prune_blocks_on_level_overflow() {
 	assert_eq!(leaves, expected);
 
 	let block14 = build_and_import_block_ext(
-		&*client,
+		&client,
 		BlockOrigin::Own,
 		false,
 		&mut para_import,
@@ -743,7 +743,7 @@ fn restore_limit_monitor() {
 	);
 
 	let block00 = build_and_import_block_ext(
-		&*client,
+		&client,
 		BlockOrigin::NetworkInitialSync,
 		true,
 		&mut para_import,
@@ -755,7 +755,7 @@ fn restore_limit_monitor() {
 	let blocks1 = (0..LEVEL_LIMIT + 1)
 		.map(|i| {
 			build_and_import_block_ext(
-				&*client,
+				&client,
 				if i == 1 { BlockOrigin::NetworkInitialSync } else { BlockOrigin::Own },
 				i == 1,
 				&mut para_import,
@@ -769,7 +769,7 @@ fn restore_limit_monitor() {
 	let _ = (0..LEVEL_LIMIT)
 		.map(|i| {
 			build_and_import_block_ext(
-				&*client,
+				&client,
 				BlockOrigin::Own,
 				false,
 				&mut para_import,
@@ -803,7 +803,7 @@ fn restore_limit_monitor() {
 	std::mem::drop(monitor);
 
 	let block13 = build_and_import_block_ext(
-		&*client,
+		&client,
 		BlockOrigin::Own,
 		false,
 		&mut para_import,

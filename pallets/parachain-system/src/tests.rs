@@ -29,7 +29,10 @@ use frame_support::{
 	traits::{OnFinalize, OnInitialize},
 	weights::Weight,
 };
-use frame_system::{pallet_prelude::{BlockNumberFor, HeaderFor}, RawOrigin};
+use frame_system::{
+	pallet_prelude::{BlockNumberFor, HeaderFor},
+	RawOrigin,
+};
 use hex_literal::hex;
 use relay_chain::HrmpChannelId;
 use sp_core::{blake2_256, H256};
@@ -238,8 +241,7 @@ struct BlockTests {
 	inherent_data_hook:
 		Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut ParachainInherentData)>>,
 	inclusion_delay: Option<usize>,
-	relay_block_number:
-		Option<Box<dyn Fn(&BlockNumberFor<Test>) -> RelayChainBlockNumber>>,
+	relay_block_number: Option<Box<dyn Fn(&BlockNumberFor<Test>) -> RelayChainBlockNumber>>,
 
 	included_para_head: Option<relay_chain::HeadData>,
 	pending_blocks: VecDeque<relay_chain::HeadData>,

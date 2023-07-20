@@ -73,7 +73,7 @@ use unincluded_segment::{
 	UsedBandwidth,
 };
 
-pub use consensus_hook::ConsensusHook;
+pub use consensus_hook::{ConsensusHook, ExpectParentIncluded};
 /// Register the `validate_block` function that is used by parachains to validate blocks on a
 /// validator.
 ///
@@ -212,6 +212,9 @@ pub mod pallet {
 		/// [`consensus_hook::ExpectParentIncluded`] here. This is only necessary in the case
 		/// that collators aren't expected to have node versions that supply the included block
 		/// in the relay-chain state proof.
+        ///
+        /// This config type is only available when the `parameterized-consensus-hook` crate feature is activated.
+		#[cfg(feature = "parameterized-consensus-hook")]
 		type ConsensusHook: ConsensusHook;
 	}
 
@@ -490,8 +493,10 @@ pub mod pallet {
 			.expect("Invalid relay chain state proof");
 
 			// Update the desired maximum capacity according to the consensus hook.
-			let (consensus_hook_weight, capacity) =
-				T::ConsensusHook::on_state_proof(&relay_state_proof);
+			#[cfg(feature = "parameterized-consensus-hook")]
+			let (consensus_hook_weight, capacity) = T::ConsensusHook::on_state_proof(&relay_state_proof);
+			#[cfg(not(feature = "parameterized-consensus-hook"))]
+			let (consensus_hook_weight, capacity) = ExpectParentIncluded::on_state_proof(&relay_state_proof);
 			total_weight += consensus_hook_weight;
 			total_weight += Self::maybe_drop_included_ancestors(&relay_state_proof, capacity);
 			// Deposit a log indicating the relay-parent storage root.
