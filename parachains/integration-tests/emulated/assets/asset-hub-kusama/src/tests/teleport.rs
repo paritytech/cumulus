@@ -87,19 +87,19 @@ fn para_dest_assertions(t: Test<Kusama, AssetHubKusama>) {
 			},
 			// Amount minus fees are deposited in Receiver's account
 			RuntimeEvent::Balances(pallet_balances::Event::Deposit { who, .. }) => {
-				// who: *who == AssetHubKusamaReceiver::get().into(),
 				who: *who == t.receiver.account_id,
 			},
 		]
 	);
 }
 
-fn para_origin_assertions(t: Test<AssetHubKusama, Kusama>) {
+fn para_origin_assertions(_t: Test<AssetHubKusama, Kusama>) {
 	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
 	assert_expected_events!(
 		AssetHubKusama,
 		vec![
+			// Dispatchable is properly executed and XCM message sent
 			RuntimeEvent::PolkadotXcm(
 				pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
 			) => {
@@ -118,20 +118,17 @@ fn relay_dest_assertions(t: Test<AssetHubKusama, Kusama>) {
 	assert_expected_events!(
 		Kusama,
 		vec![
+			// Amount minus fees are deposited in Receiver's account
 			RuntimeEvent::Balances(pallet_balances::Event::Deposit { who, .. }) => {
-				// who: *who == KusamaReceiver::get().into(),
 				who: *who == t.receiver.account_id,
 			},
 		]
 	);
 }
 
-// Limited Telport of native asset from Relay Chain to the System Parachain
-// and its way back to the Relay Chain SHOULD WORK
-
-// From Relay Chain To System Parachain
+/// Limited Telport of native asset from Relay Chain to the System Parachain
 #[test]
-fn limited_teleport_native_assets_from_relay_to_system_para() {
+fn limited_teleport_native_assets_from_relay_to_system_para_works() {
 	// Init values for Relay Chain
 	let amount_to_send: Balance = KUSAMA_ED * 1000;
 	let test_args = TestArgs {
@@ -170,11 +167,12 @@ fn limited_teleport_native_assets_from_relay_to_system_para() {
 	assert!(receiver_balance_after > receiver_balance_before);
 }
 
-// From System Parachain to Relay Chain
+/// Limited Telport of native asset from System Parachain to Relay Chain
+/// if there is enough balance in Relay Chain's `CheckAccount`
 #[test]
-fn limited_teleport_native_assets_back_from_relay_to_system_para() {
+fn limited_teleport_native_assets_back_from_relay_to_system_para_works() {
 	// Dependency - Relay Chain's `CheckAccount` should have enough balance
-	limited_teleport_native_assets_from_relay_to_system_para();
+	limited_teleport_native_assets_from_relay_to_system_para_works();
 
 	// Init values for Relay Chain
 	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
@@ -215,12 +213,9 @@ fn limited_teleport_native_assets_back_from_relay_to_system_para() {
 }
 
 
-// Telport of native asset from Relay Chain to the System Parachain
-// and its way back to the Relay Chain SHOULD WORK
-
-// From Relay Chain To System Parachain
+/// Telport of native asset from Relay Chain to the System Parachain
 #[test]
-fn teleport_native_assets_from_relay_to_system_para() {
+fn teleport_native_assets_from_relay_to_system_para_works() {
 	// Init values for Relay Chain
 	let amount_to_send: Balance = KUSAMA_ED * 1000;
 	let test_args = TestArgs {
@@ -258,11 +253,12 @@ fn teleport_native_assets_from_relay_to_system_para() {
 	assert!(receiver_balance_after > receiver_balance_before);
 }
 
-// From System Parachain to Relay Chain
+/// Telport of native asset from System Parachains to the Relay Chain
+/// if there is enough balance in Relay Chain's `CheckAccount`
 #[test]
-fn teleport_native_assets_back_from_relay_to_system_para() {
+fn teleport_native_assets_back_from_relay_to_system_para_works() {
 	// Dependency - Relay Chain's `CheckAccount` should have enough balance
-	teleport_native_assets_from_relay_to_system_para();
+	teleport_native_assets_from_relay_to_system_para_works();
 
 	// Init values for Relay Chain
 	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;

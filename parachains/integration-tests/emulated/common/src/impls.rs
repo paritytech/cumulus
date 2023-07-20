@@ -174,7 +174,6 @@ where
 	pub root_origin: S::RuntimeOrigin,
 	pub assertions_origin: Option<TestAssertions<T, S, R>>,
 	pub assertions_dest: Option<TestAssertions<T, S, R>>,
-	// pub assertion: Box<dyn Fn(Self)>,
 	pub args: T,
 	_marker: PhantomData<R>,
 }
@@ -201,7 +200,6 @@ where
 			root_origin: <S as Chain>::RuntimeOrigin::root(),
 			assertions_origin: None,
 			assertions_dest: None,
-			// assertion: Box::new(Default::default),
 			args: test_args.args,
 			_marker: Default::default(),
 		}
