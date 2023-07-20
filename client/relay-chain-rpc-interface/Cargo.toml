@@ -6,20 +6,20 @@ edition = "2021"
 
 
 [dependencies]
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0-cumulus" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-storage = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
+sp-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
+sp-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
+sp-storage = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
+sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
 
 tokio = { version = "1.29.1", features = ["sync"] }
 

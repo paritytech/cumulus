@@ -11,17 +11,17 @@ futures = "0.3.21"
 tracing = "0.1.25"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
 
 # Polkadot
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0" }
-polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0-cumulus" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0-cumulus" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0-cumulus" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0-cumulus" }
 
 # Cumulus
 cumulus-client-consensus-common = { path = "../consensus/common" }
@@ -32,12 +32,12 @@ cumulus-primitives-core = { path = "../../primitives/core" }
 async-trait = "0.1.42"
 
 # Substrate
-sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
 
 # Polkadot
-polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0" }
+polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0-cumulus" }
 
 # Cumulus
 cumulus-test-client = { path = "../../test/client" }
