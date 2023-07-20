@@ -35,7 +35,7 @@ xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rh-async-backing-feature" }
 
 # Cumulus
-cumulus-pallet-parachain-system = { path = "../../../../pallets/parachain-system", default-features = false }
+cumulus-pallet-parachain-system = { path = "../../../../pallets/parachain-system", default-features = false, features = ["parameterized-consensus-hook",] }
 cumulus-pallet-xcm = { path = "../../../../pallets/xcm", default-features = false }
 cumulus-primitives-core = { path = "../../../../primitives/core", default-features = false }
 parachain-info = { path = "../../../pallets/parachain-info", default-features = false }
@@ -47,7 +47,6 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 [features]
 default = [ 
 	"std",
-	"parameterized-consensus-hook",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
@@ -91,7 +90,4 @@ try-runtime = [
 	"frame-try-runtime/try-runtime",
 	"pallet-glutton/try-runtime",
 	"pallet-sudo/try-runtime",
-]
-parameterized-consensus-hook = [
-	"cumulus-pallet-parachain-system/parameterized-consensus-hook",
 ]
