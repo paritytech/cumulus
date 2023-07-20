@@ -81,7 +81,10 @@ asset-test-utils = { path = "../test-utils"}
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
 [features]
-default = [ "std" ]
+default = [ 
+	"std",
+	"parameterized-consensus-hook",
+]
 runtime-benchmarks = [
 	"hex-literal",
 	"frame-benchmarking/runtime-benchmarks",
@@ -186,4 +189,8 @@ std = [
 	"parachains-common/std",
 	"assets-common/std",
 	"substrate-wasm-builder",
+]
+
+parameterized-consensus-hook = [
+	"cumulus-pallet-parachain-system/parameterized-consensus-hook",
 ]

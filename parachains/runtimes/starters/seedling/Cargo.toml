@@ -36,7 +36,10 @@ cumulus-primitives-core = { path = "../../../../primitives/core", default-featur
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
 [features]
-default = [ "std" ]
+default = [ 
+	"std",
+	"parameterized-consensus-hook",
+]
 std = [
 	"codec/std",
 	"scale-info/std",
@@ -61,4 +64,8 @@ std = [
 	"parachain-info/std",
 	"parachains-common/std",
 	"substrate-wasm-builder",
+]
+
+parameterized-consensus-hook = [
+	"cumulus-pallet-parachain-system/parameterized-consensus-hook",
 ]

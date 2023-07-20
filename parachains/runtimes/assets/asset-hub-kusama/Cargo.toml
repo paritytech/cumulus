@@ -82,7 +82,10 @@ asset-test-utils = { path = "../test-utils"}
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
 [features]
-default = [ "std" ]
+default = [ 
+	"std",
+	"parameterized-consensus-hook",
+]
 # When enabled the `state_version` is set to `1`.
 # This means that the chain will start using the new state format. The migration is lazy, so
 # it requires to write a storage value to use the new state format. To migrate all the other
@@ -200,4 +203,8 @@ std = [
 	"parachains-common/std",
 	"assets-common/std",
 	"substrate-wasm-builder",
+]
+
+parameterized-consensus-hook = [
+	"cumulus-pallet-parachain-system/parameterized-consensus-hook",
 ]

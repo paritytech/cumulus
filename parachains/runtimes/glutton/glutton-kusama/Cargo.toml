@@ -45,7 +45,10 @@ parachains-common = { path = "../../../common", default-features = false }
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [features]
-default = [ "std" ]
+default = [ 
+	"std",
+	"parameterized-consensus-hook",
+]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
@@ -88,4 +91,7 @@ try-runtime = [
 	"frame-try-runtime/try-runtime",
 	"pallet-glutton/try-runtime",
 	"pallet-sudo/try-runtime",
+]
+parameterized-consensus-hook = [
+	"cumulus-pallet-parachain-system/parameterized-consensus-hook",
 ]

@@ -75,6 +75,7 @@ parachain-info = { path = "../../parachains/pallets/parachain-info", default-fea
 [features]
 default = [
 	"std",
+	"parameterized-consensus-hook",
 ]
 std = [
 	"codec/std",

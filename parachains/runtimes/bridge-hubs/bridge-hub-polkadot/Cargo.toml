@@ -76,6 +76,7 @@ bridge-hub-test-utils = { path = "../test-utils"}
 [features]
 default = [
 	"std",
+	"parameterized-consensus-hook",
 ]
 std = [
 	"codec/std",
@@ -167,4 +168,8 @@ try-runtime = [
 	"pallet-utility/try-runtime",
 	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",
+]
+
+parameterized-consensus-hook = [
+	"cumulus-pallet-parachain-system/parameterized-consensus-hook",
 ]

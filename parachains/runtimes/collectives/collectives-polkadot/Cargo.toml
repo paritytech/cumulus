@@ -81,7 +81,10 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 [features]
-default = [ "std" ]
+default = [ 
+	"std",
+	"parameterized-consensus-hook",
+]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
@@ -194,4 +197,8 @@ std = [
 	"substrate-wasm-builder",
 	"pallet-core-fellowship/std",
 	"pallet-salary/std",
+]
+
+parameterized-consensus-hook = [
+	"cumulus-pallet-parachain-system/parameterized-consensus-hook",
 ]

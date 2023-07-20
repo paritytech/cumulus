@@ -95,6 +95,7 @@ sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master
 [features]
 default = [
 	"std",
+	"parameterized-consensus-hook",
 ]
 std = [
 	"bp-bridge-hub-rococo/std",
@@ -210,4 +211,8 @@ try-runtime = [
 	"pallet-utility/try-runtime",
 	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",
+]
+
+parameterized-consensus-hook = [
+	"cumulus-pallet-parachain-system/parameterized-consensus-hook",
 ]

@@ -76,6 +76,7 @@ parachains-common = { path = "../../../common", default-features = false }
 [features]
 default = [
 	"std",
+	"parameterized-consensus-hook",
 ]
 std = [
 	"codec/std",
@@ -165,4 +166,8 @@ try-runtime = [
 	"pallet-asset-tx-payment/try-runtime",
 	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",
+]
+
+parameterized-consensus-hook = [
+	"cumulus-pallet-parachain-system/parameterized-consensus-hook",
 ]
