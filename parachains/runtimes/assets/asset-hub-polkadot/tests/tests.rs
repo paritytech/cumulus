@@ -27,12 +27,12 @@ pub use asset_hub_polkadot_runtime::{
 	ForeignAssetsInstance, MetadataDepositBase, MetadataDepositPerByte, ParachainSystem, Runtime,
 	RuntimeCall, RuntimeEvent, SessionKeys, System, TrustBackedAssetsInstance, XcmpQueue,
 };
-use asset_test_utils::{CollatorSessionKeys, ExtBuilder, RuntimeHelper, XcmReceivedFrom};
+use asset_test_utils::{CollatorSessionKey, CollatorSessionKeys, ExtBuilder, RuntimeHelper};
 use codec::{Decode, Encode};
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
-	assert_noop, assert_ok, sp_io,
-	traits::{fungibles::InspectEnumerable, Currency},
+	assert_noop, assert_ok,
+	traits::fungibles::InspectEnumerable,
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
 use parachains_common::{
@@ -40,10 +40,7 @@ use parachains_common::{
 };
 use sp_runtime::traits::MaybeEquivalence;
 use xcm::latest::prelude::*;
-use xcm_executor::{
-	traits::{ConvertLocation, Identity, JustTry, WeightTrader},
-	XcmExecutor,
-};
+use xcm_executor::traits::{Identity, JustTry, WeightTrader};
 
 const ALICE: [u8; 32] = [1u8; 32];
 const SOME_ASSET_ADMIN: [u8; 32] = [5u8; 32];
@@ -51,12 +48,16 @@ const SOME_ASSET_ADMIN: [u8; 32] = [5u8; 32];
 type AssetIdForTrustBackedAssetsConvert =
 	assets_common::AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>;
 
-fn collator_session_keys() -> CollatorSessionKeys<Runtime> {
-	CollatorSessionKeys::new(
-		AccountId::from(ALICE),
-		AccountId::from(ALICE),
-		SessionKeys { aura: AuraId::from(sp_core::ed25519::Public::from_raw(ALICE)) },
+fn collator_session_key(account: [u8; 32]) -> CollatorSessionKey<Runtime> {
+	CollatorSessionKey::new(
+		AccountId::from(account.clone()),
+		AccountId::from(account.clone()),
+		SessionKeys { aura: AuraId::from(sp_core::ed25519::Public::from_raw(account)) },
 	)
+}
+
+fn collator_session_keys() -> CollatorSessionKeys<Runtime> {
+	CollatorSessionKeys::default().add(collator_session_key(ALICE))
 }
 
 #[test]
@@ -651,7 +652,6 @@ asset_test_utils::include_create_and_manage_foreign_assets_for_local_consensus_p
 	})
 );
 
-#[allow(unused)]
 fn bridging_to_asset_hub_kusama() -> asset_test_utils::test_cases_over_bridge::TestBridgingConfig {
 	asset_test_utils::test_cases_over_bridge::TestBridgingConfig {
 		bridged_network: bridging::KusamaNetwork::get(),
@@ -659,176 +659,6 @@ fn bridging_to_asset_hub_kusama() -> asset_test_utils::test_cases_over_bridge::T
 		local_bridge_hub_location: bridging::BridgeHubPolkadot::get(),
 		bridged_target_location: bridging::AssetHubKusama::get(),
 	}
-}
-
-// TODO: uses actual XCM logged from asset-hub-kusama test `transfer_asset_via_bridge_initiate_reserve_based_for_native_asset_works`
-// 		 but only this is added manually (because we dont go through bridge-hub in test, bridge-hub adds these):
-// 			UniversalOrigin(GlobalConsensus(Kusama)),
-//			DescendOrigin(X1(Parachain(1000))),
-//
-// TODO: second hack is that, BuyExecution is changed manually, because of https://github.com/paritytech/polkadot/pull/7424
-//
-// TODO: refactor this test and move to `test_cases_over_bridge`
-#[test]
-fn receive_reserve_asset_deposited_from_different_consensus_works() {
-	let existential_deposit = ExistentialDeposit::get();
-
-	ExtBuilder::<Runtime>::default()
-		.with_collators(vec![AccountId::from(ALICE)])
-		.with_session_keys(vec![(
-			AccountId::from(ALICE),
-			AccountId::from(ALICE),
-			SessionKeys { aura: AuraId::from(sp_core::ed25519::Public::from_raw(ALICE)) },
-		)])
-		.with_tracing()
-		.build()
-		.execute_with(|| {
-			// drip 'ED' to accounts
-
-			// user target account
-			let user_account = AccountId::from([
-				3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-				3, 3, 3, 3,
-			]);
-			let _ = <pallet_balances::Pallet<Runtime>>::deposit_creating(
-				&user_account,
-				existential_deposit.clone(),
-			);
-
-			// this is `AliasOrigin` as remote sovereign account
-			let different_consensus_location = MultiLocation {
-				parents: 2,
-				interior: X2(GlobalConsensus(Kusama), Parachain(1000)),
-			};
-			let sovereign_account_of_different_consensus_location =
-				LocationToAccountId::convert_location(&different_consensus_location).unwrap();
-
-			// SA needs to thave ED + some token for fees
-			let dripped_assets = existential_deposit.clone() * 3 + 21173333300;
-			let _ = <pallet_balances::Pallet<Runtime>>::deposit_creating(
-				&sovereign_account_of_different_consensus_location,
-				existential_deposit.clone() + dripped_assets,
-			);
-
-			// staking pot for collecting fees from `BuyExecution`
-			let staking_pot = <pallet_collator_selection::Pallet<Runtime>>::account_id();
-			let _ = <pallet_balances::Pallet<Runtime>>::deposit_creating(
-				&staking_pot,
-				existential_deposit,
-			);
-
-			// create foreign asset for wrapped/derivated representation
-			let foreign_asset_id_multilocation =
-				MultiLocation { parents: 2, interior: X1(GlobalConsensus(Kusama)) };
-			let asset_minimum_asset_balance = 3333333_u128;
-			assert_ok!(<pallet_assets::Pallet<Runtime, ForeignAssetsInstance>>::force_create(
-				RuntimeHelper::<Runtime>::root_origin(),
-				foreign_asset_id_multilocation.into(),
-				sovereign_account_of_different_consensus_location.clone().into(),
-				false,
-				asset_minimum_asset_balance.into()
-			));
-
-			// trigger XCM execution as hrmp from BridgeHub would do
-			let xcm = Xcm(vec![
-				DescendOrigin(X1(PalletInstance(53))),
-				UniversalOrigin(GlobalConsensus(Kusama)),
-				DescendOrigin(X1(Parachain(1000))),
-				ReserveAssetDeposited(MultiAssets::from(vec![MultiAsset {
-					id: Concrete(MultiLocation {
-						parents: 2,
-						interior: X1(GlobalConsensus(Kusama)),
-					}),
-					fun: Fungible(999788266667),
-				}])),
-				ClearOrigin,
-				AliasOrigin(MultiLocation {
-					parents: 2,
-					interior: X2(GlobalConsensus(Kusama), Parachain(1000)),
-				}),
-				WithdrawAsset(MultiAssets::from(vec![MultiAsset {
-					id: Concrete(MultiLocation { parents: 1, interior: Here }),
-					fun: Fungible(21173333300),
-				}])),
-				ClearOrigin,
-				BuyExecution {
-					fees: MultiAsset {
-						id: Concrete(MultiLocation { parents: 1, interior: Here }),
-						fun: Fungible(21173333300),
-					},
-					weight_limit: Limited(Weight::from_parts(1609588000, 5082)),
-				},
-				RefundSurplus,
-				DepositAsset {
-					assets: Definite(MultiAssets::from(vec![MultiAsset {
-						id: Concrete(MultiLocation { parents: 1, interior: Here }),
-						fun: Fungible(21173333300),
-					}])),
-					beneficiary: MultiLocation {
-						parents: 2,
-						interior: X2(GlobalConsensus(Kusama), Parachain(1000)),
-					},
-				},
-				DepositAsset {
-					assets: Wild(AllCounted(1)),
-					beneficiary: MultiLocation {
-						parents: 0,
-						interior: X1(AccountId32 {
-							network: Some(Polkadot),
-							id: [
-								3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-								3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-							],
-						}),
-					},
-				},
-				SetTopic([
-					51, 233, 81, 206, 55, 52, 190, 159, 131, 248, 239, 11, 158, 210, 117, 22, 201,
-					83, 130, 81, 187, 50, 197, 60, 49, 74, 91, 49, 186, 35, 58, 16,
-				]),
-			]);
-
-			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
-
-			// execute xcm as XcmpQueue would do
-			let outcome = XcmExecutor::<XcmConfig>::execute_xcm(
-				MultiLocation { parents: 1, interior: X1(Parachain(1002)) }, // local bridge hub
-				xcm,
-				hash,
-				RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Sibling),
-			);
-			assert_eq!(outcome.ensure_complete(), Ok(()));
-
-			// check balances after
-
-			// user account received wrapped assets
-			assert_eq!(
-				<pallet_assets::Pallet<Runtime, ForeignAssetsInstance>>::balance(
-					foreign_asset_id_multilocation.into(),
-					&user_account
-				),
-				999788266667_u128.into()
-			);
-			// user account has untouched ED on native token
-			assert_eq!(
-				<pallet_balances::Pallet<Runtime>>::free_balance(&user_account,),
-				existential_deposit.clone()
-			);
-
-			// staking pot should have ED + fees from `BuyExecution`
-			let staking_pot_balance =
-				<pallet_balances::Pallet<Runtime>>::free_balance(&staking_pot);
-			assert!(staking_pot_balance > existential_deposit);
-			let paid_fees = staking_pot_balance - existential_deposit;
-
-			// sovereign account should have decreased about fees from `BuyExecution`
-			assert_eq!(
-				<pallet_balances::Pallet<Runtime>>::free_balance(
-					&sovereign_account_of_different_consensus_location,
-				),
-				existential_deposit + dripped_assets - paid_fees
-			);
-		})
 }
 
 #[test]
@@ -856,6 +686,26 @@ fn limited_reserve_transfer_assets_for_native_asset_over_bridge_works() {
 			}
 		}),
 		bridging_to_asset_hub_kusama,
-		WeightLimit::Unlimited
+		WeightLimit::Unlimited,
+	)
+}
+
+#[test]
+fn receive_reserve_asset_deposited_ksm_from_asset_hub_kusama_works() {
+	const BLOCK_AUTHOR_ACCOUNT: [u8; 32] = [13; 32];
+	asset_test_utils::test_cases_over_bridge::receive_reserve_asset_deposited_from_different_consensus_works::<
+		Runtime,
+		XcmConfig,
+		LocationToAccountId,
+		ForeignAssetsInstance,
+	>(
+		collator_session_keys().add(collator_session_key(BLOCK_AUTHOR_ACCOUNT)),
+		ExistentialDeposit::get(),
+		AccountId::from([73; 32]),
+		AccountId::from(BLOCK_AUTHOR_ACCOUNT),
+		// receiving DOTs
+		(MultiLocation { parents: 2, interior: X1(GlobalConsensus(Kusama)) }, 1000000000000, 1_000_000_000),
+		bridging_to_asset_hub_kusama,
+		(X1(PalletInstance(53)), GlobalConsensus(Kusama), X1(Parachain(1000)))
 	)
 }
