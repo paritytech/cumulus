@@ -33,7 +33,7 @@ fn create_and_claim_treasury_spend() {
 		.unwrap();
 	let asset_hub_location = MultiLocation::new(0, Parachain(AssetHubPolkadot::para_id().into()));
 	let root = <Polkadot as Relay>::RuntimeOrigin::root();
-	// asset kind to be spend from the treasury.
+	// asset kind to be spent from the treasury.
 	let asset_kind = LocatableAssetId::new(
 		AssetId::Concrete((PalletInstance(50), GeneralIndex(ASSET_ID.into())).into()),
 		asset_hub_location,
