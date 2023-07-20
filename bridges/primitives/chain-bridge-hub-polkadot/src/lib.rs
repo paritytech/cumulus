@@ -32,14 +32,12 @@ use sp_std::prelude::*;
 pub struct BridgeHubPolkadot;
 
 impl Chain for BridgeHubPolkadot {
-	type BlockNumber = BlockNumber;
 	type Hash = Hash;
 	type Hasher = Hasher;
-	type Header = Header;
-
+	type Block = Block;
 	type AccountId = AccountId;
 	type Balance = Balance;
-	type Index = Index;
+	type Nonce = Nonce;
 	type Signature = Signature;
 
 	fn max_extrinsic_size() -> u32 {
