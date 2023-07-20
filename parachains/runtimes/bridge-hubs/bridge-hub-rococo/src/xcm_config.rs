@@ -179,32 +179,32 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 
 		matches!(
 			call,
-			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
-				RuntimeCall::System(
-					frame_system::Call::set_heap_pages { .. } |
-						frame_system::Call::set_code { .. } |
-						frame_system::Call::set_code_without_checks { .. } |
-						frame_system::Call::kill_prefix { .. },
-				) | RuntimeCall::ParachainSystem(..) |
-				RuntimeCall::Timestamp(..) |
-				RuntimeCall::Balances(..) |
-				RuntimeCall::CollatorSelection(
-					pallet_collator_selection::Call::set_desired_candidates { .. } |
-						pallet_collator_selection::Call::set_candidacy_bond { .. } |
-						pallet_collator_selection::Call::register_as_candidate { .. } |
-						pallet_collator_selection::Call::leave_intent { .. } |
-						pallet_collator_selection::Call::set_invulnerables { .. } |
-						pallet_collator_selection::Call::add_invulnerable { .. } |
-						pallet_collator_selection::Call::remove_invulnerable { .. },
-				) | RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
-				RuntimeCall::XcmpQueue(..) |
-				RuntimeCall::DmpQueue(..) |
-				RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
-				RuntimeCall::BridgeRococoGrandpa(pallet_bridge_grandpa::Call::<
+			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. })
+				| RuntimeCall::System(
+					frame_system::Call::set_heap_pages { .. }
+						| frame_system::Call::set_code { .. }
+						| frame_system::Call::set_code_without_checks { .. }
+						| frame_system::Call::kill_prefix { .. },
+				) | RuntimeCall::ParachainSystem(..)
+				| RuntimeCall::Timestamp(..)
+				| RuntimeCall::Balances(..)
+				| RuntimeCall::CollatorSelection(
+					pallet_collator_selection::Call::set_desired_candidates { .. }
+						| pallet_collator_selection::Call::set_candidacy_bond { .. }
+						| pallet_collator_selection::Call::register_as_candidate { .. }
+						| pallet_collator_selection::Call::leave_intent { .. }
+						| pallet_collator_selection::Call::set_invulnerables { .. }
+						| pallet_collator_selection::Call::add_invulnerable { .. }
+						| pallet_collator_selection::Call::remove_invulnerable { .. },
+				) | RuntimeCall::Session(pallet_session::Call::purge_keys { .. })
+				| RuntimeCall::XcmpQueue(..)
+				| RuntimeCall::DmpQueue(..)
+				| RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. })
+				| RuntimeCall::BridgeRococoGrandpa(pallet_bridge_grandpa::Call::<
 					Runtime,
 					BridgeGrandpaRococoInstance,
-				>::initialize { .. }) |
-				RuntimeCall::BridgeWococoGrandpa(pallet_bridge_grandpa::Call::<
+				>::initialize { .. })
+				| RuntimeCall::BridgeWococoGrandpa(pallet_bridge_grandpa::Call::<
 					Runtime,
 					BridgeGrandpaWococoInstance,
 				>::initialize { .. })
