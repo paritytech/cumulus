@@ -25,7 +25,6 @@ use frame_benchmarking::{
 	account, impl_benchmark_test_suite, v2::*, whitelisted_caller, BenchmarkError,
 };
 use frame_support::{
-	assert_ok,
 	codec::Decode,
 	dispatch::DispatchResult,
 	traits::{Currency, EnsureOrigin, Get, ReservableCurrency},
@@ -186,10 +185,8 @@ mod benchmarks {
 			frame_support::BoundedVec::try_from(invulnerables).unwrap();
 		<Invulnerables<T>>::put(invulnerables);
 
-		#[block]
-		{
-			assert_ok!(<CollatorSelection<T>>::add_invulnerable(origin, new_invulnerable.clone()));
-		}
+		#[extrinsic_call]
+		_(origin as T::RuntimeOrigin, new_invulnerable.clone());
 
 		assert_last_event::<T>(Event::InvulnerableAdded { account_id: new_invulnerable }.into());
 		Ok(())
@@ -208,10 +205,8 @@ mod benchmarks {
 		<Invulnerables<T>>::put(invulnerables);
 		let to_remove = <Invulnerables<T>>::get().first().unwrap().clone();
 
-		#[block]
-		{
-			assert_ok!(<CollatorSelection<T>>::remove_invulnerable(origin, to_remove.clone()));
-		}
+		#[extrinsic_call]
+		_(origin as T::RuntimeOrigin, to_remove.clone());
 
 		assert_last_event::<T>(Event::InvulnerableRemoved { account_id: to_remove }.into());
 		Ok(())
@@ -223,10 +218,8 @@ mod benchmarks {
 		let origin =
 			T::UpdateOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
 
-		#[block]
-		{
-			assert_ok!(<CollatorSelection<T>>::set_desired_candidates(origin, max));
-		}
+		#[extrinsic_call]
+		_(origin as T::RuntimeOrigin, max);
 
 		assert_last_event::<T>(Event::NewDesiredCandidates { desired_candidates: max }.into());
 		Ok(())
@@ -238,10 +231,8 @@ mod benchmarks {
 		let origin =
 			T::UpdateOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
 
-		#[block]
-		{
-			assert_ok!(<CollatorSelection<T>>::set_candidacy_bond(origin, bond_amount));
-		}
+		#[extrinsic_call]
+		_(origin as T::RuntimeOrigin, bond_amount);
 
 		assert_last_event::<T>(Event::NewCandidacyBond { bond_amount }.into());
 		Ok(())
