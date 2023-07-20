@@ -370,11 +370,13 @@ version = "1.0.0"
 dependencies = [
  "asset-hub-kusama-runtime",
  "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
  "frame-support",
  "frame-system",
  "integration-tests-common",
  "pallet-assets",
  "pallet-balances",
+ "pallet-message-queue",
  "pallet-xcm",
  "parachains-common",
  "parity-scale-codec",

@@ -500,6 +500,10 @@ macro_rules! __impl_test_ext_for_relay_chain {
 							// simulator directly sends them to dest (not relayed).
 						}
 
+						// log events
+						Self::events().iter().for_each(|event| {
+							$crate::log::debug!(target: concat!("events::", stringify!($name)), "{:?}", event);
+						});
 
 						// clean events
 						<Self as Chain>::System::reset_events();
@@ -780,6 +784,11 @@ macro_rules! __impl_test_ext_for_parachain {
 
 						// clean messages
 						<Self as Parachain>::ParachainSystem::on_initialize(block_number);
+
+						// log events
+						Self::events().iter().for_each(|event| {
+							$crate::log::debug!(target: concat!("events::", stringify!($name)), "{:?}", event);
+						});
 
 						// clean events
 						<Self as Chain>::System::reset_events();
@@ -1066,7 +1075,7 @@ macro_rules! decl_test_bridges {
 
 				fn init() {
 					use $crate::{NetworkComponent, Network};
-					// Make sure source and target `Network` has been initialized
+					// Make sure source and target `Network` have been initialized
 					<$source as NetworkComponent>::Network::init();
 					<$target as NetworkComponent>::Network::init();
 				}
@@ -1083,9 +1092,7 @@ macro_rules! assert_expected_events {
 			let mut meet_conditions = true;
 			let mut event_message: Vec<String> = Vec::new();
 
-			let event_received = <$chain>::events().iter().any(|event| {
-				$crate::log::debug!(target: concat!("events::", stringify!($chain)), "{:?}", event);
-
+			let event_received = <$chain>::events().iter().any(|event| { // TODO: replace `any` by `for_each`, we want to avoid false negatives
 				match event {
 					$event_pat => {
 						$(
@@ -1094,6 +1101,7 @@ macro_rules! assert_expected_events {
 								meet_conditions &= $condition
 							}
 						)*
+						// TODO: check if meet conditions is true. In that case empty `event_message` removing any previous error messages from a mismatch on their attributes
 						true
 					},
 					_ => false
@@ -1107,6 +1115,10 @@ macro_rules! assert_expected_events {
 			}
 		)*
 		if !message.is_empty() {
+			// Log events as they will not be logged after the panic
+			<$chain>::events().iter().for_each(|event| {
+				$crate::log::debug!(target: concat!("events::", stringify!($chain)), "{:?}", event);
+			});
 			panic!("{}", message.concat())
 		}
 	}

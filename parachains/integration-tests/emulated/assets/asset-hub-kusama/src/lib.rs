@@ -15,7 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 pub use codec::Encode;
-pub use sp_runtime::DispatchResult;
+pub use sp_runtime::{DispatchResult, MultiAddress::Id};
 pub use frame_support::{
 	assert_ok, instances::Instance1, pallet_prelude::Weight,
 	traits::{fungibles::Inspect, OriginTrait},
@@ -27,6 +27,7 @@ pub use xcm::{
 	prelude::*,
 	v3::{Error, NetworkId::Kusama as KusamaId},
 };
+pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
 pub use xcm_emulator::{
 	assert_expected_events, bx, cumulus_pallet_dmp_queue, helpers::weight_within_threshold, Chain,
 	Parachain as Para, RelayChain as Relay, TestExt, TestExternalities

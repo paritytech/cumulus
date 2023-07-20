@@ -150,6 +150,7 @@ where
 pub struct DispatchArgs {
 	pub dest: VersionedMultiLocation,
 	pub beneficiary: VersionedMultiLocation,
+	pub amount: Balance,
 	pub assets: VersionedMultiAssets,
 	pub fee_asset_item: u32,
 	pub weight_limit: WeightLimit,
