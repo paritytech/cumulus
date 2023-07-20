@@ -302,6 +302,9 @@ impl<
 	HandleRefund: TakeRevenue,
 > WeightTrader
 for SwapFirstAssetTrader<T, AccountIdConverter, SWP, WeightToFee, Matcher, ConcreteAssets, HandleRefund>
+where
+	T::MultiAssetId: From<ConcreteAssets::AssetId>,
+	T::HigherPrecisionBalance: From<ConcreteAssets::Balance>,
 {
 	fn new() -> Self {
 		Self(None, PhantomData)
@@ -341,8 +344,8 @@ for SwapFirstAssetTrader<T, AccountIdConverter, SWP, WeightToFee, Matcher, Concr
 
 		let amount_taken = SWP::swap_tokens_for_exact_tokens(
 			acc.clone(),
-			vec![multi_id, T::MultiAssetIdConverter::get_native()],
-			T::HigherPrecisionBalance::from(fee),
+			vec![multi_id.into(), T::MultiAssetIdConverter::get_native()],
+			fee.into(),
 			None,
 			acc.clone(),
 			true
@@ -354,14 +357,16 @@ for SwapFirstAssetTrader<T, AccountIdConverter, SWP, WeightToFee, Matcher, Concr
 		// Substract amount_taken from payment_balance
 		let unused = payment_balance.checked_sub(&amount_taken).ok_or(XcmError::TooExpensive)?;
 
-		let unused_asset: T::Balance = unused.try_into().map_err(|_| XcmError::AssetNotFound)?;
+		let unused_asset: T::AssetBalance = unused.try_into().map_err(|_| XcmError::AssetNotFound)?;
+
+		let required = first.id.into_multiasset(unused_asset.try_into().map_err(|_| XcmError::AssetNotFound)?);
 
 		// Record outstanding asset
 		self.0 = Some(SwapAssetTraderRefunder {
 			outstanding_concrete_asset: first.clone(),
 		});
 
-		Ok(unused_asset)
+		Ok(required.into())
 	}
 
 	fn refund_weight(&mut self, ctx: &XcmContext, weight: Weight) -> Option<MultiAsset> {

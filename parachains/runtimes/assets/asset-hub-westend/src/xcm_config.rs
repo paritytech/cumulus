@@ -480,7 +480,21 @@ impl xcm_executor::Config for XcmConfig {
 			pallet_asset_conversion::Pallet<Runtime>,
 			WeightToFee,
 			MultiAssetsConvertedConcreteId,
-			LocalAndForeignAssets<Assets, ForeignAssets, TrustBackedAssetsPalletLocation>,
+			Assets,
+			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
+				// Revenue could also be Foreign Fungible? Maybe with multi-asset treasury..?
+				FungiblesTransactor,
+				AccountId,
+				XcmAssetFeesReceiver,
+			>,
+		>,
+		cumulus_primitives_utility::SwapFirstAssetTrader<
+			Runtime,
+			LocationToAccountId,
+			pallet_asset_conversion::Pallet<Runtime>,
+			WeightToFee,
+			MultiAssetsConvertedConcreteId,
+			ForeignAssets,
 			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
 				// Revenue could also be Foreign Fungible? Maybe with multi-asset treasury..?
 				FungiblesTransactor,
