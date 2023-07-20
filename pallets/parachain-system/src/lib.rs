@@ -212,6 +212,8 @@ pub mod pallet {
 		/// [`consensus_hook::ExpectParentIncluded`] here. This is only necessary in the case
 		/// that collators aren't expected to have node versions that supply the included block
 		/// in the relay-chain state proof.
+        ///
+        /// This config type is only available when the `parameterized-consensus-hook` crate feature is activated.
 		#[cfg(feature = "parameterized-consensus-hook")]
 		type ConsensusHook: ConsensusHook;
 	}
