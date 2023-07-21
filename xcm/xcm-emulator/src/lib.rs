@@ -1088,32 +1088,66 @@ macro_rules! decl_test_bridges {
 macro_rules! assert_expected_events {
 	( $chain:ident, vec![$( $event_pat:pat => { $($attr:ident : $condition:expr, )* }, )*] ) => {
 		let mut message: Vec<String> = Vec::new();
+		let mut events = <$chain>::events();
+
 		$(
+			let mut event_received = false;
 			let mut meet_conditions = true;
+			let mut index_match = 0;
 			let mut event_message: Vec<String> = Vec::new();
 
-			let event_received = <$chain>::events().iter().any(|event| { // TODO: replace `any` by `for_each`, we want to avoid false negatives
+			for (index, event) in events.iter().enumerate() {
+				// Have to reset the variable to override a previous partial match
+				meet_conditions = true;
 				match event {
 					$event_pat => {
+						event_received = true;
+						let mut conditions_message: Vec<String> = Vec::new();
+
 						$(
-							if !$condition {
-								event_message.push(format!(" - The attribute {:?} = {:?} did not met the condition {:?}\n", stringify!($attr), $attr, stringify!($condition)));
-								meet_conditions &= $condition
+							// We only want to record condition error messages in case it did not happened before
+							// Only the first partial match is recorded
+							if !$condition && event_message.is_empty() {
+								conditions_message.push(
+									format!(
+										" - The attribute {:?} = {:?} did not met the condition {:?}\n",
+										stringify!($attr),
+										$attr,
+										stringify!($condition)
+									)
+								);
 							}
+							meet_conditions &= $condition;
 						)*
-						// TODO: check if meet conditions is true. In that case empty `event_message` removing any previous error messages from a mismatch on their attributes
-						true
+
+						// Set the index where we found a perfect match
+						if event_received && meet_conditions {
+							index_match = index;
+							break;
+						} else {
+							event_message.extend(conditions_message);
+						}
 					},
-					_ => false
+					_ => {}
 				}
-			});
+			}
 
 			if event_received && !meet_conditions  {
-				message.push(format!("\n\nEvent \x1b[31m{}\x1b[0m was received but some of its attributes did not meet the conditions:\n{}", stringify!($event_pat), event_message.concat()));
+				message.push(
+					format!(
+						"\n\nEvent \x1b[31m{}\x1b[0m was received but some of its attributes did not meet the conditions:\n{}",
+						stringify!($event_pat),
+						event_message.concat()
+					)
+				);
 			} else if !event_received {
 				message.push(format!("\n\nEvent \x1b[31m{}\x1b[0m was never received", stringify!($event_pat)));
+			} else {
+				// If we find a perfect match we remove the event to avoid being potentially assessed multiple times
+				events.remove(index_match);
 			}
 		)*
+
 		if !message.is_empty() {
 			// Log events as they will not be logged after the panic
 			<$chain>::events().iter().for_each(|event| {
@@ -1122,7 +1156,6 @@ macro_rules! assert_expected_events {
 			panic!("{}", message.concat())
 		}
 	}
-
 }
 
 #[macro_export]

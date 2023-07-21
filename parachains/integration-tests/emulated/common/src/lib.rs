@@ -43,6 +43,7 @@ decl_test_relay_chains! {
 		},
 		pallets = {
 			XcmPallet: kusama_runtime::XcmPallet,
+			Balances: kusama_runtime::Balances,
 		}
 	},
 	#[api_version(5)]
