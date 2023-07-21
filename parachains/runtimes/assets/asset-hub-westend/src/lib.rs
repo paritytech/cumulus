@@ -1256,7 +1256,7 @@ impl_runtime_apis! {
 					MultiAsset { fun: Fungible(UNITS), id: Concrete(WestendLocation::get()) },
 				));
 				pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
-
+				pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = None;
 			}
 
 			impl pallet_xcm_benchmarks::fungible::Config for Runtime {
@@ -1264,6 +1264,7 @@ impl_runtime_apis! {
 
 				type CheckedAccount = CheckedAccount;
 				type TrustedTeleporter = TrustedTeleporter;
+				type TrustedReserve = TrustedReserve;
 
 				fn get_multi_asset() -> MultiAsset {
 					MultiAsset {
@@ -1431,7 +1432,7 @@ pub mod migrations {
 
 				// fix new account
 				let new_pool_id = pallet_asset_conversion::Pallet::<T>::get_pool_id(
-					Box::new(valid_native_asset.clone()),
+					Box::new(valid_native_asset),
 					old_pool_id.1.clone(),
 				);
 				let new_pool_account =
@@ -1471,10 +1472,10 @@ pub mod migrations {
 
 				// move LocalOrForeignAssets
 				let _ = T::Assets::transfer(
-					old_pool_id.1.as_ref().clone(),
+					*old_pool_id.1.as_ref(),
 					&old_pool_account,
 					&new_pool_account,
-					T::Assets::balance(old_pool_id.1.as_ref().clone(), &old_pool_account),
+					T::Assets::balance(*old_pool_id.1.as_ref(), &old_pool_account),
 					Preservation::Expendable,
 				);
 				reads.saturating_accrue(1);
