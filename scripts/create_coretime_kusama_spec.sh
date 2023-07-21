@@ -38,7 +38,15 @@ cat chain-spec-plain.json | jq --rawfile code rt-hex.txt '.genesis.runtime.syste
     | jq '.id = "coretime-kusama"' \
     | jq '.chainType = "Live"' \
     | jq '.bootNodes = [
-                       ]' \
+            "/dns/kusama-coretime-connect-a-0.polkadot.io/tcp/30334/p2p/12D3KooWR7Biy6nPgQFhk2eYP62pAkcFA6he9RUFURTDh7ewTjpo",
+            "/dns/kusama-coretime-connect-a-1.polkadot.io/tcp/30334/p2p/12D3KooWAGFiMZDF9RxdacrkenzGdo8nhfSe9EXofHc5mHeJ9vGX",
+            "/dns/kusama-coretime-connect-b-0.polkadot.io/tcp/30334/p2p/12D3KooWEbJsTw3TnLjDr3M7LtuBzhSBeMThpgRRNF5zPP2PUnjM",
+            "/dns/kusama-coretime-connect-b-1.polkadot.io/tcp/30334/p2p/12D3KooWMkSaSjV6pZ58d5zaBykQitYQaKtuD3TTWYbuES5WLdny",
+            "/dns/kusama-coretime-connect-a-0.polkadot.io/tcp/443/wss/p2p/12D3KooWR7Biy6nPgQFhk2eYP62pAkcFA6he9RUFURTDh7ewTjpo",
+            "/dns/kusama-coretime-connect-a-1.polkadot.io/tcp/443/wss/p2p/12D3KooWAGFiMZDF9RxdacrkenzGdo8nhfSe9EXofHc5mHeJ9vGX",
+            "/dns/kusama-coretime-connect-b-0.polkadot.io/tcp/443/wss/p2p/12D3KooWEbJsTw3TnLjDr3M7LtuBzhSBeMThpgRRNF5zPP2PUnjM",
+            "/dns/kusama-coretime-connect-b-1.polkadot.io/tcp/443/wss/p2p/12D3KooWMkSaSjV6pZ58d5zaBykQitYQaKtuD3TTWYbuES5WLdny"  
+        ]' \
     | jq '.relay_chain = "kusama"' \
     | jq --argjson para_id $para_id '.para_id = $para_id' \
     | jq --argjson para_id $para_id '.genesis.runtime.parachainInfo.parachainId = $para_id' \
@@ -46,7 +54,35 @@ cat chain-spec-plain.json | jq --rawfile code rt-hex.txt '.genesis.runtime.syste
     | jq '.genesis.runtime.collatorSelection.invulnerables = [
                                                              ]' \
     | jq '.genesis.runtime.session.keys = [
-                                          ]' \
+            [
+                "",
+                "",
+                    {
+                        "aura": "0x4491cfc3ef17b4e02c66a7161f34fcacabf86ad64a783c1dbbe74e4ef82a7966"
+                    }
+            ],
+            [
+                "",
+                "",
+                    {
+                        "aura": "0x04e3a3ecadbd493eb64ab2c19d215ccbc9eebea686dc3cea4833194674a8285e"
+                    }
+            ],
+            [
+                "",
+                "",
+                    {
+                        "aura": "0xd6838cd2a39de890885e8a1c3c9c58a614f2bdd7b5740ee683a6bbc23703c244"
+                    }
+            ],
+            [
+                "",
+                "",
+                    {
+                        "aura": "0x3cef8a7dc5acd430fc1471e56470ba55c950ee34789c3cf28bf951ce4b804364"
+                    }
+            ]
+        ]' \
     > edited-chain-spec-plain.json
 
 # build a raw spec
