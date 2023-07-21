@@ -180,180 +180,187 @@ fn relay_dest_assertions_fail(_t: Test<AssetHubKusama, Kusama>) {
 }
 
 /// Limited Teleport of native asset from Relay Chain to the System Parachain works
-// #[test]
-// fn limited_teleport_native_assets_from_relay_to_system_para_works() {
-// 	// Init values for Relay Chain
-// 	let amount_to_send: Balance = KUSAMA_ED * 1000;
-// 	let test_args = TestArgs {
-// 		sender: KusamaSender::get(),
-// 		receiver: AssetHubKusamaReceiver::get(),
-// 		args: get_relay_dispatch_args(amount_to_send),
-// 	};
+#[test]
+fn limited_teleport_native_assets_from_relay_to_system_para_works() {
+	// Init values for Relay Chain
+	let amount_to_send: Balance = KUSAMA_ED * 1000;
+	let test_args = TestArgs {
+		sender: KusamaSender::get(),
+		receiver: AssetHubKusamaReceiver::get(),
+		args: get_relay_dispatch_args(amount_to_send),
+	};
 
-// 	let mut test = Test::<Kusama, AssetHubKusama>::new(test_args);
+	let mut test = Test::<Kusama, AssetHubKusama>::new(test_args);
 
-// 	let sender_balance_before = test.sender.balance;
-// 	let receiver_balance_before = test.receiver.balance;
+	let sender_balance_before = test.sender.balance;
+	let receiver_balance_before = test.receiver.balance;
 
-// 	let dispatchable = |t: Test<Kusama, AssetHubKusama>| {
-// 		<Kusama as KusamaPallet>::XcmPallet::limited_teleport_assets(
-// 			t.signed_origin,
-// 			bx!(t.args.dest),
-// 			bx!(t.args.beneficiary),
-// 			bx!(t.args.assets),
-// 			t.args.fee_asset_item,
-// 			t.args.weight_limit
-// 		)
-// 	};
+	let dispatchable = |t: Test<Kusama, AssetHubKusama>| {
+		<Kusama as KusamaPallet>::XcmPallet::limited_teleport_assets(
+			t.signed_origin,
+			bx!(t.args.dest),
+			bx!(t.args.beneficiary),
+			bx!(t.args.assets),
+			t.args.fee_asset_item,
+			t.args.weight_limit
+		)
+	};
 
-// 	test.set_assertions(
-// 		relay_origin_assertions,
-// 		para_dest_assertions
-// 	);
+	test.set_assertions(
+		relay_origin_assertions,
+		para_dest_assertions
+	);
 
-// 	test.dispatch(dispatchable);
+	test.dispatch(dispatchable);
 
-// 	let sender_balance_after = test.sender.balance;
-// 	let receiver_balance_after = test.receiver.balance;
+	let sender_balance_after = test.sender.balance;
+	let receiver_balance_after = test.receiver.balance;
 
-// 	// Sender's balance is reduced
-// 	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
-// 	// Receiver's balance is increased
-// 	assert!(receiver_balance_after > receiver_balance_before);
-// }
+	// Sender's balance is reduced
+	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
+	// Receiver's balance is increased
+	assert!(receiver_balance_after > receiver_balance_before);
+}
 
-// /// Limited Teleport of native asset from System Parachain to Relay Chain
-// /// works when there is enough balance in Relay Chain's `CheckAccount`
-// #[test]
-// fn limited_teleport_native_assets_back_from_system_para_to_relay_works() {
-// 	// Dependency - Relay Chain's `CheckAccount` should have enough balance
-// 	limited_teleport_native_assets_from_relay_to_system_para_works();
+/// Limited Teleport of native asset from System Parachain to Relay Chain
+/// works when there is enough balance in Relay Chain's `CheckAccount`
+#[test]
+fn limited_teleport_native_assets_back_from_system_para_to_relay_works() {
+	// Dependency - Relay Chain's `CheckAccount` should have enough balance
+	limited_teleport_native_assets_from_relay_to_system_para_works();
 
-// 	// Init values for Relay Chain
-// 	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
-// 	let test_args = TestArgs {
-// 		sender: AssetHubKusamaSender::get(),
-// 		receiver: KusamaReceiver::get(),
-// 		args: get_para_dispatch_args(amount_to_send),
-// 	};
+	// Init values for Relay Chain
+	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
+	let test_args = TestArgs {
+		sender: AssetHubKusamaSender::get(),
+		receiver: KusamaReceiver::get(),
+		args: get_para_dispatch_args(amount_to_send),
+	};
 
-// 	let mut test = Test::<AssetHubKusama, Kusama>::new(test_args);
+	let mut test = Test::<AssetHubKusama, Kusama>::new(test_args);
 
-// 	let sender_balance_before = test.sender.balance;
-// 	let receiver_balance_before = test.receiver.balance;
+	let sender_balance_before = test.sender.balance;
+	let receiver_balance_before = test.receiver.balance;
 
-// 	let dispatchable = |t: Test<AssetHubKusama, Kusama>| {
-// 		<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::limited_teleport_assets(
-// 			t.signed_origin,
-// 			bx!(t.args.dest),
-// 			bx!(t.args.beneficiary),
-// 			bx!(t.args.assets),
-// 			t.args.fee_asset_item,
-// 			t.args.weight_limit
-// 		)
-// 	};
+	let dispatchable = |t: Test<AssetHubKusama, Kusama>| {
+		<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::limited_teleport_assets(
+			t.signed_origin,
+			bx!(t.args.dest),
+			bx!(t.args.beneficiary),
+			bx!(t.args.assets),
+			t.args.fee_asset_item,
+			t.args.weight_limit
+		)
+	};
 
-// 	test.set_assertions(
-// 		para_origin_assertions,
-// 		relay_dest_assertions
-// 	);
+	test.set_assertions(
+		para_origin_assertions,
+		relay_dest_assertions
+	);
 
-// 	test.dispatch(dispatchable);
+	test.dispatch(dispatchable);
 
-// 	let sender_balance_after = test.sender.balance;
-// 	let receiver_balance_after = test.receiver.balance;
+	let sender_balance_after = test.sender.balance;
+	let receiver_balance_after = test.receiver.balance;
 
-// 	// Sender's balance is reduced
-// 	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
-// 	// Receiver's balance is increased
-// 	assert!(receiver_balance_after > receiver_balance_before);
-// }
+	// Sender's balance is reduced
+	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
+	// Receiver's balance is increased
+	assert!(receiver_balance_after > receiver_balance_before);
+}
 
-// /// Limited Teleport of native asset from System Parachain to Relay Chain
-// /// fails when there is not enough balance in Relay Chain's `CheckAccount`
-// #[test]
-// fn limited_teleport_native_assets_from_system_para_to_relay_fails() {
-// 	// Init values for Relay Chain
-// 	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
-// 	let test_args = TestArgs {
-// 		sender: AssetHubKusamaSender::get(),
-// 		receiver: KusamaReceiver::get(),
-// 		args: get_para_dispatch_args(amount_to_send),
-// 	};
+/// Limited Teleport of native asset from System Parachain to Relay Chain
+/// fails when there is not enough balance in Relay Chain's `CheckAccount`
+#[test]
+fn limited_teleport_native_assets_from_system_para_to_relay_fails() {
+	// Init values for Relay Chain
+	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
+	let test_args = TestArgs {
+		sender: AssetHubKusamaSender::get(),
+		receiver: KusamaReceiver::get(),
+		args: get_para_dispatch_args(amount_to_send),
+	};
 
-// 	let mut test = Test::<AssetHubKusama, Kusama>::new(test_args);
+	let mut test = Test::<AssetHubKusama, Kusama>::new(test_args);
 
-// 	let sender_balance_before = test.sender.balance;
-// 	let receiver_balance_before = test.receiver.balance;
+	let sender_balance_before = test.sender.balance;
+	let receiver_balance_before = test.receiver.balance;
 
-// 	let dispatchable = |t: Test<AssetHubKusama, Kusama>| {
-// 		<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::limited_teleport_assets(
-// 			t.signed_origin,
-// 			bx!(t.args.dest),
-// 			bx!(t.args.beneficiary),
-// 			bx!(t.args.assets),
-// 			t.args.fee_asset_item,
-// 			t.args.weight_limit
-// 		)
-// 	};
+	let dispatchable = |t: Test<AssetHubKusama, Kusama>| {
+		<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::limited_teleport_assets(
+			t.signed_origin,
+			bx!(t.args.dest),
+			bx!(t.args.beneficiary),
+			bx!(t.args.assets),
+			t.args.fee_asset_item,
+			t.args.weight_limit
+		)
+	};
 
-// 	test.set_assertions(
-// 		para_origin_assertions,
-// 		relay_dest_assertions_fail
-// 	);
+	test.set_assertions(
+		para_origin_assertions,
+		relay_dest_assertions_fail
+	);
 
-// 	test.dispatch(dispatchable);
+	test.dispatch(dispatchable);
 
-// 	let sender_balance_after = test.sender.balance;
-// 	let receiver_balance_after = test.receiver.balance;
+	let sender_balance_after = test.sender.balance;
+	let receiver_balance_after = test.receiver.balance;
 
-// 	// Sender's balance is reduced
-// 	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
-// 	// Receiver's balance does not change
-// 	assert_eq!(receiver_balance_after, receiver_balance_before);
-// }
+	// Sender's balance is reduced
+	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
+	// Receiver's balance does not change
+	assert_eq!(receiver_balance_after, receiver_balance_before);
+}
 
-// /// Teleport of native asset from Relay Chain to the System Parachain works
-// #[test]
-// fn teleport_native_assets_from_relay_to_system_para_works() {
-// 	// Init values for Relay Chain
-// 	let amount_to_send: Balance = KUSAMA_ED * 1000;
-// 	let test_args = TestArgs {
-// 		sender: KusamaSender::get(),
-// 		receiver: AssetHubKusamaReceiver::get(),
-// 		args: get_relay_dispatch_args(amount_to_send),
-// 	};
+/// Teleport of native asset from Relay Chain to the System Parachain works
+#[test]
+fn teleport_native_assets_from_relay_to_system_para_works() {
+	// Init values for Relay Chain
+	let amount_to_send: Balance = KUSAMA_ED * 1000;
+	let test_args = TestArgs {
+		sender: KusamaSender::get(),
+		receiver: AssetHubKusamaReceiver::get(),
+		args: get_relay_dispatch_args(amount_to_send),
+	};
 
-// 	let mut test = Test::<Kusama, AssetHubKusama>::new(test_args);
+	let mut test = Test::<Kusama, AssetHubKusama>::new(test_args);
 
-// 	let sender_balance_before = test.sender.balance;
-// 	let receiver_balance_before = test.receiver.balance;
+	let sender_balance_before = test.sender.balance;
+	let receiver_balance_before = test.receiver.balance;
 
-// 	let dispatchable = |t: Test<Kusama, AssetHubKusama>| {
-// 		<Kusama as KusamaPallet>::XcmPallet::teleport_assets(
-// 			t.signed_origin,
-// 			bx!(t.args.dest),
-// 			bx!(t.args.beneficiary),
-// 			bx!(t.args.assets),
-// 			t.args.fee_asset_item
-// 		)
-// 	};
+	let dispatchable = |t: Test<Kusama, AssetHubKusama>| {
+		<Kusama as KusamaPallet>::XcmPallet::teleport_assets(
+			t.signed_origin,
+			bx!(t.args.dest),
+			bx!(t.args.beneficiary),
+			bx!(t.args.assets),
+			t.args.fee_asset_item
+		)
+	};
 
-// 	test.set_assertions(
-// 		relay_origin_assertions,
-// 		para_dest_assertions
-// 	);
+	test.set_assertions(
+		relay_origin_assertions,
+		para_dest_assertions
+	);
 
-// 	test.dispatch(dispatchable);
+	test.dispatch(dispatchable);
 
-// 	let sender_balance_after = test.sender.balance;
-// 	let receiver_balance_after = test.receiver.balance;
+	let sender_balance_after = test.sender.balance;
+	let receiver_balance_after = test.receiver.balance;
 
-// 	// Sender's balance is reduced
-// 	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
-// 	// Receiver's balance is increased
-// 	assert!(receiver_balance_after > receiver_balance_before);
-// }
+	// Sender's balance is reduced
+	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
+	// Receiver's balance is increased
+	assert!(receiver_balance_after > receiver_balance_before);
+}
+
+// TODO: Uncomment when https://github.com/paritytech/polkadot/pull/7424 is merged
+
+// Right now it is failing in the Relay Chain with a
+// `messageQueue.ProcessingFailed` event `error: Unsupported`.
+// The reason is the `Weigher` in `pallet_xcm` is not properly calculating the `remote_weight`
+// and it cause an `Overweight` error in `AllowTopLevelPaidExecutionFrom` barrier
 
 // /// Teleport of native asset from System Parachains to the Relay Chain
 // /// works when there is enough balance in Relay Chain's `CheckAccount`
@@ -401,45 +408,45 @@ fn relay_dest_assertions_fail(_t: Test<AssetHubKusama, Kusama>) {
 // 	assert!(receiver_balance_after > receiver_balance_before);
 // }
 
-/// Teleport of native asset from System Parachain to Relay Chain
-/// fails when there is not enough balance in Relay Chain's `CheckAccount`
-#[test]
-fn teleport_native_assets_from_system_para_to_relay_fails() {
-	// Init values for Relay Chain
-	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
-	let test_args = TestArgs {
-		sender: AssetHubKusamaSender::get(),
-		receiver: KusamaReceiver::get(),
-		args: get_para_dispatch_args(amount_to_send),
-	};
+// /// Teleport of native asset from System Parachain to Relay Chain
+// /// fails when there is not enough balance in Relay Chain's `CheckAccount`
+// #[test]
+// fn teleport_native_assets_from_system_para_to_relay_fails() {
+// 	// Init values for Relay Chain
+// 	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
+// 	let test_args = TestArgs {
+// 		sender: AssetHubKusamaSender::get(),
+// 		receiver: KusamaReceiver::get(),
+// 		args: get_para_dispatch_args(amount_to_send),
+// 	};
 
-	let mut test = Test::<AssetHubKusama, Kusama>::new(test_args);
+// 	let mut test = Test::<AssetHubKusama, Kusama>::new(test_args);
 
-	let sender_balance_before = test.sender.balance;
-	let receiver_balance_before = test.receiver.balance;
+// 	let sender_balance_before = test.sender.balance;
+// 	let receiver_balance_before = test.receiver.balance;
 
-	let dispatchable = |t: Test<AssetHubKusama, Kusama>| {
-		<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::teleport_assets(
-			t.signed_origin,
-			bx!(t.args.dest),
-			bx!(t.args.beneficiary),
-			bx!(t.args.assets),
-			t.args.fee_asset_item
-		)
-	};
+// 	let dispatchable = |t: Test<AssetHubKusama, Kusama>| {
+// 		<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::teleport_assets(
+// 			t.signed_origin,
+// 			bx!(t.args.dest),
+// 			bx!(t.args.beneficiary),
+// 			bx!(t.args.assets),
+// 			t.args.fee_asset_item
+// 		)
+// 	};
 
-	test.set_assertions(
-		para_origin_assertions,
-		relay_dest_assertions_fail
-	);
+// 	test.set_assertions(
+// 		para_origin_assertions,
+// 		relay_dest_assertions_fail
+// 	);
 
-	test.dispatch(dispatchable);
+// 	test.dispatch(dispatchable);
 
-	let sender_balance_after = test.sender.balance;
-	let receiver_balance_after = test.receiver.balance;
+// 	let sender_balance_after = test.sender.balance;
+// 	let receiver_balance_after = test.receiver.balance;
 
-	// Sender's balance is reduced
-	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
-	// Receiver's balance does not change
-	assert_eq!(receiver_balance_after, receiver_balance_before);
-}
+// 	// Sender's balance is reduced
+// 	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
+// 	// Receiver's balance does not change
+// 	assert_eq!(receiver_balance_after, receiver_balance_before);
+// }
