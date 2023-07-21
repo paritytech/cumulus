@@ -149,7 +149,6 @@ where
 	PF: Environment<B> + Send + Sync,
 	PF::Proposer: Proposer<
 		B,
-		Transaction = BI::Transaction,
 		ProofRecording = EnableProofRecording,
 		Proof = <EnableProofRecording as ProofRecording>::Proof,
 	>,
@@ -238,7 +237,6 @@ where
 	PF: Environment<Block> + Send + Sync + 'static,
 	PF::Proposer: Proposer<
 		Block,
-		Transaction = BI::Transaction,
 		ProofRecording = EnableProofRecording,
 		Proof = <EnableProofRecording as ProofRecording>::Proof,
 	>,

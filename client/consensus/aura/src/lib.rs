@@ -118,7 +118,7 @@ where
 		Client:
 			ProvideRuntimeApi<B> + BlockOf + AuxStore + HeaderBackend<B> + Send + Sync + 'static,
 		Client::Api: AuraApi<B, P::Public>,
-		BI: BlockImport<B, Transaction = sp_api::TransactionFor<Client, B>>
+		BI: BlockImport<B>
 			+ ParachainBlockImportMarker
 			+ Send
 			+ Sync
@@ -129,7 +129,6 @@ where
 		PF::Proposer: Proposer<
 			B,
 			Error = Error,
-			Transaction = sp_api::TransactionFor<Client, B>,
 			ProofRecording = EnableProofRecording,
 			Proof = <EnableProofRecording as ProofRecording>::Proof,
 		>,
