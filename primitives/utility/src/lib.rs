@@ -28,10 +28,12 @@ use frame_support::{
 	},
 	weights::Weight,
 };
-use pallet_asset_conversion::{Swap, Config, MultiAssetIdConverter};
+use pallet_asset_conversion::{Config, MultiAssetIdConverter, Swap};
 use polkadot_runtime_common::xcm_sender::ConstantPrice;
-use sp_runtime::{traits::Saturating, SaturatedConversion};
-use sp_runtime::traits::CheckedSub;
+use sp_runtime::{
+	traits::{CheckedSub, Saturating},
+	SaturatedConversion,
+};
 use sp_std::{marker::PhantomData, prelude::*};
 use xcm::{latest::prelude::*, WrapVersion};
 use xcm_builder::TakeRevenue;
@@ -293,18 +295,26 @@ pub struct SwapFirstAssetTrader<
 );
 
 impl<
-	T: Config,
-	AccountIdConverter: ConvertLocation<T::AccountId>,
-	SWP: Swap<T::AccountId, T::HigherPrecisionBalance, T::MultiAssetId>,
-	WeightToFee: frame_support::weights::WeightToFee<Balance = T::Balance>,
-	Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-	ConcreteAssets: fungibles::Mutate<T::AccountId> + fungibles::Balanced<T::AccountId>,
-	HandleRefund: TakeRevenue,
-> WeightTrader
-for SwapFirstAssetTrader<T, AccountIdConverter, SWP, WeightToFee, Matcher, ConcreteAssets, HandleRefund>
-where
-	T::MultiAssetId: From<ConcreteAssets::AssetId>,
-	T::HigherPrecisionBalance: From<ConcreteAssets::Balance>,
+		T: Config,
+		AccountIdConverter: ConvertLocation<T::AccountId>,
+		SWP: Swap<T::AccountId, T::HigherPrecisionBalance, T::MultiAssetId>,
+		WeightToFee: frame_support::weights::WeightToFee<Balance = T::Balance>,
+		Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
+		ConcreteAssets: fungibles::Mutate<T::AccountId> + fungibles::Balanced<T::AccountId>,
+		HandleRefund: TakeRevenue,
+	> WeightTrader
+	for SwapFirstAssetTrader<
+		T,
+		AccountIdConverter,
+		SWP,
+		WeightToFee,
+		Matcher,
+		ConcreteAssets,
+		HandleRefund,
+	> where
+	T::HigherPrecisionBalance: From<ConcreteAssets::Balance> + Into<T::AssetBalance>,
+	T::AssetBalance: Into<Fungibility>,
+	MultiLocation: From<ConcreteAssets::AssetId> + Into<T::AssetId>,
 {
 	fn new() -> Self {
 		Self(None, PhantomData)
@@ -335,8 +345,10 @@ where
 		let first = multiassets.get(0).ok_or(XcmError::AssetNotFound)?;
 
 		// Get the multi asset id in which we can pay for fees
-		let (multi_id, local_asset_balance) =
+		let (asset_id, local_asset_balance) =
 			Matcher::matches_fungibles(first).map_err(|_| XcmError::AssetNotFound)?;
+
+		let multi_id: MultiLocation = asset_id.into();
 
 		let fee = WeightToFee::weight_to_fee(&weight);
 
@@ -344,29 +356,25 @@ where
 
 		let amount_taken = SWP::swap_tokens_for_exact_tokens(
 			acc.clone(),
-			vec![multi_id.into(), T::MultiAssetIdConverter::get_native()],
+			vec![T::MultiAssetId::from(multi_id.into()), T::MultiAssetIdConverter::get_native()],
 			fee.into(),
 			None,
 			acc.clone(),
-			true
-		).map_err(|_| XcmError::AssetNotFound)?;
-
-		// Convert payment to hpb
-		let payment_balance = T::HigherPrecisionBalance::from(local_asset_balance);
+			true,
+		)
+		.map_err(|_| XcmError::AssetNotFound)?;
 
 		// Substract amount_taken from payment_balance
-		let unused = payment_balance.checked_sub(&amount_taken).ok_or(XcmError::TooExpensive)?;
+		let unused = T::HigherPrecisionBalance::from(local_asset_balance)
+			.checked_sub(&amount_taken)
+			.ok_or(XcmError::TooExpensive)?;
 
-		let unused_asset: T::AssetBalance = unused.try_into().map_err(|_| XcmError::AssetNotFound)?;
-
-		let required = first.id.into_multiasset(unused_asset.try_into().map_err(|_| XcmError::AssetNotFound)?);
+		let unused_balance: T::AssetBalance = unused.into();
 
 		// Record outstanding asset
-		self.0 = Some(SwapAssetTraderRefunder {
-			outstanding_concrete_asset: first.clone(),
-		});
+		self.0 = Some(SwapAssetTraderRefunder { outstanding_concrete_asset: first.clone() });
 
-		Ok(required.into())
+		Ok(first.id.into_multiasset(unused_balance.into()).into())
 	}
 
 	fn refund_weight(&mut self, ctx: &XcmContext, weight: Weight) -> Option<MultiAsset> {
@@ -379,14 +387,23 @@ where
 }
 
 impl<
-	T: Config,
-	AccountIdConverter: ConvertLocation<T::AccountId>,
-	SWP: Swap<T::AccountId, T::HigherPrecisionBalance, T::MultiAssetId>,
-	WeightToFee: frame_support::weights::WeightToFee<Balance = T::Balance>,
-	Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-	ConcreteAssets: fungibles::Mutate<T::AccountId> + fungibles::Balanced<T::AccountId>,
-	HandleRefund: TakeRevenue,
-> Drop for SwapFirstAssetTrader<T, AccountIdConverter, SWP, WeightToFee, Matcher, ConcreteAssets, HandleRefund>
+		T: Config,
+		AccountIdConverter: ConvertLocation<T::AccountId>,
+		SWP: Swap<T::AccountId, T::HigherPrecisionBalance, T::MultiAssetId>,
+		WeightToFee: frame_support::weights::WeightToFee<Balance = T::Balance>,
+		Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
+		ConcreteAssets: fungibles::Mutate<T::AccountId> + fungibles::Balanced<T::AccountId>,
+		HandleRefund: TakeRevenue,
+	> Drop
+	for SwapFirstAssetTrader<
+		T,
+		AccountIdConverter,
+		SWP,
+		WeightToFee,
+		Matcher,
+		ConcreteAssets,
+		HandleRefund,
+	>
 {
 	fn drop(&mut self) {
 		if let Some(asset_trader) = self.0.clone() {
@@ -661,9 +678,16 @@ mod tests {
 		let weight_to_buy = Weight::from_parts(1_000, 1_000);
 
 		// lets do first call (success)
-		assert_ok!(trader.buy_weight(&XcmContext::with_message_id([0; 32]), weight_to_buy, payment.clone()));
+		assert_ok!(trader.buy_weight(
+			&XcmContext::with_message_id([0; 32]),
+			weight_to_buy,
+			payment.clone()
+		));
 
 		// lets do second call (error)
-		assert_eq!(trader.buy_weight(&XcmContext::with_message_id([0; 32]), weight_to_buy, payment), Err(XcmError::NotWithdrawable));
+		assert_eq!(
+			trader.buy_weight(&XcmContext::with_message_id([0; 32]), weight_to_buy, payment),
+			Err(XcmError::NotWithdrawable)
+		);
 	}
 }

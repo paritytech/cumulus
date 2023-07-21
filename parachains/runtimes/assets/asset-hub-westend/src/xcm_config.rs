@@ -142,10 +142,6 @@ pub type ForeignFungiblesTransactor = FungiblesAdapter<
 	CheckingAccount,
 >;
 
-/// `AssetId/Balance` converter for `MultiAssets` (any asset)
-pub type MultiAssetsConvertedConcreteId =
-	assets_common::MultiLocationConvertedConcreteId<(), Balance>;
-
 /// `AssetId/Balance` converter for `PoolAssets`
 pub type PoolAssetsConvertedConcreteId =
 	assets_common::PoolAssetsConvertedConcreteId<PoolAssetsPalletLocation, Balance>;
@@ -479,7 +475,7 @@ impl xcm_executor::Config for XcmConfig {
 			LocationToAccountId,
 			pallet_asset_conversion::Pallet<Runtime>,
 			WeightToFee,
-			MultiAssetsConvertedConcreteId,
+			TrustBackedAssetsConvertedConcreteId,
 			Assets,
 			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
 				// Revenue could also be Foreign Fungible? Maybe with multi-asset treasury..?
@@ -493,7 +489,7 @@ impl xcm_executor::Config for XcmConfig {
 			LocationToAccountId,
 			pallet_asset_conversion::Pallet<Runtime>,
 			WeightToFee,
-			MultiAssetsConvertedConcreteId,
+			ForeignAssetsConvertedConcreteId,
 			ForeignAssets,
 			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
 				// Revenue could also be Foreign Fungible? Maybe with multi-asset treasury..?
