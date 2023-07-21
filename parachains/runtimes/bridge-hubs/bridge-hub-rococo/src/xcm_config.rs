@@ -39,12 +39,12 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
 	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
-	CurrencyAdapter, DenyReserveTransferToRelayChain, DenyThenTry, DescribeAllTerminal,
-	DescribeFamily, EnsureXcmOrigin, IsConcrete, ParentAsSuperuser, ParentIsPreset,
-	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation,
-	TakeWeightCredit, TrailingSetTopicAsId, UsingComponents, WeightInfoBounds,
-	WithComputedOrigin, WithUniqueTopic,
+	CurrencyAdapter, DenyReserveTransferToRelayChain, DenyThenTry, DescribeAccountId32Terminal,
+	DescribeAccountKey20Terminal, DescribeAllTerminal, DescribeFamily, DescribePalletTerminal,
+	EnsureXcmOrigin, IsConcrete, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId,
+	UsingComponents, WeightInfoBounds, WithComputedOrigin, WithUniqueTopic,
 };
 use xcm_executor::{
 	traits::{ExportXcm, WithOriginFilter},
@@ -101,7 +101,12 @@ pub type LocationToAccountId = (
 	AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
-pub type DescribeAgentLocation = DescribeFamily<DescribeAllTerminal>;
+pub type DescribeAgentLocation = (
+	DescribePalletTerminal,
+	DescribeAccountId32Terminal,
+	DescribeAccountKey20Terminal,
+	DescribeFamily<DescribeAllTerminal>,
+);
 
 /// Means for transacting the native currency on this chain.
 pub type CurrencyTransactor = CurrencyAdapter<
