@@ -67,10 +67,13 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
+
+use pallet_xcm::EnsureXcm;
+
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 use xcm::v3::NetworkId::{self, Rococo};
-use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin, LocalOriginToLocation};
+use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin, DescribeAgentLocation};
 
 use bp_parachains::SingleParaStoredHeaderDataBuilder;
 use bp_runtime::HeaderId;
@@ -103,7 +106,6 @@ use parachains_common::{
 	impls::DealWithFees, opaque, AccountId, Balance, BlockNumber, Hash, Header, Index, Signature,
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
-use xcm_builder::EnsureXcmOrigin;
 use xcm_executor::XcmExecutor;
 
 /// The address format for describing accounts.
@@ -680,7 +682,8 @@ impl snowbridge_control::Config for Runtime {
 	type MessageHasher = BlakeTwo256;
 	type WeightInfo = ();
 	type MaxUpgradeDataSize = MaxUpgradeDataSize;
-	type CreateAgentOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+	type CreateAgentOrigin = EnsureXcm<Everything>;
+	type DescribeAgentLocation = DescribeAgentLocation;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
