@@ -25,11 +25,11 @@ use sp_core::{crypto::UncheckedInto, sr25519};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type AssetHubPolkadotChainSpec =
-	sc_service::GenericChainSpec<asset_hub_polkadot_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<asset_hub_polkadot_runtime::RuntimeGenesisConfig, Extensions>;
 pub type AssetHubKusamaChainSpec =
-	sc_service::GenericChainSpec<asset_hub_kusama_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<asset_hub_kusama_runtime::RuntimeGenesisConfig, Extensions>;
 pub type AssetHubWestendChainSpec =
-	sc_service::GenericChainSpec<asset_hub_westend_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<asset_hub_westend_runtime::RuntimeGenesisConfig, Extensions>;
 
 const ASSET_HUB_POLKADOT_ED: AssetHubBalance =
 	asset_hub_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
@@ -213,12 +213,13 @@ fn asset_hub_polkadot_genesis(
 	invulnerables: Vec<(AccountId, AssetHubPolkadotAuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> asset_hub_polkadot_runtime::GenesisConfig {
-	asset_hub_polkadot_runtime::GenesisConfig {
+) -> asset_hub_polkadot_runtime::RuntimeGenesisConfig {
+	asset_hub_polkadot_runtime::RuntimeGenesisConfig {
 		system: asset_hub_polkadot_runtime::SystemConfig {
 			code: asset_hub_polkadot_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
+			..Default::default()
 		},
 		balances: asset_hub_polkadot_runtime::BalancesConfig {
 			balances: endowed_accounts
@@ -227,7 +228,10 @@ fn asset_hub_polkadot_genesis(
 				.map(|k| (k, ASSET_HUB_POLKADOT_ED * 4096))
 				.collect(),
 		},
-		parachain_info: asset_hub_polkadot_runtime::ParachainInfoConfig { parachain_id: id },
+		parachain_info: asset_hub_polkadot_runtime::ParachainInfoConfig {
+			parachain_id: id,
+			..Default::default()
+		},
 		collator_selection: asset_hub_polkadot_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: ASSET_HUB_POLKADOT_ED * 16,
@@ -252,6 +256,7 @@ fn asset_hub_polkadot_genesis(
 		parachain_system: Default::default(),
 		polkadot_xcm: asset_hub_polkadot_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
+			..Default::default()
 		},
 	}
 }
@@ -402,12 +407,13 @@ fn asset_hub_kusama_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> asset_hub_kusama_runtime::GenesisConfig {
-	asset_hub_kusama_runtime::GenesisConfig {
+) -> asset_hub_kusama_runtime::RuntimeGenesisConfig {
+	asset_hub_kusama_runtime::RuntimeGenesisConfig {
 		system: asset_hub_kusama_runtime::SystemConfig {
 			code: asset_hub_kusama_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
+			..Default::default()
 		},
 		balances: asset_hub_kusama_runtime::BalancesConfig {
 			balances: endowed_accounts
@@ -416,7 +422,10 @@ fn asset_hub_kusama_genesis(
 				.map(|k| (k, ASSET_HUB_KUSAMA_ED * 524_288))
 				.collect(),
 		},
-		parachain_info: asset_hub_kusama_runtime::ParachainInfoConfig { parachain_id: id },
+		parachain_info: asset_hub_kusama_runtime::ParachainInfoConfig {
+			parachain_id: id,
+			..Default::default()
+		},
 		collator_selection: asset_hub_kusama_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: ASSET_HUB_KUSAMA_ED * 16,
@@ -439,6 +448,7 @@ fn asset_hub_kusama_genesis(
 		parachain_system: Default::default(),
 		polkadot_xcm: asset_hub_kusama_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
+			..Default::default()
 		},
 	}
 }
@@ -586,12 +596,13 @@ fn asset_hub_westend_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> asset_hub_westend_runtime::GenesisConfig {
-	asset_hub_westend_runtime::GenesisConfig {
+) -> asset_hub_westend_runtime::RuntimeGenesisConfig {
+	asset_hub_westend_runtime::RuntimeGenesisConfig {
 		system: asset_hub_westend_runtime::SystemConfig {
 			code: asset_hub_westend_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
+			..Default::default()
 		},
 		balances: asset_hub_westend_runtime::BalancesConfig {
 			balances: endowed_accounts
@@ -600,7 +611,10 @@ fn asset_hub_westend_genesis(
 				.map(|k| (k, ASSET_HUB_WESTEND_ED * 4096))
 				.collect(),
 		},
-		parachain_info: asset_hub_westend_runtime::ParachainInfoConfig { parachain_id: id },
+		parachain_info: asset_hub_westend_runtime::ParachainInfoConfig {
+			parachain_id: id,
+			..Default::default()
+		},
 		collator_selection: asset_hub_westend_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: ASSET_HUB_WESTEND_ED * 16,
@@ -625,6 +639,7 @@ fn asset_hub_westend_genesis(
 		parachain_system: Default::default(),
 		polkadot_xcm: asset_hub_westend_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
+			..Default::default()
 		},
 	}
 }

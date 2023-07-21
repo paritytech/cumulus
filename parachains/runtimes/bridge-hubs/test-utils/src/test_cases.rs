@@ -36,8 +36,9 @@ use bridge_runtime_common::{
 use codec::Encode;
 use frame_support::{
 	assert_ok,
-	traits::{Get, OriginTrait},
+	traits::{Get, OriginTrait, PalletInfoAccess},
 };
+use frame_system::pallet_prelude::{BlockNumberFor, HeaderFor};
 use pallet_bridge_grandpa::BridgedHeader;
 use parachains_runtimes_test_utils::{
 	mock_open_hrmp_channel, AccountIdOf, BalanceOf, CollatorSessionKeys, ExtBuilder, RuntimeHelper,
@@ -463,7 +464,18 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 			let relayer_id_on_source: AccountId32 = relayer_at_source.public().into();
 
 			let xcm = vec![xcm::v3::Instruction::<()>::ClearOrigin; 42];
-			let expected_dispatch = xcm::latest::Xcm::<()>(xcm.clone());
+			let expected_dispatch = xcm::latest::Xcm::<()>({
+				let mut expected_instructions = xcm.clone();
+				// dispatch prepends bridge pallet instance
+				expected_instructions.insert(
+					0,
+					DescendOrigin(X1(PalletInstance(
+						<pallet_bridge_messages::Pallet<Runtime, MPI> as PalletInfoAccess>::index()
+							as u8,
+					))),
+				);
+				expected_instructions
+			});
 			// generate bridged relay chain finality, parachain heads and message proofs,
 			// to be submitted by relayer to this chain.
 			let (
@@ -579,7 +591,7 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 	local_relay_chain_id: NetworkId,
 	lane_id: LaneId,
 	existential_deposit: BalanceOf<Runtime>,
-	executive_init_block: fn(&<Runtime as frame_system::Config>::Header),
+	executive_init_block: fn(&HeaderFor<Runtime>),
 	construct_and_apply_extrinsic: fn(
 		sp_keyring::AccountKeyring,
 		pallet_utility::Call::<Runtime>
@@ -642,10 +654,9 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 		.with_tracing()
 		.build()
 		.execute_with(|| {
-			let zero: <Runtime as frame_system::Config>::BlockNumber = 0u32.into();
+			let zero: BlockNumberFor<Runtime> = 0u32.into();
 			let genesis_hash = frame_system::Pallet::<Runtime>::block_hash(zero);
-			let mut header: <Runtime as frame_system::Config>::Header =
-				bp_test_utils::test_header(1u32.into());
+			let mut header: HeaderFor<Runtime> = bp_test_utils::test_header(1u32.into());
 			header.set_parent_hash(genesis_hash);
 			executive_init_block(&header);
 
@@ -672,7 +683,18 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 			let relay_header_number = 1;
 
 			let xcm = vec![xcm::latest::Instruction::<()>::ClearOrigin; 42];
-			let expected_dispatch = xcm::latest::Xcm::<()>(xcm.clone());
+			let expected_dispatch = xcm::latest::Xcm::<()>({
+				let mut expected_instructions = xcm.clone();
+				// dispatch prepends bridge pallet instance
+				expected_instructions.insert(
+					0,
+					DescendOrigin(X1(PalletInstance(
+						<pallet_bridge_messages::Pallet<Runtime, MPI> as PalletInfoAccess>::index()
+							as u8,
+					))),
+				);
+				expected_instructions
+			});
 			// generate bridged relay chain finality, parachain heads and message proofs,
 			// to be submitted by relayer to this chain.
 			let (
