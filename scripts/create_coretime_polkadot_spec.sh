@@ -52,32 +52,36 @@ cat chain-spec-plain.json | jq --rawfile code rt-hex.txt '.genesis.runtime.syste
     | jq --argjson para_id $para_id '.genesis.runtime.parachainInfo.parachainId = $para_id' \
     | jq '.genesis.runtime.balances.balances = []' \
     | jq '.genesis.runtime.collatorSelection.invulnerables = [
-                                                             ]' \
+            "13umUoWwGb765EPzMUrMmYTcEjKfNJiNyCDwdqAvCMzteGzi",
+            "13NAwtroa2efxgtih1oscJqjxcKpWJeQF8waWPTArBewi2CQ",
+            "162qThZRtVLKainHKQXGeS3iEjCkGg1XmySXZiexFXf9YPbv",
+            "13aoMEErH2F17vL58mJ9gtNya6xYvVRTF6cFzUf7PGAu4BVN"
+        ]' \
     | jq '.genesis.runtime.session.keys = [
             [
-                "",
-                "",
+                "13umUoWwGb765EPzMUrMmYTcEjKfNJiNyCDwdqAvCMzteGzi",
+                "13umUoWwGb765EPzMUrMmYTcEjKfNJiNyCDwdqAvCMzteGzi",
                     {
                         "aura": "0x4a69b6ec0eda668471d806db625681a147efc35a4baeacf0bca95d12d13cd942"
                     }
             ],
             [
-                "",
-                "",
+                "13NAwtroa2efxgtih1oscJqjxcKpWJeQF8waWPTArBewi2CQ",
+                "13NAwtroa2efxgtih1oscJqjxcKpWJeQF8waWPTArBewi2CQ",
                     {
                         "aura": "0xf0d0e90c36f95605510f00a9f0821675bc0c7b70e5c8d113b0426c21d627773b"
                     }
             ],
             [
-                "",
-                "",
+                "162qThZRtVLKainHKQXGeS3iEjCkGg1XmySXZiexFXf9YPbv",
+                "162qThZRtVLKainHKQXGeS3iEjCkGg1XmySXZiexFXf9YPbv",
                     {
                         "aura": "0x7eef7ea441b57ec8733ee9421b4362ecc18d4363e36f6cd7b4f87577aa15fc56"
                     }
             ],
             [
-                "",
-                "",
+                "13aoMEErH2F17vL58mJ9gtNya6xYvVRTF6cFzUf7PGAu4BVN",
+                "13aoMEErH2F17vL58mJ9gtNya6xYvVRTF6cFzUf7PGAu4BVN",
                     {
                         "aura": "0x78053fb2e32e35bbf13890a34dbdd00fd610843740235f5c397a76d19a27aa45"
                     }

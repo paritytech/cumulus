@@ -52,32 +52,36 @@ cat chain-spec-plain.json | jq --rawfile code rt-hex.txt '.genesis.runtime.syste
     | jq --argjson para_id $para_id '.genesis.runtime.parachainInfo.parachainId = $para_id' \
     | jq '.genesis.runtime.balances.balances = []' \
     | jq '.genesis.runtime.collatorSelection.invulnerables = [
-                                                             ]' \
+            "5GKXTtB7RG3mLJ2kT4AkDXoxvKCFDVUdwyRmeMEbX3gBwcGi",
+            "5DknBCD1h49nc8eqnm6XtHz3bMQm5hfMuGYcLenRfCmpnBJG",
+            "5D52g9Mt9jQnZn6hwYhv649QYqGwhjygxkpb6rm3FYzYHEs3",
+            "5Egx2B41PYj8uvuhkNJeucA54h6Xmi7ZH9wqrZLwj3CuvQKA"
+        ]' \
     | jq '.genesis.runtime.session.keys = [
             [
-                "",
-                "",
+                "5GKXTtB7RG3mLJ2kT4AkDXoxvKCFDVUdwyRmeMEbX3gBwcGi",
+                "5GKXTtB7RG3mLJ2kT4AkDXoxvKCFDVUdwyRmeMEbX3gBwcGi",
                     {
                         "aura": "0xbc3ea120d2991b75447b0b53cd8623970a0f6d98fa2701036c74d94e6b79252c"
                     }
             ],
             [
-                "",
-                "",
+                "5DknBCD1h49nc8eqnm6XtHz3bMQm5hfMuGYcLenRfCmpnBJG",
+                "5DknBCD1h49nc8eqnm6XtHz3bMQm5hfMuGYcLenRfCmpnBJG",
                     {
                         "aura": "0x4acc970c28713ec93bf925352d3023418fdf89933227e1e2fdae8481103dfe28"
                     }
             ],
             [
-                "",
-                "",
+                "5D52g9Mt9jQnZn6hwYhv649QYqGwhjygxkpb6rm3FYzYHEs3",
+                "5D52g9Mt9jQnZn6hwYhv649QYqGwhjygxkpb6rm3FYzYHEs3",
                     {
                         "aura": "0x2c7b95155708c10616b6f1a77a84f3d92c9a0272609ed24dbb7e6bdb81b53e76"
                     }
             ],
             [
-                "",
-                "",
+                "5Egx2B41PYj8uvuhkNJeucA54h6Xmi7ZH9wqrZLwj3CuvQKA",
+                "5Egx2B41PYj8uvuhkNJeucA54h6Xmi7ZH9wqrZLwj3CuvQKA",
                     {
                         "aura": "0x741cfb39ec61bc76824ccec62d61670a80a890e0e21d58817f84040d3ec54474"
                     }

@@ -52,32 +52,36 @@ cat chain-spec-plain.json | jq --rawfile code rt-hex.txt '.genesis.runtime.syste
     | jq --argjson para_id $para_id '.genesis.runtime.parachainInfo.parachainId = $para_id' \
     | jq '.genesis.runtime.balances.balances = []' \
     | jq '.genesis.runtime.collatorSelection.invulnerables = [
-                                                             ]' \
+            "HRn3a4qLmv1ejBHvEbnjaiEWjt154iFi2Wde7bXKGUwGvtL",
+            "Cx9Uu2sxp3Xt1QBUbGQo7j3imTvjWJrqPF1PApDoy6UVkWP",
+            "H9wzV7Uq383BHcywiTNQXHG36jFAGkThi6FZbe8HJXTXBCh",
+            "HKuLwzkQivNK8uYnGsU2y2vYvbMahQuiyAjnjzZo6fDPKfU"
+        ]' \
     | jq '.genesis.runtime.session.keys = [
             [
-                "",
-                "",
+                "HRn3a4qLmv1ejBHvEbnjaiEWjt154iFi2Wde7bXKGUwGvtL",
+                "HRn3a4qLmv1ejBHvEbnjaiEWjt154iFi2Wde7bXKGUwGvtL",
                     {
                         "aura": "0x4491cfc3ef17b4e02c66a7161f34fcacabf86ad64a783c1dbbe74e4ef82a7966"
                     }
             ],
             [
-                "",
-                "",
+                "Cx9Uu2sxp3Xt1QBUbGQo7j3imTvjWJrqPF1PApDoy6UVkWP",
+                "Cx9Uu2sxp3Xt1QBUbGQo7j3imTvjWJrqPF1PApDoy6UVkWP",
                     {
                         "aura": "0x04e3a3ecadbd493eb64ab2c19d215ccbc9eebea686dc3cea4833194674a8285e"
                     }
             ],
             [
-                "",
-                "",
+                "H9wzV7Uq383BHcywiTNQXHG36jFAGkThi6FZbe8HJXTXBCh",
+                "H9wzV7Uq383BHcywiTNQXHG36jFAGkThi6FZbe8HJXTXBCh",
                     {
                         "aura": "0xd6838cd2a39de890885e8a1c3c9c58a614f2bdd7b5740ee683a6bbc23703c244"
                     }
             ],
             [
-                "",
-                "",
+                "HKuLwzkQivNK8uYnGsU2y2vYvbMahQuiyAjnjzZo6fDPKfU",
+                "HKuLwzkQivNK8uYnGsU2y2vYvbMahQuiyAjnjzZo6fDPKfU",
                     {
                         "aura": "0x3cef8a7dc5acd430fc1471e56470ba55c950ee34789c3cf28bf951ce4b804364"
                     }
