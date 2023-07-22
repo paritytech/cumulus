@@ -10073,6 +10073,7 @@ dependencies = [
  "penpal-runtime",
  "polkadot-cli",
  "polkadot-primitives",
+ "polkadot-runtime-common",
  "polkadot-service",
  "rococo-parachain-runtime",
  "sc-basic-authorship",

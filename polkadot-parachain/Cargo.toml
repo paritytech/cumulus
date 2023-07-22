@@ -83,6 +83,7 @@ substrate-state-trie-migration-rpc = { git = "https://github.com/paritytech/subs
 # Use rococo-native as this is currently the default "local" relay chain
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", features = ["rococo-native"] }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 

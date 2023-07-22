@@ -15,7 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-	benchmarking::{inherent_benchmark_data, RemarkBuilder},
+	benchmarking::{inherent_benchmark_data, RemarkBuilder, SignedExtraFor},
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::new_partial,
@@ -383,24 +383,27 @@ impl SubstrateCli for RelayChainCli {
 
 /// Creates partial components for the runtimes that are supported by the benchmarks.
 macro_rules! construct_benchmark_partials {
-	($config:expr, |$partials:ident| $code:expr) => {
+	($config:expr, |$partials:ident, $runtime:ident| $code:expr) => {
 		match $config.chain_spec.runtime() {
 			Runtime::AssetHubKusama => {
-				let $partials = new_partial::<asset_hub_kusama_runtime::RuntimeApi, _>(
+				use asset_hub_kusama_runtime as $runtime;
+				let $partials = new_partial::<$runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::aura_build_import_queue::<_, AuraId>,
 				)?;
 				$code
 			},
 			Runtime::AssetHubWestend => {
-				let $partials = new_partial::<asset_hub_westend_runtime::RuntimeApi, _>(
+				use asset_hub_westend_runtime as $runtime;
+				let $partials = new_partial::<$runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::aura_build_import_queue::<_, AuraId>,
 				)?;
 				$code
 			},
 			Runtime::AssetHubPolkadot => {
-				let $partials = new_partial::<asset_hub_polkadot_runtime::RuntimeApi, _>(
+				use asset_hub_polkadot_runtime as $runtime;
+				let $partials = new_partial::<$runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::aura_build_import_queue::<_, AssetHubPolkadotAuraId>,
 				)?;
@@ -410,6 +413,8 @@ macro_rules! construct_benchmark_partials {
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotLocal |
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotDevelopment => {
+					#[allow(unused_imports)]
+					use bridge_hub_polkadot_runtime as $runtime;
 					let $partials = new_partial::<chain_spec::bridge_hubs::polkadot::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
@@ -419,6 +424,8 @@ macro_rules! construct_benchmark_partials {
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal |
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment => {
+					#[allow(unused_imports)]
+					use bridge_hub_kusama_runtime as $runtime;
 					let $partials = new_partial::<chain_spec::bridge_hubs::kusama::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
@@ -426,6 +433,8 @@ macro_rules! construct_benchmark_partials {
 					$code
 				},
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::Westend => {
+					#[allow(unused_imports)]
+					use bridge_hub_kusama_runtime as $runtime;
 					let $partials = new_partial::<chain_spec::bridge_hubs::westend::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
@@ -435,6 +444,8 @@ macro_rules! construct_benchmark_partials {
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal |
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoDevelopment => {
+					#[allow(unused_imports)]
+					use bridge_hub_rococo_runtime as $runtime;
 					let $partials = new_partial::<chain_spec::bridge_hubs::rococo::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
@@ -443,6 +454,8 @@ macro_rules! construct_benchmark_partials {
 				},
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::Wococo |
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::WococoLocal => {
+					#[allow(unused_imports)]
+					use bridge_hub_rococo_runtime as $runtime;
 					let $partials = new_partial::<chain_spec::bridge_hubs::wococo::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
@@ -451,7 +464,8 @@ macro_rules! construct_benchmark_partials {
 				},
 			},
 			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => {
-				let $partials = new_partial::<collectives_polkadot_runtime::RuntimeApi, _>(
+				use collectives_polkadot_runtime as $runtime;
+				let $partials = new_partial::<$runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::aura_build_import_queue::<_, AuraId>,
 				)?;
@@ -459,6 +473,9 @@ macro_rules! construct_benchmark_partials {
 			},
 			_ => Err("The chain is not supported".into()),
 		}
+	};
+	($config:expr, |$partials:ident| $code:expr) => {
+		construct_benchmark_partials!($config, |$partials, runtime| $code)
 	};
 }
 
@@ -720,8 +737,14 @@ pub fn run() -> Result<()> {
 					})
 				}),
 				BenchmarkCmd::Overhead(cmd) => runner.sync_run(|config| {
-					construct_benchmark_partials!(config, |partials| {
-						let ext_builder = RemarkBuilder::new(partials.client.clone());
+					construct_benchmark_partials!(config, |partials, runtime| {
+						let ext_builder = RemarkBuilder::<
+							runtime::RuntimeApi,
+							runtime::SignedExtra,
+							runtime::RuntimeCall,
+							SignedExtraFor<runtime::SignedExtra>,
+							runtime::Runtime,
+						>::new(partials.client.clone());
 
 						cmd.run(
 							config,
