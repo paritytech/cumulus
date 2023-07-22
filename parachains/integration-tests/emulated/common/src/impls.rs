@@ -138,12 +138,12 @@ pub struct TestAccount {
 }
 
 #[derive(Clone)]
-pub struct TestAssertions<T, S, R>(fn(Test<S, R, T>))
+pub struct TestAssertions<Origin, Destination, Args>(fn(Test<Origin, Destination, Args>))
 where
-	S: Chain + Clone,
-	R: Chain + Clone,
-	S::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
-	R::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+	Origin: Chain + Clone,
+	Destination: Chain + Clone,
+	Origin::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+	Destination::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
 ;
 
 #[derive(Clone)]
@@ -162,43 +162,43 @@ pub struct TestArgs<T> {
 }
 
 #[derive(Clone)]
-pub struct Test<S, R, T = DispatchArgs>
+pub struct Test<Origin, Destination, Args = DispatchArgs>
 where
-	S: Chain + Clone,
-	R: Chain + Clone,
-	S::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
-	R::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+	Origin: Chain + Clone,
+	Destination: Chain + Clone,
+	Origin::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+	Destination::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
 {
 	pub sender: TestAccount,
 	pub receiver: TestAccount,
-	pub signed_origin: S::RuntimeOrigin,
-	pub root_origin: S::RuntimeOrigin,
-	pub assertions_origin: Option<TestAssertions<T, S, R>>,
-	pub assertions_dest: Option<TestAssertions<T, S, R>>,
-	pub args: T,
-	_marker: PhantomData<R>,
+	pub signed_origin: Origin::RuntimeOrigin,
+	pub root_origin: Origin::RuntimeOrigin,
+	pub assertions_origin: Option<TestAssertions<Origin, Destination, Args>>,
+	pub assertions_dest: Option<TestAssertions<Origin, Destination, Args>>,
+	pub args: Args,
+	_marker: PhantomData<Destination>,
 }
 
-impl<S, R, T> Test<S, R, T>
+impl<Origin, Destination, Args> Test<Origin, Destination, Args>
 where
-	T: Clone,
-	S: Chain + Clone,
-	R: Chain + Clone,
-	S::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
-	R::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+	Args: Clone,
+	Origin: Chain + Clone,
+	Destination: Chain + Clone,
+	Origin::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+	Destination::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
 {
-	pub fn new(test_args: TestArgs<T>) -> Self {
+	pub fn new(test_args: TestArgs<Args>) -> Self {
 		Test {
 			sender: TestAccount {
 				account_id: test_args.sender.clone(),
-				balance: S::account_data_of(test_args.sender.clone()).free,
+				balance: Origin::account_data_of(test_args.sender.clone()).free,
 			},
 			receiver: TestAccount {
 				account_id: test_args.receiver.clone(),
-				balance: R::account_data_of(test_args.receiver.clone()).free,
+				balance: Destination::account_data_of(test_args.receiver.clone()).free,
 			},
-			signed_origin: <S as Chain>::RuntimeOrigin::signed(test_args.sender),
-			root_origin: <S as Chain>::RuntimeOrigin::root(),
+			signed_origin: <Origin as Chain>::RuntimeOrigin::signed(test_args.sender),
+			root_origin: <Origin as Chain>::RuntimeOrigin::root(),
 			assertions_origin: None,
 			assertions_dest: None,
 			args: test_args.args,
@@ -212,7 +212,7 @@ where
 	}
 
 	pub fn dispatch(&mut self, dispatchable: impl FnOnce(Self) -> sp_runtime::DispatchResult) {
-		S::execute_with(|| {
+		Origin::execute_with(|| {
 			assert_ok!(dispatchable(self.clone()));
 
 			if let Some(assertion) = &self.assertions_origin {
@@ -220,7 +220,7 @@ where
 			};
 		});
 
-		R::execute_with(|| {
+		Destination::execute_with(|| {
 			if let Some(assertion) = &self.assertions_dest {
 				assertion.0(self.clone());
 			};
@@ -230,7 +230,7 @@ where
 	}
 
 	fn update_balances(&mut self) {
-		self.sender.balance = S::account_data_of(self.sender.account_id.clone()).free;
-		self.receiver.balance = R::account_data_of(self.receiver.account_id.clone()).free;
+		self.sender.balance = Origin::account_data_of(self.sender.account_id.clone()).free;
+		self.receiver.balance = Destination::account_data_of(self.receiver.account_id.clone()).free;
 	}
 }
