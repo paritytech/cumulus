@@ -1670,15 +1670,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "casey"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "614586263949597dcc18675da12ef9b429135e13628d92eb8b8c6fa50ca5656b"
-dependencies = [
- "syn 1.0.109",
-]
-
-[[package]]
 name = "cast"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -16392,7 +16383,6 @@ dependencies = [
 name = "xcm-emulator"
 version = "0.1.0"
 dependencies = [
- "casey",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
@@ -16402,6 +16392,7 @@ dependencies = [
  "cumulus-test-service",
  "frame-support",
  "frame-system",
+ "impl-trait-for-tuples",
  "lazy_static",
  "log",
  "pallet-balances",
@@ -16412,10 +16403,10 @@ dependencies = [
  "paste",
  "polkadot-primitives",
  "polkadot-runtime-parachains",
- "quote",
  "sp-arithmetic",
  "sp-core",
  "sp-io",
+ "sp-runtime",
  "sp-std",
  "sp-trie",
  "xcm",

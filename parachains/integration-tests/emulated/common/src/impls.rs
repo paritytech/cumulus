@@ -1,7 +1,6 @@
 use super::{
 	BridgeHubRococo, BridgeHubWococo,
 };
-use frame_support::{assert_ok, sp_runtime::AccountId32, traits::OriginTrait};
 use bp_messages::{
 	target_chain::{DispatchMessage, DispatchMessageData, MessageDispatch},
 	LaneId, MessageKey, OutboundLaneData,
@@ -10,11 +9,8 @@ use bridge_runtime_common::messages_xcm_extension::XcmBlobMessageDispatchResult;
 use codec::Decode;
 pub use cumulus_primitives_core::{DmpMessageHandler, XcmpMessageHandler};
 use pallet_bridge_messages::{Config, Instance1, Instance2, OutboundLanes, Pallet};
-use parachains_common::{Balance, AccountId};
 use sp_core::Get;
-use xcm_emulator::{BridgeMessage, BridgeMessageDispatchError, BridgeMessageHandler, Chain, PhantomData};
-use xcm::{prelude::*, VersionedMultiLocation};
-pub use xcm::prelude::AccountId32 as AccountId32Junction;
+use xcm_emulator::{BridgeMessage, BridgeMessageDispatchError, BridgeMessageHandler, Chain};
 
 pub struct BridgeHubMessageHandler<S, T, I> {
 	_marker: std::marker::PhantomData<(S, T, I)>,
@@ -128,109 +124,5 @@ where
 		};
 
 		OutboundLanes::<S, Instance1>::insert(LaneIdWrapper::from(lane_id).0, new_data);
-	}
-}
-
-#[derive(Clone)]
-pub struct TestAccount {
-	pub account_id: AccountId,
-	pub balance: Balance,
-}
-
-#[derive(Clone)]
-pub struct TestAssertions<Origin, Destination, Args>(fn(Test<Origin, Destination, Args>))
-where
-	Origin: Chain + Clone,
-	Destination: Chain + Clone,
-	Origin::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
-	Destination::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
-;
-
-#[derive(Clone)]
-pub struct DispatchArgs {
-	pub dest: VersionedMultiLocation,
-	pub beneficiary: VersionedMultiLocation,
-	pub amount: Balance,
-	pub assets: VersionedMultiAssets,
-	pub fee_asset_item: u32,
-	pub weight_limit: WeightLimit,
-}
-pub struct TestArgs<T> {
-	pub sender: AccountId,
-	pub receiver: AccountId,
-	pub args: T,
-}
-
-#[derive(Clone)]
-pub struct Test<Origin, Destination, Args = DispatchArgs>
-where
-	Origin: Chain + Clone,
-	Destination: Chain + Clone,
-	Origin::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
-	Destination::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
-{
-	pub sender: TestAccount,
-	pub receiver: TestAccount,
-	pub signed_origin: Origin::RuntimeOrigin,
-	pub root_origin: Origin::RuntimeOrigin,
-	pub assertions_origin: Option<TestAssertions<Origin, Destination, Args>>,
-	pub assertions_dest: Option<TestAssertions<Origin, Destination, Args>>,
-	pub args: Args,
-	_marker: PhantomData<Destination>,
-}
-
-impl<Origin, Destination, Args> Test<Origin, Destination, Args>
-where
-	Args: Clone,
-	Origin: Chain + Clone,
-	Destination: Chain + Clone,
-	Origin::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
-	Destination::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
-{
-	pub fn new(test_args: TestArgs<Args>) -> Self {
-		Test {
-			sender: TestAccount {
-				account_id: test_args.sender.clone(),
-				balance: Origin::account_data_of(test_args.sender.clone()).free,
-			},
-			receiver: TestAccount {
-				account_id: test_args.receiver.clone(),
-				balance: Destination::account_data_of(test_args.receiver.clone()).free,
-			},
-			signed_origin: <Origin as Chain>::RuntimeOrigin::signed(test_args.sender),
-			root_origin: <Origin as Chain>::RuntimeOrigin::root(),
-			assertions_origin: None,
-			assertions_dest: None,
-			args: test_args.args,
-			_marker: Default::default(),
-		}
-	}
-
-	pub fn set_assertions(&mut self, origin: fn(Self), destination: fn(Self)) {
-		self.assertions_origin = Some(TestAssertions(origin));
-		self.assertions_dest = Some(TestAssertions(destination));
-	}
-
-	pub fn dispatch(&mut self, dispatchable: impl FnOnce(Self) -> sp_runtime::DispatchResult) {
-		Origin::execute_with(|| {
-			assert_ok!(dispatchable(self.clone()));
-
-			if let Some(assertion) = &self.assertions_origin {
-				assertion.0(self.clone());
-			};
-		});
-
-		Destination::execute_with(|| {
-			if let Some(assertion) = &self.assertions_dest {
-				assertion.0(self.clone());
-			};
-		});
-
-		Self::update_balances(self);
-	}
-
-	fn update_balances(&mut self) {
-		self.sender.balance = Origin::account_data_of(self.sender.account_id.clone()).free;
-		self.receiver.balance = Destination::account_data_of(self.receiver.account_id.clone()).free;
 	}
 }

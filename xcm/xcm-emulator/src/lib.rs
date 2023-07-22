@@ -33,8 +33,12 @@ pub use std::{
 pub use frame_support::{
 	assert_ok,
 	dispatch::EncodeLike,
-	traits::{tokens::currency::Currency, EnqueueMessage, Get, Hooks, ProcessMessage, ProcessMessageError, ServiceQueues},
-	sp_runtime::AccountId32,
+	traits::{
+		tokens::currency::Currency,
+		EnqueueMessage, Get, Hooks, ProcessMessage, ProcessMessageError,
+		ServiceQueues, OriginTrait
+	},
+	sp_runtime::{AccountId32, DispatchResult},
 	weights::{Weight, WeightMeter},
 };
 pub use frame_system::{AccountInfo, Config as SystemConfig, Pallet as SystemPallet};
@@ -67,7 +71,7 @@ pub use polkadot_runtime_parachains::{
 };
 
 // Polkadot
-pub use xcm::v3::prelude::*;
+pub use xcm::{v3::prelude::{*, AccountId32 as AccountId32Junction}, VersionedMultiAssets, VersionedMultiLocation};
 pub use xcm_executor::traits::ConvertLocation;
 
 thread_local! {
@@ -91,6 +95,42 @@ thread_local! {
 	pub static PARA_IDS: RefCell<HashMap<String, Vec<u32>>> = RefCell::new(HashMap::new());
 	/// Flag indicating if global variables have been initialized for a certain Network
 	pub static INITIALIZED: RefCell<HashMap<String, bool>> = RefCell::new(HashMap::new());
+}
+
+
+pub trait CheckAssertion<Origin, Destination, Hops, Args>
+where
+	Origin: Chain + Clone,
+	Destination: Chain + Clone,
+	Origin::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+	Destination::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+	Hops: Clone,
+	Args: Clone,
+{
+	fn check_assertion(
+		test: Test<Origin, Destination, Hops, Args>
+	);
+}
+
+
+
+#[impl_trait_for_tuples::impl_for_tuples(5)]
+impl<Origin, Destination, Hops, Args> CheckAssertion<Origin, Destination, Hops, Args> for Tuple
+where
+	Origin: Chain + Clone,
+	Destination: Chain + Clone,
+	Origin::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+	Destination::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+	Hops: Clone,
+	Args: Clone,
+{
+	fn check_assertion(
+		test: Test<Origin, Destination, Hops, Args>
+	) {
+		for_tuples!( #(
+			Tuple::check_assertion(test.clone());
+		)* );
+	}
 }
 
 pub trait TestExt {
@@ -368,6 +408,7 @@ macro_rules! decl_test_relay_chains {
 			}
 
 			$crate::__impl_test_ext_for_relay_chain!($name, $genesis, $on_init, $api_version);
+			$crate::__impl_check_assertion!($name);
 		)+
 	};
 }
@@ -617,6 +658,7 @@ macro_rules! decl_test_parachains {
 			}
 
 			$crate::__impl_test_ext_for_parachain!($name, $genesis, $on_init);
+			$crate::__impl_check_assertion!($name);
 		)+
 	};
 }
@@ -1085,6 +1127,33 @@ macro_rules! decl_test_bridges {
 }
 
 #[macro_export]
+macro_rules! __impl_check_assertion {
+	($chain:ident) => {
+		impl<Origin, Destination, Hops, Args> $crate::CheckAssertion<Origin, Destination, Hops, Args> for $chain
+		where
+			Origin: Chain + Clone,
+			Destination: Chain + Clone,
+			Origin::RuntimeOrigin: $crate::OriginTrait<AccountId = $crate::AccountId32> + Clone,
+			Destination::RuntimeOrigin: $crate::OriginTrait<AccountId = $crate::AccountId32> + Clone,
+			Hops: Clone,
+			Args: Clone,
+		{
+			fn check_assertion(
+				test: $crate::Test<Origin, Destination, Hops, Args>
+			) {
+				let chain_name = std::any::type_name::<$chain>();
+
+				<$chain>::execute_with(|| {
+					if let Some(assertion) = test.hops.get(chain_name) {
+						assertion(test);
+					}
+				});
+			}
+		}
+	};
+}
+
+#[macro_export]
 macro_rules! assert_expected_events {
 	( $chain:ident, vec![$( $event_pat:pat => { $($attr:ident : $condition:expr, )* }, )*] ) => {
 		let mut message: Vec<String> = Vec::new();
@@ -1135,13 +1204,14 @@ macro_rules! assert_expected_events {
 			if event_received && !meet_conditions  {
 				message.push(
 					format!(
-						"\n\nEvent \x1b[31m{}\x1b[0m was received but some of its attributes did not meet the conditions:\n{}",
+						"\n\n{}::\x1b[31m{}\x1b[0m was received but some of its attributes did not meet the conditions:\n{}",
+						stringify!($chain),
 						stringify!($event_pat),
 						event_message.concat()
 					)
 				);
 			} else if !event_received {
-				message.push(format!("\n\nEvent \x1b[31m{}\x1b[0m was never received", stringify!($event_pat)));
+				message.push(format!("\n\n{}::\x1b[31m{}\x1b[0m was never received", stringify!($chain), stringify!($event_pat)));
 			} else {
 				// If we find a perfect match we remove the event to avoid being potentially assessed multiple times
 				events.remove(index_match);
@@ -1204,6 +1274,123 @@ where
 		Ok(true)
 	}
 }
+
+#[derive(Clone)]
+pub struct TestAccount {
+	pub account_id: AccountId,
+	pub balance: Balance,
+}
+
+#[derive(Clone)]
+pub struct TestAssertions<Origin, Destination, Hops, Args>(fn(Test<Origin, Destination, Hops, Args>))
+where
+	Origin: Chain + Clone,
+	Destination: Chain + Clone,
+	Origin::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+	Destination::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+	Hops: Clone,
+;
+
+#[derive(Clone)]
+pub struct DispatchArgs {
+	pub dest: VersionedMultiLocation,
+	pub beneficiary: VersionedMultiLocation,
+	pub amount: Balance,
+	pub assets: VersionedMultiAssets,
+	pub fee_asset_item: u32,
+	pub weight_limit: WeightLimit,
+}
+pub struct TestArgs<T> {
+	pub sender: AccountId,
+	pub receiver: AccountId,
+	pub args: T,
+}
+
+#[derive(Clone)]
+pub struct Test<Origin, Destination, Hops = (), Args = DispatchArgs>
+where
+	Origin: Chain + Clone,
+	Destination: Chain + Clone,
+	Origin::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+	Destination::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+	Hops: Clone,
+{
+	pub sender: TestAccount,
+	pub receiver: TestAccount,
+	pub signed_origin: Origin::RuntimeOrigin,
+	pub root_origin: Origin::RuntimeOrigin,
+	pub assertions_origin: Option<TestAssertions<Origin, Destination, Hops, Args>>,
+	pub assertions_dest: Option<TestAssertions<Origin, Destination, Hops, Args>>,
+	pub hops: HashMap<String, fn(Self)>,
+	pub args: Args,
+	_marker: PhantomData<(Destination, Hops)>,
+}
+
+impl<Origin, Destination, Hops, Args> Test<Origin, Destination, Hops, Args>
+where
+	Args: Clone,
+	Origin: Chain + Clone,
+	Destination: Chain + Clone,
+	Origin::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+	Destination::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
+	Hops: Clone + CheckAssertion<Origin, Destination, Hops, Args>,
+{
+	pub fn new(test_args: TestArgs<Args>) -> Self {
+		Test {
+			sender: TestAccount {
+				account_id: test_args.sender.clone(),
+				balance: Origin::account_data_of(test_args.sender.clone()).free,
+			},
+			receiver: TestAccount {
+				account_id: test_args.receiver.clone(),
+				balance: Destination::account_data_of(test_args.receiver.clone()).free,
+			},
+			signed_origin: <Origin as Chain>::RuntimeOrigin::signed(test_args.sender),
+			root_origin: <Origin as Chain>::RuntimeOrigin::root(),
+			assertions_origin: None,
+			assertions_dest: None,
+			hops: Default::default(),
+			args: test_args.args,
+			_marker: Default::default(),
+		}
+	}
+
+	pub fn set_assertions(&mut self, origin: fn(Self), destination: fn(Self)) {
+		self.assertions_origin = Some(TestAssertions(origin));
+		self.assertions_dest = Some(TestAssertions(destination));
+	}
+
+	pub fn set_hop_assertion<Hop>(&mut self, assertion: fn(Self)) {
+		let chain_name = std::any::type_name::<Hop>();
+		self.hops.insert(chain_name.to_string(), assertion);
+	}
+
+	pub fn dispatch(&mut self, dispatchable: impl FnOnce(Self) -> DispatchResult) {
+		Origin::execute_with(|| {
+			assert_ok!(dispatchable(self.clone()));
+
+			if let Some(assertion) = &self.assertions_origin {
+				assertion.0(self.clone());
+			};
+		});
+
+		Hops::check_assertion(self.clone());
+
+		Destination::execute_with(|| {
+			if let Some(assertion) = &self.assertions_dest {
+				assertion.0(self.clone());
+			};
+		});
+
+		Self::update_balances(self);
+	}
+
+	fn update_balances(&mut self) {
+		self.sender.balance = Origin::account_data_of(self.sender.account_id.clone()).free;
+		self.receiver.balance = Destination::account_data_of(self.receiver.account_id.clone()).free;
+	}
+}
+
 
 pub mod helpers {
 	use super::Weight;

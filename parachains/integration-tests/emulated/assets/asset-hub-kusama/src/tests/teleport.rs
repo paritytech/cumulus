@@ -16,6 +16,9 @@
 
 use crate::*;
 
+type RelayToParaTest = Test<Kusama, AssetHubKusama>;
+type ParaToRelayTest = Test<AssetHubKusama, Kusama>;
+
 fn get_relay_dispatch_args(amount: Balance) -> DispatchArgs {
 	DispatchArgs {
 		dest: Kusama::child_location_of(AssetHubKusama::para_id()).into(),
@@ -44,7 +47,7 @@ fn get_para_dispatch_args(amount: Balance) -> DispatchArgs {
 	}
 }
 
-fn relay_origin_assertions(t: Test<Kusama, AssetHubKusama>) {
+fn relay_origin_assertions(t: RelayToParaTest) {
 	type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
 	assert_expected_events!(
@@ -73,7 +76,7 @@ fn relay_origin_assertions(t: Test<Kusama, AssetHubKusama>) {
 	);
 }
 
-fn para_dest_assertions(t: Test<Kusama, AssetHubKusama>) {
+fn para_dest_assertions(t: RelayToParaTest) {
 	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
 	assert_expected_events!(
@@ -96,7 +99,7 @@ fn para_dest_assertions(t: Test<Kusama, AssetHubKusama>) {
 	);
 }
 
-fn para_origin_assertions(t: Test<AssetHubKusama, Kusama>) {
+fn para_origin_assertions(t: ParaToRelayTest) {
 	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
 	assert_expected_events!(
@@ -122,7 +125,7 @@ fn para_origin_assertions(t: Test<AssetHubKusama, Kusama>) {
 	);
 }
 
-fn relay_dest_assertions(t: Test<AssetHubKusama, Kusama>) {
+fn relay_dest_assertions(t: ParaToRelayTest) {
 	type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
 	assert_expected_events!(
@@ -155,7 +158,7 @@ fn relay_dest_assertions(t: Test<AssetHubKusama, Kusama>) {
 	);
 }
 
-fn relay_dest_assertions_fail(_t: Test<AssetHubKusama, Kusama>) {
+fn relay_dest_assertions_fail(_t: ParaToRelayTest) {
 	type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
 	assert_expected_events!(
@@ -190,12 +193,12 @@ fn limited_teleport_native_assets_from_relay_to_system_para_works() {
 		args: get_relay_dispatch_args(amount_to_send),
 	};
 
-	let mut test = Test::<Kusama, AssetHubKusama>::new(test_args);
+	let mut test = RelayToParaTest::new(test_args);
 
 	let sender_balance_before = test.sender.balance;
 	let receiver_balance_before = test.receiver.balance;
 
-	let dispatchable = |t: Test<Kusama, AssetHubKusama>| {
+	let dispatchable = |t: RelayToParaTest| {
 		<Kusama as KusamaPallet>::XcmPallet::limited_teleport_assets(
 			t.signed_origin,
 			bx!(t.args.dest),
@@ -237,12 +240,12 @@ fn limited_teleport_native_assets_back_from_system_para_to_relay_works() {
 		args: get_para_dispatch_args(amount_to_send),
 	};
 
-	let mut test = Test::<AssetHubKusama, Kusama>::new(test_args);
+	let mut test = ParaToRelayTest::new(test_args);
 
 	let sender_balance_before = test.sender.balance;
 	let receiver_balance_before = test.receiver.balance;
 
-	let dispatchable = |t: Test<AssetHubKusama, Kusama>| {
+	let dispatchable = |t: ParaToRelayTest| {
 		<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::limited_teleport_assets(
 			t.signed_origin,
 			bx!(t.args.dest),
@@ -281,12 +284,12 @@ fn limited_teleport_native_assets_from_system_para_to_relay_fails() {
 		args: get_para_dispatch_args(amount_to_send),
 	};
 
-	let mut test = Test::<AssetHubKusama, Kusama>::new(test_args);
+	let mut test = ParaToRelayTest::new(test_args);
 
 	let sender_balance_before = test.sender.balance;
 	let receiver_balance_before = test.receiver.balance;
 
-	let dispatchable = |t: Test<AssetHubKusama, Kusama>| {
+	let dispatchable = |t: ParaToRelayTest| {
 		<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::limited_teleport_assets(
 			t.signed_origin,
 			bx!(t.args.dest),
@@ -324,12 +327,12 @@ fn teleport_native_assets_from_relay_to_system_para_works() {
 		args: get_relay_dispatch_args(amount_to_send),
 	};
 
-	let mut test = Test::<Kusama, AssetHubKusama>::new(test_args);
+	let mut test = RelayToParaTest::new(test_args);
 
 	let sender_balance_before = test.sender.balance;
 	let receiver_balance_before = test.receiver.balance;
 
-	let dispatchable = |t: Test<Kusama, AssetHubKusama>| {
+	let dispatchable = |t: RelayToParaTest| {
 		<Kusama as KusamaPallet>::XcmPallet::teleport_assets(
 			t.signed_origin,
 			bx!(t.args.dest),
@@ -377,12 +380,12 @@ fn teleport_native_assets_from_relay_to_system_para_works() {
 // 		args: get_para_dispatch_args(amount_to_send),
 // 	};
 
-// 	let mut test = Test::<AssetHubKusama, Kusama>::new(test_args);
+// 	let mut test = ParaToRelayTest::new(test_args);
 
 // 	let sender_balance_before = test.sender.balance;
 // 	let receiver_balance_before = test.receiver.balance;
 
-// 	let dispatchable = |t: Test<AssetHubKusama, Kusama>| {
+// 	let dispatchable = |t: ParaToRelayTest| {
 // 		<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::teleport_assets(
 // 			t.signed_origin,
 // 			bx!(t.args.dest),
@@ -420,12 +423,12 @@ fn teleport_native_assets_from_relay_to_system_para_works() {
 // 		args: get_para_dispatch_args(amount_to_send),
 // 	};
 
-// 	let mut test = Test::<AssetHubKusama, Kusama>::new(test_args);
+// 	let mut test = ParaToRelayTest::new(test_args);
 
 // 	let sender_balance_before = test.sender.balance;
 // 	let receiver_balance_before = test.receiver.balance;
 
-// 	let dispatchable = |t: Test<AssetHubKusama, Kusama>| {
+// 	let dispatchable = |t: ParaToRelayTest| {
 // 		<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::teleport_assets(
 // 			t.signed_origin,
 // 			bx!(t.args.dest),
