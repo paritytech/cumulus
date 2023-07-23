@@ -25,8 +25,9 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
 
-use sc_client_api::Backend;
+use sc_client_api::{HeaderBackend, Backend};
 use sc_consensus::{shared_data::SharedData, BlockImport, ImportResult};
+use sp_blockchain::Backend as BlockchainBackend;
 use sp_consensus_slots::Slot;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use sp_timestamp::Timestamp;
@@ -45,10 +46,18 @@ pub use level_monitor::{LevelLimit, MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT};
 
 pub mod import_queue;
 
-/// Provides the hash of validation code used for authoring/execution blocks at a given
+/// Provides the hash of validation code used for authoring/execution of blocks at a given
 /// hash.
 pub trait ValidationCodeHashProvider<Hash> {
 	fn code_hash_at(&self, at: Hash) -> Option<ValidationCodeHash>;
+}
+
+impl<F, Hash> ValidationCodeHashProvider<Hash> for F
+	where F: Fn(Hash) -> Option<ValidationCodeHash>
+{
+	fn code_hash_at(&self, at: Hash) -> Option<ValidationCodeHash> {
+		(self)(at)
+	}
 }
 
 /// The result of [`ParachainConsensus::produce_candidate`].
@@ -245,7 +254,7 @@ pub struct PotentialParent<B: BlockT> {
 ///   * the block number is within `max_depth` blocks of the included block
 pub async fn find_potential_parents<B: BlockT>(
 	params: ParentSearchParams,
-	client: &impl sp_blockchain::Backend<B>,
+	client: &impl Backend<B>,
 	relay_client: &impl RelayChainInterface,
 ) -> Result<Vec<PotentialParent<B>>, RelayChainError> {
 	// 1. Build up the ancestry record of the relay chain to compare against.
@@ -344,7 +353,7 @@ pub async fn find_potential_parents<B: BlockT>(
 		}
 
 		// push children onto search frontier.
-		for child in client.children(hash).ok().into_iter().flatten() {
+		for child in client.blockchain().children(hash).ok().into_iter().flatten() {
 			let aligned_with_pending = parent_aligned_with_pending &&
 				if child_depth == 1 {
 					pending_hash.as_ref().map_or(true, |h| &child == h)
@@ -356,7 +365,7 @@ pub async fn find_potential_parents<B: BlockT>(
 				continue
 			}
 
-			let header = match client.header(child) {
+			let header = match client.blockchain().header(child) {
 				Ok(Some(h)) => h,
 				Ok(None) => continue,
 				Err(_) => continue,

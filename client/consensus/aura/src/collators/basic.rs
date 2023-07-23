@@ -161,6 +161,8 @@ where
 				continue
 			}
 
+			// TODO [now]: it'd be nice to handle this gracefully when unincluded segment
+			// is at maximum.
 			match params
 				.relay_client
 				.candidate_pending_availability(*request.relay_parent(), params.para_id)

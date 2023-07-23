@@ -79,7 +79,7 @@ pub struct Params<BI, CIDP, Client, Backend, RClient, CHP, SO, Proposer, CS> {
 	/// The para client's backend, used to access the database.
 	pub para_backend: Arc<Backend>,
 	/// A handle to the relay-chain client.
-	pub relay_client: Arc<RClient>,
+	pub relay_client: RClient,
 	/// A validation code hash provider, used to get the current validation code hash.
 	pub code_hash_provider: CHP,
 	/// A chain synchronization oracle.
@@ -120,8 +120,8 @@ where
 		+ 'static,
 	Client::Api:
 		AuraApi<Block, P::Public> + CollectCollationInfo<Block> + AuraUnincludedSegmentApi<Block>,
-	Backend: sp_blockchain::Backend<Block> + 'static,
-	RClient: RelayChainInterface + 'static,
+	Backend: sc_client_api::Backend<Block> + 'static,
+	RClient: RelayChainInterface + Clone + 'static,
 	CIDP: CreateInherentDataProviders<Block, ()> + 'static,
 	CIDP::InherentDataProviders: Send,
 	BI: BlockImport<Block> + ParachainBlockImportMarker + Send + Sync + 'static,
