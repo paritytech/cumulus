@@ -21,7 +21,11 @@ use sc_client_api::BlockBackend;
 use sp_core::{Pair, H256};
 use sp_inherents::{InherentData, InherentDataProvider};
 use sp_keyring::Sr25519Keyring;
-use sp_runtime::{generic, traits::SignedExtension, OpaqueExtrinsic, SaturatedConversion};
+use sp_runtime::{
+	generic::{Era, SignedPayload, UncheckedExtrinsic},
+	traits::SignedExtension,
+	MultiAddress, OpaqueExtrinsic, SaturatedConversion,
+};
 
 use cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider;
 use parachains_common::BlockNumber;
@@ -50,7 +54,7 @@ impl SignedExtraProvider<asset_hub_kusama_runtime::SignedExtra>
 			frame_system::CheckSpecVersion::<asset_hub_kusama_runtime::Runtime>::new(),
 			frame_system::CheckTxVersion::<asset_hub_kusama_runtime::Runtime>::new(),
 			frame_system::CheckGenesis::<asset_hub_kusama_runtime::Runtime>::new(),
-			frame_system::CheckEra::<asset_hub_kusama_runtime::Runtime>::from(generic::Era::mortal(
+			frame_system::CheckEra::<asset_hub_kusama_runtime::Runtime>::from(Era::mortal(
 				period,
 				best_block.saturated_into(),
 			)),
@@ -90,9 +94,10 @@ impl SignedExtraProvider<asset_hub_westend_runtime::SignedExtra>
 			frame_system::CheckSpecVersion::<asset_hub_westend_runtime::Runtime>::new(),
 			frame_system::CheckTxVersion::<asset_hub_westend_runtime::Runtime>::new(),
 			frame_system::CheckGenesis::<asset_hub_westend_runtime::Runtime>::new(),
-			frame_system::CheckEra::<asset_hub_westend_runtime::Runtime>::from(
-				generic::Era::mortal(period, best_block.saturated_into()),
-			),
+			frame_system::CheckEra::<asset_hub_westend_runtime::Runtime>::from(Era::mortal(
+				period,
+				best_block.saturated_into(),
+			)),
 			frame_system::CheckNonce::<asset_hub_westend_runtime::Runtime>::from(nonce),
 			frame_system::CheckWeight::<asset_hub_westend_runtime::Runtime>::new(),
 			pallet_asset_conversion_tx_payment::ChargeAssetTxPayment::<
@@ -132,7 +137,7 @@ impl SignedExtraProvider<asset_hub_polkadot_runtime::SignedExtra>
 			frame_system::CheckTxVersion::<asset_hub_polkadot_runtime::Runtime>::new(),
 			frame_system::CheckGenesis::<asset_hub_polkadot_runtime::Runtime>::new(),
 			frame_system::CheckEra::<asset_hub_polkadot_runtime::Runtime>::from(
-				generic::Era::mortal(period, best_block.saturated_into()),
+				Era::mortal(period, best_block.saturated_into()),
 			),
 			frame_system::CheckNonce::<asset_hub_polkadot_runtime::Runtime>::from(nonce),
 			frame_system::CheckWeight::<asset_hub_polkadot_runtime::Runtime>::new(),
@@ -170,9 +175,10 @@ impl SignedExtraProvider<collectives_polkadot_runtime::SignedExtra>
 			frame_system::CheckSpecVersion::<collectives_polkadot_runtime::Runtime>::new(),
 			frame_system::CheckTxVersion::<collectives_polkadot_runtime::Runtime>::new(),
 			frame_system::CheckGenesis::<collectives_polkadot_runtime::Runtime>::new(),
-			frame_system::CheckEra::<collectives_polkadot_runtime::Runtime>::from(
-				generic::Era::mortal(period, best_block.saturated_into()),
-			),
+			frame_system::CheckEra::<collectives_polkadot_runtime::Runtime>::from(Era::mortal(
+				period,
+				best_block.saturated_into(),
+			)),
 			frame_system::CheckNonce::<collectives_polkadot_runtime::Runtime>::from(nonce),
 			frame_system::CheckWeight::<collectives_polkadot_runtime::Runtime>::new(),
 		)
@@ -207,9 +213,10 @@ impl SignedExtraProvider<bridge_hub_polkadot_runtime::SignedExtra>
 			frame_system::CheckSpecVersion::<bridge_hub_polkadot_runtime::Runtime>::new(),
 			frame_system::CheckTxVersion::<bridge_hub_polkadot_runtime::Runtime>::new(),
 			frame_system::CheckGenesis::<bridge_hub_polkadot_runtime::Runtime>::new(),
-			frame_system::CheckEra::<bridge_hub_polkadot_runtime::Runtime>::from(
-				generic::Era::mortal(period, best_block.saturated_into()),
-			),
+			frame_system::CheckEra::<bridge_hub_polkadot_runtime::Runtime>::from(Era::mortal(
+				period,
+				best_block.saturated_into(),
+			)),
 			frame_system::CheckNonce::<bridge_hub_polkadot_runtime::Runtime>::from(nonce),
 			frame_system::CheckWeight::<bridge_hub_polkadot_runtime::Runtime>::new(),
 			pallet_transaction_payment::ChargeTransactionPayment::<
@@ -248,9 +255,10 @@ impl SignedExtraProvider<bridge_hub_kusama_runtime::SignedExtra>
 			frame_system::CheckSpecVersion::<bridge_hub_kusama_runtime::Runtime>::new(),
 			frame_system::CheckTxVersion::<bridge_hub_kusama_runtime::Runtime>::new(),
 			frame_system::CheckGenesis::<bridge_hub_kusama_runtime::Runtime>::new(),
-			frame_system::CheckEra::<bridge_hub_kusama_runtime::Runtime>::from(
-				generic::Era::mortal(period, best_block.saturated_into()),
-			),
+			frame_system::CheckEra::<bridge_hub_kusama_runtime::Runtime>::from(Era::mortal(
+				period,
+				best_block.saturated_into(),
+			)),
 			frame_system::CheckNonce::<bridge_hub_kusama_runtime::Runtime>::from(nonce),
 			frame_system::CheckWeight::<bridge_hub_kusama_runtime::Runtime>::new(),
 			pallet_transaction_payment::ChargeTransactionPayment::<
@@ -290,7 +298,7 @@ impl SignedExtraProvider<bridge_hub_rococo_runtime::SignedExtra>
 			frame_system::CheckTxVersion::<bridge_hub_rococo_runtime::Runtime>::new(),
 			frame_system::CheckGenesis::<bridge_hub_rococo_runtime::Runtime>::new(),
 			frame_system::CheckEra::<bridge_hub_rococo_runtime::Runtime>::from(
-				generic::Era::mortal(period, best_block.saturated_into()),
+				Era::mortal(period, best_block.saturated_into()),
 			),
 			frame_system::CheckNonce::<bridge_hub_rococo_runtime::Runtime>::from(nonce),
 			frame_system::CheckWeight::<bridge_hub_rococo_runtime::Runtime>::new(),
@@ -368,17 +376,17 @@ where
 		let call: RuntimeCall = frame_system::Call::remark { remark: vec![] }.into();
 		let genesis_hash = self.client.block_hash(0).ok().flatten().expect("Genesis block exists");
 		let best_hash = self.client.chain_info().best_hash;
-		let payload = generic::SignedPayload::<RuntimeCall, SignedExtra>::from_raw(
-			call.clone().into(),
+		let payload = SignedPayload::<RuntimeCall, SignedExtra>::from_raw(
+			call.clone(),
 			extra.clone(),
 			Extra::get_additional_signed(genesis_hash, best_hash),
 		);
 
 		let sender = Sr25519Keyring::Bob.pair();
 		let signature = payload.using_encoded(|x| sender.sign(x));
-		let extrinsic = generic::UncheckedExtrinsic::new_signed(
+		let extrinsic = UncheckedExtrinsic::<MultiAddress<_, ()>, _, _, _>::new_signed(
 			call,
-			sp_runtime::AccountId32::from(sender.public()),
+			sp_runtime::AccountId32::from(sender.public()).into(),
 			parachains_common::Signature::Sr25519(signature),
 			extra,
 		);
