@@ -144,6 +144,23 @@ impl CheckAssociatedRelayNumber for AnyRelayNumber {
 	fn check_associated_relay_number(_: RelayChainBlockNumber, _: RelayChainBlockNumber) {}
 }
 
+/// Provides an implementation of [`CheckAssociatedRelayNumber`].
+///
+/// It will ensure that the associated relay block number monotonically increases between Parachain
+/// blocks. This should be used when asynchronous backing is enabled.
+pub struct RelayNumberMonotonicallyIncreases;
+
+impl CheckAssociatedRelayNumber for RelayNumberMonotonicallyIncreases {
+	fn check_associated_relay_number(
+		current: RelayChainBlockNumber,
+		previous: RelayChainBlockNumber,
+	) {
+		if current < previous {
+			panic!("Relay chain block number needs to monotonically increase between Parachain blocks!")
+		}
+	}
+}
+
 /// Information needed when a new runtime binary is submitted and needs to be authorized before
 /// replacing the current runtime.
 #[derive(Decode, Encode, Default, PartialEq, Eq, MaxEncodedLen, TypeInfo)]
