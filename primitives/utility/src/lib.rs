@@ -28,13 +28,14 @@ use frame_support::{
 	},
 	weights::Weight,
 };
-use pallet_asset_conversion::{Config, MultiAssetIdConverter, Swap};
+use pallet_asset_conversion::{Config, MultiAssetIdConversionResult, MultiAssetIdConverter, Swap};
 use polkadot_runtime_common::xcm_sender::ConstantPrice;
 use sp_runtime::{
 	traits::{CheckedSub, Saturating},
 	SaturatedConversion,
 };
 use sp_std::{marker::PhantomData, prelude::*};
+use std::ops::Mul;
 use xcm::{latest::prelude::*, WrapVersion};
 use xcm_builder::TakeRevenue;
 use xcm_executor::traits::{ConvertLocation, MatchesFungibles, TransactAsset, WeightTrader};
@@ -314,7 +315,7 @@ impl<
 	> where
 	T::HigherPrecisionBalance: From<ConcreteAssets::Balance> + Into<T::AssetBalance>,
 	T::AssetBalance: Into<Fungibility>,
-	MultiLocation: From<ConcreteAssets::AssetId> + Into<T::AssetId>,
+	MultiLocation: From<ConcreteAssets::AssetId> + Into<T::MultiAssetId>,
 {
 	fn new() -> Self {
 		Self(None, PhantomData)
@@ -344,11 +345,11 @@ impl<
 		// Take the first multiasset from the selected MultiAssets
 		let first = multiassets.get(0).ok_or(XcmError::AssetNotFound)?;
 
-		// Get the multi asset id in which we can pay for fees
+		// Get the asset id in which we can pay for fees
 		let (asset_id, local_asset_balance) =
 			Matcher::matches_fungibles(first).map_err(|_| XcmError::AssetNotFound)?;
 
-		let multi_id: MultiLocation = asset_id.into();
+		let asset_loc: MultiLocation = asset_id.into();
 
 		let fee = WeightToFee::weight_to_fee(&weight);
 
@@ -356,7 +357,7 @@ impl<
 
 		let amount_taken = SWP::swap_tokens_for_exact_tokens(
 			acc.clone(),
-			vec![T::MultiAssetId::from(multi_id.into()), T::MultiAssetIdConverter::get_native()],
+			vec![asset_loc.into(), T::MultiAssetIdConverter::get_native()],
 			fee.into(),
 			None,
 			acc.clone(),

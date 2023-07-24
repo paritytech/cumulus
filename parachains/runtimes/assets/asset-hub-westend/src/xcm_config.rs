@@ -24,6 +24,7 @@ use assets_common::{
 	matching::{
 		FromSiblingParachain, IsForeignConcreteAsset, StartsWith, StartsWithExplicitGlobalConsensus,
 	},
+	AssetIdForTrustBackedAssetsConvert,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -476,21 +477,11 @@ impl xcm_executor::Config for XcmConfig {
 			pallet_asset_conversion::Pallet<Runtime>,
 			WeightToFee,
 			TrustBackedAssetsConvertedConcreteId,
-			Assets,
-			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
-				// Revenue could also be Foreign Fungible? Maybe with multi-asset treasury..?
-				FungiblesTransactor,
-				AccountId,
-				XcmAssetFeesReceiver,
+			LocalAndForeignAssets<
+				Assets,
+				AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>,
+				ForeignAssets,
 			>,
-		>,
-		cumulus_primitives_utility::SwapFirstAssetTrader<
-			Runtime,
-			LocationToAccountId,
-			pallet_asset_conversion::Pallet<Runtime>,
-			WeightToFee,
-			ForeignAssetsConvertedConcreteId,
-			ForeignAssets,
 			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
 				// Revenue could also be Foreign Fungible? Maybe with multi-asset treasury..?
 				FungiblesTransactor,
