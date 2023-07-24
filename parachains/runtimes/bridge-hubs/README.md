@@ -1,15 +1,16 @@
 - [Bridge-hub Parachains](#bridge-hub-parachains)
-  * [Requirements for local run/testing](#requirements-for-local-run-testing)
-  * [How to test locally Rococo <-> Wococo bridge](#how-to-test-locally-rococo-----wococo-bridge)
-    + [Run chains (Rococo + BridgeHub, Wococo + BridgeHub) with zombienet](#run-chains--rococo---bridgehub--wococo---bridgehub--with-zombienet)
-    + [Run relayer (BridgeHubRococo, BridgeHubWococo)](#run-relayer--bridgehubrococo--bridgehubwococo-)
-      - [Run with script (alternative 1)](#run-with-script--alternative-1-)
-      - [Run with binary (alternative 2)](#run-with-binary--alternative-2-)
+  * [Requirements for local run/testing](#requirements-for-local-runtesting)
+  * [How to test local Rococo <-> Wococo bridge](#how-to-test-local-rococo---wococo-bridge)
+    + [Run chains (Rococo + BridgeHub, Wococo + BridgeHub) with zombienet](#run-chains-rococo--bridgehub--assethub-wococo--bridgehub--assethub-with-zombienet)
+    + [Run relayer (BridgeHubRococo, BridgeHubWococo)](#run-relayer-bridgehubrococo-bridgehubwococo)
+      - [Run with script (alternative 1)](#run-with-script-alternative-1)
+      - [Run with binary (alternative 2)](#run-with-binary-alternative-2)
     + [Send messages - transfer asset over bridge](#send-messages---transfer-asset-over-bridge)
-  * [How to test locally Kusama <-> Polkadot bridge](#how-to-test-locally-kusama-----polkadot-bridge)
-    + [1. Run chains (Kusama + BridgeHub + AssetHub, Polkadot + BridgeHub + AssetHub) with zombienet](#1-run-chains--kusama---bridgehub---assethub--polkadot---bridgehub---assethub--with-zombienet)
-    + [2. Init bridge and run relayer (BridgeHubKusama, BridgeHubPolkadot)](#2-init-bridge-and-run-relayer--bridgehubkusama--bridgehubpolkadot-)
-    + [Send messages - transfer asset over bridge](#send-messages---transfer-asset-over-bridge-1)
+  * [How to test live BridgeHubRococo/BridgeHubWococo](#how-to-test-live-bridgehubrococobridgehubwococo)
+  * [How to test local BridgeHubKusama/BridgeHubPolkadot](#how-to-test-local-bridgehubkusamabridgehubpolkadot)
+    + [1. Run chains (Kusama + BridgeHub + AssetHub, Polkadot + BridgeHub + AssetHub) with zombienet](#1-run-chains-kusama--bridgehub--assethub-polkadot--bridgehub--assethub-with-zombienet)
+    + [2. Init bridge and run relayer (BridgeHubKusama, BridgeHubPolkadot)](#2-init-bridge-and-run-relayer-bridgehubkusama-bridgehubpolkadot)
+    + [Send messages - transfer asset over bridge (DOTs/KSMs)](#send-messages---transfer-asset-over-bridge-dotsksms)
 
 # Bridge-hub Parachains
 
@@ -41,6 +42,7 @@ mkdir -p ~/local_bridge_testing/logs
 Go to: https://github.com/paritytech/zombienet/releases
 Copy the apropriate binary (zombienet-linux) from the latest release to ~/local_bridge_testing/bin
 
+
 ---
 # 2. Build polkadot binary
 git clone https://github.com/paritytech/polkadot.git
@@ -53,6 +55,7 @@ cd polkadot
 
 cargo build --release --features fast-runtime
 cp target/release/polkadot ~/local_bridge_testing/bin/polkadot
+
 
 ---
 # 3. Build substrate-relay binary
@@ -68,6 +71,7 @@ git checkout -b polkadot-staging --track origin/polkadot-staging
 cargo build --release -p substrate-relay
 cp target/release/substrate-relay ~/local_bridge_testing/bin/substrate-relay
 
+
 ---
 # 4. Build cumulus polkadot-parachain binary
 cd <cumulus-git-repo-dir>
@@ -75,21 +79,39 @@ cd <cumulus-git-repo-dir>
 # checkout desired branch or use master:
 # git checkout -b master --track origin/master
 
-# !!! READ HERE (TODO remove once merged)
-# The use case "moving assets over bridge" is not merged yet and is implemented in separate branches.
-# So, if you want to try it, you need to checkout different branch and continue with these instructions there.
-#
-# For Rococo/Wococo local/onchain bridge testing:
-# git checkout -b bko-transfer-asset-via-bridge-ro-wo --track origin/bko-transfer-asset-via-bridge-ro-wo
-
 cargo build --release --locked --bin polkadot-parachain
 cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain
 cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain-asset-hub
+
+
+
+# !!! READ HERE (TODO remove once all mentioned branches bellow are merged)
+# The use case "moving assets over bridge" is not merged yet and is implemented in separate branches.
+# So, if you want to try it, you need to checkout different branch and continue with these instructions there.
+
+# For Kusama/Polkadot local bridge testing:
+#
+# build BridgeHubs (polkadot-parachain) from branch:
+# git checkout -b bridge-hub-kusama-polkadot --track origin/bridge-hub-kusama-polkadot
+# cargo build --release --locked --bin polkadot-parachain
+# cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain
+#
+# build AssetHubs (polkadot-parachain-asset-hub) from branch:
+# git checkout -b bko-transfer-asset-via-bridge-pallet-xcm --track origin/bko-transfer-asset-via-bridge-pallet-xcm
+# cargo build --release --locked --bin polkadot-parachain
+# cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain-asset-hub
+
+# For Rococo/Wococo local bridge testing:
+#
+# build AssetHubs (polkadot-parachain-asset-hub) from branch:
+# git checkout -b bko-transfer-asset-via-bridge-pallet-xcm-ro-wo --track origin/bko-transfer-asset-via-bridge-pallet-xcm-ro-wo
+# cargo build --release --locked --bin polkadot-parachain
+# cp target/release/polkadot-parachain ~/local_bridge_testing/bin/polkadot-parachain-asset-hub
 ```
 
-## How to test locally Rococo <-> Wococo bridge
+## How to test local Rococo <-> Wococo bridge
 
-### Run chains (Rococo + BridgeHub, Wococo + BridgeHub) with zombienet
+### Run chains (Rococo + BridgeHub + AssetHub, Wococo + BridgeHub + AssetHub) with zombienet
 
 ```
 # Rococo + BridgeHubRococo + AssetHub for Rococo (mirroring Kusama)
@@ -196,7 +218,22 @@ RUST_LOG=runtime=trace,rpc=trace,bridge=trace \
 
 TODO: see `# !!! READ HERE` above
 
-## How to test locally Kusama <-> Polkadot bridge
+## How to test live BridgeHubRococo/BridgeHubWococo
+(here is still deployed older PoC from branch `origin/bko-transfer-asset-via-bridge`, which uses custom extrinsic, which is going to be replaced by `pallet_xcm` usage)
+- uses account seed on Live Rococo:Rockmine2
+  ```
+  cd <cumulus-git-repo-dir>
+  ./scripts/bridges_rococo_wococo.sh transfer-asset-from-asset-hub-rococo
+  ```
+
+- open explorers:
+	- Rockmine2 (see events `xcmpQueue.XcmpMessageSent`, `bridgeTransfer.ReserveAssetsDeposited`, `bridgeTransfer.TransferInitiated`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fws-rococo-rockmine2-collator-node-0.parity-testnet.parity.io#/explorer
+	- BridgeHubRococo (see `bridgeWococoMessages.MessageAccepted`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-bridge-hub-rpc.polkadot.io#/explorer
+	- BridgeHubWococo (see `bridgeRococoMessages.MessagesReceived`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fwococo-bridge-hub-rpc.polkadot.io#/explorer
+	- Wockmint (see `xcmpQueue.Success` for `transfer-asset` and `xcmpQueue.Fail` for `ping-via-bridge`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fwococo-wockmint-rpc.polkadot.io#/explorer
+	- BridgeHubRococo (see `bridgeWococoMessages.MessagesDelivered`)
+
+## How to test local BridgeHubKusama/BridgeHubPolkadot
 
 Check [requirements](#requirements-for-local-runtesting) for "sudo pallet + fast-runtime".
 
@@ -225,7 +262,7 @@ cd <cumulus-git-repo-dir>
 ./scripts/bridges_kusama_polkadot.sh run-relay
 ```
 
-### Send messages - transfer asset over bridge
+### Send messages - transfer asset over bridge (DOTs/KSMs)
 
 Drip SA for AssetHubKusama on AssetHubStatemint.
 ```
