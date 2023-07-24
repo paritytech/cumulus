@@ -151,8 +151,8 @@ pub fn limited_reserve_transfer_assets_for_native_asset_works<
 			// do pallet_xcm call reserve transfer
 			assert_ok!(<pallet_xcm::Pallet<Runtime>>::limited_reserve_transfer_assets(
 				RuntimeHelper::<Runtime>::origin_of(alice_account.clone()),
-				Box::new(target_location_from_different_consensus.clone().into_versioned()),
-				Box::new(target_destination_account.clone().into_versioned()),
+				Box::new(target_location_from_different_consensus.into_versioned()),
+				Box::new(target_destination_account.into_versioned()),
 				Box::new(VersionedMultiAssets::from(MultiAssets::from(asset_to_transfer))),
 				0,
 				weight_limit,
@@ -294,7 +294,7 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 			// drip 'ED' user target account
 			let _ = <pallet_balances::Pallet<Runtime>>::deposit_creating(
 				&target_account,
-				existential_deposit.clone(),
+				existential_deposit,
 			);
 
 			// sovereign account as foreign asset owner (can be whoever for this scenario, doesnt matter)
@@ -305,7 +305,7 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 			let staking_pot = <pallet_collator_selection::Pallet<Runtime>>::account_id();
 			let _ = <pallet_balances::Pallet<Runtime>>::deposit_creating(
 				&staking_pot,
-				existential_deposit.clone(),
+				existential_deposit,
 			);
 
 			// create foreign asset for wrapped/derivated representation
