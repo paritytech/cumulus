@@ -1282,16 +1282,6 @@ pub struct TestAccount {
 }
 
 #[derive(Clone)]
-pub struct TestAssertions<Origin, Destination, Hops, Args>(fn(Test<Origin, Destination, Hops, Args>))
-where
-	Origin: Chain + Clone,
-	Destination: Chain + Clone,
-	Origin::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
-	Destination::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
-	Hops: Clone,
-;
-
-#[derive(Clone)]
 pub struct DispatchArgs {
 	pub dest: VersionedMultiLocation,
 	pub beneficiary: VersionedMultiLocation,
@@ -1319,8 +1309,6 @@ where
 	pub receiver: TestAccount,
 	pub signed_origin: Origin::RuntimeOrigin,
 	pub root_origin: Origin::RuntimeOrigin,
-	pub assertions_origin: Option<TestAssertions<Origin, Destination, Hops, Args>>,
-	pub assertions_dest: Option<TestAssertions<Origin, Destination, Hops, Args>>,
 	pub hops: HashMap<String, fn(Self)>,
 	pub args: Args,
 	_marker: PhantomData<(Destination, Hops)>,
@@ -1329,8 +1317,8 @@ where
 impl<Origin, Destination, Hops, Args> Test<Origin, Destination, Hops, Args>
 where
 	Args: Clone,
-	Origin: Chain + Clone,
-	Destination: Chain + Clone,
+	Origin: Chain + Clone + CheckAssertion<Origin, Destination, Hops, Args>,
+	Destination: Chain + Clone + CheckAssertion<Origin, Destination, Hops, Args>,
 	Origin::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
 	Destination::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
 	Hops: Clone + CheckAssertion<Origin, Destination, Hops, Args>,
@@ -1347,41 +1335,27 @@ where
 			},
 			signed_origin: <Origin as Chain>::RuntimeOrigin::signed(test_args.sender),
 			root_origin: <Origin as Chain>::RuntimeOrigin::root(),
-			assertions_origin: None,
-			assertions_dest: None,
 			hops: Default::default(),
 			args: test_args.args,
 			_marker: Default::default(),
 		}
 	}
 
-	pub fn set_assertions(&mut self, origin: fn(Self), destination: fn(Self)) {
-		self.assertions_origin = Some(TestAssertions(origin));
-		self.assertions_dest = Some(TestAssertions(destination));
-	}
-
-	pub fn set_hop_assertion<Hop>(&mut self, assertion: fn(Self)) {
+	pub fn set_assertion<Hop>(&mut self, assertion: fn(Self)) {
 		let chain_name = std::any::type_name::<Hop>();
 		self.hops.insert(chain_name.to_string(), assertion);
 	}
 
-	pub fn dispatch(&mut self, dispatchable: impl FnOnce(Self) -> DispatchResult) {
-		Origin::execute_with(|| {
+	pub fn dispatch<Chain: TestExt>(&self, dispatchable: impl FnOnce(Self) -> DispatchResult) {
+		Chain::ext_wrapper(|| {
 			assert_ok!(dispatchable(self.clone()));
-
-			if let Some(assertion) = &self.assertions_origin {
-				assertion.0(self.clone());
-			};
 		});
+	}
 
+	pub fn assert(&mut self) {
+		Origin::check_assertion(self.clone());
 		Hops::check_assertion(self.clone());
-
-		Destination::execute_with(|| {
-			if let Some(assertion) = &self.assertions_dest {
-				assertion.0(self.clone());
-			};
-		});
-
+		Destination::check_assertion(self.clone());
 		Self::update_balances(self);
 	}
 

@@ -209,12 +209,10 @@ fn limited_teleport_native_assets_from_relay_to_system_para_works() {
 		)
 	};
 
-	test.set_assertions(
-		relay_origin_assertions,
-		para_dest_assertions
-	);
-
-	test.dispatch(dispatchable);
+	test.set_assertion::<Kusama>(relay_origin_assertions);
+	test.set_assertion::<AssetHubKusama>(para_dest_assertions);
+	test.dispatch::<Kusama>(dispatchable);
+	test.assert();
 
 	let sender_balance_after = test.sender.balance;
 	let receiver_balance_after = test.receiver.balance;
@@ -256,12 +254,10 @@ fn limited_teleport_native_assets_back_from_system_para_to_relay_works() {
 		)
 	};
 
-	test.set_assertions(
-		para_origin_assertions,
-		relay_dest_assertions
-	);
-
-	test.dispatch(dispatchable);
+	test.set_assertion::<AssetHubKusama>(para_origin_assertions);
+	test.set_assertion::<Kusama>(relay_dest_assertions);
+	test.dispatch::<AssetHubKusama>(dispatchable);
+	test.assert();
 
 	let sender_balance_after = test.sender.balance;
 	let receiver_balance_after = test.receiver.balance;
@@ -300,12 +296,10 @@ fn limited_teleport_native_assets_from_system_para_to_relay_fails() {
 		)
 	};
 
-	test.set_assertions(
-		para_origin_assertions,
-		relay_dest_assertions_fail
-	);
-
-	test.dispatch(dispatchable);
+	test.set_assertion::<AssetHubKusama>(para_origin_assertions);
+	test.set_assertion::<Kusama>(relay_dest_assertions_fail);
+	test.dispatch::<AssetHubKusama>(dispatchable);
+	test.assert();
 
 	let sender_balance_after = test.sender.balance;
 	let receiver_balance_after = test.receiver.balance;
@@ -342,12 +336,10 @@ fn teleport_native_assets_from_relay_to_system_para_works() {
 		)
 	};
 
-	test.set_assertions(
-		relay_origin_assertions,
-		para_dest_assertions
-	);
-
-	test.dispatch(dispatchable);
+	test.set_assertion::<Kusama>(relay_origin_assertions);
+	test.set_assertion::<AssetHubKusama>(para_dest_assertions);
+	test.dispatch::<Kusama>(dispatchable);
+	test.assert();
 
 	let sender_balance_after = test.sender.balance;
 	let receiver_balance_after = test.receiver.balance;
@@ -395,12 +387,10 @@ fn teleport_native_assets_from_relay_to_system_para_works() {
 // 		)
 // 	};
 
-// 	test.set_assertions(
-// 		para_origin_assertions,
-// 		relay_dest_assertions
-// 	);
-
-// 	test.dispatch(dispatchable);
+// 	test.set_assertion::<AssetHubKusama>(para_origin_assertions);
+// 	test.set_assertion::<Kusama>(relay_dest_assertions);
+// 	test.dispatch::<AssetHubKusama>(dispatchable);
+// 	test.assert();
 
 // 	let sender_balance_after = test.sender.balance;
 // 	let receiver_balance_after = test.receiver.balance;
@@ -438,12 +428,10 @@ fn teleport_native_assets_from_relay_to_system_para_works() {
 // 		)
 // 	};
 
-// 	test.set_assertions(
-// 		para_origin_assertions,
-// 		relay_dest_assertions_fail
-// 	);
-
-// 	test.dispatch(dispatchable);
+// 	test.set_assertion::<AssetHubKusama>(para_origin_assertions);
+// 	test.set_assertion::<Kusama>(relay_dest_assertions);
+// 	test.dispatch::<AssetHubKusama>(dispatchable);
+// 	test.assert();
 
 // 	let sender_balance_after = test.sender.balance;
 // 	let receiver_balance_after = test.receiver.balance;
