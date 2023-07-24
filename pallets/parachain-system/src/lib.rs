@@ -40,8 +40,8 @@ use frame_support::{
 	ensure,
 	inherent::{InherentData, InherentIdentifier, ProvideInherent},
 	storage,
-	traits::Get,
 	storage::StorageList,
+	traits::Get,
 	weights::Weight,
 	RuntimeDebug,
 };
@@ -230,7 +230,7 @@ pub mod pallet {
 					return
 				},
 			};
-			
+
 			// Remove all pending UMPs that will fit into the block.
 			let pending_umps = T::PendingUpwardMessages::iter();
 			let queue_size = relevant_messaging_state.relay_dispatch_queue_remaining_capacity;
@@ -240,7 +240,7 @@ pub mod pallet {
 				host_config.max_upward_message_num_per_candidate.into(),
 			);
 			let available_size = queue_size.remaining_size;
-			
+
 			// Count the number of messages we can possibly fit in the given constraints, i.e.
 			// available_capacity and available_size.
 			let fit = pending_umps
