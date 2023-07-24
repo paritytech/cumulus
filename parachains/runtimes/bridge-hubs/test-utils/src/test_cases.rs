@@ -36,8 +36,9 @@ use bridge_runtime_common::{
 use codec::Encode;
 use frame_support::{
 	assert_ok,
-	traits::{Get, OriginTrait},
+	traits::{Get, OriginTrait, PalletInfoAccess},
 };
+use frame_system::pallet_prelude::{BlockNumberFor, HeaderFor};
 use pallet_bridge_grandpa::BridgedHeader;
 use parachains_runtimes_test_utils::{
 	mock_open_hrmp_channel, AccountIdOf, BalanceOf, CollatorSessionKeys, ExtBuilder, RuntimeHelper,
@@ -52,6 +53,9 @@ use xcm_executor::XcmExecutor;
 
 // Re-export test_case from assets
 pub use asset_test_utils::include_teleports_for_native_asset_works;
+
+// Re-export test_case from `parachains-runtimes-test-utils`
+pub use parachains_runtimes_test_utils::test_cases::change_storage_constant_by_governance_works;
 
 /// Test-case makes sure that `Runtime` can process bridging initialize via governance-like call
 pub fn initialize_bridge_by_governance_works<Runtime, GrandpaPalletInstance>(
@@ -109,76 +113,6 @@ pub fn initialize_bridge_by_governance_works<Runtime, GrandpaPalletInstance>(
 			assert_eq!(
 				pallet_bridge_grandpa::PalletOperatingMode::<Runtime, GrandpaPalletInstance>::try_get(),
 				Ok(bp_runtime::BasicOperatingMode::Normal)
-			);
-		})
-}
-
-/// Test-case makes sure that `Runtime` can change storage constant via governance-like call
-pub fn change_storage_constant_by_governance_works<Runtime, StorageConstant, StorageConstantType>(
-	collator_session_key: CollatorSessionKeys<Runtime>,
-	runtime_para_id: u32,
-	runtime_call_encode: Box<dyn Fn(frame_system::Call<Runtime>) -> Vec<u8>>,
-	storage_constant_key_value: fn() -> (Vec<u8>, StorageConstantType),
-	new_storage_constant_value: fn(&StorageConstantType) -> StorageConstantType,
-) where
-	Runtime: frame_system::Config
-		+ pallet_balances::Config
-		+ pallet_session::Config
-		+ pallet_xcm::Config
-		+ parachain_info::Config
-		+ pallet_collator_selection::Config
-		+ cumulus_pallet_dmp_queue::Config
-		+ cumulus_pallet_parachain_system::Config,
-	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
-	StorageConstant: Get<StorageConstantType>,
-	StorageConstantType: Encode + PartialEq + std::fmt::Debug,
-{
-	ExtBuilder::<Runtime>::default()
-		.with_collators(collator_session_key.collators())
-		.with_session_keys(collator_session_key.session_keys())
-		.with_para_id(runtime_para_id.into())
-		.with_tracing()
-		.build()
-		.execute_with(|| {
-			let (storage_constant_key, storage_constant_init_value): (
-				Vec<u8>,
-				StorageConstantType,
-			) = storage_constant_key_value();
-
-			// check delivery reward constant before (not stored yet, just as default value is used)
-			assert_eq!(StorageConstant::get(), storage_constant_init_value);
-			assert_eq!(sp_io::storage::get(&storage_constant_key), None);
-
-			let new_storage_constant_value =
-				new_storage_constant_value(&storage_constant_init_value);
-			assert_ne!(new_storage_constant_value, storage_constant_init_value);
-
-			// encode `set_storage` call
-			let set_storage_call =
-				runtime_call_encode(frame_system::Call::<Runtime>::set_storage {
-					items: vec![(
-						storage_constant_key.clone(),
-						new_storage_constant_value.encode(),
-					)],
-				});
-
-			// estimate - storing just 1 value
-			use frame_system::WeightInfo;
-			let require_weight_at_most =
-				<Runtime as frame_system::Config>::SystemWeightInfo::set_storage(1);
-
-			// execute XCM with Transact to `set_storage` as governance does
-			assert_ok!(RuntimeHelper::<Runtime>::execute_as_governance(
-				set_storage_call,
-				require_weight_at_most
-			)
-			.ensure_complete());
-
-			// check delivery reward constant after (stored)
-			assert_eq!(StorageConstant::get(), new_storage_constant_value);
-			assert_eq!(
-				sp_io::storage::get(&storage_constant_key),
-				Some(new_storage_constant_value.encode().into())
 			);
 		})
 }
@@ -463,7 +397,18 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 			let relayer_id_on_source: AccountId32 = relayer_at_source.public().into();
 
 			let xcm = vec![xcm::v3::Instruction::<()>::ClearOrigin; 42];
-			let expected_dispatch = xcm::latest::Xcm::<()>(xcm.clone());
+			let expected_dispatch = xcm::latest::Xcm::<()>({
+				let mut expected_instructions = xcm.clone();
+				// dispatch prepends bridge pallet instance
+				expected_instructions.insert(
+					0,
+					DescendOrigin(X1(PalletInstance(
+						<pallet_bridge_messages::Pallet<Runtime, MPI> as PalletInfoAccess>::index()
+							as u8,
+					))),
+				);
+				expected_instructions
+			});
 			// generate bridged relay chain finality, parachain heads and message proofs,
 			// to be submitted by relayer to this chain.
 			let (
@@ -579,7 +524,7 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 	local_relay_chain_id: NetworkId,
 	lane_id: LaneId,
 	existential_deposit: BalanceOf<Runtime>,
-	executive_init_block: fn(&<Runtime as frame_system::Config>::Header),
+	executive_init_block: fn(&HeaderFor<Runtime>),
 	construct_and_apply_extrinsic: fn(
 		sp_keyring::AccountKeyring,
 		pallet_utility::Call::<Runtime>
@@ -642,10 +587,9 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 		.with_tracing()
 		.build()
 		.execute_with(|| {
-			let zero: <Runtime as frame_system::Config>::BlockNumber = 0u32.into();
+			let zero: BlockNumberFor<Runtime> = 0u32.into();
 			let genesis_hash = frame_system::Pallet::<Runtime>::block_hash(zero);
-			let mut header: <Runtime as frame_system::Config>::Header =
-				bp_test_utils::test_header(1u32.into());
+			let mut header: HeaderFor<Runtime> = bp_test_utils::test_header(1u32.into());
 			header.set_parent_hash(genesis_hash);
 			executive_init_block(&header);
 
@@ -672,7 +616,18 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 			let relay_header_number = 1;
 
 			let xcm = vec![xcm::latest::Instruction::<()>::ClearOrigin; 42];
-			let expected_dispatch = xcm::latest::Xcm::<()>(xcm.clone());
+			let expected_dispatch = xcm::latest::Xcm::<()>({
+				let mut expected_instructions = xcm.clone();
+				// dispatch prepends bridge pallet instance
+				expected_instructions.insert(
+					0,
+					DescendOrigin(X1(PalletInstance(
+						<pallet_bridge_messages::Pallet<Runtime, MPI> as PalletInfoAccess>::index()
+							as u8,
+					))),
+				);
+				expected_instructions
+			});
 			// generate bridged relay chain finality, parachain heads and message proofs,
 			// to be submitted by relayer to this chain.
 			let (

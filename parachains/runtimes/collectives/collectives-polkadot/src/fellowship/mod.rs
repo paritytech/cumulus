@@ -19,28 +19,31 @@
 pub(crate) mod migration;
 mod origins;
 mod tracks;
-use cumulus_primitives_core::Junction::GeneralIndex;
-use frame_system::EnsureNever;
-pub use origins::{
-	pallet_origins as pallet_fellowship_origins, Architects, EnsureCanPromoteTo, EnsureCanRetainAt,
-	EnsureFellowship, Fellows, Masters, Members,
-};
-use xcm_builder::{AliasesIntoAccountId32, LocatableAssetId, PayOverXcm};
-
 use crate::{
 	constants, impls::ToParentTreasury, weights, AccountId, Balance, Balances, FellowshipReferenda,
 	GovernanceLocation, PolkadotTreasuryAccount, Preimage, Runtime, RuntimeCall, RuntimeEvent,
-	Scheduler, DAYS,
+	RuntimeOrigin, Scheduler, DAYS,
 };
+use cumulus_primitives_core::Junction::GeneralIndex;
 use frame_support::{
 	parameter_types,
-	traits::{EitherOf, EitherOfDiverse, MapSuccess},
+	traits::{EitherOf, EitherOfDiverse, MapSuccess, OriginTrait, TryWithMorphedArg},
 };
+use frame_system::EnsureRootWithSuccess;
+pub use origins::{
+	pallet_origins as pallet_fellowship_origins, Architects, EnsureCanPromoteTo, EnsureCanRetainAt,
+	EnsureFellowship, Fellows, Masters, Members, ToVoice,
+};
+use pallet_ranked_collective::EnsureOfRank;
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use polkadot_runtime_constants::{time::HOURS, xcm::body::FELLOWSHIP_ADMIN_INDEX};
 use sp_core::{ConstU128, ConstU32};
-use sp_runtime::traits::{AccountIdConversion, ConstU16, ConvertToValue, Replace};
+use sp_runtime::traits::{AccountIdConversion, ConstU16, ConvertToValue, Replace, TakeFirst};
 use xcm::latest::BodyId;
+use xcm_builder::{AliasesIntoAccountId32, LocatableAssetId, PayOverXcm};
+
+#[cfg(feature = "runtime-benchmarks")]
+use crate::impls::benchmarks::{OpenHrmpChannel, PayWithEnsure};
 
 /// The Fellowship members' ranks.
 pub mod ranks {
@@ -74,8 +77,19 @@ impl pallet_referenda::Config<FellowshipReferendaInstance> for Runtime {
 	type Scheduler = Scheduler;
 	type Currency = Balances;
 	// Fellows can submit proposals.
-	type SubmitOrigin =
-		pallet_ranked_collective::EnsureMember<Runtime, FellowshipCollectiveInstance, 3>;
+	type SubmitOrigin = EitherOf<
+		pallet_ranked_collective::EnsureMember<Runtime, FellowshipCollectiveInstance, 3>,
+		MapSuccess<
+			TryWithMorphedArg<
+				RuntimeOrigin,
+				<RuntimeOrigin as OriginTrait>::PalletsOrigin,
+				ToVoice,
+				EnsureOfRank<Runtime, FellowshipCollectiveInstance>,
+				(AccountId, u16),
+			>,
+			TakeFirst,
+		>,
+	>;
 	type CancelOrigin = Architects;
 	type KillOrigin = Masters;
 	type Slash = ToParentTreasury<PolkadotTreasuryAccount, ReferendaPalletAccount, Runtime>;
@@ -94,13 +108,21 @@ pub type FellowshipCollectiveInstance = pallet_ranked_collective::Instance1;
 impl pallet_ranked_collective::Config<FellowshipCollectiveInstance> for Runtime {
 	type WeightInfo = weights::pallet_ranked_collective::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
+
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	// Promotions and the induction of new members are serviced by `FellowshipCore` pallet instance.
-	type PromoteOrigin = EnsureNever<pallet_ranked_collective::Rank>;
+	type PromoteOrigin = frame_system::EnsureNever<pallet_ranked_collective::Rank>;
+	#[cfg(feature = "runtime-benchmarks")]
+	// The maximum value of `u16` set as a success value for the root to ensure the benchmarks will pass.
+	type PromoteOrigin = EnsureRootWithSuccess<Self::AccountId, ConstU16<65535>>;
+
 	// Demotion is by any of:
 	// - Root can demote arbitrarily.
 	// - the FellowshipAdmin origin (i.e. token holder referendum);
+	//
+	// The maximum value of `u16` set as a success value for the root to ensure the benchmarks will pass.
 	type DemoteOrigin = EitherOf<
-		frame_system::EnsureRootWithSuccess<Self::AccountId, ConstU16<{ ranks::DAN_9 }>>,
+		EnsureRootWithSuccess<Self::AccountId, ConstU16<65535>>,
 		MapSuccess<
 			EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
 			Replace<ConstU16<{ ranks::DAN_9 }>>,
@@ -200,7 +222,11 @@ pub type FellowshipSalaryPaymaster = PayOverXcm<
 impl pallet_salary::Config<FellowshipSalaryInstance> for Runtime {
 	type WeightInfo = weights::pallet_salary::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
+
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	type Paymaster = FellowshipSalaryPaymaster;
+	#[cfg(feature = "runtime-benchmarks")]
+	type Paymaster = PayWithEnsure<FellowshipSalaryPaymaster, OpenHrmpChannel<ConstU32<1000>>>;
 	type Members = pallet_ranked_collective::Pallet<Runtime, FellowshipCollectiveInstance>;
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
