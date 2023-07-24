@@ -3122,6 +3122,7 @@ dependencies = [
  "sp-keyring",
  "sp-runtime",
  "sp-state-machine",
+ "substrate-build-script-utils",
 ]
 
 [[package]]
