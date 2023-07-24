@@ -18,8 +18,12 @@ use super::{
 	ParachainInfo, ParachainSystem, PolkadotXcm, PoolAssets, Runtime, RuntimeCall, RuntimeEvent,
 	RuntimeOrigin, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
-use assets_common::matching::{
-	FromSiblingParachain, IsForeignConcreteAsset, StartsWith, StartsWithExplicitGlobalConsensus,
+use crate::{AllowMultiAssetPools, LiquidityWithdrawalFee};
+use assets_common::{
+	local_and_foreign_assets::MatchesLocalAndForeignAssetsMultiLocation,
+	matching::{
+		FromSiblingParachain, IsForeignConcreteAsset, StartsWith, StartsWithExplicitGlobalConsensus,
+	},
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -166,6 +170,25 @@ pub type PoolFungiblesTransactor = FungiblesAdapter<
 pub type AssetTransactors =
 	(CurrencyTransactor, FungiblesTransactor, ForeignFungiblesTransactor, PoolFungiblesTransactor);
 
+/// Simple `MultiLocation` matcher for Local and Foreign asset `MultiLocation`.
+pub struct LocalAndForeignAssetsMultiLocationMatcher;
+impl MatchesLocalAndForeignAssetsMultiLocation for LocalAndForeignAssetsMultiLocationMatcher {
+	fn is_local(location: &MultiLocation) -> bool {
+		use assets_common::fungible_conversion::MatchesMultiLocation;
+		TrustBackedAssetsConvertedConcreteId::contains(location)
+	}
+
+	fn is_foreign(location: &MultiLocation) -> bool {
+		use assets_common::fungible_conversion::MatchesMultiLocation;
+		ForeignAssetsConvertedConcreteId::contains(location)
+	}
+}
+impl Contains<MultiLocation> for LocalAndForeignAssetsMultiLocationMatcher {
+	fn contains(location: &MultiLocation) -> bool {
+		Self::is_local(location) || Self::is_foreign(location)
+	}
+}
+
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
 /// biases the kind of local `Origin` it will become.
@@ -219,6 +242,16 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				return true
 			}
 		}
+
+		// Allow to change dedicated storage items (called by governance-like)
+		match call {
+			RuntimeCall::System(frame_system::Call::set_storage { items })
+				if items.iter().any(|(k, _)| {
+					k.eq(&AllowMultiAssetPools::key()) | k.eq(&LiquidityWithdrawalFee::key())
+				}) =>
+				return true,
+			_ => (),
+		};
 
 		matches!(
 			call,
@@ -545,7 +578,8 @@ pub struct BenchmarkMultiLocationConverter<SelfParaId> {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-impl<SelfParaId> pallet_asset_conversion::BenchmarkHelper<MultiLocation>
+impl<SelfParaId>
+	pallet_asset_conversion::BenchmarkHelper<MultiLocation, sp_std::boxed::Box<MultiLocation>>
 	for BenchmarkMultiLocationConverter<SelfParaId>
 where
 	SelfParaId: Get<ParaId>,
@@ -559,6 +593,10 @@ where
 				GeneralIndex(asset_id.into()),
 			),
 		}
+	}
+
+	fn multiasset_id(asset_id: u32) -> sp_std::boxed::Box<MultiLocation> {
+		sp_std::boxed::Box::new(Self::asset_id(asset_id))
 	}
 }
 

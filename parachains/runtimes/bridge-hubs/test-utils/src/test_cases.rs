@@ -56,6 +56,9 @@ pub use asset_test_utils::include_teleports_for_native_asset_works;
 // Re-export
 pub use parachains_runtimes_test_utils::change_storage_constant_by_governance_works;
 
+// Re-export test_case from `parachains-runtimes-test-utils`
+pub use parachains_runtimes_test_utils::test_cases::change_storage_constant_by_governance_works;
+
 /// Test-case makes sure that `Runtime` can process bridging initialize via governance-like call
 pub fn initialize_bridge_by_governance_works<Runtime, GrandpaPalletInstance>(
 	collator_session_key: CollatorSessionKeys<Runtime>,
