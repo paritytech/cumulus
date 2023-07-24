@@ -53,7 +53,7 @@ impl Config for Runtime {
 	type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
 	type Migrations = (
 		v12::Migration<Runtime, Balances, DepositPerByte, DepositPerItem>,
-		v13::Migration<Runtime>,
+		v13::Migration<Runtime, Balances>,
 	);
 	type RuntimeHoldReason = RuntimeHoldReason;
 }
