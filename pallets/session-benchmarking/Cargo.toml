@@ -6,14 +6,14 @@ edition = "2021"
 license = "Apache-2.0"
 homepage = "https://substrate.io"
 repository = "https://github.com/paritytech/cumulus/"
-description = "FRAME sessions pallet benchmarking for statemint"
+description = "FRAME sessions pallet benchmarking"
 readme = "README.md"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-parity-scale-codec = { version = "3.5.0", default-features = false }
+parity-scale-codec = { version = "3.6.4", default-features = false }
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }

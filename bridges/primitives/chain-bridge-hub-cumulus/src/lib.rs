@@ -18,7 +18,7 @@
 
 pub use bp_polkadot_core::{
 	AccountId, AccountInfoStorageMapKeyProvider, AccountPublic, Balance, BlockNumber, Hash, Hasher,
-	Hashing, Header, Index, Nonce, Perbill, Signature, SignedBlock, UncheckedExtrinsic,
+	Hashing, Header, Nonce, Perbill, Signature, SignedBlock, UncheckedExtrinsic,
 	EXTRA_STORAGE_PROOF_SIZE, TX_EXTRA_BYTES,
 };
 
@@ -53,7 +53,7 @@ pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// This is a copy-paste from the cumulus repo's `parachains-common` crate.
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(constants::WEIGHT_REF_TIME_PER_SECOND, 0)
 	.saturating_div(2)
-	.set_proof_size(polkadot_primitives::v4::MAX_POV_SIZE as u64);
+	.set_proof_size(polkadot_primitives::v5::MAX_POV_SIZE as u64);
 
 /// All cumulus bridge hubs assume that about 5 percent of the block weight is consumed by
 /// `on_initialize` handlers. This is used to limit the maximal weight of a single extrinsic.
@@ -124,9 +124,13 @@ pub type Address = MultiAddress<AccountId, ()>;
 // `ensure_able_to_receive_confirmation` test.
 
 /// Maximal number of unrewarded relayer entries at inbound lane for Cumulus-based parachains.
+/// Note: this value is security-relevant, decreasing it should not be done without careful
+/// analysis (like the one above).
 pub const MAX_UNREWARDED_RELAYERS_IN_CONFIRMATION_TX: MessageNonce = 1024;
 
 /// Maximal number of unconfirmed messages at inbound lane for Cumulus-based parachains.
+/// Note: this value is security-relevant, decreasing it should not be done without careful
+/// analysis (like the one above).
 pub const MAX_UNCONFIRMED_MESSAGES_IN_CONFIRMATION_TX: MessageNonce = 4096;
 
 /// Extra signed extension data that is used by all bridge hubs.
@@ -136,7 +140,7 @@ pub type SignedExtra = (
 	CheckTxVersion,
 	CheckGenesis<Hash>,
 	CheckEra<Hash>,
-	CheckNonce<Index>,
+	CheckNonce<Nonce>,
 	CheckWeight,
 	ChargeTransactionPayment<Balance>,
 	BridgeRejectObsoleteHeadersAndMessages,
@@ -155,12 +159,12 @@ pub trait BridgeHubSignedExtension {
 		transaction_version: u32,
 		era: bp_runtime::TransactionEra<BlockNumber, Hash>,
 		genesis_hash: Hash,
-		nonce: Index,
+		nonce: Nonce,
 		tip: Balance,
 	) -> Self;
 
 	/// Return transaction nonce.
-	fn nonce(&self) -> Index;
+	fn nonce(&self) -> Nonce;
 
 	/// Return transaction tip.
 	fn tip(&self) -> Balance;
@@ -173,7 +177,7 @@ impl BridgeHubSignedExtension for SignedExtension {
 		transaction_version: u32,
 		era: bp_runtime::TransactionEra<BlockNumber, Hash>,
 		genesis_hash: Hash,
-		nonce: Index,
+		nonce: Nonce,
 		tip: Balance,
 	) -> Self {
 		GenericSignedExtension::new(
@@ -205,7 +209,7 @@ impl BridgeHubSignedExtension for SignedExtension {
 	}
 
 	/// Return transaction nonce.
-	fn nonce(&self) -> Index {
+	fn nonce(&self) -> Nonce {
 		self.payload.5 .0
 	}
 

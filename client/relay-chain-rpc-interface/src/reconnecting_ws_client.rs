@@ -161,7 +161,9 @@ impl ReconnectingWsClient {
 	}
 }
 
-/// Worker that should be used in combination with [`RelayChainRpcClient`]. Must be polled to distribute header notifications to listeners.
+/// Worker that should be used in combination with [`crate::RelayChainRpcClient`].
+///
+/// Must be polled to distribute header notifications to listeners.
 struct ReconnectingWebsocketWorker {
 	ws_urls: Vec<String>,
 	/// Communication channel with the RPC client
@@ -412,11 +414,11 @@ impl ReconnectingWebsocketWorker {
 		let urls = std::mem::take(&mut self.ws_urls);
 		let Ok(mut client_manager) = ClientManager::new(urls).await else {
 			tracing::error!(target: LOG_TARGET, "No valid RPC url found. Stopping RPC worker.");
-			return;
+			return
 		};
 		let Ok(mut subscriptions) = client_manager.get_subscriptions().await else {
 			tracing::error!(target: LOG_TARGET, "Unable to fetch subscriptions on initial connection.");
-			return;
+			return
 		};
 
 		let mut imported_blocks_cache =

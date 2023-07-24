@@ -19,7 +19,8 @@ use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
 
 /// Specialized `ChainSpec` for the shell parachain runtime.
-pub type ShellChainSpec = sc_service::GenericChainSpec<shell_runtime::GenesisConfig, Extensions>;
+pub type ShellChainSpec =
+	sc_service::GenericChainSpec<shell_runtime::RuntimeGenesisConfig, Extensions>;
 
 pub fn get_shell_chain_spec() -> ShellChainSpec {
 	ShellChainSpec::from_genesis(
@@ -36,14 +37,15 @@ pub fn get_shell_chain_spec() -> ShellChainSpec {
 	)
 }
 
-fn shell_testnet_genesis(parachain_id: ParaId) -> shell_runtime::GenesisConfig {
-	shell_runtime::GenesisConfig {
+fn shell_testnet_genesis(parachain_id: ParaId) -> shell_runtime::RuntimeGenesisConfig {
+	shell_runtime::RuntimeGenesisConfig {
 		system: shell_runtime::SystemConfig {
 			code: shell_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
+			..Default::default()
 		},
-		parachain_info: shell_runtime::ParachainInfoConfig { parachain_id },
+		parachain_info: shell_runtime::ParachainInfoConfig { parachain_id, ..Default::default() },
 		parachain_system: Default::default(),
 	}
 }
