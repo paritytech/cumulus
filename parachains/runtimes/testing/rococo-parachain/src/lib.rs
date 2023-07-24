@@ -271,6 +271,12 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+	type PendingUpwardMessages = PagedList;
+}
+
+impl pallet_paged_list::Config for Runtime {
+	type Value = cumulus_primitives_core::UpwardMessage;
+	type ValuesPerNewPage = frame_support::traits::ConstU32<64>;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -562,6 +568,7 @@ construct_runtime! {
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},
+		PagedList: pallet_paged_list::{Pallet},
 
 		ParachainSystem: cumulus_pallet_parachain_system::{
 			Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned,

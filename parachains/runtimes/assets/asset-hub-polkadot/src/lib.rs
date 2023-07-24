@@ -723,7 +723,7 @@ impl pallet_nfts::Config for Runtime {
 
 impl pallet_paged_list::Config for Runtime {
 	type Value = cumulus_primitives_core::UpwardMessage;
-	type ValuesPerPage = ConstU32<64>;
+	type ValuesPerNewPage = ConstU32<64>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

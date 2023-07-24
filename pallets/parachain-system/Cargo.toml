@@ -17,6 +17,7 @@ scale-info = { version = "2.9.0", default-features = false, features = ["derive"
 # Substrate
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-paged-list = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-externalities = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -62,6 +63,7 @@ std = [
 	"cumulus-primitives-parachain-inherent/std",
 	"frame-support/std",
 	"frame-system/std",
+	"pallet-paged-list/std",
 	"sp-core/std",
 	"sp-externalities/std",
 	"sp-io/std",
@@ -74,7 +76,12 @@ std = [
 ]
 
 runtime-benchmarks = [
-	"sp-runtime/runtime-benchmarks"
+	"sp-runtime/runtime-benchmarks",
+	"pallet-paged-list/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
 ]
 
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"frame-support/try-runtime",
+	"pallet-paged-list/try-runtime",
+]

@@ -49,6 +49,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		ParachainSystem: parachain_system::{Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned},
+		PagedList: pallet_paged_list::{Pallet},
 	}
 );
 
@@ -103,6 +104,12 @@ impl Config for Test {
 	type XcmpMessageHandler = SaveIntoThreadLocal;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+	type PendingUpwardMessages = PagedList;
+}
+
+impl pallet_paged_list::Config for Test {
+	type Value = cumulus_primitives_core::UpwardMessage;
+	type ValuesPerNewPage = frame_support::traits::ConstU32<64>;
 }
 
 pub struct FromThreadLocal;
