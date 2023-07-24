@@ -672,7 +672,7 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 			}
 		}
 
-		meter.consumed
+		meter.consumed()
 	}
 }
 

@@ -45,7 +45,7 @@ use frame_support::{
 	weights::Weight,
 	RuntimeDebug,
 };
-use frame_system::{ensure_none, ensure_root};
+use frame_system::{ensure_none, ensure_root, pallet_prelude::HeaderFor};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -213,7 +213,7 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_finalize(_: T::BlockNumber) {
+		fn on_finalize(_: BlockNumberFor<T>) {
 			<DidSetValidationCode<T>>::kill();
 			<UpgradeRestrictionSignal<T>>::kill();
 
@@ -245,7 +245,7 @@ pub mod pallet {
 			};
 
 			<PendingUpwardMessages<T>>::mutate(|up| {
-				let queue_size = relevant_messaging_state.relay_dispatch_queue_size;
+				let queue_size = relevant_messaging_state.relay_dispatch_queue_remaining_capacity;
 
 				let available_capacity = cmp::min(
 					queue_size.remaining_count,
@@ -297,7 +297,7 @@ pub mod pallet {
 			HrmpOutboundMessages::<T>::put(outbound_messages);
 		}
 
-		fn on_initialize(_n: T::BlockNumber) -> Weight {
+		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
 			let mut weight = Weight::zero();
 
 			// To prevent removing `NewValidationCode` that was set by another `on_initialize`
@@ -730,11 +730,14 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_config]
-	#[derive(Default)]
-	pub struct GenesisConfig;
+	#[derive(frame_support::DefaultNoBound)]
+	pub struct GenesisConfig<T: Config> {
+		#[serde(skip)]
+		pub _config: sp_std::marker::PhantomData<T>,
+	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			// TODO: Remove after https://github.com/paritytech/cumulus/issues/479
 			sp_io::storage::set(b":c", &[]);
@@ -1036,7 +1039,7 @@ impl<T: Config> Pallet<T> {
 	///
 	/// This is expected to be used by the
 	/// [`CollectCollationInfo`](cumulus_primitives_core::CollectCollationInfo) runtime api.
-	pub fn collect_collation_info(header: &T::Header) -> CollationInfo {
+	pub fn collect_collation_info(header: &HeaderFor<T>) -> CollationInfo {
 		CollationInfo {
 			hrmp_watermark: HrmpWatermark::<T>::get(),
 			horizontal_messages: HrmpOutboundMessages::<T>::get(),
@@ -1075,7 +1078,7 @@ impl<T: Config> Pallet<T> {
 	pub fn open_outbound_hrmp_channel_for_benchmarks(target_parachain: ParaId) {
 		RelevantMessagingState::<T>::put(MessagingStateSnapshot {
 			dmq_mqc_head: Default::default(),
-			relay_dispatch_queue_size: Default::default(),
+			relay_dispatch_queue_remaining_capacity: Default::default(),
 			ingress_channels: Default::default(),
 			egress_channels: vec![(
 				target_parachain,
