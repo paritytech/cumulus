@@ -1,12 +1,12 @@
 - [Bridge-hub Parachains](#bridge-hub-parachains)
-  * [Requirements for local run/testing](#requirements-for-local-run-testing)
-  * [How to test locally Rococo <-> Wococo bridge](#how-to-test-locally-rococo-----wococo-bridge)
-    + [Run chains (Rococo + BridgeHub, Wococo + BridgeHub) with zombienet](#run-chains--rococo---bridgehub--wococo---bridgehub--with-zombienet)
-    + [Run relayer (BridgeHubRococo, BridgeHubWococo)](#run-relayer--bridgehubrococo--bridgehubwococo-)
-      - [Run with script (alternative 1)](#run-with-script--alternative-1-)
-      - [Run with binary (alternative 2)](#run-with-binary--alternative-2-)
+  * [Requirements for local run/testing](#requirements-for-local-runtesting)
+  * [How to test locally Rococo <-> Wococo bridge](#how-to-test-locally-rococo---wococo-bridge)
+    + [Run chains (Rococo + BridgeHub, Wococo + BridgeHub) with zombienet](#run-chains-rococo--bridgehub-wococo--bridgehub-with-zombienet)
+    + [Run relayer (BridgeHubRococo, BridgeHubWococo)](#run-relayer-bridgehubrococo-bridgehubwococo)
+      - [Run with script (alternative 1)](#run-with-script-alternative-1)
+      - [Run with binary (alternative 2)](#run-with-binary-alternative-2)
     + [Send messages - transfer asset over bridge](#send-messages---transfer-asset-over-bridge)
-  * [How to test local BridgeHubKusama/BridgeHubPolkadot](#how-to-test-local-bridgehubkusama-bridgehubpolkadot)
+  * [How to test local BridgeHubKusama/BridgeHubPolkadot](#how-to-test-local-bridgehubkusamabridgehubpolkadot)
 
 # Bridge-hub Parachains
 
