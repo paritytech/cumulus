@@ -51,8 +51,8 @@ type AssetIdForTrustBackedAssetsConvert =
 
 fn collator_session_key(account: [u8; 32]) -> CollatorSessionKey<Runtime> {
 	CollatorSessionKey::new(
-		AccountId::from(account.clone()),
-		AccountId::from(account.clone()),
+		AccountId::from(account),
+		AccountId::from(account),
 		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(account)) },
 	)
 }
