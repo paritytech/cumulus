@@ -29,7 +29,7 @@ use frame_support::{
 };
 use num_traits::Zero;
 use scale_info::TypeInfo;
-use sp_std::collections::vec_deque::VecDeque;
+use sp_std::{collections::vec_deque::VecDeque, ops::RangeInclusive};
 
 /// Outbound lane storage.
 pub trait OutboundLaneStorage {
@@ -85,6 +85,13 @@ impl<S: OutboundLaneStorage> OutboundLane<S> {
 	/// Get this lane data.
 	pub fn data(&self) -> OutboundLaneData {
 		self.storage.data()
+	}
+
+	/// Return nonces of all currently queued messages (i.e. messages that we believe
+	/// are not delivered yet).
+	pub fn queued_messages(&self) -> RangeInclusive<MessageNonce> {
+		let data = self.storage.data();
+		(data.latest_received_nonce + 1)..=data.latest_generated_nonce
 	}
 
 	/// Send message over lane.

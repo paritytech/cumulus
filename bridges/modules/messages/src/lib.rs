@@ -53,7 +53,8 @@ use crate::{
 
 use bp_messages::{
 	source_chain::{
-		DeliveryConfirmationPayments, LaneMessageVerifier, SendMessageArtifacts, TargetHeaderChain,
+		DeliveryConfirmationPayments, LaneMessageVerifier, OnMessagesDelivered,
+		SendMessageArtifacts, TargetHeaderChain,
 	},
 	target_chain::{
 		DeliveryPayments, DispatchMessage, MessageDispatch, ProvedLaneMessages, ProvedMessages,
@@ -63,7 +64,9 @@ use bp_messages::{
 	MessagePayload, MessagesOperatingMode, OutboundLaneData, OutboundMessageDetails,
 	UnrewardedRelayersState, VerificationError,
 };
-use bp_runtime::{BasicOperatingMode, ChainId, OwnedBridgeModule, PreComputedSize, Size};
+use bp_runtime::{
+	BasicOperatingMode, ChainId, OwnedBridgeModule, PreComputedSize, RangeInclusiveExt, Size,
+};
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{dispatch::PostDispatchInfo, ensure, fail, traits::Get, DefaultNoBound};
 use sp_runtime::traits::UniqueSaturatedFrom;
@@ -156,6 +159,8 @@ pub mod pallet {
 		type LaneMessageVerifier: LaneMessageVerifier<Self::RuntimeOrigin, Self::OutboundPayload>;
 		/// Delivery confirmation payments.
 		type DeliveryConfirmationPayments: DeliveryConfirmationPayments<Self::AccountId>;
+		/// Delivery confirmation callback.
+		type OnMessagesDelivered: OnMessagesDelivered;
 
 		// Types that are used by inbound_lane (on target chain).
 
@@ -280,6 +285,9 @@ pub mod pallet {
 				MessageNonce::from(messages_count) <= T::MaxUnconfirmedMessagesAtInboundLane::get(),
 				Error::<T, I>::TooManyMessagesInTheProof
 			);
+
+			// if message dispatcher is currently inactive, we won't accept any messages
+			ensure!(T::MessageDispatch::is_active(), Error::<T, I>::MessageDispatchInactive);
 
 			// why do we need to know the weight of this (`receive_messages_proof`) call? Because
 			// we may want to return some funds for not-dispatching (or partially dispatching) some
@@ -487,6 +495,12 @@ pub mod pallet {
 				lane_id,
 			);
 
+			// notify others about messages delivery
+			T::OnMessagesDelivered::on_messages_delivered(
+				lane_id,
+				lane.queued_messages().checked_len().unwrap_or(0),
+			);
+
 			// because of lags, the inbound lane state (`lane_data`) may have entries for
 			// already rewarded relayers and messages (if all entries are duplicated, then
 			// this transaction must be filtered out by our signed extension)
@@ -518,6 +532,8 @@ pub mod pallet {
 		NotOperatingNormally,
 		/// The outbound lane is inactive.
 		InactiveOutboundLane,
+		/// The inbound message dispatcher is inactive.
+		MessageDispatchInactive,
 		/// Message has been treated as invalid by chain verifier.
 		MessageRejectedByChainVerifier(VerificationError),
 		/// Message has been treated as invalid by lane verifier.
@@ -708,6 +724,9 @@ fn send_message<T: Config<I>, I: 'static>(
 		.send_message(encoded_payload)
 		.map_err(Error::<T, I>::MessageRejectedByPallet)?;
 
+	// return number of messages in the queue to let sender know about its state
+	let enqueued_messages = lane.queued_messages().checked_len().unwrap_or(0);
+
 	log::trace!(
 		target: LOG_TARGET,
 		"Accepted message {} to lane {:?}. Message size: {:?}",
@@ -718,7 +737,7 @@ fn send_message<T: Config<I>, I: 'static>(
 
 	Pallet::<T, I>::deposit_event(Event::MessageAccepted { lane_id, nonce });
 
-	Ok(SendMessageArtifacts { nonce })
+	Ok(SendMessageArtifacts { nonce, enqueued_messages })
 }
 
 /// Ensure that the pallet is in normal operational mode.
