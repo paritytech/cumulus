@@ -28,7 +28,7 @@ pub use frame_support::{
 pub use frame_system::AccountInfo;
 pub use pallet_balances::AccountData;
 pub use sp_arithmetic::traits::Bounded;
-pub use sp_core::{storage::Storage, H256, Pair};
+pub use sp_core::{storage::Storage, Pair, H256};
 pub use sp_io;
 pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, fmt::Debug};
 pub use sp_trie::StorageProof;
@@ -253,7 +253,8 @@ impl fmt::Display for BridgeMessageDispatchError {
 /// Helper function to generate an account ID from seed.
 pub fn get_account_id_from_seed<TPublic: sp_core::Public>(seed: &str) -> AccountId
 where
-	sp_runtime:: MultiSigner: From<<<TPublic as sp_runtime::CryptoType>::Pair as sp_core::Pair>::Public>,
+	sp_runtime::MultiSigner:
+		From<<<TPublic as sp_runtime::CryptoType>::Pair as sp_core::Pair>::Public>,
 {
 	use sp_runtime::traits::IdentifyAccount;
 	let pubkey = TPublic::Pair::from_string(&format!("//{}", seed), None)
