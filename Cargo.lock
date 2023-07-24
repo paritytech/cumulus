@@ -2992,6 +2992,7 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-balances",
+ "pallet-paged-list",
  "parity-scale-codec",
  "polkadot-runtime-common",
  "rand_chacha 0.3.1",
