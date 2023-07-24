@@ -34,6 +34,7 @@ frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate"
 frame-try-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "master" }
 pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-bags-list = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -95,6 +96,7 @@ std = [
 	"frame-system/std",
 	"pallet-aura/std",
 	"pallet-authorship/std",
+	"pallet-bags-list/std",
 	"pallet-balances/std",
 	"pallet-collator-selection/std",
 	"pallet-session/std",
@@ -131,6 +133,7 @@ runtime-benchmarks = [
 	"frame-system-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
+	"pallet-bags-list/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"pallet-parachain-template/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
@@ -155,6 +158,7 @@ try-runtime = [
 	"pallet-aura/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-balances/try-runtime",
+	"pallet-bags-list/try-runtime",
 	"pallet-collator-selection/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-sudo/try-runtime",

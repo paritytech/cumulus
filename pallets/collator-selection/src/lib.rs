@@ -80,6 +80,7 @@ const LOG_TARGET: &str = "runtime::collator-selection";
 pub mod pallet {
 	pub use crate::weights::WeightInfo;
 	use core::ops::Div;
+	use frame_election_provider_support::{ScoreProvider, SortedListProvider};
 	use frame_support::{
 		dispatch::{DispatchClass, DispatchResultWithPostInfo},
 		pallet_prelude::*,
@@ -142,6 +143,8 @@ pub mod pallet {
 		/// Maximum number of invulnerables.
 		type MaxInvulnerables: Get<u32>;
 
+		type CandidateList: SortedListProvider<Self::AccountId, Score = BalanceOf<Self>>;
+
 		// Will be kicked if block is not produced in threshold.
 		type KickThreshold: Get<BlockNumberFor<Self>>;
 
@@ -203,6 +206,10 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn desired_candidates)]
 	pub type DesiredCandidates<T> = StorageValue<_, u32, ValueQuery>;
+
+	// #[pallet::storage]
+	// #[pallet::getter(fn minimum_deposit)]
+	// pub type MinimumDeposit<T> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
 	/// Fixed amount to deposit to become a collator.
 	///
@@ -289,6 +296,12 @@ pub mod pallet {
 		NoAssociatedValidatorId,
 		/// Validator ID is not yet registered.
 		ValidatorNotRegistered,
+		/// Some doc.
+		OnInsert,
+		/// Some doc.
+		OnRemove,
+		/// Some doc.
+		OnIncrease,
 	}
 
 	#[pallet::hooks]
@@ -451,6 +464,8 @@ pub mod pallet {
 							who.clone(),
 							frame_system::Pallet::<T>::block_number() + T::KickThreshold::get(),
 						);
+						T::CandidateList::on_insert(who.clone(), deposit)
+							.map_err(|_| Error::<T>::OnInsert)?;
 						Ok(candidates.len())
 					}
 				})?;
@@ -555,6 +570,28 @@ pub mod pallet {
 			Self::deposit_event(Event::InvulnerableRemoved { account_id: who });
 			Ok(())
 		}
+
+		/// Todo
+		///
+		/// Todo
+		#[pallet::call_index(7)]
+		#[pallet::weight(T::WeightInfo::set_candidacy_bond())]
+		pub fn increase_bond(origin: OriginFor<T>, bond: BalanceOf<T>) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			<Candidates<T>>::try_mutate(|candidates| -> DispatchResult {
+				let candidate_info = candidates
+					.iter_mut()
+					.find(|candidate_info| candidate_info.who == who)
+					.ok_or_else(|| Error::<T>::NotCandidate)?;
+				candidate_info.deposit.saturating_add(bond);
+				T::CandidateList::on_increase(&who, bond).map_err(|_| Error::<T>::OnIncrease)?;
+				Ok(())
+			})?;
+
+			Self::deposit_event(Event::InvulnerableRemoved { account_id: who });
+			Ok(())
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -584,6 +621,7 @@ pub mod pallet {
 						.ok_or(Error::<T>::NotCandidate)?;
 					let candidate = candidates.remove(index);
 					T::Currency::unreserve(who, candidate.deposit);
+					T::CandidateList::on_remove(&who).map_err(|_| Error::<T>::OnRemove)?;
 					if remove_last_authored {
 						<LastAuthoredBlock<T>>::remove(who.clone())
 					};
@@ -596,11 +634,12 @@ pub mod pallet {
 		/// Assemble the current set of candidates and invulnerables into the next collator set.
 		///
 		/// This is done on the fly, as frequent as we are told to do so, as the session manager.
-		pub fn assemble_collators(
-			candidates: BoundedVec<T::AccountId, T::MaxCandidates>,
-		) -> Vec<T::AccountId> {
+		pub fn assemble_collators() -> Vec<T::AccountId> {
+			// TODO[GMP] revisit
+			let desired_candidates: usize =
+				<DesiredCandidates<T>>::get().try_into().unwrap_or(usize::MAX);
 			let mut collators = Self::invulnerables().to_vec();
-			collators.extend(candidates);
+			collators.extend(T::CandidateList::iter().take(desired_candidates as usize));
 			collators
 		}
 
@@ -608,7 +647,7 @@ pub mod pallet {
 		/// their deposits.
 		pub fn kick_stale_candidates(
 			candidates: BoundedVec<CandidateInfo<T::AccountId, BalanceOf<T>>, T::MaxCandidates>,
-		) -> BoundedVec<T::AccountId, T::MaxCandidates> {
+		) -> usize {
 			let now = frame_system::Pallet::<T>::block_number();
 			let kick_threshold = T::KickThreshold::get();
 			let min_collators = T::MinEligibleCollators::get();
@@ -639,7 +678,7 @@ pub mod pallet {
 						}
 					}
 				})
-				.collect::<Vec<_>>()
+				.count()
 				.try_into()
 				.expect("filter_map operation can't result in a bounded vec larger than its original; qed")
 		}
@@ -680,9 +719,9 @@ pub mod pallet {
 
 			let candidates = Self::candidates();
 			let candidates_len_before = candidates.len();
-			let active_candidates = Self::kick_stale_candidates(candidates);
-			let removed = candidates_len_before - active_candidates.len();
-			let result = Self::assemble_collators(active_candidates);
+			let active_candidates_count = Self::kick_stale_candidates(candidates);
+			let removed = candidates_len_before.saturating_sub(active_candidates_count);
+			let result = Self::assemble_collators();
 
 			frame_system::Pallet::<T>::register_extra_weight_unchecked(
 				T::WeightInfo::new_session(candidates_len_before as u32, removed as u32),
@@ -695,6 +734,43 @@ pub mod pallet {
 		}
 		fn end_session(_: SessionIndex) {
 			// we don't care.
+		}
+	}
+
+	impl<T: Config> ScoreProvider<T::AccountId> for Pallet<T> {
+		type Score = BalanceOf<T>;
+
+		fn score(who: &T::AccountId) -> Self::Score {
+			let candidates = Self::candidates();
+			candidates
+				.iter()
+				.find(|&candidate_info| candidate_info.who == who.clone())
+				.map(|candidate_info| candidate_info.deposit)
+				.unwrap_or_default()
+		}
+
+		#[cfg(feature = "runtime-benchmarks")]
+		fn set_score_of(who: &T::AccountId, weight: Self::Score) {
+			// // this will clearly results in an inconsistent state, but it should not matter for a
+			// // benchmark.
+			// let active: BalanceOf<T> = weight.try_into().map_err(|_| ()).unwrap();
+			// let mut ledger = match Self::ledger(who) {
+			// 	None => StakingLedger::default_from(who.clone()),
+			// 	Some(l) => l,
+			// };
+			// ledger.active = active;
+
+			// <Ledger<T>>::insert(who, ledger);
+			// <Bonded<T>>::insert(who, who);
+
+			// // also, we play a trick to make sure that a issuance based-`CurrencyToVote` behaves well:
+			// // This will make sure that total issuance is zero, thus the currency to vote will be a 1-1
+			// // conversion.
+			// let imbalance = T::Currency::burn(T::Currency::total_issuance());
+			// // kinda ugly, but gets the job done. The fact that this works here is a HUGE exception.
+			// // Don't try this pattern in other places.
+			// sp_std::mem::forget(imbalance);
+			todo!();
 		}
 	}
 }
