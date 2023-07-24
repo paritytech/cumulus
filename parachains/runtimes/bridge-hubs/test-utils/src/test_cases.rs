@@ -53,8 +53,6 @@ use xcm_executor::XcmExecutor;
 
 // Re-export test_case from assets
 pub use asset_test_utils::include_teleports_for_native_asset_works;
-// Re-export
-pub use parachains_runtimes_test_utils::change_storage_constant_by_governance_works;
 
 // Re-export test_case from `parachains-runtimes-test-utils`
 pub use parachains_runtimes_test_utils::test_cases::change_storage_constant_by_governance_works;
