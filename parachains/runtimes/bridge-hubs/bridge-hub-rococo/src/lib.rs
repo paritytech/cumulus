@@ -493,7 +493,7 @@ pub struct IsChannelWithSiblingAssetHubActive;
 
 impl sp_runtime::traits::Get<bool> for IsChannelWithSiblingAssetHubActive {
 	fn get() -> bool {
-		let sibling_asset_hub_id: cumulus_primitives_core::ParaId = 1000u32.into();
+		let sibling_asset_hub_id: cumulus_primitives_core::ParaId = crate::xcm_config::SiblingAssetHubParId::get().into();
 		!cumulus_pallet_xcmp_queue::InboundXcmpSuspended::<Runtime>::get().contains(&sibling_asset_hub_id)
 	}
 }

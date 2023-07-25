@@ -55,6 +55,8 @@ parameter_types! {
 		X2(GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into()));
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
+
+	pub SiblingAssetHubParId: u32 = 1000;
 }
 
 pub struct RelayNetwork;

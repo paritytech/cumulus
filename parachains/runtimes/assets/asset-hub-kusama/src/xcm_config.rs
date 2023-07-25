@@ -56,7 +56,8 @@ parameter_types! {
 	pub const GovernanceLocation: MultiLocation = MultiLocation::parent();
 	pub const FellowshipLocation: MultiLocation = MultiLocation::parent();
 
-	pub SiblingBridgeHubLocation: MultiLocation = ParentThen(X1(Parachain(1001))).into();
+	pub SiblingBridgeHubParaId: u32 = 1013;
+	pub SiblingBridgeHubLocation: MultiLocation = ParentThen(X1(Parachain(SiblingBridgeHubParaId::get()))).into();
 	pub WococoNetworkId: NetworkId = NetworkId::Wococo;
 	pub BridgeFeeAsset: AssetId = MultiLocation::parent().into();
 }
@@ -528,7 +529,7 @@ impl SendXcm for LocalXcmQueueAdapter {
 
 impl bp_xcm_bridge_hub_router::LocalXcmQueue for LocalXcmQueueAdapter {
 	fn is_overloaded() -> bool {
-		let sibling_bridge_hub_id: cumulus_primitives_core::ParaId = 1000u32.into();
+		let sibling_bridge_hub_id: cumulus_primitives_core::ParaId = SiblingBridgeHubParaId::get().into();
 		let outbound_channels = cumulus_pallet_xcmp_queue::OutboundXcmpStatus::<Runtime>::get();
 		outbound_channels.iter()
 			.filter(|c| c.recipient() == sibling_bridge_hub_id)
