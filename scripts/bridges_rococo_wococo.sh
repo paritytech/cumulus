@@ -294,6 +294,36 @@ function force_create_foreign_asset() {
     send_governance_transact "${relay_url}" "${relay_chain_seed}" "${runtime_para_id}" "${hex_encoded_data}" 200000000 12000
 }
 
+function limited_reserve_transfer_assets() {
+    local url=$1
+    local seed=$2
+    local destination=$3
+    local beneficiary=$4
+    local assets=$5
+    local fee_asset_item=$6
+    local weight_limit=$7
+    echo "  calling limited_reserve_transfer_assets:"
+    echo "      url: ${url}"
+    echo "      seed: ${seed}"
+    echo "      destination: ${destination}"
+    echo "      beneficiary: ${beneficiary}"
+    echo "      assets: ${assets}"
+    echo "      fee_asset_item: ${fee_asset_item}"
+    echo "      weight_limit: ${weight_limit}"
+    echo ""
+    echo "--------------------------------------------------"
+
+    polkadot-js-api \
+        --ws "${url?}" \
+        --seed "${seed?}" \
+        tx.polkadotXcm.limitedReserveTransferAssets \
+            "${destination}" \
+            "${beneficiary}" \
+            "${assets}" \
+            "${fee_asset_item}" \
+            "${weight_limit}"
+}
+
 function allow_assets_transfer_receive() {
     local relay_url=$1
     local relay_chain_seed=$2

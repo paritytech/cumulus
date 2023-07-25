@@ -285,8 +285,8 @@ Do (asset) transfers:
 ```
 
 - open explorers: (see zombienets)
-	- AssetHubKusama (see events `xcmpQueue.XcmpMessageSent`, `bridgeTransfer.ReserveAssetsDeposited`, `bridgeTransfer.TransferInitiated`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9910#/explorer
+	- AssetHubKusama (see events `xcmpQueue.XcmpMessageSent`, `polkadotXcm.Attempted`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9910#/explorer
 	- BridgeHubKusama (see `bridgePolkadotMessages.MessageAccepted`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8943#/explorer
-	- BridgeHubPolkadot (see `bridgeKusamaMessages.MessagesReceived`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8945#/explorer
-	- AssetHubPolkadot (see `xcmpQueue.Success`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9010#/explorer
+	- BridgeHubPolkadot (see `bridgeKusamaMessages.MessagesReceived`, `xcmpQueue.XcmpMessageSent`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8945#/explorer
+	- AssetHubPolkadot (see `foreignAssets.Issued`, `xcmpQueue.Success`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9010#/explorer
 	- BridgeHubKusama (see `bridgePolkadotMessages.MessagesDelivered`) https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:8943#/explorer

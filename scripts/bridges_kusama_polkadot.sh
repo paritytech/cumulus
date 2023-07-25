@@ -156,19 +156,27 @@ case "$1" in
       ;;
   reserve-transfer-assets-from-asset-hub-kusama-local)
       ensure_polkadot_js_api
-      transfer_asset_via_bridge \
+      # send KSMs to Alice account on AHP
+      limited_reserve_transfer_assets \
           "ws://127.0.0.1:9910" \
-          "$ASSET_HUB_KUSAMA_ACCOUNT_SEED_FOR_LOCAL" \
-          "$ASSET_HUB_POLKADOT_ACCOUNT_ADDRESS_FOR_LOCAL" \
-          "Polkadot"
+          "//Alice" \
+          "$(jq --null-input '{ "V3": { "parents": 2, "interior": { "X2": [ { "GlobalConsensus": "Polkadot" }, { "Parachain": 1000 } ] } } }')" \
+          "$(jq --null-input '{ "V3": { "parents": 0, "interior": { "X1": { "AccountId32": { "id": [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125] } } } } }')" \
+          "$(jq --null-input '{ "V3": [ { "id": { "Concrete": { "parents": 1, "interior": "Here" } }, "fun": { "Fungible": 1000000000000 } } ] }')" \
+          0 \
+          "Unlimited"
       ;;
   reserve-transfer-assets-from-asset-hub-polkadot-local)
       ensure_polkadot_js_api
+      # send DOTs to Alice account on AHH
       limited_reserve_transfer_assets \
-          "ws://127.0.0.1:9910" \
-          "$ASSET_HUB_KUSAMA_ACCOUNT_SEED_FOR_LOCAL" \
-          "$ASSET_HUB_POLKADOT_ACCOUNT_ADDRESS_FOR_LOCAL" \
-          "Polkadot"
+          "ws://127.0.0.1:9010" \
+          "//Alice" \
+          "$(jq --null-input '{ "V3": { "parents": 2, "interior": { "X2": [ { "GlobalConsensus": "Kusama" }, { "Parachain": 1000 } ] } } }')" \
+          "$(jq --null-input '{ "V3": { "parents": 0, "interior": { "X1": { "AccountId32": { "id": [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125] } } } } }')" \
+          "$(jq --null-input '{ "V3": [ { "id": { "Concrete": { "parents": 1, "interior": "Here" } }, "fun": { "Fungible": 2000000000000 } } ] }')" \
+          0 \
+          "Unlimited"
       ;;
   stop)
     pkill -f polkadot
