@@ -22,12 +22,15 @@ use asset_hub_kusama_runtime::xcm_config::{
 };
 pub use asset_hub_kusama_runtime::{
 	constants::fee::WeightToFee,
-	xcm_config::{CheckingAccount, ForeignCreatorsSovereignAccountOf, XcmConfig},
+	xcm_config::{
+		bridging, CheckingAccount, ForeignCreatorsSovereignAccountOf, LocationToAccountId,
+		XcmConfig,
+	},
 	AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets, ForeignAssetsInstance,
 	MetadataDepositBase, MetadataDepositPerByte, ParachainSystem, Runtime, RuntimeCall,
-	RuntimeEvent, SessionKeys, System, TrustBackedAssetsInstance,
+	RuntimeEvent, SessionKeys, System, TrustBackedAssetsInstance, XcmpQueue,
 };
-use asset_test_utils::{CollatorSessionKeys, ExtBuilder, RuntimeHelper};
+use asset_test_utils::{CollatorSessionKey, CollatorSessionKeys, ExtBuilder, RuntimeHelper};
 use codec::{Decode, Encode};
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
@@ -46,12 +49,16 @@ const SOME_ASSET_ADMIN: [u8; 32] = [5u8; 32];
 type AssetIdForTrustBackedAssetsConvert =
 	assets_common::AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>;
 
-fn collator_session_keys() -> CollatorSessionKeys<Runtime> {
-	CollatorSessionKeys::new(
-		AccountId::from(ALICE),
-		AccountId::from(ALICE),
-		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+fn collator_session_key(account: [u8; 32]) -> CollatorSessionKey<Runtime> {
+	CollatorSessionKey::new(
+		AccountId::from(account),
+		AccountId::from(account),
+		SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(account)) },
 	)
+}
+
+fn collator_session_keys() -> CollatorSessionKeys<Runtime> {
+	CollatorSessionKeys::default().add(collator_session_key(ALICE))
 }
 
 #[test]
@@ -621,3 +628,62 @@ asset_test_utils::include_create_and_manage_foreign_assets_for_local_consensus_p
 		assert_eq!(ForeignAssets::asset_ids().collect::<Vec<_>>().len(), 1);
 	})
 );
+
+fn bridging_to_asset_hub_polkadot() -> asset_test_utils::test_cases_over_bridge::TestBridgingConfig
+{
+	asset_test_utils::test_cases_over_bridge::TestBridgingConfig {
+		bridged_network: bridging::PolkadotNetwork::get(),
+		local_bridge_hub_para_id: bridging::BridgeHubKusamaParaId::get(),
+		local_bridge_hub_location: bridging::BridgeHubKusama::get(),
+		bridged_target_location: bridging::AssetHubPolkadot::get(),
+	}
+}
+
+#[test]
+fn limited_reserve_transfer_assets_for_native_asset_over_bridge_works() {
+	asset_test_utils::test_cases_over_bridge::limited_reserve_transfer_assets_for_native_asset_works::<
+		Runtime,
+		XcmConfig,
+		ParachainSystem,
+		XcmpQueue,
+		LocationToAccountId,
+	>(
+		collator_session_keys(),
+		ExistentialDeposit::get(),
+		AccountId::from(ALICE),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
+				_ => None,
+			}
+		}),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
+				_ => None,
+			}
+		}),
+		bridging_to_asset_hub_polkadot,
+		WeightLimit::Unlimited,
+	)
+}
+
+#[test]
+fn receive_reserve_asset_deposited_dot_from_asset_hub_polkadot_works() {
+	const BLOCK_AUTHOR_ACCOUNT: [u8; 32] = [13; 32];
+	asset_test_utils::test_cases_over_bridge::receive_reserve_asset_deposited_from_different_consensus_works::<
+		Runtime,
+		XcmConfig,
+		LocationToAccountId,
+		ForeignAssetsInstance,
+	>(
+		collator_session_keys().add(collator_session_key(BLOCK_AUTHOR_ACCOUNT)),
+		ExistentialDeposit::get(),
+		AccountId::from([73; 32]),
+		AccountId::from(BLOCK_AUTHOR_ACCOUNT),
+			// receiving DOTs
+		(MultiLocation { parents: 2, interior: X1(GlobalConsensus(Polkadot)) }, 1000000000000, 1_000_000_000),
+		bridging_to_asset_hub_polkadot,
+		(X1(PalletInstance(53)), GlobalConsensus(Polkadot), X1(Parachain(1000)))
+	)
+}

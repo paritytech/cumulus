@@ -707,7 +707,7 @@ macro_rules! include_asset_transactor_transfer_with_local_consensus_currency_wor
 	}
 );
 
-///Test-case makes sure that `Runtime`'s `xcm::AssetTransactor` can handle native relay chain currency
+/// Test-case makes sure that `Runtime`'s `xcm::AssetTransactor` can handle native relay chain currency
 pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 	Runtime,
 	XcmConfig,
@@ -967,6 +967,7 @@ macro_rules! include_asset_transactor_transfer_with_pallet_assets_instance_works
 	}
 );
 
+/// Test-case makes sure that `Runtime`'s can create and manage `ForeignAssets`
 pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_works<
 	Runtime,
 	XcmConfig,

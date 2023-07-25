@@ -24,7 +24,6 @@ sp-core = { git = "https://github.com/paritytech/substrate", default-features = 
 cumulus-pallet-parachain-system = { path = "../../../pallets/parachain-system", default-features = false }
 cumulus-pallet-xcmp-queue = { path = "../../../pallets/xcmp-queue", default-features = false }
 pallet-collator-selection = { path = "../../../pallets/collator-selection", default-features = false }
-parachains-common = { path = "../../common", default-features = false }
 assets-common = { path = "../assets/common", default-features = false }
 cumulus-primitives-core = { path = "../../../primitives/core", default-features = false }
 cumulus-primitives-parachain-inherent = { path = "../../../primitives/parachain-inherent", default-features = false }
@@ -58,7 +57,6 @@ std = [
 	"pallet-collator-selection/std",
 	"pallet-session/std",
 	"assets-common/std",
-	"parachains-common/std",
 	"parachain-info/std",
 	"polkadot-parachain/std",
 	"sp-consensus-aura/std",

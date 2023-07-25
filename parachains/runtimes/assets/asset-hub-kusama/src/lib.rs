@@ -68,7 +68,6 @@ use pallet_nfts::PalletFeatures;
 pub use parachains_common as common;
 use parachains_common::{
 	impls::{AssetsToBlockAuthor, DealWithFees},
-	opaque,
 	process_xcm_message::*,
 	AccountId, AssetIdForTrustBackedAssets, AuraId, Balance, BlockNumber, Hash, Header, Nonce,
 	Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
@@ -759,10 +758,10 @@ impl pallet_nfts::Config for Runtime {
 
 impl pallet_xcm_bridge_hub_router::Config for Runtime {
 	type UniversalLocation = xcm_config::UniversalLocation;
-	type SiblingBridgeHubLocation = xcm_config::SiblingBridgeHubLocation;
-	type BridgedNetworkId = xcm_config::WococoNetworkId;
+	type SiblingBridgeHubLocation = xcm_config::bridging::BridgeHubKusama;
+	type BridgedNetworkId = xcm_config::bridging::PolkadotNetwork;
 
-	type ToBridgeHubSender = xcm_config::LocalXcmQueueAdapter;
+	type ToBridgeHubSender = xcm_config::bridging::LocalXcmQueueAdapter;
 
 	type BaseFee = ConstU128<1_000_000_000>;
 	type ByteFee = ConstU128<1_000_000>;
@@ -1206,7 +1205,10 @@ impl_runtime_apis! {
 				}
 
 				fn universal_alias() -> Result<(MultiLocation, Junction), BenchmarkError> {
-					Err(BenchmarkError::Skip)
+					match xcm_config::bridging::BridgingBenchmarksHelper::prepare_universal_alias() {
+						Some(alias) => Ok(alias),
+						None => Err(BenchmarkError::Skip)
+					}
 				}
 
 				fn transact_origin_and_runtime_call() -> Result<(MultiLocation, RuntimeCall), BenchmarkError> {

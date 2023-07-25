@@ -19,14 +19,16 @@
 
 pub use asset_hub_westend_runtime::{
 	constants::fee::WeightToFee,
-	xcm_config::{CheckingAccount, TrustBackedAssetsPalletLocation, XcmConfig},
+	xcm_config::{
+		CheckingAccount, LocationToAccountId, TrustBackedAssetsPalletLocation, XcmConfig,
+	},
 	AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets, ForeignAssetsInstance,
-	ParachainSystem, Runtime, SessionKeys, System, TrustBackedAssetsInstance,
+	ParachainSystem, Runtime, SessionKeys, System, TrustBackedAssetsInstance, XcmpQueue,
 };
 use asset_hub_westend_runtime::{
 	xcm_config::{
-		AssetFeeAsExistentialDepositMultiplierFeeCharger, ForeignCreatorsSovereignAccountOf,
-		WestendLocation,
+		bridging, AssetFeeAsExistentialDepositMultiplierFeeCharger,
+		ForeignCreatorsSovereignAccountOf, WestendLocation,
 	},
 	AllowMultiAssetPools, LiquidityWithdrawalFee, MetadataDepositBase, MetadataDepositPerByte,
 	RuntimeCall, RuntimeEvent,
@@ -630,6 +632,16 @@ asset_test_utils::include_create_and_manage_foreign_assets_for_local_consensus_p
 		assert_eq!(ForeignAssets::asset_ids().collect::<Vec<_>>().len(), 1);
 	})
 );
+
+#[allow(unused)]
+fn bridging_to_asset_hub_kusama() -> asset_test_utils::test_cases_over_bridge::TestBridgingConfig {
+	asset_test_utils::test_cases_over_bridge::TestBridgingConfig {
+		bridged_network: bridging::KusamaLocalNetwork::get(),
+		local_bridge_hub_para_id: bridging::BridgeHubParaId::get(),
+		local_bridge_hub_location: bridging::BridgeHub::get(),
+		bridged_target_location: bridging::AssetHubKusamaLocal::get(),
+	}
+}
 
 #[test]
 fn plain_receive_teleported_asset_works() {
