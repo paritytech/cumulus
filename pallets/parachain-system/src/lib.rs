@@ -195,6 +195,7 @@ pub mod pallet {
 		/// Something that can check the associated relay parent block number.
 		type CheckAssociatedRelayNumber: CheckAssociatedRelayNumber;
 
+		/// Holds the upward messages that are pending delivery to the relay.
 		type PendingUpwardMessages: StorageList<UpwardMessage>;
 	}
 
@@ -258,7 +259,7 @@ pub mod pallet {
 
 			// TODO: #274 Return back messages that do not longer fit into the queue.
 			UpwardMessages::<T>::put(&fit);
-			let _ = T::PendingUpwardMessages::drain().take(fit.len()).count();
+			T::PendingUpwardMessages::drain().take(fit.len()).for_each(core::mem::drop);
 
 			// Sending HRMP messages is a little bit more involved. There are the following
 			// constraints:
