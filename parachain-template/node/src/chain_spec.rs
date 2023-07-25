@@ -68,6 +68,7 @@ pub fn development_config() -> ChainSpec {
 	properties.insert("tokenDecimals".into(), 12.into());
 	properties.insert("ss58Format".into(), 42.into());
 
+	#[allow(deprecated)]
 	ChainSpec::from_genesis(
 		// Name
 		"Development",
@@ -114,6 +115,8 @@ pub fn development_config() -> ChainSpec {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
 			para_id: 1000,
 		},
+		parachain_template_runtime::WASM_BINARY
+			.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -124,6 +127,7 @@ pub fn local_testnet_config() -> ChainSpec {
 	properties.insert("tokenDecimals".into(), 12.into());
 	properties.insert("ss58Format".into(), 42.into());
 
+	#[allow(deprecated)]
 	ChainSpec::from_genesis(
 		// Name
 		"Local Testnet",
@@ -176,6 +180,8 @@ pub fn local_testnet_config() -> ChainSpec {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
 			para_id: 1000,
 		},
+		parachain_template_runtime::WASM_BINARY
+			.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -186,12 +192,7 @@ fn testnet_genesis(
 	id: ParaId,
 ) -> parachain_template_runtime::RuntimeGenesisConfig {
 	parachain_template_runtime::RuntimeGenesisConfig {
-		system: parachain_template_runtime::SystemConfig {
-			code: parachain_template_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			..Default::default()
-		},
+		system: parachain_template_runtime::SystemConfig::default(),
 		balances: parachain_template_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},

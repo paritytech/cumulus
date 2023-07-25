@@ -43,6 +43,7 @@ pub fn collectives_polkadot_development_config() -> CollectivesPolkadotChainSpec
 	properties.insert("tokenSymbol".into(), "DOT".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
+	#[allow(deprecated)]
 	CollectivesPolkadotChainSpec::from_genesis(
 		// Name
 		"Polkadot Collectives Development",
@@ -73,6 +74,8 @@ pub fn collectives_polkadot_development_config() -> CollectivesPolkadotChainSpec
 		None,
 		Some(properties),
 		Extensions { relay_chain: "polkadot-dev".into(), para_id: 1002 },
+		collectives_polkadot_runtime::WASM_BINARY
+			.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -83,6 +86,7 @@ pub fn collectives_polkadot_local_config() -> CollectivesPolkadotChainSpec {
 	properties.insert("tokenSymbol".into(), "DOT".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
+	#[allow(deprecated)]
 	CollectivesPolkadotChainSpec::from_genesis(
 		// Name
 		"Polkadot Collectives Local",
@@ -125,6 +129,8 @@ pub fn collectives_polkadot_local_config() -> CollectivesPolkadotChainSpec {
 		None,
 		Some(properties),
 		Extensions { relay_chain: "polkadot-local".into(), para_id: 1002 },
+		collectives_polkadot_runtime::WASM_BINARY
+			.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -134,12 +140,7 @@ fn collectives_polkadot_genesis(
 	id: ParaId,
 ) -> collectives_polkadot_runtime::RuntimeGenesisConfig {
 	collectives_polkadot_runtime::RuntimeGenesisConfig {
-		system: collectives_polkadot_runtime::SystemConfig {
-			code: collectives_polkadot_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			..Default::default()
-		},
+		system: collectives_polkadot_runtime::SystemConfig::default(),
 		balances: collectives_polkadot_runtime::BalancesConfig {
 			balances: endowed_accounts
 				.iter()

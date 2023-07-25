@@ -32,6 +32,7 @@ pub fn get_penpal_chain_spec(id: ParaId, relay_chain: &str) -> PenpalChainSpec {
 	properties.insert("tokenDecimals".into(), 12u32.into());
 	properties.insert("ss58Format".into(), 42u32.into());
 
+	#[allow(deprecated)]
 	PenpalChainSpec::from_genesis(
 		// Name
 		"Penpal Parachain",
@@ -77,6 +78,7 @@ pub fn get_penpal_chain_spec(id: ParaId, relay_chain: &str) -> PenpalChainSpec {
 			relay_chain: relay_chain.into(), // You MUST set this to the correct network!
 			para_id: id.into(),
 		},
+		penpal_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -86,12 +88,7 @@ fn penpal_testnet_genesis(
 	id: ParaId,
 ) -> penpal_runtime::RuntimeGenesisConfig {
 	penpal_runtime::RuntimeGenesisConfig {
-		system: penpal_runtime::SystemConfig {
-			code: penpal_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			..Default::default()
-		},
+		system: penpal_runtime::SystemConfig::default(),
 		balances: penpal_runtime::BalancesConfig {
 			balances: endowed_accounts
 				.iter()

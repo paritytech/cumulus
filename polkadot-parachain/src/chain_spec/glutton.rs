@@ -24,6 +24,7 @@ pub type GluttonChainSpec =
 	sc_service::GenericChainSpec<glutton_runtime::RuntimeGenesisConfig, Extensions>;
 
 pub fn glutton_development_config(para_id: ParaId) -> GluttonChainSpec {
+	#[allow(deprecated)]
 	GluttonChainSpec::from_genesis(
 		// Name
 		"Glutton Development",
@@ -37,10 +38,12 @@ pub fn glutton_development_config(para_id: ParaId) -> GluttonChainSpec {
 		None,
 		None,
 		Extensions { relay_chain: "kusama-dev".into(), para_id: para_id.into() },
+		glutton_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
 	)
 }
 
 pub fn glutton_local_config(para_id: ParaId) -> GluttonChainSpec {
+	#[allow(deprecated)]
 	GluttonChainSpec::from_genesis(
 		// Name
 		"Glutton Local",
@@ -54,6 +57,7 @@ pub fn glutton_local_config(para_id: ParaId) -> GluttonChainSpec {
 		None,
 		None,
 		Extensions { relay_chain: "kusama-local".into(), para_id: para_id.into() },
+		glutton_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -61,6 +65,7 @@ pub fn glutton_config(para_id: ParaId) -> GluttonChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 2.into());
 
+	#[allow(deprecated)]
 	GluttonChainSpec::from_genesis(
 		// Name
 		format!("Glutton {}", para_id).as_str(),
@@ -75,17 +80,13 @@ pub fn glutton_config(para_id: ParaId) -> GluttonChainSpec {
 		None,
 		Some(properties),
 		Extensions { relay_chain: "kusama".into(), para_id: para_id.into() },
+		glutton_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
 	)
 }
 
 fn glutton_genesis(parachain_id: ParaId) -> glutton_runtime::RuntimeGenesisConfig {
 	glutton_runtime::RuntimeGenesisConfig {
-		system: glutton_runtime::SystemConfig {
-			code: glutton_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			..Default::default()
-		},
+		system: glutton_runtime::SystemConfig::default(),
 		parachain_info: glutton_runtime::ParachainInfoConfig { parachain_id, ..Default::default() },
 		parachain_system: Default::default(),
 		glutton: glutton_runtime::GluttonConfig {

@@ -25,6 +25,7 @@ pub type SeedlingChainSpec =
 	sc_service::GenericChainSpec<seedling_runtime::RuntimeGenesisConfig, Extensions>;
 
 pub fn get_seedling_chain_spec() -> SeedlingChainSpec {
+	#[allow(deprecated)]
 	SeedlingChainSpec::from_genesis(
 		"Seedling Local Testnet",
 		"seedling_local_testnet",
@@ -41,6 +42,7 @@ pub fn get_seedling_chain_spec() -> SeedlingChainSpec {
 		None,
 		None,
 		Extensions { relay_chain: "westend".into(), para_id: 2000 },
+		seedling_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -49,12 +51,7 @@ fn seedling_testnet_genesis(
 	parachain_id: ParaId,
 ) -> seedling_runtime::RuntimeGenesisConfig {
 	seedling_runtime::RuntimeGenesisConfig {
-		system: seedling_runtime::SystemConfig {
-			code: seedling_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			..Default::default()
-		},
+		system: seedling_runtime::SystemConfig::default(),
 		sudo: seedling_runtime::SudoConfig { key: Some(root_key) },
 		parachain_info: seedling_runtime::ParachainInfoConfig {
 			parachain_id,

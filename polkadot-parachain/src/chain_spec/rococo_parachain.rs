@@ -29,6 +29,7 @@ pub type RococoParachainChainSpec =
 	sc_service::GenericChainSpec<rococo_parachain_runtime::RuntimeGenesisConfig, Extensions>;
 
 pub fn rococo_parachain_local_config() -> RococoParachainChainSpec {
+	#[allow(deprecated)]
 	RococoParachainChainSpec::from_genesis(
 		"Rococo Parachain Local",
 		"local_testnet",
@@ -60,10 +61,12 @@ pub fn rococo_parachain_local_config() -> RococoParachainChainSpec {
 		None,
 		None,
 		Extensions { relay_chain: "rococo-local".into(), para_id: 1000 },
+		rococo_parachain_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
 	)
 }
 
 pub fn staging_rococo_parachain_local_config() -> RococoParachainChainSpec {
+	#[allow(deprecated)]
 	RococoParachainChainSpec::from_genesis(
 		"Staging Rococo Parachain Local",
 		"staging_testnet",
@@ -91,6 +94,7 @@ pub fn staging_rococo_parachain_local_config() -> RococoParachainChainSpec {
 		None,
 		None,
 		Extensions { relay_chain: "rococo-local".into(), para_id: 1000 },
+		rococo_parachain_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -101,12 +105,7 @@ pub(crate) fn testnet_genesis(
 	id: ParaId,
 ) -> rococo_parachain_runtime::RuntimeGenesisConfig {
 	rococo_parachain_runtime::RuntimeGenesisConfig {
-		system: rococo_parachain_runtime::SystemConfig {
-			code: rococo_parachain_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			..Default::default()
-		},
+		system: rococo_parachain_runtime::SystemConfig::default(),
 		balances: rococo_parachain_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},

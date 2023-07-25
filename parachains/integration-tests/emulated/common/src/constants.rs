@@ -36,6 +36,14 @@ where
 	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
 
+fn build_genesis_storage(builder: &dyn BuildStorage, code: &[u8]) -> Storage {
+	let mut storage = builder.build_storage().unwrap();
+	storage
+		.top
+		.insert(sp_core::storage::well_known_keys::CODE.to_vec(), code.into());
+	storage
+}
+
 pub mod accounts {
 	use super::*;
 	pub const ALICE: &str = "Alice";
@@ -153,10 +161,7 @@ pub mod polkadot {
 
 	pub fn genesis() -> Storage {
 		let genesis_config = polkadot_runtime::RuntimeGenesisConfig {
-			system: polkadot_runtime::SystemConfig {
-				code: polkadot_runtime::WASM_BINARY.unwrap().to_vec(),
-				..Default::default()
-			},
+			system: polkadot_runtime::SystemConfig::default(),
 			balances: polkadot_runtime::BalancesConfig {
 				balances: accounts::init_balances()
 					.iter()
@@ -209,7 +214,7 @@ pub mod polkadot {
 			..Default::default()
 		};
 
-		genesis_config.build_storage().unwrap()
+		build_genesis_storage(&genesis_config, polkadot_runtime::WASM_BINARY.unwrap())
 	}
 }
 
@@ -252,10 +257,7 @@ pub mod westend {
 
 	pub fn genesis() -> Storage {
 		let genesis_config = westend_runtime::RuntimeGenesisConfig {
-			system: westend_runtime::SystemConfig {
-				code: westend_runtime::WASM_BINARY.unwrap().to_vec(),
-				..Default::default()
-			},
+			system: westend_runtime::SystemConfig::default(),
 			balances: westend_runtime::BalancesConfig {
 				balances: accounts::init_balances()
 					.iter()
@@ -308,7 +310,7 @@ pub mod westend {
 			..Default::default()
 		};
 
-		genesis_config.build_storage().unwrap()
+		build_genesis_storage(&genesis_config, westend_runtime::WASM_BINARY.unwrap())
 	}
 }
 
@@ -351,10 +353,7 @@ pub mod kusama {
 
 	pub fn genesis() -> Storage {
 		let genesis_config = kusama_runtime::RuntimeGenesisConfig {
-			system: kusama_runtime::SystemConfig {
-				code: kusama_runtime::WASM_BINARY.unwrap().to_vec(),
-				..Default::default()
-			},
+			system: kusama_runtime::SystemConfig::default(),
 			balances: kusama_runtime::BalancesConfig {
 				balances: accounts::init_balances()
 					.iter()
@@ -406,7 +405,7 @@ pub mod kusama {
 			..Default::default()
 		};
 
-		genesis_config.build_storage().unwrap()
+		build_genesis_storage(&genesis_config, kusama_runtime::WASM_BINARY.unwrap())
 	}
 }
 
@@ -449,10 +448,7 @@ pub mod rococo {
 
 	pub fn genesis() -> Storage {
 		let genesis_config = rococo_runtime::RuntimeGenesisConfig {
-			system: rococo_runtime::SystemConfig {
-				code: rococo_runtime::WASM_BINARY.unwrap().to_vec(),
-				..Default::default()
-			},
+			system: rococo_runtime::SystemConfig::default(),
 			balances: rococo_runtime::BalancesConfig {
 				balances: accounts::init_balances()
 					.iter()
@@ -496,7 +492,7 @@ pub mod rococo {
 			..Default::default()
 		};
 
-		genesis_config.build_storage().unwrap()
+		build_genesis_storage(&genesis_config, rococo_runtime::WASM_BINARY.unwrap())
 	}
 }
 
@@ -508,12 +504,7 @@ pub mod asset_hub_polkadot {
 
 	pub fn genesis() -> Storage {
 		let genesis_config = asset_hub_polkadot_runtime::RuntimeGenesisConfig {
-			system: asset_hub_polkadot_runtime::SystemConfig {
-				code: asset_hub_polkadot_runtime::WASM_BINARY
-					.expect("WASM binary was not build, please build it!")
-					.to_vec(),
-				..Default::default()
-			},
+			system: asset_hub_polkadot_runtime::SystemConfig::default(),
 			balances: asset_hub_polkadot_runtime::BalancesConfig {
 				balances: accounts::init_balances()
 					.iter()
@@ -553,7 +544,11 @@ pub mod asset_hub_polkadot {
 			..Default::default()
 		};
 
-		genesis_config.build_storage().unwrap()
+		build_genesis_storage(
+			&genesis_config,
+			asset_hub_polkadot_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!"),
+		)
 	}
 }
 
@@ -565,12 +560,7 @@ pub mod asset_hub_westend {
 
 	pub fn genesis() -> Storage {
 		let genesis_config = asset_hub_westend_runtime::RuntimeGenesisConfig {
-			system: asset_hub_westend_runtime::SystemConfig {
-				code: asset_hub_westend_runtime::WASM_BINARY
-					.expect("WASM binary was not build, please build it!")
-					.to_vec(),
-				..Default::default()
-			},
+			system: asset_hub_westend_runtime::SystemConfig::default(),
 			balances: asset_hub_westend_runtime::BalancesConfig {
 				balances: accounts::init_balances()
 					.iter()
@@ -610,7 +600,11 @@ pub mod asset_hub_westend {
 			..Default::default()
 		};
 
-		genesis_config.build_storage().unwrap()
+		build_genesis_storage(
+			&genesis_config,
+			asset_hub_westend_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!"),
+		)
 	}
 }
 
@@ -622,12 +616,7 @@ pub mod asset_hub_kusama {
 
 	pub fn genesis() -> Storage {
 		let genesis_config = asset_hub_kusama_runtime::RuntimeGenesisConfig {
-			system: asset_hub_kusama_runtime::SystemConfig {
-				code: asset_hub_kusama_runtime::WASM_BINARY
-					.expect("WASM binary was not build, please build it!")
-					.to_vec(),
-				..Default::default()
-			},
+			system: asset_hub_kusama_runtime::SystemConfig::default(),
 			balances: asset_hub_kusama_runtime::BalancesConfig {
 				balances: accounts::init_balances()
 					.iter()
@@ -667,7 +656,11 @@ pub mod asset_hub_kusama {
 			..Default::default()
 		};
 
-		genesis_config.build_storage().unwrap()
+		build_genesis_storage(
+			&genesis_config,
+			asset_hub_kusama_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!"),
+		)
 	}
 }
 
@@ -679,12 +672,7 @@ pub mod penpal {
 
 	pub fn genesis(para_id: u32) -> Storage {
 		let genesis_config = penpal_runtime::RuntimeGenesisConfig {
-			system: penpal_runtime::SystemConfig {
-				code: penpal_runtime::WASM_BINARY
-					.expect("WASM binary was not build, please build it!")
-					.to_vec(),
-				..Default::default()
-			},
+			system: penpal_runtime::SystemConfig::default(),
 			balances: penpal_runtime::BalancesConfig {
 				balances: accounts::init_balances()
 					.iter()
@@ -727,7 +715,10 @@ pub mod penpal {
 			..Default::default()
 		};
 
-		genesis_config.build_storage().unwrap()
+		build_genesis_storage(
+			&genesis_config,
+			penpal_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
+		)
 	}
 }
 
@@ -739,12 +730,7 @@ pub mod collectives {
 
 	pub fn genesis() -> Storage {
 		let genesis_config = collectives_polkadot_runtime::RuntimeGenesisConfig {
-			system: collectives_polkadot_runtime::SystemConfig {
-				code: collectives_polkadot_runtime::WASM_BINARY
-					.expect("WASM binary was not build, please build it!")
-					.to_vec(),
-				..Default::default()
-			},
+			system: collectives_polkadot_runtime::SystemConfig::default(),
 			balances: collectives_polkadot_runtime::BalancesConfig {
 				balances: accounts::init_balances()
 					.iter()
@@ -784,7 +770,11 @@ pub mod collectives {
 			..Default::default()
 		};
 
-		genesis_config.build_storage().unwrap()
+		build_genesis_storage(
+			&genesis_config,
+			collectives_polkadot_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!"),
+		)
 	}
 }
 
@@ -796,12 +786,7 @@ pub mod bridge_hub_kusama {
 
 	pub fn genesis() -> Storage {
 		let genesis_config = bridge_hub_kusama_runtime::RuntimeGenesisConfig {
-			system: bridge_hub_kusama_runtime::SystemConfig {
-				code: bridge_hub_kusama_runtime::WASM_BINARY
-					.expect("WASM binary was not build, please build it!")
-					.to_vec(),
-				..Default::default()
-			},
+			system: bridge_hub_kusama_runtime::SystemConfig::default(),
 			balances: bridge_hub_kusama_runtime::BalancesConfig {
 				balances: accounts::init_balances()
 					.iter()
@@ -841,7 +826,11 @@ pub mod bridge_hub_kusama {
 			..Default::default()
 		};
 
-		genesis_config.build_storage().unwrap()
+		build_genesis_storage(
+			&genesis_config,
+			bridge_hub_kusama_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!"),
+		)
 	}
 }
 
@@ -853,12 +842,7 @@ pub mod bridge_hub_polkadot {
 
 	pub fn genesis() -> Storage {
 		let genesis_config = bridge_hub_polkadot_runtime::RuntimeGenesisConfig {
-			system: bridge_hub_polkadot_runtime::SystemConfig {
-				code: bridge_hub_polkadot_runtime::WASM_BINARY
-					.expect("WASM binary was not build, please build it!")
-					.to_vec(),
-				..Default::default()
-			},
+			system: bridge_hub_polkadot_runtime::SystemConfig::default(),
 			balances: bridge_hub_polkadot_runtime::BalancesConfig {
 				balances: accounts::init_balances()
 					.iter()
@@ -898,7 +882,11 @@ pub mod bridge_hub_polkadot {
 			..Default::default()
 		};
 
-		genesis_config.build_storage().unwrap()
+		build_genesis_storage(
+			&genesis_config,
+			bridge_hub_polkadot_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!"),
+		)
 	}
 }
 
@@ -910,12 +898,7 @@ pub mod bridge_hub_rococo {
 
 	pub fn genesis() -> Storage {
 		let genesis_config = bridge_hub_rococo_runtime::RuntimeGenesisConfig {
-			system: bridge_hub_rococo_runtime::SystemConfig {
-				code: bridge_hub_rococo_runtime::WASM_BINARY
-					.expect("WASM binary was not build, please build it!")
-					.to_vec(),
-				..Default::default()
-			},
+			system: bridge_hub_rococo_runtime::SystemConfig::default(),
 			balances: bridge_hub_rococo_runtime::BalancesConfig {
 				balances: accounts::init_balances()
 					.iter()
@@ -971,6 +954,10 @@ pub mod bridge_hub_rococo {
 			..Default::default()
 		};
 
-		genesis_config.build_storage().unwrap()
+		build_genesis_storage(
+			&genesis_config,
+			bridge_hub_rococo_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!"),
+		)
 	}
 }

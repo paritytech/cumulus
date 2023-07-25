@@ -23,6 +23,7 @@ pub type ShellChainSpec =
 	sc_service::GenericChainSpec<shell_runtime::RuntimeGenesisConfig, Extensions>;
 
 pub fn get_shell_chain_spec() -> ShellChainSpec {
+	#[allow(deprecated)]
 	ShellChainSpec::from_genesis(
 		"Shell Local Testnet",
 		"shell_local_testnet",
@@ -34,17 +35,13 @@ pub fn get_shell_chain_spec() -> ShellChainSpec {
 		None,
 		None,
 		Extensions { relay_chain: "westend".into(), para_id: 1000 },
+		shell_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
 	)
 }
 
 fn shell_testnet_genesis(parachain_id: ParaId) -> shell_runtime::RuntimeGenesisConfig {
 	shell_runtime::RuntimeGenesisConfig {
-		system: shell_runtime::SystemConfig {
-			code: shell_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			..Default::default()
-		},
+		system: shell_runtime::SystemConfig::default(),
 		parachain_info: shell_runtime::ParachainInfoConfig { parachain_id, ..Default::default() },
 		parachain_system: Default::default(),
 	}

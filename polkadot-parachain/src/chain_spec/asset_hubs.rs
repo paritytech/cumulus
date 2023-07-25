@@ -67,6 +67,7 @@ pub fn asset_hub_polkadot_development_config() -> AssetHubPolkadotChainSpec {
 	properties.insert("tokenSymbol".into(), "DOT".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
+	#[allow(deprecated)]
 	AssetHubPolkadotChainSpec::from_genesis(
 		// Name
 		"Polkadot Asset Hub Development",
@@ -95,6 +96,8 @@ pub fn asset_hub_polkadot_development_config() -> AssetHubPolkadotChainSpec {
 		None,
 		Some(properties),
 		Extensions { relay_chain: "polkadot-dev".into(), para_id: 1000 },
+		asset_hub_polkadot_runtime::WASM_BINARY
+			.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -104,6 +107,7 @@ pub fn asset_hub_polkadot_local_config() -> AssetHubPolkadotChainSpec {
 	properties.insert("tokenSymbol".into(), "DOT".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
+	#[allow(deprecated)]
 	AssetHubPolkadotChainSpec::from_genesis(
 		// Name
 		"Polkadot Asset Hub Local",
@@ -146,6 +150,8 @@ pub fn asset_hub_polkadot_local_config() -> AssetHubPolkadotChainSpec {
 		None,
 		Some(properties),
 		Extensions { relay_chain: "polkadot-local".into(), para_id: 1000 },
+		asset_hub_polkadot_runtime::WASM_BINARY
+			.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -156,6 +162,7 @@ pub fn asset_hub_polkadot_config() -> AssetHubPolkadotChainSpec {
 	properties.insert("tokenSymbol".into(), "DOT".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
+	#[allow(deprecated)]
 	AssetHubPolkadotChainSpec::from_genesis(
 		// Name
 		"Polkadot Asset Hub",
@@ -206,6 +213,7 @@ pub fn asset_hub_polkadot_config() -> AssetHubPolkadotChainSpec {
 		None,
 		Some(properties),
 		Extensions { relay_chain: "polkadot".into(), para_id: 1000 },
+		asset_hub_polkadot_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -215,12 +223,7 @@ fn asset_hub_polkadot_genesis(
 	id: ParaId,
 ) -> asset_hub_polkadot_runtime::RuntimeGenesisConfig {
 	asset_hub_polkadot_runtime::RuntimeGenesisConfig {
-		system: asset_hub_polkadot_runtime::SystemConfig {
-			code: asset_hub_polkadot_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			..Default::default()
-		},
+		system: asset_hub_polkadot_runtime::SystemConfig::default(),
 		balances: asset_hub_polkadot_runtime::BalancesConfig {
 			balances: endowed_accounts
 				.iter()
@@ -267,6 +270,7 @@ pub fn asset_hub_kusama_development_config() -> AssetHubKusamaChainSpec {
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
+	#[allow(deprecated)]
 	AssetHubKusamaChainSpec::from_genesis(
 		// Name
 		"Kusama Asset Hub Development",
@@ -295,6 +299,7 @@ pub fn asset_hub_kusama_development_config() -> AssetHubKusamaChainSpec {
 		None,
 		Some(properties),
 		Extensions { relay_chain: "kusama-dev".into(), para_id: 1000 },
+		asset_hub_kusama_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -304,6 +309,7 @@ pub fn asset_hub_kusama_local_config() -> AssetHubKusamaChainSpec {
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
+	#[allow(deprecated)]
 	AssetHubKusamaChainSpec::from_genesis(
 		// Name
 		"Kusama Asset Hub Local",
@@ -346,6 +352,7 @@ pub fn asset_hub_kusama_local_config() -> AssetHubKusamaChainSpec {
 		None,
 		Some(properties),
 		Extensions { relay_chain: "kusama-local".into(), para_id: 1000 },
+		asset_hub_kusama_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -355,6 +362,7 @@ pub fn asset_hub_kusama_config() -> AssetHubKusamaChainSpec {
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
+	#[allow(deprecated)]
 	AssetHubKusamaChainSpec::from_genesis(
 		// Name
 		"Kusama Asset Hub",
@@ -400,6 +408,7 @@ pub fn asset_hub_kusama_config() -> AssetHubKusamaChainSpec {
 		None,
 		Some(properties),
 		Extensions { relay_chain: "kusama".into(), para_id: 1000 },
+		asset_hub_kusama_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -409,12 +418,7 @@ fn asset_hub_kusama_genesis(
 	id: ParaId,
 ) -> asset_hub_kusama_runtime::RuntimeGenesisConfig {
 	asset_hub_kusama_runtime::RuntimeGenesisConfig {
-		system: asset_hub_kusama_runtime::SystemConfig {
-			code: asset_hub_kusama_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			..Default::default()
-		},
+		system: asset_hub_kusama_runtime::SystemConfig::default(),
 		balances: asset_hub_kusama_runtime::BalancesConfig {
 			balances: endowed_accounts
 				.iter()
@@ -458,6 +462,7 @@ pub fn asset_hub_westend_development_config() -> AssetHubWestendChainSpec {
 	properties.insert("tokenSymbol".into(), "WND".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
+	#[allow(deprecated)]
 	AssetHubWestendChainSpec::from_genesis(
 		// Name
 		"Westend Asset Hub Development",
@@ -486,6 +491,8 @@ pub fn asset_hub_westend_development_config() -> AssetHubWestendChainSpec {
 		None,
 		Some(properties),
 		Extensions { relay_chain: "westend".into(), para_id: 1000 },
+		asset_hub_westend_runtime::WASM_BINARY
+			.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -494,6 +501,7 @@ pub fn asset_hub_westend_local_config() -> AssetHubWestendChainSpec {
 	properties.insert("tokenSymbol".into(), "WND".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
+	#[allow(deprecated)]
 	AssetHubWestendChainSpec::from_genesis(
 		// Name
 		"Westend Asset Hub Local",
@@ -536,6 +544,8 @@ pub fn asset_hub_westend_local_config() -> AssetHubWestendChainSpec {
 		None,
 		Some(properties),
 		Extensions { relay_chain: "westend-local".into(), para_id: 1000 },
+		asset_hub_westend_runtime::WASM_BINARY
+			.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -544,6 +554,7 @@ pub fn asset_hub_westend_config() -> AssetHubWestendChainSpec {
 	properties.insert("tokenSymbol".into(), "WND".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
+	#[allow(deprecated)]
 	AssetHubWestendChainSpec::from_genesis(
 		// Name
 		"Westend Asset Hub",
@@ -589,6 +600,8 @@ pub fn asset_hub_westend_config() -> AssetHubWestendChainSpec {
 		None,
 		Some(properties),
 		Extensions { relay_chain: "westend".into(), para_id: 1000 },
+		asset_hub_westend_runtime::WASM_BINARY
+			.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -598,12 +611,7 @@ fn asset_hub_westend_genesis(
 	id: ParaId,
 ) -> asset_hub_westend_runtime::RuntimeGenesisConfig {
 	asset_hub_westend_runtime::RuntimeGenesisConfig {
-		system: asset_hub_westend_runtime::SystemConfig {
-			code: asset_hub_westend_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			..Default::default()
-		},
+		system: asset_hub_westend_runtime::SystemConfig::default(),
 		balances: asset_hub_westend_runtime::BalancesConfig {
 			balances: endowed_accounts
 				.iter()

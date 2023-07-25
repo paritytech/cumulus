@@ -1133,6 +1133,7 @@ mod tests {
 		id: &str,
 		extension: E,
 	) -> DummyChainSpec<E> {
+		#[allow(deprecated)]
 		DummyChainSpec::from_genesis(
 			"Dummy local testnet",
 			id,
@@ -1154,6 +1155,8 @@ mod tests {
 			None,
 			None,
 			extension,
+			rococo_parachain_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!"),
 		)
 	}
 

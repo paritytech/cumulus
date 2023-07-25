@@ -215,6 +215,7 @@ pub mod rococo {
 		properties.insert("tokenDecimals".into(), 12.into());
 		modify_props(&mut properties);
 
+		#[allow(deprecated)]
 		BridgeHubChainSpec::from_genesis(
 			// Name
 			chain_name,
@@ -260,6 +261,8 @@ pub mod rococo {
 			None,
 			Some(properties),
 			Extensions { relay_chain: relay_chain.to_string(), para_id: para_id.into() },
+			bridge_hub_rococo_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!"),
 		)
 	}
 
@@ -270,12 +273,7 @@ pub mod rococo {
 		bridges_pallet_owner: Option<AccountId>,
 	) -> bridge_hub_rococo_runtime::RuntimeGenesisConfig {
 		bridge_hub_rococo_runtime::RuntimeGenesisConfig {
-			system: bridge_hub_rococo_runtime::SystemConfig {
-				code: bridge_hub_rococo_runtime::WASM_BINARY
-					.expect("WASM binary was not build, please build it!")
-					.to_vec(),
-				..Default::default()
-			},
+			system: bridge_hub_rococo_runtime::SystemConfig::default(),
 			balances: bridge_hub_rococo_runtime::BalancesConfig {
 				balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 			},
@@ -390,6 +388,7 @@ pub mod kusama {
 		properties.insert("tokenSymbol".into(), "KSM".into());
 		properties.insert("tokenDecimals".into(), 12.into());
 
+		#[allow(deprecated)]
 		BridgeHubChainSpec::from_genesis(
 			// Name
 			chain_name,
@@ -432,6 +431,8 @@ pub mod kusama {
 			None,
 			Some(properties),
 			Extensions { relay_chain: relay_chain.to_string(), para_id: para_id.into() },
+			bridge_hub_rococo_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!"),
 		)
 	}
 
@@ -441,12 +442,7 @@ pub mod kusama {
 		id: ParaId,
 	) -> bridge_hub_kusama_runtime::RuntimeGenesisConfig {
 		bridge_hub_kusama_runtime::RuntimeGenesisConfig {
-			system: bridge_hub_kusama_runtime::SystemConfig {
-				code: bridge_hub_kusama_runtime::WASM_BINARY
-					.expect("WASM binary was not build, please build it!")
-					.to_vec(),
-				..Default::default()
-			},
+			system: bridge_hub_kusama_runtime::SystemConfig::default(),
 			balances: bridge_hub_kusama_runtime::BalancesConfig {
 				balances: endowed_accounts
 					.iter()
@@ -527,6 +523,7 @@ pub mod polkadot {
 		properties.insert("tokenSymbol".into(), "DOT".into());
 		properties.insert("tokenDecimals".into(), 10.into());
 
+		#[allow(deprecated)]
 		BridgeHubChainSpec::from_genesis(
 			// Name
 			chain_name,
@@ -569,6 +566,8 @@ pub mod polkadot {
 			None,
 			Some(properties),
 			Extensions { relay_chain: relay_chain.to_string(), para_id: para_id.into() },
+			bridge_hub_rococo_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!"),
 		)
 	}
 
@@ -578,12 +577,7 @@ pub mod polkadot {
 		id: ParaId,
 	) -> bridge_hub_polkadot_runtime::RuntimeGenesisConfig {
 		bridge_hub_polkadot_runtime::RuntimeGenesisConfig {
-			system: bridge_hub_polkadot_runtime::SystemConfig {
-				code: bridge_hub_polkadot_runtime::WASM_BINARY
-					.expect("WASM binary was not build, please build it!")
-					.to_vec(),
-				..Default::default()
-			},
+			system: bridge_hub_polkadot_runtime::SystemConfig::default(),
 			balances: bridge_hub_polkadot_runtime::BalancesConfig {
 				balances: endowed_accounts
 					.iter()

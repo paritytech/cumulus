@@ -38,6 +38,7 @@ pub fn contracts_rococo_development_config() -> ContractsRococoChainSpec {
 	properties.insert("tokenSymbol".into(), "ROC".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
+	#[allow(deprecated)]
 	ContractsRococoChainSpec::from_genesis(
 		// Name
 		"Contracts on Rococo Development",
@@ -83,6 +84,7 @@ pub fn contracts_rococo_development_config() -> ContractsRococoChainSpec {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
 			para_id: CONTRACTS_PARACHAIN_ID,
 		},
+		contracts_rococo_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -91,6 +93,7 @@ pub fn contracts_rococo_local_config() -> ContractsRococoChainSpec {
 	properties.insert("tokenSymbol".into(), "ROC".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
+	#[allow(deprecated)]
 	ContractsRococoChainSpec::from_genesis(
 		// Name
 		"Contracts on Rococo",
@@ -142,6 +145,8 @@ pub fn contracts_rococo_local_config() -> ContractsRococoChainSpec {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
 			para_id: CONTRACTS_PARACHAIN_ID,
 		},
+		// Code
+		contracts_rococo_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -151,6 +156,7 @@ pub fn contracts_rococo_config() -> ContractsRococoChainSpec {
 	properties.insert("tokenSymbol".into(), "ROC".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
+	#[allow(deprecated)]
 	ContractsRococoChainSpec::from_genesis(
 		// Name
 		"Contracts on Rococo",
@@ -227,6 +233,8 @@ pub fn contracts_rococo_config() -> ContractsRococoChainSpec {
 		Some(properties),
 		// Extensions
 		Extensions { relay_chain: "rococo".into(), para_id: CONTRACTS_PARACHAIN_ID },
+		// Code
+		contracts_rococo_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
 	)
 }
 
@@ -236,12 +244,7 @@ fn contracts_rococo_genesis(
 	id: ParaId,
 ) -> contracts_rococo_runtime::RuntimeGenesisConfig {
 	contracts_rococo_runtime::RuntimeGenesisConfig {
-		system: contracts_rococo_runtime::SystemConfig {
-			code: contracts_rococo_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			..Default::default()
-		},
+		system: contracts_rococo_runtime::SystemConfig::default(),
 		balances: contracts_rococo_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
