@@ -41,6 +41,3 @@ metered = { package = "prioritized-metered-channel", version = "0.2.0" }
 
 # Cumulus
 cumulus-test-service = { path = "../../test/service" }
-
-[build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }

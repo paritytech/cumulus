@@ -286,10 +286,14 @@ fn build_polkadot_full_node(
 			enable_beefy: false,
 			jaeger_agent: None,
 			telemetry_worker_handle,
-			node_version: Some(env!("SUBSTRATE_CLI_IMPL_VERSION").into()),
+
+			// Cumulus doesn't spawn PVF workers, so we can disable version checks and secure
+			// external workers.
+			node_version: None,
 			workers_path: None,
 			workers_names: None,
-			dont_use_external_workers: false,
+			dont_use_external_workers: true,
+
 			overseer_enable_anyways: true,
 			overseer_gen: polkadot_service::RealOverseerGen,
 			overseer_message_channel_capacity_override: None,
