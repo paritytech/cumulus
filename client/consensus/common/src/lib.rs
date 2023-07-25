@@ -25,7 +25,7 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
 
-use sc_client_api::{HeaderBackend, Backend};
+use sc_client_api::{Backend, HeaderBackend};
 use sc_consensus::{shared_data::SharedData, BlockImport, ImportResult};
 use sp_blockchain::Backend as BlockchainBackend;
 use sp_consensus_slots::Slot;
@@ -53,7 +53,8 @@ pub trait ValidationCodeHashProvider<Hash> {
 }
 
 impl<F, Hash> ValidationCodeHashProvider<Hash> for F
-	where F: Fn(Hash) -> Option<ValidationCodeHash>
+where
+	F: Fn(Hash) -> Option<ValidationCodeHash>,
 {
 	fn code_hash_at(&self, at: Hash) -> Option<ValidationCodeHash> {
 		(self)(at)
