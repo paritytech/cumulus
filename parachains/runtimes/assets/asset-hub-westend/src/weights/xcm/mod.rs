@@ -63,8 +63,7 @@ impl<Call> XcmWeightInfo<Call> for AssetHubWestendXcmWeight<Call> {
 	}
 	// Currently there is no trusted reserve
 	fn reserve_asset_deposited(_assets: &MultiAssets) -> Weight {
-		// TODO: hardcoded - fix https://github.com/paritytech/cumulus/issues/1974
-		Weight::from_parts(1_000_000_000_u64, 0)
+		XcmFungibleWeight::<Runtime>::reserve_asset_deposited()
 	}
 	fn receive_teleported_asset(assets: &MultiAssets) -> Weight {
 		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::receive_teleported_asset())

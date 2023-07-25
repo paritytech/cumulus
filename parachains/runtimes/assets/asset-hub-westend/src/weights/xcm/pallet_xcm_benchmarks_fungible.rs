@@ -93,6 +93,15 @@ impl<T: frame_system::Config> WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(8))
 			.saturating_add(T::DbWeight::get().writes(4))
 	}
+	// Storage: `Benchmark::Override` (r:0 w:0)
+	// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	pub fn reserve_asset_deposited() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 500_000_000_000 picoseconds.
+		Weight::from_parts(500_000_000_000, 0)
+	}
 	// Storage: ParachainInfo ParachainId (r:1 w:0)
 	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
