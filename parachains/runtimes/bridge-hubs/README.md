@@ -262,16 +262,26 @@ cd <cumulus-git-repo-dir>
 ./scripts/bridges_kusama_polkadot.sh run-relay
 ```
 
-### Send messages - transfer asset over bridge (DOTs/KSMs)
+### 3. Initialize transfer asset over bridge (DOTs/KSMs)
 
-Drip SA for AssetHubKusama on AssetHubStatemint.
+This initialization does several things:
+- creates `ForeignAssets` for wrappedDOTs/wrappedKSMs
+- drips SA for AssetHubKusama on AssetHubPolkadot (and vice versa) which holds reserved assets on source chains
 ```
-./scripts/bridges_kusama_polkadot.sh drip
+./scripts/bridges_kusama_polkadot.sh init-asset-hub-kusama-local
+./scripts/bridges_kusama_polkadot.sh init-asset-hub-polkadot-local
 ```
 
-Do (asset) transfer from Kusama's Asset Hub to Polkadot's.
+### 4. Send messages - transfer asset over bridge (DOTs/KSMs)
+
+Do (asset) transfers:
 ```
-./scripts/bridges_kusama_polkadot.sh transfer-asset-from-asset-hub-kusama-local
+# KSMs from Kusama's Asset Hub to Polkadot's.
+./scripts/bridges_kusama_polkadot.sh reserve-transfer-assets-from-asset-hub-kusama-local
+```
+```
+# DOTs from Polkadot's Asset Hub to Kusama's.
+./scripts/bridges_kusama_polkadot.sh reserve-transfer-assets-from-asset-hub-polkadot-local
 ```
 
 - open explorers: (see zombienets)

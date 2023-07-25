@@ -270,35 +270,27 @@ function force_create_foreign_asset() {
     local relay_chain_seed=$2
     local runtime_para_id=$3
     local runtime_para_endpoint=$4
-    local global_consensus=$5
+    local asset_multilocation=$5
     local asset_owner_account_id=$6
+    local min_balance=$7
+    local is_sufficient=$8
     echo "  calling force_create_foreign_asset:"
     echo "      relay_url: ${relay_url}"
     echo "      relay_chain_seed: ${relay_chain_seed}"
     echo "      runtime_para_id: ${runtime_para_id}"
     echo "      runtime_para_endpoint: ${runtime_para_endpoint}"
-    echo "      global_consensus: ${global_consensus}"
+    echo "      asset_multilocation: ${asset_multilocation}"
     echo "      asset_owner_account_id: ${asset_owner_account_id}"
+    echo "      min_balance: ${min_balance}"
+    echo "      is_sufficient: ${is_sufficient}"
     echo "      params:"
 
     # 1. generate data for Transact (ForeignAssets::force_create)
-    local asset_id=$(jq --null-input \
-                             --arg global_consensus "$global_consensus" \
-        '
-            {
-                "parents": 2,
-                "interior": {
-                    "X1": {
-                        "GlobalConsensus": $global_consensus,
-                    }
-                }
-            }
-        '
-    )
     local tmp_output_file=$(mktemp)
-    generate_hex_encoded_call_data "force-create-asset" "${runtime_para_endpoint}" "${tmp_output_file}" "$asset_id" "$asset_owner_account_id" false "1000"
+    generate_hex_encoded_call_data "force-create-asset" "${runtime_para_endpoint}" "${tmp_output_file}" "$asset_multilocation" "$asset_owner_account_id" $is_sufficient $min_balance
     local hex_encoded_data=$(cat $tmp_output_file)
 
+    # 2. trigger governance call
     send_governance_transact "${relay_url}" "${relay_chain_seed}" "${runtime_para_id}" "${hex_encoded_data}" 200000000 12000
 }
 
