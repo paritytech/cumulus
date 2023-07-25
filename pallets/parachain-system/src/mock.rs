@@ -413,10 +413,8 @@ impl BlockTests {
 			ParachainSystem::on_finalize(*n);
 
 			// did block execution set new validation code?
-			if NewValidationCode::<Test>::exists() {
-				if self.pending_upgrade.is_some() {
-					panic!("attempted to set validation code while upgrade was pending");
-				}
+			if NewValidationCode::<Test>::exists() && self.pending_upgrade.is_some() {
+				panic!("attempted to set validation code while upgrade was pending");
 			}
 
 			// clean up

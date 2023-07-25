@@ -17,26 +17,18 @@
 use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
-	service::{
-		new_partial, AssetHubKusamaExecutor, AssetHubPolkadotRuntimeExecutor,
-		AssetHubWestendExecutor, Block, BridgeHubKusamaRuntimeExecutor,
-		BridgeHubPolkadotRuntimeExecutor, BridgeHubRococoRuntimeExecutor,
-		CollectivesPolkadotRuntimeExecutor, GluttonRuntimeExecutor,
-	},
+	service::{new_partial, Block},
 };
-use codec::Encode;
-use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::{info, warn};
 use parachains_common::{AssetHubPolkadotAuraId, AuraId};
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
-	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
+	NetworkParams, Result, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
-use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
+use sp_runtime::traits::AccountIdConversion;
 use std::{net::SocketAddr, path::PathBuf};
 
 /// Helper enum that is used for better distinction of different parachain/runtime configuration
@@ -350,24 +342,6 @@ impl SubstrateCli for Cli {
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		load_spec(id)
 	}
-
-	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		match chain_spec.runtime() {
-			Runtime::AssetHubPolkadot => &asset_hub_polkadot_runtime::VERSION,
-			Runtime::AssetHubKusama => &asset_hub_kusama_runtime::VERSION,
-			Runtime::AssetHubWestend => &asset_hub_westend_runtime::VERSION,
-			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
-				&collectives_polkadot_runtime::VERSION,
-			Runtime::Shell => &shell_runtime::VERSION,
-			Runtime::Seedling => &seedling_runtime::VERSION,
-			Runtime::ContractsRococo => &contracts_rococo_runtime::VERSION,
-			Runtime::BridgeHub(bridge_hub_runtime_type) =>
-				bridge_hub_runtime_type.runtime_version(),
-			Runtime::Penpal(_) => &penpal_runtime::VERSION,
-			Runtime::Glutton => &glutton_runtime::VERSION,
-			Runtime::Default => &rococo_parachain_runtime::VERSION,
-		}
-	}
 }
 
 impl SubstrateCli for RelayChainCli {
@@ -404,10 +378,6 @@ impl SubstrateCli for RelayChainCli {
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
 	}
-
-	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		polkadot_cli::Cli::native_runtime_version(chain_spec)
-	}
 }
 
 /// Creates partial components for the runtimes that are supported by the benchmarks.
@@ -434,6 +404,50 @@ macro_rules! construct_benchmark_partials {
 					crate::service::aura_build_import_queue::<_, AssetHubPolkadotAuraId>,
 				)?;
 				$code
+			},
+			Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
+				chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
+				chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotLocal |
+				chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotDevelopment => {
+					let $partials = new_partial::<chain_spec::bridge_hubs::polkadot::RuntimeApi, _>(
+						&$config,
+						crate::service::aura_build_import_queue::<_, AuraId>,
+					)?;
+					$code
+				},
+				chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
+				chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal |
+				chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment => {
+					let $partials = new_partial::<chain_spec::bridge_hubs::kusama::RuntimeApi, _>(
+						&$config,
+						crate::service::aura_build_import_queue::<_, AuraId>,
+					)?;
+					$code
+				},
+				chain_spec::bridge_hubs::BridgeHubRuntimeType::Westend => {
+					let $partials = new_partial::<chain_spec::bridge_hubs::westend::RuntimeApi, _>(
+						&$config,
+						crate::service::aura_build_import_queue::<_, AuraId>,
+					)?;
+					$code
+				},
+				chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
+				chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal |
+				chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoDevelopment => {
+					let $partials = new_partial::<chain_spec::bridge_hubs::rococo::RuntimeApi, _>(
+						&$config,
+						crate::service::aura_build_import_queue::<_, AuraId>,
+					)?;
+					$code
+				},
+				chain_spec::bridge_hubs::BridgeHubRuntimeType::Wococo |
+				chain_spec::bridge_hubs::BridgeHubRuntimeType::WococoLocal => {
+					let $partials = new_partial::<chain_spec::bridge_hubs::wococo::RuntimeApi, _>(
+						&$config,
+						crate::service::aura_build_import_queue::<_, AuraId>,
+					)?;
+					$code
+				},
 			},
 			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => {
 				let $partials = new_partial::<collectives_polkadot_runtime::RuntimeApi, _>(
@@ -591,7 +605,7 @@ macro_rules! construct_async_run {
 				runner.async_run(|$config| {
 					let $components = new_partial::<
 						rococo_parachain_runtime::RuntimeApi,
-						_
+						_,
 					>(
 						&$config,
 						crate::service::rococo_parachain_build_import_queue,
@@ -665,14 +679,10 @@ pub fn run() -> Result<()> {
 				cmd.run(config, polkadot_config)
 			})
 		},
-		Some(Subcommand::ExportGenesisState(cmd)) => {
-			let runner = cli.create_runner(cmd)?;
-			runner.sync_run(|_config| {
-				let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
-				let state_version = Cli::native_runtime_version(&spec).state_version();
-				cmd.run::<crate::service::Block>(&*spec, state_version)
-			})
-		},
+		Some(Subcommand::ExportGenesisState(cmd)) =>
+			construct_async_run!(|components, cli, cmd, config| {
+				Ok(async move { cmd.run(&*config.chain_spec, &*components.client) })
+			}),
 		Some(Subcommand::ExportGenesisWasm(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|_config| {
@@ -687,44 +697,7 @@ pub fn run() -> Result<()> {
 			match cmd {
 				BenchmarkCmd::Pallet(cmd) =>
 					if cfg!(feature = "runtime-benchmarks") {
-						runner.sync_run(|config| {
-							match config.chain_spec.runtime() {
-							Runtime::AssetHubKusama =>
-								cmd.run::<Block, AssetHubKusamaExecutor>(config),
-							Runtime::AssetHubWestend => cmd.run::<Block, AssetHubWestendExecutor>(config),
-							Runtime::AssetHubPolkadot =>
-								cmd.run::<Block, AssetHubPolkadotRuntimeExecutor>(config),
-							Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
-								cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
-							Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotLocal |
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotDevelopment =>
-									cmd.run::<Block, BridgeHubPolkadotRuntimeExecutor>(config),
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal |
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment =>
-									cmd.run::<Block, BridgeHubKusamaRuntimeExecutor>(config),
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal |
-								chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoDevelopment =>
-									cmd.run::<Block, BridgeHubRococoRuntimeExecutor>(config),
-								_ => Err(format!(
-									"Chain '{:?}' doesn't support benchmarking for bridge_hub_runtime_type: {:?}",
-									config.chain_spec.runtime(),
-									bridge_hub_runtime_type
-								)
-									.into()),
-							},
-							Runtime::Glutton =>
-								cmd.run::<Block, GluttonRuntimeExecutor>(config),
-							_ => Err(format!(
-								"Chain '{:?}' doesn't support benchmarking",
-								config.chain_spec.runtime()
-							)
-							.into()),
-						}
-						})
+						runner.sync_run(|config| cmd.run::<Block, ()>(config))
 					} else {
 						Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
@@ -760,7 +733,6 @@ pub fn run() -> Result<()> {
 		},
 		#[cfg(feature = "try-runtime")]
 		Some(Subcommand::TryRuntime(cmd)) => {
-			use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
 			use try_runtime_cli::block_building_info::timestamp_with_aura_info;
 
 			// grab the task manager.
@@ -769,99 +741,14 @@ pub fn run() -> Result<()> {
 			let task_manager =
 				sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
 					.map_err(|e| format!("Error: {:?}", e))?;
-			type HostFunctionsOf<E> = ExtendedHostFunctions<
-				sp_io::SubstrateHostFunctions,
-				<E as NativeExecutionDispatch>::ExtendHostFunctions,
-			>;
+			type HostFunctions =
+				(sp_io::SubstrateHostFunctions, frame_benchmarking::benchmarking::HostFunctions);
 
 			let info_provider = timestamp_with_aura_info(6000);
 
-			match runner.config().chain_spec.runtime() {
-				Runtime::AssetHubKusama => runner.async_run(|_| {
-					Ok((
-						cmd.run::<Block, HostFunctionsOf<AssetHubKusamaExecutor>, _>(Some(
-							info_provider,
-						)),
-						task_manager,
-					))
-				}),
-				Runtime::AssetHubWestend => runner.async_run(|_| {
-					Ok((
-						cmd.run::<Block, HostFunctionsOf<AssetHubWestendExecutor>, _>(Some(
-							info_provider,
-						)),
-						task_manager,
-					))
-				}),
-				Runtime::AssetHubPolkadot => runner.async_run(|_| {
-					Ok((
-						cmd.run::<Block, HostFunctionsOf<AssetHubPolkadotRuntimeExecutor>, _>(Some(
-							info_provider,
-						)),
-						task_manager,
-					))
-				}),
-				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
-					runner.async_run(|_| {
-						Ok((
-							cmd.run::<Block, HostFunctionsOf<CollectivesPolkadotRuntimeExecutor>, _>(Some(info_provider)),
-							task_manager,
-						))
-					}),
-				Runtime::BridgeHub(bridge_hub_runtime_type) =>
-					match bridge_hub_runtime_type {
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotLocal |
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotDevelopment =>
-							runner.async_run(|_| {
-								Ok((
-							cmd.run::<Block, HostFunctionsOf<BridgeHubPolkadotRuntimeExecutor>, _>(Some(info_provider)),
-							task_manager,
-						))
-							}),
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal |
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment => runner.async_run(|_| {
-							Ok((
-							cmd.run::<Block, HostFunctionsOf<BridgeHubKusamaRuntimeExecutor>, _>(Some(info_provider)),
-							task_manager,
-						))
-						}),
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal |
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoDevelopment => runner.async_run(|_| {
-							Ok((
-							cmd.run::<Block, HostFunctionsOf<BridgeHubRococoRuntimeExecutor>, _>(Some(info_provider)),
-							task_manager,
-						))
-						}),
-						_ => Err(format!(
-						"Chain '{:?}' doesn't support try-runtime for bridge_hub_runtime_type: {:?}",
-						runner.config().chain_spec.runtime(),
-						bridge_hub_runtime_type
-					)
-						.into()),
-					},
-				Runtime::Shell => runner.async_run(|_| {
-					Ok((
-						cmd.run::<Block, HostFunctionsOf<crate::service::ShellRuntimeExecutor>, _>(Some(info_provider)),
-						task_manager,
-					))
-				}),
-				Runtime::ContractsRococo => runner.async_run(|_| {
-					Ok((
-						cmd.run::<Block, HostFunctionsOf<crate::service::ContractsRococoRuntimeExecutor>, _>(Some(info_provider)),
-						task_manager,
-					))
-				}),
-				Runtime::Glutton => runner.async_run(|_| {
-					Ok((
-						cmd.run::<Block, HostFunctionsOf<crate::service::GluttonRuntimeExecutor>, _>(Some(info_provider)),
-						task_manager,
-					))
-				}),
-				_ => Err("Chain doesn't support try-runtime".into()),
-			}
+			runner.async_run(|_| {
+				Ok((cmd.run::<Block, HostFunctions, _>(Some(info_provider)), task_manager))
+			})
 		},
 		#[cfg(not(feature = "try-runtime"))]
 		Some(Subcommand::TryRuntime) => Err("Try-runtime was not enabled when building the node. \
@@ -925,13 +812,6 @@ pub fn run() -> Result<()> {
 				let parachain_account =
 					AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(&id);
 
-				let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
-
-				let block: crate::service::Block =
-					generate_genesis_block(&*config.chain_spec, state_version)
-						.map_err(|e| format!("{:?}", e))?;
-				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
-
 				let tokio_handle = config.tokio_handle.clone();
 				let polkadot_config =
 					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
@@ -939,11 +819,14 @@ pub fn run() -> Result<()> {
 
 				info!("Parachain id: {:?}", id);
 				info!("Parachain Account: {}", parachain_account);
-				info!("Parachain genesis state: {}", genesis_state);
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
 				if !collator_options.relay_chain_rpc_urls.is_empty() && !cli.relaychain_args.is_empty() {
-					warn!("Detected relay chain node arguments together with --relay-chain-rpc-url. This command starts a minimal Polkadot node that only uses a network-related subset of all relay chain CLI options.");
+					warn!(
+						"Detected relay chain node arguments together with --relay-chain-rpc-url. \
+						   This command starts a minimal Polkadot node that only uses a \
+						   network-related subset of all relay chain CLI options."
+					);
 				}
 
 				match config.chain_spec.runtime() {
