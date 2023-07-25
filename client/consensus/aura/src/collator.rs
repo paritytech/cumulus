@@ -311,7 +311,19 @@ where
 		relay_parent_header,
 		relay_chain_slot_duration,
 	) {
-		Some((_, t)) => (Slot::from_timestamp(t, slot_duration), t),
+		Some((r_s, t)) => {
+			let our_slot = Slot::from_timestamp(t, slot_duration);
+			tracing::debug!(
+				target: crate::LOG_TARGET,
+				relay_slot = ?r_s,
+				para_slot = ?our_slot,
+				timestamp = ?t,
+				?slot_duration,
+				?relay_chain_slot_duration,
+				"Adjusted relay-chain slot to parachain slot"
+			);
+			(our_slot, t)
+		},
 		None => return Ok(None),
 	};
 
