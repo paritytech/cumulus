@@ -56,7 +56,6 @@ cd polkadot
 cargo build --release --features fast-runtime
 cp target/release/polkadot ~/local_bridge_testing/bin/polkadot
 
-
 ---
 # 3. Build substrate-relay binary
 git clone https://github.com/paritytech/parity-bridges-common.git
@@ -233,7 +232,7 @@ TODO: see `# !!! READ HERE` above
 	- Wockmint (see `xcmpQueue.Success` for `transfer-asset` and `xcmpQueue.Fail` for `ping-via-bridge`) https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fwococo-wockmint-rpc.polkadot.io#/explorer
 	- BridgeHubRococo (see `bridgeWococoMessages.MessagesDelivered`)
 
-## How to test local BridgeHubKusama/BridgeHubPolkadot
+## How to test locally Kusama <-> Polkadot bridge
 
 Check [requirements](#requirements-for-local-runtesting) for "sudo pallet + fast-runtime".
 

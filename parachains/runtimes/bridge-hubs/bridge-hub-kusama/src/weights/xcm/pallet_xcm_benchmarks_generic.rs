@@ -19,24 +19,25 @@
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-05-31, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
-//! HOSTNAME: `bm4`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
+//! HOSTNAME: `bm3`, CPU: `Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("bridge-hub-kusama-dev"), DB CACHE: 1024
 
 // Executed Command:
-// ./artifacts/polkadot-parachain
+// target/production/polkadot-parachain
 // benchmark
 // pallet
-// --template=./templates/xcm-bench-template.hbs
-// --chain=bridge-hub-kusama-dev
-// --execution=wasm
-// --wasm-execution=compiled
-// --pallet=pallet_xcm_benchmarks::generic
-// --extrinsic=*
 // --steps=50
 // --repeat=20
-// --json
+// --extrinsic=*
+// --execution=wasm
+// --wasm-execution=compiled
+// --heap-pages=4096
+// --json-file=/var/lib/gitlab-runner/builds/zyw4fam_/0/parity/mirrors/cumulus/.git/.artifacts/bench.json
+// --pallet=pallet_xcm_benchmarks::generic
+// --chain=bridge-hub-kusama-dev
 // --header=./file_header.txt
-// --output=./parachains/runtimes/bridge-hubs/bridge-hub-kusama/src/weights/xcm/pallet_xcm_benchmarks_generic.rs
+// --template=./templates/xcm-bench-template.hbs
+// --output=./parachains/runtimes/bridge-hubs/bridge-hub-kusama/src/weights/xcm/
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
@@ -330,6 +331,26 @@ impl<T: frame_system::Config> WeightInfo<T> {
 		//  Estimated: `0`
 		// Minimum execution time: 2_557_000 picoseconds.
 		Weight::from_parts(2_655_000, 0)
+	}
+	// Storage: ParachainInfo ParachainId (r:1 w:0)
+	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
+	// Storage: BridgePolkadotMessages PalletOperatingMode (r:1 w:0)
+	// Proof: BridgePolkadotMessages PalletOperatingMode (max_values: Some(1), max_size: Some(2), added: 497, mode: MaxEncodedLen)
+	// Storage: BridgePolkadotMessages OutboundLanes (r:1 w:1)
+	// Proof: BridgePolkadotMessages OutboundLanes (max_values: Some(1), max_size: Some(44), added: 539, mode: MaxEncodedLen)
+	// Storage: BridgePolkadotMessages OutboundMessages (r:0 w:1)
+	// Proof: BridgePolkadotMessages OutboundMessages (max_values: None, max_size: Some(2621472), added: 2623947, mode: MaxEncodedLen)
+	/// The range of component `x` is `[1, 1000]`.
+	pub fn export_message(x: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `132`
+		//  Estimated: `1529`
+		// Minimum execution time: 29_796_000 picoseconds.
+		Weight::from_parts(32_947_104, 1529)
+			// Standard Error: 930
+			.saturating_add(Weight::from_parts(177_649, 0).saturating_mul(x.into()))
+			.saturating_add(T::DbWeight::get().reads(3))
+			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	pub fn set_fees_mode() -> Weight {
 		// Proof Size summary in bytes:

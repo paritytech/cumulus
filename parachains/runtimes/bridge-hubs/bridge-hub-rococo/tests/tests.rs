@@ -1,4 +1,4 @@
-// Copyright 2023 Parity Technologies (UK) Ltd.
+// Copyright Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -56,7 +56,7 @@ fn construct_extrinsic(
 		frame_system::CheckNonce::<Runtime>::from(0),
 		frame_system::CheckWeight::<Runtime>::new(),
 		pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(0),
-		BridgeRejectObsoleteHeadersAndMessages {},
+		BridgeRejectObsoleteHeadersAndMessages::default(),
 		(
 			bridge_hub_wococo_config::BridgeRefundBridgeHubRococoMessages::default(),
 			bridge_hub_rococo_config::BridgeRefundBridgeHubWococoMessages::default(),

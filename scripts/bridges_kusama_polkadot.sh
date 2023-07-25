@@ -178,6 +178,13 @@ case "$1" in
           0 \
           "Unlimited"
       ;;
+  drip)
+      transfer_balance \
+          "ws://127.0.0.1:9010" \
+          "//Alice" \
+          "$KUSAMA_ASSET_HUB_KUSAMA_1000_SOVEREIGN_ACCOUNT" \
+          $((1000000000 + 50000000000 * 20))
+      ;;
   stop)
     pkill -f polkadot
     pkill -f parachain
