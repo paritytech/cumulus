@@ -143,7 +143,12 @@ where
 	const PARENT_SEARCH_DEPTH: usize = 10;
 
 	async move {
-		// TODO [now]: this needs to send the CollationGenerationMessage::Initialize
+		cumulus_client_collator::initialize_collator_subsystems(
+			&mut params.overseer_handle,
+			params.collator_key,
+			params.para_id,
+		)
+		.await;
 
 		let mut import_notifications = match params.relay_client.import_notification_stream().await
 		{
@@ -198,7 +203,19 @@ where
 				params.relay_chain_slot_duration,
 			) {
 				None => continue,
-				Some((_, t)) => (Slot::from_timestamp(t, params.slot_duration), t),
+				Some((r_s, t)) => {
+					let our_slot = Slot::from_timestamp(t, params.slot_duration);
+					tracing::debug!(
+						target: crate::LOG_TARGET,
+						relay_slot = ?r_s,
+						para_slot = ?our_slot,
+						timestamp = ?t,
+						slot_duration = ?params.slot_duration,
+						relay_chain_slot_duration = ?params.relay_chain_slot_duration,
+						"Adjusted relay-chain slot to parachain slot"
+					);
+					(our_slot, t)
+				},
 			};
 
 			let parent_search_params = ParentSearchParams {
@@ -382,7 +399,9 @@ where
 	// be legal. Skipping the runtime API query here allows us to seamlessly run this
 	// collator against chains which have not yet upgraded their runtime.
 	if parent_hash != included_block {
-		runtime_api.can_build_upon(parent_hash, included_block, slot).ok()?;
+		if !runtime_api.can_build_upon(parent_hash, included_block, slot).ok()? {
+			return None
+		}
 	}
 
 	Some(SlotClaim::unchecked::<P>(author_pub, slot, timestamp))
