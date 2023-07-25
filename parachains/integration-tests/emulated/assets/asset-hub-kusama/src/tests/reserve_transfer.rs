@@ -16,66 +16,245 @@
 
 use crate::*;
 
+type RelayToParaTest = Test<Kusama, AssetHubKusama>;
+type ParaToRelayTest = Test<AssetHubKusama, Kusama>;
+
+fn get_relay_dispatch_args(amount: Balance) -> DispatchArgs {
+	DispatchArgs {
+		dest: Kusama::child_location_of(AssetHubKusama::para_id()).into(),
+		beneficiary: AccountId32Junction {
+			network: None,
+			id: AssetHubKusamaReceiver::get().into()
+		}.into(),
+		amount,
+		assets: (Here, amount).into(),
+		fee_asset_item: 0,
+		weight_limit: WeightLimit::Unlimited,
+	}
+}
+
+fn get_para_dispatch_args(amount: Balance) -> DispatchArgs {
+	DispatchArgs {
+		dest: AssetHubKusama::parent_location().into(),
+		beneficiary: AccountId32Junction {
+			network: None,
+			id: KusamaReceiver::get().into()
+		}.into(),
+		amount,
+		assets: (Parent, amount).into(),
+		fee_asset_item: 0,
+		weight_limit: WeightLimit::Unlimited,
+	}
+}
+
+fn relay_origin_assertions(t: RelayToParaTest) {
+	type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
+
+	assert_expected_events!(
+		Kusama,
+		vec![
+			// Amount to reserve transfer is transferred to System Parachain's account
+			RuntimeEvent::Balances(pallet_balances::Event::Transfer { from, to, amount }) => {
+				from: *from == t.sender.account_id,
+				to: *to == Kusama::sovereign_account_id_of(
+					Kusama::child_location_of(AssetHubKusama::para_id()).into()
+				),
+				amount:  *amount == t.args.amount,
+			},
+			// Dispatchable is properly executed and XCM message sent
+			RuntimeEvent::XcmPallet(
+				pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
+			) => {
+				weight: weight_within_threshold(
+					(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+					Weight::from_parts(753_242_000, 0),
+					*weight
+				),
+			},
+		]
+	);
+}
+
+fn para_dest_assertions(_t: RelayToParaTest) {
+	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
+
+	assert_expected_events!(
+		AssetHubKusama,
+		vec![
+			RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
+				outcome: Outcome::Incomplete(weight, Error::UntrustedReserveLocation),
+				..
+			}) => {
+				weight: weight_within_threshold(
+					(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+					Weight::from_parts(1_000_000_000, 0),
+					*weight
+				),
+			},
+		]
+	);
+}
+
+fn para_origin_assertions(_t: ParaToRelayTest) {
+	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
+
+	assert_expected_events!(
+		AssetHubKusama,
+		vec![
+			// Execution fails in the origin with `Barrier`
+			RuntimeEvent::PolkadotXcm(
+				pallet_xcm::Event::Attempted { outcome: Outcome::Error(error) }
+			) => {
+				error: *error == XcmError::Barrier,
+			},
+		]
+	);
+}
+
 #[test]
-fn reserve_transfer_native_asset_from_relay_to_assets() {
-	// Init tests variables
-	let amount = KUSAMA_ED * 1000;
-	let relay_sender_balance_before = Kusama::account_data_of(KusamaSender::get()).free;
-	let para_receiver_balance_before =
-		AssetHubKusama::account_data_of(AssetHubKusamaReceiver::get()).free;
+fn limited_reserve_transfer_native_asset_from_relay_to_system_para_fails() {
+	// Init values for Relay Chain
+	let amount_to_send: Balance = KUSAMA_ED * 1000;
+	let test_args = TestArgs {
+		sender: KusamaSender::get(),
+		receiver: AssetHubKusamaReceiver::get(),
+		args: get_relay_dispatch_args(amount_to_send),
+	};
 
-	let origin = <Kusama as Chain>::RuntimeOrigin::signed(KusamaSender::get());
-	let assets_para_destination: VersionedMultiLocation =
-		Kusama::child_location_of(AssetHubKusama::para_id()).into();
-	let beneficiary: VersionedMultiLocation =
-		AccountId32Junction { network: None, id: AssetHubKusamaReceiver::get().into() }.into();
-	let native_assets: VersionedMultiAssets = (Here, amount).into();
-	let fee_asset_item = 0;
-	let weight_limit = WeightLimit::Unlimited;
+	let mut test = RelayToParaTest::new(test_args);
 
-	// Send XCM message from Relay Chain
-	Kusama::execute_with(|| {
-		assert_ok!(<Kusama as KusamaPallet>::XcmPallet::limited_reserve_transfer_assets(
-			origin,
-			bx!(assets_para_destination),
-			bx!(beneficiary),
-			bx!(native_assets),
-			fee_asset_item,
-			weight_limit,
-		));
+	let sender_balance_before = test.sender.balance;
+	let receiver_balance_before = test.receiver.balance;
 
-		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
+	let dispatchable = |t: RelayToParaTest| {
+		<Kusama as KusamaPallet>::XcmPallet::limited_reserve_transfer_assets(
+			t.signed_origin,
+			bx!(t.args.dest),
+			bx!(t.args.beneficiary),
+			bx!(t.args.assets),
+			t.args.fee_asset_item,
+			t.args.weight_limit
+		)
+	};
 
-		assert_expected_events!(
-			Kusama,
-			vec![
-				RuntimeEvent::XcmPallet(pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }) => {
-					weight: weight_within_threshold((REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD), Weight::from_parts(754_244_000, 0), *weight),
-				},
-			]
-		);
-	});
+	test.set_assertion::<Kusama>(relay_origin_assertions);
+	test.set_assertion::<AssetHubKusama>(para_dest_assertions);
+	test.dispatch::<Kusama>(dispatchable);
+	test.assert();
 
-	// Receive XCM message in Assets Parachain
-	AssetHubKusama::execute_with(|| {
-		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
+	let sender_balance_after = test.sender.balance;
+	let receiver_balance_after = test.receiver.balance;
 
-		assert_expected_events!(
-			AssetHubKusama,
-			vec![
-				RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
-					outcome: Outcome::Incomplete(_, Error::UntrustedReserveLocation),
-					..
-				}) => {},
-			]
-		);
-	});
+	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
+	assert_eq!(receiver_balance_before, receiver_balance_after);
+}
 
-	// Check if balances are updated accordingly in Relay Chain and Assets Parachain
-	let relay_sender_balance_after = Kusama::account_data_of(KusamaSender::get()).free;
-	let para_sender_balance_after =
-		AssetHubKusama::account_data_of(AssetHubKusamaReceiver::get()).free;
+#[test]
+fn limited_reserve_transfer_native_asset_from_system_para_to_relay_fails() {
+	// Init values for Relay Chain
+	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
+	let test_args = TestArgs {
+		sender: AssetHubKusamaSender::get(),
+		receiver: KusamaReceiver::get(),
+		args: get_para_dispatch_args(amount_to_send),
+	};
 
-	assert_eq!(relay_sender_balance_before - amount, relay_sender_balance_after);
-	assert_eq!(para_sender_balance_after, para_receiver_balance_before);
+	let mut test = ParaToRelayTest::new(test_args);
+
+	let sender_balance_before = test.sender.balance;
+	let receiver_balance_before = test.receiver.balance;
+
+	let dispatchable = |t: ParaToRelayTest| {
+		<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::limited_reserve_transfer_assets(
+			t.signed_origin,
+			bx!(t.args.dest),
+			bx!(t.args.beneficiary),
+			bx!(t.args.assets),
+			t.args.fee_asset_item,
+			t.args.weight_limit
+		)
+	};
+
+	test.set_assertion::<AssetHubKusama>(para_origin_assertions);
+	test.dispatch::<AssetHubKusama>(dispatchable);
+	test.assert();
+
+	let sender_balance_after = test.sender.balance;
+	let receiver_balance_after = test.receiver.balance;
+
+	assert_eq!(sender_balance_before, sender_balance_after);
+	assert_eq!(receiver_balance_before, receiver_balance_after);
+}
+
+#[test]
+fn reserve_transfer_native_asset_from_relay_to_system_para_fails() {
+	// Init values for Relay Chain
+	let amount_to_send: Balance = KUSAMA_ED * 1000;
+	let test_args = TestArgs {
+		sender: KusamaSender::get(),
+		receiver: AssetHubKusamaReceiver::get(),
+		args: get_relay_dispatch_args(amount_to_send),
+	};
+
+	let mut test = RelayToParaTest::new(test_args);
+
+	let sender_balance_before = test.sender.balance;
+	let receiver_balance_before = test.receiver.balance;
+
+	let dispatchable = |t: RelayToParaTest| {
+		<Kusama as KusamaPallet>::XcmPallet::reserve_transfer_assets(
+			t.signed_origin,
+			bx!(t.args.dest),
+			bx!(t.args.beneficiary),
+			bx!(t.args.assets),
+			t.args.fee_asset_item,
+		)
+	};
+
+	test.set_assertion::<Kusama>(relay_origin_assertions);
+	test.set_assertion::<AssetHubKusama>(para_dest_assertions);
+	test.dispatch::<Kusama>(dispatchable);
+	test.assert();
+
+	let sender_balance_after = test.sender.balance;
+	let receiver_balance_after = test.receiver.balance;
+
+	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
+	assert_eq!(receiver_balance_before, receiver_balance_after);
+}
+
+#[test]
+fn reserve_transfer_native_asset_from_system_para_to_relay_fails() {
+	// Init values for Relay Chain
+	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
+	let test_args = TestArgs {
+		sender: AssetHubKusamaSender::get(),
+		receiver: KusamaReceiver::get(),
+		args: get_para_dispatch_args(amount_to_send),
+	};
+
+	let mut test = ParaToRelayTest::new(test_args);
+
+	let sender_balance_before = test.sender.balance;
+	let receiver_balance_before = test.receiver.balance;
+
+	let dispatchable = |t: ParaToRelayTest| {
+		<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::reserve_transfer_assets(
+			t.signed_origin,
+			bx!(t.args.dest),
+			bx!(t.args.beneficiary),
+			bx!(t.args.assets),
+			t.args.fee_asset_item,
+		)
+	};
+
+	test.set_assertion::<AssetHubKusama>(para_origin_assertions);
+	test.dispatch::<AssetHubKusama>(dispatchable);
+	test.assert();
+
+	let sender_balance_after = test.sender.balance;
+	let receiver_balance_after = test.receiver.balance;
+
+	assert_eq!(sender_balance_before, sender_balance_after);
+	assert_eq!(receiver_balance_before, receiver_balance_after);
 }

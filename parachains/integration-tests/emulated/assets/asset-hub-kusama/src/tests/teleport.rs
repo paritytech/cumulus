@@ -69,7 +69,8 @@ fn relay_origin_assertions(t: RelayToParaTest) {
 			) => {
 				weight: weight_within_threshold(
 					(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-					Weight::from_parts(763_770_000, 0), *weight
+					Weight::from_parts(763_770_000, 0),
+					*weight
 				),
 			},
 		]
@@ -88,7 +89,8 @@ fn para_dest_assertions(t: RelayToParaTest) {
 			}) => {
 				weight: weight_within_threshold(
 					(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-					Weight::from_parts(165_592_000, 0), *weight
+					Weight::from_parts(165_592_000, 0),
+					*weight
 				),
 			},
 			// Amount minus fees are deposited in Receiver's account
@@ -111,7 +113,8 @@ fn para_origin_assertions(t: ParaToRelayTest) {
 			) => {
 				weight: weight_within_threshold(
 					(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-					Weight::from_parts(534_872_000, 7_133), *weight
+					Weight::from_parts(534_872_000, 7_133),
+					*weight
 				),
 			},
 			// XCM message is sent
