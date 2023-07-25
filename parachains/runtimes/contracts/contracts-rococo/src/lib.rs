@@ -279,7 +279,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 
 impl pallet_paged_list::Config for Runtime {
 	type Value = cumulus_primitives_core::UpwardMessage;
-	type ValuesPerNewPage = frame_support::traits::ConstU32<64>;
+	type ValuesPerNewPage = frame_support::traits::ConstU32<2>;
 }
 
 impl pallet_insecure_randomness_collective_flip::Config for Runtime {}

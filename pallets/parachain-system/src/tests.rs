@@ -109,7 +109,7 @@ impl Config for Test {
 
 impl pallet_paged_list::Config for Test {
 	type Value = cumulus_primitives_core::UpwardMessage;
-	type ValuesPerNewPage = frame_support::traits::ConstU32<64>;
+	type ValuesPerNewPage = frame_support::traits::ConstU32<2>;
 }
 
 pub struct FromThreadLocal;
