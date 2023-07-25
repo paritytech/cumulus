@@ -58,7 +58,9 @@ use frame_support::{
 use frame_system::limits::{BlockLength, BlockWeights};
 pub use parachains_common as common;
 use parachains_common::{
-	impls::DealWithFees, AccountId, BlockNumber, Hash, Header, Nonce, Signature,
+	impls::DealWithFees,
+	process_xcm_message::{queue_paused_query, ParaIdToSibling, ProcessXcmMessage},
+	AccountId, BlockNumber, Hash, Header, Nonce, Signature,
 	AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT, MINUTES, NORMAL_DISPATCH_RATIO,
 	SLOT_DURATION,
 };

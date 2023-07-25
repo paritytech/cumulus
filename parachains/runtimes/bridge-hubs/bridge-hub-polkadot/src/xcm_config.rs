@@ -51,6 +51,8 @@ parameter_types! {
 	pub const MaxAssetsIntoHolding: u32 = 64;
 	pub FellowshipLocation: MultiLocation = MultiLocation::new(1, Parachain(1001));
 	pub const GovernanceLocation: MultiLocation = MultiLocation::parent();
+
+	pub SiblingAssetHubParId: u32 = 1000;
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used

@@ -319,14 +319,20 @@ impl pallet_message_queue::Config for Runtime {
 		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	type MessageProcessor = ProcessXcmMessage<
+	type MessageProcessor = bridge_runtime_common::messages_xcm_extension::LocalXcmQueueMessageProcessor<
 		AggregateMessageOrigin,
-		xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
-		RuntimeCall,
+		ProcessXcmMessage<
+			AggregateMessageOrigin,
+			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
+			RuntimeCall,
+		>,
 	>;
 	type Size = u32;
 	type QueueChangeHandler = ();
-	type QueuePausedQuery = queue_paused_query::NarrowToSiblings<XcmpQueue>;
+	type QueuePausedQuery = bridge_runtime_common::messages_xcm_extension::LocalXcmQueueSuspender<
+		AggregateMessageOrigin,
+		queue_paused_query::NarrowToSiblings<XcmpQueue>,
+	>;
 	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
 	type MaxStale = sp_core::ConstU32<8>;
 	type ServiceWeight = MessageQueueServiceWeight;
@@ -477,6 +483,15 @@ impl pallet_bridge_parachains::Config<BridgeParachainKusamaInstance> for Runtime
 	type MaxParaHeadDataSize = MaxKusamaParaHeadDataSize;
 }
 
+pub struct IsChannelWithSiblingAssetHubActive;
+
+impl sp_runtime::traits::Get<bool> for IsChannelWithSiblingAssetHubActive {
+	fn get() -> bool {
+		let sibling_asset_hub_id: cumulus_primitives_core::ParaId = xcm_config::SiblingAssetHubParId::get().into();
+		!cumulus_pallet_xcmp_queue::InboundXcmpSuspended::<Runtime>::get().contains(&sibling_asset_hub_id)
+	}
+}
+
 /// Add XCM messages support for Polkadot<->Kusama XCM messages
 pub type WithBridgeHubKusamaMessagesInstance = pallet_bridge_messages::Instance1;
 impl pallet_bridge_messages::Config<WithBridgeHubKusamaMessagesInstance> for Runtime {
@@ -503,7 +518,8 @@ impl pallet_bridge_messages::Config<WithBridgeHubKusamaMessagesInstance> for Run
 	>;
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubKusamaMessageBridge>;
 	type MessageDispatch =
-		XcmBlobMessageDispatch<OnThisChainBlobDispatcher<UniversalLocation>, Self::WeightInfo>;
+		XcmBlobMessageDispatch<OnThisChainBlobDispatcher<UniversalLocation>, Self::WeightInfo, IsChannelWithSiblingAssetHubActive>;
+	type OnMessagesDelivered = bridge_runtime_common::messages_xcm_extension::XcmBlobHaulerAdapter<crate::bridge_hub_config::ToBridgeHubKusamaXcmBlobHauler>;
 }
 
 /// Allows collect and claim rewards for relayers

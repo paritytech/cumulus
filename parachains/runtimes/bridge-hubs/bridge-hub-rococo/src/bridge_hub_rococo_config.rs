@@ -81,7 +81,7 @@ impl XcmBlobHauler for ToBridgeHubWococoXcmBlobHauler {
 	type MessageSenderOrigin = super::RuntimeOrigin;
 
 	fn sending_chain_location() -> MultiLocation {
-		ParentThen(X1(Parachain(1000))).into()
+		ParentThen(X1(Parachain(crate::xcm_config::SiblingAssetHubParId::get()))).into()
 	}
 
 	fn message_sender_origin() -> Self::MessageSenderOrigin {

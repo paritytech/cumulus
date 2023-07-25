@@ -58,7 +58,9 @@ use pallet_asset_conversion_tx_payment::AssetConversionAdapter;
 use pallet_nfts::PalletFeatures;
 pub use parachains_common as common;
 use parachains_common::{
-	impls::DealWithFees, AccountId, AssetIdForTrustBackedAssets, AuraId, Balance, BlockNumber,
+	impls::DealWithFees,
+	process_xcm_message::{queue_paused_query, ParaIdToSibling, ProcessXcmMessage},
+	AccountId, AssetIdForTrustBackedAssets, AuraId, Balance, BlockNumber,
 	Hash, Header, Nonce, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
@@ -795,10 +797,10 @@ impl pallet_nfts::Config for Runtime {
 
 impl pallet_xcm_bridge_hub_router::Config for Runtime {
 	type UniversalLocation = xcm_config::UniversalLocation;
-	type SiblingBridgeHubLocation = xcm_config::SiblingBridgeHubLocation;
-	type BridgedNetworkId = xcm_config::WococoNetworkId;
+	type SiblingBridgeHubLocation = xcm_config::bridging::BridgeHub;
+	type BridgedNetworkId = xcm_config::bridging::KusamaLocalNetwork;
 
-	type ToBridgeHubSender = xcm_config::LocalXcmQueueAdapter;
+	type ToBridgeHubSender = xcm_config::bridging::LocalXcmQueueAdapter;
 
 	type BaseFee = ConstU128<1_000_000_000>;
 	type ByteFee = ConstU128<1_000_000>;

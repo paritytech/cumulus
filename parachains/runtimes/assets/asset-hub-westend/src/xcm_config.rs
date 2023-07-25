@@ -515,7 +515,7 @@ type LocalXcmRouter = (
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
 pub type XcmRouter = WithUniqueTopic<(
-	BridgeHubRouter,
+	crate::BridgeHubRouter,
 	LocalXcmRouter,
 )>;
 
@@ -699,7 +699,7 @@ pub mod bridging {
 
 	impl bp_xcm_bridge_hub_router::LocalXcmQueue for LocalXcmQueueAdapter {
 		fn is_overloaded() -> bool {
-			let sibling_bridge_hub_id: cumulus_primitives_core::ParaId = BridgeHubPolkadotParaId::get().into();
+			let sibling_bridge_hub_id: cumulus_primitives_core::ParaId = BridgeHubParaId::get().into();
 			let outbound_channels = cumulus_pallet_xcmp_queue::OutboundXcmpStatus::<Runtime>::get();
 			outbound_channels.iter()
 				.filter(|c| c.recipient() == sibling_bridge_hub_id)
