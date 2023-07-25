@@ -292,8 +292,8 @@ jobs:
     strategy:
       matrix:
         channel:
-          - name: 'Cumulus Release Coordination'
-            room: '!ZrLPsivsytpkdJfVaa:matrix.parity.io'
+          - name: 'RelEng: Cumulus Release Coordination'
+            room: '!NAEMyPAHWOiOQHsvus:parity.io'
             pre-releases: true
     steps:
       - name: Matrix notification to ${{ matrix.channel.name }}
