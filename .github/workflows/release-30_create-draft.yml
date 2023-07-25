@@ -300,7 +300,7 @@ jobs:
         uses: s3krit/matrix-message-action@70ad3fb812ee0e45ff8999d6af11cafad11a6ecf # v0.0.3
         with:
           room_id: ${{ matrix.channel.room }}
-          access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
+          access_token: ${{ secrets.RELEASENOTES_MATRIX_V2_ACCESS_TOKEN }}
           message: |
             **New draft for ${{ github.repository }}**: ${{ github.event.inputs.ref2 }}<br/>
 
