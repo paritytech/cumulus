@@ -28,9 +28,10 @@ pub use integration_tests_common::{
 	BridgeHubKusama, BridgeHubKusamaPallet, BridgeHubKusamaReceiver, BridgeHubKusamaSender,
 	BridgeHubPolkadot, BridgeHubPolkadotPallet, BridgeHubPolkadotReceiver, BridgeHubPolkadotSender,
 	Collectives, CollectivesPallet, CollectivesReceiver, CollectivesSender, Kusama, KusamaMockNet,
-	KusamaPallet, KusamaReceiver, KusamaSender, PenpalKusama, PenpalKusamaReceiver,
-	PenpalKusamaSender, PenpalPolkadot, PenpalPolkadotReceiver, PenpalPolkadotSender, Polkadot,
-	PolkadotMockNet, PolkadotPallet, PolkadotReceiver, PolkadotSender,
+	KusamaPallet, KusamaReceiver, KusamaSender, PenpalKusama, PenpalKusamaPallet,
+	PenpalKusamaReceiver, PenpalKusamaSender, PenpalPolkadot, PenpalPolkadotReceiver,
+	PenpalPolkadotSender, Polkadot, PolkadotMockNet, PolkadotPallet, PolkadotReceiver,
+	PolkadotSender,
 };
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use xcm::{

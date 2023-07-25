@@ -225,6 +225,8 @@ decl_test_parachains! {
 			PolkadotXcm: asset_hub_kusama_runtime::PolkadotXcm,
 			Assets: asset_hub_kusama_runtime::Assets,
 			ForeignAssets: asset_hub_kusama_runtime::Assets,
+			PoolAssets: asset_hub_kusama_runtime::PoolAssets,
+			AssetConversion: asset_hub_kusama_runtime::AssetConversion,
 		}
 	},
 	pub struct BridgeHubKusama {
