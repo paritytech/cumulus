@@ -18,4 +18,3 @@ mod reserve_transfer;
 mod send;
 mod set_xcm_versions;
 mod teleport;
-mod transact;

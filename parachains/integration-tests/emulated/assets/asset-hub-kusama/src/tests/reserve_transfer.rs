@@ -111,6 +111,7 @@ fn para_origin_assertions(_t: ParaToRelayTest) {
 	);
 }
 
+/// Limited Reserve Transfers of native asset from Relay Chain to the System Parachain shouldn't work
 #[test]
 fn limited_reserve_transfer_native_asset_from_relay_to_system_para_fails() {
 	// Init values for Relay Chain
@@ -149,6 +150,7 @@ fn limited_reserve_transfer_native_asset_from_relay_to_system_para_fails() {
 	assert_eq!(receiver_balance_before, receiver_balance_after);
 }
 
+/// Limited Reserve Transfers of native asset from System Parachain to Relay Chain shoudln't work
 #[test]
 fn limited_reserve_transfer_native_asset_from_system_para_to_relay_fails() {
 	// Init values for Relay Chain
@@ -186,6 +188,7 @@ fn limited_reserve_transfer_native_asset_from_system_para_to_relay_fails() {
 	assert_eq!(receiver_balance_before, receiver_balance_after);
 }
 
+/// Reserve Transfers of native asset from Relay Chain to the System Parachain shouldn't work
 #[test]
 fn reserve_transfer_native_asset_from_relay_to_system_para_fails() {
 	// Init values for Relay Chain
@@ -223,6 +226,7 @@ fn reserve_transfer_native_asset_from_relay_to_system_para_fails() {
 	assert_eq!(receiver_balance_before, receiver_balance_after);
 }
 
+/// Reserve Transfers of native asset from System Parachain to Relay Chain shouldn't work
 #[test]
 fn reserve_transfer_native_asset_from_system_para_to_relay_fails() {
 	// Init values for Relay Chain

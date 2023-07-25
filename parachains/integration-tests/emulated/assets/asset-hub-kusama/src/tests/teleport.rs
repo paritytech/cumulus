@@ -185,7 +185,7 @@ fn relay_dest_assertions_fail(_t: ParaToRelayTest) {
 	);
 }
 
-/// Limited Teleport of native asset from Relay Chain to the System Parachain works
+/// Limited Teleport of native asset from Relay Chain to the System Parachain should work
 #[test]
 fn limited_teleport_native_assets_from_relay_to_system_para_works() {
 	// Init values for Relay Chain
@@ -227,7 +227,7 @@ fn limited_teleport_native_assets_from_relay_to_system_para_works() {
 }
 
 /// Limited Teleport of native asset from System Parachain to Relay Chain
-/// works when there is enough balance in Relay Chain's `CheckAccount`
+/// should work when there is enough balance in Relay Chain's `CheckAccount`
 #[test]
 fn limited_teleport_native_assets_back_from_system_para_to_relay_works() {
 	// Dependency - Relay Chain's `CheckAccount` should have enough balance
@@ -272,7 +272,7 @@ fn limited_teleport_native_assets_back_from_system_para_to_relay_works() {
 }
 
 /// Limited Teleport of native asset from System Parachain to Relay Chain
-/// fails when there is not enough balance in Relay Chain's `CheckAccount`
+/// should't work when there is not enough balance in Relay Chain's `CheckAccount`
 #[test]
 fn limited_teleport_native_assets_from_system_para_to_relay_fails() {
 	// Init values for Relay Chain
@@ -313,7 +313,7 @@ fn limited_teleport_native_assets_from_system_para_to_relay_fails() {
 	assert_eq!(receiver_balance_after, receiver_balance_before);
 }
 
-/// Teleport of native asset from Relay Chain to the System Parachain works
+/// Teleport of native asset from Relay Chain to the System Parachain should work
 #[test]
 fn teleport_native_assets_from_relay_to_system_para_works() {
 	// Init values for Relay Chain
@@ -361,7 +361,7 @@ fn teleport_native_assets_from_relay_to_system_para_works() {
 // and it cause an `Overweight` error in `AllowTopLevelPaidExecutionFrom` barrier
 
 // /// Teleport of native asset from System Parachains to the Relay Chain
-// /// works when there is enough balance in Relay Chain's `CheckAccount`
+// /// should work when there is enough balance in Relay Chain's `CheckAccount`
 // #[test]
 // fn teleport_native_assets_back_from_system_para_to_relay_works() {
 // 	// Dependency - Relay Chain's `CheckAccount` should have enough balance
@@ -405,7 +405,7 @@ fn teleport_native_assets_from_relay_to_system_para_works() {
 // }
 
 // /// Teleport of native asset from System Parachain to Relay Chain
-// /// fails when there is not enough balance in Relay Chain's `CheckAccount`
+// /// shouldn't work when there is not enough balance in Relay Chain's `CheckAccount`
 // #[test]
 // fn teleport_native_assets_from_system_para_to_relay_fails() {
 // 	// Init values for Relay Chain
