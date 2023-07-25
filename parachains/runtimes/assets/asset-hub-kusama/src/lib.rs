@@ -52,9 +52,12 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{AsEnsureOriginWithArg, ConstU32, ConstU64, ConstU8, EitherOfDiverse, InstanceFilter},
+	traits::{
+		AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse,
+		InstanceFilter,
+	},
 	weights::{ConstantMultiplier, Weight},
-	PalletId, RuntimeDebug,
+	BoundedVec, PalletId, RuntimeDebug,
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -64,8 +67,8 @@ use pallet_nfts::PalletFeatures;
 pub use parachains_common as common;
 use parachains_common::{
 	impls::{AssetsToBlockAuthor, DealWithFees},
-	opaque, AccountId, AssetIdForTrustBackedAssets, AuraId, Balance, BlockNumber, Hash, Header,
-	Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
+	AccountId, AssetIdForTrustBackedAssets, AuraId, Balance, BlockNumber, Hash, Header, Nonce,
+	Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{
@@ -100,7 +103,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("statemine"),
 	impl_name: create_runtime_str!("statemine"),
 	authoring_version: 1,
-	spec_version: 9420,
+	spec_version: 9430,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 13,
@@ -116,7 +119,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("statemine"),
 	impl_name: create_runtime_str!("statemine"),
 	authoring_version: 1,
-	spec_version: 9420,
+	spec_version: 9430,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 13,
@@ -162,11 +165,10 @@ impl frame_system::Config for Runtime {
 	type AccountId = AccountId;
 	type RuntimeCall = RuntimeCall;
 	type Lookup = AccountIdLookup<AccountId, ()>;
-	type Index = Index;
-	type BlockNumber = BlockNumber;
+	type Nonce = Nonce;
 	type Hash = Hash;
 	type Hashing = BlakeTwo256;
-	type Header = Header;
+	type Block = Block;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type BlockHashCount = BlockHashCount;
@@ -213,7 +215,9 @@ impl pallet_balances::Config for Runtime {
 	type ReserveIdentifier = [u8; 8];
 	type RuntimeHoldReason = RuntimeHoldReason;
 	type FreezeIdentifier = ();
-	type MaxHolds = ConstU32<0>;
+	// We allow each account to have holds on it from:
+	//   - `NftFractionalization`: 1
+	type MaxHolds = ConstU32<1>;
 	type MaxFreezes = ConstU32<0>;
 }
 
@@ -266,7 +270,7 @@ impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 	type StringLimit = AssetsStringLimit;
 	type Freezer = ();
 	type Extra = ();
-	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_assets_local::WeightInfo<Runtime>;
 	type CallbackHandle = ();
 	type AssetAccountDeposit = AssetAccountDeposit;
 	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
@@ -308,7 +312,7 @@ impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type StringLimit = ForeignAssetsAssetsStringLimit;
 	type Freezer = ();
 	type Extra = ();
-	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_assets_foreign::WeightInfo<Runtime>;
 	type CallbackHandle = ();
 	type AssetAccountDeposit = ForeignAssetsAssetAccountDeposit;
 	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
@@ -397,6 +401,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 				c,
 				RuntimeCall::Balances { .. } |
 					RuntimeCall::Assets { .. } |
+					RuntimeCall::NftFractionalization { .. } |
 					RuntimeCall::Nfts { .. } |
 					RuntimeCall::Uniques { .. }
 			),
@@ -412,6 +417,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 					RuntimeCall::Assets { .. } |
 						RuntimeCall::Utility { .. } |
 						RuntimeCall::Multisig { .. } |
+						RuntimeCall::NftFractionalization { .. } |
 						RuntimeCall::Nfts { .. } | RuntimeCall::Uniques { .. }
 				)
 			},
@@ -426,6 +432,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 					RuntimeCall::Assets(TrustBackedAssetsCall::set_team { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::set_metadata { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::clear_metadata { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::set_min_balance { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::create { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::destroy { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::redeposit { .. }) |
@@ -452,9 +459,12 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 				RuntimeCall::Assets(TrustBackedAssetsCall::mint { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::burn { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::freeze { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::block { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::thaw { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::freeze_asset { .. }) |
 					RuntimeCall::Assets(TrustBackedAssetsCall::thaw_asset { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::touch_other { .. }) |
+					RuntimeCall::Assets(TrustBackedAssetsCall::refund_other { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::force_mint { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::update_mint_settings { .. }) |
 					RuntimeCall::Nfts(pallet_nfts::Call::mint_pre_signed { .. }) |
@@ -582,14 +592,12 @@ impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
 	type MaxAuthorities = ConstU32<100_000>;
+	type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
-	pub const MaxCandidates: u32 = 1000;
-	pub const MinCandidates: u32 = 5;
 	pub const SessionLength: BlockNumber = 6 * HOURS;
-	pub const MaxInvulnerables: u32 = 100;
 	// StakingAdmin pluralistic body.
 	pub const StakingAdminBodyId: BodyId = BodyId::Defense;
 }
@@ -605,9 +613,9 @@ impl pallet_collator_selection::Config for Runtime {
 	type Currency = Balances;
 	type UpdateOrigin = CollatorSelectionUpdateOrigin;
 	type PotId = PotId;
-	type MaxCandidates = MaxCandidates;
-	type MinCandidates = MinCandidates;
-	type MaxInvulnerables = MaxInvulnerables;
+	type MaxCandidates = ConstU32<100>;
+	type MinEligibleCollators = ConstU32<4>;
+	type MaxInvulnerables = ConstU32<20>;
 	// should be a multiple of session or things will get inconsistent
 	type KickThreshold = Period;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
@@ -660,6 +668,32 @@ impl pallet_uniques::Config for Runtime {
 }
 
 parameter_types! {
+	pub const NftFractionalizationPalletId: PalletId = PalletId(*b"fraction");
+	pub NewAssetSymbol: BoundedVec<u8, AssetsStringLimit> = (*b"FRAC").to_vec().try_into().unwrap();
+	pub NewAssetName: BoundedVec<u8, AssetsStringLimit> = (*b"Frac").to_vec().try_into().unwrap();
+}
+
+impl pallet_nft_fractionalization::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Deposit = AssetDeposit;
+	type Currency = Balances;
+	type NewAssetSymbol = NewAssetSymbol;
+	type NewAssetName = NewAssetName;
+	type StringLimit = AssetsStringLimit;
+	type NftCollectionId = <Self as pallet_nfts::Config>::CollectionId;
+	type NftId = <Self as pallet_nfts::Config>::ItemId;
+	type AssetBalance = <Self as pallet_balances::Config>::Balance;
+	type AssetId = <Self as pallet_assets::Config<TrustBackedAssetsInstance>>::AssetId;
+	type Assets = Assets;
+	type Nfts = Nfts;
+	type PalletId = NftFractionalizationPalletId;
+	type WeightInfo = pallet_nft_fractionalization::weights::SubstrateWeight<Runtime>;
+	type RuntimeHoldReason = RuntimeHoldReason;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
+}
+
+parameter_types! {
 	pub NftsPalletFeatures: PalletFeatures = PalletFeatures::all_enabled();
 	pub const NftsMaxDeadlineDuration: BlockNumber = 12 * 30 * DAYS;
 	// re-use the Uniques deposits
@@ -701,19 +735,16 @@ impl pallet_nfts::Config for Runtime {
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
-	pub enum Runtime where
-		Block = Block,
-		NodeBlock = opaque::Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum Runtime
 	{
 		// System support stuff.
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>} = 0,
 		ParachainSystem: cumulus_pallet_parachain_system::{
-			Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
+			Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned,
 		} = 1,
 		// RandomnessCollectiveFlip = 2 removed
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
-		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 4,
+		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 4,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
@@ -725,11 +756,11 @@ construct_runtime!(
 		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
-		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
+		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config<T>} = 24,
 
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config} = 31,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config<T>} = 31,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
@@ -743,6 +774,7 @@ construct_runtime!(
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		Nfts: pallet_nfts::{Pallet, Call, Storage, Event<T>} = 52,
 		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 53,
+		NftFractionalization: pallet_nft_fractionalization::{Pallet, Call, Storage, Event<T>, HoldReason} = 54,
 
 		#[cfg(feature = "state-trie-version-1")]
 		StateTrieMigration: pallet_state_trie_migration = 70,
@@ -794,10 +826,11 @@ extern crate frame_benchmarking;
 mod benches {
 	define_benchmarks!(
 		[frame_system, SystemBench::<Runtime>]
-		[pallet_assets, Assets]
-		[pallet_assets, ForeignAssets]
+		[pallet_assets, Local]
+		[pallet_assets, Foreign]
 		[pallet_balances, Balances]
 		[pallet_multisig, Multisig]
+		[pallet_nft_fractionalization, NftFractionalization]
 		[pallet_nfts, Nfts]
 		[pallet_proxy, Proxy]
 		[pallet_session, SessionBench::<Runtime>]
@@ -902,8 +935,8 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
-		fn account_nonce(account: AccountId) -> Index {
+	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce> for Runtime {
+		fn account_nonce(account: AccountId) -> Nonce {
 			System::account_nonce(account)
 		}
 	}
@@ -1028,6 +1061,13 @@ impl_runtime_apis! {
 			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
 			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
+			// Benchmark files generated for `Assets/ForeignAssets` instances are by default
+			// `pallet_assets_assets.rs / pallet_assets_foreign_assets`, which is not really nice,
+			// so with this redefinition we can change names to nicer:
+			// `pallet_assets_local.rs / pallet_assets_foreign.rs`.
+			type Local = pallet_assets::Pallet::<Runtime, TrustBackedAssetsInstance>;
+			type Foreign = pallet_assets::Pallet::<Runtime, ForeignAssetsInstance>;
+
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
 
@@ -1042,7 +1082,16 @@ impl_runtime_apis! {
 				TrackedStorageKey};
 
 			use frame_system_benchmarking::Pallet as SystemBench;
-			impl frame_system_benchmarking::Config for Runtime {}
+			impl frame_system_benchmarking::Config for Runtime {
+				fn setup_set_code_requirements(code: &sp_std::vec::Vec<u8>) -> Result<(), BenchmarkError> {
+					ParachainSystem::initialize_for_set_code_benchmark(code.len() as u32);
+					Ok(())
+				}
+
+				fn verify_set_code() {
+					System::assert_last_event(cumulus_pallet_parachain_system::Event::<Runtime>::ValidationFunctionStored.into());
+				}
+			}
 
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
@@ -1090,7 +1139,7 @@ impl_runtime_apis! {
 					MultiAsset { fun: Fungible(UNITS), id: Concrete(KsmLocation::get()) },
 				));
 				pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
-
+				pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = None;
 			}
 
 			impl pallet_xcm_benchmarks::fungible::Config for Runtime {
@@ -1098,6 +1147,7 @@ impl_runtime_apis! {
 
 				type CheckedAccount = CheckedAccount;
 				type TrustedTeleporter = TrustedTeleporter;
+				type TrustedReserve = TrustedReserve;
 
 				fn get_multi_asset() -> MultiAsset {
 					MultiAsset {
@@ -1153,6 +1203,9 @@ impl_runtime_apis! {
 
 			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
 			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
+
+			type Local = pallet_assets::Pallet::<Runtime, TrustBackedAssetsInstance>;
+			type Foreign = pallet_assets::Pallet::<Runtime, ForeignAssetsInstance>;
 
 			let whitelist: Vec<TrackedStorageKey> = vec![
 				// Block Number

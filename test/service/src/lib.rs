@@ -55,7 +55,6 @@ use polkadot_node_subsystem::{errors::RecoveryError, messages::AvailabilityRecov
 use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::{CollatorPair, Hash as PHash, PersistedValidationData};
 use polkadot_service::ProvideRuntimeApi;
-use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_consensus::ImportQueue;
 use sc_network::{
 	config::{FullNetworkConfiguration, TransportConfig},
@@ -66,8 +65,8 @@ use sc_service::{
 		BlocksPruning, DatabaseSource, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
 		OffchainWorkerConfig, PruningMode, WasmExecutionMethod, WebRTCConfig,
 	},
-	BasePath, ChainSpec, Configuration, Error as ServiceError, PartialComponents, Role,
-	RpcHandlers, TFullBackend, TFullClient, TaskManager,
+	BasePath, ChainSpec as ChainSpecService, Configuration, Error as ServiceError,
+	PartialComponents, Role, RpcHandlers, TFullBackend, TFullClient, TaskManager,
 };
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_blockchain::HeaderBackend;
@@ -758,13 +757,6 @@ pub fn node_config(
 		chain_spec: spec,
 		wasm_method: WasmExecutionMethod::Compiled {
 			instantiation_strategy: sc_executor_wasmtime::InstantiationStrategy::PoolingCopyOnWrite,
-		},
-		execution_strategies: ExecutionStrategies {
-			syncing: sc_client_api::ExecutionStrategy::AlwaysWasm,
-			importing: sc_client_api::ExecutionStrategy::AlwaysWasm,
-			block_construction: sc_client_api::ExecutionStrategy::AlwaysWasm,
-			offchain_worker: sc_client_api::ExecutionStrategy::AlwaysWasm,
-			other: sc_client_api::ExecutionStrategy::AlwaysWasm,
 		},
 		rpc_addr: None,
 		rpc_max_connections: Default::default(),

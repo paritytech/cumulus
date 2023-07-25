@@ -30,6 +30,7 @@ members = [
 	"pallets/xcmp-queue",
 	"parachain-template/node",
 	"parachain-template/runtime",
+	"primitives/aura",
 	"primitives/core",
 	"primitives/parachain-inherent",
 	"primitives/timestamp",
@@ -57,6 +58,7 @@ members = [
 	"parachains/integration-tests/emulated/assets/asset-hub-polkadot",
 	"parachains/integration-tests/emulated/assets/asset-hub-westend",
 	"parachains/integration-tests/emulated/collectives/collectives-polkadot",
+	"parachains/integration-tests/emulated/bridges/bridge-hub-rococo",
 	"test/client",
 	"test/relay-sproof-builder",
 	"test/relay-validation-worker-provider",
@@ -73,3 +75,4 @@ opt-level = 3
 inherits = "release"
 lto = true
 codegen-units = 1
+
