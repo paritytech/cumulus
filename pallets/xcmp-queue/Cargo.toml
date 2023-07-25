@@ -33,6 +33,7 @@ frame-benchmarking = { default-features = false, optional = true, git = "https:/
 # Substrate
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-paged-list = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
 xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "master" }

@@ -44,6 +44,7 @@ frame_support::construct_runtime!(
 			Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned,
 		},
 		XcmpQueue: xcmp_queue::{Pallet, Call, Storage, Event<T>},
+		PagedList: pallet_paged_list::{Pallet},
 	}
 );
 
@@ -111,6 +112,12 @@ impl cumulus_pallet_parachain_system::Config for Test {
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ();
 	type CheckAssociatedRelayNumber = AnyRelayNumber;
+	type PendingUpwardMessages = PagedList;
+}
+
+impl pallet_paged_list::Config for Test {
+	type Value = cumulus_primitives_core::UpwardMessage;
+	type ValuesPerNewPage = frame_support::traits::ConstU32<2>;
 }
 
 parameter_types! {

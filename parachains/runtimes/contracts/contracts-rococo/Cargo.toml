@@ -41,6 +41,7 @@ pallet-authorship = { git = "https://github.com/paritytech/substrate", default-f
 pallet-insecure-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-multisig = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-paged-list = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -96,6 +97,7 @@ std = [
 	"pallet-contracts/std",
 	"pallet-multisig/std",
 	"pallet-insecure-randomness-collective-flip/std",
+	"pallet-paged-list/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
@@ -143,6 +145,7 @@ runtime-benchmarks = [
 	"pallet-collator-selection/runtime-benchmarks",
 	"pallet-contracts/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
+	"pallet-paged-list/runtime-benchmarks",
 	"pallet-sudo/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
@@ -169,6 +172,7 @@ try-runtime = [
 	"pallet-contracts/try-runtime",
 	"pallet-multisig/try-runtime",
 	"pallet-insecure-randomness-collective-flip/try-runtime",
+	"pallet-paged-list/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",

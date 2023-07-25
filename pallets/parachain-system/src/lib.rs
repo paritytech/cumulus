@@ -40,6 +40,7 @@ use frame_support::{
 	ensure,
 	inherent::{InherentData, InherentIdentifier, ProvideInherent},
 	storage,
+	storage::StorageList,
 	traits::Get,
 	weights::Weight,
 	RuntimeDebug,
@@ -193,6 +194,9 @@ pub mod pallet {
 
 		/// Something that can check the associated relay parent block number.
 		type CheckAssociatedRelayNumber: CheckAssociatedRelayNumber;
+
+		/// Holds the upward messages that are pending delivery to the relay.
+		type PendingUpwardMessages: StorageList<UpwardMessage>;
 	}
 
 	#[pallet::hooks]
@@ -228,36 +232,34 @@ pub mod pallet {
 				},
 			};
 
-			<PendingUpwardMessages<T>>::mutate(|up| {
-				let queue_size = relevant_messaging_state.relay_dispatch_queue_remaining_capacity;
+			// Remove all pending UMPs that will fit into the block.
+			let pending_umps = T::PendingUpwardMessages::iter();
+			let queue_size = relevant_messaging_state.relay_dispatch_queue_remaining_capacity;
 
-				let available_capacity = cmp::min(
-					queue_size.remaining_count,
-					host_config.max_upward_message_num_per_candidate.into(),
-				);
-				let available_size = queue_size.remaining_size;
+			let available_capacity = cmp::min(
+				queue_size.remaining_count,
+				host_config.max_upward_message_num_per_candidate.into(),
+			);
+			let available_size = queue_size.remaining_size;
 
-				// Count the number of messages we can possibly fit in the given constraints, i.e.
-				// available_capacity and available_size.
-				let num = up
-					.iter()
-					.scan((available_capacity as usize, available_size as usize), |state, msg| {
-						let (cap_left, size_left) = *state;
-						match (cap_left.checked_sub(1), size_left.checked_sub(msg.len())) {
-							(Some(new_cap), Some(new_size)) => {
-								*state = (new_cap, new_size);
-								Some(())
-							},
-							_ => None,
-						}
-					})
-					.count();
+			// Count the number of messages we can possibly fit in the given constraints, i.e.
+			// available_capacity and available_size.
+			let fit = pending_umps
+				.scan((available_capacity as usize, available_size as usize), |state, msg| {
+					let (cap_left, size_left) = *state;
+					match (cap_left.checked_sub(1), size_left.checked_sub(msg.len())) {
+						(Some(new_cap), Some(new_size)) => {
+							*state = (new_cap, new_size);
+							Some(msg)
+						},
+						_ => None,
+					}
+				})
+				.collect::<Vec<_>>();
 
-				// TODO: #274 Return back messages that do not longer fit into the queue.
-
-				UpwardMessages::<T>::put(&up[..num]);
-				*up = up.split_off(num);
-			});
+			// TODO: #274 Return back messages that do not longer fit into the queue.
+			UpwardMessages::<T>::put(&fit);
+			T::PendingUpwardMessages::drain().take(fit.len()).for_each(core::mem::drop);
 
 			// Sending HRMP messages is a little bit more involved. There are the following
 			// constraints:
@@ -661,11 +663,6 @@ pub mod pallet {
 	/// This will be cleared in `on_initialize` of each new block.
 	#[pallet::storage]
 	pub(super) type UpwardMessages<T: Config> = StorageValue<_, Vec<UpwardMessage>, ValueQuery>;
-
-	/// Upward messages that are still pending and not yet send to the relay chain.
-	#[pallet::storage]
-	pub(super) type PendingUpwardMessages<T: Config> =
-		StorageValue<_, Vec<UpwardMessage>, ValueQuery>;
 
 	/// The number of HRMP messages we observed in `on_initialize` and thus used that number for
 	/// announcing the weight of `on_initialize` and `on_finalize`.
@@ -1136,7 +1133,7 @@ impl<T: Config> Pallet<T> {
 			//
 			// Thus fall through here.
 		};
-		<PendingUpwardMessages<T>>::append(message.clone());
+		T::PendingUpwardMessages::append_one(message.clone());
 
 		// The relay ump does not use using_encoded
 		// We apply the same this to use the same hash

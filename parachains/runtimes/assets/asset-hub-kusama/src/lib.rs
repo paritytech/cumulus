@@ -537,6 +537,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+	type PendingUpwardMessages = pallet_paged_list::Pallet<Runtime>;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -733,6 +734,11 @@ impl pallet_nfts::Config for Runtime {
 	type Helper = ();
 }
 
+impl pallet_paged_list::Config for Runtime {
+	type Value = cumulus_primitives_core::UpwardMessage;
+	type ValuesPerNewPage = ConstU32<2>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime
@@ -778,6 +784,9 @@ construct_runtime!(
 
 		#[cfg(feature = "state-trie-version-1")]
 		StateTrieMigration: pallet_state_trie_migration = 70,
+
+		// Storage aux.
+		PagedList: pallet_paged_list::{Pallet} = 80,
 	}
 );
 

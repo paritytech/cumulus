@@ -283,6 +283,12 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type XcmpMessageHandler = ();
 	type ReservedXcmpWeight = ();
 	type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::AnyRelayNumber;
+	type PendingUpwardMessages = pallet_paged_list::Pallet<Runtime>;
+}
+
+impl pallet_paged_list::Config for Runtime {
+	type Value = cumulus_primitives_core::UpwardMessage;
+	type ValuesPerNewPage = ConstU32<2>;
 }
 
 parameter_types! {
@@ -302,6 +308,7 @@ construct_runtime! {
 		TransactionPayment: pallet_transaction_payment,
 		TestPallet: test_pallet,
 		Glutton: pallet_glutton,
+		PagedList: pallet_paged_list,
 	}
 }
 

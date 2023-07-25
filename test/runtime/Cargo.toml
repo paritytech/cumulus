@@ -17,6 +17,7 @@ pallet-balances = { git = "https://github.com/paritytech/substrate", default-fea
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-glutton = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-paged-list = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -50,9 +51,9 @@ std = [
 	"pallet-balances/std",
 	"pallet-sudo/std",
 	"pallet-glutton/std",
+	"pallet-paged-list/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment/std",
-	"pallet-glutton/std",
 	"sp-api/std",
 	"sp-block-builder/std",
 	"sp-core/std",

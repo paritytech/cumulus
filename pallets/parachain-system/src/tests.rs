@@ -49,6 +49,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		ParachainSystem: parachain_system::{Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned},
+		PagedList: pallet_paged_list::{Pallet},
 	}
 );
 
@@ -103,6 +104,12 @@ impl Config for Test {
 	type XcmpMessageHandler = SaveIntoThreadLocal;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+	type PendingUpwardMessages = PagedList;
+}
+
+impl pallet_paged_list::Config for Test {
+	type Value = cumulus_primitives_core::UpwardMessage;
+	type ValuesPerNewPage = frame_support::traits::ConstU32<2>;
 }
 
 pub struct FromThreadLocal;
@@ -516,16 +523,18 @@ fn send_upward_message_num_per_candidate() {
 				ParachainSystem::send_upward_message(b"message 2".to_vec()).unwrap();
 			},
 			|| {
-				let v = UpwardMessages::<Test>::get();
-				assert_eq!(v, vec![b"Mr F was here".to_vec()]);
+				assert_eq!(UpwardMessages::<Test>::get(), vec![b"Mr F was here".to_vec()]);
+				assert_eq!(<Test as Config>::PendingUpwardMessages::iter().count(), 1);
 			},
 		)
 		.add_with_post_test(
 			2,
-			|| { /* do nothing within block */ },
 			|| {
-				let v = UpwardMessages::<Test>::get();
-				assert_eq!(v, vec![b"message 2".to_vec()]);
+				assert_eq!(<Test as Config>::PendingUpwardMessages::iter().count(), 1);
+			},
+			|| {
+				assert_eq!(UpwardMessages::<Test>::get(), vec![b"message 2".to_vec()]);
+				assert_eq!(<Test as Config>::PendingUpwardMessages::iter().count(), 0);
 			},
 		);
 }
@@ -547,19 +556,23 @@ fn send_upward_message_relay_bottleneck() {
 			1,
 			|| {
 				ParachainSystem::send_upward_message(vec![0u8; 8]).unwrap();
+				assert_eq!(<Test as Config>::PendingUpwardMessages::iter().count(), 1);
 			},
 			|| {
 				// The message won't be sent because there is already one message in queue.
-				let v = UpwardMessages::<Test>::get();
-				assert!(v.is_empty());
+				assert!(UpwardMessages::<Test>::get().is_empty());
+				assert_eq!(<Test as Config>::PendingUpwardMessages::iter().count(), 1);
 			},
 		)
 		.add_with_post_test(
 			2,
-			|| { /* do nothing within block */ },
 			|| {
-				let v = UpwardMessages::<Test>::get();
-				assert_eq!(v, vec![vec![0u8; 8]]);
+				assert_eq!(<Test as Config>::PendingUpwardMessages::iter().count(), 1);
+			},
+			|| {
+				// Message got sent.
+				assert_eq!(UpwardMessages::<Test>::get(), vec![vec![0u8; 8]]);
+				assert_eq!(<Test as Config>::PendingUpwardMessages::iter().count(), 0);
 			},
 		);
 }
