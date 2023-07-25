@@ -33,6 +33,8 @@ pub trait WeightInfo {
 	fn set_candidacy_bond() -> Weight;
 	fn register_as_candidate(_c: u32) -> Weight;
 	fn leave_intent(_c: u32) -> Weight;
+	fn increase_bond(_c: u32) -> Weight;
+	fn decrease_bond(_c: u32) -> Weight;
 	fn note_author() -> Weight;
 	fn new_session(_c: u32, _r: u32) -> Weight;
 }
@@ -60,6 +62,20 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 	fn leave_intent(c: u32) -> Weight {
+		Weight::from_parts(55_336_000_u64, 0)
+			// Standard Error: 0
+			.saturating_add(Weight::from_parts(151_000_u64, 0).saturating_mul(c as u64))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
+	}
+	fn increase_bond(c: u32) -> Weight {
+		Weight::from_parts(55_336_000_u64, 0)
+			// Standard Error: 0
+			.saturating_add(Weight::from_parts(151_000_u64, 0).saturating_mul(c as u64))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
+	}
+	fn decrease_bond(c: u32) -> Weight {
 		Weight::from_parts(55_336_000_u64, 0)
 			// Standard Error: 0
 			.saturating_add(Weight::from_parts(151_000_u64, 0).saturating_mul(c as u64))
@@ -147,6 +163,20 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
 	fn leave_intent(c: u32) -> Weight {
+		Weight::from_parts(55_336_000_u64, 0)
+			// Standard Error: 0
+			.saturating_add(Weight::from_parts(151_000_u64, 0).saturating_mul(c as u64))
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
+	}
+	fn increase_bond(c: u32) -> Weight {
+		Weight::from_parts(55_336_000_u64, 0)
+			// Standard Error: 0
+			.saturating_add(Weight::from_parts(151_000_u64, 0).saturating_mul(c as u64))
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
+	}
+	fn decrease_bond(c: u32) -> Weight {
 		Weight::from_parts(55_336_000_u64, 0)
 			// Standard Error: 0
 			.saturating_add(Weight::from_parts(151_000_u64, 0).saturating_mul(c as u64))

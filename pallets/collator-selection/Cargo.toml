@@ -36,6 +36,7 @@ sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-bags-list = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
 

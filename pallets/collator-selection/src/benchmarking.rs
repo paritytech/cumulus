@@ -94,7 +94,8 @@ fn register_candidates<T: Config>(count: u32) {
 	assert!(<CandidacyBond<T>>::get() > 0u32.into(), "Bond cannot be zero!");
 
 	for who in candidates {
-		T::Currency::make_free_balance_be(&who, <CandidacyBond<T>>::get() * 2u32.into());
+		// TODO[GMP] revisit this, need it for Currency reserve in increase_bid
+		T::Currency::make_free_balance_be(&who, <CandidacyBond<T>>::get() * 3u32.into());
 		<CollatorSelection<T>>::register_as_candidate(RawOrigin::Signed(who).into()).unwrap();
 	}
 }
@@ -235,6 +236,67 @@ mod benchmarks {
 		_(origin as T::RuntimeOrigin, bond_amount);
 
 		assert_last_event::<T>(Event::NewCandidacyBond { bond_amount }.into());
+		Ok(())
+	}
+
+	#[benchmark]
+	fn increase_bond(c: Linear<1, { T::MaxCandidates::get() }>) -> Result<(), BenchmarkError> {
+		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
+		<DesiredCandidates<T>>::put(c);
+
+		register_candidates::<T>(c);
+
+		let caller = <Candidates<T>>::get().last().unwrap().who.clone();
+		v2::whitelist!(caller);
+
+		let bond_amount: BalanceOf<T> = T::Currency::minimum_balance();
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller.clone()), bond_amount);
+
+		assert_last_event::<T>(
+			Event::CandidateBondIncreased {
+				account_id: caller,
+				deposit: T::Currency::minimum_balance() + bond_amount,
+			}
+			.into(),
+		);
+		assert!(
+			<Candidates<T>>::get().last().unwrap().deposit ==
+				T::Currency::minimum_balance() * 2u32.into()
+		);
+		Ok(())
+	}
+
+	#[benchmark]
+	fn decrease_bond(c: Linear<1, { T::MaxCandidates::get() }>) -> Result<(), BenchmarkError> {
+		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
+		<DesiredCandidates<T>>::put(c);
+
+		register_candidates::<T>(c);
+
+		let caller = <Candidates<T>>::get().last().unwrap().who.clone();
+		v2::whitelist!(caller);
+
+		<CollatorSelection<T>>::increase_bond(
+			RawOrigin::Signed(caller.clone()).into(),
+			<CandidacyBond<T>>::get(),
+		)
+		.unwrap();
+
+		let bond_amount: BalanceOf<T> = T::Currency::minimum_balance();
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller.clone()), bond_amount);
+
+		assert_last_event::<T>(
+			Event::CandidateBondDecreased {
+				account_id: caller,
+				deposit: T::Currency::minimum_balance(),
+			}
+			.into(),
+		);
+		assert!(<Candidates<T>>::get().last().unwrap().deposit == T::Currency::minimum_balance());
 		Ok(())
 	}
 
