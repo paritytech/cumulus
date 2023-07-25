@@ -80,6 +80,10 @@ impl XcmBlobHauler for ToBridgeHubRococoXcmBlobHauler {
 
 	type MessageSenderOrigin = super::RuntimeOrigin;
 
+	fn sending_chain_location() -> MultiLocation {
+		ParentThen(X1(Parachain(1000))).into()
+	}
+
 	fn message_sender_origin() -> super::RuntimeOrigin {
 		pallet_xcm::Origin::from(MultiLocation::new(1, crate::xcm_config::UniversalLocation::get()))
 			.into()

@@ -320,14 +320,20 @@ impl pallet_message_queue::Config for Runtime {
 		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	type MessageProcessor = ProcessXcmMessage<
+	type MessageProcessor = bridge_runtime_common::messages_xcm_extension::LocalXcmQueueMessageProcessor<
 		AggregateMessageOrigin,
-		xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
-		RuntimeCall,
+		ProcessXcmMessage<
+			AggregateMessageOrigin,
+			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
+			RuntimeCall,
+		>,
 	>;
 	type Size = u32;
 	type QueueChangeHandler = ();
-	type QueuePausedQuery = queue_paused_query::NarrowToSiblings<XcmpQueue>;
+	type QueuePausedQuery = bridge_runtime_common::messages_xcm_extension::LocalXcmQueueSuspender<
+		AggregateMessageOrigin,
+		queue_paused_query::NarrowToSiblings<XcmpQueue>,
+	>;
 	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
 	type MaxStale = sp_core::ConstU32<8>;
 	type ServiceWeight = MessageQueueServiceWeight;
@@ -483,6 +489,15 @@ impl pallet_bridge_parachains::Config<BridgeParachainRococoInstance> for Runtime
 	type MaxParaHeadDataSize = MaxRococoParaHeadDataSize;
 }
 
+pub struct IsChannelWithSiblingAssetHubActive;
+
+impl sp_runtime::traits::Get<bool> for IsChannelWithSiblingAssetHubActive {
+	fn get() -> bool {
+		let sibling_asset_hub_id: cumulus_primitives_core::ParaId = 1000u32.into();
+		!cumulus_pallet_xcmp_queue::InboundXcmpSuspended::<Runtime>::get().contains(&sibling_asset_hub_id)
+	}
+}
+
 /// Add XCM messages support for BridgeHubRococo to support Rococo->Wococo XCM messages
 pub type WithBridgeHubWococoMessagesInstance = pallet_bridge_messages::Instance1;
 impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Runtime {
@@ -512,8 +527,10 @@ impl pallet_bridge_messages::Config<WithBridgeHubWococoMessagesInstance> for Run
 	>;
 
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubWococoMessageBridge>;
+
 	type MessageDispatch =
-		XcmBlobMessageDispatch<OnBridgeHubRococoBlobDispatcher, Self::WeightInfo>;
+		XcmBlobMessageDispatch<OnBridgeHubRococoBlobDispatcher, Self::WeightInfo, IsChannelWithSiblingAssetHubActive>;
+	type OnMessagesDelivered = bridge_runtime_common::messages_xcm_extension::XcmBlobHaulerAdapter<crate::bridge_hub_rococo_config::ToBridgeHubWococoXcmBlobHauler>;
 }
 
 /// Add XCM messages support for BridgeHubWococo to support Wococo->Rococo XCM messages
@@ -546,7 +563,8 @@ impl pallet_bridge_messages::Config<WithBridgeHubRococoMessagesInstance> for Run
 
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubRococoMessageBridge>;
 	type MessageDispatch =
-		XcmBlobMessageDispatch<OnBridgeHubWococoBlobDispatcher, Self::WeightInfo>;
+		XcmBlobMessageDispatch<OnBridgeHubWococoBlobDispatcher, Self::WeightInfo, IsChannelWithSiblingAssetHubActive>;
+	type OnMessagesDelivered = bridge_runtime_common::messages_xcm_extension::XcmBlobHaulerAdapter<crate::bridge_hub_wococo_config::ToBridgeHubRococoXcmBlobHauler>;
 }
 
 /// Allows collect and claim rewards for relayers

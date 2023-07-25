@@ -793,6 +793,18 @@ impl pallet_nfts::Config for Runtime {
 	type Helper = ();
 }
 
+impl pallet_xcm_bridge_hub_router::Config for Runtime {
+	type UniversalLocation = xcm_config::UniversalLocation;
+	type SiblingBridgeHubLocation = xcm_config::SiblingBridgeHubLocation;
+	type BridgedNetworkId = xcm_config::WococoNetworkId;
+
+	type ToBridgeHubSender = xcm_config::LocalXcmQueueAdapter;
+
+	type BaseFee = ConstU128<1_000_000_000>;
+	type ByteFee = ConstU128<1_000_000>;
+	type FeeAsset = xcm_config::BridgeFeeAsset;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime
@@ -838,6 +850,9 @@ construct_runtime!(
 		NftFractionalization: pallet_nft_fractionalization::{Pallet, Call, Storage, Event<T>, HoldReason} = 54,
 		PoolAssets: pallet_assets::<Instance3>::{Pallet, Call, Storage, Event<T>} = 55,
 		AssetConversion: pallet_asset_conversion::{Pallet, Call, Storage, Event<T>} = 56,
+
+		// Bridge utilities.
+		BridgeHubRouter: pallet_xcm_bridge_hub_router::{Pallet, Storage} = 60,
 	}
 );
 

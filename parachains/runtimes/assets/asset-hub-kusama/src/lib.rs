@@ -54,7 +54,7 @@ use frame_support::{
 	dispatch::DispatchClass,
 	parameter_types,
 	traits::{
-		AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse,
+		AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, EitherOfDiverse,
 		InstanceFilter, TransformOrigin,
 	},
 	weights::{ConstantMultiplier, Weight},
@@ -757,6 +757,18 @@ impl pallet_nfts::Config for Runtime {
 	type Helper = ();
 }
 
+impl pallet_xcm_bridge_hub_router::Config for Runtime {
+	type UniversalLocation = xcm_config::UniversalLocation;
+	type SiblingBridgeHubLocation = xcm_config::SiblingBridgeHubLocation;
+	type BridgedNetworkId = xcm_config::WococoNetworkId;
+
+	type ToBridgeHubSender = xcm_config::LocalXcmQueueAdapter;
+
+	type BaseFee = ConstU128<1_000_000_000>;
+	type ByteFee = ConstU128<1_000_000>;
+	type FeeAsset = xcm_config::BridgeFeeAsset;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime
@@ -799,6 +811,9 @@ construct_runtime!(
 		Nfts: pallet_nfts::{Pallet, Call, Storage, Event<T>} = 52,
 		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>} = 53,
 		NftFractionalization: pallet_nft_fractionalization::{Pallet, Call, Storage, Event<T>, HoldReason} = 54,
+
+		// Bridge utilities.
+		BridgeHubRouter: pallet_xcm_bridge_hub_router::{Pallet, Storage} = 60,
 
 		#[cfg(feature = "state-trie-version-1")]
 		StateTrieMigration: pallet_state_trie_migration = 70,

@@ -14,7 +14,7 @@
 // limitations under the License.
 
 use super::{
-	AccountId, AllPalletsWithSystem, Assets, Authorship, Balance, Balances, ForeignAssets,
+	AccountId, AllPalletsWithSystem, Assets, Authorship, Balance, Balances, BridgeHubRouter, ForeignAssets,
 	ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
 	TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
@@ -55,6 +55,10 @@ parameter_types! {
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 	pub const GovernanceLocation: MultiLocation = MultiLocation::parent();
 	pub const FellowshipLocation: MultiLocation = MultiLocation::parent();
+
+	pub SiblingBridgeHubLocation: MultiLocation = ParentThen(X1(Parachain(1001))).into();
+	pub WococoNetworkId: NetworkId = NetworkId::Wococo;
+	pub BridgeFeeAsset: AssetId = MultiLocation::parent().into();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -436,6 +440,8 @@ pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, R
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
 pub type XcmRouter = WithUniqueTopic<(
+	// Bridge router to send messages to locations within the the bridged chain consensus.
+	BridgeHubRouter,
 	// Two routers - use UMP to communicate with the relay chain:
 	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, ()>,
 	// ..and XCMP to communicate with the sibling chains.
@@ -500,5 +506,34 @@ pub struct XcmBenchmarkHelper;
 impl pallet_assets::BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 	fn create_asset_id_parameter(id: u32) -> MultiLocation {
 		MultiLocation { parents: 1, interior: X1(Parachain(id)) }
+	}
+}
+
+pub struct LocalXcmQueueAdapter;
+
+impl SendXcm for LocalXcmQueueAdapter {
+	type Ticket = <XcmpQueue as SendXcm>::Ticket;
+
+	fn validate(
+		destination: &mut Option<MultiLocation>,
+		message: &mut Option<Xcm<()>>,
+	) -> SendResult<Self::Ticket> {
+		XcmpQueue::validate(destination, message)
+	}
+
+	fn deliver(ticket: Self::Ticket) -> Result<XcmHash, SendError> {
+		XcmpQueue::deliver(ticket)
+	}
+}
+
+impl bp_xcm_bridge_hub_router::LocalXcmQueue for LocalXcmQueueAdapter {
+	fn is_overloaded() -> bool {
+		let sibling_bridge_hub_id: cumulus_primitives_core::ParaId = 1000u32.into();
+		let outbound_channels = cumulus_pallet_xcmp_queue::OutboundXcmpStatus::<Runtime>::get();
+		outbound_channels.iter()
+			.filter(|c| c.recipient() == sibling_bridge_hub_id)
+			.map(|c| c.is_suspended())
+			.next()
+			.unwrap_or(false)
 	}
 }

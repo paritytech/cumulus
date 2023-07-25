@@ -78,6 +78,10 @@ parachain-info = { path = "../../../pallets/parachain-info", default-features = 
 parachains-common = { path = "../../../common", default-features = false }
 assets-common = { path = "../common", default-features = false }
 
+# Bridges
+bp-xcm-bridge-hub-router = { path = "../../../../bridges/primitives/xcm-bridge-hub-router", default-features = false }
+pallet-xcm-bridge-hub-router = { path = "../../../../bridges/modules/xcm-bridge-hub-router", default-features = false }
+
 [dev-dependencies]
 hex-literal = "0.4.1"
 asset-test-utils = { path = "../test-utils"}
@@ -199,5 +203,7 @@ std = [
 	"parachain-info/std",
 	"parachains-common/std",
 	"assets-common/std",
+	"bp-xcm-bridge-hub-router/std",
+	"pallet-xcm-bridge-hub-router/std",
 	"substrate-wasm-builder",
 ]
