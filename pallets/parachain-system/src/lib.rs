@@ -188,7 +188,12 @@ pub mod pallet {
 
 		/// Queues inbound downward messages for delayed processing.
 		///
-		/// This defines the maximal DMP message length through [`crate::MaxDmpMessageLenOf`].
+		/// All inbound DMP messages from the relay are pushed into this. The handler is expected to
+		/// eventually process all the messages that are pushed to it.
+		///
+		/// There is a slightly caveat here since the only variant of [`AggregateMessageOrigin`]
+		/// that is ever used is the `Parent` variant. It would therefore be better to use a more
+		/// constrained trait instead such that no incorrect origin can be used.
 		type DmpQueue: EnqueueMessage<AggregateMessageOrigin>;
 
 		/// The weight we reserve at the beginning of the block for processing DMP messages.
@@ -206,8 +211,6 @@ pub mod pallet {
 		type CheckAssociatedRelayNumber: CheckAssociatedRelayNumber;
 
 		/// Weight info for functions and calls.
-		///
-		/// Should be benchmarked for each runtime. For testing you can use the default `()`.
 		type WeightInfo: WeightInfo;
 	}
 
@@ -458,7 +461,6 @@ pub mod pallet {
 				relevant_messaging_state.dmq_mqc_head,
 				downward_messages,
 			));
-			// TODO: This is more than zero, but will need benchmarking to figure out what.
 			total_weight.saturating_accrue(Self::enqueue_inbound_horizontal_messages(
 				&relevant_messaging_state.ingress_channels,
 				horizontal_messages,

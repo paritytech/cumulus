@@ -38,7 +38,7 @@ mod benchmarks {
 
 	#[benchmark]
 	fn enqueue_xcmp_messages(n: Linear<0, 1000> /* FAIL-CI */) {
-		let msg = BoundedVec::<u8, XcmpMaxLenOf<T>>::default();
+		let msg = BoundedVec::<u8, MaxXcmpMessageLenOf<T>>::default();
 		let msgs = vec![msg; n as usize];
 
 		QueueConfig::<T>::mutate(|data| {

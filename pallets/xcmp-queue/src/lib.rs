@@ -62,7 +62,8 @@ pub use pallet::*;
 
 /// Index used to identify overweight XCMs.
 pub type OverweightIndex = u64;
-pub type XcmpMaxLenOf<T> = <<T as Config>::XcmpQueue as EnqueueMessage<ParaId>>::MaxMessageLen;
+pub type MaxXcmpMessageLenOf<T> =
+	<<T as Config>::XcmpQueue as EnqueueMessage<ParaId>>::MaxMessageLen;
 
 const LOG_TARGET: &str = "xcmp_queue";
 const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB
@@ -90,7 +91,7 @@ pub mod pallet {
 
 		/// Enqueue an inbound horizontal message for later processing.
 		///
-		/// This defines the maximal message length via [`crate::XcmpMaxLenOf`].
+		/// This defines the maximal message length via [`crate::MaxXcmpMessageLenOf`]. The pallet assumes that this hook will eventually process all the pushed messages. No further explicit nudging is required.
 		type XcmpQueue: EnqueueMessage<ParaId>;
 
 		/// The maximum number of inbound XCMP channels that can be suspended simultaneously.
@@ -207,26 +208,12 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Some XCM was executed ok.
-		Success { message_hash: XcmHash, message_id: XcmHash, weight: Weight },
-		/// Some XCM failed.
-		Fail { message_hash: XcmHash, message_id: XcmHash, error: XcmError, weight: Weight },
-		/// Bad XCM version used.
-		BadVersion { message_hash: XcmHash },
-		/// Bad XCM format used.
-		BadFormat { message_hash: XcmHash },
 		/// An HRMP message was sent to a sibling parachain.
 		XcmpMessageSent { message_hash: XcmHash },
 	}
 
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Failed to send XCM message.
-		FailedToSend,
-		/// Bad XCM origin.
-		BadXcmOrigin,
-		/// Bad XCM data.
-		BadXcm,
 		/// Setting the queue config failed since one of its values was invalid.
 		BadQueueConfig,
 		/// The execution is already suspended.
@@ -530,7 +517,7 @@ impl<T: Config> Pallet<T> {
 
 	fn enqueue_xcmp_messages(
 		sender: ParaId,
-		mut xcms: Vec<BoundedVec<u8, XcmpMaxLenOf<T>>>,
+		mut xcms: Vec<BoundedVec<u8, MaxXcmpMessageLenOf<T>>>,
 		meter: &mut WeightMeter,
 	) {
 		if meter
@@ -562,7 +549,7 @@ impl<T: Config> Pallet<T> {
 	/// We directly encode them again since that is needed later on.
 	fn split_concatenated_xcms(
 		data: &mut &[u8],
-	) -> Result<Vec<BoundedVec<u8, XcmpMaxLenOf<T>>>, ()> {
+	) -> Result<Vec<BoundedVec<u8, MaxXcmpMessageLenOf<T>>>, ()> {
 		// FAIL-CI add benchmark to check for OOM depending on `MAX_XCM_DECODE_DEPTH`.
 		let mut encoded_xcms = Vec::new();
 		while !data.is_empty() {
