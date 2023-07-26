@@ -58,7 +58,7 @@ use frame_system::{
 	EnsureRoot,
 };
 use parachains_common::process_xcm_message::{
-	queue_paused_query, ParaIdToSibling, ProcessXcmMessage,
+	message_queue, ParaIdToSibling, ProcessXcmMessage,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
@@ -327,7 +327,7 @@ impl pallet_message_queue::Config for Runtime {
 	>;
 	type Size = u32;
 	type QueueChangeHandler = ();
-	type QueuePausedQuery = queue_paused_query::NarrowToSiblings<XcmpQueue>;
+	type QueuePausedQuery = message_queue::NarrowToSiblings<XcmpQueue>;
 	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
 	type MaxStale = sp_core::ConstU32<8>;
 	type ServiceWeight = MessageQueueServiceWeight;

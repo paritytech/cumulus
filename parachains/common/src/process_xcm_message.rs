@@ -16,19 +16,14 @@
 
 //! Implementation of `ProcessMessage` for an `ExecuteXcm` implementation.
 
-use codec::{Decode, FullCodec, MaxEncodedLen};
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
-use frame_support::{
-	ensure,
-	traits::{ProcessMessage, ProcessMessageError},
-};
-use scale_info::TypeInfo;
-use sp_io::hashing::blake2_256;
-use sp_std::{fmt::Debug, marker::PhantomData};
-use sp_weights::{Weight, WeightMeter};
-use xcm::prelude::*;
+use sp_std::{marker::PhantomData};
 
-pub mod queue_paused_query {
+// We use the default xcm processor, there is no need to adapt it.
+pub use xcm_builder::ProcessXcmMessage;
+
+/// Adapter types to help with specifying a `QueuePausedQuery` of the MessageQueue pallet.
+pub mod message_queue {
 	use super::*;
 	use frame_support::traits::QueuePausedQuery;
 
@@ -54,48 +49,5 @@ pub struct ParaIdToSibling;
 impl sp_runtime::traits::Convert<ParaId, AggregateMessageOrigin> for ParaIdToSibling {
 	fn convert(para_id: ParaId) -> AggregateMessageOrigin {
 		AggregateMessageOrigin::Sibling(para_id)
-	}
-}
-
-/// A message processor that delegates execution to an [`ExecuteXcm`].
-///
-/// FAIL-CI Delete this once <https://github.com/paritytech/polkadot/pull/6271/> merges.
-pub struct ProcessXcmMessage<MessageOrigin, XcmExecutor, Call>(
-	PhantomData<(MessageOrigin, XcmExecutor, Call)>,
-);
-impl<
-		MessageOrigin: Into<MultiLocation> + FullCodec + MaxEncodedLen + Clone + Eq + PartialEq + TypeInfo + Debug,
-		XcmExecutor: ExecuteXcm<Call>,
-		Call,
-	> ProcessMessage for ProcessXcmMessage<MessageOrigin, XcmExecutor, Call>
-{
-	type Origin = MessageOrigin;
-
-	/// Process the given message, using no more than the remaining `weight` to do so.
-	fn process_message(
-		message: &[u8],
-		origin: Self::Origin,
-		meter: &mut WeightMeter,
-		id: &mut [u8; 32],
-	) -> Result<bool, ProcessMessageError> {
-		// XCM specifically needs Blake2-256
-		*id = blake2_256(message);
-		let versioned_message = VersionedXcm::<Call>::decode(&mut &message[..])
-			.map_err(|_| ProcessMessageError::Corrupt)?;
-		let message = Xcm::<Call>::try_from(versioned_message)
-			.map_err(|_| ProcessMessageError::Unsupported)?;
-		let pre = XcmExecutor::prepare(message).map_err(|_| ProcessMessageError::Unsupported)?;
-		let required = pre.weight_of();
-		ensure!(meter.can_consume(required), ProcessMessageError::Overweight(required));
-
-		let (consumed, result) = match XcmExecutor::execute(origin.into(), pre, id, Weight::zero())
-		{
-			Outcome::Complete(w) => (w, Ok(true)),
-			Outcome::Incomplete(w, _) => (w, Ok(false)),
-			// In the error-case we assume the worst case and consume all possible weight.
-			Outcome::Error(_) => (required, Err(ProcessMessageError::Unsupported)),
-		};
-		meter.consume(consumed);
-		result
 	}
 }
