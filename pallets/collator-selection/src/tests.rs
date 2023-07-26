@@ -19,6 +19,7 @@ use frame_support::{
 	assert_noop, assert_ok,
 	traits::{Currency, OnInitialize},
 };
+use pallet_bags_list::{Error as BagsListError, ListError};
 use pallet_balances::Error as BalancesError;
 use sp_runtime::{testing::UintAuthorityId, traits::BadOrigin, BuildStorage};
 
@@ -283,6 +284,7 @@ fn set_candidacy_bond() {
 	});
 }
 
+// TODO[GMP] fix this with MaxCandidates
 #[test]
 fn cannot_register_candidate_if_too_many() {
 	new_test_ext().execute_with(|| {
@@ -418,6 +420,232 @@ fn register_as_candidate_works() {
 		assert_eq!(Balances::free_balance(4), 90);
 
 		assert_eq!(CollatorSelection::candidates().len(), 2);
+	});
+}
+
+#[test]
+fn increase_candidacy_bond_non_candidate_account() {
+	new_test_ext().execute_with(|| {
+		// given
+		assert_eq!(CollatorSelection::desired_candidates(), 2);
+		assert_eq!(CollatorSelection::candidacy_bond(), 10);
+		assert_eq!(CollatorSelection::candidates(), Vec::new());
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)));
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(4)));
+
+		assert_noop!(
+			CollatorSelection::increase_bond(RuntimeOrigin::signed(5), 10),
+			Error::<Test>::NotCandidate
+		);
+	});
+}
+
+#[test]
+fn increase_candidacy_bond_insufficient_balance() {
+	new_test_ext().execute_with(|| {
+		// given
+		assert_eq!(CollatorSelection::desired_candidates(), 2);
+		assert_eq!(CollatorSelection::candidacy_bond(), 10);
+		assert_eq!(CollatorSelection::candidates(), Vec::new());
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+
+		// take two endowed, non-invulnerables accounts.
+		assert_eq!(Balances::free_balance(3), 100);
+		assert_eq!(Balances::free_balance(4), 100);
+		assert_eq!(Balances::free_balance(5), 100);
+
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)));
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(4)));
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(5)));
+
+		assert_eq!(Balances::free_balance(3), 90);
+		assert_eq!(Balances::free_balance(4), 90);
+		assert_eq!(Balances::free_balance(5), 90);
+
+		assert_noop!(
+			CollatorSelection::increase_bond(RuntimeOrigin::signed(3), 100),
+			BalancesError::<Test>::InsufficientBalance
+		);
+	});
+}
+
+#[test]
+fn increase_candidacy_bond_works() {
+	new_test_ext().execute_with(|| {
+		// given
+		assert_eq!(CollatorSelection::desired_candidates(), 2);
+		assert_eq!(CollatorSelection::candidacy_bond(), 10);
+		assert_eq!(CollatorSelection::candidates(), Vec::new());
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+
+		// take three endowed, non-invulnerables accounts.
+		assert_eq!(Balances::free_balance(3), 100);
+		assert_eq!(Balances::free_balance(4), 100);
+		assert_eq!(Balances::free_balance(5), 100);
+
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)));
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(4)));
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(5)));
+
+		assert_eq!(Balances::free_balance(3), 90);
+		assert_eq!(Balances::free_balance(4), 90);
+		assert_eq!(Balances::free_balance(5), 90);
+
+		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(3), 10));
+		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(4), 20));
+		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(5), 30));
+
+		assert_eq!(CollatorSelection::candidates().len(), 3);
+		assert_eq!(Balances::free_balance(3), 80);
+		assert_eq!(Balances::free_balance(4), 70);
+		assert_eq!(Balances::free_balance(5), 60);
+
+		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(3), 20));
+		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(4), 30));
+
+		assert_eq!(CollatorSelection::candidates().len(), 3);
+		assert_eq!(Balances::free_balance(3), 60);
+		assert_eq!(Balances::free_balance(4), 40);
+		assert_eq!(Balances::free_balance(5), 60);
+	});
+}
+
+#[test]
+fn decrease_candidacy_bond_non_candidate_account() {
+	new_test_ext().execute_with(|| {
+		// given
+		assert_eq!(CollatorSelection::desired_candidates(), 2);
+		assert_eq!(CollatorSelection::candidacy_bond(), 10);
+		assert_eq!(CollatorSelection::candidates(), Vec::new());
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)));
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(4)));
+
+		assert_noop!(
+			CollatorSelection::decrease_bond(RuntimeOrigin::signed(5), 10),
+			Error::<Test>::NotCandidate
+		);
+	});
+}
+
+#[test]
+fn decrease_candidacy_bond_insufficient_funds() {
+	new_test_ext().execute_with(|| {
+		// given
+		assert_eq!(CollatorSelection::desired_candidates(), 2);
+		assert_eq!(CollatorSelection::candidacy_bond(), 10);
+		assert_eq!(CollatorSelection::candidates(), Vec::new());
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+
+		// take two endowed, non-invulnerables accounts.
+		assert_eq!(Balances::free_balance(3), 100);
+		assert_eq!(Balances::free_balance(4), 100);
+		assert_eq!(Balances::free_balance(5), 100);
+
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)));
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(4)));
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(5)));
+
+		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(3), 50));
+		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(4), 50));
+		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(5), 50));
+
+		assert_eq!(Balances::free_balance(3), 40);
+		assert_eq!(Balances::free_balance(4), 40);
+		assert_eq!(Balances::free_balance(5), 40);
+
+		assert_noop!(
+			CollatorSelection::decrease_bond(RuntimeOrigin::signed(3), 100),
+			Error::<Test>::OnRemoveInsufficientFunds
+		);
+
+		assert_noop!(
+			CollatorSelection::decrease_bond(RuntimeOrigin::signed(4), 60),
+			Error::<Test>::OnRemoveInsufficientFunds
+		);
+
+		assert_noop!(
+			CollatorSelection::decrease_bond(RuntimeOrigin::signed(5), 51),
+			Error::<Test>::OnRemoveInsufficientFunds
+		);
+	});
+}
+
+#[test]
+fn decrease_candidacy_bond_works() {
+	new_test_ext().execute_with(|| {
+		// given
+		assert_eq!(CollatorSelection::desired_candidates(), 2);
+		assert_eq!(CollatorSelection::candidacy_bond(), 10);
+		assert_eq!(CollatorSelection::candidates(), Vec::new());
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+
+		// take three endowed, non-invulnerables accounts.
+		assert_eq!(Balances::free_balance(3), 100);
+		assert_eq!(Balances::free_balance(4), 100);
+		assert_eq!(Balances::free_balance(5), 100);
+
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)));
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(4)));
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(5)));
+
+		assert_eq!(Balances::free_balance(3), 90);
+		assert_eq!(Balances::free_balance(4), 90);
+		assert_eq!(Balances::free_balance(5), 90);
+
+		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(3), 10));
+		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(4), 20));
+		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(5), 30));
+
+		assert_eq!(CollatorSelection::candidates().len(), 3);
+		assert_eq!(Balances::free_balance(3), 80);
+		assert_eq!(Balances::free_balance(4), 70);
+		assert_eq!(Balances::free_balance(5), 60);
+
+		assert_ok!(CollatorSelection::decrease_bond(RuntimeOrigin::signed(3), 10));
+		assert_ok!(CollatorSelection::decrease_bond(RuntimeOrigin::signed(4), 10));
+
+		assert_eq!(CollatorSelection::candidates().len(), 3);
+		assert_eq!(Balances::free_balance(3), 90);
+		assert_eq!(Balances::free_balance(4), 80);
+		assert_eq!(Balances::free_balance(5), 60);
+	});
+}
+
+#[test]
+fn candidate_list_works() {
+	new_test_ext().execute_with(|| {
+		// given
+		assert_eq!(CollatorSelection::desired_candidates(), 2);
+		assert_eq!(CollatorSelection::candidacy_bond(), 10);
+		assert_eq!(CollatorSelection::candidates(), Vec::new());
+		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+
+		// take three endowed, non-invulnerables accounts.
+		assert_eq!(Balances::free_balance(3), 100);
+		assert_eq!(Balances::free_balance(4), 100);
+		assert_eq!(Balances::free_balance(5), 100);
+
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)));
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(4)));
+		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(5)));
+
+		assert_noop!(
+			CandidateList::put_in_front_of(RuntimeOrigin::signed(5), 3),
+			BagsListError::<Test, pallet_bags_list::Instance1>::List(ListError::NotHeavier)
+		);
+		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(5), 10));
+		assert_ok!(CandidateList::put_in_front_of(RuntimeOrigin::signed(5), 4));
+		assert_ok!(CandidateList::put_in_front_of(RuntimeOrigin::signed(5), 3));
+
+		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(3), 20));
+		assert_ok!(CandidateList::put_in_front_of(RuntimeOrigin::signed(3), 5));
+
+		assert_ok!(CollatorSelection::decrease_bond(RuntimeOrigin::signed(3), 20));
+		assert_ok!(CandidateList::put_in_front_of(RuntimeOrigin::signed(5), 3));
 	});
 }
 

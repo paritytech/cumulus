@@ -445,7 +445,7 @@ pub mod pallet {
 
 			// ensure we are below limit.
 			let length = <Candidates<T>>::decode_len().unwrap_or_default();
-			ensure!((length as u32) < Self::desired_candidates(), Error::<T>::TooManyCandidates);
+			ensure!((length as u32) < T::MaxCandidates::get(), Error::<T>::TooManyCandidates);
 			ensure!(!Self::invulnerables().contains(&who), Error::<T>::AlreadyInvulnerable);
 
 			let validator_key = T::ValidatorIdOf::convert(who.clone())

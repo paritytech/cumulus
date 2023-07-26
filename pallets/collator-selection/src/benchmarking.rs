@@ -240,10 +240,13 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn increase_bond(c: Linear<1, { T::MaxCandidates::get() }>) -> Result<(), BenchmarkError> {
+	fn increase_bond(
+		c: Linear<{ min_candidates::<T>() + 1 }, { T::MaxCandidates::get() }>,
+	) -> Result<(), BenchmarkError> {
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c);
 
+		register_validators::<T>(c);
 		register_candidates::<T>(c);
 
 		let caller = <Candidates<T>>::get().last().unwrap().who.clone();
@@ -269,10 +272,13 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn decrease_bond(c: Linear<1, { T::MaxCandidates::get() }>) -> Result<(), BenchmarkError> {
+	fn decrease_bond(
+		c: Linear<{ min_candidates::<T>() + 1 }, { T::MaxCandidates::get() }>,
+	) -> Result<(), BenchmarkError> {
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c);
 
+		register_validators::<T>(c);
 		register_candidates::<T>(c);
 
 		let caller = <Candidates<T>>::get().last().unwrap().who.clone();

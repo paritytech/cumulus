@@ -196,7 +196,7 @@ ord_parameter_types! {
 
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
-	pub const BagThresholds: &'static [u64] = &[0];
+	pub const BagThresholds: &'static [u64] = &[];
 }
 
 pub struct IsRegistered;
