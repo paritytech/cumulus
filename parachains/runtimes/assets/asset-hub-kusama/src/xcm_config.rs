@@ -628,6 +628,7 @@ pub mod bridging {
 	
 	impl bp_xcm_bridge_hub_router::LocalXcmQueue for LocalXcmQueueAdapter {
 		fn is_overloaded() -> bool {
+			// TODO: need to account number of enqueued messages too!!!
 			let sibling_bridge_hub_id: cumulus_primitives_core::ParaId = BridgeHubKusamaParaId::get().into();
 			let outbound_channels = cumulus_pallet_xcmp_queue::OutboundXcmpStatus::<Runtime>::get();
 			outbound_channels.iter()

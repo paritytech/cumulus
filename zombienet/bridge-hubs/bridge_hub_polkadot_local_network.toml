@@ -94,14 +94,17 @@ cumulus_based = true
 		"-- --port 31433 --rpc-port 38833 --ws-port 38843 --no-mdns", "--bootnodes {{'alice-validator-dot'|zombie('multiAddress')}}"
 	]
 
+# changed max_message_size from 524288 to 8192 because runtime config otherwise has maxTotalSize = 8192 and maxMessageSize = 524288
+# (can't change it easily using zombienet)
+
 [[hrmp_channels]]
 sender = 1000
 recipient = 1002
 max_capacity = 4
-max_message_size = 524288
+max_message_size = 8192
 
 [[hrmp_channels]]
 sender = 1002
 recipient = 1000
 max_capacity = 4
-max_message_size = 524288
+max_message_size = 8192

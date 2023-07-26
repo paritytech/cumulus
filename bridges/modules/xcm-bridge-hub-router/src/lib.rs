@@ -79,6 +79,7 @@ pub mod pallet {
 
 			DeliveryFeeFactor::<T, I>::mutate(|f| {
 				*f = InitialFactor::get().max(*f / EXPONENTIAL_FEE_BASE);
+				log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: reducing fee factor: {}", f);
 				*f
 			});
 
@@ -103,6 +104,7 @@ pub mod pallet {
 		pub(crate) fn on_message_sent_to_bridge(message_size: u32) {
 			// if outbound queue is not overloaded, do nothing
 			if !T::ToBridgeHubSender::is_overloaded() {
+				log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: message sent, not overloaded");
 				return
 			}
 
@@ -112,6 +114,7 @@ pub mod pallet {
 			let total_factor = EXPONENTIAL_FEE_BASE.saturating_add(message_size_factor);
 			DeliveryFeeFactor::<T, I>::mutate(|f| {
 				*f = f.saturating_mul(total_factor);
+				log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: message sent, overloaded: {}", f);
 				*f
 			});
 		}
@@ -175,7 +178,10 @@ impl<T: Config<I>, I: 'static> SendXcm for Pallet<T, I> {
 		// the `Config::ToBridgeHubSender`) and (2) to-bridged bridge hub delivery (returned by
 		// `Self::exporter_for`)
 		ViaBridgeHubExporter::<T, I>::validate(dest, xcm)
-			.map(|(ticket, cost)| ((message_size, ticket), cost))
+			.map(|(ticket, cost)| {
+log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: message sent, fee: {:?}", cost);
+				((message_size, ticket), cost)
+			})
 	}
 
 	fn deliver(ticket: Self::Ticket) -> Result<XcmHash, SendError> {

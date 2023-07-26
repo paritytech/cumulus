@@ -699,6 +699,9 @@ pub mod bridging {
 
 	impl bp_xcm_bridge_hub_router::LocalXcmQueue for LocalXcmQueueAdapter {
 		fn is_overloaded() -> bool {
+			// if the outbound channel with recipient is suspended, it means that one of further
+			// bridge queues (e.g. bridge queue between two bridge hubs) is overloaded, so we shall
+			// take larger fee for our outbound messages
 			let sibling_bridge_hub_id: cumulus_primitives_core::ParaId = BridgeHubParaId::get().into();
 			let outbound_channels = cumulus_pallet_xcmp_queue::OutboundXcmpStatus::<Runtime>::get();
 			outbound_channels.iter()
@@ -706,6 +709,51 @@ pub mod bridging {
 				.map(|c| c.is_suspended())
 				.next()
 				.unwrap_or(false)
+
+			// but this backpressure mechanism is not instant - it takes a time to switch on backpressure
+			// at other chains and propagate it to this (sending) chain. So anyone could flood bridge queues
+			// before we'll get that report
+
+
+
+			/*
+Проблема 1:
+1) почему-то не пришёл сигнал
+*/
+
+
+			// 2023-07-26 16:21:00.278  INFO tokio-runtime-worker runtime::bridge-xcm-queues: [Parachain] Source.AH -> Source.BH: take_outbound_messages: statuses: [<wasm:stripped>], max_message_count: 1    
+			// 2023-07-26 16:21:00.278  INFO tokio-runtime-worker runtime::bridge-xcm-queues: [Parachain] Source.AH -> Source.BH: take_outbound_messages: para_id: <wasm:stripped>, !suspended    
+			// 2023-07-26 16:21:00.278  INFO tokio-runtime-worker runtime::bridge-xcm-queues: [Parachain] Source.AH -> Source.BH: take_outbound_messages: para_id: <wasm:stripped>, channel ready    
+			// 2023-07-26 16:21:00.278  INFO tokio-runtime-worker runtime::bridge-xcm-queues: [Parachain] Source.AH -> Source.BH: take_outbound_messages: para_id: <wasm:stripped>, page.len() 8038 >= max_size_now 154
+
+/*
+Если lastIndex - firstIndex > 1 (например),
+
+xcmpQueue.outboundXcmpStatus: Vec<CumulusPalletXcmpQueueOutboundChannelDetails>
+[
+  {
+    recipient: 1,002
+    state: Ok
+    signalsExist: false
+    firstIndex: 49
+    lastIndex: 96
+  }
+]
+*/
+
+			// if there's more that one page in the outbound queue, it is overloaded
+
+			// if the  page can be sent to the recipient
+//			T::ChannelInfo::get_channel_status(para_id)
+
+
+
+
+/*
+В первую очередь растёт:
+xcmpQueue.outboundXcmpStatus: Vec<CumulusPalletXcmpQueueOutboundChannelDetails>
+*/
 		}
 	}
 }

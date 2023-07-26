@@ -8770,6 +8770,7 @@ dependencies = [
  "bp-xcm-bridge-hub-router",
  "frame-support",
  "frame-system",
+ "log",
  "parity-scale-codec",
  "scale-info",
  "sp-runtime",

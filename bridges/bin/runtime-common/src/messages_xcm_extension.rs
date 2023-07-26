@@ -79,7 +79,13 @@ impl<BlobDispatcher: DispatchBlob, Weights: MessagesPalletWeights, IsChannelActi
 		//     }
 		// }
 		// ```
-		IsChannelActive::get()
+		let is_active = IsChannelActive::get();
+		if !is_active {
+			log::info!(target: "runtime::bridge-xcm-queues", "Target.BH -> TargetAH: overloaded. Failing delivery");
+		} else {
+			log::info!(target: "runtime::bridge-xcm-queues", "Target.BH -> TargetAH: not overloaded. Accepting delivery");
+		}
+		is_active
 	}
 
 	fn dispatch_weight(message: &mut DispatchMessage<Self::DispatchPayload>) -> Weight {
@@ -233,6 +239,7 @@ impl LocalXcmQueueManager {
 		// XCM queue
 		let is_overloaded = enqueued_messages > MAX_ENQUEUED_MESSAGES_AT_OUTBOUND_LANE;
 		if !is_overloaded {
+			log::info!(target: "runtime::bridge-xcm-queues", "Source.BH -> Target.BH: message sent, not overloaded ({})", enqueued_messages);
 			return
 		}
 
@@ -244,6 +251,8 @@ impl LocalXcmQueueManager {
 			lane,
 			enqueued_messages,
 		);
+
+		log::info!(target: "runtime::bridge-xcm-queues", "Source.BH -> Target.BH: message sent, overloaded ({}). Suspending Source.AH -> Source.BH queue", enqueued_messages);
 
 		Self::suspend_inbound_queue(sending_chain_location);
 	}
@@ -265,6 +274,8 @@ impl LocalXcmQueueManager {
 		if !Self::is_inbound_queue_suspended(sending_chain_location.clone()) {
 			return
 		}
+
+		log::info!(target: "runtime::bridge-xcm-queues", "Source.BH -> Target.BH: not overloaded ({}). Resuming Source.AH -> Source.BH queue", enqueued_messages);
 
 		log::info!(
 			target: crate::LOG_TARGET_BRIDGE_DISPATCH,

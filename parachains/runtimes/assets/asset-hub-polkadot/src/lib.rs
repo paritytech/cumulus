@@ -573,7 +573,7 @@ impl pallet_message_queue::Config for Runtime {
 		RuntimeCall,
 	>;
 	type Size = u32;
-	type QueueChangeHandler = ();
+	type QueueChangeHandler = XcmpQueue;
 	type QueuePausedQuery = queue_paused_query::NarrowToSiblings<XcmpQueue>;
 	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
 	type MaxStale = sp_core::ConstU32<8>;

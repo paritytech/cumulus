@@ -292,7 +292,7 @@ pub enum OutboundState {
 }
 
 /// Struct containing detailed information about the outbound channel.
-#[derive(Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, TypeInfo, RuntimeDebug)]
 pub struct OutboundChannelDetails {
 	/// The `ParaId` of the parachain that this channel is connected with.
 	recipient: ParaId,
@@ -458,6 +458,7 @@ impl<T: Config> Pallet<T> {
 				true
 			});
 		if appended {
+log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: appended: {:?}", details);
 			Ok((details.last_index - details.first_index - 1) as u32)
 		} else {
 			// Need to add a new page.
@@ -467,6 +468,7 @@ impl<T: Config> Pallet<T> {
 			new_page.extend_from_slice(&data[..]);
 			<OutboundXcmpMessages<T>>::insert(recipient, page_index, new_page);
 			let r = (details.last_index - details.first_index - 1) as u32;
+log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: !appended: {:?}", details);
 			<OutboundXcmpStatus<T>>::put(s);
 			Ok(r)
 		}
@@ -580,9 +582,14 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-impl<T: Config> OnQueueChanged<ParaId> for Pallet<T> {
+impl<T: Config> OnQueueChanged<cumulus_primitives_core::AggregateMessageOrigin> for Pallet<T> {
 	// Suspends/Resumes the queue when certain thresholds are reached.
-	fn on_queue_changed(para: ParaId, count: u64, _size: u64) {
+	fn on_queue_changed(origin: cumulus_primitives_core::AggregateMessageOrigin, count: u64, _size: u64) {
+		let para = match origin {
+			cumulus_primitives_core::AggregateMessageOrigin::Sibling(para) => para,
+			_ => return,
+		};
+
 		let QueueConfigData { resume_threshold, suspend_threshold, .. } = <QueueConfig<T>>::get();
 
 		let mut suspended_channels = <InboundXcmpSuspended<T>>::get();
@@ -690,7 +697,7 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 		let old_statuses_len = statuses.len();
 		let max_message_count = statuses.len().min(maximum_channels);
 		let mut result = Vec::with_capacity(max_message_count);
-
+log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: take_outbound_messages: statuses: {:?}, max_message_count: {}", statuses, max_message_count);
 		for status in statuses.iter_mut() {
 			let OutboundChannelDetails {
 				recipient: para_id,
@@ -706,12 +713,17 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 				break
 			}
 			if outbound_state == OutboundState::Suspended {
+log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: take_outbound_messages: para_id: {:?}, suspended", para_id);
 				continue
 			}
+else {
+	log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: take_outbound_messages: para_id: {:?}, !suspended", para_id);
+}
 			let (max_size_now, max_size_ever) = match T::ChannelInfo::get_channel_status(para_id) {
 				ChannelStatus::Closed => {
 					// This means that there is no such channel anymore. Nothing to be done but
 					// swallow the messages and discard the status.
+log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: take_outbound_messages: para_id: {:?}, channel closed", para_id);
 					for i in first_index..last_index {
 						<OutboundXcmpMessages<T>>::remove(para_id, i);
 					}
@@ -721,8 +733,14 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 					*status = OutboundChannelDetails::new(para_id);
 					continue
 				},
-				ChannelStatus::Full => continue,
-				ChannelStatus::Ready(n, e) => (n, e),
+				ChannelStatus::Full => {
+log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: take_outbound_messages: para_id: {:?}, channel full", para_id);
+					continue
+				},
+				ChannelStatus::Ready(n, e) => {
+log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: take_outbound_messages: para_id: {:?}, channel ready", para_id);
+					(n, e)
+				},
 			};
 
 			let page = if signals_exist {
@@ -732,6 +750,7 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 					signals_exist = false;
 					page
 				} else {
+log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: take_outbound_messages: para_id: {:?}, page.len() {} >= max_size_now {}", para_id, page.len(), max_size_now);
 					continue
 				}
 			} else if last_index > first_index {
@@ -741,11 +760,14 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 					first_index += 1;
 					page
 				} else {
+log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: take_outbound_messages: para_id: {:?}, page.len() {} >= max_size_now {}", para_id, page.len(), max_size_now);
 					continue
 				}
 			} else {
+log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: take_outbound_messages: para_id: {:?}, empty", para_id);
 				continue
 			};
+log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: take_outbound_messages: para_id: {:?}, selected page", para_id);
 			if first_index == last_index {
 				first_index = 0;
 				last_index = 0;
@@ -755,8 +777,10 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 				// TODO: #274 This means that the channel's max message size has changed since
 				//   the message was sent. We should parse it and split into smaller messages but
 				//   since it's so unlikely then for now we just drop it.
+log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: take_outbound_messages: para_id: {:?}, too large page: {} > {}", para_id, page.len(), max_size_ever);
 				log::warn!("WARNING: oversize message in queue. silently dropping.");
 			} else {
+log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: take_outbound_messages: para_id: {:?}, pushed page", para_id);
 				result.push((para_id, page));
 			}
 
