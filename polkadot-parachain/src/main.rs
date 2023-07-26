@@ -26,6 +26,9 @@ mod cli;
 mod command;
 mod rpc;
 
+#[cfg(test)]
+mod legacy_chain_spec;
+
 fn main() -> sc_cli::Result<()> {
 	command::run()
 }
