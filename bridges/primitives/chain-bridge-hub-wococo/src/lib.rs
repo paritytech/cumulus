@@ -32,12 +32,14 @@ use sp_std::prelude::*;
 pub struct BridgeHubWococo;
 
 impl Chain for BridgeHubWococo {
+	type BlockNumber = BlockNumber;
 	type Hash = Hash;
 	type Hasher = Hasher;
-	type Block = Block;
+	type Header = Header;
+
 	type AccountId = AccountId;
 	type Balance = Balance;
-	type Index = Index;
+	type Nonce = Nonce;
 	type Signature = Signature;
 
 	fn max_extrinsic_size() -> u32 {

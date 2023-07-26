@@ -70,7 +70,7 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 use parachains_common::{
-	impls::DealWithFees, AccountId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	impls::DealWithFees, AccountId, Balance, BlockNumber, Hash, Header, Nonce, Signature,
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 // XCM Imports
@@ -180,7 +180,7 @@ impl frame_system::Config for Runtime {
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
 	type Lookup = AccountIdLookup<AccountId, ()>;
 	/// The index type for storing how many extrinsics an account has signed.
-	type Index = Index;
+	type Nonce = Nonce;
 	/// The type for hashing blocks and tries.
 	type Hash = Hash;
 	/// The hashing algorithm used.
@@ -548,8 +548,8 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
-		fn account_nonce(account: AccountId) -> Index {
+	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce> for Runtime {
+		fn account_nonce(account: AccountId) -> Nonce {
 			System::account_nonce(account)
 		}
 	}
@@ -694,6 +694,7 @@ impl_runtime_apis! {
 					MultiAsset { fun: Fungible(UNITS), id: Concrete(DotRelayLocation::get()) },
 				));
 				pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
+				pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = None;
 			}
 
 			impl pallet_xcm_benchmarks::fungible::Config for Runtime {
@@ -701,6 +702,7 @@ impl_runtime_apis! {
 
 				type CheckedAccount = CheckedAccount;
 				type TrustedTeleporter = TrustedTeleporter;
+				type TrustedReserve = TrustedReserve;
 
 				fn get_multi_asset() -> MultiAsset {
 					MultiAsset {

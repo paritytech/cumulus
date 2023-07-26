@@ -32,8 +32,8 @@ use sp_runtime::{
 };
 
 pub type AccountId = u64;
-pub type TestHeader = crate::BridgedHeader<TestRuntime, ()>;
-pub type TestNumber = crate::BridgedBlockNumber<TestRuntime, ()>;
+pub type TestHeader = sp_runtime::testing::Header;
+pub type TestNumber = u64;
 
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
@@ -57,7 +57,7 @@ parameter_types! {
 
 impl frame_system::Config for TestRuntime {
 	type RuntimeOrigin = RuntimeOrigin;
-	type Index = u64;
+	type Nonce = u64;
 	type RuntimeCall = RuntimeCall;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
@@ -100,13 +100,14 @@ impl grandpa::Config for TestRuntime {
 pub struct TestBridgedChain;
 
 impl Chain for TestBridgedChain {
-	type Block = Block;
+	type BlockNumber = TestNumber;
 	type Hash = <TestRuntime as frame_system::Config>::Hash;
 	type Hasher = <TestRuntime as frame_system::Config>::Hashing;
+	type Header = TestHeader;
 
 	type AccountId = AccountId;
 	type Balance = u64;
-	type Index = u64;
+	type Nonce = u64;
 	type Signature = Signature;
 
 	fn max_extrinsic_size() -> u32 {

@@ -103,7 +103,7 @@ pub use parachains_common as common;
 use parachains_common::{
 	impls::{AssetsToBlockAuthor, DealWithFees},
 	AccountId, AssetHubPolkadotAuraId as AuraId, AssetIdForTrustBackedAssets, Balance, BlockNumber,
-	Hash, Header, Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
+	Hash, Header, Nonce, Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{
@@ -183,7 +183,7 @@ impl frame_system::Config for Runtime {
 	type AccountId = AccountId;
 	type RuntimeCall = RuntimeCall;
 	type Lookup = AccountIdLookup<AccountId, ()>;
-	type Index = Index;
+	type Nonce = Nonce;
 	type Hash = Hash;
 	type Hashing = BlakeTwo256;
 	type Block = Block;
@@ -923,8 +923,8 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
-		fn account_nonce(account: AccountId) -> Index {
+	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce> for Runtime {
+		fn account_nonce(account: AccountId) -> Nonce {
 			System::account_nonce(account)
 		}
 	}
@@ -1127,6 +1127,7 @@ impl_runtime_apis! {
 					MultiAsset { fun: Fungible(UNITS), id: Concrete(DotLocation::get()) },
 				));
 				pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
+				pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = None;
 			}
 
 			impl pallet_xcm_benchmarks::fungible::Config for Runtime {
@@ -1134,6 +1135,7 @@ impl_runtime_apis! {
 
 				type CheckedAccount = CheckedAccount;
 				type TrustedTeleporter = TrustedTeleporter;
+				type TrustedReserve = TrustedReserve;
 
 				fn get_multi_asset() -> MultiAsset {
 					MultiAsset {
