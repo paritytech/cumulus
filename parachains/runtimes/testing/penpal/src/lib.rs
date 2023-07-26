@@ -52,9 +52,7 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot, EnsureSigned,
 };
-use parachains_common::process_xcm_message::{
-	message_queue, ParaIdToSibling, ProcessXcmMessage,
-};
+use parachains_common::process_xcm_message::{message_queue, ParaIdToSibling, ProcessXcmMessage};
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;

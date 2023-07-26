@@ -17,7 +17,7 @@
 //! Implementation of `ProcessMessage` for an `ExecuteXcm` implementation.
 
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
-use sp_std::{marker::PhantomData};
+use sp_std::marker::PhantomData;
 
 // We use the default xcm processor, there is no need to adapt it.
 pub use xcm_builder::ProcessXcmMessage;

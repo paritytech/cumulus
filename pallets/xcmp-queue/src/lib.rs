@@ -62,8 +62,7 @@ pub use pallet::*;
 
 /// Index used to identify overweight XCMs.
 pub type OverweightIndex = u64;
-pub type XcmpMaxLenOf<T> =
-	<<T as Config>::XcmpQueue as EnqueueMessage<ParaId>>::MaxMessageLen;
+pub type XcmpMaxLenOf<T> = <<T as Config>::XcmpQueue as EnqueueMessage<ParaId>>::MaxMessageLen;
 
 const LOG_TARGET: &str = "xcmp_queue";
 const DEFAULT_POV_SIZE: u64 = 64 * 1024; // 64 KB

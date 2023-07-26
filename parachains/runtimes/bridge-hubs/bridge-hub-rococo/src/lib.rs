@@ -57,9 +57,7 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
-use parachains_common::process_xcm_message::{
-	message_queue, ParaIdToSibling, ProcessXcmMessage,
-};
+use parachains_common::process_xcm_message::{message_queue, ParaIdToSibling, ProcessXcmMessage};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 use xcm_config::XcmOriginToTransactDispatchOrigin;
