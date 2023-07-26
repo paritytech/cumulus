@@ -134,7 +134,7 @@ where
 			Proof = <EnableProofRecording as ProofRecording>::Proof,
 		>,
 		Error: std::error::Error + Send + From<sp_consensus::Error> + 'static,
-		P: Pair + Send + Sync,
+		P: Pair + 'static,
 		P::Public: AppPublic + Hash + Member + Encode + Decode,
 		P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
 	{

@@ -72,7 +72,7 @@ struct Verifier<P, Client, Block, CIDP> {
 	slot_duration: SlotDuration,
 	defender: NaiveEquivocationDefender,
 	telemetry: Option<TelemetryHandle>,
-	_marker: std::marker::PhantomData<(Block, P)>,
+	_phantom: std::marker::PhantomData<fn() -> (Block, P)>,
 }
 
 #[async_trait::async_trait]
@@ -223,7 +223,7 @@ pub fn fully_verifying_import_queue<P, Client, Block: BlockT, I, CIDP>(
 	telemetry: Option<TelemetryHandle>,
 ) -> BasicQueue<Block, I::Transaction>
 where
-	P: Pair,
+	P: Pair + 'static,
 	P::Signature: Encode + Decode,
 	P::Public: Encode + Decode + PartialEq + Clone + Debug,
 	I: BlockImport<Block, Error = ConsensusError>
@@ -242,7 +242,7 @@ where
 		defender: NaiveEquivocationDefender::default(),
 		slot_duration,
 		telemetry,
-		_marker: std::marker::PhantomData,
+		_phantom: std::marker::PhantomData,
 	};
 
 	BasicQueue::new(verifier, Box::new(block_import), None, spawner, registry)
