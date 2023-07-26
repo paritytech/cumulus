@@ -516,7 +516,7 @@ construct_runtime!(
 		XcmpQueue: cumulus_pallet_xcmp_queue = 30,
 		PolkadotXcm: pallet_xcm = 31,
 		CumulusXcm: cumulus_pallet_xcm = 32,
-		MessageQueue: pallet_message_queue = 34,
+		MessageQueue: pallet_message_queue = 33,
 
 		// Template
 		TemplatePallet: pallet_parachain_template = 50,

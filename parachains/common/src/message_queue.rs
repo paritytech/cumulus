@@ -14,32 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Implementation of `ProcessMessage` for an `ExecuteXcm` implementation.
+//! Helpers to deal with configuring the message queue in the runtime.
 
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
+use frame_support::traits::QueuePausedQuery;
 use sp_std::marker::PhantomData;
 
-// We use the default xcm processor, there is no need to adapt it.
-pub use xcm_builder::ProcessXcmMessage;
-
-/// Adapter types to help with specifying a `QueuePausedQuery` of the MessageQueue pallet.
-pub mod message_queue {
-	use super::*;
-	use frame_support::traits::QueuePausedQuery;
-
-	/// Narrow the scope of the `Inner` query from `AggregateMessageOrigin` to `ParaId`.
-	///
-	/// All non-paraIds will be treated as unpaused.
-	pub struct NarrowToSiblings<Inner>(PhantomData<Inner>);
-
-	impl<Inner: QueuePausedQuery<ParaId>> QueuePausedQuery<AggregateMessageOrigin>
-		for NarrowToSiblings<Inner>
-	{
-		fn is_paused(origin: &AggregateMessageOrigin) -> bool {
-			match origin {
-				AggregateMessageOrigin::Sibling(id) => Inner::is_paused(id),
-				_ => false,
-			}
+/// Narrow the scope of the `Inner` query from `AggregateMessageOrigin` to `ParaId`.
+///
+/// All non-paraIds will be treated as unpaused.
+pub struct NarrowToSiblings<Inner>(PhantomData<Inner>);
+impl<Inner: QueuePausedQuery<ParaId>> QueuePausedQuery<AggregateMessageOrigin>
+	for NarrowToSiblings<Inner>
+{
+	fn is_paused(origin: &AggregateMessageOrigin) -> bool {
+		match origin {
+			AggregateMessageOrigin::Sibling(id) => Inner::is_paused(id),
+			_ => false,
 		}
 	}
 }
