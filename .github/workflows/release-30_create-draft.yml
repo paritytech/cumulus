@@ -308,4 +308,4 @@ jobs:
 
             NOTE: The link above will no longer be valid if the draft is edited. You can then use the following link:
             [${{ github.server_url }}/${{ github.repository }}/releases](${{ github.server_url }}/${{ github.repository }}/releases)
-          server: "matrix.parity.io"
+          server: "m.parity.io"
