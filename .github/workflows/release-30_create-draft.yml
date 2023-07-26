@@ -301,6 +301,7 @@ jobs:
         with:
           room_id: ${{ matrix.channel.room }}
           access_token: ${{ secrets.RELEASENOTES_MATRIX_V2_ACCESS_TOKEN }}
+          server: "m.parity.io"
           message: |
             **New draft for ${{ github.repository }}**: ${{ github.event.inputs.ref2 }}<br/>
 
@@ -308,4 +309,3 @@ jobs:
 
             NOTE: The link above will no longer be valid if the draft is edited. You can then use the following link:
             [${{ github.server_url }}/${{ github.repository }}/releases](${{ github.server_url }}/${{ github.repository }}/releases)
-          server: "m.parity.io"
