@@ -8912,6 +8912,7 @@ dependencies = [
  "cumulus-primitives-utility",
  "frame-support",
  "frame-system",
+ "log",
  "num-traits",
  "pallet-asset-tx-payment",
  "pallet-assets",

@@ -269,6 +269,7 @@ This initialization does several things:
 ```
 ./scripts/bridges_kusama_polkadot.sh init-asset-hub-kusama-local
 ./scripts/bridges_kusama_polkadot.sh init-asset-hub-polkadot-local
+./scripts/bridges_kusama_polkadot.sh init-bridge-hub-kusama-local
 ```
 
 ### 4. Send messages - transfer asset over bridge (DOTs/KSMs)

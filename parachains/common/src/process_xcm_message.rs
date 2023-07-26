@@ -84,11 +84,28 @@ impl<
 			.map_err(|_| ProcessMessageError::Corrupt)?;
 		let message = Xcm::<Call>::try_from(versioned_message)
 			.map_err(|_| ProcessMessageError::Unsupported)?;
+let origin = origin.into();
+log::debug!(target: "bridge-xcm", "XcmExecutor::execute: {:?} {:?}", origin, message);
+/*
+2023-07-26 10:54:24.030 DEBUG tokio-runtime-worker bridge-xcm: [Parachain] XcmExecutor::execute:
+origin = MultiLocation { parents: 0, interior: X1(Parachain(1000)) }
+Xcm([
+	WithdrawAsset(MultiAssets([MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: Here }), fun: Fungible(1103000000) }])),
+	BuyExecution { fees: MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: Here }), fun: Fungible(1103000000) }, weight_limit: Unlimited },
+	ExportMessage { network: Polkadot, destination: X1(Parachain(1000)), xcm: Xcm([
+		ReserveAssetDeposited(MultiAssets([MultiAsset { id: Concrete(MultiLocation { parents: 2, interior: X1(GlobalConsensus(Kusama)) }), fun: Fungible(1000000000000) }])),
+		ClearOrigin,
+		BuyExecution { fees: MultiAsset { id: Concrete(MultiLocation { parents: 2, interior: X1(GlobalConsensus(Kusama)) }), fun: Fungible(1000000000000) }, weight_limit: Unlimited },
+		DepositAsset { assets: Wild(AllCounted(1)), beneficiary: MultiLocation { parents: 0, interior: X1(AccountId32 { network: None, id: [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125] }) } },
+		SetTopic([100, 180, 26, 216, 71, 30, 4, 149, 48, 116, 216, 88, 16, 53, 156, 79, 158, 197, 121, 147, 208, 1, 77, 253, 72, 253, 105, 124, 170, 65, 19, 144])]) },
+		RefundSurplus, DepositAsset { assets: Wild(All), beneficiary: MultiLocation { parents: 1, interior: X1(Parachain(1000)) } }, SetTopic([223, 61, 129, 65, 10, 112, 105, 126, 149, 92, 224, 145, 127, 75, 67, 180, 169, 217, 120, 187, 22, 148, 55, 241, 126, 197, 12, 84, 19, 199, 1, 138])])    
+
+*/
 		let pre = XcmExecutor::prepare(message).map_err(|_| ProcessMessageError::Unsupported)?;
 		let required = pre.weight_of();
 		ensure!(meter.can_accrue(required), ProcessMessageError::Overweight(required));
 
-		let (consumed, result) = match XcmExecutor::execute(origin.into(), pre, id, Weight::zero())
+		let (consumed, result) = match XcmExecutor::execute(origin, pre, id, Weight::zero())
 		{
 			Outcome::Complete(w) => (w, Ok(true)),
 			Outcome::Incomplete(w, _) => (w, Ok(false)),

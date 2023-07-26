@@ -56,6 +56,11 @@ GLOBAL_CONSENSUS_KUSAMA_ASSET_HUB_KUSAMA_1000_SOVEREIGN_ACCOUNT="12GvRkNCmXFuaaz
 GLOBAL_CONSENSUS_POLKADOT_SOVEREIGN_ACCOUNT="FxqimVubBRPqJ8kTwb3wL7G4q645hEkBEnXPyttLsTrFc5Q"
 GLOBAL_CONSENSUS_POLKADOT_ASSET_HUB_POLKADOT_1000_SOVEREIGN_ACCOUNT="FwGjEp7GXJXT9NjH8r4sqdyd8XZVogbxSs3iFakx4wFwJ5Y"
 
+# // Kusama.AssetHub account at Kusama.BridgeHub: 5Eg2fntNprdN3FgH4sfEaaZhYtddZQSQUqvYJ1f2mLtinVhV
+# let ahk_sa_at_bhk: AccountId = Sibling::from(1000).into_account_truncating();
+# println!("{}", ahk_sa_at_bhk);
+KUSAMA_ASSET_HUB_SOVEREIGN_ACCOUNT_AT_KUSAMA_BRIDGE_HUB="5Eg2fntNprdN3FgH4sfEaaZhYtddZQSQUqvYJ1f2mLtinVhV"
+
 function init_ksm_dot() {
     ensure_relayer
 
@@ -136,6 +141,14 @@ case "$1" in
           "$GLOBAL_CONSENSUS_POLKADOT_ASSET_HUB_POLKADOT_1000_SOVEREIGN_ACCOUNT" \
           $((1000000000 + 50000000000 * 20))
       ;;
+  init-bridge-hub-kusama-local)
+      # SA of sibling asset hub pays for the execution
+      transfer_balance \
+          "ws://127.0.0.1:8943" \
+          "//Alice" \
+          "$KUSAMA_ASSET_HUB_SOVEREIGN_ACCOUNT_AT_KUSAMA_BRIDGE_HUB" \
+          $((1000000000 + 50000000000 * 20))
+      ;;
   init-asset-hub-polkadot-local)
       # create foreign assets for native Polkadot token (governance call on Kusama)
             force_create_foreign_asset \
@@ -190,11 +203,13 @@ case "$1" in
     pkill -f parachain
     ;;
   *)
+    # TODO: init-bridge-hub-polkadot-local
     echo "A command is require. Supported commands for:
     Local (zombienet) run:
           - run-relay
           - init-asset-hub-kusama-local
           - init-asset-hub-polkadot-local
+          - init-bridge-hub-kusama-local
           - reserve-transfer-assets-from-asset-hub-kusama-local
           - reserve-transfer-assets-from-asset-hub-polkadot-local";
     exit 1

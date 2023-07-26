@@ -297,3 +297,43 @@ impl cumulus_pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn my_test() {
+		use sp_runtime::{traits::AccountIdConversion, BuildStorage};
+
+		sp_io::TestExternalities::new(
+			frame_system::GenesisConfig::<Runtime>::default().build_storage().unwrap(),
+		).execute_with(|| {
+			let mut id = sp_core::blake2_256(b"xxx");
+			let asset: MultiAsset = (MultiLocation { parents: 1, interior: Here }, 1103000000).into();
+			let assets: MultiAssets = vec![asset.clone()].into();
+			let origin = MultiLocation::new(1, X1(Parachain(1000)));
+
+
+			// Kusama.AssetHub account at Kusama.BridgeHub: 5Eg2fntNprdN3FgH4sfEaaZhYtddZQSQUqvYJ1f2mLtinVhV
+			let ahk_sa_at_bhk: AccountId = Sibling::from(1000).into_account_truncating();
+			println!("{}", ahk_sa_at_bhk);
+
+			let message: Xcm<RuntimeCall> = vec![
+				WithdrawAsset(assets.clone()),
+				BuyExecution { fees: asset, weight_limit: Unlimited },
+				ExportMessage { network: Polkadot, destination: X1(Parachain(1000)), xcm: vec![
+					ClearOrigin,
+				].into() }
+			].into();
+			let pre = XcmExecutor::<XcmConfig>::prepare(message).unwrap();
+			XcmExecutor::<XcmConfig>::execute(origin, pre, &mut id, Weight::zero()).ensure_complete().unwrap();
+		});
+
+/*
+2023-07-26 10:54:24.030 DEBUG tokio-runtime-worker bridge-xcm: [Parachain] XcmExecutor::execute: MultiLocation { parents: 0, interior: X1(Parachain(1000)) } Xcm([WithdrawAsset(MultiAssets([MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: Here }), fun: Fungible(1103000000) }])), BuyExecution { fees: MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: Here }), fun: Fungible(1103000000) }, weight_limit: Unlimited }, ExportMessage { network: Polkadot, destination: X1(Parachain(1000)), xcm: Xcm([ReserveAssetDeposited(MultiAssets([MultiAsset { id: Concrete(MultiLocation { parents: 2, interior: X1(GlobalConsensus(Kusama)) }), fun: Fungible(1000000000000) }])), ClearOrigin, BuyExecution { fees: MultiAsset { id: Concrete(MultiLocation { parents: 2, interior: X1(GlobalConsensus(Kusama)) }), fun: Fungible(1000000000000) }, weight_limit: Unlimited }, DepositAsset { assets: Wild(AllCounted(1)), beneficiary: MultiLocation { parents: 0, interior: X1(AccountId32 { network: None, id: [212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125] }) } }, SetTopic([100, 180, 26, 216, 71, 30, 4, 149, 48, 116, 216, 88, 16, 53, 156, 79, 158, 197, 121, 147, 208, 1, 77, 253, 72, 253, 105, 124, 170, 65, 19, 144])]) }, RefundSurplus, DepositAsset { assets: Wild(All), beneficiary: MultiLocation { parents: 1, interior: X1(Parachain(1000)) } }, SetTopic([223, 61, 129, 65, 10, 112, 105, 126, 149, 92, 224, 145, 127, 75, 67, 180, 169, 217, 120, 187, 22, 148, 55, 241, 126, 197, 12, 84, 19, 199, 1, 138])])    
+
+TODO: fund parachain accounts to bridge hubs
+*/
+	}
+}
