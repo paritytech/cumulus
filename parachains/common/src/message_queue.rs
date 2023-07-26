@@ -22,7 +22,7 @@ use sp_std::marker::PhantomData;
 
 /// Narrow the scope of the `Inner` query from `AggregateMessageOrigin` to `ParaId`.
 ///
-/// All non-paraIds will be treated as unpaused.
+/// All non-ParaIds will be treated as unpaused.
 pub struct NarrowToSiblings<Inner>(PhantomData<Inner>);
 impl<Inner: QueuePausedQuery<ParaId>> QueuePausedQuery<AggregateMessageOrigin>
 	for NarrowToSiblings<Inner>

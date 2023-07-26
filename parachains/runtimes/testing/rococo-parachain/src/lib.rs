@@ -68,7 +68,7 @@ use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use frame_support::traits::TransformOrigin;
 use parachains_common::{
 	impls::{AssetsFrom, NonZeroIssuance},
-	process_xcm_message::{message_queue, ParaIdToSibling, ProcessXcmMessage},
+	message_queue::{NarrowToSiblings, ParaIdToSibling},
 	AccountId, AssetIdForTrustBackedAssets, Signature,
 };
 use xcm_builder::{
@@ -292,14 +292,14 @@ impl pallet_message_queue::Config for Runtime {
 		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	type MessageProcessor = ProcessXcmMessage<
+	type MessageProcessor = xcm_builder::ProcessXcmMessage<
 		AggregateMessageOrigin,
 		xcm_executor::XcmExecutor<XcmConfig>,
 		RuntimeCall,
 	>;
 	type Size = u32;
 	type QueueChangeHandler = ();
-	type QueuePausedQuery = message_queue::NarrowToSiblings<XcmpQueue>;
+	type QueuePausedQuery = NarrowToSiblings<XcmpQueue>;
 	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
 	type MaxStale = sp_core::ConstU32<8>;
 	type ServiceWeight = MessageQueueServiceWeight;
