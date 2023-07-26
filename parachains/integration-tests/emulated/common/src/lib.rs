@@ -224,7 +224,7 @@ decl_test_parachains! {
 		pallets_extra = {
 			PolkadotXcm: asset_hub_kusama_runtime::PolkadotXcm,
 			Assets: asset_hub_kusama_runtime::Assets,
-			ForeignAssets: asset_hub_kusama_runtime::Assets,
+			ForeignAssets: asset_hub_kusama_runtime::ForeignAssets,
 			PoolAssets: asset_hub_kusama_runtime::PoolAssets,
 			AssetConversion: asset_hub_kusama_runtime::AssetConversion,
 		}
