@@ -114,7 +114,10 @@ fn test_asset_xcm_trader() {
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
 
 			// Lets buy_weight and make sure buy_weight does not return an error
-			let unused_assets = trader.buy_weight(&XcmContext::with_message_id([0; 32]), bought, asset.into()).expect("Expected Ok");
+			let unused_assets = trader
+				.buy_weight(&XcmContext::with_message_id([0; 32]), bought, asset.into())
+				.expect("Expected Ok");
+
 			// Check whether a correct amount of unused assets is returned
 			assert_ok!(
 				unused_assets.ensure_contains(&(asset_multilocation, asset_amount_extra).into())
@@ -264,7 +267,10 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 			let asset: MultiAsset = (asset_multilocation, amount_bought).into();
 
 			// Buy weight should return an error
-			assert_noop!(trader.buy_weight(&XcmContext::with_message_id([0; 32]), bought, asset.into()), XcmError::TooExpensive);
+			assert_noop!(
+				trader.buy_weight(&XcmContext::with_message_id([0; 32]), bought, asset.into()),
+				XcmError::TooExpensive
+			);
 
 			// not credited since the ED is higher than this value
 			assert_eq!(Assets::balance(1, AccountId::from(ALICE)), 0);
@@ -315,13 +321,20 @@ fn test_that_buying_ed_refund_does_not_refund() {
 			// We know we will have to buy at least ED, so lets make sure first it will
 			// fail with a payment of less than ED
 			let asset: MultiAsset = (asset_multilocation, amount_bought).into();
-			assert_noop!(trader.buy_weight(&XcmContext::with_message_id([0; 32]), bought, asset.into()), XcmError::TooExpensive);
+			assert_noop!(
+				trader.buy_weight(&XcmContext::with_message_id([0; 32]), bought, asset.into()),
+				XcmError::TooExpensive
+			);
 
 			// Now lets buy ED at least
 			let asset: MultiAsset = (asset_multilocation, ExistentialDeposit::get()).into();
 
 			// Buy weight should work
-			assert_ok!(trader.buy_weight(&XcmContext::with_message_id([0; 32]), bought, asset.into()));
+			assert_ok!(trader.buy_weight(
+				&XcmContext::with_message_id([0; 32]),
+				bought,
+				asset.into()
+			));
 
 			// Should return None. We have a specific check making sure we dont go below ED for
 			// drop payment
@@ -386,7 +399,10 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 			let asset: MultiAsset = (asset_multilocation, asset_amount_needed).into();
 
 			// Make sure again buy_weight does return an error
-			assert_noop!(trader.buy_weight(&XcmContext::with_message_id([0; 32]), bought, asset.into()), XcmError::TooExpensive);
+			assert_noop!(
+				trader.buy_weight(&XcmContext::with_message_id([0; 32]), bought, asset.into()),
+				XcmError::TooExpensive
+			);
 
 			// Drop trader
 			drop(trader);
