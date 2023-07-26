@@ -30,6 +30,7 @@ decl_test_relay_chains! {
 		},
 		pallets = {
 			XcmPallet: polkadot_runtime::XcmPallet,
+			Balances: kusama_runtime::Balances,
 		}
 	},
 	#[api_version(5)]
@@ -44,6 +45,7 @@ decl_test_relay_chains! {
 		pallets = {
 			XcmPallet: kusama_runtime::XcmPallet,
 			Balances: kusama_runtime::Balances,
+			Hrmp: kusama_runtime::Hrmp,
 		}
 	},
 	#[api_version(5)]
@@ -135,8 +137,23 @@ decl_test_parachains! {
 			PolkadotXcm: bridge_hub_polkadot_runtime::PolkadotXcm,
 		}
 	},
-	pub struct PenpalPolkadot {
-		genesis = penpal::genesis(penpal::PARA_ID),
+	pub struct PenpalPolkadotA {
+		genesis = penpal::genesis(penpal::PARA_ID_A),
+		on_init = (),
+		runtime = penpal_runtime,
+		core = {
+			XcmpMessageHandler: penpal_runtime::XcmpQueue,
+			DmpMessageHandler: penpal_runtime::DmpQueue,
+			LocationToAccountId: penpal_runtime::xcm_config::LocationToAccountId,
+			ParachainInfo: penpal_runtime::ParachainInfo,
+		},
+		pallets = {
+			PolkadotXcm: penpal_runtime::PolkadotXcm,
+			Assets: penpal_runtime::Assets,
+		}
+	},
+	pub struct PenpalPolkadotB {
+		genesis = penpal::genesis(penpal::PARA_ID_B),
 		on_init = (),
 		runtime = penpal_runtime,
 		core = {
@@ -181,8 +198,23 @@ decl_test_parachains! {
 			PolkadotXcm: bridge_hub_kusama_runtime::PolkadotXcm,
 		}
 	},
-	pub struct PenpalKusama {
-		genesis = penpal::genesis(penpal::PARA_ID),
+	pub struct PenpalKusamaA {
+		genesis = penpal::genesis(penpal::PARA_ID_A),
+		on_init = (),
+		runtime = penpal_runtime,
+		core = {
+			XcmpMessageHandler: penpal_runtime::XcmpQueue,
+			DmpMessageHandler: penpal_runtime::DmpQueue,
+			LocationToAccountId: penpal_runtime::xcm_config::LocationToAccountId,
+			ParachainInfo: penpal_runtime::ParachainInfo,
+		},
+		pallets = {
+			PolkadotXcm: penpal_runtime::PolkadotXcm,
+			Assets: penpal_runtime::Assets,
+		}
+	},
+	pub struct PenpalKusamaB {
+		genesis = penpal::genesis(penpal::PARA_ID_B),
 		on_init = (),
 		runtime = penpal_runtime,
 		core = {
@@ -214,8 +246,8 @@ decl_test_parachains! {
 			AssetConversion: asset_hub_westend_runtime::AssetConversion,
 		}
 	},
-	pub struct PenpalWestend {
-		genesis = penpal::genesis(penpal::PARA_ID),
+	pub struct PenpalWestendA {
+		genesis = penpal::genesis(penpal::PARA_ID_A),
 		on_init = (),
 		runtime = penpal_runtime,
 		core = {
@@ -296,9 +328,10 @@ decl_test_networks! {
 		relay_chain = Polkadot,
 		parachains = vec![
 			AssetHubPolkadot,
-			PenpalPolkadot,
 			Collectives,
 			BridgeHubPolkadot,
+			PenpalPolkadotA,
+			PenpalPolkadotB,
 		],
 		// TODO: uncomment when https://github.com/paritytech/cumulus/pull/2528 is merged
 		// bridge = PolkadotKusamaMockBridge
@@ -308,8 +341,9 @@ decl_test_networks! {
 		relay_chain = Kusama,
 		parachains = vec![
 			AssetHubKusama,
-			PenpalKusama,
 			BridgeHubKusama,
+			PenpalKusamaA,
+			PenpalKusamaB,
 		],
 		// TODO: uncomment when https://github.com/paritytech/cumulus/pull/2528 is merged
 		// bridge = KusamaPolkadotMockBridge
@@ -319,7 +353,7 @@ decl_test_networks! {
 		relay_chain = Westend,
 		parachains = vec![
 			AssetHubWestend,
-			PenpalWestend,
+			PenpalWestendA,
 		],
 		bridge = ()
 	},
@@ -386,7 +420,9 @@ decl_test_sender_receiver_accounts_parameter_types! {
 	BridgeHubRococo { sender: ALICE, receiver: BOB },
 	BridgeHubWococo { sender: ALICE, receiver: BOB },
 	// Penpals
-	PenpalPolkadot { sender: ALICE, receiver: BOB },
-	PenpalKusama { sender: ALICE, receiver: BOB },
-	PenpalWestend { sender: ALICE, receiver: BOB }
+	PenpalPolkadotA { sender: ALICE, receiver: BOB },
+	PenpalPolkadotB { sender: ALICE, receiver: BOB },
+	PenpalKusamaA { sender: ALICE, receiver: BOB },
+	PenpalKusamaB { sender: ALICE, receiver: BOB },
+	PenpalWestendA { sender: ALICE, receiver: BOB }
 }

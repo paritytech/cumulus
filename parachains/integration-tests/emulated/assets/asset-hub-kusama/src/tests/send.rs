@@ -64,7 +64,7 @@ fn get_system_xcm_message(origin_kind: OriginKind) -> VersionedXcm<()> {
 #[test]
 fn send_transact_sudo_from_relay_to_system_para() {
 	// Init tests variables
-	let sudo_origin = <Kusama as Chain>::RuntimeOrigin::root();
+	let root_origin = <Kusama as Chain>::RuntimeOrigin::root();
 	let system_para_destination: VersionedMultiLocation =
 		Kusama::child_location_of(AssetHubKusama::para_id()).into();
 	let asset_owner: AccountId = AssetHubKusamaSender::get().into();
@@ -73,7 +73,7 @@ fn send_transact_sudo_from_relay_to_system_para() {
 	// Send XCM message from Relay Chain
 	Kusama::execute_with(|| {
 		assert_ok!(<Kusama as KusamaPallet>::XcmPallet::send(
-			sudo_origin,
+			root_origin,
 			bx!(system_para_destination),
 			bx!(xcm),
 		));

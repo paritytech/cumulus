@@ -26,7 +26,7 @@ pub use integration_tests_common::{
 	},
 	AccountId, AssetHubWestend, AssetHubWestendPallet, AssetHubWestendReceiver,
 	AssetHubWestendSender, Collectives, CollectivesPallet, CollectivesReceiver, CollectivesSender,
-	PenpalWestend, PenpalWestendPallet, PenpalWestendReceiver, PenpalWestendSender, Westend,
+	PenpalWestendA, PenpalWestendAPallet, PenpalWestendAReceiver, PenpalWestendASender, Westend,
 	WestendPallet, WestendReceiver, WestendSender,
 };
 pub use polkadot_core_primitives::InboundDownwardMessage;

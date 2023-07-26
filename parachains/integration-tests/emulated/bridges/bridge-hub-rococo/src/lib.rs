@@ -27,7 +27,7 @@ pub use integration_tests_common::{
 	BridgeHubPolkadotReceiver, BridgeHubPolkadotSender, BridgeHubRococo, BridgeHubRococoPallet,
 	BridgeHubRococoReceiver, BridgeHubRococoSender, BridgeHubWococo, Collectives,
 	CollectivesPallet, CollectivesReceiver, CollectivesSender, Kusama, KusamaPallet,
-	PenpalPolkadot, PenpalPolkadotReceiver, PenpalPolkadotSender, Polkadot, PolkadotMockNet,
+	PenpalPolkadotA, PenpalPolkadotAReceiver, PenpalPolkadotASender, Polkadot, PolkadotMockNet,
 	PolkadotPallet, PolkadotReceiver, PolkadotSender, Rococo, RococoMockNet, RococoPallet,
 	RococoReceiver, RococoSender,
 };

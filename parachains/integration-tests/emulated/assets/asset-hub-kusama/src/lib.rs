@@ -26,12 +26,13 @@ pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use xcm::{
 	prelude::*,
 	v3::{Error, NetworkId::Kusama as KusamaId},
+	DoubleEncoded,
 };
 pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
 pub use xcm_emulator::{
 	assert_expected_events, bx, cumulus_pallet_dmp_queue, helpers::weight_within_threshold, Chain,
 	Parachain as Para, RelayChain as Relay, TestExt, TestExternalities,
-	Test, TestArgs, AccountId32Junction, DispatchArgs,
+	Test, TestArgs, AccountId32Junction, DispatchArgs, ParaId
 };
 pub use integration_tests_common::{
 	constants::{
@@ -46,9 +47,10 @@ pub use integration_tests_common::{
 	BridgeHubKusama, BridgeHubKusamaPallet, BridgeHubKusamaReceiver, BridgeHubKusamaSender,
 	BridgeHubPolkadot, BridgeHubPolkadotPallet, BridgeHubPolkadotReceiver, BridgeHubPolkadotSender,
 	Collectives, CollectivesPallet, CollectivesReceiver, CollectivesSender, Kusama, KusamaMockNet,
-	KusamaPallet, KusamaReceiver, KusamaSender, PenpalKusama, PenpalKusamaReceiver,
-	PenpalKusamaSender, PenpalPolkadot, PenpalPolkadotReceiver, PenpalPolkadotSender, Polkadot,
-	PolkadotMockNet, PolkadotPallet, PolkadotReceiver, PolkadotSender, GLOBAL_EXT_KUSAMA
+	KusamaPallet, KusamaReceiver, KusamaSender, PenpalKusamaA, PenpalKusamaAReceiver,
+	PenpalKusamaASender, PenpalPolkadotA, PenpalPolkadotAReceiver, PenpalPolkadotASender, Polkadot,
+	PolkadotMockNet, PolkadotPallet, PolkadotReceiver, PolkadotSender, PenpalKusamaAPallet,
+	PenpalKusamaB, PenpalKusamaBReceiver, PenpalKusamaBSender, PenpalKusamaBPallet
 };
 
 

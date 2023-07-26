@@ -104,7 +104,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	let foreign_asset1_at_asset_hub_westend = Box::new(MultiLocation {
 		parents: 1,
 		interior: X3(
-			Parachain(PenpalWestend::para_id().into()),
+			Parachain(PenpalWestendA::para_id().into()),
 			PalletInstance(50),
 			GeneralIndex(ASSET_ID.into()),
 		),
@@ -115,18 +115,18 @@ fn swap_locally_on_chain_using_foreign_assets() {
 			.into();
 
 	let penpal_location =
-		MultiLocation { parents: 1, interior: X1(Parachain(PenpalWestend::para_id().into())) };
+		MultiLocation { parents: 1, interior: X1(Parachain(PenpalWestendA::para_id().into())) };
 
 	// 1. Create asset on penpal:
-	PenpalWestend::execute_with(|| {
-		assert_ok!(<PenpalWestend as PenpalWestendPallet>::Assets::create(
-			<PenpalWestend as Chain>::RuntimeOrigin::signed(PenpalWestendSender::get()),
+	PenpalWestendA::execute_with(|| {
+		assert_ok!(<PenpalWestendA as PenpalWestendAPallet>::Assets::create(
+			<PenpalWestendA as Chain>::RuntimeOrigin::signed(PenpalWestendASender::get()),
 			ASSET_ID.into(),
-			PenpalWestendSender::get().into(),
+			PenpalWestendASender::get().into(),
 			1000,
 		));
 
-		assert!(<PenpalWestend as PenpalWestendPallet>::Assets::asset_exists(ASSET_ID));
+		assert!(<PenpalWestendA as PenpalWestendAPallet>::Assets::asset_exists(ASSET_ID));
 	});
 
 	// 2. Create foreign asset on asset_hub_westend:
@@ -182,18 +182,18 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	]));
 
 	// Send XCM message from penpal => asset_hub_westend
-	let sudo_penpal_origin = <PenpalWestend as Chain>::RuntimeOrigin::root();
-	PenpalWestend::execute_with(|| {
-		assert_ok!(<PenpalWestend as PenpalWestendPallet>::PolkadotXcm::send(
+	let sudo_penpal_origin = <PenpalWestendA as Chain>::RuntimeOrigin::root();
+	PenpalWestendA::execute_with(|| {
+		assert_ok!(<PenpalWestendA as PenpalWestendAPallet>::PolkadotXcm::send(
 			sudo_penpal_origin.clone(),
 			bx!(assets_para_destination.clone()),
 			bx!(xcm),
 		));
 
-		type RuntimeEvent = <PenpalWestend as Chain>::RuntimeEvent;
+		type RuntimeEvent = <PenpalWestendA as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
-			PenpalWestend,
+			PenpalWestendA,
 			vec![
 				RuntimeEvent::PolkadotXcm(pallet_xcm::Event::Sent { .. }) => {},
 			]
