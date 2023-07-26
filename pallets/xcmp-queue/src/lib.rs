@@ -62,7 +62,7 @@ pub use pallet::*;
 
 /// Index used to identify overweight XCMs.
 pub type OverweightIndex = u64;
-pub type XcmOverHrmpMaxLenOf<T> =
+pub type XcmpMaxLenOf<T> =
 	<<T as Config>::XcmpQueue as EnqueueMessage<ParaId>>::MaxMessageLen;
 
 const LOG_TARGET: &str = "xcmp_queue";
@@ -90,6 +90,8 @@ pub mod pallet {
 		type VersionWrapper: WrapVersion;
 
 		/// Enqueue an inbound horizontal message for later processing.
+		///
+		/// This defines the maximal message length via [`crate::XcmpMaxLenOf`].
 		type XcmpQueue: EnqueueMessage<ParaId>;
 
 		/// The maximum number of inbound XCMP channels that can be suspended simultaneously.
@@ -529,7 +531,7 @@ impl<T: Config> Pallet<T> {
 
 	fn enqueue_xcmp_messages(
 		sender: ParaId,
-		mut xcms: Vec<BoundedVec<u8, XcmOverHrmpMaxLenOf<T>>>,
+		mut xcms: Vec<BoundedVec<u8, XcmpMaxLenOf<T>>>,
 		meter: &mut WeightMeter,
 	) {
 		if meter
@@ -561,7 +563,7 @@ impl<T: Config> Pallet<T> {
 	/// We directly encode them again since that is needed later on.
 	fn split_concatenated_xcms(
 		data: &mut &[u8],
-	) -> Result<Vec<BoundedVec<u8, XcmOverHrmpMaxLenOf<T>>>, ()> {
+	) -> Result<Vec<BoundedVec<u8, XcmpMaxLenOf<T>>>, ()> {
 		// FAIL-CI add benchmark to check for OOM depending on `MAX_XCM_DECODE_DEPTH`.
 		let mut encoded_xcms = Vec::new();
 		while !data.is_empty() {
