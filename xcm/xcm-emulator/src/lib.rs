@@ -15,17 +15,6 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 pub use casey::pascal;
-pub use codec::Encode;
-pub use cumulus_pallet_parachain_system;
-pub use cumulus_pallet_xcmp_queue;
-pub use cumulus_primitives_core::{
-	self, relay_chain::BlockNumber as RelayBlockNumber,
-	AggregateMessageOrigin as CumulusAggregateMessageOrigin, ParaId, PersistedValidationData,
-	XcmpMessageHandler,
-};
-pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
-pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
-pub use cumulus_test_service::get_account_id_from_seed;
 pub use codec::{Decode, Encode};
 pub use log;
 pub use paste;
@@ -43,7 +32,6 @@ pub use pallet_balances::AccountData;
 pub use pallet_message_queue;
 pub use parachain_info;
 pub use parachains_common::{AccountId, BlockNumber};
-pub use paste;
 pub use sp_arithmetic::traits::Bounded;
 pub use sp_core::{storage::Storage, Pair, H256};
 pub use sp_io;
@@ -51,18 +39,15 @@ pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, fmt::Debug};
 pub use sp_trie::StorageProof;
 
 //Cumulus
-pub use cumulus_pallet_dmp_queue;
 pub use cumulus_pallet_parachain_system;
 pub use cumulus_pallet_xcmp_queue;
 pub use cumulus_primitives_core::{
-	self, relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler, ParaId,
+	self, relay_chain::BlockNumber as RelayBlockNumber,
+	AggregateMessageOrigin as CumulusAggregateMessageOrigin, ParaId,
 	PersistedValidationData, XcmpMessageHandler,
 };
 pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
-pub use pallet_message_queue;
-pub use parachain_info;
-pub use parachains_common::{AccountId, BlockNumber};
 pub use polkadot_primitives;
 pub use polkadot_runtime_parachains::{
 	dmp,

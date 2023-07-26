@@ -532,7 +532,10 @@ impl<T: Config> Pallet<T> {
 		mut xcms: Vec<BoundedVec<u8, XcmOverHrmpMaxLenOf<T>>>,
 		meter: &mut WeightMeter,
 	) {
-		if !meter.check_accrue(T::WeightInfo::enqueue_xcmp_messages(xcms.len() as u32)) {
+		if meter
+			.try_consume(T::WeightInfo::enqueue_xcmp_messages(xcms.len() as u32))
+			.is_err()
+		{
 			return
 		}
 		let QueueConfigData { drop_threshold, .. } = <QueueConfig<T>>::get();
@@ -672,7 +675,7 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 			}
 		}
 
-		meter.consumed
+		meter.consumed()
 	}
 }
 

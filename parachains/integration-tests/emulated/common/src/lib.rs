@@ -131,12 +131,12 @@ decl_test_parachains! {
 			RuntimeCall: asset_hub_polkadot_runtime::RuntimeCall,
 			RuntimeEvent: asset_hub_polkadot_runtime::RuntimeEvent,
 			XcmpMessageHandler: asset_hub_polkadot_runtime::XcmpQueue,
+			DmpMessageHandler: asset_hub_polkadot_runtime::DmpQueue,
 			LocationToAccountId: asset_hub_polkadot_runtime::xcm_config::LocationToAccountId,
 			System: asset_hub_polkadot_runtime::System,
 			Balances: asset_hub_polkadot_runtime::Balances,
 			ParachainSystem: asset_hub_polkadot_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
-			MessageQueue: asset_hub_polkadot_runtime::MessageQueue,
 		},
 		pallets_extra = {
 			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
@@ -192,12 +192,12 @@ decl_test_parachains! {
 			RuntimeCall: penpal_runtime::RuntimeCall,
 			RuntimeEvent: penpal_runtime::RuntimeEvent,
 			XcmpMessageHandler: penpal_runtime::XcmpQueue,
+			DmpMessageHandler: penpal_runtime::DmpQueue,
 			LocationToAccountId: penpal_runtime::xcm_config::LocationToAccountId,
 			System: penpal_runtime::System,
 			Balances: penpal_runtime::Balances,
 			ParachainSystem: penpal_runtime::ParachainSystem,
 			ParachainInfo: penpal_runtime::ParachainInfo,
-			MessageQueue: asset_hub_polkadot_runtime::MessageQueue,
 		},
 		pallets_extra = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
@@ -214,12 +214,12 @@ decl_test_parachains! {
 			RuntimeCall: asset_hub_kusama_runtime::RuntimeCall,
 			RuntimeEvent: asset_hub_kusama_runtime::RuntimeEvent,
 			XcmpMessageHandler: asset_hub_kusama_runtime::XcmpQueue,
+			DmpMessageHandler: asset_hub_kusama_runtime::DmpQueue,
 			LocationToAccountId: asset_hub_kusama_runtime::xcm_config::LocationToAccountId,
 			System: asset_hub_kusama_runtime::System,
 			Balances: asset_hub_kusama_runtime::Balances,
 			ParachainSystem: asset_hub_kusama_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_kusama_runtime::ParachainInfo,
-			MessageQueue: asset_hub_polkadot_runtime::MessageQueue,
 		},
 		pallets_extra = {
 			PolkadotXcm: asset_hub_kusama_runtime::PolkadotXcm,
@@ -256,12 +256,12 @@ decl_test_parachains! {
 			RuntimeCall: penpal_runtime::RuntimeCall,
 			RuntimeEvent: penpal_runtime::RuntimeEvent,
 			XcmpMessageHandler: penpal_runtime::XcmpQueue,
+			DmpMessageHandler: penpal_runtime::DmpQueue,
 			LocationToAccountId: penpal_runtime::xcm_config::LocationToAccountId,
 			System: penpal_runtime::System,
 			Balances: penpal_runtime::Balances,
 			ParachainSystem: penpal_runtime::ParachainSystem,
 			ParachainInfo: penpal_runtime::ParachainInfo,
-			MessageQueue: asset_hub_polkadot_runtime::MessageQueue,
 		},
 		pallets_extra = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
@@ -284,7 +284,6 @@ decl_test_parachains! {
 			Balances: asset_hub_westend_runtime::Balances,
 			ParachainSystem: asset_hub_westend_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_westend_runtime::ParachainInfo,
-			MessageQueue: asset_hub_polkadot_runtime::MessageQueue,
 		},
 		pallets_extra = {
 			PolkadotXcm: asset_hub_westend_runtime::PolkadotXcm,
@@ -309,7 +308,6 @@ decl_test_parachains! {
 			Balances: penpal_runtime::Balances,
 			ParachainSystem: penpal_runtime::ParachainSystem,
 			ParachainInfo: penpal_runtime::ParachainInfo,
-			MessageQueue: asset_hub_polkadot_runtime::MessageQueue,
 		},
 		pallets_extra = {
 			PolkadotXcm: penpal_runtime::PolkadotXcm,
@@ -332,7 +330,6 @@ decl_test_parachains! {
 			Balances: bridge_hub_rococo_runtime::Balances,
 			ParachainSystem: bridge_hub_rococo_runtime::ParachainSystem,
 			ParachainInfo: bridge_hub_rococo_runtime::ParachainInfo,
-			MessageQueue: asset_hub_polkadot_runtime::MessageQueue,
 		},
 		pallets_extra = {
 			PolkadotXcm: bridge_hub_rococo_runtime::PolkadotXcm,
@@ -353,7 +350,6 @@ decl_test_parachains! {
 			Balances: asset_hub_polkadot_runtime::Balances,
 			ParachainSystem: asset_hub_polkadot_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
-			MessageQueue: asset_hub_polkadot_runtime::MessageQueue,
 		},
 		pallets_extra = {
 			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
@@ -376,7 +372,6 @@ decl_test_parachains! {
 			Balances: bridge_hub_rococo_runtime::Balances,
 			ParachainSystem: bridge_hub_rococo_runtime::ParachainSystem,
 			ParachainInfo: bridge_hub_rococo_runtime::ParachainInfo,
-			MessageQueue: asset_hub_polkadot_runtime::MessageQueue,
 		},
 		pallets_extra = {
 			PolkadotXcm: bridge_hub_rococo_runtime::PolkadotXcm,
@@ -397,7 +392,6 @@ decl_test_parachains! {
 			Balances: asset_hub_polkadot_runtime::Balances,
 			ParachainSystem: asset_hub_polkadot_runtime::ParachainSystem,
 			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
-			MessageQueue: asset_hub_polkadot_runtime::MessageQueue,
 		},
 		pallets_extra = {
 			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
