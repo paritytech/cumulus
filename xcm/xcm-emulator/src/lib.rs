@@ -43,8 +43,8 @@ pub use cumulus_pallet_parachain_system;
 pub use cumulus_pallet_xcmp_queue;
 pub use cumulus_primitives_core::{
 	self, relay_chain::BlockNumber as RelayBlockNumber,
-	AggregateMessageOrigin as CumulusAggregateMessageOrigin, ParaId,
-	PersistedValidationData, XcmpMessageHandler,
+	AggregateMessageOrigin as CumulusAggregateMessageOrigin, ParaId, PersistedValidationData,
+	XcmpMessageHandler,
 };
 pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
@@ -1057,8 +1057,9 @@ macro_rules! assert_expected_events {
 		$(
 			let mut meet_conditions = true;
 			let mut event_message: Vec<String> = Vec::new();
+			let events = <$chain>::events();
 
-			let event_received = <$chain>::events().iter().any(|event| {
+			let event_received = events.iter().any(|event| {
 				$crate::log::debug!(target: concat!("events::", stringify!($chain)), "{:?}", event);
 
 				match event {
@@ -1078,7 +1079,7 @@ macro_rules! assert_expected_events {
 			if event_received && !meet_conditions  {
 				message.push(format!("\n\nEvent \x1b[31m{}\x1b[0m was received but some of its attributes did not meet the conditions:\n{}", stringify!($event_pat), event_message.concat()));
 			} else if !event_received {
-				message.push(format!("\n\nEvent \x1b[31m{}\x1b[0m was never received", stringify!($event_pat)));
+				message.push(format!("\n\nEvent \x1b[31m{}\x1b[0m was never received. All events:\n{:?}", stringify!($event_pat), events));
 			}
 		)*
 		if !message.is_empty() {

@@ -5,7 +5,7 @@ use bp_messages::{
 };
 use bridge_runtime_common::messages_xcm_extension::XcmBlobMessageDispatchResult;
 use codec::Decode;
-pub use cumulus_primitives_core::{DmpMessageHandler, XcmpMessageHandler};
+pub use cumulus_primitives_core::XcmpMessageHandler;
 use pallet_bridge_messages::{Config, Instance1, Instance2, OutboundLanes, Pallet};
 use sp_core::Get;
 use xcm_emulator::{BridgeMessage, BridgeMessageDispatchError, BridgeMessageHandler, Parachain};

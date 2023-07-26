@@ -1,5 +1,5 @@
 use crate::*;
-use frame_support::{instances::Instance2, BoundedVec};
+use frame_support::BoundedVec;
 use sp_runtime::{DispatchError, ModuleError};
 use xcm_emulator::Parachain;
 

@@ -33,28 +33,23 @@ use frame_support::{
 	traits::{OnFinalize, OnInitialize, ProcessMessage, ProcessMessageError},
 	weights::{Weight, WeightMeter},
 };
-use frame_system::RawOrigin;
+use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use sp_core::H256;
 use sp_runtime::{
-	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
+	BuildStorage,
 };
 use sp_version::RuntimeVersion;
 use std::cell::RefCell;
 
 use crate as parachain_system;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
-	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		ParachainSystem: parachain_system::{Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned},
+	pub enum Test {
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
+		ParachainSystem: parachain_system::{Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned},
 		MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -79,17 +74,16 @@ parameter_types! {
 impl frame_system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
-	type Index = u64;
-	type BlockNumber = u64;
+	type Nonce = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
 	type BlockWeights = ();
+	type Block = Block;
 	type Version = Version;
 	type PalletInfo = PalletInfo;
 	type AccountData = ();
@@ -211,7 +205,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	HANDLED_DMP_MESSAGES.with(|m| m.borrow_mut().clear());
 	HANDLED_XCMP_MESSAGES.with(|m| m.borrow_mut().clear());
 
-	frame_system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
+	frame_system::GenesisConfig::<Test>::default().build_storage().unwrap().into()
 }
 
 #[allow(dead_code)]
@@ -251,7 +245,7 @@ pub fn wasm_ext() -> sp_io::TestExternalities {
 }
 
 pub struct BlockTest {
-	n: <Test as frame_system::Config>::BlockNumber,
+	n: BlockNumberFor<Test>,
 	within_block: Box<dyn Fn()>,
 	after_block: Option<Box<dyn Fn()>>,
 }
@@ -289,7 +283,7 @@ impl BlockTests {
 		self
 	}
 
-	pub fn add<F>(self, n: <Test as frame_system::Config>::BlockNumber, within_block: F) -> Self
+	pub fn add<F>(self, n: BlockNumberFor<Test>, within_block: F) -> Self
 	where
 		F: 'static + Fn(),
 	{
@@ -298,7 +292,7 @@ impl BlockTests {
 
 	pub fn add_with_post_test<F1, F2>(
 		self,
-		n: <Test as frame_system::Config>::BlockNumber,
+		n: BlockNumberFor<Test>,
 		within_block: F1,
 		after_block: F2,
 	) -> Self
