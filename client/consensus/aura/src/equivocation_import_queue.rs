@@ -72,7 +72,7 @@ struct Verifier<P, Client, Block, CIDP> {
 	slot_duration: SlotDuration,
 	defender: NaiveEquivocationDefender,
 	telemetry: Option<TelemetryHandle>,
-	_marker: std::marker::PhantomData<(Block, P)>,
+	_marker: std::marker::PhantomData<fn() -> (Block, P)>,
 }
 
 #[async_trait::async_trait]
