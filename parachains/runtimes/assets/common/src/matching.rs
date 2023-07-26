@@ -92,7 +92,7 @@ pub struct IsTrustedBridgedReserveLocationForConcreteAsset<UniversalLocation, Re
 );
 impl<
 		UniversalLocation: Get<InteriorMultiLocation>,
-		Reserves: Get<sp_std::vec::Vec<FilteredReserveLocation>>,
+		Reserves: Get<sp_std::vec::Vec<FilteredLocation>>,
 	> ContainsPair<MultiAsset, MultiLocation>
 	for IsTrustedBridgedReserveLocationForConcreteAsset<UniversalLocation, Reserves>
 {
@@ -136,8 +136,46 @@ impl<
 	}
 }
 
-/// Reserve location as `MultiLocation` with `AssetFilter`
-pub type FilteredReserveLocation = (MultiLocation, AssetFilter);
+/// Filter assets which are explicitly not allowed for destination.
+///
+/// Returns true if asset is not `Concrete` or is explicitly not allowed by `LocationAssetFilters`
+/// Returns false if `dest` does not match any location in `LocationAssetFilters`.
+pub struct IsNotAllowedConcreteAssetBy<LocationAssetFilters>(
+	sp_std::marker::PhantomData<LocationAssetFilters>,
+);
+impl<LocationAssetFilters: Get<sp_std::vec::Vec<FilteredLocation>>>
+	Contains<(MultiLocation, sp_std::vec::Vec<MultiAsset>)>
+	for IsNotAllowedConcreteAssetBy<LocationAssetFilters>
+{
+	fn contains((dest, assets): &(MultiLocation, sp_std::vec::Vec<MultiAsset>)) -> bool {
+		for (allowed_dest, asset_filter) in LocationAssetFilters::get().iter() {
+			// we care only about explicitly configured destinations
+			if !allowed_dest.eq(dest) {
+				continue
+			}
+
+			// check all assets
+			for asset in assets {
+				let asset_location = match &asset.id {
+					Concrete(location) => location,
+					_ => return true,
+				};
+
+				// filter have to match for all assets
+				if !asset_filter.matches(asset_location) {
+					// if asset does not match filter, we found explicitly not allowed asset
+					return true
+				}
+			}
+		}
+
+		// by default, everything is allowed
+		false
+	}
+}
+
+/// Location as `MultiLocation` with `AssetFilter`
+pub type FilteredLocation = (MultiLocation, AssetFilter);
 
 /// Trait for matching asset location
 pub trait MatchAssetLocation {

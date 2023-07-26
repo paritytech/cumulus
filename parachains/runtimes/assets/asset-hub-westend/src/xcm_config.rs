@@ -455,6 +455,7 @@ impl xcm_executor::Config for XcmConfig {
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	// Asset Hub acting _as_ a reserve location for WND and assets created under `pallet-assets`.
 	// For WND, users must use teleport where allowed (e.g. with the Relay Chain).
+	// Asset Hub trusts only particular configured bridge locations as reserve locations.
 	type IsReserve = bridging::IsTrustedBridgedReserveLocationForConcreteAsset;
 	// We allow:
 	// - teleportation of WND
@@ -615,13 +616,13 @@ pub mod bridging {
 		pub AssetHubKusamaLocal: MultiLocation =  MultiLocation::new(2, X2(GlobalConsensus(KusamaLocalNetwork::get()), Parachain(1000)));
 		pub KsmLocation: MultiLocation =  MultiLocation::new(2, X1(GlobalConsensus(KusamaLocalNetwork::get())));
 
-		/// Setup exporters configuration
+		/// Setup exporters configuration.
 		pub BridgeTable: sp_std::vec::Vec<(NetworkId, MultiLocation, Option<MultiAsset>)> = sp_std::vec![
 			(KusamaLocalNetwork::get(), BridgeHub::get(), None)
 		];
 
 		/// Setup trusted bridged reserve locations
-		pub BridgedReserves: sp_std::vec::Vec<FilteredReserveLocation> = sp_std::vec![
+		pub TrustedBridgedReserveLocations: sp_std::vec::Vec<FilteredLocation> = sp_std::vec![
 			// trust assets from AssetHubKusamaLocal
 			(
 				AssetHubKusamaLocal::get(),
@@ -655,10 +656,10 @@ pub mod bridging {
 	pub type IsTrustedBridgedReserveLocationForConcreteAsset =
 		matching::IsTrustedBridgedReserveLocationForConcreteAsset<
 			UniversalLocation,
-			BridgedReserves,
+			TrustedBridgedReserveLocations,
 		>;
 
-	/// Benchmarks helper for over-bridge transfer pallet.
+	/// Benchmarks helper for bridging configuration.
 	#[cfg(feature = "runtime-benchmarks")]
 	pub struct BridgingBenchmarksHelper;
 

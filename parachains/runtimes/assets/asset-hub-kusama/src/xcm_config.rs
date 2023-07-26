@@ -24,7 +24,7 @@ use assets_common::matching::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
+	traits::{ConstU32, Contains, Everything, EverythingBut, Nothing, PalletInfoAccess},
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
@@ -396,6 +396,7 @@ impl xcm_executor::Config for XcmConfig {
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	// Asset Hub acting _as_ a reserve location for KSM and assets created under `pallet-assets`.
 	// For KSM, users must use teleport where allowed (e.g. with the Relay Chain).
+	// Asset Hub trusts only particular configured bridge locations as reserve locations.
 	type IsReserve = bridging::IsTrustedBridgedReserveLocationForConcreteAsset;
 	// We allow:
 	// - teleportation of KSM
@@ -484,7 +485,9 @@ impl pallet_xcm::Config for Runtime {
 	type XcmExecuteFilter = Nothing;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
-	type XcmReserveTransferFilter = Everything;
+	// Allow reserve based transfer to everywhere except for bridging, here we strictly check what assets are allowed.
+	type XcmReserveTransferFilter =
+		EverythingBut<bridging::IsNotAllowedExplicitlyForReserveTransfer>;
 	type Weigher = WeightInfoBounds<
 		crate::weights::xcm::AssetHubKusamaXcmWeight<RuntimeCall>,
 		RuntimeCall,
@@ -544,13 +547,14 @@ pub mod bridging {
 		pub AssetHubPolkadot: MultiLocation =  MultiLocation::new(2, X2(GlobalConsensus(PolkadotNetwork::get()), Parachain(1000)));
 		pub DotLocation: MultiLocation =  MultiLocation::new(2, X1(GlobalConsensus(PolkadotNetwork::get())));
 
-		/// Setup exporters configuration
+		/// Setup exporters configuration.
 		pub BridgeTable: sp_std::vec::Vec<(NetworkId, MultiLocation, Option<MultiAsset>)> = sp_std::vec![
 			(PolkadotNetwork::get(), BridgeHubKusama::get(), None)
 		];
 
-		/// Setup trusted bridged reserve locations
-		pub BridgedReserves: sp_std::vec::Vec<FilteredReserveLocation> = sp_std::vec![
+		/// Setup trusted bridged reserve locations.
+		/// Means that runtime accepts reserved assets from these locations.
+		pub TrustedBridgedReserveLocations: sp_std::vec::Vec<FilteredLocation> = sp_std::vec![
 			// trust assets from AssetHubPolkadot
 			(
 				AssetHubPolkadot::get(),
@@ -558,6 +562,22 @@ pub mod bridging {
 					MultiLocationFilter::default()
 						// allow receive DOT
 						.add_equals(DotLocation::get())
+						// and nothing else
+				)
+			)
+		];
+
+		/// Allowed reserve transfer assets per destination.
+		/// Means that runtime allows to transfer reserve assets to these locations.
+		pub AllowedReserveTransferAssetsLocations: sp_std::vec::Vec<FilteredLocation> = sp_std::vec![
+			// allow to transfer assets to AssetHubPolkadot
+			(
+				AssetHubPolkadot::get(),
+				AssetFilter::ByMultiLocation(
+					MultiLocationFilter::default()
+						// allow send only KSM
+						.add_equals(KsmLocation::get())
+						// and nothing else
 				)
 			)
 		];
@@ -584,10 +604,15 @@ pub mod bridging {
 	pub type IsTrustedBridgedReserveLocationForConcreteAsset =
 		matching::IsTrustedBridgedReserveLocationForConcreteAsset<
 			UniversalLocation,
-			BridgedReserves,
+			TrustedBridgedReserveLocations,
 		>;
 
-	/// Benchmarks helper for over-bridge transfer.
+	/// Filter out those assets which are not allowed for bridged reserve based transfer.
+	/// (asset, location) filter for `pallet_xcm::Config::XcmReserveTransferFilter`.
+	pub type IsNotAllowedExplicitlyForReserveTransfer =
+		IsNotAllowedConcreteAssetBy<AllowedReserveTransferAssetsLocations>;
+
+	/// Benchmarks helper for bridging configuration.
 	#[cfg(feature = "runtime-benchmarks")]
 	pub struct BridgingBenchmarksHelper;
 
@@ -595,7 +620,7 @@ pub mod bridging {
 	impl BridgingBenchmarksHelper {
 		pub fn prepare_universal_alias() -> Option<(MultiLocation, Junction)> {
 			let alias = UniversalAliases::get().into_iter().find_map(|(location, junction)| {
-				match BridgeHubKusama::get().eq(&location) {
+				match BridgeHubKusamaWithBridgeHubPolkadotInstance::get().eq(&location) {
 					true => Some((location, junction)),
 					false => None,
 				}
