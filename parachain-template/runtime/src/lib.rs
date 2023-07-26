@@ -44,7 +44,7 @@ use frame_system::{
 	EnsureRoot,
 };
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
-use parachains_common::process_xcm_message::{ParaIdToSibling, ProcessXcmMessage};
+use parachains_common::process_xcm_message::{message_queue, ParaIdToSibling, ProcessXcmMessage};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 use xcm_config::{RelayLocation, XcmOriginToTransactDispatchOrigin};
@@ -388,7 +388,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 impl parachain_info::Config for Runtime {}
 
 parameter_types! {
-		pub MessageQueueServiceWeight: Weight = Perbill::from_percent(10) *
+	pub MessageQueueServiceWeight: Weight = Perbill::from_percent(10) *
 		RuntimeBlockWeights::get().max_block; // FAIL-CI this is probably too conservative.
 }
 
@@ -407,8 +407,7 @@ impl pallet_message_queue::Config for Runtime {
 	>;
 	type Size = u32;
 	type QueueChangeHandler = ();
-	type QueuePausedQuery =
-		parachains_common::process_xcm_message::message_queue::NarrowToSiblings<XcmpQueue>;
+	type QueuePausedQuery = message_queue::NarrowToSiblings<XcmpQueue>;
 	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
 	type MaxStale = sp_core::ConstU32<8>;
 	type ServiceWeight = MessageQueueServiceWeight;
@@ -517,7 +516,6 @@ construct_runtime!(
 		XcmpQueue: cumulus_pallet_xcmp_queue = 30,
 		PolkadotXcm: pallet_xcm = 31,
 		CumulusXcm: cumulus_pallet_xcm = 32,
-		// RIP DmpQueue 33,
 		MessageQueue: pallet_message_queue = 34,
 
 		// Template
