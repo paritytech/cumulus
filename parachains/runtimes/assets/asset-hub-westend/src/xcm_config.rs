@@ -127,6 +127,17 @@ pub type ForeignAssetsConvertedConcreteId = assets_common::ForeignAssetsConverte
 	Balance,
 >;
 
+/// `AssetId/Balance` converter for pay by swap
+pub type LocalAndForeignAssetsConvertedConcreteId = assets_common::ForeignAssetsConvertedConcreteId<
+	(
+		// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
+		// - foreign assets from our consensus should be: `MultiLocation {parents: 1, X*(Parachain(xyz), ..)}
+		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` wont be accepted here
+		StartsWithExplicitGlobalConsensus<UniversalLocationNetworkId>,
+	),
+	Balance,
+>;
+
 /// Means for transacting foreign assets from different global consensus.
 pub type ForeignFungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
@@ -476,7 +487,7 @@ impl xcm_executor::Config for XcmConfig {
 			LocationToAccountId,
 			pallet_asset_conversion::Pallet<Runtime>,
 			WeightToFee,
-			TrustBackedAssetsConvertedConcreteId,
+			LocalAndForeignAssetsConvertedConcreteId,
 			LocalAndForeignAssets<
 				Assets,
 				AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>,

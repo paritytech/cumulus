@@ -28,14 +28,13 @@ use frame_support::{
 	},
 	weights::Weight,
 };
-use pallet_asset_conversion::{Config, MultiAssetIdConversionResult, MultiAssetIdConverter, Swap};
+use pallet_asset_conversion::{Config, MultiAssetIdConverter, Swap};
 use polkadot_runtime_common::xcm_sender::ConstantPrice;
 use sp_runtime::{
 	traits::{CheckedSub, Saturating},
 	SaturatedConversion,
 };
 use sp_std::{marker::PhantomData, prelude::*};
-use std::ops::Mul;
 use xcm::{latest::prelude::*, WrapVersion};
 use xcm_builder::TakeRevenue;
 use xcm_executor::traits::{ConvertLocation, MatchesFungibles, TransactAsset, WeightTrader};
@@ -313,7 +312,8 @@ impl<
 		ConcreteAssets,
 		HandleRefund,
 	> where
-	T::HigherPrecisionBalance: From<ConcreteAssets::Balance> + Into<T::AssetBalance>,
+	T::HigherPrecisionBalance: From<ConcreteAssets::Balance> + TryInto<T::AssetBalance>,
+	<T::HigherPrecisionBalance as TryInto<T::AssetBalance>>::Error: core::fmt::Debug,
 	T::AssetBalance: Into<Fungibility>,
 	MultiLocation: From<ConcreteAssets::AssetId> + Into<T::MultiAssetId>,
 {
@@ -353,7 +353,8 @@ impl<
 
 		let fee = WeightToFee::weight_to_fee(&weight);
 
-		let acc = AccountIdConverter::convert_location(&ctx.origin.unwrap()).unwrap();
+		let origin = ctx.origin.ok_or(XcmError::BadOrigin)?;
+		let acc = AccountIdConverter::convert_location(&origin).ok_or(XcmError::InvalidLocation)?;
 
 		let amount_taken = SWP::swap_tokens_for_exact_tokens(
 			acc.clone(),
@@ -370,7 +371,7 @@ impl<
 			.checked_sub(&amount_taken)
 			.ok_or(XcmError::TooExpensive)?;
 
-		let unused_balance: T::AssetBalance = unused.into();
+		let unused_balance: T::AssetBalance = unused.try_into().map_err(|_| XcmError::Overflow)?;
 
 		// Record outstanding asset
 		self.0 = Some(SwapAssetTraderRefunder { outstanding_concrete_asset: first.clone() });
