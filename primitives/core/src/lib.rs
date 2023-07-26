@@ -97,7 +97,7 @@ impl From<AggregateMessageOrigin> for xcm::v3::MultiLocation {
 		match origin {
 			AggregateMessageOrigin::Loopback => MultiLocation::here(),
 			AggregateMessageOrigin::Parent => MultiLocation::parent(),
-			AggregateMessageOrigin::Sibling(id) => Junction::Parachain(id.into()).into(),
+			AggregateMessageOrigin::Sibling(id) => MultiLocation::new(1, Junction::Parachain(id.into())),
 		}
 	}
 }
