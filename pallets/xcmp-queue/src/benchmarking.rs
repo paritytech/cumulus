@@ -53,23 +53,5 @@ mod benchmarks {
 		}
 	}
 
-	/// Benchmark `process_message` without the `XcmpProcessor` callback.
-	#[benchmark]
-	fn process_message() {
-		let msg = vec![0u8; 1024];
-		let mut id = [0u8; 32];
-
-		#[block]
-		{
-			Pallet::<T>::process_message(
-				msg.as_slice(),
-				0.into(),
-				&mut WeightMeter::max_limit(),
-				&mut id,
-			)
-			.unwrap();
-		}
-	}
-
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
 }

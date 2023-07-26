@@ -15,6 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::*;
+use frame_support::traits::ProcessMessageError;
 
 #[test]
 fn example() {
@@ -85,15 +86,17 @@ fn example() {
 			]
 		);
 	});
-	// Receive embeded XCM message within `ExportMessage` in Parachain destination
+	// Receive embedded XCM message within `ExportMessage` in Parachain destination.
+	AssetHubWococo::execute_with(|| {});
+	// Processing only happens in the next block, since the MQ pallet does it on initialize.
 	AssetHubWococo::execute_with(|| {
 		type RuntimeEvent = <AssetHubWococo as Para>::RuntimeEvent;
 
 		assert_expected_events!(
 			AssetHubWococo,
 			vec![
-				RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed {
-					success: false,
+				RuntimeEvent::MessageQueue(pallet_message_queue::Event::ProcessingFailed {
+					error: ProcessMessageError::Unsupported,
 					..
 				}) => {},
 			]

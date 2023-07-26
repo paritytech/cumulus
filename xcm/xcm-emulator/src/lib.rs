@@ -682,6 +682,8 @@ macro_rules! __impl_test_ext_for_parachain {
 
 						// clean messages
 						<Self as Parachain>::ParachainSystem::on_initialize(block_number);
+						// The MQ pallet only processes messages on initialization.
+						<Self as Parachain>::MessageQueue::on_initialize(block_number);
 					})
 				});
 
