@@ -227,9 +227,7 @@ pub fn limited_reserve_transfer_assets_for_native_asset_works<
 							destination,
 							&target_location_junctions_without_global_consensus
 						);
-						assert_matches_pallet_xcm_reserve_transfer_assets_instructions(
-							inner_xcm,
-						);
+						assert_matches_pallet_xcm_reserve_transfer_assets_instructions(inner_xcm);
 						Ok(())
 					},
 					_ => Err(ProcessMessageError::BadFormat),
@@ -391,9 +389,7 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 					247, 192, 124, 42, 17, 153, 141, 114, 34, 189, 20, 83, 69, 237, 173,
 				]),
 			]);
-			assert_matches_pallet_xcm_reserve_transfer_assets_instructions(
-				&mut xcm.clone(),
-			);
+			assert_matches_pallet_xcm_reserve_transfer_assets_instructions(&mut xcm.clone());
 
 			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
 
