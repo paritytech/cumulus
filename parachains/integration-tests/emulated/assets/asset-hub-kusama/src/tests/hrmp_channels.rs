@@ -74,11 +74,33 @@ fn get_xcm_message(call: DoubleEncoded<()>, fee_amount: Balance, para_id: ParaId
 	]))
 }
 
+fn force_process_hrmp_open(sender: Id, recipient: Id) {
+	Kusama::execute_with(|| {
+		let relay_root_origin = <Kusama as Chain>::RuntimeOrigin::root();
+
+		// Force process HRMP open channel requests without waiting for the next session
+		assert_ok!(
+			<Kusama as KusamaPallet>::Hrmp::force_process_hrmp_open(
+				relay_root_origin,
+				0
+			)
+		);
+
+		let channel_id = HrmpChannelId {
+			sender,
+			recipient
+		};
+
+		let hrmp_channel_exist
+			= polkadot_runtime_parachains::hrmp::HrmpChannels::<<Kusama as Chain>::Runtime>::contains_key(&channel_id);
+
+		// Check the HRMP channel has been successfully registrered
+		assert!(hrmp_channel_exist)
+	});
+}
+
 #[test]
 fn open_hrmp_channel_between_paras_works() {
-	// Relay Chain init values
-	let relay_root_origin = <Kusama as Chain>::RuntimeOrigin::root();
-
 	// Parchain A init values
 	let para_a_id = PenpalKusamaA::para_id();
 	let para_a_root_origin = <PenpalKusamaA as Chain>::RuntimeOrigin::root();
@@ -162,11 +184,11 @@ fn open_hrmp_channel_between_paras_works() {
 				// Open channel requested from Para A to Para B
 				RuntimeEvent::Hrmp(
 					polkadot_runtime_parachains::hrmp::Event::OpenChannelRequested(
-						sender, receiver, max_capacity, max_message_size
+						sender, recipient, max_capacity, max_message_size
 					)
 				) => {
 					sender: *sender == para_a_id.into(),
-					receiver: *receiver == para_b_id.into(),
+					recipient: *recipient == para_b_id.into(),
 					max_capacity: *max_capacity == MAX_CAPACITY,
 					max_message_size: *max_message_size == MAX_MESSAGE_SIZE,
 				},
@@ -234,31 +256,80 @@ fn open_hrmp_channel_between_paras_works() {
 				// Open channel accepted for Para A to Para B
 				RuntimeEvent::Hrmp(
 					polkadot_runtime_parachains::hrmp::Event::OpenChannelAccepted(
-						sender, receiver
+						sender, recipient
 					)
 				) => {
 					sender: *sender == para_a_id.into(),
-					receiver: *receiver == para_b_id.into(),
+					recipient: *recipient == para_b_id.into(),
 				},
 			]
 		);
 	});
 
+	force_process_hrmp_open(para_a_id, para_b_id);
+}
+
+#[test]
+fn force_open_hrmp_channel_for_system_para() {
+	// Relay Chain init values
+	let relay_root_origin = <Kusama as Chain>::RuntimeOrigin::root();
+
+	// System Para init values
+	let system_para_id = AssetHubKusama::para_id();
+	let system_para_sovereign_account = Kusama::sovereign_account_id_of(
+		Kusama::child_location_of(system_para_id)
+	);
+
+	// Parachain A init values
+	let para_a_id = PenpalKusamaA::para_id();
+	let para_a_sovereign_account = Kusama::sovereign_account_id_of(
+		Kusama::child_location_of(para_a_id)
+	);
+
+	let fund_amount = KUSAMA_ED * 1000_000_000;
+
+	// Fund Parachain's Sovereign accounts to be able to reserve the deposit
+	fund_para_sovereign(fund_amount,  system_para_sovereign_account.clone());
+	fund_para_sovereign(fund_amount, para_a_sovereign_account.clone());
+
 	Kusama::execute_with(|| {
-		// Force process HRMP open channel requests without waiting for the next session
 		assert_ok!(
-			<Kusama as KusamaPallet>::Hrmp::force_process_hrmp_open(relay_root_origin, 0)
+			<Kusama as KusamaPallet>::Hrmp::force_open_hrmp_channel(
+				relay_root_origin,
+				system_para_id,
+				para_a_id,
+				MAX_CAPACITY,
+				MAX_MESSAGE_SIZE
+			)
 		);
 
-		let channel_id = polkadot_parachain::primitives::HrmpChannelId {
-			sender: para_a_id,
-			recipient: para_b_id
-		};
+		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
-		let hrmp_channel_exist
-			= polkadot_runtime_parachains::hrmp::HrmpChannels::<<Kusama as Chain>::Runtime>::contains_key(&channel_id);
-
-		// Check the HRMP channel has been successfully registrered
-		assert!(hrmp_channel_exist)
+		assert_expected_events!(
+			Kusama,
+			vec![
+				// Sender deposit is reserved for System Parachain's Sovereign account
+				RuntimeEvent::Balances(pallet_balances::Event::Reserved { who, .. }) =>{
+					who: *who == system_para_sovereign_account,
+				},
+				// Recipient deposit is reserved for Parachain's Sovereign account
+				RuntimeEvent::Balances(pallet_balances::Event::Reserved { who, .. }) =>{
+					who: *who == para_a_sovereign_account,
+				},
+				// HRMP channel forced opened
+				RuntimeEvent::Hrmp(
+					polkadot_runtime_parachains::hrmp::Event::HrmpChannelForceOpened(
+						sender, recipient, max_capacity, max_message_size
+					)
+				) => {
+					sender: *sender == system_para_id.into(),
+					recipient: *recipient == para_a_id.into(),
+					max_capacity: *max_capacity == MAX_CAPACITY,
+					max_message_size: *max_message_size == MAX_MESSAGE_SIZE,
+				},
+			]
+		);
 	});
+
+	force_process_hrmp_open(system_para_id, para_a_id);
 }

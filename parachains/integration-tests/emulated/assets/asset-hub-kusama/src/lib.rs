@@ -15,11 +15,11 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 pub use codec::Encode;
-pub use sp_runtime::{DispatchResult, MultiAddress::Id};
+// pub use sp_runtime::{DispatchResult, MultiAddress};
 pub use frame_support::{
 	assert_err, assert_ok, instances::Instance1, pallet_prelude::Weight,
 	traits::{fungibles::Inspect, OriginTrait},
-	sp_runtime::{AccountId32, DispatchError, MultiAddress}
+	sp_runtime::{AccountId32, DispatchError, DispatchResult, MultiAddress}
 };
 pub use parachains_common::{AccountId, Balance};
 pub use polkadot_core_primitives::InboundDownwardMessage;
@@ -28,6 +28,7 @@ pub use xcm::{
 	v3::{Error, NetworkId::Kusama as KusamaId},
 	DoubleEncoded,
 };
+pub use polkadot_parachain::primitives::{HrmpChannelId, Id};
 pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
 pub use xcm_emulator::{
 	assert_expected_events, bx, cumulus_pallet_dmp_queue, helpers::weight_within_threshold, Chain,

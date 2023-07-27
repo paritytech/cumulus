@@ -3,7 +3,7 @@ use grandpa::AuthorityId as GrandpaId;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, BlockNumber};
 use polkadot_primitives::{AssignmentId, ValidatorId};
-use polkadot_parachain::primitives::{HeadData, Id, ValidationCode};
+use polkadot_parachain::primitives::{HeadData, ValidationCode};
 use polkadot_runtime_parachains::{configuration::HostConfiguration, paras::{ParaGenesisArgs, ParaKind}};
 use polkadot_service::chain_spec::get_authority_keys_from_seed_no_beefy;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
