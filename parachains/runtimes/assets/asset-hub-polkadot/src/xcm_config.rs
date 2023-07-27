@@ -403,9 +403,9 @@ impl xcm_executor::Config for XcmConfig {
 	type XcmSender = XcmRouter;
 	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	// Asset Hub acting _as_ a reserve location for DOT and assets created under `pallet-assets`.
-	// For DOT, users must use teleport where allowed (e.g. with the Relay Chain).
 	// Asset Hub trusts only particular configured bridge locations as reserve locations.
+	// Asset Hub may _act_ as a reserve location for DOT and assets created under `pallet-assets`.
+	// Users must use teleport where allowed (e.g. DOT with the Relay Chain).
 	type IsReserve = bridging::IsTrustedBridgedReserveLocationForConcreteAsset;
 	// We allow:
 	// - teleportation of DOT
@@ -577,8 +577,8 @@ pub mod bridging {
 			(KusamaNetwork::get(), BridgeHubPolkadot::get(), None)
 		];
 
-		/// Setup trusted bridged reserve locations.
-		/// Means that runtime accepts reserved assets from these locations.
+		/// Set up trusted bridged reserve locations.
+		/// Locations from which the runtime accepts reserved assets.
 		pub TrustedBridgedReserveLocations: sp_std::vec::Vec<FilteredLocation> = sp_std::vec![
 			// trust assets from AssetHubKusama
 			(

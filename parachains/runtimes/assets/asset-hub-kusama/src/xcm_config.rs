@@ -396,9 +396,9 @@ impl xcm_executor::Config for XcmConfig {
 	type XcmSender = XcmRouter;
 	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	// Asset Hub acting _as_ a reserve location for KSM and assets created under `pallet-assets`.
-	// For KSM, users must use teleport where allowed (e.g. with the Relay Chain).
 	// Asset Hub trusts only particular configured bridge locations as reserve locations.
+	// Asset Hub may _act_ as a reserve location for KSM and assets created under `pallet-assets`.
+	// Users must use teleport where allowed (e.g. KSM with the Relay Chain).
 	type IsReserve = bridging::IsTrustedBridgedReserveLocationForConcreteAsset;
 	// We allow:
 	// - teleportation of KSM
