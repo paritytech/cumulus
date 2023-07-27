@@ -114,7 +114,7 @@ pub fn limited_reserve_transfer_assets_for_native_asset_works<
 				&alice_account,
 				alice_account_init_balance,
 			);
-			// SA of target location needs to have at least ED, anyway making reserve fails
+			// SA of target location needs to have at least ED, otherwise making reserve fails
 			let _ = <pallet_balances::Pallet<Runtime>>::deposit_creating(
 				&reserve_account,
 				existential_deposit,
