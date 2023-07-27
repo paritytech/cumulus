@@ -42,13 +42,17 @@ tests:
               ]
               events:
                 - name: xcmPallet.Attempted
-                  result: { outcome: { Complete: {}}}
+                  threshold: *weight_threshold
+                  result: [{ Complete: { refTime: '3,000,000,000', proofSize: 0 }}]
                 - name: balances.Deposit
                   chain: *collectives_parachain
                   result: { who: *acc_alice_ss58 }
                 - name: dmpQueue.ExecutedDownward
                   chain: *collectives_parachain
-                  result: { outcome: { Complete: {}}}
+                  threshold: *weight_threshold
+                  result: {
+                    outcome: { Complete: { refTime: '4,000,000,000', proofSize: 0 }}
+                  }
       - name: Get the balances of the Relay Chain's treasury & Collectives parachain's future alliance member
         actions:
           - queries:
@@ -141,7 +145,10 @@ tests:
                   result: { member: *acc_alice_ss58, slashed: 10000000000000 }
                 - name: dmpQueue.ExecutedDownward
                   chain: *collectives_parachain
-                  result: { outcome: { Complete: {}}}
+                  threshold: *weight_threshold
+                  result: {
+                    outcome: { Complete: { refTime: '4,000,000,000', proofSize: '1,000,000' }}
+                  }
                 - name: messageQueue.Processed
                   result: { origin: { Ump: { Para: *cp_id }}, success: true }
 
