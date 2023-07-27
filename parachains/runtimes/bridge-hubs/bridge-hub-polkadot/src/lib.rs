@@ -487,13 +487,38 @@ pub struct IsChannelWithSiblingAssetHubActive;
 
 impl sp_runtime::traits::Get<bool> for IsChannelWithSiblingAssetHubActive {
 	fn get() -> bool {
+		// let's find the channel with the sibling AH
 		let sibling_asset_hub_id: cumulus_primitives_core::ParaId = xcm_config::SiblingAssetHubParId::get().into();
 		let outbound_channels = cumulus_pallet_xcmp_queue::OutboundXcmpStatus::<Runtime>::get();
-		outbound_channels.iter()
+		let channel_with_sibling_asset_hub = outbound_channels.iter()
 			.filter(|c| c.recipient() == sibling_asset_hub_id)
-			.map(|c| !c.is_suspended())
-			.next()
-			.unwrap_or(true)
+			.next();
+
+		// no channel => the dispatcher is inactive
+		let channel_with_sibling_asset_hub = match channel_with_sibling_asset_hub {
+			Some(channel_with_sibling_asset_hub) => channel_with_sibling_asset_hub,
+			None => return false,
+		};
+
+		// suspended channel => the dispatcher is inactive
+		if channel_with_sibling_asset_hub.is_suspended() {
+			return false;
+		}
+
+		// TODO: the following restriction is arguable, we may live without that, assuming that there
+		// can't be more than some `N` messages queued at the bridge queue (at the source BH) AND before
+		// accepting next (or next-after-next) delivery transaction, we'll receive the suspension signal
+		// from the target AH and stop accepting delivery transactions
+
+		// it takes some time for target AH to suspend inbound channel with the target BH and during that
+		// we will keep accepting new message delivery transactions. Let's also reject new deliveries if
+		// there are too many "pages" (concatenated XCM messages) in the target BH -> target AH queue.
+		const MAX_QUEUED_PAGES_BEFORE_DEACTIVATION: u16 = 4;
+		if channel_with_sibling_asset_hub.queued_pages() > MAX_QUEUED_PAGES_BEFORE_DEACTIVATION {
+			return false;
+		}
+
+		true
 	}
 }
 

@@ -559,6 +559,22 @@ parameter_types! {
 	RuntimeBlockWeights::get().max_block; // FAIl-CI this is probably too conservative.
 }
 
+// to activate backpressure on target BH and then to source BH and then to source AH
+pub struct YieldImmediately;
+
+impl frame_support::traits::ProcessMessage for YieldImmediately {
+	type Origin = cumulus_primitives_core::AggregateMessageOrigin;
+
+	fn process_message(
+		_message: &[u8],
+		_origin: Self::Origin,
+		_meter: &mut frame_support::weights::WeightMeter,
+		_id: &mut [u8; 32],
+	) -> Result<bool, frame_support::traits::ProcessMessageError> {
+		Err(frame_support::traits::ProcessMessageError::Yield)
+	}
+}
+
 impl pallet_message_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_message_queue::WeightInfo<Runtime>;
@@ -567,11 +583,7 @@ impl pallet_message_queue::Config for Runtime {
 		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	type MessageProcessor = ProcessXcmMessage<
-		AggregateMessageOrigin,
-		xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
-		RuntimeCall,
-	>;
+	type MessageProcessor = YieldImmediately;
 	type Size = u32;
 	type QueueChangeHandler = XcmpQueue;
 	type QueuePausedQuery = queue_paused_query::NarrowToSiblings<XcmpQueue>;

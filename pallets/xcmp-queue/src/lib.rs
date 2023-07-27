@@ -334,6 +334,10 @@ impl OutboundChannelDetails {
 	pub fn is_suspended(&self) -> bool {
 		self.state == OutboundState::Suspended
 	}
+
+	pub fn queued_pages(&self) -> u16 {
+		self.last_index.saturating_sub(self.first_index)
+	}
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
