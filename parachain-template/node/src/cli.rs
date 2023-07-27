@@ -3,6 +3,13 @@ use std::path::PathBuf;
 /// Sub-commands supported by the collator.
 #[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
+	/// Temporary simple way of enabling dev service
+	/// We'll need to put some thought about how to actually enable to dev service
+	/// along with its various subcommands.
+	/// 
+	/// It may be most appropriate to have a separate binary entirely for the dev service.
+	DevService(sc_cli::RunCmd),
+
 	/// Build a chain specification.
 	BuildSpec(sc_cli::BuildSpecCmd),
 

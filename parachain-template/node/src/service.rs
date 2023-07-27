@@ -457,7 +457,7 @@ pub async fn start_parachain_node(
 
 /// Builds a new development service. This service uses manual seal, and mocks
 /// the parachain inherent.
-pub async fn new_dev(
+pub fn new_dev(
 	mut config: Configuration,
 	// sealing: moonbeam_cli_opt::Sealing,
 	// rpc_config: RpcConfig,
