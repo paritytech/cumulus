@@ -19,7 +19,7 @@
 /// Equivocation resistance in general is a hard problem, as different nodes in the network
 /// may see equivocations in a different order, and therefore may not agree on which blocks
 /// should be thrown out and which ones should be kept.
-use codec::{Decode, Encode};
+use codec::Codec;
 use cumulus_client_consensus_common::ParachainBlockImportMarker;
 use lru::LruCache;
 
@@ -79,8 +79,8 @@ struct Verifier<P, Client, Block, CIDP> {
 impl<P, Client, Block, CIDP> VerifierT<Block> for Verifier<P, Client, Block, CIDP>
 where
 	P: Pair,
-	P::Signature: Encode + Decode,
-	P::Public: Encode + Decode + PartialEq + Clone + Debug,
+	P::Signature: Codec,
+	P::Public: Codec + Debug,
 	Block: BlockT,
 	Client: ProvideRuntimeApi<Block> + Send + Sync,
 	<Client as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block> + AuraApi<Block, P::Public>,
@@ -224,8 +224,8 @@ pub fn fully_verifying_import_queue<P, Client, Block: BlockT, I, CIDP>(
 ) -> BasicQueue<Block, I::Transaction>
 where
 	P: Pair + 'static,
-	P::Signature: Encode + Decode,
-	P::Public: Encode + Decode + PartialEq + Clone + Debug,
+	P::Signature: Codec,
+	P::Public: Codec + Debug,
 	I: BlockImport<Block, Error = ConsensusError>
 		+ ParachainBlockImportMarker
 		+ Send
