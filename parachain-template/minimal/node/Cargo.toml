@@ -1,0 +1,42 @@
+[package]
+name = "parachain-standalone-node"
+version = "0.1.0"
+edition = "2021"
+license = "Unlicense"
+publish = false
+build = "build.rs"
+
+[dependencies]
+clap = { version = "4.3.11", features = ["derive"] }
+futures = { version = "0.3.21", features = ["thread-pool"] }
+futures-timer = "3.0.1"
+jsonrpsee = { version = "0.16.2", features = ["server"] }
+
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus-manual-seal = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
+
+substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
+runtime = { package = "parachain-template-runtime", path = "../runtime" }
+
+[build-dependencies]
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
+[features]
+default = []
