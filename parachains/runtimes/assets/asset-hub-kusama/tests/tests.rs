@@ -22,6 +22,7 @@ use asset_hub_kusama_runtime::xcm_config::{
 };
 pub use asset_hub_kusama_runtime::{
 	constants::fee::WeightToFee,
+	xcm_config,
 	xcm_config::{
 		bridging, CheckingAccount, ForeignCreatorsSovereignAccountOf, LocationToAccountId,
 		XcmConfig,
@@ -35,7 +36,7 @@ use codec::{Decode, Encode};
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
 	assert_noop, assert_ok,
-	traits::fungibles::InspectEnumerable,
+	traits::{fungibles::InspectEnumerable, Contains},
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
 use parachains_common::{AccountId, AssetIdForTrustBackedAssets, AuraId, Balance};
@@ -686,4 +687,74 @@ fn receive_reserve_asset_deposited_dot_from_asset_hub_polkadot_works() {
 		bridging_to_asset_hub_polkadot,
 		(X1(PalletInstance(53)), GlobalConsensus(Polkadot), X1(Parachain(1000)))
 	)
+}
+
+/// Tests expected configuration of isolated `pallet_xcm::Config::XcmReserveTransferFilter`.
+#[test]
+fn xcm_reserve_transfer_filter_works() {
+	// prepare assets
+	let only_native_assets = || vec![MultiAsset::from((KsmLocation::get(), 1000))];
+	let only_trust_backed_assets = || {
+		vec![MultiAsset::from((
+			AssetIdForTrustBackedAssetsConvert::convert_back(&12345).unwrap(),
+			2000,
+		))]
+	};
+	let only_sibling_foreign_assets =
+		|| vec![MultiAsset::from((MultiLocation::new(1, X1(Parachain(12345))), 3000))];
+	let only_different_global_consensus_foreign_assets = || {
+		vec![MultiAsset::from((
+			MultiLocation::new(2, X2(GlobalConsensus(Polkadot), Parachain(12345))),
+			4000,
+		))]
+	};
+
+	// prepare destinations
+	let relaychain = MultiLocation::parent();
+	let sibling_parachain = MultiLocation::new(1, X1(Parachain(1000)));
+	let different_global_consensus_parachain_other_then_asset_hub_polkadot =
+		MultiLocation::new(2, X2(GlobalConsensus(Polkadot), Parachain(12345)));
+	let bridged_asset_hub = bridging::AssetHubPolkadot::get();
+
+	// prepare expected test data sets: (destination, assets, expected_result)
+	let test_data = vec![
+		(relaychain, only_native_assets(), true),
+		(relaychain, only_trust_backed_assets(), true),
+		(relaychain, only_sibling_foreign_assets(), true),
+		(relaychain, only_different_global_consensus_foreign_assets(), true),
+		(sibling_parachain, only_native_assets(), true),
+		(sibling_parachain, only_trust_backed_assets(), true),
+		(sibling_parachain, only_sibling_foreign_assets(), true),
+		(sibling_parachain, only_different_global_consensus_foreign_assets(), true),
+		(
+			different_global_consensus_parachain_other_then_asset_hub_polkadot,
+			only_native_assets(),
+			true,
+		),
+		(
+			different_global_consensus_parachain_other_then_asset_hub_polkadot,
+			only_trust_backed_assets(),
+			true,
+		),
+		(
+			different_global_consensus_parachain_other_then_asset_hub_polkadot,
+			only_sibling_foreign_assets(),
+			true,
+		),
+		(
+			different_global_consensus_parachain_other_then_asset_hub_polkadot,
+			only_different_global_consensus_foreign_assets(),
+			true,
+		),
+		(bridged_asset_hub, only_native_assets(), true),
+		(bridged_asset_hub, only_trust_backed_assets(), false),
+		(bridged_asset_hub, only_sibling_foreign_assets(), false),
+		(bridged_asset_hub, only_different_global_consensus_foreign_assets(), false),
+	];
+
+	// lets test filter with test data
+	type XcmReserveTransferFilter = <Runtime as pallet_xcm::Config>::XcmReserveTransferFilter;
+	for (dest, assets, expected_result) in test_data {
+		assert_eq!(expected_result, XcmReserveTransferFilter::contains(&(dest, assets)));
+	}
 }

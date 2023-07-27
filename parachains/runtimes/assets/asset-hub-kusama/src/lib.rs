@@ -1313,10 +1313,8 @@ fn ensure_key_ss58() {
 mod tests {
 	use super::{constants::fee, *};
 	use crate::{CENTS, MILLICENTS};
-	use frame_support::traits::Contains;
-	use sp_runtime::traits::{MaybeEquivalence, Zero};
+	use sp_runtime::traits::Zero;
 	use sp_weights::WeightToFee;
-	use xcm::latest::prelude::*;
 
 	/// We can fit at least 1000 transfers in a block.
 	#[test]
@@ -1368,48 +1366,5 @@ mod tests {
 		assert!(proof_o_time <= 30, "{} should be at most 30", proof_o_time);
 		let time_o_proof = time_fee.checked_div(proof_fee).unwrap_or_default();
 		assert!(time_o_proof <= 30, "{} should be at most 30", time_o_proof);
-	}
-
-	#[test]
-	fn xcm_reserve_transfer_filter_works() {
-		let only_native_assets = vec![MultiAsset::from((KsmLocation::get(), 1000))];
-		let only_trust_backed_assets = vec![MultiAsset::from((
-			assets_common::AssetIdForTrustBackedAssetsConvert::<
-				xcm_config::TrustBackedAssetsPalletLocation,
-			>::convert_back(&12345)
-			.unwrap(),
-			2000,
-		))];
-		let only_sibling_foreign_assets =
-			vec![MultiAsset::from((MultiLocation::new(1, X1(Parachain(12345))), 2000))];
-
-		let sibling_parachain = MultiLocation::new(1, X1(Parachain(1000)));
-		let bridged_asset_hub = xcm_config::bridging::AssetHubPolkadot::get();
-
-		assert!(<Runtime as pallet_xcm::Config>::XcmReserveTransferFilter::contains(&(
-			sibling_parachain,
-			only_native_assets.clone()
-		)));
-		assert!(<Runtime as pallet_xcm::Config>::XcmReserveTransferFilter::contains(&(
-			sibling_parachain,
-			only_trust_backed_assets.clone()
-		)));
-		assert!(<Runtime as pallet_xcm::Config>::XcmReserveTransferFilter::contains(&(
-			sibling_parachain,
-			only_sibling_foreign_assets.clone()
-		)));
-		// for AssetHubPolkadot only DOTs are allowed
-		assert!(<Runtime as pallet_xcm::Config>::XcmReserveTransferFilter::contains(&(
-			bridged_asset_hub,
-			only_native_assets
-		)));
-		assert!(!<Runtime as pallet_xcm::Config>::XcmReserveTransferFilter::contains(&(
-			bridged_asset_hub,
-			only_trust_backed_assets
-		)));
-		assert!(!<Runtime as pallet_xcm::Config>::XcmReserveTransferFilter::contains(&(
-			bridged_asset_hub,
-			only_sibling_foreign_assets
-		)));
 	}
 }
