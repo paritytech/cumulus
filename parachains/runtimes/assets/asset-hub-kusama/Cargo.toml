@@ -41,6 +41,7 @@ sp-api = { git = "https://github.com/paritytech/substrate", default-features = f
 sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-genesis-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
