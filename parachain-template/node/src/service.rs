@@ -522,7 +522,7 @@ pub fn new_dev(
 	let collator = config.role.is_authority();
 
 	if collator {
-		let mut env = sc_basic_authorship::ProposerFactory::with_proof_recording(
+		let env = sc_basic_authorship::ProposerFactory::with_proof_recording(
 			task_manager.spawn_handle(),
 			client.clone(),
 			transaction_pool.clone(),
