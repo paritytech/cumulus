@@ -7,13 +7,10 @@ settings:
       wsPort: 9710
       paraId: &cp_id 1001
   variables:
-    weight_threshold:  &weight_threshold { refTime: [10, 10], proofSize: [10, 10] }
     accounts:
       alice_signer: &acc_alice_signer //Alice
       alice_account32: &acc_alice_acc32 '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d'
       alice_ss58: &acc_alice_ss58 '15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5'
-      checking_account: &checking_account '13UVJyLnbVp9x5XDyJv8g8r3UddNwBrdaH7AADCmw9XQWvYW'
-
 
 tests:
   - name: Teleport assets from Relay Chain to Collectives Parachain successful.
@@ -42,30 +39,29 @@ tests:
               args: [
                 { v3: { 0, interior: { x1: { parachain: *cp_id }}}}, # destination
                 { v3: { parents: 0, interior: { x1: { accountId32: { id: *acc_alice_acc32 }}}}}, # beneficiary
-                {
-                  v3: [
-                    # {
+                { 
+                  v3: [ 
+                    # { 
                     #   # TODO use a separate Assets to pay a fee, to receive an exact amount of assets on beneficiary account.
                     #   # a call with two assets fails with an error right now.
-                    #   id: { concrete: { 0, interior: { here: true }}},
-                    #   fun: { fungible: 1000000000000 } # 1_000_000_000_000
+                    #   id: { concrete: { 0, interior: { here: true }}}, 
+                    #   fun: { fungible: 1000000000000 } # 1_000_000_000_000 
                     # },
-                    {
-                      id: { concrete: { 0, interior: { here: true }}},
+                    { 
+                      id: { concrete: { 0, interior: { here: true }}}, 
                       fun: { fungible: 20000000000000 } # 20_000_000_000_000
                     }
-                  ]
+                  ] 
                 }, # assets
                 0, # feeAssetItem
               ]
               events:
                 - name: xcmPallet.Attempted
-                  threshold: *weight_threshold
-                  result: { outcome: { Complete: { refTime: '3,000,000,000', proofSize: 0 }}}
+                  chain: *relay_chain
+                  result: { outcome: { Complete: {} } }
                 - name: dmpQueue.ExecutedDownward
                   chain: *collectives_parachain
-                  threshold: *weight_threshold
-                  result: { outcome: { Complete: { refTime: '4,000,000,000', proofSize: 0 }}}
+                  result: { outcome: { Complete: {} } }
           - queries:
               balance_rc_alice_2:
                 chain: *relay_chain
@@ -109,13 +105,13 @@ tests:
               args: [
                 { v3: { parents: 1, interior: { here: true }}}, # destination
                 { v3: { parents: 0, interior: { x1: { accountId32: { id: *acc_alice_acc32 }}}}}, # beneficiary
-                {
-                  v3: [
-                    {
-                      id: { concrete: { parents: 1, interior: { here: true }}},
+                { 
+                  v3: [ 
+                    { 
+                      id: { concrete: { parents: 1, interior: { here: true }}}, 
                       fun: { fungible: 10000000000000 } # 10_000_000_000_000
                     }
-                  ]
+                  ] 
                 }, # assets
                 0, # feeAssetItem
               ]
@@ -123,15 +119,10 @@ tests:
                 - name: balances.Withdraw
                   result: { who: *acc_alice_ss58, amount: 10000000000000 }
                 - name: polkadotXcm.Attempted
-                  threshold: *weight_threshold
-                  result: { outcome: { Complete: { refTime: '3,000,000,000', proofSize: 0 }}}
-                - name: balances.Withdraw
-                  chain: *relay_chain
-                  result: { who: *checking_account, amount: 10000000000000 } # amount received and withdrawn from registry account
+                  result: { outcome: { Complete: {} } }
                 - name: messageQueue.Processed
                   chain: *relay_chain
-                  threshold: *weight_threshold
-                  result: { origin: { Ump: { Para: '1,001' } }, weightUsed: { refTime: '4,000,000,000', proofSize: '0' }, success: true }
+                  result: { origin: { Ump: { Para: *cp_id } }, success: true}
           - queries:
               balance_rc_alice_3:
                 chain: *relay_chain

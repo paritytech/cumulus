@@ -104,12 +104,15 @@ tests:
                 - name: sudo.Sudid
                   result: { sudoResult: Ok }
                 - name: xcmPallet.Sent
+                  result: { origin: { parents: 0, interior: Here }, destination: { parents: 0, interior: { X1: { Parachain: *coll_para_id }}}}
                 - name: alliance.MembersInitialized
                   chain: *collectives_parachain
                 - name: dmpQueue.ExecutedDownward
                   chain: *collectives_parachain
                   threshold: *weight_threshold
-                  result: { outcome: { Complete: { refTime: '3,000,000,000', proofSize: '1,000,000' }}}
+                  result: {
+                    outcome: { Complete: { refTime: '3,000,000,000', proofSize: '1,000,000' }}
+                  }
 
       - name: Alliance init call fails.
         actions:
@@ -154,10 +157,13 @@ tests:
                 - name: sudo.Sudid
                   result: { sudoResult: Ok }
                 - name: xcmPallet.Sent
+                  result: { origin: { parents: 0, interior: Here }, destination: { parents: 0, interior: { X1: { Parachain: *coll_para_id }}}}
                 - name: dmpQueue.ExecutedDownward
                   chain: *collectives_parachain
                   threshold: *weight_threshold
-                  result: { outcome: { Complete: { refTime: '3,000,000,000', proofSize: '1,000,000' }}}
+                  result: {
+                    outcome: { Complete: { refTime: '3,000,000,000', proofSize: '1,000,000' }}
+                  }
 
       - name: Alliance disbanded and initialized again.
         actions:
@@ -198,13 +204,16 @@ tests:
                 - name: sudo.Sudid
                   result: { sudoResult: Ok }
                 - name: xcmPallet.Sent
+                  result: { origin: { parents: 0, interior: Here }, destination: { parents: 0, interior: { X1: { Parachain: *coll_para_id }}}}
                 - name: alliance.AllianceDisbanded
                   chain: *collectives_parachain
                   result: { fellowMembers: 6, allyMembers: 1, unreserved: 0 }
                 - name: dmpQueue.ExecutedDownward
                   chain: *collectives_parachain
                   threshold: *weight_threshold
-                  result: { outcome: { Complete: { refTime: '3,321,495,872', proofSize: '181,779' }}}
+                  result: {
+                    outcome: { Complete: { refTime: '3,321,495,872', proofSize: '181,779' }}
+                  }
       - name: Alliance initiated, founders and fellows are set.
         actions:
           - extrinsics:
@@ -244,9 +253,12 @@ tests:
                 - name: sudo.Sudid
                   result: { sudoResult: Ok }
                 - name: xcmPallet.Sent
+                  result: { origin: { parents: 0, interior: Here }, destination: { parents: 0, interior: { X1: { Parachain: *coll_para_id }}}}
                 - name: alliance.MembersInitialized
                   chain: *collectives_parachain
                 - name: dmpQueue.ExecutedDownward
                   chain: *collectives_parachain
                   threshold: *weight_threshold
-                  result: { outcome: { Complete: { refTime: '3,000,000,000', proofSize: '1,000,000' }}}
+                  result: {
+                    outcome: { Complete: { refTime: '3,000,000,000', proofSize: '1,000,000' }}
+                  }
