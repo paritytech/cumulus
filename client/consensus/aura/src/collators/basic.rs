@@ -88,7 +88,7 @@ pub async fn run<Block, P, BI, CIDP, Client, RClient, SO, Proposer, CS>(
 	Proposer::Transaction: Sync,
 	CS: CollatorServiceInterface<Block>,
 	P: Pair,
-	P::Public: AppPublic + Member + Codec,
+	P::Public: AppPublic + Member,
 	P::Signature: TryFrom<Vec<u8>> + Member + Codec,
 {
 	let mut collation_requests = cumulus_client_collator::relay_chain_driven::init(

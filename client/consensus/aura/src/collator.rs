@@ -99,7 +99,7 @@ where
 	Proposer::Transaction: Sync,
 	CS: CollatorServiceInterface<Block>,
 	P: Pair,
-	P::Public: AppPublic + Member + Codec,
+	P::Public: AppPublic + Member,
 	P::Signature: TryFrom<Vec<u8>> + Member + Codec,
 {
 	/// Instantiate a new instance of the `Aura` manager.
