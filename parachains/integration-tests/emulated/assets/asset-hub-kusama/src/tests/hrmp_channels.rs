@@ -99,6 +99,7 @@ fn force_process_hrmp_open(sender: Id, recipient: Id) {
 	});
 }
 
+/// Opening HRMP channels between Parachains should work
 #[test]
 fn open_hrmp_channel_between_paras_works() {
 	// Parchain A init values
@@ -269,8 +270,9 @@ fn open_hrmp_channel_between_paras_works() {
 	force_process_hrmp_open(para_a_id, para_b_id);
 }
 
+/// Opening HRMP channels between System Parachains and Parachains should work
 #[test]
-fn force_open_hrmp_channel_for_system_para() {
+fn force_open_hrmp_channel_for_system_para_works() {
 	// Relay Chain init values
 	let relay_root_origin = <Kusama as Chain>::RuntimeOrigin::root();
 
