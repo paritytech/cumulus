@@ -451,3 +451,245 @@ pub async fn start_parachain_node(
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
 	start_node_impl(parachain_config, polkadot_config, collator_options, para_id, hwbench).await
 }
+
+/// Builds a new development service. This service uses manual seal, and mocks
+/// the parachain inherent.
+pub async fn new_dev<RuntimeApi, Executor>(
+	mut config: Configuration,
+	// sealing: moonbeam_cli_opt::Sealing,
+	// rpc_config: RpcConfig,
+	hwbench: Option<sc_sysinfo::HwBench>,
+) -> Result<TaskManager, ServiceError> {
+	use async_io::Timer;
+	use futures::Stream;
+	use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
+	use sp_core::H256;
+
+	let sc_service::PartialComponents {
+		client,
+		backend,
+		mut task_manager,
+		import_queue,
+		keystore_container,
+		_select_chain,
+		transaction_pool,
+		other:
+			(
+				block_import,
+				filter_pool,
+				mut telemetry,
+				_telemetry_worker_handle,
+				frontier_backend,
+				fee_history_cache,
+			),
+	} = new_partial(&mut config)?;
+
+	let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
+		sc_service::build_network(sc_service::BuildNetworkParams {
+			config: &config,
+			client: client.clone(),
+			transaction_pool: transaction_pool.clone(),
+			spawn_handle: task_manager.spawn_handle(),
+			import_queue,
+			block_announce_validator_builder: None,
+			warp_sync_params: None,
+		})?;
+
+	if config.offchain_worker.enabled {
+		sc_service::build_offchain_workers(
+			&config,
+			task_manager.spawn_handle(),
+			client.clone(),
+			network.clone(),
+		);
+	}
+
+	let prometheus_registry = config.prometheus_registry().cloned();
+	let mut command_sink = None;
+	let collator = config.role.is_authority();
+
+	if collator {
+		let mut env = sc_basic_authorship::ProposerFactory::with_proof_recording(
+			task_manager.spawn_handle(),
+			client.clone(),
+			transaction_pool.clone(),
+			prometheus_registry.as_ref(),
+			telemetry.as_ref().map(|x| x.handle()),
+		);
+		env.set_soft_deadline(SOFT_DEADLINE_PERCENT);
+		env.enable_ensure_proof_size_limit_after_each_extrinsic();
+
+		let commands_stream: Box::new(StreamExt::map(
+			Timer::interval(Duration::from_millis(1000)),
+			|_| EngineCommand::SealNewBlock {
+				create_empty: true,
+				finalize: false,
+				parent_hash: None,
+				sender: None,
+			},
+		));
+
+		let select_chain = sc_consensus::LongestChain::new(backend.clone());
+
+		let client_set_aside_for_cidp = client.clone();
+
+		// Create channels for mocked XCM messages.
+		// let (downward_xcm_sender, downward_xcm_receiver) = flume::bounded::<Vec<u8>>(100);
+		// let (hrmp_xcm_sender, hrmp_xcm_receiver) = flume::bounded::<(ParaId, Vec<u8>)>(100);
+		// xcm_senders = Some((downward_xcm_sender, hrmp_xcm_sender));
+
+		task_manager.spawn_essential_handle().spawn_blocking(
+			"authorship_task",
+			Some("block-authoring"),
+			run_manual_seal(ManualSealParams {
+				block_import,
+				env,
+				client: client.clone(),
+				pool: transaction_pool.clone(),
+				commands_stream,
+				select_chain,
+				//TODO This needs to be aura to match the runtime
+				consensus_data_provider: Some(Box::new(NimbusManualSealConsensusDataProvider {
+					keystore: keystore_container.sync_keystore(),
+					client: client.clone(),
+					additional_digests_provider: maybe_provide_vrf_digest,
+					_phantom: Default::default(),
+				})),
+				create_inherent_data_providers: move |block: H256, ()| {
+					let current_para_block = client_set_aside_for_cidp
+						.number(block)
+						.expect("Header lookup should succeed")
+						.expect("Header passed in as parent should be present in backend.");
+
+					// let downward_xcm_receiver = downward_xcm_receiver.clone();
+					// let hrmp_xcm_receiver = hrmp_xcm_receiver.clone();
+
+					// let client_for_xcm = client_set_aside_for_cidp.clone();
+					async move {
+						let time = sp_timestamp::InherentDataProvider::from_system_time();
+
+						let mocked_parachain = MockValidationDataInherentDataProvider {
+							current_para_block,
+							relay_offset: 1000,
+							relay_blocks_per_para_block: 2,
+							para_blocks_per_relay_epoch: 10,
+							relay_randomness_config: (),
+							xcm_config: Default::default(),
+							raw_downward_messages: Default::default(),
+							raw_horizontal_messages: Default::default(),
+						};
+
+						Ok((time, mocked_parachain))
+					}
+				},
+			}),
+		);
+	}
+
+	rpc::spawn_essential_tasks(
+		rpc::SpawnTasksParams {
+			task_manager: &task_manager,
+			client: client.clone(),
+			substrate_backend: backend.clone(),
+			frontier_backend: frontier_backend.clone(),
+			filter_pool: filter_pool.clone(),
+			overrides: overrides.clone(),
+			fee_history_limit,
+			fee_history_cache: fee_history_cache.clone(),
+		},
+		sync_service.clone(),
+		pubsub_notification_sinks.clone(),
+	);
+
+	let rpc_builder = {
+		let client = client.clone();
+		let pool = transaction_pool.clone();
+		let backend = backend.clone();
+		let network = network.clone();
+		let sync = sync_service.clone();
+		let ethapi_cmd = ethapi_cmd.clone();
+		let max_past_logs = rpc_config.max_past_logs;
+		let overrides = overrides.clone();
+		let fee_history_cache = fee_history_cache.clone();
+		let block_data_cache = block_data_cache.clone();
+		let pubsub_notification_sinks = pubsub_notification_sinks.clone();
+
+		move |deny_unsafe, subscription_task_executor| {
+			let deps = rpc::FullDeps {
+				backend: backend.clone(),
+				client: client.clone(),
+				command_sink: command_sink.clone(),
+				deny_unsafe,
+				ethapi_cmd: ethapi_cmd.clone(),
+				filter_pool: filter_pool.clone(),
+				frontier_backend: frontier_backend.clone(),
+				graph: pool.pool().clone(),
+				pool: pool.clone(),
+				is_authority: collator,
+				max_past_logs,
+				fee_history_limit,
+				fee_history_cache: fee_history_cache.clone(),
+				network: network.clone(),
+				sync: sync.clone(),
+				xcm_senders: xcm_senders.clone(),
+				overrides: overrides.clone(),
+				block_data_cache: block_data_cache.clone(),
+				forced_parent_hashes: None,
+			};
+
+			if ethapi_cmd.contains(&EthApiCmd::Debug) || ethapi_cmd.contains(&EthApiCmd::Trace) {
+				rpc::create_full(
+					deps,
+					subscription_task_executor,
+					Some(crate::rpc::TracingConfig {
+						tracing_requesters: tracing_requesters.clone(),
+						trace_filter_max_count: rpc_config.ethapi_trace_max_count,
+					}),
+					pubsub_notification_sinks.clone(),
+				)
+				.map_err(Into::into)
+			} else {
+				rpc::create_full(
+					deps,
+					subscription_task_executor,
+					None,
+					pubsub_notification_sinks.clone(),
+				)
+				.map_err(Into::into)
+			}
+		}
+	};
+
+	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+		network,
+		client,
+		keystore: keystore_container.sync_keystore(),
+		task_manager: &mut task_manager,
+		transaction_pool,
+		rpc_builder: Box::new(rpc_builder),
+		backend,
+		system_rpc_tx,
+		sync_service: sync_service.clone(),
+		config,
+		tx_handler_controller,
+		telemetry: None,
+	})?;
+
+	if let Some(hwbench) = hwbench {
+		sc_sysinfo::print_hwbench(&hwbench);
+
+		if let Some(ref mut telemetry) = telemetry {
+			let telemetry_handle = telemetry.handle();
+			task_manager.spawn_handle().spawn(
+				"telemetry_hwbench",
+				None,
+				sc_sysinfo::initialize_hwbench_telemetry(telemetry_handle, hwbench),
+			);
+		}
+	}
+
+	log::info!("Development Service Ready");
+
+	network_starter.start_network();
+	Ok(task_manager)
+}
