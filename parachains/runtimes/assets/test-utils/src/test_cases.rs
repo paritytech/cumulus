@@ -967,7 +967,7 @@ macro_rules! include_asset_transactor_transfer_with_pallet_assets_instance_works
 	}
 );
 
-/// Test-case makes sure that `Runtime`'s can create and manage `ForeignAssets`
+/// Test-case makes sure that `Runtime` can create and manage `ForeignAssets`
 pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_works<
 	Runtime,
 	XcmConfig,
