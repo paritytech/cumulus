@@ -475,11 +475,21 @@ pub fn new_dev(
 		transaction_pool,
 		other:
 			(
-				block_import,
+				_block_import,
 				mut telemetry,
 				_telemetry_worker_handle,
 			),
 	} = new_partial(&mut config)?;
+
+	// We don't use the block import provided from new_partial because
+	// it is a parachain block import, and it will mark new blocks as
+	// not best (because parachains wait for the relay chain to do that)
+	let block_import = client.clone();
+
+	//TODO currently we are still using the parachain block import in the import queue
+	// which means that blocks authored by other nodes will still be handled incorrectly.
+	// But at least it should work for a single node already, and this will allow me to test
+	// the hypothesis that the parachain block import is the problem.
 
 	let net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
 
