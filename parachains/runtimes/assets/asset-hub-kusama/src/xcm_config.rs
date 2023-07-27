@@ -556,7 +556,7 @@ pub mod bridging {
 			(PolkadotNetwork::get(), BridgeHubKusama::get(), None)
 		];
 
-		/// Setup trusted bridged reserve locations.
+		/// Set up trusted bridged reserve locations.
 		/// Means that runtime accepts reserved assets from these locations.
 		pub TrustedBridgedReserveLocations: sp_std::vec::Vec<FilteredLocation> = sp_std::vec![
 			// trust assets from AssetHubPolkadot
