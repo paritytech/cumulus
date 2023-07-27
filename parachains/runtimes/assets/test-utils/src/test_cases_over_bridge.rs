@@ -195,7 +195,6 @@ pub fn limited_reserve_transfer_assets_for_native_asset_works<
 			let xcm_sent =
 				RuntimeHelper::<HrmpChannelSource>::take_xcm(local_bridge_hub_para_id.into())
 					.unwrap();
-			println!("xcm_sent: {:?}", xcm_sent);
 
 			assert_eq!(
 				xcm_sent_message_hash,
@@ -217,7 +216,7 @@ pub fn limited_reserve_transfer_assets_for_native_asset_works<
 				.expect("contains UnpaidExecution")
 				.match_next_inst(|instr| match instr {
 					// second instruction is ExportMessage
-					ExportMessage { network, destination, xcm: _inner_xcm } => {
+					ExportMessage { network, destination, xcm: inner_xcm } => {
 						assert_eq!(network, &bridged_network);
 						let (_, target_location_junctions_without_global_consensus) =
 							target_location_from_different_consensus
@@ -227,6 +226,9 @@ pub fn limited_reserve_transfer_assets_for_native_asset_works<
 						assert_eq!(
 							destination,
 							&target_location_junctions_without_global_consensus
+						);
+						assert_matches_pallet_xcm_reserve_transfer_assets_instructions(
+							inner_xcm,
 						);
 						Ok(())
 					},
@@ -389,6 +391,9 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 					247, 192, 124, 42, 17, 153, 141, 114, 34, 189, 20, 83, 69, 237, 173,
 				]),
 			]);
+			assert_matches_pallet_xcm_reserve_transfer_assets_instructions(
+				&mut xcm.clone(),
+			);
 
 			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
 
@@ -445,4 +450,34 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 				0.into()
 			);
 		})
+}
+
+fn assert_matches_pallet_xcm_reserve_transfer_assets_instructions<RuntimeCall>(
+	xcm: &mut Xcm<RuntimeCall>,
+) {
+	let _ = xcm
+		.0
+		.matcher()
+		.skip_inst_while(|inst| !matches!(inst, ReserveAssetDeposited(..)))
+		.expect("no instruction ReserveAssetDeposited?")
+		.match_next_inst(|instr| match instr {
+			ReserveAssetDeposited(..) => Ok(()),
+			_ => Err(ProcessMessageError::BadFormat),
+		})
+		.expect("expected instruction ReserveAssetDeposited")
+		.match_next_inst(|instr| match instr {
+			ClearOrigin => Ok(()),
+			_ => Err(ProcessMessageError::BadFormat),
+		})
+		.expect("expected instruction ClearOrigin")
+		.match_next_inst(|instr| match instr {
+			BuyExecution { .. } => Ok(()),
+			_ => Err(ProcessMessageError::BadFormat),
+		})
+		.expect("expected instruction BuyExecution")
+		.match_next_inst(|instr| match instr {
+			DepositAsset { .. } => Ok(()),
+			_ => Err(ProcessMessageError::BadFormat),
+		})
+		.expect("expected instruction DepositAsset");
 }
