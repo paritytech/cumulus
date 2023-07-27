@@ -25,78 +25,57 @@ pub type GluttonChainSpec =
 
 pub fn glutton_development_config(para_id: ParaId) -> GluttonChainSpec {
 	#[allow(deprecated)]
-	GluttonChainSpec::from_genesis(
-		// Name
-		"Glutton Development",
-		// ID
-		"glutton_dev",
-		ChainType::Local,
-		move || glutton_genesis(para_id),
-		Vec::new(),
-		None,
-		None,
-		None,
-		None,
-		Extensions { relay_chain: "kusama-dev".into(), para_id: para_id.into() },
-		glutton_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
-	)
+	GluttonChainSpec::builder()
+		.with_name("Glutton Development")
+		.with_id("glutton_dev")
+		.with_chain_type(ChainType::Local)
+		.with_genesis_config_patch(glutton_genesis(para_id))
+		.with_extensions(Extensions { relay_chain: "kusama-dev".into(), para_id: para_id.into() })
+		.with_code(
+			glutton_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
+		)
+		.build()
 }
 
 pub fn glutton_local_config(para_id: ParaId) -> GluttonChainSpec {
 	#[allow(deprecated)]
-	GluttonChainSpec::from_genesis(
-		// Name
-		"Glutton Local",
-		// ID
-		"glutton_local",
-		ChainType::Local,
-		move || glutton_genesis(para_id),
-		Vec::new(),
-		None,
-		None,
-		None,
-		None,
-		Extensions { relay_chain: "kusama-local".into(), para_id: para_id.into() },
-		glutton_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
-	)
+	GluttonChainSpec::builder()
+		.with_name("Glutton Local")
+		.with_id("glutton_local")
+		.with_chain_type(ChainType::Local)
+		.with_genesis_config_patch(glutton_genesis(para_id))
+		.with_extensions(Extensions { relay_chain: "kusama-local".into(), para_id: para_id.into() })
+		.with_code(
+			glutton_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
+		)
+		.build()
 }
 
 pub fn glutton_config(para_id: ParaId) -> GluttonChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 2.into());
 
-	#[allow(deprecated)]
-	GluttonChainSpec::from_genesis(
-		// Name
-		format!("Glutton {}", para_id).as_str(),
-		// ID
-		format!("glutton-kusama-{}", para_id).as_str(),
-		ChainType::Live,
-		move || glutton_genesis(para_id),
-		Vec::new(),
-		None,
-		// Protocol ID
-		Some(format!("glutton-kusama-{}", para_id).as_str()),
-		None,
-		Some(properties),
-		Extensions { relay_chain: "kusama".into(), para_id: para_id.into() },
-		glutton_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
-	)
+	GluttonChainSpec::builder()
+		.with_name(format!("Glutton {}", para_id).as_str())
+		.with_id(format!("glutton-kusama-{}", para_id).as_str())
+		.with_chain_type(ChainType::Live)
+		.with_genesis_config_patch(glutton_genesis(para_id))
+		.with_protocol_id(format!("glutton-kusama-{}", para_id).as_str())
+		.with_properties(properties)
+		.with_extensions(Extensions { relay_chain: "kusama".into(), para_id: para_id.into() })
+		.with_code(
+			glutton_runtime::WASM_BINARY.expect("WASM binary was not build, please build it!"),
+		)
+		.build()
 }
 
-fn glutton_genesis(parachain_id: ParaId) -> glutton_runtime::RuntimeGenesisConfig {
-	glutton_runtime::RuntimeGenesisConfig {
-		system: glutton_runtime::SystemConfig::default(),
-		parachain_info: glutton_runtime::ParachainInfoConfig { parachain_id, ..Default::default() },
-		parachain_system: Default::default(),
-		glutton: glutton_runtime::GluttonConfig {
-			compute: Default::default(),
-			storage: Default::default(),
-			trash_data_count: Default::default(),
-			..Default::default()
+fn glutton_genesis(parachain_id: ParaId) -> serde_json::Value {
+	serde_json::json!( {
+		"parachainInfo": {
+			"parachainId": parachain_id
 		},
-		sudo: glutton_runtime::SudoConfig {
-			key: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
-		},
-	}
+		"sudo": {
+			"key": Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
+		}
+	})
 }
