@@ -121,7 +121,7 @@ pub fn limited_reserve_transfer_assets_for_native_asset_works<
 				existential_deposit,
 			);
 
-			// we just check here, that user remains enough balances after withdraw
+			// we just check here, that user retains enough balance after withdrawal
 			// and also we check if `balance_to_transfer` is more than `existential_deposit`,
 			assert!(
 				(<pallet_balances::Pallet<Runtime>>::free_balance(&alice_account) -
