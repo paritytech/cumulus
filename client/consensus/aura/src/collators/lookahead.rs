@@ -281,11 +281,18 @@ where
 			let mut parent_hash = initial_parent.hash;
 			let mut parent_header = initial_parent.header;
 			let overseer_handle = &mut params.overseer_handle;
-			loop {
+			for n_built in 0.. {
 				let slot_claim = match can_build_upon(parent_hash).await {
 					None => break,
 					Some(c) => c,
 				};
+
+				tracing::debug!(
+					target: crate::LOG_TARGET,
+					?relay_parent,
+					unincluded_segment_len = initial_parent.depth + n_built,
+					"Slot claimed. Building"
+				);
 
 				let validation_data = PersistedValidationData {
 					parent_head: parent_header.encode().into(),
