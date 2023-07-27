@@ -373,6 +373,7 @@ pub type Barrier = TrailingSetTopicAsId<
 	>,
 >;
 
+/// Multiplier used for dedicated `TakeFirstAssetTrader` with `Assets` instance.
 pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<
 	Runtime,
 	WeightToFee,
@@ -380,6 +381,7 @@ pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentia
 	TrustBackedAssetsInstance,
 >;
 
+/// Multiplier used for dedicated `TakeFirstAssetTrader` with `ForeignAssets` instance.
 pub type ForeignAssetFeeAsExistentialDepositMultiplierFeeCharger =
 	AssetFeeAsExistentialDepositMultiplier<
 		Runtime,
@@ -414,6 +416,7 @@ impl xcm_executor::Config for XcmConfig {
 	>;
 	type Trader = (
 		UsingComponents<WeightToFee, KsmLocation, AccountId, Balances, ToStakingPot<Runtime>>,
+		// This trader allows to pay with `is_sufficient=true` "Trust Backed" assets from dedicated `pallet_assets` instance - `Assets`.
 		cumulus_primitives_utility::TakeFirstAssetTrader<
 			AccountId,
 			AssetFeeAsExistentialDepositMultiplierFeeCharger,
@@ -425,6 +428,7 @@ impl xcm_executor::Config for XcmConfig {
 				XcmAssetFeesReceiver,
 			>,
 		>,
+		// This trader allows to pay with `is_sufficient=true` "Foreign" assets from dedicated `pallet_assets` instance - `ForeignAssets`.
 		cumulus_primitives_utility::TakeFirstAssetTrader<
 			AccountId,
 			ForeignAssetFeeAsExistentialDepositMultiplierFeeCharger,
