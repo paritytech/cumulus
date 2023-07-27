@@ -166,7 +166,7 @@ pub fn limited_reserve_transfer_assets_for_native_asset_works<
 			);
 
 			// check reserve account
-			// check reserve account increased about all balance_to_transfer
+			// check reserve account increased by balance_to_transfer
 			assert_eq!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(&reserve_account),
 				existential_deposit + balance_to_transfer.into()
