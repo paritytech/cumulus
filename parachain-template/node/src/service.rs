@@ -2,7 +2,9 @@
 
 // std
 use std::{sync::Arc, time::Duration};
-
+use sc_client_api::HeaderBackend;
+use futures::FutureExt;
+use cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider;
 use cumulus_client_cli::CollatorOptions;
 // Local Runtime Types
 use parachain_template_runtime::{opaque::Block, RuntimeApi};
@@ -28,11 +30,12 @@ use sc_executor::{
 };
 use sc_network::NetworkBlock;
 use sc_network_sync::SyncingService;
-use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
+use sc_service::{error::Error as ServiceError, Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_keystore::KeystorePtr;
 use substrate_prometheus_endpoint::Registry;
+use sc_consensus_manual_seal::consensus::aura::AuraConsensusDataProvider;
 
 /// Native executor type.
 pub struct ParachainNativeExecutor;
@@ -450,4 +453,205 @@ pub async fn start_parachain_node(
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
 	start_node_impl(parachain_config, polkadot_config, collator_options, para_id, hwbench).await
+}
+
+/// Builds a new development service. This service uses manual seal, and mocks
+/// the parachain inherent.
+pub fn new_dev(
+	mut config: Configuration,
+	hwbench: Option<sc_sysinfo::HwBench>,
+) -> Result<TaskManager, ServiceError> {
+	use async_io::Timer;
+	use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
+	use sp_core::H256;
+
+	let sc_service::PartialComponents {
+		client,
+		backend,
+		mut task_manager,
+		import_queue,
+		keystore_container,
+		select_chain: _,
+		transaction_pool,
+		other:
+			(
+				_block_import,
+				mut telemetry,
+				_telemetry_worker_handle,
+			),
+	} = new_partial(&mut config)?;
+
+	// We don't use the block import provided from new_partial because
+	// it is a parachain block import, and it will mark new blocks as
+	// not best (because parachains wait for the relay chain to do that)
+	let block_import = client.clone();
+
+	//TODO currently we are still using the parachain block import in the import queue
+	// which means that blocks authored by other nodes will still be handled incorrectly.
+	// But at least it should work for a single node already, and this will allow me to test
+	// the hypothesis that the parachain block import is the problem.
+
+	let net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
+
+	let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
+		sc_service::build_network(sc_service::BuildNetworkParams {
+			config: &config,
+			net_config,
+			client: client.clone(),
+			transaction_pool: transaction_pool.clone(),
+			spawn_handle: task_manager.spawn_handle(),
+			import_queue,
+			block_announce_validator_builder: None,
+			warp_sync_params: None,
+		})?;
+
+	if config.offchain_worker.enabled {
+		task_manager.spawn_handle().spawn(
+			"offchain-workers-runner",
+			"offchain-worker",
+			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
+				runtime_api_provider: client.clone(),
+				is_validator: config.role.is_authority(),
+				keystore: Some(keystore_container.keystore()),
+				offchain_db: backend.offchain_storage(),
+				transaction_pool: Some(OffchainTransactionPoolFactory::new(
+					transaction_pool.clone(),
+				)),
+				network_provider: network.clone(),
+				enable_http_requests: true,
+				custom_extensions: |_| vec![],
+			})
+			.run(client.clone(), task_manager.spawn_handle())
+			.boxed(),
+		);
+	}
+
+	let prometheus_registry = config.prometheus_registry().cloned();
+	let collator = config.role.is_authority();
+
+	if collator {
+		let env = sc_basic_authorship::ProposerFactory::with_proof_recording(
+			task_manager.spawn_handle(),
+			client.clone(),
+			transaction_pool.clone(),
+			prometheus_registry.as_ref(),
+			telemetry.as_ref().map(|x| x.handle()),
+		);
+
+		let commands_stream = Box::new(futures::StreamExt::map(
+			Timer::interval(Duration::from_millis(12_000)),
+			|_| EngineCommand::SealNewBlock {
+				create_empty: true,
+				finalize: false,
+				parent_hash: None,
+				sender: None,
+			},
+		));
+
+		let select_chain = sc_consensus::LongestChain::new(backend.clone());
+
+		let client_set_aside_for_cidp = client.clone();
+		let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
+
+		// Create channels for mocked XCM messages.
+		// let (downward_xcm_sender, downward_xcm_receiver) = flume::bounded::<Vec<u8>>(100);
+		// let (hrmp_xcm_sender, hrmp_xcm_receiver) = flume::bounded::<(ParaId, Vec<u8>)>(100);
+		// xcm_senders = Some((downward_xcm_sender, hrmp_xcm_sender));
+
+		task_manager.spawn_essential_handle().spawn_blocking(
+			"authorship_task",
+			Some("block-authoring"),
+			run_manual_seal(ManualSealParams {
+				block_import,
+				env,
+				client: client.clone(),
+				pool: transaction_pool.clone(),
+				commands_stream,
+				select_chain,
+				consensus_data_provider: Some(Box::new(AuraConsensusDataProvider::new(client.clone()))),
+				create_inherent_data_providers: move |block: H256, ()| {
+					let current_para_block = client_set_aside_for_cidp
+						.number(block)
+						.expect("Header lookup should succeed")
+						.expect("Header passed in as parent should be present in backend.");
+
+					// let downward_xcm_receiver = downward_xcm_receiver.clone();
+					// let hrmp_xcm_receiver = hrmp_xcm_receiver.clone();
+
+					// let client_for_xcm = client_set_aside_for_cidp.clone();
+					async move {
+
+						let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+
+						let slot =
+							sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+								*timestamp,
+								slot_duration,
+							);
+
+						let mocked_parachain = MockValidationDataInherentDataProvider {
+							current_para_block,
+							relay_offset: 1000,
+							relay_blocks_per_para_block: 2,
+							para_blocks_per_relay_epoch: 10,
+							relay_randomness_config: (),
+							xcm_config: Default::default(),
+							raw_downward_messages: Default::default(),
+							raw_horizontal_messages: Default::default(),
+						};
+
+						Ok((slot, timestamp, mocked_parachain))
+					}
+				},
+			}),
+		);
+	}
+
+	let rpc_builder = {
+		let client = client.clone();
+		let transaction_pool = transaction_pool.clone();
+
+		Box::new(move |deny_unsafe, _| {
+			let deps = crate::rpc::FullDeps {
+				client: client.clone(),
+				pool: transaction_pool.clone(),
+				deny_unsafe,
+			};
+
+			crate::rpc::create_full(deps).map_err(Into::into)
+		})
+	};
+
+	sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+		network,
+		client,
+		keystore: keystore_container.keystore(),
+		task_manager: &mut task_manager,
+		transaction_pool,
+		rpc_builder,
+		backend,
+		system_rpc_tx,
+		sync_service: sync_service.clone(),
+		config,
+		tx_handler_controller,
+		telemetry: None,
+	})?;
+
+	if let Some(hwbench) = hwbench {
+		sc_sysinfo::print_hwbench(&hwbench);
+
+		if let Some(ref mut telemetry) = telemetry {
+			let telemetry_handle = telemetry.handle();
+			task_manager.spawn_handle().spawn(
+				"telemetry_hwbench",
+				None,
+				sc_sysinfo::initialize_hwbench_telemetry(telemetry_handle, hwbench),
+			);
+		}
+	}
+
+	log::info!("Development Service Ready");
+
+	network_starter.start_network();
+	Ok(task_manager)
 }

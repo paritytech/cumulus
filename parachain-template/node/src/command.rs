@@ -242,6 +242,12 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::TryRuntime) => Err("Try-runtime was not enabled when building the node. \
 			You can enable it with `--features try-runtime`."
 			.into()),
+		Some(Subcommand::DevService(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			runner.run_node_until_exit(|config| async move {
+				crate::service::new_dev(config, None).map_err(sc_cli::Error::Service)
+			})
+		}
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 			let collator_options = cli.run.collator_options();
