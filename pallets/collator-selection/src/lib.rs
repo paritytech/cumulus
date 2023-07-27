@@ -690,7 +690,7 @@ pub mod pallet {
 			let desired_candidates: usize =
 				<DesiredCandidates<T>>::get().try_into().unwrap_or(usize::MAX);
 			let mut collators = Self::invulnerables().to_vec();
-			collators.extend(T::CandidateList::iter().take(desired_candidates as usize));
+			collators.extend(T::CandidateList::iter().take(desired_candidates));
 			collators
 		}
 
@@ -797,7 +797,7 @@ pub mod pallet {
 				.iter()
 				.find(|&candidate_info| candidate_info.who == who.clone())
 				.map(|candidate_info| candidate_info.deposit)
-				.unwrap_or_default()
+				.unwrap_or_else(|| Zero::zero())
 		}
 
 		#[cfg(feature = "runtime-benchmarks")]
