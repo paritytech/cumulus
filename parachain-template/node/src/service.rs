@@ -459,8 +459,6 @@ pub async fn start_parachain_node(
 /// the parachain inherent.
 pub fn new_dev(
 	mut config: Configuration,
-	// sealing: moonbeam_cli_opt::Sealing,
-	// rpc_config: RpcConfig,
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> Result<TaskManager, ServiceError> {
 	use async_io::Timer;
