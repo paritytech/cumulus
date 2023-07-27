@@ -711,7 +711,7 @@ fn xcm_reserve_transfer_filter_works() {
 
 	// prepare destinations
 	let relaychain = MultiLocation::parent();
-	let sibling_parachain = MultiLocation::new(1, X1(Parachain(1000)));
+	let sibling_parachain = MultiLocation::new(1, X1(Parachain(54321)));
 	let different_global_consensus_parachain_other_then_asset_hub_polkadot =
 		MultiLocation::new(2, X2(GlobalConsensus(Polkadot), Parachain(12345)));
 	let bridged_asset_hub = bridging::AssetHubPolkadot::get();
