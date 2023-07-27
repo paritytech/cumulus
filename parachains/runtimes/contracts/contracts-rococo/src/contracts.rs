@@ -7,7 +7,7 @@ use frame_support::{
 	traits::{ConstBool, ConstU32, Nothing},
 };
 use pallet_contracts::{
-	migration::{v12, v13},
+	migration::{v12, v13, v14},
 	weights::SubstrateWeight,
 	Config, DebugInfo, DefaultAddressGenerator, Frame, Schedule,
 };
