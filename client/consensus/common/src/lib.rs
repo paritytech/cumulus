@@ -252,6 +252,7 @@ pub struct PotentialParent<B: BlockT> {
 /// parachain block (when `max_depth` >= 1), or all of the following hold:
 ///   * its parent is a potential parent
 ///   * its relay-parent is within `ancestry_lookback` of the targeted relay-parent.
+///   * its relay-parent is within the same session as the targeted relay-parent.
 ///   * the block number is within `max_depth` blocks of the included block
 pub async fn find_potential_parents<B: BlockT>(
 	params: ParentSearchParams,
@@ -262,11 +263,23 @@ pub async fn find_potential_parents<B: BlockT>(
 	let rp_ancestry = {
 		let mut ancestry = Vec::with_capacity(params.ancestry_lookback + 1);
 		let mut current_rp = params.relay_parent;
+		let mut required_session = None;
+
 		while ancestry.len() <= params.ancestry_lookback {
 			let header = match relay_client.header(RBlockId::hash(current_rp)).await? {
 				None => break,
 				Some(h) => h,
 			};
+
+			let session = relay_client.session_index_for_child(current_rp).await?;
+			if let Some(required_session) = required_session {
+				// Respect the relay-chain rule not to cross session boundaries.
+				if session != required_session {
+					break
+				}
+			} else {
+				required_session = Some(session);
+			}
 
 			ancestry.push((current_rp, *header.state_root()));
 			current_rp = *header.parent_hash();
