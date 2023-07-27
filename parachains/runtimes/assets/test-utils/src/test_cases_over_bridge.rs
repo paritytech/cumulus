@@ -13,7 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Module contains predefined test-case scenarios for `Runtime` with various assets over bridge transfer.
+//! Module contains predefined test-case scenarios for `Runtime` with various assets transferred over
+//! a bridge.
 
 use codec::Encode;
 use cumulus_primitives_core::XcmpMessageSource;
