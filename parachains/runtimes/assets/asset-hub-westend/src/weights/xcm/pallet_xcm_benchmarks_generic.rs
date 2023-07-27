@@ -212,29 +212,6 @@ impl<T: frame_system::Config> WeightInfo<T> {
 		Weight::from_parts(4_891_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	// Storage: ParachainInfo ParachainId (r:1 w:0)
-	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
-	// Storage: unknown `0x3a696e747261626c6f636b5f656e74726f7079` (r:1 w:1)
-	// Proof Skipped: unknown `0x3a696e747261626c6f636b5f656e74726f7079` (r:1 w:1)
-	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
-	// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
-	// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
-	// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
-	// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
-	// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
-	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
-	// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
-	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
-	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
-	pub fn initiate_reserve_withdraw() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `109`
-		//  Estimated: `3574`
-		// Minimum execution time: 383_395_000 picoseconds.
-		Weight::from_parts(392_319_000, 3574)
-			.saturating_add(T::DbWeight::get().reads(7))
-			.saturating_add(T::DbWeight::get().writes(3))
-	}
 	pub fn burn_asset() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
