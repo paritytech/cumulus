@@ -431,7 +431,7 @@ pub mod kusama {
 			None,
 			Some(properties),
 			Extensions { relay_chain: relay_chain.to_string(), para_id: para_id.into() },
-			bridge_hub_rococo_runtime::WASM_BINARY
+			bridge_hub_kusama_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!"),
 		)
 	}
@@ -566,7 +566,7 @@ pub mod polkadot {
 			None,
 			Some(properties),
 			Extensions { relay_chain: relay_chain.to_string(), para_id: para_id.into() },
-			bridge_hub_rococo_runtime::WASM_BINARY
+			bridge_hub_polkadot_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!"),
 		)
 	}
