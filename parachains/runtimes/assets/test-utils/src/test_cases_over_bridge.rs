@@ -159,7 +159,7 @@ pub fn limited_reserve_transfer_assets_for_native_asset_works<
 				weight_limit,
 			));
 
-			// check alice account decreased about all balance_to_transfer
+			// check alice account decreased by balance_to_transfer
 			assert_eq!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(&alice_account),
 				alice_account_init_balance - balance_to_transfer.into()
