@@ -107,7 +107,7 @@ pub async fn run<Block, P, BI, CIDP, Client, Backend, RClient, SO, Proposer, CS>
 	Proposer::Transaction: Sync,
 	CS: CollatorServiceInterface<Block>,
 	P: Pair,
-	P::Public: AppPublic + Member + Codec,
+	P::Public: AppPublic + Member,
 	P::Signature: TryFrom<Vec<u8>> + Member + Codec,
 {
 	// This is an arbitrary value which is likely guaranteed to exceed any reasonable
