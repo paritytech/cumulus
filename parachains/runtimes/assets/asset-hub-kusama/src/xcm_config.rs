@@ -557,7 +557,7 @@ pub mod bridging {
 		];
 
 		/// Set up trusted bridged reserve locations.
-		/// Means that runtime accepts reserved assets from these locations.
+		/// Locations from which the runtime accepts reserved assets.
 		pub TrustedBridgedReserveLocations: sp_std::vec::Vec<FilteredLocation> = sp_std::vec![
 			// trust assets from AssetHubPolkadot
 			(
