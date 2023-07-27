@@ -531,7 +531,7 @@ pub fn new_dev(
 		);
 
 		let commands_stream = Box::new(futures::StreamExt::map(
-			Timer::interval(Duration::from_millis(1000)),
+			Timer::interval(Duration::from_millis(12_000)),
 			|_| EngineCommand::SealNewBlock {
 				create_empty: true,
 				finalize: false,
