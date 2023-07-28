@@ -585,22 +585,18 @@ pub mod pallet {
 		pub fn increase_bond(origin: OriginFor<T>, bond: BalanceOf<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			<Candidates<T>>::try_mutate(|candidates| -> DispatchResult {
-				let candidate_info = candidates
-					.iter_mut()
-					.find(|candidate_info| candidate_info.who == who)
-					.ok_or_else(|| Error::<T>::NotCandidate)?;
-				candidate_info.deposit = candidate_info.deposit.saturating_add(bond);
-				T::Currency::reserve(&who, bond)?;
-				T::CandidateList::on_increase(&who, bond).map_err(|_| Error::<T>::OnIncrease)?;
-				Ok(())
-			})?;
-
-			let new_bond = <Candidates<T>>::get()
-				.iter()
-				.find(|candidate_info| candidate_info.who == who)
-				.map(|candidate_info| candidate_info.deposit)
-				.unwrap();
+			let new_bond =
+				<Candidates<T>>::try_mutate(|candidates| -> Result<BalanceOf<T>, DispatchError> {
+					let candidate_info = candidates
+						.iter_mut()
+						.find(|candidate_info| candidate_info.who == who)
+						.ok_or_else(|| Error::<T>::NotCandidate)?;
+					candidate_info.deposit = candidate_info.deposit.saturating_add(bond);
+					T::Currency::reserve(&who, bond)?;
+					T::CandidateList::on_increase(&who, bond)
+						.map_err(|_| Error::<T>::OnIncrease)?;
+					Ok(candidate_info.deposit)
+				})?;
 
 			Self::deposit_event(Event::CandidateBondIncreased {
 				account_id: who,
@@ -617,25 +613,21 @@ pub mod pallet {
 		pub fn decrease_bond(origin: OriginFor<T>, bond: BalanceOf<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			<Candidates<T>>::try_mutate(|candidates| -> DispatchResult {
-				let candidate_info = candidates
-					.iter_mut()
-					.find(|candidate_info| candidate_info.who == who)
-					.ok_or_else(|| Error::<T>::NotCandidate)?;
-				candidate_info.deposit = candidate_info.deposit.saturating_sub(bond);
-				if candidate_info.deposit < <CandidacyBond<T>>::get() {
-					return Err(Error::<T>::OnRemoveInsufficientFunds.into())
-				}
-				T::Currency::unreserve(&who, bond);
-				T::CandidateList::on_decrease(&who, bond).map_err(|_| Error::<T>::OnIncrease)?;
-				Ok(())
-			})?;
-
-			let new_bond = <Candidates<T>>::get()
-				.iter()
-				.find(|candidate_info| candidate_info.who == who)
-				.map(|candidate_info| candidate_info.deposit)
-				.unwrap();
+			let new_bond =
+				<Candidates<T>>::try_mutate(|candidates| -> Result<BalanceOf<T>, DispatchError> {
+					let candidate_info = candidates
+						.iter_mut()
+						.find(|candidate_info| candidate_info.who == who)
+						.ok_or_else(|| Error::<T>::NotCandidate)?;
+					candidate_info.deposit = candidate_info.deposit.saturating_sub(bond);
+					if candidate_info.deposit < <CandidacyBond<T>>::get() {
+						return Err(Error::<T>::OnRemoveInsufficientFunds.into())
+					}
+					T::Currency::unreserve(&who, bond);
+					T::CandidateList::on_decrease(&who, bond)
+						.map_err(|_| Error::<T>::OnIncrease)?;
+					Ok(candidate_info.deposit)
+				})?;
 
 			Self::deposit_event(Event::CandidateBondDecreased {
 				account_id: who,
@@ -802,26 +794,14 @@ pub mod pallet {
 
 		#[cfg(feature = "runtime-benchmarks")]
 		fn set_score_of(who: &T::AccountId, weight: Self::Score) {
-			// // this will clearly results in an inconsistent state, but it should not matter for a
-			// // benchmark.
-			// let active: BalanceOf<T> = weight.try_into().map_err(|_| ()).unwrap();
-			// let mut ledger = match Self::ledger(who) {
-			// 	None => StakingLedger::default_from(who.clone()),
-			// 	Some(l) => l,
-			// };
-			// ledger.active = active;
-
-			// <Ledger<T>>::insert(who, ledger);
-			// <Bonded<T>>::insert(who, who);
-
-			// // also, we play a trick to make sure that a issuance based-`CurrencyToVote` behaves well:
-			// // This will make sure that total issuance is zero, thus the currency to vote will be a 1-1
-			// // conversion.
-			// let imbalance = T::Currency::burn(T::Currency::total_issuance());
-			// // kinda ugly, but gets the job done. The fact that this works here is a HUGE exception.
-			// // Don't try this pattern in other places.
-			// sp_std::mem::forget(imbalance);
-			todo!();
+			let active: BalanceOf<T> = weight.try_into().map_err(|_| ()).unwrap();
+			Candidates::<T>::mutate(|candidates| {
+				if let Some(candidate) =
+					candidates.iter_mut().find(|candidate_info| candidate_info.who == who.clone())
+				{
+					candidate.deposit = active;
+				}
+			});
 		}
 	}
 }
