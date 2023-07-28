@@ -5311,7 +5311,7 @@ dependencies = [
 [[package]]
 name = "kusama-runtime"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bitvec 1.0.1",
  "frame-benchmarking",
@@ -5411,7 +5411,7 @@ dependencies = [
 [[package]]
 name = "kusama-runtime-constants"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -8147,7 +8147,7 @@ dependencies = [
 [[package]]
 name = "pallet-xcm"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bounded-collections",
  "frame-benchmarking",
@@ -8168,7 +8168,7 @@ dependencies = [
 [[package]]
 name = "pallet-xcm-benchmarks"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8763,7 +8763,7 @@ dependencies = [
 [[package]]
 name = "polkadot-approval-distribution"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "futures",
  "futures-timer",
@@ -8781,7 +8781,7 @@ dependencies = [
 [[package]]
 name = "polkadot-availability-bitfield-distribution"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "always-assert",
  "futures",
@@ -8797,7 +8797,7 @@ dependencies = [
 [[package]]
 name = "polkadot-availability-distribution"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "derive_more",
  "fatality",
@@ -8820,7 +8820,7 @@ dependencies = [
 [[package]]
 name = "polkadot-availability-recovery"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "fatality",
  "futures",
@@ -8841,7 +8841,7 @@ dependencies = [
 [[package]]
 name = "polkadot-cli"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "clap",
  "frame-benchmarking-cli",
@@ -8870,7 +8870,7 @@ dependencies = [
 [[package]]
 name = "polkadot-collator-protocol"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bitvec 1.0.1",
  "fatality",
@@ -8892,7 +8892,7 @@ dependencies = [
 [[package]]
 name = "polkadot-core-primitives"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "parity-scale-codec 3.6.4",
  "scale-info",
@@ -8904,7 +8904,7 @@ dependencies = [
 [[package]]
 name = "polkadot-dispute-distribution"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "derive_more",
  "fatality",
@@ -8929,7 +8929,7 @@ dependencies = [
 [[package]]
 name = "polkadot-erasure-coding"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "parity-scale-codec 3.6.4",
  "polkadot-node-primitives",
@@ -8943,7 +8943,7 @@ dependencies = [
 [[package]]
 name = "polkadot-gossip-support"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "futures",
  "futures-timer",
@@ -8964,7 +8964,7 @@ dependencies = [
 [[package]]
 name = "polkadot-network-bridge"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "always-assert",
  "async-trait",
@@ -8987,7 +8987,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-collation-generation"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "futures",
  "parity-scale-codec 3.6.4",
@@ -9005,7 +9005,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-approval-voting"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bitvec 1.0.1",
  "derive_more",
@@ -9034,7 +9034,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-av-store"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bitvec 1.0.1",
  "futures",
@@ -9056,7 +9056,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-backing"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bitvec 1.0.1",
  "fatality",
@@ -9075,7 +9075,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-bitfield-signing"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "futures",
  "polkadot-node-subsystem",
@@ -9090,7 +9090,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-candidate-validation"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "async-trait",
  "futures",
@@ -9110,7 +9110,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-chain-api"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "futures",
  "polkadot-node-metrics",
@@ -9125,7 +9125,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-chain-selection"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "futures",
  "futures-timer",
@@ -9142,7 +9142,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-dispute-coordinator"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "fatality",
  "futures",
@@ -9161,7 +9161,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-parachains-inherent"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "async-trait",
  "futures",
@@ -9178,7 +9178,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-prospective-parachains"
 version = "0.9.16"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bitvec 1.0.1",
  "fatality",
@@ -9195,7 +9195,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-provisioner"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bitvec 1.0.1",
  "fatality",
@@ -9213,7 +9213,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-pvf"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "always-assert",
  "futures",
@@ -9244,7 +9244,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-pvf-checker"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "futures",
  "polkadot-node-primitives",
@@ -9260,7 +9260,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-pvf-common"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "cpu-time",
  "futures",
@@ -9284,7 +9284,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-pvf-execute-worker"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "cpu-time",
  "futures",
@@ -9304,7 +9304,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-pvf-prepare-worker"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "futures",
  "libc",
@@ -9327,7 +9327,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-runtime-api"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "futures",
  "lru 0.11.0",
@@ -9342,7 +9342,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-jaeger"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "lazy_static",
  "log",
@@ -9360,7 +9360,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-metrics"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bs58 0.4.0",
  "futures",
@@ -9379,7 +9379,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-network-protocol"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "async-channel",
  "async-trait",
@@ -9403,7 +9403,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-primitives"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bounded-vec",
  "futures",
@@ -9425,7 +9425,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-subsystem"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "polkadot-node-jaeger",
  "polkadot-node-subsystem-types",
@@ -9435,7 +9435,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-subsystem-test-helpers"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "async-trait",
  "futures",
@@ -9453,7 +9453,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-subsystem-types"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -9477,7 +9477,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-subsystem-util"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -9510,7 +9510,7 @@ dependencies = [
 [[package]]
 name = "polkadot-overseer"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "async-trait",
  "futures",
@@ -9533,7 +9533,7 @@ dependencies = [
 [[package]]
 name = "polkadot-parachain"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bounded-collections",
  "derive_more",
@@ -9632,7 +9632,7 @@ dependencies = [
 [[package]]
 name = "polkadot-performance-test"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "env_logger 0.9.3",
  "kusama-runtime",
@@ -9650,7 +9650,7 @@ dependencies = [
 [[package]]
 name = "polkadot-primitives"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bitvec 1.0.1",
  "hex-literal 0.4.1",
@@ -9676,7 +9676,7 @@ dependencies = [
 [[package]]
 name = "polkadot-rpc"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "jsonrpsee",
  "mmr-rpc",
@@ -9708,7 +9708,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bitvec 1.0.1",
  "frame-benchmarking",
@@ -9804,7 +9804,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-common"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bitvec 1.0.1",
  "frame-benchmarking",
@@ -9850,7 +9850,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-constants"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -9864,7 +9864,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-metrics"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bs58 0.4.0",
  "parity-scale-codec 3.6.4",
@@ -9876,7 +9876,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-parachains"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bitflags 1.3.2",
  "bitvec 1.0.1",
@@ -9921,7 +9921,7 @@ dependencies = [
 [[package]]
 name = "polkadot-service"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "async-trait",
  "frame-benchmarking",
@@ -10040,7 +10040,7 @@ dependencies = [
 [[package]]
 name = "polkadot-statement-distribution"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "arrayvec 0.5.2",
  "bitvec 1.0.1",
@@ -10063,7 +10063,7 @@ dependencies = [
 [[package]]
 name = "polkadot-statement-table"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "parity-scale-codec 3.6.4",
  "polkadot-primitives",
@@ -10073,7 +10073,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-client"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "frame-benchmarking",
  "parity-scale-codec 3.6.4",
@@ -10101,7 +10101,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-runtime"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bitvec 1.0.1",
  "frame-election-provider-support",
@@ -10162,7 +10162,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-service"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "frame-system",
  "futures",
@@ -10935,7 +10935,7 @@ dependencies = [
 [[package]]
 name = "rococo-runtime"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "binary-merkle-tree",
  "frame-benchmarking",
@@ -11022,7 +11022,7 @@ dependencies = [
 [[package]]
 name = "rococo-runtime-constants"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -12787,7 +12787,7 @@ checksum = "826167069c09b99d56f31e9ae5c99049e932a98c9dc2dac47645b08dbbf76ba7"
 [[package]]
 name = "slot-range-helper"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "enumn",
  "parity-scale-codec 3.6.4",
@@ -14001,7 +14001,7 @@ checksum = "3369f5ac52d5eb6ab48c6b4ffdc8efbcad6b89c765749064ba298f2c68a16a76"
 [[package]]
 name = "test-runtime-constants"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -14376,7 +14376,7 @@ dependencies = [
 [[package]]
 name = "tracing-gum"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "coarsetime",
  "polkadot-node-jaeger",
@@ -14388,7 +14388,7 @@ dependencies = [
 [[package]]
 name = "tracing-gum-proc-macro"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "expander 2.0.0",
  "proc-macro-crate",
@@ -15183,7 +15183,7 @@ dependencies = [
 [[package]]
 name = "westend-runtime"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bitvec 1.0.1",
  "frame-benchmarking",
@@ -15276,7 +15276,7 @@ dependencies = [
 [[package]]
 name = "westend-runtime-constants"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -15588,7 +15588,7 @@ dependencies = [
 [[package]]
 name = "xcm"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "bounded-collections",
  "derivative",
@@ -15604,7 +15604,7 @@ dependencies = [
 [[package]]
 name = "xcm-builder"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -15658,7 +15658,7 @@ dependencies = [
 [[package]]
 name = "xcm-executor"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "environmental",
  "frame-benchmarking",
@@ -15678,7 +15678,7 @@ dependencies = [
 [[package]]
 name = "xcm-procedural"
 version = "0.9.43"
-source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#5625f42a77b0b96a1994ef5c5fcf3bde4fa0a472"
+source = "git+https://github.com/paritytech/polkadot?branch=rh-async-backing-feature#21fec9de8d32d53ae6d2b54e9e43d19c08d8d767"
 dependencies = [
  "Inflector",
  "proc-macro2",
