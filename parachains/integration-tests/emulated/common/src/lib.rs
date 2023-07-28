@@ -10,7 +10,7 @@ pub use constants::{
 pub use impls::{RococoWococoMessageHandler, WococoRococoMessageHandler};
 
 use frame_support::{parameter_types, sp_tracing};
-use parachains_common::{AccountId, Balance};
+pub use parachains_common::{AccountId, Balance};
 pub use sp_core::{sr25519, storage::Storage, Get};
 use xcm_emulator::{
 	decl_test_bridges, decl_test_networks, decl_test_parachains, decl_test_relay_chains,
@@ -341,8 +341,8 @@ decl_test_networks! {
 		relay_chain = Kusama,
 		parachains = vec![
 			AssetHubKusama,
-			BridgeHubKusama,
 			PenpalKusamaA,
+			BridgeHubKusama,
 			PenpalKusamaB,
 		],
 		// TODO: uncomment when https://github.com/paritytech/cumulus/pull/2528 is merged

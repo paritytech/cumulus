@@ -235,6 +235,7 @@ pub mod westend {
 			max_upward_message_num_per_candidate: 10,
 			max_downward_message_size: 51200,
 			hrmp_sender_deposit: 100_000_000_000,
+			hrmp_recipient_deposit: 100_000_000_000,
 			hrmp_channel_max_capacity: 1000,
 			hrmp_channel_max_message_size: 102400,
 			hrmp_channel_max_total_size: 102400,
@@ -459,6 +460,7 @@ pub mod rococo {
 
 	pub fn get_host_config() -> HostConfiguration<BlockNumber> {
 		HostConfiguration {
+			max_upward_queue_count: 10,
 			max_upward_queue_size: 51200,
 			max_upward_message_size: 51200,
 			max_upward_message_num_per_candidate: 10,
