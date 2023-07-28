@@ -111,7 +111,7 @@ pub type ForeignAssetsConvertedConcreteId = assets_common::ForeignAssetsConverte
 	(
 		// Ignore `TrustBackedAssets` explicitly
 		StartsWith<TrustBackedAssetsPalletLocation>,
-		// Ignore assets that start explicitly with our `GlobalConsensus(NetworkId)`, means:
+		// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
 		// - foreign assets from our consensus should be: `MultiLocation {parents: 1, X*(Parachain(xyz), ..)}`
 		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` won't be accepted here
 		StartsWithExplicitGlobalConsensus<UniversalLocationNetworkId>,
@@ -465,7 +465,6 @@ impl pallet_xcm::Config for Runtime {
 		RuntimeCall,
 		MaxInstructions,
 	>;
-
 	type UniversalLocation = UniversalLocation;
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
