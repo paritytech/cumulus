@@ -59,6 +59,7 @@ members = [
 	"parachains/runtimes/testing/penpal",
 	"parachains/runtimes/testing/rococo-parachain",
 	"polkadot-parachain",
+	"primitives/aura",
 	"primitives/core",
 	"primitives/parachain-inherent",
 	"primitives/timestamp",

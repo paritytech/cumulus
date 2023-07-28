@@ -28,7 +28,7 @@ pub use frame_support::{
 pub use frame_system::AccountInfo;
 pub use pallet_balances::AccountData;
 pub use sp_arithmetic::traits::Bounded;
-pub use sp_core::{storage::Storage, H256};
+pub use sp_core::{storage::Storage, Pair, H256};
 pub use sp_io;
 pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, fmt::Debug};
 pub use sp_trie::StorageProof;
@@ -43,7 +43,6 @@ pub use cumulus_primitives_core::{
 };
 pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
-pub use cumulus_test_service::get_account_id_from_seed;
 pub use pallet_message_queue;
 pub use parachain_info;
 pub use parachains_common::{AccountId, BlockNumber};
@@ -251,6 +250,19 @@ impl fmt::Display for BridgeMessageDispatchError {
 	}
 }
 
+/// Helper function to generate an account ID from seed.
+pub fn get_account_id_from_seed<TPublic: sp_core::Public>(seed: &str) -> AccountId
+where
+	sp_runtime::MultiSigner:
+		From<<<TPublic as sp_runtime::CryptoType>::Pair as sp_core::Pair>::Public>,
+{
+	use sp_runtime::traits::IdentifyAccount;
+	let pubkey = TPublic::Pair::from_string(&format!("//{}", seed), None)
+		.expect("static values are valid; qed")
+		.public();
+	sp_runtime::MultiSigner::from(pubkey).into_account()
+}
+
 // Relay Chain Implementation
 #[macro_export]
 macro_rules! decl_test_relay_chains {
@@ -319,7 +331,7 @@ macro_rules! decl_test_relay_chains {
 					use $mq as message_queue;
 					use $runtime_event as runtime_event;
 
-					Self::execute_with(|| {
+					Self::ext_wrapper(|| {
 						<$mq as EnqueueMessage<AggregateMessageOrigin>>::enqueue_message(
 							msg.try_into().expect("Message too long"),
 							AggregateMessageOrigin::Ump(UmpQueueId::Para(para.clone()))
@@ -555,7 +567,7 @@ macro_rules! __impl_xcm_handlers_for_parachain {
 			) -> $crate::Weight {
 				use $crate::{TestExt, XcmpMessageHandler};
 
-				$name::execute_with(|| {
+				$name::ext_wrapper(|| {
 					<Self as Parachain>::XcmpMessageHandler::handle_xcmp_messages(iter, max_weight)
 				})
 			}
@@ -568,7 +580,7 @@ macro_rules! __impl_xcm_handlers_for_parachain {
 			) -> $crate::Weight {
 				use $crate::{DmpMessageHandler, TestExt};
 
-				$name::execute_with(|| {
+				$name::ext_wrapper(|| {
 					<Self as Parachain>::DmpMessageHandler::handle_dmp_messages(iter, max_weight)
 				})
 			}
@@ -1100,8 +1112,8 @@ pub mod helpers {
 
 	pub fn within_threshold(threshold: u64, expected_value: u64, current_value: u64) -> bool {
 		let margin = (current_value * threshold) / 100;
-		let lower_limit = expected_value - margin;
-		let upper_limit = expected_value + margin;
+		let lower_limit = expected_value.checked_sub(margin).unwrap_or(u64::MIN);
+		let upper_limit = expected_value.checked_add(margin).unwrap_or(u64::MAX);
 
 		current_value >= lower_limit && current_value <= upper_limit
 	}
