@@ -19,6 +19,7 @@
 //! Provides functions for starting a collator node or a normal full node.
 
 use cumulus_client_cli::CollatorOptions;
+use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_client_network::{AssumeSybilResistance, RequireSecondedInBlockAnnounce};
 use cumulus_client_pov_recovery::{PoVRecovery, RecoveryDelayRange, RecoveryHandle};
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
@@ -45,7 +46,7 @@ use sc_telemetry::{log, TelemetryWorkerHandle};
 use sc_utils::mpsc::TracingUnboundedSender;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{HeaderBackend, HeaderMetadata};
-use sp_core::Decode;
+use sp_core::{traits::SpawnNamed, Decode};
 use sp_runtime::traits::{Block as BlockT, BlockIdTo};
 use std::{sync::Arc, time::Duration};
 
@@ -67,6 +68,22 @@ pub enum DARecoveryProfile {
 	Other(RecoveryDelayRange),
 }
 
+pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, RCInterface, Spawner> {
+	pub block_status: Arc<BS>,
+	pub client: Arc<Client>,
+	pub announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
+	pub spawner: Spawner,
+	pub para_id: ParaId,
+	pub relay_chain_interface: RCInterface,
+	pub task_manager: &'a mut TaskManager,
+	pub parachain_consensus: Box<dyn ParachainConsensus<Block>>,
+	pub import_queue: Box<dyn ImportQueueService<Block>>,
+	pub collator_key: CollatorPair,
+	pub relay_chain_slot_duration: Duration,
+	pub recovery_handle: Box<dyn RecoveryHandle>,
+	pub sync_service: Arc<SyncingService<Block>>,
+}
+
 /// Parameters given to [`start_relay_chain_tasks`].
 pub struct StartRelayChainTasksParams<'a, Block: BlockT, Client, RCInterface> {
 	pub client: Arc<Client>,
@@ -81,29 +98,45 @@ pub struct StartRelayChainTasksParams<'a, Block: BlockT, Client, RCInterface> {
 	pub sync_service: Arc<SyncingService<Block>>,
 }
 
-/// Start necessary consensus tasks related to the relay chain.
+/// Parameters given to [`start_full_node`].
+pub struct StartFullNodeParams<'a, Block: BlockT, Client, RCInterface> {
+	pub para_id: ParaId,
+	pub client: Arc<Client>,
+	pub relay_chain_interface: RCInterface,
+	pub task_manager: &'a mut TaskManager,
+	pub announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
+	pub relay_chain_slot_duration: Duration,
+	pub import_queue: Box<dyn ImportQueueService<Block>>,
+	pub recovery_handle: Box<dyn RecoveryHandle>,
+	pub sync_service: Arc<SyncingService<Block>>,
+}
+
+/// Start a collator node for a parachain.
 ///
-/// Parachain nodes need to track the state of the relay chain and use the
-/// relay chain's data availability service to fetch blocks if they don't
-/// arrive via the normal p2p layer (i.e. when authors withhold their blocks deliberately).
-///
-/// This function spawns work for those side tasks.
-pub async fn start_relay_chain_tasks<'a, Block, Client, Backend, RCInterface>(
-	StartRelayChainTasksParams {
+/// A collator is similar to a validator in a normal blockchain.
+/// It is responsible for producing blocks and sending the blocks to a
+/// parachain validator for validation and inclusion into the relay chain.
+#[deprecated = "use start_relay_chain_tasks instead"]
+pub async fn start_collator<'a, Block, BS, Client, Backend, RCInterface, Spawner>(
+	StartCollatorParams {
+		block_status,
 		client,
 		announce_block,
+		spawner,
 		para_id,
 		task_manager,
-		da_recovery_profile,
 		relay_chain_interface,
+		parachain_consensus,
 		import_queue,
+		collator_key,
 		relay_chain_slot_duration,
 		recovery_handle,
 		sync_service,
-	}: StartRelayChainTasksParams<'a, Block, Client, RCInterface>,
+	}: StartCollatorParams<'a, Block, BS, Client, RCInterface, Spawner>,
 ) -> sc_service::error::Result<()>
 where
 	Block: BlockT,
+	BS: BlockBackend<Block> + Send + Sync + 'static,
 	Client: Finalizer<Block, Backend>
 		+ UsageProvider<Block>
 		+ HeaderBackend<Block>
@@ -115,8 +148,76 @@ where
 		+ 'static,
 	Client::Api: CollectCollationInfo<Block>,
 	for<'b> &'b Client: BlockImport<Block>,
+	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
 	RCInterface: RelayChainInterface + Clone + 'static,
 	Backend: BackendT<Block> + 'static,
+{
+	let overseer_handle = relay_chain_interface
+		.overseer_handle()
+		.map_err(|e| sc_service::Error::Application(Box::new(e)))?;
+
+	start_relay_chain_tasks(StartRelayChainTasksParams {
+		client: client.clone(),
+		announce_block: announce_block.clone(),
+		para_id,
+		task_manager,
+		da_recovery_profile: DARecoveryProfile::Collator,
+		relay_chain_interface,
+		import_queue,
+		relay_chain_slot_duration,
+		recovery_handle,
+		sync_service,
+	})?;
+
+	#[allow(deprecated)]
+	cumulus_client_collator::start_collator(cumulus_client_collator::StartCollatorParams {
+		runtime_api: client,
+		block_status,
+		announce_block,
+		overseer_handle,
+		spawner,
+		para_id,
+		key: collator_key,
+		parachain_consensus,
+	})
+	.await;
+
+	Ok(())
+}
+
+/// Start necessary consensus tasks related to the relay chain.
+///
+/// Parachain nodes need to track the state of the relay chain and use the
+/// relay chain's data availability service to fetch blocks if they don't
+/// arrive via the normal p2p layer (i.e. when authors withhold their blocks deliberately).
+///
+/// This function spawns work for those side tasks.
+pub fn start_relay_chain_tasks<Block, Client, Backend, RCInterface>(
+	StartRelayChainTasksParams {
+		client,
+		announce_block,
+		para_id,
+		task_manager,
+		da_recovery_profile,
+		relay_chain_interface,
+		import_queue,
+		relay_chain_slot_duration,
+		recovery_handle,
+		sync_service,
+	}: StartRelayChainTasksParams<Block, Client, RCInterface>,
+) -> sc_service::error::Result<()>
+where
+	Block: BlockT,
+	Client: Finalizer<Block, Backend>
+		+ UsageProvider<Block>
+		+ Send
+		+ Sync
+		+ BlockBackend<Block>
+		+ BlockchainEvents<Block>
+		+ 'static,
+	for<'a> &'a Client: BlockImport<Block>,
+	Backend: BackendT<Block> + 'static,
+	RCInterface: RelayChainInterface + Clone + 'static,
 {
 	let (recovery_chan_tx, recovery_chan_rx) = mpsc::channel(RECOVERY_CHAN_SIZE);
 
@@ -172,6 +273,51 @@ where
 		.spawn("cumulus-pov-recovery", None, pov_recovery.run());
 
 	Ok(())
+}
+
+/// Start a full node for a parachain.
+///
+/// A full node will only sync the given parachain and will follow the
+/// tip of the chain.
+#[deprecated = "use start_relay_chain_tasks instead"]
+pub fn start_full_node<Block, Client, Backend, RCInterface>(
+	StartFullNodeParams {
+		client,
+		announce_block,
+		task_manager,
+		relay_chain_interface,
+		para_id,
+		relay_chain_slot_duration,
+		import_queue,
+		recovery_handle,
+		sync_service,
+	}: StartFullNodeParams<Block, Client, RCInterface>,
+) -> sc_service::error::Result<()>
+where
+	Block: BlockT,
+	Client: Finalizer<Block, Backend>
+		+ UsageProvider<Block>
+		+ Send
+		+ Sync
+		+ BlockBackend<Block>
+		+ BlockchainEvents<Block>
+		+ 'static,
+	for<'a> &'a Client: BlockImport<Block>,
+	Backend: BackendT<Block> + 'static,
+	RCInterface: RelayChainInterface + Clone + 'static,
+{
+	start_relay_chain_tasks(StartRelayChainTasksParams {
+		client,
+		announce_block,
+		task_manager,
+		relay_chain_interface,
+		para_id,
+		relay_chain_slot_duration,
+		import_queue,
+		recovery_handle,
+		sync_service,
+		da_recovery_profile: DARecoveryProfile::FullNode,
+	})
 }
 
 /// Re-exports of old parachain consensus loop start logic.
