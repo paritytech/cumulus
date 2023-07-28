@@ -28,7 +28,13 @@ fn swap_locally_on_chain_using_local_assets() {
 			<AssetHubKusama as Parachain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
 			ASSET_ID.into(),
 			AssetHubKusamaSender::get().into(),
-			3_000_000_000_000,
+			100_000_000_000_000,
+		));
+
+		assert_ok!(<AssetHubKusama as AssetHubKusamaPallet>::Balances::force_set_balance(
+			<AssetHubKusama as Parachain>::RuntimeOrigin::root(),
+			AssetHubKusamaSender::get().into(),
+			100_000_000_000_000,
 		));
 
 		assert_ok!(<AssetHubKusama as AssetHubKusamaPallet>::AssetConversion::create_pool(

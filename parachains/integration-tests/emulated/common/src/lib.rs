@@ -227,6 +227,7 @@ decl_test_parachains! {
 			ForeignAssets: asset_hub_kusama_runtime::ForeignAssets,
 			PoolAssets: asset_hub_kusama_runtime::PoolAssets,
 			AssetConversion: asset_hub_kusama_runtime::AssetConversion,
+			Balances: asset_hub_kusama_runtime::Balances,
 		}
 	},
 	pub struct BridgeHubKusama {
