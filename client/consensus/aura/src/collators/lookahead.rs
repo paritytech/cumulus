@@ -281,7 +281,10 @@ where
 			let mut parent_hash = initial_parent.hash;
 			let mut parent_header = initial_parent.header;
 			let overseer_handle = &mut params.overseer_handle;
-			for n_built in 0.. {
+
+			// This needs to change to support elastic scaling, but for continuously
+			// scheduled chains this ensures that the backlog will grow steadily.
+			for n_built in 0..2 {
 				let slot_claim = match can_build_upon(parent_hash).await {
 					None => break,
 					Some(c) => c,
