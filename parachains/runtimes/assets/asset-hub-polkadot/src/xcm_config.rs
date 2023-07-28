@@ -561,8 +561,9 @@ fn foreign_pallet_has_correct_local_account() {
 pub mod bridging {
 	use super::*;
 	use assets_common::{matching, matching::*};
+	use parachains_common::xcm_config::LocationFilter;
 	use sp_std::collections::btree_set::BTreeSet;
-	use xcm_builder::{NetworkExportTable, UnpaidRemoteExporter};
+	use xcm_builder::UnpaidRemoteExporter;
 
 	parameter_types! {
 		pub BridgeHubPolkadotParaId: u32 = 1002;
@@ -572,9 +573,17 @@ pub mod bridging {
 		pub AssetHubKusama: MultiLocation =  MultiLocation::new(2, X2(GlobalConsensus(KusamaNetwork::get()), Parachain(1000)));
 		pub KsmLocation: MultiLocation =  MultiLocation::new(2, X1(GlobalConsensus(KusamaNetwork::get())));
 
-		/// Setup exporters configuration.
-		pub BridgeTable: sp_std::vec::Vec<(NetworkId, MultiLocation, Option<MultiAsset>)> = sp_std::vec![
-			(KusamaNetwork::get(), BridgeHubPolkadot::get(), None)
+		/// Set up exporters configuration.
+		pub BridgeTable: sp_std::vec::Vec<(NetworkId, LocationFilter<InteriorMultiLocation>, MultiLocation, Option<MultiAsset>)> = sp_std::vec![
+			(
+				KusamaNetwork::get(),
+				LocationFilter::default()
+					// allow to bridge to AssetHubKusama
+					.add_equals(AssetHubKusama::get().interior.split_global().expect("invalid configuration for AssetHubKusama").1),
+					// and nothing else
+				BridgeHubPolkadot::get(),
+				None
+			)
 		];
 
 		/// Set up trusted bridged reserve locations.
@@ -584,7 +593,7 @@ pub mod bridging {
 			(
 				AssetHubKusama::get(),
 				AssetFilter::ByMultiLocation(
-					MultiLocationFilter::default()
+					LocationFilter::default()
 						// allow receive KSM
 						.add_equals(KsmLocation::get())
 						// and nothing else
@@ -599,7 +608,7 @@ pub mod bridging {
 			(
 				AssetHubKusama::get(),
 				AssetFilter::ByMultiLocation(
-					MultiLocationFilter::default()
+					LocationFilter::default()
 						// allow send only DOT
 						.add_equals(DotLocation::get())
 						// and nothing else
@@ -621,9 +630,12 @@ pub mod bridging {
 		}
 	}
 
+	pub type FilteredNetworkExportTable =
+		parachains_common::xcm_config::FilteredNetworkExportTable<BridgeTable>;
+
 	/// Bridge router, which wraps and sends xcm to BridgeHub to be delivered to the different GlobalConsensus
 	pub type BridgingXcmRouter =
-		UnpaidRemoteExporter<NetworkExportTable<BridgeTable>, LocalXcmRouter, UniversalLocation>;
+		UnpaidRemoteExporter<FilteredNetworkExportTable, LocalXcmRouter, UniversalLocation>;
 
 	/// Reserve locations filter for `xcm_executor::Config::IsReserve`.
 	pub type IsTrustedBridgedReserveLocationForConcreteAsset =

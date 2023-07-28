@@ -18,6 +18,7 @@ use frame_support::{
 	pallet_prelude::Get,
 	traits::{Contains, ContainsPair},
 };
+use parachains_common::xcm_config::{LocationFilter, MatchesLocation};
 use xcm::{
 	latest::prelude::{MultiAsset, MultiLocation},
 	prelude::*,
@@ -177,56 +178,16 @@ impl<LocationAssetFilters: Get<sp_std::vec::Vec<FilteredLocation>>>
 /// Location as `MultiLocation` with `AssetFilter`
 pub type FilteredLocation = (MultiLocation, AssetFilter);
 
-/// Trait for matching asset location
-pub trait MatchAssetLocation {
-	fn matches(&self, location: &MultiLocation) -> bool;
-}
-
 /// Simple asset location filter
 #[derive(Debug)]
 pub enum AssetFilter {
-	ByMultiLocation(MultiLocationFilter),
+	ByMultiLocation(LocationFilter<MultiLocation>),
 }
 
-impl MatchAssetLocation for AssetFilter {
+impl MatchesLocation<MultiLocation> for AssetFilter {
 	fn matches(&self, asset_location: &MultiLocation) -> bool {
 		match self {
 			AssetFilter::ByMultiLocation(by_location) => by_location.matches(asset_location),
 		}
-	}
-}
-
-#[derive(Debug, Default)]
-pub struct MultiLocationFilter {
-	/// Requested location equals to `MultiLocation`
-	pub equals_any: sp_std::vec::Vec<MultiLocation>,
-	/// Requested location starts with `MultiLocation`
-	pub starts_with_any: sp_std::vec::Vec<MultiLocation>,
-}
-
-impl MultiLocationFilter {
-	pub fn add_equals(mut self, filter: MultiLocation) -> Self {
-		self.equals_any.push(filter);
-		self
-	}
-	pub fn add_starts_with(mut self, filter: MultiLocation) -> Self {
-		self.starts_with_any.push(filter);
-		self
-	}
-}
-
-impl MatchAssetLocation for MultiLocationFilter {
-	fn matches(&self, location: &MultiLocation) -> bool {
-		for filter in &self.equals_any {
-			if location.eq(filter) {
-				return true
-			}
-		}
-		for filter in &self.starts_with_any {
-			if location.starts_with(filter) {
-				return true
-			}
-		}
-		false
 	}
 }
