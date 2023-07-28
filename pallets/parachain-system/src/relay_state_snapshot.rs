@@ -19,7 +19,7 @@ use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId,
 };
 use scale_info::TypeInfo;
-use sp_runtime::traits::HashFor;
+use sp_runtime::traits::HashingFor;
 use sp_state_machine::{Backend, TrieBackend, TrieBackendBuilder};
 use sp_std::vec::Vec;
 use sp_trie::{HashDBT, MemoryDB, StorageProof, EMPTY_PREFIX};
@@ -28,7 +28,7 @@ use sp_trie::{HashDBT, MemoryDB, StorageProof, EMPTY_PREFIX};
 // The field order should stay the same as the data can be found in the proof to ensure both are
 // have the same encoded representation.
 #[derive(Clone, Encode, Decode, TypeInfo, Default)]
-pub struct RelayDispachQueueSize {
+pub struct RelayDispatchQueueRemainingCapacity {
 	/// The number of additional messages that can be enqueued.
 	pub remaining_count: u32,
 	/// The total size of additional messages that can be enqueued.
@@ -48,7 +48,7 @@ pub struct MessagingStateSnapshot {
 	pub dmq_mqc_head: relay_chain::Hash,
 
 	/// The current capacity of the upward message queue of the current parachain on the relay chain.
-	pub relay_dispatch_queue_size: RelayDispachQueueSize,
+	pub relay_dispatch_queue_remaining_capacity: RelayDispatchQueueRemainingCapacity,
 
 	/// Information about all the inbound HRMP channels.
 	///
@@ -86,7 +86,7 @@ pub enum Error {
 	/// The DMQ MQC head cannot be extracted.
 	DmqMqcHead(ReadEntryErr),
 	/// Relay dispatch queue cannot be extracted.
-	RelayDispatchQueueSize(ReadEntryErr),
+	RelayDispatchQueueRemainingCapacity(ReadEntryErr),
 	/// The hrmp inress channel index cannot be extracted.
 	HrmpIngressChannelIndex(ReadEntryErr),
 	/// The hrmp egress channel index cannot be extracted.
@@ -114,7 +114,7 @@ pub enum ReadEntryErr {
 fn read_entry<T, B>(backend: &B, key: &[u8], fallback: Option<T>) -> Result<T, ReadEntryErr>
 where
 	T: Decode,
-	B: Backend<HashFor<relay_chain::Block>>,
+	B: Backend<HashingFor<relay_chain::Block>>,
 {
 	backend
 		.storage(key)
@@ -133,7 +133,7 @@ where
 fn read_optional_entry<T, B>(backend: &B, key: &[u8]) -> Result<Option<T>, ReadEntryErr>
 where
 	T: Decode,
-	B: Backend<HashFor<relay_chain::Block>>,
+	B: Backend<HashingFor<relay_chain::Block>>,
 {
 	match read_entry(backend, key, None) {
 		Ok(v) => Ok(Some(v)),
@@ -147,7 +147,8 @@ where
 /// This state proof is extracted from the relay chain block we are building on top of.
 pub struct RelayChainStateProof {
 	para_id: ParaId,
-	trie_backend: TrieBackend<MemoryDB<HashFor<relay_chain::Block>>, HashFor<relay_chain::Block>>,
+	trie_backend:
+		TrieBackend<MemoryDB<HashingFor<relay_chain::Block>>, HashingFor<relay_chain::Block>>,
 }
 
 impl RelayChainStateProof {
@@ -160,7 +161,7 @@ impl RelayChainStateProof {
 		relay_parent_storage_root: relay_chain::Hash,
 		proof: StorageProof,
 	) -> Result<Self, Error> {
-		let db = proof.into_memory_db::<HashFor<relay_chain::Block>>();
+		let db = proof.into_memory_db::<HashingFor<relay_chain::Block>>();
 		if !db.contains(&relay_parent_storage_root, EMPTY_PREFIX) {
 			return Err(Error::RootMismatch)
 		}
@@ -183,7 +184,10 @@ impl RelayChainStateProof {
 		)
 		.map_err(Error::DmqMqcHead)?;
 
-		let relay_dispatch_queue_size = read_optional_entry::<RelayDispachQueueSize, _>(
+		let relay_dispatch_queue_remaining_capacity = read_optional_entry::<
+			RelayDispatchQueueRemainingCapacity,
+			_,
+		>(
 			&self.trie_backend,
 			&relay_chain::well_known_keys::relay_dispatch_queue_remaining_capacity(self.para_id)
 				.key,
@@ -195,22 +199,26 @@ impl RelayChainStateProof {
 		// this code here needs to be removed and above needs to be changed to `read_entry` that
 		// returns an error if `relay_dispatch_queue_remaining_capacity` can not be found/decoded.
 		//
-		// For now we just fallback to the old dispatch queue size if there is an error.
-		let relay_dispatch_queue_size = match relay_dispatch_queue_size {
+		// For now we just fallback to the old dispatch queue size on `ReadEntryErr::Absent`.
+		// `ReadEntryErr::Decode` and `ReadEntryErr::Proof` are potentially subject to meddling
+		// by malicious collators, so we reject the block in those cases.
+		let relay_dispatch_queue_remaining_capacity = match relay_dispatch_queue_remaining_capacity
+		{
 			Ok(Some(r)) => r,
-			_ => {
+			Ok(None) => {
 				let res = read_entry::<(u32, u32), _>(
 					&self.trie_backend,
 					#[allow(deprecated)]
 					&relay_chain::well_known_keys::relay_dispatch_queue_size(self.para_id),
 					Some((0, 0)),
 				)
-				.map_err(Error::RelayDispatchQueueSize)?;
+				.map_err(Error::RelayDispatchQueueRemainingCapacity)?;
 
 				let remaining_count = host_config.max_upward_queue_count.saturating_sub(res.0);
 				let remaining_size = host_config.max_upward_queue_size.saturating_sub(res.1);
-				RelayDispachQueueSize { remaining_count, remaining_size }
+				RelayDispatchQueueRemainingCapacity { remaining_count, remaining_size }
 			},
+			Err(e) => return Err(Error::RelayDispatchQueueRemainingCapacity(e)),
 		};
 
 		let ingress_channel_index: Vec<ParaId> = read_entry(
@@ -255,7 +263,7 @@ impl RelayChainStateProof {
 		// by relying on the fact that `ingress_channel_index` and `egress_channel_index` are themselves sorted.
 		Ok(MessagingStateSnapshot {
 			dmq_mqc_head,
-			relay_dispatch_queue_size,
+			relay_dispatch_queue_remaining_capacity,
 			ingress_channels,
 			egress_channels,
 		})
