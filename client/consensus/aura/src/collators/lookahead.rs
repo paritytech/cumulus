@@ -31,7 +31,7 @@
 //! The main limitation is block propagation time - i.e. the new blocks created by an author
 //! must be propagated to the next author before their turn.
 
-use codec::{Decode, Encode};
+use codec::{Codec, Encode};
 use cumulus_client_collator::service::ServiceInterface as CollatorServiceInterface;
 use cumulus_client_consensus_common::{
 	self as consensus_common, ParachainBlockImportMarker, ParentSearchParams,
@@ -62,7 +62,7 @@ use sp_inherents::CreateInherentDataProviders;
 use sp_keystore::KeystorePtr;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, Member};
 use sp_timestamp::Timestamp;
-use std::{convert::TryFrom, hash::Hash, sync::Arc, time::Duration};
+use std::{convert::TryFrom, sync::Arc, time::Duration};
 
 use crate::collator::{self as collator_util, SlotClaim};
 
@@ -131,8 +131,8 @@ where
 	CS: CollatorServiceInterface<Block> + Send + Sync + 'static,
 	CHP: consensus_common::ValidationCodeHashProvider<Block::Hash> + Send + 'static,
 	P: Pair + Send + Sync,
-	P::Public: AppPublic + Hash + Member + Encode + Decode,
-	P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
+	P::Public: AppPublic + Member + Codec,
+	P::Signature: TryFrom<Vec<u8>> + Member + Codec,
 {
 	// This is an arbitrary value which is likely guaranteed to exceed any reasonable
 	// limit, as it would correspond to 10 non-included blocks.
@@ -398,8 +398,8 @@ where
 	Client: ProvideRuntimeApi<Block>,
 	Client::Api: AuraApi<Block, P::Public> + AuraUnincludedSegmentApi<Block>,
 	P: Pair,
-	P::Public: Encode + Decode,
-	P::Signature: Encode + Decode,
+	P::Public: Codec,
+	P::Signature: Codec,
 {
 	let runtime_api = client.runtime_api();
 	let authorities = runtime_api.authorities(parent_hash).ok()?;
