@@ -23,14 +23,17 @@ use super::{
 use crate::{
 	bridge_hub_rococo_config::ToBridgeHubWococoHaulBlobExporter,
 	bridge_hub_wococo_config::ToBridgeHubRococoHaulBlobExporter,
+	WithBridgeHubRococoMessagesInstance, WithBridgeHubWococoMessagesInstance,
 };
+use cumulus_primitives_core::AggregateMessageOrigin;
 use frame_support::{
 	match_types, parameter_types,
-	traits::{ConstU32, Contains, Everything, Nothing},
+	traits::{ConstU32, Contains, Everything, Nothing, ProcessMessage, ProcessMessageError, QueuePausedQuery},
+	weights::WeightMeter,
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
-use parachains_common::{impls::ToStakingPot, xcm_config::ConcreteNativeAssetFrom};
+use parachains_common::{impls::ToStakingPot, process_xcm_message::queue_paused_query, xcm_config::ConcreteNativeAssetFrom};
 use polkadot_parachain::primitives::Sibling;
 use sp_core::Get;
 use xcm::latest::prelude::*;
@@ -358,5 +361,75 @@ impl ExportXcm for BridgeHubRococoOrBridgeHubWococoSwitchExporter {
 			Wococo => ToBridgeHubWococoHaulBlobExporter::deliver(ticket),
 			_ => unimplemented!("Unsupported network: {:?}", network),
 		}
+	}
+}
+
+/// Hacky adapter for `LocalXcmQueueMessageProcessor`, because we have just one runtime for Rococo and
+/// Wococo BridgeHub, so it means we have just one message queue pallet instance.
+pub struct BridgeHubRococoOrBridgeHubWococoSwitchLocalXcmQueueMessageProcessor;
+
+impl ProcessMessage for BridgeHubRococoOrBridgeHubWococoSwitchLocalXcmQueueMessageProcessor {
+	type Origin = AggregateMessageOrigin;
+
+	fn process_message(
+		message: &[u8],
+		origin: Self::Origin,
+		meter: &mut WeightMeter,
+		id: &mut [u8; 32],
+	) -> Result<bool, ProcessMessageError> {
+		// if we are at Rococo and the queue is suspended, yield immediately
+		let at_rococo_sender_and_lane = crate::bridge_hub_rococo_config::FromRococoAssetHubToWococoAssetHubRoute::get();
+		if MultiLocation::from(origin.clone()) == at_rococo_sender_and_lane.location {
+			if bridge_runtime_common::messages_xcm_extension::LocalXcmQueueManager::is_inbound_queue_suspended::<Runtime, WithBridgeHubWococoMessagesInstance>(at_rococo_sender_and_lane.lane) {
+				return Err(ProcessMessageError::Yield)
+			}
+		}
+
+		// if we are at Wococo and the queue is suspended, yield immediately
+		let at_wococo_sender_and_lane = crate::bridge_hub_wococo_config::FromWococoAssetHubToRococoAssetHubRoute::get();
+		if MultiLocation::from(origin.clone()) == at_wococo_sender_and_lane.location {
+			if bridge_runtime_common::messages_xcm_extension::LocalXcmQueueManager::is_inbound_queue_suspended::<Runtime, WithBridgeHubRococoMessagesInstance>(at_wococo_sender_and_lane.lane) {
+				return Err(ProcessMessageError::Yield)
+			}
+		}
+
+		// else pass message to backed processor
+		parachains_common::process_xcm_message::ProcessXcmMessage::<
+			AggregateMessageOrigin,
+			xcm_executor::XcmExecutor<crate::xcm_config::XcmConfig>,
+			RuntimeCall,
+		>::process_message(message, origin, meter, id)
+	}
+}
+
+/// Hacky adapter for `LocalXcmQueueSuspender`, because we have just one runtime for Rococo and
+/// Wococo BridgeHub, so it means we have just one message queue pallet instance.
+pub struct BridgeHubRococoOrBridgeHubWococoSwitchLocalXcmQueueSuspender;
+
+impl QueuePausedQuery<AggregateMessageOrigin> for BridgeHubRococoOrBridgeHubWococoSwitchLocalXcmQueueSuspender {
+	fn is_paused(origin: &AggregateMessageOrigin) -> bool {
+		// give priority to inner status
+		if queue_paused_query::NarrowToSiblings::<XcmpQueue>::is_paused(origin) {
+			return true
+		}
+
+		// if at Rococo we have suspended the queue before, do not even start processing its messages
+		let at_rococo_sender_and_lane = crate::bridge_hub_rococo_config::FromRococoAssetHubToWococoAssetHubRoute::get();
+		if MultiLocation::from(origin.clone()) == at_rococo_sender_and_lane.location {
+			if bridge_runtime_common::messages_xcm_extension::LocalXcmQueueManager::is_inbound_queue_suspended::<Runtime, WithBridgeHubWococoMessagesInstance>(at_rococo_sender_and_lane.lane) {
+				return true
+			}
+		}
+
+		// if at Wococo we have suspended the queue before, do not even start processing its messages
+		let at_wococo_sender_and_lane = crate::bridge_hub_wococo_config::FromWococoAssetHubToRococoAssetHubRoute::get();
+		if MultiLocation::from(origin.clone()) == at_wococo_sender_and_lane.location {
+			if bridge_runtime_common::messages_xcm_extension::LocalXcmQueueManager::is_inbound_queue_suspended::<Runtime, WithBridgeHubRococoMessagesInstance>(at_wococo_sender_and_lane.lane) {
+				return true
+			}
+		}
+
+		// else process message
+		false
 	}
 }

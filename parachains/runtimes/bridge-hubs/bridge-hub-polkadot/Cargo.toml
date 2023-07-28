@@ -80,6 +80,7 @@ bp-polkadot-core = { path = "../../../../bridges/primitives/polkadot-core", defa
 bp-relayers = { path = "../../../../bridges/primitives/relayers", default-features = false }
 bp-runtime = { path = "../../../../bridges/primitives/runtime", default-features = false }
 bp-kusama = { path = "../../../../bridges/primitives/chain-kusama", default-features = false }
+bp-xcm-bridge-hub-router = { path = "../../../../bridges/primitives/xcm-bridge-hub-router", default-features = false }
 bridge-runtime-common = { path = "../../../../bridges/bin/runtime-common", default-features = false }
 pallet-bridge-grandpa = { path = "../../../../bridges/modules/grandpa", default-features = false }
 pallet-bridge-messages = { path = "../../../../bridges/modules/messages", default-features = false }
@@ -106,6 +107,7 @@ std = [
 	"bp-relayers/std",
 	"bp-runtime/std",
 	"bp-kusama/std",
+	"bp-xcm-bridge-hub-router/std",
 	"bridge-runtime-common/std",
 	"codec/std",
 	"log/std",

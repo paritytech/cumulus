@@ -27,7 +27,7 @@ use bridge_runtime_common::{
 		source::FromBridgedChainMessagesDeliveryProof, target::FromBridgedChainMessagesProof,
 		MessageBridge, ThisChainWithMessages, UnderlyingChainProvider,
 	},
-	messages_xcm_extension::{XcmBlobHauler, XcmBlobHaulerAdapter},
+	messages_xcm_extension::{SenderAndLane, XcmBlobHauler, XcmBlobHaulerAdapter},
 	refund_relayer_extension::{
 		ActualFeeRefund, RefundBridgedParachainMessages, RefundableMessagesLane,
 		RefundableParachain,
@@ -51,6 +51,11 @@ parameter_types! {
 	pub RococoGlobalConsensusNetwork: NetworkId = NetworkId::Rococo;
 	pub ActiveOutboundLanesToBridgeHubRococo: &'static [bp_messages::LaneId] = &[DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO];
 	pub PriorityBoostPerMessage: u64 = 921_900_294;
+
+	pub FromWococoAssetHubToRococoAssetHubRoute: SenderAndLane = SenderAndLane::new(
+		ParentThen(X1(Parachain(crate::xcm_config::SiblingAssetHubParId::get()))).into(),
+		DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO,
+	);
 }
 
 /// Proof of messages, coming from Rococo.
@@ -77,20 +82,12 @@ pub struct ToBridgeHubRococoXcmBlobHauler;
 impl XcmBlobHauler for ToBridgeHubRococoXcmBlobHauler {
 	type MessageSender =
 		pallet_bridge_messages::Pallet<Runtime, WithBridgeHubRococoMessagesInstance>;
-
+	type SenderAndLane = FromWococoAssetHubToRococoAssetHubRoute;
 	type MessageSenderOrigin = super::RuntimeOrigin;
-
-	fn sending_chain_location() -> MultiLocation {
-		ParentThen(X1(Parachain(crate::xcm_config::SiblingAssetHubParId::get()))).into()
-	}
 
 	fn message_sender_origin() -> super::RuntimeOrigin {
 		pallet_xcm::Origin::from(MultiLocation::new(1, crate::xcm_config::UniversalLocation::get()))
 			.into()
-	}
-
-	fn xcm_lane() -> LaneId {
-		DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO
 	}
 }
 pub const DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO: LaneId = LaneId([0, 0, 0, 1]);

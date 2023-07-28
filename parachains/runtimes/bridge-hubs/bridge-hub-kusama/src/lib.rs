@@ -326,12 +326,18 @@ impl pallet_message_queue::Config for Runtime {
 			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
 			RuntimeCall,
 		>,
+		Runtime,
+		WithBridgeHubPolkadotMessagesInstance,
+		bridge_hub_config::FromKusamaAssetHubToPolkadotAssetHubRoute,
 	>;
 	type Size = u32;
 	type QueueChangeHandler = XcmpQueue;
 	type QueuePausedQuery = bridge_runtime_common::messages_xcm_extension::LocalXcmQueueSuspender<
 		AggregateMessageOrigin,
 		queue_paused_query::NarrowToSiblings<XcmpQueue>,
+		Runtime,
+		WithBridgeHubPolkadotMessagesInstance,
+		bridge_hub_config::FromKusamaAssetHubToPolkadotAssetHubRoute,
 	>;
 	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
 	type MaxStale = sp_core::ConstU32<8>;
@@ -481,10 +487,10 @@ impl pallet_bridge_parachains::Config<BridgeParachainPolkadotInstance> for Runti
 	type MaxParaHeadDataSize = MaxPolkadotParaHeadDataSize;
 }
 
-pub struct IsChannelWithSiblingAssetHubActive;
+pub struct LocalXcmChannelWithSiblingAssetHub;
 
-impl sp_runtime::traits::Get<bool> for IsChannelWithSiblingAssetHubActive {
-	fn get() -> bool {
+impl bp_xcm_bridge_hub_router::LocalXcmChannel for LocalXcmChannelWithSiblingAssetHub {
+	fn is_congested() -> bool {
 		// let's find the channel with the sibling AH
 		let sibling_asset_hub_id: cumulus_primitives_core::ParaId = xcm_config::SiblingAssetHubParId::get().into();
 		let outbound_channels = cumulus_pallet_xcmp_queue::OutboundXcmpStatus::<Runtime>::get();
@@ -492,15 +498,15 @@ impl sp_runtime::traits::Get<bool> for IsChannelWithSiblingAssetHubActive {
 			.filter(|c| c.recipient() == sibling_asset_hub_id)
 			.next();
 
-		// no channel => the dispatcher is inactive
+		// no channel => it is congested
 		let channel_with_sibling_asset_hub = match channel_with_sibling_asset_hub {
 			Some(channel_with_sibling_asset_hub) => channel_with_sibling_asset_hub,
-			None => return false,
+			None => return true,
 		};
 
-		// suspended channel => the dispatcher is inactive
+		// suspended channel => it is congested
 		if channel_with_sibling_asset_hub.is_suspended() {
-			return false;
+			return true;
 		}
 
 		// TODO: the following restriction is arguable, we may live without that, assuming that there
@@ -513,7 +519,7 @@ impl sp_runtime::traits::Get<bool> for IsChannelWithSiblingAssetHubActive {
 		// there are too many "pages" (concatenated XCM messages) in the target BH -> target AH queue.
 		const MAX_QUEUED_PAGES_BEFORE_DEACTIVATION: u16 = 4;
 		if channel_with_sibling_asset_hub.queued_pages() > MAX_QUEUED_PAGES_BEFORE_DEACTIVATION {
-			return false;
+			return true;
 		}
 
 		true
@@ -546,8 +552,7 @@ impl pallet_bridge_messages::Config<WithBridgeHubPolkadotMessagesInstance> for R
 	>;
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubPolkadotMessageBridge>;
 	type MessageDispatch =
-		XcmBlobMessageDispatch<OnThisChainBlobDispatcher<UniversalLocation>, Self::WeightInfo, IsChannelWithSiblingAssetHubActive>;
-	type OnMessagesDelivered = bridge_runtime_common::messages_xcm_extension::XcmBlobHaulerAdapter<crate::bridge_hub_config::ToBridgeHubPolkadotXcmBlobHauler>;
+		XcmBlobMessageDispatch<OnThisChainBlobDispatcher<UniversalLocation>, Self::WeightInfo, LocalXcmChannelWithSiblingAssetHub>;
 }
 
 /// Allows collect and claim rewards for relayers

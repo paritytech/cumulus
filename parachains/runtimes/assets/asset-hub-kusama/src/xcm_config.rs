@@ -538,7 +538,6 @@ pub mod bridging {
 	use super::*;
 	use assets_common::{matching, matching::*};
 	use sp_std::collections::btree_set::BTreeSet;
-	use xcm_builder::{NetworkExportTable, UnpaidRemoteExporter};
 
 	parameter_types! {
 		pub BridgeHubKusamaParaId: u32 = 1002;
@@ -609,26 +608,13 @@ pub mod bridging {
 		}
 	}
 
-	pub struct LocalXcmQueueAdapter;
+	pub struct LocalXcmpChannelAdapter;
 
-	impl SendXcm for LocalXcmQueueAdapter {
-		type Ticket = <XcmpQueue as SendXcm>::Ticket;
-	
-		fn validate(
-			destination: &mut Option<MultiLocation>,
-			message: &mut Option<Xcm<()>>,
-		) -> SendResult<Self::Ticket> {
-			XcmpQueue::validate(destination, message)
-		}
-	
-		fn deliver(ticket: Self::Ticket) -> Result<XcmHash, SendError> {
-			XcmpQueue::deliver(ticket)
-		}
-	}
-	
-	impl bp_xcm_bridge_hub_router::LocalXcmQueue for LocalXcmQueueAdapter {
-		fn is_overloaded() -> bool {
-			// TODO: need to account number of enqueued messages too!!!
+	impl bp_xcm_bridge_hub_router::LocalXcmChannel for LocalXcmpChannelAdapter {
+		fn is_congested() -> bool {
+			// if the outbound channel with recipient is suspended, it means that one of further
+			// bridge queues (e.g. bridge queue between two bridge hubs) is overloaded, so we shall
+			// take larger fee for our outbound messages
 			let sibling_bridge_hub_id: cumulus_primitives_core::ParaId = BridgeHubKusamaParaId::get().into();
 			let outbound_channels = cumulus_pallet_xcmp_queue::OutboundXcmpStatus::<Runtime>::get();
 			outbound_channels.iter()

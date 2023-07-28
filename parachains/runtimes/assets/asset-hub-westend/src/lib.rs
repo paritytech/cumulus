@@ -796,11 +796,14 @@ impl pallet_nfts::Config for Runtime {
 }
 
 impl pallet_xcm_bridge_hub_router::Config for Runtime {
+	type WeightInfo = (); // TODO: proper benchmarks
+
 	type UniversalLocation = xcm_config::UniversalLocation;
 	type SiblingBridgeHubLocation = xcm_config::bridging::BridgeHub;
 	type BridgedNetworkId = xcm_config::bridging::KusamaLocalNetwork;
 
-	type ToBridgeHubSender = xcm_config::bridging::LocalXcmQueueAdapter;
+	type ToBridgeHubSender = XcmpQueue;
+	type WithBridgeHubChannel = xcm_config::bridging::LocalXcmpChannelAdapter;
 
 	type BaseFee = ConstU128<1_000_000_000>;
 	type ByteFee = ConstU128<1_000_000>;
