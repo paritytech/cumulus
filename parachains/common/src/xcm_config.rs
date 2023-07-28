@@ -74,9 +74,9 @@ pub trait MatchesLocation<Location> {
 /// Simple `MultiLocation` filter utility.
 #[derive(Debug, DefaultNoBound)]
 pub struct LocationFilter<Location> {
-	/// Requested location equals to `Location`
+	/// Requested location equals to `Location`.
 	pub equals_any: sp_std::vec::Vec<Location>,
-	/// Requested location starts with `Location`
+	/// Requested location starts with `Location`.
 	pub starts_with_any: sp_std::vec::Vec<Location>,
 }
 

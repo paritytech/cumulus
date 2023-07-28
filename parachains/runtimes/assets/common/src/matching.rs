@@ -228,10 +228,10 @@ where
 	}
 }
 
-/// Location as `MultiLocation` with `AssetFilter`
+/// Location as `MultiLocation` with `AssetFilter`.
 pub type FilteredLocation = (MultiLocation, AssetFilter);
 
-/// Simple asset location filter
+/// Simple asset location filter.
 #[derive(Debug)]
 pub enum AssetFilter {
 	ByMultiLocation(LocationFilter<MultiLocation>),
