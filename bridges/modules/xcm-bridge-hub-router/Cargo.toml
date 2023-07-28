@@ -17,6 +17,7 @@ bp-xcm-bridge-hub-router = { path = "../../primitives/xcm-bridge-hub-router", de
 
 # Substrate Dependencies
 
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false, optional = true }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
@@ -27,11 +28,17 @@ sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", d
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
 
+[dev-dependencies]
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
 [features]
 default = ["std"]
 std = [
 	"bp-xcm-bridge-hub-router/std",
 	"codec/std",
+	"frame-benchmarking/std",
 	"frame-support/std",
 	"frame-system/std",
 	"log/std",
@@ -40,6 +47,10 @@ std = [
 	"sp-std/std",
 	"xcm/std",
 	"xcm-builder/std",
+]
+runtime-benchmarks = [
+	"frame-benchmarking/runtime-benchmarks",
+	"xcm-builder/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-support/try-runtime",

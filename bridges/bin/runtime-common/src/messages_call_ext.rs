@@ -78,9 +78,6 @@ impl ReceiveMessagesProofInfo {
 	/// - or there are no bundled messages, but the inbound lane is blocked by too many unconfirmed
 	///   messages and/or unrewarded relayers.
 	fn is_obsolete(&self, is_dispatcher_active: bool) -> bool {
-		// TODO: maybe rename method to `is_accepted`, because it isn't about **obsolete** messages
-		// anymore
-
 		// if dispatcher is inactive, we don't accept any delivery transactions
 		if !is_dispatcher_active {
 			return true
@@ -337,8 +334,8 @@ mod tests {
 		},
 		messages_call_ext::MessagesCallSubType,
 		mock::{
-			MaxUnconfirmedMessagesAtInboundLane, MaxUnrewardedRelayerEntriesAtInboundLane,
-			TestRuntime, ThisChainRuntimeCall,
+			DummyMessageDispatch, MaxUnconfirmedMessagesAtInboundLane,
+			MaxUnrewardedRelayerEntriesAtInboundLane, TestRuntime, ThisChainRuntimeCall,
 		},
 	};
 	use bp_messages::{DeliveredMessages, UnrewardedRelayer, UnrewardedRelayersState};
@@ -442,6 +439,18 @@ mod tests {
 			// 13..=15 => tx is rejected
 			deliver_message_10();
 			assert!(!validate_message_delivery(13, 15));
+		});
+	}
+
+	#[test]
+	fn extension_reject_call_when_dispatcher_is_inactive() {
+		sp_io::TestExternalities::new(Default::default()).execute_with(|| {
+			// when current best delivered is message#10 and we're trying to deliver message 11..=15
+			// => tx is accepted, but we have inactive dispatcher, so...
+			deliver_message_10();
+
+			DummyMessageDispatch::deactivate();
+			assert!(!validate_message_delivery(11, 15));
 		});
 	}
 

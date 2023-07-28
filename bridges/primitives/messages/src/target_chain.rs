@@ -95,6 +95,9 @@ pub trait MessageDispatch {
 	/// be treated as a hint by both dispatcher and its consumers - i.e. dispatcher shall not
 	/// simply drop messages if it returns `false`. The consumer may still call the `dispatch`
 	/// if dispatcher has returned `false`.
+	///
+	/// We check it in the messages delivery transaction prolgoue. So if it becomes `false`
+	/// after some portion of messages is already dispatched, it doesn't fail the whole transaction.
 	fn is_active() -> bool;
 
 	/// Estimate dispatch weight.

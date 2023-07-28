@@ -17,15 +17,15 @@
 //! Pallet that may be used instead of `SovereignPaidRemoteExporter` in the XCM router
 //! configuration. The main thing that the pallet offers is the dynamic message fee,
 //! that is computed based on the bridge queues state. It starts exponentially increasing
-//! if the queue between this chain and the sibling/child bridge hub is overloaded.
+//! if the queue between this chain and the sibling/child bridge hub is congested.
 //!
 //! All other bridge hub queues offer some backpressure mechanisms. So if at least one
-//! of all queues is overloaded, it will eventually lead to the growth of the queue at
+//! of all queues is congested, it will eventually lead to the growth of the queue at
 //! this chain.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use bp_xcm_bridge_hub_router::LocalXcmQueue;
+use bp_xcm_bridge_hub_router::LocalXcmChannel;
 use codec::Encode;
 use frame_support::traits::Get;
 use sp_runtime::{traits::One, FixedPointNumber, FixedU128, Saturating};
@@ -33,12 +33,27 @@ use xcm::prelude::*;
 use xcm_builder::{ExporterFor, SovereignPaidRemoteExporter};
 
 pub use pallet::*;
+pub use weights::WeightInfo;
+
+pub mod benchmarking;
+pub mod weights;
+
+mod mock;
 
 /// The factor that is used to increase current message fee factor when bridge experiencing
 /// some lags.
 const EXPONENTIAL_FEE_BASE: FixedU128 = FixedU128::from_rational(105, 100); // 1.05
 /// The factor that is used to increase current message fee factor for every sent kilobyte.
 const MESSAGE_SIZE_FEE_BASE: FixedU128 = FixedU128::from_rational(1, 1000); // 0.001
+
+/// Maximal size of the XCM message that may be sent over bridge.
+///
+/// This should be less than the maximal size, allowed by the messages pallet, because
+/// the message itself is wrapped in other structs and is double encoded.
+pub const HARD_MESSAGE_SIZE_LIMIT: u32 = 32 * 1024;
+
+/// The target that will be used when publishing logs related to this pallet.
+pub const LOG_TARGET: &str = "runtime::bridge-hub-router";
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -48,6 +63,9 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config<I: 'static = ()>: frame_system::Config {
+		/// Benchmarks results from runtime we're plugged into.
+		type WeightInfo: WeightInfo;
+
 		/// Universal location of this runtime.
 		type UniversalLocation: Get<InteriorMultiLocation>;
 		/// Relative location of the sibling bridge hub.
@@ -56,7 +74,10 @@ pub mod pallet {
 		type BridgedNetworkId: Get<NetworkId>;
 
 		/// Actual message sender (XCMP/DMP) to the sibling bridge hub location.
-		type ToBridgeHubSender: SendXcm + LocalXcmQueue;
+		type ToBridgeHubSender: SendXcm;
+		/// Underlying channel with the sibling bridge hub. It must match the channel, used
+		/// by the `Self::ToBridgeHubSender`.
+		type WithBridgeHubChannel: LocalXcmChannel;
 
 		/// Base bridge fee that is paid for every outbound message.
 		type BaseFee: Get<u128>;
@@ -72,18 +93,30 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {
 		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
-			// if XCM queue is still overloaded, we don't change anything
-			if T::ToBridgeHubSender::is_overloaded() {
-				return Weight::zero() // TODO: benchmarks
+			// if XCM queue is still congested, we don't change anything
+			if T::WithBridgeHubChannel::is_congested() {
+				return T::WeightInfo::on_initialize_when_congested()
 			}
 
 			DeliveryFeeFactor::<T, I>::mutate(|f| {
+				let previous_factor = *f;
 				*f = InitialFactor::get().max(*f / EXPONENTIAL_FEE_BASE);
-				log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: reducing fee factor: {}", f);
-				*f
-			});
+				if previous_factor != *f {
+					log::info!(
+						target: LOG_TARGET,
+						"Bridge queue is uncongested. Decreased fee factor from {} to {}",
+						previous_factor,
+						f,
+					);
 
-			Weight::zero() // TODO: benchmarks
+					T::WeightInfo::on_initialize_when_non_congested()
+				} else {
+					// we have not actually updated the `DeliveryFeeFactor`, so we may deduct
+					// single db write from maximal weight
+					T::WeightInfo::on_initialize_when_non_congested()
+						.saturating_sub(T::DbWeight::get().writes(1))
+				}
+			})
 		}
 	}
 
@@ -102,9 +135,8 @@ pub mod pallet {
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		/// Called when new message is sent (queued to local outbound XCM queue) over the bridge.
 		pub(crate) fn on_message_sent_to_bridge(message_size: u32) {
-			// if outbound queue is not overloaded, do nothing
-			if !T::ToBridgeHubSender::is_overloaded() {
-				log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: message sent, not overloaded");
+			// if outbound queue is not congested, do nothing
+			if !T::WithBridgeHubChannel::is_congested() {
 				return
 			}
 
@@ -113,8 +145,14 @@ pub mod pallet {
 				.saturating_mul(MESSAGE_SIZE_FEE_BASE);
 			let total_factor = EXPONENTIAL_FEE_BASE.saturating_add(message_size_factor);
 			DeliveryFeeFactor::<T, I>::mutate(|f| {
+				let previous_factor = *f;
 				*f = f.saturating_mul(total_factor);
-				log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: message sent, overloaded: {}", f);
+				log::info!(
+					target: LOG_TARGET,
+					"Bridge queue is congested. Increased fee factor from {} to {}",
+					previous_factor,
+					f,
+				);
 				*f
 			});
 		}
@@ -142,11 +180,22 @@ impl<T: Config<I>, I: 'static> ExporterFor for Pallet<T, I> {
 			return None
 		}
 
-		// compute fee amount
-		let mesage_size = message.encoded_size();
-		let message_fee = (mesage_size as u128).saturating_mul(T::ByteFee::get());
+		// compute fee amount. Keep in mind that this is only the bridge fee. The fee for sending
+		// message from this chain to child/sibling bridge hub is determined by the
+		// `Config::ToBridgeHubSender`
+		let message_size = message.encoded_size();
+		let message_fee = (message_size as u128).saturating_mul(T::ByteFee::get());
 		let fee_sum = T::BaseFee::get().saturating_add(message_fee);
-		let fee = Self::delivery_fee_factor().saturating_mul_int(fee_sum);
+		let fee_factor = Self::delivery_fee_factor();
+		let fee = fee_factor.saturating_mul_int(fee_sum);
+
+		log::info!(
+			target: LOG_TARGET,
+			"Going to send message ({} bytes) over bridge. Computed bridge fee {} using fee factor {}",
+			fee,
+			fee_factor,
+			message_size,
+		);
 
 		Some((T::SiblingBridgeHubLocation::get(), Some((T::FeeAsset::get(), fee).into())))
 	}
@@ -169,7 +218,11 @@ impl<T: Config<I>, I: 'static> SendXcm for Pallet<T, I> {
 			.map(|xcm| xcm.encoded_size() as _)
 			.ok_or(SendError::MissingArgument)?;
 
-		// TODO: we can reject large messages here (now they're just dropped at the bridge hub)!!!
+		// bridge doesn't support oversized/overweight messages now. So it is better to drop such
+		// messages here than at the bridge hub. Let's check the message size.
+		if message_size > HARD_MESSAGE_SIZE_LIMIT {
+			return Err(SendError::ExceedsMaxMessageSize)
+		}
 
 		// just use exporter to validate destination and insert instructions to pay message fee
 		// at the sibling/child bridge hub
@@ -178,10 +231,7 @@ impl<T: Config<I>, I: 'static> SendXcm for Pallet<T, I> {
 		// the `Config::ToBridgeHubSender`) and (2) to-bridged bridge hub delivery (returned by
 		// `Self::exporter_for`)
 		ViaBridgeHubExporter::<T, I>::validate(dest, xcm)
-			.map(|(ticket, cost)| {
-log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: message sent, fee: {:?}", cost);
-				((message_size, ticket), cost)
-			})
+			.map(|(ticket, cost)| ((message_size, ticket), cost))
 	}
 
 	fn deliver(ticket: Self::Ticket) -> Result<XcmHash, SendError> {
@@ -194,5 +244,155 @@ log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: messag
 		Self::on_message_sent_to_bridge(message_size);
 
 		Ok(xcm_hash)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use mock::*;
+
+	use frame_support::traits::Hooks;
+
+	#[test]
+	fn initial_fee_factor_is_one() {
+		run_test(|| {
+			assert_eq!(DeliveryFeeFactor::<TestRuntime, ()>::get(), FixedU128::one());
+		})
+	}
+
+	#[test]
+	fn fee_factor_is_not_decreased_from_on_initialize_when_queue_is_congested() {
+		run_test(|| {
+			DeliveryFeeFactor::<TestRuntime, ()>::put(FixedU128::from_rational(125, 100));
+			TestWithBridgeHubChannel::make_congested();
+
+			// it should not decrease, because queue is congested
+			let old_delivery_fee_factor = XcmBridgeHubRouter::delivery_fee_factor();
+			XcmBridgeHubRouter::on_initialize(One::one());
+			assert_eq!(XcmBridgeHubRouter::delivery_fee_factor(), old_delivery_fee_factor);
+		})
+	}
+
+	#[test]
+	fn fee_factor_is_decreased_from_on_initialize_when_queue_is_uncongested() {
+		run_test(|| {
+			DeliveryFeeFactor::<TestRuntime, ()>::put(FixedU128::from_rational(125, 100));
+
+			// it shold eventually decreased to one
+			while XcmBridgeHubRouter::delivery_fee_factor() > FixedU128::one() {
+				XcmBridgeHubRouter::on_initialize(One::one());
+			}
+
+			// verify that it doesn't decreases anymore
+			XcmBridgeHubRouter::on_initialize(One::one());
+			assert_eq!(XcmBridgeHubRouter::delivery_fee_factor(), FixedU128::one());
+		})
+	}
+
+	#[test]
+	fn not_applicable_if_destination_is_within_other_network() {
+		run_test(|| {
+			assert_eq!(
+				send_xcm::<XcmBridgeHubRouter>(
+					MultiLocation::new(2, X2(GlobalConsensus(Rococo), Parachain(1000))),
+					vec![].into(),
+				),
+				Err(SendError::NotApplicable),
+			);
+		});
+	}
+
+	#[test]
+	fn exceeds_max_message_size_if_size_is_above_hard_limit() {
+		run_test(|| {
+			assert_eq!(
+				send_xcm::<XcmBridgeHubRouter>(
+					MultiLocation::new(2, X2(GlobalConsensus(Rococo), Parachain(1000))),
+					vec![ClearOrigin; HARD_MESSAGE_SIZE_LIMIT as usize].into(),
+				),
+				Err(SendError::ExceedsMaxMessageSize),
+			);
+		});
+	}
+
+	#[test]
+	fn returns_proper_delivery_price() {
+		run_test(|| {
+			let dest = MultiLocation::new(2, X1(GlobalConsensus(BridgedNetworkId::get())));
+			let xcm: Xcm<()> = vec![ClearOrigin].into();
+			let msg_size = xcm.encoded_size();
+
+			// initially the base fee is used: `BASE_FEE + BYTE_FEE * msg_size + HRMP_FEE`
+			let expected_fee = BASE_FEE + BYTE_FEE * (msg_size as u128) + HRMP_FEE;
+			assert_eq!(
+				XcmBridgeHubRouter::validate(&mut Some(dest), &mut Some(xcm.clone()))
+					.unwrap()
+					.1
+					.get(0),
+				Some(&(BridgeFeeAsset::get(), expected_fee).into()),
+			);
+
+			// but when factor is larger than one, it increases the fee, so it becomes:
+			// `(BASE_FEE + BYTE_FEE * msg_size) * F + HRMP_FEE`
+			let factor = FixedU128::from_rational(125, 100);
+			DeliveryFeeFactor::<TestRuntime, ()>::put(factor);
+			let expected_fee =
+				(FixedU128::saturating_from_integer(BASE_FEE + BYTE_FEE * (msg_size as u128)) *
+					factor)
+					.into_inner() / FixedU128::DIV +
+					HRMP_FEE;
+			assert_eq!(
+				XcmBridgeHubRouter::validate(&mut Some(dest), &mut Some(xcm.clone()))
+					.unwrap()
+					.1
+					.get(0),
+				Some(&(BridgeFeeAsset::get(), expected_fee).into()),
+			);
+		});
+	}
+
+	#[test]
+	fn sent_message_doesnt_increase_factor_if_queue_is_uncongested() {
+		run_test(|| {
+			let old_delivery_fee_factor = XcmBridgeHubRouter::delivery_fee_factor();
+			assert_eq!(
+				send_xcm::<XcmBridgeHubRouter>(
+					MultiLocation::new(
+						2,
+						X2(GlobalConsensus(BridgedNetworkId::get()), Parachain(1000))
+					),
+					vec![ClearOrigin].into(),
+				)
+				.map(drop),
+				Ok(()),
+			);
+
+			assert!(TestToBridgeHubSender::is_message_sent());
+			assert_eq!(old_delivery_fee_factor, XcmBridgeHubRouter::delivery_fee_factor());
+		});
+	}
+
+	#[test]
+	fn sent_message_increases_factor_if_queue_is_congested() {
+		run_test(|| {
+			TestWithBridgeHubChannel::make_congested();
+
+			let old_delivery_fee_factor = XcmBridgeHubRouter::delivery_fee_factor();
+			assert_eq!(
+				send_xcm::<XcmBridgeHubRouter>(
+					MultiLocation::new(
+						2,
+						X2(GlobalConsensus(BridgedNetworkId::get()), Parachain(1000))
+					),
+					vec![ClearOrigin].into(),
+				)
+				.map(drop),
+				Ok(()),
+			);
+
+			assert!(TestToBridgeHubSender::is_message_sent());
+			assert!(old_delivery_fee_factor < XcmBridgeHubRouter::delivery_fee_factor());
+		});
 	}
 }

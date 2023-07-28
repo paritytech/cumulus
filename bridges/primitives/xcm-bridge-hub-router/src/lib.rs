@@ -18,8 +18,14 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-/// Local XCM queue.
-pub trait LocalXcmQueue {
-	/// Returns true if the queue is currently overloaded.
-	fn is_overloaded() -> bool;
+/// Local XCM channel that may report whether it is congested or not.
+pub trait LocalXcmChannel {
+	/// Returns true if the queue is currently congested.
+	fn is_congested() -> bool;
+}
+
+impl LocalXcmChannel for () {
+	fn is_congested() -> bool {
+		false
+	}
 }

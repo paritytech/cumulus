@@ -1660,6 +1660,7 @@ dependencies = [
  "bp-relayers",
  "bp-runtime",
  "bp-test-utils",
+ "bp-xcm-bridge-hub-router",
  "frame-support",
  "frame-system",
  "hash-db",
@@ -8768,11 +8769,14 @@ name = "pallet-xcm-bridge-hub-router"
 version = "0.1.0"
 dependencies = [
  "bp-xcm-bridge-hub-router",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
  "parity-scale-codec",
  "scale-info",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
  "xcm",

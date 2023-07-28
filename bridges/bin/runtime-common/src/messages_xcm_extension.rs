@@ -22,11 +22,12 @@
 //! `XcmRouter` <- `MessageDispatch` <- `InboundMessageQueue`
 
 use bp_messages::{
-	source_chain::{MessagesBridge, OnMessagesDelivered},
+	source_chain::MessagesBridge,
 	target_chain::{DispatchMessage, MessageDispatch},
 	LaneId, MessageNonce,
 };
-use bp_runtime::messages::MessageDispatchResult;
+use bp_runtime::{messages::MessageDispatchResult, RangeInclusiveExt};
+use bp_xcm_bridge_hub_router::LocalXcmChannel;
 use codec::{Decode, Encode, FullCodec, MaxEncodedLen};
 use frame_support::{
 	dispatch::Weight,
@@ -34,11 +35,12 @@ use frame_support::{
 	weights::WeightMeter,
 	CloneNoBound, EqNoBound, PartialEqNoBound,
 };
-use pallet_bridge_messages::WeightInfoExt as MessagesPalletWeights;
+use pallet_bridge_messages::{
+	Config as MessagesConfig, Pallet as MessagesPallet, WeightInfoExt as MessagesPalletWeights,
+};
 use scale_info::TypeInfo;
-use sp_io::hashing::blake2_256;
 use sp_runtime::SaturatedConversion;
-use sp_std::{boxed::Box, fmt::Debug, marker::PhantomData, vec::Vec};
+use sp_std::{fmt::Debug, marker::PhantomData};
 use xcm::prelude::*;
 use xcm_builder::{DispatchBlob, DispatchBlobError, HaulBlob, HaulBlobError};
 
@@ -56,36 +58,18 @@ pub enum XcmBlobMessageDispatchResult {
 /// [`XcmBlobMessageDispatch`] is responsible for dispatching received messages
 ///
 /// It needs to be used at the target bridge hub.
-pub struct XcmBlobMessageDispatch<DispatchBlob, Weights, IsChannelActive> {
-	_marker: sp_std::marker::PhantomData<(DispatchBlob, Weights, IsChannelActive)>,
+pub struct XcmBlobMessageDispatch<DispatchBlob, Weights, Channel> {
+	_marker: sp_std::marker::PhantomData<(DispatchBlob, Weights, Channel)>,
 }
 
-impl<BlobDispatcher: DispatchBlob, Weights: MessagesPalletWeights, IsChannelActive: Get<bool>>
-	MessageDispatch for XcmBlobMessageDispatch<BlobDispatcher, Weights, IsChannelActive>
+impl<BlobDispatcher: DispatchBlob, Weights: MessagesPalletWeights, Channel: LocalXcmChannel>
+	MessageDispatch for XcmBlobMessageDispatch<BlobDispatcher, Weights, Channel>
 {
 	type DispatchPayload = XcmAsPlainPayload;
 	type DispatchLevelResult = XcmBlobMessageDispatchResult;
 
 	fn is_active() -> bool {
-		// TODO: we can only implement `IsChannelActive` in Cumulus. Assuming that all messages
-		// will only be sent to taget asset hub:
-		//
-		// ```rust
-		// pub struct IsChannelWithAssetHubActive;
-		//
-		// impl Get<bool> for IsChannelWithAssetHubActive {
-		//     fn get() -> bool {
-		//         !cumulus_pallet_xcmp_queue::InboundXcmpSuspended::get().contains(&SIBLNG_ASSET_HUB_PARA_ID)
-		//     }
-		// }
-		// ```
-		let is_active = IsChannelActive::get();
-		if !is_active {
-			log::info!(target: "runtime::bridge-xcm-queues", "Target.BH -> TargetAH: overloaded. Failing delivery");
-		} else {
-			log::info!(target: "runtime::bridge-xcm-queues", "Target.BH -> TargetAH: not overloaded. Accepting delivery");
-		}
-		is_active
+		!Channel::is_congested()
 	}
 
 	fn dispatch_weight(message: &mut DispatchMessage<Self::DispatchPayload>) -> Weight {
@@ -138,20 +122,34 @@ impl<BlobDispatcher: DispatchBlob, Weights: MessagesPalletWeights, IsChannelActi
 	}
 }
 
+/// A pair of sending chain location and message lane, used by this chain to send messages
+/// over the bridge.
+pub struct SenderAndLane {
+	/// Sending chain relative location.
+	pub location: MultiLocation,
+	/// Message lane, used by the sending chain.
+	pub lane: LaneId,
+}
+
+impl SenderAndLane {
+	/// Create new object using provided location and lane.
+	pub fn new(location: MultiLocation, lane: LaneId) -> Self {
+		SenderAndLane { location, lane }
+	}
+}
+
 /// [`XcmBlobHauler`] is responsible for sending messages to the bridge "point-to-point link" from
 /// one side, where on the other it can be dispatched by [`XcmBlobMessageDispatch`].
 pub trait XcmBlobHauler {
 	/// Runtime message sender adapter.
 	type MessageSender: MessagesBridge<Self::MessageSenderOrigin, XcmAsPlainPayload>;
+	/// Returns lane used by this hauler.
+	type SenderAndLane: Get<SenderAndLane>;
 
 	/// Runtime message sender origin, which is used by [`Self::MessageSender`].
 	type MessageSenderOrigin;
 	/// Runtime origin for our (i.e. this bridge hub) location within the Consensus Universe.
 	fn message_sender_origin() -> Self::MessageSenderOrigin;
-	/// Location of the sending chain (i.e. sibling asset hub) within the Consensus universe.
-	fn sending_chain_location() -> MultiLocation;
-	/// Return message lane (as "point-to-point link") used to deliver XCM messages.
-	fn xcm_lane() -> LaneId;
 }
 
 /// XCM bridge adapter which connects [`XcmBlobHauler`] with [`XcmBlobHauler::MessageSender`] and
@@ -164,19 +162,13 @@ impl<HaulerOrigin, H: XcmBlobHauler<MessageSenderOrigin = HaulerOrigin>> HaulBlo
 	for XcmBlobHaulerAdapter<H>
 {
 	fn haul_blob(blob: sp_std::prelude::Vec<u8>) -> Result<(), HaulBlobError> {
-		let lane = H::xcm_lane();
+		let lane = H::SenderAndLane::get().lane;
 		H::MessageSender::send_message(H::message_sender_origin(), lane, blob)
 			.map(|artifacts| {
 				log::info!(
 					target: crate::LOG_TARGET_BRIDGE_DISPATCH,
-					"haul_blob result - ok: {:?} on lane: {:?}",
+					"haul_blob result - ok: {:?} on lane: {:?}. Enqueued messages: {}",
 					artifacts.nonce,
-					lane
-				);
-
-				// notify XCM queue manager about updated lane state
-				LocalXcmQueueManager::on_bridge_message_enqueued(
-					Box::new(H::sending_chain_location()),
 					lane,
 					artifacts.enqueued_messages,
 				);
@@ -193,144 +185,39 @@ impl<HaulerOrigin, H: XcmBlobHauler<MessageSenderOrigin = HaulerOrigin>> HaulBlo
 	}
 }
 
-impl<HaulerOrigin, H: XcmBlobHauler<MessageSenderOrigin = HaulerOrigin>> OnMessagesDelivered
-	for XcmBlobHaulerAdapter<H>
-{
-	fn on_messages_delivered(lane: LaneId, enqueued_messages: MessageNonce) {
-		// notify XCM queue manager about updated lane state
-		LocalXcmQueueManager::on_bridge_messages_delivered(
-			Box::new(H::sending_chain_location()),
-			lane,
-			enqueued_messages,
-		);
-	}
-}
-
 /// Manager of local XCM queues (and indirectly - underlying transport channels) that
 /// controls the queue state.
 ///
 /// It needs to be used at the source bridge hub.
 pub struct LocalXcmQueueManager;
 
-/// Prefix for storage keys, written by the `LocalXcmQueueManager`.
-///
-/// We don't have a separate pallet with available storage entries for managing XCM queues
-/// in this (internediate) version of dynamic fees implementation. So we write to the runtime
-/// storage directly with this prefix.
-const LOCAL_XCM_QUEUE_MANAGER_STORAGE_PREFIX: &[u8] = b"LocalXcmQueueManager";
-
-/// Name of "virtual" storage map that holds entries for every suspended queue.
-const SUSPENDED_QUEUE_MAP_STORAGE_PREFIX: &[u8] = b"SuspendedQueues";
-
 /// Maximal number of messages in the outbound bridge queue. Once we reach this limit, we
 /// stop processing XCM messages from the sending chain (asset hub) that "owns" the lane.
-// TODO: should be some factor of `MaxUnconfirmedMessagesAtInboundLane` at bridged side?
-const MAX_ENQUEUED_MESSAGES_AT_OUTBOUND_LANE: MessageNonce = 300;
+///
+/// The value is a maximal number of messages that can be delivered in a single message
+/// delivery transaction, used on initial bridge hubs.
+const MAX_ENQUEUED_MESSAGES_AT_OUTBOUND_LANE: MessageNonce = 4096;
 
 impl LocalXcmQueueManager {
-	/// Must be called whenever we push a message to the bridge lane.
-	pub fn on_bridge_message_enqueued(
-		sending_chain_location: Box<MultiLocation>,
-		lane: LaneId,
-		enqueued_messages: MessageNonce,
-	) {
-		// suspend the inbound XCM queue with the sender to avoid queueing more messages
-		// at the outbound bridge queue AND turn on internal backpressure mechanism of the
-		// XCM queue
-		let is_overloaded = enqueued_messages > MAX_ENQUEUED_MESSAGES_AT_OUTBOUND_LANE;
-		if !is_overloaded {
-			log::info!(target: "runtime::bridge-xcm-queues", "Source.BH -> Target.BH: message sent, not overloaded ({})", enqueued_messages);
-			return
-		}
-
-		log::info!(
-			target: crate::LOG_TARGET_BRIDGE_DISPATCH,
-			"Suspending inbound XCM queue with {:?} to avoid overloading lane {:?}: there are\
-			{} messages queued at the bridge queue",
-			sending_chain_location,
-			lane,
-			enqueued_messages,
-		);
-
-		log::info!(target: "runtime::bridge-xcm-queues", "Source.BH -> Target.BH: message sent, overloaded ({}). Suspending Source.AH -> Source.BH queue", enqueued_messages);
-
-		Self::suspend_inbound_queue(sending_chain_location);
-	}
-
-	/// Must be called whenever we receive a message delivery confirmation.
-	pub fn on_bridge_messages_delivered(
-		sending_chain_location: Box<MultiLocation>,
-		lane: LaneId,
-		enqueued_messages: MessageNonce,
-	) {
-		// the queue before this call may be either suspended or not. If the lane is still
-		// overloaded, we win't need to do anything
-		let is_overloaded = enqueued_messages > MAX_ENQUEUED_MESSAGES_AT_OUTBOUND_LANE;
-		if is_overloaded {
-			return
-		}
-
-		// else - resume the inbound queue
-		if !Self::is_inbound_queue_suspended(sending_chain_location.clone()) {
-			return
-		}
-
-		log::info!(target: "runtime::bridge-xcm-queues", "Source.BH -> Target.BH: not overloaded ({}). Resuming Source.AH -> Source.BH queue", enqueued_messages);
-
-		log::info!(
-			target: crate::LOG_TARGET_BRIDGE_DISPATCH,
-			"Resuming inbound XCM queue with {:?} using lane {:?}: there are\
-			{} messages queued at the bridge queue",
-			sending_chain_location,
-			lane,
-			enqueued_messages,
-		);
-
-		Self::resume_inbound_queue(sending_chain_location);
-	}
-
 	/// Returns true if XCM message queue with given location is currently suspended.
-	pub fn is_inbound_queue_suspended(with: Box<MultiLocation>) -> bool {
-		frame_support::storage::unhashed::get_or_default(&Self::suspended_queue_map_storage_key(
-			with,
-		))
-	}
-
-	fn suspend_inbound_queue(with: Box<MultiLocation>) {
-		frame_support::storage::unhashed::put(&Self::suspended_queue_map_storage_key(with), &true);
-	}
-
-	fn resume_inbound_queue(with: Box<MultiLocation>) {
-		frame_support::storage::unhashed::kill(&Self::suspended_queue_map_storage_key(with));
-	}
-
-	fn suspended_queue_map_storage_key(with: Box<MultiLocation>) -> Vec<u8> {
-		let with: VersionedMultiLocation = (*with).into();
-		let with_hashed = with.using_encoded(blake2_256);
-
-		// let's emulate real map here - it'd be easier to kill all entries later
-		let mut final_key = Vec::with_capacity(
-			LOCAL_XCM_QUEUE_MANAGER_STORAGE_PREFIX.len() +
-				SUSPENDED_QUEUE_MAP_STORAGE_PREFIX.len() +
-				with_hashed.len(),
-		);
-
-		final_key.extend_from_slice(LOCAL_XCM_QUEUE_MANAGER_STORAGE_PREFIX);
-		final_key.extend_from_slice(SUSPENDED_QUEUE_MAP_STORAGE_PREFIX);
-		final_key.extend_from_slice(&with_hashed);
-
-		final_key
+	pub fn is_inbound_queue_suspended<R: MessagesConfig<MI>, MI: 'static>(lane: LaneId) -> bool {
+		let outbound_lane = MessagesPallet::<R, MI>::outbound_lane_data(lane);
+		let enqueued_messages = outbound_lane.queued_messages().checked_len().unwrap_or(0);
+		enqueued_messages > MAX_ENQUEUED_MESSAGES_AT_OUTBOUND_LANE
 	}
 }
 
 /// A structure that implements [`frame_support:traits::messages::ProcessMessage`] and may
 /// be used in the `pallet-message-queue` configuration to stop processing messages when the
-/// bridge queue is overloaded.
+/// bridge queue is congested.
 ///
 /// It needs to be used at the source bridge hub.
-pub struct LocalXcmQueueMessageProcessor<Origin, Inner>(PhantomData<(Origin, Inner)>);
+pub struct LocalXcmQueueMessageProcessor<Origin, Inner, R, MI, SL>(
+	PhantomData<(Origin, Inner, R, MI, SL)>,
+);
 
-impl<Origin, Inner> ProcessMessage for LocalXcmQueueMessageProcessor<Origin, Inner>
+impl<Origin, Inner, R, MI, SL> ProcessMessage
+	for LocalXcmQueueMessageProcessor<Origin, Inner, R, MI, SL>
 where
 	Origin: Clone
 		+ Into<MultiLocation>
@@ -342,6 +229,9 @@ where
 		+ TypeInfo
 		+ Debug,
 	Inner: ProcessMessage<Origin = Origin>,
+	R: MessagesConfig<MI>,
+	MI: 'static,
+	SL: Get<SenderAndLane>,
 {
 	type Origin = Origin;
 
@@ -352,8 +242,11 @@ where
 		id: &mut [u8; 32],
 	) -> Result<bool, ProcessMessageError> {
 		// if the queue is suspended, yield immediately
-		if LocalXcmQueueManager::is_inbound_queue_suspended(Box::new(origin.clone().into())) {
-			return Err(ProcessMessageError::Yield)
+		let sender_and_lane = SL::get();
+		if origin.clone().into() == sender_and_lane.location {
+			if LocalXcmQueueManager::is_inbound_queue_suspended::<R, MI>(sender_and_lane.lane) {
+				return Err(ProcessMessageError::Yield)
+			}
 		}
 
 		// else pass message to backed processor
@@ -363,15 +256,21 @@ where
 
 /// A structure that implements [`frame_support:traits::messages::QueuePausedQuery`] and may
 /// be used in the `pallet-message-queue` configuration to stop processing messages when the
-/// bridge queue is overloaded.
+/// bridge queue is congested.
 ///
 /// It needs to be used at the source bridge hub.
-pub struct LocalXcmQueueSuspender<Origin, Inner>(PhantomData<(Origin, Inner)>);
+pub struct LocalXcmQueueSuspender<Origin, Inner, R, MI, SL>(
+	PhantomData<(Origin, Inner, R, MI, SL)>,
+);
 
-impl<Origin, Inner> QueuePausedQuery<Origin> for LocalXcmQueueSuspender<Origin, Inner>
+impl<Origin, Inner, R, MI, SL> QueuePausedQuery<Origin>
+	for LocalXcmQueueSuspender<Origin, Inner, R, MI, SL>
 where
 	Origin: Clone + Into<MultiLocation>,
 	Inner: QueuePausedQuery<Origin>,
+	R: MessagesConfig<MI>,
+	MI: 'static,
+	SL: Get<SenderAndLane>,
 {
 	fn is_paused(origin: &Origin) -> bool {
 		// give priority to inner status
@@ -380,11 +279,195 @@ where
 		}
 
 		// if we have suspended the queue before, do not even start processing its messages
-		if LocalXcmQueueManager::is_inbound_queue_suspended(Box::new(origin.clone().into())) {
-			return true
+		let sender_and_lane = SL::get();
+		if origin.clone().into() == sender_and_lane.location {
+			if LocalXcmQueueManager::is_inbound_queue_suspended::<R, MI>(sender_and_lane.lane) {
+				return true
+			}
 		}
 
 		// else process message
 		false
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::mock::*;
+
+	use frame_support::parameter_types;
+	use sp_runtime::traits::{ConstBool, Get};
+
+	parameter_types! {
+		pub TestSenderAndLane: SenderAndLane = SenderAndLane::new(Here.into(), TEST_LANE_ID);
+	}
+
+	fn test_origin_location() -> MultiLocation {
+		TestSenderAndLane::get().location
+	}
+
+	fn test_origin() -> MultiLocation {
+		test_origin_location()
+	}
+
+	struct TestXcmBlobHauler;
+	impl XcmBlobHauler for TestXcmBlobHauler {
+		type MessageSender = BridgeMessages;
+		type MessageSenderOrigin = RuntimeOrigin;
+		type SenderAndLane = TestSenderAndLane;
+
+		fn message_sender_origin() -> Self::MessageSenderOrigin {
+			RuntimeOrigin::root()
+		}
+	}
+
+	struct TestInnerXcmQueueMessageProcessor;
+	impl ProcessMessage for TestInnerXcmQueueMessageProcessor {
+		type Origin = MultiLocation;
+
+		fn process_message(
+			_message: &[u8],
+			_origin: Self::Origin,
+			_meter: &mut WeightMeter,
+			_id: &mut [u8; 32],
+		) -> Result<bool, ProcessMessageError> {
+			Ok(true)
+		}
+	}
+
+	struct TestInnerXcmQueueSuspender<IsSuspended>(PhantomData<IsSuspended>);
+	impl<IsSuspended: Get<bool>> QueuePausedQuery<MultiLocation>
+		for TestInnerXcmQueueSuspender<IsSuspended>
+	{
+		fn is_paused(_: &MultiLocation) -> bool {
+			IsSuspended::get()
+		}
+	}
+
+	type TestXcmBlobHaulerAdapter = XcmBlobHaulerAdapter<TestXcmBlobHauler>;
+	type TestLocalXcmQueueMessageProcessor = LocalXcmQueueMessageProcessor<
+		MultiLocation,
+		TestInnerXcmQueueMessageProcessor,
+		TestRuntime,
+		(),
+		TestSenderAndLane,
+	>;
+	type TestLocalXcmQueueSuspender = LocalXcmQueueSuspender<
+		MultiLocation,
+		TestInnerXcmQueueSuspender<ConstBool<false>>,
+		TestRuntime,
+		(),
+		TestSenderAndLane,
+	>;
+
+	#[test]
+	fn inbound_xcm_queue_with_sending_chain_is_managed_by_blob_hauler() {
+		run_test(|| {
+			// while we enqueue `MAX_ENQUEUED_MESSAGES_AT_OUTBOUND_LANE` messages to the bridge
+			// queue, the inbound channel with the sending chain stays opened
+			for _ in 0..MAX_ENQUEUED_MESSAGES_AT_OUTBOUND_LANE {
+				TestXcmBlobHaulerAdapter::haul_blob(vec![42]).unwrap();
+				assert!(!LocalXcmQueueManager::is_inbound_queue_suspended::<TestRuntime, ()>(
+					TEST_LANE_ID
+				));
+			}
+
+			// then when we enqueue more messages, we suspend inbound queue. Note that messages
+			// are not dropped - they're enqueued at the bridge queue
+			TestXcmBlobHaulerAdapter::haul_blob(vec![42]).unwrap();
+			assert!(LocalXcmQueueManager::is_inbound_queue_suspended::<TestRuntime, ()>(
+				TEST_LANE_ID
+			));
+		});
+	}
+
+	#[test]
+	fn inbound_xcm_message_from_sibling_is_not_processed_when_bridge_queue_is_congested() {
+		run_test(|| {
+			for _ in 0..MAX_ENQUEUED_MESSAGES_AT_OUTBOUND_LANE + 1 {
+				TestXcmBlobHaulerAdapter::haul_blob(vec![42]).unwrap();
+			}
+
+			assert_eq!(
+				TestLocalXcmQueueMessageProcessor::process_message(
+					&[42],
+					test_origin(),
+					&mut WeightMeter::max_limit(),
+					&mut [0u8; 32],
+				),
+				Err(ProcessMessageError::Yield),
+			);
+		})
+	}
+
+	#[test]
+	fn inbound_xcm_message_from_other_origin_is_processed_normally() {
+		run_test(|| {
+			for _ in 0..MAX_ENQUEUED_MESSAGES_AT_OUTBOUND_LANE + 1 {
+				TestXcmBlobHaulerAdapter::haul_blob(vec![42]).unwrap();
+			}
+
+			assert_eq!(
+				TestLocalXcmQueueMessageProcessor::process_message(
+					&[42],
+					ParentThen(X1(Parachain(1000))).into(),
+					&mut WeightMeter::max_limit(),
+					&mut [0u8; 32],
+				),
+				Ok(true),
+			);
+		})
+	}
+
+	#[test]
+	fn inbound_xcm_message_from_sibling_is_processed_normally() {
+		run_test(|| {
+			assert_eq!(
+				TestLocalXcmQueueMessageProcessor::process_message(
+					&[42],
+					test_origin(),
+					&mut WeightMeter::max_limit(),
+					&mut [0u8; 32],
+				),
+				Ok(true),
+			);
+		})
+	}
+
+	#[test]
+	fn local_xcm_queue_is_paused_when_inner_suspender_returns_paused() {
+		run_test(|| {
+			assert!(LocalXcmQueueSuspender::<
+				MultiLocation,
+				TestInnerXcmQueueSuspender<ConstBool<true>>,
+				TestRuntime,
+				(),
+				TestSenderAndLane,
+			>::is_paused(&test_origin()))
+		})
+	}
+
+	#[test]
+	fn local_xcm_queue_is_paused_when_bridge_queue_is_congested() {
+		run_test(|| {
+			for _ in 0..MAX_ENQUEUED_MESSAGES_AT_OUTBOUND_LANE + 1 {
+				TestXcmBlobHaulerAdapter::haul_blob(vec![42]).unwrap();
+			}
+
+			assert!(TestLocalXcmQueueSuspender::is_paused(&test_origin()))
+		});
+	}
+
+	#[test]
+	fn local_xcm_queue_with_other_origin_is_not_paused() {
+		run_test(|| {
+			assert!(!TestLocalXcmQueueSuspender::is_paused(&ParentThen(X1(Parachain(1000))).into()))
+		});
+	}
+
+	#[test]
+	fn local_xcm_queue_is_not_paused_normally() {
+		run_test(|| assert!(!TestLocalXcmQueueSuspender::is_paused(&test_origin())));
 	}
 }
