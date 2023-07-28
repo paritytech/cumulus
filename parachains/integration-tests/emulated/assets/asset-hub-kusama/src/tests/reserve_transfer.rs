@@ -128,12 +128,65 @@ fn system_para_to_para_assertions(_t: SystemParaToParaTest) {
 			) => {
 				weight: weight_within_threshold(
 					(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-					Weight::from_parts(753_242_000, 0),
+					Weight::from_parts(676_119_000, 6196),
 					*weight
 				),
 			},
 		]
 	);
+}
+
+fn relay_limited_reserve_transfer_assets(t: RelayToSystemParaTest) -> DispatchResult {
+	<Kusama as KusamaPallet>::XcmPallet::limited_reserve_transfer_assets(
+		t.signed_origin,
+		bx!(t.args.dest),
+		bx!(t.args.beneficiary),
+		bx!(t.args.assets),
+		t.args.fee_asset_item,
+		t.args.weight_limit
+	)
+}
+
+fn relay_reserve_transfer_assets(t: RelayToSystemParaTest) -> DispatchResult {
+	<Kusama as KusamaPallet>::XcmPallet::reserve_transfer_assets(
+		t.signed_origin,
+		bx!(t.args.dest),
+		bx!(t.args.beneficiary),
+		bx!(t.args.assets),
+		t.args.fee_asset_item
+	)
+}
+
+fn system_para_limited_reserve_transfer_assets(t: SystemParaToRelayTest) -> DispatchResult {
+	<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::limited_reserve_transfer_assets(
+		t.signed_origin,
+		bx!(t.args.dest),
+		bx!(t.args.beneficiary),
+		bx!(t.args.assets),
+		t.args.fee_asset_item,
+		t.args.weight_limit
+	)
+}
+
+fn system_para_reserve_transfer_assets(t: SystemParaToRelayTest) -> DispatchResult {
+	<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::reserve_transfer_assets(
+		t.signed_origin,
+		bx!(t.args.dest),
+		bx!(t.args.beneficiary),
+		bx!(t.args.assets),
+		t.args.fee_asset_item
+	)
+}
+
+fn system_para_to_para_limited_reserve_transfer_assets(t: SystemParaToParaTest) -> DispatchResult {
+	<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::limited_reserve_transfer_assets(
+		t.signed_origin,
+		bx!(t.args.dest),
+		bx!(t.args.beneficiary),
+		bx!(t.args.assets),
+		t.args.fee_asset_item,
+		t.args.weight_limit
+	)
 }
 
 /// Limited Reserve Transfers of native asset from Relay Chain to the System Parachain shouldn't work
@@ -152,20 +205,9 @@ fn limited_reserve_transfer_native_asset_from_relay_to_system_para_fails() {
 	let sender_balance_before = test.sender.balance;
 	let receiver_balance_before = test.receiver.balance;
 
-	let dispatchable = |t: RelayToSystemParaTest| {
-		<Kusama as KusamaPallet>::XcmPallet::limited_reserve_transfer_assets(
-			t.signed_origin,
-			bx!(t.args.dest),
-			bx!(t.args.beneficiary),
-			bx!(t.args.assets),
-			t.args.fee_asset_item,
-			t.args.weight_limit
-		)
-	};
-
 	test.set_assertion::<Kusama>(relay_origin_assertions);
 	test.set_assertion::<AssetHubKusama>(para_dest_assertions);
-	test.dispatch::<Kusama>(dispatchable);
+	test.set_dispatchable::<Kusama>(relay_limited_reserve_transfer_assets);
 	test.assert();
 
 	let sender_balance_after = test.sender.balance;
@@ -198,19 +240,8 @@ fn limited_reserve_transfer_native_asset_from_system_para_to_relay_fails() {
 	let sender_balance_before = test.sender.balance;
 	let receiver_balance_before = test.receiver.balance;
 
-	let dispatchable = |t: SystemParaToRelayTest| {
-		<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::limited_reserve_transfer_assets(
-			t.signed_origin,
-			bx!(t.args.dest),
-			bx!(t.args.beneficiary),
-			bx!(t.args.assets),
-			t.args.fee_asset_item,
-			t.args.weight_limit
-		)
-	};
-
 	test.set_assertion::<AssetHubKusama>(system_para_to_relay_assertions);
-	test.dispatch::<AssetHubKusama>(dispatchable);
+	test.set_dispatchable::<AssetHubKusama>(system_para_limited_reserve_transfer_assets);
 	test.assert();
 
 	let sender_balance_after = test.sender.balance;
@@ -236,19 +267,9 @@ fn reserve_transfer_native_asset_from_relay_to_system_para_fails() {
 	let sender_balance_before = test.sender.balance;
 	let receiver_balance_before = test.receiver.balance;
 
-	let dispatchable = |t: RelayToSystemParaTest| {
-		<Kusama as KusamaPallet>::XcmPallet::reserve_transfer_assets(
-			t.signed_origin,
-			bx!(t.args.dest),
-			bx!(t.args.beneficiary),
-			bx!(t.args.assets),
-			t.args.fee_asset_item,
-		)
-	};
-
 	test.set_assertion::<Kusama>(relay_origin_assertions);
 	test.set_assertion::<AssetHubKusama>(para_dest_assertions);
-	test.dispatch::<Kusama>(dispatchable);
+	test.set_dispatchable::<Kusama>(relay_reserve_transfer_assets);
 	test.assert();
 
 	let sender_balance_after = test.sender.balance;
@@ -281,18 +302,8 @@ fn reserve_transfer_native_asset_from_system_para_to_relay_fails() {
 	let sender_balance_before = test.sender.balance;
 	let receiver_balance_before = test.receiver.balance;
 
-	let dispatchable = |t: SystemParaToRelayTest| {
-		<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::reserve_transfer_assets(
-			t.signed_origin,
-			bx!(t.args.dest),
-			bx!(t.args.beneficiary),
-			bx!(t.args.assets),
-			t.args.fee_asset_item,
-		)
-	};
-
 	test.set_assertion::<AssetHubKusama>(system_para_to_relay_assertions);
-	test.dispatch::<AssetHubKusama>(dispatchable);
+	test.set_dispatchable::<AssetHubKusama>(system_para_reserve_transfer_assets);
 	test.assert();
 
 	let sender_balance_after = test.sender.balance;
@@ -326,39 +337,13 @@ fn limited_reserve_transfer_native_asset_from_system_para_to_para() {
 	let mut test = SystemParaToParaTest::new(test_args);
 
 	let sender_balance_before = test.sender.balance;
-	// let receiver_balance_before = test.receiver.balance;
-
-	let dispatchable = |t: SystemParaToParaTest| {
-		<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::limited_reserve_transfer_assets(
-			t.signed_origin,
-			bx!(t.args.dest),
-			bx!(t.args.beneficiary),
-			bx!(t.args.assets),
-			t.args.fee_asset_item,
-			t.args.weight_limit
-		)
-	};
-
-	// AssetHubKusama::execute_with(|| {
-
-	// });
 
 	test.set_assertion::<AssetHubKusama>(system_para_to_para_assertions);
-
-	// AssetHubKusama::execute_with(|| {
-
-	// });
-
-	test.dispatch::<AssetHubKusama>(dispatchable);
-
-	AssetHubKusama::execute_with(|| {
-
-	});
+	test.set_dispatchable::<AssetHubKusama>(system_para_to_para_limited_reserve_transfer_assets);
 	test.assert();
 
 	let sender_balance_after = test.sender.balance;
-	// let receiver_balance_after = test.receiver.balance;
 
 	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
-	// assert_eq!(receiver_balance_before, receiver_balance_after);
+	// TODO: Check receiver balance when Penpal runtime is improved to propery handle reserve transfers
 }

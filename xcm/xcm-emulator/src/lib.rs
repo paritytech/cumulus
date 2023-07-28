@@ -627,8 +627,6 @@ macro_rules! decl_test_parachains {
 					<Self as TestExt>::ext_wrapper(|| {
 						let block_number = <Self as Chain>::System::block_number();
 						let mut relay_block_number = <Self as NetworkComponent>::Network::relay_block_number();
-						relay_block_number += 1;
-						<$name as NetworkComponent>::Network::set_relay_block_number(relay_block_number);
 
 						$crate::log::debug!(target: "nacho", "XCMP RELAY BLOCK NUMBER {:?}", relay_block_number);
 
@@ -1148,7 +1146,10 @@ macro_rules! __impl_check_assertion {
 				let chain_name = std::any::type_name::<$chain>();
 
 				<$chain>::execute_with(|| {
-					if let Some(assertion) = test.hops.get(chain_name) {
+					if let Some(dispatchable) = test.hops_dispatchable.get(chain_name) {
+						$crate::assert_ok!(dispatchable(test.clone()));
+					}
+					if let Some(assertion) = test.hops_assertion.get(chain_name) {
 						assertion(test);
 					}
 				});
@@ -1313,7 +1314,8 @@ where
 	pub receiver: TestAccount,
 	pub signed_origin: Origin::RuntimeOrigin,
 	pub root_origin: Origin::RuntimeOrigin,
-	pub hops: HashMap<String, fn(Self)>,
+	pub hops_assertion: HashMap<String, fn(Self)>,
+	pub hops_dispatchable: HashMap<String, fn(Self) -> DispatchResult>,
 	pub args: Args,
 	_marker: PhantomData<(Destination, Hops)>,
 }
@@ -1339,7 +1341,8 @@ where
 			},
 			signed_origin: <Origin as Chain>::RuntimeOrigin::signed(test_args.sender),
 			root_origin: <Origin as Chain>::RuntimeOrigin::root(),
-			hops: Default::default(),
+			hops_assertion: Default::default(),
+			hops_dispatchable: Default::default(),
 			args: test_args.args,
 			_marker: Default::default(),
 		}
@@ -1347,13 +1350,12 @@ where
 
 	pub fn set_assertion<Hop>(&mut self, assertion: fn(Self)) {
 		let chain_name = std::any::type_name::<Hop>();
-		self.hops.insert(chain_name.to_string(), assertion);
+		self.hops_assertion.insert(chain_name.to_string(), assertion);
 	}
 
-	pub fn dispatch<Chain: TestExt>(&self, dispatchable: impl FnOnce(Self) -> DispatchResult) {
-		Chain::ext_wrapper(|| {
-			assert_ok!(dispatchable(self.clone()));
-		});
+	pub fn set_dispatchable<Hop>(&mut self, dispatchable: fn(Self) -> DispatchResult) {
+		let chain_name = std::any::type_name::<Hop>();
+		self.hops_dispatchable.insert(chain_name.to_string(), dispatchable);
 	}
 
 	pub fn assert(&mut self) {
