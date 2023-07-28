@@ -253,7 +253,7 @@ pub mod pallet {
 							qed",
 					);
 					return
-				}
+				},
 			};
 
 			// After this point, the `RelevantMessagingState` in storage reflects the
@@ -272,14 +272,12 @@ pub mod pallet {
 							"relevant messaging state is promised to be set until `on_finalize`; \
 								qed",
 						);
-						return (0, 0);
-					}
+						return (0, 0)
+					},
 				};
 
-				let available_capacity = cmp::min(
-					available_capacity,
-					host_config.max_upward_message_num_per_candidate,
-				);
+				let available_capacity =
+					cmp::min(available_capacity, host_config.max_upward_message_num_per_candidate);
 
 				// Count the number of messages we can possibly fit in the given constraints, i.e.
 				// available_capacity and available_size.
@@ -443,10 +441,7 @@ pub mod pallet {
 			);
 
 			// Weight for adjusting the unincluded segment in `on_finalize`.
-			weight += T::DbWeight::get().reads_writes(
-				6,
-				3,
-			);
+			weight += T::DbWeight::get().reads_writes(6, 3);
 
 			// Always try to read `UpgradeGoAhead` in `on_finalize`.
 			weight += T::DbWeight::get().reads(1);
@@ -1278,8 +1273,10 @@ impl<T: Config> Pallet<T> {
 			}
 
 			let upward_capacity = &mut messaging_state.relay_dispatch_queue_remaining_capacity;
-			upward_capacity.remaining_count = upward_capacity.remaining_count.saturating_sub(used_bandwidth.ump_msg_count);
-			upward_capacity.remaining_size = upward_capacity.remaining_size.saturating_sub(used_bandwidth.ump_total_bytes);
+			upward_capacity.remaining_count =
+				upward_capacity.remaining_count.saturating_sub(used_bandwidth.ump_msg_count);
+			upward_capacity.remaining_size =
+				upward_capacity.remaining_size.saturating_sub(used_bandwidth.ump_total_bytes);
 		});
 	}
 
