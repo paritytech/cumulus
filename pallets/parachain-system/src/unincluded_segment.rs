@@ -75,21 +75,6 @@ impl OutboundBandwidthLimits {
 			hrmp_outgoing,
 		}
 	}
-
-	/// Compute the remaining bandwidth when accounting for the used amounts provided.
-	pub fn subtract(&mut self, used: &UsedBandwidth) {
-		self.ump_messages_remaining =
-			self.ump_messages_remaining.saturating_sub(used.ump_msg_count);
-		self.ump_bytes_remaining = self.ump_bytes_remaining.saturating_sub(used.ump_total_bytes);
-		for (para_id, channel_limits) in self.hrmp_outgoing.iter_mut() {
-			if let Some(update) = used.hrmp_outgoing.get(para_id) {
-				channel_limits.bytes_remaining =
-					channel_limits.bytes_remaining.saturating_sub(update.total_bytes);
-				channel_limits.messages_remaining =
-					channel_limits.messages_remaining.saturating_sub(update.msg_count);
-			}
-		}
-	}
 }
 
 /// The error type for updating bandwidth used by a segment.
