@@ -494,8 +494,7 @@ where
 		relay_chain_slot_duration,
 		recovery_handle: Box::new(overseer_handle.clone()),
 		sync_service: sync_service.clone(),
-	})
-	.await?;
+	})?;
 
 	if validator {
 		start_consensus(
@@ -691,8 +690,7 @@ where
 		relay_chain_slot_duration,
 		recovery_handle: Box::new(overseer_handle.clone()),
 		sync_service: sync_service.clone(),
-	})
-	.await?;
+	})?;
 
 	if validator {
 		start_consensus(
@@ -1409,8 +1407,7 @@ where
 		relay_chain_slot_duration,
 		recovery_handle: Box::new(overseer_handle.clone()),
 		sync_service: sync_service.clone(),
-	})
-	.await?;
+	})?;
 
 	if validator {
 		start_consensus(

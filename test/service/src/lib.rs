@@ -405,8 +405,7 @@ where
 		relay_chain_slot_duration: relay_chain_slot_duration.clone(),
 		recovery_handle,
 		sync_service: sync_service.clone(),
-	})
-	.await?;
+	})?;
 
 	if let Some(collator_key) = collator_key {
 		let parachain_consensus: Box<dyn ParachainConsensus<Block>> = match consensus {
