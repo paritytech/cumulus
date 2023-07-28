@@ -1,4 +1,4 @@
-E2E tests concerning the Polkadot Governance and Collective Parachain. The tests run by the Parachain Integration Tests [tool](https://github.com/paritytech/parachains-integration-tests/).
+E2E tests concerning Polkadot Governance and the Collectives Parachain. The tests run by the Parachain Integration Tests [tool](https://github.com/paritytech/parachains-integration-tests/).
 
 ## Requirements
 The tests require some changes to the regular production runtime builds:
