@@ -625,8 +625,11 @@ pub mod bridging {
 
 	/// Filter out those assets which are not allowed for bridged reserve based transfer.
 	/// (asset, location) filter for `pallet_xcm::Config::XcmReserveTransferFilter`.
-	pub type IsNotAllowedExplicitlyForReserveTransfer =
-		IsNotAllowedConcreteAssetBy<AllowedReserveTransferAssetsLocations>;
+	pub type IsNotAllowedExplicitlyForReserveTransfer = ExcludeOnlyForRemoteDestination<
+		UniversalLocation,
+		FilteredNetworkExportTable,
+		IsNotAllowedConcreteAssetBy<AllowedReserveTransferAssetsLocations>,
+	>;
 
 	/// Benchmarks helper for bridging configuration.
 	#[cfg(feature = "runtime-benchmarks")]

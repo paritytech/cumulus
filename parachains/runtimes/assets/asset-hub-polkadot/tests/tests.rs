@@ -750,22 +750,22 @@ fn xcm_reserve_transfer_filter_works() {
 		(
 			different_global_consensus_parachain_other_then_asset_hub_kusama,
 			only_native_assets(),
-			true,
+			false,
 		),
 		(
 			different_global_consensus_parachain_other_then_asset_hub_kusama,
 			only_trust_backed_assets(),
-			true,
+			false,
 		),
 		(
 			different_global_consensus_parachain_other_then_asset_hub_kusama,
 			only_sibling_foreign_assets(),
-			true,
+			false,
 		),
 		(
 			different_global_consensus_parachain_other_then_asset_hub_kusama,
 			only_different_global_consensus_foreign_assets(),
-			true,
+			false,
 		),
 		(bridged_asset_hub, only_native_assets(), true),
 		(bridged_asset_hub, only_trust_backed_assets(), false),
@@ -774,8 +774,22 @@ fn xcm_reserve_transfer_filter_works() {
 	];
 
 	// lets test filter with test data
-	type XcmReserveTransferFilter = <Runtime as pallet_xcm::Config>::XcmReserveTransferFilter;
-	for (dest, assets, expected_result) in test_data {
-		assert_eq!(expected_result, XcmReserveTransferFilter::contains(&(dest, assets)));
-	}
+	ExtBuilder::<Runtime>::default()
+		.with_collators(collator_session_keys().collators())
+		.with_session_keys(collator_session_keys().session_keys())
+		.build()
+		.execute_with(|| {
+			type XcmReserveTransferFilter =
+				<Runtime as pallet_xcm::Config>::XcmReserveTransferFilter;
+			for (dest, assets, expected_result) in test_data {
+				assert_eq!(
+					expected_result,
+					XcmReserveTransferFilter::contains(&(dest, assets.clone())),
+					"expected_result: {} for dest: {:?} and assets: {:?}",
+					expected_result,
+					dest,
+					assets
+				);
+			}
+		})
 }

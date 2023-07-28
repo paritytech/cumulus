@@ -23,7 +23,7 @@ use xcm::{
 	latest::prelude::{MultiAsset, MultiLocation},
 	prelude::*,
 };
-use xcm_builder::ensure_is_remote;
+use xcm_builder::{ensure_is_remote, ExporterFor};
 
 pub struct StartsWith<T>(sp_std::marker::PhantomData<T>);
 impl<Location: Get<MultiLocation>> Contains<MultiLocation> for StartsWith<Location> {
@@ -172,6 +172,59 @@ impl<LocationAssetFilters: Get<sp_std::vec::Vec<FilteredLocation>>>
 
 		// by default, everything is allowed
 		false
+	}
+}
+
+/// Adapter for `Contains<(MultiLocation, sp_std::vec::Vec<MultiAsset>)>` which checks
+/// if `Exporters` contains exporter for **remote** `MultiLocation` and iff so, then checks `Filter`,
+/// anyway return false.
+///
+/// Note: Assumes that `Exporters` do not depend on `XCM program` and works for `Xcm::default()`.
+pub struct ExcludeOnlyForRemoteDestination<UniversalLocation, Exporters, Exclude>(
+	sp_std::marker::PhantomData<(UniversalLocation, Exporters, Exclude)>,
+);
+impl<UniversalLocation, Exporters, Exclude> Contains<(MultiLocation, sp_std::vec::Vec<MultiAsset>)>
+	for ExcludeOnlyForRemoteDestination<UniversalLocation, Exporters, Exclude>
+where
+	UniversalLocation: Get<InteriorMultiLocation>,
+	Exporters: ExporterFor,
+	Exclude: Contains<(MultiLocation, sp_std::vec::Vec<MultiAsset>)>,
+{
+	fn contains(dest_and_assets: &(MultiLocation, sp_std::vec::Vec<MultiAsset>)) -> bool {
+		let universal_source = UniversalLocation::get();
+		log::trace!(
+			target: "xcm::contains",
+			"CheckOnlyForRemoteDestination dest: {:?}, assets: {:?}, universal_source: {:?}",
+			dest_and_assets.0, dest_and_assets.1, universal_source
+		);
+
+		// check if it is remote destination
+		match ensure_is_remote(universal_source, dest_and_assets.0) {
+			Ok((remote_network, remote_destination)) => {
+				if Exporters::exporter_for(&remote_network, &remote_destination, &Xcm::default())
+					.is_some()
+				{
+					Exclude::contains(dest_and_assets)
+				} else {
+					log::trace!(
+						target: "xcm::contains",
+						"CheckOnlyForRemoteDestination no exporter for dest: {:?}",
+						dest_and_assets.0
+					);
+					// no exporter means that we exclude by default
+					true
+				}
+			},
+			Err(_) => {
+				log::trace!(
+					target: "xcm::contains",
+					"CheckOnlyForRemoteDestination dest: {:?} is not remote to the universal_source: {:?}",
+					dest_and_assets.0, universal_source
+				);
+				//
+				false
+			},
+		}
 	}
 }
 
