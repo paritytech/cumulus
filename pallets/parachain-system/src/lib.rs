@@ -252,16 +252,10 @@ pub mod pallet {
 				},
 			};
 
-			let total_bandwidth_out =
+			let bandwidth_out =
 				OutboundBandwidthLimits::from_relay_chain_state(&relevant_messaging_state);
-			let bandwidth_out = AggregatedUnincludedSegment::<T>::get().map(|segment| {
-				let mut bandwidth_out = total_bandwidth_out.clone();
-				bandwidth_out.subtract(segment.used_bandwidth());
-				bandwidth_out
-			});
 
 			let (ump_msg_count, ump_total_bytes) = <PendingUpwardMessages<T>>::mutate(|up| {
-				let bandwidth_out = bandwidth_out.as_ref().unwrap_or(&total_bandwidth_out);
 				let available_capacity = cmp::min(
 					bandwidth_out.ump_messages_remaining,
 					host_config.max_upward_message_num_per_candidate,
@@ -312,8 +306,10 @@ pub mod pallet {
 				.hrmp_max_message_num_per_candidate
 				.min(<AnnouncedHrmpMessagesPerCandidate<T>>::take()) as usize;
 
-			// TODO [now]: the `ChannelInfo` implementation for this pallet is what's
-			// important here for proper limiting.
+			// Note: this internally calls the `GetChannelInfo` implementation for this
+			// pallet, which draws on the `RelevantMessagingState`. That in turn has
+			// been adjusted in `set_validation_data` to reflect the correct limits in
+			// all channels.
 			let outbound_messages =
 				T::OutboundXcmpMessageSource::take_outbound_messages(maximum_channels)
 					.into_iter()
@@ -351,9 +347,10 @@ pub mod pallet {
 				let watermark = HrmpWatermark::<T>::get();
 				let watermark_update =
 					HrmpWatermarkUpdate::new(watermark, LastRelayChainBlockNumber::<T>::get());
-				// TODO: In order of this panic to be correct, outbound message source should
-				// respect bandwidth limits as well.
-				// <https://github.com/paritytech/cumulus/issues/2471>
+
+				// TODO [now]: can't get total bandwidth out as `RelevantMessagingState`
+				// has already been altered to respect unincluded segment.
+
 				aggregated_segment
 					.append(&ancestor, watermark_update, &total_bandwidth_out)
 					.expect("unincluded segment limits exceeded");
@@ -557,9 +554,39 @@ pub mod pallet {
 			let host_config = relay_state_proof
 				.read_abridged_host_configuration()
 				.expect("Invalid host configuration in relay chain state proof");
-			let relevant_messaging_state = relay_state_proof
-				.read_messaging_state_snapshot(&host_config)
-				.expect("Invalid messaging state in relay chain state proof");
+
+			let relevant_messaging_state = {
+				// Update the egress portions of the messaging state fetched from the
+				// state proof with information from the unincluded segment.
+				// Ingress is handled within a single block currently, so doesn't
+				// need to be updated.
+
+				let unincluded_segment = AggregatedUnincludedSegment::<T>::get().unwrap_or_default();
+				let used_bandwidth = unincluded_segment.used_bandwidth();
+
+				let mut relevant_messaging_state = relay_state_proof
+					.read_messaging_state_snapshot(&host_config)
+					.expect("Invalid messaging state in relay chain state proof");
+
+				let channels = &mut relevant_messaging_state.egress_channels;
+				for (para_id, used) in used_bandwidth.hrmp_outgoing.iter() {
+					let i = match channels.binary_search_by_key(para_id, |item| item.0) {
+						Ok(i) => i,
+						Err(_) => continue, // indicates channel closed.
+					};
+
+					let c = &mut channels[i].1;
+
+					c.total_size = (c.total_size + used.total_bytes).max(c.max_total_size);
+					c.msg_count = (c.msg_count + used.msg_count).max(c.max_capacity);
+				}
+
+				let upward_capacity = &mut relevant_messaging_state.relay_dispatch_queue_remaining_capacity;
+				upward_capacity.remaining_count = upward_capacity.remaining_count.saturating_sub(used_bandwidth.ump_msg_count);
+				upward_capacity.remaining_size = upward_capacity.remaining_size.saturating_sub(used_bandwidth.ump_total_bytes);
+
+				relevant_messaging_state
+			};
 
 			<ValidationData<T>>::put(&vfp);
 			<RelayStateProof<T>>::put(relay_chain_state);
