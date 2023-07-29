@@ -31,7 +31,7 @@ use frame_support::{
 use pallet_asset_conversion::{Config, MultiAssetIdConverter, Swap};
 use polkadot_runtime_common::xcm_sender::ConstantPrice;
 use sp_runtime::{
-	traits::{CheckedSub, Saturating},
+	traits::{CheckedSub, Saturating, Zero},
 	SaturatedConversion,
 };
 use sp_std::{marker::PhantomData, prelude::*};
@@ -382,9 +382,47 @@ impl<
 	fn refund_weight(&mut self, ctx: &XcmContext, weight: Weight) -> Option<MultiAsset> {
 		log::trace!(target: "xcm::weight", "SwapFirstAssetTrader::refund_weight weight: {:?}", weight);
 
-		// TODO: swap back the weight with swap_exact_tokens_for_tokens
+		if let Some(SwapAssetTraderRefunder {
+			// mut weight_outstanding,
+			outstanding_concrete_asset,
+		}) = self.0.clone()
+		{
+			let swap_back = WeightToFee::weight_to_fee(&weight);
 
-		None
+			if swap_back.is_zero() {
+				return None
+			}
+			let (asset_id, _local_asset_balance) =
+				Matcher::matches_fungibles(&outstanding_concrete_asset).ok()?;
+
+			let asset_loc: MultiLocation = asset_id.clone().into();
+
+			let origin = ctx.origin?;
+			let acc = AccountIdConverter::convert_location(&origin)?;
+
+			// Calculate asset_balance
+			// This read should have already be cached in buy_weight
+			let amount_refunded = SWP::swap_tokens_for_exact_tokens(
+				acc.clone(),
+				vec![asset_loc.into(), T::MultiAssetIdConverter::get_native()],
+				swap_back.into(),
+				None,
+				acc.clone(),
+				true,
+			)
+			.ok()?;
+
+			self.0 = None;
+
+			// Only refund if positive
+			if amount_refunded > 0.into() {
+				Some((asset_id.clone(), amount_refunded.try_into().ok()?).into())
+			} else {
+				None
+			}
+		} else {
+			None
+		}
 	}
 }
 
