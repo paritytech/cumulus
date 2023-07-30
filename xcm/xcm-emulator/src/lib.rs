@@ -1283,22 +1283,23 @@ pub struct TestAccount {
 }
 
 #[derive(Clone)]
-pub struct DispatchArgs {
-	pub dest: VersionedMultiLocation,
-	pub beneficiary: VersionedMultiLocation,
+pub struct TestArgs {
+	pub dest: MultiLocation,
+	pub beneficiary: MultiLocation,
 	pub amount: Balance,
-	pub assets: VersionedMultiAssets,
+	pub assets: MultiAssets,
+	pub asset_id: Option<u32>,
 	pub fee_asset_item: u32,
 	pub weight_limit: WeightLimit,
 }
-pub struct TestArgs<T> {
+pub struct TestContext<T> {
 	pub sender: AccountId,
 	pub receiver: AccountId,
 	pub args: T,
 }
 
 #[derive(Clone)]
-pub struct Test<Origin, Destination, Hops = (), Args = DispatchArgs>
+pub struct Test<Origin, Destination, Hops = (), Args = TestArgs>
 where
 	Origin: Chain + Clone,
 	Destination: Chain + Clone,
@@ -1325,7 +1326,7 @@ where
 	Destination::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
 	Hops: Clone + CheckAssertion<Origin, Destination, Hops, Args>,
 {
-	pub fn new(test_args: TestArgs<Args>) -> Self {
+	pub fn new(test_args: TestContext<Args>) -> Self {
 		Test {
 			sender: TestAccount {
 				account_id: test_args.sender.clone(),
