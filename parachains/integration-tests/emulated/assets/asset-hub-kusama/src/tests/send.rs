@@ -18,29 +18,6 @@ use crate::*;
 
 const ASSET_ID: u32 = 1;
 
-fn get_relay_xcm_message(asset_owner: &AccountId, origin_kind: OriginKind) -> VersionedXcm<()> {
-	let call = <AssetHubKusama as Chain>::RuntimeCall::Assets(pallet_assets::Call::<
-		<AssetHubKusama as Chain>::Runtime,
-		Instance1,
-	>::force_create {
-		id: ASSET_ID.into(),
-		is_sufficient: true,
-		min_balance: 1000,
-		owner: MultiAddress::Id(asset_owner.clone()),
-	})
-	.encode()
-	.into();
-
-	let weight_limit = WeightLimit::Unlimited;
-	let require_weight_at_most = Weight::from_parts(1000000000, 200000);
-	let check_origin = None;
-
-	VersionedXcm::from(Xcm(vec![
-		UnpaidExecution { weight_limit, check_origin },
-		Transact { require_weight_at_most, origin_kind, call },
-	]))
-}
-
 fn get_system_xcm_message(origin_kind: OriginKind) -> VersionedXcm<()> {
 	let call = <Kusama as Chain>::RuntimeCall::System(frame_system::Call::<
 		<Kusama as Chain>::Runtime
@@ -68,8 +45,13 @@ fn send_transact_sudo_from_relay_to_system_para() {
 	let system_para_destination: VersionedMultiLocation =
 		Kusama::child_location_of(AssetHubKusama::para_id()).into();
 	let asset_owner: AccountId = AssetHubKusamaSender::get().into();
-	let xcm = get_relay_xcm_message(&asset_owner, OriginKind::Superuser);
-
+	let xcm = force_create_asset_xcm(
+		OriginKind::Superuser,
+		ASSET_ID,
+		asset_owner.clone(),
+		true,
+		1000
+	);
 	// Send XCM message from Relay Chain
 	Kusama::execute_with(|| {
 		assert_ok!(<Kusama as KusamaPallet>::XcmPallet::send(
@@ -125,7 +107,13 @@ fn send_transact_native_from_relay_to_system_para() {
 	let system_para_destination: VersionedMultiLocation =
 		Kusama::child_location_of(AssetHubKusama::para_id()).into();
 	let asset_owner: AccountId = AssetHubKusamaSender::get().into();
-	let xcm = get_relay_xcm_message(&asset_owner, OriginKind::Native);
+	let xcm = force_create_asset_xcm(
+		OriginKind::Native,
+		ASSET_ID,
+		asset_owner,
+		true,
+		1000
+	);
 
 	// Send XCM message from Relay Chain
 	Kusama::execute_with(|| {

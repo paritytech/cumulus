@@ -16,41 +16,9 @@
 
 use crate::*;
 
-type RelayToSystemParaTest = Test<Kusama, AssetHubKusama>;
-type SystemParaToRelayTest = Test<AssetHubKusama, Kusama>;
-type SystemParaToParaTest = Test<AssetHubKusama, PenpalKusamaA>;
-
-fn get_relay_dispatch_args(amount: Balance) -> DispatchArgs {
-	DispatchArgs {
-		dest: Kusama::child_location_of(AssetHubKusama::para_id()).into(),
-		beneficiary: AccountId32Junction {
-			network: None,
-			id: AssetHubKusamaReceiver::get().into()
-		}.into(),
-		amount,
-		assets: (Here, amount).into(),
-		fee_asset_item: 0,
-		weight_limit: WeightLimit::Unlimited,
-	}
-}
-
-fn get_system_para_dispatch_args(
-	dest: VersionedMultiLocation,
-	beneficiary_id: AccountId32,
-	amount: Balance,
-) -> DispatchArgs {
-	DispatchArgs {
-		dest,
-		beneficiary: AccountId32Junction {
-			network: None,
-			id: beneficiary_id.into()
-		}.into(),
-		amount,
-		assets: (Parent, amount).into(),
-		fee_asset_item: 0,
-		weight_limit: WeightLimit::Unlimited,
-	}
-}
+const ASSET_ID: u32 = 1;
+const ASSET_MIN_BALANCE: u128 = 1;
+const ASSETS_PALLET_ID: u8 = 50;
 
 fn relay_origin_assertions(t: RelayToSystemParaTest) {
 	type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
@@ -58,7 +26,7 @@ fn relay_origin_assertions(t: RelayToSystemParaTest) {
 	assert_expected_events!(
 		Kusama,
 		vec![
-			// Amount to reserve transfer is transferred to System Parachain's account
+			// Amount to reserve transfer is transferred to System Parachain's Sovereign account
 			RuntimeEvent::Balances(pallet_balances::Event::Transfer { from, to, amount }) => {
 				from: *from == t.sender.account_id,
 				to: *to == Kusama::sovereign_account_id_of(
@@ -80,7 +48,34 @@ fn relay_origin_assertions(t: RelayToSystemParaTest) {
 	);
 }
 
-fn para_dest_assertions(_t: RelayToSystemParaTest) {
+fn system_para_dest_assertions_asset_created(t: RelayToSystemParaTest) {
+	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
+
+	assert_expected_events!(
+		AssetHubKusama,
+		vec![
+			// XCM message is succesfully executed in destination
+			RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
+				outcome: Outcome::Complete(weight), ..
+			}) => {
+				weight: weight_within_threshold(
+					(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+					Weight::from_parts(1_019_445_000, 200_000),
+					*weight
+				),
+			},
+			// Asset has been created
+			RuntimeEvent::Assets(pallet_assets::Event::ForceCreated { asset_id, owner }) => {
+				asset_id: *asset_id == ASSET_ID,
+				owner: *owner == t.sender.account_id,
+			},
+		]
+	);
+
+	assert!(<AssetHubKusama as AssetHubKusamaPallet>::Assets::asset_exists(ASSET_ID));
+}
+
+fn system_para_dest_assertions_incomplete(_t: RelayToSystemParaTest) {
 	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
 	assert_expected_events!(
@@ -116,7 +111,7 @@ fn system_para_to_relay_assertions(_t: SystemParaToRelayTest) {
 	);
 }
 
-fn system_para_to_para_assertions(_t: SystemParaToParaTest) {
+fn system_para_to_para_assertions(t: SystemParaToParaTest) {
 	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
 	assert_expected_events!(
@@ -132,6 +127,61 @@ fn system_para_to_para_assertions(_t: SystemParaToParaTest) {
 					*weight
 				),
 			},
+			// Amount to reserve transfer is transferred to Parachain's Sovereing account
+			RuntimeEvent::Balances(
+				pallet_balances::Event::Transfer { from, to, amount }
+			) => {
+				from: *from == t.sender.account_id,
+				to: *to == AssetHubKusama::sovereign_account_id_of(
+					AssetHubKusama::sibling_location_of(PenpalKusamaA::para_id()).into()
+				),
+				amount: *amount == t.args.amount,
+			},
+		]
+	);
+}
+
+fn system_para_to_para_assets_assertions(t: SystemParaToParaTest) {
+	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
+
+	assert_expected_events!(
+		AssetHubKusama,
+		vec![
+			// Dispatchable is properly executed and XCM message sent
+			RuntimeEvent::PolkadotXcm(
+				pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
+			) => {
+				weight: weight_within_threshold(
+					(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+					Weight::from_parts(676_119_000, 6196),
+					*weight
+				),
+			},
+			// Amount to reserve transfer is transferred to Parachain's Sovereing account
+			RuntimeEvent::Assets(
+				pallet_assets::Event::Transferred { asset_id, from, to, amount }
+			) => {
+				asset_id: *asset_id == ASSET_ID,
+				from: *from == t.sender.account_id,
+				to: *to == AssetHubKusama::sovereign_account_id_of(
+					AssetHubKusama::sibling_location_of(PenpalKusamaA::para_id()).into()
+				),
+				amount: *amount == t.args.amount,
+			},
+		]
+	);
+}
+
+
+fn relay_send_transact_assertion(_t: RelayToSystemParaTest) {
+	type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
+
+	assert_expected_events!(
+		Kusama,
+		vec![
+			RuntimeEvent::XcmPallet(
+				pallet_xcm::Event::Sent { .. }
+			) => {},
 		]
 	);
 }
@@ -189,6 +239,34 @@ fn system_para_to_para_limited_reserve_transfer_assets(t: SystemParaToParaTest) 
 	)
 }
 
+fn system_para_to_para_reserve_transfer_assets(t: SystemParaToParaTest) -> DispatchResult {
+	<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::reserve_transfer_assets(
+		t.signed_origin,
+		bx!(t.args.dest),
+		bx!(t.args.beneficiary),
+		bx!(t.args.assets),
+		t.args.fee_asset_item,
+	)
+}
+
+fn relay_to_system_para_force_create_asset(
+	t: RelayToSystemParaTest,
+) -> DispatchResult {
+	let xcm = force_create_asset_xcm(
+		OriginKind::Superuser,
+		ASSET_ID,
+		t.receiver.account_id,
+		true,
+		ASSET_MIN_BALANCE
+	);
+
+	<Kusama as KusamaPallet>::XcmPallet::send(
+			t.root_origin,
+			bx!(t.args.dest),
+			bx!(xcm),
+	)
+}
+
 /// Limited Reserve Transfers of native asset from Relay Chain to the System Parachain shouldn't work
 #[test]
 fn limited_reserve_transfer_native_asset_from_relay_to_system_para_fails() {
@@ -206,7 +284,7 @@ fn limited_reserve_transfer_native_asset_from_relay_to_system_para_fails() {
 	let receiver_balance_before = test.receiver.balance;
 
 	test.set_assertion::<Kusama>(relay_origin_assertions);
-	test.set_assertion::<AssetHubKusama>(para_dest_assertions);
+	test.set_assertion::<AssetHubKusama>(system_para_dest_assertions_incomplete);
 	test.set_dispatchable::<Kusama>(relay_limited_reserve_transfer_assets);
 	test.assert();
 
@@ -224,6 +302,7 @@ fn limited_reserve_transfer_native_asset_from_system_para_to_relay_fails() {
 	let destination = AssetHubKusama::parent_location().into();
 	let beneficiary_id = KusamaReceiver::get().into();
 	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
+	let assets = (Parent, amount_to_send).into();
 
 	let test_args = TestArgs {
 		sender: AssetHubKusamaSender::get(),
@@ -231,7 +310,8 @@ fn limited_reserve_transfer_native_asset_from_system_para_to_relay_fails() {
 		args: get_system_para_dispatch_args(
 			destination,
 			beneficiary_id,
-			amount_to_send
+			amount_to_send,
+			assets
 		),
 	};
 
@@ -268,7 +348,7 @@ fn reserve_transfer_native_asset_from_relay_to_system_para_fails() {
 	let receiver_balance_before = test.receiver.balance;
 
 	test.set_assertion::<Kusama>(relay_origin_assertions);
-	test.set_assertion::<AssetHubKusama>(para_dest_assertions);
+	test.set_assertion::<AssetHubKusama>(system_para_dest_assertions_incomplete);
 	test.set_dispatchable::<Kusama>(relay_reserve_transfer_assets);
 	test.assert();
 
@@ -286,6 +366,7 @@ fn reserve_transfer_native_asset_from_system_para_to_relay_fails() {
 	let destination = AssetHubKusama::parent_location().into();
 	let beneficiary_id = KusamaReceiver::get().into();
 	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
+	let assets = (Parent, amount_to_send).into();
 
 	let test_args = TestArgs {
 		sender: AssetHubKusamaSender::get(),
@@ -293,7 +374,8 @@ fn reserve_transfer_native_asset_from_system_para_to_relay_fails() {
 		args: get_system_para_dispatch_args(
 			destination,
 			beneficiary_id,
-			amount_to_send
+			amount_to_send,
+			assets
 		),
 	};
 
@@ -320,9 +402,9 @@ fn limited_reserve_transfer_native_asset_from_system_para_to_para() {
 	let destination = AssetHubKusama::sibling_location_of(
 		PenpalKusamaA::para_id()
 	).into();
-	println!("DESTINATION {:?}", destination);
 	let beneficiary_id = PenpalKusamaAReceiver::get().into();
 	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
+	let assets = (Parent, amount_to_send).into();
 
 	let test_args = TestArgs {
 		sender: AssetHubKusamaSender::get(),
@@ -330,7 +412,8 @@ fn limited_reserve_transfer_native_asset_from_system_para_to_para() {
 		args: get_system_para_dispatch_args(
 			destination,
 			beneficiary_id,
-			amount_to_send
+			amount_to_send,
+			assets
 		),
 	};
 
@@ -339,6 +422,7 @@ fn limited_reserve_transfer_native_asset_from_system_para_to_para() {
 	let sender_balance_before = test.sender.balance;
 
 	test.set_assertion::<AssetHubKusama>(system_para_to_para_assertions);
+	// TODO: Add assertion for Penpal runtime. Right now message is failing with `UntrustedReserveLocation`
 	test.set_dispatchable::<AssetHubKusama>(system_para_to_para_limited_reserve_transfer_assets);
 	test.assert();
 
@@ -346,4 +430,169 @@ fn limited_reserve_transfer_native_asset_from_system_para_to_para() {
 
 	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
 	// TODO: Check receiver balance when Penpal runtime is improved to propery handle reserve transfers
+}
+
+/// Reserve Transfers of native asset from System Parachain to Parachain should work
+#[test]
+fn reserve_transfer_native_asset_from_system_para_to_para() {
+	// Init values for System Parachain
+	let destination = AssetHubKusama::sibling_location_of(
+		PenpalKusamaA::para_id()
+	).into();
+	let beneficiary_id = PenpalKusamaAReceiver::get().into();
+	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
+	let assets = (Parent, amount_to_send).into();
+
+	let test_args = TestArgs {
+		sender: AssetHubKusamaSender::get(),
+		receiver: PenpalKusamaAReceiver::get(),
+		args: get_system_para_dispatch_args(
+			destination,
+			beneficiary_id,
+			amount_to_send,
+			assets
+		),
+	};
+
+	let mut test = SystemParaToParaTest::new(test_args);
+
+	let sender_balance_before = test.sender.balance;
+
+	test.set_assertion::<AssetHubKusama>(system_para_to_para_assertions);
+	// TODO: Add assertion for Penpal runtime. Right now message is failing with `UntrustedReserveLocation`
+	test.set_dispatchable::<AssetHubKusama>(system_para_to_para_reserve_transfer_assets);
+	test.assert();
+
+	let sender_balance_after = test.sender.balance;
+
+	assert_eq!(sender_balance_before - amount_to_send, sender_balance_after);
+	// TODO: Check receiver balance when Penpal runtime is improved to propery handle reserve transfers
+}
+
+/// Limited Reserve Transfers of a local asset from System Parachain to Parachain should work
+#[test]
+fn limited_reserve_transfer_asset_from_system_para_to_para() {
+	// Init values for Relay Chain
+	let mut amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
+
+	let test_relay_args = TestArgs {
+		sender: KusamaSender::get(),
+		receiver: AssetHubKusamaSender::get(),
+		args: get_relay_dispatch_args(
+			amount_to_send
+		),
+	};
+
+	let mut relay_test = RelayToSystemParaTest::new(test_relay_args);
+
+	// Force create sufficent asset from Relay Chain
+	relay_test.set_assertion::<Kusama>(relay_send_transact_assertion);
+	relay_test.set_assertion::<AssetHubKusama>(system_para_dest_assertions_asset_created);
+	relay_test.set_dispatchable::<Kusama>(relay_to_system_para_force_create_asset);
+	relay_test.assert();
+
+	// Init values for System Parachain
+	let destination = AssetHubKusama::sibling_location_of(
+		PenpalKusamaA::para_id()
+	).into();
+	let beneficiary_id = PenpalKusamaAReceiver::get().into();
+	let amount_to_mint = ASSET_MIN_BALANCE * 10000;
+	amount_to_send = ASSET_MIN_BALANCE * 1000;
+	// let assets = (Parent, amount_to_send).into();
+	let assets: VersionedMultiAssets = (
+		X2(PalletInstance(ASSETS_PALLET_ID), GeneralIndex(ASSET_ID.into())),
+		amount_to_send
+	).into();
+
+	let system_para_test_args = TestArgs {
+		sender: AssetHubKusamaSender::get(),
+		receiver: PenpalKusamaAReceiver::get(),
+		args: get_system_para_dispatch_args(
+			destination,
+			beneficiary_id,
+			amount_to_send,
+			assets
+		),
+	};
+
+	let mut system_para_test
+		= SystemParaToParaTest::new(system_para_test_args);
+
+	// Mint asset for System Parachain's sender
+	mint_asset(
+		system_para_test.clone().signed_origin,
+		ASSET_ID,
+		system_para_test.clone().sender.account_id,
+		amount_to_mint
+	);
+
+	system_para_test.set_assertion::<AssetHubKusama>(system_para_to_para_assets_assertions);
+	// TODO: Add assertions when Penpal is able to manage assets
+	// system_para_test.set_assertion::<PenpalKusamaA>(para_dest_assets_transferred_assertions);
+	system_para_test.set_dispatchable::<AssetHubKusama>(system_para_to_para_limited_reserve_transfer_assets);
+	system_para_test.assert();
+}
+
+/// Limited Reserve Transfers of a local asset from System Parachain to Parachain should work
+#[test]
+fn reserve_transfer_asset_from_system_para_to_para() {
+	// Init values for Relay Chain
+	let mut amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
+
+	let test_relay_args = TestArgs {
+		sender: KusamaSender::get(),
+		receiver: AssetHubKusamaSender::get(),
+		args: get_relay_dispatch_args(
+			amount_to_send
+		),
+	};
+
+	let mut relay_test = RelayToSystemParaTest::new(test_relay_args);
+
+	// Force create sufficent asset from Relay Chain
+	relay_test.set_assertion::<Kusama>(relay_send_transact_assertion);
+	relay_test.set_assertion::<AssetHubKusama>(system_para_dest_assertions_asset_created);
+	relay_test.set_dispatchable::<Kusama>(relay_to_system_para_force_create_asset);
+	relay_test.assert();
+
+	// Init values for System Parachain
+	let destination = AssetHubKusama::sibling_location_of(
+		PenpalKusamaA::para_id()
+	).into();
+	let beneficiary_id = PenpalKusamaAReceiver::get().into();
+	let amount_to_mint = ASSET_MIN_BALANCE * 10000;
+	amount_to_send = ASSET_MIN_BALANCE * 1000;
+	// let assets = (Parent, amount_to_send).into();
+	let assets: VersionedMultiAssets = (
+		X2(PalletInstance(ASSETS_PALLET_ID), GeneralIndex(ASSET_ID.into())),
+		amount_to_send
+	).into();
+
+	let system_para_test_args = TestArgs {
+		sender: AssetHubKusamaSender::get(),
+		receiver: PenpalKusamaAReceiver::get(),
+		args: get_system_para_dispatch_args(
+			destination,
+			beneficiary_id,
+			amount_to_send,
+			assets
+		),
+	};
+
+	let mut system_para_test
+		= SystemParaToParaTest::new(system_para_test_args);
+
+	// Mint asset for System Parachain's sender
+	mint_asset(
+		system_para_test.clone().signed_origin,
+		ASSET_ID,
+		system_para_test.clone().sender.account_id,
+		amount_to_mint
+	);
+
+	system_para_test.set_assertion::<AssetHubKusama>(system_para_to_para_assets_assertions);
+	// TODO: Add assertions when Penpal is able to manage assets
+	// system_para_test.set_assertion::<PenpalKusamaA>(para_dest_assets_transferred_assertions);
+	system_para_test.set_dispatchable::<AssetHubKusama>(system_para_to_para_reserve_transfer_assets);
+	system_para_test.assert();
 }

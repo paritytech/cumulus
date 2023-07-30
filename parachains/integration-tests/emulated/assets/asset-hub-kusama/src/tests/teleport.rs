@@ -16,37 +16,6 @@
 
 use crate::*;
 
-type RelayToSystemParaTest = Test<Kusama, AssetHubKusama>;
-type SystemParaToRelayTest = Test<AssetHubKusama, Kusama>;
-
-fn get_relay_dispatch_args(amount: Balance) -> DispatchArgs {
-	DispatchArgs {
-		dest: Kusama::child_location_of(AssetHubKusama::para_id()).into(),
-		beneficiary: AccountId32Junction {
-			network: None,
-			id: AssetHubKusamaReceiver::get().into()
-		}.into(),
-		amount,
-		assets: (Here, amount).into(),
-		fee_asset_item: 0,
-		weight_limit: WeightLimit::Unlimited,
-	}
-}
-
-fn get_para_dispatch_args(amount: Balance) -> DispatchArgs {
-	DispatchArgs {
-		dest: AssetHubKusama::parent_location().into(),
-		beneficiary: AccountId32Junction {
-			network: None,
-			id: KusamaReceiver::get().into()
-		}.into(),
-		amount,
-		assets: (Parent, amount).into(),
-		fee_asset_item: 0,
-		weight_limit: WeightLimit::Unlimited,
-	}
-}
-
 fn relay_origin_assertions(t: RelayToSystemParaTest) {
 	type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
@@ -217,15 +186,16 @@ fn system_para_limited_teleport_assets(t: SystemParaToRelayTest) -> DispatchResu
 	)
 }
 
-fn system_para_teleport_assets(t: SystemParaToRelayTest) -> DispatchResult {
-	<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::teleport_assets(
-		t.signed_origin,
-		bx!(t.args.dest),
-		bx!(t.args.beneficiary),
-		bx!(t.args.assets),
-		t.args.fee_asset_item,
-	)
-}
+// TODO: Uncomment when https://github.com/paritytech/polkadot/pull/7424 is merged
+// fn system_para_teleport_assets(t: SystemParaToRelayTest) -> DispatchResult {
+// 	<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::teleport_assets(
+// 		t.signed_origin,
+// 		bx!(t.args.dest),
+// 		bx!(t.args.beneficiary),
+// 		bx!(t.args.assets),
+// 		t.args.fee_asset_item,
+// 	)
+// }
 
 /// Limited Teleport of native asset from Relay Chain to the System Parachain should work
 #[test]
@@ -266,10 +236,19 @@ fn limited_teleport_native_assets_back_from_system_para_to_relay_works() {
 
 	// Init values for Relay Chain
 	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
+	let destination = AssetHubKusama::parent_location().into();
+	let beneficiary_id = KusamaReceiver::get().into();
+	let assets = (Parent, amount_to_send).into();
+
 	let test_args = TestArgs {
 		sender: AssetHubKusamaSender::get(),
 		receiver: KusamaReceiver::get(),
-		args: get_para_dispatch_args(amount_to_send),
+		args: get_system_para_dispatch_args(
+			destination,
+			beneficiary_id,
+			amount_to_send,
+			assets
+		),
 	};
 
 	let mut test = SystemParaToRelayTest::new(test_args);
@@ -297,10 +276,19 @@ fn limited_teleport_native_assets_back_from_system_para_to_relay_works() {
 fn limited_teleport_native_assets_from_system_para_to_relay_fails() {
 	// Init values for Relay Chain
 	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
+	let destination = AssetHubKusama::parent_location().into();
+	let beneficiary_id = KusamaReceiver::get().into();
+	let assets = (Parent, amount_to_send).into();
+
 	let test_args = TestArgs {
 		sender: AssetHubKusamaSender::get(),
 		receiver: KusamaReceiver::get(),
-		args: get_para_dispatch_args(amount_to_send),
+		args: get_system_para_dispatch_args(
+			destination,
+			beneficiary_id,
+			amount_to_send,
+			assets
+		),
 	};
 
 	let mut test = SystemParaToRelayTest::new(test_args);
@@ -399,10 +387,13 @@ fn teleport_native_assets_from_relay_to_system_para_works() {
 // fn teleport_native_assets_from_system_para_to_relay_fails() {
 // 	// Init values for Relay Chain
 // 	let amount_to_send: Balance = ASSET_HUB_KUSAMA_ED * 1000;
+//  let assets = (Parent, amount_to_send).into();
+//
 // 	let test_args = TestArgs {
 // 		sender: AssetHubKusamaSender::get(),
 // 		receiver: KusamaReceiver::get(),
-// 		args: get_para_dispatch_args(amount_to_send),
+// 		args: get_system_para_dispatch_args(amount_to_send),
+//      assets
 // 	};
 
 // 	let mut test = SystemParaToRelayTest::new(test_args);

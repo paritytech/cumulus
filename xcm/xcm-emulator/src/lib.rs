@@ -628,8 +628,6 @@ macro_rules! decl_test_parachains {
 						let block_number = <Self as Chain>::System::block_number();
 						let mut relay_block_number = <Self as NetworkComponent>::Network::relay_block_number();
 
-						$crate::log::debug!(target: "nacho", "XCMP RELAY BLOCK NUMBER {:?}", relay_block_number);
-
 						let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
 							<Self as Chain>::RuntimeOrigin::none(),
 							<Self as NetworkComponent>::Network::hrmp_channel_parachain_inherent_data(
@@ -770,7 +768,6 @@ macro_rules! __impl_test_ext_for_parachain {
 						// Increase block number
 						let mut relay_block_number = <$name as NetworkComponent>::Network::relay_block_number();
 						relay_block_number += 1;
-						$crate::log::debug!(target: "nacho", "INNER RELAY BLOCK NUMBER {:?}", relay_block_number);
 						<$name as NetworkComponent>::Network::set_relay_block_number(relay_block_number);
 
 						let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
@@ -1050,7 +1047,6 @@ macro_rules! decl_test_networks {
 							e_index.insert(idx, recipient_para_id);
 						}
 
-						$crate::log::debug!(target: "nacho", "sender {:?}, recipient {:?}", sproof.para_id, recipient_para_id);
 						sproof
 							.hrmp_channels
 							.entry(HrmpChannelId {
