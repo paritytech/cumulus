@@ -19,7 +19,11 @@ use xcm_emulator::{
 };
 
 pub use xcm::{
-	prelude::*,
+	prelude::{
+		OriginKind, MultiAsset, VersionedXcm, WeightLimit, UnpaidExecution, WithdrawAsset,
+		BuyExecution, Transact, RefundSurplus, MultiAssets, DepositAsset, All, MultiLocation,
+		Xcm, AccountId32, Weight, X1
+	},
 	DoubleEncoded,
 };
 

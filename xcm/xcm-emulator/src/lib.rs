@@ -71,7 +71,7 @@ pub use polkadot_runtime_parachains::{
 };
 
 // Polkadot
-pub use xcm::{v3::prelude::{*, AccountId32 as AccountId32Junction}, VersionedMultiAssets, VersionedMultiLocation};
+pub use xcm::{v3::prelude::{*, AccountId32 as AccountId32Junction, Parachain as ParachainJunction}, VersionedMultiAssets, VersionedMultiLocation};
 pub use xcm_executor::traits::ConvertLocation;
 
 thread_local! {
@@ -250,7 +250,7 @@ pub trait RelayChain: Chain {
 	type SovereignAccountOf: ConvertLocation<AccountId>;
 
 	fn child_location_of(id: ParaId) -> MultiLocation {
-		(Ancestor(0), Parachain(id.into())).into()
+		(Ancestor(0), ParachainJunction(id.into())).into()
 	}
 
 	fn sovereign_account_id_of(location: MultiLocation) -> AccountId {
@@ -275,7 +275,7 @@ pub trait Parachain: Chain {
 	}
 
 	fn sibling_location_of(para_id: ParaId) -> MultiLocation {
-		(Parent, X1(Parachain(para_id.into()))).into()
+		(Parent, X1(ParachainJunction(para_id.into()))).into()
 	}
 
 	fn sovereign_account_id_of(location: MultiLocation) -> AccountId {
