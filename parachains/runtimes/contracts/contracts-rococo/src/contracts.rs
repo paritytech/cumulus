@@ -57,7 +57,7 @@ impl Config for Runtime {
 	type MaxDelegateDependencies = ConstU32<32>;
 	type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
 	type Migrations = (
-		v12::Migration<Runtime, Balances, DepositPerByte, DepositPerItem>,
+		v12::Migration<Runtime, Balances>,
 		v13::Migration<Runtime>,
 		v14::Migration<Runtime, Balances>,
 	);
