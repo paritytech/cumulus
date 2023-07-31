@@ -146,7 +146,7 @@ impl XcmpMessageSource for FromThreadLocal {
 				let (max_size_now, max_size_ever) = match status {
 					ChannelStatus::Ready(now, ever) => (now, ever),
 					ChannelStatus::Closed => return false, // drop message
-					ChannelStatus::Full => return true, // keep message queued.
+					ChannelStatus::Full => return true,    // keep message queued.
 				};
 
 				let msg_len = m.1.len();
@@ -770,28 +770,28 @@ fn hrmp_outbound_respects_used_bandwidth() {
 					// one message added
 					channel.msg_count = 1;
 					channel.total_size = 1;
-				}
+				},
 				6 => {
 					// 3 included.
 					// one message added
 					channel.msg_count = 2;
 					channel.total_size = 2;
-				}
+				},
 				7 => {
 					// 4 included.
 					// one message drained.
 					channel.msg_count = 1;
 					channel.total_size = 1;
-				}
+				},
 				8 => {
 					// 5 included. no messages added, one drained.
 					channel.msg_count = 0;
 					channel.total_size = 0;
-				}
+				},
 				_ => {
 					channel.msg_count = 0;
 					channel.total_size = 0;
-				}
+				},
 			}
 		})
 		.add(1, || {})
