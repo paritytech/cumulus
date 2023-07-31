@@ -143,7 +143,7 @@ impl XcmpMessageSource for FromThreadLocal {
 		SENT_MESSAGES.with(|ms| {
 			ms.borrow_mut().retain(|m| {
 				let status = <Pallet<Test> as GetChannelInfo>::get_channel_status(m.0);
-				let ChannelStatus::Ready(max_size_now, max_size_ever) = status else { return false };
+				let ChannelStatus::Ready(max_size_now, max_size_ever) = status else { return true };
 				let msg_len = m.1.len();
 
 				if !ids.contains(&m.0) &&
@@ -441,6 +441,47 @@ impl Drop for BlockTests {
 #[should_panic]
 fn block_tests_run_on_drop() {
 	BlockTests::new().add(123, || panic!("if this test passes, block tests run properly"));
+}
+
+#[test]
+fn test_xcmp_source_keeps_messages() {
+	let recipient = ParaId::from(400);
+
+	CONSENSUS_HOOK.with(|c| {
+		*c.borrow_mut() = Box::new(|_| (Weight::zero(), NonZeroU32::new(3).unwrap().into()))
+	});
+
+	BlockTests::new()
+		.with_inclusion_delay(2)
+		.with_relay_sproof_builder(move |_, block_number, sproof| {
+			sproof.host_config.hrmp_max_message_num_per_candidate = 10;
+			let channel = sproof.upsert_outbound_channel(recipient);
+			channel.max_total_size = 10;
+			channel.max_message_size = 10;
+
+			// Only fit messages starting from 3rd block.
+			channel.max_capacity = if block_number < 3 { 0 } else { 1 };
+		})
+		.add(1, || {})
+		.add_with_post_test(
+			2,
+			move || {
+				send_message(recipient, b"22".to_vec());
+			},
+			move || {
+				let v = HrmpOutboundMessages::<Test>::get();
+				assert!(v.is_empty());
+			},
+		)
+		.add_with_post_test(
+			3,
+			move || {},
+			move || {
+				// Not discarded.
+				let v = HrmpOutboundMessages::<Test>::get();
+				assert_eq!(v, vec![OutboundHrmpMessage { recipient, data: b"22".to_vec() }]);
+			},
+		);
 }
 
 #[test]
