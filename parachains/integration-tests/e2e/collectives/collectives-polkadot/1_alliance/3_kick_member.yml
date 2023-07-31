@@ -116,7 +116,7 @@ tests:
                   v3: [ #message
                     {
                       UnpaidExecution: {
-                        weightLimit: { 
+                        weightLimit: {
                           limited: {
                             refTime: 4000000000, # 4_000_000_000
                             proofSize: 2000000, # 2_000_000
@@ -128,7 +128,7 @@ tests:
                       Transact: {
                         originKind: Superuser,
                         requireWeightAtMost: {
-                          refTime: 2000000000, # 2_000_000_000 
+                          refTime: 2000000000, # 2_000_000_000
                           proofSize: 1000000, # 1_000_000
                         },
                         call: $alliance_kick_member
