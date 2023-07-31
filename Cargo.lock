@@ -5308,6 +5308,7 @@ dependencies = [
  "pallet-balances",
  "pallet-bridge-messages",
  "pallet-im-online",
+ "pallet-message-queue",
  "pallet-staking",
  "pallet-xcm",
  "parachain-info",

@@ -3,27 +3,30 @@ pub mod constants;
 pub mod impls;
 
 pub use constants::{
+	REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD,
 	accounts::{ALICE, BOB},
 	asset_hub_kusama, asset_hub_polkadot, asset_hub_westend, bridge_hub_kusama,
 	bridge_hub_polkadot, bridge_hub_rococo, collectives, kusama, penpal, polkadot, rococo, westend,
 };
 pub use impls::{RococoWococoMessageHandler, WococoRococoMessageHandler};
-
+pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
 use frame_support::{parameter_types, sp_tracing};
 pub use parachains_common::{AccountId, Balance};
 pub use sp_core::{sr25519, storage::Storage, Get};
 use xcm_emulator::{
 	decl_test_bridges, decl_test_networks, decl_test_parachains, decl_test_relay_chains,
-	decl_test_sender_receiver_accounts_parameter_types, BridgeMessageHandler, Chain, Parachain,
-	RelayChain, TestExt, DefaultMessageProcessor,
+	decl_test_sender_receiver_accounts_parameter_types, assert_expected_events,
+	helpers::weight_within_threshold, ParaId,
+	BridgeMessageHandler, Chain, Parachain, RelayChain, TestExt, DefaultMessageProcessor,
 };
 
 pub use xcm::{
 	prelude::{
 		OriginKind, MultiAsset, VersionedXcm, WeightLimit, UnpaidExecution, WithdrawAsset,
 		BuyExecution, Transact, RefundSurplus, MultiAssets, DepositAsset, All, MultiLocation,
-		Xcm, AccountId32, Weight, X1
+		Xcm, AccountId32, Weight, X1, Outcome,
 	},
+	v3::Error,
 	DoubleEncoded,
 };
 
@@ -439,6 +442,330 @@ decl_test_sender_receiver_accounts_parameter_types! {
 	PenpalWestendA { sender: ALICE, receiver: BOB }
 }
 
+pub mod events {
+	pub mod polkadot {
+		use crate::*;
+		type RuntimeEvent = <Polkadot as Chain>::RuntimeEvent;
+
+		// Dispatchable is completely executed and XCM sent
+		pub fn xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
+			assert_expected_events!(
+				Polkadot,
+				vec![
+					RuntimeEvent::XcmPallet(
+						pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
+					) => {
+						weight: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							expected_weight.unwrap_or(*weight),
+							*weight
+						),
+					},
+				]
+			);
+		}
+
+		// Dispatchable is incompletely executed and XCM sent
+		pub fn xcm_pallet_attempted_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
+			assert_expected_events!(
+				Polkadot,
+				vec![
+					// Dispatchable is properly executed and XCM message sent
+					RuntimeEvent::XcmPallet(
+						pallet_xcm::Event::Attempted { outcome: Outcome::Incomplete(weight, error) }
+					) => {
+						weight: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							expected_weight.unwrap_or(*weight),
+							*weight
+						),
+						error: *error == expected_error.unwrap_or(*error),
+					},
+				]
+			);
+		}
+
+		// XCM message is sent
+		pub fn xcm_pallet_sent() {
+			assert_expected_events!(
+				Polkadot,
+				vec![
+					RuntimeEvent::XcmPallet(pallet_xcm::Event::Sent { .. }) => {},
+				]
+			);
+		}
+
+		// XCM from System Parachain is succesfully received and proccessed
+		pub fn ump_queue_processed(
+			expected_success: bool,
+			expected_id: Option<ParaId>,
+			expected_weight: Option<Weight>
+		) {
+			assert_expected_events!(
+				Polkadot,
+				vec![
+					// XCM is succesfully received and proccessed
+					RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed {
+						origin: AggregateMessageOrigin::Ump(UmpQueueId::Para(id)),
+						weight_used,
+						success,
+						..
+					}) => {
+						id: *id == expected_id.unwrap_or(*id),
+						weight_used: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							expected_weight.unwrap_or(*weight_used),
+							*weight_used
+						),
+						success: *success == expected_success,
+					},
+				]
+			);
+		}
+	}
+	pub mod kusama {
+		use crate::*;
+		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
+
+		// Dispatchable is completely executed and XCM sent
+		pub fn xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
+			assert_expected_events!(
+				Kusama,
+				vec![
+					RuntimeEvent::XcmPallet(
+						pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
+					) => {
+						weight: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							expected_weight.unwrap_or(*weight),
+							*weight
+						),
+					},
+				]
+			);
+		}
+
+		// Dispatchable is incompletely executed and XCM sent
+		pub fn xcm_pallet_attempted_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
+			assert_expected_events!(
+				Kusama,
+				vec![
+					// Dispatchable is properly executed and XCM message sent
+					RuntimeEvent::XcmPallet(
+						pallet_xcm::Event::Attempted { outcome: Outcome::Incomplete(weight, error) }
+					) => {
+						weight: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							expected_weight.unwrap_or(*weight),
+							*weight
+						),
+						error: *error == expected_error.unwrap_or(*error),
+					},
+				]
+			);
+		}
+
+		// XCM message is sent
+		pub fn xcm_pallet_sent() {
+			assert_expected_events!(
+				Kusama,
+				vec![
+					RuntimeEvent::XcmPallet(pallet_xcm::Event::Sent { .. }) => {},
+				]
+			);
+		}
+
+		// XCM from System Parachain is succesfully received and proccessed
+		pub fn ump_queue_processed(
+			expected_success: bool,
+			expected_id: Option<ParaId>,
+			expected_weight: Option<Weight>
+		) {
+			assert_expected_events!(
+				Kusama,
+				vec![
+					// XCM is succesfully received and proccessed
+					RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed {
+						origin: AggregateMessageOrigin::Ump(UmpQueueId::Para(id)),
+						weight_used,
+						success,
+						..
+					}) => {
+						id: *id == expected_id.unwrap_or(*id),
+						weight_used: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							expected_weight.unwrap_or(*weight_used),
+							*weight_used
+						),
+						success: *success == expected_success,
+					},
+				]
+			);
+		}
+	}
+
+	pub mod westend {
+		use crate::*;
+		type RuntimeEvent = <Westend as Chain>::RuntimeEvent;
+
+		// Dispatchable is completely executed and XCM sent
+		pub fn xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
+			assert_expected_events!(
+				Westend,
+				vec![
+					RuntimeEvent::XcmPallet(
+						pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
+					) => {
+						weight: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							expected_weight.unwrap_or(*weight),
+							*weight
+						),
+					},
+				]
+			);
+		}
+
+		// Dispatchable is incompletely executed and XCM sent
+		pub fn xcm_pallet_attempted_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
+			assert_expected_events!(
+				Westend,
+				vec![
+					// Dispatchable is properly executed and XCM message sent
+					RuntimeEvent::XcmPallet(
+						pallet_xcm::Event::Attempted { outcome: Outcome::Incomplete(weight, error) }
+					) => {
+						weight: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							expected_weight.unwrap_or(*weight),
+							*weight
+						),
+						error: *error == expected_error.unwrap_or(*error),
+					},
+				]
+			);
+		}
+
+		// XCM message is sent
+		pub fn xcm_pallet_sent() {
+			assert_expected_events!(
+				Westend,
+				vec![
+					RuntimeEvent::XcmPallet(pallet_xcm::Event::Sent { .. }) => {},
+				]
+			);
+		}
+
+		// XCM from System Parachain is succesfully received and proccessed
+		pub fn ump_queue_processed(
+			expected_success: bool,
+			expected_id: Option<ParaId>,
+			expected_weight: Option<Weight>
+		) {
+			assert_expected_events!(
+				Westend,
+				vec![
+					// XCM is succesfully received and proccessed
+					RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed {
+						origin: AggregateMessageOrigin::Ump(UmpQueueId::Para(id)),
+						weight_used,
+						success,
+						..
+					}) => {
+						id: *id == expected_id.unwrap_or(*id),
+						weight_used: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							expected_weight.unwrap_or(*weight_used),
+							*weight_used
+						),
+						success: *success == expected_success,
+					},
+				]
+			);
+		}
+	}
+
+	pub mod rococo {
+		use crate::*;
+		type RuntimeEvent = <Rococo as Chain>::RuntimeEvent;
+
+		// Dispatchable is completely executed and XCM sent
+		pub fn xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
+			assert_expected_events!(
+				Rococo,
+				vec![
+					RuntimeEvent::XcmPallet(
+						pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
+					) => {
+						weight: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							expected_weight.unwrap_or(*weight),
+							*weight
+						),
+					},
+				]
+			);
+		}
+
+		// Dispatchable is incompletely executed and XCM sent
+		pub fn xcm_pallet_attempted_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
+			assert_expected_events!(
+				Rococo,
+				vec![
+					// Dispatchable is properly executed and XCM message sent
+					RuntimeEvent::XcmPallet(
+						pallet_xcm::Event::Attempted { outcome: Outcome::Incomplete(weight, error) }
+					) => {
+						weight: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							expected_weight.unwrap_or(*weight),
+							*weight
+						),
+						error: *error == expected_error.unwrap_or(*error),
+					},
+				]
+			);
+		}
+
+		// XCM message is sent
+		pub fn xcm_pallet_sent() {
+			assert_expected_events!(
+				Rococo,
+				vec![
+					RuntimeEvent::XcmPallet(pallet_xcm::Event::Sent { .. }) => {},
+				]
+			);
+		}
+
+		// XCM from System Parachain is succesfully received and proccessed
+		pub fn ump_queue_processed(
+			expected_success: bool,
+			expected_id: Option<ParaId>,
+			expected_weight: Option<Weight>
+		) {
+			assert_expected_events!(
+				Rococo,
+				vec![
+					// XCM is succesfully received and proccessed
+					RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed {
+						origin: AggregateMessageOrigin::Ump(UmpQueueId::Para(id)),
+						weight_used,
+						success,
+						..
+					}) => {
+						id: *id == expected_id.unwrap_or(*id),
+						weight_used: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							expected_weight.unwrap_or(*weight_used),
+							*weight_used
+						),
+						success: *success == expected_success,
+					},
+				]
+			);
+		}
+	}
+}
 
 pub fn xcm_paid_execution(
 	call: DoubleEncoded<()>,

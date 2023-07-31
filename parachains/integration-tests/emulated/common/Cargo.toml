@@ -21,6 +21,7 @@ sp-consensus-babe = { default-features = false, git = "https://github.com/parity
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-assets = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-staking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-message-queue = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-im-online = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 beefy-primitives = { package = "sp-consensus-beefy", git = "https://github.com/paritytech/substrate", branch = "master" }
 

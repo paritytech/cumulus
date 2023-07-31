@@ -97,85 +97,12 @@ pub fn system_para_test_args(
 
 pub mod events {
 	pub mod relay_chain {
-		use crate::*;
-		type RuntimeEvent = <Westend as Chain>::RuntimeEvent;
-
-		// Dispatchable is completely executed and XCM sent
-		pub fn xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
-			assert_expected_events!(
-				Westend,
-				vec![
-					RuntimeEvent::XcmPallet(
-						pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
-					) => {
-						weight: weight_within_threshold(
-							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight.unwrap_or(*weight),
-							*weight
-						),
-					},
-				]
-			);
-		}
-
-		// Dispatchable is incompletely executed and XCM sent
-		pub fn xcm_pallet_attempted_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
-			assert_expected_events!(
-				Westend,
-				vec![
-					// Dispatchable is properly executed and XCM message sent
-					RuntimeEvent::XcmPallet(
-						pallet_xcm::Event::Attempted { outcome: Outcome::Incomplete(weight, error) }
-					) => {
-						weight: weight_within_threshold(
-							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight.unwrap_or(*weight),
-							*weight
-						),
-						error: *error == expected_error.unwrap_or(*error),
-					},
-				]
-			);
-		}
-
-		// XCM message is sent
-		pub fn xcm_pallet_sent() {
-			assert_expected_events!(
-				Westend,
-				vec![
-					RuntimeEvent::XcmPallet(pallet_xcm::Event::Sent { .. }) => {},
-				]
-			);
-		}
-
-		// XCM from System Parachain is succesfully received and proccessed
-		pub fn ump_queue_processed(
-			expected_success: bool,
-			expected_id: Option<ParaId>,
-			expected_weight: Option<Weight>
-		) {
-			assert_expected_events!(
-				Westend,
-				vec![
-					// XCM is succesfully received and proccessed
-					RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed {
-						origin: AggregateMessageOrigin::Ump(UmpQueueId::Para(id)),
-						weight_used,
-						success,
-						..
-					}) => {
-						id: *id == expected_id.unwrap_or(*id),
-						weight_used: weight_within_threshold(
-							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight.unwrap_or(*weight_used),
-							*weight_used
-						),
-						success: *success == expected_success,
-					},
-				]
-			);
-		}
-
+		pub use integration_tests_common::events::westend::{
+			xcm_pallet_attempted_complete,
+			xcm_pallet_attempted_incomplete,
+			xcm_pallet_sent,
+			ump_queue_processed,
+		};
 	}
 
 	pub mod parachain {
