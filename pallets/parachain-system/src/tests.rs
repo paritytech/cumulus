@@ -688,6 +688,60 @@ fn inherent_processed_messages_are_ignored() {
 }
 
 #[test]
+fn hrmp_outbound_respects_used_bandwidth() {
+	let recipient = ParaId::from(400);
+
+	CONSENSUS_HOOK.with(|c| {
+		*c.borrow_mut() = Box::new(|_| (Weight::zero(), NonZeroU32::new(3).unwrap().into()))
+	});
+
+	BlockTests::new()
+		.with_inclusion_delay(2)
+		.with_relay_sproof_builder(move |_, _, sproof| {
+			sproof.host_config.hrmp_max_message_num_per_candidate = 10;
+			let channel = sproof.upsert_outbound_channel(recipient);
+			channel.max_capacity = 2;
+			channel.max_total_size = 4;
+
+			channel.max_message_size = 10;
+		})
+		.add(1, || {})
+		.add_with_post_test(
+			2,
+			move || {
+				send_message(recipient, b"22".to_vec());
+			},
+			move || {
+				let v = HrmpOutboundMessages::<Test>::get();
+				assert_eq!(v, vec![OutboundHrmpMessage { recipient, data: b"22".to_vec() }]);
+			},
+		)
+		.add_with_post_test(
+			3,
+			move || {
+				send_message(recipient, b"333".to_vec());
+			},
+			move || {
+				// Parent has not been included, new message would've exceeded capacity.
+				let v = HrmpOutboundMessages::<Test>::get();
+				assert!(v.is_empty());
+			},
+		)
+		.add_with_post_test(
+			4,
+			move || {
+				send_message(recipient, b"a".to_vec());
+				send_message(recipient, b"b".to_vec());
+			},
+			move || {
+				let v = HrmpOutboundMessages::<Test>::get();
+				// One small message fits. This line relies on test implementation of [`XcmpMessageSource`].
+				assert_eq!(v, vec![OutboundHrmpMessage { recipient, data: b"a".to_vec() }]);
+			},
+		);
+}
+
+#[test]
 fn events() {
 	BlockTests::new()
 		.with_relay_sproof_builder(|_, block_number, builder| {
