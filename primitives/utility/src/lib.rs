@@ -527,6 +527,7 @@ mod tests {
 			FeeChargerAssetsHandleRefund,
 		>;
 		let mut trader = <Trader as WeightTrader>::new();
+		let ctx = XcmContext { origin: None, message_id: XcmHash::default(), topic: None };
 
 		// prepare test data
 		let asset: MultiAsset = (Here, AMOUNT).into();
@@ -534,9 +535,9 @@ mod tests {
 		let weight_to_buy = Weight::from_parts(1_000, 1_000);
 
 		// lets do first call (success)
-		assert_ok!(trader.buy_weight(weight_to_buy, payment.clone()));
+		assert_ok!(trader.buy_weight(weight_to_buy, payment.clone(), &ctx));
 
 		// lets do second call (error)
-		assert_eq!(trader.buy_weight(weight_to_buy, payment), Err(XcmError::NotWithdrawable));
+		assert_eq!(trader.buy_weight(weight_to_buy, payment, &ctx), Err(XcmError::NotWithdrawable));
 	}
 }

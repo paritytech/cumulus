@@ -297,6 +297,7 @@ fn test_that_buying_ed_refund_does_not_refund() {
 			));
 
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
+			let ctx = XcmContext { origin: None, message_id: XcmHash::default(), topic: None };
 
 			// Set Alice as block author, who will receive fees
 			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
@@ -369,6 +370,7 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 			));
 
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
+			let ctx = XcmContext { origin: None, message_id: XcmHash::default(), topic: None };
 
 			// Set Alice as block author, who will receive fees
 			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
@@ -387,7 +389,7 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 			let asset: MultiAsset = (asset_multilocation, asset_amount_needed).into();
 
 			// Make sure again buy_weight does return an error
-			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::TooExpensive);
+			assert_noop!(trader.buy_weight(bought, asset.into(), &ctx), XcmError::TooExpensive);
 
 			// Drop trader
 			drop(trader);

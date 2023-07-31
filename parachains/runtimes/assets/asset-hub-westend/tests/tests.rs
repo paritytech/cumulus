@@ -119,6 +119,7 @@ fn test_asset_xcm_trader() {
 				(asset_multilocation, asset_amount_needed + asset_amount_extra).into();
 
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
+			let ctx = XcmContext { origin: None, message_id: XcmHash::default(), topic: None };
 
 			// Lets buy_weight and make sure buy_weight does not return an error
 			let unused_assets = trader.buy_weight(bought, asset.into(), &ctx).expect("Expected Ok");
