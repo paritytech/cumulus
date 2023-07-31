@@ -16,10 +16,6 @@
 
 use crate::*;
 
-const ASSET_ID: u32 = 1;
-const ASSET_MIN_BALANCE: u128 = 1;
-const ASSETS_PALLET_ID: u8 = 50;
-
 fn relay_origin_assertions(t: RelayToSystemParaTest) {
 	type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
@@ -422,7 +418,8 @@ fn limited_reserve_transfer_asset_from_system_para_to_para() {
 		ASSET_ID,
 		ASSET_MIN_BALANCE,
 		true,
-		AssetHubKusamaSender::get()
+		AssetHubKusamaSender::get(),
+		ASSET_MIN_BALANCE * 1000000
 	);
 
 	// Init values for System Parachain
@@ -465,7 +462,8 @@ fn reserve_transfer_asset_from_system_para_to_para() {
 		ASSET_ID,
 		ASSET_MIN_BALANCE,
 		true,
-		AssetHubKusamaSender::get()
+		AssetHubKusamaSender::get(),
+		ASSET_MIN_BALANCE * 1000000
 	);
 
 	// Init values for System Parachain

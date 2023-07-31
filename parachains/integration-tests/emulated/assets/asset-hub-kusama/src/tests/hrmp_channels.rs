@@ -31,7 +31,7 @@ fn fund_para_sovereign(amount: Balance, sovereign_account_id: AccountId32) {
 	});
 }
 
-fn get_init_open_channel_call(recipient_para_id: ParaId) -> DoubleEncoded<()> {
+fn init_open_channel_call(recipient_para_id: ParaId) -> DoubleEncoded<()> {
 	<Kusama as Chain>::RuntimeCall::Hrmp(polkadot_runtime_parachains::hrmp::Call::<
 		<Kusama as Chain>::Runtime
 	>::hrmp_init_open_channel {
@@ -43,35 +43,12 @@ fn get_init_open_channel_call(recipient_para_id: ParaId) -> DoubleEncoded<()> {
 	.into()
 }
 
-fn get_accept_open_channel_call(sender_para_id: ParaId) -> DoubleEncoded<()> {
+fn accept_open_channel_call(sender_para_id: ParaId) -> DoubleEncoded<()> {
 	<Kusama as Chain>::RuntimeCall::Hrmp(polkadot_runtime_parachains::hrmp::Call::<
 		<Kusama as Chain>::Runtime
 	>::hrmp_accept_open_channel { sender: sender_para_id })
 	.encode()
 	.into()
-}
-
-fn get_xcm_message(call: DoubleEncoded<()>, fee_amount: Balance, para_id: ParaId) -> VersionedXcm<()> {
-	let weight_limit = WeightLimit::Unlimited;
-	let require_weight_at_most = Weight::from_parts(1000000000, 200000);
-	let origin_kind = OriginKind::Native;
-	let native_asset = MultiAsset {
-		id: Concrete(MultiLocation { parents: 0, interior: Here }),
-		fun: Fungible(fee_amount),
-	};
-	let native_assets: MultiAssets = native_asset.clone().into();
-	let beneficiary= Kusama::child_location_of(para_id);
-
-	VersionedXcm::from(Xcm(vec![
-		WithdrawAsset(native_assets),
-		BuyExecution { fees: native_asset , weight_limit },
-		Transact { require_weight_at_most, origin_kind, call },
-		RefundSurplus,
-		DepositAsset {
-			assets: All.into(),
-			beneficiary
-		},
-	]))
 }
 
 fn force_process_hrmp_open(sender: Id, recipient: Id) {
@@ -126,11 +103,18 @@ fn open_hrmp_channel_between_paras_works() {
 	let relay_destination: VersionedMultiLocation = PenpalKusamaA::parent_location().into();
 
 	// ---- Init Open channel from Parachain to System Parachain
-	let mut call = get_init_open_channel_call(para_b_id);
-	let mut xcm = get_xcm_message(
+	let mut call = init_open_channel_call(para_b_id);
+	let origin_kind = OriginKind::Native;
+	let native_asset: MultiAsset = (Here, fee_amount).into();
+	let beneficiary= Kusama::sovereign_account_id_of(
+		Kusama::child_location_of(para_a_id)
+	);
+
+	let mut xcm = xcm_paid_execution(
 		call,
-		fee_amount,
-		para_a_id
+		origin_kind,
+		native_asset.clone(),
+		beneficiary
 	);
 
 	PenpalKusamaA::execute_with(|| {
@@ -198,11 +182,16 @@ fn open_hrmp_channel_between_paras_works() {
 	});
 
 	// ---- Accept Open channel from Parachain to System Parachain
-	call = get_accept_open_channel_call(para_a_id);
-	xcm = get_xcm_message(
+	call = accept_open_channel_call(para_a_id);
+	let beneficiary= Kusama::sovereign_account_id_of(
+		Kusama::child_location_of(para_b_id)
+	);
+
+	xcm = xcm_paid_execution(
 		call,
-		fee_amount,
-		para_b_id
+		origin_kind,
+		native_asset,
+		beneficiary
 	);
 
 	PenpalKusamaB::execute_with(|| {

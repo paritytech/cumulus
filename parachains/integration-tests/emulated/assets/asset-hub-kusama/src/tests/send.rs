@@ -16,34 +16,15 @@
 
 use crate::*;
 
-const ASSET_ID: u32 = 1;
-
-fn get_system_xcm_message(origin_kind: OriginKind) -> VersionedXcm<()> {
-	let call = <Kusama as Chain>::RuntimeCall::System(frame_system::Call::<
-		<Kusama as Chain>::Runtime
-	>::remark { remark: vec![0, 1, 2, 3] })
-	.encode()
-	.into();
-
-	let weight_limit = WeightLimit::Unlimited;
-	let require_weight_at_most = Weight::from_parts(1000000000, 200000);
-	let check_origin = None;
-
-	VersionedXcm::from(Xcm(vec![
-		UnpaidExecution { weight_limit, check_origin },
-		Transact { require_weight_at_most, origin_kind, call },
-	]))
-}
-
-
 /// Relay Chain should be able to execute `Transact` instructions in System Parachain
 /// when `OriginKind::Superuser` and signer is `sudo`
 #[test]
-fn send_transact_sudo_from_relay_to_system_para() {
+fn send_transact_sudo_from_relay_to_system_para_works() {
 	// Init tests variables
 	let root_origin = <Kusama as Chain>::RuntimeOrigin::root();
-	let system_para_destination: VersionedMultiLocation =
-		Kusama::child_location_of(AssetHubKusama::para_id()).into();
+	let system_para_destination = Kusama::child_location_of(
+		AssetHubKusama::para_id()
+	).into();
 	let asset_owner: AccountId = AssetHubKusamaSender::get().into();
 	let xcm = force_create_asset_xcm(
 		OriginKind::Superuser,
@@ -101,12 +82,13 @@ fn send_transact_sudo_from_relay_to_system_para() {
 /// Relay Chain shouldn't be able to execute `Transact` instructions in System Parachain
 /// when `OriginKind::Native`
 #[test]
-fn send_transact_native_from_relay_to_system_para() {
+fn send_transact_native_from_relay_to_system_para_fails() {
 	// Init tests variables
 	let signed_origin = <Kusama as Chain>::RuntimeOrigin::signed(KusamaSender::get().into());
-	let system_para_destination: VersionedMultiLocation =
-		Kusama::child_location_of(AssetHubKusama::para_id()).into();
-	let asset_owner: AccountId = AssetHubKusamaSender::get().into();
+	let system_para_destination = Kusama::child_location_of(
+		AssetHubKusama::para_id()
+	).into();
+	let asset_owner = AssetHubKusamaSender::get().into();
 	let xcm = force_create_asset_xcm(
 		OriginKind::Native,
 		ASSET_ID,
@@ -131,23 +113,116 @@ fn send_transact_native_from_relay_to_system_para() {
 /// System Parachain shouldn't be able to execute `Transact` instructions in Relay Chain
 /// when `OriginKind::Native`
 #[test]
-fn send_transact_native_from_system_para_to_relay() {
+fn send_transact_native_from_system_para_to_relay_fails() {
 	// Init tests variables
 	let signed_origin
 		= <AssetHubKusama as Chain>::RuntimeOrigin::signed(AssetHubKusamaSender::get().into());
-	let relay_para_destination: VersionedMultiLocation =
-		AssetHubKusama::parent_location().into();
-	let xcm = get_system_xcm_message(OriginKind::Native);
+	let relay_destination = AssetHubKusama::parent_location().into();
+	let call = <Kusama as Chain>::RuntimeCall::System(
+		frame_system::Call::<<Kusama as Chain>::Runtime>::remark_with_event { remark: vec![0, 1, 2, 3] }
+	).encode().into();
+	let origin_kind = OriginKind::Native;
+
+	let xcm = xcm_unpaid_execution(call, origin_kind);
 
 	// Send XCM message from Relay Chain
 	AssetHubKusama::execute_with(|| {
 		assert_err!(
 			<AssetHubKusama as AssetHubKusamaPallet>::PolkadotXcm::send(
 				signed_origin,
-				bx!(relay_para_destination),
+				bx!(relay_destination),
 				bx!(xcm)
 			),
 			DispatchError::BadOrigin
+		);
+	});
+}
+
+/// Parachain should be able to send XCM paying its fee with sufficient asset
+/// in the System Parachain
+#[test]
+fn send_xcm_from_para_to_system_para_paying_fee_with_assets_works() {
+	let para_sovereign_account = AssetHubKusama::sovereign_account_id_of(
+		AssetHubKusama::sibling_location_of(
+			PenpalKusamaA::para_id()
+		)
+	);
+
+	// Force create and mint assets for Parachain's sovereign account
+	force_create_and_mint_asset(
+		ASSET_ID,
+		ASSET_MIN_BALANCE,
+		true,
+		para_sovereign_account.clone(),
+		ASSET_MIN_BALANCE * 1000000000
+	);
+
+	// We just need a call that can pass the `SafeCallFilter`
+	// Call values are not relevant
+	let call = force_create_call(
+		ASSET_ID,
+		para_sovereign_account.clone(),
+		true,
+		ASSET_MIN_BALANCE
+	);
+
+	let origin_kind = OriginKind::SovereignAccount;
+	let fee_amount = ASSET_MIN_BALANCE * 1000000;
+	let native_asset = (
+		X2(PalletInstance(ASSETS_PALLET_ID), GeneralIndex(ASSET_ID.into())),
+		fee_amount
+	).into();
+
+	let root_origin = <PenpalKusamaA as Chain>::RuntimeOrigin::root();
+	let system_para_destination = PenpalKusamaA::sibling_location_of(
+		AssetHubKusama::para_id()
+	).into();
+	let xcm = xcm_paid_execution(
+		call,
+		origin_kind,
+		native_asset,
+		para_sovereign_account.clone()
+	);
+
+	PenpalKusamaA::execute_with(|| {
+		assert_ok!(<PenpalKusamaA as PenpalKusamaAPallet>::PolkadotXcm::send(
+			root_origin,
+			bx!(system_para_destination),
+			bx!(xcm),
+		));
+
+		type RuntimeEvent = <PenpalKusamaA as Chain>::RuntimeEvent;
+
+		assert_expected_events!(
+			PenpalKusamaA,
+			vec![
+				RuntimeEvent::PolkadotXcm(pallet_xcm::Event::Sent {..}) => {},
+			]
+		);
+	});
+
+	AssetHubKusama::execute_with(|| {
+		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
+
+		assert_expected_events!(
+			AssetHubKusama,
+			vec![
+				RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Success { weight, .. }) => {
+					weight: weight_within_threshold(
+						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+						Weight::from_parts(2_176_414_000, 203_593),
+						*weight
+					),
+				},
+				RuntimeEvent::Assets(pallet_assets::Event::Burned { asset_id, owner, balance }) => {
+					asset_id: *asset_id == ASSET_ID,
+					owner: *owner == para_sovereign_account,
+					balance: *balance == fee_amount,
+				},
+				RuntimeEvent::Assets(pallet_assets::Event::Issued { asset_id, .. }) => {
+					asset_id: *asset_id == ASSET_ID,
+				},
+			]
 		);
 	});
 }

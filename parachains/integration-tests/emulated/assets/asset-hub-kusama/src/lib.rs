@@ -42,6 +42,7 @@ pub use integration_tests_common::{
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
 	lazy_static::lazy_static,
+	xcm_paid_execution, xcm_unpaid_execution,
 	AssetHubKusama, AssetHubKusamaPallet, AssetHubKusamaReceiver, AssetHubKusamaSender,
 	BridgeHubKusama, BridgeHubKusamaPallet, BridgeHubKusamaReceiver, BridgeHubKusamaSender,
 	BridgeHubPolkadot, BridgeHubPolkadotPallet, BridgeHubPolkadotReceiver, BridgeHubPolkadotSender,
@@ -51,6 +52,10 @@ pub use integration_tests_common::{
 	PolkadotMockNet, PolkadotPallet, PolkadotReceiver, PolkadotSender, PenpalKusamaAPallet,
 	PenpalKusamaB, PenpalKusamaBReceiver, PenpalKusamaBSender, PenpalKusamaBPallet
 };
+
+pub const ASSET_ID: u32 = 1;
+pub const ASSET_MIN_BALANCE: u128 = 1000;
+pub const ASSETS_PALLET_ID: u8 = 50;
 
 pub type RelayToSystemParaTest = Test<Kusama, AssetHubKusama>;
 pub type SystemParaToRelayTest = Test<AssetHubKusama, Kusama>;
@@ -94,42 +99,39 @@ pub fn get_system_para_test_args(
 	}
 }
 
+pub fn force_create_call(
+	asset_id: u32,
+	owner: AccountId,
+	is_sufficient: bool,
+	min_balance: Balance
+) -> DoubleEncoded<()> {
+	<AssetHubKusama as Chain>::RuntimeCall::Assets(pallet_assets::Call::<
+		<AssetHubKusama as Chain>::Runtime,
+		Instance1,
+	>::force_create {
+		id: asset_id.into(),
+		owner: owner.into(),
+		is_sufficient,
+		min_balance,
+	})
+	.encode()
+	.into()
+}
+
 pub fn force_create_asset_xcm(
 	origin_kind: OriginKind,
 	asset_id: u32,
 	owner: AccountId,
 	is_sufficient: bool,
 	min_balance: Balance
-// ) -> VersionedXcm<<Kusama as Chain>::RuntimeCall> {
 ) -> VersionedXcm<()> {
-	let call =
-		<AssetHubKusama as Chain>::RuntimeCall::Assets(pallet_assets::Call::<
-			<AssetHubKusama as Chain>::Runtime,
-			Instance1,
-		>::force_create {
-			id: asset_id.into(),
-			owner: owner.into(),
-			is_sufficient,
-			min_balance,
-		})
-		.encode()
-		.into();
-
-	let weight_limit = WeightLimit::Unlimited;
-	let require_weight_at_most = Weight::from_parts(1000000000, 200000);
-	let check_origin = None;
-
-	VersionedXcm::from(Xcm(vec![
-		UnpaidExecution {
-			weight_limit,
-			check_origin,
-		},
-		Transact {
-			require_weight_at_most,
-			origin_kind,
-			call
-		},
-	]))
+	let call = force_create_call(
+		asset_id,
+		owner,
+		is_sufficient,
+		min_balance
+	);
+	xcm_unpaid_execution(call, origin_kind)
 }
 
 pub fn mint_asset(
@@ -167,7 +169,8 @@ pub fn force_create_and_mint_asset(
 	id: u32,
 	min_balance: u128,
 	is_sufficient: bool,
-	asset_owner: AccountId
+	asset_owner: AccountId,
+	amount_to_mint: u128,
 ) {
 	// Init values for Relay Chain
 	let root_origin = <Kusama as Chain>::RuntimeOrigin::root();
@@ -237,7 +240,7 @@ pub fn force_create_and_mint_asset(
 		signed_origin,
 		id,
 		asset_owner,
-		min_balance * 10000,
+		amount_to_mint,
 	);
 }
 

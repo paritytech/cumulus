@@ -52,12 +52,6 @@ fn system_para_sets_relay_xcm_supported_version() {
 	let parent_location = AssetHubKusama::parent_location();
 	let system_para_destination: VersionedMultiLocation =
 		Kusama::child_location_of(AssetHubKusama::para_id()).into();
-
-	let weight_limit = WeightLimit::Unlimited;
-	let check_origin = None;
-	let require_weight_at_most = Weight::from_parts(1000000000, 200000);
-	let origin_kind = OriginKind::Superuser;
-
 	let call = <AssetHubKusama as Chain>::RuntimeCall::PolkadotXcm(pallet_xcm::Call::<
 		<AssetHubKusama as Chain>::Runtime
 	>::force_xcm_version {
@@ -66,11 +60,9 @@ fn system_para_sets_relay_xcm_supported_version() {
 	})
 	.encode()
 	.into();
+	let origin_kind = OriginKind::Superuser;
 
-	let xcm = VersionedXcm::from(Xcm(vec![
-		UnpaidExecution { weight_limit, check_origin },
-		Transact { require_weight_at_most, origin_kind, call },
-	]));
+	let xcm = xcm_unpaid_execution(call, origin_kind);
 
 	// System Parachain sets supported version for Relay Chain throught it
 	Kusama::execute_with(|| {
@@ -97,8 +89,15 @@ fn system_para_sets_relay_xcm_supported_version() {
 		assert_expected_events!(
 			AssetHubKusama,
 			vec![
-				RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward { outcome: Outcome::Complete(weight), .. }) => {
-					weight: weight_within_threshold((REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD), Weight::from_parts(1_019_210_000, 200_000), *weight),
+				RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
+					outcome: Outcome::Complete(weight),
+					..
+				}) => {
+					weight: weight_within_threshold(
+						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+						Weight::from_parts(1_019_210_000, 200_000),
+						*weight
+					),
 				},
 				RuntimeEvent::PolkadotXcm(pallet_xcm::Event::SupportedVersionChanged {
 					location,

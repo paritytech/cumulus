@@ -371,6 +371,7 @@ dependencies = [
  "asset-hub-kusama-runtime",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcmp-queue",
  "frame-support",
  "frame-system",
  "integration-tests-common",
