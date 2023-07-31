@@ -99,7 +99,7 @@ tests:
                       "FellowshipOrigins": "Fellows",
                     },
                     {
-                      "Lookup": { # TODO obtain from the call https://github.com/paritytech/parachains-integration-tests/issues/103
+                      "Lookup": {
                         "hash_": $send_whitelist_remark_cp.hash,
                         "len": $send_whitelist_remark_cp.len,
                       },

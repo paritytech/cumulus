@@ -111,7 +111,7 @@ tests:
                         "balance": 200000000000000,
                       }
                     },
-                  ] # TODO no event to catch
+                  ] # TODO no event to catch https://github.com/paritytech/substrate/issues/14687
           - name: Bob Vote Aye
             actions:
               - extrinsics:
@@ -130,7 +130,7 @@ tests:
                         "balance": 200000000000000,
                       }
                     },
-                  ] # TODO no event to catch
+                  ] # TODO no event to catch https://github.com/paritytech/substrate/issues/14687
           - name: Submit the decision deposit
             actions:
               - extrinsics:
