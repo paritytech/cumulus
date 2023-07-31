@@ -143,7 +143,12 @@ impl XcmpMessageSource for FromThreadLocal {
 		SENT_MESSAGES.with(|ms| {
 			ms.borrow_mut().retain(|m| {
 				let status = <Pallet<Test> as GetChannelInfo>::get_channel_status(m.0);
-				let ChannelStatus::Ready(max_size_now, max_size_ever) = status else { return false };
+				let (max_size_now, max_size_ever) = match status {
+					ChannelStatus::Ready(now, ever) => (now, ever),
+					ChannelStatus::Closed => return false, // drop message
+					ChannelStatus::Full => return true, // keep message queued.
+				};
+
 				let msg_len = m.1.len();
 
 				if !ids.contains(&m.0) &&
