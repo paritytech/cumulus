@@ -39,7 +39,8 @@ decl_test_relay_chains! {
 		},
 		pallets = {
 			XcmPallet: polkadot_runtime::XcmPallet,
-			Balances: kusama_runtime::Balances,
+			Balances: polkadot_runtime::Balances,
+			Hrmp: polkadot_runtime::Hrmp,
 		}
 	},
 	#[api_version(5)]

@@ -212,6 +212,31 @@ pub mod polkadot {
 				epoch_config: Some(polkadot_runtime::BABE_GENESIS_EPOCH_CONFIG),
 			},
 			configuration: polkadot_runtime::ConfigurationConfig { config: get_host_config() },
+			paras: polkadot_runtime::ParasConfig {
+				paras: vec![
+					(
+						asset_hub_polkadot::PARA_ID.into(), ParaGenesisArgs {
+							genesis_head: HeadData::default(),
+							validation_code: ValidationCode(asset_hub_polkadot_runtime::WASM_BINARY.unwrap().to_vec()),
+							para_kind: ParaKind::Parachain
+						}
+					),
+					(
+						penpal::PARA_ID_A.into(), ParaGenesisArgs {
+							genesis_head: HeadData::default(),
+							validation_code: ValidationCode(penpal_runtime::WASM_BINARY.unwrap().to_vec()),
+							para_kind: ParaKind::Parachain
+						}
+					),
+					(
+						penpal::PARA_ID_B.into(), ParaGenesisArgs {
+							genesis_head: HeadData::default(),
+							validation_code: ValidationCode(penpal_runtime::WASM_BINARY.unwrap().to_vec()),
+							para_kind: ParaKind::Parachain
+						}
+					),
+				],
+			},
 			..Default::default()
 		};
 

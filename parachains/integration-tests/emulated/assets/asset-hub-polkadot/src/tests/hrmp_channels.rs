@@ -20,10 +20,10 @@ const MAX_CAPACITY: u32 = 8;
 const MAX_MESSAGE_SIZE: u32 = 8192;
 
 fn fund_para_sovereign(amount: Balance, sovereign_account_id: AccountId32) {
-	Kusama::execute_with(|| {
+	Polkadot::execute_with(|| {
 		assert_ok!(
-			<Kusama as KusamaPallet>::Balances::force_set_balance(
-				<Kusama as Chain>::RuntimeOrigin::root(),
+			<Polkadot as PolkadotPallet>::Balances::force_set_balance(
+				<Polkadot as Chain>::RuntimeOrigin::root(),
 				MultiAddress::Id(sovereign_account_id),
 				amount,
 			)
@@ -32,8 +32,8 @@ fn fund_para_sovereign(amount: Balance, sovereign_account_id: AccountId32) {
 }
 
 fn init_open_channel_call(recipient_para_id: ParaId) -> DoubleEncoded<()> {
-	<Kusama as Chain>::RuntimeCall::Hrmp(polkadot_runtime_parachains::hrmp::Call::<
-		<Kusama as Chain>::Runtime
+	<Polkadot as Chain>::RuntimeCall::Hrmp(polkadot_runtime_parachains::hrmp::Call::<
+		<Polkadot as Chain>::Runtime
 	>::hrmp_init_open_channel {
 		recipient: recipient_para_id,
 		proposed_max_capacity: MAX_CAPACITY,
@@ -44,20 +44,20 @@ fn init_open_channel_call(recipient_para_id: ParaId) -> DoubleEncoded<()> {
 }
 
 fn accept_open_channel_call(sender_para_id: ParaId) -> DoubleEncoded<()> {
-	<Kusama as Chain>::RuntimeCall::Hrmp(polkadot_runtime_parachains::hrmp::Call::<
-		<Kusama as Chain>::Runtime
+	<Polkadot as Chain>::RuntimeCall::Hrmp(polkadot_runtime_parachains::hrmp::Call::<
+		<Polkadot as Chain>::Runtime
 	>::hrmp_accept_open_channel { sender: sender_para_id })
 	.encode()
 	.into()
 }
 
 fn force_process_hrmp_open(sender: Id, recipient: Id) {
-	Kusama::execute_with(|| {
-		let relay_root_origin = <Kusama as Chain>::RuntimeOrigin::root();
+	Polkadot::execute_with(|| {
+		let relay_root_origin = <Polkadot as Chain>::RuntimeOrigin::root();
 
 		// Force process HRMP open channel requests without waiting for the next session
 		assert_ok!(
-			<Kusama as KusamaPallet>::Hrmp::force_process_hrmp_open(
+			<Polkadot as PolkadotPallet>::Hrmp::force_process_hrmp_open(
 				relay_root_origin,
 				0
 			)
@@ -69,7 +69,7 @@ fn force_process_hrmp_open(sender: Id, recipient: Id) {
 		};
 
 		let hrmp_channel_exist
-			= polkadot_runtime_parachains::hrmp::HrmpChannels::<<Kusama as Chain>::Runtime>::contains_key(&channel_id);
+			= polkadot_runtime_parachains::hrmp::HrmpChannels::<<Polkadot as Chain>::Runtime>::contains_key(&channel_id);
 
 		// Check the HRMP channel has been successfully registrered
 		assert!(hrmp_channel_exist)
@@ -80,34 +80,34 @@ fn force_process_hrmp_open(sender: Id, recipient: Id) {
 #[test]
 fn open_hrmp_channel_between_paras_works() {
 	// Parchain A init values
-	let para_a_id = PenpalKusamaA::para_id();
-	let para_a_root_origin = <PenpalKusamaA as Chain>::RuntimeOrigin::root();
-	let para_a_sovereign_account = Kusama::sovereign_account_id_of(
-		Kusama::child_location_of(para_a_id)
+	let para_a_id = PenpalPolkadotA::para_id();
+	let para_a_root_origin = <PenpalPolkadotA as Chain>::RuntimeOrigin::root();
+	let para_a_sovereign_account = Polkadot::sovereign_account_id_of(
+		Polkadot::child_location_of(para_a_id)
 	);
 
 	// Parachain B init values
-	let para_b_id = PenpalKusamaB::para_id();
-	let para_b_root_origin = <PenpalKusamaB as Chain>::RuntimeOrigin::root();
-	let para_b_sovereign_account = Kusama::sovereign_account_id_of(
-		Kusama::child_location_of(para_b_id)
+	let para_b_id = PenpalPolkadotB::para_id();
+	let para_b_root_origin = <PenpalPolkadotB as Chain>::RuntimeOrigin::root();
+	let para_b_sovereign_account = Polkadot::sovereign_account_id_of(
+		Polkadot::child_location_of(para_b_id)
 	);
 
-	let fee_amount = KUSAMA_ED * 1000;
-	let fund_amount = KUSAMA_ED * 1000_000_000;
+	let fee_amount = POLKADOT_ED * 1000;
+	let fund_amount = POLKADOT_ED * 1000_000_000;
 
 	// Fund Parachain's Sovereign accounts to be able to reserve the deposit
 	fund_para_sovereign(fund_amount,  para_a_sovereign_account.clone());
 	fund_para_sovereign(fund_amount, para_b_sovereign_account.clone());
 
-	let relay_destination: VersionedMultiLocation = PenpalKusamaA::parent_location().into();
+	let relay_destination: VersionedMultiLocation = PenpalPolkadotA::parent_location().into();
 
 	// ---- Init Open channel from Parachain to System Parachain
 	let mut call = init_open_channel_call(para_b_id);
 	let origin_kind = OriginKind::Native;
 	let native_asset: MultiAsset = (Here, fee_amount).into();
-	let beneficiary= Kusama::sovereign_account_id_of(
-		Kusama::child_location_of(para_a_id)
+	let beneficiary= Polkadot::sovereign_account_id_of(
+		Polkadot::child_location_of(para_a_id)
 	);
 
 	let mut xcm = xcm_paid_execution(
@@ -117,9 +117,9 @@ fn open_hrmp_channel_between_paras_works() {
 		beneficiary
 	);
 
-	PenpalKusamaA::execute_with(|| {
+	PenpalPolkadotA::execute_with(|| {
 		assert_ok!(
-			<PenpalKusamaA as PenpalKusamaAPallet>::PolkadotXcm::send(
+			<PenpalPolkadotA as PenpalPolkadotAPallet>::PolkadotXcm::send(
 				para_a_root_origin,
 				bx!(relay_destination.clone()),
 				bx!(xcm),
@@ -128,18 +128,18 @@ fn open_hrmp_channel_between_paras_works() {
 		events::parachain::xcm_pallet_sent();
 	});
 
-	Kusama::execute_with(|| {
-		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
+	Polkadot::execute_with(|| {
+		type RuntimeEvent = <Polkadot as Chain>::RuntimeEvent;
 
 		events::relay_chain::ump_queue_processed(
 			true,
 			Some(para_a_id),
-			Some(Weight::from_parts(1_312_558_000, 200000)),
+			Some(Weight::from_parts(7_000_000_000, 200_000)),
 
 		);
 
 		assert_expected_events!(
-			Kusama,
+			Polkadot,
 			vec![
 				// Parachain's Sovereign account balance is withdrawn to pay XCM fees
 				RuntimeEvent::Balances(pallet_balances::Event::Withdraw { who, amount }) => {
@@ -167,8 +167,8 @@ fn open_hrmp_channel_between_paras_works() {
 
 	// ---- Accept Open channel from Parachain to System Parachain
 	call = accept_open_channel_call(para_a_id);
-	let beneficiary= Kusama::sovereign_account_id_of(
-		Kusama::child_location_of(para_b_id)
+	let beneficiary= Polkadot::sovereign_account_id_of(
+		Polkadot::child_location_of(para_b_id)
 	);
 
 	xcm = xcm_paid_execution(
@@ -178,9 +178,9 @@ fn open_hrmp_channel_between_paras_works() {
 		beneficiary
 	);
 
-	PenpalKusamaB::execute_with(|| {
+	PenpalPolkadotB::execute_with(|| {
 		assert_ok!(
-			<PenpalKusamaB as PenpalKusamaBPallet>::PolkadotXcm::send(
+			<PenpalPolkadotB as PenpalPolkadotBPallet>::PolkadotXcm::send(
 				para_b_root_origin,
 				bx!(relay_destination),
 				bx!(xcm),
@@ -189,17 +189,17 @@ fn open_hrmp_channel_between_paras_works() {
 		events::parachain::xcm_pallet_sent();
 	});
 
-	Kusama::execute_with(|| {
-		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
+	Polkadot::execute_with(|| {
+		type RuntimeEvent = <Polkadot as Chain>::RuntimeEvent;
 
 		events::relay_chain::ump_queue_processed(
 			true,
 			Some(para_b_id),
-			Some(Weight::from_parts(1_312_558_000, 200_000)),
+			Some(Weight::from_parts(7_000_000_000, 200_000)),
 		);
 
 		assert_expected_events!(
-			Kusama,
+			Polkadot,
 			vec![
 				// Parachain's Sovereign account balance is withdrawn to pay XCM fees
 				RuntimeEvent::Balances(pallet_balances::Event::Withdraw { who, amount }) => {
@@ -230,29 +230,29 @@ fn open_hrmp_channel_between_paras_works() {
 #[test]
 fn force_open_hrmp_channel_for_system_para_works() {
 	// Relay Chain init values
-	let relay_root_origin = <Kusama as Chain>::RuntimeOrigin::root();
+	let relay_root_origin = <Polkadot as Chain>::RuntimeOrigin::root();
 
 	// System Para init values
-	let system_para_id = AssetHubKusama::para_id();
-	let system_para_sovereign_account = Kusama::sovereign_account_id_of(
-		Kusama::child_location_of(system_para_id)
+	let system_para_id = AssetHubPolkadot::para_id();
+	let system_para_sovereign_account = Polkadot::sovereign_account_id_of(
+		Polkadot::child_location_of(system_para_id)
 	);
 
 	// Parachain A init values
-	let para_a_id = PenpalKusamaA::para_id();
-	let para_a_sovereign_account = Kusama::sovereign_account_id_of(
-		Kusama::child_location_of(para_a_id)
+	let para_a_id = PenpalPolkadotA::para_id();
+	let para_a_sovereign_account = Polkadot::sovereign_account_id_of(
+		Polkadot::child_location_of(para_a_id)
 	);
 
-	let fund_amount = KUSAMA_ED * 1000_000_000;
+	let fund_amount = POLKADOT_ED * 1000_000_000;
 
 	// Fund Parachain's Sovereign accounts to be able to reserve the deposit
 	fund_para_sovereign(fund_amount,  system_para_sovereign_account.clone());
 	fund_para_sovereign(fund_amount, para_a_sovereign_account.clone());
 
-	Kusama::execute_with(|| {
+	Polkadot::execute_with(|| {
 		assert_ok!(
-			<Kusama as KusamaPallet>::Hrmp::force_open_hrmp_channel(
+			<Polkadot as PolkadotPallet>::Hrmp::force_open_hrmp_channel(
 				relay_root_origin,
 				system_para_id,
 				para_a_id,
@@ -261,10 +261,10 @@ fn force_open_hrmp_channel_for_system_para_works() {
 			)
 		);
 
-		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
+		type RuntimeEvent = <Polkadot as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
-			Kusama,
+			Polkadot,
 			vec![
 				// Sender deposit is reserved for System Parachain's Sovereign account
 				RuntimeEvent::Balances(pallet_balances::Event::Reserved { who, .. }) =>{

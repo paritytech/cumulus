@@ -16,6 +16,7 @@ sp-core = { default-features = false, git = "https://github.com/paritytech/subst
 sp-weights = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-assets = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-message-queue = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
 polkadot-core-primitives = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -30,6 +31,9 @@ pallet-xcm = { default-features = false, git = "https://github.com/paritytech/po
 parachains-common = { path = "../../../../common" }
 penpal-runtime = { path = "../../../../runtimes/testing/penpal" }
 asset-hub-polkadot-runtime = { path = "../../../../runtimes/assets/asset-hub-polkadot" }
+cumulus-pallet-dmp-queue = { path = "../../../../../pallets/dmp-queue" }
+cumulus-pallet-xcmp-queue = { default-features = false, path = "../../../../../pallets/xcmp-queue" }
+cumulus-pallet-parachain-system = { path = "../../../../../pallets/parachain-system" }
 
 # Local
 xcm-emulator = { default-features = false, path = "../../../../../xcm/xcm-emulator" }
