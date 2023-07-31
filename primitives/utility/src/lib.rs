@@ -315,7 +315,7 @@ impl<
 	T::HigherPrecisionBalance: From<ConcreteAssets::Balance> + TryInto<T::AssetBalance>,
 	<T::HigherPrecisionBalance as TryInto<T::AssetBalance>>::Error: core::fmt::Debug,
 	T::AssetBalance: Into<Fungibility>,
-	MultiLocation: From<ConcreteAssets::AssetId> + Into<T::MultiAssetId>,
+	ConcreteAssets::AssetId: Into<T::MultiAssetId>,
 {
 	fn new() -> Self {
 		Self(None, PhantomData)
@@ -349,8 +349,6 @@ impl<
 		let (asset_id, local_asset_balance) =
 			Matcher::matches_fungibles(first).map_err(|_| XcmError::AssetNotFound)?;
 
-		let asset_loc: MultiLocation = asset_id.into();
-
 		let fee = WeightToFee::weight_to_fee(&weight);
 
 		let origin = ctx.origin.ok_or(XcmError::BadOrigin)?;
@@ -358,7 +356,7 @@ impl<
 
 		let amount_taken = SWP::swap_tokens_for_exact_tokens(
 			acc.clone(),
-			vec![asset_loc.into(), T::MultiAssetIdConverter::get_native()],
+			vec![asset_id.into(), T::MultiAssetIdConverter::get_native()],
 			fee.into(),
 			None,
 			acc.clone(),
@@ -384,7 +382,7 @@ impl<
 
 		if let Some(SwapAssetTraderRefunder {
 			// mut weight_outstanding,
-			outstanding_concrete_asset,
+			outstanding_concrete_asset: MultiAsset { id, fun },
 		}) = self.0.clone()
 		{
 			let swap_back = WeightToFee::weight_to_fee(&weight);
@@ -393,9 +391,7 @@ impl<
 				return None
 			}
 			let (asset_id, _local_asset_balance) =
-				Matcher::matches_fungibles(&outstanding_concrete_asset).ok()?;
-
-			let asset_loc: MultiLocation = asset_id.clone().into();
+				Matcher::matches_fungibles(&(id, fun).into()).ok()?;
 
 			let origin = ctx.origin?;
 			let acc = AccountIdConverter::convert_location(&origin)?;
@@ -404,7 +400,7 @@ impl<
 			// This read should have already be cached in buy_weight
 			let amount_refunded = SWP::swap_tokens_for_exact_tokens(
 				acc.clone(),
-				vec![asset_loc.into(), T::MultiAssetIdConverter::get_native()],
+				vec![asset_id.into(), T::MultiAssetIdConverter::get_native()],
 				swap_back.into(),
 				None,
 				acc.clone(),
@@ -416,7 +412,7 @@ impl<
 
 			// Only refund if positive
 			if amount_refunded > 0.into() {
-				Some((asset_id.clone(), amount_refunded.try_into().ok()?).into())
+				Some((id, amount_refunded.try_into().ok()?).into())
 			} else {
 				None
 			}
