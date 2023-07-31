@@ -19,6 +19,10 @@ use crate::*;
 fn relay_origin_assertions(t: RelayToSystemParaTest) {
 	type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
+	events::relay_chain::xcm_pallet_attempted_complete(
+		Weight::from_parts(763_770_000, 0)
+	);
+
 	assert_expected_events!(
 		Kusama,
 		vec![
@@ -32,67 +36,6 @@ fn relay_origin_assertions(t: RelayToSystemParaTest) {
 				who: *who == <Kusama as KusamaPallet>::XcmPallet::check_account(),
 				amount:  *amount == t.args.amount,
 			},
-			// Dispatchable is properly executed and XCM message sent
-			RuntimeEvent::XcmPallet(
-				pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
-			) => {
-				weight: weight_within_threshold(
-					(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-					Weight::from_parts(763_770_000, 0),
-					*weight
-				),
-			},
-		]
-	);
-}
-
-fn para_dest_assertions(t: RelayToSystemParaTest) {
-	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
-
-	assert_expected_events!(
-		AssetHubKusama,
-		vec![
-			// XCM message is succesfully executed in destination
-			RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
-				outcome: Outcome::Complete(weight), ..
-			}) => {
-				weight: weight_within_threshold(
-					(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-					Weight::from_parts(165_592_000, 0),
-					*weight
-				),
-			},
-			// Amount minus fees are deposited in Receiver's account
-			RuntimeEvent::Balances(pallet_balances::Event::Deposit { who, .. }) => {
-				who: *who == t.receiver.account_id,
-			},
-		]
-	);
-}
-
-fn para_origin_assertions(t: SystemParaToRelayTest) {
-	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
-
-	assert_expected_events!(
-		AssetHubKusama,
-		vec![
-			// Dispatchable is properly executed
-			RuntimeEvent::PolkadotXcm(
-				pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
-			) => {
-				weight: weight_within_threshold(
-					(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-					Weight::from_parts(534_872_000, 7_133),
-					*weight
-				),
-			},
-			// XCM message is sent
-			RuntimeEvent::ParachainSystem(cumulus_pallet_parachain_system::Event::UpwardMessageSent { .. }) => {},
-			// Amount is withdrawn from Sender's account
-			RuntimeEvent::Balances(pallet_balances::Event::Withdraw { who, amount }) => {
-				who: *who == t.sender.account_id,
-				amount: *amount == t.args.amount,
-			},
 		]
 	);
 }
@@ -100,23 +43,15 @@ fn para_origin_assertions(t: SystemParaToRelayTest) {
 fn relay_dest_assertions(t: SystemParaToRelayTest) {
 	type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
+	events::relay_chain::ump_queue_processed(
+		AssetHubKusama::para_id(),
+		Weight::from_parts(299_246_000, 0),
+		true,
+	);
+
 	assert_expected_events!(
 		Kusama,
 		vec![
-			// XCM is succesfully received and proccessed
-			RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed {
-				origin: AggregateMessageOrigin::Ump(UmpQueueId::Para(id)),
-				weight_used,
-				success,
-				..
-			}) => {
-				id: *id == AssetHubKusama::para_id(),
-				weight_used: weight_within_threshold(
-					(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-					Weight::from_parts(299_246_000, 0), *weight_used
-				),
-				success: *success == true,
-			},
 			// Amount is witdrawn from Relay Chain's `CheckAccount`
 			RuntimeEvent::Balances(pallet_balances::Event::Withdraw { who, amount }) => {
 				who: *who == <Kusama as KusamaPallet>::XcmPallet::check_account(),
@@ -131,24 +66,47 @@ fn relay_dest_assertions(t: SystemParaToRelayTest) {
 }
 
 fn relay_dest_assertions_fail(_t: SystemParaToRelayTest) {
-	type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
+	events::relay_chain::ump_queue_processed(
+		AssetHubKusama::para_id(),
+		Weight::from_parts(144_595_000, 0),
+		false
+	);
+}
+
+fn para_origin_assertions(t: SystemParaToRelayTest) {
+	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
+
+	events::parachain::xcm_pallet_attempted_complete(
+		Weight::from_parts(534_872_000, 7_133)
+	);
+
+	events::parachain::parachain_system_ump_sent();
 
 	assert_expected_events!(
-		Kusama,
+		AssetHubKusama,
 		vec![
-			// XCM is succesfully received but fails execution
-			RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed {
-				origin: AggregateMessageOrigin::Ump(UmpQueueId::Para(id)),
-				weight_used,
-				success,
-				..
-			}) => {
-				id: *id == AssetHubKusama::para_id(),
-				weight_used: weight_within_threshold(
-					(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-					Weight::from_parts(144_595_000, 0), *weight_used
-				),
-				success: *success == false,
+			// Amount is withdrawn from Sender's account
+			RuntimeEvent::Balances(pallet_balances::Event::Withdraw { who, amount }) => {
+				who: *who == t.sender.account_id,
+				amount: *amount == t.args.amount,
+			},
+		]
+	);
+}
+
+fn para_dest_assertions(t: RelayToSystemParaTest) {
+	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
+
+	events::parachain::dmp_queue_complete(
+		Weight::from_parts(165_592_000, 0)
+	);
+
+	assert_expected_events!(
+		AssetHubKusama,
+		vec![
+			// Amount minus fees are deposited in Receiver's account
+			RuntimeEvent::Balances(pallet_balances::Event::Deposit { who, .. }) => {
+				who: *who == t.receiver.account_id,
 			},
 		]
 	);
@@ -205,7 +163,7 @@ fn limited_teleport_native_assets_from_relay_to_system_para_works() {
 	let test_args = TestContext {
 		sender: KusamaSender::get(),
 		receiver: AssetHubKusamaReceiver::get(),
-		args: get_relay_test_args(amount_to_send),
+		args: relay_test_args(amount_to_send),
 	};
 
 	let mut test = RelayToSystemParaTest::new(test_args);
@@ -243,7 +201,7 @@ fn limited_teleport_native_assets_back_from_system_para_to_relay_works() {
 	let test_args = TestContext {
 		sender: AssetHubKusamaSender::get(),
 		receiver: KusamaReceiver::get(),
-		args: get_system_para_test_args(
+		args: system_para_test_args(
 			destination,
 			beneficiary_id,
 			amount_to_send,
@@ -284,7 +242,7 @@ fn limited_teleport_native_assets_from_system_para_to_relay_fails() {
 	let test_args = TestContext {
 		sender: AssetHubKusamaSender::get(),
 		receiver: KusamaReceiver::get(),
-		args: get_system_para_test_args(
+		args: system_para_test_args(
 			destination,
 			beneficiary_id,
 			amount_to_send,
@@ -320,7 +278,7 @@ fn teleport_native_assets_from_relay_to_system_para_works() {
 	let test_args = TestContext {
 		sender: KusamaSender::get(),
 		receiver: AssetHubKusamaReceiver::get(),
-		args: get_relay_test_args(amount_to_send),
+		args: relay_test_args(amount_to_send),
 	};
 
 	let mut test = RelayToSystemParaTest::new(test_args);
@@ -394,7 +352,7 @@ fn teleport_native_assets_from_relay_to_system_para_works() {
 // 	let test_args = TestContext {
 // 		sender: AssetHubKusamaSender::get(),
 // 		receiver: KusamaReceiver::get(),
-// 		args: get_system_para_test_args(amount_to_send),
+// 		args: system_para_test_args(amount_to_send),
 //      assets,
 //      None
 // 	};

@@ -41,20 +41,16 @@ fn send_transact_sudo_from_relay_to_system_para_works() {
 			bx!(xcm),
 		));
 
-		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
-
-		assert_expected_events!(
-			Kusama,
-			vec![
-				RuntimeEvent::XcmPallet(pallet_xcm::Event::Sent { .. }) => {},
-			]
-		);
+		events::relay_chain::xcm_pallet_sent();
 	});
 
 	// Receive XCM message in Assets Parachain
 	AssetHubKusama::execute_with(|| {
-
 		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
+
+		events::parachain::dmp_queue_complete(
+			Weight::from_parts(1_019_445_000, 200_000)
+		);
 
 		assert_expected_events!(
 			AssetHubKusama,
@@ -62,15 +58,6 @@ fn send_transact_sudo_from_relay_to_system_para_works() {
 				RuntimeEvent::Assets(pallet_assets::Event::ForceCreated { asset_id, owner }) => {
 					asset_id: *asset_id == ASSET_ID,
 					owner: *owner == asset_owner,
-				},
-				RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
-					outcome: Outcome::Complete(weight), ..
-				}) => {
-					weight: weight_within_threshold(
-						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-						Weight::from_parts(1_019_445_000, 200_000),
-						*weight
-					),
 				},
 			]
 		);
@@ -191,29 +178,19 @@ fn send_xcm_from_para_to_system_para_paying_fee_with_assets_works() {
 			bx!(xcm),
 		));
 
-		type RuntimeEvent = <PenpalKusamaA as Chain>::RuntimeEvent;
-
-		assert_expected_events!(
-			PenpalKusamaA,
-			vec![
-				RuntimeEvent::PolkadotXcm(pallet_xcm::Event::Sent {..}) => {},
-			]
-		);
+		events::parachain::xcm_pallet_sent();
 	});
 
 	AssetHubKusama::execute_with(|| {
 		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
+		events::parachain::xcmp_queue_success(
+			Weight::from_parts(2_176_414_000, 203_593)
+		);
+
 		assert_expected_events!(
 			AssetHubKusama,
 			vec![
-				RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Success { weight, .. }) => {
-					weight: weight_within_threshold(
-						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-						Weight::from_parts(2_176_414_000, 203_593),
-						*weight
-					),
-				},
 				RuntimeEvent::Assets(pallet_assets::Event::Burned { asset_id, owner, balance }) => {
 					asset_id: *asset_id == ASSET_ID,
 					owner: *owner == para_sovereign_account,

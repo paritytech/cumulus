@@ -72,33 +72,20 @@ fn system_para_sets_relay_xcm_supported_version() {
 			bx!(xcm),
 		));
 
-		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
-
-		assert_expected_events!(
-			Kusama,
-			vec![
-				RuntimeEvent::XcmPallet(pallet_xcm::Event::Sent { .. }) => {},
-			]
-		);
+		events::relay_chain::xcm_pallet_sent();
 	});
 
 	// System Parachain receive the XCM message
 	AssetHubKusama::execute_with(|| {
 		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
+		events::parachain::dmp_queue_complete(
+			Weight::from_parts(1_019_210_000, 200_000)
+		);
+
 		assert_expected_events!(
 			AssetHubKusama,
 			vec![
-				RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
-					outcome: Outcome::Complete(weight),
-					..
-				}) => {
-					weight: weight_within_threshold(
-						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-						Weight::from_parts(1_019_210_000, 200_000),
-						*weight
-					),
-				},
 				RuntimeEvent::PolkadotXcm(pallet_xcm::Event::SupportedVersionChanged {
 					location,
 					version: XCM_V3

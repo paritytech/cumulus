@@ -125,38 +125,21 @@ fn open_hrmp_channel_between_paras_works() {
 				bx!(xcm),
 		));
 
-		type RuntimeEvent = <PenpalKusamaA as Chain>::RuntimeEvent;
-
-		assert_expected_events!(
-			PenpalKusamaA,
-			// Message is sent succesfully
-			vec![
-				RuntimeEvent::PolkadotXcm(pallet_xcm::Event::Sent { .. }) => {},
-			]
-		);
+		events::parachain::xcm_pallet_sent();
 	});
 
 	Kusama::execute_with(|| {
 		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
+		events::relay_chain::ump_queue_processed(
+			para_a_id,
+			Weight::from_parts(1_312_558_000, 200000),
+			true
+		);
+
 		assert_expected_events!(
 			Kusama,
 			vec![
-				// XCM is succesfully received and proccessed
-				RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed {
-					origin: AggregateMessageOrigin::Ump(UmpQueueId::Para(id)),
-					weight_used,
-					success,
-					..
-				}) => {
-					id: *id == para_a_id,
-					weight_used: weight_within_threshold(
-						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-						Weight::from_parts(1_312_558_000, 200000),
-						*weight_used
-					),
-					success: *success == true,
-				},
 				// Parachain's Sovereign account balance is withdrawn to pay XCM fees
 				RuntimeEvent::Balances(pallet_balances::Event::Withdraw { who, amount }) => {
 					who: *who == para_a_sovereign_account.clone(),
@@ -202,38 +185,21 @@ fn open_hrmp_channel_between_paras_works() {
 				bx!(xcm),
 		));
 
-		type RuntimeEvent = <PenpalKusamaB as Chain>::RuntimeEvent;
-
-		assert_expected_events!(
-			PenpalKusamaB,
-			// Message is sent succesfully
-			vec![
-				RuntimeEvent::PolkadotXcm(pallet_xcm::Event::Sent { .. }) => {},
-			]
-		);
+		events::parachain::xcm_pallet_sent();
 	});
 
 	Kusama::execute_with(|| {
 		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
+		events::relay_chain::ump_queue_processed(
+			para_b_id,
+			Weight::from_parts(1_312_558_000, 200000),
+			true
+		);
+
 		assert_expected_events!(
 			Kusama,
 			vec![
-				// XCM is succesfully received and proccessed
-				RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed {
-					origin: AggregateMessageOrigin::Ump(UmpQueueId::Para(id)),
-					weight_used,
-					success,
-					..
-				}) => {
-					id: *id == para_b_id,
-					weight_used: weight_within_threshold(
-						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-						Weight::from_parts(1_312_558_000, 200000),
-						*weight_used
-					),
-					success: *success == true,
-				},
 				// Parachain's Sovereign account balance is withdrawn to pay XCM fees
 				RuntimeEvent::Balances(pallet_balances::Event::Withdraw { who, amount }) => {
 					who: *who == para_b_sovereign_account.clone(),

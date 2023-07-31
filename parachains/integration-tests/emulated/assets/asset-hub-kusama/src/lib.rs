@@ -61,7 +61,7 @@ pub type RelayToSystemParaTest = Test<Kusama, AssetHubKusama>;
 pub type SystemParaToRelayTest = Test<AssetHubKusama, Kusama>;
 pub type SystemParaToParaTest = Test<AssetHubKusama, PenpalKusamaA>;
 
-pub fn get_relay_test_args(
+pub fn relay_test_args(
 	amount: Balance
 ) -> TestArgs {
 	TestArgs {
@@ -78,7 +78,7 @@ pub fn get_relay_test_args(
 	}
 }
 
-pub fn get_system_para_test_args(
+pub fn system_para_test_args(
 	dest: MultiLocation,
 	beneficiary_id: AccountId32,
 	amount: Balance,
@@ -96,6 +96,229 @@ pub fn get_system_para_test_args(
 		asset_id,
 		fee_asset_item: 0,
 		weight_limit: WeightLimit::Unlimited,
+	}
+}
+
+pub mod events {
+	pub mod relay_chain {
+		use crate::*;
+		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
+
+		// Dispatchable is completely executed and XCM sent
+		pub fn xcm_pallet_attempted_complete(expected_weight: Weight) {
+			assert_expected_events!(
+				Kusama,
+				vec![
+					RuntimeEvent::XcmPallet(
+						pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
+					) => {
+						weight: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							// Weight::from_parts(763_770_000, 0),
+							expected_weight,
+							*weight
+						),
+					},
+				]
+			);
+		}
+
+		// Dispatchable is incompletely executed and XCM sent
+		pub fn xcm_pallet_attempted_incomplete(expected_weight: Weight, expected_error: Error) {
+			assert_expected_events!(
+				Kusama,
+				vec![
+					// Dispatchable is properly executed and XCM message sent
+					RuntimeEvent::XcmPallet(
+						pallet_xcm::Event::Attempted { outcome: Outcome::Incomplete(weight, error) }
+					) => {
+						weight: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							// Weight::from_parts(763_770_000, 0),
+							expected_weight,
+							*weight
+						),
+						error: *error == expected_error,
+					},
+				]
+			);
+		}
+
+		// XCM message is sent
+		pub fn xcm_pallet_sent() {
+			assert_expected_events!(
+				Kusama,
+				vec![
+					RuntimeEvent::XcmPallet(pallet_xcm::Event::Sent { .. }) => {},
+				]
+			);
+		}
+
+		// XCM from System Parachain is succesfully received and proccessed
+		pub fn ump_queue_processed(
+			expected_id: ParaId,
+			expected_weight: Weight,
+			expected_success: bool
+		) {
+			assert_expected_events!(
+				Kusama,
+				vec![
+					// XCM is succesfully received and proccessed
+					RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed {
+						origin: AggregateMessageOrigin::Ump(UmpQueueId::Para(id)),
+						weight_used,
+						success,
+						..
+					}) => {
+						id: *id == expected_id,
+						weight_used: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							expected_weight,
+							*weight_used
+						),
+						success: *success == expected_success,
+					},
+				]
+			);
+		}
+
+	}
+
+	pub mod parachain {
+		use crate::*;
+		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
+
+		// Dispatchable is completely executed and XCM sent
+		pub fn xcm_pallet_attempted_complete(expected_weight: Weight) {
+			assert_expected_events!(
+				AssetHubKusama,
+				vec![
+					RuntimeEvent::PolkadotXcm(
+						pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
+					) => {
+						weight: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							// Weight::from_parts(763_770_000, 0),
+							expected_weight,
+							*weight
+						),
+					},
+				]
+			);
+		}
+
+		// Dispatchable is incompletely executed and XCM sent
+		pub fn xcm_pallet_attempted_incomplete(expected_weight: Weight, expected_error: Error) {
+			assert_expected_events!(
+				AssetHubKusama,
+				vec![
+					// Dispatchable is properly executed and XCM message sent
+					RuntimeEvent::PolkadotXcm(
+						pallet_xcm::Event::Attempted { outcome: Outcome::Incomplete(weight, error) }
+					) => {
+						weight: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							// Weight::from_parts(763_770_000, 0),
+							expected_weight,
+							*weight
+						),
+						error: *error == expected_error,
+					},
+				]
+			);
+		}
+
+		// Dispatchable throws and error when trying to be sent
+		pub fn xcm_pallet_attempted_error(expected_error: Error) {
+			assert_expected_events!(
+				AssetHubKusama,
+				vec![
+					// Execution fails in the origin with `Barrier`
+					RuntimeEvent::PolkadotXcm(
+						pallet_xcm::Event::Attempted { outcome: Outcome::Error(error) }
+					) => {
+						error: *error == expected_error,
+					},
+				]
+			);
+		}
+
+		// XCM message is sent
+		pub fn xcm_pallet_sent() {
+			assert_expected_events!(
+				AssetHubKusama,
+				vec![
+					RuntimeEvent::PolkadotXcm(pallet_xcm::Event::Sent { .. }) => {},
+				]
+			);
+		}
+
+		// XCM message is sent to Relay Chain
+		pub fn parachain_system_ump_sent() {
+			assert_expected_events!(
+				AssetHubKusama,
+				vec![
+					RuntimeEvent::ParachainSystem(
+						cumulus_pallet_parachain_system::Event::UpwardMessageSent { .. }
+					) => {},
+				]
+			);
+		}
+
+		// XCM from Relay Chain is completely executed
+		pub fn dmp_queue_complete(expected_weight: Weight) {
+			assert_expected_events!(
+				AssetHubKusama,
+				vec![
+					RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
+						outcome: Outcome::Complete(weight), ..
+					}) => {
+						weight: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							expected_weight,
+							*weight
+						),
+					},
+				]
+			);
+		}
+
+		// XCM from Relay Chain is incompletely executed
+		pub fn dmp_queue_incomplete(expected_weight: Weight, expected_error: Error) {
+			assert_expected_events!(
+				AssetHubKusama,
+				vec![
+					RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
+						outcome: Outcome::Incomplete(weight, error), ..
+					}) => {
+						weight: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							expected_weight,
+							*weight
+						),
+						error: *error == expected_error,
+					},
+				]
+			);
+		}
+
+		// XCM from another Parachain is completely executed
+		pub fn xcmp_queue_success(expected_weight: Weight) {
+			assert_expected_events!(
+				AssetHubKusama,
+				vec![
+					RuntimeEvent::XcmpQueue(
+						cumulus_pallet_xcmp_queue::Event::Success { weight, .. }
+					) => {
+						weight: weight_within_threshold(
+							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+							expected_weight,
+							*weight
+						),
+					},
+				]
+			);
+		}
 	}
 }
 
@@ -192,34 +415,40 @@ pub fn force_create_and_mint_asset(
 			)
 		);
 
-		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
+		events::relay_chain::xcm_pallet_sent();
 
-		assert_expected_events!(
-			Kusama,
-			vec![
-				RuntimeEvent::XcmPallet(
-					pallet_xcm::Event::Sent { .. }
-				) => {},
-			]
-		);
+		// type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
+
+		// assert_expected_events!(
+		// 	Kusama,
+		// 	vec![
+		// 		RuntimeEvent::XcmPallet(
+		// 			pallet_xcm::Event::Sent { .. }
+		// 		) => {},
+		// 	]
+		// );
 	});
 
 	AssetHubKusama::execute_with(|| {
 		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
+		events::parachain::dmp_queue_complete(
+			Weight::from_parts(1_019_445_000, 200_000)
+		);
+
 		assert_expected_events!(
 			AssetHubKusama,
 			vec![
-				// XCM message is succesfully executed in destination
-				RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
-					outcome: Outcome::Complete(weight), ..
-				}) => {
-					weight: weight_within_threshold(
-						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-						Weight::from_parts(1_019_445_000, 200_000),
-						*weight
-					),
-				},
+				// // XCM message is succesfully executed in destination
+				// RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
+				// 	outcome: Outcome::Complete(weight), ..
+				// }) => {
+				// 	weight: weight_within_threshold(
+				// 		(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+				// 		Weight::from_parts(1_019_445_000, 200_000),
+				// 		*weight
+				// 	),
+				// },
 				// Asset has been created
 				RuntimeEvent::Assets(pallet_assets::Event::ForceCreated { asset_id, owner }) => {
 					asset_id: *asset_id == id,

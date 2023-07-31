@@ -19,6 +19,10 @@ use crate::*;
 fn relay_origin_assertions(t: RelayToSystemParaTest) {
 	type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
+	events::relay_chain::xcm_pallet_attempted_complete(
+		Weight::from_parts(753_242_000, 0)
+	);
+
 	assert_expected_events!(
 		Kusama,
 		vec![
@@ -30,72 +34,31 @@ fn relay_origin_assertions(t: RelayToSystemParaTest) {
 				),
 				amount:  *amount == t.args.amount,
 			},
-			// Dispatchable is properly executed and XCM message sent
-			RuntimeEvent::XcmPallet(
-				pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
-			) => {
-				weight: weight_within_threshold(
-					(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-					Weight::from_parts(753_242_000, 0),
-					*weight
-				),
-			},
 		]
 	);
 }
 
 fn system_para_dest_assertions_incomplete(_t: RelayToSystemParaTest) {
-	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
-
-	assert_expected_events!(
-		AssetHubKusama,
-		vec![
-			RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
-				outcome: Outcome::Incomplete(weight, Error::UntrustedReserveLocation),
-				..
-			}) => {
-				weight: weight_within_threshold(
-					(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-					Weight::from_parts(1_000_000_000, 0),
-					*weight
-				),
-			},
-		]
+	events::parachain::dmp_queue_incomplete(
+		Weight::from_parts(1_000_000_000, 0),
+		Error::UntrustedReserveLocation
 	);
 }
 
 fn system_para_to_relay_assertions(_t: SystemParaToRelayTest) {
-	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
-
-	assert_expected_events!(
-		AssetHubKusama,
-		vec![
-			// Execution fails in the origin with `Barrier`
-			RuntimeEvent::PolkadotXcm(
-				pallet_xcm::Event::Attempted { outcome: Outcome::Error(error) }
-			) => {
-				error: *error == XcmError::Barrier,
-			},
-		]
-	);
+	events::parachain::xcm_pallet_attempted_error(XcmError::Barrier)
 }
 
 fn system_para_to_para_assertions(t: SystemParaToParaTest) {
 	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
+	events::parachain::xcm_pallet_attempted_complete(
+		Weight::from_parts(676_119_000, 6196)
+	);
+
 	assert_expected_events!(
 		AssetHubKusama,
 		vec![
-			// Dispatchable is properly executed and XCM message sent
-			RuntimeEvent::PolkadotXcm(
-				pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
-			) => {
-				weight: weight_within_threshold(
-					(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-					Weight::from_parts(676_119_000, 6196),
-					*weight
-				),
-			},
 			// Amount to reserve transfer is transferred to Parachain's Sovereing account
 			RuntimeEvent::Balances(
 				pallet_balances::Event::Transfer { from, to, amount }
@@ -113,19 +76,13 @@ fn system_para_to_para_assertions(t: SystemParaToParaTest) {
 fn system_para_to_para_assets_assertions(t: SystemParaToParaTest) {
 	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
+	events::parachain::xcm_pallet_attempted_complete(
+		Weight::from_parts(676_119_000, 6196)
+	);
+
 	assert_expected_events!(
 		AssetHubKusama,
 		vec![
-			// Dispatchable is properly executed and XCM message sent
-			RuntimeEvent::PolkadotXcm(
-				pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
-			) => {
-				weight: weight_within_threshold(
-					(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-					Weight::from_parts(676_119_000, 6196),
-					*weight
-				),
-			},
 			// Amount to reserve transfer is transferred to Parachain's Sovereing account
 			RuntimeEvent::Assets(
 				pallet_assets::Event::Transferred { asset_id, from, to, amount }
@@ -212,7 +169,7 @@ fn limited_reserve_transfer_native_asset_from_relay_to_system_para_fails() {
 	let test_args = TestContext {
 		sender: KusamaSender::get(),
 		receiver: AssetHubKusamaReceiver::get(),
-		args: get_relay_test_args(amount_to_send),
+		args: relay_test_args(amount_to_send),
 	};
 
 	let mut test = RelayToSystemParaTest::new(test_args);
@@ -244,7 +201,7 @@ fn limited_reserve_transfer_native_asset_from_system_para_to_relay_fails() {
 	let test_args = TestContext {
 		sender: AssetHubKusamaSender::get(),
 		receiver: KusamaReceiver::get(),
-		args: get_system_para_test_args(
+		args: system_para_test_args(
 			destination,
 			beneficiary_id,
 			amount_to_send,
@@ -277,7 +234,7 @@ fn reserve_transfer_native_asset_from_relay_to_system_para_fails() {
 	let test_args = TestContext {
 		sender: KusamaSender::get(),
 		receiver: AssetHubKusamaReceiver::get(),
-		args: get_relay_test_args(amount_to_send),
+		args: relay_test_args(amount_to_send),
 	};
 
 	let mut test = RelayToSystemParaTest::new(test_args);
@@ -309,7 +266,7 @@ fn reserve_transfer_native_asset_from_system_para_to_relay_fails() {
 	let test_args = TestContext {
 		sender: AssetHubKusamaSender::get(),
 		receiver: KusamaReceiver::get(),
-		args: get_system_para_test_args(
+		args: system_para_test_args(
 			destination,
 			beneficiary_id,
 			amount_to_send,
@@ -348,7 +305,7 @@ fn limited_reserve_transfer_native_asset_from_system_para_to_para() {
 	let test_args = TestContext {
 		sender: AssetHubKusamaSender::get(),
 		receiver: PenpalKusamaAReceiver::get(),
-		args: get_system_para_test_args(
+		args: system_para_test_args(
 			destination,
 			beneficiary_id,
 			amount_to_send,
@@ -386,7 +343,7 @@ fn reserve_transfer_native_asset_from_system_para_to_para() {
 	let test_args = TestContext {
 		sender: AssetHubKusamaSender::get(),
 		receiver: PenpalKusamaAReceiver::get(),
-		args: get_system_para_test_args(
+		args: system_para_test_args(
 			destination,
 			beneficiary_id,
 			amount_to_send,
@@ -436,7 +393,7 @@ fn limited_reserve_transfer_asset_from_system_para_to_para() {
 	let system_para_test_args = TestContext {
 		sender: AssetHubKusamaSender::get(),
 		receiver: PenpalKusamaAReceiver::get(),
-		args: get_system_para_test_args(
+		args: system_para_test_args(
 			destination,
 			beneficiary_id,
 			amount_to_send,
@@ -480,7 +437,7 @@ fn reserve_transfer_asset_from_system_para_to_para() {
 	let system_para_test_args = TestContext {
 		sender: AssetHubKusamaSender::get(),
 		receiver: PenpalKusamaAReceiver::get(),
-		args: get_system_para_test_args(
+		args: system_para_test_args(
 			destination,
 			beneficiary_id,
 			amount_to_send,
