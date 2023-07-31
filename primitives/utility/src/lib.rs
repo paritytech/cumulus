@@ -144,7 +144,7 @@ impl<
 	// If everything goes well, we charge.
 	fn buy_weight(
 		&mut self,
-		_ctx: &XcmContext,
+		_ctx: Option<&XcmContext>,
 		weight: Weight,
 		payment: xcm_executor::Assets,
 	) -> Result<xcm_executor::Assets, XcmError> {
@@ -197,7 +197,7 @@ impl<
 		Ok(unused)
 	}
 
-	fn refund_weight(&mut self, _ctx: &XcmContext, weight: Weight) -> Option<MultiAsset> {
+	fn refund_weight(&mut self, _ctx: Option<&XcmContext>, weight: Weight) -> Option<MultiAsset> {
 		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::refund_weight weight: {:?}", weight);
 		if let Some(AssetTraderRefunder {
 			mut weight_outstanding,
