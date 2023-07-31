@@ -115,11 +115,9 @@ impl<
 
 		if last_slot == new_slot {
 			authored_so_far < velocity + 1
-		} else if last_slot < new_slot {
-			true
 		} else {
-			// slot moved backwards
-			false
+			// disallow slot from moving backwards.
+			last_slot < new_slot
 		}
 	}
 }
