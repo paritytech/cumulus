@@ -1268,8 +1268,8 @@ impl<T: Config> Pallet<T> {
 
 				let c = &mut channels[i].1;
 
-				c.total_size = (c.total_size + used.total_bytes).max(c.max_total_size);
-				c.msg_count = (c.msg_count + used.msg_count).max(c.max_capacity);
+				c.total_size = (c.total_size + used.total_bytes).min(c.max_total_size);
+				c.msg_count = (c.msg_count + used.msg_count).min(c.max_capacity);
 			}
 
 			let upward_capacity = &mut messaging_state.relay_dispatch_queue_remaining_capacity;
