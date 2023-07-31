@@ -28,7 +28,7 @@ pub use frame_support::{
 pub use frame_system::AccountInfo;
 pub use pallet_balances::AccountData;
 pub use sp_arithmetic::traits::Bounded;
-pub use sp_core::{storage::Storage, H256};
+pub use sp_core::{storage::Storage, Pair, H256};
 pub use sp_io;
 pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, fmt::Debug};
 pub use sp_trie::StorageProof;
@@ -43,7 +43,6 @@ pub use cumulus_primitives_core::{
 };
 pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
-pub use cumulus_test_service::get_account_id_from_seed;
 pub use pallet_message_queue;
 pub use parachain_info;
 pub use parachains_common::{AccountId, BlockNumber};
@@ -249,6 +248,19 @@ impl fmt::Display for BridgeMessageDispatchError {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(f, "{:?}", self.0)
 	}
+}
+
+/// Helper function to generate an account ID from seed.
+pub fn get_account_id_from_seed<TPublic: sp_core::Public>(seed: &str) -> AccountId
+where
+	sp_runtime::MultiSigner:
+		From<<<TPublic as sp_runtime::CryptoType>::Pair as sp_core::Pair>::Public>,
+{
+	use sp_runtime::traits::IdentifyAccount;
+	let pubkey = TPublic::Pair::from_string(&format!("//{}", seed), None)
+		.expect("static values are valid; qed")
+		.public();
+	sp_runtime::MultiSigner::from(pubkey).into_account()
 }
 
 // Relay Chain Implementation
@@ -1100,8 +1112,8 @@ pub mod helpers {
 
 	pub fn within_threshold(threshold: u64, expected_value: u64, current_value: u64) -> bool {
 		let margin = (current_value * threshold) / 100;
-		let lower_limit = expected_value - margin;
-		let upper_limit = expected_value + margin;
+		let lower_limit = expected_value.checked_sub(margin).unwrap_or(u64::MIN);
+		let upper_limit = expected_value.checked_add(margin).unwrap_or(u64::MAX);
 
 		current_value >= lower_limit && current_value <= upper_limit
 	}
