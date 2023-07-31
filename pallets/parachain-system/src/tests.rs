@@ -702,46 +702,128 @@ fn hrmp_outbound_respects_used_bandwidth() {
 
 	BlockTests::new()
 		.with_inclusion_delay(2)
-		.with_relay_sproof_builder(move |_, _, sproof| {
+		.with_relay_sproof_builder(move |_, block_number, sproof| {
 			sproof.host_config.hrmp_max_message_num_per_candidate = 10;
 			let channel = sproof.upsert_outbound_channel(recipient);
 			channel.max_capacity = 2;
 			channel.max_total_size = 4;
 
 			channel.max_message_size = 10;
+
+			// states:
+			// [relay_chain][unincluded_segment] + [message_queue]
+			// 2: []["2"] + ["2222"]
+			// 3: []["2", "3"] + ["2222"]
+			// 4: []["2", "3"] + ["2222", "444", "4"]
+			// 5: ["2"]["3"] + ["2222", "444", "4"]
+			// 6: ["2", "3"][] + ["2222", "444", "4"]
+			// 7: ["3"]["444"] + ["2222", "4"]
+			// 8: []["444", "4"] + ["2222"]
+			//
+			// 2 tests max bytes - there is message space but no byte space.
+			// 4 tests max capacity - there is byte space but no message space
+
+			match block_number {
+				5 => {
+					// 2 included.
+					// one message added
+					channel.msg_count = 1;
+					channel.total_size = 1;
+				}
+				6 => {
+					// 3 included.
+					// one message added
+					channel.msg_count = 2;
+					channel.total_size = 2;
+				}
+				7 => {
+					// 4 included.
+					// one message drained.
+					channel.msg_count = 1;
+					channel.total_size = 1;
+				}
+				8 => {
+					// 5 included. no messages added, one drained.
+					channel.msg_count = 0;
+					channel.total_size = 0;
+				}
+				_ => {
+					channel.msg_count = 0;
+					channel.total_size = 0;
+				}
+			}
 		})
 		.add(1, || {})
 		.add_with_post_test(
 			2,
 			move || {
-				send_message(recipient, b"22".to_vec());
+				send_message(recipient, b"2".to_vec());
+				send_message(recipient, b"2222".to_vec());
 			},
 			move || {
 				let v = HrmpOutboundMessages::<Test>::get();
-				assert_eq!(v, vec![OutboundHrmpMessage { recipient, data: b"22".to_vec() }]);
+				assert_eq!(v, vec![OutboundHrmpMessage { recipient, data: b"2".to_vec() }]);
 			},
 		)
 		.add_with_post_test(
 			3,
 			move || {
-				send_message(recipient, b"333".to_vec());
+				send_message(recipient, b"3".to_vec());
 			},
 			move || {
-				// Parent has not been included, new message would've exceeded capacity.
 				let v = HrmpOutboundMessages::<Test>::get();
-				assert!(v.is_empty());
+				assert_eq!(v, vec![OutboundHrmpMessage { recipient, data: b"3".to_vec() }]);
 			},
 		)
 		.add_with_post_test(
 			4,
 			move || {
-				send_message(recipient, b"a".to_vec());
-				send_message(recipient, b"b".to_vec());
+				send_message(recipient, b"444".to_vec());
+				send_message(recipient, b"4".to_vec());
 			},
 			move || {
+				// Queue has byte capacity but not message capacity.
 				let v = HrmpOutboundMessages::<Test>::get();
-				// One small message fits. This line relies on test implementation of [`XcmpMessageSource`].
-				assert_eq!(v, vec![OutboundHrmpMessage { recipient, data: b"a".to_vec() }]);
+				assert!(v.is_empty());
+			},
+		)
+		.add_with_post_test(
+			5,
+			|| {},
+			move || {
+				// 1 is included here, channel not drained yet. nothing fits.
+				let v = HrmpOutboundMessages::<Test>::get();
+				assert!(v.is_empty());
+			},
+		)
+		.add_with_post_test(
+			6,
+			|| {},
+			move || {
+				// 2 is included here. channel is totally full.
+				let v = HrmpOutboundMessages::<Test>::get();
+				assert!(v.is_empty());
+			},
+		)
+		.add_with_post_test(
+			7,
+			|| {},
+			move || {
+				// 3 is included here. One message was drained out. The 3-byte message
+				// finally fits
+				let v = HrmpOutboundMessages::<Test>::get();
+				// This line relies on test implementation of [`XcmpMessageSource`].
+				assert_eq!(v, vec![OutboundHrmpMessage { recipient, data: b"444".to_vec() }]);
+			},
+		)
+		.add_with_post_test(
+			8,
+			|| {},
+			move || {
+				// 4 is included here. Relay-chain side of the queue is empty,
+				let v = HrmpOutboundMessages::<Test>::get();
+				// This line relies on test implementation of [`XcmpMessageSource`].
+				assert_eq!(v, vec![OutboundHrmpMessage { recipient, data: b"4".to_vec() }]);
 			},
 		);
 }
