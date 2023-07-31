@@ -137,15 +137,23 @@ fn send_message(dest: ParaId, message: Vec<u8>) {
 impl XcmpMessageSource for FromThreadLocal {
 	fn take_outbound_messages(maximum_channels: usize) -> Vec<(ParaId, Vec<u8>)> {
 		let mut ids = std::collections::BTreeSet::<ParaId>::new();
-		let mut taken = 0;
+		let mut taken_messages = 0;
+		let mut taken_bytes = 0;
 		let mut result = Vec::new();
 		SENT_MESSAGES.with(|ms| {
 			ms.borrow_mut().retain(|m| {
 				let status = <Pallet<Test> as GetChannelInfo>::get_channel_status(m.0);
-				let ready = matches!(status, ChannelStatus::Ready(..));
-				if ready && !ids.contains(&m.0) && taken < maximum_channels {
+				let ChannelStatus::Ready(max_size_now, max_size_ever) = status else { return false };
+				let msg_len = m.1.len();
+
+				if !ids.contains(&m.0) &&
+					taken_messages < maximum_channels &&
+					msg_len <= max_size_ever &&
+					taken_bytes + msg_len <= max_size_now
+				{
 					ids.insert(m.0);
-					taken += 1;
+					taken_messages += 1;
+					taken_bytes += msg_len;
 					result.push(m.clone());
 					false
 				} else {
