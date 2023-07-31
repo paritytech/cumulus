@@ -137,9 +137,9 @@ impl<
 	}
 }
 
-/// Filter assets which are explicitly not allowed for destination.
+/// Filter assets that are explicitly not allowed for destination.
 ///
-/// Returns true if asset is not `Concrete` or is explicitly not allowed by `LocationAssetFilters`
+/// Returns true if asset is not `Concrete` or is explicitly not allowed by `LocationAssetFilters`.
 /// Returns false if `dest` does not match any location in `LocationAssetFilters`.
 pub struct IsNotAllowedConcreteAssetBy<LocationAssetFilters>(
 	sp_std::marker::PhantomData<LocationAssetFilters>,
