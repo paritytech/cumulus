@@ -432,10 +432,19 @@ parameter_types! {
 	pub const PolkadotBridgeParachainPalletName: &'static str = bp_polkadot::PARAS_PALLET_NAME;
 	pub const MaxPolkadotParaHeadDataSize: u32 = bp_polkadot::MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE;
 
-	// Both are just initial values, and concrete values will be set up by governance call (`set_storage`) with `initialize` bridge call as a part of cutover plan (https://github.com/paritytech/parity-bridges-common/issues/1730)
-	pub storage DeliveryRewardInBalance: u64 = 1_000_000;
-	pub storage RequiredStakeForStakeAndSlash: Balance = Balance::MAX;
 	pub const RelayerStakeReserveId: [u8; 8] = *b"brdgrlrs";
+	// Just initial value, and concrete values will be set up by governance call (`set_storage`) with `initialize` bridge call as a part of cutover plan (https://github.com/paritytech/parity-bridges-common/issues/1730)
+	pub storage DeliveryRewardInBalance: u64 = 1_000_000;
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+parameter_types! {
+	pub storage RequiredStakeForStakeAndSlash: Balance = 1;
+}
+#[cfg(not(feature = "runtime-benchmarks"))]
+parameter_types! {
+	// Just initial value, and concrete values will be set up by governance call (`set_storage`) with `initialize` bridge call as a part of cutover plan (https://github.com/paritytech/parity-bridges-common/issues/1730)
+	pub storage RequiredStakeForStakeAndSlash: Balance = Balance::MAX;
 }
 
 /// Add parachain bridge pallet to track Polkadot BridgeHub parachain
