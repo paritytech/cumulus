@@ -70,6 +70,7 @@ decl_test_relay_chains! {
 		pallets = {
 			XcmPallet: westend_runtime::XcmPallet,
 			Sudo: westend_runtime::Sudo,
+			Balances: westend_runtime::Balances,
 		}
 	},
 	#[api_version(5)]
@@ -251,6 +252,7 @@ decl_test_parachains! {
 		},
 		pallets = {
 			PolkadotXcm: asset_hub_westend_runtime::PolkadotXcm,
+			Balances: asset_hub_westend_runtime::Balances,
 			Assets: asset_hub_westend_runtime::Assets,
 			ForeignAssets: asset_hub_westend_runtime::ForeignAssets,
 			AssetConversion: asset_hub_westend_runtime::AssetConversion,

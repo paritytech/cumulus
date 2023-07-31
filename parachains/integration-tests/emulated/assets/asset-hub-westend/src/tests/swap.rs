@@ -4,12 +4,10 @@ use xcm_emulator::{Chain, Parachain};
 
 #[test]
 fn swap_locally_on_chain_using_local_assets() {
-	const ASSET_ID: u32 = 1;
-
 	let asset_native = Box::new(MultiLocation { parents: 0, interior: Here });
 	let asset_one = Box::new(MultiLocation {
 		parents: 0,
-		interior: X2(PalletInstance(50), GeneralIndex(ASSET_ID.into())),
+		interior: X2(PalletInstance(ASSETS_PALLET_ID), GeneralIndex(ASSET_ID.into())),
 	});
 
 	AssetHubWestend::execute_with(|| {
@@ -98,14 +96,13 @@ fn swap_locally_on_chain_using_local_assets() {
 fn swap_locally_on_chain_using_foreign_assets() {
 	use frame_support::weights::WeightToFee;
 
-	const ASSET_ID: u32 = 1;
 	let asset_native = Box::new(MultiLocation { parents: 0, interior: Here });
 
 	let foreign_asset1_at_asset_hub_westend = Box::new(MultiLocation {
 		parents: 1,
 		interior: X3(
 			Parachain(PenpalWestendA::para_id().into()),
-			PalletInstance(50),
+			PalletInstance(ASSETS_PALLET_ID),
 			GeneralIndex(ASSET_ID.into()),
 		),
 	});
@@ -135,14 +132,35 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	let origin_kind = OriginKind::Xcm;
 	let sov_penpal_on_asset_hub_westend = AssetHubWestend::sovereign_account_id_of(penpal_location);
 
-	AssetHubWestend::fund_accounts(vec![
-		(AssetHubWestendSender::get(), 5_000_000), // An account to swap dot for something else.
-		(sov_penpal_on_asset_hub_westend.clone(), 1000_000_000_000_000_000),
-	]);
+	// fn fund_para_sovereign(amount: Balance, sovereign_account_id: AccountId32) {
+		AssetHubWestend::execute_with(|| {
+			assert_ok!(
+				<AssetHubWestend as AssetHubWestendPallet>::Balances::force_set_balance(
+					<AssetHubWestend as Chain>::RuntimeOrigin::root(),
+					// MultiAddress::Id(sovereign_account_id),
+					AssetHubWestendSender::get().into(),
+					5_000_000,
+				)
+			);
+			assert_ok!(
+				<AssetHubWestend as AssetHubWestendPallet>::Balances::force_set_balance(
+					<AssetHubWestend as Chain>::RuntimeOrigin::root(),
+					// MultiAddress::Id(sovereign_account_id),
+					sov_penpal_on_asset_hub_westend.clone().into(),
+					1000_000_000_000_000_000,
+				)
+			);
+		});
+	// }h
+
+	// AssetHubWestend::fund_accounts(vec![
+	// 	(AssetHubWestendSender::get(), 5_000_000), // An account to swap dot for something else.
+	// 	(sov_penpal_on_asset_hub_westend.clone(), 1000_000_000_000_000_000),
+	// ]);
 
 	let sov_penpal_on_asset_hub_westend_as_location: MultiLocation = MultiLocation {
 		parents: 0,
-		interior: X1(AccountId32 {
+		interior: X1(AccountId32Junction {
 			network: None,
 			id: sov_penpal_on_asset_hub_westend.clone().into(),
 		}),
