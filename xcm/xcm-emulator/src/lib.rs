@@ -809,7 +809,7 @@ macro_rules! decl_test_networks {
 
 			impl $name {
 				pub fn reset() {
-					use $crate::{TestExt, VecDeque};
+					use $crate::{TestExt, VecDeque, Network};
 
 					$crate::INITIALIZED.with(|b| b.borrow_mut().remove(stringify!($name)));
 					$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().remove(stringify!($name)));
@@ -818,6 +818,7 @@ macro_rules! decl_test_networks {
 					$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().remove(stringify!($name)));
 					$crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().remove(stringify!($name)));
 					$crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().remove(stringify!($name)));
+					$crate::PARA_IDS.with(|b| b.borrow_mut().insert(stringify!($name).to_string(), Self::_para_ids()));
 
 					<$relay_chain>::reset_ext();
 					$( <$parachain>::reset_ext(); )*
