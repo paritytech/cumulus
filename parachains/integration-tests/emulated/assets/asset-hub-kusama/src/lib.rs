@@ -105,7 +105,7 @@ pub mod events {
 		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
 		// Dispatchable is completely executed and XCM sent
-		pub fn xcm_pallet_attempted_complete(expected_weight: Weight) {
+		pub fn xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
 			assert_expected_events!(
 				Kusama,
 				vec![
@@ -114,8 +114,7 @@ pub mod events {
 					) => {
 						weight: weight_within_threshold(
 							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							// Weight::from_parts(763_770_000, 0),
-							expected_weight,
+							expected_weight.unwrap_or(*weight),
 							*weight
 						),
 					},
@@ -124,7 +123,7 @@ pub mod events {
 		}
 
 		// Dispatchable is incompletely executed and XCM sent
-		pub fn xcm_pallet_attempted_incomplete(expected_weight: Weight, expected_error: Error) {
+		pub fn xcm_pallet_attempted_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
 			assert_expected_events!(
 				Kusama,
 				vec![
@@ -134,11 +133,10 @@ pub mod events {
 					) => {
 						weight: weight_within_threshold(
 							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							// Weight::from_parts(763_770_000, 0),
-							expected_weight,
+							expected_weight.unwrap_or(*weight),
 							*weight
 						),
-						error: *error == expected_error,
+						error: *error == expected_error.unwrap_or(*error),
 					},
 				]
 			);
@@ -156,9 +154,9 @@ pub mod events {
 
 		// XCM from System Parachain is succesfully received and proccessed
 		pub fn ump_queue_processed(
-			expected_id: ParaId,
-			expected_weight: Weight,
-			expected_success: bool
+			expected_success: bool,
+			expected_id: Option<ParaId>,
+			expected_weight: Option<Weight>
 		) {
 			assert_expected_events!(
 				Kusama,
@@ -170,10 +168,10 @@ pub mod events {
 						success,
 						..
 					}) => {
-						id: *id == expected_id,
+						id: *id == expected_id.unwrap_or(*id),
 						weight_used: weight_within_threshold(
 							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight,
+							expected_weight.unwrap_or(*weight_used),
 							*weight_used
 						),
 						success: *success == expected_success,
@@ -189,7 +187,7 @@ pub mod events {
 		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
 		// Dispatchable is completely executed and XCM sent
-		pub fn xcm_pallet_attempted_complete(expected_weight: Weight) {
+		pub fn xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
 			assert_expected_events!(
 				AssetHubKusama,
 				vec![
@@ -198,8 +196,7 @@ pub mod events {
 					) => {
 						weight: weight_within_threshold(
 							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							// Weight::from_parts(763_770_000, 0),
-							expected_weight,
+							expected_weight.unwrap_or(*weight),
 							*weight
 						),
 					},
@@ -208,7 +205,7 @@ pub mod events {
 		}
 
 		// Dispatchable is incompletely executed and XCM sent
-		pub fn xcm_pallet_attempted_incomplete(expected_weight: Weight, expected_error: Error) {
+		pub fn xcm_pallet_attempted_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
 			assert_expected_events!(
 				AssetHubKusama,
 				vec![
@@ -218,18 +215,17 @@ pub mod events {
 					) => {
 						weight: weight_within_threshold(
 							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							// Weight::from_parts(763_770_000, 0),
-							expected_weight,
+							expected_weight.unwrap_or(*weight),
 							*weight
 						),
-						error: *error == expected_error,
+						error: *error == expected_error.unwrap_or(*error),
 					},
 				]
 			);
 		}
 
 		// Dispatchable throws and error when trying to be sent
-		pub fn xcm_pallet_attempted_error(expected_error: Error) {
+		pub fn xcm_pallet_attempted_error(expected_error: Option<Error>) {
 			assert_expected_events!(
 				AssetHubKusama,
 				vec![
@@ -237,7 +233,7 @@ pub mod events {
 					RuntimeEvent::PolkadotXcm(
 						pallet_xcm::Event::Attempted { outcome: Outcome::Error(error) }
 					) => {
-						error: *error == expected_error,
+						error: *error == expected_error.unwrap_or(*error),
 					},
 				]
 			);
@@ -266,7 +262,7 @@ pub mod events {
 		}
 
 		// XCM from Relay Chain is completely executed
-		pub fn dmp_queue_complete(expected_weight: Weight) {
+		pub fn dmp_queue_complete(expected_weight: Option<Weight>) {
 			assert_expected_events!(
 				AssetHubKusama,
 				vec![
@@ -275,7 +271,7 @@ pub mod events {
 					}) => {
 						weight: weight_within_threshold(
 							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight,
+							expected_weight.unwrap_or(*weight),
 							*weight
 						),
 					},
@@ -284,7 +280,7 @@ pub mod events {
 		}
 
 		// XCM from Relay Chain is incompletely executed
-		pub fn dmp_queue_incomplete(expected_weight: Weight, expected_error: Error) {
+		pub fn dmp_queue_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
 			assert_expected_events!(
 				AssetHubKusama,
 				vec![
@@ -293,17 +289,17 @@ pub mod events {
 					}) => {
 						weight: weight_within_threshold(
 							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight,
+							expected_weight.unwrap_or(*weight),
 							*weight
 						),
-						error: *error == expected_error,
+						error: *error == expected_error.unwrap_or(*error),
 					},
 				]
 			);
 		}
 
 		// XCM from another Parachain is completely executed
-		pub fn xcmp_queue_success(expected_weight: Weight) {
+		pub fn xcmp_queue_success(expected_weight: Option<Weight>) {
 			assert_expected_events!(
 				AssetHubKusama,
 				vec![
@@ -312,7 +308,7 @@ pub mod events {
 					) => {
 						weight: weight_within_threshold(
 							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight,
+							expected_weight.unwrap_or(*weight),
 							*weight
 						),
 					},
@@ -416,39 +412,18 @@ pub fn force_create_and_mint_asset(
 		);
 
 		events::relay_chain::xcm_pallet_sent();
-
-		// type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
-
-		// assert_expected_events!(
-		// 	Kusama,
-		// 	vec![
-		// 		RuntimeEvent::XcmPallet(
-		// 			pallet_xcm::Event::Sent { .. }
-		// 		) => {},
-		// 	]
-		// );
 	});
 
 	AssetHubKusama::execute_with(|| {
 		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
 		events::parachain::dmp_queue_complete(
-			Weight::from_parts(1_019_445_000, 200_000)
+			Some(Weight::from_parts(1_019_445_000, 200_000))
 		);
 
 		assert_expected_events!(
 			AssetHubKusama,
 			vec![
-				// // XCM message is succesfully executed in destination
-				// RuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
-				// 	outcome: Outcome::Complete(weight), ..
-				// }) => {
-				// 	weight: weight_within_threshold(
-				// 		(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-				// 		Weight::from_parts(1_019_445_000, 200_000),
-				// 		*weight
-				// 	),
-				// },
 				// Asset has been created
 				RuntimeEvent::Assets(pallet_assets::Event::ForceCreated { asset_id, owner }) => {
 					asset_id: *asset_id == id,

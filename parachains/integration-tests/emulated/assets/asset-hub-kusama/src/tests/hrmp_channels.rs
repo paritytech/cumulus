@@ -132,9 +132,10 @@ fn open_hrmp_channel_between_paras_works() {
 		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
 		events::relay_chain::ump_queue_processed(
-			para_a_id,
-			Weight::from_parts(1_312_558_000, 200000),
-			true
+			true,
+			Some(para_a_id),
+			Some(Weight::from_parts(1_312_558_000, 200000)),
+
 		);
 
 		assert_expected_events!(
@@ -192,9 +193,9 @@ fn open_hrmp_channel_between_paras_works() {
 		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
 		events::relay_chain::ump_queue_processed(
-			para_b_id,
-			Weight::from_parts(1_312_558_000, 200000),
-			true
+			true,
+			Some(para_b_id),
+			Some(Weight::from_parts(1_312_558_000, 200000)),
 		);
 
 		assert_expected_events!(

@@ -49,7 +49,7 @@ fn send_transact_sudo_from_relay_to_system_para_works() {
 		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
 		events::parachain::dmp_queue_complete(
-			Weight::from_parts(1_019_445_000, 200_000)
+			Some(Weight::from_parts(1_019_445_000, 200_000))
 		);
 
 		assert_expected_events!(
@@ -185,7 +185,7 @@ fn send_xcm_from_para_to_system_para_paying_fee_with_assets_works() {
 		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
 		events::parachain::xcmp_queue_success(
-			Weight::from_parts(2_176_414_000, 203_593)
+			Some(Weight::from_parts(2_176_414_000, 203_593))
 		);
 
 		assert_expected_events!(
