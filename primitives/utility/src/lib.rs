@@ -146,8 +146,9 @@ impl<
 		&mut self,
 		weight: Weight,
 		payment: xcm_executor::Assets,
+		context: &XcmContext,
 	) -> Result<xcm_executor::Assets, XcmError> {
-		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::buy_weight weight: {:?}, payment: {:?}", weight, payment);
+		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::buy_weight weight: {:?}, payment: {:?}, context: {:?}", weight, payment, context);
 
 		// Make sure we dont enter twice
 		if self.0.is_some() {
@@ -196,8 +197,8 @@ impl<
 		Ok(unused)
 	}
 
-	fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
-		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::refund_weight weight: {:?}", weight);
+	fn refund_weight(&mut self, weight: Weight, context: &XcmContext) -> Option<MultiAsset> {
+		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::refund_weight weight: {:?}, context: {:?}", weight, context);
 		if let Some(AssetTraderRefunder {
 			mut weight_outstanding,
 			outstanding_concrete_asset: MultiAsset { id, fun },
