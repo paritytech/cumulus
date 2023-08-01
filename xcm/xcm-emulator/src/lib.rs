@@ -1259,7 +1259,7 @@ where
 	) -> Result<bool, ProcessMessageError> {
 		MessageQueuePallet::<T::Runtime>::enqueue_message(
 			msg.try_into().expect("Message too long"),
-			AggregateMessageOrigin::Ump(UmpQueueId::Para(para))
+			AggregateMessageOrigin::Ump(UmpQueueId::Para(para)),
 		);
 		MessageQueuePallet::<T::Runtime>::service_queues(Weight::MAX);
 
