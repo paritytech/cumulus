@@ -368,7 +368,6 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 name = "asset-hub-kusama-integration-tests"
 version = "1.0.0"
 dependencies = [
- "asset-hub-kusama-runtime",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
@@ -381,7 +380,6 @@ dependencies = [
  "pallet-xcm",
  "parachains-common",
  "parity-scale-codec",
- "penpal-runtime",
  "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-runtime",
@@ -468,7 +466,6 @@ dependencies = [
 name = "asset-hub-polkadot-integration-tests"
 version = "1.0.0"
 dependencies = [
- "asset-hub-polkadot-runtime",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
@@ -481,7 +478,6 @@ dependencies = [
  "pallet-xcm",
  "parachains-common",
  "parity-scale-codec",
- "penpal-runtime",
  "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-runtime",
@@ -581,7 +577,6 @@ dependencies = [
  "pallet-xcm",
  "parachains-common",
  "parity-scale-codec",
- "penpal-runtime",
  "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-runtime",
@@ -1373,7 +1368,6 @@ name = "bridge-hub-rococo-integration-tests"
 version = "1.0.0"
 dependencies = [
  "bp-messages",
- "bridge-hub-rococo-runtime",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
  "frame-support",
