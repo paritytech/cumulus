@@ -16,39 +16,41 @@
 
 pub use codec::Encode;
 pub use frame_support::{
-	assert_err, assert_ok, instances::Instance1, pallet_prelude::Weight,
+	assert_err, assert_ok,
+	instances::Instance1,
+	pallet_prelude::Weight,
+	sp_runtime::{AccountId32, DispatchError, DispatchResult, MultiAddress},
 	traits::{fungibles::Inspect, OriginTrait},
-	sp_runtime::{AccountId32, DispatchError, DispatchResult, MultiAddress}
+};
+pub use integration_tests_common::{
+	constants::{
+		accounts::{ALICE, BOB},
+		asset_hub_polkadot::ED as ASSET_HUB_POLKADOT_ED,
+		polkadot::ED as POLKADOT_ED,
+		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
+	},
+	lazy_static::lazy_static,
+	xcm_paid_execution, xcm_unpaid_execution, AssetHubPolkadot, AssetHubPolkadotPallet,
+	AssetHubPolkadotReceiver, AssetHubPolkadotSender, BridgeHubPolkadot, BridgeHubPolkadotPallet,
+	BridgeHubPolkadotReceiver, BridgeHubPolkadotSender, Collectives, CollectivesPallet,
+	CollectivesReceiver, CollectivesSender, PenpalPolkadotA, PenpalPolkadotAPallet,
+	PenpalPolkadotAReceiver, PenpalPolkadotASender, PenpalPolkadotB, PenpalPolkadotBPallet,
+	PenpalPolkadotBReceiver, PenpalPolkadotBSender, Polkadot, PolkadotMockNet, PolkadotPallet,
+	PolkadotReceiver, PolkadotSender,
 };
 pub use parachains_common::{AccountId, Balance};
 pub use polkadot_core_primitives::InboundDownwardMessage;
+pub use polkadot_parachain::primitives::{HrmpChannelId, Id};
+pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
 pub use xcm::{
 	prelude::*,
 	v3::{Error, NetworkId::Polkadot as PolkadotId},
 	DoubleEncoded,
 };
-pub use polkadot_parachain::primitives::{HrmpChannelId, Id};
-pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
 pub use xcm_emulator::{
-	assert_expected_events, bx, cumulus_pallet_dmp_queue, helpers::weight_within_threshold, Chain,
-	Parachain as Para, RelayChain as Relay, TestExt, TestExternalities,
-	Test, TestContext, AccountId32Junction, TestArgs, ParaId
-};
-pub use integration_tests_common::{
-	constants::{
-		accounts::{ALICE, BOB},
-		polkadot::ED as POLKADOT_ED,
-		asset_hub_polkadot::ED as ASSET_HUB_POLKADOT_ED,
-		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
-	},
-	lazy_static::lazy_static,
-	xcm_paid_execution, xcm_unpaid_execution,
-	AssetHubPolkadot, AssetHubPolkadotPallet, AssetHubPolkadotReceiver, AssetHubPolkadotSender,
-	BridgeHubPolkadot, BridgeHubPolkadotPallet, BridgeHubPolkadotReceiver, BridgeHubPolkadotSender,
-	Collectives, CollectivesPallet, CollectivesReceiver, CollectivesSender, Polkadot, PolkadotMockNet,
-	PolkadotPallet, PolkadotReceiver, PolkadotSender, PenpalPolkadotA, PenpalPolkadotAReceiver,
-	PenpalPolkadotASender, PenpalPolkadotAPallet, PenpalPolkadotB, PenpalPolkadotBReceiver,
-	PenpalPolkadotBSender, PenpalPolkadotBPallet
+	assert_expected_events, bx, cumulus_pallet_dmp_queue, helpers::weight_within_threshold,
+	AccountId32Junction, Chain, ParaId, Parachain as Para, RelayChain as Relay, Test, TestArgs,
+	TestContext, TestExt, TestExternalities,
 };
 
 pub const ASSET_ID: u32 = 1;
@@ -59,15 +61,14 @@ pub type RelayToSystemParaTest = Test<Polkadot, AssetHubPolkadot>;
 pub type SystemParaToRelayTest = Test<AssetHubPolkadot, Polkadot>;
 pub type SystemParaToParaTest = Test<AssetHubPolkadot, PenpalPolkadotA>;
 
-pub fn relay_test_args(
-	amount: Balance
-) -> TestArgs {
+pub fn relay_test_args(amount: Balance) -> TestArgs {
 	TestArgs {
 		dest: Polkadot::child_location_of(AssetHubPolkadot::para_id()),
 		beneficiary: AccountId32Junction {
 			network: None,
-			id: AssetHubPolkadotReceiver::get().into()
-		}.into(),
+			id: AssetHubPolkadotReceiver::get().into(),
+		}
+		.into(),
 		amount,
 		assets: (Here, amount).into(),
 		asset_id: None,
@@ -85,10 +86,7 @@ pub fn system_para_test_args(
 ) -> TestArgs {
 	TestArgs {
 		dest,
-		beneficiary: AccountId32Junction {
-			network: None,
-			id: beneficiary_id.into()
-		}.into(),
+		beneficiary: AccountId32Junction { network: None, id: beneficiary_id.into() }.into(),
 		amount,
 		assets,
 		asset_id,
@@ -100,10 +98,8 @@ pub fn system_para_test_args(
 pub mod events {
 	pub mod relay_chain {
 		pub use integration_tests_common::events::polkadot::{
-			xcm_pallet_attempted_complete,
-			xcm_pallet_attempted_incomplete,
+			ump_queue_processed, xcm_pallet_attempted_complete, xcm_pallet_attempted_incomplete,
 			xcm_pallet_sent,
-			ump_queue_processed,
 		};
 	}
 
@@ -130,7 +126,10 @@ pub mod events {
 		}
 
 		// Dispatchable is incompletely executed and XCM sent
-		pub fn xcm_pallet_attempted_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
+		pub fn xcm_pallet_attempted_incomplete(
+			expected_weight: Option<Weight>,
+			expected_error: Option<Error>,
+		) {
 			assert_expected_events!(
 				AssetHubPolkadot,
 				vec![
@@ -205,7 +204,10 @@ pub mod events {
 		}
 
 		// XCM from Relay Chain is incompletely executed
-		pub fn dmp_queue_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
+		pub fn dmp_queue_incomplete(
+			expected_weight: Option<Weight>,
+			expected_error: Option<Error>,
+		) {
 			assert_expected_events!(
 				AssetHubPolkadot,
 				vec![
@@ -247,7 +249,7 @@ pub fn force_create_call(
 	asset_id: u32,
 	owner: AccountId,
 	is_sufficient: bool,
-	min_balance: Balance
+	min_balance: Balance,
 ) -> DoubleEncoded<()> {
 	<AssetHubPolkadot as Chain>::RuntimeCall::Assets(pallet_assets::Call::<
 		<AssetHubPolkadot as Chain>::Runtime,
@@ -267,14 +269,9 @@ pub fn force_create_asset_xcm(
 	asset_id: u32,
 	owner: AccountId,
 	is_sufficient: bool,
-	min_balance: Balance
+	min_balance: Balance,
 ) -> VersionedXcm<()> {
-	let call = force_create_call(
-		asset_id,
-		owner,
-		is_sufficient,
-		min_balance
-	);
+	let call = force_create_call(asset_id, owner, is_sufficient, min_balance);
 	xcm_unpaid_execution(call, origin_kind)
 }
 
@@ -282,17 +279,15 @@ pub fn mint_asset(
 	signed_origin: <AssetHubPolkadot as Chain>::RuntimeOrigin,
 	id: u32,
 	beneficiary: AccountId,
-	amount_to_mint: u128
+	amount_to_mint: u128,
 ) {
 	AssetHubPolkadot::execute_with(|| {
-		assert_ok!(
-			<AssetHubPolkadot as AssetHubPolkadotPallet>::Assets::mint(
-				signed_origin,
-				id.into(),
-				beneficiary.clone().into(),
-				amount_to_mint
-			)
-		);
+		assert_ok!(<AssetHubPolkadot as AssetHubPolkadotPallet>::Assets::mint(
+			signed_origin,
+			id.into(),
+			beneficiary.clone().into(),
+			amount_to_mint
+		));
 
 		type RuntimeEvent = <AssetHubPolkadot as Chain>::RuntimeEvent;
 
@@ -324,17 +319,15 @@ pub fn force_create_and_mint_asset(
 		id,
 		asset_owner.clone(),
 		is_sufficient,
-		min_balance
+		min_balance,
 	);
 
 	Polkadot::execute_with(|| {
-		assert_ok!(
-			<Polkadot as PolkadotPallet>::XcmPallet::send(
-				root_origin,
-				bx!(destination.into()),
-				bx!(xcm),
-			)
-		);
+		assert_ok!(<Polkadot as PolkadotPallet>::XcmPallet::send(
+			root_origin,
+			bx!(destination.into()),
+			bx!(xcm),
+		));
 
 		events::relay_chain::xcm_pallet_sent();
 	});
@@ -342,9 +335,7 @@ pub fn force_create_and_mint_asset(
 	AssetHubPolkadot::execute_with(|| {
 		type RuntimeEvent = <AssetHubPolkadot as Chain>::RuntimeEvent;
 
-		events::parachain::dmp_queue_complete(
-			Some(Weight::from_parts(1_019_445_000, 200_000))
-		);
+		events::parachain::dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
 
 		assert_expected_events!(
 			AssetHubPolkadot,
@@ -360,17 +351,10 @@ pub fn force_create_and_mint_asset(
 		assert!(<AssetHubPolkadot as AssetHubPolkadotPallet>::Assets::asset_exists(id.into()));
 	});
 
-	let signed_origin = <AssetHubPolkadot as Chain>::RuntimeOrigin::signed(
-		asset_owner.clone()
-	);
+	let signed_origin = <AssetHubPolkadot as Chain>::RuntimeOrigin::signed(asset_owner.clone());
 
 	// Mint asset for System Parachain's sender
-	mint_asset(
-		signed_origin,
-		id,
-		asset_owner,
-		amount_to_mint,
-	);
+	mint_asset(signed_origin, id, asset_owner, amount_to_mint);
 }
 
 #[cfg(test)]

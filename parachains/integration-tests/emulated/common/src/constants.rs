@@ -2,9 +2,12 @@ use beefy_primitives::crypto::AuthorityId as BeefyId;
 use grandpa::AuthorityId as GrandpaId;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, BlockNumber};
-use polkadot_primitives::{AssignmentId, ValidatorId};
 use polkadot_parachain::primitives::{HeadData, ValidationCode};
-use polkadot_runtime_parachains::{configuration::HostConfiguration, paras::{ParaGenesisArgs, ParaKind}};
+use polkadot_primitives::{AssignmentId, ValidatorId};
+use polkadot_runtime_parachains::{
+	configuration::HostConfiguration,
+	paras::{ParaGenesisArgs, ParaKind},
+};
 use polkadot_service::chain_spec::get_authority_keys_from_seed_no_beefy;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
@@ -217,25 +220,34 @@ pub mod polkadot {
 			paras: polkadot_runtime::ParasConfig {
 				paras: vec![
 					(
-						asset_hub_polkadot::PARA_ID.into(), ParaGenesisArgs {
+						asset_hub_polkadot::PARA_ID.into(),
+						ParaGenesisArgs {
 							genesis_head: HeadData::default(),
-							validation_code: ValidationCode(asset_hub_polkadot_runtime::WASM_BINARY.unwrap().to_vec()),
-							para_kind: ParaKind::Parachain
-						}
+							validation_code: ValidationCode(
+								asset_hub_polkadot_runtime::WASM_BINARY.unwrap().to_vec(),
+							),
+							para_kind: ParaKind::Parachain,
+						},
 					),
 					(
-						penpal::PARA_ID_A.into(), ParaGenesisArgs {
+						penpal::PARA_ID_A.into(),
+						ParaGenesisArgs {
 							genesis_head: HeadData::default(),
-							validation_code: ValidationCode(penpal_runtime::WASM_BINARY.unwrap().to_vec()),
-							para_kind: ParaKind::Parachain
-						}
+							validation_code: ValidationCode(
+								penpal_runtime::WASM_BINARY.unwrap().to_vec(),
+							),
+							para_kind: ParaKind::Parachain,
+						},
 					),
 					(
-						penpal::PARA_ID_B.into(), ParaGenesisArgs {
+						penpal::PARA_ID_B.into(),
+						ParaGenesisArgs {
 							genesis_head: HeadData::default(),
-							validation_code: ValidationCode(penpal_runtime::WASM_BINARY.unwrap().to_vec()),
-							para_kind: ParaKind::Parachain
-						}
+							validation_code: ValidationCode(
+								penpal_runtime::WASM_BINARY.unwrap().to_vec(),
+							),
+							para_kind: ParaKind::Parachain,
+						},
 					),
 				],
 				..Default::default()
@@ -454,25 +466,34 @@ pub mod kusama {
 			paras: kusama_runtime::ParasConfig {
 				paras: vec![
 					(
-						asset_hub_kusama::PARA_ID.into(), ParaGenesisArgs {
+						asset_hub_kusama::PARA_ID.into(),
+						ParaGenesisArgs {
 							genesis_head: HeadData::default(),
-							validation_code: ValidationCode(asset_hub_kusama_runtime::WASM_BINARY.unwrap().to_vec()),
-							para_kind: ParaKind::Parachain
-						}
+							validation_code: ValidationCode(
+								asset_hub_kusama_runtime::WASM_BINARY.unwrap().to_vec(),
+							),
+							para_kind: ParaKind::Parachain,
+						},
 					),
 					(
-						penpal::PARA_ID_A.into(), ParaGenesisArgs {
+						penpal::PARA_ID_A.into(),
+						ParaGenesisArgs {
 							genesis_head: HeadData::default(),
-							validation_code: ValidationCode(penpal_runtime::WASM_BINARY.unwrap().to_vec()),
-							para_kind: ParaKind::Parachain
-						}
+							validation_code: ValidationCode(
+								penpal_runtime::WASM_BINARY.unwrap().to_vec(),
+							),
+							para_kind: ParaKind::Parachain,
+						},
 					),
 					(
-						penpal::PARA_ID_B.into(), ParaGenesisArgs {
+						penpal::PARA_ID_B.into(),
+						ParaGenesisArgs {
 							genesis_head: HeadData::default(),
-							validation_code: ValidationCode(penpal_runtime::WASM_BINARY.unwrap().to_vec()),
-							para_kind: ParaKind::Parachain
-						}
+							validation_code: ValidationCode(
+								penpal_runtime::WASM_BINARY.unwrap().to_vec(),
+							),
+							para_kind: ParaKind::Parachain,
+						},
 					),
 				],
 				..Default::default()

@@ -16,41 +16,43 @@
 
 pub use codec::Encode;
 pub use frame_support::{
-	assert_err, assert_ok, instances::Instance1, pallet_prelude::Weight,
+	assert_err, assert_ok,
+	instances::Instance1,
+	pallet_prelude::Weight,
+	sp_runtime::{AccountId32, DispatchError, DispatchResult, MultiAddress},
 	traits::{fungibles::Inspect, OriginTrait},
-	sp_runtime::{AccountId32, DispatchError, DispatchResult, MultiAddress}
+};
+pub use integration_tests_common::{
+	constants::{
+		accounts::{ALICE, BOB},
+		asset_hub_kusama::ED as ASSET_HUB_KUSAMA_ED,
+		kusama::ED as KUSAMA_ED,
+		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
+	},
+	lazy_static::lazy_static,
+	xcm_paid_execution, xcm_unpaid_execution, AssetHubKusama, AssetHubKusamaPallet,
+	AssetHubKusamaReceiver, AssetHubKusamaSender, BridgeHubKusama, BridgeHubKusamaPallet,
+	BridgeHubKusamaReceiver, BridgeHubKusamaSender, BridgeHubPolkadot, BridgeHubPolkadotPallet,
+	BridgeHubPolkadotReceiver, BridgeHubPolkadotSender, Collectives, CollectivesPallet,
+	CollectivesReceiver, CollectivesSender, Kusama, KusamaMockNet, KusamaPallet, KusamaReceiver,
+	KusamaSender, PenpalKusamaA, PenpalKusamaAPallet, PenpalKusamaAReceiver, PenpalKusamaASender,
+	PenpalKusamaB, PenpalKusamaBPallet, PenpalKusamaBReceiver, PenpalKusamaBSender,
+	PenpalPolkadotA, PenpalPolkadotAReceiver, PenpalPolkadotASender, Polkadot, PolkadotMockNet,
+	PolkadotPallet, PolkadotReceiver, PolkadotSender,
 };
 pub use parachains_common::{AccountId, Balance};
 pub use polkadot_core_primitives::InboundDownwardMessage;
+pub use polkadot_parachain::primitives::{HrmpChannelId, Id};
+pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
 pub use xcm::{
 	prelude::*,
 	v3::{Error, NetworkId::Kusama as KusamaId},
 	DoubleEncoded,
 };
-pub use polkadot_parachain::primitives::{HrmpChannelId, Id};
-pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
 pub use xcm_emulator::{
-	assert_expected_events, bx, cumulus_pallet_dmp_queue, helpers::weight_within_threshold, Chain,
-	Parachain as Para, RelayChain as Relay, TestExt, TestExternalities,
-	Test, TestContext, AccountId32Junction, TestArgs, ParaId
-};
-pub use integration_tests_common::{
-	constants::{
-		accounts::{ALICE, BOB},
-		kusama::ED as KUSAMA_ED,
-		asset_hub_kusama::ED as ASSET_HUB_KUSAMA_ED,
-		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
-	},
-	lazy_static::lazy_static,
-	xcm_paid_execution, xcm_unpaid_execution,
-	AssetHubKusama, AssetHubKusamaPallet, AssetHubKusamaReceiver, AssetHubKusamaSender,
-	BridgeHubKusama, BridgeHubKusamaPallet, BridgeHubKusamaReceiver, BridgeHubKusamaSender,
-	BridgeHubPolkadot, BridgeHubPolkadotPallet, BridgeHubPolkadotReceiver, BridgeHubPolkadotSender,
-	Collectives, CollectivesPallet, CollectivesReceiver, CollectivesSender, Kusama, KusamaMockNet,
-	KusamaPallet, KusamaReceiver, KusamaSender, PenpalKusamaA, PenpalKusamaAReceiver,
-	PenpalKusamaASender, PenpalPolkadotA, PenpalPolkadotAReceiver, PenpalPolkadotASender, Polkadot,
-	PolkadotMockNet, PolkadotPallet, PolkadotReceiver, PolkadotSender, PenpalKusamaAPallet,
-	PenpalKusamaB, PenpalKusamaBReceiver, PenpalKusamaBSender, PenpalKusamaBPallet
+	assert_expected_events, bx, cumulus_pallet_dmp_queue, helpers::weight_within_threshold,
+	AccountId32Junction, Chain, ParaId, Parachain as Para, RelayChain as Relay, Test, TestArgs,
+	TestContext, TestExt, TestExternalities,
 };
 
 pub const ASSET_ID: u32 = 1;
@@ -61,15 +63,14 @@ pub type RelayToSystemParaTest = Test<Kusama, AssetHubKusama>;
 pub type SystemParaToRelayTest = Test<AssetHubKusama, Kusama>;
 pub type SystemParaToParaTest = Test<AssetHubKusama, PenpalKusamaA>;
 
-pub fn relay_test_args(
-	amount: Balance
-) -> TestArgs {
+pub fn relay_test_args(amount: Balance) -> TestArgs {
 	TestArgs {
 		dest: Kusama::child_location_of(AssetHubKusama::para_id()),
 		beneficiary: AccountId32Junction {
 			network: None,
-			id: AssetHubKusamaReceiver::get().into()
-		}.into(),
+			id: AssetHubKusamaReceiver::get().into(),
+		}
+		.into(),
 		amount,
 		assets: (Here, amount).into(),
 		asset_id: None,
@@ -87,10 +88,7 @@ pub fn system_para_test_args(
 ) -> TestArgs {
 	TestArgs {
 		dest,
-		beneficiary: AccountId32Junction {
-			network: None,
-			id: beneficiary_id.into()
-		}.into(),
+		beneficiary: AccountId32Junction { network: None, id: beneficiary_id.into() }.into(),
 		amount,
 		assets,
 		asset_id,
@@ -102,10 +100,8 @@ pub fn system_para_test_args(
 pub mod events {
 	pub mod relay_chain {
 		pub use integration_tests_common::events::kusama::{
-			xcm_pallet_attempted_complete,
-			xcm_pallet_attempted_incomplete,
+			ump_queue_processed, xcm_pallet_attempted_complete, xcm_pallet_attempted_incomplete,
 			xcm_pallet_sent,
-			ump_queue_processed,
 		};
 	}
 
@@ -132,7 +128,10 @@ pub mod events {
 		}
 
 		// Dispatchable is incompletely executed and XCM sent
-		pub fn xcm_pallet_attempted_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
+		pub fn xcm_pallet_attempted_incomplete(
+			expected_weight: Option<Weight>,
+			expected_error: Option<Error>,
+		) {
 			assert_expected_events!(
 				AssetHubKusama,
 				vec![
@@ -207,7 +206,10 @@ pub mod events {
 		}
 
 		// XCM from Relay Chain is incompletely executed
-		pub fn dmp_queue_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
+		pub fn dmp_queue_incomplete(
+			expected_weight: Option<Weight>,
+			expected_error: Option<Error>,
+		) {
 			assert_expected_events!(
 				AssetHubKusama,
 				vec![
@@ -249,7 +251,7 @@ pub fn force_create_call(
 	asset_id: u32,
 	owner: AccountId,
 	is_sufficient: bool,
-	min_balance: Balance
+	min_balance: Balance,
 ) -> DoubleEncoded<()> {
 	<AssetHubKusama as Chain>::RuntimeCall::Assets(pallet_assets::Call::<
 		<AssetHubKusama as Chain>::Runtime,
@@ -269,14 +271,9 @@ pub fn force_create_asset_xcm(
 	asset_id: u32,
 	owner: AccountId,
 	is_sufficient: bool,
-	min_balance: Balance
+	min_balance: Balance,
 ) -> VersionedXcm<()> {
-	let call = force_create_call(
-		asset_id,
-		owner,
-		is_sufficient,
-		min_balance
-	);
+	let call = force_create_call(asset_id, owner, is_sufficient, min_balance);
 	xcm_unpaid_execution(call, origin_kind)
 }
 
@@ -284,17 +281,15 @@ pub fn mint_asset(
 	signed_origin: <AssetHubKusama as Chain>::RuntimeOrigin,
 	id: u32,
 	beneficiary: AccountId,
-	amount_to_mint: u128
+	amount_to_mint: u128,
 ) {
 	AssetHubKusama::execute_with(|| {
-		assert_ok!(
-			<AssetHubKusama as AssetHubKusamaPallet>::Assets::mint(
-				signed_origin,
-				id.into(),
-				beneficiary.clone().into(),
-				amount_to_mint
-			)
-		);
+		assert_ok!(<AssetHubKusama as AssetHubKusamaPallet>::Assets::mint(
+			signed_origin,
+			id.into(),
+			beneficiary.clone().into(),
+			amount_to_mint
+		));
 
 		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
@@ -326,17 +321,15 @@ pub fn force_create_and_mint_asset(
 		id,
 		asset_owner.clone(),
 		is_sufficient,
-		min_balance
+		min_balance,
 	);
 
 	Kusama::execute_with(|| {
-		assert_ok!(
-			<Kusama as KusamaPallet>::XcmPallet::send(
-				root_origin,
-				bx!(destination.into()),
-				bx!(xcm),
-			)
-		);
+		assert_ok!(<Kusama as KusamaPallet>::XcmPallet::send(
+			root_origin,
+			bx!(destination.into()),
+			bx!(xcm),
+		));
 
 		events::relay_chain::xcm_pallet_sent();
 	});
@@ -344,9 +337,7 @@ pub fn force_create_and_mint_asset(
 	AssetHubKusama::execute_with(|| {
 		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
-		events::parachain::dmp_queue_complete(
-			Some(Weight::from_parts(1_019_445_000, 200_000))
-		);
+		events::parachain::dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
 
 		assert_expected_events!(
 			AssetHubKusama,
@@ -362,17 +353,10 @@ pub fn force_create_and_mint_asset(
 		assert!(<AssetHubKusama as AssetHubKusamaPallet>::Assets::asset_exists(id.into()));
 	});
 
-	let signed_origin = <AssetHubKusama as Chain>::RuntimeOrigin::signed(
-		asset_owner.clone()
-	);
+	let signed_origin = <AssetHubKusama as Chain>::RuntimeOrigin::signed(asset_owner.clone());
 
 	// Mint asset for System Parachain's sender
-	mint_asset(
-		signed_origin,
-		id,
-		asset_owner,
-		amount_to_mint,
-	);
+	mint_asset(signed_origin, id, asset_owner, amount_to_mint);
 }
 
 #[cfg(test)]

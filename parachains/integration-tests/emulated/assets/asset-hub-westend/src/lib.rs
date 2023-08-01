@@ -16,38 +16,40 @@
 
 pub use codec::Encode;
 pub use frame_support::{
-	assert_err, assert_ok, instances::{Instance1, Instance2}, pallet_prelude::Weight,
-	traits::{fungibles::Inspect, OriginTrait},
+	assert_err, assert_ok,
+	instances::{Instance1, Instance2},
+	pallet_prelude::Weight,
 	sp_runtime::{AccountId32, DispatchError, DispatchResult, ModuleError, MultiAddress},
-	BoundedVec
+	traits::{fungibles::Inspect, OriginTrait},
+	BoundedVec,
+};
+pub use integration_tests_common::{
+	constants::{
+		accounts::{ALICE, BOB},
+		asset_hub_westend::ED as ASSET_HUB_WESTEND_ED,
+		westend::ED as WESTEND_ED,
+		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
+	},
+	lazy_static::lazy_static,
+	xcm_paid_execution, xcm_unpaid_execution, AssetHubWestend, AssetHubWestendPallet,
+	AssetHubWestendReceiver, AssetHubWestendSender, Collectives, CollectivesPallet,
+	CollectivesReceiver, CollectivesSender, PenpalWestendA, PenpalWestendAPallet,
+	PenpalWestendAReceiver, PenpalWestendASender, Westend, WestendMockNet, WestendPallet,
+	WestendReceiver, WestendSender,
 };
 pub use parachains_common::{AccountId, Balance};
 pub use polkadot_core_primitives::InboundDownwardMessage;
+pub use polkadot_parachain::primitives::{HrmpChannelId, Id};
+pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
 pub use xcm::{
 	prelude::*,
 	v3::{Error, NetworkId::Westend as WestendId},
 	DoubleEncoded,
 };
-pub use polkadot_parachain::primitives::{HrmpChannelId, Id};
-pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
 pub use xcm_emulator::{
-	assert_expected_events, bx, cumulus_pallet_dmp_queue, helpers::weight_within_threshold, Chain,
-	Parachain as Para, RelayChain as Relay, TestExt, TestExternalities,
-	Test, TestContext, AccountId32Junction, TestArgs, ParaId
-};
-pub use integration_tests_common::{
-	constants::{
-		accounts::{ALICE, BOB},
-		westend::ED as WESTEND_ED,
-		asset_hub_westend::ED as ASSET_HUB_WESTEND_ED,
-		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
-	},
-	lazy_static::lazy_static,
-	xcm_paid_execution, xcm_unpaid_execution,
-	AssetHubWestend, AssetHubWestendPallet, AssetHubWestendReceiver, AssetHubWestendSender,
-	Collectives, CollectivesPallet, CollectivesReceiver, CollectivesSender, Westend, WestendMockNet,
-	WestendPallet, WestendReceiver, WestendSender, PenpalWestendA, PenpalWestendAReceiver,
-	PenpalWestendASender, PenpalWestendAPallet
+	assert_expected_events, bx, cumulus_pallet_dmp_queue, helpers::weight_within_threshold,
+	AccountId32Junction, Chain, ParaId, Parachain as Para, RelayChain as Relay, Test, TestArgs,
+	TestContext, TestExt, TestExternalities,
 };
 
 pub const ASSET_ID: u32 = 1;
@@ -58,15 +60,14 @@ pub type RelayToSystemParaTest = Test<Westend, AssetHubWestend>;
 pub type SystemParaToRelayTest = Test<AssetHubWestend, Westend>;
 pub type SystemParaToParaTest = Test<AssetHubWestend, PenpalWestendA>;
 
-pub fn relay_test_args(
-	amount: Balance
-) -> TestArgs {
+pub fn relay_test_args(amount: Balance) -> TestArgs {
 	TestArgs {
 		dest: Westend::child_location_of(AssetHubWestend::para_id()),
 		beneficiary: AccountId32Junction {
 			network: None,
-			id: AssetHubWestendReceiver::get().into()
-		}.into(),
+			id: AssetHubWestendReceiver::get().into(),
+		}
+		.into(),
 		amount,
 		assets: (Here, amount).into(),
 		asset_id: None,
@@ -84,10 +85,7 @@ pub fn system_para_test_args(
 ) -> TestArgs {
 	TestArgs {
 		dest,
-		beneficiary: AccountId32Junction {
-			network: None,
-			id: beneficiary_id.into()
-		}.into(),
+		beneficiary: AccountId32Junction { network: None, id: beneficiary_id.into() }.into(),
 		amount,
 		assets,
 		asset_id,
@@ -99,10 +97,8 @@ pub fn system_para_test_args(
 pub mod events {
 	pub mod relay_chain {
 		pub use integration_tests_common::events::westend::{
-			xcm_pallet_attempted_complete,
-			xcm_pallet_attempted_incomplete,
+			ump_queue_processed, xcm_pallet_attempted_complete, xcm_pallet_attempted_incomplete,
 			xcm_pallet_sent,
-			ump_queue_processed,
 		};
 	}
 
@@ -129,7 +125,10 @@ pub mod events {
 		}
 
 		// Dispatchable is incompletely executed and XCM sent
-		pub fn xcm_pallet_attempted_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
+		pub fn xcm_pallet_attempted_incomplete(
+			expected_weight: Option<Weight>,
+			expected_error: Option<Error>,
+		) {
 			assert_expected_events!(
 				AssetHubWestend,
 				vec![
@@ -204,7 +203,10 @@ pub mod events {
 		}
 
 		// XCM from Relay Chain is incompletely executed
-		pub fn dmp_queue_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
+		pub fn dmp_queue_incomplete(
+			expected_weight: Option<Weight>,
+			expected_error: Option<Error>,
+		) {
 			assert_expected_events!(
 				AssetHubWestend,
 				vec![
@@ -246,7 +248,7 @@ pub fn force_create_call(
 	asset_id: u32,
 	owner: AccountId,
 	is_sufficient: bool,
-	min_balance: Balance
+	min_balance: Balance,
 ) -> DoubleEncoded<()> {
 	<AssetHubWestend as Chain>::RuntimeCall::Assets(pallet_assets::Call::<
 		<AssetHubWestend as Chain>::Runtime,
@@ -266,14 +268,9 @@ pub fn force_create_asset_xcm(
 	asset_id: u32,
 	owner: AccountId,
 	is_sufficient: bool,
-	min_balance: Balance
+	min_balance: Balance,
 ) -> VersionedXcm<()> {
-	let call = force_create_call(
-		asset_id,
-		owner,
-		is_sufficient,
-		min_balance
-	);
+	let call = force_create_call(asset_id, owner, is_sufficient, min_balance);
 	xcm_unpaid_execution(call, origin_kind)
 }
 
@@ -281,17 +278,15 @@ pub fn mint_asset(
 	signed_origin: <AssetHubWestend as Chain>::RuntimeOrigin,
 	id: u32,
 	beneficiary: AccountId,
-	amount_to_mint: u128
+	amount_to_mint: u128,
 ) {
 	AssetHubWestend::execute_with(|| {
-		assert_ok!(
-			<AssetHubWestend as AssetHubWestendPallet>::Assets::mint(
-				signed_origin,
-				id.into(),
-				beneficiary.clone().into(),
-				amount_to_mint
-			)
-		);
+		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::Assets::mint(
+			signed_origin,
+			id.into(),
+			beneficiary.clone().into(),
+			amount_to_mint
+		));
 
 		type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
@@ -323,17 +318,15 @@ pub fn force_create_and_mint_asset(
 		id,
 		asset_owner.clone(),
 		is_sufficient,
-		min_balance
+		min_balance,
 	);
 
 	Westend::execute_with(|| {
-		assert_ok!(
-			<Westend as WestendPallet>::XcmPallet::send(
-				root_origin,
-				bx!(destination.into()),
-				bx!(xcm),
-			)
-		);
+		assert_ok!(<Westend as WestendPallet>::XcmPallet::send(
+			root_origin,
+			bx!(destination.into()),
+			bx!(xcm),
+		));
 
 		events::relay_chain::xcm_pallet_sent();
 	});
@@ -341,9 +334,7 @@ pub fn force_create_and_mint_asset(
 	AssetHubWestend::execute_with(|| {
 		type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
-		events::parachain::dmp_queue_complete(
-			Some(Weight::from_parts(1_019_445_000, 200_000))
-		);
+		events::parachain::dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
 
 		assert_expected_events!(
 			AssetHubWestend,
@@ -359,17 +350,10 @@ pub fn force_create_and_mint_asset(
 		assert!(<AssetHubWestend as AssetHubWestendPallet>::Assets::asset_exists(id.into()));
 	});
 
-	let signed_origin = <AssetHubWestend as Chain>::RuntimeOrigin::signed(
-		asset_owner.clone()
-	);
+	let signed_origin = <AssetHubWestend as Chain>::RuntimeOrigin::signed(asset_owner.clone());
 
 	// Mint asset for System Parachain's sender
-	mint_asset(
-		signed_origin,
-		id,
-		asset_owner,
-		amount_to_mint,
-	);
+	mint_asset(signed_origin, id, asset_owner, amount_to_mint);
 }
 
 #[cfg(test)]

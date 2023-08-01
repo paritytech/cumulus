@@ -131,20 +131,16 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	let sov_penpal_on_asset_hub_westend = AssetHubWestend::sovereign_account_id_of(penpal_location);
 
 	AssetHubWestend::execute_with(|| {
-		assert_ok!(
-			<AssetHubWestend as AssetHubWestendPallet>::Balances::force_set_balance(
-				<AssetHubWestend as Chain>::RuntimeOrigin::root(),
-				AssetHubWestendSender::get().into(),
-				5_000_000,
-			)
-		);
-		assert_ok!(
-			<AssetHubWestend as AssetHubWestendPallet>::Balances::force_set_balance(
-				<AssetHubWestend as Chain>::RuntimeOrigin::root(),
-				sov_penpal_on_asset_hub_westend.clone().into(),
-				1000_000_000_000_000_000,
-			)
-		);
+		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::Balances::force_set_balance(
+			<AssetHubWestend as Chain>::RuntimeOrigin::root(),
+			AssetHubWestendSender::get().into(),
+			5_000_000,
+		));
+		assert_ok!(<AssetHubWestend as AssetHubWestendPallet>::Balances::force_set_balance(
+			<AssetHubWestend as Chain>::RuntimeOrigin::root(),
+			sov_penpal_on_asset_hub_westend.clone().into(),
+			1000_000_000_000_000_000,
+		));
 	});
 
 	let sov_penpal_on_asset_hub_westend_as_location: MultiLocation = MultiLocation {

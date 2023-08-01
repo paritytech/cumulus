@@ -53,10 +53,10 @@ fn system_para_sets_relay_xcm_supported_version() {
 	let system_para_destination: VersionedMultiLocation =
 		Westend::child_location_of(AssetHubWestend::para_id()).into();
 	let call = <AssetHubWestend as Chain>::RuntimeCall::PolkadotXcm(pallet_xcm::Call::<
-		<AssetHubWestend as Chain>::Runtime
+		<AssetHubWestend as Chain>::Runtime,
 	>::force_xcm_version {
 		location: bx!(parent_location),
-		version: XCM_V3
+		version: XCM_V3,
 	})
 	.encode()
 	.into();
@@ -79,9 +79,7 @@ fn system_para_sets_relay_xcm_supported_version() {
 	AssetHubWestend::execute_with(|| {
 		type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
-		events::parachain::dmp_queue_complete(
-			Some(Weight::from_parts(1_019_210_000, 200_000))
-		);
+		events::parachain::dmp_queue_complete(Some(Weight::from_parts(1_019_210_000, 200_000)));
 
 		assert_expected_events!(
 			AssetHubWestend,
