@@ -402,7 +402,7 @@ where
 			DARecoveryProfile::FullNode
 		},
 		import_queue: import_queue_service,
-		relay_chain_slot_duration: relay_chain_slot_duration.clone(),
+		relay_chain_slot_duration,
 		recovery_handle,
 		sync_service: sync_service.clone(),
 	})?;
