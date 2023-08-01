@@ -268,7 +268,7 @@ fn run_with_externalities<B: BlockT, R, F: FnOnce() -> R>(
 	backend: &TrieBackend<B>,
 	execute: F,
 ) -> R {
-	let mut overlay = sp_state_machine::OverlayedChanges::default();
+	let mut overlay = sp_state_machine::Changes::default();
 	let mut cache = Default::default();
 	let mut ext = Ext::<B>::new(&mut overlay, &mut cache, backend);
 
@@ -276,16 +276,14 @@ fn run_with_externalities<B: BlockT, R, F: FnOnce() -> R>(
 }
 
 fn host_storage_read(key: &[u8], value_out: &mut [u8], value_offset: u32) -> Option<u32> {
-	match with_externalities(|ext| ext.storage(key)) {
+	with_externalities(|ext| match ext.storage(key, value_offset, None) {
 		Some(value) => {
-			let value_offset = value_offset as usize;
-			let data = &value[value_offset.min(value.len())..];
-			let written = sp_std::cmp::min(data.len(), value_out.len());
-			value_out[..written].copy_from_slice(&data[..written]);
+			let written = sp_std::cmp::min(value.len(), value_out.len());
+			value_out[..written].copy_from_slice(&value[..written]);
 			Some(value.len() as u32)
 		},
 		None => None,
-	}
+	})
 }
 
 fn host_storage_set(key: &[u8], value: &[u8]) {
@@ -293,7 +291,7 @@ fn host_storage_set(key: &[u8], value: &[u8]) {
 }
 
 fn host_storage_get(key: &[u8]) -> Option<bytes::Bytes> {
-	with_externalities(|ext| ext.storage(key).map(|value| value.into()))
+	with_externalities(|ext| ext.storage(key, 0, None).map(|value| value.into_owned().into()))
 }
 
 fn host_storage_exists(key: &[u8]) -> bool {
@@ -334,9 +332,12 @@ fn host_storage_commit_transaction() {
 		.expect("No open transaction that can be committed.");
 }
 
-fn host_default_child_storage_get(storage_key: &[u8], key: &[u8]) -> Option<Vec<u8>> {
+fn host_default_child_storage_get(storage_key: &[u8], key: &[u8]) -> Option<bytes::Bytes> {
 	let child_info = ChildInfo::new_default(storage_key);
-	with_externalities(|ext| ext.child_storage(&child_info, key))
+	with_externalities(|ext| {
+		ext.child_storage(&child_info, key, 0, None)
+			.map(|value| value.into_owned().into())
+	})
 }
 
 fn host_default_child_storage_read(
@@ -346,28 +347,24 @@ fn host_default_child_storage_read(
 	value_offset: u32,
 ) -> Option<u32> {
 	let child_info = ChildInfo::new_default(storage_key);
-	match with_externalities(|ext| ext.child_storage(&child_info, key)) {
+	with_externalities(|ext| match ext.child_storage(&child_info, key, value_offset, None) {
 		Some(value) => {
-			let value_offset = value_offset as usize;
-			let data = &value[value_offset.min(value.len())..];
-			let written = sp_std::cmp::min(data.len(), value_out.len());
-			value_out[..written].copy_from_slice(&data[..written]);
+			let written = sp_std::cmp::min(value.len(), value_out.len());
+			value_out[..written].copy_from_slice(&value[..written]);
 			Some(value.len() as u32)
 		},
 		None => None,
-	}
+	})
 }
 
 fn host_default_child_storage_set(storage_key: &[u8], key: &[u8], value: &[u8]) {
 	let child_info = ChildInfo::new_default(storage_key);
-	with_externalities(|ext| {
-		ext.place_child_storage(&child_info, key.to_vec(), Some(value.to_vec()))
-	})
+	with_externalities(|ext| ext.place_child_storage(&child_info, key, Some(value)));
 }
 
 fn host_default_child_storage_clear(storage_key: &[u8], key: &[u8]) {
 	let child_info = ChildInfo::new_default(storage_key);
-	with_externalities(|ext| ext.place_child_storage(&child_info, key.to_vec(), None))
+	with_externalities(|ext| ext.place_child_storage(&child_info, key, None));
 }
 
 fn host_default_child_storage_storage_kill(
@@ -395,11 +392,13 @@ fn host_default_child_storage_clear_prefix(
 fn host_default_child_storage_root(storage_key: &[u8], version: StateVersion) -> Vec<u8> {
 	let child_info = ChildInfo::new_default(storage_key);
 	with_externalities(|ext| ext.child_storage_root(&child_info, version))
+		.expect("Root always calculated for default storage.")
 }
 
 fn host_default_child_storage_next_key(storage_key: &[u8], key: &[u8]) -> Option<Vec<u8>> {
 	let child_info = ChildInfo::new_default(storage_key);
-	with_externalities(|ext| ext.next_child_storage_key(&child_info, key))
+	with_externalities(|ext| ext.next_child_storage_key(&child_info, key, 1))
+		.and_then(|mut nexts| nexts.get_mut(0).map(|v| sp_std::mem::take(v)))
 }
 
 fn host_offchain_index_set(_key: &[u8], _value: &[u8]) {}
