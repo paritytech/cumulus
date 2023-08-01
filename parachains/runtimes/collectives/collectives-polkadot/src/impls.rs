@@ -36,16 +36,18 @@ pub type BalanceOf<T> =
 	<pallet_balances::Pallet<T> as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 /// Implements `OnUnbalanced::on_unbalanced` to teleport slashed assets to relay chain treasury account.
-pub struct ToParentTreasury<TreasuryAcc, PalletAcc, T>(PhantomData<(TreasuryAcc, PalletAcc, T)>);
+pub struct ToParentTreasury<TreasuryAccount, PalletAccount, T>(
+	PhantomData<(TreasuryAccount, PalletAccount, T)>,
+);
 
-impl<TreasuryAcc, PalletAcc, T> OnUnbalanced<NegativeImbalance<T>>
-	for ToParentTreasury<TreasuryAcc, PalletAcc, T>
+impl<TreasuryAccount, PalletAccount, T> OnUnbalanced<NegativeImbalance<T>>
+	for ToParentTreasury<TreasuryAccount, PalletAccount, T>
 where
 	T: pallet_balances::Config + pallet_xcm::Config + frame_system::Config,
 	<<T as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId: From<AccountIdOf<T>>,
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
-	TreasuryAcc: Get<AccountIdOf<T>>,
-	PalletAcc: Get<AccountIdOf<T>>,
+	TreasuryAccount: Get<AccountIdOf<T>>,
+	PalletAccount: Get<AccountIdOf<T>>,
 	BalanceOf<T>: Into<Fungibility>,
 {
 	fn on_unbalanced(amount: NegativeImbalance<T>) {
@@ -54,10 +56,10 @@ where
 			Err(amount) => amount,
 		};
 		let imbalance = amount.peek();
-		let pallet_acc: AccountIdOf<T> = PalletAcc::get();
-		let treasury_acc: AccountIdOf<T> = TreasuryAcc::get();
+		let pallet_acc: AccountIdOf<T> = PalletAccount::get();
+		let treasury_acc: AccountIdOf<T> = TreasuryAccount::get();
 
-		<pallet_balances::Pallet<T>>::resolve_creating(&pallet_acc.clone(), amount);
+		<pallet_balances::Pallet<T>>::resolve_creating(&pallet_acc, amount);
 
 		let result = <pallet_xcm::Pallet<T>>::teleport_assets(
 			<<T as frame_system::Config>::RuntimeOrigin>::signed(pallet_acc.into()),
@@ -71,10 +73,9 @@ where
 			0,
 		);
 
-		match result {
-			Err(err) => log::warn!("Failed to teleport slashed assets: {:?}", err),
-			_ => (),
-		};
+		if let Err(err) = result {
+			log::warn!("Failed to teleport slashed assets: {:?}", err);
+		}
 	}
 }
 
@@ -142,6 +143,84 @@ impl PrivilegeCmp<OriginCaller> for EqualOrGreatestRootCmp {
 			// Root is greater than anything.
 			(OriginCaller::system(frame_system::RawOrigin::Root), _) => Some(Ordering::Greater),
 			_ => None,
+		}
+	}
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub mod benchmarks {
+	use super::*;
+	use crate::ParachainSystem;
+	use cumulus_primitives_core::{ChannelStatus, GetChannelInfo};
+	use frame_support::traits::{
+		fungible,
+		tokens::{Pay, PaymentStatus},
+	};
+	use pallet_ranked_collective::Rank;
+	use parachains_common::{AccountId, Balance};
+	use sp_runtime::traits::Convert;
+
+	/// Rank to salary conversion helper type.
+	pub struct RankToSalary<Fungible>(PhantomData<Fungible>);
+	impl<Fungible> Convert<Rank, Balance> for RankToSalary<Fungible>
+	where
+		Fungible: fungible::Inspect<AccountId, Balance = Balance>,
+	{
+		fn convert(r: Rank) -> Balance {
+			Balance::from(r).saturating_mul(Fungible::minimum_balance())
+		}
+	}
+
+	/// Trait for setting up any prerequisites for successful execution of benchmarks.
+	pub trait EnsureSuccessful {
+		fn ensure_successful();
+	}
+
+	/// Implementation of the [`EnsureSuccessful`] trait which opens an HRMP channel between
+	/// the Collectives and a parachain with a given ID.
+	pub struct OpenHrmpChannel<I>(PhantomData<I>);
+	impl<I: Get<u32>> EnsureSuccessful for OpenHrmpChannel<I> {
+		fn ensure_successful() {
+			if let ChannelStatus::Closed = ParachainSystem::get_channel_status(I::get().into()) {
+				ParachainSystem::open_outbound_hrmp_channel_for_benchmarks(I::get().into())
+			}
+		}
+	}
+
+	/// Type that wraps a type implementing the [`Pay`] trait to decorate its [`Pay::ensure_successful`]
+	/// function with a provided implementation of the [`EnsureSuccessful`] trait.
+	pub struct PayWithEnsure<O, E>(PhantomData<(O, E)>);
+	impl<O, E> Pay for PayWithEnsure<O, E>
+	where
+		O: Pay,
+		E: EnsureSuccessful,
+	{
+		type AssetKind = O::AssetKind;
+		type Balance = O::Balance;
+		type Beneficiary = O::Beneficiary;
+		type Error = O::Error;
+		type Id = O::Id;
+
+		fn pay(
+			who: &Self::Beneficiary,
+			asset_kind: Self::AssetKind,
+			amount: Self::Balance,
+		) -> Result<Self::Id, Self::Error> {
+			O::pay(who, asset_kind, amount)
+		}
+		fn check_payment(id: Self::Id) -> PaymentStatus {
+			O::check_payment(id)
+		}
+		fn ensure_successful(
+			who: &Self::Beneficiary,
+			asset_kind: Self::AssetKind,
+			amount: Self::Balance,
+		) {
+			E::ensure_successful();
+			O::ensure_successful(who, asset_kind, amount)
+		}
+		fn ensure_concluded(id: Self::Id) {
+			O::ensure_concluded(id)
 		}
 	}
 }

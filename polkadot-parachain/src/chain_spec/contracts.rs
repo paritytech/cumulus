@@ -24,7 +24,7 @@ use sc_service::ChainType;
 use sp_core::{crypto::UncheckedInto, sr25519};
 
 pub type ContractsRococoChainSpec =
-	sc_service::GenericChainSpec<contracts_rococo_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<contracts_rococo_runtime::RuntimeGenesisConfig, Extensions>;
 
 /// No relay chain suffix because the id is the same over all relay chains.
 const CONTRACTS_PARACHAIN_ID: u32 = 1002;
@@ -234,17 +234,21 @@ fn contracts_rococo_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> contracts_rococo_runtime::GenesisConfig {
-	contracts_rococo_runtime::GenesisConfig {
+) -> contracts_rococo_runtime::RuntimeGenesisConfig {
+	contracts_rococo_runtime::RuntimeGenesisConfig {
 		system: contracts_rococo_runtime::SystemConfig {
 			code: contracts_rococo_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
+			..Default::default()
 		},
 		balances: contracts_rococo_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
-		parachain_info: contracts_rococo_runtime::ParachainInfoConfig { parachain_id: id },
+		parachain_info: contracts_rococo_runtime::ParachainInfoConfig {
+			parachain_id: id,
+			..Default::default()
+		},
 		collator_selection: contracts_rococo_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: CONTRACTS_ROCOCO_ED * 16,
@@ -269,6 +273,7 @@ fn contracts_rococo_genesis(
 		parachain_system: Default::default(),
 		polkadot_xcm: contracts_rococo_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
+			..Default::default()
 		},
 		sudo: contracts_rococo_runtime::SudoConfig {
 			key: Some(

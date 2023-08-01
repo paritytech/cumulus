@@ -14,30 +14,33 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::reconnecting_ws_client::ReconnectingWsClient;
-use cumulus_primitives_core::{
-	relay_chain::{
-		CandidateCommitments, CandidateEvent, CandidateHash, CommittedCandidateReceipt, CoreState,
-		DisputeState, GroupRotationInfo, Hash as RelayHash, Header as RelayHeader,
-		InboundHrmpMessage, OccupiedCoreAssumption, OldV1SessionInfo, PvfCheckStatement,
-		ScrapedOnChainVotes, SessionIndex, SessionInfo, ValidationCode, ValidationCodeHash,
-		ValidatorId, ValidatorIndex, ValidatorSignature,
-	},
-	InboundDownwardMessage, ParaId, PersistedValidationData,
-};
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use futures::channel::mpsc::Receiver;
 use jsonrpsee::{core::params::ArrayParams, rpc_params};
 use parity_scale_codec::{Decode, Encode};
-use polkadot_service::{BlockNumber, TaskManager};
+use serde::de::DeserializeOwned;
+pub use url::Url;
+
 use sc_client_api::StorageData;
 use sc_rpc_api::{state::ReadProof, system::Health};
-use serde::de::DeserializeOwned;
+use sc_service::TaskManager;
 use sp_api::RuntimeVersion;
 use sp_consensus_babe::Epoch;
 use sp_core::sp_std::collections::btree_map::BTreeMap;
 use sp_storage::StorageKey;
-pub use url::Url;
+
+use cumulus_primitives_core::{
+	relay_chain::{
+		slashing, BlockNumber, CandidateCommitments, CandidateEvent, CandidateHash,
+		CommittedCandidateReceipt, CoreState, DisputeState, ExecutorParams, GroupRotationInfo,
+		Hash as RelayHash, Header as RelayHeader, InboundHrmpMessage, OccupiedCoreAssumption,
+		PvfCheckStatement, ScrapedOnChainVotes, SessionIndex, SessionInfo, ValidationCode,
+		ValidationCodeHash, ValidatorId, ValidatorIndex, ValidatorSignature,
+	},
+	InboundDownwardMessage, ParaId, PersistedValidationData,
+};
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
+
+use crate::reconnecting_ws_client::ReconnectingWsClient;
 
 const LOG_TARGET: &str = "relay-chain-rpc-client";
 
@@ -133,17 +136,6 @@ impl RelayChainRpcClient {
 	/// Returns information regarding the current epoch.
 	pub async fn babe_api_current_epoch(&self, at: RelayHash) -> Result<Epoch, RelayChainError> {
 		self.call_remote_runtime_function("BabeApi_current_epoch", at, None::<()>).await
-	}
-
-	/// Old method to fetch v1 session info.
-	pub async fn parachain_host_session_info_before_version_2(
-		&self,
-		at: RelayHash,
-		index: SessionIndex,
-	) -> Result<Option<OldV1SessionInfo>, RelayChainError> {
-		// The function in wasm never changes/gets augmented with a version
-		self.call_remote_runtime_function("ParachainHost_session_info", at, Some(index))
-			.await
 	}
 
 	/// Scrape dispute relevant from on-chain, backing votes and resolved disputes.
@@ -272,7 +264,7 @@ impl RelayChainRpcClient {
 	/// Get hash of n-th block.
 	pub async fn chain_get_block_hash(
 		&self,
-		block_number: Option<polkadot_service::BlockNumber>,
+		block_number: Option<BlockNumber>,
 	) -> Result<Option<RelayHash>, RelayChainError> {
 		let params = rpc_params![block_number];
 		self.request("chain_getBlockHash", params).await
@@ -328,13 +320,57 @@ impl RelayChainRpcClient {
 	}
 
 	/// Returns all onchain disputes.
-	/// This is a staging method! Do not use on production runtimes!
-	pub async fn parachain_host_staging_get_disputes(
+	pub async fn parachain_host_disputes(
 		&self,
 		at: RelayHash,
 	) -> Result<Vec<(SessionIndex, CandidateHash, DisputeState<BlockNumber>)>, RelayChainError> {
-		self.call_remote_runtime_function("ParachainHost_staging_get_disputes", at, None::<()>)
+		self.call_remote_runtime_function("ParachainHost_disputes", at, None::<()>)
 			.await
+	}
+
+	/// Returns a list of validators that lost a past session dispute and need to be slashed.
+	///
+	/// This is a staging method! Do not use on production runtimes!
+	pub async fn parachain_host_unapplied_slashes(
+		&self,
+		at: RelayHash,
+	) -> Result<Vec<(SessionIndex, CandidateHash, slashing::PendingSlashes)>, RelayChainError> {
+		self.call_remote_runtime_function("ParachainHost_unapplied_slashes", at, None::<()>)
+			.await
+	}
+
+	/// Returns a merkle proof of a validator session key in a past session.
+	///
+	/// This is a staging method! Do not use on production runtimes!
+	pub async fn parachain_host_key_ownership_proof(
+		&self,
+		at: RelayHash,
+		validator_id: ValidatorId,
+	) -> Result<Option<slashing::OpaqueKeyOwnershipProof>, RelayChainError> {
+		self.call_remote_runtime_function(
+			"ParachainHost_key_ownership_proof",
+			at,
+			Some(validator_id),
+		)
+		.await
+	}
+
+	/// Submits an unsigned extrinsic to slash validators who lost a dispute about
+	/// a candidate of a past session.
+	///
+	/// This is a staging method! Do not use on production runtimes!
+	pub async fn parachain_host_submit_report_dispute_lost(
+		&self,
+		at: RelayHash,
+		dispute_proof: slashing::DisputeProof,
+		key_ownership_proof: slashing::OpaqueKeyOwnershipProof,
+	) -> Result<Option<()>, RelayChainError> {
+		self.call_remote_runtime_function(
+			"ParachainHost_submit_report_dispute_lost",
+			at,
+			Some((dispute_proof, key_ownership_proof)),
+		)
+		.await
 	}
 
 	pub async fn authority_discovery_authorities(
@@ -386,6 +422,20 @@ impl RelayChainRpcClient {
 	) -> Result<Option<SessionInfo>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_session_info", at, Some(index))
 			.await
+	}
+
+	/// Get the executor parameters for the given session, if stored
+	pub async fn parachain_host_session_executor_params(
+		&self,
+		at: RelayHash,
+		session_index: SessionIndex,
+	) -> Result<Option<ExecutorParams>, RelayChainError> {
+		self.call_remote_runtime_function(
+			"ParachainHost_session_executor_params",
+			at,
+			Some(session_index),
+		)
+		.await
 	}
 
 	/// Get header at specified hash

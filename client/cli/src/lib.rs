@@ -27,6 +27,7 @@ use std::{
 
 use codec::Encode;
 use sc_chain_spec::ChainSpec;
+use sc_client_api::ExecutorProvider;
 use sc_service::{
 	config::{PrometheusConfig, TelemetryEndpoints},
 	BasePath, TransactionPoolOptions,
@@ -93,7 +94,7 @@ impl PurgeChainCmd {
 			io::stdin().read_line(&mut input)?;
 			let input = input.trim();
 
-			match input.chars().nth(0) {
+			match input.chars().next() {
 				Some('y') | Some('Y') => {},
 				_ => {
 					println!("Aborted");
@@ -103,7 +104,7 @@ impl PurgeChainCmd {
 		}
 
 		for db_path in &db_paths {
-			match fs::remove_dir_all(&db_path) {
+			match fs::remove_dir_all(db_path) {
 				Ok(_) => {
 					println!("{:?} removed.", &db_path);
 				},
@@ -149,9 +150,14 @@ impl ExportGenesisStateCommand {
 	pub fn run<Block: BlockT>(
 		&self,
 		chain_spec: &dyn ChainSpec,
-		genesis_state_version: StateVersion,
+		client: &impl ExecutorProvider<Block>,
 	) -> sc_cli::Result<()> {
-		let block: Block = generate_genesis_block(chain_spec, genesis_state_version)?;
+		let state_version = sc_chain_spec::resolve_state_version_from_wasm(
+			&chain_spec.build_storage()?,
+			client.executor(),
+		)?;
+
+		let block: Block = generate_genesis_block(chain_spec, state_version)?;
 		let raw_header = block.header().encode();
 		let output_buf = if self.raw {
 			raw_header
@@ -387,48 +393,32 @@ impl sc_cli::CliConfiguration for NormalizedRunCmd {
 		self.base.disable_grandpa()
 	}
 
-	fn rpc_ws_max_connections(&self) -> sc_cli::Result<Option<usize>> {
-		self.base.rpc_ws_max_connections()
+	fn rpc_max_connections(&self) -> sc_cli::Result<u32> {
+		self.base.rpc_max_connections()
 	}
 
 	fn rpc_cors(&self, is_dev: bool) -> sc_cli::Result<Option<Vec<String>>> {
 		self.base.rpc_cors(is_dev)
 	}
 
-	fn rpc_http(&self, default_listen_port: u16) -> sc_cli::Result<Option<SocketAddr>> {
-		self.base.rpc_http(default_listen_port)
-	}
-
-	fn rpc_ipc(&self) -> sc_cli::Result<Option<String>> {
-		self.base.rpc_ipc()
-	}
-
-	fn rpc_ws(&self, default_listen_port: u16) -> sc_cli::Result<Option<SocketAddr>> {
-		self.base.rpc_ws(default_listen_port)
+	fn rpc_addr(&self, default_listen_port: u16) -> sc_cli::Result<Option<SocketAddr>> {
+		self.base.rpc_addr(default_listen_port)
 	}
 
 	fn rpc_methods(&self) -> sc_cli::Result<sc_service::config::RpcMethods> {
 		self.base.rpc_methods()
 	}
 
-	fn rpc_max_payload(&self) -> sc_cli::Result<Option<usize>> {
-		self.base.rpc_max_payload()
-	}
-
-	fn rpc_max_request_size(&self) -> sc_cli::Result<Option<usize>> {
+	fn rpc_max_request_size(&self) -> sc_cli::Result<u32> {
 		Ok(self.base.rpc_max_request_size)
 	}
 
-	fn rpc_max_response_size(&self) -> sc_cli::Result<Option<usize>> {
+	fn rpc_max_response_size(&self) -> sc_cli::Result<u32> {
 		Ok(self.base.rpc_max_response_size)
 	}
 
-	fn rpc_max_subscriptions_per_connection(&self) -> sc_cli::Result<Option<usize>> {
+	fn rpc_max_subscriptions_per_connection(&self) -> sc_cli::Result<u32> {
 		Ok(self.base.rpc_max_subscriptions_per_connection)
-	}
-
-	fn ws_max_out_buffer_capacity(&self) -> sc_cli::Result<Option<usize>> {
-		self.base.ws_max_out_buffer_capacity()
 	}
 
 	fn transaction_pool(&self, is_dev: bool) -> sc_cli::Result<TransactionPoolOptions> {

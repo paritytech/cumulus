@@ -41,7 +41,7 @@ fn call_validate_block_encoded_header(
 			relay_parent_number: 1,
 			relay_parent_storage_root,
 		},
-		&WASM_BINARY.expect("You need to build the WASM binaries to run the tests!"),
+		WASM_BINARY.expect("You need to build the WASM binaries to run the tests!"),
 	)
 	.map(|v| v.head_data.0)
 }
@@ -56,10 +56,7 @@ fn call_validate_block(
 }
 
 fn create_test_client() -> (Client, Header) {
-	let client = TestClientBuilder::new()
-		// NOTE: this allows easier debugging
-		.set_execution_strategy(sc_client_api::ExecutionStrategy::NativeWhenPossible)
-		.build();
+	let client = TestClientBuilder::new().build();
 
 	let genesis_header = client
 		.header(client.chain_info().genesis_hash)
@@ -191,7 +188,7 @@ fn validate_block_invalid_parent_hash() {
 			.unwrap_err();
 	} else {
 		let output = Command::new(env::current_exe().unwrap())
-			.args(&["validate_block_invalid_parent_hash", "--", "--nocapture"])
+			.args(["validate_block_invalid_parent_hash", "--", "--nocapture"])
 			.env("RUN_TEST", "1")
 			.output()
 			.expect("Runs the test");
@@ -213,7 +210,7 @@ fn validate_block_fails_on_invalid_validation_data() {
 		call_validate_block(parent_head, block, Hash::random()).unwrap_err();
 	} else {
 		let output = Command::new(env::current_exe().unwrap())
-			.args(&["validate_block_fails_on_invalid_validation_data", "--", "--nocapture"])
+			.args(["validate_block_fails_on_invalid_validation_data", "--", "--nocapture"])
 			.env("RUN_TEST", "1")
 			.output()
 			.expect("Runs the test");
@@ -242,7 +239,7 @@ fn check_inherent_fails_on_validate_block_as_expected() {
 			.unwrap_err();
 	} else {
 		let output = Command::new(env::current_exe().unwrap())
-			.args(&["check_inherent_fails_on_validate_block_as_expected", "--", "--nocapture"])
+			.args(["check_inherent_fails_on_validate_block_as_expected", "--", "--nocapture"])
 			.env("RUN_TEST", "1")
 			.output()
 			.expect("Runs the test");
@@ -276,7 +273,7 @@ fn check_inherents_are_unsigned_and_before_all_other_extrinsics() {
 		.unwrap_err();
 	} else {
 		let output = Command::new(env::current_exe().unwrap())
-			.args(&[
+			.args([
 				"check_inherents_are_unsigned_and_before_all_other_extrinsics",
 				"--",
 				"--nocapture",

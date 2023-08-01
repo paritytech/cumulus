@@ -1,35 +1,29 @@
 use crate::{
 	constants::currency::deposit, Balance, Balances, RandomnessCollectiveFlip, Runtime,
-	RuntimeBlockWeights, RuntimeCall, RuntimeEvent, Timestamp,
+	RuntimeCall, RuntimeEvent, Timestamp,
 };
 use frame_support::{
 	parameter_types,
 	traits::{ConstBool, ConstU32, Nothing},
-	weights::Weight,
 };
 use pallet_contracts::{
-	weights::{SubstrateWeight, WeightInfo},
-	Config, DefaultAddressGenerator, Frame, Schedule,
+	migration::v12, weights::SubstrateWeight, Config, DebugInfo, DefaultAddressGenerator, Frame,
+	Schedule,
 };
+use sp_runtime::Perbill;
+
 pub use parachains_common::AVERAGE_ON_INITIALIZE_RATIO;
 
 // Prints debug output of the `contracts` pallet to stdout if the node is
 // started with `-lruntime::contracts=debug`.
-pub const CONTRACTS_DEBUG_OUTPUT: bool = true;
+pub const CONTRACTS_DEBUG_OUTPUT: DebugInfo = DebugInfo::UnsafeDebug;
 
 parameter_types! {
 	pub const DepositPerItem: Balance = deposit(1, 0);
 	pub const DepositPerByte: Balance = deposit(0, 1);
-	// The lazy deletion runs inside on_initialize.
-	pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
-		RuntimeBlockWeights::get().max_block;
-	// The weight needed for decoding the queue should be less or equal than a fifth
-	// of the overall weight dedicated to the lazy deletion.
-	pub DeletionQueueDepth: u32 = ((DeletionWeightLimit::get().ref_time() / (
-			<Runtime as Config>::WeightInfo::on_initialize_per_queue_item(1).ref_time() -
-			<Runtime as Config>::WeightInfo::on_initialize_per_queue_item(0).ref_time()
-		)) / 5) as u32;
+	pub const DefaultDepositLimit: Balance = deposit(1024, 1024 * 1024);
 	pub MySchedule: Schedule<Runtime> = Default::default();
+	pub CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(30);
 }
 
 impl Config for Runtime {
@@ -47,11 +41,10 @@ impl Config for Runtime {
 	type CallFilter = Nothing;
 	type DepositPerItem = DepositPerItem;
 	type DepositPerByte = DepositPerByte;
+	type DefaultDepositLimit = DefaultDepositLimit;
 	type WeightPrice = pallet_transaction_payment::Pallet<Self>;
 	type WeightInfo = SubstrateWeight<Self>;
 	type ChainExtension = ();
-	type DeletionQueueDepth = DeletionQueueDepth;
-	type DeletionWeightLimit = DeletionWeightLimit;
 	type Schedule = MySchedule;
 	type CallStack = [Frame<Self>; 5];
 	type AddressGenerator = DefaultAddressGenerator;
@@ -59,4 +52,7 @@ impl Config for Runtime {
 	type MaxStorageKeyLen = ConstU32<128>;
 	type UnsafeUnstableInterface = ConstBool<true>;
 	type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
+	type MaxDelegateDependencies = ConstU32<32>;
+	type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
+	type Migrations = (v12::Migration<Runtime>,);
 }

@@ -17,27 +17,23 @@ use super::*;
 use crate as collator_selection;
 use frame_support::{
 	ord_parameter_types, parameter_types,
-	traits::{ConstU32, ConstU64, FindAuthor, GenesisBuild, ValidatorRegistration},
+	traits::{ConstBool, ConstU32, ConstU64, FindAuthor, ValidatorRegistration},
 	PalletId,
 };
 use frame_system as system;
 use frame_system::EnsureSignedBy;
 use sp_core::H256;
 use sp_runtime::{
-	testing::{Header, UintAuthorityId},
+	testing::UintAuthorityId,
 	traits::{BlakeTwo256, IdentityLookup, OpaqueKeys},
-	RuntimeAppPublic,
+	BuildStorage, RuntimeAppPublic,
 };
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum Test
 	{
 		System: frame_system,
 		Timestamp: pallet_timestamp,
@@ -61,13 +57,12 @@ impl system::Config for Test {
 	type DbWeight = ();
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
-	type Index = u64;
-	type BlockNumber = u64;
+	type Nonce = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
+	type Block = Block;
 	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
@@ -96,6 +91,10 @@ impl pallet_balances::Config for Test {
 	type MaxLocks = ();
 	type MaxReserves = MaxReserves;
 	type ReserveIdentifier = [u8; 8];
+	type RuntimeHoldReason = RuntimeHoldReason;
+	type FreezeIdentifier = ();
+	type MaxHolds = ConstU32<0>;
+	type MaxFreezes = ConstU32<0>;
 }
 
 pub struct Author4;
@@ -124,6 +123,7 @@ impl pallet_aura::Config for Test {
 	type AuthorityId = sp_consensus_aura::sr25519::AuthorityId;
 	type MaxAuthorities = ConstU32<100_000>;
 	type DisabledValidators = ();
+	type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 sp_runtime::impl_opaque_keys! {
@@ -148,12 +148,12 @@ pub struct TestSessionHandler;
 impl pallet_session::SessionHandler<u64> for TestSessionHandler {
 	const KEY_TYPE_IDS: &'static [sp_runtime::KeyTypeId] = &[UintAuthorityId::ID];
 	fn on_genesis_session<Ks: OpaqueKeys>(keys: &[(u64, Ks)]) {
-		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+		SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
 	}
 	fn on_new_session<Ks: OpaqueKeys>(_: bool, keys: &[(u64, Ks)], _: &[(u64, Ks)]) {
 		SessionChangeBlock::set(System::block_number());
 		dbg!(keys.len());
-		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+		SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
 	}
 	fn on_before_session_ending() {}
 	fn on_disabled(_: u32) {}
@@ -183,19 +183,12 @@ ord_parameter_types! {
 
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
-	pub const MaxCandidates: u32 = 20;
-	pub const MaxInvulnerables: u32 = 20;
-	pub const MinCandidates: u32 = 1;
 }
 
 pub struct IsRegistered;
 impl ValidatorRegistration<u64> for IsRegistered {
 	fn is_registered(id: &u64) -> bool {
-		if *id == 7u64 {
-			false
-		} else {
-			true
-		}
+		*id != 42u64
 	}
 }
 
@@ -204,9 +197,9 @@ impl Config for Test {
 	type Currency = Balances;
 	type UpdateOrigin = EnsureSignedBy<RootAccount, u64>;
 	type PotId = PotId;
-	type MaxCandidates = MaxCandidates;
-	type MinCandidates = MinCandidates;
-	type MaxInvulnerables = MaxInvulnerables;
+	type MaxCandidates = ConstU32<20>;
+	type MinEligibleCollators = ConstU32<1>;
+	type MaxInvulnerables = ConstU32<20>;
 	type KickThreshold = Period;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = IdentityCollator;
@@ -216,8 +209,8 @@ impl Config for Test {
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	sp_tracing::try_init_simple();
-	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	let invulnerables = vec![1, 2];
+	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
+	let invulnerables = vec![2, 1]; // unsorted
 
 	let balances = vec![(1, 100), (2, 100), (3, 100), (4, 100), (5, 100)];
 	let keys = balances

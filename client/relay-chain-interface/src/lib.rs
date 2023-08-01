@@ -17,7 +17,6 @@
 use std::{collections::BTreeMap, pin::Pin, sync::Arc};
 
 use polkadot_overseer::prometheus::PrometheusError;
-use polkadot_service::SubstrateServiceError;
 use sc_client_api::StorageProof;
 
 use futures::Stream;
@@ -27,6 +26,7 @@ use jsonrpsee_core::Error as JsonRpcError;
 use parity_scale_codec::Error as CodecError;
 use sp_api::ApiError;
 
+use cumulus_primitives_core::relay_chain::BlockId;
 pub use cumulus_primitives_core::{
 	relay_chain::{
 		CommittedCandidateReceipt, Hash as PHash, Header as PHeader, InboundHrmpMessage,
@@ -47,7 +47,9 @@ pub enum RelayChainError {
 	WaitTimeout(PHash),
 	#[error("Import listener closed while waiting for relay-chain block `{0}` to be imported.")]
 	ImportListenerClosed(PHash),
-	#[error("Blockchain returned an error while waiting for relay-chain block `{0}` to be imported: {1}")]
+	#[error(
+		"Blockchain returned an error while waiting for relay-chain block `{0}` to be imported: {1}"
+	)]
 	WaitBlockchainError(PHash, sp_blockchain::Error),
 	#[error("Blockchain returned an error: {0}")]
 	BlockchainError(#[from] sp_blockchain::Error),
@@ -61,10 +63,8 @@ pub enum RelayChainError {
 	WorkerCommunicationError(String),
 	#[error("Scale codec deserialization error: {0}")]
 	DeserializationError(CodecError),
-	#[error("Polkadot service error: {0}")]
-	ServiceError(#[from] polkadot_service::Error),
-	#[error("Substrate service error: {0}")]
-	SubServiceError(#[from] SubstrateServiceError),
+	#[error(transparent)]
+	Application(#[from] Box<dyn std::error::Error + Send + Sync + 'static>),
 	#[error("Prometheus error: {0}")]
 	PrometheusError(#[from] PrometheusError),
 	#[error("Unspecified error occured: {0}")]
@@ -89,6 +89,12 @@ impl From<RelayChainError> for sp_blockchain::Error {
 	}
 }
 
+impl<T: std::error::Error + Send + Sync + 'static> From<Box<T>> for RelayChainError {
+	fn from(r: Box<T>) -> Self {
+		RelayChainError::Application(r)
+	}
+}
+
 /// Trait that provides all necessary methods for interaction between collator and relay chain.
 #[async_trait]
 pub trait RelayChainInterface: Send + Sync {
@@ -104,6 +110,12 @@ pub trait RelayChainInterface: Send + Sync {
 
 	/// Get the hash of the current best block.
 	async fn best_block_hash(&self) -> RelayChainResult<PHash>;
+
+	/// Fetch the block header of a given hash or height, if it exists.
+	async fn header(&self, block_id: BlockId) -> RelayChainResult<Option<PHeader>>;
+
+	/// Get the hash of the finalized block.
+	async fn finalized_block_hash(&self) -> RelayChainResult<PHash>;
 
 	/// Returns the whole contents of the downward message queue for the parachain we are collating
 	/// for.
@@ -248,6 +260,10 @@ where
 		(**self).best_block_hash().await
 	}
 
+	async fn finalized_block_hash(&self) -> RelayChainResult<PHash> {
+		(**self).finalized_block_hash().await
+	}
+
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {
 		(**self).is_major_syncing().await
 	}
@@ -280,5 +296,9 @@ where
 		&self,
 	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
 		(**self).new_best_notification_stream().await
+	}
+
+	async fn header(&self, block_id: BlockId) -> RelayChainResult<Option<PHeader>> {
+		(**self).header(block_id).await
 	}
 }

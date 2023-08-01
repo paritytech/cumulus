@@ -19,13 +19,13 @@ use crate::*;
 use async_trait::async_trait;
 use codec::Encode;
 use cumulus_client_pov_recovery::RecoveryKind;
-use cumulus_primitives_core::{InboundDownwardMessage, InboundHrmpMessage};
+use cumulus_primitives_core::{relay_chain::BlockId, InboundDownwardMessage, InboundHrmpMessage};
 use cumulus_relay_chain_interface::{
 	CommittedCandidateReceipt, OccupiedCoreAssumption, OverseerHandle, PHeader, ParaId,
 	RelayChainInterface, RelayChainResult, SessionIndex, StorageValue, ValidatorId,
 };
 use cumulus_test_client::{
-	runtime::{Block, Header},
+	runtime::{Block, Hash, Header},
 	Backend, Client, InitBlockBuilder, TestClientBuilder, TestClientBuilderExt,
 };
 use futures::{channel::mpsc, executor::block_on, select, FutureExt, Stream, StreamExt};
@@ -33,7 +33,6 @@ use futures_timer::Delay;
 use sc_client_api::{blockchain::Backend as _, Backend as _, UsageProvider};
 use sc_consensus::{BlockImport, BlockImportParams, ForkChoiceStrategy};
 use sp_consensus::{BlockOrigin, BlockStatus};
-use sp_runtime::generic::BlockId;
 use std::{
 	collections::{BTreeMap, HashMap},
 	pin::Pin,
@@ -82,6 +81,10 @@ impl RelayChainInterface for Relaychain {
 	}
 
 	async fn best_block_hash(&self) -> RelayChainResult<PHash> {
+		unimplemented!("Not needed for test")
+	}
+
+	async fn finalized_block_hash(&self) -> RelayChainResult<PHash> {
 		unimplemented!("Not needed for test")
 	}
 
@@ -183,7 +186,7 @@ impl RelayChainInterface for Relaychain {
 	}
 
 	async fn wait_for_block(&self, _: PHash) -> RelayChainResult<()> {
-		unimplemented!("Not needed for test")
+		Ok(())
 	}
 
 	async fn new_best_notification_stream(
@@ -204,18 +207,21 @@ impl RelayChainInterface for Relaychain {
 			})
 			.boxed())
 	}
+
+	async fn header(&self, _block_id: BlockId) -> RelayChainResult<Option<PHeader>> {
+		unimplemented!("Not needed for test")
+	}
 }
 
 fn build_block<B: InitBlockBuilder>(
 	builder: &B,
-	at: Option<BlockId<Block>>,
+	at: Option<Hash>,
 	timestamp: Option<u64>,
 ) -> Block {
 	let builder = match at {
 		Some(at) => match timestamp {
-			Some(ts) =>
-				builder.init_block_builder_with_timestamp(&at, None, Default::default(), ts),
-			None => builder.init_block_builder_at(&at, None, Default::default()),
+			Some(ts) => builder.init_block_builder_with_timestamp(at, None, Default::default(), ts),
+			None => builder.init_block_builder_at(at, None, Default::default()),
 		},
 		None => builder.init_block_builder(None, Default::default()),
 	};
@@ -246,7 +252,7 @@ async fn import_block<I: BlockImport<Block>>(
 	block_import_params.body = Some(body);
 	block_import_params.post_digests.push(post_digest);
 
-	importer.import_block(block_import_params, Default::default()).await.unwrap();
+	importer.import_block(block_import_params).await.unwrap();
 }
 
 fn import_block_sync<I: BlockImport<Block>>(
@@ -263,7 +269,7 @@ fn build_and_import_block_ext<B: InitBlockBuilder, I: BlockImport<Block>>(
 	origin: BlockOrigin,
 	import_as_best: bool,
 	importer: &mut I,
-	at: Option<BlockId<Block>>,
+	at: Option<Hash>,
 	timestamp: Option<u64>,
 ) -> Block {
 	let block = build_block(builder, at, timestamp);
@@ -335,7 +341,7 @@ fn follow_new_best_with_dummy_recovery_works() {
 		Some(recovery_chan_tx),
 	);
 
-	let block = build_block(&*client.clone(), None, None);
+	let block = build_block(&*client, None, None);
 	let block_clone = block.clone();
 	let client_clone = client.clone();
 
@@ -421,8 +427,7 @@ fn follow_finalized_does_not_stop_on_unknown_block() {
 	let block = build_and_import_block(client.clone(), false);
 
 	let unknown_block = {
-		let block_builder =
-			client.init_block_builder_at(&BlockId::Hash(block.hash()), None, Default::default());
+		let block_builder = client.init_block_builder_at(block.hash(), None, Default::default());
 		block_builder.build().unwrap().block
 	};
 
@@ -471,8 +476,7 @@ fn follow_new_best_sets_best_after_it_is_imported() {
 	let block = build_and_import_block(client.clone(), false);
 
 	let unknown_block = {
-		let block_builder =
-			client.init_block_builder_at(&BlockId::Hash(block.hash()), None, Default::default());
+		let block_builder = client.init_block_builder_at(block.hash(), None, Default::default());
 		block_builder.build().unwrap().block
 	};
 
@@ -508,7 +512,7 @@ fn follow_new_best_sets_best_after_it_is_imported() {
 		block_import_params.body = Some(body);
 
 		// Now import the unkown block to make it "known"
-		client.import_block(block_import_params, Default::default()).await.unwrap();
+		client.import_block(block_import_params).await.unwrap();
 
 		loop {
 			Delay::new(Duration::from_millis(100)).await;
@@ -547,7 +551,6 @@ fn do_not_set_best_block_to_older_block() {
 	let client = Arc::new(TestClientBuilder::with_backend(backend).build());
 
 	let blocks = (0..NUM_BLOCKS)
-		.into_iter()
 		.map(|_| build_and_import_block(client.clone(), true))
 		.collect::<Vec<_>>();
 
@@ -559,7 +562,6 @@ fn do_not_set_best_block_to_older_block() {
 	let consensus =
 		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}), None);
 
-	let client2 = client.clone();
 	let work = async move {
 		new_best_heads_sender
 			.unbounded_send(blocks[NUM_BLOCKS - 2].header().clone())
@@ -579,7 +581,7 @@ fn do_not_set_best_block_to_older_block() {
 	});
 
 	// Build and import a new best block.
-	build_and_import_block(client2.clone(), true);
+	build_and_import_block(client, true);
 }
 
 #[test]
@@ -604,10 +606,9 @@ fn prune_blocks_on_level_overflow() {
 		None,
 		None,
 	);
-	let id0 = BlockId::Hash(block0.header.hash());
+	let id0 = block0.header.hash();
 
 	let blocks1 = (0..LEVEL_LIMIT)
-		.into_iter()
 		.map(|i| {
 			build_and_import_block_ext(
 				&*client,
@@ -619,10 +620,9 @@ fn prune_blocks_on_level_overflow() {
 			)
 		})
 		.collect::<Vec<_>>();
-	let id10 = BlockId::Hash(blocks1[0].header.hash());
+	let id10 = blocks1[0].header.hash();
 
 	let blocks2 = (0..2)
-		.into_iter()
 		.map(|i| {
 			build_and_import_block_ext(
 				&*client,
@@ -717,10 +717,9 @@ fn restore_limit_monitor() {
 		None,
 		None,
 	);
-	let id00 = BlockId::Hash(block00.header.hash());
+	let id00 = block00.header.hash();
 
 	let blocks1 = (0..LEVEL_LIMIT + 1)
-		.into_iter()
 		.map(|i| {
 			build_and_import_block_ext(
 				&*client,
@@ -732,10 +731,9 @@ fn restore_limit_monitor() {
 			)
 		})
 		.collect::<Vec<_>>();
-	let id10 = BlockId::Hash(blocks1[0].header.hash());
+	let id10 = blocks1[0].header.hash();
 
 	let _ = (0..LEVEL_LIMIT)
-		.into_iter()
 		.map(|i| {
 			build_and_import_block_ext(
 				&*client,
@@ -765,6 +763,12 @@ fn restore_limit_monitor() {
 		LevelLimit::Some(LEVEL_LIMIT),
 	);
 
+	let monitor_sd = para_import.monitor.clone().unwrap();
+
+	let monitor = monitor_sd.shared_data();
+	assert_eq!(monitor.import_counter, 3);
+	std::mem::drop(monitor);
+
 	let block13 = build_and_import_block_ext(
 		&*client,
 		BlockOrigin::Own,
@@ -783,14 +787,13 @@ fn restore_limit_monitor() {
 	let expected = vec![blocks1[1].header.hash(), block13.header.hash()];
 	assert_eq!(leaves, expected);
 
-	let monitor = para_import.monitor.unwrap();
-	let monitor = monitor.shared_data();
-	assert_eq!(monitor.import_counter, 5);
+	let monitor = monitor_sd.shared_data();
+	assert_eq!(monitor.import_counter, 4);
 	assert!(monitor.levels.iter().all(|(number, hashes)| {
 		hashes
 			.iter()
 			.filter(|hash| **hash != block13.header.hash())
 			.all(|hash| *number == *monitor.freshness.get(hash).unwrap())
 	}));
-	assert_eq!(*monitor.freshness.get(&block13.header.hash()).unwrap(), monitor.import_counter - 1);
+	assert_eq!(*monitor.freshness.get(&block13.header.hash()).unwrap(), monitor.import_counter);
 }

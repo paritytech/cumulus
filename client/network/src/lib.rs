@@ -17,7 +17,7 @@
 //! Parachain specific networking
 //!
 //! Provides a custom block announcement implementation for parachains
-//! that use the relay chain provided consensus. See [`BlockAnnounceValidator`]
+//! that use the relay chain provided consensus. See [`RequireSecondedInBlockAnnounce`]
 //! and [`WaitToAnnounce`] for more information about this implementation.
 
 use sp_consensus::block_validation::{
@@ -36,7 +36,6 @@ use polkadot_primitives::{
 
 use codec::{Decode, DecodeAll, Encode};
 use futures::{channel::oneshot, future::FutureExt, Future};
-
 use std::{convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc};
 
 #[cfg(test)]
@@ -90,14 +89,13 @@ impl BlockAnnounceData {
 	///
 	/// This will not check the signature, for this you should use [`BlockAnnounceData::check_signature`].
 	fn validate(&self, encoded_header: Vec<u8>) -> Result<(), Validation> {
-		let candidate_hash = if let CompactStatement::Seconded(h) =
-			self.statement.unchecked_payload()
-		{
-			h
-		} else {
-			tracing::debug!(target: LOG_TARGET, "`CompactStatement` isn't the candidate variant!",);
-			return Err(Validation::Failure { disconnect: true })
-		};
+		let candidate_hash =
+			if let CompactStatement::Seconded(h) = self.statement.unchecked_payload() {
+				h
+			} else {
+				tracing::debug!(target: LOG_TARGET, "`CompactStatement` isn't the candidate variant!",);
+				return Err(Validation::Failure { disconnect: true })
+			};
 
 		if *candidate_hash != self.receipt.hash() {
 			tracing::debug!(
@@ -187,7 +185,16 @@ impl TryFrom<&'_ CollationSecondedSignal> for BlockAnnounceData {
 	}
 }
 
+/// A type alias for the [`RequireSecondedInBlockAnnounce`] validator.
+#[deprecated = "This has been renamed to RequireSecondedInBlockAnnounce"]
+pub type BlockAnnounceValidator<Block, RCInterface> =
+	RequireSecondedInBlockAnnounce<Block, RCInterface>;
+
 /// Parachain specific block announce validator.
+///
+/// This is not required when the collation mechanism itself is sybil-resistant, as it is a spam protection
+/// mechanism used to prevent nodes from dealing with unbounded numbers of blocks. For sybil-resistant
+/// collation mechanisms, this will only slow things down.
 ///
 /// This block announce validator is required if the parachain is running
 /// with the relay chain provided consensus to make sure each node only
@@ -215,23 +222,23 @@ impl TryFrom<&'_ CollationSecondedSignal> for BlockAnnounceData {
 /// it. However, if the announcement is for a block below the tip the announcement is accepted
 /// as it probably comes from a node that is currently syncing the chain.
 #[derive(Clone)]
-pub struct BlockAnnounceValidator<Block, RCInterface> {
+pub struct RequireSecondedInBlockAnnounce<Block, RCInterface> {
 	phantom: PhantomData<Block>,
 	relay_chain_interface: RCInterface,
 	para_id: ParaId,
 }
 
-impl<Block, RCInterface> BlockAnnounceValidator<Block, RCInterface>
+impl<Block, RCInterface> RequireSecondedInBlockAnnounce<Block, RCInterface>
 where
 	RCInterface: Clone,
 {
-	/// Create a new [`BlockAnnounceValidator`].
+	/// Create a new [`RequireSecondedInBlockAnnounce`].
 	pub fn new(relay_chain_interface: RCInterface, para_id: ParaId) -> Self {
 		Self { phantom: Default::default(), relay_chain_interface, para_id }
 	}
 }
 
-impl<Block: BlockT, RCInterface> BlockAnnounceValidator<Block, RCInterface>
+impl<Block: BlockT, RCInterface> RequireSecondedInBlockAnnounce<Block, RCInterface>
 where
 	RCInterface: RelayChainInterface + Clone,
 {
@@ -304,9 +311,9 @@ where
 			Ok(Validation::Success { is_new_best: true })
 		} else if block_number >= known_best_number {
 			tracing::debug!(
-					target: LOG_TARGET,
-					"Validation failed because a justification is needed if the block at the top of the chain."
-				);
+				target: LOG_TARGET,
+				"Validation failed because a justification is needed if the block at the top of the chain."
+			);
 
 			Ok(Validation::Failure { disconnect: false })
 		} else {
@@ -316,7 +323,7 @@ where
 }
 
 impl<Block: BlockT, RCInterface> BlockAnnounceValidatorT<Block>
-	for BlockAnnounceValidator<Block, RCInterface>
+	for RequireSecondedInBlockAnnounce<Block, RCInterface>
 where
 	RCInterface: RelayChainInterface + Clone + 'static,
 {
@@ -335,9 +342,9 @@ where
 			let relay_chain_is_syncing = relay_chain_interface
 				.is_major_syncing()
 				.await
-				.map_err(|e| {
-					tracing::error!(target: LOG_TARGET, "Unable to determine sync status. {}", e)
-				})
+				.map_err(
+					|e| tracing::error!(target: LOG_TARGET, "Unable to determine sync status. {}", e),
+				)
 				.unwrap_or(false);
 
 			if relay_chain_is_syncing {
@@ -452,5 +459,53 @@ async fn wait_to_announce<Block: BlockT>(
 			block = ?block_hash,
 			"Received invalid statement while waiting to announce block.",
 		);
+	}
+}
+
+/// A [`BlockAnnounceValidator`] which accepts all block announcements, as it assumes
+/// sybil resistance is handled elsewhere.
+#[derive(Debug, Clone)]
+pub struct AssumeSybilResistance(bool);
+
+impl AssumeSybilResistance {
+	/// Instantiate this block announcement validator while permissively allowing (but ignoring)
+	/// announcements which come tagged with seconded messages.
+	///
+	/// This is useful for backwards compatibility when upgrading nodes: old nodes will continue
+	/// to broadcast announcements with seconded messages, so these announcements shouldn't be rejected
+	/// and the peers not punished.
+	pub fn allow_seconded_messages() -> Self {
+		AssumeSybilResistance(true)
+	}
+
+	/// Instantiate this block announcement validator while rejecting announcements that come with
+	/// data.
+	pub fn reject_seconded_messages() -> Self {
+		AssumeSybilResistance(false)
+	}
+}
+
+impl<Block: BlockT> BlockAnnounceValidatorT<Block> for AssumeSybilResistance {
+	fn validate(
+		&mut self,
+		_header: &Block::Header,
+		data: &[u8],
+	) -> Pin<Box<dyn Future<Output = Result<Validation, BoxedError>> + Send>> {
+		let allow_seconded_messages = self.0;
+		let data = data.to_vec();
+
+		async move {
+			Ok(if data.is_empty() {
+				Validation::Success { is_new_best: false }
+			} else if !allow_seconded_messages {
+				Validation::Failure { disconnect: false }
+			} else {
+				match BlockAnnounceData::decode_all(&mut data.as_slice()) {
+					Ok(_) => Validation::Success { is_new_best: false },
+					Err(_) => Validation::Failure { disconnect: true },
+				}
+			})
+		}
+		.boxed()
 	}
 }

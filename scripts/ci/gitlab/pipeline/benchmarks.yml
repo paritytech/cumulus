@@ -3,7 +3,7 @@
 # Work only on release-parachains-v* branches
 
 benchmarks-build:
-  stage:                           benchmarks-build
+  stage: benchmarks-build
   extends:
     - .docker-env
     - .collect-artifacts
@@ -14,41 +14,38 @@ benchmarks-build:
     - cp target/production/polkadot-parachain ./artifacts/
 
 benchmarks-assets:
-  stage:                           benchmarks-run
-  timeout:                         1d
+  stage: benchmarks-run
+  timeout: 1d
   extends:
-    - .docker-env
     - .collect-artifacts
     - .benchmarks-refs
   before_script:
     - !reference [.docker-env, before_script]
   script:
-    - ./scripts/benchmarks-ci.sh assets statemine ./artifacts
-    - ./scripts/benchmarks-ci.sh assets statemint ./artifacts
-    - ./scripts/benchmarks-ci.sh assets westmint ./artifacts
+    - ./scripts/benchmarks-ci.sh assets asset-hub-kusama ./artifacts
+    - ./scripts/benchmarks-ci.sh assets asset-hub-polkadot ./artifacts
+    - ./scripts/benchmarks-ci.sh assets asset-hub-westend ./artifacts
     - export CURRENT_TIME=$(date '+%s')
-    - export BRANCHNAME="weights-statemint-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
+    - export BRANCHNAME="weights-asset-hub-polkadot-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
     - !reference [.git-commit-push, script]
-    - ./scripts/ci/create-benchmark-pr.sh "[benchmarks] Update weights for statemine/t" "$BRANCHNAME"
+    - ./scripts/ci/create-benchmark-pr.sh "[benchmarks] Update weights for asset-hub-kusama/-polkadot" "$BRANCHNAME"
     - rm -f ./artifacts/polkadot-parachain
     - rm -f ./artifacts/test-parachain
   after_script:
     - rm -rf .git/config
   tags:
-    - weights-vm
+    - weights
 
 benchmarks-collectives:
-  stage:                           benchmarks-run
-  timeout:                         1d
+  stage: benchmarks-run
+  timeout: 1d
   extends:
-    - .docker-env
     - .collect-artifacts
     - .benchmarks-refs
   before_script:
     - !reference [.docker-env, before_script]
   script:
     - ./scripts/benchmarks-ci.sh collectives collectives-polkadot ./artifacts
-    - git status
     - export CURRENT_TIME=$(date '+%s')
     - export BRANCHNAME="weights-collectives-${CI_COMMIT_BRANCH}-${CURRENT_TIME}"
     - !reference [.git-commit-push, script]
@@ -58,18 +55,18 @@ benchmarks-collectives:
   after_script:
     - rm -rf .git/config
   tags:
-    - weights-vm
+    - weights
 
 benchmarks-bridge-hubs:
-  stage:                           benchmarks-run
-  timeout:                         1d
+  stage: benchmarks-run
+  timeout: 1d
   extends:
-    - .docker-env
     - .collect-artifacts
     - .benchmarks-refs
   before_script:
     - !reference [.docker-env, before_script]
   script:
+    - ./scripts/benchmarks-ci.sh bridge-hubs bridge-hub-polkadot ./artifacts
     - ./scripts/benchmarks-ci.sh bridge-hubs bridge-hub-kusama ./artifacts
     - ./scripts/benchmarks-ci.sh bridge-hubs bridge-hub-rococo ./artifacts
     - export CURRENT_TIME=$(date '+%s')
@@ -81,4 +78,4 @@ benchmarks-bridge-hubs:
   after_script:
     - rm -rf .git/config
   tags:
-    - weights-vm
+    - weights

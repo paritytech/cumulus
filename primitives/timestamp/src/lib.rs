@@ -82,10 +82,7 @@ mod tests {
 		ValidationParams,
 	};
 	use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
-	use sp_runtime::{
-		generic::BlockId,
-		traits::{Block as BlockT, Header as HeaderT},
-	};
+	use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 	use std::{env, process::Command, str::FromStr};
 
 	const SLOT_DURATION: u64 = 6000;
@@ -102,7 +99,7 @@ mod tests {
 				relay_parent_number: 1,
 				relay_parent_storage_root,
 			},
-			&WASM_BINARY.expect("You need to build the WASM binaries to run the tests!"),
+			WASM_BINARY.expect("You need to build the WASM binaries to run the tests!"),
 		)
 		.map(|v| Header::decode(&mut &v.head_data.0[..]).expect("Decodes `Header`."))
 	}
@@ -128,7 +125,7 @@ mod tests {
 
 		let block = client
 			.init_block_builder_with_timestamp(
-				&BlockId::Hash(hash),
+				hash,
 				Some(validation_data),
 				sproof_builder,
 				timestamp,
@@ -178,7 +175,7 @@ mod tests {
 				(slot_timestamp * 10, false),
 			] {
 				let output = Command::new(env::current_exe().unwrap())
-					.args(&["check_timestamp_inherent_works", "--", "--nocapture"])
+					.args(["check_timestamp_inherent_works", "--", "--nocapture"])
 					.env("RUN_TEST", "1")
 					.env("TIMESTAMP", timestamp.to_string())
 					.output()

@@ -17,7 +17,7 @@
 //! Taken from polkadot/runtime/common (at a21cd64) and adapted for parachains.
 
 use frame_support::traits::{
-	fungibles::{self, Balanced, CreditOf},
+	fungibles::{self, Balanced, Credit},
 	Contains, ContainsPair, Currency, Get, Imbalance, OnUnbalanced,
 };
 use pallet_asset_tx_payment::HandleCredit;
@@ -75,7 +75,7 @@ where
 	R: pallet_authorship::Config + pallet_assets::Config<I>,
 	AccountIdOf<R>: From<polkadot_primitives::AccountId> + Into<polkadot_primitives::AccountId>,
 {
-	fn handle_credit(credit: CreditOf<AccountIdOf<R>, pallet_assets::Pallet<R, I>>) {
+	fn handle_credit(credit: Credit<AccountIdOf<R>, pallet_assets::Pallet<R, I>>) {
 		if let Some(author) = pallet_authorship::Pallet::<R>::author() {
 			// In case of error: Will drop the result triggering the `OnDrop` of the imbalance.
 			let _ = pallet_assets::Pallet::<R, I>::resolve(&author, credit);
@@ -91,7 +91,19 @@ where
 	Assets: fungibles::Inspect<AccountId>,
 {
 	fn contains(id: &<Assets as fungibles::Inspect<AccountId>>::AssetId) -> bool {
-		!Assets::total_issuance(*id).is_zero()
+		!Assets::total_issuance(id.clone()).is_zero()
+	}
+}
+
+/// Allow checking in assets that exists.
+pub struct AssetExists<AccountId, Assets>(PhantomData<(AccountId, Assets)>);
+impl<AccountId, Assets> Contains<<Assets as fungibles::Inspect<AccountId>>::AssetId>
+	for AssetExists<AccountId, Assets>
+where
+	Assets: fungibles::Inspect<AccountId>,
+{
+	fn contains(id: &<Assets as fungibles::Inspect<AccountId>>::AssetId) -> bool {
+		Assets::asset_exists(id.clone())
 	}
 }
 
@@ -111,31 +123,26 @@ mod tests {
 	use super::*;
 	use frame_support::{
 		parameter_types,
-		traits::{FindAuthor, ValidatorRegistration},
+		traits::{ConstU32, FindAuthor, ValidatorRegistration},
 		PalletId,
 	};
 	use frame_system::{limits, EnsureRoot};
 	use pallet_collator_selection::IdentityCollator;
 	use polkadot_primitives::AccountId;
-	use sp_core::H256;
+	use sp_core::{ConstU64, H256};
 	use sp_runtime::{
-		testing::Header,
 		traits::{BlakeTwo256, IdentityLookup},
-		Perbill,
+		BuildStorage, Perbill,
 	};
 	use xcm::prelude::*;
 
-	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 	type Block = frame_system::mocking::MockBlock<Test>;
 	const TEST_ACCOUNT: AccountId = AccountId::new([1; 32]);
 
 	frame_support::construct_runtime!(
-		pub enum Test where
-			Block = Block,
-			NodeBlock = Block,
-			UncheckedExtrinsic = UncheckedExtrinsic,
+		pub enum Test
 		{
-			System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+			System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 			Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 			CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>},
 		}
@@ -151,14 +158,13 @@ mod tests {
 	impl frame_system::Config for Test {
 		type BaseCallFilter = frame_support::traits::Everything;
 		type RuntimeOrigin = RuntimeOrigin;
-		type Index = u64;
-		type BlockNumber = u64;
+		type Nonce = u64;
 		type RuntimeCall = RuntimeCall;
 		type Hash = H256;
 		type Hashing = BlakeTwo256;
 		type AccountId = AccountId;
 		type Lookup = IdentityLookup<Self::AccountId>;
-		type Header = Header;
+		type Block = Block;
 		type RuntimeEvent = RuntimeEvent;
 		type BlockHashCount = BlockHashCount;
 		type BlockLength = BlockLength;
@@ -179,12 +185,16 @@ mod tests {
 		type Balance = u64;
 		type RuntimeEvent = RuntimeEvent;
 		type DustRemoval = ();
-		type ExistentialDeposit = ();
+		type ExistentialDeposit = ConstU64<1>;
 		type AccountStore = System;
 		type MaxLocks = ();
 		type WeightInfo = ();
 		type MaxReserves = MaxReserves;
 		type ReserveIdentifier = [u8; 8];
+		type RuntimeHoldReason = RuntimeHoldReason;
+		type FreezeIdentifier = ();
+		type MaxHolds = ConstU32<1>;
+		type MaxFreezes = ConstU32<1>;
 	}
 
 	pub struct OneAuthor;
@@ -206,9 +216,6 @@ mod tests {
 
 	parameter_types! {
 		pub const PotId: PalletId = PalletId(*b"PotStake");
-		pub const MaxCandidates: u32 = 20;
-		pub const MaxInvulnerables: u32 = 20;
-		pub const MinCandidates: u32 = 1;
 	}
 
 	impl pallet_collator_selection::Config for Test {
@@ -216,9 +223,9 @@ mod tests {
 		type Currency = Balances;
 		type UpdateOrigin = EnsureRoot<AccountId>;
 		type PotId = PotId;
-		type MaxCandidates = MaxCandidates;
-		type MinCandidates = MinCandidates;
-		type MaxInvulnerables = MaxInvulnerables;
+		type MaxCandidates = ConstU32<20>;
+		type MinEligibleCollators = ConstU32<1>;
+		type MaxInvulnerables = ConstU32<20>;
 		type ValidatorId = <Self as frame_system::Config>::AccountId;
 		type ValidatorIdOf = IdentityCollator;
 		type ValidatorRegistration = IsRegistered;
@@ -232,7 +239,7 @@ mod tests {
 	}
 
 	pub fn new_test_ext() -> sp_io::TestExternalities {
-		let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+		let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 		// We use default for brevity, but you can configure as desired if needed.
 		pallet_balances::GenesisConfig::<Test>::default()
 			.assimilate_storage(&mut t)
@@ -262,7 +269,6 @@ mod tests {
 		}
 
 		let asset_location = SomeSiblingParachain::get()
-			.clone()
 			.pushed_with_interior(GeneralIndex(42))
 			.expect("multilocation will only have 2 junctions; qed");
 		let asset = MultiAsset { id: Concrete(asset_location), fun: 1_000_000u128.into() };

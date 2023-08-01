@@ -22,7 +22,7 @@
 //!
 //! For more information about AuRa, the Substrate crate should be checked.
 
-use codec::{Decode, Encode};
+use codec::Codec;
 use cumulus_client_consensus_common::{
 	ParachainBlockImportMarker, ParachainCandidate, ParachainConsensus,
 };
@@ -40,15 +40,19 @@ use sp_consensus::{EnableProofRecording, Environment, ProofRecording, Proposer, 
 use sp_consensus_aura::{AuraApi, SlotDuration};
 use sp_core::crypto::Pair;
 use sp_inherents::CreateInherentDataProviders;
-use sp_keystore::SyncCryptoStorePtr;
+use sp_keystore::KeystorePtr;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, Member, NumberFor};
-use std::{convert::TryFrom, hash::Hash, marker::PhantomData, sync::Arc};
+use std::{convert::TryFrom, marker::PhantomData, sync::Arc};
 
 mod import_queue;
 
 pub use import_queue::{build_verifier, import_queue, BuildVerifierParams, ImportQueueParams};
 pub use sc_consensus_aura::{slot_duration, AuraVerifier, BuildAuraWorkerParams, SlotProportion};
 pub use sc_consensus_slots::InherentDataProviderExt;
+
+pub mod collator;
+pub mod collators;
+pub mod equivocation_import_queue;
 
 const LOG_TARGET: &str = "aura::cumulus";
 
@@ -79,7 +83,7 @@ pub struct BuildAuraConsensusParams<PF, BI, CIDP, Client, BS, SO> {
 	pub para_client: Arc<Client>,
 	pub backoff_authoring_blocks: Option<BS>,
 	pub sync_oracle: SO,
-	pub keystore: SyncCryptoStorePtr,
+	pub keystore: KeystorePtr,
 	pub force_authoring: bool,
 	pub slot_duration: SlotDuration,
 	pub telemetry: Option<TelemetryHandle>,
@@ -130,9 +134,9 @@ where
 			Proof = <EnableProofRecording as ProofRecording>::Proof,
 		>,
 		Error: std::error::Error + Send + From<sp_consensus::Error> + 'static,
-		P: Pair + Send + Sync,
-		P::Public: AppPublic + Hash + Member + Encode + Decode,
-		P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
+		P: Pair + 'static,
+		P::Public: AppPublic + Member + Codec,
+		P::Signature: TryFrom<Vec<u8>> + Member + Codec,
 	{
 		let worker = sc_consensus_aura::build_aura_worker::<P, _, _, _, _, _, _, _, _>(
 			BuildAuraWorkerParams {

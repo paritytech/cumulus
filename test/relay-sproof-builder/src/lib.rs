@@ -18,7 +18,7 @@ use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId,
 };
 use polkadot_primitives::UpgradeGoAhead;
-use sp_runtime::traits::HashFor;
+use sp_runtime::traits::HashingFor;
 use sp_state_machine::MemoryDB;
 use sp_std::collections::btree_map::BTreeMap;
 
@@ -38,13 +38,14 @@ pub struct RelayStateSproofBuilder {
 	pub host_config: AbridgedHostConfiguration,
 	pub dmq_mqc_head: Option<relay_chain::Hash>,
 	pub upgrade_go_ahead: Option<UpgradeGoAhead>,
-	pub relay_dispatch_queue_size: Option<(u32, u32)>,
+	pub relay_dispatch_queue_remaining_capacity: Option<(u32, u32)>,
 	pub hrmp_ingress_channel_index: Option<Vec<ParaId>>,
 	pub hrmp_egress_channel_index: Option<Vec<ParaId>>,
 	pub hrmp_channels: BTreeMap<relay_chain::HrmpChannelId, AbridgedHrmpChannel>,
 	pub current_slot: relay_chain::Slot,
 	pub current_epoch: u64,
 	pub randomness: relay_chain::Hash,
+	pub additional_key_values: Vec<(Vec<u8>, Vec<u8>)>,
 }
 
 impl Default for RelayStateSproofBuilder {
@@ -64,13 +65,14 @@ impl Default for RelayStateSproofBuilder {
 			},
 			dmq_mqc_head: None,
 			upgrade_go_ahead: None,
-			relay_dispatch_queue_size: None,
+			relay_dispatch_queue_remaining_capacity: None,
 			hrmp_ingress_channel_index: None,
 			hrmp_egress_channel_index: None,
 			hrmp_channels: BTreeMap::new(),
 			current_slot: 0.into(),
 			current_epoch: 0u64,
 			randomness: relay_chain::Hash::default(),
+			additional_key_values: vec![],
 		}
 	}
 }
@@ -102,7 +104,7 @@ impl RelayStateSproofBuilder {
 	pub fn into_state_root_and_proof(
 		self,
 	) -> (polkadot_primitives::Hash, sp_state_machine::StorageProof) {
-		let (db, root) = MemoryDB::<HashFor<polkadot_primitives::Block>>::default_with_root();
+		let (db, root) = MemoryDB::<HashingFor<polkadot_primitives::Block>>::default_with_root();
 		let state_version = Default::default(); // for test using default.
 		let mut backend = sp_state_machine::TrieBackendBuilder::new(db, root).build();
 
@@ -122,10 +124,15 @@ impl RelayStateSproofBuilder {
 					dmq_mqc_head.encode(),
 				);
 			}
-			if let Some(relay_dispatch_queue_size) = self.relay_dispatch_queue_size {
+			if let Some(relay_dispatch_queue_remaining_capacity) =
+				self.relay_dispatch_queue_remaining_capacity
+			{
 				insert(
-					relay_chain::well_known_keys::relay_dispatch_queue_size(self.para_id),
-					relay_dispatch_queue_size.encode(),
+					relay_chain::well_known_keys::relay_dispatch_queue_remaining_capacity(
+						self.para_id,
+					)
+					.key,
+					relay_dispatch_queue_remaining_capacity.encode(),
 				);
 			}
 			if let Some(upgrade_go_ahead) = self.upgrade_go_ahead {
@@ -163,9 +170,13 @@ impl RelayStateSproofBuilder {
 				self.randomness.encode(),
 			);
 			insert(relay_chain::well_known_keys::CURRENT_SLOT.to_vec(), self.current_slot.encode());
+
+			for (key, value) in self.additional_key_values {
+				insert(key, value);
+			}
 		}
 
-		let root = backend.root().clone();
+		let root = *backend.root();
 		let proof = sp_state_machine::prove_read(backend, relevant_keys).expect("prove read");
 		(root, proof)
 	}

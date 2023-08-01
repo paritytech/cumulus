@@ -22,7 +22,7 @@ use sp_core::sr25519;
 
 /// Specialized `ChainSpec` for the seedling parachain runtime.
 pub type SeedlingChainSpec =
-	sc_service::GenericChainSpec<seedling_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<seedling_runtime::RuntimeGenesisConfig, Extensions>;
 
 pub fn get_seedling_chain_spec() -> SeedlingChainSpec {
 	SeedlingChainSpec::from_genesis(
@@ -47,15 +47,19 @@ pub fn get_seedling_chain_spec() -> SeedlingChainSpec {
 fn seedling_testnet_genesis(
 	root_key: AccountId,
 	parachain_id: ParaId,
-) -> seedling_runtime::GenesisConfig {
-	seedling_runtime::GenesisConfig {
+) -> seedling_runtime::RuntimeGenesisConfig {
+	seedling_runtime::RuntimeGenesisConfig {
 		system: seedling_runtime::SystemConfig {
 			code: seedling_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
+			..Default::default()
 		},
 		sudo: seedling_runtime::SudoConfig { key: Some(root_key) },
-		parachain_info: seedling_runtime::ParachainInfoConfig { parachain_id },
+		parachain_info: seedling_runtime::ParachainInfoConfig {
+			parachain_id,
+			..Default::default()
+		},
 		parachain_system: Default::default(),
 	}
 }

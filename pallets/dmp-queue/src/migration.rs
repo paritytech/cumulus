@@ -16,34 +16,37 @@
 
 //! A module that is responsible for migration of storage.
 
-use crate::{Config, Pallet, Store, DEFAULT_POV_SIZE};
+use crate::{Config, Configuration, Overweight, Pallet, DEFAULT_POV_SIZE};
 use frame_support::{
 	pallet_prelude::*,
-	traits::StorageVersion,
+	traits::{OnRuntimeUpgrade, StorageVersion},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight},
 };
 
 /// The current storage version.
-pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
-/// Migrates the pallet storage to the most recent version, checking and setting the
-/// `StorageVersion`.
-pub fn migrate_to_latest<T: Config>() -> Weight {
-	let mut weight = T::DbWeight::get().reads(1);
+/// Migrates the pallet storage to the most recent version.
+pub struct Migration<T: Config>(PhantomData<T>);
 
-	if StorageVersion::get::<Pallet<T>>() == 0 {
-		weight.saturating_accrue(migrate_to_v1::<T>());
-		StorageVersion::new(1).put::<Pallet<T>>();
-		weight.saturating_accrue(T::DbWeight::get().writes(1));
+impl<T: Config> OnRuntimeUpgrade for Migration<T> {
+	fn on_runtime_upgrade() -> Weight {
+		let mut weight = T::DbWeight::get().reads(1);
+
+		if StorageVersion::get::<Pallet<T>>() == 0 {
+			weight.saturating_accrue(migrate_to_v1::<T>());
+			StorageVersion::new(1).put::<Pallet<T>>();
+			weight.saturating_accrue(T::DbWeight::get().writes(1));
+		}
+
+		if StorageVersion::get::<Pallet<T>>() == 1 {
+			weight.saturating_accrue(migrate_to_v2::<T>());
+			StorageVersion::new(2).put::<Pallet<T>>();
+			weight.saturating_accrue(T::DbWeight::get().writes(1));
+		}
+
+		weight
 	}
-
-	if StorageVersion::get::<Pallet<T>>() == 1 {
-		weight.saturating_accrue(migrate_to_v2::<T>());
-		StorageVersion::new(2).put::<Pallet<T>>();
-		weight.saturating_accrue(T::DbWeight::get().writes(1));
-	}
-
-	weight
 }
 
 mod v0 {
@@ -74,7 +77,7 @@ pub fn migrate_to_v1<T: Config>() -> Weight {
 		}
 	};
 
-	if let Err(_) = <Pallet<T> as Store>::Configuration::translate(|pre| pre.map(translate)) {
+	if Configuration::<T>::translate(|pre| pre.map(translate)).is_err() {
 		log::error!(
 			target: "dmp_queue",
 			"unexpected error when performing translation of the QueueConfig type during storage upgrade to v2"
@@ -89,7 +92,7 @@ pub fn migrate_to_v1<T: Config>() -> Weight {
 /// NOTE: Only use this function if you know what you're doing. Default to using
 /// `migrate_to_latest`.
 pub fn migrate_to_v2<T: Config>() -> Weight {
-	let overweight_messages = <Pallet<T> as Store>::Overweight::initialize_counter() as u64;
+	let overweight_messages = Overweight::<T>::initialize_counter() as u64;
 
 	T::DbWeight::get().reads_writes(overweight_messages, 1)
 }

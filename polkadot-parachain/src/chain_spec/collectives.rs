@@ -23,7 +23,7 @@ use sc_service::ChainType;
 use sp_core::sr25519;
 
 pub type CollectivesPolkadotChainSpec =
-	sc_service::GenericChainSpec<collectives_polkadot_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<collectives_polkadot_runtime::RuntimeGenesisConfig, Extensions>;
 
 const COLLECTIVES_POLKADOT_ED: CollectivesBalance =
 	collectives_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
@@ -132,12 +132,13 @@ fn collectives_polkadot_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> collectives_polkadot_runtime::GenesisConfig {
-	collectives_polkadot_runtime::GenesisConfig {
+) -> collectives_polkadot_runtime::RuntimeGenesisConfig {
+	collectives_polkadot_runtime::RuntimeGenesisConfig {
 		system: collectives_polkadot_runtime::SystemConfig {
 			code: collectives_polkadot_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
+			..Default::default()
 		},
 		balances: collectives_polkadot_runtime::BalancesConfig {
 			balances: endowed_accounts
@@ -146,7 +147,10 @@ fn collectives_polkadot_genesis(
 				.map(|k| (k, COLLECTIVES_POLKADOT_ED * 4096))
 				.collect(),
 		},
-		parachain_info: collectives_polkadot_runtime::ParachainInfoConfig { parachain_id: id },
+		parachain_info: collectives_polkadot_runtime::ParachainInfoConfig {
+			parachain_id: id,
+			..Default::default()
+		},
 		collator_selection: collectives_polkadot_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: COLLECTIVES_POLKADOT_ED * 16,
@@ -171,6 +175,7 @@ fn collectives_polkadot_genesis(
 		parachain_system: Default::default(),
 		polkadot_xcm: collectives_polkadot_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
+			..Default::default()
 		},
 		alliance: Default::default(),
 		alliance_motion: Default::default(),

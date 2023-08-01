@@ -17,7 +17,7 @@
 mod pallet_xcm_benchmarks_fungible;
 mod pallet_xcm_benchmarks_generic;
 
-use crate::Runtime;
+use crate::{xcm_config::MaxAssetsIntoHolding, Runtime};
 use frame_support::weights::Weight;
 use pallet_xcm_benchmarks_fungible::WeightInfo as XcmFungibleWeight;
 use pallet_xcm_benchmarks_generic::WeightInfo as XcmGeneric;
@@ -28,21 +28,31 @@ trait WeighMultiAssets {
 	fn weigh_multi_assets(&self, weight: Weight) -> Weight;
 }
 
-const MAX_ASSETS: u32 = 100;
+const MAX_ASSETS: u64 = 100;
 
 impl WeighMultiAssets for MultiAssetFilter {
 	fn weigh_multi_assets(&self, weight: Weight) -> Weight {
 		match self {
-			Self::Definite(assets) =>
-				weight.saturating_mul(assets.inner().into_iter().count() as u64),
-			Self::Wild(_) => weight.saturating_mul(MAX_ASSETS as u64),
+			Self::Definite(assets) => weight.saturating_mul(assets.inner().iter().count() as u64),
+			Self::Wild(asset) => match asset {
+				All => weight.saturating_mul(MAX_ASSETS),
+				AllOf { fun, .. } => match fun {
+					WildFungibility::Fungible => weight,
+					// Magic number 2 has to do with the fact that we could have up to 2 times
+					// MaxAssetsIntoHolding in the worst-case scenario.
+					WildFungibility::NonFungible =>
+						weight.saturating_mul((MaxAssetsIntoHolding::get() * 2) as u64),
+				},
+				AllCounted(count) => weight.saturating_mul(MAX_ASSETS.min(*count as u64)),
+				AllOfCounted { count, .. } => weight.saturating_mul(MAX_ASSETS.min(*count as u64)),
+			},
 		}
 	}
 }
 
 impl WeighMultiAssets for MultiAssets {
 	fn weigh_multi_assets(&self, weight: Weight) -> Weight {
-		weight.saturating_mul(self.inner().into_iter().count() as u64)
+		weight.saturating_mul(self.inner().iter().count() as u64)
 	}
 }
 
@@ -51,10 +61,16 @@ impl<Call> XcmWeightInfo<Call> for BridgeHubKusamaXcmWeight<Call> {
 	fn withdraw_asset(assets: &MultiAssets) -> Weight {
 		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::withdraw_asset())
 	}
-	// Currently there is no trusted reserve
+	// Currently there is no trusted reserve (`IsReserve = ()`),
+	// but we need this hack for `pallet_xcm::reserve_transfer_assets`
+	// (TODO) fix https://github.com/paritytech/polkadot/pull/7424
+	// (TODO) fix https://github.com/paritytech/polkadot/pull/7546
 	fn reserve_asset_deposited(_assets: &MultiAssets) -> Weight {
+		// TODO: if we change `IsReserve = ...` then use this line...
+		// TODO: or if remote weight estimation is fixed, then remove
 		// TODO: hardcoded - fix https://github.com/paritytech/cumulus/issues/1974
-		Weight::from_ref_time(1_000_000_000 as u64)
+		let hardcoded_weight = Weight::from_parts(1_000_000_000_u64, 0);
+		hardcoded_weight.min(XcmFungibleWeight::<Runtime>::reserve_asset_deposited())
 	}
 	fn receive_teleported_asset(assets: &MultiAssets) -> Weight {
 		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::receive_teleported_asset())
@@ -112,7 +128,7 @@ impl<Call> XcmWeightInfo<Call> for BridgeHubKusamaXcmWeight<Call> {
 
 	fn deposit_asset(assets: &MultiAssetFilter, _dest: &MultiLocation) -> Weight {
 		// Hardcoded till the XCM pallet is fixed
-		let hardcoded_weight = Weight::from_ref_time(1_000_000_000 as u64);
+		let hardcoded_weight = Weight::from_parts(1_000_000_000_u64, 0);
 		let weight = assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_asset());
 		hardcoded_weight.min(weight)
 	}
@@ -131,17 +147,14 @@ impl<Call> XcmWeightInfo<Call> for BridgeHubKusamaXcmWeight<Call> {
 		_reserve: &MultiLocation,
 		_xcm: &Xcm<()>,
 	) -> Weight {
-		assets.weigh_multi_assets(XcmGeneric::<Runtime>::initiate_reserve_withdraw())
+		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::initiate_reserve_withdraw())
 	}
 	fn initiate_teleport(
 		assets: &MultiAssetFilter,
 		_dest: &MultiLocation,
 		_xcm: &Xcm<()>,
 	) -> Weight {
-		// Hardcoded till the XCM pallet is fixed
-		let hardcoded_weight = Weight::from_ref_time(200_000_000 as u64);
-		let weight = assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::initiate_teleport());
-		hardcoded_weight.min(weight)
+		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::initiate_teleport())
 	}
 	fn report_holding(_response_info: &QueryResponseInfo, _assets: &MultiAssetFilter) -> Weight {
 		XcmGeneric::<Runtime>::report_holding()

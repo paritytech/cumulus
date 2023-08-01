@@ -103,14 +103,6 @@ fn main() -> Result<(), sc_cli::Error> {
 					&parachain_id,
 				);
 
-			let state_version =
-				RelayChainCli::native_runtime_version(&config.chain_spec).state_version();
-
-			let block: parachains_common::Block =
-				generate_genesis_block(&*config.chain_spec, state_version)
-					.map_err(|e| format!("{:?}", e))?;
-			let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
-
 			let tokio_handle = config.tokio_handle.clone();
 			let polkadot_config =
 				SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
@@ -118,11 +110,13 @@ fn main() -> Result<(), sc_cli::Error> {
 
 			tracing::info!("Parachain id: {:?}", parachain_id);
 			tracing::info!("Parachain Account: {}", parachain_account);
-			tracing::info!("Parachain genesis state: {}", genesis_state);
 			tracing::info!(
 				"Is collating: {}",
 				if config.role.is_authority() { "yes" } else { "no" }
 			);
+			if cli.fail_pov_recovery {
+				tracing::info!("PoV recovery failure enabled");
+			}
 
 			let collator_key = config.role.is_authority().then(|| CollatorPair::generate().0);
 
@@ -141,6 +135,7 @@ fn main() -> Result<(), sc_cli::Error> {
 					polkadot_config,
 					parachain_id,
 					cli.disable_block_announcements.then(wrap_announce_block),
+					cli.fail_pov_recovery,
 					|_| Ok(jsonrpsee::RpcModule::new(())),
 					consensus,
 					collator_options,

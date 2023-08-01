@@ -16,13 +16,19 @@
 pub mod account {
 	use frame_support::PalletId;
 
-	/// Relay Chain treasury pallet id, used to convert into AccountId
-	pub const RELAY_TREASURY_PALL_ID: PalletId = PalletId(*b"py/trsry");
-	/// Alliance pallet id.
-	/// It is used as a temporarily place to deposit a slashed imbalance before teleport to the treasury.
+	/// Polkadot treasury pallet id, used to convert into AccountId
+	pub const POLKADOT_TREASURY_PALLET_ID: PalletId = PalletId(*b"py/trsry");
+	/// Alliance pallet ID.
+	/// It is used as a temporarily place to deposit a slashed imbalance
+	/// before the teleport to the Treasury.
 	pub const ALLIANCE_PALLET_ID: PalletId = PalletId(*b"py/allia");
-	/// Ambassador Referenda pallet id.
-	/// It is used as a temporarily place to deposit a slashed imbalance before teleport to the treasury.
+	/// Referenda pallet ID.
+	/// It is used as a temporarily place to deposit a slashed imbalance
+	/// before the teleport to the Treasury.
+	pub const REFERENDA_PALLET_ID: PalletId = PalletId(*b"py/refer");
+	/// Ambassador Referenda pallet ID.
+	/// It is used as a temporarily place to deposit a slashed imbalance
+	/// before the teleport to the Treasury.
 	pub const AMBASSADOR_REFERENDA_PALLET_ID: PalletId = PalletId(*b"py/amref");
 }
 
@@ -46,9 +52,12 @@ pub mod currency {
 
 /// Fee-related.
 pub mod fee {
-	use frame_support::weights::{
-		constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-		WeightToFeePolynomial,
+	use frame_support::{
+		pallet_prelude::Weight,
+		weights::{
+			constants::ExtrinsicBaseWeight, FeePolynomial, WeightToFeeCoefficient,
+			WeightToFeeCoefficients, WeightToFeePolynomial,
+		},
 	};
 	use polkadot_core_primitives::Balance;
 	use smallvec::smallvec;
@@ -68,13 +77,46 @@ pub mod fee {
 	///   - Setting it to `0` will essentially disable the weight fee.
 	///   - Setting it to `1` will cause the literal `#[weight = x]` values to be charged.
 	pub struct WeightToFee;
-	impl WeightToFeePolynomial for WeightToFee {
+	impl frame_support::weights::WeightToFee for WeightToFee {
+		type Balance = Balance;
+
+		fn weight_to_fee(weight: &Weight) -> Self::Balance {
+			let time_poly: FeePolynomial<Balance> = RefTimeToFee::polynomial().into();
+			let proof_poly: FeePolynomial<Balance> = ProofSizeToFee::polynomial().into();
+
+			// Take the maximum instead of the sum to charge by the more scarce resource.
+			time_poly.eval(weight.ref_time()).max(proof_poly.eval(weight.proof_size()))
+		}
+	}
+
+	/// Maps the reference time component of `Weight` to a fee.
+	pub struct RefTimeToFee;
+	impl WeightToFeePolynomial for RefTimeToFee {
 		type Balance = Balance;
 		fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
 			// in Polkadot, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 CENT:
 			// in a parachain, we map to 1/10 of that, or 1/100 CENT
 			let p = super::currency::CENTS;
 			let q = 100 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
+
+			smallvec![WeightToFeeCoefficient {
+				degree: 1,
+				negative: false,
+				coeff_frac: Perbill::from_rational(p % q, q),
+				coeff_integer: p / q,
+			}]
+		}
+	}
+
+	/// Maps the proof size component of `Weight` to a fee.
+	pub struct ProofSizeToFee;
+	impl WeightToFeePolynomial for ProofSizeToFee {
+		type Balance = Balance;
+		fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+			// Map 10kb proof to 1 CENT.
+			let p = super::currency::CENTS;
+			let q = 10_000;
+
 			smallvec![WeightToFeeCoefficient {
 				degree: 1,
 				negative: false,

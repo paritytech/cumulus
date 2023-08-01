@@ -30,15 +30,15 @@ async fn purge_chain_works() {
 	let base_dir = tempdir().expect("could not create a temp dir");
 	let base_dir_path = format!("{}/polkadot", base_dir.path().display());
 
-	let args = &["--", "--dev", "-d", &base_dir_path];
+	let args = &["--", "-d", &base_dir_path, "--chain=rococo-local"];
 
 	common::run_node_for_a_while(base_dir.path(), args, SIGINT).await;
 
 	assert!(base_dir.path().join("chains/local_testnet/db/full").exists());
-	assert!(base_dir.path().join("polkadot/chains/dev/db/full").exists());
+	assert!(base_dir.path().join("polkadot/chains/rococo_local_testnet/db/full").exists());
 
 	let status = Command::new(cargo_bin("polkadot-parachain"))
-		.args(&["purge-chain", "-d"])
+		.args(["purge-chain", "-d"])
 		.arg(base_dir.path())
 		.arg("-y")
 		.status()
@@ -48,6 +48,6 @@ async fn purge_chain_works() {
 	// Make sure that the `parachain_local_testnet` chain folder exists, but the `db` is deleted.
 	assert!(base_dir.path().join("chains/local_testnet").exists());
 	assert!(!base_dir.path().join("chains/local_testnet/db/full").exists());
-	// assert!(base_path.path().join("polkadot/chains/dev").exists());
-	// assert!(!base_path.path().join("polkadot/chains/dev/db").exists());
+	assert!(base_dir.path().join("polkadot/chains/rococo_local_testnet").exists());
+	assert!(!base_dir.path().join("polkadot/chains/rococo_local_testnet/db/full").exists());
 }

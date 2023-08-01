@@ -16,6 +16,7 @@
 
 use super::*;
 use async_trait::async_trait;
+use cumulus_primitives_core::relay_chain::BlockId;
 use cumulus_relay_chain_inprocess_interface::{check_block_in_chain, BlockCheckStatus};
 use cumulus_relay_chain_interface::{
 	OverseerHandle, PHeader, ParaId, RelayChainError, RelayChainResult,
@@ -38,7 +39,7 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::BlockOrigin;
 use sp_core::{Pair, H256};
 use sp_keyring::Sr25519Keyring;
-use sp_keystore::{testing::KeyStore, SyncCryptoStore, SyncCryptoStorePtr};
+use sp_keystore::{testing::MemoryKeystore, Keystore, KeystorePtr};
 use sp_runtime::RuntimeAppPublic;
 use sp_state_machine::StorageValue;
 use std::{collections::BTreeMap, time::Duration};
@@ -84,6 +85,9 @@ impl RelayChainInterface for DummyRelayChainInterface {
 	async fn best_block_hash(&self) -> RelayChainResult<PHash> {
 		Ok(self.relay_backend.blockchain().info().best_hash)
 	}
+	async fn finalized_block_hash(&self) -> RelayChainResult<PHash> {
+		Ok(self.relay_backend.blockchain().info().finalized_hash)
+	}
 
 	async fn retrieve_dmq_contents(
 		&self,
@@ -126,15 +130,15 @@ impl RelayChainInterface for DummyRelayChainInterface {
 					para_id: 0u32.into(),
 					relay_parent: PHash::random(),
 					collator: CollatorPair::generate().0.public(),
-					persisted_validation_data_hash: PHash::random().into(),
+					persisted_validation_data_hash: PHash::random(),
 					pov_hash: PHash::random(),
 					erasure_root: PHash::random(),
 					signature: sp_core::sr25519::Signature([0u8; 64]).into(),
 					validation_code_hash: ValidationCodeHash::from(PHash::random()),
 				},
 				commitments: CandidateCommitments {
-					upward_messages: Vec::new(),
-					horizontal_messages: Vec::new(),
+					upward_messages: Default::default(),
+					horizontal_messages: Default::default(),
 					new_validation_code: None,
 					head_data: HeadData(Vec::new()),
 					processed_downward_messages: 0,
@@ -234,13 +238,30 @@ impl RelayChainInterface for DummyRelayChainInterface {
 				});
 		Ok(Box::pin(notifications_stream))
 	}
+
+	async fn header(&self, block_id: BlockId) -> RelayChainResult<Option<PHeader>> {
+		let hash = match block_id {
+			BlockId::Hash(hash) => hash,
+			BlockId::Number(num) =>
+				if let Some(hash) = self.relay_client.hash(num)? {
+					hash
+				} else {
+					return Ok(None)
+				},
+		};
+		let header = self.relay_client.header(hash)?;
+
+		Ok(header)
+	}
 }
 
-fn make_validator_and_api(
-) -> (BlockAnnounceValidator<Block, Arc<DummyRelayChainInterface>>, Arc<DummyRelayChainInterface>) {
+fn make_validator_and_api() -> (
+	RequireSecondedInBlockAnnounce<Block, Arc<DummyRelayChainInterface>>,
+	Arc<DummyRelayChainInterface>,
+) {
 	let relay_chain_interface = Arc::new(DummyRelayChainInterface::new());
 	(
-		BlockAnnounceValidator::new(relay_chain_interface.clone(), ParaId::from(56)),
+		RequireSecondedInBlockAnnounce::new(relay_chain_interface.clone(), ParaId::from(56)),
 		relay_chain_interface,
 	)
 }
@@ -270,8 +291,8 @@ async fn make_gossip_message_and_header(
 	relay_parent: H256,
 	validator_index: u32,
 ) -> (CollationSecondedSignal, Header) {
-	let keystore: SyncCryptoStorePtr = Arc::new(KeyStore::new());
-	let alice_public = SyncCryptoStore::sr25519_generate_new(
+	let keystore: KeystorePtr = Arc::new(MemoryKeystore::new());
+	let alice_public = Keystore::sr25519_generate_new(
 		&*keystore,
 		ValidatorId::ID,
 		Some(&Sr25519Keyring::Alice.to_seed()),
@@ -290,7 +311,7 @@ async fn make_gossip_message_and_header(
 			para_id: 0u32.into(),
 			relay_parent,
 			collator: CollatorPair::generate().0.public(),
-			persisted_validation_data_hash: PHash::random().into(),
+			persisted_validation_data_hash: PHash::random(),
 			pov_hash: PHash::random(),
 			erasure_root: PHash::random(),
 			signature: sp_core::sr25519::Signature([0u8; 64]).into(),
@@ -306,7 +327,6 @@ async fn make_gossip_message_and_header(
 		validator_index.into(),
 		&alice_public.into(),
 	)
-	.await
 	.ok()
 	.flatten()
 	.expect("Signing statement");
@@ -451,8 +471,8 @@ async fn check_statement_seconded() {
 	let header = default_header();
 	let relay_parent = H256::from_low_u64_be(1);
 
-	let keystore: SyncCryptoStorePtr = Arc::new(KeyStore::new());
-	let alice_public = SyncCryptoStore::sr25519_generate_new(
+	let keystore: KeystorePtr = Arc::new(MemoryKeystore::new());
+	let alice_public = Keystore::sr25519_generate_new(
 		&*keystore,
 		ValidatorId::ID,
 		Some(&Sr25519Keyring::Alice.to_seed()),
@@ -463,13 +483,13 @@ async fn check_statement_seconded() {
 
 	let statement = Statement::Valid(Default::default());
 
-	let signed_statement = block_on(SignedFullStatement::sign(
+	let signed_statement = SignedFullStatement::sign(
 		&keystore,
 		statement,
 		&signing_context,
 		0.into(),
 		&alice_public.into(),
-	))
+	)
 	.ok()
 	.flatten()
 	.expect("Signs statement");
@@ -482,7 +502,7 @@ async fn check_statement_seconded() {
 				para_id: 0u32.into(),
 				relay_parent: PHash::random(),
 				collator: CollatorPair::generate().0.public(),
-				persisted_validation_data_hash: PHash::random().into(),
+				persisted_validation_data_hash: PHash::random(),
 				pov_hash: PHash::random(),
 				erasure_root: PHash::random(),
 				signature: sp_core::sr25519::Signature([0u8; 64]).into(),
