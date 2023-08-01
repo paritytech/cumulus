@@ -69,7 +69,7 @@ fn relay_dest_assertions_fail(_t: SystemParaToRelayTest) {
 	events::relay_chain::ump_queue_processed(
 		false,
 		Some(AssetHubWestend::para_id()),
-		Some(Weight::from_parts(144_595_000, 0)),
+		Some(Weight::from_parts(148_705_000, 3_593)),
 	);
 }
 
@@ -77,7 +77,7 @@ fn para_origin_assertions(t: SystemParaToRelayTest) {
 	type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
 	events::parachain::xcm_pallet_attempted_complete(
-		Some(Weight::from_parts(534_872_000, 7_133))
+		Some(Weight::from_parts(632_207_000, 7_186))
 	);
 
 	events::parachain::parachain_system_ump_sent();
@@ -98,7 +98,7 @@ fn para_dest_assertions(t: RelayToSystemParaTest) {
 	type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
 	events::parachain::dmp_queue_complete(
-		Some(Weight::from_parts(165_592_000, 0))
+		Some(Weight::from_parts(632_207_000, 7_186))
 	);
 
 	assert_expected_events!(

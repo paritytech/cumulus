@@ -134,7 +134,7 @@ fn open_hrmp_channel_between_paras_works() {
 		events::relay_chain::ump_queue_processed(
 			true,
 			Some(para_a_id),
-			Some(Weight::from_parts(7_000_000_000, 200_000)),
+			Some(Weight::from_parts(1_282_426_000, 207_186)),
 
 		);
 
@@ -195,7 +195,7 @@ fn open_hrmp_channel_between_paras_works() {
 		events::relay_chain::ump_queue_processed(
 			true,
 			Some(para_b_id),
-			Some(Weight::from_parts(7_000_000_000, 200_000)),
+			Some(Weight::from_parts(1_282_426_000, 207_186)),
 		);
 
 		assert_expected_events!(

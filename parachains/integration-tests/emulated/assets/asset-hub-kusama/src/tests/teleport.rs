@@ -20,7 +20,7 @@ fn relay_origin_assertions(t: RelayToSystemParaTest) {
 	type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
 	events::relay_chain::xcm_pallet_attempted_complete(
-		Some(Weight::from_parts(763_770_000, 0))
+		Some(Weight::from_parts(631_531_000, 7_186))
 	);
 
 	assert_expected_events!(
@@ -46,7 +46,7 @@ fn relay_dest_assertions(t: SystemParaToRelayTest) {
 	events::relay_chain::ump_queue_processed(
 		true,
 		Some(AssetHubKusama::para_id()),
-		Some(Weight::from_parts(299_246_000, 0))
+		Some(Weight::from_parts(307_225_000, 7_186))
 	);
 
 	assert_expected_events!(
@@ -69,7 +69,7 @@ fn relay_dest_assertions_fail(_t: SystemParaToRelayTest) {
 	events::relay_chain::ump_queue_processed(
 		false,
 		Some(AssetHubKusama::para_id()),
-		Some(Weight::from_parts(144_595_000, 0)),
+		Some(Weight::from_parts(148_433_000, 3_593)),
 	);
 }
 

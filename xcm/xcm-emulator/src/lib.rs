@@ -44,7 +44,7 @@ pub use frame_support::{
 pub use frame_system::{AccountInfo, Config as SystemConfig, Pallet as SystemPallet};
 pub use pallet_balances::AccountData;
 pub use sp_arithmetic::traits::Bounded;
-pub use sp_core::{sr25519, storage::Storage, H256};
+pub use sp_core::{sr25519, storage::Storage, Pair, H256};
 pub use sp_io::TestExternalities;
 pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, fmt::Debug};
 pub use sp_trie::StorageProof;
@@ -59,7 +59,6 @@ pub use cumulus_primitives_core::{
 };
 pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
-pub use cumulus_test_service::get_account_id_from_seed;
 pub use cumulus_pallet_parachain_system::Pallet as ParachainSystemPallet;
 pub use pallet_message_queue::{Pallet as  MessageQueuePallet, Event as MessageQueueEvent, Config as MessageQueueConfig};
 pub use parachain_info;
@@ -234,7 +233,7 @@ pub trait Chain: TestExt + NetworkComponent {
 	type System;
 
 	fn account_id_of(seed: &str) -> AccountId {
-		get_account_id_from_seed::<sr25519::Public>(seed)
+		helpers::get_account_id_from_seed::<sr25519::Public>(seed)
 	}
 
 	fn account_data_of(account: AccountId) -> AccountData<Balance>;
@@ -1367,7 +1366,7 @@ where
 
 
 pub mod helpers {
-	use super::Weight;
+	use super::*;
 
 	pub fn within_threshold(threshold: u64, expected_value: u64, current_value: u64) -> bool {
 		let margin = (current_value * threshold) / 100;
@@ -1388,5 +1387,18 @@ pub mod helpers {
 			within_threshold(threshold_size, expected_weight.proof_size(), weight.proof_size());
 
 		ref_time_within && proof_size_within
+	}
+
+	/// Helper function to generate an account ID from seed.
+	pub fn get_account_id_from_seed<TPublic: sp_core::Public>(seed: &str) -> AccountId
+	where
+		sp_runtime::MultiSigner:
+			From<<<TPublic as sp_runtime::CryptoType>::Pair as sp_core::Pair>::Public>,
+	{
+		use sp_runtime::traits::IdentifyAccount;
+		let pubkey = TPublic::Pair::from_string(&format!("//{}", seed), None)
+			.expect("static values are valid; qed")
+			.public();
+		sp_runtime::MultiSigner::from(pubkey).into_account()
 	}
 }

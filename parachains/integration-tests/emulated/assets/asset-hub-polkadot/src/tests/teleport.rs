@@ -20,7 +20,7 @@ fn relay_origin_assertions(t: RelayToSystemParaTest) {
 	type RuntimeEvent = <Polkadot as Chain>::RuntimeEvent;
 
 	events::relay_chain::xcm_pallet_attempted_complete(
-		Some(Weight::from_parts(3_000_000_000, 0))
+		Some(Weight::from_parts(632_207_000, 7_186))
 	);
 
 	assert_expected_events!(
@@ -46,7 +46,7 @@ fn relay_dest_assertions(t: SystemParaToRelayTest) {
 	events::relay_chain::ump_queue_processed(
 		true,
 		Some(AssetHubPolkadot::para_id()),
-		Some(Weight::from_parts(4_000_000_000, 0))
+		Some(Weight::from_parts(368_931_000, 7_186))
 	);
 
 	assert_expected_events!(
@@ -69,7 +69,7 @@ fn relay_dest_assertions_fail(_t: SystemParaToRelayTest) {
 	events::relay_chain::ump_queue_processed(
 		false,
 		Some(AssetHubPolkadot::para_id()),
-		Some(Weight::from_parts(1_000_000_000, 0)),
+		Some(Weight::from_parts(232_982_000, 3_593)),
 	);
 }
 
@@ -77,7 +77,7 @@ fn para_origin_assertions(t: SystemParaToRelayTest) {
 	type RuntimeEvent = <AssetHubPolkadot as Chain>::RuntimeEvent;
 
 	events::parachain::xcm_pallet_attempted_complete(
-		Some(Weight::from_parts(534_236_000, 7_133))
+		Some(Weight::from_parts(632_207_000, 7_186))
 	);
 
 	events::parachain::parachain_system_ump_sent();
@@ -98,7 +98,7 @@ fn para_dest_assertions(t: RelayToSystemParaTest) {
 	type RuntimeEvent = <AssetHubPolkadot as Chain>::RuntimeEvent;
 
 	events::parachain::dmp_queue_complete(
-		Some(Weight::from_parts(162_014_000, 0))
+		Some(Weight::from_parts(161_196_000, 0))
 	);
 
 	assert_expected_events!(

@@ -258,6 +258,7 @@ decl_test_parachains! {
 			Balances: asset_hub_westend_runtime::Balances,
 			Assets: asset_hub_westend_runtime::Assets,
 			ForeignAssets: asset_hub_westend_runtime::ForeignAssets,
+			PoolAssets: asset_hub_westend_runtime::PoolAssets,
 			AssetConversion: asset_hub_westend_runtime::AssetConversion,
 		}
 	},

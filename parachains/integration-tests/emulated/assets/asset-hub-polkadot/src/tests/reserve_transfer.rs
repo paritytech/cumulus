@@ -20,7 +20,7 @@ fn relay_origin_assertions(t: RelayToSystemParaTest) {
 	type RuntimeEvent = <Polkadot as Chain>::RuntimeEvent;
 
 	events::relay_chain::xcm_pallet_attempted_complete(
-		Some(Weight::from_parts(2_000_000_000, 0))
+		Some(Weight::from_parts(629_384_000, 6_196))
 	);
 
 	assert_expected_events!(
