@@ -17,7 +17,7 @@ pallet-sudo = { git = "https://github.com/paritytech/substrate", default-feature
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-genesis-builder = { package = "sp-genesis-builder", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-genesis-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -49,6 +49,7 @@ std = [
 	"sp-api/std",
 	"sp-block-builder/std",
 	"sp-core/std",
+	"sp-genesis-builder/std",
 	"sp-inherents/std",
 	"sp-offchain/std",
 	"sp-runtime/std",

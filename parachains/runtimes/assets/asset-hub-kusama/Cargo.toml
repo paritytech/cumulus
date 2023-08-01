@@ -180,6 +180,7 @@ std = [
 	"sp-block-builder/std",
 	"sp-consensus-aura/std",
 	"sp-core/std",
+	"sp-genesis-builder/std",
 	"sp-inherents/std",
 	"sp-offchain/std",
 	"sp-runtime/std",
