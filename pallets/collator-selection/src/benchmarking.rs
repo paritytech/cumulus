@@ -335,6 +335,35 @@ mod benchmarks {
 		);
 	}
 
+	#[benchmark]
+	fn buy_slot(c: Linear<{ min_candidates::<T>() + 1 }, { T::MaxCandidates::get() }>) {
+		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
+		<DesiredCandidates<T>>::put(1);
+
+		register_validators::<T>(c);
+		register_candidates::<T>(c);
+
+		let caller: T::AccountId = whitelisted_caller();
+		let bond: BalanceOf<T> = T::Currency::minimum_balance() * 10u32.into();
+		T::Currency::make_free_balance_be(&caller, bond);
+
+		<session::Pallet<T>>::set_keys(
+			RawOrigin::Signed(caller.clone()).into(),
+			keys::<T>(c + 1),
+			Vec::new(),
+		)
+		.unwrap();
+
+		let target = <Candidates<T>>::get().last().unwrap().who.clone();
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller.clone()), bond / 2u32.into(), target);
+
+		assert_last_event::<T>(
+			Event::CandidateAdded { account_id: caller, deposit: bond / 2u32.into() }.into(),
+		);
+	}
+
 	// worse case is the last candidate leaving.
 	#[benchmark]
 	fn leave_intent(c: Linear<{ min_candidates::<T>() + 1 }, { T::MaxCandidates::get() }>) {

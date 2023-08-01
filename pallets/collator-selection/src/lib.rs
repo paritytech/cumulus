@@ -308,6 +308,8 @@ pub mod pallet {
 		OnRemoveInsufficientFunds,
 		/// Some doc.
 		OnIncrease,
+		/// Some doc
+		InsufficientBond,
 	}
 
 	#[pallet::hooks]
@@ -634,6 +636,67 @@ pub mod pallet {
 				deposit: new_bond,
 			});
 			Ok(())
+		}
+
+		#[pallet::call_index(9)]
+		#[pallet::weight(T::WeightInfo::buy_slot(T::MaxCandidates::get()))]
+		pub fn buy_slot(
+			origin: OriginFor<T>,
+			deposit: BalanceOf<T>,
+			target: T::AccountId,
+		) -> DispatchResultWithPostInfo {
+			let who = ensure_signed(origin)?;
+
+			// ensure we are below limit.
+			let length = <Candidates<T>>::decode_len().unwrap_or_default();
+			ensure!((length as u32) <= T::MaxCandidates::get(), Error::<T>::TooManyCandidates);
+			ensure!(!Self::invulnerables().contains(&who), Error::<T>::AlreadyInvulnerable);
+
+			let validator_key = T::ValidatorIdOf::convert(who.clone())
+				.ok_or(Error::<T>::NoAssociatedValidatorId)?;
+			ensure!(
+				T::ValidatorRegistration::is_registered(&validator_key),
+				Error::<T>::ValidatorNotRegistered
+			);
+
+			ensure!(deposit >= Self::candidacy_bond(), Error::<T>::InsufficientBond);
+
+			<Candidates<T>>::try_mutate(|candidates| -> Result<(), DispatchError> {
+				let mut kicked = false;
+				for candidate_info in candidates.iter_mut() {
+					if candidate_info.who == who {
+						Err(Error::<T>::AlreadyCandidate)?
+					}
+
+					if !kicked && candidate_info.who == target {
+						if deposit <= candidate_info.deposit {
+							Err(Error::<T>::InsufficientBond)?
+						}
+
+						T::Currency::unreserve(&candidate_info.who, candidate_info.deposit);
+						T::CandidateList::on_remove(&candidate_info.who)
+							.map_err(|_| Error::<T>::OnRemove)?;
+						<LastAuthoredBlock<T>>::remove(candidate_info.who.clone());
+
+						kicked = true;
+						candidate_info.who = who.clone();
+						candidate_info.deposit = deposit;
+
+						T::Currency::reserve(&who, deposit)?;
+						<LastAuthoredBlock<T>>::insert(
+							who.clone(),
+							frame_system::Pallet::<T>::block_number() + T::KickThreshold::get(),
+						);
+						T::CandidateList::on_insert(who.clone(), deposit)
+							.map_err(|_| Error::<T>::OnInsert)?;
+					}
+				}
+				Ok(())
+			})?;
+
+			Self::deposit_event(Event::CandidateRemoved { account_id: target });
+			Self::deposit_event(Event::CandidateAdded { account_id: who, deposit });
+			Ok(Some(T::WeightInfo::buy_slot(length as u32)).into())
 		}
 	}
 
