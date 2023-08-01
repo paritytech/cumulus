@@ -16,9 +16,10 @@
 
 pub use codec::Encode;
 pub use frame_support::{
-	assert_err, assert_ok, instances::Instance1, pallet_prelude::Weight,
+	assert_err, assert_ok, instances::{Instance1, Instance2}, pallet_prelude::Weight,
 	traits::{fungibles::Inspect, OriginTrait},
-	sp_runtime::{AccountId32, DispatchError, DispatchResult, MultiAddress}
+	sp_runtime::{AccountId32, DispatchError, DispatchResult, ModuleError, MultiAddress},
+	BoundedVec
 };
 pub use parachains_common::{AccountId, Balance};
 pub use polkadot_core_primitives::InboundDownwardMessage;

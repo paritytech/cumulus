@@ -1,12 +1,7 @@
 use crate::*;
-use frame_support::{instances::Instance2, BoundedVec};
-use sp_runtime::{DispatchError, ModuleError};
-use xcm_emulator::Parachain;
 
 #[test]
 fn swap_locally_on_chain_using_local_assets() {
-	const ASSET_ID: u32 = 1;
-
 	let asset_native = Box::new(asset_hub_westend_runtime::xcm_config::WestendLocation::get());
 	let asset_one = Box::new(MultiLocation {
 		parents: 0,
@@ -139,7 +134,6 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		assert_ok!(
 			<AssetHubWestend as AssetHubWestendPallet>::Balances::force_set_balance(
 				<AssetHubWestend as Chain>::RuntimeOrigin::root(),
-				// MultiAddress::Id(sovereign_account_id),
 				AssetHubWestendSender::get().into(),
 				5_000_000,
 			)
@@ -147,7 +141,6 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		assert_ok!(
 			<AssetHubWestend as AssetHubWestendPallet>::Balances::force_set_balance(
 				<AssetHubWestend as Chain>::RuntimeOrigin::root(),
-				// MultiAddress::Id(sovereign_account_id),
 				sov_penpal_on_asset_hub_westend.clone().into(),
 				1000_000_000_000_000_000,
 			)
@@ -322,8 +315,6 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 #[test]
 fn cannot_create_pool_from_pool_assets() {
-	const ASSET_ID: u32 = 1;
-
 	let asset_native = Box::new(asset_hub_westend_runtime::xcm_config::WestendLocation::get());
 	let mut asset_one = asset_hub_westend_runtime::xcm_config::PoolAssetsPalletLocation::get();
 	asset_one.append_with(GeneralIndex(ASSET_ID.into())).expect("pool assets");
