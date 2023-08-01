@@ -424,31 +424,31 @@ fn register_as_candidate_works() {
 }
 
 #[test]
-fn cannot_buy_slot_if_invulnerable() {
+fn cannot_take_candidate_slot_if_invulnerable() {
 	new_test_ext().execute_with(|| {
 		assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
 
 		// can't 1 because it is invulnerable.
 		assert_noop!(
-			CollatorSelection::buy_slot(RuntimeOrigin::signed(1), 50u64.into(), 2),
+			CollatorSelection::take_candidate_slot(RuntimeOrigin::signed(1), 50u64.into(), 2),
 			Error::<Test>::AlreadyInvulnerable,
 		);
 	})
 }
 
 #[test]
-fn cannot_buy_slot_if_keys_not_registered() {
+fn cannot_take_candidate_slot_if_keys_not_registered() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)));
 		assert_noop!(
-			CollatorSelection::buy_slot(RuntimeOrigin::signed(42), 50u64.into(), 3),
+			CollatorSelection::take_candidate_slot(RuntimeOrigin::signed(42), 50u64.into(), 3),
 			Error::<Test>::ValidatorNotRegistered
 		);
 	})
 }
 
 #[test]
-fn cannot_buy_slot_if_duplicate() {
+fn cannot_take_candidate_slot_if_duplicate() {
 	new_test_ext().execute_with(|| {
 		// can add 3 as candidate
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)));
@@ -462,56 +462,60 @@ fn cannot_buy_slot_if_duplicate() {
 
 		// but no more
 		assert_noop!(
-			CollatorSelection::buy_slot(RuntimeOrigin::signed(3), 50u64.into(), 4),
+			CollatorSelection::take_candidate_slot(RuntimeOrigin::signed(3), 50u64.into(), 4),
 			Error::<Test>::AlreadyCandidate,
 		);
 	})
 }
 
 #[test]
-fn cannot_buy_slot_if_poor() {
+fn cannot_take_candidate_slot_if_poor() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(4)));
 		assert_eq!(Balances::free_balance(3), 100);
 		assert_eq!(Balances::free_balance(33), 0);
 
 		// works
-		assert_ok!(CollatorSelection::buy_slot(RuntimeOrigin::signed(3), 20u64.into(), 4));
+		assert_ok!(CollatorSelection::take_candidate_slot(
+			RuntimeOrigin::signed(3),
+			20u64.into(),
+			4
+		));
 
 		// poor
 		assert_noop!(
-			CollatorSelection::buy_slot(RuntimeOrigin::signed(33), 30u64.into(), 3),
+			CollatorSelection::take_candidate_slot(RuntimeOrigin::signed(33), 30u64.into(), 3),
 			BalancesError::<Test>::InsufficientBalance,
 		);
 	});
 }
 
 #[test]
-fn cannot_buy_slot_if_insufficient_deposit() {
+fn cannot_take_candidate_slot_if_insufficient_deposit() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)));
 		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(3), 50u64.into()));
 		assert_noop!(
-			CollatorSelection::buy_slot(RuntimeOrigin::signed(4), 5u64.into(), 3),
+			CollatorSelection::take_candidate_slot(RuntimeOrigin::signed(4), 5u64.into(), 3),
 			Error::<Test>::InsufficientBond,
 		);
 	});
 }
 
 #[test]
-fn cannot_buy_slot_if_deposit_less_than_target() {
+fn cannot_take_candidate_slot_if_deposit_less_than_target() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)));
 		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(3), 50u64.into()));
 		assert_noop!(
-			CollatorSelection::buy_slot(RuntimeOrigin::signed(4), 20u64.into(), 3),
+			CollatorSelection::take_candidate_slot(RuntimeOrigin::signed(4), 20u64.into(), 3),
 			Error::<Test>::InsufficientBond,
 		);
 	});
 }
 
 #[test]
-fn buy_slot_works() {
+fn take_candidate_slot_works() {
 	new_test_ext().execute_with(|| {
 		// given
 		assert_eq!(CollatorSelection::desired_candidates(), 2);
@@ -538,7 +542,11 @@ fn buy_slot_works() {
 		let key = MockSessionKeys { aura: UintAuthorityId(6) };
 		Session::set_keys(RuntimeOrigin::signed(6).into(), key, Vec::new()).unwrap();
 
-		assert_ok!(CollatorSelection::buy_slot(RuntimeOrigin::signed(6), 50u64.into(), 4));
+		assert_ok!(CollatorSelection::take_candidate_slot(
+			RuntimeOrigin::signed(6),
+			50u64.into(),
+			4
+		));
 
 		assert_eq!(Balances::free_balance(3), 90);
 		assert_eq!(Balances::free_balance(4), 100);

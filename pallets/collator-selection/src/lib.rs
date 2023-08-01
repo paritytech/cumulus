@@ -639,8 +639,8 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(9)]
-		#[pallet::weight(T::WeightInfo::buy_slot(T::MaxCandidates::get()))]
-		pub fn buy_slot(
+		#[pallet::weight(T::WeightInfo::take_candidate_slot(T::MaxCandidates::get()))]
+		pub fn take_candidate_slot(
 			origin: OriginFor<T>,
 			deposit: BalanceOf<T>,
 			target: T::AccountId,
@@ -696,7 +696,7 @@ pub mod pallet {
 
 			Self::deposit_event(Event::CandidateRemoved { account_id: target });
 			Self::deposit_event(Event::CandidateAdded { account_id: who, deposit });
-			Ok(Some(T::WeightInfo::buy_slot(length as u32)).into())
+			Ok(Some(T::WeightInfo::take_candidate_slot(length as u32)).into())
 		}
 	}
 

@@ -336,7 +336,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn buy_slot(c: Linear<{ min_candidates::<T>() + 1 }, { T::MaxCandidates::get() }>) {
+	fn take_candidate_slot(c: Linear<{ min_candidates::<T>() + 1 }, { T::MaxCandidates::get() }>) {
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(1);
 

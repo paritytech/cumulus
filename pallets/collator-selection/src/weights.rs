@@ -35,7 +35,7 @@ pub trait WeightInfo {
 	fn leave_intent(_c: u32) -> Weight;
 	fn increase_bond(_c: u32) -> Weight;
 	fn decrease_bond(_c: u32) -> Weight;
-	fn buy_slot(_c: u32) -> Weight;
+	fn take_candidate_slot(_c: u32) -> Weight;
 	fn note_author() -> Weight;
 	fn new_session(_c: u32, _r: u32) -> Weight;
 }
@@ -83,7 +83,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
-	fn buy_slot(c: u32) -> Weight {
+	fn take_candidate_slot(c: u32) -> Weight {
 		Weight::from_parts(71_196_000_u64, 0)
 			// Standard Error: 0
 			.saturating_add(Weight::from_parts(198_000_u64, 0).saturating_mul(c as u64))
@@ -191,7 +191,7 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
-	fn buy_slot(c: u32) -> Weight {
+	fn take_candidate_slot(c: u32) -> Weight {
 		Weight::from_parts(71_196_000_u64, 0)
 			// Standard Error: 0
 			.saturating_add(Weight::from_parts(198_000_u64, 0).saturating_mul(c as u64))
