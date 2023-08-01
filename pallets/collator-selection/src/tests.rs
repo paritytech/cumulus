@@ -284,26 +284,26 @@ fn set_candidacy_bond() {
 	});
 }
 
-// TODO[GMP] fix this with MaxCandidates
 #[test]
 fn cannot_register_candidate_if_too_many() {
 	new_test_ext().execute_with(|| {
-		// reset desired candidates:
-		<crate::DesiredCandidates<Test>>::put(0);
-
-		// can't accept anyone anymore.
-		assert_noop!(
-			CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)),
-			Error::<Test>::TooManyCandidates,
-		);
-
-		// reset desired candidates:
 		<crate::DesiredCandidates<Test>>::put(1);
-		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(4)));
 
-		// but no more
+		// MaxCandidates: u32 = 20
+		// Aside from 3, 4, and 5, create enough accounts to have 21 potential
+		// candidates.
+		for i in 6..=23 {
+			Balances::make_free_balance_be(&i, 100);
+			let key = MockSessionKeys { aura: UintAuthorityId(i) };
+			Session::set_keys(RuntimeOrigin::signed(i).into(), key, Vec::new()).unwrap();
+		}
+
+		for c in 3..=22 {
+			assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(c)));
+		}
+
 		assert_noop!(
-			CollatorSelection::register_as_candidate(RuntimeOrigin::signed(5)),
+			CollatorSelection::register_as_candidate(RuntimeOrigin::signed(23)),
 			Error::<Test>::TooManyCandidates,
 		);
 	})
