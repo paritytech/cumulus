@@ -1920,6 +1920,7 @@ version = "0.1.0"
 dependencies = [
  "asset-hub-polkadot-runtime",
  "collectives-polkadot-runtime",
+ "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
  "frame-support",
  "frame-system",

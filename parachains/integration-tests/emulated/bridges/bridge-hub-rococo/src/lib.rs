@@ -101,7 +101,7 @@ pub fn system_para_test_args(
 
 pub mod events {
 	pub mod relay_chain {
-		pub use integration_tests_common::events::kusama::{
+		pub use integration_tests_common::events::rococo::{
 			xcm_pallet_attempted_complete,
 			xcm_pallet_attempted_incomplete,
 			xcm_pallet_sent,
