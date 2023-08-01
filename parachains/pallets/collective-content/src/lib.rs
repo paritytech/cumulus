@@ -52,12 +52,6 @@ use sp_std::prelude::*;
 // worst case 2 bytes base and codec, 2 bytes hash type and size, 64 bytes hash digest.
 pub type OpaqueCid = BoundedVec<u8, ConstU32<68>>;
 
-/// The block number type of [frame_system::Config].
-pub type BlockNumberFor<T> = <T as frame_system::Config>::BlockNumber;
-
-/// [DispatchTime] of [frame_system::Config].
-pub type DispatchTimeFor<T> = DispatchTime<BlockNumberFor<T>>;
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -68,7 +62,6 @@ pub mod pallet {
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub (super) trait Store)]
 	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T, I = ()>(PhantomData<(T, I)>);
 
@@ -105,7 +98,7 @@ pub mod pallet {
 		/// A new charter has been set.
 		NewCharterSet { cid: OpaqueCid },
 		/// A new announcement has been made.
-		AnnouncementAnnounced { cid: OpaqueCid, maybe_expire_at: Option<T::BlockNumber> },
+		AnnouncementAnnounced { cid: OpaqueCid, maybe_expire_at: Option<BlockNumberFor<T>> },
 		/// An on-chain announcement has been removed.
 		AnnouncementRemoved { cid: OpaqueCid },
 	}
@@ -119,7 +112,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn announcements)]
 	pub type Announcements<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, OpaqueCid, Option<T::BlockNumber>, ValueQuery>;
+		StorageMap<_, Blake2_128Concat, OpaqueCid, Option<BlockNumberFor<T>>, ValueQuery>;
 
 	/// The current count of the announcements.
 	#[pallet::storage]
@@ -129,7 +122,7 @@ pub mod pallet {
 	/// The closest expiration block number of an announcement.
 	#[pallet::storage]
 	pub type NextAnnouncementExpireAt<T: Config<I>, I: 'static = ()> =
-		StorageValue<_, T::BlockNumber, OptionQuery>;
+		StorageValue<_, BlockNumberFor<T>, OptionQuery>;
 
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
@@ -164,7 +157,7 @@ pub mod pallet {
 		pub fn announce(
 			origin: OriginFor<T>,
 			cid: OpaqueCid,
-			maybe_expire: Option<DispatchTimeFor<T>>,
+			maybe_expire: Option<DispatchTime<BlockNumberFor<T>>>,
 		) -> DispatchResult {
 			T::AnnouncementOrigin::ensure_origin(origin)?;
 
@@ -211,14 +204,14 @@ pub mod pallet {
 
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		/// Clean up expired announcements.
-		pub fn cleanup_announcements(now: T::BlockNumber) {
+		pub fn cleanup_announcements(now: BlockNumberFor<T>) {
 			if NextAnnouncementExpireAt::<T, I>::get().map_or(true, |next| next > now) {
 				// no expired announcements expected.
 				return
 			}
-			let mut maybe_next: Option<T::BlockNumber> = None;
+			let mut maybe_next: Option<BlockNumberFor<T>> = None;
 			let mut count = 0;
-			<Announcements<T, I>>::translate(|cid, maybe_expire_at: Option<T::BlockNumber>| {
+			<Announcements<T, I>>::translate(|cid, maybe_expire_at: Option<BlockNumberFor<T>>| {
 				match maybe_expire_at {
 					Some(expire_at) if now >= expire_at => {
 						Self::deposit_event(Event::<T, I>::AnnouncementRemoved { cid });
@@ -246,9 +239,9 @@ pub mod pallet {
 	}
 
 	#[pallet::hooks]
-	impl<T: Config<I>, I: 'static> Hooks<T::BlockNumber> for Pallet<T, I> {
+	impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {
 		/// Clean up expired announcements if there is enough `remaining_weight` weight left.
-		fn on_idle(now: T::BlockNumber, remaining_weight: Weight) -> Weight {
+		fn on_idle(now: BlockNumberFor<T>, remaining_weight: Weight) -> Weight {
 			let weight = T::WeightInfo::cleanup_announcements(<AnnouncementsCount<T, I>>::get());
 			if remaining_weight.any_lt(weight) {
 				return T::DbWeight::get().reads(1)

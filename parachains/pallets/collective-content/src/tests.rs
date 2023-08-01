@@ -90,7 +90,7 @@ fn announce_works() {
 		// one more with expire. success.
 		let origin = RuntimeOrigin::signed(AnnouncementManager::get());
 		let cid = create_cid(4);
-		let maybe_expire_at = DispatchTimeFor::<Test>::After(10);
+		let maybe_expire_at = DispatchTime::<_>::After(10);
 
 		assert_ok!(CollectiveContent::announce(origin, cid.clone(), Some(maybe_expire_at)));
 		assert_eq!(NextAnnouncementExpireAt::<Test>::get(), Some(maybe_expire_at.evaluate(now)));
@@ -103,8 +103,8 @@ fn announce_works() {
 		// one more with later expire. success.
 		let origin = RuntimeOrigin::signed(AnnouncementManager::get());
 		let cid = create_cid(5);
-		let prev_maybe_expire_at = DispatchTimeFor::<Test>::After(10);
-		let maybe_expire_at = DispatchTimeFor::<Test>::At(now + 20);
+		let prev_maybe_expire_at = DispatchTime::<_>::After(10);
+		let maybe_expire_at = DispatchTime::<_>::At(now + 20);
 
 		assert_ok!(CollectiveContent::announce(origin, cid.clone(), Some(maybe_expire_at)));
 		assert_eq!(
@@ -120,7 +120,7 @@ fn announce_works() {
 		// one more with earlier expire. success.
 		let origin = RuntimeOrigin::signed(AnnouncementManager::get());
 		let cid = create_cid(6);
-		let maybe_expire_at = DispatchTimeFor::<Test>::At(now + 5);
+		let maybe_expire_at = DispatchTime::<_>::At(now + 5);
 
 		assert_ok!(CollectiveContent::announce(origin, cid.clone(), Some(maybe_expire_at)));
 		assert_eq!(NextAnnouncementExpireAt::<Test>::get(), Some(maybe_expire_at.evaluate(now)));
@@ -159,7 +159,7 @@ fn remove_announcement_works() {
 
 		// one more announcement.
 		let cid_2 = create_cid(11);
-		let expire_at_2 = DispatchTimeFor::<Test>::At(10);
+		let expire_at_2 = DispatchTime::<_>::At(10);
 		assert_ok!(CollectiveContent::announce(origin.clone(), cid_2.clone(), Some(expire_at_2)));
 		// two announcements registered.
 		assert!(<Announcements<Test>>::contains_key(cid.clone()));
@@ -216,8 +216,7 @@ fn clean_announcements_works() {
 			assert_ok!(CollectiveContent::announce(
 				origin.clone(),
 				cid,
-				maybe_expire_at
-					.map_or(None, |expire_at| Some(DispatchTimeFor::<Test>::At(expire_at)))
+				maybe_expire_at.map_or(None, |expire_at| Some(DispatchTime::<_>::At(expire_at)))
 			));
 		}
 		assert_eq!(<Announcements<Test>>::iter_keys().count(), 8);
@@ -226,8 +225,8 @@ fn clean_announcements_works() {
 
 		// invoke `clean_announcements` through the on_idle hook.
 		assert_eq!(
-			<CollectiveContent as Hooks<_>>::on_idle(cleanup_block, Weight::from_ref_time(20)),
-			Weight::from_ref_time(10)
+			<CollectiveContent as Hooks<_>>::on_idle(cleanup_block, Weight::from_parts(20, 0)),
+			Weight::from_parts(10, 0)
 		);
 		assert_eq!(<Announcements<Test>>::iter_keys().count(), 5);
 		assert_eq!(AnnouncementsCount::<Test>::get(), 5);
@@ -244,8 +243,8 @@ fn clean_announcements_works() {
 
 		// on_idle. not enough weight.
 		assert_eq!(
-			<CollectiveContent as Hooks<_>>::on_idle(cleanup_block, Weight::from_ref_time(9)),
-			Weight::from_ref_time(0)
+			<CollectiveContent as Hooks<_>>::on_idle(cleanup_block, Weight::from_parts(9, 0)),
+			Weight::from_parts(0, 0)
 		);
 	});
 }

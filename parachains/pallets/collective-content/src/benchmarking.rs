@@ -15,8 +15,8 @@
 
 //! The pallet benchmarks.
 
-use super::{DispatchTimeFor, Pallet as CollectiveContent, *};
-use frame_benchmarking::benchmarks_instance_pallet;
+use super::{Pallet as CollectiveContent, *};
+use frame_benchmarking::v1::{benchmarks_instance_pallet, BenchmarkError};
 use frame_support::traits::{EnsureOrigin, UnfilteredDispatchable};
 
 fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::RuntimeEvent) {
@@ -33,7 +33,7 @@ benchmarks_instance_pallet! {
 	set_charter {
 		let cid: OpaqueCid = create_cid(1);
 		let call = Call::<T, I>::set_charter { cid: cid.clone() };
-		let origin = T::CharterOrigin::successful_origin();
+		let origin = T::CharterOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
 	}: { call.dispatch_bypass_filter(origin)? }
 	verify {
 		assert_eq!(CollectiveContent::<T, I>::charter(), Some(cid.clone()));
@@ -45,7 +45,7 @@ benchmarks_instance_pallet! {
 
 		let mut maybe_expire = None;
 		if x == 1 {
-			maybe_expire = Some(DispatchTimeFor::<T>::At(10u32.into()));
+			maybe_expire = Some(DispatchTime::<_>::At(10u32.into()));
 		}
 		let now = frame_system::Pallet::<T>::block_number();
 		let cid: OpaqueCid = create_cid(1);
@@ -53,7 +53,7 @@ benchmarks_instance_pallet! {
 			cid: cid.clone(),
 			maybe_expire: maybe_expire.clone(),
 		};
-		let origin = T::AnnouncementOrigin::successful_origin();
+		let origin = T::AnnouncementOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
 	}: { call.dispatch_bypass_filter(origin)? }
 	verify {
 		assert_eq!(CollectiveContent::<T, I>::announcements_count(), 1);
@@ -66,7 +66,7 @@ benchmarks_instance_pallet! {
 
 	remove_announcement {
 		let cid: OpaqueCid = create_cid(1);
-		let origin = T::AnnouncementOrigin::successful_origin();
+		let origin = T::AnnouncementOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
 		CollectiveContent::<T, I>::announce(
 			origin.clone(),
 			cid.clone(),
@@ -83,7 +83,7 @@ benchmarks_instance_pallet! {
 
 	cleanup_announcements {
 		let x in 0 .. 100;
-		let origin = T::AnnouncementOrigin::successful_origin();
+		let origin = T::AnnouncementOrigin::try_successful_origin().unwrap();
 
 		let max_count = x;
 		for i in 0..max_count {
@@ -91,7 +91,7 @@ benchmarks_instance_pallet! {
 			CollectiveContent::<T, I>::announce(
 				origin.clone(),
 				cid,
-				Some(DispatchTimeFor::<T>::At(5u32.into())),
+				Some(DispatchTime::<_>::At(5u32.into())),
 			).expect("could not publish an announcement");
 		}
 		assert_eq!(CollectiveContent::<T, I>::announcements_count(), max_count);

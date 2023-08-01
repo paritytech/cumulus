@@ -27,7 +27,7 @@ pub mod origins;
 mod tracks;
 
 use super::*;
-use frame_support::traits::TryMapSuccess;
+use frame_support::traits::{EitherOf, TryMapSuccess};
 pub use origins::pallet_origins as pallet_ambassador_origins;
 use origins::pallet_origins::{
 	EnsureAmbassador, EnsureRankedAmbassador, EnsureSeniorAmbassador, Origin,
@@ -74,13 +74,13 @@ parameter_types! {
 	pub const SubmissionDeposit: Balance = 0;
 	pub const UndecidingTimeout: BlockNumber = 7 * DAYS;
 	// The Ambassador Referenda pallet account, used as a temporarily place to deposit a slashed imbalance before teleport to the treasury.
-	pub AmbassadorPalletAccId: AccountId = constants::account::AMBASSADOR_REFERENDA_PALLET_ID.into_account_truncating();
+	pub AmbassadorPalletAccount: AccountId = constants::account::AMBASSADOR_REFERENDA_PALLET_ID.into_account_truncating();
 }
 
-pub type AmbassadorReferendaInstance = pallet_referenda::Instance1;
+pub type AmbassadorReferendaInstance = pallet_referenda::Instance2;
 
 impl pallet_referenda::Config<AmbassadorReferendaInstance> for Runtime {
-	type WeightInfo = weights::pallet_referenda::WeightInfo<Runtime>;
+	type WeightInfo = (); // TODO actual weights
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type Scheduler = Scheduler;
@@ -93,7 +93,7 @@ impl pallet_referenda::Config<AmbassadorReferendaInstance> for Runtime {
 	>;
 	type CancelOrigin = EitherOf<EnsureRoot<AccountId>, EnsureSeniorAmbassador>;
 	type KillOrigin = EitherOf<EnsureRoot<AccountId>, EnsureSeniorAmbassador>;
-	type Slash = ToParentTreasury<RelayTreasuryAccId, AmbassadorPalletAccId, Runtime>;
+	type Slash = ToParentTreasury<PolkadotTreasuryAccount, AmbassadorPalletAccount, Runtime>;
 	type Votes = pallet_ranked_collective::Votes;
 	type Tally = pallet_ranked_collective::TallyOf<Runtime, AmbassadorCollectiveInstance>;
 	type SubmissionDeposit = SubmissionDeposit;
@@ -117,10 +117,10 @@ morph_types! {
 	} where N::Type: CheckedSub;
 }
 
-pub type AmbassadorCollectiveInstance = pallet_ranked_collective::Instance1;
+pub type AmbassadorCollectiveInstance = pallet_ranked_collective::Instance2;
 
 impl pallet_ranked_collective::Config<AmbassadorCollectiveInstance> for Runtime {
-	type WeightInfo = weights::pallet_ranked_collective::WeightInfo<Runtime>;
+	type WeightInfo = (); // TODO actual weights
 	type RuntimeEvent = RuntimeEvent;
 	// Promotion is by any of:
 	// - Root can promote arbitrarily.
