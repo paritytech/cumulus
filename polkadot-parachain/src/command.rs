@@ -15,9 +15,10 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
+	benchmarking::{inherent_benchmark_data, RemarkBuilder, SignedExtraFor},
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
-	service::{new_partial, Block},
+	service::new_partial,
 };
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
@@ -116,7 +117,7 @@ fn runtime(id: &str) -> Runtime {
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	let (id, _, para_id) = extract_parachain_id(id);
 	Ok(match id {
-		// - Defaul-like
+		// - Default-like
 		"staging" =>
 			Box::new(chain_spec::rococo_parachain::staging_rococo_parachain_local_config()),
 		"tick" =>
@@ -382,24 +383,27 @@ impl SubstrateCli for RelayChainCli {
 
 /// Creates partial components for the runtimes that are supported by the benchmarks.
 macro_rules! construct_benchmark_partials {
-	($config:expr, |$partials:ident| $code:expr) => {
+	($config:expr, |$partials:ident, $runtime:ident| $code:expr) => {
 		match $config.chain_spec.runtime() {
 			Runtime::AssetHubKusama => {
-				let $partials = new_partial::<asset_hub_kusama_runtime::RuntimeApi, _>(
+				use asset_hub_kusama_runtime as $runtime;
+				let $partials = new_partial::<$runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::aura_build_import_queue::<_, AuraId>,
 				)?;
 				$code
 			},
 			Runtime::AssetHubWestend => {
-				let $partials = new_partial::<asset_hub_westend_runtime::RuntimeApi, _>(
+				use asset_hub_westend_runtime as $runtime;
+				let $partials = new_partial::<$runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::aura_build_import_queue::<_, AuraId>,
 				)?;
 				$code
 			},
 			Runtime::AssetHubPolkadot => {
-				let $partials = new_partial::<asset_hub_polkadot_runtime::RuntimeApi, _>(
+				use asset_hub_polkadot_runtime as $runtime;
+				let $partials = new_partial::<$runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::aura_build_import_queue::<_, AssetHubPolkadotAuraId>,
 				)?;
@@ -409,6 +413,8 @@ macro_rules! construct_benchmark_partials {
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::Polkadot |
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotLocal |
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::PolkadotDevelopment => {
+					#[allow(unused_imports)]
+					use bridge_hub_polkadot_runtime as $runtime;
 					let $partials = new_partial::<chain_spec::bridge_hubs::polkadot::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
@@ -418,6 +424,8 @@ macro_rules! construct_benchmark_partials {
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama |
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaLocal |
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::KusamaDevelopment => {
+					#[allow(unused_imports)]
+					use bridge_hub_kusama_runtime as $runtime;
 					let $partials = new_partial::<chain_spec::bridge_hubs::kusama::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
@@ -425,6 +433,8 @@ macro_rules! construct_benchmark_partials {
 					$code
 				},
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::Westend => {
+					#[allow(unused_imports)]
+					use bridge_hub_kusama_runtime as $runtime;
 					let $partials = new_partial::<chain_spec::bridge_hubs::westend::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
@@ -434,6 +444,8 @@ macro_rules! construct_benchmark_partials {
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal |
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoDevelopment => {
+					#[allow(unused_imports)]
+					use bridge_hub_rococo_runtime as $runtime;
 					let $partials = new_partial::<chain_spec::bridge_hubs::rococo::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
@@ -442,6 +454,8 @@ macro_rules! construct_benchmark_partials {
 				},
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::Wococo |
 				chain_spec::bridge_hubs::BridgeHubRuntimeType::WococoLocal => {
+					#[allow(unused_imports)]
+					use bridge_hub_rococo_runtime as $runtime;
 					let $partials = new_partial::<chain_spec::bridge_hubs::wococo::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
@@ -450,7 +464,8 @@ macro_rules! construct_benchmark_partials {
 				},
 			},
 			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => {
-				let $partials = new_partial::<collectives_polkadot_runtime::RuntimeApi, _>(
+				use collectives_polkadot_runtime as $runtime;
+				let $partials = new_partial::<$runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::aura_build_import_queue::<_, AuraId>,
 				)?;
@@ -458,6 +473,9 @@ macro_rules! construct_benchmark_partials {
 			},
 			_ => Err("The chain is not supported".into()),
 		}
+	};
+	($config:expr, |$partials:ident| $code:expr) => {
+		construct_benchmark_partials!($config, |$partials, runtime| $code)
 	};
 }
 
@@ -695,24 +713,19 @@ pub fn run() -> Result<()> {
 
 			// Switch on the concrete benchmark sub-command-
 			match cmd {
+				#[cfg(not(feature = "runtime-benchmarks"))]
+				BenchmarkCmd::Pallet(_) => Err("Benchmarking wasn't enabled when building the node. \
+					You can enable it with `--features runtime-benchmarks`."
+					.into()),
+				#[cfg(feature = "runtime-benchmarks")]
 				BenchmarkCmd::Pallet(cmd) =>
-					if cfg!(feature = "runtime-benchmarks") {
-						runner.sync_run(|config| cmd.run::<Block, ()>(config))
-					} else {
-						Err("Benchmarking wasn't enabled when building the node. \
-				You can enable it with `--features runtime-benchmarks`."
-							.into())
-					},
+					runner.sync_run(|config| cmd.run::<crate::service::Block, ()>(config)),
 				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
 					construct_benchmark_partials!(config, |partials| cmd.run(partials.client))
 				}),
 				#[cfg(not(feature = "runtime-benchmarks"))]
-				BenchmarkCmd::Storage(_) =>
-					return Err(sc_cli::Error::Input(
-						"Compile with --features=runtime-benchmarks \
+				BenchmarkCmd::Storage(_) => Err("Compile with --features=runtime-benchmarks \
 						to enable storage benchmarks."
-							.into(),
-					)
 					.into()),
 				#[cfg(feature = "runtime-benchmarks")]
 				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
@@ -721,6 +734,25 @@ pub fn run() -> Result<()> {
 						let storage = partials.backend.expose_storage();
 
 						cmd.run(config, partials.client.clone(), db, storage)
+					})
+				}),
+				BenchmarkCmd::Overhead(cmd) => runner.sync_run(|config| {
+					construct_benchmark_partials!(config, |partials, runtime| {
+						let ext_builder = RemarkBuilder::<
+							runtime::RuntimeApi,
+							runtime::SignedExtra,
+							runtime::RuntimeCall,
+							SignedExtraFor<runtime::SignedExtra>,
+							runtime::Runtime,
+						>::new(partials.client.clone());
+
+						cmd.run(
+							config,
+							partials.client,
+							inherent_benchmark_data()?,
+							Vec::new(),
+							&ext_builder,
+						)
 					})
 				}),
 				BenchmarkCmd::Machine(cmd) =>

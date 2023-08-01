@@ -66,7 +66,8 @@ use bp_runtime::HeaderId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
+pub use polkadot_runtime_common::BlockHashCount;
+use polkadot_runtime_common::SlowAdjustingFeeUpdate;
 
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
@@ -117,6 +118,9 @@ pub type SignedExtra = (
 	BridgeRejectObsoleteHeadersAndMessages,
 	(BridgeRefundBridgeHubRococoMessages, BridgeRefundBridgeHubWococoMessages),
 );
+
+/// The payload being signed in transactions.
+pub type SignedPayload = generic::SignedPayload<RuntimeCall, SignedExtra>;
 
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =

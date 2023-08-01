@@ -8,7 +8,15 @@ use std::{
 use tempfile::tempdir;
 
 /// The runtimes that this command supports.
-static RUNTIMES: [&str; 3] = ["asset-hub-westend", "asset-hub-kusama", "asset-hub-polkadot"];
+static RUNTIMES: [&str; 7] = [
+	"asset-hub-westend",
+	"asset-hub-kusama",
+	"asset-hub-polkadot",
+	"collectives-polkadot",
+	"bridge-hub-polkadot",
+	"bridge-hub-kusama",
+	"bridge-hub-rococo",
+];
 
 /// The `benchmark storage` command works for the dev runtimes.
 #[test]
