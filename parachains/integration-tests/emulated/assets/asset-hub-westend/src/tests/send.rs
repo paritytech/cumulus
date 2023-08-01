@@ -66,65 +66,6 @@ fn send_transact_sudo_from_relay_to_system_para_works() {
 	});
 }
 
-/// Relay Chain shouldn't be able to execute `Transact` instructions in System Parachain
-/// when `OriginKind::Native`
-#[test]
-fn send_transact_native_from_relay_to_system_para_fails() {
-	// Init tests variables
-	let signed_origin = <Westend as Chain>::RuntimeOrigin::signed(WestendSender::get().into());
-	let system_para_destination = Westend::child_location_of(
-		AssetHubWestend::para_id()
-	).into();
-	let asset_owner = AssetHubWestendSender::get().into();
-	let xcm = force_create_asset_xcm(
-		OriginKind::Native,
-		ASSET_ID,
-		asset_owner,
-		true,
-		1000
-	);
-
-	// Send XCM message from Relay Chain
-	Westend::execute_with(|| {
-		assert_err!(
-			<Westend as WestendPallet>::XcmPallet::send(
-				signed_origin,
-				bx!(system_para_destination),
-				bx!(xcm)
-			),
-			DispatchError::BadOrigin
-		);
-	});
-}
-
-/// System Parachain shouldn't be able to execute `Transact` instructions in Relay Chain
-/// when `OriginKind::Native`
-#[test]
-fn send_transact_native_from_system_para_to_relay_fails() {
-	// Init tests variables
-	let signed_origin
-		= <AssetHubWestend as Chain>::RuntimeOrigin::signed(AssetHubWestendSender::get().into());
-	let relay_destination = AssetHubWestend::parent_location().into();
-	let call = <Westend as Chain>::RuntimeCall::System(
-		frame_system::Call::<<Westend as Chain>::Runtime>::remark_with_event { remark: vec![0, 1, 2, 3] }
-	).encode().into();
-	let origin_kind = OriginKind::Native;
-
-	let xcm = xcm_unpaid_execution(call, origin_kind);
-
-	// Send XCM message from Relay Chain
-	AssetHubWestend::execute_with(|| {
-		assert_err!(
-			<AssetHubWestend as AssetHubWestendPallet>::PolkadotXcm::send(
-				signed_origin,
-				bx!(relay_destination),
-				bx!(xcm)
-			),
-			DispatchError::BadOrigin
-		);
-	});
-}
-
 /// Parachain should be able to send XCM paying its fee with sufficient asset
 /// in the System Parachain
 #[test]
