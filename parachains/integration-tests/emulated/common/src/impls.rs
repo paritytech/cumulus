@@ -1,6 +1,4 @@
-use super::{
-	BridgeHubRococo, BridgeHubWococo,
-};
+use super::{BridgeHubRococo, BridgeHubWococo};
 use bp_messages::{
 	target_chain::{DispatchMessage, DispatchMessageData, MessageDispatch},
 	LaneId, MessageKey, OutboundLaneData,

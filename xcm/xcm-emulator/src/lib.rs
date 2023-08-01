@@ -15,30 +15,29 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 pub use codec::{Decode, Encode};
+pub use lazy_static::lazy_static;
 pub use log;
 pub use paste;
-pub use lazy_static::lazy_static;
 pub use std::{
 	any::type_name,
 	collections::HashMap,
 	error::Error,
 	fmt,
 	marker::PhantomData,
-	thread::LocalKey,
-	sync::{Mutex, Condvar},
 	ops::Deref,
+	sync::{Condvar, Mutex},
+	thread::LocalKey,
 };
 
 // Substrate
 pub use frame_support::{
 	assert_ok,
 	dispatch::EncodeLike,
-	traits::{
-		tokens::currency::Currency,
-		EnqueueMessage, Get, Hooks, ProcessMessage, ProcessMessageError,
-		ServiceQueues, OriginTrait
-	},
 	sp_runtime::{AccountId32, DispatchResult},
+	traits::{
+		tokens::currency::Currency, EnqueueMessage, Get, Hooks, OriginTrait, ProcessMessage,
+		ProcessMessageError, ServiceQueues,
+	},
 	weights::{Weight, WeightMeter},
 };
 pub use frame_system::{AccountInfo, Config as SystemConfig, Pallet as SystemPallet};
@@ -51,16 +50,17 @@ pub use sp_trie::StorageProof;
 
 //Cumulus
 pub use cumulus_pallet_dmp_queue;
-pub use cumulus_pallet_parachain_system;
-pub use cumulus_pallet_xcmp_queue::{Pallet as XcmpQueuePallet, Config as XcmpQueueConfig};
+pub use cumulus_pallet_parachain_system::{self, Pallet as ParachainSystemPallet};
+pub use cumulus_pallet_xcmp_queue::{Config as XcmpQueueConfig, Pallet as XcmpQueuePallet};
 pub use cumulus_primitives_core::{
 	self, relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler, ParaId,
 	PersistedValidationData, XcmpMessageHandler,
 };
 pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
-pub use cumulus_pallet_parachain_system::Pallet as ParachainSystemPallet;
-pub use pallet_message_queue::{Pallet as  MessageQueuePallet, Event as MessageQueueEvent, Config as MessageQueueConfig};
+pub use pallet_message_queue::{
+	Config as MessageQueueConfig, Event as MessageQueueEvent, Pallet as MessageQueuePallet,
+};
 pub use parachain_info;
 pub use parachains_common::{AccountId, Balance, BlockNumber};
 pub use polkadot_primitives;
@@ -70,7 +70,10 @@ pub use polkadot_runtime_parachains::{
 };
 
 // Polkadot
-pub use xcm::{v3::prelude::{*, AccountId32 as AccountId32Junction, Parachain as ParachainJunction}, VersionedMultiAssets, VersionedMultiLocation};
+pub use xcm::{
+	v3::prelude::{AccountId32 as AccountId32Junction, Parachain as ParachainJunction, *},
+	VersionedMultiAssets, VersionedMultiLocation,
+};
 pub use xcm_executor::traits::ConvertLocation;
 
 thread_local! {
@@ -105,9 +108,7 @@ where
 	Hops: Clone,
 	Args: Clone,
 {
-	fn check_assertion(
-		test: Test<Origin, Destination, Hops, Args>
-	);
+	fn check_assertion(test: Test<Origin, Destination, Hops, Args>);
 }
 
 #[impl_trait_for_tuples::impl_for_tuples(5)]
@@ -120,9 +121,7 @@ where
 	Hops: Clone,
 	Args: Clone,
 {
-	fn check_assertion(
-		test: Test<Origin, Destination, Hops, Args>
-	) {
+	fn check_assertion(test: Test<Origin, Destination, Hops, Args>) {
 		for_tuples!( #(
 			Tuple::check_assertion(test.clone());
 		)* );
@@ -186,42 +185,38 @@ pub trait NetworkComponent {
 		to_para_id: u32,
 		iter: I,
 	) {
-		HORIZONTAL_MESSAGES.with(|b|
+		HORIZONTAL_MESSAGES.with(|b| {
 			b.borrow_mut()
 				.get_mut(Self::Network::name())
 				.unwrap()
 				.push_back((to_para_id, iter.collect()))
-		);
+		});
 	}
 
 	fn send_upward_message(from_para_id: u32, msg: Vec<u8>) {
-		UPWARD_MESSAGES.with(|b|
+		UPWARD_MESSAGES.with(|b| {
 			b.borrow_mut()
 				.get_mut(Self::Network::name())
 				.unwrap()
 				.push_back((from_para_id, msg))
-		);
+		});
 	}
 
 	fn send_downward_messages(
 		to_para_id: u32,
 		iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
 	) {
-		DOWNWARD_MESSAGES.with(|b|
+		DOWNWARD_MESSAGES.with(|b| {
 			b.borrow_mut()
 				.get_mut(Self::Network::name())
 				.unwrap()
 				.push_back((to_para_id, iter.collect()))
-		);
+		});
 	}
 
 	fn send_bridged_messages(msg: BridgeMessage) {
-		BRIDGED_MESSAGES.with(|b|
-			b.borrow_mut()
-				.get_mut(Self::Network::name())
-				.unwrap()
-				.push_back(msg)
-		);
+		BRIDGED_MESSAGES
+			.with(|b| b.borrow_mut().get_mut(Self::Network::name()).unwrap().push_back(msg));
 	}
 }
 
@@ -260,7 +255,6 @@ pub trait Parachain: Chain {
 	type LocationToAccountId: ConvertLocation<AccountId>;
 	type ParachainInfo: Get<ParaId>;
 	type ParachainSystem;
-
 
 	fn para_id() -> ParaId {
 		Self::ext_wrapper(|| Self::ParachainInfo::get())
@@ -1123,18 +1117,18 @@ macro_rules! decl_test_bridges {
 #[macro_export]
 macro_rules! __impl_check_assertion {
 	($chain:ident) => {
-		impl<Origin, Destination, Hops, Args> $crate::CheckAssertion<Origin, Destination, Hops, Args> for $chain
+		impl<Origin, Destination, Hops, Args>
+			$crate::CheckAssertion<Origin, Destination, Hops, Args> for $chain
 		where
 			Origin: Chain + Clone,
 			Destination: Chain + Clone,
 			Origin::RuntimeOrigin: $crate::OriginTrait<AccountId = $crate::AccountId32> + Clone,
-			Destination::RuntimeOrigin: $crate::OriginTrait<AccountId = $crate::AccountId32> + Clone,
+			Destination::RuntimeOrigin:
+				$crate::OriginTrait<AccountId = $crate::AccountId32> + Clone,
 			Hops: Clone,
 			Args: Clone,
 		{
-			fn check_assertion(
-				test: $crate::Test<Origin, Destination, Hops, Args>
-			) {
+			fn check_assertion(test: $crate::Test<Origin, Destination, Hops, Args>) {
 				let chain_name = std::any::type_name::<$chain>();
 
 				<$chain>::execute_with(|| {
@@ -1251,8 +1245,9 @@ impl<T> ProcessMessage for DefaultMessageProcessor<T>
 where
 	T: Chain + RelayChain,
 	T::Runtime: MessageQueueConfig,
-	<<T::Runtime as MessageQueueConfig>::MessageProcessor as ProcessMessage>::Origin: PartialEq<AggregateMessageOrigin>,
-	MessageQueuePallet::<T::Runtime>: EnqueueMessage<AggregateMessageOrigin> + ServiceQueues,
+	<<T::Runtime as MessageQueueConfig>::MessageProcessor as ProcessMessage>::Origin:
+		PartialEq<AggregateMessageOrigin>,
+	MessageQueuePallet<T::Runtime>: EnqueueMessage<AggregateMessageOrigin> + ServiceQueues,
 {
 	type Origin = ParaId;
 
@@ -1260,7 +1255,7 @@ where
 		msg: &[u8],
 		para: Self::Origin,
 		_meter: &mut WeightMeter,
-		_id: &mut XcmHash
+		_id: &mut XcmHash,
 	) -> Result<bool, ProcessMessageError> {
 		MessageQueuePallet::<T::Runtime>::enqueue_message(
 			msg.try_into().expect("Message too long"),
@@ -1363,7 +1358,6 @@ where
 		self.receiver.balance = Destination::account_data_of(self.receiver.account_id.clone()).free;
 	}
 }
-
 
 pub mod helpers {
 	use super::*;

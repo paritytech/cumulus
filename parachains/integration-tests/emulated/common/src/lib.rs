@@ -3,28 +3,28 @@ pub mod constants;
 pub mod impls;
 
 pub use constants::{
-	REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD,
 	accounts::{ALICE, BOB},
 	asset_hub_kusama, asset_hub_polkadot, asset_hub_westend, bridge_hub_kusama,
 	bridge_hub_polkadot, bridge_hub_rococo, collectives, kusama, penpal, polkadot, rococo, westend,
+	PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD,
 };
-pub use impls::{RococoWococoMessageHandler, WococoRococoMessageHandler};
-pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
 use frame_support::{parameter_types, sp_tracing};
+pub use impls::{RococoWococoMessageHandler, WococoRococoMessageHandler};
 pub use parachains_common::{AccountId, Balance};
+pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
 pub use sp_core::{sr25519, storage::Storage, Get};
 use xcm_emulator::{
-	decl_test_bridges, decl_test_networks, decl_test_parachains, decl_test_relay_chains,
-	decl_test_sender_receiver_accounts_parameter_types, assert_expected_events,
-	helpers::weight_within_threshold, ParaId,
-	BridgeMessageHandler, Chain, Parachain, RelayChain, TestExt, DefaultMessageProcessor,
+	assert_expected_events, decl_test_bridges, decl_test_networks, decl_test_parachains,
+	decl_test_relay_chains, decl_test_sender_receiver_accounts_parameter_types,
+	helpers::weight_within_threshold, BridgeMessageHandler, Chain, DefaultMessageProcessor, ParaId,
+	Parachain, RelayChain, TestExt,
 };
 
 pub use xcm::{
 	prelude::{
-		OriginKind, MultiAsset, VersionedXcm, WeightLimit, UnpaidExecution, WithdrawAsset,
-		BuyExecution, Transact, RefundSurplus, MultiAssets, DepositAsset, All, MultiLocation,
-		Xcm, AccountId32, Weight, X1, Outcome,
+		AccountId32, All, BuyExecution, DepositAsset, MultiAsset, MultiAssets, MultiLocation,
+		OriginKind, Outcome, RefundSurplus, Transact, UnpaidExecution, VersionedXcm, Weight,
+		WeightLimit, WithdrawAsset, Xcm, X1,
 	},
 	v3::Error,
 	DoubleEncoded,
@@ -484,7 +484,10 @@ pub mod events {
 		}
 
 		// Dispatchable is incompletely executed and XCM sent
-		pub fn xcm_pallet_attempted_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
+		pub fn xcm_pallet_attempted_incomplete(
+			expected_weight: Option<Weight>,
+			expected_error: Option<Error>,
+		) {
 			assert_expected_events!(
 				Polkadot,
 				vec![
@@ -517,7 +520,7 @@ pub mod events {
 		pub fn ump_queue_processed(
 			expected_success: bool,
 			expected_id: Option<ParaId>,
-			expected_weight: Option<Weight>
+			expected_weight: Option<Weight>,
 		) {
 			assert_expected_events!(
 				Polkadot,
@@ -564,7 +567,10 @@ pub mod events {
 		}
 
 		// Dispatchable is incompletely executed and XCM sent
-		pub fn xcm_pallet_attempted_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
+		pub fn xcm_pallet_attempted_incomplete(
+			expected_weight: Option<Weight>,
+			expected_error: Option<Error>,
+		) {
 			assert_expected_events!(
 				Kusama,
 				vec![
@@ -597,7 +603,7 @@ pub mod events {
 		pub fn ump_queue_processed(
 			expected_success: bool,
 			expected_id: Option<ParaId>,
-			expected_weight: Option<Weight>
+			expected_weight: Option<Weight>,
 		) {
 			assert_expected_events!(
 				Kusama,
@@ -645,7 +651,10 @@ pub mod events {
 		}
 
 		// Dispatchable is incompletely executed and XCM sent
-		pub fn xcm_pallet_attempted_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
+		pub fn xcm_pallet_attempted_incomplete(
+			expected_weight: Option<Weight>,
+			expected_error: Option<Error>,
+		) {
 			assert_expected_events!(
 				Westend,
 				vec![
@@ -678,7 +687,7 @@ pub mod events {
 		pub fn ump_queue_processed(
 			expected_success: bool,
 			expected_id: Option<ParaId>,
-			expected_weight: Option<Weight>
+			expected_weight: Option<Weight>,
 		) {
 			assert_expected_events!(
 				Westend,
@@ -726,7 +735,10 @@ pub mod events {
 		}
 
 		// Dispatchable is incompletely executed and XCM sent
-		pub fn xcm_pallet_attempted_incomplete(expected_weight: Option<Weight>, expected_error: Option<Error>) {
+		pub fn xcm_pallet_attempted_incomplete(
+			expected_weight: Option<Weight>,
+			expected_error: Option<Error>,
+		) {
 			assert_expected_events!(
 				Rococo,
 				vec![
@@ -759,7 +771,7 @@ pub mod events {
 		pub fn ump_queue_processed(
 			expected_success: bool,
 			expected_id: Option<ParaId>,
-			expected_weight: Option<Weight>
+			expected_weight: Option<Weight>,
 		) {
 			assert_expected_events!(
 				Rococo,
@@ -789,7 +801,7 @@ pub fn xcm_paid_execution(
 	call: DoubleEncoded<()>,
 	origin_kind: OriginKind,
 	native_asset: MultiAsset,
-	beneficiary: AccountId
+	beneficiary: AccountId,
 ) -> VersionedXcm<()> {
 	let weight_limit = WeightLimit::Unlimited;
 	let require_weight_at_most = Weight::from_parts(1000000000, 200000);
@@ -797,26 +809,20 @@ pub fn xcm_paid_execution(
 
 	VersionedXcm::from(Xcm(vec![
 		WithdrawAsset(native_assets),
-		BuyExecution { fees: native_asset , weight_limit },
+		BuyExecution { fees: native_asset, weight_limit },
 		Transact { require_weight_at_most, origin_kind, call },
 		RefundSurplus,
 		DepositAsset {
 			assets: All.into(),
 			beneficiary: MultiLocation {
 				parents: 0,
-				interior: X1(AccountId32 {
-					network: None,
-					id: beneficiary.into(),
-				}),
-			}
+				interior: X1(AccountId32 { network: None, id: beneficiary.into() }),
+			},
 		},
 	]))
 }
 
-pub fn xcm_unpaid_execution(
-	call: DoubleEncoded<()>,
-	origin_kind: OriginKind
-) -> VersionedXcm<()> {
+pub fn xcm_unpaid_execution(call: DoubleEncoded<()>, origin_kind: OriginKind) -> VersionedXcm<()> {
 	let weight_limit = WeightLimit::Unlimited;
 	let require_weight_at_most = Weight::from_parts(1000000000, 200000);
 	let check_origin = None;

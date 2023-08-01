@@ -19,9 +19,10 @@ use crate::*;
 fn relay_origin_assertions(t: RelayToSystemParaTest) {
 	type RuntimeEvent = <Westend as Chain>::RuntimeEvent;
 
-	events::relay_chain::xcm_pallet_attempted_complete(
-		Some(Weight::from_parts(632_207_000, 7_186))
-	);
+	events::relay_chain::xcm_pallet_attempted_complete(Some(Weight::from_parts(
+		632_207_000,
+		7_186,
+	)));
 
 	assert_expected_events!(
 		Westend,
@@ -46,7 +47,7 @@ fn relay_dest_assertions(t: SystemParaToRelayTest) {
 	events::relay_chain::ump_queue_processed(
 		true,
 		Some(AssetHubWestend::para_id()),
-		Some(Weight::from_parts(308_222_000, 7_186))
+		Some(Weight::from_parts(308_222_000, 7_186)),
 	);
 
 	assert_expected_events!(
@@ -76,9 +77,7 @@ fn relay_dest_assertions_fail(_t: SystemParaToRelayTest) {
 fn para_origin_assertions(t: SystemParaToRelayTest) {
 	type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
-	events::parachain::xcm_pallet_attempted_complete(
-		Some(Weight::from_parts(533_910_000, 7167))
-	);
+	events::parachain::xcm_pallet_attempted_complete(Some(Weight::from_parts(533_910_000, 7167)));
 
 	events::parachain::parachain_system_ump_sent();
 
@@ -97,9 +96,7 @@ fn para_origin_assertions(t: SystemParaToRelayTest) {
 fn para_dest_assertions(t: RelayToSystemParaTest) {
 	type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
-	events::parachain::dmp_queue_complete(
-		Some(Weight::from_parts(164_733_000, 0))
-	);
+	events::parachain::dmp_queue_complete(Some(Weight::from_parts(164_733_000, 0)));
 
 	assert_expected_events!(
 		AssetHubWestend,
@@ -119,7 +116,7 @@ fn relay_limited_teleport_assets(t: RelayToSystemParaTest) -> DispatchResult {
 		bx!(t.args.beneficiary.into()),
 		bx!(t.args.assets.into()),
 		t.args.fee_asset_item,
-		t.args.weight_limit
+		t.args.weight_limit,
 	)
 }
 
@@ -129,7 +126,7 @@ fn relay_teleport_assets(t: RelayToSystemParaTest) -> DispatchResult {
 		bx!(t.args.dest.into()),
 		bx!(t.args.beneficiary.into()),
 		bx!(t.args.assets.into()),
-		t.args.fee_asset_item
+		t.args.fee_asset_item,
 	)
 }
 
@@ -140,7 +137,7 @@ fn system_para_limited_teleport_assets(t: SystemParaToRelayTest) -> DispatchResu
 		bx!(t.args.beneficiary.into()),
 		bx!(t.args.assets.into()),
 		t.args.fee_asset_item,
-		t.args.weight_limit
+		t.args.weight_limit,
 	)
 }
 
@@ -201,13 +198,7 @@ fn limited_teleport_native_assets_back_from_system_para_to_relay_works() {
 	let test_args = TestContext {
 		sender: AssetHubWestendSender::get(),
 		receiver: WestendReceiver::get(),
-		args: system_para_test_args(
-			destination,
-			beneficiary_id,
-			amount_to_send,
-			assets,
-			None
-		),
+		args: system_para_test_args(destination, beneficiary_id, amount_to_send, assets, None),
 	};
 
 	let mut test = SystemParaToRelayTest::new(test_args);
@@ -242,13 +233,7 @@ fn limited_teleport_native_assets_from_system_para_to_relay_fails() {
 	let test_args = TestContext {
 		sender: AssetHubWestendSender::get(),
 		receiver: WestendReceiver::get(),
-		args: system_para_test_args(
-			destination,
-			beneficiary_id,
-			amount_to_send,
-			assets,
-			None
-		),
+		args: system_para_test_args(destination, beneficiary_id, amount_to_send, assets, None),
 	};
 
 	let mut test = SystemParaToRelayTest::new(test_args);
