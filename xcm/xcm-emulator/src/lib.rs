@@ -97,7 +97,6 @@ thread_local! {
 	pub static INITIALIZED: RefCell<HashMap<String, bool>> = RefCell::new(HashMap::new());
 }
 
-
 pub trait CheckAssertion<Origin, Destination, Hops, Args>
 where
 	Origin: Chain + Clone,
@@ -111,8 +110,6 @@ where
 		test: Test<Origin, Destination, Hops, Args>
 	);
 }
-
-
 
 #[impl_trait_for_tuples::impl_for_tuples(5)]
 impl<Origin, Destination, Hops, Args> CheckAssertion<Origin, Destination, Hops, Args> for Tuple

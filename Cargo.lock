@@ -1374,6 +1374,7 @@ version = "1.0.0"
 dependencies = [
  "bp-messages",
  "bridge-hub-rococo-runtime",
+ "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
  "frame-support",
  "frame-system",
@@ -1381,6 +1382,7 @@ dependencies = [
  "pallet-assets",
  "pallet-balances",
  "pallet-bridge-messages",
+ "pallet-message-queue",
  "pallet-xcm",
  "parachains-common",
  "parity-scale-codec",

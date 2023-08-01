@@ -335,6 +335,21 @@ decl_test_parachains! {
 			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
 			Assets: asset_hub_polkadot_runtime::Assets,
 		}
+	},
+	pub struct PenpalRococoA {
+		genesis = penpal::genesis(penpal::PARA_ID_A),
+		on_init = (),
+		runtime = penpal_runtime,
+		core = {
+			XcmpMessageHandler: penpal_runtime::XcmpQueue,
+			DmpMessageHandler: penpal_runtime::DmpQueue,
+			LocationToAccountId: penpal_runtime::xcm_config::LocationToAccountId,
+			ParachainInfo: penpal_runtime::ParachainInfo,
+		},
+		pallets = {
+			PolkadotXcm: penpal_runtime::PolkadotXcm,
+			Assets: penpal_runtime::Assets,
+		}
 	}
 }
 
@@ -377,6 +392,7 @@ decl_test_networks! {
 		parachains = vec![
 			AssetHubRococo,
 			BridgeHubRococo,
+			PenpalRococoA,
 		],
 		bridge = RococoWococoMockBridge
 	},
@@ -439,7 +455,8 @@ decl_test_sender_receiver_accounts_parameter_types! {
 	PenpalPolkadotB { sender: ALICE, receiver: BOB },
 	PenpalKusamaA { sender: ALICE, receiver: BOB },
 	PenpalKusamaB { sender: ALICE, receiver: BOB },
-	PenpalWestendA { sender: ALICE, receiver: BOB }
+	PenpalWestendA { sender: ALICE, receiver: BOB },
+	PenpalRococoA { sender: ALICE, receiver: BOB }
 }
 
 pub mod events {

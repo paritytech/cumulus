@@ -16,6 +16,7 @@ sp-core = { default-features = false, git = "https://github.com/paritytech/subst
 sp-weights = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-assets = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-message-queue = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
 polkadot-core-primitives = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -29,6 +30,7 @@ pallet-xcm = { default-features = false, git = "https://github.com/paritytech/po
 # Cumulus
 parachains-common = { path = "../../../../common" }
 cumulus-pallet-xcmp-queue = { default-features = false, path = "../../../../../pallets/xcmp-queue" }
+cumulus-pallet-parachain-system = { path = "../../../../../pallets/parachain-system" }
 bridge-hub-rococo-runtime = { path = "../../../../runtimes/bridge-hubs/bridge-hub-rococo" }
 pallet-bridge-messages = { default-features = false, path = "../../../../../bridges/modules/messages" }
 bp-messages = { default-features = false, path = "../../../../../bridges/primitives/messages" }
