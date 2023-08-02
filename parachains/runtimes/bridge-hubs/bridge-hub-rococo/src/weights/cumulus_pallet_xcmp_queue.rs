@@ -87,7 +87,16 @@ impl<T: frame_system::Config> cumulus_pallet_xcmp_queue::WeightInfo for WeightIn
 	}
 	/// Storage: XcmpQueue QueueSuspended (r:1 w:0)
 	/// Proof Skipped: XcmpQueue QueueSuspended (max_values: Some(1), max_size: None, mode: Measured)
-	fn process_message() -> Weight {
+		fn suspend_channel() -> Weight {
+		Weight::zero()
+	}
+	fn split_concatenated_xcm() -> Weight {
+		Weight::zero()
+	}
+	fn resume_channel() -> Weight {
+		Weight::zero()
+	}
+fn process_message() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `76`
 		//  Estimated: `1561`

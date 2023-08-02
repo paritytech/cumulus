@@ -61,15 +61,6 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	fn suspend_channel() -> Weight {
-		Weight::zero()
-	}
-	fn resume_channel() -> Weight {
-		Weight::zero()
-	}
-	fn split_concatenated_xcm() -> Weight {
-		Weight::zero()
-	}
 	
 	/// Storage: XcmpQueue QueueConfig (r:1 w:0)
 	/// Proof Skipped: XcmpQueue QueueConfig (max_values: Some(1), max_size: None, mode: Measured)
@@ -93,7 +84,16 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: XcmpQueue QueueSuspended (r:1 w:0)
 	/// Proof Skipped: XcmpQueue QueueSuspended (max_values: Some(1), max_size: None, mode: Measured)
-	fn process_message() -> Weight {
+		fn suspend_channel() -> Weight {
+		Weight::zero()
+	}
+	fn split_concatenated_xcm() -> Weight {
+		Weight::zero()
+	}
+	fn resume_channel() -> Weight {
+		Weight::zero()
+	}
+fn process_message() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `76`
 		//  Estimated: `1561`
@@ -140,16 +140,7 @@ impl WeightInfo for () {
 	}
 	/// Storage: XcmpQueue QueueSuspended (r:1 w:0)
 	/// Proof Skipped: XcmpQueue QueueSuspended (max_values: Some(1), max_size: None, mode: Measured)
-	fn process_message() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `76`
-		//  Estimated: `1561`
-		// Minimum execution time: 2_718_000 picoseconds.
-		Weight::from_parts(2_717_000_u64, 0)
-			.saturating_add(RocksDbWeight::get().reads(1_u64))
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
-	}
-	fn suspend_channel() -> Weight {
+		fn suspend_channel() -> Weight {
 		Weight::zero()
 	}
 	fn split_concatenated_xcm() -> Weight {
@@ -158,4 +149,14 @@ impl WeightInfo for () {
 	fn resume_channel() -> Weight {
 		Weight::zero()
 	}
+fn process_message() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `76`
+		//  Estimated: `1561`
+		// Minimum execution time: 2_718_000 picoseconds.
+		Weight::from_parts(2_717_000_u64, 0)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+
 }

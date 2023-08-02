@@ -65,7 +65,16 @@ impl<T: frame_system::Config> cumulus_pallet_xcmp_queue::WeightInfo for WeightIn
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 
-	fn process_message() -> Weight {
+		fn suspend_channel() -> Weight {
+		Weight::zero()
+	}
+	fn split_concatenated_xcm() -> Weight {
+		Weight::zero()
+	}
+	fn resume_channel() -> Weight {
+		Weight::zero()
+	}
+fn process_message() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `76`
 		//  Estimated: `1561`
