@@ -240,8 +240,12 @@ pub mod pallet {
 					return
 				},
 			};
-			let relevant_messaging_state = match Self::relevant_messaging_state() {
-				Some(ok) => ok,
+
+			// Before updating the relevant messaging state, we need to extract
+			// the total bandwidth limits for the purpose of updating the unincluded
+			// segment.
+			let total_bandwidth_out = match Self::relevant_messaging_state() {
+				Some(s) => OutboundBandwidthLimits::from_relay_chain_state(&s),
 				None => {
 					debug_assert!(
 						false,
@@ -252,22 +256,28 @@ pub mod pallet {
 				},
 			};
 
-			let total_bandwidth_out =
-				OutboundBandwidthLimits::from_relay_chain_state(&relevant_messaging_state);
-			let bandwidth_out = AggregatedUnincludedSegment::<T>::get().map(|segment| {
-				let mut bandwidth_out = total_bandwidth_out.clone();
-				bandwidth_out.subtract(segment.used_bandwidth());
-				bandwidth_out
-			});
+			// After this point, the `RelevantMessagingState` in storage reflects the
+			// unincluded segment.
+			Self::adjust_egress_bandwidth_limits();
 
 			let (ump_msg_count, ump_total_bytes) = <PendingUpwardMessages<T>>::mutate(|up| {
-				let bandwidth_out = bandwidth_out.as_ref().unwrap_or(&total_bandwidth_out);
-				let available_capacity = cmp::min(
-					bandwidth_out.ump_messages_remaining,
-					host_config.max_upward_message_num_per_candidate,
-				);
+				let (available_capacity, available_size) = match Self::relevant_messaging_state() {
+					Some(limits) => (
+						limits.relay_dispatch_queue_remaining_capacity.remaining_count,
+						limits.relay_dispatch_queue_remaining_capacity.remaining_size,
+					),
+					None => {
+						debug_assert!(
+							false,
+							"relevant messaging state is promised to be set until `on_finalize`; \
+								qed",
+						);
+						return (0, 0)
+					},
+				};
 
-				let available_size = bandwidth_out.ump_bytes_remaining;
+				let available_capacity =
+					cmp::min(available_capacity, host_config.max_upward_message_num_per_candidate);
 
 				// Count the number of messages we can possibly fit in the given constraints, i.e.
 				// available_capacity and available_size.
@@ -312,8 +322,9 @@ pub mod pallet {
 				.hrmp_max_message_num_per_candidate
 				.min(<AnnouncedHrmpMessagesPerCandidate<T>>::take()) as usize;
 
-			// TODO [now]: the `ChannelInfo` implementation for this pallet is what's
-			// important here for proper limiting.
+			// Note: this internally calls the `GetChannelInfo` implementation for this
+			// pallet, which draws on the `RelevantMessagingState`. That in turn has
+			// been adjusted above to reflect the correct limits in all channels.
 			let outbound_messages =
 				T::OutboundXcmpMessageSource::take_outbound_messages(maximum_channels)
 					.into_iter()
@@ -351,9 +362,7 @@ pub mod pallet {
 				let watermark = HrmpWatermark::<T>::get();
 				let watermark_update =
 					HrmpWatermarkUpdate::new(watermark, LastRelayChainBlockNumber::<T>::get());
-				// TODO: In order of this panic to be correct, outbound message source should
-				// respect bandwidth limits as well.
-				// <https://github.com/paritytech/cumulus/issues/2471>
+
 				aggregated_segment
 					.append(&ancestor, watermark_update, &total_bandwidth_out)
 					.expect("unincluded segment limits exceeded");
@@ -430,6 +439,9 @@ pub mod pallet {
 				3 + hrmp_max_message_num_per_candidate as u64,
 				4 + hrmp_max_message_num_per_candidate as u64,
 			);
+
+			// Weight for adjusting the unincluded segment in `on_finalize`.
+			weight += T::DbWeight::get().reads_writes(6, 3);
 
 			// Always try to read `UpgradeGoAhead` in `on_finalize`.
 			weight += T::DbWeight::get().reads(1);
@@ -557,6 +569,7 @@ pub mod pallet {
 			let host_config = relay_state_proof
 				.read_abridged_host_configuration()
 				.expect("Invalid host configuration in relay chain state proof");
+
 			let relevant_messaging_state = relay_state_proof
 				.read_messaging_state_snapshot(&host_config)
 				.expect("Invalid messaging state in relay chain state proof");
@@ -1225,6 +1238,46 @@ impl<T: Config> Pallet<T> {
 		// a new block is allowed.
 		assert!(new_len < capacity.get(), "no space left for the block in the unincluded segment");
 		weight_used
+	}
+
+	/// This adjusts the `RelevantMessagingState` according to the bandwidth limits in the
+	/// unincluded segment.
+	//
+	// Reads: 2
+	// Writes: 1
+	fn adjust_egress_bandwidth_limits() {
+		let unincluded_segment = match AggregatedUnincludedSegment::<T>::get() {
+			None => return,
+			Some(s) => s,
+		};
+
+		<RelevantMessagingState<T>>::mutate(|messaging_state| {
+			let messaging_state = match messaging_state {
+				None => return,
+				Some(s) => s,
+			};
+
+			let used_bandwidth = unincluded_segment.used_bandwidth();
+
+			let channels = &mut messaging_state.egress_channels;
+			for (para_id, used) in used_bandwidth.hrmp_outgoing.iter() {
+				let i = match channels.binary_search_by_key(para_id, |item| item.0) {
+					Ok(i) => i,
+					Err(_) => continue, // indicates channel closed.
+				};
+
+				let c = &mut channels[i].1;
+
+				c.total_size = (c.total_size + used.total_bytes).min(c.max_total_size);
+				c.msg_count = (c.msg_count + used.msg_count).min(c.max_capacity);
+			}
+
+			let upward_capacity = &mut messaging_state.relay_dispatch_queue_remaining_capacity;
+			upward_capacity.remaining_count =
+				upward_capacity.remaining_count.saturating_sub(used_bandwidth.ump_msg_count);
+			upward_capacity.remaining_size =
+				upward_capacity.remaining_size.saturating_sub(used_bandwidth.ump_total_bytes);
+		});
 	}
 
 	/// Put a new validation function into a particular location where polkadot

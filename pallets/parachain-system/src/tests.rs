@@ -137,15 +137,28 @@ fn send_message(dest: ParaId, message: Vec<u8>) {
 impl XcmpMessageSource for FromThreadLocal {
 	fn take_outbound_messages(maximum_channels: usize) -> Vec<(ParaId, Vec<u8>)> {
 		let mut ids = std::collections::BTreeSet::<ParaId>::new();
-		let mut taken = 0;
+		let mut taken_messages = 0;
+		let mut taken_bytes = 0;
 		let mut result = Vec::new();
 		SENT_MESSAGES.with(|ms| {
 			ms.borrow_mut().retain(|m| {
 				let status = <Pallet<Test> as GetChannelInfo>::get_channel_status(m.0);
-				let ready = matches!(status, ChannelStatus::Ready(..));
-				if ready && !ids.contains(&m.0) && taken < maximum_channels {
+				let (max_size_now, max_size_ever) = match status {
+					ChannelStatus::Ready(now, ever) => (now, ever),
+					ChannelStatus::Closed => return false, // drop message
+					ChannelStatus::Full => return true,    // keep message queued.
+				};
+
+				let msg_len = m.1.len();
+
+				if !ids.contains(&m.0) &&
+					taken_messages < maximum_channels &&
+					msg_len <= max_size_ever &&
+					taken_bytes + msg_len <= max_size_now
+				{
 					ids.insert(m.0);
-					taken += 1;
+					taken_messages += 1;
+					taken_bytes += msg_len;
 					result.push(m.clone());
 					false
 				} else {
@@ -436,6 +449,47 @@ fn block_tests_run_on_drop() {
 }
 
 #[test]
+fn test_xcmp_source_keeps_messages() {
+	let recipient = ParaId::from(400);
+
+	CONSENSUS_HOOK.with(|c| {
+		*c.borrow_mut() = Box::new(|_| (Weight::zero(), NonZeroU32::new(3).unwrap().into()))
+	});
+
+	BlockTests::new()
+		.with_inclusion_delay(2)
+		.with_relay_sproof_builder(move |_, block_number, sproof| {
+			sproof.host_config.hrmp_max_message_num_per_candidate = 10;
+			let channel = sproof.upsert_outbound_channel(recipient);
+			channel.max_total_size = 10;
+			channel.max_message_size = 10;
+
+			// Only fit messages starting from 3rd block.
+			channel.max_capacity = if block_number < 3 { 0 } else { 1 };
+		})
+		.add(1, || {})
+		.add_with_post_test(
+			2,
+			move || {
+				send_message(recipient, b"22".to_vec());
+			},
+			move || {
+				let v = HrmpOutboundMessages::<Test>::get();
+				assert!(v.is_empty());
+			},
+		)
+		.add_with_post_test(
+			3,
+			move || {},
+			move || {
+				// Not discarded.
+				let v = HrmpOutboundMessages::<Test>::get();
+				assert_eq!(v, vec![OutboundHrmpMessage { recipient, data: b"22".to_vec() }]);
+			},
+		);
+}
+
+#[test]
 fn unincluded_segment_works() {
 	CONSENSUS_HOOK.with(|c| {
 		*c.borrow_mut() = Box::new(|_| (Weight::zero(), NonZeroU32::new(10).unwrap().into()))
@@ -677,6 +731,142 @@ fn inherent_processed_messages_are_ignored() {
 				assert_eq!(&*m, EXPECTED_PROCESSED_XCMP.as_slice());
 			});
 		});
+}
+
+#[test]
+fn hrmp_outbound_respects_used_bandwidth() {
+	let recipient = ParaId::from(400);
+
+	CONSENSUS_HOOK.with(|c| {
+		*c.borrow_mut() = Box::new(|_| (Weight::zero(), NonZeroU32::new(3).unwrap().into()))
+	});
+
+	BlockTests::new()
+		.with_inclusion_delay(2)
+		.with_relay_sproof_builder(move |_, block_number, sproof| {
+			sproof.host_config.hrmp_max_message_num_per_candidate = 10;
+			let channel = sproof.upsert_outbound_channel(recipient);
+			channel.max_capacity = 2;
+			channel.max_total_size = 4;
+
+			channel.max_message_size = 10;
+
+			// states:
+			// [relay_chain][unincluded_segment] + [message_queue]
+			// 2: []["2"] + ["2222"]
+			// 3: []["2", "3"] + ["2222"]
+			// 4: []["2", "3"] + ["2222", "444", "4"]
+			// 5: ["2"]["3"] + ["2222", "444", "4"]
+			// 6: ["2", "3"][] + ["2222", "444", "4"]
+			// 7: ["3"]["444"] + ["2222", "4"]
+			// 8: []["444", "4"] + ["2222"]
+			//
+			// 2 tests max bytes - there is message space but no byte space.
+			// 4 tests max capacity - there is byte space but no message space
+
+			match block_number {
+				5 => {
+					// 2 included.
+					// one message added
+					channel.msg_count = 1;
+					channel.total_size = 1;
+				},
+				6 => {
+					// 3 included.
+					// one message added
+					channel.msg_count = 2;
+					channel.total_size = 2;
+				},
+				7 => {
+					// 4 included.
+					// one message drained.
+					channel.msg_count = 1;
+					channel.total_size = 1;
+				},
+				8 => {
+					// 5 included. no messages added, one drained.
+					channel.msg_count = 0;
+					channel.total_size = 0;
+				},
+				_ => {
+					channel.msg_count = 0;
+					channel.total_size = 0;
+				},
+			}
+		})
+		.add(1, || {})
+		.add_with_post_test(
+			2,
+			move || {
+				send_message(recipient, b"2".to_vec());
+				send_message(recipient, b"2222".to_vec());
+			},
+			move || {
+				let v = HrmpOutboundMessages::<Test>::get();
+				assert_eq!(v, vec![OutboundHrmpMessage { recipient, data: b"2".to_vec() }]);
+			},
+		)
+		.add_with_post_test(
+			3,
+			move || {
+				send_message(recipient, b"3".to_vec());
+			},
+			move || {
+				let v = HrmpOutboundMessages::<Test>::get();
+				assert_eq!(v, vec![OutboundHrmpMessage { recipient, data: b"3".to_vec() }]);
+			},
+		)
+		.add_with_post_test(
+			4,
+			move || {
+				send_message(recipient, b"444".to_vec());
+				send_message(recipient, b"4".to_vec());
+			},
+			move || {
+				// Queue has byte capacity but not message capacity.
+				let v = HrmpOutboundMessages::<Test>::get();
+				assert!(v.is_empty());
+			},
+		)
+		.add_with_post_test(
+			5,
+			|| {},
+			move || {
+				// 1 is included here, channel not drained yet. nothing fits.
+				let v = HrmpOutboundMessages::<Test>::get();
+				assert!(v.is_empty());
+			},
+		)
+		.add_with_post_test(
+			6,
+			|| {},
+			move || {
+				// 2 is included here. channel is totally full.
+				let v = HrmpOutboundMessages::<Test>::get();
+				assert!(v.is_empty());
+			},
+		)
+		.add_with_post_test(
+			7,
+			|| {},
+			move || {
+				// 3 is included here. One message was drained out. The 3-byte message
+				// finally fits
+				let v = HrmpOutboundMessages::<Test>::get();
+				// This line relies on test implementation of [`XcmpMessageSource`].
+				assert_eq!(v, vec![OutboundHrmpMessage { recipient, data: b"444".to_vec() }]);
+			},
+		)
+		.add_with_post_test(
+			8,
+			|| {},
+			move || {
+				// 4 is included here. Relay-chain side of the queue is empty,
+				let v = HrmpOutboundMessages::<Test>::get();
+				// This line relies on test implementation of [`XcmpMessageSource`].
+				assert_eq!(v, vec![OutboundHrmpMessage { recipient, data: b"4".to_vec() }]);
+			},
+		);
 }
 
 #[test]
