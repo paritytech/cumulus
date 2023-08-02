@@ -31,9 +31,8 @@ mod benchmarks {
 	/// Enqueue `n` messages via `enqueue_inbound_downward_messages`.
 	#[benchmark]
 	fn enqueue_inbound_downward_messages(n: Linear<0, 1000>) {
-		// FAIL-CI use correct maximum
 		let msg = InboundDownwardMessage {
-			sent_at: n, // Should not matter.
+			sent_at: n, // The block number does not matter.
 			msg: vec![0u8; MaxDmpMessageLenOf::<T>::get() as usize],
 		};
 		let msgs = vec![msg; n as usize];

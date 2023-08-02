@@ -42,6 +42,9 @@ pub trait WeightInfo {
 	fn set_config_with_u32() -> Weight;
 	fn enqueue_xcmp_messages(n: u32, ) -> Weight;
 	fn process_message() -> Weight;
+	fn suspend_channel() -> Weight;
+	fn resume_channel() -> Weight;
+	fn split_concatenated_xcm() -> Weight;
 }
 
 /// Weights for cumulus_pallet_xcmp_queue using the Substrate node and recommended hardware.
@@ -58,6 +61,16 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+	fn suspend_channel() -> Weight {
+		Weight::zero()
+	}
+	fn resume_channel() -> Weight {
+		Weight::zero()
+	}
+	fn split_concatenated_xcm() -> Weight {
+		Weight::zero()
+	}
+	
 	/// Storage: XcmpQueue QueueConfig (r:1 w:0)
 	/// Proof Skipped: XcmpQueue QueueConfig (max_values: Some(1), max_size: None, mode: Measured)
 	/// Storage: MessageQueue BookStateFor (r:1 w:1)
@@ -135,5 +148,14 @@ impl WeightInfo for () {
 		Weight::from_parts(2_717_000_u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	fn suspend_channel() -> Weight {
+		Weight::zero()
+	}
+	fn split_concatenated_xcm() -> Weight {
+		Weight::zero()
+	}
+	fn resume_channel() -> Weight {
+		Weight::zero()
 	}
 }

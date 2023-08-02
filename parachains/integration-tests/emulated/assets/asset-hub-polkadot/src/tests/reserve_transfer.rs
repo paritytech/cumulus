@@ -64,7 +64,7 @@ fn reserve_transfer_native_asset_from_relay_to_assets() {
 			AssetHubPolkadot,
 			vec![
 				RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed {
-					success: false, // FAIL-CI why?
+					success: false, // Error since UntrustedReserveLocation.
 					..
 				}) => {},
 			]

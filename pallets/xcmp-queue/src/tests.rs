@@ -119,7 +119,7 @@ fn bad_blob_message_no_panic() {
 
 /// Invalid concatenated XCMs panic in debug mode.
 #[test]
-#[should_panic = "Invalid incoming XCMP message data"]
+#[should_panic = "Could not parse incoming XCMP messages."]
 #[cfg(debug_assertions)]
 fn handle_invalid_data_panics() {
 	new_test_ext().execute_with(|| {
@@ -210,29 +210,29 @@ fn suspend_and_resume_xcm_execution_work() {
 #[test]
 fn update_suspend_threshold_works() {
 	new_test_ext().execute_with(|| {
-		assert_eq!(<QueueConfig<Test>>::get().suspend_threshold, 200);
+		assert_eq!(<QueueConfig<Test>>::get().suspend_threshold, 2048);
 		assert_noop!(XcmpQueue::update_suspend_threshold(Origin::signed(2), 5), BadOrigin);
 
-		assert_ok!(XcmpQueue::update_suspend_threshold(Origin::root(), 300));
-		assert_eq!(<QueueConfig<Test>>::get().suspend_threshold, 300);
+		assert_ok!(XcmpQueue::update_suspend_threshold(Origin::root(), 3000));
+		assert_eq!(<QueueConfig<Test>>::get().suspend_threshold, 3000);
 	});
 }
 
 #[test]
 fn update_drop_threshold_works() {
 	new_test_ext().execute_with(|| {
-		assert_eq!(<QueueConfig<Test>>::get().drop_threshold, 500);
-		assert_ok!(XcmpQueue::update_drop_threshold(Origin::root(), 600));
+		assert_eq!(<QueueConfig<Test>>::get().drop_threshold, 3096);
+		assert_ok!(XcmpQueue::update_drop_threshold(Origin::root(), 4000));
 		assert_noop!(XcmpQueue::update_drop_threshold(Origin::signed(2), 7), BadOrigin);
 
-		assert_eq!(<QueueConfig<Test>>::get().drop_threshold, 600);
+		assert_eq!(<QueueConfig<Test>>::get().drop_threshold, 4000);
 	});
 }
 
 #[test]
 fn update_resume_threshold_works() {
 	new_test_ext().execute_with(|| {
-		assert_eq!(<QueueConfig<Test>>::get().resume_threshold, 100);
+		assert_eq!(<QueueConfig<Test>>::get().resume_threshold, 1024);
 		assert_noop!(
 			XcmpQueue::update_resume_threshold(Origin::root(), 0),
 			Error::<Test>::BadQueueConfig

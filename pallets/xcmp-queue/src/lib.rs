@@ -524,6 +524,7 @@ impl<T: Config> Pallet<T> {
 			.try_consume(T::WeightInfo::enqueue_xcmp_messages(xcms.len() as u32))
 			.is_err()
 		{
+			defensive!("Out of weight: cannot enqueue XCMP messages; dropping msgs: ", xcms.len());
 			return
 		}
 		let QueueConfigData { drop_threshold, .. } = <QueueConfig<T>>::get();
@@ -533,11 +534,7 @@ impl<T: Config> Pallet<T> {
 		let to_enqueue = (drop_threshold as usize).saturating_sub(new_count) as usize;
 		if to_enqueue < xcms.len() {
 			// This should not happen since the channel should have been suspended in [`on_queue_changed`].
-			log::error!(
-				"XCMP queue for sibling {:?} is full; dropping {} messages.",
-				sender,
-				xcms.len() - to_enqueue,
-			);
+			log::error!("XCMP queue for sibling {:?} is full; dropping messages.", sender,);
 			xcms.truncate(to_enqueue);
 		}
 
@@ -549,10 +546,15 @@ impl<T: Config> Pallet<T> {
 	/// We directly encode them again since that is needed later on.
 	fn split_concatenated_xcms(
 		data: &mut &[u8],
+		meter: &mut WeightMeter,
 	) -> Result<Vec<BoundedVec<u8, MaxXcmpMessageLenOf<T>>>, ()> {
-		// FAIL-CI add benchmark to check for OOM depending on `MAX_XCM_DECODE_DEPTH`.
 		let mut encoded_xcms = Vec::new();
 		while !data.is_empty() {
+			if meter.try_consume(T::WeightInfo::split_concatenated_xcm()).is_err() {
+				defensive!("Could not decode all; dropping");
+				return Err(())
+			}
+
 			let xcm =
 				VersionedXcm::<T::RuntimeCall>::decode_with_depth_limit(MAX_XCM_DECODE_DEPTH, data)
 					.map_err(|_| ())?;
@@ -617,22 +619,30 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 		max_weight: Weight,
 	) -> Weight {
 		let mut meter = WeightMeter::from_limit(max_weight);
-		// FAIL-CI how do i return an out-of-weight error in a `XcmpMessageHandler`?
 
 		for (sender, _sent_at, mut data) in iter {
-			let format =
-				match XcmpMessageFormat::decode_with_depth_limit(MAX_XCM_DECODE_DEPTH, &mut data) {
-					Ok(f) => f,
-					Err(_) => {
-						defensive!("Unknown XCMP message format. Message silently dropped.");
-						continue
-					},
-				};
+			let format = match XcmpMessageFormat::decode(&mut data) {
+				Ok(f) => f,
+				Err(_) => {
+					defensive!("Unknown XCMP message format. Message silently dropped.");
+					continue
+				},
+			};
 
 			match format {
 				XcmpMessageFormat::Signals =>
 					while !data.is_empty() {
-						// FAIL-CI consume weight here and above/below
+						if meter
+							.try_consume(
+								T::WeightInfo::suspend_channel()
+									.max(T::WeightInfo::resume_channel()),
+							)
+							.is_err()
+						{
+							defensive!("Not enough weight to process signals - dropping.");
+							break
+						}
+
 						match ChannelSignal::decode(&mut data) {
 							Ok(ChannelSignal::Suspend) => Self::suspend_channel(sender),
 							Ok(ChannelSignal::Resume) => Self::resume_channel(sender),
@@ -643,12 +653,15 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 						}
 					},
 				XcmpMessageFormat::ConcatenatedVersionedXcm => {
-					match Self::split_concatenated_xcms(&mut data) {
+					match Self::split_concatenated_xcms(&mut data, &mut meter) {
 						Ok(xcms) => {
 							Self::enqueue_xcmp_messages(sender, xcms, &mut meter);
 						},
 						Err(()) => {
-							defensive!("Invalid incoming XCMP message data");
+							defensive!(
+								"Could not parse incoming XCMP messages. Used weight: ",
+								meter.consumed_ratio()
+							);
 							continue
 						},
 					}
