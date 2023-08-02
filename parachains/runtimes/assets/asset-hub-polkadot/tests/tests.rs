@@ -733,7 +733,7 @@ fn xcm_reserve_transfer_filter_works() {
 	// prepare destinations
 	let relaychain = MultiLocation::parent();
 	let sibling_parachain = MultiLocation::new(1, X1(Parachain(54321)));
-	let different_global_consensus_parachain_other_then_asset_hub_kusama =
+	let different_global_consensus_parachain_other_than_asset_hub_kusama =
 		MultiLocation::new(2, X2(GlobalConsensus(Kusama), Parachain(12345)));
 	let bridged_asset_hub = bridging::AssetHubKusama::get();
 
@@ -748,22 +748,22 @@ fn xcm_reserve_transfer_filter_works() {
 		(sibling_parachain, only_sibling_foreign_assets(), true),
 		(sibling_parachain, only_different_global_consensus_foreign_assets(), true),
 		(
-			different_global_consensus_parachain_other_then_asset_hub_kusama,
+			different_global_consensus_parachain_other_than_asset_hub_kusama,
 			only_native_assets(),
 			false,
 		),
 		(
-			different_global_consensus_parachain_other_then_asset_hub_kusama,
+			different_global_consensus_parachain_other_than_asset_hub_kusama,
 			only_trust_backed_assets(),
 			false,
 		),
 		(
-			different_global_consensus_parachain_other_then_asset_hub_kusama,
+			different_global_consensus_parachain_other_than_asset_hub_kusama,
 			only_sibling_foreign_assets(),
 			false,
 		),
 		(
-			different_global_consensus_parachain_other_then_asset_hub_kusama,
+			different_global_consensus_parachain_other_than_asset_hub_kusama,
 			only_different_global_consensus_foreign_assets(),
 			false,
 		),

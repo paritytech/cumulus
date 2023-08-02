@@ -727,22 +727,22 @@ fn xcm_reserve_transfer_filter_works() {
 		(sibling_parachain, only_sibling_foreign_assets(), true),
 		(sibling_parachain, only_different_global_consensus_foreign_assets(), true),
 		(
-			different_global_consensus_parachain_other_then_asset_hub_polkadot,
+			different_global_consensus_parachain_other_than_asset_hub_polkadot,
 			only_native_assets(),
 			false,
 		),
 		(
-			different_global_consensus_parachain_other_then_asset_hub_polkadot,
+			different_global_consensus_parachain_other_than_asset_hub_polkadot,
 			only_trust_backed_assets(),
 			false,
 		),
 		(
-			different_global_consensus_parachain_other_then_asset_hub_polkadot,
+			different_global_consensus_parachain_other_than_asset_hub_polkadot,
 			only_sibling_foreign_assets(),
 			false,
 		),
 		(
-			different_global_consensus_parachain_other_then_asset_hub_polkadot,
+			different_global_consensus_parachain_other_than_asset_hub_polkadot,
 			only_different_global_consensus_foreign_assets(),
 			false,
 		),
