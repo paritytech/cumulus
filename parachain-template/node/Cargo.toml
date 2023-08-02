@@ -10,11 +10,12 @@ edition = "2021"
 build = "build.rs"
 
 [dependencies]
-clap = { version = "4.3.11", features = ["derive"] }
+clap = { version = "4.3.12", features = ["derive"] }
 log = "0.4.19"
 codec = { package = "parity-scale-codec", version = "3.0.0" }
-serde = { version = "1.0.167", features = ["derive"] }
+serde = { version = "1.0.171", features = ["derive"] }
 jsonrpsee = { version = "0.16.2", features = ["server"] }
+futures = "0.3.28"
 
 # Local
 parachain-template-runtime = { path = "../runtime" }
@@ -27,6 +28,7 @@ sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch 
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+sc-offchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
