@@ -5,14 +5,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0-cumulus" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v1.0.0" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "release-v1.0.0-cumulus" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 
 futures = "0.3.28"
 async-trait = "0.1.71"
