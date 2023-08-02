@@ -122,7 +122,8 @@ impl pallet_message_queue::Config for Test {
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type MessageProcessor = SaveIntoThreadLocal;
 	type Size = u32;
-	type QueueChangeHandler = ();
+	// The XCMP queue pallet is only ever able to handle the `Sibling(ParaId)` origin:
+	type QueueChangeHandler = NarrowOriginToSibling<XcmpQueue>;
 	type QueuePausedQuery = ();
 	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
 	type MaxStale = sp_core::ConstU32<8>;

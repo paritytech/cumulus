@@ -20,6 +20,7 @@ pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", def
 pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+pallet-message-queue = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 sp-io = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
@@ -53,6 +54,7 @@ std = [
 	"pallet-assets/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
+	"pallet-message-queue/std",
 	"polkadot-primitives/std",
 	"sp-consensus-aura/std",
 	"sp-io/std",

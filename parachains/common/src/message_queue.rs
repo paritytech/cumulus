@@ -18,19 +18,30 @@
 
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use frame_support::traits::QueuePausedQuery;
+use pallet_message_queue::OnQueueChanged;
 use sp_std::marker::PhantomData;
 
 /// Narrow the scope of the `Inner` query from `AggregateMessageOrigin` to `ParaId`.
 ///
-/// All non-ParaIds will be treated as unpaused.
-pub struct NarrowToSiblings<Inner>(PhantomData<Inner>);
+/// All non-`Sibling` variants will be ignored.
+pub struct NarrowOriginToSibling<Inner>(PhantomData<Inner>);
 impl<Inner: QueuePausedQuery<ParaId>> QueuePausedQuery<AggregateMessageOrigin>
-	for NarrowToSiblings<Inner>
+	for NarrowOriginToSibling<Inner>
 {
 	fn is_paused(origin: &AggregateMessageOrigin) -> bool {
 		match origin {
 			AggregateMessageOrigin::Sibling(id) => Inner::is_paused(id),
 			_ => false,
+		}
+	}
+}
+
+impl<Inner: OnQueueChanged<ParaId>> OnQueueChanged<AggregateMessageOrigin>
+	for NarrowOriginToSibling<Inner>
+{
+	fn on_queue_changed(origin: AggregateMessageOrigin, count: u64, size: u64) {
+		if let AggregateMessageOrigin::Sibling(id) = origin {
+			Inner::on_queue_changed(id, count, size)
 		}
 	}
 }
