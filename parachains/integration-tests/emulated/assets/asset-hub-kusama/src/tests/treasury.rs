@@ -16,7 +16,7 @@
 
 use crate::*;
 use frame_support::traits::fungibles::{Create, Inspect, Mutate};
-use polkadot_runtime_common::impls::AssetKind;
+use polkadot_runtime_common::impls::LocatableAssetId;
 use xcm_executor::traits::ConvertLocation;
 
 #[test]
@@ -34,7 +34,7 @@ fn create_and_claim_treasury_spend() {
 	let asset_hub_location = MultiLocation::new(0, Parachain(AssetHubKusama::para_id().into()));
 	let root = <Kusama as Relay>::RuntimeOrigin::root();
 	// asset kind to be spend from the treasury.
-	let asset_kind = AssetKind::new(
+	let asset_kind = LocatableAssetId::new(
 		asset_hub_location,
 		AssetId::Concrete((PalletInstance(50), GeneralIndex(ASSET_ID.into())).into()),
 	);
