@@ -156,7 +156,7 @@ pub mod pallet {
 			})
 		}
 
-		/// Overwrites the number of pages of messages which must be in the queue for the other side to be told to
+		/// Overwrites the number of messages which must be in the queue for the other side to be told to
 		/// suspend their sending.
 		///
 		/// - `origin`: Must pass `Root`.
@@ -172,7 +172,7 @@ pub mod pallet {
 			})
 		}
 
-		/// Overwrites the number of pages of messages which must be in the queue after which we drop any further
+		/// Overwrites the number of messages which must be in the queue after which we drop any further
 		/// messages from the channel.
 		///
 		/// - `origin`: Must pass `Root`.
@@ -188,7 +188,7 @@ pub mod pallet {
 			})
 		}
 
-		/// Overwrites the number of pages of messages which the queue must be reduced to before it signals that
+		/// Overwrites the number of messages which the queue must be reduced to before it signals that
 		/// message sending may recommence after it has been suspended.
 		///
 		/// - `origin`: Must pass `Root`.
@@ -318,23 +318,23 @@ impl OutboundChannelDetails {
 
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct QueueConfigData {
-	/// The number of pages of messages which must be in the queue for the other side to be told to
-	/// suspend their sending.
+	/// The number of messages which must be in the queue for the other side to be told to suspend
+	/// their sending.
 	suspend_threshold: u32,
-	/// The number of pages of messages which must be in the queue after which we drop any further
-	/// messages from the channel.
+	/// The number of messages which must be in the queue after which we drop any further messages
+	/// from the channel. This should normally not happen since the `suspend_threshold` can be used to suspend the channel.
 	drop_threshold: u32,
-	/// The number of pages of messages which the queue must be reduced to before it signals that
+	/// The number of messages which the queue must be reduced to before it signals that
 	/// message sending may recommence after it has been suspended.
 	resume_threshold: u32,
-	/// The amount of remaining weight under which we stop processing messages.
+	/// UNUSED - The amount of remaining weight under which we stop processing messages.
 	#[deprecated(note = "Will be removed")]
 	threshold_weight: Weight,
-	/// The speed to which the available weight approaches the maximum weight. A lower number
+	/// UNUSED - The speed to which the available weight approaches the maximum weight. A lower number
 	/// results in a faster progression. A value of 1 makes the entire weight available initially.
 	#[deprecated(note = "Will be removed")]
 	weight_restrict_decay: Weight,
-	/// The maximum amount of weight any individual message may consume. Messages above this weight
+	/// UNUSED - The maximum amount of weight any individual message may consume. Messages above this weight
 	/// go into the overweight queue and may only be serviced explicitly.
 	#[deprecated(note = "Will be removed")]
 	xcmp_max_individual_weight: Weight,
