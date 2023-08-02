@@ -20,7 +20,7 @@ use sc_service::ChainType;
 
 /// Specialized `ChainSpec` for the shell parachain runtime.
 pub type ShellChainSpec =
-	sc_service::GenericChainSpec<shell_runtime::RuntimeGenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<(), Extensions>;
 
 pub fn get_shell_chain_spec() -> ShellChainSpec {
 	ShellChainSpec::builder()

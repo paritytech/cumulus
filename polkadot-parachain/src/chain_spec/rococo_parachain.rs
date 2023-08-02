@@ -26,7 +26,7 @@ use sc_chain_spec::ChainType;
 use sp_core::{crypto::UncheckedInto, sr25519};
 
 pub type RococoParachainChainSpec =
-	sc_service::GenericChainSpec<rococo_parachain_runtime::RuntimeGenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<(), Extensions>;
 
 pub fn rococo_parachain_local_config() -> RococoParachainChainSpec {
 	#[allow(deprecated)]

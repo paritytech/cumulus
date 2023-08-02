@@ -24,12 +24,9 @@ use sc_service::ChainType;
 use sp_core::{crypto::UncheckedInto, sr25519};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type AssetHubPolkadotChainSpec =
-	sc_service::GenericChainSpec<asset_hub_polkadot_runtime::RuntimeGenesisConfig, Extensions>;
-pub type AssetHubKusamaChainSpec =
-	sc_service::GenericChainSpec<asset_hub_kusama_runtime::RuntimeGenesisConfig, Extensions>;
-pub type AssetHubWestendChainSpec =
-	sc_service::GenericChainSpec<asset_hub_westend_runtime::RuntimeGenesisConfig, Extensions>;
+pub type AssetHubPolkadotChainSpec = sc_service::GenericChainSpec<(), Extensions>;
+pub type AssetHubKusamaChainSpec = sc_service::GenericChainSpec<(), Extensions>;
+pub type AssetHubWestendChainSpec = sc_service::GenericChainSpec<(), Extensions>;
 
 const ASSET_HUB_POLKADOT_ED: AssetHubBalance =
 	asset_hub_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;

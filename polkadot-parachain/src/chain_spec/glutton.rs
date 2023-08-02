@@ -21,7 +21,7 @@ use sp_core::sr25519;
 
 /// Specialized `ChainSpec` for the Glutton parachain runtime.
 pub type GluttonChainSpec =
-	sc_service::GenericChainSpec<glutton_runtime::RuntimeGenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<(), Extensions>;
 
 pub fn glutton_development_config(para_id: ParaId) -> GluttonChainSpec {
 	#[allow(deprecated)]

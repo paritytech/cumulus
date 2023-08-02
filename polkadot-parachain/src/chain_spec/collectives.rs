@@ -23,7 +23,7 @@ use sc_service::ChainType;
 use sp_core::sr25519;
 
 pub type CollectivesPolkadotChainSpec =
-	sc_service::GenericChainSpec<collectives_polkadot_runtime::RuntimeGenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<(), Extensions>;
 
 const COLLECTIVES_POLKADOT_ED: CollectivesBalance =
 	collectives_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;

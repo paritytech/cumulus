@@ -24,7 +24,7 @@ use sc_service::ChainType;
 use sp_core::{crypto::UncheckedInto, sr25519};
 
 pub type ContractsRococoChainSpec =
-	sc_service::GenericChainSpec<contracts_rococo_runtime::RuntimeGenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<(), Extensions>;
 
 /// No relay chain suffix because the id is the same over all relay chains.
 const CONTRACTS_PARACHAIN_ID: u32 = 1002;

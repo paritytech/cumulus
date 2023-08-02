@@ -196,7 +196,7 @@ pub mod rococo {
 
 	/// Specialized `ChainSpec` for the normal parachain runtime.
 	pub type BridgeHubChainSpec =
-		sc_service::GenericChainSpec<bridge_hub_rococo_runtime::RuntimeGenesisConfig, Extensions>;
+		sc_service::GenericChainSpec<(), Extensions>;
 
 	pub type RuntimeApi = bridge_hub_rococo_runtime::RuntimeApi;
 
@@ -359,7 +359,7 @@ pub mod kusama {
 
 	/// Specialized `ChainSpec` for the normal parachain runtime.
 	pub type BridgeHubChainSpec =
-		sc_service::GenericChainSpec<bridge_hub_kusama_runtime::RuntimeGenesisConfig, Extensions>;
+		sc_service::GenericChainSpec<(), Extensions>;
 	pub type RuntimeApi = bridge_hub_kusama_runtime::RuntimeApi;
 
 	pub fn local_config(
@@ -483,7 +483,7 @@ pub mod polkadot {
 
 	/// Specialized `ChainSpec` for the normal parachain runtime.
 	pub type BridgeHubChainSpec =
-		sc_service::GenericChainSpec<bridge_hub_polkadot_runtime::RuntimeGenesisConfig, Extensions>;
+		sc_service::GenericChainSpec<(), Extensions>;
 	pub type RuntimeApi = bridge_hub_polkadot_runtime::RuntimeApi;
 
 	pub fn local_config(

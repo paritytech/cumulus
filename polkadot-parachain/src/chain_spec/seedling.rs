@@ -22,7 +22,7 @@ use sp_core::sr25519;
 
 /// Specialized `ChainSpec` for the seedling parachain runtime.
 pub type SeedlingChainSpec =
-	sc_service::GenericChainSpec<seedling_runtime::RuntimeGenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<(), Extensions>;
 
 pub fn get_seedling_chain_spec() -> SeedlingChainSpec {
 	SeedlingChainSpec::builder()
