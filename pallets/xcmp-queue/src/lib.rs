@@ -344,9 +344,9 @@ impl Default for QueueConfigData {
 	fn default() -> Self {
 		#![allow(deprecated)]
 		Self {
-			suspend_threshold: 200,
-			drop_threshold: 500,
-			resume_threshold: 100,
+			suspend_threshold: 2048,
+			drop_threshold: 3096,
+			resume_threshold: 1024,
 			threshold_weight: Weight::from_parts(100_000, 0),
 			weight_restrict_decay: Weight::from_parts(2, 0),
 			xcmp_max_individual_weight: Weight::from_parts(
