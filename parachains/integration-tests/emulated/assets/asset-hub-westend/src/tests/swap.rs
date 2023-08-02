@@ -96,7 +96,7 @@ fn swap_locally_on_chain_using_local_assets() {
 }
 
 #[test]
-#[cfg(feature = "FAIL-CI")] // fix this
+#[cfg(feature = "FAIL-CI")] // Fails with `MessageQueue::OverweightEnqueued` event.
 fn swap_locally_on_chain_using_foreign_assets() {
 	use frame_support::weights::WeightToFee;
 
@@ -202,7 +202,9 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		);
 	});
 
-	// Receive XCM message in Assets Parachain
+	// One block for the MessageQueue to process the message.
+	AssetHubWestend::execute_with(|| {});
+	// Receive XCM message in Assets Parachain in the next block.
 	AssetHubWestend::execute_with(|| {
 		assert!(<AssetHubWestend as AssetHubWestendPallet>::ForeignAssets::asset_exists(
 			*foreign_asset1_at_asset_hub_westend

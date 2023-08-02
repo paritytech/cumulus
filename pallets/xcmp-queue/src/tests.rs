@@ -143,29 +143,6 @@ fn handle_invalid_data_no_panic() {
 	});
 }
 
-/*#[test] FAIL-CI
-fn service_overweight_unknown() {
-	new_test_ext().execute_with(|| {
-		assert_noop!(
-			XcmpQueue::service_overweight(Origin::root(), 0, Weight::MAX),
-			Error::<Test>::BadOverweightIndex,
-		);
-	});
-}
-
-#[test]
-fn service_overweight_bad_xcm_format() {
-	new_test_ext().execute_with(|| {
-		let bad_xcm = vec![255];
-		Overweight::<Test>::insert(0, (ParaId::from(1000), 0, bad_xcm));
-
-		assert_noop!(
-			XcmpQueue::service_overweight(Origin::root(), 0, Weight::MAX),
-			Error::<Test>::BadXcm
-		);
-	});
-}*/
-
 #[test]
 fn suspend_xcm_execution_works() {
 	new_test_ext().execute_with(|| {

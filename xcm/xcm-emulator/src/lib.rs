@@ -776,6 +776,7 @@ macro_rules! __impl_parachain {
 					);
 					// set `AnnouncedHrmpMessagesPerCandidate`
 					<Self as Parachain>::ParachainSystem::on_initialize(block_number);
+					<Self as Parachain>::MessageQueue::on_initialize(block_number);
 				});
 			}
 		}
