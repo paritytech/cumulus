@@ -148,7 +148,6 @@ impl<
 	// If everything goes well, we charge.
 	fn buy_weight(
 		&mut self,
-		_: &XcmContext,
 		weight: Weight,
 		payment: xcm_executor::Assets,
 		context: &XcmContext,
@@ -328,9 +327,9 @@ impl<
 	// On successful swap, we substract from the payment
 	fn buy_weight(
 		&mut self,
-		ctx: &XcmContext,
 		weight: Weight,
 		payment: xcm_executor::Assets,
+		ctx: &XcmContext,
 	) -> Result<xcm_executor::Assets, XcmError> {
 		log::trace!(target: "xcm::weight", "SwapFirstAssetTrader::buy_weight weight: {:?}, payment: {:?}", weight, payment);
 
@@ -378,7 +377,7 @@ impl<
 		Ok(first.id.into_multiasset(unused_balance.into()).into())
 	}
 
-	fn refund_weight(&mut self, ctx: &XcmContext, weight: Weight) -> Option<MultiAsset> {
+	fn refund_weight(&mut self, weight: Weight, ctx: &XcmContext) -> Option<MultiAsset> {
 		log::trace!(target: "xcm::weight", "SwapFirstAssetTrader::refund_weight weight: {:?}", weight);
 
 		if let Some(SwapAssetTraderRefunder {
