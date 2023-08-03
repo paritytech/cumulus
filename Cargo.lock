@@ -1161,6 +1161,11 @@ dependencies = [
 [[package]]
 name = "bp-xcm-bridge-hub-router"
 version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+]
 
 [[package]]
 name = "bridge-runtime-common"

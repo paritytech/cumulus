@@ -44,6 +44,9 @@ parameter_types! {
 	pub const WeightCredit: Weight = BASE_XCM_WEIGHT_TWICE;
 	/// Lane used by the with-Millau bridge.
 	pub MullauSenderAndLane: SenderAndLane = SenderAndLane::new(Here.into(), XCM_LANE);
+
+	/// Dummy message used in configuration.
+	pub DummyXcmMessage: Xcm<()> = Xcm::new();
 }
 
 /// Message payload for Rialto -> Millau messages.
@@ -125,9 +128,15 @@ pub type ToMillauBlobExporter = HaulBlobExporter<
 pub struct ToMillauXcmBlobHauler;
 
 impl XcmBlobHauler for ToMillauXcmBlobHauler {
-	type MessageSender = pallet_bridge_messages::Pallet<Runtime, WithMillauMessagesInstance>;
-	type MessageSenderOrigin = RuntimeOrigin;
+	type Runtime = Runtime;
+	type MessagesInstance = WithMillauMessagesInstance;
 	type SenderAndLane = MullauSenderAndLane;
+
+	type ToSendingChainSender = crate::xcm_config::XcmRouter;
+	type CongestedMessage = DummyXcmMessage;
+	type UncongestedMessage = DummyXcmMessage;
+
+	type MessageSenderOrigin = RuntimeOrigin;
 
 	fn message_sender_origin() -> RuntimeOrigin {
 		pallet_xcm::Origin::from(MultiLocation::new(1, crate::xcm_config::UniversalLocation::get()))

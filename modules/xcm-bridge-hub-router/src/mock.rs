@@ -20,6 +20,7 @@ use crate as pallet_xcm_bridge_hub_router;
 
 use bp_xcm_bridge_hub_router::LocalXcmChannel;
 use frame_support::{construct_runtime, parameter_types};
+use frame_system::EnsureRoot;
 use sp_core::H256;
 use sp_runtime::{
 	traits::{BlakeTwo256, ConstU128, IdentityLookup},
@@ -86,6 +87,7 @@ impl pallet_xcm_bridge_hub_router::Config<()> for TestRuntime {
 	type SiblingBridgeHubLocation = SiblingBridgeHubLocation;
 	type BridgedNetworkId = BridgedNetworkId;
 
+	type BridgeHubOrigin = EnsureRoot<AccountId>;
 	type ToBridgeHubSender = TestToBridgeHubSender;
 	type WithBridgeHubChannel = TestWithBridgeHubChannel;
 
@@ -114,7 +116,7 @@ impl SendXcm for TestToBridgeHubSender {
 
 	fn deliver(_ticket: Self::Ticket) -> Result<XcmHash, SendError> {
 		frame_support::storage::unhashed::put(b"TestToBridgeHubSender.Sent", &true);
-		Ok([0u8; 32].into())
+		Ok([0u8; 32])
 	}
 }
 

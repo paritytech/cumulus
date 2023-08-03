@@ -53,7 +53,8 @@ use crate::{
 
 use bp_messages::{
 	source_chain::{
-		DeliveryConfirmationPayments, LaneMessageVerifier, SendMessageArtifacts, TargetHeaderChain,
+		DeliveryConfirmationPayments, LaneMessageVerifier, OnMessagesDelivered,
+		SendMessageArtifacts, TargetHeaderChain,
 	},
 	target_chain::{
 		DeliveryPayments, DispatchMessage, MessageDispatch, ProvedLaneMessages, ProvedMessages,
@@ -158,6 +159,8 @@ pub mod pallet {
 		type LaneMessageVerifier: LaneMessageVerifier<Self::RuntimeOrigin, Self::OutboundPayload>;
 		/// Delivery confirmation payments.
 		type DeliveryConfirmationPayments: DeliveryConfirmationPayments<Self::AccountId>;
+		/// Delivery confirmation callback.
+		type OnMessagesDelivered: OnMessagesDelivered;
 
 		// Types that are used by inbound_lane (on target chain).
 
@@ -492,6 +495,12 @@ pub mod pallet {
 				lane_id,
 			);
 
+			// notify others about messages delivery
+			T::OnMessagesDelivered::on_messages_delivered(
+				lane_id,
+				lane.data().queued_messages().checked_len().unwrap_or(0),
+			);
+
 			// because of lags, the inbound lane state (`lane_data`) may have entries for
 			// already rewarded relayers and messages (if all entries are duplicated, then
 			// this transaction must be filtered out by our signed extension)
@@ -582,6 +591,23 @@ pub mod pallet {
 		Hasher = Blake2_128Concat,
 		Key = LaneId,
 		Value = OutboundLaneData,
+		QueryKind = ValueQuery,
+		OnEmpty = GetDefault,
+		MaxValues = MaybeOutboundLanesCount<T, I>,
+	>;
+
+	/// Map of lane id => is congested signal sent. It is managed by the
+	/// `bridge_runtime_common::LocalXcmQueueManager`.
+	///
+	/// **bridges-v1**: this map is temporary and will be dropped in the v2. We can emulate
+	/// a storage map using unhashed storage functions, but then benchmarks are not accounting
+	/// its `proof_size`, so it is missing from the final weights. So we need to make it a map
+	/// inside some pallet.
+	#[pallet::storage]
+	pub type OutboundLanesCongestedSignals<T: Config<I>, I: 'static = ()> = StorageMap<
+		Hasher = Blake2_128Concat,
+		Key = LaneId,
+		Value = bool,
 		QueryKind = ValueQuery,
 		OnEmpty = GetDefault,
 		MaxValues = MaybeOutboundLanesCount<T, I>,
@@ -721,7 +747,7 @@ fn send_message<T: Config<I>, I: 'static>(
 		.map_err(Error::<T, I>::MessageRejectedByPallet)?;
 
 	// return number of messages in the queue to let sender know about its state
-	let enqueued_messages = lane.data().queued_messages().checked_len().unwrap_or(0);
+	let enqueued_messages = lane.data().queued_messages().saturating_len();
 
 	log::trace!(
 		target: LOG_TARGET,
@@ -930,8 +956,7 @@ mod tests {
 
 		let outbound_lane = outbound_lane::<TestRuntime, ()>(TEST_LANE_ID);
 		let message_nonce = outbound_lane.data().latest_generated_nonce + 1;
-		let prev_enqueud_messages =
-			outbound_lane.data().queued_messages().checked_len().unwrap_or(0);
+		let prev_enqueud_messages = outbound_lane.data().queued_messages().saturating_len();
 		let artifacts = send_message::<TestRuntime, ()>(
 			RuntimeOrigin::signed(1),
 			TEST_LANE_ID,

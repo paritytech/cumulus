@@ -18,6 +18,10 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::{Decode, Encode, MaxEncodedLen};
+use scale_info::TypeInfo;
+use sp_runtime::{traits::One, FixedU128, RuntimeDebug};
+
 /// Local XCM channel that may report whether it is congested or not.
 pub trait LocalXcmChannel {
 	/// Returns true if the queue is currently congested.
@@ -27,5 +31,20 @@ pub trait LocalXcmChannel {
 impl LocalXcmChannel for () {
 	fn is_congested() -> bool {
 		false
+	}
+}
+
+/// Current status of the bridge.
+#[derive(Clone, Decode, Encode, Eq, PartialEq, TypeInfo, MaxEncodedLen, RuntimeDebug)]
+pub struct BridgeState {
+	/// Current delivery fee factor.
+	pub delivery_fee_factor: FixedU128,
+	/// Bridge congestion flag.
+	pub is_congested: bool,
+}
+
+impl Default for BridgeState {
+	fn default() -> BridgeState {
+		BridgeState { delivery_fee_factor: FixedU128::one(), is_congested: false }
 	}
 }

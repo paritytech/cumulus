@@ -65,7 +65,7 @@ time cargo run --release -p millau-bridge-node --features=runtime-benchmarks -- 
 	--execution=wasm \
 	--wasm-execution=Compiled \
 	--heap-pages=4096 \
-	--output=./modules/xcm_bridge_hub_router/src/weights.rs \
+	--output=./modules/xcm-bridge-hub-router/src/weights.rs \
 	--template=./.maintain/bridge-weight-template.hbs
 
 # weights for Millau runtime. We want to provide runtime weight overhead for messages calls,
