@@ -56,6 +56,9 @@ parameter_types! {
 		ParentThen(X1(Parachain(crate::xcm_config::SiblingAssetHubParId::get()))).into(),
 		DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO,
 	);
+
+	pub CongestedMessage: Xcm<()> = sp_std::vec![].into();
+	pub UncongestedMessage: Xcm<()> = sp_std::vec![].into();
 }
 
 /// Proof of messages, coming from Rococo.
@@ -72,6 +75,9 @@ pub type OnBridgeHubWococoBlobDispatcher = BridgeBlobDispatcher<
 	BridgeRococoMessagesPalletInstance,
 >;
 
+/// On messages delivered callback.
+pub type OnMessagesDelivered = XcmBlobHaulerAdapter<ToBridgeHubRococoXcmBlobHauler>;
+
 /// Export XCM messages to be relayed to the other side.
 pub type ToBridgeHubRococoHaulBlobExporter = HaulBlobExporter<
 	XcmBlobHaulerAdapter<ToBridgeHubRococoXcmBlobHauler>,
@@ -80,9 +86,14 @@ pub type ToBridgeHubRococoHaulBlobExporter = HaulBlobExporter<
 >;
 pub struct ToBridgeHubRococoXcmBlobHauler;
 impl XcmBlobHauler for ToBridgeHubRococoXcmBlobHauler {
-	type MessageSender =
-		pallet_bridge_messages::Pallet<Runtime, WithBridgeHubRococoMessagesInstance>;
+	type Runtime = Runtime;
+	type MessagesInstance = WithBridgeHubRococoMessagesInstance;
 	type SenderAndLane = FromWococoAssetHubToRococoAssetHubRoute;
+
+	type ToSendingChainSender = XcmRouter;
+	type CongestedMessage = CongestedMessage;
+	type UncongestedMessage = UncongestedMessage;
+
 	type MessageSenderOrigin = super::RuntimeOrigin;
 
 	fn message_sender_origin() -> super::RuntimeOrigin {

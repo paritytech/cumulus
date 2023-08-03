@@ -802,6 +802,7 @@ impl pallet_xcm_bridge_hub_router::Config for Runtime {
 	type SiblingBridgeHubLocation = xcm_config::bridging::BridgeHub;
 	type BridgedNetworkId = xcm_config::bridging::KusamaLocalNetwork;
 
+	type BridgeHubOrigin = xcm_config::bridging::EnsureSiblingBridgeHubOrigin;
 	type ToBridgeHubSender = XcmpQueue;
 	type WithBridgeHubChannel = xcm_config::bridging::LocalXcmpChannelAdapter;
 
@@ -857,7 +858,7 @@ construct_runtime!(
 		AssetConversion: pallet_asset_conversion::{Pallet, Call, Storage, Event<T>} = 56,
 
 		// Bridge utilities.
-		BridgeHubRouter: pallet_xcm_bridge_hub_router::{Pallet, Storage} = 60,
+		BridgeHubRouter: pallet_xcm_bridge_hub_router::{Pallet, Storage, Call} = 60,
 	}
 );
 
@@ -1533,5 +1534,16 @@ pub mod migrations {
 
 			T::DbWeight::get().reads_writes(reads, writes)
 		}
+	}
+
+	#[test]
+	fn my_test() {
+		println!(
+			"{}",
+			hex::encode(RuntimeCall::BridgeHubRouter(pallet_xcm_bridge_hub_router::Call::report_bridge_status {
+				bridge_id: Default::default(),
+				is_congested: true,
+			}).encode())
+		)
 	}
 }

@@ -624,4 +624,19 @@ pub mod bridging {
 				.unwrap_or(false)
 		}
 	}
+
+
+	pub struct EnsureSiblingBridgeHubOrigin;
+
+	impl frame_support::traits::EnsureOrigin<RuntimeOrigin> for EnsureSiblingBridgeHubOrigin {
+		type Success = ();
+
+		fn try_origin(o: RuntimeOrigin) -> Result<(), RuntimeOrigin> {
+			use frame_support::traits::OriginTrait;
+			match *o.caller() {
+				crate::OriginCaller::CumulusXcm(cumulus_pallet_xcm::Origin::SiblingParachain(id)) if id == BridgeHubKusamaParaId::get().into() => Ok(()),
+				_ => Err(o)
+			}
+		}
+	}
 }

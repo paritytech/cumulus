@@ -83,6 +83,7 @@ bp-xcm-bridge-hub-router = { path = "../../../../bridges/primitives/xcm-bridge-h
 pallet-xcm-bridge-hub-router = { path = "../../../../bridges/modules/xcm-bridge-hub-router", default-features = false }
 
 [dev-dependencies]
+hex = "0.4"
 hex-literal = "0.4.1"
 asset-test-utils = { path = "../test-utils"}
 

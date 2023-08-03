@@ -763,6 +763,7 @@ impl pallet_xcm_bridge_hub_router::Config for Runtime {
 	type SiblingBridgeHubLocation = xcm_config::bridging::BridgeHubKusama;
 	type BridgedNetworkId = xcm_config::bridging::PolkadotNetwork;
 
+	type BridgeHubOrigin = xcm_config::bridging::EnsureSiblingBridgeHubOrigin;
 	type ToBridgeHubSender = XcmpQueue;
 	type WithBridgeHubChannel = xcm_config::bridging::LocalXcmpChannelAdapter;
 
@@ -815,7 +816,7 @@ construct_runtime!(
 		NftFractionalization: pallet_nft_fractionalization::{Pallet, Call, Storage, Event<T>, HoldReason} = 54,
 
 		// Bridge utilities.
-		BridgeHubRouter: pallet_xcm_bridge_hub_router::{Pallet, Storage} = 60,
+		BridgeHubRouter: pallet_xcm_bridge_hub_router::{Pallet, Storage, Call} = 60,
 
 		#[cfg(feature = "state-trie-version-1")]
 		StateTrieMigration: pallet_state_trie_migration = 70,
@@ -1404,5 +1405,17 @@ mod tests {
 		assert!(proof_o_time <= 30, "{} should be at most 30", proof_o_time);
 		let time_o_proof = time_fee.checked_div(proof_fee).unwrap_or_default();
 		assert!(time_o_proof <= 30, "{} should be at most 30", time_o_proof);
+	}
+
+
+	#[test]
+	fn my_test() {
+		println!(
+			"{}",
+			hex::encode(RuntimeCall::BridgeHubRouter(pallet_xcm_bridge_hub_router::Call::report_bridge_status {
+				bridge_id: Default::default(),
+				is_congested: true,
+			}).encode())
+		)
 	}
 }

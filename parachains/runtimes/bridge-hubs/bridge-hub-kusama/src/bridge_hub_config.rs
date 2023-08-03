@@ -52,6 +52,38 @@ parameter_types! {
 		ParentThen(X1(Parachain(crate::xcm_config::SiblingAssetHubParId::get()))).into(),
 		ASSET_HUB_KUSAMA_TO_ASSET_HUB_POLKADOT_LANE_ID,
 	);
+
+	// To get that hex, the following code was used (at Westend asset hub runtime):
+	// println!(
+	// 	"{}",
+	// 	hex::encode(RuntimeCall::BridgeHubRouter(pallet_xcm_bridge_hub_router::Call::report_bridge_status {
+	// 		bridge_id: Default::default(),
+	// 		is_congested: true,
+	// 	}).encode())
+	// )
+	pub CongestedMessage: Xcm<()> = sp_std::vec![Transact {
+		origin_kind: OriginKind::Xcm,
+		require_weight_at_most: Weight::from_parts(0, 0),
+		call: hex_literal::hex!("3c00000000000000000000000000000000000000000000000000000000000000000001")
+			.to_vec()
+			.into(),
+	}].into();
+
+	// To get that hex, the following code was used (at Westend asset hub runtime):
+	// println!(
+	// 	"{}",
+	// 	hex::encode(RuntimeCall::BridgeHubRouter(pallet_xcm_bridge_hub_router::Call::report_bridge_status {
+	// 		bridge_id: Default::default(),
+	// 		is_congested: false,
+	// 	}).encode())
+	// )
+	pub UncongestedMessage: Xcm<()> = sp_std::vec![Transact {
+		origin_kind: OriginKind::Xcm,
+		require_weight_at_most: Weight::from_parts(0, 0),
+		call: hex_literal::hex!("3c00000000000000000000000000000000000000000000000000000000000000000000")
+			.to_vec()
+			.into(),
+	}].into();
 }
 
 /// Proof of messages, coming from BridgeHubPolkadot.
@@ -65,6 +97,9 @@ pub type ToBridgeHubPolkadotMessagesDeliveryProof =
 pub type OnThisChainBlobDispatcher<UniversalLocation> =
 	BridgeBlobDispatcher<XcmRouter, UniversalLocation, BridgePolkadotMessagesPalletInstance>;
 
+/// On messages delivered callback.
+pub type OnMessagesDelivered = XcmBlobHaulerAdapter<ToBridgeHubPolkadotXcmBlobHauler>;
+
 /// Export XCM messages to be relayed to the other side.
 pub type ToBridgeHubPolkadotHaulBlobExporter = HaulBlobExporter<
 	XcmBlobHaulerAdapter<ToBridgeHubPolkadotXcmBlobHauler>,
@@ -73,9 +108,14 @@ pub type ToBridgeHubPolkadotHaulBlobExporter = HaulBlobExporter<
 >;
 pub struct ToBridgeHubPolkadotXcmBlobHauler;
 impl XcmBlobHauler for ToBridgeHubPolkadotXcmBlobHauler {
-	type MessageSender =
-		pallet_bridge_messages::Pallet<Runtime, WithBridgeHubPolkadotMessagesInstance>;
+	type Runtime = Runtime;
+	type MessagesInstance = WithBridgeHubPolkadotMessagesInstance;
 	type SenderAndLane = FromKusamaAssetHubToPolkadotAssetHubRoute;
+
+	type ToSendingChainSender = crate::XcmRouter;
+	type CongestedMessage = CongestedMessage;
+	type UncongestedMessage = UncongestedMessage;
+
 	type MessageSenderOrigin = super::RuntimeOrigin;
 
 	fn message_sender_origin() -> Self::MessageSenderOrigin {

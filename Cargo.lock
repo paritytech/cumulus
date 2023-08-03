@@ -456,6 +456,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
+ "hex",
  "hex-literal 0.4.1",
  "kusama-runtime-constants",
  "log",
@@ -655,6 +656,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
+ "hex",
  "hex-literal 0.4.1",
  "log",
  "pallet-asset-conversion",
@@ -1339,6 +1341,11 @@ dependencies = [
 [[package]]
 name = "bp-xcm-bridge-hub-router"
 version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+]
 
 [[package]]
 name = "bridge-hub-kusama-runtime"

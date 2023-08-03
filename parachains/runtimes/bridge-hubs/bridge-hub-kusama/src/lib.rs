@@ -319,26 +319,14 @@ impl pallet_message_queue::Config for Runtime {
 		cumulus_primitives_core::AggregateMessageOrigin,
 	>;
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	type MessageProcessor = bridge_runtime_common::messages_xcm_extension::LocalXcmQueueMessageProcessor<
+	type MessageProcessor = ProcessXcmMessage<
 		AggregateMessageOrigin,
-		ProcessXcmMessage<
-			AggregateMessageOrigin,
-			xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
-			RuntimeCall,
-		>,
-		Runtime,
-		WithBridgeHubPolkadotMessagesInstance,
-		bridge_hub_config::FromKusamaAssetHubToPolkadotAssetHubRoute,
+		xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
+		RuntimeCall,
 	>;
 	type Size = u32;
 	type QueueChangeHandler = XcmpQueue;
-	type QueuePausedQuery = bridge_runtime_common::messages_xcm_extension::LocalXcmQueueSuspender<
-		AggregateMessageOrigin,
-		queue_paused_query::NarrowToSiblings<XcmpQueue>,
-		Runtime,
-		WithBridgeHubPolkadotMessagesInstance,
-		bridge_hub_config::FromKusamaAssetHubToPolkadotAssetHubRoute,
-	>;
+	type QueuePausedQuery = queue_paused_query::NarrowToSiblings<XcmpQueue>;
 	type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
 	type MaxStale = sp_core::ConstU32<8>;
 	type ServiceWeight = MessageQueueServiceWeight;
@@ -553,6 +541,8 @@ impl pallet_bridge_messages::Config<WithBridgeHubPolkadotMessagesInstance> for R
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubPolkadotMessageBridge>;
 	type MessageDispatch =
 		XcmBlobMessageDispatch<OnThisChainBlobDispatcher<UniversalLocation>, Self::WeightInfo, LocalXcmChannelWithSiblingAssetHub>;
+
+	type OnMessagesDelivered = bridge_hub_config::OnMessagesDelivered;
 }
 
 /// Allows collect and claim rewards for relayers
