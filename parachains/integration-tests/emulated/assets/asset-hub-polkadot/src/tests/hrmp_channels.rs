@@ -19,88 +19,31 @@ use crate::*;
 const MAX_CAPACITY: u32 = 8;
 const MAX_MESSAGE_SIZE: u32 = 8192;
 
-fn fund_para_sovereign(amount: Balance, sovereign_account_id: AccountId32) {
-	Polkadot::execute_with(|| {
-		assert_ok!(<Polkadot as PolkadotPallet>::Balances::force_set_balance(
-			<Polkadot as Chain>::RuntimeOrigin::root(),
-			MultiAddress::Id(sovereign_account_id),
-			amount,
-		));
-	});
-}
-
-fn init_open_channel_call(recipient_para_id: ParaId) -> DoubleEncoded<()> {
-	<Polkadot as Chain>::RuntimeCall::Hrmp(polkadot_runtime_parachains::hrmp::Call::<
-		<Polkadot as Chain>::Runtime,
-	>::hrmp_init_open_channel {
-		recipient: recipient_para_id,
-		proposed_max_capacity: MAX_CAPACITY,
-		proposed_max_message_size: MAX_MESSAGE_SIZE,
-	})
-	.encode()
-	.into()
-}
-
-fn accept_open_channel_call(sender_para_id: ParaId) -> DoubleEncoded<()> {
-	<Polkadot as Chain>::RuntimeCall::Hrmp(polkadot_runtime_parachains::hrmp::Call::<
-		<Polkadot as Chain>::Runtime,
-	>::hrmp_accept_open_channel {
-		sender: sender_para_id,
-	})
-	.encode()
-	.into()
-}
-
-fn force_process_hrmp_open(sender: Id, recipient: Id) {
-	Polkadot::execute_with(|| {
-		let relay_root_origin = <Polkadot as Chain>::RuntimeOrigin::root();
-
-		// Force process HRMP open channel requests without waiting for the next session
-		assert_ok!(<Polkadot as PolkadotPallet>::Hrmp::force_process_hrmp_open(
-			relay_root_origin,
-			0
-		));
-
-		let channel_id = HrmpChannelId { sender, recipient };
-
-		let hrmp_channel_exist = polkadot_runtime_parachains::hrmp::HrmpChannels::<
-			<Polkadot as Chain>::Runtime,
-		>::contains_key(&channel_id);
-
-		// Check the HRMP channel has been successfully registrered
-		assert!(hrmp_channel_exist)
-	});
-}
-
 /// Opening HRMP channels between Parachains should work
 #[test]
 fn open_hrmp_channel_between_paras_works() {
 	// Parchain A init values
 	let para_a_id = PenpalPolkadotA::para_id();
 	let para_a_root_origin = <PenpalPolkadotA as Chain>::RuntimeOrigin::root();
-	let para_a_sovereign_account =
-		Polkadot::sovereign_account_id_of(Polkadot::child_location_of(para_a_id));
 
 	// Parachain B init values
 	let para_b_id = PenpalPolkadotB::para_id();
 	let para_b_root_origin = <PenpalPolkadotB as Chain>::RuntimeOrigin::root();
-	let para_b_sovereign_account =
-		Polkadot::sovereign_account_id_of(Polkadot::child_location_of(para_b_id));
 
 	let fee_amount = POLKADOT_ED * 1000;
 	let fund_amount = POLKADOT_ED * 1000_000_000;
 
 	// Fund Parachain's Sovereign accounts to be able to reserve the deposit
-	fund_para_sovereign(fund_amount, para_a_sovereign_account.clone());
-	fund_para_sovereign(fund_amount, para_b_sovereign_account.clone());
+	let para_a_sovereign_account = Polkadot::fund_para_sovereign(fund_amount, para_a_id);
+	let para_b_sovereign_account = Polkadot::fund_para_sovereign(fund_amount, para_b_id);
 
 	let relay_destination: VersionedMultiLocation = PenpalPolkadotA::parent_location().into();
 
 	// ---- Init Open channel from Parachain to System Parachain
-	let mut call = init_open_channel_call(para_b_id);
+	let mut call = Polkadot::init_open_channel_call(para_b_id, MAX_CAPACITY, MAX_MESSAGE_SIZE);
 	let origin_kind = OriginKind::Native;
 	let native_asset: MultiAsset = (Here, fee_amount).into();
-	let beneficiary = Polkadot::sovereign_account_id_of(Polkadot::child_location_of(para_a_id));
+	let beneficiary = Polkadot::sovereign_account_id_of_child_para(para_a_id);
 
 	let mut xcm = xcm_paid_execution(call, origin_kind, native_asset.clone(), beneficiary);
 
@@ -151,8 +94,8 @@ fn open_hrmp_channel_between_paras_works() {
 	});
 
 	// ---- Accept Open channel from Parachain to System Parachain
-	call = accept_open_channel_call(para_a_id);
-	let beneficiary = Polkadot::sovereign_account_id_of(Polkadot::child_location_of(para_b_id));
+	call = Polkadot::accept_open_channel_call(para_a_id);
+	let beneficiary = Polkadot::sovereign_account_id_of_child_para(para_b_id);
 
 	xcm = xcm_paid_execution(call, origin_kind, native_asset, beneficiary);
 
@@ -200,7 +143,7 @@ fn open_hrmp_channel_between_paras_works() {
 		);
 	});
 
-	force_process_hrmp_open(para_a_id, para_b_id);
+	Polkadot::force_process_hrmp_open(para_a_id, para_b_id);
 }
 
 /// Opening HRMP channels between System Parachains and Parachains should work
@@ -211,19 +154,15 @@ fn force_open_hrmp_channel_for_system_para_works() {
 
 	// System Para init values
 	let system_para_id = AssetHubPolkadot::para_id();
-	let system_para_sovereign_account =
-		Polkadot::sovereign_account_id_of(Polkadot::child_location_of(system_para_id));
 
 	// Parachain A init values
 	let para_a_id = PenpalPolkadotA::para_id();
-	let para_a_sovereign_account =
-		Polkadot::sovereign_account_id_of(Polkadot::child_location_of(para_a_id));
 
 	let fund_amount = POLKADOT_ED * 1000_000_000;
 
 	// Fund Parachain's Sovereign accounts to be able to reserve the deposit
-	fund_para_sovereign(fund_amount, system_para_sovereign_account.clone());
-	fund_para_sovereign(fund_amount, para_a_sovereign_account.clone());
+	let system_para_sovereign_account = Polkadot::fund_para_sovereign(fund_amount, system_para_id);
+	let para_a_sovereign_account = Polkadot::fund_para_sovereign(fund_amount, para_a_id);
 
 	Polkadot::execute_with(|| {
 		assert_ok!(<Polkadot as PolkadotPallet>::Hrmp::force_open_hrmp_channel(
@@ -262,5 +201,5 @@ fn force_open_hrmp_channel_for_system_para_works() {
 		);
 	});
 
-	force_process_hrmp_open(system_para_id, para_a_id);
+	Polkadot::force_process_hrmp_open(system_para_id, para_a_id);
 }
