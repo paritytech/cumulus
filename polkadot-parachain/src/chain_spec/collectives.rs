@@ -22,8 +22,7 @@ use parachains_common::{AccountId, AuraId, Balance as CollectivesBalance};
 use sc_service::ChainType;
 use sp_core::sr25519;
 
-pub type CollectivesPolkadotChainSpec =
-	sc_service::GenericChainSpec<(), Extensions>;
+pub type CollectivesPolkadotChainSpec = sc_service::GenericChainSpec<(), Extensions>;
 
 const COLLECTIVES_POLKADOT_ED: CollectivesBalance =
 	collectives_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;

@@ -22,8 +22,7 @@ use parachains_common::{AccountId, AuraId};
 use sc_service::ChainType;
 use sp_core::sr25519;
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type PenpalChainSpec =
-	sc_service::GenericChainSpec<(), Extensions>;
+pub type PenpalChainSpec = sc_service::GenericChainSpec<(), Extensions>;
 
 pub fn get_penpal_chain_spec(id: ParaId, relay_chain: &str) -> PenpalChainSpec {
 	// Give your base currency a unit name and decimal places

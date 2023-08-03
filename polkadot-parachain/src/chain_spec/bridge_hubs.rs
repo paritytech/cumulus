@@ -195,8 +195,7 @@ pub mod rococo {
 		bridge_hub_rococo_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 	/// Specialized `ChainSpec` for the normal parachain runtime.
-	pub type BridgeHubChainSpec =
-		sc_service::GenericChainSpec<(), Extensions>;
+	pub type BridgeHubChainSpec = sc_service::GenericChainSpec<(), Extensions>;
 
 	pub type RuntimeApi = bridge_hub_rococo_runtime::RuntimeApi;
 
@@ -358,8 +357,7 @@ pub mod kusama {
 		bridge_hub_kusama_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 	/// Specialized `ChainSpec` for the normal parachain runtime.
-	pub type BridgeHubChainSpec =
-		sc_service::GenericChainSpec<(), Extensions>;
+	pub type BridgeHubChainSpec = sc_service::GenericChainSpec<(), Extensions>;
 	pub type RuntimeApi = bridge_hub_kusama_runtime::RuntimeApi;
 
 	pub fn local_config(
@@ -482,8 +480,7 @@ pub mod polkadot {
 		bridge_hub_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 	/// Specialized `ChainSpec` for the normal parachain runtime.
-	pub type BridgeHubChainSpec =
-		sc_service::GenericChainSpec<(), Extensions>;
+	pub type BridgeHubChainSpec = sc_service::GenericChainSpec<(), Extensions>;
 	pub type RuntimeApi = bridge_hub_polkadot_runtime::RuntimeApi;
 
 	pub fn local_config(
