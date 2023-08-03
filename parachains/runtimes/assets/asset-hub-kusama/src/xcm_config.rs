@@ -345,6 +345,8 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 					pallet_uniques::Call::set_collection_max_supply { .. } |
 					pallet_uniques::Call::set_price { .. } |
 					pallet_uniques::Call::buy_item { .. }
+			) | RuntimeCall::BridgeHubRouter(
+				pallet_xcm_bridge_hub_router::Call::report_bridge_status { .. }
 			)
 		)
 	}
@@ -364,6 +366,8 @@ pub type Barrier = TrailingSetTopicAsId<
 					AllowTopLevelPaidExecutionFrom<Everything>,
 					// Parent and its pluralities (i.e. governance bodies) get free execution.
 					AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
+					// Allow unpaid status reports from bridge hub.
+					bridging::AllowUnpaidStatusReportsFromSiblingBridgeHub,
 					// Subscriptions for version tracking are OK.
 					AllowSubscriptionsFrom<ParentOrSiblings>,
 				),
@@ -537,7 +541,11 @@ impl pallet_assets::BenchmarkHelper<MultiLocation> for XcmBenchmarkHelper {
 pub mod bridging {
 	use super::*;
 	use assets_common::{matching, matching::*};
+	use frame_support::{traits::ProcessMessageError, ensure};
 	use sp_std::collections::btree_set::BTreeSet;
+	use xcm::DoubleEncoded;
+	use xcm_builder::{CreateMatcher, MatchXcm};
+	use xcm_executor::traits::ShouldExecute;
 
 	parameter_types! {
 		pub BridgeHubKusamaParaId: u32 = 1002;
@@ -634,9 +642,88 @@ pub mod bridging {
 		fn try_origin(o: RuntimeOrigin) -> Result<(), RuntimeOrigin> {
 			use frame_support::traits::OriginTrait;
 			match *o.caller() {
-				crate::OriginCaller::CumulusXcm(cumulus_pallet_xcm::Origin::SiblingParachain(id)) if id == BridgeHubKusamaParaId::get().into() => Ok(()),
+				crate::OriginCaller::PolkadotXcm(pallet_xcm::Origin::Xcm(loc)) if loc == BridgeHubKusama::get() => Ok(()),
 				_ => Err(o)
 			}
 		}
+	}
+
+	pub struct AllowUnpaidStatusReportsFromSiblingBridgeHub;
+
+	impl ShouldExecute for AllowUnpaidStatusReportsFromSiblingBridgeHub {
+		fn should_execute<Call>(
+			origin: &MultiLocation,
+			instructions: &mut [Instruction<Call>],
+			max_weight: Weight,
+			_properties: &mut xcm_executor::traits::Properties,
+		) -> Result<(), ProcessMessageError> {
+			log::trace!(
+				target: "xcm::barriers",
+				"AllowUnpaidStatusReportsFromSiblingBridgeHub origin: {:?}, instructions: {:?}, max_weight: {:?}, properties: {:?}",
+				origin, instructions, max_weight, _properties,
+			);
+
+			// we only allow unpaid status reports from sibling bright hub
+			ensure!(*origin == BridgeHubKusama::get(), ProcessMessageError::Unsupported);
+
+			// we expect an XCM program with single `report_bridge_status` call
+			instructions
+				.matcher()
+				.assert_remaining_insts(1)?
+				.match_next_inst(|inst| match inst {
+					Transact { origin_kind: OriginKind::Xcm, call: encoded_call, .. } => {
+						// this is a hack - don't know if there's a way to do that properly
+						// or else we can simply allow all calls
+						let mut decoded_call = DoubleEncoded::<RuntimeCall>::from(encoded_call.clone());
+
+						ensure!(
+							matches!(
+								decoded_call.ensure_decoded().map_err(|_| ProcessMessageError::BadFormat)?,
+								RuntimeCall::BridgeHubRouter(pallet_xcm_bridge_hub_router::Call::report_bridge_status { .. })
+							),
+							ProcessMessageError::BadFormat,
+						);
+
+						Ok(())
+					},
+					_ => Err(ProcessMessageError::BadFormat),
+				})?;
+
+			Ok(())
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn my_test() {
+		use codec::Encode;
+let _ = env_logger::try_init();
+		let origin = MultiLocation::new(1, X1(Parachain(1002)));
+		let message: Xcm<RuntimeCall> = vec![
+			Transact {
+				origin_kind: OriginKind::Xcm,
+				require_weight_at_most: Weight::from_parts(0, 0),
+				call: hex_literal::hex!("3c00000000000000000000000000000000000000000000000000000000000000000001")
+					.to_vec()
+//					.encode()
+					.into(),
+			},
+		].into();
+		let mut message_hash = message.using_encoded(sp_core::blake2_256);
+
+		sp_io::TestExternalities::new(Default::default()).execute_with(|| {
+			let prepared = XcmExecutor::<XcmConfig>::prepare(message).unwrap();
+			let outcome = XcmExecutor::<XcmConfig>::execute(
+				origin,
+				prepared,
+				&mut message_hash,
+				Weight::zero(),
+			);
+			println!("{:?}", outcome);
+		});
 	}
 }

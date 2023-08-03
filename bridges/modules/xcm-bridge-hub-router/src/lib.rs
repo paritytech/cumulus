@@ -139,7 +139,7 @@ pub mod pallet {
 	}
 
 	#[pallet::call]
-	impl<T: Config<I>, I: 'static> Pallet<T, I> {
+	impl<T: Config<I>, I: 'static> Pallet<T, I> where OriginFor<T>: sp_std::fmt::Debug {
 		/// Notification about congested bridge queue.
 		#[pallet::call_index(0)]
 		#[pallet::weight(Weight::zero())] // TODO
@@ -147,10 +147,19 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			// this argument is not currently used, but to ease future migration, we'll keep it
 			// here
-			_bridge_id: H256,
+			bridge_id: H256,
 			is_congested: bool,
 		) -> DispatchResult {
+log::info!(target: LOG_TARGET, "=== Origin: {:?}", origin);
 			let _ = T::BridgeHubOrigin::ensure_origin(origin)?;
+
+			log::info!(
+				target: LOG_TARGET,
+				"bridge-xcm-queues: Received bridge status from {}: congested = {}",
+				bridge_id,
+				is_congested,
+			);
+
 			Bridge::<T, I>::mutate(|bridge| {
 				bridge.is_congested = is_congested;
 			});

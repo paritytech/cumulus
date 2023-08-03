@@ -83,7 +83,9 @@ pallet-xcm-bridge-hub-router = { path = "../../../../bridges/modules/xcm-bridge-
 
 [dev-dependencies]
 asset-test-utils = { path = "../test-utils"}
+env_logger = "0.9"
 hex = "0.4"
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }

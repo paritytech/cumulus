@@ -547,7 +547,7 @@ log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: !appen
 		meter: &mut WeightMeter,
 	) {
 		if !meter.check_accrue(T::WeightInfo::enqueue_xcmp_messages(xcms.len() as u32)) {
-			return
+			return // TODO: no even log
 		}
 		let QueueConfigData { drop_threshold, .. } = <QueueConfig<T>>::get();
 		let fp = T::XcmpQueue::footprint(sender);

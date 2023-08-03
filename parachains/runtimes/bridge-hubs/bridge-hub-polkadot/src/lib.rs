@@ -488,10 +488,10 @@ impl bp_xcm_bridge_hub_router::LocalXcmChannel for LocalXcmChannelWithSiblingAss
 			.filter(|c| c.recipient() == sibling_asset_hub_id)
 			.next();
 
-		// no channel => it is congested
+		// no channel => it is empty, so not congested
 		let channel_with_sibling_asset_hub = match channel_with_sibling_asset_hub {
 			Some(channel_with_sibling_asset_hub) => channel_with_sibling_asset_hub,
-			None => return true,
+			None => return false,
 		};
 
 		// suspended channel => it is congested
