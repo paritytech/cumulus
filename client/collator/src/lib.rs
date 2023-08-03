@@ -26,7 +26,8 @@ use sp_core::traits::SpawnNamed;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
 use cumulus_client_consensus_common::ParachainConsensus;
-use polkadot_node_primitives::{CollationResult, MaybeCompressedPoV};
+use polkadot_node_primitives::{CollationGenerationConfig, CollationResult, MaybeCompressedPoV};
+use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
 use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::{CollatorPair, Id as ParaId};
 
@@ -233,6 +234,31 @@ pub mod relay_chain_driven {
 	}
 }
 
+/// Initialize the collation-related subsystems on the relay-chain side.
+///
+/// This must be done prior to collation, and does not set up any callback for collation.
+/// For callback-driven collators, use the [`relay_chain_driven`] module.
+pub async fn initialize_collator_subsystems(
+	overseer_handle: &mut OverseerHandle,
+	key: CollatorPair,
+	para_id: ParaId,
+) {
+	overseer_handle
+		.send_msg(
+			CollationGenerationMessage::Initialize(CollationGenerationConfig {
+				key,
+				para_id,
+				collator: None,
+			}),
+			"StartCollator",
+		)
+		.await;
+
+	overseer_handle
+		.send_msg(CollatorProtocolMessage::CollateOn(para_id), "StartCollator")
+		.await;
+}
+
 /// Parameters for [`start_collator`].
 pub struct StartCollatorParams<Block: BlockT, RA, BS, Spawner> {
 	pub para_id: ParaId,
@@ -246,7 +272,24 @@ pub struct StartCollatorParams<Block: BlockT, RA, BS, Spawner> {
 }
 
 /// Start the collator.
+#[deprecated = "Collators should run consensus futures which handle this logic internally"]
 pub async fn start_collator<Block, RA, BS, Spawner>(
+	params: StartCollatorParams<Block, RA, BS, Spawner>,
+) where
+	Block: BlockT,
+	BS: BlockBackend<Block> + Send + Sync + 'static,
+	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
+	RA: ProvideRuntimeApi<Block> + Send + Sync + 'static,
+	RA::Api: CollectCollationInfo<Block>,
+{
+	// This never needed to be asynchronous, but shouldn't be changed due to backcompat.
+	#[allow(deprecated)]
+	start_collator_sync(params);
+}
+
+/// Start the collator in a synchronous function.
+#[deprecated = "Collators should run consensus futures which handle this logic internally"]
+pub fn start_collator_sync<Block, RA, BS, Spawner>(
 	StartCollatorParams {
 		para_id,
 		block_status,
@@ -269,9 +312,8 @@ pub async fn start_collator<Block, RA, BS, Spawner>(
 
 	let collator = Collator::new(collator_service, parachain_consensus);
 
-	let mut request_stream = relay_chain_driven::init(key, para_id, overseer_handle).await;
-
 	let collation_future = Box::pin(async move {
+		let mut request_stream = relay_chain_driven::init(key, para_id, overseer_handle).await;
 		while let Some(request) = request_stream.next().await {
 			let collation = collator
 				.clone()
@@ -375,6 +417,7 @@ mod tests {
 
 		spawner.spawn("overseer", None, overseer.run().then(|_| async {}).boxed());
 
+		#[allow(deprecated)]
 		let collator_start = start_collator(StartCollatorParams {
 			runtime_api: client.clone(),
 			block_status: client.clone(),

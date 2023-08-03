@@ -45,4 +45,5 @@ cumulus-client-collator = { path = "../../collator" }
 # Polkadot
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
 polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
 polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }

@@ -144,6 +144,23 @@ impl CheckAssociatedRelayNumber for AnyRelayNumber {
 	fn check_associated_relay_number(_: RelayChainBlockNumber, _: RelayChainBlockNumber) {}
 }
 
+/// Provides an implementation of [`CheckAssociatedRelayNumber`].
+///
+/// It will ensure that the associated relay block number monotonically increases between Parachain
+/// blocks. This should be used when asynchronous backing is enabled.
+pub struct RelayNumberMonotonicallyIncreases;
+
+impl CheckAssociatedRelayNumber for RelayNumberMonotonicallyIncreases {
+	fn check_associated_relay_number(
+		current: RelayChainBlockNumber,
+		previous: RelayChainBlockNumber,
+	) {
+		if current < previous {
+			panic!("Relay chain block number needs to monotonically increase between Parachain blocks!")
+		}
+	}
+}
+
 /// Information needed when a new runtime binary is submitted and needs to be authorized before
 /// replacing the current runtime.
 #[derive(Decode, Encode, Default, PartialEq, Eq, MaxEncodedLen, TypeInfo)]
@@ -936,6 +953,18 @@ impl<T: Config> Pallet<T> {
 		}
 
 		Ok(actual_hash)
+	}
+
+	/// Get the unincluded segment size after the given hash.
+	///
+	/// If the unincluded segment doesn't contain the given hash, this returns the
+	/// length of the entire unincluded segment.
+	///
+	/// This is intended to be used for determining how long the unincluded segment _would be_
+	/// in runtime APIs related to authoring.
+	pub fn unincluded_segment_size_after(included_hash: T::Hash) -> u32 {
+		let segment = UnincludedSegment::<T>::get();
+		crate::unincluded_segment::size_after_included(included_hash, &segment)
 	}
 }
 
