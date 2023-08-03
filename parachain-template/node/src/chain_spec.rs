@@ -203,6 +203,9 @@ fn testnet_genesis(
 	})
 }
 
+#[cfg(test)]
+/// RuntimeGenesisConfig-based (legacy) parachain-template configurations. Used for testing ChainSpecs against the JSON-based
+/// genesis configs. Entire file shall be removed once native runtime is removed.
 mod legacy {
 	use super::*;
 

@@ -14,6 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+//! RuntimeGenesisConfig-based (legacy) polkadot-parachain ChainSpec configurations. Used for
+//! testing ChainSpecs against the JSON-based genesis configs. Entire file shall be removed once
+//! native runtime is removed. This is just a verbatim copy of chain_spec mod.
+
 #![allow(dead_code)]
 
 use parachains_common::{AccountId, Signature};
