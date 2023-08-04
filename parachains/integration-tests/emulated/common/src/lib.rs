@@ -2,6 +2,7 @@ pub use lazy_static;
 pub mod constants;
 pub mod impls;
 
+pub use paste;
 pub use codec::Encode;
 pub use constants::{
 	accounts::{ALICE, BOB},
@@ -9,7 +10,7 @@ pub use constants::{
 	bridge_hub_polkadot, bridge_hub_rococo, collectives, kusama, penpal, polkadot, rococo, westend,
 	PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD,
 };
-use frame_support::{assert_ok, parameter_types, sp_tracing};
+use frame_support::{assert_ok, parameter_types, sp_tracing, instances::Instance1, traits::fungibles::Inspect};
 pub use impls::{RococoWococoMessageHandler, WococoRococoMessageHandler};
 pub use parachains_common::{AccountId, Balance};
 use polkadot_parachain::primitives::HrmpChannelId;
@@ -17,7 +18,7 @@ pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueu
 pub use sp_core::{sr25519, storage::Storage, Get};
 use xcm_emulator::{
 	assert_expected_events, decl_test_bridges, decl_test_networks, decl_test_parachains,
-	decl_test_relay_chains, decl_test_sender_receiver_accounts_parameter_types,
+	decl_test_relay_chains, decl_test_sender_receiver_accounts_parameter_types, bx,
 	helpers::weight_within_threshold, BridgeMessageHandler, Chain, DefaultMessageProcessor, ParaId,
 	Parachain, RelayChain, TestExt,
 };
@@ -90,6 +91,7 @@ decl_test_relay_chains! {
 		pallets = {
 			XcmPallet: rococo_runtime::XcmPallet,
 			Sudo: rococo_runtime::Sudo,
+			Balances: rococo_runtime::Balances,
 		}
 	},
 	#[api_version(5)]
@@ -104,6 +106,7 @@ decl_test_relay_chains! {
 		pallets = {
 			XcmPallet: rococo_runtime::XcmPallet,
 			Sudo: rococo_runtime::Sudo,
+			Balances: rococo_runtime::Balances,
 		}
 	}
 }
@@ -123,6 +126,7 @@ decl_test_parachains! {
 		pallets = {
 			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
 			Assets: asset_hub_polkadot_runtime::Assets,
+			Balances: asset_hub_polkadot_runtime::Balances,
 		}
 	},
 	pub struct Collectives {
@@ -137,6 +141,7 @@ decl_test_parachains! {
 		},
 		pallets = {
 			PolkadotXcm: collectives_polkadot_runtime::PolkadotXcm,
+			Balances: collectives_polkadot_runtime::Balances,
 		}
 	},
 	pub struct BridgeHubPolkadot {
@@ -198,6 +203,7 @@ decl_test_parachains! {
 			PolkadotXcm: asset_hub_kusama_runtime::PolkadotXcm,
 			Assets: asset_hub_kusama_runtime::Assets,
 			ForeignAssets: asset_hub_kusama_runtime::Assets,
+			Balances: asset_hub_kusama_runtime::Balances,
 		}
 	},
 	pub struct BridgeHubKusama {
@@ -292,6 +298,7 @@ decl_test_parachains! {
 		},
 		pallets = {
 			PolkadotXcm: bridge_hub_rococo_runtime::PolkadotXcm,
+			Balances: bridge_hub_rococo_runtime::Balances,
 		}
 	},
 	// AssetHubRococo (aka Rockmine/Rockmine2) mirrors AssetHubKusama
@@ -463,343 +470,6 @@ decl_test_sender_receiver_accounts_parameter_types! {
 	PenpalRococoA { sender: ALICE, receiver: BOB }
 }
 
-pub mod events {
-	pub mod polkadot {
-		use crate::*;
-		type RuntimeEvent = <Polkadot as Chain>::RuntimeEvent;
-
-		// Dispatchable is completely executed and XCM sent
-		pub fn xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
-			assert_expected_events!(
-				Polkadot,
-				vec![
-					RuntimeEvent::XcmPallet(
-						pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
-					) => {
-						weight: weight_within_threshold(
-							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight.unwrap_or(*weight),
-							*weight
-						),
-					},
-				]
-			);
-		}
-
-		// Dispatchable is incompletely executed and XCM sent
-		pub fn xcm_pallet_attempted_incomplete(
-			expected_weight: Option<Weight>,
-			expected_error: Option<Error>,
-		) {
-			assert_expected_events!(
-				Polkadot,
-				vec![
-					// Dispatchable is properly executed and XCM message sent
-					RuntimeEvent::XcmPallet(
-						pallet_xcm::Event::Attempted { outcome: Outcome::Incomplete(weight, error) }
-					) => {
-						weight: weight_within_threshold(
-							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight.unwrap_or(*weight),
-							*weight
-						),
-						error: *error == expected_error.unwrap_or(*error),
-					},
-				]
-			);
-		}
-
-		// XCM message is sent
-		pub fn xcm_pallet_sent() {
-			assert_expected_events!(
-				Polkadot,
-				vec![
-					RuntimeEvent::XcmPallet(pallet_xcm::Event::Sent { .. }) => {},
-				]
-			);
-		}
-
-		// XCM from System Parachain is succesfully received and proccessed
-		pub fn ump_queue_processed(
-			expected_success: bool,
-			expected_id: Option<ParaId>,
-			expected_weight: Option<Weight>,
-		) {
-			assert_expected_events!(
-				Polkadot,
-				vec![
-					// XCM is succesfully received and proccessed
-					RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed {
-						origin: AggregateMessageOrigin::Ump(UmpQueueId::Para(id)),
-						weight_used,
-						success,
-						..
-					}) => {
-						id: *id == expected_id.unwrap_or(*id),
-						weight_used: weight_within_threshold(
-							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight.unwrap_or(*weight_used),
-							*weight_used
-						),
-						success: *success == expected_success,
-					},
-				]
-			);
-		}
-	}
-	pub mod kusama {
-		use crate::*;
-		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
-
-		// Dispatchable is completely executed and XCM sent
-		pub fn xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
-			assert_expected_events!(
-				Kusama,
-				vec![
-					RuntimeEvent::XcmPallet(
-						pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
-					) => {
-						weight: weight_within_threshold(
-							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight.unwrap_or(*weight),
-							*weight
-						),
-					},
-				]
-			);
-		}
-
-		// Dispatchable is incompletely executed and XCM sent
-		pub fn xcm_pallet_attempted_incomplete(
-			expected_weight: Option<Weight>,
-			expected_error: Option<Error>,
-		) {
-			assert_expected_events!(
-				Kusama,
-				vec![
-					// Dispatchable is properly executed and XCM message sent
-					RuntimeEvent::XcmPallet(
-						pallet_xcm::Event::Attempted { outcome: Outcome::Incomplete(weight, error) }
-					) => {
-						weight: weight_within_threshold(
-							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight.unwrap_or(*weight),
-							*weight
-						),
-						error: *error == expected_error.unwrap_or(*error),
-					},
-				]
-			);
-		}
-
-		// XCM message is sent
-		pub fn xcm_pallet_sent() {
-			assert_expected_events!(
-				Kusama,
-				vec![
-					RuntimeEvent::XcmPallet(pallet_xcm::Event::Sent { .. }) => {},
-				]
-			);
-		}
-
-		// XCM from System Parachain is succesfully received and proccessed
-		pub fn ump_queue_processed(
-			expected_success: bool,
-			expected_id: Option<ParaId>,
-			expected_weight: Option<Weight>,
-		) {
-			assert_expected_events!(
-				Kusama,
-				vec![
-					// XCM is succesfully received and proccessed
-					RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed {
-						origin: AggregateMessageOrigin::Ump(UmpQueueId::Para(id)),
-						weight_used,
-						success,
-						..
-					}) => {
-						id: *id == expected_id.unwrap_or(*id),
-						weight_used: weight_within_threshold(
-							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight.unwrap_or(*weight_used),
-							*weight_used
-						),
-						success: *success == expected_success,
-					},
-				]
-			);
-		}
-	}
-
-	pub mod westend {
-		use crate::*;
-		type RuntimeEvent = <Westend as Chain>::RuntimeEvent;
-
-		// Dispatchable is completely executed and XCM sent
-		pub fn xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
-			assert_expected_events!(
-				Westend,
-				vec![
-					RuntimeEvent::XcmPallet(
-						pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
-					) => {
-						weight: weight_within_threshold(
-							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight.unwrap_or(*weight),
-							*weight
-						),
-					},
-				]
-			);
-		}
-
-		// Dispatchable is incompletely executed and XCM sent
-		pub fn xcm_pallet_attempted_incomplete(
-			expected_weight: Option<Weight>,
-			expected_error: Option<Error>,
-		) {
-			assert_expected_events!(
-				Westend,
-				vec![
-					// Dispatchable is properly executed and XCM message sent
-					RuntimeEvent::XcmPallet(
-						pallet_xcm::Event::Attempted { outcome: Outcome::Incomplete(weight, error) }
-					) => {
-						weight: weight_within_threshold(
-							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight.unwrap_or(*weight),
-							*weight
-						),
-						error: *error == expected_error.unwrap_or(*error),
-					},
-				]
-			);
-		}
-
-		// XCM message is sent
-		pub fn xcm_pallet_sent() {
-			assert_expected_events!(
-				Westend,
-				vec![
-					RuntimeEvent::XcmPallet(pallet_xcm::Event::Sent { .. }) => {},
-				]
-			);
-		}
-
-		// XCM from System Parachain is succesfully received and proccessed
-		pub fn ump_queue_processed(
-			expected_success: bool,
-			expected_id: Option<ParaId>,
-			expected_weight: Option<Weight>,
-		) {
-			assert_expected_events!(
-				Westend,
-				vec![
-					// XCM is succesfully received and proccessed
-					RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed {
-						origin: AggregateMessageOrigin::Ump(UmpQueueId::Para(id)),
-						weight_used,
-						success,
-						..
-					}) => {
-						id: *id == expected_id.unwrap_or(*id),
-						weight_used: weight_within_threshold(
-							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight.unwrap_or(*weight_used),
-							*weight_used
-						),
-						success: *success == expected_success,
-					},
-				]
-			);
-		}
-	}
-
-	pub mod rococo {
-		use crate::*;
-		type RuntimeEvent = <Rococo as Chain>::RuntimeEvent;
-
-		// Dispatchable is completely executed and XCM sent
-		pub fn xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
-			assert_expected_events!(
-				Rococo,
-				vec![
-					RuntimeEvent::XcmPallet(
-						pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
-					) => {
-						weight: weight_within_threshold(
-							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight.unwrap_or(*weight),
-							*weight
-						),
-					},
-				]
-			);
-		}
-
-		// Dispatchable is incompletely executed and XCM sent
-		pub fn xcm_pallet_attempted_incomplete(
-			expected_weight: Option<Weight>,
-			expected_error: Option<Error>,
-		) {
-			assert_expected_events!(
-				Rococo,
-				vec![
-					// Dispatchable is properly executed and XCM message sent
-					RuntimeEvent::XcmPallet(
-						pallet_xcm::Event::Attempted { outcome: Outcome::Incomplete(weight, error) }
-					) => {
-						weight: weight_within_threshold(
-							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight.unwrap_or(*weight),
-							*weight
-						),
-						error: *error == expected_error.unwrap_or(*error),
-					},
-				]
-			);
-		}
-
-		// XCM message is sent
-		pub fn xcm_pallet_sent() {
-			assert_expected_events!(
-				Rococo,
-				vec![
-					RuntimeEvent::XcmPallet(pallet_xcm::Event::Sent { .. }) => {},
-				]
-			);
-		}
-
-		// XCM from System Parachain is succesfully received and proccessed
-		pub fn ump_queue_processed(
-			expected_success: bool,
-			expected_id: Option<ParaId>,
-			expected_weight: Option<Weight>,
-		) {
-			assert_expected_events!(
-				Rococo,
-				vec![
-					// XCM is succesfully received and proccessed
-					RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed {
-						origin: AggregateMessageOrigin::Ump(UmpQueueId::Para(id)),
-						weight_used,
-						success,
-						..
-					}) => {
-						id: *id == expected_id.unwrap_or(*id),
-						weight_used: weight_within_threshold(
-							(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-							expected_weight.unwrap_or(*weight_used),
-							*weight_used
-						),
-						success: *success == expected_success,
-					},
-				]
-			);
-		}
-	}
-}
-
 pub fn xcm_paid_execution(
 	call: DoubleEncoded<()>,
 	origin_kind: OriginKind,
@@ -836,129 +506,575 @@ pub fn xcm_unpaid_execution(call: DoubleEncoded<()>, origin_kind: OriginKind) ->
 	]))
 }
 
-impl Kusama {
-	pub fn fund_account(account: AccountId, amount: Balance) {
-		Self::execute_with(|| {
-			assert_ok!(<Self as KusamaPallet>::Balances::force_set_balance(
-				<Self as Chain>::RuntimeOrigin::root(),
-				account.into(),
-				amount,
-			));
-		});
-	}
+// Polkadot implementation
+impl_accounts_helpers_for_relay_chain!(Polkadot);
+impl_assert_events_helpers_for_relay_chain!(Polkadot);
+impl_hrmp_channels_helpers_for_relay_chain!(Polkadot);
 
-	pub fn fund_para_sovereign(amount: Balance, para_id: ParaId) -> sp_runtime::AccountId32 {
-		let sovereign_account = Self::sovereign_account_id_of_child_para(para_id);
-		Self::fund_account(sovereign_account.clone(), amount);
-		sovereign_account
-	}
+// Kusama implementation
+impl_accounts_helpers_for_relay_chain!(Kusama);
+impl_assert_events_helpers_for_relay_chain!(Kusama);
+impl_hrmp_channels_helpers_for_relay_chain!(Kusama);
 
-	pub fn init_open_channel_call(
-		recipient_para_id: ParaId,
-		max_capacity: u32,
-		max_message_size: u32,
-	) -> DoubleEncoded<()> {
-		<Self as Chain>::RuntimeCall::Hrmp(polkadot_runtime_parachains::hrmp::Call::<
-			<Self as Chain>::Runtime,
-		>::hrmp_init_open_channel {
-			recipient: recipient_para_id,
-			proposed_max_capacity: max_capacity,
-			proposed_max_message_size: max_message_size,
-		})
-		.encode()
-		.into()
-	}
+// Westend implementation
+impl_accounts_helpers_for_relay_chain!(Westend);
+impl_assert_events_helpers_for_relay_chain!(Westend);
 
-	pub fn accept_open_channel_call(sender_para_id: ParaId) -> DoubleEncoded<()> {
-		<Self as Chain>::RuntimeCall::Hrmp(polkadot_runtime_parachains::hrmp::Call::<
-			<Self as Chain>::Runtime,
-		>::hrmp_accept_open_channel {
-			sender: sender_para_id,
-		})
-		.encode()
-		.into()
-	}
+// Rococo implementation
+impl_accounts_helpers_for_relay_chain!(Rococo);
+impl_assert_events_helpers_for_relay_chain!(Rococo);
 
-	pub fn force_process_hrmp_open(sender: ParaId, recipient: ParaId) {
-		Self::execute_with(|| {
-			let relay_root_origin = <Self as Chain>::RuntimeOrigin::root();
+// Wococo implementation
+impl_accounts_helpers_for_relay_chain!(Wococo);
+impl_assert_events_helpers_for_relay_chain!(Wococo);
 
-			// Force process HRMP open channel requests without waiting for the next session
-			assert_ok!(<Self as KusamaPallet>::Hrmp::force_process_hrmp_open(relay_root_origin, 0));
+// AssetHubPolkadot implementation
+impl_accounts_helpers_for_parachain!(AssetHubPolkadot);
+impl_assets_helpers_for_parachain!(AssetHubPolkadot, Polkadot);
+impl_assert_events_helpers_for_parachain!(AssetHubPolkadot);
 
-			let channel_id = HrmpChannelId { sender, recipient };
+// AssetHubKusama implementation
+impl_accounts_helpers_for_parachain!(AssetHubKusama);
+impl_assets_helpers_for_parachain!(AssetHubKusama, Kusama);
+impl_assert_events_helpers_for_parachain!(AssetHubKusama);
 
-			let hrmp_channel_exist = polkadot_runtime_parachains::hrmp::HrmpChannels::<
-				<Self as Chain>::Runtime,
-			>::contains_key(&channel_id);
+// AssetHubWestend implementation
+impl_accounts_helpers_for_parachain!(AssetHubWestend);
+impl_assets_helpers_for_parachain!(AssetHubWestend, Westend);
+impl_assert_events_helpers_for_parachain!(AssetHubWestend);
 
-			// Check the HRMP channel has been successfully registrered
-			assert!(hrmp_channel_exist)
-		});
-	}
-}
+// Collectives implementation
+impl_accounts_helpers_for_parachain!(Collectives);
+impl_assert_events_helpers_for_parachain!(Collectives);
 
-impl Polkadot {
-	pub fn fund_account(account: AccountId, amount: Balance) {
-		Self::execute_with(|| {
-			assert_ok!(<Self as PolkadotPallet>::Balances::force_set_balance(
-				<Self as Chain>::RuntimeOrigin::root(),
-				account.into(),
-				amount,
-			));
-		});
-	}
+// BridgeHubRococo implementation
+impl_accounts_helpers_for_parachain!(BridgeHubRococo);
+impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 
-	pub fn fund_para_sovereign(amount: Balance, para_id: ParaId) -> sp_runtime::AccountId32 {
-		let sovereign_account = Self::sovereign_account_id_of_child_para(para_id);
-		Self::fund_account(sovereign_account.clone(), amount);
-		sovereign_account
-	}
+// type AssetHubKusamaRuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
-	pub fn init_open_channel_call(
-		recipient_para_id: ParaId,
-		max_capacity: u32,
-		max_message_size: u32,
-	) -> DoubleEncoded<()> {
-		<Self as Chain>::RuntimeCall::Hrmp(polkadot_runtime_parachains::hrmp::Call::<
-			<Self as Chain>::Runtime,
-		>::hrmp_init_open_channel {
-			recipient: recipient_para_id,
-			proposed_max_capacity: max_capacity,
-			proposed_max_message_size: max_message_size,
-		})
-		.encode()
-		.into()
-	}
+// impl AssetHubKusama {
+// 	pub fn fund_accounts(accounts: Vec<(AccountId, Balance)>) {
+// 		Self::execute_with(|| {
+// 			for account in accounts {
+// 				assert_ok!(<Self as AssetHubKusamaPallet>::Balances::force_set_balance(
+// 					<Self as Chain>::RuntimeOrigin::root(),
+// 					account.0.into(),
+// 					account.1,
+// 				));
+// 			}
+// 		});
+// 	}
 
-	pub fn accept_open_channel_call(sender_para_id: ParaId) -> DoubleEncoded<()> {
-		<Self as Chain>::RuntimeCall::Hrmp(polkadot_runtime_parachains::hrmp::Call::<
-			<Self as Chain>::Runtime,
-		>::hrmp_accept_open_channel {
-			sender: sender_para_id,
-		})
-		.encode()
-		.into()
-	}
+// 	/// Returns the encoded call for `force_create` from the assets pallet
+// 	pub fn force_create_asset_call(
+// 		asset_id: u32,
+// 		owner: AccountId,
+// 		is_sufficient: bool,
+// 		min_balance: Balance,
+// 	) -> DoubleEncoded<()> {
+// 		<Self as Chain>::RuntimeCall::Assets(pallet_assets::Call::<
+// 			<Self as Chain>::Runtime,
+// 			Instance1,
+// 		>::force_create {
+// 			id: asset_id.into(),
+// 			owner: owner.into(),
+// 			is_sufficient,
+// 			min_balance,
+// 		})
+// 		.encode()
+// 		.into()
+// 	}
 
-	pub fn force_process_hrmp_open(sender: ParaId, recipient: ParaId) {
-		Self::execute_with(|| {
-			let relay_root_origin = <Self as Chain>::RuntimeOrigin::root();
+// 	/// Returns a `VersionedXcm` for `force_create` from the assets pallet
+// 	pub fn force_create_asset_xcm(
+// 		origin_kind: OriginKind,
+// 		asset_id: u32,
+// 		owner: AccountId,
+// 		is_sufficient: bool,
+// 		min_balance: Balance,
+// 	) -> VersionedXcm<()> {
+// 		let call = Self::force_create_asset_call(asset_id, owner, is_sufficient, min_balance);
+// 		xcm_unpaid_execution(call, origin_kind)
+// 	}
 
-			// Force process HRMP open channel requests without waiting for the next session
-			assert_ok!(<Self as PolkadotPallet>::Hrmp::force_process_hrmp_open(
-				relay_root_origin,
-				0
-			));
+// 	/// Mint assets making use of the assets pallet
+// 	pub fn mint_asset(
+// 		signed_origin: <Self as Chain>::RuntimeOrigin,
+// 		id: u32,
+// 		beneficiary: AccountId,
+// 		amount_to_mint: u128,
+// 	) {
+// 		Self::execute_with(|| {
+// 			assert_ok!(<Self as AssetHubKusamaPallet>::Assets::mint(
+// 				signed_origin,
+// 				id.into(),
+// 				beneficiary.clone().into(),
+// 				amount_to_mint
+// 			));
 
-			let channel_id = HrmpChannelId { sender, recipient };
+// 			assert_expected_events!(
+// 				Self,
+// 				vec![
+// 					AssetHubKusamaRuntimeEvent::Assets(pallet_assets::Event::Issued { asset_id, owner, amount }) => {
+// 						asset_id: *asset_id == id,
+// 						owner: *owner == beneficiary.clone().into(),
+// 						amount: *amount == amount_to_mint,
+// 					},
+// 				]
+// 			);
+// 		});
+// 	}
 
-			let hrmp_channel_exist = polkadot_runtime_parachains::hrmp::HrmpChannels::<
-				<Self as Chain>::Runtime,
-			>::contains_key(&channel_id);
+// 	/// Force create and mint assets making use of the assets pallet
+// 	pub fn force_create_and_mint_asset(
+// 		id: u32,
+// 		min_balance: u128,
+// 		is_sufficient: bool,
+// 		asset_owner: AccountId,
+// 		amount_to_mint: u128,
+// 	) {
+// 		// Init values for Relay Chain
+// 		let root_origin = <Kusama as Chain>::RuntimeOrigin::root();
+// 		let destination = Kusama::child_location_of(AssetHubPolkadot::para_id());
+// 		let xcm = Self::force_create_asset_xcm(
+// 			OriginKind::Superuser,
+// 			id,
+// 			asset_owner.clone(),
+// 			is_sufficient,
+// 			min_balance,
+// 		);
 
-			// Check the HRMP channel has been successfully registrered
-			assert!(hrmp_channel_exist)
-		});
-	}
-}
+// 		Kusama::execute_with(|| {
+// 			assert_ok!(<Kusama as KusamaPallet>::XcmPallet::send(
+// 				root_origin,
+// 				bx!(destination.into()),
+// 				bx!(xcm),
+// 			));
+
+// 			Kusama::xcm_pallet_sent();
+// 		});
+
+// 		Self::execute_with(|| {
+// 			Self::dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
+
+// 			assert_expected_events!(
+// 				Self,
+// 				vec![
+// 					// Asset has been created
+// 					AssetHubKusamaRuntimeEvent::Assets(pallet_assets::Event::ForceCreated { asset_id, owner }) => {
+// 						asset_id: *asset_id == id,
+// 						owner: *owner == asset_owner.clone(),
+// 					},
+// 				]
+// 			);
+
+// 			assert!(<Self as AssetHubKusamaPallet>::Assets::asset_exists(id.into()));
+// 		});
+
+// 		let signed_origin = <Self as Chain>::RuntimeOrigin::signed(asset_owner.clone());
+
+// 		// Mint asset for System Parachain's sender
+// 		Self::mint_asset(signed_origin, id, asset_owner, amount_to_mint);
+// 	}
+
+// 	/// Asserts a dispatchable is completely executed and XCM sent
+// 	pub fn xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
+// 		assert_expected_events!(
+// 			Self,
+// 			vec![
+// 				AssetHubKusamaRuntimeEvent::PolkadotXcm(
+// 					pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
+// 				) => {
+// 					weight: weight_within_threshold(
+// 						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+// 						expected_weight.unwrap_or(*weight),
+// 						*weight
+// 					),
+// 				},
+// 			]
+// 		);
+// 	}
+
+// 	/// Asserts a dispatchable is incompletely executed and XCM sent
+// 	pub fn xcm_pallet_attempted_incomplete(
+// 		expected_weight: Option<Weight>,
+// 		expected_error: Option<Error>,
+// 	) {
+// 		assert_expected_events!(
+// 			Self,
+// 			vec![
+// 				// Dispatchable is properly executed and XCM message sent
+// 				AssetHubKusamaRuntimeEvent::PolkadotXcm(
+// 					pallet_xcm::Event::Attempted { outcome: Outcome::Incomplete(weight, error) }
+// 				) => {
+// 					weight: weight_within_threshold(
+// 						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+// 						expected_weight.unwrap_or(*weight),
+// 						*weight
+// 					),
+// 					error: *error == expected_error.unwrap_or(*error),
+// 				},
+// 			]
+// 		);
+// 	}
+
+// 	/// Asserts a dispatchable throws and error when trying to be sent
+// 	pub fn xcm_pallet_attempted_error(expected_error: Option<Error>) {
+// 		assert_expected_events!(
+// 			Self,
+// 			vec![
+// 				// Execution fails in the origin with `Barrier`
+// 				AssetHubKusamaRuntimeEvent::PolkadotXcm(
+// 					pallet_xcm::Event::Attempted { outcome: Outcome::Error(error) }
+// 				) => {
+// 					error: *error == expected_error.unwrap_or(*error),
+// 				},
+// 			]
+// 		);
+// 	}
+
+// 	/// Asserts a XCM message is sent
+// 	pub fn xcm_pallet_sent() {
+// 		assert_expected_events!(
+// 			Self,
+// 			vec![
+// 				AssetHubKusamaRuntimeEvent::PolkadotXcm(pallet_xcm::Event::Sent { .. }) => {},
+// 			]
+// 		);
+// 	}
+
+// 	/// Asserts a XCM message is sent to Relay Chain
+// 	pub fn parachain_system_ump_sent() {
+// 		assert_expected_events!(
+// 			Self,
+// 			vec![
+// 				AssetHubKusamaRuntimeEvent::ParachainSystem(
+// 					cumulus_pallet_parachain_system::Event::UpwardMessageSent { .. }
+// 				) => {},
+// 			]
+// 		);
+// 	}
+
+// 	/// Asserts a XCM from Relay Chain is completely executed
+// 	pub fn dmp_queue_complete(expected_weight: Option<Weight>) {
+// 		assert_expected_events!(
+// 			Self,
+// 			vec![
+// 				AssetHubKusamaRuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
+// 					outcome: Outcome::Complete(weight), ..
+// 				}) => {
+// 					weight: weight_within_threshold(
+// 						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+// 						expected_weight.unwrap_or(*weight),
+// 						*weight
+// 					),
+// 				},
+// 			]
+// 		);
+// 	}
+
+// 	/// Asserts a XCM from Relay Chain is incompletely executed
+// 	pub fn dmp_queue_incomplete(
+// 		expected_weight: Option<Weight>,
+// 		expected_error: Option<Error>,
+// 	) {
+// 		assert_expected_events!(
+// 			Self,
+// 			vec![
+// 				AssetHubKusamaRuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
+// 					outcome: Outcome::Incomplete(weight, error), ..
+// 				}) => {
+// 					weight: weight_within_threshold(
+// 						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+// 						expected_weight.unwrap_or(*weight),
+// 						*weight
+// 					),
+// 					error: *error == expected_error.unwrap_or(*error),
+// 				},
+// 			]
+// 		);
+// 	}
+
+// 	/// Asserts a XCM from another Parachain is completely executed
+// 	pub fn xcmp_queue_success(expected_weight: Option<Weight>) {
+// 		assert_expected_events!(
+// 			Self,
+// 			vec![
+// 				AssetHubKusamaRuntimeEvent::XcmpQueue(
+// 					cumulus_pallet_xcmp_queue::Event::Success { weight, .. }
+// 				) => {
+// 					weight: weight_within_threshold(
+// 						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+// 						expected_weight.unwrap_or(*weight),
+// 						*weight
+// 					),
+// 				},
+// 			]
+// 		);
+// 	}
+// }
+
+// type AssetHubWestendRuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
+
+// impl AssetHubWestend {
+// 	pub fn fund_accounts(accounts: Vec<(AccountId, Balance)>) {
+// 		Self::execute_with(|| {
+// 			for account in accounts {
+// 				assert_ok!(<Self as AssetHubWestendPallet>::Balances::force_set_balance(
+// 					<Self as Chain>::RuntimeOrigin::root(),
+// 					account.0.into(),
+// 					account.1,
+// 				));
+// 			}
+// 		});
+// 	}
+
+// 	/// Returns the encoded call for `force_create` from the assets pallet
+// 	pub fn force_create_asset_call(
+// 		asset_id: u32,
+// 		owner: AccountId,
+// 		is_sufficient: bool,
+// 		min_balance: Balance,
+// 	) -> DoubleEncoded<()> {
+// 		<Self as Chain>::RuntimeCall::Assets(pallet_assets::Call::<
+// 			<Self as Chain>::Runtime,
+// 			Instance1,
+// 		>::force_create {
+// 			id: asset_id.into(),
+// 			owner: owner.into(),
+// 			is_sufficient,
+// 			min_balance,
+// 		})
+// 		.encode()
+// 		.into()
+// 	}
+
+// 	/// Returns a `VersionedXcm` for `force_create` from the assets pallet
+// 	pub fn force_create_asset_xcm(
+// 		origin_kind: OriginKind,
+// 		asset_id: u32,
+// 		owner: AccountId,
+// 		is_sufficient: bool,
+// 		min_balance: Balance,
+// 	) -> VersionedXcm<()> {
+// 		let call = Self::force_create_asset_call(asset_id, owner, is_sufficient, min_balance);
+// 		xcm_unpaid_execution(call, origin_kind)
+// 	}
+
+// 	/// Mint assets making use of the assets pallet
+// 	pub fn mint_asset(
+// 		signed_origin: <Self as Chain>::RuntimeOrigin,
+// 		id: u32,
+// 		beneficiary: AccountId,
+// 		amount_to_mint: u128,
+// 	) {
+// 		Self::execute_with(|| {
+// 			assert_ok!(<Self as AssetHubWestendPallet>::Assets::mint(
+// 				signed_origin,
+// 				id.into(),
+// 				beneficiary.clone().into(),
+// 				amount_to_mint
+// 			));
+
+// 			assert_expected_events!(
+// 				Self,
+// 				vec![
+// 					AssetHubWestendRuntimeEvent::Assets(pallet_assets::Event::Issued { asset_id, owner, amount }) => {
+// 						asset_id: *asset_id == id,
+// 						owner: *owner == beneficiary.clone().into(),
+// 						amount: *amount == amount_to_mint,
+// 					},
+// 				]
+// 			);
+// 		});
+// 	}
+
+// 	/// Force create and mint assets making use of the assets pallet
+// 	pub fn force_create_and_mint_asset(
+// 		id: u32,
+// 		min_balance: u128,
+// 		is_sufficient: bool,
+// 		asset_owner: AccountId,
+// 		amount_to_mint: u128,
+// 	) {
+// 		// Init values for Relay Chain
+// 		let root_origin = <Westend as Chain>::RuntimeOrigin::root();
+// 		let destination = Westend::child_location_of(AssetHubWestend::para_id());
+// 		let xcm = Self::force_create_asset_xcm(
+// 			OriginKind::Superuser,
+// 			id,
+// 			asset_owner.clone(),
+// 			is_sufficient,
+// 			min_balance,
+// 		);
+
+// 		Westend::execute_with(|| {
+// 			assert_ok!(<Westend as WestendPallet>::XcmPallet::send(
+// 				root_origin,
+// 				bx!(destination.into()),
+// 				bx!(xcm),
+// 			));
+
+// 			Westend::xcm_pallet_sent();
+// 		});
+
+// 		Self::execute_with(|| {
+// 			Self::dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
+
+// 			assert_expected_events!(
+// 				Self,
+// 				vec![
+// 					// Asset has been created
+// 					AssetHubWestendRuntimeEvent::Assets(pallet_assets::Event::ForceCreated { asset_id, owner }) => {
+// 						asset_id: *asset_id == id,
+// 						owner: *owner == asset_owner.clone(),
+// 					},
+// 				]
+// 			);
+
+// 			assert!(<Self as AssetHubWestendPallet>::Assets::asset_exists(id.into()));
+// 		});
+
+// 		let signed_origin = <Self as Chain>::RuntimeOrigin::signed(asset_owner.clone());
+
+// 		// Mint asset for System Parachain's sender
+// 		Self::mint_asset(signed_origin, id, asset_owner, amount_to_mint);
+// 	}
+
+// 	/// Asserts a dispatchable is completely executed and XCM sent
+// 	pub fn xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
+// 		assert_expected_events!(
+// 			Self,
+// 			vec![
+// 				AssetHubWestendRuntimeEvent::PolkadotXcm(
+// 					pallet_xcm::Event::Attempted { outcome: Outcome::Complete(weight) }
+// 				) => {
+// 					weight: weight_within_threshold(
+// 						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+// 						expected_weight.unwrap_or(*weight),
+// 						*weight
+// 					),
+// 				},
+// 			]
+// 		);
+// 	}
+
+// 	/// Asserts a dispatchable is incompletely executed and XCM sent
+// 	pub fn xcm_pallet_attempted_incomplete(
+// 		expected_weight: Option<Weight>,
+// 		expected_error: Option<Error>,
+// 	) {
+// 		assert_expected_events!(
+// 			Self,
+// 			vec![
+// 				// Dispatchable is properly executed and XCM message sent
+// 				AssetHubWestendRuntimeEvent::PolkadotXcm(
+// 					pallet_xcm::Event::Attempted { outcome: Outcome::Incomplete(weight, error) }
+// 				) => {
+// 					weight: weight_within_threshold(
+// 						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+// 						expected_weight.unwrap_or(*weight),
+// 						*weight
+// 					),
+// 					error: *error == expected_error.unwrap_or(*error),
+// 				},
+// 			]
+// 		);
+// 	}
+
+// 	/// Asserts a dispatchable throws and error when trying to be sent
+// 	pub fn xcm_pallet_attempted_error(expected_error: Option<Error>) {
+// 		assert_expected_events!(
+// 			Self,
+// 			vec![
+// 				// Execution fails in the origin with `Barrier`
+// 				AssetHubWestendRuntimeEvent::PolkadotXcm(
+// 					pallet_xcm::Event::Attempted { outcome: Outcome::Error(error) }
+// 				) => {
+// 					error: *error == expected_error.unwrap_or(*error),
+// 				},
+// 			]
+// 		);
+// 	}
+
+// 	/// Asserts a XCM message is sent
+// 	pub fn xcm_pallet_sent() {
+// 		assert_expected_events!(
+// 			Self,
+// 			vec![
+// 				AssetHubWestendRuntimeEvent::PolkadotXcm(pallet_xcm::Event::Sent { .. }) => {},
+// 			]
+// 		);
+// 	}
+
+// 	/// Asserts a XCM message is sent to Relay Chain
+// 	pub fn parachain_system_ump_sent() {
+// 		assert_expected_events!(
+// 			Self,
+// 			vec![
+// 				AssetHubWestendRuntimeEvent::ParachainSystem(
+// 					cumulus_pallet_parachain_system::Event::UpwardMessageSent { .. }
+// 				) => {},
+// 			]
+// 		);
+// 	}
+
+// 	/// Asserts a XCM from Relay Chain is completely executed
+// 	pub fn dmp_queue_complete(expected_weight: Option<Weight>) {
+// 		assert_expected_events!(
+// 			Self,
+// 			vec![
+// 				AssetHubWestendRuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
+// 					outcome: Outcome::Complete(weight), ..
+// 				}) => {
+// 					weight: weight_within_threshold(
+// 						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+// 						expected_weight.unwrap_or(*weight),
+// 						*weight
+// 					),
+// 				},
+// 			]
+// 		);
+// 	}
+
+// 	/// Asserts a XCM from Relay Chain is incompletely executed
+// 	pub fn dmp_queue_incomplete(
+// 		expected_weight: Option<Weight>,
+// 		expected_error: Option<Error>,
+// 	) {
+// 		assert_expected_events!(
+// 			Self,
+// 			vec![
+// 				AssetHubWestendRuntimeEvent::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
+// 					outcome: Outcome::Incomplete(weight, error), ..
+// 				}) => {
+// 					weight: weight_within_threshold(
+// 						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+// 						expected_weight.unwrap_or(*weight),
+// 						*weight
+// 					),
+// 					error: *error == expected_error.unwrap_or(*error),
+// 				},
+// 			]
+// 		);
+// 	}
+
+// 	/// Asserts a XCM from another Parachain is completely executed
+// 	pub fn xcmp_queue_success(expected_weight: Option<Weight>) {
+// 		assert_expected_events!(
+// 			Self,
+// 			vec![
+// 				AssetHubWestendRuntimeEvent::XcmpQueue(
+// 					cumulus_pallet_xcmp_queue::Event::Success { weight, .. }
+// 				) => {
+// 					weight: weight_within_threshold(
+// 						(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
+// 						expected_weight.unwrap_or(*weight),
+// 						*weight
+// 					),
+// 				},
+// 			]
+// 		);
+// 	}
+// }

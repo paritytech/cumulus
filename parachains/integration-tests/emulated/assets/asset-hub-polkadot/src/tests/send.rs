@@ -25,7 +25,7 @@ fn send_transact_sudo_from_relay_to_system_para_works() {
 	let system_para_destination = Polkadot::child_location_of(AssetHubPolkadot::para_id()).into();
 	let asset_owner: AccountId = AssetHubPolkadotSender::get().into();
 	let xcm =
-		force_create_asset_xcm(OriginKind::Superuser, ASSET_ID, asset_owner.clone(), true, 1000);
+		AssetHubPolkadot::force_create_asset_xcm(OriginKind::Superuser, ASSET_ID, asset_owner.clone(), true, 1000);
 	// Send XCM message from Relay Chain
 	Polkadot::execute_with(|| {
 		assert_ok!(<Polkadot as PolkadotPallet>::XcmPallet::send(
@@ -34,14 +34,14 @@ fn send_transact_sudo_from_relay_to_system_para_works() {
 			bx!(xcm),
 		));
 
-		events::relay_chain::xcm_pallet_sent();
+		Polkadot::xcm_pallet_sent();
 	});
 
 	// Receive XCM message in Assets Parachain
 	AssetHubPolkadot::execute_with(|| {
 		type RuntimeEvent = <AssetHubPolkadot as Chain>::RuntimeEvent;
 
-		events::parachain::dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
+		AssetHubPolkadot::dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
 
 		assert_expected_events!(
 			AssetHubPolkadot,
@@ -65,7 +65,7 @@ fn send_transact_native_from_relay_to_system_para_fails() {
 	let signed_origin = <Polkadot as Chain>::RuntimeOrigin::signed(PolkadotSender::get().into());
 	let system_para_destination = Polkadot::child_location_of(AssetHubPolkadot::para_id()).into();
 	let asset_owner = AssetHubPolkadotSender::get().into();
-	let xcm = force_create_asset_xcm(OriginKind::Native, ASSET_ID, asset_owner, true, 1000);
+	let xcm = AssetHubPolkadot::force_create_asset_xcm(OriginKind::Native, ASSET_ID, asset_owner, true, 1000);
 
 	// Send XCM message from Relay Chain
 	Polkadot::execute_with(|| {
@@ -121,7 +121,7 @@ fn send_xcm_from_para_to_system_para_paying_fee_with_assets_works() {
 	);
 
 	// Force create and mint assets for Parachain's sovereign account
-	force_create_and_mint_asset(
+	AssetHubPolkadot::force_create_and_mint_asset(
 		ASSET_ID,
 		ASSET_MIN_BALANCE,
 		true,
@@ -131,7 +131,7 @@ fn send_xcm_from_para_to_system_para_paying_fee_with_assets_works() {
 
 	// We just need a call that can pass the `SafeCallFilter`
 	// Call values are not relevant
-	let call = force_create_call(ASSET_ID, para_sovereign_account.clone(), true, ASSET_MIN_BALANCE);
+	let call = AssetHubPolkadot::force_create_asset_call(ASSET_ID, para_sovereign_account.clone(), true, ASSET_MIN_BALANCE);
 
 	let origin_kind = OriginKind::SovereignAccount;
 	let fee_amount = ASSET_MIN_BALANCE * 1000000;
@@ -150,13 +150,13 @@ fn send_xcm_from_para_to_system_para_paying_fee_with_assets_works() {
 			bx!(xcm),
 		));
 
-		events::parachain::xcm_pallet_sent();
+		AssetHubPolkadot::xcm_pallet_sent();
 	});
 
 	AssetHubPolkadot::execute_with(|| {
 		type RuntimeEvent = <AssetHubPolkadot as Chain>::RuntimeEvent;
 
-		events::parachain::xcmp_queue_success(Some(Weight::from_parts(2_176_414_000, 203_593)));
+		AssetHubPolkadot::xcmp_queue_success(Some(Weight::from_parts(2_176_414_000, 203_593)));
 
 		assert_expected_events!(
 			AssetHubPolkadot,

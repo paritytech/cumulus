@@ -19,7 +19,7 @@ use crate::*;
 fn relay_origin_assertions(t: RelayToSystemParaTest) {
 	type RuntimeEvent = <Westend as Chain>::RuntimeEvent;
 
-	events::relay_chain::xcm_pallet_attempted_complete(Some(Weight::from_parts(
+	Westend::xcm_pallet_attempted_complete(Some(Weight::from_parts(
 		629_384_000,
 		6_196,
 	)));
@@ -40,20 +40,20 @@ fn relay_origin_assertions(t: RelayToSystemParaTest) {
 }
 
 fn system_para_dest_assertions_incomplete(_t: RelayToSystemParaTest) {
-	events::parachain::dmp_queue_incomplete(
+	AssetHubWestend::dmp_queue_incomplete(
 		Some(Weight::from_parts(1_000_000_000, 0)),
 		Some(Error::UntrustedReserveLocation),
 	);
 }
 
 fn system_para_to_relay_assertions(_t: SystemParaToRelayTest) {
-	events::parachain::xcm_pallet_attempted_error(Some(XcmError::Barrier))
+	AssetHubWestend::xcm_pallet_attempted_error(Some(XcmError::Barrier))
 }
 
 fn system_para_to_para_assertions(t: SystemParaToParaTest) {
 	type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
-	events::parachain::xcm_pallet_attempted_complete(Some(Weight::from_parts(676_119_000, 6196)));
+	AssetHubWestend::xcm_pallet_attempted_complete(Some(Weight::from_parts(676_119_000, 6196)));
 
 	assert_expected_events!(
 		AssetHubWestend,
@@ -75,7 +75,7 @@ fn system_para_to_para_assertions(t: SystemParaToParaTest) {
 fn system_para_to_para_assets_assertions(t: SystemParaToParaTest) {
 	type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
-	events::parachain::xcm_pallet_attempted_complete(Some(Weight::from_parts(676_119_000, 6196)));
+	AssetHubWestend::xcm_pallet_attempted_complete(Some(Weight::from_parts(676_119_000, 6196)));
 
 	assert_expected_events!(
 		AssetHubWestend,
@@ -340,7 +340,7 @@ fn reserve_transfer_native_asset_from_system_para_to_para() {
 #[test]
 fn limited_reserve_transfer_asset_from_system_para_to_para() {
 	// Force create asset from Relay Chain and mint assets for System Parachain's sender account
-	force_create_and_mint_asset(
+	AssetHubWestend::force_create_and_mint_asset(
 		ASSET_ID,
 		ASSET_MIN_BALANCE,
 		true,
@@ -375,7 +375,7 @@ fn limited_reserve_transfer_asset_from_system_para_to_para() {
 #[test]
 fn reserve_transfer_asset_from_system_para_to_para() {
 	// Force create asset from Relay Chain and mint assets for System Parachain's sender account
-	force_create_and_mint_asset(
+	AssetHubWestend::force_create_and_mint_asset(
 		ASSET_ID,
 		ASSET_MIN_BALANCE,
 		true,

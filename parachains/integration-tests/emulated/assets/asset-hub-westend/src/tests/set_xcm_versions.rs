@@ -72,14 +72,14 @@ fn system_para_sets_relay_xcm_supported_version() {
 			bx!(xcm),
 		));
 
-		events::relay_chain::xcm_pallet_sent();
+		Westend::xcm_pallet_sent();
 	});
 
 	// System Parachain receive the XCM message
 	AssetHubWestend::execute_with(|| {
 		type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
-		events::parachain::dmp_queue_complete(Some(Weight::from_parts(1_019_210_000, 200_000)));
+		AssetHubWestend::dmp_queue_complete(Some(Weight::from_parts(1_019_210_000, 200_000)));
 
 		assert_expected_events!(
 			AssetHubWestend,
