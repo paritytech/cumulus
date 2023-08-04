@@ -51,6 +51,42 @@ macro_rules! ensure_feature {
 	};
 }
 
+#[macro_export]
+macro_rules! ensure_para {
+	($runtime:literal, $($body:tt)+) => {
+		{
+			#[cfg(not(feature=$runtime))]
+			unimplemented!("Please turn feature `{}` on to use this runtime.", $runtime);
+			#[cfg(feature = $runtime)]
+			$($body)+
+		}
+	};
+}
+
+#[macro_export]
+macro_rules! ensure_relay {
+	($runtime:literal, $($body:tt)+) => {
+		{
+			#[cfg(not(feature=$runtime))]
+			unimplemented!("Please turn feature `{}` on to use this runtime.", $runtime);
+			#[cfg(feature = $runtime)]
+			$($body)+
+		}
+	};
+}
+
+#[macro_export]
+macro_rules! ensure_para_relay {
+	($para_runtime:literal, $relay_runtime:literal, $($body:tt)+) => {
+		{
+			#[cfg(not(all(feature = $para_runtime, feature = $relay_runtime)))]
+			unimplemented!("Please turn both features `{}` and `{}` on to use this functionallity.", $para_runtime, $relay_runtime);
+			#[cfg(all(feature = $para_runtime, feature = $relay_runtime))]
+			$($body)+
+		}
+	};
+}
+
 /// The `purge-chain` command used to remove the whole chain: the parachain and the relay chain.
 #[derive(Debug, clap::Parser)]
 #[group(skip)]

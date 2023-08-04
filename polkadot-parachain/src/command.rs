@@ -36,7 +36,7 @@ use crate::{
 	service::{new_partial, Block},
 };
 use codec::Encode;
-use cumulus_client_cli::{ensure_feature, generate_genesis_block};
+use cumulus_client_cli::{ensure_feature, ensure_para, ensure_para_relay, generate_genesis_block};
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::{info, warn};
@@ -129,8 +129,8 @@ fn runtime(id: &str) -> Runtime {
 	} else if id.starts_with("collectives-westend") {
 		Runtime::CollectivesWestend
 	} else if id.starts_with("bridge-hub") {
-		ensure_feature!(
-			"bridge-hub-runtimes",
+		ensure_para!(
+			"bridge-hub-runtime",
 			Runtime::BridgeHub(
 				id.parse::<chain_spec::bridge_hubs::BridgeHubRuntimeType>()
 					.expect("Invalid value"),
@@ -149,23 +149,23 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	let (id, _, para_id) = extract_parachain_id(id);
 	Ok(match id {
 		// - Defaul-like
-		"staging" => ensure_feature!(
+		"staging" => ensure_para!(
 			"rococo-parachain-runtime",
 			Box::new(chain_spec::rococo_parachain::staging_rococo_parachain_local_config())
 		),
-		"tick" => ensure_feature!(
+		"tick" => ensure_para!(
 			"rococo-parachain-runtime",
 			Box::new(chain_spec::rococo_parachain::RococoParachainChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/tick.json")[..],
 			)?)
 		),
-		"trick" => ensure_feature!(
+		"trick" => ensure_para!(
 			"rococo-parachain-runtime",
 			Box::new(chain_spec::rococo_parachain::RococoParachainChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/trick.json")[..],
 			)?)
 		),
-		"track" => ensure_feature!(
+		"track" => ensure_para!(
 			"rococo-parachain-runtime",
 			Box::new(chain_spec::rococo_parachain::RococoParachainChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/track.json")[..],
@@ -174,114 +174,114 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 
 		// -- Starters
 		"shell" =>
-			ensure_feature!("shell-runtime", Box::new(chain_spec::shell::get_shell_chain_spec())),
-		"seedling" => ensure_feature!(
+			ensure_para!("shell-runtime", Box::new(chain_spec::shell::get_shell_chain_spec())),
+		"seedling" => ensure_para!(
 			"seedling-runtime",
 			Box::new(chain_spec::seedling::get_seedling_chain_spec())
 		),
 
 		// -- Asset Hub Polkadot
-		"asset-hub-polkadot-dev" | "statemint-dev" => ensure_feature!(
-			"asset-hub-polkadot-runtime",
+		"asset-hub-polkadot-dev" | "statemint-dev" => ensure_para_relay!(
+			"asset-hub-runtime", "polkadot-runtime",
 			Box::new(chain_spec::asset_hub_polkadot::asset_hub_polkadot_development_config())
 		),
-		"asset-hub-polkadot-local" | "statemint-local" => ensure_feature!(
-			"asset-hub-polkadot-runtime",
+		"asset-hub-polkadot-local" | "statemint-local" => ensure_para_relay!(
+			"asset-hub-runtime", "polkadot-runtime",
 			Box::new(chain_spec::asset_hub_polkadot::asset_hub_polkadot_local_config())
 		),
 		// the chain spec as used for generating the upgrade genesis values
-		"asset-hub-polkadot-genesis" | "statemint-genesis" => ensure_feature!(
-			"asset-hub-polkadot-runtime",
+		"asset-hub-polkadot-genesis" | "statemint-genesis" => ensure_para_relay!(
+			"asset-hub-runtime", "polkadot-runtime",
 			Box::new(chain_spec::asset_hub_polkadot::asset_hub_polkadot_config())
 		),
 		// the shell-based chain spec as used for syncing
-		"asset-hub-polkadot" | "statemint" => ensure_feature!(
-			"asset-hub-polkadot-runtime",
+		"asset-hub-polkadot" | "statemint" => ensure_para_relay!(
+			"asset-hub-runtime", "polkadot-runtime",
 			Box::new(chain_spec::asset_hub_polkadot::AssetHubPolkadotChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/asset-hub-polkadot.json")[..],
 			)?)
 		),
 
 		// -- Asset Hub Kusama
-		"asset-hub-kusama-dev" | "statemine-dev" => ensure_feature!(
-			"asset-hub-kusama-runtime",
+		"asset-hub-kusama-dev" | "statemine-dev" => ensure_para_relay!(
+			"asset-hub-runtime", "kusama-runtime",
 			Box::new(chain_spec::asset_hub_kusama::asset_hub_kusama_development_config())
 		),
-		"asset-hub-kusama-local" | "statemine-local" => ensure_feature!(
-			"asset-hub-kusama-runtime",
+		"asset-hub-kusama-local" | "statemine-local" => ensure_para_relay!(
+			"asset-hub-runtime", "kusama-runtime",
 			Box::new(chain_spec::asset_hub_kusama::asset_hub_kusama_local_config())
 		),
 		// the chain spec as used for generating the upgrade genesis values
-		"asset-hub-kusama-genesis" | "statemine-genesis" => ensure_feature!(
-			"asset-hub-kusama-runtime",
+		"asset-hub-kusama-genesis" | "statemine-genesis" => ensure_para_relay!(
+			"asset-hub-runtime", "kusama-runtime",
 			Box::new(chain_spec::asset_hub_kusama::asset_hub_kusama_config())
 		),
 		// the shell-based chain spec as used for syncing
-		"asset-hub-kusama" | "statemine" => ensure_feature!(
-			"asset-hub-kusama-runtime",
+		"asset-hub-kusama" | "statemine" => ensure_para_relay!(
+			"asset-hub-runtime", "kusama-runtime",
 			Box::new(chain_spec::asset_hub_kusama::AssetHubKusamaChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/asset-hub-kusama.json")[..],
 			)?)
 		),
 
 		// -- Asset Hub Westend
-		"asset-hub-westend-dev" | "westmint-dev" => ensure_feature!(
-			"asset-hub-westend-runtime",
+		"asset-hub-westend-dev" | "westmint-dev" => ensure_para_relay!(
+			"asset-hub-runtime", "westend-runtime",
 			Box::new(chain_spec::asset_hub_westend::asset_hub_westend_development_config())
 		),
-		"asset-hub-westend-local" | "westmint-local" => ensure_feature!(
-			"asset-hub-westend-runtime",
+		"asset-hub-westend-local" | "westmint-local" => ensure_para_relay!(
+			"asset-hub-runtime", "westend-runtime",
 			Box::new(chain_spec::asset_hub_westend::asset_hub_westend_local_config())
 		),
 		// the chain spec as used for generating the upgrade genesis values
-		"asset-hub-westend-genesis" | "westmint-genesis" => ensure_feature!(
-			"asset-hub-westend-runtime",
+		"asset-hub-westend-genesis" | "westmint-genesis" => ensure_para_relay!(
+			"asset-hub-runtime", "westend-runtime",
 			Box::new(chain_spec::asset_hub_westend::asset_hub_westend_config())
 		),
 		// the shell-based chain spec as used for syncing
-		"asset-hub-westend" | "westmint" => ensure_feature!(
-			"asset-hub-westend-runtime",
+		"asset-hub-westend" | "westmint" => ensure_para_relay!(
+			"asset-hub-runtime", "westend-runtime",
 			Box::new(chain_spec::asset_hub_westend::AssetHubWestendChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/asset-hub-westend.json")[..],
 			)?)
 		),
 
 		// -- Polkadot Collectives
-		"collectives-polkadot-dev" => ensure_feature!(
-			"collectives-runtime",
+		"collectives-polkadot-dev" => ensure_para_relay!(
+			"collectives-runtime", "polkadot-runtime",
 			Box::new(chain_spec::collectives::collectives_polkadot_development_config())
 		),
-		"collectives-polkadot-local" => ensure_feature!(
-			"collectives-runtime",
+		"collectives-polkadot-local" => ensure_para_relay!(
+			"collectives-runtime", "polkadot-runtime",
 			Box::new(chain_spec::collectives::collectives_polkadot_local_config())
 		),
-		"collectives-polkadot" => ensure_feature!(
-			"collectives-runtime",
+		"collectives-polkadot" => ensure_para_relay!(
+			"collectives-runtime", "polkadot-runtime",
 			Box::new(chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/collectives-polkadot.json")[..],
 			)?)
 		),
-		"collectives-westend" => ensure_feature!(
-			"collectives-runtime",
+		"collectives-westend" => ensure_para_relay!(
+			"collectives-runtime", "westend-runtime",
 			Box::new(chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/collectives-westend.json")[..],
 			)?)
 		),
 
 		// -- Contracts on Rococo
-		"contracts-rococo-dev" => ensure_feature!(
-			"contracts-runtime",
+		"contracts-rococo-dev" => ensure_para_relay!(
+			"contracts-runtime", "rococo-runtime",
 			Box::new(chain_spec::contracts::contracts_rococo_development_config())
 		),
-		"contracts-rococo-local" => ensure_feature!(
-			"contracts-runtime",
+		"contracts-rococo-local" => ensure_para_relay!(
+			"contracts-runtime", "rococo-runtime",
 			Box::new(chain_spec::contracts::contracts_rococo_local_config())
 		),
-		"contracts-rococo-genesis" => ensure_feature!(
-			"contracts-runtime",
+		"contracts-rococo-genesis" => ensure_para_relay!(
+			"contracts-runtime", "rococo-runtime",
 			Box::new(chain_spec::contracts::contracts_rococo_config())
 		),
-		"contracts-rococo" => ensure_feature!(
+		"contracts-rococo" => ensure_para!(
 			"contracts-runtime",
 			Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/contracts-rococo.json")[..],
@@ -299,36 +299,36 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				.load_config()?,
 
 		// -- Penpal
-		"penpal-kusama" => ensure_feature!(
-			"penpal-runtime",
+		"penpal-kusama" => ensure_para_relay!(
+			"penpal-runtime", "kusama-runtime",
 			Box::new(chain_spec::penpal::get_penpal_chain_spec(
 				para_id.expect("Must specify parachain id"),
 				"kusama-local",
 			))
 		),
-		"penpal-polkadot" => ensure_feature!(
-			"penpal-runtime",
+		"penpal-polkadot" => ensure_para_relay!(
+			"penpal-runtime", "polkadot-runtime",
 			Box::new(chain_spec::penpal::get_penpal_chain_spec(
 				para_id.expect("Must specify parachain id"),
 				"polkadot-local",
 			))
 		),
 		// -- Glutton
-		"glutton-kusama-dev" => ensure_feature!(
-			"glutton-runtime",
+		"glutton-kusama-dev" => ensure_para_relay!(
+			"glutton-runtime", "kusama-runtime",
 			Box::new(chain_spec::glutton::glutton_development_config(
 				para_id.expect("Must specify parachain id"),
 			))
 		),
-		"glutton-kusama-local" => ensure_feature!(
-			"glutton-runtime",
+		"glutton-kusama-local" => ensure_para_relay!(
+			"glutton-runtime", "kusama-runtime",
 			Box::new(chain_spec::glutton::glutton_local_config(
 				para_id.expect("Must specify parachain id"),
 			))
 		),
 		// the chain spec as used for generating the upgrade genesis values
-		"glutton-kusama-genesis" => ensure_feature!(
-			"glutton-runtime",
+		"glutton-kusama-genesis" => ensure_para_relay!(
+			"glutton-runtime", "kusama-runtime",
 			Box::new(chain_spec::glutton::glutton_config(
 				para_id.expect("Must specify parachain id"),
 			))
@@ -337,7 +337,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		// -- Fallback (generic chainspec)
 		"" => {
 			log::warn!("No ChainSpec.id specified, so using default one, based on rococo-parachain runtime");
-			ensure_feature!(
+			ensure_para!(
 				"rococo-parachain-runtime",
 				Box::new(chain_spec::rococo_parachain::rococo_parachain_local_config())
 			)
@@ -348,11 +348,11 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			let path: PathBuf = path.into();
 			match path.runtime() {
 				Runtime::AssetHubPolkadot =>
-					ensure_feature!("asset-hub-polkadot-runtime", Box::new(
+					ensure_para_relay!("asset-hub-runtime", "polkadot-runtime", Box::new(
 					chain_spec::asset_hub_polkadot::AssetHubPolkadotChainSpec::from_json_file(path)?,
 				)),
-				Runtime::AssetHubKusama => ensure_feature!(
-					"asset-hub-kusama-runtime",
+				Runtime::AssetHubKusama => ensure_para_relay!(
+					"asset-hub-runtime", "kusama-runtime",
 					Box::new(
 						chain_spec::asset_hub_kusama::AssetHubKusamaChainSpec::from_json_file(
 							path
@@ -360,10 +360,10 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 					)
 				),
 				Runtime::AssetHubWestend =>
-					ensure_feature!("asset-hub-westend-runtime", Box::new(
+					ensure_para_relay!("asset-hub-runtime", "westend-runtime", Box::new(
 					chain_spec::asset_hub_westend::AssetHubWestendChainSpec::from_json_file(path)?,
 				)),
-				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => ensure_feature!(
+				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => ensure_para!(
 					"collectives-runtime",
 					Box::new(
 						chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_file(
@@ -371,33 +371,33 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 						)?,
 					)
 				),
-				Runtime::Shell => ensure_feature!(
+				Runtime::Shell => ensure_para!(
 					"shell-runtime",
 					Box::new(chain_spec::shell::ShellChainSpec::from_json_file(path)?)
 				),
-				Runtime::Seedling => ensure_feature!(
+				Runtime::Seedling => ensure_para!(
 					"seedling-runtime",
 					Box::new(chain_spec::seedling::SeedlingChainSpec::from_json_file(path)?)
 				),
-				Runtime::ContractsRococo => ensure_feature!(
+				Runtime::ContractsRococo => ensure_para!(
 					"contracts-runtime",
 					Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_file(
 						path
 					)?)
 				),
-				Runtime::BridgeHub(_bridge_hub_runtime_type) => ensure_feature!(
-					"bridge-hub-runtimes",
+				Runtime::BridgeHub(_bridge_hub_runtime_type) => ensure_para!(
+					"bridge-hub-runtime",
 					_bridge_hub_runtime_type.chain_spec_from_json_file(path)?
 				),
-				Runtime::Penpal(_para_id) => ensure_feature!(
+				Runtime::Penpal(_para_id) => ensure_para!(
 					"penpal-runtime",
 					Box::new(chain_spec::penpal::PenpalChainSpec::from_json_file(path)?)
 				),
-				Runtime::Glutton => ensure_feature!(
+				Runtime::Glutton => ensure_para!(
 					"glutton-runtime",
 					Box::new(chain_spec::glutton::GluttonChainSpec::from_json_file(path)?)
 				),
-				Runtime::Default => ensure_feature!(
+				Runtime::Default => ensure_para!(
 					"rococo-parachain-runtime",
 					Box::new(
 						chain_spec::rococo_parachain::RococoParachainChainSpec::from_json_file(
@@ -481,23 +481,23 @@ impl SubstrateCli for Cli {
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
 		match chain_spec.runtime() {
 			Runtime::AssetHubPolkadot =>
-				ensure_feature!("asset-hub-polkadot-runtime", &asset_hub_polkadot_runtime::VERSION),
+				ensure_para_relay!("asset-hub-runtime", "polkadot-runtime", &asset_hub_polkadot_runtime::VERSION),
 			Runtime::AssetHubKusama =>
-				ensure_feature!("asset-hub-kusama-runtime", &asset_hub_kusama_runtime::VERSION),
+				ensure_para_relay!("asset-hub-runtime", "kusama-runtime", &asset_hub_kusama_runtime::VERSION),
 			Runtime::AssetHubWestend =>
-				ensure_feature!("asset-hub-westend-runtime", &asset_hub_westend_runtime::VERSION),
+				ensure_para_relay!("asset-hub-runtime", "westend-runtime", &asset_hub_westend_runtime::VERSION),
 			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
-				ensure_feature!("collectives-runtime", &collectives_polkadot_runtime::VERSION),
-			Runtime::Shell => ensure_feature!("shell-runtime", &shell_runtime::VERSION),
-			Runtime::Seedling => ensure_feature!("seedling-runtime", &seedling_runtime::VERSION),
+				ensure_para!("collectives-runtime", &collectives_polkadot_runtime::VERSION),
+			Runtime::Shell => ensure_para!("shell-runtime", &shell_runtime::VERSION),
+			Runtime::Seedling => ensure_para!("seedling-runtime", &seedling_runtime::VERSION),
 			Runtime::ContractsRococo =>
-				ensure_feature!("contracts-runtime", &contracts_rococo_runtime::VERSION),
+				ensure_para!("contracts-runtime", &contracts_rococo_runtime::VERSION),
 			Runtime::BridgeHub(_bridge_hub_runtime_type) =>
-				ensure_feature!("bridge-hub-runtimes", _bridge_hub_runtime_type.runtime_version()),
-			Runtime::Penpal(_) => ensure_feature!("penpal-runtime", &penpal_runtime::VERSION),
-			Runtime::Glutton => ensure_feature!("glutton-runtime", &glutton_runtime::VERSION),
+				ensure_para!("bridge-hub-runtime", _bridge_hub_runtime_type.runtime_version()),
+			Runtime::Penpal(_) => ensure_para!("penpal-runtime", &penpal_runtime::VERSION),
+			Runtime::Glutton => ensure_para!("glutton-runtime", &glutton_runtime::VERSION),
 			Runtime::Default =>
-				ensure_feature!("rococo-parachain-runtime", &rococo_parachain_runtime::VERSION),
+				ensure_para!("rococo-parachain-runtime", &rococo_parachain_runtime::VERSION),
 		}
 	}
 }
@@ -592,7 +592,7 @@ macro_rules! construct_async_run {
 		let runner = $cli.create_runner($cmd)?;
 		match runner.config().chain_spec.runtime() {
 			Runtime::AssetHubWestend => {
-				ensure_feature!("asset-hub-westend-runtime", runner.async_run(|$config| {
+				ensure_para_relay!("asset-hub-runtime", "westend-runtime", runner.async_run(|$config| {
 					let $components = new_partial::<asset_hub_westend_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
