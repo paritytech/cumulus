@@ -878,7 +878,6 @@ macro_rules! decl_test_networks {
 					$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().remove(Self::name()));
 					$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().remove(Self::name()));
 					$crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().remove(Self::name()));
-					// $crate::RELAY_BLOCK_NUMBER.with(|b| b.borrow_mut().remove(Self::name()));
 
 					<$relay_chain>::reset_ext();
 					$( <$parachain>::reset_ext(); )*
