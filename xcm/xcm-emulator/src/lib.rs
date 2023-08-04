@@ -247,6 +247,10 @@ pub trait RelayChain: Chain {
 	fn sovereign_account_id_of(location: MultiLocation) -> AccountId {
 		Self::SovereignAccountOf::convert_location(&location).unwrap()
 	}
+
+	fn sovereign_account_id_of_child_para(id: ParaId) -> AccountId {
+		Self::sovereign_account_id_of(Self::child_location_of(id))
+	}
 }
 
 pub trait Parachain: Chain {

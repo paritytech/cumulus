@@ -2,15 +2,17 @@ pub use lazy_static;
 pub mod constants;
 pub mod impls;
 
+pub use codec::Encode;
 pub use constants::{
 	accounts::{ALICE, BOB},
 	asset_hub_kusama, asset_hub_polkadot, asset_hub_westend, bridge_hub_kusama,
 	bridge_hub_polkadot, bridge_hub_rococo, collectives, kusama, penpal, polkadot, rococo, westend,
 	PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD,
 };
-use frame_support::{parameter_types, sp_tracing};
+use frame_support::{assert_ok, parameter_types, sp_tracing};
 pub use impls::{RococoWococoMessageHandler, WococoRococoMessageHandler};
 pub use parachains_common::{AccountId, Balance};
+use polkadot_parachain::primitives::HrmpChannelId;
 pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
 pub use sp_core::{sr25519, storage::Storage, Get};
 use xcm_emulator::{
@@ -292,19 +294,20 @@ decl_test_parachains! {
 			PolkadotXcm: bridge_hub_rococo_runtime::PolkadotXcm,
 		}
 	},
+	// AssetHubRococo (aka Rockmine/Rockmine2) mirrors AssetHubKusama
 	pub struct AssetHubRococo {
-		genesis = asset_hub_polkadot::genesis(),
+		genesis = asset_hub_kusama::genesis(),
 		on_init = (),
-		runtime = asset_hub_polkadot_runtime,
+		runtime = asset_hub_kusama_runtime,
 		core = {
-			XcmpMessageHandler: asset_hub_polkadot_runtime::XcmpQueue,
-			DmpMessageHandler: asset_hub_polkadot_runtime::DmpQueue,
-			LocationToAccountId: asset_hub_polkadot_runtime::xcm_config::LocationToAccountId,
-			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
+			XcmpMessageHandler: asset_hub_kusama_runtime::XcmpQueue,
+			DmpMessageHandler: asset_hub_kusama_runtime::DmpQueue,
+			LocationToAccountId: asset_hub_kusama_runtime::xcm_config::LocationToAccountId,
+			ParachainInfo: asset_hub_kusama_runtime::ParachainInfo,
 		},
 		pallets = {
-			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
-			Assets: asset_hub_polkadot_runtime::Assets,
+			PolkadotXcm: asset_hub_kusama_runtime::PolkadotXcm,
+			Assets: asset_hub_kusama_runtime::Assets,
 		}
 	},
 	// Wococo Parachains
@@ -831,4 +834,131 @@ pub fn xcm_unpaid_execution(call: DoubleEncoded<()>, origin_kind: OriginKind) ->
 		UnpaidExecution { weight_limit, check_origin },
 		Transact { require_weight_at_most, origin_kind, call },
 	]))
+}
+
+impl Kusama {
+	pub fn fund_account(account: AccountId, amount: Balance) {
+		Self::execute_with(|| {
+			assert_ok!(<Self as KusamaPallet>::Balances::force_set_balance(
+				<Self as Chain>::RuntimeOrigin::root(),
+				account.into(),
+				amount,
+			));
+		});
+	}
+
+	pub fn fund_para_sovereign(amount: Balance, para_id: ParaId) -> sp_runtime::AccountId32 {
+		let sovereign_account = Self::sovereign_account_id_of_child_para(para_id);
+		Self::fund_account(sovereign_account.clone(), amount);
+		sovereign_account
+	}
+
+	pub fn init_open_channel_call(
+		recipient_para_id: ParaId,
+		max_capacity: u32,
+		max_message_size: u32,
+	) -> DoubleEncoded<()> {
+		<Self as Chain>::RuntimeCall::Hrmp(polkadot_runtime_parachains::hrmp::Call::<
+			<Self as Chain>::Runtime,
+		>::hrmp_init_open_channel {
+			recipient: recipient_para_id,
+			proposed_max_capacity: max_capacity,
+			proposed_max_message_size: max_message_size,
+		})
+		.encode()
+		.into()
+	}
+
+	pub fn accept_open_channel_call(sender_para_id: ParaId) -> DoubleEncoded<()> {
+		<Self as Chain>::RuntimeCall::Hrmp(polkadot_runtime_parachains::hrmp::Call::<
+			<Self as Chain>::Runtime,
+		>::hrmp_accept_open_channel {
+			sender: sender_para_id,
+		})
+		.encode()
+		.into()
+	}
+
+	pub fn force_process_hrmp_open(sender: ParaId, recipient: ParaId) {
+		Self::execute_with(|| {
+			let relay_root_origin = <Self as Chain>::RuntimeOrigin::root();
+
+			// Force process HRMP open channel requests without waiting for the next session
+			assert_ok!(<Self as KusamaPallet>::Hrmp::force_process_hrmp_open(relay_root_origin, 0));
+
+			let channel_id = HrmpChannelId { sender, recipient };
+
+			let hrmp_channel_exist = polkadot_runtime_parachains::hrmp::HrmpChannels::<
+				<Self as Chain>::Runtime,
+			>::contains_key(&channel_id);
+
+			// Check the HRMP channel has been successfully registrered
+			assert!(hrmp_channel_exist)
+		});
+	}
+}
+
+impl Polkadot {
+	pub fn fund_account(account: AccountId, amount: Balance) {
+		Self::execute_with(|| {
+			assert_ok!(<Self as PolkadotPallet>::Balances::force_set_balance(
+				<Self as Chain>::RuntimeOrigin::root(),
+				account.into(),
+				amount,
+			));
+		});
+	}
+
+	pub fn fund_para_sovereign(amount: Balance, para_id: ParaId) -> sp_runtime::AccountId32 {
+		let sovereign_account = Self::sovereign_account_id_of_child_para(para_id);
+		Self::fund_account(sovereign_account.clone(), amount);
+		sovereign_account
+	}
+
+	pub fn init_open_channel_call(
+		recipient_para_id: ParaId,
+		max_capacity: u32,
+		max_message_size: u32,
+	) -> DoubleEncoded<()> {
+		<Self as Chain>::RuntimeCall::Hrmp(polkadot_runtime_parachains::hrmp::Call::<
+			<Self as Chain>::Runtime,
+		>::hrmp_init_open_channel {
+			recipient: recipient_para_id,
+			proposed_max_capacity: max_capacity,
+			proposed_max_message_size: max_message_size,
+		})
+		.encode()
+		.into()
+	}
+
+	pub fn accept_open_channel_call(sender_para_id: ParaId) -> DoubleEncoded<()> {
+		<Self as Chain>::RuntimeCall::Hrmp(polkadot_runtime_parachains::hrmp::Call::<
+			<Self as Chain>::Runtime,
+		>::hrmp_accept_open_channel {
+			sender: sender_para_id,
+		})
+		.encode()
+		.into()
+	}
+
+	pub fn force_process_hrmp_open(sender: ParaId, recipient: ParaId) {
+		Self::execute_with(|| {
+			let relay_root_origin = <Self as Chain>::RuntimeOrigin::root();
+
+			// Force process HRMP open channel requests without waiting for the next session
+			assert_ok!(<Self as PolkadotPallet>::Hrmp::force_process_hrmp_open(
+				relay_root_origin,
+				0
+			));
+
+			let channel_id = HrmpChannelId { sender, recipient };
+
+			let hrmp_channel_exist = polkadot_runtime_parachains::hrmp::HrmpChannels::<
+				<Self as Chain>::Runtime,
+			>::contains_key(&channel_id);
+
+			// Check the HRMP channel has been successfully registrered
+			assert!(hrmp_channel_exist)
+		});
+	}
 }
