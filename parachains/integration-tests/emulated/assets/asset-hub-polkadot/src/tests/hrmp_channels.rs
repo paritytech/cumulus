@@ -54,13 +54,13 @@ fn open_hrmp_channel_between_paras_works() {
 			bx!(xcm),
 		));
 
-		// PenpalPolkadotA::xcm_pallet_sent();
+		// PenpalPolkadotA::assert_xcm_pallet_sent();
 	});
 
 	Polkadot::execute_with(|| {
 		type RuntimeEvent = <Polkadot as Chain>::RuntimeEvent;
 
-		Polkadot::ump_queue_processed(
+		Polkadot::assert_ump_queue_processed(
 			true,
 			Some(para_a_id),
 			Some(Weight::from_parts(1_282_426_000, 207_186)),
@@ -106,13 +106,13 @@ fn open_hrmp_channel_between_paras_works() {
 			bx!(xcm),
 		));
 
-		// PenpalPolkadotB::xcm_pallet_sent();
+		// PenpalPolkadotB::assert_xcm_pallet_sent();
 	});
 
 	Polkadot::execute_with(|| {
 		type RuntimeEvent = <Polkadot as Chain>::RuntimeEvent;
 
-		Polkadot::ump_queue_processed(
+		Polkadot::assert_ump_queue_processed(
 			true,
 			Some(para_b_id),
 			Some(Weight::from_parts(1_282_426_000, 207_186)),

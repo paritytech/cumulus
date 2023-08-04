@@ -34,14 +34,14 @@ fn send_transact_sudo_from_relay_to_system_para_works() {
 			bx!(xcm),
 		));
 
-		Kusama::xcm_pallet_sent();
+		Kusama::assert_xcm_pallet_sent();
 	});
 
 	// Receive XCM message in Assets Parachain
 	AssetHubKusama::execute_with(|| {
 		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
-		AssetHubKusama::dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
+		AssetHubKusama::assert_dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
 
 		assert_expected_events!(
 			AssetHubKusama,
@@ -150,13 +150,13 @@ fn send_xcm_from_para_to_system_para_paying_fee_with_assets_works() {
 			bx!(xcm),
 		));
 
-		AssetHubKusama::xcm_pallet_sent();
+		AssetHubKusama::assert_xcm_pallet_sent();
 	});
 
 	AssetHubKusama::execute_with(|| {
 		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
-		AssetHubKusama::xcmp_queue_success(Some(Weight::from_parts(2_176_414_000, 203_593)));
+		AssetHubKusama::assert_xcmp_queue_success(Some(Weight::from_parts(2_176_414_000, 203_593)));
 
 		assert_expected_events!(
 			AssetHubKusama,

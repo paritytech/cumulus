@@ -34,14 +34,14 @@ fn send_transact_sudo_from_relay_to_system_para_works() {
 			bx!(xcm),
 		));
 
-		Polkadot::xcm_pallet_sent();
+		Polkadot::assert_xcm_pallet_sent();
 	});
 
 	// Receive XCM message in Assets Parachain
 	AssetHubPolkadot::execute_with(|| {
 		type RuntimeEvent = <AssetHubPolkadot as Chain>::RuntimeEvent;
 
-		AssetHubPolkadot::dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
+		AssetHubPolkadot::assert_dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
 
 		assert_expected_events!(
 			AssetHubPolkadot,
@@ -150,13 +150,13 @@ fn send_xcm_from_para_to_system_para_paying_fee_with_assets_works() {
 			bx!(xcm),
 		));
 
-		AssetHubPolkadot::xcm_pallet_sent();
+		AssetHubPolkadot::assert_xcm_pallet_sent();
 	});
 
 	AssetHubPolkadot::execute_with(|| {
 		type RuntimeEvent = <AssetHubPolkadot as Chain>::RuntimeEvent;
 
-		AssetHubPolkadot::xcmp_queue_success(Some(Weight::from_parts(2_176_414_000, 203_593)));
+		AssetHubPolkadot::assert_xcmp_queue_success(Some(Weight::from_parts(2_176_414_000, 203_593)));
 
 		assert_expected_events!(
 			AssetHubPolkadot,

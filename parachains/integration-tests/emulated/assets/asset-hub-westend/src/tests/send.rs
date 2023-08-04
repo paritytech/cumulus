@@ -34,14 +34,14 @@ fn send_transact_sudo_from_relay_to_system_para_works() {
 			bx!(xcm),
 		));
 
-		Westend::xcm_pallet_sent();
+		Westend::assert_xcm_pallet_sent();
 	});
 
 	// Receive XCM message in Assets Parachain
 	AssetHubWestend::execute_with(|| {
 		type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
-		AssetHubWestend::dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
+		AssetHubWestend::assert_dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
 
 		assert_expected_events!(
 			AssetHubWestend,
@@ -95,13 +95,13 @@ fn send_xcm_from_para_to_system_para_paying_fee_with_assets_works() {
 			bx!(xcm),
 		));
 
-		AssetHubWestend::xcm_pallet_sent();
+		AssetHubWestend::assert_xcm_pallet_sent();
 	});
 
 	AssetHubWestend::execute_with(|| {
 		type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
-		AssetHubWestend::xcmp_queue_success(Some(Weight::from_parts(2_176_414_000, 203_593)));
+		AssetHubWestend::assert_xcmp_queue_success(Some(Weight::from_parts(2_176_414_000, 203_593)));
 
 		assert_expected_events!(
 			AssetHubWestend,

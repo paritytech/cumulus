@@ -161,7 +161,7 @@ macro_rules! impl_assert_events_helpers_for_relay_chain {
 
 			impl $chain {
 				/// Asserts a dispatchable is completely executed and XCM sent
-				pub fn xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
+				pub fn assert_xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
 					assert_expected_events!(
 						Self,
 						vec![
@@ -179,7 +179,7 @@ macro_rules! impl_assert_events_helpers_for_relay_chain {
 				}
 
 				/// Asserts a dispatchable is incompletely executed and XCM sent
-				pub fn xcm_pallet_attempted_incomplete(
+				pub fn assert_xcm_pallet_attempted_incomplete(
 					expected_weight: Option<Weight>,
 					expected_error: Option<Error>,
 				) {
@@ -202,7 +202,7 @@ macro_rules! impl_assert_events_helpers_for_relay_chain {
 				}
 
 				/// Asserts a XCM message is sent
-				pub fn xcm_pallet_sent() {
+				pub fn assert_xcm_pallet_sent() {
 					assert_expected_events!(
 						Self,
 						vec![
@@ -212,7 +212,7 @@ macro_rules! impl_assert_events_helpers_for_relay_chain {
 				}
 
 				/// Asserts a XCM from System Parachain is succesfully received and proccessed
-				pub fn ump_queue_processed(
+				pub fn assert_ump_queue_processed(
 					expected_success: bool,
 					expected_id: Option<ParaId>,
 					expected_weight: Option<Weight>,
@@ -328,7 +328,7 @@ macro_rules! impl_assert_events_helpers_for_parachain {
 
 			impl $chain {
 				/// Asserts a dispatchable is completely executed and XCM sent
-				pub fn xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
+				pub fn assert_xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
 					assert_expected_events!(
 						Self,
 						vec![
@@ -346,7 +346,7 @@ macro_rules! impl_assert_events_helpers_for_parachain {
 				}
 
 				/// Asserts a dispatchable is incompletely executed and XCM sent
-				pub fn xcm_pallet_attempted_incomplete(
+				pub fn assert_xcm_pallet_attempted_incomplete(
 					expected_weight: Option<Weight>,
 					expected_error: Option<Error>,
 				) {
@@ -369,7 +369,7 @@ macro_rules! impl_assert_events_helpers_for_parachain {
 				}
 
 				/// Asserts a dispatchable throws and error when trying to be sent
-				pub fn xcm_pallet_attempted_error(expected_error: Option<Error>) {
+				pub fn assert_xcm_pallet_attempted_error(expected_error: Option<Error>) {
 					assert_expected_events!(
 						Self,
 						vec![
@@ -384,7 +384,7 @@ macro_rules! impl_assert_events_helpers_for_parachain {
 				}
 
 				/// Asserts a XCM message is sent
-				pub fn xcm_pallet_sent() {
+				pub fn assert_xcm_pallet_sent() {
 					assert_expected_events!(
 						Self,
 						vec![
@@ -394,7 +394,7 @@ macro_rules! impl_assert_events_helpers_for_parachain {
 				}
 
 				/// Asserts a XCM message is sent to Relay Chain
-				pub fn parachain_system_ump_sent() {
+				pub fn assert_parachain_system_ump_sent() {
 					assert_expected_events!(
 						Self,
 						vec![
@@ -406,7 +406,7 @@ macro_rules! impl_assert_events_helpers_for_parachain {
 				}
 
 				/// Asserts a XCM from Relay Chain is completely executed
-				pub fn dmp_queue_complete(expected_weight: Option<Weight>) {
+				pub fn assert_dmp_queue_complete(expected_weight: Option<Weight>) {
 					assert_expected_events!(
 						Self,
 						vec![
@@ -424,7 +424,7 @@ macro_rules! impl_assert_events_helpers_for_parachain {
 				}
 
 				/// Asserts a XCM from Relay Chain is incompletely executed
-				pub fn dmp_queue_incomplete(
+				pub fn assert_dmp_queue_incomplete(
 					expected_weight: Option<Weight>,
 					expected_error: Option<Error>,
 				) {
@@ -446,7 +446,7 @@ macro_rules! impl_assert_events_helpers_for_parachain {
 				}
 
 				/// Asserts a XCM from another Parachain is completely executed
-				pub fn xcmp_queue_success(expected_weight: Option<Weight>) {
+				pub fn assert_xcmp_queue_success(expected_weight: Option<Weight>) {
 					assert_expected_events!(
 						Self,
 						vec![
@@ -560,11 +560,11 @@ macro_rules! impl_assets_helpers_for_parachain {
 							bx!(xcm),
 						));
 
-						<$relay_chain>::xcm_pallet_sent();
+						<$relay_chain>::assert_xcm_pallet_sent();
 					});
 
 					Self::execute_with(|| {
-						Self::dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
+						Self::assert_dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
 
 						type RuntimeEvent = <$chain as Chain>::RuntimeEvent;
 

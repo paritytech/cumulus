@@ -19,7 +19,7 @@ use crate::*;
 fn relay_origin_assertions(t: RelayToSystemParaTest) {
 	type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
-	Kusama::xcm_pallet_attempted_complete(Some(Weight::from_parts(
+	Kusama::assert_xcm_pallet_attempted_complete(Some(Weight::from_parts(
 		630_092_000,
 		6_196,
 	)));
@@ -40,20 +40,20 @@ fn relay_origin_assertions(t: RelayToSystemParaTest) {
 }
 
 fn system_para_dest_assertions_incomplete(_t: RelayToSystemParaTest) {
-	AssetHubKusama::dmp_queue_incomplete(
+	AssetHubKusama::assert_dmp_queue_incomplete(
 		Some(Weight::from_parts(1_000_000_000, 0)),
 		Some(Error::UntrustedReserveLocation),
 	);
 }
 
 fn system_para_to_relay_assertions(_t: SystemParaToRelayTest) {
-	AssetHubKusama::xcm_pallet_attempted_error(Some(XcmError::Barrier))
+	AssetHubKusama::assert_xcm_pallet_attempted_error(Some(XcmError::Barrier))
 }
 
 fn system_para_to_para_assertions(t: SystemParaToParaTest) {
 	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
-	AssetHubKusama::xcm_pallet_attempted_complete(Some(Weight::from_parts(630_092_000, 6_196)));
+	AssetHubKusama::assert_xcm_pallet_attempted_complete(Some(Weight::from_parts(630_092_000, 6_196)));
 
 	assert_expected_events!(
 		AssetHubKusama,
@@ -75,7 +75,7 @@ fn system_para_to_para_assertions(t: SystemParaToParaTest) {
 fn system_para_to_para_assets_assertions(t: SystemParaToParaTest) {
 	type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
-	AssetHubKusama::xcm_pallet_attempted_complete(Some(Weight::from_parts(676_119_000, 6196)));
+	AssetHubKusama::assert_xcm_pallet_attempted_complete(Some(Weight::from_parts(676_119_000, 6196)));
 
 	assert_expected_events!(
 		AssetHubKusama,

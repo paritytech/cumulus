@@ -54,13 +54,13 @@ fn open_hrmp_channel_between_paras_works() {
 			bx!(xcm),
 		));
 
-		// PenpalKusamaA::xcm_pallet_sent();
+		// PenpalKusamaA::assert_xcm_pallet_sent();
 	});
 
 	Kusama::execute_with(|| {
 		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
-		Kusama::ump_queue_processed(
+		Kusama::assert_ump_queue_processed(
 			true,
 			Some(para_a_id),
 			Some(Weight::from_parts(1_312_558_000, 200000)),
@@ -106,13 +106,13 @@ fn open_hrmp_channel_between_paras_works() {
 			bx!(xcm),
 		));
 
-		// PenpalKusamaB::xcm_pallet_sent();
+		// PenpalKusamaB::assert_xcm_pallet_sent();
 	});
 
 	Kusama::execute_with(|| {
 		type RuntimeEvent = <Kusama as Chain>::RuntimeEvent;
 
-		Kusama::ump_queue_processed(
+		Kusama::assert_ump_queue_processed(
 			true,
 			Some(para_b_id),
 			Some(Weight::from_parts(1_312_558_000, 200_000)),

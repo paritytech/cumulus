@@ -19,7 +19,7 @@ use crate::*;
 fn relay_origin_assertions(t: RelayToSystemParaTest) {
 	type RuntimeEvent = <Westend as Chain>::RuntimeEvent;
 
-	Westend::xcm_pallet_attempted_complete(Some(Weight::from_parts(
+	Westend::assert_xcm_pallet_attempted_complete(Some(Weight::from_parts(
 		629_384_000,
 		6_196,
 	)));
@@ -40,20 +40,20 @@ fn relay_origin_assertions(t: RelayToSystemParaTest) {
 }
 
 fn system_para_dest_assertions_incomplete(_t: RelayToSystemParaTest) {
-	AssetHubWestend::dmp_queue_incomplete(
+	AssetHubWestend::assert_dmp_queue_incomplete(
 		Some(Weight::from_parts(1_000_000_000, 0)),
 		Some(Error::UntrustedReserveLocation),
 	);
 }
 
 fn system_para_to_relay_assertions(_t: SystemParaToRelayTest) {
-	AssetHubWestend::xcm_pallet_attempted_error(Some(XcmError::Barrier))
+	AssetHubWestend::assert_xcm_pallet_attempted_error(Some(XcmError::Barrier))
 }
 
 fn system_para_to_para_assertions(t: SystemParaToParaTest) {
 	type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
-	AssetHubWestend::xcm_pallet_attempted_complete(Some(Weight::from_parts(676_119_000, 6196)));
+	AssetHubWestend::assert_xcm_pallet_attempted_complete(Some(Weight::from_parts(676_119_000, 6196)));
 
 	assert_expected_events!(
 		AssetHubWestend,
@@ -75,7 +75,7 @@ fn system_para_to_para_assertions(t: SystemParaToParaTest) {
 fn system_para_to_para_assets_assertions(t: SystemParaToParaTest) {
 	type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
-	AssetHubWestend::xcm_pallet_attempted_complete(Some(Weight::from_parts(676_119_000, 6196)));
+	AssetHubWestend::assert_xcm_pallet_attempted_complete(Some(Weight::from_parts(676_119_000, 6196)));
 
 	assert_expected_events!(
 		AssetHubWestend,

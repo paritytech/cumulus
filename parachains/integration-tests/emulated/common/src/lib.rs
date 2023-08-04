@@ -652,11 +652,11 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 				bx!(xcm),
 // 			));
 
-// 			Kusama::xcm_pallet_sent();
+// 			Kusama::assert_xcm_pallet_sent();
 // 		});
 
 // 		Self::execute_with(|| {
-// 			Self::dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
+// 			Self::assert_dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
 
 // 			assert_expected_events!(
 // 				Self,
@@ -679,7 +679,7 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 	}
 
 // 	/// Asserts a dispatchable is completely executed and XCM sent
-// 	pub fn xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
+// 	pub fn assert_xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
 // 		assert_expected_events!(
 // 			Self,
 // 			vec![
@@ -697,7 +697,7 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 	}
 
 // 	/// Asserts a dispatchable is incompletely executed and XCM sent
-// 	pub fn xcm_pallet_attempted_incomplete(
+// 	pub fn assert_xcm_pallet_attempted_incomplete(
 // 		expected_weight: Option<Weight>,
 // 		expected_error: Option<Error>,
 // 	) {
@@ -720,7 +720,7 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 	}
 
 // 	/// Asserts a dispatchable throws and error when trying to be sent
-// 	pub fn xcm_pallet_attempted_error(expected_error: Option<Error>) {
+// 	pub fn assert_xcm_pallet_attempted_error(expected_error: Option<Error>) {
 // 		assert_expected_events!(
 // 			Self,
 // 			vec![
@@ -735,7 +735,7 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 	}
 
 // 	/// Asserts a XCM message is sent
-// 	pub fn xcm_pallet_sent() {
+// 	pub fn assert_xcm_pallet_sent() {
 // 		assert_expected_events!(
 // 			Self,
 // 			vec![
@@ -745,7 +745,7 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 	}
 
 // 	/// Asserts a XCM message is sent to Relay Chain
-// 	pub fn parachain_system_ump_sent() {
+// 	pub fn assert_parachain_system_ump_sent() {
 // 		assert_expected_events!(
 // 			Self,
 // 			vec![
@@ -757,7 +757,7 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 	}
 
 // 	/// Asserts a XCM from Relay Chain is completely executed
-// 	pub fn dmp_queue_complete(expected_weight: Option<Weight>) {
+// 	pub fn assert_dmp_queue_complete(expected_weight: Option<Weight>) {
 // 		assert_expected_events!(
 // 			Self,
 // 			vec![
@@ -775,7 +775,7 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 	}
 
 // 	/// Asserts a XCM from Relay Chain is incompletely executed
-// 	pub fn dmp_queue_incomplete(
+// 	pub fn assert_dmp_queue_incomplete(
 // 		expected_weight: Option<Weight>,
 // 		expected_error: Option<Error>,
 // 	) {
@@ -797,7 +797,7 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 	}
 
 // 	/// Asserts a XCM from another Parachain is completely executed
-// 	pub fn xcmp_queue_success(expected_weight: Option<Weight>) {
+// 	pub fn assert_xcmp_queue_success(expected_weight: Option<Weight>) {
 // 		assert_expected_events!(
 // 			Self,
 // 			vec![
@@ -916,11 +916,11 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 				bx!(xcm),
 // 			));
 
-// 			Westend::xcm_pallet_sent();
+// 			Westend::assert_xcm_pallet_sent();
 // 		});
 
 // 		Self::execute_with(|| {
-// 			Self::dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
+// 			Self::assert_dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
 
 // 			assert_expected_events!(
 // 				Self,
@@ -943,7 +943,7 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 	}
 
 // 	/// Asserts a dispatchable is completely executed and XCM sent
-// 	pub fn xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
+// 	pub fn assert_xcm_pallet_attempted_complete(expected_weight: Option<Weight>) {
 // 		assert_expected_events!(
 // 			Self,
 // 			vec![
@@ -961,7 +961,7 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 	}
 
 // 	/// Asserts a dispatchable is incompletely executed and XCM sent
-// 	pub fn xcm_pallet_attempted_incomplete(
+// 	pub fn assert_xcm_pallet_attempted_incomplete(
 // 		expected_weight: Option<Weight>,
 // 		expected_error: Option<Error>,
 // 	) {
@@ -984,7 +984,7 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 	}
 
 // 	/// Asserts a dispatchable throws and error when trying to be sent
-// 	pub fn xcm_pallet_attempted_error(expected_error: Option<Error>) {
+// 	pub fn assert_xcm_pallet_attempted_error(expected_error: Option<Error>) {
 // 		assert_expected_events!(
 // 			Self,
 // 			vec![
@@ -999,7 +999,7 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 	}
 
 // 	/// Asserts a XCM message is sent
-// 	pub fn xcm_pallet_sent() {
+// 	pub fn assert_xcm_pallet_sent() {
 // 		assert_expected_events!(
 // 			Self,
 // 			vec![
@@ -1009,7 +1009,7 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 	}
 
 // 	/// Asserts a XCM message is sent to Relay Chain
-// 	pub fn parachain_system_ump_sent() {
+// 	pub fn assert_parachain_system_ump_sent() {
 // 		assert_expected_events!(
 // 			Self,
 // 			vec![
@@ -1021,7 +1021,7 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 	}
 
 // 	/// Asserts a XCM from Relay Chain is completely executed
-// 	pub fn dmp_queue_complete(expected_weight: Option<Weight>) {
+// 	pub fn assert_dmp_queue_complete(expected_weight: Option<Weight>) {
 // 		assert_expected_events!(
 // 			Self,
 // 			vec![
@@ -1039,7 +1039,7 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 	}
 
 // 	/// Asserts a XCM from Relay Chain is incompletely executed
-// 	pub fn dmp_queue_incomplete(
+// 	pub fn assert_dmp_queue_incomplete(
 // 		expected_weight: Option<Weight>,
 // 		expected_error: Option<Error>,
 // 	) {
@@ -1061,7 +1061,7 @@ impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
 // 	}
 
 // 	/// Asserts a XCM from another Parachain is completely executed
-// 	pub fn xcmp_queue_success(expected_weight: Option<Weight>) {
+// 	pub fn assert_xcmp_queue_success(expected_weight: Option<Weight>) {
 // 		assert_expected_events!(
 // 			Self,
 // 			vec![

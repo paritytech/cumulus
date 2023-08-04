@@ -72,14 +72,14 @@ fn system_para_sets_relay_xcm_supported_version() {
 			bx!(xcm),
 		));
 
-		Polkadot::xcm_pallet_sent();
+		Polkadot::assert_xcm_pallet_sent();
 	});
 
 	// System Parachain receive the XCM message
 	AssetHubPolkadot::execute_with(|| {
 		type RuntimeEvent = <AssetHubPolkadot as Chain>::RuntimeEvent;
 
-		AssetHubPolkadot::dmp_queue_complete(Some(Weight::from_parts(1_019_210_000, 200_000)));
+		AssetHubPolkadot::assert_dmp_queue_complete(Some(Weight::from_parts(1_019_210_000, 200_000)));
 
 		assert_expected_events!(
 			AssetHubPolkadot,
