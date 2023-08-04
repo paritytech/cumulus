@@ -294,19 +294,20 @@ decl_test_parachains! {
 			PolkadotXcm: bridge_hub_rococo_runtime::PolkadotXcm,
 		}
 	},
+	// AssetHubRococo (aka Rockmine/Rockmine2) mirrors AssetHubKusama
 	pub struct AssetHubRococo {
-		genesis = asset_hub_polkadot::genesis(),
+		genesis = asset_hub_kusama::genesis(),
 		on_init = (),
-		runtime = asset_hub_polkadot_runtime,
+		runtime = asset_hub_kusama_runtime,
 		core = {
-			XcmpMessageHandler: asset_hub_polkadot_runtime::XcmpQueue,
-			DmpMessageHandler: asset_hub_polkadot_runtime::DmpQueue,
-			LocationToAccountId: asset_hub_polkadot_runtime::xcm_config::LocationToAccountId,
-			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
+			XcmpMessageHandler: asset_hub_kusama_runtime::XcmpQueue,
+			DmpMessageHandler: asset_hub_kusama_runtime::DmpQueue,
+			LocationToAccountId: asset_hub_kusama_runtime::xcm_config::LocationToAccountId,
+			ParachainInfo: asset_hub_kusama_runtime::ParachainInfo,
 		},
 		pallets = {
-			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
-			Assets: asset_hub_polkadot_runtime::Assets,
+			PolkadotXcm: asset_hub_kusama_runtime::PolkadotXcm,
+			Assets: asset_hub_kusama_runtime::Assets,
 		}
 	},
 	// Wococo Parachains
