@@ -689,11 +689,19 @@ pub mod bridging {
 			// take larger fee for our outbound messages
 			let sibling_bridge_hub_id: cumulus_primitives_core::ParaId = BridgeHubParaId::get().into();
 			let outbound_channels = cumulus_pallet_xcmp_queue::OutboundXcmpStatus::<Runtime>::get();
-			outbound_channels.iter()
+			let is_outbound_channel_congested = outbound_channels.iter()
 				.filter(|c| c.recipient() == sibling_bridge_hub_id)
 				.map(|c| c.is_suspended())
 				.next()
-				.unwrap_or(false)
+				.unwrap_or(false);
+			if is_outbound_channel_congested {
+				return true;
+			}
+
+			// if the inbound channel with recipient is suspended, it means that we are unable to receive
+			// congestion reports from the bridge hub. So we assume the bridge pipeline is congested too
+			let inbound_suspended = cumulus_pallet_xcmp_queue::InboundXcmpSuspended::<Runtime>::get();
+			inbound_suspended.contains(&sibling_bridge_hub_id)
 		}
 	}
 
