@@ -836,15 +836,19 @@ pub fn xcm_unpaid_execution(call: DoubleEncoded<()>, origin_kind: OriginKind) ->
 }
 
 impl Kusama {
-	pub fn fund_para_sovereign(amount: Balance, para_id: ParaId) -> sp_runtime::AccountId32 {
-		let sovereign_account = Self::sovereign_account_id_of_child_para(para_id);
+	pub fn fund_account(account: AccountId, amount: Balance) {
 		Self::execute_with(|| {
 			assert_ok!(<Self as KusamaPallet>::Balances::force_set_balance(
 				<Self as Chain>::RuntimeOrigin::root(),
-				sp_runtime::MultiAddress::Id(sovereign_account.clone()),
+				account.into(),
 				amount,
 			));
 		});
+	}
+
+	pub fn fund_para_sovereign(amount: Balance, para_id: ParaId) -> sp_runtime::AccountId32 {
+		let sovereign_account = Self::sovereign_account_id_of_child_para(para_id);
+		Self::fund_account(sovereign_account.clone(), amount);
 		sovereign_account
 	}
 
@@ -894,15 +898,19 @@ impl Kusama {
 }
 
 impl Polkadot {
-	pub fn fund_para_sovereign(amount: Balance, para_id: ParaId) -> sp_runtime::AccountId32 {
-		let sovereign_account = Self::sovereign_account_id_of_child_para(para_id);
+	pub fn fund_account(account: AccountId, amount: Balance) {
 		Self::execute_with(|| {
 			assert_ok!(<Self as PolkadotPallet>::Balances::force_set_balance(
 				<Self as Chain>::RuntimeOrigin::root(),
-				sp_runtime::MultiAddress::Id(sovereign_account.clone()),
+				account.into(),
 				amount,
 			));
 		});
+	}
+
+	pub fn fund_para_sovereign(amount: Balance, para_id: ParaId) -> sp_runtime::AccountId32 {
+		let sovereign_account = Self::sovereign_account_id_of_child_para(para_id);
+		Self::fund_account(sovereign_account.clone(), amount);
 		sovereign_account
 	}
 
