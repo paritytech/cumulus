@@ -1,6 +1,7 @@
 [package]
 name = "cumulus-test-service"
 version = "0.1.0"
+publish = false
 authors.workspace = true
 edition.workspace = true
 repository.workspace = true

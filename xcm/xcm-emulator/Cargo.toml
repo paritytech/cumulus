@@ -2,6 +2,7 @@
 name = "xcm-emulator"
 description = "Test kit to emulate XCM program execution."
 version = "0.1.0"
+publish = false
 authors.workspace = true
 edition.workspace = true
 repository.workspace = true

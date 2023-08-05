@@ -2,6 +2,7 @@
 name = "cumulus-test-relay-validation-worker-provider"
 version = "0.1.0"
 build = "build.rs"
+publish = false
 authors.workspace = true
 edition.workspace = true
 repository.workspace = true
