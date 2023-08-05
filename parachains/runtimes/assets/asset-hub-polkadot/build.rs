@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[cfg(feature = "std")]
+#[cfg(all(feature = "std", feature = "polkadot-runtime"))]
 fn main() {
 	substrate_wasm_builder::WasmBuilder::new()
 		.with_current_project()
@@ -22,5 +22,5 @@ fn main() {
 		.build()
 }
 
-#[cfg(not(feature = "std"))]
+#[cfg(not(all(feature = "std", feature = "polkadot-runtime")))]
 fn main() {}

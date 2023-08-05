@@ -85,7 +85,8 @@ asset-test-utils = { path = "../test-utils"}
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
 [features]
-default = [ "std" ]
+default = [ "std", "westend-runtime"]
+westend-runtime = []
 runtime-benchmarks = [
 	"hex-literal",
 	"frame-benchmarking/runtime-benchmarks",
