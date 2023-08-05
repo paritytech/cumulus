@@ -34,8 +34,8 @@ parachain-info = { path = "../../../../parachains/pallets/parachain-info", defau
 parachains-runtimes-test-utils = { path = "../../test-utils", default-features = false }
 
 # Polkadot
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm = { package = "staging-xcm", git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-executor = { package = "staging-xcm-executor", git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 

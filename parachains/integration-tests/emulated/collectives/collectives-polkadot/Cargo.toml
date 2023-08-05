@@ -24,7 +24,7 @@ polkadot-core-primitives = { default-features = false, git = "https://github.com
 polkadot-parachain = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-xcm = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
+xcm = { package = "staging-xcm", default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 xcm-executor = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 pallet-xcm = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 
