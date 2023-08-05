@@ -2,11 +2,11 @@ pub mod constants;
 
 pub use constants::accounts::{ALICE, BOB};
 
-#[cfg(feature = "asset-hub-kusamat-runtime")]
+#[cfg(all(feature = "asset-hub-runtime", feature = "kusama-runtime"))]
 pub use constants::asset_hub_kusama;
-#[cfg(feature = "asset-hub-polkadot-runtime")]
+#[cfg(all(feature = "asset-hub-runtime", feature = "polkadot-runtime"))]
 pub use constants::asset_hub_polkadot;
-#[cfg(feature = "asset-hub-westend-runtime")]
+#[cfg(all(feature = "asset-hub-runtime", feature = "westend-runtime"))]
 pub use constants::asset_hub_westend;
 #[cfg(feature = "collectives-runtime")]
 pub use constants::collectives;
@@ -18,7 +18,7 @@ pub use constants::penpal;
 pub use constants::polkadot;
 #[cfg(feature = "westend-runtime")]
 pub use constants::westend;
-#[cfg(feature = "bridge-hub-runtimes")]
+#[cfg(feature = "bridge-hub-runtime")]
 pub use constants::{bridge_hub_kusama, bridge_hub_polkadot};
 
 use frame_support::{parameter_types, sp_io, sp_tracing};
@@ -97,7 +97,7 @@ decl_test_relay_chains! {
 
 decl_test_parachains! {
 	// Westend
-	#[cfg(feature = "asset-hub-westend-runtime")]
+	#[cfg(all(feature = "asset-hub-runtime", feature = "westend-runtime"))]
 	pub struct AssetHubWestend {
 		genesis = asset_hub_westend::genesis(),
 		on_init = (),
@@ -122,7 +122,7 @@ decl_test_parachains! {
 		}
 	},
 	// Polkadot
-	#[cfg(feature = "asset-hub-polkadot-runtime")]
+	#[cfg(all(feature = "asset-hub-runtime", feature = "polkadot-runtime"))]
 	pub struct AssetHubPolkadot {
 		genesis = asset_hub_polkadot::genesis(),
 		on_init = (),
@@ -190,7 +190,7 @@ decl_test_parachains! {
 	},
 
 	// Kusama
-	#[cfg(feature = "asset-hub-kusama-runtime")]
+	#[cfg(all(feature = "asset-hub-runtime", feature = "kusama-runtime"))]
 	pub struct AssetHubKusama {
 		genesis = asset_hub_kusama::genesis(),
 		on_init = (),
@@ -235,7 +235,7 @@ decl_test_parachains! {
 			Assets: penpal_runtime::Assets,
 		}
 	},
-	#[cfg(feature = "collectives-polkadot-runtime")]
+	#[cfg(all(feature = "collectives-runtime", feature = "polkadot-runtime"))]
 	pub struct Collectives {
 		genesis = collectives::genesis(),
 		on_init = (),
@@ -256,7 +256,7 @@ decl_test_parachains! {
 			PolkadotXcm: collectives_polkadot_runtime::PolkadotXcm,
 		}
 	},
-	#[cfg(feature = "bridge-hub-runtimes")]
+	#[cfg(all(feature = "bridge-hub-runtime", feature = "kusama-runtime"))]
 	pub struct BHKusama {
 		genesis = bridge_hub_kusama::genesis(),
 		on_init = (),
@@ -277,7 +277,7 @@ decl_test_parachains! {
 			PolkadotXcm: bridge_hub_kusama_runtime::PolkadotXcm,
 		}
 	},
-	#[cfg(feature = "bridge-hub-runtimes")]
+	#[cfg(all(feature = "bridge-hub-runtime", feature = "polkadot-runtime"))]
 	pub struct BHPolkadot {
 		genesis = bridge_hub_polkadot::genesis(),
 		on_init = (),
@@ -305,13 +305,13 @@ decl_test_networks! {
 	pub struct PolkadotMockNet {
 		relay_chain = Polkadot,
 		parachains = vec![
-			#[cfg(feature = "asset-hub-polkadot-runtime")]
+			#[cfg(feature = "asset-hub-runtime")]
 			AssetHubPolkadot,
 			#[cfg(feature = "penpal-runtime")]
 			PenpalPolkadot,
 			#[cfg(feature = "collectives-runtime")]
 			Collectives,
-			#[cfg(feature = "bridge-hub-runtimes")]
+			#[cfg(feature = "bridge-hub-runtime")]
 			BHPolkadot,
 		],
 	},
@@ -319,11 +319,11 @@ decl_test_networks! {
 	pub struct KusamaMockNet {
 		relay_chain = Kusama,
 		parachains = vec![
-			#[cfg(feature = "asset-hub-kusama-runtime")]
+			#[cfg(feature = "asset-hub-runtime")]
 			AssetHubKusama,
 			#[cfg(feature = "penpal-runtime")]
 			PenpalKusama,
-			#[cfg(feature = "bridge-hubs-runtime")]
+			#[cfg(feature = "bridge-hub-runtime")]
 			BHKusama,
 		],
 	},
@@ -331,7 +331,7 @@ decl_test_networks! {
 	pub struct WestendMockNet {
 		relay_chain = Westend,
 		parachains = vec![
-			#[cfg(feature = "asset-hub-westend-runtime")]
+			#[cfg(feature = "asset-hub-runtime")]
 			AssetHubWestend,
 			#[cfg(feature = "penpal-runtime")]
 			PenpalWestend,
@@ -399,7 +399,7 @@ parameter_types! {
 	pub CollectivesReceiver: AccountId = Collectives::account_id_of(BOB);
 }
 
-#[cfg(feature = "bridge-hub-runtimes")]
+#[cfg(feature = "bridge-hub-runtime")]
 parameter_types! {
 	pub BHPolkadotSender: AccountId = BHPolkadot::account_id_of(ALICE);
 	pub BHPolkadotReceiver: AccountId = BHPolkadot::account_id_of(BOB);

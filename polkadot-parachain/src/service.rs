@@ -88,10 +88,10 @@ impl sc_executor::NativeExecutionDispatch for ShellRuntimeExecutor {
 }
 
 /// Native Asset Hub Polkadot (Statemint) executor instance.
-#[cfg(feature = "asset-hub-polkadot-runtime")]
+#[cfg(all(feature = "asset-hub-runtime", feature = "polkadot-runtime"))]
 pub struct AssetHubPolkadotRuntimeExecutor;
 
-#[cfg(feature = "asset-hub-polkadot-runtime")]
+#[cfg(all(feature = "asset-hub-runtime", feature = "polkadot-runtime"))]
 impl sc_executor::NativeExecutionDispatch for AssetHubPolkadotRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -105,10 +105,10 @@ impl sc_executor::NativeExecutionDispatch for AssetHubPolkadotRuntimeExecutor {
 }
 
 /// Native Asset Hub Kusama (Statemine) executor instance.
-#[cfg(feature = "asset-hub-kusama-runtime")]
+#[cfg(all(feature = "asset-hub-runtime", feature = "kusama-runtime"))]
 pub struct AssetHubKusamaExecutor;
 
-#[cfg(feature = "asset-hub-kusama-runtime")]
+#[cfg(all(feature = "asset-hub-runtime", feature = "kusama-runtime"))]
 impl sc_executor::NativeExecutionDispatch for AssetHubKusamaExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -122,10 +122,10 @@ impl sc_executor::NativeExecutionDispatch for AssetHubKusamaExecutor {
 }
 
 /// Native Asset Hub Westend (Westmint) executor instance.
-#[cfg(feature = "asset-hub-westend-runtime")]
+#[cfg(all(feature = "asset-hub-runtime", feature = "westend-runtime"))]
 pub struct AssetHubWestendExecutor;
 
-#[cfg(feature = "asset-hub-westend-runtime")]
+#[cfg(all(feature = "asset-hub-runtime", feature = "westend-runtime"))]
 impl sc_executor::NativeExecutionDispatch for AssetHubWestendExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -156,10 +156,10 @@ impl sc_executor::NativeExecutionDispatch for CollectivesPolkadotRuntimeExecutor
 }
 
 /// Native BridgeHubPolkadot executor instance.
-#[cfg(feature = "bridge-hub-runtimes")]
+#[cfg(feature = "bridge-hub-runtime")]
 pub struct BridgeHubPolkadotRuntimeExecutor;
 
-#[cfg(feature = "bridge-hub-runtimes")]
+#[cfg(feature = "bridge-hub-runtime")]
 impl sc_executor::NativeExecutionDispatch for BridgeHubPolkadotRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -173,10 +173,10 @@ impl sc_executor::NativeExecutionDispatch for BridgeHubPolkadotRuntimeExecutor {
 }
 
 /// Native BridgeHubKusama executor instance.
-#[cfg(feature = "bridge-hub-runtimes")]
+#[cfg(feature = "bridge-hub-runtime")]
 pub struct BridgeHubKusamaRuntimeExecutor;
 
-#[cfg(feature = "bridge-hub-runtimes")]
+#[cfg(feature = "bridge-hub-runtime")]
 impl sc_executor::NativeExecutionDispatch for BridgeHubKusamaRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -190,10 +190,10 @@ impl sc_executor::NativeExecutionDispatch for BridgeHubKusamaRuntimeExecutor {
 }
 
 /// Native BridgeHubRococo executor instance.
-#[cfg(feature = "bridge-hub-runtimes")]
+#[cfg(feature = "bridge-hub-runtime")]
 pub struct BridgeHubRococoRuntimeExecutor;
 
-#[cfg(feature = "bridge-hub-runtimes")]
+#[cfg(feature = "bridge-hub-runtime")]
 impl sc_executor::NativeExecutionDispatch for BridgeHubRococoRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 

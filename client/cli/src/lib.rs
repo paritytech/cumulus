@@ -38,19 +38,7 @@ use sp_runtime::{
 };
 use url::Url;
 
-/// panic if a feature is not enabled.
-#[macro_export]
-macro_rules! ensure_feature {
-	($runtime:literal, $($body:tt)+) => {
-		{
-			#[cfg(not(feature=$runtime))]
-			unimplemented!("Please turn feature `{}` on to use this runtime.", $runtime);
-			#[cfg(feature = $runtime)]
-			$($body)+
-		}
-	};
-}
-
+/// Ensure that a certain parachain feature is enabled.
 #[macro_export]
 macro_rules! ensure_para {
 	($runtime:literal, $($body:tt)+) => {
@@ -63,18 +51,7 @@ macro_rules! ensure_para {
 	};
 }
 
-#[macro_export]
-macro_rules! ensure_relay {
-	($runtime:literal, $($body:tt)+) => {
-		{
-			#[cfg(not(feature=$runtime))]
-			unimplemented!("Please turn feature `{}` on to use this runtime.", $runtime);
-			#[cfg(feature = $runtime)]
-			$($body)+
-		}
-	};
-}
-
+/// Ensure that a certain parachain and relay chain feature combination is enabled.
 #[macro_export]
 macro_rules! ensure_para_relay {
 	($para_runtime:literal, $relay_runtime:literal, $($body:tt)+) => {

@@ -35,4 +35,4 @@ asset-hub-westend-runtime = { path = "../../../../runtimes/assets/asset-hub-west
 
 # Local
 xcm-emulator = { default-features = false, path = "../../../../../xcm/xcm-emulator" }
-integration-tests-common = { default-features = false, path = "../../common" }
+integration-tests-common = { default-features = false, path = "../../common", features = ["asset-hub-runtime", "penpal-runtime", "westend-runtime"]}

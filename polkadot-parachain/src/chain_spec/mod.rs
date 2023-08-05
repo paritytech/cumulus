@@ -20,13 +20,13 @@ use serde::{Deserialize, Serialize};
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
-#[cfg(feature = "asset-hub-kusama-runtime")]
+#[cfg(all(feature = "asset-hub-runtime", feature = "kusama-runtime"))]
 pub mod asset_hub_kusama;
-#[cfg(feature = "asset-hub-polkadot-runtime")]
+#[cfg(all(feature = "asset-hub-runtime", feature = "polkadot-runtime"))]
 pub mod asset_hub_polkadot;
-#[cfg(feature = "asset-hub-westend-runtime")]
+#[cfg(all(feature = "asset-hub-runtime", feature = "westend-runtime"))]
 pub mod asset_hub_westend;
-#[cfg(feature = "bridge-hub-runtimes")]
+#[cfg(feature = "bridge-hub-runtime")]
 pub mod bridge_hubs;
 #[cfg(feature = "collectives-runtime")]
 pub mod collectives;

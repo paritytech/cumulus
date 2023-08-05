@@ -405,7 +405,7 @@ pub mod kusama {
 	}
 }
 
-#[cfg(feature = "asset-hub-polkadot-runtime")]
+#[cfg(all(feature = "asset-hub-runtime", feature = "polkadot-runtime"))]
 pub mod asset_hub_polkadot {
 	use super::*;
 	pub const PARA_ID: u32 = 1000;
@@ -461,7 +461,7 @@ pub mod asset_hub_polkadot {
 	}
 }
 
-#[cfg(feature = "asset-hub-westend-runtime")]
+#[cfg(all(feature = "asset-hub-runtime", feature = "westend-runtime"))]
 pub mod asset_hub_westend {
 	use super::*;
 	pub const PARA_ID: u32 = 1000;
@@ -518,7 +518,7 @@ pub mod asset_hub_westend {
 }
 
 // Asset Hub Kusama
-#[cfg(feature = "asset-hub-kusama-runtime")]
+#[cfg(all(feature = "asset-hub-runtime", feature = "kusama-runtime"))]
 pub mod asset_hub_kusama {
 	use super::*;
 	pub const PARA_ID: u32 = 1000;
@@ -692,7 +692,7 @@ pub mod collectives {
 	}
 }
 
-#[cfg(feature = "bridge-hub-runtimes")]
+#[cfg(feature = "bridge-hub-runtime")]
 pub mod bridge_hub_kusama {
 	use super::*;
 	pub const PARA_ID: u32 = 1002;
@@ -748,7 +748,7 @@ pub mod bridge_hub_kusama {
 	}
 }
 
-#[cfg(feature = "bridge-hub-runtimes")]
+#[cfg(feature = "bridge-hub-runtime")]
 pub mod bridge_hub_polkadot {
 	use super::*;
 	pub const PARA_ID: u32 = 1002;

@@ -104,22 +104,32 @@ polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "maste
 
 [features]
 default = [
-	"asset-hub-kusama-runtime",
-	"asset-hub-polkadot-runtime",
-	"asset-hub-westend-runtime",
-	"bridge-hub-runtimes",
+	"asset-hub-runtime",
+	"bridge-hub-runtime",
 	"collectives-runtime",
 	"contracts-runtime",
 	"glutton-runtime",
 	"penpal-runtime",
 	"rococo-parachain-runtime",
 	"seedling-runtime",
-	"shell-runtime"
+	"shell-runtime",
+
+	"polkadot-runtime",
+	"kusama-runtime",
+	"westend-runtime",
+	"rococo-runtime",
 ]
-asset-hub-kusama-runtime = [ "dep:asset-hub-kusama-runtime"]
-asset-hub-polkadot-runtime = [ "dep:asset-hub-polkadot-runtime"]
-asset-hub-westend-runtime = [ "dep:asset-hub-westend-runtime"]
-bridge-hub-runtimes = [
+polkadot-runtime = []
+kusama-runtime = []
+westend-runtime = []
+rococo-runtime = []
+
+asset-hub-runtime = [ 
+	"dep:asset-hub-kusama-runtime",
+	"dep:asset-hub-polkadot-runtime",
+	"dep:asset-hub-westend-runtime",
+]
+bridge-hub-runtime = [
 	"dep:bridge-hub-kusama-runtime", 
 	"dep:bridge-hub-polkadot-runtime",
 	"dep:bridge-hub-rococo-runtime",
