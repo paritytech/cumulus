@@ -1,10 +1,12 @@
 [package]
 name = "polkadot-parachain-bin"
-version = "0.9.430"
-authors = ["Parity Technologies <admin@parity.io>"]
+version = "1.0.0"
 build = "build.rs"
-edition = "2021"
 description = "Runs a polkadot parachain node which could be a collator."
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
 
 [[bin]]
 name = "polkadot-parachain"
