@@ -151,7 +151,7 @@ macro_rules! impl_accounts_helpers_for_relay_chain {
 				}
 			}
 		}
-	}
+	};
 }
 
 #[macro_export]
@@ -241,7 +241,7 @@ macro_rules! impl_assert_events_helpers_for_relay_chain {
 				}
 			}
 		}
-	}
+	};
 }
 
 #[macro_export]
@@ -299,7 +299,7 @@ macro_rules! impl_hrmp_channels_helpers_for_relay_chain {
 				}
 			}
 		}
-	}
+	};
 }
 
 #[macro_export]
@@ -321,7 +321,7 @@ macro_rules! impl_accounts_helpers_for_parachain {
 				}
 			}
 		}
-	}
+	};
 }
 
 #[macro_export]
@@ -468,7 +468,7 @@ macro_rules! impl_assert_events_helpers_for_parachain {
 				}
 			}
 		}
-	}
+	};
 }
 
 #[macro_export]
@@ -593,5 +593,5 @@ macro_rules! impl_assets_helpers_for_parachain {
 				}
 			}
 		}
-	}
+	};
 }

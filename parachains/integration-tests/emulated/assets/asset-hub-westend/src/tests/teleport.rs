@@ -19,10 +19,7 @@ use crate::*;
 fn relay_origin_assertions(t: RelayToSystemParaTest) {
 	type RuntimeEvent = <Westend as Chain>::RuntimeEvent;
 
-	Westend::assert_xcm_pallet_attempted_complete(Some(Weight::from_parts(
-		632_207_000,
-		7_186,
-	)));
+	Westend::assert_xcm_pallet_attempted_complete(Some(Weight::from_parts(632_207_000, 7_186)));
 
 	assert_expected_events!(
 		Westend,
@@ -77,7 +74,10 @@ fn relay_dest_assertions_fail(_t: SystemParaToRelayTest) {
 fn para_origin_assertions(t: SystemParaToRelayTest) {
 	type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
-	AssetHubWestend::assert_xcm_pallet_attempted_complete(Some(Weight::from_parts(533_910_000, 7167)));
+	AssetHubWestend::assert_xcm_pallet_attempted_complete(Some(Weight::from_parts(
+		533_910_000,
+		7167,
+	)));
 
 	AssetHubWestend::assert_parachain_system_ump_sent();
 

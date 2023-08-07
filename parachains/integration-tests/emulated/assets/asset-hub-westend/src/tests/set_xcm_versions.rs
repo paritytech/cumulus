@@ -79,7 +79,10 @@ fn system_para_sets_relay_xcm_supported_version() {
 	AssetHubWestend::execute_with(|| {
 		type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
-		AssetHubWestend::assert_dmp_queue_complete(Some(Weight::from_parts(1_019_210_000, 200_000)));
+		AssetHubWestend::assert_dmp_queue_complete(Some(Weight::from_parts(
+			1_019_210_000,
+			200_000,
+		)));
 
 		assert_expected_events!(
 			AssetHubWestend,

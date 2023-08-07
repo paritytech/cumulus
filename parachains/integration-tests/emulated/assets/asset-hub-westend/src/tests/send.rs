@@ -24,8 +24,13 @@ fn send_transact_sudo_from_relay_to_system_para_works() {
 	let root_origin = <Westend as Chain>::RuntimeOrigin::root();
 	let system_para_destination = Westend::child_location_of(AssetHubWestend::para_id()).into();
 	let asset_owner: AccountId = AssetHubWestendSender::get().into();
-	let xcm =
-		AssetHubWestend::force_create_asset_xcm(OriginKind::Superuser, ASSET_ID, asset_owner.clone(), true, 1000);
+	let xcm = AssetHubWestend::force_create_asset_xcm(
+		OriginKind::Superuser,
+		ASSET_ID,
+		asset_owner.clone(),
+		true,
+		1000,
+	);
 	// Send XCM message from Relay Chain
 	Westend::execute_with(|| {
 		assert_ok!(<Westend as WestendPallet>::XcmPallet::send(
@@ -41,7 +46,10 @@ fn send_transact_sudo_from_relay_to_system_para_works() {
 	AssetHubWestend::execute_with(|| {
 		type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
-		AssetHubWestend::assert_dmp_queue_complete(Some(Weight::from_parts(1_019_445_000, 200_000)));
+		AssetHubWestend::assert_dmp_queue_complete(Some(Weight::from_parts(
+			1_019_445_000,
+			200_000,
+		)));
 
 		assert_expected_events!(
 			AssetHubWestend,
@@ -76,7 +84,12 @@ fn send_xcm_from_para_to_system_para_paying_fee_with_assets_works() {
 
 	// We just need a call that can pass the `SafeCallFilter`
 	// Call values are not relevant
-	let call = AssetHubWestend::force_create_asset_call(ASSET_ID, para_sovereign_account.clone(), true, ASSET_MIN_BALANCE);
+	let call = AssetHubWestend::force_create_asset_call(
+		ASSET_ID,
+		para_sovereign_account.clone(),
+		true,
+		ASSET_MIN_BALANCE,
+	);
 
 	let origin_kind = OriginKind::SovereignAccount;
 	let fee_amount = ASSET_MIN_BALANCE * 1000000;
@@ -86,7 +99,12 @@ fn send_xcm_from_para_to_system_para_paying_fee_with_assets_works() {
 	let root_origin = <PenpalWestendA as Chain>::RuntimeOrigin::root();
 	let system_para_destination =
 		PenpalWestendA::sibling_location_of(AssetHubWestend::para_id()).into();
-	let xcm = xcm_transact_paid_execution(call, origin_kind, native_asset, para_sovereign_account.clone());
+	let xcm = xcm_transact_paid_execution(
+		call,
+		origin_kind,
+		native_asset,
+		para_sovereign_account.clone(),
+	);
 
 	PenpalWestendA::execute_with(|| {
 		assert_ok!(<PenpalWestendA as PenpalWestendAPallet>::PolkadotXcm::send(
@@ -101,7 +119,10 @@ fn send_xcm_from_para_to_system_para_paying_fee_with_assets_works() {
 	AssetHubWestend::execute_with(|| {
 		type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
-		AssetHubWestend::assert_xcmp_queue_success(Some(Weight::from_parts(2_176_414_000, 203_593)));
+		AssetHubWestend::assert_xcmp_queue_success(Some(Weight::from_parts(
+			2_176_414_000,
+			203_593,
+		)));
 
 		assert_expected_events!(
 			AssetHubWestend,

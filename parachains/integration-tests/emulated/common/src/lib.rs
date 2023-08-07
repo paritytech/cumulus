@@ -2,7 +2,6 @@ pub use lazy_static;
 pub mod constants;
 pub mod impls;
 
-pub use paste;
 pub use codec::Encode;
 pub use constants::{
 	accounts::{ALICE, BOB},
@@ -10,15 +9,18 @@ pub use constants::{
 	bridge_hub_polkadot, bridge_hub_rococo, collectives, kusama, penpal, polkadot, rococo, westend,
 	PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD,
 };
-use frame_support::{assert_ok, parameter_types, sp_tracing, instances::Instance1, traits::fungibles::Inspect};
+use frame_support::{
+	assert_ok, instances::Instance1, parameter_types, sp_tracing, traits::fungibles::Inspect,
+};
 pub use impls::{RococoWococoMessageHandler, WococoRococoMessageHandler};
 pub use parachains_common::{AccountId, Balance};
+pub use paste;
 use polkadot_parachain::primitives::HrmpChannelId;
 pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
 pub use sp_core::{sr25519, storage::Storage, Get};
 use xcm_emulator::{
-	assert_expected_events, decl_test_bridges, decl_test_networks, decl_test_parachains,
-	decl_test_relay_chains, decl_test_sender_receiver_accounts_parameter_types, bx,
+	assert_expected_events, bx, decl_test_bridges, decl_test_networks, decl_test_parachains,
+	decl_test_relay_chains, decl_test_sender_receiver_accounts_parameter_types,
 	helpers::weight_within_threshold, BridgeMessageHandler, Chain, DefaultMessageProcessor, ParaId,
 	Parachain, RelayChain, TestExt,
 };
@@ -542,7 +544,10 @@ pub fn xcm_transact_paid_execution(
 }
 
 /// Helper method to build a XCM with a `Transact` instruction without paying for its execution
-pub fn xcm_transact_unpaid_execution(call: DoubleEncoded<()>, origin_kind: OriginKind) -> VersionedXcm<()> {
+pub fn xcm_transact_unpaid_execution(
+	call: DoubleEncoded<()>,
+	origin_kind: OriginKind,
+) -> VersionedXcm<()> {
 	let weight_limit = WeightLimit::Unlimited;
 	let require_weight_at_most = Weight::from_parts(1000000000, 200000);
 	let check_origin = None;

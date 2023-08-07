@@ -31,11 +31,11 @@ pub use integration_tests_common::{
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
 	lazy_static::lazy_static,
-	xcm_transact_paid_execution, xcm_transact_unpaid_execution, AssetHubWestend, AssetHubWestendPallet,
-	AssetHubWestendReceiver, AssetHubWestendSender, Collectives, CollectivesPallet,
-	CollectivesReceiver, CollectivesSender, PenpalWestendA, PenpalWestendAPallet,
-	PenpalWestendAReceiver, PenpalWestendASender, Westend, WestendMockNet, WestendPallet,
-	WestendReceiver, WestendSender,
+	xcm_transact_paid_execution, xcm_transact_unpaid_execution, AssetHubWestend,
+	AssetHubWestendPallet, AssetHubWestendReceiver, AssetHubWestendSender, Collectives,
+	CollectivesPallet, CollectivesReceiver, CollectivesSender, PenpalWestendA,
+	PenpalWestendAPallet, PenpalWestendAReceiver, PenpalWestendASender, Westend, WestendMockNet,
+	WestendPallet, WestendReceiver, WestendSender,
 };
 pub use parachains_common::{AccountId, Balance};
 pub use polkadot_core_primitives::InboundDownwardMessage;

@@ -130,12 +130,10 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	let origin_kind = OriginKind::Xcm;
 	let sov_penpal_on_asset_hub_westend = AssetHubWestend::sovereign_account_id_of(penpal_location);
 
-	AssetHubWestend::fund_accounts(
-		vec![
-			(AssetHubWestendSender::get().into(), 5_000_000 * WESTEND_ED),
-			(sov_penpal_on_asset_hub_westend.clone().into(), 1000_000_000_000_000_000 * WESTEND_ED)
-		]
-	);
+	AssetHubWestend::fund_accounts(vec![
+		(AssetHubWestendSender::get().into(), 5_000_000 * WESTEND_ED),
+		(sov_penpal_on_asset_hub_westend.clone().into(), 1000_000_000_000_000_000 * WESTEND_ED),
+	]);
 
 	let sov_penpal_on_asset_hub_westend_as_location: MultiLocation = MultiLocation {
 		parents: 0,

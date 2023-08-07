@@ -24,8 +24,13 @@ fn send_transact_sudo_from_relay_to_system_para_works() {
 	let root_origin = <Kusama as Chain>::RuntimeOrigin::root();
 	let system_para_destination = Kusama::child_location_of(AssetHubKusama::para_id()).into();
 	let asset_owner: AccountId = AssetHubKusamaSender::get().into();
-	let xcm =
-		AssetHubKusama::force_create_asset_xcm(OriginKind::Superuser, ASSET_ID, asset_owner.clone(), true, 1000);
+	let xcm = AssetHubKusama::force_create_asset_xcm(
+		OriginKind::Superuser,
+		ASSET_ID,
+		asset_owner.clone(),
+		true,
+		1000,
+	);
 	// Send XCM message from Relay Chain
 	Kusama::execute_with(|| {
 		assert_ok!(<Kusama as KusamaPallet>::XcmPallet::send(
@@ -65,7 +70,13 @@ fn send_transact_native_from_relay_to_system_para_fails() {
 	let signed_origin = <Kusama as Chain>::RuntimeOrigin::signed(KusamaSender::get().into());
 	let system_para_destination = Kusama::child_location_of(AssetHubKusama::para_id()).into();
 	let asset_owner = AssetHubKusamaSender::get().into();
-	let xcm = AssetHubKusama::force_create_asset_xcm(OriginKind::Native, ASSET_ID, asset_owner, true, 1000);
+	let xcm = AssetHubKusama::force_create_asset_xcm(
+		OriginKind::Native,
+		ASSET_ID,
+		asset_owner,
+		true,
+		1000,
+	);
 
 	// Send XCM message from Relay Chain
 	Kusama::execute_with(|| {
@@ -131,7 +142,12 @@ fn send_xcm_from_para_to_system_para_paying_fee_with_assets_works() {
 
 	// We just need a call that can pass the `SafeCallFilter`
 	// Call values are not relevant
-	let call = AssetHubKusama::force_create_asset_call(ASSET_ID, para_sovereign_account.clone(), true, ASSET_MIN_BALANCE);
+	let call = AssetHubKusama::force_create_asset_call(
+		ASSET_ID,
+		para_sovereign_account.clone(),
+		true,
+		ASSET_MIN_BALANCE,
+	);
 
 	let origin_kind = OriginKind::SovereignAccount;
 	let fee_amount = ASSET_MIN_BALANCE * 1000000;
@@ -141,7 +157,12 @@ fn send_xcm_from_para_to_system_para_paying_fee_with_assets_works() {
 	let root_origin = <PenpalKusamaA as Chain>::RuntimeOrigin::root();
 	let system_para_destination =
 		PenpalKusamaA::sibling_location_of(AssetHubKusama::para_id()).into();
-	let xcm = xcm_transact_paid_execution(call, origin_kind, native_asset, para_sovereign_account.clone());
+	let xcm = xcm_transact_paid_execution(
+		call,
+		origin_kind,
+		native_asset,
+		para_sovereign_account.clone(),
+	);
 
 	PenpalKusamaA::execute_with(|| {
 		assert_ok!(<PenpalKusamaA as PenpalKusamaAPallet>::PolkadotXcm::send(

@@ -19,10 +19,7 @@ use crate::*;
 fn relay_origin_assertions(t: RelayToSystemParaTest) {
 	type RuntimeEvent = <Polkadot as Chain>::RuntimeEvent;
 
-	Polkadot::assert_xcm_pallet_attempted_complete(Some(Weight::from_parts(
-		632_207_000,
-		7_186,
-	)));
+	Polkadot::assert_xcm_pallet_attempted_complete(Some(Weight::from_parts(632_207_000, 7_186)));
 
 	assert_expected_events!(
 		Polkadot,
@@ -77,7 +74,10 @@ fn relay_dest_assertions_fail(_t: SystemParaToRelayTest) {
 fn para_origin_assertions(t: SystemParaToRelayTest) {
 	type RuntimeEvent = <AssetHubPolkadot as Chain>::RuntimeEvent;
 
-	AssetHubPolkadot::assert_xcm_pallet_attempted_complete(Some(Weight::from_parts(632_207_000, 7_186)));
+	AssetHubPolkadot::assert_xcm_pallet_attempted_complete(Some(Weight::from_parts(
+		632_207_000,
+		7_186,
+	)));
 
 	AssetHubPolkadot::assert_parachain_system_ump_sent();
 
