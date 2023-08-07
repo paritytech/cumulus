@@ -20,16 +20,13 @@
 
 use crate::{Bridge, Call};
 
-use bp_xcm_bridge_hub_router::BridgeState;
+use bp_xcm_bridge_hub_router::{BridgeState, MINIMAL_DELIVERY_FEE_FACTOR};
 use frame_benchmarking::benchmarks_instance_pallet;
 use frame_support::{
 	dispatch::UnfilteredDispatchable,
 	traits::{EnsureOrigin, Get, Hooks},
 };
-use sp_runtime::{
-	traits::{One, Zero},
-	FixedU128,
-};
+use sp_runtime::traits::Zero;
 use xcm::prelude::*;
 
 /// Pallet we're benchmarking here.
@@ -45,7 +42,7 @@ benchmarks_instance_pallet! {
 	on_initialize_when_non_congested {
 		Bridge::<T, I>::put(BridgeState {
 			is_congested: false,
-			delivery_fee_factor: FixedU128::one() + FixedU128::one(),
+			delivery_fee_factor: MINIMAL_DELIVERY_FEE_FACTOR + MINIMAL_DELIVERY_FEE_FACTOR,
 		});
 	}: {
 		crate::Pallet::<T, I>::on_initialize(Zero::zero())
@@ -54,7 +51,7 @@ benchmarks_instance_pallet! {
 	on_initialize_when_congested {
 		Bridge::<T, I>::put(BridgeState {
 			is_congested: false,
-			delivery_fee_factor: FixedU128::one() + FixedU128::one(),
+			delivery_fee_factor: MINIMAL_DELIVERY_FEE_FACTOR + MINIMAL_DELIVERY_FEE_FACTOR,
 		});
 		T::make_congested();
 	}: {
@@ -80,13 +77,13 @@ benchmarks_instance_pallet! {
 
 		let dest = MultiLocation::new(
 			T::UniversalLocation::get().len() as u8,
-			X1(GlobalConsensus(T::BridgedNetworkId::get())),
+			X1(GlobalConsensus(T::BridgedNetworkId::get().unwrap())),
 		);
 		let xcm = sp_std::vec![].into();
 	}: {
 		send_xcm::<crate::Pallet<T, I>>(dest, xcm).expect("message is sent")
 	}
 	verify {
-		assert!(Bridge::<T, I>::get().delivery_fee_factor > FixedU128::one());
+		assert!(Bridge::<T, I>::get().delivery_fee_factor > MINIMAL_DELIVERY_FEE_FACTOR);
 	}
 }
