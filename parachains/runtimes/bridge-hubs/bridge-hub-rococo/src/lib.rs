@@ -485,7 +485,7 @@ impl pallet_bridge_parachains::Config<BridgeParachainRococoInstance> for Runtime
 
 pub struct LocalXcmChannelWithSiblingAssetHub;
 
-impl bp_xcm_bridge_hub_router::LocalXcmChannel for LocalXcmChannelWithSiblingAssetHub {
+impl bp_xcm_bridge_hub_router::XcmChannelStatusProvider for LocalXcmChannelWithSiblingAssetHub {
 	fn is_congested() -> bool {
 		// let's find the channel with the sibling AH
 		let sibling_asset_hub_id: cumulus_primitives_core::ParaId = xcm_config::SiblingAssetHubParId::get().into();

@@ -54,7 +54,7 @@ use frame_support::{
 	dispatch::DispatchClass,
 	parameter_types,
 	traits::{
-		AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, EitherOfDiverse,
+		AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse,
 		InstanceFilter, TransformOrigin,
 	},
 	weights::{ConstantMultiplier, Weight},
@@ -760,15 +760,14 @@ impl pallet_xcm_bridge_hub_router::Config for Runtime {
 	type WeightInfo = (); // TODO: proper weights
 
 	type UniversalLocation = xcm_config::UniversalLocation;
-	type SiblingBridgeHubLocation = xcm_config::bridging::BridgeHubKusama;
 	type BridgedNetworkId = xcm_config::bridging::PolkadotNetwork;
+	type Bridges = xcm_builder::NetworkExportTable<xcm_config::bridging::BridgeTable>;
 
 	type BridgeHubOrigin = xcm_config::bridging::EnsureSiblingBridgeHubOrigin;
 	type ToBridgeHubSender = XcmpQueue;
 	type WithBridgeHubChannel = xcm_config::bridging::LocalXcmpChannelAdapter;
 
-	type BaseFee = ConstU128<1_000_000_000>;
-	type ByteFee = ConstU128<1_000_000>;
+	type ByteFee = xcm_config::bridging::BridgeByteFee;
 	type FeeAsset = xcm_config::BridgeFeeAsset;
 }
 

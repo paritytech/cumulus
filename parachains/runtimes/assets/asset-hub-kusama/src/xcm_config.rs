@@ -555,9 +555,13 @@ pub mod bridging {
 		pub AssetHubPolkadot: MultiLocation =  MultiLocation::new(2, X2(GlobalConsensus(PolkadotNetwork::get()), Parachain(1000)));
 		pub DotLocation: MultiLocation =  MultiLocation::new(2, X1(GlobalConsensus(PolkadotNetwork::get())));
 
+		// TODO: governance calls for setting up following constants? Or leave it constants?
+		pub storage BridgeFeeBase: MultiAsset = (KsmLocation::get(), 1_000_000_000).into();
+		pub storage BridgeByteFee: Balance = 1_000_000;
+
 		/// Setup exporters configuration
 		pub BridgeTable: sp_std::vec::Vec<(NetworkId, MultiLocation, Option<MultiAsset>)> = sp_std::vec![
-			(PolkadotNetwork::get(), BridgeHubKusama::get(), None)
+			(PolkadotNetwork::get(), BridgeHubKusama::get(), Some(BridgeFeeBase::get()))
 		];
 
 		/// Setup trusted bridged reserve locations
@@ -618,26 +622,39 @@ pub mod bridging {
 
 	pub struct LocalXcmpChannelAdapter;
 
-	impl bp_xcm_bridge_hub_router::LocalXcmChannel for LocalXcmpChannelAdapter {
+	impl bp_xcm_bridge_hub_router::XcmChannelStatusProvider for LocalXcmpChannelAdapter {
 		fn is_congested() -> bool {
 			// if the outbound channel with recipient is suspended, it means that one of further
 			// bridge queues (e.g. bridge queue between two bridge hubs) is overloaded, so we shall
 			// take larger fee for our outbound messages
 			let sibling_bridge_hub_id: cumulus_primitives_core::ParaId = BridgeHubKusamaParaId::get().into();
 			let outbound_channels = cumulus_pallet_xcmp_queue::OutboundXcmpStatus::<Runtime>::get();
-			let is_outbound_channel_congested = outbound_channels.iter()
+			let outbound_channel = outbound_channels.iter()
 				.filter(|c| c.recipient() == sibling_bridge_hub_id)
-				.map(|c| c.is_suspended())
-				.next()
-				.unwrap_or(false);
-			if is_outbound_channel_congested {
+				.next();
+			let is_outbound_channel_suspended = outbound_channel.clone().map(|c| c.is_suspended()).unwrap_or(false);
+			if is_outbound_channel_suspended {
 				return true;
 			}
 
 			// if the inbound channel with recipient is suspended, it means that we are unable to receive
 			// congestion reports from the bridge hub. So we assume the bridge pipeline is congested too
 			let inbound_suspended = cumulus_pallet_xcmp_queue::InboundXcmpSuspended::<Runtime>::get();
-			inbound_suspended.contains(&sibling_bridge_hub_id)
+			let is_inbound_channel_suspended = inbound_suspended.contains(&sibling_bridge_hub_id);
+			if is_inbound_channel_suspended {
+				return true;
+			}
+
+			// TODO: https://github.com/paritytech/cumulus/pull/2342 - once this PR is merged, we may
+			// remove the following code
+			//
+			// if the outbound channel has at least `N` pages enqueued, let's assume it is congested.
+			// Normally, the chain with a few opened HRMP channels, will "send" pages at every block.
+			// Having `N` pages means that for last `N` blocks we either have not sent any messages,
+			// or have sent signals.
+			const MAX_OUTBOUND_PAGES_BEFORE_CONGESTION: u16 = 4;
+			let is_outbound_channel_congested = outbound_channel.map(|c| c.queued_pages()).unwrap_or(0);
+			is_outbound_channel_congested > MAX_OUTBOUND_PAGES_BEFORE_CONGESTION
 		}
 	}
 

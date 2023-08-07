@@ -214,7 +214,6 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(_: BlockNumberFor<T>) {
-log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: on_finalize.start");
 			<DidSetValidationCode<T>>::kill();
 			<UpgradeRestrictionSignal<T>>::kill();
 
@@ -284,7 +283,6 @@ log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: on_fin
 			// - the sent out messages should be ordered by ascension of recipient para id.
 			// - the capacity and total size of the channel is limited,
 			// - the maximum size of a message is limited (and can potentially be changed),
-log::info!(target: "runtime::bridge-xcm-queues", "Source.AH -> Source.BH: on_finalize.max_messages: {}", host_config.hrmp_max_message_num_per_candidate);
 			let maximum_channels = host_config
 				.hrmp_max_message_num_per_candidate
 				.min(<AnnouncedHrmpMessagesPerCandidate<T>>::take()) as usize;

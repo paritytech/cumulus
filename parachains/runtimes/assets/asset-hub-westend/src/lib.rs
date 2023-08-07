@@ -799,15 +799,14 @@ impl pallet_xcm_bridge_hub_router::Config for Runtime {
 	type WeightInfo = (); // TODO: proper benchmarks
 
 	type UniversalLocation = xcm_config::UniversalLocation;
-	type SiblingBridgeHubLocation = xcm_config::bridging::BridgeHub;
 	type BridgedNetworkId = xcm_config::bridging::KusamaLocalNetwork;
+	type Bridges = xcm_builder::NetworkExportTable<xcm_config::bridging::BridgeTable>;
 
 	type BridgeHubOrigin = xcm_config::bridging::EnsureSiblingBridgeHubOrigin;
 	type ToBridgeHubSender = XcmpQueue;
 	type WithBridgeHubChannel = xcm_config::bridging::LocalXcmpChannelAdapter;
 
-	type BaseFee = ConstU128<1_000_000_000>;
-	type ByteFee = ConstU128<1_000_000>;
+	type ByteFee = xcm_config::bridging::BridgeByteFee;
 	type FeeAsset = xcm_config::BridgeFeeAsset;
 }
 

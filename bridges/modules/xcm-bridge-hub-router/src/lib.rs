@@ -159,7 +159,6 @@ pub mod pallet {
 			bridge_id: H256,
 			is_congested: bool,
 		) -> DispatchResult {
-log::info!(target: LOG_TARGET, "=== Origin: {:?}", origin);
 			let _ = T::BridgeHubOrigin::ensure_origin(origin)?;
 
 			log::info!(

@@ -112,7 +112,7 @@ impl XcmBlobHauler for ToBridgeHubPolkadotXcmBlobHauler {
 	type MessagesInstance = WithBridgeHubPolkadotMessagesInstance;
 	type SenderAndLane = FromKusamaAssetHubToPolkadotAssetHubRoute;
 
-	type ToSendingChainSender = crate::XcmRouter;
+	type ToSourceChainSender = crate::XcmRouter;
 	type CongestedMessage = CongestedMessage;
 	type UncongestedMessage = UncongestedMessage;
 

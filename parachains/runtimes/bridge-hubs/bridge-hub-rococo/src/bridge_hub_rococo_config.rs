@@ -90,7 +90,7 @@ impl XcmBlobHauler for ToBridgeHubWococoXcmBlobHauler {
 	type MessagesInstance = WithBridgeHubWococoMessagesInstance;
 	type SenderAndLane = FromRococoAssetHubToWococoAssetHubRoute;
 
-	type ToSendingChainSender = XcmRouter;
+	type ToSourceChainSender = XcmRouter;
 	type CongestedMessage = CongestedMessage;
 	type UncongestedMessage = UncongestedMessage;
 
