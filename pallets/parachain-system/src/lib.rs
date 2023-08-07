@@ -1515,6 +1515,20 @@ pub trait CheckInherents<Block: BlockT> {
 	) -> frame_support::inherent::CheckInherentsResult;
 }
 
+/// Struct that always returns `Ok` on inherents check, needed for backwards-compatibility.
+#[doc(hidden)]
+pub struct DummyCheckInherents<Block>(sp_std::marker::PhantomData<Block>);
+
+#[allow(deprecated)]
+impl<Block: BlockT> CheckInherents<Block> for DummyCheckInherents<Block> {
+	fn check_inherents(
+		_: &Block,
+		_: &RelayChainStateProof,
+	) -> frame_support::inherent::CheckInherentsResult {
+		sp_inherents::CheckInherentsResult::new()
+	}
+}
+
 /// Something that should be informed about system related events.
 ///
 /// This includes events like [`on_validation_data`](Self::on_validation_data) that is being
