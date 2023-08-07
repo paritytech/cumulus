@@ -696,17 +696,17 @@ fn decrease_candidacy_bond_insufficient_funds() {
 
 		assert_noop!(
 			CollatorSelection::decrease_bond(RuntimeOrigin::signed(3), 100),
-			Error::<Test>::OnRemoveInsufficientFunds
+			Error::<Test>::DepositTooLow
 		);
 
 		assert_noop!(
 			CollatorSelection::decrease_bond(RuntimeOrigin::signed(4), 60),
-			Error::<Test>::OnRemoveInsufficientFunds
+			Error::<Test>::DepositTooLow
 		);
 
 		assert_noop!(
 			CollatorSelection::decrease_bond(RuntimeOrigin::signed(5), 51),
-			Error::<Test>::OnRemoveInsufficientFunds
+			Error::<Test>::DepositTooLow
 		);
 	});
 }
@@ -859,7 +859,7 @@ fn fees_edgecases() {
 }
 
 #[test]
-fn session_management_works() {
+fn session_management_single_candidate() {
 	new_test_ext().execute_with(|| {
 		initialize_to_block(1);
 
@@ -896,7 +896,7 @@ fn session_management_works() {
 }
 
 #[test]
-fn session_management_works_1() {
+fn session_management_max_candidates() {
 	new_test_ext().execute_with(|| {
 		initialize_to_block(1);
 
@@ -934,7 +934,7 @@ fn session_management_works_1() {
 }
 
 #[test]
-fn session_management_works_2() {
+fn session_management_increase_bid_without_list_update() {
 	new_test_ext().execute_with(|| {
 		initialize_to_block(1);
 
@@ -973,7 +973,7 @@ fn session_management_works_2() {
 }
 
 #[test]
-fn session_management_works_3() {
+fn session_management_increase_bid_with_list_update() {
 	new_test_ext().execute_with(|| {
 		initialize_to_block(1);
 
@@ -1013,7 +1013,7 @@ fn session_management_works_3() {
 }
 
 #[test]
-fn session_management_works_4() {
+fn session_management_candidate_list_lazy_sort() {
 	new_test_ext().execute_with(|| {
 		initialize_to_block(1);
 
@@ -1029,6 +1029,9 @@ fn session_management_works_4() {
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(4)));
 		assert_ok!(CollatorSelection::register_as_candidate(RuntimeOrigin::signed(5)));
 		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(5), 50));
+		// even though candidate 5 has a higher bid than both 3 and 4, we try
+		// to put it in front of 4 and not 3; the list should be lazily sorted
+		// and not reorder candidate 5 ahead of 4.
 		assert_ok!(CandidateList::put_in_front_of(RuntimeOrigin::signed(5), 4));
 
 		// session won't see this.
@@ -1053,7 +1056,7 @@ fn session_management_works_4() {
 }
 
 #[test]
-fn session_management_works_5() {
+fn session_management_reciprocal_outbidding() {
 	new_test_ext().execute_with(|| {
 		initialize_to_block(1);
 
@@ -1074,6 +1077,8 @@ fn session_management_works_5() {
 
 		initialize_to_block(5);
 
+		// candidates 3 and 4 saw they were outbid and preemptively bid more
+		// than 5 in the next block.
 		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(4), 60));
 		assert_ok!(CandidateList::put_in_front_of(RuntimeOrigin::signed(4), 5));
 		assert_ok!(CollatorSelection::increase_bond(RuntimeOrigin::signed(3), 60));
@@ -1101,7 +1106,7 @@ fn session_management_works_5() {
 }
 
 #[test]
-fn session_management_works_6() {
+fn session_management_decrease_bid_after_auction() {
 	new_test_ext().execute_with(|| {
 		initialize_to_block(1);
 
@@ -1129,6 +1134,9 @@ fn session_management_works_6() {
 
 		initialize_to_block(5);
 
+		// candidate 5 saw it was outbid and wants to take back its bid, but
+		// not entirely so they still keep their place in the candidate list
+		// in case there is an opportunity in the future.
 		assert_ok!(CollatorSelection::decrease_bond(RuntimeOrigin::signed(5), 50));
 
 		// session won't see this.

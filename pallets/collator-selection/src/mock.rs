@@ -181,11 +181,10 @@ impl pallet_session::Config for Test {
 type CandidateBagsListInstance = pallet_bags_list::Instance1;
 impl pallet_bags_list::Config<CandidateBagsListInstance> for Test {
 	type RuntimeEvent = RuntimeEvent;
-	/// The voter bags-list is loosely kept up to date, and the real source of truth for the score
-	/// of each node is the staking pallet.
+	/// The candidate bags-list is loosely kept up to date, and the real source
+	/// of truth for the score of each node is the collator-selection pallet.
 	type ScoreProvider = CollatorSelection;
 	type BagThresholds = BagThresholds;
-	// TODO[GMP] come back to this
 	type Score = u64;
 	type WeightInfo = pallet_bags_list::weights::SubstrateWeight<Test>;
 }

@@ -460,18 +460,16 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 parameter_types! {
-	// TODO[GMP] come  back to this
-	pub const BagThresholds: &'static [u128] = &[0];
+	pub const BagThresholds: &'static [u128] = &[];
 }
 
 type CandidateBagsListInstance = pallet_bags_list::Instance1;
 impl pallet_bags_list::Config<CandidateBagsListInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	/// The voter bags-list is loosely kept up to date, and the real source of truth for the score
-	/// of each node is the staking pallet.
+	/// The candidate bags-list is loosely kept up to date, and the real source
+	/// of truth for the score of each node is the collator-selection pallet.
 	type ScoreProvider = CollatorSelection;
 	type BagThresholds = BagThresholds;
-	// TODO[GMP] come  back to this
 	type Score = Balance;
 	type WeightInfo = pallet_bags_list::weights::SubstrateWeight<Runtime>;
 }
