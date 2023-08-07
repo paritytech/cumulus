@@ -70,7 +70,12 @@ fn with_externalities<F: FnOnce(&mut dyn Externalities) -> R, R>(f: F) -> R {
 /// ensuring that the final storage root matches the storage root in the header of the block. In the
 /// end we return back the [`ValidationResult`] with all the required information for the validator.
 #[doc(hidden)]
-pub fn validate_block<B: BlockT, E: ExecuteBlock<B>, PSC: crate::Config>(
+pub fn validate_block<
+	B: BlockT,
+	E: ExecuteBlock<B>,
+	PSC: crate::Config,
+	CI: crate::CheckInherents<B>,
+>(
 	MemoryOptimizedValidationParams {
 		block_data,
 		parent_head,
@@ -158,6 +163,28 @@ where
 		sp_io::offchain_index::host_set.replace_implementation(host_offchain_index_set),
 		sp_io::offchain_index::host_clear.replace_implementation(host_offchain_index_clear),
 	);
+
+	#[cfg(not(feature = "parameterized-consensus-hook"))]
+	run_with_externalities::<B, _, _>(&backend, || {
+		let relay_chain_proof = crate::RelayChainStateProof::new(
+			PSC::SelfParaId::get(),
+			inherent_data.validation_data.relay_parent_storage_root,
+			inherent_data.relay_chain_state.clone(),
+		)
+		.expect("Invalid relay chain state proof");
+
+		let res = CI::check_inherents(&block, &relay_chain_proof);
+
+		if !res.ok() {
+			if log::log_enabled!(log::Level::Error) {
+				res.into_errors().for_each(|e| {
+					log::error!("Checking inherent with identifier `{:?}` failed", e.0)
+				});
+			}
+
+			panic!("Checking inherents failed");
+		}
+	});
 
 	run_with_externalities::<B, _, _>(&backend, || {
 		let head_data = HeadData(block.header().encode());

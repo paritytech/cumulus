@@ -48,7 +48,7 @@ use frame_system::{ensure_none, ensure_root, pallet_prelude::HeaderFor};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{BlockNumberProvider, Hash},
+	traits::{Block as BlockT, BlockNumberProvider, Hash},
 	transaction_validity::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidity,
 		ValidTransaction,
@@ -1494,6 +1494,33 @@ impl<T: Config> Pallet<T> {
 impl<T: Config> UpwardMessageSender for Pallet<T> {
 	fn send_upward_message(message: UpwardMessage) -> Result<(u32, XcmHash), MessageSendError> {
 		Self::send_upward_message(message)
+	}
+}
+
+/// Something that can check the inherents of a block.
+#[deprecated = "use `cumulus-pallet-aura-ext::FixedVelocityConsensusHook` instead"]
+pub trait CheckInherents<Block: BlockT> {
+	/// Check all inherents of the block.
+	///
+	/// This function gets passed all the extrinsics of the block, so it is up to the callee to
+	/// identify the inherents. The `validation_data` can be used to access the
+	fn check_inherents(
+		block: &Block,
+		validation_data: &RelayChainStateProof,
+	) -> frame_support::inherent::CheckInherentsResult;
+}
+
+/// Struct that always returns `Ok` on inherents check, needed for backwards-compatibility.
+#[doc(hidden)]
+pub struct DummyCheckInherents<Block>(sp_std::marker::PhantomData<Block>);
+
+#[allow(deprecated)]
+impl<Block: BlockT> CheckInherents<Block> for DummyCheckInherents<Block> {
+	fn check_inherents(
+		_: &Block,
+		_: &RelayChainStateProof,
+	) -> frame_support::inherent::CheckInherentsResult {
+		sp_inherents::CheckInherentsResult::new()
 	}
 }
 
