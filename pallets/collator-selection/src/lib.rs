@@ -583,27 +583,35 @@ pub mod pallet {
 		/// the amount cannot be reserved.
 		#[pallet::call_index(7)]
 		#[pallet::weight(T::WeightInfo::increase_bond(T::MaxCandidates::get()))]
-		pub fn increase_bond(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
+		pub fn increase_bond(
+			origin: OriginFor<T>,
+			amount: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-
-			let new_amount =
-				<Candidates<T>>::try_mutate(|candidates| -> Result<BalanceOf<T>, DispatchError> {
-					let candidate_info = candidates
+			// The function below will try to mutate the `Candidates` entry for
+			// the caller to increase their bond by `amount`. The return value
+			// is a tuple of the position of the entry in the list, used for
+			// weight calculation, and the new bonded amount.
+			let (idx, new_amount) = <Candidates<T>>::try_mutate(
+				|candidates| -> Result<(usize, BalanceOf<T>), DispatchError> {
+					let (idx, candidate_info) = candidates
 						.iter_mut()
-						.find(|candidate_info| candidate_info.who == who)
+						.enumerate()
+						.find(|(_, candidate_info)| candidate_info.who == who)
 						.ok_or_else(|| Error::<T>::NotCandidate)?;
 					candidate_info.deposit = candidate_info.deposit.saturating_add(amount);
 					T::Currency::reserve(&who, amount)?;
 					T::CandidateList::on_increase(&who, amount)
 						.map_err(|_| Error::<T>::UpdateCandidateListFailed)?;
-					Ok(candidate_info.deposit)
-				})?;
+					Ok((idx, candidate_info.deposit))
+				},
+			)?;
 
 			Self::deposit_event(Event::CandidateBondIncreased {
 				account_id: who,
 				deposit: new_amount,
 			});
-			Ok(())
+			Ok(Some(T::WeightInfo::increase_bond(idx as u32)).into())
 		}
 
 		/// Decrease the candidacy bond of collator candidate `origin` by an
@@ -613,14 +621,21 @@ pub mod pallet {
 		/// the remaining bond is lower than the minimum candidacy bond.
 		#[pallet::call_index(8)]
 		#[pallet::weight(T::WeightInfo::decrease_bond(T::MaxCandidates::get()))]
-		pub fn decrease_bond(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
+		pub fn decrease_bond(
+			origin: OriginFor<T>,
+			amount: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-
-			let new_amount =
-				<Candidates<T>>::try_mutate(|candidates| -> Result<BalanceOf<T>, DispatchError> {
-					let candidate_info = candidates
+			// The function below will try to mutate the `Candidates` entry for
+			// the caller to decrease their bond by `amount`. The return value
+			// is a tuple of the position of the entry in the list, used for
+			// weight calculation, and the new bonded amount.
+			let (idx, new_amount) = <Candidates<T>>::try_mutate(
+				|candidates| -> Result<(usize, BalanceOf<T>), DispatchError> {
+					let (idx, candidate_info) = candidates
 						.iter_mut()
-						.find(|candidate_info| candidate_info.who == who)
+						.enumerate()
+						.find(|(_, candidate_info)| candidate_info.who == who)
 						.ok_or_else(|| Error::<T>::NotCandidate)?;
 					candidate_info.deposit = candidate_info.deposit.saturating_sub(amount);
 					if candidate_info.deposit < <CandidacyBond<T>>::get() {
@@ -629,14 +644,15 @@ pub mod pallet {
 					T::Currency::unreserve(&who, amount);
 					T::CandidateList::on_decrease(&who, amount)
 						.map_err(|_| Error::<T>::UpdateCandidateListFailed)?;
-					Ok(candidate_info.deposit)
-				})?;
+					Ok((idx, candidate_info.deposit))
+				},
+			)?;
 
 			Self::deposit_event(Event::CandidateBondDecreased {
 				account_id: who,
 				deposit: new_amount,
 			});
-			Ok(())
+			Ok(Some(T::WeightInfo::decrease_bond(idx as u32)).into())
 		}
 
 		/// The caller `origin` replaces a candidate `target` in the collator
