@@ -86,7 +86,7 @@ fn send_xcm_from_para_to_system_para_paying_fee_with_assets_works() {
 	let root_origin = <PenpalWestendA as Chain>::RuntimeOrigin::root();
 	let system_para_destination =
 		PenpalWestendA::sibling_location_of(AssetHubWestend::para_id()).into();
-	let xcm = xcm_paid_execution(call, origin_kind, native_asset, para_sovereign_account.clone());
+	let xcm = xcm_transact_paid_execution(call, origin_kind, native_asset, para_sovereign_account.clone());
 
 	PenpalWestendA::execute_with(|| {
 		assert_ok!(<PenpalWestendA as PenpalWestendAPallet>::PolkadotXcm::send(

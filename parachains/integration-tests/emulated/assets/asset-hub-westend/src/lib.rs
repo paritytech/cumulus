@@ -31,7 +31,7 @@ pub use integration_tests_common::{
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
 	lazy_static::lazy_static,
-	xcm_paid_execution, xcm_unpaid_execution, AssetHubWestend, AssetHubWestendPallet,
+	xcm_transact_paid_execution, xcm_transact_unpaid_execution, AssetHubWestend, AssetHubWestendPallet,
 	AssetHubWestendReceiver, AssetHubWestendSender, Collectives, CollectivesPallet,
 	CollectivesReceiver, CollectivesSender, PenpalWestendA, PenpalWestendAPallet,
 	PenpalWestendAReceiver, PenpalWestendASender, Westend, WestendMockNet, WestendPallet,
@@ -54,6 +54,7 @@ pub use xcm_emulator::{
 
 pub const ASSET_ID: u32 = 1;
 pub const ASSET_MIN_BALANCE: u128 = 1000;
+// `Assets` pallet index
 pub const ASSETS_PALLET_ID: u8 = 50;
 
 pub type RelayToSystemParaTest = Test<Westend, AssetHubWestend>;

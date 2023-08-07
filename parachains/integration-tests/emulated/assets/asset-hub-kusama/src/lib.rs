@@ -30,7 +30,7 @@ pub use integration_tests_common::{
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
 	lazy_static::lazy_static,
-	xcm_paid_execution, xcm_unpaid_execution, AssetHubKusama, AssetHubKusamaPallet,
+	xcm_transact_paid_execution, xcm_transact_unpaid_execution, AssetHubKusama, AssetHubKusamaPallet,
 	AssetHubKusamaReceiver, AssetHubKusamaSender, BridgeHubKusama, BridgeHubKusamaPallet,
 	BridgeHubKusamaReceiver, BridgeHubKusamaSender, BridgeHubPolkadot, BridgeHubPolkadotPallet,
 	BridgeHubPolkadotReceiver, BridgeHubPolkadotSender, Collectives, CollectivesPallet,

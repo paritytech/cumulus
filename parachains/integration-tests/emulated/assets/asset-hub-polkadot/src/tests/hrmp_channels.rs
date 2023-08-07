@@ -45,7 +45,7 @@ fn open_hrmp_channel_between_paras_works() {
 	let native_asset: MultiAsset = (Here, fee_amount).into();
 	let beneficiary = Polkadot::sovereign_account_id_of_child_para(para_a_id);
 
-	let mut xcm = xcm_paid_execution(call, origin_kind, native_asset.clone(), beneficiary);
+	let mut xcm = xcm_transact_paid_execution(call, origin_kind, native_asset.clone(), beneficiary);
 
 	PenpalPolkadotA::execute_with(|| {
 		assert_ok!(<PenpalPolkadotA as PenpalPolkadotAPallet>::PolkadotXcm::send(
@@ -53,8 +53,6 @@ fn open_hrmp_channel_between_paras_works() {
 			bx!(relay_destination.clone()),
 			bx!(xcm),
 		));
-
-		// PenpalPolkadotA::assert_xcm_pallet_sent();
 	});
 
 	Polkadot::execute_with(|| {
@@ -97,7 +95,7 @@ fn open_hrmp_channel_between_paras_works() {
 	call = Polkadot::accept_open_channel_call(para_a_id);
 	let beneficiary = Polkadot::sovereign_account_id_of_child_para(para_b_id);
 
-	xcm = xcm_paid_execution(call, origin_kind, native_asset, beneficiary);
+	xcm = xcm_transact_paid_execution(call, origin_kind, native_asset, beneficiary);
 
 	PenpalPolkadotB::execute_with(|| {
 		assert_ok!(<PenpalPolkadotB as PenpalPolkadotBPallet>::PolkadotXcm::send(
@@ -105,8 +103,6 @@ fn open_hrmp_channel_between_paras_works() {
 			bx!(relay_destination),
 			bx!(xcm),
 		));
-
-		// PenpalPolkadotB::assert_xcm_pallet_sent();
 	});
 
 	Polkadot::execute_with(|| {

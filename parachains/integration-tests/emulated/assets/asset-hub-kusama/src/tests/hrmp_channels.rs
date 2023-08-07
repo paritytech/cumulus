@@ -45,7 +45,7 @@ fn open_hrmp_channel_between_paras_works() {
 	let native_asset: MultiAsset = (Here, fee_amount).into();
 	let beneficiary = Kusama::sovereign_account_id_of_child_para(para_a_id);
 
-	let mut xcm = xcm_paid_execution(call, origin_kind, native_asset.clone(), beneficiary);
+	let mut xcm = xcm_transact_paid_execution(call, origin_kind, native_asset.clone(), beneficiary);
 
 	PenpalKusamaA::execute_with(|| {
 		assert_ok!(<PenpalKusamaA as PenpalKusamaAPallet>::PolkadotXcm::send(
@@ -53,8 +53,6 @@ fn open_hrmp_channel_between_paras_works() {
 			bx!(relay_destination.clone()),
 			bx!(xcm),
 		));
-
-		// PenpalKusamaA::assert_xcm_pallet_sent();
 	});
 
 	Kusama::execute_with(|| {
@@ -97,7 +95,7 @@ fn open_hrmp_channel_between_paras_works() {
 	call = Kusama::accept_open_channel_call(para_a_id);
 	let beneficiary = Kusama::sovereign_account_id_of_child_para(para_b_id);
 
-	xcm = xcm_paid_execution(call, origin_kind, native_asset, beneficiary);
+	xcm = xcm_transact_paid_execution(call, origin_kind, native_asset, beneficiary);
 
 	PenpalKusamaB::execute_with(|| {
 		assert_ok!(<PenpalKusamaB as PenpalKusamaBPallet>::PolkadotXcm::send(
@@ -105,8 +103,6 @@ fn open_hrmp_channel_between_paras_works() {
 			bx!(relay_destination),
 			bx!(xcm),
 		));
-
-		// PenpalKusamaB::assert_xcm_pallet_sent();
 	});
 
 	Kusama::execute_with(|| {

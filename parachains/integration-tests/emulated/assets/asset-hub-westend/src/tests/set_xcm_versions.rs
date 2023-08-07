@@ -62,7 +62,7 @@ fn system_para_sets_relay_xcm_supported_version() {
 	.into();
 	let origin_kind = OriginKind::Superuser;
 
-	let xcm = xcm_unpaid_execution(call, origin_kind);
+	let xcm = xcm_transact_unpaid_execution(call, origin_kind);
 
 	// System Parachain sets supported version for Relay Chain throught it
 	Westend::execute_with(|| {

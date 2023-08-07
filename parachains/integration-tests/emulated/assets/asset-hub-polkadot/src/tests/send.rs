@@ -97,7 +97,7 @@ fn send_transact_native_from_system_para_to_relay_fails() {
 	.into();
 	let origin_kind = OriginKind::Native;
 
-	let xcm = xcm_unpaid_execution(call, origin_kind);
+	let xcm = xcm_transact_unpaid_execution(call, origin_kind);
 
 	// Send XCM message from Relay Chain
 	AssetHubPolkadot::execute_with(|| {
@@ -141,7 +141,7 @@ fn send_xcm_from_para_to_system_para_paying_fee_with_assets_works() {
 	let root_origin = <PenpalPolkadotA as Chain>::RuntimeOrigin::root();
 	let system_para_destination =
 		PenpalPolkadotA::sibling_location_of(AssetHubPolkadot::para_id()).into();
-	let xcm = xcm_paid_execution(call, origin_kind, native_asset, para_sovereign_account.clone());
+	let xcm = xcm_transact_paid_execution(call, origin_kind, native_asset, para_sovereign_account.clone());
 
 	PenpalPolkadotA::execute_with(|| {
 		assert_ok!(<PenpalPolkadotA as PenpalPolkadotAPallet>::PolkadotXcm::send(

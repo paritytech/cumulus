@@ -131,6 +131,7 @@ macro_rules! impl_accounts_helpers_for_relay_chain {
 	( $chain:ident ) => {
 		$crate::paste::paste! {
 			impl $chain {
+				/// Fund a set of accounts with a balance
 				pub fn fund_accounts(accounts: Vec<(AccountId, Balance)>) {
 					Self::execute_with(|| {
 						for account in accounts {
@@ -142,7 +143,7 @@ macro_rules! impl_accounts_helpers_for_relay_chain {
 						}
 					});
 				}
-
+				/// Fund a sovereign account based on its Parachain Id
 				pub fn fund_para_sovereign(amount: Balance, para_id: ParaId) -> sp_runtime::AccountId32 {
 					let sovereign_account = Self::sovereign_account_id_of_child_para(para_id);
 					Self::fund_accounts(vec![(sovereign_account.clone(), amount)]);
@@ -248,6 +249,7 @@ macro_rules! impl_hrmp_channels_helpers_for_relay_chain {
 	( $chain:ident ) => {
 		$crate::paste::paste! {
 			impl $chain {
+				/// Init open channel request with another Parachain
 				pub fn init_open_channel_call(
 					recipient_para_id: ParaId,
 					max_capacity: u32,
@@ -263,7 +265,7 @@ macro_rules! impl_hrmp_channels_helpers_for_relay_chain {
 					.encode()
 					.into()
 				}
-
+				/// Recipient Parachain accept the open request from another Parachain
 				pub fn accept_open_channel_call(sender_para_id: ParaId) -> DoubleEncoded<()> {
 					<Self as Chain>::RuntimeCall::Hrmp(polkadot_runtime_parachains::hrmp::Call::<
 						<Self as Chain>::Runtime,
@@ -274,6 +276,7 @@ macro_rules! impl_hrmp_channels_helpers_for_relay_chain {
 					.into()
 				}
 
+				/// A root origin force to open a channel between two Parachains
 				pub fn force_process_hrmp_open(sender: ParaId, recipient: ParaId) {
 					Self::execute_with(|| {
 						let relay_root_origin = <Self as Chain>::RuntimeOrigin::root();
@@ -304,6 +307,7 @@ macro_rules! impl_accounts_helpers_for_parachain {
 	( $chain:ident ) => {
 		$crate::paste::paste! {
 			impl $chain {
+				/// Fund a set of accounts with a balance
 				pub fn fund_accounts(accounts: Vec<(AccountId, Balance)>) {
 					Self::execute_with(|| {
 						for account in accounts {
@@ -501,7 +505,7 @@ macro_rules! impl_assets_helpers_for_parachain {
 					min_balance: Balance,
 				) -> VersionedXcm<()> {
 					let call = Self::force_create_asset_call(asset_id, owner, is_sufficient, min_balance);
-					xcm_unpaid_execution(call, origin_kind)
+					xcm_transact_unpaid_execution(call, origin_kind)
 				}
 
 				/// Mint assets making use of the assets pallet

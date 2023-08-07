@@ -1270,12 +1270,14 @@ where
 	}
 }
 
+/// Struct that keeps account's id and balance
 #[derive(Clone)]
 pub struct TestAccount {
 	pub account_id: AccountId,
 	pub balance: Balance,
 }
 
+/// Default `Args` provided by xcm-emulator to be stored in a `Test` instance
 #[derive(Clone)]
 pub struct TestArgs {
 	pub dest: MultiLocation,
@@ -1286,12 +1288,21 @@ pub struct TestArgs {
 	pub fee_asset_item: u32,
 	pub weight_limit: WeightLimit,
 }
+
+/// Auxiliar struct to help creating a new `Test` instance
 pub struct TestContext<T> {
 	pub sender: AccountId,
 	pub receiver: AccountId,
 	pub args: T,
 }
 
+/// Struct that help with tests where either dispatchables or assertions need
+/// to be reused. The struct keeps the test's arguments of your choice in the generic `Args`.
+/// These arguments can be easily reused and shared between the assertions functions
+/// and dispatchables functions, which are also stored in `Test`.
+/// `Origin` corresponds to the chain where the XCM interaction starts with an initial execution.
+/// `Destination` corresponds to the last chain where an effect of the intial execution is expected happen.
+/// `Hops` refer all the ordered intermediary chains an initial XCM execution can provoke some effect.
 #[derive(Clone)]
 pub struct Test<Origin, Destination, Hops = (), Args = TestArgs>
 where
@@ -1311,6 +1322,7 @@ where
 	_marker: PhantomData<(Destination, Hops)>,
 }
 
+/// `Test` implementation
 impl<Origin, Destination, Hops, Args> Test<Origin, Destination, Hops, Args>
 where
 	Args: Clone,
@@ -1320,6 +1332,7 @@ where
 	Destination::RuntimeOrigin: OriginTrait<AccountId = AccountId32> + Clone,
 	Hops: Clone + CheckAssertion<Origin, Destination, Hops, Args>,
 {
+	/// Creates a new `Test` instance
 	pub fn new(test_args: TestContext<Args>) -> Self {
 		Test {
 			sender: TestAccount {
@@ -1338,24 +1351,24 @@ where
 			_marker: Default::default(),
 		}
 	}
-
+	/// Stores an assertion in a particular Chain
 	pub fn set_assertion<Hop>(&mut self, assertion: fn(Self)) {
 		let chain_name = std::any::type_name::<Hop>();
 		self.hops_assertion.insert(chain_name.to_string(), assertion);
 	}
-
+	/// Stores an assertion in a particular Chain
 	pub fn set_dispatchable<Hop>(&mut self, dispatchable: fn(Self) -> DispatchResult) {
 		let chain_name = std::any::type_name::<Hop>();
 		self.hops_dispatchable.insert(chain_name.to_string(), dispatchable);
 	}
-
+	/// Executes all dispatchables and assertions in order from `Origin` to `Destination`
 	pub fn assert(&mut self) {
 		Origin::check_assertion(self.clone());
 		Hops::check_assertion(self.clone());
 		Destination::check_assertion(self.clone());
 		Self::update_balances(self);
 	}
-
+	/// Updates sender and receiver balances
 	fn update_balances(&mut self) {
 		self.sender.balance = Origin::account_data_of(self.sender.account_id.clone()).free;
 		self.receiver.balance = Destination::account_data_of(self.receiver.account_id.clone()).free;

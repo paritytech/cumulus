@@ -31,7 +31,7 @@ pub use integration_tests_common::{
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
 	lazy_static::lazy_static,
-	xcm_paid_execution, xcm_unpaid_execution, AssetHubRococo, AssetHubRococoPallet,
+	xcm_transact_paid_execution, xcm_transact_unpaid_execution, AssetHubRococo, AssetHubRococoPallet,
 	AssetHubRococoReceiver, AssetHubRococoSender, AssetHubWococo, AssetHubWococoPallet,
 	AssetHubWococoReceiver, AssetHubWococoSender, BridgeHubRococo, BridgeHubRococoPallet,
 	BridgeHubRococoReceiver, BridgeHubRococoSender, BridgeHubWococo, BridgeHubWococoPallet,
