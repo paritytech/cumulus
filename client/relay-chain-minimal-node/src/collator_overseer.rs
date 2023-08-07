@@ -62,7 +62,7 @@ pub(crate) struct CollatorOverseerGenArgs<'a> {
 	pub authority_discovery_service: AuthorityDiscoveryService,
 	/// Receiver for collation request protocol v1.
 	pub collation_req_receiver_v1: IncomingRequestReceiver<v1::CollationFetchingRequest>,
-	/// Receiver for collation request protocol v1.
+	/// Receiver for collation request protocol vstaging.
 	pub collation_req_receiver_vstaging:
 		IncomingRequestReceiver<vstaging::CollationFetchingRequest>,
 	/// Receiver for availability request protocol
