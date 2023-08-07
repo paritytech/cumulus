@@ -31,7 +31,7 @@ mod keywords {
 struct Input {
 	runtime: Path,
 	block_executor: Path,
-	check_inherents: Option<Path>,
+	check_inherents: Path,
 }
 
 impl Parse for Input {
@@ -59,7 +59,11 @@ impl Parse for Input {
 			}
 		}
 
-		while !input.is_empty() || runtime.is_none() || block_executor.is_none() {
+		while !input.is_empty() ||
+			runtime.is_none() ||
+			block_executor.is_none() ||
+			check_inherents.is_none()
+		{
 			let lookahead = input.lookahead1();
 
 			if lookahead.peek(keywords::Runtime) {
@@ -76,7 +80,7 @@ impl Parse for Input {
 		Ok(Self {
 			runtime: runtime.expect("Everything is parsed before; qed"),
 			block_executor: block_executor.expect("Everything is parsed before; qed"),
-			check_inherents,
+			check_inherents: check_inherents.expect("Everything is parsed before; qed"),
 		})
 	}
 }
@@ -100,28 +104,6 @@ pub fn register_validate_block(input: proc_macro::TokenStream) -> proc_macro::To
 	let crate_ = match crate_() {
 		Ok(c) => c,
 		Err(e) => return e.into_compile_error().into(),
-	};
-
-	let check_inherents = match check_inherents {
-		Some(_check_inherents) => {
-			#[cfg(not(feature = "parameterized-consensus-hook"))]
-			quote::quote! { #_check_inherents }
-			#[cfg(feature = "parameterized-consensus-hook")]
-			return Error::new(
-				Span::call_site(),
-				"CheckInherents is incompatible with consensus hook feature",
-			)
-			.into_compile_error()
-			.into()
-		},
-		None => {
-			#[cfg(feature = "parameterized-consensus-hook")]
-			quote::quote! { #crate_::DummyCheckInherents<<#runtime as #crate_::validate_block::GetRuntimeBlockType>::RuntimeBlock> }
-			#[cfg(not(feature = "parameterized-consensus-hook"))]
-			return Error::new(Span::call_site(), "missing CheckInherents input")
-				.into_compile_error()
-				.into()
-		},
 	};
 
 	if cfg!(not(feature = "std")) {

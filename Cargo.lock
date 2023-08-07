@@ -2882,16 +2882,11 @@ name = "cumulus-primitives-timestamp"
 version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core",
- "cumulus-test-client",
- "cumulus-test-relay-sproof-builder",
  "futures",
  "parity-scale-codec 3.6.4",
- "sp-consensus",
  "sp-inherents",
- "sp-runtime",
  "sp-std",
  "sp-timestamp",
- "sp-tracing",
 ]
 
 [[package]]

@@ -86,10 +86,12 @@ pub use consensus_hook::{ConsensusHook, ExpectParentIncluded};
 /// ```
 ///     struct BlockExecutor;
 ///     struct Runtime;
+///     struct CheckInherents;
 ///
 ///     cumulus_pallet_parachain_system::register_validate_block! {
 ///         Runtime = Runtime,
 ///         BlockExecutor = Executive,
+///         CheckInherents = CheckInherents,
 ///     }
 ///
 /// # fn main() {}
@@ -1498,7 +1500,10 @@ impl<T: Config> UpwardMessageSender for Pallet<T> {
 }
 
 /// Something that can check the inherents of a block.
-#[deprecated = "use `cumulus-pallet-aura-ext::FixedVelocityConsensusHook` instead"]
+#[cfg_attr(
+	feature = "parameterized-consensus-hook",
+	deprecated = "consider switching to `cumulus-pallet-parachain-system::ConsensusHook`"
+)]
 pub trait CheckInherents<Block: BlockT> {
 	/// Check all inherents of the block.
 	///
@@ -1508,20 +1513,6 @@ pub trait CheckInherents<Block: BlockT> {
 		block: &Block,
 		validation_data: &RelayChainStateProof,
 	) -> frame_support::inherent::CheckInherentsResult;
-}
-
-/// Struct that always returns `Ok` on inherents check, needed for backwards-compatibility.
-#[doc(hidden)]
-pub struct DummyCheckInherents<Block>(sp_std::marker::PhantomData<Block>);
-
-#[allow(deprecated)]
-impl<Block: BlockT> CheckInherents<Block> for DummyCheckInherents<Block> {
-	fn check_inherents(
-		_: &Block,
-		_: &RelayChainStateProof,
-	) -> frame_support::inherent::CheckInherentsResult {
-		sp_inherents::CheckInherentsResult::new()
-	}
 }
 
 /// Something that should be informed about system related events.
