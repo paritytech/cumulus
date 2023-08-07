@@ -2961,6 +2961,7 @@ dependencies = [
  "cumulus-relay-chain-rpc-interface",
  "futures",
  "lru 0.11.0",
+ "parking_lot 0.12.1",
  "polkadot-availability-recovery",
  "polkadot-collator-protocol",
  "polkadot-core-primitives",
