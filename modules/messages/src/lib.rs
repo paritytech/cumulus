@@ -498,7 +498,7 @@ pub mod pallet {
 			// notify others about messages delivery
 			T::OnMessagesDelivered::on_messages_delivered(
 				lane_id,
-				lane.data().queued_messages().checked_len().unwrap_or(0),
+				lane.data().queued_messages().saturating_len(),
 			);
 
 			// because of lags, the inbound lane state (`lane_data`) may have entries for
@@ -599,10 +599,12 @@ pub mod pallet {
 	/// Map of lane id => is congested signal sent. It is managed by the
 	/// `bridge_runtime_common::LocalXcmQueueManager`.
 	///
-	/// **bridges-v1**: this map is temporary and will be dropped in the v2. We can emulate
-	/// a storage map using unhashed storage functions, but then benchmarks are not accounting
-	/// its `proof_size`, so it is missing from the final weights. So we need to make it a map
-	/// inside some pallet.
+	/// **bridges-v1**: this map is a temporary hack and will be dropped in the `v2`. We can emulate
+	/// a storage map using `sp_io::unhashed` storage functions, but then benchmarks are not
+	/// accounting its `proof_size`, so it is missing from the final weights. So we need to make it
+	/// a map inside some pallet. We could use a simply value instead of map here, because
+	/// in `v1` we'll only have a single lane. But in the case of adding another lane before `v2`,
+	/// it'll be easier to deal with the isolated storage map instead.
 	#[pallet::storage]
 	pub type OutboundLanesCongestedSignals<T: Config<I>, I: 'static = ()> = StorageMap<
 		Hasher = Blake2_128Concat,
@@ -928,9 +930,10 @@ mod tests {
 			inbound_unrewarded_relayers_state, message, message_payload, run_test,
 			unrewarded_relayer, AccountId, DbWeight, RuntimeEvent as TestEvent, RuntimeOrigin,
 			TestDeliveryConfirmationPayments, TestDeliveryPayments, TestMessageDispatch,
-			TestMessagesDeliveryProof, TestMessagesProof, TestRelayer, TestRuntime, TestWeightInfo,
-			MAX_OUTBOUND_PAYLOAD_SIZE, PAYLOAD_REJECTED_BY_TARGET_CHAIN, REGULAR_PAYLOAD,
-			TEST_LANE_ID, TEST_LANE_ID_2, TEST_LANE_ID_3, TEST_RELAYER_A, TEST_RELAYER_B,
+			TestMessagesDeliveryProof, TestMessagesProof, TestOnMessagesDelivered, TestRelayer,
+			TestRuntime, TestWeightInfo, MAX_OUTBOUND_PAYLOAD_SIZE,
+			PAYLOAD_REJECTED_BY_TARGET_CHAIN, REGULAR_PAYLOAD, TEST_LANE_ID, TEST_LANE_ID_2,
+			TEST_LANE_ID_3, TEST_RELAYER_A, TEST_RELAYER_B,
 		},
 		outbound_lane::ReceivalConfirmationError,
 	};
@@ -1401,6 +1404,7 @@ mod tests {
 			);
 			assert!(TestDeliveryConfirmationPayments::is_reward_paid(TEST_RELAYER_A, 1));
 			assert!(!TestDeliveryConfirmationPayments::is_reward_paid(TEST_RELAYER_B, 1));
+			assert_eq!(TestOnMessagesDelivered::call_arguments(), Some((TEST_LANE_ID, 1)));
 
 			// this reports delivery of both message 1 and message 2 => reward is paid only to
 			// TEST_RELAYER_B
@@ -1443,6 +1447,7 @@ mod tests {
 			);
 			assert!(!TestDeliveryConfirmationPayments::is_reward_paid(TEST_RELAYER_A, 1));
 			assert!(TestDeliveryConfirmationPayments::is_reward_paid(TEST_RELAYER_B, 1));
+			assert_eq!(TestOnMessagesDelivered::call_arguments(), Some((TEST_LANE_ID, 0)));
 		});
 	}
 

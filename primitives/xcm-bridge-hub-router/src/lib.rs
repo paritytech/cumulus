@@ -20,15 +20,21 @@
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_runtime::{traits::One, FixedU128, RuntimeDebug};
+use sp_runtime::{FixedU128, RuntimeDebug};
 
-/// Local XCM channel that may report whether it is congested or not.
-pub trait LocalXcmChannel {
-	/// Returns true if the queue is currently congested.
+/// Minimal delivery fee factor.
+pub const MINIMAL_DELIVERY_FEE_FACTOR: FixedU128 = FixedU128::from_u32(1);
+
+/// XCM channel status provider that may report whether it is congested or not.
+///
+/// By channel we mean the physical channel that is used to deliver messages of one
+/// of the bridge queues.
+pub trait XcmChannelStatusProvider {
+	/// Returns true if the channel is currently congested.
 	fn is_congested() -> bool;
 }
 
-impl LocalXcmChannel for () {
+impl XcmChannelStatusProvider for () {
 	fn is_congested() -> bool {
 		false
 	}
@@ -45,6 +51,6 @@ pub struct BridgeState {
 
 impl Default for BridgeState {
 	fn default() -> BridgeState {
-		BridgeState { delivery_fee_factor: FixedU128::one(), is_congested: false }
+		BridgeState { delivery_fee_factor: MINIMAL_DELIVERY_FEE_FACTOR, is_congested: false }
 	}
 }

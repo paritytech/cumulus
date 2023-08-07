@@ -133,7 +133,7 @@ impl XcmBlobHauler for ToRialtoXcmBlobHauler {
 	type MessagesInstance = WithRialtoMessagesInstance;
 	type SenderAndLane = RialtoSenderAndLane;
 
-	type ToSendingChainSender = crate::xcm_config::XcmRouter;
+	type ToSourceChainSender = crate::xcm_config::XcmRouter;
 	type CongestedMessage = DummyXcmMessage;
 	type UncongestedMessage = DummyXcmMessage;
 

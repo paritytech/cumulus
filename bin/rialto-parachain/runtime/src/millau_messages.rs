@@ -133,7 +133,7 @@ impl XcmBlobHauler for ToMillauXcmBlobHauler {
 	type MessagesInstance = WithMillauMessagesInstance;
 	type SenderAndLane = MullauSenderAndLane;
 
-	type ToSendingChainSender = crate::XcmRouter;
+	type ToSourceChainSender = crate::XcmRouter;
 	type CongestedMessage = DummyXcmMessage;
 	type UncongestedMessage = DummyXcmMessage;
 
