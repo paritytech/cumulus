@@ -18,6 +18,7 @@ use crate::*;
 
 #[test]
 fn reserve_transfer_native_asset_from_relay_to_assets() {
+	KusamaMockNet::reset();
 	// Init tests variables
 	let amount = KUSAMA_ED * 1000;
 	let relay_sender_balance_before = Kusama::account_data_of(KusamaSender::get()).free;
