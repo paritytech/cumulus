@@ -33,17 +33,11 @@ impl<T: Config> OnRuntimeUpgrade for Migration<T> {
 	fn on_runtime_upgrade() -> Weight {
 		let mut weight = T::DbWeight::get().reads(1);
 
-		if StorageVersion::get::<Pallet<T>>() == 0 {
-			weight.saturating_accrue(migrate_to_v1::<T>());
-			StorageVersion::new(1).put::<Pallet<T>>();
-			weight.saturating_accrue(T::DbWeight::get().writes(1));
-		}
+		weight.saturating_accrue(migrate_to_v1::<T>());
 
-		if StorageVersion::get::<Pallet<T>>() == 1 {
-			weight.saturating_accrue(migrate_to_v2::<T>());
-			StorageVersion::new(2).put::<Pallet<T>>();
-			weight.saturating_accrue(T::DbWeight::get().writes(1));
-		}
+		weight.saturating_accrue(migrate_to_v2::<T>());
+		StorageVersion::new(2).put::<Pallet<T>>();
+		weight.saturating_accrue(T::DbWeight::get().writes(1));
 
 		weight
 	}
