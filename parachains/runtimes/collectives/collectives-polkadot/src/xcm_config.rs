@@ -26,10 +26,7 @@ use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
-	xcm_config::{
-		ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry,
-		RelayOrOtherSystemParachains,
-	},
+	xcm_config::{ConcreteNativeAssetFrom, RelayOrOtherSystemParachains},
 	TREASURY_PALLET_ID,
 };
 use polkadot_parachain::primitives::Sibling;

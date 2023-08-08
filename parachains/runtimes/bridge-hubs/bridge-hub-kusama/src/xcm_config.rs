@@ -25,7 +25,10 @@ use frame_support::{
 use frame_system::EnsureRoot;
 use kusama_runtime_constants::system_parachain::SystemParachains;
 use pallet_xcm::XcmPassthrough;
-use parachains_common::{impls::ToStakingPot, xcm_config::ConcreteNativeAssetFrom};
+use parachains_common::{
+	impls::ToStakingPot,
+	xcm_config::{ConcreteNativeAssetFrom, RelayOrOtherSystemParachains},
+};
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::AccountIdConversion;
 use xcm::latest::prelude::*;

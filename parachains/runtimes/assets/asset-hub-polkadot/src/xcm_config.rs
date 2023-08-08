@@ -29,15 +29,12 @@ use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
-	xcm_config::{
-		AssetFeeAsExistentialDepositMultiplier, DenyReserveTransferToRelayChain, DenyThenTry,
-		RelayOrOtherSystemParachains,
-	},
+	xcm_config::{AssetFeeAsExistentialDepositMultiplier, RelayOrOtherSystemParachains},
 	TREASURY_PALLET_ID,
 };
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::{AccountIdConversion, ConvertInto};
-use westend_runtime_constants::system_parachain::SystemParachains;
+use polkadot_runtime_constants::system_parachain::SystemParachains;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
