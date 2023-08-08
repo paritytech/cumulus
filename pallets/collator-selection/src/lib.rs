@@ -184,15 +184,19 @@ pub mod pallet {
 	pub type Invulnerables<T: Config> =
 		StorageValue<_, BoundedVec<T::AccountId, T::MaxInvulnerables>, ValueQuery>;
 
+	/// Current number of candidates in the `Candidates` map.
+	///
+	/// This must always be less than [`Config::MaxCandidates`].
+	#[pallet::storage]
+	#[pallet::getter(fn candidate_count)]
+	pub type CandidateCount<T> = StorageValue<_, u32, ValueQuery>;
+
 	/// The (community, limited) collation candidates. `Candidates` and `Invulnerables` should be
 	/// mutually exclusive.
 	#[pallet::storage]
 	#[pallet::getter(fn candidates)]
-	pub type Candidates<T: Config> = StorageValue<
-		_,
-		BoundedVec<CandidateInfo<T::AccountId, BalanceOf<T>>, T::MaxCandidates>,
-		ValueQuery,
-	>;
+	pub type Candidates<T: Config> =
+		StorageMap<_, Identity, T::AccountId, BalanceOf<T>, ValueQuery>;
 
 	/// Last block authored by collator.
 	#[pallet::storage]
@@ -309,6 +313,9 @@ pub mod pallet {
 		/// Deposit amount is too low to take the target's slot in the
 		/// candidate list.
 		InsufficientBond,
+		/// The target account to be replaced in the candidate list is not a
+		/// candidate.
+		TargetIsNotCandidate,
 	}
 
 	#[pallet::hooks]
@@ -341,8 +348,7 @@ pub mod pallet {
 			// don't wipe out the collator set
 			if new.is_empty() {
 				ensure!(
-					Candidates::<T>::decode_len().unwrap_or_default() >=
-						T::MinEligibleCollators::get() as usize,
+					CandidateCount::<T>::get() >= T::MinEligibleCollators::get(),
 					Error::<T>::TooFewEligibleCollators
 				);
 			}
@@ -445,8 +451,8 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			// ensure we are below limit.
-			let length = <Candidates<T>>::decode_len().unwrap_or_default();
-			ensure!((length as u32) < T::MaxCandidates::get(), Error::<T>::TooManyCandidates);
+			let length = <CandidateCount<T>>::get();
+			ensure!(length < T::MaxCandidates::get(), Error::<T>::TooManyCandidates);
 			ensure!(!Self::invulnerables().contains(&who), Error::<T>::AlreadyInvulnerable);
 
 			let validator_key = T::ValidatorIdOf::convert(who.clone())
@@ -458,27 +464,26 @@ pub mod pallet {
 
 			let deposit = Self::candidacy_bond();
 			// First authored block is current block plus kick threshold to handle session delay
-			let incoming = CandidateInfo { who: who.clone(), deposit };
-
-			let current_count =
-				<Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
-					if candidates.iter().any(|candidate| candidate.who == who) {
-						Err(Error::<T>::AlreadyCandidate)?
-					} else {
-						T::Currency::reserve(&who, deposit)?;
-						candidates.try_push(incoming).map_err(|_| Error::<T>::TooManyCandidates)?;
-						<LastAuthoredBlock<T>>::insert(
-							who.clone(),
-							frame_system::Pallet::<T>::block_number() + T::KickThreshold::get(),
-						);
-						T::CandidateList::on_insert(who.clone(), deposit)
-							.map_err(|_| Error::<T>::InsertToCandidateListFailed)?;
-						Ok(candidates.len())
-					}
-				})?;
+			let new_length = <Candidates<T>>::try_mutate_exists(
+				&who,
+				|maybe_bond| -> Result<u32, DispatchError> {
+					ensure!(maybe_bond.is_none(), Error::<T>::AlreadyCandidate);
+					T::Currency::reserve(&who, deposit)?;
+					*maybe_bond = Some(deposit);
+					<LastAuthoredBlock<T>>::insert(
+						who.clone(),
+						frame_system::Pallet::<T>::block_number() + T::KickThreshold::get(),
+					);
+					T::CandidateList::on_insert(who.clone(), deposit)
+						.map_err(|_| Error::<T>::InsertToCandidateListFailed)?;
+					let new_length = length + 1;
+					<CandidateCount<T>>::put(new_length);
+					Ok(new_length)
+				},
+			)?;
 
 			Self::deposit_event(Event::CandidateAdded { account_id: who, deposit });
-			Ok(Some(T::WeightInfo::register_as_candidate(current_count as u32)).into())
+			Ok(Some(T::WeightInfo::register_as_candidate(new_length)).into())
 		}
 
 		/// Deregister `origin` as a collator candidate. Note that the collator can only leave on
@@ -491,13 +496,14 @@ pub mod pallet {
 		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(
-				Self::eligible_collators() > T::MinEligibleCollators::get() as usize,
+				Self::eligible_collators() > T::MinEligibleCollators::get(),
 				Error::<T>::TooFewEligibleCollators
 			);
+			let length = <CandidateCount<T>>::get();
 			// Do remove their last authored block.
-			let current_count = Self::try_remove_candidate(&who, true)?;
+			Self::try_remove_candidate(&who, true)?;
 
-			Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
+			Ok(Some(T::WeightInfo::leave_intent(length.saturating_sub(1) as u32)).into())
 		}
 
 		/// Add a new account `who` to the list of `Invulnerables` collators. `who` must have
@@ -544,10 +550,7 @@ pub mod pallet {
 					.unwrap_or_default()
 					.try_into()
 					.unwrap_or(T::MaxInvulnerables::get().saturating_sub(1)),
-				Candidates::<T>::decode_len()
-					.unwrap_or_default()
-					.try_into()
-					.unwrap_or(T::MaxCandidates::get()),
+				<CandidateCount<T>>::get(),
 			);
 
 			Ok(Some(weight_used).into())
@@ -563,7 +566,7 @@ pub mod pallet {
 			T::UpdateOrigin::ensure_origin(origin)?;
 
 			ensure!(
-				Self::eligible_collators() > T::MinEligibleCollators::get() as usize,
+				Self::eligible_collators() > T::MinEligibleCollators::get(),
 				Error::<T>::TooFewEligibleCollators
 			);
 
@@ -585,27 +588,23 @@ pub mod pallet {
 		/// the amount cannot be reserved.
 		#[pallet::call_index(7)]
 		#[pallet::weight(T::WeightInfo::increase_bond(T::MaxCandidates::get()))]
-		pub fn increase_bond(
-			origin: OriginFor<T>,
-			amount: BalanceOf<T>,
-		) -> DispatchResultWithPostInfo {
+		pub fn increase_bond(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			// The function below will try to mutate the `Candidates` entry for
 			// the caller to increase their bond by `amount`. The return value
 			// is a tuple of the position of the entry in the list, used for
 			// weight calculation, and the new bonded amount.
-			let (idx, new_amount) = <Candidates<T>>::try_mutate(
-				|candidates| -> Result<(usize, BalanceOf<T>), DispatchError> {
-					let (idx, candidate_info) = candidates
-						.iter_mut()
-						.enumerate()
-						.find(|(_, candidate_info)| candidate_info.who == who)
-						.ok_or_else(|| Error::<T>::NotCandidate)?;
-					candidate_info.deposit = candidate_info.deposit.saturating_add(amount);
+			let new_amount = <Candidates<T>>::try_mutate_exists(
+				&who,
+				|maybe_deposit| -> Result<BalanceOf<T>, DispatchError> {
+					let new_deposit = maybe_deposit
+						.ok_or_else(|| Error::<T>::NotCandidate)?
+						.saturating_add(amount);
+					*maybe_deposit = Some(new_deposit);
 					T::Currency::reserve(&who, amount)?;
 					T::CandidateList::on_increase(&who, amount)
 						.map_err(|_| Error::<T>::UpdateCandidateListFailed)?;
-					Ok((idx, candidate_info.deposit))
+					Ok(new_deposit)
 				},
 			)?;
 
@@ -613,7 +612,7 @@ pub mod pallet {
 				account_id: who,
 				deposit: new_amount,
 			});
-			Ok(Some(T::WeightInfo::increase_bond(idx as u32)).into())
+			Ok(())
 		}
 
 		/// Decrease the candidacy bond of collator candidate `origin` by an
@@ -623,30 +622,24 @@ pub mod pallet {
 		/// the remaining bond is lower than the minimum candidacy bond.
 		#[pallet::call_index(8)]
 		#[pallet::weight(T::WeightInfo::decrease_bond(T::MaxCandidates::get()))]
-		pub fn decrease_bond(
-			origin: OriginFor<T>,
-			amount: BalanceOf<T>,
-		) -> DispatchResultWithPostInfo {
+		pub fn decrease_bond(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			// The function below will try to mutate the `Candidates` entry for
 			// the caller to decrease their bond by `amount`. The return value
 			// is a tuple of the position of the entry in the list, used for
 			// weight calculation, and the new bonded amount.
-			let (idx, new_amount) = <Candidates<T>>::try_mutate(
-				|candidates| -> Result<(usize, BalanceOf<T>), DispatchError> {
-					let (idx, candidate_info) = candidates
-						.iter_mut()
-						.enumerate()
-						.find(|(_, candidate_info)| candidate_info.who == who)
-						.ok_or_else(|| Error::<T>::NotCandidate)?;
-					candidate_info.deposit = candidate_info.deposit.saturating_sub(amount);
-					if candidate_info.deposit < <CandidacyBond<T>>::get() {
-						return Err(Error::<T>::DepositTooLow.into())
-					}
+			let new_amount = <Candidates<T>>::try_mutate_exists(
+				&who,
+				|maybe_deposit| -> Result<BalanceOf<T>, DispatchError> {
+					let new_deposit = maybe_deposit
+						.ok_or_else(|| Error::<T>::NotCandidate)?
+						.saturating_sub(amount);
+					ensure!(new_deposit >= <CandidacyBond<T>>::get(), Error::<T>::DepositTooLow);
+					*maybe_deposit = Some(new_deposit);
 					T::Currency::unreserve(&who, amount);
 					T::CandidateList::on_decrease(&who, amount)
 						.map_err(|_| Error::<T>::UpdateCandidateListFailed)?;
-					Ok((idx, candidate_info.deposit))
+					Ok(new_deposit)
 				},
 			)?;
 
@@ -654,7 +647,7 @@ pub mod pallet {
 				account_id: who,
 				deposit: new_amount,
 			});
-			Ok(Some(T::WeightInfo::decrease_bond(idx as u32)).into())
+			Ok(())
 		}
 
 		/// The caller `origin` replaces a candidate `target` in the collator
@@ -675,9 +668,9 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 
-			let length = <Candidates<T>>::decode_len().unwrap_or_default();
 			ensure!(!Self::invulnerables().contains(&who), Error::<T>::AlreadyInvulnerable);
 			ensure!(deposit >= Self::candidacy_bond(), Error::<T>::InsufficientBond);
+			ensure!(!<Candidates<T>>::contains_key(&who), Error::<T>::AlreadyCandidate);
 
 			let validator_key = T::ValidatorIdOf::convert(who.clone())
 				.ok_or(Error::<T>::NoAssociatedValidatorId)?;
@@ -686,37 +679,34 @@ pub mod pallet {
 				Error::<T>::ValidatorNotRegistered
 			);
 
-			<Candidates<T>>::try_mutate(|candidates| -> Result<(), DispatchError> {
-				let mut kicked = false;
-				for candidate_info in candidates.iter_mut() {
-					ensure!(candidate_info.who != who, Error::<T>::AlreadyCandidate);
+			ensure!(deposit >= Self::candidacy_bond(), Error::<T>::InsufficientBond);
 
-					if !kicked && candidate_info.who == target {
-						ensure!(deposit > candidate_info.deposit, Error::<T>::InsufficientBond);
-
-						T::Currency::unreserve(&candidate_info.who, candidate_info.deposit);
-						T::CandidateList::on_remove(&candidate_info.who)
-							.map_err(|_| Error::<T>::RemoveFromCandidateListFailed)?;
-						<LastAuthoredBlock<T>>::remove(candidate_info.who.clone());
-
-						kicked = true;
-						T::Currency::reserve(&who, deposit)?;
-						candidate_info.who = who.clone();
-						candidate_info.deposit = deposit;
-
-						<LastAuthoredBlock<T>>::insert(
-							who.clone(),
-							frame_system::Pallet::<T>::block_number() + T::KickThreshold::get(),
-						);
-						T::CandidateList::on_insert(who.clone(), deposit)
-							.map_err(|_| Error::<T>::InsertToCandidateListFailed)?;
-					}
-				}
-				Ok(())
-			})?;
+			let length = <CandidateCount<T>>::get();
+			let target_deposit = <Candidates<T>>::try_mutate_exists(
+				&target,
+				|maybe_target_deposit| -> Result<BalanceOf<T>, DispatchError> {
+					let target_deposit =
+						maybe_target_deposit.ok_or(Error::<T>::TargetIsNotCandidate)?;
+					T::Currency::unreserve(&target, target_deposit);
+					T::CandidateList::on_remove(&target)
+						.map_err(|_| Error::<T>::RemoveFromCandidateListFailed)?;
+					<LastAuthoredBlock<T>>::remove(target.clone());
+					*maybe_target_deposit = None;
+					Ok(target_deposit)
+				},
+			)?;
+			ensure!(deposit > target_deposit, Error::<T>::InsufficientBond);
+			T::Currency::reserve(&who, deposit)?;
+			<Candidates<T>>::insert(&who, deposit);
+			<LastAuthoredBlock<T>>::insert(
+				who.clone(),
+				frame_system::Pallet::<T>::block_number() + T::KickThreshold::get(),
+			);
+			T::CandidateList::on_insert(who.clone(), deposit)
+				.map_err(|_| Error::<T>::InsertToCandidateListFailed)?;
 
 			Self::deposit_event(Event::CandidateReplaced { old: target, new: who, deposit });
-			Ok(Some(T::WeightInfo::take_candidate_slot(length as u32)).into())
+			Ok(Some(T::WeightInfo::take_candidate_slot(length)).into())
 		}
 	}
 
@@ -728,34 +718,37 @@ pub mod pallet {
 
 		/// Return the total number of accounts that are eligible collators (candidates and
 		/// invulnerables).
-		fn eligible_collators() -> usize {
-			Candidates::<T>::decode_len()
-				.unwrap_or_default()
-				.saturating_add(Invulnerables::<T>::decode_len().unwrap_or_default())
+		fn eligible_collators() -> u32 {
+			<CandidateCount<T>>::get().saturating_add(
+				Invulnerables::<T>::decode_len()
+					.unwrap_or_default()
+					.try_into()
+					.unwrap_or(u32::MAX),
+			)
 		}
 
 		/// Removes a candidate if they exist and sends them back their deposit.
 		fn try_remove_candidate(
 			who: &T::AccountId,
 			remove_last_authored: bool,
-		) -> Result<usize, DispatchError> {
-			let current_count =
-				<Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
-					let index = candidates
-						.iter()
-						.position(|candidate| candidate.who == *who)
-						.ok_or(Error::<T>::NotCandidate)?;
-					let candidate = candidates.remove(index);
-					T::Currency::unreserve(who, candidate.deposit);
+		) -> Result<(), DispatchError> {
+			<Candidates<T>>::try_mutate_exists(
+				&who,
+				|maybe_deposit| -> Result<(), DispatchError> {
+					let deposit = maybe_deposit.ok_or(Error::<T>::NotCandidate)?;
+					T::Currency::unreserve(who, deposit);
+					*maybe_deposit = None;
 					T::CandidateList::on_remove(&who)
 						.map_err(|_| Error::<T>::RemoveFromCandidateListFailed)?;
 					if remove_last_authored {
 						<LastAuthoredBlock<T>>::remove(who.clone())
 					};
-					Ok(candidates.len())
-				})?;
+					<CandidateCount<T>>::mutate(|length| *length = length.saturating_sub(1));
+					Ok(())
+				},
+			)?;
 			Self::deposit_event(Event::CandidateRemoved { account_id: who.clone() });
-			Ok(current_count)
+			Ok(())
 		}
 
 		/// Assemble the current set of candidates and invulnerables into the next collator set.
@@ -773,35 +766,33 @@ pub mod pallet {
 		/// their deposits.
 		///
 		/// Return value is the number of candidates left in the list.
-		pub fn kick_stale_candidates(
-			candidates: BoundedVec<CandidateInfo<T::AccountId, BalanceOf<T>>, T::MaxCandidates>,
-		) -> usize {
+		pub fn kick_stale_candidates(candidates: impl IntoIterator<Item = T::AccountId>) -> u32 {
 			let now = frame_system::Pallet::<T>::block_number();
 			let kick_threshold = T::KickThreshold::get();
 			let min_collators = T::MinEligibleCollators::get();
 			candidates
 				.into_iter()
 				.filter_map(|c| {
-					let last_block = <LastAuthoredBlock<T>>::get(c.who.clone());
+					let last_block = <LastAuthoredBlock<T>>::get(c.clone());
 					let since_last = now.saturating_sub(last_block);
 
-					let is_invulnerable = Self::invulnerables().contains(&c.who);
+					let is_invulnerable = Self::invulnerables().contains(&c);
 					let is_lazy = since_last >= kick_threshold;
 
 					if is_invulnerable {
 						// They are invulnerable. No reason for them to be in Candidates also.
 						// We don't even care about the min collators here, because an Account
 						// should not be a collator twice.
-						let _ = Self::try_remove_candidate(&c.who, false);
+						let _ = Self::try_remove_candidate(&c, false);
 						None
 					} else {
-						if Self::eligible_collators() <= min_collators as usize || !is_lazy {
+						if Self::eligible_collators() <= min_collators || !is_lazy {
 							// Either this is a good collator (not lazy) or we are at the minimum
 							// that the system needs. They get to stay.
-							Some(c.who)
+							Some(c)
 						} else {
 							// This collator has not produced a block recently enough. Bye bye.
-							let _ = Self::try_remove_candidate(&c.who, true);
+							let _ = Self::try_remove_candidate(&c, true);
 							None
 						}
 					}
@@ -845,9 +836,9 @@ pub mod pallet {
 				<frame_system::Pallet<T>>::block_number(),
 			);
 
-			let candidates = Self::candidates();
-			let candidates_len_before = candidates.len();
-			let active_candidates_count = Self::kick_stale_candidates(candidates);
+			let candidates_len_before = <CandidateCount<T>>::get();
+			let active_candidates_count =
+				Self::kick_stale_candidates(<Candidates<T>>::iter().map(|(who, _)| who));
 			let removed = candidates_len_before.saturating_sub(active_candidates_count);
 			let result = Self::assemble_collators();
 
@@ -869,23 +860,14 @@ pub mod pallet {
 		type Score = BalanceOf<T>;
 
 		fn score(who: &T::AccountId) -> Self::Score {
-			let candidates = Self::candidates();
-			candidates
-				.iter()
-				.find(|&candidate_info| candidate_info.who == who.clone())
-				.map(|candidate_info| candidate_info.deposit)
-				.unwrap_or_else(|| Zero::zero())
+			<Candidates<T>>::get(who)
 		}
 
 		#[cfg(feature = "runtime-benchmarks")]
 		fn set_score_of(who: &T::AccountId, weight: Self::Score) {
 			let active: BalanceOf<T> = weight.try_into().map_err(|_| ()).unwrap();
-			Candidates::<T>::mutate(|candidates| {
-				if let Some(candidate) =
-					candidates.iter_mut().find(|candidate_info| candidate_info.who == who.clone())
-				{
-					candidate.deposit = active;
-				}
+			Candidates::<T>::mutate(who, |deposit| {
+				*deposit = active;
 			});
 		}
 	}
