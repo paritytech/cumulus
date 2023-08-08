@@ -271,6 +271,8 @@ pub mod pallet {
 		CandidateBondDecreased { account_id: T::AccountId, deposit: BalanceOf<T> },
 		/// A candidate was removed.
 		CandidateRemoved { account_id: T::AccountId },
+		/// An account was replaced in the candidate list by another one.
+		CandidateReplaced { old: T::AccountId, new: T::AccountId, deposit: BalanceOf<T> },
 		/// An account was unable to be added to the Invulnerables because they did not have keys
 		/// registered. Other Invulnerables may have been set.
 		InvalidInvulnerableSkipped { account_id: T::AccountId },
@@ -713,8 +715,7 @@ pub mod pallet {
 				Ok(())
 			})?;
 
-			Self::deposit_event(Event::CandidateRemoved { account_id: target });
-			Self::deposit_event(Event::CandidateAdded { account_id: who, deposit });
+			Self::deposit_event(Event::CandidateReplaced { old: target, new: who, deposit });
 			Ok(Some(T::WeightInfo::take_candidate_slot(length as u32)).into())
 		}
 	}

@@ -357,10 +357,11 @@ mod benchmarks {
 		let target = <Candidates<T>>::get().last().unwrap().who.clone();
 
 		#[extrinsic_call]
-		_(RawOrigin::Signed(caller.clone()), bond / 2u32.into(), target);
+		_(RawOrigin::Signed(caller.clone()), bond / 2u32.into(), target.clone());
 
 		assert_last_event::<T>(
-			Event::CandidateAdded { account_id: caller, deposit: bond / 2u32.into() }.into(),
+			Event::CandidateReplaced { old: target, new: caller, deposit: bond / 2u32.into() }
+				.into(),
 		);
 	}
 
