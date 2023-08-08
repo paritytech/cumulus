@@ -809,7 +809,7 @@ macro_rules! decl_test_networks {
 
 			impl $name {
 				pub fn reset() {
-					use $crate::{TestExt, VecDeque, Network};
+					use $crate::{TestExt, VecDeque};
 
 					$crate::INITIALIZED.with(|b| b.borrow_mut().remove(stringify!($name)));
 					$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().remove(stringify!($name)));
