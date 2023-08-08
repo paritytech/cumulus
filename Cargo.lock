@@ -2878,6 +2878,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-primitives-timestamp"
+version = "0.1.0"
+dependencies = [
+ "cumulus-primitives-core",
+ "futures",
+ "parity-scale-codec 3.6.4",
+ "sp-inherents",
+ "sp-std",
+ "sp-timestamp",
+]
+
+[[package]]
 name = "cumulus-primitives-utility"
 version = "0.1.0"
 dependencies = [
