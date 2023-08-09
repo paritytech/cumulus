@@ -10,7 +10,7 @@ pub use impls::{RococoWococoMessageHandler, WococoRococoMessageHandler};
 
 use xcm_emulator::{
 	decl_test_bridges, decl_test_networks, decl_test_parachains, decl_test_relay_chains,
-	decl_test_sender_receiver_accounts_parameter_types
+	decl_test_sender_receiver_accounts_parameter_types,
 };
 
 decl_test_relay_chains! {

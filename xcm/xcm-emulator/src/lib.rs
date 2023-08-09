@@ -28,7 +28,7 @@ pub use frame_support::{
 pub use frame_system::AccountInfo;
 pub use pallet_balances::AccountData;
 pub use sp_arithmetic::traits::Bounded;
-pub use sp_core::{storage::Storage, Pair, H256, sr25519, parameter_types};
+pub use sp_core::{parameter_types, sr25519, storage::Storage, Pair, H256};
 pub use sp_io;
 pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, fmt::Debug};
 pub use sp_trie::StorageProof;
@@ -45,7 +45,7 @@ pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 pub use pallet_message_queue;
 pub use parachain_info;
-pub use parachains_common::{AccountId, BlockNumber, Balance};
+pub use parachains_common::{AccountId, Balance, BlockNumber};
 pub use polkadot_primitives;
 pub use polkadot_runtime_parachains::{
 	dmp,
@@ -54,8 +54,7 @@ pub use polkadot_runtime_parachains::{
 pub use sp_tracing;
 
 // Polkadot
-pub use xcm::v3::prelude as xcm_prelude;
-pub use xcm::v3::prelude::*;
+pub use xcm::v3::{prelude as xcm_prelude, prelude::*};
 pub use xcm_executor::traits::ConvertLocation;
 
 thread_local! {
@@ -465,12 +464,19 @@ macro_rules! __impl_relay {
 				$crate::get_account_id_from_seed::<$crate::sr25519::Public>(seed)
 			}
 
-			pub fn account_data_of(account: $crate::AccountId) -> $crate::AccountData<$crate::Balance> {
-				<Self as $crate::TestExt>::ext_wrapper(|| <Self as $crate::RelayChain>::System::account(account).data)
+			pub fn account_data_of(
+				account: $crate::AccountId,
+			) -> $crate::AccountData<$crate::Balance> {
+				<Self as $crate::TestExt>::ext_wrapper(|| {
+					<Self as $crate::RelayChain>::System::account(account).data
+				})
 			}
 
 			pub fn sovereign_account_id_of(location: $crate::MultiLocation) -> $crate::AccountId {
-				<<Self as $crate::RelayChain>::SovereignAccountOf as $crate::ConvertLocation<$crate::AccountId>>::convert_location(&location).unwrap()
+				<<Self as $crate::RelayChain>::SovereignAccountOf as $crate::ConvertLocation<
+					$crate::AccountId,
+				>>::convert_location(&location)
+				.unwrap()
 			}
 
 			pub fn fund_accounts(accounts: Vec<($crate::AccountId, $crate::Balance)>) {
@@ -575,7 +581,9 @@ macro_rules! __impl_xcm_handlers_for_parachain {
 				use $crate::{TestExt, XcmpMessageHandler};
 
 				<$name as $crate::TestExt>::ext_wrapper(|| {
-					<Self as $crate::Parachain>::XcmpMessageHandler::handle_xcmp_messages(iter, max_weight)
+					<Self as $crate::Parachain>::XcmpMessageHandler::handle_xcmp_messages(
+						iter, max_weight,
+					)
 				})
 			}
 		}
@@ -588,7 +596,9 @@ macro_rules! __impl_xcm_handlers_for_parachain {
 				use $crate::{DmpMessageHandler, TestExt};
 
 				<$name as $crate::TestExt>::ext_wrapper(|| {
-					<Self as $crate::Parachain>::DmpMessageHandler::handle_dmp_messages(iter, max_weight)
+					<Self as $crate::Parachain>::DmpMessageHandler::handle_dmp_messages(
+						iter, max_weight,
+					)
 				})
 			}
 		}
@@ -734,7 +744,9 @@ macro_rules! __impl_parachain {
 			pub fn para_id() -> $crate::ParaId {
 				use $crate::Get;
 
-				<Self as $crate::TestExt>::ext_wrapper(|| <Self as $crate::Parachain>::ParachainInfo::get())
+				<Self as $crate::TestExt>::ext_wrapper(|| {
+					<Self as $crate::Parachain>::ParachainInfo::get()
+				})
 			}
 
 			pub fn parent_location() -> $crate::MultiLocation {
@@ -753,12 +765,19 @@ macro_rules! __impl_parachain {
 				$crate::get_account_id_from_seed::<$crate::sr25519::Public>(seed)
 			}
 
-			pub fn account_data_of(account: $crate::AccountId) -> $crate::AccountData<$crate::Balance> {
-				<Self as $crate::TestExt>::ext_wrapper(|| <Self as $crate::Parachain>::System::account(account).data)
+			pub fn account_data_of(
+				account: $crate::AccountId,
+			) -> $crate::AccountData<$crate::Balance> {
+				<Self as $crate::TestExt>::ext_wrapper(|| {
+					<Self as $crate::Parachain>::System::account(account).data
+				})
 			}
 
 			pub fn sovereign_account_id_of(location: $crate::MultiLocation) -> $crate::AccountId {
-				<<Self as $crate::Parachain>::LocationToAccountId as $crate::ConvertLocation<$crate::AccountId>>::convert_location(&location).unwrap()
+				<<Self as $crate::Parachain>::LocationToAccountId as $crate::ConvertLocation<
+					$crate::AccountId,
+				>>::convert_location(&location)
+				.unwrap()
 			}
 
 			pub fn fund_accounts(accounts: Vec<($crate::AccountId, $crate::Balance)>) {

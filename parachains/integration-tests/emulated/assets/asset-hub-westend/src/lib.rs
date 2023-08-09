@@ -24,10 +24,10 @@ pub use integration_tests_common::{
 		polkadot::ED as POLKADOT_ED,
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
-	AssetHubWestend, AssetHubWestendPallet, AssetHubWestendReceiver,
-	AssetHubWestendSender, Collectives, CollectivesPallet, CollectivesReceiver, CollectivesSender,
-	PenpalWestend, PenpalWestendPallet, PenpalWestendReceiver, PenpalWestendSender, Westend,
-	WestendPallet, WestendReceiver, WestendSender,
+	AssetHubWestend, AssetHubWestendPallet, AssetHubWestendReceiver, AssetHubWestendSender,
+	Collectives, CollectivesPallet, CollectivesReceiver, CollectivesSender, PenpalWestend,
+	PenpalWestendPallet, PenpalWestendReceiver, PenpalWestendSender, Westend, WestendPallet,
+	WestendReceiver, WestendSender,
 };
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use xcm::{
