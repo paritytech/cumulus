@@ -24,7 +24,7 @@ pub use integration_tests_common::{
 		polkadot::ED as POLKADOT_ED,
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
-	AccountId, AssetHubWestend, AssetHubWestendPallet, AssetHubWestendReceiver,
+	AssetHubWestend, AssetHubWestendPallet, AssetHubWestendReceiver,
 	AssetHubWestendSender, Collectives, CollectivesPallet, CollectivesReceiver, CollectivesSender,
 	PenpalWestend, PenpalWestendPallet, PenpalWestendReceiver, PenpalWestendSender, Westend,
 	WestendPallet, WestendReceiver, WestendSender,

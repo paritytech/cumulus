@@ -15680,6 +15680,7 @@ dependencies = [
  "sp-tracing",
  "sp-trie",
  "xcm",
+ "xcm-executor",
 ]
 
 [[package]]

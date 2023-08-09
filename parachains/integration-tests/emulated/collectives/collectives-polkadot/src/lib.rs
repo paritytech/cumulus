@@ -19,8 +19,9 @@
 #![cfg(test)]
 
 pub use frame_support::assert_ok;
+pub use parachains_common::AccountId;
 pub use integration_tests_common::{
-	constants::accounts::ALICE, AccountId, AssetHubPolkadot as AssetHub,
+	constants::accounts::ALICE, AssetHubPolkadot as AssetHub,
 	AssetHubPolkadotPallet as AssetHubPallet, Collectives, CollectivesPallet, Polkadot,
 	PolkadotMockNet,
 };

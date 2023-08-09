@@ -23,7 +23,7 @@ pub use integration_tests_common::{
 		rococo::{ED as ROCOCO_ED, ED as WOCOCO_ED},
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
-	AccountId, AssetHubWococo, BridgeHubPolkadot, BridgeHubPolkadotPallet,
+	AssetHubWococo, BridgeHubPolkadot, BridgeHubPolkadotPallet,
 	BridgeHubPolkadotReceiver, BridgeHubPolkadotSender, BridgeHubRococo, BridgeHubRococoPallet,
 	BridgeHubRococoReceiver, BridgeHubRococoSender, BridgeHubWococo, Collectives,
 	CollectivesPallet, CollectivesReceiver, CollectivesSender, Kusama, KusamaPallet,
