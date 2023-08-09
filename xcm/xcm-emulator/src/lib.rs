@@ -289,6 +289,7 @@ macro_rules! decl_test_relay_chains {
 			}
 		),
 		+
+		$(,)?
 	) => {
 		$(
 			pub struct $name;
@@ -516,6 +517,7 @@ macro_rules! decl_test_parachains {
 			}
 		),
 		+
+		$(,)?
 	) => {
 		$(
 			pub struct $name;
@@ -803,6 +805,7 @@ macro_rules! decl_test_networks {
 			}
 		),
 		+
+		$(,)?
 	) => {
 		$(
 			pub struct $name;
@@ -1027,6 +1030,7 @@ macro_rules! decl_test_bridges {
 			}
 		),
 		+
+		$(,)?
 	) => {
 		$(
 			#[derive(Debug)]
