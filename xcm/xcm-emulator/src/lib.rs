@@ -51,6 +51,7 @@ pub use polkadot_runtime_parachains::{
 	dmp,
 	inclusion::{AggregateMessageOrigin, UmpQueueId},
 };
+pub use sp_tracing;
 
 // Polkadot
 pub use xcm::v3::prelude::*;
@@ -381,7 +382,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				ext.execute_with(|| {
 					#[allow(clippy::no_effect)]
 					$on_init;
-					sp_tracing::try_init_simple();
+					$crate::sp_tracing::try_init_simple();
 					<Self as RelayChain>::System::set_block_number(1);
 				});
 				ext
@@ -611,7 +612,7 @@ macro_rules! __impl_test_ext_for_parachain {
 				ext.execute_with(|| {
 					#[allow(clippy::no_effect)]
 					$on_init;
-					sp_tracing::try_init_simple();
+					$crate::sp_tracing::try_init_simple();
 					<Self as Parachain>::System::set_block_number(1);
 				});
 				ext
