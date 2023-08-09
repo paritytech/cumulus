@@ -294,7 +294,7 @@ macro_rules! decl_test_relay_chains {
 		$(
 			pub struct $name;
 
-			impl RelayChain for $name {
+			impl $crate::RelayChain for $name {
 				type Runtime = $runtime;
 				type RuntimeOrigin = $runtime_origin;
 				type RuntimeCall = $runtime_call;
@@ -375,7 +375,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				= $crate::RefCell::new(<$name>::build_new_ext($genesis));
 		}
 
-		impl TestExt for $name {
+		impl $crate::TestExt for $name {
 			fn build_new_ext(storage: $crate::Storage) -> $crate::sp_io::TestExternalities {
 				let mut ext = sp_io::TestExternalities::new(storage);
 				ext.execute_with(|| {
@@ -522,7 +522,7 @@ macro_rules! decl_test_parachains {
 		$(
 			pub struct $name;
 
-			impl Parachain for $name {
+			impl $crate::Parachain for $name {
 				type Runtime = $runtime;
 				type RuntimeOrigin = $runtime_origin;
 				type RuntimeCall = $runtime_call;

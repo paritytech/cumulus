@@ -396,7 +396,7 @@ decl_test_parachains! {
 		pallets_extra = {
 			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
 			Assets: asset_hub_polkadot_runtime::Assets,
-		}
+		}`
 	}
 }
 
