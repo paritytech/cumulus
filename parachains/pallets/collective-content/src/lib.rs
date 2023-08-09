@@ -165,7 +165,7 @@ pub mod pallet {
 			let maybe_expire_at = maybe_expire.map(|e| e.evaluate(now));
 			ensure!(maybe_expire_at.map_or(true, |e| e > now), Error::<T, I>::InvalidExpiration);
 
-			<Announcements<T, I>>::insert(cid.clone(), maybe_expire_at.clone());
+			<Announcements<T, I>>::insert(cid.clone(), maybe_expire_at);
 			<AnnouncementsCount<T, I>>::mutate(|count| *count += 1);
 
 			if let Some(expire_at) = maybe_expire_at {
