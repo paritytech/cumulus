@@ -191,9 +191,7 @@ pub mod pallet {
 		/// All inbound DMP messages from the relay are pushed into this. The handler is expected to
 		/// eventually process all the messages that are pushed to it.
 		///
-		/// There is a slightly caveat here since the only variant of [`AggregateMessageOrigin`]
-		/// that is ever used is the `Parent` variant. It would therefore be better to use a more
-		/// constrained trait instead such that no incorrect origin can be used.
+		/// This will only ever be used to enqueue messages with origin [`AggregateMessageOrigin::Parent`].
 		type DmpQueue: EnqueueMessage<AggregateMessageOrigin>;
 
 		/// The weight we reserve at the beginning of the block for processing DMP messages.

@@ -213,7 +213,7 @@ pub fn enqueued_messages(origin: ParaId) -> Vec<Vec<u8>> {
 }
 
 impl<T: OnQueueChanged<ParaId>> EnqueueMessage<ParaId> for EnqueueToLocalStorage<T> {
-	type MaxMessageLen = sp_core::ConstU32<1024>;
+	type MaxMessageLen = sp_core::ConstU32<65_536>;
 
 	fn enqueue_message(message: BoundedSlice<u8, Self::MaxMessageLen>, origin: ParaId) {
 		let mut msgs = EnqueuedMessages::get();
