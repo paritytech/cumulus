@@ -947,14 +947,14 @@ macro_rules! decl_test_networks {
 
 					while let Some(msg) = $crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().pop_front()) {
 						let dispatch_result = <<Self::Bridge as $crate::Bridge>::Target as TestExt>::ext_wrapper(|| {
-							<<Self::Bridge as Bridge>::Handler as BridgeMessageHandler>::dispatch_target_inbound_message(msg.clone())
+							<<Self::Bridge as Bridge>::Handler as $crate::BridgeMessageHandler>::dispatch_target_inbound_message(msg.clone())
 						});
 
 						match dispatch_result {
 							Err(e) => panic!("Error {:?} processing bridged message: {:?}", e, msg.clone()),
 							Ok(()) => {
 								<<Self::Bridge as $crate::Bridge>::Source as TestExt>::ext_wrapper(|| {
-									<<Self::Bridge as Bridge>::Handler as BridgeMessageHandler>::notify_source_message_delivery(msg.id);
+									<<Self::Bridge as Bridge>::Handler as $crate::BridgeMessageHandler>::notify_source_message_delivery(msg.id);
 								});
 								$crate::log::debug!(target: concat!("bridge::", stringify!($name)) , "Bridged message processed {:?}", msg.clone());
 							}
