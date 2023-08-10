@@ -59,7 +59,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.compute_tag.outputs.version }}
         with:
-          assignees: release-engineering
           filename: .github/ISSUE_TEMPLATE/release-client.md
 
       - id: create-issue-checklist-runtime
@@ -70,7 +69,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.compute_tag.outputs.version }}
         with:
-          assignees: release-engineering
           filename: .github/ISSUE_TEMPLATE/release-runtime.md
 
       - name: Matrix notification to ${{ matrix.channel.name }}
