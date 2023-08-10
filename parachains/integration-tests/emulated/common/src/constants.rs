@@ -1,4 +1,4 @@
-use beefy_primitives::crypto::AuthorityId as BeefyId;
+use beefy_primitives::ecdsa_crypto::AuthorityId as BeefyId;
 use grandpa::AuthorityId as GrandpaId;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, BlockNumber};
@@ -953,19 +953,19 @@ pub mod bridge_hub_rococo {
 				..Default::default()
 			},
 			bridge_wococo_grandpa: bridge_hub_rococo_runtime::BridgeWococoGrandpaConfig {
-				owner: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
+				owner: Some(get_account_id_from_seed::<sr25519::Public>(accounts::BOB)),
 				..Default::default()
 			},
 			bridge_rococo_grandpa: bridge_hub_rococo_runtime::BridgeRococoGrandpaConfig {
-				owner: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
+				owner: Some(get_account_id_from_seed::<sr25519::Public>(accounts::BOB)),
 				..Default::default()
 			},
 			bridge_rococo_messages: bridge_hub_rococo_runtime::BridgeRococoMessagesConfig {
-				owner: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
+				owner: Some(get_account_id_from_seed::<sr25519::Public>(accounts::BOB)),
 				..Default::default()
 			},
 			bridge_wococo_messages: bridge_hub_rococo_runtime::BridgeWococoMessagesConfig {
-				owner: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
+				owner: Some(get_account_id_from_seed::<sr25519::Public>(accounts::BOB)),
 				..Default::default()
 			},
 			..Default::default()

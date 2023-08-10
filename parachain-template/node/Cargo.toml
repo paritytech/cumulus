@@ -10,10 +10,10 @@ edition = "2021"
 build = "build.rs"
 
 [dependencies]
-clap = { version = "4.3.16", features = ["derive"] }
+clap = { version = "4.3.21", features = ["derive"] }
 log = "0.4.19"
 codec = { package = "parity-scale-codec", version = "3.0.0" }
-serde = { version = "1.0.171", features = ["derive"] }
+serde = { version = "1.0.183", features = ["derive"] }
 jsonrpsee = { version = "0.16.2", features = ["server"] }
 futures = "0.3.28"
 
