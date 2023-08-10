@@ -141,7 +141,7 @@ fn build_overseer(
 			network_bridge_metrics,
 			req_protocol_names,
 			peer_set_protocol_names,
-			notification_sinks.clone(),
+			notification_sinks,
 		))
 		.provisioner(DummySubsystem)
 		.runtime_api(RuntimeApiSubsystem::new(
