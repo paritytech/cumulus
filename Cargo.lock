@@ -949,6 +949,7 @@ dependencies = [
  "bp-runtime",
  "frame-support",
  "sp-api",
+ "sp-std 8.0.0",
 ]
 
 [[package]]
@@ -1017,6 +1018,7 @@ dependencies = [
  "bp-runtime",
  "frame-support",
  "sp-api",
+ "sp-std 8.0.0",
 ]
 
 [[package]]
@@ -1092,6 +1094,7 @@ dependencies = [
  "bp-runtime",
  "frame-support",
  "sp-api",
+ "sp-std 8.0.0",
 ]
 
 [[package]]
@@ -1144,6 +1147,7 @@ dependencies = [
  "bp-runtime",
  "frame-support",
  "sp-api",
+ "sp-std 8.0.0",
 ]
 
 [[package]]
@@ -1156,6 +1160,7 @@ dependencies = [
  "bp-runtime",
  "frame-support",
  "sp-api",
+ "sp-std 8.0.0",
 ]
 
 [[package]]
