@@ -7,6 +7,7 @@ members = [
 	"bridges/modules/messages",
 	"bridges/modules/parachains",
 	"bridges/modules/relayers",
+	"bridges/modules/xcm-bridge-hub-router",
 	"client/cli",
 	"client/collator",
 	"client/consensus/aura",
