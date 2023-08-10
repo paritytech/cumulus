@@ -1368,6 +1368,7 @@ version = "0.1.0"
 dependencies = [
  "bp-bridge-hub-kusama",
  "bp-bridge-hub-polkadot",
+ "bp-header-chain",
  "bp-kusama",
  "bp-messages",
  "bp-parachains",
@@ -1447,6 +1448,7 @@ version = "0.1.0"
 dependencies = [
  "bp-bridge-hub-kusama",
  "bp-bridge-hub-polkadot",
+ "bp-header-chain",
  "bp-kusama",
  "bp-messages",
  "bp-parachains",

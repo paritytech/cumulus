@@ -734,6 +734,10 @@ impl_runtime_apis! {
 		fn best_finalized() -> Option<HeaderId<bp_polkadot::Hash, bp_polkadot::BlockNumber>> {
 			BridgePolkadotGrandpa::best_finalized()
 		}
+		fn synced_headers_grandpa_info(
+		) -> Vec<bp_header_chain::HeaderGrandpaInfo<bp_polkadot::Header>> {
+			BridgePolkadotGrandpa::synced_headers_grandpa_info()
+		}
 	}
 
 	impl bp_bridge_hub_polkadot::BridgeHubPolkadotFinalityApi<Block> for Runtime {

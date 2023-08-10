@@ -735,6 +735,10 @@ impl_runtime_apis! {
 		fn best_finalized() -> Option<HeaderId<bp_kusama::Hash, bp_kusama::BlockNumber>> {
 			BridgeKusamaGrandpa::best_finalized()
 		}
+		fn synced_headers_grandpa_info(
+		) -> Vec<bp_header_chain::HeaderGrandpaInfo<bp_kusama::Header>> {
+			BridgeKusamaGrandpa::synced_headers_grandpa_info()
+		}
 	}
 
 	impl bp_bridge_hub_kusama::BridgeHubKusamaFinalityApi<Block> for Runtime {

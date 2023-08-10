@@ -71,12 +71,6 @@ impl XcmBlobHauler for ToBridgeHubPolkadotXcmBlobHauler {
 	type MessageSender =
 		pallet_bridge_messages::Pallet<Runtime, WithBridgeHubPolkadotMessagesInstance>;
 
-	type MessageSenderOrigin = super::RuntimeOrigin;
-
-	fn message_sender_origin() -> Self::MessageSenderOrigin {
-		pallet_xcm::Origin::from(MultiLocation::here()).into()
-	}
-
 	fn xcm_lane() -> LaneId {
 		// TODO: rework once dynamic lanes are supported (https://github.com/paritytech/parity-bridges-common/issues/1760)
 		ASSET_HUB_KUSAMA_TO_ASSET_HUB_POLKADOT_LANE_ID
