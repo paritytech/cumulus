@@ -17,7 +17,7 @@
 
 #[frame_support::pallet]
 pub mod pallet_origins {
-	use super::super::ranks;
+	use crate::ambassador::ranks;
 	use frame_support::pallet_prelude::*;
 	use pallet_ranked_collective::Rank;
 
@@ -31,8 +31,6 @@ pub mod pallet_origins {
 	#[derive(PartialEq, Eq, Clone, MaxEncodedLen, Encode, Decode, TypeInfo, RuntimeDebug)]
 	#[pallet::origin]
 	pub enum Origin {
-		/// Plurality voice of the [ranks::CANDIDATE] members or above given via referendum.
-		Candidate,
 		/// Plurality voice of the [ranks::AMBASSADOR_TIER_1] members or above given via referendum.
 		AmbassadorTier1,
 		/// Plurality voice of the [ranks::AMBASSADOR_TIER_2] members or above given via referendum.
@@ -53,20 +51,20 @@ pub mod pallet_origins {
 		MasterAmbassadorTier9,
 	}
 
-	/// Implementation of the [EnsureOrigin] trait for the [Origin::Ambassador] origin.
-	pub struct EnsureAmbassador;
-	impl<O: Into<Result<Origin, O>> + From<Origin>> EnsureOrigin<O> for EnsureAmbassador {
-		type Success = ();
-		fn try_origin(o: O) -> Result<Self::Success, O> {
-			o.into().and_then(|o| match o {
-				Origin::Ambassador => Ok(()),
-				r => Err(O::from(r)),
+	impl Origin {
+		/// Returns the rank that the origin `self` speaks for, or `None` if it doesn't speak for any.
+		pub fn as_voice(&self) -> Option<Rank> {
+			Some(match &self {
+				Origin::AmbassadorTier1 => ranks::AMBASSADOR_TIER_1,
+				Origin::AmbassadorTier2 => ranks::AMBASSADOR_TIER_2,
+				Origin::SeniorAmbassadorTier3 => ranks::SENIOR_AMBASSADOR_TIER_3,
+				Origin::SeniorAmbassadorTier4 => ranks::SENIOR_AMBASSADOR_TIER_4,
+				Origin::HeadAmbassadorTier5 => ranks::HEAD_AMBASSADOR_TIER_5,
+				Origin::HeadAmbassadorTier6 => ranks::HEAD_AMBASSADOR_TIER_6,
+				Origin::HeadAmbassadorTier7 => ranks::HEAD_AMBASSADOR_TIER_7,
+				Origin::MasterAmbassadorTier8 => ranks::MASTER_AMBASSADOR_TIER_8,
+				Origin::MasterAmbassadorTier9 => ranks::MASTER_AMBASSADOR_TIER_9,
 			})
-		}
-
-		#[cfg(feature = "runtime-benchmarks")]
-		fn try_successful_origin() -> Result<O, ()> {
-			Ok(O::from(Origin::Ambassador))
 		}
 	}
 
@@ -87,26 +85,36 @@ pub mod pallet_origins {
 		}
 	}
 
-	// TODO EnsureAmbassadorVoiceFrom
+	/// Implementation of the [EnsureOrigin] trait for the plurality voice [Origin]s
+	/// from a given rank `R` with the success result of the corresponding [Rank].
+	pub struct EnsureAmbassadorVoiceFrom<R>(PhantomData<R>);
+	impl<R: Get<Rank>, O: Into<Result<Origin, O>> + From<Origin>> EnsureOrigin<O>
+		for EnsureAmbassadorVoiceFrom<R>
+	{
+		type Success = Rank;
+		fn try_origin(o: O) -> Result<Self::Success, O> {
+			o.into().and_then(|o| match Origin::as_voice(&o) {
+				Some(r) if r >= R::get() => Ok(r),
+				_ => Err(O::from(o)),
+			})
+		}
+
+		#[cfg(feature = "runtime-benchmarks")]
+		fn try_successful_origin() -> Result<O, ()> {
+			ranks::MASTER_AMBASSADOR_TIER_9
+				.ge(&R::get())
+				.then(O::from(Origin::MasterAmbassadorTier9))
+				.ok_or(Err(()))
+		}
+	}
 
 	/// Implementation of the [EnsureOrigin] trait for the plurality voice [Origin]s with the
-	/// success result of the corresponding [Rank]. Not implemented for [Origin::Candidate].
+	/// success result of the corresponding [Rank].
 	pub struct EnsureAmbassadorVoice;
 	impl<O: Into<Result<Origin, O>> + From<Origin>> EnsureOrigin<O> for EnsureAmbassadorVoice {
 		type Success = Rank;
 		fn try_origin(o: O) -> Result<Self::Success, O> {
-			o.into().and_then(|o| match o {
-				Origin::AmbassadorTier1 => Ok(ranks::AMBASSADOR_TIER_1),
-				Origin::AmbassadorTier2 => Ok(ranks::AMBASSADOR_TIER_2),
-				Origin::SeniorAmbassadorTier3 => Ok(ranks::SENIOR_AMBASSADOR_TIER_3),
-				Origin::SeniorAmbassadorTier4 => Ok(ranks::SENIOR_AMBASSADOR_TIER_4),
-				Origin::HeadAmbassadorTier5 => Ok(ranks::HEAD_AMBASSADOR_TIER_5),
-				Origin::HeadAmbassadorTier6 => Ok(ranks::HEAD_AMBASSADOR_TIER_6),
-				Origin::HeadAmbassadorTier7 => Ok(ranks::HEAD_AMBASSADOR_TIER_7),
-				Origin::MasterAmbassadorTier8 => Ok(ranks::MASTER_AMBASSADOR_TIER_8),
-				Origin::MasterAmbassadorTier9 => Ok(ranks::MASTER_AMBASSADOR_TIER_9),
-				r => Err(O::from(r)),
-			})
+			o.into().and_then(|o| Origin::as_voice(&o).ok_or(O::from(o)))
 		}
 
 		#[cfg(feature = "runtime-benchmarks")]

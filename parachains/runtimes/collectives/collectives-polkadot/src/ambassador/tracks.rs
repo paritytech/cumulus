@@ -16,9 +16,7 @@
 //! The Ambassador Program's referenda voting tracks.
 
 use super::Origin;
-use crate::{
-	constants::currency::DOLLARS, Balance, BlockNumber, RuntimeOrigin, DAYS, MINUTES, UNITS,
-};
+use crate::{constants::currency::DOLLARS, Balance, BlockNumber, RuntimeOrigin, DAYS, MINUTES};
 use sp_runtime::Perbill;
 
 /// Referendum `TrackId` type.
@@ -28,7 +26,6 @@ pub type TrackId = u16;
 pub mod constants {
 	use super::TrackId;
 
-	pub const CANDIDATE: TrackId = 0;
 	pub const AMBASSADOR_TIER_1: TrackId = 1;
 	pub const AMBASSADOR_TIER_2: TrackId = 2;
 	pub const SENIOR_AMBASSADOR_TIER_3: TrackId = 3;
@@ -51,29 +48,7 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 
 	/// Return the array of available tracks and their information.
 	fn tracks() -> &'static [(Self::Id, pallet_referenda::TrackInfo<Balance, BlockNumber>)] {
-		static DATA: [(TrackId, pallet_referenda::TrackInfo<Balance, BlockNumber>); 4] = [
-			(
-				constants::CANDIDATE,
-				pallet_referenda::TrackInfo {
-					name: "candidate",
-					max_deciding: 10,
-					decision_deposit: 5 * DOLLARS,
-					prepare_period: 30 * MINUTES,
-					decision_period: 7 * DAYS,
-					confirm_period: 30 * MINUTES,
-					min_enactment_period: 5 * MINUTES,
-					min_approval: pallet_referenda::Curve::LinearDecreasing {
-						length: Perbill::from_percent(100),
-						floor: Perbill::from_percent(50),
-						ceil: Perbill::from_percent(100),
-					},
-					min_support: pallet_referenda::Curve::LinearDecreasing {
-						length: Perbill::from_percent(100),
-						floor: Perbill::from_percent(10),
-						ceil: Perbill::from_percent(50),
-					},
-				},
-			),
+		static DATA: [(TrackId, pallet_referenda::TrackInfo<Balance, BlockNumber>); 9] = [
 			(
 				constants::AMBASSADOR_TIER_1,
 				pallet_referenda::TrackInfo {
@@ -289,7 +264,6 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 		}
 
 		match Origin::try_from(id.clone()) {
-			Ok(Origin::Candidate) => Ok(constants::CANDIDATE),
 			Ok(Origin::AmbassadorTier1) => Ok(constants::AMBASSADOR_TIER_1),
 			Ok(Origin::AmbassadorTier2) => Ok(constants::AMBASSADOR_TIER_2),
 			Ok(Origin::SeniorAmbassadorTier3) => Ok(constants::SENIOR_AMBASSADOR_TIER_3),

@@ -28,15 +28,16 @@ pub mod origins;
 mod tracks;
 
 use super::*;
-use frame_support::traits::{EitherOf, TryMapSuccess};
+use crate::xcm_config::{FellowshipAdminBodyId, UsdtAsset};
+use frame_support::traits::{EitherOf, MapSuccess, TryMapSuccess};
 pub use origins::pallet_origins as pallet_ambassador_origins;
 use origins::pallet_origins::{
-	EnsureAmbassador, EnsureAmbassadorVoice, EnsureHeadAmbassadorVoice, Origin,
+	EnsureAmbassadorVoice, EnsureAmbassadorVoiceFrom, EnsureHeadAmbassadorVoice, Origin,
 };
-use sp_arithmetic::traits::CheckedSub;
-use sp_runtime::traits::{CheckedReduceBy, ConstU16, TypedGet};
+use sp_core::ConstU128;
+use sp_runtime::traits::{CheckedReduceBy, ConstU16, ConvertToValue, Replace};
 use xcm::prelude::*;
-use xcm_builder::{LocatableAssetId, PayOverXcm};
+use xcm_builder::{AliasesIntoAccountId32, PayOverXcm};
 
 /// The Ambassador Program's member ranks.
 pub mod ranks {
@@ -59,37 +60,29 @@ impl pallet_ambassador_origins::Config for Runtime {}
 
 pub type AmbassadorCollectiveInstance = pallet_ranked_collective::Instance2;
 
+// Promotion, demotion and approval (rank-retention) is by any of:
+// - Root can promote arbitrarily.
+// - the FellowshipAdmin origin (i.e. token holder referendum);
+// - a senior members vote by the rank two above the new/current rank.
+pub type PromoteOrigin = EitherOf<
+	frame_system::EnsureRootWithSuccess<AccountId, ConstU16<65535>>,
+	EitherOf<
+		MapSuccess<
+			EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
+			Replace<ConstU16<{ ranks::MASTER_AMBASSADOR_TIER_9 }>>,
+		>,
+		TryMapSuccess<
+			EnsureAmbassadorVoiceFrom<ConstU16<{ ranks::SENIOR_AMBASSADOR_TIER_3 }>>,
+			CheckedReduceBy<ConstU16<2>>,
+		>,
+	>,
+>;
+
 impl pallet_ranked_collective::Config<AmbassadorCollectiveInstance> for Runtime {
 	type WeightInfo = (); // TODO actual weights
 	type RuntimeEvent = RuntimeEvent;
-	// Promotion is by any of:
-	// - Root can promote arbitrarily.
-	// - the FellowshipAdmin origin (i.e. token holder referendum);
-	// - a vote by the rank two above the new rank.
-	type PromoteOrigin = EitherOf<
-		frame_system::EnsureRootWithSuccess<Self::AccountId, ConstU16<65535>>,
-		EitherOf<
-			MapSuccess<
-				EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
-				Replace<ConstU16<{ ranks::MASTER_AMBASSADOR_TIER_9 }>>,
-			>,
-			TryMapSuccess<EnsureAmbassadorVoice, CheckedReduceBy<ConstU16<2>>>, // TODO ensure 3 or higher
-		>,
-	>;
-	// Demotion is by any of:
-	// - Root can demote arbitrarily.
-	// - the FellowshipAdmin origin (i.e. token holder referendum);
-	// - a vote by the rank two above the current rank.
-	type DemoteOrigin = EitherOf<
-		frame_system::EnsureRootWithSuccess<Self::AccountId, ConstU16<65535>>,
-		EitherOf<
-			MapSuccess<
-				EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
-				Replace<ConstU16<{ ranks::MASTER_AMBASSADOR_TIER_9 }>>,
-			>,
-			TryMapSuccess<EnsureAmbassadorVoice, CheckedReduceBy<ConstU16<2>>>, // TODO ensure 3 or higher
-		>,
-	>;
+	type PromoteOrigin = PromoteOrigin;
+	type DemoteOrigin = PromoteOrigin;
 	type Polls = AmbassadorReferenda;
 	type MinRankOfClass = sp_runtime::traits::Identity;
 	type VoteWeight = pallet_ranked_collective::Linear;
@@ -135,8 +128,8 @@ pub type AmbassadorContentInstance = pallet_collective_content::Instance1;
 impl pallet_collective_content::Config<AmbassadorContentInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type CharterOrigin = EitherOf<EnsureRoot<AccountId>, EnsureHeadAmbassadorVoice>;
-	// An announcement can be submitted by a Senior Ambassador member or the [Origin::AmbassadorTier1] plurality voice
-	// taken via referendum on the [tracks::constants::AMBASSADOR_TIER_1] track.
+	// An announcement can be submitted by a Senior Ambassador member or an ambassador plurality voice
+	// taken via referendum.
 	type AnnouncementOrigin = EitherOfDiverse<
 		pallet_ranked_collective::EnsureMember<
 			Runtime,
@@ -167,7 +160,7 @@ impl pallet_core_fellowship::Config<AmbassadorCoreInstance> for Runtime {
 	// - Root;
 	// - the FellowshipAdmin origin (i.e. token holder referendum);
 	// - a single Head Ambassador;
-	// - a vote among all Members.
+	// - a vote among all senior members.
 	type InductOrigin = EitherOfDiverse<
 		EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
 		EitherOfDiverse<
@@ -176,43 +169,17 @@ impl pallet_core_fellowship::Config<AmbassadorCoreInstance> for Runtime {
 				AmbassadorCollectiveInstance,
 				{ ranks::HEAD_AMBASSADOR_TIER_5 },
 			>,
-			EnsureAmbassadorVoice, // TODO ensure 3 or higher
+			EnsureAmbassadorVoiceFrom<ConstU16<{ ranks::SENIOR_AMBASSADOR_TIER_3 }>>,
 		>,
 	>;
-	// Approval (rank-retention) of a Member's current rank is by any of:
-	// - Root;
-	// - the FellowshipAdmin origin (i.e. token holder referendum);
-	// - a vote by the rank two above the current rank.
-	type ApproveOrigin = EitherOf<
-		MapSuccess<
-			EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
-			Replace<ConstU16<{ ranks::MASTER_AMBASSADOR_TIER_9 }>>,
-		>,
-		TryMapSuccess<EnsureAmbassadorVoice, CheckedReduceBy<ConstU16<2>>>, // TODO ensure 3 or higher
-	>;
-	// Promotion is by any of:
-	// - Root can promote arbitrarily.
-	// - the FellowshipAdmin origin (i.e. token holder referendum);
-	// - a vote by the rank two above the new rank.
-	type PromoteOrigin = EitherOf<
-		MapSuccess<
-			EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
-			Replace<ConstU16<{ ranks::MASTER_AMBASSADOR_TIER_9 }>>,
-		>,
-		TryMapSuccess<EnsureAmbassadorVoice, CheckedReduceBy<ConstU16<2>>>, // TODO ensure 3 or higher
-	>;
+	type ApproveOrigin = PromoteOrigin;
+	type PromoteOrigin = PromoteOrigin;
 	type EvidenceSize = ConstU32<65536>;
 }
 
 pub type AmbassadorSalaryInstance = pallet_salary::Instance2;
 
 parameter_types! {
-	pub AssetHub: MultiLocation = (Parent, Parachain(1000)).into();
-	pub AssetHubUsdtId: AssetId = (PalletInstance(50), GeneralIndex(1984)).into();
-	pub UsdtAsset: LocatableAssetId = LocatableAssetId {
-		location: AssetHub::get(),
-		asset_id: AssetHubUsdtId::get(),
-	};
 	// The interior location on AssetHub for the paying account. This is the Ambassador Salary
 	// pallet instance (which sits at index 64). This sovereign account will need funding.
 	pub Interior: InteriorMultiLocation = PalletInstance(74).into();
