@@ -28,6 +28,9 @@ cumulus-primitives-core = { path = "../../primitives/core", default-features = f
 # Optional import for benchmarking
 frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", branch = "master" }
 
+# Bridges
+bp-xcm-bridge-hub-router = { path = "../../bridges/primitives/xcm-bridge-hub-router", default-features = false, optional = true }
+
 [dev-dependencies]
 
 # Substrate
@@ -55,6 +58,7 @@ std = [
 	"sp-std/std",
 	"xcm-executor/std",
 	"xcm/std",
+	"bp-xcm-bridge-hub-router/std",
 ]
 
 runtime-benchmarks = [
@@ -64,3 +68,7 @@ runtime-benchmarks = [
 	"xcm-builder/runtime-benchmarks",
 ]
 try-runtime = ["frame-support/try-runtime"]
+
+bridging = [
+	"bp-xcm-bridge-hub-router",
+]
