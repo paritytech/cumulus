@@ -59,6 +59,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.compute_tag.outputs.version }}
         with:
+          assignees: EgorPopelyaev, coderobe, chevdor
           filename: .github/ISSUE_TEMPLATE/release-client.md
 
       - id: create-issue-checklist-runtime
@@ -69,6 +70,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.compute_tag.outputs.version }}
         with:
+          assignees: EgorPopelyaev, coderobe, chevdor
           filename: .github/ISSUE_TEMPLATE/release-runtime.md
 
       - name: Matrix notification to ${{ matrix.channel.name }}
