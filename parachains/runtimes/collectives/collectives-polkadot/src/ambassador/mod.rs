@@ -15,14 +15,18 @@
 
 //! The Ambassador Program.
 //!
-//!  TODO update
 //! The module defines the following on-chain functionality of the Ambassador Program:
 //!
-//! - Managed set of program members, where every member has a [rank](ranks) (via
-//!   [pallet_ranked_collective]).
-//! - Referendum functionality for the program members to propose, vote on, and execute proposals on
-//!   behalf of the members of a certain [rank](Origin) (via [pallet_referenda]).
+//! - Managed set of program members, where every member has a [rank](ranks)
+//! (via [AmbassadorCollective](pallet_ranked_collective)).
+//! - Referendum functionality for the program members to propose, vote on, and execute
+//! proposals on behalf of the members of a certain [rank](Origin)
+//! (via [AmbassadorReferenda](pallet_referenda)).
 //! - Managed content (charter, announcements) (via [pallet_collective_content]).
+//! - Promotion and demotion periods, register of members' activity, rank based salaries
+//! (via [AmbassadorCore](pallet_core_fellowship)).
+//! - Members' salaries (via [AmbassadorSalary](pallet_salary), requiring a member to be
+//! imported or inducted into [AmbassadorCore](pallet_core_fellowship)).
 
 pub mod origins;
 mod tracks;
@@ -206,7 +210,10 @@ impl pallet_salary::Config<AmbassadorSalaryInstance> for Runtime {
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type Paymaster = AmbassadorSalaryPaymaster;
 	#[cfg(feature = "runtime-benchmarks")]
-	type Paymaster = PayWithEnsure<AmbassadorSalaryPaymaster, OpenHrmpChannel<ConstU32<1000>>>;
+	type Paymaster = crate::impls::benchmarks::PayWithEnsure<
+		AmbassadorSalaryPaymaster,
+		crate::impls::benchmarks::OpenHrmpChannel<ConstU32<1000>>,
+	>;
 	type Members = pallet_ranked_collective::Pallet<Runtime, AmbassadorCollectiveInstance>;
 
 	#[cfg(not(feature = "runtime-benchmarks"))]

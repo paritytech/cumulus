@@ -103,8 +103,8 @@ pub mod pallet_origins {
 		fn try_successful_origin() -> Result<O, ()> {
 			ranks::MASTER_AMBASSADOR_TIER_9
 				.ge(&R::get())
-				.then(O::from(Origin::MasterAmbassadorTier9))
-				.ok_or(Err(()))
+				.then(|| O::from(Origin::MasterAmbassadorTier9))
+				.ok_or(())
 		}
 	}
 
