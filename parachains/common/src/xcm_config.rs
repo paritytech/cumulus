@@ -81,8 +81,8 @@ impl ContainsPair<MultiAsset, MultiLocation> for ConcreteNativeAssetFromSiblingS
 #[cfg(test)]
 mod tests {
 	use super::{
-		ContainsPair, Here, MultiAsset, MultiLocation, ConcreteNativeAssetFromSiblingSystemParachain,
-		Parachain, Parent, GeneralIndex, PalletInstance,
+		ConcreteNativeAssetFromSiblingSystemParachain, ContainsPair, GeneralIndex, Here,
+		MultiAsset, MultiLocation, PalletInstance, Parachain, Parent,
 	};
 
 	#[test]
@@ -90,7 +90,10 @@ mod tests {
 		let expected_asset: MultiAsset = (Parent, 1000000).into();
 		let expected_origin: MultiLocation = (Parent, Parachain(1999)).into();
 
-		assert!(ConcreteNativeAssetFromSiblingSystemParachain::contains(&expected_asset, &expected_origin));
+		assert!(ConcreteNativeAssetFromSiblingSystemParachain::contains(
+			&expected_asset,
+			&expected_origin
+		));
 	}
 
 	#[test]
@@ -108,7 +111,6 @@ mod tests {
 				&expected_origin
 			));
 		});
-
 	}
 
 	#[test]

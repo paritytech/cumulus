@@ -33,7 +33,9 @@ use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
-	xcm_config::{AssetFeeAsExistentialDepositMultiplier, ConcreteNativeAssetFromSiblingSystemParachain},
+	xcm_config::{
+		AssetFeeAsExistentialDepositMultiplier, ConcreteNativeAssetFromSiblingSystemParachain,
+	},
 };
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::ConvertInto;
@@ -447,8 +449,8 @@ pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentia
 >;
 
 /// Cases where a remote origin is accepted as trusted Teleporter:
-/// - teleportation of WND from the parent Relay Chain and sibling parachains.
-/// - teleportation of sibling parachain's assets (as ForeignCreators)
+/// - teleportation of WND from the parent Relay Chain and sibling system parachains; and
+/// - teleportation of sibling parachain's assets (as ForeignCreators).
 pub type TrustedTeleporters = (
 	NativeAsset,
 	IsForeignConcreteAsset<FromSiblingParachain<parachain_info::Pallet<Runtime>>>,
