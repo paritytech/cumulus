@@ -83,7 +83,7 @@ pub type PromoteOrigin = EitherOf<
 >;
 
 impl pallet_ranked_collective::Config<AmbassadorCollectiveInstance> for Runtime {
-	type WeightInfo = (); // TODO actual weights
+	type WeightInfo = weights::pallet_ranked_collective_ambassador_collective::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
 	type PromoteOrigin = PromoteOrigin;
 	type DemoteOrigin = PromoteOrigin;
@@ -103,7 +103,7 @@ parameter_types! {
 pub type AmbassadorReferendaInstance = pallet_referenda::Instance2;
 
 impl pallet_referenda::Config<AmbassadorReferendaInstance> for Runtime {
-	type WeightInfo = (); // TODO actual weights
+	type WeightInfo = weights::pallet_referenda_ambassador_referenda::WeightInfo<Runtime>;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type Scheduler = Scheduler;
@@ -148,7 +148,7 @@ impl pallet_collective_content::Config<AmbassadorContentInstance> for Runtime {
 pub type AmbassadorCoreInstance = pallet_core_fellowship::Instance2;
 
 impl pallet_core_fellowship::Config<AmbassadorCoreInstance> for Runtime {
-	type WeightInfo = (); // TODO actual weights
+	type WeightInfo = weights::pallet_core_fellowship_ambassador_core::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
 	type Members = pallet_ranked_collective::Pallet<Runtime, AmbassadorCollectiveInstance>;
 	type Balance = Balance;
@@ -204,7 +204,7 @@ pub type AmbassadorSalaryPaymaster = PayOverXcm<
 >;
 
 impl pallet_salary::Config<AmbassadorSalaryInstance> for Runtime {
-	type WeightInfo = weights::pallet_salary::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_salary_ambassador_salary::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
