@@ -455,19 +455,19 @@ macro_rules! __impl_relay {
 				(Ancestor(0), Parachain(id.into())).into()
 			}
 
-			pub fn account_id_of(seed: &str) -> $crate::AccountId {
+			pub fn account_id_of(seed: &str) -> <<Self as RelayChain>::Runtime as frame_system::Config>::AccountId {
 				$crate::get_account_id_from_seed::<sr25519::Public>(seed)
 			}
 
-			pub fn account_data_of(account: AccountId) -> $crate::AccountData<Balance> {
+			pub fn account_data_of(account: <<Self as RelayChain>::Runtime as frame_system::Config>::AccountId) -> $crate::AccountData<<<Self as RelayChain>::Runtime as pallet_balances::Config>::Balance> {
 				Self::ext_wrapper(|| <Self as RelayChain>::System::account(account).data)
 			}
 
-			pub fn sovereign_account_id_of(location: $crate::MultiLocation) -> $crate::AccountId {
-				<Self as RelayChain>::SovereignAccountOf::convert_location(&location).unwrap()
+			pub fn sovereign_account_id_of(location: $crate::MultiLocation) -> <<Self as RelayChain>::Runtime as frame_system::Config>::AccountId {
+				<Self as RelayChain>::SovereignAccountOf::convert(location.into()).unwrap()
 			}
 
-			pub fn fund_accounts(accounts: Vec<(AccountId, Balance)>) {
+			pub fn fund_accounts(accounts: Vec<(<<Self as RelayChain>::Runtime as frame_system::Config>::AccountId, <<Self as RelayChain>::Runtime as pallet_balances::Config>::Balance)>) {
 				Self::ext_wrapper(|| {
 					for account in accounts {
 						let _ = <Self as RelayChain>::Balances::force_set_balance(
@@ -740,15 +740,15 @@ macro_rules! __impl_parachain {
 				$crate::get_account_id_from_seed::<sr25519::Public>(seed)
 			}
 
-			pub fn account_data_of(account: AccountId) -> $crate::AccountData<Balance> {
+			pub fn account_data_of(account: <<Self as Parachain>::Runtime as frame_system::Config>::AccountId) -> $crate::AccountData<<<Self as Parachain>::Runtime as pallet_balances::Config>::Balance> {
 				Self::ext_wrapper(|| <Self as Parachain>::System::account(account).data)
 			}
 
-			pub fn sovereign_account_id_of(location: $crate::MultiLocation) -> $crate::AccountId {
-				<Self as Parachain>::LocationToAccountId::convert_location(&location).unwrap()
+			pub fn sovereign_account_id_of(location: $crate::MultiLocation) -> <<Self as Parachain>::Runtime as frame_system::Config>::AccountId {
+				<Self as Parachain>::LocationToAccountId::convert(location.into()).unwrap()
 			}
 
-			pub fn fund_accounts(accounts: Vec<(AccountId, Balance)>) {
+			pub fn fund_accounts(accounts: Vec<(<<Self as Parachain>::Runtime as frame_system::Config>::AccountId, <<Self as Parachain>::Runtime as pallet_balances::Config>::Balance)>) {
 				Self::ext_wrapper(|| {
 					for account in accounts {
 						let _ = <Self as Parachain>::Balances::force_set_balance(
