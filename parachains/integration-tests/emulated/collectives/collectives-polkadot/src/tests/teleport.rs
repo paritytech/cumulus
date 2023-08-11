@@ -17,7 +17,7 @@
 use crate::*;
 
 #[test]
-fn teleport_to_other_system_parachains() {
+fn teleport_to_other_system_parachains_works() {
 	let amount = COLLECTIVES_POLKADOT_ED * 100;
 	let native_asset: VersionedMultiAssets = (Parent, amount).into();
 

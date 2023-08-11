@@ -23,7 +23,7 @@ pub use integration_tests_common::{
 	CollectivesWestendPallet, CollectivesWestendSender,
 };
 pub use xcm::prelude::*;
-pub use xcm_emulator::{assert_expected_events, bx, Parachain, TestExt};
+pub use xcm_emulator::{assert_expected_events, bx, Parachain, TestExt, Chain};
 
 #[cfg(test)]
 mod tests;

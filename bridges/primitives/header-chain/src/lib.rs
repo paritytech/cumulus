@@ -21,7 +21,7 @@
 
 use bp_runtime::{
 	BasicOperatingMode, Chain, HashOf, HasherOf, HeaderOf, RawStorageProof, StorageProofChecker,
-	StorageProofError,
+	StorageProofError, UnderlyingChainProvider,
 };
 use codec::{Codec, Decode, Encode, EncodeLike, MaxEncodedLen};
 use core::{clone::Clone, cmp::Eq, default::Default, fmt::Debug};
@@ -139,7 +139,7 @@ pub trait ConsensusLogReader {
 pub struct GrandpaConsensusLogReader<Number>(sp_std::marker::PhantomData<Number>);
 
 impl<Number: Codec> GrandpaConsensusLogReader<Number> {
-	pub fn find_authorities_change(
+	pub fn find_scheduled_change(
 		digest: &Digest,
 	) -> Option<sp_consensus_grandpa::ScheduledChange<Number>> {
 		// find the first consensus digest with the right ID which converts to
@@ -151,12 +151,34 @@ impl<Number: Codec> GrandpaConsensusLogReader<Number> {
 				_ => None,
 			})
 	}
+
+	pub fn find_forced_change(
+		digest: &Digest,
+	) -> Option<(Number, sp_consensus_grandpa::ScheduledChange<Number>)> {
+		// find the first consensus digest with the right ID which converts to
+		// the right kind of consensus log.
+		digest
+			.convert_first(|log| log.consensus_try_to(&GRANDPA_ENGINE_ID))
+			.and_then(|log| match log {
+				ConsensusLog::ForcedChange(delay, change) => Some((delay, change)),
+				_ => None,
+			})
+	}
 }
 
 impl<Number: Codec> ConsensusLogReader for GrandpaConsensusLogReader<Number> {
 	fn schedules_authorities_change(digest: &Digest) -> bool {
-		GrandpaConsensusLogReader::<Number>::find_authorities_change(digest).is_some()
+		GrandpaConsensusLogReader::<Number>::find_scheduled_change(digest).is_some()
 	}
+}
+
+/// The Grandpa-related info associated to a header.
+#[derive(Encode, Decode, Debug, PartialEq, Clone, TypeInfo)]
+pub struct HeaderGrandpaInfo<Header: HeaderT> {
+	/// The header justification
+	pub justification: justification::GrandpaJustification<Header>,
+	/// The authority set introduced by the header.
+	pub authority_set: Option<AuthoritySet>,
 }
 
 /// A minimized version of `pallet-bridge-grandpa::Call` that can be used without a runtime.
@@ -220,4 +242,18 @@ pub trait ChainWithGrandpa: Chain {
 	/// ancestry and the pallet will accept the call. The limit is only used to compute maximal
 	/// refund amount and doing calls which exceed the limit, may be costly to submitter.
 	const AVERAGE_HEADER_SIZE_IN_JUSTIFICATION: u32;
+}
+
+/// A trait that provides the type of the underlying `ChainWithGrandpa`.
+pub trait UnderlyingChainWithGrandpaProvider: UnderlyingChainProvider {
+	/// Underlying `ChainWithGrandpa` type.
+	type ChainWithGrandpa: ChainWithGrandpa;
+}
+
+impl<T> UnderlyingChainWithGrandpaProvider for T
+where
+	T: UnderlyingChainProvider,
+	T::Chain: ChainWithGrandpa,
+{
+	type ChainWithGrandpa = T::Chain;
 }

@@ -29,7 +29,7 @@ use frame_support::{
 	sp_runtime::{MultiAddress, MultiSigner},
 	RuntimeDebug,
 };
-use sp_std::prelude::*;
+use sp_std::prelude::Vec;
 
 /// BridgeHubKusama parachain.
 #[derive(RuntimeDebug)]
@@ -43,7 +43,7 @@ impl Chain for BridgeHubKusama {
 
 	type AccountId = AccountId;
 	type Balance = Balance;
-	type Index = Index;
+	type Nonce = Nonce;
 	type Signature = Signature;
 
 	fn max_extrinsic_size() -> u32 {

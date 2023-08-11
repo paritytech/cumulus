@@ -5,8 +5,8 @@ macro_rules! test_parachain_is_trusted_teleporter {
 			// init Origin variables
 			let sender = [<$sender_para Sender>]::get();
 			let mut para_sender_balance_before =
-				<$sender_para>::account_data_of(sender.clone()).free;
-			let origin = <$sender_para as $crate::Parachain>::RuntimeOrigin::signed(sender.clone());
+				<$sender_para as $crate::Chain>::account_data_of(sender.clone()).free;
+			let origin = <$sender_para as $crate::Chain>::RuntimeOrigin::signed(sender.clone());
 			let fee_asset_item = 0;
 			let weight_limit = WeightLimit::Unlimited;
 
@@ -15,11 +15,11 @@ macro_rules! test_parachain_is_trusted_teleporter {
 					// init Destination variables
 					let receiver = [<$receiver_para Receiver>]::get();
 					let para_receiver_balance_before =
-						<$receiver_para>::account_data_of(receiver.clone()).free;
+						<$receiver_para as $crate::Chain>::account_data_of(receiver.clone()).free;
 					let para_destination: VersionedMultiLocation =
 						<$sender_para>::sibling_location_of(<$receiver_para>::para_id()).into();
 					let beneficiary: VersionedMultiLocation =
-						AccountId32 { network: None, id: receiver.clone().into() }.into();
+						$crate::AccountId32 { network: None, id: receiver.clone().into() }.into();
 
 					// Send XCM message from Origin Parachain
 					<$sender_para>::execute_with(|| {
@@ -32,7 +32,7 @@ macro_rules! test_parachain_is_trusted_teleporter {
 							weight_limit.clone(),
 						));
 
-						type RuntimeEvent = <$sender_para as $crate::Parachain>::RuntimeEvent;
+						type RuntimeEvent = <$sender_para as $crate::Chain>::RuntimeEvent;
 
 						assert_expected_events!(
 							$sender_para,
@@ -52,7 +52,7 @@ macro_rules! test_parachain_is_trusted_teleporter {
 
 					// Receive XCM message in Destination Parachain
 					<$receiver_para>::execute_with(|| {
-						type RuntimeEvent = <$receiver_para as $crate::Parachain>::RuntimeEvent;
+						type RuntimeEvent = <$receiver_para as $crate::Chain>::RuntimeEvent;
 
 						assert_expected_events!(
 							$receiver_para,
@@ -69,15 +69,15 @@ macro_rules! test_parachain_is_trusted_teleporter {
 
 					// Check if balances are updated accordingly in Origin and Destination Parachains
 					let para_sender_balance_after =
-						<$sender_para>::account_data_of(sender.clone()).free;
+						<$sender_para as $crate::Chain>::account_data_of(sender.clone()).free;
 					let para_receiver_balance_after =
-						<$receiver_para>::account_data_of(receiver.clone()).free;
+						<$receiver_para as $crate::Chain>::account_data_of(receiver.clone()).free;
 
 					assert_eq!(para_sender_balance_before - $amount, para_sender_balance_after);
 					assert!(para_receiver_balance_after > para_receiver_balance_before);
 
 					// Update sender balance
-					para_sender_balance_before = <$sender_para>::account_data_of(sender.clone()).free;
+					para_sender_balance_before = <$sender_para as $crate::Chain>::account_data_of(sender.clone()).free;
 				}
 			)+
 		}

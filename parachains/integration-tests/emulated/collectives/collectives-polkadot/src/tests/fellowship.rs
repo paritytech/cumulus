@@ -46,7 +46,7 @@ fn pay_salary() {
 	});
 
 	CollectivesPolkadot::execute_with(|| {
-		type RuntimeEvent = <CollectivesPolkadot as Parachain>::RuntimeEvent;
+		type RuntimeEvent = <CollectivesPolkadot as Chain>::RuntimeEvent;
 
 		assert_ok!(FellowshipSalaryPaymaster::pay(&pay_to, (), pay_amount));
 		assert_expected_events!(
@@ -58,7 +58,7 @@ fn pay_salary() {
 	});
 
 	AssetHubPolkadot::execute_with(|| {
-		type RuntimeEvent = <AssetHubPolkadot as Parachain>::RuntimeEvent;
+		type RuntimeEvent = <AssetHubPolkadot as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			AssetHubPolkadot,

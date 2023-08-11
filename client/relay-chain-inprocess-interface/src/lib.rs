@@ -72,11 +72,7 @@ impl RelayChainInterface for RelayChainInProcessInterface {
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
-		Ok(self.full_client.runtime_api().dmq_contents_with_context(
-			relay_parent,
-			sp_core::ExecutionContext::Importing,
-			para_id,
-		)?)
+		Ok(self.full_client.runtime_api().dmq_contents(relay_parent, para_id)?)
 	}
 
 	async fn retrieve_all_inbound_hrmp_channel_contents(
@@ -84,19 +80,21 @@ impl RelayChainInterface for RelayChainInProcessInterface {
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> RelayChainResult<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
-		Ok(self.full_client.runtime_api().inbound_hrmp_channels_contents_with_context(
-			relay_parent,
-			sp_core::ExecutionContext::Importing,
-			para_id,
-		)?)
+		Ok(self
+			.full_client
+			.runtime_api()
+			.inbound_hrmp_channels_contents(relay_parent, para_id)?)
 	}
 
 	async fn header(&self, block_id: BlockId) -> RelayChainResult<Option<PHeader>> {
 		let hash = match block_id {
 			BlockId::Hash(hash) => hash,
-			BlockId::Number(num) => self.full_client.hash(num)?.ok_or_else(|| {
-				RelayChainError::GenericError(format!("block with number {num} not found"))
-			})?,
+			BlockId::Number(num) =>
+				if let Some(hash) = self.full_client.hash(num)? {
+					hash
+				} else {
+					return Ok(None)
+				},
 		};
 		let header = self.full_client.header(hash)?;
 
@@ -281,17 +279,25 @@ fn build_polkadot_full_node(
 
 	let relay_chain_full_node = polkadot_service::build_full(
 		config,
-		is_collator,
-		None,
-		// Disable BEEFY. It should not be required by the internal relay chain node.
-		false,
-		None,
-		telemetry_worker_handle,
-		true,
-		polkadot_service::RealOverseerGen,
-		None,
-		None,
-		hwbench,
+		polkadot_service::NewFullParams {
+			is_collator,
+			grandpa_pause: None,
+			// Disable BEEFY. It should not be required by the internal relay chain node.
+			enable_beefy: false,
+			jaeger_agent: None,
+			telemetry_worker_handle,
+
+			// Cumulus doesn't spawn PVF workers, so we can disable version checks.
+			node_version: None,
+			workers_path: None,
+			workers_names: None,
+
+			overseer_enable_anyways: true,
+			overseer_gen: polkadot_service::RealOverseerGen,
+			overseer_message_channel_capacity_override: None,
+			malus_finality_delay: None,
+			hwbench,
+		},
 	)?;
 
 	Ok((relay_chain_full_node, maybe_collator_key))
@@ -339,8 +345,8 @@ mod tests {
 	use polkadot_primitives::Block as PBlock;
 	use polkadot_test_client::{
 		construct_transfer_extrinsic, BlockBuilderExt, Client, ClientBlockImportExt,
-		DefaultTestClientBuilderExt, ExecutionStrategy, InitPolkadotBlockBuilder,
-		TestClientBuilder, TestClientBuilderExt,
+		DefaultTestClientBuilderExt, InitPolkadotBlockBuilder, TestClientBuilder,
+		TestClientBuilderExt,
 	};
 	use sp_consensus::{BlockOrigin, SyncOracle};
 	use sp_runtime::traits::Block as BlockT;
@@ -361,8 +367,7 @@ mod tests {
 	}
 
 	fn build_client_backend_and_block() -> (Arc<Client>, PBlock, RelayChainInProcessInterface) {
-		let builder =
-			TestClientBuilder::new().set_execution_strategy(ExecutionStrategy::NativeWhenPossible);
+		let builder = TestClientBuilder::new();
 		let backend = builder.backend();
 		let client = Arc::new(builder.build());
 
