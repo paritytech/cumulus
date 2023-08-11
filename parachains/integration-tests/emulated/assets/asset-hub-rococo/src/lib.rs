@@ -23,7 +23,7 @@ pub use integration_tests_common::{
 	BridgeHubRococoReceiver,
 };
 pub use xcm::prelude::*;
-pub use xcm_emulator::{assert_expected_events, bx, Parachain, TestExt};
+pub use xcm_emulator::{assert_expected_events, bx, Chain, Parachain, TestExt};
 
 #[cfg(test)]
 mod tests;
