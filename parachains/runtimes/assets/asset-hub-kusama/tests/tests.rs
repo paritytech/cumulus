@@ -671,6 +671,7 @@ fn limited_reserve_transfer_assets_for_native_asset_over_bridge_works() {
 		}),
 		bridging_to_asset_hub_polkadot,
 		WeightLimit::Unlimited,
+		Some(xcm_config::bridging::XcmBridgeHubRouterFeeAssetId::get()),
 	)
 }
 

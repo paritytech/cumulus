@@ -514,6 +514,7 @@ dependencies = [
  "pallet-utility",
  "pallet-xcm",
  "pallet-xcm-benchmarks",
+ "pallet-xcm-bridge-hub-router",
  "parachain-info",
  "parachains-common",
  "parity-scale-codec",

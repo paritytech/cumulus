@@ -56,6 +56,7 @@ pub fn limited_reserve_transfer_assets_for_native_asset_works<
 	>,
 	ensure_configuration: fn() -> TestBridgingConfig,
 	weight_limit: WeightLimit,
+	maybe_paid_export_message: Option<AssetId>,
 ) where
 	Runtime: frame_system::Config
 		+ pallet_balances::Config
@@ -160,6 +161,7 @@ pub fn limited_reserve_transfer_assets_for_native_asset_works<
 			));
 
 			// check alice account decreased by balance_to_transfer
+			// TODO:check-parameter: change and assert in tests when (https://github.com/paritytech/polkadot/pull/7005) merged
 			assert_eq!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(&alice_account),
 				alice_account_init_balance - balance_to_transfer.into()
@@ -202,37 +204,53 @@ pub fn limited_reserve_transfer_assets_for_native_asset_works<
 			);
 			let mut xcm_sent: Xcm<()> = xcm_sent.try_into().expect("versioned xcm");
 
-			// check sent XCM ExportMessage to bridge-hub
-			xcm_sent
-				.0
-				.matcher()
-				.match_next_inst(|instr| match instr {
-					// first instruction is UNpai (because we have explicit unpaid execution on bridge-hub now)
-					UnpaidExecution { weight_limit, check_origin }
-						if weight_limit == &Unlimited && check_origin.is_none() =>
-						Ok(()),
-					_ => Err(ProcessMessageError::BadFormat),
-				})
-				.expect("contains UnpaidExecution")
-				.match_next_inst(|instr| match instr {
-					// second instruction is ExportMessage
-					ExportMessage { network, destination, xcm: inner_xcm } => {
-						assert_eq!(network, &bridged_network);
-						let (_, target_location_junctions_without_global_consensus) =
-							target_location_from_different_consensus
-								.interior
-								.split_global()
-								.expect("split works");
-						assert_eq!(
-							destination,
-							&target_location_junctions_without_global_consensus
-						);
-						assert_matches_pallet_xcm_reserve_transfer_assets_instructions(inner_xcm);
-						Ok(())
-					},
-					_ => Err(ProcessMessageError::BadFormat),
-				})
-				.expect("contains ExportMessage");
+			// check sent XCM ExportMessage to BridgeHub
+
+			// 1. check paid or unpaid
+			if let Some(expected_fee_asset_id) = maybe_paid_export_message {
+				xcm_sent
+					.0
+					.matcher()
+					.match_next_inst(|instr| match instr {
+						WithdrawAsset(_) => Ok(()),
+						_ => Err(ProcessMessageError::BadFormat),
+					})
+					.expect("contains WithdrawAsset")
+					.match_next_inst(|instr| match instr {
+						BuyExecution { fees, .. } if fees.id.eq(&expected_fee_asset_id) => Ok(()),
+						_ => Err(ProcessMessageError::BadFormat),
+					})
+					.expect("contains BuyExecution")
+			} else {
+				xcm_sent
+					.0
+					.matcher()
+					.match_next_inst(|instr| match instr {
+						// first instruction could be UnpaidExecution (because we could have explicit unpaid execution on BridgeHub)
+						UnpaidExecution { weight_limit, check_origin }
+							if weight_limit == &Unlimited && check_origin.is_none() =>
+							Ok(()),
+						_ => Err(ProcessMessageError::BadFormat),
+					})
+					.expect("contains UnpaidExecution")
+			}
+			// 2. check ExportMessage
+			.match_next_inst(|instr| match instr {
+				// second instruction is ExportMessage
+				ExportMessage { network, destination, xcm: inner_xcm } => {
+					assert_eq!(network, &bridged_network);
+					let (_, target_location_junctions_without_global_consensus) =
+						target_location_from_different_consensus
+							.interior
+							.split_global()
+							.expect("split works");
+					assert_eq!(destination, &target_location_junctions_without_global_consensus);
+					assert_matches_pallet_xcm_reserve_transfer_assets_instructions(inner_xcm);
+					Ok(())
+				},
+				_ => Err(ProcessMessageError::BadFormat),
+			})
+			.expect("contains ExportMessage");
 		})
 }
 

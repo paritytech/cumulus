@@ -16,7 +16,7 @@
 use super::{
 	AccountId, AllPalletsWithSystem, Assets, Authorship, Balance, Balances, ForeignAssets,
 	ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
-	TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
+	ToPolkadotXcmRouter, TransactionByteFee, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
 use crate::ForeignAssetsInstance;
 use assets_common::matching::{
@@ -449,6 +449,7 @@ impl xcm_executor::Config for XcmConfig {
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 	type AssetLocker = ();
 	type AssetExchanger = ();
+	// TODO:check-parameter: change and assert in tests when (https://github.com/paritytech/polkadot/pull/7005) merged
 	type FeeManager = ();
 	type MessageExporter = ();
 	type UniversalAliases = bridging::UniversalAliases;
@@ -471,7 +472,11 @@ type LocalXcmRouter = (
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
-pub type XcmRouter = WithUniqueTopic<(LocalXcmRouter, bridging::BridgingXcmRouter)>;
+pub type XcmRouter = WithUniqueTopic<(
+	LocalXcmRouter,
+	// Router, which wraps and sends xcm to BridgeHub to be delivered to the Polkadot GlobalConsensus
+	ToPolkadotXcmRouter,
+)>;
 
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
@@ -542,7 +547,6 @@ pub mod bridging {
 	use assets_common::{matching, matching::*};
 	use parachains_common::xcm_config::LocationFilter;
 	use sp_std::collections::btree_set::BTreeSet;
-	use xcm_builder::UnpaidRemoteExporter;
 
 	parameter_types! {
 		pub BridgeHubKusamaParaId: u32 = 1002;
@@ -552,7 +556,14 @@ pub mod bridging {
 		pub AssetHubPolkadot: MultiLocation =  MultiLocation::new(2, X2(GlobalConsensus(PolkadotNetwork::get()), Parachain(1000)));
 		pub DotLocation: MultiLocation =  MultiLocation::new(2, X1(GlobalConsensus(PolkadotNetwork::get())));
 
+		/// Router expects payment with this `AssetId`.
+		/// (`AssetId` has to be aligned with `BridgeTable`)
+		pub XcmBridgeHubRouterFeeAssetId: AssetId = KsmLocation::get().into();
+		/// Price per byte - can be adjusted via governance `set_storage` call.
+		pub storage XcmBridgeHubRouterByteFee: Balance = TransactionByteFee::get();
+
 		/// Set up exporters configuration.
+		/// `Option<MultiAsset>` represents static "base fee" which is used for total delivery fee calculation.
 		pub BridgeTable: sp_std::vec::Vec<(NetworkId, LocationFilter<InteriorMultiLocation>, MultiLocation, Option<MultiAsset>)> = sp_std::vec![
 			(
 				PolkadotNetwork::get(),
@@ -611,10 +622,6 @@ pub mod bridging {
 
 	pub type FilteredNetworkExportTable =
 		parachains_common::xcm_config::FilteredNetworkExportTable<BridgeTable>;
-
-	/// Bridge router, which wraps and sends xcm to BridgeHub to be delivered to the different GlobalConsensus
-	pub type BridgingXcmRouter =
-		UnpaidRemoteExporter<FilteredNetworkExportTable, LocalXcmRouter, UniversalLocation>;
 
 	/// Reserve locations filter for `xcm_executor::Config::IsReserve`.
 	pub type IsTrustedBridgedReserveLocationForConcreteAsset =

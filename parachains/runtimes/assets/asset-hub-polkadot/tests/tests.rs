@@ -692,6 +692,7 @@ fn limited_reserve_transfer_assets_for_native_asset_over_bridge_works() {
 		}),
 		bridging_to_asset_hub_kusama,
 		WeightLimit::Unlimited,
+		None,
 	)
 }
 
