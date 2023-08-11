@@ -464,7 +464,7 @@ macro_rules! __impl_relay {
 			}
 
 			pub fn sovereign_account_id_of(location: $crate::MultiLocation) -> <<Self as RelayChain>::Runtime as frame_system::Config>::AccountId {
-				<Self as RelayChain>::SovereignAccountOf::convert(location.into()).unwrap()
+				<Self as RelayChain>::SovereignAccountOf::convert_location(&location).unwrap()
 			}
 
 			pub fn fund_accounts(accounts: Vec<(<<Self as RelayChain>::Runtime as frame_system::Config>::AccountId, <<Self as RelayChain>::Runtime as pallet_balances::Config>::Balance)>) {
@@ -745,7 +745,7 @@ macro_rules! __impl_parachain {
 			}
 
 			pub fn sovereign_account_id_of(location: $crate::MultiLocation) -> <<Self as Parachain>::Runtime as frame_system::Config>::AccountId {
-				<Self as Parachain>::LocationToAccountId::convert(location.into()).unwrap()
+				<Self as Parachain>::LocationToAccountId::convert_location(&location).unwrap()
 			}
 
 			pub fn fund_accounts(accounts: Vec<(<<Self as Parachain>::Runtime as frame_system::Config>::AccountId, <<Self as Parachain>::Runtime as pallet_balances::Config>::Balance)>) {
