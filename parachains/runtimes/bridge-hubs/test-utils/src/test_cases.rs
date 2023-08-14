@@ -51,7 +51,10 @@ use sp_runtime::{
 };
 use xcm::latest::prelude::*;
 use xcm_builder::DispatchBlobError;
-use xcm_executor::{traits::WeightBounds, XcmExecutor};
+use xcm_executor::{
+	traits::{TransactAsset, WeightBounds},
+	XcmExecutor,
+};
 
 // Re-export test_case from assets
 pub use asset_test_utils::include_teleports_for_native_asset_works;
@@ -135,7 +138,8 @@ pub fn handle_export_message_from_system_parachain_to_outbound_queue_works<
 	>,
 	export_message_instruction: fn() -> Instruction<XcmConfig::RuntimeCall>,
 	expected_lane_id: LaneId,
-	// TODO: add paid or unpaid
+	existential_deposit: Option<MultiAsset>,
+	maybe_paid_export_message: Option<MultiAsset>,
 ) where
 	Runtime: frame_system::Config
 		+ pallet_balances::Config
@@ -169,10 +173,35 @@ pub fn handle_export_message_from_system_parachain_to_outbound_queue_works<
 			);
 
 			// prepare `ExportMessage`
-			let xcm = Xcm(vec![
-				UnpaidExecution { weight_limit: Unlimited, check_origin: None },
-				export_message_instruction(),
-			]);
+			let xcm = if let Some(fee) = maybe_paid_export_message {
+				// deposit ED to origin (if needed)
+				if let Some(ed) = existential_deposit {
+					XcmConfig::AssetTransactor::deposit_asset(
+						&ed,
+						&sibling_parachain_location,
+						&XcmContext::with_message_id([0; 32]),
+					)
+					.expect("deposited ed");
+				}
+				// deposit fee to origin
+				XcmConfig::AssetTransactor::deposit_asset(
+					&fee,
+					&sibling_parachain_location,
+					&XcmContext::with_message_id([0; 32]),
+				)
+				.expect("deposited fee");
+
+				Xcm(vec![
+					WithdrawAsset(MultiAssets::from(vec![fee.clone()])),
+					BuyExecution { fees: fee, weight_limit: Unlimited },
+					export_message_instruction(),
+				])
+			} else {
+				Xcm(vec![
+					UnpaidExecution { weight_limit: Unlimited, check_origin: None },
+					export_message_instruction(),
+				])
+			};
 
 			// execute XCM
 			let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
