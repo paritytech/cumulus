@@ -200,6 +200,14 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			}
 		}
 
+		// Allow to change dedicated storage items (called by governance-like)
+		match call {
+			RuntimeCall::System(frame_system::Call::set_storage { items })
+				if items.iter().any(|(k, _)| k.eq(&bridging::XcmBridgeHubRouterByteFee::key())) =>
+				return true,
+			_ => (),
+		};
+
 		matches!(
 			call,
 			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
@@ -572,7 +580,9 @@ pub mod bridging {
 					.add_equals(AssetHubPolkadot::get().interior.split_global().expect("invalid configuration for AssetHubPolkadot").1),
 					// and nothing else
 				BridgeHubKusama::get(),
-				None
+				// base delivery fee to local `BridgeHub`
+				// (initially was calculated `170733333` + 10% by test `BridgeHubKusama::can_calculate_weight_for_paid_export_message_with_reserve_transfer`)
+				Some((XcmBridgeHubRouterFeeAssetId::get(), 187806666).into())
 			)
 		];
 

@@ -778,3 +778,29 @@ fn xcm_reserve_transfer_filter_works() {
 			}
 		})
 }
+
+#[test]
+fn change_xcm_bridge_hub_router_byte_fee_by_governance_works() {
+	asset_test_utils::test_cases::change_storage_constant_by_governance_works::<
+		Runtime,
+		bridging::XcmBridgeHubRouterByteFee,
+		Balance,
+	>(
+		collator_session_keys(),
+		1000,
+		Box::new(|call| RuntimeCall::System(call).encode()),
+		|| {
+			(
+				bridging::XcmBridgeHubRouterByteFee::key().to_vec(),
+				bridging::XcmBridgeHubRouterByteFee::get(),
+			)
+		},
+		|old_value| {
+			if let Some(new_value) = old_value.checked_add(1) {
+				new_value
+			} else {
+				old_value.checked_sub(1).unwrap()
+			}
+		},
+	)
+}
