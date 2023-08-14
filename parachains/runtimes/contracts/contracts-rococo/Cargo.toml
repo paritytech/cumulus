@@ -51,7 +51,7 @@ pallet-contracts = { git = "https://github.com/paritytech/substrate", default-fe
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot
-kusama-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+rococo-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -86,8 +86,8 @@ std = [
 	"frame-support/std",
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
+	"rococo-runtime-constants/std",
     "frame-try-runtime/std",
-	"kusama-runtime-constants/std",
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
