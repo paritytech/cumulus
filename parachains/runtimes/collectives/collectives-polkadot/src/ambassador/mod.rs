@@ -64,11 +64,11 @@ impl pallet_ambassador_origins::Config for Runtime {}
 
 pub type AmbassadorCollectiveInstance = pallet_ranked_collective::Instance2;
 
-// Promotion, demotion and approval (rank-retention) is by any of:
-// - Root can promote arbitrarily.
-// - the FellowshipAdmin origin (i.e. token holder referendum);
-// - a senior members vote by the rank two above the new/current rank.
-pub type PromoteOrigin = EitherOf<
+/// Demotion is by any of:
+/// - Root can promote arbitrarily.
+/// - the FellowshipAdmin origin (i.e. token holder referendum);
+/// - a senior members vote by the rank two above the current rank.
+pub type DemoteOrigin = EitherOf<
 	frame_system::EnsureRootWithSuccess<AccountId, ConstU16<65535>>,
 	EitherOf<
 		MapSuccess<
@@ -82,11 +82,28 @@ pub type PromoteOrigin = EitherOf<
 	>,
 >;
 
+/// Promotion and approval (rank-retention) is by any of:
+/// - Root can promote arbitrarily.
+/// - the FellowshipAdmin origin (i.e. token holder referendum);
+/// - a senior members vote by the rank two above the new/current rank.
+/// - a member of rank `5` or above can add a candidate (rank `0`).
+pub type PromoteOrigin = EitherOf<
+	DemoteOrigin,
+	TryMapSuccess<
+		pallet_ranked_collective::EnsureMember<
+			Runtime,
+			AmbassadorCollectiveInstance,
+			{ ranks::HEAD_AMBASSADOR_TIER_5 },
+		>,
+		Replace<ConstU16<0>>,
+	>,
+>;
+
 impl pallet_ranked_collective::Config<AmbassadorCollectiveInstance> for Runtime {
 	type WeightInfo = weights::pallet_ranked_collective_ambassador_collective::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
 	type PromoteOrigin = PromoteOrigin;
-	type DemoteOrigin = PromoteOrigin;
+	type DemoteOrigin = DemoteOrigin;
 	type Polls = AmbassadorReferenda;
 	type MinRankOfClass = sp_runtime::traits::Identity;
 	type VoteWeight = pallet_ranked_collective::Linear;
