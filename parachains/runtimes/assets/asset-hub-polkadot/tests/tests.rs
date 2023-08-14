@@ -23,9 +23,10 @@ use asset_hub_polkadot_runtime::xcm_config::{
 	XcmConfig,
 };
 pub use asset_hub_polkadot_runtime::{
-	constants::fee::WeightToFee, AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets,
-	ForeignAssetsInstance, MetadataDepositBase, MetadataDepositPerByte, ParachainSystem, Runtime,
-	RuntimeCall, RuntimeEvent, SessionKeys, System, TrustBackedAssetsInstance, XcmpQueue,
+	constants::fee::WeightToFee, xcm_config, AssetDeposit, Assets, Balances, ExistentialDeposit,
+	ForeignAssets, ForeignAssetsInstance, MetadataDepositBase, MetadataDepositPerByte,
+	ParachainSystem, Runtime, RuntimeCall, RuntimeEvent, SessionKeys, System,
+	TrustBackedAssetsInstance, XcmpQueue,
 };
 use asset_test_utils::{CollatorSessionKey, CollatorSessionKeys, ExtBuilder, RuntimeHelper};
 use codec::{Decode, Encode};
@@ -692,7 +693,7 @@ fn limited_reserve_transfer_assets_for_native_asset_over_bridge_works() {
 		}),
 		bridging_to_asset_hub_kusama,
 		WeightLimit::Unlimited,
-		None,
+		Some(xcm_config::bridging::XcmBridgeHubRouterFeeAssetId::get()),
 	)
 }
 
@@ -798,4 +799,30 @@ fn xcm_reserve_transfer_filter_works() {
 				);
 			}
 		})
+}
+
+#[test]
+fn change_xcm_bridge_hub_router_byte_fee_by_governance_works() {
+	asset_test_utils::test_cases::change_storage_constant_by_governance_works::<
+		Runtime,
+		bridging::XcmBridgeHubRouterByteFee,
+		Balance,
+	>(
+		collator_session_keys(),
+		1000,
+		Box::new(|call| RuntimeCall::System(call).encode()),
+		|| {
+			(
+				bridging::XcmBridgeHubRouterByteFee::key().to_vec(),
+				bridging::XcmBridgeHubRouterByteFee::get(),
+			)
+		},
+		|old_value| {
+			if let Some(new_value) = old_value.checked_add(1) {
+				new_value
+			} else {
+				old_value.checked_sub(1).unwrap()
+			}
+		},
+	)
 }

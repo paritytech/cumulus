@@ -482,7 +482,7 @@ type LocalXcmRouter = (
 /// queues.
 pub type XcmRouter = WithUniqueTopic<(
 	LocalXcmRouter,
-	// Router, which wraps and sends xcm to BridgeHub to be delivered to the Polkadot GlobalConsensus
+	// Router which wraps and sends xcm to BridgeHub to be delivered to the Polkadot GlobalConsensus
 	ToPolkadotXcmRouter,
 )>;
 

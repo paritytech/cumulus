@@ -16,7 +16,7 @@
 use super::{
 	AccountId, AllPalletsWithSystem, Assets, Authorship, Balance, Balances, ForeignAssets,
 	ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
-	TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
+	ToKusamaXcmRouter, TransactionByteFee, TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
 use crate::ForeignAssetsInstance;
 use assets_common::matching::{
@@ -206,6 +206,14 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				return true
 			}
 		}
+
+		// Allow to change dedicated storage items (called by governance-like)
+		match call {
+			RuntimeCall::System(frame_system::Call::set_storage { items })
+				if items.iter().any(|(k, _)| k.eq(&bridging::XcmBridgeHubRouterByteFee::key())) =>
+				return true,
+			_ => (),
+		};
 
 		matches!(
 			call,
@@ -460,6 +468,7 @@ impl xcm_executor::Config for XcmConfig {
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 	type AssetLocker = ();
 	type AssetExchanger = ();
+	// TODO:check-parameter: change and assert in tests when (https://github.com/paritytech/polkadot/pull/7005) merged
 	type FeeManager = ();
 	type MessageExporter = ();
 	type UniversalAliases = bridging::UniversalAliases;
@@ -482,7 +491,11 @@ type LocalXcmRouter = (
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
-pub type XcmRouter = WithUniqueTopic<(LocalXcmRouter, bridging::BridgingXcmRouter)>;
+pub type XcmRouter = WithUniqueTopic<(
+	LocalXcmRouter,
+	// Router which wraps and sends XCM to BridgeHub to be delivered to the Kusama GlobalConsensus
+	ToKusamaXcmRouter,
+)>;
 
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
@@ -567,7 +580,6 @@ pub mod bridging {
 	use assets_common::{matching, matching::*};
 	use parachains_common::xcm_config::LocationFilter;
 	use sp_std::collections::btree_set::BTreeSet;
-	use xcm_builder::UnpaidRemoteExporter;
 
 	parameter_types! {
 		pub BridgeHubPolkadotParaId: u32 = 1002;
@@ -577,7 +589,14 @@ pub mod bridging {
 		pub AssetHubKusama: MultiLocation =  MultiLocation::new(2, X2(GlobalConsensus(KusamaNetwork::get()), Parachain(1000)));
 		pub KsmLocation: MultiLocation =  MultiLocation::new(2, X1(GlobalConsensus(KusamaNetwork::get())));
 
+		/// Router expects payment with this `AssetId`.
+		/// (`AssetId` has to be aligned with `BridgeTable`)
+		pub XcmBridgeHubRouterFeeAssetId: AssetId = DotLocation::get().into();
+		/// Price per byte - can be adjusted via governance `set_storage` call.
+		pub storage XcmBridgeHubRouterByteFee: Balance = TransactionByteFee::get();
+
 		/// Set up exporters configuration.
+		/// `Option<MultiAsset>` represents static "base fee" which is used for total delivery fee calculation.
 		pub BridgeTable: sp_std::vec::Vec<(NetworkId, LocationFilter<InteriorMultiLocation>, MultiLocation, Option<MultiAsset>)> = sp_std::vec![
 			(
 				KusamaNetwork::get(),
@@ -586,7 +605,9 @@ pub mod bridging {
 					.add_equals(AssetHubKusama::get().interior.split_global().expect("invalid configuration for AssetHubKusama").1),
 					// and nothing else
 				BridgeHubPolkadot::get(),
-				None
+				// base delivery fee to local `BridgeHub`
+				// (initially was calculated `51220000` + 10% by test `BridgeHubPolkadot::can_calculate_weight_for_paid_export_message_with_reserve_transfer`)
+				Some((XcmBridgeHubRouterFeeAssetId::get(), 56342000).into())
 			)
 		];
 
@@ -636,10 +657,6 @@ pub mod bridging {
 
 	pub type FilteredNetworkExportTable =
 		parachains_common::xcm_config::FilteredNetworkExportTable<BridgeTable>;
-
-	/// Bridge router, which wraps and sends xcm to BridgeHub to be delivered to the different GlobalConsensus
-	pub type BridgingXcmRouter =
-		UnpaidRemoteExporter<FilteredNetworkExportTable, LocalXcmRouter, UniversalLocation>;
 
 	/// Reserve locations filter for `xcm_executor::Config::IsReserve`.
 	pub type IsTrustedBridgedReserveLocationForConcreteAsset =
