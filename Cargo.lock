@@ -9467,6 +9467,8 @@ dependencies = [
  "pin-project",
  "polkadot-core-primitives",
  "polkadot-node-core-pvf-common",
+ "polkadot-node-core-pvf-execute-worker",
+ "polkadot-node-core-pvf-prepare-worker",
  "polkadot-node-metrics",
  "polkadot-node-primitives",
  "polkadot-parachain",
@@ -9475,6 +9477,7 @@ dependencies = [
  "slotmap",
  "sp-core",
  "sp-maybe-compressed-blob",
+ "sp-tracing",
  "sp-wasm-interface",
  "substrate-build-script-utils",
  "tempfile",
@@ -9516,6 +9519,26 @@ dependencies = [
  "sp-core",
  "sp-externalities",
  "sp-io",
+ "tokio",
+ "tracing-gum",
+]
+
+[[package]]
+name = "polkadot-node-core-pvf-execute-worker"
+version = "0.9.43"
+source = "git+https://github.com/paritytech/polkadot?branch=master#7da410e5068689c4864054d5fcce78ce312aef08"
+dependencies = [
+ "cpu-time",
+ "futures",
+ "parity-scale-codec",
+ "polkadot-node-core-pvf-common",
+ "polkadot-parachain",
+ "polkadot-primitives",
+ "rayon",
+ "sp-core",
+ "sp-maybe-compressed-blob",
+ "sp-tracing",
+ "tikv-jemalloc-ctl",
  "tokio",
  "tracing-gum",
 ]
