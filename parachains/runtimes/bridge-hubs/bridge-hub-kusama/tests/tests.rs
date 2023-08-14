@@ -259,3 +259,12 @@ pub fn complex_relay_extrinsic_works() {
 		construct_and_apply_extrinsic,
 	);
 }
+
+#[test]
+pub fn can_calculate_weight_for_paid_export_message_with_reserve_transfer() {
+	bridge_hub_test_utils::test_cases::can_calculate_weight_for_paid_export_message_with_reserve_transfer::<
+		Runtime,
+		XcmConfig,
+		WeightToFee,
+	>();
+}
