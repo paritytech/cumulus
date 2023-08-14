@@ -379,12 +379,13 @@ pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentia
 	TrustBackedAssetsInstance,
 >;
 
-/// Cases where a remote origin is accepted as trusted Teleporter:
+/// Cases where a remote origin is accepted as a Trusted Teleporter:
+///
 /// - teleportation of KSM from the parent Relay Chain and sibling system parachains; and
-/// - teleportation of sibling parachain's assets (as ForeignCreators).
+/// - teleportation of sibling parachains' assets (as `ForeignCreators`).
 pub type TrustedTeleporters = (
-	IsForeignConcreteAsset<FromSiblingParachain<parachain_info::Pallet<Runtime>>>,
 	ConcreteNativeAssetFromSystem,
+	IsForeignConcreteAsset<FromSiblingParachain<parachain_info::Pallet<Runtime>>>,
 );
 
 pub struct XcmConfig;

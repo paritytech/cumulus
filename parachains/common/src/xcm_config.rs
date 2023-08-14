@@ -64,7 +64,7 @@ impl<Location: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation>
 	}
 }
 
-/// Accepts an asset if it is a native asset from a System Parachain.
+/// Accepts an asset if it is a native asset from the system (Relay Chain or system parachain).
 pub struct ConcreteNativeAssetFromSystem;
 impl ContainsPair<MultiAsset, MultiLocation> for ConcreteNativeAssetFromSystem {
 	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
