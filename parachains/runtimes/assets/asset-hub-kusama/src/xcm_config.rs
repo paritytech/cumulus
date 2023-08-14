@@ -29,9 +29,7 @@ use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
-	xcm_config::{
-		AssetFeeAsExistentialDepositMultiplier, ConcreteNativeAssetFromSiblingSystemParachain,
-	},
+	xcm_config::{AssetFeeAsExistentialDepositMultiplier, ConcreteNativeAssetFromSystem},
 };
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::ConvertInto;
@@ -40,8 +38,8 @@ use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
 	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, CurrencyAdapter,
 	DenyReserveTransferToRelayChain, DenyThenTry, DescribeAllTerminal, DescribeFamily,
-	EnsureXcmOrigin, FungiblesAdapter, HashedDescription, IsConcrete, LocalMint, NativeAsset,
-	NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+	EnsureXcmOrigin, FungiblesAdapter, HashedDescription, IsConcrete, LocalMint, NoChecking,
+	ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
 	SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId, UsingComponents,
 	WeightInfoBounds, WithComputedOrigin, WithUniqueTopic,
@@ -385,9 +383,8 @@ pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentia
 /// - teleportation of KSM from the parent Relay Chain and sibling system parachains; and
 /// - teleportation of sibling parachain's assets (as ForeignCreators).
 pub type TrustedTeleporters = (
-	NativeAsset,
 	IsForeignConcreteAsset<FromSiblingParachain<parachain_info::Pallet<Runtime>>>,
-	ConcreteNativeAssetFromSiblingSystemParachain,
+	ConcreteNativeAssetFromSystem,
 );
 
 pub struct XcmConfig;
