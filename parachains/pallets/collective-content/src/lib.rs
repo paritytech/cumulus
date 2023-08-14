@@ -18,7 +18,7 @@
 //! The pallet provides the functionality to store different types of content. This would typically
 //! be used by an on-chain collective, such as the Polkadot Alliance or Ambassador Program.
 //!
-//! The pallet stores content as a [OpaqueCid], which should correspond to some off-chain hosting service,
+//! The pallet stores content as an [OpaqueCid], which should correspond to some off-chain hosting service,
 //! such as IPFS, and contain any type of data. Each type of content has its own origin from which
 //! it can be managed. The origins are configurable in the runtime. Storing content does not require
 //! a deposit, as it is expected to be managed by a trusted collective.
@@ -49,7 +49,7 @@ use sp_core::ConstU32;
 use sp_std::prelude::*;
 
 /// IPFS compatible CID.
-// worst case 2 bytes base and codec, 2 bytes hash type and size, 64 bytes hash digest.
+// Worst case 2 bytes base and codec, 2 bytes hash type and size, 64 bytes hash digest.
 pub type OpaqueCid = BoundedVec<u8, ConstU32<68>>;
 
 #[frame_support::pallet]
