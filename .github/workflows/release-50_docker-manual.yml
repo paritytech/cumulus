@@ -34,7 +34,7 @@ jobs:
           echo "TMP folder: $TMP"
           echo "TMP=$TMP" >> $GITHUB_ENV
           pwd
-          # ls -al "${{ env.TMP }}"
+          ls -al "$TMP"
 
       - name: Fetch files from release
         working-directory: ${{ env.TMP }}
@@ -78,7 +78,7 @@ jobs:
             gpg --keyserver $KEYSERVER --receive-keys $KEY_PARITY_SEC
             echo -e "5\ny\n" | gpg --no-tty --command-fd 0 --expert --edit-key $KEY_PARITY_SEC trust;
 
-            if [[ ${{ github.event.release.prerelease }} == "true" ]]; then
+            if [[ "${{ github.event.release.prerelease }}" == "true" ]]; then
                 for key in $KEY_CHEVDOR $KEY_EGOR; do
                   (
                     echo "Importing GPG key $key"
