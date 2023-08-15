@@ -38,3 +38,8 @@ pub enum Call {
 	#[codec(index = 43)]
 	ToPolkadotXcmRouter(XcmBridgeHubRouterCall),
 }
+
+frame_support::parameter_types! {
+	/// Some sane weight to execute `xcm::Transact(pallet-xcm-bridge-hub-router::Call::report_bridge_status)`.
+	pub const XcmBridgeHubRouterTransactCallMaxWeight: frame_support::weights::Weight = frame_support::weights::Weight::from_parts(200_000_000, 6144);
+}
