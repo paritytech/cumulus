@@ -58,7 +58,7 @@ parameter_types! {
 
 	pub CongestedMessage: Xcm<()> = sp_std::vec![Transact {
 		origin_kind: OriginKind::Xcm,
-		require_weight_at_most: Weight::from_parts(0, 0),
+		require_weight_at_most: bp_asset_hub_kusama::XcmBridgeHubRouterTransactCallMaxWeight::get(),
 		call: bp_asset_hub_kusama::Call::ToPolkadotXcmRouter(
 			bp_asset_hub_kusama::XcmBridgeHubRouterCall::report_bridge_status {
 				bridge_id: Default::default(),
@@ -69,7 +69,7 @@ parameter_types! {
 
 	pub UncongestedMessage: Xcm<()> = sp_std::vec![Transact {
 		origin_kind: OriginKind::Xcm,
-		require_weight_at_most: Weight::from_parts(0, 0),
+		require_weight_at_most: bp_asset_hub_kusama::XcmBridgeHubRouterTransactCallMaxWeight::get(),
 		call: bp_asset_hub_kusama::Call::ToPolkadotXcmRouter(
 			bp_asset_hub_kusama::XcmBridgeHubRouterCall::report_bridge_status {
 				bridge_id: Default::default(),
