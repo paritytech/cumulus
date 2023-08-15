@@ -35,11 +35,12 @@ use asset_test_utils::{CollatorSessionKeys, ExtBuilder, RuntimeHelper, XcmReceiv
 use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
-	assert_noop, assert_ok, sp_io,
+	assert_noop, assert_ok,
 	traits::fungibles::InspectEnumerable,
 	weights::{Weight, WeightToFee as WeightToFeeT},
 };
 use parachains_common::{AccountId, AssetIdForTrustBackedAssets, AuraId, Balance};
+use sp_io;
 use sp_runtime::{
 	traits::{CheckedAdd, CheckedSub, MaybeEquivalence},
 	Permill,

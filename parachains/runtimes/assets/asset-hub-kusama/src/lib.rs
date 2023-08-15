@@ -57,7 +57,7 @@ use frame_support::{
 		InstanceFilter,
 	},
 	weights::{ConstantMultiplier, Weight},
-	BoundedVec, PalletId, RuntimeDebug,
+	BoundedVec, PalletId,
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -71,6 +71,7 @@ use parachains_common::{
 	Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
+use sp_runtime::RuntimeDebug;
 use xcm_config::{
 	FellowshipLocation, ForeignAssetsConvertedConcreteId, GovernanceLocation, KsmLocation,
 	TrustBackedAssetsConvertedConcreteId, XcmConfig,
