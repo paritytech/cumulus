@@ -28,7 +28,10 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
-use parachains_common::{impls::ToStakingPot, xcm_config::AssetFeeAsExistentialDepositMultiplier};
+use parachains_common::{
+	impls::ToStakingPot,
+	xcm_config::{AllowUnpaidTransactsFrom, AssetFeeAsExistentialDepositMultiplier},
+};
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
@@ -352,6 +355,8 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 					pallet_uniques::Call::set_collection_max_supply { .. } |
 					pallet_uniques::Call::set_price { .. } |
 					pallet_uniques::Call::buy_item { .. }
+			) | RuntimeCall::ToPolkadotXcmRouter(
+				pallet_xcm_bridge_hub_router::Call::report_bridge_status { .. }
 			)
 		)
 	}
@@ -373,6 +378,8 @@ pub type Barrier = TrailingSetTopicAsId<
 					AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
 					// Subscriptions for version tracking are OK.
 					AllowSubscriptionsFrom<ParentOrSiblings>,
+					// Allows Transacts with `report_bridge_status` from sibling BridgeHub.
+					bridging::AllowUnpaidStatusReportsFromSiblingBridgeHub<ToPolkadotXcmRouter>,
 				),
 				UniversalLocation,
 				ConstU32<8>,
@@ -622,6 +629,7 @@ pub mod bridging {
 				(BridgeHubKusamaWithBridgeHubPolkadotInstance::get(), GlobalConsensus(PolkadotNetwork::get()))
 			]
 		);
+
 	}
 
 	impl Contains<(MultiLocation, Junction)> for UniversalAliases {
@@ -647,6 +655,21 @@ pub mod bridging {
 		FilteredNetworkExportTable,
 		IsNotAllowedConcreteAssetBy<AllowedReserveTransferAssetsLocations>,
 	>;
+
+	impl Contains<RuntimeCall> for ToPolkadotXcmRouter {
+		fn contains(call: &RuntimeCall) -> bool {
+			matches!(
+				call,
+				RuntimeCall::ToPolkadotXcmRouter(
+					pallet_xcm_bridge_hub_router::Call::report_bridge_status { .. }
+				)
+			)
+		}
+	}
+
+	/// Barrier for `pallet_xcm_bridge_hub_router::Pallet` to receive congestion statuses from sibling BridgeHub.
+	pub type AllowUnpaidStatusReportsFromSiblingBridgeHub<XcmBridgeHubRouter> =
+		AllowUnpaidTransactsFrom<RuntimeCall, XcmBridgeHubRouter, Equals<BridgeHubKusama>>;
 
 	/// Benchmarks helper for bridging configuration.
 	#[cfg(feature = "runtime-benchmarks")]

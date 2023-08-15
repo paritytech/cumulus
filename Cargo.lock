@@ -758,6 +758,7 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-session",
  "pallet-xcm",
+ "pallet-xcm-bridge-hub-router",
  "parachain-info",
  "parachains-common",
  "parachains-runtimes-test-utils",
@@ -1136,6 +1137,7 @@ name = "bp-asset-hub-kusama"
 version = "0.1.0"
 dependencies = [
  "bp-xcm-bridge-hub-router",
+ "frame-support",
  "parity-scale-codec",
  "scale-info",
 ]
@@ -1145,6 +1147,7 @@ name = "bp-asset-hub-polkadot"
 version = "0.1.0"
 dependencies = [
  "bp-xcm-bridge-hub-router",
+ "frame-support",
  "parity-scale-codec",
  "scale-info",
 ]

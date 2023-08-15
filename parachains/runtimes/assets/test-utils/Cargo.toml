@@ -40,6 +40,9 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", default-feature
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
+# Bridges
+pallet-xcm-bridge-hub-router = { path = "../../../../bridges/modules/xcm-bridge-hub-router", default-features = false }
+
 [dev-dependencies]
 hex-literal = "0.3.4"
 
@@ -75,4 +78,5 @@ std = [
     "xcm-executor/std",
     "cumulus-pallet-xcmp-queue/std",
     "cumulus-pallet-dmp-queue/std",
+    "pallet-xcm-bridge-hub-router/std",
 ]

@@ -29,7 +29,8 @@ pub use asset_hub_kusama_runtime::{
 	},
 	AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets, ForeignAssetsInstance,
 	MetadataDepositBase, MetadataDepositPerByte, ParachainSystem, Runtime, RuntimeCall,
-	RuntimeEvent, SessionKeys, System, TrustBackedAssetsInstance, XcmpQueue,
+	RuntimeEvent, SessionKeys, System, ToPolkadotXcmRouterInstance, TrustBackedAssetsInstance,
+	XcmpQueue,
 };
 use asset_test_utils::{CollatorSessionKey, CollatorSessionKeys, ExtBuilder, RuntimeHelper};
 use codec::{Decode, Encode};
@@ -824,4 +825,80 @@ fn test_report_bridge_status_call_compatibility() {
 		)
 		.encode()
 	)
+}
+
+#[test]
+fn report_bridge_status_from_xcm_bridge_router_works() {
+	asset_test_utils::test_cases_over_bridge::report_bridge_status_from_xcm_bridge_router_works::<
+		Runtime,
+		XcmConfig,
+		ParachainSystem,
+		XcmpQueue,
+		LocationToAccountId,
+		ToPolkadotXcmRouterInstance,
+	>(
+		collator_session_keys(),
+		ExistentialDeposit::get(),
+		AccountId::from(ALICE),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::PolkadotXcm(event)) => Some(event),
+				_ => None,
+			}
+		}),
+		Box::new(|runtime_event_encoded: Vec<u8>| {
+			match RuntimeEvent::decode(&mut &runtime_event_encoded[..]) {
+				Ok(RuntimeEvent::XcmpQueue(event)) => Some(event),
+				_ => None,
+			}
+		}),
+		bridging_to_asset_hub_polkadot,
+		WeightLimit::Unlimited,
+		Some(xcm_config::bridging::XcmBridgeHubRouterFeeAssetId::get()),
+		|| {
+			sp_std::vec![Transact {
+				origin_kind: OriginKind::Xcm,
+				require_weight_at_most:
+					bp_asset_hub_kusama::XcmBridgeHubRouterTransactCallMaxWeight::get(),
+				call: bp_asset_hub_kusama::Call::ToPolkadotXcmRouter(
+					bp_asset_hub_kusama::XcmBridgeHubRouterCall::report_bridge_status {
+						bridge_id: Default::default(),
+						is_congested: true,
+					}
+				)
+				.encode()
+				.into(),
+			}]
+			.into()
+		},
+		|| {
+			sp_std::vec![Transact {
+				origin_kind: OriginKind::Xcm,
+				require_weight_at_most:
+					bp_asset_hub_kusama::XcmBridgeHubRouterTransactCallMaxWeight::get(),
+				call: bp_asset_hub_kusama::Call::ToPolkadotXcmRouter(
+					bp_asset_hub_kusama::XcmBridgeHubRouterCall::report_bridge_status {
+						bridge_id: Default::default(),
+						is_congested: false,
+					}
+				)
+				.encode()
+				.into(),
+			}]
+			.into()
+		},
+	)
+}
+
+#[test]
+fn check_sane_weight_report_bridge_status() {
+	use pallet_xcm_bridge_hub_router::WeightInfo;
+	let actual = <Runtime as pallet_xcm_bridge_hub_router::Config<ToPolkadotXcmRouterInstance>>::WeightInfo::report_bridge_status();
+	let max_weight = bp_asset_hub_kusama::XcmBridgeHubRouterTransactCallMaxWeight::get();
+	assert!(
+		actual.all_lte(max_weight),
+		"max_weight: {:?} should be adjusted to actual {:?}",
+		max_weight,
+		actual
+	);
 }

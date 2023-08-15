@@ -495,3 +495,97 @@ fn assert_matches_pallet_xcm_reserve_transfer_assets_instructions<RuntimeCall>(
 		})
 		.expect("expected instruction DepositAsset");
 }
+
+pub fn report_bridge_status_from_xcm_bridge_router_works<
+	Runtime,
+	XcmConfig,
+	HrmpChannelOpener,
+	HrmpChannelSource,
+	LocationToAccountId,
+	XcmBridgeHubRouterInstance,
+>(
+	collator_session_keys: CollatorSessionKeys<Runtime>,
+	existential_deposit: BalanceOf<Runtime>,
+	alice_account: AccountIdOf<Runtime>,
+	unwrap_pallet_xcm_event: Box<dyn Fn(Vec<u8>) -> Option<pallet_xcm::Event<Runtime>>>,
+	unwrap_xcmp_queue_event: Box<
+		dyn Fn(Vec<u8>) -> Option<cumulus_pallet_xcmp_queue::Event<Runtime>>,
+	>,
+	ensure_configuration: fn() -> TestBridgingConfig,
+	weight_limit: WeightLimit,
+	maybe_paid_export_message: Option<AssetId>,
+	congested_message: fn() -> Xcm<XcmConfig::RuntimeCall>,
+	uncongested_message: fn() -> Xcm<XcmConfig::RuntimeCall>,
+) where
+	Runtime: frame_system::Config
+		+ pallet_balances::Config
+		+ pallet_session::Config
+		+ pallet_xcm::Config
+		+ parachain_info::Config
+		+ pallet_collator_selection::Config
+		+ cumulus_pallet_parachain_system::Config
+		+ cumulus_pallet_xcmp_queue::Config
+		+ pallet_xcm_bridge_hub_router::Config<XcmBridgeHubRouterInstance>,
+	AccountIdOf<Runtime>: Into<[u8; 32]>,
+	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
+	BalanceOf<Runtime>: From<Balance>,
+	<Runtime as pallet_balances::Config>::Balance: From<Balance> + Into<u128>,
+	XcmConfig: xcm_executor::Config,
+	LocationToAccountId: ConvertLocation<AccountIdOf<Runtime>>,
+	<Runtime as frame_system::Config>::AccountId:
+		Into<<<Runtime as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId>,
+	<<Runtime as frame_system::Config>::Lookup as StaticLookup>::Source:
+		From<<Runtime as frame_system::Config>::AccountId>,
+	HrmpChannelOpener: frame_support::inherent::ProvideInherent<
+		Call = cumulus_pallet_parachain_system::Call<Runtime>,
+	>,
+	HrmpChannelSource: XcmpMessageSource,
+	XcmBridgeHubRouterInstance: 'static,
+{
+	ExtBuilder::<Runtime>::default()
+		.with_collators(collator_session_keys.collators())
+		.with_session_keys(collator_session_keys.session_keys())
+		.with_tracing()
+		.build()
+		.execute_with(|| {
+			// check transfer works
+			limited_reserve_transfer_assets_for_native_asset_works::<
+				Runtime,
+				XcmConfig,
+				HrmpChannelOpener,
+				HrmpChannelSource,
+				LocationToAccountId,
+			>(
+				collator_session_keys,
+				existential_deposit,
+				alice_account,
+				unwrap_pallet_xcm_event,
+				unwrap_xcmp_queue_event,
+				ensure_configuration,
+				weight_limit,
+				maybe_paid_export_message,
+			);
+
+			let report_brigde_status = |is_congested: bool| {
+				// prepare bridge config
+				let TestBridgingConfig { local_bridge_hub_location, .. } = ensure_configuration();
+
+				// Call received XCM execution
+				let xcm = if is_congested { congested_message() } else { uncongested_message() };
+				let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
+
+				// execute xcm as XcmpQueue would do
+				let outcome = XcmExecutor::<XcmConfig>::execute_xcm(
+					local_bridge_hub_location,
+					xcm,
+					hash,
+					RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Sibling),
+				);
+				assert_eq!(outcome.ensure_complete(), Ok(()));
+				assert_eq!(is_congested, pallet_xcm_bridge_hub_router::Pallet::<Runtime, XcmBridgeHubRouterInstance>::bridge().is_congested);
+			};
+
+			report_brigde_status(true);
+			report_brigde_status(false);
+		})
+}
