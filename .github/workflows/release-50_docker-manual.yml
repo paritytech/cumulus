@@ -31,6 +31,7 @@ jobs:
       - name: Prepare temp folder
         run: |
           TMP=$(mktemp -d)
+          echo "TMP folder: $TMP"
           echo "TMP=$TMP" >> "$GITHUB_ENV"
           pwd
           ls -al "${{ env.TMP }}"
