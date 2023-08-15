@@ -307,7 +307,8 @@ pub struct RunCmd {
 }
 
 impl RunCmd {
-	/// Create a [`NormalizedRunCmd`] which merges the `collator` cli argument into `validator` to have only one.
+	/// Create a [`NormalizedRunCmd`] which merges the `collator` cli argument into `validator` to
+	/// have only one.
 	pub fn normalize(&self) -> NormalizedRunCmd {
 		let mut new_base = self.base.clone();
 
@@ -391,6 +392,10 @@ impl sc_cli::CliConfiguration for NormalizedRunCmd {
 
 	fn disable_grandpa(&self) -> sc_cli::Result<bool> {
 		self.base.disable_grandpa()
+	}
+
+	fn disable_beefy(&self) -> sc_cli::Result<bool> {
+		self.base.disable_beefy()
 	}
 
 	fn rpc_max_connections(&self) -> sc_cli::Result<u32> {

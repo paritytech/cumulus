@@ -783,11 +783,19 @@ impl_runtime_apis! {
 		fn best_finalized() -> Option<HeaderId<bp_rococo::Hash, bp_rococo::BlockNumber>> {
 			BridgeRococoGrandpa::best_finalized()
 		}
+		fn synced_headers_grandpa_info(
+		) -> Vec<bp_header_chain::HeaderGrandpaInfo<bp_rococo::Header>> {
+			BridgeRococoGrandpa::synced_headers_grandpa_info()
+		}
 	}
 
 	impl bp_wococo::WococoFinalityApi<Block> for Runtime {
 		fn best_finalized() -> Option<HeaderId<bp_wococo::Hash, bp_wococo::BlockNumber>> {
 			BridgeWococoGrandpa::best_finalized()
+		}
+		fn synced_headers_grandpa_info(
+		) -> Vec<bp_header_chain::HeaderGrandpaInfo<bp_wococo::Header>> {
+			BridgeWococoGrandpa::synced_headers_grandpa_info()
 		}
 	}
 
@@ -956,6 +964,7 @@ impl_runtime_apis! {
 					MultiAsset { fun: Fungible(UNITS), id: Concrete(RelayLocation::get()) },
 				));
 				pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
+				pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = None;
 			}
 
 			impl pallet_xcm_benchmarks::fungible::Config for Runtime {
@@ -963,6 +972,7 @@ impl_runtime_apis! {
 
 				type CheckedAccount = CheckedAccount;
 				type TrustedTeleporter = TrustedTeleporter;
+				type TrustedReserve = TrustedReserve;
 
 				fn get_multi_asset() -> MultiAsset {
 					MultiAsset {
