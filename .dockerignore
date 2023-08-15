@@ -4,6 +4,8 @@
 **/*.md
 /docker/
 !/target/release/polkadot-parachain
+!/target/release/polkadot-parachain.asc
+!/target/release/polkadot-parachain.sha256
 
 # dotfiles in the repo root
 /.*
