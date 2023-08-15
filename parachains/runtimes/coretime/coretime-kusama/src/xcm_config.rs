@@ -67,7 +67,8 @@ pub type CurrencyTransactor = CurrencyAdapter<
 	Balances,
 	// Use this currency when it is a fungible asset matching the given location or name:
 	IsConcrete<KsmRelayLocation>,
-	// Do a simple punn to convert an `AccountId32` `MultiLocation` into a native chain `AccountId`:
+	// Do a simple punn to convert an `AccountId32` `MultiLocation` into a native chain
+	// `AccountId`:
 	LocationToAccountId,
 	// Our chain's `AccountId` type (we can't get away without mentioning it explicitly):
 	AccountId,
