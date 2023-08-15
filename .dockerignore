@@ -3,9 +3,7 @@
 **/*.txt
 **/*.md
 /docker/
-!/target/release/polkadot-parachain
-!/target/release/polkadot-parachain.asc
-!/target/release/polkadot-parachain.sha256
+!/target/release-artifacts/**/*
 
 # dotfiles in the repo root
 /.*
