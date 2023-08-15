@@ -32,7 +32,7 @@ jobs:
         run: |
           TMP=$(mktemp -d)
           echo "TMP folder: $TMP"
-          echo "TMP=$TMP" >> "$GITHUB_ENV"
+          echo "TMP=$TMP" >> $GITHUB_ENV
           pwd
           ls -al "${{ env.TMP }}"
 
