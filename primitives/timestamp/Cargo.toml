@@ -1,9 +1,10 @@
 [package]
 name = "cumulus-primitives-timestamp"
 version = "0.1.0"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
-description = "Provides timestamp related functionality for parachains."
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [ "derive" ] }
