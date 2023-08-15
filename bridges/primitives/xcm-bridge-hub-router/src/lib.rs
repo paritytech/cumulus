@@ -20,6 +20,7 @@
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
+use sp_core::H256;
 use sp_runtime::{FixedU128, RuntimeDebug};
 
 /// Minimal delivery fee factor.
@@ -53,4 +54,13 @@ impl Default for BridgeState {
 	fn default() -> BridgeState {
 		BridgeState { delivery_fee_factor: MINIMAL_DELIVERY_FEE_FACTOR, is_congested: false }
 	}
+}
+
+/// A minimized version of `pallet-xcm-bridge-hub-router::Call` that can be used without a runtime.
+#[derive(Encode, Decode, Debug, PartialEq, Eq, Clone, TypeInfo)]
+#[allow(non_camel_case_types)]
+pub enum XcmBridgeHubRouterCall {
+	/// `pallet-xcm-bridge-hub-router::Call::report_bridge_status`
+	#[codec(index = 0)]
+	report_bridge_status { bridge_id: H256, is_congested: bool },
 }
