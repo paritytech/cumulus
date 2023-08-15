@@ -117,9 +117,11 @@ pub type ForeignAssetsConvertedConcreteId = assets_common::ForeignAssetsConverte
 	(
 		// Ignore `TrustBackedAssets` explicitly
 		StartsWith<TrustBackedAssetsPalletLocation>,
-		// Ignore assets that start explicitly with our `GlobalConsensus(NetworkId)`; means:
-		// - foreign assets from our consensus should be: `MultiLocation {parents: 1, X*(Parachain(xyz), ..)}`
-		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` won't be accepted here
+		// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
+		// - foreign assets from our consensus should be: `MultiLocation {parents: 1,
+		//   X*(Parachain(xyz), ..)}
+		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` wont
+		//   be accepted here
 		StartsWithExplicitGlobalConsensus<UniversalLocationNetworkId>,
 	),
 	Balance,
@@ -293,6 +295,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 					pallet_assets::Call::thaw_asset { .. } |
 					pallet_assets::Call::transfer_ownership { .. } |
 					pallet_assets::Call::set_team { .. } |
+					pallet_assets::Call::set_metadata { .. } |
 					pallet_assets::Call::clear_metadata { .. } |
 					pallet_assets::Call::force_clear_metadata { .. } |
 					pallet_assets::Call::force_asset_status { .. } |
@@ -417,7 +420,8 @@ pub type Barrier = TrailingSetTopicAsId<
 			// Allow XCMs with some computed origins to pass through.
 			WithComputedOrigin<
 				(
-					// If the message is one that immediately attemps to pay for execution, then allow it.
+					// If the message is one that immediately attemps to pay for execution, then
+					// allow it.
 					AllowTopLevelPaidExecutionFrom<Everything>,
 					// Parent and its pluralities (i.e. governance bodies) get free execution.
 					AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
