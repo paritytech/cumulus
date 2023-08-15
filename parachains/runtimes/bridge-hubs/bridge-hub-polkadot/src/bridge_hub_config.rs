@@ -33,6 +33,7 @@ use bridge_runtime_common::{
 		RefundableParachain,
 	},
 };
+use codec::Encode;
 use frame_support::{parameter_types, traits::PalletInfoAccess, RuntimeDebug};
 use xcm::{latest::prelude::*, prelude::NetworkId};
 use xcm_builder::{BridgeBlobDispatcher, HaulBlobExporter};
@@ -55,8 +56,27 @@ parameter_types! {
 		ASSET_HUB_POLKADOT_TO_ASSET_HUB_KUSAMA_LANE_ID,
 	);
 
-	pub CongestedMessage: Xcm<()> = unimplemented!("TODO: not supported yet!");
-	pub UncongestedMessage: Xcm<()> = unimplemented!("TODO: not supported yet!");
+	pub CongestedMessage: Xcm<()> = sp_std::vec![Transact {
+		origin_kind: OriginKind::Xcm,
+		require_weight_at_most: Weight::from_parts(0, 0),
+		call: bp_asset_hub_polkadot::Call::ToKusamaXcmRouter(
+			bp_asset_hub_polkadot::XcmBridgeHubRouterCall::report_bridge_status {
+				bridge_id: Default::default(),
+				is_congested: true,
+			}
+		).encode().into(),
+	}].into();
+
+	pub UncongestedMessage: Xcm<()> = sp_std::vec![Transact {
+		origin_kind: OriginKind::Xcm,
+		require_weight_at_most: Weight::from_parts(0, 0),
+		call: bp_asset_hub_polkadot::Call::ToKusamaXcmRouter(
+			bp_asset_hub_polkadot::XcmBridgeHubRouterCall::report_bridge_status {
+				bridge_id: Default::default(),
+				is_congested: false,
+			}
+		).encode().into(),
+	}].into();
 }
 
 /// Proof of messages, coming from BridgeHubKusama.

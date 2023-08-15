@@ -72,6 +72,7 @@ parachain-info = { path = "../../../../parachains/pallets/parachain-info", defau
 parachains-common = { path = "../../../../parachains/common", default-features = false }
 
 # Bridges
+bp-asset-hub-kusama = { path = "../../../../bridges/primitives/chain-asset-hub-kusama", default-features = false }
 bp-bridge-hub-kusama = { path = "../../../../bridges/primitives/chain-bridge-hub-kusama", default-features = false }
 bp-bridge-hub-polkadot = { path = "../../../../bridges/primitives/chain-bridge-hub-polkadot", default-features = false }
 bp-header-chain = { path = "../../../../bridges/primitives/header-chain", default-features = false }
@@ -99,6 +100,7 @@ default = [
 	"std",
 ]
 std = [
+	"bp-asset-hub-kusama/std",
 	"bp-bridge-hub-kusama/std",
 	"bp-bridge-hub-polkadot/std",
 	"bp-header-chain/std",
