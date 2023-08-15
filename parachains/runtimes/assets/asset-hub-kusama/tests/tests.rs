@@ -804,3 +804,24 @@ fn change_xcm_bridge_hub_router_byte_fee_by_governance_works() {
 		},
 	)
 }
+
+#[test]
+fn test_report_bridge_status_call_compatibility() {
+	// if this test fails, make sure `bp_asset_hub_kusama` has valid encoding
+	assert_eq!(
+		RuntimeCall::ToPolkadotXcmRouter(
+			pallet_xcm_bridge_hub_router::Call::report_bridge_status {
+				bridge_id: Default::default(),
+				is_congested: true,
+			}
+		)
+		.encode(),
+		bp_asset_hub_kusama::Call::ToPolkadotXcmRouter(
+			bp_asset_hub_kusama::XcmBridgeHubRouterCall::report_bridge_status {
+				bridge_id: Default::default(),
+				is_congested: true,
+			}
+		)
+		.encode()
+	)
+}

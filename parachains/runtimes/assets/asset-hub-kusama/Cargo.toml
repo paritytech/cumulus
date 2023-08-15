@@ -81,6 +81,7 @@ pallet-xcm-bridge-hub-router = { path = "../../../../bridges/modules/xcm-bridge-
 
 [dev-dependencies]
 asset-test-utils = { path = "../test-utils"}
+bp-asset-hub-kusama = { path = "../../../../bridges/primitives/chain-asset-hub-kusama" }
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
