@@ -86,7 +86,7 @@ impl XcmBlobHauler for ToBridgeHubWococoXcmBlobHauler {
 
 	type ToSourceChainSender = crate::XcmRouter;
 	type CongestedMessage = ();
-	type UncongestedMessage =();
+	type UncongestedMessage = ();
 }
 pub const DEFAULT_XCM_LANE_TO_BRIDGE_HUB_WOCOCO: LaneId = LaneId([0, 0, 0, 1]);
 
