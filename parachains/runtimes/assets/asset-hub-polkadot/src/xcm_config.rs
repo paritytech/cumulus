@@ -90,7 +90,7 @@ pub type CurrencyTransactor = CurrencyAdapter<
 	(),
 >;
 
-/// `AssetId/Balance` converter for `TrustBackedAssets``
+/// `AssetId`/`Balance` converter for `TrustBackedAssets`.
 pub type TrustBackedAssetsConvertedConcreteId =
 	assets_common::TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance>;
 
@@ -117,8 +117,10 @@ pub type ForeignAssetsConvertedConcreteId = assets_common::ForeignAssetsConverte
 		// Ignore `TrustBackedAssets` explicitly
 		StartsWith<TrustBackedAssetsPalletLocation>,
 		// Ignore assets that start explicitly with our `GlobalConsensus(NetworkId)`, means:
-		// - foreign assets from our consensus should be: `MultiLocation {parents: 1, X*(Parachain(xyz), ..)}`
-		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` won't be accepted here
+		// - foreign assets from our consensus should be: `MultiLocation {parents: 1,
+		//   X*(Parachain(xyz), ..)}`
+		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` won't
+		//   be accepted here
 		StartsWithExplicitGlobalConsensus<UniversalLocationNetworkId>,
 	),
 	Balance,
@@ -229,7 +231,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				) | RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 				RuntimeCall::XcmpQueue(..) |
 				RuntimeCall::DmpQueue(..) |
-				RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
 				RuntimeCall::Assets(
 					pallet_assets::Call::create { .. } |
 						pallet_assets::Call::force_create { .. } |
@@ -348,7 +349,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 					pallet_uniques::Call::set_accept_ownership { .. } |
 					pallet_uniques::Call::set_collection_max_supply { .. } |
 					pallet_uniques::Call::set_price { .. } |
-					pallet_uniques::Call::buy_item { .. },
+					pallet_uniques::Call::buy_item { .. }
 			)
 		)
 	}
@@ -496,7 +497,8 @@ impl pallet_xcm::Config for Runtime {
 	type XcmRouter = XcmRouter;
 	// We support local origins dispatching XCM executions in principle...
 	type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
-	// ... but disallow generic XCM execution. As a result only teleports and reserve transfers are allowed.
+	// ... but disallow generic XCM execution. As a result only teleports and reserve transfers are
+	// allowed.
 	type XcmExecuteFilter = Nothing;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
