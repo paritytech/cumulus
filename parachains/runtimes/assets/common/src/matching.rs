@@ -176,8 +176,8 @@ impl<LocationAssetFilters: Get<sp_std::vec::Vec<FilteredLocation>>>
 }
 
 /// Adapter for `Contains<(MultiLocation, sp_std::vec::Vec<MultiAsset>)>` which checks
-/// if `Exporters` contains exporter for **remote** `MultiLocation` and iff so, then checks `Filter`,
-/// anyway return false.
+/// if `Exporters` contains exporter for **remote** `MultiLocation` and iff so, then checks
+/// `Filter`, anyway return false.
 ///
 /// Note: Assumes that `Exporters` do not depend on `XCM program` and works for `Xcm::default()`.
 pub struct ExcludeOnlyForRemoteDestination<UniversalLocation, Exporters, Exclude>(

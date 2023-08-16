@@ -44,7 +44,7 @@ polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-f
 pallet-xcm-bridge-hub-router = { path = "../../../../bridges/modules/xcm-bridge-hub-router", default-features = false }
 
 [dev-dependencies]
-hex-literal = "0.3.4"
+hex-literal = "0.4.1"
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }

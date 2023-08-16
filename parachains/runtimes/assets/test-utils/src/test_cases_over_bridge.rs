@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Module contains predefined test-case scenarios for `Runtime` with various assets transferred over
-//! a bridge.
+//! Module contains predefined test-case scenarios for `Runtime` with various assets transferred
+//! over a bridge.
 
 use codec::Encode;
 use cumulus_primitives_core::XcmpMessageSource;
@@ -270,7 +270,7 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 		foreign_asset_id_minimum_balance,
 	): (MultiLocation, u128, u128),
 	ensure_configuration: fn() -> TestBridgingConfig,
-	(bridge_instance, universal_origin, descend_origin): (Junctions, Junction, Junctions), // bridge adds origin manipulation on the way
+	(bridge_instance, universal_origin, descend_origin): (Junctions, Junction, Junctions), /* bridge adds origin manipulation on the way */
 ) where
 	Runtime: frame_system::Config
 		+ pallet_balances::Config
@@ -316,7 +316,8 @@ pub fn receive_reserve_asset_deposited_from_different_consensus_works<
 				existential_deposit,
 			);
 
-			// sovereign account as foreign asset owner (can be whoever for this scenario, doesnt matter)
+			// sovereign account as foreign asset owner (can be whoever for this scenario, doesnt
+			// matter)
 			let sovereign_account_as_owner_of_foreign_asset =
 				LocationToAccountId::convert_location(&MultiLocation::parent()).unwrap();
 
