@@ -51,7 +51,7 @@ use {cumulus_primitives_core::ParaId, sp_core::Get};
 
 parameter_types! {
 	pub const WestendLocation: MultiLocation = MultiLocation::parent();
-	pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Westend);
+	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::Westend);
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub UniversalLocation: InteriorMultiLocation =
 		X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
@@ -273,7 +273,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				) | RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 				RuntimeCall::XcmpQueue(..) |
 				RuntimeCall::DmpQueue(..) |
-				RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
 				RuntimeCall::Assets(
 					pallet_assets::Call::create { .. } |
 						pallet_assets::Call::force_create { .. } |
@@ -293,6 +292,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 						pallet_assets::Call::thaw_asset { .. } |
 						pallet_assets::Call::transfer_ownership { .. } |
 						pallet_assets::Call::set_team { .. } |
+						pallet_assets::Call::set_metadata { .. } |
 						pallet_assets::Call::clear_metadata { .. } |
 						pallet_assets::Call::force_clear_metadata { .. } |
 						pallet_assets::Call::force_asset_status { .. } |
