@@ -11,6 +11,9 @@ use pallet_bridge_messages::{Config, Instance1, Instance2, OutboundLanes, Pallet
 use sp_core::Get;
 use xcm_emulator::{BridgeMessage, BridgeMessageDispatchError, BridgeMessageHandler, Chain};
 
+pub use paste;
+pub use parachains_common::{AccountId, Balance};
+
 pub struct BridgeHubMessageHandler<S, T, I> {
 	_marker: std::marker::PhantomData<(S, T, I)>,
 }
@@ -129,10 +132,10 @@ where
 #[macro_export]
 macro_rules! impl_accounts_helpers_for_relay_chain {
 	( $chain:ident ) => {
-		$crate::paste::paste! {
+		$crate::impls::paste::paste! {
 			impl $chain {
 				/// Fund a set of accounts with a balance
-				pub fn fund_accounts(accounts: Vec<(AccountId, Balance)>) {
+				pub fn fund_accounts(accounts: Vec<($crate::impls::AccountId, $crate::impls::Balance)>) {
 					Self::execute_with(|| {
 						for account in accounts {
 							assert_ok!(<Self as [<$chain Pallet>]>::Balances::force_set_balance(
@@ -144,7 +147,7 @@ macro_rules! impl_accounts_helpers_for_relay_chain {
 					});
 				}
 				/// Fund a sovereign account based on its Parachain Id
-				pub fn fund_para_sovereign(amount: Balance, para_id: ParaId) -> sp_runtime::AccountId32 {
+				pub fn fund_para_sovereign(amount: $crate::impls::Balance, para_id: ParaId) -> sp_runtime::AccountId32 {
 					let sovereign_account = Self::sovereign_account_id_of_child_para(para_id);
 					Self::fund_accounts(vec![(sovereign_account.clone(), amount)]);
 					sovereign_account
@@ -157,7 +160,7 @@ macro_rules! impl_accounts_helpers_for_relay_chain {
 #[macro_export]
 macro_rules! impl_assert_events_helpers_for_relay_chain {
 	( $chain:ident ) => {
-		$crate::paste::paste! {
+		$crate::impls::paste::paste! {
 			type [<$chain RuntimeEvent>] = <$chain as Chain>::RuntimeEvent;
 
 			impl $chain {
@@ -247,7 +250,7 @@ macro_rules! impl_assert_events_helpers_for_relay_chain {
 #[macro_export]
 macro_rules! impl_hrmp_channels_helpers_for_relay_chain {
 	( $chain:ident ) => {
-		$crate::paste::paste! {
+		$crate::impls::paste::paste! {
 			impl $chain {
 				/// Init open channel request with another Parachain
 				pub fn init_open_channel_call(
@@ -305,10 +308,10 @@ macro_rules! impl_hrmp_channels_helpers_for_relay_chain {
 #[macro_export]
 macro_rules! impl_accounts_helpers_for_parachain {
 	( $chain:ident ) => {
-		$crate::paste::paste! {
+		$crate::impls::paste::paste! {
 			impl $chain {
 				/// Fund a set of accounts with a balance
-				pub fn fund_accounts(accounts: Vec<(AccountId, Balance)>) {
+				pub fn fund_accounts(accounts: Vec<($crate::impls::AccountId, $crate::impls::Balance)>) {
 					Self::execute_with(|| {
 						for account in accounts {
 							assert_ok!(<Self as [<$chain Pallet>]>::Balances::force_set_balance(
@@ -327,7 +330,7 @@ macro_rules! impl_accounts_helpers_for_parachain {
 #[macro_export]
 macro_rules! impl_assert_events_helpers_for_parachain {
 	( $chain:ident ) => {
-		$crate::paste::paste! {
+		$crate::impls::paste::paste! {
 			type [<$chain RuntimeEvent>] = <$chain as Chain>::RuntimeEvent;
 
 			impl $chain {
@@ -474,14 +477,14 @@ macro_rules! impl_assert_events_helpers_for_parachain {
 #[macro_export]
 macro_rules! impl_assets_helpers_for_parachain {
 	( $chain:ident, $relay_chain:ident ) => {
-		$crate::paste::paste! {
+		$crate::impls::paste::paste! {
 			impl $chain {
 				/// Returns the encoded call for `force_create` from the assets pallet
 				pub fn force_create_asset_call(
 					asset_id: u32,
-					owner: AccountId,
+					owner: $crate::impls::AccountId,
 					is_sufficient: bool,
-					min_balance: Balance,
+					min_balance: $crate::impls::Balance,
 				) -> DoubleEncoded<()> {
 					<Self as Chain>::RuntimeCall::Assets(pallet_assets::Call::<
 						<Self as Chain>::Runtime,
@@ -500,9 +503,9 @@ macro_rules! impl_assets_helpers_for_parachain {
 				pub fn force_create_asset_xcm(
 					origin_kind: OriginKind,
 					asset_id: u32,
-					owner: AccountId,
+					owner: $crate::impls::AccountId,
 					is_sufficient: bool,
-					min_balance: Balance,
+					min_balance: $crate::impls::Balance,
 				) -> VersionedXcm<()> {
 					let call = Self::force_create_asset_call(asset_id, owner, is_sufficient, min_balance);
 					xcm_transact_unpaid_execution(call, origin_kind)
@@ -512,7 +515,7 @@ macro_rules! impl_assets_helpers_for_parachain {
 				pub fn mint_asset(
 					signed_origin: <Self as Chain>::RuntimeOrigin,
 					id: u32,
-					beneficiary: AccountId,
+					beneficiary: $crate::impls::AccountId,
 					amount_to_mint: u128,
 				) {
 					Self::execute_with(|| {
@@ -543,7 +546,7 @@ macro_rules! impl_assets_helpers_for_parachain {
 					id: u32,
 					min_balance: u128,
 					is_sufficient: bool,
-					asset_owner: AccountId,
+					asset_owner: $crate::impls::AccountId,
 					amount_to_mint: u128,
 				) {
 					// Init values for Relay Chain
