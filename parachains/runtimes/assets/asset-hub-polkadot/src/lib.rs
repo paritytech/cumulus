@@ -1118,6 +1118,9 @@ impl_runtime_apis! {
 				fn make_congested() {
 					cumulus_pallet_xcmp_queue::bridging::suspend_channel_for_benchmarks::<Runtime>(xcm_config::bridging::BridgeHubPolkadotParaId::get().into());
 				}
+				fn bridged_target_destination() -> MultiLocation {
+					xcm_config::bridging::AssetHubKusama::get()
+				}
 			}
 
 			use xcm::latest::prelude::*;
