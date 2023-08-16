@@ -106,3 +106,8 @@ impl<SiblingParaId: Get<ParaId>, Runtime: crate::Config>
 		true
 	}
 }
+
+#[cfg(feature = "runtime-benchmarks")]
+pub fn suspend_channel_for_benchmarks<T: crate::Config>(target: ParaId) {
+	pallet::Pallet::<T>::suspend_channel(target)
+}
