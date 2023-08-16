@@ -428,7 +428,8 @@ impl xcm_executor::Config for XcmConfig {
 	>;
 	type Trader = (
 		UsingComponents<WeightToFee, DotLocation, AccountId, Balances, ToStakingPot<Runtime>>,
-		// This trader allows to pay with `is_sufficient=true` "Trust Backed" assets from dedicated `pallet_assets` instance - `Assets`.
+		// This trader allows to pay with `is_sufficient=true` "Trust Backed" assets from dedicated
+		// `pallet_assets` instance - `Assets`.
 		cumulus_primitives_utility::TakeFirstAssetTrader<
 			AccountId,
 			AssetFeeAsExistentialDepositMultiplierFeeCharger,
@@ -440,7 +441,8 @@ impl xcm_executor::Config for XcmConfig {
 				XcmAssetFeesReceiver,
 			>,
 		>,
-		// This trader allows to pay with `is_sufficient=true` "Foreign" assets from dedicated `pallet_assets` instance - `ForeignAssets`.
+		// This trader allows to pay with `is_sufficient=true` "Foreign" assets from dedicated
+		// `pallet_assets` instance - `ForeignAssets`.
 		cumulus_primitives_utility::TakeFirstAssetTrader<
 			AccountId,
 			ForeignAssetFeeAsExistentialDepositMultiplierFeeCharger,
@@ -502,7 +504,8 @@ impl pallet_xcm::Config for Runtime {
 	type XcmExecuteFilter = Nothing;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
-	// Allow reserve based transfer to everywhere except for bridging, here we strictly check what assets are allowed.
+	// Allow reserve based transfer to everywhere except for bridging, here we strictly check what
+	// assets are allowed.
 	type XcmReserveTransferFilter =
 		EverythingBut<bridging::IsNotAllowedExplicitlyForReserveTransfer>;
 	type Weigher = WeightInfoBounds<
@@ -639,7 +642,8 @@ pub mod bridging {
 	pub type FilteredNetworkExportTable =
 		parachains_common::xcm_config::FilteredNetworkExportTable<BridgeTable>;
 
-	/// Bridge router, which wraps and sends xcm to BridgeHub to be delivered to the different GlobalConsensus
+	/// Bridge router, which wraps and sends xcm to BridgeHub to be delivered to the different
+	/// GlobalConsensus
 	pub type BridgingXcmRouter =
 		UnpaidRemoteExporter<FilteredNetworkExportTable, LocalXcmRouter, UniversalLocation>;
 
