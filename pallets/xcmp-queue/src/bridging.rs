@@ -18,7 +18,8 @@ use cumulus_primitives_core::ParaId;
 use frame_support::pallet_prelude::Get;
 
 /// Adapter implementation for `bp_xcm_bridge_hub_router::XcmChannelStatusProvider` which checks
-/// both `OutboundXcmpStatus` and `InboundXcmpStatus` for defined `ParaId` if any of those is suspended.
+/// both `OutboundXcmpStatus` and `InboundXcmpStatus` for defined `ParaId` if any of those is
+/// suspended.
 pub struct InboundAndOutboundXcmpChannelCongestionStatusProvider<SiblingBridgeHubParaId, Runtime>(
 	sp_std::marker::PhantomData<(SiblingBridgeHubParaId, Runtime)>,
 );
@@ -40,8 +41,9 @@ impl<SiblingBridgeHubParaId: Get<ParaId>, Runtime: crate::Config>
 			return true
 		}
 
-		// if the inbound channel with recipient is suspended, it means that we are unable to receive
-		// congestion reports from the bridge hub. So we assume the bridge pipeline is congested too
+		// if the inbound channel with recipient is suspended, it means that we are unable to
+		// receive congestion reports from the bridge hub. So we assume the bridge pipeline is
+		// congested too
 		let inbound_channels = pallet::InboundXcmpStatus::<Runtime>::get();
 		let inbound_channel = inbound_channels.iter().find(|c| c.sender == sibling_bridge_hub_id);
 		let is_inbound_channel_suspended =
@@ -90,14 +92,15 @@ impl<SiblingParaId: Get<ParaId>, Runtime: crate::Config>
 			return true
 		}
 
-		// TODO: the following restriction is arguable, we may live without that, assuming that there
-		// can't be more than some `N` messages queued at the bridge queue (at the source BH) AND before
-		// accepting next (or next-after-next) delivery transaction, we'll receive the suspension signal
-		// from the target parachain and stop accepting delivery transactions
+		// TODO: the following restriction is arguable, we may live without that, assuming that
+		// there can't be more than some `N` messages queued at the bridge queue (at the source BH)
+		// AND before accepting next (or next-after-next) delivery transaction, we'll receive the
+		// suspension signal from the target parachain and stop accepting delivery transactions
 
-		// it takes some time for target parachain to suspend inbound channel with the target BH and during that
-		// we will keep accepting new message delivery transactions. Let's also reject new deliveries if
-		// there are too many "pages" (concatenated XCM messages) in the target BH -> target parachain queue.
+		// it takes some time for target parachain to suspend inbound channel with the target BH and
+		// during that we will keep accepting new message delivery transactions. Let's also reject
+		// new deliveries if there are too many "pages" (concatenated XCM messages) in the target BH
+		// -> target parachain queue.
 		const MAX_QUEUED_PAGES_BEFORE_DEACTIVATION: u16 = 4;
 		if channel_with_sibling_parachain.queued_pages() > MAX_QUEUED_PAGES_BEFORE_DEACTIVATION {
 			return true
