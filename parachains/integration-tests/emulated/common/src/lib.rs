@@ -10,7 +10,7 @@ pub use constants::{
 	PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD,
 };
 use frame_support::{
-	assert_ok, instances::Instance1, parameter_types, sp_tracing, traits::fungibles::Inspect,
+	assert_ok, instances::Instance1, traits::fungibles::Inspect,
 };
 pub use impls::{RococoWococoMessageHandler, WococoRococoMessageHandler};
 pub use parachains_common::{AccountId, Balance};

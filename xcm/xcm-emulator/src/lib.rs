@@ -445,7 +445,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				ext.execute_with(|| {
 					#[allow(clippy::no_effect)]
 					$on_init;
-					sp_tracing::try_init_simple();
+					$crate::sp_tracing::try_init_simple();
 
 					let mut block_number = <Self as Chain>::System::block_number();
 					block_number = std::cmp::max(1, block_number);
@@ -687,7 +687,7 @@ macro_rules! __impl_test_ext_for_parachain {
 				ext.execute_with(|| {
 					#[allow(clippy::no_effect)]
 					$on_init;
-					sp_tracing::try_init_simple();
+					$crate::sp_tracing::try_init_simple();
 
 					let mut block_number = <Self as Chain>::System::block_number();
 					block_number = std::cmp::max(1, block_number);
