@@ -99,6 +99,8 @@ thread_local! {
 	pub static PARA_IDS: RefCell<HashMap<String, Vec<u32>>> = RefCell::new(HashMap::new());
 	/// Flag indicating if global variables have been initialized for a certain Network
 	pub static INITIALIZED: RefCell<HashMap<String, bool>> = RefCell::new(HashMap::new());
+	/// Most recent `HeadData` of each parachain, encoded.
+	pub static LAST_HEAD: RefCell<HashMap<String, HashMap<u32, HeadData>>> = RefCell::new(HashMap::new());
 }
 
 pub trait CheckAssertion<Origin, Destination, Hops, Args>
@@ -279,7 +281,7 @@ pub trait Parachain: Chain {
 		Self::LocationToAccountId::convert_location(&location).unwrap()
 	}
 
-	fn prepare_for_xcmp();
+	fn init();
 }
 
 pub trait Bridge {
@@ -616,7 +618,7 @@ macro_rules! decl_test_parachains {
 				type ParachainSystem = $crate::ParachainSystemPallet<<Self as Chain>::Runtime>;
 				type ParachainInfo = $parachain_info;
 
-				fn prepare_for_xcmp() {
+				fn init() {
 					use $crate::{Network, NetworkComponent, Hooks};
 
 					let para_id = Self::para_id();
@@ -629,6 +631,11 @@ macro_rules! decl_test_parachains {
 						let header = <Self as Chain>::System::finalize();
 						let parent_head_data = $crate::HeadData(header.encode());
 
+						$crate::LAST_HEAD.with(|b| b.borrow_mut()
+							.get_mut(<Self as NetworkComponent>::Network::name())
+							.expect("network not initialized?")
+							.insert(para_id.into(), parent_head_data.clone())
+						);
 
 						let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
 							<Self as Chain>::RuntimeOrigin::none(),
@@ -771,9 +778,17 @@ macro_rules! __impl_test_ext_for_parachain {
 				// Initialize block
 				$local_ext.with(|v| {
 					v.borrow_mut().execute_with(|| {
-						// Get parent head data
-						let header = <Self as Chain>::System::finalize();
-						let parent_head_data = $crate::HeadData(header.encode());
+						let parent_head_data = $crate::LAST_HEAD.with(|b| b.borrow_mut()
+							.get_mut(<Self as NetworkComponent>::Network::name())
+							.expect("network not initialized?")
+							.get(&para_id)
+							.expect("network not initialized?")
+							.clone()
+						);
+
+						// This needs to pass for things to work correctly in
+						// unincluded segment handling.
+						assert_eq!(parent_head_data.hash(), <Self as Chain>::System::parent_hash());
 
 						// Increase block number
 						let mut relay_block_number = <$name as NetworkComponent>::Network::relay_block_number();
@@ -832,13 +847,21 @@ macro_rules! __impl_test_ext_for_parachain {
 							<$name>::send_bridged_messages(msg);
 						}
 
-						// clean messages
-						<Self as Parachain>::ParachainSystem::on_initialize(block_number);
-
 						// log events
 						Self::events().iter().for_each(|event| {
 							$crate::log::debug!(target: concat!("events::", stringify!($name)), "{:?}", event);
 						});
+
+						// Store parent head data for use later.
+						let created_header = <Self as Chain>::System::finalize();
+						let parent_head_data = $crate::LAST_HEAD.with(|b| b.borrow_mut()
+							.get_mut(<Self as NetworkComponent>::Network::name())
+							.expect("network not initialized?")
+							.insert(para_id.into(), $crate::HeadData(created_header.encode()))
+						);
+
+						// clean messages
+						<Self as Parachain>::ParachainSystem::on_initialize(block_number);
 
 						// clean events
 						<Self as Chain>::System::reset_events();
@@ -894,13 +917,14 @@ macro_rules! decl_test_networks {
 					$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().remove(Self::name()));
 					$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().remove(Self::name()));
 					$crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().remove(Self::name()));
+					$crate::LAST_HEAD.with(|b| b.borrow_mut().remove(Self::name()));
 
 					<$relay_chain>::reset_ext();
 					$( <$parachain>::reset_ext(); )*
 				}
 
 				fn init() {
-					// If Network has not been itialized yet, it gets initialized
+					// If Network has not been initialized yet, it gets initialized
 					if $crate::INITIALIZED.with(|b| b.borrow_mut().get(Self::name()).is_none()) {
 						$crate::INITIALIZED.with(|b| b.borrow_mut().insert(Self::name().to_string(), true));
 						$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().insert(Self::name().to_string(), $crate::VecDeque::new()));
@@ -909,8 +933,9 @@ macro_rules! decl_test_networks {
 						$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().insert(Self::name().to_string(), $crate::VecDeque::new()));
 						$crate::BRIDGED_MESSAGES.with(|b| b.borrow_mut().insert(Self::name().to_string(), $crate::VecDeque::new()));
 						$crate::PARA_IDS.with(|b| b.borrow_mut().insert(Self::name().to_string(), Self::para_ids()));
+						$crate::LAST_HEAD.with(|b| b.borrow_mut().insert(Self::name().to_string(), $crate::HashMap::new()));
 
-						$( <$parachain>::prepare_for_xcmp(); )*
+						$( <$parachain>::init(); )*
 					}
 				}
 

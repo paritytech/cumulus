@@ -188,7 +188,9 @@ decl_test_parachains! {
 	},
 	pub struct PenpalPolkadotB {
 		genesis = penpal::genesis(penpal::PARA_ID_B),
-		on_init = (),
+		on_init = {
+			penpal_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = penpal_runtime,
 		core = {
 			XcmpMessageHandler: penpal_runtime::XcmpQueue,
@@ -256,7 +258,9 @@ decl_test_parachains! {
 	},
 	pub struct PenpalKusamaB {
 		genesis = penpal::genesis(penpal::PARA_ID_B),
-		on_init = (),
+		on_init = {
+			penpal_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = penpal_runtime,
 		core = {
 			XcmpMessageHandler: penpal_runtime::XcmpQueue,
