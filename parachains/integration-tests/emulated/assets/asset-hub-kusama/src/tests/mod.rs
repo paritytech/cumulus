@@ -14,7 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+mod hrmp_channels;
 mod reserve_transfer;
+mod send;
+mod set_xcm_versions;
 mod swap;
 mod teleport;
-mod transact;
