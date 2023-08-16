@@ -6,7 +6,7 @@ description = "Cumulus-specific networking protocol"
 edition = "2021"
 
 [dependencies]
-async-trait = "0.1.72"
+async-trait = "0.1.73"
 codec = { package = "parity-scale-codec", version = "3.0.0", features = [ "derive" ] }
 futures = "0.3.28"
 futures-timer = "3.0.2"
@@ -31,7 +31,7 @@ cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 
 [dev-dependencies]
 portpicker = "0.1.1"
-tokio = { version = "1.29.1", features = ["macros"] }
+tokio = { version = "1.31.0", features = ["macros"] }
 url = "2.4.0"
 
 # Substrate

@@ -146,8 +146,9 @@ impl<
 		&mut self,
 		weight: Weight,
 		payment: xcm_executor::Assets,
+		context: &XcmContext,
 	) -> Result<xcm_executor::Assets, XcmError> {
-		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::buy_weight weight: {:?}, payment: {:?}", weight, payment);
+		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::buy_weight weight: {:?}, payment: {:?}, context: {:?}", weight, payment, context);
 
 		// Make sure we dont enter twice
 		if self.0.is_some() {
@@ -196,8 +197,8 @@ impl<
 		Ok(unused)
 	}
 
-	fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
-		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::refund_weight weight: {:?}", weight);
+	fn refund_weight(&mut self, weight: Weight, context: &XcmContext) -> Option<MultiAsset> {
+		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::refund_weight weight: {:?}, context: {:?}", weight, context);
 		if let Some(AssetTraderRefunder {
 			mut weight_outstanding,
 			outstanding_concrete_asset: MultiAsset { id, fun },
@@ -233,7 +234,8 @@ impl<
 				outstanding_minus_substracted.saturated_into();
 			let asset_balance: u128 = asset_balance.saturated_into();
 
-			// Construct outstanding_concrete_asset with the same location id and substracted balance
+			// Construct outstanding_concrete_asset with the same location id and substracted
+			// balance
 			let outstanding_concrete_asset: MultiAsset = (id, outstanding_minus_substracted).into();
 
 			// Substract from existing weight and balance
@@ -270,8 +272,8 @@ impl<
 }
 
 /// XCM fee depositor to which we implement the TakeRevenue trait
-/// It receives a Transact implemented argument, a 32 byte convertible acocuntId, and the fee receiver account
-/// FungiblesMutateAdapter should be identical to that implemented by WithdrawAsset
+/// It receives a Transact implemented argument, a 32 byte convertible acocuntId, and the fee
+/// receiver account FungiblesMutateAdapter should be identical to that implemented by WithdrawAsset
 pub struct XcmFeesTo32ByteAccount<FungiblesMutateAdapter, AccountId, ReceiverAccount>(
 	PhantomData<(FungiblesMutateAdapter, AccountId, ReceiverAccount)>,
 );
@@ -526,6 +528,7 @@ mod tests {
 			FeeChargerAssetsHandleRefund,
 		>;
 		let mut trader = <Trader as WeightTrader>::new();
+		let ctx = XcmContext { origin: None, message_id: XcmHash::default(), topic: None };
 
 		// prepare test data
 		let asset: MultiAsset = (Here, AMOUNT).into();
@@ -533,9 +536,9 @@ mod tests {
 		let weight_to_buy = Weight::from_parts(1_000, 1_000);
 
 		// lets do first call (success)
-		assert_ok!(trader.buy_weight(weight_to_buy, payment.clone()));
+		assert_ok!(trader.buy_weight(weight_to_buy, payment.clone(), &ctx));
 
 		// lets do second call (error)
-		assert_eq!(trader.buy_weight(weight_to_buy, payment), Err(XcmError::NotWithdrawable));
+		assert_eq!(trader.buy_weight(weight_to_buy, payment, &ctx), Err(XcmError::NotWithdrawable));
 	}
 }

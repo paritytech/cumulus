@@ -106,7 +106,7 @@ where
 	Proposer: ProposerInterface<Block, Transaction = BI::Transaction> + Send + Sync + 'static,
 	Proposer::Transaction: Sync,
 	CS: CollatorServiceInterface<Block> + Send + Sync + 'static,
-	P: Pair + Send + Sync,
+	P: Pair,
 	P::Public: AppPublic + Member + Codec,
 	P::Signature: TryFrom<Vec<u8>> + Member + Codec,
 {

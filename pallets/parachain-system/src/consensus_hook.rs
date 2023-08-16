@@ -70,9 +70,9 @@ pub trait ConsensusHook {
 /// even if collators haven't been updated to provide the last included parent in the state
 /// proof yet.
 ///
-/// This behaves as though the parent is included, even if the relay chain state proof doesn't contain
-/// the included para head. If the para head is present in the state proof, this does ensure the
-/// parent is included.
+/// This behaves as though the parent is included, even if the relay chain state proof doesn't
+/// contain the included para head. If the para head is present in the state proof, this does ensure
+/// the parent is included.
 pub struct ExpectParentIncluded;
 
 impl ConsensusHook for ExpectParentIncluded {

@@ -438,11 +438,11 @@ pub fn assert_total<Fungibles, AccountId>(
 /// Helper function which emulates opening HRMP channel which is needed for `XcmpQueue` to pass.
 ///
 /// Calls parachain-system's `create_inherent` in case the channel hasn't been opened before, and
-/// thus requires additional parameters for validating it: latest included parachain head and parachain
-/// AuRa-slot.
+/// thus requires additional parameters for validating it: latest included parachain head and
+/// parachain AuRa-slot.
 ///
-/// AuRa consensus hook expects pallets to be initialized, before calling this function make sure to `run_to_block`
-/// at least once.
+/// AuRa consensus hook expects pallets to be initialized, before calling this function make sure to
+/// `run_to_block` at least once.
 pub fn mock_open_hrmp_channel<
 	C: cumulus_pallet_parachain_system::Config,
 	T: ProvideInherent<Call = cumulus_pallet_parachain_system::Call<C>>,

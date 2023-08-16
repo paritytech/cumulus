@@ -221,8 +221,8 @@ pub mod pallet {
 		/// Something that can check the associated relay parent block number.
 		type CheckAssociatedRelayNumber: CheckAssociatedRelayNumber;
 
-		/// An entry-point for higher-level logic to manage the backlog of unincluded parachain blocks
-		/// and authorship rights for those blocks.
+		/// An entry-point for higher-level logic to manage the backlog of unincluded parachain
+		/// blocks and authorship rights for those blocks.
 		///
 		/// Typically, this should be a hook tailored to the collator-selection/consensus mechanism
 		/// that is used for this chain.
@@ -232,7 +232,8 @@ pub mod pallet {
 		/// that collators aren't expected to have node versions that supply the included block
 		/// in the relay-chain state proof.
 		///
-		/// This config type is only available when the `parameterized-consensus-hook` crate feature is activated.
+		/// This config type is only available when the `parameterized-consensus-hook` crate feature
+		/// is activated.
 		#[cfg(feature = "parameterized-consensus-hook")]
 		type ConsensusHook: ConsensusHook;
 	}
@@ -369,8 +370,8 @@ pub mod pallet {
 					AggregatedUnincludedSegment::<T>::get().unwrap_or_default();
 				let consumed_go_ahead_signal =
 					if aggregated_segment.consumed_go_ahead_signal().is_some() {
-						// Some ancestor within the segment already processed this signal -- validated during
-						// inherent creation.
+						// Some ancestor within the segment already processed this signal --
+						// validated during inherent creation.
 						None
 					} else {
 						relay_upgrade_go_ahead
@@ -718,17 +719,19 @@ pub mod pallet {
 	pub(super) type UnincludedSegment<T: Config> =
 		StorageValue<_, Vec<Ancestor<T::Hash>>, ValueQuery>;
 
-	/// Storage field that keeps track of bandwidth used by the unincluded segment along with the latest
-	/// the latest HRMP watermark. Used for limiting the acceptance of new blocks with respect to relay
-	/// chain constraints.
+	/// Storage field that keeps track of bandwidth used by the unincluded segment along with the
+	/// latest the latest HRMP watermark. Used for limiting the acceptance of new blocks with
+	/// respect to relay chain constraints.
 	#[pallet::storage]
 	pub(super) type AggregatedUnincludedSegment<T: Config> =
 		StorageValue<_, SegmentTracker<T::Hash>, OptionQuery>;
 
-	/// In case of a scheduled upgrade, this storage field contains the validation code to be applied.
+	/// In case of a scheduled upgrade, this storage field contains the validation code to be
+	/// applied.
 	///
-	/// As soon as the relay chain gives us the go-ahead signal, we will overwrite the [`:code`][sp_core::storage::well_known_keys::CODE]
-	/// which will result the next block process with the new validation code. This concludes the upgrade process.
+	/// As soon as the relay chain gives us the go-ahead signal, we will overwrite the
+	/// [`:code`][sp_core::storage::well_known_keys::CODE] which will result the next block process
+	/// with the new validation code. This concludes the upgrade process.
 	#[pallet::storage]
 	#[pallet::getter(fn new_validation_function)]
 	pub(super) type PendingValidationCode<T: Config> = StorageValue<_, Vec<u8>, ValueQuery>;
@@ -1103,8 +1106,8 @@ impl<T: Config> Pallet<T> {
 
 	/// Process all inbound horizontal messages relayed by the collator.
 	///
-	/// This is similar to `Pallet::process_inbound_downward_messages`, but works on multiple inbound
-	/// channels.
+	/// This is similar to `Pallet::process_inbound_downward_messages`, but works on multiple
+	/// inbound channels.
 	///
 	/// **Panics** if either any of horizontal messages submitted by the collator was sent from
 	///            a para which has no open channel to this parachain or if after processing
@@ -1232,7 +1235,8 @@ impl<T: Config> Pallet<T> {
 		let new_len = {
 			let para_head_hash = included_head;
 			let dropped: Vec<Ancestor<T::Hash>> = <UnincludedSegment<T>>::mutate(|chain| {
-				// Drop everything up to (inclusive) the block with an included para head, if present.
+				// Drop everything up to (inclusive) the block with an included para head, if
+				// present.
 				let idx = chain
 					.iter()
 					.position(|block| {
@@ -1335,7 +1339,8 @@ impl<T: Config> Pallet<T> {
 	/// The implementation of the runtime upgrade functionality for parachains.
 	pub fn schedule_code_upgrade(validation_function: Vec<u8>) -> DispatchResult {
 		// Ensure that `ValidationData` exists. We do not care about the validation data per se,
-		// but we do care about the [`UpgradeRestrictionSignal`] which arrives with the same inherent.
+		// but we do care about the [`UpgradeRestrictionSignal`] which arrives with the same
+		// inherent.
 		ensure!(<ValidationData<T>>::exists(), Error::<T>::ValidationDataNotAvailable,);
 		ensure!(<UpgradeRestrictionSignal<T>>::get().is_none(), Error::<T>::ProhibitedByPolkadot);
 
@@ -1359,7 +1364,8 @@ impl<T: Config> Pallet<T> {
 
 	/// Returns the [`CollationInfo`] of the current active block.
 	///
-	/// The given `header` is the header of the built block we are collecting the collation info for.
+	/// The given `header` is the header of the built block we are collecting the collation info
+	/// for.
 	///
 	/// This is expected to be used by the
 	/// [`CollectCollationInfo`](cumulus_primitives_core::CollectCollationInfo) runtime api.
@@ -1540,7 +1546,8 @@ impl<Block: BlockT> CheckInherents<Block> for DummyCheckInherents<Block> {
 pub trait OnSystemEvent {
 	/// Called in each blocks once when the validation data is set by the inherent.
 	fn on_validation_data(data: &PersistedValidationData);
-	/// Called when the validation code is being applied, aka from the next block on this is the new runtime.
+	/// Called when the validation code is being applied, aka from the next block on this is the new
+	/// runtime.
 	fn on_validation_code_applied();
 }
 
@@ -1563,8 +1570,8 @@ pub trait RelaychainStateProvider {
 	fn current_relay_chain_state() -> RelayChainState;
 }
 
-/// Implements [`BlockNumberProvider`] that returns relay chain block number fetched from validation data.
-/// When validation data is not available (e.g. within on_initialize), 0 will be returned.
+/// Implements [`BlockNumberProvider`] that returns relay chain block number fetched from validation
+/// data. When validation data is not available (e.g. within on_initialize), 0 will be returned.
 ///
 /// **NOTE**: This has been deprecated, please use [`RelaychainDataProvider`]
 #[deprecated = "Use `RelaychainDataProvider` instead"]
@@ -1606,9 +1613,10 @@ impl<T: Config> RelaychainStateProvider for RelaychainDataProvider<T> {
 	}
 }
 
-/// Implements [`BlockNumberProvider`] and [`RelaychainStateProvider`] that returns relevant relay data fetched from
-/// validation data.
-/// NOTE: When validation data is not available (e.g. within on_initialize), default values will be returned.
+/// Implements [`BlockNumberProvider`] and [`RelaychainStateProvider`] that returns relevant relay
+/// data fetched from validation data.
+/// NOTE: When validation data is not available (e.g. within on_initialize), default values will be
+/// returned.
 pub struct RelaychainDataProvider<T>(sp_std::marker::PhantomData<T>);
 
 impl<T: Config> BlockNumberProvider for RelaychainDataProvider<T> {

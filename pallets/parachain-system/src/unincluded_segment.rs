@@ -316,10 +316,11 @@ impl HrmpWatermarkUpdate {
 pub struct SegmentTracker<H> {
 	/// Bandwidth used by the segment.
 	used_bandwidth: UsedBandwidth,
-	/// The mark which specifies the block number up to which all inbound HRMP messages are processed.
+	/// The mark which specifies the block number up to which all inbound HRMP messages are
+	/// processed.
 	hrmp_watermark: Option<relay_chain::BlockNumber>,
-	/// Optional go-ahead signal sent by the relay-chain some ancestor from the segment has processed.
-	/// Only single block is allowed to have this set within the whole segment.
+	/// Optional go-ahead signal sent by the relay-chain some ancestor from the segment has
+	/// processed. Only single block is allowed to have this set within the whole segment.
 	consumed_go_ahead_signal: Option<relay_chain::UpgradeGoAhead>,
 	/// `H` is the type of para head hash.
 	phantom_data: PhantomData<H>,

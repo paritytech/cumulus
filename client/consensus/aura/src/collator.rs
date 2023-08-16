@@ -86,7 +86,7 @@ pub struct Collator<Block, P, BI, CIDP, RClient, Proposer, CS> {
 	para_id: ParaId,
 	proposer: Proposer,
 	collator_service: CS,
-	_marker: std::marker::PhantomData<(Block, P)>,
+	_marker: std::marker::PhantomData<(Block, Box<dyn Fn(P) + Send + Sync + 'static>)>,
 }
 
 impl<Block, P, BI, CIDP, RClient, Proposer, CS> Collator<Block, P, BI, CIDP, RClient, Proposer, CS>
