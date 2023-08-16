@@ -17,22 +17,6 @@ LABEL io.parity.image.authors="devops-team@parity.io" \
 # show backtraces
 ENV RUST_BACKTRACE 1
 
-# install tools and dependencies
-# RUN apt-get update && \
-# 	DEBIAN_FRONTEND=noninteractive apt-get install -y \
-# 		libssl1.1 \
-# 		ca-certificates \
-# 		curl && \
-# # apt cleanup
-# 	apt-get autoremove -y && \
-# 	apt-get clean && \
-# 	find /var/lib/apt/lists/ -type f -not -name lock -delete; \
-# # add user and link ~/.local/share/polkadot to /data
-# 	useradd -m -u 1000 -U -s /bin/sh -d /polkadot polkadot && \
-# 	mkdir -p /data /polkadot/.local/share && \
-# 	chown -R polkadot:polkadot /data && \
-# 	ln -s /data /polkadot/.local/share/polkadot && \
-
 USER root
 
 RUN	mkdir -p /specs
