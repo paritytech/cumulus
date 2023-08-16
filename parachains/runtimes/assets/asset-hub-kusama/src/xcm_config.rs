@@ -148,7 +148,7 @@ pub type ForeignFungiblesTransactor = FungiblesAdapter<
 	CheckingAccount,
 >;
 
-/// `AssetId/Balance` converter for `PoolAssets`
+/// `AssetId`/`Balance` converter for `PoolAssets`.
 pub type PoolAssetsConvertedConcreteId =
 	assets_common::PoolAssetsConvertedConcreteId<PoolAssetsPalletLocation, Balance>;
 
