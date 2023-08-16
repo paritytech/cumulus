@@ -637,15 +637,6 @@ macro_rules! decl_test_parachains {
 							.insert(para_id.into(), parent_head_data.clone())
 						);
 
-						let _ = <Self as Parachain>::ParachainSystem::set_validation_data(
-							<Self as Chain>::RuntimeOrigin::none(),
-							<Self as NetworkComponent>::Network::hrmp_channel_parachain_inherent_data(
-								para_id.into(),
-								relay_block_number,
-								parent_head_data,
-							),
-						);
-						// set `AnnouncedHrmpMessagesPerCandidate`
 						<Self as Parachain>::ParachainSystem::on_initialize(block_number);
 					});
 				}
@@ -786,10 +777,6 @@ macro_rules! __impl_test_ext_for_parachain {
 							.clone()
 						);
 
-						// This needs to pass for things to work correctly in
-						// unincluded segment handling.
-						assert_eq!(parent_head_data.hash(), <Self as Chain>::System::parent_hash());
-
 						// Increase block number
 						let mut relay_block_number = <$name as NetworkComponent>::Network::relay_block_number();
 						relay_block_number += 1;
@@ -860,11 +847,13 @@ macro_rules! __impl_test_ext_for_parachain {
 							.insert(para_id.into(), $crate::HeadData(created_header.encode()))
 						);
 
-						// clean messages
-						<Self as Parachain>::ParachainSystem::on_initialize(block_number);
-
 						// clean events
 						<Self as Chain>::System::reset_events();
+
+						// reinitialize before next call.
+						let next_block_number = block_number + 1;
+						<Self as Chain>::System::initialize(&next_block_number, &created_header.hash(), &Default::default());
+						<Self as Parachain>::ParachainSystem::on_initialize(next_block_number);
 					})
 				});
 
