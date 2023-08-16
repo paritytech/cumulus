@@ -1055,7 +1055,6 @@ macro_rules! decl_test_networks {
 				fn hrmp_channel_parachain_inherent_data(
 					para_id: u32,
 					relay_parent_number: u32,
-					parent_head_data: $crate::HeadData,
 				) -> $crate::ParachainInherentData {
 					use $crate::cumulus_primitives_core::{relay_chain::{HeadData, HrmpChannelId}, AbridgedHrmpChannel};
 
@@ -1069,8 +1068,6 @@ macro_rules! decl_test_networks {
 						if let Err(idx) = e_index.binary_search(&recipient_para_id) {
 							e_index.insert(idx, recipient_para_id);
 						}
-
-						sproof.included_para_head = parent_head_data.clone().into();
 
 						sproof
 							.hrmp_channels
