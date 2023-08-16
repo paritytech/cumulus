@@ -790,11 +790,12 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 		})
 }
 
+/// Estimates fee for paid `ExportMessage` processing.
 pub fn can_calculate_weight_for_paid_export_message_with_reserve_transfer<
 	Runtime,
 	XcmConfig,
 	WeightToFee,
->()
+>() -> u128
 where
 	Runtime: frame_system::Config + pallet_balances::Config,
 	XcmConfig: xcm_executor::Config,
@@ -890,7 +891,9 @@ where
 		"Estimate fee: {:?} for `ExportMessage` for runtime: {:?}",
 		estimated_fee,
 		Runtime::Version::get(),
-	)
+	);
+
+	estimated_fee.into()
 }
 
 pub mod test_data {
