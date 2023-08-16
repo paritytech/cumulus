@@ -1,23 +1,20 @@
 use crate::*;
 use frame_support::{instances::Instance2, BoundedVec};
 use sp_runtime::{DispatchError, ModuleError};
-use xcm_emulator::Parachain;
 
 #[test]
 fn swap_locally_on_chain_using_local_assets() {
-	const ASSET_ID: u32 = 1;
-
 	let asset_native = Box::new(asset_hub_kusama_runtime::xcm_config::KsmLocation::get());
 	let asset_one = Box::new(MultiLocation {
 		parents: 0,
-		interior: X2(PalletInstance(50), GeneralIndex(ASSET_ID.into())),
+		interior: X2(PalletInstance(ASSETS_PALLET_ID), GeneralIndex(ASSET_ID.into())),
 	});
 
 	AssetHubKusama::execute_with(|| {
-		type RuntimeEvent = <AssetHubKusama as Parachain>::RuntimeEvent;
+		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 
 		assert_ok!(<AssetHubKusama as AssetHubKusamaPallet>::Assets::create(
-			<AssetHubKusama as Parachain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
+			<AssetHubKusama as Chain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
 			ASSET_ID.into(),
 			AssetHubKusamaSender::get().into(),
 			1000,
@@ -25,20 +22,20 @@ fn swap_locally_on_chain_using_local_assets() {
 		assert!(<AssetHubKusama as AssetHubKusamaPallet>::Assets::asset_exists(ASSET_ID));
 
 		assert_ok!(<AssetHubKusama as AssetHubKusamaPallet>::Assets::mint(
-			<AssetHubKusama as Parachain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
+			<AssetHubKusama as Chain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
 			ASSET_ID.into(),
 			AssetHubKusamaSender::get().into(),
 			100_000_000_000_000,
 		));
 
 		assert_ok!(<AssetHubKusama as AssetHubKusamaPallet>::Balances::force_set_balance(
-			<AssetHubKusama as Parachain>::RuntimeOrigin::root(),
+			<AssetHubKusama as Chain>::RuntimeOrigin::root(),
 			AssetHubKusamaSender::get().into(),
 			100_000_000_000_000,
 		));
 
 		assert_ok!(<AssetHubKusama as AssetHubKusamaPallet>::AssetConversion::create_pool(
-			<AssetHubKusama as Parachain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
+			<AssetHubKusama as Chain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
 			asset_native.clone(),
 			asset_one.clone(),
 		));
@@ -51,7 +48,7 @@ fn swap_locally_on_chain_using_local_assets() {
 		);
 
 		assert_ok!(<AssetHubKusama as AssetHubKusamaPallet>::AssetConversion::add_liquidity(
-			<AssetHubKusama as Parachain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
+			<AssetHubKusama as Chain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
 			asset_native.clone(),
 			asset_one.clone(),
 			1_000_000_000_000,
@@ -72,7 +69,7 @@ fn swap_locally_on_chain_using_local_assets() {
 
 		assert_ok!(
 			<AssetHubKusama as AssetHubKusamaPallet>::AssetConversion::swap_exact_tokens_for_tokens(
-				<AssetHubKusama as Parachain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
+				<AssetHubKusama as Chain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
 				path,
 				100,
 				1,
@@ -92,7 +89,7 @@ fn swap_locally_on_chain_using_local_assets() {
 		);
 
 		assert_ok!(<AssetHubKusama as AssetHubKusamaPallet>::AssetConversion::remove_liquidity(
-			<AssetHubKusama as Parachain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
+			<AssetHubKusama as Chain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
 			asset_native,
 			asset_one,
 			1414213562273 - 2_000_000_000, // all but the 2 EDs can't be retrieved.
@@ -107,14 +104,13 @@ fn swap_locally_on_chain_using_local_assets() {
 fn swap_locally_on_chain_using_foreign_assets() {
 	use frame_support::weights::WeightToFee;
 
-	const ASSET_ID: u32 = 1;
 	let asset_native = Box::new(asset_hub_kusama_runtime::xcm_config::KsmLocation::get());
 
 	let foreign_asset1_at_asset_hub_kusama = Box::new(MultiLocation {
 		parents: 1,
 		interior: X3(
-			Parachain(PenpalKusama::para_id().into()),
-			PalletInstance(50),
+			Parachain(PenpalKusamaA::para_id().into()),
+			PalletInstance(ASSETS_PALLET_ID),
 			GeneralIndex(ASSET_ID.into()),
 		),
 	});
@@ -124,18 +120,18 @@ fn swap_locally_on_chain_using_foreign_assets() {
 			.into();
 
 	let penpal_location =
-		MultiLocation { parents: 1, interior: X1(Parachain(PenpalKusama::para_id().into())) };
+		MultiLocation { parents: 1, interior: X1(Parachain(PenpalKusamaA::para_id().into())) };
 
 	// 1. Create asset on penpal:
-	PenpalKusama::execute_with(|| {
-		assert_ok!(<PenpalKusama as PenpalKusamaPallet>::Assets::create(
-			<PenpalKusama as Parachain>::RuntimeOrigin::signed(PenpalKusamaSender::get()),
+	PenpalKusamaA::execute_with(|| {
+		assert_ok!(<PenpalKusamaA as PenpalKusamaAPallet>::Assets::create(
+			<PenpalKusamaA as Chain>::RuntimeOrigin::signed(PenpalKusamaASender::get()),
 			ASSET_ID.into(),
-			PenpalKusamaSender::get().into(),
+			PenpalKusamaASender::get().into(),
 			1000,
 		));
 
-		assert!(<PenpalKusama as PenpalKusamaPallet>::Assets::asset_exists(ASSET_ID));
+		assert!(<PenpalKusamaA as PenpalKusamaAPallet>::Assets::asset_exists(ASSET_ID));
 	});
 
 	// 2. Create foreign asset on asset_hub_kusama:
@@ -145,21 +141,22 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	let sov_penpal_on_asset_hub_kusama = AssetHubKusama::sovereign_account_id_of(penpal_location);
 
 	AssetHubKusama::fund_accounts(vec![
-		(AssetHubKusamaSender::get(), 5_000_000), // An account to swap dot for something else.
-		(sov_penpal_on_asset_hub_kusama.clone(), 1000_000_000_000_000_000),
+		(AssetHubKusamaSender::get().into(), 5_000_000 * KUSAMA_ED), /* An account to swap dot
+		                                                              * for something else. */
+		(sov_penpal_on_asset_hub_kusama.clone().into(), 1000_000_000_000_000_000 * KUSAMA_ED),
 	]);
 
 	let sov_penpal_on_asset_hub_kusama_as_location: MultiLocation = MultiLocation {
 		parents: 0,
-		interior: X1(AccountId32 {
+		interior: X1(AccountId32Junction {
 			network: None,
 			id: sov_penpal_on_asset_hub_kusama.clone().into(),
 		}),
 	};
 
 	let call_foreign_assets_create =
-		<AssetHubKusama as Para>::RuntimeCall::ForeignAssets(pallet_assets::Call::<
-			<AssetHubKusama as Para>::Runtime,
+		<AssetHubKusama as Chain>::RuntimeCall::ForeignAssets(pallet_assets::Call::<
+			<AssetHubKusama as Chain>::Runtime,
 			Instance2,
 		>::create {
 			id: *foreign_asset1_at_asset_hub_kusama,
@@ -191,18 +188,18 @@ fn swap_locally_on_chain_using_foreign_assets() {
 	]));
 
 	// Send XCM message from penpal => asset_hub_kusama
-	let sudo_penpal_origin = <PenpalKusama as Parachain>::RuntimeOrigin::root();
-	PenpalKusama::execute_with(|| {
-		assert_ok!(<PenpalKusama as PenpalKusamaPallet>::PolkadotXcm::send(
+	let sudo_penpal_origin = <PenpalKusamaA as Chain>::RuntimeOrigin::root();
+	PenpalKusamaA::execute_with(|| {
+		assert_ok!(<PenpalKusamaA as PenpalKusamaAPallet>::PolkadotXcm::send(
 			sudo_penpal_origin.clone(),
 			bx!(assets_para_destination.clone()),
 			bx!(xcm),
 		));
 
-		type RuntimeEvent = <PenpalKusama as Parachain>::RuntimeEvent;
+		type RuntimeEvent = <PenpalKusamaA as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
-			PenpalKusama,
+			PenpalKusamaA,
 			vec![
 				RuntimeEvent::PolkadotXcm(pallet_xcm::Event::Sent { .. }) => {},
 			]
@@ -220,10 +217,10 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		// (While it might be nice to use batch,
 		// currently that's disabled due to safe call filters.)
 
-		type RuntimeEvent = <AssetHubKusama as Parachain>::RuntimeEvent;
+		type RuntimeEvent = <AssetHubKusama as Chain>::RuntimeEvent;
 		// 3. Mint foreign asset (in reality this should be a teleport or some such)
 		assert_ok!(<AssetHubKusama as AssetHubKusamaPallet>::ForeignAssets::mint(
-			<AssetHubKusama as Parachain>::RuntimeOrigin::signed(
+			<AssetHubKusama as Chain>::RuntimeOrigin::signed(
 				sov_penpal_on_asset_hub_kusama.clone().into()
 			),
 			*foreign_asset1_at_asset_hub_kusama,
@@ -240,7 +237,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 		// 4. Create pool:
 		assert_ok!(<AssetHubKusama as AssetHubKusamaPallet>::AssetConversion::create_pool(
-			<AssetHubKusama as Parachain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
+			<AssetHubKusama as Chain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
 			asset_native.clone(),
 			foreign_asset1_at_asset_hub_kusama.clone(),
 		));
@@ -254,7 +251,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 		// 5. Add liquidity:
 		assert_ok!(<AssetHubKusama as AssetHubKusamaPallet>::AssetConversion::add_liquidity(
-			<AssetHubKusama as Parachain>::RuntimeOrigin::signed(
+			<AssetHubKusama as Chain>::RuntimeOrigin::signed(
 				sov_penpal_on_asset_hub_kusama.clone()
 			),
 			asset_native.clone(),
@@ -283,7 +280,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 		assert_ok!(
 			<AssetHubKusama as AssetHubKusamaPallet>::AssetConversion::swap_exact_tokens_for_tokens(
-				<AssetHubKusama as Parachain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
+				<AssetHubKusama as Chain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
 				path,
 				100000,
 				1000,
@@ -304,7 +301,7 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 		// 7. Remove liquidity
 		assert_ok!(<AssetHubKusama as AssetHubKusamaPallet>::AssetConversion::remove_liquidity(
-			<AssetHubKusama as Parachain>::RuntimeOrigin::signed(
+			<AssetHubKusama as Chain>::RuntimeOrigin::signed(
 				sov_penpal_on_asset_hub_kusama.clone()
 			),
 			asset_native,
@@ -319,8 +316,6 @@ fn swap_locally_on_chain_using_foreign_assets() {
 
 #[test]
 fn cannot_create_pool_from_pool_assets() {
-	const ASSET_ID: u32 = 1;
-
 	let asset_native = Box::new(asset_hub_kusama_runtime::xcm_config::KsmLocation::get());
 	let mut asset_one = asset_hub_kusama_runtime::xcm_config::PoolAssetsPalletLocation::get();
 	asset_one.append_with(GeneralIndex(ASSET_ID.into())).expect("pool assets");
@@ -329,7 +324,7 @@ fn cannot_create_pool_from_pool_assets() {
 		let pool_owner_account_id = asset_hub_kusama_runtime::AssetConversionOrigin::get();
 
 		assert_ok!(<AssetHubKusama as AssetHubKusamaPallet>::PoolAssets::create(
-			<AssetHubKusama as Parachain>::RuntimeOrigin::signed(pool_owner_account_id.clone()),
+			<AssetHubKusama as Chain>::RuntimeOrigin::signed(pool_owner_account_id.clone()),
 			ASSET_ID.into(),
 			pool_owner_account_id.clone().into(),
 			1000,
@@ -337,7 +332,7 @@ fn cannot_create_pool_from_pool_assets() {
 		assert!(<AssetHubKusama as AssetHubKusamaPallet>::PoolAssets::asset_exists(ASSET_ID));
 
 		assert_ok!(<AssetHubKusama as AssetHubKusamaPallet>::PoolAssets::mint(
-			<AssetHubKusama as Parachain>::RuntimeOrigin::signed(pool_owner_account_id),
+			<AssetHubKusama as Chain>::RuntimeOrigin::signed(pool_owner_account_id),
 			ASSET_ID.into(),
 			AssetHubKusamaSender::get().into(),
 			3_000_000_000_000,
@@ -345,7 +340,7 @@ fn cannot_create_pool_from_pool_assets() {
 
 		assert_matches::assert_matches!(
 			<AssetHubKusama as AssetHubKusamaPallet>::AssetConversion::create_pool(
-				<AssetHubKusama as Parachain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
+				<AssetHubKusama as Chain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
 				asset_native.clone(),
 				Box::new(asset_one),
 			),

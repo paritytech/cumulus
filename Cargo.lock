@@ -448,6 +448,7 @@ name = "asset-hub-kusama-integration-tests"
 version = "1.0.0"
 dependencies = [
  "assert_matches",
+ "asset-hub-kusama-runtime",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",

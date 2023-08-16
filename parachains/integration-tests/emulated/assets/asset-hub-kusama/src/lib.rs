@@ -35,14 +35,12 @@ pub use integration_tests_common::{
 	BridgeHubKusamaPallet, BridgeHubKusamaReceiver, BridgeHubKusamaSender, BridgeHubPolkadot,
 	BridgeHubPolkadotPallet, BridgeHubPolkadotReceiver, BridgeHubPolkadotSender, Collectives,
 	CollectivesPallet, CollectivesReceiver, CollectivesSender, Kusama, KusamaMockNet, KusamaPallet,
-	KusamaReceiver, KusamaSender, PenpalKusama, PenpalKusamaA, PenpalKusamaAPallet,
-	PenpalKusamaAReceiver, PenpalKusamaASender, PenpalKusamaB, PenpalKusamaBPallet,
-	PenpalKusamaBReceiver, PenpalKusamaBSender, PenpalKusamaPallet, PenpalKusamaReceiver,
-	PenpalKusamaSender, PenpalPolkadot, PenpalPolkadotA, PenpalPolkadotAReceiver,
-	PenpalPolkadotASender, PenpalPolkadotReceiver, PenpalPolkadotSender, Polkadot, PolkadotMockNet,
-	PolkadotPallet, PolkadotReceiver, PolkadotSender,
+	KusamaReceiver, KusamaSender, PenpalKusamaA, PenpalKusamaAPallet, PenpalKusamaAReceiver,
+	PenpalKusamaASender, PenpalKusamaB, PenpalKusamaBPallet, PenpalKusamaBReceiver,
+	PenpalKusamaBSender, PenpalPolkadotA, PenpalPolkadotAReceiver, PenpalPolkadotASender, Polkadot,
+	PolkadotMockNet, PolkadotPallet, PolkadotReceiver, PolkadotSender,
 };
-pub use parachains_common::{AccountId, Balance};
+pub use parachains_common::Balance;
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use polkadot_parachain::primitives::{HrmpChannelId, Id};
 pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
