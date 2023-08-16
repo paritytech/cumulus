@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
-pub use casey::pascal;
 pub use codec::{Decode, Encode};
 pub use lazy_static::lazy_static;
 pub use log;
@@ -45,8 +44,6 @@ pub use frame_support::{
 pub use frame_system::{AccountInfo, Config as SystemConfig, Pallet as SystemPallet};
 pub use pallet_balances::AccountData;
 pub use pallet_message_queue;
-pub use parachain_info;
-pub use parachains_common::{AccountId, BlockNumber};
 pub use sp_arithmetic::traits::Bounded;
 pub use sp_core::{sr25519, storage::Storage, Pair, H256};
 pub use sp_io::TestExternalities;
@@ -260,7 +257,6 @@ pub trait RelayChain: Chain {
 
 pub trait Parachain: Chain {
 	type XcmpMessageHandler: XcmpMessageHandler;
-	type DmpMessageHandler: DmpMessageHandler;
 	type LocationToAccountId: ConvertLocation<AccountId>;
 	type ParachainInfo: Get<ParaId>;
 	type ParachainSystem;
@@ -355,7 +351,6 @@ macro_rules! decl_test_relay_chains {
 				core = {
 					MessageProcessor: $mp:path,
 					SovereignAccountOf: $sovereign_acc_of:path,
-
 				},
 				pallets = {
 					$($pallet_name:ident: $pallet_path:path,)*
@@ -963,11 +958,11 @@ macro_rules! decl_test_networks {
 
 								use $crate::{EnqueueMessage, CumulusAggregateMessageOrigin, BoundedSlice, ServiceQueues, TestExt};
 								type ParachainDmpQueue = <
-									<$parachain as Parachain>::Runtime
+									<$parachain as Chain>::Runtime
 									as
 									$crate::cumulus_pallet_parachain_system::Config
 								>::DmpQueue;
-								for m in msgs {
+								for m in msgs.clone().into_iter() {
 									<$parachain>::execute_with(|| {
 										<ParachainDmpQueue as EnqueueMessage<CumulusAggregateMessageOrigin>>::enqueue_message(
 											BoundedSlice::<_, _>::try_from(&m.1[..]).unwrap(),
@@ -1176,7 +1171,6 @@ macro_rules! assert_expected_events {
 			let mut meet_conditions = true;
 			let mut index_match = 0;
 			let mut event_message: Vec<String> = Vec::new();
-			let events = <$chain>::events();
 
 			for (index, event) in events.iter().enumerate() {
 				$crate::log::debug!(target: concat!("events::", stringify!($chain)), "{:?}", event);
@@ -1225,7 +1219,7 @@ macro_rules! assert_expected_events {
 					)
 				);
 			} else if !event_received {
-				message.push(format!("\n\n{}::\x1b[31m{}\x1b[0m was never received. All events:\n{:?}", stringify!($event_pat), events));
+				message.push(format!("\n\n{}::\x1b[31m{}\x1b[0m was never received. All events:\n{:#?}", stringify!($chain), stringify!($event_pat), events));
 			} else {
 				// If we find a perfect match we remove the event to avoid being potentially assessed multiple times
 				events.remove(index_match);
