@@ -106,7 +106,7 @@ impl RelayStateSproofBuilder {
 		self,
 	) -> (polkadot_primitives::Hash, sp_state_machine::StorageProof) {
 		let (db, root) =
-			PrefixedMemoryDB::<HashFor<polkadot_primitives::Block>>::default_with_root();
+			PrefixedMemoryDB::<HashingFor<polkadot_primitives::Block>>::default_with_root();
 		let state_version = Default::default(); // for test using default.
 		let mut backend = sp_state_machine::TrieBackendBuilder::new(db, root).build();
 
