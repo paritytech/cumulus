@@ -1,4 +1,5 @@
 use crate::*;
+use asset_hub_kusama_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 use frame_support::{instances::Instance2, BoundedVec};
 use sp_runtime::{DispatchError, ModuleError};
 
@@ -92,7 +93,7 @@ fn swap_locally_on_chain_using_local_assets() {
 			<AssetHubKusama as Chain>::RuntimeOrigin::signed(AssetHubKusamaSender::get()),
 			asset_native,
 			asset_one,
-			1414213562273 - 2_000_000_000, // all but the 2 EDs can't be retrieved.
+			1414213562273 - EXISTENTIAL_DEPOSIT * 2, // all but the 2 EDs can't be retrieved.
 			0,
 			0,
 			AssetHubKusamaSender::get().into(),
