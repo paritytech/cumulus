@@ -588,8 +588,10 @@ pub mod bridging {
 					// and nothing else
 				BridgeHubKusama::get(),
 				// base delivery fee to local `BridgeHub`
-				// (initially was calculated `170733333` + 10% by test `BridgeHubKusama::can_calculate_weight_for_paid_export_message_with_reserve_transfer`)
-				Some((XcmBridgeHubRouterFeeAssetId::get(), 187806666).into())
+				Some((
+					XcmBridgeHubRouterFeeAssetId::get(),
+					bp_asset_hub_kusama::BridgeHubKusamaBaseFeeInDots::get(),
+				).into())
 			)
 		];
 

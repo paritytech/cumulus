@@ -613,8 +613,10 @@ pub mod bridging {
 					// and nothing else
 				BridgeHubPolkadot::get(),
 				// base delivery fee to local `BridgeHub`
-				// (initially was calculated `51220000` + 10% by test `BridgeHubPolkadot::can_calculate_weight_for_paid_export_message_with_reserve_transfer`)
-				Some((XcmBridgeHubRouterFeeAssetId::get(), 56342000).into())
+				Some((
+					XcmBridgeHubRouterFeeAssetId::get(),
+					bp_asset_hub_polkadot::BridgeHubPolkadotBaseFeeInDots::get()
+				).into())
 			)
 		];
 

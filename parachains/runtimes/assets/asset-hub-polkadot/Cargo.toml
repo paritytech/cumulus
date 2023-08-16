@@ -76,11 +76,11 @@ assets-common = { path = "../common", default-features = false }
 
 # Bridges
 pallet-xcm-bridge-hub-router = { path = "../../../../bridges/modules/xcm-bridge-hub-router", default-features = false }
+bp-asset-hub-polkadot = { path = "../../../../bridges/primitives/chain-asset-hub-polkadot", default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.4.1"
 asset-test-utils = { path = "../test-utils"}
-bp-asset-hub-polkadot = { path = "../../../../bridges/primitives/chain-asset-hub-polkadot" }
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
@@ -195,5 +195,6 @@ std = [
 	"parachains-common/std",
 	"assets-common/std",
 	"pallet-xcm-bridge-hub-router/std",
+	"bp-asset-hub-polkadot/std",
 	"substrate-wasm-builder",
 ]
