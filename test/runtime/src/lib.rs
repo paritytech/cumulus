@@ -81,8 +81,8 @@ impl_opaque_keys! {
 pub const TEST_RUNTIME_UPGRADE_KEY: &[u8] = b"+test_runtime_upgrade_key+";
 
 // The only difference between the two declarations below is the `spec_version`. With the
-// `increment-spec-version` feature enabled `spec_version` should be greater than the one of without the
-// `increment-spec-version` feature.
+// `increment-spec-version` feature enabled `spec_version` should be greater than the one of without
+// the `increment-spec-version` feature.
 //
 // The duplication here is unfortunate necessity.
 //
@@ -345,8 +345,6 @@ pub type SignedExtra = (
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
-/// Extrinsic type that has already been checked.
-pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
 	Runtime,

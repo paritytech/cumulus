@@ -21,7 +21,7 @@ use frame_support::traits::ProcessMessageError;
 fn example() {
 	// Init tests variables
 	// XcmPallet send arguments
-	let sudo_origin = <Rococo as Relay>::RuntimeOrigin::root();
+	let sudo_origin = <Rococo as Chain>::RuntimeOrigin::root();
 	let destination = Rococo::child_location_of(BridgeHubRococo::para_id()).into();
 	let weight_limit = WeightLimit::Unlimited;
 	let check_origin = None;
@@ -46,7 +46,7 @@ fn example() {
 			bx!(xcm),
 		));
 
-		type RuntimeEvent = <Rococo as Relay>::RuntimeEvent;
+		type RuntimeEvent = <Rococo as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			Rococo,
@@ -57,7 +57,7 @@ fn example() {
 	});
 	// Receive XCM message in Bridge Hub source Parachain
 	BridgeHubRococo::execute_with(|| {
-		type RuntimeEvent = <BridgeHubRococo as Para>::RuntimeEvent;
+		type RuntimeEvent = <BridgeHubRococo as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			BridgeHubRococo,
@@ -77,7 +77,7 @@ fn example() {
 	// Wococo GLobal Consensus
 	// Receive XCM message in Bridge Hub target Parachain
 	BridgeHubWococo::execute_with(|| {
-		type RuntimeEvent = <BridgeHubWococo as Para>::RuntimeEvent;
+		type RuntimeEvent = <BridgeHubWococo as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			BridgeHubWococo,
@@ -90,7 +90,7 @@ fn example() {
 	AssetHubWococo::execute_with(|| {});
 	// Processing only happens in the next block, since the MQ pallet does it on initialize.
 	AssetHubWococo::execute_with(|| {
-		type RuntimeEvent = <AssetHubWococo as Para>::RuntimeEvent;
+		type RuntimeEvent = <AssetHubWococo as Chain>::RuntimeEvent;
 
 		assert_expected_events!(
 			AssetHubWococo,
