@@ -311,7 +311,7 @@ impl pallet_assets::Config<PoolAssetsInstance> for Runtime {
 	type AssetAccountDeposit = ConstU128<0>;
 	type MetadataDepositBase = ConstU128<0>;
 	type MetadataDepositPerByte = ConstU128<0>;
-	type ApprovalDeposit = ConstU128<0>;
+	type ApprovalDeposit = ApprovalDeposit;
 	type StringLimit = ConstU32<50>;
 	type Freezer = ();
 	type Extra = ();

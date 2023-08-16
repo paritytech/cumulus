@@ -96,7 +96,7 @@ pub type CurrencyTransactor = CurrencyAdapter<
 	(),
 >;
 
-/// `AssetId/Balance` converter for `TrustBackedAssets`
+/// `AssetId`/`Balance` converter for `PoolAssets`.
 pub type TrustBackedAssetsConvertedConcreteId =
 	assets_common::TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance>;
 
@@ -279,6 +279,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 						pallet_assets::Call::destroy_accounts { .. } |
 						pallet_assets::Call::destroy_approvals { .. } |
 						pallet_assets::Call::finish_destroy { .. } |
+						pallet_assets::Call::block { .. } |
 						pallet_assets::Call::mint { .. } |
 						pallet_assets::Call::burn { .. } |
 						pallet_assets::Call::transfer { .. } |
@@ -299,7 +300,9 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 						pallet_assets::Call::force_cancel_approval { .. } |
 						pallet_assets::Call::transfer_approved { .. } |
 						pallet_assets::Call::touch { .. } |
-						pallet_assets::Call::refund { .. },
+						pallet_assets::Call::touch_other { .. } |
+						pallet_assets::Call::refund { .. } |
+						pallet_assets::Call::refund_other { .. },
 				) | RuntimeCall::ForeignAssets(
 				pallet_assets::Call::create { .. } |
 					pallet_assets::Call::force_create { .. } |
@@ -307,6 +310,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 					pallet_assets::Call::destroy_accounts { .. } |
 					pallet_assets::Call::destroy_approvals { .. } |
 					pallet_assets::Call::finish_destroy { .. } |
+					pallet_assets::Call::block { .. } |
 					pallet_assets::Call::mint { .. } |
 					pallet_assets::Call::burn { .. } |
 					pallet_assets::Call::transfer { .. } |
@@ -318,7 +322,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 					pallet_assets::Call::thaw_asset { .. } |
 					pallet_assets::Call::transfer_ownership { .. } |
 					pallet_assets::Call::set_team { .. } |
-					pallet_assets::Call::set_metadata { .. } |
 					pallet_assets::Call::clear_metadata { .. } |
 					pallet_assets::Call::force_clear_metadata { .. } |
 					pallet_assets::Call::force_asset_status { .. } |
@@ -327,9 +330,12 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 					pallet_assets::Call::force_cancel_approval { .. } |
 					pallet_assets::Call::transfer_approved { .. } |
 					pallet_assets::Call::touch { .. } |
-					pallet_assets::Call::refund { .. },
+					pallet_assets::Call::touch_other { .. } |
+					pallet_assets::Call::refund { .. } |
+					pallet_assets::Call::refund_other { .. },
 			) | RuntimeCall::PoolAssets(
 				pallet_assets::Call::force_create { .. } |
+					pallet_assets::Call::block { .. } |
 					pallet_assets::Call::burn { .. } |
 					pallet_assets::Call::transfer { .. } |
 					pallet_assets::Call::transfer_keep_alive { .. } |
@@ -349,7 +355,9 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 					pallet_assets::Call::force_cancel_approval { .. } |
 					pallet_assets::Call::transfer_approved { .. } |
 					pallet_assets::Call::touch { .. } |
-					pallet_assets::Call::refund { .. },
+					pallet_assets::Call::touch_other { .. } |
+					pallet_assets::Call::refund { .. } |
+					pallet_assets::Call::refund_other { .. },
 			) | RuntimeCall::AssetConversion(
 				pallet_asset_conversion::Call::create_pool { .. } |
 					pallet_asset_conversion::Call::add_liquidity { .. } |
