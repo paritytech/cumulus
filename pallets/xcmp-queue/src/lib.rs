@@ -51,8 +51,7 @@ use frame_support::{
 	BoundedVec,
 };
 use pallet_message_queue::OnQueueChanged;
-use polkadot_runtime_common::xcm_sender::ConstantPrice;
-use polkadot_runtime_common::xcm_sender::PriceForParachainDelivery;
+use polkadot_runtime_common::xcm_sender::{ConstantPrice, PriceForParachainDelivery};
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
@@ -92,7 +91,9 @@ pub mod pallet {
 
 		/// Enqueue an inbound horizontal message for later processing.
 		///
-		/// This defines the maximal message length via [`crate::MaxXcmpMessageLenOf`]. The pallet assumes that this hook will eventually process all the pushed messages. No further explicit nudging is required.
+		/// This defines the maximal message length via [`crate::MaxXcmpMessageLenOf`]. The pallet
+		/// assumes that this hook will eventually process all the pushed messages. No further
+		/// explicit nudging is required.
 		type XcmpQueue: EnqueueMessage<ParaId>;
 
 		/// The maximum number of inbound XCMP channels that can be suspended simultaneously.
@@ -157,8 +158,8 @@ pub mod pallet {
 			})
 		}
 
-		/// Overwrites the number of messages which must be in the queue for the other side to be told to
-		/// suspend their sending.
+		/// Overwrites the number of messages which must be in the queue for the other side to be
+		/// told to suspend their sending.
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.suspend_value`
@@ -173,8 +174,8 @@ pub mod pallet {
 			})
 		}
 
-		/// Overwrites the number of messages which must be in the queue after which we drop any further
-		/// messages from the channel.
+		/// Overwrites the number of messages which must be in the queue after which we drop any
+		/// further messages from the channel.
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.drop_threshold`
@@ -189,8 +190,8 @@ pub mod pallet {
 			})
 		}
 
-		/// Overwrites the number of messages which the queue must be reduced to before it signals that
-		/// message sending may recommence after it has been suspended.
+		/// Overwrites the number of messages which the queue must be reduced to before it signals
+		/// that message sending may recommence after it has been suspended.
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.resume_threshold`
@@ -225,9 +226,12 @@ pub mod pallet {
 
 	/// The suspended inbound XCMP channels. All others are not suspended.
 	///
-	/// This is a `StorageValue` instead of a `StorageMap` since we expect multiple reads per block to different keys with a one byte payload. The access to `BoundedBTreeSet` will be cached within the block and therefore only included once in the proof size.
+	/// This is a `StorageValue` instead of a `StorageMap` since we expect multiple reads per block
+	/// to different keys with a one byte payload. The access to `BoundedBTreeSet` will be cached
+	/// within the block and therefore only included once in the proof size.
 	///
-	/// NOTE: The PoV benchmarking cannot know this and will over-estimate, but the actual proof will be smaller.
+	/// NOTE: The PoV benchmarking cannot know this and will over-estimate, but the actual proof
+	/// will be smaller.
 	#[pallet::storage]
 	pub type InboundXcmpSuspended<T: Config> =
 		StorageValue<_, BoundedBTreeSet<ParaId, T::MaxInboundSuspended>, ValueQuery>;
@@ -323,7 +327,8 @@ pub struct QueueConfigData {
 	/// their sending.
 	suspend_threshold: u32,
 	/// The number of messages which must be in the queue after which we drop any further messages
-	/// from the channel. This should normally not happen since the `suspend_threshold` can be used to suspend the channel.
+	/// from the channel. This should normally not happen since the `suspend_threshold` can be used
+	/// to suspend the channel.
 	drop_threshold: u32,
 	/// The number of messages which the queue must be reduced to before it signals that
 	/// message sending may recommence after it has been suspended.
@@ -331,12 +336,13 @@ pub struct QueueConfigData {
 	/// UNUSED - The amount of remaining weight under which we stop processing messages.
 	#[deprecated(note = "Will be removed")]
 	threshold_weight: Weight,
-	/// UNUSED - The speed to which the available weight approaches the maximum weight. A lower number
-	/// results in a faster progression. A value of 1 makes the entire weight available initially.
+	/// UNUSED - The speed to which the available weight approaches the maximum weight. A lower
+	/// number results in a faster progression. A value of 1 makes the entire weight available
+	/// initially.
 	#[deprecated(note = "Will be removed")]
 	weight_restrict_decay: Weight,
-	/// UNUSED - The maximum amount of weight any individual message may consume. Messages above this weight
-	/// go into the overweight queue and may only be serviced explicitly.
+	/// UNUSED - The maximum amount of weight any individual message may consume. Messages above
+	/// this weight go into the overweight queue and may only be serviced explicitly.
 	#[deprecated(note = "Will be removed")]
 	xcmp_max_individual_weight: Weight,
 }
@@ -534,7 +540,8 @@ impl<T: Config> Pallet<T> {
 		let new_count = xcms.len().saturating_add(fp.count as usize);
 		let to_enqueue = (drop_threshold as usize).saturating_sub(new_count) as usize;
 		if to_enqueue < xcms.len() {
-			// This should not happen since the channel should have been suspended in [`on_queue_changed`].
+			// This should not happen since the channel should have been suspended in
+			// [`on_queue_changed`].
 			log::error!("XCMP queue for sibling {:?} is full; dropping messages.", sender,);
 			xcms.truncate(to_enqueue);
 		}

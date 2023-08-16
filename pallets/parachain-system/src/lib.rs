@@ -191,7 +191,8 @@ pub mod pallet {
 		/// All inbound DMP messages from the relay are pushed into this. The handler is expected to
 		/// eventually process all the messages that are pushed to it.
 		///
-		/// This will only ever be used to enqueue messages with origin [`AggregateMessageOrigin::Parent`].
+		/// This will only ever be used to enqueue messages with origin
+		/// [`AggregateMessageOrigin::Parent`].
 		type DmpQueue: EnqueueMessage<AggregateMessageOrigin>;
 
 		/// The weight we reserve at the beginning of the block for processing DMP messages.
@@ -862,7 +863,8 @@ impl<T: Config> Pallet<T> {
 			for m in &downward_messages {
 				dmq_head.extend_downward(m);
 			}
-			// Note: we are not using `.defensive()` here since that prints the whole value to console. In case that the message is too long, this clogs up the log quite badly.
+			// Note: we are not using `.defensive()` here since that prints the whole value to
+			// console. In case that the message is too long, this clogs up the log quite badly.
 			let bounded =
 				downward_messages
 					.iter()
@@ -897,7 +899,8 @@ impl<T: Config> Pallet<T> {
 	/// Process all inbound horizontal messages relayed by the collator.
 	///
 	/// This is similar to [`enqueue_inbound_downward_messages`], but works on multiple inbound
-	/// channels. It immediately dispatches signals and queues all other XCM. Blob messages are ignored.
+	/// channels. It immediately dispatches signals and queues all other XCM. Blob messages are
+	/// ignored.
 	///
 	/// **Panics** if either any of horizontal messages submitted by the collator was sent from
 	///            a para which has no open channel to this parachain or if after processing

@@ -29,7 +29,6 @@ pallet-xcm = { default-features = false, git = "https://github.com/paritytech/po
 
 # Cumulus
 parachains-common = { path = "../../../../common" }
-cumulus-pallet-dmp-queue = { path = "../../../../../pallets/dmp-queue" }
 cumulus-pallet-xcmp-queue = { default-features = false, path = "../../../../../pallets/xcmp-queue" }
 cumulus-pallet-parachain-system = { path = "../../../../../pallets/parachain-system" }
 
