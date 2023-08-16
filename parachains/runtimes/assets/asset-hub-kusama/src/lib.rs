@@ -1134,9 +1134,14 @@ impl_runtime_apis! {
 
 			impl XcmBridgeHubRouterConfig<ToPolkadotXcmRouterInstance> for Runtime {
 				fn make_congested() {
-					cumulus_pallet_xcmp_queue::bridging::suspend_channel_for_benchmarks::<Runtime>(xcm_config::bridging::BridgeHubKusamaParaId::get().into());
+					cumulus_pallet_xcmp_queue::bridging::suspend_channel_for_benchmarks::<Runtime>(
+						xcm_config::bridging::BridgeHubKusamaParaId::get().into()
+					);
 				}
-				fn bridged_target_destination() -> MultiLocation {
+				fn ensure_bridged_target_destination() -> MultiLocation {
+					ParachainSystem::open_outbound_hrmp_channel_for_benchmarks(
+						xcm_config::bridging::BridgeHubKusamaParaId::get().into()
+					);
 					xcm_config::bridging::AssetHubPolkadot::get()
 				}
 			}

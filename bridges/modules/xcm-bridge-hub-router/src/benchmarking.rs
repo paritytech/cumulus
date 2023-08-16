@@ -37,9 +37,10 @@ pub trait Config<I: 'static>: crate::Config<I> {
 	/// Fill up queue so it becomes congested.
 	fn make_congested();
 
-	/// Destination which is valid for this router instance.
+	/// Returns destination which is valid for this router instance.
 	/// (Needs to pass `T::Bridges`)
-	fn bridged_target_destination() -> MultiLocation {
+	/// Make sure that `SendXcm` will pass.
+	fn ensure_bridged_target_destination() -> MultiLocation {
 		MultiLocation::new(
 			Self::UniversalLocation::get().len() as u8,
 			X1(GlobalConsensus(Self::BridgedNetworkId::get().unwrap())),
@@ -84,7 +85,7 @@ benchmarks_instance_pallet! {
 		// make local queue congested, because it means additional db write
 		T::make_congested();
 
-		let dest = T::bridged_target_destination();
+		let dest = T::ensure_bridged_target_destination();
 		let xcm = sp_std::vec![].into();
 	}: {
 		send_xcm::<crate::Pallet<T, I>>(dest, xcm).expect("message is sent")
