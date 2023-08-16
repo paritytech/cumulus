@@ -56,9 +56,6 @@ parameter_types! {
 		ParentThen(X1(Parachain(1000))).into(),
 		DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO,
 	);
-
-	pub CongestedMessage: Xcm<()> = unimplemented!("TODO: not supported yet!");
-	pub UncongestedMessage: Xcm<()> = unimplemented!("TODO: not supported yet!");
 }
 
 /// Proof of messages, coming from Rococo.
@@ -88,8 +85,8 @@ impl XcmBlobHauler for ToBridgeHubRococoXcmBlobHauler {
 	type SenderAndLane = FromAssetHubWococoToAssetHubRococoRoute;
 
 	type ToSourceChainSender = crate::XcmRouter;
-	type CongestedMessage = CongestedMessage;
-	type UncongestedMessage = UncongestedMessage;
+	type CongestedMessage = ();
+	type UncongestedMessage = ();
 }
 pub const DEFAULT_XCM_LANE_TO_BRIDGE_HUB_ROCOCO: LaneId = LaneId([0, 0, 0, 1]);
 
