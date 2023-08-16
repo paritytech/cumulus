@@ -261,9 +261,9 @@ async fn build_relay_chain_interface(
 	let relay_chain_full_node = polkadot_test_service::new_full(
 		relay_chain_config,
 		if let Some(ref key) = collator_key {
-			polkadot_service::IsCollator::Yes(key.clone())
+			polkadot_service::IsParachainNode::Collator(key.clone())
 		} else {
-			polkadot_service::IsCollator::Yes(CollatorPair::generate().0)
+			polkadot_service::IsParachainNode::Collator(CollatorPair::generate().0)
 		},
 		None,
 	)
@@ -773,7 +773,6 @@ pub fn node_config(
 		offchain_worker: OffchainWorkerConfig { enabled: true, indexing_enabled: false },
 		force_authoring: false,
 		disable_grandpa: false,
-		disable_beefy: true,
 		dev_key_seed: Some(key_seed),
 		tracing_targets: None,
 		tracing_receiver: Default::default(),
