@@ -494,7 +494,8 @@ type LocalXcmRouter = (
 /// queues.
 pub type XcmRouter = WithUniqueTopic<(
 	LocalXcmRouter,
-	// Router which wraps and sends xcm to BridgeHub to be delivered to the Polkadot GlobalConsensus
+	// Router which wraps and sends xcm to BridgeHub to be delivered to the Polkadot
+	// GlobalConsensus
 	ToPolkadotXcmRouter,
 )>;
 
@@ -675,7 +676,8 @@ pub mod bridging {
 		}
 	}
 
-	/// Barrier for `pallet_xcm_bridge_hub_router::Pallet` to receive congestion statuses from sibling BridgeHub.
+	/// Barrier for `pallet_xcm_bridge_hub_router::Pallet` to receive congestion statuses from
+	/// sibling BridgeHub.
 	pub type AllowUnpaidStatusReportsFromSiblingBridgeHub<XcmBridgeHubRouter> =
 		AllowUnpaidTransactsFrom<RuntimeCall, XcmBridgeHubRouter, Equals<BridgeHubKusama>>;
 

@@ -698,7 +698,8 @@ pub mod bridging {
 		}
 	}
 
-	/// Barrier for `pallet_xcm_bridge_hub_router::Pallet` to receive congestion statuses from sibling BridgeHub.
+	/// Barrier for `pallet_xcm_bridge_hub_router::Pallet` to receive congestion statuses from
+	/// sibling BridgeHub.
 	pub type AllowUnpaidStatusReportsFromSiblingBridgeHub<XcmBridgeHubRouter> =
 		AllowUnpaidTransactsFrom<RuntimeCall, XcmBridgeHubRouter, Equals<BridgeHubPolkadot>>;
 

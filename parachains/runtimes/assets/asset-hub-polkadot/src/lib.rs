@@ -721,7 +721,8 @@ impl pallet_nfts::Config for Runtime {
 	type Helper = ();
 }
 
-/// XCM router instance to BridgeHub with bridging capabilities for `Kusama` global consensus with dynamic fees and back-pressure.
+/// XCM router instance to BridgeHub with bridging capabilities for `Kusama` global consensus with
+/// dynamic fees and back-pressure.
 pub type ToKusamaXcmRouterInstance = pallet_assets::Instance1;
 impl pallet_xcm_bridge_hub_router::Config<ToKusamaXcmRouterInstance> for Runtime {
 	type WeightInfo = weights::pallet_xcm_bridge_hub_router::WeightInfo<Runtime>;

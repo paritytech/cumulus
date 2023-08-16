@@ -226,7 +226,8 @@ pub fn limited_reserve_transfer_assets_for_native_asset_works<
 					.0
 					.matcher()
 					.match_next_inst(|instr| match instr {
-						// first instruction could be UnpaidExecution (because we could have explicit unpaid execution on BridgeHub)
+						// first instruction could be UnpaidExecution (because we could have
+						// explicit unpaid execution on BridgeHub)
 						UnpaidExecution { weight_limit, check_origin }
 							if weight_limit == &Unlimited && check_origin.is_none() =>
 							Ok(()),
