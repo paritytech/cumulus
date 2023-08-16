@@ -151,10 +151,15 @@ pub trait XcmBlobHauler {
 	/// location (`Self::SenderAndLane::get().location`).
 	type ToSourceChainSender: SendXcm;
 	/// An XCM message that is sent to the sending chain when the bridge queue becomes congested.
-	type CongestedMessage: Get<Xcm<()>>;
+	type CongestedMessage: Get<Option<Xcm<()>>>;
 	/// An XCM message that is sent to the sending chain when the bridge queue becomes not
 	/// congested.
-	type UncongestedMessage: Get<Xcm<()>>;
+	type UncongestedMessage: Get<Option<Xcm<()>>>;
+
+	/// Returns `true` if we want to handle congestion.
+	fn supports_congestion_detection() -> bool {
+		Self::CongestedMessage::get().is_some() || Self::UncongestedMessage::get().is_some()
+	}
 }
 
 /// XCM bridge adapter which connects [`XcmBlobHauler`] with [`pallet_bridge_messages`] and
@@ -233,6 +238,11 @@ impl<H: XcmBlobHauler> LocalXcmQueueManager<H> {
 		sender_and_lane: &SenderAndLane,
 		enqueued_messages: MessageNonce,
 	) {
+		// skip if we dont want to handle congestion
+		if !H::supports_congestion_detection() {
+			return
+		}
+
 		// if we have already sent the congestion signal, we don't want to do anything
 		if Self::is_congested_signal_sent(sender_and_lane.lane) {
 			return
@@ -268,6 +278,11 @@ impl<H: XcmBlobHauler> LocalXcmQueueManager<H> {
 		sender_and_lane: &SenderAndLane,
 		enqueued_messages: MessageNonce,
 	) {
+		// skip if we dont want to handle congestion
+		if !H::supports_congestion_detection() {
+			return
+		}
+
 		// if we have not sent the congestion signal before, we don't want to do anything
 		if !Self::is_congested_signal_sent(sender_and_lane.lane) {
 			return
@@ -305,20 +320,24 @@ impl<H: XcmBlobHauler> LocalXcmQueueManager<H> {
 
 	/// Send congested signal to the `sending_chain_location`.
 	fn send_congested_signal(sender_and_lane: &SenderAndLane) -> Result<(), SendError> {
-		send_xcm::<H::ToSourceChainSender>(sender_and_lane.location, H::CongestedMessage::get())?;
-		OutboundLanesCongestedSignals::<H::Runtime, H::MessagesInstance>::insert(
-			sender_and_lane.lane,
-			true,
-		);
+		if let Some(msg) = H::CongestedMessage::get() {
+			send_xcm::<H::ToSourceChainSender>(sender_and_lane.location, msg)?;
+			OutboundLanesCongestedSignals::<H::Runtime, H::MessagesInstance>::insert(
+				sender_and_lane.lane,
+				true,
+			);
+		}
 		Ok(())
 	}
 
 	/// Send `uncongested` signal to the `sending_chain_location`.
 	fn send_uncongested_signal(sender_and_lane: &SenderAndLane) -> Result<(), SendError> {
-		send_xcm::<H::ToSourceChainSender>(sender_and_lane.location, H::UncongestedMessage::get())?;
-		OutboundLanesCongestedSignals::<H::Runtime, H::MessagesInstance>::remove(
-			sender_and_lane.lane,
-		);
+		if let Some(msg) = H::UncongestedMessage::get() {
+			send_xcm::<H::ToSourceChainSender>(sender_and_lane.location, msg)?;
+			OutboundLanesCongestedSignals::<H::Runtime, H::MessagesInstance>::remove(
+				sender_and_lane.lane,
+			);
+		}
 		Ok(())
 	}
 }
