@@ -731,7 +731,7 @@ impl pallet_xcm_bridge_hub_router::Config<ToKusamaXcmRouterInstance> for Runtime
 
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type BridgeHubOrigin =
-		EnsureXcm<asset_common::matching::Equals<xcm_config::bridging::BridgeHubPolkadot>>;
+		EnsureXcm<assets_common::matching::Equals<xcm_config::bridging::BridgeHubPolkadot>>;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BridgeHubOrigin = EnsureRoot<AccountId>;
 
