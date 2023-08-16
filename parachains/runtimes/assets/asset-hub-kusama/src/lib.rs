@@ -29,9 +29,7 @@ mod weights;
 pub mod xcm_config;
 
 use assets_common::{
-	foreign_creators::ForeignCreators,
-	matching::{Equals, FromSiblingParachain},
-	MultiLocationForAssetId,
+	foreign_creators::ForeignCreators, matching::FromSiblingParachain, MultiLocationForAssetId,
 };
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
@@ -744,7 +742,12 @@ impl pallet_xcm_bridge_hub_router::Config<ToPolkadotXcmRouterInstance> for Runti
 	type BridgedNetworkId = xcm_config::bridging::PolkadotNetwork;
 	type Bridges = xcm_config::bridging::FilteredNetworkExportTable;
 
-	type BridgeHubOrigin = EnsureXcm<Equals<xcm_config::bridging::BridgeHubKusama>>;
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	type BridgeHubOrigin =
+		EnsureXcm<asset_common::matching::Equals<xcm_config::bridging::BridgeHubKusama>>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BridgeHubOrigin = EnsureRoot<AccountId>;
+
 	type ToBridgeHubSender = XcmpQueue;
 	type WithBridgeHubChannel =
 		cumulus_pallet_xcmp_queue::bridging::InboundAndOutboundXcmpChannelCongestionStatusProvider<
