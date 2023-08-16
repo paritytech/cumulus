@@ -18,7 +18,7 @@ use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId,
 };
 use polkadot_primitives::UpgradeGoAhead;
-use sp_runtime::traits::HashFor;
+use sp_runtime::traits::HashingFor;
 use sp_std::collections::btree_map::BTreeMap;
 use sp_trie::PrefixedMemoryDB;
 
@@ -78,7 +78,8 @@ impl Default for RelayStateSproofBuilder {
 }
 
 impl RelayStateSproofBuilder {
-	/// Returns a mutable reference to HRMP channel metadata for a channel (`sender`, `self.para_id`).
+	/// Returns a mutable reference to HRMP channel metadata for a channel (`sender`,
+	/// `self.para_id`).
 	///
 	/// If there is no channel, a new default one is created.
 	///

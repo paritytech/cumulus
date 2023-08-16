@@ -11,14 +11,14 @@ name = "polkadot-parachain"
 path = "src/main.rs"
 
 [dependencies]
-async-trait = "0.1.71"
-clap = { version = "4.3.16", features = ["derive"] }
+async-trait = "0.1.73"
+clap = { version = "4.3.21", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 futures = "0.3.28"
 hex-literal = "0.4.1"
-log = "0.4.19"
-serde = { version = "1.0.171", features = ["derive"] }
-serde_json = "1.0.103"
+log = "0.4.20"
+serde = { version = "1.0.183", features = ["derive"] }
+serde_json = "1.0.104"
 
 # Local
 rococo-parachain-runtime = { path = "../parachains/runtimes/testing/rococo-parachain" }
@@ -97,8 +97,8 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 [dev-dependencies]
 assert_cmd = "2.0"
 nix = { version = "0.26.1", features = ["signal"] }
-tempfile = "3.7.0"
-tokio = { version = "1.29.1", features = ["macros", "time", "parking_lot"] }
+tempfile = "3.7.1"
+tokio = { version = "1.31.0", features = ["macros", "time", "parking_lot"] }
 wait-timeout = "0.2"
 
 [features]
