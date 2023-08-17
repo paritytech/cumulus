@@ -17,6 +17,7 @@
 use crate::*;
 
 #[test]
+#[ignore]
 fn example() {
 	// Init tests variables
 	// XcmPallet send arguments

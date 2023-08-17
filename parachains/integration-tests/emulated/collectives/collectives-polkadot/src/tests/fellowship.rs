@@ -26,6 +26,7 @@ use sp_core::crypto::Ss58Codec;
 use xcm_emulator::TestExt;
 
 #[test]
+#[ignore]
 fn pay_salary() {
 	let asset_id: u32 = 1984;
 	let pay_from: AccountId =

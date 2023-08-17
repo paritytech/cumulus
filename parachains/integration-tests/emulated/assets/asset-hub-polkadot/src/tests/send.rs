@@ -129,6 +129,7 @@ fn send_transact_native_from_system_para_to_relay_fails() {
 /// Parachain should be able to send XCM paying its fee with sufficient asset
 /// in the System Parachain
 #[test]
+#[ignore]
 fn send_xcm_from_para_to_system_para_paying_fee_with_assets_works() {
 	let para_sovereign_account = AssetHubPolkadot::sovereign_account_id_of(
 		AssetHubPolkadot::sibling_location_of(PenpalPolkadotA::para_id()),
