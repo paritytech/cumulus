@@ -287,7 +287,7 @@ impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 
 parameter_types! {
 	pub const AssetConversionPalletId: PalletId = PalletId(*b"py/ascon");
-	pub storage AllowMultiAssetPools: bool = false;
+	pub const AllowMultiAssetPools: bool = false;
 	// should be non-zero if AllowMultiAssetPools is true, otherwise can be zero
 	pub storage LiquidityWithdrawalFee: Permill = Permill::from_percent(0);
 }
