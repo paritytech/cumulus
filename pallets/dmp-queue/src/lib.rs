@@ -21,13 +21,14 @@
 #[cfg(test)]
 mod tests;
 
-use cumulus_primitives_core::{relay_chain::BlockNumber as RelayBlockNumber};
-use sp_runtime::Saturating;
+use cumulus_primitives_core::relay_chain::BlockNumber as RelayBlockNumber;
 use frame_support::{
 	pallet_prelude::*,
-	traits::{OnRuntimeUpgrade, HandleMessage}, storage_alias,
+	storage_alias,
+	traits::{HandleMessage, OnRuntimeUpgrade},
 	weights::Weight,
 };
+use sp_runtime::Saturating;
 use sp_std::vec::Vec;
 
 const LOG: &str = "dmp-queue-undeploy-migration";
@@ -55,7 +56,10 @@ type PageCounter = u32;
 /// should be purged with [DeleteDmp].
 pub struct UndeployDmp<T: MigrationConfig>(PhantomData<T>);
 
-pub type DeleteDmp<T> = frame_support::migrations::RemovePallet<<T as MigrationConfig>::PalletName, <T as MigrationConfig>::DbWeight>;
+pub type DeleteDmp<T> = frame_support::migrations::RemovePallet<
+	<T as MigrationConfig>::PalletName,
+	<T as MigrationConfig>::DbWeight,
+>;
 
 /// Subset of the DMP queue config required for [UndeployMigration].
 pub trait MigrationConfig {
@@ -74,17 +78,22 @@ type PageIndex<T: MigrationConfig> =
 	StorageValue<<T as MigrationConfig>::PalletName, PageIndexData, ValueQuery>;
 
 #[storage_alias(dynamic)]
-type Pages<T: MigrationConfig> =
-	StorageMap<<T as MigrationConfig>::PalletName, Blake2_128Concat, PageCounter, Vec<(RelayBlockNumber, Vec<u8>)>, ValueQuery>;
+type Pages<T: MigrationConfig> = StorageMap<
+	<T as MigrationConfig>::PalletName,
+	Blake2_128Concat,
+	PageCounter,
+	Vec<(RelayBlockNumber, Vec<u8>)>,
+	ValueQuery,
+>;
 
 #[storage_alias(dynamic)]
 type Overweight<T: MigrationConfig> = CountedStorageMap<
-		<T as MigrationConfig>::PalletName,
-		Blake2_128Concat,
-		OverweightIndex,
-		(RelayBlockNumber, Vec<u8>),
-		OptionQuery,
-	>;
+	<T as MigrationConfig>::PalletName,
+	Blake2_128Concat,
+	OverweightIndex,
+	(RelayBlockNumber, Vec<u8>),
+	OptionQuery,
+>;
 
 impl<T: MigrationConfig> OnRuntimeUpgrade for UndeployDmp<T> {
 	#[cfg(feature = "try-runtime")]
@@ -142,7 +151,7 @@ impl<T: MigrationConfig> OnRuntimeUpgrade for UndeployDmp<T> {
 					log::error!(target: LOG, "[Page {p}] Message #{m}: TOO LONG - ignoring");
 					continue;
 				};
-				
+
 				T::DmpHandler::handle_message(bound.as_bounded_slice());
 				messages_migrated.saturating_inc();
 				log::info!(target: LOG, "[Page {p}] Migrated message #{m} from block {block}");

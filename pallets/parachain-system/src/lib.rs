@@ -29,10 +29,10 @@
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use cumulus_primitives_core::{
-	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo,
-	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError,
-	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
-	XcmpMessageHandler, XcmpMessageSource,
+	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, GetChannelInfo,
+	InboundDownwardMessage, InboundHrmpMessage, MessageSendError, OutboundHrmpMessage, ParaId,
+	PersistedValidationData, UpwardMessage, UpwardMessageSender, XcmpMessageHandler,
+	XcmpMessageSource,
 };
 use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
 use frame_support::{
@@ -41,7 +41,7 @@ use frame_support::{
 	ensure,
 	inherent::{InherentData, InherentIdentifier, ProvideInherent},
 	storage,
-	traits::{HandleMessage, Get},
+	traits::{Get, HandleMessage},
 	weights::Weight,
 	RuntimeDebug,
 };
@@ -158,8 +158,7 @@ where
 }
 
 /// The maximal length of a DMP message.
-pub type MaxDmpMessageLenOf<T> =
-	<<T as Config>::DmpQueue as HandleMessage>::MaxMessageLen;
+pub type MaxDmpMessageLenOf<T> = <<T as Config>::DmpQueue as HandleMessage>::MaxMessageLen;
 
 #[frame_support::pallet]
 pub mod pallet {

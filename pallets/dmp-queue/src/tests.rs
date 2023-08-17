@@ -20,10 +20,10 @@ use super::*;
 
 use frame_support::{
 	assert_ok, parameter_types,
-	traits::{OnRuntimeUpgrade, StorageVersion, HandleMessage},
-	weights::Weight, StorageNoopGuard,
+	traits::{Footprint, HandleMessage, OnRuntimeUpgrade, StorageVersion},
+	weights::Weight,
+	StorageNoopGuard,
 };
-use frame_support::traits::Footprint;
 use sp_core::bounded_vec::BoundedSlice;
 use sp_io::TestExternalities as TestExt;
 
@@ -60,7 +60,7 @@ struct Runtime;
 impl MigrationConfig for Runtime {
 	type PalletName = PalletName;
 	type DmpHandler = MockedDmpHandler;
-	type DbWeight = ();	
+	type DbWeight = ();
 }
 
 #[test]
