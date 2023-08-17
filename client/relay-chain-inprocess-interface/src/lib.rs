@@ -44,7 +44,8 @@ use sp_state_machine::{Backend as StateBackend, StorageValue};
 /// The timeout in seconds after that the waiting for a block should be aborted.
 const TIMEOUT_IN_SECONDS: u64 = 6;
 
-/// Provides an implementation of the [`RelayChainInterface`] using a local in-process relay chain node.
+/// Provides an implementation of the [`RelayChainInterface`] using a local in-process relay chain
+/// node.
 #[derive(Clone)]
 pub struct RelayChainInProcessInterface {
 	full_client: Arc<FullClient>,
@@ -188,8 +189,8 @@ impl RelayChainInterface for RelayChainInProcessInterface {
 
 	/// Wait for a given relay chain block in an async way.
 	///
-	/// The caller needs to pass the hash of a block it waits for and the function will return when the
-	/// block is available or an error occurred.
+	/// The caller needs to pass the hash of a block it waits for and the function will return when
+	/// the block is available or an error occurred.
 	///
 	/// The waiting for the block is implemented as follows:
 	///
@@ -199,10 +200,11 @@ impl RelayChainInterface for RelayChainInProcessInterface {
 	///
 	/// 3. If the block isn't imported yet, add an import notification listener.
 	///
-	/// 4. Poll the import notification listener until the block is imported or the timeout is fired.
+	/// 4. Poll the import notification listener until the block is imported or the timeout is
+	/// fired.
 	///
-	/// The timeout is set to 6 seconds. This should be enough time to import the block in the current
-	/// round and if not, the new round of the relay chain already started anyway.
+	/// The timeout is set to 6 seconds. This should be enough time to import the block in the
+	/// current round and if not, the new round of the relay chain already started anyway.
 	async fn wait_for_block(&self, hash: PHash) -> RelayChainResult<()> {
 		let mut listener =
 			match check_block_in_chain(self.backend.clone(), self.full_client.clone(), hash)? {
@@ -265,26 +267,25 @@ pub fn check_block_in_chain(
 /// Build the Polkadot full node using the given `config`.
 #[sc_tracing::logging::prefix_logs_with("Relaychain")]
 fn build_polkadot_full_node(
-	mut config: Configuration,
+	config: Configuration,
 	parachain_config: &Configuration,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> Result<(NewFull, Option<CollatorPair>), polkadot_service::Error> {
-	let (is_collator, maybe_collator_key) = if parachain_config.role.is_authority() {
+	let (is_parachain_node, maybe_collator_key) = if parachain_config.role.is_authority() {
 		let collator_key = CollatorPair::generate().0;
-		(polkadot_service::IsCollator::Yes(collator_key.clone()), Some(collator_key))
+		(polkadot_service::IsParachainNode::Collator(collator_key.clone()), Some(collator_key))
 	} else {
-		(polkadot_service::IsCollator::No, None)
+		(polkadot_service::IsParachainNode::FullNode, None)
 	};
-
-	// Disable BEEFY. It should not be required by the internal relay chain node.
-	config.disable_beefy = true;
 
 	let relay_chain_full_node = polkadot_service::build_full(
 		config,
 		polkadot_service::NewFullParams {
-			is_collator,
+			is_parachain_node,
 			grandpa_pause: None,
+			// Disable BEEFY. It should not be required by the internal relay chain node.
+			enable_beefy: false,
 			jaeger_agent: None,
 			telemetry_worker_handle,
 
@@ -293,7 +294,6 @@ fn build_polkadot_full_node(
 			workers_path: None,
 			workers_names: None,
 
-			overseer_enable_anyways: true,
 			overseer_gen: polkadot_service::RealOverseerGen,
 			overseer_message_channel_capacity_override: None,
 			malus_finality_delay: None,
