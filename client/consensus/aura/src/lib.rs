@@ -118,11 +118,7 @@ where
 		Client:
 			ProvideRuntimeApi<B> + BlockOf + AuxStore + HeaderBackend<B> + Send + Sync + 'static,
 		Client::Api: AuraApi<B, P::Public>,
-		BI: BlockImport<B>
-			+ ParachainBlockImportMarker
-			+ Send
-			+ Sync
-			+ 'static,
+		BI: BlockImport<B> + ParachainBlockImportMarker + Send + Sync + 'static,
 		SO: SyncOracle + Send + Sync + Clone + 'static,
 		BS: BackoffAuthoringBlocksStrategy<NumberFor<B>> + Send + Sync + 'static,
 		PF: Environment<B, Error = Error> + Send + Sync + 'static,
