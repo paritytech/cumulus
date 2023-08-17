@@ -13,7 +13,6 @@
 
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
-
 pub use codec::Encode;
 pub use frame_support::{
 	assert_err, assert_ok,
@@ -30,11 +29,12 @@ pub use integration_tests_common::{
 		PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD, XCM_V3,
 	},
 	lazy_static::lazy_static,
-	xcm_transact_paid_execution, xcm_transact_unpaid_execution, AssetHubKusama,
-	AssetHubKusamaPallet, AssetHubKusamaReceiver, AssetHubKusamaSender, BridgeHubKusama,
-	BridgeHubKusamaPallet, BridgeHubKusamaReceiver, BridgeHubKusamaSender, BridgeHubPolkadot,
-	BridgeHubPolkadotPallet, BridgeHubPolkadotReceiver, BridgeHubPolkadotSender, Collectives,
-	CollectivesPallet, CollectivesReceiver, CollectivesSender, Kusama, KusamaMockNet, KusamaPallet,
+	test_parachain_is_trusted_teleporter, xcm_transact_paid_execution,
+	xcm_transact_unpaid_execution, AssetHubKusama, AssetHubKusamaPallet, AssetHubKusamaReceiver,
+	AssetHubKusamaSender, BridgeHubKusama, BridgeHubKusamaPallet, BridgeHubKusamaReceiver,
+	BridgeHubKusamaSender, BridgeHubPolkadot, BridgeHubPolkadotPallet, BridgeHubPolkadotReceiver,
+	BridgeHubPolkadotSender, CollectivesPolkadot, CollectivesPolkadotPallet,
+	CollectivesPolkadotReceiver, CollectivesPolkadotSender, Kusama, KusamaMockNet, KusamaPallet,
 	KusamaReceiver, KusamaSender, PenpalKusamaA, PenpalKusamaAPallet, PenpalKusamaAReceiver,
 	PenpalKusamaASender, PenpalKusamaB, PenpalKusamaBPallet, PenpalKusamaBReceiver,
 	PenpalKusamaBSender, PenpalPolkadotA, PenpalPolkadotAReceiver, PenpalPolkadotASender, Polkadot,

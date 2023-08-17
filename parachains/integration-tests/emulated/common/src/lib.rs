@@ -1,6 +1,7 @@
 pub use lazy_static;
 pub mod constants;
 pub mod impls;
+pub mod macros;
 
 pub use codec::Encode;
 pub use constants::{
@@ -9,22 +10,18 @@ pub use constants::{
 	bridge_hub_polkadot, bridge_hub_rococo, collectives, kusama, penpal, polkadot, rococo, westend,
 	PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD,
 };
+pub use cumulus_pallet_xcmp_queue;
 use frame_support::{
 	assert_ok, instances::Instance1, parameter_types, sp_tracing, traits::fungibles::Inspect,
 };
 pub use impls::{RococoWococoMessageHandler, WococoRococoMessageHandler};
+pub use pallet_balances;
+pub use pallet_xcm;
 pub use parachains_common::{AccountId, Balance};
 pub use paste;
 use polkadot_parachain::primitives::HrmpChannelId;
 pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
 pub use sp_core::{sr25519, storage::Storage, Get};
-use xcm_emulator::{
-	assert_expected_events, bx, decl_test_bridges, decl_test_networks, decl_test_parachains,
-	decl_test_relay_chains, decl_test_sender_receiver_accounts_parameter_types,
-	helpers::weight_within_threshold, BridgeMessageHandler, Chain, DefaultMessageProcessor, ParaId,
-	Parachain, RelayChain, TestExt,
-};
-
 pub use xcm::{
 	prelude::{
 		AccountId32, All, BuyExecution, DepositAsset, MultiAsset, MultiAssets, MultiLocation,
@@ -33,6 +30,12 @@ pub use xcm::{
 	},
 	v3::Error,
 	DoubleEncoded,
+};
+pub use xcm_emulator::{
+	assert_expected_events, bx, decl_test_bridges, decl_test_networks, decl_test_parachains,
+	decl_test_relay_chains, decl_test_sender_receiver_accounts_parameter_types,
+	helpers::weight_within_threshold, BridgeMessageHandler, Chain, DefaultMessageProcessor, ParaId,
+	Parachain, RelayChain, TestExt,
 };
 
 decl_test_relay_chains! {
@@ -131,7 +134,7 @@ decl_test_parachains! {
 			Balances: asset_hub_polkadot_runtime::Balances,
 		}
 	},
-	pub struct Collectives {
+	pub struct CollectivesPolkadot {
 		genesis = collectives::genesis(),
 		on_init = (),
 		runtime = collectives_polkadot_runtime,
@@ -272,6 +275,21 @@ decl_test_parachains! {
 			AssetConversion: asset_hub_westend_runtime::AssetConversion,
 		}
 	},
+	pub struct CollectivesWestend {
+		genesis = collectives::genesis(),
+		on_init = (),
+		runtime = collectives_polkadot_runtime,
+		core = {
+			XcmpMessageHandler: collectives_polkadot_runtime::XcmpQueue,
+			DmpMessageHandler: collectives_polkadot_runtime::DmpQueue,
+			LocationToAccountId: collectives_polkadot_runtime::xcm_config::LocationToAccountId,
+			ParachainInfo: collectives_polkadot_runtime::ParachainInfo,
+		},
+		pallets = {
+			PolkadotXcm: collectives_polkadot_runtime::PolkadotXcm,
+			Balances: collectives_polkadot_runtime::Balances,
+		}
+	},
 	pub struct PenpalWestendA {
 		genesis = penpal::genesis(penpal::PARA_ID_A),
 		on_init = (),
@@ -317,6 +335,7 @@ decl_test_parachains! {
 		pallets = {
 			PolkadotXcm: asset_hub_kusama_runtime::PolkadotXcm,
 			Assets: asset_hub_kusama_runtime::Assets,
+			Balances: asset_hub_kusama_runtime::Balances,
 		}
 	},
 	// Wococo Parachains
@@ -347,6 +366,7 @@ decl_test_parachains! {
 		pallets = {
 			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
 			Assets: asset_hub_polkadot_runtime::Assets,
+			Balances: asset_hub_kusama_runtime::Balances,
 		}
 	},
 	pub struct PenpalRococoA {
@@ -371,7 +391,7 @@ decl_test_networks! {
 		relay_chain = Polkadot,
 		parachains = vec![
 			AssetHubPolkadot,
-			Collectives,
+			CollectivesPolkadot,
 			BridgeHubPolkadot,
 			PenpalPolkadotA,
 			PenpalPolkadotB,
@@ -396,6 +416,7 @@ decl_test_networks! {
 		relay_chain = Westend,
 		parachains = vec![
 			AssetHubWestend,
+			CollectivesWestend,
 			PenpalWestendA,
 		],
 		bridge = ()
@@ -480,9 +501,14 @@ impl_accounts_helpers_for_parachain!(AssetHubWestend);
 impl_assets_helpers_for_parachain!(AssetHubWestend, Westend);
 impl_assert_events_helpers_for_parachain!(AssetHubWestend);
 
+// AssetHubRococo implementation
+impl_accounts_helpers_for_parachain!(AssetHubRococo);
+impl_assets_helpers_for_parachain!(AssetHubRococo, Rococo);
+impl_assert_events_helpers_for_parachain!(AssetHubRococo);
+
 // Collectives implementation
-impl_accounts_helpers_for_parachain!(Collectives);
-impl_assert_events_helpers_for_parachain!(Collectives);
+impl_accounts_helpers_for_parachain!(CollectivesWestend);
+impl_assert_events_helpers_for_parachain!(CollectivesWestend);
 
 // BridgeHubRococo implementation
 impl_accounts_helpers_for_parachain!(BridgeHubRococo);
@@ -502,7 +528,8 @@ decl_test_sender_receiver_accounts_parameter_types! {
 	AssetHubRococo { sender: ALICE, receiver: BOB },
 	AssetHubWococo { sender: ALICE, receiver: BOB },
 	// Collectives
-	Collectives { sender: ALICE, receiver: BOB },
+	CollectivesPolkadot { sender: ALICE, receiver: BOB },
+	CollectivesWestend { sender: ALICE, receiver: BOB },
 	// Bridged Hubs
 	BridgeHubPolkadot { sender: ALICE, receiver: BOB },
 	BridgeHubKusama { sender: ALICE, receiver: BOB },

@@ -23,7 +23,6 @@ use frame_support::traits::{
 	tokens::Pay,
 };
 use sp_core::crypto::Ss58Codec;
-use xcm_emulator::TestExt;
 
 #[test]
 fn pay_salary() {
@@ -46,12 +45,12 @@ fn pay_salary() {
 		assert_ok!(<AssetHubAssets as Mutate<_>>::mint_into(asset_id, &pay_from, pay_amount * 2));
 	});
 
-	Collectives::execute_with(|| {
-		type RuntimeEvent = <Collectives as Chain>::RuntimeEvent;
+	CollectivesPolkadot::execute_with(|| {
+		type RuntimeEvent = <CollectivesPolkadot as Chain>::RuntimeEvent;
 
 		assert_ok!(FellowshipSalaryPaymaster::pay(&pay_to, (), pay_amount));
 		assert_expected_events!(
-			Collectives,
+			CollectivesPolkadot,
 			vec![
 				RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::XcmpMessageSent { .. }) => {},
 			]
