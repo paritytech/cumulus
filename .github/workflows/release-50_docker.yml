@@ -57,6 +57,8 @@ jobs:
             -H "Authorization: Bearer ${GITHUB_TOKEN}" \
             https://raw.githubusercontent.com/EgorPopelyaev/polkadot/master/scripts/ci/common/lib.sh
 
+          ls -al
+
       - name: Check SHA256
         working-directory: ${{ env.TMP }}
         run: |
