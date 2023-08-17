@@ -21,7 +21,9 @@ use crate::Config;
 
 use bp_messages::{
 	calc_relayers_rewards,
-	source_chain::{DeliveryConfirmationPayments, LaneMessageVerifier, TargetHeaderChain},
+	source_chain::{
+		DeliveryConfirmationPayments, LaneMessageVerifier, OnMessagesDelivered, TargetHeaderChain,
+	},
 	target_chain::{
 		DeliveryPayments, DispatchMessage, DispatchMessageData, MessageDispatch,
 		ProvedLaneMessages, ProvedMessages, SourceHeaderChain,
@@ -39,9 +41,8 @@ use frame_support::{
 use scale_info::TypeInfo;
 use sp_core::H256;
 use sp_runtime::{
-	testing::Header as SubstrateHeader,
 	traits::{BlakeTwo256, ConstU32, IdentityLookup},
-	Perbill,
+	BuildStorage, Perbill,
 };
 use std::{
 	collections::{BTreeMap, VecDeque},
@@ -71,17 +72,13 @@ pub type TestRelayer = u64;
 pub type TestDispatchLevelResult = ();
 
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 
 use crate as pallet_bridge_messages;
 
 frame_support::construct_runtime! {
-	pub enum TestRuntime where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum TestRuntime
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Event<T>},
 		Messages: pallet_bridge_messages::{Pallet, Call, Event<T>},
 	}
@@ -98,14 +95,13 @@ pub type DbWeight = RocksDbWeight;
 
 impl frame_system::Config for TestRuntime {
 	type RuntimeOrigin = RuntimeOrigin;
-	type Index = u64;
+	type Nonce = u64;
 	type RuntimeCall = RuntimeCall;
-	type BlockNumber = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = SubstrateHeader;
+	type Block = Block;
 	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = ConstU64<250>;
 	type Version = ();
@@ -167,6 +163,7 @@ impl Config for TestRuntime {
 	type TargetHeaderChain = TestTargetHeaderChain;
 	type LaneMessageVerifier = TestLaneMessageVerifier;
 	type DeliveryConfirmationPayments = TestDeliveryConfirmationPayments;
+	type OnMessagesDelivered = TestOnMessagesDelivered;
 
 	type SourceHeaderChain = TestSourceHeaderChain;
 	type MessageDispatch = TestMessageDispatch;
@@ -316,9 +313,8 @@ impl TargetHeaderChain<TestPayload, TestRelayer> for TestTargetHeaderChain {
 #[derive(Debug, Default)]
 pub struct TestLaneMessageVerifier;
 
-impl LaneMessageVerifier<RuntimeOrigin, TestPayload> for TestLaneMessageVerifier {
+impl LaneMessageVerifier<TestPayload> for TestLaneMessageVerifier {
 	fn verify_message(
-		_submitter: &RuntimeOrigin,
 		_lane: &LaneId,
 		_lane_outbound_data: &OutboundLaneData,
 		payload: &TestPayload,
@@ -409,13 +405,25 @@ impl SourceHeaderChain for TestSourceHeaderChain {
 	}
 }
 
-/// Source header chain that is used in tests.
+/// Test message dispatcher.
 #[derive(Debug)]
 pub struct TestMessageDispatch;
+
+impl TestMessageDispatch {
+	pub fn deactivate() {
+		frame_support::storage::unhashed::put(b"TestMessageDispatch.IsCongested", &true)
+	}
+}
 
 impl MessageDispatch for TestMessageDispatch {
 	type DispatchPayload = TestPayload;
 	type DispatchLevelResult = TestDispatchLevelResult;
+
+	fn is_active() -> bool {
+		!frame_support::storage::unhashed::get_or_default::<bool>(
+			b"TestMessageDispatch.IsCongested",
+		)
+	}
 
 	fn dispatch_weight(message: &mut DispatchMessage<TestPayload>) -> Weight {
 		match message.data.payload.as_ref() {
@@ -431,6 +439,24 @@ impl MessageDispatch for TestMessageDispatch {
 			Ok(payload) => payload.dispatch_result.clone(),
 			Err(_) => dispatch_result(0),
 		}
+	}
+}
+
+/// Test callback, called during message delivery confirmation transaction.
+pub struct TestOnMessagesDelivered;
+
+impl TestOnMessagesDelivered {
+	pub fn call_arguments() -> Option<(LaneId, MessageNonce)> {
+		frame_support::storage::unhashed::get(b"TestOnMessagesDelivered.OnMessagesDelivered")
+	}
+}
+
+impl OnMessagesDelivered for TestOnMessagesDelivered {
+	fn on_messages_delivered(lane: LaneId, enqueued_messages: MessageNonce) {
+		frame_support::storage::unhashed::put(
+			b"TestOnMessagesDelivered.OnMessagesDelivered",
+			&(lane, enqueued_messages),
+		);
 	}
 }
 
@@ -487,7 +513,7 @@ pub fn inbound_unrewarded_relayers_state(lane: bp_messages::LaneId) -> Unrewarde
 
 /// Return test externalities to use in tests.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+	let mut t = frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
 	pallet_balances::GenesisConfig::<TestRuntime> { balances: vec![(ENDOWED_ACCOUNT, 1_000_000)] }
 		.assimilate_storage(&mut t)
 		.unwrap();

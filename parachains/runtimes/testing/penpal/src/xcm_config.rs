@@ -20,7 +20,8 @@
 //!
 //! One of the main uses of the penpal chain will be to be a benefactor of reserve asset transfers
 //! with Asset Hub as the reserve. At present no derivative tokens are minted on receipt of a
-//! `ReserveAssetTransferDeposited` message but that will but the intension will be to support this soon.
+//! `ReserveAssetTransferDeposited` message but that will but the intension will be to support this
+//! soon.
 use super::{
 	AccountId, AllPalletsWithSystem, AssetId as AssetIdPalletAssets, Assets, Balance, Balances,
 	ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
@@ -47,10 +48,10 @@ use xcm_builder::{
 	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, AsPrefixedGeneralIndex,
 	ConvertedConcreteId, CurrencyAdapter, DenyReserveTransferToRelayChain, DenyThenTry,
 	EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete, LocalMint, NativeAsset,
-	ParentIsPreset, ProvideWeighableInstructions, RelayChainAsNative, SiblingParachainAsNative,
-	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId, UniversalWeigherAdapter,
-	UsingComponents, WithComputedOrigin, WithUniqueTopic,
+	ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+	TrailingSetTopicAsId, UniversalWeigherAdapter, UsingComponents, WithComputedOrigin,
+	WithUniqueTopic,
 };
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
@@ -160,9 +161,11 @@ pub type Barrier = TrailingSetTopicAsId<
 			// Allow XCMs with some computed origins to pass through.
 			WithComputedOrigin<
 				(
-					// If the message is one that immediately attemps to pay for execution, then allow it.
+					// If the message is one that immediately attemps to pay for execution, then
+					// allow it.
 					AllowTopLevelPaidExecutionFrom<Everything>,
-					// Common Good Assets parachain, parent and its exec plurality get free execution
+					// Common Good Assets parachain, parent and its exec plurality get free
+					// execution
 					AllowExplicitUnpaidExecutionFrom<(
 						CommonGoodAssetsParachain,
 						ParentOrParentsExecutivePlurality,
@@ -315,20 +318,6 @@ parameter_types! {
 	pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
 }
 
-/// Helper for adding more instructions to the weight estimation on destination side.
-pub struct DestinationWeigherAddons;
-impl ProvideWeighableInstructions<()> for DestinationWeigherAddons {
-	fn provide_for(
-		_dest: impl Into<MultiLocation>,
-		_message: &Xcm<()>,
-	) -> sp_std::vec::Vec<Instruction<()>> {
-		sp_std::vec![
-			// runtime uses `WithUniqueTopic` which (possibly) adds `SetTopic` instruction
-			SetTopic([3; 32])
-		]
-	}
-}
-
 impl pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
@@ -344,7 +333,7 @@ impl pallet_xcm::Config for Runtime {
 	type DestinationWeigher = UniversalWeigherAdapter<
 		// use local weight for remote message and hope for the best.
 		FixedWeightBounds<UnitWeightCost, (), MaxInstructions>,
-		DestinationWeigherAddons,
+		(XcmRouter,),
 	>;
 	type UniversalLocation = UniversalLocation;
 	type RuntimeOrigin = RuntimeOrigin;

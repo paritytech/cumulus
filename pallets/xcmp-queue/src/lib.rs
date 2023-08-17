@@ -47,7 +47,7 @@ use frame_support::{
 	traits::{EnsureOrigin, Get},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight},
 };
-use polkadot_runtime_common::xcm_sender::ConstantPrice;
+use polkadot_runtime_common::xcm_sender::PriceForParachainDelivery;
 use rand_chacha::{
 	rand_core::{RngCore, SeedableRng},
 	ChaChaRng,
@@ -107,7 +107,7 @@ pub mod pallet {
 		type ControllerOriginConverter: ConvertOrigin<Self::RuntimeOrigin>;
 
 		/// The price for delivering an XCM to a sibling parachain destination.
-		type PriceForSiblingDelivery: PriceForSiblingDelivery;
+		type PriceForSiblingDelivery: PriceForParachainDelivery;
 
 		/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
@@ -115,7 +115,7 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_idle(_now: T::BlockNumber, max_weight: Weight) -> Weight {
+		fn on_idle(_now: BlockNumberFor<T>, max_weight: Weight) -> Weight {
 			// on_idle processes additional messages with any remaining block weight.
 			Self::service_xcmp_queue(max_weight)
 		}
@@ -187,8 +187,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Overwrites the number of pages of messages which must be in the queue for the other side to be told to
-		/// suspend their sending.
+		/// Overwrites the number of pages of messages which must be in the queue for the other side
+		/// to be told to suspend their sending.
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.suspend_value`
@@ -201,8 +201,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Overwrites the number of pages of messages which must be in the queue after which we drop any further
-		/// messages from the channel.
+		/// Overwrites the number of pages of messages which must be in the queue after which we
+		/// drop any further messages from the channel.
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.drop_threshold`
@@ -215,8 +215,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Overwrites the number of pages of messages which the queue must be reduced to before it signals that
-		/// message sending may recommence after it has been suspended.
+		/// Overwrites the number of pages of messages which the queue must be reduced to before it
+		/// signals that message sending may recommence after it has been suspended.
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.resume_threshold`
@@ -243,7 +243,8 @@ pub mod pallet {
 		}
 
 		/// Overwrites the speed to which the available weight approaches the maximum weight.
-		/// A lower number results in a faster progression. A value of 1 makes the entire weight available initially.
+		/// A lower number results in a faster progression. A value of 1 makes the entire weight
+		/// available initially.
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.weight_restrict_decay`.
@@ -257,7 +258,8 @@ pub mod pallet {
 		}
 
 		/// Overwrite the maximum amount of weight any individual message may consume.
-		/// Messages above this weight go into the overweight queue and may only be serviced explicitly.
+		/// Messages above this weight go into the overweight queue and may only be serviced
+		/// explicitly.
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.xcmp_max_individual_weight`.
@@ -679,8 +681,8 @@ impl<T: Config> Pallet<T> {
 									Overweight::<T>::count() < MAX_OVERWEIGHT_MESSAGES;
 								weight_used.saturating_accrue(T::DbWeight::get().reads(1));
 								if is_under_limit {
-									// overweight - add to overweight queue and continue with message
-									// execution consuming the message.
+									// overweight - add to overweight queue and continue with
+									// message execution consuming the message.
 									let msg_len = last_remaining_fragments
 										.len()
 										.saturating_sub(remaining_fragments.len());
@@ -1135,22 +1137,6 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 	}
 }
 
-pub trait PriceForSiblingDelivery {
-	fn price_for_sibling_delivery(id: ParaId, message: &Xcm<()>) -> MultiAssets;
-}
-
-impl PriceForSiblingDelivery for () {
-	fn price_for_sibling_delivery(_: ParaId, _: &Xcm<()>) -> MultiAssets {
-		MultiAssets::new()
-	}
-}
-
-impl<T: Get<MultiAssets>> PriceForSiblingDelivery for ConstantPrice<T> {
-	fn price_for_sibling_delivery(_: ParaId, _: &Xcm<()>) -> MultiAssets {
-		T::get()
-	}
-}
-
 /// Xcm sender for sending to a sibling parachain.
 impl<T: Config> SendXcm for Pallet<T> {
 	type Ticket = (ParaId, VersionedXcm<()>);
@@ -1166,7 +1152,7 @@ impl<T: Config> SendXcm for Pallet<T> {
 			MultiLocation { parents: 1, interior: X1(Parachain(id)) } => {
 				let xcm = msg.take().ok_or(SendError::MissingArgument)?;
 				let id = ParaId::from(*id);
-				let price = T::PriceForSiblingDelivery::price_for_sibling_delivery(id, &xcm);
+				let price = T::PriceForSiblingDelivery::price_for_parachain_delivery(id, &xcm);
 				let versioned_xcm = T::VersionWrapper::wrap_version(&d, xcm)
 					.map_err(|()| SendError::DestinationUnsupported)?;
 				Ok(((id, versioned_xcm), price))

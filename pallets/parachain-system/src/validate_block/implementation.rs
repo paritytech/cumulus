@@ -16,7 +16,7 @@
 
 //! The actual implementation of the validate block functionality.
 
-use super::MemoryOptimizedValidationParams;
+use super::{trie_cache, MemoryOptimizedValidationParams};
 use cumulus_primitives_core::{
 	relay_chain::Hash as RHash, ParachainBlockData, PersistedValidationData,
 };
@@ -30,13 +30,17 @@ use frame_support::traits::{ExecuteBlock, ExtrinsicCall, Get, IsSubType};
 use sp_core::storage::{ChildInfo, StateVersion};
 use sp_externalities::{set_and_run_with_externalities, Externalities};
 use sp_io::KillStorageResult;
-use sp_runtime::traits::{Block as BlockT, Extrinsic, HashFor, Header as HeaderT};
+use sp_runtime::traits::{Block as BlockT, Extrinsic, HashingFor, Header as HeaderT};
 use sp_std::prelude::*;
 use sp_trie::MemoryDB;
 
-type TrieBackend<B> = sp_state_machine::TrieBackend<MemoryDB<HashFor<B>>, HashFor<B>>;
+type TrieBackend<B> = sp_state_machine::TrieBackend<
+	MemoryDB<HashingFor<B>>,
+	HashingFor<B>,
+	trie_cache::CacheProvider<HashingFor<B>>,
+>;
 
-type Ext<'a, B> = sp_state_machine::Ext<'a, HashFor<B>, TrieBackend<B>>;
+type Ext<'a, B> = sp_state_machine::Ext<'a, HashingFor<B>, TrieBackend<B>>;
 
 fn with_externalities<F: FnOnce(&mut dyn Externalities) -> R, R>(f: F) -> R {
 	sp_externalities::with_externalities(f).expect("Environmental externalities not set.")
@@ -114,10 +118,15 @@ where
 
 	sp_std::mem::drop(storage_proof);
 
+	let cache_provider = trie_cache::CacheProvider::new();
 	// We use the storage root of the `parent_head` to ensure that it is the correct root.
 	// This is already being done above while creating the in-memory db, but let's be paranoid!!
-	let backend =
-		sp_state_machine::TrieBackendBuilder::new(db, *parent_header.state_root()).build();
+	let backend = sp_state_machine::TrieBackendBuilder::new_with_cache(
+		db,
+		*parent_header.state_root(),
+		cache_provider,
+	)
+	.build();
 
 	let _guard = (
 		// Replace storage calls with our own implementations
@@ -260,8 +269,7 @@ fn run_with_externalities<B: BlockT, R, F: FnOnce() -> R>(
 	execute: F,
 ) -> R {
 	let mut overlay = sp_state_machine::OverlayedChanges::default();
-	let mut cache = Default::default();
-	let mut ext = Ext::<B>::new(&mut overlay, &mut cache, backend);
+	let mut ext = Ext::<B>::new(&mut overlay, backend);
 
 	set_and_run_with_externalities(&mut ext, || execute())
 }

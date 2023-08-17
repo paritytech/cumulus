@@ -38,11 +38,10 @@ use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
 	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
 	CurrencyAdapter, DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin, IsConcrete,
-	ParentAsSuperuser, ParentIsPreset, ProvideWeighableInstructions, RelayChainAsNative,
-	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId,
-	UniversalWeigherAdapter, UsingComponents, WeightInfoBounds, WithComputedOrigin,
-	WithUniqueTopic,
+	ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+	SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId, UniversalWeigherAdapter,
+	UsingComponents, WeightInfoBounds, WithComputedOrigin, WithUniqueTopic,
 };
 use xcm_executor::{
 	traits::{ExportXcm, WithOriginFilter},
@@ -185,7 +184,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				) | RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 				RuntimeCall::XcmpQueue(..) |
 				RuntimeCall::DmpQueue(..) |
-				RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
 				RuntimeCall::BridgeRococoGrandpa(pallet_bridge_grandpa::Call::<
 					Runtime,
 					BridgeGrandpaRococoInstance,
@@ -208,7 +206,8 @@ pub type Barrier = TrailingSetTopicAsId<
 			AllowKnownQueryResponses<PolkadotXcm>,
 			WithComputedOrigin<
 				(
-					// If the message is one that immediately attemps to pay for execution, then allow it.
+					// If the message is one that immediately attemps to pay for execution, then
+					// allow it.
 					AllowTopLevelPaidExecutionFrom<Everything>,
 					// Parent and its pluralities (i.e. governance bodies) get free execution.
 					AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
@@ -231,8 +230,8 @@ impl xcm_executor::Config for XcmConfig {
 	type XcmSender = XcmRouter;
 	type AssetTransactor = CurrencyTransactor;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	// BridgeHub does not recognize a reserve location for any asset. Users must teleport Native token
-	// where allowed (e.g. with the Relay Chain).
+	// BridgeHub does not recognize a reserve location for any asset. Users must teleport Native
+	// token where allowed (e.g. with the Relay Chain).
 	type IsReserve = ();
 	/// Only allow teleportation of NativeToken of relay chain.
 	type IsTeleporter = ConcreteNativeAssetFrom<RelayLocation>;
@@ -279,20 +278,6 @@ parameter_types! {
 	pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
 }
 
-/// Helper for adding more instructions to the weight estimation on destination side.
-pub struct DestinationWeigherAddons;
-impl ProvideWeighableInstructions<()> for DestinationWeigherAddons {
-	fn provide_for(
-		_dest: impl Into<MultiLocation>,
-		_message: &Xcm<()>,
-	) -> sp_std::vec::Vec<Instruction<()>> {
-		sp_std::vec![
-			// runtime uses `WithUniqueTopic` which (possibly) adds `SetTopic` instruction
-			SetTopic([3; 32])
-		]
-	}
-}
-
 impl pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type XcmRouter = XcmRouter;
@@ -312,7 +297,7 @@ impl pallet_xcm::Config for Runtime {
 	type DestinationWeigher = UniversalWeigherAdapter<
 		// use local weight for remote message and hope for the best.
 		WeightInfoBounds<crate::weights::xcm::BridgeHubRococoXcmWeight<()>, (), MaxInstructions>,
-		DestinationWeigherAddons,
+		(XcmRouter,),
 	>;
 	type UniversalLocation = UniversalLocation;
 	type RuntimeOrigin = RuntimeOrigin;
@@ -337,7 +322,8 @@ impl cumulus_pallet_xcm::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
-/// Hacky switch implementation, because we have just one runtime for Rococo and Wococo BridgeHub, so it means we have just one XcmConfig
+/// Hacky switch implementation, because we have just one runtime for Rococo and Wococo BridgeHub,
+/// so it means we have just one XcmConfig
 pub struct BridgeHubRococoOrBridgeHubWococoSwitchExporter;
 impl ExportXcm for BridgeHubRococoOrBridgeHubWococoSwitchExporter {
 	type Ticket = (NetworkId, (sp_std::prelude::Vec<u8>, XcmHash));

@@ -25,7 +25,7 @@ use bp_runtime::{
 	decl_bridge_finality_runtime_apis, decl_bridge_messages_runtime_apis, Chain, Parachain,
 };
 use frame_support::{dispatch::DispatchClass, RuntimeDebug};
-use sp_std::prelude::*;
+use sp_std::prelude::Vec;
 
 /// BridgeHubWococo parachain.
 #[derive(RuntimeDebug)]
@@ -39,7 +39,7 @@ impl Chain for BridgeHubWococo {
 
 	type AccountId = AccountId;
 	type Balance = Balance;
-	type Index = Index;
+	type Nonce = Nonce;
 	type Signature = Signature;
 
 	fn max_extrinsic_size() -> u32 {

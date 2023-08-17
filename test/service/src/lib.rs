@@ -55,7 +55,6 @@ use polkadot_node_subsystem::{errors::RecoveryError, messages::AvailabilityRecov
 use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::{CollatorPair, Hash as PHash, PersistedValidationData};
 use polkadot_service::ProvideRuntimeApi;
-use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_consensus::ImportQueue;
 use sc_network::{
 	config::{FullNetworkConfiguration, TransportConfig},
@@ -73,9 +72,8 @@ use sp_arithmetic::traits::SaturatedConversion;
 use sp_blockchain::HeaderBackend;
 use sp_core::{Pair, H256};
 use sp_keyring::Sr25519Keyring;
-use sp_runtime::{codec::Encode, generic, traits::BlakeTwo256};
+use sp_runtime::{codec::Encode, generic};
 use sp_state_machine::BasicExternalities;
-use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
 use substrate_test_client::{
 	BlockchainEventsExt, RpcHandlersExt, RpcTransactionError, RpcTransactionOutput,
@@ -184,7 +182,7 @@ pub fn new_partial(
 		Client,
 		Backend,
 		(),
-		sc_consensus::import_queue::BasicQueue<Block, PrefixedMemoryDB<BlakeTwo256>>,
+		sc_consensus::import_queue::BasicQueue<Block>,
 		sc_transaction_pool::FullPool<Block, Client>,
 		ParachainBlockImport,
 	>,
@@ -262,9 +260,9 @@ async fn build_relay_chain_interface(
 	let relay_chain_full_node = polkadot_test_service::new_full(
 		relay_chain_config,
 		if let Some(ref key) = collator_key {
-			polkadot_service::IsCollator::Yes(key.clone())
+			polkadot_service::IsParachainNode::Collator(key.clone())
 		} else {
-			polkadot_service::IsCollator::Yes(CollatorPair::generate().0)
+			polkadot_service::IsParachainNode::Collator(CollatorPair::generate().0)
 		},
 		None,
 	)
@@ -474,8 +472,8 @@ pub struct TestNode {
 	pub client: Arc<Client>,
 	/// Node's network.
 	pub network: Arc<NetworkService<Block, H256>>,
-	/// The `MultiaddrWithPeerId` to this node. This is useful if you want to pass it as "boot node"
-	/// to other nodes.
+	/// The `MultiaddrWithPeerId` to this node. This is useful if you want to pass it as "boot
+	/// node" to other nodes.
 	pub addr: MultiaddrWithPeerId,
 	/// RPCHandlers to make RPC queries.
 	pub rpc_handlers: RpcHandlers,
@@ -513,7 +511,8 @@ impl TestNodeBuilder {
 	///
 	/// `para_id` - The parachain id this node is running for.
 	/// `tokio_handle` - The tokio handler to use.
-	/// `key` - The key that will be used to generate the name and that will be passed as `dev_seed`.
+	/// `key` - The key that will be used to generate the name and that will be passed as
+	/// `dev_seed`.
 	pub fn new(para_id: ParaId, tokio_handle: tokio::runtime::Handle, key: Sr25519Keyring) -> Self {
 		TestNodeBuilder {
 			key,
@@ -757,13 +756,6 @@ pub fn node_config(
 		chain_spec: spec,
 		wasm_method: WasmExecutionMethod::Compiled {
 			instantiation_strategy: sc_executor_wasmtime::InstantiationStrategy::PoolingCopyOnWrite,
-		},
-		execution_strategies: ExecutionStrategies {
-			syncing: sc_client_api::ExecutionStrategy::AlwaysWasm,
-			importing: sc_client_api::ExecutionStrategy::AlwaysWasm,
-			block_construction: sc_client_api::ExecutionStrategy::AlwaysWasm,
-			offchain_worker: sc_client_api::ExecutionStrategy::AlwaysWasm,
-			other: sc_client_api::ExecutionStrategy::AlwaysWasm,
 		},
 		rpc_addr: None,
 		rpc_max_connections: Default::default(),

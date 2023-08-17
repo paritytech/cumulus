@@ -19,9 +19,12 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use crate::justification::{
+	GrandpaJustification, JustificationVerificationContext, JustificationVerificationError,
+};
 use bp_runtime::{
 	BasicOperatingMode, Chain, HashOf, HasherOf, HeaderOf, RawStorageProof, StorageProofChecker,
-	StorageProofError,
+	StorageProofError, UnderlyingChainProvider,
 };
 use codec::{Codec, Decode, Encode, EncodeLike, MaxEncodedLen};
 use core::{clone::Clone, cmp::Eq, default::Default, fmt::Debug};
@@ -30,7 +33,7 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_consensus_grandpa::{AuthorityList, ConsensusLog, SetId, GRANDPA_ENGINE_ID};
 use sp_runtime::{traits::Header as HeaderT, Digest, RuntimeDebug};
-use sp_std::boxed::Box;
+use sp_std::{boxed::Box, vec::Vec};
 
 pub mod justification;
 pub mod storage_keys;
@@ -139,7 +142,7 @@ pub trait ConsensusLogReader {
 pub struct GrandpaConsensusLogReader<Number>(sp_std::marker::PhantomData<Number>);
 
 impl<Number: Codec> GrandpaConsensusLogReader<Number> {
-	pub fn find_authorities_change(
+	pub fn find_scheduled_change(
 		digest: &Digest,
 	) -> Option<sp_consensus_grandpa::ScheduledChange<Number>> {
 		// find the first consensus digest with the right ID which converts to
@@ -151,12 +154,69 @@ impl<Number: Codec> GrandpaConsensusLogReader<Number> {
 				_ => None,
 			})
 	}
+
+	pub fn find_forced_change(
+		digest: &Digest,
+	) -> Option<(Number, sp_consensus_grandpa::ScheduledChange<Number>)> {
+		// find the first consensus digest with the right ID which converts to
+		// the right kind of consensus log.
+		digest
+			.convert_first(|log| log.consensus_try_to(&GRANDPA_ENGINE_ID))
+			.and_then(|log| match log {
+				ConsensusLog::ForcedChange(delay, change) => Some((delay, change)),
+				_ => None,
+			})
+	}
 }
 
 impl<Number: Codec> ConsensusLogReader for GrandpaConsensusLogReader<Number> {
 	fn schedules_authorities_change(digest: &Digest) -> bool {
-		GrandpaConsensusLogReader::<Number>::find_authorities_change(digest).is_some()
+		GrandpaConsensusLogReader::<Number>::find_scheduled_change(digest).is_some()
 	}
+}
+
+/// The finality-related info associated to a header.
+#[derive(Encode, Decode, Debug, PartialEq, Clone, TypeInfo)]
+pub struct HeaderFinalityInfo<FinalityProof, FinalityVerificationContext> {
+	/// The header finality proof.
+	pub finality_proof: FinalityProof,
+	/// The new verification context introduced by the header.
+	pub new_verification_context: Option<FinalityVerificationContext>,
+}
+
+/// Grandpa-related info associated to a header. This info can be saved to events.
+pub type StoredHeaderGrandpaInfo<Header> =
+	HeaderFinalityInfo<GrandpaJustification<Header>, AuthoritySet>;
+
+/// Processed Grandpa-related info associated to a header.
+pub type HeaderGrandpaInfo<Header> =
+	HeaderFinalityInfo<GrandpaJustification<Header>, JustificationVerificationContext>;
+
+impl<Header: HeaderT> TryFrom<StoredHeaderGrandpaInfo<Header>> for HeaderGrandpaInfo<Header> {
+	type Error = JustificationVerificationError;
+
+	fn try_from(grandpa_info: StoredHeaderGrandpaInfo<Header>) -> Result<Self, Self::Error> {
+		Ok(Self {
+			finality_proof: grandpa_info.finality_proof,
+			new_verification_context: match grandpa_info.new_verification_context {
+				Some(authority_set) => Some(authority_set.try_into()?),
+				None => None,
+			},
+		})
+	}
+}
+
+/// Helper trait for finding equivocations in finality proofs.
+pub trait FindEquivocations<FinalityProof, FinalityVerificationContext, EquivocationProof> {
+	/// The type returned when encountering an error while looking for equivocations.
+	type Error;
+
+	/// Find equivocations.
+	fn find_equivocations(
+		verification_context: &FinalityVerificationContext,
+		synced_proof: &FinalityProof,
+		source_proofs: &[FinalityProof],
+	) -> Result<Vec<EquivocationProof>, Self::Error>;
 }
 
 /// A minimized version of `pallet-bridge-grandpa::Call` that can be used without a runtime.
@@ -220,4 +280,19 @@ pub trait ChainWithGrandpa: Chain {
 	/// ancestry and the pallet will accept the call. The limit is only used to compute maximal
 	/// refund amount and doing calls which exceed the limit, may be costly to submitter.
 	const AVERAGE_HEADER_SIZE_IN_JUSTIFICATION: u32;
+}
+
+impl<T> ChainWithGrandpa for T
+where
+	T: Chain + UnderlyingChainProvider,
+	T::Chain: ChainWithGrandpa,
+{
+	const WITH_CHAIN_GRANDPA_PALLET_NAME: &'static str =
+		<T::Chain as ChainWithGrandpa>::WITH_CHAIN_GRANDPA_PALLET_NAME;
+	const MAX_AUTHORITIES_COUNT: u32 = <T::Chain as ChainWithGrandpa>::MAX_AUTHORITIES_COUNT;
+	const REASONABLE_HEADERS_IN_JUSTIFICATON_ANCESTRY: u32 =
+		<T::Chain as ChainWithGrandpa>::REASONABLE_HEADERS_IN_JUSTIFICATON_ANCESTRY;
+	const MAX_HEADER_SIZE: u32 = <T::Chain as ChainWithGrandpa>::MAX_HEADER_SIZE;
+	const AVERAGE_HEADER_SIZE_IN_JUSTIFICATION: u32 =
+		<T::Chain as ChainWithGrandpa>::AVERAGE_HEADER_SIZE_IN_JUSTIFICATION;
 }

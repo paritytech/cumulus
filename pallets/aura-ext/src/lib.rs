@@ -23,9 +23,9 @@
 //! check the constructed block on the relay chain.
 //!
 //! ```
-//!# struct Runtime;
-//!# struct Executive;
-//!# struct CheckInherents;
+//! # struct Runtime;
+//! # struct Executive;
+//! # struct CheckInherents;
 //! cumulus_pallet_parachain_system::register_validate_block! {
 //!     Runtime = Runtime,
 //!     BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
@@ -75,8 +75,8 @@ pub mod pallet {
 	/// Serves as cache for the authorities.
 	///
 	/// The authorities in AuRa are overwritten in `on_initialize` when we switch to a new session,
-	/// but we require the old authorities to verify the seal when validating a PoV. This will always
-	/// be updated to the latest AuRa authorities in `on_finalize`.
+	/// but we require the old authorities to verify the seal when validating a PoV. This will
+	/// always be updated to the latest AuRa authorities in `on_finalize`.
 	#[pallet::storage]
 	pub(crate) type Authorities<T: Config> = StorageValue<
 		_,
@@ -85,11 +85,14 @@ pub mod pallet {
 	>;
 
 	#[pallet::genesis_config]
-	#[derive(Default)]
-	pub struct GenesisConfig;
+	#[derive(frame_support::DefaultNoBound)]
+	pub struct GenesisConfig<T: Config> {
+		#[serde(skip)]
+		pub _config: sp_std::marker::PhantomData<T>,
+	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			let authorities = Aura::<T>::authorities();
 

@@ -53,7 +53,8 @@ use crate::{
 
 use bp_messages::{
 	source_chain::{
-		DeliveryConfirmationPayments, LaneMessageVerifier, SendMessageArtifacts, TargetHeaderChain,
+		DeliveryConfirmationPayments, LaneMessageVerifier, OnMessagesDelivered,
+		SendMessageArtifacts, TargetHeaderChain,
 	},
 	target_chain::{
 		DeliveryPayments, DispatchMessage, MessageDispatch, ProvedLaneMessages, ProvedMessages,
@@ -63,7 +64,9 @@ use bp_messages::{
 	MessagePayload, MessagesOperatingMode, OutboundLaneData, OutboundMessageDetails,
 	UnrewardedRelayersState, VerificationError,
 };
-use bp_runtime::{BasicOperatingMode, ChainId, OwnedBridgeModule, PreComputedSize, Size};
+use bp_runtime::{
+	BasicOperatingMode, ChainId, OwnedBridgeModule, PreComputedSize, RangeInclusiveExt, Size,
+};
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{dispatch::PostDispatchInfo, ensure, fail, traits::Get, DefaultNoBound};
 use sp_runtime::traits::UniqueSaturatedFrom;
@@ -153,9 +156,11 @@ pub mod pallet {
 		/// Target header chain.
 		type TargetHeaderChain: TargetHeaderChain<Self::OutboundPayload, Self::AccountId>;
 		/// Message payload verifier.
-		type LaneMessageVerifier: LaneMessageVerifier<Self::RuntimeOrigin, Self::OutboundPayload>;
+		type LaneMessageVerifier: LaneMessageVerifier<Self::OutboundPayload>;
 		/// Delivery confirmation payments.
 		type DeliveryConfirmationPayments: DeliveryConfirmationPayments<Self::AccountId>;
+		/// Delivery confirmation callback.
+		type OnMessagesDelivered: OnMessagesDelivered;
 
 		// Types that are used by inbound_lane (on target chain).
 
@@ -188,9 +193,9 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I>
 	where
-		u32: TryFrom<<T as frame_system::Config>::BlockNumber>,
+		u32: TryFrom<BlockNumberFor<T>>,
 	{
-		fn on_idle(_block: T::BlockNumber, remaining_weight: Weight) -> Weight {
+		fn on_idle(_block: BlockNumberFor<T>, remaining_weight: Weight) -> Weight {
 			// we'll need at least to read outbound lane state, kill a message and update lane state
 			let db_weight = T::DbWeight::get();
 			if !remaining_weight.all_gte(db_weight.reads_writes(1, 2)) {
@@ -280,6 +285,9 @@ pub mod pallet {
 				MessageNonce::from(messages_count) <= T::MaxUnconfirmedMessagesAtInboundLane::get(),
 				Error::<T, I>::TooManyMessagesInTheProof
 			);
+
+			// if message dispatcher is currently inactive, we won't accept any messages
+			ensure!(T::MessageDispatch::is_active(), Error::<T, I>::MessageDispatchInactive);
 
 			// why do we need to know the weight of this (`receive_messages_proof`) call? Because
 			// we may want to return some funds for not-dispatching (or partially dispatching) some
@@ -487,6 +495,12 @@ pub mod pallet {
 				lane_id,
 			);
 
+			// notify others about messages delivery
+			T::OnMessagesDelivered::on_messages_delivered(
+				lane_id,
+				lane.data().queued_messages().saturating_len(),
+			);
+
 			// because of lags, the inbound lane state (`lane_data`) may have entries for
 			// already rewarded relayers and messages (if all entries are duplicated, then
 			// this transaction must be filtered out by our signed extension)
@@ -518,6 +532,8 @@ pub mod pallet {
 		NotOperatingNormally,
 		/// The outbound lane is inactive.
 		InactiveOutboundLane,
+		/// The inbound message dispatcher is inactive.
+		MessageDispatchInactive,
 		/// Message has been treated as invalid by chain verifier.
 		MessageRejectedByChainVerifier(VerificationError),
 		/// Message has been treated as invalid by lane verifier.
@@ -580,6 +596,25 @@ pub mod pallet {
 		MaxValues = MaybeOutboundLanesCount<T, I>,
 	>;
 
+	/// Map of lane id => is congested signal sent. It is managed by the
+	/// `bridge_runtime_common::LocalXcmQueueManager`.
+	///
+	/// **bridges-v1**: this map is a temporary hack and will be dropped in the `v2`. We can emulate
+	/// a storage map using `sp_io::unhashed` storage functions, but then benchmarks are not
+	/// accounting its `proof_size`, so it is missing from the final weights. So we need to make it
+	/// a map inside some pallet. We could use a simply value instead of map here, because
+	/// in `v1` we'll only have a single lane. But in the case of adding another lane before `v2`,
+	/// it'll be easier to deal with the isolated storage map instead.
+	#[pallet::storage]
+	pub type OutboundLanesCongestedSignals<T: Config<I>, I: 'static = ()> = StorageMap<
+		Hasher = Blake2_128Concat,
+		Key = LaneId,
+		Value = bool,
+		QueryKind = ValueQuery,
+		OnEmpty = GetDefault,
+		MaxValues = MaybeOutboundLanesCount<T, I>,
+	>;
+
 	/// All queued outbound messages.
 	#[pallet::storage]
 	pub type OutboundMessages<T: Config<I>, I: 'static = ()> =
@@ -597,7 +632,7 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
+	impl<T: Config<I>, I: 'static> BuildGenesisConfig for GenesisConfig<T, I> {
 		fn build(&self) {
 			PalletOperatingMode::<T, I>::put(self.operating_mode);
 			if let Some(ref owner) = self.owner {
@@ -627,6 +662,11 @@ pub mod pallet {
 			}
 		}
 
+		/// Return outbound lane data.
+		pub fn outbound_lane_data(lane: LaneId) -> OutboundLaneData {
+			OutboundLanes::<T, I>::get(lane)
+		}
+
 		/// Return inbound lane data.
 		pub fn inbound_lane_data(lane: LaneId) -> InboundLaneData<T::InboundRelayer> {
 			InboundLanes::<T, I>::get(lane).0
@@ -643,8 +683,7 @@ pub mod pallet {
 	}
 }
 
-impl<T, I> bp_messages::source_chain::MessagesBridge<T::RuntimeOrigin, T::OutboundPayload>
-	for Pallet<T, I>
+impl<T, I> bp_messages::source_chain::MessagesBridge<T::OutboundPayload> for Pallet<T, I>
 where
 	T: Config<I>,
 	I: 'static,
@@ -652,17 +691,15 @@ where
 	type Error = sp_runtime::DispatchErrorWithPostInfo<PostDispatchInfo>;
 
 	fn send_message(
-		sender: T::RuntimeOrigin,
 		lane: LaneId,
 		message: T::OutboundPayload,
 	) -> Result<SendMessageArtifacts, Self::Error> {
-		crate::send_message::<T, I>(sender, lane, message)
+		crate::send_message::<T, I>(lane, message)
 	}
 }
 
 /// Function that actually sends message.
 fn send_message<T: Config<I>, I: 'static>(
-	submitter: T::RuntimeOrigin,
 	lane_id: LaneId,
 	payload: T::OutboundPayload,
 ) -> sp_std::result::Result<
@@ -688,18 +725,16 @@ fn send_message<T: Config<I>, I: 'static>(
 
 	// now let's enforce any additional lane rules
 	let mut lane = outbound_lane::<T, I>(lane_id);
-	T::LaneMessageVerifier::verify_message(&submitter, &lane_id, &lane.data(), &payload).map_err(
-		|err| {
-			log::trace!(
-				target: LOG_TARGET,
-				"Message to lane {:?} is rejected by lane verifier: {:?}",
-				lane_id,
-				err,
-			);
+	T::LaneMessageVerifier::verify_message(&lane_id, &lane.data(), &payload).map_err(|err| {
+		log::trace!(
+			target: LOG_TARGET,
+			"Message to lane {:?} is rejected by lane verifier: {:?}",
+			lane_id,
+			err,
+		);
 
-			Error::<T, I>::MessageRejectedByLaneVerifier(err)
-		},
-	)?;
+		Error::<T, I>::MessageRejectedByLaneVerifier(err)
+	})?;
 
 	// finally, save message in outbound storage and emit event
 	let encoded_payload = payload.encode();
@@ -707,6 +742,9 @@ fn send_message<T: Config<I>, I: 'static>(
 	let nonce = lane
 		.send_message(encoded_payload)
 		.map_err(Error::<T, I>::MessageRejectedByPallet)?;
+
+	// return number of messages in the queue to let sender know about its state
+	let enqueued_messages = lane.data().queued_messages().saturating_len();
 
 	log::trace!(
 		target: LOG_TARGET,
@@ -718,7 +756,7 @@ fn send_message<T: Config<I>, I: 'static>(
 
 	Pallet::<T, I>::deposit_event(Event::MessageAccepted { lane_id, nonce });
 
-	Ok(SendMessageArtifacts { nonce })
+	Ok(SendMessageArtifacts { nonce, enqueued_messages })
 }
 
 /// Ensure that the pallet is in normal operational mode.
@@ -886,8 +924,9 @@ mod tests {
 		mock::{
 			inbound_unrewarded_relayers_state, message, message_payload, run_test,
 			unrewarded_relayer, AccountId, DbWeight, RuntimeEvent as TestEvent, RuntimeOrigin,
-			TestDeliveryConfirmationPayments, TestDeliveryPayments, TestMessagesDeliveryProof,
-			TestMessagesProof, TestRelayer, TestRuntime, TestWeightInfo, MAX_OUTBOUND_PAYLOAD_SIZE,
+			TestDeliveryConfirmationPayments, TestDeliveryPayments, TestMessageDispatch,
+			TestMessagesDeliveryProof, TestMessagesProof, TestOnMessagesDelivered, TestRelayer,
+			TestRuntime, TestWeightInfo, MAX_OUTBOUND_PAYLOAD_SIZE,
 			PAYLOAD_REJECTED_BY_TARGET_CHAIN, REGULAR_PAYLOAD, TEST_LANE_ID, TEST_LANE_ID_2,
 			TEST_LANE_ID_3, TEST_RELAYER_A, TEST_RELAYER_B,
 		},
@@ -913,10 +952,12 @@ mod tests {
 	fn send_regular_message() {
 		get_ready_for_events();
 
-		let message_nonce =
-			outbound_lane::<TestRuntime, ()>(TEST_LANE_ID).data().latest_generated_nonce + 1;
-		send_message::<TestRuntime, ()>(RuntimeOrigin::signed(1), TEST_LANE_ID, REGULAR_PAYLOAD)
+		let outbound_lane = outbound_lane::<TestRuntime, ()>(TEST_LANE_ID);
+		let message_nonce = outbound_lane.data().latest_generated_nonce + 1;
+		let prev_enqueud_messages = outbound_lane.data().queued_messages().saturating_len();
+		let artifacts = send_message::<TestRuntime, ()>(TEST_LANE_ID, REGULAR_PAYLOAD)
 			.expect("send_message has failed");
+		assert_eq!(artifacts.enqueued_messages, prev_enqueud_messages + 1);
 
 		// check event with assigned nonce
 		assert_eq!(
@@ -982,11 +1023,7 @@ mod tests {
 			));
 
 			assert_noop!(
-				send_message::<TestRuntime, ()>(
-					RuntimeOrigin::signed(1),
-					TEST_LANE_ID,
-					REGULAR_PAYLOAD,
-				),
+				send_message::<TestRuntime, ()>(TEST_LANE_ID, REGULAR_PAYLOAD,),
 				Error::<TestRuntime, ()>::NotOperatingNormally,
 			);
 
@@ -1036,11 +1073,7 @@ mod tests {
 			);
 
 			assert_noop!(
-				send_message::<TestRuntime, ()>(
-					RuntimeOrigin::signed(1),
-					TEST_LANE_ID,
-					REGULAR_PAYLOAD,
-				),
+				send_message::<TestRuntime, ()>(TEST_LANE_ID, REGULAR_PAYLOAD,),
 				Error::<TestRuntime, ()>::NotOperatingNormally,
 			);
 
@@ -1090,11 +1123,7 @@ mod tests {
 				.extra
 				.extend_from_slice(&[0u8; MAX_OUTBOUND_PAYLOAD_SIZE as usize]);
 			assert_noop!(
-				send_message::<TestRuntime, ()>(
-					RuntimeOrigin::signed(1),
-					TEST_LANE_ID,
-					message_payload.clone(),
-				),
+				send_message::<TestRuntime, ()>(TEST_LANE_ID, message_payload.clone(),),
 				Error::<TestRuntime, ()>::MessageRejectedByPallet(
 					VerificationError::MessageTooLarge
 				),
@@ -1105,11 +1134,7 @@ mod tests {
 				message_payload.extra.pop();
 			}
 			assert_eq!(message_payload.encoded_size() as u32, MAX_OUTBOUND_PAYLOAD_SIZE);
-			assert_ok!(send_message::<TestRuntime, ()>(
-				RuntimeOrigin::signed(1),
-				TEST_LANE_ID,
-				message_payload,
-			),);
+			assert_ok!(send_message::<TestRuntime, ()>(TEST_LANE_ID, message_payload,),);
 		})
 	}
 
@@ -1118,11 +1143,7 @@ mod tests {
 		run_test(|| {
 			// messages with this payload are rejected by target chain verifier
 			assert_noop!(
-				send_message::<TestRuntime, ()>(
-					RuntimeOrigin::signed(1),
-					TEST_LANE_ID,
-					PAYLOAD_REJECTED_BY_TARGET_CHAIN,
-				),
+				send_message::<TestRuntime, ()>(TEST_LANE_ID, PAYLOAD_REJECTED_BY_TARGET_CHAIN,),
 				Error::<TestRuntime, ()>::MessageRejectedByChainVerifier(VerificationError::Other(
 					mock::TEST_ERROR
 				)),
@@ -1137,7 +1158,7 @@ mod tests {
 			let mut message = REGULAR_PAYLOAD;
 			message.reject_by_lane_verifier = true;
 			assert_noop!(
-				send_message::<TestRuntime, ()>(RuntimeOrigin::signed(1), TEST_LANE_ID, message,),
+				send_message::<TestRuntime, ()>(TEST_LANE_ID, message,),
 				Error::<TestRuntime, ()>::MessageRejectedByLaneVerifier(VerificationError::Other(
 					mock::TEST_ERROR
 				)),
@@ -1227,6 +1248,23 @@ mod tests {
 	}
 
 	#[test]
+	fn receive_messages_fails_if_dispatcher_is_inactive() {
+		run_test(|| {
+			TestMessageDispatch::deactivate();
+			assert_noop!(
+				Pallet::<TestRuntime>::receive_messages_proof(
+					RuntimeOrigin::signed(1),
+					TEST_RELAYER_A,
+					Ok(vec![message(1, REGULAR_PAYLOAD)]).into(),
+					1,
+					REGULAR_PAYLOAD.declared_weight,
+				),
+				Error::<TestRuntime, ()>::MessageDispatchInactive,
+			);
+		});
+	}
+
+	#[test]
 	fn receive_messages_proof_does_not_accept_message_if_dispatch_weight_is_not_enough() {
 		run_test(|| {
 			let mut declared_weight = REGULAR_PAYLOAD.declared_weight;
@@ -1293,16 +1331,8 @@ mod tests {
 	#[test]
 	fn receive_messages_delivery_proof_rewards_relayers() {
 		run_test(|| {
-			assert_ok!(send_message::<TestRuntime, ()>(
-				RuntimeOrigin::signed(1),
-				TEST_LANE_ID,
-				REGULAR_PAYLOAD,
-			));
-			assert_ok!(send_message::<TestRuntime, ()>(
-				RuntimeOrigin::signed(1),
-				TEST_LANE_ID,
-				REGULAR_PAYLOAD,
-			));
+			assert_ok!(send_message::<TestRuntime, ()>(TEST_LANE_ID, REGULAR_PAYLOAD,));
+			assert_ok!(send_message::<TestRuntime, ()>(TEST_LANE_ID, REGULAR_PAYLOAD,));
 
 			// this reports delivery of message 1 => reward is paid to TEST_RELAYER_A
 			let single_message_delivery_proof = TestMessagesDeliveryProof(Ok((
@@ -1337,6 +1367,7 @@ mod tests {
 			);
 			assert!(TestDeliveryConfirmationPayments::is_reward_paid(TEST_RELAYER_A, 1));
 			assert!(!TestDeliveryConfirmationPayments::is_reward_paid(TEST_RELAYER_B, 1));
+			assert_eq!(TestOnMessagesDelivered::call_arguments(), Some((TEST_LANE_ID, 1)));
 
 			// this reports delivery of both message 1 and message 2 => reward is paid only to
 			// TEST_RELAYER_B
@@ -1379,6 +1410,7 @@ mod tests {
 			);
 			assert!(!TestDeliveryConfirmationPayments::is_reward_paid(TEST_RELAYER_A, 1));
 			assert!(TestDeliveryConfirmationPayments::is_reward_paid(TEST_RELAYER_B, 1));
+			assert_eq!(TestOnMessagesDelivered::call_arguments(), Some((TEST_LANE_ID, 0)));
 		});
 	}
 
@@ -1899,11 +1931,7 @@ mod tests {
 			send_regular_message();
 			receive_messages_delivery_proof();
 			// send + receive confirmation for lane 2
-			assert_ok!(send_message::<TestRuntime, ()>(
-				RuntimeOrigin::signed(1),
-				TEST_LANE_ID_2,
-				REGULAR_PAYLOAD,
-			));
+			assert_ok!(send_message::<TestRuntime, ()>(TEST_LANE_ID_2, REGULAR_PAYLOAD,));
 			assert_ok!(Pallet::<TestRuntime>::receive_messages_delivery_proof(
 				RuntimeOrigin::signed(1),
 				TestMessagesDeliveryProof(Ok((
@@ -1979,11 +2007,7 @@ mod tests {
 	fn outbound_message_from_unconfigured_lane_is_rejected() {
 		run_test(|| {
 			assert_noop!(
-				send_message::<TestRuntime, ()>(
-					RuntimeOrigin::signed(1),
-					TEST_LANE_ID_3,
-					REGULAR_PAYLOAD,
-				),
+				send_message::<TestRuntime, ()>(TEST_LANE_ID_3, REGULAR_PAYLOAD,),
 				Error::<TestRuntime, ()>::InactiveOutboundLane,
 			);
 		});

@@ -71,11 +71,10 @@ pub trait TargetHeaderChain<Payload, AccountId> {
 /// Lane3 until some block, ...), then it may be built using this verifier.
 ///
 /// Any fee requirements should also be enforced here.
-pub trait LaneMessageVerifier<SenderOrigin, Payload> {
+pub trait LaneMessageVerifier<Payload> {
 	/// Verify message payload and return Ok(()) if message is valid and allowed to be sent over the
 	/// lane.
 	fn verify_message(
-		submitter: &SenderOrigin,
 		lane: &LaneId,
 		outbound_data: &OutboundLaneData,
 		payload: &Payload,
@@ -116,41 +115,48 @@ impl<AccountId> DeliveryConfirmationPayments<AccountId> for () {
 	}
 }
 
+/// Callback that is called at the source chain (bridge hub) when we get delivery confirmation
+/// for new messages.
+pub trait OnMessagesDelivered {
+	/// New messages delivery has been confirmed.
+	///
+	/// The only argument of the function is the number of yet undelivered messages
+	fn on_messages_delivered(lane: LaneId, enqueued_messages: MessageNonce);
+}
+
+impl OnMessagesDelivered for () {
+	fn on_messages_delivered(_lane: LaneId, _enqueued_messages: MessageNonce) {}
+}
+
 /// Send message artifacts.
 #[derive(Eq, RuntimeDebug, PartialEq)]
 pub struct SendMessageArtifacts {
 	/// Nonce of the message.
 	pub nonce: MessageNonce,
+	/// Number of enqueued messages at the lane, after the message is sent.
+	pub enqueued_messages: MessageNonce,
 }
 
 /// Messages bridge API to be used from other pallets.
-pub trait MessagesBridge<SenderOrigin, Payload> {
+pub trait MessagesBridge<Payload> {
 	/// Error type.
 	type Error: Debug;
 
 	/// Send message over the bridge.
 	///
 	/// Returns unique message nonce or error if send has failed.
-	fn send_message(
-		sender: SenderOrigin,
-		lane: LaneId,
-		message: Payload,
-	) -> Result<SendMessageArtifacts, Self::Error>;
+	fn send_message(lane: LaneId, message: Payload) -> Result<SendMessageArtifacts, Self::Error>;
 }
 
 /// Bridge that does nothing when message is being sent.
 #[derive(Eq, RuntimeDebug, PartialEq)]
 pub struct NoopMessagesBridge;
 
-impl<SenderOrigin, Payload> MessagesBridge<SenderOrigin, Payload> for NoopMessagesBridge {
+impl<Payload> MessagesBridge<Payload> for NoopMessagesBridge {
 	type Error = &'static str;
 
-	fn send_message(
-		_sender: SenderOrigin,
-		_lane: LaneId,
-		_message: Payload,
-	) -> Result<SendMessageArtifacts, Self::Error> {
-		Ok(SendMessageArtifacts { nonce: 0 })
+	fn send_message(_lane: LaneId, _message: Payload) -> Result<SendMessageArtifacts, Self::Error> {
+		Ok(SendMessageArtifacts { nonce: 0, enqueued_messages: 0 })
 	}
 }
 
@@ -176,9 +182,8 @@ impl<Payload, AccountId> TargetHeaderChain<Payload, AccountId> for ForbidOutboun
 	}
 }
 
-impl<SenderOrigin, Payload> LaneMessageVerifier<SenderOrigin, Payload> for ForbidOutboundMessages {
+impl<Payload> LaneMessageVerifier<Payload> for ForbidOutboundMessages {
 	fn verify_message(
-		_submitter: &SenderOrigin,
 		_lane: &LaneId,
 		_outbound_data: &OutboundLaneData,
 		_payload: &Payload,

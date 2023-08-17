@@ -20,7 +20,7 @@
 
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::ParachainConsensus;
-use cumulus_client_network::BlockAnnounceValidator;
+use cumulus_client_network::RequireSecondedInBlockAnnounce;
 use cumulus_client_pov_recovery::{PoVRecovery, RecoveryDelayRange, RecoveryHandle};
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
@@ -361,7 +361,8 @@ where
 		_ => None,
 	};
 
-	let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface, para_id);
+	let block_announce_validator =
+		RequireSecondedInBlockAnnounce::new(relay_chain_interface, para_id);
 	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
 
 	sc_service::build_network(sc_service::BuildNetworkParams {
@@ -376,7 +377,8 @@ where
 	})
 }
 
-/// Creates a new background task to wait for the relay chain to sync up and retrieve the parachain header
+/// Creates a new background task to wait for the relay chain to sync up and retrieve the parachain
+/// header
 fn warp_sync_get<B, RCInterface>(
 	para_id: ParaId,
 	relay_chain_interface: RCInterface,
@@ -412,7 +414,8 @@ where
 	receiver
 }
 
-/// Waits for the relay chain to have finished syncing and then gets the parachain header that corresponds to the last finalized relay chain block.
+/// Waits for the relay chain to have finished syncing and then gets the parachain header that
+/// corresponds to the last finalized relay chain block.
 async fn wait_for_target_block<B, RCInterface>(
 	sender: oneshot::Sender<<B as BlockT>::Header>,
 	para_id: ParaId,

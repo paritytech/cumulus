@@ -18,9 +18,12 @@ use super::{
 	ParachainSystem, PolkadotXcm, PoolAssets, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
 	TrustBackedAssetsInstance, WeightToFee, XcmpQueue,
 };
-use crate::ForeignAssets;
-use assets_common::matching::{
-	FromSiblingParachain, IsForeignConcreteAsset, StartsWith, StartsWithExplicitGlobalConsensus,
+use crate::{AllowMultiAssetPools, ForeignAssets, LiquidityWithdrawalFee};
+use assets_common::{
+	local_and_foreign_assets::MatchesLocalAndForeignAssetsMultiLocation,
+	matching::{
+		FromSiblingParachain, IsForeignConcreteAsset, StartsWith, StartsWithExplicitGlobalConsensus,
+	},
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -36,11 +39,11 @@ use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
 	AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, CurrencyAdapter,
 	DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin, FungiblesAdapter, IsConcrete,
-	LocalMint, NativeAsset, NoChecking, ParentAsSuperuser, ParentIsPreset,
-	ProvideWeighableInstructions, RelayChainAsNative, SiblingParachainAsNative,
-	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId, UniversalWeigherAdapter,
-	UsingComponents, WeightInfoBounds, WithComputedOrigin, WithUniqueTopic,
+	LocalMint, NativeAsset, NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId,
+	UniversalWeigherAdapter, UsingComponents, WeightInfoBounds, WithComputedOrigin,
+	WithUniqueTopic,
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
@@ -49,7 +52,7 @@ use {cumulus_primitives_core::ParaId, sp_core::Get};
 
 parameter_types! {
 	pub const WestendLocation: MultiLocation = MultiLocation::parent();
-	pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Westend);
+	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::Westend);
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub UniversalLocation: InteriorMultiLocation =
 		X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
@@ -116,8 +119,10 @@ pub type ForeignAssetsConvertedConcreteId = assets_common::ForeignAssetsConverte
 		// Ignore `TrustBackedAssets` explicitly
 		StartsWith<TrustBackedAssetsPalletLocation>,
 		// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
-		// - foreign assets from our consensus should be: `MultiLocation {parents: 1, X*(Parachain(xyz), ..)}
-		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` wont be accepted here
+		// - foreign assets from our consensus should be: `MultiLocation {parents: 1,
+		//   X*(Parachain(xyz), ..)}
+		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` wont
+		//   be accepted here
 		StartsWithExplicitGlobalConsensus<UniversalLocationNetworkId>,
 	),
 	Balance,
@@ -163,6 +168,25 @@ pub type PoolFungiblesTransactor = FungiblesAdapter<
 /// Means for transacting assets on this chain.
 pub type AssetTransactors =
 	(CurrencyTransactor, FungiblesTransactor, ForeignFungiblesTransactor, PoolFungiblesTransactor);
+
+/// Simple `MultiLocation` matcher for Local and Foreign asset `MultiLocation`.
+pub struct LocalAndForeignAssetsMultiLocationMatcher;
+impl MatchesLocalAndForeignAssetsMultiLocation for LocalAndForeignAssetsMultiLocationMatcher {
+	fn is_local(location: &MultiLocation) -> bool {
+		use assets_common::fungible_conversion::MatchesMultiLocation;
+		TrustBackedAssetsConvertedConcreteId::contains(location)
+	}
+
+	fn is_foreign(location: &MultiLocation) -> bool {
+		use assets_common::fungible_conversion::MatchesMultiLocation;
+		ForeignAssetsConvertedConcreteId::contains(location)
+	}
+}
+impl Contains<MultiLocation> for LocalAndForeignAssetsMultiLocationMatcher {
+	fn contains(location: &MultiLocation) -> bool {
+		Self::is_local(location) || Self::is_foreign(location)
+	}
+}
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -218,6 +242,16 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			}
 		}
 
+		// Allow to change dedicated storage items (called by governance-like)
+		match call {
+			RuntimeCall::System(frame_system::Call::set_storage { items })
+				if items.iter().any(|(k, _)| {
+					k.eq(&AllowMultiAssetPools::key()) | k.eq(&LiquidityWithdrawalFee::key())
+				}) =>
+				return true,
+			_ => (),
+		};
+
 		matches!(
 			call,
 			RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
@@ -240,38 +274,35 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				) | RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 				RuntimeCall::XcmpQueue(..) |
 				RuntimeCall::DmpQueue(..) |
-				RuntimeCall::Utility(
-					pallet_utility::Call::as_derivative { .. } |
-						pallet_utility::Call::batch { .. } |
-						pallet_utility::Call::batch_all { .. },
-				) | RuntimeCall::Assets(
-				pallet_assets::Call::create { .. } |
-					pallet_assets::Call::force_create { .. } |
-					pallet_assets::Call::start_destroy { .. } |
-					pallet_assets::Call::destroy_accounts { .. } |
-					pallet_assets::Call::destroy_approvals { .. } |
-					pallet_assets::Call::finish_destroy { .. } |
-					pallet_assets::Call::mint { .. } |
-					pallet_assets::Call::burn { .. } |
-					pallet_assets::Call::transfer { .. } |
-					pallet_assets::Call::transfer_keep_alive { .. } |
-					pallet_assets::Call::force_transfer { .. } |
-					pallet_assets::Call::freeze { .. } |
-					pallet_assets::Call::thaw { .. } |
-					pallet_assets::Call::freeze_asset { .. } |
-					pallet_assets::Call::thaw_asset { .. } |
-					pallet_assets::Call::transfer_ownership { .. } |
-					pallet_assets::Call::set_team { .. } |
-					pallet_assets::Call::clear_metadata { .. } |
-					pallet_assets::Call::force_clear_metadata { .. } |
-					pallet_assets::Call::force_asset_status { .. } |
-					pallet_assets::Call::approve_transfer { .. } |
-					pallet_assets::Call::cancel_approval { .. } |
-					pallet_assets::Call::force_cancel_approval { .. } |
-					pallet_assets::Call::transfer_approved { .. } |
-					pallet_assets::Call::touch { .. } |
-					pallet_assets::Call::refund { .. },
-			) | RuntimeCall::ForeignAssets(
+				RuntimeCall::Assets(
+					pallet_assets::Call::create { .. } |
+						pallet_assets::Call::force_create { .. } |
+						pallet_assets::Call::start_destroy { .. } |
+						pallet_assets::Call::destroy_accounts { .. } |
+						pallet_assets::Call::destroy_approvals { .. } |
+						pallet_assets::Call::finish_destroy { .. } |
+						pallet_assets::Call::mint { .. } |
+						pallet_assets::Call::burn { .. } |
+						pallet_assets::Call::transfer { .. } |
+						pallet_assets::Call::transfer_keep_alive { .. } |
+						pallet_assets::Call::force_transfer { .. } |
+						pallet_assets::Call::freeze { .. } |
+						pallet_assets::Call::thaw { .. } |
+						pallet_assets::Call::freeze_asset { .. } |
+						pallet_assets::Call::thaw_asset { .. } |
+						pallet_assets::Call::transfer_ownership { .. } |
+						pallet_assets::Call::set_team { .. } |
+						pallet_assets::Call::set_metadata { .. } |
+						pallet_assets::Call::clear_metadata { .. } |
+						pallet_assets::Call::force_clear_metadata { .. } |
+						pallet_assets::Call::force_asset_status { .. } |
+						pallet_assets::Call::approve_transfer { .. } |
+						pallet_assets::Call::cancel_approval { .. } |
+						pallet_assets::Call::force_cancel_approval { .. } |
+						pallet_assets::Call::transfer_approved { .. } |
+						pallet_assets::Call::touch { .. } |
+						pallet_assets::Call::refund { .. },
+				) | RuntimeCall::ForeignAssets(
 				pallet_assets::Call::create { .. } |
 					pallet_assets::Call::force_create { .. } |
 					pallet_assets::Call::start_destroy { .. } |
@@ -386,7 +417,8 @@ pub type Barrier = TrailingSetTopicAsId<
 			// Allow XCMs with some computed origins to pass through.
 			WithComputedOrigin<
 				(
-					// If the message is one that immediately attemps to pay for execution, then allow it.
+					// If the message is one that immediately attemps to pay for execution, then
+					// allow it.
 					AllowTopLevelPaidExecutionFrom<Everything>,
 					// Parent and its pluralities (i.e. governance bodies) get free execution.
 					AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
@@ -483,20 +515,6 @@ parameter_types! {
 	pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
 }
 
-/// Helper for adding more instructions to the weight estimation on destination side.
-pub struct DestinationWeigherAddons;
-impl ProvideWeighableInstructions<()> for DestinationWeigherAddons {
-	fn provide_for(
-		_dest: impl Into<MultiLocation>,
-		_message: &Xcm<()>,
-	) -> sp_std::vec::Vec<Instruction<()>> {
-		sp_std::vec![
-			// runtime uses `WithUniqueTopic` which (possibly) adds `SetTopic` instruction
-			SetTopic([3; 32])
-		]
-	}
-}
-
 impl pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
@@ -514,7 +532,7 @@ impl pallet_xcm::Config for Runtime {
 	type DestinationWeigher = UniversalWeigherAdapter<
 		// use local weight for remote message and hope for the best.
 		WeightInfoBounds<crate::weights::xcm::AssetHubWestendXcmWeight<()>, (), MaxInstructions>,
-		DestinationWeigherAddons,
+		(XcmRouter,),
 	>;
 	type UniversalLocation = UniversalLocation;
 	type RuntimeOrigin = RuntimeOrigin;
@@ -560,7 +578,8 @@ pub struct BenchmarkMultiLocationConverter<SelfParaId> {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-impl<SelfParaId> pallet_asset_conversion::BenchmarkHelper<MultiLocation>
+impl<SelfParaId>
+	pallet_asset_conversion::BenchmarkHelper<MultiLocation, sp_std::boxed::Box<MultiLocation>>
 	for BenchmarkMultiLocationConverter<SelfParaId>
 where
 	SelfParaId: Get<ParaId>,
@@ -574,5 +593,9 @@ where
 				GeneralIndex(asset_id.into()),
 			),
 		}
+	}
+
+	fn multiasset_id(asset_id: u32) -> sp_std::boxed::Box<MultiLocation> {
+		sp_std::boxed::Box::new(Self::asset_id(asset_id))
 	}
 }

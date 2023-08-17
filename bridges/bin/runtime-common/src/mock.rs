@@ -33,10 +33,15 @@ use crate::messages::{
 };
 
 use bp_header_chain::{ChainWithGrandpa, HeaderChain};
-use bp_messages::{target_chain::ForbidInboundMessages, LaneId, MessageNonce};
+use bp_messages::{
+	target_chain::{DispatchMessage, MessageDispatch},
+	LaneId, MessageNonce,
+};
 use bp_parachains::SingleParaStoredHeaderDataBuilder;
 use bp_relayers::PayRewardFromAccount;
-use bp_runtime::{Chain, ChainId, Parachain, UnderlyingChainProvider};
+use bp_runtime::{
+	messages::MessageDispatchResult, Chain, ChainId, Parachain, UnderlyingChainProvider,
+};
 use codec::{Decode, Encode};
 use frame_support::{
 	parameter_types,
@@ -66,9 +71,7 @@ pub type ThisChainCallOrigin = RuntimeOrigin;
 /// Header of `ThisChain`.
 pub type ThisChainHeader = sp_runtime::generic::Header<ThisChainBlockNumber, ThisChainHasher>;
 /// Block of `ThisChain`.
-pub type ThisChainBlock = frame_system::mocking::MockBlock<TestRuntime>;
-/// Unchecked extrinsic of `ThisChain`.
-pub type ThisChainUncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
+pub type ThisChainBlock = frame_system::mocking::MockBlockU32<TestRuntime>;
 
 /// Account identifier at the `BridgedChain`.
 pub type BridgedChainAccountId = u128;
@@ -108,12 +111,9 @@ pub const BRIDGED_CHAIN_MAX_EXTRINSIC_WEIGHT: usize = 2048;
 pub const BRIDGED_CHAIN_MAX_EXTRINSIC_SIZE: u32 = 1024;
 
 frame_support::construct_runtime! {
-	pub enum TestRuntime where
-		Block = ThisChainBlock,
-		NodeBlock = ThisChainBlock,
-		UncheckedExtrinsic = ThisChainUncheckedExtrinsic,
+	pub enum TestRuntime
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Utility: pallet_utility,
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},
@@ -148,14 +148,13 @@ parameter_types! {
 
 impl frame_system::Config for TestRuntime {
 	type RuntimeOrigin = RuntimeOrigin;
-	type Index = u64;
+	type Nonce = u64;
 	type RuntimeCall = RuntimeCall;
-	type BlockNumber = ThisChainBlockNumber;
 	type Hash = ThisChainHash;
 	type Hashing = ThisChainHasher;
 	type AccountId = ThisChainAccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = ThisChainHeader;
+	type Block = ThisChainBlock;
 	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = ConstU32<250>;
 	type Version = ();
@@ -251,9 +250,10 @@ impl pallet_bridge_messages::Config for TestRuntime {
 		(),
 		ConstU64<100_000>,
 	>;
+	type OnMessagesDelivered = ();
 
 	type SourceHeaderChain = SourceHeaderChainAdapter<OnThisChainBridge>;
-	type MessageDispatch = ForbidInboundMessages<(), FromBridgedChainMessagePayload>;
+	type MessageDispatch = DummyMessageDispatch;
 	type BridgedChainId = BridgedChainId;
 }
 
@@ -263,6 +263,34 @@ impl pallet_bridge_relayers::Config for TestRuntime {
 	type PaymentProcedure = TestPaymentProcedure;
 	type StakeAndSlash = TestStakeAndSlash;
 	type WeightInfo = ();
+}
+
+/// Dummy message dispatcher.
+pub struct DummyMessageDispatch;
+
+impl DummyMessageDispatch {
+	pub fn deactivate() {
+		frame_support::storage::unhashed::put(&b"inactive"[..], &false);
+	}
+}
+
+impl MessageDispatch for DummyMessageDispatch {
+	type DispatchPayload = Vec<u8>;
+	type DispatchLevelResult = ();
+
+	fn is_active() -> bool {
+		frame_support::storage::unhashed::take::<bool>(&b"inactive"[..]) != Some(false)
+	}
+
+	fn dispatch_weight(_message: &mut DispatchMessage<Self::DispatchPayload>) -> Weight {
+		Weight::zero()
+	}
+
+	fn dispatch(
+		_: DispatchMessage<Self::DispatchPayload>,
+	) -> MessageDispatchResult<Self::DispatchLevelResult> {
+		MessageDispatchResult { unspent_weight: Weight::zero(), dispatch_level_result: () }
+	}
 }
 
 /// Bridge that is deployed on `ThisChain` and allows sending/receiving messages to/from
@@ -324,7 +352,7 @@ impl Chain for ThisUnderlyingChain {
 	type Header = ThisChainHeader;
 	type AccountId = ThisChainAccountId;
 	type Balance = ThisChainBalance;
-	type Index = u32;
+	type Nonce = u32;
 	type Signature = sp_runtime::MultiSignature;
 
 	fn max_extrinsic_size() -> u32 {
@@ -364,7 +392,7 @@ impl Chain for BridgedUnderlyingChain {
 	type Header = BridgedChainHeader;
 	type AccountId = BridgedChainAccountId;
 	type Balance = BridgedChainBalance;
-	type Index = u32;
+	type Nonce = u32;
 	type Signature = sp_runtime::MultiSignature;
 
 	fn max_extrinsic_size() -> u32 {
@@ -390,7 +418,7 @@ impl Chain for BridgedUnderlyingParachain {
 	type Header = BridgedChainHeader;
 	type AccountId = BridgedChainAccountId;
 	type Balance = BridgedChainBalance;
-	type Index = u32;
+	type Nonce = u32;
 	type Signature = sp_runtime::MultiSignature;
 
 	fn max_extrinsic_size() -> u32 {

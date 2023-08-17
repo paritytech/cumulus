@@ -307,12 +307,13 @@ pub mod pallet {
 			parachains.len() as _,
 		))]
 		pub fn submit_parachain_heads(
-			_origin: OriginFor<T>,
+			origin: OriginFor<T>,
 			at_relay_block: (RelayBlockNumber, RelayBlockHash),
 			parachains: Vec<(ParaId, ParaHash)>,
 			parachain_heads_proof: ParaHeadsProof,
 		) -> DispatchResultWithPostInfo {
 			Self::ensure_not_halted().map_err(Error::<T, I>::BridgeModule)?;
+			ensure_signed(origin)?;
 
 			// we'll need relay chain header to verify that parachains heads are always increasing.
 			let (relay_block_number, relay_block_hash) = at_relay_block;
@@ -417,7 +418,7 @@ pub mod pallet {
 					});
 
 				// we're refunding weight if update has not happened and if pruning has not happened
-				let is_update_happened = matches!(update_result, Ok(_));
+				let is_update_happened = update_result.is_ok();
 				if !is_update_happened {
 					actual_weight = actual_weight.saturating_sub(
 						WeightInfoOf::<T, I>::parachain_head_storage_write_weight(
@@ -622,7 +623,7 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
+	impl<T: Config<I>, I: 'static> BuildGenesisConfig for GenesisConfig<T, I> {
 		fn build(&self) {
 			PalletOperatingMode::<T, I>::put(self.operating_mode);
 			if let Some(ref owner) = self.owner {
@@ -690,12 +691,13 @@ pub(crate) mod tests {
 	use super::*;
 	use crate::mock::{
 		run_test, test_relay_header, BigParachainHeader, RegularParachainHasher,
-		RegularParachainHeader, RuntimeEvent as TestEvent, RuntimeOrigin, TestRuntime,
-		UNTRACKED_PARACHAIN_ID,
+		RegularParachainHeader, RelayBlockHeader, RuntimeEvent as TestEvent, RuntimeOrigin,
+		TestRuntime, UNTRACKED_PARACHAIN_ID,
 	};
 	use bp_test_utils::prepare_parachain_heads_proof;
 	use codec::Encode;
 
+	use bp_header_chain::{justification::GrandpaJustification, StoredHeaderGrandpaInfo};
 	use bp_parachains::{
 		BestParaHeadHash, BridgeParachainCall, ImportedParaHeadsKeyProvider, ParasInfoKeyProvider,
 	};
@@ -739,7 +741,10 @@ pub(crate) mod tests {
 		test_relay_header(0, state_root).hash()
 	}
 
-	fn proceed(num: RelayBlockNumber, state_root: RelayBlockHash) -> ParaHash {
+	fn proceed(
+		num: RelayBlockNumber,
+		state_root: RelayBlockHash,
+	) -> (ParaHash, GrandpaJustification<RelayBlockHeader>) {
 		pallet_bridge_grandpa::Pallet::<TestRuntime, BridgesGrandpaPalletInstance>::on_initialize(
 			0,
 		);
@@ -751,11 +756,11 @@ pub(crate) mod tests {
 			pallet_bridge_grandpa::Pallet::<TestRuntime, BridgesGrandpaPalletInstance>::submit_finality_proof(
 				RuntimeOrigin::signed(1),
 				Box::new(header),
-				justification,
+				justification.clone(),
 			)
 		);
 
-		hash
+		(hash, justification)
 	}
 
 	fn initial_best_head(parachain: u32) -> ParaInfo {
@@ -992,7 +997,7 @@ pub(crate) mod tests {
 			);
 
 			// import head#10 of parachain#1 at relay block #1
-			let relay_1_hash = proceed(1, state_root_10);
+			let (relay_1_hash, justification) = proceed(1, state_root_10);
 			assert_ok!(import_parachain_1_head(1, state_root_10, parachains_10, proof_10));
 			assert_eq!(
 				ParasInfo::<TestRuntime>::get(ParaId(1)),
@@ -1031,6 +1036,10 @@ pub(crate) mod tests {
 							pallet_bridge_grandpa::Event::UpdatedBestFinalizedHeader {
 								number: 1,
 								hash: relay_1_hash,
+								grandpa_info: StoredHeaderGrandpaInfo {
+									finality_proof: justification,
+									new_verification_context: None,
+								},
 							}
 						),
 						topics: vec![],
@@ -1148,7 +1157,7 @@ pub(crate) mod tests {
 
 			// try to import head#0 of parachain#1 at relay block#1
 			// => call succeeds, but nothing is changed
-			let relay_1_hash = proceed(1, state_root);
+			let (relay_1_hash, justification) = proceed(1, state_root);
 			assert_ok!(import_parachain_1_head(1, state_root, parachains, proof));
 			assert_eq!(ParasInfo::<TestRuntime>::get(ParaId(1)), Some(initial_best_head(1)));
 			assert_eq!(
@@ -1168,6 +1177,10 @@ pub(crate) mod tests {
 							pallet_bridge_grandpa::Event::UpdatedBestFinalizedHeader {
 								number: 1,
 								hash: relay_1_hash,
+								grandpa_info: StoredHeaderGrandpaInfo {
+									finality_proof: justification,
+									new_verification_context: None,
+								}
 							}
 						),
 						topics: vec![],
@@ -1196,7 +1209,7 @@ pub(crate) mod tests {
 			initialize(state_root_5);
 
 			// head#10 of parachain#1 at relay block#1
-			let relay_1_hash = proceed(1, state_root_10);
+			let (relay_1_hash, justification) = proceed(1, state_root_10);
 			assert_ok!(import_parachain_1_head(1, state_root_10, parachains_10, proof_10));
 			assert_eq!(
 				ParasInfo::<TestRuntime>::get(ParaId(1)),
@@ -1217,6 +1230,10 @@ pub(crate) mod tests {
 							pallet_bridge_grandpa::Event::UpdatedBestFinalizedHeader {
 								number: 1,
 								hash: relay_1_hash,
+								grandpa_info: StoredHeaderGrandpaInfo {
+									finality_proof: justification.clone(),
+									new_verification_context: None,
+								}
 							}
 						),
 						topics: vec![],
@@ -1254,6 +1271,10 @@ pub(crate) mod tests {
 							pallet_bridge_grandpa::Event::UpdatedBestFinalizedHeader {
 								number: 1,
 								hash: relay_1_hash,
+								grandpa_info: StoredHeaderGrandpaInfo {
+									finality_proof: justification,
+									new_verification_context: None,
+								}
 							}
 						),
 						topics: vec![],
@@ -1578,5 +1599,26 @@ pub(crate) mod tests {
 			MaybeMaxTotalParachainHashes::<TestRuntime, ()>::get(),
 			Some(mock::TOTAL_PARACHAINS * mock::HeadsToKeep::get()),
 		);
+	}
+
+	#[test]
+	fn submit_finality_proof_requires_signed_origin() {
+		run_test(|| {
+			let (state_root, proof, parachains) =
+				prepare_parachain_heads_proof::<RegularParachainHeader>(vec![(1, head_data(1, 0))]);
+
+			initialize(state_root);
+
+			// `submit_parachain_heads()` should fail when the pallet is halted.
+			assert_noop!(
+				Pallet::<TestRuntime>::submit_parachain_heads(
+					RuntimeOrigin::root(),
+					(0, test_relay_header(0, state_root).hash()),
+					parachains,
+					proof,
+				),
+				DispatchError::BadOrigin
+			);
+		})
 	}
 }

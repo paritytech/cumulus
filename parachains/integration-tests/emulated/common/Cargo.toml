@@ -7,6 +7,8 @@ description = "Common resources for integration testing with xcm-emulator"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false }
+lazy_static = "1.4.0"
+paste = "1.0.14"
 
 # Substrate
 grandpa = { package = "sc-consensus-grandpa", git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -20,19 +22,23 @@ sp-consensus-babe = { default-features = false, git = "https://github.com/parity
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-assets = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-staking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-message-queue = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-im-online = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+beefy-primitives = { package = "sp-consensus-beefy", git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
 polkadot-core-primitives = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-parachain = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-service = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master", features = ["full-node"] }
 polkadot-primitives = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-runtime-constants = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 kusama-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 kusama-runtime-constants = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-westend-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" } 
+rococo-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+rococo-runtime-constants = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+westend-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 westend-runtime-constants = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 xcm = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 xcm-executor = { default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -49,7 +55,15 @@ asset-hub-westend-runtime = { path = "../../../runtimes/assets/asset-hub-westend
 collectives-polkadot-runtime = { path = "../../../runtimes/collectives/collectives-polkadot" }
 bridge-hub-kusama-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-kusama" }
 bridge-hub-polkadot-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-polkadot" }
+bridge-hub-rococo-runtime = { path = "../../../runtimes/bridge-hubs/bridge-hub-rococo" }
 xcm-emulator = { default-features = false, path = "../../../../xcm/xcm-emulator" }
+cumulus-pallet-dmp-queue = { path = "../../../../pallets/dmp-queue" }
+cumulus-pallet-xcmp-queue = { default-features = false, path = "../../../../pallets/xcmp-queue" }
+cumulus-pallet-parachain-system = { path = "../../../../pallets/parachain-system" }
+bp-messages = { path = "../../../../bridges/primitives/messages"}
+bp-runtime = { path = "../../../../bridges/primitives/runtime"}
+pallet-bridge-messages = { path = "../../../../bridges/modules/messages" }
+bridge-runtime-common = { path = "../../../../bridges/bin/runtime-common"}
 
 [features]
 runtime-benchmarks = [
