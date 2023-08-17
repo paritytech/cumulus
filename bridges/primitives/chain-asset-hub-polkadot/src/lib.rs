@@ -44,6 +44,6 @@ frame_support::parameter_types! {
 	pub const XcmBridgeHubRouterTransactCallMaxWeight: frame_support::weights::Weight = frame_support::weights::Weight::from_parts(200_000_000, 6144);
 
 	/// Base delivery fee to `BridgeHubPolkadot`.
-	/// (initially was calculated `51220000` + 10% by test `BridgeHubPolkadot::can_calculate_weight_for_paid_export_message_with_reserve_transfer`)
+	/// (initially was calculated `51220000` + `10%` by test `BridgeHubPolkadot::can_calculate_weight_for_paid_export_message_with_reserve_transfer`)
 	pub const BridgeHubPolkadotBaseFeeInDots: u128 = 56342000;
 }
