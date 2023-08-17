@@ -57,6 +57,7 @@ jobs:
             -H "Authorization: Bearer ${GITHUB_TOKEN}" \
             https://raw.githubusercontent.com/EgorPopelyaev/polkadot/master/scripts/ci/common/lib.sh
 
+          chmod a+x lib.sh
           ls -al
 
       - name: Check SHA256
