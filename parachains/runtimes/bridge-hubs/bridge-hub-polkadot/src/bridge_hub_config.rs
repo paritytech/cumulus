@@ -27,7 +27,7 @@ use bridge_runtime_common::{
 		source::FromBridgedChainMessagesDeliveryProof, target::FromBridgedChainMessagesProof,
 		MessageBridge, ThisChainWithMessages, UnderlyingChainProvider,
 	},
-	messages_xcm_extension::{XcmBlobHauler, XcmBlobHaulerAdapter},
+	messages_xcm_extension::{SenderAndLane, XcmBlobHauler, XcmBlobHaulerAdapter},
 	refund_relayer_extension::{
 		ActualFeeRefund, RefundBridgedParachainMessages, RefundableMessagesLane,
 		RefundableParachain,
@@ -47,6 +47,13 @@ parameter_types! {
 	pub KusamaGlobalConsensusNetwork: NetworkId = NetworkId::Kusama;
 	// see the `FEE_BOOST_PER_MESSAGE` constant to get the meaning of this value
 	pub PriorityBoostPerMessage: u64 = 4_551_111_111_111;
+
+	pub AssetHubPolkadotParaId: cumulus_primitives_core::ParaId = 1000.into();
+
+	pub FromAssetHubPolkadotToAssetHubKusamaRoute: SenderAndLane = SenderAndLane::new(
+		ParentThen(X1(Parachain(AssetHubPolkadotParaId::get().into()))).into(),
+		ASSET_HUB_POLKADOT_TO_ASSET_HUB_KUSAMA_LANE_ID,
+	);
 }
 
 /// Proof of messages, coming from BridgeHubKusama.
@@ -68,13 +75,13 @@ pub type ToBridgeHubKusamaHaulBlobExporter = HaulBlobExporter<
 >;
 pub struct ToBridgeHubKusamaXcmBlobHauler;
 impl XcmBlobHauler for ToBridgeHubKusamaXcmBlobHauler {
-	type MessageSender =
-		pallet_bridge_messages::Pallet<Runtime, WithBridgeHubKusamaMessagesInstance>;
+	type Runtime = Runtime;
+	type MessagesInstance = WithBridgeHubKusamaMessagesInstance;
+	type SenderAndLane = FromAssetHubPolkadotToAssetHubKusamaRoute;
 
-	fn xcm_lane() -> LaneId {
-		// TODO: rework once dynamic lanes are supported (https://github.com/paritytech/parity-bridges-common/issues/1760)
-		ASSET_HUB_POLKADOT_TO_ASSET_HUB_KUSAMA_LANE_ID
-	}
+	type ToSourceChainSender = crate::XcmRouter;
+	type CongestedMessage = ();
+	type UncongestedMessage = ();
 }
 
 /// Messaging Bridge configuration for ThisChain -> BridgeHubKusama

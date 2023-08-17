@@ -487,7 +487,8 @@ impl pallet_bridge_messages::Config<WithBridgeHubKusamaMessagesInstance> for Run
 	>;
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubKusamaMessageBridge>;
 	type MessageDispatch =
-		XcmBlobMessageDispatch<OnThisChainBlobDispatcher<UniversalLocation>, Self::WeightInfo>;
+		XcmBlobMessageDispatch<OnThisChainBlobDispatcher<UniversalLocation>, Self::WeightInfo, ()>;
+	type OnMessagesDelivered = ();
 }
 
 /// Allows collect and claim rewards for relayers
@@ -736,7 +737,7 @@ impl_runtime_apis! {
 			BridgeKusamaGrandpa::best_finalized()
 		}
 		fn synced_headers_grandpa_info(
-		) -> Vec<bp_header_chain::HeaderGrandpaInfo<bp_kusama::Header>> {
+		) -> Vec<bp_header_chain::StoredHeaderGrandpaInfo<bp_kusama::Header>> {
 			BridgeKusamaGrandpa::synced_headers_grandpa_info()
 		}
 	}

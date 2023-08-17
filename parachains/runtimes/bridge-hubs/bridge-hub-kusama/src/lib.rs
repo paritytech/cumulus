@@ -486,7 +486,8 @@ impl pallet_bridge_messages::Config<WithBridgeHubPolkadotMessagesInstance> for R
 	>;
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubPolkadotMessageBridge>;
 	type MessageDispatch =
-		XcmBlobMessageDispatch<OnThisChainBlobDispatcher<UniversalLocation>, Self::WeightInfo>;
+		XcmBlobMessageDispatch<OnThisChainBlobDispatcher<UniversalLocation>, Self::WeightInfo, ()>;
+	type OnMessagesDelivered = ();
 }
 
 /// Allows collect and claim rewards for relayers
@@ -735,7 +736,7 @@ impl_runtime_apis! {
 			BridgePolkadotGrandpa::best_finalized()
 		}
 		fn synced_headers_grandpa_info(
-		) -> Vec<bp_header_chain::HeaderGrandpaInfo<bp_polkadot::Header>> {
+		) -> Vec<bp_header_chain::StoredHeaderGrandpaInfo<bp_polkadot::Header>> {
 			BridgePolkadotGrandpa::synced_headers_grandpa_info()
 		}
 	}
