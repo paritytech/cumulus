@@ -33,29 +33,14 @@ use sp_std::vec::Vec;
 
 const LOG: &str = "dmp-queue-undeploy-migration";
 
-/// Information concerning our message pages.
-#[derive(Copy, Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
-struct PageIndexData {
-	/// The lowest used page index.
-	begin_used: PageCounter,
-	/// The lowest unused page index.
-	end_used: PageCounter,
-	/// The number of overweight messages ever recorded (and thus the lowest free index).
-	overweight_count: OverweightIndex,
-}
-
-/// Index used to identify overweight messages.
-type OverweightIndex = u64;
-
-/// Index used to identify normal pages.
-type PageCounter = u32;
-
 /// Undeploy the DMP queue pallet.
 ///
 /// Moves all storage from the pallet to a new Queue handler. Afterwards the storage of the DMP
 /// should be purged with [DeleteDmp].
 pub struct UndeployDmp<T: MigrationConfig>(PhantomData<T>);
 
+/// Delete the DMP pallet. Should only be used once the DMP pallet is removed from the runtime and
+/// after [UndeployDmp].
 pub type DeleteDmp<T> = frame_support::migrations::RemovePallet<
 	<T as MigrationConfig>::PalletName,
 	<T as MigrationConfig>::DbWeight,
@@ -72,6 +57,19 @@ pub trait MigrationConfig {
 	// The weight info for the runtime.
 	type DbWeight: Get<frame_support::weights::RuntimeDbWeight>;
 }
+
+#[derive(Copy, Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
+struct PageIndexData {
+	/// The lowest used page index.
+	begin_used: PageCounter,
+	/// The lowest unused page index.
+	end_used: PageCounter,
+	/// The number of overweight messages ever recorded (and thus the lowest free index).
+	overweight_count: OverweightIndex,
+}
+
+type OverweightIndex = u64;
+type PageCounter = u32;
 
 #[storage_alias(dynamic)]
 type PageIndex<T: MigrationConfig> =

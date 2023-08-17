@@ -20,8 +20,7 @@ use super::*;
 
 use frame_support::{
 	assert_ok, parameter_types,
-	traits::{Footprint, HandleMessage, OnRuntimeUpgrade, StorageVersion},
-	weights::Weight,
+	traits::{Footprint, HandleMessage, OnRuntimeUpgrade},
 	StorageNoopGuard,
 };
 use sp_core::bounded_vec::BoundedSlice;
@@ -35,7 +34,7 @@ struct MockedDmpHandler;
 impl HandleMessage for MockedDmpHandler {
 	type MaxMessageLen = ConstU32<16>;
 
-	fn handle_message(msg: BoundedSlice<u8, Self::MaxMessageLen>) {
+	fn handle_message(_: BoundedSlice<u8, Self::MaxMessageLen>) {
 		RecordedMessages::mutate(|n| *n += 1);
 	}
 
