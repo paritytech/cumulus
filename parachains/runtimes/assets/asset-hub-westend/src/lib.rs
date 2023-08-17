@@ -272,7 +272,8 @@ parameter_types! {
 }
 
 ord_parameter_types! {
-	pub const AssetConversionOrigin: sp_runtime::AccountId32 = AccountIdConversion::<sp_runtime::AccountId32>::into_account_truncating(&AssetConversionPalletId::get());
+	pub const AssetConversionOrigin: sp_runtime::AccountId32 =
+		AccountIdConversion::<sp_runtime::AccountId32>::into_account_truncating(&AssetConversionPalletId::get());
 }
 
 pub type PoolAssetsInstance = pallet_assets::Instance3;
