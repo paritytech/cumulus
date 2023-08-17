@@ -159,7 +159,6 @@ where
 	BE: Backend<Block>,
 {
 	type Error = BI::Error;
-	type Transaction = BI::Transaction;
 
 	async fn check_block(
 		&mut self,
@@ -170,7 +169,7 @@ where
 
 	async fn import_block(
 		&mut self,
-		mut params: sc_consensus::BlockImportParams<Block, Self::Transaction>,
+		mut params: sc_consensus::BlockImportParams<Block>,
 	) -> Result<sc_consensus::ImportResult, Self::Error> {
 		// Blocks are stored within the backend by using POST hash.
 		let hash = params.post_hash();
