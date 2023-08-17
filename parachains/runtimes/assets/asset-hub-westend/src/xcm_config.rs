@@ -489,12 +489,7 @@ impl xcm_executor::Config for XcmConfig {
 			WeightToFee,
 			TrustBackedAssetsConvertedConcreteId,
 			Assets,
-			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
-				// Revenue could also be Foreign Fungible? Maybe with multi-asset treasury..?
-				FungiblesTransactor,
-				AccountId,
-				XcmAssetFeesReceiver,
-			>,
+			XcmAssetFeesReceiver,
 		>,
 		cumulus_primitives_utility::SwapFirstAssetTrader<
 			Runtime,
@@ -503,12 +498,7 @@ impl xcm_executor::Config for XcmConfig {
 			WeightToFee,
 			ForeignAssetsConvertedConcreteId,
 			ForeignAssets,
-			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
-				// Revenue could also be Foreign Fungible? Maybe with multi-asset treasury..?
-				FungiblesTransactor,
-				AccountId,
-				XcmAssetFeesReceiver,
-			>,
+			XcmAssetFeesReceiver,
 		>,
 	);
 	type ResponseHandler = PolkadotXcm;
