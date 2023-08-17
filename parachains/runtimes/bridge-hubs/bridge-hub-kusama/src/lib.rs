@@ -742,7 +742,7 @@ impl_runtime_apis! {
 			BridgePolkadotGrandpa::best_finalized()
 		}
 		fn synced_headers_grandpa_info(
-		) -> Vec<bp_header_chain::HeaderGrandpaInfo<bp_polkadot::Header>> {
+		) -> Vec<bp_header_chain::StoredHeaderGrandpaInfo<bp_polkadot::Header>> {
 			BridgePolkadotGrandpa::synced_headers_grandpa_info()
 		}
 	}

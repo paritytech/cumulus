@@ -743,7 +743,7 @@ impl_runtime_apis! {
 			BridgeKusamaGrandpa::best_finalized()
 		}
 		fn synced_headers_grandpa_info(
-		) -> Vec<bp_header_chain::HeaderGrandpaInfo<bp_kusama::Header>> {
+		) -> Vec<bp_header_chain::StoredHeaderGrandpaInfo<bp_kusama::Header>> {
 			BridgeKusamaGrandpa::synced_headers_grandpa_info()
 		}
 	}
