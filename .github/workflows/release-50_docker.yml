@@ -64,6 +64,9 @@ jobs:
         working-directory: ${{ env.TMP }}
         run: |
           ls -al
+
+          cat lib.sh
+          
           . ./lib.sh
 
           echo "Checking binary $BINARY"
