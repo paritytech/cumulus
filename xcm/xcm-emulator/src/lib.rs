@@ -637,7 +637,9 @@ macro_rules! decl_test_parachains {
 							.insert(para_id.into(), parent_head_data.clone())
 						);
 
-						<Self as Parachain>::ParachainSystem::on_initialize(block_number);
+						let next_block_number = block_number + 1;
+						<Self as Chain>::System::initialize(&next_block_number, &header.hash(), &Default::default());
+						<Self as Parachain>::ParachainSystem::on_initialize(next_block_number);
 					});
 				}
 			}
@@ -792,6 +794,11 @@ macro_rules! __impl_test_ext_for_parachain {
 				// Execute
 				let r = $local_ext.with(|v| v.borrow_mut().execute_with(execute));
 
+				// provide inbound DMP/HRMP messages through a side-channel.
+				// normally this would come through the `set_validation_data`,
+				// but we go around that.
+				<$name as NetworkComponent>::Network::process_messages();
+
 				// Finalize block and send messages if needed
 				$local_ext.with(|v| {
 					v.borrow_mut().execute_with(|| {
@@ -806,8 +813,16 @@ macro_rules! __impl_test_ext_for_parachain {
 							Default::default(),
 						);
 
-						// get xcmp messages
+						// Finalize to get xcmp messages.
 						<Self as Parachain>::ParachainSystem::on_finalize(block_number);
+						// Store parent head data for use later.
+						let created_header = <Self as Chain>::System::finalize();
+						$crate::LAST_HEAD.with(|b| b.borrow_mut()
+							.get_mut(<Self as NetworkComponent>::Network::name())
+							.expect("network not initialized?")
+							.insert(para_id.into(), $crate::HeadData(created_header.encode()))
+						);
+
 						let collation_info = <Self as Parachain>::ParachainSystem::collect_collation_info(&mock_header);
 
 						// send upward messages
@@ -839,14 +854,6 @@ macro_rules! __impl_test_ext_for_parachain {
 							$crate::log::debug!(target: concat!("events::", stringify!($name)), "{:?}", event);
 						});
 
-						// Store parent head data for use later.
-						let created_header = <Self as Chain>::System::finalize();
-						let parent_head_data = $crate::LAST_HEAD.with(|b| b.borrow_mut()
-							.get_mut(<Self as NetworkComponent>::Network::name())
-							.expect("network not initialized?")
-							.insert(para_id.into(), $crate::HeadData(created_header.encode()))
-						);
-
 						// clean events
 						<Self as Chain>::System::reset_events();
 
@@ -857,6 +864,9 @@ macro_rules! __impl_test_ext_for_parachain {
 					})
 				});
 
+				// provide inbound DMP/HRMP messages through a side-channel.
+				// normally this would come through the `set_validation_data`,
+				// but we go around that.
 				<$name as NetworkComponent>::Network::process_messages();
 
 				r
