@@ -62,6 +62,7 @@ jobs:
       - name: Check SHA256
         working-directory: ${{ env.TMP }}
         run: |
+          ls -al
           . ./lib.sh
 
           echo "Checking binary $BINARY"
