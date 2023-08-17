@@ -409,7 +409,7 @@ mod tests {
 
 		let backend = sp_state_machine::create_proof_check_backend::<BlakeTwo256>(
 			*header.state_root(),
-			proof.to_storage_proof(None).unwrap().0,
+			proof.to_storage_proof::<BlakeTwo256>(None).unwrap().0,
 		)
 		.unwrap();
 
