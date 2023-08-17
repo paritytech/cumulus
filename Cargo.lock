@@ -1272,6 +1272,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "bp-asset-hub-kusama"
+version = "0.1.0"
+dependencies = [
+ "bp-xcm-bridge-hub-router",
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+]
+
+[[package]]
+name = "bp-asset-hub-polkadot"
+version = "0.1.0"
+dependencies = [
+ "bp-xcm-bridge-hub-router",
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+]
+
+[[package]]
 name = "bp-bridge-hub-cumulus"
 version = "0.1.0"
 dependencies = [
@@ -1521,6 +1541,7 @@ dependencies = [
 name = "bridge-hub-kusama-runtime"
 version = "0.1.0"
 dependencies = [
+ "bp-asset-hub-kusama",
  "bp-bridge-hub-kusama",
  "bp-bridge-hub-polkadot",
  "bp-header-chain",
@@ -1601,6 +1622,7 @@ dependencies = [
 name = "bridge-hub-polkadot-runtime"
 version = "0.1.0"
 dependencies = [
+ "bp-asset-hub-polkadot",
  "bp-bridge-hub-kusama",
  "bp-bridge-hub-polkadot",
  "bp-header-chain",
@@ -3248,6 +3270,7 @@ dependencies = [
 name = "cumulus-pallet-xcmp-queue"
 version = "0.1.0"
 dependencies = [
+ "bp-xcm-bridge-hub-router",
  "cumulus-pallet-parachain-system",
  "cumulus-primitives-core",
  "frame-benchmarking",
@@ -9006,6 +9029,25 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+]
+
+[[package]]
+name = "pallet-xcm-bridge-hub-router"
+version = "0.1.0"
+dependencies = [
+ "bp-xcm-bridge-hub-router",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-builder",
 ]
 
 [[package]]

@@ -33,6 +33,7 @@ use bridge_runtime_common::{
 		RefundableParachain,
 	},
 };
+use codec::Encode;
 use frame_support::{parameter_types, traits::PalletInfoAccess, RuntimeDebug};
 use xcm::{latest::prelude::*, prelude::NetworkId};
 use xcm_builder::{BridgeBlobDispatcher, HaulBlobExporter};
@@ -54,6 +55,28 @@ parameter_types! {
 		ParentThen(X1(Parachain(AssetHubKusamaParaId::get().into()))).into(),
 		ASSET_HUB_KUSAMA_TO_ASSET_HUB_POLKADOT_LANE_ID,
 	);
+
+	pub CongestedMessage: Xcm<()> = sp_std::vec![Transact {
+		origin_kind: OriginKind::Xcm,
+		require_weight_at_most: bp_asset_hub_kusama::XcmBridgeHubRouterTransactCallMaxWeight::get(),
+		call: bp_asset_hub_kusama::Call::ToPolkadotXcmRouter(
+			bp_asset_hub_kusama::XcmBridgeHubRouterCall::report_bridge_status {
+				bridge_id: Default::default(),
+				is_congested: true,
+			}
+		).encode().into(),
+	}].into();
+
+	pub UncongestedMessage: Xcm<()> = sp_std::vec![Transact {
+		origin_kind: OriginKind::Xcm,
+		require_weight_at_most: bp_asset_hub_kusama::XcmBridgeHubRouterTransactCallMaxWeight::get(),
+		call: bp_asset_hub_kusama::Call::ToPolkadotXcmRouter(
+			bp_asset_hub_kusama::XcmBridgeHubRouterCall::report_bridge_status {
+				bridge_id: Default::default(),
+				is_congested: false,
+			}
+		).encode().into(),
+	}].into();
 }
 
 /// Proof of messages, coming from BridgeHubPolkadot.
@@ -80,9 +103,12 @@ impl XcmBlobHauler for ToBridgeHubPolkadotXcmBlobHauler {
 	type SenderAndLane = FromAssetHubKusamaToAssetHubPolkadotRoute;
 
 	type ToSourceChainSender = crate::XcmRouter;
-	type CongestedMessage = ();
-	type UncongestedMessage = ();
+	type CongestedMessage = CongestedMessage;
+	type UncongestedMessage = UncongestedMessage;
 }
+
+/// On messages delivered callback.
+pub type OnMessagesDelivered = XcmBlobHaulerAdapter<ToBridgeHubPolkadotXcmBlobHauler>;
 
 /// Messaging Bridge configuration for ThisChain -> BridgeHubPolkadot
 pub struct WithBridgeHubPolkadotMessageBridge;

@@ -485,9 +485,15 @@ impl pallet_bridge_messages::Config<WithBridgeHubPolkadotMessagesInstance> for R
 		DeliveryRewardInBalance,
 	>;
 	type SourceHeaderChain = SourceHeaderChainAdapter<WithBridgeHubPolkadotMessageBridge>;
-	type MessageDispatch =
-		XcmBlobMessageDispatch<OnThisChainBlobDispatcher<UniversalLocation>, Self::WeightInfo, ()>;
-	type OnMessagesDelivered = ();
+	type MessageDispatch = XcmBlobMessageDispatch<
+		OnThisChainBlobDispatcher<UniversalLocation>,
+		Self::WeightInfo,
+		cumulus_pallet_xcmp_queue::bridging::OutboundXcmpChannelCongestionStatusProvider<
+			bridge_hub_config::AssetHubKusamaParaId,
+			Runtime,
+		>,
+	>;
+	type OnMessagesDelivered = bridge_hub_config::OnMessagesDelivered;
 }
 
 /// Allows collect and claim rewards for relayers
