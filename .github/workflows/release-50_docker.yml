@@ -56,8 +56,7 @@ jobs:
         run: |
           curl -O -L \
             -H "Accept: application/vnd.github.v3.raw" \
-            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-            https://raw.githubusercontent.com/EgorPopelyaev/polkadot/master/scripts/ci/common/lib.sh
+            https://raw.githubusercontent.com/paritytech/polkadot/master/scripts/ci/common/lib.sh
 
           chmod a+x lib.sh
           ls -al
