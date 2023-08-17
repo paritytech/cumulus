@@ -407,9 +407,11 @@ mod tests {
 		// Ensure that we did not include `:code` in the proof.
 		let proof = block.storage_proof();
 
-		let backend =
-			sp_state_machine::create_proof_check_backend::<BlakeTwo256>(header.state_root(), proof)
-				.unwrap();
+		let backend = sp_state_machine::create_proof_check_backend::<BlakeTwo256>(
+			*header.state_root(),
+			proof.to_storage_proof(None).unwrap().0,
+		)
+		.unwrap();
 
 		// Should return an error, as it was not included while building the proof.
 		assert!(backend
