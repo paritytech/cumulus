@@ -34,8 +34,8 @@ fn pay_salary() {
 	let pay_to = Polkadot::account_id_of(ALICE);
 	let pay_amount = 9000;
 
-	AssetHubPolkadot::execute_with(|| {
-		type AssetHubAssets = <AssetHubPolkadot as AssetHubPolkadotPallet>::Assets;
+	AssetHub::execute_with(|| {
+		type AssetHubAssets = <AssetHub as AssetHubPallet>::Assets;
 
 		assert_ok!(<AssetHubAssets as Create<_>>::create(
 			asset_id,
@@ -47,7 +47,7 @@ fn pay_salary() {
 	});
 
 	Collectives::execute_with(|| {
-		type RuntimeEvent = <Collectives as Chain>::RuntimeEvent;
+		type RuntimeEvent = <Collectives as Parachain>::RuntimeEvent;
 
 		assert_ok!(FellowshipSalaryPaymaster::pay(&pay_to, (), pay_amount));
 		assert_expected_events!(
@@ -58,11 +58,11 @@ fn pay_salary() {
 		);
 	});
 
-	AssetHubPolkadot::execute_with(|| {
-		type RuntimeEvent = <AssetHubPolkadot as Chain>::RuntimeEvent;
+	AssetHub::execute_with(|| {
+		type RuntimeEvent = <AssetHub as Parachain>::RuntimeEvent;
 
 		assert_expected_events!(
-			AssetHubPolkadot,
+			AssetHub,
 			vec![
 				RuntimeEvent::Assets(pallet_assets::Event::Transferred { asset_id: id, from, to, amount }) => {
 					asset_id: id == &asset_id,

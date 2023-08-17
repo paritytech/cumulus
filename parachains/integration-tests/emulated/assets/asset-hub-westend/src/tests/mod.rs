@@ -15,7 +15,6 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 mod reserve_transfer;
-mod send;
-mod set_xcm_versions;
 mod swap;
 mod teleport;
+mod transact;
