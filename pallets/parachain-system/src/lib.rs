@@ -29,7 +29,7 @@
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use cumulus_primitives_core::{
-	relay_chain, AbridgedHostConfiguration, AggregateMessageOrigin, ChannelStatus, CollationInfo,
+	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo,
 	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError,
 	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
 	XcmpMessageHandler, XcmpMessageSource,
@@ -41,7 +41,7 @@ use frame_support::{
 	ensure,
 	inherent::{InherentData, InherentIdentifier, ProvideInherent},
 	storage,
-	traits::{EnqueueMessage, Get},
+	traits::{HandleMessage, Get},
 	weights::Weight,
 	RuntimeDebug,
 };
@@ -159,7 +159,7 @@ where
 
 /// The maximal length of a DMP message.
 pub type MaxDmpMessageLenOf<T> =
-	<<T as Config>::DmpQueue as EnqueueMessage<AggregateMessageOrigin>>::MaxMessageLen;
+	<<T as Config>::DmpQueue as HandleMessage>::MaxMessageLen;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -192,7 +192,7 @@ pub mod pallet {
 		/// eventually process all the messages that are pushed to it.
 		///
 		/// This will only ever be used to enqueue messages with origin [`AggregateMessageOrigin::Parent`].
-		type DmpQueue: EnqueueMessage<AggregateMessageOrigin>;
+		type DmpQueue: HandleMessage;
 
 		/// The weight we reserve at the beginning of the block for processing DMP messages.
 		type ReservedDmpWeight: Get<Weight>;
@@ -871,7 +871,7 @@ impl<T: Config> Pallet<T> {
 							None
 						},
 					});
-			T::DmpQueue::enqueue_messages(bounded, AggregateMessageOrigin::Parent);
+			T::DmpQueue::handle_messages(bounded);
 			<LastDmqMqcHead<T>>::put(&dmq_head);
 
 			Self::deposit_event(Event::DownwardMessagesProcessed {
