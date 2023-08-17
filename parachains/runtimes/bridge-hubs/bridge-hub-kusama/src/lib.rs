@@ -344,6 +344,17 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type PriceForSiblingDelivery = ();
 }
 
+parameter_types! {
+	pub const DmpQueuePalletName: &'static str = "DmpQueue";
+	pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
+}
+
+impl cumulus_pallet_dmp_queue::MigrationConfig for Runtime {
+	type PalletName = DmpQueuePalletName;
+	type DmpHandler = frame_support::traits::EnqueueWithOrigin<MessageQueue, RelayOrigin>;
+	type DbWeight = <Runtime as frame_system::Config>::DbWeight;
+}
+
 pub const PERIOD: u32 = 6 * HOURS;
 pub const OFFSET: u32 = 0;
 

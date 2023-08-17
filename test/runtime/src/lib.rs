@@ -29,6 +29,7 @@ pub mod wasm_spec_version_incremented {
 
 mod test_pallet;
 
+use cumulus_primitives_core::AggregateMessageOrigin;
 use frame_support::traits::OnRuntimeUpgrade;
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
 use sp_core::{ConstU32, OpaqueMetadata};
@@ -273,13 +274,17 @@ impl pallet_glutton::Config for Runtime {
 	type WeightInfo = pallet_glutton::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
+}
+
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type WeightInfo = ();
 	type SelfParaId = ParachainId;
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type OutboundXcmpMessageSource = ();
-	type DmpQueue = ();
+	type DmpQueue = frame_support::traits::EnqueueWithOrigin<(), RelayOrigin>;
 	type ReservedDmpWeight = ();
 	type XcmpMessageHandler = ();
 	type ReservedXcmpWeight = ();

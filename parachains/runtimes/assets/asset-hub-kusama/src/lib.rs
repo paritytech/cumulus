@@ -159,17 +159,6 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 2;
 }
 
-parameter_types! {
-	pub const DmpQueuePalletName: &'static str = "DmpQueue";
-	pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
-}
-
-impl cumulus_pallet_dmp_queue::MigrationConfig for Runtime {
-	type PalletName = DmpQueuePalletName;
-	type DmpHandler = frame_support::traits::EnqueueWithOrigin<MessageQueue, RelayOrigin>;
-	type DbWeight = <Runtime as frame_system::Config>::DbWeight;
-}
-
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
 	type BaseCallFilter = frame_support::traits::Everything;
@@ -602,6 +591,17 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ControllerOriginConverter = xcm_config::XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
 	type PriceForSiblingDelivery = ();
+}
+
+parameter_types! {
+	pub const DmpQueuePalletName: &'static str = "DmpQueue";
+	pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
+}
+
+impl cumulus_pallet_dmp_queue::MigrationConfig for Runtime {
+	type PalletName = DmpQueuePalletName;
+	type DmpHandler = frame_support::traits::EnqueueWithOrigin<MessageQueue, RelayOrigin>;
+	type DbWeight = <Runtime as frame_system::Config>::DbWeight;
 }
 
 parameter_types! {
