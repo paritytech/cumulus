@@ -412,7 +412,7 @@ mod tests {
 			.0
 			.into_memory_db();
 
-		let backend = sp_state_machine::new_in_mem_hash_key::<BlakeTwo256>()
+		let backend = sp_state_machine::new_in_mem::<BlakeTwo256>()
 			.update_backend(*header.state_root(), db);
 
 		// Should return an error, as it was not included while building the proof.
