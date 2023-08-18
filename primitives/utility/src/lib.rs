@@ -469,7 +469,8 @@ impl<
 
 /// XCM fee depositor to which we implement the TakeRevenue trait
 /// It receives a Transact implemented argument, a 32 byte convertible accountId, and the fee
-/// receiver account. FungiblesMutateAdapter should be identical to that implemented by WithdrawAsset
+/// receiver account. FungiblesMutateAdapter should be identical to that implemented by
+/// WithdrawAsset
 pub struct XcmFeesTo32ByteAccount<FungiblesMutateAdapter, AccountId, ReceiverAccount>(
 	PhantomData<(FungiblesMutateAdapter, AccountId, ReceiverAccount)>,
 );

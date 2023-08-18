@@ -168,7 +168,6 @@ fn test_asset_xcm_trader_with_refund() {
 			));
 
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
-			let ctx = XcmContext { origin: None, message_id: XcmHash::default(), topic: None };
 
 			// Set Alice as block author, who will receive fees
 			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
