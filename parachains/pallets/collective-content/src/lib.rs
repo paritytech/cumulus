@@ -18,10 +18,10 @@
 //! The pallet provides the functionality to store different types of content. This would typically
 //! be used by an on-chain collective, such as the Polkadot Alliance or Ambassador Program.
 //!
-//! The pallet stores content as an [OpaqueCid], which should correspond to some off-chain hosting service,
-//! such as IPFS, and contain any type of data. Each type of content has its own origin from which
-//! it can be managed. The origins are configurable in the runtime. Storing content does not require
-//! a deposit, as it is expected to be managed by a trusted collective.
+//! The pallet stores content as an [OpaqueCid], which should correspond to some off-chain hosting
+//! service, such as IPFS, and contain any type of data. Each type of content has its own origin
+//! from which it can be managed. The origins are configurable in the runtime. Storing content does
+//! not require a deposit, as it is expected to be managed by a trusted collective.
 //!
 //! Content types:
 //!
@@ -153,12 +153,13 @@ pub mod pallet {
 		/// Parameters:
 		/// - `origin`: Must be the [Config::AnnouncementOrigin].
 		/// - `cid`: [CID](super::OpaqueCid) of the IPFS document to announce.
-		/// - `maybe_expire`: Expiration block of the announcement. If `None` [`Config::AnnouncementLifetime`]
+		/// - `maybe_expire`: Expiration block of the announcement. If `None`
+		///   [`Config::AnnouncementLifetime`]
 		/// used as a default.
 		///
 		/// Weight: `O(1)`.
 		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::announce(maybe_expire.map_or(0, |_| 1)))]
+		#[pallet::weight(T::WeightInfo::announce())]
 		pub fn announce(
 			origin: OriginFor<T>,
 			cid: OpaqueCid,
@@ -190,7 +191,8 @@ pub mod pallet {
 		/// Transaction fee refunded for expired announcements.
 		///
 		/// Parameters:
-		/// - `origin`: Must be the [Config::AnnouncementOrigin] or signed for expired announcements.
+		/// - `origin`: Must be the [Config::AnnouncementOrigin] or signed for expired
+		///   announcements.
 		/// - `cid`: [CID](super::OpaqueCid) of the IPFS document to remove.
 		///
 		/// Weight: `O(1)`.

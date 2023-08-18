@@ -83,7 +83,7 @@ impl WeightInfo for CCWeightInfo {
 	fn set_charter() -> Weight {
 		Weight::zero()
 	}
-	fn announce(_x: u32) -> Weight {
+	fn announce() -> Weight {
 		Weight::zero()
 	}
 	fn remove_announcement() -> Weight {

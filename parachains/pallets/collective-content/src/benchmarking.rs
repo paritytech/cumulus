@@ -48,27 +48,19 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn announce(x: Linear<0, 1>) -> Result<(), BenchmarkError> {
-		let mut maybe_expire = None;
-		if x == 1 {
-			maybe_expire = Some(DispatchTime::<_>::At(10u32.into()));
-		}
+	fn announce() -> Result<(), BenchmarkError> {
+		let expire_at = DispatchTime::<_>::At(10u32.into());
 		let now = frame_system::Pallet::<T>::block_number();
 		let cid: OpaqueCid = create_cid(1);
 		let origin = T::AnnouncementOrigin::try_successful_origin()
 			.map_err(|_| BenchmarkError::Weightless)?;
 
 		#[extrinsic_call]
-		_(origin as T::RuntimeOrigin, cid.clone(), maybe_expire.clone());
+		_(origin as T::RuntimeOrigin, cid.clone(), Some(expire_at.clone()));
 
 		assert_eq!(CollectiveContent::<T, I>::announcements_count(), 1);
-		assert_eq!(NextAnnouncementExpireAt::<T, I>::get().map_or(0, |_| 1), x);
 		assert_last_event::<T, I>(
-			Event::AnnouncementAnnounced {
-				cid,
-				expire_at: maybe_expire.map_or(now, |e| e.evaluate(now)),
-			}
-			.into(),
+			Event::AnnouncementAnnounced { cid, expire_at: expire_at.evaluate(now) }.into(),
 		);
 
 		Ok(())
