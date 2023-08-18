@@ -35,7 +35,7 @@ cumulus-test-relay-sproof-builder = { path = "../../test/relay-sproof-builder" }
 parachains-common = { path = "../../parachains/common" }
 
 # Polkadot
-xcm = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
-polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "master" }

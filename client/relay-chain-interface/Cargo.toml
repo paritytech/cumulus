@@ -5,7 +5,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "rh-async-backing-feature" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 
