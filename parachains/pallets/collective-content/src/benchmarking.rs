@@ -29,9 +29,6 @@ fn create_cid(i: u8) -> OpaqueCid {
 	cid
 }
 
-//
-
-// #[instance_benchmarks(where T: Config<I>, I: 'static)]
 #[instance_benchmarks]
 mod benchmarks {
 	use super::*;

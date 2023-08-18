@@ -57,6 +57,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
+	use sp_runtime::{ArithmeticError::Overflow, Saturating};
 
 	/// The current storage version.
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
@@ -166,7 +167,10 @@ pub mod pallet {
 			ensure!(maybe_expire_at.map_or(true, |e| e > now), Error::<T, I>::InvalidExpiration);
 
 			<Announcements<T, I>>::insert(cid.clone(), maybe_expire_at);
-			<AnnouncementsCount<T, I>>::mutate(|count| *count += 1);
+			<AnnouncementsCount<T, I>>::try_mutate(|count| -> DispatchResult {
+				*count = count.checked_add(1).ok_or(Overflow)?;
+				Ok(())
+			})?;
 
 			if let Some(expire_at) = maybe_expire_at {
 				if NextAnnouncementExpireAt::<T, I>::get().map_or(true, |n| n > expire_at) {
@@ -195,7 +199,7 @@ pub mod pallet {
 			);
 
 			<Announcements<T, I>>::remove(cid.clone());
-			<AnnouncementsCount<T, I>>::mutate(|count| *count -= 1);
+			<AnnouncementsCount<T, I>>::mutate(|count| count.saturating_dec());
 
 			Self::deposit_event(Event::<T, I>::AnnouncementRemoved { cid });
 			Ok(())
