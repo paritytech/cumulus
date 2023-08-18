@@ -883,6 +883,7 @@ dependencies = [
  "sp-std",
  "substrate-wasm-builder",
  "xcm",
+ "xcm-builder",
  "xcm-executor",
 ]
 
@@ -9101,7 +9102,6 @@ dependencies = [
  "pallet-session",
  "pallet-xcm",
  "parachain-info",
- "parachains-common",
  "parity-scale-codec",
  "polkadot-parachain",
  "sp-consensus-aura",
