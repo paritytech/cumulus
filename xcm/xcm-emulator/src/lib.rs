@@ -372,7 +372,7 @@ macro_rules! decl_test_relay_chains {
 				type RuntimeEvent = $runtime::RuntimeEvent;
 				type System = $crate::SystemPallet::<Self::Runtime>;
 
-				fn account_data_of(account: AccountId) -> $crate::AccountData<Balance> {
+				fn account_data_of(account: RuntimeAccountId<Self::Runtime>>) -> $crate::AccountData<Balance> {
 					Self::ext_wrapper(|| $crate::SystemPallet::<Self::Runtime>::account(account).data.into())
 				}
 
@@ -596,7 +596,7 @@ macro_rules! decl_test_parachains {
 				type RuntimeEvent = $runtime::RuntimeEvent;
 				type System = $crate::SystemPallet::<Self::Runtime>;
 
-				fn account_data_of(account: AccountId) -> $crate::AccountData<Balance> {
+				fn account_data_of(account: RuntimeAccountId<Self::Runtime>) -> $crate::AccountData<Balance> {
 					Self::ext_wrapper(|| $crate::SystemPallet::<Self::Runtime>::account(account).data.into())
 				}
 
