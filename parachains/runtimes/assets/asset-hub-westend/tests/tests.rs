@@ -29,8 +29,8 @@ use asset_hub_westend_runtime::{
 		AssetFeeAsExistentialDepositMultiplierFeeCharger, ForeignCreatorsSovereignAccountOf,
 		WestendLocation,
 	},
-	AllPalletsWithoutSystem, LiquidityWithdrawalFee, MetadataDepositBase, MetadataDepositPerByte,
-	RuntimeCall, RuntimeEvent,
+	AllPalletsWithoutSystem, MetadataDepositBase, MetadataDepositPerByte, RuntimeCall,
+	RuntimeEvent,
 };
 use asset_test_utils::{CollatorSessionKeys, ExtBuilder, XcmReceivedFrom};
 use codec::{Decode, DecodeLimit, Encode};
