@@ -233,7 +233,7 @@ pub trait Chain: TestExt + NetworkComponent {
 		helpers::get_account_id_from_seed::<sr25519::Public>(seed)
 	}
 
-	fn account_data_of(account:  RuntimeAccountId<Self::Runtime>) -> AccountData<Balance>;
+	fn account_data_of(account: RuntimeAccountId<Self::Runtime>) -> AccountData<Balance>;
 
 	fn events() -> Vec<<Self as Chain>::RuntimeEvent>;
 }
@@ -372,7 +372,7 @@ macro_rules! decl_test_relay_chains {
 				type RuntimeEvent = $runtime::RuntimeEvent;
 				type System = $crate::SystemPallet::<Self::Runtime>;
 
-				fn account_data_of(account: RuntimeAccountId<Self::Runtime>>) -> $crate::AccountData<Balance> {
+				fn account_data_of(account: RuntimeAccountId<Self::Runtime>) -> $crate::AccountData<Balance> {
 					Self::ext_wrapper(|| $crate::SystemPallet::<Self::Runtime>::account(account).data.into())
 				}
 
