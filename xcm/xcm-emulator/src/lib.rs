@@ -36,7 +36,7 @@ pub use frame_support::{
 	sp_runtime::{AccountId32, DispatchResult},
 	traits::{
 		tokens::currency::Currency, EnqueueMessage, Get, Hooks, OriginTrait, ProcessMessage,
-		ProcessMessageError, ServiceQueues,
+		ProcessMessageError, ServiceQueues, HandleMessage, OnInitialize,
 	},
 	weights::{Weight, WeightMeter},
 	BoundedSlice,
@@ -51,6 +51,7 @@ pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, fmt::Debug};
 pub use sp_trie::StorageProof;
 
 //Cumulus
+pub use cumulus_pallet_dmp_queue;
 pub use cumulus_pallet_parachain_system::{self, Pallet as ParachainSystemPallet};
 pub use cumulus_pallet_xcmp_queue::{Config as XcmpQueueConfig, Pallet as XcmpQueuePallet};
 pub use cumulus_primitives_core::{
@@ -950,13 +951,13 @@ macro_rules! decl_test_networks {
 								msg_dedup.dedup();
 
 								let msgs = msg_dedup.clone().into_iter().filter(|m| {
-									!$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name))
+									!$crate::DMP_DONE.with(|b| b.borrow().get(stringify!($name))
 										.unwrap_or(&mut $crate::VecDeque::new())
 										.contains(&(to_para_id, m.0, m.1.clone()))
 									)
 								}).collect::<Vec<(RelayChainBlockNumber, Vec<u8>)>>();
 
-								use $crate::{EnqueueMessage, CumulusAggregateMessageOrigin, BoundedSlice, ServiceQueues, TestExt};
+								use $crate::{HandleMessage, CumulusAggregateMessageOrigin, BoundedSlice, ServiceQueues, TestExt};
 								type ParachainDmpQueue = <
 									<$parachain as Chain>::Runtime
 									as
@@ -964,14 +965,14 @@ macro_rules! decl_test_networks {
 								>::DmpQueue;
 								for m in msgs.clone().into_iter() {
 									<$parachain>::execute_with(|| {
-										<ParachainDmpQueue as EnqueueMessage<CumulusAggregateMessageOrigin>>::enqueue_message(
-											BoundedSlice::<_, _>::try_from(&m.1[..]).unwrap(),
-											CumulusAggregateMessageOrigin::Parent,
+										<ParachainDmpQueue as HandleMessage>::handle_message(
+											BoundedSlice::<_, _>::try_from(&m.1[..]).unwrap()
 										);
-										<ParachainDmpQueue as ServiceQueues>::service_queues(Weight::MAX);
-										$crate::log::debug!(target: concat!("dmp::", stringify!($name)) , "DMP messages processed {:?} to para_id {:?}", msgs.clone(), &to_para_id);
+										//<ParachainDmpQueue as ServiceQueues>::service_queues(Weight::MAX);
+										//<$parachain as Chain>::on_initialize(0);
 									});
-									$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(stringify!($name)).unwrap().push_back((to_para_id, m.0, m.1)));
+									$crate::log::debug!(target: concat!("dmp::", stringify!($name)) , "DMP messages processed {:?} to para_id {:?}", msgs.clone(), &to_para_id);
+									$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(Self::name()).unwrap().push_back((to_para_id, m.0, m.1)));
 								}
 							}
 						)*

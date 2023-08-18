@@ -18,7 +18,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(test)]
 mod tests;
 
 use cumulus_primitives_core::relay_chain::BlockNumber as RelayBlockNumber;

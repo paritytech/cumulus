@@ -107,7 +107,8 @@ impl cumulus_pallet_parachain_system::Config for Test {
 	type OnSystemEvent = ();
 	type SelfParaId = ();
 	type OutboundXcmpMessageSource = XcmpQueue;
-	type DmpQueue = ();
+	// Ignore all DMP messages:
+	type DmpQueue = frame_support::traits::EnqueueWithOrigin<(), sp_core::ConstU8<0>>;
 	type ReservedDmpWeight = ();
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ();

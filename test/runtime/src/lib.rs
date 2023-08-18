@@ -274,17 +274,14 @@ impl pallet_glutton::Config for Runtime {
 	type WeightInfo = pallet_glutton::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-	pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
-}
-
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type WeightInfo = ();
 	type SelfParaId = ParachainId;
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type OutboundXcmpMessageSource = ();
-	type DmpQueue = frame_support::traits::EnqueueWithOrigin<(), RelayOrigin>;
+	// Ignore all DMP messages:
+	type DmpQueue = frame_support::traits::EnqueueWithOrigin<(), sp_core::ConstU8<0>>;
 	type ReservedDmpWeight = ();
 	type XcmpMessageHandler = ();
 	type ReservedXcmpWeight = ();
