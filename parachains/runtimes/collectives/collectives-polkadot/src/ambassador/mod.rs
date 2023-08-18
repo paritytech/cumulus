@@ -144,11 +144,16 @@ impl pallet_referenda::Config<AmbassadorReferendaInstance> for Runtime {
 	type Preimages = Preimage;
 }
 
+parameter_types! {
+	pub const AnnouncementLifetime: BlockNumber = 180 * DAYS;
+}
+
 pub type AmbassadorContentInstance = pallet_collective_content::Instance1;
 
 impl pallet_collective_content::Config<AmbassadorContentInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type CharterOrigin = EitherOf<EnsureRoot<AccountId>, EnsureHeadAmbassadorsVoice>;
+	type AnnouncementLifetime = AnnouncementLifetime;
 	// An announcement can be submitted by a Senior Ambassador member or an ambassador plurality voice
 	// taken via referendum.
 	type AnnouncementOrigin = EitherOfDiverse<

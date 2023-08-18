@@ -16,7 +16,9 @@
 //! Tests.
 
 use super::{mock::*, *};
-use frame_support::{assert_noop, assert_ok, error::BadOrigin, traits::Hooks, weights::Weight};
+use frame_support::{
+	assert_noop, assert_ok, error::BadOrigin, pallet_prelude::Pays, traits::Hooks, weights::Weight,
+};
 
 /// returns CID hash of 68 bytes of given `i`.
 fn create_cid(i: u8) -> OpaqueCid {
@@ -28,7 +30,7 @@ fn create_cid(i: u8) -> OpaqueCid {
 fn set_charter_works() {
 	new_test_ext().execute_with(|| {
 		// wrong origin.
-		let origin = RuntimeOrigin::signed(OtherAccount::get());
+		let origin = RuntimeOrigin::signed(SomeAccount::get());
 		let cid = create_cid(1);
 		assert_noop!(CollectiveContent::set_charter(origin, cid), BadOrigin);
 
@@ -55,7 +57,7 @@ fn announce_works() {
 	new_test_ext().execute_with(|| {
 		let now = frame_system::Pallet::<Test>::block_number();
 		// wrong origin.
-		let origin = RuntimeOrigin::signed(OtherAccount::get());
+		let origin = RuntimeOrigin::signed(SomeAccount::get());
 		let cid = create_cid(1);
 
 		assert_noop!(CollectiveContent::announce(origin, cid, None), BadOrigin);
@@ -67,11 +69,14 @@ fn announce_works() {
 		let maybe_expire_at = None;
 
 		assert_ok!(CollectiveContent::announce(origin, cid.clone(), maybe_expire_at));
-		assert_eq!(NextAnnouncementExpireAt::<Test>::get(), None);
+		assert_eq!(
+			NextAnnouncementExpireAt::<Test>::get(),
+			Some(now.saturating_add(AnnouncementLifetime::get()))
+		);
 		assert_eq!(AnnouncementsCount::<Test>::get(), 1);
 		System::assert_last_event(RuntimeEvent::CollectiveContent(Event::AnnouncementAnnounced {
 			cid,
-			maybe_expire_at: None,
+			expire_at: now.saturating_add(AnnouncementLifetime::get()),
 		}));
 
 		// one more. success.
@@ -80,11 +85,14 @@ fn announce_works() {
 		let maybe_expire_at = None;
 
 		assert_ok!(CollectiveContent::announce(origin, cid.clone(), maybe_expire_at));
-		assert_eq!(NextAnnouncementExpireAt::<Test>::get(), None);
+		assert_eq!(
+			NextAnnouncementExpireAt::<Test>::get(),
+			Some(now.saturating_add(AnnouncementLifetime::get()))
+		);
 		assert_eq!(AnnouncementsCount::<Test>::get(), 2);
 		System::assert_last_event(RuntimeEvent::CollectiveContent(Event::AnnouncementAnnounced {
 			cid,
-			maybe_expire_at: None,
+			expire_at: now.saturating_add(AnnouncementLifetime::get()),
 		}));
 
 		// one more with expire. success.
@@ -97,7 +105,7 @@ fn announce_works() {
 		assert_eq!(AnnouncementsCount::<Test>::get(), 3);
 		System::assert_last_event(RuntimeEvent::CollectiveContent(Event::AnnouncementAnnounced {
 			cid,
-			maybe_expire_at: Some(maybe_expire_at.evaluate(now)),
+			expire_at: maybe_expire_at.evaluate(now),
 		}));
 
 		// one more with later expire. success.
@@ -114,7 +122,7 @@ fn announce_works() {
 		assert_eq!(AnnouncementsCount::<Test>::get(), 4);
 		System::assert_last_event(RuntimeEvent::CollectiveContent(Event::AnnouncementAnnounced {
 			cid,
-			maybe_expire_at: Some(maybe_expire_at.evaluate(now)),
+			expire_at: maybe_expire_at.evaluate(now),
 		}));
 
 		// one more with earlier expire. success.
@@ -127,7 +135,7 @@ fn announce_works() {
 		assert_eq!(AnnouncementsCount::<Test>::get(), 5);
 		System::assert_last_event(RuntimeEvent::CollectiveContent(Event::AnnouncementAnnounced {
 			cid,
-			maybe_expire_at: Some(maybe_expire_at.evaluate(now)),
+			expire_at: maybe_expire_at.evaluate(now),
 		}));
 	});
 }
@@ -137,10 +145,13 @@ fn remove_announcement_works() {
 	new_test_ext().execute_with(|| {
 		assert_eq!(AnnouncementsCount::<Test>::get(), 0);
 		// wrong origin.
-		let origin = RuntimeOrigin::signed(OtherAccount::get());
+		let origin = RuntimeOrigin::signed(CharterManager::get());
 		let cid = create_cid(8);
 
-		assert_noop!(CollectiveContent::remove_announcement(origin, cid), BadOrigin);
+		assert_noop!(
+			CollectiveContent::remove_announcement(origin, cid),
+			Error::<Test>::MissingAnnouncement
+		);
 
 		// missing announcement.
 		let origin = RuntimeOrigin::signed(AnnouncementManager::get());
@@ -151,42 +162,60 @@ fn remove_announcement_works() {
 			Error::<Test>::MissingAnnouncement
 		);
 
-		// success.
-		// add announcement.
+		// wrong origin. announcement not yet expired.
 		let origin = RuntimeOrigin::signed(AnnouncementManager::get());
 		let cid = create_cid(10);
 		assert_ok!(CollectiveContent::announce(origin.clone(), cid.clone(), None));
-
-		// one more announcement.
-		let cid_2 = create_cid(11);
-		let expire_at_2 = DispatchTime::<_>::At(10);
-		assert_ok!(CollectiveContent::announce(origin.clone(), cid_2.clone(), Some(expire_at_2)));
-		// two announcements registered.
 		assert!(<Announcements<Test>>::contains_key(cid.clone()));
-		assert!(<Announcements<Test>>::contains_key(cid_2.clone()));
-		assert_eq!(AnnouncementsCount::<Test>::get(), 2);
+		assert_eq!(AnnouncementsCount::<Test>::get(), 1);
+
+		let origin = RuntimeOrigin::signed(SomeAccount::get());
+		assert_noop!(CollectiveContent::remove_announcement(origin, cid.clone()), BadOrigin);
+		let origin = RuntimeOrigin::signed(AnnouncementManager::get());
+		assert_ok!(CollectiveContent::remove_announcement(origin, cid));
+
+		// success.
 
 		// remove first announcement and assert.
-		assert_ok!(CollectiveContent::remove_announcement(origin.clone(), cid.clone()));
+		let origin = RuntimeOrigin::signed(AnnouncementManager::get());
+		let cid = create_cid(11);
+		assert_ok!(CollectiveContent::announce(origin.clone(), cid.clone(), None));
+		assert!(<Announcements<Test>>::contains_key(cid.clone()));
+		assert_eq!(AnnouncementsCount::<Test>::get(), 1);
+
+		let info = CollectiveContent::remove_announcement(origin.clone(), cid.clone()).unwrap();
+		assert_eq!(info.pays_fee, Pays::Yes);
 		System::assert_last_event(RuntimeEvent::CollectiveContent(Event::AnnouncementRemoved {
 			cid: cid.clone(),
 		}));
 		assert_noop!(
-			CollectiveContent::remove_announcement(origin.clone(), cid.clone()),
+			CollectiveContent::remove_announcement(origin, cid.clone()),
 			Error::<Test>::MissingAnnouncement
 		);
 		assert!(!<Announcements<Test>>::contains_key(cid));
-		assert!(<Announcements<Test>>::contains_key(cid_2.clone()));
+		assert_eq!(AnnouncementsCount::<Test>::get(), 0);
+
+		// remove expired announcement and assert.
+		let origin = RuntimeOrigin::signed(AnnouncementManager::get());
+		let cid = create_cid(12);
+		assert_ok!(CollectiveContent::announce(
+			origin.clone(),
+			cid.clone(),
+			Some(DispatchTime::<_>::At(10))
+		));
+		assert!(<Announcements<Test>>::contains_key(cid.clone()));
 		assert_eq!(AnnouncementsCount::<Test>::get(), 1);
 
-		// remove second announcement and assert.
-		assert_ok!(CollectiveContent::remove_announcement(origin.clone(), cid_2.clone()));
+		System::set_block_number(11);
+		let origin = RuntimeOrigin::signed(SomeAccount::get());
+		let info = CollectiveContent::remove_announcement(origin.clone(), cid.clone()).unwrap();
+		assert_eq!(info.pays_fee, Pays::No);
 		System::assert_last_event(RuntimeEvent::CollectiveContent(Event::AnnouncementRemoved {
-			cid: cid_2.clone(),
+			cid: cid.clone(),
 		}));
 		assert_eq!(AnnouncementsCount::<Test>::get(), 0);
 		assert_noop!(
-			CollectiveContent::remove_announcement(origin, cid_2),
+			CollectiveContent::remove_announcement(origin, cid),
 			Error::<Test>::MissingAnnouncement
 		);
 	});

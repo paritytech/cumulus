@@ -55,9 +55,9 @@ pub type OpaqueCid = BoundedVec<u8, ConstU32<68>>;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::pallet_prelude::*;
+	use frame_support::{ensure, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
-	use sp_runtime::{ArithmeticError::Overflow, Saturating};
+	use sp_runtime::{traits::BadOrigin, ArithmeticError::Overflow, Saturating};
 
 	/// The current storage version.
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
@@ -72,6 +72,9 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self, I>>
 			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+		/// Default lifetime for an announcement before it expires.
+		type AnnouncementLifetime: Get<BlockNumberFor<Self>>;
 
 		/// The origin to control the collective announcements.
 		type AnnouncementOrigin: EnsureOrigin<Self::RuntimeOrigin>;
@@ -99,7 +102,7 @@ pub mod pallet {
 		/// A new charter has been set.
 		NewCharterSet { cid: OpaqueCid },
 		/// A new announcement has been made.
-		AnnouncementAnnounced { cid: OpaqueCid, maybe_expire_at: Option<BlockNumberFor<T>> },
+		AnnouncementAnnounced { cid: OpaqueCid, expire_at: BlockNumberFor<T> },
 		/// An on-chain announcement has been removed.
 		AnnouncementRemoved { cid: OpaqueCid },
 	}
@@ -113,7 +116,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn announcements)]
 	pub type Announcements<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, OpaqueCid, Option<BlockNumberFor<T>>, ValueQuery>;
+		StorageMap<_, Blake2_128Concat, OpaqueCid, BlockNumberFor<T>, OptionQuery>;
 
 	/// The current count of the announcements.
 	#[pallet::storage]
@@ -148,9 +151,10 @@ pub mod pallet {
 		/// Publish an announcement.
 		///
 		/// Parameters:
-		/// - `origin`: Must be the [Config::CharterOrigin].
+		/// - `origin`: Must be the [Config::AnnouncementOrigin].
 		/// - `cid`: [CID](super::OpaqueCid) of the IPFS document to announce.
-		/// - `maybe_expire`: Expiration block of the announcement.
+		/// - `maybe_expire`: Expiration block of the announcement. If `None` [`Config::AnnouncementLifetime`]
+		/// used as a default.
 		///
 		/// Weight: `O(1)`.
 		#[pallet::call_index(1)]
@@ -163,46 +167,57 @@ pub mod pallet {
 			T::AnnouncementOrigin::ensure_origin(origin)?;
 
 			let now = frame_system::Pallet::<T>::block_number();
-			let maybe_expire_at = maybe_expire.map(|e| e.evaluate(now));
-			ensure!(maybe_expire_at.map_or(true, |e| e > now), Error::<T, I>::InvalidExpiration);
+			let expire_at = maybe_expire
+				.map_or(now.saturating_add(T::AnnouncementLifetime::get()), |e| e.evaluate(now));
+			ensure!(expire_at > now, Error::<T, I>::InvalidExpiration);
 
-			<Announcements<T, I>>::insert(cid.clone(), maybe_expire_at);
+			<Announcements<T, I>>::insert(cid.clone(), expire_at);
 			<AnnouncementsCount<T, I>>::try_mutate(|count| -> DispatchResult {
 				*count = count.checked_add(1).ok_or(Overflow)?;
 				Ok(())
 			})?;
 
-			if let Some(expire_at) = maybe_expire_at {
-				if NextAnnouncementExpireAt::<T, I>::get().map_or(true, |n| n > expire_at) {
-					NextAnnouncementExpireAt::<T, I>::put(expire_at);
-				}
+			if NextAnnouncementExpireAt::<T, I>::get().map_or(true, |n| n > expire_at) {
+				NextAnnouncementExpireAt::<T, I>::put(expire_at);
 			}
 
-			Self::deposit_event(Event::<T, I>::AnnouncementAnnounced { cid, maybe_expire_at });
+			Self::deposit_event(Event::<T, I>::AnnouncementAnnounced { cid, expire_at });
 			Ok(())
 		}
 
 		/// Remove an announcement.
 		///
+		/// Transaction fee refunded for expired announcements.
+		///
 		/// Parameters:
-		/// - `origin`: Must be the [Config::CharterOrigin].
+		/// - `origin`: Must be the [Config::AnnouncementOrigin] or signed for expired announcements.
 		/// - `cid`: [CID](super::OpaqueCid) of the IPFS document to remove.
 		///
 		/// Weight: `O(1)`.
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::remove_announcement())]
-		pub fn remove_announcement(origin: OriginFor<T>, cid: OpaqueCid) -> DispatchResult {
-			T::AnnouncementOrigin::ensure_origin(origin)?;
-			ensure!(
-				<Announcements<T, I>>::contains_key(cid.clone()),
-				Error::<T, I>::MissingAnnouncement
-			);
+		pub fn remove_announcement(
+			origin: OriginFor<T>,
+			cid: OpaqueCid,
+		) -> DispatchResultWithPostInfo {
+			let maybe_who = match T::AnnouncementOrigin::try_origin(origin) {
+				Ok(_) => None,
+				Err(origin) => Some(ensure_signed(origin)?),
+			};
+			let expire_at = <Announcements<T, I>>::get(cid.clone())
+				.ok_or(Error::<T, I>::MissingAnnouncement)?;
+			let now = frame_system::Pallet::<T>::block_number();
+			ensure!(maybe_who.is_none() || now >= expire_at, BadOrigin);
 
 			<Announcements<T, I>>::remove(cid.clone());
 			<AnnouncementsCount<T, I>>::mutate(|count| count.saturating_dec());
 
 			Self::deposit_event(Event::<T, I>::AnnouncementRemoved { cid });
-			Ok(())
+
+			if now >= expire_at {
+				return Ok(Pays::No.into())
+			}
+			Ok(Pays::Yes.into())
 		}
 	}
 
@@ -215,26 +230,19 @@ pub mod pallet {
 			}
 			let mut maybe_next: Option<BlockNumberFor<T>> = None;
 			let mut count = 0;
-			<Announcements<T, I>>::translate(|cid, maybe_expire_at: Option<BlockNumberFor<T>>| {
-				match maybe_expire_at {
-					Some(expire_at) if now >= expire_at => {
-						Self::deposit_event(Event::<T, I>::AnnouncementRemoved { cid });
-						None
-					},
-					Some(expire_at) => {
-						// determine `NextAnnouncementExpireAt`.
-						maybe_next = match maybe_next {
-							Some(next) if expire_at > next => Some(next),
-							_ => Some(expire_at),
-						};
-						count += 1;
-						// return translated `maybe_expire_at`.
-						Some(maybe_expire_at)
-					},
-					None => {
-						count += 1;
-						Some(maybe_expire_at)
-					},
+			<Announcements<T, I>>::translate(|cid, expire_at: BlockNumberFor<T>| {
+				if now >= expire_at {
+					Self::deposit_event(Event::<T, I>::AnnouncementRemoved { cid });
+					None
+				} else {
+					// determine `NextAnnouncementExpireAt`.
+					maybe_next = match maybe_next {
+						Some(next) if expire_at > next => Some(next),
+						_ => Some(expire_at),
+					};
+					count += 1;
+					// return translated `maybe_expire_at`.
+					Some(expire_at)
 				}
 			});
 			<NextAnnouncementExpireAt<T, I>>::set(maybe_next);

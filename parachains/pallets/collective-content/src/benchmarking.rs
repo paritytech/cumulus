@@ -66,7 +66,7 @@ mod benchmarks {
 		assert_last_event::<T, I>(
 			Event::AnnouncementAnnounced {
 				cid,
-				maybe_expire_at: maybe_expire.map_or(None, |e| Some(e.evaluate(now))),
+				expire_at: maybe_expire.map_or(now, |e| e.evaluate(now)),
 			}
 			.into(),
 		);

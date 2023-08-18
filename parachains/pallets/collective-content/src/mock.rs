@@ -18,7 +18,7 @@
 pub use crate as pallet_collective_content;
 use crate::WeightInfo;
 use frame_support::{
-	ord_parameter_types,
+	ord_parameter_types, parameter_types,
 	traits::{ConstU32, ConstU64},
 	weights::Weight,
 };
@@ -38,13 +38,18 @@ type Block = frame_system::mocking::MockBlock<Test>;
 ord_parameter_types! {
 	pub const CharterManager: u64 = 1;
 	pub const AnnouncementManager: u64 = 2;
-	pub const OtherAccount: u64 = 3;
+	pub const SomeAccount: u64 = 3;
+}
+
+parameter_types! {
+	pub const AnnouncementLifetime: u64 = 100;
 }
 
 impl pallet_collective_content::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
-	type CharterOrigin = EnsureSignedBy<CharterManager, AccountId>;
+	type AnnouncementLifetime = AnnouncementLifetime;
 	type AnnouncementOrigin = EnsureSignedBy<AnnouncementManager, AccountId>;
+	type CharterOrigin = EnsureSignedBy<CharterManager, AccountId>;
 	type WeightInfo = CCWeightInfo;
 }
 
