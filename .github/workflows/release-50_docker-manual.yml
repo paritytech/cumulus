@@ -1,132 +1,145 @@
 name: Release - Docker (Manual)
 
-# This workflow fetches the binaries, checks sha256 and GPG
-# signatures, then builds an injected docker
-# image and publishes it.
-
 on:
   workflow_dispatch:
     inputs:
-      tag:
-        description: release tag to build image for
-        default: v0.9.230
+      release_id:
+        description: |
+          Release ID.
+          You can find it using the command:
+            curl -s \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" https://api.github.com/repos/$OWNER/$REPO/releases | \
+              jq '.[] | { name: .name, id: .id }'
         required: true
-      prerelease:
-        description: is prerelease
-        default: "false"
+        type: string
+      production_image:
+        description: "True for an image for the final release or false for an rc image"
         required: true
+        type: boolean
+        default: false
+      registry:
+        description: "Container registry"
+        required: true
+        type: string
+        default: docker.io
+      owner:
+        description: Owner of the container image repo
+        required: true
+        type: string
+        default: parity
+
+env:
+  RELEASE_ID: ${{ inputs.release_id }}
+  ENGINE: docker
+  REGISTRY: ${{ inputs.registry }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  DOCKER_OWNER: ${{ inputs.owner || github.repository_owner }}
+  REPO: ${{ github.repository }}
 
 jobs:
-  docker_build_publish:
-    env:
-      BINARY: polkadot-parachain
+  fetch-artifacts:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout sources
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        uses: actions/checkout@v3
+
+      - name: Fetch all artifacts
+        run: |
+          . ./scripts/ci/common/lib.sh
+          fetch_release_artifacts
+
+      - name: Cache the artifacts
+        uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
         with:
-          ref: ${{ github.event.release.tag_name }}
+          key: artifacts-${{ github.sha }}
+          path: |
+            ./release-artifacts/**/*
 
-      - name: Prepare temp folder
+  build-container:
+    runs-on: ubuntu-latest
+    needs: fetch-artifacts
+
+    strategy:
+      matrix:
+        binary: ["polkadot-parachain"]
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Get artifacts from cache
+        uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
+        with:
+          key: artifacts-${{ github.sha }}
+          fail-on-cache-miss: true
+          path: |
+            ./release-artifacts/**/*
+
+      - name: Check sha256 ${{ matrix.binary }}
+        working-directory: ./release-artifacts
         run: |
-          TMP=$(mktemp -d)
-          echo "TMP=$TMP" >> "$GITHUB_ENV"
-          pwd
-          ls -al "$TMP"
+          . ../scripts/ci/common/lib.sh
 
-      - name: Fetch files from release
-        working-directory: ${{ env.TMP }}
+          echo "Checking binary ${{ matrix.binary }}"
+          check_sha256 ${{ matrix.binary }} && echo "OK" || echo "ERR"
+
+      - name: Check GPG ${{ matrix.binary }}
+        working-directory: ./release-artifacts
         run: |
-          echo "Repo: ${{ github.event.repository.full_name }}"
-          echo "Working from folder $(pwd)"
-          ls -al
-
-          for f in $BINARY $BINARY.asc $BINARY.sha256; do
-            URL="https://github.com/${{ github.event.repository.full_name }}/releases/download/${{ github.event.inputs.tag }}/$f"
-            echo " - Fetching $f from $URL"
-            wget "$URL" -O "$f"
-          done
-          chmod a+x $BINARY
-          ls -al
-
-      - name: Fetch lib.sh from polkadot repo
-        working-directory: ${{ env.TMP }}
-        run: |
-          curl -O -L \
-            -H "Accept: application/vnd.github.v3.raw" \
-            https://raw.githubusercontent.com/paritytech/polkadot/master/scripts/ci/common/lib.sh
-
-          chmod a+x lib.sh
-          ls -al
-
-      - name: Check SHA256
-        working-directory: ${{ env.TMP }}
-        run: |
-          ls -al
-          . ./lib.sh
-
-          echo "Checking binary $BINARY"
-          check_sha256 $BINARY && echo "OK" || echo "ERR"
-
-      - name: Check GPG
-        working-directory: ${{ env.TMP }}
-        run: |
-          . ./lib.sh
-
+          . ../scripts/ci/common/lib.sh
           import_gpg_keys
-          check_gpg $BINARY
+          check_gpg ${{ matrix.binary }}
 
-      - name: Build injected image
-        env:
-          DOCKERHUB_ORG: parity
-          OWNER: ${{ env.DOCKERHUB_ORG }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          IMAGE_NAME: polkadot-parachain
+      - name: Fetch commit and tag
+        id: fetch_refs
         run: |
-          mkdir -p target/release-artifacts
-          cp -f ${TMP}/$BINARY* target/release-artifacts/
-          ./docker/scripts/build-injected-image.sh
+            is_final=${{ inputs.production_image }}
+
+            if [ "${is_final}" != "true" ]; then
+                release=release-${{ inputs.release_id }} && \
+                echo "release=${release}" >> $GITHUB_OUTPUT
+
+                commit=$(git rev-parse --short HEAD) && \
+                echo "commit=${commit}" >> $GITHUB_OUTPUT
+
+
+                tag=$(git name-rev --tags --name-only $(git rev-parse HEAD)) && \
+                [ "${tag}" != "undefined" ] && echo "tag=${tag}" >> $GITHUB_OUTPUT || \
+                echo "No tag, doing without"
+            else
+                semver=$( echo $VERSION | cut -f1 -d- )
+                echo "tag=latest" >> $GITHUB_OUTPUT
+                echo "semver=${semver}" >> $GITHUB_OUTPUT
+            fi
+
+      - name: Build Injected Container image for ${{ matrix.binary }}
+        env:
+            BIN_FOLDER: ./release-artifacts
+            BINARY: ${{ matrix.binary }}
+            TAGS: ${{join(steps.fetch_refs.outputs.*, ',')}}
+        run: |
+          echo "Building container for ${{ matrix.binary }}"
+          ./scripts/ci/dockerfiles/build-injected.sh
 
       - name: Login to Dockerhub
-        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Tag and Publish
+      - name: Push Container image for ${{ matrix.binary }}
+        id: docker_push
         env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_ORG: parity
+          BINARY: ${{ matrix.binary }}
         run: |
-          docker run --pull never --rm $DOCKERHUB_ORG/$BINARY --version
-          VERSION=$(docker run --pull never --rm $DOCKERHUB_ORG/$BINARY --version | awk '{ print $2 }' )
-          SEMVER=$( echo $VERSION | cut -f1 -d- )
-          GITREF=$( echo $VERSION | cut -f2 -d- )
-          PRE=${{ github.event.inputs.prerelease }}
-          PRE_STR=""
+          $ENGINE images | grep ${BINARY}
+          $ENGINE push --all-tags ${REGISTRY}/${DOCKER_OWNER}/${BINARY}
 
-          echo "SEMVER=$SEMVER"
-          echo "GITREF=$GITREF"
-          echo "PRE=$PRE"
-
-          # Build a tag such as:
-          # 1.2.3-8a1201273 or
-          # 1.2.3-pre-8a1201273 for pre-releases
-          [[ $PRE == "true" ]] && PRE_STR="-pre"
-          TAG=${SEMVER}${PRE_STR}-${GITREF}
-          echo "PRE_STR=$PRE_STR"
-          echo "TAG=$TAG"
-
-          docker tag $DOCKERHUB_ORG/$BINARY $DOCKERHUB_ORG/$BINARY:$TAG
-          docker push $DOCKERHUB_ORG/$BINARY:$TAG
-
-          if [[ $PRE != "true" ]]; then
-            docker tag $DOCKERHUB_ORG/$BINARY $DOCKERHUB_ORG/$BINARY:latest
-            docker tag $DOCKERHUB_ORG/$BINARY $DOCKERHUB_ORG/$BINARY:$SEMVER
-
-            docker push $DOCKERHUB_ORG/$BINARY:latest
-            docker push $DOCKERHUB_ORG/$BINARY:$SEMVER
-          fi
-
-          docker images
+      - name: Check version for the published image for ${{ matrix.binary }}
+        env:
+          BINARY: ${{ matrix.binary }}
+          RELEASE_TAG: ${{ steps.fetch_refs.outputs.release }}
+        run: |
+          echo "Checking tag ${RELEASE_TAG} for image ${REGISTRY}/${DOCKER_OWNER}/${BINARY}"
+          $ENGINE run -i ${REGISTRY}/${DOCKER_OWNER}/${BINARY}:${RELEASE_TAG} --version
