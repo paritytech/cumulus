@@ -95,6 +95,10 @@ pub type CurrencyTransactor = CurrencyAdapter<
 pub type TrustBackedAssetsConvertedConcreteId =
 	assets_common::TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance>;
 
+/// `AssetId` converter for `TrustBackedAssets`
+pub type AssetIdForTrustBackedAssetsConvert =
+	assets_common::AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>;
+
 /// Means for transacting assets besides the native currency on this chain.
 pub type FungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
@@ -476,6 +480,7 @@ impl xcm_executor::Config for XcmConfig {
 			WeightToFee,
 			TrustBackedAssetsConvertedConcreteId,
 			Assets,
+			AssetIdForTrustBackedAssetsConvert,
 			XcmAssetFeesReceiver,
 		>,
 		cumulus_primitives_utility::SwapFirstAssetTrader<
@@ -485,6 +490,7 @@ impl xcm_executor::Config for XcmConfig {
 			WeightToFee,
 			ForeignAssetsConvertedConcreteId,
 			ForeignAssets,
+			ConvertInto,
 			XcmAssetFeesReceiver,
 		>,
 	);

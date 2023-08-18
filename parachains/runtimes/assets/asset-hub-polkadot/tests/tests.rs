@@ -44,9 +44,6 @@ use xcm_executor::traits::{Identity, JustTry, WeightTrader};
 const ALICE: [u8; 32] = [1u8; 32];
 const SOME_ASSET_ADMIN: [u8; 32] = [5u8; 32];
 
-type AssetIdForTrustBackedAssetsConvert =
-	assets_common::AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>;
-
 fn collator_session_keys() -> CollatorSessionKeys<Runtime> {
 	CollatorSessionKeys::new(
 		AccountId::from(ALICE),

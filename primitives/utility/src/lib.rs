@@ -28,10 +28,10 @@ use frame_support::{
 	},
 	weights::Weight,
 };
-use pallet_asset_conversion::{Config, MultiAssetIdConverter, Swap};
+use pallet_asset_conversion::{MultiAssetIdConverter, Swap};
 use polkadot_runtime_common::xcm_sender::ConstantPrice;
 use sp_runtime::{
-	traits::{CheckedSub, Saturating, Zero},
+	traits::{CheckedSub, MaybeEquivalence, Saturating, Zero},
 	SaturatedConversion,
 };
 use sp_std::{marker::PhantomData, prelude::*};
@@ -283,12 +283,13 @@ struct SwapAssetTraderRefunder<B> {
 }
 
 pub struct SwapFirstAssetTrader<
-	T: Config,
+	T: pallet_asset_conversion::Config,
 	AccountIdConverter: ConvertLocation<T::AccountId>,
 	SWP: Swap<T::AccountId, T::HigherPrecisionBalance, T::MultiAssetId>,
 	WeightToFee: frame_support::weights::WeightToFee<Balance = T::Balance>,
 	Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
 	ConcreteAssets: fungibles::Mutate<T::AccountId> + fungibles::Balanced<T::AccountId>,
+	ConvertConcreteAssetId: MaybeEquivalence<T::AssetId, ConcreteAssets::AssetId>,
 	ReceiverAccount: Get<Option<T::AccountId>>,
 >(
 	Option<SwapAssetTraderRefunder<T::AssetBalance>>,
@@ -299,17 +300,19 @@ pub struct SwapFirstAssetTrader<
 		WeightToFee,
 		Matcher,
 		ConcreteAssets,
+		ConvertConcreteAssetId,
 		ReceiverAccount,
 	)>,
 );
 
 impl<
-		T: Config,
+		T: pallet_asset_conversion::Config,
 		AccountIdConverter: ConvertLocation<T::AccountId>,
 		SWP: Swap<T::AccountId, T::HigherPrecisionBalance, T::MultiAssetId>,
 		WeightToFee: frame_support::weights::WeightToFee<Balance = T::Balance>,
 		Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
 		ConcreteAssets: fungibles::Mutate<T::AccountId> + fungibles::Balanced<T::AccountId>,
+		ConvertConcreteAssetId: MaybeEquivalence<T::AssetId, ConcreteAssets::AssetId>,
 		ReceiverAccount: Get<Option<T::AccountId>>,
 	> WeightTrader
 	for SwapFirstAssetTrader<
@@ -319,9 +322,9 @@ impl<
 		WeightToFee,
 		Matcher,
 		ConcreteAssets,
+		ConvertConcreteAssetId,
 		ReceiverAccount,
 	> where
-	ConcreteAssets::AssetId: Into<T::MultiAssetId>,
 	T::HigherPrecisionBalance: From<ConcreteAssets::Balance> + TryInto<T::AssetBalance>,
 	T::AssetBalance: Into<Fungibility> + Into<ConcreteAssets::Balance>,
 	T::AccountId: Clone + Into<[u8; 32]>,
@@ -357,6 +360,18 @@ impl<
 		// Get the asset id in which we can pay for fees
 		let (asset_id, payment_balance) =
 			Matcher::matches_fungibles(first).map_err(|_| XcmError::AssetNotFound)?;
+		let multi_asset_id: T::MultiAssetId = match ConvertConcreteAssetId::convert_back(&asset_id)
+		{
+			Some(mutli_asset_id) => mutli_asset_id.into(),
+			None => {
+				log::warn!(
+					target: "xcm::weight",
+					"SwapFirstAssetTrader::buy_weight failed conversion from `ConcreteAssets::AssetId` asset_id: {:?} to `T::AssetId`",
+					asset_id
+				);
+				return Err(XcmError::AssetNotFound)
+			},
+		};
 
 		let fee = WeightToFee::weight_to_fee(&weight);
 
@@ -367,7 +382,7 @@ impl<
 
 		let amount_taken = SWP::swap_tokens_for_exact_tokens(
 			acc.clone(),
-			vec![asset_id.clone().into(), T::MultiAssetIdConverter::get_native()],
+			vec![multi_asset_id.into(), T::MultiAssetIdConverter::get_native()],
 			fee.into(),
 			Some(minted_payment.into()),
 			acc.clone(),
@@ -410,13 +425,26 @@ impl<
 			}
 			let (asset_id, _local_asset_balance) =
 				Matcher::matches_fungibles(&(id, fun).into()).ok()?;
+			let multi_asset_id: T::MultiAssetId = match ConvertConcreteAssetId::convert_back(
+				&asset_id,
+			) {
+				Some(mutli_asset_id) => mutli_asset_id.into(),
+				None => {
+					log::warn!(
+						target: "xcm::weight",
+						"SwapFirstAssetTrader::refund_weight failed conversion from `ConcreteAssets::AssetId` asset_id: {:?} to `T::AssetId`",
+						asset_id
+					);
+					return None
+				},
+			};
 
 			let origin = ctx.origin?;
 			let acc = AccountIdConverter::convert_location(&origin)?;
 
 			let amount_refunded = SWP::swap_tokens_for_exact_tokens(
 				acc.clone(),
-				vec![T::MultiAssetIdConverter::get_native(), asset_id.into()],
+				vec![T::MultiAssetIdConverter::get_native(), multi_asset_id],
 				T::HigherPrecisionBalance::from(unused_payment.into()),
 				Some(swap_back_native.into()),
 				acc.clone(),

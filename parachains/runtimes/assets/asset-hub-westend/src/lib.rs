@@ -29,12 +29,9 @@ mod weights;
 pub mod xcm_config;
 
 use crate::xcm_config::{
-	LocalAndForeignAssetsMultiLocationMatcher, TrustBackedAssetsPalletLocation,
+	AssetIdForTrustBackedAssetsConvert, LocalAndForeignAssetsMultiLocationMatcher,
 };
-use assets_common::{
-	local_and_foreign_assets::{LocalAndForeignAssets, MultiLocationConverter},
-	AssetIdForTrustBackedAssetsConvert,
-};
+use assets_common::local_and_foreign_assets::{LocalAndForeignAssets, MultiLocationConverter};
 use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
@@ -307,11 +304,7 @@ impl pallet_asset_conversion::Config for Runtime {
 	type Currency = Balances;
 	type AssetBalance = Balance;
 	type AssetId = MultiLocation;
-	type Assets = LocalAndForeignAssets<
-		Assets,
-		AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>,
-		ForeignAssets,
-	>;
+	type Assets = LocalAndForeignAssets<Assets, AssetIdForTrustBackedAssetsConvert, ForeignAssets>;
 	type PoolAssets = PoolAssets;
 	type PoolAssetId = u32;
 	type PoolSetupFee = ConstU128<0>; // Asset class deposit fees are sufficient to prevent spam
@@ -669,11 +662,8 @@ impl pallet_collator_selection::Config for Runtime {
 
 impl pallet_asset_conversion_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type Fungibles = LocalAndForeignAssets<
-		Assets,
-		AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>,
-		ForeignAssets,
-	>;
+	type Fungibles =
+		LocalAndForeignAssets<Assets, AssetIdForTrustBackedAssetsConvert, ForeignAssets>;
 	type OnChargeAssetTransaction = AssetConversionAdapter<Balances, AssetConversion>;
 }
 
