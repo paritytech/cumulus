@@ -31,28 +31,38 @@ pub mod pallet_origins {
 	#[derive(PartialEq, Eq, Clone, MaxEncodedLen, Encode, Decode, TypeInfo, RuntimeDebug)]
 	#[pallet::origin]
 	pub enum Origin {
-		/// Plurality voice of the [ranks::AMBASSADOR_TIER_1] members or above given via referendum.
+		/// Plurality voice of the [ranks::AMBASSADOR_TIER_1] members or above given via
+		/// referendum.
 		Ambassadors,
-		/// Plurality voice of the [ranks::AMBASSADOR_TIER_2] members or above given via referendum.
+		/// Plurality voice of the [ranks::AMBASSADOR_TIER_2] members or above given via
+		/// referendum.
 		AmbassadorsTier2,
-		/// Plurality voice of the [ranks::SENIOR_AMBASSADOR_TIER_3] members or above given via referendum.
+		/// Plurality voice of the [ranks::SENIOR_AMBASSADOR_TIER_3] members or above given via
+		/// referendum.
 		SeniorAmbassadors,
-		/// Plurality voice of the [ranks::SENIOR_AMBASSADOR_TIER_4] members or above given via referendum.
+		/// Plurality voice of the [ranks::SENIOR_AMBASSADOR_TIER_4] members or above given via
+		/// referendum.
 		SeniorAmbassadorsTier4,
-		/// Plurality voice of the [ranks::HEAD_AMBASSADOR_TIER_5] members or above given via referendum.
+		/// Plurality voice of the [ranks::HEAD_AMBASSADOR_TIER_5] members or above given via
+		/// referendum.
 		HeadAmbassadors,
-		/// Plurality voice of the [ranks::HEAD_AMBASSADOR_TIER_6] members or above given via referendum.
+		/// Plurality voice of the [ranks::HEAD_AMBASSADOR_TIER_6] members or above given via
+		/// referendum.
 		HeadAmbassadorsTier6,
-		/// Plurality voice of the [ranks::HEAD_AMBASSADOR_TIER_7] members or above given via referendum.
+		/// Plurality voice of the [ranks::HEAD_AMBASSADOR_TIER_7] members or above given via
+		/// referendum.
 		HeadAmbassadorsTier7,
-		/// Plurality voice of the [ranks::MASTER_AMBASSADOR_TIER_8] members or above given via referendum.
+		/// Plurality voice of the [ranks::MASTER_AMBASSADOR_TIER_8] members or above given via
+		/// referendum.
 		MasterAmbassadors,
-		/// Plurality voice of the [ranks::MASTER_AMBASSADOR_TIER_9] members or above given via referendum.
+		/// Plurality voice of the [ranks::MASTER_AMBASSADOR_TIER_9] members or above given via
+		/// referendum.
 		MasterAmbassadorsTier9,
 	}
 
 	impl Origin {
-		/// Returns the rank that the origin `self` speaks for, or `None` if it doesn't speak for any.
+		/// Returns the rank that the origin `self` speaks for, or `None` if it doesn't speak for
+		/// any.
 		pub fn as_voice(&self) -> Option<Rank> {
 			Some(match &self {
 				Origin::Ambassadors => ranks::AMBASSADOR_TIER_1,

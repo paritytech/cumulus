@@ -125,7 +125,8 @@ impl pallet_referenda::Config<AmbassadorReferendaInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Scheduler = Scheduler;
 	type Currency = Balances;
-	// A proposal can be submitted by a member of the Ambassador Program of [ranks::SENIOR_AMBASSADOR_TIER_3] rank or higher.
+	// A proposal can be submitted by a member of the Ambassador Program of
+	// [ranks::SENIOR_AMBASSADOR_TIER_3] rank or higher.
 	type SubmitOrigin = pallet_ranked_collective::EnsureMember<
 		Runtime,
 		AmbassadorCollectiveInstance,
@@ -154,8 +155,8 @@ impl pallet_collective_content::Config<AmbassadorContentInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type CharterOrigin = EitherOf<EnsureRoot<AccountId>, EnsureHeadAmbassadorsVoice>;
 	type AnnouncementLifetime = AnnouncementLifetime;
-	// An announcement can be submitted by a Senior Ambassador member or an ambassador plurality voice
-	// taken via referendum.
+	// An announcement can be submitted by a Senior Ambassador member or an ambassador plurality
+	// voice taken via referendum.
 	type AnnouncementOrigin = EitherOfDiverse<
 		pallet_ranked_collective::EnsureMember<
 			Runtime,
