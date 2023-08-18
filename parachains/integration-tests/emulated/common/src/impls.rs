@@ -411,20 +411,20 @@ macro_rules! impl_assert_events_helpers_for_parachain {
 
 				/// Asserts a XCM from Relay Chain is completely executed
 				pub fn assert_dmp_queue_complete(expected_weight: Option<Weight>) {
-					/*assert_expected_events!(
+					assert_expected_events!(
 						Self,
 						vec![
-							[<$chain RuntimeEvent>]::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
-								outcome: Outcome::Complete(weight), ..
+							[<$chain RuntimeEvent>]::MessageQueue(pallet_message_queue::Event::Processed {
+								success: true, weight_used: weight, ..
 							}) => {
 								weight: weight_within_threshold(
 									(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
-									expected_weight.unwrap_or(weight),
-									weight
+									expected_weight.unwrap_or(*weight),
+									*weight
 								),
 							},
 						]
-					); FAIL-CI */
+					);
 				}
 
 				/// Asserts a XCM from Relay Chain is incompletely executed
@@ -432,30 +432,29 @@ macro_rules! impl_assert_events_helpers_for_parachain {
 					expected_weight: Option<Weight>,
 					expected_error: Option<Error>,
 				) {
-					/*assert_expected_events!(
+					assert_expected_events!(
 						Self,
 						vec![
-							[<$chain RuntimeEvent>]::DmpQueue(cumulus_pallet_dmp_queue::Event::ExecutedDownward {
-								outcome: Outcome::Incomplete(weight, error), ..
+							[<$chain RuntimeEvent>]::MessageQueue(pallet_message_queue::Event::Processed {
+								success: false, weight_used: weight, ..
 							}) => {
 								weight: weight_within_threshold(
 									(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
 									expected_weight.unwrap_or(*weight),
 									*weight
 								),
-								error: *error == expected_error.unwrap_or(*error),
+								/*FAIL-CI error: *error == expected_error.unwrap_or(*error),*/
 							},
 						]
-					); FAIL-CI */
+					);
 				}
 
 				/// Asserts a XCM from another Parachain is completely executed
 				pub fn assert_xcmp_queue_success(expected_weight: Option<Weight>) {
-					/* FAIL-CI assert_expected_events!(
+					assert_expected_events!(
 						Self,
 						vec![
-							[<$chain RuntimeEvent>]::XcmpQueue(
-								cumulus_pallet_xcmp_queue::Event::Success { weight, .. }
+							[<$chain RuntimeEvent>]::MessageQueue(pallet_message_queue::Event::Processed { success: true, weight_used: weight, .. }
 							) => {
 								weight: weight_within_threshold(
 									(REF_TIME_THRESHOLD, PROOF_SIZE_THRESHOLD),
@@ -464,7 +463,7 @@ macro_rules! impl_assert_events_helpers_for_parachain {
 								),
 							},
 						]
-					);*/
+					);
 				}
 			}
 		}

@@ -957,22 +957,19 @@ macro_rules! decl_test_networks {
 									)
 								}).collect::<Vec<(RelayChainBlockNumber, Vec<u8>)>>();
 
-								use $crate::{HandleMessage, CumulusAggregateMessageOrigin, BoundedSlice, ServiceQueues, TestExt};
-								type ParachainDmpQueue = <
-									<$parachain as Chain>::Runtime
-									as
-									$crate::cumulus_pallet_parachain_system::Config
-								>::DmpQueue;
-								for m in msgs.clone().into_iter() {
+								use $crate::{ProcessMessage, CumulusAggregateMessageOrigin, BoundedSlice, WeightMeter, TestExt};
+								for (block, msg) in msgs.clone().into_iter() {
+									let mut weight_meter = WeightMeter::max_limit();
 									<$parachain>::execute_with(|| {
-										<ParachainDmpQueue as HandleMessage>::handle_message(
-											BoundedSlice::<_, _>::try_from(&m.1[..]).unwrap()
+										let _ =  <$parachain as Parachain>::MessageProcessor::process_message(
+											&msg[..],
+											$crate::CumulusAggregateMessageOrigin::Parent,
+											&mut weight_meter,
+											&mut msg.using_encoded(sp_core::blake2_256),
 										);
-										//<ParachainDmpQueue as ServiceQueues>::service_queues(Weight::MAX);
-										//<$parachain as Chain>::on_initialize(0);
 									});
 									$crate::log::debug!(target: concat!("dmp::", stringify!($name)) , "DMP messages processed {:?} to para_id {:?}", msgs.clone(), &to_para_id);
-									$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(Self::name()).unwrap().push_back((to_para_id, m.0, m.1)));
+									$crate::DMP_DONE.with(|b| b.borrow_mut().get_mut(Self::name()).unwrap().push_back((to_para_id, block, msg)));
 								}
 							}
 						)*
@@ -1004,12 +1001,12 @@ macro_rules! decl_test_networks {
 					while let Some((from_para_id, msg)) = $crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::name()).unwrap().pop_front()) {
 						let mut weight_meter = WeightMeter::max_limit();
 						<$relay_chain>::ext_wrapper(|| {
-							/*let _ =  <$relay_chain as RelayChain>::MessageProcessor::process_message(
+							let _ =  <$relay_chain as RelayChain>::MessageProcessor::process_message(
 								&msg[..],
 								from_para_id.into(),
 								&mut weight_meter,
 								&mut msg.using_encoded(sp_core::blake2_256),
-							);*/
+							);
 						});
 						$crate::log::debug!(target: concat!("ump::", stringify!($name)) , "Upward message processed {:?} from para_id {:?}", &msg, &from_para_id);
 					}
@@ -1303,12 +1300,11 @@ where
 		_meter: &mut WeightMeter,
 		_id: &mut XcmHash,
 	) -> Result<bool, ProcessMessageError> {
-		/*MessageQueuePallet::<T::Runtime>::enqueue_message(
+		MessageQueuePallet::<T::Runtime>::enqueue_message(
 			msg.try_into().expect("Message too long"),
 			AggregateMessageOrigin::Ump(UmpQueueId::Para(para)),
 		);
-		MessageQueuePallet::<T::Runtime>::service_queues(Weight::MAX);*/
-		todo!();
+		MessageQueuePallet::<T::Runtime>::service_queues(Weight::MAX);
 
 		Ok(true)
 	}
