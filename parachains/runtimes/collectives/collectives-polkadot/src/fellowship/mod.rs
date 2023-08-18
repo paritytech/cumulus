@@ -23,7 +23,7 @@ use crate::{
 	constants,
 	impls::ToParentTreasury,
 	weights,
-	xcm_config::{FellowshipAdminBodyId, UsdtAsset},
+	xcm_config::{FellowshipAdminBodyId, UsdtAssetHub},
 	AccountId, Balance, Balances, FellowshipReferenda, GovernanceLocation, PolkadotTreasuryAccount,
 	Preimage, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, Scheduler, DAYS,
 };
@@ -209,7 +209,7 @@ pub type FellowshipSalaryPaymaster = PayOverXcm<
 	ConstU32<{ 6 * HOURS }>,
 	AccountId,
 	(),
-	ConvertToValue<UsdtAsset>,
+	ConvertToValue<UsdtAssetHub>,
 	AliasesIntoAccountId32<(), AccountId>,
 >;
 

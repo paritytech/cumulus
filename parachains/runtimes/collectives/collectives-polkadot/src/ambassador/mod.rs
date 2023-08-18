@@ -32,7 +32,7 @@ pub mod origins;
 mod tracks;
 
 use super::*;
-use crate::xcm_config::{FellowshipAdminBodyId, UsdtAsset};
+use crate::xcm_config::{DotAssetHub, FellowshipAdminBodyId};
 use frame_support::traits::{EitherOf, MapSuccess, TryMapSuccess};
 pub use origins::pallet_origins as pallet_ambassador_origins;
 use origins::pallet_origins::{
@@ -211,9 +211,7 @@ parameter_types! {
 	pub Interior: InteriorMultiLocation = PalletInstance(74).into();
 }
 
-const USDT_UNITS: u128 = 1_000_000;
-
-/// [`PayOverXcm`] setup to pay the Ambassador salary on the AssetHub in USDT.
+/// [`PayOverXcm`] setup to pay the Ambassador salary on the AssetHub in DOT.
 pub type AmbassadorSalaryPaymaster = PayOverXcm<
 	Interior,
 	crate::xcm_config::XcmRouter,
@@ -221,7 +219,7 @@ pub type AmbassadorSalaryPaymaster = PayOverXcm<
 	ConstU32<{ 6 * HOURS }>,
 	AccountId,
 	(),
-	ConvertToValue<UsdtAsset>,
+	ConvertToValue<DotAssetHub>,
 	AliasesIntoAccountId32<(), AccountId>,
 >;
 
@@ -249,5 +247,5 @@ impl pallet_salary::Config<AmbassadorSalaryInstance> for Runtime {
 	// 15 days to claim the salary payment.
 	type PayoutPeriod = ConstU32<{ 15 * DAYS }>;
 	// Total monthly salary budget.
-	type Budget = ConstU128<{ 100_000 * USDT_UNITS }>;
+	type Budget = ConstU128<{ 10_000 * DOLLARS }>;
 }

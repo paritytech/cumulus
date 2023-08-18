@@ -50,9 +50,13 @@ parameter_types! {
 	pub const FellowshipAdminBodyId: BodyId = BodyId::Index(FELLOWSHIP_ADMIN_INDEX);
 	pub AssetHub: MultiLocation = (Parent, Parachain(1000)).into();
 	pub AssetHubUsdtId: AssetId = (PalletInstance(50), GeneralIndex(1984)).into();
-	pub UsdtAsset: LocatableAssetId = LocatableAssetId {
+	pub UsdtAssetHub: LocatableAssetId = LocatableAssetId {
 		location: AssetHub::get(),
 		asset_id: AssetHubUsdtId::get(),
+	};
+	pub DotAssetHub: LocatableAssetId = LocatableAssetId {
+		location: AssetHub::get(),
+		asset_id: DotLocation::get().into(),
 	};
 }
 
