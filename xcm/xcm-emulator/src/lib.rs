@@ -1262,13 +1262,13 @@ pub struct DefaultParaMessageProcessor<T>(PhantomData<T>);
 // Process HRMP messages from sibling paraids
 impl<T> ProcessMessage for DefaultParaMessageProcessor<T>
 where
-	T: Chain + RelayChain,
+	T: Parachain,
 	T::Runtime: MessageQueueConfig,
 	<<T::Runtime as MessageQueueConfig>::MessageProcessor as ProcessMessage>::Origin:
-		PartialEq<AggregateMessageOrigin>,
-	MessageQueuePallet<T::Runtime>: EnqueueMessage<AggregateMessageOrigin> + ServiceQueues,
+		PartialEq<CumulusAggregateMessageOrigin>,
+	MessageQueuePallet<T::Runtime>: EnqueueMessage<CumulusAggregateMessageOrigin> + ServiceQueues,
 {
-	type Origin = AggregateMessageOrigin;
+	type Origin = CumulusAggregateMessageOrigin;
 
 	fn process_message(
 		msg: &[u8],
@@ -1289,7 +1289,7 @@ pub struct DefaultRelayMessageProcessor<T>(PhantomData<T>);
 // Process UMP messages on the relay
 impl<T> ProcessMessage for DefaultRelayMessageProcessor<T>
 where
-	T: Chain + RelayChain,
+	T: RelayChain,
 	T::Runtime: MessageQueueConfig,
 	<<T::Runtime as MessageQueueConfig>::MessageProcessor as ProcessMessage>::Origin:
 		PartialEq<AggregateMessageOrigin>,
