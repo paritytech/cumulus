@@ -314,15 +314,11 @@ impl pallet_asset_conversion::Config for Runtime {
 	type PalletId = AssetConversionPalletId;
 	type AllowMultiAssetPools = AllowMultiAssetPools;
 	type MaxSwapPathLength = ConstU32<4>;
-
 	type MultiAssetId = Box<MultiLocation>;
 	type MultiAssetIdConverter =
 		MultiLocationConverter<WestendLocation, LocalAndForeignAssetsMultiLocationMatcher>;
-
 	type MintMinLiquidity = ConstU128<100>;
-
 	type WeightInfo = weights::pallet_asset_conversion::WeightInfo<Runtime>;
-
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper =
 		crate::xcm_config::BenchmarkMultiLocationConverter<parachain_info::Pallet<Runtime>>;
@@ -581,9 +577,9 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
-	type OutboundXcmpMessageSource = XcmpQueue;
 	type DmpMessageHandler = DmpQueue;
 	type ReservedDmpWeight = ReservedDmpWeight;
+	type OutboundXcmpMessageSource = XcmpQueue;
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
@@ -1383,8 +1379,9 @@ pub mod migrations {
 	use sp_runtime::{traits::StaticLookup, Saturating};
 	use xcm::latest::prelude::*;
 
-	/// Temporary migration because of bug with native asset, it can be removed once applied on `AssetHubWestend`.
-	/// Migrates pools with `MultiLocation { parents: 0, interior: Here }` to `MultiLocation { parents: 1, interior: Here }`
+	/// Temporary migration because of bug with native asset, it can be removed once applied on
+	/// `AssetHubWestend`. Migrates pools with `MultiLocation { parents: 0, interior: Here }` to
+	/// `MultiLocation { parents: 1, interior: Here }`
 	pub struct NativeAssetParents0ToParents1Migration<T>(sp_std::marker::PhantomData<T>);
 	impl<
 			T: pallet_asset_conversion::Config<

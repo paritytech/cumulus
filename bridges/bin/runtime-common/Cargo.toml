@@ -9,7 +9,7 @@ license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.1.5", default-features = false, features = ["derive"] }
 hash-db = { version = "0.16.0", default-features = false }
-log = { version = "0.4.19", default-features = false }
+log = { version = "0.4.20", default-features = false }
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 static_assertions = { version = "1.1", optional = true }
 
@@ -21,6 +21,7 @@ bp-parachains = { path = "../../primitives/parachains", default-features = false
 bp-polkadot-core = { path = "../../primitives/polkadot-core", default-features = false }
 bp-relayers = { path = "../../primitives/relayers", default-features = false }
 bp-runtime = { path = "../../primitives/runtime", default-features = false }
+bp-xcm-bridge-hub-router = { path = "../../primitives/xcm-bridge-hub-router", default-features = false }
 pallet-bridge-grandpa = { path = "../../modules/grandpa", default-features = false }
 pallet-bridge-messages = { path = "../../modules/messages", default-features = false }
 pallet-bridge-parachains = { path = "../../modules/parachains", default-features = false }
@@ -55,6 +56,7 @@ std = [
 	"bp-parachains/std",
 	"bp-polkadot-core/std",
 	"bp-runtime/std",
+	"bp-xcm-bridge-hub-router/std",
 	"codec/std",
 	"frame-support/std",
 	"frame-system/std",
