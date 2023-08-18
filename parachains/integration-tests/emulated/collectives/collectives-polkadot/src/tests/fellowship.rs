@@ -16,15 +16,6 @@
 
 //! Integration tests concerning the Fellowship.
 
-use crate::*;
-use collectives_polkadot_runtime::fellowship::FellowshipSalaryPaymaster;
-use frame_support::traits::{
-	fungibles::{Create, Mutate},
-	tokens::Pay,
-};
-use sp_core::crypto::Ss58Codec;
-use xcm_emulator::TestExt;
-
 #[test]
 #[ignore]
 fn pay_salary() {
