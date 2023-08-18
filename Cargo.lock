@@ -1286,6 +1286,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "bp-bridge-hub-kusama"
+version = "0.1.0"
+dependencies = [
+ "bp-bridge-hub-cumulus",
+ "bp-messages",
+ "bp-runtime",
+ "frame-support",
+ "sp-api",
+ "sp-std",
+]
+
+[[package]]
+name = "bp-bridge-hub-polkadot"
+version = "0.1.0"
+dependencies = [
+ "bp-bridge-hub-cumulus",
+ "bp-messages",
+ "bp-runtime",
+ "frame-support",
+ "sp-api",
+ "sp-std",
+]
+
+[[package]]
 name = "bp-bridge-hub-rococo"
 version = "0.1.0"
 dependencies = [
@@ -1329,6 +1353,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "bp-kusama"
+version = "0.1.0"
+dependencies = [
+ "bp-header-chain",
+ "bp-polkadot-core",
+ "bp-runtime",
+ "frame-support",
+ "sp-api",
+ "sp-std",
+]
+
+[[package]]
 name = "bp-messages"
 version = "0.1.0"
 dependencies = [
@@ -1357,6 +1393,18 @@ dependencies = [
  "scale-info",
  "sp-core",
  "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "bp-polkadot"
+version = "0.1.0"
+dependencies = [
+ "bp-header-chain",
+ "bp-polkadot-core",
+ "bp-runtime",
+ "frame-support",
+ "sp-api",
  "sp-std",
 ]
 
@@ -1473,7 +1521,18 @@ dependencies = [
 name = "bridge-hub-kusama-runtime"
 version = "0.1.0"
 dependencies = [
+ "bp-bridge-hub-kusama",
+ "bp-bridge-hub-polkadot",
+ "bp-header-chain",
+ "bp-kusama",
+ "bp-messages",
+ "bp-parachains",
+ "bp-polkadot",
+ "bp-polkadot-core",
+ "bp-relayers",
+ "bp-runtime",
  "bridge-hub-test-utils",
+ "bridge-runtime-common",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -1496,6 +1555,10 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-bridge-grandpa",
+ "pallet-bridge-messages",
+ "pallet-bridge-parachains",
+ "pallet-bridge-relayers",
  "pallet-collator-selection",
  "pallet-multisig",
  "pallet-session",
@@ -1520,12 +1583,14 @@ dependencies = [
  "sp-core",
  "sp-inherents",
  "sp-io",
+ "sp-keyring",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
  "sp-std",
  "sp-transaction-pool",
  "sp-version",
+ "static_assertions",
  "substrate-wasm-builder",
  "xcm",
  "xcm-builder",
@@ -1536,7 +1601,18 @@ dependencies = [
 name = "bridge-hub-polkadot-runtime"
 version = "0.1.0"
 dependencies = [
+ "bp-bridge-hub-kusama",
+ "bp-bridge-hub-polkadot",
+ "bp-header-chain",
+ "bp-kusama",
+ "bp-messages",
+ "bp-parachains",
+ "bp-polkadot",
+ "bp-polkadot-core",
+ "bp-relayers",
+ "bp-runtime",
  "bridge-hub-test-utils",
+ "bridge-runtime-common",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -1558,6 +1634,10 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-bridge-grandpa",
+ "pallet-bridge-messages",
+ "pallet-bridge-parachains",
+ "pallet-bridge-relayers",
  "pallet-collator-selection",
  "pallet-multisig",
  "pallet-session",
@@ -1583,12 +1663,14 @@ dependencies = [
  "sp-core",
  "sp-inherents",
  "sp-io",
+ "sp-keyring",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
  "sp-std",
  "sp-transaction-pool",
  "sp-version",
+ "static_assertions",
  "substrate-wasm-builder",
  "xcm",
  "xcm-builder",
@@ -1707,7 +1789,6 @@ dependencies = [
 name = "bridge-hub-test-utils"
 version = "0.1.0"
 dependencies = [
- "assert_matches",
  "asset-test-utils",
  "bp-bridge-hub-rococo",
  "bp-bridge-hub-wococo",

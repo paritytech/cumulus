@@ -71,14 +71,44 @@ pallet-collator-selection = { path = "../../../../pallets/collator-selection", d
 parachain-info = { path = "../../../../parachains/pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../../parachains/common", default-features = false }
 
+# Bridges
+bp-bridge-hub-kusama = { path = "../../../../bridges/primitives/chain-bridge-hub-kusama", default-features = false }
+bp-bridge-hub-polkadot = { path = "../../../../bridges/primitives/chain-bridge-hub-polkadot", default-features = false }
+bp-header-chain = { path = "../../../../bridges/primitives/header-chain", default-features = false }
+bp-messages = { path = "../../../../bridges/primitives/messages", default-features = false }
+bp-parachains = { path = "../../../../bridges/primitives/parachains", default-features = false }
+bp-polkadot-core = { path = "../../../../bridges/primitives/polkadot-core", default-features = false }
+bp-relayers = { path = "../../../../bridges/primitives/relayers", default-features = false }
+bp-runtime = { path = "../../../../bridges/primitives/runtime", default-features = false }
+bp-polkadot = { path = "../../../../bridges/primitives/chain-polkadot", default-features = false }
+bridge-runtime-common = { path = "../../../../bridges/bin/runtime-common", default-features = false }
+pallet-bridge-grandpa = { path = "../../../../bridges/modules/grandpa", default-features = false }
+pallet-bridge-messages = { path = "../../../../bridges/modules/messages", default-features = false }
+pallet-bridge-parachains = { path = "../../../../bridges/modules/parachains", default-features = false }
+pallet-bridge-relayers = { path = "../../../../bridges/modules/relayers", default-features = false }
+
 [dev-dependencies]
+static_assertions = "1.1"
 bridge-hub-test-utils = { path = "../test-utils"}
+bridge-runtime-common = { path = "../../../../bridges/bin/runtime-common", features = ["integrity-test"] }
+bp-kusama = { path = "../../../../bridges/primitives/chain-kusama" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [features]
 default = [
 	"std",
 ]
 std = [
+	"bp-bridge-hub-kusama/std",
+	"bp-bridge-hub-polkadot/std",
+	"bp-header-chain/std",
+	"bp-messages/std",
+	"bp-parachains/std",
+	"bp-polkadot-core/std",
+	"bp-relayers/std",
+	"bp-runtime/std",
+	"bp-polkadot/std",
+	"bridge-runtime-common/std",
 	"codec/std",
 	"log/std",
 	"scale-info/std",
@@ -99,6 +129,10 @@ std = [
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
+	"pallet-bridge-grandpa/std",
+	"pallet-bridge-messages/std",
+	"pallet-bridge-parachains/std",
+	"pallet-bridge-relayers/std",
 	"pallet-collator-selection/std",
 	"pallet-multisig/std",
 	"pallet-session/std",
@@ -131,12 +165,18 @@ std = [
 ]
 
 runtime-benchmarks = [
+	"bridge-runtime-common/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
+	"pallet-bridge-grandpa/runtime-benchmarks",
+	"pallet-bridge-messages/runtime-benchmarks",
+	"pallet-bridge-parachains/runtime-benchmarks",
+	"pallet-bridge-relayers/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
+	"cumulus-pallet-parachain-system/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
@@ -150,6 +190,10 @@ runtime-benchmarks = [
 ]
 
 try-runtime = [
+	"pallet-bridge-grandpa/try-runtime",
+	"pallet-bridge-messages/try-runtime",
+	"pallet-bridge-parachains/try-runtime",
+	"pallet-bridge-relayers/try-runtime",
 	"cumulus-pallet-aura-ext/try-runtime",
 	"cumulus-pallet-dmp-queue/try-runtime",
 	"cumulus-pallet-parachain-system/try-runtime",
