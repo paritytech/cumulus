@@ -240,8 +240,8 @@ pub trait Chain: TestExt + NetworkComponent {
 }
 
 pub trait RelayChain: Chain {
-	type MessageProcessor: ProcessMessage;
 	type SovereignAccountOf: ConvertLocation<AccountId>;
+	type MessageProcessor: ProcessMessage<Origin=ParaId>;
 
 	fn child_location_of(id: ParaId) -> MultiLocation {
 		(Ancestor(0), ParachainJunction(id.into())).into()
@@ -261,6 +261,7 @@ pub trait Parachain: Chain {
 	type LocationToAccountId: ConvertLocation<AccountId>;
 	type ParachainInfo: Get<ParaId>;
 	type ParachainSystem;
+	type MessageProcessor: ProcessMessage<Origin=CumulusAggregateMessageOrigin>;
 
 	fn para_id() -> ParaId {
 		Self::ext_wrapper(|| Self::ParachainInfo::get())
@@ -575,7 +576,7 @@ macro_rules! decl_test_parachains {
 					XcmpMessageHandler: $xcmp_message_handler:path,
 					LocationToAccountId: $location_to_account:path,
 					ParachainInfo: $parachain_info:path,
-					MessageQueue: $message_queue:path,
+					MessageProcessor: $message_processor:path,
 				},
 				pallets = {
 					$($pallet_name:ident: $pallet_path:path,)*
@@ -612,6 +613,7 @@ macro_rules! decl_test_parachains {
 				type LocationToAccountId = $location_to_account;
 				type ParachainSystem = $crate::ParachainSystemPallet<<Self as Chain>::Runtime>;
 				type ParachainInfo = $parachain_info;
+				type MessageProcessor = $message_processor;
 
 				fn prepare_for_xcmp() {
 					use $crate::{Network, NetworkComponent, Hooks};
@@ -818,8 +820,6 @@ macro_rules! __impl_test_ext_for_parachain {
 
 						// clean messages
 						<Self as Parachain>::ParachainSystem::on_initialize(block_number);
-						// The MQ pallet only processes messages on initialization.
-						// FAIL-CI <Self as Parachain>::MessageQueue::on_initialize(block_number);
 
 						// log events
 						Self::events().iter().for_each(|event| {
@@ -1004,12 +1004,12 @@ macro_rules! decl_test_networks {
 					while let Some((from_para_id, msg)) = $crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::name()).unwrap().pop_front()) {
 						let mut weight_meter = WeightMeter::max_limit();
 						<$relay_chain>::ext_wrapper(|| {
-							let _ =  <$relay_chain as RelayChain>::MessageProcessor::process_message(
+							/*let _ =  <$relay_chain as RelayChain>::MessageProcessor::process_message(
 								&msg[..],
 								from_para_id.into(),
 								&mut weight_meter,
 								&mut msg.using_encoded(sp_core::blake2_256),
-							);
+							);*/
 						});
 						$crate::log::debug!(target: concat!("ump::", stringify!($name)) , "Upward message processed {:?} from para_id {:?}", &msg, &from_para_id);
 					}
@@ -1258,8 +1258,36 @@ macro_rules! decl_test_sender_receiver_accounts_parameter_types {
 	};
 }
 
-pub struct DefaultMessageProcessor<T>(PhantomData<T>);
-impl<T> ProcessMessage for DefaultMessageProcessor<T>
+pub struct DefaultParaMessageProcessor<T>(PhantomData<T>);
+// Process HRMP messages from sibling paraids
+impl<T> ProcessMessage for DefaultParaMessageProcessor<T>
+where
+	T: Chain + RelayChain,
+	T::Runtime: MessageQueueConfig,
+	<<T::Runtime as MessageQueueConfig>::MessageProcessor as ProcessMessage>::Origin:
+		PartialEq<AggregateMessageOrigin>,
+	MessageQueuePallet<T::Runtime>: EnqueueMessage<AggregateMessageOrigin> + ServiceQueues,
+{
+	type Origin = AggregateMessageOrigin;
+
+	fn process_message(
+		msg: &[u8],
+		orig: Self::Origin,
+		_meter: &mut WeightMeter,
+		_id: &mut XcmHash,
+	) -> Result<bool, ProcessMessageError> {
+		MessageQueuePallet::<T::Runtime>::enqueue_message(
+			msg.try_into().expect("Message too long"),
+			orig,
+		);
+		MessageQueuePallet::<T::Runtime>::service_queues(Weight::MAX);
+
+		Ok(true)
+	}
+}
+pub struct DefaultRelayMessageProcessor<T>(PhantomData<T>);
+// Process UMP messages on the relay
+impl<T> ProcessMessage for DefaultRelayMessageProcessor<T>
 where
 	T: Chain + RelayChain,
 	T::Runtime: MessageQueueConfig,
@@ -1275,11 +1303,12 @@ where
 		_meter: &mut WeightMeter,
 		_id: &mut XcmHash,
 	) -> Result<bool, ProcessMessageError> {
-		MessageQueuePallet::<T::Runtime>::enqueue_message(
+		/*MessageQueuePallet::<T::Runtime>::enqueue_message(
 			msg.try_into().expect("Message too long"),
 			AggregateMessageOrigin::Ump(UmpQueueId::Para(para)),
 		);
-		MessageQueuePallet::<T::Runtime>::service_queues(Weight::MAX);
+		MessageQueuePallet::<T::Runtime>::service_queues(Weight::MAX);*/
+		todo!();
 
 		Ok(true)
 	}
