@@ -172,7 +172,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				RuntimeCall::PolkadotXcm(pallet_xcm::Call::force_xcm_version { .. }) |
 				RuntimeCall::XcmpQueue(..) |
 				RuntimeCall::DmpQueue(..) |
-				RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
 				RuntimeCall::Alliance(
 					// `init_members` accepts unbounded vecs as arguments,
 					// but the call can be initiated only by root origin.
@@ -225,7 +224,8 @@ pub type Barrier = TrailingSetTopicAsId<
 			// Allow XCMs with some computed origins to pass through.
 			WithComputedOrigin<
 				(
-					// If the message is one that immediately attemps to pay for execution, then allow it.
+					// If the message is one that immediately attemps to pay for execution, then
+					// allow it.
 					AllowTopLevelPaidExecutionFrom<Everything>,
 					// Parent and its pluralities (i.e. governance bodies) get free execution.
 					AllowExplicitUnpaidExecutionFrom<ParentOrParentsPlurality>,
