@@ -20,15 +20,14 @@
 //!
 //! ### Governance
 //!
-//! As a common good parachain, Collectives defers its governance (namely, its `Root` origin), to its
-//! Relay Chain parent, Polkadot.
+//! As a common good parachain, Collectives defers its governance (namely, its `Root` origin), to
+//! its Relay Chain parent, Polkadot.
 //!
 //! ### Collator Selection
 //!
 //! Collectives uses `pallet-collator-selection`, a simple first-come-first-served registration
 //! system where collators can reserve a small bond to join the block producer set. There is no
 //! slashing. Collective members are generally expected to run collators.
-//!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]
@@ -662,10 +661,8 @@ pub type SignedExtra = (
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
-/// Extrinsic type that has already been checked.
-pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
-// All migrations executed on runtime upgrade as a nested tuple of types implementing
-// `OnRuntimeUpgrade`. Included migrations must be idempotent.
+/// All migrations executed on runtime upgrade as a nested tuple of types implementing
+/// `OnRuntimeUpgrade`. Included migrations must be idempotent.
 type Migrations = (
 	// v9420
 	import_kusama_fellowship::Migration<Runtime, FellowshipCollectiveInstance>,

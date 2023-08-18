@@ -189,8 +189,6 @@ pub mod pallet {
 		///
 		/// All inbound DMP messages from the relay are pushed into this. The handler is expected to
 		/// eventually process all the messages that are pushed to it.
-		///
-		/// This will only ever be used to enqueue messages with origin [`AggregateMessageOrigin::Parent`].
 		type DmpQueue: HandleMessage;
 
 		/// The weight we reserve at the beginning of the block for processing DMP messages.
@@ -562,10 +560,12 @@ pub mod pallet {
 		Unauthorized,
 	}
 
-	/// In case of a scheduled upgrade, this storage field contains the validation code to be applied.
+	/// In case of a scheduled upgrade, this storage field contains the validation code to be
+	/// applied.
 	///
-	/// As soon as the relay chain gives us the go-ahead signal, we will overwrite the [`:code`][sp_core::storage::well_known_keys::CODE]
-	/// which will result the next block process with the new validation code. This concludes the upgrade process.
+	/// As soon as the relay chain gives us the go-ahead signal, we will overwrite the
+	/// [`:code`][sp_core::storage::well_known_keys::CODE] which will result the next block process
+	/// with the new validation code. This concludes the upgrade process.
 	#[pallet::storage]
 	#[pallet::getter(fn new_validation_function)]
 	pub(super) type PendingValidationCode<T: Config> = StorageValue<_, Vec<u8>, ValueQuery>;
@@ -859,7 +859,8 @@ impl<T: Config> Pallet<T> {
 			for m in &downward_messages {
 				dmq_head.extend_downward(m);
 			}
-			// Note: we are not using `.defensive()` here since that prints the whole value to console. In case that the message is too long, this clogs up the log quite badly.
+			// Note: we are not using `.defensive()` here since that prints the whole value to
+			// console. In case that the message is too long, this clogs up the log quite badly.
 			let bounded =
 				downward_messages
 					.iter()
@@ -894,7 +895,8 @@ impl<T: Config> Pallet<T> {
 	/// Process all inbound horizontal messages relayed by the collator.
 	///
 	/// This is similar to [`enqueue_inbound_downward_messages`], but works on multiple inbound
-	/// channels. It immediately dispatches signals and queues all other XCM. Blob messages are ignored.
+	/// channels. It immediately dispatches signals and queues all other XCM. Blob messages are
+	/// ignored.
 	///
 	/// **Panics** if either any of horizontal messages submitted by the collator was sent from
 	///            a para which has no open channel to this parachain or if after processing
@@ -1010,7 +1012,8 @@ impl<T: Config> Pallet<T> {
 	/// The implementation of the runtime upgrade functionality for parachains.
 	pub fn schedule_code_upgrade(validation_function: Vec<u8>) -> DispatchResult {
 		// Ensure that `ValidationData` exists. We do not care about the validation data per se,
-		// but we do care about the [`UpgradeRestrictionSignal`] which arrives with the same inherent.
+		// but we do care about the [`UpgradeRestrictionSignal`] which arrives with the same
+		// inherent.
 		ensure!(<ValidationData<T>>::exists(), Error::<T>::ValidationDataNotAvailable,);
 		ensure!(<UpgradeRestrictionSignal<T>>::get().is_none(), Error::<T>::ProhibitedByPolkadot);
 
@@ -1034,7 +1037,8 @@ impl<T: Config> Pallet<T> {
 
 	/// Returns the [`CollationInfo`] of the current active block.
 	///
-	/// The given `header` is the header of the built block we are collecting the collation info for.
+	/// The given `header` is the header of the built block we are collecting the collation info
+	/// for.
 	///
 	/// This is expected to be used by the
 	/// [`CollectCollationInfo`](cumulus_primitives_core::CollectCollationInfo) runtime api.
@@ -1197,7 +1201,8 @@ pub trait CheckInherents<Block: BlockT> {
 pub trait OnSystemEvent {
 	/// Called in each blocks once when the validation data is set by the inherent.
 	fn on_validation_data(data: &PersistedValidationData);
-	/// Called when the validation code is being applied, aka from the next block on this is the new runtime.
+	/// Called when the validation code is being applied, aka from the next block on this is the new
+	/// runtime.
 	fn on_validation_code_applied();
 }
 
@@ -1220,8 +1225,8 @@ pub trait RelaychainStateProvider {
 	fn current_relay_chain_state() -> RelayChainState;
 }
 
-/// Implements [`BlockNumberProvider`] that returns relay chain block number fetched from validation data.
-/// When validation data is not available (e.g. within on_initialize), 0 will be returned.
+/// Implements [`BlockNumberProvider`] that returns relay chain block number fetched from validation
+/// data. When validation data is not available (e.g. within on_initialize), 0 will be returned.
 ///
 /// **NOTE**: This has been deprecated, please use [`RelaychainDataProvider`]
 #[deprecated = "Use `RelaychainDataProvider` instead"]
@@ -1263,9 +1268,10 @@ impl<T: Config> RelaychainStateProvider for RelaychainDataProvider<T> {
 	}
 }
 
-/// Implements [`BlockNumberProvider`] and [`RelaychainStateProvider`] that returns relevant relay data fetched from
-/// validation data.
-/// NOTE: When validation data is not available (e.g. within on_initialize), default values will be returned.
+/// Implements [`BlockNumberProvider`] and [`RelaychainStateProvider`] that returns relevant relay
+/// data fetched from validation data.
+/// NOTE: When validation data is not available (e.g. within on_initialize), default values will be
+/// returned.
 pub struct RelaychainDataProvider<T>(sp_std::marker::PhantomData<T>);
 
 impl<T: Config> BlockNumberProvider for RelaychainDataProvider<T> {

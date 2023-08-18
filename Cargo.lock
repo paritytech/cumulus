@@ -254,9 +254,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.74"
+version = "1.0.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c6f84b74db2535ebae81eede2f39b947dcbf01d093ae5f791e5dd414a1bf289"
+checksum = "3b13c32d80ecc7ab747b80c3784bce54ee8a7a0cc4fbda9bf4cda2cf6fe90854"
 
 [[package]]
 name = "approx"
@@ -561,17 +561,17 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 name = "asset-hub-kusama-integration-tests"
 version = "1.0.0"
 dependencies = [
- "asset-hub-kusama-runtime",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcmp-queue",
  "frame-support",
  "frame-system",
  "integration-tests-common",
  "pallet-assets",
  "pallet-balances",
- "pallet-message-queue",
  "pallet-xcm",
  "parachains-common",
  "parity-scale-codec",
- "penpal-runtime",
  "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-runtime",
@@ -606,7 +606,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.4.1",
+ "hex-literal",
  "kusama-runtime-constants",
  "log",
  "pallet-asset-tx-payment",
@@ -615,7 +615,6 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
- "pallet-message-queue",
  "pallet-multisig",
  "pallet-nft-fractionalization",
  "pallet-nfts",
@@ -660,17 +659,17 @@ dependencies = [
 name = "asset-hub-polkadot-integration-tests"
 version = "1.0.0"
 dependencies = [
- "asset-hub-polkadot-runtime",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcmp-queue",
  "frame-support",
  "frame-system",
  "integration-tests-common",
  "pallet-assets",
  "pallet-balances",
- "pallet-message-queue",
  "pallet-xcm",
  "parachains-common",
  "parity-scale-codec",
- "penpal-runtime",
  "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-runtime",
@@ -705,7 +704,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.4.1",
+ "hex-literal",
  "log",
  "pallet-asset-tx-payment",
  "pallet-assets",
@@ -713,7 +712,6 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
- "pallet-message-queue",
  "pallet-multisig",
  "pallet-nfts",
  "pallet-nfts-runtime-api",
@@ -759,17 +757,18 @@ version = "1.0.0"
 dependencies = [
  "assert_matches",
  "asset-hub-westend-runtime",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcmp-queue",
  "frame-support",
  "frame-system",
  "integration-tests-common",
  "pallet-asset-conversion",
  "pallet-assets",
  "pallet-balances",
- "pallet-message-queue",
  "pallet-xcm",
  "parachains-common",
  "parity-scale-codec",
- "penpal-runtime",
  "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-runtime",
@@ -777,7 +776,6 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-weights",
- "westend-runtime",
  "xcm",
  "xcm-emulator",
  "xcm-executor",
@@ -805,7 +803,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.4.1",
+ "hex-literal",
  "log",
  "pallet-asset-conversion",
  "pallet-asset-conversion-tx-payment",
@@ -814,7 +812,6 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
- "pallet-message-queue",
  "pallet-multisig",
  "pallet-nft-fractionalization",
  "pallet-nfts",
@@ -860,6 +857,7 @@ name = "asset-test-utils"
 version = "1.0.0"
 dependencies = [
  "assets-common",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
@@ -867,7 +865,7 @@ dependencies = [
  "cumulus-test-relay-sproof-builder",
  "frame-support",
  "frame-system",
- "hex-literal 0.3.4",
+ "hex-literal",
  "pallet-assets",
  "pallet-balances",
  "pallet-collator-selection",
@@ -1320,7 +1318,7 @@ dependencies = [
  "finality-grandpa",
  "frame-support",
  "hex",
- "hex-literal 0.4.1",
+ "hex-literal",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -1338,7 +1336,7 @@ dependencies = [
  "bp-runtime",
  "frame-support",
  "hex",
- "hex-literal 0.4.1",
+ "hex-literal",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -1388,7 +1386,7 @@ dependencies = [
  "bp-runtime",
  "frame-support",
  "hex",
- "hex-literal 0.4.1",
+ "hex-literal",
  "parity-scale-codec",
  "scale-info",
  "sp-runtime",
@@ -1404,6 +1402,7 @@ dependencies = [
  "bp-runtime",
  "frame-support",
  "sp-api",
+ "sp-std",
 ]
 
 [[package]]
@@ -1413,7 +1412,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hash-db",
- "hex-literal 0.4.1",
+ "hex-literal",
  "impl-trait-for-tuples",
  "num-traits",
  "parity-scale-codec",
@@ -1457,6 +1456,7 @@ dependencies = [
  "bp-runtime",
  "frame-support",
  "sp-api",
+ "sp-std",
 ]
 
 [[package]]
@@ -1480,14 +1480,13 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.4.1",
+ "hex-literal",
  "kusama-runtime-constants",
  "log",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
- "pallet-message-queue",
  "pallet-multisig",
  "pallet-session",
  "pallet-timestamp",
@@ -1544,13 +1543,12 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.4.1",
+ "hex-literal",
  "log",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
- "pallet-message-queue",
  "pallet-multisig",
  "pallet-session",
  "pallet-timestamp",
@@ -1592,7 +1590,7 @@ name = "bridge-hub-rococo-integration-tests"
 version = "1.0.0"
 dependencies = [
  "bp-messages",
- "bridge-hub-rococo-runtime",
+ "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
  "frame-support",
  "frame-system",
@@ -1600,7 +1598,6 @@ dependencies = [
  "pallet-assets",
  "pallet-balances",
  "pallet-bridge-messages",
- "pallet-message-queue",
  "pallet-xcm",
  "parachains-common",
  "parity-scale-codec",
@@ -1622,6 +1619,7 @@ version = "0.1.0"
 dependencies = [
  "bp-bridge-hub-rococo",
  "bp-bridge-hub-wococo",
+ "bp-header-chain",
  "bp-messages",
  "bp-parachains",
  "bp-polkadot-core",
@@ -1647,7 +1645,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.4.1",
+ "hex-literal",
  "log",
  "pallet-aura",
  "pallet-authorship",
@@ -1657,7 +1655,6 @@ dependencies = [
  "pallet-bridge-parachains",
  "pallet-bridge-relayers",
  "pallet-collator-selection",
- "pallet-message-queue",
  "pallet-multisig",
  "pallet-session",
  "pallet-timestamp",
@@ -1712,6 +1709,7 @@ dependencies = [
  "bp-runtime",
  "bp-test-utils",
  "bridge-runtime-common",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
  "frame-benchmarking",
@@ -1895,15 +1893,6 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
-]
-
-[[package]]
-name = "casey"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "614586263949597dcc18675da12ef9b429135e13628d92eb8b8c6fa50ca5656b"
-dependencies = [
- "syn 1.0.109",
 ]
 
 [[package]]
@@ -2157,6 +2146,7 @@ version = "0.1.0"
 dependencies = [
  "asset-hub-polkadot-runtime",
  "collectives-polkadot-runtime",
+ "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
  "frame-support",
  "frame-system",
@@ -2164,7 +2154,6 @@ dependencies = [
  "pallet-assets",
  "pallet-balances",
  "pallet-core-fellowship",
- "pallet-message-queue",
  "pallet-salary",
  "pallet-xcm",
  "parachains-common",
@@ -2201,7 +2190,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.4.1",
+ "hex-literal",
  "log",
  "pallet-alliance",
  "pallet-aura",
@@ -2210,7 +2199,6 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-core-fellowship",
- "pallet-message-queue",
  "pallet-multisig",
  "pallet-preimage",
  "pallet-proxy",
@@ -2401,7 +2389,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.4.1",
+ "hex-literal",
  "kusama-runtime-constants",
  "log",
  "pallet-aura",
@@ -2411,7 +2399,6 @@ dependencies = [
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-insecure-randomness-collective-flip",
- "pallet-message-queue",
  "pallet-multisig",
  "pallet-session",
  "pallet-sudo",
@@ -2853,7 +2840,7 @@ dependencies = [
  "cumulus-primitives-parachain-inherent",
  "cumulus-relay-chain-interface",
  "futures",
- "lru 0.11.0",
+ "lru 0.10.0",
  "parity-scale-codec",
  "polkadot-node-primitives",
  "polkadot-overseer",
@@ -3087,17 +3074,14 @@ dependencies = [
  "cumulus-test-client",
  "cumulus-test-relay-sproof-builder",
  "environmental",
- "frame-benchmarking",
  "frame-support",
  "frame-system",
- "hex-literal 0.4.1",
+ "hex-literal",
  "impl-trait-for-tuples",
  "lazy_static",
  "log",
- "pallet-message-queue",
  "parity-scale-codec",
  "polkadot-parachain",
- "rand 0.8.5",
  "sc-client-api",
  "scale-info",
  "sp-core",
@@ -3172,7 +3156,6 @@ dependencies = [
 name = "cumulus-pallet-xcmp-queue"
 version = "0.1.0"
 dependencies = [
- "bounded-collections",
  "cumulus-pallet-parachain-system",
  "cumulus-primitives-core",
  "frame-benchmarking",
@@ -3180,7 +3163,6 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-balances",
- "pallet-message-queue",
  "parity-scale-codec",
  "polkadot-runtime-common",
  "rand_chacha 0.3.1",
@@ -3469,7 +3451,6 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "pallet-balances",
  "pallet-glutton",
- "pallet-message-queue",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -5101,7 +5082,6 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "pallet-glutton",
- "pallet-message-queue",
  "pallet-sudo",
  "parachain-info",
  "parachains-common",
@@ -5262,12 +5242,6 @@ name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
-
-[[package]]
-name = "hex-literal"
-version = "0.3.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ebdb29d2ea9ed0083cd8cece49bbd968021bd99b0849edb4a9a7ee0fdf6a4e0"
 
 [[package]]
 name = "hex-literal"
@@ -5655,20 +5629,26 @@ dependencies = [
  "bridge-hub-rococo-runtime",
  "bridge-runtime-common",
  "collectives-polkadot-runtime",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
  "frame-support",
  "frame-system",
  "kusama-runtime",
  "kusama-runtime-constants",
+ "lazy_static",
  "pallet-assets",
  "pallet-balances",
  "pallet-bridge-messages",
  "pallet-im-online",
+ "pallet-message-queue",
  "pallet-staking",
  "pallet-xcm",
  "parachain-info",
  "parachains-common",
  "parity-scale-codec",
+ "paste",
  "penpal-runtime",
  "polkadot-core-primitives",
  "polkadot-parachain",
@@ -5996,7 +5976,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.4.1",
+ "hex-literal",
  "kusama-runtime-constants",
  "log",
  "pallet-authority-discovery",
@@ -9025,13 +9005,12 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.4.1",
+ "hex-literal",
  "log",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
- "pallet-message-queue",
  "pallet-parachain-template",
  "pallet-session",
  "pallet-sudo",
@@ -9040,7 +9019,6 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-xcm",
  "parachain-info",
- "parachains-common",
  "parity-scale-codec",
  "polkadot-parachain",
  "polkadot-runtime-common",
@@ -9077,7 +9055,6 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
- "pallet-message-queue",
  "parity-scale-codec",
  "polkadot-primitives",
  "scale-info",
@@ -9086,7 +9063,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "sp-weights",
  "substrate-wasm-builder",
  "xcm",
  "xcm-builder",
@@ -9098,6 +9074,7 @@ name = "parachains-runtimes-test-utils"
 version = "1.0.0"
 dependencies = [
  "assets-common",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
@@ -9105,7 +9082,7 @@ dependencies = [
  "cumulus-test-relay-sproof-builder",
  "frame-support",
  "frame-system",
- "hex-literal 0.3.4",
+ "hex-literal",
  "pallet-assets",
  "pallet-balances",
  "pallet-collator-selection",
@@ -9341,7 +9318,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.4.1",
+ "hex-literal",
  "log",
  "pallet-asset-tx-payment",
  "pallet-assets",
@@ -9349,7 +9326,6 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
- "pallet-message-queue",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -9981,6 +9957,8 @@ dependencies = [
  "pin-project",
  "polkadot-core-primitives",
  "polkadot-node-core-pvf-common",
+ "polkadot-node-core-pvf-execute-worker",
+ "polkadot-node-core-pvf-prepare-worker",
  "polkadot-node-metrics",
  "polkadot-node-primitives",
  "polkadot-parachain",
@@ -9989,6 +9967,7 @@ dependencies = [
  "slotmap",
  "sp-core",
  "sp-maybe-compressed-blob",
+ "sp-tracing",
  "sp-wasm-interface",
  "substrate-build-script-utils",
  "tempfile",
@@ -10030,6 +10009,26 @@ dependencies = [
  "sp-core",
  "sp-externalities",
  "sp-io",
+ "tokio",
+ "tracing-gum",
+]
+
+[[package]]
+name = "polkadot-node-core-pvf-execute-worker"
+version = "0.9.43"
+source = "git+https://github.com/paritytech/polkadot?branch=master#39397a5a82ff6ab77ce39e7af9113c7c9cbd4c1e"
+dependencies = [
+ "cpu-time",
+ "futures",
+ "parity-scale-codec",
+ "polkadot-node-core-pvf-common",
+ "polkadot-parachain",
+ "polkadot-primitives",
+ "rayon",
+ "sp-core",
+ "sp-maybe-compressed-blob",
+ "sp-tracing",
+ "tikv-jemalloc-ctl",
  "tokio",
  "tracing-gum",
 ]
@@ -10307,7 +10306,7 @@ dependencies = [
  "frame-benchmarking-cli",
  "futures",
  "glutton-runtime",
- "hex-literal 0.4.1",
+ "hex-literal",
  "jsonrpsee",
  "log",
  "nix 0.26.2",
@@ -10385,7 +10384,7 @@ version = "0.9.43"
 source = "git+https://github.com/paritytech/polkadot?branch=master#39397a5a82ff6ab77ce39e7af9113c7c9cbd4c1e"
 dependencies = [
  "bitvec",
- "hex-literal 0.4.1",
+ "hex-literal",
  "parity-scale-codec",
  "polkadot-core-primitives",
  "polkadot-parachain",
@@ -10451,7 +10450,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.4.1",
+ "hex-literal",
  "log",
  "pallet-authority-discovery",
  "pallet-authorship",
@@ -10662,7 +10661,7 @@ dependencies = [
  "frame-system",
  "frame-system-rpc-runtime-api",
  "futures",
- "hex-literal 0.4.1",
+ "hex-literal",
  "is_executable",
  "kusama-runtime",
  "kvdb",
@@ -11665,7 +11664,6 @@ dependencies = [
  "pallet-assets",
  "pallet-aura",
  "pallet-balances",
- "pallet-message-queue",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -11706,7 +11704,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.4.1",
+ "hex-literal",
  "log",
  "pallet-authority-discovery",
  "pallet-authorship",
@@ -14886,18 +14884,18 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "1.0.46"
+version = "1.0.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9207952ae1a003f42d3d5e892dac3c6ba42aa6ac0c79a6a91a2b5cb4253e75c"
+checksum = "611040a08a0439f8248d1990b111c95baa9c704c805fa1f62104b39655fd7f90"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.46"
+version = "1.0.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1728216d3244de4f14f14f8c15c79be1a7c67867d28d69b719690e2a19fb445"
+checksum = "090198534930841fab3a5d1bb637cde49e339654e606195f8d9c76eeb081dc96"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -16351,7 +16349,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.4.1",
+ "hex-literal",
  "log",
  "pallet-authority-discovery",
  "pallet-authorship",
@@ -16863,7 +16861,7 @@ dependencies = [
 name = "xcm-emulator"
 version = "0.1.0"
 dependencies = [
- "casey",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
@@ -16871,6 +16869,8 @@ dependencies = [
  "cumulus-test-relay-sproof-builder",
  "frame-support",
  "frame-system",
+ "impl-trait-for-tuples",
+ "lazy_static",
  "log",
  "pallet-balances",
  "pallet-message-queue",
@@ -16880,7 +16880,6 @@ dependencies = [
  "paste",
  "polkadot-primitives",
  "polkadot-runtime-parachains",
- "quote",
  "sp-arithmetic",
  "sp-core",
  "sp-io",
@@ -16888,6 +16887,7 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "xcm",
+ "xcm-executor",
 ]
 
 [[package]]
