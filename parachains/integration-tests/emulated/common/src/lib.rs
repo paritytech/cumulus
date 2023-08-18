@@ -22,7 +22,7 @@ use xcm_emulator::{
 	assert_expected_events, bx, decl_test_bridges, decl_test_networks, decl_test_parachains,
 	decl_test_relay_chains, decl_test_sender_receiver_accounts_parameter_types,
 	helpers::weight_within_threshold, BridgeMessageHandler, Chain, DefaultMessageProcessor, ParaId,
-	Parachain, RelayChain, TestExt,
+	Parachain, RelayChain, TestExt, RuntimeAccountId
 };
 
 pub use xcm::{
