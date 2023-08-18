@@ -65,6 +65,7 @@ jobs:
         run: |
             . ${TMP}/lib.sh
             fetch_release_artifacts
+            cp -f ${TMP}/lib.sh release-artifacts/
 
       - name: Cache the artifacts
         uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
@@ -96,7 +97,7 @@ jobs:
       - name: Check sha256 ${{ matrix.binary }}
         working-directory: ./release-artifacts
         run: |
-          . ${TMP}/lib.sh
+          . ./lib.sh
 
           echo "Checking binary ${{ matrix.binary }}"
           check_sha256 ${{ matrix.binary }} && echo "OK" || echo "ERR"
@@ -104,7 +105,7 @@ jobs:
       - name: Check GPG ${{ matrix.binary }}
         working-directory: ./release-artifacts
         run: |
-          . ${TMP}/lib.sh
+          . ./lib.sh
           import_gpg_keys
           check_gpg ${{ matrix.binary }}
 
