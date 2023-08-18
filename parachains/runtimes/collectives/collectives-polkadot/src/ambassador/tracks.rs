@@ -264,15 +264,15 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 		}
 
 		match Origin::try_from(id.clone()) {
-			Ok(Origin::AmbassadorTier1) => Ok(constants::AMBASSADOR_TIER_1),
-			Ok(Origin::AmbassadorTier2) => Ok(constants::AMBASSADOR_TIER_2),
-			Ok(Origin::SeniorAmbassadorTier3) => Ok(constants::SENIOR_AMBASSADOR_TIER_3),
-			Ok(Origin::SeniorAmbassadorTier4) => Ok(constants::SENIOR_AMBASSADOR_TIER_4),
-			Ok(Origin::HeadAmbassadorTier5) => Ok(constants::HEAD_AMBASSADOR_TIER_5),
-			Ok(Origin::HeadAmbassadorTier6) => Ok(constants::HEAD_AMBASSADOR_TIER_6),
-			Ok(Origin::HeadAmbassadorTier7) => Ok(constants::HEAD_AMBASSADOR_TIER_7),
-			Ok(Origin::MasterAmbassadorTier8) => Ok(constants::MASTER_AMBASSADOR_TIER_8),
-			Ok(Origin::MasterAmbassadorTier9) => Ok(constants::MASTER_AMBASSADOR_TIER_9),
+			Ok(Origin::Ambassadors) => Ok(constants::AMBASSADOR_TIER_1),
+			Ok(Origin::AmbassadorsTier2) => Ok(constants::AMBASSADOR_TIER_2),
+			Ok(Origin::SeniorAmbassadors) => Ok(constants::SENIOR_AMBASSADOR_TIER_3),
+			Ok(Origin::SeniorAmbassadorsTier4) => Ok(constants::SENIOR_AMBASSADOR_TIER_4),
+			Ok(Origin::HeadAmbassadors) => Ok(constants::HEAD_AMBASSADOR_TIER_5),
+			Ok(Origin::HeadAmbassadorsTier6) => Ok(constants::HEAD_AMBASSADOR_TIER_6),
+			Ok(Origin::HeadAmbassadorsTier7) => Ok(constants::HEAD_AMBASSADOR_TIER_7),
+			Ok(Origin::MasterAmbassadors) => Ok(constants::MASTER_AMBASSADOR_TIER_8),
+			Ok(Origin::MasterAmbassadorsTier9) => Ok(constants::MASTER_AMBASSADOR_TIER_9),
 			_ => Err(()),
 		}
 	}

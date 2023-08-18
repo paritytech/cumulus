@@ -36,7 +36,7 @@ use crate::xcm_config::{FellowshipAdminBodyId, UsdtAsset};
 use frame_support::traits::{EitherOf, MapSuccess, TryMapSuccess};
 pub use origins::pallet_origins as pallet_ambassador_origins;
 use origins::pallet_origins::{
-	EnsureAmbassadorVoice, EnsureAmbassadorVoiceFrom, EnsureHeadAmbassadorVoice, Origin,
+	EnsureAmbassadorsVoice, EnsureAmbassadorsVoiceFrom, EnsureHeadAmbassadorsVoice, Origin,
 };
 use sp_core::ConstU128;
 use sp_runtime::traits::{CheckedReduceBy, ConstU16, ConvertToValue, Replace};
@@ -76,7 +76,7 @@ pub type DemoteOrigin = EitherOf<
 			Replace<ConstU16<{ ranks::MASTER_AMBASSADOR_TIER_9 }>>,
 		>,
 		TryMapSuccess<
-			EnsureAmbassadorVoiceFrom<ConstU16<{ ranks::SENIOR_AMBASSADOR_TIER_3 }>>,
+			EnsureAmbassadorsVoiceFrom<ConstU16<{ ranks::SENIOR_AMBASSADOR_TIER_3 }>>,
 			CheckedReduceBy<ConstU16<2>>,
 		>,
 	>,
@@ -131,8 +131,8 @@ impl pallet_referenda::Config<AmbassadorReferendaInstance> for Runtime {
 		AmbassadorCollectiveInstance,
 		{ ranks::SENIOR_AMBASSADOR_TIER_3 },
 	>;
-	type CancelOrigin = EitherOf<EnsureRoot<AccountId>, EnsureHeadAmbassadorVoice>;
-	type KillOrigin = EitherOf<EnsureRoot<AccountId>, EnsureHeadAmbassadorVoice>;
+	type CancelOrigin = EitherOf<EnsureRoot<AccountId>, EnsureHeadAmbassadorsVoice>;
+	type KillOrigin = EitherOf<EnsureRoot<AccountId>, EnsureHeadAmbassadorsVoice>;
 	type Slash = ToParentTreasury<PolkadotTreasuryAccount, AmbassadorPalletAccount, Runtime>;
 	type Votes = pallet_ranked_collective::Votes;
 	type Tally = pallet_ranked_collective::TallyOf<Runtime, AmbassadorCollectiveInstance>;
@@ -148,7 +148,7 @@ pub type AmbassadorContentInstance = pallet_collective_content::Instance1;
 
 impl pallet_collective_content::Config<AmbassadorContentInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type CharterOrigin = EitherOf<EnsureRoot<AccountId>, EnsureHeadAmbassadorVoice>;
+	type CharterOrigin = EitherOf<EnsureRoot<AccountId>, EnsureHeadAmbassadorsVoice>;
 	// An announcement can be submitted by a Senior Ambassador member or an ambassador plurality voice
 	// taken via referendum.
 	type AnnouncementOrigin = EitherOfDiverse<
@@ -157,7 +157,7 @@ impl pallet_collective_content::Config<AmbassadorContentInstance> for Runtime {
 			AmbassadorCollectiveInstance,
 			{ ranks::SENIOR_AMBASSADOR_TIER_3 },
 		>,
-		EnsureAmbassadorVoice,
+		EnsureAmbassadorsVoice,
 	>;
 	type WeightInfo = weights::pallet_collective_content::WeightInfo<Runtime>;
 }
@@ -175,7 +175,7 @@ impl pallet_core_fellowship::Config<AmbassadorCoreInstance> for Runtime {
 	// - a vote among all Head Ambassadors.
 	type ParamsOrigin = EitherOfDiverse<
 		EnsureXcm<IsVoiceOfBody<GovernanceLocation, FellowshipAdminBodyId>>,
-		EnsureHeadAmbassadorVoice,
+		EnsureHeadAmbassadorsVoice,
 	>;
 	// Induction (creating a candidate) is by any of:
 	// - Root;
@@ -190,7 +190,7 @@ impl pallet_core_fellowship::Config<AmbassadorCoreInstance> for Runtime {
 				AmbassadorCollectiveInstance,
 				{ ranks::HEAD_AMBASSADOR_TIER_5 },
 			>,
-			EnsureAmbassadorVoiceFrom<ConstU16<{ ranks::SENIOR_AMBASSADOR_TIER_3 }>>,
+			EnsureAmbassadorsVoiceFrom<ConstU16<{ ranks::SENIOR_AMBASSADOR_TIER_3 }>>,
 		>,
 	>;
 	type ApproveOrigin = PromoteOrigin;
