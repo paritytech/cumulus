@@ -95,6 +95,10 @@ pub type CurrencyTransactor = CurrencyAdapter<
 pub type TrustBackedAssetsConvertedConcreteId =
 	assets_common::TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance>;
 
+/// `AssetId` converter for `TrustBackedAssets`
+pub type AssetIdForTrustBackedAssetsConvert =
+	assets_common::AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>;
+
 /// Means for transacting assets besides the native currency on this chain.
 pub type FungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
@@ -469,16 +473,25 @@ impl xcm_executor::Config for XcmConfig {
 	>;
 	type Trader = (
 		UsingComponents<WeightToFee, WestendLocation, AccountId, Balances, ToStakingPot<Runtime>>,
-		cumulus_primitives_utility::TakeFirstAssetTrader<
-			AccountId,
-			AssetFeeAsExistentialDepositMultiplierFeeCharger,
+		cumulus_primitives_utility::SwapFirstAssetTrader<
+			Runtime,
+			LocationToAccountId,
+			pallet_asset_conversion::Pallet<Runtime>,
+			WeightToFee,
 			TrustBackedAssetsConvertedConcreteId,
 			Assets,
-			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
-				FungiblesTransactor,
-				AccountId,
-				XcmAssetFeesReceiver,
-			>,
+			AssetIdForTrustBackedAssetsConvert,
+			XcmAssetFeesReceiver,
+		>,
+		cumulus_primitives_utility::SwapFirstAssetTrader<
+			Runtime,
+			LocationToAccountId,
+			pallet_asset_conversion::Pallet<Runtime>,
+			WeightToFee,
+			ForeignAssetsConvertedConcreteId,
+			ForeignAssets,
+			ConvertInto,
+			XcmAssetFeesReceiver,
 		>,
 	);
 	type ResponseHandler = PolkadotXcm;

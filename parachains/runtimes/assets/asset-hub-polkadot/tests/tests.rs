@@ -168,7 +168,6 @@ fn test_asset_xcm_trader_with_refund() {
 			));
 
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
-			let ctx = XcmContext { origin: None, message_id: XcmHash::default(), topic: None };
 
 			// Set Alice as block author, who will receive fees
 			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
@@ -185,6 +184,8 @@ fn test_asset_xcm_trader_with_refund() {
 			let amount_bought = WeightToFee::weight_to_fee(&bought);
 
 			let asset: MultiAsset = (asset_multilocation, amount_bought).into();
+
+			let ctx = XcmContext::with_message_id([0; 32]);
 
 			// Make sure buy_weight does not return an error
 			assert_ok!(trader.buy_weight(bought, asset.clone().into(), &ctx));

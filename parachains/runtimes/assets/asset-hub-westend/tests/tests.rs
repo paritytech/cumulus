@@ -19,14 +19,14 @@
 
 pub use asset_hub_westend_runtime::{
 	constants::fee::WeightToFee,
-	xcm_config::{CheckingAccount, TrustBackedAssetsPalletLocation, XcmConfig},
+	xcm_config::{CheckingAccount, XcmConfig},
 	AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets, ForeignAssetsInstance,
 	ParachainSystem, Runtime, SessionKeys, System, TrustBackedAssetsInstance,
 };
 use asset_hub_westend_runtime::{
 	xcm_config::{
-		AssetFeeAsExistentialDepositMultiplierFeeCharger, ForeignCreatorsSovereignAccountOf,
-		WestendLocation,
+		AssetFeeAsExistentialDepositMultiplierFeeCharger, AssetIdForTrustBackedAssetsConvert,
+		ForeignCreatorsSovereignAccountOf, WestendLocation,
 	},
 	AllowMultiAssetPools, LiquidityWithdrawalFee, MetadataDepositBase, MetadataDepositPerByte,
 	RuntimeCall, RuntimeEvent,
@@ -53,9 +53,6 @@ use xcm_executor::{
 
 const ALICE: [u8; 32] = [1u8; 32];
 const SOME_ASSET_ADMIN: [u8; 32] = [5u8; 32];
-
-type AssetIdForTrustBackedAssetsConvert =
-	assets_common::AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>;
 
 fn collator_session_keys() -> CollatorSessionKeys<Runtime> {
 	CollatorSessionKeys::new(
