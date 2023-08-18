@@ -668,6 +668,9 @@ type Migrations = (
 	import_kusama_fellowship::Migration<Runtime, FellowshipCollectiveInstance>,
 	// unreleased
 	pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,
+	// unreleased
+	cumulus_pallet_dmp_queue::UndeployDmpQueue<Runtime>,
+	cumulus_pallet_dmp_queue::DeleteDmpQueue<Runtime>,
 );
 
 /// Executive: handles dispatch to the various modules.

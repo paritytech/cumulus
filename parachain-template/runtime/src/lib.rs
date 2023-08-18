@@ -367,6 +367,7 @@ impl pallet_sudo::Config for Runtime {
 parameter_types! {
 	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
 	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+	pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
@@ -424,17 +425,6 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = ();
 	type PriceForSiblingDelivery = ();
-}
-
-parameter_types! {
-	pub const DmpQueuePalletName: &'static str = "DmpQueue";
-	pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
-}
-
-impl cumulus_pallet_dmp_queue::MigrationConfig for Runtime {
-	type PalletName = DmpQueuePalletName;
-	type DmpHandler = frame_support::traits::EnqueueWithOrigin<MessageQueue, RelayOrigin>;
-	type DbWeight = <Runtime as frame_system::Config>::DbWeight;
 }
 
 parameter_types! {

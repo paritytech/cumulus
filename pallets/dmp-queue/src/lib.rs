@@ -36,12 +36,12 @@ const LOG: &str = "dmp-queue-undeploy-migration";
 /// Undeploy the DMP queue pallet.
 ///
 /// Moves all storage from the pallet to a new Queue handler. Afterwards the storage of the DMP
-/// should be purged with [DeleteDmp].
-pub struct UndeployDmp<T: MigrationConfig>(PhantomData<T>);
+/// should be purged with [DeleteDmpQueue].
+pub struct UndeployDmpQueue<T: MigrationConfig>(PhantomData<T>);
 
 /// Delete the DMP pallet. Should only be used once the DMP pallet is removed from the runtime and
-/// after [UndeployDmp].
-pub type DeleteDmp<T> = frame_support::migrations::RemovePallet<
+/// after [UndeployDmpQueue].
+pub type DeleteDmpQueue<T> = frame_support::migrations::RemovePallet<
 	<T as MigrationConfig>::PalletName,
 	<T as MigrationConfig>::DbWeight,
 >;
@@ -93,7 +93,7 @@ type Overweight<T: MigrationConfig> = CountedStorageMap<
 	OptionQuery,
 >;
 
-impl<T: MigrationConfig> OnRuntimeUpgrade for UndeployDmp<T> {
+impl<T: MigrationConfig> OnRuntimeUpgrade for UndeployDmpQueue<T> {
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::DispatchError> {
 		let index = PageIndex::<T>::get();
@@ -178,6 +178,6 @@ impl<T: MigrationConfig> OnRuntimeUpgrade for UndeployDmp<T> {
 			log::info!(target: LOG, "[Overweight {i}] Migrated message from block {block}");
 		}
 
-		Weight::zero() // todo!("FAIL-CI")
+		Weight::zero() // FAIL-CI
 	}
 }

@@ -841,8 +841,8 @@ pub type UncheckedExtrinsic =
 /// Migrations to apply on runtime upgrade.
 pub type Migrations = (
 	pallet_collator_selection::migration::v1::MigrateToV1<Runtime>,
-	cumulus_pallet_dmp_queue::UndeployDmp<Runtime>,
-	cumulus_pallet_dmp_queue::DeleteDmp<Runtime>,
+	cumulus_pallet_dmp_queue::UndeployDmpQueue<Runtime>,
+	cumulus_pallet_dmp_queue::DeleteDmpQueue<Runtime>,
 );
 
 /// Executive: handles dispatch to the various modules.

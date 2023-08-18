@@ -51,7 +51,7 @@ use frame_support::{
 	BoundedVec,
 };
 use pallet_message_queue::OnQueueChanged;
-use polkadot_runtime_common::xcm_sender::{ConstantPrice, PriceForParachainDelivery};
+use polkadot_runtime_common::xcm_sender::PriceForParachainDelivery;
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;

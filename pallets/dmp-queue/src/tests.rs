@@ -86,16 +86,16 @@ fn migration_works() {
 
 		// Run the migration:
 		#[cfg(feature = "try-runtime")]
-		assert_ok!(UndeployDmp::<Runtime>::pre_upgrade());
-		let _weight = UndeployDmp::<Runtime>::on_runtime_upgrade();
+		assert_ok!(UndeployDmpQueue::<Runtime>::pre_upgrade());
+		let _weight = UndeployDmpQueue::<Runtime>::on_runtime_upgrade();
 		#[cfg(feature = "try-runtime")]
-		assert_ok!(UndeployDmp::<Runtime>::post_upgrade(vec![]));
+		assert_ok!(UndeployDmpQueue::<Runtime>::post_upgrade(vec![]));
 
 		assert_eq!(RecordedMessages::take(), 10 * 16 + 5);
 
 		// Test the storage removal:
 		assert!(PageIndex::<Runtime>::exists(), "Not gone yet");
-		DeleteDmp::<Runtime>::on_runtime_upgrade();
+		DeleteDmpQueue::<Runtime>::on_runtime_upgrade();
 		assert!(!PageIndex::<Runtime>::exists());
 		assert!(!Pages::<Runtime>::contains_key(10));
 		assert!(!Overweight::<Runtime>::contains_key(0));
@@ -124,16 +124,16 @@ fn migration_too_long_ignored() {
 
 		// Run the migration:
 		#[cfg(feature = "try-runtime")]
-		assert_ok!(UndeployDmp::<Runtime>::pre_upgrade());
-		let _weight = UndeployDmp::<Runtime>::on_runtime_upgrade();
+		assert_ok!(UndeployDmpQueue::<Runtime>::pre_upgrade());
+		let _weight = UndeployDmpQueue::<Runtime>::on_runtime_upgrade();
 		#[cfg(feature = "try-runtime")]
-		assert_ok!(UndeployDmp::<Runtime>::post_upgrade(vec![]));
+		assert_ok!(UndeployDmpQueue::<Runtime>::post_upgrade(vec![]));
 
 		assert_eq!(RecordedMessages::take(), 2);
 
 		// Test the storage removal:
 		assert!(PageIndex::<Runtime>::exists(), "Not gone yet");
-		DeleteDmp::<Runtime>::on_runtime_upgrade();
+		DeleteDmpQueue::<Runtime>::on_runtime_upgrade();
 		assert!(!PageIndex::<Runtime>::exists());
 		assert!(!Pages::<Runtime>::contains_key(10));
 		assert!(!Overweight::<Runtime>::contains_key(0));
