@@ -43,8 +43,8 @@ pub use frame_support::{
 pub use frame_system::{AccountInfo, Config as SystemConfig, Pallet as SystemPallet};
 pub use pallet_balances::AccountData;
 pub use sp_arithmetic::traits::Bounded;
-pub use sp_core::{sr25519, storage::Storage, Pair, H256};
-pub use sp_io::TestExternalities;
+pub use sp_core::{parameter_types, sr25519, storage::Storage, Pair, H256};
+pub use sp_io::{self, TestExternalities};
 pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, fmt::Debug};
 pub use sp_trie::StorageProof;
 
@@ -68,6 +68,7 @@ pub use polkadot_runtime_parachains::{
 	dmp,
 	inclusion::{AggregateMessageOrigin, UmpQueueId},
 };
+pub use sp_tracing;
 
 // Polkadot
 pub use xcm::{
@@ -358,6 +359,7 @@ macro_rules! decl_test_relay_chains {
 			}
 		),
 		+
+		$(,)?
 	) => {
 		$(
 			#[derive(Clone)]
@@ -443,7 +445,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				ext.execute_with(|| {
 					#[allow(clippy::no_effect)]
 					$on_init;
-					sp_tracing::try_init_simple();
+					$crate::sp_tracing::try_init_simple();
 
 					let mut block_number = <Self as Chain>::System::block_number();
 					block_number = std::cmp::max(1, block_number);
@@ -582,6 +584,7 @@ macro_rules! decl_test_parachains {
 			}
 		),
 		+
+		$(,)?
 	) => {
 		$(
 			#[derive(Clone)]
@@ -684,7 +687,7 @@ macro_rules! __impl_test_ext_for_parachain {
 				ext.execute_with(|| {
 					#[allow(clippy::no_effect)]
 					$on_init;
-					sp_tracing::try_init_simple();
+					$crate::sp_tracing::try_init_simple();
 
 					let mut block_number = <Self as Chain>::System::block_number();
 					block_number = std::cmp::max(1, block_number);
@@ -789,8 +792,8 @@ macro_rules! __impl_test_ext_for_parachain {
 						);
 
 						// get xcmp messages
-						<Self as Parachain>::ParachainSystem::on_finalize(block_number);
-						let collation_info = <Self as Parachain>::ParachainSystem::collect_collation_info(&mock_header);
+						<Self as $crate::Parachain>::ParachainSystem::on_finalize(block_number);
+						let collation_info = <Self as $crate::Parachain>::ParachainSystem::collect_collation_info(&mock_header);
 
 						// send upward messages
 						let relay_block_number = <$name as NetworkComponent>::Network::relay_block_number();
@@ -809,7 +812,7 @@ macro_rules! __impl_test_ext_for_parachain {
 						// get bridge messages
 						type NetworkBridge = <<$name as NetworkComponent>::Network as Network>::Bridge;
 
-						let bridge_messages = <NetworkBridge as Bridge>::Handler::get_source_outbound_messages();
+						let bridge_messages = <<NetworkBridge as Bridge>::Handler as $crate::BridgeMessageHandler>::get_source_outbound_messages();
 
 						// send bridged messages
 						for msg in bridge_messages {
@@ -857,6 +860,7 @@ macro_rules! decl_test_networks {
 			}
 		),
 		+
+		$(,)?
 	) => {
 		$(
 			pub struct $name;
@@ -1014,8 +1018,8 @@ macro_rules! decl_test_networks {
 						match dispatch_result {
 							Err(e) => panic!("Error {:?} processing bridged message: {:?}", e, msg.clone()),
 							Ok(()) => {
-								<<Self::Bridge as $crate::Bridge>::Source as TestExt>::ext_wrapper(|| {
-									<<Self::Bridge as Bridge>::Handler as BridgeMessageHandler>::notify_source_message_delivery(msg.id);
+								<<Self::Bridge as $crate::Bridge>::Source as $crate::TestExt>::ext_wrapper(|| {
+									<<Self::Bridge as Bridge>::Handler as $crate::BridgeMessageHandler>::notify_source_message_delivery(msg.id);
 								});
 								$crate::log::debug!(target: concat!("bridge::", stringify!($name)) , "Bridged message processed {:?}", msg.clone());
 							}
@@ -1096,6 +1100,7 @@ macro_rules! decl_test_bridges {
 			}
 		),
 		+
+		$(,)?
 	) => {
 		$(
 			#[derive(Debug)]
@@ -1233,7 +1238,7 @@ macro_rules! bx {
 macro_rules! decl_test_sender_receiver_accounts_parameter_types {
 	( $( $chain:ident { sender: $sender:expr, receiver: $receiver:expr }),+ ) => {
 		$crate::paste::paste! {
-			parameter_types! {
+			$crate::parameter_types! {
 				$(
 					pub [<$chain Sender>]: $crate::AccountId = <$chain>::account_id_of($sender);
 					pub [<$chain Receiver>]: $crate::AccountId = <$chain>::account_id_of($receiver);

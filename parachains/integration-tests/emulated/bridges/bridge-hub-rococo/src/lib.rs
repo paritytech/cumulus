@@ -18,7 +18,6 @@ pub use bp_messages::LaneId;
 pub use codec::Encode;
 pub use frame_support::{
 	assert_err, assert_ok,
-	instances::Instance1,
 	pallet_prelude::Weight,
 	sp_runtime::{AccountId32, DispatchError, DispatchResult, MultiAddress},
 	traits::{fungibles::Inspect, OriginTrait},
