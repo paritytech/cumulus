@@ -32,21 +32,21 @@ pub mod pallet_origins {
 	#[pallet::origin]
 	pub enum Origin {
 		/// Plurality voice of the [ranks::AMBASSADOR_TIER_1] members or above given via referendum.
-		AmbassadorTier1,
+		Ambassadors,
 		/// Plurality voice of the [ranks::AMBASSADOR_TIER_2] members or above given via referendum.
 		AmbassadorTier2,
 		/// Plurality voice of the [ranks::SENIOR_AMBASSADOR_TIER_3] members or above given via referendum.
-		SeniorAmbassadorTier3,
+		SeniorAmbassadors,
 		/// Plurality voice of the [ranks::SENIOR_AMBASSADOR_TIER_4] members or above given via referendum.
 		SeniorAmbassadorTier4,
 		/// Plurality voice of the [ranks::HEAD_AMBASSADOR_TIER_5] members or above given via referendum.
-		HeadAmbassadorTier5,
+		HeadAmbassadors,
 		/// Plurality voice of the [ranks::HEAD_AMBASSADOR_TIER_6] members or above given via referendum.
 		HeadAmbassadorTier6,
 		/// Plurality voice of the [ranks::HEAD_AMBASSADOR_TIER_7] members or above given via referendum.
 		HeadAmbassadorTier7,
 		/// Plurality voice of the [ranks::MASTER_AMBASSADOR_TIER_8] members or above given via referendum.
-		MasterAmbassadorTier8,
+		MasterAmbassadors,
 		/// Plurality voice of the [ranks::MASTER_AMBASSADOR_TIER_9] members or above given via referendum.
 		MasterAmbassadorTier9,
 	}

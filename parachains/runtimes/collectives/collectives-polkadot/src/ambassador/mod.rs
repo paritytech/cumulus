@@ -23,7 +23,7 @@
 //! proposals on behalf of the members of a certain [rank](Origin)
 //! (via [AmbassadorReferenda](pallet_referenda)).
 //! - Managed content (charter, announcements) (via [pallet_collective_content]).
-//! - Promotion and demotion periods, register of members' activity, rank based salaries
+//! - Promotion and demotion periods, register of members' activity, and rank based salaries
 //! (via [AmbassadorCore](pallet_core_fellowship)).
 //! - Members' salaries (via [AmbassadorSalary](pallet_salary), requiring a member to be
 //! imported or inducted into [AmbassadorCore](pallet_core_fellowship)).
