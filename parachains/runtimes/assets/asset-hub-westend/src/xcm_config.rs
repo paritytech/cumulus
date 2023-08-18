@@ -24,7 +24,6 @@ use assets_common::{
 	matching::{
 		FromSiblingParachain, IsForeignConcreteAsset, StartsWith, StartsWithExplicitGlobalConsensus,
 	},
-	AssetIdForTrustBackedAssetsConvert,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -47,7 +46,6 @@ use xcm_builder::{
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
-use assets_common::local_and_foreign_assets::LocalAndForeignAssets;
 #[cfg(feature = "runtime-benchmarks")]
 use {cumulus_primitives_core::ParaId, sp_core::Get};
 
@@ -119,17 +117,6 @@ pub type ForeignAssetsConvertedConcreteId = assets_common::ForeignAssetsConverte
 	(
 		// Ignore `TrustBackedAssets` explicitly
 		StartsWith<TrustBackedAssetsPalletLocation>,
-		// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
-		// - foreign assets from our consensus should be: `MultiLocation {parents: 1, X*(Parachain(xyz), ..)}
-		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` wont be accepted here
-		StartsWithExplicitGlobalConsensus<UniversalLocationNetworkId>,
-	),
-	Balance,
->;
-
-/// `AssetId/Balance` converter for pay by swap
-pub type LocalAndForeignAssetsConvertedConcreteId = assets_common::ForeignAssetsConvertedConcreteId<
-	(
 		// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
 		// - foreign assets from our consensus should be: `MultiLocation {parents: 1, X*(Parachain(xyz), ..)}
 		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` wont be accepted here

@@ -23,7 +23,6 @@ use codec::Encode;
 use cumulus_primitives_core::{MessageSendError, UpwardMessageSender};
 use frame_support::{
 	traits::{
-		fungibles::Mutate,
 		tokens::{fungibles, fungibles::Inspect, Fortitude::Polite, Precision::Exact},
 		Get,
 	},
@@ -341,7 +340,7 @@ impl<
 		payment: xcm_executor::Assets,
 		ctx: &XcmContext,
 	) -> Result<xcm_executor::Assets, XcmError> {
-		log::trace!(target: "xcm::weight", "SwapFirstAssetTrader::buy_weight weight: {:?}, payment: {:?}", weight, payment);
+		log::trace!(target: "xcm::weight", "SwapFirstAssetTrader::buy_weight weight: {:?}, payment: {:?}, ctx: {:?}", weight, payment, ctx);
 
 		// Make sure we dont enter twice
 		if self.0.is_some() {
