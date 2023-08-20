@@ -29,7 +29,7 @@ cumulus-client-network = { path = "../network" }
 cumulus-primitives-core = { path = "../../primitives/core" }
 
 [dev-dependencies]
-async-trait = "0.1.42"
+async-trait = "0.1.73"
 
 # Substrate
 sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -42,3 +42,4 @@ polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/po
 # Cumulus
 cumulus-test-client = { path = "../../test/client" }
 cumulus-test-runtime = { path = "../../test/runtime" }
+cumulus-test-relay-sproof-builder = { path = "../../test/relay-sproof-builder" }

@@ -36,7 +36,7 @@ use assets_common::{
 	AssetIdForTrustBackedAssetsConvert,
 };
 use codec::{Decode, Encode, MaxEncodedLen};
-use constants::{currency::*, fee::WeightToFee};
+use constants::{consensus::*, currency::*, fee::WeightToFee};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
 	construct_runtime,
@@ -266,13 +266,14 @@ impl pallet_assets::Config<TrustBackedAssetsInstance> for Runtime {
 
 parameter_types! {
 	pub const AssetConversionPalletId: PalletId = PalletId(*b"py/ascon");
-	pub storage AllowMultiAssetPools: bool = false;
+	pub const AllowMultiAssetPools: bool = false;
 	// should be non-zero if AllowMultiAssetPools is true, otherwise can be zero
-	pub storage LiquidityWithdrawalFee: Permill = Permill::from_percent(0);
+	pub const LiquidityWithdrawalFee: Permill = Permill::from_percent(0);
 }
 
 ord_parameter_types! {
-	pub const AssetConversionOrigin: sp_runtime::AccountId32 = AccountIdConversion::<sp_runtime::AccountId32>::into_account_truncating(&AssetConversionPalletId::get());
+	pub const AssetConversionOrigin: sp_runtime::AccountId32 =
+		AccountIdConversion::<sp_runtime::AccountId32>::into_account_truncating(&AssetConversionPalletId::get());
 }
 
 pub type PoolAssetsInstance = pallet_assets::Instance3;
@@ -321,15 +322,11 @@ impl pallet_asset_conversion::Config for Runtime {
 	type PalletId = AssetConversionPalletId;
 	type AllowMultiAssetPools = AllowMultiAssetPools;
 	type MaxSwapPathLength = ConstU32<4>;
-
 	type MultiAssetId = Box<MultiLocation>;
 	type MultiAssetIdConverter =
 		MultiLocationConverter<WestendLocation, LocalAndForeignAssetsMultiLocationMatcher>;
-
 	type MintMinLiquidity = ConstU128<100>;
-
 	type WeightInfo = weights::pallet_asset_conversion::WeightInfo<Runtime>;
-
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper =
 		crate::xcm_config::BenchmarkMultiLocationConverter<parachain_info::Pallet<Runtime>>;
@@ -588,12 +585,18 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
-	type OutboundXcmpMessageSource = XcmpQueue;
 	type DmpMessageHandler = DmpQueue;
 	type ReservedDmpWeight = ReservedDmpWeight;
+	type OutboundXcmpMessageSource = XcmpQueue;
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+	type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
+		Runtime,
+		RELAY_CHAIN_SLOT_DURATION_MILLIS,
+		BLOCK_PROCESSING_VELOCITY,
+		UNINCLUDED_SEGMENT_CAPACITY,
+	>;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -1349,33 +1352,9 @@ impl_runtime_apis! {
 	}
 }
 
-struct CheckInherents;
-
-impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
-	fn check_inherents(
-		block: &Block,
-		relay_state_proof: &cumulus_pallet_parachain_system::RelayChainStateProof,
-	) -> sp_inherents::CheckInherentsResult {
-		let relay_chain_slot = relay_state_proof
-			.read_slot()
-			.expect("Could not read the relay chain slot from the proof");
-
-		let inherent_data =
-			cumulus_primitives_timestamp::InherentDataProvider::from_relay_chain_slot_and_duration(
-				relay_chain_slot,
-				sp_std::time::Duration::from_secs(6),
-			)
-			.create_inherent_data()
-			.expect("Could not create the timestamp inherent data");
-
-		inherent_data.check_extrinsics(block)
-	}
-}
-
 cumulus_pallet_parachain_system::register_validate_block! {
 	Runtime = Runtime,
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
-	CheckInherents = CheckInherents,
 }
 
 pub mod migrations {

@@ -10,7 +10,10 @@ pub use constants::{
 	PROOF_SIZE_THRESHOLD, REF_TIME_THRESHOLD,
 };
 use frame_support::{
-	assert_ok, instances::Instance1, parameter_types, sp_tracing, traits::fungibles::Inspect,
+	assert_ok,
+	instances::Instance1,
+	parameter_types, sp_tracing,
+	traits::{fungibles::Inspect, Hooks},
 };
 pub use impls::{RococoWococoMessageHandler, WococoRococoMessageHandler};
 pub use parachains_common::{AccountId, Balance};
@@ -117,7 +120,9 @@ decl_test_parachains! {
 	// Polkadot Parachains
 	pub struct AssetHubPolkadot {
 		genesis = asset_hub_polkadot::genesis(),
-		on_init = (),
+		on_init = {
+			asset_hub_polkadot_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = asset_hub_polkadot_runtime,
 		core = {
 			XcmpMessageHandler: asset_hub_polkadot_runtime::XcmpQueue,
@@ -133,7 +138,9 @@ decl_test_parachains! {
 	},
 	pub struct Collectives {
 		genesis = collectives::genesis(),
-		on_init = (),
+		on_init = {
+			collectives_polkadot_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = collectives_polkadot_runtime,
 		core = {
 			XcmpMessageHandler: collectives_polkadot_runtime::XcmpQueue,
@@ -148,7 +155,9 @@ decl_test_parachains! {
 	},
 	pub struct BridgeHubPolkadot {
 		genesis = bridge_hub_polkadot::genesis(),
-		on_init = (),
+		on_init = {
+			bridge_hub_polkadot_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = bridge_hub_polkadot_runtime,
 		core = {
 			XcmpMessageHandler: bridge_hub_polkadot_runtime::XcmpQueue,
@@ -162,7 +171,9 @@ decl_test_parachains! {
 	},
 	pub struct PenpalPolkadotA {
 		genesis = penpal::genesis(penpal::PARA_ID_A),
-		on_init = (),
+		on_init = {
+			penpal_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = penpal_runtime,
 		core = {
 			XcmpMessageHandler: penpal_runtime::XcmpQueue,
@@ -177,7 +188,9 @@ decl_test_parachains! {
 	},
 	pub struct PenpalPolkadotB {
 		genesis = penpal::genesis(penpal::PARA_ID_B),
-		on_init = (),
+		on_init = {
+			penpal_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = penpal_runtime,
 		core = {
 			XcmpMessageHandler: penpal_runtime::XcmpQueue,
@@ -193,7 +206,9 @@ decl_test_parachains! {
 	// Kusama Parachains
 	pub struct AssetHubKusama {
 		genesis = asset_hub_kusama::genesis(),
-		on_init = (),
+		on_init = {
+			asset_hub_kusama_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = asset_hub_kusama_runtime,
 		core = {
 			XcmpMessageHandler: asset_hub_kusama_runtime::XcmpQueue,
@@ -204,13 +219,17 @@ decl_test_parachains! {
 		pallets = {
 			PolkadotXcm: asset_hub_kusama_runtime::PolkadotXcm,
 			Assets: asset_hub_kusama_runtime::Assets,
-			ForeignAssets: asset_hub_kusama_runtime::Assets,
+			ForeignAssets: asset_hub_kusama_runtime::ForeignAssets,
+			PoolAssets: asset_hub_kusama_runtime::PoolAssets,
+			AssetConversion: asset_hub_kusama_runtime::AssetConversion,
 			Balances: asset_hub_kusama_runtime::Balances,
 		}
 	},
 	pub struct BridgeHubKusama {
 		genesis = bridge_hub_kusama::genesis(),
-		on_init = (),
+		on_init = {
+			bridge_hub_kusama_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = bridge_hub_kusama_runtime,
 		core = {
 			XcmpMessageHandler: bridge_hub_kusama_runtime::XcmpQueue,
@@ -224,7 +243,9 @@ decl_test_parachains! {
 	},
 	pub struct PenpalKusamaA {
 		genesis = penpal::genesis(penpal::PARA_ID_A),
-		on_init = (),
+		on_init = {
+			penpal_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = penpal_runtime,
 		core = {
 			XcmpMessageHandler: penpal_runtime::XcmpQueue,
@@ -239,7 +260,9 @@ decl_test_parachains! {
 	},
 	pub struct PenpalKusamaB {
 		genesis = penpal::genesis(penpal::PARA_ID_B),
-		on_init = (),
+		on_init = {
+			penpal_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = penpal_runtime,
 		core = {
 			XcmpMessageHandler: penpal_runtime::XcmpQueue,
@@ -255,7 +278,9 @@ decl_test_parachains! {
 	// Westend Parachains
 	pub struct AssetHubWestend {
 		genesis = asset_hub_westend::genesis(),
-		on_init = (),
+		on_init = {
+			asset_hub_westend_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = asset_hub_westend_runtime,
 		core = {
 			XcmpMessageHandler: asset_hub_westend_runtime::XcmpQueue,
@@ -274,7 +299,9 @@ decl_test_parachains! {
 	},
 	pub struct PenpalWestendA {
 		genesis = penpal::genesis(penpal::PARA_ID_A),
-		on_init = (),
+		on_init = {
+			penpal_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = penpal_runtime,
 		core = {
 			XcmpMessageHandler: penpal_runtime::XcmpQueue,
@@ -290,7 +317,9 @@ decl_test_parachains! {
 	// Rococo Parachains
 	pub struct BridgeHubRococo {
 		genesis = bridge_hub_rococo::genesis(),
-		on_init = (),
+		on_init = {
+			bridge_hub_rococo_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = bridge_hub_rococo_runtime,
 		core = {
 			XcmpMessageHandler: bridge_hub_rococo_runtime::XcmpQueue,
@@ -306,7 +335,9 @@ decl_test_parachains! {
 	// AssetHubRococo (aka Rockmine/Rockmine2) mirrors AssetHubKusama
 	pub struct AssetHubRococo {
 		genesis = asset_hub_kusama::genesis(),
-		on_init = (),
+		on_init = {
+			asset_hub_polkadot_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = asset_hub_kusama_runtime,
 		core = {
 			XcmpMessageHandler: asset_hub_kusama_runtime::XcmpQueue,
@@ -322,7 +353,9 @@ decl_test_parachains! {
 	// Wococo Parachains
 	pub struct BridgeHubWococo {
 		genesis = bridge_hub_rococo::genesis(),
-		on_init = (),
+		on_init = {
+			bridge_hub_rococo_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = bridge_hub_rococo_runtime,
 		core = {
 			XcmpMessageHandler: bridge_hub_rococo_runtime::XcmpQueue,
@@ -336,7 +369,9 @@ decl_test_parachains! {
 	},
 	pub struct AssetHubWococo {
 		genesis = asset_hub_polkadot::genesis(),
-		on_init = (),
+		on_init = {
+			asset_hub_polkadot_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = asset_hub_polkadot_runtime,
 		core = {
 			XcmpMessageHandler: asset_hub_polkadot_runtime::XcmpQueue,
@@ -351,7 +386,9 @@ decl_test_parachains! {
 	},
 	pub struct PenpalRococoA {
 		genesis = penpal::genesis(penpal::PARA_ID_A),
-		on_init = (),
+		on_init = {
+			penpal_runtime::AuraExt::on_initialize(1);
+		},
 		runtime = penpal_runtime,
 		core = {
 			XcmpMessageHandler: penpal_runtime::XcmpQueue,
@@ -479,6 +516,17 @@ impl_assert_events_helpers_for_parachain!(AssetHubKusama);
 impl_accounts_helpers_for_parachain!(AssetHubWestend);
 impl_assets_helpers_for_parachain!(AssetHubWestend, Westend);
 impl_assert_events_helpers_for_parachain!(AssetHubWestend);
+
+// PenpalPolkadot implementations
+impl_assert_events_helpers_for_parachain!(PenpalPolkadotA);
+impl_assert_events_helpers_for_parachain!(PenpalPolkadotB);
+
+// PenpalKusama implementations
+impl_assert_events_helpers_for_parachain!(PenpalKusamaA);
+impl_assert_events_helpers_for_parachain!(PenpalKusamaB);
+
+// PenpalWestendA implementation
+impl_assert_events_helpers_for_parachain!(PenpalWestendA);
 
 // Collectives implementation
 impl_accounts_helpers_for_parachain!(Collectives);

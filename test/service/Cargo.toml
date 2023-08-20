@@ -9,14 +9,14 @@ name = "test-parachain"
 path = "src/main.rs"
 
 [dependencies]
-async-trait = "0.1.72"
+async-trait = "0.1.73"
 clap = { version = "4.3.21", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 criterion = { version = "0.5.1", features = [ "async_tokio" ] }
 jsonrpsee = { version = "0.16.2", features = ["server"] }
 rand = "0.8.5"
 serde = { version = "1.0.183", features = ["derive"] }
-tokio = { version = "1.30.0", features = ["macros"] }
+tokio = { version = "1.32.0", features = ["macros"] }
 tracing = "0.1.37"
 url = "2.4.0"
 tempfile = "3.7.1"
@@ -46,7 +46,6 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", default-features
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -77,7 +76,7 @@ cumulus-test-runtime = { path = "../runtime" }
 cumulus-relay-chain-minimal-node = { path = "../../client/relay-chain-minimal-node" }
 cumulus-client-pov-recovery = { path = "../../client/pov-recovery" }
 cumulus-test-relay-sproof-builder = { path = "../relay-sproof-builder" }
-cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
+cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false, features = ["parameterized-consensus-hook",] }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [dev-dependencies]
