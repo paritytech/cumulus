@@ -61,4 +61,5 @@ impl Config for Runtime {
 		v14::Migration<Runtime, Balances>,
 	);
 	type RuntimeHoldReason = RuntimeHoldReason;
+	type Environment = ();
 }
