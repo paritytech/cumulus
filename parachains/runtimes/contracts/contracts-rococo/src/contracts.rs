@@ -62,5 +62,5 @@ impl Config for Runtime {
 		v15::Migration<Runtime>,
 	);
 	type RuntimeHoldReason = RuntimeHoldReason;
-	type TraceableCallSpan = ();
+	type Tracing = ();
 }
