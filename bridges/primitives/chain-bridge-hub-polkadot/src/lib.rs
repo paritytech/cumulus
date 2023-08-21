@@ -25,16 +25,18 @@ use bp_runtime::{
 	decl_bridge_finality_runtime_apis, decl_bridge_messages_runtime_apis, Chain, Parachain,
 };
 use frame_support::{dispatch::DispatchClass, RuntimeDebug};
-use sp_std::prelude::*;
+use sp_std::prelude::Vec;
 
 /// BridgeHubPolkadot parachain.
 #[derive(RuntimeDebug)]
 pub struct BridgeHubPolkadot;
 
 impl Chain for BridgeHubPolkadot {
+	type BlockNumber = BlockNumber;
 	type Hash = Hash;
 	type Hasher = Hasher;
-	type Block = Block;
+	type Header = Header;
+
 	type AccountId = AccountId;
 	type Balance = Balance;
 	type Nonce = Nonce;

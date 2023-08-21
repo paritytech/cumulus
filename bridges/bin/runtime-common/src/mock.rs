@@ -33,10 +33,15 @@ use crate::messages::{
 };
 
 use bp_header_chain::{ChainWithGrandpa, HeaderChain};
-use bp_messages::{target_chain::ForbidInboundMessages, LaneId, MessageNonce};
+use bp_messages::{
+	target_chain::{DispatchMessage, MessageDispatch},
+	LaneId, MessageNonce,
+};
 use bp_parachains::SingleParaStoredHeaderDataBuilder;
 use bp_relayers::PayRewardFromAccount;
-use bp_runtime::{Chain, ChainId, Parachain, UnderlyingChainProvider};
+use bp_runtime::{
+	messages::MessageDispatchResult, Chain, ChainId, Parachain, UnderlyingChainProvider,
+};
 use codec::{Decode, Encode};
 use frame_support::{
 	parameter_types,
@@ -63,7 +68,9 @@ pub type ThisChainHasher = BlakeTwo256;
 pub type ThisChainRuntimeCall = RuntimeCall;
 /// Runtime call origin at `ThisChain`.
 pub type ThisChainCallOrigin = RuntimeOrigin;
-// Block of `ThisChain`.
+/// Header of `ThisChain`.
+pub type ThisChainHeader = sp_runtime::generic::Header<ThisChainBlockNumber, ThisChainHasher>;
+/// Block of `ThisChain`.
 pub type ThisChainBlock = frame_system::mocking::MockBlockU32<TestRuntime>;
 
 /// Account identifier at the `BridgedChain`.
@@ -79,8 +86,6 @@ pub type BridgedChainHasher = BlakeTwo256;
 /// Header of the `BridgedChain`.
 pub type BridgedChainHeader =
 	sp_runtime::generic::Header<BridgedChainBlockNumber, BridgedChainHasher>;
-/// Block of the `BridgedChain`.
-pub type BridgedChainBlock = frame_system::mocking::MockBlockU32<TestRuntime>;
 
 /// Rewards payment procedure.
 pub type TestPaymentProcedure = PayRewardFromAccount<Balances, ThisChainAccountId>;
@@ -245,9 +250,10 @@ impl pallet_bridge_messages::Config for TestRuntime {
 		(),
 		ConstU64<100_000>,
 	>;
+	type OnMessagesDelivered = ();
 
 	type SourceHeaderChain = SourceHeaderChainAdapter<OnThisChainBridge>;
-	type MessageDispatch = ForbidInboundMessages<(), FromBridgedChainMessagePayload>;
+	type MessageDispatch = DummyMessageDispatch;
 	type BridgedChainId = BridgedChainId;
 }
 
@@ -257,6 +263,34 @@ impl pallet_bridge_relayers::Config for TestRuntime {
 	type PaymentProcedure = TestPaymentProcedure;
 	type StakeAndSlash = TestStakeAndSlash;
 	type WeightInfo = ();
+}
+
+/// Dummy message dispatcher.
+pub struct DummyMessageDispatch;
+
+impl DummyMessageDispatch {
+	pub fn deactivate() {
+		frame_support::storage::unhashed::put(&b"inactive"[..], &false);
+	}
+}
+
+impl MessageDispatch for DummyMessageDispatch {
+	type DispatchPayload = Vec<u8>;
+	type DispatchLevelResult = ();
+
+	fn is_active() -> bool {
+		frame_support::storage::unhashed::take::<bool>(&b"inactive"[..]) != Some(false)
+	}
+
+	fn dispatch_weight(_message: &mut DispatchMessage<Self::DispatchPayload>) -> Weight {
+		Weight::zero()
+	}
+
+	fn dispatch(
+		_: DispatchMessage<Self::DispatchPayload>,
+	) -> MessageDispatchResult<Self::DispatchLevelResult> {
+		MessageDispatchResult { unspent_weight: Weight::zero(), dispatch_level_result: () }
+	}
 }
 
 /// Bridge that is deployed on `ThisChain` and allows sending/receiving messages to/from
@@ -312,9 +346,10 @@ impl From<BridgedChainOrigin>
 pub struct ThisUnderlyingChain;
 
 impl Chain for ThisUnderlyingChain {
-	type Block = ThisChainBlock;
+	type BlockNumber = ThisChainBlockNumber;
 	type Hash = ThisChainHash;
 	type Hasher = ThisChainHasher;
+	type Header = ThisChainHeader;
 	type AccountId = ThisChainAccountId;
 	type Balance = ThisChainBalance;
 	type Nonce = u32;
@@ -351,9 +386,10 @@ pub struct BridgedUnderlyingParachain;
 pub struct BridgedChainCall;
 
 impl Chain for BridgedUnderlyingChain {
-	type Block = BridgedChainBlock;
+	type BlockNumber = BridgedChainBlockNumber;
 	type Hash = BridgedChainHash;
 	type Hasher = BridgedChainHasher;
+	type Header = BridgedChainHeader;
 	type AccountId = BridgedChainAccountId;
 	type Balance = BridgedChainBalance;
 	type Nonce = u32;
@@ -376,9 +412,10 @@ impl ChainWithGrandpa for BridgedUnderlyingChain {
 }
 
 impl Chain for BridgedUnderlyingParachain {
-	type Block = BridgedChainBlock;
+	type BlockNumber = BridgedChainBlockNumber;
 	type Hash = BridgedChainHash;
 	type Hasher = BridgedChainHasher;
+	type Header = BridgedChainHeader;
 	type AccountId = BridgedChainAccountId;
 	type Balance = BridgedChainBalance;
 	type Nonce = u32;

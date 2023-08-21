@@ -16,7 +16,7 @@
 
 use codec::Decode;
 use polkadot_primitives::{
-	Block as PBlock, Hash as PHash, Header as PHeader, PersistedValidationData,
+	Block as PBlock, Hash as PHash, Header as PHeader, PersistedValidationData, ValidationCodeHash,
 };
 
 use cumulus_primitives_core::{
@@ -25,13 +25,14 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
 
-use sc_client_api::Backend;
+use sc_client_api::{Backend, HeaderBackend};
 use sc_consensus::{shared_data::SharedData, BlockImport, ImportResult};
-use sp_consensus_slots::{Slot, SlotDuration};
+use sp_blockchain::Backend as BlockchainBackend;
+use sp_consensus_slots::Slot;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use sp_timestamp::Timestamp;
 
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 mod level_monitor;
 mod parachain_consensus;
@@ -45,6 +46,21 @@ pub use level_monitor::{LevelLimit, MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT};
 
 pub mod import_queue;
 
+/// Provides the hash of validation code used for authoring/execution of blocks at a given
+/// hash.
+pub trait ValidationCodeHashProvider<Hash> {
+	fn code_hash_at(&self, at: Hash) -> Option<ValidationCodeHash>;
+}
+
+impl<F, Hash> ValidationCodeHashProvider<Hash> for F
+where
+	F: Fn(Hash) -> Option<ValidationCodeHash>,
+{
+	fn code_hash_at(&self, at: Hash) -> Option<ValidationCodeHash> {
+		(self)(at)
+	}
+}
+
 /// The result of [`ParachainConsensus::produce_candidate`].
 pub struct ParachainCandidate<B> {
 	/// The block that was built for this candidate.
@@ -53,12 +69,14 @@ pub struct ParachainCandidate<B> {
 	pub proof: sp_trie::StorageProof,
 }
 
-/// A specific parachain consensus implementation that can be used by a collator to produce candidates.
+/// A specific parachain consensus implementation that can be used by a collator to produce
+/// candidates.
 ///
-/// The collator will call [`Self::produce_candidate`] every time there is a free core for the parachain
-/// this collator is collating for. It is the job of the consensus implementation to decide if this
-/// specific collator should build a candidate for the given relay chain block. The consensus
-/// implementation could, for example, check whether this specific collator is part of a staked set.
+/// The collator will call [`Self::produce_candidate`] every time there is a free core for the
+/// parachain this collator is collating for. It is the job of the consensus implementation to
+/// decide if this specific collator should build a candidate for the given relay chain block. The
+/// consensus implementation could, for example, check whether this specific collator is part of a
+/// staked set.
 #[async_trait::async_trait]
 pub trait ParachainConsensus<B: BlockT>: Send + Sync + dyn_clone::DynClone {
 	/// Produce a new candidate at the given parent block and relay-parent blocks.
@@ -94,8 +112,8 @@ impl<B: BlockT> ParachainConsensus<B> for Box<dyn ParachainConsensus<B> + Send +
 /// Parachain specific block import.
 ///
 /// This is used to set `block_import_params.fork_choice` to `false` as long as the block origin is
-/// not `NetworkInitialSync`. The best block for parachains is determined by the relay chain. Meaning
-/// we will update the best block, as it is included by the relay-chain.
+/// not `NetworkInitialSync`. The best block for parachains is determined by the relay chain.
+/// Meaning we will update the best block, as it is included by the relay-chain.
 pub struct ParachainBlockImport<Block: BlockT, BI, BE> {
 	inner: BI,
 	monitor: Option<SharedData<LevelMonitor<Block, BE>>>,
@@ -141,7 +159,6 @@ where
 	BE: Backend<Block>,
 {
 	type Error = BI::Error;
-	type Transaction = BI::Transaction;
 
 	async fn check_block(
 		&mut self,
@@ -152,7 +169,7 @@ where
 
 	async fn import_block(
 		&mut self,
-		mut params: sc_consensus::BlockImportParams<Block, Self::Transaction>,
+		mut params: sc_consensus::BlockImportParams<Block>,
 	) -> Result<sc_consensus::ImportResult, Self::Error> {
 		// Blocks are stored within the backend by using POST hash.
 		let hash = params.post_hash();
@@ -232,25 +249,38 @@ pub struct PotentialParent<B: BlockT> {
 /// a set of [`PotentialParent`]s which could be potential parents of a new block with this
 /// relay-parent according to the search parameters.
 ///
-/// A parachain block is a potential parent if it is either the last included parachain block, the pending
-/// parachain block (when `max_depth` >= 1), or all of the following hold:
+/// A parachain block is a potential parent if it is either the last included parachain block, the
+/// pending parachain block (when `max_depth` >= 1), or all of the following hold:
 ///   * its parent is a potential parent
 ///   * its relay-parent is within `ancestry_lookback` of the targeted relay-parent.
+///   * its relay-parent is within the same session as the targeted relay-parent.
 ///   * the block number is within `max_depth` blocks of the included block
 pub async fn find_potential_parents<B: BlockT>(
 	params: ParentSearchParams,
-	client: &impl sp_blockchain::Backend<B>,
+	client: &impl Backend<B>,
 	relay_client: &impl RelayChainInterface,
 ) -> Result<Vec<PotentialParent<B>>, RelayChainError> {
 	// 1. Build up the ancestry record of the relay chain to compare against.
 	let rp_ancestry = {
 		let mut ancestry = Vec::with_capacity(params.ancestry_lookback + 1);
 		let mut current_rp = params.relay_parent;
+		let mut required_session = None;
+
 		while ancestry.len() <= params.ancestry_lookback {
 			let header = match relay_client.header(RBlockId::hash(current_rp)).await? {
 				None => break,
 				Some(h) => h,
 			};
+
+			let session = relay_client.session_index_for_child(current_rp).await?;
+			if let Some(required_session) = required_session {
+				// Respect the relay-chain rule not to cross session boundaries.
+				if session != required_session {
+					break
+				}
+			} else {
+				required_session = Some(session);
+			}
 
 			ancestry.push((current_rp, *header.state_root()));
 			current_rp = *header.parent_hash();
@@ -338,7 +368,7 @@ pub async fn find_potential_parents<B: BlockT>(
 		}
 
 		// push children onto search frontier.
-		for child in client.children(hash).ok().into_iter().flatten() {
+		for child in client.blockchain().children(hash).ok().into_iter().flatten() {
 			let aligned_with_pending = parent_aligned_with_pending &&
 				if child_depth == 1 {
 					pending_hash.as_ref().map_or(true, |h| &child == h)
@@ -350,7 +380,7 @@ pub async fn find_potential_parents<B: BlockT>(
 				continue
 			}
 
-			let header = match client.header(child) {
+			let header = match client.blockchain().header(child) {
 				Ok(Some(h)) => h,
 				Ok(None) => continue,
 				Err(_) => continue,
@@ -371,12 +401,12 @@ pub async fn find_potential_parents<B: BlockT>(
 /// Get the relay-parent slot and timestamp from a header.
 pub fn relay_slot_and_timestamp(
 	relay_parent_header: &PHeader,
-	relay_chain_slot_duration: SlotDuration,
+	relay_chain_slot_duration: Duration,
 ) -> Option<(Slot, Timestamp)> {
 	sc_consensus_babe::find_pre_digest::<PBlock>(relay_parent_header)
 		.map(|babe_pre_digest| {
 			let slot = babe_pre_digest.slot();
-			let t = Timestamp::new(relay_chain_slot_duration.as_millis() * *slot);
+			let t = Timestamp::new(relay_chain_slot_duration.as_millis() as u64 * *slot);
 
 			(slot, t)
 		})

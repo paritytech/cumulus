@@ -14,12 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+//! Relay chain state proof provides means for accessing part of relay chain storage for reads.
+
 use codec::{Decode, Encode};
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId,
 };
 use scale_info::TypeInfo;
-use sp_runtime::traits::HashFor;
+use sp_runtime::traits::HashingFor;
 use sp_state_machine::{Backend, TrieBackend, TrieBackendBuilder};
 use sp_std::vec::Vec;
 use sp_trie::{HashDBT, MemoryDB, StorageProof, EMPTY_PREFIX};
@@ -47,7 +49,8 @@ pub struct MessagingStateSnapshot {
 	/// If the value is absent on the relay chain this will be set to all zeros.
 	pub dmq_mqc_head: relay_chain::Hash,
 
-	/// The current capacity of the upward message queue of the current parachain on the relay chain.
+	/// The current capacity of the upward message queue of the current parachain on the relay
+	/// chain.
 	pub relay_dispatch_queue_remaining_capacity: RelayDispatchQueueRemainingCapacity,
 
 	/// Information about all the inbound HRMP channels.
@@ -93,6 +96,8 @@ pub enum Error {
 	HrmpEgressChannelIndex(ReadEntryErr),
 	/// The channel identified by the sender and receiver cannot be extracted.
 	HrmpChannel(ParaId, ParaId, ReadEntryErr),
+	/// The latest included parachain head cannot be extracted.
+	ParaHead(ReadEntryErr),
 }
 
 #[derive(Debug)]
@@ -114,7 +119,7 @@ pub enum ReadEntryErr {
 fn read_entry<T, B>(backend: &B, key: &[u8], fallback: Option<T>) -> Result<T, ReadEntryErr>
 where
 	T: Decode,
-	B: Backend<HashFor<relay_chain::Block>>,
+	B: Backend<HashingFor<relay_chain::Block>>,
 {
 	backend
 		.storage(key)
@@ -133,7 +138,7 @@ where
 fn read_optional_entry<T, B>(backend: &B, key: &[u8]) -> Result<Option<T>, ReadEntryErr>
 where
 	T: Decode,
-	B: Backend<HashFor<relay_chain::Block>>,
+	B: Backend<HashingFor<relay_chain::Block>>,
 {
 	match read_entry(backend, key, None) {
 		Ok(v) => Ok(Some(v)),
@@ -147,7 +152,8 @@ where
 /// This state proof is extracted from the relay chain block we are building on top of.
 pub struct RelayChainStateProof {
 	para_id: ParaId,
-	trie_backend: TrieBackend<MemoryDB<HashFor<relay_chain::Block>>, HashFor<relay_chain::Block>>,
+	trie_backend:
+		TrieBackend<MemoryDB<HashingFor<relay_chain::Block>>, HashingFor<relay_chain::Block>>,
 }
 
 impl RelayChainStateProof {
@@ -160,7 +166,7 @@ impl RelayChainStateProof {
 		relay_parent_storage_root: relay_chain::Hash,
 		proof: StorageProof,
 	) -> Result<Self, Error> {
-		let db = proof.into_memory_db::<HashFor<relay_chain::Block>>();
+		let db = proof.into_memory_db::<HashingFor<relay_chain::Block>>();
 		if !db.contains(&relay_parent_storage_root, EMPTY_PREFIX) {
 			return Err(Error::RootMismatch)
 		}
@@ -194,9 +200,10 @@ impl RelayChainStateProof {
 
 		// TODO paritytech/polkadot#6283: Remove all usages of `relay_dispatch_queue_size`
 		//
-		// When the relay chain and all parachains support `relay_dispatch_queue_remaining_capacity`,
-		// this code here needs to be removed and above needs to be changed to `read_entry` that
-		// returns an error if `relay_dispatch_queue_remaining_capacity` can not be found/decoded.
+		// When the relay chain and all parachains support
+		// `relay_dispatch_queue_remaining_capacity`, this code here needs to be removed and above
+		// needs to be changed to `read_entry` that returns an error if
+		// `relay_dispatch_queue_remaining_capacity` can not be found/decoded.
 		//
 		// For now we just fallback to the old dispatch queue size on `ReadEntryErr::Absent`.
 		// `ReadEntryErr::Decode` and `ReadEntryErr::Proof` are potentially subject to meddling
@@ -258,8 +265,9 @@ impl RelayChainStateProof {
 			egress_channels.push((recipient, hrmp_channel));
 		}
 
-		// NOTE that ingress_channels and egress_channels promise to be sorted. We satisfy this property
-		// by relying on the fact that `ingress_channel_index` and `egress_channel_index` are themselves sorted.
+		// NOTE that ingress_channels and egress_channels promise to be sorted. We satisfy this
+		// property by relying on the fact that `ingress_channel_index` and `egress_channel_index`
+		// are themselves sorted.
 		Ok(MessagingStateSnapshot {
 			dmq_mqc_head,
 			relay_dispatch_queue_remaining_capacity,
@@ -274,6 +282,15 @@ impl RelayChainStateProof {
 	pub fn read_abridged_host_configuration(&self) -> Result<AbridgedHostConfiguration, Error> {
 		read_entry(&self.trie_backend, relay_chain::well_known_keys::ACTIVE_CONFIG, None)
 			.map_err(Error::Config)
+	}
+
+	/// Read latest included parachain [head data](`relay_chain::HeadData`) from the relay chain
+	/// state proof.
+	///
+	/// Returns an error if anything failed at reading or decoding.
+	pub fn read_included_para_head(&self) -> Result<relay_chain::HeadData, Error> {
+		read_entry(&self.trie_backend, &relay_chain::well_known_keys::para_head(self.para_id), None)
+			.map_err(Error::ParaHead)
 	}
 
 	/// Read the [`Slot`](relay_chain::Slot) from the relay chain state proof.
@@ -319,12 +336,12 @@ impl RelayChainStateProof {
 		.map_err(Error::UpgradeRestriction)
 	}
 
-	/// Read an entry given by the key and try to decode it. If the value specified by the key according
-	/// to the proof is empty, the `fallback` value will be returned.
+	/// Read an entry given by the key and try to decode it. If the value specified by the key
+	/// according to the proof is empty, the `fallback` value will be returned.
 	///
-	/// Returns `Err` in case the backend can't return the value under the specific key (likely due to
-	/// a malformed proof), in case the decoding fails, or in case where the value is empty in the relay
-	/// chain state and no fallback was provided.
+	/// Returns `Err` in case the backend can't return the value under the specific key (likely due
+	/// to a malformed proof), in case the decoding fails, or in case where the value is empty in
+	/// the relay chain state and no fallback was provided.
 	pub fn read_entry<T>(&self, key: &[u8], fallback: Option<T>) -> Result<T, Error>
 	where
 		T: Decode,
@@ -334,8 +351,8 @@ impl RelayChainStateProof {
 
 	/// Read an optional entry given by the key and try to decode it.
 	///
-	/// Returns `Err` in case the backend can't return the value under the specific key (likely due to
-	/// a malformed proof) or if the value couldn't be decoded.
+	/// Returns `Err` in case the backend can't return the value under the specific key (likely due
+	/// to a malformed proof) or if the value couldn't be decoded.
 	pub fn read_optional_entry<T>(&self, key: &[u8]) -> Result<Option<T>, Error>
 	where
 		T: Decode,

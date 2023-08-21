@@ -18,13 +18,14 @@
 use codec::Encode;
 use frame_support::{
 	assert_noop, assert_ok,
-	traits::{fungibles::InspectEnumerable, Get, OriginTrait},
+	traits::{fungibles::InspectEnumerable, Get, OnFinalize, OnInitialize, OriginTrait},
 	weights::Weight,
 };
-use parachains_common::Balance;
+use frame_system::pallet_prelude::BlockNumberFor;
+use parachains_common::{AccountId, Balance};
 use parachains_runtimes_test_utils::{
 	assert_metadata, assert_total, AccountIdOf, BalanceOf, CollatorSessionKeys, ExtBuilder,
-	RuntimeHelper, ValidatorIdOf, XcmReceivedFrom,
+	ValidatorIdOf, XcmReceivedFrom,
 };
 use sp_runtime::{
 	traits::{MaybeEquivalence, StaticLookup, Zero},
@@ -33,10 +34,17 @@ use sp_runtime::{
 use xcm::latest::prelude::*;
 use xcm_executor::{traits::ConvertLocation, XcmExecutor};
 
+type RuntimeHelper<Runtime, AllPalletsWithoutSystem = ()> =
+	parachains_runtimes_test_utils::RuntimeHelper<Runtime, AllPalletsWithoutSystem>;
+
+// Re-export test_case from `parachains-runtimes-test-utils`
+pub use parachains_runtimes_test_utils::test_cases::change_storage_constant_by_governance_works;
+
 /// Test-case makes sure that `Runtime` can receive native asset from relay chain
 /// and can teleport it back and to the other parachains
 pub fn teleports_for_native_asset_works<
 	Runtime,
+	AllPalletsWithoutSystem,
 	XcmConfig,
 	CheckingAccount,
 	WeightToFee,
@@ -59,6 +67,8 @@ pub fn teleports_for_native_asset_works<
 		+ pallet_collator_selection::Config
 		+ cumulus_pallet_parachain_system::Config
 		+ cumulus_pallet_xcmp_queue::Config,
+	AllPalletsWithoutSystem:
+		OnInitialize<BlockNumberFor<Runtime>> + OnFinalize<BlockNumberFor<Runtime>>,
 	AccountIdOf<Runtime>: Into<[u8; 32]>,
 	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
 	BalanceOf<Runtime>: From<Balance> + Into<u128>,
@@ -81,6 +91,13 @@ pub fn teleports_for_native_asset_works<
 		.with_para_id(runtime_para_id.into())
 		.build()
 		.execute_with(|| {
+			let mut alice = [0u8; 32];
+			alice[0] = 1;
+
+			let included_head = RuntimeHelper::<Runtime, AllPalletsWithoutSystem>::run_to_block(
+				2,
+				AccountId::from(alice),
+			);
 			// check Balances before
 			assert_eq!(<pallet_balances::Pallet<Runtime>>::free_balance(&target_account), 0.into());
 			assert_eq!(
@@ -163,6 +180,8 @@ pub fn teleports_for_native_asset_works<
 					dest_beneficiary,
 					(native_asset_id, native_asset_to_teleport_away.into()),
 					None,
+					included_head.clone(),
+					&alice,
 				));
 				// check balances
 				assert_eq!(
@@ -208,6 +227,8 @@ pub fn teleports_for_native_asset_works<
 					dest_beneficiary,
 					(native_asset_id, native_asset_to_teleport_away.into()),
 					Some((runtime_para_id, other_para_id)),
+					included_head,
+					&alice,
 				));
 
 				// check balances
@@ -237,6 +258,7 @@ pub fn teleports_for_native_asset_works<
 macro_rules! include_teleports_for_native_asset_works(
 	(
 		$runtime:path,
+		$all_pallets_without_system:path,
 		$xcm_config:path,
 		$checking_account:path,
 		$weight_to_fee:path,
@@ -254,6 +276,7 @@ macro_rules! include_teleports_for_native_asset_works(
 
 			$crate::test_cases::teleports_for_native_asset_works::<
 				$runtime,
+				$all_pallets_without_system,
 				$xcm_config,
 				$checking_account,
 				$weight_to_fee,
@@ -270,9 +293,11 @@ macro_rules! include_teleports_for_native_asset_works(
 	}
 );
 
-/// Test-case makes sure that `Runtime` can receive teleported assets from sibling parachain relay chain
+/// Test-case makes sure that `Runtime` can receive teleported assets from sibling parachain relay
+/// chain
 pub fn teleports_for_foreign_assets_works<
 	Runtime,
+	AllPalletsWithoutSystem,
 	XcmConfig,
 	CheckingAccount,
 	WeightToFee,
@@ -298,6 +323,8 @@ pub fn teleports_for_foreign_assets_works<
 		+ cumulus_pallet_parachain_system::Config
 		+ cumulus_pallet_xcmp_queue::Config
 		+ pallet_assets::Config<ForeignAssetsPalletInstance>,
+	AllPalletsWithoutSystem:
+		OnInitialize<BlockNumberFor<Runtime>> + OnFinalize<BlockNumberFor<Runtime>>,
 	AccountIdOf<Runtime>: Into<[u8; 32]>,
 	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
 	BalanceOf<Runtime>: From<Balance>,
@@ -359,6 +386,13 @@ pub fn teleports_for_foreign_assets_works<
 		.with_tracing()
 		.build()
 		.execute_with(|| {
+			let mut alice = [0u8; 32];
+			alice[0] = 1;
+
+			let included_head = RuntimeHelper::<Runtime, AllPalletsWithoutSystem>::run_to_block(
+				2,
+				AccountId::from(alice),
+			);
 			// checks target_account before
 			assert_eq!(
 				<pallet_balances::Pallet<Runtime>>::free_balance(&target_account),
@@ -510,6 +544,8 @@ pub fn teleports_for_foreign_assets_works<
 					dest_beneficiary,
 					(foreign_asset_id_multilocation, asset_to_teleport_away),
 					Some((runtime_para_id, foreign_para_id)),
+					included_head,
+					&alice,
 				));
 
 				// check balances
@@ -554,6 +590,7 @@ pub fn teleports_for_foreign_assets_works<
 macro_rules! include_teleports_for_foreign_assets_works(
 	(
 		$runtime:path,
+		$all_pallets_without_system:path,
 		$xcm_config:path,
 		$checking_account:path,
 		$weight_to_fee:path,
@@ -574,6 +611,7 @@ macro_rules! include_teleports_for_foreign_assets_works(
 
 			$crate::test_cases::teleports_for_foreign_assets_works::<
 				$runtime,
+				$all_pallets_without_system,
 				$xcm_config,
 				$checking_account,
 				$weight_to_fee,
@@ -592,7 +630,8 @@ macro_rules! include_teleports_for_foreign_assets_works(
 	}
 );
 
-/// Test-case makes sure that `Runtime`'s `xcm::AssetTransactor` can handle native relay chain currency
+/// Test-case makes sure that `Runtime`'s `xcm::AssetTransactor` can handle native relay chain
+/// currency
 pub fn asset_transactor_transfer_with_local_consensus_currency_works<Runtime, XcmConfig>(
 	collator_session_keys: CollatorSessionKeys<Runtime>,
 	source_account: AccountIdOf<Runtime>,
@@ -704,7 +743,8 @@ macro_rules! include_asset_transactor_transfer_with_local_consensus_currency_wor
 	}
 );
 
-///Test-case makes sure that `Runtime`'s `xcm::AssetTransactor` can handle native relay chain currency
+///Test-case makes sure that `Runtime`'s `xcm::AssetTransactor` can handle native relay chain
+/// currency
 pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 	Runtime,
 	XcmConfig,
@@ -824,7 +864,8 @@ pub fn asset_transactor_transfer_with_pallet_assets_instance_works<
 			);
 			additional_checks_before();
 
-			// transfer_asset (deposit/withdraw) ALICE -> CHARLIE (not ok - Charlie does not have ExistentialDeposit)
+			// transfer_asset (deposit/withdraw) ALICE -> CHARLIE (not ok - Charlie does not have
+			// ExistentialDeposit)
 			assert_noop!(
 				RuntimeHelper::<XcmConfig>::do_transfer(
 					MultiLocation {
@@ -1100,7 +1141,8 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 				freezer: bob_account.clone().into(),
 			});
 
-			// lets simulate this was triggered by relay chain from local consensus sibling parachain
+			// lets simulate this was triggered by relay chain from local consensus sibling
+			// parachain
 			let xcm = Xcm(vec![
 				WithdrawAsset(buy_execution_fee.clone().into()),
 				BuyExecution { fees: buy_execution_fee.clone(), weight_limit: Unlimited },
@@ -1203,7 +1245,8 @@ pub fn create_and_manage_foreign_assets_for_local_consensus_parachain_assets_wor
 				pallet_assets::Error::<Runtime, ForeignAssetsPalletInstance>::NoPermission
 			);
 
-			// lets try create asset for different parachain(3333) (foreign_creator(2222) can create just his assets)
+			// lets try create asset for different parachain(3333) (foreign_creator(2222) can create
+			// just his assets)
 			let foreign_asset_id_multilocation =
 				MultiLocation { parents: 1, interior: X2(Parachain(3333), GeneralIndex(1234567)) };
 			let asset_id = AssetIdConverter::convert(&foreign_asset_id_multilocation).unwrap();

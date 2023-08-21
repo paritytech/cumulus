@@ -30,7 +30,9 @@ use parity_scale_codec::{Decode, Encode};
 
 use cumulus_primitives_core::{
 	relay_chain::{
-		slashing, BlockNumber, CandidateCommitments, CandidateEvent, CandidateHash,
+		slashing,
+		vstaging::{AsyncBackingParams, BackingState},
+		BlockNumber, CandidateCommitments, CandidateEvent, CandidateHash,
 		CommittedCandidateReceipt, CoreState, DisputeState, ExecutorParams, GroupRotationInfo,
 		Hash as RelayHash, Header as RelayHeader, InboundHrmpMessage, OccupiedCoreAssumption,
 		PvfCheckStatement, ScrapedOnChainVotes, SessionIndex, SessionInfo, ValidationCode,
@@ -525,7 +527,8 @@ impl RelayChainRpcClient {
 		.await
 	}
 
-	/// Fetch the hash of the validation code used by a para, making the given `OccupiedCoreAssumption`.
+	/// Fetch the hash of the validation code used by a para, making the given
+	/// `OccupiedCoreAssumption`.
 	pub async fn parachain_host_validation_code_hash(
 		&self,
 		at: RelayHash,
@@ -631,6 +634,33 @@ impl RelayChainRpcClient {
 	) -> Result<Vec<InboundDownwardMessage>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_dmq_contents", at, Some(para_id))
 			.await
+	}
+
+	#[allow(missing_docs)]
+	pub async fn parachain_host_staging_async_backing_params(
+		&self,
+		at: RelayHash,
+	) -> Result<AsyncBackingParams, RelayChainError> {
+		self.call_remote_runtime_function(
+			"ParachainHost_staging_async_backing_params",
+			at,
+			None::<()>,
+		)
+		.await
+	}
+
+	#[allow(missing_docs)]
+	pub async fn parachain_host_staging_para_backing_state(
+		&self,
+		at: RelayHash,
+		para_id: ParaId,
+	) -> Result<Option<BackingState>, RelayChainError> {
+		self.call_remote_runtime_function(
+			"ParachainHost_staging_para_backing_state",
+			at,
+			Some(para_id),
+		)
+		.await
 	}
 
 	/// Get a stream of all imported relay chain headers

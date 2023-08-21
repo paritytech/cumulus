@@ -29,16 +29,18 @@ use frame_support::{
 	sp_runtime::{MultiAddress, MultiSigner},
 	RuntimeDebug,
 };
-use sp_std::prelude::*;
+use sp_std::prelude::Vec;
 
 /// BridgeHubRococo parachain.
 #[derive(RuntimeDebug)]
 pub struct BridgeHubRococo;
 
 impl Chain for BridgeHubRococo {
+	type BlockNumber = BlockNumber;
 	type Hash = Hash;
 	type Hasher = Hasher;
-	type Block = Block;
+	type Header = Header;
+
 	type AccountId = AccountId;
 	type Balance = Balance;
 	type Nonce = Nonce;

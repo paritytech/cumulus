@@ -100,7 +100,8 @@ async fn collect_relay_storage_proof(
 		relay_well_known_keys::ACTIVE_CONFIG.to_vec(),
 		relay_well_known_keys::dmq_mqc_head(para_id),
 		// TODO paritytech/polkadot#6283: Remove all usages of `relay_dispatch_queue_size`
-		// We need to keep this here until all parachains have migrated to `relay_dispatch_queue_remaining_capacity`.
+		// We need to keep this here until all parachains have migrated to
+		// `relay_dispatch_queue_remaining_capacity`.
 		#[allow(deprecated)]
 		relay_well_known_keys::relay_dispatch_queue_size(para_id),
 		relay_well_known_keys::relay_dispatch_queue_remaining_capacity(para_id).key,
@@ -108,6 +109,7 @@ async fn collect_relay_storage_proof(
 		relay_well_known_keys::hrmp_egress_channel_index(para_id),
 		relay_well_known_keys::upgrade_go_ahead_signal(para_id),
 		relay_well_known_keys::upgrade_restriction_signal(para_id),
+		relay_well_known_keys::para_head(para_id),
 	];
 	relevant_keys.extend(ingress_channels.into_iter().map(|sender| {
 		relay_well_known_keys::hrmp_channels(HrmpChannelId { sender, recipient: para_id })

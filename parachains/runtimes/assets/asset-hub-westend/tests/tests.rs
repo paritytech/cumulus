@@ -20,17 +20,19 @@
 pub use asset_hub_westend_runtime::{
 	constants::fee::WeightToFee,
 	xcm_config::{CheckingAccount, TrustBackedAssetsPalletLocation, XcmConfig},
-	AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets, ForeignAssetsInstance,
-	ParachainSystem, Runtime, SessionKeys, System, TrustBackedAssetsInstance,
+	AllowMultiAssetPools, AssetDeposit, Assets, Balances, ExistentialDeposit, ForeignAssets,
+	ForeignAssetsInstance, ParachainSystem, Runtime, SessionKeys, System,
+	TrustBackedAssetsInstance,
 };
 use asset_hub_westend_runtime::{
 	xcm_config::{
 		AssetFeeAsExistentialDepositMultiplierFeeCharger, ForeignCreatorsSovereignAccountOf,
 		WestendLocation,
 	},
-	MetadataDepositBase, MetadataDepositPerByte, RuntimeCall, RuntimeEvent,
+	AllPalletsWithoutSystem, MetadataDepositBase, MetadataDepositPerByte, RuntimeCall,
+	RuntimeEvent,
 };
-use asset_test_utils::{CollatorSessionKeys, ExtBuilder, RuntimeHelper, XcmReceivedFrom};
+use asset_test_utils::{CollatorSessionKeys, ExtBuilder, XcmReceivedFrom};
 use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_utility::ChargeWeightInFungibles;
 use frame_support::{
@@ -52,6 +54,8 @@ const SOME_ASSET_ADMIN: [u8; 32] = [5u8; 32];
 
 type AssetIdForTrustBackedAssetsConvert =
 	assets_common::AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>;
+
+type RuntimeHelper = asset_test_utils::RuntimeHelper<Runtime, AllPalletsWithoutSystem>;
 
 fn collator_session_keys() -> CollatorSessionKeys<Runtime> {
 	CollatorSessionKeys::new(
@@ -76,7 +80,7 @@ fn test_asset_xcm_trader() {
 			let minimum_asset_balance = 3333333_u128;
 			let local_asset_id = 1;
 			assert_ok!(Assets::force_create(
-				RuntimeHelper::<Runtime>::root_origin(),
+				RuntimeHelper::root_origin(),
 				local_asset_id.into(),
 				AccountId::from(ALICE).into(),
 				true,
@@ -85,7 +89,7 @@ fn test_asset_xcm_trader() {
 
 			// We first mint enough asset for the account to exist for assets
 			assert_ok!(Assets::mint(
-				RuntimeHelper::<Runtime>::origin_of(AccountId::from(ALICE)),
+				RuntimeHelper::origin_of(AccountId::from(ALICE)),
 				local_asset_id.into(),
 				AccountId::from(ALICE).into(),
 				minimum_asset_balance
@@ -96,7 +100,7 @@ fn test_asset_xcm_trader() {
 				AssetIdForTrustBackedAssetsConvert::convert_back(&local_asset_id).unwrap();
 
 			// Set Alice as block author, who will receive fees
-			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
+			RuntimeHelper::run_to_block(2, AccountId::from(ALICE));
 
 			// We are going to buy 4e9 weight
 			let bought = Weight::from_parts(4_000_000_000u64, 0);
@@ -115,9 +119,10 @@ fn test_asset_xcm_trader() {
 				(asset_multilocation, asset_amount_needed + asset_amount_extra).into();
 
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
+			let ctx = XcmContext { origin: None, message_id: XcmHash::default(), topic: None };
 
 			// Lets buy_weight and make sure buy_weight does not return an error
-			let unused_assets = trader.buy_weight(bought, asset.into()).expect("Expected Ok");
+			let unused_assets = trader.buy_weight(bought, asset.into(), &ctx).expect("Expected Ok");
 			// Check whether a correct amount of unused assets is returned
 			assert_ok!(
 				unused_assets.ensure_contains(&(asset_multilocation, asset_amount_extra).into())
@@ -154,7 +159,7 @@ fn test_asset_xcm_trader_with_refund() {
 			// We need root origin to create a sufficient asset
 			// We set existential deposit to be identical to the one for Balances first
 			assert_ok!(Assets::force_create(
-				RuntimeHelper::<Runtime>::root_origin(),
+				RuntimeHelper::root_origin(),
 				1.into(),
 				AccountId::from(ALICE).into(),
 				true,
@@ -163,16 +168,17 @@ fn test_asset_xcm_trader_with_refund() {
 
 			// We first mint enough asset for the account to exist for assets
 			assert_ok!(Assets::mint(
-				RuntimeHelper::<Runtime>::origin_of(AccountId::from(ALICE)),
+				RuntimeHelper::origin_of(AccountId::from(ALICE)),
 				1.into(),
 				AccountId::from(ALICE).into(),
 				ExistentialDeposit::get()
 			));
 
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
+			let ctx = XcmContext { origin: None, message_id: XcmHash::default(), topic: None };
 
 			// Set Alice as block author, who will receive fees
-			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
+			RuntimeHelper::run_to_block(2, AccountId::from(ALICE));
 
 			// We are going to buy 4e9 weight
 			let bought = Weight::from_parts(4_000_000_000u64, 0);
@@ -184,11 +190,12 @@ fn test_asset_xcm_trader_with_refund() {
 			let asset: MultiAsset = (asset_multilocation, amount_bought).into();
 
 			// Make sure buy_weight does not return an error
-			assert_ok!(trader.buy_weight(bought, asset.clone().into()));
+			assert_ok!(trader.buy_weight(bought, asset.clone().into(), &ctx));
 
 			// Make sure again buy_weight does return an error
-			// This assert relies on the fact, that we use `TakeFirstAssetTrader` in `WeightTrader` tuple chain, which cannot be called twice
-			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::TooExpensive);
+			// This assert relies on the fact, that we use `TakeFirstAssetTrader` in `WeightTrader`
+			// tuple chain, which cannot be called twice
+			assert_noop!(trader.buy_weight(bought, asset.into(), &ctx), XcmError::TooExpensive);
 
 			// We actually use half of the weight
 			let weight_used = bought / 2;
@@ -197,7 +204,7 @@ fn test_asset_xcm_trader_with_refund() {
 			let amount_refunded = WeightToFee::weight_to_fee(&(bought - weight_used));
 
 			assert_eq!(
-				trader.refund_weight(bought - weight_used),
+				trader.refund_weight(bought - weight_used, &ctx),
 				Some((asset_multilocation, amount_refunded).into())
 			);
 
@@ -231,7 +238,7 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 			// We need root origin to create a sufficient asset
 			// We set existential deposit to be identical to the one for Balances first
 			assert_ok!(Assets::force_create(
-				RuntimeHelper::<Runtime>::root_origin(),
+				RuntimeHelper::root_origin(),
 				1.into(),
 				AccountId::from(ALICE).into(),
 				true,
@@ -239,9 +246,10 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 			));
 
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
+			let ctx = XcmContext { origin: None, message_id: XcmHash::default(), topic: None };
 
 			// Set Alice as block author, who will receive fees
-			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
+			RuntimeHelper::run_to_block(2, AccountId::from(ALICE));
 
 			// We are going to buy 5e9 weight
 			let bought = Weight::from_parts(500_000_000u64, 0);
@@ -258,7 +266,7 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 			let asset: MultiAsset = (asset_multilocation, amount_bought).into();
 
 			// Buy weight should return an error
-			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::TooExpensive);
+			assert_noop!(trader.buy_weight(bought, asset.into(), &ctx), XcmError::TooExpensive);
 
 			// not credited since the ED is higher than this value
 			assert_eq!(Assets::balance(1, AccountId::from(ALICE)), 0);
@@ -282,7 +290,7 @@ fn test_that_buying_ed_refund_does_not_refund() {
 			// We need root origin to create a sufficient asset
 			// We set existential deposit to be identical to the one for Balances first
 			assert_ok!(Assets::force_create(
-				RuntimeHelper::<Runtime>::root_origin(),
+				RuntimeHelper::root_origin(),
 				1.into(),
 				AccountId::from(ALICE).into(),
 				true,
@@ -290,9 +298,10 @@ fn test_that_buying_ed_refund_does_not_refund() {
 			));
 
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
+			let ctx = XcmContext { origin: None, message_id: XcmHash::default(), topic: None };
 
 			// Set Alice as block author, who will receive fees
-			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
+			RuntimeHelper::run_to_block(2, AccountId::from(ALICE));
 
 			let bought = Weight::from_parts(500_000_000u64, 0);
 
@@ -308,17 +317,17 @@ fn test_that_buying_ed_refund_does_not_refund() {
 			// We know we will have to buy at least ED, so lets make sure first it will
 			// fail with a payment of less than ED
 			let asset: MultiAsset = (asset_multilocation, amount_bought).into();
-			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::TooExpensive);
+			assert_noop!(trader.buy_weight(bought, asset.into(), &ctx), XcmError::TooExpensive);
 
 			// Now lets buy ED at least
 			let asset: MultiAsset = (asset_multilocation, ExistentialDeposit::get()).into();
 
 			// Buy weight should work
-			assert_ok!(trader.buy_weight(bought, asset.into()));
+			assert_ok!(trader.buy_weight(bought, asset.into(), &ctx));
 
 			// Should return None. We have a specific check making sure we dont go below ED for
 			// drop payment
-			assert_eq!(trader.refund_weight(bought), None);
+			assert_eq!(trader.refund_weight(bought, &ctx), None);
 
 			// Drop trader
 			drop(trader);
@@ -345,7 +354,7 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 			// Create a non-sufficient asset with specific existential deposit
 			let minimum_asset_balance = 1_000_000_u128;
 			assert_ok!(Assets::force_create(
-				RuntimeHelper::<Runtime>::root_origin(),
+				RuntimeHelper::root_origin(),
 				1.into(),
 				AccountId::from(ALICE).into(),
 				false,
@@ -354,16 +363,17 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 
 			// We first mint enough asset for the account to exist for assets
 			assert_ok!(Assets::mint(
-				RuntimeHelper::<Runtime>::origin_of(AccountId::from(ALICE)),
+				RuntimeHelper::origin_of(AccountId::from(ALICE)),
 				1.into(),
 				AccountId::from(ALICE).into(),
 				minimum_asset_balance
 			));
 
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
+			let ctx = XcmContext { origin: None, message_id: XcmHash::default(), topic: None };
 
 			// Set Alice as block author, who will receive fees
-			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
+			RuntimeHelper::run_to_block(2, AccountId::from(ALICE));
 
 			// We are going to buy 4e9 weight
 			let bought = Weight::from_parts(4_000_000_000u64, 0);
@@ -376,7 +386,7 @@ fn test_asset_xcm_trader_not_possible_for_non_sufficient_assets() {
 			let asset: MultiAsset = (asset_multilocation, asset_amount_needed).into();
 
 			// Make sure again buy_weight does return an error
-			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::TooExpensive);
+			assert_noop!(trader.buy_weight(bought, asset.into(), &ctx), XcmError::TooExpensive);
 
 			// Drop trader
 			drop(trader);
@@ -427,7 +437,7 @@ fn test_assets_balances_api_works() {
 			// We need root origin to create a sufficient asset
 			let minimum_asset_balance = 3333333_u128;
 			assert_ok!(Assets::force_create(
-				RuntimeHelper::<Runtime>::root_origin(),
+				RuntimeHelper::root_origin(),
 				local_asset_id.into(),
 				AccountId::from(ALICE).into(),
 				true,
@@ -436,7 +446,7 @@ fn test_assets_balances_api_works() {
 
 			// We first mint enough asset for the account to exist for assets
 			assert_ok!(Assets::mint(
-				RuntimeHelper::<Runtime>::origin_of(AccountId::from(ALICE)),
+				RuntimeHelper::origin_of(AccountId::from(ALICE)),
 				local_asset_id.into(),
 				AccountId::from(ALICE).into(),
 				minimum_asset_balance
@@ -445,7 +455,7 @@ fn test_assets_balances_api_works() {
 			// create foreign asset
 			let foreign_asset_minimum_asset_balance = 3333333_u128;
 			assert_ok!(ForeignAssets::force_create(
-				RuntimeHelper::<Runtime>::root_origin(),
+				RuntimeHelper::root_origin(),
 				foreign_asset_id_multilocation,
 				AccountId::from(SOME_ASSET_ADMIN).into(),
 				false,
@@ -454,7 +464,7 @@ fn test_assets_balances_api_works() {
 
 			// We first mint enough asset for the account to exist for assets
 			assert_ok!(ForeignAssets::mint(
-				RuntimeHelper::<Runtime>::origin_of(AccountId::from(SOME_ASSET_ADMIN)),
+				RuntimeHelper::origin_of(AccountId::from(SOME_ASSET_ADMIN)),
 				foreign_asset_id_multilocation,
 				AccountId::from(ALICE).into(),
 				6 * foreign_asset_minimum_asset_balance
@@ -501,6 +511,7 @@ fn test_assets_balances_api_works() {
 
 asset_test_utils::include_teleports_for_native_asset_works!(
 	Runtime,
+	AllPalletsWithoutSystem,
 	XcmConfig,
 	CheckingAccount,
 	WeightToFee,
@@ -524,6 +535,7 @@ asset_test_utils::include_teleports_for_native_asset_works!(
 
 asset_test_utils::include_teleports_for_foreign_assets_works!(
 	Runtime,
+	AllPalletsWithoutSystem,
 	XcmConfig,
 	CheckingAccount,
 	WeightToFee,
@@ -648,7 +660,7 @@ fn plain_receive_teleported_asset_works() {
 				.map(xcm::v3::Xcm::<RuntimeCall>::try_from).expect("failed").expect("failed");
 
 			let outcome =
-				XcmExecutor::<XcmConfig>::execute_xcm(Parent, maybe_msg, message_id, RuntimeHelper::<Runtime>::xcm_max_weight(XcmReceivedFrom::Parent));
+				XcmExecutor::<XcmConfig>::execute_xcm(Parent, maybe_msg, message_id, RuntimeHelper::xcm_max_weight(XcmReceivedFrom::Parent));
 			assert_eq!(outcome.ensure_complete(), Ok(()));
 		})
 }

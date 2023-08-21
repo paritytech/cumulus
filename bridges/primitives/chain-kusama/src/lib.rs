@@ -23,14 +23,16 @@ pub use bp_polkadot_core::*;
 use bp_header_chain::ChainWithGrandpa;
 use bp_runtime::{decl_bridge_finality_runtime_apis, Chain};
 use frame_support::weights::Weight;
+use sp_std::prelude::Vec;
 
 /// Kusama Chain
 pub struct Kusama;
 
 impl Chain for Kusama {
-	type Block = <PolkadotLike as Chain>::Block;
+	type BlockNumber = <PolkadotLike as Chain>::BlockNumber;
 	type Hash = <PolkadotLike as Chain>::Hash;
 	type Hasher = <PolkadotLike as Chain>::Hasher;
+	type Header = <PolkadotLike as Chain>::Header;
 
 	type AccountId = <PolkadotLike as Chain>::AccountId;
 	type Balance = <PolkadotLike as Chain>::Balance;
@@ -68,4 +70,4 @@ pub const WITH_KUSAMA_GRANDPA_PALLET_NAME: &str = "BridgeKusamaGrandpa";
 /// reserve.
 pub const MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE: u32 = 128;
 
-decl_bridge_finality_runtime_apis!(kusama);
+decl_bridge_finality_runtime_apis!(kusama, grandpa);

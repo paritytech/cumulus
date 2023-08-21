@@ -14,18 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
+use crate::HeaderIdProvider;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{weights::Weight, Parameter};
-use num_traits::{Bounded, CheckedSub, SaturatingAdd, Zero};
+use num_traits::{AsPrimitive, Bounded, CheckedSub, Saturating, SaturatingAdd, Zero};
 use sp_runtime::{
 	traits::{
-		AtLeast32Bit, AtLeast32BitUnsigned, Block as BlockT, Hash as HashT, Header as HeaderT,
-		HeaderProvider, MaybeDisplay, MaybeSerialize, MaybeSerializeDeserialize, Member,
-		SimpleBitOps, Verify,
+		AtLeast32Bit, AtLeast32BitUnsigned, Hash as HashT, Header as HeaderT, MaybeDisplay,
+		MaybeSerialize, MaybeSerializeDeserialize, Member, SimpleBitOps, Verify,
 	},
 	FixedPointOperand,
 };
-use sp_std::{convert::TryFrom, fmt::Debug, hash::Hash, vec, vec::Vec};
+use sp_std::{convert::TryFrom, fmt::Debug, hash::Hash, str::FromStr, vec, vec::Vec};
 
 /// Chain call, that is either SCALE-encoded, or decoded.
 #[derive(Debug, Clone, PartialEq)]
@@ -91,6 +91,27 @@ impl<ChainCall: Encode> Encode for EncodedOrDecodedCall<ChainCall> {
 
 /// Minimal Substrate-based chain representation that may be used from no_std environment.
 pub trait Chain: Send + Sync + 'static {
+	/// A type that fulfills the abstract idea of what a Substrate block number is.
+	// Constraits come from the associated Number type of `sp_runtime::traits::Header`
+	// See here for more info:
+	// https://crates.parity.io/sp_runtime/traits/trait.Header.html#associatedtype.Number
+	//
+	// Note that the `AsPrimitive<usize>` trait is required by the GRANDPA justification
+	// verifier, and is not usually part of a Substrate Header's Number type.
+	type BlockNumber: Parameter
+		+ Member
+		+ MaybeSerializeDeserialize
+		+ Hash
+		+ Copy
+		+ Default
+		+ MaybeDisplay
+		+ AtLeast32BitUnsigned
+		+ FromStr
+		+ AsPrimitive<usize>
+		+ Default
+		+ Saturating
+		+ MaxEncodedLen;
+
 	/// A type that fulfills the abstract idea of what a Substrate hash is.
 	// Constraits come from the associated Hash type of `sp_runtime::traits::Header`
 	// See here for more info:
@@ -115,10 +136,13 @@ pub trait Chain: Send + Sync + 'static {
 	// https://crates.parity.io/sp_runtime/traits/trait.Header.html#associatedtype.Hashing
 	type Hasher: HashT<Output = Self::Hash>;
 
-	/// A type that fulfills the abstract idea of what a Substrate block is.
+	/// A type that fulfills the abstract idea of what a Substrate header is.
 	// See here for more info:
-	// https://crates.parity.io/sp_runtime/traits/trait.Block.html
-	type Block: Parameter + BlockT<Hash = Self::Hash> + MaybeSerialize;
+	// https://crates.parity.io/sp_runtime/traits/trait.Header.html
+	type Header: Parameter
+		+ HeaderT<Number = Self::BlockNumber, Hash = Self::Hash>
+		+ HeaderIdProvider<Self::Header>
+		+ MaybeSerializeDeserialize;
 
 	/// The user account identifier type for the runtime.
 	type AccountId: Parameter
@@ -146,7 +170,7 @@ pub trait Chain: Send + Sync + 'static {
 		+ Zero
 		+ TryFrom<sp_core::U256>
 		+ MaxEncodedLen;
-	/// Index of a transaction used by the chain.
+	/// Nonce of a transaction used by the chain.
 	type Nonce: Parameter
 		+ Member
 		+ MaybeSerialize
@@ -176,9 +200,10 @@ impl<T> Chain for T
 where
 	T: Send + Sync + 'static + UnderlyingChainProvider,
 {
+	type BlockNumber = <T::Chain as Chain>::BlockNumber;
 	type Hash = <T::Chain as Chain>::Hash;
 	type Hasher = <T::Chain as Chain>::Hasher;
-	type Block = <T::Chain as Chain>::Block;
+	type Header = <T::Chain as Chain>::Header;
 	type AccountId = <T::Chain as Chain>::AccountId;
 	type Balance = <T::Chain as Chain>::Balance;
 	type Nonce = <T::Chain as Chain>::Nonce;
@@ -219,7 +244,7 @@ impl<Para: Parachain> frame_support::traits::Get<u32> for ParachainIdOf<Para> {
 pub type UnderlyingChainOf<C> = <C as UnderlyingChainProvider>::Chain;
 
 /// Block number used by the chain.
-pub type BlockNumberOf<C> = <<<C as Chain>::Block as HeaderProvider>::HeaderT as HeaderT>::Number;
+pub type BlockNumberOf<C> = <C as Chain>::BlockNumber;
 
 /// Hash type used by the chain.
 pub type HashOf<C> = <C as Chain>::Hash;
@@ -228,7 +253,7 @@ pub type HashOf<C> = <C as Chain>::Hash;
 pub type HasherOf<C> = <C as Chain>::Hasher;
 
 /// Header type used by the chain.
-pub type HeaderOf<C> = <<C as Chain>::Block as HeaderProvider>::HeaderT;
+pub type HeaderOf<C> = <C as Chain>::Header;
 
 /// Account id type used by the chain.
 pub type AccountIdOf<C> = <C as Chain>::AccountId;
@@ -236,7 +261,7 @@ pub type AccountIdOf<C> = <C as Chain>::AccountId;
 /// Balance type used by the chain.
 pub type BalanceOf<C> = <C as Chain>::Balance;
 
-/// Transaction index type used by the chain.
+/// Transaction nonce type used by the chain.
 pub type NonceOf<C> = <C as Chain>::Nonce;
 
 /// Signature type used by the chain.
@@ -254,10 +279,11 @@ pub type TransactionEraOf<C> = crate::TransactionEra<BlockNumberOf<C>, HashOf<C>
 ///     - `<ThisChain>FinalityApi`
 /// - constants that are stringified names of runtime API methods:
 ///     - `BEST_FINALIZED_<THIS_CHAIN>_HEADER_METHOD`
+///     - `<THIS_CHAIN>_ACCEPTED_<CONSENSUS>_FINALITY_PROOFS_METHOD`
 /// The name of the chain has to be specified in snake case (e.g. `rialto_parachain`).
 #[macro_export]
 macro_rules! decl_bridge_finality_runtime_apis {
-	($chain: ident) => {
+	($chain: ident $(, $consensus: ident => $justification_type: ty)?) => {
 		bp_runtime::paste::item! {
 			mod [<$chain _finality_api>] {
 				use super::*;
@@ -265,6 +291,13 @@ macro_rules! decl_bridge_finality_runtime_apis {
 				/// Name of the `<ThisChain>FinalityApi::best_finalized` runtime method.
 				pub const [<BEST_FINALIZED_ $chain:upper _HEADER_METHOD>]: &str =
 					stringify!([<$chain:camel FinalityApi_best_finalized>]);
+
+				$(
+					/// Name of the `<ThisChain>FinalityApi::accepted_<consensus>_finality_proofs`
+					/// runtime method.
+					pub const [<$chain:upper _SYNCED_HEADERS_ $consensus:upper _INFO_METHOD>]: &str =
+						stringify!([<$chain:camel FinalityApi_synced_headers_ $consensus:lower _info>]);
+				)?
 
 				sp_api::decl_runtime_apis! {
 					/// API for querying information about the finalized chain headers.
@@ -274,12 +307,21 @@ macro_rules! decl_bridge_finality_runtime_apis {
 					pub trait [<$chain:camel FinalityApi>] {
 						/// Returns number and hash of the best finalized header known to the bridge module.
 						fn best_finalized() -> Option<bp_runtime::HeaderId<Hash, BlockNumber>>;
+
+						$(
+							/// Returns the justifications accepted in the current block.
+							fn [<synced_headers_ $consensus:lower _info>](
+							) -> Vec<$justification_type>;
+						)?
 					}
 				}
 			}
 
 			pub use [<$chain _finality_api>]::*;
 		}
+	};
+	($chain: ident, grandpa) => {
+		decl_bridge_finality_runtime_apis!($chain, grandpa => bp_header_chain::StoredHeaderGrandpaInfo<Header>);
 	};
 }
 
@@ -351,8 +393,8 @@ macro_rules! decl_bridge_messages_runtime_apis {
 /// The name of the chain has to be specified in snake case (e.g. `rialto_parachain`).
 #[macro_export]
 macro_rules! decl_bridge_runtime_apis {
-	($chain: ident) => {
-		bp_runtime::decl_bridge_finality_runtime_apis!($chain);
+	($chain: ident $(, $consensus: ident)?) => {
+		bp_runtime::decl_bridge_finality_runtime_apis!($chain $(, $consensus)?);
 		bp_runtime::decl_bridge_messages_runtime_apis!($chain);
 	};
 }

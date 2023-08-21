@@ -23,14 +23,17 @@ pub use bp_polkadot_core::*;
 use bp_header_chain::ChainWithGrandpa;
 use bp_runtime::{decl_bridge_finality_runtime_apis, Chain};
 use frame_support::{parameter_types, weights::Weight};
+use sp_std::prelude::Vec;
 
 /// Rococo Chain
 pub struct Rococo;
 
 impl Chain for Rococo {
-	type Block = <PolkadotLike as Chain>::Block;
+	type BlockNumber = <PolkadotLike as Chain>::BlockNumber;
 	type Hash = <PolkadotLike as Chain>::Hash;
 	type Hasher = <PolkadotLike as Chain>::Hasher;
+	type Header = <PolkadotLike as Chain>::Header;
+
 	type AccountId = <PolkadotLike as Chain>::AccountId;
 	type Balance = <PolkadotLike as Chain>::Balance;
 	type Nonce = <PolkadotLike as Chain>::Nonce;
@@ -71,4 +74,4 @@ pub const WITH_ROCOCO_GRANDPA_PALLET_NAME: &str = "BridgeRococoGrandpa";
 /// reserve.
 pub const MAX_NESTED_PARACHAIN_HEAD_DATA_SIZE: u32 = 128;
 
-decl_bridge_finality_runtime_apis!(rococo);
+decl_bridge_finality_runtime_apis!(rococo, grandpa);

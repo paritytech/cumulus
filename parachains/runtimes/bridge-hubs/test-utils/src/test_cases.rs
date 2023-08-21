@@ -36,13 +36,14 @@ use bridge_runtime_common::{
 use codec::Encode;
 use frame_support::{
 	assert_ok,
-	traits::{Get, OriginTrait, PalletInfoAccess},
+	traits::{Get, OnFinalize, OnInitialize, OriginTrait, PalletInfoAccess},
 };
 use frame_system::pallet_prelude::{BlockNumberFor, HeaderFor};
 use pallet_bridge_grandpa::BridgedHeader;
+use parachains_common::AccountId;
 use parachains_runtimes_test_utils::{
-	mock_open_hrmp_channel, AccountIdOf, BalanceOf, CollatorSessionKeys, ExtBuilder, RuntimeHelper,
-	ValidatorIdOf, XcmReceivedFrom,
+	mock_open_hrmp_channel, AccountIdOf, BalanceOf, CollatorSessionKeys, ExtBuilder, ValidatorIdOf,
+	XcmReceivedFrom,
 };
 use sp_core::H256;
 use sp_keyring::AccountKeyring::*;
@@ -53,6 +54,12 @@ use xcm_executor::XcmExecutor;
 
 // Re-export test_case from assets
 pub use asset_test_utils::include_teleports_for_native_asset_works;
+
+type RuntimeHelper<Runtime, AllPalletsWithoutSystem = ()> =
+	parachains_runtimes_test_utils::RuntimeHelper<Runtime, AllPalletsWithoutSystem>;
+
+// Re-export test_case from `parachains-runtimes-test-utils`
+pub use parachains_runtimes_test_utils::test_cases::change_storage_constant_by_governance_works;
 
 /// Test-case makes sure that `Runtime` can process bridging initialize via governance-like call
 pub fn initialize_bridge_by_governance_works<Runtime, GrandpaPalletInstance>(
@@ -110,76 +117,6 @@ pub fn initialize_bridge_by_governance_works<Runtime, GrandpaPalletInstance>(
 			assert_eq!(
 				pallet_bridge_grandpa::PalletOperatingMode::<Runtime, GrandpaPalletInstance>::try_get(),
 				Ok(bp_runtime::BasicOperatingMode::Normal)
-			);
-		})
-}
-
-/// Test-case makes sure that `Runtime` can change storage constant via governance-like call
-pub fn change_storage_constant_by_governance_works<Runtime, StorageConstant, StorageConstantType>(
-	collator_session_key: CollatorSessionKeys<Runtime>,
-	runtime_para_id: u32,
-	runtime_call_encode: Box<dyn Fn(frame_system::Call<Runtime>) -> Vec<u8>>,
-	storage_constant_key_value: fn() -> (Vec<u8>, StorageConstantType),
-	new_storage_constant_value: fn(&StorageConstantType) -> StorageConstantType,
-) where
-	Runtime: frame_system::Config
-		+ pallet_balances::Config
-		+ pallet_session::Config
-		+ pallet_xcm::Config
-		+ parachain_info::Config
-		+ pallet_collator_selection::Config
-		+ cumulus_pallet_dmp_queue::Config
-		+ cumulus_pallet_parachain_system::Config,
-	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
-	StorageConstant: Get<StorageConstantType>,
-	StorageConstantType: Encode + PartialEq + std::fmt::Debug,
-{
-	ExtBuilder::<Runtime>::default()
-		.with_collators(collator_session_key.collators())
-		.with_session_keys(collator_session_key.session_keys())
-		.with_para_id(runtime_para_id.into())
-		.with_tracing()
-		.build()
-		.execute_with(|| {
-			let (storage_constant_key, storage_constant_init_value): (
-				Vec<u8>,
-				StorageConstantType,
-			) = storage_constant_key_value();
-
-			// check delivery reward constant before (not stored yet, just as default value is used)
-			assert_eq!(StorageConstant::get(), storage_constant_init_value);
-			assert_eq!(sp_io::storage::get(&storage_constant_key), None);
-
-			let new_storage_constant_value =
-				new_storage_constant_value(&storage_constant_init_value);
-			assert_ne!(new_storage_constant_value, storage_constant_init_value);
-
-			// encode `set_storage` call
-			let set_storage_call =
-				runtime_call_encode(frame_system::Call::<Runtime>::set_storage {
-					items: vec![(
-						storage_constant_key.clone(),
-						new_storage_constant_value.encode(),
-					)],
-				});
-
-			// estimate - storing just 1 value
-			use frame_system::WeightInfo;
-			let require_weight_at_most =
-				<Runtime as frame_system::Config>::SystemWeightInfo::set_storage(1);
-
-			// execute XCM with Transact to `set_storage` as governance does
-			assert_ok!(RuntimeHelper::<Runtime>::execute_as_governance(
-				set_storage_call,
-				require_weight_at_most
-			)
-			.ensure_complete());
-
-			// check delivery reward constant after (stored)
-			assert_eq!(StorageConstant::get(), new_storage_constant_value);
-			assert_eq!(
-				sp_io::storage::get(&storage_constant_key),
-				Some(new_storage_constant_value.encode().into())
 			);
 		})
 }
@@ -277,6 +214,7 @@ pub fn handle_export_message_from_system_parachain_to_outbound_queue_works<
 ///     2. to Sibling parachain
 pub fn message_dispatch_routing_works<
 	Runtime,
+	AllPalletsWithoutSystem,
 	XcmConfig,
 	HrmpChannelOpener,
 	MessagesPalletInstance,
@@ -304,13 +242,18 @@ pub fn message_dispatch_routing_works<
 		+ cumulus_pallet_parachain_system::Config
 		+ cumulus_pallet_xcmp_queue::Config
 		+ pallet_bridge_messages::Config<MessagesPalletInstance, InboundPayload = XcmAsPlainPayload>,
+	AllPalletsWithoutSystem:
+		OnInitialize<BlockNumberFor<Runtime>> + OnFinalize<BlockNumberFor<Runtime>>,
+	<Runtime as frame_system::Config>::AccountId:
+		Into<<<Runtime as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId>,
 	XcmConfig: xcm_executor::Config,
 	MessagesPalletInstance: 'static,
 	ValidatorIdOf<Runtime>: From<AccountIdOf<Runtime>>,
 	HrmpChannelOpener: frame_support::inherent::ProvideInherent<
 		Call = cumulus_pallet_parachain_system::Call<Runtime>,
 	>,
-	// MessageDispatcher: MessageDispatch<AccountIdOf<Runtime>, DispatchLevelResult = XcmBlobMessageDispatchResult, DispatchPayload = XcmAsPlainPayload>,
+	// MessageDispatcher: MessageDispatch<AccountIdOf<Runtime>, DispatchLevelResult =
+	// XcmBlobMessageDispatchResult, DispatchPayload = XcmAsPlainPayload>,
 	RuntimeNetwork: Get<NetworkId>,
 	BridgedNetwork: Get<NetworkId>,
 {
@@ -324,6 +267,13 @@ pub fn message_dispatch_routing_works<
 		.with_tracing()
 		.build()
 		.execute_with(|| {
+			let mut alice = [0u8; 32];
+			alice[0] = 1;
+
+			let included_head = RuntimeHelper::<Runtime, AllPalletsWithoutSystem>::run_to_block(
+				2,
+				AccountId::from(alice),
+			);
 			// 1. this message is sent from other global consensus with destination of this Runtime relay chain (UMP)
 			let bridging_message =
 				test_data::simulate_message_exporter_on_bridged_chain::<BridgedNetwork, RuntimeNetwork>(
@@ -365,7 +315,7 @@ pub fn message_dispatch_routing_works<
 						   .count(), 0);
 
 			// 2.1. WITH hrmp channel -> Ok
-			mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(runtime_para_id.into(), sibling_parachain_id.into());
+			mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(runtime_para_id.into(), sibling_parachain_id.into(), included_head, &alice);
 			let result = <<Runtime as pallet_bridge_messages::Config<MessagesPalletInstance>>::MessageDispatch>::dispatch(
 				DispatchMessage {
 					key: MessageKey { lane_id: expected_lane_id, nonce: 1 },
@@ -386,7 +336,7 @@ pub fn message_dispatch_routing_works<
 
 /// Test-case makes sure that Runtime can dispatch XCM messages submitted by relayer,
 /// with proofs (finality, para heads, message) independently submitted.
-pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI, MB>(
+pub fn relayed_incoming_message_works<Runtime, AllPalletsWithoutSystem, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI, MB>(
 	collator_session_key: CollatorSessionKeys<Runtime>,
 	runtime_para_id: u32,
 	bridged_para_id: u32,
@@ -406,6 +356,8 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 	+ pallet_bridge_grandpa::Config<GPI>
 	+ pallet_bridge_parachains::Config<PPI>
 	+ pallet_bridge_messages::Config<MPI, InboundPayload = XcmAsPlainPayload>,
+	AllPalletsWithoutSystem: OnInitialize<BlockNumberFor<Runtime>>
+		+ OnFinalize<BlockNumberFor<Runtime>>,
 	GPI: 'static,
 	PPI: 'static,
 	MPI: 'static,
@@ -436,9 +388,18 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 		.with_tracing()
 		.build()
 		.execute_with(|| {
+			let mut alice = [0u8; 32];
+			alice[0] = 1;
+
+			let included_head = RuntimeHelper::<Runtime, AllPalletsWithoutSystem>::run_to_block(
+				2,
+				AccountId::from(alice),
+			);
 			mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(
 				runtime_para_id.into(),
 				sibling_parachain_id.into(),
+				included_head,
+				&alice,
 			);
 
 			// start with bridged chain block#0
@@ -582,7 +543,7 @@ pub fn relayed_incoming_message_works<Runtime, XcmConfig, HrmpChannelOpener, GPI
 /// Test-case makes sure that Runtime can dispatch XCM messages submitted by relayer,
 /// with proofs (finality, para heads, message) batched together in signed extrinsic.
 /// Also verifies relayer transaction signed extensions work as intended.
-pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI, MB>(
+pub fn complex_relay_extrinsic_works<Runtime, AllPalletsWithoutSystem, XcmConfig, HrmpChannelOpener, GPI, PPI, MPI, MB>(
 	collator_session_key: CollatorSessionKeys<Runtime>,
 	runtime_para_id: u32,
 	bridged_para_id: u32,
@@ -611,6 +572,8 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 	+ pallet_bridge_parachains::Config<PPI>
 	+ pallet_bridge_messages::Config<MPI, InboundPayload = XcmAsPlainPayload>
 	+ pallet_bridge_relayers::Config,
+	AllPalletsWithoutSystem: OnInitialize<BlockNumberFor<Runtime>>
+		+ OnFinalize<BlockNumberFor<Runtime>>,
 	GPI: 'static,
 	PPI: 'static,
 	MPI: 'static,
@@ -654,6 +617,13 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 		.with_tracing()
 		.build()
 		.execute_with(|| {
+			let mut alice = [0u8; 32];
+			alice[0] = 1;
+
+			let included_head = RuntimeHelper::<Runtime, AllPalletsWithoutSystem>::run_to_block(
+				2,
+				AccountId::from(alice),
+			);
 			let zero: BlockNumberFor<Runtime> = 0u32.into();
 			let genesis_hash = frame_system::Pallet::<Runtime>::block_hash(zero);
 			let mut header: HeaderFor<Runtime> = bp_test_utils::test_header(1u32.into());
@@ -663,6 +633,8 @@ pub fn complex_relay_extrinsic_works<Runtime, XcmConfig, HrmpChannelOpener, GPI,
 			mock_open_hrmp_channel::<Runtime, HrmpChannelOpener>(
 				runtime_para_id.into(),
 				sibling_parachain_id.into(),
+				included_head,
+				&alice,
 			);
 
 			// start with bridged chain block#0
@@ -906,7 +878,8 @@ pub mod test_data {
 		)
 	}
 
-	/// Helper that creates InitializationData mock data, that can be used to initialize bridge GRANDPA pallet
+	/// Helper that creates InitializationData mock data, that can be used to initialize bridge
+	/// GRANDPA pallet
 	pub fn initialization_data<
 		Runtime: pallet_bridge_grandpa::Config<GrandpaPalletInstance>,
 		GrandpaPalletInstance: 'static,
