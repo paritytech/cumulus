@@ -140,6 +140,7 @@ jobs:
           for bin in $BINARY; do
             chmod a+x $bin
           done
+          ls -al
           echo "Building container for ${{ matrix.binary }}"
           ./docker/scripts/build-injected-image.sh
 
