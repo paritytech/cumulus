@@ -182,6 +182,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type ReservedXcmpWeight = ();
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 	type WeightInfo = weights::cumulus_pallet_parachain_system::WeightInfo<Runtime>;
+	type ConsensusHook = cumulus_pallet_parachain_system::consensus_hook::ExpectParentIncluded;
 }
 
 parameter_types! {
@@ -427,19 +428,7 @@ impl_runtime_apis! {
 	}
 }
 
-struct CheckInherents;
-
-impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
-	fn check_inherents(
-		_: &Block,
-		_: &cumulus_pallet_parachain_system::RelayChainStateProof,
-	) -> sp_inherents::CheckInherentsResult {
-		sp_inherents::CheckInherentsResult::new()
-	}
-}
-
 cumulus_pallet_parachain_system::register_validate_block! {
 	Runtime = Runtime,
 	BlockExecutor = Executive,
-	CheckInherents = CheckInherents,
 }
