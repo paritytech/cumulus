@@ -25,6 +25,7 @@ use cumulus_primitives_core::{
 	relay_chain::BlockNumber as RelayBlockNumber, InboundDownwardMessage, InboundHrmpMessage,
 	PersistedValidationData,
 };
+use cumulus_primitives_core::AggregateMessageOrigin;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use frame_support::{
 	dispatch::UnfilteredDispatchable,
@@ -95,6 +96,10 @@ impl frame_system::Config for Test {
 	type SS58Prefix = ();
 	type OnSetCode = ParachainSetCode<Self>;
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
+}
+
+parameter_types! {
+	pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
 }
 
 impl Config for Test {
