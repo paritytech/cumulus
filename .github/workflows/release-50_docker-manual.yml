@@ -35,13 +35,11 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   DOCKER_OWNER: ${{ inputs.owner || github.repository_owner }}
   REPO: ${{ github.repository }}
+  BINARY: polkadot-parachain
 
 jobs:
   fetch-artifacts:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        binary: ["polkadot-parachain"]
 
     steps:
       - name: Checkout sources
@@ -70,10 +68,9 @@ jobs:
 
             fetch_release_artifacts
 
-            for bin in ${{ matrix.binary }} ; do
-              chmod a+x release-artifacts/$bin
-            done
+            chmod a+x release-artifacts/$BINARY
             ls -al
+
             cp -f ${TMP}/lib.sh release-artifacts/
 
       - name: Cache the artifacts
@@ -87,10 +84,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: fetch-artifacts
 
-    strategy:
-      matrix:
-        binary: ["polkadot-parachain"]
-
     steps:
       - name: Checkout sources
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
@@ -103,20 +96,20 @@ jobs:
           path: |
             ./release-artifacts/**/*
 
-      - name: Check sha256 ${{ matrix.binary }}
+      - name: Check sha256 $BINARY
         working-directory: ./release-artifacts
         run: |
           . ./lib.sh
 
-          echo "Checking binary ${{ matrix.binary }}"
-          check_sha256 ${{ matrix.binary }} && echo "OK" || echo "ERR"
+          echo "Checking binary $BINARY"
+          check_sha256 $BINARY && echo "OK" || echo "ERR"
 
-      - name: Check GPG ${{ matrix.binary }}
+      - name: Check GPG $BINARY
         working-directory: ./release-artifacts
         run: |
           . ./lib.sh
           import_gpg_keys
-          check_gpg ${{ matrix.binary }}
+          check_gpg $BINARY
 
       - name: Fetch commit and tag
         id: fetch_refs
@@ -135,19 +128,20 @@ jobs:
                 [ "${tag}" != "undefined" ] && echo "tag=${tag}" >> $GITHUB_OUTPUT || \
                 echo "No tag, doing without"
             else
-                semver=$( echo $VERSION | cut -f1 -d- )
+                docker run --pull never --rm $DOCKER_OWNER/$BINARY --version
+                VERSION=$(docker run --pull never --rm $DOCKER_OWNER/$BINARY --version | awk '{ print $2 }' )
+                SEMVER=$( echo $VERSION | cut -f1 -d- )
                 echo "tag=latest" >> $GITHUB_OUTPUT
-                echo "semver=${semver}" >> $GITHUB_OUTPUT
+                echo "semver=${SEMVER}" >> $GITHUB_OUTPUT
             fi
 
-      - name: Build Injected Container image for ${{ matrix.binary }}
+      - name: Build Injected Container image for $BINARY
         env:
             BIN_FOLDER: ./release-artifacts
-            BINARY: ${{ matrix.binary }}
             TAGS: ${{join(steps.fetch_refs.outputs.*, ',')}}
         run: |
           ls -al
-          echo "Building container for ${{ matrix.binary }}"
+          echo "Building container for $BINARY"
           ./docker/scripts/build-injected-image.sh
 
       - name: Login to Dockerhub
@@ -156,17 +150,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Push Container image for ${{ matrix.binary }}
+      - name: Push Container image for $BINARY
         id: docker_push
-        env:
-          BINARY: ${{ matrix.binary }}
         run: |
           $ENGINE images | grep ${BINARY}
           $ENGINE push --all-tags ${REGISTRY}/${DOCKER_OWNER}/${BINARY}
 
-      - name: Check version for the published image for ${{ matrix.binary }}
+      - name: Check version for the published image for $BINARY
         env:
-          BINARY: ${{ matrix.binary }}
           RELEASE_TAG: ${{ steps.fetch_refs.outputs.release }}
         run: |
           echo "Checking tag ${RELEASE_TAG} for image ${REGISTRY}/${DOCKER_OWNER}/${BINARY}"
