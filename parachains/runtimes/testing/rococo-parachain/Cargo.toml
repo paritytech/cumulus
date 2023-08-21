@@ -16,7 +16,7 @@ frame-support = { git = "https://github.com/paritytech/substrate", default-featu
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, features = ["experimental"], branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -48,6 +48,7 @@ cumulus-pallet-parachain-system = { path = "../../../../pallets/parachain-system
 cumulus-pallet-xcm = { path = "../../../../pallets/xcm", default-features = false }
 cumulus-pallet-xcmp-queue = { path = "../../../../pallets/xcmp-queue", default-features = false }
 cumulus-ping = { path = "../../../pallets/ping", default-features = false }
+cumulus-primitives-aura = { path = "../../../../primitives/aura", default-features = false }
 cumulus-primitives-core = { path = "../../../../primitives/core", default-features = false }
 cumulus-primitives-utility = { path = "../../../../primitives/utility", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }

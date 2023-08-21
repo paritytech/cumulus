@@ -23,7 +23,7 @@ frame-try-runtime = { git = "https://github.com/paritytech/substrate", default-f
 pallet-asset-conversion-tx-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-asset-conversion = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, features = ["experimental"], branch = "master" }
 pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-multisig = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
