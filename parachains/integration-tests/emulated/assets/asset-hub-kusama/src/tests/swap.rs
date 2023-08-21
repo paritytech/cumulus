@@ -150,9 +150,6 @@ fn swap_locally_on_chain_using_foreign_assets() {
 		                                                              * for something else. */
 		(sov_penpal_on_asset_hub_kusama.clone().into(), 1000_000_000_000_000_000 * KUSAMA_ED),
 	]);
-	// PenpalKusamaA::fund_accounts(vec![
-	// 	(PenpalKusamaASender::get().into(), 5_000_000 * KUSAMA_ED), // need some money to do xcm
-	// fees. ]);
 
 	let sov_penpal_on_asset_hub_kusama_as_location: MultiLocation = MultiLocation {
 		parents: 0,
