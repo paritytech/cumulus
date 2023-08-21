@@ -35,8 +35,8 @@ pub use frame_support::{
 	dispatch::EncodeLike,
 	sp_runtime::{AccountId32, DispatchResult},
 	traits::{
-		tokens::currency::Currency, EnqueueMessage, Get, Hooks, OriginTrait, ProcessMessage,
-		ProcessMessageError, ServiceQueues, HandleMessage, OnInitialize,
+		tokens::currency::Currency, EnqueueMessage, Get, HandleMessage, Hooks, OnInitialize,
+		OriginTrait, ProcessMessage, ProcessMessageError, ServiceQueues,
 	},
 	weights::{Weight, WeightMeter},
 	BoundedSlice,
@@ -243,7 +243,7 @@ pub trait Chain: TestExt + NetworkComponent {
 
 pub trait RelayChain: Chain {
 	type SovereignAccountOf: ConvertLocation<AccountId>;
-	type MessageProcessor: ProcessMessage<Origin=ParaId> + ServiceQueues;
+	type MessageProcessor: ProcessMessage<Origin = ParaId> + ServiceQueues;
 
 	fn child_location_of(id: ParaId) -> MultiLocation {
 		(Ancestor(0), ParachainJunction(id.into())).into()
@@ -263,7 +263,7 @@ pub trait Parachain: Chain {
 	type LocationToAccountId: ConvertLocation<AccountId>;
 	type ParachainInfo: Get<ParaId>;
 	type ParachainSystem;
-	type MessageProcessor: ProcessMessage<Origin=CumulusAggregateMessageOrigin> + ServiceQueues;
+	type MessageProcessor: ProcessMessage<Origin = CumulusAggregateMessageOrigin> + ServiceQueues;
 
 	fn para_id() -> ParaId {
 		Self::ext_wrapper(|| Self::ParachainInfo::get())
