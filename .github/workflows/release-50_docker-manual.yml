@@ -13,10 +13,10 @@ on:
         required: true
         type: string
       production_image:
-        description: "True for an image for the final release or false for an rc image"
+        description: "Set to true for an image for the final release or false for an rc image"
         required: true
-        type: boolean
-        default: false
+        type: string
+        default: "false"
       registry:
         description: "Container registry"
         required: true
