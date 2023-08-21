@@ -39,6 +39,9 @@ env:
 jobs:
   fetch-artifacts:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        binary: ["polkadot-parachain"]
 
     steps:
       - name: Checkout sources
@@ -64,7 +67,13 @@ jobs:
       - name: Fetch all artifacts
         run: |
             . ${TMP}/lib.sh
+
             fetch_release_artifacts
+
+            for bin in ${{ matrix.binary }} ; do
+              chmod a+x release-artifacts/$bin
+            done
+            ls -al
             cp -f ${TMP}/lib.sh release-artifacts/
 
       - name: Cache the artifacts
@@ -137,9 +146,6 @@ jobs:
             BINARY: ${{ matrix.binary }}
             TAGS: ${{join(steps.fetch_refs.outputs.*, ',')}}
         run: |
-          for bin in $BINARY; do
-            chmod a+x $bin
-          done
           ls -al
           echo "Building container for ${{ matrix.binary }}"
           ./docker/scripts/build-injected-image.sh
