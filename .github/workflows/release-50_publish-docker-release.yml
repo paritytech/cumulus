@@ -83,8 +83,8 @@ jobs:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           IMAGE_NAME: polkadot-parachain
         run: |
-          mkdir -p target/release-artifacts
-          cp -f ${TMP}/$BINARY* target/release-artifacts/
+          mkdir -p release-artifacts
+          cp -f ${TMP}/$BINARY* release-artifacts/
           ./docker/scripts/build-injected-image.sh
 
       - name: Login to Dockerhub
