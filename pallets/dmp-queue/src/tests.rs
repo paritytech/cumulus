@@ -20,8 +20,10 @@
 
 use super::*;
 
+#[cfg(feature = "try-runtime")]
+use frame_support::assert_ok;
 use frame_support::{
-	assert_ok, parameter_types,
+	parameter_types,
 	traits::{Footprint, HandleMessage, OnRuntimeUpgrade},
 	StorageNoopGuard,
 };
