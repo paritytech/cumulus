@@ -86,8 +86,6 @@ fn example() {
 			]
 		);
 	});
-	// Receive embedded XCM message within `ExportMessage` in Parachain destination.
-	AssetHubWococo::execute_with(|| {});
 	// Processing only happens in the next block, since the MQ pallet does it on initialize.
 	AssetHubWococo::execute_with(|| {
 		type RuntimeEvent = <AssetHubWococo as Chain>::RuntimeEvent;

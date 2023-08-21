@@ -50,6 +50,8 @@ pub use sp_io::TestExternalities;
 pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, fmt::Debug};
 pub use sp_trie::StorageProof;
 
+use frame_support::traits::ExecuteOverweightError;
+
 //Cumulus
 pub use cumulus_pallet_dmp_queue;
 pub use cumulus_pallet_parachain_system::{self, Pallet as ParachainSystemPallet};
@@ -241,7 +243,7 @@ pub trait Chain: TestExt + NetworkComponent {
 
 pub trait RelayChain: Chain {
 	type SovereignAccountOf: ConvertLocation<AccountId>;
-	type MessageProcessor: ProcessMessage<Origin=ParaId>;
+	type MessageProcessor: ProcessMessage<Origin=ParaId> + ServiceQueues;
 
 	fn child_location_of(id: ParaId) -> MultiLocation {
 		(Ancestor(0), ParachainJunction(id.into())).into()
@@ -261,7 +263,7 @@ pub trait Parachain: Chain {
 	type LocationToAccountId: ConvertLocation<AccountId>;
 	type ParachainInfo: Get<ParaId>;
 	type ParachainSystem;
-	type MessageProcessor: ProcessMessage<Origin=CumulusAggregateMessageOrigin>;
+	type MessageProcessor: ProcessMessage<Origin=CumulusAggregateMessageOrigin> + ServiceQueues;
 
 	fn para_id() -> ParaId {
 		Self::ext_wrapper(|| Self::ParachainInfo::get())
@@ -960,7 +962,7 @@ macro_rules! decl_test_networks {
 								use $crate::{ProcessMessage, CumulusAggregateMessageOrigin, BoundedSlice, WeightMeter, TestExt};
 								for (block, msg) in msgs.clone().into_iter() {
 									let mut weight_meter = WeightMeter::max_limit();
-									<$parachain>::execute_with(|| {
+									<$parachain>::ext_wrapper(|| {
 										let _ =  <$parachain as Parachain>::MessageProcessor::process_message(
 											&msg[..],
 											$crate::CumulusAggregateMessageOrigin::Parent,
@@ -977,7 +979,7 @@ macro_rules! decl_test_networks {
 				}
 
 				fn process_horizontal_messages() {
-					use $crate::{XcmpMessageHandler, Bounded};
+					use $crate::{XcmpMessageHandler, ServiceQueues, Bounded};
 
 					while let Some((to_para_id, messages))
 						= $crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().get_mut(Self::name()).unwrap().pop_front()) {
@@ -987,7 +989,9 @@ macro_rules! decl_test_networks {
 
 							if $crate::PARA_IDS.with(|b| b.borrow_mut().get_mut(Self::name()).unwrap().contains(&to_para_id)) && para_id == to_para_id {
 								<$parachain>::ext_wrapper(|| {
-									<$parachain as Parachain>::XcmpMessageHandler::handle_xcmp_messages(iter.clone(), $crate::Weight::max_value());
+									<$parachain as Parachain>::XcmpMessageHandler::handle_xcmp_messages(iter.clone(), $crate::Weight::MAX);
+									// Nudge the MQ pallet to process immediately instead of in the next block.
+									let _ =  <$parachain as Parachain>::MessageProcessor::service_queues($crate::Weight::MAX);
 								});
 								$crate::log::debug!(target: concat!("hrmp::", stringify!($name)) , "HRMP messages processed {:?} to para_id {:?}", &messages, &to_para_id);
 							}
@@ -1217,7 +1221,7 @@ macro_rules! assert_expected_events {
 					)
 				);
 			} else if !event_received {
-				message.push(format!("\n\n{}::\x1b[31m{}\x1b[0m was never received. All events:\n{:#?}", stringify!($chain), stringify!($event_pat), events));
+				message.push(format!("\n\n{}::\x1b[31m{}\x1b[0m was never received. All events:\n{:#?}", stringify!($chain), stringify!($event_pat), <$chain>::events()));
 			} else {
 				// If we find a perfect match we remove the event to avoid being potentially assessed multiple times
 				events.remove(index_match);
@@ -1275,13 +1279,35 @@ where
 	) -> Result<bool, ProcessMessageError> {
 		MessageQueuePallet::<T::Runtime>::enqueue_message(
 			msg.try_into().expect("Message too long"),
-			orig,
+			orig.clone(),
 		);
 		MessageQueuePallet::<T::Runtime>::service_queues(Weight::MAX);
 
 		Ok(true)
 	}
 }
+impl<T> ServiceQueues for DefaultParaMessageProcessor<T>
+where
+	T: Parachain,
+	T::Runtime: MessageQueueConfig,
+	<<T::Runtime as MessageQueueConfig>::MessageProcessor as ProcessMessage>::Origin:
+		PartialEq<CumulusAggregateMessageOrigin>,
+	MessageQueuePallet<T::Runtime>: EnqueueMessage<CumulusAggregateMessageOrigin> + ServiceQueues,
+{
+	type OverweightMessageAddress = ();
+
+	fn service_queues(weight_limit: Weight) -> Weight {
+		MessageQueuePallet::<T::Runtime>::service_queues(weight_limit)
+	}
+
+	fn execute_overweight(
+		_weight_limit: Weight,
+		_address: Self::OverweightMessageAddress,
+	) -> Result<Weight, ExecuteOverweightError> {
+		unimplemented!()
+	}
+}
+
 pub struct DefaultRelayMessageProcessor<T>(PhantomData<T>);
 // Process UMP messages on the relay
 impl<T> ProcessMessage for DefaultRelayMessageProcessor<T>
@@ -1307,6 +1333,28 @@ where
 		MessageQueuePallet::<T::Runtime>::service_queues(Weight::MAX);
 
 		Ok(true)
+	}
+}
+
+impl<T> ServiceQueues for DefaultRelayMessageProcessor<T>
+where
+	T: RelayChain,
+	T::Runtime: MessageQueueConfig,
+	<<T::Runtime as MessageQueueConfig>::MessageProcessor as ProcessMessage>::Origin:
+		PartialEq<AggregateMessageOrigin>,
+	MessageQueuePallet<T::Runtime>: EnqueueMessage<AggregateMessageOrigin> + ServiceQueues,
+{
+	type OverweightMessageAddress = ();
+
+	fn service_queues(weight_limit: Weight) -> Weight {
+		MessageQueuePallet::<T::Runtime>::service_queues(weight_limit)
+	}
+
+	fn execute_overweight(
+		_weight_limit: Weight,
+		_address: Self::OverweightMessageAddress,
+	) -> Result<Weight, ExecuteOverweightError> {
+		unimplemented!()
 	}
 }
 
