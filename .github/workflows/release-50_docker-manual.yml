@@ -138,6 +138,7 @@ jobs:
       - name: Build Injected Container image for $BINARY
         env:
             BIN_FOLDER: ./release-artifacts
+            IMAGE_NAME: ${{ env.BINARY }}
             TAGS: ${{join(steps.fetch_refs.outputs.*, ',')}}
         run: |
           ls -al
