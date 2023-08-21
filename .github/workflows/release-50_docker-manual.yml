@@ -137,10 +137,9 @@ jobs:
             BINARY: ${{ matrix.binary }}
             TAGS: ${{join(steps.fetch_refs.outputs.*, ',')}}
         run: |
-          for bin in $BIN_FOLDER/$BINARY; do
-            chmod a+x $BIN_FOLDER/$bin
+          for bin in $BINARY; do
+            chmod a+x $bin
           done
-          
           echo "Building container for ${{ matrix.binary }}"
           ./docker/scripts/build-injected-image.sh
 
