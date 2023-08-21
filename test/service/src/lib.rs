@@ -255,9 +255,9 @@ async fn build_relay_chain_interface(
 		cumulus_client_cli::RelayChainMode::Embedded => polkadot_test_service::new_full(
 			relay_chain_config,
 			if let Some(ref key) = collator_key {
-				polkadot_service::IsCollator::Yes(key.clone())
+				polkadot_service::IsParachainNode::Collator(key.clone())
 			} else {
-				polkadot_service::IsCollator::Yes(CollatorPair::generate().0)
+				polkadot_service::IsParachainNode::Collator(CollatorPair::generate().0)
 			},
 			None,
 		)
