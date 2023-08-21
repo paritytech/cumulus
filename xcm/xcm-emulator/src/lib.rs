@@ -229,7 +229,7 @@ pub trait Chain: TestExt + NetworkComponent {
 	type RuntimeEvent;
 	type System;
 
-	fn account_id_of(seed: &str) ->  AccountId {
+	fn account_id_of(seed: &str) -> AccountId {
 		helpers::get_account_id_from_seed::<sr25519::Public>(seed)
 	}
 
@@ -1127,7 +1127,8 @@ macro_rules! __impl_check_assertion {
 		where
 			Origin: Chain + Clone,
 			Destination: Chain + Clone,
-			Origin::RuntimeOrigin: $crate::OriginTrait<AccountId = RuntimeAccountId<Origin::Runtime>> + Clone,
+			Origin::RuntimeOrigin:
+				$crate::OriginTrait<AccountId = RuntimeAccountId<Origin::Runtime>> + Clone,
 			Destination::RuntimeOrigin:
 				$crate::OriginTrait<AccountId = RuntimeAccountId<Origin::Runtime>> + Clone,
 			Hops: Clone,
