@@ -22,10 +22,9 @@ use super::*;
 
 use codec::Encode;
 use cumulus_primitives_core::{
-	relay_chain::BlockNumber as RelayBlockNumber, InboundDownwardMessage, InboundHrmpMessage,
-	PersistedValidationData,
+	relay_chain::BlockNumber as RelayBlockNumber, AggregateMessageOrigin, InboundDownwardMessage,
+	InboundHrmpMessage, PersistedValidationData,
 };
-use cumulus_primitives_core::AggregateMessageOrigin;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use frame_support::{
 	dispatch::UnfilteredDispatchable,
