@@ -45,7 +45,7 @@ pub type DeleteDmpQueue<T> = frame_support::migrations::RemovePallet<
 	<T as MigrationConfig>::DbWeight,
 >;
 
-/// Subset of the DMP queue config required for [UndeployMigration].
+/// Subset of the DMP queue config required for [UndeployDmpQueue].
 pub trait MigrationConfig {
 	/// Name of the previously deployed DMP queue pallet.
 	type PalletName: Get<&'static str>;
