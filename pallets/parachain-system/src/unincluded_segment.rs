@@ -23,7 +23,7 @@
 use super::relay_state_snapshot::{MessagingStateSnapshot, RelayDispatchQueueRemainingCapacity};
 use codec::{Decode, Encode};
 use cumulus_primitives_core::{relay_chain, ParaId};
-use frame_support::RuntimeDebug;
+use sp_runtime::RuntimeDebug;
 use scale_info::TypeInfo;
 use sp_std::{collections::btree_map::BTreeMap, marker::PhantomData};
 
