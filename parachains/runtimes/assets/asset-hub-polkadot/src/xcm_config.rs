@@ -215,7 +215,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 		// Allow to change dedicated storage items (called by governance-like)
 		match call {
 			RuntimeCall::System(frame_system::Call::set_storage { items })
-				if items.iter().any(|(k, _)| k.eq(&bridging::XcmBridgeHubRouterByteFee::key())) =>
+				if items.iter().all(|(k, _)| k.eq(&bridging::XcmBridgeHubRouterByteFee::key())) =>
 				return true,
 			_ => (),
 		};
