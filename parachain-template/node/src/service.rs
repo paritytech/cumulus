@@ -53,7 +53,7 @@ impl sc_executor::NativeExecutionDispatch for ParachainNativeExecutor {
 
 type ParachainExecutor = NativeElseWasmExecutor<ParachainNativeExecutor>;
 
-type ParachainClient = TFullClient<Block, RuntimeApi, ParachainExecutor>;
+pub type ParachainClient = TFullClient<Block, RuntimeApi, ParachainExecutor>;
 
 type ParachainBackend = TFullBackend<Block>;
 
