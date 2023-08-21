@@ -590,6 +590,7 @@ version = "0.9.420"
 dependencies = [
  "asset-test-utils",
  "assets-common",
+ "bp-asset-hub-kusama",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -629,6 +630,7 @@ dependencies = [
  "pallet-utility",
  "pallet-xcm",
  "pallet-xcm-benchmarks",
+ "pallet-xcm-bridge-hub-router",
  "parachain-info",
  "parachains-common",
  "parity-scale-codec",
@@ -688,6 +690,7 @@ version = "0.9.420"
 dependencies = [
  "asset-test-utils",
  "assets-common",
+ "bp-asset-hub-polkadot",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -724,6 +727,7 @@ dependencies = [
  "pallet-utility",
  "pallet-xcm",
  "pallet-xcm-benchmarks",
+ "pallet-xcm-bridge-hub-router",
  "parachain-info",
  "parachains-common",
  "parity-scale-codec",
@@ -871,6 +875,7 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-session",
  "pallet-xcm",
+ "pallet-xcm-bridge-hub-router",
  "parachain-info",
  "parachains-common",
  "parachains-runtimes-test-utils",
@@ -1270,6 +1275,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68534a48cbf63a4b1323c433cf21238c9ec23711e0df13b08c33e5c2082663ce"
 dependencies = [
  "thiserror",
+]
+
+[[package]]
+name = "bp-asset-hub-kusama"
+version = "0.1.0"
+dependencies = [
+ "bp-xcm-bridge-hub-router",
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+]
+
+[[package]]
+name = "bp-asset-hub-polkadot"
+version = "0.1.0"
+dependencies = [
+ "bp-xcm-bridge-hub-router",
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
 ]
 
 [[package]]
@@ -3168,6 +3193,7 @@ dependencies = [
 name = "cumulus-pallet-xcmp-queue"
 version = "0.1.0"
 dependencies = [
+ "bp-xcm-bridge-hub-router",
  "cumulus-pallet-parachain-system",
  "cumulus-primitives-core",
  "frame-benchmarking",
@@ -8926,6 +8952,25 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+]
+
+[[package]]
+name = "pallet-xcm-bridge-hub-router"
+version = "0.1.0"
+dependencies = [
+ "bp-xcm-bridge-hub-router",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-builder",
 ]
 
 [[package]]
