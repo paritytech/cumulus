@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Cumulus test parachain collator
+//! Cumulus parachain node (which could be run as a collator)
 
 #![warn(missing_docs)]
 #![warn(unused_extern_crates)]
@@ -26,6 +26,7 @@ mod cli;
 mod command;
 mod rpc;
 
-fn main() -> sc_cli::Result<()> {
+/// Process command line arguments and execute them.
+pub fn run() -> sc_cli::Result<()> {
 	command::run()
 }
