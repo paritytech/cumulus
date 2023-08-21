@@ -30,6 +30,7 @@ pub use std::{
 };
 
 // Substrate
+pub use cumulus_primitives_core::AggregateMessageOrigin as CumulusAggregateMessageOrigin;
 pub use frame_support::{
 	assert_ok,
 	dispatch::EncodeLike,
@@ -39,8 +40,7 @@ pub use frame_support::{
 		OriginTrait, ProcessMessage, ProcessMessageError, ServiceQueues,
 	},
 	weights::{Weight, WeightMeter},
-	BoundedSlice,
-	StorageHasher,
+	BoundedSlice, StorageHasher,
 };
 pub use frame_system::{AccountInfo, Config as SystemConfig, Pallet as SystemPallet};
 pub use pallet_balances::AccountData;
@@ -60,7 +60,7 @@ pub use cumulus_pallet_xcmp_queue::{Config as XcmpQueueConfig, Pallet as XcmpQue
 pub use cumulus_primitives_core::{
 	self,
 	relay_chain::{BlockNumber as RelayBlockNumber, HeadData},
-	DmpMessageHandler, ParaId, PersistedValidationData, XcmpMessageHandler,
+	ParaId, PersistedValidationData, XcmpMessageHandler,
 };
 pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;

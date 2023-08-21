@@ -61,9 +61,6 @@ use xcm::latest::XcmHash;
 
 mod benchmarking;
 pub mod migration;
-mod relay_state_snapshot;
-#[macro_use]
-pub mod validate_block;
 mod mock;
 #[cfg(test)]
 mod tests;

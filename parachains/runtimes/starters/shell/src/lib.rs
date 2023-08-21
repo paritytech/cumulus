@@ -49,7 +49,6 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
-use cumulus_primitives_core::AggregateMessageOrigin;
 pub use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,

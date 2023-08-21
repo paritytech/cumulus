@@ -39,10 +39,12 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 	BuildStorage,
 };
+use sp_std::{collections::vec_deque::VecDeque, num::NonZeroU32};
 use sp_version::RuntimeVersion;
 use std::cell::RefCell;
 
 use crate as parachain_system;
+use crate::consensus_hook::UnincludedSegmentCapacity;
 
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -79,11 +81,11 @@ impl frame_system::Config for Test {
 	type Hashing = BlakeTwo256;
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type Block = Block;
 	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
 	type BlockWeights = ();
-	type Block = Block;
 	type Version = Version;
 	type PalletInfo = PalletInfo;
 	type AccountData = ();
@@ -102,7 +104,6 @@ parameter_types! {
 }
 
 impl Config for Test {
-	type WeightInfo = ();
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = ParachainId;
@@ -111,7 +112,22 @@ impl Config for Test {
 	type ReservedDmpWeight = ReservedDmpWeight;
 	type XcmpMessageHandler = SaveIntoThreadLocal;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
-	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+	type CheckAssociatedRelayNumber = AnyRelayNumber;
+	type ConsensusHook = TestConsensusHook;
+	type WeightInfo = ();
+}
+
+std::thread_local! {
+	pub static CONSENSUS_HOOK: RefCell<Box<dyn Fn(&RelayChainStateProof) -> (Weight, UnincludedSegmentCapacity)>>
+		= RefCell::new(Box::new(|_| (Weight::zero(), NonZeroU32::new(1).unwrap().into())));
+}
+
+pub struct TestConsensusHook;
+
+impl ConsensusHook for TestConsensusHook {
+	fn on_state_proof(s: &RelayChainStateProof) -> (Weight, UnincludedSegmentCapacity) {
+		CONSENSUS_HOOK.with(|f| f.borrow_mut()(s))
+	}
 }
 
 parameter_types! {
@@ -150,15 +166,28 @@ pub fn send_message(dest: ParaId, message: Vec<u8>) {
 impl XcmpMessageSource for FromThreadLocal {
 	fn take_outbound_messages(maximum_channels: usize) -> Vec<(ParaId, Vec<u8>)> {
 		let mut ids = std::collections::BTreeSet::<ParaId>::new();
-		let mut taken = 0;
+		let mut taken_messages = 0;
+		let mut taken_bytes = 0;
 		let mut result = Vec::new();
 		SENT_MESSAGES.with(|ms| {
 			ms.borrow_mut().retain(|m| {
 				let status = <Pallet<Test> as GetChannelInfo>::get_channel_status(m.0);
-				let ready = matches!(status, ChannelStatus::Ready(..));
-				if ready && !ids.contains(&m.0) && taken < maximum_channels {
+				let (max_size_now, max_size_ever) = match status {
+					ChannelStatus::Ready(now, ever) => (now, ever),
+					ChannelStatus::Closed => return false, // drop message
+					ChannelStatus::Full => return true,    // keep message queued.
+				};
+
+				let msg_len = m.1.len();
+
+				if !ids.contains(&m.0) &&
+					taken_messages < maximum_channels &&
+					msg_len <= max_size_ever &&
+					taken_bytes + msg_len <= max_size_now
+				{
 					ids.insert(m.0);
-					taken += 1;
+					taken_messages += 1;
+					taken_bytes += msg_len;
 					result.push(m.clone());
 					false
 				} else {
@@ -261,14 +290,18 @@ pub struct BlockTest {
 #[derive(Default)]
 pub struct BlockTests {
 	tests: Vec<BlockTest>,
+	without_externalities: bool,
 	pending_upgrade: Option<RelayChainBlockNumber>,
 	ran: bool,
-	without_externalities: bool,
 	relay_sproof_builder_hook:
 		Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut RelayStateSproofBuilder)>>,
-	persisted_validation_data_hook: Option<Box<dyn Fn(&BlockTests, &mut PersistedValidationData)>>,
 	inherent_data_hook:
 		Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut ParachainInherentData)>>,
+	inclusion_delay: Option<usize>,
+	relay_block_number: Option<Box<dyn Fn(&BlockNumberFor<Test>) -> RelayChainBlockNumber>>,
+
+	included_para_head: Option<relay_chain::HeadData>,
+	pending_blocks: VecDeque<relay_chain::HeadData>,
 }
 
 impl BlockTests {
@@ -319,11 +352,11 @@ impl BlockTests {
 		self
 	}
 
-	pub fn with_validation_data<F>(mut self, f: F) -> Self
+	pub fn with_relay_block_number<F>(mut self, f: F) -> Self
 	where
-		F: 'static + Fn(&BlockTests, &mut PersistedValidationData),
+		F: 'static + Fn(&BlockNumberFor<Test>) -> RelayChainBlockNumber,
 	{
-		self.persisted_validation_data_hook = Some(Box::new(f));
+		self.relay_block_number = Some(Box::new(f));
 		self
 	}
 
@@ -332,6 +365,11 @@ impl BlockTests {
 		F: 'static + Fn(&BlockTests, RelayChainBlockNumber, &mut ParachainInherentData),
 	{
 		self.inherent_data_hook = Some(Box::new(f));
+		self
+	}
+
+	pub fn with_inclusion_delay(mut self, inclusion_delay: usize) -> Self {
+		self.inclusion_delay.replace(inclusion_delay);
 		self
 	}
 
@@ -344,7 +382,19 @@ impl BlockTests {
 	pub fn run_without_ext(&mut self) {
 		self.ran = true;
 
+		let mut parent_head_data = {
+			let header = HeaderFor::<Test>::new_from_number(0);
+			relay_chain::HeadData(header.encode())
+		};
+
+		self.included_para_head = Some(parent_head_data.clone());
+
 		for BlockTest { n, within_block, after_block } in self.tests.iter() {
+			let relay_parent_number = self
+				.relay_block_number
+				.as_ref()
+				.map(|f| f(n))
+				.unwrap_or(*n as RelayChainBlockNumber);
 			// clear pending updates, as applicable
 			if let Some(upgrade_block) = self.pending_upgrade {
 				if n >= &upgrade_block.into() {
@@ -353,24 +403,27 @@ impl BlockTests {
 			}
 
 			// begin initialization
+			let parent_hash = BlakeTwo256::hash(&parent_head_data.0);
 			System::reset_events();
-			System::initialize(&n, &Default::default(), &Default::default());
+			System::initialize(n, &parent_hash, &Default::default());
 
 			// now mess with the storage the way validate_block does
 			let mut sproof_builder = RelayStateSproofBuilder::default();
+			sproof_builder.included_para_head = self
+				.included_para_head
+				.clone()
+				.unwrap_or_else(|| parent_head_data.clone())
+				.into();
 			if let Some(ref hook) = self.relay_sproof_builder_hook {
-				hook(self, *n as RelayChainBlockNumber, &mut sproof_builder);
+				hook(self, relay_parent_number, &mut sproof_builder);
 			}
 			let (relay_parent_storage_root, relay_chain_state) =
 				sproof_builder.into_state_root_and_proof();
-			let mut vfp = PersistedValidationData {
-				relay_parent_number: *n as RelayChainBlockNumber,
+			let vfp = PersistedValidationData {
+				relay_parent_number,
 				relay_parent_storage_root,
 				..Default::default()
 			};
-			if let Some(ref hook) = self.persisted_validation_data_hook {
-				hook(self, &mut vfp);
-			}
 
 			<ValidationData<Test>>::put(&vfp);
 			NewValidationCode::<Test>::kill();
@@ -386,7 +439,7 @@ impl BlockTests {
 					horizontal_messages: Default::default(),
 				};
 				if let Some(ref hook) = self.inherent_data_hook {
-					hook(self, *n as RelayChainBlockNumber, &mut system_inherent_data);
+					hook(self, relay_parent_number, &mut system_inherent_data);
 				}
 				inherent_data
 					.put_data(
@@ -404,9 +457,7 @@ impl BlockTests {
 				.dispatch_bypass_filter(RawOrigin::None.into())
 				.expect("dispatch succeeded");
 			MessageQueue::on_initialize(*n);
-
 			within_block();
-
 			MessageQueue::on_finalize(*n);
 			ParachainSystem::on_finalize(*n);
 
@@ -416,7 +467,23 @@ impl BlockTests {
 			}
 
 			// clean up
-			System::finalize();
+			let header = System::finalize();
+			let head_data = relay_chain::HeadData(header.encode());
+			parent_head_data = head_data.clone();
+			match self.inclusion_delay {
+				Some(delay) if delay > 0 => {
+					self.pending_blocks.push_back(head_data);
+					if self.pending_blocks.len() > delay {
+						let included = self.pending_blocks.pop_front().unwrap();
+
+						self.included_para_head.replace(included);
+					}
+				},
+				_ => {
+					self.included_para_head.replace(head_data);
+				},
+			}
+
 			if let Some(after_block) = after_block {
 				after_block();
 			}

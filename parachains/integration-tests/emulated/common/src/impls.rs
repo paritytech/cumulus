@@ -430,7 +430,6 @@ macro_rules! impl_assert_events_helpers_for_parachain {
 				/// Asserts a XCM from Relay Chain is incompletely executed
 				pub fn assert_dmp_queue_incomplete(
 					expected_weight: Option<Weight>,
-					expected_error: Option<Error>,
 				) {
 					assert_expected_events!(
 						Self,
@@ -443,7 +442,6 @@ macro_rules! impl_assert_events_helpers_for_parachain {
 									expected_weight.unwrap_or(*weight),
 									*weight
 								),
-								/*FAIL-CI error: *error == expected_error.unwrap_or(*error),*/
 							},
 						]
 					);

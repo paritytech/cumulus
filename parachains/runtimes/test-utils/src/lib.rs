@@ -325,7 +325,7 @@ impl<
 }
 
 impl<
-		Runtime: cumulus_pallet_dmp_queue::Config + cumulus_pallet_parachain_system::Config,
+		Runtime: cumulus_pallet_parachain_system::Config + pallet_xcm::Config,
 		AllPalletsWithoutSystem,
 	> RuntimeHelper<Runtime, AllPalletsWithoutSystem>
 {
