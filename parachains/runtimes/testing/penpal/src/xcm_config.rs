@@ -95,7 +95,14 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	ConvertedConcreteId<
 		AssetIdPalletAssets,
 		Balance,
-		AsPrefixedGeneralIndex<SystemAssetHubAssetsPalletLocation, AssetIdPalletAssets, JustTry>,
+		(
+			AsPrefixedGeneralIndex<AssetsPalletLocation, AssetIdPalletAssets, JustTry>,
+			AsPrefixedGeneralIndex<
+				SystemAssetHubAssetsPalletLocation,
+				AssetIdPalletAssets,
+				JustTry,
+			>,
+		),
 		JustTry,
 	>,
 	// Convert an XCM MultiLocation into a local account id:
@@ -110,7 +117,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 >;
 
 /// Means for transacting assets on this chain.
-pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
+pub type AssetTransactors = (FungiblesTransactor, CurrencyTransactor);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -265,6 +272,10 @@ parameter_types! {
 	// the Relay Chain's Asset Hub's Assets pallet index
 	pub SystemAssetHubAssetsPalletLocation: MultiLocation =
 		MultiLocation::new(1, X2(Parachain(1000), PalletInstance(50)));
+
+	pub AssetsPalletLocation: MultiLocation =
+		MultiLocation::new(0, X1(PalletInstance(50)));
+
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
