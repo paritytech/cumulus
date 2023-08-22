@@ -89,7 +89,8 @@ polkadot-parachain \
 ```
 
 #### Relay Chain Light Client
-An internal relay chain light client provides a fast and lightweight approach for connecting to the relay chain network. It provides relay chain notifications and facilitates runtime calls.
+An internal relay chain light client provides a fast and lightweight approach for connecting to the relay chain network.
+It provides relay chain notifications and facilitates runtime calls.
 
 To specify which chain the light client should connect to, users need to supply a relay chain chain-spec as part of the relay chain arguments.
 

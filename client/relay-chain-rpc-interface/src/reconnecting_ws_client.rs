@@ -44,7 +44,9 @@ use crate::rpc_client::{distribute_header, RpcDispatcherMessage};
 
 const LOG_TARGET: &str = "reconnecting-websocket-client";
 
-/// Worker that should be used in combination with [`RelayChainRpcClient`]. Must be polled to distribute header notifications to listeners.
+/// Worker that should be used in combination with [`RelayChainRpcClient`].
+///
+/// Must be polled to distribute header notifications to listeners.
 pub struct ReconnectingWebsocketWorker {
 	ws_urls: Vec<String>,
 	/// Communication channel with the RPC client
