@@ -113,8 +113,7 @@ impl cumulus_pallet_parachain_system::Config for Test {
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ();
 	type CheckAssociatedRelayNumber = AnyRelayNumber;
-	#[cfg(feature = "parameterized-consensus-hook")]
-	type ConsensusHook = ();
+	type ConsensusHook = cumulus_pallet_parachain_system::consensus_hook::ExpectParentIncluded;
 }
 
 parameter_types! {

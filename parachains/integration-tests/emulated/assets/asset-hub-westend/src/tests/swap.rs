@@ -91,7 +91,6 @@ fn swap_locally_on_chain_using_local_assets() {
 }
 
 #[test]
-#[cfg(feature = "FAIL-CI")] // Fails with `MessageQueue::OverweightEnqueued` event.
 fn swap_locally_on_chain_using_foreign_assets() {
 	use frame_support::weights::WeightToFee;
 

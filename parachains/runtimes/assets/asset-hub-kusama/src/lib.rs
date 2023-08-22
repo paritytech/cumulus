@@ -653,6 +653,7 @@ impl pallet_message_queue::Config for Runtime {
 	type MaxStale = sp_core::ConstU32<8>;
 	type ServiceWeight = MessageQueueServiceWeight;
 }
+
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {
