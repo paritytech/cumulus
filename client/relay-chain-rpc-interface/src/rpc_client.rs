@@ -59,54 +59,7 @@ pub use url::Url;
 const LOG_TARGET: &str = "relay-chain-rpc-client";
 const NOTIFICATION_CHANNEL_SIZE_LIMIT: usize = 20;
 
-/// Client that maps RPC methods and deserializes results
-#[derive(Clone)]
-pub struct RelayChainRpcClient {
-	/// Websocket client to make calls
-	ws_client: RpcFrontend,
-}
-
-/// Entry point to create [`RelayChainRpcClient`] and start a worker that communicates
-/// to JsonRPC servers over the network.
-pub async fn create_client_and_start_worker(
-	urls: Vec<Url>,
-	task_manager: &mut TaskManager,
-) -> RelayChainResult<RelayChainRpcClient> {
-	let (worker, sender) = ReconnectingWebsocketWorker::new(urls).await;
-
-	task_manager
-		.spawn_essential_handle()
-		.spawn("relay-chain-rpc-worker", None, worker.run());
-
-	let ws_client = RpcFrontend::new(sender);
-
-	let client = RelayChainRpcClient::new(ws_client);
-
-	Ok(client)
-}
-
-/// Entry point to create [`RelayChainRpcClient`] and start a worker that communicates
-/// with an embedded smoldot instance.
-pub async fn create_client_and_start_light_client_worker(
-	chain_spec: String,
-	task_manager: &mut TaskManager,
-) -> RelayChainResult<RelayChainRpcClient> {
-	let (client, chain_id, json_rpc_responses) =
-		build_smoldot_client(task_manager.spawn_handle(), &chain_spec).await?;
-	let (worker, sender) = LightClientRpcWorker::new(client, json_rpc_responses, chain_id);
-
-	task_manager
-		.spawn_essential_handle()
-		.spawn("relay-light-client-worker", None, worker.run());
-
-	let rpc_frontend = RpcFrontend::new(sender);
-
-	let client = RelayChainRpcClient::new(rpc_frontend);
-
-	Ok(client)
-}
-
-/// Messages for communication between [`RpcFrontend`] and the RPC workers.
+/// Messages for communication between [`RelayChainRpcClient`] and the RPC workers.
 #[derive(Debug)]
 pub enum RpcDispatcherMessage {
 	/// Register new listener for the best headers stream. Contains a sender which will be used
@@ -129,88 +82,56 @@ pub enum RpcDispatcherMessage {
 	Request(String, ArrayParams, OneshotSender<Result<JsonValue, JsonRpseeError>>),
 }
 
-/// Frontend for performing websocket requests.
-/// Requests and stream requests are forwarded to a processing worker.
-#[derive(Debug, Clone)]
-pub struct RpcFrontend {
-	/// Channel to communicate with the RPC worker
-	to_worker_channel: TokioSender<RpcDispatcherMessage>,
+/// Entry point to create [`RelayChainRpcClient`] and start a worker that communicates
+/// to JsonRPC servers over the network.
+pub async fn create_client_and_start_worker(
+	urls: Vec<Url>,
+	task_manager: &mut TaskManager,
+) -> RelayChainResult<RelayChainRpcClient> {
+	let (worker, sender) = ReconnectingWebsocketWorker::new(urls).await;
+
+	task_manager
+		.spawn_essential_handle()
+		.spawn("relay-chain-rpc-worker", None, worker.run());
+
+	let client = RelayChainRpcClient::new(sender);
+
+	Ok(client)
 }
 
-impl RpcFrontend {
-	/// Create a new websocket client frontend.
-	pub fn new(sender: TokioSender<RpcDispatcherMessage>) -> Self {
-		tracing::debug!(target: LOG_TARGET, "Instantiating reconnecting websocket client");
-		Self { to_worker_channel: sender }
-	}
+/// Entry point to create [`RelayChainRpcClient`] and start a worker that communicates
+/// with an embedded smoldot instance.
+pub async fn create_client_and_start_light_client_worker(
+	chain_spec: String,
+	task_manager: &mut TaskManager,
+) -> RelayChainResult<RelayChainRpcClient> {
+	let (client, chain_id, json_rpc_responses) =
+		build_smoldot_client(task_manager.spawn_handle(), &chain_spec).await?;
+	let (worker, sender) = LightClientRpcWorker::new(client, json_rpc_responses, chain_id);
+
+	task_manager
+		.spawn_essential_handle()
+		.spawn("relay-light-client-worker", None, worker.run());
+
+	let client = RelayChainRpcClient::new(sender);
+
+	Ok(client)
 }
 
-impl RpcFrontend {
-	/// Perform a request via websocket connection.
-	pub async fn request<R>(&self, method: &str, params: ArrayParams) -> Result<R, RelayChainError>
-	where
-		R: serde::de::DeserializeOwned,
-	{
-		let (tx, rx) = futures::channel::oneshot::channel();
-
-		let message = RpcDispatcherMessage::Request(method.into(), params, tx);
-		self.to_worker_channel.send(message).await.map_err(|err| {
-			RelayChainError::WorkerCommunicationError(format!(
-				"Unable to send message to RPC worker: {}",
-				err
-			))
-		})?;
-
-		let value = rx.await.map_err(|err| {
-			RelayChainError::WorkerCommunicationError(format!(
-				"Unexpected channel close on RPC worker side: {}",
-				err
-			))
-		})??;
-
-		serde_json::from_value(value)
-			.map_err(|_| RelayChainError::GenericError("Unable to deserialize value".to_string()))
-	}
-
-	/// Get a stream of new best relay chain headers
-	pub fn get_best_heads_stream(&self) -> Result<Receiver<RelayHeader>, RelayChainError> {
-		let (tx, rx) =
-			futures::channel::mpsc::channel::<RelayHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
-		self.send_register_message_to_worker(RpcDispatcherMessage::RegisterBestHeadListener(tx))?;
-		Ok(rx)
-	}
-
-	/// Get a stream of finalized relay chain headers
-	pub fn get_finalized_heads_stream(&self) -> Result<Receiver<RelayHeader>, RelayChainError> {
-		let (tx, rx) =
-			futures::channel::mpsc::channel::<RelayHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
-		self.send_register_message_to_worker(RpcDispatcherMessage::RegisterFinalizationListener(
-			tx,
-		))?;
-		Ok(rx)
-	}
-
-	/// Get a stream of all imported relay chain headers
-	pub fn get_imported_heads_stream(&self) -> Result<Receiver<RelayHeader>, RelayChainError> {
-		let (tx, rx) =
-			futures::channel::mpsc::channel::<RelayHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
-		self.send_register_message_to_worker(RpcDispatcherMessage::RegisterImportListener(tx))?;
-		Ok(rx)
-	}
-
-	fn send_register_message_to_worker(
-		&self,
-		message: RpcDispatcherMessage,
-	) -> Result<(), RelayChainError> {
-		self.to_worker_channel
-			.try_send(message)
-			.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))
-	}
+/// Client that maps RPC methods and deserializes results
+#[derive(Clone)]
+pub struct RelayChainRpcClient {
+	/// Sender to send messages to the worker.
+	worker_channel: TokioSender<RpcDispatcherMessage>,
 }
+
 impl RelayChainRpcClient {
 	/// Initialize new RPC Client.
-	pub(crate) fn new(ws_client: RpcFrontend) -> Self {
-		RelayChainRpcClient { ws_client }
+	///
+	/// This client expects a channel connected to a worker that processes
+	/// requests sent via this channel.
+	pub(crate) fn new(worker_channel: TokioSender<RpcDispatcherMessage>) -> Self {
+		RelayChainRpcClient { worker_channel }
 	}
 
 	/// Call a call to `state_call` rpc method.
@@ -269,8 +190,25 @@ impl RelayChainRpcClient {
 		R: DeserializeOwned + std::fmt::Debug,
 		OR: Fn(&RelayChainError),
 	{
-		self.ws_client.request(method, params).await.map_err(|err| {
-			trace_error(&err);
+		let (tx, rx) = futures::channel::oneshot::channel();
+
+		let message = RpcDispatcherMessage::Request(method.into(), params, tx);
+		self.worker_channel.send(message).await.map_err(|err| {
+			RelayChainError::WorkerCommunicationError(format!(
+				"Unable to send message to RPC worker: {}",
+				err
+			))
+		})?;
+
+		let value = rx.await.map_err(|err| {
+			RelayChainError::WorkerCommunicationError(format!(
+				"Unexpected channel close on RPC worker side: {}",
+				err
+			))
+		})??;
+
+		serde_json::from_value(value).map_err(|_| {
+			trace_error(&RelayChainError::GenericError("Unable to deserialize value".to_string()));
 			RelayChainError::RpcCallError(method.to_string())
 		})
 	}
@@ -677,19 +615,39 @@ impl RelayChainRpcClient {
 		.await
 	}
 
+	fn send_register_message_to_worker(
+		&self,
+		message: RpcDispatcherMessage,
+	) -> Result<(), RelayChainError> {
+		self.worker_channel
+			.try_send(message)
+			.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))
+	}
+
 	/// Get a stream of all imported relay chain headers
 	pub fn get_imported_heads_stream(&self) -> Result<Receiver<RelayHeader>, RelayChainError> {
-		self.ws_client.get_imported_heads_stream()
+		let (tx, rx) =
+			futures::channel::mpsc::channel::<RelayHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
+		self.send_register_message_to_worker(RpcDispatcherMessage::RegisterImportListener(tx))?;
+		Ok(rx)
 	}
 
 	/// Get a stream of new best relay chain headers
 	pub fn get_best_heads_stream(&self) -> Result<Receiver<RelayHeader>, RelayChainError> {
-		self.ws_client.get_best_heads_stream()
+		let (tx, rx) =
+			futures::channel::mpsc::channel::<RelayHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
+		self.send_register_message_to_worker(RpcDispatcherMessage::RegisterBestHeadListener(tx))?;
+		Ok(rx)
 	}
 
 	/// Get a stream of finalized relay chain headers
 	pub fn get_finalized_heads_stream(&self) -> Result<Receiver<RelayHeader>, RelayChainError> {
-		self.ws_client.get_finalized_heads_stream()
+		let (tx, rx) =
+			futures::channel::mpsc::channel::<RelayHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
+		self.send_register_message_to_worker(RpcDispatcherMessage::RegisterFinalizationListener(
+			tx,
+		))?;
+		Ok(rx)
 	}
 }
 
