@@ -111,6 +111,15 @@ jobs:
           import_gpg_keys
           check_gpg $BINARY
 
+      - name: Build Injected Container image for $BINARY
+        env:
+            BIN_FOLDER: ./release-artifacts
+            IMAGE_NAME: ${{ env.BINARY }}
+        run: |
+          ls -al
+          echo "Building container for $BINARY"
+          ./docker/scripts/build-injected-image.sh
+
       - name: Fetch commit and tag
         id: fetch_refs
         run: |
@@ -135,15 +144,6 @@ jobs:
                 echo "release=${release}" >> $GITHUB_OUTPUT
             fi
 
-      - name: Build Injected Container image for $BINARY
-        env:
-            BIN_FOLDER: ./release-artifacts
-            IMAGE_NAME: ${{ env.BINARY }}
-        run: |
-          ls -al
-          echo "Building container for $BINARY"
-          ./docker/scripts/build-injected-image.sh
-
       - name: Login to Dockerhub
         uses: docker/login-action@v2
         with:
@@ -157,16 +157,11 @@ jobs:
         run: |
           TAGS=${TAGS[@]:-latest}
           IFS=',' read -r -a TAG_ARRAY <<< "$TAGS"
-          TAG_ARGS=" "
 
-          echo "The image ${IMAGE_NAME} will be tagged with ${TAG_ARRAY[*]}"
-          for tag in "${TAG_ARRAY[@]}"; do
-            TAG_ARGS+="--tag ${OWNER}/${IMAGE_NAME}:${tag} "
+          echo "The image ${BINARY} will be tagged with ${TAG_ARRAY[*]}"
+          for TAG in "${TAG_ARRAY[@]}"; do
+            $ENGINE tag ${DOCKER_OWNER}/${BINARY} ${DOCKER_OWNER}/${BINARY}:${TAG}
           done
-
-          echo "$TAG_ARGS"
-
-          $ENGINE $TAG_ARGS
 
           $ENGINE images | grep ${BINARY}
           $ENGINE push --all-tags ${REGISTRY}/${DOCKER_OWNER}/${BINARY}
