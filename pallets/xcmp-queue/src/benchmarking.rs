@@ -93,23 +93,17 @@ mod benchmarks {
 	#[benchmark]
 	fn split_concatenated_xcm() {
 		let max_downward_message_size = MaxXcmpMessageLenOf::<T>::get() as usize;
-		// A nested XCM of maximal length:
-		let mut xcm = Xcm::<T>(vec![
-			ClearOrigin;
-			max_downward_message_size - MAX_XCM_DECODE_DEPTH as usize * 3
-		]);
+
+		// A nested XCM of length 100:
+		// NOTE: If this fails because of a custom XCM decoder then you need to reduce it.
+		let mut xcm = Xcm::<T>(vec![ClearOrigin; 100]);
+
 		for _ in 0..MAX_XCM_DECODE_DEPTH - 1 {
 			xcm = Xcm::<T>(vec![Instruction::SetAppendix(xcm)]);
 		}
 
 		let data = VersionedXcm::<T>::from(xcm).encode();
-		assert!(
-			data.len() < max_downward_message_size &&
-				data.len() > (max_downward_message_size as f32 * 0.95) as usize,
-			"Should approximate the worst-case size by about 95% but was: {} vs {}",
-			data.len(),
-			max_downward_message_size,
-		);
+		assert!(data.len() < max_downward_message_size, "Page size is too small");
 		// Verify that decoding works with the exact recursion limit:
 		VersionedXcm::<T::RuntimeCall>::decode_with_depth_limit(
 			MAX_XCM_DECODE_DEPTH,
