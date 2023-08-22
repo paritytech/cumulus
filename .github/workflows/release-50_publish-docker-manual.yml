@@ -18,11 +18,14 @@ on:
               jq '.[] | { name: .name, id: .id }'
         required: true
         type: string
-      production_image:
-        description: "Set to true for an image for the final release or false for an rc image"
+      image_type:
+        description: "Type of the image to be published"
         required: true
-        type: string
-        default: "false"
+        default: "rc"
+        type: choice
+        options:
+          - rc
+          - final
       registry:
         description: "Container registry"
         required: true
@@ -129,9 +132,9 @@ jobs:
       - name: Fetch commit and tag
         id: fetch_refs
         run: |
-            is_final=${{ inputs.production_image }}
+            type=${{ inputs.image_type }}
 
-            if [ "${is_final}" != "true" ]; then
+            if [ "${type}" == "rc" ]; then
                 release=release-${{ inputs.release_id }} && \
                 echo "release=${release}" >> $GITHUB_OUTPUT
 
@@ -142,7 +145,7 @@ jobs:
                 tag=$(git name-rev --tags --name-only $(git rev-parse HEAD)) && \
                 [ "${tag}" != "undefined" ] && echo "tag=${tag}" >> $GITHUB_OUTPUT || \
                 echo "No tag, doing without"
-            else
+            elif [ "${type}" == "final" ]; then
                 VERSION=$(docker run --pull never --rm $DOCKER_OWNER/$BINARY --version | awk '{ print $2 }' )
                 release=$( echo $VERSION | cut -f1 -d- )
                 echo "tag=latest" >> $GITHUB_OUTPUT
