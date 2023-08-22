@@ -160,10 +160,10 @@ jobs:
           echo "The image ${BINARY} will be tagged with ${TAG_ARRAY[*]}"
           for TAG in "${TAG_ARRAY[@]}"; do
             $ENGINE tag ${DOCKER_OWNER}/${BINARY} ${DOCKER_OWNER}/${BINARY}:${TAG}
+            $ENGINE push ${DOCKER_OWNER}/${BINARY}:${TAG}
           done
 
           $ENGINE images | grep ${BINARY}
-          $ENGINE push --all-tags ${REGISTRY}/${DOCKER_OWNER}/${BINARY}
 
       - name: Check version for the published image for ${{ env.BINARY }}
         env:
