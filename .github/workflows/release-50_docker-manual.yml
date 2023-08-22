@@ -113,8 +113,8 @@ jobs:
 
       - name: Build Injected Container image for $BINARY
         env:
-            BIN_FOLDER: ./release-artifacts
             IMAGE_NAME: ${{ env.BINARY }}
+            OWNER: ${{ env.DOCKER_OWNER }}
         run: |
           ls -al
           echo "Building container for $BINARY"
@@ -137,7 +137,6 @@ jobs:
                 [ "${tag}" != "undefined" ] && echo "tag=${tag}" >> $GITHUB_OUTPUT || \
                 echo "No tag, doing without"
             else
-                docker run --pull never --rm $DOCKER_OWNER/$BINARY --version
                 VERSION=$(docker run --pull never --rm $DOCKER_OWNER/$BINARY --version | awk '{ print $2 }' )
                 release=$( echo $VERSION | cut -f1 -d- )
                 echo "tag=latest" >> $GITHUB_OUTPUT
@@ -166,7 +165,7 @@ jobs:
           $ENGINE images | grep ${BINARY}
           $ENGINE push --all-tags ${REGISTRY}/${DOCKER_OWNER}/${BINARY}
 
-      - name: Check version for the published image for $BINARY
+      - name: Check version for the published image for ${{ env.BINARY }}
         env:
           RELEASE_TAG: ${{ steps.fetch_refs.outputs.release }}
         run: |
