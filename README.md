@@ -43,10 +43,10 @@ You may run `polkadot-parachain` locally after building it or using one of the c
 
 ### Relay Chain Interaction
 To operate a parachain node, a connection to the corresponding relay chain is necessary. This can be
-achieved in one of two ways:
+achieved in one of three ways:
 1. Run a full relay chain node within the parachain node (default)
 2. Connect to an external relay chain node via WebSocket RPC
-2. Run a light client for the relay chain
+3. Run a light client for the relay chain
 
 #### In-process Relay Chain Node
 If an external relay chain node is not specified (default behavior), then a full relay chain node is

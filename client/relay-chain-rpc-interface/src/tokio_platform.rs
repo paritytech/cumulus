@@ -29,7 +29,7 @@ use tokio_util::compat::{Compat, TokioAsyncReadCompatExt};
 type CompatTcpStream = Compat<TcpStream>;
 
 /// Platform implementation for tokio
-/// This implementation is a conversion of the implementation for smol:
+/// This implementation is a port of the implementation for smol:
 /// https://github.com/smol-dot/smoldot/blob/8c577b4a753fe96190f813070564ecc742b91a16/light-base/src/platform/default.rs
 #[derive(Clone)]
 pub struct TokioPlatform {
