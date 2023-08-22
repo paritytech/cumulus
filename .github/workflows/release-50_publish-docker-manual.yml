@@ -1,4 +1,10 @@
-name: Release - Docker (Manual)
+name: Release - Publish RC or the Final Container image manually
+
+# This workflow allows to publish rc or final conatiner emages manually
+# based on the 'production_image' option chosen in the workflow setup.
+# It fetches the binaries, checks sha256 and GPG
+# signatures based on release id from the gihub, then builds an injected docker
+# images and publishes them.
 
 on:
   workflow_dispatch:
