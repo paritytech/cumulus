@@ -13964,7 +13964,8 @@ dependencies = [
 [[package]]
 name = "smoldot"
 version = "0.11.0"
-source = "git+https://github.com/smol-dot/smoldot?rev=8c577b4a753fe96190f813070564ecc742b91a1#8c577b4a753fe96190f813070564ecc742b91a16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c0bb30cf57b7b5f6109ce17c3164445e2d6f270af2cb48f6e4d31c2967c9a9f5"
 dependencies = [
  "arrayvec 0.7.4",
  "async-lock",
@@ -14017,7 +14018,8 @@ dependencies = [
 [[package]]
 name = "smoldot-light"
 version = "0.9.0"
-source = "git+https://github.com/smol-dot/smoldot?rev=8c577b4a753fe96190f813070564ecc742b91a1#8c577b4a753fe96190f813070564ecc742b91a16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "256b5bad1d6b49045e95fe87492ce73d5af81545d8b4d8318a872d2007024c33"
 dependencies = [
  "async-channel",
  "async-lock",
