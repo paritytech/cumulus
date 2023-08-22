@@ -37,12 +37,7 @@ serde = "1.0.183"
 lru = "0.11.0"
 smoldot = { git = "https://github.com/smol-dot/smoldot", rev = "8c577b4a753fe96190f813070564ecc742b91a1" , default_features = false, features = ["std"]}
 smoldot-light = { git = "https://github.com/smol-dot/smoldot",  rev = "8c577b4a753fe96190f813070564ecc742b91a1", default_features = false, features = ["std"] }
-parking_lot = "0.12.1"
 either = "1.8.1"
-event-listener = "2.5.3"
 thiserror = "1.0.38"
-soketto = "0.7.1"
 rand = "0.8.5"
-derive_more = "0.99.17"
-futures-util = "0.3.28"
 pin-project = "1.1.3"
