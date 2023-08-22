@@ -40,6 +40,7 @@ frame_support::construct_runtime!(
 		Session: pallet_session,
 		Aura: pallet_aura,
 		Balances: pallet_balances,
+		CandidateList: pallet_bags_list::<Instance1>,
 		CollatorSelection: collator_selection,
 		Authorship: pallet_authorship,
 	}
@@ -177,12 +178,24 @@ impl pallet_session::Config for Test {
 	type WeightInfo = ();
 }
 
+type CandidateBagsListInstance = pallet_bags_list::Instance1;
+impl pallet_bags_list::Config<CandidateBagsListInstance> for Test {
+	type RuntimeEvent = RuntimeEvent;
+	/// The candidate bags-list is loosely kept up to date, and the real source
+	/// of truth for the score of each node is the collator-selection pallet.
+	type ScoreProvider = CollatorSelection;
+	type BagThresholds = BagThresholds;
+	type Score = u64;
+	type WeightInfo = pallet_bags_list::weights::SubstrateWeight<Test>;
+}
+
 ord_parameter_types! {
 	pub const RootAccount: u64 = 777;
 }
 
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
+	pub const BagThresholds: &'static [u64] = &[];
 }
 
 pub struct IsRegistered;
@@ -201,6 +214,7 @@ impl Config for Test {
 	type MinEligibleCollators = ConstU32<1>;
 	type MaxInvulnerables = ConstU32<20>;
 	type KickThreshold = Period;
+	type CandidateList = CandidateList;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = IdentityCollator;
 	type ValidatorRegistration = IsRegistered;

@@ -26,6 +26,8 @@ pallet-parachain-template = { path = "../pallets/template", default-features = f
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "master" }
+# TODO[GMP] maybe unnecessary
+frame-election-provider-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -34,9 +36,11 @@ frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate"
 frame-try-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "master" }
 pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-bags-list = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-staking = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -88,15 +92,18 @@ std = [
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-utility/std",
 	"frame-executive/std",
+	"frame-election-provider-support/std",
 	"frame-support/std",
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
 	"pallet-aura/std",
 	"pallet-authorship/std",
+	"pallet-bags-list/std",
 	"pallet-balances/std",
 	"pallet-collator-selection/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
+	"pallet-staking/std",
 	"pallet-parachain-template/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
@@ -126,13 +133,16 @@ runtime-benchmarks = [
 	"hex-literal",
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
+	"frame-election-provider-support/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
+	"pallet-bags-list/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"pallet-parachain-template/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-sudo/runtime-benchmarks",
+	"pallet-staking/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
@@ -147,15 +157,18 @@ try-runtime = [
 	"cumulus-pallet-parachain-system/try-runtime",
 	"cumulus-pallet-xcm/try-runtime",
 	"cumulus-pallet-xcmp-queue/try-runtime",
+	"frame-election-provider-support/try-runtime",
 	"frame-executive/try-runtime",
 	"frame-system/try-runtime",
 	"frame-try-runtime/try-runtime",
 	"pallet-aura/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-balances/try-runtime",
+	"pallet-bags-list/try-runtime",
 	"pallet-collator-selection/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-sudo/try-runtime",
+	"pallet-staking/try-runtime",
 	"pallet-parachain-template/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",

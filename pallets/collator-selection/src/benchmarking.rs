@@ -24,9 +24,9 @@ use crate::Pallet as CollatorSelection;
 use frame_benchmarking::{
 	account, impl_benchmark_test_suite, v2::*, whitelisted_caller, BenchmarkError,
 };
+use frame_election_provider_support::SortedListProvider;
 use frame_support::{
 	codec::Decode,
-	dispatch::DispatchResult,
 	traits::{Currency, EnsureOrigin, Get, ReservableCurrency},
 };
 use frame_system::{pallet_prelude::BlockNumberFor, EventRecord, RawOrigin};
@@ -94,7 +94,8 @@ fn register_candidates<T: Config>(count: u32) {
 	assert!(<CandidacyBond<T>>::get() > 0u32.into(), "Bond cannot be zero!");
 
 	for who in candidates {
-		T::Currency::make_free_balance_be(&who, <CandidacyBond<T>>::get() * 2u32.into());
+		// TODO[GMP] revisit this, need it for Currency reserve in increase_bid
+		T::Currency::make_free_balance_be(&who, <CandidacyBond<T>>::get() * 3u32.into());
 		<CollatorSelection<T>>::register_as_candidate(RawOrigin::Signed(who).into()).unwrap();
 	}
 }
@@ -107,8 +108,8 @@ fn min_candidates<T: Config>() -> u32 {
 
 fn min_invulnerables<T: Config>() -> u32 {
 	let min_collators = T::MinEligibleCollators::get();
-	let candidates_length = <Candidates<T>>::get().len();
-	min_collators.saturating_sub(candidates_length.try_into().unwrap())
+	let candidates_length = <CandidateCount<T>>::get();
+	min_collators.saturating_sub(candidates_length)
 }
 
 #[benchmarks(where T: pallet_authorship::Config + session::Config)]
@@ -163,19 +164,13 @@ mod benchmarks {
 		for (who, _) in candidates {
 			let deposit = <CandidacyBond<T>>::get();
 			T::Currency::make_free_balance_be(&who, deposit * 1000_u32.into());
-			let incoming = CandidateInfo { who: who.clone(), deposit };
-			<Candidates<T>>::try_mutate(|candidates| -> DispatchResult {
-				if !candidates.iter().any(|candidate| candidate.who == who) {
-					T::Currency::reserve(&who, deposit)?;
-					candidates.try_push(incoming).expect("we've respected the bounded vec limit");
-					<LastAuthoredBlock<T>>::insert(
-						who.clone(),
-						frame_system::Pallet::<T>::block_number() + T::KickThreshold::get(),
-					);
-				}
-				Ok(())
-			})
-			.expect("only returns ok");
+			<Candidates<T>>::insert(who.clone(), deposit);
+			T::CandidateList::on_insert(who.clone(), deposit).unwrap();
+			T::Currency::reserve(&who, deposit)?;
+			<LastAuthoredBlock<T>>::insert(
+				who.clone(),
+				frame_system::Pallet::<T>::block_number() + T::KickThreshold::get(),
+			);
 		}
 
 		// now we need to fill up invulnerables
@@ -238,6 +233,73 @@ mod benchmarks {
 		Ok(())
 	}
 
+	#[benchmark]
+	fn increase_bond(
+		c: Linear<{ min_candidates::<T>() + 1 }, { T::MaxCandidates::get() }>,
+	) -> Result<(), BenchmarkError> {
+		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
+		<DesiredCandidates<T>>::put(c);
+
+		register_validators::<T>(c);
+		register_candidates::<T>(c);
+
+		let caller = <Candidates<T>>::iter().last().unwrap().0.clone();
+		v2::whitelist!(caller);
+
+		let bond_amount: BalanceOf<T> = T::Currency::minimum_balance();
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller.clone()), bond_amount);
+
+		assert_last_event::<T>(
+			Event::CandidateBondIncreased {
+				account_id: caller,
+				deposit: T::Currency::minimum_balance() + bond_amount,
+			}
+			.into(),
+		);
+		assert!(
+			<Candidates<T>>::iter().last().unwrap().1 ==
+				T::Currency::minimum_balance() * 2u32.into()
+		);
+		Ok(())
+	}
+
+	#[benchmark]
+	fn decrease_bond(
+		c: Linear<{ min_candidates::<T>() + 1 }, { T::MaxCandidates::get() }>,
+	) -> Result<(), BenchmarkError> {
+		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
+		<DesiredCandidates<T>>::put(c);
+
+		register_validators::<T>(c);
+		register_candidates::<T>(c);
+
+		let caller = <Candidates<T>>::iter().last().unwrap().0.clone();
+		v2::whitelist!(caller);
+
+		<CollatorSelection<T>>::increase_bond(
+			RawOrigin::Signed(caller.clone()).into(),
+			<CandidacyBond<T>>::get(),
+		)
+		.unwrap();
+
+		let bond_amount: BalanceOf<T> = T::Currency::minimum_balance();
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller.clone()), bond_amount);
+
+		assert_last_event::<T>(
+			Event::CandidateBondDecreased {
+				account_id: caller,
+				deposit: T::Currency::minimum_balance(),
+			}
+			.into(),
+		);
+		assert!(<Candidates<T>>::iter().last().unwrap().1 == T::Currency::minimum_balance());
+		Ok(())
+	}
+
 	// worse case is when we have all the max-candidate slots filled except one, and we fill that
 	// one.
 	#[benchmark]
@@ -267,6 +329,36 @@ mod benchmarks {
 		);
 	}
 
+	#[benchmark]
+	fn take_candidate_slot(c: Linear<{ min_candidates::<T>() + 1 }, { T::MaxCandidates::get() }>) {
+		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
+		<DesiredCandidates<T>>::put(1);
+
+		register_validators::<T>(c);
+		register_candidates::<T>(c);
+
+		let caller: T::AccountId = whitelisted_caller();
+		let bond: BalanceOf<T> = T::Currency::minimum_balance() * 10u32.into();
+		T::Currency::make_free_balance_be(&caller, bond);
+
+		<session::Pallet<T>>::set_keys(
+			RawOrigin::Signed(caller.clone()).into(),
+			keys::<T>(c + 1),
+			Vec::new(),
+		)
+		.unwrap();
+
+		let target = <Candidates<T>>::iter().last().unwrap().0.clone();
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller.clone()), bond / 2u32.into(), target.clone());
+
+		assert_last_event::<T>(
+			Event::CandidateReplaced { old: target, new: caller, deposit: bond / 2u32.into() }
+				.into(),
+		);
+	}
+
 	// worse case is the last candidate leaving.
 	#[benchmark]
 	fn leave_intent(c: Linear<{ min_candidates::<T>() + 1 }, { T::MaxCandidates::get() }>) {
@@ -276,7 +368,7 @@ mod benchmarks {
 		register_validators::<T>(c);
 		register_candidates::<T>(c);
 
-		let leaving = <Candidates<T>>::get().last().unwrap().who.clone();
+		let leaving = <Candidates<T>>::iter().last().unwrap().0.clone();
 		v2::whitelist!(leaving);
 
 		#[extrinsic_call]
@@ -323,30 +415,31 @@ mod benchmarks {
 
 		let new_block: BlockNumberFor<T> = 1800u32.into();
 		let zero_block: BlockNumberFor<T> = 0u32.into();
-		let candidates = <Candidates<T>>::get();
+		let candidates: Vec<T::AccountId> = <Candidates<T>>::iter().map(|(who, _)| who).collect();
 
 		let non_removals = c.saturating_sub(r);
 
 		for i in 0..c {
-			<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), zero_block);
+			<LastAuthoredBlock<T>>::insert(candidates[i as usize].clone(), zero_block);
 		}
 
 		if non_removals > 0 {
 			for i in 0..non_removals {
-				<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), new_block);
+				<LastAuthoredBlock<T>>::insert(candidates[i as usize].clone(), new_block);
 			}
 		} else {
 			for i in 0..c {
-				<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), new_block);
+				<LastAuthoredBlock<T>>::insert(candidates[i as usize].clone(), new_block);
 			}
 		}
 
 		let min_candidates = min_candidates::<T>();
-		let pre_length = <Candidates<T>>::get().len();
+		let pre_length = <CandidateCount<T>>::get();
+		assert!(pre_length as usize == <Candidates<T>>::iter().count());
 
 		frame_system::Pallet::<T>::set_block_number(new_block);
 
-		assert!(<Candidates<T>>::get().len() == c as usize);
+		assert!(<CandidateCount<T>>::get() == c);
 
 		#[block]
 		{
@@ -357,16 +450,16 @@ mod benchmarks {
 			// candidates > removals and remaining candidates > min candidates
 			// => remaining candidates should be shorter than before removal, i.e. some were
 			//    actually removed.
-			assert!(<Candidates<T>>::get().len() < pre_length);
+			assert!(<CandidateCount<T>>::get() < pre_length);
 		} else if c > r && non_removals < min_candidates {
 			// candidates > removals and remaining candidates would be less than min candidates
 			// => remaining candidates should equal min candidates, i.e. some were removed up to
 			//    the minimum, but then any more were "forced" to stay in candidates.
-			assert!(<Candidates<T>>::get().len() == min_candidates as usize);
+			assert!(<CandidateCount<T>>::get() == min_candidates);
 		} else {
 			// removals >= candidates, non removals must == 0
 			// can't remove more than exist
-			assert!(<Candidates<T>>::get().len() == pre_length);
+			assert!(<CandidateCount<T>>::get() == pre_length);
 		}
 	}
 
