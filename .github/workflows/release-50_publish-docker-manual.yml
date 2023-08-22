@@ -102,7 +102,7 @@ jobs:
           path: |
             ./release-artifacts/**/*
 
-      - name: Check sha256 $BINARY
+      - name: Check sha256 ${{ env.BINARY }}
         working-directory: ./release-artifacts
         run: |
           . ./lib.sh
@@ -110,7 +110,7 @@ jobs:
           echo "Checking binary $BINARY"
           check_sha256 $BINARY && echo "OK" || echo "ERR"
 
-      - name: Check GPG $BINARY
+      - name: Check GPG ${{ env.BINARY }}
         working-directory: ./release-artifacts
         run: |
           . ./lib.sh
@@ -155,7 +155,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Tag and Push Container image for $BINARY
+      - name: Tag and Push Container image for ${{ env.BINARY }}
         id: docker_push
         env:
           TAGS: ${{join(steps.fetch_refs.outputs.*, ',')}}

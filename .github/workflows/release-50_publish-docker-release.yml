@@ -95,7 +95,6 @@ jobs:
 
       - name: Tag and Publish
         env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_ORG: parity
         run: |
           docker run --pull never --rm $DOCKERHUB_ORG/$BINARY --version
