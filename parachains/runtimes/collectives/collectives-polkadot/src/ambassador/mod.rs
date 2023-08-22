@@ -208,13 +208,13 @@ pub type AmbassadorSalaryInstance = pallet_salary::Instance2;
 
 parameter_types! {
 	// The interior location on AssetHub for the paying account. This is the Ambassador Salary
-	// pallet instance (which sits at index 64). This sovereign account will need funding.
-	pub Interior: InteriorMultiLocation = PalletInstance(74).into();
+	// pallet instance (which sits at index 74). This sovereign account will need funding.
+	pub AmbassadorSalaryLocation: InteriorMultiLocation = PalletInstance(74).into();
 }
 
 /// [`PayOverXcm`] setup to pay the Ambassador salary on the AssetHub in DOT.
 pub type AmbassadorSalaryPaymaster = PayOverXcm<
-	Interior,
+	AmbassadorSalaryLocation,
 	crate::xcm_config::XcmRouter,
 	crate::PolkadotXcm,
 	ConstU32<{ 6 * HOURS }>,

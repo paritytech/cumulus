@@ -16,7 +16,7 @@
 //! The Ambassador Program's referenda voting tracks.
 
 use super::Origin;
-use crate::{constants::currency::DOLLARS, Balance, BlockNumber, RuntimeOrigin, DAYS, MINUTES};
+use crate::{constants::currency::DOLLARS, Balance, BlockNumber, RuntimeOrigin, DAYS, HOURS};
 use sp_runtime::Perbill;
 
 /// Referendum `TrackId` type.
@@ -55,10 +55,10 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					name: "ambassador tier 1",
 					max_deciding: 10,
 					decision_deposit: 5 * DOLLARS,
-					prepare_period: 30 * MINUTES,
+					prepare_period: 24 * HOURS,
 					decision_period: 7 * DAYS,
-					confirm_period: 30 * MINUTES,
-					min_enactment_period: 5 * MINUTES,
+					confirm_period: 24 * HOURS,
+					min_enactment_period: 1 * HOURS,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
 						length: Perbill::from_percent(100),
 						floor: Perbill::from_percent(50),
@@ -77,10 +77,10 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					name: "ambassador tier 2",
 					max_deciding: 10,
 					decision_deposit: 5 * DOLLARS,
-					prepare_period: 30 * MINUTES,
+					prepare_period: 24 * HOURS,
 					decision_period: 7 * DAYS,
-					confirm_period: 30 * MINUTES,
-					min_enactment_period: 5 * MINUTES,
+					confirm_period: 24 * HOURS,
+					min_enactment_period: 1 * HOURS,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
 						length: Perbill::from_percent(100),
 						floor: Perbill::from_percent(50),
@@ -99,10 +99,10 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					name: "senior ambassador tier 3",
 					max_deciding: 10,
 					decision_deposit: 5 * DOLLARS,
-					prepare_period: 30 * MINUTES,
+					prepare_period: 24 * HOURS,
 					decision_period: 7 * DAYS,
-					confirm_period: 30 * MINUTES,
-					min_enactment_period: 5 * MINUTES,
+					confirm_period: 24 * HOURS,
+					min_enactment_period: 1 * HOURS,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
 						length: Perbill::from_percent(100),
 						floor: Perbill::from_percent(50),
@@ -121,10 +121,10 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					name: "senior ambassador tier 4",
 					max_deciding: 10,
 					decision_deposit: 5 * DOLLARS,
-					prepare_period: 30 * MINUTES,
+					prepare_period: 24 * HOURS,
 					decision_period: 7 * DAYS,
-					confirm_period: 30 * MINUTES,
-					min_enactment_period: 5 * MINUTES,
+					confirm_period: 24 * HOURS,
+					min_enactment_period: 1 * HOURS,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
 						length: Perbill::from_percent(100),
 						floor: Perbill::from_percent(50),
@@ -143,10 +143,10 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					name: "head ambassador tier 5",
 					max_deciding: 10,
 					decision_deposit: 5 * DOLLARS,
-					prepare_period: 30 * MINUTES,
+					prepare_period: 24 * HOURS,
 					decision_period: 7 * DAYS,
-					confirm_period: 30 * MINUTES,
-					min_enactment_period: 5 * MINUTES,
+					confirm_period: 24 * HOURS,
+					min_enactment_period: 1 * HOURS,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
 						length: Perbill::from_percent(100),
 						floor: Perbill::from_percent(50),
@@ -165,10 +165,10 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					name: "head ambassador tier 6",
 					max_deciding: 10,
 					decision_deposit: 5 * DOLLARS,
-					prepare_period: 30 * MINUTES,
+					prepare_period: 24 * HOURS,
 					decision_period: 7 * DAYS,
-					confirm_period: 30 * MINUTES,
-					min_enactment_period: 5 * MINUTES,
+					confirm_period: 24 * HOURS,
+					min_enactment_period: 1 * HOURS,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
 						length: Perbill::from_percent(100),
 						floor: Perbill::from_percent(50),
@@ -187,10 +187,10 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					name: "head ambassador tier 7",
 					max_deciding: 10,
 					decision_deposit: 5 * DOLLARS,
-					prepare_period: 30 * MINUTES,
+					prepare_period: 24 * HOURS,
 					decision_period: 7 * DAYS,
-					confirm_period: 30 * MINUTES,
-					min_enactment_period: 5 * MINUTES,
+					confirm_period: 24 * HOURS,
+					min_enactment_period: 1 * HOURS,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
 						length: Perbill::from_percent(100),
 						floor: Perbill::from_percent(50),
@@ -209,10 +209,10 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					name: "master ambassador tier 8",
 					max_deciding: 10,
 					decision_deposit: 5 * DOLLARS,
-					prepare_period: 30 * MINUTES,
+					prepare_period: 24 * HOURS,
 					decision_period: 7 * DAYS,
-					confirm_period: 30 * MINUTES,
-					min_enactment_period: 5 * MINUTES,
+					confirm_period: 24 * HOURS,
+					min_enactment_period: 1 * HOURS,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
 						length: Perbill::from_percent(100),
 						floor: Perbill::from_percent(50),
@@ -231,10 +231,10 @@ impl pallet_referenda::TracksInfo<Balance, BlockNumber> for TracksInfo {
 					name: "master ambassador tier 9",
 					max_deciding: 10,
 					decision_deposit: 5 * DOLLARS,
-					prepare_period: 30 * MINUTES,
+					prepare_period: 24 * HOURS,
 					decision_period: 7 * DAYS,
-					confirm_period: 30 * MINUTES,
-					min_enactment_period: 5 * MINUTES,
+					confirm_period: 24 * HOURS,
+					min_enactment_period: 1 * HOURS,
 					min_approval: pallet_referenda::Curve::LinearDecreasing {
 						length: Perbill::from_percent(100),
 						floor: Perbill::from_percent(50),
