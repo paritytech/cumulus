@@ -81,7 +81,7 @@ jobs:
           DOCKERHUB_ORG: parity
           OWNER: ${{ env.DOCKERHUB_ORG }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          IMAGE_NAME: polkadot-parachain
+          IMAGE_NAME: ${{ env.BINARY }}
         run: |
           mkdir -p release-artifacts
           cp -f ${TMP}/$BINARY* release-artifacts/

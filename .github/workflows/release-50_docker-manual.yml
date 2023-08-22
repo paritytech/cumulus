@@ -130,16 +130,15 @@ jobs:
             else
                 docker run --pull never --rm $DOCKER_OWNER/$BINARY --version
                 VERSION=$(docker run --pull never --rm $DOCKER_OWNER/$BINARY --version | awk '{ print $2 }' )
-                SEMVER=$( echo $VERSION | cut -f1 -d- )
+                release=$( echo $VERSION | cut -f1 -d- )
                 echo "tag=latest" >> $GITHUB_OUTPUT
-                echo "semver=${SEMVER}" >> $GITHUB_OUTPUT
+                echo "release=${release}" >> $GITHUB_OUTPUT
             fi
 
       - name: Build Injected Container image for $BINARY
         env:
             BIN_FOLDER: ./release-artifacts
             IMAGE_NAME: ${{ env.BINARY }}
-            TAGS: ${{join(steps.fetch_refs.outputs.*, ',')}}
         run: |
           ls -al
           echo "Building container for $BINARY"
@@ -151,9 +150,24 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Push Container image for $BINARY
+      - name: Tag and Push Container image for $BINARY
         id: docker_push
+        env:
+          TAGS: ${{join(steps.fetch_refs.outputs.*, ',')}}
         run: |
+          TAGS=${TAGS[@]:-latest}
+          IFS=',' read -r -a TAG_ARRAY <<< "$TAGS"
+          TAG_ARGS=" "
+
+          echo "The image ${IMAGE_NAME} will be tagged with ${TAG_ARRAY[*]}"
+          for tag in "${TAG_ARRAY[@]}"; do
+            TAG_ARGS+="--tag ${OWNER}/${IMAGE_NAME}:${tag} "
+          done
+
+          echo "$TAG_ARGS"
+
+          $ENGINE $TAG_ARGS
+
           $ENGINE images | grep ${BINARY}
           $ENGINE push --all-tags ${REGISTRY}/${DOCKER_OWNER}/${BINARY}
 
