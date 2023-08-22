@@ -747,6 +747,7 @@ pub fn run() -> Result<()> {
 			let info_provider = timestamp_with_aura_info(6000);
 
 			runner.async_run(|_| {
+				#[allow(deprecated)]
 				Ok((cmd.run::<Block, HostFunctions, _>(Some(info_provider)), task_manager))
 			})
 		},
