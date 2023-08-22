@@ -109,9 +109,23 @@ pub async fn create_client_and_start_light_client_worker(
 /// Messages for communication between [`RpcFrontend`] and the RPC workers.
 #[derive(Debug)]
 pub enum RpcDispatcherMessage {
+	/// Register new listener for the best headers stream. Contains a sender which will be used
+	/// to send incoming headers.
 	RegisterBestHeadListener(Sender<RelayHeader>),
+
+	/// Register new listener for the import headers stream. Contains a sender which will be used
+	/// to send incoming headers.
 	RegisterImportListener(Sender<RelayHeader>),
+
+	/// Register new listener for the finalized headers stream. Contains a sender which will be
+	/// used to send incoming headers.
 	RegisterFinalizationListener(Sender<RelayHeader>),
+
+	/// Register new listener for the finalized headers stream.
+	/// Contains the following:
+	/// - [`String`] representing the RPC method to be called
+	/// - [`ArrayParams`] for the parameters to the RPC call
+	/// - [`OneshotSender`] for the return value of the request
 	Request(String, ArrayParams, OneshotSender<Result<JsonValue, JsonRpseeError>>),
 }
 

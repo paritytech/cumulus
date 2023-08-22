@@ -95,7 +95,7 @@ pub async fn build_smoldot_client(
 	chain_spec: &str,
 ) -> RelayChainResult<(SmoldotClient<TokioPlatform, ()>, ChainId, JsonRpcResponses)> {
 	let platform = TokioPlatform::new(spawner);
-	let mut client: SmoldotClient<TokioPlatform, ()> = SmoldotClient::new(platform);
+	let mut client = SmoldotClient::new(platform);
 
 	// Ask the client to connect to a chain.
 	let smoldot_light::AddChainSuccess { chain_id, json_rpc_responses } = client
@@ -148,6 +148,7 @@ fn handle_notification(
 
 impl LightClientRpcWorker {
 	/// Create new light-client worker.
+	///
 	/// Returns the worker itself and a channel to send messages.
 	pub fn new(
 		smoldot_client: smoldot_light::Client<TokioPlatform, ()>,
@@ -174,7 +175,9 @@ impl LightClientRpcWorker {
 		(worker, tx)
 	}
 
-	// Main worker loop. Does the following:
+	// Main worker loop.
+	//
+	// Does the following:
 	// 1. Initialize notification streams
 	// 2. Enter main loop
 	// 	 a. On listening request, register listener for respective notification stream
@@ -190,26 +193,29 @@ impl LightClientRpcWorker {
 			RelayHeader,
 			SignedBlock<RelayBlock>,
 		>>::subscribe_new_heads(&self.smoldot_client)
-		.await else {
+		.await
+		else {
 			tracing::error!(
 				target: LOG_TARGET,
 				"Unable to initialize new heads subscription"
 			);
-			return;
+			return
 		};
 
-		let Ok(mut finalized_head_subscription) = <JsonRpseeClient as ChainApiClient<
-			RelayNumber,
-			RelayHash,
-			RelayHeader,
-			SignedBlock<RelayBlock>,
-		>>::subscribe_finalized_heads(&self.smoldot_client)
-		.await else {
+		let Ok(mut finalized_head_subscription) =
+			<JsonRpseeClient as ChainApiClient<
+				RelayNumber,
+				RelayHash,
+				RelayHeader,
+				SignedBlock<RelayBlock>,
+			>>::subscribe_finalized_heads(&self.smoldot_client)
+			.await
+		else {
 			tracing::error!(
 				target: LOG_TARGET,
 				"Unable to initialize finalized heads subscription"
 			);
-			return;
+			return
 		};
 
 		let Ok(mut all_head_subscription) = <JsonRpseeClient as ChainApiClient<
@@ -217,7 +223,9 @@ impl LightClientRpcWorker {
 			RelayHash,
 			RelayHeader,
 			SignedBlock<RelayBlock>,
-		>>::subscribe_all_heads(&self.smoldot_client).await else {
+		>>::subscribe_all_heads(&self.smoldot_client)
+		.await
+		else {
 			tracing::error!(
 				target: LOG_TARGET,
 				"Unable to initialize all heads subscription"
