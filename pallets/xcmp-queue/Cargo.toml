@@ -72,3 +72,4 @@ try-runtime = [
 	"frame-support/try-runtime",
 	"pallet-message-queue/try-runtime",
 ]
+parameterized-consensus-hook = ["cumulus-pallet-parachain-system/parameterized-consensus-hook"]
