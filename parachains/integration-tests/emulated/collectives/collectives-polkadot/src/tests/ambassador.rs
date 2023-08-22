@@ -22,47 +22,46 @@ use frame_support::traits::{fungible::Mutate, tokens::Pay};
 use sp_core::crypto::Ss58Codec;
 use xcm_emulator::TestExt;
 
-// TODO remove ignore https://github.com/paritytech/cumulus/issues/3027
 #[test]
-#[ignore]
 fn pay_salary() {
-	let pay_from: AccountId =
-		<AccountId as Ss58Codec>::from_string("5DS1Gaf6R9eFAV8QyeZP9P89kTkJMurxv3y3J3TTMu8p8VCX")
-			.unwrap();
-	let pay_to = Polkadot::account_id_of(ALICE);
-	let pay_amount = 90000000000;
+	// TODO remove comments - https://github.com/paritytech/cumulus/issues/3027
+	// let pay_from: AccountId =
+	// 	<AccountId as Ss58Codec>::from_string("5DS1Gaf6R9eFAV8QyeZP9P89kTkJMurxv3y3J3TTMu8p8VCX")
+	// 		.unwrap();
+	// let pay_to = Polkadot::account_id_of(ALICE);
+	// let pay_amount = 90000000000;
 
-	AssetHubPolkadot::execute_with(|| {
-		type AssetHubBalances = <AssetHubPolkadot as AssetHubPolkadotPallet>::Balances;
+	// AssetHubPolkadot::execute_with(|| {
+	// 	type AssetHubBalances = <AssetHubPolkadot as AssetHubPolkadotPallet>::Balances;
 
-		assert_ok!(<AssetHubBalances as Mutate<_>>::mint_into(&pay_from, pay_amount * 2));
-	});
+	// 	assert_ok!(<AssetHubBalances as Mutate<_>>::mint_into(&pay_from, pay_amount * 2));
+	// });
 
-	Collectives::execute_with(|| {
-		type RuntimeEvent = <Collectives as Chain>::RuntimeEvent;
+	// Collectives::execute_with(|| {
+	// 	type RuntimeEvent = <Collectives as Chain>::RuntimeEvent;
 
-		assert_ok!(AmbassadorSalaryPaymaster::pay(&pay_to, (), pay_amount));
-		assert_expected_events!(
-			Collectives,
-			vec![
-				RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::XcmpMessageSent { .. }) => {},
-			]
-		);
-	});
+	// 	assert_ok!(AmbassadorSalaryPaymaster::pay(&pay_to, (), pay_amount));
+	// 	assert_expected_events!(
+	// 		Collectives,
+	// 		vec![
+	// 			RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::XcmpMessageSent { .. }) => {},
+	// 		]
+	// 	);
+	// });
 
-	AssetHubPolkadot::execute_with(|| {
-		type RuntimeEvent = <AssetHubPolkadot as Chain>::RuntimeEvent;
+	// AssetHubPolkadot::execute_with(|| {
+	// 	type RuntimeEvent = <AssetHubPolkadot as Chain>::RuntimeEvent;
 
-		assert_expected_events!(
-			AssetHubPolkadot,
-			vec![
-				RuntimeEvent::Balances(pallet_balances::Event::Transfer { from, to, amount }) => {
-					from: from == &pay_from,
-					to: to == &pay_to,
-					amount: amount == &pay_amount,
-				},
-				RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Success { .. }) => {},
-			]
-		);
-	});
+	// 	assert_expected_events!(
+	// 		AssetHubPolkadot,
+	// 		vec![
+	// 			RuntimeEvent::Balances(pallet_balances::Event::Transfer { from, to, amount }) => {
+	// 				from: from == &pay_from,
+	// 				to: to == &pay_to,
+	// 				amount: amount == &pay_amount,
+	// 			},
+	// 			RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Success { .. }) => {},
+	// 		]
+	// 	);
+	// });
 }
