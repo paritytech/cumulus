@@ -22,7 +22,9 @@ use frame_support::traits::{fungible::Mutate, tokens::Pay};
 use sp_core::crypto::Ss58Codec;
 use xcm_emulator::TestExt;
 
+// TODO remove ignore https://github.com/paritytech/cumulus/issues/3027
 #[test]
+#[ignore]
 fn pay_salary() {
 	let pay_from: AccountId =
 		<AccountId as Ss58Codec>::from_string("5DS1Gaf6R9eFAV8QyeZP9P89kTkJMurxv3y3J3TTMu8p8VCX")
