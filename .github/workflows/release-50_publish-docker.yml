@@ -91,7 +91,7 @@ jobs:
             ls -al
 
       - name: Fetch rc artifacts or release artifacts based on release id
-        if: ${{ env.EVENT_NAME }} == 'workflow_dispatch'
+        if: ${{ env.EVENT_NAME  == 'workflow_dispatch' }}
         run: |
           . ${TMP}/lib.sh
 
