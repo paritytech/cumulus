@@ -75,7 +75,7 @@ jobs:
           chmod a+x lib.sh
           ls -al
 
-      - name: Fetch Release artifacts
+      - name: Fetch release artifacts based on final release tag
         if: ${{ github.event_name == 'release' &&  github.event.action != '' && github.event.action == 'published' }}
         run: |
           mkdir -p release-artifacts && cd release-artifacts
@@ -88,7 +88,7 @@ jobs:
             chmod a+x $BINARY
             ls -al
 
-      - name: Fetch RC artifacts
+      - name: Fetch rc artifacts or release artifacts based on release id
         if: ${{ github.event_name }} == "workflow_dispatch"
         run: |
           . ${TMP}/lib.sh
@@ -147,27 +147,29 @@ jobs:
           echo "Building container for $BINARY"
           ./docker/scripts/build-injected-image.sh
 
-      - name: Fetch commit and tag
-        id: fetch_refs
+      - name: Fetch rc commit and tag
+        if: ${{ inputs.image_type == 'rc' }}
+        id: fetch_rc_refs
         run: |
-          type=${{ inputs.image_type }}
+          release=release-${{ inputs.release_id }} && \
+          echo "release=${release}" >> $GITHUB_OUTPUT
 
-          if [[ "${type}" == "rc" ]]; then
-            release=release-${{ inputs.release_id }} && \
-            echo "release=${release}" >> $GITHUB_OUTPUT
+          commit=$(git rev-parse --short HEAD) && \
+          echo "commit=${commit}" >> $GITHUB_OUTPUT
 
-            commit=$(git rev-parse --short HEAD) && \
-            echo "commit=${commit}" >> $GITHUB_OUTPUT
+          tag=$(git name-rev --tags --name-only $(git rev-parse HEAD)) && \
+          [ "${tag}" != "undefined" ] && echo "tag=${tag}" >> $GITHUB_OUTPUT || \
+          echo "No tag, doing without"
 
-            tag=$(git name-rev --tags --name-only $(git rev-parse HEAD)) && \
-            [ "${tag}" != "undefined" ] && echo "tag=${tag}" >> $GITHUB_OUTPUT || \
-            echo "No tag, doing without"
-          elif [[ "${type}" == "release" || ${{ github.event_name }} == "release" && ! -z $EVENT_ACTION && $EVENT_ACTION=="published" ]]; then
-            VERSION=$(docker run --pull never --rm $DOCKER_OWNER/$BINARY --version | awk '{ print $2 }' )
-            release=$( echo $VERSION | cut -f1 -d- )
-            echo "tag=latest" >> $GITHUB_OUTPUT
-            echo "release=${release}" >> $GITHUB_OUTPUT
-          fi
+      - name: Fetch release tags
+        if: ${{ inputs.image_type == 'release' || github.event_name == 'release' &&  github.event.action != '' && github.event.action == 'published' }}
+        id: fetch_refs_release
+        run: |
+          VERSION=$(docker run --pull never --rm $DOCKER_OWNER/$BINARY --version | awk '{ print $2 }' )
+          release=$( echo $VERSION | cut -f1 -d- )
+          echo "tag=latest" >> $GITHUB_OUTPUT
+          echo "release=${release}" >> $GITHUB_OUTPUT
+
 
       - name: Login to Dockerhub
         uses: docker/login-action@v2
@@ -191,9 +193,18 @@ jobs:
 
           $ENGINE images | grep ${BINARY}
 
-      - name: Check version for the published image for ${{ env.BINARY }}
+      - name: Check version for the published rc image for ${{ env.BINARY }}
+        if: ${{ inputs.image_type == 'rc' }}
         env:
-          RELEASE_TAG: ${{ steps.fetch_refs.outputs.release }}
+          RELEASE_TAG: ${{ steps.fetch_rc_refs.outputs.release }}
+        run: |
+          echo "Checking tag ${RELEASE_TAG} for image ${REGISTRY}/${DOCKER_OWNER}/${BINARY}"
+          $ENGINE run -i ${REGISTRY}/${DOCKER_OWNER}/${BINARY}:${RELEASE_TAG} --version
+
+      - name: Check version for the published release image for ${{ env.BINARY }}
+        if: ${{ inputs.image_type == 'release' || github.event_name == 'release' &&  github.event.action != '' && github.event.action == 'published' }}
+        env:
+          RELEASE_TAG: ${{ steps.fetch_rc_refs.outputs.release }}
         run: |
           echo "Checking tag ${RELEASE_TAG} for image ${REGISTRY}/${DOCKER_OWNER}/${BINARY}"
           $ENGINE run -i ${REGISTRY}/${DOCKER_OWNER}/${BINARY}:${RELEASE_TAG} --version
