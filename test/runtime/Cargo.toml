@@ -14,6 +14,7 @@ frame-support = { git = "https://github.com/paritytech/substrate", default-featu
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-message-queue = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-glutton = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -49,6 +50,8 @@ std = [
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
 	"pallet-balances/std",
+	"pallet-message-queue/std",
+	"pallet-glutton/std",
 	"pallet-sudo/std",
 	"pallet-glutton/std",
 	"pallet-timestamp/std",

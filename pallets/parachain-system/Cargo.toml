@@ -15,8 +15,10 @@ trie-db = { version = "0.27.1", default-features = false }
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 
 # Substrate
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master", optional = true }
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-message-queue = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-externalities = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -40,6 +42,7 @@ cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inh
 assert_matches = "1.5"
 hex-literal = "0.4.1"
 lazy_static = "1.4"
+rand = "0.8.5"
 
 # Substrate
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -62,22 +65,32 @@ std = [
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-parachain-inherent/std",
 	"frame-support/std",
+	"frame-benchmarking/std",
 	"frame-system/std",
+	"pallet-message-queue/std",
 	"sp-core/std",
 	"sp-externalities/std",
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-state-machine/std",
 	"sp-std/std",
+	"sp-tracing/std",
 	"sp-trie/std",
 	"xcm/std",
 	"trie-db/std",
 ]
 
 runtime-benchmarks = [
-	"sp-runtime/runtime-benchmarks"
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+	"pallet-message-queue/runtime-benchmarks",
+	"cumulus-test-client/runtime-benchmarks",
 ]
 
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"frame-support/try-runtime",
+	"pallet-message-queue/try-runtime",
+]
 
 parameterized-consensus-hook = []
