@@ -49,6 +49,8 @@ env:
   REPO: ${{ github.repository }}
   BINARY: polkadot-parachain
   EVENT_ACTION: ${{ github.event.action }}
+  EVENT_NAME: ${{ github.event_name }}
+  IMAGE_TYPE: ${{ inputs.image_type }}
 
 jobs:
   fetch-artifacts:
@@ -76,7 +78,7 @@ jobs:
           ls -al
 
       - name: Fetch release artifacts based on final release tag
-        if: ${{ github.event_name == 'release' &&  github.event.action != '' && github.event.action == 'published' }}
+        if: ${{ env.EVENT_NAME == 'release' && env.EVENT_ACTION != '' && env.EVENT_ACTION == 'published' }}
         run: |
           mkdir -p release-artifacts && cd release-artifacts
 
@@ -89,7 +91,7 @@ jobs:
             ls -al
 
       - name: Fetch rc artifacts or release artifacts based on release id
-        if: ${{ github.event_name }} == "workflow_dispatch"
+        if: ${{ env.EVENT_NAME }} == 'workflow_dispatch'
         run: |
           . ${TMP}/lib.sh
 
@@ -148,7 +150,7 @@ jobs:
           ./docker/scripts/build-injected-image.sh
 
       - name: Fetch rc commit and tag
-        if: ${{ inputs.image_type == 'rc' }}
+        if: ${{ env.IMAGE_TYPE == 'rc' }}
         id: fetch_rc_refs
         run: |
           release=release-${{ inputs.release_id }} && \
@@ -162,8 +164,8 @@ jobs:
           echo "No tag, doing without"
 
       - name: Fetch release tags
-        if: ${{ inputs.image_type == 'release' || github.event_name == 'release' &&  github.event.action != '' && github.event.action == 'published' }}
-        id: fetch_refs_release
+        if: ${{ env.IMAGE_TYPE == 'release' || env.EVENT_NAME == 'release' &&  env.EVENT_ACTION != '' && env.EVENT_ACTION == 'published' }}
+        id: fetch_release_refs
         run: |
           VERSION=$(docker run --pull never --rm $DOCKER_OWNER/$BINARY --version | awk '{ print $2 }' )
           release=$( echo $VERSION | cut -f1 -d- )
@@ -180,7 +182,7 @@ jobs:
       - name: Tag and Push Container image for ${{ env.BINARY }}
         id: docker_push
         env:
-          TAGS: ${{join(steps.fetch_refs.outputs.*, ',')}}
+          TAGS: ${{ join(steps.fetch_rc_refs.outputs.*, ',') || join(steps.fetch_release_refs.outputs.*, ',') }}
         run: |
           TAGS=${TAGS[@]:-latest}
           IFS=',' read -r -a TAG_ARRAY <<< "$TAGS"
@@ -193,18 +195,9 @@ jobs:
 
           $ENGINE images | grep ${BINARY}
 
-      - name: Check version for the published rc image for ${{ env.BINARY }}
-        if: ${{ inputs.image_type == 'rc' }}
+      - name: Check version for the published image for ${{ env.BINARY }}
         env:
-          RELEASE_TAG: ${{ steps.fetch_rc_refs.outputs.release }}
-        run: |
-          echo "Checking tag ${RELEASE_TAG} for image ${REGISTRY}/${DOCKER_OWNER}/${BINARY}"
-          $ENGINE run -i ${REGISTRY}/${DOCKER_OWNER}/${BINARY}:${RELEASE_TAG} --version
-
-      - name: Check version for the published release image for ${{ env.BINARY }}
-        if: ${{ inputs.image_type == 'release' || github.event_name == 'release' &&  github.event.action != '' && github.event.action == 'published' }}
-        env:
-          RELEASE_TAG: ${{ steps.fetch_rc_refs.outputs.release }}
+          RELEASE_TAG: ${{ steps.fetch_rc_refs.outputs.release || steps.fetch_release_refs.outputs.release  }}
         run: |
           echo "Checking tag ${RELEASE_TAG} for image ${REGISTRY}/${DOCKER_OWNER}/${BINARY}"
           $ENGINE run -i ${REGISTRY}/${DOCKER_OWNER}/${BINARY}:${RELEASE_TAG} --version
