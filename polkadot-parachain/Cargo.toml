@@ -1,6 +1,6 @@
 [package]
 name = "polkadot-parachain-bin"
-version = "0.9.430"
+version = "1.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 build = "build.rs"
 edition = "2021"
@@ -12,7 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 async-trait = "0.1.73"
-clap = { version = "4.3.21", features = ["derive"] }
+clap = { version = "4.3.23", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 futures = "0.3.28"
 hex-literal = "0.4.1"
@@ -99,7 +99,7 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 [dev-dependencies]
 assert_cmd = "2.0"
 nix = { version = "0.26.1", features = ["signal"] }
-tempfile = "3.7.1"
+tempfile = "3.8.0"
 tokio = { version = "1.32.0", features = ["macros", "time", "parking_lot"] }
 wait-timeout = "0.2"
 

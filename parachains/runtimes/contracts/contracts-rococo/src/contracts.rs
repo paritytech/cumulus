@@ -63,4 +63,5 @@ impl Config for Runtime {
 	);
 	type RuntimeHoldReason = RuntimeHoldReason;
 	type Debug = ();
+	type Environment = ();
 }
