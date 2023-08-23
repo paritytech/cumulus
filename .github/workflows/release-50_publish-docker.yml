@@ -22,15 +22,15 @@ on:
         required: true
         type: string
       image_type:
-        description: "Type of the image to be published"
+        description: Type of the image to be published
         required: true
-        default: "rc"
+        default: rc
         type: choice
         options:
-            - rc
-            - final
+          - rc
+          - release
       registry:
-        description: "Container registry"
+        description: Container registry
         required: true
         type: string
         default: docker.io
@@ -68,33 +68,37 @@ jobs:
       - name: Fetch lib.sh from polkadot repo
         working-directory: ${{ env.TMP }}
         run: |
-            curl -O -L \
-                -H "Accept: application/vnd.github.v3.raw" \
-                https://raw.githubusercontent.com/paritytech/polkadot/master/scripts/ci/common/lib.sh
+          curl -O -L \
+              -H "Accept: application/vnd.github.v3.raw" \
+              https://raw.githubusercontent.com/paritytech/polkadot/master/scripts/ci/common/lib.sh
 
-            chmod a+x lib.sh
-            ls -al
+          chmod a+x lib.sh
+          ls -al
 
-      - name: Fetch all artifacts
+      - name: Fetch Release artifacts
+        if: ${{ github.event_name }} == "release" && ! -z $EVENT_ACTION && $EVENT_ACTION=="published"
         run: |
-            if [[ ${{ github.event_name }} == "release" && ! -z $EVENT_ACTION && $EVENT_ACTION=="published" ]]; then
-                mkdir -p release-artifacts && cd release-artifacts
+          mkdir -p release-artifacts && cd release-artifacts
 
-                for f in $BINARY $BINARY.asc $BINARY.sha256; do
-                    URL="https://github.com/${{ github.event.repository.full_name }}/releases/download/${{ github.event.release.tag_name }}/$f"
-                    echo " - Fetching $f from $URL"
-                    wget "$URL" -O "$f"
-                done
-            else
-                . ${TMP}/lib.sh
-                fetch_release_artifacts
-                cd release-artifacts
-            fi
-
+            for f in $BINARY $BINARY.asc $BINARY.sha256; do
+                URL="https://github.com/${{ github.event.repository.full_name }}/releases/download/${{ github.event.release.tag_name }}/$f"
+                echo " - Fetching $f from $URL"
+                wget "$URL" -O "$f"
+            done
             chmod a+x $BINARY
             ls -al
 
-            cp -f ${TMP}/lib.sh .
+      - name: Fetch RC artifacts
+        if: ${{ github.event_name }} == "workflow_dispatch"
+        run: |
+          . ${TMP}/lib.sh
+
+          fetch_release_artifacts
+
+          chmod a+x release-artifacts/$BINARY
+          ls -al
+
+          cp -f ${TMP}/lib.sh release-artifacts/
 
       - name: Cache the artifacts
         uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
@@ -139,9 +143,9 @@ jobs:
           IMAGE_NAME: ${{ env.BINARY }}
           OWNER: ${{ env.DOCKER_OWNER }}
         run: |
-            ls -al
-            echo "Building container for $BINARY"
-            ./docker/scripts/build-injected-image.sh
+          ls -al
+          echo "Building container for $BINARY"
+          ./docker/scripts/build-injected-image.sh
 
       - name: Fetch commit and tag
         id: fetch_refs
@@ -158,7 +162,7 @@ jobs:
             tag=$(git name-rev --tags --name-only $(git rev-parse HEAD)) && \
             [ "${tag}" != "undefined" ] && echo "tag=${tag}" >> $GITHUB_OUTPUT || \
             echo "No tag, doing without"
-          elif [[ "${type}" == "final" || ${{ github.event_name }} == "release" && ! -z $EVENT_ACTION && $EVENT_ACTION=="published" ]]; then
+          elif [[ "${type}" == "release" || ${{ github.event_name }} == "release" && ! -z $EVENT_ACTION && $EVENT_ACTION=="published" ]]; then
             VERSION=$(docker run --pull never --rm $DOCKER_OWNER/$BINARY --version | awk '{ print $2 }' )
             release=$( echo $VERSION | cut -f1 -d- )
             echo "tag=latest" >> $GITHUB_OUTPUT
