@@ -76,7 +76,7 @@ jobs:
           ls -al
 
       - name: Fetch Release artifacts
-        if: ${{ github.event_name }} == "release" && ! -z $EVENT_ACTION && $EVENT_ACTION=="published"
+        if: ${{ github.event_name == 'release' &&  github.event.action != '' && github.event.action == 'published' }}
         run: |
           mkdir -p release-artifacts && cd release-artifacts
 
