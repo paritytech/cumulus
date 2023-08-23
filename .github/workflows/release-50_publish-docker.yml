@@ -76,7 +76,7 @@ jobs:
 
       - name: Fetch all artifacts
         run: |
-            if [[ ${{ github.event.release }} == "published" ]]; then
+            if [[ ${{ github.event_name }} == "release" && ${{ github.event.action }} == "published" ]]; then
                 mkdir -p release-artifacts && cd release-artifacts
 
                 for f in $BINARY $BINARY.asc $BINARY.sha256; do
@@ -157,7 +157,7 @@ jobs:
             tag=$(git name-rev --tags --name-only $(git rev-parse HEAD)) && \
             [ "${tag}" != "undefined" ] && echo "tag=${tag}" >> $GITHUB_OUTPUT || \
             echo "No tag, doing without"
-          elif [[ "${type}" == "final" || "${{ github.event.release }}" == "published"]] ; then
+          elif [[ "${type}" == "final" || ${{ github.event_name }} == "release" && ${{ github.event.action }} == "published" ]] ; then
             VERSION=$(docker run --pull never --rm $DOCKER_OWNER/$BINARY --version | awk '{ print $2 }' )
             release=$( echo $VERSION | cut -f1 -d- )
             echo "tag=latest" >> $GITHUB_OUTPUT
