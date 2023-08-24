@@ -1,7 +1,7 @@
 name: Release - Publish Docker Image
 
-# This workflow listens to pubished releases.
-# It includes releases and pre-releases.
+# This workflow listens to pubished releases or can be triggered manually.
+# It includes releases and rc candidates.
 # It fetches the binaries, checks sha256 and GPG
 # signatures, then builds an injected docker
 # image and publishes it.
