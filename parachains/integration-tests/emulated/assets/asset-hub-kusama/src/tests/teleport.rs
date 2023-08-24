@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+#![allow(dead_code)] // <https://github.com/paritytech/cumulus/issues/3027>
+
 use crate::*;
 
 fn relay_origin_assertions(t: RelayToSystemParaTest) {
