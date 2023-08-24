@@ -1439,6 +1439,7 @@ dependencies = [
  "bp-runtime",
  "frame-support",
  "sp-api",
+ "sp-runtime",
  "sp-std",
 ]
 
