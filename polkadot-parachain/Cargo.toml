@@ -12,7 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 async-trait = "0.1.73"
-clap = { version = "4.3.23", features = ["derive"] }
+clap = { version = "4.3.24", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 futures = "0.3.28"
 hex-literal = "0.4.1"
@@ -67,7 +67,6 @@ sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
-try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 frame-rpc-system = { package = "substrate-frame-rpc-system", git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -99,7 +98,7 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 [dev-dependencies]
 assert_cmd = "2.0"
 nix = { version = "0.26.1", features = ["signal"] }
-tempfile = "3.7.1"
+tempfile = "3.8.0"
 tokio = { version = "1.32.0", features = ["macros", "time", "parking_lot"] }
 wait-timeout = "0.2"
 
@@ -124,5 +123,4 @@ try-runtime = [
 	"asset-hub-kusama-runtime/try-runtime",
 	"asset-hub-westend-runtime/try-runtime",
 	"shell-runtime/try-runtime",
-	"try-runtime-cli/try-runtime",
 ]

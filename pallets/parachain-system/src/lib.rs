@@ -42,7 +42,6 @@ use frame_support::{
 	storage,
 	traits::Get,
 	weights::Weight,
-	RuntimeDebug,
 };
 use frame_system::{ensure_none, ensure_root, pallet_prelude::HeaderFor};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
@@ -53,6 +52,7 @@ use sp_runtime::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidity,
 		ValidTransaction,
 	},
+	RuntimeDebug,
 };
 use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
 use xcm::latest::XcmHash;
@@ -1447,6 +1447,10 @@ impl<T: Config> Pallet<T> {
 			hrmp_max_message_num_per_candidate: 2,
 			validation_upgrade_cooldown: 2,
 			validation_upgrade_delay: 2,
+			async_backing_params: relay_chain::vstaging::AsyncBackingParams {
+				allowed_ancestry_len: 0,
+				max_candidate_depth: 0,
+			},
 		};
 		<HostConfiguration<T>>::put(host_config);
 	}
