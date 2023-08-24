@@ -71,27 +71,29 @@ jobs:
         working-directory: ${{ env.TMP }}
         run: |
           curl -O -L \
-              -H "Accept: application/vnd.github.v3.raw" \
-              https://raw.githubusercontent.com/paritytech/polkadot/master/scripts/ci/common/lib.sh
+            -H "Accept: application/vnd.github.v3.raw" \
+            https://raw.githubusercontent.com/paritytech/polkadot/master/scripts/ci/common/lib.sh
 
           chmod a+x lib.sh
           ls -al
 
       - name: Fetch release artifacts based on final release tag
+        #this step runs only if the workflow is triggered automatically when new release is published
         if: ${{ env.EVENT_NAME == 'release' && env.EVENT_ACTION != '' && env.EVENT_ACTION == 'published' }}
         run: |
           mkdir -p release-artifacts && cd release-artifacts
 
-            for f in $BINARY $BINARY.asc $BINARY.sha256; do
-                URL="https://github.com/${{ github.event.repository.full_name }}/releases/download/${{ github.event.release.tag_name }}/$f"
-                echo " - Fetching $f from $URL"
-                wget "$URL" -O "$f"
-            done
-            chmod a+x $BINARY
-            cp -f ${TMP}/lib.sh .
-            ls -al
+          for f in $BINARY $BINARY.asc $BINARY.sha256; do
+            URL="https://github.com/${{ github.event.repository.full_name }}/releases/download/${{ github.event.release.tag_name }}/$f"
+            echo " - Fetching $f from $URL"
+            wget "$URL" -O "$f"
+          done
+          chmod a+x $BINARY
+          cp -f ${TMP}/lib.sh .
+          ls -al
 
       - name: Fetch rc artifacts or release artifacts based on release id
+        #this step runs only if the workflow is triggered manually
         if: ${{ env.EVENT_NAME  == 'workflow_dispatch' }}
         run: |
           . ${TMP}/lib.sh
@@ -106,9 +108,9 @@ jobs:
       - name: Cache the artifacts
         uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
         with:
-            key: artifacts-${{ github.sha }}
-            path: |
-                ./release-artifacts/**/*
+          key: artifacts-${{ github.sha }}
+          path: |
+            ./release-artifacts/**/*
 
   build-container:
     runs-on: ubuntu-latest
