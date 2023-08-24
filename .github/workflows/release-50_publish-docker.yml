@@ -88,6 +88,7 @@ jobs:
                 wget "$URL" -O "$f"
             done
             chmod a+x $BINARY
+            cp -f ${TMP}/lib.sh .
             ls -al
 
       - name: Fetch rc artifacts or release artifacts based on release id
