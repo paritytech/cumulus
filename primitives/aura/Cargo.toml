@@ -8,14 +8,14 @@ edition = "2021"
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [ "derive" ] }
 
 # Substrate
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rockmint-10005" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rockmint-10005" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rockmint-10005" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rockmint-10005" }
 
 # Polkadot
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rockmint-10005" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rockmint-10005" }
 
 [features]
 default = [ "std" ]

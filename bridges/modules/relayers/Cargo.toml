@@ -20,19 +20,19 @@ pallet-bridge-messages = { path = "../messages", default-features = false }
 
 # Substrate Dependencies
 
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false, optional = true }
-frame-support = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , branch = "rockmint-10005" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "rockmint-10005" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "rockmint-10005" }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "rockmint-10005" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "rockmint-10005" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "rockmint-10005" }
 
 [dev-dependencies]
 bp-runtime = { path = "../../primitives/runtime" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "rockmint-10005" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "rockmint-10005" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "rockmint-10005" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "rockmint-10005" }
 
 [features]
 default = ["std"]

@@ -11,17 +11,17 @@ log = { version = "0.4.20", default-features = false }
 assert_matches = "1.4.0"
 
 # Substrate
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false, optional = true }
-frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , branch = "rockmint-10005" }
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rockmint-10005" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rockmint-10005" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rockmint-10005" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rockmint-10005" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rockmint-10005" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "rockmint-10005" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rockmint-10005" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rockmint-10005" }
+pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rockmint-10005" }
+pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rockmint-10005" }
 
 # Cumulus
 asset-test-utils = { path = "../../assets/test-utils"}
@@ -34,11 +34,11 @@ parachains-common = { path = "../../../../parachains/common", default-features =
 parachains-runtimes-test-utils = { path = "../../test-utils", default-features = false }
 
 # Polkadot
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", default-features = false, optional = true , branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rockmint-10005" }
+pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", default-features = false, optional = true , branch = "rockmint-10005" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rockmint-10005" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rockmint-10005" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rockmint-10005" }
 
 # Bridges
 bp-bridge-hub-rococo = { path = "../../../../bridges/primitives/chain-bridge-hub-rococo", default-features = false }

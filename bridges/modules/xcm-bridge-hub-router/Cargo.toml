@@ -17,21 +17,21 @@ bp-xcm-bridge-hub-router = { path = "../../primitives/xcm-bridge-hub-router", de
 
 # Substrate Dependencies
 
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false, optional = true }
-frame-support = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , branch = "rockmint-10005" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "rockmint-10005" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "rockmint-10005" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "rockmint-10005" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "rockmint-10005" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "rockmint-10005" }
 
 # Polkadot Dependencies
 
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "rockmint-10005" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "rockmint-10005" }
 
 [dev-dependencies]
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "rockmint-10005" }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "rockmint-10005" }
 
 [features]
 default = ["std"]

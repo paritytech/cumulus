@@ -6,21 +6,21 @@ edition = "2021"
 
 
 [dependencies]
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "rockmint-10005" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-storage = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "rockmint-10005" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "rockmint-10005" }
+sp-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "rockmint-10005" }
+sp-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "rockmint-10005" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "rockmint-10005" }
+sp-storage = { git = "https://github.com/paritytech/substrate", branch = "rockmint-10005" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "rockmint-10005" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rockmint-10005" }
+sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "rockmint-10005" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "rockmint-10005" }
 
 tokio = { version = "1.32.0", features = ["sync"] }
 tokio-util = { version = "0.7.8", features = ["compat"] }
