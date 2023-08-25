@@ -74,6 +74,7 @@ cumulus-primitives-utility = { path = "../../../../primitives/utility", default-
 pallet-collator-selection = { path = "../../../../pallets/collator-selection", default-features = false }
 parachain-info = { path = "../../../pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
+pallet-collective-content = { path = "../../../pallets/collective-content", default-features = false }
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
@@ -110,6 +111,7 @@ runtime-benchmarks = [
 	"pallet-ranked-collective/runtime-benchmarks",
 	"pallet-core-fellowship/runtime-benchmarks",
 	"pallet-salary/runtime-benchmarks",
+	"pallet-collective-content/runtime-benchmarks",
 ]
 try-runtime = [
 	"cumulus-pallet-aura-ext/try-runtime",
@@ -140,6 +142,7 @@ try-runtime = [
 	"pallet-ranked-collective/try-runtime",
 	"pallet-core-fellowship/try-runtime",
 	"pallet-salary/try-runtime",
+	"pallet-collective-content/try-runtime",
 ]
 std = [
 	"codec/std",
@@ -197,6 +200,7 @@ std = [
 	"substrate-wasm-builder",
 	"pallet-core-fellowship/std",
 	"pallet-salary/std",
+	"pallet-collective-content/std",
 ]
 
 experimental = [ "pallet-aura/experimental" ]
