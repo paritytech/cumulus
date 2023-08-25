@@ -15,13 +15,14 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub mod constants;
 pub mod impls;
 pub mod xcm_config;
-pub use constants::*;
+pub use config_constants::*;
 pub use opaque::*;
 pub use types::*;
 
-/// Common types of parachains.
+/// Common types within a parachain configuration.
 mod types {
 	use sp_runtime::traits::{IdentifyAccount, Verify};
 
@@ -65,8 +66,8 @@ mod types {
 	pub type AssetIdForTrustBackedAssets = u32;
 }
 
-/// Common constants of parachains.
-mod constants {
+/// Common constants of a parachain configuration.
+mod config_constants {
 	use super::types::BlockNumber;
 	use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight};
 	use sp_runtime::Perbill;
