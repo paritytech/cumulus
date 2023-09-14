@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["BridgeHubMessageHandler"],"trait":["DmpMessageHandler","XcmpMessageHandler"],"type":["RococoWococoMessageHandler","WococoRococoMessageHandler"]};

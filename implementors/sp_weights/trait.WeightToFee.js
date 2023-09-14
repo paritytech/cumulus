@@ -1,0 +1,11 @@
+(function() {var implementors = {
+"asset_hub_kusama_runtime":[["impl WeightToFee for <a class=\"struct\" href=\"asset_hub_kusama_runtime/constants/fee/struct.WeightToFee.html\" title=\"struct asset_hub_kusama_runtime::constants::fee::WeightToFee\">WeightToFee</a>"]],
+"asset_hub_polkadot_runtime":[["impl WeightToFee for <a class=\"struct\" href=\"asset_hub_polkadot_runtime/constants/fee/struct.WeightToFee.html\" title=\"struct asset_hub_polkadot_runtime::constants::fee::WeightToFee\">WeightToFee</a>"]],
+"asset_hub_westend_runtime":[["impl WeightToFee for <a class=\"struct\" href=\"asset_hub_westend_runtime/constants/fee/struct.WeightToFee.html\" title=\"struct asset_hub_westend_runtime::constants::fee::WeightToFee\">WeightToFee</a>"]],
+"bridge_hub_kusama_runtime":[["impl WeightToFee for <a class=\"struct\" href=\"bridge_hub_kusama_runtime/constants/fee/struct.WeightToFee.html\" title=\"struct bridge_hub_kusama_runtime::constants::fee::WeightToFee\">WeightToFee</a>"]],
+"bridge_hub_polkadot_runtime":[["impl WeightToFee for <a class=\"struct\" href=\"bridge_hub_polkadot_runtime/constants/fee/struct.WeightToFee.html\" title=\"struct bridge_hub_polkadot_runtime::constants::fee::WeightToFee\">WeightToFee</a>"]],
+"bridge_hub_rococo_runtime":[["impl WeightToFee for <a class=\"struct\" href=\"bridge_hub_rococo_runtime/constants/fee/struct.WeightToFee.html\" title=\"struct bridge_hub_rococo_runtime::constants::fee::WeightToFee\">WeightToFee</a>"]],
+"collectives_polkadot_runtime":[["impl WeightToFee for <a class=\"struct\" href=\"collectives_polkadot_runtime/constants/fee/struct.WeightToFee.html\" title=\"struct collectives_polkadot_runtime::constants::fee::WeightToFee\">WeightToFee</a>"]],
+"contracts_rococo_runtime":[["impl WeightToFee for <a class=\"struct\" href=\"contracts_rococo_runtime/constants/fee/struct.WeightToFee.html\" title=\"struct contracts_rococo_runtime::constants::fee::WeightToFee\">WeightToFee</a>"]],
+"penpal_runtime":[["impl WeightToFee for <a class=\"struct\" href=\"penpal_runtime/struct.WeightToFee.html\" title=\"struct penpal_runtime::WeightToFee\">WeightToFee</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
