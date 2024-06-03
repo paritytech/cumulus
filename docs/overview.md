@@ -99,3 +99,20 @@ After updating the Parachain runtime, a Parachain needs to wait a certain amount
 The WASM blob update not only contains the Parachain runtime, but also the `validate_block`
 function provided by Cumulus. So, updating a Parachain runtime on the relay chain involves a
 complete update of the validation WASM blob.
+
+## Register Parachain 
+
+To start a node and connect to a network the chain spec has to be passed. Chain spec is a configuration 
+for a node to bootstrap itself, define extensions like rocksdb, setup the network, etc 
+([ChainSpec trait](https://github.com/paritytech/substrate/blob/4b7911607b48a5ca7ebf1d655f12d91cdd241866/client/chain-spec/src/lib.rs#L223)). 
+For Collator nodes the spec additionally contains wasm runtime of a parachain and genesis config used 
+to set an initial state of a chain and build a genesis block. The chain spec has two different formats, 
+raw and human readable. Raw spec has genesis data encoded in hex format ([chain spec examples](https://github.com/paritytech/cumulus/tree/master/parachains/chain-specs)).
+
+Registering a new Parachain requires executing a register call on the Relay Chain. Genesis head (or genesis block) 
+and validation code (or wasm runtime) are two parameters of that call that must be built from 
+the same genesis information used to spin up the collators. Both are stored on the Relay Chain. 
+The Genesis block is used as a parachain’s genesis block on the Relay Chain. And the validation code 
+is used as a Parachain Validation Function (PVF) to validate all Proof-of-Verification 
+(PoV) blocks sent by Collators. The parameters of the register call can be obtained from the chain spec 
+with cumulus client commands, export-genesis-state and export-genesis-wasm. 
